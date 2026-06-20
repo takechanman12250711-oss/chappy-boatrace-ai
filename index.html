@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>チャッピーボートレースAI Ver2</title>
+<title>チャッピーボートレースAI Ver3</title>
 <style>
 body{margin:0;background:#f4f7fb;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#111}
 main{padding:16px;max-width:850px;margin:auto}
-h1{background:#1976d2;color:white;padding:18px;border-radius:20px}
-.card{background:white;border-radius:18px;padding:16px;margin:14px 0;box-shadow:0 4px 14px #0001}
-select,button,textarea{width:100%;font-size:17px;padding:12px;border-radius:12px;margin:6px 0}
+h1{background:#1976d2;color:white;padding:18px;border-radius:20px;font-size:30px}
+.card{background:white;border-radius:20px;padding:18px;margin:16px 0;box-shadow:0 4px 14px #0001}
+select,button{width:100%;font-size:18px;padding:14px;border-radius:14px;margin:8px 0}
 button{background:#1976d2;color:white;border:0;font-weight:bold}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.boat{border:1px solid #dbe3ef;border-radius:16px;padding:14px;margin:12px 0}
+.score{font-size:34px;font-weight:900;color:#1976d2}
+.badge{display:inline-block;background:#eef4ff;border-radius:999px;padding:5px 10px;margin:3px;font-weight:bold}
 .blue{border-left:8px solid #1976d2}
 .pink{border-left:8px solid #e85aa6}
-pre{white-space:pre-wrap;font-size:15px;line-height:1.5}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.boat{border:1px solid #dbe3ef;border-radius:14px;padding:12px;margin:10px 0}
-.score{font-size:26px;font-weight:900;color:#1976d2}
-.badge{display:inline-block;background:#eef4ff;border-radius:999px;padding:4px 8px;margin:2px;font-weight:bold}
+pre{white-space:pre-wrap;font-size:16px;line-height:1.55}
 </style>
 </head>
+
 <body>
 <main>
-
-<h1>🚤 チャッピーボートレースAI Ver2</h1>
+<h1>🚤 チャッピーボートレースAI Ver3</h1>
 
 <div class="card">
 <h2>📡 自動取得</h2>
@@ -69,7 +69,6 @@ pre{white-space:pre-wrap;font-size:15px;line-height:1.5}
 <h2>📊 舟券太郎理論</h2>
 <pre id="theory">まだ解析していません</pre>
 </div>
-
 </main>
 
 <script>
@@ -88,74 +87,171 @@ async function loadRace(){
  document.getElementById("status").textContent="取得中...";
 
  try{
-   const res=await fetch(url);
-   const data=await res.json();
+  const res=await fetch(url);
+  const data=await res.json();
 
-   document.getElementById("status").textContent=
+  const officialHtml =
+    data.officialHtml ||
+    data.official?.html ||
+    data.official?.preview ||
+    "";
+
+  const hiyoriHtml =
+    data.hiyoriHtml ||
+    data.hiyori?.[0]?.html ||
+    data.hiyori?.[0]?.preview ||
+    "";
+
+  document.getElementById("status").textContent =
 `✅ 取得成功
 場：${placeName[place]}
 レース：${race}R
 
-公式HTML：${data.official?.length || 0}
-日和HTML：${data.hiyori?.[0]?.length || 0}
+公式HTML：${data.officialLength || data.official?.length || 0}
+日和HTML：${data.hiyoriLength || data.hiyori?.[0]?.length || 0}
 
-※現Verは取得HTMLから簡易指数を作成`;
+※HTML全文が取れている場合は自動抽出。
+※previewのみの場合は仮指数で表示。`;
 
-   const racers=createDummyRacers(place,race,data);
-   render(racers,place,race);
+  const racers = parseRace(officialHtml,hiyoriHtml,place);
+  render(racers,place,race);
 
  }catch(e){
-   document.getElementById("status").textContent="取得失敗："+e;
+  document.getElementById("status").textContent="取得失敗："+e;
  }
 }
 
-function createDummyRacers(place,race,data){
- const base=[
-  {boat:1,name:"1号艇",st:0.15,tenji:6.90,win:6.0,motor:35},
-  {boat:2,name:"2号艇",st:0.16,tenji:6.92,win:5.7,motor:34},
-  {boat:3,name:"3号艇",st:0.15,tenji:6.88,win:5.9,motor:38},
-  {boat:4,name:"4号艇",st:0.17,tenji:6.85,win:6.4,motor:42},
-  {boat:5,name:"5号艇",st:0.14,tenji:6.91,win:6.7,motor:40},
-  {boat:6,name:"6号艇",st:0.17,tenji:6.93,win:6.1,motor:39}
+function strip(html){
+ return String(html)
+  .replace(/<script[\s\S]*?<\/script>/gi,"")
+  .replace(/<style[\s\S]*?<\/style>/gi,"")
+  .replace(/<[^>]+>/g,"\n")
+  .replace(/&nbsp;/g," ")
+  .replace(/&amp;/g,"&")
+  .replace(/&lt;/g,"<")
+  .replace(/&gt;/g,">")
+  .replace(/\r/g,"\n")
+  .replace(/\n+/g,"\n")
+  .split("\n")
+  .map(x=>x.trim())
+  .filter(Boolean);
+}
+
+function numsNear(lines,key){
+ const i=lines.findIndex(x=>x.includes(key));
+ if(i<0)return [];
+ const text=lines.slice(i,i+120).join(" ");
+ return (text.match(/\d+\.\d{2}/g)||[]).map(Number).slice(0,6);
+}
+
+function namesFrom(lines){
+ const bad=["出走表","全国","当地","勝率","モーター","ボート","展示","進入","選手","登録番号","支部","級別"];
+ const arr=[];
+ for(const x of lines){
+  if(/^[一-龯ぁ-んァ-ンー]{2,8}$/.test(x) && !bad.includes(x)){
+    arr.push(x);
+  }
+ }
+ return [...new Set(arr)].slice(0,6);
+}
+
+function gradesFrom(lines){
+ return lines.filter(x=>/^(A1|A2|B1|B2)$/.test(x)).slice(0,6);
+}
+
+function parseRace(officialHtml,hiyoriHtml,place){
+ const o=strip(officialHtml);
+ const h=strip(hiyoriHtml);
+
+ let names=namesFrom(o);
+ let grades=gradesFrom(o);
+
+ let national=numsNear(o,"全国");
+ let local=numsNear(o,"当地");
+ let motor=numsNear(o,"モーター");
+ let boatRate=numsNear(o,"ボート");
+
+ let tenji=numsNear(h,"展示");
+ let lap=numsNear(h,"一周");
+ let st=numsNear(h,"ST");
+ let tilt=numsNear(h,"チルト");
+
+ const fallback=[
+  {st:.15,tenji:6.90,win:6.0,motor:35},
+  {st:.16,tenji:6.92,win:5.7,motor:34},
+  {st:.15,tenji:6.88,win:5.9,motor:38},
+  {st:.17,tenji:6.85,win:6.4,motor:42},
+  {st:.14,tenji:6.91,win:6.7,motor:40},
+  {st:.17,tenji:6.93,win:6.1,motor:39}
  ];
 
- base.forEach(b=>{
-   let s=50;
-   s+=(b.win-5.5)*8;
-   s+=(0.18-b.st)*100;
-   s+=(6.95-b.tenji)*20;
-   s+=(b.motor-35)*0.5;
-   if(place==="24" && b.boat===1) s+=8;
-   if(place==="20" && b.boat===6) s+=5;
-   b.score=Math.round(Math.max(1,Math.min(99,s)));
- });
+ const racers=[];
+ for(let i=0;i<6;i++){
+  const f=fallback[i];
 
- return base;
+  const r={
+   boat:i+1,
+   name:names[i] || `${i+1}号艇`,
+   grade:grades[i] || "",
+   national:Number(national[i] || f.win),
+   local:Number(local[i] || f.win),
+   motor:Number(motor[i] || f.motor),
+   boatRate:Number(boatRate[i] || 35),
+   tenji:Number(tenji[i] || f.tenji),
+   lap:Number(lap[i] || 37.50),
+   st:Number(st[i] || f.st),
+   tilt:tilt[i] || ""
+  };
+
+  r.score=score(r,place);
+  racers.push(r);
+ }
+ return racers;
+}
+
+function score(r,place){
+ let s=50;
+ s+=(r.national-5.5)*8;
+ s+=(r.local-5.5)*5;
+ s+=(0.18-r.st)*100;
+ s+=(6.95-r.tenji)*20;
+ s+=(r.motor-35)*0.45;
+
+ if(place==="24" && r.boat===1) s+=8;
+ if(place==="20" && r.boat===6) s+=5;
+ if(r.grade==="A1") s+=6;
+ if(r.grade==="A2") s+=3;
+
+ return Math.round(Math.max(1,Math.min(99,s)));
 }
 
 function render(racers,place,race){
- racers.sort((a,b)=>a.boat-b.boat);
+ document.getElementById("boats").innerHTML=racers.map(r=>{
+  const atk=Math.round(r.score-3);
+  const ten=Math.round(r.score);
+  const road=Math.round(r.score-5);
+  const loc=Math.round(50+(r.local-5.5)*12);
 
- document.getElementById("boats").innerHTML=racers.map(b=>`
- <div class="boat">
-   <h3>🚤${b.boat}号艇 ${b.name}</h3>
-   <div class="score">${b.score}点</div>
-   <span class="badge">🔥攻め ${Math.round(b.score-3)}</span>
-   <span class="badge">🌊展開 ${Math.round(b.score)}</span>
-   <span class="badge">⚡道中 ${Math.round(b.score-5)}</span>
-   <span class="badge">🏠当地 ${place==="24"&&b.boat===1?90:70}</span>
-   <p>ST ${b.st} / 展示 ${b.tenji} / 勝率 ${b.win} / M ${b.motor}%</p>
- </div>
- `).join("");
+  return `
+  <div class="boat">
+   <h3>🚤${r.boat}号艇 ${r.name} ${r.grade}</h3>
+   <div class="score">${r.score}点</div>
+   <span class="badge">🔥攻め ${atk}</span>
+   <span class="badge">🌊展開 ${ten}</span>
+   <span class="badge">⚡道中 ${road}</span>
+   <span class="badge">🏠当地 ${loc}</span>
+   <p>ST ${r.st} / 展示 ${r.tenji} / 全国 ${r.national} / 当地 ${r.local} / M ${r.motor}%</p>
+  </div>`;
+ }).join("");
 
  const rank=[...racers].sort((a,b)=>b.score-a.score);
  const h=rank[0], s=rank[1], t=rank[2];
  const outs=racers.filter(x=>x.boat>=4).sort((a,b)=>b.score-a.score);
 
- document.getElementById("blue").textContent=
-`◎本命：${h.boat}号艇 ${h.score}点
-○対抗：${s.boat}号艇 ${s.score}点
-▲穴：${t.boat}号艇 ${t.score}点
+ document.getElementById("blue").textContent =
+`◎本命：${h.boat}号艇 ${h.name} ${h.score}点
+○対抗：${s.boat}号艇 ${s.name} ${s.score}点
+▲穴：${t.boat}号艇 ${t.name} ${t.score}点
 △押さえ：${rank.slice(3).map(x=>x.boat+"号艇").join(" / ")}
 
 本線：
@@ -173,7 +269,7 @@ ${h.boat}-${rank.slice(1,4).map(x=>x.boat).join("")}-流し
 高指数艇と安全カバーは分ける。
 2コース差し、3コース攻め、4コース残しは切らない。`;
 
- document.getElementById("pink").textContent=
+ document.getElementById("pink").textContent =
 `万舟軸：
 ${outs.map(x=>x.boat+"号艇 "+x.score+"点").join("\n")}
 
@@ -194,23 +290,23 @@ ${outs[1].boat}-1-24
 展開を作る艇と拾う艇を分ける。`;
 
  const fastest=[...racers].sort((a,b)=>a.st-b.st)[0];
- const tenji=[...racers].sort((a,b)=>a.tenji-b.tenji)[0];
+ const tenjiTop=[...racers].sort((a,b)=>a.tenji-b.tenji)[0];
+ const sam=[...racers].sort((a,b)=>(a.tenji+a.lap)-(b.tenji+b.lap))[0];
 
- document.getElementById("theory").textContent=
+ document.getElementById("theory").textContent =
 `🔥スリットアラート：
 ST最速 ${fastest.boat}号艇 ST${fastest.st}
 
 ⏱ダブルタイム：
-展示1位 ${tenji.boat}号艇 展示${tenji.tenji}
+展示1位 ${tenjiTop.boat}号艇 展示${tenjiTop.tenji}
 
 🌊新サムアラート：
-展示＋STで ${tenji.boat}号艇をプラス評価
+展示＋一周で ${sam.boat}号艇をプラス評価
 
 固定ルール：
 モーター過信なし。
 選手技量・今節ST・展示・当地勝率を重視。`;
 }
 </script>
-
 </body>
 </html>
