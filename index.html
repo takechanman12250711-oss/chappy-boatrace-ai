@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>チャッピーボートレースAI</title>
+
+<style>
+body{
+font-family:sans-serif;
+background:#f5f7fb;
+padding:20px;
+}
+
+h1{
+background:#1976d2;
+color:white;
+padding:15px;
+border-radius:15px;
+}
+
+.card{
+background:white;
+padding:15px;
+border-radius:15px;
+margin-top:15px;
+}
+
+button{
+background:#1976d2;
+color:white;
+border:none;
+padding:12px;
+border-radius:10px;
+width:100%;
+font-size:18px;
+}
+
+input{
+width:100%;
+padding:10px;
+font-size:18px;
+margin-top:10px;
+}
+</style>
+
+</head>
+<body>
+
+<h1>🚤チャッピーボートレースAI</h1>
+
+<div class="card">
+
+<h2>場コード</h2>
+
+<input id="place" value="24">
+
+<h2>レース番号</h2>
+
+<input id="race" value="1">
+
+<button onclick="getRace()">
+出走表取得
+</button>
+
+</div>
+
+<div class="card">
+
+<h2>結果</h2>
+
+<pre id="result">
+未取得
+</pre>
+
+</div>
+
+<script>
+
+async function getRace(){
+
+const place =
+document.getElementById("place").value;
+
+const race =
+document.getElementById("race").value;
+
+const url =
+"https://chappy-boatrace-api.takechanman12250711.workers.dev/?place="
++ place +
+"&race="
++ race;
+
+const res = await fetch(url);
+
+const data = await res.json();
+
+document.getElementById("result")
+.textContent =
+JSON.stringify(data,null,2);
+
+}
+
+</script>
+
+</body>
+</html>
