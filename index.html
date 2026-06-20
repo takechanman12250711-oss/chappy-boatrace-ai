@@ -1,86 +1,85 @@
-<!doctype html>
+from pathlib import Path
+
+html = r'''<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>チャッピーボートレースAI 完全自動版</title>
+<title>チャッピーボートレースAI Ver6 完全版</title>
 <style>
-body{margin:0;background:#f4f7fb;font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#111}
-main{padding:16px;max-width:850px;margin:auto}
-h1{background:#1976d2;color:white;padding:18px;border-radius:20px;font-size:28px}
+:root{--blue:#1976d2;--pink:#e85aa6;--bg:#f4f7fb;--ink:#111;--line:#dbe3ef;--muted:#667085;--green:#0a8f3c;--red:#d33}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--ink)}
+main{padding:16px;max-width:900px;margin:auto}
+h1{background:linear-gradient(135deg,#1976d2,#38a5f8);color:white;padding:18px;border-radius:20px;font-size:28px}
 .card{background:white;border-radius:20px;padding:18px;margin:16px 0;box-shadow:0 4px 14px #0001}
-select,button{width:100%;font-size:18px;padding:14px;border-radius:14px;margin:8px 0}
-button{background:#1976d2;color:white;border:0;font-weight:bold}
+select,button,textarea,input{width:100%;font-size:18px;padding:14px;border-radius:14px;margin:8px 0;box-sizing:border-box;border:1px solid #ccd6e2}
+button{background:var(--blue);color:white;border:0;font-weight:bold}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.boat{border:1px solid #dbe3ef;border-radius:16px;padding:14px;margin:12px 0}
-.score{font-size:34px;font-weight:900;color:#1976d2}
+.boat{border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.score{font-size:34px;font-weight:900;color:var(--blue)}
 .badge{display:inline-block;background:#eef4ff;border-radius:999px;padding:5px 10px;margin:3px;font-weight:bold}
-.blue{border-left:8px solid #1976d2}
-.pink{border-left:8px solid #e85aa6}
+.buff{color:var(--green);font-weight:bold}
+.debuff{color:var(--red);font-weight:bold}
+.blue{border-left:8px solid var(--blue)}
+.pink{border-left:8px solid var(--pink)}
 pre{white-space:pre-wrap;font-size:16px;line-height:1.55}
+.small{font-size:13px;color:var(--muted)}
+.tab{display:inline-block;padding:5px 10px;border-radius:999px;background:#f2f4f7;margin:2px;font-size:13px;font-weight:800}
 </style>
 </head>
 <body>
 <main>
-
-<h1>🚤 チャッピーボートレースAI 完全自動版</h1>
+<h1>🚤 チャッピーボートレースAI Ver6 完全版</h1>
 
 <div class="card">
-<h2>📡 自動取得</h2>
+<h2>📡 完全自動取得</h2>
 <div class="row">
 <select id="place">
-<option value="01">桐生</option>
-<option value="02">戸田</option>
-<option value="03">江戸川</option>
-<option value="04">平和島</option>
-<option value="05">多摩川</option>
-<option value="06">浜名湖</option>
-<option value="07">蒲郡</option>
-<option value="08">常滑</option>
-<option value="09">津</option>
-<option value="10">三国</option>
-<option value="11">びわこ</option>
-<option value="12">住之江</option>
-<option value="13">尼崎</option>
-<option value="14">鳴門</option>
-<option value="15">丸亀</option>
-<option value="16">児島</option>
-<option value="17">宮島</option>
-<option value="18">徳山</option>
-<option value="19">下関</option>
-<option value="20">若松</option>
-<option value="21">芦屋</option>
-<option value="22">福岡</option>
-<option value="23">唐津</option>
-<option value="24" selected>大村</option>
+<option value="01">桐生</option><option value="02">戸田</option><option value="03">江戸川</option><option value="04">平和島</option><option value="05">多摩川</option>
+<option value="06">浜名湖</option><option value="07">蒲郡</option><option value="08">常滑</option><option value="09">津</option><option value="10">三国</option>
+<option value="11">びわこ</option><option value="12">住之江</option><option value="13">尼崎</option><option value="14">鳴門</option><option value="15">丸亀</option>
+<option value="16">児島</option><option value="17">宮島</option><option value="18">徳山</option><option value="19">下関</option><option value="20">若松</option>
+<option value="21">芦屋</option><option value="22">福岡</option><option value="23">唐津</option><option value="24" selected>大村</option>
 </select>
-
 <select id="race">
-<option value="1">1R</option><option value="2">2R</option><option value="3">3R</option>
-<option value="4">4R</option><option value="5">5R</option><option value="6">6R</option>
-<option value="7">7R</option><option value="8">8R</option><option value="9">9R</option>
-<option value="10">10R</option><option value="11">11R</option><option value="12">12R</option>
+<option value="1">1R</option><option value="2">2R</option><option value="3">3R</option><option value="4">4R</option><option value="5">5R</option><option value="6">6R</option>
+<option value="7">7R</option><option value="8">8R</option><option value="9">9R</option><option value="10">10R</option><option value="11">11R</option><option value="12">12R</option>
 </select>
 </div>
-<button onclick="loadRace()">出走表取得</button>
+<button onclick="loadRace()">出走表取得 → Ver6予想</button>
 <pre id="status">未取得</pre>
 </div>
 
-<div class="card"><h2>🚤 選手カード</h2><div id="boats">まだ取得していません</div></div>
-<div class="card blue"><h2>🎯 青シート 本命</h2><pre id="blue">まだ解析していません</pre></div>
+<div class="card">
+<h2>📈 合成オッズ / 出てない目TOP30</h2>
+<input id="odds" placeholder="合成オッズ用：例 8.2,14.7,31.5">
+<textarea id="missing" placeholder="出てない目TOP30や気になる目をメモ。例：1-5-2 25.4 / 5-1-3 80.1"></textarea>
+</div>
+
+<div class="card"><h2>🚤 選手カード：点数 → バフ/デバフ → 一言</h2><div id="boats">まだ取得していません</div></div>
+<div class="card blue"><h2>🎯 青シート 本命・軸・押さえ</h2><pre id="blue">まだ解析していません</pre></div>
 <div class="card pink"><h2>💣 ピンクシート 万舟</h2><pre id="pink">まだ解析していません</pre></div>
 <div class="card"><h2>📊 舟券太郎理論</h2><pre id="theory">まだ解析していません</pre></div>
-
+<div class="card"><h2>🧭 展開判定・フォーメーション</h2><pre id="formation">まだ解析していません</pre></div>
 </main>
 
 <script>
 const API="https://chappy-boatrace-api.takechanman12250711.workers.dev/";
-
 const placeName={
 "01":"桐生","02":"戸田","03":"江戸川","04":"平和島","05":"多摩川","06":"浜名湖",
 "07":"蒲郡","08":"常滑","09":"津","10":"三国","11":"びわこ","12":"住之江",
 "13":"尼崎","14":"鳴門","15":"丸亀","16":"児島","17":"宮島","18":"徳山",
 "19":"下関","20":"若松","21":"芦屋","22":"福岡","23":"唐津","24":"大村"
+};
+const venueRules={
+"01":"標準。内枠＋ST重視。","02":"戸田：狭水面で外・センターの波乱補正。4残し注意。","03":"江戸川：波風・当地巧者・外枠波乱補正。道中艇重視。",
+"04":"平和島：イン絶対ではなくセンター攻め注意。","05":"多摩川：静水面寄り。展示・一周重視。","06":"浜名湖：広水面。スピード型と外の伸び注意。",
+"07":"蒲郡：ナイター。展示気配重視。","08":"常滑：イン寄りだが3攻め注意。","09":"津：風向きで差し/まくり差し変化。",
+"10":"三国：モーニングはイン寄り。ST重視。","11":"びわこ：風とうねり注意。","12":"住之江：イン強め。2差し・3攻め両立。",
+"13":"尼崎：センター攻め残りに注意。","14":"鳴門：潮・風で波乱。外差し注意。","15":"丸亀：ナイター。イン＋展示上位を評価。",
+"16":"児島：潮汐影響。地元/当地重視。","17":"宮島：潮汐大。時間帯・当地巧者重視。","18":"徳山：イン強め。2差し・3攻め・4残し。",
+"19":"下関：ナイター水面。展示と当地重視。","20":"若松：海水ナイター。6号艇の道中・当地補正。","21":"芦屋：モーニング。イン寄り。",
+"22":"福岡：河口。2M波乱・外枠/道中艇注意。","23":"唐津：イン寄り。地元補正。","24":"大村：イン有利。ただし新エンジン期はモーター過信禁止。2差し・3攻め・4残しを残す。"
 };
 
 async function loadRace(){
@@ -88,75 +87,43 @@ async function loadRace(){
  const race=document.getElementById("race").value;
  const url=API+"?source=both&place="+place+"&race="+race;
  document.getElementById("status").textContent="取得中...";
-
  try{
   const res=await fetch(url);
   const data=await res.json();
-
   const officialHtml=data.officialHtml||data.official?.html||data.official?.preview||"";
   const hiyoriHtml=data.hiyoriHtml||data.hiyori?.[0]?.html||data.hiyori?.[0]?.preview||"";
-
   document.getElementById("status").textContent=
 `✅ 取得成功
-場：${placeName[place]}
-レース：${race}R
-
+場：${placeName[place]} ${race}R
 公式HTML：${data.officialLength||data.official?.length||officialHtml.length}
 日和HTML：${data.hiyoriLength||data.hiyori?.[0]?.length||hiyoriHtml.length}
-
-完全自動版：24場対応・青/ピンク/舟券太郎理論`;
-
+場補正：${venueRules[place]}`;
   const racers=parseRace(officialHtml,hiyoriHtml,place);
-  render(racers,place,race);
-
- }catch(e){
-  document.getElementById("status").textContent="取得失敗："+e;
- }
+  analyzeAndRender(racers,place,race);
+ }catch(e){document.getElementById("status").textContent="取得失敗："+e;}
 }
 
 function strip(html){
- return String(html)
- .replace(/<script[\s\S]*?<\/script>/gi,"")
- .replace(/<style[\s\S]*?<\/style>/gi,"")
- .replace(/<[^>]+>/g,"\n")
- .replace(/&nbsp;/g," ")
- .replace(/&amp;/g,"&")
- .replace(/&lt;/g,"<")
- .replace(/&gt;/g,">")
- .replace(/\r/g,"\n")
- .replace(/\n+/g,"\n")
+ return String(html).replace(/<script[\s\S]*?<\/script>/gi,"").replace(/<style[\s\S]*?<\/style>/gi,"").replace(/<[^>]+>/g,"\n")
+ .replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/\r/g,"\n").replace(/\n+/g,"\n")
  .split("\n").map(x=>x.trim()).filter(Boolean);
 }
-
-function numsNear(lines,key){
- const i=lines.findIndex(x=>x.includes(key));
- if(i<0)return [];
- const text=lines.slice(i,i+130).join(" ");
- return (text.match(/\d+\.\d{2}/g)||[]).map(Number).slice(0,6);
+function numsNear(lines,key,range=150){
+ const i=lines.findIndex(x=>x.includes(key)); if(i<0)return [];
+ return (lines.slice(i,i+range).join(" ").match(/\d+\.\d{2}/g)||[]).map(Number).slice(0,6);
 }
-
 function namesFrom(lines){
- const bad=["出走表","全国","当地","勝率","モーター","ボート","展示","進入","選手","登録番号","支部","級別","平均ST"];
+ const bad=["出走表","全国","当地","勝率","モーター","ボート","展示","進入","選手","登録番号","支部","級別","平均ST","発売","締切","オッズ"];
  const arr=[];
- for(const x of lines){
-  if(/^[一-龯ぁ-んァ-ンー]{2,9}$/.test(x)&&!bad.includes(x)){
-   if(!x.includes("発売")&&!x.includes("締切")&&!x.includes("オッズ")) arr.push(x);
-  }
- }
+ for(const x of lines){ if(/^[一-龯ぁ-んァ-ンー]{2,9}$/.test(x)&&!bad.includes(x)&&!/発売|締切|オッズ|レース|一覧/.test(x)) arr.push(x); }
  return [...new Set(arr)].slice(0,6);
 }
-
-function gradesFrom(lines){
- return lines.filter(x=>/^(A1|A2|B1|B2)$/.test(x)).slice(0,6);
-}
-
+function gradesFrom(lines){return lines.filter(x=>/^(A1|A2|B1|B2)$/.test(x)).slice(0,6);}
 function parseRace(officialHtml,hiyoriHtml,place){
  const o=strip(officialHtml), h=strip(hiyoriHtml);
  const names=namesFrom(o), grades=gradesFrom(o);
- const national=numsNear(o,"全国"), local=numsNear(o,"当地");
- const motor=numsNear(o,"モーター"), boatRate=numsNear(o,"ボート");
+ const national=numsNear(o,"全国"), local=numsNear(o,"当地"), motor=numsNear(o,"モーター"), boatRate=numsNear(o,"ボート");
  const tenji=numsNear(h,"展示"), lap=numsNear(h,"一周"), st=numsNear(h,"ST"), tilt=numsNear(h,"チルト");
-
  const fb=[
   {st:.15,tenji:6.90,lap:37.5,win:6.0,local:5.8,motor:35,boatRate:35},
   {st:.16,tenji:6.92,lap:37.7,win:5.7,local:5.4,motor:34,boatRate:34},
@@ -165,24 +132,12 @@ function parseRace(officialHtml,hiyoriHtml,place){
   {st:.14,tenji:6.91,lap:37.6,win:6.7,local:6.0,motor:40,boatRate:37},
   {st:.17,tenji:6.93,lap:37.8,win:6.1,local:5.9,motor:39,boatRate:36}
  ];
-
  return fb.map((f,i)=>{
-  const r={
-   boat:i+1,
-   name:names[i]||`${i+1}号艇`,
-   grade:grades[i]||"",
-   national:Number(national[i]||f.win),
-   local:Number(local[i]||f.local),
-   motor:Number(motor[i]||f.motor),
-   boatRate:Number(boatRate[i]||f.boatRate),
-   tenji:Number(tenji[i]||f.tenji),
-   lap:Number(lap[i]||f.lap),
-   st:Number(st[i]||f.st),
-   tilt:tilt[i]||"",
-   buffs:[],
-   debuffs:[]
-  };
-  r.score=score(r,place);
+  const r={boat:i+1,name:names[i]||`${i+1}号艇`,grade:grades[i]||"",national:Number(national[i]||f.win),local:Number(local[i]||f.local),
+   motor:Number(motor[i]||f.motor),boatRate:Number(boatRate[i]||f.boatRate),tenji:Number(tenji[i]||f.tenji),lap:Number(lap[i]||f.lap),
+   st:Number(st[i]||f.st),tilt:tilt[i]||"",buffs:[],debuffs:[],role:""};
+  r.indexScore=calcIndex(r,place);
+  r.flowScore=calcFlow(r,place);
   return r;
  });
 }
@@ -196,120 +151,210 @@ function venueBonus(place,r){
  if(place==="22"&&r.boat>=4)b+=3;
  if(place==="17"&&r.boat===1)b+=3;
  if(place==="15"&&r.boat===1)b+=4;
+ if(place==="18"&&r.boat===1)b+=5;
  return b;
 }
-
-function score(r,place){
+function calcIndex(r,place){
  let s=50;
- s+=(r.national-5.5)*8;
- s+=(r.local-5.5)*5;
- s+=(0.18-r.st)*100;
- s+=(6.95-r.tenji)*20;
- s+=(r.motor-35)*0.45;
- s+=venueBonus(place,r);
-
- if(r.grade==="A1")s+=6;
- if(r.grade==="A2")s+=3;
- if(r.boat>=5)s-=2;
-
+ s+=(r.national-5.5)*8; s+=(r.local-5.5)*5; s+=(0.18-r.st)*100; s+=(6.95-r.tenji)*20; s+=(r.motor-35)*0.35; s+=(r.boatRate-35)*0.15; s+=venueBonus(place,r);
+ if(r.grade==="A1")s+=6; if(r.grade==="A2")s+=3; if(r.boat>=5)s-=2;
  return Math.round(Math.max(1,Math.min(99,s)));
 }
-
-function buffs(r,place){
+function calcFlow(r,place){
+ let s=50;
+ if(r.boat===1)s+=18;
+ if(r.boat===2)s+=10; // 2差しを切らない
+ if(r.boat===3)s+=12; // 3攻め
+ if(r.boat===4)s+=8;  // 4残し
+ if(r.boat>=5)s+=4;  // 展開拾い
+ s+=(0.18-r.st)*70; s+=(6.95-r.tenji)*12; s+=(r.local-5.5)*5;
+ if(place==="24"&&r.boat===1)s+=8;
+ if(place==="20"&&r.boat===6)s+=8;
+ if(place==="03"&&r.boat>=4)s+=8;
+ return Math.round(Math.max(1,Math.min(99,s)));
+}
+function getBuffs(r,place){
  const up=[],down=[];
- if(r.grade==="A1")up.push("⬆️級別A1 +6");
- if(r.grade==="A2")up.push("⬆️級別A2 +3");
- if(r.st<=0.13)up.push("⬆️ST優秀 +5");
- if(r.st>=0.18)down.push("⬇️ST遅め -4");
- if(r.tenji<=6.85)up.push("⬆️展示上位 +5");
- if(r.tenji>=6.95)down.push("⬇️展示弱め -3");
- if(r.motor>=40)up.push("⬆️モーター良 +4");
- if(r.motor<=30)down.push("⬇️モーター低め -4");
+ if(r.grade==="A1")up.push("⬆️級別A1 +6"); if(r.grade==="A2")up.push("⬆️級別A2 +3");
+ if(r.st<=0.13)up.push("⬆️ST優秀 +5"); if(r.st>=0.18)down.push("⬇️ST遅め -4");
+ if(r.tenji<=6.85)up.push("⬆️展示上位 +5"); if(r.tenji>=6.95)down.push("⬇️展示弱め -3");
+ if(r.motor>=40)up.push("⬆️モーター良 +4"); if(r.motor<=30)down.push("⬇️モーター低め -4");
+ if(r.local>=6.0)up.push("⬆️当地勝率 +6"); if(r.local<5.0)down.push("⬇️当地不安 -4");
  if(place==="24"&&r.boat===1)up.push("⬆️大村イン補正 +8");
+ if(place==="20"&&r.boat===6)up.push("⬆️若松6号艇道中補正 +5");
  if(place==="03"&&r.boat>=4)up.push("⬆️江戸川外枠波乱補正 +4");
  if(r.boat>=5)down.push("⬇️外枠補正 -2");
  return {up,down};
 }
-
-function render(racers,place,race){
+function roleOf(r){
+ if(r.boat===1)return "イン逃げ/残し役";
+ if(r.boat===2)return "2コース差し役";
+ if(r.boat===3)return "3コース攻め役";
+ if(r.boat===4)return "4コース残し/まくり差し役";
+ if(r.boat===5)return "展開拾い/まくり差し穴";
+ return "道中拾い/当地巧者なら3着候補";
+}
+function combinedOdds(){
+ const a=document.getElementById("odds").value.split(/[,\s、]+/).map(x=>parseFloat(x)).filter(x=>x>0);
+ if(!a.length)return "未入力";
+ return (1/a.reduce((s,x)=>s+1/x,0)).toFixed(1)+"倍";
+}
+function analyzeAndRender(racers,place,race){
+ racers.forEach(r=>r.role=roleOf(r));
+ const indexRank=[...racers].sort((a,b)=>b.indexScore-a.indexScore);
+ const flowRank=[...racers].sort((a,b)=>b.flowScore-a.flowScore);
+ const fastest=[...racers].sort((a,b)=>a.st-b.st)[0];
+ const tenjiTop=[...racers].sort((a,b)=>a.tenji-b.tenji)[0];
+ const lapTop=[...racers].sort((a,b)=>a.lap-b.lap)[0];
+ const samRank=[...racers].sort((a,b)=>(a.tenji+a.lap)-(b.tenji+b.lap));
+ renderBoats(racers,place);
+ renderBlue(racers,indexRank,flowRank,place);
+ renderPink(racers,indexRank,flowRank,place);
+ renderTheory(racers,fastest,tenjiTop,lapTop,samRank);
+ renderFormation(racers,indexRank,flowRank,place);
+}
+function renderBoats(racers,place){
  document.getElementById("boats").innerHTML=racers.map(r=>{
-  const b=buffs(r,place);
+  const b=getBuffs(r,place);
   return `<div class="boat">
    <h3>🚤${r.boat}号艇 ${r.name} ${r.grade}</h3>
-   <div class="score">${r.score}点</div>
-   <span class="badge">🔥攻め ${Math.round(r.score-3)}</span>
-   <span class="badge">🌊展開 ${Math.round(r.score)}</span>
-   <span class="badge">⚡道中 ${Math.round(r.score-5)}</span>
+   <div class="score">指数${r.indexScore} / 展開${r.flowScore}</div>
+   <span class="badge">🔥攻め ${Math.round(r.indexScore-3)}</span>
+   <span class="badge">🌊展開 ${r.flowScore}</span>
+   <span class="badge">⚡道中 ${Math.round(50+(r.local-5.5)*10+(6.95-r.tenji)*10)}</span>
    <span class="badge">🏠当地 ${Math.round(50+(r.local-5.5)*12)}</span>
-   <p>ST ${r.st} / 展示 ${r.tenji} / 全国 ${r.national} / 当地 ${r.local} / M ${r.motor}%</p>
+   <p>ST ${r.st} / 展示 ${r.tenji} / 一周 ${r.lap} / 全国 ${r.national} / 当地 ${r.local} / M ${r.motor}%</p>
    <pre>${b.up.concat(b.down).join("\n")||"大きな補正なし"}</pre>
+   <p><b>一言：</b>${r.role}。指数と買い目は分離して評価。</p>
   </div>`;
  }).join("");
-
- const rank=[...racers].sort((a,b)=>b.score-a.score);
- const h=rank[0], s=rank[1], t=rank[2];
- const outs=racers.filter(x=>x.boat>=4).sort((a,b)=>b.score-a.score);
-
+}
+function renderBlue(racers,indexRank,flowRank,place){
+ const h=flowRank[0], s=flowRank[1], t=flowRank[2];
  document.getElementById("blue").textContent=
-`◎本命：${h.boat}号艇 ${h.name} ${h.score}点
-○対抗：${s.boat}号艇 ${s.name} ${s.score}点
-▲穴：${t.boat}号艇 ${t.name} ${t.score}点
-△押さえ：${rank.slice(3).map(x=>x.boat+"号艇").join(" / ")}
+`【指数上位】※指数＝買い目ではない
+${indexRank.map(r=>`${r.boat}号艇 ${r.name} 指数${r.indexScore}`).join("\n")}
 
-本線：
-${h.boat}-${s.boat}${t.boat}-${rank.slice(1,5).map(x=>x.boat).join("")}
+【展開上位】
+${flowRank.map(r=>`${r.boat}号艇 ${r.name} 展開${r.flowScore}`).join("\n")}
 
-安全押さえ：
-1-23-2345
+◎本命：${h.boat}号艇 ${h.name}
+○対抗：${s.boat}号艇 ${s.name}
+▲穴：${t.boat}号艇 ${t.name}
+△押さえ：${flowRank.slice(3).map(x=>x.boat+"号艇").join(" / ")}
+
+🎯本線フォーメーション
+${h.boat}-${s.boat}${t.boat}-${flowRank.slice(1,5).map(x=>x.boat).join("")}
+
+🚤展開本線
+1-3-245
+1-2-345
+
+🛟安全押さえ
 1-2-34
 1-3-24
+1-4-23
 
-流し候補：
-${h.boat}-${rank.slice(1,4).map(x=>x.boat).join("")}-流し
+🌊流し候補
+1-234-流し
+1-45-2456
 
-展開：
-高指数艇と安全カバーは分ける。
-2コース差し、3コース攻め、4コース残しは切らない。`;
-
+展開理由：
+指数上位と買い目は分離。
+2コース差し、3コース攻め、4コース残しを必ず残す。
+モーター/展示だけで買わず、当地・ST・展開を合わせる。`;
+}
+function renderPink(racers,indexRank,flowRank,place){
+ const outs=racers.filter(x=>x.boat>=4).sort((a,b)=>(b.indexScore+b.flowScore)-(a.indexScore+a.flowScore));
+ const miss=document.getElementById("missing").value.trim()||"未入力";
  document.getElementById("pink").textContent=
-`万舟軸：
-${outs.map(x=>x.boat+"号艇 "+x.score+"点").join("\n")}
-
-万舟候補：
-${outs[0].boat}-1-24
-1-${outs[0].boat}-24
-${outs[1].boat}-1-24
-3-5-1
-5-3-1
+`💣万舟軸
+${outs.map(x=>`${x.boat}号艇 ${x.name} 指数${x.indexScore}/展開${x.flowScore}`).join("\n")}
 
 外枠期待度：
-4号艇 ${racers[3].score}点
-5号艇 ${racers[4].score}点
-6号艇 ${racers[5].score}点
+4号艇 ${racers[3].indexScore + racers[3].flowScore}
+5号艇 ${racers[4].indexScore + racers[4].flowScore}
+6号艇 ${racers[5].indexScore + racers[5].flowScore}
+
+外枠万舟フォーメーション
+4-1-235
+5-1-234
+6-1-234
+
+内側絡み万舟
+1-4-56
+1-5-46
+2-1-456
+3-1-456
+
+展開崩れ
+3-45-全
+4-35-全
+5-34-全
+
+出てない目TOP30メモ：
+${miss}
+
+合成オッズ：
+${combinedOdds()}
 
 狙い：
 外枠だけでなく内側絡みの万舟も見る。
 展開を作る艇と拾う艇を分ける。`;
-
- const fastest=[...racers].sort((a,b)=>a.st-b.st)[0];
- const tenjiTop=[...racers].sort((a,b)=>a.tenji-b.tenji)[0];
- const sam=[...racers].sort((a,b)=>(a.tenji+a.lap)-(b.tenji+b.lap))[0];
-
+}
+function renderTheory(racers,fastest,tenjiTop,lapTop,samRank){
+ const alerts=[];
+ for(let i=0;i<racers.length-1;i++){
+  const diff=Math.abs(racers[i].st-racers[i+1].st);
+  if(diff>=0.10)alerts.push(`${racers[i].boat}-${racers[i+1].boat}間 ST差${diff.toFixed(2)} 発動`);
+ }
  document.getElementById("theory").textContent=
-`🔥スリットアラート：
-ST最速 ${fastest.boat}号艇 ST${fastest.st}
+`🔥スリットアラート
+${alerts.length?alerts.join("\n"):"0.10以上差はなし"}
+ST最速：${fastest.boat}号艇 ST${fastest.st}
 
-⏱ダブルタイム：
-展示1位 ${tenjiTop.boat}号艇 展示${tenjiTop.tenji}
+⏱ダブルタイム理論
+展示1位：${tenjiTop.boat}号艇 展示${tenjiTop.tenji}
+一周1位：${lapTop.boat}号艇 一周${lapTop.lap}
+${tenjiTop.boat===lapTop.boat?"同一艇で強アラート":"別艇。展示型と道中型を分ける"}
 
-🌊新サムアラート：
-展示＋一周で ${sam.boat}号艇をプラス評価
+🌊新サムアラート
+${samRank.slice(0,3).map((r,i)=>`${i+1}位 ${r.boat}号艇 展示＋一周 ${(r.tenji+r.lap).toFixed(2)}`).join("\n")}
 
 固定ルール：
+舟券太郎理論は5号艇限定ではない。
+全艇に対してスリット、展示、一周、新サムを評価。
 モーター過信なし。
-選手技量・今節ST・展示・当地勝率を重視。
-2コース差し、3コース攻め、4コース残しを切らない。`;
+選手技量・今節ST・展示・当地勝率を重視。`;
+}
+function renderFormation(racers,indexRank,flowRank,place){
+ document.getElementById("formation").textContent=
+`🧭展開判定
+1号艇：イン逃げ/残し
+2号艇：差し。指数が低くても切らない
+3号艇：攻め役。3攻め時は4残しを評価
+4号艇：残し/まくり差し
+5号艇：展開拾い/まくり差し穴
+6号艇：道中拾い/当地巧者なら3着
+
+📌高指数艇
+${indexRank.slice(0,3).map(r=>`${r.boat}号艇 指数${r.indexScore}`).join(" / ")}
+
+📌安全カバー
+1-2-34
+1-3-24
+1-4-23
+
+📌流し
+1-234-流し
+1-45-2456
+
+📌場特徴
+${venueRules[place]}`;
 }
 </script>
 </body>
-</html>
+</html>'''
+path = Path("/mnt/data/chappy_boatrace_ai_ver6_complete.html")
+path.write_text(html, encoding="utf-8")
+print(path)
