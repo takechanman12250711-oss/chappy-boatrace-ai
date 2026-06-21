@@ -67,11 +67,30 @@ export default async function handler(req, res) {
 }
 
 function cut(text, start, end) {
-  const s = text.indexOf(start);
-  if (s < 0) return "";
+  const all = [];
+  let pos = 0;
+
+  while (true) {
+    const i = text.indexOf(start, pos);
+    if (i < 0) break;
+    all.push(i);
+    pos = i + start.length;
+  }
+
+  if (!all.length) return "";
+
+  const s = all.length >= 2 ? all[1] : all[0];
   const e = text.indexOf(end, s + start.length);
+
   const raw = e >= 0 ? text.slice(s, e) : text.slice(s);
-  return raw.trim().slice(0, 4000);
+
+  return raw
+    .replace(/\\n/g, "\n")
+    .replace(/\\t/g, " ")
+    .replace(/\n{2,}/g, "\n")
+    .trim()
+    .slice(0, 4000);
+}
 }
 
 function ymdJST() {
