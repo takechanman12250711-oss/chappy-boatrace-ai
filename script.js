@@ -1,39 +1,91 @@
-const API="https://chappy-boatrace-api.takechanman12250711.workers.dev/";
-const placeName={"01":"桐生","02":"戸田","03":"江戸川","04":"平和島","05":"多摩川","06":"浜名湖","07":"蒲郡","08":"常滑","09":"津","10":"三国","11":"びわこ","12":"住之江","13":"尼崎","14":"鳴門","15":"丸亀","16":"児島","17":"宮島","18":"徳山","19":"下関","20":"若松","21":"芦屋","22":"福岡","23":"唐津","24":"大村"};
-const order=Object.keys(placeName);let selectedPlace="24",selectedRace="1";
-const venueDB={
-"01":{type:"標準",water:"淡水/ナイター",memo:"桐生：内寄り。ナイターは展示気配とST重視。",in:5,center:2,out:1,rough:1,wind:2,tide:0,night:2,engine:"通常"},
-"02":{type:"波乱",water:"淡水/狭水面",memo:"戸田：狭水面。センター攻め・4残し・波乱。",in:2,center:5,out:4,rough:5,wind:3,tide:0,night:0,engine:"通常"},
-"03":{type:"超波乱",water:"河川/難水面",memo:"江戸川：波風・当地巧者・外枠波乱。道中重視。",in:0,center:4,out:6,rough:7,wind:7,tide:2,night:0,engine:"通常"},
-"04":{type:"波乱",water:"海水",memo:"平和島：イン絶対ではない。2差し・4残し。",in:2,center:5,out:3,rough:4,wind:4,tide:2,night:0,engine:"通常"},
-"05":{type:"標準",water:"淡水",memo:"多摩川：静水面寄り。展示・一周・技量。",in:4,center:3,out:2,rough:2,wind:2,tide:0,night:0,engine:"通常"},
-"06":{type:"標準",water:"汽水/広水面",memo:"浜名湖：広水面。外の伸びとまくり差し。",in:3,center:4,out:3,rough:3,wind:4,tide:1,night:0,engine:"通常"},
-"07":{type:"ナイター",water:"汽水/ナイター",memo:"蒲郡：ナイター。展示気配・回り足。",in:5,center:3,out:2,rough:2,wind:2,tide:1,night:3,engine:"通常"},
-"08":{type:"標準",water:"海水",memo:"常滑：イン寄りだが3攻め注意。",in:5,center:3,out:2,rough:2,wind:3,tide:1,night:0,engine:"通常"},
-"09":{type:"風注意",water:"淡水",memo:"津：風向きで差し/まくり差し変化。",in:3,center:4,out:3,rough:3,wind:4,tide:0,night:0,engine:"通常"},
-"10":{type:"イン",water:"淡水/モーニング",memo:"三国：モーニングはイン寄り。ST重視。",in:6,center:2,out:1,rough:1,wind:2,tide:0,night:0,engine:"通常"},
-"11":{type:"風注意",water:"淡水",memo:"びわこ：風とうねり注意。道中足。",in:3,center:3,out:3,rough:3,wind:5,tide:0,night:0,engine:"通常"},
-"12":{type:"イン",water:"淡水/ナイター",memo:"住之江：イン強め。2差し・3攻め両立。",in:7,center:2,out:1,rough:1,wind:1,tide:0,night:3,engine:"通常"},
-"13":{type:"標準",water:"淡水",memo:"尼崎：センター攻め残り注意。",in:4,center:4,out:2,rough:2,wind:2,tide:0,night:0,engine:"通常"},
-"14":{type:"潮風",water:"海水/潮",memo:"鳴門：潮・風で波乱。外差し注意。",in:3,center:4,out:3,rough:4,wind:4,tide:5,night:0,engine:"通常"},
-"15":{type:"ナイター",water:"海水/ナイター",memo:"丸亀：ナイター。イン＋展示上位。",in:6,center:3,out:2,rough:2,wind:2,tide:2,night:3,engine:"通常"},
-"16":{type:"潮",water:"海水/潮",memo:"児島：潮汐影響。地元/当地重視。",in:4,center:3,out:3,rough:3,wind:3,tide:4,night:0,engine:"通常"},
-"17":{type:"潮",water:"海水/潮",memo:"宮島：潮汐大。時間帯・当地巧者。",in:4,center:3,out:3,rough:4,wind:3,tide:6,night:0,engine:"通常"},
-"18":{type:"イン",water:"海水/モーニング",memo:"徳山：イン強め。2差し・3攻め・4残し。",in:7,center:2,out:1,rough:1,wind:2,tide:2,night:0,engine:"通常"},
-"19":{type:"ナイター",water:"海水/ナイター",memo:"下関：ナイター。展示と当地。",in:5,center:3,out:2,rough:2,wind:3,tide:2,night:3,engine:"通常"},
-"20":{type:"海水ナイター",water:"海水/ナイター",memo:"若松：海水ナイター。6号艇道中・当地補正。",in:4,center:3,out:4,rough:4,wind:4,tide:3,night:4,engine:"通常"},
-"21":{type:"イン",water:"淡水/モーニング",memo:"芦屋：モーニング。イン寄り。",in:7,center:2,out:1,rough:1,wind:2,tide:0,night:0,engine:"通常"},
-"22":{type:"波乱",water:"汽水/河口",memo:"福岡：河口。2M波乱・外枠/道中艇。",in:2,center:4,out:5,rough:5,wind:5,tide:5,night:0,engine:"通常"},
-"23":{type:"イン",water:"淡水/モーニング",memo:"唐津：イン寄り。地元補正。",in:6,center:2,out:1,rough:1,wind:2,tide:1,night:0,engine:"通常"},
-"24":{type:"イン",water:"海水/ナイター",memo:"大村：イン有利。ただし新エンジン期はモーター過信禁止。2差し・3攻め・4残し。",in:8,center:3,out:1,rough:1,wind:2,tide:2,night:3,engine:"新エンジン注意"}
-};
-function init(){document.getElementById("placeGrid").innerHTML=order.map(c=>`<button class="placeBtn" id="p${c}" onclick="setPlace('${c}')">${placeName[c]}</button>`).join("");document.getElementById("raceGrid").innerHTML=Array.from({length:12},(_,i)=>`<button class="raceBtn" id="r${i+1}" onclick="setRace('${i+1}')">${i+1}R</button>`).join("");active();}
-function setPlace(c){selectedPlace=c;active();statusText(`${placeName[c]}を選択。レースを選んで取得。`)}function setRace(r){selectedRace=r;active();statusText(`${r}Rを選択。取得ボタンで解析。`)}function active(){order.forEach(c=>document.getElementById("p"+c)?.classList.toggle("active",c===selectedPlace));for(let i=1;i<=12;i++)document.getElementById("r"+i)?.classList.toggle("active",String(i)===String(selectedRace))}function jumpTo(id){document.getElementById(id)?.scrollIntoView({behavior:"smooth"})}function statusText(t){document.getElementById("status").textContent=t}
-async function loadRace(){const url=API+"?source=both&place="+selectedPlace+"&race="+selectedRace;statusText("取得中...");try{const res=await fetch(url);const data=await res.json();const officialHtml=data.officialHtml||data.official?.html||data.official?.preview||"";const hiyoriHtml=data.hiyoriHtml||data.hiyori?.[0]?.html||data.hiyori?.[0]?.preview||"";statusText(`✅取得成功\n場：${placeName[selectedPlace]} ${selectedRace}R\n公式HTML：${data.officialLength||data.official?.length||officialHtml.length}\n日和HTML：${data.hiyoriLength||data.hiyori?.[0]?.length||hiyoriHtml.length}\n場補正：${venueDB[selectedPlace].memo}`);analyze(parseRace(officialHtml,hiyoriHtml,selectedPlace),selectedPlace)}catch(e){statusText("取得失敗："+e)}}
-function strip(html){return String(html).replace(/<script[\s\S]*?<\/script>/gi,"").replace(/<style[\s\S]*?<\/style>/gi,"").replace(/<[^>]+>/g,"\n").replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/\r/g,"\n").replace(/\n+/g,"\n").split("\n").map(x=>x.trim()).filter(Boolean)}function numsNear(lines,key,range=170){const i=lines.findIndex(x=>x.includes(key));if(i<0)return[];return(lines.slice(i,i+range).join(" ").match(/\d+\.\d{2}/g)||[]).map(Number).slice(0,6)}function namesFrom(lines){const bad=["出走表","全国","当地","勝率","モーター","ボート","展示","進入","選手","登録番号","支部","級別","平均ST","発売","締切","オッズ"];const arr=[];for(const x of lines){if(/^[一-龯ぁ-んァ-ンー]{2,9}$/.test(x)&&!bad.includes(x)&&!/発売|締切|オッズ|レース|一覧|予想|結果/.test(x))arr.push(x)}return[...new Set(arr)].slice(0,6)}function gradesFrom(lines){return lines.filter(x=>/^(A1|A2|B1|B2)$/.test(x)).slice(0,6)}
-function parseRace(officialHtml,hiyoriHtml,place){const o=strip(officialHtml),h=strip(hiyoriHtml),names=namesFrom(o),grades=gradesFrom(o);const national=numsNear(o,"全国"),local=numsNear(o,"当地"),motor=numsNear(o,"モーター"),boatRate=numsNear(o,"ボート"),tenji=numsNear(h,"展示"),lap=numsNear(h,"一周"),st=numsNear(h,"ST");const fb=[{st:.15,tenji:6.90,lap:37.50,win:6.0,local:5.8,motor:35,boatRate:35},{st:.16,tenji:6.92,lap:37.70,win:5.7,local:5.4,motor:34,boatRate:34},{st:.15,tenji:6.88,lap:37.40,win:5.9,local:5.9,motor:38,boatRate:36},{st:.17,tenji:6.85,lap:37.30,win:6.4,local:6.1,motor:42,boatRate:38},{st:.14,tenji:6.91,lap:37.60,win:6.7,local:6.0,motor:40,boatRate:37},{st:.17,tenji:6.93,lap:37.80,win:6.1,local:5.9,motor:39,boatRate:36}];return fb.map((f,i)=>{const r={boat:i+1,name:names[i]||`${i+1}号艇`,grade:grades[i]||"",national:Number(national[i]||f.win),local:Number(local[i]||f.local),motor:Number(motor[i]||f.motor),boatRate:Number(boatRate[i]||f.boatRate),tenji:Number(tenji[i]||f.tenji),lap:Number(lap[i]||f.lap),st:Number(st[i]||f.st)};r.indexScore=calcIndex(r,place);r.flowScore=calcFlow(r,place);r.manshuScore=calcManshu(r,place);r.buyScore=Math.round(r.indexScore*.50+r.flowScore*.35+r.manshuScore*.15);return r})}
-function venueBonus(place,r){const v=venueDB[place];let b=0;if(r.boat===1)b+=v.in;if(r.boat===2)b+=2;if(r.boat===3)b+=v.center;if(r.boat===4)b+=v.center+1;if(r.boat>=5)b+=v.out;if(place==="20"&&r.boat===6)b+=6;if(place==="03"&&r.boat>=4)b+=6;if(place==="22"&&r.boat>=4)b+=5;return b}function calcIndex(r,place){const v=venueDB[place];let s=50;s+=(r.national-5.5)*8;s+=(r.local-5.5)*6;s+=(0.18-r.st)*105;s+=(6.95-r.tenji)*22;s+=(37.8-r.lap)*4;s+=(r.motor-35)*.22;s+=(r.boatRate-35)*.08;s+=venueBonus(place,r);if(r.grade==="A1")s+=6;if(r.grade==="A2")s+=3;if(r.boat>=5)s-=2;if(v.engine.includes("新"))s-=Math.max(0,(r.motor-40))*0.15;return Math.round(Math.max(1,Math.min(99,s)))}function calcFlow(r,place){const v=venueDB[place];let s=50;if(r.boat===1)s+=18+v.in;if(r.boat===2)s+=13;if(r.boat===3)s+=14+v.center;if(r.boat===4)s+=11+v.center;if(r.boat===5)s+=8+v.out;if(r.boat===6)s+=6+v.out;s+=(0.18-r.st)*75;s+=(6.95-r.tenji)*14;s+=(r.local-5.5)*6;if(place==="24"&&r.boat===1)s+=7;if(place==="20"&&r.boat===6)s+=8;if(place==="03"&&r.boat>=4)s+=8;if(place==="22"&&r.boat>=4)s+=6;return Math.round(Math.max(1,Math.min(99,s)))}function calcManshu(r,place){const v=venueDB[place];let s=40;if(r.boat>=4)s+=18;if(r.boat>=5)s+=10;if(r.st<=.14)s+=8;if(r.tenji<=6.88)s+=6;if(r.local>=6.0)s+=5;if(v.rough>=4)s+=8;if(v.tide>=4)s+=4;if(v.wind>=4)s+=4;if(r.boat===1)s-=18;return Math.round(Math.max(1,Math.min(99,s)))}
-function role(r){return["","イン逃げ/残し役","2コース差し役。指数低くても切らない","3コース攻め役。展開の起点","4コース残し/まくり差し役","展開拾い/まくり差し穴","道中拾い/3着候補"][r.boat]}function buffs(r,place){const v=venueDB[place];let u=[],d=[];if(r.grade==="A1")u.push("⬆️級別A1 +6");if(r.grade==="A2")u.push("⬆️級別A2 +3");if(r.national>=6.5)u.push("⬆️全国勝率上位 +6");if(r.local>=6.0)u.push("⬆️当地勝率 +6");if(r.local<5)d.push("⬇️当地不安 -4");if(r.st<=.13)u.push("⬆️ST優秀 +5");if(r.st>=.18)d.push("⬇️ST遅め -4");if(r.tenji<=6.85)u.push("⬆️展示上位 +5");if(r.tenji>=6.95)d.push("⬇️展示弱め -3");if(r.lap<=37.35)u.push("⬆️一周上位 +5");if(r.motor>=40)u.push("⬆️モーター良 +2");if(v.tide>=4)u.push("⬆️潮補正あり");if(v.wind>=4)u.push("⬆️風/波乱補正あり");if(place==="20"&&r.boat===6)u.push("⬆️若松6道中補正");if(place==="03"&&r.boat>=4)u.push("⬆️江戸川外枠波乱");if(r.boat>=5)d.push("⬇️外枠補正 -2");if(v.engine.includes("新"))d.push("⬇️新エンジン期：モーター過信禁止");return u.concat(d)}function odds(){const a=document.getElementById("oddsInput").value.split(/[,\s、]+/).map(parseFloat).filter(x=>x>0);if(!a.length)return"未入力";return(1/a.reduce((s,x)=>s+1/x,0)).toFixed(1)+"倍"}
-function analyze(racers,place){const idx=[...racers].sort((a,b)=>b.indexScore-a.indexScore),fl=[...racers].sort((a,b)=>b.flowScore-a.flowScore),buy=[...racers].sort((a,b)=>b.buyScore-a.buyScore),man=[...racers].sort((a,b)=>b.manshuScore-a.manshuScore);const fastest=[...racers].sort((a,b)=>a.st-b.st)[0],tenji=[...racers].sort((a,b)=>a.tenji-b.tenji)[0],lap=[...racers].sort((a,b)=>a.lap-b.lap)[0],sam=[...racers].sort((a,b)=>(a.tenji+a.lap)-(b.tenji+b.lap));renderBoats(racers,place);renderBlue(idx,fl,buy);renderPink(racers,man);renderTickets(idx,fl,buy,man);renderTheory(racers,fastest,tenji,lap,sam,place);renderFlow(place);renderVenue(place);renderAlerts(racers,place,tenji,lap);renderComment(idx,fl,man,place)}
-function renderBoats(racers,place){document.getElementById("boats").innerHTML=racers.map(r=>`<div class="boat"><h3>🚤${r.boat}号艇 ${r.name} ${r.grade}</h3><div class="score">指数${r.indexScore} / 展開${r.flowScore} / 万舟${r.manshuScore} / 買い${r.buyScore}</div><span class="badge">🔥攻め ${r.indexScore-3}</span><span class="badge">🌊展開 ${r.flowScore}</span><span class="badge">💣万舟 ${r.manshuScore}</span><span class="badge">🏠当地 ${Math.round(50+(r.local-5.5)*12)}</span><p>ST ${r.st} / 展示 ${r.tenji} / 一周 ${r.lap} / 全国 ${r.national} / 当地 ${r.local} / M ${r.motor}%</p><pre>${buffs(r,place).join("\n")||"大きな補正なし"}</pre><p><b>一言：</b>${role(r)}</p></div>`).join("")}function renderBlue(idx,fl,buy){document.getElementById("blue").textContent=`【指数ランキング】※指数＝買い目ではない\n${idx.map(r=>`${r.boat}号艇 ${r.name} 指数${r.indexScore}`).join("\n")}\n\n【展開ランキング】\n${fl.map(r=>`${r.boat}号艇 ${r.name} 展開${r.flowScore}`).join("\n")}\n\n【買い総合】\n${buy.map(r=>`${r.boat}号艇 ${r.name} 買い${r.buyScore}`).join("\n")}\n\n◎本命：${fl[0].boat}号艇 ${fl[0].name}\n○対抗：${fl[1].boat}号艇 ${fl[1].name}\n▲穴：${fl[2].boat}号艇 ${fl[2].name}\n△押さえ：${fl.slice(3).map(x=>x.boat+"号艇").join(" / ")}\n\n🎯本線\n${fl[0].boat}-${fl[1].boat}${fl[2].boat}-${fl.slice(1,5).map(x=>x.boat).join("")}\n\n🚤展開本線\n1-3-245\n1-2-345\n\n🛟安全押さえ\n1-2-34\n1-3-24\n1-4-23\n\n🌊流し\n1-234-流し\n1-45-2456`}function renderPink(racers,man){document.getElementById("pink").textContent=`💣万舟ランキング\n${man.map(x=>`${x.boat}号艇 ${x.name} 万舟${x.manshuScore}`).join("\n")}\n\n4号艇期待度：${racers[3].manshuScore}\n5号艇期待度：${racers[4].manshuScore}\n6号艇期待度：${racers[5].manshuScore}\n\n外枠万舟\n4-1-235\n5-1-234\n6-1-234\n\n内側絡み万舟\n1-4-56\n1-5-46\n2-1-456\n3-1-456\n\n展開崩れ\n3-45-全\n4-35-全\n5-34-全\n\n出てない目TOP30メモ：\n${document.getElementById("missingInput").value.trim()||"未入力"}\n\n合成オッズ：${odds()}`}function renderTickets(idx,fl,buy,man){document.getElementById("tickets").textContent=`🎫本線フォーメーション\n1-23-2345\n1-3-245\n\n🛟安全フォーメーション\n1-2-34\n1-3-24\n1-4-23\n\n🌊流し候補\n1-234-流し\n1-45-2456\n\n💣万舟フォーメーション\n3-45-全\n4-35-全\n5-34-全\n2-1-456\n\n📌高指数艇：${idx.slice(0,3).map(r=>r.boat+"号艇").join(" / ")}\n📌展開軸：${fl.slice(0,3).map(r=>r.boat+"号艇").join(" / ")}\n📌買い総合：${buy.slice(0,3).map(r=>r.boat+"号艇").join(" / ")}\n📌万舟軸：${man.slice(0,3).map(r=>r.boat+"号艇").join(" / ")}\n\n※指数上位と安全カバーは分ける。`}function renderTheory(racers,fastest,tenji,lap,sam,place){let alerts=[];for(let i=0;i<5;i++){let diff=Math.abs(racers[i].st-racers[i+1].st);if(diff>=.10)alerts.push(`${racers[i].boat}-${racers[i+1].boat}間 ST差${diff.toFixed(2)} 発動`)}document.getElementById("theory").textContent=`🔥スリットアラート\n${alerts.length?alerts.join("\n"):"0.10以上差はなし"}\nST最速：${fastest.boat}号艇 ST${fastest.st}\n\n⏱ダブルタイム\n展示1位：${tenji.boat}号艇 展示${tenji.tenji}\n一周1位：${lap.boat}号艇 一周${lap.lap}\n${tenji.boat===lap.boat?"同一艇で強アラート":"別艇。展示型と道中型を分ける"}\n\n🌊新サム\n${sam.slice(0,3).map((r,i)=>`${i+1}位 ${r.boat}号艇 展示＋一周 ${(r.tenji+r.lap).toFixed(2)}`).join("\n")}\n\n🚨万舟警報\n${venueDB[place].rough>=4?"波乱場補正あり。外枠・3着穴を強めに見る。":"標準/イン寄り。穴は3着絡み中心。"}\n\n舟券太郎理論は5号艇限定ではなく全艇対象。`}function renderFlow(place){const v=venueDB[place];let one=50+v.in*3,two=12+Math.max(0,8-v.in),three=12+v.center*2,four=8+v.center,outside=5+v.out*2;document.getElementById("flow").textContent=`1逃げ：${one}%\n2差し：${two}%\n3まくり/攻め：${three}%\n4まくり差し/残し：${four}%\n5・6展開拾い：${outside}%\n\n展開メモ：\n1が強い場でも2差しは残す。\n3が攻める時は4残し。\n外枠は指数が低くても万舟・3着で評価。`}function renderVenue(place){const v=venueDB[place];document.getElementById("venue").textContent=`${placeName[place]}補正\n水面：${v.water}\nタイプ：${v.type}\nエンジン：${v.engine}\n\n⬆️イン補正：+${v.in}\n⬆️センター攻め補正：+${v.center}\n⬆️外枠期待：+${v.out}\n⬆️波乱度：+${v.rough}\n⬆️ナイター補正：+${v.night}\n⬆️風補正：+${v.wind}\n⬆️潮補正：+${v.tide}\n\n説明：\n${v.memo}`}function renderAlerts(racers,place,tenji,lap){const v=venueDB[place];let arr=[];if(v.engine.includes("新"))arr.push("新エンジン補正：モーター数字を下げて、ST・展示・技量を優先");if(v.wind>=4)arr.push("風補正：外枠・センター攻め・道中波乱を上げる");if(v.tide>=4)arr.push("潮補正：当地巧者と展示/一周を上げる");if(tenji.boat===lap.boat)arr.push("ダブルタイム強アラート：展示1位と一周1位が同一");if(racers.some(r=>r.boat>=4&&r.manshuScore>=70))arr.push("万舟警報：外枠期待度70以上あり");document.getElementById("alerts").textContent=arr.length?arr.join("\n"):"強アラートなし"}function renderComment(idx,fl,man,place){document.getElementById("comment").textContent=`AI展開コメント：\n${placeName[place]}は「${venueDB[place].memo}」\n\n指数トップは${idx[0].boat}号艇、展開トップは${fl[0].boat}号艇。\nただし買い目は指数だけでは決めない。\n\n本命は展開軸${fl[0].boat}号艇から。\n2コース差し、3コース攻め、4コース残しを必ずカバー。\n万舟は${man[0].boat}号艇を中心に、外枠だけでなく内側絡みも見る。\n\nモーターと展示だけで買わず、当地勝率・ST・道中足を混ぜる。`}
+const PLACES={"01":"桐生","02":"戸田","03":"江戸川","04":"平和島","05":"多摩川","06":"浜名湖","07":"蒲郡","08":"常滑","09":"津","10":"三国","11":"びわこ","12":"住之江","13":"尼崎","14":"鳴門","15":"丸亀","16":"児島","17":"宮島","18":"徳山","19":"下関","20":"若松","21":"芦屋","22":"福岡","23":"唐津","24":"大村"};
+const VENUE={"24":{in:9,center:4,out:2,rough:1,memo:"大村：イン有利。新エンジン期はモーター過信なし。2差し届きにくいが残しは切らない。3攻め・4残し。"},"20":{in:5,center:4,out:5,rough:4,memo:"若松：海水ナイター。当地・道中・6号艇の絡みを上げる。"},"15":{in:7,center:4,out:3,rough:2,memo:"丸亀：ナイター。イン＋展示上位。3攻め・4残しも見る。"},"17":{in:5,center:4,out:4,rough:4,memo:"宮島：潮汐大。潮・風・当地巧者を重視。"},"22":{in:3,center:5,out:6,rough:6,memo:"福岡：河口。2M波乱、外枠・道中艇注意。"},"03":{in:1,center:5,out:7,rough:8,memo:"江戸川：難水面。当地巧者・外枠・道中重視。"},"02":{in:3,center:6,out:5,rough:6,memo:"戸田：狭水面。センター攻め、4残し、波乱。"}};
+function v(place){return VENUE[place]||{in:5,center:3,out:3,rough:3,memo:PLACES[place]+"：標準補正。ST・展示・当地を重視。"}}
+function init(){const p=document.getElementById("place");p.innerHTML=Object.entries(PLACES).map(([k,n])=>`<option value="${k}" ${k==="24"?"selected":""}>${n}</option>`).join("");document.getElementById("race").innerHTML=Array.from({length:12},(_,i)=>`<option>${i+1}R</option>`).join("");sample();}
+function sample(){document.getElementById("paste").value=`平均ST
+今期 0.15 0.16 0.16 0.16 0.17 0.15
+今節 0.10 0.23 0.12 0.19 0.15 0.18
+展示 6.90 6.92 6.88 6.85 6.91 6.93
+一周 37.5 37.7 37.4 37.3 37.6 37.8
+全国 6.0 5.7 5.9 6.4 6.7 6.1
+当地 5.8 5.4 5.9 6.1 6.0 5.9
+モーター 35 34 38 42 40 39`;analyze();}
+function nums(text,key,dec=true){const i=text.indexOf(key);if(i<0)return [];const s=text.slice(i,i+180);const re=dec?/\d+\.\d+/g:/\d+/g;return (s.match(re)||[]).map(Number).slice(0,6);}
+function analyze(){const text=document.getElementById("paste").value,place=document.getElementById("place").value,wind=document.getElementById("wind").value,water=document.getElementById("water").value;let st=nums(text,"平均ST"),now=nums(text,"今節"),tenji=nums(text,"展示"),lap=nums(text,"一周"),nat=nums(text,"全国"),loc=nums(text,"当地"),motor=nums(text,"モーター",false);const fb={st:[.15,.16,.16,.16,.17,.15],now:[.14,.16,.16,.16,.17,.15],tenji:[6.90,6.92,6.88,6.85,6.91,6.93],lap:[37.5,37.7,37.4,37.3,37.6,37.8],nat:[6.0,5.7,5.9,6.4,6.7,6.1],loc:[5.8,5.4,5.9,6.1,6.0,5.9],motor:[35,34,38,42,40,39]};const r=[1,2,3,4,5,6].map((b,i)=>makeRacer(b,i,{st,now,tenji,lap,nat,loc,motor,fb},place,wind,water));render(r,place,wind,water);}
+function makeRacer(b,i,d,place,wind,water){const vv=v(place);const r={boat:b,avg:d.st[i]||d.fb.st[i],now:d.now[i]||d.fb.now[i],tenji:d.tenji[i]||d.fb.tenji[i],lap:d.lap[i]||d.fb.lap[i],nat:d.nat[i]||d.fb.nat[i],loc:d.loc[i]||d.fb.loc[i],motor:d.motor[i]||d.fb.motor[i]};let s=50+(r.nat-5.5)*8+(r.loc-5.5)*6+(0.18-r.avg)*100+(0.18-r.now)*80+(6.95-r.tenji)*25+(37.8-r.lap)*5+(r.motor-35)*.25;if(b===1)s+=vv.in+10;if(b===2)s+=5;if(b===3)s+=vv.center+8;if(b===4)s+=vv.center+5;if(b>=5)s+=vv.out-2;if(wind==="強風"||water==="荒れ"){if(b>=4)s+=5;if(b===1)s-=4}r.score=Math.round(Math.max(1,Math.min(99,s)));r.attack=Math.round(r.score+(b===3?5:0)+(b===4?3:0));r.flow=Math.round(r.score+(b===1?vv.in:0)+(b>=4?vv.rough:0));r.manshu=Math.round(Math.max(1,Math.min(99,40+(b>=4?25:0)+(b>=5?10:0)+(r.now<=.14?8:0)+(r.tenji<=6.88?8:0)+vv.rough*2-(b===1?18:0))));return r;}
+function role(b){return ["","イン逃げ/残し","2コース差し・残し","3コース攻め","4コース残し/まくり差し","展開拾い穴","道中拾い/3着穴"][b]}
+function render(r,place,wind,water){const rank=[...r].sort((a,b)=>b.score-a.score),flow=[...r].sort((a,b)=>b.flow-a.flow),man=[...r].sort((a,b)=>b.manshu-a.manshu);document.getElementById("status").textContent=`反映OK：${PLACES[place]} / 風:${wind} / 水面:${water}`;document.getElementById("racers").innerHTML=r.map(x=>`<div class="racer"><b>🚤${x.boat}号艇</b><div class="score">${x.score}点</div><span class="badge">🔥攻め ${x.attack}</span><span class="badge">🌊展開 ${x.flow}</span><span class="badge">💣万舟 ${x.manshu}</span><p>平均ST ${x.avg} / 今節ST ${x.now} / 展示 ${x.tenji} / 一周 ${x.lap} / 全国 ${x.nat} / 当地 ${x.loc} / M ${x.motor}%</p><p>${role(x.boat)}</p></div>`).join("");document.getElementById("blue").textContent=`◎本命：${flow[0].boat}号艇 ${flow[0].score}点
+○対抗：${flow[1].boat}号艇 ${flow[1].score}点
+▲穴：${flow[2].boat}号艇 ${flow[2].score}点
+△押さえ：${flow.slice(3).map(x=>x.boat+"号艇").join(" / ")}
+
+本線：
+${flow[0].boat}-${flow[1].boat}${flow[2].boat}-${flow.slice(1,5).map(x=>x.boat).join("")}
+
+バフ：
+・展開軸は${flow[0].boat}号艇
+・2コース差し、3コース攻め、4コース残しは切らない
+・高指数艇と安全カバーは分ける`;document.getElementById("pink").textContent=`万舟軸：
+${man.slice(0,4).map(x=>`${x.boat}号艇 万舟${x.manshu}`).join("\n")}
+
+外枠期待度：
+4号艇 ${r[3].manshu}
+5号艇 ${r[4].manshu}
+6号艇 ${r[5].manshu}
+
+万舟候補：
+4-1-235
+5-1-234
+6-1-234
+1-4-56
+1-5-46
+2-1-456
+3-45-全`;document.getElementById("ticket").textContent=`本線：1-23-2345
+攻め：1-3-245
+差し：1-2-345
+残し：1-4-23
+流し：1-234-流し
+穴流し：3-45-全 / 4-35-全 / 5-34-全
+
+指数上位：${rank.slice(0,3).map(x=>x.boat+"号艇").join(" / ")}
+展開上位：${flow.slice(0,3).map(x=>x.boat+"号艇").join(" / ")}
+万舟上位：${man.slice(0,3).map(x=>x.boat+"号艇").join(" / ")}`;const fastest=[...r].sort((a,b)=>a.now-b.now)[0],ten=[...r].sort((a,b)=>a.tenji-b.tenji)[0],la=[...r].sort((a,b)=>a.lap-b.lap)[0],sam=[...r].sort((a,b)=>(a.tenji+a.lap)-(b.tenji+b.lap));document.getElementById("theory").textContent=`🔥スリットアラート：
+ST最速 ${fastest.boat}号艇 今節ST${fastest.now}
+
+⏱ダブルタイム：
+展示1位 ${ten.boat}号艇 展示${ten.tenji}
+一周1位 ${la.boat}号艇 一周${la.lap}
+
+🌊新サムアラート：
+${sam.slice(0,3).map((x,i)=>`${i+1}位 ${x.boat}号艇 合計${(x.tenji+x.lap).toFixed(2)}`).join("\n")}
+
+固定ルール：
+舟券太郎理論は5号艇限定ではなく全艇対象。
+モーター過信なし。ST・展示・当地・展開を重視。`;const vv=v(place);document.getElementById("flow").textContent=`1逃げ：${50+vv.in*3}%
+2差し：${15+Math.max(0,5-vv.in)}%
+3攻め：${15+vv.center*2}%
+4残し/まくり差し：${10+vv.center}%
+5・6展開拾い：${8+vv.out*2}%
+
+AIコメント：
+${PLACES[place]}は${vv.memo}
+展開を作る艇と拾う艇を分ける。`;document.getElementById("venue").textContent=`${PLACES[place]}補正
+${vv.memo}
+
+イン補正：+${vv.in}
+センター補正：+${vv.center}
+外枠補正：+${vv.out}
+波乱補正：+${vv.rough}
+
+風：${wind}
+水面：${water}`;document.getElementById("alerts").textContent=`警戒：
+・2差し残し
+・3コース攻め
+・4コース残し
+・外枠3着
+・当地勝率補正
+・モーター過信禁止`;document.getElementById("comment").textContent=`最終コメント：
+本命は${flow[0].boat}号艇中心。
+ただし指数だけで切らず、1-2差し、1-3攻め、1-4残しは必ずカバー。
+万舟は${man[0].boat}号艇を軸候補に、外枠だけでなく内側絡みも見る。`;}
 init();

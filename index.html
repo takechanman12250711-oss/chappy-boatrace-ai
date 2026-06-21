@@ -2,84 +2,38 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>チャッピーボートレース予想ツール</title>
-<style>
-:root{--blue:#0984dc;--pink:#f06ab0;--bg:#f5f7fb;--ink:#172033;--line:#d8e2ee;--muted:#667085;--card:#fff;--ok:#087443;--ng:#c62828}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif}header{background:linear-gradient(135deg,#0875d1,#18a7e6);color:#fff;padding:18px 14px}h1{font-size:22px;margin:0}.sub{font-size:13px;line-height:1.5;margin-top:6px}main{max-width:1100px;margin:auto;padding:12px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 6px 18px rgba(16,24,40,.06)}h2{font-size:18px;margin:0 0 10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:800px){.grid{grid-template-columns:1fr}}.row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:700px){.row{grid-template-columns:repeat(2,1fr)}}label{font-size:13px;font-weight:800}select,input,textarea{width:100%;border:1px solid #cdd7e4;border-radius:10px;padding:9px;background:#fff;font-size:16px}textarea{min-height:220px;font-size:13px;line-height:1.45}.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.btn{border:0;border-radius:999px;padding:11px 16px;font-weight:900;font-size:15px;touch-action:manipulation;cursor:pointer}.primary{background:var(--blue);color:white}.ghost{background:#edf2f7;color:#344054}.pinkbtn{background:var(--pink);color:#fff}.wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}table{border-collapse:collapse;width:100%;min-width:1180px;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:7px;text-align:left;vertical-align:middle}th{background:#f8fafc;color:#475467;white-space:nowrap}td input,td select{padding:7px;font-size:14px}.small{font-size:13px;color:var(--muted);line-height:1.55}.status{font-weight:900;white-space:pre-wrap;margin-top:8px}.ok{color:var(--ok)}.ng{color:var(--ng)}.debug{background:#0b1220;color:#dbeafe;border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:pre-wrap;max-height:220px;overflow:auto}.sheet{border-radius:16px;padding:14px;margin-bottom:12px}.blue{background:linear-gradient(180deg,#e7f3ff,#fff);border:2px solid #8bc8ff}.pinkS{background:linear-gradient(180deg,#fff0f8,#fff);border:2px solid #ffadd6}.ticket{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;margin:2px;font-weight:800;font-size:12px}.badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:900}.bblue{background:#d7ecff;color:#075ca8}.bpink{background:#ffe0ef;color:#b5166a}.mini{min-width:0;width:100%}.mini th,.mini td{padding:7px}.warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px;color:#9a3412;font-weight:800}
-</style>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>チャッピーボートレースAI 完成版</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><h1>🚤 チャッピーボートレース予想ツール</h1><div class="sub">日和の表を貼り付け → 6艇へ反映 → 🎯本命/💣万舟シート生成</div></header>
 <main>
-<div id="jsStatus" class="warn">⚠️ JS未起動：この表示が消えない場合、ChatGPT/Claude内プレビューではボタンが動きません。ZIPをダウンロードしてSafari/Chromeで index.html を開いてください。</div>
-<div class="card"><h2>① レース条件</h2><div class="row">
-<label>場<select id="venue"><option>桐生</option><option>戸田</option><option>江戸川</option><option>平和島</option><option>多摩川</option><option>浜名湖</option><option>蒲郡</option><option>常滑</option><option>津</option><option>三国</option><option>びわこ</option><option>住之江</option><option>尼崎</option><option>鳴門</option><option>丸亀</option><option>児島</option><option>宮島</option><option>徳山</option><option>下関</option><option selected>若松</option><option>芦屋</option><option>福岡</option><option>唐津</option><option>大村</option></select></label>
-<label>レース<select id="race"><option>1R</option><option>2R</option><option>3R</option><option>4R</option><option>5R</option><option>6R</option><option>7R</option><option>8R</option><option>9R</option><option>10R</option><option>11R</option><option>12R</option></select></label>
-<label>風<select id="wind"><option value="無風|0">無風</option><option value="向かい風|1">向かい風 1m</option><option value="向かい風|2">向かい風 2m</option><option value="向かい風|3">向かい風 3m</option><option value="向かい風|4">向かい風 4m</option><option value="向かい風|5">向かい風 5m以上</option><option value="追い風|1">追い風 1m</option><option value="追い風|2">追い風 2m</option><option value="追い風|3">追い風 3m</option><option value="追い風|4">追い風 4m</option><option value="追い風|5">追い風 5m以上</option><option value="左横風|1">左横風 1m</option><option value="左横風|2">左横風 2m</option><option value="左横風|3">左横風 3m以上</option><option value="右横風|1">右横風 1m</option><option value="右横風|2">右横風 2m</option><option value="右横風|3">右横風 3m以上</option></select></label>
-<label>水面<select id="water"><option value="0">普通</option><option value="4">荒れ気味</option><option value="-2">静水面</option></select></label>
-</div><p id="venueMemo" class="small"></p><label class="small">🔗 日和URL<input id="url" placeholder="https://boatrace-biyori.com/... など"></label></div>
+<h1>🚤 チャッピーボートレースAI 完成版</h1>
+<p class="lead">青シート・万舟・舟券太郎理論・場補正・AI展開を強化表示</p>
 
-<div class="card"><h2>② 出走表・日和の表を貼り付け</h2><p class="small">今回みたいな「項目名＋横に6艇」の表に対応。貼ったら <b>貼り付け反映</b> を押してね。</p>
-<textarea id="paste" placeholder="ここに貼り付け"></textarea>
-<div class="btns"><button class="btn primary" id="importBtn" type="button">貼り付け反映</button><button class="btn ghost" id="sampleBtn" type="button">日和サンプル</button><button class="btn ghost" id="clearBtn" type="button">クリア</button></div>
-<div id="pasteStatus" class="status"></div><details style="margin-top:10px"><summary class="small">読み取りログ</summary><div id="debug" class="debug">未実行</div></details></div>
+<section class="card">
+  <h2>① レース条件</h2>
+  <div class="grid2">
+    <label>場<select id="place"></select></label>
+    <label>レース<select id="race"></select></label>
+    <label>風<select id="wind"><option>無風</option><option>追い風</option><option>向かい風</option><option>横風</option><option>強風</option></select></label>
+    <label>水面<select id="water"><option>普通</option><option>荒れ</option><option>うねり</option><option>潮あり</option></select></label>
+  </div>
+  <textarea id="paste" placeholder="ここに出走表・日和データを貼り付け"></textarea>
+  <button onclick="analyze()">貼り付け反映・予想する</button>
+  <pre id="status">未解析</pre>
+</section>
 
-<div class="card"><h2>③ 6艇入力・反映結果</h2><div class="wrap"><table id="boatTable"><thead><tr><th>艇</th><th>選手</th><th>級</th><th>平均ST</th><th>今節ST</th><th>展示T</th><th>一周T</th><th>全国勝率</th><th>当地勝率</th><th>今節得点率</th><th>モーター2連</th><th>ボート2連</th><th>地元</th><th>タイプ</th><th>指数</th></tr></thead><tbody>
-<script>for(var i=1;i<=6;i++){document.write('<tr><td><b>'+i+'</b></td><td><input id="name'+i+'" placeholder="選手名"></td><td><select id="grade'+i+'"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option></select></td><td><input id="avgST'+i+'" type="number" step="0.01" value="0.16"></td><td><input id="seriesST'+i+'" type="number" step="0.01" value="0.16"></td><td><input id="tenji'+i+'" type="number" step="0.01" value="6.90"></td><td><input id="lap'+i+'" type="number" step="0.01" value="36.80"></td><td><input id="winN'+i+'" type="number" step="0.01" value="5.50"></td><td><input id="winL'+i+'" type="number" step="0.01" value="5.50"></td><td><input id="scoreNow'+i+'" type="number" step="0.01" value="5.00"></td><td><input id="motor2'+i+'" type="number" step="0.1" value="35"></td><td><input id="boat2'+i+'" type="number" step="0.1" value="35"></td><td><input id="home'+i+'" type="checkbox"></td><td><select id="type'+i+'"><option>逃げ型</option><option>差し型</option><option>まくり型</option><option>まくり差し型</option><option>自在</option><option>道中型</option></select></td><td><b id="score'+i+'">—</b></td></tr>')}</script>
-</tbody></table></div><div class="btns"><button class="btn primary" id="calcBtn" type="button">予想する</button><button class="btn ghost" id="manualSampleBtn" type="button">サンプル入力</button><button class="btn ghost" id="resetBtn" type="button">リセット</button></div></div>
-
-<div class="grid"><div class="card"><h2>舟券太郎理論アラート</h2><div id="alerts" class="small">入力後に表示</div></div><div class="card"><h2>合成オッズ</h2><p class="small">例：8.2,14.7,31.5</p><input id="odds" placeholder="8.2,14.7,31.5"><p id="combined" class="status">—</p></div></div>
-<div class="card"><h2>読み取り済み項目</h2><div id="parsedItems" class="small">まだ反映なし</div></div>
-<div class="grid"><div id="blue" class="sheet blue"><h2>🎯 本命シート</h2><p class="small">まだ予想していません</p></div><div id="pink" class="sheet pinkS"><h2>💣 万舟シート</h2><p class="small">まだ予想していません</p></div></div>
+<section class="card"><h2>② 6艇入力・反映結果</h2><div id="racers"></div></section>
+<section class="card alert" id="theoryCard"><h2>📊 舟券太郎理論アラート</h2><pre id="theory">未解析</pre></section>
+<section class="card blue"><h2>🎯 青シート 本命</h2><pre id="blue">未解析</pre></section>
+<section class="card pink"><h2>💣 ピンクシート 万舟</h2><pre id="pink">未解析</pre></section>
+<section class="card dark"><h2>🎫 フォーメーション</h2><pre id="ticket">未解析</pre></section>
+<section class="card"><h2>🧭 AI展開分析</h2><pre id="flow">未解析</pre></section>
+<section class="card"><h2>🌊 場補正・24場特徴</h2><pre id="venue">未解析</pre></section>
+<section class="card"><h2>🚨 アラート</h2><pre id="alerts">未解析</pre></section>
+<section class="card"><h2>🤖 AIコメント</h2><pre id="comment">未解析</pre></section>
 </main>
-<script>
-(function(){
-'use strict';
-var memo={桐生:'ナイター。STと展示気配重視。',戸田:'狭い水面で波乱寄り。センター/外の差し場注意。',江戸川:'河川水面。風・波・当地巧者・道中重視。',平和島:'イン絶対ではなくセンター攻め注意。',多摩川:'静水面寄り。展示T・一周Tを評価。',浜名湖:'広い水面。スピード型注意。',蒲郡:'ナイター。展示上位のセンター注意。',常滑:'イン寄り。向かい風で2・3コース攻め注意。',津:'イン強め。2差し・3着拾い。',三国:'モーニングはイン強め。',びわこ:'風で波乱。道中指数重視。',住之江:'イン強め。技量差重視。',尼崎:'内寄りだがまくり差しも見る。',鳴門:'海水。潮・風・道中注意。',丸亀:'ナイター。外の展示気配注意。',児島:'潮と風を加味。',宮島:'潮汐影響大。当地と水面適性重視。',徳山:'モーニング。イン強め。2差し/3攻め/4残し。',下関:'ナイター。イン寄り。伸びる外は穴。',若松:'海水ナイター。風・うねり・当地巧者。6でも道中/当地が高ければ3着候補。',芦屋:'モーニング。逃げ・差し本線。',福岡:'河口。2M波乱・道中・当地巧者。',唐津:'モーニング。内寄り。',大村:'イン有利。新エンジン期はモーター過信せず技量・今節ST・展示重視。'};
-function $(id){return document.getElementById(id)}
-function n(x){x=String(x==null?'':x).replace(/[％%]/g,'').replace(/[()（）,]/g,'').trim(); if(!x||/^[-ー―–]$/.test(x)) return null; var m=x.match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):null}
-function toks(line){return String(line).replace(/\u00a0/g,' ').replace(/　/g,' ').trim().split(/\t+|\s+/).filter(Boolean)}
-function nums(line){var a=toks(line).map(n).filter(function(x){return x!==null}); return a.length>=6?a.slice(-6):null}
-function status(t,ok){$('pasteStatus').textContent=t;$('pasteStatus').className='status '+(ok?'ok':'ng')}
-function log(t){$('debug').textContent=t||'未実行'}
-function set6(prefix,arr){if(!arr||arr.length<6)return false; for(var i=1;i<=6;i++){var el=$(prefix+i); if(el&&arr[i-1]!=null)el.value=arr[i-1]} return true}
-function venueMemo(){var v=$('venue').value; $('venueMemo').innerHTML='<b>'+v+'メモ：</b>'+memo[v]}
-function calcOdds(){var arr=$('odds').value.split(/[、,\s]+/).map(n).filter(function(x){return x&&x>0}); if(!arr.length){$('combined').textContent='—';return} var c=1/arr.reduce(function(a,b){return a+1/b},0); $('combined').textContent='合成オッズ：約'+c.toFixed(1)+'倍'}
-function importPaste(){
-  var text=$('paste').value||''; if(!text.trim()){status('貼り付け欄が空です',false);return}
-  var lines=text.replace(/\r/g,'').split('\n').map(function(s){return s.trim()}).filter(Boolean);
-  var found=[], dbg=[], section='';
-  function rec(name,prefix,arr){if(set6(prefix,arr)){found.push(name);dbg.push(name+': '+arr.join(', '));return true}return false}
-  for(var idx=0;idx<lines.length;idx++){
-    var line=lines[idx];
-    if(/^(平均ST|ST順位|展示順位|勝率|2連対率|3連対率|モーター|ボート|事故率|決り手数|今節データ|フライング|優勝数|優出数|準優出数)$/.test(line)){section=line;dbg.push('\n['+section+']');continue}
-    var arr=nums(line); if(!arr)continue; var first=toks(line)[0]||'';
-    if(section==='平均ST'){
-      if(first==='直近1ヶ月')rec('平均ST：直近1ヶ月','avgST',arr); else if(first==='直近3ヶ月'&&!found.some(function(x){return x.indexOf('平均ST')===0}))rec('平均ST：直近3ヶ月','avgST',arr); else if(first==='今期'&&!found.some(function(x){return x.indexOf('平均ST')===0}))rec('平均ST：今期','avgST',arr);
-    }
-    if(section==='勝率'){
-      if(first==='全国')rec('勝率：全国','winN',arr); if(first==='当地')rec('勝率：当地','winL',arr); if(first==='直近1ヶ月')rec('今節指数代用：勝率直近1ヶ月','scoreNow',arr); else if(first==='直近3ヶ月'&&!found.some(function(x){return x.indexOf('今節指数')===0}))rec('今節指数代用：勝率直近3ヶ月','scoreNow',arr);
-    }
-    if(section==='モーター'&&first==='2連対率')rec('モーター：2連対率','motor2',arr);
-    if(section==='ボート'&&first==='2連対率')rec('ボート：2連対率','boat2',arr);
-    if(section==='今節データ'){
-      if(first==='得点率')rec('今節：得点率','scoreNow',arr); if(first==='平均ST')rec('今節：平均ST','seriesST',arr); if(first==='平均展示')rec('今節：平均展示','tenji',arr);
-    }
-  }
-  log(dbg.join('\n')||'6艇分の数字行が見つかりませんでした');
-  var unique=Array.from(new Set(found)); $('parsedItems').innerHTML=unique.length?unique.map(function(x){return '<span class="pill">'+x+'</span>'}).join(''):'未反映';
-  if(unique.length){status('反映OK：'+unique.length+'項目\n'+unique.join(' / '),true); calculate()} else {status('反映できませんでした。画像コピーではなく文字としてコピーした表を貼ってください。',false)}
-}
-function score(i){var avg=parseFloat($('avgST'+i).value)||0.16, st=parseFloat($('seriesST'+i).value)||avg, ten=parseFloat($('tenji'+i).value)||6.90, winN=parseFloat($('winN'+i).value)||5.5, winL=parseFloat($('winL'+i).value)||5.5, now=parseFloat($('scoreNow'+i).value)||5.0, motor=parseFloat($('motor2'+i).value)||35, boat=parseFloat($('boat2'+i).value)||35, grade=$('grade'+i).value; var s=50+(winN-5)*7+(winL-5)*5+(now-5)*5+Math.max(-12,Math.min(14,(0.18-avg)*80))+Math.max(-12,Math.min(14,(0.18-st)*85))+Math.max(-8,Math.min(10,(6.95-ten)*25))+Math.max(-5,Math.min(8,(motor-35)*.35))+Math.max(-3,Math.min(5,(boat-35)*.18)); if(grade==='A1')s+=6; if(grade==='A2')s+=3; if(grade==='B2')s-=4; if($('home'+i).checked)s+=5; var wv=$('wind').value.split('|'),wd=wv[0],wm=Number(wv[1])||0; if(wd==='向かい風'&&wm>=3){if(i===2||i===3)s+=3;if(i===6)s+=1} if(wd==='追い風'&&wm>=3){if(i===1)s+=3;if(i>=5)s-=2} return Math.round(Math.max(1,Math.min(99,s)))}
-function calculate(){var arr=[]; for(var i=1;i<=6;i++){var s=score(i); $('score'+i).textContent=s; arr.push({i:i,s:s,name:$('name'+i).value||i+'号艇',grade:$('grade'+i).value,type:$('type'+i).value,local:parseFloat($('winL'+i).value)||0,st:parseFloat($('seriesST'+i).value)||0.2,ten:parseFloat($('tenji'+i).value)||9})} var rank=arr.slice().sort(function(a,b){return b.s-a.s}), one=arr[0], top=rank[0], attack=arr.slice().sort(function(a,b){return a.st-b.st})[0], tenTop=arr.slice().sort(function(a,b){return a.ten-b.ten})[0], local=arr.slice().sort(function(a,b){return b.local-a.local})[0]; var head=one.s+8>=top.s?1:top.i, mates=rank.filter(function(x){return x.i!==head}).slice(0,4).map(function(x){return x.i}), m2=mates[0],m3=mates[1],m4=mates[2]; $('alerts').innerHTML='<b>🔥攻め艇</b> '+attack.i+'号艇（今節ST '+attack.st.toFixed(2)+'）<br><b>⏱展示トップ</b> '+tenTop.i+'号艇（'+tenTop.ten.toFixed(2)+'）<br><b>🏠当地巧者</b> '+local.i+'号艇（当地 '+local.local.toFixed(2)+'）'; var context=$('venue').value+' '+$('race').value+' / 風：'+$('wind').selectedOptions[0].text+' / 水面：'+$('water').selectedOptions[0].text; $('blue').innerHTML='<h2>🎯 本命シート</h2><p class="small">'+context+'</p><div class="ticket"><span class="badge bblue">◎本命</span> '+head+'号艇　<span class="badge bblue">○対抗</span> '+m2+'号艇　<span class="badge bblue">▲穴</span> '+m3+'号艇</div><div class="ticket"><b>本線</b><br>'+[head+'-'+m2+'-'+m3,head+'-'+m3+'-'+m2,head+'-'+m2+'-'+m4,head+'-'+m3+'-'+m4].join(' / ')+'</div><div class="ticket"><b>フォーメーション</b><br>'+head+'-'+mates.slice(0,2).join('')+'-'+mates.join('')+'</div>'; $('pink').innerHTML='<h2>💣 万舟シート</h2><p class="small">'+context+'</p><div class="ticket"><span class="badge bpink">穴の軸</span> '+local.i+'号艇・'+attack.i+'号艇・'+tenTop.i+'号艇</div><div class="ticket"><b>万舟候補</b><br>'+Array.from(new Set(['2-1-'+local.i,'3-1-'+local.i,'1-'+mates.slice(1,3).join('')+'-'+[5,6,4,3,2].filter(function(x){return x!==head}).join('')])).join(' / ')+'</div>'}
-function samplePaste(){ $('paste').value='平均ST\n今期\t0.15\t0.15\t0.15\t0.17\t0.14\t0.17\n直近3ヶ月\t0.15\t0.16\t0.17\t0.17\t0.15\t0.15\n直近1ヶ月\t0.14\t0.16\t0.16\t0.16\t0.17\t0.15\n勝率\n全国\t5.94\t5.57\t5.58\t6.67\t6.85\t6.09\n当地\t5.77\t4.75\t5.95\t6.08\t6.03\t5.88\nモーター\n2連対率\t28.6%\t29.4%\t38.9%\t53.9%\t42.9%\t41.2%\nボート\n2連対率\t30.8%\t22.2%\t45.5%\t47.6%\t25.0%\t22.2%\n今節データ\n得点率\t4.00\t5.25\t6.50\t3.00\t2.50\t4.00\n平均ST\t0.10\t0.23\t0.12\t0.19\t0.15\t0.18\n平均展示\t6.93\t6.96\t6.97\t6.85\t6.99\t6.95'; status('サンプルを入れました。貼り付け反映を押してね。',true)}
-function clearPaste(){ $('paste').value=''; status('クリアしました',true); log('未実行'); $('parsedItems').textContent='まだ反映なし'}
-function sampleBoats(){for(var i=1;i<=6;i++){ $('name'+i).value=['眞鳥','山田','大串','高田','坂元','中島'][i-1]; $('grade'+i).value=['A2','A2','A2','A1','A2','A2'][i-1]; $('avgST'+i).value=[.14,.16,.16,.16,.17,.15][i-1]; $('seriesST'+i).value=[.10,.23,.12,.19,.15,.18][i-1]; $('tenji'+i).value=[6.93,6.96,6.97,6.85,6.99,6.95][i-1]; $('winN'+i).value=[5.94,5.57,5.58,6.67,6.85,6.09][i-1]; $('winL'+i).value=[5.77,4.75,5.95,6.08,6.03,5.88][i-1]; $('scoreNow'+i).value=[4,5.25,6.5,3,2.5,4][i-1]; $('motor2'+i).value=[28.6,29.4,38.9,53.9,42.9,41.2][i-1]} calculate()}
-function resetAll(){for(var i=1;i<=6;i++){['name','avgST','seriesST','tenji','lap','winN','winL','scoreNow','motor2','boat2'].forEach(function(p){var e=$(p+i); if(e)e.value=p==='name'?'':(p==='tenji'?'6.90':p==='lap'?'36.80':p.indexOf('ST')>-1?'0.16':p.indexOf('win')>-1?'5.50':p.indexOf('2')>-1?'35':'5.00')}); $('grade'+i).value='B1'; $('home'+i).checked=false; $('score'+i).textContent='—'} clearPaste(); $('blue').innerHTML='<h2>🎯 本命シート</h2><p class="small">まだ予想していません</p>'; $('pink').innerHTML='<h2>💣 万舟シート</h2><p class="small">まだ予想していません</p>'; $('alerts').textContent='入力後に表示'}
-function boot(){ $('jsStatus').textContent='✅ JS起動OK：ボタンが使えます'; $('jsStatus').className='status ok'; venueMemo(); $('venue').addEventListener('change',venueMemo); $('odds').addEventListener('input',calcOdds); $('importBtn').addEventListener('click',importPaste); $('sampleBtn').addEventListener('click',samplePaste); $('clearBtn').addEventListener('click',clearPaste); $('calcBtn').addEventListener('click',calculate); $('manualSampleBtn').addEventListener('click',sampleBoats); $('resetBtn').addEventListener('click',resetAll); $('paste').addEventListener('paste',function(){setTimeout(function(){status('貼り付けOK。貼り付け反映を押してね。',true)},100)})}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-window.importPaste=importPaste;window.samplePaste=samplePaste;window.clearPaste=clearPaste;window.calculate=calculate;
-})();
-</script>
+<script src="script.js"></script>
 </body>
 </html>
