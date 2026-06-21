@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>チャッピーボートレースAI 完成版</title>
+<title>チャッピーボートレースAI Ver12</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
-<h1>🚤 チャッピーボートレースAI 完成版</h1>
-<p class="lead">青シート・万舟・舟券太郎理論・場補正・AI展開を強化表示</p>
+<h1>🚤 チャッピーボートレースAI Ver12</h1>
+<p class="lead">あっくん仕様：本命・万舟・舟券太郎理論・流し・場補正を強化</p>
 
 <section class="card">
   <h2>① レース条件</h2>
@@ -19,20 +19,23 @@
     <label>風<select id="wind"><option>無風</option><option>追い風</option><option>向かい風</option><option>横風</option><option>強風</option></select></label>
     <label>水面<select id="water"><option>普通</option><option>荒れ</option><option>うねり</option><option>潮あり</option></select></label>
   </div>
-  <textarea id="paste" placeholder="ここに出走表・日和データを貼り付け"></textarea>
+  <textarea id="paste" placeholder="出走表・日和データを貼り付け"></textarea>
+  <textarea id="missingInput" placeholder="出てない目TOP30を貼り付け。未入力なら自動候補を表示"></textarea>
+  <input id="oddsInput" placeholder="合成オッズ：例 8.2,14.7,31.5">
+  <button onclick="sample()">サンプル入力</button>
   <button onclick="analyze()">貼り付け反映・予想する</button>
   <pre id="status">未解析</pre>
 </section>
 
 <section class="card"><h2>② 6艇入力・反映結果</h2><div id="racers"></div></section>
-<section class="card alert" id="theoryCard"><h2>📊 舟券太郎理論アラート</h2><pre id="theory">未解析</pre></section>
+<section class="card alert"><h2>📊 舟券太郎理論フル</h2><pre id="theory">未解析</pre></section>
 <section class="card blue"><h2>🎯 青シート 本命</h2><pre id="blue">未解析</pre></section>
 <section class="card pink"><h2>💣 ピンクシート 万舟</h2><pre id="pink">未解析</pre></section>
-<section class="card dark"><h2>🎫 フォーメーション</h2><pre id="ticket">未解析</pre></section>
+<section class="card dark"><h2>🎫 フォーメーション5段階</h2><pre id="ticket">未解析</pre></section>
 <section class="card"><h2>🧭 AI展開分析</h2><pre id="flow">未解析</pre></section>
 <section class="card"><h2>🌊 場補正・24場特徴</h2><pre id="venue">未解析</pre></section>
 <section class="card"><h2>🚨 アラート</h2><pre id="alerts">未解析</pre></section>
-<section class="card"><h2>🤖 AIコメント</h2><pre id="comment">未解析</pre></section>
+<section class="card"><h2>🤖 最終コメント</h2><pre id="comment">未解析</pre></section>
 </main>
 <script src="script.js"></script>
 </body>
