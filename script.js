@@ -246,19 +246,15 @@ function init(){
 const place = $("place").value;
  const race = $("race").value.replace("R", "");
 const date = ymdJST();
+try {
+  $("status").textContent = "日和取得中...";
 
-const raceRes = await fetch(`/api/race?place=${place}&race=${race}&date=${date}&t=${Date.now()}`);
-const raceData = await raceRes.json();
-
-const hiyoriRes = await fetch(`/api/hiyori?place=${place}&race=${race}&date=${date}&t=${Date.now()}`);
-const hiyoriData = await hiyoriRes.json();
-
-  console.log({ raceData, hiyoriData });
-
+  const hiyoriRes = await fetch(`/api/hiyori?place=${place}&race=${race}&date=${date}&t=${Date.now()}`);
+  const hiyoriData = await hiyoriRes.json();
   const s = hiyoriData.sections || {};
 
-  $("paste").value =
-`【日和 基本情報】
+  $("paste").value = `
+【日和 基本情報】
 ${s.basic || ""}
 
 【日和 枠別情報】
@@ -285,7 +281,13 @@ ${s.result || ""}
 【日和 出目ランク】
 ${s.kimariRank || ""}`;
 
+  $("status").textContent = "日和反映OK";
   analyze(true);
+} catch (e) {
+  console.error(e);
+  $("status").textContent = `取得エラー: ${e.message}`;
+}
+
 });
  applyVenue();
  sample();
