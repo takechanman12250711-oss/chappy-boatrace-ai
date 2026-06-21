@@ -67,28 +67,22 @@ export default async function handler(req, res) {
 }
 
 function cut(text, start, end) {
-  const all = [];
-  let pos = 0;
+  const menuEnd = text.indexOf("データ取得中です");
+  const baseText = menuEnd >= 0 ? text.slice(menuEnd) : text;
 
-  while (true) {
-    const i = text.indexOf(start, pos);
-    if (i < 0) break;
-    all.push(i);
-    pos = i + start.length;
-  }
+  const s = baseText.indexOf(start);
+  if (s < 0) return "";
 
-  if (!all.length) return "";
-
-  const s = all.length >= 2 ? all[1] : all[0];
-  const e = text.indexOf(end, s + start.length);
-
-  const raw = e >= 0 ? text.slice(s, e) : text.slice(s);
+  const e = baseText.indexOf(end, s + start.length);
+  const raw = e >= 0 ? baseText.slice(s, e) : baseText.slice(s);
 
   return raw
     .replace(/\\n/g, "\n")
     .replace(/\\t/g, " ")
     .replace(/\n{2,}/g, "\n")
     .trim()
+    .slice(0, 4000);
+}
     .slice(0, 4000);
 }
 
