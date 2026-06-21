@@ -16,6 +16,7 @@ export default async function handler(req, res) {
     const html = await r.text();
 
     res.setHeader("Access-Control-Allow-Origin", "*");
+
     return res.status(200).json({
       status: "ok",
       place,
@@ -25,6 +26,7 @@ export default async function handler(req, res) {
       officialLength: html.length,
       officialHtml: html
     });
+
   } catch (e) {
     return res.status(500).json({
       status: "error",
@@ -36,5 +38,5 @@ export default async function handler(req, res) {
 function ymdJST() {
   const d = new Date();
   d.setHours(d.getHours() + 9);
-  return d.toISOString().slice(0, 10).replaceAll("-", "");
+  return d.toISOString().slice(0, 10).replace(/-/g, "");
 }
