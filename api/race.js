@@ -15,6 +15,17 @@ export default async function handler(req, res) {
 
     const html = await r.text();
 
+const text = html
+  .replace(/<script[\s\S]*?<\/script>/gi, "")
+  .replace(/<style[\s\S]*?<\/style>/gi, "")
+  .replace(/<[^>]+>/g, "\n")
+  .replace(/&nbsp;/g, " ")
+  .replace(/&amp;/g, "&")
+  .replace(/\n{2,}/g, "\n")
+  .trim();
+
+res.setHeader(...)
+
     res.setHeader("Access-Control-Allow-Origin", "*");
 
     return res.status(200).json({
