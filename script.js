@@ -246,12 +246,47 @@ function init(){
   const place = $("place").value;
   const race = $("race").value;
 
-  const res = await fetch(`${API}?place=${place}&race=${race}`);
-  const data = await res.json();
+  const raceRes = await fetch(`/api/race?place=${place}&race=${race}`);
+  const raceData = await raceRes.json();
 
-  console.log(data);
+  const hiyoriRes = await fetch(`/api/hiyori?place=${place}&race=${race}`);
+  const hiyoriData = await hiyoriRes.json();
 
- $("paste").value = data.officialText || data.officialHtml || "";
+  console.log({ raceData, hiyoriData });
+
+  const s = hiyoriData.sections || {};
+
+  $("paste").value =
+`【公式出走表】
+${raceData.officialText || ""}
+
+【日和 基本情報】
+${s.basic || ""}
+
+【日和 枠別情報】
+${s.course || ""}
+
+【日和 モーター情報】
+${s.motor || ""}
+
+【日和 今節成績】
+${s.current || ""}
+
+【日和 直前情報】
+${s.before || ""}
+
+【日和 オッズ検索】
+${s.oddsSearch || ""}
+
+【日和 オッズ一覧】
+${s.oddsList || ""}
+
+【日和 結果】
+${s.result || ""}
+
+【日和 出目ランク】
+${s.kimariRank || ""}`;
+
   analyze(true);
 });
  applyVenue();
