@@ -1,44 +1,44 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>チャッピーボートレースAI Ver14 Final</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>チャッピーボートレースAI Ver15 Stable</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
-<h1>🚤 チャッピーボートレースAI Ver14 Final</h1>
-<p class="lead">艇番固定優遇なし。展開・場・水面・ST・展示・当地で状況連動評価。</p>
+  <h1>🚤 チャッピーボートレースAI Ver15 Stable</h1>
+  <p class="lead">あっくん仕様：艇番固定優遇なし。展開・場・水面・ST・展示・当地で状況連動評価。</p>
 
-<section class="card">
-  <h2>① レース条件</h2>
-  <div class="grid2">
-    <label>場<select id="place"></select></label>
-    <label>レース<select id="race"></select></label>
-    <label>風<select id="wind"><option>無風</option><option>追い風</option><option>向かい風</option><option>横風</option><option>強風</option></select></label>
-    <label>水面<select id="water"><option>普通</option><option>荒れ</option><option>うねり</option><option>潮あり</option></select></label>
-    <label>進入<select id="entry"><option value="normal">枠なり想定</option><option value="move">前付け/進入変化あり</option><option value="deep">深イン想定</option></select></label>
-    <label>エンジン<select id="engine"><option value="normal">通常</option><option value="new">新エンジン/新燃料期</option></select></label>
-  </div>
-  <textarea id="paste" placeholder="出走表・日和データを貼り付け"></textarea>
-  <textarea id="missingInput" placeholder="出てない目TOP30を貼り付け。未入力なら自動候補を表示"></textarea>
-  <input id="oddsInput" placeholder="合成オッズ：例 8.2,14.7,31.5">
-  <button onclick="sample()">サンプル入力</button>
-  <button onclick="analyze()">貼り付け反映・予想する</button>
-  <pre id="status">未解析</pre>
-</section>
+  <section class="card">
+    <h2>① レース条件</h2>
+    <div class="grid2">
+      <label>場<select id="place"></select></label>
+      <label>レース<select id="race"></select></label>
+      <label>風<select id="wind"><option>無風</option><option>追い風</option><option>向かい風</option><option>横風</option><option>強風</option></select></label>
+      <label>水面<select id="water"><option>普通</option><option>荒れ</option><option>うねり</option><option>潮あり</option></select></label>
+      <label>進入<select id="entry"><option value="normal">枠なり想定</option><option value="move">前付け/進入変化あり</option><option value="deep">深イン想定</option></select></label>
+      <label>エンジン<select id="engine"><option value="normal">通常</option><option value="new">新エンジン/新燃料期</option></select></label>
+    </div>
+    <textarea id="paste" placeholder="出走表・日和データを貼り付け"></textarea>
+    <textarea id="missingInput" placeholder="出てない目TOP30を貼り付け。未入力なら自動候補を表示"></textarea>
+    <input id="oddsInput" placeholder="合成オッズ：例 8.2,14.7,31.5">
+    <button id="sampleBtn">サンプル入力</button>
+    <button id="analyzeBtn">貼り付け反映・予想する</button>
+    <pre id="status">未解析</pre>
+  </section>
 
-<section class="card"><h2>② 6艇入力・あっくん指数</h2><div id="racers"></div></section>
-<section class="card alert"><h2>📊 舟券太郎理論フル</h2><pre id="theory">未解析</pre></section>
-<section class="card blue"><h2>🎯 青シート 本命</h2><pre id="blue">未解析</pre></section>
-<section class="card pink"><h2>💣 ピンクシート 万舟</h2><pre id="pink">未解析</pre></section>
-<section class="card dark"><h2>🎫 フォーメーション5段階</h2><pre id="ticket">未解析</pre></section>
-<section class="card"><h2>🧭 AI展開分析</h2><pre id="flow">未解析</pre></section>
-<section class="card"><h2>📉 出てない目TOP30</h2><pre id="missingAuto">未解析</pre></section>
-<section class="card"><h2>🌊 場補正・24場特徴</h2><pre id="venue">未解析</pre></section>
-<section class="card"><h2>🚨 アラート</h2><pre id="alerts">未解析</pre></section>
-<section class="card"><h2>🤖 最終コメント</h2><pre id="comment">未解析</pre></section>
+  <section class="card"><h2>② 6艇入力・あっくん指数</h2><div id="racers"></div></section>
+  <section class="card alert"><h2>📊 舟券太郎理論フル</h2><pre id="theory">未解析</pre></section>
+  <section class="card blue"><h2>🎯 青シート 本命</h2><pre id="blue">未解析</pre></section>
+  <section class="card pink"><h2>💣 ピンクシート 万舟</h2><pre id="pink">未解析</pre></section>
+  <section class="card dark"><h2>🎫 フォーメーション5段階</h2><pre id="ticket">未解析</pre></section>
+  <section class="card"><h2>🧭 AI展開分析</h2><pre id="flow">未解析</pre></section>
+  <section class="card"><h2>📉 出てない目TOP30</h2><pre id="missingAuto">未解析</pre></section>
+  <section class="card"><h2>🌊 場補正・24場特徴</h2><pre id="venue">未解析</pre></section>
+  <section class="card"><h2>🚨 アラート</h2><pre id="alerts">未解析</pre></section>
+  <section class="card"><h2>🤖 最終コメント</h2><pre id="comment">未解析</pre></section>
 </main>
 <script src="script.js"></script>
 </body>
