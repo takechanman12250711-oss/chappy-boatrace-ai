@@ -242,7 +242,18 @@ function init(){
  setSelectOptions();
  $("place").addEventListener("change", applyVenue);
  $("sampleBtn").addEventListener("click", sample);
- $("analyzeBtn").addEventListener("click", () => analyze(true));
+ $("analyzeBtn").addEventListener("click", async () => {
+  const place = $("place").value;
+  const race = $("race").value;
+
+  const res = await fetch(`${API}?place=${place}&race=${race}`);
+  const data = await res.json();
+
+  console.log(data);
+
+  $("paste").value = data.officialHtml || "";
+  analyze(true);
+});
  applyVenue();
  sample();
 }
