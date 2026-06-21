@@ -35,18 +35,18 @@ export default async function handler(req, res) {
       hiyoriUrl,
       hiyoriLength: html.length,
       hiyoriHtml: html,
-      hiyoriText: text,
+hiyoriText: text,
+preview: text.slice(0, 3000),
+hasBasic: text.includes("基本情報"),
+hasCourse: text.includes("枠別情報"),
+hasMotor: text.includes("モータ"),
+hasCurrent: text.includes("今節成績"),
+hasBefore: text.includes("直前情報"),
+hasOdds: text.includes("オッズ"),
+hasResult: text.includes("結果"),
+hasRank: text.includes("出目"),
 
-      sections: {
-        basic: "基本情報",
-        course: "枠別情報",
-        motor: "モータ情報",
-        current: "今節成績",
-        before: "直前情報",
-        oddsSearch: "オッズ検索",
-        oddsList: "オッズ一覧",
-        result: "結果",
-        kimariRank: "出目ランク"
+sections: {
       }
     });
 
