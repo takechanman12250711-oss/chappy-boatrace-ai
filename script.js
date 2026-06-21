@@ -1,6 +1,6 @@
 (() => {
 "use strict";
-const API = "https://chappy-boatrace-api-v2.takechanman12250711.workers.dev";
+const API = "/api/race";
 const $ = (id) => document.getElementById(id);
 
 const PLACES = {
