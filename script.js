@@ -242,7 +242,7 @@ function init(){
  setSelectOptions();
  $("place").addEventListener("change", applyVenue);
  $("sampleBtn").addEventListener("click", sample);
- $("analyzeBtn").addEventListener("click", const place = $("place").value;
+ $("analyzeBtn").addEventListener("click", async()=>{
 const place = $("place").value;
  const race = $("race").value.replace("R", "");
 const date = ymdJST();
