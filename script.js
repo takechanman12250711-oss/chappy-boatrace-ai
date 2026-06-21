@@ -259,11 +259,3 @@ function init(){
 }
 document.addEventListener("DOMContentLoaded", init);
 })();
-const text = html
-  .replace(/<script[\s\S]*?<\/script>/gi, "")
-  .replace(/<style[\s\S]*?<\/style>/gi, "")
-  .replace(/<[^>]+>/g, "\n")
-  .replace(/&nbsp;/g, " ")
-  .replace(/&amp;/g, "&")
-  .replace(/\n{2,}/g, "\n")
-  .trim();
