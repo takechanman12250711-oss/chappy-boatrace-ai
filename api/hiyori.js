@@ -8,9 +8,7 @@ export default async function handler(req, res) {
 
   try {
     const r = await fetch(hiyoriUrl, {
-      headers: {
-        "user-agent": "Mozilla/5.0"
-      }
+      headers: { "user-agent": "Mozilla/5.0" }
     });
 
     const html = await r.text();
@@ -21,8 +19,22 @@ export default async function handler(req, res) {
       .replace(/<[^>]+>/g, "\n")
       .replace(/&nbsp;/g, " ")
       .replace(/&amp;/g, "&")
+      .replace(/\t/g, " ")
       .replace(/\n{2,}/g, "\n")
+      .replace(/[ ]{2,}/g, " ")
       .trim();
+
+    const sections = {
+      basic: cut(text, "基本情報", "枠別勝率"),
+      course: cut(text, "枠別勝率", "今節成績"),
+      current: cut(text, "今節成績", "モーター比較"),
+      motor: cut(text, "モーター比較", "直前情報"),
+      before: cut(text, "直前情報", "結果"),
+      result: cut(text, "結果", "オッズ"),
+      oddsSearch: cut(text, "オッズ", "オッズ一覧"),
+      oddsList: cut(text, "オッズ一覧", "出目ランク"),
+      kimariRank: cut(text, "出目ランク", "MyData")
+    };
 
     res.setHeader("Access-Control-Allow-Origin", "*");
 
@@ -34,20 +46,16 @@ export default async function handler(req, res) {
       date,
       hiyoriUrl,
       hiyoriLength: html.length,
-      hiyoriHtml: html,
-hiyoriText: text,
-preview: text.slice(0, 3000),
-hasBasic: text.includes("基本情報"),
-hasCourse: text.includes("枠別情報"),
-hasMotor: text.includes("モータ"),
-hasCurrent: text.includes("今節成績"),
-hasBefore: text.includes("直前情報"),
-hasOdds: text.includes("オッズ"),
-hasResult: text.includes("結果"),
-hasRank: text.includes("出目"),
-
-sections: {
-      }
+      preview: text.slice(0, 1000),
+      hasBasic: !!sections.basic,
+      hasCourse: !!sections.course,
+      hasMotor: !!sections.motor,
+      hasCurrent: !!sections.current,
+      hasBefore: !!sections.before,
+      hasOdds: !!sections.oddsSearch,
+      hasResult: !!sections.result,
+      hasRank: !!sections.kimariRank,
+      sections
     });
 
   } catch (e) {
@@ -56,6 +64,14 @@ sections: {
       message: e.message
     });
   }
+}
+
+function cut(text, start, end) {
+  const s = text.indexOf(start);
+  if (s < 0) return "";
+  const e = text.indexOf(end, s + start.length);
+  const raw = e >= 0 ? text.slice(s, e) : text.slice(s);
+  return raw.trim().slice(0, 4000);
 }
 
 function ymdJST() {
