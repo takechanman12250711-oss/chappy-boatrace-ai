@@ -25,15 +25,16 @@ export default async function handler(req, res) {
       .trim();
 
     const sections = {
-      basic: cut(text, "基本情報", "枠別勝率"),
-      course: cut(text, "枠別勝率", "今節成績"),
-      current: cut(text, "今節成績", "モーター比較"),
-      motor: cut(text, "モーター比較", "直前情報"),
-      before: cut(text, "直前情報", "結果"),
-      result: cut(text, "結果", "オッズ"),
-      oddsSearch: cut(text, "オッズ", "オッズ一覧"),
-      oddsList: cut(text, "オッズ一覧", "出目ランク"),
-      kimariRank: cut(text, "出目ランク", "MyData")
+  basic: text.slice(0, 4000),
+  course: "",
+  current: "",
+  motor: "",
+  before: "",
+  result: "",
+  oddsSearch: "",
+  oddsList: "",
+  kimariRank: ""
+};
     };
 
     res.setHeader("Access-Control-Allow-Origin", "*");
