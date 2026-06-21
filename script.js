@@ -257,10 +257,7 @@ function init(){
   const s = hiyoriData.sections || {};
 
   $("paste").value =
-`【公式出走表】
-${raceData.officialText || ""}
-
-【日和 基本情報】
+`【日和 基本情報】
 ${s.basic || ""}
 
 【日和 枠別情報】
