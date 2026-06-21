@@ -1,0 +1,32 @@
+:root{
+ --blue:#1976d2;--blue2:#eaf4ff;--pink:#e85aa6;--pink2:#fff0f7;--bg:#f4f7fb;--ink:#101828;
+ --line:#dbe3ef;--muted:#667085;--green:#07833f;--red:#d33;--yellow:#f59e0b;--dark:#111827;
+}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--ink)}
+main{padding:14px;max-width:980px;margin:auto}
+h1{background:linear-gradient(135deg,#1976d2,#43a7ff);color:white;padding:18px;border-radius:20px;font-size:26px}
+h2{margin:0 0 12px}
+.card{background:white;border-radius:20px;padding:16px;margin:14px 0;box-shadow:0 4px 14px #0001}
+button,input,textarea{font-size:17px;border-radius:12px;border:1px solid #ccd6e2;box-sizing:border-box}
+button{background:var(--blue);color:white;border:0;font-weight:900;padding:12px;width:100%;margin:7px 0}
+input,textarea{width:100%;padding:12px;margin:6px 0}
+.placeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.placeBtn{background:#eef4ff;color:#1257a5;border:1px solid #cfe2ff;margin:0;padding:11px 2px;font-size:14px;border-radius:10px}
+.placeBtn.active{background:#1976d2;color:white}
+.raceGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.raceBtn{background:#f2f4f7;color:#111;border:1px solid #d0d5dd;margin:0;padding:9px 2px;font-size:14px}
+.raceBtn.active{background:#111827;color:white}
+.big3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.jump{background:#111827}
+.boat{border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.score{font-size:30px;font-weight:900;color:var(--blue)}
+.badge{display:inline-block;background:#eef4ff;border-radius:999px;padding:5px 10px;margin:3px;font-weight:800}
+.blue{border-left:8px solid var(--blue);background:linear-gradient(90deg,var(--blue2),white 18%)}
+.pink{border-left:8px solid var(--pink);background:linear-gradient(90deg,var(--pink2),white 18%)}
+.warn{border-left:8px solid var(--yellow)}
+.dark{border-left:8px solid var(--dark)}
+pre{white-space:pre-wrap;font-size:15.5px;line-height:1.55}
+.small{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;border-radius:999px;background:#f2f4f7;padding:4px 9px;margin:2px;font-weight:800}
+.notice{background:#fff7e6;border:1px solid #ffd58a;border-radius:14px;padding:10px;margin:8px 0;color:#7a4b00}
+@media(max-width:640px){.placeGrid{grid-template-columns:repeat(4,1fr)}.placeBtn{font-size:14px}.raceGrid{grid-template-columns:repeat(6,1fr)}.big3{grid-template-columns:1fr 1fr 1fr}}
