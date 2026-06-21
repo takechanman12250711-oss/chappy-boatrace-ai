@@ -24,9 +24,7 @@ const text = html
   .replace(/\n{2,}/g, "\n")
   .trim();
 
-res.setHeader(...)
-
-    res.setHeader("Access-Control-Allow-Origin", "*");
+res.setHeader("Access-Control-Allow-Origin", "*");
 
     return res.status(200).json({
       status: "ok",
