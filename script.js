@@ -243,7 +243,8 @@ function init(){
  $("place").addEventListener("change", applyVenue);
  $("sampleBtn").addEventListener("click", sample);
  $("analyzeBtn").addEventListener("click", const place = $("place").value;
-const race = $("race").value.replace("R", "");
+const place = $("place").value;
+ const race = $("race").value.replace("R", "");
 const date = ymdJST();
 
 const raceRes = await fetch(`/api/race?place=${place}&race=${race}&date=${date}&t=${Date.now()}`);
