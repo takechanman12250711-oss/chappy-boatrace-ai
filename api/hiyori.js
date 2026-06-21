@@ -35,7 +35,6 @@ export default async function handler(req, res) {
   oddsList: "",
   kimariRank: ""
 };
-    };
 
     res.setHeader("Access-Control-Allow-Origin", "*");
 
