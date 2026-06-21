@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 }
 
 function cut(text, start, end) {
-  const menuEnd = text.indexOf("データ取得中です");
+  const menuEnd = text.indexOf("データ取得中です。");
   const baseText = menuEnd >= 0 ? text.slice(menuEnd) : text;
 
   const s = baseText.indexOf(start);
