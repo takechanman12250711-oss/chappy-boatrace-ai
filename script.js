@@ -251,7 +251,7 @@ function init(){
 
   console.log(data);
 
-  $("paste").$("paste").value = data.officialText || data.officialHtml || "";
+ $("paste").value = data.officialText || data.officialHtml || "";
   analyze(true);
 });
  applyVenue();
