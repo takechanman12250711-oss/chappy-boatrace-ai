@@ -26,14 +26,14 @@ export default async function handler(req, res) {
 
     const sections = {
   basic: text.slice(0, 4000),
-  course: "",
-  current: "",
-  motor: "",
-  before: "",
-  result: "",
-  oddsSearch: "",
-  oddsList: "",
-  kimariRank: ""
+  course: text.includes("枠別勝率") ? "枠別勝率あり" : "",
+  current: text.includes("今節情報") ? "今節情報あり" : "",
+  motor: text.includes("モーター比較") ? "モーター比較あり" : "",
+  before: text.includes("直前情報") ? "直前情報あり" : "",
+  result: text.includes("結果") ? "結果あり" : "",
+  oddsSearch: text.includes("オッズ") ? "オッズあり" : "",
+  oddsList: text.includes("オッズ一覧") ? "オッズ一覧あり" : "",
+  kimariRank: text.includes("出目ランク") ? "出目ランクあり" : ""
 };
 
     res.setHeader("Access-Control-Allow-Origin", "*");
