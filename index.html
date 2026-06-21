@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>チャッピーボートレースAI Ver13</title>
+<title>チャッピーボートレースAI Ver14 Final</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
-<h1>🚤 チャッピーボートレースAI Ver13</h1>
-<p class="lead">あっくん指数・舟券太郎理論・出てない目TOP30・展開率を追加</p>
+<h1>🚤 チャッピーボートレースAI Ver14 Final</h1>
+<p class="lead">艇番固定優遇なし。展開・場・水面・ST・展示・当地で状況連動評価。</p>
 
 <section class="card">
   <h2>① レース条件</h2>
@@ -18,6 +18,8 @@
     <label>レース<select id="race"></select></label>
     <label>風<select id="wind"><option>無風</option><option>追い風</option><option>向かい風</option><option>横風</option><option>強風</option></select></label>
     <label>水面<select id="water"><option>普通</option><option>荒れ</option><option>うねり</option><option>潮あり</option></select></label>
+    <label>進入<select id="entry"><option value="normal">枠なり想定</option><option value="move">前付け/進入変化あり</option><option value="deep">深イン想定</option></select></label>
+    <label>エンジン<select id="engine"><option value="normal">通常</option><option value="new">新エンジン/新燃料期</option></select></label>
   </div>
   <textarea id="paste" placeholder="出走表・日和データを貼り付け"></textarea>
   <textarea id="missingInput" placeholder="出てない目TOP30を貼り付け。未入力なら自動候補を表示"></textarea>
