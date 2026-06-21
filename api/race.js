@@ -33,7 +33,8 @@ res.setHeader("Access-Control-Allow-Origin", "*");
       date,
       officialUrl,
       officialLength: html.length,
-      officialHtml: html
+officialHtml: html,
+officialText: text
     });
 
   } catch (e) {
