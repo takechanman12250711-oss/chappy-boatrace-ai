@@ -91,7 +91,6 @@ function cut(text, start, end) {
     .trim()
     .slice(0, 4000);
 }
-}
 
 function ymdJST() {
   const d = new Date();
