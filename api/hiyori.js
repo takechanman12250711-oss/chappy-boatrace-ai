@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+I export default async function handler(req, res) {
   const place = String(req.query.place || "24");
   const race = String(req.query.race || "1");
   const date = req.query.date || ymdJST();
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       date,
       hiyoriUrl,
       hiyoriLength: html.length,
-      preview: text.slice(0, 1000),
+      preview: "ok",
       hasBasic: !!sections.basic,
       hasCourse: !!sections.course,
       hasMotor: !!sections.motor,
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 }
 
 function cut(text, start, end) {
-  const menuEnd = text.indexOf("データ取得中です。");
+  const menuEnd = text.lastIndexOf("基本情報");
   const baseText = menuEnd >= 0 ? text.slice(menuEnd) : text;
 
   const s = baseText.indexOf(start);
