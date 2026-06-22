@@ -89,3 +89,4 @@ function ymdJST() {
   d.setHours(d.getHours() + 9);
   return d.toISOString().slice(0, 10).replace(/-/g, "");
 }
+}
