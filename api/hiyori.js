@@ -1,4 +1,4 @@
-I export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const place = String(req.query.place || "24");
   const race = String(req.query.race || "1");
   const date = req.query.date || ymdJST();
