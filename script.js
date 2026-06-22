@@ -117,14 +117,13 @@ async function analyze(showStatus=true){
 try {
   const race = $("race").value.replace("R","");
   const od = await fetch(`/api/odds?place=${p}&race=${race}&date=${ymdJST()}`);
-const oj = await od.json();
-oddsText = oj.preview || oj.text || "";
+  const oj = await od.json();
+  oddsText = oj.preview || oj.text || "";
 } catch(e) {
   oddsText = "";
 }
  render(racers,p,w,wa,en,eg,showStatus,oddsText);
-}
-function render(racers,p,w,wa,en,eg,showStatus){
+function render(racers,p,w,wa,en,eg,showStatus,oddsText){
  const v=V(p), rank=[...racers].sort((a,b)=>b.akkun-a.akkun), flowRank=[...racers].sort((a,b)=>b.flow-a.flow), manshu=[...racers].sort((a,b)=>b.manshu-a.manshu);
  if(showStatus)$("status").textContent=`反映OK：${PLACES[p]} / 風:${w} / 水面:${wa} / 進入:${en} / エンジン:${eg}`;
  $("racers").innerHTML=racers.map(r=>`<div class="racer"><b>🚤${r.boat}号艇</b><div class="score">あっくん指数 ${r.akkun}点</div><span class="badge">📊データ ${r.dataScore}</span><span class="badge">🧭展開 ${r.flowCore}</span><span class="badge">🔥攻め ${r.attack}</span><span class="badge">💣万舟 ${r.manshu}</span><p>平均ST ${r.avg} / 今節ST ${r.now} / 展示 ${r.tenji} / 一周 ${r.lap} / 全国 ${r.nat} / 当地 ${r.loc} / 地元 ${r.home} / M ${r.motor}%</p><pre>${buffs(r,eg)}</pre><p>${role(r.boat)}</p></div>`).join("");
