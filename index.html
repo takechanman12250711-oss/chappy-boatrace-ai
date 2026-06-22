@@ -43,13 +43,15 @@
 </main>
 <script src="script.js?v=20260622-3"></script>
 <script>
-const $=id=>document.getElementById(id);
-$("place").innerHTML='<option value="24">大村</option>';
-$("race").innerHTML='<option>1R</option><option>2R</option><option>3R</option><option>4R</option><option>5R</option><option>6R</option><option>7R</option><option>8R</option><option>9R</option><option>10R</option><option>11R</option><option>12R</option>';
-$("wind").innerHTML='<option>無風</option><option>追い風</option><option>向かい風</option><option>横風</option><option>強風</option>';
-$("water").innerHTML='<option>普通</option><option>荒れ</option><option>うねり</option><option>潮あり</option>';
-$("entry").innerHTML='<option value="normal">枠なり想定</option><option value="move">前付け/進入変化あり</option><option value="deep">深イン想定</option>';
-$("engine").innerHTML='<option value="normal">通常</option><option value="new">新エンジン/新燃料期</option>';
+window.addEventListener("load",()=>{
+  const $=id=>document.getElementById(id);
+  const places={"01":"桐生","02":"戸田","03":"江戸川","04":"平和島","05":"多摩川","06":"浜名湖","07":"蒲郡","08":"常滑","09":"津","10":"三国","11":"びわこ","12":"住之江","13":"尼崎","14":"鳴門","15":"丸亀","16":"児島","17":"宮島","18":"徳山","19":"下関","20":"若松","21":"芦屋","22":"福岡","23":"唐津","24":"大村"};
+  $("place").innerHTML=Object.entries(places).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+  $("race").innerHTML=Array.from({length:12},(_,i)=>`<option>${i+1}R</option>`).join("");
+  $("wind").innerHTML=["無風","追い風","向かい風","横風","強風"].map(x=>`<option>${x}</option>`).join("");
+  $("water").innerHTML=["普通","荒れ","うねり","潮あり"].map(x=>`<option>${x}</option>`).join("");
+  $("entry").innerHTML='<option value="normal">枠なり想定</option><option value="move">前付け/進入変化あり</option><option value="deep">深イン想定</option>';
+  $("engine").innerHTML='<option value="normal">通常</option><option value="new">新エンジン/新燃料期</option>';
+  $("place").value="24";
+});
 </script>
-</body>
-</html>
