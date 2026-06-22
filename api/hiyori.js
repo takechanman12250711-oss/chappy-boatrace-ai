@@ -81,7 +81,7 @@ function cut(text, start, end) {
     .replace(/\\t/g, " ")
     .replace(/\n{2,}/g, "\n")
     .trim()
-    .slice(0, 4000);
+    .slice(0, 12000);
 }
 
 function ymdJST() {
