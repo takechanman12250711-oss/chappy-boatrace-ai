@@ -1,57 +1,121 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>チャッピーボートレースAI</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>チャッピーボートレースAI V2</title>
+  <link rel="stylesheet" href="style.css?v=2" />
 </head>
+
 <body>
-<main>
-  <h1>🚤 チャッピーボートレースAI</h1>
-  <p class="lead">理想形：場選択で自動反映＋手貼りデータ＋展開60%評価。</p>
+  <header class="app-header">
+    <h1>🚤 チャッピーボートレースAI V2</h1>
+    <p>展開 → 理由 → 本命 → 買い目 → 万舟</p>
+  </header>
 
-  <section class="card">
-    <h2>① レース条件</h2>
-    <div class="grid2">
-      <label>場<select id="place"></select></label>
-      <label>レース<select id="race"></select></label>
-      <label>風<select id="wind"></select></label>
-      <label>水面<select id="water"></select></label>
-      <label>進入<select id="entry"></select></label>
-      <label>エンジン<select id="engine"></select></label>
-    </div>
-    <pre id="autoVenue">場を選ぶと自動反映</pre>
-    <textarea id="paste" placeholder="出走表・日和・公式データを貼り付け"></textarea>
-    <textarea id="missingInput" placeholder="出てない目TOP30を貼り付け。未入力なら自動候補"></textarea>
-    <input id="oddsInput" placeholder="合成オッズ：例 8.2,14.7,31.5">
-    <button id="sampleBtn">サンプル入力</button>
-    <button id="analyzeBtn">貼り付け反映・予想する</button>
-    <pre id="status">未解析</pre>
-  </section>
+  <main class="app">
 
-  <section class="card"><h2>② 6艇入力・あっくん指数</h2><div id="racers"></div></section>
-  <section class="card alert"><h2>📊 舟券太郎理論フル</h2><pre id="theory">未解析</pre></section>
-  <section class="card blue"><h2>🎯 青シート 本命</h2><pre id="blue">未解析</pre></section>
-  <section class="card pink"><h2>💣 ピンクシート 万舟</h2><pre id="pink">未解析</pre></section>
-  <section class="card dark"><h2>🎫 フォーメーション5段階</h2><pre id="ticket">未解析</pre></section>
-  <section class="card"><h2>🧭 展開エンジン</h2><pre id="flow">未解析</pre></section>
-  <section class="card"><h2>📉 出てない目TOP30</h2><pre id="missingAuto">未解析</pre></section>
-  <section class="card"><h2>🌊 場補正・24場特徴</h2><pre id="venue">未解析</pre></section>
-  <section class="card"><h2>🚨 アラート</h2><pre id="alerts">未解析</pre></section>
-  <section class="card"><h2>🤖 最終コメント</h2><pre id="comment">未解析</pre></section>
-</main>
-<script src="script.js?v=20260622-3"></script>
-<script>
-window.addEventListener("load",()=>{
-  const $=id=>document.getElementById(id);
-  const places={"01":"桐生","02":"戸田","03":"江戸川","04":"平和島","05":"多摩川","06":"浜名湖","07":"蒲郡","08":"常滑","09":"津","10":"三国","11":"びわこ","12":"住之江","13":"尼崎","14":"鳴門","15":"丸亀","16":"児島","17":"宮島","18":"徳山","19":"下関","20":"若松","21":"芦屋","22":"福岡","23":"唐津","24":"大村"};
-  $("place").innerHTML=Object.entries(places).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
-  $("race").innerHTML=Array.from({length:12},(_,i)=>`<option>${i+1}R</option>`).join("");
-  $("wind").innerHTML=["無風","追い風","向かい風","横風","強風"].map(x=>`<option>${x}</option>`).join("");
-  $("water").innerHTML=["普通","荒れ","うねり","潮あり"].map(x=>`<option>${x}</option>`).join("");
-  $("entry").innerHTML='<option value="normal">枠なり想定</option><option value="move">前付け/進入変化あり</option><option value="deep">深イン想定</option>';
-  $("engine").innerHTML='<option value="normal">通常</option><option value="new">新エンジン/新燃料期</option>';
-  $("place").value="24";
-});
-</script>
+    <section class="card race-card">
+      <h2>① レース選択</h2>
+
+      <div class="grid-2">
+        <label>
+          場
+          <select id="place"></select>
+        </label>
+
+        <label>
+          レース
+          <select id="race"></select>
+        </label>
+      </div>
+
+      <button id="analyzeBtn" class="main-btn">
+        出走表取得して予想
+      </button>
+
+      <p id="status" class="status">場とレースを選んでください</p>
+    </section>
+
+    <details class="card">
+      <summary>⚙️ 詳細設定</summary>
+
+      <div class="grid-2 settings">
+        <label>
+          風
+          <select id="wind"></select>
+        </label>
+
+        <label>
+          水面
+          <select id="water"></select>
+        </label>
+
+        <label>
+          進入
+          <select id="entry"></select>
+        </label>
+
+        <label>
+          エンジン
+          <select id="engine"></select>
+        </label>
+      </div>
+    </details>
+
+    <section class="card paste-card">
+      <h2>② 入力データ確認</h2>
+      <p class="small">自動取得・手入力の確認用。通常は触らなくてOK。</p>
+
+      <textarea id="paste" placeholder="出走表・日和データがここに入ります"></textarea>
+
+      <div class="button-row">
+        <button id="sampleBtn" class="sub-btn">サンプル入力</button>
+        <button id="clearBtn" class="sub-btn">クリア</button>
+      </div>
+    </section>
+
+    <section class="card flow-card">
+      <h2>🌊 展開エンジン</h2>
+      <div id="flowEngine" class="result-box">未解析</div>
+
+      <h3>展開理由</h3>
+      <div id="flowReason" class="reason-box">未解析</div>
+    </section>
+
+    <section class="card blue-card">
+      <h2>🎯 本命シート</h2>
+      <div id="mainSheet" class="result-box">未解析</div>
+    </section>
+
+    <section class="card ticket-card">
+      <h2>🎫 フォーメーション</h2>
+      <div id="formation" class="result-box">未解析</div>
+    </section>
+
+    <section class="card pink-card">
+      <h2>💣 万舟シート</h2>
+      <div id="pinkSheet" class="result-box">未解析</div>
+    </section>
+
+    <section class="card alert-card">
+      <h2>🚨 舟券太郎アラート</h2>
+      <div id="alerts" class="result-box">未解析</div>
+    </section>
+
+    <details class="card">
+      <summary>📊 出てない目TOP30</summary>
+      <textarea id="missingInput" placeholder="出てない目TOP30を貼る場合はここ"></textarea>
+      <div id="missingList" class="result-box">未入力</div>
+    </details>
+
+    <section class="card footer-note">
+      <p>展開60%・指数40%</p>
+      <p>艇番固定優遇なし / 地元・当地加味 / 新エンジン補正対応</p>
+    </section>
+
+  </main>
+
+  <script src="script.js?v=2"></script>
+</body>
+</html>
