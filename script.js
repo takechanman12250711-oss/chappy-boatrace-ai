@@ -154,7 +154,7 @@ ${manshu.slice(0,4).map(x=>`${x.boat}号艇 万舟${x.manshu}点 / 期待${x.man
 3-45-全
 
 出てない目TOP30：
-${$("missingInput").value.trim()||missingList().join(" / ")}
+${($("missingInput").value.trim() || missingList).replace(/\\n/g,"\n")}
 
 合成オッズ：${oddsCalc()}`;
  $("ticket").textContent=`🎯本線
