@@ -1,121 +1,120 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>チャッピーボートレースAI V2</title>
-  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="stylesheet" href="style.css?v=20260623-v2" />
 </head>
 
 <body>
-  <header class="app-header">
+  <header class="hero">
     <h1>🚤 チャッピーボートレースAI V2</h1>
     <p>展開 → 理由 → 本命 → 買い目 → 万舟</p>
   </header>
 
-  <main class="app">
+  <main class="wrap">
 
     <section class="card race-card">
       <h2>① レース選択</h2>
 
-      <div class="grid-2">
-        <label>
-          場
+      <div class="grid2">
+        <label>場
           <select id="place"></select>
         </label>
 
-        <label>
-          レース
+        <label>レース
           <select id="race"></select>
         </label>
       </div>
 
-      <button id="analyzeBtn" class="main-btn">
-        出走表取得して予想
-      </button>
-
+      <button id="analyzeBtn" class="primary">出走表取得して予想</button>
       <p id="status" class="status">場とレースを選んでください</p>
     </section>
 
     <details class="card">
       <summary>⚙️ 詳細設定</summary>
 
-      <div class="grid-2 settings">
-        <label>
-          風
+      <div class="grid2">
+        <label>風
           <select id="wind"></select>
         </label>
 
-        <label>
-          水面
+        <label>水面
           <select id="water"></select>
         </label>
 
-        <label>
-          進入
+        <label>進入
           <select id="entry"></select>
         </label>
 
-        <label>
-          エンジン
+        <label>エンジン
           <select id="engine"></select>
         </label>
       </div>
+
+      <pre id="autoVenue" class="mini">場を選ぶと自動反映</pre>
     </details>
 
-    <section class="card paste-card">
+    <section class="card input-card">
       <h2>② 入力データ確認</h2>
-      <p class="small">自動取得・手入力の確認用。通常は触らなくてOK。</p>
+      <p class="note">自動取得できない時だけ手貼り。通常は触らなくてOK。</p>
 
-      <textarea id="paste" placeholder="出走表・日和データがここに入ります"></textarea>
+      <textarea id="paste" placeholder="出走表・日和・公式データを貼り付け"></textarea>
+      <textarea id="missingInput" placeholder="出てない目TOP30を貼り付け。未入力なら自動候補"></textarea>
+      <input id="oddsInput" placeholder="合成オッズ例：8.2,14.7,31.5" />
 
-      <div class="button-row">
-        <button id="sampleBtn" class="sub-btn">サンプル入力</button>
-        <button id="clearBtn" class="sub-btn">クリア</button>
+      <div class="btn-row">
+        <button id="sampleBtn" class="sub">サンプル入力</button>
+        <button id="clearBtn" class="sub">クリア</button>
       </div>
     </section>
 
-    <section class="card flow-card">
+    <section class="card flow">
       <h2>🌊 展開エンジン</h2>
-      <div id="flowEngine" class="result-box">未解析</div>
+      <pre id="flowEngine">未解析</pre>
 
       <h3>展開理由</h3>
-      <div id="flowReason" class="reason-box">未解析</div>
+      <pre id="flowReason">未解析</pre>
     </section>
 
-    <section class="card blue-card">
+    <section class="card blue">
       <h2>🎯 本命シート</h2>
-      <div id="mainSheet" class="result-box">未解析</div>
+      <pre id="mainSheet">未解析</pre>
     </section>
 
-    <section class="card ticket-card">
+    <section class="card ticket">
       <h2>🎫 フォーメーション</h2>
-      <div id="formation" class="result-box">未解析</div>
+      <pre id="formation">未解析</pre>
     </section>
 
-    <section class="card pink-card">
+    <section class="card pink">
       <h2>💣 万舟シート</h2>
-      <div id="pinkSheet" class="result-box">未解析</div>
+      <pre id="pinkSheet">未解析</pre>
     </section>
 
-    <section class="card alert-card">
+    <section class="card alert">
       <h2>🚨 舟券太郎アラート</h2>
-      <div id="alerts" class="result-box">未解析</div>
+      <pre id="alerts">未解析</pre>
     </section>
 
     <details class="card">
       <summary>📊 出てない目TOP30</summary>
-      <textarea id="missingInput" placeholder="出てない目TOP30を貼る場合はここ"></textarea>
-      <div id="missingList" class="result-box">未入力</div>
+      <pre id="missingList">未解析</pre>
     </details>
 
-    <section class="card footer-note">
+    <section class="card comment">
+      <h2>🤖 最終コメント</h2>
+      <pre id="comment">未解析</pre>
+    </section>
+
+    <footer class="footer">
       <p>展開60%・指数40%</p>
       <p>艇番固定優遇なし / 地元・当地加味 / 新エンジン補正対応</p>
-    </section>
+    </footer>
 
   </main>
 
-  <script src="script.js?v=2"></script>
+  <script src="script.js?v=20260623-v2"></script>
 </body>
 </html>
