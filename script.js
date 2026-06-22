@@ -74,7 +74,7 @@ ${v.memo}
 ※ここは固定DB。実戦では貼り付けデータを優先して展開60%で再計算。`;
  analyze(false);
 }
-function // sample();
+function function sample(){
  $("paste").value=`平均ST
 今期 0.15 0.16 0.16 0.16 0.17 0.15
 今節 0.10 0.23 0.12 0.19 0.15 0.18
