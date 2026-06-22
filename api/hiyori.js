@@ -59,11 +59,11 @@ I export default async function handler(req, res) {
     });
 
   } catch (e) {
-    return res.status(500).json({
-      status: "error",
-      message: e.message
-    });
-  }
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  return res.status(200).json({
+    status: "error",
+    message: String(e.message || e)
+  });
 }
 
 function cut(text, start, end) {
