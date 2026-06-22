@@ -137,6 +137,7 @@ ${flowRank[0].boat}-${flowRank[2].boat}-${flowRank[1].boat}
 
 一言：
 指数40%・展開60%。艇番固定優遇なし。`;
+ const missingList = "1-4-5 / 1-5-4 / 2-1-4 / 2-1-5 / 3-1-4 / 3-1-5 / 4-1-3 / 4-1-5 / 5-1-3 / 5-1-4 / 6-1-3 / 6-1-4";
 const pinkAxis = manshu.slice(0,4)
   .map(x => `${x.boat}号艇 万舟${x.manshu}点 / 期待${x.manshuPct}%`)
   .join("\n");
