@@ -115,10 +115,10 @@ async function analyze(showStatus=true){
  const racers=[1,2,3,4,5,6].map((b,i)=>makeRacer(b,i,d,p,w,wa,en,eg));
  let oddsText = "";
 try {
-  function render(racers,p,w,wa,en,eg,showStatus,oddsText){
+  const race = $("race").value.replace("R","");
   const od = await fetch(`/api/odds?place=${p}&race=${race}&date=${ymdJST()}`);
-  const oj = await od.json();
-  oddsText = oj.preview || oj.text || "";
+const oj = await od.json();
+oddsText = oj.preview || oj.text || "";
 } catch(e) {
   oddsText = "";
 }
