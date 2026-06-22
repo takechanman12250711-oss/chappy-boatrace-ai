@@ -145,13 +145,8 @@ ${manshu.slice(0,4).map(x=>`${x.boat}号艇 万舟${x.manshu}点 / 期待${x.man
 6号艇期待度：${racers[5].manshu}点 / ${racers[5].manshuPct}%
 
 万舟候補：
-4-1-235
-5-1-234
-6-1-234
-1-4-56
-1-5-46
-2-1-456
-3-45-全
+${manshu.slice(0,3).map(x=>`${x.boat}-1-${[2,3,4,5,6].filter(n=>n!==x.boat).slice(0,3).join("")}`).join("\n")}
+${flowRank.slice(0,2).map(x=>`${x.boat}-45-全`).join("\n")}
 
 出てない目TOP30：
 ${($("missingInput").value.trim() || missingList).replace(/\\n/g,"\n")}
