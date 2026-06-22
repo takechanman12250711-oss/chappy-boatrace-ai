@@ -4,7 +4,7 @@ module.exports = async function handler(req, res) {
   const date = req.query.date || ymdJST();
 
   const url =
-  `https://kyoteibiyori.com/race_shusso.php?place_no=${place}&race_no=${race}&hiduke=${date}&slider=6`;
+`https://kyoteibiyori.com/race_shusso.php?place_no=${place}&race_no=${race}&hiduke=${date}&slider=5`
 
   try {
     const r = await fetch(url, {
