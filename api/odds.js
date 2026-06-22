@@ -31,7 +31,8 @@ module.exports = async function handler(req, res) {
       date,
       url,
       length: text.length,
-      preview: text.slice(0, 3000)
+preview: text.slice(0, 3000),
+html: html.slice(0, 20000)
     });
   } catch (e) {
     res.setHeader("Access-Control-Allow-Origin", "*");
