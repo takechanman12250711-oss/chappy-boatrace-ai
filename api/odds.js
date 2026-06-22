@@ -8,7 +8,9 @@ module.exports = async function handler(req, res) {
 
   try {
     const r = await fetch(url, {
-      headers: { "user-agent": "Mozilla/5.0" }
+  headers: {
+    "user-agent":
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/605
     });
     const html = await r.text();
 
