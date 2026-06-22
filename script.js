@@ -1,5 +1,6 @@
 (() => {
 "use strict";
+ alert("script OK");
 const API = "/api/race";
 const $ = (id) => document.getElementById(id);
 
