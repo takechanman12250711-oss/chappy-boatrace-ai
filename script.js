@@ -138,7 +138,7 @@ ${flowRank[0].boat}-${flowRank[2].boat}-${flowRank[1].boat}
 一言：
 指数40%・展開60%。艇番固定優遇なし。`;
  $("pink").textContent=`万舟軸：
-${manshu.slice(0,4).map(x=>`${x.boat}号艇 万舟${x.manshu}点 / 期待${x.manshuPct}%`).join("\\n")}
+${manshu.slice(0,4).map(x=>`${x.boat}号艇 万舟${x.manshu}点 / 期待${x.manshuPct}%`).join("\n")}
 
 4号艇期待度：${racers[3].manshu}点 / ${racers[3].manshuPct}%
 5号艇期待度：${racers[4].manshu}点 / ${racers[4].manshuPct}%
