@@ -137,22 +137,30 @@ ${flowRank[0].boat}-${flowRank[2].boat}-${flowRank[1].boat}
 
 一言：
 指数40%・展開60%。艇番固定優遇なし。`;
- $("pink").textContent=`万舟軸：
-${manshu.slice(0,4).map(x=>`${x.boat}号艇 万舟${x.manshu}点 / 期待${x.manshuPct}%`).join("\n")}
+const pinkAxis = manshu.slice(0,4)
+  .map(x => `${x.boat}号艇 万舟${x.manshu}点 / 期待${x.manshuPct}%`)
+  .join("\n");
+
+const pinkTickets = [
+  ...manshu.slice(0,3).map(x => `${x.boat}-1-${[2,3,4,5,6].filter(n=>n!==x.boat).slice(0,3).join("")}`),
+  ...flowRank.slice(0,2).map(x => `${x.boat}-45-全`)
+].join("\n");
+
+$("pink").textContent=`万舟軸：
+${pinkAxis}
 
 4号艇期待度：${racers[3].manshu}点 / ${racers[3].manshuPct}%
 5号艇期待度：${racers[4].manshu}点 / ${racers[4].manshuPct}%
 6号艇期待度：${racers[5].manshu}点 / ${racers[5].manshuPct}%
 
 万舟候補：
-${manshu.slice(0,3).map(x=>`${x.boat}-1-${[2,3,4,5,6].filter(n=>n!==x.boat).slice(0,3).join("")}`).join("\n")}
-${flowRank.slice(0,2).map(x=>`${x.boat}-45-全`).join("\n")}
+${pinkTickets}
 
 出てない目TOP30：
 ${($("missingInput").value.trim() || missingList).replace(/\\n/g,"\n")}
 
 合成オッズ：${oddsCalc()}`;
- $("ticket").textContent=`🎯本線
+$("ticket").textContent=`🎯本線
 1-23-2345
 1-3-245
 
