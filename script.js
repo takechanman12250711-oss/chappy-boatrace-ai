@@ -290,7 +290,7 @@ ${s.kimariRank || ""}`;
 
 });
  applyVenue();
- sample();
+ // sample();
 }
 document.addEventListener("DOMContentLoaded", init);
 })();
