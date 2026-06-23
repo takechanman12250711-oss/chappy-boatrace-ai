@@ -1,4 +1,4 @@
-// api/race.js v3.1 完全版
+// api/race.js v3.2 完全版
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -72,7 +72,8 @@ async function fetchHtml(url) {
       "User-Agent":
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1",
       "Accept-Language": "ja-JP,ja;q=0.9",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept":
+        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Referer": "https://www.boatrace.jp/",
       "Cache-Control": "no-cache"
     },
@@ -120,27 +121,38 @@ function parseRaceText(text) {
   const startIndex = text.indexOf("登録番号／級別");
   if (startIndex >= 0) target = text.slice(startIndex);
 
+  const markerRegex = /\s([1-6])\s+(\d{4})\s*\/\s*(A1|A2|B1|B2)\s+/g;
+  const markers = [];
+  let m;
+
+  while ((m = markerRegex.exec(target)) !== null) {
+    markers.push({
+      index: m.index,
+      boat: Number(m[1]),
+      regNo: m[2],
+      class: m[3],
+      end: markerRegex.lastIndex
+    });
+  }
+
   const boats = [];
 
-  const regex =
-  /(?:^|\s)([1-6])\s+(\d{4})\s*\/\s*(A1|A2|B1|B2)\s+(.+?)(?=\s+[一-龥]{2,4}\/[一-龥]{2,4}\s+\d{2}歳\/)/g;
+  for (let i = 0; i < markers.length; i++) {
+    const cur = markers[i];
+    const next = markers[i + 1];
+    const block = target.slice(cur.index, next ? next.index : cur.index + 700);
 
-  let match;
+    const afterClass = target.slice(cur.end, cur.end + 100);
+    const nameMatch = afterClass.match(
+      /^([一-龥ぁ-んァ-ヶー・\s]{2,16})\s+[一-龥]{2,4}\/[一-龥]{2,4}/
+    );
 
-  while ((match = regex.exec(target)) !== null) {
-    const boat = Number(match[1]);
-    const regNo = match[2];
-    const playerClass = match[3];
-    const name = cleanName(match[4]);
-
-    const blockStart = match.index;
-    const nextIndex = findNextBoatIndex(target, blockStart + 5);
-    const block = target.slice(blockStart, nextIndex > blockStart ? nextIndex : blockStart + 600);
+    const name = nameMatch ? cleanName(nameMatch[1]) : "";
 
     boats.push({
-      boat,
-      regNo,
-      class: playerClass,
+      boat: cur.boat,
+      regNo: cur.regNo,
+      class: cur.class,
       name,
       branchHome: extractBranchHome(block),
       ageWeight: extractAgeWeight(block),
@@ -158,14 +170,9 @@ function parseRaceText(text) {
   return uniqueBoats(boats);
 }
 
-function findNextBoatIndex(text, from) {
-  const rest = text.slice(from);
-  const m = rest.match(/\s[1-6]\s+\d{4}\s*\/\s*(A1|A2|B1|B2)\s+/);
-  return m ? from + m.index : text.length;
-}
-
 function uniqueBoats(boats) {
   const used = new Set();
+
   return boats
     .filter(b => {
       if (!b.boat || used.has(b.boat)) return false;
@@ -203,6 +210,12 @@ function extractAverageST(block) {
   return list.length ? list[0] : null;
 }
 
+function extractCandidateRates(block) {
+  return [...block.matchAll(/\b\d+\.\d{2}\b/g)]
+    .map(m => Number(m[0]))
+    .filter(n => n >= 1 && n <= 10);
+}
+
 function extractNationalWinRate(block) {
   const nums = extractCandidateRates(block);
   return nums[0] ?? null;
@@ -213,14 +226,9 @@ function extractLocalWinRate(block) {
   return nums[3] ?? nums[1] ?? null;
 }
 
-function extractCandidateRates(block) {
-  return [...block.matchAll(/\b\d+\.\d{2}\b/g)]
-    .map(m => Number(m[0]))
-    .filter(n => n >= 1 && n <= 10);
-}
-
 function extractMotor(block) {
   const idx = block.indexOf("モーター");
+
   if (idx >= 0) {
     const part = block.slice(idx, idx + 120);
     const m = part.match(/モーター\s+(\d{1,3})/);
@@ -237,6 +245,7 @@ function extractMotorRates(block) {
 
   const part = block.slice(idx, idx + 160);
   const nums = [...part.matchAll(/\b\d{2}\.\d{2}\b/g)].map(m => Number(m[0]));
+
   return [nums[0] ?? null, nums[1] ?? null];
 }
 
@@ -257,7 +266,7 @@ function makeDebug(html, text, boats) {
     hasBoatColor: /boatColor|is-boatColor|boat_color/i.test(html),
     trCount: (html.match(/<tr/gi) || []).length,
     tbodyCount: (html.match(/<tbody/gi) || []).length,
-    textHead: text.slice(0, 1500),
+    textHead: text.slice(0, 1800),
     foundBlocks: boats.map(b => b.raw)
   };
 }
