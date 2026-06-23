@@ -1,5 +1,5 @@
-// api/race.js v3.4 完全版
-// 登番＋級別を目印に拾う方式
+// api/race.js v3.5 完全版
+// 出走表6艇取得 + モーター/ボート情報強化版
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -120,8 +120,6 @@ function parseRaceText(text) {
   const startIndex = text.indexOf("登録番号");
   if (startIndex >= 0) target = text.slice(startIndex);
 
-  // まず「登番 / 級別」を全部拾う
-  // 例: 5143 / B1
   const regClassRegex = /(\d{4})\s*\/\s*(A1|A2|B1|B2)/g;
   const hits = [];
   let m;
@@ -141,13 +139,16 @@ function parseRaceText(text) {
   for (let i = 0; i < hits.length && boats.length < 6; i++) {
     const cur = hits[i];
     const next = hits[i + 1];
-    const block = target.slice(cur.index, next ? next.index : cur.index + 900);
+    const block = target.slice(cur.index, next ? next.index : cur.index + 1000);
 
-    const before = target.slice(Math.max(0, cur.index - 20), cur.index);
+    const before = target.slice(Math.max(0, cur.index - 30), cur.index);
     const boat = extractBoatFromBefore(before, boats.length + 1);
 
-    const afterClass = target.slice(cur.end, cur.end + 120);
+    const afterClass = target.slice(cur.end, cur.end + 150);
     const name = extractName(afterClass);
+
+    const rates = extractRates(block);
+    const equipment = extractEquipment(block);
 
     boats.push({
       boat,
@@ -157,13 +158,22 @@ function parseRaceText(text) {
       branchHome: extractBranchHome(block),
       ageWeight: extractAgeWeight(block),
       avgST: extractAverageST(block),
-      nationalWinRate: extractNationalWinRate(block),
-      localWinRate: extractLocalWinRate(block),
-      motor: extractMotor(block),
-      motor2Rate: extractMotorRates(block)[0],
-      motor3Rate: extractMotorRates(block)[1],
-      boatNo: extractBoatNo(block),
-      raw: block.slice(0, 500)
+
+      nationalWinRate: rates.nationalWinRate,
+      national2Rate: rates.national2Rate,
+      national3Rate: rates.national3Rate,
+      localWinRate: rates.localWinRate,
+      local2Rate: rates.local2Rate,
+      local3Rate: rates.local3Rate,
+
+      motor: equipment.motor,
+      motor2Rate: equipment.motor2Rate,
+      motor3Rate: equipment.motor3Rate,
+      boatNo: equipment.boatNo,
+      boat2Rate: equipment.boat2Rate,
+      boat3Rate: equipment.boat3Rate,
+
+      raw: block.slice(0, 550)
     });
   }
 
@@ -174,16 +184,12 @@ function parseRaceText(text) {
 }
 
 function extractBoatFromBefore(before, fallback) {
-  // 登番の直前にある最後の1〜6を艇番として使う
   const nums = before.match(/\b[1-6]\b/g);
-  if (nums && nums.length) {
-    return Number(nums[nums.length - 1]);
-  }
+  if (nums && nums.length) return Number(nums[nums.length - 1]);
   return fallback;
 }
 
 function extractName(afterClass) {
-  // 例: " 常盤 海心 徳島/徳島 25歳..."
   const m = afterClass.match(
     /^\s*([一-龥ぁ-んァ-ヶー・]+\s+[一-龥ぁ-んァ-ヶー・]+)\s+[一-龥]{2,4}\/[一-龥]{2,4}/
   );
@@ -195,6 +201,130 @@ function extractName(afterClass) {
   );
 
   return fallback ? cleanName(fallback[1]) : "";
+}
+
+function extractRates(block) {
+  // ブロック冒頭の基本情報順：
+  // 平均ST 勝率 2連率 3連率 勝率 2連率 3連率 ...
+  const avgST = extractAverageST(block);
+  const numbers = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(x => Number(x[0]));
+
+  let start = 0;
+  if (avgST !== null) {
+    const stIndex = numbers.findIndex(n => Math.abs(n - avgST) < 0.001);
+    if (stIndex >= 0) start = stIndex + 1;
+  }
+
+  const rates = numbers.slice(start);
+
+  return {
+    nationalWinRate: pickRate(rates[0]),
+    national2Rate: pickPercent(rates[1]),
+    national3Rate: pickPercent(rates[2]),
+    localWinRate: pickRate(rates[3]),
+    local2Rate: pickPercent(rates[4]),
+    local3Rate: pickPercent(rates[5])
+  };
+}
+
+function pickRate(n) {
+  return typeof n === "number" && n >= 0 && n <= 10 ? n : null;
+}
+
+function pickPercent(n) {
+  return typeof n === "number" && n >= 0 && n <= 100 ? n : null;
+}
+
+function extractEquipment(block) {
+  // 公式テキストは次の並びになりやすい：
+  // 全国/当地の6数字 → モーターNo 2連率 3連率 → ボートNo 2連率 3連率 → 成績
+  const avgST = extractAverageST(block);
+  const allDecimals = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(x => Number(x[0]));
+
+  let afterBase = allDecimals;
+
+  if (avgST !== null) {
+    const stIndex = allDecimals.findIndex(n => Math.abs(n - avgST) < 0.001);
+    if (stIndex >= 0) afterBase = allDecimals.slice(stIndex + 7);
+  } else {
+    afterBase = allDecimals.slice(6);
+  }
+
+  // block内の整数も拾う。モーター/ボート番号は2桁前後。
+  const tokens = block.split(" ");
+  const parsed = [];
+
+  for (const t of tokens) {
+    if (/^\d{1,3}$/.test(t)) {
+      parsed.push({ type: "int", value: Number(t) });
+    } else if (/^\d+\.\d{2}$/.test(t)) {
+      parsed.push({ type: "dec", value: Number(t) });
+    }
+  }
+
+  // 平均ST以降、基本6数字の後に出る
+  const avgStTokenIndex = tokens.findIndex(t => t === String(avgST?.toFixed(2)));
+  let startTokenIndex = avgStTokenIndex >= 0 ? avgStTokenIndex + 7 : 0;
+
+  const tail = tokens.slice(startTokenIndex);
+  const equipmentPattern = findEquipmentPattern(tail);
+
+  return equipmentPattern;
+}
+
+function findEquipmentPattern(tokens) {
+  // 例: 44 27.27 40.91 11 39.91 58.72
+  for (let i = 0; i < tokens.length - 5; i++) {
+    const mNo = toInt(tokens[i]);
+    const m2 = toDecimal(tokens[i + 1]);
+    const m3 = toDecimal(tokens[i + 2]);
+    const bNo = toInt(tokens[i + 3]);
+    const b2 = toDecimal(tokens[i + 4]);
+    const b3 = toDecimal(tokens[i + 5]);
+
+    if (
+      isNo(mNo) &&
+      isPercent(m2) &&
+      isPercent(m3) &&
+      isNo(bNo) &&
+      isPercent(b2) &&
+      isPercent(b3)
+    ) {
+      return {
+        motor: mNo,
+        motor2Rate: m2,
+        motor3Rate: m3,
+        boatNo: bNo,
+        boat2Rate: b2,
+        boat3Rate: b3
+      };
+    }
+  }
+
+  return {
+    motor: null,
+    motor2Rate: null,
+    motor3Rate: null,
+    boatNo: null,
+    boat2Rate: null,
+    boat3Rate: null
+  };
+}
+
+function toInt(v) {
+  return /^\d{1,3}$/.test(String(v)) ? Number(v) : null;
+}
+
+function toDecimal(v) {
+  return /^\d+\.\d{2}$/.test(String(v)) ? Number(v) : null;
+}
+
+function isNo(n) {
+  return typeof n === "number" && n >= 1 && n <= 999;
+}
+
+function isPercent(n) {
+  return typeof n === "number" && n >= 0 && n <= 100;
 }
 
 function uniqueBoats(boats) {
@@ -227,62 +357,11 @@ function extractAgeWeight(block) {
 }
 
 function extractAverageST(block) {
-  const m = block.match(/平均ST\s*(0\.\d{2})/);
+  const m = block.match(/\b(0\.\d{2})\b/);
   if (m) return Number(m[1]);
 
-  const list = [...block.matchAll(/\b0\.\d{2}\b/g)]
-    .map(x => Number(x[0]))
-    .filter(n => n >= 0.09 && n <= 0.35);
-
-  return list.length ? list[0] : null;
-}
-
-function extractCandidateRates(block) {
-  return [...block.matchAll(/\b\d+\.\d{2}\b/g)]
-    .map(m => Number(m[0]))
-    .filter(n => n >= 1 && n <= 10);
-}
-
-function extractNationalWinRate(block) {
-  const nums = extractCandidateRates(block);
-  return nums[0] ?? null;
-}
-
-function extractLocalWinRate(block) {
-  const nums = extractCandidateRates(block);
-  return nums[3] ?? nums[1] ?? null;
-}
-
-function extractMotor(block) {
-  const idx = block.indexOf("モーター");
-
-  if (idx >= 0) {
-    const part = block.slice(idx, idx + 120);
-    const m = part.match(/モーター\s+(\d{1,3})/);
-    if (m) return Number(m[1]);
-  }
-
-  const m = block.match(/\s(\d{1,3})\s+\d{2}\.\d{2}\s+\d{2}\.\d{2}/);
-  return m ? Number(m[1]) : null;
-}
-
-function extractMotorRates(block) {
-  const idx = block.indexOf("モーター");
-  if (idx < 0) return [null, null];
-
-  const part = block.slice(idx, idx + 160);
-  const nums = [...part.matchAll(/\b\d{2}\.\d{2}\b/g)].map(m => Number(m[0]));
-
-  return [nums[0] ?? null, nums[1] ?? null];
-}
-
-function extractBoatNo(block) {
-  const idx = block.indexOf("ボート");
-  if (idx < 0) return null;
-
-  const part = block.slice(idx, idx + 120);
-  const m = part.match(/ボート\s+(\d{1,3})/);
-  return m ? Number(m[1]) : null;
+  const dashST = block.match(/\s-\s/);
+  return dashST ? null : null;
 }
 
 function makeDebug(html, text, parsed) {
@@ -295,13 +374,17 @@ function makeDebug(html, text, parsed) {
     tbodyCount: (html.match(/<tbody/gi) || []).length,
     hitCount: parsed.hits.length,
     hits: parsed.hits.slice(0, 10),
-    textHead: text.slice(0, 1600),
-    textTail: text.slice(-3000),
     foundBlocks: parsed.boats.map(b => ({
       boat: b.boat,
       regNo: b.regNo,
       class: b.class,
       name: b.name,
+      motor: b.motor,
+      motor2Rate: b.motor2Rate,
+      motor3Rate: b.motor3Rate,
+      boatNo: b.boatNo,
+      boat2Rate: b.boat2Rate,
+      boat3Rate: b.boat3Rate,
       raw: b.raw
     }))
   };
