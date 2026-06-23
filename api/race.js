@@ -1,4 +1,4 @@
-// api/race.js v3 完全版
+// api/race.js v3.1 完全版
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -36,7 +36,8 @@ export default async function handler(req, res) {
         url,
         count: 0,
         boats: [],
-        message: "データがありません"
+        message: "データがありません",
+        debug: debug === "1" ? makeDebug(html, text, []) : undefined
       });
     }
 
@@ -51,12 +52,8 @@ export default async function handler(req, res) {
       url,
       count: boats.length,
       boats,
-      debug: debug === "1" ? {
-        textHead: text.slice(0, 1500),
-        foundBlocks: boats.map(b => b.raw)
-      } : undefined
+      debug: debug === "1" ? makeDebug(html, text, boats) : undefined
     });
-
   } catch (err) {
     return res.status(500).json({
       ok: false,
@@ -70,23 +67,33 @@ export default async function handler(req, res) {
 }
 
 async function fetchHtml(url) {
-  const response = await fetch(url, {
-    headers: {
+  const headersList = [
+    {
       "User-Agent":
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1",
       "Accept-Language": "ja-JP,ja;q=0.9",
-      "Accept":
-        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Referer": "https://www.boatrace.jp/",
       "Cache-Control": "no-cache"
+    },
+    {
+      "User-Agent": "Mozilla/5.0",
+      "Accept-Language": "ja-JP,ja;q=0.9"
     }
-  });
+  ];
 
-  if (!response.ok) {
-    throw new Error(`公式サイト取得失敗: ${response.status}`);
+  let lastStatus = "";
+
+  for (const headers of headersList) {
+    const response = await fetch(url, { headers });
+    lastStatus = response.status;
+
+    if (response.ok) {
+      return await response.text();
+    }
   }
 
-  return await response.text();
+  throw new Error(`公式サイト取得失敗: ${lastStatus}`);
 }
 
 function cleanText(html) {
@@ -100,6 +107,7 @@ function cleanText(html) {
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
+    .replace(/&#12288;/g, " ")
     .replace(/\r?\n/g, " ")
     .replace(/\t/g, " ")
     .replace(/\s+/g, " ")
@@ -107,19 +115,15 @@ function cleanText(html) {
 }
 
 function parseRaceText(text) {
+  let target = text;
+
+  const startIndex = text.indexOf("登録番号／級別");
+  if (startIndex >= 0) target = text.slice(startIndex);
+
   const boats = [];
 
-  // 出走表本文だけに寄せる
-  let target = text;
-  const startIndex = text.indexOf("登録番号／級別");
-  if (startIndex >= 0) {
-    target = text.slice(startIndex);
-  }
-
-  // 艇番 + 登録番号 + / + 級別 + 名前 を拾う
-  // 例: 1 5143 / B1 常盤 海心 徳島/徳島 ...
   const regex =
-    /(?:^|\s)([1-6])\s+(\d{4})\s*\/\s*(A1|A2|B1|B2)\s+([一-龥ぁ-んァ-ヶー・\s]{2,12})(?=\s+[一-龥ぁ-んァ-ヶー・]+\/|徳島\/|香川\/|大阪\/|東京\/|福岡\/|長崎\/|広島\/|岡山\/|佐賀\/|山口\/|兵庫\/|愛知\/|静岡\/|三重\/|滋賀\/|福井\/|埼玉\/|群馬\/|千葉\/|神奈川\/|北海道\/|宮城\/|福島\/|新潟\/|石川\/|富山\/|奈良\/|京都\/|和歌山\/|愛媛\/|高知\/|熊本\/|大分\/|宮崎\/|鹿児島\/|沖縄\/)/g;
+    /(?:^|\s)([1-6])\s+(\d{4})\s*\/\s*(A1|A2|B1|B2)\s+([一-龥ぁ-んァ-ヶー・\s]{2,16})(?=\s+[一-龥ぁ-んァ-ヶー・]+\/)/g;
 
   let match;
 
@@ -130,39 +134,28 @@ function parseRaceText(text) {
     const name = cleanName(match[4]);
 
     const blockStart = match.index;
-    const nextMatch = findNextBoatIndex(target, blockStart + 10);
-    const block = target.slice(blockStart, nextMatch > blockStart ? nextMatch : blockStart + 500);
-
-    const nums = extractNumbers(block);
+    const nextIndex = findNextBoatIndex(target, blockStart + 5);
+    const block = target.slice(blockStart, nextIndex > blockStart ? nextIndex : blockStart + 600);
 
     boats.push({
       boat,
       regNo,
       class: playerClass,
       name,
+      branchHome: extractBranchHome(block),
       ageWeight: extractAgeWeight(block),
       avgST: extractAverageST(block),
-      nationalWinRate: extractRateAfterKeyword(block, "全国") ?? nums.winRates[0] ?? null,
-      localWinRate: extractRateAfterKeyword(block, "当地") ?? nums.winRates[1] ?? null,
+      nationalWinRate: extractNationalWinRate(block),
+      localWinRate: extractLocalWinRate(block),
       motor: extractMotor(block),
-      motor2Rate: extractMotorRate(block, "2連率"),
-      motor3Rate: extractMotorRate(block, "3連率"),
+      motor2Rate: extractMotorRates(block)[0],
+      motor3Rate: extractMotorRates(block)[1],
       boatNo: extractBoatNo(block),
-      raw: block.slice(0, 350)
+      raw: block.slice(0, 400)
     });
   }
 
-  // 重複削除
-  const unique = [];
-  const used = new Set();
-
-  for (const b of boats) {
-    if (used.has(b.boat)) continue;
-    used.add(b.boat);
-    unique.push(b);
-  }
-
-  return unique.sort((a, b) => a.boat - b.boat);
+  return uniqueBoats(boats);
 }
 
 function findNextBoatIndex(text, from) {
@@ -171,11 +164,27 @@ function findNextBoatIndex(text, from) {
   return m ? from + m.index : text.length;
 }
 
+function uniqueBoats(boats) {
+  const used = new Set();
+  return boats
+    .filter(b => {
+      if (!b.boat || used.has(b.boat)) return false;
+      used.add(b.boat);
+      return true;
+    })
+    .sort((a, b) => a.boat - b.boat);
+}
+
 function cleanName(name) {
   return String(name || "")
     .replace(/\s+/g, "")
     .replace(/[0-9.]/g, "")
     .trim();
+}
+
+function extractBranchHome(block) {
+  const m = block.match(/([一-龥]{2,4})\/([一-龥]{2,4})/);
+  return m ? `${m[1]}/${m[2]}` : "";
 }
 
 function extractAgeWeight(block) {
@@ -194,43 +203,41 @@ function extractAverageST(block) {
   return list.length ? list[0] : null;
 }
 
-function extractNumbers(block) {
-  const all = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(m => Number(m[0]));
-
-  return {
-    winRates: all.filter(n => n >= 1 && n <= 10),
-    percentages: all.filter(n => n > 10 && n <= 100)
-  };
+function extractNationalWinRate(block) {
+  const nums = extractCandidateRates(block);
+  return nums[0] ?? null;
 }
 
-function extractRateAfterKeyword(block, keyword) {
-  const idx = block.indexOf(keyword);
-  if (idx < 0) return null;
+function extractLocalWinRate(block) {
+  const nums = extractCandidateRates(block);
+  return nums[3] ?? nums[1] ?? null;
+}
 
-  const part = block.slice(idx, idx + 120);
-  const m = part.match(/\b\d+\.\d{2}\b/);
-  return m ? Number(m[0]) : null;
+function extractCandidateRates(block) {
+  return [...block.matchAll(/\b\d+\.\d{2}\b/g)]
+    .map(m => Number(m[0]))
+    .filter(n => n >= 1 && n <= 10);
 }
 
 function extractMotor(block) {
-  const m =
-    block.match(/モーター\s+(\d{1,3})/) ||
-    block.match(/\s(\d{1,3})\s+\d{2}\.\d{2}\s+\d{2}\.\d{2}/);
+  const idx = block.indexOf("モーター");
+  if (idx >= 0) {
+    const part = block.slice(idx, idx + 120);
+    const m = part.match(/モーター\s+(\d{1,3})/);
+    if (m) return Number(m[1]);
+  }
 
+  const m = block.match(/\s(\d{1,3})\s+\d{2}\.\d{2}\s+\d{2}\.\d{2}/);
   return m ? Number(m[1]) : null;
 }
 
-function extractMotorRate(block, label) {
+function extractMotorRates(block) {
   const idx = block.indexOf("モーター");
-  if (idx < 0) return null;
+  if (idx < 0) return [null, null];
 
-  const part = block.slice(idx, idx + 150);
+  const part = block.slice(idx, idx + 160);
   const nums = [...part.matchAll(/\b\d{2}\.\d{2}\b/g)].map(m => Number(m[0]));
-
-  if (label === "2連率") return nums[0] ?? null;
-  if (label === "3連率") return nums[1] ?? null;
-
-  return null;
+  return [nums[0] ?? null, nums[1] ?? null];
 }
 
 function extractBoatNo(block) {
@@ -240,4 +247,17 @@ function extractBoatNo(block) {
   const part = block.slice(idx, idx + 120);
   const m = part.match(/ボート\s+(\d{1,3})/);
   return m ? Number(m[1]) : null;
+}
+
+function makeDebug(html, text, boats) {
+  return {
+    htmlLength: html.length,
+    hasNoData: text.includes("データがありません"),
+    hasRacerNameClass: /A1|A2|B1|B2/.test(text),
+    hasBoatColor: /boatColor|is-boatColor|boat_color/i.test(html),
+    trCount: (html.match(/<tr/gi) || []).length,
+    tbodyCount: (html.match(/<tbody/gi) || []).length,
+    textHead: text.slice(0, 1500),
+    foundBlocks: boats.map(b => b.raw)
+  };
 }
