@@ -10,17 +10,6 @@
     "19":"下関","20":"若松","21":"芦屋","22":"福岡","23":"唐津","24":"大村"
   };
 
-  const VENUE = {
-    "01":{wind:"無風",water:"普通",entry:"normal",engine:"normal",memo:"桐生：展示・ST・回り足重視"},
-    "02":{wind:"横風",water:"普通",entry:"normal",engine:"normal",memo:"戸田：センター攻めと4残し注意"},
-    "03":{wind:"強風",water:"荒れ",entry:"normal",engine:"normal",memo:"江戸川：波・風で波乱注意"},
-    "04":{wind:"横風",water:"普通",entry:"normal",engine:"normal",memo:"平和島：1絶対ではなく2・3攻め注意"},
-    "05":{wind:"横風",water:"普通",entry:"normal",engine:"new",memo:"多摩川：新エンジン期は展示過信しない"},
-    "15":{wind:"追い風",water:"普通",entry:"normal",engine:"normal",memo:"丸亀：ナイターでイン＋差し筋重視"},
-    "20":{wind:"追い風",water:"普通",entry:"normal",engine:"normal",memo:"若松：地元・当地巧者の3着拾い注意"},
-    "24":{wind:"無風",water:"普通",entry:"normal",engine:"new",memo:"大村：基本イン有利。新エンジン期は選手技量・今節ST重視"}
-  };
-
   const OPTIONS = {
     wind:["無風","追い風","向かい風","横風","強風"],
     water:["普通","荒れ","うねり","潮あり"],
@@ -28,10 +17,13 @@
     engine:[["normal","通常"],["new","新エンジン/新燃料期"]]
   };
 
-  const names = ["選手A","選手B","選手C","選手D","選手E","選手F"];
+  const VENUE = {
+    "20":{wind:"追い風",water:"普通",entry:"normal",engine:"normal",memo:"若松：当地巧者・道中拾い注意"},
+    "24":{wind:"無風",water:"普通",entry:"normal",engine:"new",memo:"大村：イン有利。新エンジン期は選手技量・今節ST重視"}
+  };
 
   function setOptions(){
-    $("place").innerHTML = Object.entries(PLACES).map(([k,v]) => `<option value="${k}">${v}</option>`).join("");
+    $("place").innerHTML = Object.entries(PLACES).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
     $("race").innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}">${i+1}R</option>`).join("");
     $("wind").innerHTML = OPTIONS.wind.map(x=>`<option>${x}</option>`).join("");
     $("water").innerHTML = OPTIONS.water.map(x=>`<option>${x}</option>`).join("");
@@ -41,10 +33,21 @@
     $("race").value = "1";
   }
 
+  function racerName(i){
+    const text = $("paste").value || "";
+    const re = new RegExp(`${i}[\\s\\S]{0,40}?([一-龥ぁ-んァ-ンー]{2,8})`);
+    const m = text.match(re);
+    return m ? m[1] : `選手${i}`;
+  }
+
+  function racer(i){
+    return `${i}号艇 ${racerName(i)}`;
+  }
+
   function venueData(){
     return VENUE[$("place").value] || {
       wind:"無風",water:"普通",entry:"normal",engine:"normal",
-      memo:`${PLACES[$("place").value]}：場特徴を標準補正`
+      memo:`${PLACES[$("place").value]}：標準補正`
     };
   }
 
@@ -55,17 +58,66 @@
     $("entry").value = v.entry;
     $("engine").value = v.engine;
     $("autoVenue").textContent =
-      `場補正：${PLACES[$("place").value]}\n風：${v.wind} / 水面：${v.water} / 進入：${v.entry} / エンジン：${v.engine}\n${v.memo}`;
+`場補正：${PLACES[$("place").value]}
+風：${v.wind} / 水面：${v.water} / 進入：${v.entry} / エンジン：${v.engine}
+${v.memo}`;
   }
 
-  function racer(i){
-    return `${i}号艇 ${names[i-1]}`;
+  function parseOdds(){
+    return ($("oddsInput").value || "")
+      .split(/[,\s、]+/)
+      .map(Number)
+      .filter(n => !Number.isNaN(n) && n > 0);
+  }
+
+  function parseMissing(){
+    const raw = $("missingInput").value.trim();
+    if(!raw) return [];
+    return raw.match(/[1-6]-[1-6]-[1-6]/g) || [];
+  }
+
+  function expectedRank(odds, score){
+    if(odds >= 80 && score >= 80) return "S";
+    if(odds >= 50 && score >= 70) return "A";
+    if(odds >= 30 && score >= 60) return "B";
+    return "C";
+  }
+
+  function generateManshu(){
+    const missing = parseMissing();
+    const odds = parseOdds();
+
+    const base = missing.length ? missing : [
+      "5-1-4","5-1-6","4-5-1","6-1-5","4-1-5","5-4-1"
+    ];
+
+    const outerPower = {
+      "4":78,
+      "5":86,
+      "6":72
+    };
+
+    return base.slice(0,6).map((bet,idx)=>{
+      const head = bet[0];
+      const od = odds[idx] || (head === "5" ? 118 : head === "6" ? 142 : 96);
+      const score = outerPower[head] || 64;
+      return {
+        bet,
+        odds: od,
+        score,
+        rank: expectedRank(od, score)
+      };
+    }).sort((a,b)=>{
+      const rankScore = {S:4,A:3,B:2,C:1};
+      return rankScore[b.rank] - rankScore[a.rank] || b.odds - a.odds;
+    });
   }
 
   function analyze(){
     const placeName = PLACES[$("place").value];
     const race = $("race").value + "R";
     const engine = $("engine").value;
+    const manshu = generateManshu();
 
     $("status").textContent = `${placeName}${race} 解析OK`;
 
@@ -127,23 +179,12 @@
     $("pinkSheet").textContent =
 `◎ ${racer(5)}
 万舟指数：86点
-オッズ：118倍
-期待値：A
 
-○ ${racer(4)}
-万舟指数：78点
-オッズ：96倍
-期待値：B
+【万舟候補 自動生成】
+${manshu.map(x=>`${x.bet}　オッズ${x.odds}倍　期待値${x.rank}`).join("\n")}
 
-▲ ${racer(6)}
-万舟指数：72点
-オッズ：142倍
-期待値：B
-
-【万舟候補】
-5-1-4　オッズ118倍　期待値A
-5-1-6　オッズ142倍　期待値A
-4-5-1　オッズ96倍　期待値B`;
+※出てない目TOP30が入力されていればそこから優先。
+※合成オッズ欄が入力されていれば順番に反映。`;
 
     $("alerts").textContent =
 `スリットアラート
@@ -156,19 +197,19 @@
 → プラス評価のみ採用`;
 
     $("missingList").textContent =
-      $("missingInput").value.trim() || "未入力：自動候補 1-4-5 / 1-5-4 / 2-1-5 / 3-5-1 / 5-1-4";
+      parseMissing().length ? parseMissing().join("\n") : "未入力：自動候補を使用";
 
     $("comment").textContent =
 `最終コメント：
 本線は1残り。展開を作るのは3号艇。
-万舟は5号艇の差し場拾いを重視。
+万舟は入力された出てない目TOP30とオッズから自動生成。
 2コース差しと4コース残しは切らない。`;
   }
 
   function sample(){
-    $("paste").value = "サンプル：出走表データ";
-    $("missingInput").value = "5-1-4\n5-1-6\n4-5-1";
-    $("oddsInput").value = "118,142,96";
+    $("paste").value = "1 山田太郎\n2 佐藤次郎\n3 鈴木一郎\n4 田中三郎\n5 高橋四郎\n6 伊藤五郎";
+    $("missingInput").value = "5-1-4\n5-1-6\n4-5-1\n6-1-5\n4-1-5";
+    $("oddsInput").value = "118,142,96,156,84";
     analyze();
   }
 
