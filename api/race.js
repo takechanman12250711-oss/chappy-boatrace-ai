@@ -121,7 +121,8 @@ function parseRaceText(text) {
   const startIndex = text.indexOf("登録番号／級別");
   if (startIndex >= 0) target = text.slice(startIndex);
 
-  const markerRegex = /\s([1-6])\s+(\d{4})\s*\/\s*(A1|A2|B1|B2)\s+/g;
+  const markerRegex =
+/([1-6])\s+(\d{4})\s*\/\s*(A1|A2|B1|B2)/g;
   const markers = [];
   let m;
 
