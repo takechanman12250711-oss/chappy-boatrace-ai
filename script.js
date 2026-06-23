@@ -33,20 +33,9 @@
     $("race").value = "1";
   }
 
-  function racerName(i){
-    const text = $("paste").value || "";
-    const re = new RegExp(`${i}[\\s\\S]{0,40}?([一-龥ぁ-んァ-ンー]{2,8})`);
-    const m = text.match(re);
-    return m ? m[1] : `選手${i}`;
-  }
-
-  function racer(i){
-    return `${i}号艇 ${racerName(i)}`;
-  }
-
   function venueData(){
     return VENUE[$("place").value] || {
-      wind:"無風",water:"普通",entry:"normal",engine:"normal",
+      wind:"無風", water:"普通", entry:"normal", engine:"normal",
       memo:`${PLACES[$("place").value]}：標準補正`
     };
   }
@@ -61,6 +50,17 @@
 `場補正：${PLACES[$("place").value]}
 風：${v.wind} / 水面：${v.water} / 進入：${v.entry} / エンジン：${v.engine}
 ${v.memo}`;
+  }
+
+  function racerName(i){
+    const text = $("paste").value || "";
+    const re = new RegExp(`${i}[\\s\\S]{0,40}?([一-龥ぁ-んァ-ンー]{2,10})`);
+    const m = text.match(re);
+    return m ? m[1] : `選手${i}`;
+  }
+
+  function racer(i){
+    return `${i}号艇 ${racerName(i)}`;
   }
 
   function parseOdds(){
@@ -83,24 +83,58 @@ ${v.memo}`;
     return "C";
   }
 
+  function autoManshuBase(){
+    const nums = ["1","2","3","4","5","6"];
+    const bets = [];
+
+    for(const a of nums){
+      for(const b of nums){
+        for(const c of nums){
+          if(a === b || a === c || b === c) continue;
+
+          let score = 40;
+
+          if(a === "4") score += 18;
+          if(a === "5") score += 24;
+          if(a === "6") score += 20;
+
+          if(b === "4" || b === "5" || b === "6") score += 10;
+          if(c === "4" || c === "5" || c === "6") score += 8;
+
+          if(a === "1") score -= 18;
+          if(a === "2") score -= 8;
+
+          if($("engine").value === "new" && (a === "3" || a === "5" || a === "6")) score += 8;
+          if($("wind").value === "強風" || $("water").value === "荒れ") score += 8;
+          if($("entry").value !== "normal" && (a === "4" || a === "5" || a === "6")) score += 6;
+
+          bets.push({ bet:`${a}-${b}-${c}`, score });
+        }
+      }
+    }
+
+    return bets
+      .sort((x,y)=>y.score-x.score)
+      .slice(0,30)
+      .map(x=>x.bet);
+  }
+
   function generateManshu(){
     const missing = parseMissing();
     const odds = parseOdds();
+    const base = missing.length ? missing : autoManshuBase();
 
-    const base = missing.length ? missing : [
-      "5-1-4","5-1-6","4-5-1","6-1-5","4-1-5","5-4-1"
-    ];
-
-    const outerPower = {
-      "4":78,
-      "5":86,
-      "6":72
-    };
-
-    return base.slice(0,6).map((bet,idx)=>{
+    return base.slice(0,8).map((bet,idx)=>{
       const head = bet[0];
-      const od = odds[idx] || (head === "5" ? 118 : head === "6" ? 142 : 96);
-      const score = outerPower[head] || 64;
+      const od = odds[idx] || Math.round(45 + idx * 13 + (head === "5" ? 35 : head === "6" ? 45 : head === "4" ? 25 : 0));
+      let score = 60;
+
+      if(head === "5") score += 22;
+      if(head === "6") score += 18;
+      if(head === "4") score += 16;
+      if(bet.includes("-5-") || bet.endsWith("-5")) score += 6;
+      if(bet.includes("-6-") || bet.endsWith("-6")) score += 5;
+
       return {
         bet,
         odds: od,
@@ -108,8 +142,8 @@ ${v.memo}`;
         rank: expectedRank(od, score)
       };
     }).sort((a,b)=>{
-      const rankScore = {S:4,A:3,B:2,C:1};
-      return rankScore[b.rank] - rankScore[a.rank] || b.odds - a.odds;
+      const r = {S:4,A:3,B:2,C:1};
+      return r[b.rank] - r[a.rank] || b.score - a.score || b.odds - a.odds;
     });
   }
 
@@ -184,6 +218,7 @@ ${v.memo}`;
 ${manshu.map(x=>`${x.bet}　オッズ${x.odds}倍　期待値${x.rank}`).join("\n")}
 
 ※出てない目TOP30が入力されていればそこから優先。
+※未入力なら展開・外枠期待度から自動生成。
 ※合成オッズ欄が入力されていれば順番に反映。`;
 
     $("alerts").textContent =
@@ -197,19 +232,19 @@ ${manshu.map(x=>`${x.bet}　オッズ${x.odds}倍　期待値${x.rank}`).join("\
 → プラス評価のみ採用`;
 
     $("missingList").textContent =
-      parseMissing().length ? parseMissing().join("\n") : "未入力：自動候補を使用";
+      parseMissing().length ? parseMissing().join("\n") : autoManshuBase().slice(0,30).join("\n");
 
     $("comment").textContent =
 `最終コメント：
 本線は1残り。展開を作るのは3号艇。
-万舟は入力された出てない目TOP30とオッズから自動生成。
+万舟は出てない目TOP30があれば優先、未入力なら展開から自動生成。
 2コース差しと4コース残しは切らない。`;
   }
 
   function sample(){
     $("paste").value = "1 山田太郎\n2 佐藤次郎\n3 鈴木一郎\n4 田中三郎\n5 高橋四郎\n6 伊藤五郎";
-    $("missingInput").value = "5-1-4\n5-1-6\n4-5-1\n6-1-5\n4-1-5";
-    $("oddsInput").value = "118,142,96,156,84";
+    $("missingInput").value = "6-1-5\n5-6-1\n4-5-1\n6-5-1\n5-1-6";
+    $("oddsInput").value = "156,188,96,210,142";
     analyze();
   }
 
