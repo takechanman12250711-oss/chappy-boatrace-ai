@@ -1,5 +1,5 @@
-// api/race.js v3.6 艇番固定版
-// 6艇の順番をそのまま 1〜6号艇に固定する版
+// api/race.js v3.7 6号艇補正版
+// 平均STが「-」の艇でもモーター/ボート情報を拾う版
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -72,8 +72,7 @@ async function fetchHtml(url) {
       "User-Agent":
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1",
       "Accept-Language": "ja-JP,ja;q=0.9",
-      "Accept":
-        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Referer": "https://www.boatrace.jp/",
       "Cache-Control": "no-cache"
     },
@@ -138,10 +137,9 @@ function parseRaceText(text) {
   for (let i = 0; i < hits.length && i < 6; i++) {
     const cur = hits[i];
     const next = hits[i + 1];
-    const block = target.slice(cur.index, next ? next.index : cur.index + 1000);
+    const block = target.slice(cur.index, next ? next.index : cur.index + 1100);
 
-    const boat = i + 1; // ★艇番は出走表の順番で固定
-
+    const boat = i + 1;
     const afterClass = target.slice(cur.end, cur.end + 150);
     const name = extractName(afterClass);
 
@@ -171,14 +169,11 @@ function parseRaceText(text) {
       boat2Rate: equipment.boat2Rate,
       boat3Rate: equipment.boat3Rate,
 
-      raw: block.slice(0, 550)
+      raw: block.slice(0, 650)
     });
   }
 
-  return {
-    boats,
-    hits
-  };
+  return { boats, hits };
 }
 
 function extractName(afterClass) {
@@ -230,13 +225,29 @@ function extractEquipment(block) {
   const avgST = extractAverageST(block);
   const tokens = block.split(" ");
 
-  const avgStTokenIndex =
-    avgST === null ? -1 : tokens.findIndex(t => t === avgST.toFixed(2));
+  let startTokenIndex = 0;
 
-  const startTokenIndex = avgStTokenIndex >= 0 ? avgStTokenIndex + 7 : 0;
-  const tail = tokens.slice(startTokenIndex);
+  if (avgST !== null) {
+    const avgStTokenIndex = tokens.findIndex(t => t === avgST.toFixed(2));
+    startTokenIndex = avgStTokenIndex >= 0 ? avgStTokenIndex + 7 : 0;
+  } else {
+    // 平均STが「-」の艇用
+    // F数 L数 - 勝率... の後、基本6数字を飛ばしてモーターへ進む
+    const dashIndex = tokens.findIndex((t, idx) => {
+      return t === "-" && idx > 0 && tokens[idx - 1]?.startsWith("L");
+    });
 
-  return findEquipmentPattern(tail);
+    startTokenIndex = dashIndex >= 0 ? dashIndex + 7 : 0;
+  }
+
+  let equipment = findEquipmentPattern(tokens.slice(startTokenIndex));
+
+  // 保険：上で拾えない場合はブロック全体から探す
+  if (equipment.motor === null) {
+    equipment = findEquipmentPattern(tokens);
+  }
+
+  return equipment;
 }
 
 function findEquipmentPattern(tokens) {
@@ -311,9 +322,15 @@ function extractAgeWeight(block) {
 }
 
 function extractAverageST(block) {
-  const m = block.match(/\b(0\.\d{2})\b/);
+  // F0 L0 0.19 のような平均STを優先
+  const m = block.match(/\bF\d+\s+L\d+\s+(0\.\d{2})\b/);
   if (m) return Number(m[1]);
-  return null;
+
+  // F0 L0 - の場合
+  if (/\bF\d+\s+L\d+\s+-\b/.test(block)) return null;
+
+  const fallback = block.match(/\b(0\.\d{2})\b/);
+  return fallback ? Number(fallback[1]) : null;
 }
 
 function makeDebug(html, text, parsed) {
@@ -331,6 +348,7 @@ function makeDebug(html, text, parsed) {
       regNo: b.regNo,
       class: b.class,
       name: b.name,
+      avgST: b.avgST,
       motor: b.motor,
       motor2Rate: b.motor2Rate,
       motor3Rate: b.motor3Rate,
