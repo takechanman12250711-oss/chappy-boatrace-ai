@@ -1,5 +1,5 @@
-// api/race.js v3.5 完全版
-// 出走表6艇取得 + モーター/ボート情報強化版
+// api/race.js v3.6 艇番固定版
+// 6艇の順番をそのまま 1〜6号艇に固定する版
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -88,7 +88,6 @@ async function fetchHtml(url) {
   for (const headers of headersList) {
     const response = await fetch(url, { headers });
     lastStatus = response.status;
-
     if (response.ok) return await response.text();
   }
 
@@ -136,13 +135,12 @@ function parseRaceText(text) {
 
   const boats = [];
 
-  for (let i = 0; i < hits.length && boats.length < 6; i++) {
+  for (let i = 0; i < hits.length && i < 6; i++) {
     const cur = hits[i];
     const next = hits[i + 1];
     const block = target.slice(cur.index, next ? next.index : cur.index + 1000);
 
-    const before = target.slice(Math.max(0, cur.index - 30), cur.index);
-    const boat = extractBoatFromBefore(before, boats.length + 1);
+    const boat = i + 1; // ★艇番は出走表の順番で固定
 
     const afterClass = target.slice(cur.end, cur.end + 150);
     const name = extractName(afterClass);
@@ -178,15 +176,9 @@ function parseRaceText(text) {
   }
 
   return {
-    boats: uniqueBoats(boats),
+    boats,
     hits
   };
-}
-
-function extractBoatFromBefore(before, fallback) {
-  const nums = before.match(/\b[1-6]\b/g);
-  if (nums && nums.length) return Number(nums[nums.length - 1]);
-  return fallback;
 }
 
 function extractName(afterClass) {
@@ -204,12 +196,11 @@ function extractName(afterClass) {
 }
 
 function extractRates(block) {
-  // ブロック冒頭の基本情報順：
-  // 平均ST 勝率 2連率 3連率 勝率 2連率 3連率 ...
   const avgST = extractAverageST(block);
   const numbers = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(x => Number(x[0]));
 
   let start = 0;
+
   if (avgST !== null) {
     const stIndex = numbers.findIndex(n => Math.abs(n - avgST) < 0.001);
     if (stIndex >= 0) start = stIndex + 1;
@@ -236,44 +227,19 @@ function pickPercent(n) {
 }
 
 function extractEquipment(block) {
-  // 公式テキストは次の並びになりやすい：
-  // 全国/当地の6数字 → モーターNo 2連率 3連率 → ボートNo 2連率 3連率 → 成績
   const avgST = extractAverageST(block);
-  const allDecimals = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(x => Number(x[0]));
-
-  let afterBase = allDecimals;
-
-  if (avgST !== null) {
-    const stIndex = allDecimals.findIndex(n => Math.abs(n - avgST) < 0.001);
-    if (stIndex >= 0) afterBase = allDecimals.slice(stIndex + 7);
-  } else {
-    afterBase = allDecimals.slice(6);
-  }
-
-  // block内の整数も拾う。モーター/ボート番号は2桁前後。
   const tokens = block.split(" ");
-  const parsed = [];
 
-  for (const t of tokens) {
-    if (/^\d{1,3}$/.test(t)) {
-      parsed.push({ type: "int", value: Number(t) });
-    } else if (/^\d+\.\d{2}$/.test(t)) {
-      parsed.push({ type: "dec", value: Number(t) });
-    }
-  }
+  const avgStTokenIndex =
+    avgST === null ? -1 : tokens.findIndex(t => t === avgST.toFixed(2));
 
-  // 平均ST以降、基本6数字の後に出る
-  const avgStTokenIndex = tokens.findIndex(t => t === String(avgST?.toFixed(2)));
-  let startTokenIndex = avgStTokenIndex >= 0 ? avgStTokenIndex + 7 : 0;
-
+  const startTokenIndex = avgStTokenIndex >= 0 ? avgStTokenIndex + 7 : 0;
   const tail = tokens.slice(startTokenIndex);
-  const equipmentPattern = findEquipmentPattern(tail);
 
-  return equipmentPattern;
+  return findEquipmentPattern(tail);
 }
 
 function findEquipmentPattern(tokens) {
-  // 例: 44 27.27 40.91 11 39.91 58.72
   for (let i = 0; i < tokens.length - 5; i++) {
     const mNo = toInt(tokens[i]);
     const m2 = toDecimal(tokens[i + 1]);
@@ -327,18 +293,6 @@ function isPercent(n) {
   return typeof n === "number" && n >= 0 && n <= 100;
 }
 
-function uniqueBoats(boats) {
-  const used = new Set();
-
-  return boats
-    .filter(b => {
-      if (!b.boat || used.has(b.boat)) return false;
-      used.add(b.boat);
-      return true;
-    })
-    .sort((a, b) => a.boat - b.boat);
-}
-
 function cleanName(name) {
   return String(name || "")
     .replace(/\s+/g, "")
@@ -359,9 +313,7 @@ function extractAgeWeight(block) {
 function extractAverageST(block) {
   const m = block.match(/\b(0\.\d{2})\b/);
   if (m) return Number(m[1]);
-
-  const dashST = block.match(/\s-\s/);
-  return dashST ? null : null;
+  return null;
 }
 
 function makeDebug(html, text, parsed) {
