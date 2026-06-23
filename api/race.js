@@ -1,5 +1,6 @@
-// api/race.js v4.1 展示タイム完全取得版
+// api/race.js v4.2 水面気象情報取得版
 // racelist + beforeinfo 合体
+// 展示タイム・チルト・展示ST・水面気象情報まで取得
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -47,6 +48,7 @@ export default async function handler(req, res) {
     let beforeParsed = {
       ok: false,
       displays: [],
+      weather: null,
       text: "",
       error: ""
     };
@@ -59,6 +61,7 @@ export default async function handler(req, res) {
         beforeParsed = {
           ok: true,
           displays: parseBeforeInfoText(beforeText),
+          weather: parseWeatherInfo(beforeText),
           text: beforeText,
           error: ""
         };
@@ -78,6 +81,7 @@ export default async function handler(req, res) {
       raceListUrl,
       beforeInfoUrl,
       count: boats.length,
+      weather: beforeParsed.weather,
       boats,
       debug: debug === "1" ? makeDebug(raceHtml, raceText, parsedRace, beforeParsed) : undefined
     });
@@ -317,7 +321,7 @@ function findEquipmentPattern(tokens) {
 }
 
 /* =========================
-   直前情報 / 展示解析 v4.1
+   直前情報 / 展示解析
 ========================= */
 
 function parseBeforeInfoText(text) {
@@ -407,6 +411,30 @@ function parseStartExhibitionList(text) {
   return results.slice(0, 6);
 }
 
+function parseWeatherInfo(text) {
+  const idx = text.indexOf("水面気象情報");
+  if (idx < 0) return null;
+
+  const target = text.slice(idx, idx + 400);
+
+  const timeMatch = target.match(/(\d{1,2}:\d{2})現在/);
+  const tempMatch = target.match(/気温\s*([\d.]+)℃/);
+  const weatherMatch = target.match(/気温\s*[\d.]+℃\s*([^\s]+)\s*風速/);
+  const windMatch = target.match(/風速\s*([\d.]+)m/);
+  const waterMatch = target.match(/水温\s*([\d.]+)℃/);
+  const waveMatch = target.match(/波高\s*([\d.]+)cm/);
+
+  return {
+    weatherTime: timeMatch ? timeMatch[1] : null,
+    temperature: tempMatch ? Number(tempMatch[1]) : null,
+    weather: weatherMatch ? weatherMatch[1] : null,
+    windSpeed: windMatch ? Number(windMatch[1]) : null,
+    waterTemp: waterMatch ? Number(waterMatch[1]) : null,
+    waveHeight: waveMatch ? Number(waveMatch[1]) : null,
+    raw: target
+  };
+}
+
 function mergeBeforeInfo(boats, displays) {
   return boats.map(b => {
     const d = displays.find(x => x.boat === b.boat);
@@ -493,6 +521,7 @@ function makeDebug(html, text, parsedRace, beforeParsed) {
     hitCount: parsedRace.hits.length,
     beforeInfoOk: beforeParsed.ok,
     beforeInfoError: beforeParsed.error,
+    weather: beforeParsed.weather,
     beforeDisplays: beforeParsed.displays,
     foundBlocks: parsedRace.boats.map(b => ({
       boat: b.boat,
