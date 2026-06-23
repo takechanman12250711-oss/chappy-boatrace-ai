@@ -1,4 +1,5 @@
-// api/race.js v3.3 完全版
+// api/race.js v3.4 完全版
+// 登番＋級別を目印に拾う方式
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -36,8 +37,7 @@ export default async function handler(req, res) {
         url,
         count: 0,
         boats: [],
-        message: "データがありません",
-        debug: debug === "1" ? makeDebug(html, text, [], []) : undefined
+        message: "データがありません"
       });
     }
 
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       url,
       count: parsed.boats.length,
       boats: parsed.boats,
-      debug: debug === "1" ? makeDebug(html, text, parsed.boats, parsed.markers) : undefined
+      debug: debug === "1" ? makeDebug(html, text, parsed) : undefined
     });
   } catch (err) {
     return res.status(500).json({
@@ -107,6 +107,7 @@ function cleanText(html) {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&#12288;/g, " ")
+    .replace(/　/g, " ")
     .replace(/\r?\n/g, " ")
     .replace(/\t/g, " ")
     .replace(/\s+/g, " ")
@@ -115,40 +116,41 @@ function cleanText(html) {
 
 function parseRaceText(text) {
   let target = text;
-  const startIndex = text.indexOf("登録番号")
+
+  const startIndex = text.indexOf("登録番号");
   if (startIndex >= 0) target = text.slice(startIndex);
 
-  const markerRegex = /([1-6]) *(\d{4}) *\/ *(A1|A2|B1|B2)/g;
-  const markers = [];
+  // まず「登番 / 級別」を全部拾う
+  // 例: 5143 / B1
+  const regClassRegex = /(\d{4})\s*\/\s*(A1|A2|B1|B2)/g;
+  const hits = [];
   let m;
 
-  while ((m = markerRegex.exec(target)) !== null) {
-    markers.push({
+  while ((m = regClassRegex.exec(target)) !== null) {
+    hits.push({
       index: m.index,
-      boat: Number(m[1]),
-      regNo: m[2],
-      class: m[3],
-      end: markerRegex.lastIndex,
+      regNo: m[1],
+      class: m[2],
+      end: regClassRegex.lastIndex,
       hit: m[0]
     });
   }
 
   const boats = [];
 
-  for (let i = 0; i < markers.length; i++) {
-    const cur = markers[i];
-    const next = markers[i + 1];
+  for (let i = 0; i < hits.length && boats.length < 6; i++) {
+    const cur = hits[i];
+    const next = hits[i + 1];
     const block = target.slice(cur.index, next ? next.index : cur.index + 900);
-    const afterClass = target.slice(cur.end, cur.end + 160);
 
-    const nameMatch = afterClass.match(
-      /^\s*([一-龥ぁ-んァ-ヶー・]+\s*[一-龥ぁ-んァ-ヶー・]+)/
-    );
+    const before = target.slice(Math.max(0, cur.index - 20), cur.index);
+    const boat = extractBoatFromBefore(before, boats.length + 1);
 
-    const name = nameMatch ? cleanName(nameMatch[1]) : "";
+    const afterClass = target.slice(cur.end, cur.end + 120);
+    const name = extractName(afterClass);
 
     boats.push({
-      boat: cur.boat,
+      boat,
       regNo: cur.regNo,
       class: cur.class,
       name,
@@ -167,8 +169,32 @@ function parseRaceText(text) {
 
   return {
     boats: uniqueBoats(boats),
-    markers
+    hits
   };
+}
+
+function extractBoatFromBefore(before, fallback) {
+  // 登番の直前にある最後の1〜6を艇番として使う
+  const nums = before.match(/\b[1-6]\b/g);
+  if (nums && nums.length) {
+    return Number(nums[nums.length - 1]);
+  }
+  return fallback;
+}
+
+function extractName(afterClass) {
+  // 例: " 常盤 海心 徳島/徳島 25歳..."
+  const m = afterClass.match(
+    /^\s*([一-龥ぁ-んァ-ヶー・]+\s+[一-龥ぁ-んァ-ヶー・]+)\s+[一-龥]{2,4}\/[一-龥]{2,4}/
+  );
+
+  if (m) return cleanName(m[1]);
+
+  const fallback = afterClass.match(
+    /^\s*([一-龥ぁ-んァ-ヶー・]{2,8}\s*[一-龥ぁ-んァ-ヶー・]{1,8})/
+  );
+
+  return fallback ? cleanName(fallback[1]) : "";
 }
 
 function uniqueBoats(boats) {
@@ -259,7 +285,7 @@ function extractBoatNo(block) {
   return m ? Number(m[1]) : null;
 }
 
-function makeDebug(html, text, boats, markers) {
+function makeDebug(html, text, parsed) {
   return {
     htmlLength: html.length,
     hasNoData: text.includes("データがありません"),
@@ -267,11 +293,14 @@ function makeDebug(html, text, boats, markers) {
     hasBoatColor: /boatColor|is-boatColor|boat_color/i.test(html),
     trCount: (html.match(/<tr/gi) || []).length,
     tbodyCount: (html.match(/<tbody/gi) || []).length,
-    markerCount: markers.length,
-    markers: markers.slice(0, 20),
+    hitCount: parsed.hits.length,
+    hits: parsed.hits.slice(0, 10),
+    textHead: text.slice(0, 1600),
     textTail: text.slice(-3000),
-    foundBlocks: boats.map(b => ({
+    foundBlocks: parsed.boats.map(b => ({
       boat: b.boat,
+      regNo: b.regNo,
+      class: b.class,
       name: b.name,
       raw: b.raw
     }))
