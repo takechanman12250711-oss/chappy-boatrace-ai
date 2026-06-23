@@ -1,5 +1,5 @@
-// api/race.js v5
-// 舟券太郎指数＋展開予想＋本線/穴フォーメーション自動生成版
+// api/race.js v5.1
+// v5 + 全国24場プロファイル入り版
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -79,6 +79,7 @@ export default async function handler(req, res) {
       jcd,
       rno,
       date,
+      venue: theory.venue,
       raceListUrl,
       beforeInfoUrl,
       count: boats.length,
@@ -108,10 +109,6 @@ export default async function handler(req, res) {
     });
   }
 }
-
-/* =========================
-   fetch / clean
-========================= */
 
 async function fetchHtml(url) {
   const headersList = [
@@ -159,13 +156,9 @@ function cleanText(html) {
     .trim();
 }
 
-/* =========================
-   出走表解析
-========================= */
-
+/* 出走表解析 */
 function parseRaceText(text) {
   let target = text;
-
   const startIndex = text.indexOf("登録番号");
   if (startIndex >= 0) target = text.slice(startIndex);
 
@@ -335,10 +328,7 @@ function findEquipmentPattern(tokens) {
   };
 }
 
-/* =========================
-   直前情報 / 展示解析
-========================= */
-
+/* 直前情報 */
 function parseBeforeInfoText(text) {
   const displays = [];
 
@@ -470,14 +460,11 @@ function mergeBeforeInfo(boats, displays) {
   });
 }
 
-/* =========================
-   v5 予想エンジン
-========================= */
-
+/* 予想エンジン */
 function buildPredictionEngine(baseBoats, weather, jcd) {
   const boats = baseBoats.map(b => ({ ...b }));
-
   const venue = venueProfile(jcd);
+
   const rankedExhibition = rankByLow(boats, "exhibitionTime");
   const rankedST = rankByLow(boats, "exhibitionST");
   const rankedMotor = rankByHigh(boats, "motor2Rate");
@@ -486,7 +473,6 @@ function buildPredictionEngine(baseBoats, weather, jcd) {
   for (const b of boats) {
     const buffs = [];
     const debuffs = [];
-
     let score = 50;
 
     score += courseBasePoint(b.boat, venue);
@@ -500,46 +486,50 @@ function buildPredictionEngine(baseBoats, weather, jcd) {
     if (b.motor2Rate != null) score += clamp((b.motor2Rate - 33) * 0.35, -8, 10);
     if (b.boat2Rate != null) score += clamp((b.boat2Rate - 33) * 0.25, -6, 8);
 
-    if (b.exhibitionTime != null) {
-      const exRank = rankedExhibition.find(x => x.boat === b.boat)?.rank;
-      if (exRank === 1) score += 8;
-      else if (exRank === 2) score += 5;
-      else if (exRank === 6) score -= 5;
-    }
-
-    if (b.tilt != null && b.tilt >= 0.5) {
-      if (b.boat >= 4) score += 5;
-      else score -= 2;
-    }
-
-    if (b.boat === 1 && venue.inStrong) score += 8;
-    if (b.boat >= 5 && venue.outHard) score -= 5;
-
-    if (weather?.windSpeed >= 4) {
-      score += b.boat >= 3 ? 3 : -2;
-    }
-
     const exRank = rankedExhibition.find(x => x.boat === b.boat)?.rank;
     const stRank = rankedST.find(x => x.boat === b.boat)?.rank;
     const motorRank = rankedMotor.find(x => x.boat === b.boat)?.rank;
     const boatRank = rankedBoat.find(x => x.boat === b.boat)?.rank;
+
+    if (exRank === 1) score += 8;
+    else if (exRank === 2) score += 5;
+    else if (exRank === 6) score -= 5;
+
+    if (b.boat === 1) score += venue.inPower;
+    if (b.boat === 2) score += venue.secondPower;
+    if (b.boat === 3) score += venue.thirdPower;
+    if (b.boat === 4) score += venue.fourthPower;
+    if (b.boat === 5) score += venue.fifthPower;
+    if (b.boat === 6) score += venue.sixthPower;
+
+    if (weather?.windSpeed >= 4) {
+      score += venue.windRisk >= 4 ? (b.boat >= 3 ? 4 : -2) : 0;
+    }
+
+    if (weather?.waveHeight >= 5) {
+      score += venue.waveRisk >= 4 ? (b.boat >= 4 ? 4 : -2) : 0;
+    }
+
+    if (b.tilt != null && b.tilt >= 0.5) {
+      score += b.boat >= 4 ? 5 : -1;
+    }
 
     if (exRank === 1) buffs.push("⬆️展示タイム1位 +8");
     if (exRank === 2) buffs.push("⬆️展示タイム2位 +5");
     if (stRank === 1) buffs.push("⬆️展示ST1位 +6");
     if (motorRank === 1) buffs.push("⬆️モーター2連率1位 +5");
     if (boatRank === 1) buffs.push("⬆️ボート2連率1位 +4");
-    if (b.boat === 1 && venue.inStrong) buffs.push("⬆️場特性イン有利 +8");
+    if (b.boat === 1 && venue.inPower >= 8) buffs.push("⬆️場特性イン有利 +" + venue.inPower);
     if (b.localWinRate != null && b.localWinRate >= 6) buffs.push("⬆️当地勝率高め +5");
     if (b.tilt != null && b.tilt >= 0.5) buffs.push("⬆️チルト攻撃型 +5");
 
     if (exRank === 6) debuffs.push("⬇️展示タイム最下位 -5");
     if (b.avgST != null && b.avgST >= 0.20) debuffs.push("⬇️平均ST遅め -4");
-    if (b.boat >= 5 && venue.outHard) debuffs.push("⬇️外枠不利 -5");
+    if (b.boat >= 5 && venue.outHard) debuffs.push("⬇️外枠不利");
     if (b.motor2Rate != null && b.motor2Rate < 30) debuffs.push("⬇️モーター2連率低め -4");
 
     b.chappyScore = Math.round(clamp(score, 1, 100));
-    b.funaTaroScore = calcFunaTaroScore(b, boats, weather);
+    b.funaTaroScore = calcFunaTaroScore(b, boats, weather, venue);
     b.totalScore = Math.round(clamp(b.chappyScore * 0.65 + b.funaTaroScore * 0.35, 1, 100));
     b.buffs = buffs;
     b.debuffs = debuffs;
@@ -547,6 +537,7 @@ function buildPredictionEngine(baseBoats, weather, jcd) {
   }
 
   const sorted = [...boats].sort((a, b) => b.totalScore - a.totalScore);
+
   const marks = {
     honmei: markBoat(sorted[0], "◎"),
     taikou: markBoat(sorted[1], "○"),
@@ -563,6 +554,7 @@ function buildPredictionEngine(baseBoats, weather, jcd) {
   const raceComment = makeRaceComment(boats, marks, raceShape, weather, venue);
 
   return {
+    venue,
     boats,
     marks,
     slitAlert,
@@ -575,7 +567,7 @@ function buildPredictionEngine(baseBoats, weather, jcd) {
   };
 }
 
-function calcFunaTaroScore(b, boats, weather) {
+function calcFunaTaroScore(b, boats, weather, venue) {
   let score = 50;
 
   const exRank = rankByLow(boats, "exhibitionTime").find(x => x.boat === b.boat)?.rank;
@@ -586,18 +578,59 @@ function calcFunaTaroScore(b, boats, weather) {
   if (stRank === 1) score += 10;
   if (motorRank === 1) score += 7;
 
-  if (b.exhibitionTime != null && b.straightTime != null) {
-    const sum = b.exhibitionTime + b.straightTime;
-    score += clamp((13.8 - sum) * 10, -8, 8);
-  }
+  if (weather?.windSpeed >= 4 && b.boat >= 3) score += venue.windRisk;
+  if (weather?.waveHeight >= 5 && b.boat >= 4) score += venue.waveRisk;
 
-  if (weather?.windSpeed >= 4 && b.boat >= 3) score += 5;
-
-  if (b.boat === 1) score += 6;
-  if (b.boat === 2) score += 3;
-  if (b.boat >= 5) score -= 2;
+  if (b.boat === 1) score += Math.max(0, venue.inPower * 0.7);
+  if (b.boat === 2) score += venue.secondPower * 0.5;
+  if (b.boat === 3) score += venue.thirdPower * 0.5;
+  if (b.boat >= 5 && venue.outHard) score -= 4;
 
   return Math.round(clamp(score, 1, 100));
+}
+
+/* 場特性：24場 */
+function venueProfile(jcd) {
+  const code = String(jcd).padStart(2, "0");
+
+  const profiles = {
+    "01": { name: "桐生", inPower: 8, secondPower: 4, thirdPower: 4, fourthPower: 3, fifthPower: -1, sixthPower: -4, outHard: true, windRisk: 3, waveRisk: 2, courseBias: "イン寄り", recommendedShape: "1逃げ＋2差し＋3攻め" },
+    "02": { name: "戸田", inPower: 3, secondPower: 4, thirdPower: 6, fourthPower: 5, fifthPower: 1, sixthPower: -2, outHard: false, windRisk: 4, waveRisk: 4, courseBias: "センター波乱", recommendedShape: "3・4攻め警戒" },
+    "03": { name: "江戸川", inPower: 1, secondPower: 4, thirdPower: 5, fourthPower: 5, fifthPower: 2, sixthPower: -1, outHard: false, windRisk: 5, waveRisk: 5, courseBias: "波乱水面", recommendedShape: "波風で外差し警戒" },
+    "04": { name: "平和島", inPower: 5, secondPower: 4, thirdPower: 5, fourthPower: 4, fifthPower: 0, sixthPower: -3, outHard: false, windRisk: 4, waveRisk: 3, courseBias: "中穴", recommendedShape: "1逃げ＋3攻め＋4差し" },
+    "05": { name: "多摩川", inPower: 6, secondPower: 4, thirdPower: 5, fourthPower: 4, fifthPower: 0, sixthPower: -3, outHard: false, windRisk: 3, waveRisk: 2, courseBias: "日本一の静水面寄り", recommendedShape: "センター実力重視" },
+    "06": { name: "浜名湖", inPower: 5, secondPower: 4, thirdPower: 5, fourthPower: 4, fifthPower: 1, sixthPower: -2, outHard: false, windRisk: 5, waveRisk: 4, courseBias: "風注意", recommendedShape: "風で3・4・5浮上" },
+    "07": { name: "蒲郡", inPower: 8, secondPower: 5, thirdPower: 4, fourthPower: 3, fifthPower: -1, sixthPower: -4, outHard: true, windRisk: 2, waveRisk: 2, courseBias: "イン寄り", recommendedShape: "1逃げ＋2差し" },
+    "08": { name: "常滑", inPower: 7, secondPower: 4, thirdPower: 5, fourthPower: 4, fifthPower: 0, sixthPower: -3, outHard: false, windRisk: 4, waveRisk: 3, courseBias: "イン＋センター", recommendedShape: "1逃げ＋3攻め" },
+    "09": { name: "津", inPower: 7, secondPower: 5, thirdPower: 4, fourthPower: 3, fifthPower: -1, sixthPower: -4, outHard: true, windRisk: 3, waveRisk: 3, courseBias: "イン寄り", recommendedShape: "1逃げ＋2差し" },
+    "10": { name: "三国", inPower: 7, secondPower: 4, thirdPower: 5, fourthPower: 3, fifthPower: -1, sixthPower: -4, outHard: true, windRisk: 4, waveRisk: 3, courseBias: "イン＋3攻め", recommendedShape: "1逃げ＋3まくり" },
+    "11": { name: "びわこ", inPower: 5, secondPower: 4, thirdPower: 5, fourthPower: 5, fifthPower: 1, sixthPower: -2, outHard: false, windRisk: 5, waveRisk: 4, courseBias: "風波乱", recommendedShape: "4カド・外差し警戒" },
+    "12": { name: "住之江", inPower: 9, secondPower: 5, thirdPower: 4, fourthPower: 3, fifthPower: -2, sixthPower: -5, outHard: true, windRisk: 2, waveRisk: 1, courseBias: "イン強い", recommendedShape: "1逃げ中心" },
+    "13": { name: "尼崎", inPower: 8, secondPower: 5, thirdPower: 4, fourthPower: 3, fifthPower: -1, sixthPower: -4, outHard: true, windRisk: 2, waveRisk: 2, courseBias: "イン寄り", recommendedShape: "1逃げ＋2差し" },
+    "14": { name: "鳴門", inPower: 5, secondPower: 4, thirdPower: 5, fourthPower: 5, fifthPower: 1, sixthPower: -2, outHard: false, windRisk: 5, waveRisk: 4, courseBias: "風波乱", recommendedShape: "まくり差し警戒" },
+    "15": { name: "丸亀", inPower: 8, secondPower: 5, thirdPower: 4, fourthPower: 3, fifthPower: 0, sixthPower: -3, outHard: false, windRisk: 3, waveRisk: 2, courseBias: "イン寄りナイター", recommendedShape: "1逃げ＋2差し＋3攻め" },
+    "16": { name: "児島", inPower: 7, secondPower: 4, thirdPower: 5, fourthPower: 4, fifthPower: 0, sixthPower: -3, outHard: false, windRisk: 3, waveRisk: 3, courseBias: "バランス", recommendedShape: "1逃げ＋3攻め" },
+    "17": { name: "宮島", inPower: 6, secondPower: 4, thirdPower: 5, fourthPower: 4, fifthPower: 1, sixthPower: -2, outHard: false, windRisk: 4, waveRisk: 4, courseBias: "潮注意", recommendedShape: "潮で2差し・4残り警戒" },
+    "18": { name: "徳山", inPower: 9, secondPower: 5, thirdPower: 3, fourthPower: 2, fifthPower: -2, sixthPower: -5, outHard: true, windRisk: 2, waveRisk: 2, courseBias: "イン強い", recommendedShape: "1逃げ中心" },
+    "19": { name: "下関", inPower: 8, secondPower: 5, thirdPower: 4, fourthPower: 3, fifthPower: -1, sixthPower: -4, outHard: true, windRisk: 3, waveRisk: 2, courseBias: "イン寄りナイター", recommendedShape: "1逃げ＋2差し" },
+    "20": { name: "若松", inPower: 7, secondPower: 5, thirdPower: 5, fourthPower: 4, fifthPower: 1, sixthPower: -2, outHard: false, windRisk: 4, waveRisk: 3, courseBias: "夜の展開水面", recommendedShape: "2差し＋3攻め＋外拾い" },
+    "21": { name: "芦屋", inPower: 8, secondPower: 5, thirdPower: 4, fourthPower: 3, fifthPower: -1, sixthPower: -4, outHard: true, windRisk: 3, waveRisk: 2, courseBias: "イン寄り", recommendedShape: "1逃げ＋2差し" },
+    "22": { name: "福岡", inPower: 3, secondPower: 4, thirdPower: 5, fourthPower: 5, fifthPower: 2, sixthPower: -1, outHard: false, windRisk: 5, waveRisk: 5, courseBias: "河口波乱", recommendedShape: "2M波乱・外差し警戒" },
+    "23": { name: "唐津", inPower: 8, secondPower: 5, thirdPower: 4, fourthPower: 3, fifthPower: -1, sixthPower: -4, outHard: true, windRisk: 3, waveRisk: 2, courseBias: "イン寄り", recommendedShape: "1逃げ＋2差し" },
+    "24": { name: "大村", inPower: 10, secondPower: 5, thirdPower: 4, fourthPower: 2, fifthPower: -3, sixthPower: -6, outHard: true, windRisk: 2, waveRisk: 1, courseBias: "全国屈指のイン水面", recommendedShape: "1逃げ中心＋2差し残り" }
+  };
+
+  return profiles[code] || profiles["24"];
+}
+
+function courseBasePoint(boat, venue) {
+  if (boat === 1) return venue.inPower;
+  if (boat === 2) return venue.secondPower;
+  if (boat === 3) return venue.thirdPower;
+  if (boat === 4) return venue.fourthPower;
+  if (boat === 5) return venue.fifthPower;
+  if (boat === 6) return venue.sixthPower;
+  return 0;
 }
 
 function makeSlitAlert(boats) {
@@ -634,9 +667,9 @@ function makeDoubleTimeAlert(boats) {
   const ex1 = rankByLow(boats, "exhibitionTime")[0];
   const straight1 = rankByLow(boats, "straightTime")[0];
 
-  if (!ex1 || !straight1) return [];
+  if (!ex1) return [];
 
-  if (ex1.boat === straight1.boat) {
+  if (straight1 && ex1.boat === straight1.boat) {
     return [{
       boat: ex1.boat,
       type: "ダブルタイム理論",
@@ -644,10 +677,11 @@ function makeDoubleTimeAlert(boats) {
     }];
   }
 
-  return [
-    { boat: ex1.boat, type: "展示タイム1位", reason: "展示タイム最上位" },
-    { boat: straight1.boat, type: "直線系タイム1位", reason: "直線系タイム最上位" }
-  ];
+  return [{
+    boat: ex1.boat,
+    type: "展示タイム1位",
+    reason: "展示タイム最上位"
+  }];
 }
 
 function makeNewSumAlert(boats, weather) {
@@ -677,22 +711,16 @@ function makeNewSumAlert(boats, weather) {
 }
 
 function makeRaceShape(boats, venue, weather) {
-  const b1 = boats.find(b => b.boat === 1);
-  const b2 = boats.find(b => b.boat === 2);
-  const b3 = boats.find(b => b.boat === 3);
-  const b4 = boats.find(b => b.boat === 4);
-  const b5 = boats.find(b => b.boat === 5);
-
   const stRank = rankByLow(boats, "exhibitionST");
   const exRank = rankByLow(boats, "exhibitionTime");
 
   const fastestST = stRank[0]?.boat;
   const bestEx = exRank[0]?.boat;
 
-  let shape = "1逃げ本線";
+  let shape = venue.recommendedShape;
   let attackBoat = null;
 
-  if (b1 && b1.totalScore >= 72 && venue.inStrong) {
+  if (venue.inPower >= 8) {
     shape = "1逃げ中心";
   }
 
@@ -701,26 +729,29 @@ function makeRaceShape(boats, venue, weather) {
     attackBoat = 3;
   }
 
-  if (fastestST === 4 || (b4?.tilt ?? 0) >= 0.5) {
+  if (fastestST === 4 || bestEx === 4) {
     shape = "4カド攻め警戒";
     attackBoat = 4;
   }
 
-  if ((b5?.tilt ?? 0) >= 0.5 || fastestST === 5) {
+  if (fastestST === 5 || bestEx === 5) {
     shape = "5一撃まくり差し警戒";
     attackBoat = 5;
   }
 
-  if (weather?.windSpeed >= 4) {
-    shape += "・風で波乱含み";
+  if (weather?.windSpeed >= 4 || weather?.waveHeight >= 5) {
+    shape += "・水面波乱含み";
   }
 
   return {
+    venueName: venue.name,
+    courseBias: venue.courseBias,
+    recommendedShape: venue.recommendedShape,
     shape,
     attackBoat,
     fastestST,
     bestExhibition: bestEx,
-    memo: "高指数艇と展開カバーは分けて判定"
+    memo: "場特性・展示・ST・水面から展開を自動判定"
   };
 }
 
@@ -789,22 +820,25 @@ function makeHoleFormation(boats, sorted, raceShape, venue) {
     holes.unshift(`4-5-1236`, `4-6-1235`);
   }
 
+  if (venue.waveRisk >= 5 || venue.windRisk >= 5) {
+    holes.unshift(`4-5-126`, `5-4-126`, `6-4-125`);
+  }
+
   return [...new Set(holes)].slice(0, 8);
 }
 
 function makeRaceComment(boats, marks, raceShape, weather, venue) {
-  const honmei = marks.honmei?.boat;
-  const taikou = marks.taikou?.boat;
+  let comment = `${venue.name}は「${venue.courseBias}」。推奨展開は「${venue.recommendedShape}」。`;
 
-  let comment = `本命は${honmei}号艇。対抗は${taikou}号艇。`;
+  comment += ` 本命は${marks.honmei?.boat}号艇、対抗は${marks.taikou?.boat}号艇。`;
 
-  comment += ` 展開は「${raceShape.shape}」。`;
+  comment += ` 展開判定は「${raceShape.shape}」。`;
 
   if (weather) {
     comment += ` 水面は${weather.weather || "不明"}、風速${weather.windSpeed ?? "-"}m、波高${weather.waveHeight ?? "-"}cm。`;
   }
 
-  comment += " 本線はイン逃げ・2コース差し・3コース攻めを中心に、穴は外枠の展開突きまで押さえる。";
+  comment += " 本線は場特性に沿って組み、穴は外枠の展開突きまで押さえる。";
 
   return comment;
 }
@@ -822,39 +856,7 @@ function markBoat(b, mark) {
   };
 }
 
-/* =========================
-   Venue
-========================= */
-
-function venueProfile(jcd) {
-  const code = String(jcd).padStart(2, "0");
-
-  const profiles = {
-    "24": { name: "大村", inStrong: true, outHard: true },
-    "15": { name: "丸亀", inStrong: true, outHard: false },
-    "20": { name: "若松", inStrong: true, outHard: false },
-    "17": { name: "宮島", inStrong: true, outHard: false },
-    "03": { name: "江戸川", inStrong: false, outHard: false },
-    "22": { name: "福岡", inStrong: false, outHard: false }
-  };
-
-  return profiles[code] || { name: "不明", inStrong: true, outHard: false };
-}
-
-function courseBasePoint(boat, venue) {
-  if (boat === 1) return venue.inStrong ? 12 : 6;
-  if (boat === 2) return 6;
-  if (boat === 3) return 4;
-  if (boat === 4) return 2;
-  if (boat === 5) return venue.outHard ? -4 : -1;
-  if (boat === 6) return venue.outHard ? -8 : -4;
-  return 0;
-}
-
-/* =========================
-   Utility
-========================= */
-
+/* Utility */
 function rankByLow(boats, key) {
   return boats
     .filter(b => typeof b[key] === "number" && !Number.isNaN(b[key]))
@@ -940,38 +942,15 @@ function makeDebug(html, text, parsedRace, beforeParsed, theory) {
   return {
     htmlLength: html.length,
     hasNoData: text.includes("データがありません"),
-    hasRacerNameClass: /A1|A2|B1|B2/.test(text),
-    hasBoatColor: /boatColor|is-boatColor|boat_color/i.test(html),
-    trCount: (html.match(/<tr/gi) || []).length,
-    tbodyCount: (html.match(/<tbody/gi) || []).length,
     hitCount: parsedRace.hits.length,
     beforeInfoOk: beforeParsed.ok,
-    beforeInfoError: beforeParsed.error,
     weather: beforeParsed.weather,
-    beforeDisplays: beforeParsed.displays,
+    venue: theory.venue,
     theory: {
       marks: theory.marks,
-      slitAlert: theory.slitAlert,
-      doubleTimeAlert: theory.doubleTimeAlert,
-      newSumAlert: theory.newSumAlert,
       raceShape: theory.raceShape,
       mainFormation: theory.mainFormation,
       holeFormation: theory.holeFormation
-    },
-    foundBlocks: parsedRace.boats.map(b => ({
-      boat: b.boat,
-      regNo: b.regNo,
-      class: b.class,
-      name: b.name,
-      avgST: b.avgST,
-      motor: b.motor,
-      motor2Rate: b.motor2Rate,
-      motor3Rate: b.motor3Rate,
-      boatNo: b.boatNo,
-      boat2Rate: b.boat2Rate,
-      boat3Rate: b.boat3Rate,
-      raw: b.raw
-    })),
-    beforeTextHead: beforeParsed.text ? beforeParsed.text.slice(0, 2500) : ""
+    }
   };
 }
