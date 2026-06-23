@@ -54,9 +54,12 @@ ${v.memo}`;
 
   function racerName(i){
     const text = $("paste").value || "";
-    const re = new RegExp(`${i}[\\s\\S]{0,40}?([一-龥ぁ-んァ-ンー]{2,10})`);
-    const m = text.match(re);
-    return m ? m[1] : `選手${i}`;
+    const lines = text.split(/\n/);
+    for (const line of lines) {
+      const m = line.match(new RegExp(`^\\s*${i}\\s+([一-龥ぁ-んァ-ンー]{2,10})`));
+      if (m) return m[1];
+    }
+    return `選手${i}`;
   }
 
   function racer(i){
@@ -83,6 +86,11 @@ ${v.memo}`;
     return "C";
   }
 
+  function validBet(bet){
+    const p = bet.split("-");
+    return p.length === 3 && new Set(p).size === 3;
+  }
+
   function autoManshuBase(){
     const nums = ["1","2","3","4","5","6"];
     const bets = [];
@@ -93,20 +101,19 @@ ${v.memo}`;
           if(a === b || a === c || b === c) continue;
 
           let score = 40;
-
+          if(a === "5") score += 26;
+          if(a === "6") score += 22;
           if(a === "4") score += 18;
-          if(a === "5") score += 24;
-          if(a === "6") score += 20;
-
-          if(b === "4" || b === "5" || b === "6") score += 10;
-          if(c === "4" || c === "5" || c === "6") score += 8;
-
+          if(a === "3") score += 10;
           if(a === "1") score -= 18;
           if(a === "2") score -= 8;
 
-          if($("engine").value === "new" && (a === "3" || a === "5" || a === "6")) score += 8;
+          if(["4","5","6"].includes(b)) score += 10;
+          if(["4","5","6"].includes(c)) score += 8;
+
+          if($("engine").value === "new" && ["3","5","6"].includes(a)) score += 8;
           if($("wind").value === "強風" || $("water").value === "荒れ") score += 8;
-          if($("entry").value !== "normal" && (a === "4" || a === "5" || a === "6")) score += 6;
+          if($("entry").value !== "normal" && ["4","5","6"].includes(a)) score += 6;
 
           bets.push({ bet:`${a}-${b}-${c}`, score });
         }
@@ -115,36 +122,42 @@ ${v.memo}`;
 
     return bets
       .sort((x,y)=>y.score-x.score)
-      .slice(0,30)
       .map(x=>x.bet);
   }
 
   function generateManshu(){
-    const missing = parseMissing();
+    const input = parseMissing().filter(validBet);
     const odds = parseOdds();
-    const base = missing.length ? missing : autoManshuBase();
+    const base = input.length ? input : autoManshuBase();
 
     return base.slice(0,8).map((bet,idx)=>{
-      const head = bet[0];
-      const od = odds[idx] || Math.round(45 + idx * 13 + (head === "5" ? 35 : head === "6" ? 45 : head === "4" ? 25 : 0));
-      let score = 60;
+      const head = bet.split("-")[0];
+      const od = odds[idx] || Math.round(45 + idx * 11 + (head === "5" ? 35 : head === "6" ? 42 : head === "4" ? 25 : 0));
 
+      let score = 60;
       if(head === "5") score += 22;
       if(head === "6") score += 18;
       if(head === "4") score += 16;
       if(bet.includes("-5-") || bet.endsWith("-5")) score += 6;
       if(bet.includes("-6-") || bet.endsWith("-6")) score += 5;
 
-      return {
-        bet,
-        odds: od,
-        score,
-        rank: expectedRank(od, score)
-      };
+      return { bet, odds: od, score, rank: expectedRank(od, score) };
     }).sort((a,b)=>{
       const r = {S:4,A:3,B:2,C:1};
       return r[b.rank] - r[a.rank] || b.score - a.score || b.odds - a.odds;
     });
+  }
+
+  function renderEntryList(){
+    $("entryList").textContent =
+`1号艇 ${racerName(1)}
+2号艇 ${racerName(2)}
+3号艇 ${racerName(3)}
+4号艇 ${racerName(4)}
+5号艇 ${racerName(5)}
+6号艇 ${racerName(6)}
+
+※出走表を貼ると選手名を反映。未入力なら仮名表示。`;
   }
 
   function analyze(){
@@ -154,6 +167,8 @@ ${v.memo}`;
     const manshu = generateManshu();
 
     $("status").textContent = `${placeName}${race} 解析OK`;
+
+    renderEntryList();
 
     $("flowEngine").textContent =
 `1逃げ　　　　 62%
@@ -219,7 +234,7 @@ ${manshu.map(x=>`${x.bet}　オッズ${x.odds}倍　期待値${x.rank}`).join("\
 
 ※出てない目TOP30が入力されていればそこから優先。
 ※未入力なら展開・外枠期待度から自動生成。
-※合成オッズ欄が入力されていれば順番に反映。`;
+※同じ艇番が重なる買い目は除外。`;
 
     $("alerts").textContent =
 `スリットアラート
@@ -232,7 +247,9 @@ ${manshu.map(x=>`${x.bet}　オッズ${x.odds}倍　期待値${x.rank}`).join("\
 → プラス評価のみ採用`;
 
     $("missingList").textContent =
-      parseMissing().length ? parseMissing().join("\n") : autoManshuBase().slice(0,30).join("\n");
+      parseMissing().filter(validBet).length
+        ? parseMissing().filter(validBet).join("\n")
+        : autoManshuBase().slice(0,30).join("\n");
 
     $("comment").textContent =
 `最終コメント：
@@ -250,7 +267,8 @@ ${manshu.map(x=>`${x.bet}　オッズ${x.odds}倍　期待値${x.rank}`).join("\
 
   function clearAll(){
     ["paste","missingInput","oddsInput"].forEach(id => $(id).value = "");
-    ["flowEngine","flowReason","mainSheet","formation","pinkSheet","alerts","missingList","comment"].forEach(id => $(id).textContent = "未解析");
+    ["entryList","flowEngine","flowReason","mainSheet","formation","pinkSheet","alerts","missingList","comment"]
+      .forEach(id => $(id).textContent = "未解析");
     $("status").textContent = "場とレースを選んでください";
   }
 
