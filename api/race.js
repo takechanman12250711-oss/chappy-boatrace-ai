@@ -1,4 +1,4 @@
-// api/race.js v3.2 完全版
+// api/race.js v3.3 完全版
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -37,11 +37,11 @@ export default async function handler(req, res) {
         count: 0,
         boats: [],
         message: "データがありません",
-        debug: debug === "1" ? makeDebug(html, text, []) : undefined
+        debug: debug === "1" ? makeDebug(html, text, [], []) : undefined
       });
     }
 
-    const boats = parseRaceText(text);
+    const parsed = parseRaceText(text);
 
     return res.status(200).json({
       ok: true,
@@ -50,9 +50,9 @@ export default async function handler(req, res) {
       rno,
       date,
       url,
-      count: boats.length,
-      boats,
-      debug: debug === "1" ? makeDebug(html, text, boats) : undefined
+      count: parsed.boats.length,
+      boats: parsed.boats,
+      debug: debug === "1" ? makeDebug(html, text, parsed.boats, parsed.markers) : undefined
     });
   } catch (err) {
     return res.status(500).json({
@@ -89,9 +89,7 @@ async function fetchHtml(url) {
     const response = await fetch(url, { headers });
     lastStatus = response.status;
 
-    if (response.ok) {
-      return await response.text();
-    }
+    if (response.ok) return await response.text();
   }
 
   throw new Error(`公式サイト取得失敗: ${lastStatus}`);
@@ -117,12 +115,10 @@ function cleanText(html) {
 
 function parseRaceText(text) {
   let target = text;
-
   const startIndex = text.indexOf("登録番号／級別");
   if (startIndex >= 0) target = text.slice(startIndex);
 
-  const markerRegex =
-/([1-6])\s+(\d{4})\s*\/\s*(A1|A2|B1|B2)/g;
+  const markerRegex = /([1-6])\s+(\d{4})\s*\/\s*(A1|A2|B1|B2)/g;
   const markers = [];
   let m;
 
@@ -132,7 +128,8 @@ function parseRaceText(text) {
       boat: Number(m[1]),
       regNo: m[2],
       class: m[3],
-      end: markerRegex.lastIndex
+      end: markerRegex.lastIndex,
+      hit: m[0]
     });
   }
 
@@ -141,13 +138,12 @@ function parseRaceText(text) {
   for (let i = 0; i < markers.length; i++) {
     const cur = markers[i];
     const next = markers[i + 1];
-    const block = target.slice(cur.index, next ? next.index : cur.index + 700);
+    const block = target.slice(cur.index, next ? next.index : cur.index + 900);
+    const afterClass = target.slice(cur.end, cur.end + 160);
 
-    const afterClass = target.slice(cur.end, cur.end + 100);
-    const nameMatch =
-afterClass.match(
- /^([一-龥ぁ-んァ-ヶー]+\s*[一-龥ぁ-んァ-ヶー]+)/ 
-);
+    const nameMatch = afterClass.match(
+      /^\s*([一-龥ぁ-んァ-ヶー・]+\s*[一-龥ぁ-んァ-ヶー・]+)/
+    );
 
     const name = nameMatch ? cleanName(nameMatch[1]) : "";
 
@@ -165,11 +161,14 @@ afterClass.match(
       motor2Rate: extractMotorRates(block)[0],
       motor3Rate: extractMotorRates(block)[1],
       boatNo: extractBoatNo(block),
-      raw: block.slice(0, 400)
+      raw: block.slice(0, 500)
     });
   }
 
-  return uniqueBoats(boats);
+  return {
+    boats: uniqueBoats(boats),
+    markers
+  };
 }
 
 function uniqueBoats(boats) {
@@ -260,7 +259,7 @@ function extractBoatNo(block) {
   return m ? Number(m[1]) : null;
 }
 
-function makeDebug(html, text, boats) {
+function makeDebug(html, text, boats, markers) {
   return {
     htmlLength: html.length,
     hasNoData: text.includes("データがありません"),
@@ -268,7 +267,13 @@ function makeDebug(html, text, boats) {
     hasBoatColor: /boatColor|is-boatColor|boat_color/i.test(html),
     trCount: (html.match(/<tr/gi) || []).length,
     tbodyCount: (html.match(/<tbody/gi) || []).length,
-    textHead: text.slice(0, 1800),
-    foundBlocks: boats.map(b => b.raw)
+    markerCount: markers.length,
+    markers: markers.slice(0, 20),
+    textHead: text.slice(0, 2000),
+    foundBlocks: boats.map(b => ({
+      boat: b.boat,
+      name: b.name,
+      raw: b.raw
+    }))
   };
 }
