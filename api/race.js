@@ -144,9 +144,10 @@ function parseRaceText(text) {
     const block = target.slice(cur.index, next ? next.index : cur.index + 700);
 
     const afterClass = target.slice(cur.end, cur.end + 100);
-    const nameMatch = afterClass.match(
-      /^([一-龥ぁ-んァ-ヶー・\s]{2,16})\s+[一-龥]{2,4}\/[一-龥]{2,4}/
-    );
+    const nameMatch =
+afterClass.match(
+ /^([一-龥ぁ-んァ-ヶー]+\s*[一-龥ぁ-んァ-ヶー]+)/ 
+);
 
     const name = nameMatch ? cleanName(nameMatch[1]) : "";
 
