@@ -1,7 +1,5 @@
-// api/race.js v4.2 水面気象情報取得版
-// racelist + beforeinfo 合体
-// 展示タイム・チルト・展示ST・水面気象情報まで取得
-// 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
+// api/race.js v5
+// 舟券太郎指数＋展開予想＋本線/穴フォーメーション自動生成版
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -70,7 +68,10 @@ export default async function handler(req, res) {
       beforeParsed.error = e.message;
     }
 
-    const boats = mergeBeforeInfo(parsedRace.boats, beforeParsed.displays);
+    let boats = mergeBeforeInfo(parsedRace.boats, beforeParsed.displays);
+    const theory = buildPredictionEngine(boats, beforeParsed.weather, jcd);
+
+    boats = theory.boats;
 
     return res.status(200).json({
       ok: true,
@@ -83,7 +84,17 @@ export default async function handler(req, res) {
       count: boats.length,
       weather: beforeParsed.weather,
       boats,
-      debug: debug === "1" ? makeDebug(raceHtml, raceText, parsedRace, beforeParsed) : undefined
+      prediction: {
+        marks: theory.marks,
+        slitAlert: theory.slitAlert,
+        doubleTimeAlert: theory.doubleTimeAlert,
+        newSumAlert: theory.newSumAlert,
+        raceShape: theory.raceShape,
+        mainFormation: theory.mainFormation,
+        holeFormation: theory.holeFormation,
+        raceComment: theory.raceComment
+      },
+      debug: debug === "1" ? makeDebug(raceHtml, raceText, parsedRace, beforeParsed, theory) : undefined
     });
   } catch (err) {
     return res.status(500).json({
@@ -97,6 +108,10 @@ export default async function handler(req, res) {
     });
   }
 }
+
+/* =========================
+   fetch / clean
+========================= */
 
 async function fetchHtml(url) {
   const headersList = [
@@ -456,8 +471,407 @@ function mergeBeforeInfo(boats, displays) {
 }
 
 /* =========================
+   v5 予想エンジン
+========================= */
+
+function buildPredictionEngine(baseBoats, weather, jcd) {
+  const boats = baseBoats.map(b => ({ ...b }));
+
+  const venue = venueProfile(jcd);
+  const rankedExhibition = rankByLow(boats, "exhibitionTime");
+  const rankedST = rankByLow(boats, "exhibitionST");
+  const rankedMotor = rankByHigh(boats, "motor2Rate");
+  const rankedBoat = rankByHigh(boats, "boat2Rate");
+
+  for (const b of boats) {
+    const buffs = [];
+    const debuffs = [];
+
+    let score = 50;
+
+    score += courseBasePoint(b.boat, venue);
+
+    if (b.nationalWinRate != null) score += clamp((b.nationalWinRate - 4.5) * 4, -8, 12);
+    if (b.localWinRate != null) score += clamp((b.localWinRate - 4.5) * 3, -6, 10);
+
+    if (b.avgST != null) score += clamp((0.18 - b.avgST) * 100, -8, 10);
+    if (b.exhibitionST != null) score += clamp((0.12 - b.exhibitionST) * 80, -8, 12);
+
+    if (b.motor2Rate != null) score += clamp((b.motor2Rate - 33) * 0.35, -8, 10);
+    if (b.boat2Rate != null) score += clamp((b.boat2Rate - 33) * 0.25, -6, 8);
+
+    if (b.exhibitionTime != null) {
+      const exRank = rankedExhibition.find(x => x.boat === b.boat)?.rank;
+      if (exRank === 1) score += 8;
+      else if (exRank === 2) score += 5;
+      else if (exRank === 6) score -= 5;
+    }
+
+    if (b.tilt != null && b.tilt >= 0.5) {
+      if (b.boat >= 4) score += 5;
+      else score -= 2;
+    }
+
+    if (b.boat === 1 && venue.inStrong) score += 8;
+    if (b.boat >= 5 && venue.outHard) score -= 5;
+
+    if (weather?.windSpeed >= 4) {
+      score += b.boat >= 3 ? 3 : -2;
+    }
+
+    const exRank = rankedExhibition.find(x => x.boat === b.boat)?.rank;
+    const stRank = rankedST.find(x => x.boat === b.boat)?.rank;
+    const motorRank = rankedMotor.find(x => x.boat === b.boat)?.rank;
+    const boatRank = rankedBoat.find(x => x.boat === b.boat)?.rank;
+
+    if (exRank === 1) buffs.push("⬆️展示タイム1位 +8");
+    if (exRank === 2) buffs.push("⬆️展示タイム2位 +5");
+    if (stRank === 1) buffs.push("⬆️展示ST1位 +6");
+    if (motorRank === 1) buffs.push("⬆️モーター2連率1位 +5");
+    if (boatRank === 1) buffs.push("⬆️ボート2連率1位 +4");
+    if (b.boat === 1 && venue.inStrong) buffs.push("⬆️場特性イン有利 +8");
+    if (b.localWinRate != null && b.localWinRate >= 6) buffs.push("⬆️当地勝率高め +5");
+    if (b.tilt != null && b.tilt >= 0.5) buffs.push("⬆️チルト攻撃型 +5");
+
+    if (exRank === 6) debuffs.push("⬇️展示タイム最下位 -5");
+    if (b.avgST != null && b.avgST >= 0.20) debuffs.push("⬇️平均ST遅め -4");
+    if (b.boat >= 5 && venue.outHard) debuffs.push("⬇️外枠不利 -5");
+    if (b.motor2Rate != null && b.motor2Rate < 30) debuffs.push("⬇️モーター2連率低め -4");
+
+    b.chappyScore = Math.round(clamp(score, 1, 100));
+    b.funaTaroScore = calcFunaTaroScore(b, boats, weather);
+    b.totalScore = Math.round(clamp(b.chappyScore * 0.65 + b.funaTaroScore * 0.35, 1, 100));
+    b.buffs = buffs;
+    b.debuffs = debuffs;
+    b.shortComment = makeBoatComment(b, exRank, stRank, motorRank);
+  }
+
+  const sorted = [...boats].sort((a, b) => b.totalScore - a.totalScore);
+  const marks = {
+    honmei: markBoat(sorted[0], "◎"),
+    taikou: markBoat(sorted[1], "○"),
+    ana: markBoat(sorted[2], "▲"),
+    osaE: markBoat(sorted[3], "△")
+  };
+
+  const slitAlert = makeSlitAlert(boats);
+  const doubleTimeAlert = makeDoubleTimeAlert(boats);
+  const newSumAlert = makeNewSumAlert(boats, weather);
+  const raceShape = makeRaceShape(boats, venue, weather);
+  const mainFormation = makeMainFormation(boats, sorted, raceShape, venue);
+  const holeFormation = makeHoleFormation(boats, sorted, raceShape, venue);
+  const raceComment = makeRaceComment(boats, marks, raceShape, weather, venue);
+
+  return {
+    boats,
+    marks,
+    slitAlert,
+    doubleTimeAlert,
+    newSumAlert,
+    raceShape,
+    mainFormation,
+    holeFormation,
+    raceComment
+  };
+}
+
+function calcFunaTaroScore(b, boats, weather) {
+  let score = 50;
+
+  const exRank = rankByLow(boats, "exhibitionTime").find(x => x.boat === b.boat)?.rank;
+  const stRank = rankByLow(boats, "exhibitionST").find(x => x.boat === b.boat)?.rank;
+  const motorRank = rankByHigh(boats, "motor2Rate").find(x => x.boat === b.boat)?.rank;
+
+  if (exRank === 1) score += 12;
+  if (stRank === 1) score += 10;
+  if (motorRank === 1) score += 7;
+
+  if (b.exhibitionTime != null && b.straightTime != null) {
+    const sum = b.exhibitionTime + b.straightTime;
+    score += clamp((13.8 - sum) * 10, -8, 8);
+  }
+
+  if (weather?.windSpeed >= 4 && b.boat >= 3) score += 5;
+
+  if (b.boat === 1) score += 6;
+  if (b.boat === 2) score += 3;
+  if (b.boat >= 5) score -= 2;
+
+  return Math.round(clamp(score, 1, 100));
+}
+
+function makeSlitAlert(boats) {
+  const alerts = [];
+
+  for (let i = 0; i < boats.length; i++) {
+    const cur = boats[i];
+    const left = boats[i - 1];
+    const right = boats[i + 1];
+
+    if (cur.exhibitionST == null) continue;
+
+    if (left?.exhibitionST != null && left.exhibitionST - cur.exhibitionST >= 0.1) {
+      alerts.push({
+        boat: cur.boat,
+        type: "スリットアラート",
+        reason: `${left.boat}号艇より展示STが0.10以上早い`
+      });
+    }
+
+    if (right?.exhibitionST != null && right.exhibitionST - cur.exhibitionST >= 0.1) {
+      alerts.push({
+        boat: cur.boat,
+        type: "スリットアラート",
+        reason: `${right.boat}号艇より展示STが0.10以上早い`
+      });
+    }
+  }
+
+  return alerts;
+}
+
+function makeDoubleTimeAlert(boats) {
+  const ex1 = rankByLow(boats, "exhibitionTime")[0];
+  const straight1 = rankByLow(boats, "straightTime")[0];
+
+  if (!ex1 || !straight1) return [];
+
+  if (ex1.boat === straight1.boat) {
+    return [{
+      boat: ex1.boat,
+      type: "ダブルタイム理論",
+      reason: "展示タイム＋直線系タイムが両方上位"
+    }];
+  }
+
+  return [
+    { boat: ex1.boat, type: "展示タイム1位", reason: "展示タイム最上位" },
+    { boat: straight1.boat, type: "直線系タイム1位", reason: "直線系タイム最上位" }
+  ];
+}
+
+function makeNewSumAlert(boats, weather) {
+  const sums = boats
+    .filter(b => b.exhibitionTime != null && b.straightTime != null)
+    .map(b => ({
+      boat: b.boat,
+      sum: Number((b.exhibitionTime + b.straightTime).toFixed(2))
+    }));
+
+  if (!sums.length) return [];
+
+  const avg = sums.reduce((a, b) => a + b.sum, 0) / sums.length;
+
+  return sums
+    .map(x => ({
+      boat: x.boat,
+      type: "新サム理論",
+      sum: x.sum,
+      diff: Number((avg - x.sum).toFixed(2)),
+      reason: weather?.windSpeed >= 4
+        ? "風ありで新サム効果やや強め"
+        : "展示＋直線系の合計が平均より良い"
+    }))
+    .filter(x => x.diff > 0)
+    .sort((a, b) => b.diff - a.diff);
+}
+
+function makeRaceShape(boats, venue, weather) {
+  const b1 = boats.find(b => b.boat === 1);
+  const b2 = boats.find(b => b.boat === 2);
+  const b3 = boats.find(b => b.boat === 3);
+  const b4 = boats.find(b => b.boat === 4);
+  const b5 = boats.find(b => b.boat === 5);
+
+  const stRank = rankByLow(boats, "exhibitionST");
+  const exRank = rankByLow(boats, "exhibitionTime");
+
+  const fastestST = stRank[0]?.boat;
+  const bestEx = exRank[0]?.boat;
+
+  let shape = "1逃げ本線";
+  let attackBoat = null;
+
+  if (b1 && b1.totalScore >= 72 && venue.inStrong) {
+    shape = "1逃げ中心";
+  }
+
+  if (fastestST === 3 || bestEx === 3) {
+    shape = "3攻め警戒";
+    attackBoat = 3;
+  }
+
+  if (fastestST === 4 || (b4?.tilt ?? 0) >= 0.5) {
+    shape = "4カド攻め警戒";
+    attackBoat = 4;
+  }
+
+  if ((b5?.tilt ?? 0) >= 0.5 || fastestST === 5) {
+    shape = "5一撃まくり差し警戒";
+    attackBoat = 5;
+  }
+
+  if (weather?.windSpeed >= 4) {
+    shape += "・風で波乱含み";
+  }
+
+  return {
+    shape,
+    attackBoat,
+    fastestST,
+    bestExhibition: bestEx,
+    memo: "高指数艇と展開カバーは分けて判定"
+  };
+}
+
+function makeMainFormation(boats, sorted, raceShape, venue) {
+  const top = sorted[0]?.boat || 1;
+  const second = sorted[1]?.boat || 2;
+  const third = sorted[2]?.boat || 3;
+  const fourth = sorted[3]?.boat || 4;
+
+  if (raceShape.shape.includes("1逃げ")) {
+    return [
+      `1-${second}${third}-${second}${third}${fourth}`,
+      `1-2-34`,
+      `1-3-24`,
+      `1-23-2345`
+    ];
+  }
+
+  if (raceShape.attackBoat === 3) {
+    return [
+      `1-3-245`,
+      `3-1-245`,
+      `3-4-125`,
+      `1-23-2345`
+    ];
+  }
+
+  if (raceShape.attackBoat === 4) {
+    return [
+      `1-4-235`,
+      `4-1-235`,
+      `4-5-123`,
+      `1-24-2345`
+    ];
+  }
+
+  return [
+    `${top}-${second}${third}-${second}${third}${fourth}`,
+    `1-23-2345`,
+    `1-2-34`
+  ];
+}
+
+function makeHoleFormation(boats, sorted, raceShape, venue) {
+  const outer = boats
+    .filter(b => b.boat >= 4)
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .map(b => b.boat);
+
+  const o1 = outer[0] || 5;
+  const o2 = outer[1] || 4;
+
+  const holes = [
+    `${o1}-1-2346`,
+    `${o1}-${o2}-1236`,
+    `1-${o1}-236`,
+    `2-1-${o1}${o2}`,
+    `3-${o1}-126`
+  ];
+
+  if (raceShape.attackBoat === 3) {
+    holes.unshift(`3-5-1246`, `3-6-1245`);
+  }
+
+  if (raceShape.attackBoat === 4) {
+    holes.unshift(`4-5-1236`, `4-6-1235`);
+  }
+
+  return [...new Set(holes)].slice(0, 8);
+}
+
+function makeRaceComment(boats, marks, raceShape, weather, venue) {
+  const honmei = marks.honmei?.boat;
+  const taikou = marks.taikou?.boat;
+
+  let comment = `本命は${honmei}号艇。対抗は${taikou}号艇。`;
+
+  comment += ` 展開は「${raceShape.shape}」。`;
+
+  if (weather) {
+    comment += ` 水面は${weather.weather || "不明"}、風速${weather.windSpeed ?? "-"}m、波高${weather.waveHeight ?? "-"}cm。`;
+  }
+
+  comment += " 本線はイン逃げ・2コース差し・3コース攻めを中心に、穴は外枠の展開突きまで押さえる。";
+
+  return comment;
+}
+
+function markBoat(b, mark) {
+  if (!b) return null;
+
+  return {
+    mark,
+    boat: b.boat,
+    name: b.name,
+    totalScore: b.totalScore,
+    chappyScore: b.chappyScore,
+    funaTaroScore: b.funaTaroScore
+  };
+}
+
+/* =========================
+   Venue
+========================= */
+
+function venueProfile(jcd) {
+  const code = String(jcd).padStart(2, "0");
+
+  const profiles = {
+    "24": { name: "大村", inStrong: true, outHard: true },
+    "15": { name: "丸亀", inStrong: true, outHard: false },
+    "20": { name: "若松", inStrong: true, outHard: false },
+    "17": { name: "宮島", inStrong: true, outHard: false },
+    "03": { name: "江戸川", inStrong: false, outHard: false },
+    "22": { name: "福岡", inStrong: false, outHard: false }
+  };
+
+  return profiles[code] || { name: "不明", inStrong: true, outHard: false };
+}
+
+function courseBasePoint(boat, venue) {
+  if (boat === 1) return venue.inStrong ? 12 : 6;
+  if (boat === 2) return 6;
+  if (boat === 3) return 4;
+  if (boat === 4) return 2;
+  if (boat === 5) return venue.outHard ? -4 : -1;
+  if (boat === 6) return venue.outHard ? -8 : -4;
+  return 0;
+}
+
+/* =========================
    Utility
 ========================= */
+
+function rankByLow(boats, key) {
+  return boats
+    .filter(b => typeof b[key] === "number" && !Number.isNaN(b[key]))
+    .sort((a, b) => a[key] - b[key])
+    .map((b, i) => ({ ...b, rank: i + 1 }));
+}
+
+function rankByHigh(boats, key) {
+  return boats
+    .filter(b => typeof b[key] === "number" && !Number.isNaN(b[key]))
+    .sort((a, b) => b[key] - a[key])
+    .map((b, i) => ({ ...b, rank: i + 1 }));
+}
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, Number(n) || 0));
+}
 
 function pickRate(n) {
   return typeof n === "number" && n >= 0 && n <= 10 ? n : null;
@@ -510,7 +924,19 @@ function extractAverageST(block) {
   return fallback ? Number(fallback[1]) : null;
 }
 
-function makeDebug(html, text, parsedRace, beforeParsed) {
+function makeBoatComment(b, exRank, stRank, motorRank) {
+  const parts = [];
+
+  if (b.boat === 1) parts.push("イン戦の軸候補");
+  if (exRank === 1) parts.push("展示最上位");
+  if (stRank === 1) parts.push("スリット優勢");
+  if (motorRank === 1) parts.push("モーター上位");
+  if (b.boat >= 4) parts.push("展開突き候補");
+
+  return parts.length ? parts.join("・") : "平均的な評価";
+}
+
+function makeDebug(html, text, parsedRace, beforeParsed, theory) {
   return {
     htmlLength: html.length,
     hasNoData: text.includes("データがありません"),
@@ -523,6 +949,15 @@ function makeDebug(html, text, parsedRace, beforeParsed) {
     beforeInfoError: beforeParsed.error,
     weather: beforeParsed.weather,
     beforeDisplays: beforeParsed.displays,
+    theory: {
+      marks: theory.marks,
+      slitAlert: theory.slitAlert,
+      doubleTimeAlert: theory.doubleTimeAlert,
+      newSumAlert: theory.newSumAlert,
+      raceShape: theory.raceShape,
+      mainFormation: theory.mainFormation,
+      holeFormation: theory.holeFormation
+    },
     foundBlocks: parsedRace.boats.map(b => ({
       boat: b.boat,
       regNo: b.regNo,
