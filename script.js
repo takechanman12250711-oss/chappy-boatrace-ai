@@ -1,7 +1,7 @@
 // script.js 自動取得対応版 v1
 
 // ★ここをVercelのURLに変更
-const API_BASE_URL = "https://あなたのvercel名.vercel.app/api/race";
+const API_BASE_URL = "https://chappy-boatrace-ai.vercel.app/api/race";
 
 const venueCodes = {
   "桐生": "01",
