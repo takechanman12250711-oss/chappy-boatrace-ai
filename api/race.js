@@ -269,7 +269,7 @@ function makeDebug(html, text, boats, markers) {
     tbodyCount: (html.match(/<tbody/gi) || []).length,
     markerCount: markers.length,
     markers: markers.slice(0, 20),
-    textHead: text.slice(0, 2000),
+    textTail: text.slice(-3000),
     foundBlocks: boats.map(b => ({
       boat: b.boat,
       name: b.name,
