@@ -1,5 +1,5 @@
-// api/race.js v4.0 展示タイム取得版
-// racelist + beforeinfo を合体
+// api/race.js v4.1 展示タイム完全取得版
+// racelist + beforeinfo 合体
 // 例: /api/race?jcd=15&rno=1&date=20260622&debug=1
 
 export default async function handler(req, res) {
@@ -20,12 +20,10 @@ export default async function handler(req, res) {
   }
 
   const raceListUrl =
-    `https://www.boatrace.jp/owpc/pc/race/racelist` +
-    `?rno=${rno}&jcd=${jcd}&hd=${date}`;
+    `https://www.boatrace.jp/owpc/pc/race/racelist?rno=${rno}&jcd=${jcd}&hd=${date}`;
 
   const beforeInfoUrl =
-    `https://www.boatrace.jp/owpc/pc/race/beforeinfo` +
-    `?rno=${rno}&jcd=${jcd}&hd=${date}`;
+    `https://www.boatrace.jp/owpc/pc/race/beforeinfo?rno=${rno}&jcd=${jcd}&hd=${date}`;
 
   try {
     const raceHtml = await fetchHtml(raceListUrl);
@@ -176,7 +174,6 @@ function parseRaceText(text) {
     const boat = i + 1;
     const afterClass = target.slice(cur.end, cur.end + 150);
     const name = extractName(afterClass);
-
     const rates = extractRates(block);
     const equipment = extractEquipment(block);
 
@@ -320,122 +317,94 @@ function findEquipmentPattern(tokens) {
 }
 
 /* =========================
-   直前情報 / 展示解析
+   直前情報 / 展示解析 v4.1
 ========================= */
 
 function parseBeforeInfoText(text) {
-  let target = text;
-
-  const startIndex = text.indexOf("展示");
-  if (startIndex >= 0) target = text.slice(startIndex);
-
   const displays = [];
 
+  const exhibitionList = parseExhibitionList(text);
+  const stList = parseStartExhibitionList(text);
+
   for (let boat = 1; boat <= 6; boat++) {
-    const block = extractBeforeBlock(target, boat);
+    const ex = exhibitionList.find(x => x.boat === boat);
+    const st = stList.find(x => x.boat === boat);
 
-    const display = {
+    displays.push({
       boat,
-      exhibitionCourse: extractExhibitionCourse(block, boat),
-      exhibitionST: extractExhibitionST(block),
-      exhibitionTime: extractExhibitionTime(block),
-      tilt: extractTilt(block),
-      circumferenceTime: extractCircumferenceTime(block),
-      straightTime: extractStraightTime(block),
-      turnTime: extractTurnTime(block),
-      beforeRaw: block.slice(0, 500)
-    };
-
-    displays.push(display);
+      exhibitionCourse: st?.course ?? boat,
+      exhibitionST: st?.st ?? null,
+      exhibitionTime: ex?.exhibitionTime ?? null,
+      tilt: ex?.tilt ?? null,
+      circumferenceTime: null,
+      straightTime: ex?.exhibitionTime ?? null,
+      turnTime: null,
+      beforeRaw: [ex?.raw || "", st?.raw || ""].filter(Boolean).join(" / ")
+    });
   }
 
   return displays;
 }
 
-function extractBeforeBlock(text, boat) {
-  const markers = [];
+function parseExhibitionList(text) {
+  const displays = [];
 
-  for (let b = 1; b <= 6; b++) {
-    const idx = findBoatMarkerIndex(text, b);
-    if (idx >= 0) markers.push({ boat: b, index: idx });
+  let target = text;
+  const startIndex = text.indexOf("体重 展示 タイム チルト");
+  if (startIndex >= 0) target = text.slice(startIndex);
+
+  const endIndex = target.indexOf("スタート展示");
+  if (endIndex >= 0) target = target.slice(0, endIndex);
+
+  const regex =
+    /(?:^|\s)([1-6])\s+([一-龥ぁ-んァ-ヶー・]+\s+[一-龥ぁ-んァ-ヶー・]+)\s+(\d{2,3}\.\d)kg\s+(\d\.\d{2})\s+(-?\d+\.\d)/g;
+
+  let m;
+  while ((m = regex.exec(target)) !== null) {
+    displays.push({
+      boat: Number(m[1]),
+      name: cleanName(m[2]),
+      weight: Number(m[3]),
+      exhibitionTime: Number(m[4]),
+      tilt: Number(m[5]),
+      raw: m[0].trim()
+    });
   }
 
-  markers.sort((a, b) => a.index - b.index);
-
-  const cur = markers.find(x => x.boat === boat);
-  if (!cur) return "";
-
-  const next = markers.find(x => x.index > cur.index);
-  return text.slice(cur.index, next ? next.index : cur.index + 900);
+  return displays;
 }
 
-function findBoatMarkerIndex(text, boat) {
-  const patterns = [
-    new RegExp(`(?:^|\\s)${boat}\\s+\\d+\\.\\d{2}`),
-    new RegExp(`(?:^|\\s)${boat}\\s+[\\.0-9]+\\s+[-\\.0-9]+`),
-    new RegExp(`(?:^|\\s)${boat}\\s`)
-  ];
+function parseStartExhibitionList(text) {
+  const results = [];
 
-  for (const p of patterns) {
-    const m = text.match(p);
-    if (m) return m.index || 0;
+  const idx = text.indexOf("スタート展示");
+  if (idx < 0) return results;
+
+  let target = text.slice(idx);
+
+  const weatherIndex = target.indexOf("水面気象情報");
+  if (weatherIndex >= 0) target = target.slice(0, weatherIndex);
+
+  const regex = /([1-6])\s+(F|L)?\s*\.?(\d{2})/g;
+  let m;
+
+  while ((m = regex.exec(target)) !== null) {
+    const course = Number(m[1]);
+    const sign = m[2] || "";
+    const rawNum = m[3];
+
+    let st = Number(`0.${rawNum}`);
+    if (sign === "F") st = -st;
+
+    results.push({
+      boat: course,
+      course,
+      st,
+      raw: m[0].trim()
+    });
   }
 
-  return -1;
-}
-
-function extractExhibitionCourse(block, fallbackBoat) {
-  const m = block.match(/\b([1-6])\b\s+[1-6]\b\s+(?:F|L|\.|0\.)/);
-  if (m) return Number(m[1]);
-
-  return fallbackBoat;
-}
-
-function extractExhibitionST(block) {
-  const f = block.match(/\bF\s*\.?(\d{2})\b/);
-  if (f) return -Number(`0.${f[1]}`);
-
-  const l = block.match(/\bL\s*\.?(\d{2})\b/);
-  if (l) return Number(`0.${l[1]}`);
-
-  const n = block.match(/\b[1-6]\s+\.?(\d{2})\b/);
-  if (n) return Number(`0.${n[1]}`);
-
-  return null;
-}
-
-function extractExhibitionTime(block) {
-  const nums = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(m => Number(m[0]));
-
-  const candidate = nums.find(n => n >= 6.0 && n <= 7.5);
-  return candidate ?? null;
-}
-
-function extractTilt(block) {
-  const m = block.match(/チルト\s*([-+]?\d+\.?\d*)/);
-  if (m) return Number(m[1]);
-
-  const nums = [...block.matchAll(/[-+]?\d+\.\d+/g)].map(m => Number(m[0]));
-  const candidate = nums.find(n => n >= -0.5 && n <= 3.0);
-  return candidate ?? null;
-}
-
-function extractCircumferenceTime(block) {
-  const nums = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(m => Number(m[0]));
-  const candidate = nums.find(n => n >= 36.0 && n <= 39.5);
-  return candidate ?? null;
-}
-
-function extractStraightTime(block) {
-  const nums = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(m => Number(m[0]));
-  const candidate = nums.find(n => n >= 6.5 && n <= 8.5);
-  return candidate ?? null;
-}
-
-function extractTurnTime(block) {
-  const nums = [...block.matchAll(/\b\d+\.\d{2}\b/g)].map(m => Number(m[0]));
-  const candidate = nums.find(n => n >= 5.0 && n <= 7.5);
-  return candidate ?? null;
+  return results.slice(0, 6);
 }
 
 function mergeBeforeInfo(boats, displays) {
@@ -539,6 +508,6 @@ function makeDebug(html, text, parsedRace, beforeParsed) {
       boat3Rate: b.boat3Rate,
       raw: b.raw
     })),
-    beforeTextHead: beforeParsed.text ? beforeParsed.text.slice(0, 1500) : ""
+    beforeTextHead: beforeParsed.text ? beforeParsed.text.slice(0, 2500) : ""
   };
 }
