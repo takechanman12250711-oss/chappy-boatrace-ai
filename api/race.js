@@ -1,246 +1,397 @@
-// api/race.js 修正版 v2
-// 例: /api/race?jcd=24&rno=7&date=20260623
+// script.js 開催なし対応版・丸ごと完全版 v2
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+const API_BASE_URL = "https://chappy-boatrace-ai.vercel.app/api/race";
 
-  if (req.method === "OPTIONS") return res.status(200).end();
+const venueCodes = {
+  "桐生": "01", "戸田": "02", "江戸川": "03", "平和島": "04",
+  "多摩川": "05", "浜名湖": "06", "蒲郡": "07", "常滑": "08",
+  "津": "09", "三国": "10", "びわこ": "11", "住之江": "12",
+  "尼崎": "13", "鳴門": "14", "丸亀": "15", "児島": "16",
+  "宮島": "17", "徳山": "18", "下関": "19", "若松": "20",
+  "芦屋": "21", "福岡": "22", "唐津": "23", "大村": "24"
+};
 
-  const { jcd, rno, date, debug } = req.query;
+let raceData = [];
 
-  if (!jcd || !rno || !date) {
-    return res.status(400).json({
-      ok: false,
-      error: "jcd, rno, date が必要です",
-      sample: "/api/race?jcd=24&rno=7&date=20260623"
-    });
+function todayYmd() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}${m}${day}`;
+}
+
+function dateInputYmd() {
+  const input = document.querySelector("#dateInput");
+  if (!input || !input.value) return todayYmd();
+  return input.value.replaceAll("-", "");
+}
+
+async function fetchRaceData() {
+  const place = document.querySelector("#placeSelect")?.value || "大村";
+  const rnoText = document.querySelector("#raceSelect")?.value || "1R";
+  const rno = String(rnoText).replace("R", "");
+  const jcd = venueCodes[place];
+  const date = dateInputYmd();
+
+  if (!jcd) {
+    showError("場コードが見つかりません");
+    return;
   }
 
-  const url =
-    `https://www.boatrace.jp/owpc/pc/race/racelist` +
-    `?rno=${rno}&jcd=${jcd}&hd=${date}`;
+  const url = `${API_BASE_URL}?jcd=${jcd}&rno=${rno}&date=${date}`;
+
+  setStatus("出走表を取得中...");
+  clearPredictionAreas();
 
   try {
-    const html = await fetchHtml(url);
-    const boats = parseRaceListV2(html);
+    const res = await fetch(url);
+    const data = await res.json();
 
-    return res.status(200).json({
-      ok: true,
-      source: "boatrace.jp",
-      jcd,
-      rno,
-      date,
-      url,
-      count: boats.length,
-      boats,
-      debug: debug === "1" ? makeDebug(html) : undefined
-    });
+    if (!data.ok) {
+      throw new Error(data.error || "取得失敗");
+    }
+
+    if (!data.boats || data.boats.length === 0) {
+      raceData = [];
+      setStatus("本日この場は開催していません");
+
+      const raceList = document.querySelector("#raceListArea");
+      if (raceList) {
+        raceList.innerHTML = `
+          <div class="predict-box">
+            <strong>📅 開催なし</strong><br>
+            ${place} ${rno}R は、この日付では出走表データがありません。<br>
+            開催場か日付を変更してください。
+          </div>
+        `;
+      }
+      return;
+    }
+
+    raceData = data.boats.map(b => ({
+      boat: b.boat,
+      name: b.name || `選手${b.boat}`,
+      class: b.class || "",
+      regNo: b.regNo || "",
+      avgST: b.avgST ?? null,
+      nationalWinRate: b.nationalWinRate ?? null,
+      localWinRate: b.localWinRate ?? null,
+      motor: b.motor ?? null,
+      boatNo: b.boatNo ?? null,
+      raw: b.raw || ""
+    }));
+
+    renderRaceList();
+    runPrediction();
+
+    setStatus(`${place}${rno}R 出走表取得OK`);
   } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: err.message,
-      jcd,
-      rno,
-      date,
-      url
-    });
+    console.error(err);
+    showError(`取得失敗: ${err.message}`);
   }
 }
 
-async function fetchHtml(url) {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile Safari/604.1",
-      "Accept-Language": "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7",
-      "Accept":
-        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-    }
+function clearPredictionAreas() {
+  const ids = [
+    "#engineArea",
+    "#mainSheetArea",
+    "#formationArea",
+    "#manshuSheetArea",
+    "#alertArea",
+    "#finalCommentArea"
+  ];
+  ids.forEach(id => {
+    const el = document.querySelector(id);
+    if (el) el.innerHTML = "";
   });
+}
 
-  if (!response.ok) {
-    throw new Error(`公式サイト取得失敗: ${response.status}`);
+function showError(message) {
+  setStatus(message);
+
+  clearPredictionAreas();
+
+  const raceList = document.querySelector("#raceListArea");
+  if (raceList) {
+    raceList.innerHTML = `
+      <div class="predict-box">
+        <strong>⚠️ データ取得エラー</strong><br>
+        ${message}
+      </div>
+    `;
+  }
+}
+
+function createSampleData() {
+  return [1, 2, 3, 4, 5, 6].map(n => ({
+    boat: n,
+    name: `選手${n}`,
+    class: "",
+    regNo: "",
+    avgST: null,
+    nationalWinRate: null,
+    localWinRate: null,
+    motor: null,
+    boatNo: null,
+    raw: ""
+  }));
+}
+
+function calcScore(b) {
+  let score = 50;
+
+  if (b.boat === 1) score += 18;
+  if (b.boat === 2) score += 8;
+  if (b.boat === 3) score += 6;
+  if (b.boat === 4) score += 3;
+  if (b.boat === 5) score -= 2;
+  if (b.boat === 6) score -= 5;
+
+  if (b.class === "A1") score += 10;
+  if (b.class === "A2") score += 6;
+  if (b.class === "B1") score -= 2;
+  if (b.class === "B2") score -= 5;
+
+  if (b.avgST !== null) {
+    if (b.avgST <= 0.13) score += 8;
+    else if (b.avgST <= 0.15) score += 5;
+    else if (b.avgST <= 0.17) score += 2;
+    else if (b.avgST >= 0.20) score -= 6;
   }
 
-  return await response.text();
-}
-
-function cleanText(text) {
-  return String(text || "")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<\/(td|th|div|p|li|span)>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/\r?\n/g, " ")
-    .replace(/\t/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function splitRows(html) {
-  const rows = [];
-  const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  let m;
-
-  while ((m = rowRegex.exec(html)) !== null) {
-    const rowHtml = m[0];
-    const txt = cleanText(rowHtml);
-
-    if (
-      /is-boatColor[1-6]/.test(rowHtml) ||
-      /boatColor[1-6]/.test(rowHtml) ||
-      /^[1-6]\s/.test(txt) ||
-      /登録番号/.test(txt) === false
-    ) {
-      rows.push(rowHtml);
-    }
+  if (b.nationalWinRate !== null) {
+    if (b.nationalWinRate >= 7) score += 8;
+    else if (b.nationalWinRate >= 6) score += 5;
+    else if (b.nationalWinRate >= 5) score += 2;
+    else score -= 3;
   }
 
-  return rows;
-}
-
-function parseRaceListV2(html) {
-  const boats = [];
-
-  // 公式PC版の出走表は艇番カラーclassが入ることが多い
-  const rows = splitRows(html);
-
-  for (const row of rows) {
-    const boat = extractBoatNo(row);
-    if (!boat || boat < 1 || boat > 6) continue;
-
-    const text = cleanText(row);
-
-    const name = extractName(text);
-    const playerClass = extractClass(text);
-    const regNo = extractRegNo(text);
-    const avgST = extractST(text);
-    const rates = extractWinRates(text);
-    const motor = extractMotor(text);
-    const boatNo = extractBoatNumber(text);
-
-    boats.push({
-      boat,
-      name,
-      class: playerClass,
-      regNo,
-      avgST,
-      nationalWinRate: rates[0] ?? null,
-      localWinRate: rates[1] ?? null,
-      motor,
-      boatNo,
-      raw: text.slice(0, 300)
-    });
+  if (b.localWinRate !== null) {
+    if (b.localWinRate >= 7) score += 6;
+    else if (b.localWinRate >= 6) score += 4;
+    else if (b.localWinRate >= 5) score += 1;
   }
 
-  const unique = [];
-  const used = new Set();
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
 
-  for (const b of boats) {
-    if (used.has(b.boat)) continue;
-    used.add(b.boat);
-    unique.push(b);
+function getBuffDebuff(b) {
+  const buffs = [];
+  const debuffs = [];
+
+  if (b.boat === 1) buffs.push("⬆️イン有利 +18");
+  if (b.boat === 2) buffs.push("⬆️2コース差し +8");
+  if (b.boat === 3) buffs.push("⬆️3コース攻め +6");
+  if (b.boat === 4) buffs.push("⬆️4カド展開 +3");
+  if (b.boat >= 5) debuffs.push("⬇️外枠補正 -2〜-5");
+
+  if (b.class === "A1") buffs.push("⬆️A1格 +10");
+  if (b.class === "A2") buffs.push("⬆️A2格 +6");
+  if (b.class === "B1") debuffs.push("⬇️B1格 -2");
+  if (b.class === "B2") debuffs.push("⬇️B2格 -5");
+
+  if (b.avgST !== null && b.avgST <= 0.15) buffs.push(`⬆️ST優秀 ${b.avgST}`);
+  if (b.avgST !== null && b.avgST >= 0.20) debuffs.push(`⬇️ST遅め ${b.avgST}`);
+
+  if (b.nationalWinRate !== null && b.nationalWinRate >= 6) {
+    buffs.push(`⬆️全国勝率 ${b.nationalWinRate}`);
   }
 
-  return unique.sort((a, b) => a.boat - b.boat);
-}
+  if (b.localWinRate !== null && b.localWinRate >= 6) {
+    buffs.push(`⬆️当地勝率 ${b.localWinRate}`);
+  }
 
-function extractBoatNo(rowHtml) {
-  const colorMatch =
-    rowHtml.match(/is-boatColor([1-6])/i) ||
-    rowHtml.match(/boatColor([1-6])/i) ||
-    rowHtml.match(/boat_color_([1-6])/i);
-
-  if (colorMatch) return Number(colorMatch[1]);
-
-  const text = cleanText(rowHtml);
-  const headMatch = text.match(/^([1-6])\s/);
-  if (headMatch) return Number(headMatch[1]);
-
-  return null;
-}
-
-function extractRegNo(text) {
-  const m = text.match(/\b(\d{4})\b/);
-  return m ? m[1] : "";
-}
-
-function extractClass(text) {
-  const m = text.match(/\b(A1|A2|B1|B2)\b/);
-  return m ? m[1] : "";
-}
-
-function extractName(text) {
-  // 例: 4524 深谷知博 A1
-  let m = text.match(
-    /\b\d{4}\b\s+([一-龥ぁ-んァ-ヶー・\s]{2,16})\s+(A1|A2|B1|B2)\b/
-  );
-  if (m) return m[1].replace(/\s+/g, "");
-
-  // 例: 深谷 知博 A1
-  m = text.match(
-    /([一-龥ぁ-んァ-ヶー・]{1,6}\s+[一-龥ぁ-んァ-ヶー・]{1,8})\s+(A1|A2|B1|B2)\b/
-  );
-  if (m) return m[1].replace(/\s+/g, "");
-
-  return "";
-}
-
-function extractST(text) {
-  // 平均ST付近を優先
-  const stLabel = text.match(/平均ST\s*[:：]?\s*(0\.\d{2})/);
-  if (stLabel) return Number(stLabel[1]);
-
-  // 0.xxが複数あるので、0.10〜0.30をST候補として拾う
-  const matches = [...text.matchAll(/0\.\d{2}/g)]
-    .map(m => Number(m[0]))
-    .filter(n => n >= 0.09 && n <= 0.35);
-
-  return matches.length ? matches[0] : null;
-}
-
-function extractWinRates(text) {
-  // 公式表には勝率が 6.12 などで複数出る
-  const nums = [...text.matchAll(/\b\d+\.\d{2}\b/g)]
-    .map(m => Number(m[0]))
-    .filter(n => n >= 1 && n <= 10);
-
-  // ST 0.xx は除外済み
-  return nums.slice(0, 2);
-}
-
-function extractMotor(text) {
-  // モーター番号っぽい 2桁
-  const m =
-    text.match(/モーター\s*[:：]?\s*(\d{1,3})/) ||
-    text.match(/M\s*[:：]?\s*(\d{1,3})/);
-
-  return m ? Number(m[1]) : null;
-}
-
-function extractBoatNumber(text) {
-  const m =
-    text.match(/ボート\s*[:：]?\s*(\d{1,3})/) ||
-    text.match(/B\s*[:：]?\s*(\d{1,3})/);
-
-  return m ? Number(m[1]) : null;
-}
-
-function makeDebug(html) {
-  const text = cleanText(html);
   return {
-    htmlLength: html.length,
-    textHead: text.slice(0, 500),
-    hasBoatColor: /boatColor|is-boatColor|boat_color/i.test(html),
-    hasRacelist: /racelist/i.test(html),
-    trCount: (html.match(/<tr/gi) || []).length,
-    tbodyCount: (html.match(/<tbody/gi) || []).length
+    buffs: buffs.length ? buffs : ["⬆️大きな加点なし"],
+    debuffs: debuffs.length ? debuffs : ["⬇️大きな減点なし"]
   };
 }
+
+function renderRaceList() {
+  const area = document.querySelector("#raceListArea");
+  if (!area) return;
+
+  area.innerHTML = raceData.map(b => `
+    <div class="boat-row boat-${b.boat}">
+      <strong>${b.boat}号艇</strong> ${b.name}
+      ${b.class ? `<span>${b.class}</span>` : ""}
+      <br>
+      <small>
+        登番:${b.regNo || "-"}　
+        全国:${b.nationalWinRate ?? "-"}　
+        当地:${b.localWinRate ?? "-"}　
+        ST:${b.avgST ?? "-"}
+      </small>
+    </div>
+  `).join("");
+}
+
+function runPrediction() {
+  if (!raceData.length) return;
+
+  const scored = raceData
+    .map(b => ({ ...b, score: calcScore(b) }))
+    .sort((a, b) => b.score - a.score);
+
+  renderEngine(scored);
+  renderMainSheet(scored);
+  renderFormation(scored);
+  renderManshuSheet(scored);
+  renderAlerts(scored);
+  renderFinalComment(scored);
+}
+
+function renderEngine(scored) {
+  const area = document.querySelector("#engineArea");
+  if (!area) return;
+
+  area.innerHTML = scored.map(b => {
+    const bd = getBuffDebuff(b);
+    return `
+      <div class="card-mini">
+        <strong>${b.boat}号艇 ${b.name}</strong>
+        <div>スコア：${b.score}</div>
+        <div>${bd.buffs.slice(0, 2).join(" / ")}</div>
+        <div>${bd.debuffs.slice(0, 1).join(" / ")}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderMainSheet(scored) {
+  const area = document.querySelector("#mainSheetArea");
+  if (!area) return;
+
+  const marks = ["◎", "○", "▲", "△"];
+  const top = scored.slice(0, 4);
+
+  area.innerHTML = top.map((b, i) => {
+    const bd = getBuffDebuff(b);
+    return `
+      <div class="predict-box">
+        <strong>${marks[i]} ${b.boat}号艇 ${b.name}</strong>
+        <div>スコア：${b.score}</div>
+        <div>${bd.buffs.join(" / ")}</div>
+        <div>${bd.debuffs.join(" / ")}</div>
+        <p>${b.boat}号艇は枠・級別・ST・勝率を加味して評価。</p>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderFormation(scored) {
+  const area = document.querySelector("#formationArea");
+  if (!area) return;
+
+  const nums = scored.map(b => b.boat);
+  const first = nums[0];
+  const second = nums[1];
+  const third = nums[2];
+  const fourth = nums[3];
+
+  area.innerHTML = `
+    <div class="predict-box">
+      <strong>【本線】</strong><br>
+      ${first}-${second}${third}-${second}${third}${fourth}<br>
+      ${first}-${second}-${third}<br>
+      ${first}-${third}-${second}
+    </div>
+
+    <div class="predict-box">
+      <strong>【押さえ】</strong><br>
+      1-2-345<br>
+      1-3-245<br>
+      2-1-345
+    </div>
+
+    <div class="predict-box">
+      <strong>【流し】</strong><br>
+      1-${second}${third}-${second}${third}${fourth}<br>
+      ※展開型の安全カバー
+    </div>
+  `;
+}
+
+function renderManshuSheet(scored) {
+  const area = document.querySelector("#manshuSheetArea");
+  if (!area) return;
+
+  const outer = scored.filter(b => b.boat >= 4);
+  const hot = outer.length ? outer[0] : scored[3];
+
+  area.innerHTML = `
+    <div class="predict-box">
+      <strong>穴軸候補：${hot.boat}号艇 ${hot.name}</strong>
+      <div>万舟指数：${Math.max(0, hot.score - 10)}</div>
+      <div>⬆️ 展開拾い / 道中浮上</div>
+      <div>⬇️ 頭固定はリスクあり</div>
+      <p>内側が競る展開なら、2着・3着で絡む余地あり。</p>
+    </div>
+
+    <div class="predict-box">
+      <strong>【万舟候補】</strong><br>
+      5-6-1　オッズ待ち<br>
+      6-4-1　オッズ待ち<br>
+      4-5-6　オッズ待ち<br>
+      5-1-4　オッズ待ち<br>
+      6-1-5　オッズ待ち
+    </div>
+  `;
+}
+
+function renderAlerts(scored) {
+  const area = document.querySelector("#alertArea");
+  if (!area) return;
+
+  const fastest = [...scored]
+    .filter(b => b.avgST !== null)
+    .sort((a, b) => a.avgST - b.avgST)[0];
+
+  area.innerHTML = `
+    <div class="predict-box">
+      <strong>スリットアラート</strong><br>
+      ${fastest ? `${fastest.boat}号艇 ${fastest.name} ST優秀` : "ST情報なし"}
+    </div>
+    <div class="predict-box">
+      <strong>ダブルタイム理論</strong><br>
+      展示・一周タイム入力後に判定
+    </div>
+    <div class="predict-box">
+      <strong>新サムアラート</strong><br>
+      展示＋一周タイム入力後に判定
+    </div>
+  `;
+}
+
+function renderFinalComment(scored) {
+  const area = document.querySelector("#finalCommentArea");
+  if (!area) return;
+
+  const top = scored[0];
+
+  area.innerHTML = `
+    <p>
+      現時点の中心は <strong>${top.boat}号艇 ${top.name}</strong>。
+      展示・オッズ・水面で最終補正。
+      本命は指数上位、万舟は展開拾いを中心に見る。
+    </p>
+  `;
+}
+
+function setStatus(text) {
+  const status = document.querySelector("#statusText");
+  if (status) status.textContent = text;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.querySelector("#fetchRaceBtn");
+  if (btn) btn.addEventListener("click", fetchRaceData);
+
+  const raceList = document.querySelector("#raceListArea");
+  if (raceList) {
+    raceList.innerHTML = "場・レースを選んで取得してください。";
+  }
+
+  setStatus("未取得");
+});
