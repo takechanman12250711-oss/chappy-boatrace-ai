@@ -1,275 +1,265 @@
-// script.js v6.2
-// index.html対応版：placeSelect / raceSelect / dateInput / fetchRaceBtn 対応
-// JSON直表示をやめて、青シート・ピンクシートへ表示
+// script.js v7
+// 大きく見やすい表示版
 
 const API_BASE = "/api/race";
 
 const PLACE_CODES = {
-  桐生: "01", 戸田: "02", 江戸川: "03", 平和島: "04",
-  多摩川: "05", 浜名湖: "06", 蒲郡: "07", 常滑: "08",
-  津: "09", 三国: "10", びわこ: "11", 住之江: "12",
-  尼崎: "13", 鳴門: "14", 丸亀: "15", 児島: "16",
-  宮島: "17", 徳山: "18", 下関: "19", 若松: "20",
-  芦屋: "21", 福岡: "22", 唐津: "23", 大村: "24"
+  桐生:"01", 戸田:"02", 江戸川:"03", 平和島:"04",
+  多摩川:"05", 浜名湖:"06", 蒲郡:"07", 常滑:"08",
+  津:"09", 三国:"10", びわこ:"11", 住之江:"12",
+  尼崎:"13", 鳴門:"14", 丸亀:"15", 児島:"16",
+  宮島:"17", 徳山:"18", 下関:"19", 若松:"20",
+  芦屋:"21", 福岡:"22", 唐津:"23", 大村:"24"
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  const btn =
-    document.querySelector("#fetchRaceBtn") ||
-    document.querySelector("#predictBtn") ||
-    document.querySelector("#runBtn") ||
-    document.querySelector("button");
-
-  if (btn) btn.addEventListener("click", runPrediction);
+  document.querySelector("#fetchRaceBtn")?.addEventListener("click", runPrediction);
 });
 
 async function runPrediction() {
-  const place = getValue(["#placeSelect", "#place", "#jcd"]);
-  const rno = getValue(["#raceSelect", "#rno", "#raceNo", "#race"]);
-  const dateInput = getValue(["#dateInput", "#date", "#raceDate"]);
-  const date = dateInput
-  ? String(dateInput).replaceAll("-", "").replaceAll("/", "")
-  : todayYmd();
-
+  const place = val("#placeSelect");
+  const rnoRaw = val("#raceSelect");
+  const rno = String(rnoRaw).replace("R", "");
+  const dateRaw = val("#dateInput");
+  const date = dateRaw ? dateRaw.replaceAll("-", "").replaceAll("/", "") : todayYmd();
   const jcd = PLACE_CODES[place] || place;
 
   if (!jcd || !rno) {
-    showError("場名とレース番号を入力してね。");
+    showError("場とレースを選んでね");
     return;
   }
 
-  showLoading();
   setStatus("取得中…");
+  clearAreas();
+  setHTML("#raceListArea", `<div class="loading">読み込み中…🚤</div>`);
 
   try {
-    const url = `${API_BASE}?jcd=${encodeURIComponent(jcd)}&rno=${encodeURIComponent(rno)}&date=${encodeURIComponent(date)}`;
-console.log("FETCH URL:", url);
+    const url = `${API_BASE}?jcd=${jcd}&rno=${rno}&date=${date}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-const res = await fetch(url);
-const text = await res.text();
-console.log("API TEXT:", text);
+    if (!data.ok) {
+      showError(data.error || "API取得失敗");
+      setStatus("取得失敗");
+      return;
+    }
 
-let data;
-try {
-  data = JSON.parse(text);
-} catch (e) {
-  showError("JSON変換エラー：" + text.slice(0, 200));
-  setStatus("取得失敗");
-  return;
-}
+    if (!Array.isArray(data.boats) || data.boats.length === 0) {
+      showError(data.message || "出走表データがありません");
+      setStatus("取得失敗");
+      return;
+    }
 
-if (!data.ok) {
-  showError(data.error || "API取得に失敗しました。");
-  setStatus("取得失敗");
-  return;
-}
-
-if (!Array.isArray(data.boats) || data.boats.length === 0) {
-  showError("boatsが空です：" + JSON.stringify(data).slice(0, 300));
-  setStatus("取得失敗");
-  return;
-}
-
-    renderPrediction(data);
+    renderAll(data);
     setStatus("取得成功");
-  } catch (err) {
-    showError("通信エラー：" + err.message);
+  } catch (e) {
+    showError("通信エラー：" + e.message);
     setStatus("通信エラー");
   }
 }
 
-function renderPrediction(data) {
+function renderAll(data) {
   const boats = data.boats || [];
-  const prediction = data.prediction || data.theory || {};
+  const p = data.prediction || {};
   const venue = data.venue || {};
   const weather = data.weather || {};
 
-  setHTML("#raceListArea", raceListHtml(boats));
-  setHTML("#engineArea", engineHtml(boats, weather, venue));
-  setHTML("#mainSheetArea", blueSheet(boats, prediction, weather, venue, data));
-  setHTML("#formationArea", formationHtml(prediction));
-  setHTML("#manshuSheetArea", pinkSheet(boats, prediction));
-  setHTML("#alertArea", alerts(prediction));
-
-  const result = document.querySelector("#result");
-  if (result) result.innerHTML = "";
+  setHTML("#raceListArea", renderEntryTable(boats));
+  setHTML("#engineArea", renderCondition(data, venue, weather, boats));
+  setHTML("#mainSheetArea", renderMainSheet(boats, p, venue));
+  setHTML("#formationArea", renderFormations(p));
+  setHTML("#manshuSheetArea", renderManshuSheet(boats, p));
+  setHTML("#alertArea", renderAlerts(p));
+  setHTML("#finalCommentArea", renderFinalComment(p, venue, weather));
 }
 
-function raceListHtml(boats) {
+function renderEntryTable(boats) {
   return `
-    <div class="mini-table">
-      ${boats.map(b => `
-        <div class="mini-row">
-          <b>${b.boat}号艇</b>
-          <span>${b.name || "-"}</span>
-          <span>${b.class || "-"}</span>
-          <span>ST ${formatST(b.avgST)}</span>
-        </div>
-      `).join("")}
+    <div class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>艇</th><th>選手</th><th>級</th><th>平均ST</th><th>展示ST</th><th>展示</th><th>総合</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${boats.map(b => `
+            <tr>
+              <td><b>${b.boat}</b></td>
+              <td>${b.name || "-"}</td>
+              <td>${b.class || "-"}</td>
+              <td>${fmtST(b.avgST)}</td>
+              <td>${fmtST(b.exhibitionST)}</td>
+              <td>${b.exhibitionTime ?? "-"}</td>
+              <td><b>${b.totalScore ?? "-"}</b></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
     </div>
   `;
 }
 
-function engineHtml(boats, weather, venue) {
+function renderCondition(data, venue, weather, boats) {
   return `
-    <div class="info-box">
-      <p><b>場特性：</b>${venue.courseBias || "-"}</p>
+    <div class="comment-box">
+      <p><b>場：</b>${venue.name || data.jcd}　<b>傾向：</b>${venue.courseBias || "-"}</p>
       <p><b>推奨展開：</b>${venue.recommendedShape || "-"}</p>
-      <p><b>水面：</b>${weather.weather || "-"} / 風 ${weather.windSpeed ?? "-"}m / 波 ${weather.waveHeight ?? "-"}cm</p>
+      <p><b>水面：</b>${weather.weather || "-"} / 風 ${weather.windSpeed ?? "-"}m / 波 ${weather.waveHeight ?? "-"}cm / 気温 ${weather.temperature ?? "-"}℃</p>
     </div>
-    <div class="mini-table">
-      ${boats.map(b => `
-        <div class="mini-row">
-          <b>${b.boat}号艇</b>
-          <span>モーター ${b.motor ?? "-"} / ${b.motor2Rate ?? "-"}%</span>
-          <span>ボート ${b.boatNo ?? "-"} / ${b.boat2Rate ?? "-"}%</span>
-          <span>展示 ${b.exhibitionTime ?? "-"}</span>
-        </div>
-      `).join("")}
+
+    <div class="table">
+      <table>
+        <thead>
+          <tr>
+            <th>艇</th><th>モーター</th><th>M2率</th><th>M3率</th><th>ボート</th><th>B2率</th><th>チルト</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${boats.map(b => `
+            <tr>
+              <td><b>${b.boat}</b></td>
+              <td>${b.motor ?? "-"}</td>
+              <td>${b.motor2Rate ?? "-"}%</td>
+              <td>${b.motor3Rate ?? "-"}%</td>
+              <td>${b.boatNo ?? "-"}</td>
+              <td>${b.boat2Rate ?? "-"}%</td>
+              <td>${b.tilt ?? "-"}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
     </div>
   `;
 }
 
-function blueSheet(boats, p, weather, venue, data) {
-  const marks = p.marks || {};
+function renderMainSheet(boats, p, venue) {
+  const m = p.marks || {};
 
   return `
-    <div class="sheet blue-sheet">
-      <h3>🎯 ${venue.name || data.jcd || ""} ${data.rno || ""}R 本命シート</h3>
+    <div class="rank-card">${markLine("◎ 本命", m.honmei)}</div>
+    <div class="rank-card">${markLine("○ 対抗", m.taikou)}</div>
+    <div class="rank-card">${markLine("▲ 穴", m.ana)}</div>
+    <div class="rank-card">${markLine("△ 押さえ", m.osaE)}</div>
 
-      <div class="mark-grid">
-        ${markCard("◎ 本命", marks.honmei)}
-        ${markCard("○ 対抗", marks.taikou)}
-        ${markCard("▲ 穴", marks.ana)}
-        ${markCard("△ 押さえ", marks.osaE)}
-      </div>
+    <details open>
+      <summary>各艇の詳しい評価を見る</summary>
+      ${boats.map(renderBoatDetail).join("")}
+    </details>
+  `;
+}
 
-      <h4>🚤 各艇指数</h4>
-      ${boats.map(boatCard).join("")}
+function markLine(label, m) {
+  if (!m) return `<b>${label}</b><br>該当なし`;
 
-      <h4>📝 展開コメント</h4>
-      <p>${p.raceComment || p.raceShape?.memo || "-"}</p>
+  return `
+    <b>${label}</b><br>
+    <span style="font-size:1.25rem;font-weight:800;">${m.boat}号艇 ${m.name || ""}</span><br>
+    総合 ${m.totalScore ?? "-"} / チャッピー ${m.chappyScore ?? "-"} / 舟券太郎 ${m.funaTaroScore ?? "-"}
+  `;
+}
+
+function renderBoatDetail(b) {
+  return `
+    <div class="boat-card boat-${b.boat}">
+      <h3>${b.boat}号艇 ${b.name || ""}</h3>
+      <p><b>指数：</b>総合 ${b.totalScore ?? "-"} / チャッピー ${b.chappyScore ?? "-"} / 舟券太郎 ${b.funaTaroScore ?? "-"}</p>
+      <p><b>選手：</b>${b.class || "-"} / ${b.branchHome || "-"} / ${b.ageWeight || "-"}</p>
+      <p><b>勝率：</b>全国 ${b.nationalWinRate ?? "-"} / 当地 ${b.localWinRate ?? "-"}</p>
+      <p><b>ST：</b>平均 ${fmtST(b.avgST)} / 展示 ${fmtST(b.exhibitionST)}</p>
+      <p><b>展示：</b>${b.exhibitionTime ?? "-"} / チルト ${b.tilt ?? "-"}</p>
+      <p><b>モーター：</b>${b.motor ?? "-"}号機 / 2率 ${b.motor2Rate ?? "-"}% / 3率 ${b.motor3Rate ?? "-"}%</p>
+      <p><b>ボート：</b>${b.boatNo ?? "-"} / 2率 ${b.boat2Rate ?? "-"}% / 3率 ${b.boat3Rate ?? "-"}%</p>
+      <p>⬆️ ${join(b.buffs)}</p>
+      <p>⬇️ ${join(b.debuffs)}</p>
+      <p><b>一言：</b>${b.shortComment || "-"}</p>
     </div>
   `;
 }
 
-function pinkSheet(boats, p) {
+function renderFormations(p) {
+  return `
+    <h3>🎯 本線</h3>
+    ${tickets(p.mainFormation)}
+
+    <h3>🛡 押さえ・流し</h3>
+    ${tickets((p.mainFormation || []).filter(x => String(x).includes("流し")))}
+
+    <h3>💣 穴</h3>
+    ${tickets(p.holeFormation)}
+  `;
+}
+
+function renderManshuSheet(boats, p) {
   const outer = boats.filter(b => Number(b.boat) >= 4);
 
   return `
-    <div class="sheet pink-sheet">
-      <h3>💣 万舟シート</h3>
-
-      <h4>💣 穴フォーメーション</h4>
-      ${formation(p.holeFormation)}
-
-      <h4>🌪 外枠期待度</h4>
-      ${outer.map(holeBoatCard).join("")}
+    <div class="comment-box">
+      <b>万舟の見方：</b>外枠だけでなく、2差し・3攻めからの内側残りも見る。
     </div>
+    ${outer.map(b => `
+      <div class="boat-card boat-${b.boat}">
+        <h3>${b.boat}号艇 ${b.name || ""}</h3>
+        <p><b>万舟期待度：</b>${stars(b.totalScore)}</p>
+        <p>総合 ${b.totalScore ?? "-"} / 展示 ${b.exhibitionTime ?? "-"} / 展示ST ${fmtST(b.exhibitionST)}</p>
+        <p>${b.shortComment || "展開待ち"}</p>
+      </div>
+    `).join("")}
   `;
 }
 
-function formationHtml(p) {
-  return `
-    <div class="formation-box">
-      <h4>🚤 本線フォーメーション</h4>
-      ${formation(p.mainFormation)}
-
-      <h4>🚤 穴フォーメーション</h4>
-      ${formation(p.holeFormation)}
-    </div>
-  `;
-}
-
-function markCard(label, m) {
-  if (!m) return `<div class="mark-card"><b>${label}</b><br>該当なし</div>`;
-
-  return `
-    <div class="mark-card">
-      <div class="mark-title">${label}</div>
-      <div class="mark-boat">${m.boat}号艇 ${m.name || ""}</div>
-      <p>総合 ${m.totalScore ?? "-"} / チャッピー ${m.chappyScore ?? "-"} / 舟券太郎 ${m.funaTaroScore ?? "-"}</p>
-    </div>
-  `;
-}
-
-function boatCard(b) {
-  return `
-    <div class="boat-card boat-${b.boat}">
-      <h4>${b.boat}号艇 ${b.name || ""}</h4>
-      <p><b>総合：</b>${b.totalScore ?? "-"}　<b>チャッピー：</b>${b.chappyScore ?? "-"}　<b>舟券太郎：</b>${b.funaTaroScore ?? "-"}</p>
-      <p><b>展示：</b>${b.exhibitionTime ?? "-"}　<b>展示ST：</b>${formatST(b.exhibitionST)}　<b>チルト：</b>${b.tilt ?? "-"}</p>
-      <p><b>モーター：</b>${b.motor ?? "-"}号機 / 2連率 ${b.motor2Rate ?? "-"}%</p>
-      <p><b>ボート：</b>${b.boatNo ?? "-"} / 2連率 ${b.boat2Rate ?? "-"}%</p>
-      <p>⬆️ ${joinText(b.buffs)}</p>
-      <p>⬇️ ${joinText(b.debuffs)}</p>
-      <p>${b.shortComment || "-"}</p>
-    </div>
-  `;
-}
-
-function holeBoatCard(b) {
-  const score = Number(b.totalScore || 0);
-  const stars = score >= 60 ? "★★★★★" : score >= 55 ? "★★★★" : score >= 50 ? "★★★" : "★★";
-
-  return `
-    <div class="boat-card hole-card boat-${b.boat}">
-      <h4>${b.boat}号艇 ${b.name || ""}</h4>
-      <p><b>万舟期待：</b>${stars}</p>
-      <p><b>総合：</b>${b.totalScore ?? "-"} / <b>展示：</b>${b.exhibitionTime ?? "-"} / <b>展示ST：</b>${formatST(b.exhibitionST)}</p>
-      <p>${b.shortComment || "展開待ち"}</p>
-    </div>
-  `;
-}
-
-function alerts(p) {
+function renderAlerts(p) {
   const list = [
     ...(p.slitAlert || []),
     ...(p.doubleTimeAlert || []),
     ...(p.newSumAlert || [])
   ];
 
-  if (!list.length) return `<p>大きなアラートなし</p>`;
+  if (!list.length) return `<div class="comment-box">大きなアラートなし</div>`;
 
+  return list.map(a => `
+    <div class="alert-card">
+      <b>${a.boat}号艇 ${a.type || "アラート"}</b><br>
+      ${a.reason || ""}${a.sum ? ` / 合計 ${a.sum}` : ""}
+    </div>
+  `).join("");
+}
+
+function renderFinalComment(p, venue, weather) {
   return `
-    <div class="alert-list">
-      ${list.map(a => `
-        <div class="alert-card">
-          <b>${a.boat}号艇</b> ${a.type || "アラート"}<br>
-          ${a.reason || ""}${a.sum ? ` / 合計 ${a.sum}` : ""}
-        </div>
-      `).join("")}
+    <div class="comment-box">
+      <p>${p.raceComment || "-"}</p>
+      <p><b>展開：</b>${p.raceShape?.shape || "-"}</p>
+      <p><b>場特性：</b>${venue.courseBias || "-"} / <b>水面：</b>${weather.weather || "-"} 風${weather.windSpeed ?? "-"}m 波${weather.waveHeight ?? "-"}cm</p>
     </div>
   `;
 }
 
-function formation(list) {
-  if (!Array.isArray(list) || list.length === 0) {
-    return `<p>なし</p>`;
-  }
-
-  return `
-    <div class="formation">
-      ${list.map(x => `<span>${x}</span>`).join("")}
-    </div>
-  `;
+function tickets(list) {
+  if (!Array.isArray(list) || list.length === 0) return `<p>なし</p>`;
+  return list.map(x => `<span class="ticket">${x}</span>`).join("");
 }
 
-function showLoading() {
-  setHTML("#raceListArea", "読み込み中…🚤");
-  setHTML("#mainSheetArea", "");
-  setHTML("#formationArea", "");
-  setHTML("#manshuSheetArea", "");
-  setHTML("#alertArea", "");
+function stars(score) {
+  const s = Number(score || 0);
+  if (s >= 70) return "★★★★★";
+  if (s >= 60) return "★★★★";
+  if (s >= 50) return "★★★";
+  return "★★";
+}
+
+function clearAreas() {
+  ["#raceListArea","#engineArea","#mainSheetArea","#formationArea","#manshuSheetArea","#alertArea","#finalCommentArea"]
+    .forEach(id => setHTML(id, ""));
 }
 
 function showError(msg) {
-  const html = `<div class="error">⚠️ ${msg}</div>`;
-  setHTML("#raceListArea", html);
-  setHTML("#mainSheetArea", "");
-  setHTML("#formationArea", "");
-  setHTML("#manshuSheetArea", "");
-  setHTML("#alertArea", "");
+  setHTML("#raceListArea", `<div class="error">⚠️ ${msg}</div>`);
+}
+
+function setHTML(id, html) {
+  const el = document.querySelector(id);
+  if (el) el.innerHTML = html;
 }
 
 function setStatus(text) {
@@ -277,26 +267,15 @@ function setStatus(text) {
   if (el) el.textContent = text;
 }
 
-function setHTML(selector, html) {
-  const el = document.querySelector(selector);
-  if (el) el.innerHTML = html;
+function val(id) {
+  return document.querySelector(id)?.value?.trim() || "";
 }
 
-function getValue(selectors) {
-  for (const selector of selectors) {
-    const el = document.querySelector(selector);
-    if (el && el.value !== undefined && String(el.value).trim() !== "") {
-      return String(el.value).trim();
-    }
-  }
-  return "";
+function join(v) {
+  return Array.isArray(v) && v.length ? v.join(" / ") : "なし";
 }
 
-function joinText(arr) {
-  return Array.isArray(arr) && arr.length ? arr.join(" / ") : "なし";
-}
-
-function formatST(v) {
+function fmtST(v) {
   if (v === null || v === undefined || v === "" || Number.isNaN(Number(v))) return "-";
   const n = Number(v);
   if (n < 0) return `F${Math.abs(n).toFixed(2).slice(1)}`;
@@ -305,5 +284,5 @@ function formatST(v) {
 
 function todayYmd() {
   const d = new Date();
-  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
 }
