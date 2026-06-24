@@ -45,7 +45,7 @@ if (!parsedRace || !parsedRace.boats || parsedRace.boats.length === 0) {
     jcd,
     rno,
     date,
-    venue: getVenueProfile(jcd),
+    venue: theory?.venue || { name: "不明" },
     count: 0,
     boats: [],
     message: "出走表の解析に失敗"
