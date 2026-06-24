@@ -104,19 +104,7 @@ let beforeParsed = {
         holeFormation: theory.holeFormation,
         raceComment: theory.raceComment
       },
-      debug: debug === "1" ? makeDebug(raceHtml, raceText, parsedRace, beforeParsed, theory) : undefined
-    });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: err.message,
-      jcd,
-      rno,
-      date,
-      raceListUrl,
-      beforeInfoUrl
-    });
-  }
+      debug: debug === "1" ? makeDebug(raceHtml, raceText, parsedRace, beforeParsed, theory) : 
 }
 
 async function fetchHtml(url) {
