@@ -24,26 +24,21 @@ module.exports = async function handler(req, res) {
   const beforeInfoUrl =
     `https://www.boatrace.jp/owpc/pc/race/beforeinfo?rno=${rno}&jcd=${jcd}&hd=${date}`;
 
-  try {
+  let raceText = "";
+let parsedRace = null;
+
+try {
   const raceHtml = await fetchHtml(raceListUrl);
-  const raceText = cleanText(raceHtml);
-
-  const parsedRace = parseRaceText(raceText);
-
-  let beforeParsed = {
-    ok: false,
-    displays: [],
-    weather: null,
-    text: "",
-    error: ""
-  };
+  raceText = cleanText(raceHtml);
+  parsedRace = parseRaceText(raceText);
 } catch (e) {
   return res.status(500).json({
     ok: false,
     error: e.message
   });
 }
-if (!parsedRace.boats || parsedRace.boats.length === 0) {
+
+if (!parsedRace || !parsedRace.boats || parsedRace.boats.length === 0) {
   return res.status(200).json({
     ok: true,
     source: "boatrace.jp",
@@ -64,6 +59,7 @@ let beforeParsed = {
   text: "",
   error: ""
 };
+  
     try {
   const beforeHtml = await fetchHtml(beforeInfoUrl);
       const beforeText = cleanText(beforeHtml);
