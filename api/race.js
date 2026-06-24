@@ -30,11 +30,15 @@ let parsedRace = null;
 try {
   const raceHtml = await fetchHtml(raceListUrl);
   raceText = cleanText(raceHtml);
+
+  console.log(raceText.substring(0,3000));
+
   parsedRace = parseRaceText(raceText);
+
 } catch (e) {
   return res.status(500).json({
-    ok: false,
-    error: e.message
+    ok:false,
+    error:e.message
   });
 }
 
