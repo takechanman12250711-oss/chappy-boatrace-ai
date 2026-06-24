@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
   try {
     const html = await fetchHtml(url);
     const text = cleanText(html);
-console.log(oddsText.substring(0,5000));
+　　console.log(text.substring(0,5000));
     const odds = parseOdds3t(text);
 
     return res.status(200).json({
