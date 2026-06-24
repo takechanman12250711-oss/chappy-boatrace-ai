@@ -28,18 +28,20 @@ export default async function handler(req, res) {
     const raceHtml = await fetchHtml(raceListUrl);
     const raceText = cleanText(raceHtml);
 
-    if (raceText.includes("データがありません")) {
-      return res.status(200).json({
-        ok: true,
-        source: "boatrace.jp",
-        jcd,
-        rno,
-        date,
-        count: 0,
-        boats: [],
-        message: "データがありません"
-      });
-    }
+    const racerHitCount = (raceText.match(/\d{4}\s*\/\s*[AB]\d/g) || []).length;
+
+if (racerHitCount < 6 && raceText.includes("データがありません")) {
+  return res.status(200).json({
+    ok: true,
+    source: "boatrace.jp",
+    jcd,
+    rno,
+    date,
+    count: 0,
+    boats: [],
+    message: "データがありません"
+  });
+}
 
     const parsedRace = parseRaceText(raceText);
 
