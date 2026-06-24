@@ -3,143 +3,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>チャッピーボートレースAI v2</title>
+  <title>チャッピーボートレースAI</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <div class="app">
+  <header class="app-header">
+    <h1>🚤 チャッピーボートレースAI</h1>
+    <p>大きく見やすい予想シート v7</p>
+  </header>
 
-    <header class="hero">
-      <h1>🚤 チャッピーボートレースAI v2</h1>
-      <p>出走表 自動取得 × 予想エンジン</p>
-    </header>
+  <main class="app">
 
-    <section class="card">
-      <h2>① レース選択</h2>
+    <section class="control-card">
+      <h2>レース選択</h2>
+
+      <label>日付</label>
+      <input id="dateInput" type="text" placeholder="例：20260624 / 2026/06/24" />
 
       <label>場</label>
       <select id="placeSelect">
-        <option>大村</option>
-        <option>若松</option>
-        <option>丸亀</option>
-        <option>宮島</option>
-        <option>下関</option>
-        <option>多摩川</option>
-        <option>桐生</option>
-        <option>戸田</option>
-        <option>江戸川</option>
-        <option>平和島</option>
-        <option>浜名湖</option>
-        <option>蒲郡</option>
-        <option>常滑</option>
-        <option>津</option>
-        <option>三国</option>
-        <option>びわこ</option>
-        <option>住之江</option>
-        <option>尼崎</option>
-        <option>鳴門</option>
-        <option>児島</option>
-        <option>徳山</option>
-        <option>芦屋</option>
-        <option>福岡</option>
-        <option>唐津</option>
+        <option>桐生</option><option>戸田</option><option>江戸川</option><option>平和島</option>
+        <option>多摩川</option><option>浜名湖</option><option>蒲郡</option><option>常滑</option>
+        <option>津</option><option>三国</option><option>びわこ</option><option>住之江</option>
+        <option>尼崎</option><option>鳴門</option><option>丸亀</option><option>児島</option>
+        <option>宮島</option><option>徳山</option><option>下関</option><option>若松</option>
+        <option>芦屋</option><option>福岡</option><option>唐津</option><option>大村</option>
       </select>
 
       <label>レース</label>
       <select id="raceSelect">
-        <option>1R</option>
-        <option>2R</option>
-        <option>3R</option>
-        <option>4R</option>
-        <option>5R</option>
-        <option>6R</option>
-        <option>7R</option>
-        <option>8R</option>
-        <option>9R</option>
-        <option>10R</option>
-        <option>11R</option>
-        <option>12R</option>
+        <option value="1">1R</option>
+        <option value="2">2R</option>
+        <option value="3">3R</option>
+        <option value="4">4R</option>
+        <option value="5">5R</option>
+        <option value="6">6R</option>
+        <option value="7">7R</option>
+        <option value="8">8R</option>
+        <option value="9">9R</option>
+        <option value="10">10R</option>
+        <option value="11">11R</option>
+        <option value="12">12R</option>
       </select>
 
       <button id="fetchRaceBtn">出走表取得して予想</button>
 
-      <p id="statusText" class="status">未取得</p>
+      <div id="statusText" class="status">未取得</div>
     </section>
 
-    <details class="card">
-      <summary>⚙ 詳細設定</summary>
-
-      <label>日付</label>
-      <input id="dateInput" type="date" />
-
-      <p class="note">
-        日付未入力なら今日の出走表を取得します。
-      </p>
-    </details>
-
-    <section class="card">
-      <h2>③ 入力データ確認</h2>
-
-      <textarea id="rawDataInput" placeholder="自動取得できない時だけ、出走表データを貼り付け"></textarea>
-      <textarea id="oddsInput" placeholder="出てない目TOP30を使う時だけ、オッズ人気順などを貼り付け"></textarea>
-
-      <div class="button-row">
-        <button id="sampleBtn" type="button">サンプル入力</button>
-        <button id="clearBtn" type="button">クリア</button>
-      </div>
+    <section class="panel">
+      <h2>🚤 出走表一覧</h2>
+      <div id="raceListArea">まだ取得していません</div>
     </section>
 
-    <section class="card">
-      <h2>🚤 出走表</h2>
-      <div id="raceListArea" class="race-list">
-        まだ取得されていません。
-      </div>
-    </section>
-
-    <section class="card blue">
-      <h2>🧠 予想エンジン</h2>
+    <section class="panel">
+      <h2>🌊 水面・モーター情報</h2>
       <div id="engineArea"></div>
     </section>
 
-    <section class="card blue">
+    <section class="panel blue-panel">
       <h2>🎯 本命シート</h2>
       <div id="mainSheetArea"></div>
     </section>
 
-    <section class="card">
-      <h2>📊 フォーメーション</h2>
+    <section class="panel">
+      <h2>🎫 フォーメーション</h2>
       <div id="formationArea"></div>
     </section>
 
-    <section class="card pink">
+    <section class="panel pink-panel">
       <h2>💣 万舟シート</h2>
       <div id="manshuSheetArea"></div>
     </section>
 
-    <details class="card">
-      <summary>📊 出てない目TOP30</summary>
-      <div id="missingTop30Area">
-        オッズ入力後に表示
-      </div>
-    </details>
-
-    <section class="card red">
-      <h2>🚨 舟券太郎アラート</h2>
+    <section class="panel">
+      <h2>🚨 理論アラート</h2>
       <div id="alertArea"></div>
     </section>
 
-    <section class="card green">
-      <h2>🧊 最終コメント</h2>
+    <section class="panel">
+      <h2>📝 最終コメント</h2>
       <div id="finalCommentArea"></div>
     </section>
 
-    <footer>
-      的中率60%・指数40%<br />
-      展示・オッズ・水面は直前補正
-    </footer>
+    <div id="result"></div>
 
-  </div>
+  </main>
 
   <script src="script.js"></script>
 </body>
