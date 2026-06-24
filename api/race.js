@@ -64,7 +64,8 @@ let beforeParsed = {
   text: "",
   error: ""
 };
-    
+    try {
+  const beforeHtml = await fetchHtml(beforeInfoUrl);
       const beforeText = cleanText(beforeHtml);
 
       if (!beforeText.includes("データがありません")) {
