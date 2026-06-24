@@ -13,9 +13,11 @@ const PLACE_CODES = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.querySelector("#predictBtn")
-    || document.querySelector("#runBtn")
-    || document.querySelector("button");
+  const btn = document.querySelector("#fetchRaceBtn");
+
+const place = getValue(["#placeSelect", "#place", "#jcd"]);
+const rno = getValue(["#raceSelect", "#rno", "#raceNo", "#race"]);
+const date = getValue(["#dateInput", "#date", "#raceDate"]) || todayYmd();
 
   if (btn) btn.addEventListener("click", runPrediction);
 });
