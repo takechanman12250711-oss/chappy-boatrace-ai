@@ -165,7 +165,7 @@ function parseRaceText(text) {
   const startIndex = text.indexOf("登録番号");
   if (startIndex >= 0) target = text.slice(startIndex);
 
-  const regClassRegex = /(\d{4})\s*\/\s*(A1|A2|B1|B2)/g;
+  const regClassRegex = /(\d{4})\s*(?:\/|\s+)\s*(A1|A2|B1|B2)/g;
   const hits = [];
   let m;
 
