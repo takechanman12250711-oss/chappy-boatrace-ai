@@ -27,7 +27,9 @@ async function runPrediction() {
   const place = getValue(["#placeSelect", "#place", "#jcd"]);
   const rno = getValue(["#raceSelect", "#rno", "#raceNo", "#race"]);
   const dateInput = getValue(["#dateInput", "#date", "#raceDate"]);
-  const date = dateInput ? dateInput.replaceAll("-", "") : todayYmd();
+  const date = dateInput
+  ? String(dateInput).replaceAll("-", "").replaceAll("/", "")
+  : todayYmd();
 
   const jcd = PLACE_CODES[place] || place;
 
