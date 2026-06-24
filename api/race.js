@@ -104,7 +104,8 @@ let beforeParsed = {
         holeFormation: theory.holeFormation,
         raceComment: theory.raceComment
       },
-      debug: debug === "1" ? makeDebug(raceHtml, raceText, parsedRace, beforeParsed, theory) : 
+      debug: debug === "1" ? makeDebug(raceHtml, raceText, parsedRace, beforeParsed, theory) : null
+});
 }
 
 async function fetchHtml(url) {
