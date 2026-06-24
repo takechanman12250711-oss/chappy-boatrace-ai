@@ -64,13 +64,7 @@ let beforeParsed = {
   text: "",
   error: ""
 };
-    venue: getVenueProfile(jcd),
-    count: 0,
-    boats: [],
-    message: "出走表の解析に失敗"
-  });
-}
-      const beforeHtml = await fetchHtml(beforeInfoUrl);
+    
       const beforeText = cleanText(beforeHtml);
 
       if (!beforeText.includes("データがありません")) {
