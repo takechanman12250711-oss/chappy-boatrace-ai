@@ -43,20 +43,32 @@ async function runPrediction() {
 
   try {
     const url = `${API_BASE}?jcd=${encodeURIComponent(jcd)}&rno=${encodeURIComponent(rno)}&date=${encodeURIComponent(date)}`;
-    const res = await fetch(url);
-    const data = await res.json();
+console.log("FETCH URL:", url);
 
-    if (!data.ok) {
-      showError(data.error || "API取得に失敗しました。");
-      setStatus("取得失敗");
-      return;
-    }
+const res = await fetch(url);
+const text = await res.text();
+console.log("API TEXT:", text);
 
-    if (!Array.isArray(data.boats) || data.boats.length === 0) {
-      showError("出走表データが取得できませんでした。場・R・日付を確認してね。");
-      setStatus("取得失敗");
-      return;
-    }
+let data;
+try {
+  data = JSON.parse(text);
+} catch (e) {
+  showError("JSON変換エラー：" + text.slice(0, 200));
+  setStatus("取得失敗");
+  return;
+}
+
+if (!data.ok) {
+  showError(data.error || "API取得に失敗しました。");
+  setStatus("取得失敗");
+  return;
+}
+
+if (!Array.isArray(data.boats) || data.boats.length === 0) {
+  showError("boatsが空です：" + JSON.stringify(data).slice(0, 300));
+  setStatus("取得失敗");
+  return;
+}
 
     renderPrediction(data);
     setStatus("取得成功");
