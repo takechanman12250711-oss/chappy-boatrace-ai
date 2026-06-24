@@ -28,19 +28,7 @@ export default async function handler(req, res) {
     const raceHtml = await fetchHtml(raceListUrl);
     const raceText = cleanText(raceHtml);
 
-    const racerHitCount = (raceText.match(/\d{4}\s*\/\s*[AB]\d/g) || []).length;
-
-if (racerHitCount < 6 && raceText.includes("データがありません")) {
-  return res.status(200).json({
-    ok: true,
-    source: "boatrace.jp",
-    jcd,
-    rno,
-    date,
-    count: 0,
-    boats: [],
-    message: "データがありません"
-  });
+    
 }
 
     const parsedRace = parseRaceText(raceText);
@@ -53,7 +41,35 @@ if (racerHitCount < 6 && raceText.includes("データがありません")) {
       error: ""
     };
 
-    try {
+    const parsedRace = parseRaceText(raceText);
+
+if (!parsedRace.boats || parsedRace.boats.length === 0) {
+  return res.status(200).json({
+    ok: true,
+    source: "boatrace.jp",
+    jcd,
+    rno,
+    date,
+    venue: getVenueProfile(jcd),
+    count: 0,
+    boats: [],
+    message: "出走表の解析に失敗"
+  });
+}
+
+let beforeParsed = {
+  ok: false,
+  displays: [],
+  weather: null,
+  text: "",
+  error: ""
+};
+    venue: getVenueProfile(jcd),
+    count: 0,
+    boats: [],
+    message: "出走表の解析に失敗"
+  });
+}
       const beforeHtml = await fetchHtml(beforeInfoUrl);
       const beforeText = cleanText(beforeHtml);
 
