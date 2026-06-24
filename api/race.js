@@ -8,7 +8,8 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const { jcd, rno, date, debug } = req.query;
+  const { jcd, date, debug } = req.query;
+const rno = String(req.query.rno || "").replace("R", "");
 
   if (!jcd || !rno || !date) {
     return res.status(400).json({
