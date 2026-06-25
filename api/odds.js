@@ -21,9 +21,18 @@ module.exports = async function handler(req, res) {
 
   try {
     const html = await fetchHtml(url);
-    const odds = parseOddsFromHtml(html);
+const text = cleanText(html);
 
-    const text = cleanText(html);
+console.log(text.substring(0,5000));
+
+const start =
+  text.indexOf("3連単オッズ") > -1
+    ? text.indexOf("3連単オッズ")
+    : 0;
+
+const target = text.substring(start);
+
+const odds = parseOdds3t(target);
     const numbers = extractNumberStream(text);
 
     return res.status(200).json({
@@ -37,9 +46,8 @@ module.exports = async function handler(req, res) {
       url,
       debug: debug === "1"
         ? {
-            textSample: text.slice(0, 3000),
-            numbersSample: numbers.slice(0, 300),
-            htmlSample: html.slice(0, 3000)
+           targetSample: target.slice(0, 3000),
+numbersSample: extractNumberStream(target).slice(0, 300)
           }
         : null
     });
