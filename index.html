@@ -88,13 +88,25 @@
     </section>
 
     <section class="panel">
-      <h2>📝 最終コメント</h2>
-      <section class="panel">
-  <h2>📈 的中率・回収率</h2>
+  <h2>📈 成績入力</h2>
+
+  <div class="result-buttons">
+    <button id="hitBtn" type="button">⭕ アタリ</button>
+    <button id="missBtn" type="button">❌ ハズレ</button>
+  </div>
+
+  <label>購入金額</label>
+  <input id="betAmountInput" type="number" placeholder="例：1000">
+
+  <label>払戻金</label>
+  <input id="payoutInput" type="number" placeholder="例：3200">
+
+  <button id="saveResultBtn" type="button">
+    成績を保存
+  </button>
+
   <div id="statsArea"></div>
 </section>
-      <div id="finalCommentArea"></div>
-    </section>
 
     <div id="result"></div>
 
