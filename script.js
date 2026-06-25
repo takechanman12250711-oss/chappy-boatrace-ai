@@ -17,6 +17,9 @@ let latestRaceData = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#fetchRaceBtn")?.addEventListener("click", runPrediction);
+  document.querySelector("#resultTypeSelect")?.addEventListener("change", autoFillOdds);
+document.querySelector("#oddsInput")?.addEventListener("input", updateAutoPayout);
+document.querySelector("#betAmountInput")?.addEventListener("input", updateAutoPayout);
 
   document.querySelector("#hitBtn")?.addEventListener("click", () => {
     currentResultStatus = "アタリ";
