@@ -496,41 +496,79 @@ function saveSimpleResult() {
     return;
   }
 
-  let stats = JSON.parse(localStorage.getItem("chappyStats") || "{}");
+  const history = JSON.parse(
+    localStorage.getItem("chappyResultHistory") || "[]"
+  );
 
-  stats.predictions = (stats.predictions || 0) + 1;
+  history.push({
+    status: currentResultStatus,
+    bet,
+    payout,
+    savedAt: Date.now()
+  });
 
-  if (currentResultStatus === "アタリ") {
-    stats.hits = (stats.hits || 0) + 1;
-  }
-
-  stats.bet = (stats.bet || 0) + bet;
-  stats.payout = (stats.payout || 0) + payout;
-
-  localStorage.setItem("chappyStats", JSON.stringify(stats));
+  localStorage.setItem(
+    "chappyResultHistory",
+    JSON.stringify(history)
+  );
 
   renderStatsArea();
 
   alert("成績保存完了");
 }
 
-function renderStatsArea() {
-  const stats = JSON.parse(localStorage.getItem("chappyStats") || "{}");
+function undoLastResult() {
+  const history = JSON.parse(
+    localStorage.getItem("chappyResultHistory") || "[]"
+  );
 
-  const predictions = stats.predictions || 0;
-  const hits = stats.hits || 0;
-  const bet = stats.bet || 0;
-  const payout = stats.payout || 0;
+  if (!history.length) {
+    alert("取り消す成績がありません");
+    return;
+  }
+
+  history.pop();
+
+  localStorage.setItem(
+    "chappyResultHistory",
+    JSON.stringify(history)
+  );
+
+  renderStatsArea();
+
+  alert("直前の成績を取り消しました");
+}
+
+function renderStatsArea() {
+  const history = JSON.parse(
+    localStorage.getItem("chappyResultHistory") || "[]"
+  );
+
+  const predictions = history.length;
+
+  const hits = history.filter(
+    r => r.status === "アタリ"
+  ).length;
+
+  const bet = history.reduce(
+    (sum, r) => sum + Number(r.bet || 0),
+    0
+  );
+
+  const payout = history.reduce(
+    (sum, r) => sum + Number(r.payout || 0),
+    0
+  );
 
   const hitRate =
     predictions > 0
       ? ((hits / predictions) * 100).toFixed(1)
-      : 0;
+      : "0";
 
   const recoveryRate =
     bet > 0
       ? ((payout / bet) * 100).toFixed(1)
-      : 0;
+      : "0";
 
   const area = document.querySelector("#statsArea");
 
@@ -547,5 +585,9 @@ function renderStatsArea() {
     </table>
   `;
 }
+
+document
+  .querySelector("#undoResultBtn")
+  ?.addEventListener("click", undoLastResult);
 
 renderStatsArea();
