@@ -59,7 +59,7 @@ const odds = data.odds || [];
   setHTML("#engineArea", renderCondition(venue, weather, boats));
   setHTML("#mainSheetArea", renderMainSheet(boats, p));
   setHTML("#formationArea", renderFormations(p));
-  setHTML("#manshuSheetArea", renderManshuSheet(boats, p));
+  setHTML("#manshuSheetArea", renderManshuSheet(boats, p) + renderManshuOdds(odds));
   setHTML("#alertArea", renderAlerts(p));
   setHTML("#finalCommentArea", renderFinalComment(p, venue, weather));
   setHTML("#oddsArea", renderOdds(odds));
@@ -510,6 +510,32 @@ function renderOdds(odds) {
           </div>
         `).join("")}
       </div>
+    </div>
+  `;
+}
+function getManshuOdds(odds) {
+  if (!Array.isArray(odds)) return [];
+  return odds
+    .filter(o => Number(o.odds) >= 100)
+    .slice(0, 10);
+}
+
+function renderManshuOdds(odds) {
+  const list = getManshuOdds(odds);
+
+  if (!list.length) {
+    return `<div class="card">💣 万舟候補なし</div>`;
+  }
+
+  return `
+    <div class="card manshu-odds-card">
+      <h3>💣 万舟候補TOP10</h3>
+      ${list.map((o, i) => `
+        <div class="odds-pill manshu-pill">
+          <b>${i + 1}. ${o.key}</b>
+          <span>${o.odds}倍</span>
+        </div>
+      `).join("")}
     </div>
   `;
 }
