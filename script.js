@@ -318,16 +318,52 @@ function renderFinalComment(p, venue, weather) {
   `;
 }
 
-function renderPerformanceBox() {
-  return `
-    <div class="performance-box">
-      <h3>📈 成績集計</h3>
-      <div class="score-grid">
-        <div><b>予想数</b><span>未集計</span></div>
-        <div><b>的中率</b><span>未集計</span></div>
-        <div><b>回収率</b><span>未集計</span></div>
+function renderPerformanceBox(stats) {
+
+  if (!stats || !stats.total) {
+    return `
+      <div class="card">
+        <h3>📈 的中率・回収率</h3>
+        <p>まだデータなし</p>
       </div>
-      <p class="mini-note">次工程で結果APIと連携して自動集計。</p>
+    `;
+  }
+
+  const t = stats.total;
+
+  return `
+    <div class="card">
+
+      <h3>📈 的中率・回収率</h3>
+
+      <table style="width:100%">
+        <tr>
+          <td>予想数</td>
+          <td><b>${t.predictions}</b></td>
+        </tr>
+
+        <tr>
+          <td>的中率</td>
+          <td><b>${t.hitRate}%</b></td>
+        </tr>
+
+        <tr>
+          <td>回収率</td>
+          <td><b>${t.recoveryRate}%</b></td>
+        </tr>
+
+        <tr>
+          <td>本命的中率</td>
+          <td><b>${t.honmeiHitRate}%</b></td>
+        </tr>
+
+        <tr>
+          <td>万舟的中率</td>
+          <td><b>${t.manshuHitRate}%</b></td>
+        </tr>
+
+      </table>
+
     </div>
   `;
 }
