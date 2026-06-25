@@ -32,6 +32,9 @@ async function runPrediction() {
 const res = await fetch(`${API_BASE}?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
     const data = await res.json();
 
+const oddsRes = await fetch(`/api/odds?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
+const oddsData = await oddsRes.json();
+data.odds = oddsData.ok ? oddsData.odds : [];
     if (!data.ok || !Array.isArray(data.boats) || data.boats.length === 0) {
       showError(data.message || data.error || "出走表データが取得できません");
       setStatus("取得失敗");
