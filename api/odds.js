@@ -32,7 +32,7 @@ const start =
 
 const target = text.substring(start);
 
-const odds = parseOdds3t(target);
+const odds = parseOddsFromHtml(html);
     const numbers = extractNumberStream(text);
 
     return res.status(200).json({
