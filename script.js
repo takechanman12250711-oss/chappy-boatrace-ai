@@ -696,10 +696,10 @@ document
 renderStatsArea();
 function autoFillOdds() {
   const oddsInput = document.querySelector("#oddsInput");
-  if (!oddsInput || !latestRaceData || !Array.isArray(latestRaceData.odds)) return;
+  if (!oddsInput || !Array.isArray(latestOddsList) || latestOddsList.length === 0) return;
+const oddsList = latestOddsList;
 
   const type = val("#resultTypeSelect");
-  const oddsList = latestRaceData.odds;
 
   let target = null;
 
