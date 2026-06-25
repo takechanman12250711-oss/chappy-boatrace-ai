@@ -73,6 +73,10 @@ function renderAll(data) {
   setHTML("#manshuSheetArea", renderManshuSheet(boats, p) + renderManshuOdds(odds) + renderMissingTop30(missing));
   setHTML("#alertArea", renderAlerts(p));
   setHTML("#finalCommentArea", renderFinalComment(p, venue, weather));
+  setHTML(
+  "#statsArea",
+  renderPerformanceBox(data.stats)
+);
 }
 
 function renderEntryTable(boats) {
