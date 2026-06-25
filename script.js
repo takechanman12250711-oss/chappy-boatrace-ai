@@ -501,11 +501,12 @@ function saveSimpleResult() {
   );
 
   history.push({
-    status: currentResultStatus,
-    bet,
-    payout,
-    savedAt: Date.now()
-  });
+  place: val("#placeSelect"),
+  status: currentResultStatus,
+  bet,
+  payout,
+  savedAt: Date.now()
+});
 
   localStorage.setItem(
     "chappyResultHistory",
