@@ -1,5 +1,5 @@
-// script.js v8.1
-// 根拠型「この選手の強み」版
+// script.js v8.3
+// 表示整理版：プラス/マイナス廃止・カード減量・情報量維持
 
 const API_BASE = "/api/race";
 
@@ -28,17 +28,19 @@ async function runPrediction() {
   setHTML("#raceListArea", `<div class="loading">読み込み中…🚤</div>`);
 
   try {
-    const safeDate = date || getTodayYmd();
+    const safeDate = date || todayYmd();
+
     const res = await fetch(`${API_BASE}?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
     const data = await res.json();
 
     const oddsRes = await fetch(`/api/odds?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
     const oddsData = await oddsRes.json();
     data.odds = oddsData.ok ? oddsData.odds : [];
-    
+
     const missRes = await fetch(`/api/missing?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
     const missData = await missRes.json();
     data.missing = missData.ok ? missData.missing : [];
+
     if (!data.ok || !Array.isArray(data.boats) || data.boats.length === 0) {
       showError(data.message || data.error || "出走表データが取得できません");
       setStatus("取得失敗");
@@ -60,16 +62,17 @@ function renderAll(data) {
   const weather = data.weather || {};
   const odds = data.odds || [];
   const missing = data.missing || [];
+
   setHTML("#raceListArea", renderEntryTable(boats));
   setHTML("#engineArea", renderCondition(venue, weather, boats));
   setHTML("#mainSheetArea", renderMainSheet(boats, p));
   setHTML("#formationArea", renderFormations(p));
   setHTML(
-  "#manshuSheetArea",
-  renderManshuSheet(boats, p)
-  + renderManshuOdds(odds)
-  + renderMissingTop30(missing)
-);
+    "#manshuSheetArea",
+    renderManshuSheet(boats, p)
+    + renderManshuOdds(odds)
+    + renderMissingTop30(missing)
+  );
   setHTML("#alertArea", renderAlerts(p));
   setHTML("#finalCommentArea", renderFinalComment(p, venue, weather));
   setHTML("#oddsArea", renderOdds(odds));
@@ -81,7 +84,7 @@ function renderEntryTable(boats) {
       <table>
         <thead>
           <tr>
-            <th>艇</th><th>選手</th><th>級</th><th>ST</th><th>展示</th><th>強み</th>
+            <th>艇</th><th>選手</th><th>級</th><th>ST</th><th>展示</th><th>特徴</th>
           </tr>
         </thead>
         <tbody>
@@ -142,37 +145,38 @@ function renderCondition(venue, weather, boats) {
 function renderMainSheet(boats, p) {
   const marks = p.marks || {};
   const picks = [
-    ["◎ 本命", marks.honmei, "軸として一番買いやすい艇"],
-    ["○ 対抗", marks.taikou, "本命に迫る相手候補"],
-    ["▲ 穴", marks.ana, "展開が向けば配当を上げる艇"],
-    ["△ 押さえ", marks.osaE, "切ると怖い安全カバー"]
+    ["◎ 本命", marks.honmei, "軸候補"],
+    ["○ 対抗", marks.taikou, "相手筆頭"],
+    ["▲ 穴", marks.ana, "展開向けば配当上昇"],
+    ["△ 押さえ", marks.osaE || marks.osae, "安全カバー"]
   ];
 
   return `
-    ${picks.map(([label, m, role]) => pickCard(label, m, role, boats)).join("")}
+    <div class="sheet compact-sheet">
+      <h3>🎯 本命シート</h3>
+      ${picks.map(([label, m, role]) => {
+        if (!m) return `<div class="line-block"><b>${label}</b>：該当なし</div>`;
+        const b = boats.find(x => Number(x.boat) === Number(m.boat)) || m;
+        return `
+          <div class="line-block">
+            <b>${label} ${b.boat}号艇 ${b.name || ""}　評価${b.totalScore ?? m.totalScore ?? "-"}</b>
+            <p>役割：${role}</p>
+            <p>理由：${simpleReasons(b)}</p>
+            <p>特徴：${buyReason(b)}</p>
+          </div>
+        `;
+      }).join("")}
+      <div class="mini-note">
+        指数だけでなく、コース・ST・展示・場特性・当地成績を合わせて判断。
+      </div>
+    </div>
 
-    <details open>
-      <summary>全艇の「強み」と根拠を見る</summary>
+    <details>
+      <summary>全艇の詳細を見る</summary>
       ${boats.map(boatDetail).join("")}
     </details>
-  `;
-}
 
-function pickCard(label, m, role, boats) {
-  if (!m) return `<div class="rank-card"><b>${label}</b><br>該当なし</div>`;
-  const b = boats.find(x => Number(x.boat) === Number(m.boat)) || m;
-
-  return `
-    <div class="rank-card">
-      <div style="font-size:1.2rem;font-weight:900;">${label}　${b.boat}号艇 ${b.name || ""}</div>
-      <p><b>役割：</b>${role}</p>
-      <p><b>なぜ買う：</b>${buyReason(b)}</p>
-      <p><b>この選手の強み：</b></p>
-      ${skillListHtml(b)}
-      <p class="small-score">総合 ${b.totalScore ?? "-"} / チャッピー ${b.chappyScore ?? "-"} / 舟券太郎 ${b.funaTaroScore ?? "-"}</p>
-      <p>⬆️ ${join(b.buffs)}</p>
-      <p>⬇️ ${join(b.debuffs)}</p>
-    </div>
+    ${renderPerformanceBox()}
   `;
 }
 
@@ -180,16 +184,8 @@ function boatDetail(b) {
   return `
     <div class="boat-card boat-${b.boat}">
       <h3>${b.boat}号艇 ${b.name || ""}</h3>
-
-      <p class="big-reason">${buyReason(b)}</p>
-
-      <p><b>この選手の強み</b></p>
-      ${skillListHtml(b)}
-
       <p><b>今回の役割：</b>${positionReason(b)}</p>
-      <p>⬆️ <b>プラス材料：</b>${join(b.buffs)}</p>
-      <p>⬇️ <b>マイナス材料：</b>${join(b.debuffs)}</p>
-
+      <p><b>評価理由：</b>${simpleReasons(b)}</p>
       <details>
         <summary>数字の詳細</summary>
         <p>総合 ${b.totalScore ?? "-"} / チャッピー ${b.chappyScore ?? "-"} / 舟券太郎 ${b.funaTaroScore ?? "-"}</p>
@@ -198,148 +194,18 @@ function boatDetail(b) {
         <p>平均ST ${fmtST(b.avgST)} / 展示ST ${fmtST(b.exhibitionST)}</p>
         <p>展示 ${b.exhibitionTime ?? "-"} / チルト ${b.tilt ?? "-"}</p>
         <p>モーター ${b.motor ?? "-"} / 2率 ${b.motor2Rate ?? "-"}% / 3率 ${b.motor3Rate ?? "-"}%</p>
-        <p>ボート ${b.boatNo ?? "-"} / 2率 ${b.boat2Rate ?? "-"}% / 3率 ${b.boat3Rate ?? "-"}%</p>
       </details>
     </div>
   `;
 }
 
-function skillListHtml(b) {
-  const skills = skillPoints(b);
-
-  if (!skills.length) {
-    return `<ul><li>現データだけでは断定不可。展示・ST・当地・機力で評価。</li></ul>`;
-  }
-
-  return `
-    <ul>
-      ${skills.map(s => `<li><b>${s.title}</b><br><span>${s.reason}</span></li>`).join("")}
-    </ul>
-  `;
-}
-
-function skillPoints(b) {
-  const skills = [];
-  const boat = Number(b.boat);
-  const avgST = num(b.avgST);
-  const exST = num(b.exhibitionST);
-  const exTime = num(b.exhibitionTime);
-  const motor2 = num(b.motor2Rate);
-  const motor3 = num(b.motor3Rate);
-  const boat2 = num(b.boat2Rate);
-  const local = num(b.localWinRate);
-  const national = num(b.nationalWinRate);
-  const tilt = num(b.tilt);
-  const total = num(b.totalScore);
-
-  if (avgST && avgST <= 0.14) {
-    skills.push({
-      title: "🚀 スタートが武器",
-      reason: `平均ST ${fmtST(avgST)}。スリットで展開を作れる可能性がある。`
-    });
-  }
-
-  if (exST !== null && exST <= 0.08) {
-    skills.push({
-      title: "🚨 展示STが速い",
-      reason: `展示ST ${fmtST(exST)}。本番で同じ踏み込みなら攻め・差しの起点になる。`
-    });
-  }
-
-  if (motor2 !== null && motor2 >= 40) {
-    skills.push({
-      title: "🔧 モーター出し上位",
-      reason: `モーター2連率 ${motor2}% 。機力面の後押しがある。`
-    });
-  }
-
-  if (motor3 !== null && motor3 >= 50) {
-    skills.push({
-      title: "🔧 機力の安定感あり",
-      reason: `モーター3連率 ${motor3}% 。連絡みの下支えとして評価。`
-    });
-  }
-
-  if (boat2 !== null && boat2 >= 40) {
-    skills.push({
-      title: "🛠 ボート相性良好",
-      reason: `ボート2連率 ${boat2}% 。足回りの安定材料。`
-    });
-  }
-
-  if (local !== null && local >= 6) {
-    skills.push({
-      title: "🌊 当地水面に強い",
-      reason: `当地勝率 ${local}。この場で走れる根拠がある。`
-    });
-  }
-
-  if (national !== null && national >= 6) {
-    skills.push({
-      title: "💪 地力上位",
-      reason: `全国勝率 ${national}。単純な選手力として上位評価。`
-    });
-  }
-
-  if (exTime !== null && exTime <= 6.80) {
-    skills.push({
-      title: "⚙️ 展示気配良好",
-      reason: `展示タイム ${exTime}。調整・足色が悪くない。`
-    });
-  }
-
-  if (tilt !== null && tilt >= 0.5) {
-    skills.push({
-      title: "⚙️ 伸び寄り調整の可能性",
-      reason: `チルト ${tilt}。外から攻める意識や伸び型調整を警戒。`
-    });
-  }
-
-  if (boat === 1 && total >= 65) {
-    skills.push({
-      title: "① 内寄りで強い条件",
-      reason: "1コース＋総合評価が高く、先マイできれば軸候補。"
-    });
-  }
-
-  if (boat === 2 && (exST !== null && exST <= 0.12 || avgST !== null && avgST <= 0.15)) {
-    skills.push({
-      title: "🎯 差し残し候補",
-      reason: "2コースから1を見て差す形。頭より2着残りで評価しやすい。"
-    });
-  }
-
-  if (boat === 3 && (exST !== null && exST <= 0.10 || total >= 60)) {
-    skills.push({
-      title: "🎯 センター攻め候補",
-      reason: "3コースから攻めの起点になれる条件がある。"
-    });
-  }
-
-  if (boat === 4 && (exST !== null && exST <= 0.10 || tilt !== null && tilt >= 0.5)) {
-    skills.push({
-      title: "🎯 カド攻め・展開乗り候補",
-      reason: "4カドから自力攻め、または3攻めに乗る形を警戒。"
-    });
-  }
-
-  if (boat >= 5 && (local !== null && local >= 5.5 || exST !== null && exST <= 0.10 || total >= 55)) {
-    skills.push({
-      title: "⑤⑥ 外から連絡み候補",
-      reason: "外枠で人気が落ちやすい分、展開が向くと配当を上げる。"
-    });
-  }
-
-  return skills.slice(0, 5);
-}
-
 function renderFormations(p) {
   return `
-    <h3>🎯 本線</h3>
+    <h3>🎫 本線</h3>
     <p>一番素直な展開。まずここを中心。</p>
     ${tickets(p.mainFormation)}
 
-    <h3>🛡 押さえ</h3>
+    <h3>🛟 押さえ</h3>
     <p>展開が少しズレた時の安全カバー。</p>
     ${tickets((p.holeFormation || []).slice(0, 3))}
 
@@ -350,27 +216,94 @@ function renderFormations(p) {
 }
 
 function renderManshuSheet(boats, p) {
+  const shape = p.raceShape || {};
   const targets = boats
     .filter(b => Number(b.boat) >= 3)
     .sort((a,b) => Number(b.totalScore || 0) - Number(a.totalScore || 0))
     .slice(0,4);
 
   return `
-    <div class="comment-box">
-      <p><b>💣 万舟の狙い方</b></p>
-      <p>外枠一撃だけでなく、3攻め・4残し・5差し場・6展開待ちまで見る。</p>
-    </div>
+    <div class="sheet manshu-sheet">
+      <h3>💣 万舟シート</h3>
+      <p><b>狙い筋：</b>${shape.shape || "3攻め・4残し・5差し場・6展開待ち"}</p>
+      <p><b>攻め艇：</b>${shape.attackBoat ? shape.attackBoat + "号艇" : "未判定"}</p>
+      <p>外枠一撃だけでなく、内側絡みの高配当も見る。</p>
 
-    ${targets.map(b => `
-      <div class="boat-card boat-${b.boat}">
-        <h3>${b.boat}号艇 ${b.name || ""}</h3>
-        <p class="big-reason">${manshuReason(b)}</p>
-        <p>期待度：<b>${stars(b.totalScore)}</b></p>
-        ${skillListHtml(b)}
-        <p>⬆️ ${join(b.buffs)}</p>
-        <p>⬇️ ${join(b.debuffs)}</p>
+      ${targets.map(b => `
+        <div class="line-block">
+          <b>${b.boat}号艇 ${b.name || ""}　万舟期待 ${stars(b.totalScore)}</b>
+          <p>${manshuReason(b)}</p>
+          <p>理由：${simpleReasons(b)}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderOdds(odds) {
+  if (!Array.isArray(odds) || odds.length === 0) {
+    return `<div class="card">オッズ未取得</div>`;
+  }
+
+  const top = odds.slice(0, 12);
+
+  return `
+    <div class="sheet odds-card">
+      <h3>💰 3連単オッズ TOP12</h3>
+      <div class="odds-grid">
+        ${top.map((o, i) => `
+          <div class="odds-pill">
+            <b>${i + 1}. ${o.key}</b>
+            <span>${o.odds}倍</span>
+          </div>
+        `).join("")}
       </div>
-    `).join("")}
+    </div>
+  `;
+}
+
+function renderMissingTop30(list) {
+  if (!Array.isArray(list) || list.length === 0) {
+    return `<div class="card">出てない目TOP30取得中...</div>`;
+  }
+
+  return `
+    <div class="sheet missing-card">
+      <h3>📊 出てない目 TOP30</h3>
+      <div class="odds-grid">
+        ${list.slice(0, 30).map(x => `
+          <div class="odds-pill">
+            <b>${x.rank}. ${x.key}</b>
+            <span>${x.odds}倍</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function getManshuOdds(odds) {
+  if (!Array.isArray(odds)) return [];
+  return odds.filter(o => Number(o.odds) >= 100).slice(0, 10);
+}
+
+function renderManshuOdds(odds) {
+  const list = getManshuOdds(odds);
+
+  if (!list.length) {
+    return `<div class="card">💣 万舟候補なし</div>`;
+  }
+
+  return `
+    <div class="sheet manshu-odds-card">
+      <h3>💣 万舟候補TOP10</h3>
+      ${list.map((o, i) => `
+        <div class="odds-pill manshu-pill">
+          <b>${i + 1}. ${o.key}</b>
+          <span>${o.odds}倍</span>
+        </div>
+      `).join("")}
+    </div>
   `;
 }
 
@@ -381,7 +314,9 @@ function renderAlerts(p) {
     ...(p.newSumAlert || [])
   ];
 
-  if (!list.length) return `<div class="comment-box">大きなアラートなし。基本展開を重視。</div>`;
+  if (!list.length) {
+    return `<div class="comment-box">大きな理論アラートなし。基本展開を重視。</div>`;
+  }
 
   return list.map(a => `
     <div class="alert-card">
@@ -398,45 +333,79 @@ function renderFinalComment(p, venue, weather) {
       <p>${p.raceComment || "展開とSTを見て本線・押さえ・穴を分ける。"}</p>
       <p><b>展開：</b>${p.raceShape?.shape || "-"}</p>
       <p><b>場：</b>${venue.courseBias || "-"} / <b>水面：</b>${weather.weather || "-"} 風${weather.windSpeed ?? "-"}m 波${weather.waveHeight ?? "-"}cm</p>
-      <p><b>注意：</b>整備巧者・ペラ巧者・ピット離れは、現状は展示/モーター/チルト/当地からの推定。選手DB追加後に精度を上げる。</p>
     </div>
   `;
 }
 
+function renderPerformanceBox() {
+  return `
+    <div class="sheet performance-sheet">
+      <h3>📈 成績集計</h3>
+      <p>的中率：未集計</p>
+      <p>回収率：未集計</p>
+      <p class="mini-note">次の工程で結果APIと連携して自動集計する。</p>
+    </div>
+  `;
+}
+
+function simpleReasons(b) {
+  if (!b) return "データ不足";
+
+  const r = [];
+
+  if (Number(b.exhibitionTime) > 0) r.push(`展示${b.exhibitionTime}`);
+  if (Number(b.exhibitionST) > 0) r.push(`展示ST${fmtST(b.exhibitionST)}`);
+  if (Number(b.avgST) > 0) r.push(`平均ST${fmtST(b.avgST)}`);
+  if (Number(b.localWinRate) > 0) r.push(`当地勝率${b.localWinRate}`);
+  if (Number(b.nationalWinRate) > 0) r.push(`全国勝率${b.nationalWinRate}`);
+  if (Number(b.motor2Rate) > 0) r.push(`モーター2連率${b.motor2Rate}%`);
+
+  if (Number(b.boat) === 1) r.push("イン戦");
+  if (Number(b.boat) >= 4) r.push("展開待ち");
+
+  return r.slice(0, 6).join(" / ") || "平均的な評価";
+}
+
+function shortSkill(b) {
+  const boat = Number(b.boat);
+  if (boat === 1) return "逃げ軸";
+  if (boat === 2) return "差し候補";
+  if (boat === 3) return "攻め候補";
+  if (boat === 4) return "カド攻め";
+  if (boat === 5) return "差し場待ち";
+  if (boat === 6) return "展開待ち";
+  return "評価中";
+}
+
 function buyReason(b) {
   const boat = Number(b.boat);
-  if (boat === 1) return "インから先マイできるかが鍵。STと足が足りれば逃げ本線。";
-  if (boat === 2) return "2コース差し候補。頭固定より2着残り・差し残しで評価。";
-  if (boat === 3) return "3コース攻め候補。スタートが決まればまくり・まくり差しで展開を作る。";
-  if (boat === 4) return "カド位置で攻め残し候補。3の攻めに乗る形も見る。";
-  if (boat === 5) return "内が競った時の差し場待ち。2・3着で配当を上げる。";
-  if (boat === 6) return "大外で展開待ち。当地・ST・展示が良い時は切りすぎ注意。";
+  if (boat === 1) return "インから先マイできれば軸。ST遅れは注意。";
+  if (boat === 2) return "2コース差し候補。頭より2着残りも見る。";
+  if (boat === 3) return "3コース攻め候補。まくり・まくり差しの起点。";
+  if (boat === 4) return "カドから攻め残し、または3攻めに乗る形。";
+  if (boat === 5) return "内が競った時の差し場。2・3着で配当を上げる。";
+  if (boat === 6) return "大外で展開待ち。当地やSTが良ければ切りすぎ注意。";
   return "展開次第の押さえ候補。";
 }
 
 function positionReason(b) {
   const boat = Number(b.boat);
-  if (boat === 1) return "1マーク先取りが最大条件。スタート遅れなら差される。";
-  if (boat === 2) return "1を見て差す形。差し切りより2着残りが現実的。";
-  if (boat === 3) return "攻めるならレースの起点。ここが遅いと外も苦しい。";
-  if (boat === 4) return "3の攻めに乗るか、自力でカド攻めできるか。";
-  if (boat === 5) return "4までが攻めて内が空けば差し場あり。";
-  if (boat === 6) return "最内差し・展開待ち。当地が良い時は切りすぎ注意。";
+  if (boat === 1) return "1マーク先取りが条件。";
+  if (boat === 2) return "1を見て差す形。";
+  if (boat === 3) return "センター攻めの起点。";
+  if (boat === 4) return "カド攻め、または展開乗り。";
+  if (boat === 5) return "差し場待ち。";
+  if (boat === 6) return "最内差し・展開待ち。";
   return "-";
 }
 
 function manshuReason(b) {
   const boat = Number(b.boat);
   if (boat === 3) return "3が攻めると人気筋が崩れて配当が上がる。";
-  if (boat === 4) return "カドから攻め残ると本命筋とズレて高配当になりやすい。";
-  if (boat === 5) return "内が競った時の差し場。2・3着絡みで万舟に繋がる。";
-  if (boat === 6) return "大外で人気が落ちる分、展開がハマれば一気に跳ねる。";
+  if (boat === 4) return "カドから残ると本命筋とズレて高配当になりやすい。";
+  if (boat === 5) return "内が競った時の差し場。2・3着絡みで万舟候補。";
+  if (boat === 6) return "大外で人気が落ちる分、展開がハマれば跳ねる。";
   return "展開がズレた時の高配当候補。";
-}
-
-function shortSkill(b) {
-  const s = skillPoints(b)[0];
-  return s ? s.title.replace(/[🚀🚨🔧🛠🌊💪⚙️①⑤⑥🎯]/g, "") : "根拠待ち";
 }
 
 function tickets(list) {
@@ -453,8 +422,16 @@ function stars(score) {
 }
 
 function clearAreas() {
-  ["#raceListArea","#engineArea","#mainSheetArea","#formationArea","#manshuSheetArea","#alertArea","#finalCommentArea"]
-    .forEach(id => setHTML(id, ""));
+  [
+    "#raceListArea",
+    "#engineArea",
+    "#mainSheetArea",
+    "#formationArea",
+    "#manshuSheetArea",
+    "#alertArea",
+    "#finalCommentArea",
+    "#oddsArea"
+  ].forEach(id => setHTML(id, ""));
 }
 
 function showError(msg) {
@@ -475,10 +452,6 @@ function val(id) {
   return document.querySelector(id)?.value?.trim() || "";
 }
 
-function join(v) {
-  return Array.isArray(v) && v.length ? v.join(" / ") : "なし";
-}
-
 function fmtST(v) {
   if (v === null || v === undefined || v === "" || Number.isNaN(Number(v))) return "-";
   const n = Number(v);
@@ -486,85 +459,7 @@ function fmtST(v) {
   return n.toFixed(2);
 }
 
-function num(v) {
-  if (v === null || v === undefined || v === "" || Number.isNaN(Number(v))) return null;
-  return Number(v);
-}
-
 function todayYmd() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
-}
-function getTodayYmd() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}${m}${day}`;
-}
-function renderOdds(odds) {
-  if (!Array.isArray(odds) || odds.length === 0) {
-    return `<div class="card">オッズ未取得</div>`;
-  }
-
-  const top = odds.slice(0, 12);
-
-  return `
-    <div class="card odds-card">
-      <h2>💰 3連単オッズ TOP12</h2>
-      <div class="odds-grid">
-        ${top.map((o, i) => `
-          <div class="odds-pill">
-            <b>${i + 1}. ${o.key}</b>
-            <span>${o.odds}倍</span>
-          </div>
-        `).join("")}
-      </div>
-    </div>
-  `;
-}
-
-function renderMissingTop30(list) {
-  if (!Array.isArray(list) || list.length === 0) {
-    return `<div class="card">出てない目TOP30取得中...</div>`;
-  }
-
-  return `
-    <div class="card missing-card">
-      <h3>📊 出てない目 TOP30</h3>
-      ${list.slice(0, 30).map(x => `
-        <div class="odds-pill">
-          <b>${x.rank}. ${x.key}</b>
-          <span>${x.odds}倍</span>
-        </div>
-      `).join("")}
-    </div>
-  `;
-}
-
-function getManshuOdds(odds) {
-  if (!Array.isArray(odds)) return [];
-  return odds
-    .filter(o => Number(o.odds) >= 100)
-    .slice(0, 10);
-}
-
-function renderManshuOdds(odds) {
-  const list = getManshuOdds(odds);
-
-  if (!list.length) {
-    return `<div class="card">💣 万舟候補なし</div>`;
-  }
-
-  return `
-    <div class="card manshu-odds-card">
-      <h3>💣 万舟候補TOP10</h3>
-      ${list.map((o, i) => `
-        <div class="odds-pill manshu-pill">
-          <b>${i + 1}. ${o.key}</b>
-          <span>${o.odds}倍</span>
-        </div>
-      `).join("")}
-    </div>
-  `;
 }
