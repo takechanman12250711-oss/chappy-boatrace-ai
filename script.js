@@ -607,6 +607,33 @@ history.forEach(r => {
       <tr><td>払戻金額</td><td>${payout.toLocaleString()}円</td></tr>
       <tr><td>回収率</td><td>${recoveryRate}%</td></tr>
     </table>
+    <h3>🚤 24場別成績</h3>
+<table class="table">
+  <tr>
+    <th>場</th>
+    <th>予想</th>
+    <th>的中率</th>
+    <th>回収率</th>
+  </tr>
+  ${Object.entries(venueStats).map(([place, s]) => {
+    const vHitRate = s.predictions > 0
+      ? ((s.hits / s.predictions) * 100).toFixed(1)
+      : "0";
+
+    const vRecoveryRate = s.bet > 0
+      ? ((s.payout / s.bet) * 100).toFixed(1)
+      : "0";
+
+    return `
+      <tr>
+        <td>${place}</td>
+        <td>${s.predictions}</td>
+        <td>${vHitRate}%</td>
+        <td>${vRecoveryRate}%</td>
+      </tr>
+    `;
+  }).join("")}
+</table>
   `;
 }
 
