@@ -692,3 +692,39 @@ document
   ?.addEventListener("click", undoLastResult);
 
 renderStatsArea();
+function autoFillOdds() {
+  const oddsInput = document.querySelector("#oddsInput");
+  if (!oddsInput || !latestRaceData || !Array.isArray(latestRaceData.odds)) return;
+
+  const type = val("#resultTypeSelect");
+  const oddsList = latestRaceData.odds;
+
+  let target = null;
+
+  if (type === "万舟") {
+    target = oddsList.find(o => Number(o.odds) >= 100);
+  } else {
+    target = oddsList[0];
+  }
+
+  if (target && target.odds) {
+    oddsInput.value = target.odds;
+  }
+
+  updateAutoPayout();
+}
+
+function updateAutoPayout() {
+  const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
+  const odds = Number(document.querySelector("#oddsInput")?.value || 0);
+  const text = document.querySelector("#autoPayoutText");
+
+  const payout =
+    currentResultStatus === "アタリ"
+      ? Math.floor(bet * odds)
+      : 0;
+
+  if (text) {
+    text.textContent = `払戻金：${payout.toLocaleString()}円`;
+  }
+}
