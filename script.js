@@ -570,6 +570,29 @@ function renderStatsArea() {
     bet > 0
       ? ((payout / bet) * 100).toFixed(1)
       : "0";
+  const venueStats = {};
+
+history.forEach(r => {
+  if (!r.place) return;
+
+  if (!venueStats[r.place]) {
+    venueStats[r.place] = {
+      predictions: 0,
+      hits: 0,
+      bet: 0,
+      payout: 0
+    };
+  }
+
+  venueStats[r.place].predictions++;
+
+  if (r.status === "アタリ") {
+    venueStats[r.place].hits++;
+  }
+
+  venueStats[r.place].bet += Number(r.bet || 0);
+  venueStats[r.place].payout += Number(r.payout || 0);
+});
 
   const area = document.querySelector("#statsArea");
 
