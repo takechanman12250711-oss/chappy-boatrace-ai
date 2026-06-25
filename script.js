@@ -13,6 +13,7 @@ const PLACE_CODES = {
 };
 
 let currentResultStatus = "";
+let latestRaceData = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#fetchRaceBtn")?.addEventListener("click", runPrediction);
