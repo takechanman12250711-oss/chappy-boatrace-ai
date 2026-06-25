@@ -79,29 +79,38 @@ async function fetchHtml(url) {
 }
 
 function parseOddsFromHtml(html) {
-  const odds = [];
-
-  // 公式ページの中にある data-* や表示HTMLから拾う
-  // まず「1-2-3 12.3」型
   const text = cleanText(html);
+  const nums = extractNumberStream(text);
 
-  const hyphenPattern =
-    /\b([1-6])[-－]([1-6])[-－]([1-6])\s+(\d+(?:\.\d+)?)\b/g;
-
-  let m;
-  while ((m = hyphenPattern.exec(text)) !== null) {
-    addOdds(odds, m[1], m[2], m[3], m[4]);
+  // 「1 2 3 4 5 6」の選手番号並びを探す
+  let start = -1;
+  for (let i = 0; i < nums.length - 6; i++) {
+    if (
+      nums[i] === "1" &&
+      nums[i + 1] === "2" &&
+      nums[i + 2] === "3" &&
+      nums[i + 3] === "4" &&
+      nums[i + 4] === "5" &&
+      nums[i + 5] === "6"
+    ) {
+      start = i + 6;
+      break;
+    }
   }
 
-  // 次に公式PC表の並びから復元
-  // 3連単表は「1頭」「2頭」…の6ブロックに分かれ、
-  // 各ブロック内に相手・3着・オッズが縦に並ぶ。
-  const tableText = extractOddsAreaText(html);
-  const tokens = tokenize(tableText);
+  if (start < 0) return [];
 
-  const rebuilt = rebuildFromOfficialTokens(tokens);
-  for (const item of rebuilt) {
-    addOdds(odds, item.first, item.second, item.third, item.odds);
+  const odds = [];
+
+  for (let i = start; i < nums.length - 2; i += 3) {
+    const first = (Math.floor((i - start) / 3) % 6) + 1;
+    const second = Number(nums[i]);
+    const third = Number(nums[i + 1]);
+    const value = Number(nums[i + 2]);
+
+    addOdds(odds, first, second, third, value);
+
+    if (uniqueOdds(odds).length >= 120) break;
   }
 
   return uniqueOdds(odds).sort((a, b) => a.odds - b.odds);
