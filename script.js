@@ -532,7 +532,7 @@ function renderMissingTop30(list) {
   return `
     <div class="card missing-card">
       <h3>📊 出てない目 TOP30</h3>
-      ${list.map(x => `
+      ${list.slice(0, 30).map(x => `
         <div class="odds-pill">
           <b>${x.rank}. ${x.key}</b>
           <span>${x.odds}倍</span>
