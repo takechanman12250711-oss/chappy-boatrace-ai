@@ -40,9 +40,9 @@ async function runPrediction() {
     const missRes = await fetch(`/api/missing?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
     const missData = await missRes.json();
     data.missing = missData.ok ? missData.missing : [];
-const statsRes = await fetch("/api/stats");
-const statsData = await statsRes.json();
-data.stats = statsData;
+    const statsRes = await fetch("/api/stats");
+    const statsData = await statsRes.json();
+    data.stats = statsData;
     if (!data.ok || !Array.isArray(data.boats) || data.boats.length === 0) {
       showError(data.message || data.error || "出走表データが取得できません");
       setStatus("取得失敗");
