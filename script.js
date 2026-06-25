@@ -487,3 +487,65 @@ function todayYmd() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
 }
+function saveSimpleResult() {
+  const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
+  const payout = Number(document.querySelector("#payoutInput")?.value || 0);
+
+  if (!currentResultStatus) {
+    alert("先にアタリかハズレを選択してね");
+    return;
+  }
+
+  let stats = JSON.parse(localStorage.getItem("chappyStats") || "{}");
+
+  stats.predictions = (stats.predictions || 0) + 1;
+
+  if (currentResultStatus === "アタリ") {
+    stats.hits = (stats.hits || 0) + 1;
+  }
+
+  stats.bet = (stats.bet || 0) + bet;
+  stats.payout = (stats.payout || 0) + payout;
+
+  localStorage.setItem("chappyStats", JSON.stringify(stats));
+
+  renderStatsArea();
+
+  alert("成績保存完了");
+}
+
+function renderStatsArea() {
+  const stats = JSON.parse(localStorage.getItem("chappyStats") || "{}");
+
+  const predictions = stats.predictions || 0;
+  const hits = stats.hits || 0;
+  const bet = stats.bet || 0;
+  const payout = stats.payout || 0;
+
+  const hitRate =
+    predictions > 0
+      ? ((hits / predictions) * 100).toFixed(1)
+      : 0;
+
+  const recoveryRate =
+    bet > 0
+      ? ((payout / bet) * 100).toFixed(1)
+      : 0;
+
+  const area = document.querySelector("#statsArea");
+
+  if (!area) return;
+
+  area.innerHTML = `
+    <table class="table">
+      <tr><td>予想数</td><td>${predictions}</td></tr>
+      <tr><td>アタリ数</td><td>${hits}</td></tr>
+      <tr><td>的中率</td><td>${hitRate}%</td></tr>
+      <tr><td>購入金額</td><td>${bet.toLocaleString()}円</td></tr>
+      <tr><td>払戻金額</td><td>${payout.toLocaleString()}円</td></tr>
+      <tr><td>回収率</td><td>${recoveryRate}%</td></tr>
+    </table>
+  `;
+}
+
+renderStatsArea();
