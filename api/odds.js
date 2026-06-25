@@ -82,7 +82,6 @@ function parseOddsFromHtml(html) {
   const text = cleanText(html);
   const nums = extractNumberStream(text);
 
-  // 「1 2 3 4 5 6」の選手番号並びを探す
   let start = -1;
   for (let i = 0; i < nums.length - 6; i++) {
     if (
@@ -101,16 +100,33 @@ function parseOddsFromHtml(html) {
   if (start < 0) return [];
 
   const odds = [];
+  let idx = start;
 
-  for (let i = start; i < nums.length - 2; i += 3) {
-    const first = (Math.floor((i - start) / 3) % 6) + 1;
-    const second = Number(nums[i]);
-    const third = Number(nums[i + 1]);
-    const value = Number(nums[i + 2]);
+  for (let secondGroup = 0; secondGroup < 5; secondGroup++) {
+    for (let row = 0; row < 4; row++) {
+      for (let first = 1; first <= 6; first++) {
+        const seconds = [1,2,3,4,5,6].filter(n => n !== first);
+        const second = seconds[secondGroup];
 
-    addOdds(odds, first, second, third, value);
+        let third;
+        let value;
 
-    if (uniqueOdds(odds).length >= 120) break;
+        if (row === 0) {
+          const shownSecond = Number(nums[idx]);
+          third = Number(nums[idx + 1]);
+          value = Number(nums[idx + 2]);
+          idx += 3;
+
+          if (shownSecond !== second) continue;
+        } else {
+          third = Number(nums[idx]);
+          value = Number(nums[idx + 1]);
+          idx += 2;
+        }
+
+        addOdds(odds, first, second, third, value);
+      }
+    }
   }
 
   return uniqueOdds(odds).sort((a, b) => a.odds - b.odds);
