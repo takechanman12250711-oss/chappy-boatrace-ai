@@ -502,6 +502,7 @@ function saveSimpleResult() {
 
   history.push({
   place: val("#placeSelect"),
+  type: val("#resultTypeSelect"),
   status: currentResultStatus,
   bet,
   payout,
