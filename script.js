@@ -214,6 +214,8 @@ function renderFormations(p) {
 }
 
 function renderOdds(odds) {
+  latestOddsList = Array.isArray(odds) ? odds : [];
+
   if (!Array.isArray(odds) || odds.length === 0) {
     return `<div class="summary-box">オッズ未取得</div>`;
   }
