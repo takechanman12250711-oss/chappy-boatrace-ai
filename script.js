@@ -623,6 +623,33 @@ history.forEach(r => {
       <tr><td>払戻金額</td><td>${payout.toLocaleString()}円</td></tr>
       <tr><td>回収率</td><td>${recoveryRate}%</td></tr>
     </table>
+    <h3>🎯 予想別成績</h3>
+
+<table class="table">
+<tr>
+<th>種類</th>
+<th>予想</th>
+<th>的中率</th>
+</tr>
+
+${Object.entries(typeStats).map(([type, s]) => {
+
+const rate =
+s.predictions > 0
+? ((s.hits / s.predictions) * 100).toFixed(1)
+: "0";
+
+return `
+<tr>
+<td>${type}</td>
+<td>${s.predictions}</td>
+<td>${rate}%</td>
+</tr>
+`;
+
+}).join("")}
+
+</table>
     <h3>🚤 24場別成績</h3>
 <table class="table">
   <tr>
