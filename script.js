@@ -12,8 +12,22 @@ const PLACE_CODES = {
   芦屋:"21", 福岡:"22", 唐津:"23", 大村:"24"
 };
 
+let currentResultStatus = "";
+
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#fetchRaceBtn")?.addEventListener("click", runPrediction);
+
+  document.querySelector("#hitBtn")?.addEventListener("click", () => {
+    currentResultStatus = "アタリ";
+    setStatus("⭕ アタリ選択中");
+  });
+
+  document.querySelector("#missBtn")?.addEventListener("click", () => {
+    currentResultStatus = "ハズレ";
+    setStatus("❌ ハズレ選択中");
+  });
+
+  document.querySelector("#saveResultBtn")?.addEventListener("click", saveSimpleResult);
 });
 
 async function runPrediction() {
