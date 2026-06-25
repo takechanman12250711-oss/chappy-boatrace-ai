@@ -506,8 +506,25 @@ function renderOdds(odds) {
   if (!Array.isArray(odds) || odds.length === 0) {
     return `<div class="card">オッズ未取得</div>`;
   }
-  function renderMissingTop30(list) {
 
+  const top = odds.slice(0, 12);
+
+  return `
+    <div class="card odds-card">
+      <h2>💰 3連単オッズ TOP12</h2>
+      <div class="odds-grid">
+        ${top.map((o, i) => `
+          <div class="odds-pill">
+            <b>${i + 1}. ${o.key}</b>
+            <span>${o.odds}倍</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderMissingTop30(list) {
   if (!Array.isArray(list) || list.length === 0) {
     return `<div class="card">出てない目TOP30取得中...</div>`;
   }
@@ -515,14 +532,12 @@ function renderOdds(odds) {
   return `
     <div class="card missing-card">
       <h3>📊 出てない目 TOP30</h3>
-
       ${list.map(x => `
         <div class="odds-pill">
           <b>${x.rank}. ${x.key}</b>
           <span>${x.odds}倍</span>
         </div>
       `).join("")}
-
     </div>
   `;
 }
