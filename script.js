@@ -28,7 +28,8 @@ async function runPrediction() {
   setHTML("#raceListArea", `<div class="loading">読み込み中…🚤</div>`);
 
   try {
-    const res = await fetch(`${API_BASE}?jcd=${jcd}&rno=${rno}&date=${date}`);
+    const safeDate = date || getTodayYmd();
+const res = await fetch(`${API_BASE}?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
     const data = await res.json();
 
     if (!data.ok || !Array.isArray(data.boats) || data.boats.length === 0) {
