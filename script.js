@@ -489,7 +489,8 @@ function todayYmd() {
 }
 function saveSimpleResult() {
   const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
-  const payout = Number(document.querySelector("#payoutInput")?.value || 0);
+  const odds = Number(document.querySelector("#oddsInput")?.value || 0);
+  const payout = currentResultStatus === "アタリ" ? Math.floor(bet * odds) : 0;
 
   if (!currentResultStatus) {
     alert("先にアタリかハズレを選択してね");
@@ -505,6 +506,7 @@ function saveSimpleResult() {
   type: val("#resultTypeSelect"),
   status: currentResultStatus,
   bet,
+  odds,
   payout,
   savedAt: Date.now()
 });
