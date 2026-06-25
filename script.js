@@ -73,6 +73,7 @@ async function runPrediction() {
 }
 
 function renderAll(data) {
+  latestRaceData = data;
   const boats = data.boats || [];
   const p = data.prediction || {};
   const venue = data.venue || {};
