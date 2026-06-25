@@ -62,6 +62,7 @@ const odds = data.odds || [];
   setHTML("#manshuSheetArea", renderManshuSheet(boats, p));
   setHTML("#alertArea", renderAlerts(p));
   setHTML("#finalCommentArea", renderFinalComment(p, venue, weather));
+  setHTML("#oddsArea", renderOdds(odds));
 }
 
 function renderEntryTable(boats) {
@@ -490,4 +491,25 @@ function getTodayYmd() {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}${m}${day}`;
+}
+function renderOdds(odds) {
+  if (!Array.isArray(odds) || odds.length === 0) {
+    return `<div class="card">オッズ未取得</div>`;
+  }
+
+  const top = odds.slice(0, 12);
+
+  return `
+    <div class="card odds-card">
+      <h2>💰 3連単オッズ TOP12</h2>
+      <div class="odds-grid">
+        ${top.map((o, i) => `
+          <div class="odds-pill">
+            <b>${i + 1}. ${o.key}</b>
+            <span>${o.odds}倍</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
 }
