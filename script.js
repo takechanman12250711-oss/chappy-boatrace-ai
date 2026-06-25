@@ -54,7 +54,7 @@ function renderAll(data) {
   const p = data.prediction || {};
   const venue = data.venue || {};
   const weather = data.weather || {};
-
+const odds = data.odds || [];
   setHTML("#raceListArea", renderEntryTable(boats));
   setHTML("#engineArea", renderCondition(venue, weather, boats));
   setHTML("#mainSheetArea", renderMainSheet(boats, p));
