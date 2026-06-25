@@ -542,22 +542,6 @@ function renderMissingTop30(list) {
   `;
 }
 
-  const top = odds.slice(0, 12);
-
-  return `
-    <div class="card odds-card">
-      <h2>💰 3連単オッズ TOP12</h2>
-      <div class="odds-grid">
-        ${top.map((o, i) => `
-          <div class="odds-pill">
-            <b>${i + 1}. ${o.key}</b>
-            <span>${o.odds}倍</span>
-          </div>
-        `).join("")}
-      </div>
-    </div>
-  `;
-}
 function getManshuOdds(odds) {
   if (!Array.isArray(odds)) return [];
   return odds
