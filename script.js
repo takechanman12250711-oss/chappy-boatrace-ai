@@ -572,6 +572,21 @@ function renderStatsArea() {
       ? ((payout / bet) * 100).toFixed(1)
       : "0";
   const venueStats = {};
+  const typeStats = {
+  本命: { predictions: 0, hits: 0 },
+  万舟: { predictions: 0, hits: 0 },
+  展開: { predictions: 0, hits: 0 }
+};
+
+history.forEach(r => {
+  if (!r.type) return;
+
+  typeStats[r.type].predictions++;
+
+  if (r.status === "アタリ") {
+    typeStats[r.type].hits++;
+  }
+});
 
 history.forEach(r => {
   if (!r.place) return;
