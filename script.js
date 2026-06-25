@@ -29,12 +29,16 @@ async function runPrediction() {
 
   try {
     const safeDate = date || getTodayYmd();
-const res = await fetch(`${API_BASE}?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
+    const res = await fetch(`${API_BASE}?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
     const data = await res.json();
 
-const oddsRes = await fetch(`/api/odds?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
-const oddsData = await oddsRes.json();
-data.odds = oddsData.ok ? oddsData.odds : [];
+    const oddsRes = await fetch(`/api/odds?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
+    const oddsData = await oddsRes.json();
+    data.odds = oddsData.ok ? oddsData.odds : [];
+    
+    const missRes = await fetch(`/api/missing?jcd=${jcd}&rno=${rno}&date=${safeDate}`);
+    const missData = await missRes.json();
+    data.missing = missData.ok ? missData.missing : [];
     if (!data.ok || !Array.isArray(data.boats) || data.boats.length === 0) {
       showError(data.message || data.error || "出走表データが取得できません");
       setStatus("取得失敗");
@@ -54,12 +58,18 @@ function renderAll(data) {
   const p = data.prediction || {};
   const venue = data.venue || {};
   const weather = data.weather || {};
-const odds = data.odds || [];
+  const odds = data.odds || [];
+  const missing = data.missing || [];
   setHTML("#raceListArea", renderEntryTable(boats));
   setHTML("#engineArea", renderCondition(venue, weather, boats));
   setHTML("#mainSheetArea", renderMainSheet(boats, p));
   setHTML("#formationArea", renderFormations(p));
-  setHTML("#manshuSheetArea", renderManshuSheet(boats, p) + renderManshuOdds(odds));
+  setHTML(
+  "#manshuSheetArea",
+  renderManshuSheet(boats, p)
+  + renderManshuOdds(odds)
+  + renderMissingTop30(missing)
+);
   setHTML("#alertArea", renderAlerts(p));
   setHTML("#finalCommentArea", renderFinalComment(p, venue, weather));
   setHTML("#oddsArea", renderOdds(odds));
@@ -496,6 +506,26 @@ function renderOdds(odds) {
   if (!Array.isArray(odds) || odds.length === 0) {
     return `<div class="card">オッズ未取得</div>`;
   }
+  function renderMissingTop30(list) {
+
+  if (!Array.isArray(list) || list.length === 0) {
+    return `<div class="card">出てない目TOP30取得中...</div>`;
+  }
+
+  return `
+    <div class="card missing-card">
+      <h3>📊 出てない目 TOP30</h3>
+
+      ${list.map(x => `
+        <div class="odds-pill">
+          <b>${x.rank}. ${x.key}</b>
+          <span>${x.odds}倍</span>
+        </div>
+      `).join("")}
+
+    </div>
+  `;
+}
 
   const top = odds.slice(0, 12);
 
