@@ -537,6 +537,11 @@ if (!currentResultStatus) {
 
 const fixedResult = result.replaceAll("-", "");
 
+const payout =
+  currentResultStatus === "アタリ"
+    ? Math.floor(bet * odds)
+    : 0;
+
   const history = JSON.parse(
     localStorage.getItem("chappyResultHistory") || "[]"
   );
