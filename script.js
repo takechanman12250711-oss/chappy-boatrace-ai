@@ -505,10 +505,18 @@ function saveSimpleResult() {
   document.querySelector("#raceResultInput")?.value
     ?.trim();
 
-  if (!currentResultStatus) {
-    alert("レース結果を入力してね");
-    return;
-  }
+  if (!result) {
+  alert("レース結果を入力してね");
+  return;
+}
+
+autoJudgeResult();
+
+if (!currentResultStatus) {
+  currentResultStatus = "ハズレ";
+}
+
+const fixedResult = result.replaceAll("-", "");
 
   const history = JSON.parse(
     localStorage.getItem("chappyResultHistory") || "[]"
@@ -516,7 +524,7 @@ function saveSimpleResult() {
 
   history.push({
   place: val("#placeSelect"),
-  result,
+  result: fixedResult,
   status: currentResultStatus,
   bet,
   odds,
