@@ -887,3 +887,197 @@ function renderManshuSheet(p = {}) {
   </div>
   `;
 }
+/* ===== v10 展開診断パネル：追加専用 ===== */
+
+function chappyNum(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function chappyClamp(n, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+function chappyBoat(boats, no) {
+  return (boats || []).find(b => Number(b.boat) === Number(no)) || {};
+}
+
+function chappyInTrustScore(data) {
+  const boats = data?.boats || [];
+  const b1 = chappyBoat(boats, 1);
+
+  let score = 60;
+
+  const avgST = chappyNum(b1.avgST, 0.18);
+  const exST = chappyNum(b1.exhibitionST, 0.18);
+  const local = chappyNum(b1.localWinRate, 0);
+  const national = chappyNum(b1.nationalWinRate, 0);
+  const motor = chappyNum(b1.motor2Rate, 0);
+
+  if (avgST > 0 && avgST <= 0.14) score += 10;
+  else if (avgST >= 0.20) score -= 12;
+
+  if (exST > 0 && exST <= 0.12) score += 8;
+  else if (exST >= 0.20) score -= 10;
+
+  if (local >= 7) score += 10;
+  else if (local > 0 && local < 5) score -= 8;
+
+  if (national >= 7) score += 6;
+  if (motor >= 40) score += 5;
+  if (motor > 0 && motor < 25) score -= 5;
+
+  return chappyClamp(score);
+}
+
+function chappyAttackBoat(data) {
+  const boats = data?.boats || [];
+  const candidates = boats.filter(b => Number(b.boat) >= 2);
+
+  let best = null;
+  let bestScore = -999;
+
+  candidates.forEach(b => {
+    let s = 50;
+
+    const avgST = chappyNum(b.avgST, 0.18);
+    const exST = chappyNum(b.exhibitionST, 0.18);
+    const motor = chappyNum(b.motor2Rate, 0);
+    const local = chappyNum(b.localWinRate, 0);
+    const tilt = chappyNum(b.tilt, 0);
+
+    if (avgST > 0 && avgST <= 0.14) s += 12;
+    if (exST > 0 && exST <= 0.12) s += 12;
+    if (motor >= 40) s += 8;
+    if (local >= 7) s += 8;
+    if (tilt >= 0.5) s += 5;
+
+    if (Number(b.boat) === 3) s += 8;
+    if (Number(b.boat) === 4) s += 6;
+
+    if (s > bestScore) {
+      bestScore = s;
+      best = b;
+    }
+  });
+
+  return {
+    boat: best?.boat || "-",
+    name: best?.name || "",
+    score: chappyClamp(bestScore)
+  };
+}
+
+function chappySashiBoat(data, attackBoat) {
+  const boats = data?.boats || [];
+  const atk = Number(attackBoat);
+
+  let targetNo = "-";
+
+  if (atk === 3) targetNo = 5;
+  else if (atk === 4) targetNo = 5;
+  else if (atk === 2) targetNo = 4;
+  else targetNo = 5;
+
+  const b = chappyBoat(boats, targetNo);
+
+  let score = 55;
+  const local = chappyNum(b.localWinRate, 0);
+  const avgST = chappyNum(b.avgST, 0.18);
+  const motor = chappyNum(b.motor2Rate, 0);
+
+  if (local >= 7) score += 10;
+  if (avgST > 0 && avgST <= 0.15) score += 8;
+  if (motor >= 40) score += 6;
+  if (atk === 3 || atk === 4) score += 10;
+
+  return {
+    boat: targetNo,
+    name: b.name || "",
+    score: chappyClamp(score)
+  };
+}
+
+function chappyNokoshiBoat(data, attackBoat) {
+  const boats = data?.boats || [];
+  const atk = Number(attackBoat);
+  const targetNo = atk === 3 ? 4 : 2;
+  const b = chappyBoat(boats, targetNo);
+
+  let score = 55;
+  const avgST = chappyNum(b.avgST, 0.18);
+  const local = chappyNum(b.localWinRate, 0);
+
+  if (avgST > 0 && avgST <= 0.16) score += 8;
+  if (local >= 7) score += 8;
+  if (targetNo === 4) score += 8;
+
+  return {
+    boat: targetNo,
+    name: b.name || "",
+    score: chappyClamp(score)
+  };
+}
+
+function chappyInTrustLabel(score) {
+  if (score >= 90) return "🔵 鉄板級";
+  if (score >= 80) return "🟢 強い";
+  if (score >= 60) return "🟡 普通";
+  if (score >= 40) return "🟠 怪しい";
+  return "🔴 波乱";
+}
+
+function renderRaceShapePanelV10(data) {
+  const inScore = chappyInTrustScore(data);
+  const attack = chappyAttackBoat(data);
+  const sashi = chappySashiBoat(data, attack.boat);
+  const nokoshi = chappyNokoshiBoat(data, attack.boat);
+
+  return `
+    <div id="raceShapePanelV10" class="sheet">
+      <h3>🚤 展開診断</h3>
+
+      <div class="race-line">
+        <b>イン信頼度：${inScore}点</b>
+        <p>${chappyInTrustLabel(inScore)}</p>
+      </div>
+
+      <div class="race-line">
+        <b>🔥 攻め艇：${attack.boat}号艇 ${attack.name}</b>
+        <p>攻め期待：${attack.score}点</p>
+      </div>
+
+      <div class="race-line">
+        <b>🌊 差し場：${sashi.boat}号艇 ${sashi.name}</b>
+        <p>差し場期待：${sashi.score}点</p>
+      </div>
+
+      <div class="race-line">
+        <b>🎯 残し：${nokoshi.boat}号艇 ${nokoshi.name}</b>
+        <p>残し期待：${nokoshi.score}点</p>
+      </div>
+
+      <div class="summary-box">
+        <b>考え方</b>
+        <p>情報 → 展開 → 評価 → 舟券。外枠期待はイン逃げが怪しい時、または外に強い選手がいる時だけ上げる。</p>
+      </div>
+    </div>
+  `;
+}
+
+function chappyInsertRaceShapePanelV10() {
+  if (!latestRaceData || !document.querySelector("#mainSheetArea")) return;
+
+  const main = document.querySelector("#mainSheetArea");
+  const old = document.querySelector("#raceShapePanelV10");
+  if (old) old.remove();
+
+  main.insertAdjacentHTML("beforebegin", renderRaceShapePanelV10(latestRaceData));
+}
+
+const chappyOldRenderAllV10 = renderAll;
+
+renderAll = function(data) {
+  chappyOldRenderAllV10(data);
+  setTimeout(chappyInsertRaceShapePanelV10, 50);
+};
