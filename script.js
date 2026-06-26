@@ -497,6 +497,26 @@ function todayYmd() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
 }
+function autoJudgeResult() {
+  const result =
+    document.querySelector("#raceResultInput")
+      ?.value
+      ?.replaceAll("-", "")
+      .trim();
+
+  if (!result) return;
+
+  const mainList = latestRaceData?.mainFormation || [];
+  const holeList = latestRaceData?.holeFormation || [];
+
+  const allPredictions = [...mainList, ...holeList];
+
+  currentResultStatus =
+    allPredictions.includes(result)
+      ? "アタリ"
+      : "ハズレ";
+}
+
 function saveSimpleResult() {
   const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
   const odds = Number(document.querySelector("#oddsInput")?.value || 0);
