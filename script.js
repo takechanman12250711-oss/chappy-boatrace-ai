@@ -746,3 +746,82 @@ document.querySelector("#raceResultInput")?.addEventListener("input", () => {
 
 document.querySelector("#betAmountInput")?.addEventListener("input", updateAutoPayout);
 document.querySelector("#oddsInput")?.addEventListener("input", updateAutoPayout);
+/* ===== 本命シート強化 v9.2 ===== */
+
+function renderMainSheet(boats, p) {
+  const marks = p.marks || {};
+
+  const picks = [
+    ["◎", "本命", marks.honmei],
+    ["○", "対抗", marks.taikou],
+    ["▲", "穴", marks.ana],
+    ["△", "押さえ", marks.osae || marks.osaE]
+  ];
+
+  return `
+    <div class="sheet compact-sheet">
+      <h3>🎯 本命シート</h3>
+
+      ${picks.map(([mark, label, m]) => {
+
+        if (!m) return "";
+
+        const b =
+          boats.find(x =>
+            Number(x.boat) === Number(m.boat)
+          ) || m;
+
+        const score =
+          b.totalScore ??
+          m.totalScore ??
+          "-";
+
+        return `
+          <div class="race-line">
+
+            <b>${mark} ${label}</b>
+
+            <p>
+              ${b.boat}号艇
+              ${b.name || ""}
+            </p>
+
+            <p>
+              スコア：
+              ${score}点
+            </p>
+
+            <p>
+              特徴：
+              ${roleName(b.boat)}
+            </p>
+
+            <p>
+              展開：
+              ${roleComment(b)}
+            </p>
+
+            <p>
+              データ：
+              ${simpleReasons(b)}
+            </p>
+
+          </div>
+        `;
+
+      }).join("")}
+
+      <div class="summary-box">
+
+        <b>判断軸</b>
+
+        <p>
+          展示・ST・当地・全国・
+          展開を重視。
+        </p>
+
+      </div>
+
+    </div>
+  `;
+}
