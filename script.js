@@ -732,10 +732,17 @@ function renderMainSheet(boats, p) {
   `;
 }
 
-function renderManshuSheet(p) {
-  if (!p) return `<div class="summary-box">万舟データなし</div>`;
+function renderManshuSheet(boats, p, missing) {
+  p = p || {};
+  missing = missing || [];
 
-  const list = p.missingTop30 || p.missing || p.manshuTickets || p.holeFormation || [];
+  const list =
+    p.missingTop30 ||
+    p.missing ||
+    p.manshuTickets ||
+    missing ||
+    [];
+
   const rows = list.slice(0, 30).map((x, i) => {
     const key = typeof x === "string" ? x : (x.key || x.result || "");
     const odds = findOddsByResult(key)?.odds || x.odds || "-";
