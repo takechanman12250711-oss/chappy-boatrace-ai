@@ -721,11 +721,11 @@ function updateAutoPayout() {
   if (text) text.textContent = `払戻金：${payout.toLocaleString()}円`;
 }
 
-function renderMainSheet(p) {
-  if (!p) return `<div class="summary-box">本命データなし</div>`;
+function renderMainSheet(boats, p) {
+  p = p || {};
   return `
     <div class="sheet main-sheet">
-      <b>本線</b>${tickets(p.mainFormation)}
+      <b>本線</b>${tickets(p.mainFormation || [])}
       <b>押さえ</b>${tickets(p.safeFormation || [])}
       <b>穴・流し候補</b>${tickets(p.holeFormation || [])}
     </div>
