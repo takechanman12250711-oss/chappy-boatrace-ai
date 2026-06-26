@@ -632,3 +632,126 @@ function updateAutoPayout() {
     text.textContent = `払戻金：${payout.toLocaleString()}円`;
   }
 }
+/* ===== 緊急復旧パッチ v10 ===== */
+
+function normKey(v) {
+  return String(v || "").replaceAll("-", "").replaceAll(" ", "").trim();
+}
+
+function showKey(v) {
+  const s = normKey(v);
+  return s.length === 3 ? `${s[0]}-${s[1]}-${s[2]}` : String(v || "");
+}
+
+function expandTicket(x) {
+  const t = String(x || "").trim();
+  if (!t) return [];
+  if (/^[1-6]-[1-6]-[1-6]$/.test(t)) return [t];
+
+  const p = t.split("-").filter(Boolean);
+  if (p.length !== 3) return [t];
+
+  const out = [];
+  [...p[0]].forEach(a => [...p[1]].forEach(b => [...p[2]].forEach(c => {
+    if (a !== b && b !== c && a !== c) out.push(`${a}-${b}-${c}`);
+  })));
+  return [...new Set(out)];
+}
+
+function tickets(list) {
+  const arr = Array.isArray(list) ? list : [];
+  const out = arr.flatMap(x => {
+    if (typeof x === "string") return expandTicket(x);
+    return expandTicket(x.key || x.result || "");
+  });
+
+  if (!out.length) return `<div class="summary-box">候補なし</div>`;
+
+  return out.slice(0, 24)
+    .map(x => `<div class="ticket-pill">${x}</div>`)
+    .join("");
+}
+
+function findOddsByResult(result) {
+  const key = normKey(result);
+  const list = Array.isArray(latestOddsList) ? latestOddsList : [];
+  return list.find(o => normKey(o.key || o.result || o.number) === key);
+}
+
+function autoFillOdds() {
+  const input = document.querySelector("#raceResultInput");
+  if (!input) return;
+
+  const hit = findOddsByResult(input.value);
+  const oddsInput = document.querySelector("#oddsInput");
+
+  if (hit && oddsInput) oddsInput.value = hit.odds;
+  updateAutoPayout();
+}
+
+function autoJudgeResult() {
+  const result = normKey(document.querySelector("#raceResultInput")?.value);
+  if (!result) return;
+
+  autoFillOdds();
+
+  const d = latestRaceData || {};
+  const predictionList = [
+    d.mainFormation,
+    d.safeFormation,
+    d.holeFormation,
+    d.manshuFormation,
+    d.manshuTickets,
+    d.missingTop30,
+    d.missing
+  ].filter(Array.isArray)
+   .flatMap(a => a.flatMap(x => expandTicket(typeof x === "string" ? x : (x.key || x.result || ""))))
+   .map(normKey);
+
+  currentResultStatus = predictionList.includes(result) ? "アタリ" : "ハズレ";
+  setStatus(currentResultStatus === "アタリ" ? "⭕ アタリ自動判定" : "❌ ハズレ自動判定");
+  updateAutoPayout();
+}
+
+function updateAutoPayout() {
+  const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
+  const odds = Number(document.querySelector("#oddsInput")?.value || 0);
+  const payout = currentResultStatus === "アタリ" ? Math.floor(bet * odds) : 0;
+  const text = document.querySelector("#autoPayoutText");
+  if (text) text.textContent = `払戻金：${payout.toLocaleString()}円`;
+}
+
+function renderMainSheet(p) {
+  if (!p) return `<div class="summary-box">本命データなし</div>`;
+  return `
+    <div class="sheet main-sheet">
+      <b>本線</b>${tickets(p.mainFormation)}
+      <b>押さえ</b>${tickets(p.safeFormation || [])}
+      <b>穴・流し候補</b>${tickets(p.holeFormation || [])}
+    </div>
+  `;
+}
+
+function renderManshuSheet(p) {
+  if (!p) return `<div class="summary-box">万舟データなし</div>`;
+
+  const list = p.missingTop30 || p.missing || p.manshuTickets || p.holeFormation || [];
+  const rows = list.slice(0, 30).map((x, i) => {
+    const key = typeof x === "string" ? x : (x.key || x.result || "");
+    const odds = findOddsByResult(key)?.odds || x.odds || "-";
+    return `<li>${i + 1}. ${showKey(key)}　${odds}倍</li>`;
+  }).join("");
+
+  return `
+    <div class="sheet manshu-sheet">
+      <b>万舟候補</b>${tickets(p.manshuFormation || p.holeFormation || [])}
+      <b>出てない目TOP30</b>
+      <ol>${rows || "<li>データなし</li>"}</ol>
+    </div>
+  `;
+}
+
+document.querySelector(".result-buttons")?.style.setProperty("display", "none");
+document.querySelector("#raceResultInput")?.addEventListener("input", autoJudgeResult);
+document.querySelector("#betAmountInput")?.addEventListener("input", updateAutoPayout);
+document.querySelector("#oddsInput")?.addEventListener("input", updateAutoPayout);
