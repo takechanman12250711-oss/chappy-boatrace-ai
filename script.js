@@ -694,3 +694,55 @@ function todayYmd() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
 }
+/* ===== v9.1 修正：フォーメーション戻し＋払戻金表示修正 ===== */
+
+function tickets(list) {
+  if (!Array.isArray(list) || list.length === 0) return `<p>なし</p>`;
+
+  return `
+    <div class="ticket-list">
+      ${[...new Set(list.map(x => typeof x === "string" ? x : (x.key || x.result || "")))]
+        .filter(Boolean)
+        .map(x => `<span class="ticket">${x}</span>`)
+        .join("")}
+    </div>
+  `;
+}
+
+function renderFormations(p) {
+  return `
+    <div class="sheet">
+      <h3>🧾 買い目</h3>
+
+      <h4>本線</h4>
+      ${tickets(p.mainFormation)}
+
+      <h4>押さえ</h4>
+      ${tickets(p.safeFormation || [])}
+
+      <h4>穴・流し候補</h4>
+      ${tickets(p.holeFormation || [])}
+    </div>
+  `;
+}
+
+function updateAutoPayout() {
+  const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
+  const odds = Number(document.querySelector("#oddsInput")?.value || 0);
+  const text = document.querySelector("#autoPayoutText");
+
+  const payout = Math.floor(bet * odds);
+
+  if (text) {
+    text.textContent = `払戻金：${payout.toLocaleString()}円`;
+  }
+}
+
+document.querySelector("#raceResultInput")?.addEventListener("input", () => {
+  autoFillOdds();
+  autoJudgeResult();
+  updateAutoPayout();
+});
+
+document.querySelector("#betAmountInput")?.addEventListener("input", updateAutoPayout);
+document.querySelector("#oddsInput")?.addEventListener("input", updateAutoPayout);
