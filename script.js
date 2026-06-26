@@ -824,3 +824,66 @@ function renderMainSheet(boats, p) {
     </div>
   `;
 }
+/* ===== 万舟シート強化 v9.3 ===== */
+
+function renderManshuSheet(p = {}) {
+
+  const axis =
+    p.manshuAxis ||
+    p.holeAxis ||
+    "4号艇";
+
+  const reason =
+    p.manshuReason ||
+    "外枠の一撃・展開待ち";
+
+  const forms =
+    p.manshuFormation ||
+    p.holeFormation ||
+    [];
+
+  const top10 =
+    p.missingTop10 ||
+    p.missing ||
+    [];
+
+  const top30 =
+    p.missingTop30 ||
+    [];
+
+  return `
+  <div class="sheet manshu-sheet">
+
+    <h4>💣 万舟軸</h4>
+
+    <p><b>${axis}</b></p>
+
+    <h4>💣 万舟理由</h4>
+
+    <p>${reason}</p>
+
+    <h4>💣 万舟フォーメーション</h4>
+
+    ${tickets(forms)}
+
+    <h4>🔥 出てない目TOP10</h4>
+
+    <div class="ticket-list">
+      ${top10
+        .slice(0,10)
+        .map(x=>`<div>${typeof x==="string"?x:x.key||""}</div>`)
+        .join("")}
+    </div>
+
+    <h4>🔥 出てない目TOP30</h4>
+
+    <div class="ticket-list">
+      ${top30
+        .slice(0,30)
+        .map(x=>`<div>${typeof x==="string"?x:x.key||""}</div>`)
+        .join("")}
+    </div>
+
+  </div>
+  `;
+}
