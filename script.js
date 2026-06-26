@@ -501,9 +501,12 @@ function saveSimpleResult() {
   const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
   const odds = Number(document.querySelector("#oddsInput")?.value || 0);
   const payout = currentResultStatus === "アタリ" ? Math.floor(bet * odds) : 0;
+  const result =
+  document.querySelector("#raceResultInput")?.value
+    ?.trim();
 
   if (!currentResultStatus) {
-    alert("先にアタリかハズレを選択してね");
+    alert("レース結果を入力してね");
     return;
   }
 
@@ -513,7 +516,7 @@ function saveSimpleResult() {
 
   history.push({
   place: val("#placeSelect"),
-  type: val("#resultTypeSelect"),
+  result,
   status: currentResultStatus,
   bet,
   odds,
