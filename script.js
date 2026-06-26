@@ -520,7 +520,6 @@ function autoJudgeResult() {
 function saveSimpleResult() {
   const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
   const odds = Number(document.querySelector("#oddsInput")?.value || 0);
-  const payout = currentResultStatus === "アタリ" ? Math.floor(bet * odds) : 0;
   const result =
   document.querySelector("#raceResultInput")?.value
     ?.trim();
