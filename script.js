@@ -497,259 +497,123 @@ function todayYmd() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
 }
-function autoJudgeResult() {
-  const result =
-    document.querySelector("#raceResultInput")
-      ?.value
-      ?.replaceAll("-", "")
-      .trim();
+function normalizeResultKey(v) {
+  return String(v || "")
+    .replaceAll("-", "")
+    .replaceAll(" ", "")
+    .trim();
+}
 
+function formatResultKey(v) {
+  const s = normalizeResultKey(v);
+  return s.length === 3 ? `${s[0]}-${s[1]}-${s[2]}` : String(v || "");
+}
+
+function expandTicket(raw) {
+  if (!raw) return [];
+
+  const text = String(raw).trim();
+
+  if (/^[1-6]-[1-6]-[1-6]$/.test(text)) {
+    return [text];
+  }
+
+  const parts = text.split("-").filter(Boolean);
+
+  if (parts.length === 3) {
+    const a = [...parts[0]];
+    const b = [...parts[1]];
+    const c = [...parts[2]];
+    const out = [];
+
+    a.forEach(x => {
+      b.forEach(y => {
+        c.forEach(z => {
+          if (x !== y && y !== z && x !== z) {
+            out.push(`${x}-${y}-${z}`);
+          }
+        });
+      });
+    });
+
+    return [...new Set(out)];
+  }
+
+  return [text];
+}
+
+function tickets(list) {
+  const arr = Array.isArray(list) ? list : [];
+  const expanded = arr.flatMap(expandTicket);
+
+  if (!expanded.length) {
+    return `<div class="summary-box">候補なし</div>`;
+  }
+
+  return expanded
+    .slice(0, 18)
+    .map(x => `<div class="ticket-pill">${x}</div>`)
+    .join("");
+}
+
+function findOddsByResult(result) {
+  const key = normalizeResultKey(result);
+  const list = Array.isArray(latestOddsList) ? latestOddsList : [];
+
+  return list.find(o => {
+    const oddsKey = normalizeResultKey(o.key || o.result || o.number);
+    return oddsKey === key;
+  });
+}
+
+function collectPredictionTickets() {
+  const d = latestRaceData || {};
+
+  const lists = [
+    d.mainFormation,
+    d.safeFormation,
+    d.holeFormation,
+    d.manshuFormation,
+    d.manshuTickets,
+    d.missing,
+    d.missingTop30
+  ];
+
+  return lists
+    .filter(Array.isArray)
+    .flatMap(list =>
+      list.map(x => typeof x === "string" ? x : (x.key || x.result || ""))
+    )
+    .flatMap(expandTicket)
+    .map(normalizeResultKey);
+}
+
+function autoJudgeResult() {
+  const input = document.querySelector("#raceResultInput");
+  if (!input) return;
+
+  const result = normalizeResultKey(input.value);
   if (!result) return;
 
-  const mainList = latestRaceData?.mainFormation || [];
-  const holeList = latestRaceData?.holeFormation || [];
+  const oddsHit = findOddsByResult(result);
+  const oddsInput = document.querySelector("#oddsInput");
 
-  const allPredictions = [...mainList, ...holeList];
+  if (oddsHit && oddsInput) {
+    oddsInput.value = oddsHit.odds;
+  }
+
+  const predictions = collectPredictionTickets();
 
   currentResultStatus =
-    allPredictions.includes(result)
-      ? "アタリ"
-      : "ハズレ";
-}
+  oddsHit || predictions.includes(result)
+    ? "アタリ"
+    : "ハズレ";
 
-function saveSimpleResult() {
-  const bet = Number(document.querySelector("#betAmountInput")?.value || 0);
-  const odds = Number(document.querySelector("#oddsInput")?.value || 0);
-  const result =
-  document.querySelector("#raceResultInput")?.value
-    ?.trim();
-
-  if (!result) {
-  alert("レース結果を入力してね");
-  return;
-}
-
-autoJudgeResult();
-
-if (!currentResultStatus) {
-  currentResultStatus = "ハズレ";
-}
-
-const fixedResult = result.replaceAll("-", "");
-
-const payout =
-  currentResultStatus === "アタリ"
-    ? Math.floor(bet * odds)
-    : 0;
-
-  const history = JSON.parse(
-    localStorage.getItem("chappyResultHistory") || "[]"
+  setStatus(
+    currentResultStatus === "アタリ"
+      ? "⭕ アタリ自動判定"
+      : "❌ ハズレ自動判定"
   );
-
-  history.push({
-  place: val("#placeSelect"),
-  result: fixedResult,
-  status: currentResultStatus,
-  bet,
-  odds,
-  payout,
-  savedAt: Date.now()
-});
-
-  localStorage.setItem(
-    "chappyResultHistory",
-    JSON.stringify(history)
-  );
-
-  renderStatsArea();
-
-  alert("成績保存完了");
-}
-
-function undoLastResult() {
-  const history = JSON.parse(
-    localStorage.getItem("chappyResultHistory") || "[]"
-  );
-
-  if (!history.length) {
-    alert("取り消す成績がありません");
-    return;
-  }
-
-  history.pop();
-
-  localStorage.setItem(
-    "chappyResultHistory",
-    JSON.stringify(history)
-  );
-
-  renderStatsArea();
-
-  alert("直前の成績を取り消しました");
-}
-
-function renderStatsArea() {
-  const history = JSON.parse(
-    localStorage.getItem("chappyResultHistory") || "[]"
-  );
-
-  const predictions = history.length;
-
-  const hits = history.filter(
-    r => r.status === "アタリ"
-  ).length;
-
-  const bet = history.reduce(
-    (sum, r) => sum + Number(r.bet || 0),
-    0
-  );
-
-  const payout = history.reduce(
-    (sum, r) => sum + Number(r.payout || 0),
-    0
-  );
-
-  const hitRate =
-    predictions > 0
-      ? ((hits / predictions) * 100).toFixed(1)
-      : "0";
-
-  const recoveryRate =
-    bet > 0
-      ? ((payout / bet) * 100).toFixed(1)
-      : "0";
-  const venueStats = {};
-  const typeStats = {
-  本命: { predictions: 0, hits: 0 },
-  万舟: { predictions: 0, hits: 0 },
-  展開: { predictions: 0, hits: 0 }
-};
-
-history.forEach(r => {
-  if (!r.type) return;
-
-  typeStats[r.type].predictions++;
-
-  if (r.status === "アタリ") {
-    typeStats[r.type].hits++;
-  }
-});
-
-history.forEach(r => {
-  if (!r.place) return;
-
-  if (!venueStats[r.place]) {
-    venueStats[r.place] = {
-      predictions: 0,
-      hits: 0,
-      bet: 0,
-      payout: 0
-    };
-  }
-
-  venueStats[r.place].predictions++;
-
-  if (r.status === "アタリ") {
-    venueStats[r.place].hits++;
-  }
-
-  venueStats[r.place].bet += Number(r.bet || 0);
-  venueStats[r.place].payout += Number(r.payout || 0);
-});
-
-  const area = document.querySelector("#statsArea");
-
-  if (!area) return;
-
-  area.innerHTML = `
-    <table class="table">
-      <tr><td>予想数</td><td>${predictions}</td></tr>
-      <tr><td>アタリ数</td><td>${hits}</td></tr>
-      <tr><td>的中率</td><td>${hitRate}%</td></tr>
-      <tr><td>購入金額</td><td>${bet.toLocaleString()}円</td></tr>
-      <tr><td>払戻金額</td><td>${payout.toLocaleString()}円</td></tr>
-      <tr><td>回収率</td><td>${recoveryRate}%</td></tr>
-    </table>
-    <h3>🎯 予想別成績</h3>
-
-<table class="table">
-<tr>
-<th>種類</th>
-<th>予想</th>
-<th>的中率</th>
-</tr>
-
-${Object.entries(typeStats).map(([type, s]) => {
-
-const rate =
-s.predictions > 0
-? ((s.hits / s.predictions) * 100).toFixed(1)
-: "0";
-
-return `
-<tr>
-<td>${type}</td>
-<td>${s.predictions}</td>
-<td>${rate}%</td>
-</tr>
-`;
-
-}).join("")}
-
-</table>
-    <h3>🚤 24場別成績</h3>
-<table class="table">
-  <tr>
-    <th>場</th>
-    <th>予想</th>
-    <th>的中率</th>
-    <th>回収率</th>
-  </tr>
-  ${Object.entries(venueStats).map(([place, s]) => {
-    const vHitRate = s.predictions > 0
-      ? ((s.hits / s.predictions) * 100).toFixed(1)
-      : "0";
-
-    const vRecoveryRate = s.bet > 0
-      ? ((s.payout / s.bet) * 100).toFixed(1)
-      : "0";
-
-    return `
-      <tr>
-        <td>${place}</td>
-        <td>${s.predictions}</td>
-        <td>${vHitRate}%</td>
-        <td>${vRecoveryRate}%</td>
-      </tr>
-    `;
-  }).join("")}
-</table>
-  `;
-}
-
-document
-  .querySelector("#undoResultBtn")
-  ?.addEventListener("click", undoLastResult);
-
-renderStatsArea();
-function autoFillOdds() {
-  const oddsInput = document.querySelector("#oddsInput");
-  if (!oddsInput || !Array.isArray(latestOddsList) || latestOddsList.length === 0) return;
-const oddsList = latestOddsList;
-
-  const type = val("#resultTypeSelect");
-
-  let target = null;
-
-  if (type === "万舟") {
-    target = oddsList.find(o => Number(o.odds) >= 100);
-  } else {
-    target = oddsList[0];
-  }
-
-  if (target && target.odds) {
-    oddsInput.value = target.odds;
-  }
 
   updateAutoPayout();
 }
