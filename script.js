@@ -1109,3 +1109,105 @@ function renderManshuSheet(boats = [], p = {}) {
     </div>
   `;
 }
+/* ===== v11.1 万舟シート：展開ルート強化版 ===== */
+
+function manshuRouteTextV111(boatNo, attackBoat) {
+  const atk = Number(attackBoat);
+
+  if (boatNo === 4) {
+    return atk === 3
+      ? "3が攻める → 4が残す・差す → 高配当"
+      : "カドから攻める or 残す展開待ち";
+  }
+
+  if (boatNo === 5) {
+    return atk === 3 || atk === 4
+      ? `${atk}が攻める → 内が流れる → 5に差し場`
+      : "内が競る → 5が差し場を拾う";
+  }
+
+  if (boatNo === 6) {
+    return "外は展開待ち。地元・当地・STが良い時だけ評価";
+  }
+
+  return "展開待ち";
+}
+
+function manshuScoreV111(boatNo, boats = [], p = {}) {
+  const b = boats.find(x => Number(x.boat) === boatNo) || {};
+  const shape = p.raceShape || {};
+  const atk = Number(shape.attackBoat);
+
+  let score = 45;
+
+  if (boatNo === 4) score += 8;
+  if (boatNo === 5) score += 10;
+  if (boatNo === 6) score += 3;
+
+  if (boatNo === 4 && atk === 3) score += 12;
+  if (boatNo === 5 && (atk === 3 || atk === 4)) score += 15;
+  if (boatNo === 6 && (atk === 3 || atk === 4)) score += 6;
+
+  if (Number(b.totalScore || 0) >= 70) score += 10;
+  if (Number(b.localWinRate || 0) >= 7) score += 10;
+  if (Number(b.avgST || 0) > 0 && Number(b.avgST) <= 0.15) score += 7;
+  if (Number(b.exhibitionST || 0) > 0 && Number(b.exhibitionST) <= 0.12) score += 7;
+  if (Number(b.motor2Rate || 0) >= 40) score += 5;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function manshuRankLabelV111(score) {
+  if (score >= 85) return "★★★★★ 激アツ";
+  if (score >= 75) return "★★★★☆ 有力";
+  if (score >= 60) return "★★★☆☆ 展開次第";
+  if (score >= 45) return "★★☆☆☆ 押さえ";
+  return "★☆☆☆☆ 低め";
+}
+
+function renderManshuSheet(boats = [], p = {}) {
+  const shape = p.raceShape || {};
+  const attackBoat = shape.attackBoat || "-";
+  const forms = p.manshuFormation || p.holeFormation || [];
+
+  const rows = [4, 5, 6].map(no => {
+    const b = boats.find(x => Number(x.boat) === no) || {};
+    const score = manshuScoreV111(no, boats, p);
+
+    return `
+      <div class="race-line">
+        <b>🎯 ${no}号艇期待度：${score}点</b>
+        <p>${manshuRankLabelV111(score)}</p>
+        <p><b>展開ルート：</b>${manshuRouteTextV111(no, attackBoat)}</p>
+        <p><b>選手材料：</b>${b.name || ""} / ST:${fmtST(b.avgST)} / 当地:${b.localWinRate || "-"} / 展示ST:${fmtST(b.exhibitionST)}</p>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="sheet manshu-sheet">
+
+      <h4>💣 万舟軸</h4>
+      <p><b>${p.manshuAxis || p.holeAxis || "展開待ち"}</b></p>
+
+      <h4>💣 万舟理由</h4>
+      <p>${p.manshuReason || "イン逃げが怪しい時、攻め艇が動いて外に差し場ができる展開を見る。"}</p>
+
+      <h4>💥 万舟発生条件</h4>
+      <p>
+        イン信頼度が下がる<br>
+        ↓<br>
+        ${attackBoat !== "-" ? `${attackBoat}号艇が攻める` : "攻め艇が動く"}<br>
+        ↓<br>
+        4残し・5差し場・6展開待ちが発生
+      </p>
+
+      <h4>🚤 展開ルート別 4・5・6期待度</h4>
+      ${rows}
+
+      <h4>💣 万舟フォーメーション</h4>
+      ${tickets(forms)}
+
+    </div>
+  `;
+}
