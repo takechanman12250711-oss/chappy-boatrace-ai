@@ -401,3 +401,32 @@ function makeFallbackBoats() {
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, Number(n) || 0));
 }
+function extractBoatNumbers(block) {
+  const nums = String(block || "").match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+
+  const stIndex = nums.findIndex(n => n > 0 && n < 1);
+
+  if (stIndex < 0) {
+    return {
+      nationalWinRate: null,
+      localWinRate: null,
+      motor: null,
+      motor2Rate: null,
+      motor3Rate: null,
+      boatNo: null,
+      boat2Rate: null,
+      boat3Rate: null
+    };
+  }
+
+  return {
+    nationalWinRate: nums[stIndex + 1] ?? null,
+    localWinRate: nums[stIndex + 4] ?? null,
+    motor: nums[stIndex + 7] ?? null,
+    motor2Rate: nums[stIndex + 8] ?? null,
+    motor3Rate: nums[stIndex + 9] ?? null,
+    boatNo: nums[stIndex + 10] ?? null,
+    boat2Rate: nums[stIndex + 11] ?? null,
+    boat3Rate: nums[stIndex + 12] ?? null
+  };
+}
