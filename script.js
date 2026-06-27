@@ -1562,3 +1562,42 @@ function tickets(list) {
     .map(x => `<div class="ticket-pill">${x}</div>`)
     .join("");
 }
+/* ===== v13.3 理論アラート重複削除 ===== */
+
+function cleanTheoryAlertDupV133() {
+  const alertAreas = document.querySelectorAll(
+    "#alertArea, .alert-area, .theory-alert, .alert-card"
+  );
+
+  const seenText = new Set();
+
+  alertAreas.forEach(area => {
+    const text = area.textContent.replace(/\s+/g, " ").trim();
+
+    if (!text) return;
+
+    if (seenText.has(text)) {
+      area.remove();
+    } else {
+      seenText.add(text);
+    }
+  });
+
+  document.querySelectorAll(".sheet").forEach(sheet => {
+    const title = sheet.textContent.replace(/\s+/g, " ").trim();
+
+    if (
+      title.includes("理論アラート") &&
+      document.querySelectorAll(".sheet").length
+    ) {
+      const same = [...document.querySelectorAll(".sheet")]
+        .filter(x => x.textContent.replace(/\s+/g, " ").trim() === title);
+
+      same.forEach((el, i) => {
+        if (i > 0) el.remove();
+      });
+    }
+  });
+}
+
+setInterval(cleanTheoryAlertDupV133, 800);
