@@ -1066,49 +1066,6 @@ function manshuExpectReason(boatNo, boats = [], p = {}) {
 
   return reasons.join(" / ") || "イン逃げが怪しい時、外の展開が必要";
 }
-
-function renderManshuSheet(boats = [], p = {}) {
-  const shape = p.raceShape || {};
-  const forms = p.manshuFormation || p.holeFormation || [];
-
-  const scores = [4, 5, 6].map(no => ({
-    no,
-    boat: boats.find(b => Number(b.boat) === no) || {},
-    score: manshuExpectScore(no, boats, p)
-  }));
-
-  return `
-    <div class="sheet manshu-sheet">
-
-      <h4>💣 万舟軸</h4>
-      <p><b>${p.manshuAxis || p.holeAxis || "展開待ち"}</b></p>
-
-      <h4>💣 万舟理由</h4>
-      <p>${p.manshuReason || "イン逃げが怪しい時、攻め艇が動いて外に差し場ができる展開を見る。"}</p>
-
-      <h4>💥 万舟発生条件</h4>
-      <p>
-        イン信頼度が下がる<br>
-        ↓<br>
-        ${shape.attackBoat ? `${shape.attackBoat}号艇が攻める` : "攻め艇が動く"}<br>
-        ↓<br>
-        4残し・5差し場・6展開待ちが発生
-      </p>
-
-      ${scores.map(x => `
-        <div class="race-line">
-          <b>🎯 ${x.no}号艇期待度：${x.score}点</b>
-          <p>${manshuExpectLabel(x.score)}</p>
-          <p>${manshuExpectReason(x.no, boats, p)}</p>
-        </div>
-      `).join("")}
-
-      <h4>💣 万舟フォーメーション</h4>
-      ${tickets(forms)}
-
-    </div>
-  `;
-}
 /* ===== v11.1 万舟シート：展開ルート強化版 ===== */
 
 function manshuRouteTextV111(boatNo, attackBoat) {
