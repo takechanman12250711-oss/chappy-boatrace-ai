@@ -1399,3 +1399,10 @@ renderAll = function(data) {
   oldRenderAllV12(data);
   setTimeout(insertRoutePanelV12, 80);
 };
+/* ===== v12 表示保険パッチ ===== */
+
+setInterval(() => {
+  if (!document.querySelector("#routePanelV12")) {
+    insertRoutePanelV12();
+  }
+}, 1000);
