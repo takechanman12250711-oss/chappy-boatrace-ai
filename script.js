@@ -413,3 +413,478 @@ function calcManshuScore(b, analysis) {
 }
 
 /* ===== 後半はこの下にそのまま貼る ===== */
+
+function renderManshuOdds(odds) {
+  const list = Array.isArray(odds)
+    ? odds.filter(o => Number(o.odds) >= 100).slice(0, 10)
+    : [];
+
+  if (!list.length) {
+    return `<div class="summary-box">💣 万舟候補なし</div>`;
+  }
+
+  return `
+    <div class="sheet manshu-odds-card">
+      <h3>💣 万舟候補TOP10</h3>
+      <div class="odds-grid">
+        ${list.map((o, i) => `
+          <div class="odds-pill manshu-pill">
+            <b>${i + 1}. ${showKey(o.key || o.result || o.number)}</b>
+            <span>${o.odds}倍</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderMissingTop30(list) {
+  if (!Array.isArray(list) || !list.length) {
+    return `<div class="summary-box">出てない目TOP30取得中...</div>`;
+  }
+
+  return `
+    <div class="sheet missing-card">
+      <h3>📊 出てない目 TOP30</h3>
+      <div class="odds-grid">
+        ${list.slice(0, 30).map((x, i) => `
+          <div class="odds-pill">
+            <b>${x.rank || i + 1}. ${showKey(x.key || x.result || x.number)}</b>
+            <span>${x.odds || "-"}倍</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderAlerts(p) {
+  const raw = [
+    ...(p.slitAlert || []),
+    ...(p.doubleTimeAlert || []),
+    ...(p.newSumAlert || [])
+  ];
+
+  const seen = new Set();
+
+  const list = raw.filter(a => {
+    const key = `${a.boat || ""}-${a.type || ""}-${a.reason || ""}-${a.sum || ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (!list.length) {
+    return `<div class="summary-box">🚨 理論アラートなし。基本展開を重視。</div>`;
+  }
+
+  return `
+    <div class="sheet">
+      <h3>🚨 舟券太郎 理論アラート</h3>
+      ${list.map(a => `
+        <div class="race-line">
+          <b>${a.boat ? `${a.boat}号艇 ` : ""}${a.type || "アラート"}</b>
+          <p>${a.reason || ""}${a.sum ? ` / 合計 ${a.sum}` : ""}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderFinalComment(p, venue, weather, analysis) {
+  return `
+    <div class="summary-box">
+      <h3>📝 最終コメント</h3>
+      <p>${p.raceComment || "展開とSTを見て本線・押さえ・穴・万舟を分ける。"}</p>
+      <p><b>展開：</b>${analysis?.shapeText || p.raceShape?.shape || "-"}</p>
+      <p><b>場：</b>${venue.courseBias || "-"} / <b>水面：</b>${weather.weather || "-"} 風${weather.windSpeed ?? "-"}m 波${weather.waveHeight ?? "-"}cm</p>
+    </div>
+  `;
+}
+
+function autoFillOdds() {
+  const result = val("#raceResultInput");
+  const oddsInput = $("#oddsInput");
+
+  if (!oddsInput || !result) {
+    updateAutoPayout();
+    return;
+  }
+
+  const hit = findOddsByResult(result);
+
+  if (hit?.odds) {
+    oddsInput.value = hit.odds;
+  }
+
+  updateAutoPayout();
+}
+
+function autoJudgeResult() {
+  const result = normalizeKey(val("#raceResultInput"));
+  if (!result) return;
+
+  const predictions = collectPredictionTickets();
+
+  currentResultStatus = predictions.includes(result)
+    ? "アタリ"
+    : "ハズレ";
+
+  setStatus(
+    currentResultStatus === "アタリ"
+      ? "⭕ アタリ自動判定"
+      : "❌ ハズレ自動判定"
+  );
+}
+
+function collectPredictionTickets() {
+  const p = latestRaceData?.prediction || {};
+
+  const lists = [
+    p.mainFormation,
+    p.safeFormation,
+    p.holeFormation,
+    p.manshuFormation,
+    p.manshuTickets
+  ];
+
+  return lists
+    .filter(Array.isArray)
+    .flatMap(list => normalizeFormList(list).flatMap(expandForm))
+    .map(normalizeKey);
+}
+
+function saveSimpleResult() {
+  const resultRaw = val("#raceResultInput");
+
+  if (!resultRaw) {
+    alert("レース結果を入力してね");
+    return;
+  }
+
+  autoFillOdds();
+  autoJudgeResult();
+
+  const bet = Number($("#betAmountInput")?.value || 0);
+  const odds = Number($("#oddsInput")?.value || 0);
+  const payout = currentResultStatus === "アタリ"
+    ? Math.floor(bet * odds)
+    : 0;
+
+  const history = JSON.parse(
+    localStorage.getItem("chappyResultHistory") || "[]"
+  );
+
+  history.push({
+    place: val("#placeSelect"),
+    result: normalizeKey(resultRaw),
+    status: currentResultStatus,
+    bet,
+    odds,
+    payout,
+    savedAt: Date.now()
+  });
+
+  localStorage.setItem("chappyResultHistory", JSON.stringify(history));
+
+  renderStatsArea();
+  updateAutoPayout();
+
+  alert("成績保存完了");
+}
+
+function undoLastResult() {
+  const history = JSON.parse(
+    localStorage.getItem("chappyResultHistory") || "[]"
+  );
+
+  if (!history.length) {
+    alert("取り消す成績がありません");
+    return;
+  }
+
+  history.pop();
+  localStorage.setItem("chappyResultHistory", JSON.stringify(history));
+
+  renderStatsArea();
+  alert("直前の成績を取り消しました");
+}
+
+function renderStatsArea() {
+  const history = JSON.parse(
+    localStorage.getItem("chappyResultHistory") || "[]"
+  );
+
+  const predictions = history.length;
+  const hits = history.filter(r => r.status === "アタリ").length;
+
+  const bet = history.reduce((sum, r) => sum + Number(r.bet || 0), 0);
+  const payout = history.reduce((sum, r) => sum + Number(r.payout || 0), 0);
+
+  const hitRate = predictions > 0
+    ? ((hits / predictions) * 100).toFixed(1)
+    : "0";
+
+  const recoveryRate = bet > 0
+    ? ((payout / bet) * 100).toFixed(1)
+    : "0";
+
+  const venueStats = {};
+
+  history.forEach(r => {
+    if (!r.place) return;
+
+    if (!venueStats[r.place]) {
+      venueStats[r.place] = {
+        predictions: 0,
+        hits: 0,
+        bet: 0,
+        payout: 0
+      };
+    }
+
+    venueStats[r.place].predictions++;
+    if (r.status === "アタリ") venueStats[r.place].hits++;
+    venueStats[r.place].bet += Number(r.bet || 0);
+    venueStats[r.place].payout += Number(r.payout || 0);
+  });
+
+  const area = $("#statsArea");
+  if (!area) return;
+
+  area.innerHTML = `
+    <table class="table">
+      <tr><td>予想数</td><td>${predictions}</td></tr>
+      <tr><td>アタリ数</td><td>${hits}</td></tr>
+      <tr><td>的中率</td><td>${hitRate}%</td></tr>
+      <tr><td>購入金額</td><td>${bet.toLocaleString()}円</td></tr>
+      <tr><td>払戻金額</td><td>${payout.toLocaleString()}円</td></tr>
+      <tr><td>回収率</td><td>${recoveryRate}%</td></tr>
+    </table>
+
+    <h3>🚤 24場別成績</h3>
+    <table class="table">
+      <tr>
+        <th>場</th>
+        <th>予想</th>
+        <th>的中率</th>
+        <th>回収率</th>
+      </tr>
+      ${Object.entries(venueStats).map(([place, s]) => {
+        const vHitRate = s.predictions > 0
+          ? ((s.hits / s.predictions) * 100).toFixed(1)
+          : "0";
+
+        const vRecoveryRate = s.bet > 0
+          ? ((s.payout / s.bet) * 100).toFixed(1)
+          : "0";
+
+        return `
+          <tr>
+            <td>${place}</td>
+            <td>${s.predictions}</td>
+            <td>${vHitRate}%</td>
+            <td>${vRecoveryRate}%</td>
+          </tr>
+        `;
+      }).join("")}
+    </table>
+  `;
+}
+
+function updateAutoPayout() {
+  const bet = Number($("#betAmountInput")?.value || 0);
+  const odds = Number($("#oddsInput")?.value || 0);
+  const text = $("#autoPayoutText");
+
+  const payout = Math.floor(bet * odds);
+
+  if (text) {
+    text.textContent = `払戻金：${payout.toLocaleString()}円`;
+  }
+}
+
+function calcBoatScore(b) {
+  if (!b) return 50;
+
+  let s = 50;
+
+  if (num(b.avgST, 0.18) > 0 && num(b.avgST, 0.18) <= 0.14) s += 10;
+  if (num(b.exhibitionST, 0.18) > 0 && num(b.exhibitionST, 0.18) <= 0.12) s += 8;
+  if (num(b.localWinRate, 0) >= 7) s += 10;
+  if (num(b.nationalWinRate, 0) >= 7) s += 8;
+  if (num(b.motor2Rate, 0) >= 40) s += 5;
+
+  return clamp(s);
+}
+
+function buildBuffs(b) {
+  const r = [];
+
+  if (num(b.avgST, 0) > 0 && num(b.avgST, 0) <= 0.15) r.push("ST良");
+  if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST, 0) <= 0.12) r.push("展示ST良");
+  if (num(b.localWinRate, 0) >= 7) r.push("当地強");
+  if (num(b.nationalWinRate, 0) >= 7) r.push("全国勝率高");
+  if (num(b.motor2Rate, 0) >= 40) r.push("モーター良");
+
+  return r;
+}
+
+function buildDebuffs(b) {
+  const r = [];
+
+  if (num(b.avgST, 0) >= 0.20) r.push("ST遅め");
+  if (num(b.exhibitionST, 0) >= 0.20) r.push("展示ST遅め");
+  if (num(b.localWinRate, 0) > 0 && num(b.localWinRate, 0) < 5) r.push("当地弱め");
+  if (num(b.motor2Rate, 0) > 0 && num(b.motor2Rate, 0) < 25) r.push("モーター弱め");
+
+  return r;
+}
+
+function simpleReasons(b) {
+  if (!b) return "データ不足";
+
+  const r = [];
+
+  if (num(b.exhibitionTime, 0) > 0) r.push(`展示${b.exhibitionTime}`);
+  if (num(b.exhibitionST, 0) > 0) r.push(`展示ST${fmtST(b.exhibitionST)}`);
+  if (num(b.avgST, 0) > 0) r.push(`平均ST${fmtST(b.avgST)}`);
+  if (num(b.localWinRate, 0) > 0) r.push(`当地勝率${b.localWinRate}`);
+  if (num(b.nationalWinRate, 0) > 0) r.push(`全国勝率${b.nationalWinRate}`);
+  if (num(b.motor2Rate, 0) > 0) r.push(`M2率${b.motor2Rate}%`);
+
+  return r.slice(0, 5).join(" / ") || "平均的な評価";
+}
+
+function roleName(boat) {
+  const n = Number(boat);
+
+  if (n === 1) return "逃げ軸";
+  if (n === 2) return "差し候補";
+  if (n === 3) return "攻め候補";
+  if (n === 4) return "カド攻め・残し";
+  if (n === 5) return "差し場待ち";
+  if (n === 6) return "展開待ち・当地注意";
+
+  return "-";
+}
+
+function roleComment(b) {
+  const n = Number(b.boat);
+
+  if (n === 1) return "インから先マイできれば軸。ST遅れは波乱。";
+  if (n === 2) return "2コース差し候補。頭だけでなく2着残りも見る。";
+  if (n === 3) return "センター攻めの起点。まくり・まくり差し候補。";
+  if (n === 4) return "4コース残しを切らない。3攻めに乗る形も見る。";
+  if (n === 5) return "内が競った時の差し場。万舟の入口。";
+  if (n === 6) return "大外で展開待ち。当地・地元・道中力があれば注意。";
+
+  return "展開次第。";
+}
+
+function manshuReason(b) {
+  const n = Number(b.boat);
+
+  if (n === 3) return "3が攻めると人気筋が崩れて配当が上がる。";
+  if (n === 4) return "4残し・カド攻めで本線からズレると高配当。";
+  if (n === 5) return "差し場が開くと2・3着絡みで跳ねる。";
+  if (n === 6) return "展開待ちだが当地・道中力で3着拾いあり。";
+
+  return "展開がズレた時の候補。";
+}
+
+function findOddsByResult(result) {
+  const key = normalizeKey(result);
+
+  return latestOddsList.find(o =>
+    normalizeKey(o.key || o.result || o.number) === key
+  );
+}
+
+function normalizeKey(v) {
+  return String(v || "")
+    .replaceAll("-", "")
+    .replaceAll("－", "")
+    .replaceAll(" ", "")
+    .trim();
+}
+
+function showKey(v) {
+  const s = normalizeKey(v);
+  return s.length === 3 ? `${s[0]}-${s[1]}-${s[2]}` : String(v || "-");
+}
+
+function boatByNo(boats, no) {
+  return (boats || []).find(b => Number(b.boat) === Number(no)) || null;
+}
+
+function num(v, fb = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fb;
+}
+
+function clamp(n, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+function normalizeDate(v) {
+  return String(v || "")
+    .replaceAll("-", "")
+    .replaceAll("/", "")
+    .trim();
+}
+
+function clearAreas() {
+  [
+    "#raceListArea",
+    "#engineArea",
+    "#mainSheetArea",
+    "#formationArea",
+    "#manshuSheetArea",
+    "#alertArea",
+    "#finalCommentArea",
+    "#oddsArea"
+  ].forEach(id => setHTML(id, ""));
+}
+
+function showError(msg) {
+  setHTML("#raceListArea", `<div class="error">⚠️ ${msg}</div>`);
+}
+
+function setHTML(id, html) {
+  const el = document.querySelector(id);
+  if (el) el.innerHTML = html;
+}
+
+function setStatus(text) {
+  const el = $("#statusText");
+  if (el) el.textContent = text;
+}
+
+function val(id) {
+  return $(id)?.value?.trim() || "";
+}
+
+function $(id) {
+  return document.querySelector(id);
+}
+
+function fmtST(v) {
+  if (v === null || v === undefined || v === "" || Number.isNaN(Number(v))) {
+    return "-";
+  }
+
+  const n = Number(v);
+
+  if (n < 0) {
+    return `F${Math.abs(n).toFixed(2).slice(1)}`;
+  }
+
+  return n.toFixed(2);
+}
+
+function todayYmd() {
+  const d = new Date();
+
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+}
