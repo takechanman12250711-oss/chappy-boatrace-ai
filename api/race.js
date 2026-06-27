@@ -949,3 +949,34 @@ function makeDebug(html, text, parsedRace, beforeParsed, theory) {
     }
   };
 }
+function makeFallbackBoats() {
+  return [1, 2, 3, 4, 5, 6].map(no => ({
+    boat: no,
+    regNo: "",
+    class: "-",
+    name: `${no}号艇`,
+    branchHome: "",
+    ageWeight: "",
+    avgST: null,
+    nationalWinRate: null,
+    national2Rate: null,
+    national3Rate: null,
+    localWinRate: null,
+    local2Rate: null,
+    local3Rate: null,
+    motor: null,
+    motor2Rate: null,
+    motor3Rate: null,
+    boatNo: null,
+    boat2Rate: null,
+    boat3Rate: null,
+    exhibitionTime: null,
+    tilt: null,
+    exhibitionST: null,
+    exhibitionCourse: no,
+    circumferenceTime: null,
+    straightTime: null,
+    turnTime: null,
+    raw: "fallback"
+  }));
+}
