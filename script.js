@@ -1168,3 +1168,234 @@ function renderManshuSheet(boats = [], p = {}) {
     </div>
   `;
 }
+/* ===== v12 展開ルート診断パネル ===== */
+
+function v12Num(v, fb = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fb;
+}
+
+function v12Boat(boats, no) {
+  return (boats || []).find(b => Number(b.boat) === Number(no)) || {};
+}
+
+function v12ScoreLabel(score) {
+  if (score >= 85) return "★★★★★ 激アツ";
+  if (score >= 75) return "★★★★☆ 有力";
+  if (score >= 60) return "★★★☆☆ 展開次第";
+  if (score >= 45) return "★★☆☆☆ 押さえ";
+  return "★☆☆☆☆ 低め";
+}
+
+function v12PickAttackBoat(data) {
+  const boats = data?.boats || [];
+  let best = null;
+  let bestScore = -999;
+
+  boats.filter(b => Number(b.boat) >= 2 && Number(b.boat) <= 5).forEach(b => {
+    let s = 50;
+
+    const no = Number(b.boat);
+    const avgST = v12Num(b.avgST, 0.18);
+    const exST = v12Num(b.exhibitionST, 0.18);
+    const motor = v12Num(b.motor2Rate, 0);
+    const local = v12Num(b.localWinRate, 0);
+    const tilt = v12Num(b.tilt, 0);
+
+    if (avgST > 0 && avgST <= 0.14) s += 12;
+    if (exST > 0 && exST <= 0.12) s += 12;
+    if (motor >= 40) s += 7;
+    if (local >= 7) s += 8;
+    if (tilt >= 0.5) s += 5;
+
+    if (no === 3) s += 8;
+    if (no === 4) s += 6;
+
+    if (s > bestScore) {
+      bestScore = s;
+      best = b;
+    }
+  });
+
+  return {
+    boat: best?.boat || 3,
+    name: best?.name || "",
+    score: Math.round(Math.max(0, Math.min(100, bestScore)))
+  };
+}
+
+function v12InTrust(data) {
+  const b1 = v12Boat(data?.boats || [], 1);
+  let s = 60;
+
+  const avgST = v12Num(b1.avgST, 0.18);
+  const exST = v12Num(b1.exhibitionST, 0.18);
+  const local = v12Num(b1.localWinRate, 0);
+  const national = v12Num(b1.nationalWinRate, 0);
+  const motor = v12Num(b1.motor2Rate, 0);
+
+  if (avgST > 0 && avgST <= 0.14) s += 10;
+  if (avgST >= 0.20) s -= 12;
+
+  if (exST > 0 && exST <= 0.12) s += 8;
+  if (exST >= 0.20) s -= 10;
+
+  if (local >= 7) s += 10;
+  if (local > 0 && local < 5) s -= 8;
+
+  if (national >= 7) s += 6;
+  if (motor >= 40) s += 5;
+  if (motor > 0 && motor < 25) s -= 5;
+
+  return Math.round(Math.max(0, Math.min(100, s)));
+}
+
+function v12RouteTickets(attackBoat) {
+  const atk = Number(attackBoat);
+
+  if (atk === 3) {
+    return {
+      main: ["1-3-245", "1-2-345"],
+      hole: ["4-1-235", "5-1-234"],
+      manshu: ["5-14-2346", "4-15-2356"]
+    };
+  }
+
+  if (atk === 4) {
+    return {
+      main: ["1-4-235", "1-2-345"],
+      hole: ["4-1-235", "5-4-123"],
+      manshu: ["4-56-12356", "5-14-2346"]
+    };
+  }
+
+  if (atk === 2) {
+    return {
+      main: ["1-2-345", "2-1-345"],
+      hole: ["3-12-1245", "4-12-235"],
+      manshu: ["4-23-12356", "5-23-12346"]
+    };
+  }
+
+  return {
+    main: ["1-23-2345"],
+    hole: ["4-15-12356"],
+    manshu: ["5-14-12346"]
+  };
+}
+
+function v12OuterExpect(no, data, attackBoat, inTrust) {
+  const boats = data?.boats || [];
+  const b = v12Boat(boats, no);
+  const atk = Number(attackBoat);
+
+  let s = 40;
+
+  if (inTrust < 60) s += 12;
+  if (inTrust < 45) s += 10;
+
+  if (no === 4 && atk === 3) s += 18;
+  if (no === 5 && (atk === 3 || atk === 4)) s += 22;
+  if (no === 6 && (atk === 3 || atk === 4)) s += 8;
+
+  if (v12Num(b.localWinRate, 0) >= 7) s += 10;
+  if (v12Num(b.avgST, 0.18) > 0 && v12Num(b.avgST) <= 0.15) s += 8;
+  if (v12Num(b.exhibitionST, 0.18) > 0 && v12Num(b.exhibitionST) <= 0.12) s += 8;
+  if (v12Num(b.motor2Rate, 0) >= 40) s += 5;
+
+  return Math.round(Math.max(0, Math.min(100, s)));
+}
+
+function renderRoutePanelV12(data) {
+  const boats = data?.boats || [];
+  const attack = v12PickAttackBoat(data);
+  const inTrust = v12InTrust(data);
+  const r = v12RouteTickets(attack.boat);
+
+  const e4 = v12OuterExpect(4, data, attack.boat, inTrust);
+  const e5 = v12OuterExpect(5, data, attack.boat, inTrust);
+  const e6 = v12OuterExpect(6, data, attack.boat, inTrust);
+
+  const b4 = v12Boat(boats, 4);
+  const b5 = v12Boat(boats, 5);
+  const b6 = v12Boat(boats, 6);
+
+  return `
+    <div id="routePanelV12" class="sheet">
+      <h3>🚤 V12 展開ルート診断</h3>
+
+      <div class="summary-box">
+        <b>考え方</b>
+        <p>情報 → 展開 → 評価 → 舟券。ここでは「誰が攻めるか」「誰が残るか」「どこに差し場ができるか」を先に見る。</p>
+      </div>
+
+      <div class="race-line">
+        <b>① イン信頼度：${inTrust}点</b>
+        <p>${inTrust >= 80 ? "イン強め。本線は内残り重視。" : inTrust >= 60 ? "普通。攻め艇次第で外も見る。" : "イン怪しい。外枠・差し場・万舟警戒。"}</p>
+      </div>
+
+      <div class="race-line">
+        <b>② 攻め艇：${attack.boat}号艇 ${attack.name}</b>
+        <p>攻め期待：${attack.score}点</p>
+      </div>
+
+      <div class="race-line">
+        <b>③ 展開ルート① 本線</b>
+        <p>${attack.boat}号艇が攻める → 1が残る → 2/3/4が残る</p>
+        ${tickets(r.main)}
+      </div>
+
+      <div class="race-line">
+        <b>④ 展開ルート② 穴</b>
+        <p>${attack.boat}号艇が攻める → 4残し・5差し場</p>
+        ${tickets(r.hole)}
+      </div>
+
+      <div class="race-line">
+        <b>⑤ 展開ルート③ 万舟</b>
+        <p>イン信頼度が下がる → 外に差し場 → 4/5/6絡み</p>
+        ${tickets(r.manshu)}
+      </div>
+
+      <div class="race-line">
+        <b>🎯 4号艇期待度：${e4}点</b>
+        <p>${v12ScoreLabel(e4)}</p>
+        <p>${b4.name || ""} / 3攻め時の残し・差し場候補</p>
+      </div>
+
+      <div class="race-line">
+        <b>🎯 5号艇期待度：${e5}点</b>
+        <p>${v12ScoreLabel(e5)}</p>
+        <p>${b5.name || ""} / 攻め艇が動いた時の差し場候補</p>
+      </div>
+
+      <div class="race-line">
+        <b>🎯 6号艇期待度：${e6}点</b>
+        <p>${v12ScoreLabel(e6)}</p>
+        <p>${b6.name || ""} / 展開待ち。当地・地元・STが良い時だけ評価</p>
+      </div>
+    </div>
+  `;
+}
+
+function insertRoutePanelV12() {
+  if (!latestRaceData) return;
+
+  const old = document.querySelector("#routePanelV12");
+  if (old) old.remove();
+
+  const target =
+    document.querySelector("#raceShapePanelV10") ||
+    document.querySelector("#mainSheetArea");
+
+  if (!target) return;
+
+  target.insertAdjacentHTML("afterend", renderRoutePanelV12(latestRaceData));
+}
+
+const oldRenderAllV12 = renderAll;
+
+renderAll = function(data) {
+  oldRenderAllV12(data);
+  setTimeout(insertRoutePanelV12, 80);
+};
