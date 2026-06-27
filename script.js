@@ -33,7 +33,19 @@ const PLACE_CODES = {
 let currentResultStatus = "";
 let latestRaceData = null;
 let latestOddsList = [];
+function tickets(list) {
+  const arr = compactForms(list);
 
+  if (!arr.length) {
+    return `<div class="summary-box">候補なし</div>`;
+  }
+
+  return `
+    <div class="ticket-list">
+      ${arr.map(x => `<span class="ticket">${x}</span>`).join("")}
+    </div>
+  `;
+}
 document.addEventListener("DOMContentLoaded", () => {
   $("#fetchRaceBtn")?.addEventListener("click", runPrediction);
 
@@ -414,19 +426,7 @@ function calcManshuScore(b, analysis) {
 
 /* ===== 後半はこの下にそのまま貼る ===== */
 
-function tickets(list) {
-  const arr = compactForms(list);
 
-  if (!arr.length) {
-    return `<div class="summary-box">候補なし</div>`;
-  }
-
-  return `
-    <div class="ticket-list">
-      ${arr.map(x => `<span class="ticket">${x}</span>`).join("")}
-    </div>
-  `;
-}
 
 function compactForms(list) {
   const arr = normalizeFormList(list);
