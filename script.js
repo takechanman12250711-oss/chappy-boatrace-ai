@@ -1495,3 +1495,70 @@ function chappyCleanV131() {
 }
 
 setInterval(chappyCleanV131, 800);
+/* ===== v13.2 フォーメーション内包重複削除 ===== */
+
+function normalizeFormV132(x) {
+  return String(x || "").replaceAll("－", "-").replaceAll(" ", "").trim();
+}
+
+function expandFormV132(raw) {
+  const text = normalizeFormV132(raw);
+  const parts = text.split("-").filter(Boolean);
+
+  if (parts.length !== 3) return [text];
+
+  const a = [...parts[0]];
+  const b = [...parts[1]];
+  const c = [...parts[2]];
+  const out = [];
+
+  a.forEach(x => {
+    b.forEach(y => {
+      c.forEach(z => {
+        if (x !== y && y !== z && x !== z) {
+          out.push(`${x}-${y}-${z}`);
+        }
+      });
+    });
+  });
+
+  return [...new Set(out)];
+}
+
+function formContainsV132(big, small) {
+  const bigSet = new Set(expandFormV132(big));
+  const smallList = expandFormV132(small);
+
+  if (!bigSet.size || !smallList.length) return false;
+
+  return smallList.every(x => bigSet.has(x));
+}
+
+function cleanFormsV132(list) {
+  const arr = [...new Set((list || []).map(normalizeFormV132).filter(Boolean))];
+
+  return arr.filter((form, i) => {
+    return !arr.some((other, j) => {
+      if (i === j) return false;
+      if (other === form) return false;
+
+      const otherCount = expandFormV132(other).length;
+      const formCount = expandFormV132(form).length;
+
+      return otherCount > formCount && formContainsV132(other, form);
+    });
+  });
+}
+
+function tickets(list) {
+  const arr = cleanFormsV132(Array.isArray(list) ? list : []);
+
+  if (!arr.length) {
+    return `<div class="summary-box">候補なし</div>`;
+  }
+
+  return arr
+    .slice(0, 12)
+    .map(x => `<div class="ticket-pill">${x}</div>`)
+    .join("");
+}
