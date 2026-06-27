@@ -82,9 +82,17 @@ async function runPrediction() {
     const oddsRes = await fetch(`/api/odds?jcd=${jcd}&rno=${rno}&date=${date}`);
     const oddsData = await oddsRes.json();
 
-    const missRes = await fetch(`/api/missing?jcd=${jcd}&rno=${rno}&date=${date}`);
-    const missData = await missRes.json();
+    let missData = { ok: false, missing: [] };
 
+try {
+  const missRes = await fetch(`/api/missing?jcd=${jcd}&rno=${rno}&date=${date}`);
+
+  if (missRes.ok) {
+    missData = await missRes.json();
+  }
+} catch (e) {
+  missData = { ok: false, missing: [] };
+}
     data.odds = oddsData?.ok ? oddsData.odds || [] : oddsData?.odds || [];
     data.missing = missData?.ok ? missData.missing || [] : missData?.missing || [];
 
