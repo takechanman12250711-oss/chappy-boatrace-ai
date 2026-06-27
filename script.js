@@ -1448,3 +1448,50 @@ function chappyCleanDuplicateDisplaysV13() {
 }
 
 setInterval(chappyCleanDuplicateDisplaysV13, 800);
+/* ===== v13.1 重複削除・役割整理 ===== */
+
+function chappyUniqueArrayV131(arr) {
+  return [...new Set((arr || []).filter(Boolean))];
+}
+
+function tickets(list) {
+  const arr = chappyUniqueArrayV131(
+    Array.isArray(list) ? list : []
+  );
+
+  if (!arr.length) {
+    return `<div class="summary-box">候補なし</div>`;
+  }
+
+  return arr
+    .slice(0, 12)
+    .map(x => `<div class="ticket-pill">${x}</div>`)
+    .join("");
+}
+
+function chappyCleanV131() {
+  // V12は展開専門なので残す
+  // 古い展開診断V10は消す
+  document.querySelectorAll("#raceShapePanelV10").forEach(el => el.remove());
+
+  // V12が複数あれば1つだけ残す
+  document.querySelectorAll("#routePanelV12").forEach((el, i) => {
+    if (i > 0) el.remove();
+  });
+
+  // 同じ買い目ボタンを削除
+  document.querySelectorAll(".sheet").forEach(sheet => {
+    const seen = new Set();
+
+    sheet.querySelectorAll(".ticket-pill").forEach(el => {
+      const key = el.textContent.trim();
+      if (seen.has(key)) {
+        el.remove();
+      } else {
+        seen.add(key);
+      }
+    });
+  });
+}
+
+setInterval(chappyCleanV131, 800);
