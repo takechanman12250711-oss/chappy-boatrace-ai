@@ -1,317 +1,64 @@
-// api/odds.js v2
-// 公式3連単オッズ取得API
-// 例: /api/odds?jcd=19&rno=7&date=20260624
-
+// api/odds.js v3
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  const { jcd, date, debug } = req.query;
+  const { jcd, date } = req.query;
   const rno = String(req.query.rno || "").replace("R", "");
 
   if (!jcd || !rno || !date) {
-    return res.status(400).json({
-      ok: false,
-      error: "jcd, rno, date が必要です"
-    });
+    return res.status(400).json({ ok:false, odds:[], error:"jcd,rno,date required" });
   }
 
-  const url =
-    `https://www.boatrace.jp/owpc/pc/race/odds3t` +
-    `?rno=${rno}&jcd=${jcd}&hd=${date}`;
-
   try {
-    const html = await fetchHtml(url);
-const text = cleanText(html);
+    const url = `https://www.boatrace.jp/owpc/pc/race/odds3t?rno=${rno}&jcd=${jcd}&hd=${date}`;
+    const html = await fetch(url, {
+      headers: { "User-Agent":"Mozilla/5.0", "Referer":"https://www.boatrace.jp/" }
+    }).then(r => r.text());
 
-console.log(text.substring(0,5000));
+    const odds = [];
+    const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 
-const start =
-  text.indexOf("3連単オッズ") > -1
-    ? text.indexOf("3連単オッズ")
-    : 0;
+    const nums = text.match(/\d+(?:\.\d+)?/g) || [];
 
-const target = text.substring(start);
+    for (let i = 0; i < nums.length - 3; i++) {
+      const a = Number(nums[i]);
+      const b = Number(nums[i + 1]);
+      const c = Number(nums[i + 2]);
+      const o = Number(nums[i + 3]);
 
-const odds = parseOddsFromHtml(target);
-const numbers = extractNumberStream(target);
+      if (
+        a >= 1 && a <= 6 &&
+        b >= 1 && b <= 6 &&
+        c >= 1 && c <= 6 &&
+        a !== b && a !== c && b !== c &&
+        o >= 1 && o <= 9999
+      ) {
+        odds.push({
+          key: `${a}-${b}-${c}`,
+          first:a,
+          second:b,
+          third:c,
+          odds:o
+        });
+      }
+    }
+
+    const unique = [...new Map(odds.map(x => [x.key, x])).values()]
+      .sort((a,b) => a.odds - b.odds)
+      .slice(0, 120);
 
     return res.status(200).json({
-      ok: true,
-      source: "boatrace.jp",
-      jcd,
-      rno,
-      date,
-      count: odds.length,
-      odds,
-      url,
-      debug: debug === "1"
-        ? {
-           targetSample: target.slice(0, 3000),
-numbersSample: extractNumberStream(target).slice(0, 300)
-          }
-        : null
-    });
-  } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      error: e.message,
+      ok:true,
+      count:unique.length,
+      odds:unique,
       url
+    });
+
+  } catch (e) {
+    return res.status(200).json({
+      ok:false,
+      odds:[],
+      error:e.message
     });
   }
 };
-
-async function fetchHtml(url) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
-      "Accept-Language": "ja-JP,ja;q=0.9",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Referer": "https://www.boatrace.jp/"
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error(`公式オッズ取得失敗: ${res.status}`);
-  }
-
-  return await res.text();
-}
-
-function parseOddsFromHtml(html) {
-  const text = cleanText(html);
-  const nums = extractNumberStream(text);
-
-  let start = -1;
-  for (let i = 0; i < nums.length - 6; i++) {
-    if (
-      nums[i] === "1" &&
-      nums[i + 1] === "2" &&
-      nums[i + 2] === "3" &&
-      nums[i + 3] === "4" &&
-      nums[i + 4] === "5" &&
-      nums[i + 5] === "6"
-    ) {
-      start = i + 6;
-      break;
-    }
-  }
-
-  if (start < 0) return [];
-
-  const odds = [];
-  let idx = start;
-
-  for (let secondGroup = 0; secondGroup < 5; secondGroup++) {
-    for (let row = 0; row < 4; row++) {
-      for (let first = 1; first <= 6; first++) {
-        const seconds = [1,2,3,4,5,6].filter(n => n !== first);
-        const second = seconds[secondGroup];
-
-        let third;
-        let value;
-
-        if (row === 0) {
-          const shownSecond = Number(nums[idx]);
-          third = Number(nums[idx + 1]);
-          value = Number(nums[idx + 2]);
-          idx += 3;
-
-          if (shownSecond !== second) continue;
-        } else {
-          third = Number(nums[idx]);
-          value = Number(nums[idx + 1]);
-          idx += 2;
-        }
-
-        addOdds(odds, first, second, third, value);
-      }
-    }
-  }
-
-  return uniqueOdds(odds).sort((a, b) => a.odds - b.odds);
-}
-
-function extractOddsAreaText(html) {
-  let s = String(html || "");
-
-  // odds3tページのメイン部分だけなるべく切る
-  const startKeys = [
-    "3連単オッズ",
-    "oddsTable",
-    "table1",
-    "is-p3-0"
-  ];
-
-  let start = -1;
-  for (const key of startKeys) {
-    start = s.indexOf(key);
-    if (start >= 0) break;
-  }
-
-  if (start >= 0) s = s.slice(start);
-
-  const endKeys = [
-    "締切時オッズ",
-    "レース開始後",
-    "ボートレースガイドはこちら",
-    "PAGE TOP"
-  ];
-
-  let end = -1;
-  for (const key of endKeys) {
-    end = s.indexOf(key);
-    if (end >= 0) break;
-  }
-
-  if (end > 0) s = s.slice(0, end);
-
-  return cleanText(s);
-}
-
-function rebuildFromOfficialTokens(tokens) {
-  const result = [];
-
-  for (let first = 1; first <= 6; first++) {
-    const start = findHeadBlock(tokens, first);
-    if (start < 0) continue;
-
-    const nextStarts = [];
-    for (let f = first + 1; f <= 6; f++) {
-      const idx = findHeadBlock(tokens, f, start + 1);
-      if (idx >= 0) nextStarts.push(idx);
-    }
-
-    const end = nextStarts.length ? Math.min(...nextStarts) : tokens.length;
-    const block = tokens.slice(start + 1, end);
-
-    const parsed = parseHeadBlock(first, block);
-    result.push(...parsed);
-  }
-
-  return result;
-}
-
-function findHeadBlock(tokens, first, from = 0) {
-  for (let i = from; i < tokens.length; i++) {
-    if (tokens[i] === String(first)) {
-      const around = tokens.slice(i, i + 8).join(" ");
-      if (around.includes("号") || around.includes("選手") || isLikelyHeadStart(tokens, i)) {
-        return i;
-      }
-    }
-  }
-  return -1;
-}
-
-function isLikelyHeadStart(tokens, i) {
-  // 頭ブロック直後は相手艇番号とオッズが連続しやすい
-  let nums = 0;
-  for (let k = i + 1; k < Math.min(tokens.length, i + 20); k++) {
-    if (/^[1-6]$/.test(tokens[k]) || /^\d+\.\d+$/.test(tokens[k]) || /^\d+$/.test(tokens[k])) nums++;
-  }
-  return nums >= 10;
-}
-
-function parseHeadBlock(first, block) {
-  const result = [];
-
-  // 公式PC表の見た目は各1着艇ごとに
-  // 2着艇 -> 3着艇 -> オッズ の並びが続く。
-  let currentSecond = null;
-
-  for (let i = 0; i < block.length - 1; i++) {
-    const t = block[i];
-
-    if (/^[1-6]$/.test(t) && Number(t) !== first) {
-      const next = block[i + 1];
-
-      // 次が1-6なら「2着艇」の見出しっぽい
-      if (/^[1-6]$/.test(next) && Number(next) !== first && Number(next) !== Number(t)) {
-        currentSecond = Number(t);
-        continue;
-      }
-
-      // 次がオッズなら currentSecond - t - odds と見る
-      if (currentSecond && isOdds(next)) {
-        const third = Number(t);
-        if (third !== first && third !== currentSecond) {
-          result.push({
-            first,
-            second: currentSecond,
-            third,
-            odds: Number(next)
-          });
-        }
-      }
-    }
-  }
-
-  return result;
-}
-
-function tokenize(text) {
-  return String(text || "")
-    .replace(/[^\d.]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .filter(Boolean);
-}
-
-function extractNumberStream(text) {
-  return String(text || "").match(/\d+(?:\.\d+)?/g) || [];
-}
-
-function isOdds(v) {
-  if (!/^\d+(?:\.\d+)?$/.test(String(v))) return false;
-  const n = Number(v);
-  return n >= 1.0 && n <= 9999.9;
-}
-
-function addOdds(list, first, second, third, oddsValue) {
-  const a = Number(first);
-  const b = Number(second);
-  const c = Number(third);
-  const odds = Number(oddsValue);
-
-  if (![a, b, c].every(x => x >= 1 && x <= 6)) return;
-  if (a === b || a === c || b === c) return;
-  if (!Number.isFinite(odds) || odds <= 0) return;
-
-  list.push({
-    key: `${a}-${b}-${c}`,
-    first: a,
-    second: b,
-    third: c,
-    odds
-  });
-}
-
-function uniqueOdds(list) {
-  const map = new Map();
-
-  for (const item of list) {
-    if (!map.has(item.key)) {
-      map.set(item.key, item);
-    }
-  }
-
-  return [...map.values()];
-}
-
-function cleanText(html) {
-  return String(html || "")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<\/tr>/gi, " ")
-    .replace(/<\/td>/gi, " ")
-    .replace(/<\/th>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/　/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
