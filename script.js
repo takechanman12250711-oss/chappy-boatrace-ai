@@ -1406,3 +1406,45 @@ setInterval(() => {
     insertRoutePanelV12();
   }
 }, 1000);
+/* ===== v13 重複表示整理パッチ ===== */
+
+function chappyDedupeTextItems(parentSelector, itemSelector) {
+  document.querySelectorAll(parentSelector).forEach(parent => {
+    const seen = new Set();
+
+    parent.querySelectorAll(itemSelector).forEach(el => {
+      const key = el.textContent.replace(/\s+/g, " ").trim();
+
+      if (!key) return;
+
+      if (seen.has(key)) {
+        el.remove();
+      } else {
+        seen.add(key);
+      }
+    });
+  });
+}
+
+function chappyCleanDuplicateDisplaysV13() {
+  // V10とV12で同じ意味の診断が重複するので、古いV10は非表示
+  document.querySelectorAll("#raceShapePanelV10").forEach(el => el.remove());
+
+  // V12パネルが複数出た時は1つだけ残す
+  const routePanels = document.querySelectorAll("#routePanelV12");
+  routePanels.forEach((el, i) => {
+    if (i > 0) el.remove();
+  });
+
+  // 同じ買い目が重複したら消す
+  chappyDedupeTextItems(".sheet", ".ticket-pill");
+  chappyDedupeTextItems(".ticket-list", "div");
+
+  // 万舟シート内の完全重複行だけ消す
+  chappyDedupeTextItems(".manshu-sheet", ".race-line");
+
+  // V12内の完全重複行だけ消す
+  chappyDedupeTextItems("#routePanelV12", ".race-line");
+}
+
+setInterval(chappyCleanDuplicateDisplaysV13, 800);
