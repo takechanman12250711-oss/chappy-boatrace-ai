@@ -1601,3 +1601,22 @@ function cleanTheoryAlertDupV133() {
 }
 
 setInterval(cleanTheoryAlertDupV133, 800);
+/* ===== v13.4 ピンクシート整理 ===== */
+
+setInterval(() => {
+
+  document.querySelectorAll(".race-line").forEach(el => {
+
+    const txt = el.textContent || "";
+
+    if (
+      txt.includes("4号艇期待度") ||
+      txt.includes("5号艇期待度") ||
+      txt.includes("6号艇期待度")
+    ) {
+      el.remove();
+    }
+
+  });
+
+}, 1000);
