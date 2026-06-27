@@ -414,6 +414,75 @@ function calcManshuScore(b, analysis) {
 
 /* ===== 後半はこの下にそのまま貼る ===== */
 
+function tickets(list) {
+  const arr = compactForms(list);
+
+  if (!arr.length) {
+    return `<div class="summary-box">候補なし</div>`;
+  }
+
+  return `
+    <div class="ticket-list">
+      ${arr.map(x => `<span class="ticket">${x}</span>`).join("")}
+    </div>
+  `;
+}
+
+function compactForms(list) {
+  const arr = normalizeFormList(list);
+  if (!arr.length) return [];
+
+  return arr.filter((form, i) => {
+    return !arr.some((other, j) => {
+      if (i === j) return false;
+      if (form === other) return false;
+
+      const small = expandForm(form);
+      const big = expandForm(other);
+
+      return big.length > small.length && small.every(x => big.includes(x));
+    });
+  });
+}
+
+function normalizeFormList(list) {
+  if (!Array.isArray(list)) return [];
+
+  return [...new Set(
+    list.map(x => {
+      const raw =
+        typeof x === "string"
+          ? x
+          : (x.key || x.result || x.number || "");
+
+      return String(raw)
+        .replaceAll("－", "-")
+        .replaceAll(" ", "")
+        .trim();
+    }).filter(Boolean)
+  )];
+}
+
+function expandForm(raw) {
+  const text = String(raw || "").replaceAll("－", "-").trim();
+  const parts = text.split("-").filter(Boolean);
+
+  if (parts.length !== 3) return [text];
+
+  const out = [];
+
+  [...parts[0]].forEach(a => {
+    [...parts[1]].forEach(b => {
+      [...parts[2]].forEach(c => {
+        if (a !== b && b !== c && a !== c) {
+          out.push(`${a}-${b}-${c}`);
+        }
+      });
+    });
+  });
+
+  return [...new Set(out)];
+}
 function renderManshuOdds(odds) {
   const list = Array.isArray(odds)
     ? odds.filter(o => Number(o.odds) >= 100).slice(0, 10)
