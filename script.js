@@ -857,6 +857,34 @@ function renderManshuSheet(p = {}) {
     <h4>💣 万舟軸</h4>
 
     <p><b>${axis}</b></p>
+    
+    <h4>💥 万舟発生条件</h4>
+
+<p>
+イン信頼度が低い
+↓
+攻め艇が攻撃成功
+↓
+外枠に差し場発生
+</p>
+
+<h4>🎯 4号艇期待度</h4>
+
+<p>
+${axis.includes("4") ? "★★★★☆" : "★★☆☆☆"}
+</p>
+
+<h4>🎯 5号艇期待度</h4>
+
+<p>
+${axis.includes("5") ? "★★★★★" : "★★★☆☆"}
+</p>
+
+<h4>🎯 6号艇期待度</h4>
+
+<p>
+${axis.includes("6") ? "★★★★☆" : "★★☆☆☆"}
+</p>
 
     <h4>💣 万舟理由</h4>
 
@@ -1081,3 +1109,94 @@ renderAll = function(data) {
   chappyOldRenderAllV10(data);
   setTimeout(chappyInsertRaceShapePanelV10, 50);
 };
+/* ===== v11 万舟シート完成版：最後に追加 ===== */
+
+function manshuExpectScore(boatNo, boats = [], p = {}) {
+  const b = boats.find(x => Number(x.boat) === Number(boatNo)) || {};
+  const shape = p.raceShape || {};
+  let score = 45;
+
+  if (Number(boatNo) === 4) score += 10;
+  if (Number(boatNo) === 5) score += 12;
+  if (Number(boatNo) === 6) score += 4;
+
+  if (Number(b.totalScore || 0) >= 70) score += 12;
+  if (Number(b.localWinRate || 0) >= 7) score += 10;
+  if (Number(b.exhibitionST || 0) > 0 && Number(b.exhibitionST) <= 0.12) score += 8;
+  if (Number(b.avgST || 0) > 0 && Number(b.avgST) <= 0.15) score += 6;
+  if (Number(b.motor2Rate || 0) >= 40) score += 5;
+
+  if (shape.attackBoat) score += 8;
+  if (Number(boatNo) === 5 && (Number(shape.attackBoat) === 3 || Number(shape.attackBoat) === 4)) score += 12;
+  if (Number(boatNo) === 4 && Number(shape.attackBoat) === 3) score += 8;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function manshuExpectLabel(score) {
+  if (score >= 85) return "★★★★★ 激アツ";
+  if (score >= 75) return "★★★★☆ 有力";
+  if (score >= 60) return "★★★☆☆ 展開次第";
+  if (score >= 45) return "★★☆☆☆ 押さえ";
+  return "★☆☆☆☆ 低め";
+}
+
+function manshuExpectReason(boatNo, boats = [], p = {}) {
+  const b = boats.find(x => Number(x.boat) === Number(boatNo)) || {};
+  const shape = p.raceShape || {};
+  const reasons = [];
+
+  if (Number(boatNo) === 4) reasons.push("4はカド残し・攻め残しの対象");
+  if (Number(boatNo) === 5) reasons.push("5は攻め艇が動いた時の差し場候補");
+  if (Number(boatNo) === 6) reasons.push("6は展開待ち。当地・地元・STが良い時だけ評価");
+
+  if (shape.attackBoat) reasons.push(`${shape.attackBoat}号艇が攻め艇候補`);
+  if (Number(b.localWinRate || 0) >= 7) reasons.push("当地成績が強い");
+  if (Number(b.exhibitionST || 0) > 0 && Number(b.exhibitionST) <= 0.12) reasons.push("展示STが良い");
+  if (Number(b.avgST || 0) > 0 && Number(b.avgST) <= 0.15) reasons.push("平均STが良い");
+
+  return reasons.join(" / ") || "イン逃げが怪しい時、外の展開が必要";
+}
+
+function renderManshuSheet(boats = [], p = {}) {
+  const shape = p.raceShape || {};
+  const forms = p.manshuFormation || p.holeFormation || [];
+
+  const scores = [4, 5, 6].map(no => ({
+    no,
+    boat: boats.find(b => Number(b.boat) === no) || {},
+    score: manshuExpectScore(no, boats, p)
+  }));
+
+  return `
+    <div class="sheet manshu-sheet">
+
+      <h4>💣 万舟軸</h4>
+      <p><b>${p.manshuAxis || p.holeAxis || "展開待ち"}</b></p>
+
+      <h4>💣 万舟理由</h4>
+      <p>${p.manshuReason || "イン逃げが怪しい時、攻め艇が動いて外に差し場ができる展開を見る。"}</p>
+
+      <h4>💥 万舟発生条件</h4>
+      <p>
+        イン信頼度が下がる<br>
+        ↓<br>
+        ${shape.attackBoat ? `${shape.attackBoat}号艇が攻める` : "攻め艇が動く"}<br>
+        ↓<br>
+        4残し・5差し場・6展開待ちが発生
+      </p>
+
+      ${scores.map(x => `
+        <div class="race-line">
+          <b>🎯 ${x.no}号艇期待度：${x.score}点</b>
+          <p>${manshuExpectLabel(x.score)}</p>
+          <p>${manshuExpectReason(x.no, boats, p)}</p>
+        </div>
+      `).join("")}
+
+      <h4>💣 万舟フォーメーション</h4>
+      ${tickets(forms)}
+
+    </div>
+  `;
+}
