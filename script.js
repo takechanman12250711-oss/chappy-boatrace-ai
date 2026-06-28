@@ -336,8 +336,22 @@ function renderMainSheet(boats, p, analysis) {
     ["△", "押さえ", marks.osae || marks.osaE]
   ];
 
+  const dynamic = analysis?.dynamic || [];
+  const topAttack = [...dynamic].sort((a, b) => b.attack - a.attack)[0];
+  const topSashi = [...dynamic].sort((a, b) => b.sashi - a.sashi)[0];
+  const topNokoshi = [...dynamic].sort((a, b) => b.nokoshi - a.nokoshi)[0];
+  const topManshu = [...dynamic].sort((a, b) => b.manshu - a.manshu)[0];
+
   return `
     <div class="sheet compact-sheet">
+      <div class="summary-box">
+        <b>🧠 Dynamic評価</b>
+        <p>🔥 攻め艇：${topAttack?.boat || "-"}号艇 ${topAttack?.name || ""} / ${topAttack?.attack ?? "-"}点</p>
+        <p>🌊 差し艇：${topSashi?.boat || "-"}号艇 ${topSashi?.name || ""} / ${topSashi?.sashi ?? "-"}点</p>
+        <p>⚡ 残し艇：${topNokoshi?.boat || "-"}号艇 ${topNokoshi?.name || ""} / ${topNokoshi?.nokoshi ?? "-"}点</p>
+        <p>💣 万舟艇：${topManshu?.boat || "-"}号艇 ${topManshu?.name || ""} / ${topManshu?.manshu ?? "-"}点</p>
+      </div>
+
       ${picks.map(([mark, label, m]) => {
         if (!m) return "";
 
