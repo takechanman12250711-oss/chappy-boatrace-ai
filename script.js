@@ -265,7 +265,6 @@ function renderMainSheet(boats, p, analysis) {
 
   return `
     <div class="sheet compact-sheet">
-
       ${picks.map(([mark, label, m]) => {
         if (!m) return "";
         const b = boatByNo(boats, m.boat) || m;
@@ -280,8 +279,8 @@ function renderMainSheet(boats, p, analysis) {
           </div>
         `;
       }).join("") || `<div class="summary-box">本命データなし</div>`}
-
-    
+    </div>
+  `;
 }
 
 /* フォーメーション */
