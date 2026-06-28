@@ -832,3 +832,27 @@ function todayYmd() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
 }
+function renderRaceFlow(analysis) {
+  const attack = analysis?.attackBoat || "-";
+  const sashi = analysis?.sashiBoat || "-";
+  const nokoshi = analysis?.nokoshiBoat || "-";
+  const trust = analysis?.inTrust ?? "-";
+  const shape = analysis?.shapeText || "-";
+
+  return `
+    <div class="sheet flow-sheet">
+      <div class="summary-box">
+        <b>🌊 展開の軸</b>
+        <p>イン信頼度：${trust}点</p>
+        <p>攻め艇：${attack}号艇</p>
+        <p>差し場：${sashi}号艇</p>
+        <p>残し：${nokoshi}号艇</p>
+      </div>
+
+      <div class="race-line">
+        <b>展開メモ</b>
+        <p>${shape}</p>
+      </div>
+    </div>
+  `;
+}
