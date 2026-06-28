@@ -100,10 +100,6 @@ function parseOdds3T(html) {
   return odds.sort((a, b) => a.odds - b.odds);
 }
 
-  return uniqueOdds(odds)
-    .sort((a, b) => a.odds - b.odds)
-    .slice(0, 120);
-}
 
 function uniqueOdds(list) {
   const map = new Map();
