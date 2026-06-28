@@ -910,6 +910,7 @@ function renderRaceFlow(analysis) {
   const trust = analysis?.inTrust ?? 0;
   const shape = analysis?.shapeText || "-";
   const ranking = analysis?.attackRanking || [];
+  const dynamic = analysis?.dynamic || [];
 
   const trustLabel =
     trust >= 80 ? "イン信頼高め" :
@@ -949,6 +950,15 @@ function renderRaceFlow(analysis) {
         ${ranking.slice(0, 4).map((x, i) => `
           <p>${i + 1}位：${x.boat}号艇 ${x.name || ""}　${x.score}点</p>
         `).join("") || `<p>攻め指数データなし</p>`}
+      </div>
+      
+            <div class="race-line">
+        <b>🧠 Dynamic Race Engine</b>
+        ${dynamic.map(x => `
+          <p>${x.boat}号艇 ${x.name || ""}：
+            🔥攻${x.attack} / 🌊差${x.sashi} / ⚡残${x.nokoshi} / 🌀展${x.tenkai} / 💣万${x.manshu}
+          </p>
+        `).join("") || `<p>Dynamic指数なし</p>`}
       </div>
 
       <div class="race-line">
