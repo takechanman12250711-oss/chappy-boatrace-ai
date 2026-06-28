@@ -73,39 +73,32 @@ async function fetchHtml(url) {
 }
 
 function parseOdds3T(html) {
-  const text = cleanText(html);
-
-  const areaStart = text.indexOf("3連単オッズ");
-  const target = areaStart >= 0 ? text.slice(areaStart) : text;
-
-  const nums = target.match(/\d+(?:\.\d+)?/g) || [];
   const odds = [];
+  const regex = /(\d)\s*-\s*(\d)\s*-\s*(\d)[\s\S]{0,80}?(\d+\.\d+|\d+)/g;
 
-  for (let i = 0; i < nums.length - 3; i++) {
-    const a = Number(nums[i]);
-    const b = Number(nums[i + 1]);
-    const c = Number(nums[i + 2]);
-    const o = Number(nums[i + 3]);
+  let m;
+
+  while ((m = regex.exec(html)) !== null) {
+    const key = `${m[1]}-${m[2]}-${m[3]}`;
+    const value = Number(m[4]);
 
     if (
-      a >= 1 && a <= 6 &&
-      b >= 1 && b <= 6 &&
-      c >= 1 && c <= 6 &&
-      a !== b &&
-      a !== c &&
-      b !== c &&
-      o >= 1 &&
-      o <= 9999.9
+      value > 0 &&
+      value < 99999 &&
+      !odds.find(x => x.key === key)
     ) {
       odds.push({
-        key: `${a}-${b}-${c}`,
-        first: a,
-        second: b,
-        third: c,
-        odds: o
+        key,
+        first: Number(m[1]),
+        second: Number(m[2]),
+        third: Number(m[3]),
+        odds: value
       });
     }
   }
+
+  return odds.sort((a, b) => a.odds - b.odds);
+}
 
   return uniqueOdds(odds)
     .sort((a, b) => a.odds - b.odds)
