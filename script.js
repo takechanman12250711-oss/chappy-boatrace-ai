@@ -837,18 +837,41 @@ function renderRaceFlow(analysis) {
   const trust = analysis?.inTrust ?? "-";
   const shape = analysis?.shapeText || "-";
 
+  const trustLabel =
+    trust >= 80 ? "イン信頼高め" :
+    trust >= 60 ? "標準・展開次第" :
+    "イン不安・波乱警戒";
+
+  const waveLabel =
+    trust >= 80 ? "堅め" :
+    trust >= 60 ? "中波乱" :
+    "高波乱";
+
   return `
     <div class="sheet flow-sheet">
       <div class="summary-box">
-        <b>🌊 展開の軸</b>
-        <p>イン信頼度：${trust}点</p>
-        <p>攻め艇：${attack}号艇</p>
-        <p>差し場：${sashi}号艇</p>
-        <p>残し：${nokoshi}号艇</p>
+        <b>🌊 展開予想</b>
+        <p><b>イン信頼度：</b>${trust}点 / ${trustLabel}</p>
+        <p><b>波乱目安：</b>${waveLabel}</p>
       </div>
 
       <div class="race-line">
-        <b>展開メモ</b>
+        <b>🔥 攻め艇</b>
+        <p>${attack}号艇：この艇が展開を作る中心。</p>
+      </div>
+
+      <div class="race-line">
+        <b>🌊 差し場</b>
+        <p>${sashi}号艇：攻めが入った時に差し場を拾う候補。</p>
+      </div>
+
+      <div class="race-line">
+        <b>⚡ 残し艇</b>
+        <p>${nokoshi}号艇：攻められても2・3着に残す候補。</p>
+      </div>
+
+      <div class="race-line">
+        <b>🚤 展開メモ</b>
         <p>${shape}</p>
       </div>
     </div>
