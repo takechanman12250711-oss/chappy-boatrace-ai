@@ -281,12 +281,7 @@ function renderMainSheet(boats, p, analysis) {
         `;
       }).join("") || `<div class="summary-box">本命データなし</div>`}
 
-      <div class="summary-box">
-        <b>本命の考え方</b>
-        <p>予想を押し付けず、材料 → 展開 → 舟券の順で判断する。</p>
-      </div>
-    </div>
-  `;
+    
 }
 
 /* フォーメーション */
