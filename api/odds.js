@@ -1,5 +1,5 @@
-// api/odds.js v5
-// オッズAPI安定版：取得できない時も画面を止めない
+// api/odds.js v6
+// オッズAPI：公式HTMLから取れない時はダミー禁止で空返し
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -23,17 +23,7 @@ module.exports = async function handler(req, res) {
   try {
     const html = await fetchHtml(url);
 
-    if (html.includes("データがありません")) {
-      return res.status(200).json({
-        ok: true,
-        odds: [],
-        count: 0,
-        message: "公式オッズなし",
-        url
-      });
-    }
-
-    const odds = parseOdds3T(html);
+    const odds = parseOfficialOdds(html);
 
     return res.status(200).json({
       ok: true,
@@ -72,34 +62,47 @@ async function fetchHtml(url) {
   return await res.text();
 }
 
-function parseOdds3T(html) {
+function parseOfficialOdds(html) {
+  if (!html || html.includes("データがありません")) return [];
+
   const odds = [];
-  const regex = /(\d)\s*-\s*(\d)\s*-\s*(\d)[\s\S]{0,80}?(\d+\.\d+|\d+)/g;
+  const text = cleanText(html);
 
-  let m;
+  const start = text.indexOf("3連単オッズ");
+  const target = start >= 0 ? text.slice(start) : text;
 
-  while ((m = regex.exec(html)) !== null) {
-    const key = `${m[1]}-${m[2]}-${m[3]}`;
-    const value = Number(m[4]);
+  const nums = target.match(/\d+(?:\.\d+)?/g) || [];
+
+  for (let i = 0; i < nums.length - 3; i++) {
+    const a = Number(nums[i]);
+    const b = Number(nums[i + 1]);
+    const c = Number(nums[i + 2]);
+    const o = Number(nums[i + 3]);
 
     if (
-      value > 0 &&
-      value < 99999 &&
-      !odds.find(x => x.key === key)
+      a >= 1 && a <= 6 &&
+      b >= 1 && b <= 6 &&
+      c >= 1 && c <= 6 &&
+      a !== b &&
+      a !== c &&
+      b !== c &&
+      o >= 10 &&
+      o <= 9999.9
     ) {
       odds.push({
-        key,
-        first: Number(m[1]),
-        second: Number(m[2]),
-        third: Number(m[3]),
-        odds: value
+        key: `${a}-${b}-${c}`,
+        first: a,
+        second: b,
+        third: c,
+        odds: o
       });
     }
   }
 
-  return odds.sort((a, b) => a.odds - b.odds);
+  return uniqueOdds(odds)
+    .sort((a, b) => a.odds - b.odds)
+    .slice(0, 120);
 }
-
 
 function uniqueOdds(list) {
   const map = new Map();
