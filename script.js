@@ -378,28 +378,37 @@ function renderMainSheet(boats, p, analysis) {
 /* フォーメーション */
 
 function renderFormations(p, analysis) {
-  const attack = Number(analysis?.attackBoat || 3);
-  const sashi = Number(analysis?.sashiBoat || 5);
-  const nokoshi = Number(analysis?.nokoshiBoat || 4);
+  const dynamic = analysis?.dynamic || [];
+
+  const topAttack = [...dynamic].sort((a, b) => b.attack - a.attack)[0];
+  const topSashi = [...dynamic].sort((a, b) => b.sashi - a.sashi)[0];
+  const topNokoshi = [...dynamic].sort((a, b) => b.nokoshi - a.nokoshi)[0];
+  const topManshu = [...dynamic].sort((a, b) => b.manshu - a.manshu)[0];
+
+  const a = Number(topAttack?.boat || analysis?.attackBoat || 3);
+  const s = Number(topSashi?.boat || analysis?.sashiBoat || 5);
+  const n = Number(topNokoshi?.boat || analysis?.nokoshiBoat || 4);
+  const m = Number(topManshu?.boat || 6);
   const trust = Number(analysis?.inTrust || 60);
 
   const main = trust >= 70
-    ? [`1-${attack}2-${nokoshi}${sashi}5`]
-    : [`1-${attack}${sashi}-${nokoshi}25`];
+    ? [`1-${a}${s}-${n}${s}5`]
+    : [`1-${a}${s}-${n}25`];
 
   const safe = [
-    `1-${nokoshi}${sashi}-23${attack}`,
-    `2-1${attack}-13${nokoshi}${sashi}`
+    `1-${n}${s}-23${a}`,
+    `2-1${a}-13${n}${s}`
   ];
 
   const hole = [
-    `${attack}-1-${nokoshi}${sashi}5`,
-    `${nokoshi}-1-${attack}${sashi}5`
+    `${a}-1-${n}${s}5`,
+    `${n}-1-${a}${s}5`
   ];
 
-  const manshu = trust < 70
-    ? [`${sashi}-${attack}1-2346`, `6-${attack}1-2345`]
-    : [`${sashi}-1${attack}-2346`];
+  const manshu = [
+    `${m}-${a}1-2346`,
+    `${s}-${a}1-2346`
+  ];
 
   return `
     <div class="sheet">
