@@ -381,7 +381,10 @@ function renderFormations(p) {
   const main = compactForms(p.mainFormation || []);
   const safe = removeDuplicateForms(p.safeFormation || [], main);
   const hole = removeDuplicateForms(p.holeFormation || [], [...main, ...safe]);
-  const manshu = removeDuplicateForms(p.manshuFormation || p.manshuTickets || [], [...main, ...safe, ...hole]);
+  const manshu = removeDuplicateForms(
+    p.manshuFormation || p.manshuTickets || [],
+    [...main, ...safe, ...hole]
+  );
 
   return `
     <div class="sheet">
@@ -400,6 +403,19 @@ function renderFormations(p) {
       ${ticketsWithOdds(manshu)}
     </div>
   `;
+}
+
+function removeDuplicateForms(list, baseList) {
+  const baseExpanded = new Set(
+    compactForms(baseList)
+      .flatMap(expandForm)
+      .map(normalizeKey)
+  );
+
+  return compactForms(list).filter(form => {
+    const expanded = expandForm(form).map(normalizeKey);
+    return !expanded.every(x => baseExpanded.has(x));
+  });
 }
 
 function removeDuplicateForms(list, baseList) {
