@@ -294,15 +294,63 @@ function renderMainSheet(boats, p, analysis) {
 function renderFormations(p) {
   return `
     <div class="sheet">
-      <h3>🎫 舟券ロジック</h3>
-      <h4>本線</h4>${tickets(p.mainFormation || [])}
-      <h4>押さえ</h4>${tickets(p.safeFormation || [])}
-      <h4>穴・流し</h4>${tickets(p.holeFormation || [])}
-      <h4>万舟</h4>${tickets(p.manshuFormation || p.manshuTickets || [])}
+      <h3>🧾 舟券フォーメーション</h3>
+
+      <h4>本線</h4>
+      ${ticketsWithOdds(p.mainFormation || [])}
+
+      <h4>押さえ</h4>
+      ${ticketsWithOdds(p.safeFormation || [])}
+
+      <h4>穴</h4>
+      ${ticketsWithOdds(p.holeFormation || [])}
+
+      <h4>万舟</h4>
+      ${ticketsWithOdds(p.manshuFormation || p.manshuTickets || [])}
+    </div>
+  `;
+}
+function ticketsWithOdds(list) {
+  const arr = compactForms(list);
+
+  if (!arr.length) {
+    return `<div class="summary-box">候補なし</div>`;
+  }
+
+  return `
+    <div class="ticket-list">
+      ${arr.map(form => {
+        const odds = compositeOddsForForm(form);
+        return `
+          <span class="ticket">
+            ${form}${odds ? `　合成${odds}倍` : ""}
+          </span>
+        `;
+      }).join("")}
     </div>
   `;
 }
 
+function compositeOddsForForm(form) {
+  const keys = expandForm(form).map(normalizeKey);
+  const oddsMap = new Map(
+    latestOddsList.map(o => [
+      normalizeKey(o.key || o.result || o.number),
+      Number(o.odds)
+    ])
+  );
+
+  const values = keys
+    .map(k => oddsMap.get(k))
+    .filter(v => Number.isFinite(v) && v > 0);
+
+  if (!values.length) return "";
+
+  const inverseSum = values.reduce((sum, o) => sum + 1 / o, 0);
+  if (!inverseSum) return "";
+
+  return (1 / inverseSum).toFixed(1);
+}
 /* オッズ */
 
 function renderOdds(odds) {
