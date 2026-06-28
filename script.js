@@ -91,7 +91,7 @@ function renderAll(data) {
   setHTML("#raceListArea", renderEntryTable(boats));
   setHTML("#engineArea", renderMaterialPanel(venue, weather, boats, analysis));
   setHTML("#mainSheetArea", renderMainSheet(boats, p, analysis));
-  setHTML("#formationArea", renderFormations(p));
+  setHTML("#formationArea", renderFormations(p, analysis));
   setHTML("#oddsArea", renderOdds(odds));
   setHTML("#manshuSheetArea", renderManshuSheet(boats, p, analysis) + renderManshuOdds(odds));
   setHTML("#alertArea", renderAlerts(p));
