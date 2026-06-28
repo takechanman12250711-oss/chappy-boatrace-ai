@@ -314,7 +314,6 @@ function renderOdds(odds) {
 
   return `
     <div class="sheet odds-card">
-      <h3>💰 3連単オッズ TOP12</h3>
       <div class="odds-grid">
         ${latestOddsList.slice(0, 12).map((o, i) => `
           <div class="odds-pill">
@@ -334,11 +333,7 @@ function renderManshuSheet(boats, p, analysis) {
   const targets = pickManshuTargets(boats, analysis);
 
   return `
-    <div class="sheet manshu-sheet">
-      <h3>💣 万舟シート</h3>
-
-      
-
+      <div class="sheet manshu-sheet"
       <h4>注目艇</h4>
       ${targets.map(b => `
         <div class="race-line">
