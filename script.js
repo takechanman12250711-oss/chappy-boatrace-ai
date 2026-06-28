@@ -265,7 +265,6 @@ function renderMainSheet(boats, p, analysis) {
 
   return `
     <div class="sheet compact-sheet">
-      <h3>🎯 本命シート</h3>
 
       ${picks.map(([mark, label, m]) => {
         if (!m) return "";
