@@ -377,14 +377,29 @@ function renderMainSheet(boats, p, analysis) {
 
 /* フォーメーション */
 
-function renderFormations(p) {
-  const main = compactForms(p.mainFormation || []);
-  const safe = removeDuplicateForms(p.safeFormation || [], main);
-  const hole = removeDuplicateForms(p.holeFormation || [], [...main, ...safe]);
-  const manshu = removeDuplicateForms(
-    p.manshuFormation || p.manshuTickets || [],
-    [...main, ...safe, ...hole]
-  );
+function renderFormations(p, analysis) {
+  const attack = Number(analysis?.attackBoat || 3);
+  const sashi = Number(analysis?.sashiBoat || 5);
+  const nokoshi = Number(analysis?.nokoshiBoat || 4);
+  const trust = Number(analysis?.inTrust || 60);
+
+  const main = trust >= 70
+    ? [`1-${attack}2-${nokoshi}${sashi}5`]
+    : [`1-${attack}${sashi}-${nokoshi}25`];
+
+  const safe = [
+    `1-${nokoshi}${sashi}-23${attack}`,
+    `2-1${attack}-13${nokoshi}${sashi}`
+  ];
+
+  const hole = [
+    `${attack}-1-${nokoshi}${sashi}5`,
+    `${nokoshi}-1-${attack}${sashi}5`
+  ];
+
+  const manshu = trust < 70
+    ? [`${sashi}-${attack}1-2346`, `6-${attack}1-2345`]
+    : [`${sashi}-1${attack}-2346`];
 
   return `
     <div class="sheet">
@@ -394,13 +409,13 @@ function renderFormations(p) {
       ${ticketsWithOdds(main)}
 
       <h4>押さえ</h4>
-      ${ticketsWithOdds(safe)}
+      ${ticketsWithOdds(removeDuplicateForms(safe, main))}
 
       <h4>穴</h4>
-      ${ticketsWithOdds(hole)}
+      ${ticketsWithOdds(removeDuplicateForms(hole, [...main, ...safe]))}
 
       <h4>万舟</h4>
-      ${ticketsWithOdds(manshu)}
+      ${ticketsWithOdds(removeDuplicateForms(manshu, [...main, ...safe, ...hole]))}
     </div>
   `;
 }
