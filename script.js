@@ -87,6 +87,7 @@ function renderAll(data) {
   const missing = data.missing || [];
   const analysis = analyzeRace(boats, p, venue);
 
+  setHTML("#raceFlowArea", renderRaceFlow(analysis));
   setHTML("#raceListArea", renderEntryTable(boats));
   setHTML("#engineArea", renderMaterialPanel(venue, weather, boats, analysis));
   setHTML("#mainSheetArea", renderMainSheet(boats, p, analysis));
@@ -786,6 +787,7 @@ function normalizeDate(v) {
 
 function clearAreas() {
   [
+    '#raceFlowArea',
     "#raceListArea",
     "#engineArea",
     "#mainSheetArea",
