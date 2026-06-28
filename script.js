@@ -92,7 +92,7 @@ function renderAll(data) {
   setHTML("#mainSheetArea", renderMainSheet(boats, p, analysis));
   setHTML("#formationArea", renderFormations(p));
   setHTML("#oddsArea", renderOdds(odds));
-  setHTML("#manshuSheetArea", renderManshuSheet(boats, p, analysis) + renderManshuOdds(odds) + renderMissingTop30(missing));
+  setHTML("#manshuSheetArea", renderManshuSheet(boats, p, analysis) + renderManshuOdds(odds));
   setHTML("#alertArea", renderAlerts(p));
   setHTML("#finalCommentArea", renderFinalComment(p, venue, weather, analysis));
 
