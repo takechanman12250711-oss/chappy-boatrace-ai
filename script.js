@@ -193,12 +193,13 @@ function analyzeRace(boats, p, venue) {
   const shape = p.raceShape || {};
   const b1 = boatByNo(boats, 1);
   const attack = pickAttackBoat(boats, shape.attackBoat);
-
+  const attackRanking = buildAttackRanking(boats);
   return {
     inTrust: scoreInTrust(b1, venue),
     attackBoat: attack.boat,
     attackName: attack.name,
     attackScore: attack.score,
+    attackRanking,
     shapeText: shape.shape || `${attack.boat}号艇攻め → 内残り・差し場`,
     sashiBoat: attack.boat === 3 || attack.boat === 4 ? 5 : 2,
     nokoshiBoat: attack.boat === 3 ? 4 : 2
@@ -217,6 +218,17 @@ function scoreInTrust(b, venue) {
   if (num(b.motor2Rate, 0) > 0 && num(b.motor2Rate, 0) < 25) s -= 5;
 
   return clamp(s);
+}
+
+function buildAttackRanking(boats) {
+  return boats
+    .filter(b => Number(b.boat) >= 2 && Number(b.boat) <= 5)
+    .map(b => ({
+      boat: b.boat,
+      name: b.name,
+      score: calcBoatScore(b)
+    }))
+    .sort((a, b) => b.score - a.score);
 }
 
 function pickAttackBoat(boats, forced) {
