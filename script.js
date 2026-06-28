@@ -337,14 +337,7 @@ function renderManshuSheet(boats, p, analysis) {
     <div class="sheet manshu-sheet">
       <h3>💣 万舟シート</h3>
 
-      <h4>万舟発生条件</h4>
-      <p>
-        イン信頼度が下がる<br>
-        ↓<br>
-        ${analysis.attackBoat}号艇が攻める<br>
-        ↓<br>
-        4残し・5差し場・6展開待ち
-      </p>
+      
 
       <h4>注目艇</h4>
       ${targets.map(b => `
