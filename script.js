@@ -378,23 +378,41 @@ function renderMainSheet(boats, p, analysis) {
 /* フォーメーション */
 
 function renderFormations(p) {
+  const main = compactForms(p.mainFormation || []);
+  const safe = removeDuplicateForms(p.safeFormation || [], main);
+  const hole = removeDuplicateForms(p.holeFormation || [], [...main, ...safe]);
+  const manshu = removeDuplicateForms(p.manshuFormation || p.manshuTickets || [], [...main, ...safe, ...hole]);
+
   return `
     <div class="sheet">
       <h3>🧾 舟券フォーメーション</h3>
 
       <h4>本線</h4>
-      ${ticketsWithOdds(p.mainFormation || [])}
+      ${ticketsWithOdds(main)}
 
       <h4>押さえ</h4>
-      ${ticketsWithOdds(p.safeFormation || [])}
+      ${ticketsWithOdds(safe)}
 
       <h4>穴</h4>
-      ${ticketsWithOdds(p.holeFormation || [])}
+      ${ticketsWithOdds(hole)}
 
       <h4>万舟</h4>
-      ${ticketsWithOdds(p.manshuFormation || p.manshuTickets || [])}
+      ${ticketsWithOdds(manshu)}
     </div>
   `;
+}
+
+function removeDuplicateForms(list, baseList) {
+  const baseExpanded = new Set(
+    compactForms(baseList)
+      .flatMap(expandForm)
+      .map(normalizeKey)
+  );
+
+  return compactForms(list).filter(form => {
+    const expanded = expandForm(form).map(normalizeKey);
+    return !expanded.every(x => baseExpanded.has(x));
+  });
 }
 function ticketsWithOdds(list) {
   const arr = compactForms(list);
