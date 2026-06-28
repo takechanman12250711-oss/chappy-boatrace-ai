@@ -257,33 +257,34 @@ function pickAttackBoat(boats, forced) {
 function renderMainSheet(boats, p, analysis) {
   const marks = p.marks || {};
   const picks = [
-    ["◎","本命",marks.honmei],
-    ["○","対抗",marks.taikou],
-    ["▲","穴",marks.ana],
-    ["△","押さえ",marks.osae || marks.osaE]
+    ["◎", "本命", marks.honmei],
+    ["○", "対抗", marks.taikou],
+    ["▲", "穴", marks.ana],
+    ["△", "押さえ", marks.osae || marks.osaE]
   ];
 
   return `
-  <div class="sheet compact-sheet">
+    <div class="sheet compact-sheet">
+      ${picks.map(([mark, label, m]) => {
+        if (!m) return "";
 
-    ${picks.map(([mark,label,m])=>{
-      if(!m) return "";
+        const b = boatByNo(boats, m.boat) || m;
+        const score = b.totalScore ?? m.totalScore ?? calcBoatScore(b);
+        const buffs = buildBuffs(b);
+        const debuffs = buildDebuffs(b);
 
-      const b = boatByNo(boats,m.boat)||m;
-
-      return `
-      <div class="race-line">
-        <b>${mark} ${label}：${b.boat}号艇 ${b.name||""}</b>
-        <p>スコア：${b.totalScore ?? calcBoatScore(b)}点</p>
-        <p><b>材料：</b>${simpleReasons(b)}</p>
-        <p><b>展開：</b>${roleComment(b)}</p>
-        <p>⬆️ ${buildBuffs(b).join(" / ") || "大きな加点なし"}</p>
-        <p>⬇️ ${buildDebuffs(b).join(" / ") || "大きな減点なし"}</p>
-      </div>
-      `;
-    }).join("")}
-
-  </div>
+        return `
+          <div class="race-line main-card">
+            <b>${mark} ${label}：${b.boat || m.boat}号艇 ${b.name || ""}</b>
+            <p><b>総合：</b>${score}点</p>
+            <p><b>材料：</b>${simpleReasons(b)}</p>
+            <p><b>展開：</b>${roleComment(b)}</p>
+            <p>⬆️ ${buffs.length ? buffs.join(" / ") : "大きな加点なし"}</p>
+            <p>⬇️ ${debuffs.length ? debuffs.join(" / ") : "大きな減点なし"}</p>
+          </div>
+        `;
+      }).join("") || `<div class="summary-box">本命データなし</div>`}
+    </div>
   `;
 }
 
