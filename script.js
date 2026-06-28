@@ -356,8 +356,7 @@ function renderManshuSheet(boats, p, analysis) {
         </div>
       `).join("") || `<div class="summary-box">万舟候補なし</div>`}
 
-      <h4>万舟フォーメーション</h4>
-      ${tickets(forms)}
+    
     </div>
   `;
 }
