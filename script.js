@@ -194,12 +194,19 @@ function analyzeRace(boats, p, venue) {
   const b1 = boatByNo(boats, 1);
   const attack = pickAttackBoat(boats, shape.attackBoat);
   const attackRanking = buildAttackRanking(boats);
+    const dynamic = buildDynamicRaceEngine(boats, {
+    inTrust: scoreInTrust(b1, venue),
+    attackBoat: attack.boat,
+    sashiBoat: attack.boat === 3 || attack.boat === 4 ? 5 : 2,
+    nokoshiBoat: attack.boat === 3 ? 4 : 2
+  });
   return {
     inTrust: scoreInTrust(b1, venue),
     attackBoat: attack.boat,
     attackName: attack.name,
     attackScore: attack.score,
     attackRanking,
+    dynamic,
     shapeText: shape.shape || `${attack.boat}号艇攻め → 内残り・差し場`,
     sashiBoat: attack.boat === 3 || attack.boat === 4 ? 5 : 2,
     nokoshiBoat: attack.boat === 3 ? 4 : 2
@@ -229,6 +236,60 @@ function buildAttackRanking(boats) {
       score: calcBoatScore(b)
     }))
     .sort((a, b) => b.score - a.score);
+}
+
+function buildDynamicRaceEngine(boats, analysis) {
+  return (boats || []).map(b => {
+    const no = Number(b.boat);
+    let attack = 40;
+    let sashi = 40;
+    let nokoshi = 40;
+    let tenkai = 40;
+    let manshu = 35;
+
+    if (no === 1) nokoshi += analysis.inTrust >= 70 ? 25 : 10;
+    if (no === 2) sashi += 18;
+    if (no === 3) attack += 20;
+    if (no === 4) attack += 16;
+    if (no === 5) sashi += 16;
+    if (no === 6) tenkai += 18;
+
+    if (no === Number(analysis.attackBoat)) attack += 20;
+    if (no === Number(analysis.sashiBoat)) sashi += 20;
+    if (no === Number(analysis.nokoshiBoat)) nokoshi += 18;
+
+    if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.15) {
+      attack += 10;
+      tenkai += 6;
+    }
+
+    if (num(b.localWinRate, 0) >= 6) {
+      tenkai += 10;
+      nokoshi += 6;
+    }
+
+    if (num(b.motor2Rate, 0) >= 40) {
+      attack += 6;
+      sashi += 6;
+    }
+
+    if (analysis.inTrust < 60 && no >= 4) {
+      manshu += 18;
+      tenkai += 10;
+    }
+
+    if (no >= 5) manshu += 10;
+
+    return {
+      boat: no,
+      name: b.name || "",
+      attack: clamp(attack),
+      sashi: clamp(sashi),
+      nokoshi: clamp(nokoshi),
+      tenkai: clamp(tenkai),
+      manshu: clamp(manshu)
+    };
+  });
 }
 
 function pickAttackBoat(boats, forced) {
