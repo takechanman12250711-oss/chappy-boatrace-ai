@@ -846,25 +846,48 @@ function renderRaceFlow(analysis) {
   const attack = analysis?.attackBoat || "-";
   const sashi = analysis?.sashiBoat || "-";
   const nokoshi = analysis?.nokoshiBoat || "-";
-  const trust = analysis?.inTrust ?? "-";
+  const trust = analysis?.inTrust ?? 0;
   const shape = analysis?.shapeText || "-";
+  const ranking = analysis?.attackRanking || [];
 
   const trustLabel =
     trust >= 80 ? "イン信頼高め" :
     trust >= 60 ? "標準・展開次第" :
     "イン不安・波乱警戒";
 
-  const waveLabel =
-    trust >= 80 ? "堅め" :
-    trust >= 60 ? "中波乱" :
-    "高波乱";
+  const waveLevel =
+    trust >= 80 ? "★★☆☆☆" :
+    trust >= 60 ? "★★★☆☆" :
+    "★★★★☆";
+
+  const attackPattern =
+    Number(attack) === 2 ? "2コース差し" :
+    Number(attack) === 3 ? "3コース攻め・まくり差し" :
+    Number(attack) === 4 ? "カド攻め・まくり差し" :
+    Number(attack) === 5 ? "外差し・展開待ち" :
+    "展開待ち";
+
+  const flyCondition =
+    trust >= 80
+      ? "1号艇のST遅れ、またはセンター勢のトップスタート。"
+      : trust >= 60
+        ? "1号艇が少し流れる、3・4号艇が攻め切る、5号艇に差し場が開く。"
+        : "インが凹む、センターが攻める、外が道中で拾う。";
 
   return `
     <div class="sheet flow-sheet">
       <div class="summary-box">
-        <b>🌊 展開予想</b>
+        <b>🌊 展開予想カード</b>
         <p><b>イン信頼度：</b>${trust}点 / ${trustLabel}</p>
-        <p><b>波乱目安：</b>${waveLabel}</p>
+        <p><b>波乱度：</b>${waveLevel}</p>
+        <p><b>攻めパターン：</b>${attackPattern}</p>
+      </div>
+
+      <div class="race-line">
+        <b>🥇 攻め指数ランキング</b>
+        ${ranking.slice(0, 4).map((x, i) => `
+          <p>${i + 1}位：${x.boat}号艇 ${x.name || ""}　${x.score}点</p>
+        `).join("") || `<p>攻め指数データなし</p>`}
       </div>
 
       <div class="race-line">
@@ -883,7 +906,12 @@ function renderRaceFlow(analysis) {
       </div>
 
       <div class="race-line">
-        <b>🚤 展開メモ</b>
+        <b>⚠️ 軸が飛ぶ条件</b>
+        <p>${flyCondition}</p>
+      </div>
+
+      <div class="race-line">
+        <b>🤖 AI展開コメント</b>
         <p>${shape}</p>
       </div>
     </div>
