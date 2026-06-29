@@ -675,6 +675,18 @@ function buildFormationReason(type, trust, prob, analysis) {
     txt.push(`${analysis.nokoshiBoat}号艇残り注意。`);
   }
 
+if (analysis?.attackBoat) {
+  txt.push(`攻め役：${analysis.attackBoat}号艇`);
+}
+
+if (analysis?.sashiBoat) {
+  txt.push(`差し候補：${analysis.sashiBoat}号艇`);
+}
+
+if (analysis?.nokoshiBoat) {
+  txt.push(`残り目：${analysis.nokoshiBoat}号艇`);
+}
+
   return "🧠 " + txt.join(" ");
 }
 function uniqueNums(list) {
