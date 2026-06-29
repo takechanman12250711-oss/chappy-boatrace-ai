@@ -24,11 +24,12 @@ function chappyAnalyzeRaceEngine(boats, p, venue) {
   const nokoshiBoat = attack.boat === 3 ? 4 : 2;
 
   const probability = chappyBuildProbability({
-    inTrust,
-    attackBoat: attack.boat,
-    attackScore: attack.score,
-    attackType
-  });
+  inTrust,
+  attackBoat: attack.boat,
+  attackScore: attack.score,
+  attackType,
+  venueAI
+});
 
   return {
     inTrust,
