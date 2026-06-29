@@ -296,6 +296,7 @@ function buildAttackRanking(boats) {
 
 function buildDynamicRaceEngine(boats, analysis) {
   const list = boats || [];
+  const theory = latestRaceData?.prediction?.theory || latestRaceData?.theory || {};
 
   const exhibitionRank = [...list]
     .filter(b => num(b.exhibitionTime, 0) > 0)
@@ -427,6 +428,7 @@ if (analysis.attackScore >= 75 && isOutside) {
     if (no >= 5) manshu += 10;
 
     return {
+      theory,
       boat: no,
       name: b.name || "",
       attack: clamp(attack),
