@@ -251,13 +251,22 @@ function buildTheoryFlags(boats){
   const localPower = list.some(b => num(b.localWinRate, 0) >= 6.5);
   const motorGap = list.some(b => num(b.motor2Rate, 0) >= 45);
 
-  return {
-    slitAlert,
-    doubleTime,
-    newSam,
-    localPower,
-    motorGap
-  };
+const taroScore =
+  50 +
+  (slitAlert ? 15 : 0) +
+  (doubleTime ? 12 : 0) +
+  (newSam ? 10 : 0) +
+  (localPower ? 8 : 0) +
+  (motorGap ? 6 : 0);
+
+return {
+  slitAlert,
+  doubleTime,
+  newSam,
+  localPower,
+  motorGap,
+  taroScore: clamp(taroScore)
+};
 }
 
 function scoreInTrust(b, venue) {
@@ -679,6 +688,10 @@ function buildFormationReason(type, trust, prob, analysis) {
   const txt = [];
   
   const theory = analysis?.theory || {};
+
+if (Number(theory.taroScore || 0) > 0) {
+  txt.push(`🚤 舟券太郎指数 ${theory.taroScore}点`);
+}
 
   txt.push(`展開予測：${type}`);
   
