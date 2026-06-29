@@ -532,6 +532,36 @@ function renderFormations(p, analysis) {
   `;
 }
 
+function makeTickets(firstList, secondList, thirdList) {
+  const out = [];
+
+  uniqueNums(firstList).forEach(first => {
+    uniqueNums(secondList).forEach(second => {
+      uniqueNums(thirdList).forEach(third => {
+        if (first === second) return;
+        if (first === third) return;
+        if (second === third) return;
+
+        out.push(`${first}-${second}-${third}`);
+      });
+    });
+  });
+
+  return [...new Set(out)];
+}
+
+function uniqueNums(list) {
+  return [...new Set(
+    (list || [])
+      .map(x => Number(x))
+      .filter(x => Number.isFinite(x) && x >= 1 && x <= 6)
+  )];
+}
+
+function compactTicketList(list, limit = 6) {
+  return [...new Set(list || [])].slice(0, limit);
+}
+
 function removeDuplicateForms(list, baseList) {
   const baseExpanded = new Set(
     compactForms(baseList)
