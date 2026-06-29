@@ -967,6 +967,10 @@ function calcBoatScore(b) {
   if (num(b.localWinRate, 0) >= 7) s += 4;
   if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.11) s += 5;
   if (num(b.avgST, 0) >= 0.20) s -= 6;
+  if (window.currentVenue === "大村" && num(b.boat) === 3) s += 5;
+  if (window.currentVenue === "大村" && num(b.boat) === 2) s -= 4;
+  if (window.currentVenue === "多摩川" && num(b.boat) === 3) s += 3;
+  if (window.currentVenue === "丸亀" && num(b.boat) === 1) s += 2;
   if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 8;
   if (num(b.exhibitionTime, 0) > 0 && num(b.exhibitionTime) <= 6.75) s += 8;
   if (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00) s += 10;
