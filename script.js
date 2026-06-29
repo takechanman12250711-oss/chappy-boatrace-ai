@@ -1237,6 +1237,16 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
         <p>${flyCondition}</p>
       </div>
 
+<div class="race-line">
+  <b>📊 展開確率AI</b>
+
+  <p>🚤 逃げ　${analysis.probability?.escape ?? "-"}%</p>
+  <p>🌊 2差し　${analysis.probability?.sashi ?? "-"}%</p>
+  <p>🔥 まくり　${analysis.probability?.makuri ?? "-"}%</p>
+  <p>💥 まくり差し　${analysis.probability?.makuriSashi ?? "-"}%</p>
+  <p>🌪 波乱　${analysis.probability?.upset ?? "-"}%</p>
+</div>
+
       <div class="race-line">
         <b>🤖 AI展開コメント</b>
         <p>${attackComment}</p>
