@@ -597,11 +597,28 @@ function renderOdds(odds) {
 /* ピンクシート */
 
 function renderManshuSheet(boats, p, analysis) {
-  const forms = p.manshuFormation || p.manshuTickets || p.holeFormation || [];
   const targets = pickManshuTargets(boats, analysis);
+  const attack = analysis?.attackBoat || "-";
+  const sashi = analysis?.sashiBoat || "-";
+  const nokoshi = analysis?.nokoshiBoat || "-";
+  const trust = analysis?.inTrust ?? 60;
+
+  const conditions = [
+    trust < 70 ? "1号艇の信頼度が高すぎない" : "1号艇が流れた時だけ波乱",
+    `${attack}号艇が攻める展開`,
+    `${sashi}号艇に差し場ができる`,
+    `${nokoshi}号艇が残すと配当がズレる`
+  ];
 
   return `
-      <div class="sheet manshu-sheet"
+    <div class="sheet manshu-sheet">
+      <h3>💣 万舟シート</h3>
+
+      <div class="summary-box">
+        <b>💣 万舟になる条件</b>
+        ${conditions.map(x => `<p>・${x}</p>`).join("")}
+      </div>
+
       <h4>注目艇</h4>
       ${targets.map(b => `
         <div class="race-line">
@@ -611,8 +628,6 @@ function renderManshuSheet(boats, p, analysis) {
           <p>${manshuReason(b)}</p>
         </div>
       `).join("") || `<div class="summary-box">万舟候補なし</div>`}
-
-    
     </div>
   `;
 }
