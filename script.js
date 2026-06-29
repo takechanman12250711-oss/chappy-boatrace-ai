@@ -267,6 +267,10 @@ function buildDynamicRaceEngine(boats, analysis) {
     let nokoshi = 40;
     let tenkai = 40;
     let manshu = 35;
+    const isAttack = no === Number(analysis.attackBoat);
+    const isSashi = no === Number(analysis.sashiBoat);
+    const isNokoshi = no === Number(analysis.nokoshiBoat);
+    const isOutside = no >= 5;
 
     if (no === 1) nokoshi += analysis.inTrust >= 70 ? 25 : 10;
     if (no === 2) sashi += 18;
@@ -275,9 +279,25 @@ function buildDynamicRaceEngine(boats, analysis) {
     if (no === 5) sashi += 16;
     if (no === 6) tenkai += 18;
 
-    if (no === Number(analysis.attackBoat)) attack += 20;
-    if (no === Number(analysis.sashiBoat)) sashi += 20;
-    if (no === Number(analysis.nokoshiBoat)) nokoshi += 18;
+    if (isAttack) attack += 20;
+    if (isSashi) sashi += 20;
+    if (isNokoshi) nokoshi += 18;
+    if (isAttack) {
+  tenkai += 15;
+  manshu += 10;
+}
+
+if (isSashi) {
+  tenkai += 12;
+}
+
+if (isNokoshi) {
+  manshu += 8;
+}
+
+if (isOutside && isAttack) {
+  manshu += 12;
+}
 
     if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.15) {
       attack += 10;
