@@ -502,17 +502,17 @@ function renderFormations(p, analysis) {
     <div class="sheet">
       <h3>🧾 舟券フォーメーション</h3>
 
-      <h4>本線</h4>
-      ${ticketsWithOdds(main)}
+      <h4 class="form-main">本線</h4>
+${ticketsWithOdds(main)}
 
-      <h4>押さえ</h4>
-      ${ticketsWithOdds(removeDuplicateForms(safe, main))}
+<h4 class="form-safe">押さえ</h4>
+${ticketsWithOdds(removeDuplicateForms(safe, main))}
 
-      <h4>穴</h4>
-      ${ticketsWithOdds(removeDuplicateForms(hole, [...main, ...safe]))}
+<h4 class="form-hole">穴</h4>
+${ticketsWithOdds(removeDuplicateForms(hole, [...main, ...safe]))}
 
-      <h4>万舟</h4>
-      ${ticketsWithOdds(removeDuplicateForms(manshu, [...main, ...safe, ...hole]))}
+<h4 class="form-manshu">万舟</h4>
+${ticketsWithOdds(removeDuplicateForms(manshu, [...main, ...safe, ...hole]))}
     </div>
   `;
 }
