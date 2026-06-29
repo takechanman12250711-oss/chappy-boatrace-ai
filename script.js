@@ -386,28 +386,37 @@ function renderFormations(p, analysis) {
   const topManshu = [...dynamic].sort((a, b) => b.manshu - a.manshu)[0];
 
   const a = Number(topAttack?.boat || analysis?.attackBoat || 3);
-  const s = Number(topSashi?.boat || analysis?.sashiBoat || 5);
+  const s = Number(topSashi?.boat || analysis?.sashiBoat || 2);
   const n = Number(topNokoshi?.boat || analysis?.nokoshiBoat || 4);
   const m = Number(topManshu?.boat || 6);
   const trust = Number(analysis?.inTrust || 60);
 
   const main = trust >= 70
-    ? [`1-${a}${s}-${n}${s}5`]
-    : [`1-${a}${s}-${n}25`];
+    ? [
+        `1-2-${a}${n}${s}`,
+        `1-${a}-2${n}${s}`
+      ]
+    : [
+        `1-${a}-${s}${n}`,
+        `${a}-1-${s}${n}`
+      ];
 
   const safe = [
-    `1-${n}${s}-23${a}`,
-    `2-1${a}-13${n}${s}`
+    `1-${s}-${a}${n}`,
+    `1-${n}-${a}${s}`,
+    `2-1-${a}${n}${s}`
   ];
 
   const hole = [
-    `${a}-1-${n}${s}5`,
-    `${n}-1-${a}${s}5`
+    `${a}-1-${s}${n}${m}`,
+    `${n}-1-${a}${s}${m}`,
+    `${a}-${s}-1${n}${m}`
   ];
 
   const manshu = [
-    `${m}-${a}1-2346`,
-    `${s}-${a}1-2346`
+    `${m}-${a}-1${s}${n}`,
+    `${s}-${a}-1${n}${m}`,
+    `${n}-${a}-1${s}${m}`
   ];
 
   return `
