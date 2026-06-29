@@ -181,3 +181,173 @@ function chappyNum(v, fb = 0) {
 function chappyClamp(n, min = 0, max = 100) {
   return Math.max(min, Math.min(max, Math.round(n)));
 }
+
+const VENUE_AI = {
+  桐生: {
+    inPower: 8,
+    makuri: 4,
+    sashi: 3,
+    note: "淡水。センター攻めが決まりやすい。"
+  },
+
+  戸田: {
+    inPower: -6,
+    makuri: 8,
+    sashi: 7,
+    note: "全国屈指のイン受難水面。"
+  },
+
+  江戸川: {
+    inPower: -12,
+    makuri: 10,
+    sashi: 9,
+    note: "風と波で大波乱。"
+  },
+
+  平和島: {
+    inPower: -3,
+    makuri: 5,
+    sashi: 5,
+    note: "風向きで一変。"
+  },
+
+  多摩川: {
+    inPower: 6,
+    makuri: 2,
+    sashi: 4,
+    note: "静水面。イン優勢。"
+  },
+
+  浜名湖: {
+    inPower: 3,
+    makuri: 4,
+    sashi: 5,
+    note: "潮位次第。"
+  },
+
+  蒲郡: {
+    inPower: 8,
+    makuri: 3,
+    sashi: 4,
+    note: "ナイターはイン強め。"
+  },
+
+  常滑: {
+    inPower: 4,
+    makuri: 5,
+    sashi: 5,
+    note: "バランス型水面。"
+  },
+
+  津: {
+    inPower: 7,
+    makuri: 3,
+    sashi: 4,
+    note: "イン有利。"
+  },
+
+  三国: {
+    inPower: 7,
+    makuri: 4,
+    sashi: 4,
+    note: "風が吹くと荒れる。"
+  },
+
+  びわこ: {
+    inPower: 5,
+    makuri: 5,
+    sashi: 4,
+    note: "淡水。"
+  },
+
+  住之江: {
+    inPower: 7,
+    makuri: 3,
+    sashi: 4,
+    note: "イン中心。"
+  },
+
+  尼崎: {
+    inPower: 6,
+    makuri: 4,
+    sashi: 5,
+    note: "差しも届く。"
+  },
+
+  鳴門: {
+    inPower: 5,
+    makuri: 5,
+    sashi: 5,
+    note: "潮位の影響あり。"
+  },
+
+  丸亀: {
+    inPower: 8,
+    makuri: 4,
+    sashi: 4,
+    note: "ナイターはイン強い。"
+  },
+
+  児島: {
+    inPower: 5,
+    makuri: 6,
+    sashi: 5,
+    note: "潮で展開変化。"
+  },
+
+  宮島: {
+    inPower: 2,
+    makuri: 7,
+    sashi: 6,
+    note: "干満差が大きい。"
+  },
+
+  徳山: {
+    inPower: 8,
+    makuri: 3,
+    sashi: 4,
+    note: "イン優勢。"
+  },
+
+  下関: {
+    inPower: 7,
+    makuri: 4,
+    sashi: 5,
+    note: "ナイター向き。"
+  },
+
+  若松: {
+    inPower: 5,
+    makuri: 6,
+    sashi: 6,
+    note: "波乱も多い。"
+  },
+
+  芦屋: {
+    inPower: 8,
+    makuri: 4,
+    sashi: 4,
+    note: "イン有利。"
+  },
+
+  福岡: {
+    inPower: 4,
+    makuri: 5,
+    sashi: 7,
+    note: "2マーク波乱。"
+  },
+
+  唐津: {
+    inPower: 7,
+    makuri: 4,
+    sashi: 5,
+    note: "比較的イン優勢。"
+  },
+
+  大村: {
+    inPower: 9,
+    makuri: 6,
+    sashi: 2,
+    note: "新エンジン期は3コース攻め・2差し届きにくい。"
+  }
+};
