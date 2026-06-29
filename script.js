@@ -190,33 +190,32 @@ function renderMaterialPanel(venue, weather, boats, analysis) {
 /* 展開分析 */
 
 function analyzeRace(boats, p, venue) {
-  const shape = p.raceShape || {};
-  const b1 = boatByNo(boats, 1);
-  const attack = pickAttackBoat(boats, shape.attackBoat);
-  const attackRanking = buildAttackRanking(boats);
-    const dynamic = buildDynamicRaceEngine(boats, {
-    inTrust: scoreInTrust(b1, venue),
-    attackBoat: attack.boat,
-    sashiBoat: attack.boat === 3 || attack.boat === 4 ? 5 : 2,
-    nokoshiBoat: attack.boat === 3 ? 4 : 2
-  });
-  const attackType = judgeAttackType(
-    attack.boat,
-    boats,
-    venue,
-    b1
-);
+  if (typeof chappyAnalyzeRaceEngine === "function") {
+    const base = chappyAnalyzeRaceEngine(boats, p, venue);
+
+    return {
+      ...base,
+      attackRanking: buildAttackRanking(boats),
+      dynamic: buildDynamicRaceEngine(boats, base)
+    };
+  }
+
   return {
-    inTrust: scoreInTrust(b1, venue),
-    attackBoat: attack.boat,
-    attackName: attack.name,
-    attackScore: attack.score,
-    attackRanking,
-    attackType,
-    dynamic,
-    shapeText: shape.shape || `${attack.boat}号艇攻め → 内残り・差し場`,
-    sashiBoat: attack.boat === 3 || attack.boat === 4 ? 5 : 2,
-    nokoshiBoat: attack.boat === 3 ? 4 : 2
+    inTrust: 60,
+    attackBoat: 3,
+    attackName: "",
+    attackScore: 60,
+    attackType: "まくり差し",
+    sashiBoat: 5,
+    nokoshiBoat: 4,
+    attackRanking: buildAttackRanking(boats),
+    dynamic: buildDynamicRaceEngine(boats, {
+      inTrust: 60,
+      attackBoat: 3,
+      sashiBoat: 5,
+      nokoshiBoat: 4
+    }),
+    shapeText: "3号艇攻め → 5号艇差し場 → 4号艇残し"
   };
 }
 
