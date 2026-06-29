@@ -316,8 +316,29 @@ if (isOutside && isAttack) {
     const lapPoint = rankPoint(lapRank, no, [15, 10, 7]);
     nokoshi += lapPoint;
     tenkai += Math.round(lapPoint / 2);
+    if (exPoint >= 12) {
+  attack += 8;
+  tenkai += 8;
+  manshu += 5;
+}
+
+if (exPoint >= 9 && isSashi) {
+  sashi += 8;
+  tenkai += 5;
+}
+
+if (exPoint >= 9 && isAttack) {
+  attack += 10;
+}
 
     if (exPoint === 12 && lapPoint === 15) {
+      if (lapPoint >= 15) {
+  nokoshi += 12;
+  tenkai += 10;
+
+  if (isAttack) attack += 8;
+  if (isSashi) sashi += 8;
+}
       attack += 12;
       sashi += 10;
       manshu += 10;
