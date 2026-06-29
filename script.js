@@ -920,6 +920,21 @@ function expandForm(raw) {
   return [...new Set(out)];
 }
 
+function calcBoatScore(b) {
+  let s = 50;
+
+  if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) s += 10;
+  if (num(b.localWinRate, 0) >= 6) s += 8;
+  if (num(b.nationalWinRate, 0) >= 6) s += 8;
+  if (num(b.motor2Rate, 0) >= 40) s += 5;
+
+  if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 8;
+  if (num(b.exhibitionTime, 0) > 0 && num(b.exhibitionTime) <= 6.75) s += 8;
+  if (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00) s += 10;
+
+  return clamp(s);
+}
+
 function buildBuffs(b) {
   const r = [];
 
