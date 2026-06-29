@@ -56,6 +56,8 @@ function chappyBuildProbability(x) {
   let escape = trust;
   let sashi = 20;
   let makuri = 15;
+  sashi += Number(venueAI.sashi || 0);
+  makuri += Number(venueAI.makuri || 0);
   let makuriSashi = 15;
   let upset = 100 - trust;
 
