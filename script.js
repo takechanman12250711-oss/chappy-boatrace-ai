@@ -542,6 +542,10 @@ function renderFormations(p, analysis) {
   const m = Number(topManshu?.boat || 6);
   const trust = Number(analysis?.inTrust || 60);
   const type = analysis?.attackType || "まくり差し";
+  const prob = analysis?.probability || {};
+  const highMakuri = Number(prob.makuri || 0) >= 25;
+  const highSashi = Number(prob.sashi || 0) >= 25;
+  const highUpset = Number(prob.upset || 0) >= 25;
 
   let main = [];
   let safe = [];
@@ -568,8 +572,21 @@ function renderFormations(p, analysis) {
     safe = makeTickets([1, 2], [s, n, a], [1, 2, a, n, s, 5, 6]);
     hole = makeTickets([a, n], [1, s], [1, 2, n, s, m, 6]);
   }
+if (highMakuri) {
+  main.push(...makeTickets([a, 1], [1, s, n], [1, 2, s, n, 5, 6]));
+  hole.push(...makeTickets([a, s], [1, n], [1, 2, n, m, 6]));
+}
 
-  manshu = makeTickets([m, s, n, a], [a, 1, s], [1, 2, a, n, s, m, 6]);
+if (highSashi) {
+  safe.push(...makeTickets([1, 2, s], [s, 1, a], [1, 2, a, n, 5, 6]));
+}
+
+if (highUpset) {
+  manshu.push(...makeTickets([m, a, s], [a, 1, n], [1, 2, s, n, m, 6]));
+}
+  manshu.push(
+  ...makeTickets([m, s, n, a], [a, 1, s], [1, 2, 3, 4, 5, 6])
+);
 
   main = compactTicketList(main, 4);
   safe = compactTicketList(removeDuplicateForms(safe, main), 5);
@@ -579,6 +596,10 @@ function renderFormations(p, analysis) {
   return `
     <div class="sheet">
       <h3>🧾 舟券フォーメーション</h3>
+
+      <p class="aiReason">
+${buildFormationReason(type, trust, prob, analysis)}
+</p>
 
       <h4 class="form-main">本線</h4>
       ${ticketsWithOdds(main)}
@@ -612,7 +633,46 @@ function makeTickets(firstList, secondList, thirdList) {
 
   return [...new Set(out)];
 }
+function buildFormationReason(type, trust, prob, analysis) {
 
+  const txt = [];
+
+  txt.push(`展開予測：${type}`);
+
+  if (trust >= 80){
+    txt.push("イン信頼度が高く逃げ中心。");
+  }else if(trust >= 60){
+    txt.push("インは残るが差し・まくり警戒。");
+  }else{
+    txt.push("イン不安で波乱期待。");
+  }
+
+  if(Number(prob?.makuri || 0) >= 25){
+    txt.push("まくり率高め。");
+  }
+
+  if(Number(prob?.sashi || 0) >= 25){
+    txt.push("差しが決まりやすい。");
+  }
+
+  if(Number(prob?.upset || 0) >= 20){
+    txt.push("万舟警戒レース。");
+  }
+
+  if(analysis?.attackBoat){
+    txt.push(`${analysis.attackBoat}号艇が攻め役。`);
+  }
+
+  if(analysis?.sashiBoat){
+    txt.push(`${analysis.sashiBoat}号艇が差し候補。`);
+  }
+
+  if(analysis?.nokoshiBoat){
+    txt.push(`${analysis.nokoshiBoat}号艇残り注意。`);
+  }
+
+  return "🧠 " + txt.join(" ");
+}
 function uniqueNums(list) {
   return [...new Set(
     (list || [])
