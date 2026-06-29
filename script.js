@@ -1076,7 +1076,32 @@ function renderRaceFlow(analysis) {
     Number(attack) === 4 ? "カド攻め・まくり差し" :
     Number(attack) === 5 ? "外差し・展開待ち" :
     "展開待ち";
+    
+    const attackComment = judgeAttackComment(
+  analysis?.attackType || attackPattern,
+  attack,
+  sashi,
+  nokoshi
+);
+function judgeAttackComment(type, attack, sashi, nokoshi) {
+  if (type === "まくり") {
+    return `${attack}号艇が全速で攻める展開。${nokoshi}号艇の残しと、${sashi}号艇の差し場を重視。`;
+  }
 
+  if (type === "まくり差し") {
+    return `${attack}号艇がまくり差しで差し場を狙う展開。内残りと外の連動を両方見る。`;
+  }
+
+  if (type === "差し") {
+    return `${attack}号艇の差し展開。イン残りを見ながら、2着・3着の残しを重視。`;
+  }
+
+  if (type === "展開待ち") {
+    return `${attack}号艇は展開待ち。内が競った時の差し場・道中拾いを重視。`;
+  }
+
+  return `${attack}号艇が展開を作る想定。${sashi}号艇の差し場、${nokoshi}号艇の残しを確認。`;
+}
   const flyCondition =
     trust >= 80
       ? "1号艇のST遅れ、またはセンター勢のトップスタート。"
@@ -1131,6 +1156,7 @@ function renderRaceFlow(analysis) {
 
       <div class="race-line">
         <b>🤖 AI展開コメント</b>
+        <p>${attackComment}</p>
         <p>${shape}</p>
       </div>
     </div>
