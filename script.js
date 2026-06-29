@@ -391,29 +391,61 @@ function renderFormations(p, analysis) {
   const m = Number(topManshu?.boat || 6);
   const trust = Number(analysis?.inTrust || 60);
 
-  const main = trust >= 70
-    ? [
-        `1-2-${a}${n}${s}`,
-        `1-${a}-2${n}${s}`
-      ]
-    : [
-        `1-${a}-${s}${n}`,
-        `${a}-1-${s}${n}`
-      ];
+  let main = [];
+  let safe = [];
+  let hole = [];
+  let manshu = [];
 
-  const safe = [
-    `1-${s}-${a}${n}`,
-    `1-${n}-${a}${s}`,
-    `2-1-${a}${n}${s}`
-  ];
+  if (trust >= 75) {
+    main = [
+      `1-2-${a}${n}`,
+      `1-${a}-2${n}`
+    ];
 
-  const hole = [
-    `${a}-1-${s}${n}${m}`,
-    `${n}-1-${a}${s}${m}`,
-    `${a}-${s}-1${n}${m}`
-  ];
+    safe = [
+      `1-${n}-2${a}`,
+      `1-${s}-${a}${n}`,
+      `2-1-${a}${n}`
+    ];
 
-  const manshu = [
+    hole = [
+      `${a}-1-2${n}`,
+      `${a}-2-1${n}`
+    ];
+  } else if (trust >= 60) {
+    main = [
+      `1-${a}-2${n}`,
+      `1-2-${a}${n}`
+    ];
+
+    safe = [
+      `1-${s}-${a}${n}`,
+      `2-1-${a}${n}`,
+      `${a}-1-2${n}`
+    ];
+
+    hole = [
+      `${a}-${s}-1${n}`,
+      `${n}-1-${a}${s}`
+    ];
+  } else {
+    main = [
+      `${a}-1-${s}${n}`,
+      `1-${a}-${s}${n}`
+    ];
+
+    safe = [
+      `2-1-${a}${n}`,
+      `1-${s}-${a}${n}`
+    ];
+
+    hole = [
+      `${a}-${s}-1${n}`,
+      `${n}-${a}-1${s}`
+    ];
+  }
+
+  manshu = [
     `${m}-${a}-1${s}${n}`,
     `${s}-${a}-1${n}${m}`,
     `${n}-${a}-1${s}${m}`
