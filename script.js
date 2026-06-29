@@ -331,18 +331,19 @@ if (exPoint >= 9 && isAttack) {
   attack += 10;
 }
 
-    if (exPoint === 12 && lapPoint === 15) {
-      if (lapPoint >= 15) {
+    if (lapPoint >= 15) {
   nokoshi += 12;
   tenkai += 10;
 
   if (isAttack) attack += 8;
   if (isSashi) sashi += 8;
 }
-      attack += 12;
-      sashi += 10;
-      manshu += 10;
-    }
+
+if (exPoint === 12 && lapPoint === 15) {
+  attack += 12;
+  sashi += 10;
+  manshu += 10;
+}
 
     if (num(b.localWinRate, 0) >= 6) {
       tenkai += 10;
@@ -355,9 +356,23 @@ if (exPoint >= 9 && isAttack) {
     }
 
     if (analysis.inTrust < 60 && no >= 4) {
-      manshu += 18;
-      tenkai += 10;
-    }
+  manshu += 18;
+  tenkai += 10;
+}
+
+if (analysis.inTrust < 50 && isOutside) {
+  manshu += 15;
+  attack += 5;
+}
+
+if (analysis.attackScore >= 75 && isAttack) {
+  attack += 12;
+  tenkai += 8;
+}
+
+if (analysis.attackScore >= 75 && isOutside) {
+  manshu += 10;
+}
 
     if (no >= 5) manshu += 10;
 
