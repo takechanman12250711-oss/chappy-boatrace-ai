@@ -383,22 +383,8 @@ function renderMainSheet(boats, p, analysis) {
     ["△", "押さえ", marks.osae || marks.osaE]
   ];
 
-  const dynamic = analysis?.dynamic || [];
-  const topAttack = [...dynamic].sort((a, b) => b.attack - a.attack)[0];
-  const topSashi = [...dynamic].sort((a, b) => b.sashi - a.sashi)[0];
-  const topNokoshi = [...dynamic].sort((a, b) => b.nokoshi - a.nokoshi)[0];
-  const topManshu = [...dynamic].sort((a, b) => b.manshu - a.manshu)[0];
-
   return `
     <div class="sheet compact-sheet">
-      <div class="summary-box">
-        <b>🧠 Dynamic評価</b>
-        <p>🔥 攻め艇：${topAttack?.boat || "-"}号艇 ${topAttack?.name || ""} / ${topAttack?.attack ?? "-"}点</p>
-        <p>🌊 差し艇：${topSashi?.boat || "-"}号艇 ${topSashi?.name || ""} / ${topSashi?.sashi ?? "-"}点</p>
-        <p>⚡ 残し艇：${topNokoshi?.boat || "-"}号艇 ${topNokoshi?.name || ""} / ${topNokoshi?.nokoshi ?? "-"}点</p>
-        <p>💣 万舟艇：${topManshu?.boat || "-"}号艇 ${topManshu?.name || ""} / ${topManshu?.manshu ?? "-"}点</p>
-      </div>
-
       ${picks.map(([mark, label, m]) => {
         if (!m) return "";
 
@@ -406,13 +392,13 @@ function renderMainSheet(boats, p, analysis) {
         const score = b.totalScore ?? m.totalScore ?? calcBoatScore(b);
         const buffs = buildBuffs(b);
         const debuffs = buildDebuffs(b);
+        const reason = buildPickReason(b, label, analysis);
 
         return `
           <div class="race-line main-card">
             <b>${mark} ${label}：${b.boat || m.boat}号艇 ${b.name || ""}</b>
             <p><b>総合：</b>${score}点</p>
-            <p><b>材料：</b>${simpleReasons(b)}</p>
-            <p><b>展開：</b>${roleComment(b)}</p>
+            <p><b>理由：</b>${reason}</p>
             <p>⬆️ ${buffs.length ? buffs.join(" / ") : "大きな加点なし"}</p>
             <p>⬇️ ${debuffs.length ? debuffs.join(" / ") : "大きな減点なし"}</p>
           </div>
@@ -420,6 +406,35 @@ function renderMainSheet(boats, p, analysis) {
       }).join("") || `<div class="summary-box">本命データなし</div>`}
     </div>
   `;
+}
+
+function buildPickReason(b, label, analysis) {
+  const no = Number(b.boat);
+  const attack = Number(analysis?.attackBoat);
+  const sashi = Number(analysis?.sashiBoat);
+  const nokoshi = Number(analysis?.nokoshiBoat);
+
+  if (label === "本命") {
+    return "展開の中心。材料とイン信頼度を見て軸候補。";
+  }
+
+  if (no === attack) {
+    return `${no}号艇が攻め役。展開を作る可能性が高い。`;
+  }
+
+  if (no === sashi) {
+    return `${no}号艇は差し場候補。攻めが入った時に浮上。`;
+  }
+
+  if (no === nokoshi) {
+    return `${no}号艇は残し候補。2・3着で重要。`;
+  }
+
+  if (label === "穴") {
+    return "展開が崩れた時の高配当候補。";
+  }
+
+  return "本線の取りこぼしを拾う押さえ候補。";
 }
 
 /* フォーメーション */
