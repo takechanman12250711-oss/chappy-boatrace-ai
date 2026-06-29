@@ -1,8 +1,8 @@
 // engine.js
-// チャッピー展開AIエンジン v2.0
+// チャッピー展開AIエンジン v3.0
 
 function chappyEngineVersion() {
-  return "engine v2.0";
+  return "engine v3.0";
 }
 
 function chappyAnalyzeRaceEngine(boats, p, venue) {
@@ -13,11 +13,15 @@ function chappyAnalyzeRaceEngine(boats, p, venue) {
   const attack = chappyPickAttackBoat(boats, shape.attackBoat);
   const attackType = chappyJudgeAttackType(attack.boat, boats, venue, b1);
 
-  const sashiBoat =
-    attack.boat === 3 || attack.boat === 4 ? 5 : 2;
+  const sashiBoat = attack.boat === 3 || attack.boat === 4 ? 5 : 2;
+  const nokoshiBoat = attack.boat === 3 ? 4 : 2;
 
-  const nokoshiBoat =
-    attack.boat === 3 ? 4 : 2;
+  const probability = chappyBuildProbability({
+    inTrust,
+    attackBoat: attack.boat,
+    attackScore: attack.score,
+    attackType
+  });
 
   return {
     inTrust,
@@ -27,9 +31,53 @@ function chappyAnalyzeRaceEngine(boats, p, venue) {
     attackType,
     sashiBoat,
     nokoshiBoat,
+    probability,
     shapeText:
       shape.shape ||
       `${attack.boat}号艇${attackType} → ${sashiBoat}号艇差し場 → ${nokoshiBoat}号艇残し`
+  };
+}
+
+function chappyBuildProbability(x) {
+  const trust = Number(x.inTrust || 60);
+  const attackScore = Number(x.attackScore || 60);
+  const type = x.attackType || "まくり差し";
+
+  let escape = trust;
+  let sashi = 20;
+  let makuri = 15;
+  let makuriSashi = 15;
+  let upset = 100 - trust;
+
+  if (type === "差し") {
+    sashi += 15;
+    escape -= 5;
+  }
+
+  if (type === "まくり") {
+    makuri += 20;
+    escape -= 12;
+    upset += 10;
+  }
+
+  if (type === "まくり差し") {
+    makuriSashi += 18;
+    sashi += 6;
+    escape -= 6;
+  }
+
+  if (attackScore >= 75) {
+    makuri += 5;
+    makuriSashi += 5;
+    upset += 5;
+  }
+
+  return {
+    escape: chappyClamp(escape),
+    sashi: chappyClamp(sashi),
+    makuri: chappyClamp(makuri),
+    makuriSashi: chappyClamp(makuriSashi),
+    upset: chappyClamp(upset)
   };
 }
 
@@ -50,11 +98,7 @@ function chappyScoreInTrust(b, venue) {
 function chappyPickAttackBoat(boats, forced) {
   if (forced) {
     const b = chappyBoatByNo(boats, forced);
-    return {
-      boat: Number(forced),
-      name: b?.name || "",
-      score: 75
-    };
+    return { boat: Number(forced), name: b?.name || "", score: 75 };
   }
 
   let best = null;
