@@ -627,7 +627,6 @@ function renderManshuSheet(boats, p, analysis) {
 
   return `
     <div class="sheet manshu-sheet">
-      <h3>💣 万舟シート</h3>
 
       <div class="summary-box">
         <b>💣 万舟になる条件</b>
