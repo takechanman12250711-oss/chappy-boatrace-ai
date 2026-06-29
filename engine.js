@@ -7,6 +7,13 @@ function chappyEngineVersion() {
 
 function chappyAnalyzeRaceEngine(boats, p, venue) {
   const shape = p?.raceShape || {};
+  const venueAI =
+  VENUE_AI[venue?.name] || {
+    inPower: 0,
+    makuri: 0,
+    sashi: 0,
+    note: ""
+  };
   const b1 = chappyBoatByNo(boats, 1);
 
   const inTrust = chappyScoreInTrust(b1, venue);
