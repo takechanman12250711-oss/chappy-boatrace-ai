@@ -37,8 +37,6 @@ function chappyAnalyzeRaceEngine(boats, p, venue) {
     attackName: attack.name,
     attackScore: attack.score,
     attackType,
-    sashiBoat,
-    attackType,
     venueNote: venueAI.note,
     sashiBoat,
     shapeText:
