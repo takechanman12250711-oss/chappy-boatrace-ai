@@ -49,6 +49,7 @@ function chappyAnalyzeRaceEngine(boats, p, venue) {
 
 function chappyBuildProbability(x) {
   const trust = Number(x.inTrust || 60);
+  const venueAI = x.venueAI || {};
   const attackScore = Number(x.attackScore || 60);
   const type = x.attackType || "まくり差し";
 
