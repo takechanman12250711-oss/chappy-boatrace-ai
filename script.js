@@ -246,7 +246,22 @@ function buildAttackRanking(boats) {
 }
 
 function buildDynamicRaceEngine(boats, analysis) {
-  return (boats || []).map(b => {
+  const list = boats || [];
+
+  const exhibitionRank = [...list]
+    .filter(b => num(b.exhibitionTime, 0) > 0)
+    .sort((a, b) => num(a.exhibitionTime) - num(b.exhibitionTime));
+
+  const lapRank = [...list]
+    .filter(b => num(b.lapTime, 0) > 0)
+    .sort((a, b) => num(a.lapTime) - num(b.lapTime));
+
+  const rankPoint = (rank, boatNo, points) => {
+    const idx = rank.findIndex(x => Number(x.boat) === Number(boatNo));
+    return idx >= 0 && idx < points.length ? points[idx] : 0;
+  };
+
+  return list.map(b => {
     const no = Number(b.boat);
     let attack = 40;
     let sashi = 40;
@@ -268,6 +283,25 @@ function buildDynamicRaceEngine(boats, analysis) {
     if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.15) {
       attack += 10;
       tenkai += 6;
+    }
+
+    if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) {
+      attack += 8;
+      tenkai += 5;
+    }
+
+    const exPoint = rankPoint(exhibitionRank, no, [12, 9, 6]);
+    attack += exPoint;
+    sashi += Math.round(exPoint / 2);
+
+    const lapPoint = rankPoint(lapRank, no, [15, 10, 7]);
+    nokoshi += lapPoint;
+    tenkai += Math.round(lapPoint / 2);
+
+    if (exPoint === 12 && lapPoint === 15) {
+      attack += 12;
+      sashi += 10;
+      manshu += 10;
     }
 
     if (num(b.localWinRate, 0) >= 6) {
