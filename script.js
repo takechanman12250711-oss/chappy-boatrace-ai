@@ -493,75 +493,41 @@ function renderFormations(p, analysis) {
   let manshu = [];
 
   if (trust >= 75) {
-    main = [
-      `1-2-${a}${n}`,
-      `1-${a}-2${n}`
-    ];
-
-    safe = [
-      `1-${n}-2${a}`,
-      `1-${s}-${a}${n}`,
-      `2-1-${a}${n}`
-    ];
-
-    hole = [
-      `${a}-1-2${n}`,
-      `${a}-2-1${n}`
-    ];
+    main = makeTickets([1], [2, a], [a, n, s, 5, 6]);
+    safe = makeTickets([1, 2], [n, s, a, 1], [2, a, n, s, 5, 6]);
+    hole = makeTickets([a, n], [1, 2, s], [1, 2, n, s, m, 6]);
   } else if (trust >= 60) {
-    main = [
-      `1-${a}-2${n}`,
-      `1-2-${a}${n}`
-    ];
-
-    safe = [
-      `1-${s}-${a}${n}`,
-      `2-1-${a}${n}`,
-      `${a}-1-2${n}`
-    ];
-
-    hole = [
-      `${a}-${s}-1${n}`,
-      `${n}-1-${a}${s}`
-    ];
+    main = makeTickets([1], [a, 2, s], [2, a, n, s, 5, 6]);
+    safe = makeTickets([1, 2, a], [s, 1, n], [1, 2, a, n, s, 5, 6]);
+    hole = makeTickets([a, n], [1, s], [1, 2, n, s, m, 6]);
   } else {
-    main = [
-      `${a}-1-${s}${n}`,
-      `1-${a}-${s}${n}`
-    ];
-
-    safe = [
-      `2-1-${a}${n}`,
-      `1-${s}-${a}${n}`
-    ];
-
-    hole = [
-      `${a}-${s}-1${n}`,
-      `${n}-${a}-1${s}`
-    ];
+    main = makeTickets([a, 1], [1, s, n], [1, 2, a, n, s, m, 6]);
+    safe = makeTickets([2, 1], [1, s, a], [1, 2, a, n, s, 5, 6]);
+    hole = makeTickets([a, n, m], [s, a, 1], [1, 2, a, n, s, m, 6]);
   }
 
-  manshu = [
-    `${m}-${a}-1${s}${n}`,
-    `${s}-${a}-1${n}${m}`,
-    `${n}-${a}-1${s}${m}`
-  ];
+  manshu = makeTickets([m, s, n, a], [a, 1, s], [1, 2, a, n, s, m, 6]);
+
+  main = compactTicketList(main, 4);
+  safe = compactTicketList(removeDuplicateForms(safe, main), 5);
+  hole = compactTicketList(removeDuplicateForms(hole, [...main, ...safe]), 5);
+  manshu = compactTicketList(removeDuplicateForms(manshu, [...main, ...safe, ...hole]), 6);
 
   return `
     <div class="sheet">
       <h3>🧾 舟券フォーメーション</h3>
 
       <h4 class="form-main">本線</h4>
-${ticketsWithOdds(main)}
+      ${ticketsWithOdds(main)}
 
-<h4 class="form-safe">押さえ</h4>
-${ticketsWithOdds(removeDuplicateForms(safe, main))}
+      <h4 class="form-safe">押さえ</h4>
+      ${ticketsWithOdds(safe)}
 
-<h4 class="form-hole">穴</h4>
-${ticketsWithOdds(removeDuplicateForms(hole, [...main, ...safe]))}
+      <h4 class="form-hole">穴</h4>
+      ${ticketsWithOdds(hole)}
 
-<h4 class="form-manshu">万舟</h4>
-${ticketsWithOdds(removeDuplicateForms(manshu, [...main, ...safe, ...hole]))}
+      <h4 class="form-manshu">万舟</h4>
+      ${ticketsWithOdds(manshu)}
     </div>
   `;
 }
