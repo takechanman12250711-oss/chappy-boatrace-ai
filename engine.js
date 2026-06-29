@@ -72,6 +72,19 @@ function chappyBuildProbability(x) {
     upset += 5;
   }
 
+const total =
+  escape +
+  sashi +
+  makuri +
+  makuriSashi +
+  upset;
+
+escape = Math.round((escape / total) * 100);
+sashi = Math.round((sashi / total) * 100);
+makuri = Math.round((makuri / total) * 100);
+makuriSashi = Math.round((makuriSashi / total) * 100);
+upset = 100 - escape - sashi - makuri - makuriSashi;
+
   return {
     escape: chappyClamp(escape),
     sashi: chappyClamp(sashi),
