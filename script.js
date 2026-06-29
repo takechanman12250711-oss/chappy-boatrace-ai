@@ -200,12 +200,19 @@ function analyzeRace(boats, p, venue) {
     sashiBoat: attack.boat === 3 || attack.boat === 4 ? 5 : 2,
     nokoshiBoat: attack.boat === 3 ? 4 : 2
   });
+  const attackType = judgeAttackType(
+    attack.boat,
+    boats,
+    venue,
+    b1
+);
   return {
     inTrust: scoreInTrust(b1, venue),
     attackBoat: attack.boat,
     attackName: attack.name,
     attackScore: attack.score,
     attackRanking,
+    attackType,
     dynamic,
     shapeText: shape.shape || `${attack.boat}号艇攻め → 内残り・差し場`,
     sashiBoat: attack.boat === 3 || attack.boat === 4 ? 5 : 2,
@@ -290,6 +297,46 @@ function buildDynamicRaceEngine(boats, analysis) {
       manshu: clamp(manshu)
     };
   });
+}
+
+function judgeAttackType(boat, boats, venue, b1){
+
+    const b = boatByNo(boats, boat);
+
+    if(!b){
+        return "攻め";
+    }
+
+    const st = Number(b.avgST || 0.18);
+    const inTrust = scoreInTrust(b1, venue);
+
+    if(boat===2){
+        return "差し";
+    }
+
+    if(boat===3){
+
+        if(st<=0.14 && inTrust<75){
+            return "まくり";
+        }
+
+        return "まくり差し";
+    }
+
+    if(boat===4){
+
+        if(st<=0.14){
+            return "まくり差し";
+        }
+
+        return "差し";
+    }
+
+    if(boat>=5){
+        return "展開待ち";
+    }
+
+    return "逃げ";
 }
 
 function pickAttackBoat(boats, forced) {
@@ -483,18 +530,6 @@ function removeDuplicateForms(list, baseList) {
   });
 }
 
-function removeDuplicateForms(list, baseList) {
-  const baseExpanded = new Set(
-    compactForms(baseList)
-      .flatMap(expandForm)
-      .map(normalizeKey)
-  );
-
-  return compactForms(list).filter(form => {
-    const expanded = expandForm(form).map(normalizeKey);
-    return !expanded.every(x => baseExpanded.has(x));
-  });
-}
 function ticketsWithOdds(list) {
   const arr = compactForms(list);
 
@@ -1055,7 +1090,7 @@ function renderRaceFlow(analysis) {
         <b>🌊 展開予想カード</b>
         <p><b>イン信頼度：</b>${trust}点 / ${trustLabel}</p>
         <p><b>波乱度：</b>${waveLevel}</p>
-        <p><b>攻めパターン：</b>${attackPattern}</p>
+        <p><b>攻めパターン：</b>${analysis?.attackType || attackPattern}</p>
       </div>
 
       <div class="race-line">
