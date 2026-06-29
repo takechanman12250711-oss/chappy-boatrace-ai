@@ -192,9 +192,10 @@ function renderMaterialPanel(venue, weather, boats, analysis) {
 function analyzeRace(boats, p, venue) {
   if (typeof chappyAnalyzeRaceEngine === "function") {
     const base = chappyAnalyzeRaceEngine(boats, p, venue);
-
+    const theory = buildTheoryFlags(boats);
     return {
       ...base,
+      theory,
       attackRanking: buildAttackRanking(boats),
       dynamic: buildDynamicRaceEngine(boats, base)
     };
@@ -216,6 +217,46 @@ function analyzeRace(boats, p, venue) {
       nokoshiBoat: 4
     }),
     shapeText: "3号艇攻め → 5号艇差し場 → 4号艇残し"
+  };
+}
+
+function buildTheoryFlags(boats){
+  const list = boats || [];
+
+  const stList = list
+    .filter(b => num(b.exhibitionST, 0) > 0)
+    .map(b => ({ boat: b.boat, st: num(b.exhibitionST) }))
+    .sort((a, b) => a.st - b.st);
+
+  const exRank = [...list]
+    .filter(b => num(b.exhibitionTime, 0) > 0)
+    .sort((a, b) => num(a.exhibitionTime) - num(b.exhibitionTime));
+
+  const lapRank = [...list]
+    .filter(b => num(b.lapTime, 0) > 0)
+    .sort((a, b) => num(a.lapTime) - num(b.lapTime));
+
+  const slitAlert =
+    stList.length >= 2 && Math.abs(stList[0].st - stList[1].st) >= 0.10;
+
+  const doubleTime =
+    exRank.length && lapRank.length &&
+    Number(exRank[0].boat) === Number(lapRank[0].boat);
+
+  const newSam =
+    exRank.length && lapRank.length &&
+    Number(exRank[0].boat) >= 4 &&
+    Number(lapRank[0].boat) >= 4;
+
+  const localPower = list.some(b => num(b.localWinRate, 0) >= 6.5);
+  const motorGap = list.some(b => num(b.motor2Rate, 0) >= 45);
+
+  return {
+    slitAlert,
+    doubleTime,
+    newSam,
+    localPower,
+    motorGap
   };
 }
 
