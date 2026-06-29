@@ -682,6 +682,26 @@ function buildFormationReason(type, trust, prob, analysis) {
 
   txt.push(`展開予測：${type}`);
   
+  if (theory.slitAlert) {
+  txt.push("🚨 スリットアラート");
+}
+
+if (theory.doubleTime) {
+  txt.push("⏱ ダブルタイム");
+}
+
+if (theory.newSam) {
+  txt.push("⭐ 新サム理論");
+}
+
+if (theory.localPower) {
+  txt.push("🏠 当地実績上位");
+}
+
+if (theory.motorGap) {
+  txt.push("🔧 モーター格差あり");
+}
+  
   if (analysis?.venueNote) {
   txt.push(`場特徴：${analysis.venueNote}`);
 }
