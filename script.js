@@ -1149,6 +1149,7 @@ function renderRaceFlow(analysis) {
   const shape = analysis?.shapeText || "-";
   const ranking = analysis?.attackRanking || [];
   const dynamic = analysis?.dynamic || [];
+  const venueNote = analysis?.venueNote || "";
 
   const trustLabel =
     trust >= 80 ? "イン信頼高め" :
@@ -1249,6 +1250,7 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
 
       <div class="race-line">
         <b>🤖 AI展開コメント</b>
+        <p>🏟️ 場特徴：${venueNote}</p>
         <p>${attackComment}</p>
         <p>${shape}</p>
       </div>
