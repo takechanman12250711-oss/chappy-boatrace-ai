@@ -486,24 +486,32 @@ function renderFormations(p, analysis) {
   const n = Number(topNokoshi?.boat || analysis?.nokoshiBoat || 4);
   const m = Number(topManshu?.boat || 6);
   const trust = Number(analysis?.inTrust || 60);
+  const type = analysis?.attackType || "まくり差し";
 
   let main = [];
   let safe = [];
   let hole = [];
   let manshu = [];
 
-  if (trust >= 75) {
-    main = makeTickets([1], [2, a], [a, n, s, 5, 6]);
-    safe = makeTickets([1, 2], [n, s, a, 1], [2, a, n, s, 5, 6]);
-    hole = makeTickets([a, n], [1, 2, s], [1, 2, n, s, m, 6]);
-  } else if (trust >= 60) {
-    main = makeTickets([1], [a, 2, s], [2, a, n, s, 5, 6]);
-    safe = makeTickets([1, 2, a], [s, 1, n], [1, 2, a, n, s, 5, 6]);
-    hole = makeTickets([a, n], [1, s], [1, 2, n, s, m, 6]);
+  if (type === "差し") {
+    main = makeTickets([1, 2], [2, 1, a], [a, n, s, 5, 6]);
+    safe = makeTickets([1], [a, n, s], [2, a, n, s, 5, 6]);
+    hole = makeTickets([2, a], [1, s, n], [1, a, n, s, 5, 6]);
+  } else if (type === "まくり") {
+    main = makeTickets([a, 1], [1, s, n], [1, 2, s, n, 5, 6]);
+    safe = makeTickets([1], [a, 2, s], [2, a, n, s, 5, 6]);
+    hole = makeTickets([a, s, n], [1, 2], [1, 2, s, n, m, 6]);
+  } else if (type === "まくり差し") {
+    main = makeTickets([1], [a, s, 2], [2, a, s, n, 5, 6]);
+    safe = makeTickets([a, 1], [1, s, n], [1, 2, s, n, 5, 6]);
+    hole = makeTickets([s, n, a], [a, 1], [1, 2, s, n, m, 6]);
   } else {
-    main = makeTickets([a, 1], [1, s, n], [1, 2, a, n, s, m, 6]);
-    safe = makeTickets([2, 1], [1, s, a], [1, 2, a, n, s, 5, 6]);
-    hole = makeTickets([a, n, m], [s, a, 1], [1, 2, a, n, s, m, 6]);
+    main = trust >= 70
+      ? makeTickets([1], [2, a], [a, n, s, 5, 6])
+      : makeTickets([1, a], [a, s, n], [1, 2, a, n, s, m, 6]);
+
+    safe = makeTickets([1, 2], [s, n, a], [1, 2, a, n, s, 5, 6]);
+    hole = makeTickets([a, n], [1, s], [1, 2, n, s, m, 6]);
   }
 
   manshu = makeTickets([m, s, n, a], [a, 1, s], [1, 2, a, n, s, m, 6]);
