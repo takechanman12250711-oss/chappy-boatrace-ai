@@ -1126,13 +1126,6 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
       </div>
       
             <div class="race-line">
-        <b>🧠 Dynamic Race Engine</b>
-        ${dynamic.map(x => `
-          <p>${x.boat}号艇 ${x.name || ""}：
-            🔥攻${x.attack} / 🌊差${x.sashi} / ⚡残${x.nokoshi} / 🌀展${x.tenkai} / 💣万${x.manshu}
-          </p>
-        `).join("") || `<p>Dynamic指数なし</p>`}
-      </div>
 
       <div class="race-line">
         <b>🔥 攻め艇</b>
