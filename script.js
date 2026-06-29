@@ -677,6 +677,8 @@ function makeTickets(firstList, secondList, thirdList) {
 function buildFormationReason(type, trust, prob, analysis) {
 
   const txt = [];
+  
+  const theory = analysis?.theory || {};
 
   txt.push(`展開予測：${type}`);
   
