@@ -688,8 +688,7 @@ function buildFormationReason(type, trust, prob, analysis) {
   const txt = [];
   
   const theory = analysis?.theory || {};
-
-if (Number(theory.taroScore || 0) > 0) {
+  if (Number(theory.taroScore || 0) > 0) {
   txt.push(`🚤 舟券太郎指数 ${theory.taroScore}点`);
 }
 
