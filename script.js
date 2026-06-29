@@ -638,6 +638,10 @@ function buildFormationReason(type, trust, prob, analysis) {
   const txt = [];
 
   txt.push(`展開予測：${type}`);
+  
+  if (analysis?.venueNote) {
+  txt.push(`場特徴：${analysis.venueNote}`);
+}
 
   if (trust >= 80){
     txt.push("イン信頼度が高く逃げ中心。");
