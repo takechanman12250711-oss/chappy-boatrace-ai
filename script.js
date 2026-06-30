@@ -74,7 +74,7 @@ async function safeJson(url, fallback) {
     return fallback;
   }
 }
-
+window.runPrediction = runPrediction;
 function renderAll(data) {
   latestRaceData = data;
 
