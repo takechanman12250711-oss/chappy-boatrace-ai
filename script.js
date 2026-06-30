@@ -32,10 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderStatsArea();
 });
 
-async function runPrediction() {
-  ...
-}
-window.runPrediction = runPrediction;
+  async function runPrediction() {
   const place = val("#placeSelect");
   const rno = String(val("#raceSelect")).replace("R", "");
   const date = normalizeDate(val("#dateInput")) || todayYmd();
@@ -67,7 +64,7 @@ window.runPrediction = runPrediction;
     setStatus("通信エラー");
   }
 }
-
+window.runPrediction = runPrediction;
 async function safeJson(url, fallback) {
   try {
     const res = await fetch(url);
