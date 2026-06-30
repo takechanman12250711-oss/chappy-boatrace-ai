@@ -723,6 +723,26 @@ if (theory.localPower) {
 if (theory.motorGap) {
   txt.push(`🔧 モーター格差あり`);
 }
+if (analysis?.attackBoat) {
+  txt.push(`⚔️ 攻め役：${analysis.attackBoat}号艇`);
+}
+
+if (analysis?.sashiBoat) {
+  txt.push(`🎯 差し候補：${analysis.sashiBoat}号艇`);
+}
+
+if (analysis?.nokoshiBoat) {
+  txt.push(`🛟 残り目：${analysis.nokoshiBoat}号艇`);
+}
+
+const manshuBoat =
+  analysis?.dynamic
+    ?.slice()
+    .sort((a, b) => Number(b.manshu || 0) - Number(a.manshu || 0))[0];
+
+if (manshuBoat?.boat) {
+  txt.push(`💣 万舟注意：${manshuBoat.boat}号艇（万舟指数 ${manshuBoat.manshu}）`);
+}
 
   if (trust >= 80){
     txt.push("イン信頼度が高く逃げ中心。");
