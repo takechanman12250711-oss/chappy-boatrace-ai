@@ -1,5 +1,5 @@
-// script.js v15.0
-// チャッピーボートレースAI：材料 → 展開 → 舟券 / 重複整理版
+// script.js v15.1 stable
+// 基本形安定版：出走表 → 展開 → 青シート → フォーメーション → 万舟 → 成績管理
 
 const API_BASE = "/api/race";
 
