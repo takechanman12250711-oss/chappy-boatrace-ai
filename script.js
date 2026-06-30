@@ -715,14 +715,6 @@ if (analysis?.nokoshiBoat) {
   txt.push(`⚡ 残し本線：${analysis.nokoshiBoat}号艇`);
 }
 
-const manshuBoat =
-  analysis?.dynamic
-    ?.slice()
-    .sort((a, b) => Number(b.manshu || 0) - Number(a.manshu || 0))[0];
-
-if (manshuBoat?.boat) {
-  txt.push(`💣 万舟注意：${manshuBoat.boat}号艇（万舟指数 ${manshuBoat.manshu}点）`);
-}
 
   if (trust >= 80){
     txt.push("イン信頼度が高く逃げ中心。");
