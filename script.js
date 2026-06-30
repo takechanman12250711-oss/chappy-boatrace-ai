@@ -48,7 +48,6 @@ async function runPrediction() {
 
     const oddsData = await safeJson(`${API_BASE}/odds?jcd=${jcd}&rno=${rno}&date=${date}`, { ok:false, odds:[] });
     const missData = await safeJson(`/api/missing?jcd=${jcd}&rno=${rno}&date=${date}`, { ok:false, missing:[] });
-
     data.odds = oddsData?.ok ? oddsData.odds || [] : [];
     data.missing = missData?.ok ? missData.missing || [] : [];
 
