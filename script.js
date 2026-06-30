@@ -1441,7 +1441,7 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
 
       <div class="race-line">
         <b>🥇 攻め指数ランキング</b>
-          ${ranking.slice(0,4).map((x,i)=>`
+       ${dynamic.slice().sort((a,b)=>Number(b.attack||0)-Number(a.attack||0)).slice(0,4).map((x,i)=>`
 <div class="attack-card">
   <b>${i+1}位 ${x.boat}号艇 ${x.name}</b>
 
@@ -1456,9 +1456,8 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
 
   <div>💣万舟 ${x.manshu}</div>
   <progress max="100" value="${x.manshu}"></progress>
-
-  </div>
-  `).join("")}
+</div>
+`).join("")}
   <div class="race-line">
 
       <div class="race-line">
