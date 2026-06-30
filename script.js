@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
   async function runPrediction() {
+  alert("ボタン反応OK");
   const place = val("#placeSelect");
   const rno = String(val("#raceSelect")).replace("R", "");
   const date = normalizeDate(val("#dateInput")) || todayYmd();
