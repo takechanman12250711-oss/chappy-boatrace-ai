@@ -690,7 +690,7 @@ function buildFormationReason(type, trust, prob, analysis) {
   const txt = [];
   
   const theory = analysis?.theory || {};
-  const taroScore = Number(theory.taroScore || 0);
+const taroScore = Number(theory.taroScore || 0);
 const taroRank =
   taroScore >= 95 ? "S評価 ★★★★★" :
   taroScore >= 85 ? "A評価 ★★★★☆" :
@@ -701,7 +701,6 @@ const taroRank =
 if (taroScore > 0) {
   txt.push(`🚤 舟券太郎指数 ${taroScore}点 ${taroRank}`);
 }
-
   txt.push(`展開予測：${type}`);
   
 if (theory.slitAlert) {
@@ -1439,32 +1438,7 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
         <p><b>攻めパターン：</b>${analysis?.attackType || attackPattern}</p>
       </div>
 
-<div class="race-line">
-  <b>🥇 攻め指数ランキング</b>
-  ${(dynamic.length ? dynamic : ranking.map(x => ({
-  boat: x.boat,
-  name: x.name,
-  attack: x.score || 50,
-  sashi: 40,
-  nokoshi: 40,
-  manshu: 35
-}))).slice()
-    .sort((a,b)=>Number(b.attack||0)-Number(a.attack||0))
-    .slice(0,4)
-    .map((x,i)=>`
-      <div class="attack-card">
-        <b>${i+1}位 ${x.boat}号艇 ${x.name}</b>
-        <div>⚔️攻め ${x.attack}</div>
-        <progress max="100" value="${x.attack}"></progress>
-        <div>🎯差し ${x.sashi}</div>
-        <progress max="100" value="${x.sashi}"></progress>
-        <div>🛟残り ${x.nokoshi}</div>
-        <progress max="100" value="${x.nokoshi}"></progress>
-        <div>💣万舟 ${x.manshu}</div>
-        <progress max="100" value="${x.manshu}"></progress>
-      </div>
-    `).join("")}
-</div>
+
 
       <div class="race-line">
         <b>🔥 攻め艇</b>
@@ -1485,23 +1459,5 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
         <b>⚠️ 軸が飛ぶ条件</b>
         <p>${flyCondition}</p>
       </div>
-
-<div class="race-line">
-  <b>📊 展開確率AI</b>
-
-  <p>🚤 逃げ　${analysis.probability?.escape ?? "-"}%</p>
-  <p>🌊 2差し　${analysis.probability?.sashi ?? "-"}%</p>
-  <p>🔥 まくり　${analysis.probability?.makuri ?? "-"}%</p>
-  <p>💥 まくり差し　${analysis.probability?.makuriSashi ?? "-"}%</p>
-  <p>🌪 波乱　${analysis.probability?.upset ?? "-"}%</p>
-</div>
-
-      <div class="race-line">
-        <b>🤖 AI展開コメント</b>
-        <p>🏟️ 場特徴：${venueNote}</p>
-        <p>${attackComment}</p>
-        <p>${shape}</p>
-      </div>
-    </div>
   `;
 }
