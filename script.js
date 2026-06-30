@@ -705,23 +705,23 @@ if (taroScore > 0) {
   txt.push(`展開予測：${type}`);
   
 if (theory.slitAlert) {
-  txt.push(`🚨 スリットアラート発動`);
+  txt.push(`🔴 最重要：スリットアラート発動`);
 }
 
 if (theory.doubleTime) {
-  txt.push(`⏱ ダブルタイム発動`);
+  txt.push(`🔴 最重要：ダブルタイム発動`);
 }
 
 if (theory.newSam) {
-  txt.push(`⭐ 新サム理論発動`);
-}
-
-if (theory.localPower) {
-  txt.push(`🏠 当地実績上位`);
+  txt.push(`🟡 注意：新サム理論発動`);
 }
 
 if (theory.motorGap) {
-  txt.push(`🔧 モーター格差あり`);
+  txt.push(`🟡 注意：モーター格差あり`);
+}
+
+if (theory.localPower) {
+  txt.push(`🔵 参考：当地実績上位`);
 }
 if (analysis?.attackBoat) {
   txt.push(`⚔️ 攻め役：${analysis.attackBoat}号艇`);
