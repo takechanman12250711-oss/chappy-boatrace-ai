@@ -741,7 +741,7 @@ const manshuBoat =
     .sort((a, b) => Number(b.manshu || 0) - Number(a.manshu || 0))[0];
 
 if (manshuBoat?.boat) {
-  txt.push(`💣 万舟注意：${manshuBoat.boat}号艇（万舟指数 ${manshuBoat.manshu}点）
+  txt.push(`💣 万舟注意：${manshuBoat.boat}号艇（万舟指数 ${manshuBoat.manshu}点）`);
 }
 
   if (trust >= 80){
