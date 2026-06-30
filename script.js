@@ -715,10 +715,6 @@ if (analysis?.nokoshiBoat) {
     txt.push("万舟警戒レース。");
   }
 
-  if(analysis?.nokoshiBoat){
-    txt.push(`${analysis.nokoshiBoat}号艇残り注意。`);
-  }
-
   return "🧠 " + txt.join(" ");
 }
 function uniqueNums(list) {
