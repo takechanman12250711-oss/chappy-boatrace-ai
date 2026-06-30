@@ -494,7 +494,9 @@ function pickAttackBoat(boats, forced) {
     const no = Number(b.boat);
 
     if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) s += 12;
-    if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 10;
+    if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += if (num(b.exhibitionTime, 0) > 0 && num(b.exhibitionTime) <= 6.75) s += 6;
+    if (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00) s += 6;
+    if (num(b.localWinRate, 0) >= 6.5) s += 5;
     if (num(b.motor2Rate, 0) >= 40) s += 8;
     if (num(b.localWinRate, 0) >= 6) s += 8;
     if (no === 3) s += 8;
