@@ -690,19 +690,6 @@ function buildFormationReason(type, trust, prob, analysis) {
   const txt = [];
   txt.push(`展開予測：${type}`);
   
-if (theory.slitAlert) {
-  
-if (theory.newSam) {
-  txt.push(`🟡 注意：新サム理論発動`);
-}
-
-if (theory.motorGap) {
-  txt.push(`🟡 注意：モーター格差あり`);
-}
-
-if (theory.localPower) {
-  txt.push(`🔵 参考：当地実績上位`);
-}
 if (analysis?.attackBoat) {
   txt.push(`🔥 展開の主役：${analysis.attackBoat}号艇`);
 }
@@ -716,14 +703,6 @@ if (analysis?.nokoshiBoat) {
 }
 
 
-  if (trust >= 80){
-    txt.push("イン信頼度が高く逃げ中心。");
-  }else if(trust >= 60){
-    txt.push("インは残るが差し・まくり警戒。");
-  }else{
-    txt.push("イン不安で波乱期待。");
-  }
-
   if(Number(prob?.makuri || 0) >= 25){
     txt.push("まくり率高め。");
   }
@@ -734,14 +713,6 @@ if (analysis?.nokoshiBoat) {
 
   if(Number(prob?.upset || 0) >= 20){
     txt.push("万舟警戒レース。");
-  }
-
-  if(analysis?.attackBoat){
-    txt.push(`${analysis.attackBoat}号艇が攻め役。`);
-  }
-
-  if(analysis?.sashiBoat){
-    txt.push(`${analysis.sashiBoat}号艇が差し候補。`);
   }
 
   if(analysis?.nokoshiBoat){
