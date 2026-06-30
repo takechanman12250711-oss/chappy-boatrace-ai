@@ -1441,7 +1441,14 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
 
 <div class="race-line">
   <b>🥇 攻め指数ランキング</b>
-  ${dynamic.slice()
+  ${(dynamic.length ? dynamic : ranking.map(x => ({
+  boat: x.boat,
+  name: x.name,
+  attack: x.score || 50,
+  sashi: 40,
+  nokoshi: 40,
+  manshu: 35
+}))).slice()
     .sort((a,b)=>Number(b.attack||0)-Number(a.attack||0))
     .slice(0,4)
     .map((x,i)=>`
