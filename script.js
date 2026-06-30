@@ -1439,26 +1439,25 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
         <p><b>攻めパターン：</b>${analysis?.attackType || attackPattern}</p>
       </div>
 
-      <div class="race-line">
-        <b>🥇 攻め指数ランキング</b>
-       ${dynamic.slice().sort((a,b)=>Number(b.attack||0)-Number(a.attack||0)).slice(0,4).map((x,i)=>`
-<div class="attack-card">
-  <b>${i+1}位 ${x.boat}号艇 ${x.name}</b>
-
-  <div>⚔️攻め ${x.attack}</div>
-  <progress max="100" value="${x.attack}"></progress>
-
-  <div>🎯差し ${x.sashi}</div>
-  <progress max="100" value="${x.sashi}"></progress>
-
-  <div>🛟残り ${x.nokoshi}</div>
-  <progress max="100" value="${x.nokoshi}"></progress>
-
-  <div>💣万舟 ${x.manshu}</div>
-  <progress max="100" value="${x.manshu}"></progress>
+<div class="race-line">
+  <b>🥇 攻め指数ランキング</b>
+  ${dynamic.slice()
+    .sort((a,b)=>Number(b.attack||0)-Number(a.attack||0))
+    .slice(0,4)
+    .map((x,i)=>`
+      <div class="attack-card">
+        <b>${i+1}位 ${x.boat}号艇 ${x.name}</b>
+        <div>⚔️攻め ${x.attack}</div>
+        <progress max="100" value="${x.attack}"></progress>
+        <div>🎯差し ${x.sashi}</div>
+        <progress max="100" value="${x.sashi}"></progress>
+        <div>🛟残り ${x.nokoshi}</div>
+        <progress max="100" value="${x.nokoshi}"></progress>
+        <div>💣万舟 ${x.manshu}</div>
+        <progress max="100" value="${x.manshu}"></progress>
+      </div>
+    `).join("")}
 </div>
-`).join("")}
-  <div class="race-line">
 
       <div class="race-line">
         <b>🔥 攻め艇</b>
