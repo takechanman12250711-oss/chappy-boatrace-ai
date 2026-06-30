@@ -724,15 +724,15 @@ if (theory.localPower) {
   txt.push(`🔵 参考：当地実績上位`);
 }
 if (analysis?.attackBoat) {
-  txt.push(`⚔️ 攻め役：${analysis.attackBoat}号艇`);
+  txt.push(`🔥 展開の主役：${analysis.attackBoat}号艇`);
 }
 
 if (analysis?.sashiBoat) {
-  txt.push(`🎯 差し候補：${analysis.sashiBoat}号艇`);
+  txt.push(`🎯 差し本線：${analysis.sashiBoat}号艇`);
 }
 
 if (analysis?.nokoshiBoat) {
-  txt.push(`🛟 残り目：${analysis.nokoshiBoat}号艇`);
+  txt.push(`⚡ 残し本線：${analysis.nokoshiBoat}号艇`);
 }
 
 const manshuBoat =
