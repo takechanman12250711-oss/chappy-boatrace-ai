@@ -688,29 +688,10 @@ function makeTickets(firstList, secondList, thirdList) {
 function buildFormationReason(type, trust, prob, analysis) {
 
   const txt = [];
-  
-  const theory = analysis?.theory || {};
-const taroScore = Number(theory.taroScore || 0);
-const taroRank =
-  taroScore >= 95 ? "S評価 ★★★★★" :
-  taroScore >= 85 ? "A評価 ★★★★☆" :
-  taroScore >= 75 ? "B評価 ★★★☆☆" :
-  taroScore >= 65 ? "C評価 ★★☆☆☆" :
-  "D評価 ★☆☆☆☆";
-
-if (taroScore > 0) {
-  txt.push(`🚤 舟券太郎指数 ${taroScore}点 ${taroRank}`);
-}
   txt.push(`展開予測：${type}`);
   
 if (theory.slitAlert) {
-  txt.push(`🔴 最重要：スリットアラート発動`);
-}
-
-if (theory.doubleTime) {
-  txt.push(`🔴 最重要：ダブルタイム発動`);
-}
-
+  
 if (theory.newSam) {
   txt.push(`🟡 注意：新サム理論発動`);
 }
