@@ -93,7 +93,12 @@ function renderAll(data) {
   setHTML("#mainSheetArea", renderMainSheet(boats, p, analysis));
   setHTML("#formationArea", renderFormations(p, analysis));
   setHTML("#oddsArea", renderOdds(odds));
-  setHTML("#manshuSheetArea", renderManshuSheet(boats, p, analysis) + renderManshuOdds(odds));
+  setHTML(
+  "#manshuSheetArea",
+  renderManshuSheet(boats, p, analysis)
+  + renderMissingTop30(missing)
+  + renderManshuOdds(odds)
+);
   setHTML("#alertArea", renderAlerts(p));
   setHTML("#finalCommentArea", renderFinalComment(p, venue, weather, analysis));
 
@@ -208,10 +213,24 @@ function analyzeRace(boats, p, venue) {
     sashiBoat: base.sashiBoat,
     nokoshiBoat: base.nokoshiBoat
   }),
+    tenkaiRate: buildTenkaiRate(boats, {
+    attackBoat: base.attackBoat,
+    sashiBoat: base.sashiBoat,
+    nokoshiBoat: base.nokoshiBoat
+  }),
+
+  expectedValue: buildExpectedValue(
+    buildChappyAIIndex(boats, {
+    attackBoat: base.attackBoat,
+    sashiBoat: base.sashiBoat,
+    nokoshiBoat: base.nokoshiBoat
+  }),
+  latestOddsList
+ ),
   attackRanking: buildAttackRanking(boats),
   dynamic: buildDynamicRaceEngine(boats, base)
-};
-  }
+ };
+   }
     const attack = pickAttackBoat(boats);
     const sashi = pickSashiBoat(boats, attack.boat);
     const nokoshi = pickNokoshiBoat(boats, attack.boat);
