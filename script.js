@@ -231,7 +231,6 @@ function analyzeRace(boats, p, venue) {
     sashiBoat: sashi,
     nokoshiBoat: nokoshi,
     chappyIndex: buildChappyAIIndex(boats,{
-    chappyIndex: buildChappyAIIndex(boats, {
     attackBoat: attack.boat,
     sashiBoat: sashi,
     nokoshiBoat: nokoshi
