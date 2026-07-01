@@ -195,6 +195,10 @@ function analyzeRace(boats, p, venue) {
 
     base.sashiBoat = pickSashiBoat(boats, base.attackBoat);
     base.nokoshiBoat = pickNokoshiBoat(boats, base.attackBoat);
+    const attack = pickAttackBoat(boats);
+    const sashi = pickSashiBoat(boats, attack.boat);
+    const nokoshi = pickNokoshiBoat(boats, attack.boat);
+    const attackType = judgeAttackType(attack.boat, boats, venue, boatByNo(boats, 1));
     return {
       ...base,
       theory,
@@ -202,11 +206,32 @@ function analyzeRace(boats, p, venue) {
       dynamic: buildDynamicRaceEngine(boats, base)
     };
   }
-    const attack = pickAttackBoat(boats);
-    const sashi = pickSashiBoat(boats, attack.boat);
-    const nokoshi = pickNokoshiBoat(boats, attack.boat);
-    const attackType = judgeAttackType(attack.boat, boats, venue, boatByNo(boats, 1));
+    
+    function venueAdjust(venueName, boatNo, role) {
+  let s = 0;
+  const v = String(venueName || window.currentVenue || "");
 
+  if (v.includes("大村")) {
+    if (role === "attack" && boatNo === 3) s += 6;
+    if (role === "sashi" && boatNo === 2) s -= 3;
+    if (role === "motor") s -= 3;
+  }
+
+  if (v.includes("若松")) {
+    if (role === "outside" && boatNo >= 5) s += 4;
+    if (role === "nokoshi" && boatNo === 6) s += 4;
+  }
+
+  if (v.includes("丸亀")) {
+    if (role === "nokoshi" && boatNo === 1) s += 4;
+  }
+
+  if (v.includes("多摩川")) {
+    if (role === "attack" && boatNo === 3) s += 3;
+  }
+
+  return s;
+}
     const raceShape = buildRaceShape(
     attack.boat,
     sashi,
