@@ -200,23 +200,26 @@ function analyzeRace(boats, p, venue) {
       dynamic: buildDynamicRaceEngine(boats, base)
     };
   }
+const attack = pickAttackBoat(boats);
 
+const sashi = attack.boat >= 4 ? attack.boat - 1 : attack.boat + 2;
+const nokoshi = attack.boat === 3 ? 4 : 1;
   return {
     inTrust: 60,
-    attackBoat: 3,
-    attackName: "",
-    attackScore: 60,
+    attackBoat: attack.boat,
+    attackName: attack.name,
+    attackScore: attack.score,
     attackType: "まくり差し",
-    sashiBoat: 5,
-    nokoshiBoat: 4,
+    sashiBoat: sashi,
+    nokoshiBoat: nokoshi,
     attackRanking: buildAttackRanking(boats),
     dynamic: buildDynamicRaceEngine(boats, {
       inTrust: 60,
-      attackBoat: 3,
-      sashiBoat: 5,
-      nokoshiBoat: 4
+      attackBoat: attack.boat,
+      sashiBoat: sashi,
+      nokoshiBoat: nokoshi
     }),
-    shapeText: "3号艇攻め → 5号艇差し場 → 4号艇残し"
+    shapeText: `${attack.boat}号艇攻め → ${sashi}号艇差し場 → ${nokoshi}号艇残し`
   };
 }
 
