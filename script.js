@@ -391,6 +391,7 @@ function buildExpectedValue(aiRank, oddsList) {
       ev
     };
   }).sort((a, b) => b.ev - a.ev);
+  }
 
 function buildTenkaiRate(boats, analysis) {
   const attackBoat = boatByNo(boats, analysis.attackBoat);
@@ -1556,13 +1557,13 @@ function renderRaceFlow(analysis) {
   const shape = analysis?.shapeText || "-";
   const aiRank = analysis?.chappyIndex || [];
   const tenkai = analysis?.tenkaiRate || {
-  const evRank = analysis?.expectedValue || [];
   escape: 0,
   attack: 0,
   sashi: 0,
   nokoshi: 0,
   upset: 0
 };
+  const evRank = analysis?.expectedValue || [];
   const trustLabel =
     trust >= 80 ? "イン信頼高め" :
     trust >= 60 ? "標準・展開次第" :
@@ -1666,7 +1667,6 @@ const attackComment = judgeAttackComment(
       .join("")
   }
 </div>
-    </div>
     <div class="race-line">
   <b>🎯 展開成立率</b>
   <p>🚤 逃げ成立率　${tenkai.escape}%</p>
