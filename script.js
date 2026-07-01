@@ -1384,17 +1384,17 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
 
       <div class="race-line">
         <b>🔥 攻め艇</b>
-        <p>${attack}号艇：この艇が展開を作る中心。</p>
+        <p>${attackComment}</p>
       </div>
 
       <div class="race-line">
         <b>🌊 差し場</b>
-        <p>${sashi}号艇：攻めが入った時に差し場を拾う候補。</p>
+        <p>${sashiComment}</p>
       </div>
 
       <div class="race-line">
         <b>⚡ 残し艇</b>
-        <p>${nokoshi}号艇：攻められても2・3着に残す候補。</p>
+        <p>${nokoshiComment}</p>
       </div>
 
       <div class="race-line">
