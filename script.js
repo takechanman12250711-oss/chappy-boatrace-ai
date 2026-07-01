@@ -1456,13 +1456,6 @@ const attackComment = judgeAttackComment(
   nokoshi
 );
 
-const flyCondition =
-  trust >= 80
-    ? "1号艇のST遅れ、またはセンター勢のトップスタート。"
-    : trust >= 60
-      ? "1号艇が少し流れる、3・4号艇が攻め切る、5号艇に差し場が開く。"
-      : "インが凹む、センターが攻める、外が道中で拾う。";
-
 
   const flyCondition =
     trust >= 80
