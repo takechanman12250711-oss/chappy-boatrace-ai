@@ -501,10 +501,6 @@ function pickAttackBoat(boats, forced) {
     if (num(b.localWinRate, 0) >= 6) s += 8;
     if (no === 3) s += 8;
     if (no === 4) s += 6;
-    if (num(b.motor2Rate, 0) >= 40) s += 8;
-    if (num(b.localWinRate, 0) >= 6) s += 8;
-    if (no === 3) s += 8;
-    if (no === 4) s += 6;
 
     if (s > bestScore) {
       bestScore = s;
