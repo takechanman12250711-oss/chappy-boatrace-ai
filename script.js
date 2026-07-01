@@ -208,31 +208,6 @@ function analyzeRace(boats, p, venue) {
     };
   }
     
-    function venueAdjust(venueName, boatNo, role) {
-  let s = 0;
-  const v = String(venueName || window.currentVenue || "");
-
-  if (v.includes("大村")) {
-    if (role === "attack" && boatNo === 3) s += 6;
-    if (role === "sashi" && boatNo === 2) s -= 3;
-    if (role === "motor") s -= 3;
-  }
-
-  if (v.includes("若松")) {
-    if (role === "outside" && boatNo >= 5) s += 4;
-    if (role === "nokoshi" && boatNo === 6) s += 4;
-  }
-
-  if (v.includes("丸亀")) {
-    if (role === "nokoshi" && boatNo === 1) s += 4;
-  }
-
-  if (v.includes("多摩川")) {
-    if (role === "attack" && boatNo === 3) s += 3;
-  }
-
-  return s;
-}
     const raceShape = buildRaceShape(
     attack.boat,
     sashi,
@@ -256,6 +231,31 @@ function analyzeRace(boats, p, venue) {
     }),
     shapeText: raceShape,
   };
+}
+function venueAdjust(venueName, boatNo, role) {
+  let s = 0;
+  const v = String(venueName || window.currentVenue || "");
+
+  const add = (name, roleName, boats, point) => {
+    if (v.includes(name) && role === roleName && boats.includes(Number(boatNo))) s += point;
+  };
+
+  add("大村", "attack", [3], 6);
+  add("大村", "sashi", [2], -3);
+  add("大村", "motor", [1,2,3,4,5,6], -3);
+
+  add("若松", "outside", [5,6], 4);
+  add("若松", "nokoshi", [6], 4);
+
+  add("丸亀", "nokoshi", [1], 4);
+  add("多摩川", "attack", [3], 3);
+  add("戸田", "sashi", [2,4], 4);
+  add("江戸川", "outside", [4,5,6], 5);
+  add("平和島", "attack", [3,4], 3);
+  add("宮島", "sashi", [2,5], 3);
+  add("福岡", "manshu", [4,5,6], 5);
+
+  return s;
 }
 
 function buildTheoryFlags(boats){
