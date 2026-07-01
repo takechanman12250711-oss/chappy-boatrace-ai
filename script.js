@@ -701,8 +701,9 @@ if (highMakuri) {
   hole.push(...makeTickets([a, s], [1, n], [1, 2, n, m, 6]));
 }
 
-if (highSashi) {
+if (highSashi || s === 2) {
   safe.push(...makeTickets([1, 2, s], [s, 1, a], [1, 2, a, n, 5, 6]));
+  hole.push(...makeTickets([2], [1, a, s], [1, a, s, n, 5, 6]));
 }
 
 if (highUpset) {
