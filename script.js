@@ -218,7 +218,7 @@ function analyzeRace(boats, p, venue) {
     attackBoat: attack.boat,
     attackName: attack.name,
     attackScore: attack.score,
-    attackType: "まくり差し",
+    attackType: attackType,
     sashiBoat: sashi,
     nokoshiBoat: nokoshi,
     attackRanking: buildAttackRanking(boats),
@@ -228,7 +228,7 @@ function analyzeRace(boats, p, venue) {
       sashiBoat: sashi,
       nokoshiBoat: nokoshi
     }),
-    shapeText: `${attack.boat}号艇攻め → ${sashi}号艇差し場 → ${nokoshi}号艇残し`
+    shapeText: raceShape,
   };
 }
 
