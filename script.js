@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function runPrediction() {
   const place = val("#placeSelect");
+  window.currentVenue = place;
   const rno = String(val("#raceSelect")).replace("R", "");
   const date = normalizeDate(val("#dateInput")) || todayYmd();
   const jcd = PLACE_CODES[place] || place;
@@ -527,9 +528,10 @@ function pickAttackBoat(boats, forced) {
   let bestScore = -999;
 
   boats.filter(b => Number(b.boat) >= 2 && Number(b.boat) <= 5).forEach(b => {
-    let s = 45;
     const no = Number(b.boat);
-
+    let s = 45;
+    s += venueAdjust(window.currentVenue, no, "attack");
+    
     if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) s += 12;
     if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 10;
     if (num(b.motor2Rate, 0) >= 40) s += 8;
@@ -558,7 +560,7 @@ function pickSashiBoat(boats, attackBoat) {
     .forEach(b => {
       const no = Number(b.boat);
       let s = 40;
-
+      s += venueAdjust(window.currentVenue, no, "sashi");
       if (no === 2) s += 14;
       if (no === 5) s += 12;
       if (no === 4) s += 8;
@@ -590,7 +592,7 @@ function pickNokoshiBoat(boats, attackBoat) {
     .forEach(b => {
       const no = Number(b.boat);
       let s = 40;
-
+      s += venueAdjust(window.currentVenue, no, "nokoshi");
       if (no === 1) s += 16;
       if (no === 4) s += 10;
       if (no === 2) s += 8;
