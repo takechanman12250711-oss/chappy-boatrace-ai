@@ -1365,8 +1365,8 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
     return `${attack}号艇は展開待ち。内が競った時の差し場・道中拾いを重視。`;
   }
 
-  return `${attack}号艇が展開を作る想定。${sashi}号艇の差し場、${nokoshi}号艇の残しを確認。`;
-}
+  return `${attack}号艇が展開を作る想定。${sashi}号艇が差し場、${nokoshi}号艇が残し候補。`;
+  }
   const flyCondition =
     trust >= 80
       ? "1号艇のST遅れ、またはセンター勢のトップスタート。"
@@ -1405,4 +1405,4 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
         <p>${flyCondition}</p>
       </div>
   `;
-}
+   }
