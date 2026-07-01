@@ -235,6 +235,11 @@ function analyzeRace(boats, p, venue) {
     sashiBoat: sashi,
     nokoshiBoat: nokoshi
     }),
+    tenkaiRate: buildTenkaiRate(boats, {
+    attackBoat: attack.boat,
+    sashiBoat: sashi,
+    nokoshiBoat: nokoshi
+    }),
     attackRanking: buildAttackRanking(boats),
     dynamic: buildDynamicRaceEngine(boats, {
       inTrust: 60,
@@ -346,7 +351,42 @@ function buildAttackRanking(boats) {
     }))
     .sort((a, b) => b.score - a.score);
 }
+function buildTenkaiRate(boats, analysis) {
+  const attackBoat = boatByNo(boats, analysis.attackBoat);
+  const sashiBoat = boatByNo(boats, analysis.sashiBoat);
+  const nokoshiBoat = boatByNo(boats, analysis.nokoshiBoat);
+  const b1 = boatByNo(boats, 1);
 
+  let escape = scoreInTrust(b1, {});
+  let attack = 45;
+  let sashi = 40;
+  let upset = 25;
+
+  if (attackBoat) {
+    if (num(attackBoat.avgST, 0) > 0 && num(attackBoat.avgST) <= 0.14) attack += 15;
+    if (num(attackBoat.exhibitionST, 0) > 0 && num(attackBoat.exhibitionST) <= 0.12) attack += 12;
+    if (num(attackBoat.exhibitionTime, 0) > 0 && num(attackBoat.exhibitionTime) <= 6.75) attack += 8;
+    if (num(attackBoat.localWinRate, 0) >= 6) attack += 6;
+  }
+
+  if (sashiBoat) {
+    if (Number(sashiBoat.boat) === 2) sashi += 10;
+    if (num(sashiBoat.exhibitionTime, 0) > 0 && num(sashiBoat.exhibitionTime) <= 6.75) sashi += 8;
+    if (num(sashiBoat.localWinRate, 0) >= 6) sashi += 6;
+  }
+
+  if (escape < 65) upset += 15;
+  if (Number(analysis.attackBoat) >= 4) upset += 10;
+  if (Number(analysis.sashiBoat) >= 5) upset += 8;
+
+  return {
+    escape: clamp(escape),
+    attack: clamp(attack),
+    sashi: clamp(sashi),
+    nokoshi: clamp(calcBoatScore(nokoshiBoat)),
+    upset: clamp(upset)
+  };
+}
 function buildChappyAIIndex(boats, analysis) {
   return (boats || []).map(b => {
     const no = Number(b.boat);
