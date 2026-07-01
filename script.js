@@ -326,16 +326,16 @@ function buildDynamicRaceEngine(boats, analysis) {
     const isNokoshi = no === Number(analysis.nokoshiBoat);
     const isOutside = no >= 5;
 
-    if (no === 1) nokoshi += analysis.inTrust >= 70 ? 25 : 10;
-    if (no === 2) sashi += 18;
-    if (no === 3) attack += 20;
-    if (no === 4) attack += 16;
-    if (no === 5) sashi += 16;
-    if (no === 6) tenkai += 18;
+    if (no === 1) nokoshi += analysis.inTrust >= 70 ? 22 : 10;
+    if (no === 2) sashi += 14;
+    if (no === 3) attack += 12;
+    if (no === 4) attack += 10;
+    if (no === 5) sashi += 10;
+    if (no === 6) tenkai += 12;
 
-    if (isAttack) attack += 20;
-    if (isSashi) sashi += 20;
-    if (isNokoshi) nokoshi += 18;
+    if (isAttack) attack += 15;
+    if (isSashi) sashi += 15;
+    if (isNokoshi) nokoshi += 12;
     if (isAttack) {
   tenkai += 15;
   manshu += 10;
@@ -1133,10 +1133,6 @@ function calcBoatScore(b) {
   if (num(b.nationalWinRate, 0) >= 6) s += 8;
   if (num(b.motor2Rate, 0) >= 40) s += 5;
   if (num(b.avgST, 0) >= 0.20) s -= 6;
-  if (window.currentVenue === "大村" && num(b.boat) === 3) s += 5;
-  if (window.currentVenue === "大村" && num(b.boat) === 2) s -= 4;
-  if (window.currentVenue === "多摩川" && num(b.boat) === 3) s += 3;
-  if (window.currentVenue === "丸亀" && num(b.boat) === 1) s += 2;
   if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 8;
   if (num(b.exhibitionTime, 0) > 0 && num(b.exhibitionTime) <= 6.75) s += 8;
   if (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00) s += 10;
