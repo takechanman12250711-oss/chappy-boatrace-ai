@@ -1128,10 +1128,10 @@ function calcBoatScore(b) {
   let s = 50;
 
   if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) s += 10;
-  if (num(b.localWinRate, 0) >= 6) s += 8;
+  if (num(b.localWinRate, 0) >= 7) s += 8;
+  else if (num(b.localWinRate, 0) >= 6) s += 4;
   if (num(b.nationalWinRate, 0) >= 6) s += 8;
   if (num(b.motor2Rate, 0) >= 40) s += 5;
-  if (num(b.localWinRate, 0) >= 7) s += 4;
   if (num(b.avgST, 0) >= 0.20) s -= 6;
   if (window.currentVenue === "大村" && num(b.boat) === 3) s += 5;
   if (window.currentVenue === "大村" && num(b.boat) === 2) s -= 4;
