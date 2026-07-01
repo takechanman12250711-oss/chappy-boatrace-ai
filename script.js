@@ -192,6 +192,9 @@ function analyzeRace(boats, p, venue) {
   if (typeof chappyAnalyzeRaceEngine === "function") {
     const base = chappyAnalyzeRaceEngine(boats, p, venue);
     const theory = buildTheoryFlags(boats);
+
+    base.sashiBoat = pickSashiBoat(boats, base.attackBoat);
+    base.nokoshiBoat = pickNokoshiBoat(boats, base.attackBoat);
     return {
       ...base,
       theory,
@@ -199,10 +202,10 @@ function analyzeRace(boats, p, venue) {
       dynamic: buildDynamicRaceEngine(boats, base)
     };
   }
-const attack = pickAttackBoat(boats);
+    const attack = pickAttackBoat(boats);
 
-const sashi = attack.boat >= 4 ? attack.boat - 1 : attack.boat + 2;
-const nokoshi = attack.boat === 3 ? 4 : 1;
+    const sashi = pickSashiBoat(boats, attack.boat);
+    const nokoshi = pickNokoshiBoat(boats, attack.boat);
   return {
     inTrust: 60,
     attackBoat: attack.boat,
@@ -514,7 +517,68 @@ function pickAttackBoat(boats, forced) {
     score: clamp(bestScore)
   };
 }
+function pickSashiBoat(boats, attackBoat) {
+  let best = null;
+  let bestScore = -999;
 
+  boats
+    .filter(b => Number(b.boat) !== Number(attackBoat))
+    .forEach(b => {
+      const no = Number(b.boat);
+      let s = 40;
+
+      if (no === 2) s += 14;
+      if (no === 5) s += 12;
+      if (no === 4) s += 8;
+      if (no === 6) s += 6;
+
+      if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.15) s += 8;
+      if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 8;
+      if (num(b.exhibitionTime, 0) > 0 && num(b.exhibitionTime) <= 6.75) s += 6;
+      if (num(b.localWinRate, 0) >= 6) s += 6;
+      if (num(b.motor2Rate, 0) >= 40) s += 5;
+
+      if (no === 1 && Number(attackBoat) >= 3) s += 8;
+
+      if (s > bestScore) {
+        bestScore = s;
+        best = b;
+      }
+    });
+
+  return Number(best?.boat || 2);
+}
+
+function pickNokoshiBoat(boats, attackBoat) {
+  let best = null;
+  let bestScore = -999;
+
+  boats
+    .filter(b => Number(b.boat) !== Number(attackBoat))
+    .forEach(b => {
+      const no = Number(b.boat);
+      let s = 40;
+
+      if (no === 1) s += 16;
+      if (no === 4) s += 10;
+      if (no === 2) s += 8;
+      if (no === 6) s += 8;
+
+      if (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00) s += 12;
+      if (num(b.localWinRate, 0) >= 6.5) s += 10;
+      if (num(b.nationalWinRate, 0) >= 6) s += 6;
+      if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.16) s += 5;
+
+      if (no === 1 && Number(attackBoat) >= 3) s += 8;
+
+      if (s > bestScore) {
+        bestScore = s;
+        best = b;
+      }
+    });
+
+  return Number(best?.boat || 1);
+}
 /* 青シート */
 
 function renderMainSheet(boats, p, analysis) {
