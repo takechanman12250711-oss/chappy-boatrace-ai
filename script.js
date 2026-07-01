@@ -255,18 +255,19 @@ function analyzeRace(boats, p, venue) {
     nokoshiBoat: nokoshi
     }),
     tenkaiRate: buildTenkaiRate(boats, {
+  attackBoat: attack.boat,
+  sashiBoat: sashi,
+  nokoshiBoat: nokoshi
+}),
+
+expectedValue: buildExpectedValue(
+  buildChappyAIIndex(boats, {
     attackBoat: attack.boat,
     sashiBoat: sashi,
     nokoshiBoat: nokoshi
-    }),
-    expectedValue: buildExpectedValue(
-    buildChappyAIIndex(boats, {
-    attackBoat: attack.boat,
-    sashiBoat: sashi,
-    nokoshiBoat: nokoshi
-    }),
-    latestOddsList
-  ),
+  }),
+  latestOddsList
+),
     attackRanking: buildAttackRanking(boats),
     dynamic: buildDynamicRaceEngine(boats, {
       inTrust: 60,
