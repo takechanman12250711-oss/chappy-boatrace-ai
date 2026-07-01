@@ -1506,17 +1506,25 @@ const attackComment = judgeAttackComment(
 function buildFlowReason(type, attack, sashi, nokoshi) {
   const r = [];
 
-  r.push(`${attack}号艇が攻めの中心。`);
-  r.push(`${sashi}号艇が差し場候補。`);
-  r.push(`${nokoshi}号艇が残し候補。`);
+  r.push(`① ${attack}号艇が攻めの中心。ST・展示・場補正から展開を作る役。`);
+  r.push(`② ${sashi}号艇は差し場候補。攻めが入った時に空いた内を拾う。`);
+  r.push(`③ ${nokoshi}号艇は残し候補。攻められても2・3着に残す想定。`);
 
-  if (type === "まくり") r.push("センターが一気に攻める展開。");
-  else if (type === "まくり差し") r.push("まくり差しが決まりやすい展開。");
-  else if (type === "差し") r.push("差しが届きやすい展開。");
-  else r.push("内が競れば展開が向く。");
+  if (type === "まくり") {
+    r.push("④ まくり展開なので、攻め艇の頭まで見る。");
+  } else if (type === "まくり差し") {
+    r.push("④ まくり差し展開なので、1残り＋攻め艇2着の形を本線にする。");
+  } else if (type === "差し") {
+    r.push("④ 差し展開なので、1-2系と2-1系を両方押さえる。");
+  } else {
+    r.push("④ 展開待ちなので、内が競った時の外差し・道中拾いを見る。");
+  }
 
-  return r.join(" ");
+  r.push("⑤ フォーメーションは本線・押さえ・穴・万舟を分けて買う。");
+
+  return r.join("<br>");
 }
+
 function judgeAttackComment(type, attack, sashi, nokoshi) {
   if (type === "まくり") {
     return `${attack}号艇が全速で攻める展開。${nokoshi}号艇の残しと、${sashi}号艇の差し場を重視。`;
