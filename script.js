@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
   async function runPrediction() {
+  alert("ボタン反応OK");
   const place = val("#placeSelect");
   window.currentVenue = place;
   const rno = String(val("#raceSelect")).replace("R", "");
@@ -260,7 +261,9 @@ function venueAdjust(venueName, boatNo, role) {
 
   return s;
 }
-
+function buildRaceShape(attack, sashi, nokoshi, type) {
+  return `${attack}号艇${type} → ${sashi}号艇差し場 → ${nokoshi}号艇残し`;
+}
 function buildTheoryFlags(boats){
   const list = boats || [];
 
