@@ -240,6 +240,14 @@ function analyzeRace(boats, p, venue) {
     sashiBoat: sashi,
     nokoshiBoat: nokoshi
     }),
+    expectedValue: buildExpectedValue(
+    buildChappyAIIndex(boats, {
+    attackBoat: attack.boat,
+    sashiBoat: sashi,
+    nokoshiBoat: nokoshi
+    }),
+    latestOddsList
+  ),
     attackRanking: buildAttackRanking(boats),
     dynamic: buildDynamicRaceEngine(boats, {
       inTrust: 60,
@@ -351,6 +359,39 @@ function buildAttackRanking(boats) {
     }))
     .sort((a, b) => b.score - a.score);
 }
+
+function buildExpectedValue(aiRank, oddsList) {
+  const oddsMap = new Map();
+
+  (oddsList || []).forEach(o => {
+    const key = normalizeKey(o.key || o.result || o.number);
+    const first = Number(key[0]);
+    const odds = Number(o.odds);
+    if (first && odds > 0) {
+      const current = oddsMap.get(first) || [];
+      current.push(odds);
+      oddsMap.set(first, current);
+    }
+  });
+
+  return (aiRank || []).map(x => {
+    const arr = oddsMap.get(Number(x.boat)) || [];
+    const avgOdds = arr.length
+      ? arr.reduce((a, b) => a + b, 0) / arr.length
+      : 10;
+
+    const probability = Number(x.score) / 100;
+    const ev = +(probability * avgOdds).toFixed(2);
+
+    return {
+      boat: x.boat,
+      name: x.name,
+      score: x.score,
+      odds: avgOdds.toFixed(1),
+      ev
+    };
+  }).sort((a, b) => b.ev - a.ev);
+
 function buildTenkaiRate(boats, analysis) {
   const attackBoat = boatByNo(boats, analysis.attackBoat);
   const sashiBoat = boatByNo(boats, analysis.sashiBoat);
@@ -1515,6 +1556,7 @@ function renderRaceFlow(analysis) {
   const shape = analysis?.shapeText || "-";
   const aiRank = analysis?.chappyIndex || [];
   const tenkai = analysis?.tenkaiRate || {
+  const evRank = analysis?.expectedValue || [];
   escape: 0,
   attack: 0,
   sashi: 0,
@@ -1632,6 +1674,14 @@ const attackComment = judgeAttackComment(
   <p>➡️ 差し成立率　${tenkai.sashi}%</p>
   <p>🛡 残し成立率　${tenkai.nokoshi}%</p>
   <p>💥 波乱率　　　${tenkai.upset}%</p>
+</div>
+<div class="race-line">
+  <b>💰 回収期待値EV</b>
+  ${
+    evRank.map((x, i) => `
+      <p>${i + 1}位　${x.boat}号艇 ${x.name}　EV ${x.ev} / 平均${x.odds}倍</p>
+    `).join("")
+  }
 </div>
   `;
 }
