@@ -207,7 +207,10 @@ function analyzeRace(boats, p, venue) {
       dynamic: buildDynamicRaceEngine(boats, base)
     };
   }
-    
+    const attack = pickAttackBoat(boats);
+    const sashi = pickSashiBoat(boats, attack.boat);
+    const nokoshi = pickNokoshiBoat(boats, attack.boat);
+    const attackType = judgeAttackType(attack.boat, boats, venue, boatByNo(boats, 1));
     const raceShape = buildRaceShape(
     attack.boat,
     sashi,
