@@ -1514,7 +1514,13 @@ function renderRaceFlow(analysis) {
   const trust = analysis?.inTrust ?? 0;
   const shape = analysis?.shapeText || "-";
   const aiRank = analysis?.chappyIndex || [];
-  
+  const tenkai = analysis?.tenkaiRate || {
+  escape: 0,
+  attack: 0,
+  sashi: 0,
+  nokoshi: 0,
+  upset: 0
+};
   const trustLabel =
     trust >= 80 ? "イン信頼高め" :
     trust >= 60 ? "標準・展開次第" :
@@ -1619,6 +1625,14 @@ const attackComment = judgeAttackComment(
   }
 </div>
     </div>
+    <div class="race-line">
+  <b>🎯 展開成立率</b>
+  <p>🚤 逃げ成立率　${tenkai.escape}%</p>
+  <p>⚡ 攻め成立率　${tenkai.attack}%</p>
+  <p>➡️ 差し成立率　${tenkai.sashi}%</p>
+  <p>🛡 残し成立率　${tenkai.nokoshi}%</p>
+  <p>💥 波乱率　　　${tenkai.upset}%</p>
+</div>
   `;
 }
 function buildFlowReason(type, attack, sashi, nokoshi) {
