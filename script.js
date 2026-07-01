@@ -1484,17 +1484,20 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
 
       <div class="race-line">
         <b>🔥 攻め艇</b>
-        <p>${attackComment}</p>
+        <p>${attack}号艇：${attackComment}</p>
+        <p><b>攻め指数：</b>${calcBoatScore(boatByNo(latestRaceData?.boats, attack))}点</p>
       </div>
 
       <div class="race-line">
         <b>🌊 差し場</b>
         <p>${sashi}号艇：攻めが入った時に差し場を拾う候補。</p>
+        <p><b>差し指数：</b>${calcBoatScore(boatByNo(latestRaceData?.boats, sashi))}点</p>
       </div>
 
       <div class="race-line">
         <b>⚡ 残し艇</b>
         <p>${nokoshi}号艇：攻められても2・3着に残す候補。</p>
+        <p><b>残し指数：</b>${calcBoatScore(boatByNo(latestRaceData?.boats, nokoshi))}点</p>
       </div>
 
             <div class="race-line">
