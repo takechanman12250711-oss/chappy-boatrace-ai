@@ -225,6 +225,11 @@ function analyzeRace(boats, p, venue) {
     attackType: attackType,
     sashiBoat: sashi,
     nokoshiBoat: nokoshi,
+    chappyIndex: buildChappyAIIndex(boats,{
+    attackBoat:attack.boat,
+    sashiBoat:sashi,
+    nokoshiBoat:nokoshi
+    }),
     attackRanking: buildAttackRanking(boats),
     dynamic: buildDynamicRaceEngine(boats, {
       inTrust: 60,
@@ -335,6 +340,46 @@ function buildAttackRanking(boats) {
       score: calcBoatScore(b)
     }))
     .sort((a, b) => b.score - a.score);
+}
+
+function buildChappyAIIndex(boats, analysis) {
+  return (boats || []).map(b => {
+    const no = Number(b.boat);
+    let score = 50;
+
+    // 基本能力
+    if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) score += 10;
+    if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) score += 8;
+    if (num(b.exhibitionTime, 0) > 0 && num(b.exhibitionTime) <= 6.75) score += 8;
+    if (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00) score += 8;
+
+    // 実力・当地
+    if (num(b.nationalWinRate, 0) >= 6) score += 8;
+    if (num(b.localWinRate, 0) >= 6) score += 8;
+
+    // モーターは加点控えめ
+    if (num(b.motor2Rate, 0) >= 40) score += 5;
+    if (num(b.motor2Rate, 0) > 0 && num(b.motor2Rate) <= 25) score -= 5;
+
+    // 展開役割
+    if (no === Number(analysis.attackBoat)) score += 12;
+    if (no === Number(analysis.sashiBoat)) score += 10;
+    if (no === Number(analysis.nokoshiBoat)) score += 8;
+
+    // 場別補正
+    score += venueAdjust(window.currentVenue, no, "attack");
+    score += venueAdjust(window.currentVenue, no, "sashi");
+    score += venueAdjust(window.currentVenue, no, "nokoshi");
+
+    // 外枠は万舟寄り、軸評価は少し抑える
+    if (no >= 5) score -= 3;
+
+    return {
+      boat: no,
+      name: b.name || "",
+      score: clamp(score)
+    };
+  }).sort((a, b) => b.score - a.score);
 }
 
 function buildDynamicRaceEngine(boats, analysis) {
