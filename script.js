@@ -33,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
   async function runPrediction() {
-  alert("ボタン反応OK");
   const place = val("#placeSelect");
   window.currentVenue = place;
   const rno = String(val("#raceSelect")).replace("R", "");
