@@ -1418,9 +1418,7 @@ function renderRaceFlow(analysis) {
   const nokoshi = analysis?.nokoshiBoat || "-";
   const trust = analysis?.inTrust ?? 0;
   const shape = analysis?.shapeText || "-";
-  const ranking = analysis?.attackRanking || [];
-  const venueNote = analysis?.venueNote || "";
-
+  
   const trustLabel =
     trust >= 80 ? "イン信頼高め" :
     trust >= 60 ? "標準・展開次第" :
@@ -1438,51 +1436,28 @@ function renderRaceFlow(analysis) {
     Number(attack) === 5 ? "外差し・展開待ち" :
     "展開待ち";
     
-    const attackComment = judgeAttackComment(
-    const flowReason = buildFlowReason(attack, sashi, nokoshi, trust);
+    const flowReason = buildFlowReason(
   analysis?.attackType || attackPattern,
   attack,
   sashi,
   nokoshi
 );
-function buildFlowReason(type, attack, sashi, nokoshi) {
-  const r = [];
 
-  r.push(`${attack}号艇が攻めの中心。`);
-  r.push(`${sashi}号艇が差し場候補。`);
-  r.push(`${nokoshi}号艇が残し候補。`);
+const attackComment = judgeAttackComment(
+  analysis?.attackType || attackPattern,
+  attack,
+  sashi,
+  nokoshi
+);
 
-  if (type === "まくり") {
-    r.push("センターが一気に攻める展開。");
-  } else if (type === "まくり差し") {
-    r.push("まくり差しが決まりやすい展開。");
-  } else if (type === "差し") {
-    r.push("差しが届きやすい展開。");
-  } else {
-    r.push("内が競れば展開が向く。");
-  }
+const flyCondition =
+  trust >= 80
+    ? "1号艇のST遅れ、またはセンター勢のトップスタート。"
+    : trust >= 60
+      ? "1号艇が少し流れる、3・4号艇が攻め切る、5号艇に差し場が開く。"
+      : "インが凹む、センターが攻める、外が道中で拾う。";
 
-  return r.join(" ");
-}
-function judgeAttackComment(type, attack, sashi, nokoshi) {
-  if (type === "まくり") {
-    return `${attack}号艇が全速で攻める展開。${nokoshi}号艇の残しと、${sashi}号艇の差し場を重視。`;
-  }
 
-  if (type === "まくり差し") {
-    return `${attack}号艇がまくり差しで差し場を狙う展開。内残りと外の連動を両方見る。`;
-  }
-
-  if (type === "差し") {
-    return `${attack}号艇の差し展開。イン残りを見ながら、2着・3着の残しを重視。`;
-  }
-
-  if (type === "展開待ち") {
-    return `${attack}号艇は展開待ち。内が競った時の差し場・道中拾いを重視。`;
-  }
-
-  return `${attack}号艇が展開を作る想定。${sashi}号艇が差し場、${nokoshi}号艇が残し候補。`;
-  }
   const flyCondition =
     trust >= 80
       ? "1号艇のST遅れ、またはセンター勢のトップスタート。"
@@ -1498,8 +1473,6 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
         <p><b>波乱度：</b>${waveLevel}</p>
         <p><b>攻めパターン：</b>${analysis?.attackType || attackPattern}</p>
       </div>
-
-
 
       <div class="race-line">
         <b>🔥 攻め艇</b>
@@ -1532,3 +1505,36 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
     </div>
   `;
 }
+function buildFlowReason(type, attack, sashi, nokoshi) {
+  const r = [];
+
+  r.push(`${attack}号艇が攻めの中心。`);
+  r.push(`${sashi}号艇が差し場候補。`);
+  r.push(`${nokoshi}号艇が残し候補。`);
+
+  if (type === "まくり") r.push("センターが一気に攻める展開。");
+  else if (type === "まくり差し") r.push("まくり差しが決まりやすい展開。");
+  else if (type === "差し") r.push("差しが届きやすい展開。");
+  else r.push("内が競れば展開が向く。");
+
+  return r.join(" ");
+}
+function judgeAttackComment(type, attack, sashi, nokoshi) {
+  if (type === "まくり") {
+    return `${attack}号艇が全速で攻める展開。${nokoshi}号艇の残しと、${sashi}号艇の差し場を重視。`;
+  }
+
+  if (type === "まくり差し") {
+    return `${attack}号艇がまくり差しで差し場を狙う展開。内残りと外の連動を両方見る。`;
+  }
+
+  if (type === "差し") {
+    return `${attack}号艇の差し展開。イン残りを見ながら、2着・3着の残しを重視。`;
+  }
+
+  if (type === "展開待ち") {
+    return `${attack}号艇は展開待ち。内が競った時の差し場・道中拾いを重視。`;
+  }
+
+  return `${attack}号艇が展開を作る想定。${sashi}号艇が差し場、${nokoshi}号艇が残し候補。`;
+  }
