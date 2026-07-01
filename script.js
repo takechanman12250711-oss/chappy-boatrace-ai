@@ -679,7 +679,13 @@ function renderFormations(p, analysis) {
     safe = makeTickets([1], [a, 2, s], [2, a, n, s, 5, 6]);
     hole = makeTickets([a, s, n], [1, 2], [1, 2, s, n, m, 6]);
   } else if (type === "まくり差し") {
-    main = makeTickets([1], [a, s, 2], [2, a, s, n, 5, 6]);
+    if (trust >= 75) {
+  main = makeTickets([1], [a, s], [2, a, s]);
+} else if (trust >= 60) {
+  main = makeTickets([1], [a, s], [2, a, s, n]);
+} else {
+  main = makeTickets([1, a], [a, s], [2, a, s, n]);
+}
     safe = makeTickets([a, 1], [1, s, n], [1, 2, s, n, 5, 6]);
     hole = makeTickets([s, n, a], [a, 1], [1, 2, s, n, m, 6]);
   } else {
