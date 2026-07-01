@@ -1345,6 +1345,12 @@ function renderRaceFlow(analysis) {
   sashi,
   nokoshi
 );
+
+const sashiComment =
+`${sashi}号艇：攻めが入った時に差し場を拾う候補。`;
+
+const nokoshiComment =
+`${nokoshi}号艇：攻められても2・3着に残す候補。`;
 function judgeAttackComment(type, attack, sashi, nokoshi) {
   if (type === "まくり") {
     return `${attack}号艇が全速で攻める展開。${nokoshi}号艇の残しと、${sashi}号艇の差し場を重視。`;
