@@ -201,11 +201,16 @@ function analyzeRace(boats, p, venue) {
     const nokoshi = pickNokoshiBoat(boats, attack.boat);
     const attackType = judgeAttackType(attack.boat, boats, venue, boatByNo(boats, 1));
     return {
-      ...base,
-      theory,
-      attackRanking: buildAttackRanking(boats),
-      dynamic: buildDynamicRaceEngine(boats, base)
-    };
+  ...base,
+  theory,
+  chappyIndex: buildChappyAIIndex(boats, {
+    attackBoat: base.attackBoat,
+    sashiBoat: base.sashiBoat,
+    nokoshiBoat: base.nokoshiBoat
+  }),
+  attackRanking: buildAttackRanking(boats),
+  dynamic: buildDynamicRaceEngine(boats, base)
+};
   }
     const attack = pickAttackBoat(boats);
     const sashi = pickSashiBoat(boats, attack.boat);
@@ -226,9 +231,10 @@ function analyzeRace(boats, p, venue) {
     sashiBoat: sashi,
     nokoshiBoat: nokoshi,
     chappyIndex: buildChappyAIIndex(boats,{
-    attackBoat:attack.boat,
-    sashiBoat:sashi,
-    nokoshiBoat:nokoshi
+    chappyIndex: buildChappyAIIndex(boats, {
+    attackBoat: attack.boat,
+    sashiBoat: sashi,
+    nokoshiBoat: nokoshi
     }),
     attackRanking: buildAttackRanking(boats),
     dynamic: buildDynamicRaceEngine(boats, {
@@ -1468,6 +1474,7 @@ function renderRaceFlow(analysis) {
   const nokoshi = analysis?.nokoshiBoat || "-";
   const trust = analysis?.inTrust ?? 0;
   const shape = analysis?.shapeText || "-";
+  const aiRank = analysis?.chappyIndex || [];
   
   const trustLabel =
     trust >= 80 ? "イン信頼高め" :
@@ -1557,7 +1564,21 @@ const attackComment = judgeAttackComment(
         <b>⚠️ 軸が飛ぶ条件</b>
         <p>${flyCondition}</p>
       </div>
+<div class="race-line">
+  <b>🤖 チャッピーAI指数</b>
 
+  ${
+    aiRank
+      .map((x, i) => `
+        <p>
+  ${i + 1}位　
+  ${x.boat}号艇 ${x.name}
+  <b>${x.score}点</b>
+</p>
+      `)
+      .join("")
+  }
+</div>
     </div>
   `;
 }
