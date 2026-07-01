@@ -1321,7 +1321,6 @@ function renderRaceFlow(analysis) {
   const trust = analysis?.inTrust ?? 0;
   const shape = analysis?.shapeText || "-";
   const ranking = analysis?.attackRanking || [];
-  const dynamic = analysis?.dynamic || [];
   const venueNote = analysis?.venueNote || "";
 
   const trustLabel =
@@ -1400,9 +1399,11 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
         <p>${nokoshi}号艇：攻められても2・3着に残す候補。</p>
       </div>
 
-      <div class="race-line">
+            <div class="race-line">
         <b>⚠️ 軸が飛ぶ条件</b>
         <p>${flyCondition}</p>
       </div>
+
+    </div>
   `;
-   }
+}
