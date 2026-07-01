@@ -1495,6 +1495,19 @@ const attackComment = judgeAttackComment(
         <p>${flowReason}</p>
       </div>
       
+      <div class="race-line">
+        <b>🎯 展開シミュレーション</b>
+
+        <p><b>本線</b></p>
+        <p>${buildSimulation(analysis,"main")}</p>
+
+        <p><b>対抗</b></p>
+        <p>${buildSimulation(analysis,"sub")}</p>
+
+        <p><b>万舟</b></p>
+      <p>${buildSimulation(analysis,"hole")}</p>
+     </div>
+      
             <div class="race-line">
         <b>⚠️ 軸が飛ぶ条件</b>
         <p>${flyCondition}</p>
@@ -1523,6 +1536,43 @@ function buildFlowReason(type, attack, sashi, nokoshi) {
   r.push("⑤ フォーメーションは本線・押さえ・穴・万舟を分けて買う。");
 
   return r.join("<br>");
+}
+
+function buildSimulation(analysis, mode) {
+  const attack = analysis.attackBoat;
+  const sashi = analysis.sashiBoat;
+  const nokoshi = analysis.nokoshiBoat;
+
+  if (mode === "main") {
+    return `
+① ${attack}号艇が攻める
+<br>↓
+<br>② ${sashi}号艇に差し場
+<br>↓
+<br>③ ${nokoshi}号艇が残す
+<br>↓
+<br><b>本線決着</b>`;
+  }
+
+  if (mode === "sub") {
+    return `
+① イン先マイ
+<br>↓
+<br>② ${attack}号艇追走
+<br>↓
+<br>③ ${sashi}号艇差し
+<br>↓
+<br><b>押さえ展開</b>`;
+  }
+
+  return `
+① センター攻め
+<br>↓
+<br>② 外差し
+<br>↓
+<br>③ 展開突き
+<br>↓
+<br><b>万舟展開</b>`;
 }
 
 function judgeAttackComment(type, attack, sashi, nokoshi) {
