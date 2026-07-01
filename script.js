@@ -1439,12 +1439,31 @@ function renderRaceFlow(analysis) {
     "展開待ち";
     
     const attackComment = judgeAttackComment(
+    const flowReason = buildFlowReason(attack, sashi, nokoshi, trust);
   analysis?.attackType || attackPattern,
   attack,
   sashi,
   nokoshi
 );
+function buildFlowReason(type, attack, sashi, nokoshi) {
+  const r = [];
 
+  r.push(`${attack}号艇が攻めの中心。`);
+  r.push(`${sashi}号艇が差し場候補。`);
+  r.push(`${nokoshi}号艇が残し候補。`);
+
+  if (type === "まくり") {
+    r.push("センターが一気に攻める展開。");
+  } else if (type === "まくり差し") {
+    r.push("まくり差しが決まりやすい展開。");
+  } else if (type === "差し") {
+    r.push("差しが届きやすい展開。");
+  } else {
+    r.push("内が競れば展開が向く。");
+  }
+
+  return r.join(" ");
+}
 function judgeAttackComment(type, attack, sashi, nokoshi) {
   if (type === "まくり") {
     return `${attack}号艇が全速で攻める展開。${nokoshi}号艇の残しと、${sashi}号艇の差し場を重視。`;
@@ -1499,7 +1518,12 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
         <p>${nokoshi}号艇：攻められても2・3着に残す候補。</p>
         <p><b>残し指数：</b>${calcBoatScore(boatByNo(latestRaceData?.boats, nokoshi))}点</p>
       </div>
-
+      
+      <div class="race-line">
+        <b>🧠 展開根拠</b>
+        <p>${flowReason}</p>
+      </div>
+      
             <div class="race-line">
         <b>⚠️ 軸が飛ぶ条件</b>
         <p>${flyCondition}</p>
