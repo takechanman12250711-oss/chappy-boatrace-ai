@@ -610,7 +610,9 @@ function renderFormations(p, analysis) {
   let safe = [];
   let hole = [];
   let manshu = [];
-
+  
+  const dynamic = analysis?.dynamic || [];
+  
   if (type === "差し") {
     main = makeTickets([1, 2], [2, 1, a], [a, n, s, 5, 6]);
     safe = makeTickets([1], [a, n, s], [2, a, n, s, 5, 6]);
