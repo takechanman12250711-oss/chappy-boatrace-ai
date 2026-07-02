@@ -1835,10 +1835,10 @@ const attackComment = judgeAttackComment(
     aiRank.map((x, i) => {
 
       const comment =
-        x.score >= 90 ? "🔥 軸候補" :
-        x.score >= 80 ? "⭕ 連対期待" :
-        x.score >= 70 ? "△ 3着候補" :
-        "💣 穴候補";
+  x.score >= 90 ? "◎本命" :
+  x.score >= 80 ? "○対抗" :
+  x.score >= 70 ? "▲連下" :
+  "☆穴";
 
       return `
         <p>
