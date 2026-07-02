@@ -93,6 +93,7 @@ function renderAll(data) {
   setHTML("#mainSheetArea", renderMainSheet(boats, p, analysis));
   setHTML("#formationArea", renderFormations(p, analysis));
   setHTML("#oddsArea", renderOdds(odds));
+  console.log("odds count", latestOddsList.length, latestOddsList.slice(0, 3));
   setHTML(
   "#manshuSheetArea",
   renderManshuSheet(boats, p, analysis)
