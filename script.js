@@ -956,6 +956,23 @@ function makeTickets(firstList, secondList, thirdList) {
 
   return [...new Set(out)];
 }
+function buildBuyReason(analysis) {
+  const tenkai = analysis?.tenkaiRate || {};
+  const attack = analysis?.attackBoat || "-";
+  const sashi = analysis?.sashiBoat || "-";
+  const nokoshi = analysis?.nokoshiBoat || "-";
+  const trust = analysis?.inTrust || 0;
+
+  const r = [];
+
+  r.push(`イン信頼度は${trust}点。${trust >= 70 ? "本線はイン残り中心。" : "攻め艇・差し場も必要。"}`);
+  r.push(`${attack}号艇が攻め役。攻め成立率${tenkai.attack || 0}%で展開の中心。`);
+  r.push(`${sashi}号艇は差し場候補。差し成立率${tenkai.sashi || 0}%を評価。`);
+  r.push(`${nokoshi}号艇は残し候補。残し成立率${tenkai.nokoshi || 0}%で2・3着候補。`);
+  r.push(`波乱率は${tenkai.upset || 0}%。${tenkai.upset >= 50 ? "万舟も強めに見る。" : "本線と押さえを中心に見る。"}`);
+
+  return r.map(x => `<p>・${x}</p>`).join("");
+}
 function buildFormationReason(type, trust, prob, analysis) {
 
   const txt = [];
