@@ -101,7 +101,7 @@ function renderAll(data) {
   setHTML(
   "#manshuSheetArea",
   renderManshuSheet(boats, p, analysis)
-  + renderMissingTop30(missing)
+  + renderMissingTop30(missing, odds)
   + renderManshuOdds(odds)
 );
   setHTML("#alertArea", renderAlerts(p));
@@ -1265,14 +1265,14 @@ function renderManshuOdds(odds) {
   `;
 }
 
-function renderMissingTop30(list) {
+function renderMissingTop30(list, oddsList = []) {
   if (!Array.isArray(list) || !list.length) {
     return `<div class="summary-box">出てない目上位30取得中...</div>`;
   }
 
   const oddsMap = new Map();
 
-(latestOddsList || []).forEach(o => {
+(oddsList || latestOddsList || []).forEach(o => {
   const raw = o.key || o.result || o.number || "";
   const key = normalizeKey(raw);
   const shown = showKey(raw).replaceAll("-", "");
