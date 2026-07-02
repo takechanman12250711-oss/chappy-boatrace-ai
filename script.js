@@ -1557,7 +1557,22 @@ function val(id) {
 function $(id) {
   return document.querySelector(id);
 }
+function termHelp(term) {
+  const dict = {
+    "モーター2連率": "そのモーターが1着または2着に入った割合です。",
+    "モーター3連率": "そのモーターが3着以内に入った割合です。",
+    "ボート2連率": "そのボートが1着または2着に入った割合です。",
+    "ボート3連率": "そのボートが3着以内に入った割合です。",
+    "回収期待値": "オッズとAI指数から見た買う価値の目安です。高いほど狙う価値があります。",
+    "舟券太郎理論": "スリットアラート・ダブルタイム理論・新サム理論などをまとめた評価です。"
+  };
 
+  alert(`${term}\n\n${dict[term] || "説明がまだ登録されていません。"}`);
+}
+
+function helpBtn(term) {
+  return `<button class="help-btn" onclick="termHelp('${term}')">?</button>`;
+}
 function fmtST(v) {
   if (v === null || v === undefined || v === "" || Number.isNaN(Number(v))) return "-";
   const n = Number(v);
