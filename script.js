@@ -1220,19 +1220,31 @@ function renderManshuOdds(odds) {
 
 function renderMissingTop30(list) {
   if (!Array.isArray(list) || !list.length) {
-    return `<div class="summary-box">出てない目TOP30取得中...</div>`;
+    return `<div class="summary-box">出てない目上位30取得中...</div>`;
   }
+
+  const oddsMap = new Map(
+    (latestOddsList || []).map(o => [
+      normalizeKey(o.key || o.result || o.number),
+      o.odds
+    ])
+  );
 
   return `
     <div class="sheet missing-card">
-      <h3>📊 出てない目 TOP30</h3>
+      <h3>📊 出てない目上位30</h3>
       <div class="odds-grid">
-        ${list.slice(0, 30).map((x, i) => `
-          <div class="odds-pill">
-            <b>${x.rank || i + 1}. ${showKey(x.key || x.result || x.number)}</b>
-            <span>${x.odds || "-"}倍</span>
-          </div>
-        `).join("")}
+        ${list.slice(0, 30).map((x, i) => {
+          const key = x.key || x.result || x.number;
+          const odds = x.odds || oddsMap.get(normalizeKey(key)) || "-";
+
+          return `
+            <div class="odds-pill">
+              <b>${x.rank || i + 1}. ${showKey(key)}</b>
+              <span>${odds}倍</span>
+            </div>
+          `;
+        }).join("")}
       </div>
     </div>
   `;
