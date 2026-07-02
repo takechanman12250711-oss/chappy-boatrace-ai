@@ -1840,12 +1840,12 @@ const attackComment = judgeAttackComment(
   x.score >= 70 ? "▲連下" :
   "☆穴";
 
-      return `
-        <p>
-          ${i+1}位　
-          ${x.boat}号艇 ${x.name}
-          <b>${x.score}点</b>
-          （${comment}）
+return `
+<p>
+🏆${i+1}位
+${x.boat}号艇 ${x.name}
+AI指数 ${x.score}点
+${comment}
         </p>
       `;
     }).join("")
