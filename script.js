@@ -1288,8 +1288,9 @@ function renderMissingTop30(list, oddsList = []) {
       <div class="odds-grid">
         ${list.slice(0, 30).map((x, i) => {
           const key = x.key || x.result || x.number;
-          const odds = x.odds || oddsMap.get(normalizeKey(key)) || "-";
-
+          const keyA = normalizeKey(key);
+           const keyB = showKey(key).replaceAll("-", "");
+           const odds = x.odds || oddsMap.get(keyA) || oddsMap.get(keyB) || "-";
           return `
             <div class="odds-pill">
               <b>${x.rank || i + 1}. ${showKey(key)}</b>
