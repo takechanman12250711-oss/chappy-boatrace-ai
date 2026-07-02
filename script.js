@@ -114,7 +114,7 @@ function renderEntryTable(boats) {
       <table>
         <thead>
           <tr>
-            <th>艇</th><th>選手</th><th>級</th><th>平均ST</th><th>全国</th><th>当地</th><th>M2</th><th>役割</th>
+            <th>艇</th><th>選手</th><th>級</th><th>平均ST</th><th>全国</th><th>当地</th><th>モーター2連率 ${helpBtn("モーター2連率")}</th><th>役割</th>
           </tr>
         </thead>
         <tbody>
@@ -169,7 +169,14 @@ function renderMaterialPanel(venue, weather, boats, analysis) {
         <table>
           <thead>
             <tr>
-              <th>艇</th><th>全国勝率</th><th>当地勝率</th><th>M</th><th>M2</th><th>M3</th><th>展示</th><th>展示ST</th>
+  <th>艇</th>
+<th>全国勝率</th>
+<th>当地勝率</th>
+<th>モーター番号</th>
+<th>モーター2連率 ${helpBtn("モーター2連率")}</th>
+<th>モーター3連率 ${helpBtn("モーター3連率")}</th>
+<th>展示タイム</th>
+<th>展示スタート</th>
             </tr>
           </thead>
           <tbody>
