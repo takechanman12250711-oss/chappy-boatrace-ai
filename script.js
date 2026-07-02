@@ -1827,19 +1827,28 @@ const attackComment = judgeAttackComment(
         <p>${flyCondition}</p>
       </div>
 <div class="race-line">
-  <b>🤖 チャッピーAI指数</b>
+  <b>🤖 チャッピー人工知能指数</b>
 
   ${
-    aiRank
-      .map((x, i) => `
+    aiRank.map((x, i) => {
+
+      const comment =
+        x.score >= 90 ? "🔥 軸候補" :
+        x.score >= 80 ? "⭕ 連対期待" :
+        x.score >= 70 ? "△ 3着候補" :
+        "💣 穴候補";
+
+      return `
         <p>
-  ${i + 1}位　
-  ${x.boat}号艇 ${x.name}
-  <b>${x.score}点</b>
-</p>
-      `)
-      .join("")
+          ${i+1}位　
+          ${x.boat}号艇 ${x.name}
+          <b>${x.score}点</b>
+          （${comment}）
+        </p>
+      `;
+    }).join("")
   }
+
 </div>
     <div class="race-line">
   <b>🎯 展開成立率</b>
