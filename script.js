@@ -1298,11 +1298,12 @@ function renderMissingTop30(list, oddsList = []) {
            const keyB = showKey(key).replaceAll("-", "");
            const rawOdds = x.odds && x.odds !== "-" ? x.odds : "";
            const odds = rawOdds || oddsMap.get(keyA) || oddsMap.get(keyB) || "-";
+           const comment = buildHoleComment(key, odds);
           return `
             <div class="odds-pill">
               <b>${x.rank || i + 1}. ${showKey(key)}</b>
               <span>${odds}倍</span>
-              <span class="odds-comment">${buildHoleComment(key, odds)}</span>
+              <span class="odds-comment">${comment}</span>
             </div>
           `;
         }).join("")}
@@ -1947,4 +1948,18 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
 
   return `${attack}号艇が展開を作る想定。${sashi}号艇が差し場、${nokoshi}号艇が残し候補。`;
   }
+  function buildHoleComment(key, odds) {
+  if (!key) return "";
+
+  const a = key.split("-").map(Number);
+
+  if (a[0] === 2) return "◎2差し";
+  if (a[0] === 3) return "◎3攻め";
+  if (a[0] === 4) return "◎4カド";
+  if (a[0] === 5) return "◎5一撃";
+  if (a[0] === 6) return "◎6展開";
+
+  if (Number(odds) >= 200) return "○高配当";
+  return "";
+}
   
