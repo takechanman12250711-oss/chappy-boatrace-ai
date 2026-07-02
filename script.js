@@ -466,17 +466,23 @@ function buildChappyAIIndex(boats, analysis) {
     const no = Number(b.boat);
     let score = 50;
 
-    // 基本能力
-    if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) score += 10;
+    // 選手実力
+    score += num(b.nationalWinRate, 0) * 2;
+    score += num(b.localWinRate, 0) * 1.5;
+
+    // スタートタイミング
+    if (num(b.avgST, 0) > 0) {
+      if (num(b.avgST) <= 0.13) score += 12;
+      else if (num(b.avgST) <= 0.15) score += 8;
+      else if (num(b.avgST) >= 0.20) score -= 10;
+    }
+
+    // 展示
     if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) score += 8;
     if (num(b.exhibitionTime, 0) > 0 && num(b.exhibitionTime) <= 6.75) score += 8;
-    if (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00) score += 8;
+    if (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00) score += 10;
 
-    // 実力・当地
-    if (num(b.nationalWinRate, 0) >= 6) score += 8;
-    if (num(b.localWinRate, 0) >= 6) score += 8;
-
-    // モーターは加点控えめ
+    // モーターは控えめ
     if (num(b.motor2Rate, 0) >= 40) score += 5;
     if (num(b.motor2Rate, 0) > 0 && num(b.motor2Rate) <= 25) score -= 5;
 
@@ -490,7 +496,7 @@ function buildChappyAIIndex(boats, analysis) {
     score += venueAdjust(window.currentVenue, no, "sashi");
     score += venueAdjust(window.currentVenue, no, "nokoshi");
 
-    // 外枠は万舟寄り、軸評価は少し抑える
+    // 外枠は軸評価だけ少し下げる
     if (no >= 5) score -= 3;
 
     return {
