@@ -911,10 +911,10 @@ if (highUpset) {
   ...makeTickets([m, s, n, a], [a, 1, s], [1, 2, 3, 4, 5, 6])
 );
 
-  main = compactTicketList(main, 4);
-  safe = compactTicketList(removeDuplicateForms(safe, main), 5);
-  hole = compactTicketList(removeDuplicateForms(hole, [...main, ...safe]), 5);
-  manshu = compactTicketList(removeDuplicateForms(manshu, [...main, ...safe, ...hole]), 6);
+main = rankTicketsByRace(main, analysis, "main").slice(0, 5);
+safe = rankTicketsByRace(removeDuplicateForms(safe, main), analysis, "safe").slice(0, 6);
+hole = rankTicketsByRace(removeDuplicateForms(hole, [...main, ...safe]), analysis, "hole").slice(0, 6);
+manshu = rankTicketsByRace(removeDuplicateForms(manshu, [...main, ...safe, ...hole]), analysis, "manshu").slice(0, 8);
 
   return `
     <div class="sheet">
@@ -942,7 +942,46 @@ ${buildFormationReason(type, trust, prob, analysis)}
     </div>
   `;
 }
+function rankTicketsByRace(list, analysis, mode) {
+  const attack = Number(analysis?.attackBoat || 3);
+  const sashi = Number(analysis?.sashiBoat || 2);
+  const nokoshi = Number(analysis?.nokoshiBoat || 1);
+  const trust = Number(analysis?.inTrust || 60);
+  const tenkai = analysis?.tenkaiRate || {};
+  const upset = Number(tenkai.upset || 0);
 
+  return [...new Set(list || [])]
+    .map(ticket => {
+      const nums = String(ticket).split("-").map(Number);
+      const [first, second, third] = nums;
+      let score = 50;
+
+      if (first === 1 && trust >= 70) score += 20;
+      if (first === attack) score += Number(tenkai.attack || 0) / 3;
+      if (second === sashi || third === sashi) score += Number(tenkai.sashi || 0) / 4;
+      if (second === nokoshi || third === nokoshi) score += Number(tenkai.nokoshi || 0) / 4;
+
+      if (mode === "manshu") {
+        if (first >= 4) score += 20;
+        if (second >= 4 || third >= 5) score += 12;
+        score += upset / 2;
+      }
+
+      if (mode === "hole") {
+        if (first === attack || first === sashi) score += 12;
+        if (third >= 5) score += 8;
+      }
+
+      const odds = Number(compositeOddsForForm(ticket) || 0);
+      if (odds >= 30) score += 8;
+      if (odds >= 80) score += 12;
+      if (odds >= 150) score += mode === "manshu" ? 20 : 5;
+
+      return { ticket, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(x => x.ticket);
+}
 function makeTickets(firstList, secondList, thirdList) {
   const out = [];
 
