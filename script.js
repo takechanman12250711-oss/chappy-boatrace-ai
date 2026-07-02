@@ -1538,6 +1538,16 @@ function calcBoatScore(b) {
   if (num(b.lapTime, 0) > 0 && num(b.lapTime) >= 37.20) s -= 3;
   if (num(b.motor2Rate, 0) > 0 && num(b.motor2Rate) <= 25) s -= 4;
   
+  // 地元・当地を少し強化
+if (num(b.localWinRate, 0) >= 7.0) s += 4;
+if (num(b.local2Rate, 0) >= 50) s += 3;
+
+// 今節スタート重視
+if (num(b.thisST, 0) > 0 && num(b.thisST) <= 0.14) s += 6;
+
+// 今節着順重視
+if (num(b.thisAverage, 0) >= 6.0) s += 5;
+
   return clamp(s);
 }
 
