@@ -1290,7 +1290,7 @@ function renderMissingTop30(list, oddsList = []) {
 
   return `
     <div class="sheet missing-card">
-      <h3>📊 出てない目上位30</h3>
+      <h3>📊 オッズ連動穴候補上位30</h3>
       <div class="odds-grid">
         ${list.slice(0, 30).map((x, i) => {
           const key = x.key || x.result || x.number;
