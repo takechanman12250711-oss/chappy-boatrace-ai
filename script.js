@@ -1947,3 +1947,24 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
 
   return `${attack}号艇が展開を作る想定。${sashi}号艇が差し場、${nokoshi}号艇が残し候補。`;
   }
+  function calcHoleIndex(key, odds){
+
+  let score = 50;
+
+  odds = Number(odds) || 999;
+
+  // オッズ
+  if (odds >= 100) score += 15;
+  if (odds >= 300) score += 10;
+  if (odds >= 1000) score += 5;
+
+  // 1頭は少し下げる
+  if (key.startsWith("1-")) score -= 8;
+
+  // 外頭は上げる
+  if (key.startsWith("4-")) score += 8;
+  if (key.startsWith("5-")) score += 12;
+  if (key.startsWith("6-")) score += 15;
+
+  return Math.max(0, Math.min(100, score));
+}
