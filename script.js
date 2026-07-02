@@ -1298,6 +1298,7 @@ function renderMissingTop30(list, oddsList = []) {
            const keyB = showKey(key).replaceAll("-", "");
            const rawOdds = x.odds && x.odds !== "-" ? x.odds : "";
            const odds = rawOdds || oddsMap.get(keyA) || oddsMap.get(keyB) || "-";
+           const holeIndex = calcHoleIndex(key, odds);
           return `
             <div class="odds-pill">
               <b>${x.rank || i + 1}. ${showKey(key)}</b>
