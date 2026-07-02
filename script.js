@@ -923,6 +923,10 @@ if (highUpset) {
       <p class="aiReason">
 ${buildFormationReason(type, trust, prob, analysis)}
 </p>
+<div class="summary-box">
+  <b>🧠 買い理由</b>
+  ${buildBuyReason(analysis)}
+</div>
 
       <h4 class="form-main">本線</h4>
       ${ticketsWithOdds(main)}
