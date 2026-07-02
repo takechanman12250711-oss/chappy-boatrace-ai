@@ -49,10 +49,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const oddsData = await safeJson(`${API_BASE}/odds?jcd=${jcd}&rno=${rno}&date=${date}`, { ok:false, odds:[] });
     const missData = await safeJson(`/api/missing?jcd=${jcd}&rno=${rno}&date=${date}`, { ok:false, missing:[] });
-    data.odds = oddsData?.ok ? oddsData.odds || [] : [];
-    data.missing = missData?.ok ? missData.missing || [] : [];
 
-    if (!data.ok || !Array.isArray(data.boats) || data.boats.length === 0) {
+    data.odds = oddsData?.ok
+     ? (oddsData.odds || oddsData.list || oddsData.data || oddsData.results || [])
+     : [];
+
+     data.missing = missData?.ok ? missData.missing || [] : [];
+
+     if (!data.ok || !Array.isArray(data.boats) || data.boats.length === 0) {
       showError(data.message || data.error || "出走表データが取得できません");
       setStatus("取得失敗");
       return;
