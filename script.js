@@ -1118,7 +1118,10 @@ function compositeOddsForForm(form) {
 
 function renderOdds(odds) {
   latestOddsList = Array.isArray(odds) ? odds : [];
-
+  latestOddsList = latestOddsList.map(o => ({
+  ...o,
+  key: normalizeKey(o.key || o.result || o.number)
+}));
   if (!latestOddsList.length) {
     return `<div class="summary-box">オッズ未取得</div>`;
   }
@@ -1224,11 +1227,11 @@ function renderMissingTop30(list) {
   }
 
   const oddsMap = new Map(
-    (latestOddsList || []).map(o => [
-      normalizeKey(o.key || o.result || o.number),
-      o.odds
-    ])
-  );
+  (latestOddsList || []).map(o => [
+    normalizeKey(o.key || o.result || o.number),
+    o.odds
+  ])
+);
 
   return `
     <div class="sheet missing-card">
