@@ -941,11 +941,6 @@ ${buildFormationReason(type, trust, prob, analysis)}
 
       <h4 class="form-hole">穴</h4>
       ${ticketsWithOdds(hole)}
-manshu = rankTicketsByRace(
-  buildManshuAITickets(analysis),
-  analysis,
-  "manshu"
-).slice(0, 8);
       <h4 class="form-manshu">万舟</h4>
       ${ticketsWithOdds(manshu)}
     </div>
