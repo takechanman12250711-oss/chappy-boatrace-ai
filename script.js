@@ -1270,12 +1270,17 @@ function renderMissingTop30(list) {
     return `<div class="summary-box">出てない目上位30取得中...</div>`;
   }
 
-  const oddsMap = new Map(
-  (latestOddsList || []).map(o => [
-    normalizeKey(o.key || o.result || o.number),
-    o.odds
-  ])
-);
+  const oddsMap = new Map();
+
+(latestOddsList || []).forEach(o => {
+  const raw = o.key || o.result || o.number || "";
+  const key = normalizeKey(raw);
+  const shown = showKey(raw).replaceAll("-", "");
+  const odds = o.odds;
+
+  if (key) oddsMap.set(key, odds);
+  if (shown) oddsMap.set(shown, odds);
+});
 
   return `
     <div class="sheet missing-card">
