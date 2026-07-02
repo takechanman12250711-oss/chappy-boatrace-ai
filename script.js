@@ -914,7 +914,12 @@ if (highUpset) {
 main = rankTicketsByRace(main, analysis, "main").slice(0, 5);
 safe = rankTicketsByRace(removeDuplicateForms(safe, main), analysis, "safe").slice(0, 6);
 hole = rankTicketsByRace(removeDuplicateForms(hole, [...main, ...safe]), analysis, "hole").slice(0, 6);
-manshu = rankTicketsByRace(removeDuplicateForms(manshu, [...main, ...safe, ...hole]), analysis, "manshu").slice(0, 8);
+
+manshu = rankTicketsByRace(
+  buildManshuAITickets(analysis),
+  analysis,
+  "manshu"
+).slice(0, 8);
 
   return `
     <div class="sheet">
