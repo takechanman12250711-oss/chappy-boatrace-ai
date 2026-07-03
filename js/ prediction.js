@@ -181,4 +181,3 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
   if (Number(odds) >= 200) return "○高配当";
   return "";
 }
-export {};
