@@ -1844,14 +1844,7 @@ const attackComment = judgeAttackComment(
   ${renderAiRank(aiRank)}
 
 </div>
-    <div class="race-line">
-  <b>🎯 展開成立率</b>
-  <p>🚤 逃げ成立率　${tenkai.escape}%</p>
-  <p>⚡ 攻め成立率　${tenkai.attack}%</p>
-  <p>➡️ 差し成立率　${tenkai.sashi}%</p>
-  <p>🛡 残し成立率　${tenkai.nokoshi}%</p>
-  <p>💥 波乱率　　　${tenkai.upset}%</p>
-</div>
+  ${renderTenkaiRate(tenkai)}
 <div class="race-line">
   <b>💰 回収期待値</b>
   ${
