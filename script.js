@@ -1774,7 +1774,6 @@ const attackComment = judgeAttackComment(
   nokoshi
 );
 
-
   const flyCondition =
     trust >= 80
       ? "1号艇のST遅れ、またはセンター勢のトップスタート。"
