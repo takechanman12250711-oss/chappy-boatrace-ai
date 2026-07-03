@@ -148,4 +148,37 @@ if (analysis.attackScore >= 75 && isOutside) {
     };
   });
 }
+function judgeAttackComment(type, attack, sashi, nokoshi) {
+  if (type === "まくり") {
+    return `${attack}号艇が全速で攻める展開。${nokoshi}号艇の残しと、${sashi}号艇の差し場を重視。`;
+  }
+
+  if (type === "まくり差し") {
+    return `${attack}号艇がまくり差しで差し場を狙う展開。内残りと外の連動を両方見る。`;
+  }
+
+  if (type === "差し") {
+    return `${attack}号艇の差し展開。イン残りを見ながら、2着・3着の残しを重視。`;
+  }
+
+  if (type === "展開待ち") {
+    return `${attack}号艇は展開待ち。内が競った時の差し場・道中拾いを重視。`;
+  }
+
+  return `${attack}号艇が展開を作る想定。${sashi}号艇が差し場、${nokoshi}号艇が残し候補。`;
+  }
+  function buildHoleComment(key, odds) {
+  if (!key) return "";
+
+  const a = key.split("-").map(Number);
+
+  if (a[0] === 2) return "◎2差し";
+  if (a[0] === 3) return "◎3攻め";
+  if (a[0] === 4) return "◎4カド";
+  if (a[0] === 5) return "◎5一撃";
+  if (a[0] === 6) return "◎6展開";
+
+  if (Number(odds) >= 200) return "○高配当";
+  return "";
+}
 export {};
