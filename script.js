@@ -1845,14 +1845,7 @@ const attackComment = judgeAttackComment(
 
 </div>
   ${renderTenkaiRate(tenkai)}
-<div class="race-line">
-  <b>💰 回収期待値</b>
-  ${
-    evRank.map((x, i) => `
-      <p>${i + 1}位　${x.boat}号艇 ${x.name}　EV ${x.ev} / 平均${x.odds}倍</p>
-    `).join("")
-  }
-</div>
+  ${renderEvRank(evRank)}
   `;
 }
 function buildFlowReason(type, attack, sashi, nokoshi) {
