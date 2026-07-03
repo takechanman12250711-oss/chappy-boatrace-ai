@@ -275,3 +275,8 @@ function buildSimulation(analysis, mode) {
 <br>③ 外が拾う
 <br><br><b>万舟展開</b>`;
 }
+window.buildDynamicRaceEngine = buildDynamicRaceEngine;
+window.judgeAttackComment = judgeAttackComment;
+window.buildHoleComment = buildHoleComment;
+window.buildFlowReason = buildFlowReason;
+window.buildSimulation = buildSimulation;
