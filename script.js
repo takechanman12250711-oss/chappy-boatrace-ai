@@ -1841,25 +1841,7 @@ const attackComment = judgeAttackComment(
 <div class="race-line">
   <b>🤖 チャッピー人工知能指数</b>
 
-  ${
-    aiRank.map((x, i) => {
-
-      const comment =
-  x.score >= 90 ? "◎本命" :
-  x.score >= 80 ? "○対抗" :
-  x.score >= 70 ? "▲連下" :
-  "☆穴";
-
-return `
-<p>
-🏆${i+1}位
-${x.boat}号艇 ${x.name}
-AI指数 ${x.score}点
-${comment}
-        </p>
-      `;
-    }).join("")
-  }
+  ${renderAiRank(aiRank)}
 
 </div>
     <div class="race-line">
