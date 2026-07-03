@@ -9,7 +9,20 @@ function aiRankComment(score) {
   if (score >= 70) return "▲連下";
   return "☆穴";
 }
-
+function renderAiRank(aiRank = []) {
+  return aiRank
+    .map((x, i) => {
+      const mark = aiRankComment(x.score);
+      return `
+        <div class="ai-rank-row">
+          <b>${i + 1}位　${mark}</b><br>
+          ${x.boat}号艇 ${x.name}<br>
+          AI指数：<b>${x.score}点</b>
+        </div>
+      `;
+    })
+    .join("");
+}
 function renderTenkaiRate(tenkai) {
   return `
     <div class="race-line">
