@@ -275,8 +275,9 @@ function buildSimulation(analysis, mode) {
 <br>③ 外が拾う
 <br><br><b>万舟展開</b>`;
 }
-window.buildDynamicRaceEngine = buildDynamicRaceEngine;
-window.judgeAttackComment = judgeAttackComment;
-window.buildHoleComment = buildHoleComment;
-window.buildFlowReason = buildFlowReason;
 window.buildSimulation = buildSimulation;
+
+if (typeof buildDynamicRaceEngine !== "undefined") window.buildDynamicRaceEngine = buildDynamicRaceEngine;
+if (typeof judgeAttackComment !== "undefined") window.judgeAttackComment = judgeAttackComment;
+if (typeof buildHoleComment !== "undefined") window.buildHoleComment = buildHoleComment;
+if (typeof buildFlowReason !== "undefined") window.buildFlowReason = buildFlowReason;
