@@ -1767,13 +1767,6 @@ function renderRaceFlow(analysis) {
     Number(attack) === 5 ? "外差し・展開待ち" :
     "展開待ち";
     
-    const flowReason = buildFlowReason(
-  analysis?.attackType || attackPattern,
-  attack,
-  sashi,
-  nokoshi
-);
-
 const attackComment = judgeAttackComment(
   analysis?.attackType || attackPattern,
   attack,
@@ -1818,7 +1811,6 @@ const attackComment = judgeAttackComment(
       
       <div class="race-line">
         <b>🧠 展開根拠</b>
-        <p>${flowReason}</p>
       </div>
       
       <div class="race-line">
