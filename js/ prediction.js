@@ -1,3 +1,8 @@
+// ================================
+// チャッピーAI
+// 展開予想
+// ================================
+
 function buildDynamicRaceEngine(boats, analysis) {
   const list = boats || [];
   const theory = latestRaceData?.prediction?.theory || latestRaceData?.theory || {};
