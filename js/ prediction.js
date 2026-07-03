@@ -242,3 +242,36 @@ function buildSimulation(analysis, mode) {
 <br>↓
 <br><b>万舟展開</b>`;
 }
+function buildSimulation(analysis, mode) {
+  const attack = analysis.attackBoat;
+  const sashi = analysis.sashiBoat;
+  const nokoshi = analysis.nokoshiBoat;
+
+  if (mode === "main") {
+    return `
+① ${attack}号艇が攻める
+<br>↓
+<br>② ${sashi}号艇に差し場
+<br>↓
+<br>③ ${nokoshi}号艇が残す
+<br><br><b>本命展開</b>`;
+  }
+
+  if (mode === "sub") {
+    return `
+① ${attack}号艇が攻める
+<br>↓
+<br>② 外差し
+<br>↓
+<br>③ 展開突き
+<br><br><b>対抗展開</b>`;
+  }
+
+  return `
+① ${attack}号艇が攻める
+<br>↓
+<br>② 内が競る
+<br>↓
+<br>③ 外が拾う
+<br><br><b>万舟展開</b>`;
+}
