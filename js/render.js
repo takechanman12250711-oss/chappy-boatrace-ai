@@ -41,7 +41,11 @@ function renderEvRank(evRank = []) {
       <b>💰 回収期待値</b>
       ${
         evRank.map((x, i) => `
-          <p>${i + 1}位　${x.boat}号艇 ${x.name}</p>
+          <div class="ai-rank-row">
+            <b>${i + 1}位</b>　
+            ${x.boat}号艇 ${x.name}<br>
+            <span>期待値候補：AI指数とオッズ妙味で評価</span>
+          </div>
         `).join("")
       }
     </div>
