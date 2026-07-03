@@ -281,3 +281,4 @@ if (typeof buildDynamicRaceEngine !== "undefined") window.buildDynamicRaceEngine
 if (typeof judgeAttackComment !== "undefined") window.judgeAttackComment = judgeAttackComment;
 if (typeof buildHoleComment !== "undefined") window.buildHoleComment = buildHoleComment;
 if (typeof buildFlowReason !== "undefined") window.buildFlowReason = buildFlowReason;
+window.buildSimulation = buildSimulation;
