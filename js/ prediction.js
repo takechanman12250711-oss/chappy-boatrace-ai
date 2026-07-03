@@ -181,3 +181,9 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
   if (Number(odds) >= 200) return "○高配当";
   return "";
 }
+// ================================
+// 展開理由
+// ================================
+
+function buildFlowReason(type, attack, sashi, nokoshi) {
+  const r = [];
