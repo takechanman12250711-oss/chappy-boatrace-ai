@@ -1905,6 +1905,7 @@ const attackComment = judgeAttackComment(
 
 </div>
   ${renderTenkaiRate(tenkai)}
+  ${renderTenkaiIndex(buildTenkaiIndexTable(latestRaceData?.boats || []))}
   ${renderEvRank(evRank)}
   `;
 }
@@ -1943,4 +1944,18 @@ function judgeAttackComment(type, attack, sashi, nokoshi) {
   if (Number(odds) >= 200) return "○高配当";
   return "";
 }
-  
+  function renderTenkaiIndex(list = []) {
+  return `
+    <div class="race-line">
+      <b>📊 展開指数</b>
+      ${
+        list.map(x => `
+          <p>
+            ${x.boat}号艇 ${x.name}<br>
+            攻め:${x.attack} / 差し:${x.sashi} / 残し:${x.nokoshi}
+          </p>
+        `).join("")
+      }
+    </div>
+  `;
+}
