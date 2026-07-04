@@ -759,6 +759,13 @@ function pickAttackBoat(boats, forced) {
       best = b;
     }
   });
+  
+  // 攻め艇AI Ver2：今節ST補正
+if (num(b.thisSeriesST, 0) > 0 && num(b.thisSeriesST) <= 0.13) {
+    s += 8;
+} else if (num(b.thisSeriesST, 0) > 0 && num(b.thisSeriesST) <= 0.15) {
+    s += 4;
+}
 
   return {
     boat: Number(best?.boat || 3),
