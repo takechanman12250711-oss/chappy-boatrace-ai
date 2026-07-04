@@ -1905,7 +1905,7 @@ const attackComment = judgeAttackComment(
 
 </div>
   ${renderTenkaiRate(tenkai)}
-  ${renderTenkaiIndex(buildTenkaiIndexTable(boats))}
+  ${renderTenkaiIndex(buildTenkaiIndexTable(latestRaceData?.boats || []))}
   ${renderEvRank(evRank)}
   `;
 }
