@@ -259,12 +259,18 @@ function analyzeRace(boats, p, venue) {
    }
     const attack = pickAttackBoat(boats);
     let sashi = pickSashiBoat(boats, attack);
-    const nokoshi = pickNokoshiBoat(boats, attack.boat);
+    let nokoshi = pickNokoshiBoat(boats, attack);
     const attackType = judgeAttackType(attack.boat, boats, venue, boatByNo(boats, 1));
     // 2コース差し補正：2号艇は差し場候補として必ず残す
     if (boats.some(b => Number(b.boat) === 2)) {
     if (sashi !== 2 && Number(attack.boat) !== 2) {
     sashi = 2;
+    }
+   }
+  // 4コース残し補正：4号艇は攻められても2・3着候補として残す
+    if (boats.some(b => Number(b.boat) === 4)) {
+    if (nokoshi !== 4 && Number(attack.boat) !== 4) {
+    nokoshi = 4;
     }
    }
     const raceShape = buildRaceShape(
