@@ -743,6 +743,10 @@ function pickAttackBoat(boats, forced) {
     let s = 45;
     s += venueAdjust(window.currentVenue, no, "attack");
     
+    // 攻め艇AI Ver2：展示STが速い艇を攻め候補として加点
+    if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.10) s += 10;
+    else if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.13) s += 6;
+    
     if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) s += 12;
     if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 10;
     if (num(b.motor2Rate, 0) >= 40) s += 8;
