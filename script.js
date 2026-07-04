@@ -767,6 +767,19 @@ if (num(b.thisSeriesST, 0) > 0 && num(b.thisSeriesST) <= 0.13) {
     s += 4;
 }
 
+// 地元・当地勝率補正
+if (num(b.localWinRate, 0) >= 7.00) {
+    s += 10;
+} else if (num(b.localWinRate, 0) >= 6.00) {
+    s += 6;
+}
+
+if (num(b.homeWinRate, 0) >= 7.00) {
+    s += 8;
+} else if (num(b.homeWinRate, 0) >= 6.00) {
+    s += 4;
+}
+
   return {
     boat: Number(best?.boat || 3),
     name: best?.name || "",
