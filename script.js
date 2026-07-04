@@ -268,6 +268,7 @@ function analyzeRace(boats, p, venue) {
     attackType
   );
   return {
+    // 展開AI本体：attack / sashi / nokoshi の最終決定地点
     inTrust: 60,
     attackBoat: attack.boat,
     attackName: attack.name,
