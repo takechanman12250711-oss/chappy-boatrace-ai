@@ -939,7 +939,6 @@ if (highUpset) {
 main = rankTicketsByRace(main, analysis, "main").slice(0, 5);
 safe = rankTicketsByRace(removeDuplicateForms(safe, main), analysis, "safe").slice(0, 6);
 hole = rankTicketsByRace(removeDuplicateForms(hole, [...main, ...safe]), analysis, "hole").slice(0, 6);
-
 manshu = rankTicketsByRace(
   buildManshuAITickets(analysis),
   analysis,
@@ -1228,11 +1227,11 @@ function renderManshuSheet(boats, p, analysis) {
         ${conditions.map(x => `<p>・${x}</p>`).join("")}
       </div>
 
-      <h4>注目艇</h4>
+      <h4>💣 万舟注目艇</h4>
       ${targets.map(b => `
         <div class="race-line">
           <b>${b.boat}号艇 ${b.name || ""}</b>
-          <p>万舟指数：${b.manshuScore}点</p>
+          <p><b>万舟指数：</b>${b.manshuScore}点</p>
           <p><b>材料：</b>${simpleReasons(b)}</p>
           <p>${manshuReason(b)}</p>
         </div>
