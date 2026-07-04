@@ -340,35 +340,44 @@ function venueAdjust(venueName, boatNo, role) {
   add("宮島", "sashi", [2,5], 3);
   add("福岡", "manshu", [4,5,6], 5);
 
-  return s;
-}
-function buildRaceShape(attack, sashi, nokoshi, type) {
-  return `${attack}号艇${type} → ${sashi}号艇差し場 → ${nokoshi}号艇残し`;
-}
-function buildTheoryFlags(boats){
-  const list = boats || [];
+  // 宮島：イン有利だが3コース攻めも有効
+  add("宮島", "attack", [3], 2);
 
-  const stList = list
+  // 丸亀：イン残りを少し評価
+  add("丸亀", "nokoshi", [1], 2);
+
+  // 多摩川：差しが届く条件を少し評価
+  add("多摩川", "sashi", [2], 2);
+
+  return s;
+  }
+  function buildRaceShape(attack, sashi, nokoshi, type) {
+   return `${attack}号艇${type} → ${sashi}号艇差し場 → ${nokoshi}号艇残し`;
+  }
+  function buildTheoryFlags(boats){
+   const list = boats || [];
+
+   const stList = list
     .filter(b => num(b.exhibitionST, 0) > 0)
     .map(b => ({ boat: b.boat, st: num(b.exhibitionST) }))
     .sort((a, b) => a.st - b.st);
 
-  const exRank = [...list]
+   const exRank = [...list]
     .filter(b => num(b.exhibitionTime, 0) > 0)
     .sort((a, b) => num(a.exhibitionTime) - num(b.exhibitionTime));
 
-  const lapRank = [...list]
+   const lapRank = [...list]
     .filter(b => num(b.lapTime, 0) > 0)
     .sort((a, b) => num(a.lapTime) - num(b.lapTime));
 
-  const slitAlert =
+   const slitAlert =
     stList.length >= 2 && Math.abs(stList[0].st - stList[1].st) >= 0.10;
 
-  const doubleTime =
+   const doubleTime =
     exRank.length && lapRank.length &&
     Number(exRank[0].boat) === Number(lapRank[0].boat);
 
-  const newSam =
+   const newSam =
     exRank.length && lapRank.length &&
     Number(exRank[0].boat) >= 4 &&
     Number(lapRank[0].boat) >= 4;
