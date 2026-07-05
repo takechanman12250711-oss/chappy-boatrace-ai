@@ -402,3 +402,35 @@ function buildBuyReason(analysis) {
 
   return r.map(x => `<p>・${x}</p>`).join("");
 }
+function buildFormationReason(type, trust, prob, analysis) {
+
+  const txt = [];
+  txt.push(`展開予測：${type}`);
+  
+if (analysis?.attackBoat) {
+  txt.push(`🔥 展開の主役：${analysis.attackBoat}号艇`);
+}
+
+if (analysis?.sashiBoat) {
+  txt.push(`🎯 差し本線：${analysis.sashiBoat}号艇`);
+}
+
+if (analysis?.nokoshiBoat) {
+  txt.push(`⚡ 残し本線：${analysis.nokoshiBoat}号艇`);
+}
+
+
+  if(Number(prob?.makuri || 0) >= 25){
+    txt.push("まくり率高め。");
+  }
+
+  if(Number(prob?.sashi || 0) >= 25){
+    txt.push("差しが決まりやすい。");
+  }
+
+  if(Number(prob?.upset || 0) >= 20){
+    txt.push("万舟警戒レース。");
+  }
+
+  return "🧠 " + txt.join(" ");
+}
