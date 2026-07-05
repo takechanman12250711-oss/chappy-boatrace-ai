@@ -760,10 +760,6 @@ function pickAttackBoat(boats, forced) {
     }
   });
   
-  
-}
-
-
   return {
     boat: Number(best?.boat || 3),
     name: best?.name || "",
