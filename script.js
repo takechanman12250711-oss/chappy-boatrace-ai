@@ -1634,16 +1634,6 @@ function boatByNo(boats, no) {
   return (boats || []).find(b => Number(b.boat) === Number(no)) || null;
 }
 
-  alert(`${term}\n\n${dict[term] || "説明がまだ登録されていません。"}`);
-}
-
-function helpBtn(term) {
-  return `<button class="help-btn" onclick="termHelp('${term}')">?</button>`;
-}
-function boatByNo(boats, no) {
-  return (boats || []).find(b => Number(b.boat) === Number(no)) || null;
-}
-
 function num(v, fb = 0) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fb;
