@@ -1640,6 +1640,43 @@ function boatByNo(boats, no) {
 function helpBtn(term) {
   return `<button class="help-btn" onclick="termHelp('${term}')">?</button>`;
 }
+function boatByNo(boats, no) {
+  return (boats || []).find(b => Number(b.boat) === Number(no)) || null;
+}
+
+function num(v, fb = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fb;
+}
+
+function clamp(n, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+function fmtNum(v) {
+  return Number.isFinite(Number(v)) ? Number(v).toFixed(2) : "-";
+}
+
+function fmtPct(v) {
+  return Number.isFinite(Number(v)) ? `${Number(v).toFixed(2)}%` : "-";
+}
+
+function normalizeDate(v) {
+  return String(v || "").replaceAll("-", "").replaceAll("/", "").trim();
+}
+
+function termHelp(term) {
+  const dict = {
+    "モーター2連率": "そのモーターが1着または2着に入った割合です。",
+    "モーター3連率": "そのモーターが3着以内に入った割合です。"
+  };
+
+  alert(`${term}\n\n${dict[term] || "説明がまだ登録されていません。"}`);
+}
+
+function helpBtn(term) {
+  return `<button class="help-btn" onclick="termHelp('${term}')">?</button>`;
+}
 function fmtST(v) {
   if (v === null || v === undefined || v === "" || Number.isNaN(Number(v))) return "-";
   const n = Number(v);
