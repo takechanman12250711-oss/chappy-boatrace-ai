@@ -435,3 +435,5 @@ if (analysis?.nokoshiBoat) {
   return "🧠 " + txt.join(" ");
 }
 window.renderFormations = renderFormations;
+window.buildFormationReason = buildFormationReason;
+window.buildBuyReason = buildBuyReason;
