@@ -749,12 +749,6 @@ function pickAttackBoat(boats, forced) {
     
     if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) s += 12;
     if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 10;
-    // 攻め艇AI Ver2：今節ST補正
-    if (num(b.thisSeriesST, 0) > 0 && num(b.thisSeriesST) <= 0.13) {
-     s += 8;
-     } else if (num(b.thisSeriesST, 0) > 0 && num(b.thisSeriesST) <= 0.15) {
-     s += 4;
-     }
     if (num(b.motor2Rate, 0) >= 40) s += 8;
     if (num(b.localWinRate, 0) >= 6) s += 8;
     if (no === 3) s += 8;
