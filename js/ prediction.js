@@ -277,12 +277,6 @@ function buildSimulation(analysis, mode) {
 }
 window.buildSimulation = buildSimulation;
 
-if (typeof buildDynamicRaceEngine !== "undefined") window.buildDynamicRaceEngine = buildDynamicRaceEngine;
-if (typeof judgeAttackComment !== "undefined") window.judgeAttackComment = judgeAttackComment;
-if (typeof buildHoleComment !== "undefined") window.buildHoleComment = buildHoleComment;
-if (typeof buildFlowReason !== "undefined") window.buildFlowReason = buildFlowReason;
-window.buildSimulation = buildSimulation;
-}
 function renderFormations(p, analysis) {
   const dynamic = analysis?.dynamic || [];
 
