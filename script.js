@@ -448,39 +448,6 @@ function pickAttackBoat(boats, forced) {
   };
 }
 
-function buildTenkaiIndexTable(boats) {
-  return (boats || []).map(b => {
-    const no = Number(b.boat);
-
-    return {
-      boat: no,
-      name: b.name || "",
-      attack: clamp(
-        40
-        + (no === 3 ? 10 : 0)
-        + (no === 4 ? 8 : 0)
-        + (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.15 ? 8 : 0)
-        + (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12 ? 8 : 0)
-        + venueAdjust(window.currentVenue, no, "attack")
-      ),
-      sashi: clamp(
-        40
-        + (no === 2 ? 12 : 0)
-        + (no === 5 ? 6 : 0)
-        + (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12 ? 5 : 0)
-        + venueAdjust(window.currentVenue, no, "sashi")
-      ),
-      nokoshi: clamp(
-        40
-        + (no === 1 ? 15 : 0)
-        + (no === 4 ? 10 : 0)
-        + (num(b.lapTime, 0) > 0 && num(b.lapTime) <= 37.00 ? 8 : 0)
-        + venueAdjust(window.currentVenue, no, "nokoshi")
-      )
-    };
-  });
-}
-
 function pickSashiBoat(boats, attackBoat) {
   let best = null;
   let bestScore = -999;
