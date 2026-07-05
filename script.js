@@ -639,34 +639,36 @@ function judgeAttackType(boat, boats, venue, b1){
 function pickAttackBoat(boats, forced) {
   if (forced) {
     const b = boatByNo(boats, forced);
-    return { boat:Number(forced), name:b?.name || "", score:75 };
+    return { boat: Number(forced), name: b?.name || "", score: 75 };
   }
 
   let best = null;
   let bestScore = -999;
 
-  boats.filter(b => Number(b.boat) >= 2 && Number(b.boat) <= 5).forEach(b => {
-    const no = Number(b.boat);
-    let s = 45;
-    s += venueAdjust(window.currentVenue, no, "attack");
-    
-    // 攻め艇AI Ver2：展示STが速い艇を攻め候補として加点
-    if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.10) s += 10;
-    else if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.13) s += 6;
-    
-    if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) s += 12;
-    if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 10;
-    if (num(b.motor2Rate, 0) >= 40) s += 8;
-    if (num(b.localWinRate, 0) >= 6) s += 8;
-    if (no === 3) s += 8;
-    if (no === 4) s += 6;
+  boats
+    .filter(b => Number(b.boat) >= 2 && Number(b.boat) <= 5)
+    .forEach(b => {
+      const no = Number(b.boat);
+      let s = 45;
 
-    if (s > bestScore) {
-      bestScore = s;
-      best = b;
-    }
-  });
-  
+      s += venueAdjust(window.currentVenue, no, "attack");
+
+      if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.10) s += 10;
+      else if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.13) s += 6;
+
+      if (num(b.avgST, 0) > 0 && num(b.avgST) <= 0.14) s += 12;
+      if (num(b.exhibitionST, 0) > 0 && num(b.exhibitionST) <= 0.12) s += 10;
+      if (num(b.motor2Rate, 0) >= 40) s += 8;
+      if (num(b.localWinRate, 0) >= 6) s += 8;
+      if (no === 3) s += 8;
+      if (no === 4) s += 6;
+
+      if (s > bestScore) {
+        bestScore = s;
+        best = b;
+      }
+    });
+
   return {
     boat: Number(best?.boat || 3),
     name: best?.name || "",
