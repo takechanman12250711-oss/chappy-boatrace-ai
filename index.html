@@ -90,3 +90,111 @@
       <div id="raceListArea"></div>
       <div id="engineArea"></div>
     </section>
+        <section class="layout-grid">
+
+      <div id="raceFlowArea"></div>
+
+      <div id="mainSheetArea"></div>
+
+    </section>
+
+    <section class="layout-grid">
+
+      <div id="formationArea"></div>
+
+      <div id="manshuSheetArea"></div>
+
+    </section>
+
+    <section class="layout-grid">
+
+      <div id="oddsArea"></div>
+
+      <div id="alertArea"></div>
+
+    </section>
+
+    <section class="layout-grid">
+
+      <div id="finalCommentArea"></div>
+
+      <div id="statsArea"></div>
+
+    </section>
+
+    <section class="layout-grid">
+
+      <div class="panel">
+
+        <h2>🎯 レース結果登録</h2>
+
+        <div class="form-grid">
+
+          <label>
+            レース結果
+            <input
+              id="raceResultInput"
+              type="text"
+              placeholder="例：1-2-3"
+            >
+          </label>
+
+          <label>
+            オッズ
+            <input
+              id="oddsInput"
+              type="number"
+              step="0.1"
+            >
+          </label>
+
+          <label>
+            購入金額
+            <input
+              id="betAmountInput"
+              type="number"
+              value="1000"
+            >
+          </label>
+
+        </div>
+
+        <div id="autoPayoutText">
+          払戻金：0円
+        </div>
+
+        <div class="button-row result-buttons">
+
+          <button
+            id="saveResultBtn"
+            class="primary-btn"
+          >
+            成績保存
+          </button>
+
+          <button
+            id="undoResultBtn"
+            class="sub-btn"
+          >
+            1件取り消し
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="panel">
+
+        <h2>📈 AIダッシュボード</h2>
+
+        <div id="aiIndexArea"></div>
+
+        <div id="theoryArea"></div>
+
+        <div id="weatherArea"></div>
+
+        <div id="venueArea"></div>
+
+      </div>
+
+    </section>
