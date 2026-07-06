@@ -105,3 +105,62 @@ function loadSettings() {
   );
 
 }
+// =======================================
+// storage.js 完全版②
+// 公開関数・自動復元
+// =======================================
+
+function restoreLatestRace() {
+  const race = loadLatestRace();
+  const odds = loadLatestOdds();
+
+  if (!race) return false;
+
+  window.latestRaceData = race;
+  window.latestOddsList = odds || [];
+
+  if (typeof renderAll === "function") {
+    renderAll(race);
+  }
+
+  return true;
+}
+
+function rememberCurrentRace() {
+  if (window.latestRaceData) {
+    saveLatestRace(window.latestRaceData);
+  }
+
+  if (window.latestOddsList) {
+    saveLatestOdds(window.latestOddsList);
+  }
+}
+
+function resetAppStorage() {
+  clearLocalData();
+
+  localStorage.removeItem("chappyResultHistory");
+
+  alert("保存データを削除しました");
+}
+
+window.saveLocalData = saveLocalData;
+window.loadLocalData = loadLocalData;
+window.loadAllLocalData = loadAllLocalData;
+window.clearLocalData = clearLocalData;
+
+window.saveLatestRace = saveLatestRace;
+window.loadLatestRace = loadLatestRace;
+window.saveLatestOdds = saveLatestOdds;
+window.loadLatestOdds = loadLatestOdds;
+
+window.saveSettings = saveSettings;
+window.loadSettings = loadSettings;
+
+window.restoreLatestRace = restoreLatestRace;
+window.rememberCurrentRace = rememberCurrentRace;
+window.resetAppStorage = resetAppStorage;
+
+// =======================================
+// storage.js 完了
+// =======================================
