@@ -675,6 +675,7 @@ function autoJudgeResult() {
 
 function collectPredictionTickets() {
   const p = latestRaceData?.prediction || {};
+
   return [
     p.mainFormation,
     p.safeFormation,
@@ -683,8 +684,9 @@ function collectPredictionTickets() {
     p.manshuTickets
   ]
     .filter(Array.isArray)
-    .flatMap(list => normalizeFormList(list).flatMap(expandForm))
-    .map(normalizeKey);
+    .flat()
+    .map(x => String(x || "").replaceAll("-", ""))
+    .filter(Boolean);
 }
 
 function saveSimpleResult() {
