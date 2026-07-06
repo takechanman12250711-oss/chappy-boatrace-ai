@@ -580,24 +580,6 @@ function buildPickReason(b, label, analysis) {
   return "本線の取りこぼしを拾う押さえ候補。";
 }
 
-function makeTickets(firstList, secondList, thirdList) {
-  const out = [];
-
-  uniqueNums(firstList).forEach(first => {
-    uniqueNums(secondList).forEach(second => {
-      uniqueNums(thirdList).forEach(third => {
-        if (first === second) return;
-        if (first === third) return;
-        if (second === third) return;
-
-        out.push(`${first}-${second}-${third}`);
-      });
-    });
-  });
-
-  return [...new Set(out)];
-}
-
 function uniqueNums(list) {
   return [...new Set(
     (list || [])
@@ -691,42 +673,7 @@ function renderOdds(odds) {
 }
 
 /* ピンクシート */
-function buildManshuAITickets(analysis) {
-  const attack = Number(analysis?.attackBoat || 3);
-  const sashi = Number(analysis?.sashiBoat || 5);
-  const nokoshi = Number(analysis?.nokoshiBoat || 1);
 
-  const outside = [5, 6].filter(x => x !== attack && x !== sashi && x !== nokoshi);
-  const tickets = [];
-
-  // 攻め艇が主役
-  tickets.push(`${attack}-${sashi}-${nokoshi}`);
-  tickets.push(`${attack}-${nokoshi}-${sashi}`);
-
-  // 差し場がハマる
-  tickets.push(`${sashi}-${attack}-${nokoshi}`);
-  tickets.push(`${sashi}-${nokoshi}-${attack}`);
-
-  // 1残り＋外差し
-  if (nokoshi === 1) {
-    tickets.push(`${attack}-1-${sashi}`);
-    tickets.push(`${sashi}-1-${attack}`);
-  }
-
-  // 外枠絡みの大穴
-  outside.forEach(o => {
-    tickets.push(`${attack}-${o}-${nokoshi}`);
-    tickets.push(`${o}-${attack}-${nokoshi}`);
-    tickets.push(`${o}-${sashi}-${attack}`);
-  });
-
-  return [...new Set(tickets)]
-    .filter(t => {
-      const a = t.split("-");
-      return a.length === 3 && new Set(a).size === 3;
-    })
-    .slice(0, 10);
-}
 function renderManshuSheet(boats, p, analysis) {
   const targets = pickManshuTargets(boats, analysis);
   const attack = analysis?.attackBoat || "-";
