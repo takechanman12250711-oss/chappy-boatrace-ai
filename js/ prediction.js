@@ -431,4 +431,3 @@ if (analysis?.nokoshiBoat) {
 window.renderFormations = renderFormations;
 window.buildFormationReason = buildFormationReason;
 window.buildBuyReason = buildBuyReason;
-}
