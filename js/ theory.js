@@ -96,3 +96,117 @@ function buildDoubleTimeAlert(exRank = [], lapRank = []) {
     reason: `${exTop.boat}号艇が展示タイム・一周タイムの両方で上位。`
   }];
 }
+// =======================================
+// theory.js 完全版②
+// 新サム理論・舟券太郎指数
+// =======================================
+
+function buildNewSumAlert(boats = []) {
+
+  const list = boats
+    .filter(b =>
+      num(b.exhibitionTime,0)>0 &&
+      num(b.lapTime,0)>0
+    )
+    .map(b=>({
+
+      boat:Number(b.boat),
+      name:b.name||"",
+      total:
+        num(b.exhibitionTime)+
+        num(b.lapTime),
+
+      exhibition:
+        num(b.exhibitionTime),
+
+      lap:
+        num(b.lapTime)
+
+    }))
+    .sort((a,b)=>a.total-b.total);
+
+  if(!list.length) return [];
+
+  const top=list[0];
+
+  if(top.boat<4) return [];
+
+  return [{
+
+    boat:top.boat,
+    name:top.name,
+
+    type:"新サム理論",
+
+    total:top.total.toFixed(2),
+
+    reason:
+      `${top.boat}号艇が展示＋一周タイム最上位。`
+
+  }];
+
+}
+
+function buildTaroIndex(theory){
+
+  let score=50;
+
+  if(theory.slitAlert.length)
+    score+=15;
+
+  if(theory.doubleTimeAlert.length)
+    score+=12;
+
+  if(theory.newSumAlert.length)
+    score+=10;
+
+  if(theory.localPower)
+    score+=8;
+
+  if(theory.motorGap)
+    score+=6;
+
+  return clamp(score);
+
+}
+
+function renderTheorySummary(theory){
+
+  return `
+
+<div class="summary-box">
+
+<b>🧠 舟券太郎理論</b>
+
+<p>
+スリット：
+${theory.slitAlert.length?"⭕":"－"}
+</p>
+
+<p>
+ダブルタイム：
+${theory.doubleTimeAlert.length?"⭕":"－"}
+</p>
+
+<p>
+新サム：
+${theory.newSumAlert.length?"⭕":"－"}
+</p>
+
+<p>
+指数：
+${buildTaroIndex(theory)}点
+</p>
+
+</div>
+
+`;
+
+}
+
+window.buildTheoryFlags=buildTheoryFlags;
+window.buildSlitAlert=buildSlitAlert;
+window.buildDoubleTimeAlert=buildDoubleTimeAlert;
+window.buildNewSumAlert=buildNewSumAlert;
+window.buildTaroIndex=buildTaroIndex;
+window.renderTheorySummary=renderTheorySummary;
