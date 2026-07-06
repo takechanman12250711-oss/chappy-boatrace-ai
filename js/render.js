@@ -317,3 +317,69 @@ ${boats.map(b=>`
 }
 
 window.renderMaterialPanel = renderMaterialPanel;
+function renderMainSheet(boats = [], p = {}, analysis = {}) {
+  if (!boats.length) {
+    return `<div class="sheet blue-sheet">青シートデータなし</div>`;
+  }
+
+  const aiRank = analysis.aiRank || [];
+  const tenkai = analysis.tenkaiRate || {};
+
+  return `
+    <div class="sheet blue-sheet">
+      <h3>🎯 青シート</h3>
+
+      <div class="summary-box">
+        <b>本命・軸判断</b>
+        <p>イン信頼度：${analysis.inTrust || 0}点</p>
+        <p>攻め艇：${analysis.attackBoat || "-"}号艇</p>
+        <p>差し候補：${analysis.sashiBoat || "-"}号艇</p>
+        <p>残し候補：${analysis.nokoshiBoat || "-"}号艇</p>
+      </div>
+
+      <h4>🚤 展開指数</h4>
+      <ul>
+        <li>攻め：${tenkai.attack || 0}%</li>
+        <li>差し：${tenkai.sashi || 0}%</li>
+        <li>残し：${tenkai.nokoshi || 0}%</li>
+        <li>波乱：${tenkai.upset || 0}%</li>
+      </ul>
+
+      <h4>🏆 AIランクTOP6</h4>
+      ${renderAiRank(aiRank)}
+
+      <h4>📋 各艇評価</h4>
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>艇</th>
+              <th>選手</th>
+              <th>AI</th>
+              <th>ST</th>
+              <th>展示</th>
+              <th>一言</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${boats.map(b => {
+              const rank = aiRank.find(x => Number(x.boat) === Number(b.boat));
+              return `
+                <tr>
+                  <td>${b.boat || "-"}</td>
+                  <td>${b.name || "-"}</td>
+                  <td>${rank?.score ?? "-"}</td>
+                  <td>${fmtST(b.avgST || b.exhibitionST)}</td>
+                  <td>${fmtNum(b.exhibitionTime)}</td>
+                  <td>${rank?.comment || "AI指数と展開で評価"}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+window.renderMainSheet = renderMainSheet;
