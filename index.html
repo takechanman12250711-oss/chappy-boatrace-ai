@@ -91,71 +91,79 @@
       <div id="engineArea"></div>
     </section>
         <section class="layout-grid">
-
       <div id="raceFlowArea"></div>
-
       <div id="mainSheetArea"></div>
-
-    </section>
-
-    <section class="layout-grid">
-
       <div id="formationArea"></div>
-
       <div id="manshuSheetArea"></div>
-
     </section>
 
     <section class="layout-grid">
-
-      <div id="oddsArea"></div>
-
       <div id="alertArea"></div>
-
+      <div id="oddsArea"></div>
     </section>
 
     <section class="layout-grid">
 
-      <div id="finalCommentArea"></div>
+      <div id="theoryArea">
+        <div class="panel">
+          <h2>🧠 舟券太郎理論</h2>
+          <div id="theorySummaryArea"></div>
+          <div id="theoryAlertArea"></div>
+        </div>
+      </div>
 
-      <div id="statsArea"></div>
+      <div id="aiArea">
+        <div class="panel">
+          <h2>🤖 チャッピーAI</h2>
+          <div id="aiIndexArea"></div>
+          <div id="attackRankingArea"></div>
+          <div id="expectedValueArea"></div>
+          <div id="tenkaiIndexArea"></div>
+        </div>
+      </div>
 
     </section>
 
     <section class="layout-grid">
 
       <div class="panel">
+        <h2>🌤 レース情報</h2>
+        <div id="weatherArea"></div>
+        <div id="venueArea"></div>
+      </div>
 
-        <h2>🎯 レース結果登録</h2>
+      <div class="panel">
+        <h2>💬 最終コメント</h2>
+        <div id="finalCommentArea"></div>
+      </div>
 
-        <div class="form-grid">
+    </section>
 
-          <label>
-            レース結果
-            <input
-              id="raceResultInput"
-              type="text"
-              placeholder="例：1-2-3"
-            >
-          </label>
+    <section class="layout-grid">
 
-          <label>
-            オッズ
-            <input
-              id="oddsInput"
-              type="number"
-              step="0.1"
-            >
-          </label>
+      <div class="panel">
+        <h2>📊 成績管理</h2>
 
-          <label>
-            購入金額
-            <input
-              id="betAmountInput"
-              type="number"
-              value="1000"
-            >
-          </label>
+        <div class="result-inputs">
+
+          <input
+            id="raceResultInput"
+            type="text"
+            placeholder="例：1-2-3"
+          />
+
+          <input
+            id="oddsInput"
+            type="number"
+            placeholder="オッズ"
+          />
+
+          <input
+            id="betAmountInput"
+            type="number"
+            value="100"
+            placeholder="購入金額"
+          />
 
         </div>
 
@@ -163,158 +171,39 @@
           払戻金：0円
         </div>
 
-        <div class="button-row result-buttons">
-
-          <button
-            id="saveResultBtn"
-            class="primary-btn"
-          >
-            成績保存
-          </button>
-
-          <button
-            id="undoResultBtn"
-            class="sub-btn"
-          >
-            1件取り消し
-          </button>
-
+        <div class="result-buttons">
+          <button id="saveResultBtn">保存</button>
+          <button id="undoResultBtn">取り消し</button>
         </div>
 
+        <div id="statsArea"></div>
+
       </div>
 
       <div class="panel">
 
-        <h2>📈 AIダッシュボード</h2>
+        <h2>📁 データ確認</h2>
 
-        <div id="aiIndexArea"></div>
+        <div id="missingArea"></div>
 
-        <div id="theoryArea"></div>
-
-        <div id="weatherArea"></div>
-
-        <div id="venueArea"></div>
+        <div id="historyArea"></div>
 
       </div>
-
-    </section>
-        <section class="layout-grid">
-
-      <div id="raceFlowArea" class="panel">
-        <h2>🌊 展開予想</h2>
-      </div>
-
-      <div id="mainSheetArea" class="panel blue-panel">
-        <h2>🎯 青シート（本命予想）</h2>
-      </div>
-
-    </section>
-
-    <section class="layout-grid">
-
-      <div id="formationArea" class="panel">
-        <h2>📋 フォーメーション</h2>
-      </div>
-
-      <div id="manshuSheetArea" class="panel pink-panel">
-        <h2>💣 ピンクシート（万舟予想）</h2>
-      </div>
-
-    </section>
-
-    <section class="layout-grid">
-
-      <div id="alertArea" class="panel">
-        <h2>🚨 AI・理論アラート</h2>
-      </div>
-
-      <div id="oddsArea" class="panel">
-        <h2>💴 オッズ・期待値</h2>
-      </div>
-
-    </section>
-
-    <section class="layout-grid">
-
-      <div class="panel">
-        <h2>🤖 チャッピーAI指数</h2>
-        <div id="aiIndexArea"></div>
-      </div>
-
-      <div class="panel">
-        <h2>🧠 舟券太郎理論</h2>
-        <div id="theoryArea"></div>
-      </div>
-
-    </section>
-
-    <section class="layout-grid">
-
-      <div class="panel">
-        <h2>⚙ モーター・ボート評価</h2>
-        <div id="materialArea"></div>
-      </div>
-
-      <div class="panel">
-        <h2>🌤 水面・気象情報</h2>
-        <div id="weatherArea"></div>
-      </div>
-
-    </section>
-
-    <section class="panel">
-
-      <h2>🏁 最終コメント</h2>
-
-      <div id="finalCommentArea"></div>
-
-    </section>
-
-    <section class="panel">
-
-      <h2>📈 成績管理</h2>
-
-      <div class="result-input">
-
-        <input
-          id="raceResultInput"
-          type="text"
-          placeholder="例：1-2-3">
-
-        <input
-          id="oddsInput"
-          type="number"
-          placeholder="オッズ">
-
-        <input
-          id="betAmountInput"
-          type="number"
-          value="100"
-          placeholder="購入金額">
-
-      </div>
-
-      <div id="autoPayoutText">
-        払戻金：0円
-      </div>
-
-      <div class="button-row result-buttons">
-
-        <button id="saveResultBtn">
-          成績保存
-        </button>
-
-        <button id="undoResultBtn">
-          取り消し
-        </button>
-
-      </div>
-
-      <div id="statsArea"></div>
 
     </section>
       </main>
 
-  <script src="./script.js"></script>
+  <!-- JavaScript -->
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/theory.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/prediction.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/script.js"></script>
+
 </body>
 </html>
