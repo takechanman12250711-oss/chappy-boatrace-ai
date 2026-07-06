@@ -414,3 +414,49 @@ function renderOdds(odds = []) {
 }
 
 window.renderOdds = renderOdds;
+function renderOdds(odds = []) {
+  const list = Array.isArray(odds) ? odds : [];
+
+  if (!list.length) {
+    return `
+      <div class="sheet">
+        <h3>💰 オッズTOP12</h3>
+        <p>オッズデータなし</p>
+      </div>
+    `;
+  }
+
+  const top = [...list]
+    .filter(o => Number(o.odds) > 0)
+    .sort((a, b) => Number(a.odds) - Number(b.odds))
+    .slice(0, 12);
+
+  return `
+    <div class="sheet">
+      <h3>💰 オッズTOP12</h3>
+
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>順位</th>
+              <th>買い目</th>
+              <th>オッズ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${top.map((o, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${o.key || o.result || o.number || "-"}</td>
+                <td>${Number(o.odds).toFixed(1)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+window.renderOdds = renderOdds;
