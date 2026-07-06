@@ -580,46 +580,6 @@ function buildPickReason(b, label, analysis) {
   return "本線の取りこぼしを拾う押さえ候補。";
 }
 
-function rankTicketsByRace(list, analysis, mode) {
-  const attack = Number(analysis?.attackBoat || 3);
-  const sashi = Number(analysis?.sashiBoat || 2);
-  const nokoshi = Number(analysis?.nokoshiBoat || 1);
-  const trust = Number(analysis?.inTrust || 60);
-  const tenkai = analysis?.tenkaiRate || {};
-  const upset = Number(tenkai.upset || 0);
-
-  return [...new Set(list || [])]
-    .map(ticket => {
-      const nums = String(ticket).split("-").map(Number);
-      const [first, second, third] = nums;
-      let score = 50;
-
-      if (first === 1 && trust >= 70) score += 20;
-      if (first === attack) score += Number(tenkai.attack || 0) / 3;
-      if (second === sashi || third === sashi) score += Number(tenkai.sashi || 0) / 4;
-      if (second === nokoshi || third === nokoshi) score += Number(tenkai.nokoshi || 0) / 4;
-
-      if (mode === "manshu") {
-        if (first >= 4) score += 20;
-        if (second >= 4 || third >= 5) score += 12;
-        score += upset / 2;
-      }
-
-      if (mode === "hole") {
-        if (first === attack || first === sashi) score += 12;
-        if (third >= 5) score += 8;
-      }
-
-      const odds = Number(compositeOddsForForm(ticket) || 0);
-      if (odds >= 30) score += 8;
-      if (odds >= 80) score += 12;
-      if (odds >= 150) score += mode === "manshu" ? 20 : 5;
-
-      return { ticket, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .map(x => x.ticket);
-}
 function makeTickets(firstList, secondList, thirdList) {
   const out = [];
 
