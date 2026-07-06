@@ -223,3 +223,97 @@ function renderEntryTable(boats = []) {
 }
 
 window.renderEntryTable = renderEntryTable;
+function renderMaterialPanel(venue = {}, weather = {}, boats = []) {
+
+  const place = venue.place || venue.name || "-";
+  const trend = venue.trend || venue.waterType || "-";
+
+  const wind = weather.wind ?? "-";
+  const wave = weather.wave ?? "-";
+  const temp = weather.temperature ?? weather.temp ?? "-";
+
+  return `
+<div class="sheet">
+
+<h3>🌊 水面・モーター情報</h3>
+
+<h4>🌊 材料カード</h4>
+
+<p><b>${place}</b>：${trend}</p>
+
+<p>
+推奨展開：
+${venue.recommend || "1逃げ＋2差し＋3攻め"}
+</p>
+
+<p>
+天候：
+${weather.weather || "-"}
+／風${wind}m
+／波${wave}cm
+／気温${temp}℃
+</p>
+
+<details>
+
+<summary>▶▶ モーター・展示詳細</summary>
+
+<div class="table">
+
+<table>
+
+<thead>
+
+<tr>
+<th>艇</th>
+<th>全国勝率</th>
+<th>当地勝率</th>
+<th>モーター</th>
+<th>2連率</th>
+<th>3連率</th>
+<th>展示</th>
+<th>ST</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+${boats.map(b=>`
+
+<tr>
+
+<td>${b.boat}</td>
+
+<td>${fmtNum(b.nationalWinRate)}</td>
+
+<td>${fmtNum(b.localWinRate)}</td>
+
+<td>${b.motor || "-"}</td>
+
+<td>${fmtPct(b.motor2Rate)}</td>
+
+<td>${fmtPct(b.motor3Rate)}</td>
+
+<td>${fmtNum(b.exhibitionTime)}</td>
+
+<td>${fmtST(b.exhibitionST)}</td>
+
+</tr>
+
+`).join("")}
+
+</tbody>
+
+</table>
+
+</div>
+
+</details>
+
+</div>
+`;
+
+}
+
+window.renderMaterialPanel = renderMaterialPanel;
