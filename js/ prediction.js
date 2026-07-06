@@ -358,7 +358,7 @@ manshu = rankTicketsByRace(
       <h3>🧾 舟券フォーメーション</h3>
 
       <p class="aiReason">
-${window.buildFormationReason(type, trust, prob, analysis)}
+${buildFormationReason(type, trust, prob, analysis)}
 </p>
 <div class="summary-box">
   <b>🧠 買い理由</b>
