@@ -587,23 +587,6 @@ function uniqueNums(list) {
       .filter(x => Number.isFinite(x) && x >= 1 && x <= 6)
   )];
 }
-
-function compactTicketList(list, limit = 6) {
-  return [...new Set(list || [])].slice(0, limit);
-}
-
-function removeDuplicateForms(list, baseList) {
-  const baseExpanded = new Set(
-    compactForms(baseList)
-      .flatMap(expandForm)
-      .map(normalizeKey)
-  );
-
-  return compactForms(list).filter(form => {
-    const expanded = expandForm(form).map(normalizeKey);
-    return !expanded.every(x => baseExpanded.has(x));
-  });
-}
 /* ピンクシート */
 
 function renderManshuSheet(boats, p, analysis) {
