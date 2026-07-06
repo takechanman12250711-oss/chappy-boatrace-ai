@@ -460,3 +460,57 @@ function renderOdds(odds = []) {
 }
 
 window.renderOdds = renderOdds;
+function renderMissing(missing = [], odds = []) {
+  const list = Array.isArray(missing) ? missing : [];
+  const oddsMap = new Map(
+    (Array.isArray(odds) ? odds : []).map(o => [
+      String(o.key || o.result || o.number || "").replaceAll("-", ""),
+      Number(o.odds || 0)
+    ])
+  );
+
+  if (!list.length) {
+    return `
+      <div class="sheet pink-sheet">
+        <h3>💣 出てない目TOP30</h3>
+        <p>出てない目データなし</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="sheet pink-sheet">
+      <h3>💣 出てない目TOP30</h3>
+      <p>日数なし・現位オッズのみ</p>
+
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>順位</th>
+              <th>出目</th>
+              <th>オッズ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.slice(0, 30).map((m, i) => {
+              const rawKey = m.key || m.result || m.number || "";
+              const key = String(rawKey).replaceAll("-", "");
+              const oddsValue = Number(m.odds || oddsMap.get(key) || 0);
+
+              return `
+                <tr>
+                  <td>${m.rank || i + 1}</td>
+                  <td>${key || "-"}</td>
+                  <td>${oddsValue ? oddsValue.toFixed(1) : "-"}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+window.renderMissing = renderMissing;
