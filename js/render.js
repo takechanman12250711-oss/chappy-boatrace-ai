@@ -180,3 +180,46 @@ function renderRaceFlow(analysis) {
 }
 
 window.renderRaceFlow = renderRaceFlow;
+function renderEntryTable(boats = []) {
+  if (!boats.length) {
+    return `<div class="sheet">出走表データなし</div>`;
+  }
+
+  return `
+    <div class="sheet">
+      <h3>🚤 出走表一覧</h3>
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <th>艇</th>
+              <th>選手</th>
+              <th>級</th>
+              <th>支部</th>
+              <th>平均ST</th>
+              <th>全国勝率</th>
+              <th>当地勝率</th>
+              <th>モーター</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${boats.map(b => `
+              <tr>
+                <td>${b.boat || "-"}</td>
+                <td>${b.name || "-"}</td>
+                <td>${b.class || b.grade || "-"}</td>
+                <td>${b.branch || "-"}</td>
+                <td>${fmtST(b.avgST)}</td>
+                <td>${fmtNum(b.nationalWinRate)}</td>
+                <td>${fmtNum(b.localWinRate)}</td>
+                <td>${b.motor || "-"}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+window.renderEntryTable = renderEntryTable;
