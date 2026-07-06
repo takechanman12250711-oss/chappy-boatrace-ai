@@ -109,7 +109,12 @@ function renderAll(data) {
   setHTML("#raceListArea", renderEntryTable(boats));
   setHTML("#engineArea", renderMaterialPanel(venue, weather, boats, analysis));
   setHTML("#mainSheetArea", renderMainSheet(boats, p, analysis));
-  setHTML("#formationArea", renderFormations(p, analysis));
+  setHTML(
+  "#formationArea",
+  typeof window.renderFormations === "function"
+    ? window.renderFormations(p, analysis)
+    : `<div class="sheet error">⚠ prediction.js が読み込めていません</div>`
+);
   setHTML("#oddsArea", renderOdds(odds));
   console.log("odds count", latestOddsList.length, latestOddsList.slice(0, 3));
   setHTML(
