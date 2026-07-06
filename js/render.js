@@ -514,3 +514,28 @@ function renderMissing(missing = [], odds = []) {
 }
 
 window.renderMissing = renderMissing;
+function renderStats(history = []) {
+  const list = Array.isArray(history) ? history : [];
+
+  const total = list.length;
+  const hit = list.filter(x => x.hit === true || x.result === "hit").length;
+  const bet = list.reduce((sum, x) => sum + Number(x.bet || 0), 0);
+  const pay = list.reduce((sum, x) => sum + Number(x.pay || x.payout || 0), 0);
+
+  const hitRate = total ? ((hit / total) * 100).toFixed(1) : "0.0";
+  const recovery = bet ? ((pay / bet) * 100).toFixed(1) : "0.0";
+
+  return `
+    <div class="sheet">
+      <h3>📊 成績管理</h3>
+      <p>予想数：${total}</p>
+      <p>的中数：${hit}</p>
+      <p>的中率：${hitRate}%</p>
+      <p>購入金額：${bet}円</p>
+      <p>払戻金額：${pay}円</p>
+      <p>回収率：${recovery}%</p>
+    </div>
+  `;
+}
+
+window.renderStats = renderStats;
