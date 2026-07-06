@@ -120,8 +120,7 @@ function renderAll(data) {
   setHTML(
   "#manshuSheetArea",
   renderManshuSheet(boats, p, analysis)
-  + renderMissingTop30(missing, odds)
-  + renderManshuOdds(odds)
+  + window.renderMissing(missing, odds)
 );
   setHTML("#alertArea", renderAlerts(p));
   setHTML("#finalCommentArea", renderFinalComment(p, venue, weather, analysis));
