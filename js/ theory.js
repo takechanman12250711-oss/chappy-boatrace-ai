@@ -210,3 +210,84 @@ window.buildDoubleTimeAlert=buildDoubleTimeAlert;
 window.buildNewSumAlert=buildNewSumAlert;
 window.buildTaroIndex=buildTaroIndex;
 window.renderTheorySummary=renderTheorySummary;
+// =======================================
+// theory.js 完全版③（最終）
+// アラート表示・公開関数
+// =======================================
+
+function renderTheoryAlerts(theory) {
+
+  const html = [];
+
+  theory.slitAlert.forEach(x => {
+
+    html.push(`
+      <div class="alert-card slit">
+        🚀 <b>スリットアラート</b><br>
+        ${x.boat}号艇 ${x.name}<br>
+        ST:${x.value}　差:${x.diff}
+      </div>
+    `);
+
+  });
+
+  theory.doubleTimeAlert.forEach(x => {
+
+    html.push(`
+      <div class="alert-card double">
+        ⏱ <b>ダブルタイム理論</b><br>
+        ${x.boat}号艇 ${x.name}<br>
+        展示:${x.exhibitionTime}
+        一周:${x.lapTime}
+      </div>
+    `);
+
+  });
+
+  theory.newSumAlert.forEach(x => {
+
+    html.push(`
+      <div class="alert-card newsum">
+        ⭐ <b>新サム理論</b><br>
+        ${x.boat}号艇 ${x.name}<br>
+        合計:${x.total}
+      </div>
+    `);
+
+  });
+
+  if (!html.length) {
+
+    return `
+      <div class="summary-box">
+        理論アラートなし
+      </div>
+    `;
+
+  }
+
+  return html.join("");
+
+}
+
+function theoryComment(theory){
+
+  if(theory.taroScore>=90)
+    return "かなり強い理論一致";
+
+  if(theory.taroScore>=75)
+    return "買い材料が多い";
+
+  if(theory.taroScore>=60)
+    return "平均的";
+
+  return "理論一致は少なめ";
+
+}
+
+window.renderTheoryAlerts = renderTheoryAlerts;
+window.theoryComment = theoryComment;
+
+// =======================================
+// theory.js 完了
+// =======================================
