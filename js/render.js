@@ -539,3 +539,36 @@ function renderStats(history = []) {
 }
 
 window.renderStats = renderStats;
+function renderAlerts(p = {}) {
+  const raw = [
+    ...(p.slitAlert || []),
+    ...(p.doubleTimeAlert || []),
+    ...(p.newSumAlert || [])
+  ];
+
+  const seen = new Set();
+  const list = raw.filter(a => {
+    const key = `${a.boat || ""}-${a.type || ""}-${a.reason || ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (!list.length) {
+    return `<div class="summary-box">🚨 理論アラートなし</div>`;
+  }
+
+  return `
+    <div class="sheet">
+      <h3>🚨 舟券太郎 理論アラート</h3>
+      ${list.map(a => `
+        <div class="race-line">
+          <b>${a.boat ? `${a.boat}号艇` : ""} ${a.type || "アラート"}</b>
+          <p>${a.reason || ""}${a.sum ? ` / 合計:${a.sum}` : ""}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+window.renderAlerts = renderAlerts;
