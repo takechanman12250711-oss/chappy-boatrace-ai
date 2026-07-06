@@ -604,49 +604,6 @@ function removeDuplicateForms(list, baseList) {
     return !expanded.every(x => baseExpanded.has(x));
   });
 }
-
-function ticketsWithOdds(list) {
-  const arr = compactForms(list);
-
-  if (!arr.length) {
-    return `<div class="summary-box">候補なし</div>`;
-  }
-
-  return `
-    <div class="ticket-list">
-      ${arr.map(form => {
-        const odds = compositeOddsForForm(form);
-        return `
-          <span class="ticket">
-            ${form}${odds ? `　合成${odds}倍` : ""}
-          </span>
-        `;
-      }).join("")}
-    </div>
-  `;
-}
-
-function compositeOddsForForm(form) {
-  const keys = expandForm(form).map(normalizeKey);
-  const oddsMap = new Map(
-    latestOddsList.map(o => [
-      normalizeKey(o.key || o.result || o.number),
-      Number(o.odds)
-    ])
-  );
-
-  const values = keys
-    .map(k => oddsMap.get(k))
-    .filter(v => Number.isFinite(v) && v > 0);
-
-  if (!values.length) return "";
-
-  const inverseSum = values.reduce((sum, o) => sum + 1 / o, 0);
-  if (!inverseSum) return "";
-
-  return (1 / inverseSum).toFixed(1);
-}
-
 /* ピンクシート */
 
 function renderManshuSheet(boats, p, analysis) {
@@ -825,51 +782,6 @@ function updateAutoPayout() {
 }
 
 /* 共通 */
-
-function tickets(list) {
-  const arr = compactForms(list);
-  if (!arr.length) return `<div class="summary-box">候補なし</div>`;
-  return `<div class="ticket-list">${arr.map(x => `<span class="ticket">${x}</span>`).join("")}</div>`;
-}
-
-function compactForms(list) {
-  const arr = normalizeFormList(list);
-  if (!arr.length) return [];
-
-  return arr.filter((form, i) => {
-    return !arr.some((other, j) => {
-      if (i === j || form === other) return false;
-      const small = expandForm(form);
-      const big = expandForm(other);
-      return big.length > small.length && small.every(x => big.includes(x));
-    });
-  });
-}
-
-function normalizeFormList(list) {
-  if (!Array.isArray(list)) return [];
-  return [...new Set(list.map(x => {
-    const raw = typeof x === "string" ? x : (x.key || x.result || x.number || "");
-    return String(raw).replaceAll("－", "-").replaceAll(" ", "").trim();
-  }).filter(Boolean))];
-}
-
-function expandForm(raw) {
-  const text = String(raw || "").replaceAll("－", "-").trim();
-  const parts = text.split("-").filter(Boolean);
-  if (parts.length !== 3) return [text];
-
-  const out = [];
-  [...parts[0]].forEach(a => {
-    [...parts[1]].forEach(b => {
-      [...parts[2]].forEach(c => {
-        if (a !== b && b !== c && a !== c) out.push(`${a}-${b}-${c}`);
-      });
-    });
-  });
-
-  return [...new Set(out)];
-}
 
 function calcBoatScore(b) {
   let s = 50;
