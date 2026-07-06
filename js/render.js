@@ -143,3 +143,40 @@ function renderMaterialPanel(venue, weather, boats, analysis) {
     </details>
   `;
 }
+function renderRaceFlow(analysis) {
+  if (!analysis) {
+    return `<div class="sheet">展開分析データなし</div>`;
+  }
+
+  const attack = analysis.attackBoat || "-";
+  const sashi = analysis.sashiBoat || "-";
+  const nokoshi = analysis.nokoshiBoat || "-";
+  const trust = analysis.inTrust || 0;
+  const type = analysis.attackType || "展開不明";
+  const tenkai = analysis.tenkaiRate || {};
+
+  return `
+    <div class="sheet">
+      <h3>🚤 展開分析</h3>
+
+      <p><b>イン信頼度：</b>${trust}点</p>
+      <p>${trust >= 70 ? "イン中心。" : "普通。攻め艇次第で穴も見る。"}</p>
+
+      <p><b>攻め艇：</b>${attack}号艇</p>
+      <p><b>差し候補：</b>${sashi}号艇</p>
+      <p><b>残し候補：</b>${nokoshi}号艇</p>
+
+      <h4>展開の流れ</h4>
+      <p>${type}</p>
+
+      <ul>
+        <li>攻め期待：${tenkai.attack || 0}%</li>
+        <li>差し期待：${tenkai.sashi || 0}%</li>
+        <li>残し期待：${tenkai.nokoshi || 0}%</li>
+        <li>波乱率：${tenkai.upset || 0}%</li>
+      </ul>
+    </div>
+  `;
+}
+
+window.renderRaceFlow = renderRaceFlow;
