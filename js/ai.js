@@ -201,3 +201,270 @@ async function refreshOdds(){
   );
 
 }
+// ================================
+// api.js 完全版②
+// API通信・自動更新・取得補助
+// ================================
+
+async function fetchRaceOnly(jcd, rno, date) {
+
+  return await safeJson(
+    `${API_BASE}?jcd=${jcd}&rno=${rno}&date=${date}`,
+    { ok:false }
+  );
+
+}
+
+async function fetchOddsOnly(jcd, rno, date) {
+
+  const data = await safeJson(
+    `/api/odds?jcd=${jcd}&rno=${rno}&date=${date}`,
+    { ok:false, odds:[] }
+  );
+
+  return data.ok
+    ? (data.odds || data.list || [])
+    : [];
+
+}
+
+async function fetchMissingOnly(jcd, rno, date) {
+
+  const data = await safeJson(
+    `/api/missing?jcd=${jcd}&rno=${rno}&date=${date}`,
+    { ok:false, missing:[] }
+  );
+
+  return data.ok
+    ? data.missing || []
+    : [];
+
+}
+
+async function fetchWeatherOnly(jcd, rno, date) {
+
+  const data = await safeJson(
+    `/api/weather?jcd=${jcd}&rno=${rno}&date=${date}`,
+    { ok:false }
+  );
+
+  return data.ok
+    ? (data.weather || data)
+    : {};
+
+}
+
+async function refreshAllData() {
+
+  if (!latestRaceData) return;
+
+  const place = val("#placeSelect");
+  const race = String(val("#raceSelect")).replace("R", "");
+  const date = normalizeDate(val("#dateInput")) || todayYmd();
+
+  const jcd = PLACE_CODES[place] || place;
+
+  latestOddsList = await fetchOddsOnly(jcd, race, date);
+
+  latestRaceData.odds = latestOddsList;
+
+  latestRaceData.missing =
+    await fetchMissingOnly(jcd, race, date);
+
+  latestRaceData.weather =
+    await fetchWeatherOnly(jcd, race, date);
+
+  renderAll(latestRaceData);
+
+}
+
+async function autoRefreshOdds() {
+
+  if (!latestRaceData) return;
+
+  try {
+
+    await refreshOdds();
+
+    autoFillOdds();
+
+  } catch (e) {
+
+    console.error(e);
+
+  }
+
+}
+
+function startAutoRefresh() {
+
+  stopAutoRefresh();
+
+  window.chappyRefreshTimer = setInterval(() => {
+
+    autoRefreshOdds();
+
+  }, 30000);
+
+}
+
+function stopAutoRefresh() {
+
+  if (window.chappyRefreshTimer) {
+
+    clearInterval(window.chappyRefreshTimer);
+
+    window.chappyRefreshTimer = null;
+
+  }
+
+}
+
+function loadRaceFromCurrentForm() {
+
+  return runPrediction();
+
+}
+
+function hasRaceLoaded() {
+
+  return !!latestRaceData;
+
+}
+
+window.runPrediction = runPrediction;
+window.reloadRace = reloadRace;
+window.refreshOdds = refreshOdds;
+window.refreshAllData = refreshAllData;
+window.fetchRaceData = fetchRaceData;
+window.fetchRaceOnly = fetchRaceOnly;
+window.fetchOddsOnly = fetchOddsOnly;
+window.fetchMissingOnly = fetchMissingOnly;
+window.fetchWeatherOnly = fetchWeatherOnly;
+window.startAutoRefresh = startAutoRefresh;
+window.stopAutoRefresh = stopAutoRefresh;
+window.loadRaceFromCurrentForm = loadRaceFromCurrentForm;
+window.hasRaceLoaded = hasRaceLoaded;
+// ================================
+// api.js 完全版③（最終）
+// 初期化・イベント・公開関数
+// ================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  $("#fetchRaceBtn")?.addEventListener(
+    "click",
+    runPrediction
+  );
+
+  $("#refreshOddsBtn")?.addEventListener(
+    "click",
+    refreshOdds
+  );
+
+  $("#reloadRaceBtn")?.addEventListener(
+    "click",
+    reloadRace
+  );
+
+  $("#placeSelect")?.addEventListener(
+    "change",
+    stopAutoRefresh
+  );
+
+  $("#raceSelect")?.addEventListener(
+    "change",
+    stopAutoRefresh
+  );
+
+});
+
+async function preloadRace() {
+
+  const place = val("#placeSelect");
+
+  if (!place) return;
+
+  try {
+
+    await runPrediction();
+
+  } catch (e) {
+
+    console.error(e);
+
+  }
+
+}
+
+async function fetchCurrentRaceResult() {
+
+  if (!latestRaceData) return null;
+
+  const place = val("#placeSelect");
+  const race = String(val("#raceSelect")).replace("R", "");
+  const date = normalizeDate(val("#dateInput")) || todayYmd();
+
+  const jcd = PLACE_CODES[place] || place;
+
+  return await safeJson(
+    `/api/result?jcd=${jcd}&rno=${race}&date=${date}`,
+    {}
+  );
+
+}
+
+async function waitForOfficialResult() {
+
+  const result = await fetchCurrentRaceResult();
+
+  if (!result?.result) return;
+
+  $("#raceResultInput").value = result.result;
+
+  autoFillOdds();
+  autoJudgeResult();
+
+}
+
+async function autoWatchResult() {
+
+  stopResultWatcher();
+
+  window.chappyResultTimer = setInterval(async () => {
+
+    try {
+
+      await waitForOfficialResult();
+
+    } catch (e) {
+
+      console.error(e);
+
+    }
+
+  },60000);
+
+}
+
+function stopResultWatcher(){
+
+  if(window.chappyResultTimer){
+
+    clearInterval(window.chappyResultTimer);
+
+    window.chappyResultTimer=null;
+
+  }
+
+}
+
+window.fetchCurrentRaceResult=fetchCurrentRaceResult;
+window.waitForOfficialResult=waitForOfficialResult;
+window.autoWatchResult=autoWatchResult;
+window.stopResultWatcher=stopResultWatcher;
+window.preloadRace=preloadRace;
+
+// ================================
+// api.js 完了
+// ================================
