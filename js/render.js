@@ -383,3 +383,34 @@ function renderMainSheet(boats = [], p = {}, analysis = {}) {
 }
 
 window.renderMainSheet = renderMainSheet;
+function renderOdds(odds = []) {
+  if (!Array.isArray(odds) || !odds.length) {
+    return `<div class="sheet">オッズデータなし</div>`;
+  }
+
+  const top = [...odds]
+    .map(o => ({
+      key: o.key || o.result || o.number || "-",
+      odds: Number(o.odds || 0)
+    }))
+    .filter(o => o.key !== "-" && o.odds > 0)
+    .sort((a, b) => a.odds - b.odds)
+    .slice(0, 12);
+
+  return `
+    <div class="sheet">
+      <h3>💰 オッズTOP12</h3>
+      <div class="odds-list">
+        ${top.map((o, i) => `
+          <div class="odds-row">
+            <b>${i + 1}位</b>
+            <span>${o.key}</span>
+            <span>${o.odds.toFixed(1)}倍</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+window.renderOdds = renderOdds;
