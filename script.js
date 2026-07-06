@@ -109,7 +109,7 @@ function renderAll(data) {
   setHTML("#raceListArea", renderEntryTable(boats));
   setHTML("#engineArea", renderMaterialPanel(venue, weather, boats, analysis));
   setHTML("#mainSheetArea", renderMainSheet(boats, p, analysis));
-  setHTML("#formationArea", window.renderFormations(p, analysis));
+  setHTML("#formationArea", renderFormations(p, analysis));
   setHTML("#oddsArea", renderOdds(odds));
   console.log("odds count", latestOddsList.length, latestOddsList.slice(0, 3));
   setHTML(
