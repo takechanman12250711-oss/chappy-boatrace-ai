@@ -1,7 +1,7 @@
 // api/race.js
-// _parser.js の export 名ズレ対応版
+// 公式HTML取得 → _parser.parseOfficialRaceHtml 実行版
 
-const parser = require("./_parser");
+const { parseOfficialRaceHtml } = require("./_parser");
 
 module.exports = async function handler(req, res) {
   try {
@@ -15,40 +15,52 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const params = {
-      jcd: String(jcd),
-      rno: String(rno),
-      date: String(date)
-    };
+    const entryUrl =
+      `https://www.boatrace.jp/owpc/pc/race/racelist` +
+      `?rno=${rno}&jcd=${jcd}&hd=${date}`;
 
-    const fetcher =
-      parser.fetchRaceData ||
-      parser.getRaceData ||
-      parser.parseRaceData ||
-      parser.default ||
-      parser;
+    const beforeInfoUrl =
+      `https://www.boatrace.jp/owpc/pc/race/beforeinfo` +
+      `?rno=${rno}&jcd=${jcd}&hd=${date}`;
 
-    if (typeof fetcher !== "function") {
-      return res.status(500).json({
-        ok: false,
-        error: "_parser.js に実行できる関数がありません",
-        parserKeys: Object.keys(parser)
-      });
+    const [entryRes, beforeRes] = await Promise.all([
+      fetch(entryUrl),
+      fetch(beforeInfoUrl)
+    ]);
+
+    if (!entryRes.ok) {
+      throw new Error(`公式出走表取得失敗: ${entryRes.status}`);
     }
 
-    const data = await fetcher(params);
+    const entryHtml = await entryRes.text();
+    const beforeHtml = beforeRes.ok ? await beforeRes.text() : "";
+
+    const parsed = parseOfficialRaceHtml(entryHtml, {
+      jcd: String(jcd),
+      rno: String(rno),
+      date: String(date),
+      entryUrl,
+      beforeInfoUrl,
+      beforeHtml
+    });
 
     return res.status(200).json({
       ok: true,
-      ...data
+      source: "boatrace-official",
+      stadiumCode: String(jcd),
+      raceNo: Number(rno),
+      date: String(date),
+      entryUrl,
+      beforeInfoUrl,
+      ...parsed
     });
 
   } catch (error) {
     return res.status(500).json({
       ok: false,
       error: error.message,
-      stack: error.stack,
-      name: error.name
+      name: error.name,
+      stack: error.stack
     });
   }
 };
