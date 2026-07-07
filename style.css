@@ -1,1 +1,398 @@
-あ
+/* ==========================================================
+   チャッピーボートレースAI
+   style.css 完全版
+========================================================== */
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+
+  background:#eef3f8;
+
+  color:#222;
+
+  font-family:
+    "Yu Gothic",
+    "Hiragino Sans",
+    sans-serif;
+
+  line-height:1.6;
+
+}
+
+.app{
+
+  width:min(1800px,96%);
+
+  margin:auto;
+
+  padding:20px;
+
+}
+
+.app-header{
+
+  background:linear-gradient(90deg,#0b6efd,#0099ff);
+
+  color:#fff;
+
+  padding:20px;
+
+  box-shadow:0 3px 10px rgba(0,0,0,.15);
+
+}
+
+.app-header h1{
+
+  font-size:34px;
+
+}
+
+.app-header p{
+
+  margin-top:8px;
+
+  opacity:.9;
+
+}
+
+.layout-grid{
+
+  display:grid;
+
+  gap:20px;
+
+  margin-top:20px;
+
+  grid-template-columns:repeat(auto-fit,minmax(450px,1fr));
+
+}
+
+.panel{
+
+  background:#fff;
+
+  border-radius:14px;
+
+  padding:18px;
+
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+
+}
+
+.panel h2{
+
+  color:#0b6efd;
+
+  margin-bottom:15px;
+
+}
+
+.control-panel{
+
+  margin-top:20px;
+
+}
+
+.form-grid{
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
+
+  gap:15px;
+
+}
+
+.form-grid label{
+
+  display:flex;
+
+  flex-direction:column;
+
+  font-weight:bold;
+
+  gap:6px;
+
+}
+
+select,
+input{
+
+  padding:10px;
+
+  border:1px solid #ccc;
+
+  border-radius:8px;
+
+  font-size:15px;
+
+}
+
+.button-row{
+
+  display:flex;
+
+  gap:10px;
+
+  flex-wrap:wrap;
+
+  margin-top:20px;
+
+}
+
+.primary-btn{
+
+  background:#0b6efd;
+
+  color:#fff;
+
+  border:none;
+
+  border-radius:8px;
+
+  padding:12px 24px;
+
+  cursor:pointer;
+
+  font-size:16px;
+
+}
+
+.primary-btn:hover{
+
+  background:#005fd0;
+
+}
+
+.sub-btn{
+
+  background:#f3f3f3;
+
+  border:none;
+
+  border-radius:8px;
+
+  padding:12px 20px;
+
+  cursor:pointer;
+
+}
+
+.status{
+
+  margin-top:15px;
+
+  font-weight:bold;
+
+  color:#0b6efd;
+
+}
+/* ===========================
+   シート
+=========================== */
+
+.sheet{
+
+  background:#fff;
+
+  border-radius:14px;
+
+  padding:18px;
+
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+
+}
+
+.compact-sheet{
+
+  border-left:8px solid #1976d2;
+
+}
+
+.manshu-sheet{
+
+  border-left:8px solid #e91e63;
+
+}
+
+.flow-sheet{
+
+  border-left:8px solid #ff9800;
+
+}
+
+.summary-box{
+
+  background:#f7f9fc;
+
+  border-radius:10px;
+
+  padding:12px;
+
+  margin-bottom:15px;
+
+}
+
+.race-line{
+
+  padding:12px;
+
+  border-bottom:1px solid #ececec;
+
+}
+
+.race-line:last-child{
+
+  border-bottom:none;
+
+}
+
+.main-card{
+
+  background:#fafafa;
+
+  border-radius:10px;
+
+  margin-bottom:12px;
+
+}
+
+/* ===========================
+   テーブル
+=========================== */
+
+.table{
+
+  width:100%;
+
+  border-collapse:collapse;
+
+}
+
+.table th{
+
+  background:#0b6efd;
+
+  color:#fff;
+
+  padding:10px;
+
+}
+
+.table td{
+
+  padding:10px;
+
+  border:1px solid #ddd;
+
+}
+
+.table tr:nth-child(even){
+
+  background:#f7f7f7;
+
+}
+
+/* ===========================
+   成績管理
+=========================== */
+
+.result-inputs{
+
+  display:grid;
+
+  gap:10px;
+
+  margin-bottom:15px;
+
+}
+
+.result-buttons{
+
+  display:flex;
+
+  gap:10px;
+
+  margin:15px 0;
+
+}
+
+.result-buttons button{
+
+  flex:1;
+
+  padding:12px;
+
+  border:none;
+
+  border-radius:8px;
+
+  cursor:pointer;
+
+  background:#0b6efd;
+
+  color:#fff;
+
+}
+
+#autoPayoutText{
+
+  font-size:20px;
+
+  font-weight:bold;
+
+  color:#d32f2f;
+
+}
+
+/* ===========================
+   AIカード
+=========================== */
+
+.ai-card{
+
+  background:#eef7ff;
+
+  border-left:6px solid #2196f3;
+
+  border-radius:10px;
+
+  padding:12px;
+
+  margin-bottom:12px;
+
+}
+
+.theory-card{
+
+  background:#fff8e1;
+
+  border-left:6px solid #ffc107;
+
+  border-radius:10px;
+
+  padding:12px;
+
+  margin-bottom:12px;
+
+}
+
+.alert-card{
+
+  background:#ffebee;
+
+  border-left:6px solid #f44336;
+
+  border-radius:10px;
+
+  padding:12px;
+
+  margin-bottom:12px;
+
+}
