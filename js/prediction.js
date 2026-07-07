@@ -247,3 +247,236 @@ function rankRacers(raceData){
     .map(racer => calculateRacerIndexes(racer, raceData))
     .sort((a, b) => b.score - a.score);
 }
+function createBuffsAndDebuffs(racer){
+  const buffs = [];
+  const debuffs = [];
+
+  if(racer.attackIndex >= 80){
+    buffs.push(`攻め指数${racer.attackIndex}でスタート・攻撃力が高い`);
+  }else if(racer.attackIndex <= 55){
+    debuffs.push(`攻め指数${racer.attackIndex}で自力攻めは弱め`);
+  }
+
+  if(racer.flowIndex >= 80){
+    buffs.push(`展開指数${racer.flowIndex}で差し場・展開待ちに強い`);
+  }else if(racer.flowIndex <= 55){
+    debuffs.push(`展開指数${racer.flowIndex}で展開を拾う力は控えめ`);
+  }
+
+  if(racer.raceIndex >= 80){
+    buffs.push(`道中指数${racer.raceIndex}で2M以降の粘りが強い`);
+  }else if(racer.raceIndex <= 55){
+    debuffs.push(`道中指数${racer.raceIndex}で周回勝負は不安`);
+  }
+
+  if(racer.localIndex >= 80){
+    buffs.push(`当地指数${racer.localIndex}で水面相性が良い`);
+  }else if(racer.localIndex <= 55){
+    debuffs.push(`当地指数${racer.localIndex}で当地実績は弱め`);
+  }
+
+  if(racer.motorIndex >= 80){
+    buffs.push(`モーター評価${racer.motorIndex}で足色は上位`);
+  }else if(racer.motorIndex <= 55){
+    debuffs.push(`モーター評価${racer.motorIndex}で機力面は強調しにくい`);
+  }
+
+  if(racer.exhibitionIndex >= 80){
+    buffs.push(`展示評価${racer.exhibitionIndex}で直前気配が良い`);
+  }else if(racer.exhibitionIndex <= 55){
+    debuffs.push(`展示評価${racer.exhibitionIndex}で直前気配は物足りない`);
+  }
+
+  return { buffs, debuffs };
+}
+
+function createRacerComment(racer){
+  const boat = toNumber(racer.boat);
+
+  if(racer.score >= 85){
+    return `${boat}号艇${racer.name}は総合指数が高く、軸候補としてかなり信頼できる。攻め・展開・道中のどれかで崩れにくい形。`;
+  }
+
+  if(racer.attackIndex >= 80){
+    return `${boat}号艇${racer.name}は攻め性能が高く、スリットから展開を作れるタイプ。頭まで警戒したい。`;
+  }
+
+  if(racer.flowIndex >= 80){
+    return `${boat}号艇${racer.name}は展開を拾う力が高く、差し場や外の攻めに乗る形で連絡みがある。`;
+  }
+
+  if(racer.raceIndex >= 80){
+    return `${boat}号艇${racer.name}は道中型。1Mで届かなくても2M以降で3着に残す力がある。`;
+  }
+
+  if(racer.localIndex >= 80){
+    return `${boat}号艇${racer.name}は当地巧者。水面相性で人気以上に残す可能性がある。`;
+  }
+
+  if(boat >= 5 && racer.score >= 60){
+    return `${boat}号艇${racer.name}は外枠で評価は上がりにくいが、展開が割れた時の3着候補として面白い。`;
+  }
+
+  return `${boat}号艇${racer.name}は大きな強調材料は少ないが、展開次第で押さえに入るタイプ。`;
+}
+
+function createMainPrediction(raceData){
+  const ranked = rankRacers(raceData);
+
+  const marks = ["◎", "○", "▲", "△", "☆", "注"];
+
+  const racers = ranked.map((racer, index) => {
+    const bd = createBuffsAndDebuffs(racer);
+
+    return {
+      ...racer,
+      mark: marks[index] || "注",
+      buffs: bd.buffs,
+      debuffs: bd.debuffs,
+      comment: createRacerComment(racer)
+    };
+  });
+
+  return {
+    racers
+  };
+}
+
+function pickBoat(racers, boatNo){
+  return racers.find(r => toNumber(r.boat) === toNumber(boatNo));
+}
+
+function ticket(a, b, c){
+  return `${a}-${b}-${c}`;
+}
+
+function uniqueTickets(tickets){
+  return [...new Set(tickets.filter(Boolean))];
+}
+
+function createMainTickets(raceData){
+  const ranked = rankRacers(raceData);
+  const boats = ranked.map(r => toNumber(r.boat));
+
+  const top = boats[0];
+  const second = boats[1];
+  const third = boats[2];
+  const fourth = boats[3];
+  const fifth = boats[4];
+
+  const one = pickBoat(ranked, 1);
+  const two = pickBoat(ranked, 2);
+  const three = pickBoat(ranked, 3);
+  const four = pickBoat(ranked, 4);
+
+  let main = [];
+  let safe = [];
+  let hole = [];
+
+  if(one && one.score >= 76){
+    main.push(
+      ticket(1, second, third),
+      ticket(1, third, second),
+      ticket(1, second, fourth)
+    );
+
+    safe.push(
+      ticket(1, 2, 3),
+      ticket(1, 2, 4),
+      ticket(1, 3, 2)
+    );
+  }else{
+    main.push(
+      ticket(top, second, third),
+      ticket(top, third, second),
+      ticket(second, top, third)
+    );
+
+    safe.push(
+      ticket(1, top, second),
+      ticket(top, 1, second),
+      ticket(second, 1, top)
+    );
+  }
+
+  if(two && two.flowIndex >= 76){
+    safe.push(
+      ticket(2, 1, 3),
+      ticket(2, 1, 4),
+      ticket(1, 2, 4)
+    );
+  }
+
+  if(three && three.attackIndex >= 76){
+    hole.push(
+      ticket(3, 1, 2),
+      ticket(3, 1, 4),
+      ticket(3, 2, 1)
+    );
+  }
+
+  if(four && four.attackIndex >= 74){
+    hole.push(
+      ticket(4, 1, 2),
+      ticket(4, 1, 3),
+      ticket(1, 4, 5)
+    );
+  }
+
+  if(fifth){
+    hole.push(
+      ticket(top, fifth, second),
+      ticket(top, second, fifth),
+      ticket(fifth, top, second)
+    );
+  }
+
+  return {
+    main: uniqueTickets(main).slice(0, 6),
+    safe: uniqueTickets(safe).slice(0, 8),
+    hole: uniqueTickets(hole).slice(0, 10)
+  };
+}
+
+function calculateManshuScore(racer){
+  const boat = toNumber(racer.boat);
+
+  let score = 0;
+
+  if(boat >= 4) score += 18;
+  if(boat >= 5) score += 12;
+
+  score += Math.max(0, racer.attackIndex - 65) * 0.35;
+  score += Math.max(0, racer.flowIndex - 65) * 0.35;
+  score += Math.max(0, racer.raceIndex - 65) * 0.30;
+  score += Math.max(0, racer.localIndex - 65) * 0.25;
+
+  if(racer.score >= 65 && racer.score <= 78){
+    score += 10;
+  }
+
+  if(racer.score >= 79){
+    score += 4;
+  }
+
+  return Math.round(clamp(score, 0, 100));
+}
+
+function createManshuCandidates(raceData){
+  const ranked = rankRacers(raceData);
+
+  return ranked
+    .map(racer => {
+      const manshuScore = calculateManshuScore(racer);
+
+      return {
+        ...racer,
+        manshuScore,
+        comment:
+          manshuScore >= 70
+            ? `${racer.boat}号艇${racer.name}は万舟の起点候補。攻めか展開のどちらかで高配当を作れる。`
+            : `${racer.boat}号艇${racer.name}は相手・3着穴候補。展開が割れた時に押さえたい。`
+      };
+    })
+    .sort((a, b) => b.manshuScore - a.manshuScore);
+}
