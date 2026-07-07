@@ -693,3 +693,21 @@ window.renderAllEmpty=function(){
 };
 
 })();
+/*==================================================
+  renderAll 本体
+==================================================*/
+
+window.renderAll=function(data={}){
+
+    window.renderRaceList?.(data.races ?? []);
+    window.renderWeather?.(data.weather ?? {});
+    window.renderVenue?.(data.venue ?? data.stadium ?? {});
+
+    window.renderEntryArea?.(data.runners ?? data.entries ?? data.entry ?? []);
+    window.renderMaterialArea?.(data.material ?? data.exhibition ?? {});
+    window.renderMainSheet?.(data.blueSheet ?? data.mainSheet ?? data.prediction ?? []);
+    window.renderPinkSheet?.(data.pinkSheet ?? data.manshuSheet ?? {});
+    window.renderFormation?.(data.formation ?? data.formations ?? []);
+    window.renderComment?.(data.comment ?? data.finalComment ?? {});
+
+};
