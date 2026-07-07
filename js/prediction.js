@@ -3497,7 +3497,139 @@
 
     return date;
   }
+　  /* ===============================
+    Part8 修正版
+    - 未定義対策
+    - 不正舟券除外
+    - 展示0をデータなし扱い
+    - バフ/デバフ整理
+  =============================== */
 
+  function clampScore(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return 50;
+    return Math.max(0, Math.min(100, Math.round(n)));
+  }
+
+  function isValidBoatNo(n) {
+    const v = Number(n);
+    return Number.isFinite(v) && v >= 1 && v <= 6;
+  }
+
+  function hasDuplicateBoats(nums) {
+    const clean = nums.map(Number).filter(isValidBoatNo);
+    return new Set(clean).size !== clean.length;
+  }
+
+  function normalizeTicket(ticketText) {
+    if (!ticketText) return "";
+
+    const text = String(ticketText).trim();
+
+    if (!text.includes("-")) return "";
+
+    const parts = text.split("-");
+
+    if (parts.length !== 3) return "";
+
+    const nums = parts.map(p => String(p).trim());
+
+    if (nums.some(p => !p)) return "";
+
+    return nums.join("-");
+  }
+
+  function isValidExactTicket(ticketText) {
+    const t = normalizeTicket(ticketText);
+    if (!t) return false;
+
+    const parts = t.split("-");
+
+    if (parts.some(p => p.length !== 1)) return false;
+
+    const nums = parts.map(Number);
+
+    if (nums.some(n => !isValidBoatNo(n))) return false;
+
+    return !hasDuplicateBoats(nums);
+  }
+
+  function cleanExactTickets(list) {
+    return uniqueList(
+      (list || [])
+        .map(normalizeTicket)
+        .filter(isValidExactTicket)
+    );
+  }
+
+  function cleanFormationTickets(list) {
+    return uniqueList(
+      (list || [])
+        .map(v => String(v || "").trim())
+        .filter(Boolean)
+        .filter(v => v.includes("-"))
+        .filter(v => !hasInvalidFormationDuplicate(v))
+    );
+  }
+
+  function hasInvalidFormationDuplicate(text) {
+    const parts = String(text).split("-");
+    if (parts.length !== 3) return true;
+
+    const first = parts[0];
+    const second = parts[1];
+    const third = parts[2];
+
+    if (!/^[1-6]+$/.test(first)) return true;
+    if (!/^[1-6]+$/.test(second)) return true;
+    if (!/^[1-6]+$/.test(third)) return true;
+
+    if (first.length === 1) {
+      if (second.includes(first)) return true;
+      if (third.includes(first)) return true;
+    }
+
+    return false;
+  }
+
+  function safeTimeValue(v) {
+    const n = toNumberOrNull(v);
+
+    if (n === null) return null;
+    if (n <= 0) return null;
+
+    return n;
+  }
+
+  function limitReasons(list, max = 2) {
+    const clean = uniqueList(list || [])
+      .map(v => String(v).trim())
+      .filter(Boolean);
+
+    return clean.slice(0, max);
+  }
+
+  function safeBuffs(list) {
+    const result = limitReasons(list, 2);
+    return result.length ? result : ["特になし"];
+  }
+
+  function safeDebuffs(list) {
+    const result = limitReasons(list, 2);
+    return result.length ? result : ["特になし"];
+  }
+
+  function safeDisplay(v) {
+    if (v === null || v === undefined || v === "") return "-";
+    if (Number(v) === 0) return "-";
+    return v;
+  }
+
+  function replaceAllFormationCleaner() {
+    const oldCleanTickets = cleanTickets;
+
+    window.__CHAPPY_OLD_CLEAN_TICKETS__ = oldCleanTickets;
+  }
   function debugPrediction(data) {
     console.log("[Chappy Prediction]", data);
     return data;
