@@ -1,9 +1,7 @@
 // api/race.js
-// エラー内容をフロントに返すデバッグ版
+// _parser.js の export 名ズレ対応版
 
-const {
-  fetchRaceData
-} = require("./_parser");
+const parser = require("./_parser");
 
 module.exports = async function handler(req, res) {
   try {
@@ -17,11 +15,28 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const data = await fetchRaceData({
+    const params = {
       jcd: String(jcd),
       rno: String(rno),
       date: String(date)
-    });
+    };
+
+    const fetcher =
+      parser.fetchRaceData ||
+      parser.getRaceData ||
+      parser.parseRaceData ||
+      parser.default ||
+      parser;
+
+    if (typeof fetcher !== "function") {
+      return res.status(500).json({
+        ok: false,
+        error: "_parser.js に実行できる関数がありません",
+        parserKeys: Object.keys(parser)
+      });
+    }
+
+    const data = await fetcher(params);
 
     return res.status(200).json({
       ok: true,
@@ -29,8 +44,6 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("api/race error", error);
-
     return res.status(500).json({
       ok: false,
       error: error.message,
