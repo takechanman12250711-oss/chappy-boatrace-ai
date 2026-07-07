@@ -66,17 +66,7 @@ function normalizeStadium(value) {
 }
 
 function buildOfficialUrl(type, stadiumCode, raceNo, date) {
-  const pageMap = {
-    entry: "racelist",
-    before: "beforeinfo"
-  };
-
-  const page = pageMap[type];
-
-  if (!page) {
-    throw new Error("未対応の取得タイプです");
-  }
-
+  const page = type === "entry" ? "racelist" : "beforeinfo";
   return `${BASE_URL}/${page}?rno=${raceNo}&jcd=${stadiumCode}&hd=${date}`;
 }
 
@@ -132,7 +122,7 @@ export default async function handler(req, res) {
     return sendJson(res, 200, {
       ok: true,
       source: "boatrace-official",
-      parser: "chappy-parser-v1",
+      parser: "chappy-parser-v2",
       stadiumCode,
       stadiumName: STADIUM_CODE_TO_NAME[stadiumCode] || "",
       raceNo,
@@ -142,14 +132,14 @@ export default async function handler(req, res) {
       raceInfo: parsed.raceInfo,
       entries: parsed.entries,
       beforeInfo: parsed.beforeInfo,
-startExhibition: parsed.startExhibition,
-weather: parsed.weather,
-debug: {
-  foundEntries: parsed.entries.filter((entry) => entry.rawFound).length,
-  foundBeforeInfo: parsed.beforeInfo.filter((item) => item.rawBlock).length,
-  foundStartExhibition: parsed.startExhibition.length
-},
-      message: "race.js と parser.js 接続完了"
+      startExhibition: parsed.startExhibition,
+      weather: parsed.weather,
+      debug: {
+        foundEntries: parsed.entries.filter((entry) => entry.rawFound).length,
+        foundBeforeInfo: parsed.beforeInfo.filter((item) => item.rawBlock).length,
+        foundStartExhibition: parsed.startExhibition.length
+      },
+      message: "race.js v2：出走表＋直前情報 接続完了"
     });
   } catch (error) {
     return sendJson(res, 500, {
