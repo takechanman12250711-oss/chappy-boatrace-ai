@@ -396,3 +396,250 @@ input{
   margin-bottom:12px;
 
 }
+/* ===========================
+   出走表カード
+=========================== */
+
+.entry-card{
+  background:#ffffff;
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:12px;
+  border-left:6px solid #0b6efd;
+  box-shadow:0 1px 5px rgba(0,0,0,.06);
+}
+
+.entry-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.boat-number{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  font-size:20px;
+  color:#fff;
+}
+
+.boat-1{ background:#ffffff; color:#111; border:2px solid #ccc; }
+.boat-2{ background:#111111; }
+.boat-3{ background:#d32f2f; }
+.boat-4{ background:#1976d2; }
+.boat-5{ background:#fbc02d; color:#111; }
+.boat-6{ background:#2e7d32; }
+
+.racer-name{
+  font-size:20px;
+  font-weight:bold;
+}
+
+.racer-class{
+  font-size:13px;
+  background:#eef3f8;
+  padding:4px 8px;
+  border-radius:20px;
+}
+
+.entry-info{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:8px;
+  font-size:14px;
+}
+
+.entry-info div{
+  background:#f7f9fc;
+  padding:8px;
+  border-radius:8px;
+}
+
+/* ===========================
+   予想評価カード
+=========================== */
+
+.score-card{
+  background:#ffffff;
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:12px;
+  border:1px solid #e2e8f0;
+}
+
+.score-card.top{
+  border-left:7px solid #1976d2;
+  background:#f1f7ff;
+}
+
+.score-card.hole{
+  border-left:7px solid #e91e63;
+  background:#fff2f7;
+}
+
+.score-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+  font-weight:bold;
+}
+
+.score-badge{
+  font-size:22px;
+  color:#0b6efd;
+}
+
+.score-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:8px;
+  margin:10px 0;
+}
+
+.score-item{
+  background:#f7f9fc;
+  border-radius:8px;
+  padding:8px;
+  text-align:center;
+}
+
+.score-item strong{
+  display:block;
+  font-size:20px;
+  color:#0b6efd;
+}
+
+.buff-list{
+  display:grid;
+  gap:6px;
+  margin-top:10px;
+}
+
+.buff{
+  background:#e8f5e9;
+  color:#1b5e20;
+  padding:7px 9px;
+  border-radius:8px;
+  font-size:14px;
+}
+
+.debuff{
+  background:#ffebee;
+  color:#b71c1c;
+  padding:7px 9px;
+  border-radius:8px;
+  font-size:14px;
+}
+
+.comment{
+  margin-top:10px;
+  background:#fffde7;
+  border-left:5px solid #fbc02d;
+  border-radius:8px;
+  padding:10px;
+}
+
+/* ===========================
+   舟券フォーメーション
+=========================== */
+
+.ticket-box{
+  background:#f7f9fc;
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:12px;
+}
+
+.ticket-box h3{
+  margin-bottom:10px;
+  color:#0b6efd;
+}
+
+.ticket-line{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px;
+  border-bottom:1px solid #e0e0e0;
+}
+
+.ticket-line:last-child{
+  border-bottom:none;
+}
+
+.ticket-rank{
+  font-weight:bold;
+  color:#e91e63;
+}
+
+.ticket-number{
+  font-size:18px;
+  font-weight:bold;
+}
+
+.ticket-note{
+  font-size:13px;
+  color:#555;
+}
+
+.ticket-main{
+  border-left:6px solid #1976d2;
+}
+
+.ticket-safe{
+  border-left:6px solid #43a047;
+}
+
+.ticket-hole{
+  border-left:6px solid #e91e63;
+}
+
+/* ===========================
+   オッズ表示
+=========================== */
+
+.odds-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;
+}
+
+.odds-card{
+  background:#ffffff;
+  border-radius:10px;
+  padding:10px;
+  border:1px solid #ddd;
+  text-align:center;
+}
+
+.odds-card strong{
+  display:block;
+  font-size:18px;
+  color:#0b6efd;
+}
+
+.odds-card span{
+  font-size:22px;
+  font-weight:bold;
+  color:#d32f2f;
+}
+
+.synthetic-odds{
+  background:#fff8e1;
+  border-left:6px solid #ffc107;
+  border-radius:10px;
+  padding:12px;
+  margin-top:12px;
+}
+
+.synthetic-odds strong{
+  color:#d32f2f;
+  font-size:20px;
+}
