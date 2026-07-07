@@ -1,73 +1,286 @@
-// js/script.js
-// 強制診断版
+/* =========================================================
+  チャッピーボートレースAI
+  script.js 完全版
 
-document.addEventListener("DOMContentLoaded", () => {
-  const box = document.createElement("div");
-  box.id = "debugBox";
-  box.style.cssText = `
-    margin:16px;
-    padding:16px;
-    background:#111;
-    color:#0f0;
-    font-size:14px;
-    border-radius:12px;
-    white-space:pre-wrap;
-    z-index:99999;
-    position:relative;
-  `;
-  document.body.prepend(box);
+  役割：
+  - ボタン処理
+  - API取得
+  - renderAll()接続
+========================================================= */
 
-  log("✅ script.js 読み込みOK");
+(function () {
+  "use strict";
 
-  log(`ChappyAPI: ${typeof window.ChappyAPI}`);
-  log(`renderEntryTable: ${typeof window.renderEntryTable}`);
-  log(`renderMaterialPanel: ${typeof window.renderMaterialPanel}`);
+  const PLACE_CODE_MAP = {
+    桐生: "01",
+    戸田: "02",
+    江戸川: "03",
+    平和島: "04",
+    多摩川: "05",
+    浜名湖: "06",
+    蒲郡: "07",
+    常滑: "08",
+    津: "09",
+    三国: "10",
+    びわこ: "11",
+    住之江: "12",
+    尼崎: "13",
+    鳴門: "14",
+    丸亀: "15",
+    児島: "16",
+    宮島: "17",
+    徳山: "18",
+    下関: "19",
+    若松: "20",
+    芦屋: "21",
+    福岡: "22",
+    唐津: "23",
+    大村: "24"
+  };
 
-  const button = document.querySelector("button");
-  log(`button: ${button ? "あり" : "なし"}`);
+  let lastRaceData = null;
 
-  if (!button) return;
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("✅ script.js 読み込みOK");
 
-  button.addEventListener("click", async (e) => {
-    e.preventDefault();
-    log("✅ ボタン押された");
+    setDefaultDate();
 
-    try {
-      const raceData = await window.ChappyAPI.fetchRace({
-        jcd: "24",
-        rno: "1",
-        date: "20260707"
-      });
+    const fetchBtn = document.getElementById("fetchRaceBtn");
+    const reloadBtn = document.getElementById("reloadRaceBtn");
+    const oddsBtn = document.getElementById("refreshOddsBtn");
 
-      log(`✅ API成功 entries=${raceData.entries.length}`);
+    if (fetchBtn) fetchBtn.addEventListener("click", fetchAndRenderRace);
+    if (reloadBtn) reloadBtn.addEventListener("click", fetchAndRenderRace);
+    if (oddsBtn) oddsBtn.addEventListener("click", refreshOddsOnly);
 
-      const test = document.createElement("div");
-      test.style.cssText = `
-        margin:16px;
-        padding:16px;
-        background:white;
-        color:#111;
-        border-radius:12px;
-        font-size:18px;
-      `;
-
-      test.innerHTML = `
-        <h2>🚤 出走表テスト表示</h2>
-        ${raceData.entries.map(e => `
-          <div style="padding:10px;border-bottom:1px solid #ddd;">
-            ${e.boatNo}号艇 ${e.racerName} / ${e.className} / ST ${e.avgST}
-          </div>
-        `).join("")}
-      `;
-
-      document.body.prepend(test);
-
-    } catch (err) {
-      log(`❌ エラー: ${err.message}`);
-    }
+    updateStatus("待機中");
   });
 
-  function log(msg) {
-    box.textContent += msg + "\n";
+  function setDefaultDate() {
+    const input = document.getElementById("dateInput");
+    if (!input || input.value) return;
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+
+    input.value = `${yyyy}-${mm}-${dd}`;
   }
-});
+
+  async function fetchAndRenderRace() {
+    try {
+      clearErrorArea();
+      updateStatus("取得中...");
+
+      const params = getRaceParams();
+
+      console.log("🚤 race params", params);
+
+      const data = await fetchRaceData(params);
+
+      lastRaceData = data;
+
+      console.log("✅ API成功 entries=", data?.entries?.length || 0, data);
+
+      const prediction = createPredictionSafe(data);
+      const theory = createTheorySafe(data);
+      const ai = createAISafe(data);
+      const odds = data?.odds || null;
+
+      if (typeof window.renderAll === "function") {
+        window.renderAll(data, {
+          prediction,
+          theory,
+          ai,
+          odds,
+          stats: loadStatsSafe(),
+          history: loadHistorySafe()
+        });
+      } else {
+        throw new Error("renderAll() が見つかりません。render.jsを確認してください。");
+      }
+
+      updateStatus("取得完了");
+
+    } catch (error) {
+      console.error("❌ fetchAndRenderRace error", error);
+      updateStatus("エラー");
+      showError(error.message || "取得に失敗しました");
+    }
+  }
+
+  function getRaceParams() {
+    const place = document.getElementById("placeSelect")?.value || "大村";
+    const raceText = document.getElementById("raceSelect")?.value || "1R";
+    const dateValue = document.getElementById("dateInput")?.value;
+
+    const jcd = PLACE_CODE_MAP[place];
+
+    if (!jcd) {
+      throw new Error(`場コードが見つかりません：${place}`);
+    }
+
+    const rno = Number(String(raceText).replace("R", ""));
+    const date = String(dateValue || "").replaceAll("-", "");
+
+    if (!rno) {
+      throw new Error("レース番号が不正です");
+    }
+
+    if (!date || date.length !== 8) {
+      throw new Error("日付を入力してください");
+    }
+
+    return {
+      place,
+      jcd,
+      rno,
+      date
+    };
+  }
+
+  async function fetchRaceData(params) {
+    if (window.ChappyAPI && typeof window.ChappyAPI.getRace === "function") {
+      return await window.ChappyAPI.getRace(params);
+    }
+
+    if (window.ChappyAPI && typeof window.ChappyAPI.fetchRace === "function") {
+      return await window.ChappyAPI.fetchRace(params);
+    }
+
+    if (typeof window.fetchRace === "function") {
+      return await window.fetchRace(params);
+    }
+
+    const url = `/api/race?jcd=${encodeURIComponent(params.jcd)}&rno=${encodeURIComponent(params.rno)}&date=${encodeURIComponent(params.date)}`;
+
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`APIエラー：${res.status}`);
+    }
+
+    return await res.json();
+  }
+
+  function createPredictionSafe(data) {
+    try {
+      if (typeof window.createPrediction === "function") {
+        return window.createPrediction(data);
+      }
+    } catch (error) {
+      console.warn("prediction.js error", error);
+    }
+
+    return null;
+  }
+
+  function createTheorySafe(data) {
+    try {
+      if (typeof window.createTheory === "function") {
+        return window.createTheory(data);
+      }
+
+      if (typeof window.analyzeTheory === "function") {
+        return window.analyzeTheory(data);
+      }
+    } catch (error) {
+      console.warn("theory.js error", error);
+    }
+
+    return null;
+  }
+
+  function createAISafe(data) {
+    try {
+      if (typeof window.createAI === "function") {
+        return window.createAI(data);
+      }
+
+      if (typeof window.createAIIndex === "function") {
+        return window.createAIIndex(data);
+      }
+    } catch (error) {
+      console.warn("ai.js error", error);
+    }
+
+    return null;
+  }
+
+  function refreshOddsOnly() {
+    if (!lastRaceData) {
+      updateStatus("先に出走表を取得してください");
+      return;
+    }
+
+    try {
+      if (typeof window.renderOdds === "function") {
+        window.renderOdds(lastRaceData, lastRaceData.odds || null);
+      }
+
+      updateStatus("オッズ更新完了");
+    } catch (error) {
+      console.error(error);
+      showError("オッズ更新に失敗しました");
+    }
+  }
+
+  function updateStatus(message) {
+    const el = document.getElementById("statusArea");
+    if (el) el.textContent = message;
+  }
+
+  function showError(message) {
+    const el = document.getElementById("errorArea");
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="panel error-panel">
+        <h2>⚠️ エラー</h2>
+        <p>${escapeHTML(message)}</p>
+      </div>
+    `;
+  }
+
+  function clearErrorArea() {
+    const el = document.getElementById("errorArea");
+    if (el) el.innerHTML = "";
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function loadStatsSafe() {
+    try {
+      if (typeof window.getStats === "function") {
+        return window.getStats();
+      }
+
+      const raw = localStorage.getItem("chappy_stats");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function loadHistorySafe() {
+    try {
+      if (typeof window.getRaceHistory === "function") {
+        return window.getRaceHistory();
+      }
+
+      const raw = localStorage.getItem("chappy_history");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+})();
