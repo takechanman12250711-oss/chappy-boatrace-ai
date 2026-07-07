@@ -1345,3 +1345,80 @@ h1, h2, h3 {
 .muted {
   color: #666;
 }
+/* =========================================================
+  緊急修正 v4
+  - 表の縦割れ禁止
+  - 色は最小限
+  - スマホでも横スクロール
+========================================================= */
+
+.data-table {
+  min-width: 980px !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
+.table-wrap {
+  overflow-x: auto !important;
+  width: 100% !important;
+}
+
+.data-table th,
+.data-table td {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  line-height: 1.6 !important;
+  font-size: 14px !important;
+  padding: 10px 12px !important;
+  vertical-align: middle !important;
+}
+
+/* 選手名・一言だけ折り返しOK */
+.data-table td:nth-child(2),
+.data-table td:last-child {
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* カードは白 */
+.card,
+.entry-card,
+.mini-card,
+.sheet-card,
+.formation-box {
+  background: #fff !important;
+  color: #222 !important;
+}
+
+/* 艇番だけ色 */
+.boat-label,
+.boat-badge {
+  width: auto !important;
+  min-width: 34px !important;
+  height: auto !important;
+  padding: 4px 8px !important;
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+/* 点数は普通の見た目に戻す */
+.score-num,
+.score-badge,
+.big-number {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  min-width: auto !important;
+  font-size: inherit !important;
+  font-weight: 900 !important;
+}
+
+/* フォーメーションは横並び */
+.ticket-chip,
+.formation-box span,
+.formation-box li {
+  white-space: nowrap !important;
+}
