@@ -334,3 +334,152 @@ function renderMissing(missingData){
     </div>
   `;
 }
+function renderStats(statsData){
+  const stats = statsData || {};
+
+  return `
+    <div class="sheet">
+      <h2>📈 成績・回収率管理</h2>
+
+      <table class="table">
+        <tbody>
+          <tr>
+            <th>予想数</th>
+            <td>${safeNumber(stats.totalPredictions)}回</td>
+          </tr>
+          <tr>
+            <th>的中数</th>
+            <td>${safeNumber(stats.hitCount)}回</td>
+          </tr>
+          <tr>
+            <th>的中率</th>
+            <td>${safeText(stats.hitRate)}%</td>
+          </tr>
+          <tr>
+            <th>購入金額</th>
+            <td>${safeText(stats.totalBet)}円</td>
+          </tr>
+          <tr>
+            <th>払戻金額</th>
+            <td>${safeText(stats.totalPayout)}円</td>
+          </tr>
+          <tr>
+            <th>回収率</th>
+            <td>${safeText(stats.returnRate)}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderTheoryPanel(theoryData){
+  const theories = theoryData || [];
+
+  if(!theories.length){
+    return renderEmpty("舟券太郎理論データがありません");
+  }
+
+  return `
+    <div class="sheet">
+      <h2>🧠 舟券太郎理論</h2>
+
+      ${theories.map(theory => `
+        <div class="theory-card">
+          <h3>${safeText(theory.name)}</h3>
+          <p>${safeText(theory.detail)}</p>
+          <div class="index-tags">
+            <span class="index-tag attack-tag">
+              評価 ${safeNumber(theory.score)}
+            </span>
+            <span class="index-tag flow-tag">
+              対象 ${safeText(theory.target)}
+            </span>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderAIPanel(aiData){
+  const comments = aiData?.comments || [];
+
+  if(!comments.length){
+    return renderEmpty("AIコメントがありません");
+  }
+
+  return `
+    <div class="sheet">
+      <h2>🤖 AI総合コメント</h2>
+
+      ${comments.map(comment => `
+        <div class="ai-card">
+          ${safeText(comment)}
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderResultPanel(resultData){
+  const result = resultData || {};
+
+  return `
+    <div class="sheet">
+      <h2>🏁 結果入力・自動判定</h2>
+
+      <div class="result-inputs">
+        <input id="resultTicketInput" placeholder="結果 例：1-2-3">
+        <input id="payoutInput" placeholder="払戻金 例：1250">
+      </div>
+
+      <div class="result-buttons">
+        <button onclick="saveRaceResult()">結果を保存</button>
+        <button onclick="clearRaceResult()">結果を消去</button>
+      </div>
+
+      <div id="autoPayoutText">
+        ${safeText(result.message, "結果未入力")}
+      </div>
+    </div>
+  `;
+}
+
+function renderLoading(targetId, message = "読み込み中..."){
+  setHTML(targetId, `
+    <div class="sheet loading">
+      ${safeText(message)}
+    </div>
+  `);
+}
+
+function renderComplete(appData){
+  setHTML("entryArea", renderEntryTable(appData));
+  setHTML("materialArea", renderMaterialPanel(appData));
+  setHTML("flowArea", renderRaceFlow(appData?.flows));
+  setHTML("mainSheetArea", renderMainSheet(appData?.prediction));
+  setHTML("oddsArea", renderOdds(appData?.odds));
+  setHTML("missingArea", renderMissing(appData?.missing));
+  setHTML("theoryArea", renderTheoryPanel(appData?.theories));
+  setHTML("aiArea", renderAIPanel(appData?.ai));
+  setHTML("statsArea", renderStats(appData?.stats));
+  setHTML("resultArea", renderResultPanel(appData?.result));
+}
+
+function clearAllAreas(){
+  const ids = [
+    "entryArea",
+    "materialArea",
+    "flowArea",
+    "mainSheetArea",
+    "oddsArea",
+    "missingArea",
+    "theoryArea",
+    "aiArea",
+    "statsArea",
+    "resultArea"
+  ];
+
+  ids.forEach(id => setHTML(id, ""));
+}
