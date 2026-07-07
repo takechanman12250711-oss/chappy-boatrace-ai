@@ -643,3 +643,263 @@ input{
   color:#d32f2f;
   font-size:20px;
 }
+/* ===========================
+   出てない目TOP30
+=========================== */
+
+.missing-list{
+  display:grid;
+  gap:8px;
+}
+
+.missing-item{
+  display:grid;
+  grid-template-columns:80px 1fr 90px;
+  gap:10px;
+  align-items:center;
+  background:#fff2f7;
+  border-left:5px solid #e91e63;
+  border-radius:8px;
+  padding:9px;
+}
+
+.missing-rank{
+  font-weight:bold;
+  color:#e91e63;
+}
+
+.missing-number{
+  font-size:18px;
+  font-weight:bold;
+}
+
+.missing-odds{
+  text-align:right;
+  color:#d32f2f;
+  font-weight:bold;
+}
+
+/* ===========================
+   指数タグ
+=========================== */
+
+.index-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
+}
+
+.index-tag{
+  padding:5px 8px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:bold;
+}
+
+.attack-tag{
+  background:#ffebee;
+  color:#b71c1c;
+}
+
+.flow-tag{
+  background:#e3f2fd;
+  color:#0d47a1;
+}
+
+.race-tag{
+  background:#fff8e1;
+  color:#795548;
+}
+
+.local-tag{
+  background:#e8f5e9;
+  color:#1b5e20;
+}
+
+/* ===========================
+   展開予想
+=========================== */
+
+.flow-card{
+  background:#fffaf0;
+  border-left:6px solid #ff9800;
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:12px;
+}
+
+.flow-title{
+  font-weight:bold;
+  color:#ef6c00;
+  margin-bottom:8px;
+}
+
+.flow-steps{
+  display:grid;
+  gap:8px;
+}
+
+.flow-step{
+  background:#ffffff;
+  border-radius:8px;
+  padding:9px;
+  border:1px solid #ffe0b2;
+}
+
+.flow-point{
+  font-weight:bold;
+  color:#d84315;
+}
+
+/* ===========================
+   凡例
+=========================== */
+
+.legend-box{
+  background:#f7f9fc;
+  border-radius:10px;
+  padding:10px;
+  margin-bottom:12px;
+  font-size:14px;
+}
+
+.legend-box span{
+  display:inline-block;
+  margin-right:12px;
+  margin-bottom:4px;
+}
+
+/* ===========================
+   空表示・エラー表示
+=========================== */
+
+.empty-box{
+  background:#f7f9fc;
+  border:1px dashed #b0bec5;
+  border-radius:10px;
+  padding:18px;
+  text-align:center;
+  color:#607d8b;
+}
+
+.error-box{
+  background:#ffebee;
+  border-left:6px solid #f44336;
+  border-radius:10px;
+  padding:14px;
+  color:#b71c1c;
+  font-weight:bold;
+}
+
+/* ===========================
+   ローディング
+=========================== */
+
+.loading{
+  position:relative;
+  opacity:.65;
+}
+
+.loading::after{
+  content:"読み込み中...";
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.75);
+  border-radius:14px;
+  font-weight:bold;
+  color:#0b6efd;
+}
+
+/* ===========================
+   スマホ対応
+=========================== */
+
+@media(max-width:768px){
+
+  .app{
+    width:100%;
+    padding:10px;
+  }
+
+  .app-header{
+    padding:16px;
+  }
+
+  .app-header h1{
+    font-size:26px;
+  }
+
+  .layout-grid{
+    grid-template-columns:1fr;
+    gap:14px;
+  }
+
+  .panel,
+  .sheet{
+    padding:14px;
+  }
+
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .button-row{
+    flex-direction:column;
+  }
+
+  .primary-btn,
+  .sub-btn{
+    width:100%;
+  }
+
+  .entry-header{
+    align-items:flex-start;
+  }
+
+  .ticket-line{
+    flex-direction:column;
+  }
+
+  .missing-item{
+    grid-template-columns:1fr;
+  }
+
+  .missing-odds{
+    text-align:left;
+  }
+
+  .table{
+    font-size:13px;
+  }
+
+  .table th,
+  .table td{
+    padding:7px;
+  }
+}
+
+/* ===========================
+   印刷・画像化向け
+=========================== */
+
+@media print{
+
+  body{
+    background:#ffffff;
+  }
+
+  .control-panel,
+  .button-row{
+    display:none;
+  }
+
+  .sheet,
+  .panel{
+    box-shadow:none;
+    page-break-inside:avoid;
+  }
+}
