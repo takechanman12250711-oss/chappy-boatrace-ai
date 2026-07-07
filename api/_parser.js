@@ -270,26 +270,33 @@ function splitBeforeBlocks(html) {
   return blocks;
 }
 
-function parseBeforeBlock(block) {
-  const text = cleanText(block.text);
+function parseStartExhibition(html) {
+  const text = getBeforeText(html);
+  const start = text.indexOf("スタート展示");
+  if (start < 0) return [];
 
-  const displayTimeMatch = text.match(/(?:^|\s)(6\.\d{2}|7\.\d{2})(?:\s|$)/);
-  const tiltMatch = text.match(/(?:^|\s)(-?0\.5|-?1\.0|-?1\.5|-?2\.0|-?3\.0|0)(?:\s|$)/);
-  const weightMatch = text.match(/(\d{2}\.\d)kg/);
+  const end = text.indexOf("水面気象情報", start);
+  const section = end >= 0 ? text.slice(start, end) : text.slice(start, start + 1500);
 
-  return {
-    boat: block.boat,
-    racerName: block.racerName,
-    exhibition: {
-      displayTime: displayTimeMatch ? toNumber(displayTimeMatch[1]) : null,
-      tilt: tiltMatch ? toNumber(tiltMatch[1]) : null,
-      weight: weightMatch ? toNumber(weightMatch[1]) : null,
-      adjustedWeight: null,
-      propeller: /\s新\s/.test(text) ? "新" : "",
-      partsExchange: ""
-    },
-    rawBlock: text
-  };
+  const stValues = [];
+  const stRe = /\.(\d{2})/g;
+  let m;
+
+  while ((m = stRe.exec(section)) !== null) {
+    stValues.push(Number(`0.${m[1]}`));
+  }
+
+  const result = [];
+
+  for (let i = 0; i < Math.min(6, stValues.length); i++) {
+    result.push({
+      course: i + 1,
+      boat: i + 1,
+      st: stValues[i]
+    });
+  }
+
+  return result;
 }
 
 function parseStartExhibition(html) {
