@@ -679,7 +679,7 @@ window.renderComment=function(data={}){
   renderAll 本体
 ==================================================*/
 
-window.renderAll=function(data={}, extra={}){
+window.renderAll = function(data = {}, extra = {}) {
 
     const prediction = extra.prediction || {};
     const ai = extra.ai || {};
@@ -690,6 +690,7 @@ window.renderAll=function(data={}, extra={}){
         prediction.entryList ||
         data.runners ||
         data.entries ||
+        data.entryList ||
         [];
 
     const blueSheet =
@@ -730,7 +731,7 @@ window.renderAll=function(data={}, extra={}){
   初期化
 ==================================================*/
 
-window.renderAllEmpty=function(){
+window.renderAllEmpty = function() {
 
     renderEntryArea([]);
     renderMaterialArea();
