@@ -1,150 +1,73 @@
 // js/script.js
-// 表示先コンテナ自動生成つき 完全接続版
+// 強制診断版
 
 document.addEventListener("DOMContentLoaded", () => {
-  const statusBox =
-    document.getElementById("statusBox") ||
-    document.querySelector(".status-box");
+  const box = document.createElement("div");
+  box.id = "debugBox";
+  box.style.cssText = `
+    margin:16px;
+    padding:16px;
+    background:#111;
+    color:#0f0;
+    font-size:14px;
+    border-radius:12px;
+    white-space:pre-wrap;
+    z-index:99999;
+    position:relative;
+  `;
+  document.body.prepend(box);
 
-  const stadiumSelect =
-    document.getElementById("stadiumCode") ||
-    document.getElementById("jcd") ||
-    document.querySelector("select");
+  log("✅ script.js 読み込みOK");
 
-  const raceNoSelect =
-    document.getElementById("raceNo") ||
-    document.getElementById("rno") ||
-    document.querySelectorAll("select")[1];
+  log(`ChappyAPI: ${typeof window.ChappyAPI}`);
+  log(`renderEntryTable: ${typeof window.renderEntryTable}`);
+  log(`renderMaterialPanel: ${typeof window.renderMaterialPanel}`);
 
-  const raceDateInput =
-    document.getElementById("raceDate") ||
-    document.getElementById("date") ||
-    document.querySelector('input[type="date"]') ||
-    document.querySelector('input');
+  const button = document.querySelector("button");
+  log(`button: ${button ? "あり" : "なし"}`);
 
-  const mainButton =
-    document.getElementById("loadRaceButton") ||
-    document.getElementById("fetchRaceButton") ||
-    document.querySelector("button");
+  if (!button) return;
 
-  createRenderContainers();
-  setDefaultDate();
-
-  if (mainButton) {
-    mainButton.addEventListener("click", async (e) => {
-      e.preventDefault();
-      await loadRace();
-    });
-  }
-
-  async function loadRace() {
-    setStatus("取得ボタン押された！API通信中...", "loading");
+  button.addEventListener("click", async (e) => {
+    e.preventDefault();
+    log("✅ ボタン押された");
 
     try {
-      const params = {
-        jcd: stadiumSelect?.value || "24",
-        rno: raceNoSelect?.value || "1",
-        date: formatDate(raceDateInput?.value)
-      };
+      const raceData = await window.ChappyAPI.fetchRace({
+        jcd: "24",
+        rno: "1",
+        date: "20260707"
+      });
 
-      console.log("API params", params);
+      log(`✅ API成功 entries=${raceData.entries.length}`);
 
-      const raceData = await ChappyAPI.fetchRace(params);
+      const test = document.createElement("div");
+      test.style.cssText = `
+        margin:16px;
+        padding:16px;
+        background:white;
+        color:#111;
+        border-radius:12px;
+        font-size:18px;
+      `;
 
-      window.currentRaceData = raceData;
-      console.log("API raceData", raceData);
+      test.innerHTML = `
+        <h2>🚤 出走表テスト表示</h2>
+        ${raceData.entries.map(e => `
+          <div style="padding:10px;border-bottom:1px solid #ddd;">
+            ${e.boatNo}号艇 ${e.racerName} / ${e.className} / ST ${e.avgST}
+          </div>
+        `).join("")}
+      `;
 
-      createRenderContainers();
-      renderAll(raceData);
+      document.body.prepend(test);
 
-      setStatus(`✅ 実データ取得成功！出走表 ${raceData.entries.length}艇`, "success");
-    } catch (error) {
-      console.error("API error", error);
-      setStatus(`❌ 取得失敗：${error.message}`, "error");
-      alert(`❌ 取得失敗：${error.message}`);
+    } catch (err) {
+      log(`❌ エラー: ${err.message}`);
     }
+  });
+
+  function log(msg) {
+    box.textContent += msg + "\n";
   }
-
-  function createRenderContainers() {
-    let output = document.getElementById("chappyOutput");
-
-    if (!output) {
-      output = document.createElement("div");
-      output.id = "chappyOutput";
-      output.className = "chappy-output";
-
-      const raceCard =
-        document.querySelector(".race-select") ||
-        document.querySelector(".card") ||
-        document.querySelector("main") ||
-        document.body;
-
-      raceCard.insertAdjacentElement("afterend", output);
-    }
-
-    const ids = [
-      "raceFlow",
-      "entryTable",
-      "materialPanel",
-      "mainSheet",
-      "oddsPanel",
-      "missingPanel",
-      "statsPanel",
-      "theoryPanel",
-      "aiPanel"
-    ];
-
-    ids.forEach((id) => {
-      if (!document.getElementById(id)) {
-        const div = document.createElement("section");
-        div.id = id;
-        div.className = "card render-card";
-        output.appendChild(div);
-      }
-    });
-  }
-
-  function renderAll(raceData) {
-    if (typeof renderRaceFlow === "function") renderRaceFlow(raceData);
-    if (typeof renderEntryTable === "function") renderEntryTable(raceData);
-    if (typeof renderMaterialPanel === "function") renderMaterialPanel(raceData);
-    if (typeof renderMainSheet === "function") renderMainSheet(raceData);
-    if (typeof renderOdds === "function") renderOdds(raceData);
-    if (typeof renderMissing === "function") renderMissing(raceData);
-    if (typeof renderStats === "function") renderStats(raceData);
-    if (typeof renderTheory === "function") renderTheory(raceData);
-    if (typeof renderAI === "function") renderAI(raceData);
-  }
-
-  function setDefaultDate() {
-    if (!raceDateInput || raceDateInput.value) return;
-
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-
-    raceDateInput.value = `${yyyy}-${mm}-${dd}`;
-  }
-
-  function formatDate(value) {
-    if (!value) {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
-      return `${yyyy}${mm}${dd}`;
-    }
-
-    return String(value).replaceAll("-", "").replaceAll("/", "");
-  }
-
-  function setStatus(message, type = "") {
-    if (!statusBox) return;
-
-    statusBox.textContent = message;
-    statusBox.className = `status-box ${type}`;
-  }
-
-  setStatus("待機中：表示先コンテナ接続OK", "");
 });
