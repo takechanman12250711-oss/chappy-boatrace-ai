@@ -679,55 +679,56 @@ window.renderComment=function(data={}){
   renderAll 本体
 ==================================================*/
 
-window.renderAll=function(data={}){
+window.renderAll=function(data={}, extra={}){
 
-    const root =
-        data.prediction ||
-        data.result ||
-        data.aiResult ||
-        data.analysis ||
-        data;
+    const prediction = extra.prediction || {};
+    const theory = extra.theory || {};
+    const ai = extra.ai || {};
+    const odds = extra.odds || null;
 
     const runners =
-        root.runners ||
-        root.entries ||
-        root.entryList ||
-        root.racers ||
-        root.players ||
+        prediction.runners ||
+        prediction.entries ||
+        prediction.entryList ||
         data.runners ||
         data.entries ||
+        data.entryList ||
         [];
 
     const blueSheet =
-        root.blueSheet ||
-        root.mainSheet ||
-        root.normalSheet ||
-        root.honmei ||
-        root.normal ||
-        root.predictionSheet ||
+        prediction.blueSheet ||
+        prediction.mainSheet ||
+        prediction.normalSheet ||
+        prediction.honmei ||
+        prediction.items ||
         [];
 
     const pinkSheet =
-        root.pinkSheet ||
-        root.manshuSheet ||
-        root.longshotSheet ||
-        root.holeSheet ||
-        root.manshu ||
+        prediction.pinkSheet ||
+        prediction.manshuSheet ||
+        prediction.longshotSheet ||
+        prediction.holeSheet ||
         {};
 
     const formation =
-        root.formation ||
-        root.formations ||
-        root.buyFormations ||
-        root.tickets ||
-        root.bets ||
+        prediction.formation ||
+        prediction.formations ||
+        prediction.buyFormations ||
+        prediction.tickets ||
+        prediction.bets ||
         [];
 
     renderEntryArea(runners);
     renderMainSheet(blueSheet);
     renderPinkSheet(pinkSheet);
     renderFormation(formation);
-    renderComment(root.comment || root.finalComment || {});
+    renderComment({
+        summary: ai.summary || prediction.comment || prediction.finalComment || "",
+        raceFlow: ai.raceFlow || prediction.raceFlow || "",
+        target: ai.target || "",
+        danger: ai.danger || "",
+        buy: ai.buy || ""
+    });
 
 };
 
