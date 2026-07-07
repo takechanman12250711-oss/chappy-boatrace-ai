@@ -1,10 +1,3 @@
-/* =========================================================
-   チャッピーボートレースAI
-   api/_parser.js v3
-   出走表 + 直前情報 修正版
-   依存ライブラリなし
-========================================================= */
-
 function stripHtml(html) {
   return String(html || "")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -20,21 +13,18 @@ function stripHtml(html) {
     .trim();
 }
 
-export function zenToHan(text) {
+function zenToHan(text) {
   return String(text || "").replace(/[０-９．]/g, (ch) => {
     if (ch === "．") return ".";
     return String.fromCharCode(ch.charCodeAt(0) - 0xfee0);
   });
 }
 
-export function cleanText(text) {
-  return zenToHan(text)
-    .replace(/\u00a0/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+function cleanText(text) {
+  return zenToHan(text).replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export function toNumber(value) {
+function toNumber(value) {
   const n = Number(String(value ?? "").replace(/[^\d.-]/g, ""));
   return Number.isFinite(n) ? n : null;
 }
@@ -78,10 +68,6 @@ function emptyEntry(boat) {
     rawBlock: ""
   };
 }
-
-/* =========================================================
-   出走表解析
-========================================================= */
 
 function getRaceBodyText(html) {
   const text = cleanText(stripHtml(html));
@@ -148,15 +134,15 @@ function parseEntryBlock(block) {
   const re = new RegExp(
     "^" +
       "([1-6])\\s+" +
-      "(\\d{4})\\s*\/\\s*(A1|A2|B1|B2)\\s+" +
+      "(\\d{4})\\s*\\/\\s*(A1|A2|B1|B2)\\s+" +
       "(.+?)\\s+" +
-      "([^\\s\\/]+)\/([^\\s\\/]+)\\s+" +
+      "([^\\s\\/]+)\\/([^\\s\\/]+)\\s+" +
       "(\\d+)歳\\/([\\d.]+)kg\\s+" +
       "F(\\d+)\\s+L(\\d+)\\s+" +
       "([\\d.]+)\\s+" +
       "([\\d.]+)\\s+([\\d.]+)\\s+([\\d.]+)\\s+" +
       "([\\d.]+)\\s+([\\d.]+)\\s+([\\d.]+)\\s+" +
-      "(\\d+)\\s+([\\d.]+)\\+([\\d.]+)\\s+" +
+      "(\\d+)\\s+([\\d.]+)\\s+([\\d.]+)\\s+" +
       "(\\d+)\\s+([\\d.]+)\\s+([\\d.]+)" +
       "(.*)$"
   );
@@ -194,7 +180,7 @@ function parseEntryBlock(block) {
   return entry;
 }
 
-export function parseEntriesFromOfficialHtml(html) {
+function parseEntriesFromOfficialHtml(html) {
   const bodyText = getRaceBodyText(html);
   const blocks = splitEntryBlocks(bodyText);
   const parsed = blocks.map(parseEntryBlock);
@@ -207,7 +193,7 @@ export function parseEntriesFromOfficialHtml(html) {
   return entries;
 }
 
-export function parseRaceInfoFromOfficialHtml(html) {
+function parseRaceInfoFromOfficialHtml(html) {
   const text = cleanText(stripHtml(html));
   const titleMatch = text.match(/本日のレース\s+(.+?)\s+出走表/);
   const deadlineMatch = text.match(/締切予定時刻\s+((?:\d{1,2}:\d{2}\s*){1,12})/);
@@ -218,10 +204,6 @@ export function parseRaceInfoFromOfficialHtml(html) {
     rawText: text.slice(0, 5000)
   };
 }
-
-/* =========================================================
-   直前情報解析
-========================================================= */
 
 function getBeforeText(html) {
   return cleanText(stripHtml(html));
@@ -243,7 +225,6 @@ function getBeforeMainText(html) {
 function splitBeforeBlocks(html) {
   const text = getBeforeMainText(html);
   const blocks = [];
-
   const starts = [];
   const re = /(?:^|\s)([1-6])\s+([一-龥ぁ-んァ-ヶー\s]{2,16})\s+(?:\d{2}\.\dkg|\d{2}\.\d|6\.\d{2}|7\.\d{2}|R\s+進入)/g;
 
@@ -259,7 +240,6 @@ function splitBeforeBlocks(html) {
   for (let i = 0; i < starts.length; i++) {
     const current = starts[i];
     const next = starts[i + 1];
-
     blocks.push({
       boat: current.boat,
       racerName: current.racerName,
@@ -268,6 +248,33 @@ function splitBeforeBlocks(html) {
   }
 
   return blocks;
+}
+
+function parseBeforeBlock(block) {
+  const text = cleanText(block.text);
+
+  const displayTimeMatch = text.match(/(?:^|\s)(6\.\d{2}|7\.\d{2})(?:\s|$)/);
+  const weightMatch = text.match(/(\d{2}\.\d)kg/);
+  const numbers = text.match(/-?\d+\.\d/g) || [];
+
+  let tilt = null;
+  if (numbers.length >= 3) {
+    tilt = toNumber(numbers[2]);
+  }
+
+  return {
+    boat: block.boat,
+    racerName: block.racerName,
+    exhibition: {
+      displayTime: displayTimeMatch ? toNumber(displayTimeMatch[1]) : null,
+      tilt,
+      weight: weightMatch ? toNumber(weightMatch[1]) : null,
+      adjustedWeight: null,
+      propeller: /\s新\s/.test(text) ? "新" : "",
+      partsExchange: ""
+    },
+    rawBlock: text
+  };
 }
 
 function parseStartExhibition(html) {
@@ -287,34 +294,11 @@ function parseStartExhibition(html) {
   }
 
   const result = [];
-
   for (let i = 0; i < Math.min(6, stValues.length); i++) {
     result.push({
       course: i + 1,
       boat: i + 1,
       st: stValues[i]
-    });
-  }
-
-  return result;
-}
-
-function parseStartExhibition(html) {
-  const text = getBeforeText(html);
-  const start = text.indexOf("スタート展示");
-  if (start < 0) return [];
-
-  const section = text.slice(start, start + 1200);
-  const result = [];
-
-  const re = /([1-6])\s+([1-6])\s+\.(\d{2})/g;
-  let m;
-
-  while ((m = re.exec(section)) !== null) {
-    result.push({
-      course: toNumber(m[1]),
-      boat: toNumber(m[2]),
-      st: Number(`0.${m[3]}`)
     });
   }
 
@@ -338,7 +322,7 @@ function parseWeatherFromBeforeHtml(html) {
   };
 }
 
-export function parseBeforeInfoFromOfficialHtml(html) {
+function parseBeforeInfoFromOfficialHtml(html) {
   const blocks = splitBeforeBlocks(html);
   const parsed = blocks.map(parseBeforeBlock);
 
@@ -369,7 +353,7 @@ export function parseBeforeInfoFromOfficialHtml(html) {
   };
 }
 
-export function mergeEntriesWithBeforeInfo(entries, beforeParsed) {
+function mergeEntriesWithBeforeInfo(entries, beforeParsed) {
   return entries.map((entry) => {
     const before = beforeParsed.beforeInfo.find((item) => item.boat === entry.boat);
 
@@ -380,7 +364,7 @@ export function mergeEntriesWithBeforeInfo(entries, beforeParsed) {
   });
 }
 
-export function parseOfficialRaceHtml(entryHtml, beforeHtml = "") {
+function parseOfficialRaceHtml(entryHtml, beforeHtml = "") {
   const raceInfo = parseRaceInfoFromOfficialHtml(entryHtml);
   const entries = parseEntriesFromOfficialHtml(entryHtml);
 
@@ -402,3 +386,7 @@ export function parseOfficialRaceHtml(entryHtml, beforeHtml = "") {
     rawBeforeText: beforeParsed.rawText
   };
 }
+
+module.exports = {
+  parseOfficialRaceHtml
+};
