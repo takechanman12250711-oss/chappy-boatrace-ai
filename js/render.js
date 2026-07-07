@@ -684,24 +684,44 @@ window.renderAll=function(data={}, extra={}){
     const prediction = extra.prediction || {};
     const ai = extra.ai || {};
 
-    const debugHtml = `
-        <div class="cp-card">
-            <div class="cp-card-title">データ確認</div>
-            <div class="cp-card-body">
-                <div>extraキー：${Object.keys(extra).join(" / ") || "なし"}</div>
-                <div>predictionキー：${Object.keys(prediction).join(" / ") || "なし"}</div>
-                <div>aiキー：${Object.keys(ai).join(" / ") || "なし"}</div>
-            </div>
-        </div>
-    `;
+    const runners =
+        prediction.runners ||
+        prediction.entries ||
+        prediction.entryList ||
+        data.runners ||
+        data.entries ||
+        [];
 
-    const area=document.getElementById("dataCheckArea");
-    if(area) area.innerHTML=debugHtml;
+    const blueSheet =
+        prediction.blueSheet ||
+        prediction.mainSheet ||
+        prediction.normalSheet ||
+        prediction.items ||
+        [];
 
-    renderMainSheet([]);
-    renderFormation([]);
+    const pinkSheet =
+        prediction.pinkSheet ||
+        prediction.manshuSheet ||
+        prediction.longshotSheet ||
+        {};
+
+    const formation =
+        prediction.formation ||
+        prediction.formations ||
+        prediction.buyFormations ||
+        prediction.tickets ||
+        [];
+
+    renderEntryArea(runners);
+    renderMainSheet(blueSheet);
+    renderPinkSheet(pinkSheet);
+    renderFormation(formation);
     renderComment({
-        summary:"データ名確認中"
+        summary: ai.summary || prediction.comment || prediction.finalComment || "",
+        raceFlow: ai.raceFlow || prediction.raceFlow || "",
+        target: ai.target || "",
+        danger: ai.danger || "",
+        buy: ai.buy || ""
     });
 
 };
