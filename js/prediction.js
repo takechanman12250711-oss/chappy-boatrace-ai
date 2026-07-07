@@ -2845,1127 +2845,665 @@
     return text.join("。")+"。";
 
   }
-    /* =========================================================
-    Part6 舟券太郎理論
-    - スリットアラート
-    - ダブルタイム理論
-    - 新サム理論
-    - アラート表示
-  ========================================================= */
+    /* ===============================
+    フォーメーション生成
+    - 本線
+    - 押さえ
+    - 流し
+    - 万舟
+  =============================== */
 
-  function num(v) {
-    const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
-    return Number.isFinite(n) ? n : null;
-  }
+  function createFormation(race, context) {
+    const mainSheet = context.mainSheet || {};
+    const manshuSheet = context.manshuSheet || {};
+    const raceFlow = context.raceFlow || {};
+    const indexes = context.indexes || {};
 
-  function getRacers(data) {
-    return data?.racers || data?.entries || data?.entry || [];
-  }
+    const honmei = mainSheet.honmei;
+    const taikou = mainSheet.taikou;
+    const ana = mainSheet.ana;
+    const osae = mainSheet.osae;
 
-  function boatName(r) {
-    return r?.boatNo || r?.waku || r?.number || r?.course || "-";
-  }
+    const totalRanking = indexes.totalRanking || [];
+    const pickupRanking = indexes.michuRanking || [];
+    const expectedRanking = indexes.expectedRanking || [];
 
-  function racerName(r) {
-    return r?.name || r?.racerName || r?.playerName || "選手名なし";
-  }
+    const axis = honmei?.boatNo || totalRanking[0]?.boatNo || 1;
+    const secondAxis = taikou?.boatNo || totalRanking[1]?.boatNo || 2;
+    const holeAxis = ana?.boatNo || expectedRanking[0]?.boatNo || 3;
+    const coverAxis = osae?.boatNo || pickupRanking[0]?.boatNo || 4;
 
-  function getExTime(r) {
-    return num(r?.exhibitionTime ?? r?.tenjiTime ?? r?.displayTime);
-  }
+    const secondGroup = uniqueNumbers([
+      secondAxis,
+      holeAxis,
+      coverAxis,
+      totalRanking[2]?.boatNo,
+      pickupRanking[0]?.boatNo
+    ]).filter(n => n !== axis).slice(0, 4);
 
-  function getLapTime(r) {
-    return num(r?.lapTime ?? r?.roundTime ?? r?.oneLapTime);
-  }
+    const thirdGroup = uniqueNumbers([
+      secondAxis,
+      holeAxis,
+      coverAxis,
+      pickupRanking[0]?.boatNo,
+      pickupRanking[1]?.boatNo,
+      expectedRanking[0]?.boatNo,
+      expectedRanking[1]?.boatNo
+    ]).filter(n => n !== axis).slice(0, 5);
 
-  function getTenjiST(r) {
-    return num(r?.exhibitionST ?? r?.tenjiST ?? r?.st);
-  }
-
-  function renderTheoryPanel(data) {
-    const area = document.getElementById("theoryArea");
-    if (!area) return;
-
-    const racers = getRacers(data);
-
-    if (!racers.length) {
-      area.innerHTML = `
-        <section class="card theory-card">
-          <h2>舟券太郎理論</h2>
-          <p class="muted">出走データが不足しています。</p>
-        </section>
-      `;
-      return;
-    }
-
-    const slitAlerts = createSlitAlerts(racers);
-    const doubleTime = createDoubleTimeTheory(racers);
-    const shinsam = createShinsamTheory(racers, data);
-
-    area.innerHTML = `
-      <section class="card theory-card">
-        <h2>舟券太郎理論</h2>
-
-        ${renderSlitAlerts(slitAlerts)}
-        ${renderDoubleTime(doubleTime)}
-        ${renderShinsam(shinsam)}
-
-        <div class="theory-note">
-          <strong>判定ルール</strong>
-          <p>
-            スリット差・展示タイム・一周タイムを数値化し、
-            展開を作る艇と拾う艇を分けて見る。
-          </p>
-        </div>
-      </section>
-    `;
-  }
-
-  function createSlitAlerts(racers) {
-    const list = racers.map((r, i) => ({
-      boat: boatName(r),
-      name: racerName(r),
-      st: getTenjiST(r),
-      index: i
-    }));
-
-    const alerts = [];
-
-    list.forEach((item, i) => {
-      if (item.st === null) return;
-
-      const prev = list[i - 1];
-      const next = list[i + 1];
-
-      const diffs = [];
-
-      if (prev && prev.st !== null) {
-        diffs.push({
-          target: prev.boat,
-          diff: prev.st - item.st
-        });
-      }
-
-      if (next && next.st !== null) {
-        diffs.push({
-          target: next.boat,
-          diff: next.st - item.st
-        });
-      }
-
-      const max = diffs.find(d => d.diff >= 0.1);
-
-      if (max) {
-        alerts.push({
-          ...item,
-          diff: max.diff,
-          target: max.target,
-          comment: `${item.boat}号艇が隣艇よりスリット優勢。攻め起点候補。`
-        });
-      }
+    const main = createMainFormationTickets({
+      axis,
+      secondAxis,
+      holeAxis,
+      coverAxis,
+      secondGroup,
+      thirdGroup,
+      context
     });
 
-    return alerts;
-  }
+    const cover = createCoverFormationTickets({
+      axis,
+      secondAxis,
+      holeAxis,
+      coverAxis,
+      totalRanking,
+      pickupRanking,
+      context
+    });
 
-  function renderSlitAlerts(alerts) {
-    if (!alerts.length) {
-      return `
-        <div class="theory-block">
-          <h3>⚡ スリットアラート</h3>
-          <p class="muted">発動なし。展示ST差は大きくない。</p>
-        </div>
-      `;
-    }
+    const nagashi = createNagashiTickets({
+      axis,
+      secondGroup,
+      thirdGroup,
+      raceFlow,
+      context
+    });
 
-    return `
-      <div class="theory-block">
-        <h3>⚡ スリットアラート</h3>
-        <div class="mini-grid">
-          ${alerts.map(a => `
-            <div class="mini-card boat-${a.boat}">
-              <strong>${a.boat}号艇 ${a.name}</strong>
-              <p>展示ST：${a.st}</p>
-              <p>隣艇差：+${a.diff.toFixed(2)}</p>
-              <p>${a.comment}</p>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `;
-  }
+    const hole = createHoleFormationTickets({
+      manshuSheet,
+      expectedRanking,
+      pickupRanking,
+      totalRanking,
+      context
+    });
 
-  function createDoubleTimeTheory(racers) {
-    const exList = racers
-      .map(r => ({
-        boat: boatName(r),
-        name: racerName(r),
-        ex: getExTime(r),
-        lap: getLapTime(r)
-      }))
-      .filter(r => r.ex !== null || r.lap !== null);
-
-    const exBest = exList
-      .filter(r => r.ex !== null)
-      .sort((a, b) => a.ex - b.ex)[0];
-
-    const lapBest = exList
-      .filter(r => r.lap !== null)
-      .sort((a, b) => a.lap - b.lap)[0];
-
-    const doubleHit =
-      exBest && lapBest && String(exBest.boat) === String(lapBest.boat)
-        ? exBest
-        : null;
+    const all = uniqueList([
+      ...main,
+      ...cover,
+      ...nagashi,
+      ...hole
+    ]);
 
     return {
-      exBest,
-      lapBest,
-      doubleHit
+      main,
+      cover,
+      nagashi,
+      hole,
+      all,
+      summary: createFormationSummary({
+        main,
+        cover,
+        nagashi,
+        hole,
+        axis,
+        secondAxis,
+        holeAxis,
+        coverAxis,
+        context
+      })
     };
   }
 
-  function renderDoubleTime(data) {
-    const ex = data.exBest;
-    const lap = data.lapBest;
-    const hit = data.doubleHit;
+  function createMainFormationTickets(params) {
+    const {
+      axis,
+      secondAxis,
+      holeAxis,
+      coverAxis,
+      secondGroup,
+      thirdGroup,
+      context
+    } = params;
 
-    return `
-      <div class="theory-block">
-        <h3>⏱ ダブルタイム理論</h3>
+    const tickets = [];
 
-        <div class="mini-grid">
-          <div class="mini-card">
-            <strong>展示タイム1位</strong>
-            <p>${ex ? `${ex.boat}号艇 ${ex.name} / ${ex.ex}` : "データなし"}</p>
-          </div>
+    tickets.push(ticket(axis, secondAxis, holeAxis));
+    tickets.push(ticket(axis, secondAxis, coverAxis));
+    tickets.push(ticket(axis, holeAxis, secondAxis));
 
-          <div class="mini-card">
-            <strong>一周タイム1位</strong>
-            <p>${lap ? `${lap.boat}号艇 ${lap.name} / ${lap.lap}` : "データなし"}</p>
-          </div>
-        </div>
+    if (coverAxis) {
+      tickets.push(ticket(axis, coverAxis, secondAxis));
+    }
 
-        <p class="${hit ? "alert-text" : "muted"}">
-          ${
-            hit
-              ? `🔥 ${hit.boat}号艇が展示・一周の両方で1位。連絡み警戒。`
-              : "展示1位と一周1位は分散。単独の強烈気配は薄め。"
-          }
-        </p>
-      </div>
-    `;
+    if (axis === 1 && context.venue?.inPower >= 70) {
+      const s = secondGroup.slice(0, 3).join("");
+      const t = thirdGroup.slice(0, 4).join("");
+
+      if (s && t) {
+        tickets.push(`${axis}-${s}-${t}`);
+      }
+    }
+
+    return cleanTickets(tickets).slice(0, 8);
   }
 
-  function createShinsamTheory(racers, data) {
-    const water = data?.weather || data?.water || {};
-    const wind = num(water?.windSpeed ?? water?.wind);
-    const isStrongWind = wind !== null && wind >= 5;
+  function createCoverFormationTickets(params) {
+    const {
+      axis,
+      secondAxis,
+      holeAxis,
+      coverAxis,
+      totalRanking,
+      pickupRanking,
+      context
+    } = params;
 
-    const list = racers
-      .map(r => {
-        const ex = getExTime(r);
-        const lap = getLapTime(r);
-        const total = ex !== null && lap !== null ? ex + lap : null;
+    const tickets = [];
 
-        return {
-          boat: boatName(r),
-          name: racerName(r),
-          ex,
-          lap,
-          total
-        };
+    if (secondAxis) {
+      tickets.push(ticket(secondAxis, axis, holeAxis));
+      tickets.push(ticket(secondAxis, axis, coverAxis));
+    }
+
+    if (holeAxis) {
+      tickets.push(ticket(holeAxis, axis, secondAxis));
+      tickets.push(ticket(holeAxis, secondAxis, axis));
+    }
+
+    if (coverAxis) {
+      tickets.push(ticket(axis, coverAxis, holeAxis));
+      tickets.push(ticket(coverAxis, axis, secondAxis));
+    }
+
+    const road = pickupRanking[0]?.boatNo;
+    const third = totalRanking[2]?.boatNo;
+
+    if (road && third) {
+      tickets.push(ticket(axis, secondAxis, road));
+      tickets.push(ticket(axis, road, third));
+    }
+
+    if (context.weather?.insideRisk >= 65 && axis === 1) {
+      tickets.push(ticket(secondAxis, holeAxis, axis));
+      tickets.push(ticket(holeAxis, secondAxis, axis));
+    }
+
+    return cleanTickets(tickets).slice(0, 10);
+  }
+
+  function createNagashiTickets(params) {
+    const {
+      axis,
+      secondGroup,
+      thirdGroup,
+      raceFlow,
+      context
+    } = params;
+
+    const tickets = [];
+
+    const attackBoat = Number(raceFlow?.attackBoats?.[0]?.boatNo || 0);
+    const pickupBoat = Number(raceFlow?.pickupBoats?.[0]?.boatNo || 0);
+
+    const second = uniqueNumbers(secondGroup).filter(n => n && n !== axis);
+    const third = uniqueNumbers(thirdGroup).filter(n => n && n !== axis);
+
+    if (second.length >= 2 && third.length >= 3) {
+      tickets.push(`${axis}-${second.slice(0, 3).join("")}-${third.slice(0, 5).join("")}`);
+    }
+
+    if (attackBoat && attackBoat !== axis) {
+      const s = uniqueNumbers([axis, ...second]).filter(n => n !== attackBoat).slice(0, 3);
+      const t = uniqueNumbers([axis, pickupBoat, ...third]).filter(n => n !== attackBoat).slice(0, 5);
+
+      if (s.length && t.length) {
+        tickets.push(`${attackBoat}-${s.join("")}-${t.join("")}`);
+      }
+    }
+
+    if (pickupBoat && pickupBoat !== axis) {
+      const s = uniqueNumbers([axis, attackBoat, ...second]).filter(n => n !== pickupBoat).slice(0, 3);
+      const t = uniqueNumbers([axis, attackBoat, ...third]).filter(n => n !== pickupBoat).slice(0, 5);
+
+      if (s.length && t.length) {
+        tickets.push(`${axis}-${s.join("")}-${pickupBoat}${t.join("")}`);
+      }
+    }
+
+    if (context.weather?.outsideChance >= 65) {
+      const outside = uniqueNumbers([4, 5, 6, attackBoat, pickupBoat]).filter(Boolean);
+      const inside = uniqueNumbers([1, 2, 3, axis]).filter(Boolean);
+
+      if (outside.length && inside.length) {
+        tickets.push(`${outside.slice(0, 2).join("")}-${inside.slice(0, 3).join("")}-${third.slice(0, 5).join("")}`);
+      }
+    }
+
+    return cleanTickets(tickets).slice(0, 6);
+  }
+
+  function createHoleFormationTickets(params) {
+    const {
+      manshuSheet,
+      expectedRanking,
+      pickupRanking,
+      totalRanking,
+      context
+    } = params;
+
+    const tickets = [];
+
+    if (Array.isArray(manshuSheet.formation)) {
+      tickets.push(...manshuSheet.formation);
+    }
+
+    const e1 = expectedRanking[0]?.boatNo;
+    const e2 = expectedRanking[1]?.boatNo;
+    const p1 = pickupRanking[0]?.boatNo;
+    const p2 = pickupRanking[1]?.boatNo;
+    const t1 = totalRanking[0]?.boatNo;
+    const t2 = totalRanking[1]?.boatNo;
+
+    tickets.push(ticket(e1, t1, p1));
+    tickets.push(ticket(e1, p1, t1));
+    tickets.push(ticket(e2, t1, p1));
+    tickets.push(ticket(t1, e1, p1));
+    tickets.push(ticket(t1, p1, e1));
+    tickets.push(ticket(p1, t1, e1));
+
+    if (context.weather?.insideRisk >= 65) {
+      tickets.push(ticket(e1, e2, t1));
+      tickets.push(ticket(e1, p2, t1));
+    }
+
+    if (context.newEngine?.updated) {
+      tickets.push(ticket(e1, t2, p1));
+      tickets.push(ticket(t2, e1, p1));
+    }
+
+    return cleanTickets(tickets).slice(0, 12);
+  }
+
+  function createFormationSummary(params) {
+    const parts = [];
+
+    parts.push(`本線は${params.axis}号艇を軸に、${params.secondAxis}号艇・${params.holeAxis}号艇・${params.coverAxis}号艇を相手評価。`);
+
+    if (params.main.length) {
+      parts.push(`本線${params.main.length}点。`);
+    }
+
+    if (params.cover.length) {
+      parts.push(`押さえ${params.cover.length}点。2コース差し・4コース残し・道中艇を残す。`);
+    }
+
+    if (params.nagashi.length) {
+      parts.push(`流し${params.nagashi.length}点。展開が割れる場合に対応。`);
+    }
+
+    if (params.hole.length) {
+      parts.push(`万舟${params.hole.length}点。期待値艇と拾い艇を絡める。`);
+    }
+
+    if (params.context.weather?.insideRisk >= 65) {
+      parts.push("風波でイン過信注意のため、外・差し・拾いを厚めにする。");
+    }
+
+    if (params.context.newEngine?.updated) {
+      parts.push("新型エンジン期なので、モーター数字より展示・ST・今節気配を優先。");
+    }
+
+    return parts.join("");
+  }
+
+  function ticket(a, b, c) {
+    if (!a || !b || !c) return "";
+    if (a === b || a === c || b === c) return "";
+    return `${a}-${b}-${c}`;
+  }
+
+  function cleanTickets(list) {
+    return uniqueList(
+      (list || [])
+        .filter(Boolean)
+        .map(v => String(v).trim())
+        .filter(v => v.includes("-"))
+    );
+  }
+
+  function uniqueNumbers(list) {
+    return uniqueList(list)
+      .map(v => Number(v))
+      .filter(v => Number.isFinite(v) && v >= 1 && v <= 6);
+  }
+    /* ===============================
+    最終コメント生成
+  =============================== */
+
+  function createFinalComment(race, context) {
+    const mainSheet = context.mainSheet || {};
+    const manshuSheet = context.manshuSheet || {};
+    const formation = context.formation || {};
+    const raceFlow = context.raceFlow || {};
+    const venue = context.venue || {};
+    const weather = context.weather || {};
+    const newEngine = context.newEngine || {};
+    const exhibition = context.exhibition || {};
+
+    const honmei = mainSheet.honmei;
+    const taikou = mainSheet.taikou;
+    const ana = mainSheet.ana;
+    const osae = mainSheet.osae;
+
+    const lines = [];
+
+    if (honmei) {
+      lines.push(`本命は${honmei.boatNo}号艇。総合${honmei.score}点で中心評価。`);
+    }
+
+    if (taikou) {
+      lines.push(`対抗は${taikou.boatNo}号艇。${taikou.role || "相手本線"}として評価。`);
+    }
+
+    if (ana) {
+      lines.push(`穴は${ana.boatNo}号艇。攻め・期待値・展開ズレを拾う。`);
+    }
+
+    if (osae) {
+      lines.push(`押さえは${osae.boatNo}号艇。道中・残し・当地適性で残す。`);
+    }
+
+    if (raceFlow?.summary) {
+      lines.push(`展開は「${raceFlow.summary}」`);
+    }
+
+    if (exhibition?.comment) {
+      lines.push(exhibition.comment);
+    }
+
+    if (weather?.comment) {
+      lines.push(weather.comment);
+    }
+
+    if (venue?.memo) {
+      lines.push(`${venue.name || race.stadiumName}の場傾向：${venue.memo}`);
+    }
+
+    if (newEngine?.updated) {
+      lines.push(newEngine.rule);
+    }
+
+    if (formation?.summary) {
+      lines.push(formation.summary);
+    }
+
+    if (manshuSheet?.reason) {
+      lines.push(`万舟側は${manshuSheet.reason}`);
+    }
+
+    return {
+      title: createFinalTitle({
+        honmei,
+        taikou,
+        ana,
+        osae,
+        weather,
+        newEngine
+      }),
+      comment: lines.join(" "),
+      buyLevel: createBuyLevel({
+        honmei,
+        taikou,
+        ana,
+        osae,
+        weather
+      }),
+      memo: createFinalMemo({
+        venue,
+        weather,
+        newEngine,
+        raceFlow
       })
-      .filter(r => r.total !== null);
+    };
+  }
 
-    if (!list.length) {
+  function createFinalTitle(params) {
+    const honmei = params.honmei;
+    const taikou = params.taikou;
+    const ana = params.ana;
+
+    if (!honmei) return "データ不足";
+
+    if (params.weather?.insideRisk >= 70) {
+      return `波乱含み：${honmei.boatNo}中心も外・差し注意`;
+    }
+
+    if (params.newEngine?.updated) {
+      return `新型エンジン期：${honmei.boatNo}中心、展示重視`;
+    }
+
+    if (honmei.score >= 82 && taikou?.score >= 72) {
+      return `本線濃いめ：${honmei.boatNo}-${taikou.boatNo}軸`;
+    }
+
+    if (ana?.score >= 68 || ana?.expected >= 72) {
+      return `穴含み：${honmei.boatNo}中心＋${ana.boatNo}警戒`;
+    }
+
+    return `${honmei.boatNo}号艇中心の標準戦`;
+  }
+
+  function createBuyLevel(params) {
+    const honmei = params.honmei;
+    const taikou = params.taikou;
+    const ana = params.ana;
+    const osae = params.osae;
+
+    if (!honmei) {
       return {
-        list: [],
-        alerts: [],
-        average: null,
-        wind,
-        isStrongWind
+        level: "見送り",
+        score: 30,
+        reason: "本命評価が作れないため"
       };
     }
 
-    const average =
-      list.reduce((sum, r) => sum + r.total, 0) / list.length;
+    let score = honmei.score;
 
-    const ranked = list
-      .map(r => ({
-        ...r,
-        diff: average - r.total
-      }))
-      .sort((a, b) => b.diff - a.diff);
+    if (taikou?.score >= 70) score += 5;
+    if (ana?.expected >= 75) score += 4;
+    if (osae?.michu >= 70 || osae?.local >= 70) score += 3;
 
-    const alerts = ranked.filter(r => r.diff > 0);
+    if (params.weather?.insideRisk >= 70) score -= 8;
+    if (params.weather?.roughScore >= 75) score -= 5;
+
+    score = clampScore(score);
+
+    if (score >= 82) {
+      return {
+        level: "強め",
+        score,
+        reason: "本命と相手の指数が揃っている"
+      };
+    }
+
+    if (score >= 70) {
+      return {
+        level: "標準",
+        score,
+        reason: "中心はあるが押さえも必要"
+      };
+    }
+
+    if (score >= 58) {
+      return {
+        level: "軽め",
+        score,
+        reason: "波乱・展開ズレを含む"
+      };
+    }
 
     return {
-      list: ranked,
-      alerts,
-      average,
-      wind,
-      isStrongWind
+      level: "見送り寄り",
+      score,
+      reason: "軸信頼度が足りない"
     };
   }
 
-  function renderShinsam(data) {
-    if (!data.list.length) {
-      return `
-        <div class="theory-block">
-          <h3>🌊 新サム理論</h3>
-          <p class="muted">展示タイム・一周タイムの不足で判定不可。</p>
-        </div>
-      `;
+  function createFinalMemo(params) {
+    const memo = [];
+
+    if (params.venue?.bias?.length) {
+      memo.push(`場バイアス：${params.venue.bias.join(" / ")}`);
     }
 
-    return `
-      <div class="theory-block">
-        <h3>🌊 新サム理論</h3>
-
-        <p class="muted">
-          展示タイム＋一周タイムの合計で評価。
-          平均より速い艇だけプラス判定。
-        </p>
-
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>艇</th>
-                <th>選手</th>
-                <th>合計</th>
-                <th>平均差</th>
-                <th>判定</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data.list.map(r => `
-                <tr>
-                  <td class="boat-label boat-${r.boat}">${r.boat}号艇</td>
-                  <td>${r.name}</td>
-                  <td>${r.total.toFixed(2)}</td>
-                  <td>${r.diff > 0 ? "+" : ""}${r.diff.toFixed(2)}</td>
-                  <td>${r.diff > 0 ? "⬆️プラス" : "—"}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-
-        <p class="${data.alerts.length ? "alert-text" : "muted"}">
-          ${
-            data.alerts.length
-              ? `🔥 新サムアラート：${data.alerts.map(r => `${r.boat}号艇`).join("・")} がプラス判定。`
-              : "新サムアラート発動なし。"
-          }
-        </p>
-
-        <p class="muted">
-          風速：${data.wind ?? "不明"}m　
-          ${
-            data.isStrongWind
-              ? "風が強めなので新サム評価を少し重視。"
-              : "風が弱めなら新サム評価は補助扱い。"
-          }
-        </p>
-      </div>
-    `;
-  }
-
-  window.renderTheoryPanel = renderTheoryPanel;
-    /* =========================================================
-    Part7 AI指数
-    - 攻め指数
-    - 展開指数
-    - 道中指数
-    - 当地指数
-    - 総合指数
-    - ランキング
-    - 期待値
-  ========================================================= */
-
-  function clampScore(v) {
-    const n = Number(v);
-    if (!Number.isFinite(n)) return 50;
-    return Math.max(0, Math.min(100, Math.round(n)));
-  }
-
-  function calcAttackIndex(r) {
-    const st = getTenjiST(r);
-    const ex = getExTime(r);
-    const rank = num(r?.rankPoint ?? r?.classPoint ?? r?.winRate);
-
-    let score = 50;
-
-    if (st !== null) score += (0.18 - st) * 180;
-    if (ex !== null) score += (6.85 - ex) * 35;
-    if (rank !== null) score += (rank - 5.0) * 4;
-
-    return clampScore(score);
-  }
-
-  function calcFlowIndex(r, racers) {
-    const boat = Number(boatName(r));
-    const attack = calcAttackIndex(r);
-
-    let score = 50;
-
-    if (boat === 1) score += 8;
-    if (boat === 2) score += 6;
-    if (boat === 3) score += attack >= 60 ? 10 : 3;
-    if (boat === 4) score += attack >= 62 ? 8 : 2;
-    if (boat === 5) score += 4;
-    if (boat === 6) score += 2;
-
-    const left = racers[boat - 2];
-    const right = racers[boat];
-
-    if (left && calcAttackIndex(left) >= 65) score += 6;
-    if (right && calcAttackIndex(right) >= 65) score += 4;
-
-    return clampScore(score);
-  }
-
-  function calcRoadIndex(r) {
-    const winRate = num(r?.winRate ?? r?.racerWinRate);
-    const secondRate = num(r?.secondRate ?? r?.twoRate);
-    const grade = String(r?.class || r?.grade || "");
-
-    let score = 50;
-
-    if (winRate !== null) score += (winRate - 5.0) * 6;
-    if (secondRate !== null) score += (secondRate - 35) * 0.5;
-
-    if (grade.includes("A1")) score += 10;
-    if (grade.includes("A2")) score += 5;
-    if (grade.includes("B2")) score -= 6;
-
-    return clampScore(score);
-  }
-
-  function calcLocalIndex(r) {
-    const localRate = num(r?.localWinRate ?? r?.venueWinRate ?? r?.placeWinRate);
-    const isLocal =
-      r?.isLocal === true ||
-      String(r?.branch || r?.home || "").includes(String(r?.venuePref || ""));
-
-    let score = 50;
-
-    if (localRate !== null) score += (localRate - 5.0) * 7;
-    if (isLocal) score += 8;
-
-    return clampScore(score);
-  }
-
-  function calcMotorIndex(r) {
-    const motor2 = num(r?.motorTwoRate ?? r?.motor2Rate ?? r?.motorRate);
-    const boat2 = num(r?.boatTwoRate ?? r?.boat2Rate);
-
-    let score = 50;
-
-    if (motor2 !== null) score += (motor2 - 35) * 0.45;
-    if (boat2 !== null) score += (boat2 - 35) * 0.25;
-
-    return clampScore(score);
-  }
-
-  function calcTotalIndex(r, racers) {
-    const attack = calcAttackIndex(r);
-    const flow = calcFlowIndex(r, racers);
-    const road = calcRoadIndex(r);
-    const local = calcLocalIndex(r);
-    const motor = calcMotorIndex(r);
-
-    const total =
-      attack * 0.28 +
-      flow * 0.24 +
-      road * 0.22 +
-      local * 0.16 +
-      motor * 0.10;
-
-    return {
-      attack,
-      flow,
-      road,
-      local,
-      motor,
-      total: clampScore(total)
-    };
-  }
-
-  function createAiIndexes(data) {
-    const racers = getRacers(data);
-
-    return racers
-      .map(r => {
-        const index = calcTotalIndex(r, racers);
-
-        return {
-          boat: boatName(r),
-          name: racerName(r),
-          className: r?.class || r?.grade || "-",
-          attack: index.attack,
-          flow: index.flow,
-          road: index.road,
-          local: index.local,
-          motor: index.motor,
-          total: index.total,
-          value: calcExpectedValue(index.total, r)
-        };
-      })
-      .sort((a, b) => b.total - a.total);
-  }
-
-  function calcExpectedValue(total, r) {
-    const odds = num(r?.odds ?? r?.winOdds ?? r?.trioOdds);
-    let value = total;
-
-    if (odds !== null) {
-      if (odds >= 15) value += 8;
-      if (odds >= 30) value += 10;
-      if (odds <= 3) value -= 8;
+    if (params.weather?.buffs?.length) {
+      memo.push(`水面プラス：${params.weather.buffs.slice(0, 2).join(" / ")}`);
     }
 
-    return clampScore(value);
-  }
-
-  function indexLabel(score) {
-    if (score >= 80) return "S";
-    if (score >= 70) return "A";
-    if (score >= 60) return "B";
-    if (score >= 50) return "C";
-    return "D";
-  }
-
-  function renderAiIndexPanel(data) {
-    const area = document.getElementById("aiIndexArea");
-    if (!area) return;
-
-    const list = createAiIndexes(data);
-
-    if (!list.length) {
-      area.innerHTML = `
-        <section class="card ai-index-card">
-          <h2>AI指数</h2>
-          <p class="muted">指数データが不足しています。</p>
-        </section>
-      `;
-      return;
+    if (params.weather?.debuffs?.length) {
+      memo.push(`水面注意：${params.weather.debuffs.slice(0, 2).join(" / ")}`);
     }
 
-    area.innerHTML = `
-      <section class="card ai-index-card">
-        <h2>AI指数</h2>
-
-        <p class="muted">
-          攻め・展開・道中・当地・機力を分けて数値化。
-          総合だけでなく、3着候補は道中指数と当地指数も重視。
-        </p>
-
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>順位</th>
-                <th>艇</th>
-                <th>選手</th>
-                <th>攻め</th>
-                <th>展開</th>
-                <th>道中</th>
-                <th>当地</th>
-                <th>機力</th>
-                <th>総合</th>
-                <th>期待値</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${list.map((r, i) => `
-                <tr>
-                  <td>${i + 1}</td>
-                  <td class="boat-label boat-${r.boat}">${r.boat}号艇</td>
-                  <td>${r.name}</td>
-                  <td>${r.attack}</td>
-                  <td>${r.flow}</td>
-                  <td>${r.road}</td>
-                  <td>${r.local}</td>
-                  <td>${r.motor}</td>
-                  <td><strong>${r.total}</strong> / ${indexLabel(r.total)}</td>
-                  <td><strong>${r.value}</strong> / ${indexLabel(r.value)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-
-        ${renderIndexSummary(list)}
-      </section>
-    `;
-  }
-
-  function renderIndexSummary(list) {
-    const attack = [...list].sort((a, b) => b.attack - a.attack)[0];
-    const flow = [...list].sort((a, b) => b.flow - a.flow)[0];
-    const road = [...list].sort((a, b) => b.road - a.road)[0];
-    const local = [...list].sort((a, b) => b.local - a.local)[0];
-    const value = [...list].sort((a, b) => b.value - a.value)[0];
-
-    return `
-      <div class="mini-grid index-summary">
-        <div class="mini-card">
-          <strong>🔥 攻め指数1位</strong>
-          <p>${attack.boat}号艇 ${attack.name} / ${attack.attack}</p>
-        </div>
-
-        <div class="mini-card">
-          <strong>🌊 展開指数1位</strong>
-          <p>${flow.boat}号艇 ${flow.name} / ${flow.flow}</p>
-        </div>
-
-        <div class="mini-card">
-          <strong>⚡ 道中指数1位</strong>
-          <p>${road.boat}号艇 ${road.name} / ${road.road}</p>
-        </div>
-
-        <div class="mini-card">
-          <strong>🏠 当地指数1位</strong>
-          <p>${local.boat}号艇 ${local.name} / ${local.local}</p>
-        </div>
-
-        <div class="mini-card">
-          <strong>💰 期待値1位</strong>
-          <p>${value.boat}号艇 ${value.name} / ${value.value}</p>
-        </div>
-      </div>
-    `;
-  }
-
-  window.renderAiIndexPanel = renderAiIndexPanel;
-    /* =========================================================
-    Part8 オッズ画面
-    - 3連単
-    - 2連単
-    - 2連複
-    - 拡連複
-    - 合成オッズ
-    - 期待値
-  ========================================================= */
-
-  function getOddsData(data) {
-    return data?.odds || data?.oddsData || {};
-  }
-
-  function normalizeOddsList(list) {
-    if (!Array.isArray(list)) return [];
-
-    return list
-      .map(o => ({
-        mark: o?.mark || o?.combination || o?.ticket || o?.kumi || "-",
-        odds: num(o?.odds ?? o?.value ?? o?.rate),
-        popularity: num(o?.popularity ?? o?.rank)
-      }))
-      .filter(o => o.mark !== "-" && o.odds !== null)
-      .sort((a, b) => {
-        if (a.popularity !== null && b.popularity !== null) {
-          return a.popularity - b.popularity;
-        }
-        return a.odds - b.odds;
-      });
-  }
-
-  function getOddsListByType(odds, type) {
-    const keys = {
-      trifecta: ["trifecta", "sanrentan", "threeExact", "3rentan", "3連単"],
-      exacta: ["exacta", "nirentan", "twoExact", "2rentan", "2連単"],
-      quinella: ["quinella", "nirenpuku", "twoQuinella", "2renpuku", "2連複"],
-      wide: ["wide", "kakurenpuku", "kakuren", "拡連複"]
-    };
-
-    const candidates = keys[type] || [];
-
-    for (const key of candidates) {
-      if (Array.isArray(odds?.[key])) return normalizeOddsList(odds[key]);
+    if (params.newEngine?.updated) {
+      memo.push(`新型エンジン：${params.newEngine.phaseLabel}`);
     }
 
-    return [];
+    if (params.raceFlow?.title) {
+      memo.push(`展開型：${params.raceFlow.title}`);
+    }
+
+    return memo;
   }
 
-  function calcSyntheticOdds(marks, oddsList) {
-    if (!marks || !marks.length) return null;
+  /* ===============================
+    共通ユーティリティ
+  =============================== */
 
-    const oddsMap = new Map(
-      oddsList.map(o => [String(o.mark).replace(/\s/g, ""), o.odds])
-    );
+  function toBoatNo(v) {
+    const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
+    if (!Number.isFinite(n)) return 0;
+    if (n < 1 || n > 6) return 0;
+    return n;
+  }
 
-    let inverseSum = 0;
-    let hitCount = 0;
+  function toNumber(v) {
+    const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  }
 
-    marks.forEach(mark => {
-      const key = String(mark).replace(/\s/g, "");
-      const odds = oddsMap.get(key);
+  function toNumberOrNull(v) {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(String(v).replace(/[^\d.-]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  }
 
-      if (odds && odds > 0) {
-        inverseSum += 1 / odds;
-        hitCount++;
-      }
+  function toPercentNumber(v) {
+    if (v === null || v === undefined || v === "") return null;
+    const raw = String(v).replace("%", "");
+    const n = Number(raw.replace(/[^\d.-]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function safeString(v) {
+    if (v === null || v === undefined) return "";
+    return String(v).trim();
+  }
+
+  function normalizeST(v) {
+    if (v === null || v === undefined || v === "") return "";
+
+    let s = String(v).trim();
+
+    if (s.startsWith(".")) {
+      s = "0" + s;
+    }
+
+    const n = Number(s);
+
+    if (!Number.isFinite(n)) return String(v).trim();
+
+    return n.toFixed(2);
+  }
+
+  function toSTNumber(v) {
+    if (v === null || v === undefined || v === "") return null;
+
+    let s = String(v).trim();
+
+    if (s.startsWith(".")) {
+      s = "0" + s;
+    }
+
+    const n = Number(s);
+
+    if (!Number.isFinite(n)) return null;
+
+    return n;
+  }
+
+  function formatST(v) {
+    const n = toSTNumber(v);
+    if (n === null) return "-";
+    return n.toFixed(2).replace(/^0/, "");
+  }
+
+  function findByBoatNo(list, boatNo) {
+    if (!Array.isArray(list)) return null;
+    return list.find(item => Number(item.boatNo) === Number(boatNo)) || null;
+  }
+
+  function rankSmallNumber(list, key) {
+    const valid = (list || [])
+      .filter(item => item[key] !== null && item[key] !== undefined)
+      .sort((a, b) => Number(a[key]) - Number(b[key]));
+
+    const result = {};
+
+    valid.forEach((item, index) => {
+      result[item.boatNo] = index + 1;
     });
 
-    if (!inverseSum || !hitCount) return null;
-
-    return {
-      odds: 1 / inverseSum,
-      count: hitCount
-    };
+    return result;
   }
 
-  function getFormationMarks(data) {
-    const f = data?.formation || data?.formations || {};
-
-    const main = f?.main || f?.honmei || data?.mainFormation || [];
-    const cover = f?.cover || f?.osae || data?.coverFormation || [];
-    const hole = f?.hole || f?.manshu || data?.holeFormation || [];
-
-    return {
-      main: Array.isArray(main) ? main : [],
-      cover: Array.isArray(cover) ? cover : [],
-      hole: Array.isArray(hole) ? hole : []
-    };
+  function uniqueList(list) {
+    return [...new Set((list || []).filter(v => v !== null && v !== undefined && v !== ""))];
   }
 
-  function expectedValueLabel(odds) {
-    if (odds === null || odds === undefined) return "判定不可";
-    if (odds >= 30) return "一撃型";
-    if (odds >= 15) return "妙味あり";
-    if (odds >= 7) return "標準";
-    if (odds >= 3) return "堅め";
-    return "過剰人気注意";
+  function diffDateDays(fromDate, toDate) {
+    if (!fromDate || !toDate) return null;
+
+    const f = parseDate(fromDate);
+    const t = parseDate(toDate);
+
+    if (!f || !t) return null;
+
+    const diff = t.getTime() - f.getTime();
+    return Math.floor(diff / 86400000);
   }
 
-  function renderOddsPanel(data) {
-    const area = document.getElementById("oddsArea");
-    if (!area) return;
+  function parseDate(v) {
+    const s = String(v || "").replace(/[^\d]/g, "");
 
-    const odds = getOddsData(data);
+    if (s.length !== 8) return null;
 
-    const trifecta = getOddsListByType(odds, "trifecta");
-    const exacta = getOddsListByType(odds, "exacta");
-    const quinella = getOddsListByType(odds, "quinella");
-    const wide = getOddsListByType(odds, "wide");
+    const y = Number(s.slice(0, 4));
+    const m = Number(s.slice(4, 6)) - 1;
+    const d = Number(s.slice(6, 8));
 
-    const formations = getFormationMarks(data);
+    const date = new Date(y, m, d);
 
-    const mainSynthetic = calcSyntheticOdds(formations.main, trifecta);
-    const coverSynthetic = calcSyntheticOdds(formations.cover, trifecta);
-    const holeSynthetic = calcSyntheticOdds(formations.hole, trifecta);
+    if (!Number.isFinite(date.getTime())) return null;
 
-    area.innerHTML = `
-      <section class="card odds-card">
-        <h2>オッズ</h2>
-
-        <div class="mini-grid">
-          ${renderSyntheticCard("本線", mainSynthetic)}
-          ${renderSyntheticCard("押さえ", coverSynthetic)}
-          ${renderSyntheticCard("万舟", holeSynthetic)}
-        </div>
-
-        ${renderOddsTypeBlock("3連単", trifecta, 12)}
-        ${renderOddsTypeBlock("2連単", exacta, 10)}
-        ${renderOddsTypeBlock("2連複", quinella, 10)}
-        ${renderOddsTypeBlock("拡連複", wide, 10)}
-      </section>
-    `;
+    return date;
   }
 
-  function renderSyntheticCard(title, result) {
-    if (!result) {
-      return `
-        <div class="mini-card">
-          <strong>${title} 合成オッズ</strong>
-          <p class="muted">判定不可</p>
-        </div>
-      `;
-    }
-
-    const odds = result.odds;
-
-    return `
-      <div class="mini-card">
-        <strong>${title} 合成オッズ</strong>
-        <p class="big-number">${odds.toFixed(1)}倍</p>
-        <p>${expectedValueLabel(odds)}</p>
-        <p class="muted">取得点数：${result.count}点</p>
-      </div>
-    `;
+  function debugPrediction(data) {
+    console.log("[Chappy Prediction]", data);
+    return data;
   }
 
-  function renderOddsTypeBlock(title, list, limit) {
-    if (!list.length) {
-      return `
-        <div class="odds-block">
-          <h3>${title}</h3>
-          <p class="muted">オッズデータなし</p>
-        </div>
-      `;
-    }
-
-    const top = list.slice(0, limit);
-
-    return `
-      <div class="odds-block">
-        <h3>${title}</h3>
-
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>人気</th>
-                <th>買い目</th>
-                <th>オッズ</th>
-                <th>期待値</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${top.map((o, i) => `
-                <tr>
-                  <td>${o.popularity ?? i + 1}</td>
-                  <td><strong>${o.mark}</strong></td>
-                  <td>${o.odds.toFixed(1)}倍</td>
-                  <td>${expectedValueLabel(o.odds)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
-
-  window.renderOddsPanel = renderOddsPanel;
-    /* =========================================================
-    Part9 履歴・成績・データ確認・最終コメント
-  ========================================================= */
-
-  function renderHistoryPanel(data) {
-    const area = document.getElementById("historyArea");
-    if (!area) return;
-
-    const history = JSON.parse(localStorage.getItem("chappyRaceHistory") || "[]");
-
-    area.innerHTML = `
-      <section class="card history-card">
-        <h2>履歴</h2>
-        ${
-          history.length
-            ? history.slice(0, 10).map(h => `
-              <div class="mini-card">
-                <strong>${h.date || "-"} ${h.venue || "-"} ${h.raceNo || "-"}R</strong>
-                <p>${h.result || "結果未登録"}</p>
-              </div>
-            `).join("")
-            : `<p class="muted">履歴はまだありません。</p>`
-        }
-      </section>
-    `;
-  }
-
-  function renderStatsPanel(data) {
-    const area = document.getElementById("statsArea");
-    if (!area) return;
-
-    const stats = JSON.parse(localStorage.getItem("chappyStats") || "{}");
-
-    const total = num(stats.total) || 0;
-    const hit = num(stats.hit) || 0;
-    const returnRate = num(stats.returnRate) || 0;
-    const hitRate = total ? Math.round((hit / total) * 100) : 0;
-
-    area.innerHTML = `
-      <section class="card stats-card">
-        <h2>成績管理</h2>
-
-        <div class="mini-grid">
-          <div class="mini-card">
-            <strong>予想数</strong>
-            <p class="big-number">${total}</p>
-          </div>
-
-          <div class="mini-card">
-            <strong>的中数</strong>
-            <p class="big-number">${hit}</p>
-          </div>
-
-          <div class="mini-card">
-            <strong>的中率</strong>
-            <p class="big-number">${hitRate}%</p>
-          </div>
-
-          <div class="mini-card">
-            <strong>回収率</strong>
-            <p class="big-number">${returnRate}%</p>
-          </div>
-        </div>
-      </section>
-    `;
-  }
-
-  function renderDataCheckPanel(data) {
-    const area = document.getElementById("dataCheckArea");
-    if (!area) return;
-
-    const racers = getRacers(data);
-    const odds = getOddsData(data);
-
-    const checks = [
-      {
-        name: "出走表",
-        ok: racers.length >= 6
-      },
-      {
-        name: "展示タイム",
-        ok: racers.some(r => getExTime(r) !== null)
-      },
-      {
-        name: "展示ST",
-        ok: racers.some(r => getTenjiST(r) !== null)
-      },
-      {
-        name: "一周タイム",
-        ok: racers.some(r => getLapTime(r) !== null)
-      },
-      {
-        name: "オッズ",
-        ok: Object.keys(odds || {}).length > 0
-      },
-      {
-        name: "気象",
-        ok: !!(data?.weather || data?.water)
-      },
-      {
-        name: "場情報",
-        ok: !!(data?.venue || data?.stadium || data?.place)
-      }
-    ];
-
-    area.innerHTML = `
-      <section class="card data-check-card">
-        <h2>データ確認</h2>
-
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>項目</th>
-                <th>状態</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${checks.map(c => `
-                <tr>
-                  <td>${c.name}</td>
-                  <td>${c.ok ? "✅ 取得済み" : "⚠️ 未取得"}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    `;
-  }
-
-  function renderFinalComment(data) {
-    const area = document.getElementById("finalCommentArea");
-    if (!area) return;
-
-    const indexes = createAiIndexes(data);
-    const top = indexes[0];
-    const second = indexes[1];
-    const value = [...indexes].sort((a, b) => b.value - a.value)[0];
-
-    if (!top) {
-      area.innerHTML = `
-        <section class="card final-comment-card">
-          <h2>最終コメント</h2>
-          <p class="muted">データ不足で最終判定できません。</p>
-        </section>
-      `;
-      return;
-    }
-
-    area.innerHTML = `
-      <section class="card final-comment-card">
-        <h2>最終コメント</h2>
-
-        <p>
-          総合指数トップは
-          <strong>${top.boat}号艇 ${top.name}</strong>。
-          攻め・展開・道中・当地を合わせた中心候補。
-        </p>
-
-        <p>
-          相手筆頭は
-          <strong>${second ? `${second.boat}号艇 ${second.name}` : "判定不可"}</strong>。
-          本線は指数上位から組み、押さえは道中指数と当地指数を重視。
-        </p>
-
-        <p>
-          妙味候補は
-          <strong>${value.boat}号艇 ${value.name}</strong>。
-          人気だけで切らず、3着拾い・展開待ちの評価に入れる。
-        </p>
-
-        <p class="muted">
-          最終判断は展示・ST・風・水面・オッズを合わせて調整。
-        </p>
-      </section>
-    `;
-  }
-
-  window.renderHistoryPanel = renderHistoryPanel;
-  window.renderStatsPanel = renderStatsPanel;
-  window.renderDataCheckPanel = renderDataCheckPanel;
-  window.renderFinalComment = renderFinalComment;
-    /* =========================================================
-    Part10 renderAll・互換関数・初期化
-  ========================================================= */
-
-  function renderAll(data) {
-    if (!data) return;
-
-    window.__CHAPPY_LAST_DATA__ = data;
-
-    if (typeof renderEntryTable === "function") renderEntryTable(data);
-    if (typeof renderWeatherPanel === "function") renderWeatherPanel(data);
-    if (typeof renderVenuePanel === "function") renderVenuePanel(data);
-    if (typeof renderMaterialPanel === "function") renderMaterialPanel(data);
-    if (typeof renderRaceFlow === "function") renderRaceFlow(data);
-    if (typeof renderMainSheet === "function") renderMainSheet(data);
-    if (typeof renderPinkSheet === "function") renderPinkSheet(data);
-    if (typeof renderTheoryPanel === "function") renderTheoryPanel(data);
-    if (typeof renderAiIndexPanel === "function") renderAiIndexPanel(data);
-    if (typeof renderOddsPanel === "function") renderOddsPanel(data);
-    if (typeof renderHistoryPanel === "function") renderHistoryPanel(data);
-    if (typeof renderStatsPanel === "function") renderStatsPanel(data);
-    if (typeof renderDataCheckPanel === "function") renderDataCheckPanel(data);
-    if (typeof renderFinalComment === "function") renderFinalComment(data);
-  }
-
-  function rerenderLastRace() {
-    if (window.__CHAPPY_LAST_DATA__) {
-      renderAll(window.__CHAPPY_LAST_DATA__);
-    }
-  }
-
-  function clearArea(id) {
-    const area = document.getElementById(id);
-    if (area) area.innerHTML = "";
-  }
-
-  function clearAllRenderAreas() {
-    [
-      "raceListArea",
-      "entryArea",
-      "weatherArea",
-      "venueArea",
-      "materialArea",
-      "raceFlowArea",
-      "mainSheetArea",
-      "formationArea",
-      "pinkSheetArea",
-      "theoryArea",
-      "aiIndexArea",
-      "oddsArea",
-      "statsArea",
-      "historyArea",
-      "dataCheckArea",
-      "finalCommentArea"
-    ].forEach(clearArea);
-  }
-
-  function renderError(message) {
-    const area =
-      document.getElementById("finalCommentArea") ||
-      document.getElementById("raceListArea");
-
-    if (!area) return;
-
-    area.innerHTML = `
-      <section class="card error-card">
-        <h2>エラー</h2>
-        <p>${message || "データ取得に失敗しました。"}</p>
-      </section>
-    `;
-  }
-
-  function renderLoading(message) {
-    const area = document.getElementById("raceListArea");
-    if (!area) return;
-
-    area.innerHTML = `
-      <section class="card loading-card">
-        <h2>読み込み中</h2>
-        <p>${message || "レースデータを取得しています。"}</p>
-      </section>
-    `;
-  }
-
-  function renderEmpty(message) {
-    const area = document.getElementById("raceListArea");
-    if (!area) return;
-
-    area.innerHTML = `
-      <section class="card empty-card">
-        <h2>データなし</h2>
-        <p>${message || "表示できるデータがありません。"}</p>
-      </section>
-    `;
-  }
-
-  function renderRaceList(races) {
-    const area = document.getElementById("raceListArea");
-    if (!area) return;
-
-    if (!Array.isArray(races) || !races.length) {
-      renderEmpty("レース一覧がありません。");
-      return;
-    }
-
-    area.innerHTML = `
-      <section class="card race-list-card">
-        <h2>レース一覧</h2>
-
-        <div class="race-list">
-          ${races.map(r => `
-            <button class="race-button" data-race-no="${r.raceNo || r.rno || ""}">
-              ${r.raceNo || r.rno || "-"}R
-              <span>${r.title || r.name || ""}</span>
-            </button>
-          `).join("")}
-        </div>
-      </section>
-    `;
-  }
-
-  function initRenderEvents() {
-    document.addEventListener("click", e => {
-      const btn = e.target.closest("[data-race-no]");
-      if (!btn) return;
-
-      const raceNo = btn.dataset.raceNo;
-
-      if (typeof window.selectRace === "function") {
-        window.selectRace(raceNo);
-      }
-    });
-  }
-
-  window.renderAll = renderAll;
-  window.rerenderLastRace = rerenderLastRace;
-  window.clearAllRenderAreas = clearAllRenderAreas;
-  window.renderError = renderError;
-  window.renderLoading = renderLoading;
-  window.renderEmpty = renderEmpty;
-  window.renderRaceList = renderRaceList;
-
-  initRenderEvents();
+  window.createPrediction = createPrediction;
+  window.debugPrediction = debugPrediction;
 
 })();
