@@ -3630,12 +3630,429 @@
 
     window.__CHAPPY_OLD_CLEAN_TICKETS__ = oldCleanTickets;
   }
+    /* ===============================
+    Part9 舟券生成 安全版
+    - 重複艇番禁止
+    - 流し自動整理
+    - 万舟フォーメーション修正
+  =============================== */
+
+  function ticket(a, b, c) {
+    const nums = [Number(a), Number(b), Number(c)];
+
+    if (nums.some(n => !isValidBoatNo(n))) return "";
+    if (hasDuplicateBoats(nums)) return "";
+
+    return `${nums[0]}-${nums[1]}-${nums[2]}`;
+  }
+
+  function cleanTickets(list) {
+    return cleanExactTickets(list);
+  }
+
+  function createSafeFormation(axis, seconds, thirds) {
+    const a = Number(axis);
+    if (!isValidBoatNo(a)) return "";
+
+    const s = uniqueNumbers(seconds)
+      .filter(n => n !== a);
+
+    const t = uniqueNumbers(thirds)
+      .filter(n => n !== a)
+      .filter(n => !s.includes(n) || s.length >= 2);
+
+    if (!s.length || !t.length) return "";
+
+    const safeThirds = t.filter(n => n !== a);
+
+    if (!safeThirds.length) return "";
+
+    return `${a}-${s.join("")}-${safeThirds.join("")}`;
+  }
+
+  function expandFormation(text) {
+    if (!text || !String(text).includes("-")) return [];
+
+    const parts = String(text).split("-");
+    if (parts.length !== 3) return [];
+
+    const firsts = parts[0].split("").map(Number).filter(isValidBoatNo);
+    const seconds = parts[1].split("").map(Number).filter(isValidBoatNo);
+    const thirds = parts[2].split("").map(Number).filter(isValidBoatNo);
+
+    const tickets = [];
+
+    firsts.forEach(a => {
+      seconds.forEach(b => {
+        thirds.forEach(c => {
+          const t = ticket(a, b, c);
+          if (t) tickets.push(t);
+        });
+      });
+    });
+
+    return cleanExactTickets(tickets);
+  }
+
+  function cleanFormationTickets(list) {
+    const result = [];
+
+    (list || []).forEach(item => {
+      const text = String(item || "").trim();
+      if (!text) return;
+
+      if (isValidExactTicket(text)) {
+        result.push(text);
+        return;
+      }
+
+      result.push(...expandFormation(text));
+    });
+
+    return cleanExactTickets(result);
+  }
+
+  function createManshuFormation(candidates, hold, pickup) {
+    const c = (candidates || []).map(v => v.boatNo);
+    const h = (hold || []).map(v => v.boatNo);
+    const p = (pickup || []).map(v => v.boatNo);
+
+    const tickets = [];
+
+    tickets.push(ticket(c[0], h[0], p[0]));
+    tickets.push(ticket(c[0], p[0], h[0]));
+    tickets.push(ticket(h[0], c[0], p[0]));
+    tickets.push(ticket(h[0], c[0], p[1]));
+    tickets.push(ticket(c[1], h[0], p[0]));
+    tickets.push(ticket(c[0], h[1], p[0]));
+    tickets.push(ticket(p[0], h[0], c[0]));
+
+    return cleanExactTickets(tickets).slice(0, 8);
+  }
+
+  function createMainFormationTickets(params) {
+    const {
+      axis,
+      secondAxis,
+      holeAxis,
+      coverAxis,
+      secondGroup,
+      thirdGroup,
+      context
+    } = params;
+
+    const tickets = [];
+
+    tickets.push(ticket(axis, secondAxis, holeAxis));
+    tickets.push(ticket(axis, secondAxis, coverAxis));
+    tickets.push(ticket(axis, holeAxis, secondAxis));
+    tickets.push(ticket(axis, coverAxis, secondAxis));
+
+    if (axis === 1 && context.venue?.inPower >= 70) {
+      tickets.push(...expandFormation(createSafeFormation(axis, secondGroup, thirdGroup)));
+    }
+
+    return cleanExactTickets(tickets).slice(0, 8);
+  }
+
+  function createCoverFormationTickets(params) {
+    const {
+      axis,
+      secondAxis,
+      holeAxis,
+      coverAxis,
+      totalRanking,
+      pickupRanking,
+      context
+    } = params;
+
+    const road = pickupRanking[0]?.boatNo;
+    const third = totalRanking[2]?.boatNo;
+
+    const tickets = [
+      ticket(secondAxis, axis, holeAxis),
+      ticket(secondAxis, axis, coverAxis),
+      ticket(holeAxis, axis, secondAxis),
+      ticket(holeAxis, secondAxis, axis),
+      ticket(axis, coverAxis, holeAxis),
+      ticket(coverAxis, axis, secondAxis),
+      ticket(axis, secondAxis, road),
+      ticket(axis, road, third)
+    ];
+
+    if (context.weather?.insideRisk >= 65 && axis === 1) {
+      tickets.push(ticket(secondAxis, holeAxis, axis));
+      tickets.push(ticket(holeAxis, secondAxis, axis));
+    }
+
+    return cleanExactTickets(tickets).slice(0, 10);
+  }
+
+  function createNagashiTickets(params) {
+    const { axis, secondGroup, thirdGroup, raceFlow, context } = params;
+
+    const tickets = [];
+
+    const attackBoat = Number(raceFlow?.attackBoats?.[0]?.boatNo || 0);
+    const pickupBoat = Number(raceFlow?.pickupBoats?.[0]?.boatNo || 0);
+
+    tickets.push(...expandFormation(createSafeFormation(axis, secondGroup, thirdGroup)));
+
+    if (attackBoat && attackBoat !== axis) {
+      const seconds = uniqueNumbers([axis, ...secondGroup]).filter(n => n !== attackBoat);
+      const thirds = uniqueNumbers([axis, pickupBoat, ...thirdGroup]).filter(n => n !== attackBoat);
+      tickets.push(...expandFormation(createSafeFormation(attackBoat, seconds, thirds)));
+    }
+
+    if (pickupBoat && pickupBoat !== axis) {
+      const seconds = uniqueNumbers([axis, attackBoat, ...secondGroup]).filter(n => n !== pickupBoat);
+      const thirds = uniqueNumbers([axis, attackBoat, ...thirdGroup]).filter(n => n !== pickupBoat);
+      tickets.push(...expandFormation(createSafeFormation(axis, seconds, thirds)));
+    }
+
+    if (context.weather?.outsideChance >= 65) {
+      const outside = uniqueNumbers([4, 5, 6, attackBoat, pickupBoat]);
+      const inside = uniqueNumbers([1, 2, 3, axis]);
+
+      outside.forEach(a => {
+        inside.forEach(b => {
+          thirdGroup.forEach(c => {
+            tickets.push(ticket(a, b, c));
+          });
+        });
+      });
+    }
+
+    return cleanExactTickets(tickets).slice(0, 12);
+  }
+
+  function createHoleFormationTickets(params) {
+    const {
+      manshuSheet,
+      expectedRanking,
+      pickupRanking,
+      totalRanking,
+      context
+    } = params;
+
+    const e1 = expectedRanking[0]?.boatNo;
+    const e2 = expectedRanking[1]?.boatNo;
+    const p1 = pickupRanking[0]?.boatNo;
+    const p2 = pickupRanking[1]?.boatNo;
+    const t1 = totalRanking[0]?.boatNo;
+    const t2 = totalRanking[1]?.boatNo;
+
+    const tickets = [
+      ...(manshuSheet.formation || []),
+      ticket(e1, t1, p1),
+      ticket(e1, p1, t1),
+      ticket(e2, t1, p1),
+      ticket(t1, e1, p1),
+      ticket(t1, p1, e1),
+      ticket(p1, t1, e1)
+    ];
+
+    if (context.weather?.insideRisk >= 65) {
+      tickets.push(ticket(e1, e2, t1));
+      tickets.push(ticket(e1, p2, t1));
+    }
+
+    if (context.newEngine?.updated) {
+      tickets.push(ticket(e1, t2, p1));
+      tickets.push(ticket(t2, e1, p1));
+    }
+
+    return cleanExactTickets(tickets).slice(0, 12);
+  }
   function debugPrediction(data) {
     console.log("[Chappy Prediction]", data);
     return data;
   }
 
-  window.createPrediction = createPrediction;
+    /* ===============================
+    Part10 最終AI評価
+    - 買い目ランク
+    - 信頼度
+    - 万舟期待度
+    - 最終判定
+  =============================== */
+
+  function createTicketRanks(prediction) {
+    const formation = prediction?.formation || {};
+
+    const main = rankTickets(formation.main || [], "本線", 85);
+    const cover = rankTickets(formation.cover || [], "押さえ", 72);
+    const nagashi = rankTickets(formation.nagashi || [], "流し", 65);
+    const hole = rankTickets(formation.hole || [], "万舟", 58);
+
+    return [...main, ...cover, ...nagashi, ...hole]
+      .filter(item => isValidExactTicket(item.ticket))
+      .sort((a, b) => b.score - a.score);
+  }
+
+  function rankTickets(tickets, type, baseScore) {
+    return cleanExactTickets(tickets).map((ticketText, index) => {
+      const score = clampScore(baseScore - index * 3);
+
+      return {
+        ticket: ticketText,
+        type,
+        score,
+        rank: createRankLabel(score),
+        comment: createTicketComment(type, score)
+      };
+    });
+  }
+
+  function createRankLabel(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function createTicketComment(type, score) {
+    if (type === "本線") return "中心評価の買い目";
+    if (type === "押さえ") return "2着・3着ズレの保険";
+    if (type === "流し") return "展開が割れた時の対応";
+    if (type === "万舟") return "高配当狙い";
+    return "AI候補";
+  }
+
+  function createConfidence(prediction) {
+    const honmei = prediction?.mainSheet?.honmei;
+    const taikou = prediction?.mainSheet?.taikou;
+    const weather = prediction?.weather || {};
+
+    if (!honmei) {
+      return {
+        score: 30,
+        level: "低",
+        reason: "本命評価が不足"
+      };
+    }
+
+    let score = honmei.score || 50;
+
+    if (taikou?.score >= 70) score += 6;
+    if (weather.insideRisk >= 70) score -= 10;
+    if (weather.roughScore >= 75) score -= 8;
+
+    score = clampScore(score);
+
+    return {
+      score,
+      level: score >= 80 ? "高" : score >= 65 ? "中" : "低",
+      reason:
+        score >= 80
+          ? "軸と相手が比較的はっきりしている"
+          : score >= 65
+            ? "中心はあるが押さえも必要"
+            : "展開ズレ・波乱を警戒"
+    };
+  }
+
+  function createManshuPower(prediction) {
+    const hole = prediction?.formation?.hole || [];
+    const weather = prediction?.weather || {};
+    const manshu = prediction?.manshuSheet?.candidates || [];
+
+    let score = 45;
+
+    score += Math.min(hole.length, 8) * 3;
+    if (weather.outsideChance >= 65) score += 10;
+    if (weather.insideRisk >= 65) score += 8;
+    if (manshu[0]?.manshuScore >= 70) score += 10;
+
+    score = clampScore(score);
+
+    return {
+      score,
+      level: score >= 75 ? "高" : score >= 60 ? "中" : "低",
+      reason:
+        score >= 75
+          ? "外枠・ズレ目・拾いの期待値が高い"
+          : score >= 60
+            ? "万舟は狙えるが点数管理が必要"
+            : "本線寄りで万舟は軽め"
+    };
+  }
+
+  function createFinalAiJudge(prediction) {
+    const confidence = createConfidence(prediction);
+    const manshuPower = createManshuPower(prediction);
+    const ticketRanks = createTicketRanks(prediction);
+
+    const topTickets = ticketRanks.slice(0, 5);
+    const manshuTickets = ticketRanks
+      .filter(t => t.type === "万舟")
+      .slice(0, 5);
+
+    return {
+      confidence,
+      manshuPower,
+      ticketRanks,
+      topTickets,
+      manshuTickets,
+      summary: createFinalAiSummary({
+        prediction,
+        confidence,
+        manshuPower,
+        topTickets,
+        manshuTickets
+      })
+    };
+  }
+
+  function createFinalAiSummary(params) {
+    const honmei = params.prediction?.mainSheet?.honmei;
+    const taikou = params.prediction?.mainSheet?.taikou;
+    const ana = params.prediction?.mainSheet?.ana;
+
+    const parts = [];
+
+    if (honmei) {
+      parts.push(`中心は${honmei.boatNo}号艇`);
+    }
+
+    if (taikou) {
+      parts.push(`相手本線は${taikou.boatNo}号艇`);
+    }
+
+    if (ana) {
+      parts.push(`穴は${ana.boatNo}号艇`);
+    }
+
+    parts.push(`信頼度は${params.confidence.level}`);
+    parts.push(`万舟期待度は${params.manshuPower.level}`);
+
+    if (params.topTickets.length) {
+      parts.push(`最上位買い目は${params.topTickets[0].ticket}`);
+    }
+
+    return parts.join("。") + "。";
+  }
+
+  function enhancePrediction(prediction) {
+    const finalAi = createFinalAiJudge(prediction);
+
+    return {
+      ...prediction,
+      finalAi,
+      ticketRanks: finalAi.ticketRanks,
+      confidence: finalAi.confidence,
+      manshuPower: finalAi.manshuPower
+    };
+  }
+
+  const __CHAPPY_BASE_CREATE_PREDICTION__ = createPrediction;
+
+  window.createPrediction = function(data) {
+    const prediction = __CHAPPY_BASE_CREATE_PREDICTION__(data);
+    return enhancePrediction(prediction);
+  };
+
   window.debugPrediction = debugPrediction;
 
 })();
