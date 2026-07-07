@@ -1,5 +1,5 @@
 // js/api.js
-// チャッピーボートレースAI API接続
+// API返却データ名ズレ対応版
 
 const ChappyAPI = (() => {
   const BASE_URL = "";
@@ -14,89 +14,71 @@ const ChappyAPI = (() => {
   };
 
   async function fetchRace({ jcd, rno, date }) {
-    if (!jcd || !rno || !date) {
-      throw new Error("jcd・rno・date が不足しています");
-    }
-
-    const url =
-      `${BASE_URL}/api/race?jcd=${encodeURIComponent(jcd)}` +
-      `&rno=${encodeURIComponent(rno)}` +
-      `&date=${encodeURIComponent(date)}`;
-
+    const url = `/api/race?jcd=${jcd}&rno=${rno}&date=${date}`;
     const res = await fetch(url);
-
-    if (!res.ok) {
-      throw new Error(`API通信エラー: ${res.status}`);
-    }
-
     const json = await res.json();
 
-    if (!json.ok) {
-      throw new Error(json.error || "API取得に失敗しました");
+    if (!res.ok || !json.ok) {
+      throw new Error(json.error || `API通信エラー: ${res.status}`);
     }
 
     return normalizeRace(json);
   }
 
   function normalizeRace(raw) {
-    const entries = normalizeEntries(raw.entries || raw.entry || []);
-    const beforeInfo = raw.beforeInfo || raw.before || [];
-    const startExhibition = raw.startExhibition || raw.start || [];
-
     return {
       ok: true,
-
-      stadiumCode: raw.stadiumCode || raw.jcd || "",
-      stadiumName: raw.stadiumName || raw.stadium || "",
-      raceNo: raw.raceNo || raw.rno || "",
+      stadiumCode: raw.stadiumCode || "",
+      stadiumName: raw.stadiumName || "",
+      raceNo: raw.raceNo || "",
       date: raw.date || "",
-
       raceInfo: raw.raceInfo || {},
+      entries: normalizeEntries(raw.entries || []),
+      beforeInfo: normalizeBeforeInfo(raw.beforeInfo || []),
+      startExhibition: normalizeStartExhibition(raw.startExhibition || []),
       weather: normalizeWeather(raw.weather || {}),
-      entries,
-      beforeInfo: normalizeBeforeInfo(beforeInfo),
-      startExhibition: normalizeStartExhibition(startExhibition),
-
-      debug: raw.debug || {},
-
       raw
     };
   }
 
   function normalizeEntries(entries) {
     return entries.map((e, index) => {
-      const boatNo = Number(e.boatNo || e.waku || e.course || index + 1);
+      const boatNo = Number(e.boat || e.waku || index + 1);
 
       return {
         boatNo,
         color: BOAT_COLORS[boatNo],
 
-        racerName: e.racerName || e.name || "",
-        registerNo: e.registerNo || e.regNo || "",
-        className: e.className || e.grade || "",
+        racerName: e.racerName || "",
+        registerNo: e.registerNo || "",
+        className: e.className || "",
         branch: e.branch || "",
-        birthplace: e.birthplace || e.from || "",
+        birthplace: e.birthPlace || e.birthplace || "",
         age: e.age || "",
         weight: e.weight || "",
-        fl: e.fl || e.F_L || "",
-        avgST: e.avgST || e.st || "",
+        fl: `F${e.fCount ?? 0} L${e.lCount ?? 0}`,
+        avgST: e.avgSt ?? e.avgST ?? "",
 
-        nationalWinRate: e.nationalWinRate || e.nationalRate || "",
-        national2Rate: e.national2Rate || e.national2 || "",
-        national3Rate: e.national3Rate || e.national3 || "",
+        nationalWinRate: e.nationalWinRate ?? "",
+        national2Rate: e.national2Rate ?? "",
+        national3Rate: e.national3Rate ?? "",
 
-        localWinRate: e.localWinRate || e.localRate || "",
-        local2Rate: e.local2Rate || e.local2 || "",
-        local3Rate: e.local3Rate || e.local3 || "",
+        localWinRate: e.localWinRate ?? "",
+        local2Rate: e.local2Rate ?? "",
+        local3Rate: e.local3Rate ?? "",
 
-        motorNo: e.motorNo || "",
-        motor2Rate: e.motor2Rate || e.motor2 || "",
-        motor3Rate: e.motor3Rate || e.motor3 || "",
+        motorNo: e.motorNo ?? "",
+        motor2Rate: e.motor2Rate ?? "",
+        motor3Rate: e.motor3Rate ?? "",
 
-        boatNumber: e.boatNumber || e.boatNo2 || e.boat || "",
-        boat2Rate: e.boat2Rate || e.boat2 || "",
-        boat3Rate: e.boat3Rate || e.boat3 || "",
+        boatNumber: e.boatNo ?? "",
+        boat2Rate: e.boat2Rate ?? "",
+        boat3Rate: e.boat3Rate ?? "",
 
+        exhibitionTime: e.exhibition?.displayTime ?? "",
+        tilt: e.exhibition?.tilt ?? "",
+
+        currentRace: e.currentRace || {},
         raw: e
       };
     });
@@ -104,13 +86,13 @@ const ChappyAPI = (() => {
 
   function normalizeBeforeInfo(beforeInfo) {
     return beforeInfo.map((b, index) => {
-      const boatNo = Number(b.boatNo || b.waku || index + 1);
+      const boatNo = Number(b.boat || index + 1);
 
       return {
         boatNo,
-        exhibitionTime: b.exhibitionTime || b.tenjiTime || b.displayTime || "",
-        tilt: b.tilt || "",
-        weight: b.weight || "",
+        exhibitionTime: b.exhibition?.displayTime ?? "",
+        tilt: b.exhibition?.tilt ?? "",
+        weight: b.exhibition?.weight ?? "",
         raw: b
       };
     });
@@ -118,7 +100,7 @@ const ChappyAPI = (() => {
 
   function normalizeStartExhibition(startExhibition) {
     return startExhibition.map((s, index) => {
-      const boatNo = Number(s.boatNo || s.waku || index + 1);
+      const boatNo = Number(s.boat || s.boatNo || index + 1);
 
       return {
         boatNo,
@@ -131,11 +113,11 @@ const ChappyAPI = (() => {
 
   function normalizeWeather(weather) {
     return {
-      temperature: weather.temperature || weather.temp || "",
-      windSpeed: weather.windSpeed || weather.wind || "",
-      windDirection: weather.windDirection || weather.windDir || "",
-      waterTemperature: weather.waterTemperature || weather.waterTemp || "",
-      waveHeight: weather.waveHeight || weather.wave || "",
+      temperature: weather.temperature ?? "",
+      windSpeed: weather.windSpeed ?? "",
+      windDirection: weather.windDirection ?? "",
+      waterTemperature: weather.waterTemperature ?? "",
+      waveHeight: weather.waveHeight ?? "",
       raw: weather
     };
   }
