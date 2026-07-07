@@ -681,16 +681,27 @@ window.renderComment=function(data={}){
 
 window.renderAll=function(data={}){
 
-    window.renderRaceList?.(data.races ?? []);
-    window.renderWeather?.(data.weather ?? {});
-    window.renderVenue?.(data.venue ?? data.stadium ?? {});
+    const testHtml = `
+        <div class="cp-card">
+            <div class="cp-card-title">✅ renderAll 強制テスト成功</div>
+            <div class="cp-card-body">
+                render.jsの新しいrenderAllが動いています。
+            </div>
+        </div>
+    `;
 
-    window.renderEntryArea?.(data.runners ?? data.entries ?? data.entry ?? []);
-    window.renderMaterialArea?.(data.material ?? data.exhibition ?? {});
-    window.renderMainSheet?.(data.blueSheet ?? data.mainSheet ?? data.prediction ?? []);
-    window.renderPinkSheet?.(data.pinkSheet ?? data.manshuSheet ?? {});
-    window.renderFormation?.(data.formation ?? data.formations ?? []);
-    window.renderComment?.(data.comment ?? data.finalComment ?? {});
+    const ids = [
+        "mainSheetArea",
+        "formationArea",
+        "pinkSheetArea",
+        "finalCommentArea",
+        "dataCheckArea"
+    ];
+
+    ids.forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.innerHTML=testHtml;
+    });
 
 };
 
