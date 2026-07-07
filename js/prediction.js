@@ -480,3 +480,151 @@ function createManshuCandidates(raceData){
     })
     .sort((a, b) => b.manshuScore - a.manshuScore);
 }
+/* ==========================================================
+   prediction.js 完全版 Part3/3
+   最終予想・フォーメーション生成
+========================================================== */
+
+function createFormation(mainTickets) {
+  return {
+    main: mainTickets.main || [],
+    safe: mainTickets.safe || [],
+    hole: mainTickets.hole || []
+  };
+}
+
+function createFlowComment(ranked) {
+  const attack = [...ranked]
+    .sort((a, b) => b.attackIndex - a.attackIndex)[0];
+
+  const flow = [...ranked]
+    .sort((a, b) => b.flowIndex - a.flowIndex)[0];
+
+  const race = [...ranked]
+    .sort((a, b) => b.raceIndex - a.raceIndex)[0];
+
+  const local = [...ranked]
+    .sort((a, b) => b.localIndex - a.localIndex)[0];
+
+  return [
+    {
+      title: "🔥 攻め艇",
+      boat: attack.boat,
+      name: attack.name,
+      score: attack.attackIndex,
+      comment: "スタートから展開を作る中心候補"
+    },
+    {
+      title: "🌊 展開艇",
+      boat: flow.boat,
+      name: flow.name,
+      score: flow.flowIndex,
+      comment: "差し・まくり差しで展開を拾う候補"
+    },
+    {
+      title: "⚡ 道中艇",
+      boat: race.boat,
+      name: race.name,
+      score: race.raceIndex,
+      comment: "2マーク以降で着順を上げる候補"
+    },
+    {
+      title: "🏠 当地巧者",
+      boat: local.boat,
+      name: local.name,
+      score: local.localIndex,
+      comment: "水面実績を活かして連絡み候補"
+    }
+  ];
+}
+
+function createPredictionResult(raceData) {
+
+  const ranked = rankRacers(raceData);
+
+  const prediction = createMainPrediction(raceData);
+
+  const tickets = createMainTickets(raceData);
+
+  const manshu = createManshuCandidates(raceData);
+
+  const formation = createFormation(tickets);
+
+  const flowComments = createFlowComment(ranked);
+
+  return {
+
+    prediction,
+
+    tickets,
+
+    formation,
+
+    manshu,
+
+    flowComments
+
+  };
+
+}
+
+function createSummary(result){
+
+  const main = result.prediction.racers[0];
+
+  const second = result.prediction.racers[1];
+
+  const third = result.prediction.racers[2];
+
+  return {
+
+    favorite:
+      `${main.boat}号艇 ${main.name}`,
+
+    rival:
+      `${second.boat}号艇 ${second.name}`,
+
+    hole:
+      `${third.boat}号艇 ${third.name}`,
+
+    score:
+      `${main.score}点`
+
+  };
+
+}
+
+function buildPredictionData(raceData){
+
+  const result = createPredictionResult(raceData);
+
+  return {
+
+    ...raceData,
+
+    prediction: result.prediction,
+
+    tickets: result.tickets,
+
+    formation: result.formation,
+
+    manshu: result.manshu,
+
+    flows: result.flowComments,
+
+    summary: createSummary(result)
+
+  };
+
+}
+
+/* ==========================================================
+   外部呼び出し
+========================================================== */
+
+window.buildPredictionData = buildPredictionData;
+window.rankRacers = rankRacers;
+window.createPredictionResult = createPredictionResult;
+window.createMainPrediction = createMainPrediction;
+window.createMainTickets = createMainTickets;
+window.createManshuCandidates = createManshuCandidates;
