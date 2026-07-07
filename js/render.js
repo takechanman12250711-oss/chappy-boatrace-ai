@@ -681,27 +681,53 @@ window.renderComment=function(data={}){
 
 window.renderAll=function(data={}){
 
-    const testHtml = `
-        <div class="cp-card">
-            <div class="cp-card-title">✅ renderAll 強制テスト成功</div>
-            <div class="cp-card-body">
-                render.jsの新しいrenderAllが動いています。
-            </div>
-        </div>
-    `;
+    const root =
+        data.prediction ||
+        data.result ||
+        data.aiResult ||
+        data.analysis ||
+        data;
 
-    const ids = [
-        "mainSheetArea",
-        "formationArea",
-        "pinkSheetArea",
-        "finalCommentArea",
-        "dataCheckArea"
-    ];
+    const runners =
+        root.runners ||
+        root.entries ||
+        root.entryList ||
+        root.racers ||
+        root.players ||
+        data.runners ||
+        data.entries ||
+        [];
 
-    ids.forEach(id=>{
-        const el=document.getElementById(id);
-        if(el) el.innerHTML=testHtml;
-    });
+    const blueSheet =
+        root.blueSheet ||
+        root.mainSheet ||
+        root.normalSheet ||
+        root.honmei ||
+        root.normal ||
+        root.predictionSheet ||
+        [];
+
+    const pinkSheet =
+        root.pinkSheet ||
+        root.manshuSheet ||
+        root.longshotSheet ||
+        root.holeSheet ||
+        root.manshu ||
+        {};
+
+    const formation =
+        root.formation ||
+        root.formations ||
+        root.buyFormations ||
+        root.tickets ||
+        root.bets ||
+        [];
+
+    renderEntryArea(runners);
+    renderMainSheet(blueSheet);
+    renderPinkSheet(pinkSheet);
+    renderFormation(formation);
+    renderComment(root.comment || root.finalComment || {});
 
 };
 
