@@ -682,52 +682,26 @@ window.renderComment=function(data={}){
 window.renderAll=function(data={}, extra={}){
 
     const prediction = extra.prediction || {};
-    const theory = extra.theory || {};
     const ai = extra.ai || {};
-    const odds = extra.odds || null;
 
-    const runners =
-        prediction.runners ||
-        prediction.entries ||
-        prediction.entryList ||
-        data.runners ||
-        data.entries ||
-        data.entryList ||
-        [];
+    const debugHtml = `
+        <div class="cp-card">
+            <div class="cp-card-title">データ確認</div>
+            <div class="cp-card-body">
+                <div>extraキー：${Object.keys(extra).join(" / ") || "なし"}</div>
+                <div>predictionキー：${Object.keys(prediction).join(" / ") || "なし"}</div>
+                <div>aiキー：${Object.keys(ai).join(" / ") || "なし"}</div>
+            </div>
+        </div>
+    `;
 
-    const blueSheet =
-        prediction.blueSheet ||
-        prediction.mainSheet ||
-        prediction.normalSheet ||
-        prediction.honmei ||
-        prediction.items ||
-        [];
+    const area=document.getElementById("dataCheckArea");
+    if(area) area.innerHTML=debugHtml;
 
-    const pinkSheet =
-        prediction.pinkSheet ||
-        prediction.manshuSheet ||
-        prediction.longshotSheet ||
-        prediction.holeSheet ||
-        {};
-
-    const formation =
-        prediction.formation ||
-        prediction.formations ||
-        prediction.buyFormations ||
-        prediction.tickets ||
-        prediction.bets ||
-        [];
-
-    renderEntryArea(runners);
-    renderMainSheet(blueSheet);
-    renderPinkSheet(pinkSheet);
-    renderFormation(formation);
+    renderMainSheet([]);
+    renderFormation([]);
     renderComment({
-        summary: ai.summary || prediction.comment || prediction.finalComment || "",
-        raceFlow: ai.raceFlow || prediction.raceFlow || "",
-        target: ai.target || "",
-        danger: ai.danger || "",
-        buy: ai.buy || ""
+        summary:"データ名確認中"
     });
 
 };
