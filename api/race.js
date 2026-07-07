@@ -92,7 +92,7 @@ async function fetchHtml(url) {
   return html;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") {
     return sendJson(res, 200, { ok: true });
   }
