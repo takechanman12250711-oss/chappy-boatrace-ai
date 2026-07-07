@@ -676,22 +676,6 @@ window.renderComment=function(data={}){
 };
 
 /*==================================================
-  初期化
-==================================================*/
-
-window.renderAllEmpty=function(){
-
-    renderEntryArea([]);
-    renderMaterialArea();
-    renderMainSheet([]);
-    renderPinkSheet({});
-    renderFormation([]);
-    renderComment({});
-
-};
-
-})();
-/*==================================================
   renderAll 本体
 ==================================================*/
 
@@ -709,3 +693,20 @@ window.renderAll=function(data={}){
     window.renderComment?.(data.comment ?? data.finalComment ?? {});
 
 };
+
+/*==================================================
+  初期化
+==================================================*/
+
+window.renderAllEmpty=function(){
+
+    renderEntryArea([]);
+    renderMaterialArea();
+    renderMainSheet([]);
+    renderPinkSheet({});
+    renderFormation([]);
+    renderComment({});
+
+};
+
+})();
