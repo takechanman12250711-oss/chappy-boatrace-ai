@@ -1,4 +1,4 @@
-import { parseOfficialRaceHtml } from "./_parser.mjs";
+const { parseOfficialRaceHtml } = require("./_parser.js");
 
 const STADIUM_NAME_TO_CODE = {
   "桐生": "01", "戸田": "02", "江戸川": "03", "平和島": "04",
