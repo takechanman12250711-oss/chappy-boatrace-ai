@@ -1021,3 +1021,106 @@ body {
   padding: 9px 12px !important;
   font-weight: 900 !important;
 }
+/* =========================================================
+  折り返し改善 v1
+  - 不要な縦折れを防ぐ
+  - コメントだけ自然に折り返す
+========================================================= */
+
+/* セクション全体の幅を少し広く使う */
+.card {
+  max-width: none !important;
+}
+
+/* グリッドカードを細くしすぎない */
+.mini-grid,
+.sheet-grid,
+.index-summary {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+}
+
+/* カード内の艇名・点数は折り返しにくく */
+.mini-card strong,
+.sheet-card strong,
+.formation-box strong {
+  white-space: nowrap !important;
+}
+
+/* 艇番＋名前の行 */
+.boat-row,
+.racer-row,
+.player-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+}
+
+/* 名前は1行優先 */
+.racer-name,
+.player-name,
+.boat-name {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 説明文は2〜3行まで */
+.short-comment,
+.card-comment,
+.one-line-comment {
+  line-height: 1.6 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* 表の文字折れ防止 */
+.data-table {
+  min-width: 1040px !important;
+}
+
+.data-table th,
+.data-table td {
+  white-space: nowrap !important;
+}
+
+/* バフ・デバフ列はタグで横並び */
+.buff-list,
+.debuff-list,
+.tag-list {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+}
+
+/* 一言列だけ折り返しOK */
+.data-table td:last-child {
+  white-space: normal !important;
+  min-width: 260px !important;
+}
+
+/* フォーメーションは改行しすぎない */
+.ticket-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+.ticket-chip {
+  white-space: nowrap !important;
+}
+
+/* スマホでは横スクロール優先 */
+@media (max-width: 640px) {
+  .mini-grid,
+  .sheet-grid,
+  .index-summary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .data-table {
+    min-width: 1080px !important;
+  }
+}
