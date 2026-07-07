@@ -127,7 +127,7 @@ export default async function handler(req, res) {
       fetchHtml(beforeInfoUrl).catch(() => "")
     ]);
 
-    const parsed = parseOfficialRaceHtml(entryHtml);
+    const parsed = parseOfficialRaceHtml(entryHtml, beforeHtml);
 
     return sendJson(res, 200, {
       ok: true,
