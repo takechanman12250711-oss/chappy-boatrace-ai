@@ -1,14 +1,7 @@
 /* =========================================================
    チャッピーボートレースAI
-   api/race.js 完全版 Part1/3
-
-   役割：
-   - Vercel API側の race メインAPI
-   - 出走表・展示情報の取得基盤
-   - 24場コード管理
-   - パラメータチェック
-   - 公式URL生成
-   - HTML取得
+   api/race.js 完全版 Part2/3
+   出走表取得・6艇パース対応
 ========================================================= */
 
 const STADIUMS = {
@@ -39,30 +32,12 @@ const STADIUMS = {
 };
 
 const STADIUM_NAME_TO_CODE = {
-  "桐生": "01",
-  "戸田": "02",
-  "江戸川": "03",
-  "平和島": "04",
-  "多摩川": "05",
-  "浜名湖": "06",
-  "蒲郡": "07",
-  "常滑": "08",
-  "津": "09",
-  "三国": "10",
-  "びわこ": "11",
-  "住之江": "12",
-  "尼崎": "13",
-  "鳴門": "14",
-  "丸亀": "15",
-  "児島": "16",
-  "宮島": "17",
-  "徳山": "18",
-  "下関": "19",
-  "若松": "20",
-  "芦屋": "21",
-  "福岡": "22",
-  "唐津": "23",
-  "大村": "24"
+  "桐生": "01", "戸田": "02", "江戸川": "03", "平和島": "04",
+  "多摩川": "05", "浜名湖": "06", "蒲郡": "07", "常滑": "08",
+  "津": "09", "三国": "10", "びわこ": "11", "住之江": "12",
+  "尼崎": "13", "鳴門": "14", "丸亀": "15", "児島": "16",
+  "宮島": "17", "徳山": "18", "下関": "19", "若松": "20",
+  "芦屋": "21", "福岡": "22", "唐津": "23", "大村": "24"
 };
 
 const OFFICIAL_BASE_URL = "https://www.boatrace.jp/owpc/pc/race";
@@ -77,49 +52,32 @@ function sendJson(res, statusCode, data) {
 function normalizeDate(dateText) {
   if (!dateText) {
     const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const dd = String(now.getDate()).padStart(2, "0");
-    return `${yyyy}${mm}${dd}`;
+    return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
   }
 
   const cleaned = String(dateText).replaceAll("-", "").replaceAll("/", "");
-
   if (!/^\d{8}$/.test(cleaned)) {
     throw new Error("dateは YYYYMMDD または YYYY-MM-DD で指定してください");
   }
-
   return cleaned;
 }
 
 function normalizeRaceNo(raceNo) {
   const num = Number(raceNo);
-
   if (!Number.isInteger(num) || num < 1 || num > 12) {
     throw new Error("raceNoは1〜12で指定してください");
   }
-
   return num;
 }
 
 function normalizeStadiumCode(stadium) {
-  if (!stadium) {
-    throw new Error("stadiumを指定してください");
-  }
+  if (!stadium) throw new Error("stadiumを指定してください");
 
   const value = String(stadium).trim();
 
-  if (/^\d{1,2}$/.test(value)) {
-    return value.padStart(2, "0");
-  }
-
-  if (STADIUM_NAME_TO_CODE[value]) {
-    return STADIUM_NAME_TO_CODE[value];
-  }
-
-  if (STADIUMS[value]) {
-    return STADIUMS[value].code;
-  }
+  if (/^\d{1,2}$/.test(value)) return value.padStart(2, "0");
+  if (STADIUM_NAME_TO_CODE[value]) return STADIUM_NAME_TO_CODE[value];
+  if (STADIUMS[value]) return STADIUMS[value].code;
 
   throw new Error("未対応の場です");
 }
@@ -137,10 +95,7 @@ function buildOfficialUrl(type, stadiumCode, raceNo, date) {
   };
 
   const page = pageMap[type];
-
-  if (!page) {
-    throw new Error("未対応の取得タイプです");
-  }
+  if (!page) throw new Error("未対応の取得タイプです");
 
   return `${OFFICIAL_BASE_URL}/${page}?rno=${raceNo}&jcd=${stadiumCode}&hd=${date}`;
 }
@@ -149,9 +104,8 @@ async function fetchHtml(url) {
   const response = await fetch(url, {
     method: "GET",
     headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; ChappyBoatRaceAI/1.0; +https://github.com/)",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      "User-Agent": "Mozilla/5.0 ChappyBoatRaceAI",
+      "Accept": "text/html"
     }
   });
 
@@ -175,13 +129,62 @@ function stripHtml(html) {
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function buildEmptyRaceData({ stadiumCode, raceNo, date }) {
+function toNumber(value) {
+  const num = Number(String(value || "").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(num) ? num : null;
+}
+
+function parseEntryTable(html) {
+  const text = stripHtml(html);
+
+  const entries = [];
+
+  for (let boat = 1; boat <= 6; boat++) {
+    const boatText = String(boat);
+
+    const pattern = new RegExp(
+      `${boatText}\\s+([一-龥ぁ-んァ-ヶー\\s]{2,12})\\s+(A1|A2|B1|B2)\\s+([一-龥ぁ-んァ-ヶー]{1,4})\\s+(\\d{1,2})\\s+(\\d{2,3})\\s+([0-9.]+)\\s+([0-9.]+)`,
+      "u"
+    );
+
+    const match = text.match(pattern);
+
+    entries.push({
+      boat,
+      boatLabel: `${boat}号艇`,
+      racerName: match ? match[1].replace(/\s+/g, "") : "",
+      className: match ? match[2] : "",
+      branch: match ? match[3] : "",
+      age: match ? toNumber(match[4]) : null,
+      weight: match ? toNumber(match[5]) : null,
+      nationalWinRate: match ? toNumber(match[6]) : null,
+      localWinRate: match ? toNumber(match[7]) : null,
+
+      motorNo: null,
+      motorRate: null,
+      boatNo: null,
+      boatRate: null,
+      avgSt: null,
+      fCount: 0,
+      lCount: 0,
+
+      rawFound: Boolean(match)
+    });
+  }
+
+  return entries;
+}
+
+function buildRaceData({ stadiumCode, raceNo, date, entryHtml, beforeHtml }) {
+  const entryUrl = buildOfficialUrl("entry", stadiumCode, raceNo, date);
+  const beforeInfoUrl = buildOfficialUrl("before", stadiumCode, raceNo, date);
+
+  const entries = parseEntryTable(entryHtml);
+
   return {
     ok: true,
     source: "boatrace-official",
@@ -189,15 +192,18 @@ function buildEmptyRaceData({ stadiumCode, raceNo, date }) {
     stadiumName: getStadiumName(stadiumCode),
     raceNo,
     date,
-    entryUrl: buildOfficialUrl("entry", stadiumCode, raceNo, date),
-    beforeInfoUrl: buildOfficialUrl("before", stadiumCode, raceNo, date),
-    entries: [],
+    entryUrl,
+    beforeInfoUrl,
+
+    entries,
     beforeInfo: [],
+
     rawText: {
-      entry: "",
-      beforeInfo: ""
+      entry: stripHtml(entryHtml).slice(0, 3000),
+      beforeInfo: stripHtml(beforeHtml).slice(0, 3000)
     },
-    message: "Part1ではHTML取得基盤まで。Part2で出走表パースを追加。"
+
+    message: "Part2：出走表6艇パース対応。Part3で展示タイム・展示ST・一周タイムを追加。"
   };
 }
 
@@ -226,14 +232,13 @@ export default async function handler(req, res) {
       fetchHtml(beforeInfoUrl).catch(() => "")
     ]);
 
-    const data = buildEmptyRaceData({
+    const data = buildRaceData({
       stadiumCode,
       raceNo,
-      date
+      date,
+      entryHtml,
+      beforeHtml
     });
-
-    data.rawText.entry = stripHtml(entryHtml);
-    data.rawText.beforeInfo = stripHtml(beforeHtml);
 
     return sendJson(res, 200, data);
   } catch (error) {
