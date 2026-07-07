@@ -1114,3 +1114,234 @@ input{
     font-size: 13px;
   }
 }
+/* =========================================================
+  見やすさ改善 v3
+  - 色は数字だけ
+  - 艇番は小さい丸だけ
+  - カードは白基調
+========================================================= */
+
+/* 全体は白基調 */
+.card,
+.entry-card,
+.mini-card,
+.sheet-card,
+.formation-box,
+.main-sheet-card,
+.pink-sheet-card,
+.ai-index-card,
+.odds-card {
+  background: #fff !important;
+  color: #222 !important;
+}
+
+/* 艇番は小さい丸だけ */
+.boat-label,
+.boat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 艇番カラー */
+.boat-1,
+.boat-label.boat-1,
+.boat-badge.boat-1 {
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px solid #999 !important;
+}
+
+.boat-2,
+.boat-label.boat-2,
+.boat-badge.boat-2 {
+  background: #111 !important;
+  color: #fff !important;
+  border: 1px solid #111 !important;
+}
+
+.boat-3,
+.boat-label.boat-3,
+.boat-badge.boat-3 {
+  background: #e53935 !important;
+  color: #fff !important;
+  border: 1px solid #e53935 !important;
+}
+
+.boat-4,
+.boat-label.boat-4,
+.boat-badge.boat-4 {
+  background: #1e88e5 !important;
+  color: #fff !important;
+  border: 1px solid #1e88e5 !important;
+}
+
+.boat-5,
+.boat-label.boat-5,
+.boat-badge.boat-5 {
+  background: #fdd835 !important;
+  color: #111 !important;
+  border: 1px solid #fdd835 !important;
+}
+
+.boat-6,
+.boat-label.boat-6,
+.boat-badge.boat-6 {
+  background: #43a047 !important;
+  color: #fff !important;
+  border: 1px solid #43a047 !important;
+}
+
+/* カードに艇色が付かないように完全解除 */
+.entry-card.boat-1,
+.entry-card.boat-2,
+.entry-card.boat-3,
+.entry-card.boat-4,
+.entry-card.boat-5,
+.entry-card.boat-6,
+.mini-card.boat-1,
+.mini-card.boat-2,
+.mini-card.boat-3,
+.mini-card.boat-4,
+.mini-card.boat-5,
+.mini-card.boat-6 {
+  background: #fff !important;
+  color: #222 !important;
+  border-color: rgba(0,0,0,.08) !important;
+}
+
+/* 点数だけ色付け */
+.score-num,
+.score-badge,
+.big-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 5px 9px;
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 16px;
+  background: #f1f3f4;
+  color: #333;
+}
+
+.score-s {
+  background: #ede7f6 !important;
+  color: #4527a0 !important;
+}
+
+.score-a {
+  background: #e8f5e9 !important;
+  color: #1b5e20 !important;
+}
+
+.score-b {
+  background: #e3f2fd !important;
+  color: #0d47a1 !important;
+}
+
+.score-c {
+  background: #fff3e0 !important;
+  color: #e65100 !important;
+}
+
+.score-d {
+  background: #eeeeee !important;
+  color: #555 !important;
+}
+
+/* 表を読みやすく */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.data-table th {
+  padding: 8px 10px;
+  font-size: 13px;
+  white-space: nowrap;
+  color: #555;
+  background: transparent;
+}
+
+.data-table td {
+  padding: 12px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  background: #fff;
+  border-top: 1px solid rgba(0,0,0,.06);
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  vertical-align: middle;
+}
+
+.data-table td:first-child {
+  border-left: 1px solid rgba(0,0,0,.06);
+  border-radius: 12px 0 0 12px;
+}
+
+.data-table td:last-child {
+  border-right: 1px solid rgba(0,0,0,.06);
+  border-radius: 0 12px 12px 0;
+}
+
+/* バフ/デバフは薄いタグ */
+.buff-tag,
+.debuff-tag,
+.neutral-tag {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 999px;
+}
+
+.buff-tag {
+  background: #f1f8e9 !important;
+  color: #33691e !important;
+}
+
+.debuff-tag {
+  background: #fff0f0 !important;
+  color: #b71c1c !important;
+}
+
+.neutral-tag {
+  background: #f5f5f5 !important;
+  color: #444 !important;
+}
+
+/* フォーメーションは大きく */
+.ticket-chip {
+  background: #fff !important;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 17px;
+  font-weight: 900;
+  color: #222;
+}
+
+/* 見出し色も抑える */
+h1, h2, h3 {
+  color: #222;
+}
+
+.muted {
+  color: #666;
+}
