@@ -141,10 +141,14 @@ export default async function handler(req, res) {
       beforeInfoUrl,
       raceInfo: parsed.raceInfo,
       entries: parsed.entries,
-      beforeInfo: [],
-      debug: {
-        foundEntries: parsed.entries.filter((entry) => entry.rawFound).length
-      },
+      beforeInfo: parsed.beforeInfo,
+startExhibition: parsed.startExhibition,
+weather: parsed.weather,
+debug: {
+  foundEntries: parsed.entries.filter((entry) => entry.rawFound).length,
+  foundBeforeInfo: parsed.beforeInfo.filter((item) => item.rawBlock).length,
+  foundStartExhibition: parsed.startExhibition.length
+},
       message: "race.js と parser.js 接続完了"
     });
   } catch (error) {
