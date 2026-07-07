@@ -681,16 +681,74 @@ window.renderComment=function(data={}){
 
 window.renderAll=function(data={}){
 
-    window.renderRaceList?.(data.races ?? []);
-    window.renderWeather?.(data.weather ?? {});
-    window.renderVenue?.(data.venue ?? data.stadium ?? {});
+    const prediction =
+        data.prediction ||
+        data.ai ||
+        data.result ||
+        data.forecast ||
+        data;
 
-    window.renderEntryArea?.(data.runners ?? data.entries ?? data.entry ?? []);
-    window.renderMaterialArea?.(data.material ?? data.exhibition ?? {});
-    window.renderMainSheet?.(data.blueSheet ?? data.mainSheet ?? data.prediction ?? []);
-    window.renderPinkSheet?.(data.pinkSheet ?? data.manshuSheet ?? {});
-    window.renderFormation?.(data.formation ?? data.formations ?? []);
-    window.renderComment?.(data.comment ?? data.finalComment ?? {});
+    const runners =
+        prediction.runners ||
+        prediction.entries ||
+        prediction.entry ||
+        prediction.players ||
+        prediction.racers ||
+        data.runners ||
+        data.entries ||
+        [];
+
+    const blueSheet =
+        prediction.blueSheet ||
+        prediction.mainSheet ||
+        prediction.normalSheet ||
+        prediction.honmeiSheet ||
+        prediction.sheet ||
+        [];
+
+    const pinkSheet =
+        prediction.pinkSheet ||
+        prediction.manshuSheet ||
+        prediction.holeSheet ||
+        prediction.longshotSheet ||
+        {};
+
+    const formation =
+        prediction.formation ||
+        prediction.formations ||
+        prediction.tickets ||
+        prediction.bets ||
+        [];
+
+    const weather =
+        prediction.weather ||
+        prediction.weatherInfo ||
+        prediction.condition ||
+        data.weather ||
+        {};
+
+    const venue =
+        prediction.venue ||
+        prediction.stadium ||
+        prediction.placeInfo ||
+        data.venue ||
+        data.stadium ||
+        {};
+
+    const comment =
+        prediction.comment ||
+        prediction.finalComment ||
+        prediction.summary ||
+        {};
+
+    renderWeather(weather);
+    renderVenue(venue);
+    renderEntryArea(runners);
+    renderMaterialArea(prediction.material || prediction.exhibition || {});
+    renderMainSheet(blueSheet);
+    renderPinkSheet(pinkSheet);
+    renderFormation(formation);
+    renderComment(comment);
 
 };
 
