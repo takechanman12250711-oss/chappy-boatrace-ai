@@ -684,45 +684,14 @@ window.renderAll = function(data = {}, extra = {}) {
     const prediction = extra.prediction || {};
     const ai = extra.ai || {};
 
-    const runners =
-        prediction.runners ||
-        prediction.entries ||
-        prediction.entryList ||
-        data.runners ||
-        data.entries ||
-        data.entryList ||
-        [];
+    renderMainSheet([]);
+    renderFormation([]);
 
-    const blueSheet =
-        prediction.blueSheet ||
-        prediction.mainSheet ||
-        prediction.normalSheet ||
-        prediction.items ||
-        [];
-
-    const pinkSheet =
-        prediction.pinkSheet ||
-        prediction.manshuSheet ||
-        prediction.longshotSheet ||
-        {};
-
-    const formation =
-        prediction.formation ||
-        prediction.formations ||
-        prediction.buyFormations ||
-        prediction.tickets ||
-        [];
-
-    renderEntryArea(runners);
-    renderMainSheet(blueSheet);
-    renderPinkSheet(pinkSheet);
-    renderFormation(formation);
     renderComment({
-        summary: ai.summary || prediction.comment || prediction.finalComment || "",
-        raceFlow: ai.raceFlow || prediction.raceFlow || "",
-        target: ai.target || "",
-        danger: ai.danger || "",
-        buy: ai.buy || ""
+        summary:
+            "extraキー：" + Object.keys(extra).join(" / ") +
+            "\n\npredictionキー：" + Object.keys(prediction).join(" / ") +
+            "\n\naiキー：" + Object.keys(ai).join(" / ")
     });
 
 };
