@@ -1039,107 +1039,100 @@
   =============================== */
 
   function renderTicketRanking(prediction) {
-    const ranks =
-      prediction.ticketRanks ||
-      prediction.ticketRank ||
-      prediction.ranking ||
-      [];
 
-    const list = arrayify(ranks);
+  const list = arrayify(
+    prediction.ticketRanks ||
+    prediction.ticketRank ||
+    prediction.ranking ||
+    []
+  );
 
-    if (list.length === 0) {
-      return section("AI買い目一覧", emptyBox("買い目ランキングデータがありません"), "🏆", "v3-ticket-section");
-    }
-
-    const body = `
-      <div class="v3-ticket-list">
-        ${list.map(renderTicketRow).join("")}
-      </div>
-    `;
-
-    return section("AI買い目一覧", body, "🏆", "v3-ticket-section");
+  if (!list.length) {
+    return section(
+      "AI買い目一覧",
+      emptyBox("買い目ランキングデータがありません"),
+      "🏆",
+      "v3-ticket-section"
+    );
   }
 
-  function renderTicketRow(item, index) {
+  const groups = {
+    S: [],
+    A: [],
+    B: [],
+    C: []
+  };
+
+  list.forEach((item, i) => {
+
     if (typeof item === "string") {
-      item = { ticket: item };
+      item = {
+        ticket: item,
+        rank: "B"
+      };
     }
 
-    const rank = item.rank || item.order || index + 1;
+    const rank = String(item.rank || item.order || "B").toUpperCase();
 
-    const ticket =
-      item.ticket ||
-      item.bet ||
-      item.line ||
-      item.formation ||
-      "-";
+    if (!groups[rank]) groups.B.push(item);
+    else groups[rank].push(item);
 
-    const score =
-      item.score ??
-      item.value ??
-      item.point ??
-      "";
+  });
 
-    const reason =
-      item.reason ||
-      item.comment ||
-      item.text ||
-      "";
+  function block(title, color, rows) {
 
-    const rankLabel = normalizeRankLabel(rank);
+    if (!rows.length) return "";
 
     return `
-      <div class="v3-ticket-row">
-        <div class="v3-ticket-rank ${rankLabel.className}">
-          <strong>${escapeHtml(rank)}</strong>
-          <span>${escapeHtml(rankLabel.label)}</span>
+      <div class="v3-ticket-group">
+
+        <div class="v3-ticket-group-title"
+             style="border-left:5px solid ${color};">
+
+          ${title}
+
         </div>
 
-        <div class="v3-ticket-main">
-          <div class="v3-ticket-bet">
-            ${ticketArrow(ticket)}
+        ${rows.slice(0,5).map(r=>`
+
+          <div class="v3-ticket-inline">
+
+            <span class="ticket">
+              ${ticketArrow(r.ticket||"-")}
+            </span>
+
+            ${
+              r.score!==undefined
+              ?`<span class="score">${r.score}</span>`
+              :""
+            }
+
           </div>
-          ${
-            reason
-              ? `<div class="v3-ticket-reason">${escapeHtml(limitText(reason, 45))}</div>`
-              : ""
-          }
-        </div>
 
-        ${
-          score !== ""
-            ? `<div class="v3-ticket-score">${escapeHtml(score)}</div>`
-            : ""
-        }
+        `).join("")}
+
       </div>
     `;
   }
 
-  function normalizeRankLabel(rank) {
-    const r = safeText(rank, "");
+  return section(
 
-    if (r === "S" || r === "1") {
-      return { label: "本線", className: "rank-s" };
-    }
+    "AI買い目一覧",
 
-    if (r === "A" || r === "2") {
-      return { label: "対抗", className: "rank-a" };
-    }
+    `
+      ${block("S評価（本線）","#ef4444",groups.S)}
+      ${block("A評価（対抗）","#2563eb",groups.A)}
+      ${block("B評価（押さえ）","#16a34a",groups.B)}
+      ${block("C評価（穴）","#f59e0b",groups.C)}
+    `,
 
-    if (r === "B" || r === "3") {
-      return { label: "押さえ", className: "rank-b" };
-    }
+    "🏆",
 
-    if (r === "C") {
-      return { label: "穴", className: "rank-c" };
-    }
+    "v3-ticket-section"
 
-    if (r === "D") {
-      return { label: "薄め", className: "rank-d" };
-    }
+  );
 
-    return { label: "候補", className: "rank-normal" };
-  }
+}
 
   /* ===============================
     7. 舟券太郎理論
