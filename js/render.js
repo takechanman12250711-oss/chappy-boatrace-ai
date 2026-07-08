@@ -26,7 +26,9 @@ function set(id,html){const e=$(id);if(e)e.innerHTML=html;}
 function safe(v){
   if(v===null||v===undefined||v==="")return "-";
   if(Array.isArray(v))return v.map(safe).join(" / ");
-  if(typeof v==="object")return Object.entries(v).map(([k,val])=>`${k}:${safe(val)}`).join(" / ");
+  if(typeof v==="object"){
+    return v.comment||v.summary||v.message||v.name||v.title||"-";
+  }
   return String(v);
 }
 
@@ -40,6 +42,8 @@ function asArray(v){
   if(Array.isArray(v.candidates))return v.candidates;
   if(Array.isArray(v.bets))return v.bets;
   if(Array.isArray(v.tickets))return v.tickets;
+  return [];
+}
 
   return Object.entries(v).map(([key,val])=>{
     if(val&&typeof val==="object"&&!Array.isArray(val)){
@@ -175,21 +179,36 @@ function renderEntries(entries){
 =============================== */
 
 function renderMainSheet(mainSheet){
-  const list=asArray(mainSheet);
-  if(!list.length)return card("🔵 本命シート",`<div class="empty-text">青シートデータなし</div>`);
+  if(!mainSheet||typeof mainSheet!=="object"){
+    return card("🔵 本命シート",`<div class="empty-text">青シートデータなし</div>`);
+  }
+
+  const order=[
+    ["◎ 本命","honmei"],
+    ["○ 対抗","taikou"],
+    ["▲ 穴","ana"],
+    ["△ 押さえ","osae"]
+  ];
+
+  const list=order
+    .map(([label,key])=>{
+      const x=mainSheet[key];
+      if(!x)return null;
+      return {label,...x};
+    })
+    .filter(Boolean);
 
   return card("🔵 本命シート",`
     <div class="sheet-list">
       ${list.map(x=>{
         const no=pickNo(x);
         const name=pickName(x);
-        const mark=x.mark||x.symbol||x.rank||x.sectionKey||"";
         const score=pickScore(x);
 
         return `
           <div class="sheet-row">
             <div class="sheet-head">
-              <span class="sheet-mark">${safe(mark)}</span>
+              <span class="sheet-mark">${x.label}</span>
               ${no?boatBadge(no):""}
               <span class="sheet-name">${safe(name)}</span>
             </div>
@@ -200,12 +219,19 @@ function renderMainSheet(mainSheet){
             ${signs(x.debuffs||x.minus||x.bad,"マイナス要因")}
 
             <div class="comment-label">AIコメント</div>
-            <div class="sheet-comment">
-              ${safe(x.comment||x.reason||x.memo||x.value)}
-            </div>
+            <div class="sheet-comment">${safe(x.comment||x.reason||x.memo)}</div>
           </div>
         `;
       }).join("")}
+
+      ${mainSheet.reason?`
+        <div class="sheet-row">
+          <div class="sheet-head">
+            <span class="sheet-mark">理由</span>
+          </div>
+          <div class="sheet-comment">${safe(mainSheet.reason)}</div>
+        </div>
+      `:""}
     </div>
   `);
 }
