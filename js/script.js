@@ -101,6 +101,7 @@ debugArea.style.margin = "12px";
 debugArea.textContent = JSON.stringify(prediction, null, 2);
 
 document.body.prepend(debugArea);
+
       if (!prediction || typeof prediction !== "object") {
         throw new Error("prediction.js から有効な予想データが返っていません。");
       }
