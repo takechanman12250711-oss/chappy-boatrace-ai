@@ -1688,3 +1688,125 @@ body {
 .entry-table {
   min-width: 480px;
 }
+/* =========================================================
+  スマホ表示 圧縮調整
+========================================================= */
+
+@media (max-width: 430px) {
+  .render-root {
+    padding: 6px;
+    font-size: 13px;
+  }
+
+  .render-section {
+    padding: 9px;
+    margin: 10px 0;
+    border-radius: 12px;
+  }
+
+  .section-head {
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+
+  .section-head h2 {
+    font-size: 16px;
+  }
+
+  .section-head p {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .render-divider {
+    height: 5px;
+    margin: 11px 4px;
+  }
+
+  .race-info-grid,
+  .ai-summary-grid,
+  .mini-card-grid {
+    gap: 6px;
+  }
+
+  .mini-card {
+    padding: 7px 8px;
+    border-radius: 10px;
+  }
+
+  .mini-card-label {
+    font-size: 10px;
+  }
+
+  .mini-card-value {
+    font-size: 15px;
+    line-height: 1.25;
+  }
+
+  .ai-score-card {
+    padding: 9px;
+  }
+
+  .ai-score-value {
+    font-size: 25px;
+  }
+
+  .sheet-card {
+    padding: 9px;
+    border-radius: 12px;
+    border-left-width: 5px;
+  }
+
+  .score-pill {
+    min-width: 48px;
+    padding: 5px 6px;
+  }
+
+  .score-pill span {
+    font-size: 9px;
+  }
+
+  .score-pill strong {
+    font-size: 17px;
+  }
+
+  .buff-debuff {
+    gap: 5px;
+    margin-top: 7px;
+  }
+
+  .buff-list,
+  .debuff-list {
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  .buff-list span,
+  .debuff-list span {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .formation-item,
+  .ticket-rank-card {
+    padding: 8px;
+    border-radius: 11px;
+  }
+
+  .formation-ticket,
+  .ticket-rank-ticket {
+    font-size: 14px;
+  }
+
+  .boat-badge {
+    min-width: 23px;
+    height: 23px;
+    font-size: 12px;
+  }
+
+  .boat-badge.mini {
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+}
