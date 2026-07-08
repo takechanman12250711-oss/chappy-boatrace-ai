@@ -1124,3 +1124,507 @@ body {
     min-width: 1080px !important;
   }
 }
+/* =========================================================
+  チャッピーボートレースAI
+  render.js v2 対応CSS Part5 / 6
+========================================================= */
+
+.render-root {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px;
+  color: #1f2937;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.render-section {
+  background: #ffffff;
+  border: 1px solid #d7dde8;
+  border-radius: 16px;
+  padding: 14px;
+  margin: 14px 0;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+.section-head {
+  border-bottom: 3px solid #111827;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.section-head h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.section-head p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.render-divider {
+  height: 7px;
+  margin: 18px 4px;
+  background: linear-gradient(90deg, #111827, #d1d5db);
+  border-radius: 999px;
+}
+
+.race-info-grid,
+.ai-summary-grid,
+.mini-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.mini-card {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 13px;
+  padding: 9px 10px;
+}
+
+.mini-card-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 800;
+}
+
+.mini-card-value {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111827;
+  word-break: keep-all;
+}
+
+.mini-card-sub {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.boat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.boat-badge.mini {
+  min-width: 22px;
+  height: 22px;
+  font-size: 12px;
+  margin: 0 2px;
+}
+
+.boat-name,
+.boat-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 900;
+}
+
+.boat-line {
+  flex-wrap: wrap;
+}
+
+.boat-line-sub {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.entry-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+  font-size: 13px;
+}
+
+.entry-table th {
+  background: #111827;
+  color: #ffffff;
+  padding: 8px;
+  white-space: nowrap;
+}
+
+.entry-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 8px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.entry-table .td-name strong {
+  display: block;
+  font-size: 14px;
+}
+
+.entry-table .td-name span {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.ai-score-card {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 15px;
+  padding: 12px;
+}
+
+.ai-score-card.pink {
+  background: #fdf2f8;
+  border-color: #fbcfe8;
+}
+
+.ai-score-label {
+  font-size: 12px;
+  font-weight: 900;
+  color: #374151;
+}
+
+.ai-score-value {
+  font-size: 32px;
+  font-weight: 1000;
+  color: #111827;
+  line-height: 1.1;
+}
+
+.ai-score-card p {
+  margin: 7px 0 0;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.strength-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.strength-bar-fill {
+  height: 100%;
+  background: #111827;
+  border-radius: 999px;
+}
+
+.ai-comment-box,
+.index-summary,
+.formation-comment,
+.manshu-comment,
+.final-comment-main,
+.final-comment-sub {
+  margin-top: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 11px;
+}
+
+.ai-comment-box h3,
+.index-summary h3,
+.formation-block h3,
+.manshu-block h3,
+.final-comment-sub h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 900;
+}
+.sheet-card-list {
+  display: grid;
+  gap: 10px;
+}
+
+.sheet-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 7px solid #111827;
+  border-radius: 15px;
+  padding: 12px;
+}
+
+.sheet-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.role-label {
+  font-size: 12px;
+  font-weight: 900;
+  color: #1d4ed8;
+  margin-bottom: 5px;
+}
+
+.pink-label {
+  color: #be185d;
+}
+
+.score-pill {
+  min-width: 70px;
+  background: #111827;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 7px 8px;
+  text-align: center;
+}
+
+.score-pill span {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  opacity: 0.8;
+}
+
+.score-pill strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.buff-debuff {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.buff-list,
+.debuff-list {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.buff-list strong,
+.debuff-list strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.buff-list span,
+.debuff-list span {
+  display: inline-block;
+  font-size: 12px;
+  margin: 2px 4px 2px 0;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.sheet-comment,
+.formation-reason,
+.ticket-rank-comment {
+  margin: 9px 0 0;
+  font-size: 13px;
+  color: #374151;
+}
+
+.tag-row,
+.formation-meta,
+.ticket-rank-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.info-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.tag-main {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.tag-safety {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.tag-manshu,
+.tag-odds {
+  background: #fdf2f8;
+  border-color: #fbcfe8;
+  color: #be185d;
+}
+
+.tag-score,
+.tag-hit {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+.formation-block,
+.manshu-block {
+  margin-bottom: 14px;
+}
+
+.formation-list {
+  display: grid;
+  gap: 9px;
+}
+
+.formation-item,
+.ticket-rank-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 11px;
+}
+
+.formation-ticket,
+.ticket-rank-ticket {
+  font-size: 18px;
+  font-weight: 1000;
+  color: #111827;
+  word-break: keep-all;
+}
+
+.ticket-text {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.ticket-ranking-list {
+  display: grid;
+  gap: 9px;
+}
+
+.ticket-rank-head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ticket-rank-no {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 1000;
+}
+
+.ticket-rank-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.final-comment-main {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.empty-box {
+  background: #f9fafb;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  border-radius: 13px;
+  padding: 14px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.error-section {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.debug-section pre {
+  max-height: 420px;
+  overflow: auto;
+  font-size: 11px;
+}
+
+@media (min-width: 720px) {
+  .buff-debuff {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .race-info-grid,
+  .ai-summary-grid,
+  .mini-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .render-root {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .render-section {
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .section-head h2 {
+    font-size: 18px;
+  }
+
+  .mini-card-value {
+    font-size: 16px;
+  }
+
+  .sheet-card-head {
+    align-items: stretch;
+  }
+
+  .score-pill {
+    min-width: 62px;
+  }
+
+  .score-pill strong {
+    font-size: 20px;
+  }
+
+  .formation-ticket,
+  .ticket-rank-ticket {
+    font-size: 16px;
+  }
+}
