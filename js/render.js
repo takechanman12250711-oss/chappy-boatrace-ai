@@ -592,9 +592,9 @@
   function renderMainSheet(prediction) {
     const sheet = prediction.mainSheet || {};
 
-    const honmei = sheet.honmei || sheet.main || sheet◎ || sheet.top;
-    const taikou = sheet.taikou || sheet.rival || sheet○ || sheet.second;
-    const ana = sheet.ana || sheet.hole || sheet▲ || sheet.third;
+    const honmei = sheet.honmei || sheet.main || sheet["◎"] || sheet.top;
+const taikou = sheet.taikou || sheet.rival || sheet["○"] || sheet.second;
+const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
     const osa =
       sheet.osa ||
       sheet.osae ||
