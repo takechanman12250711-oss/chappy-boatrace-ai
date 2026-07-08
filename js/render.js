@@ -44,11 +44,6 @@ function asArray(v){
   if(Array.isArray(v.tickets))return v.tickets;
   return [];
 }
-
-  return Object.entries(v).map(([key,val])=>{
-    if(val&&typeof val==="object"&&!Array.isArray(val)){
-      return {sectionKey:key,...val};
-    }
     return {sectionKey:key,value:val};
   });
 }
