@@ -552,31 +552,49 @@
 }
 
   function addIndexRows(rows, list, label) {
-  const items = arrayify(list).slice(0, 2);
 
-  items.forEach((item) => {
-    if (!item) return;
+  arrayify(list)
+    .slice(0,3)
+    .forEach(item => {
 
-    let no = "";
-    let score = "-";
+      if (!item) return;
 
-    if (typeof item === "number" || typeof item === "string") {
-      no = item;
-    } else {
-      no = item.no || item.boatNo || item.waku || item.course || item.number || "";
-      score = item.score ?? item.value ?? item.point ?? "-";
-    }
+      let boat = "";
+      let score = "";
 
-    rows.push(`
-      <div class="v3-index-cell">
-        <div class="v3-index-label">${escapeHtml(label)}</div>
-        <div class="v3-index-line">
-          <span class="v3-index-boat">${boatBadge(no, "mini")}</span>
-          <span class="v3-index-score">${escapeHtml(score)}</span>
+      if (typeof item === "number" || typeof item === "string") {
+        boat = item;
+      } else {
+        boat =
+          item.no ||
+          item.boatNo ||
+          item.waku ||
+          item.course ||
+          "";
+
+        score =
+          item.score ??
+          item.value ??
+          item.point ??
+          "";
+      }
+
+      rows.push(`
+
+        <div class="v3-index-row">
+
+          <span class="label">${label}</span>
+
+          ${boatBadge(boat,"mini")}
+
+          <strong>${score}</strong>
+
         </div>
-      </div>
-    `);
-  });
+
+      `);
+
+    });
+
 }
     /* ===============================
     4. 新聞シート共通
