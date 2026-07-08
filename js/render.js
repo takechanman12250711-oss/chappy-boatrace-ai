@@ -432,45 +432,6 @@
 
   return section("出走表", body, "👥", "v3-entry-section");
 }
-      return `
-  <tr>
-    <td>${boatBadge(no, "small")}</td>
-
-    <td class="v3-entry-name">
-      <strong style="color:${boatColor(no).border};">${escapeHtml(name)}</strong>
-      ${grade ? `<span>${escapeHtml(grade)}</span>` : ""}
-    </td>
-
-    <td>${escapeHtml(st)}</td>
-
-    <td>${escapeHtml(motor)}</td>
-
-    <td>${escapeHtml(local)}</td>
-  </tr>
-`;
-    }).join("");
-
-    const body = `
-  <div class="v3-table-wrap">
-    <table class="v3-entry-table">
-      <thead>
-        <tr>
-          <th class="col-boat">艇番</th>
-          <th class="col-name">選手名</th>
-          <th class="col-st">平均ST</th>
-          <th class="col-motor">モーター</th>
-          <th class="col-local">当地勝率</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows}
-      </tbody>
-    </table>
-  </div>
-`;
-
-    return section("出走表", body, "👥", "v3-entry-section");
-  }
     /* ===============================
     3. AI総合
   =============================== */
