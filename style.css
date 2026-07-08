@@ -848,3 +848,50 @@ input {
     max-width: 720px;
   }
 }
+/* =========================================================
+  出走表 数字ズレ修正
+========================================================= */
+
+.v3-entry-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 0;
+}
+
+.v3-entry-table th,
+.v3-entry-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.v3-entry-table th:nth-child(1),
+.v3-entry-table td:nth-child(1) {
+  width: 42px;
+}
+
+.v3-entry-table th:nth-child(2),
+.v3-entry-table td:nth-child(2) {
+  width: auto;
+  text-align: left;
+}
+
+.v3-entry-table th:nth-child(3),
+.v3-entry-table td:nth-child(3),
+.v3-entry-table th:nth-child(4),
+.v3-entry-table td:nth-child(4),
+.v3-entry-table th:nth-child(5),
+.v3-entry-table td:nth-child(5) {
+  width: 44px;
+  text-align: center;
+}
+
+.v3-entry-name strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v3-entry-table td strong,
+.v3-entry-table td span {
+  text-align: center;
+}
