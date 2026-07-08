@@ -1,44 +1,129 @@
 /* =========================================================
   チャッピーボートレースAI
-  render.js 完全版 Part 1/6
+  render.js 完全版 Part 1-1 / 6
+
+  役割：
+  - prediction.js の返却データ専用の描画ファイル
+  - AI計算・予想ロジックは書かない
+  - renderAll(prediction) を公開する
+
+  UI方針：
+  - ボートレース新聞をスマホで読む感覚
+  - 見やすさ最優先
+  - 情報量は減らさない
 ========================================================= */
 
 (function () {
   "use strict";
 
-  const VERSION = "render-v2.0.0";
+  /* ===============================
+    バージョン
+  =============================== */
+
+  const RENDER_VERSION = "render-v2.0.0";
+
+  /* ===============================
+    艇カラー
+  =============================== */
 
   const BOAT_COLORS = {
-    1: { name: "白", className: "boat-1" },
-    2: { name: "黒", className: "boat-2" },
-    3: { name: "赤", className: "boat-3" },
-    4: { name: "青", className: "boat-4" },
-    5: { name: "黄", className: "boat-5" },
-    6: { name: "緑", className: "boat-6" }
+    1: {
+      name: "白",
+      short: "白",
+      bg: "#ffffff",
+      text: "#111111",
+      border: "#cfcfcf",
+      soft: "#f7f7f7"
+    },
+    2: {
+      name: "黒",
+      short: "黒",
+      bg: "#111111",
+      text: "#ffffff",
+      border: "#111111",
+      soft: "#eeeeee"
+    },
+    3: {
+      name: "赤",
+      short: "赤",
+      bg: "#e53935",
+      text: "#ffffff",
+      border: "#e53935",
+      soft: "#fff0f0"
+    },
+    4: {
+      name: "青",
+      short: "青",
+      bg: "#1e88e5",
+      text: "#ffffff",
+      border: "#1e88e5",
+      soft: "#eef6ff"
+    },
+    5: {
+      name: "黄",
+      short: "黄",
+      bg: "#fdd835",
+      text: "#111111",
+      border: "#fbc02d",
+      soft: "#fffbe6"
+    },
+    6: {
+      name: "緑",
+      short: "緑",
+      bg: "#43a047",
+      text: "#ffffff",
+      border: "#43a047",
+      soft: "#eefaf1"
+    }
   };
 
-  const SECTION_TITLES = {
-    raceInfo: "🚤 レース情報",
-    entry: "👥 出走表",
-    ai: "📊 AI分析",
-    main: "🔵 本命予想シート",
-    manshu: "🌸 万舟予想シート",
-    formation: "🎯 フォーメーション",
-    flow: "🌊 展開予想",
-    final: "🤖 AI総合コメント"
+  const MARK_LABELS = {
+    honmei: "◎ 本命",
+    taikou: "○ 対抗",
+    ana: "▲ 穴",
+    osa: "△ 押さえ",
+    osaee: "△ 押さえ",
+    manshu: "💣 万舟",
+    nokoshi: "残し",
+    hiroi: "拾い"
   };
+
+  /* ===============================
+    DOM取得
+  =============================== */
+
+  function $(id) {
+    return document.getElementById(id);
+  }
 
   function getRoot() {
-    return document.getElementById("resultArea")
-      || document.getElementById("predictionArea")
-      || document.getElementById("output")
-      || document.querySelector("main")
-      || document.body;
+    return (
+      $("resultArea") ||
+      $("predictionArea") ||
+      $("mainArea") ||
+      $("app") ||
+      document.body
+    );
+  }
+
+  /* ===============================
+    安全処理
+  =============================== */
+
+  function safeText(value, fallback = "-") {
+    if (value === null || value === undefined || value === "") {
+      return fallback;
+    }
+    return String(value);
+  }
+
+  function safeNum(value, fallback = 0) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
   }
 
   function escapeHtml(value) {
-    if (value === null || value === undefined) return "";
-    return String(value)
+    return safeText(value, "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -46,580 +131,1222 @@
       .replace(/'/g, "&#039;");
   }
 
-  function valueOrDash(value) {
+  function percent(value) {
     if (value === null || value === undefined || value === "") return "-";
-    return escapeHtml(value);
+    const n = Number(value);
+    if (!Number.isFinite(n)) return safeText(value);
+    return `${Math.round(n)}%`;
   }
 
-  function asArray(value) {
-    return Array.isArray(value) ? value : [];
+  function fixed(value, digit = 1) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "-";
+    return n.toFixed(digit);
   }
 
-  function boatClass(boatNo) {
-    const no = Number(boatNo);
-    return BOAT_COLORS[no] ? BOAT_COLORS[no].className : "";
+  function signed(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "-";
+    if (n > 0) return `+${n}`;
+    return String(n);
   }
 
-  function boatBadge(boatNo) {
-    const no = Number(boatNo);
-    const color = BOAT_COLORS[no];
-
-    if (!color) {
-      return `<span class="boat-badge unknown">${valueOrDash(boatNo)}</span>`;
-    }
-
-    return `<span class="boat-badge ${color.className}">${no}</span>`;
+  function arrayify(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    return [value];
   }
 
-  function scoreText(score) {
-    if (score === null || score === undefined || score === "") return "-";
-    return `<span class="score-text">${escapeHtml(score)}</span>`;
+  /* ===============================
+    艇番表示
+  =============================== */
+
+  function boatColor(no) {
+    return BOAT_COLORS[Number(no)] || BOAT_COLORS[1];
   }
 
-  function tagList(items, type = "normal") {
-    const list = asArray(items);
-    if (!list.length) return `<span class="empty-text">-</span>`;
+  function boatBadge(no, extraClass = "") {
+    const c = boatColor(no);
+    const n = safeText(no);
 
     return `
-      <div class="tag-list ${escapeHtml(type)}">
-        ${list.map(item => `<span class="mini-tag">${escapeHtml(item)}</span>`).join("")}
+      <span class="boat-badge boat-${escapeHtml(n)} ${extraClass}"
+        style="
+          background:${c.bg};
+          color:${c.text};
+          border:1px solid ${c.border};
+        ">
+        ${escapeHtml(n)}
+      </span>
+    `;
+  }
+
+  function boatName(no, name) {
+    const c = boatColor(no);
+
+    return `
+      <span class="boat-name" style="color:${c.border};">
+        ${boatBadge(no)}
+        <span>${escapeHtml(name || `${no}号艇`)}</span>
+      </span>
+    `;
+  }
+
+  function boatLine(no, name, subText = "") {
+    return `
+      <div class="boat-line">
+        ${boatName(no, name)}
+        ${
+          subText
+            ? `<span class="boat-line-sub">${escapeHtml(subText)}</span>`
+            : ""
+        }
       </div>
     `;
   }
 
-  function textList(items) {
-    const list = asArray(items);
-    if (!list.length) return `<p class="empty-text">-</p>`;
+  /* ===============================
+    共通レイアウト
+  =============================== */
+
+  function section(title, body, options = {}) {
+    const icon = options.icon || "";
+    const className = options.className || "";
+    const note = options.note || "";
 
     return `
-      <ul class="text-list">
-        ${list.map(item => `<li>${escapeHtml(item)}</li>`).join("")}
-      </ul>
-    `;
-  }
-
-  function createSection(id, title) {
-    return `
-      <section class="chappy-section" id="${escapeHtml(id)}">
-        <div class="section-header">
-          <h2>${escapeHtml(title)}</h2>
+      <section class="render-section ${className}">
+        <div class="section-head">
+          <h2>${icon ? `${icon} ` : ""}${escapeHtml(title)}</h2>
+          ${note ? `<p>${escapeHtml(note)}</p>` : ""}
         </div>
-        <div class="section-body" data-section-body="${escapeHtml(id)}"></div>
+        <div class="section-body">
+          ${body || emptyBox("表示データがありません")}
+        </div>
       </section>
     `;
   }
 
-  function getSectionBody(id) {
-    return document.querySelector(`[data-section-body="${id}"]`);
-  }
-
-  function safeRender(sectionName, renderFn) {
-    try {
-      renderFn();
-    } catch (error) {
-      console.error(`[render.js] ${sectionName} render error:`, error);
-      const body = getSectionBody(sectionName);
-      if (body) {
-        body.innerHTML = `
-          <div class="notice-card error">
-            <strong>表示エラー</strong>
-            <p>${escapeHtml(sectionName)} の描画中に問題が発生しました。</p>
-          </div>
-        `;
-      }
-    }
-  }
-
-  function buildBaseLayout(root) {
-    root.innerHTML = `
-      <div class="chappy-render" data-render-version="${escapeHtml(VERSION)}">
-        ${createSection("raceInfo", SECTION_TITLES.raceInfo)}
-        ${createSection("entry", SECTION_TITLES.entry)}
-        ${createSection("ai", SECTION_TITLES.ai)}
-        ${createSection("main", SECTION_TITLES.main)}
-        ${createSection("manshu", SECTION_TITLES.manshu)}
-        ${createSection("formation", SECTION_TITLES.formation)}
-        ${createSection("flow", SECTION_TITLES.flow)}
-        ${createSection("final", SECTION_TITLES.final)}
+  function divider(label = "") {
+    return `
+      <div class="render-divider">
+        ${label ? `<span>${escapeHtml(label)}</span>` : ""}
       </div>
     `;
   }
+
+  function miniCard(label, value, sub = "") {
+    return `
+      <div class="mini-card">
+        <div class="mini-card-label">${escapeHtml(label)}</div>
+        <div class="mini-card-value">${escapeHtml(value)}</div>
+        ${sub ? `<div class="mini-card-sub">${escapeHtml(sub)}</div>` : ""}
+      </div>
+    `;
+  }
+
+  function emptyBox(text = "データがありません") {
+    return `
+      <div class="empty-box">
+        ${escapeHtml(text)}
+      </div>
+    `;
+  }
+
+  function tag(text, type = "normal") {
+    return `
+      <span class="info-tag tag-${escapeHtml(type)}">
+        ${escapeHtml(text)}
+      </span>
+    `;
+  }
+
+  function scorePill(score, label = "指数") {
+    const n = safeNum(score, null);
+    const value = n === null ? "-" : Math.round(n);
+
+    return `
+      <div class="score-pill">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value)}</strong>
+      </div>
+    `;
+  }
+
+  function strengthBar(value, max = 100) {
+    const n = Math.max(0, Math.min(max, safeNum(value, 0)));
+    const rate = max > 0 ? Math.round((n / max) * 100) : 0;
+
+    return `
+      <div class="strength-bar">
+        <div class="strength-bar-fill" style="width:${rate}%"></div>
+      </div>
+    `;
+  }
+    /* ===============================
+    メイン描画
+  =============================== */
 
   function renderAll(prediction) {
     const root = getRoot();
 
     if (!prediction || typeof prediction !== "object") {
-      root.innerHTML = `
-        <div class="notice-card error">
-          <strong>予想データがありません</strong>
-          <p>prediction.js から有効な prediction オブジェクトが渡されていません。</p>
-        </div>
-      `;
+      root.innerHTML = renderError(
+        "予想データがありません",
+        "prediction.js から有効な prediction オブジェクトが返っていません。"
+      );
       return;
     }
 
-    buildBaseLayout(root);
+    const html = `
+      <div class="render-root" data-render-version="${escapeHtml(RENDER_VERSION)}">
 
-    safeRender("raceInfo", () => renderRaceInfo(prediction));
-    safeRender("entry", () => renderEntryTable(prediction));
-    safeRender("ai", () => renderAiAnalysis(prediction));
-    safeRender("main", () => renderMainSheet(prediction));
-    safeRender("manshu", () => renderManshuSheet(prediction));
-    safeRender("formation", () => renderFormation(prediction));
-    safeRender("flow", () => renderRaceFlow(prediction));
-    safeRender("final", () => renderFinalComment(prediction));
+        ${renderRaceInfo(prediction)}
+
+        ${divider()}
+
+        ${renderEntryTable(prediction)}
+
+        ${divider()}
+
+        ${renderAiSummary(prediction)}
+
+        ${divider()}
+
+        ${renderMainSheet(prediction)}
+
+        ${divider()}
+
+        ${renderMainFormation(prediction)}
+
+        ${divider()}
+
+        ${renderManshuSheet(prediction)}
+
+        ${divider()}
+
+        ${renderManshuFormation(prediction)}
+
+        ${divider()}
+
+        ${renderTicketRanking(prediction)}
+
+        ${divider()}
+
+        ${renderFinalComment(prediction)}
+
+      </div>
+    `;
+
+    root.innerHTML = html;
   }
-    function renderRaceInfo(prediction) {
-    const body = getSectionBody("raceInfo");
-    if (!body) return;
 
-    const race = prediction.race || {};
-    const venue = prediction.venue || {};
-    const weather = prediction.weather || {};
-    const newEngine = prediction.newEngine || {};
-
-    body.innerHTML = `
-      <div class="info-grid">
-        <div class="info-card">
-          <div class="info-label">場</div>
-          <div class="info-value">${valueOrDash(venue.name || race.venueName)}</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">レース</div>
-          <div class="info-value">${valueOrDash(race.raceNo)}R</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">締切</div>
-          <div class="info-value">${valueOrDash(race.deadline || race.closeTime)}</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">距離</div>
-          <div class="info-value">${valueOrDash(race.distance || "1800m")}</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">天候</div>
-          <div class="info-value">${valueOrDash(weather.weather)}</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">風</div>
-          <div class="info-value">${valueOrDash(weather.wind)}</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">波</div>
-          <div class="info-value">${valueOrDash(weather.wave)}</div>
-        </div>
-        <div class="info-card">
-          <div class="info-label">新エンジン</div>
-          <div class="info-value">${valueOrDash(newEngine.comment || newEngine.status)}</div>
-        </div>
+  function renderError(title, message) {
+    return `
+      <div class="render-root">
+        <section class="render-section error-section">
+          <div class="section-head">
+            <h2>⚠️ ${escapeHtml(title)}</h2>
+          </div>
+          <div class="section-body">
+            <p>${escapeHtml(message)}</p>
+          </div>
+        </section>
       </div>
     `;
   }
 
-    function renderEntryTable(prediction) {
-    const body = getSectionBody("entry");
-    if (!body) return;
+  /* ===============================
+    1. レース情報
+  =============================== */
 
-    const entries = asArray(prediction.race && prediction.race.entries);
+  function renderRaceInfo(prediction) {
+    const race = prediction.race || {};
+    const venue = prediction.venue || {};
+    const weather = prediction.weather || {};
+    const exhibition = prediction.exhibition || {};
 
-    if (!entries.length) {
-      body.innerHTML = `
-        <div class="notice-card">
-          <p>出走表データがありません。</p>
-        </div>
-      `;
-      return;
+    const title =
+      race.title ||
+      race.raceName ||
+      `${safeText(race.place || venue.name || venue.venueName, "開催場")} ${safeText(
+        race.raceNo || race.rno,
+        "-"
+      )}R`;
+
+    const cards = `
+      <div class="race-info-grid">
+        ${miniCard("場", race.place || venue.name || venue.venueName || "-")}
+        ${miniCard("R", race.raceNo || race.rno || "-", race.distance ? `${race.distance}m` : "")}
+        ${miniCard("締切", race.deadline || race.closeTime || "-")}
+        ${miniCard("条件", race.grade || race.className || race.condition || "-")}
+        ${miniCard("風", weather.wind || weather.windText || "-", weather.windSpeed ? `${weather.windSpeed}m` : "")}
+        ${miniCard("波", weather.wave || weather.waveHeight || "-", weather.water || "")}
+        ${miniCard("天候", weather.weather || weather.condition || "-")}
+        ${miniCard("展示", exhibition.status || exhibition.comment || "-", exhibition.updatedAt || "")}
+      </div>
+    `;
+
+    const note = [
+      race.date ? `日付：${race.date}` : "",
+      venue.feature ? `場特徴：${venue.feature}` : "",
+      weather.comment ? `水面：${weather.comment}` : ""
+    ]
+      .filter(Boolean)
+      .join(" / ");
+
+    return section("レース情報", cards, {
+      icon: "🚤",
+      note,
+      className: "race-info-section"
+    });
+  }
+
+  /* ===============================
+    2. 出走表
+  =============================== */
+
+  function renderEntryTable(prediction) {
+    const race = prediction.race || {};
+    const entries =
+      prediction.entries ||
+      prediction.entry ||
+      race.entries ||
+      race.entry ||
+      [];
+
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return section("出走表", emptyBox("出走表データがありません"), {
+        icon: "👥",
+        className: "entry-section"
+      });
     }
 
-    body.innerHTML = `
+    const rows = entries
+      .map((e, index) => {
+        const no = e.no || e.boatNo || e.waku || e.course || index + 1;
+        const name = e.name || e.racerName || e.player || "-";
+        const grade = e.grade || e.class || e.rank || "-";
+        const st = e.st || e.avgSt || e.averageST || "-";
+        const motor = e.motorNo || e.motor || e.motorNumber || "-";
+        const boat = e.boatNo2 || e.boat || e.boatNumber || "-";
+        const local = e.localRate || e.venueRate || e.courseRate || "-";
+
+        return `
+          <tr>
+            <td class="td-boat">${boatBadge(no)}</td>
+            <td class="td-name">
+              <strong style="color:${boatColor(no).border};">${escapeHtml(name)}</strong>
+              <span>${escapeHtml(grade)}</span>
+            </td>
+            <td>${escapeHtml(st)}</td>
+            <td>${escapeHtml(motor)}</td>
+            <td>${escapeHtml(boat)}</td>
+            <td>${escapeHtml(local)}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    const body = `
       <div class="table-scroll">
         <table class="entry-table">
           <thead>
             <tr>
               <th>艇</th>
               <th>選手</th>
-              <th>級</th>
-              <th>支部</th>
               <th>ST</th>
-              <th>全国</th>
+              <th>モ</th>
+              <th>ボ</th>
               <th>当地</th>
-              <th>モーター</th>
-              <th>展示</th>
             </tr>
           </thead>
           <tbody>
-            ${entries.map(entry => {
-              const boatNo = entry.boatNo || entry.course || entry.waku;
-              const motorText = formatMotor(entry);
-              const nationalText = formatRate(entry.national, entry.nationalRate || entry.winRate);
-              const localText = formatRate(entry.local, entry.localRate || entry.venueRate);
-
-              return `
-                <tr>
-                  <td>${boatBadge(boatNo)}</td>
-                  <td class="name-cell">
-                    <span class="boat-name ${boatClass(boatNo)}">
-                      ${valueOrDash(entry.name || entry.racerName || entry.playerName)}
-                    </span>
-                  </td>
-                  <td>${valueOrDash(entry.className || entry.class || entry.grade)}</td>
-                  <td>${valueOrDash(entry.branch || entry.area)}</td>
-                  <td>${valueOrDash(entry.avgST || entry.st || entry.avgSt)}</td>
-                  <td>${nationalText}</td>
-                  <td>${localText}</td>
-                  <td>${motorText}</td>
-                  <td>${valueOrDash(entry.exhibitionTime || entry.exTime)}</td>
-                </tr>
-              `;
-            }).join("")}
+            ${rows}
           </tbody>
         </table>
       </div>
     `;
+
+    return section("出走表", body, {
+      icon: "👥",
+      className: "entry-section"
+    });
   }
+    /* ===============================
+    3. AI総合
+  =============================== */
 
-  function formatRate(rateObj, fallback) {
-    if (rateObj && typeof rateObj === "object") {
-      const win = rateObj.winRate ?? "-";
-      const second = rateObj.secondRate ?? "-";
-      return `${valueOrDash(win)} / 2連${valueOrDash(second)}%`;
-    }
+  function renderAiSummary(prediction) {
+    const confidence = prediction.confidence || {};
+    const manshuPower = prediction.manshuPower || {};
+    const finalAi = prediction.finalAi || {};
+    const indexes = prediction.indexes || {};
 
-    return valueOrDash(fallback);
-  }
+    const confidenceScore =
+      confidence.score ??
+      confidence.value ??
+      confidence.percent ??
+      prediction.confidenceScore ??
+      "-";
 
-  function formatMotor(entry) {
-    if (!entry) return "-";
+    const manshuScore =
+      manshuPower.score ??
+      manshuPower.value ??
+      manshuPower.percent ??
+      prediction.manshuScore ??
+      "-";
 
-    if (entry.motor && typeof entry.motor === "object") {
-      const no = entry.motor.no ?? entry.motor.motorNo ?? "-";
-      const second = entry.motor.secondRate ?? entry.motor.motor2Rate ?? "-";
-      return `${valueOrDash(no)}号機 / 2連${valueOrDash(second)}%`;
-    }
+    const aiText =
+      finalAi.summary ||
+      finalAi.comment ||
+      finalAi.text ||
+      prediction.aiComment ||
+      "AIまとめデータがありません";
 
-    if (entry.motorNo) {
-      return `${valueOrDash(entry.motorNo)}号機`;
-    }
-
-    return valueOrDash(entry.motor);
-  }
-    function renderAiAnalysis(prediction) {
-    const body = getSectionBody("ai");
-    if (!body) return;
-
-    const scores = asArray(prediction.indexes && prediction.indexes.scores);
-
-    if (!scores.length) {
-      body.innerHTML = `
-        <div class="notice-card">
-          <p>AI分析データがありません。</p>
+    const cards = `
+      <div class="ai-summary-grid">
+        <div class="ai-score-card">
+          <div class="ai-score-label">信頼度</div>
+          <div class="ai-score-value">${escapeHtml(percent(confidenceScore))}</div>
+          ${strengthBar(confidenceScore)}
+          <p>${escapeHtml(confidence.reason || confidence.comment || "")}</p>
         </div>
-      `;
-      return;
-    }
 
-    body.innerHTML = `
-      <div class="analysis-legend">
-        <span>🔥 攻め指数</span>
-        <span>🌊 展開指数</span>
-        <span>⚡ 道中指数</span>
-        <span>🏠 当地指数</span>
+        <div class="ai-score-card pink">
+          <div class="ai-score-label">万舟期待度</div>
+          <div class="ai-score-value">${escapeHtml(percent(manshuScore))}</div>
+          ${strengthBar(manshuScore)}
+          <p>${escapeHtml(manshuPower.reason || manshuPower.comment || "")}</p>
+        </div>
       </div>
 
-      <div class="analysis-list">
-        ${scores.map(item => {
-          const boatNo = item.boatNo || item.boat || item.waku;
-          return `
-            <div class="analysis-card">
-              <div class="analysis-head">
-                ${boatBadge(boatNo)}
-                <strong class="boat-name ${boatClass(boatNo)}">
-                  ${valueOrDash(item.name || item.playerName)}
-                </strong>
-                <span class="total-score">${scoreText(item.total || item.score)}</span>
-              </div>
-
-              <div class="index-grid">
-                <div><span>🔥 攻め</span><b>${valueOrDash(item.attack)}</b></div>
-                <div><span>🌊 展開</span><b>${valueOrDash(item.flow)}</b></div>
-                <div><span>⚡ 道中</span><b>${valueOrDash(item.middle)}</b></div>
-                <div><span>🏠 当地</span><b>${valueOrDash(item.local)}</b></div>
-              </div>
-
-              <div class="analysis-comment">
-                ${valueOrDash(item.comment)}
-              </div>
-            </div>
-          `;
-        }).join("")}
+      <div class="ai-comment-box">
+        <h3>AIまとめ</h3>
+        <p>${escapeHtml(aiText)}</p>
       </div>
+
+      ${renderIndexSummary(indexes)}
     `;
+
+    return section("AI総合", cards, {
+      icon: "📊",
+      className: "ai-summary-section"
+    });
   }
 
-  function renderSheetRows(rows) {
-    const list = asArray(rows);
-
-    if (!list.length) {
-      return `
-        <div class="notice-card">
-          <p>シートデータがありません。</p>
-        </div>
-      `;
+  function renderIndexSummary(indexes) {
+    if (!indexes || typeof indexes !== "object") {
+      return "";
     }
+
+    const items = Object.entries(indexes)
+      .filter(([, value]) => value !== null && value !== undefined)
+      .slice(0, 12)
+      .map(([key, value]) => {
+        const label = normalizeIndexLabel(key);
+        const text =
+          typeof value === "object"
+            ? value.score ?? value.value ?? value.comment ?? "-"
+            : value;
+
+        return miniCard(label, text);
+      })
+      .join("");
+
+    if (!items) return "";
 
     return `
-      <div class="sheet-list">
-        ${list.map(row => {
-          const boatNo = row.boatNo || row.boat || row.waku;
-          return `
-            <div class="sheet-card">
-              <div class="sheet-head">
-                <div class="sheet-left">
-                  ${boatBadge(boatNo)}
-                  <strong class="boat-name ${boatClass(boatNo)}">
-                    ${valueOrDash(row.name || row.playerName)}
-                  </strong>
-                </div>
-                <div class="sheet-score">
-                  ${scoreText(row.score || row.index)}
-                </div>
-              </div>
-
-              <div class="buff-area">
-                <div class="buff-row">
-                  <span class="buff-label up">⬆️ バフ</span>
-                  ${tagList(row.buffs || row.plus || row.good, "buff")}
-                </div>
-                <div class="buff-row">
-                  <span class="buff-label down">⬇️ デバフ</span>
-                  ${tagList(row.debuffs || row.minus || row.bad, "debuff")}
-                </div>
-              </div>
-
-              <p class="sheet-comment">
-                ${valueOrDash(row.comment || row.summary)}
-              </p>
-            </div>
-          `;
-        }).join("")}
+      <div class="index-summary">
+        <h3>指数サマリー</h3>
+        <div class="mini-card-grid">
+          ${items}
+        </div>
       </div>
     `;
   }
+
+  function normalizeIndexLabel(key) {
+    const map = {
+      attack: "攻め指数",
+      flow: "展開指数",
+      road: "道中指数",
+      local: "当地指数",
+      start: "ST指数",
+      exhibition: "展示指数",
+      motor: "モーター",
+      weather: "水面",
+      venue: "場傾向",
+      stability: "安定",
+      power: "機力",
+      odds: "オッズ"
+    };
+
+    return map[key] || key;
+  }
+
+  /* ===============================
+    4. 本命シート
+  =============================== */
 
   function renderMainSheet(prediction) {
-    const body = getSectionBody("main");
-    if (!body) return;
-
     const sheet = prediction.mainSheet || {};
-    const rows = sheet.rows || sheet.items || sheet.list;
 
-    body.innerHTML = `
-      <div class="sheet-summary blue-sheet">
-        <div class="sheet-title">${valueOrDash(sheet.title || "本命予想")}</div>
-        <p>${valueOrDash(sheet.comment || sheet.summary)}</p>
+    const honmei = sheet.honmei || sheet.main || sheet◎ || sheet.top;
+    const taikou = sheet.taikou || sheet.rival || sheet○ || sheet.second;
+    const ana = sheet.ana || sheet.hole || sheet▲ || sheet.third;
+    const osa =
+      sheet.osa ||
+      sheet.osae ||
+      sheet.support ||
+      sheet.delta ||
+      sheet["△"];
+
+    const items = [
+      normalizeSheetItem(honmei, "honmei"),
+      normalizeSheetItem(taikou, "taikou"),
+      normalizeSheetItem(ana, "ana"),
+      normalizeSheetItem(osa, "osa")
+    ].filter(Boolean);
+
+    if (items.length === 0 && Array.isArray(sheet.items)) {
+      sheet.items.forEach((item, index) => {
+        const roles = ["honmei", "taikou", "ana", "osa"];
+        items.push(normalizeSheetItem(item, item.role || roles[index] || "osa"));
+      });
+    }
+
+    if (items.length === 0) {
+      return section("本命シート", emptyBox("本命シートデータがありません"), {
+        icon: "🔵",
+        className: "main-sheet-section"
+      });
+    }
+
+    const body = `
+      <div class="sheet-card-list main-sheet-list">
+        ${items.map(renderMainSheetCard).join("")}
       </div>
-      ${renderSheetRows(rows)}
+    `;
+
+    return section("本命シート", body, {
+      icon: "🔵",
+      className: "main-sheet-section"
+    });
+  }
+
+  function normalizeSheetItem(item, role = "osa") {
+    if (!item) return null;
+
+    if (typeof item === "number" || typeof item === "string") {
+      return {
+        role,
+        no: item,
+        name: `${item}号艇`,
+        score: "-",
+        buffs: [],
+        debuffs: [],
+        comment: ""
+      };
+    }
+
+    const no =
+      item.no ||
+      item.boatNo ||
+      item.waku ||
+      item.course ||
+      item.lane ||
+      item.number;
+
+    return {
+      role: item.role || role,
+      no,
+      name: item.name || item.racerName || item.player || `${safeText(no)}号艇`,
+      score: item.score ?? item.index ?? item.point ?? item.value ?? "-",
+      buffs: arrayify(item.buffs || item.buff || item.plus || item.positive),
+      debuffs: arrayify(item.debuffs || item.debuff || item.minus || item.negative),
+      comment: item.comment || item.reason || item.text || item.shortComment || "",
+      tags: arrayify(item.tags || item.labels),
+      sub: item.sub || item.type || item.tactic || ""
+    };
+  }
+
+  function renderMainSheetCard(item) {
+    const roleLabel = MARK_LABELS[item.role] || item.role || "評価";
+    const no = item.no;
+    const c = boatColor(no);
+
+    return `
+      <article class="sheet-card main-card" style="border-left-color:${c.border};">
+        <div class="sheet-card-head">
+          <div>
+            <div class="role-label">${escapeHtml(roleLabel)}</div>
+            ${boatLine(no, item.name, item.sub)}
+          </div>
+          ${scorePill(item.score, "AI指数")}
+        </div>
+
+        ${renderBuffDebuff(item.buffs, item.debuffs)}
+
+        ${
+          item.tags && item.tags.length
+            ? `<div class="tag-row">${item.tags.map((t) => tag(t)).join("")}</div>`
+            : ""
+        }
+
+        ${
+          item.comment
+            ? `<p class="sheet-comment">${escapeHtml(item.comment)}</p>`
+            : ""
+        }
+      </article>
     `;
   }
-    function renderManshuSheet(prediction) {
-    const body = getSectionBody("manshu");
-    if (!body) return;
 
-    const sheet = prediction.manshuSheet || {};
-    const rows = sheet.rows || sheet.items || sheet.list;
-    const missing = asArray(sheet.missingTop30 || sheet.missing || sheet.top30);
+  function renderBuffDebuff(buffs, debuffs) {
+    const plus = arrayify(buffs);
+    const minus = arrayify(debuffs);
 
-    body.innerHTML = `
-      <div class="sheet-summary pink-sheet">
-        <div class="sheet-title">${valueOrDash(sheet.title || "万舟予想")}</div>
-        <p>${valueOrDash(sheet.comment || sheet.summary)}</p>
-      </div>
-
-      ${renderSheetRows(rows)}
-
-      <div class="sub-block">
-        <h3>💣 出てない目 TOP30</h3>
-        ${renderMissingTickets(missing)}
-      </div>
-    `;
-  }
-
-  function renderMissingTickets(list) {
-    const items = asArray(list);
-
-    if (!items.length) {
+    if (plus.length === 0 && minus.length === 0) {
       return `
-        <div class="notice-card">
-          <p>出てない目データがありません。</p>
+        <div class="buff-debuff empty">
+          <span>⬆️ プラス要因：-</span>
+          <span>⬇️ マイナス要因：-</span>
         </div>
       `;
     }
 
     return `
-      <div class="table-scroll">
-        <table class="ticket-table">
-          <thead>
-            <tr>
-              <th>順位</th>
-              <th>買い目</th>
-              <th>現位オッズ</th>
-              <th>評価</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.slice(0, 30).map((item, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                <td class="ticket-text">${valueOrDash(item.ticket || item.buy || item.mark)}</td>
-                <td>${valueOrDash(item.odds || item.currentOdds)}</td>
-                <td>${valueOrDash(item.rank || item.comment || "-")}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
-
-  function renderFormation(prediction) {
-    const body = getSectionBody("formation");
-    if (!body) return;
-
-    const formation = prediction.formation || {};
-
-    const main = asArray(formation.main || formation.honsen);
-    const cover = asArray(formation.cover || formation.osaae);
-    const nagashi = asArray(formation.nagashi || formation.flow);
-    const hole = asArray(formation.hole || formation.manshu);
-
-    body.innerHTML = `
-      <div class="formation-grid">
-        ${renderTicketBlock("本線", main)}
-        ${renderTicketBlock("安全押さえ", cover)}
-        ${renderTicketBlock("流し", nagashi)}
-        ${renderTicketBlock("万舟", hole)}
-      </div>
-    `;
-  }
-
-  function renderTicketBlock(title, tickets) {
-    const list = asArray(tickets);
-
-    return `
-      <div class="ticket-block">
-        <h3>${escapeHtml(title)}</h3>
-        ${
-          list.length
-            ? `
-              <div class="ticket-list">
-                ${list.map(ticket => `
-                  <div class="ticket-item">
-                    <span class="ticket-mark">
-                      ${valueOrDash(ticket.ticket || ticket.buy || ticket)}
-                    </span>
-                    <span class="ticket-note">
-                      ${valueOrDash(ticket.comment || ticket.rank || "")}
-                    </span>
-                  </div>
-                `).join("")}
-              </div>
-            `
-            : `<p class="empty-text">-</p>`
-        }
-      </div>
-    `;
-  }
-    function renderRaceFlow(prediction) {
-    const body = getSectionBody("flow");
-    if (!body) return;
-
-    const flow = prediction.raceFlow || {};
-    const points = asArray(flow.points || flow.steps || flow.list);
-    const keyBoats = asArray(flow.keyBoats || flow.focusBoats);
-
-    body.innerHTML = `
-      <div class="flow-summary">
-        <div class="flow-title">
-          ${valueOrDash(flow.title || "展開予想")}
+      <div class="buff-debuff">
+        <div class="buff-list">
+          <strong>⬆️ プラス要因</strong>
+          ${
+            plus.length
+              ? plus.map((b) => `<span>${escapeHtml(formatFactor(b))}</span>`).join("")
+              : "<span>-</span>"
+          }
         </div>
-        <p>${valueOrDash(flow.comment || flow.summary)}</p>
-      </div>
 
-      <div class="sub-block">
-        <h3>展開ポイント</h3>
-        ${textList(points)}
-      </div>
-
-      <div class="sub-block">
-        <h3>注目艇</h3>
-        ${renderKeyBoats(keyBoats)}
+        <div class="debuff-list">
+          <strong>⬇️ マイナス要因</strong>
+          ${
+            minus.length
+              ? minus.map((d) => `<span>${escapeHtml(formatFactor(d))}</span>`).join("")
+              : "<span>-</span>"
+          }
+        </div>
       </div>
     `;
   }
 
-  function renderKeyBoats(items) {
-    const list = asArray(items);
+  function formatFactor(value) {
+    if (!value) return "-";
 
-    if (!list.length) {
-      return `<p class="empty-text">-</p>`;
+    if (typeof value === "string" || typeof value === "number") {
+      return value;
+    }
+
+    const label = value.label || value.name || value.text || value.reason || "-";
+    const point =
+      value.point !== undefined
+        ? ` ${signed(value.point)}`
+        : value.score !== undefined
+          ? ` ${signed(value.score)}`
+          : "";
+
+    return `${label}${point}`;
+  }
+    /* ===============================
+    5. 本線フォーメーション
+  =============================== */
+
+  function renderMainFormation(prediction) {
+    const formation = prediction.formation || {};
+    const main =
+      formation.main ||
+      formation.honmei ||
+      formation.normal ||
+      formation.base ||
+      prediction.mainFormation ||
+      [];
+
+    const safety =
+      formation.safety ||
+      formation.osae ||
+      formation.cover ||
+      prediction.safetyFormation ||
+      [];
+
+    const body = `
+      <div class="formation-block">
+        <h3>本線</h3>
+        ${renderFormationList(main, "main")}
+      </div>
+
+      <div class="formation-block">
+        <h3>安全押さえ</h3>
+        ${renderFormationList(safety, "safety")}
+      </div>
+
+      ${renderFormationComment(formation)}
+    `;
+
+    return section("本線フォーメーション", body, {
+      icon: "🎫",
+      className: "formation-section main-formation-section"
+    });
+  }
+
+  function renderFormationList(list, type = "main") {
+    const items = normalizeFormationList(list);
+
+    if (items.length === 0) {
+      return emptyBox("フォーメーションデータがありません");
     }
 
     return `
-      <div class="key-boat-list">
-        ${list.map(item => {
-          const boatNo = item.boatNo || item.boat || item.waku;
-          return `
-            <div class="key-boat-card">
-              <div class="key-boat-head">
-                ${boatBadge(boatNo)}
-                <strong class="boat-name ${boatClass(boatNo)}">
-                  ${valueOrDash(item.name || item.playerName)}
-                </strong>
-                <span>${valueOrDash(item.role || item.type)}</span>
-              </div>
-              <p>${valueOrDash(item.comment)}</p>
-            </div>
-          `;
-        }).join("")}
+      <div class="formation-list formation-${escapeHtml(type)}">
+        ${items.map((item) => renderFormationItem(item, type)).join("")}
       </div>
     `;
   }
+
+  function normalizeFormationList(list) {
+    if (!list) return [];
+
+    if (typeof list === "string") {
+      return [{ ticket: list }];
+    }
+
+    if (Array.isArray(list)) {
+      return list.map((item) => {
+        if (typeof item === "string") {
+          return { ticket: item };
+        }
+
+        return {
+          ticket:
+            item.ticket ||
+            item.line ||
+            item.formation ||
+            item.bet ||
+            item.kumi ||
+            "",
+          label: item.label || item.type || item.rank || "",
+          reason: item.reason || item.comment || item.text || "",
+          odds: item.odds || item.syntheticOdds || item.gouseiOdds || "",
+          score: item.score ?? item.value ?? item.point ?? ""
+        };
+      });
+    }
+
+    if (typeof list === "object") {
+      return Object.entries(list).map(([label, value]) => {
+        if (typeof value === "string") {
+          return { label, ticket: value };
+        }
+
+        return {
+          label,
+          ticket:
+            value.ticket ||
+            value.line ||
+            value.formation ||
+            value.bet ||
+            value.kumi ||
+            "",
+          reason: value.reason || value.comment || value.text || "",
+          odds: value.odds || value.syntheticOdds || value.gouseiOdds || "",
+          score: value.score ?? value.value ?? value.point ?? ""
+        };
+      });
+    }
+
+    return [];
+  }
+
+  function renderFormationItem(item, type) {
+    const ticket = item.ticket || "-";
+
+    return `
+      <article class="formation-item ${escapeHtml(type)}">
+        <div class="formation-ticket">
+          ${renderTicketText(ticket)}
+        </div>
+
+        <div class="formation-meta">
+          ${item.label ? tag(item.label, type) : ""}
+          ${item.score !== "" ? tag(`評価 ${item.score}`, "score") : ""}
+          ${item.odds ? tag(`合成 ${item.odds}`, "odds") : ""}
+        </div>
+
+        ${
+          item.reason
+            ? `<p class="formation-reason">${escapeHtml(item.reason)}</p>`
+            : ""
+        }
+      </article>
+    `;
+  }
+
+  function renderTicketText(ticket) {
+    const text = safeText(ticket);
+
+    const html = text.replace(/[1-6]/g, (num) => {
+      return boatBadge(num, "mini");
+    });
+
+    return `<span class="ticket-text">${html}</span>`;
+  }
+
+  function renderFormationComment(formation) {
+    const comment =
+      formation.comment ||
+      formation.reason ||
+      formation.text ||
+      formation.mainComment ||
+      "";
+
+    if (!comment) return "";
+
+    return `
+      <div class="formation-comment">
+        ${escapeHtml(comment)}
+      </div>
+    `;
+  }
+
+  /* ===============================
+    6. 万舟シート
+  =============================== */
+
+  function renderManshuSheet(prediction) {
+    const sheet = prediction.manshuSheet || {};
+
+    const candidates =
+      sheet.candidates ||
+      sheet.items ||
+      sheet.manshu ||
+      sheet.longshot ||
+      [];
+
+    const nokoshi =
+      sheet.nokoshi ||
+      sheet.remain ||
+      sheet.keep ||
+      sheet.nokoshiCandidates ||
+      [];
+
+    const hiroi =
+      sheet.hiroi ||
+      sheet.pickup ||
+      sheet.pick ||
+      sheet.hiroiCandidates ||
+      [];
+
+    const body = `
+      <div class="manshu-block">
+        <h3>万舟候補</h3>
+        ${renderManshuList(candidates, "manshu")}
+      </div>
+
+      <div class="manshu-block">
+        <h3>残し候補</h3>
+        ${renderManshuList(nokoshi, "nokoshi")}
+      </div>
+
+      <div class="manshu-block">
+        <h3>拾い候補</h3>
+        ${renderManshuList(hiroi, "hiroi")}
+      </div>
+
+      ${renderManshuComment(sheet)}
+    `;
+
+    return section("万舟シート", body, {
+      icon: "🌸",
+      className: "manshu-sheet-section"
+    });
+  }
+
+  function renderManshuList(list, role = "manshu") {
+    const items = arrayify(list)
+      .map((item) => normalizeSheetItem(item, role))
+      .filter(Boolean);
+
+    if (items.length === 0) {
+      return emptyBox("候補データがありません");
+    }
+
+    return `
+      <div class="sheet-card-list manshu-card-list">
+        ${items.map((item) => renderManshuCard(item, role)).join("")}
+      </div>
+    `;
+  }
+
+  function renderManshuCard(item, role) {
+    const roleLabel = MARK_LABELS[item.role] || MARK_LABELS[role] || "候補";
+    const no = item.no;
+    const c = boatColor(no);
+
+    return `
+      <article class="sheet-card manshu-card" style="border-left-color:${c.border};">
+        <div class="sheet-card-head">
+          <div>
+            <div class="role-label pink-label">${escapeHtml(roleLabel)}</div>
+            ${boatLine(no, item.name, item.sub)}
+          </div>
+          ${scorePill(item.score, "期待")}
+        </div>
+
+        ${renderBuffDebuff(item.buffs, item.debuffs)}
+
+        ${
+          item.comment
+            ? `<p class="sheet-comment">${escapeHtml(item.comment)}</p>`
+            : ""
+        }
+      </article>
+    `;
+  }
+
+  function renderManshuComment(sheet) {
+    const comment =
+      sheet.comment ||
+      sheet.reason ||
+      sheet.text ||
+      sheet.summary ||
+      "";
+
+    if (!comment) return "";
+
+    return `
+      <div class="manshu-comment">
+        ${escapeHtml(comment)}
+      </div>
+    `;
+  }
+    /* ===============================
+    7. 万舟フォーメーション
+  =============================== */
+
+  function renderManshuFormation(prediction) {
+    const formation = prediction.formation || {};
+
+    const manshu =
+      formation.manshu ||
+      formation.longshot ||
+      formation.highPay ||
+      prediction.manshuFormation ||
+      [];
+
+    const body = `
+      <div class="formation-block">
+        <h3>万舟フォーメーション</h3>
+        ${renderFormationList(manshu, "manshu")}
+      </div>
+
+      ${
+        formation.manshuComment
+          ? `
+            <div class="formation-comment">
+              ${escapeHtml(formation.manshuComment)}
+            </div>
+          `
+          : ""
+      }
+    `;
+
+    return section("万舟フォーメーション", body, {
+      icon: "💣",
+      className: "manshu-formation-section"
+    });
+  }
+
+  /* ===============================
+    8. AI買い目ランキング
+  =============================== */
+
+  function renderTicketRanking(prediction) {
+    const ranks =
+      prediction.ticketRanks ||
+      prediction.ticketRank ||
+      prediction.ranking ||
+      [];
+
+    const list = arrayify(ranks);
+
+    if (list.length === 0) {
+      return section(
+        "AI買い目ランキング",
+        emptyBox("ランキングデータがありません"),
+        {
+          icon: "🏆",
+          className: "ticket-ranking-section"
+        }
+      );
+    }
+
+    const body = `
+      <div class="ticket-ranking-list">
+        ${list.map(renderTicketRankCard).join("")}
+      </div>
+    `;
+
+    return section("AI買い目ランキング", body, {
+      icon: "🏆",
+      className: "ticket-ranking-section"
+    });
+  }
+
+  function renderTicketRankCard(item, index) {
+
+    if (typeof item === "string") {
+      item = {
+        ticket: item
+      };
+    }
+
+    const rank =
+      item.rank ||
+      item.order ||
+      index + 1;
+
+    const ticket =
+      item.ticket ||
+      item.bet ||
+      item.line ||
+      item.formation ||
+      "-";
+
+    const score =
+      item.score ??
+      item.value ??
+      item.point ??
+      "";
+
+    const odds =
+      item.odds ||
+      item.syntheticOdds ||
+      item.gouseiOdds ||
+      "";
+
+    const hit =
+      item.hitRate ||
+      item.probability ||
+      item.rate ||
+      "";
+
+    const reason =
+      item.reason ||
+      item.comment ||
+      item.text ||
+      "";
+
+    return `
+      <article class="ticket-rank-card">
+
+        <div class="ticket-rank-head">
+
+          <div class="ticket-rank-no">
+            ${escapeHtml(rank)}
+          </div>
+
+          <div class="ticket-rank-main">
+            <div class="ticket-rank-ticket">
+              ${renderTicketText(ticket)}
+            </div>
+
+            <div class="ticket-rank-tags">
+
+              ${
+                score !== ""
+                  ? tag(`AI ${score}`, "score")
+                  : ""
+              }
+
+              ${
+                odds
+                  ? tag(`合成 ${odds}`, "odds")
+                  : ""
+              }
+
+              ${
+                hit
+                  ? tag(`的中 ${percent(hit)}`, "hit")
+                  : ""
+              }
+
+            </div>
+
+          </div>
+
+        </div>
+
+        ${
+          reason
+            ? `
+              <div class="ticket-rank-comment">
+                ${escapeHtml(reason)}
+              </div>
+            `
+            : ""
+        }
+
+      </article>
+    `;
+  }
+
+  /* ===============================
+    共通ランキング補助
+  =============================== */
+
+  function sortByScore(list) {
+
+    return arrayify(list).sort((a, b) => {
+
+      const sa = Number(a.score ?? a.value ?? 0);
+      const sb = Number(b.score ?? b.value ?? 0);
+
+      return sb - sa;
+
+    });
+
+  }
+
+  function topItems(list, limit = 5) {
+
+    return sortByScore(list).slice(0, limit);
+
+  }
+    /* ===============================
+    9. 最終コメント
+  =============================== */
 
   function renderFinalComment(prediction) {
-    const body = getSectionBody("final");
-    if (!body) return;
+    const finalComment =
+      prediction.finalComment ||
+      prediction.comment ||
+      prediction.finalText ||
+      "";
 
     const finalAi = prediction.finalAi || {};
-    const finalComment = prediction.finalComment || "";
+    const raceFlow = prediction.raceFlow || {};
 
-    body.innerHTML = `
-      <div class="final-card">
-        <div class="final-main">
-          ${valueOrDash(finalComment || finalAi.comment || finalAi.summary)}
-        </div>
+    const summary =
+      finalAi.final ||
+      finalAi.summary ||
+      finalAi.comment ||
+      "";
 
-        <div class="final-grid">
-          <div>
-            <span>信頼度</span>
-            <b>${valueOrDash(prediction.confidence || finalAi.confidence)}</b>
-          </div>
-          <div>
-            <span>万舟力</span>
-            <b>${valueOrDash(prediction.manshuPower || finalAi.manshuPower)}</b>
-          </div>
-          <div>
-            <span>最終評価</span>
-            <b>${valueOrDash(finalAi.rank || finalAi.grade || "-")}</b>
-          </div>
-        </div>
+    const flowComment =
+      raceFlow.comment ||
+      raceFlow.summary ||
+      raceFlow.text ||
+      "";
+
+    const body = `
+      ${
+        finalComment
+          ? `
+            <div class="final-comment-main">
+              ${escapeHtml(finalComment)}
+            </div>
+          `
+          : ""
+      }
+
+      ${
+        summary
+          ? `
+            <div class="final-comment-sub">
+              <h3>AI最終判断</h3>
+              <p>${escapeHtml(summary)}</p>
+            </div>
+          `
+          : ""
+      }
+
+      ${
+        flowComment
+          ? `
+            <div class="final-comment-sub">
+              <h3>展開メモ</h3>
+              <p>${escapeHtml(flowComment)}</p>
+            </div>
+          `
+          : ""
+      }
+
+      ${
+        !finalComment && !summary && !flowComment
+          ? emptyBox("最終コメントデータがありません")
+          : ""
+      }
+    `;
+
+    return section("最終コメント", body, {
+      icon: "📝",
+      className: "final-comment-section"
+    });
+  }
+
+  /* ===============================
+    追加：展開データ補助表示
+  =============================== */
+
+  function renderRaceFlowMini(raceFlow) {
+    if (!raceFlow || typeof raceFlow !== "object") return "";
+
+    const attack = raceFlow.attack || raceFlow.attacker || raceFlow.seme;
+    const key = raceFlow.key || raceFlow.keyBoat || raceFlow.focus;
+    const flow = raceFlow.flow || raceFlow.pattern || raceFlow.type;
+
+    if (!attack && !key && !flow) return "";
+
+    return `
+      <div class="race-flow-mini">
+        ${attack ? miniCard("攻め艇", attack) : ""}
+        ${key ? miniCard("展開キー", key) : ""}
+        ${flow ? miniCard("想定展開", flow) : ""}
       </div>
     `;
   }
-    window.renderAll = renderAll;
 
-  window.ChappyRender = {
-    version: VERSION,
-    renderAll
-  };
+  /* ===============================
+    追加：デバッグ用
+  =============================== */
+
+  function renderDebug(prediction) {
+    if (!window.CHAPPY_DEBUG_RENDER) return "";
+
+    return `
+      <section class="render-section debug-section">
+        <div class="section-head">
+          <h2>🧪 Debug</h2>
+        </div>
+        <div class="section-body">
+          <pre>${escapeHtml(JSON.stringify(prediction, null, 2))}</pre>
+        </div>
+      </section>
+    `;
+  }
+
+  /* ===============================
+    外部公開
+  =============================== */
+
+  window.renderAll = renderAll;
+  window.renderPrediction = renderAll;
+  window.CHAPPY_RENDER_VERSION = RENDER_VERSION;
+
+  /* ===============================
+    読み込み確認
+  =============================== */
+
+  console.info(
+    `[Chappy BoatRace AI] render.js loaded: ${RENDER_VERSION}`
+  );
 
 })();
