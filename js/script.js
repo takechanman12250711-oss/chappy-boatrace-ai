@@ -88,15 +88,14 @@
       const ai = createAISafe(data);
       const odds = data?.odds || null;
 
+            console.log("✅ prediction確認", prediction);
+
+      if (!prediction || typeof prediction !== "object") {
+        throw new Error("prediction.js から有効な予想データが返っていません。");
+      }
+
       if (typeof window.renderAll === "function") {
-        window.renderAll(data, {
-          prediction,
-          theory,
-          ai,
-          odds,
-          stats: loadStatsSafe(),
-          history: loadHistorySafe()
-        });
+        window.renderAll(prediction);
       } else {
         throw new Error("renderAll() が見つかりません。render.jsを確認してください。");
       }
