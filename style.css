@@ -1810,3 +1810,54 @@ body {
     font-size: 10px;
   }
 }
+/* =========================================================
+  AI買い目ランキング 圧縮表示
+========================================================= */
+
+.ticket-ranking-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ticket-rank-card {
+  padding: 6px 7px;
+  border-radius: 10px;
+}
+
+.ticket-rank-head {
+  gap: 6px;
+}
+
+.ticket-rank-no {
+  min-width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.ticket-rank-ticket {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.ticket-rank-tags {
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.ticket-rank-tags .info-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+}
+
+.ticket-rank-comment {
+  font-size: 10px;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+@media (max-width: 360px) {
+  .ticket-ranking-list {
+    grid-template-columns: 1fr;
+  }
+}
