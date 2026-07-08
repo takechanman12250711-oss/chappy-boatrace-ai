@@ -111,11 +111,24 @@
   =============================== */
 
   function safeText(value, fallback = "-") {
-    if (value === null || value === undefined || value === "") {
-      return fallback;
-    }
-    return String(value);
+  if (value === null || value === undefined || value === "") {
+    return fallback;
   }
+
+  if (typeof value === "object") {
+    if (value.name) return String(value.name);
+    if (value.label) return String(value.label);
+    if (value.text) return String(value.text);
+    if (value.comment) return String(value.comment);
+    if (value.score !== undefined) return String(value.score);
+    if (value.value !== undefined) return String(value.value);
+    if (value.number !== undefined) return String(value.number);
+    if (value.no !== undefined) return String(value.no);
+    return "-";
+  }
+
+  return String(value);
+}
 
   function safeNum(value, fallback = 0) {
     const n = Number(value);
@@ -866,28 +879,36 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
   }
 
   function renderFormationItem(item, type) {
-    const ticket = item.ticket || "-";
+  const ticket = item.ticket || "-";
 
-    return `
-      <article class="formation-item ${escapeHtml(type)}">
-        <div class="formation-ticket">
-          ${renderTicketText(ticket)}
-        </div>
+  const score =
+    item.score !== undefined &&
+    item.score !== null &&
+    item.score !== "" &&
+    item.score !== "undefined"
+      ? item.score
+      : "";
 
-        <div class="formation-meta">
-          ${item.label ? tag(item.label, type) : ""}
-          ${item.score !== "" ? tag(`評価 ${item.score}`, "score") : ""}
-          ${item.odds ? tag(`合成 ${item.odds}`, "odds") : ""}
-        </div>
+  return `
+    <article class="formation-item ${escapeHtml(type)}">
+      <div class="formation-ticket">
+        ${renderTicketText(ticket)}
+      </div>
 
-        ${
-          item.reason
-            ? `<p class="formation-reason">${escapeHtml(item.reason)}</p>`
-            : ""
-        }
-      </article>
-    `;
-  }
+      <div class="formation-meta">
+        ${item.label ? tag(item.label, type) : ""}
+        ${score !== "" ? tag(`評価 ${score}`, "score") : ""}
+        ${item.odds ? tag(`合成 ${item.odds}`, "odds") : ""}
+      </div>
+
+      ${
+        item.reason
+          ? `<p class="formation-reason">${escapeHtml(item.reason)}</p>`
+          : ""
+      }
+    </article>
+  `;
+}
 
   function renderTicketText(ticket) {
     const text = safeText(ticket);
@@ -1225,11 +1246,20 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
   =============================== */
 
   function renderFinalComment(prediction) {
-    const finalComment =
-      prediction.finalComment ||
-      prediction.comment ||
-      prediction.finalText ||
-      "";
+     const finalCommentRaw =
+  prediction.finalComment ||
+  prediction.comment ||
+  prediction.finalText ||
+  "";
+
+const finalComment =
+  typeof finalCommentRaw === "object"
+    ? finalCommentRaw.text ||
+      finalCommentRaw.comment ||
+      finalCommentRaw.summary ||
+      finalCommentRaw.final ||
+      ""
+    : finalCommentRaw;
 
     const finalAi = prediction.finalAi || {};
     const raceFlow = prediction.raceFlow || {};
