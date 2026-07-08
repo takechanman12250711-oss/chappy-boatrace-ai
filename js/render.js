@@ -403,20 +403,21 @@
         "-";
 
       return `
-        <tr>
-          <td>${boatBadge(no, "small")}</td>
-          <td class="v3-entry-name">
-            <strong style="color:${boatColor(no).border};">${escapeHtml(name)}</strong>
-            ${grade ? `<span>${escapeHtml(grade)}</span>` : ""}
-          </td>
-          <td>${escapeHtml(st)}</td>
-          <td>
-            <strong>${escapeHtml(motor)}</strong>
-            ${motorRate ? `<span>${escapeHtml(motorRate)}</span>` : ""}
-          </td>
-          <td>${escapeHtml(local)}</td>
-        </tr>
-      `;
+  <tr>
+    <td>${boatBadge(no, "small")}</td>
+
+    <td class="v3-entry-name">
+      <strong style="color:${boatColor(no).border};">${escapeHtml(name)}</strong>
+      ${grade ? `<span>${escapeHtml(grade)}</span>` : ""}
+    </td>
+
+    <td>${escapeHtml(st)}</td>
+
+    <td>${escapeHtml(motor)}</td>
+
+    <td>${escapeHtml(local)}</td>
+  </tr>
+`;
     }).join("");
 
     const body = `
@@ -425,10 +426,10 @@
          <thead>
            <tr>
              <th>艇番</th>
-             <th>選手名</th>
-             <th>平均ST</th>
-             <th>モーター</th>
-           <th>当地</th>
+<th>選手名</th>
+<th>平均ST</th>
+<th>モーター</th>
+<th>当地勝率</th>
           </tr>
 　　　　　　</thead>
           <tbody>
