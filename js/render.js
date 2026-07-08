@@ -1,95 +1,61 @@
 /* =========================================================
   チャッピーボートレースAI
-  render.js 完全版 Part 1-1 / 6
+  render.js 完成版UI v3 Part 1 / 8
 
   役割：
-  - prediction.js の返却データ専用の描画ファイル
+  - prediction.js の返却データを表示する描画専用ファイル
   - AI計算・予想ロジックは書かない
-  - renderAll(prediction) を公開する
+  - 「ボートレース新聞をスマホで読む感覚」を作る
 
-  UI方針：
-  - ボートレース新聞をスマホで読む感覚
-  - 見やすさ最優先
-  - 情報量は減らさない
+  公開関数：
+  - window.renderAll(prediction)
+  - window.renderPrediction(prediction)
 ========================================================= */
 
 (function () {
   "use strict";
 
-  /* ===============================
-    バージョン
-  =============================== */
-
-  const RENDER_VERSION = "render-v2.0.0";
-
-  /* ===============================
-    艇カラー
-  =============================== */
+  const RENDER_VERSION = "render-ui-v3.0.0";
 
   const BOAT_COLORS = {
-    1: {
-      name: "白",
-      short: "白",
-      bg: "#ffffff",
-      text: "#111111",
-      border: "#cfcfcf",
-      soft: "#f7f7f7"
-    },
-    2: {
-      name: "黒",
-      short: "黒",
-      bg: "#111111",
-      text: "#ffffff",
-      border: "#111111",
-      soft: "#eeeeee"
-    },
-    3: {
-      name: "赤",
-      short: "赤",
-      bg: "#e53935",
-      text: "#ffffff",
-      border: "#e53935",
-      soft: "#fff0f0"
-    },
-    4: {
-      name: "青",
-      short: "青",
-      bg: "#1e88e5",
-      text: "#ffffff",
-      border: "#1e88e5",
-      soft: "#eef6ff"
-    },
-    5: {
-      name: "黄",
-      short: "黄",
-      bg: "#fdd835",
-      text: "#111111",
-      border: "#fbc02d",
-      soft: "#fffbe6"
-    },
-    6: {
-      name: "緑",
-      short: "緑",
-      bg: "#43a047",
-      text: "#ffffff",
-      border: "#43a047",
-      soft: "#eefaf1"
-    }
+    1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
+    2: { name: "黒", bg: "#111111", text: "#ffffff", border: "#111111" },
+    3: { name: "赤", bg: "#e53935", text: "#ffffff", border: "#e53935" },
+    4: { name: "青", bg: "#1e88e5", text: "#ffffff", border: "#1e88e5" },
+    5: { name: "黄", bg: "#fdd835", text: "#111111", border: "#fbc02d" },
+    6: { name: "緑", bg: "#43a047", text: "#ffffff", border: "#43a047" }
   };
 
-  const MARK_LABELS = {
+  const ROLE_LABELS = {
     honmei: "◎ 本命",
+    main: "◎ 本命",
     taikou: "○ 対抗",
+    rival: "○ 対抗",
     ana: "▲ 穴",
+    hole: "▲ 穴",
     osa: "△ 押さえ",
-    osaee: "△ 押さえ",
+    osae: "△ 押さえ",
+    safety: "△ 押さえ",
     manshu: "💣 万舟",
-    nokoshi: "残し",
-    hiroi: "拾い"
+    longshot: "💣 万舟",
+    nokoshi: "👀 残し",
+    hiroi: "🎯 拾い"
+  };
+
+  const THEORY_LABELS = {
+    attack: "🔥 攻め艇",
+    flow: "🌊 展開艇",
+    road: "⚡ 道中艇",
+    michu: "⚡ 道中艇",
+    local: "🏠 当地巧者",
+    slit: "⏱ スリット",
+    doubleTime: "🏁 ダブルタイム",
+    shinsam: "📈 新サム",
+    odds: "💹 合成オッズ"
   };
 
   /* ===============================
-    DOM取得
+    DOM
   =============================== */
 
   function $(id) {
@@ -111,26 +77,35 @@
   =============================== */
 
   function safeText(value, fallback = "-") {
-  if (value === null || value === undefined || value === "") {
-    return fallback;
-  }
+    if (value === null || value === undefined || value === "") {
+      return fallback;
+    }
 
-  if (typeof value === "object") {
-    if (value.name) return String(value.name);
-    if (value.label) return String(value.label);
-    if (value.text) return String(value.text);
-    if (value.comment) return String(value.comment);
-    if (value.score !== undefined) return String(value.score);
-    if (value.value !== undefined) return String(value.value);
-    if (value.number !== undefined) return String(value.number);
-    if (value.no !== undefined) return String(value.no);
-    return "-";
-  }
+    if (typeof value === "object") {
+      if (value.name !== undefined) return String(value.name);
+      if (value.label !== undefined) return String(value.label);
+      if (value.text !== undefined) return String(value.text);
+      if (value.comment !== undefined) return String(value.comment);
+      if (value.summary !== undefined) return String(value.summary);
+      if (value.score !== undefined) return String(value.score);
+      if (value.value !== undefined) return String(value.value);
+      if (value.number !== undefined) return String(value.number);
+      if (value.no !== undefined) return String(value.no);
+      return fallback;
+    }
 
-  return String(value);
-}
+    return String(value);
+  }
 
   function safeNum(value, fallback = 0) {
+    if (value === null || value === undefined || value === "") return fallback;
+
+    if (typeof value === "object") {
+      if (value.score !== undefined) value = value.score;
+      else if (value.value !== undefined) value = value.value;
+      else if (value.percent !== undefined) value = value.percent;
+    }
+
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
   }
@@ -144,157 +119,120 @@
       .replace(/'/g, "&#039;");
   }
 
-  function percent(value) {
-    if (value === null || value === undefined || value === "") return "-";
-    const n = Number(value);
-    if (!Number.isFinite(n)) return safeText(value);
-    return `${Math.round(n)}%`;
-  }
-
-  function fixed(value, digit = 1) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return "-";
-    return n.toFixed(digit);
-  }
-
-  function signed(value) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return "-";
-    if (n > 0) return `+${n}`;
-    return String(n);
-  }
-
   function arrayify(value) {
     if (!value) return [];
     if (Array.isArray(value)) return value;
     return [value];
   }
 
+  function percent(value) {
+    const n = safeNum(value, null);
+    if (n === null) return "-";
+    return `${Math.round(n)}%`;
+  }
+
+  function signed(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return safeText(value);
+    return n > 0 ? `+${n}` : String(n);
+  }
+
+  function limitText(value, max = 70) {
+    const text = safeText(value, "");
+    if (!text) return "";
+    return text.length > max ? `${text.slice(0, max)}…` : text;
+  }
+
   /* ===============================
-    艇番表示
+    艇番
   =============================== */
 
   function boatColor(no) {
     return BOAT_COLORS[Number(no)] || BOAT_COLORS[1];
   }
 
-  function boatBadge(no, extraClass = "") {
-    const c = boatColor(no);
+  function boatBadge(no, size = "") {
     const n = safeText(no);
+    const c = boatColor(n);
 
     return `
-      <span class="boat-badge boat-${escapeHtml(n)} ${extraClass}"
-        style="
-          background:${c.bg};
-          color:${c.text};
-          border:1px solid ${c.border};
-        ">
+      <span class="v3-boat-badge ${size ? `v3-boat-${escapeHtml(size)}` : ""}"
+        style="background:${c.bg};color:${c.text};border-color:${c.border};">
         ${escapeHtml(n)}
       </span>
     `;
   }
 
-  function boatName(no, name) {
+  function boatTitle(no, name) {
     const c = boatColor(no);
 
     return `
-      <span class="boat-name" style="color:${c.border};">
+      <span class="v3-boat-title" style="color:${c.border};">
         ${boatBadge(no)}
-        <span>${escapeHtml(name || `${no}号艇`)}</span>
+        <strong>${escapeHtml(name || `${safeText(no)}号艇`)}</strong>
       </span>
     `;
   }
 
-  function boatLine(no, name, subText = "") {
-    return `
-      <div class="boat-line">
-        ${boatName(no, name)}
-        ${
-          subText
-            ? `<span class="boat-line-sub">${escapeHtml(subText)}</span>`
-            : ""
-        }
-      </div>
-    `;
+  function ticketArrow(ticket) {
+    const text = safeText(ticket);
+    const html = text
+      .replace(/-/g, " → ")
+      .replace(/[1-6]/g, (n) => boatBadge(n, "mini"));
+
+    return `<span class="v3-ticket-arrow">${html}</span>`;
   }
 
   /* ===============================
-    共通レイアウト
+    共通UI
   =============================== */
 
-  function section(title, body, options = {}) {
-    const icon = options.icon || "";
-    const className = options.className || "";
-    const note = options.note || "";
-
+  function section(title, body, icon = "", className = "") {
     return `
-      <section class="render-section ${className}">
-        <div class="section-head">
+      <section class="v3-section ${className}">
+        <div class="v3-section-head">
           <h2>${icon ? `${icon} ` : ""}${escapeHtml(title)}</h2>
-          ${note ? `<p>${escapeHtml(note)}</p>` : ""}
         </div>
-        <div class="section-body">
+        <div class="v3-section-body">
           ${body || emptyBox("表示データがありません")}
         </div>
       </section>
     `;
   }
 
-  function divider(label = "") {
-    return `
-      <div class="render-divider">
-        ${label ? `<span>${escapeHtml(label)}</span>` : ""}
-      </div>
-    `;
+  function divider() {
+    return `<div class="v3-divider"></div>`;
   }
 
-  function miniCard(label, value, sub = "") {
-    return `
-      <div class="mini-card">
-        <div class="mini-card-label">${escapeHtml(label)}</div>
-        <div class="mini-card-value">${escapeHtml(value)}</div>
-        ${sub ? `<div class="mini-card-sub">${escapeHtml(sub)}</div>` : ""}
-      </div>
-    `;
-  }
-
-  function emptyBox(text = "データがありません") {
-    return `
-      <div class="empty-box">
-        ${escapeHtml(text)}
-      </div>
-    `;
+  function emptyBox(text) {
+    return `<div class="v3-empty">${escapeHtml(text || "データがありません")}</div>`;
   }
 
   function tag(text, type = "normal") {
-    return `
-      <span class="info-tag tag-${escapeHtml(type)}">
-        ${escapeHtml(text)}
-      </span>
-    `;
+    if (!text) return "";
+    return `<span class="v3-tag v3-tag-${escapeHtml(type)}">${escapeHtml(text)}</span>`;
   }
 
-  function scorePill(score, label = "指数") {
-    const n = safeNum(score, null);
-    const value = n === null ? "-" : Math.round(n);
-
+  function scoreBox(label, value) {
     return `
-      <div class="score-pill">
+      <div class="v3-score-box">
         <span>${escapeHtml(label)}</span>
         <strong>${escapeHtml(value)}</strong>
       </div>
     `;
   }
 
-  function strengthBar(value, max = 100) {
-    const n = Math.max(0, Math.min(max, safeNum(value, 0)));
-    const rate = max > 0 ? Math.round((n / max) * 100) : 0;
+  function starRating(value) {
+    const n = safeNum(value, 0);
+    const stars = Math.max(0, Math.min(5, Math.round(n / 20)));
+    return "★★★★★".slice(0, stars) + "☆☆☆☆☆".slice(0, 5 - stars);
+  }
 
-    return `
-      <div class="strength-bar">
-        <div class="strength-bar-fill" style="width:${rate}%"></div>
-      </div>
-    `;
+  function levelLabel(value, highLabel, midLabel, lowLabel) {
+    const n = safeNum(value, 0);
+    if (n >= 75) return highLabel;
+    if (n >= 45) return midLabel;
+    return lowLabel;
   }
     /* ===============================
     メイン描画
@@ -306,44 +244,39 @@
     if (!prediction || typeof prediction !== "object") {
       root.innerHTML = renderError(
         "予想データがありません",
-        "prediction.js から有効な prediction オブジェクトが返っていません。"
+        "prediction.js から prediction オブジェクトが返っていません。"
       );
       return;
     }
 
     const html = `
-      <div class="render-root" data-render-version="${escapeHtml(RENDER_VERSION)}">
+      <div class="v3-root" data-render-version="${escapeHtml(RENDER_VERSION)}">
 
         ${renderRaceInfo(prediction)}
-
         ${divider()}
 
         ${renderEntryTable(prediction)}
-
         ${divider()}
 
         ${renderAiSummary(prediction)}
-
         ${divider()}
 
-        ${renderMainSheet(prediction)}
-
+        ${renderNewspaperSheet(prediction, "main")}
         ${divider()}
 
-        ${renderMainFormation(prediction)}
-
+        ${renderFormationSection(prediction, "main")}
         ${divider()}
 
-        ${renderManshuSheet(prediction)}
-
+        ${renderNewspaperSheet(prediction, "manshu")}
         ${divider()}
 
-        ${renderManshuFormation(prediction)}
-
+        ${renderFormationSection(prediction, "manshu")}
         ${divider()}
 
         ${renderTicketRanking(prediction)}
+        ${divider()}
 
+        ${renderTheoryPanel(prediction)}
         ${divider()}
 
         ${renderFinalComment(prediction)}
@@ -356,13 +289,13 @@
 
   function renderError(title, message) {
     return `
-      <div class="render-root">
-        <section class="render-section error-section">
-          <div class="section-head">
+      <div class="v3-root">
+        <section class="v3-section v3-error">
+          <div class="v3-section-head">
             <h2>⚠️ ${escapeHtml(title)}</h2>
           </div>
-          <div class="section-body">
-            <p>${escapeHtml(message)}</p>
+          <div class="v3-section-body">
+            ${escapeHtml(message)}
           </div>
         </section>
       </div>
@@ -379,40 +312,48 @@
     const weather = prediction.weather || {};
     const exhibition = prediction.exhibition || {};
 
-    const title =
-      race.title ||
-      race.raceName ||
-      `${safeText(race.place || venue.name || venue.venueName, "開催場")} ${safeText(
-        race.raceNo || race.rno,
-        "-"
-      )}R`;
+    const place = race.place || venue.name || venue.venueName || "-";
+    const raceNo = race.raceNo || race.rno || "-";
+    const date = race.date || prediction.date || "-";
 
-    const cards = `
-      <div class="race-info-grid">
-        ${miniCard("場", race.place || venue.name || venue.venueName || "-")}
-        ${miniCard("R", race.raceNo || race.rno || "-", race.distance ? `${race.distance}m` : "")}
-        ${miniCard("締切", race.deadline || race.closeTime || "-")}
-        ${miniCard("条件", race.grade || race.className || race.condition || "-")}
-        ${miniCard("風", weather.wind || weather.windText || "-", weather.windSpeed ? `${weather.windSpeed}m` : "")}
-        ${miniCard("波", weather.wave || weather.waveHeight || "-", weather.water || "")}
-        ${miniCard("天候", weather.weather || weather.condition || "-")}
-        ${miniCard("展示", exhibition.status || exhibition.comment || "-", exhibition.updatedAt || "")}
+    const info = [
+      { label: "場", value: place },
+      { label: "R", value: raceNo },
+      { label: "日付", value: date },
+      { label: "締切", value: race.deadline || race.closeTime || "-" },
+      { label: "風", value: weather.wind || weather.windText || "-", sub: weather.windSpeed ? `${weather.windSpeed}m` : "" },
+      { label: "波", value: weather.wave || weather.waveHeight || "-" },
+      { label: "天候", value: weather.weather || weather.condition || "-" },
+      { label: "展示", value: exhibition.status || exhibition.comment || "展示補正" }
+    ];
+
+    const note =
+      weather.comment ||
+      venue.feature ||
+      race.comment ||
+      "展示・ST・場傾向を優先して評価。";
+
+    const body = `
+      <div class="v3-race-grid">
+        ${info.map((item) => renderInfoCell(item)).join("")}
+      </div>
+
+      <div class="v3-note">
+        ${escapeHtml(limitText(note, 110))}
       </div>
     `;
 
-    const note = [
-      race.date ? `日付：${race.date}` : "",
-      venue.feature ? `場特徴：${venue.feature}` : "",
-      weather.comment ? `水面：${weather.comment}` : ""
-    ]
-      .filter(Boolean)
-      .join(" / ");
+    return section("レース情報", body, "🚤", "v3-race-section");
+  }
 
-    return section("レース情報", cards, {
-      icon: "🚤",
-      note,
-      className: "race-info-section"
-    });
+  function renderInfoCell(item) {
+    return `
+      <div class="v3-info-cell">
+        <span>${escapeHtml(item.label)}</span>
+        <strong>${escapeHtml(item.value)}</strong>
+        ${item.sub ? `<em>${escapeHtml(item.sub)}</em>` : ""}
+      </div>
+    `;
   }
 
   /* ===============================
@@ -429,48 +370,63 @@
       [];
 
     if (!Array.isArray(entries) || entries.length === 0) {
-      return section("出走表", emptyBox("出走表データがありません"), {
-        icon: "👥",
-        className: "entry-section"
-      });
+      return section("出走表", emptyBox("出走表データがありません"), "👥", "v3-entry-section");
     }
 
-    const rows = entries
-      .map((e, index) => {
-        const no = e.no || e.boatNo || e.waku || e.course || index + 1;
-        const name = e.name || e.racerName || e.player || "-";
-        const grade = e.grade || e.class || e.rank || "-";
-        const st = e.st || e.avgSt || e.averageST || "-";
-        const motor = e.motorNo || e.motor || e.motorNumber || "-";
-        const boat = e.boatNo2 || e.boat || e.boatNumber || "-";
-        const local = e.localRate || e.venueRate || e.courseRate || "-";
+    const rows = entries.map((e, index) => {
+      const no = e.no || e.waku || e.course || e.boatNo || index + 1;
+      const name = e.name || e.racerName || e.player || "-";
+      const grade = e.grade || e.class || e.rank || "";
+      const st = e.st || e.avgSt || e.averageST || "-";
 
-        return `
-          <tr>
-            <td class="td-boat">${boatBadge(no)}</td>
-            <td class="td-name">
-              <strong style="color:${boatColor(no).border};">${escapeHtml(name)}</strong>
-              <span>${escapeHtml(grade)}</span>
-            </td>
-            <td>${escapeHtml(st)}</td>
-            <td>${escapeHtml(motor)}</td>
-            <td>${escapeHtml(boat)}</td>
-            <td>${escapeHtml(local)}</td>
-          </tr>
-        `;
-      })
-      .join("");
+      const motorObj = e.motor || e.motorInfo || {};
+      const motor =
+        e.motorNo ||
+        e.motorNumber ||
+        motorObj.no ||
+        motorObj.number ||
+        "-";
+
+      const motorRate =
+        e.motorRate ||
+        e.motor2Rate ||
+        motorObj.rate ||
+        motorObj.twoRate ||
+        "";
+
+      const local =
+        e.localRate ||
+        e.venueRate ||
+        e.courseRate ||
+        e.local ||
+        "-";
+
+      return `
+        <tr>
+          <td>${boatBadge(no, "small")}</td>
+          <td class="v3-entry-name">
+            <strong style="color:${boatColor(no).border};">${escapeHtml(name)}</strong>
+            ${grade ? `<span>${escapeHtml(grade)}</span>` : ""}
+          </td>
+          <td>${escapeHtml(st)}</td>
+          <td>
+            <strong>${escapeHtml(motor)}</strong>
+            ${motorRate ? `<span>${escapeHtml(motorRate)}</span>` : ""}
+          </td>
+          <td>${escapeHtml(local)}</td>
+        </tr>
+      `;
+    }).join("");
 
     const body = `
-      <div class="table-scroll">
-        <table class="entry-table">
+      <div class="v3-table-wrap">
+        <table class="v3-entry-table">
           <thead>
             <tr>
               <th>艇</th>
               <th>選手</th>
               <th>ST</th>
               <th>モ</th>
-              <th>ボ</th>
               <th>当地</th>
             </tr>
           </thead>
@@ -481,10 +437,7 @@
       </div>
     `;
 
-    return section("出走表", body, {
-      icon: "👥",
-      className: "entry-section"
-    });
+    return section("出走表", body, "👥", "v3-entry-section");
   }
     /* ===============================
     3. AI総合
@@ -501,154 +454,239 @@
       confidence.value ??
       confidence.percent ??
       prediction.confidenceScore ??
-      "-";
+      0;
 
     const manshuScore =
       manshuPower.score ??
       manshuPower.value ??
       manshuPower.percent ??
       prediction.manshuScore ??
-      "-";
+      0;
 
-    const aiText =
+    const summary =
       finalAi.summary ||
       finalAi.comment ||
       finalAi.text ||
       prediction.aiComment ||
-      "AIまとめデータがありません";
+      "AIまとめデータがありません。";
 
-    const cards = `
-      <div class="ai-summary-grid">
-        <div class="ai-score-card">
-          <div class="ai-score-label">信頼度</div>
-          <div class="ai-score-value">${escapeHtml(percent(confidenceScore))}</div>
-          ${strengthBar(confidenceScore)}
-          <p>${escapeHtml(confidence.reason || confidence.comment || "")}</p>
-        </div>
+    const body = `
+      <div class="v3-ai-grid">
 
-        <div class="ai-score-card pink">
-          <div class="ai-score-label">万舟期待度</div>
-          <div class="ai-score-value">${escapeHtml(percent(manshuScore))}</div>
-          ${strengthBar(manshuScore)}
-          <p>${escapeHtml(manshuPower.reason || manshuPower.comment || "")}</p>
-        </div>
+        ${renderAiMeter(
+          "本命信頼度",
+          confidenceScore,
+          levelLabel(confidenceScore, "高信頼", "標準", "不安定"),
+          confidence.reason || confidence.comment || ""
+        )}
+
+        ${renderAiMeter(
+          "万舟期待度",
+          manshuScore,
+          levelLabel(manshuScore, "波乱注意", "中穴気配", "本線寄り"),
+          manshuPower.reason || manshuPower.comment || ""
+        )}
+
       </div>
 
-      <div class="ai-comment-box">
+      <div class="v3-ai-summary-box">
         <h3>AIまとめ</h3>
-        <p>${escapeHtml(aiText)}</p>
+        <p>${escapeHtml(summary)}</p>
       </div>
 
-      ${renderIndexSummary(indexes)}
+      ${renderIndexPanel(indexes)}
     `;
 
-    return section("AI総合", cards, {
-      icon: "📊",
-      className: "ai-summary-section"
-    });
+    return section("AI総合", body, "📊", "v3-ai-section");
   }
 
-  function renderIndexSummary(indexes) {
-    if (!indexes || typeof indexes !== "object") {
-      return "";
-    }
+  function renderAiMeter(label, score, level, comment) {
+    return `
+      <div class="v3-ai-meter">
+        <div class="v3-ai-meter-head">
+          <span>${escapeHtml(label)}</span>
+          <em>${escapeHtml(level)}</em>
+        </div>
 
-    const items = Object.entries(indexes)
-      .filter(([, value]) => value !== null && value !== undefined)
-      .slice(0, 12)
-      .map(([key, value]) => {
-        const label = normalizeIndexLabel(key);
-        const text =
-          typeof value === "object"
-            ? value.score ?? value.value ?? value.comment ?? "-"
-            : value;
+        <div class="v3-stars">
+          ${escapeHtml(starRating(score))}
+        </div>
 
-        return miniCard(label, text);
-      })
-      .join("");
+        <div class="v3-ai-percent">
+          ${escapeHtml(percent(score))}
+        </div>
 
-    if (!items) return "";
+        <div class="v3-ai-bar">
+          <div style="width:${Math.max(0, Math.min(100, safeNum(score, 0)))}%"></div>
+        </div>
+
+        ${
+          comment
+            ? `<p>${escapeHtml(limitText(comment, 60))}</p>`
+            : ""
+        }
+      </div>
+    `;
+  }
+
+  function renderIndexPanel(indexes) {
+    if (!indexes || typeof indexes !== "object") return "";
+
+    const rows = [];
+
+    addIndexRows(rows, indexes.attackRanking, "🔥 攻め");
+    addIndexRows(rows, indexes.tenkaiRanking || indexes.flowRanking, "🌊 展開");
+    addIndexRows(rows, indexes.michuRanking || indexes.roadRanking, "⚡ 道中");
+    addIndexRows(rows, indexes.localRanking, "🏠 当地");
+    addIndexRows(rows, indexes.expectedRanking, "🎯 期待");
+
+    if (rows.length === 0) return "";
 
     return `
-      <div class="index-summary">
+      <div class="v3-index-panel">
         <h3>指数サマリー</h3>
-        <div class="mini-card-grid">
-          ${items}
+        <div class="v3-index-grid">
+          ${rows.slice(0, 10).join("")}
         </div>
       </div>
     `;
   }
 
-  function normalizeIndexLabel(key) {
-    const map = {
-      attack: "攻め指数",
-      flow: "展開指数",
-      road: "道中指数",
-      local: "当地指数",
-      start: "ST指数",
-      exhibition: "展示指数",
-      motor: "モーター",
-      weather: "水面",
-      venue: "場傾向",
-      stability: "安定",
-      power: "機力",
-      odds: "オッズ"
-    };
+  function addIndexRows(rows, list, label) {
+    const items = arrayify(list).slice(0, 2);
 
-    return map[key] || key;
+    items.forEach((item) => {
+      if (!item) return;
+
+      if (typeof item === "number" || typeof item === "string") {
+        rows.push(`
+          <div class="v3-index-cell">
+            <span>${escapeHtml(label)}</span>
+            <strong>${boatBadge(item, "mini")}</strong>
+          </div>
+        `);
+        return;
+      }
+
+      const no = item.no || item.boatNo || item.waku || item.course || item.number;
+      const score = item.score ?? item.value ?? item.point ?? "";
+
+      rows.push(`
+        <div class="v3-index-cell">
+          <span>${escapeHtml(label)}</span>
+          <strong>
+            ${boatBadge(no, "mini")}
+            ${score !== "" ? escapeHtml(score) : ""}
+          </strong>
+        </div>
+      `);
+    });
   }
-
-  /* ===============================
-    4. 本命シート
+    /* ===============================
+    4. 新聞シート共通
   =============================== */
 
-  function renderMainSheet(prediction) {
+  function renderNewspaperSheet(prediction, mode) {
+    if (mode === "manshu") {
+      return renderManshuNewspaper(prediction);
+    }
+
+    return renderMainNewspaper(prediction);
+  }
+
+  function renderMainNewspaper(prediction) {
     const sheet = prediction.mainSheet || {};
 
-    const honmei = sheet.honmei || sheet.main || sheet["◎"] || sheet.top;
-const taikou = sheet.taikou || sheet.rival || sheet["○"] || sheet.second;
-const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
-    const osa =
-      sheet.osa ||
-      sheet.osae ||
-      sheet.support ||
-      sheet.delta ||
-      sheet["△"];
-
     const items = [
-      normalizeSheetItem(honmei, "honmei"),
-      normalizeSheetItem(taikou, "taikou"),
-      normalizeSheetItem(ana, "ana"),
-      normalizeSheetItem(osa, "osa")
+      normalizeSheetItem(sheet.honmei || sheet.main || sheet["◎"] || sheet.top, "honmei"),
+      normalizeSheetItem(sheet.taikou || sheet.rival || sheet["○"] || sheet.second, "taikou"),
+      normalizeSheetItem(sheet.ana || sheet.hole || sheet["▲"] || sheet.third, "ana"),
+      normalizeSheetItem(sheet.osa || sheet.osae || sheet["△"] || sheet.support, "osa")
     ].filter(Boolean);
 
     if (items.length === 0 && Array.isArray(sheet.items)) {
       sheet.items.forEach((item, index) => {
         const roles = ["honmei", "taikou", "ana", "osa"];
-        items.push(normalizeSheetItem(item, item.role || roles[index] || "osa"));
+        const normalized = normalizeSheetItem(item, item.role || roles[index] || "osa");
+        if (normalized) items.push(normalized);
       });
     }
 
     if (items.length === 0) {
-      return section("本命シート", emptyBox("本命シートデータがありません"), {
-        icon: "🔵",
-        className: "main-sheet-section"
-      });
+      return section("本命新聞", emptyBox("本命シートデータがありません"), "📰", "v3-main-newspaper");
     }
 
     const body = `
-      <div class="sheet-card-list main-sheet-list">
-        ${items.map(renderMainSheetCard).join("")}
+      <div class="v3-newspaper-list">
+        ${items.map(renderNewspaperCard).join("")}
       </div>
     `;
 
-    return section("本命シート", body, {
-      icon: "🔵",
-      className: "main-sheet-section"
-    });
+    return section("本命新聞", body, "📰", "v3-main-newspaper");
   }
 
-  function normalizeSheetItem(item, role = "osa") {
+  function renderManshuNewspaper(prediction) {
+    const sheet = prediction.manshuSheet || {};
+
+    const candidates = arrayify(
+      sheet.candidates ||
+      sheet.items ||
+      sheet.manshu ||
+      sheet.longshot ||
+      []
+    );
+
+    const nokoshi = arrayify(
+      sheet.nokoshi ||
+      sheet.remain ||
+      sheet.keep ||
+      sheet.nokoshiCandidates ||
+      []
+    );
+
+    const hiroi = arrayify(
+      sheet.hiroi ||
+      sheet.pickup ||
+      sheet.pick ||
+      sheet.hiroiCandidates ||
+      []
+    );
+
+    const items = [
+      ...candidates.map((item) => normalizeSheetItem(item, "manshu")),
+      ...nokoshi.map((item) => normalizeSheetItem(item, "nokoshi")),
+      ...hiroi.map((item) => normalizeSheetItem(item, "hiroi"))
+    ].filter(Boolean);
+
+    const comment =
+      sheet.comment ||
+      sheet.reason ||
+      sheet.text ||
+      sheet.summary ||
+      "";
+
+    if (items.length === 0 && !comment) {
+      return section("万舟新聞", emptyBox("万舟シートデータがありません"), "🌸", "v3-manshu-newspaper");
+    }
+
+    const body = `
+      ${
+        items.length
+          ? `<div class="v3-newspaper-list">${items.map(renderNewspaperCard).join("")}</div>`
+          : ""
+      }
+
+      ${
+        comment
+          ? `<div class="v3-note v3-manshu-note">${escapeHtml(comment)}</div>`
+          : ""
+      }
+    `;
+
+    return section("万舟新聞", body, "🌸", "v3-manshu-newspaper");
+  }
+
+  function normalizeSheetItem(item, role) {
     if (!item) return null;
 
     if (typeof item === "number" || typeof item === "string") {
@@ -656,7 +694,8 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
         role,
         no: item,
         name: `${item}号艇`,
-        score: "-",
+        score: "",
+        tags: [],
         buffs: [],
         debuffs: [],
         comment: ""
@@ -671,95 +710,123 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
       item.lane ||
       item.number;
 
+    const rawTags = [
+      item.type,
+      item.tactic,
+      item.style,
+      ...arrayify(item.tags || item.labels)
+    ].filter(Boolean);
+
     return {
       role: item.role || role,
       no,
       name: item.name || item.racerName || item.player || `${safeText(no)}号艇`,
-      score: item.score ?? item.index ?? item.point ?? item.value ?? "-",
+      score: item.score ?? item.index ?? item.point ?? item.value ?? "",
+      tags: normalizeTags(rawTags, item),
       buffs: arrayify(item.buffs || item.buff || item.plus || item.positive),
       debuffs: arrayify(item.debuffs || item.debuff || item.minus || item.negative),
       comment: item.comment || item.reason || item.text || item.shortComment || "",
-      tags: arrayify(item.tags || item.labels),
-      sub: item.sub || item.type || item.tactic || ""
+      sub: item.sub || item.type || item.tactic || item.style || ""
     };
   }
 
-  function renderMainSheetCard(item) {
-    const roleLabel = MARK_LABELS[item.role] || item.role || "評価";
-    const no = item.no;
-    const c = boatColor(no);
+  function normalizeTags(rawTags, item) {
+    const tags = [];
+
+    arrayify(rawTags).forEach((tagText) => {
+      const t = safeText(tagText, "");
+      if (!t) return;
+
+      if (t.includes("当地")) tags.push("🏠当地");
+      else if (t.includes("差し")) tags.push("⚡差し");
+      else if (t.includes("攻め")) tags.push("🔥攻め");
+      else if (t.includes("道中")) tags.push("⚡道中");
+      else if (t.includes("展開")) tags.push("🌊展開");
+      else if (t.includes("外")) tags.push("🌪外枠");
+      else if (t.includes("イン")) tags.push("🚤イン");
+      else tags.push(t);
+    });
+
+    const buffs = arrayify(item.buffs || item.buff || item.plus || item.positive)
+      .map((v) => safeText(v, ""))
+      .join(" ");
+
+    if (buffs.includes("当地") && !tags.includes("🏠当地")) tags.push("🏠当地");
+    if (buffs.includes("差し") && !tags.includes("⚡差し")) tags.push("⚡差し");
+    if (buffs.includes("攻め") && !tags.includes("🔥攻め")) tags.push("🔥攻め");
+    if (buffs.includes("展示") && !tags.includes("🚤展示")) tags.push("🚤展示");
+    if (buffs.includes("ST") && !tags.includes("⏱ST")) tags.push("⏱ST");
+
+    return [...new Set(tags)].slice(0, 5);
+  }
+
+  function renderNewspaperCard(item) {
+    const role = ROLE_LABELS[item.role] || item.role || "評価";
+    const c = boatColor(item.no);
 
     return `
-      <article class="sheet-card main-card" style="border-left-color:${c.border};">
-        <div class="sheet-card-head">
-          <div>
-            <div class="role-label">${escapeHtml(roleLabel)}</div>
-            ${boatLine(no, item.name, item.sub)}
-          </div>
-          ${scorePill(item.score, "AI指数")}
-        </div>
+      <article class="v3-paper-card" style="border-left-color:${c.border};">
 
-        ${renderBuffDebuff(item.buffs, item.debuffs)}
+        <div class="v3-paper-head">
+          <div class="v3-paper-title">
+            <span class="v3-role">${escapeHtml(role)}</span>
+            ${boatTitle(item.no, item.name)}
+          </div>
+
+          ${
+            item.score !== ""
+              ? `<div class="v3-paper-score"><span>AI</span><strong>${escapeHtml(Math.round(safeNum(item.score, 0)))}</strong></div>`
+              : ""
+          }
+        </div>
 
         ${
           item.tags && item.tags.length
-            ? `<div class="tag-row">${item.tags.map((t) => tag(t)).join("")}</div>`
+            ? `<div class="v3-tag-row">${item.tags.map((t) => tag(t, "paper")).join("")}</div>`
             : ""
         }
 
+        ${renderFactorLine(item.buffs, "plus")}
+        ${renderFactorLine(item.debuffs, "minus")}
+
         ${
           item.comment
-            ? `<p class="sheet-comment">${escapeHtml(item.comment)}</p>`
+            ? `<div class="v3-paper-comment"><strong>狙い</strong><p>${escapeHtml(limitText(item.comment, 85))}</p></div>`
             : ""
         }
+
       </article>
     `;
   }
 
-  function renderBuffDebuff(buffs, debuffs) {
-    const plus = arrayify(buffs);
-    const minus = arrayify(debuffs);
+  function renderFactorLine(list, type) {
+    const items = arrayify(list)
+      .map(formatFactor)
+      .filter(Boolean)
+      .slice(0, 4);
 
-    if (plus.length === 0 && minus.length === 0) {
-      return `
-        <div class="buff-debuff empty">
-          <span>⬆️ プラス要因：-</span>
-          <span>⬇️ マイナス要因：-</span>
-        </div>
-      `;
-    }
+    if (items.length === 0) return "";
+
+    const label = type === "plus" ? "⬆" : "⬇";
 
     return `
-      <div class="buff-debuff">
-        <div class="buff-list">
-          <strong>⬆️ プラス要因</strong>
-          ${
-            plus.length
-              ? plus.map((b) => `<span>${escapeHtml(formatFactor(b))}</span>`).join("")
-              : "<span>-</span>"
-          }
-        </div>
-
-        <div class="debuff-list">
-          <strong>⬇️ マイナス要因</strong>
-          ${
-            minus.length
-              ? minus.map((d) => `<span>${escapeHtml(formatFactor(d))}</span>`).join("")
-              : "<span>-</span>"
-          }
+      <div class="v3-factor-line v3-factor-${escapeHtml(type)}">
+        <span>${label}</span>
+        <div>
+          ${items.map((item) => tag(item, type)).join("")}
         </div>
       </div>
     `;
   }
 
   function formatFactor(value) {
-    if (!value) return "-";
+    if (!value) return "";
 
     if (typeof value === "string" || typeof value === "number") {
-      return value;
+      return safeText(value, "");
     }
 
-    const label = value.label || value.name || value.text || value.reason || "-";
+    const label = value.label || value.name || value.text || value.reason || "";
     const point =
       value.point !== undefined
         ? ` ${signed(value.point)}`
@@ -767,14 +834,31 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
           ? ` ${signed(value.score)}`
           : "";
 
-    return `${label}${point}`;
+    return `${label}${point}`.trim();
   }
     /* ===============================
-    5. 本線フォーメーション
+    5. フォーメーション
   =============================== */
 
-  function renderMainFormation(prediction) {
+  function renderFormationSection(prediction, mode) {
     const formation = prediction.formation || {};
+
+    if (mode === "manshu") {
+      const manshu =
+        formation.manshu ||
+        formation.longshot ||
+        formation.highPay ||
+        prediction.manshuFormation ||
+        [];
+
+      return section(
+        "万舟フォーメーション",
+        renderFormationBody(manshu, "manshu"),
+        "💣",
+        "v3-manshu-formation"
+      );
+    }
+
     const main =
       formation.main ||
       formation.honmei ||
@@ -790,27 +874,41 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
       prediction.safetyFormation ||
       [];
 
+    const hole =
+      formation.hole ||
+      formation.ana ||
+      formation.sub ||
+      [];
+
     const body = `
-      <div class="formation-block">
+      <div class="v3-formation-group">
         <h3>本線</h3>
-        ${renderFormationList(main, "main")}
+        ${renderFormationBody(main, "main")}
       </div>
 
-      <div class="formation-block">
-        <h3>安全押さえ</h3>
-        ${renderFormationList(safety, "safety")}
+      <div class="v3-formation-group">
+        <h3>押さえ</h3>
+        ${renderFormationBody(safety, "safety")}
       </div>
 
-      ${renderFormationComment(formation)}
+      ${
+        arrayify(hole).length
+          ? `
+            <div class="v3-formation-group">
+              <h3>穴</h3>
+              ${renderFormationBody(hole, "hole")}
+            </div>
+          `
+          : ""
+      }
+
+      ${renderFormationNote(formation)}
     `;
 
-    return section("本線フォーメーション", body, {
-      icon: "🎫",
-      className: "formation-section main-formation-section"
-    });
+    return section("本線フォーメーション", body, "🎫", "v3-main-formation");
   }
 
-  function renderFormationList(list, type = "main") {
+  function renderFormationBody(list, type) {
     const items = normalizeFormationList(list);
 
     if (items.length === 0) {
@@ -818,8 +916,8 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
     }
 
     return `
-      <div class="formation-list formation-${escapeHtml(type)}">
-        ${items.map((item) => renderFormationItem(item, type)).join("")}
+      <div class="v3-formation-list v3-formation-${escapeHtml(type)}">
+        ${items.map((item) => renderFormationRow(item, type)).join("")}
       </div>
     `;
   }
@@ -832,492 +930,430 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
     }
 
     if (Array.isArray(list)) {
-      return list.map((item) => {
-        if (typeof item === "string") {
-          return { ticket: item };
-        }
+      return list
+        .map((item) => {
+          if (!item) return null;
 
-        return {
-          ticket:
-            item.ticket ||
-            item.line ||
-            item.formation ||
-            item.bet ||
-            item.kumi ||
-            "",
-          label: item.label || item.type || item.rank || "",
-          reason: item.reason || item.comment || item.text || "",
-          odds: item.odds || item.syntheticOdds || item.gouseiOdds || "",
-          score: item.score ?? item.value ?? item.point ?? ""
-        };
-      });
+          if (typeof item === "string") {
+            return { ticket: item };
+          }
+
+          return {
+            ticket:
+              item.ticket ||
+              item.line ||
+              item.formation ||
+              item.bet ||
+              item.kumi ||
+              "",
+            label: item.label || item.type || item.rank || "",
+            score:
+              item.score !== undefined &&
+              item.score !== null &&
+              item.score !== "undefined"
+                ? item.score
+                : "",
+            odds:
+              item.odds ||
+              item.syntheticOdds ||
+              item.gouseiOdds ||
+              "",
+            reason:
+              item.reason ||
+              item.comment ||
+              item.text ||
+              ""
+          };
+        })
+        .filter(Boolean);
     }
 
     if (typeof list === "object") {
-      return Object.entries(list).map(([label, value]) => {
-        if (typeof value === "string") {
-          return { label, ticket: value };
-        }
+      return Object.entries(list)
+        .map(([label, value]) => {
+          if (!value) return null;
 
-        return {
-          label,
-          ticket:
-            value.ticket ||
-            value.line ||
-            value.formation ||
-            value.bet ||
-            value.kumi ||
-            "",
-          reason: value.reason || value.comment || value.text || "",
-          odds: value.odds || value.syntheticOdds || value.gouseiOdds || "",
-          score: value.score ?? value.value ?? value.point ?? ""
-        };
-      });
+          if (typeof value === "string") {
+            return { label, ticket: value };
+          }
+
+          return {
+            label,
+            ticket:
+              value.ticket ||
+              value.line ||
+              value.formation ||
+              value.bet ||
+              value.kumi ||
+              "",
+            score:
+              value.score !== undefined &&
+              value.score !== null &&
+              value.score !== "undefined"
+                ? value.score
+                : "",
+            odds:
+              value.odds ||
+              value.syntheticOdds ||
+              value.gouseiOdds ||
+              "",
+            reason:
+              value.reason ||
+              value.comment ||
+              value.text ||
+              ""
+          };
+        })
+        .filter(Boolean);
     }
 
     return [];
   }
 
-  function renderFormationItem(item, type) {
-  const ticket = item.ticket || "-";
+  function renderFormationRow(item, type) {
+    return `
+      <div class="v3-formation-row v3-formation-row-${escapeHtml(type)}">
+        <div class="v3-formation-ticket">
+          ${ticketArrow(item.ticket || "-")}
+        </div>
 
-  const score =
-    item.score !== undefined &&
-    item.score !== null &&
-    item.score !== "" &&
-    item.score !== "undefined"
-      ? item.score
-      : "";
+        <div class="v3-formation-tags">
+          ${item.label ? tag(item.label, type) : ""}
+          ${item.score !== "" ? tag(`評価 ${item.score}`, "score") : ""}
+          ${item.odds ? tag(`合成 ${item.odds}`, "odds") : ""}
+        </div>
 
-  return `
-    <article class="formation-item ${escapeHtml(type)}">
-      <div class="formation-ticket">
-        ${renderTicketText(ticket)}
+        ${
+          item.reason
+            ? `<div class="v3-formation-reason">${escapeHtml(limitText(item.reason, 60))}</div>`
+            : ""
+        }
       </div>
-
-      <div class="formation-meta">
-        ${item.label ? tag(item.label, type) : ""}
-        ${score !== "" ? tag(`評価 ${score}`, "score") : ""}
-        ${item.odds ? tag(`合成 ${item.odds}`, "odds") : ""}
-      </div>
-
-      ${
-        item.reason
-          ? `<p class="formation-reason">${escapeHtml(item.reason)}</p>`
-          : ""
-      }
-    </article>
-  `;
-}
-
-  function renderTicketText(ticket) {
-    const text = safeText(ticket);
-
-    const html = text.replace(/[1-6]/g, (num) => {
-      return boatBadge(num, "mini");
-    });
-
-    return `<span class="ticket-text">${html}</span>`;
+    `;
   }
 
-  function renderFormationComment(formation) {
-    const comment =
+  function renderFormationNote(formation) {
+    const note =
       formation.comment ||
       formation.reason ||
       formation.text ||
       formation.mainComment ||
       "";
 
-    if (!comment) return "";
+    if (!note) return "";
 
-    return `
-      <div class="formation-comment">
-        ${escapeHtml(comment)}
-      </div>
-    `;
-  }
-
-  /* ===============================
-    6. 万舟シート
-  =============================== */
-
-  function renderManshuSheet(prediction) {
-    const sheet = prediction.manshuSheet || {};
-
-    const candidates =
-      sheet.candidates ||
-      sheet.items ||
-      sheet.manshu ||
-      sheet.longshot ||
-      [];
-
-    const nokoshi =
-      sheet.nokoshi ||
-      sheet.remain ||
-      sheet.keep ||
-      sheet.nokoshiCandidates ||
-      [];
-
-    const hiroi =
-      sheet.hiroi ||
-      sheet.pickup ||
-      sheet.pick ||
-      sheet.hiroiCandidates ||
-      [];
-
-    const body = `
-      <div class="manshu-block">
-        <h3>万舟候補</h3>
-        ${renderManshuList(candidates, "manshu")}
-      </div>
-
-      <div class="manshu-block">
-        <h3>残し候補</h3>
-        ${renderManshuList(nokoshi, "nokoshi")}
-      </div>
-
-      <div class="manshu-block">
-        <h3>拾い候補</h3>
-        ${renderManshuList(hiroi, "hiroi")}
-      </div>
-
-      ${renderManshuComment(sheet)}
-    `;
-
-    return section("万舟シート", body, {
-      icon: "🌸",
-      className: "manshu-sheet-section"
-    });
-  }
-
-  function renderManshuList(list, role = "manshu") {
-    const items = arrayify(list)
-      .map((item) => normalizeSheetItem(item, role))
-      .filter(Boolean);
-
-    if (items.length === 0) {
-      return emptyBox("候補データがありません");
-    }
-
-    return `
-      <div class="sheet-card-list manshu-card-list">
-        ${items.map((item) => renderManshuCard(item, role)).join("")}
-      </div>
-    `;
-  }
-
-  function renderManshuCard(item, role) {
-    const roleLabel = MARK_LABELS[item.role] || MARK_LABELS[role] || "候補";
-    const no = item.no;
-    const c = boatColor(no);
-
-    return `
-      <article class="sheet-card manshu-card" style="border-left-color:${c.border};">
-        <div class="sheet-card-head">
-          <div>
-            <div class="role-label pink-label">${escapeHtml(roleLabel)}</div>
-            ${boatLine(no, item.name, item.sub)}
-          </div>
-          ${scorePill(item.score, "期待")}
-        </div>
-
-        ${renderBuffDebuff(item.buffs, item.debuffs)}
-
-        ${
-          item.comment
-            ? `<p class="sheet-comment">${escapeHtml(item.comment)}</p>`
-            : ""
-        }
-      </article>
-    `;
-  }
-
-  function renderManshuComment(sheet) {
-    const comment =
-      sheet.comment ||
-      sheet.reason ||
-      sheet.text ||
-      sheet.summary ||
-      "";
-
-    if (!comment) return "";
-
-    return `
-      <div class="manshu-comment">
-        ${escapeHtml(comment)}
-      </div>
-    `;
+    return `<div class="v3-note">${escapeHtml(limitText(note, 100))}</div>`;
   }
     /* ===============================
-    7. 万舟フォーメーション
-  =============================== */
-
-  function renderManshuFormation(prediction) {
-    const formation = prediction.formation || {};
-
-    const manshu =
-      formation.manshu ||
-      formation.longshot ||
-      formation.highPay ||
-      prediction.manshuFormation ||
-      [];
-
-    const body = `
-      <div class="formation-block">
-        <h3>万舟フォーメーション</h3>
-        ${renderFormationList(manshu, "manshu")}
-      </div>
-
-      ${
-        formation.manshuComment
-          ? `
-            <div class="formation-comment">
-              ${escapeHtml(formation.manshuComment)}
-            </div>
-          `
-          : ""
-      }
-    `;
-
-    return section("万舟フォーメーション", body, {
-      icon: "💣",
-      className: "manshu-formation-section"
-    });
-  }
-
-  /* ===============================
-    8. AI買い目ランキング
+    6. AI買い目一覧
   =============================== */
 
   function renderTicketRanking(prediction) {
-  const ranks =
-    prediction.ticketRanks ||
-    prediction.ticketRank ||
-    prediction.ranking ||
-    [];
+    const ranks =
+      prediction.ticketRanks ||
+      prediction.ticketRank ||
+      prediction.ranking ||
+      [];
 
-  const list = arrayify(ranks);
+    const list = arrayify(ranks);
 
-  if (list.length === 0) {
-    return section(
-      "AI買い目ランキング",
-      emptyBox("ランキングデータがありません"),
-      {
-        icon: "🏆",
-        className: "ticket-ranking-section"
-      }
-    );
+    if (list.length === 0) {
+      return section("AI買い目一覧", emptyBox("買い目ランキングデータがありません"), "🏆", "v3-ticket-section");
+    }
+
+    const body = `
+      <div class="v3-ticket-list">
+        ${list.map(renderTicketRow).join("")}
+      </div>
+    `;
+
+    return section("AI買い目一覧", body, "🏆", "v3-ticket-section");
   }
 
-  const body = `
-    <div class="newspaper-ticket-list">
-      ${list.map(renderTicketRankRow).join("")}
-    </div>
-  `;
+  function renderTicketRow(item, index) {
+    if (typeof item === "string") {
+      item = { ticket: item };
+    }
 
-  return section("AI買い目ランキング", body, {
-    icon: "🏆",
-    className: "ticket-ranking-section"
-  });
-}
+    const rank = item.rank || item.order || index + 1;
 
-function renderTicketRankRow(item, index) {
-  if (typeof item === "string") {
-    item = { ticket: item };
-  }
+    const ticket =
+      item.ticket ||
+      item.bet ||
+      item.line ||
+      item.formation ||
+      "-";
 
-  const rank = item.rank || item.order || index + 1;
-  const ticket =
-    item.ticket ||
-    item.bet ||
-    item.line ||
-    item.formation ||
-    "-";
+    const score =
+      item.score ??
+      item.value ??
+      item.point ??
+      "";
 
-  const score =
-    item.score ??
-    item.value ??
-    item.point ??
-    "";
+    const reason =
+      item.reason ||
+      item.comment ||
+      item.text ||
+      "";
 
-  const reason =
-    item.reason ||
-    item.comment ||
-    item.text ||
-    "";
+    const rankLabel = normalizeRankLabel(rank);
 
-  return `
-    <div class="newspaper-ticket-row">
-      <div class="newspaper-ticket-rank">${escapeHtml(rank)}</div>
-
-      <div class="newspaper-ticket-main">
-        <div class="newspaper-ticket-bet">
-          ${renderTicketArrow(ticket)}
+    return `
+      <div class="v3-ticket-row">
+        <div class="v3-ticket-rank ${rankLabel.className}">
+          <strong>${escapeHtml(rank)}</strong>
+          <span>${escapeHtml(rankLabel.label)}</span>
         </div>
+
+        <div class="v3-ticket-main">
+          <div class="v3-ticket-bet">
+            ${ticketArrow(ticket)}
+          </div>
+          ${
+            reason
+              ? `<div class="v3-ticket-reason">${escapeHtml(limitText(reason, 45))}</div>`
+              : ""
+          }
+        </div>
+
         ${
-          reason
-            ? `<div class="newspaper-ticket-reason">${escapeHtml(reason)}</div>`
+          score !== ""
+            ? `<div class="v3-ticket-score">${escapeHtml(score)}</div>`
             : ""
         }
       </div>
+    `;
+  }
 
-      ${
-        score !== ""
-          ? `<div class="newspaper-ticket-score">${escapeHtml(score)}</div>`
-          : ""
-      }
-    </div>
-  `;
-}
+  function normalizeRankLabel(rank) {
+    const r = safeText(rank, "");
 
-function renderTicketArrow(ticket) {
-  const text = safeText(ticket);
+    if (r === "S" || r === "1") {
+      return { label: "本線", className: "rank-s" };
+    }
 
-  const html = text
-    .replace(/-/g, " → ")
-    .replace(/[1-6]/g, (num) => boatBadge(num, "mini"));
+    if (r === "A" || r === "2") {
+      return { label: "対抗", className: "rank-a" };
+    }
 
-  return `<span class="ticket-arrow-text">${html}</span>`;
-}
+    if (r === "B" || r === "3") {
+      return { label: "押さえ", className: "rank-b" };
+    }
+
+    if (r === "C") {
+      return { label: "穴", className: "rank-c" };
+    }
+
+    if (r === "D") {
+      return { label: "薄め", className: "rank-d" };
+    }
+
+    return { label: "候補", className: "rank-normal" };
+  }
 
   /* ===============================
-    共通ランキング補助
+    7. 舟券太郎理論
   =============================== */
 
-  function sortByScore(list) {
+  function renderTheoryPanel(prediction) {
+    const indexes = prediction.indexes || {};
+    const raceFlow = prediction.raceFlow || {};
+    const exhibition = prediction.exhibition || {};
+    const finalAi = prediction.finalAi || {};
 
-    return arrayify(list).sort((a, b) => {
+    const items = [];
 
-      const sa = Number(a.score ?? a.value ?? 0);
-      const sb = Number(b.score ?? b.value ?? 0);
+    pushTheoryFromRanking(items, "attack", indexes.attackRanking);
+    pushTheoryFromRanking(items, "flow", indexes.tenkaiRanking || indexes.flowRanking);
+    pushTheoryFromRanking(items, "road", indexes.michuRanking || indexes.roadRanking);
+    pushTheoryFromRanking(items, "local", indexes.localRanking);
 
-      return sb - sa;
+    pushTheoryText(items, "slit", finalAi.slitAlert || exhibition.slitAlert || raceFlow.slitAlert);
+    pushTheoryText(items, "doubleTime", finalAi.doubleTime || exhibition.doubleTime);
+    pushTheoryText(items, "shinsam", finalAi.shinsam || exhibition.shinsam);
+    pushTheoryText(items, "odds", finalAi.syntheticOdds || prediction.syntheticOdds);
 
-    });
+    if (items.length === 0) {
+      return section("舟券太郎理論", emptyBox("理論表示データがありません"), "🧠", "v3-theory-section");
+    }
 
+    const body = `
+      <div class="v3-theory-grid">
+        ${items.map(renderTheoryItem).join("")}
+      </div>
+    `;
+
+    return section("舟券太郎理論", body, "🧠", "v3-theory-section");
   }
 
-  function topItems(list, limit = 5) {
+  function pushTheoryFromRanking(items, key, ranking) {
+    const list = arrayify(ranking).slice(0, 2);
+    if (list.length === 0) return;
 
-    return sortByScore(list).slice(0, limit);
+    list.forEach((item) => {
+      if (!item) return;
 
+      if (typeof item === "number" || typeof item === "string") {
+        items.push({
+          key,
+          label: THEORY_LABELS[key],
+          no: item,
+          score: "",
+          text: ""
+        });
+        return;
+      }
+
+      items.push({
+        key,
+        label: THEORY_LABELS[key],
+        no: item.no || item.boatNo || item.waku || item.course || item.number,
+        score: item.score ?? item.value ?? item.point ?? "",
+        text: item.comment || item.reason || item.text || ""
+      });
+    });
+  }
+
+  function pushTheoryText(items, key, value) {
+    if (!value) return;
+
+    if (Array.isArray(value)) {
+      value.slice(0, 2).forEach((v) => pushTheoryText(items, key, v));
+      return;
+    }
+
+    if (typeof value === "object") {
+      items.push({
+        key,
+        label: THEORY_LABELS[key],
+        no: value.no || value.boatNo || value.waku || value.course || "",
+        score: value.score ?? value.value ?? value.point ?? "",
+        text: value.text || value.comment || value.reason || value.label || ""
+      });
+      return;
+    }
+
+    items.push({
+      key,
+      label: THEORY_LABELS[key],
+      no: "",
+      score: "",
+      text: value
+    });
+  }
+
+  function renderTheoryItem(item) {
+    return `
+      <div class="v3-theory-item v3-theory-${escapeHtml(item.key)}">
+        <div class="v3-theory-label">${escapeHtml(item.label || "理論")}</div>
+
+        <div class="v3-theory-main">
+          ${item.no ? boatBadge(item.no, "mini") : ""}
+          ${
+            item.score !== ""
+              ? `<strong>${escapeHtml(item.score)}</strong>`
+              : ""
+          }
+        </div>
+
+        ${
+          item.text
+            ? `<p>${escapeHtml(limitText(item.text, 45))}</p>`
+            : ""
+        }
+      </div>
+    `;
   }
     /* ===============================
-    9. 最終コメント
+    8. 最終コメント
   =============================== */
 
   function renderFinalComment(prediction) {
-     const finalCommentRaw =
-  prediction.finalComment ||
-  prediction.comment ||
-  prediction.finalText ||
-  "";
-
-const finalComment =
-  typeof finalCommentRaw === "object"
-    ? finalCommentRaw.text ||
-      finalCommentRaw.comment ||
-      finalCommentRaw.summary ||
-      finalCommentRaw.final ||
-      ""
-    : finalCommentRaw;
-
     const finalAi = prediction.finalAi || {};
     const raceFlow = prediction.raceFlow || {};
 
-    const summary =
-      finalAi.final ||
-      finalAi.summary ||
-      finalAi.comment ||
+    const rawFinal =
+      prediction.finalComment ||
+      prediction.comment ||
+      prediction.finalText ||
       "";
 
-    const flowComment =
+    const finalText =
+      typeof rawFinal === "object"
+        ? rawFinal.text ||
+          rawFinal.comment ||
+          rawFinal.summary ||
+          rawFinal.final ||
+          ""
+        : rawFinal;
+
+    const flowText =
       raceFlow.comment ||
       raceFlow.summary ||
       raceFlow.text ||
       "";
 
+    const aiText =
+      finalAi.final ||
+      finalAi.summary ||
+      finalAi.comment ||
+      finalAi.text ||
+      "";
+
+    const blocks = [
+      {
+        title: "展開",
+        text: flowText || finalAi.flow || ""
+      },
+      {
+        title: "狙い",
+        text: finalAi.target || finalAi.aim || finalText || ""
+      },
+      {
+        title: "注意点",
+        text: finalAi.risk || finalAi.warning || finalAi.caution || ""
+      },
+      {
+        title: "AI結論",
+        text: aiText || finalText || ""
+      }
+    ].filter((b) => b.text);
+
+    if (blocks.length === 0) {
+      return section("最終コメント", emptyBox("最終コメントデータがありません"), "📝", "v3-final-section");
+    }
+
     const body = `
-      ${
-        finalComment
-          ? `
-            <div class="final-comment-main">
-              ${escapeHtml(finalComment)}
-            </div>
-          `
-          : ""
-      }
-
-      ${
-        summary
-          ? `
-            <div class="final-comment-sub">
-              <h3>AI最終判断</h3>
-              <p>${escapeHtml(summary)}</p>
-            </div>
-          `
-          : ""
-      }
-
-      ${
-        flowComment
-          ? `
-            <div class="final-comment-sub">
-              <h3>展開メモ</h3>
-              <p>${escapeHtml(flowComment)}</p>
-            </div>
-          `
-          : ""
-      }
-
-      ${
-        !finalComment && !summary && !flowComment
-          ? emptyBox("最終コメントデータがありません")
-          : ""
-      }
+      <div class="v3-final-grid">
+        ${blocks.map(renderFinalBlock).join("")}
+      </div>
     `;
 
-    return section("最終コメント", body, {
-      icon: "📝",
-      className: "final-comment-section"
-    });
+    return section("最終コメント", body, "📝", "v3-final-section");
   }
 
-  /* ===============================
-    追加：展開データ補助表示
-  =============================== */
-
-  function renderRaceFlowMini(raceFlow) {
-    if (!raceFlow || typeof raceFlow !== "object") return "";
-
-    const attack = raceFlow.attack || raceFlow.attacker || raceFlow.seme;
-    const key = raceFlow.key || raceFlow.keyBoat || raceFlow.focus;
-    const flow = raceFlow.flow || raceFlow.pattern || raceFlow.type;
-
-    if (!attack && !key && !flow) return "";
-
+  function renderFinalBlock(block) {
     return `
-      <div class="race-flow-mini">
-        ${attack ? miniCard("攻め艇", attack) : ""}
-        ${key ? miniCard("展開キー", key) : ""}
-        ${flow ? miniCard("想定展開", flow) : ""}
+      <div class="v3-final-block">
+        <h3>■ ${escapeHtml(block.title)}</h3>
+        <p>${escapeHtml(limitText(block.text, 140))}</p>
       </div>
     `;
   }
 
   /* ===============================
-    追加：デバッグ用
+    デバッグ
   =============================== */
 
   function renderDebug(prediction) {
     if (!window.CHAPPY_DEBUG_RENDER) return "";
 
     return `
-      <section class="render-section debug-section">
-        <div class="section-head">
+      <section class="v3-section v3-debug">
+        <div class="v3-section-head">
           <h2>🧪 Debug</h2>
         </div>
-        <div class="section-body">
+        <div class="v3-section-body">
           <pre>${escapeHtml(JSON.stringify(prediction, null, 2))}</pre>
         </div>
       </section>
@@ -1332,12 +1368,6 @@ const finalComment =
   window.renderPrediction = renderAll;
   window.CHAPPY_RENDER_VERSION = RENDER_VERSION;
 
-  /* ===============================
-    読み込み確認
-  =============================== */
-
-  console.info(
-    `[Chappy BoatRace AI] render.js loaded: ${RENDER_VERSION}`
-  );
+  console.info(`[Chappy BoatRace AI] render.js loaded: ${RENDER_VERSION}`);
 
 })();
