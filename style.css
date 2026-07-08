@@ -781,4 +781,70 @@ input {
   .v3-formation-list {
     grid-template-columns: 1fr;
   }
+}、
+/* =========================================================
+  表示ズレ修正・余白統一
+========================================================= */
+
+.app {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+.layout-grid {
+  width: 100%;
+  display: block;
+  margin-top: 12px;
+}
+
+.panel,
+.v3-section {
+  width: 100%;
+  margin: 0 0 12px 0;
+}
+
+.v3-root {
+  padding: 0;
+}
+
+.v3-section {
+  padding: 10px;
+}
+
+.v3-section-head {
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.v3-divider {
+  width: 100%;
+  margin: 10px 0;
+}
+
+.v3-race-grid,
+.v3-ai-grid,
+.v3-index-grid,
+.v3-theory-grid,
+.v3-newspaper-list,
+.v3-formation-list {
+  width: 100%;
+  gap: 6px;
+}
+
+.v3-ticket-row,
+.v3-paper-card,
+.v3-formation-row,
+.v3-info-cell,
+.v3-ai-meter,
+.v3-index-cell,
+.v3-theory-item,
+.v3-final-block {
+  width: 100%;
+}
+
+@media (min-width: 431px) {
+  .app {
+    max-width: 720px;
+  }
 }
