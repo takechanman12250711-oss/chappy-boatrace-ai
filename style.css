@@ -998,3 +998,40 @@ input {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* =========================================================
+  指数サマリー 完全整列
+========================================================= */
+
+.v3-index-cell {
+  display: grid !important;
+  grid-template-rows: auto 1fr;
+  min-height: 58px !important;
+  padding: 8px !important;
+}
+
+.v3-index-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.v3-index-line {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.v3-index-boat {
+  display: flex;
+  justify-content: center;
+}
+
+.v3-index-score {
+  text-align: right;
+  font-size: 17px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
