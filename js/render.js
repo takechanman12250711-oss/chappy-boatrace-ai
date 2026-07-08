@@ -523,27 +523,33 @@
   }
 
   function renderIndexPanel(indexes) {
-    if (!indexes || typeof indexes !== "object") return "";
 
-    const rows = [];
+  if (!indexes || typeof indexes !== "object") return "";
 
-    addIndexRows(rows, indexes.attackRanking, "🔥 攻め");
-    addIndexRows(rows, indexes.tenkaiRanking || indexes.flowRanking, "🌊 展開");
-    addIndexRows(rows, indexes.michuRanking || indexes.roadRanking, "⚡ 道中");
-    addIndexRows(rows, indexes.localRanking, "🏠 当地");
-    addIndexRows(rows, indexes.expectedRanking, "🎯 期待");
+  const rows = [];
 
-    if (rows.length === 0) return "";
+  addIndexRows(rows, indexes.attackRanking, "🔥攻め");
+  addIndexRows(rows, indexes.tenkaiRanking || indexes.flowRanking, "🌊展開");
+  addIndexRows(rows, indexes.michuRanking || indexes.roadRanking, "⚡道中");
+  addIndexRows(rows, indexes.localRanking, "🏠当地");
+  addIndexRows(rows, indexes.expectedRanking, "🎯期待");
 
-    return `
-      <div class="v3-index-panel">
-        <h3>指数サマリー</h3>
-        <div class="v3-index-grid">
-          ${rows.slice(0, 10).join("")}
-        </div>
+  if (!rows.length) return "";
+
+  return `
+    <div class="v3-index-panel">
+
+      <h3>AI指数ランキング</h3>
+
+      <div class="v3-index-table">
+
+        ${rows.join("")}
+
       </div>
-    `;
-  }
+
+    </div>
+  `;
+}
 
   function addIndexRows(rows, list, label) {
   const items = arrayify(list).slice(0, 2);
