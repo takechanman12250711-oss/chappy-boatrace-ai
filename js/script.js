@@ -89,7 +89,18 @@
       const odds = data?.odds || null;
 
             console.log("✅ prediction確認", prediction);
+　　　　window.__CHAPPY_PREDICTION__ = prediction;
 
+const debugArea = document.createElement("pre");
+debugArea.style.whiteSpace = "pre-wrap";
+debugArea.style.fontSize = "12px";
+debugArea.style.background = "#fff";
+debugArea.style.border = "1px solid #ddd";
+debugArea.style.padding = "12px";
+debugArea.style.margin = "12px";
+debugArea.textContent = JSON.stringify(prediction, null, 2);
+
+document.body.prepend(debugArea);
       if (!prediction || typeof prediction !== "object") {
         throw new Error("prediction.js から有効な予想データが返っていません。");
       }
