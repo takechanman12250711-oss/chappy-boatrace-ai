@@ -1302,3 +1302,85 @@ input {
   justify-content: center;
   align-items: center;
 }
+/* =========================================================
+  出走表スマホ表示 修正
+========================================================= */
+
+.v3-entry-grid-table {
+  width: 100%;
+  overflow-x: auto;
+  border-top: 2px solid #111;
+}
+
+.v3-entry-row {
+  display: grid;
+  grid-template-columns: 44px minmax(110px, 1fr) 58px 70px 78px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+
+.v3-entry-head {
+  background: #f8fafc;
+  font-weight: 700;
+  color: #111827;
+  font-size: 11px;
+}
+
+.v3-entry-boat {
+  text-align: center;
+}
+
+.v3-entry-player {
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.v3-entry-player strong {
+  display: block;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.v3-entry-player span {
+  display: block;
+  font-size: 10px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.v3-entry-num {
+  text-align: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.v3-boat-badge.v3-boat-small {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+}
+
+.v3-boat-badge.v3-boat-mini {
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+}
+
+@media (max-width: 480px) {
+  .v3-entry-row {
+    grid-template-columns: 36px minmax(95px, 1fr) 48px 58px 64px;
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .v3-entry-player strong {
+    font-size: 12px;
+  }
+
+  .v3-entry-num {
+    font-size: 11px;
+  }
+}
