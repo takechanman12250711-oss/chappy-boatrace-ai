@@ -895,3 +895,24 @@ input {
 .v3-entry-table td span {
   text-align: center;
 }
+/* ===== 指数サマリー 数字位置を揃える ===== */
+
+.v3-index-cell strong{
+    display:flex;
+    align-items:center;
+}
+
+.v3-index-cell .v3-boat-badge{
+    flex:0 0 24px;
+    width:24px;
+    height:24px;
+    margin-right:8px;
+}
+
+.v3-index-cell strong{
+    font-variant-numeric: tabular-nums;
+}
+
+.v3-index-cell strong:last-child{
+    margin-left:auto;
+}
