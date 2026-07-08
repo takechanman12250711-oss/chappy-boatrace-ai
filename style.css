@@ -916,3 +916,64 @@ input {
 .v3-index-cell strong:last-child{
     margin-left:auto;
 }
+/* =========================================================
+  出走表・指数サマリー 揃え修正
+========================================================= */
+
+.v3-entry-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 0;
+}
+
+.v3-entry-table th,
+.v3-entry-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.v3-entry-table th:nth-child(1),
+.v3-entry-table td:nth-child(1) {
+  width: 46px;
+}
+
+.v3-entry-table th:nth-child(2),
+.v3-entry-table td:nth-child(2) {
+  width: auto;
+  text-align: left;
+}
+
+.v3-entry-table th:nth-child(3),
+.v3-entry-table td:nth-child(3) {
+  width: 58px;
+}
+
+.v3-entry-table th:nth-child(4),
+.v3-entry-table td:nth-child(4) {
+  width: 64px;
+}
+
+.v3-entry-table th:nth-child(5),
+.v3-entry-table td:nth-child(5) {
+  width: 58px;
+}
+
+.v3-index-value {
+  display: grid !important;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.v3-index-boat {
+  display: flex;
+  justify-content: center;
+}
+
+.v3-index-score {
+  display: block;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
