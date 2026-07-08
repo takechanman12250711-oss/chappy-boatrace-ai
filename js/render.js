@@ -1270,77 +1270,73 @@
   =============================== */
 
   function renderFinalComment(prediction) {
-    const finalAi = prediction.finalAi || {};
-    const raceFlow = prediction.raceFlow || {};
+  const finalAi = prediction.finalAi || {};
+  const raceFlow = prediction.raceFlow || {};
 
-    const rawFinal =
-      prediction.finalComment ||
-      prediction.comment ||
-      prediction.finalText ||
-      "";
+  const finalText = safeText(
+    prediction.finalComment ||
+    prediction.comment ||
+    prediction.finalText ||
+    finalAi.summary ||
+    finalAi.comment ||
+    "",
+    ""
+  );
 
-    const finalText =
-      typeof rawFinal === "object"
-        ? rawFinal.text ||
-          rawFinal.comment ||
-          rawFinal.summary ||
-          rawFinal.final ||
-          ""
-        : rawFinal;
+  const flowText = safeText(
+    raceFlow.comment ||
+    raceFlow.summary ||
+    raceFlow.text ||
+    finalAi.flow ||
+    "",
+    ""
+  );
 
-    const flowText =
-      raceFlow.comment ||
-      raceFlow.summary ||
-      raceFlow.text ||
-      "";
-
-    const aiText =
-      finalAi.final ||
-      finalAi.summary ||
-      finalAi.comment ||
-      finalAi.text ||
-      "";
-
-    const blocks = [
-      {
-        title: "展開",
-        text: flowText || finalAi.flow || ""
-      },
-      {
-        title: "狙い",
-        text: finalAi.target || finalAi.aim || finalText || ""
-      },
-      {
-        title: "注意点",
-        text: finalAi.risk || finalAi.warning || finalAi.caution || ""
-      },
-      {
-        title: "AI結論",
-        text: aiText || finalText || ""
-      }
-    ].filter((b) => b.text);
-
-    if (blocks.length === 0) {
-      return section("最終コメント", emptyBox("最終コメントデータがありません"), "📝", "v3-final-section");
+  const blocks = [
+    {
+      title: "展開",
+      text: flowText
+    },
+    {
+      title: "狙い",
+      text: finalAi.target || finalAi.aim || finalText
+    },
+    {
+      title: "注意点",
+      text: finalAi.risk || finalAi.warning || finalAi.caution || ""
+    },
+    {
+      title: "AI結論",
+      text: finalAi.final || finalAi.summary || finalAi.comment || finalText
     }
+  ].filter((b) => b.text);
 
-    const body = `
-      <div class="v3-final-grid">
-        ${blocks.map(renderFinalBlock).join("")}
-      </div>
-    `;
-
-    return section("最終コメント", body, "📝", "v3-final-section");
+  if (blocks.length === 0) {
+    return section(
+      "最終コメント",
+      emptyBox("最終コメントデータがありません"),
+      "📝",
+      "v3-final-section"
+    );
   }
 
-  function renderFinalBlock(block) {
-    return `
-      <div class="v3-final-block">
-        <h3>■ ${escapeHtml(block.title)}</h3>
-        <p>${escapeHtml(limitText(block.text, 140))}</p>
-      </div>
-    `;
-  }
+  const body = `
+    <div class="v3-final-grid">
+      ${blocks.map(renderFinalBlock).join("")}
+    </div>
+  `;
+
+  return section("最終コメント", body, "📝", "v3-final-section");
+}
+
+function renderFinalBlock(block) {
+  return `
+    <div class="v3-final-block">
+      <h3>■ ${escapeHtml(block.title)}</h3>
+      <p>${escapeHtml(limitText(block.text, 140))}</p>
+    </div>
+  `;
+}
 
   /* ===============================
     デバッグ
