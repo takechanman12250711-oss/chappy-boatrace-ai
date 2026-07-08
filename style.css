@@ -1199,3 +1199,26 @@ input {
 .v3-entry-name span {
   font-size: 8px;
 }
+/* =========================================================
+  出走表 選手名の縦ズレ修正
+========================================================= */
+
+.v3-entry-name {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 34px;
+  line-height: 1.1;
+}
+
+.v3-entry-name strong {
+  display: block;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.v3-entry-name span {
+  display: block;
+  line-height: 1;
+  margin-top: 2px;
+}
