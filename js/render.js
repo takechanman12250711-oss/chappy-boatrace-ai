@@ -1090,134 +1090,95 @@ const ana = sheet.ana || sheet.hole || sheet["▲"] || sheet.third;
   =============================== */
 
   function renderTicketRanking(prediction) {
-    const ranks =
-      prediction.ticketRanks ||
-      prediction.ticketRank ||
-      prediction.ranking ||
-      [];
+  const ranks =
+    prediction.ticketRanks ||
+    prediction.ticketRank ||
+    prediction.ranking ||
+    [];
 
-    const list = arrayify(ranks);
+  const list = arrayify(ranks);
 
-    if (list.length === 0) {
-      return section(
-        "AI買い目ランキング",
-        emptyBox("ランキングデータがありません"),
-        {
-          icon: "🏆",
-          className: "ticket-ranking-section"
-        }
-      );
-    }
-
-    const body = `
-      <div class="ticket-ranking-list">
-        ${list.map(renderTicketRankCard).join("")}
-      </div>
-    `;
-
-    return section("AI買い目ランキング", body, {
-      icon: "🏆",
-      className: "ticket-ranking-section"
-    });
+  if (list.length === 0) {
+    return section(
+      "AI買い目ランキング",
+      emptyBox("ランキングデータがありません"),
+      {
+        icon: "🏆",
+        className: "ticket-ranking-section"
+      }
+    );
   }
 
-  function renderTicketRankCard(item, index) {
+  const body = `
+    <div class="newspaper-ticket-list">
+      ${list.map(renderTicketRankRow).join("")}
+    </div>
+  `;
 
-    if (typeof item === "string") {
-      item = {
-        ticket: item
-      };
-    }
+  return section("AI買い目ランキング", body, {
+    icon: "🏆",
+    className: "ticket-ranking-section"
+  });
+}
 
-    const rank =
-      item.rank ||
-      item.order ||
-      index + 1;
+function renderTicketRankRow(item, index) {
+  if (typeof item === "string") {
+    item = { ticket: item };
+  }
 
-    const ticket =
-      item.ticket ||
-      item.bet ||
-      item.line ||
-      item.formation ||
-      "-";
+  const rank = item.rank || item.order || index + 1;
+  const ticket =
+    item.ticket ||
+    item.bet ||
+    item.line ||
+    item.formation ||
+    "-";
 
-    const score =
-      item.score ??
-      item.value ??
-      item.point ??
-      "";
+  const score =
+    item.score ??
+    item.value ??
+    item.point ??
+    "";
 
-    const odds =
-      item.odds ||
-      item.syntheticOdds ||
-      item.gouseiOdds ||
-      "";
+  const reason =
+    item.reason ||
+    item.comment ||
+    item.text ||
+    "";
 
-    const hit =
-      item.hitRate ||
-      item.probability ||
-      item.rate ||
-      "";
+  return `
+    <div class="newspaper-ticket-row">
+      <div class="newspaper-ticket-rank">${escapeHtml(rank)}</div>
 
-    const reason =
-      item.reason ||
-      item.comment ||
-      item.text ||
-      "";
-
-    return `
-      <article class="ticket-rank-card">
-
-        <div class="ticket-rank-head">
-
-          <div class="ticket-rank-no">
-            ${escapeHtml(rank)}
-          </div>
-
-          <div class="ticket-rank-main">
-            <div class="ticket-rank-ticket">
-              ${renderTicketText(ticket)}
-            </div>
-
-            <div class="ticket-rank-tags">
-
-              ${
-                score !== ""
-                  ? tag(`AI ${score}`, "score")
-                  : ""
-              }
-
-              ${
-                odds
-                  ? tag(`合成 ${odds}`, "odds")
-                  : ""
-              }
-
-              ${
-                hit
-                  ? tag(`的中 ${percent(hit)}`, "hit")
-                  : ""
-              }
-
-            </div>
-
-          </div>
-
+      <div class="newspaper-ticket-main">
+        <div class="newspaper-ticket-bet">
+          ${renderTicketArrow(ticket)}
         </div>
-
         ${
           reason
-            ? `
-              <div class="ticket-rank-comment">
-                ${escapeHtml(reason)}
-              </div>
-            `
+            ? `<div class="newspaper-ticket-reason">${escapeHtml(reason)}</div>`
             : ""
         }
+      </div>
 
-      </article>
-    `;
-  }
+      ${
+        score !== ""
+          ? `<div class="newspaper-ticket-score">${escapeHtml(score)}</div>`
+          : ""
+      }
+    </div>
+  `;
+}
+
+function renderTicketArrow(ticket) {
+  const text = safeText(ticket);
+
+  const html = text
+    .replace(/-/g, " → ")
+    .replace(/[1-6]/g, (num) => boatBadge(num, "mini"));
+
+  return `<span class="ticket-arrow-text">${html}</span>`;
+}
 
   /* ===============================
     共通ランキング補助
