@@ -1926,3 +1926,34 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* =========================================================
+  最終コメント 圧縮・読みやすさ調整
+========================================================= */
+
+.final-comment-main,
+.final-comment-sub {
+  font-size: 11px;
+  line-height: 1.55;
+  padding: 8px;
+}
+
+.final-comment-main {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.final-comment-sub h3 {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.final-comment-sub p {
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.final-comment-section .section-body {
+  display: grid;
+  gap: 6px;
+}
