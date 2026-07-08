@@ -1524,3 +1524,29 @@ input {
 .v3-ticket-inline .score{
     font-weight:700;
 }
+/* ===== AI指数 ===== */
+
+.v3-index-table{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:8px;
+}
+
+.v3-index-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 10px;
+    border:1px solid #ececec;
+    border-radius:10px;
+    background:#fff;
+}
+
+.v3-index-row .label{
+    font-size:12px;
+    font-weight:700;
+}
+
+.v3-index-row strong{
+    font-size:14px;
+}
