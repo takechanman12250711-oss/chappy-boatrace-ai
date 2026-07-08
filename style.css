@@ -895,27 +895,6 @@ input {
 .v3-entry-table td span {
   text-align: center;
 }
-/* ===== 指数サマリー 数字位置を揃える ===== */
-
-.v3-index-cell strong{
-    display:flex;
-    align-items:center;
-}
-
-.v3-index-cell .v3-boat-badge{
-    flex:0 0 24px;
-    width:24px;
-    height:24px;
-    margin-right:8px;
-}
-
-.v3-index-cell strong{
-    font-variant-numeric: tabular-nums;
-}
-
-.v3-index-cell strong:last-child{
-    margin-left:auto;
-}
 /* =========================================================
   出走表・指数サマリー 揃え修正
 ========================================================= */
@@ -976,4 +955,46 @@ input {
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 900;
+}
+/* =========================================================
+  指数サマリー 表示崩れ修正
+========================================================= */
+
+.v3-index-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  align-items: start;
+}
+
+.v3-index-cell {
+  display: grid;
+  grid-template-rows: auto auto;
+  min-height: 54px;
+  height: auto !important;
+  padding: 8px;
+}
+
+.v3-index-cell span {
+  line-height: 1.2;
+}
+
+.v3-index-cell strong {
+  display: grid !important;
+  grid-template-columns: 28px 1fr;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0 !important;
+}
+
+.v3-index-cell .v3-boat-badge {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+}
+
+.v3-index-score {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
