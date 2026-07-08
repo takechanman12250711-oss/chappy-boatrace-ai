@@ -1628,3 +1628,63 @@ body {
     font-size: 16px;
   }
 }
+/* =========================================================
+  横はみ出し修正
+========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.render-root {
+  max-width: 100%;
+  width: 100%;
+  padding: 10px;
+  overflow-x: hidden;
+}
+
+.render-section {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.race-info-grid,
+.ai-summary-grid,
+.mini-card-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mini-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.mini-card-value,
+.mini-card-sub,
+.section-head p,
+.ai-comment-box p,
+.sheet-comment,
+.final-comment-main,
+.final-comment-sub p {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.entry-table {
+  min-width: 480px;
+}
