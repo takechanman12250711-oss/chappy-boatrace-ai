@@ -362,46 +362,76 @@
   =============================== */
 
   function renderEntryTable(prediction) {
-    const race = prediction.race || {};
-    const entries =
-      prediction.entries ||
-      prediction.entry ||
-      race.entries ||
-      race.entry ||
-      [];
+  const race = prediction.race || {};
+  const entries =
+    prediction.entries ||
+    prediction.entry ||
+    race.entries ||
+    race.entry ||
+    [];
 
-    if (!Array.isArray(entries) || entries.length === 0) {
-      return section("出走表", emptyBox("出走表データがありません"), "👥", "v3-entry-section");
-    }
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return section(
+      "出走表",
+      emptyBox("出走表データがありません"),
+      "👥",
+      "v3-entry-section"
+    );
+  }
 
-    const rows = entries.map((e, index) => {
-      const no = e.no || e.waku || e.course || e.boatNo || index + 1;
-      const name = e.name || e.racerName || e.player || "-";
-      const grade = e.grade || e.class || e.rank || "";
-      const st = e.st || e.avgSt || e.averageST || "-";
+  const rows = entries.map((e, index) => {
+    const no = e.no || e.waku || e.course || e.boatNo || index + 1;
+    const name = e.name || e.racerName || e.player || "-";
+    const grade = e.grade || e.class || e.rank || "";
+    const st = e.st || e.avgSt || e.averageST || "-";
 
-      const motorObj = e.motor || e.motorInfo || {};
-      const motor =
-        e.motorNo ||
-        e.motorNumber ||
-        motorObj.no ||
-        motorObj.number ||
-        "-";
+    const motorObj = e.motor || e.motorInfo || {};
+    const motor =
+      e.motorNo ||
+      e.motorNumber ||
+      motorObj.no ||
+      motorObj.number ||
+      "-";
 
-      const motorRate =
-        e.motorRate ||
-        e.motor2Rate ||
-        motorObj.rate ||
-        motorObj.twoRate ||
-        "";
+    const local =
+      e.localRate ||
+      e.venueRate ||
+      e.courseRate ||
+      e.local ||
+      "-";
 
-      const local =
-        e.localRate ||
-        e.venueRate ||
-        e.courseRate ||
-        e.local ||
-        "-";
+    return `
+      <div class="v3-entry-row">
+        <div class="v3-entry-boat">${boatBadge(no, "small")}</div>
 
+        <div class="v3-entry-player">
+          <strong style="color:${boatColor(no).border};">${escapeHtml(name)}</strong>
+          ${grade ? `<span>${escapeHtml(grade)}</span>` : ""}
+        </div>
+
+        <div class="v3-entry-num">${escapeHtml(st)}</div>
+        <div class="v3-entry-num">${escapeHtml(motor)}</div>
+        <div class="v3-entry-num">${escapeHtml(local)}</div>
+      </div>
+    `;
+  }).join("");
+
+  const body = `
+    <div class="v3-entry-grid-table">
+      <div class="v3-entry-row v3-entry-head">
+        <div>艇番</div>
+        <div>選手名</div>
+        <div>平均ST</div>
+        <div>モーター</div>
+        <div>当地勝率</div>
+      </div>
+
+      ${rows}
+    </div>
+  `;
+
+  return section("出走表", body, "👥", "v3-entry-section");
+}
       return `
   <tr>
     <td>${boatBadge(no, "small")}</td>
