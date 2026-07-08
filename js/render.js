@@ -554,9 +554,6 @@
   }
 
   function addIndexRows(rows, list, label) {
-    const items = arrayify(list).slice(0, 2);
-
-    function addIndexRows(rows, list, label) {
   const items = arrayify(list).slice(0, 2);
 
   items.forEach((item) => {
