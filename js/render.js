@@ -63,14 +63,15 @@
   }
 
   function getRoot() {
-    return (
-      $("resultArea") ||
-      $("predictionArea") ||
-      $("mainArea") ||
-      $("app") ||
-      document.body
-    );
+  const root = document.getElementById("resultArea");
+
+  if (!root) {
+    console.error("resultArea が見つかりません。index.html を確認してください。");
+    return document.body;
   }
+
+  return root;
+}
 
   /* ===============================
     安全処理
