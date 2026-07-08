@@ -576,10 +576,11 @@
         <div class="v3-index-cell">
           <span>${escapeHtml(label)}</span>
           <strong>
-            ${boatBadge(no, "mini")}
-            ${score !== "" ? escapeHtml(score) : ""}
-          </strong>
-        </div>
+            <strong class="v3-index-value">
+             <span class="v3-index-boat">${boatBadge(no, "mini")}</span>
+             <span class="v3-index-score">${score !== "" ? escapeHtml(score) : "-"}</span>
+           </strong>
+         </div>
       `);
     });
   }
