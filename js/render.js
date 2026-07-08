@@ -421,23 +421,23 @@
     }).join("");
 
     const body = `
-      <div class="v3-table-wrap">
-        <table class="v3-entry-table">
-         <thead>
-           <tr>
-             <th>艇番</th>
-<th>選手名</th>
-<th>平均ST</th>
-<th>モーター</th>
-<th>当地勝率</th>
-          </tr>
-　　　　　　</thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
-      </div>
-    `;
+  <div class="v3-table-wrap">
+    <table class="v3-entry-table">
+      <thead>
+        <tr>
+          <th class="col-boat">艇番</th>
+          <th class="col-name">選手名</th>
+          <th class="col-st">平均ST</th>
+          <th class="col-motor">モーター</th>
+          <th class="col-local">当地勝率</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+      </tbody>
+    </table>
+  </div>
+`;
 
     return section("出走表", body, "👥", "v3-entry-section");
   }
