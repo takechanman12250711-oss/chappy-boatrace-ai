@@ -556,34 +556,33 @@
   function addIndexRows(rows, list, label) {
     const items = arrayify(list).slice(0, 2);
 
-    items.forEach((item) => {
-      if (!item) return;
+    function addIndexRows(rows, list, label) {
+  const items = arrayify(list).slice(0, 2);
 
-      if (typeof item === "number" || typeof item === "string") {
-        rows.push(`
-          <div class="v3-index-cell">
-            <span>${escapeHtml(label)}</span>
-            <strong>${boatBadge(item, "mini")}</strong>
-          </div>
-        `);
-        return;
-      }
+  items.forEach((item) => {
+    if (!item) return;
 
-      const no = item.no || item.boatNo || item.waku || item.course || item.number;
-      const score = item.score ?? item.value ?? item.point ?? "";
+    let no = "";
+    let score = "-";
 
-      rows.push(`
-        <div class="v3-index-cell">
-          <span>${escapeHtml(label)}</span>
-          <strong>
-            <strong class="v3-index-value">
-             <span class="v3-index-boat">${boatBadge(no, "mini")}</span>
-             <span class="v3-index-score">${score !== "" ? escapeHtml(score) : "-"}</span>
-           </strong>
-         </div>
-      `);
-    });
-  }
+    if (typeof item === "number" || typeof item === "string") {
+      no = item;
+    } else {
+      no = item.no || item.boatNo || item.waku || item.course || item.number || "";
+      score = item.score ?? item.value ?? item.point ?? "-";
+    }
+
+    rows.push(`
+      <div class="v3-index-cell">
+        <div class="v3-index-label">${escapeHtml(label)}</div>
+        <div class="v3-index-line">
+          <span class="v3-index-boat">${boatBadge(no, "mini")}</span>
+          <span class="v3-index-score">${escapeHtml(score)}</span>
+        </div>
+      </div>
+    `);
+  });
+}
     /* ===============================
     4. 新聞シート共通
   =============================== */
