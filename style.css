@@ -1101,3 +1101,57 @@ input {
 .v3-entry-table .v3-boat-badge {
   margin: 0 auto;
 }
+/* =========================================================
+  出走表 class列幅で完全固定
+========================================================= */
+
+.v3-entry-table {
+  table-layout: fixed !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.v3-entry-table th,
+.v3-entry-table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  padding: 5px 3px !important;
+}
+
+.v3-entry-table .col-boat,
+.v3-entry-table td:nth-child(1) {
+  width: 42px !important;
+}
+
+.v3-entry-table .col-name,
+.v3-entry-table td:nth-child(2) {
+  width: auto !important;
+  text-align: left !important;
+}
+
+.v3-entry-table .col-st,
+.v3-entry-table td:nth-child(3) {
+  width: 58px !important;
+}
+
+.v3-entry-table .col-motor,
+.v3-entry-table td:nth-child(4) {
+  width: 60px !important;
+}
+
+.v3-entry-table .col-local,
+.v3-entry-table td:nth-child(5) {
+  width: 64px !important;
+}
+
+.v3-entry-name strong {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v3-entry-table .v3-boat-badge {
+  margin: 0 auto;
+}
