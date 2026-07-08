@@ -422,15 +422,15 @@
     const body = `
       <div class="v3-table-wrap">
         <table class="v3-entry-table">
-          <thead>
-            <tr>
-              <th>艇</th>
-              <th>選手</th>
-              <th>ST</th>
-              <th>モ</th>
-              <th>当地</th>
-            </tr>
-          </thead>
+         <thead>
+           <tr>
+             <th>艇番</th>
+             <th>選手名</th>
+             <th>平均ST</th>
+             <th>モーター</th>
+           <th>当地</th>
+          </tr>
+　　　　　　</thead>
           <tbody>
             ${rows}
           </tbody>
