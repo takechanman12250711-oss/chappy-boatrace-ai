@@ -216,7 +216,7 @@
     `;
   }
 
-  function renderEntryTable(prediction) {
+    function renderEntryTable(prediction) {
     const body = getSectionBody("entry");
     if (!body) return;
 
@@ -250,20 +250,24 @@
           <tbody>
             ${entries.map(entry => {
               const boatNo = entry.boatNo || entry.course || entry.waku;
+              const motorText = formatMotor(entry);
+              const nationalText = formatRate(entry.national, entry.nationalRate || entry.winRate);
+              const localText = formatRate(entry.local, entry.localRate || entry.venueRate);
+
               return `
                 <tr>
                   <td>${boatBadge(boatNo)}</td>
                   <td class="name-cell">
                     <span class="boat-name ${boatClass(boatNo)}">
-                      ${valueOrDash(entry.name || entry.playerName)}
+                      ${valueOrDash(entry.name || entry.racerName || entry.playerName)}
                     </span>
                   </td>
-                  <td>${valueOrDash(entry.class || entry.grade)}</td>
+                  <td>${valueOrDash(entry.className || entry.class || entry.grade)}</td>
                   <td>${valueOrDash(entry.branch || entry.area)}</td>
-                  <td>${valueOrDash(entry.st || entry.avgSt)}</td>
-                  <td>${valueOrDash(entry.nationalRate || entry.winRate)}</td>
-                  <td>${valueOrDash(entry.localRate || entry.venueRate)}</td>
-                  <td>${valueOrDash(entry.motorNo || entry.motor)}</td>
+                  <td>${valueOrDash(entry.avgST || entry.st || entry.avgSt)}</td>
+                  <td>${nationalText}</td>
+                  <td>${localText}</td>
+                  <td>${motorText}</td>
                   <td>${valueOrDash(entry.exhibitionTime || entry.exTime)}</td>
                 </tr>
               `;
@@ -272,6 +276,32 @@
         </table>
       </div>
     `;
+  }
+
+  function formatRate(rateObj, fallback) {
+    if (rateObj && typeof rateObj === "object") {
+      const win = rateObj.winRate ?? "-";
+      const second = rateObj.secondRate ?? "-";
+      return `${valueOrDash(win)} / 2連${valueOrDash(second)}%`;
+    }
+
+    return valueOrDash(fallback);
+  }
+
+  function formatMotor(entry) {
+    if (!entry) return "-";
+
+    if (entry.motor && typeof entry.motor === "object") {
+      const no = entry.motor.no ?? entry.motor.motorNo ?? "-";
+      const second = entry.motor.secondRate ?? entry.motor.motor2Rate ?? "-";
+      return `${valueOrDash(no)}号機 / 2連${valueOrDash(second)}%`;
+    }
+
+    if (entry.motorNo) {
+      return `${valueOrDash(entry.motorNo)}号機`;
+    }
+
+    return valueOrDash(entry.motor);
   }
     function renderAiAnalysis(prediction) {
     const body = getSectionBody("ai");
