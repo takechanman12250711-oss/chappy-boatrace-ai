@@ -1861,3 +1861,68 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* =========================================================
+  本命・万舟シート 圧縮2列表示
+========================================================= */
+
+.sheet-card-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.sheet-card {
+  padding: 7px;
+}
+
+.sheet-card-head {
+  gap: 6px;
+}
+
+.role-label {
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+
+.boat-line,
+.boat-name {
+  gap: 4px;
+}
+
+.boat-line-sub {
+  font-size: 10px;
+}
+
+.buff-debuff {
+  margin-top: 5px;
+  gap: 4px;
+}
+
+.buff-list,
+.debuff-list {
+  padding: 5px;
+}
+
+.buff-list strong,
+.debuff-list strong {
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+
+.buff-list span,
+.debuff-list span {
+  font-size: 10px;
+  padding: 1px 5px;
+  margin: 1px 2px 1px 0;
+}
+
+.sheet-comment {
+  font-size: 10px;
+  line-height: 1.4;
+  margin-top: 5px;
+}
+
+@media (max-width: 360px) {
+  .sheet-card-list {
+    grid-template-columns: 1fr;
+  }
+}
