@@ -935,18 +935,51 @@
   }
 
   function calcTotalIndex(indexes, weights) {
-    const total =
-      indexes.st * weights.st +
-      indexes.exhibition * weights.exhibition +
-      indexes.motor * weights.motor +
-      indexes.local * weights.local +
-      indexes.national * weights.national +
-      indexes.attack * weights.attack +
-      indexes.raceFlow * weights.raceFlow +
-      indexes.turn * weights.turn;
 
-    return clamp(round(total), INDEX_LIMIT.min, INDEX_LIMIT.max);
+  let total =
+    indexes.st * weights.st +
+    indexes.exhibition * weights.exhibition +
+    indexes.motor * weights.motor +
+    indexes.local * weights.local +
+    indexes.national * weights.national +
+    indexes.attack * weights.attack +
+    indexes.raceFlow * weights.raceFlow +
+    indexes.turn * weights.turn;
+
+  // STが非常に良い
+  if (indexes.st >= 90) total += 4;
+  else if (indexes.st >= 80) total += 2;
+
+  // 展示気配が良い
+  if (indexes.exhibition >= 90) total += 4;
+  else if (indexes.exhibition >= 80) total += 2;
+
+  // 攻め指数
+  if (indexes.attack >= 85) total += 3;
+
+  // 展開指数
+  if (indexes.raceFlow >= 85) total += 3;
+
+  // 当地巧者
+  if (indexes.local >= 85) total += 2;
+
+  // モーターが極端に悪い
+  if (indexes.motor <= 35) total -= 2;
+
+  // STと展示が両方優秀なら相乗効果
+  if (
+    indexes.st >= 85 &&
+    indexes.exhibition >= 85
+  ) {
+    total += 3;
   }
+
+  return clamp(
+    round(total),
+    INDEX_LIMIT.min,
+    INDEX_LIMIT.max
+  );
+}
     /* ===============================
     スリットAI
   =============================== */
