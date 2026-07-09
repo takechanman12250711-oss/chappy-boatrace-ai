@@ -163,17 +163,17 @@
     return await res.json();
   }
 
-  function createPredictionSafe(data) {
+function createPredictionSafe(data) {
   try {
     if (typeof window.createPrediction === "function") {
-      const prediction = window.createPrediction(data);
-      if (prediction && prediction.ok !== false) return prediction;
+      return window.createPrediction(data);
     }
   } catch (error) {
-    console.error("prediction.js error", error);
+    console.warn("prediction.js error", error);
   }
 
-  try {
+  return null;
+}
     if (window.ChappyAICore && typeof window.ChappyAICore.analyze === "function") {
       const core = window.ChappyAICore.analyze(data);
 
