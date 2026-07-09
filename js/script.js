@@ -174,10 +174,6 @@ function createPredictionSafe(data) {
 
   return null;
 }
-    if (window.ChappyAICore && typeof window.ChappyAICore.analyze === "function") {
-      const core = window.ChappyAICore.analyze(data);
-
-      return {
         ok: true,
         version: "fallback-ai-core",
         race: data,
