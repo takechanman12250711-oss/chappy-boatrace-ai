@@ -174,59 +174,6 @@ function createPredictionSafe(data) {
 
   return null;
 }
-        ok: true,
-        version: "fallback-ai-core",
-        race: data,
-        aiCore: core,
-        indexes: {
-          scores: core.analyses || [],
-          totalRanking: core.ranking || []
-        },
-        mainSheet: {
-          honmei: core.mainSheet?.[0] || null,
-          taikou: core.mainSheet?.[1] || null,
-          ana: core.mainSheet?.[2] || null,
-          osae: core.mainSheet?.[3] || null,
-          evaluations: core.mainSheet || [],
-          formation: core.formations || {}
-        },
-        manshuSheet: {
-          candidates: core.longshotSheet || [],
-          formation: core.formations?.longshot || [],
-          reason: core.comments?.join(" ") || ""
-        },
-        formation: core.formations || {},
-        finalComment: {
-          title: "AI Core fallback",
-          comment: core.comments?.join(" ") || "ai-core.jsで予想を生成しました。"
-        }
-      };
-    }
-  } catch (error) {
-    console.error("ai-core fallback error", error);
-  }
-
-  return null;
-}
-
-  try {
-    if (
-      window.ChappyAICore &&
-      typeof window.ChappyAICore.analyze === "function"
-    ) {
-      return window.ChappyAICore.analyze(data);
-    }
-  } catch (error) {
-    console.error("ai-core fallback error", error);
-  }
-
-  return {
-    ok: true,
-    errorFallback: true,
-    message: "prediction.js fallback",
-    raw: data
-  };
-}
 
   function createTheorySafe(data) {
     try {
