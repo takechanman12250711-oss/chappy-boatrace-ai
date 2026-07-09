@@ -537,26 +537,26 @@
   =============================== */
 
   const NORMAL_WEIGHTS = {
-    st: 0.17,
-    exhibition: 0.17,
-    motor: 0.13,
-    local: 0.12,
-    national: 0.11,
-    attack: 0.12,
-    raceFlow: 0.10,
-    turn: 0.08
-  };
+  st: 0.18,
+  exhibition: 0.18,
+  motor: 0.12,
+  local: 0.13,
+  national: 0.10,
+  attack: 0.13,
+  raceFlow: 0.10,
+  turn: 0.06
+};
 
   const NEW_ENGINE_WEIGHTS = {
-    st: 0.20,
-    exhibition: 0.21,
-    motor: 0.07,
-    local: 0.13,
-    national: 0.11,
-    attack: 0.12,
-    raceFlow: 0.08,
-    turn: 0.08
-  };
+  st: 0.22,
+  exhibition: 0.23,
+  motor: 0.05,
+  local: 0.14,
+  national: 0.10,
+  attack: 0.14,
+  raceFlow: 0.08,
+  turn: 0.04
+};
 
   const INDEX_LIMIT = {
     min: 1,
