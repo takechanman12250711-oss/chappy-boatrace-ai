@@ -1120,6 +1120,12 @@ function buildBoatAnalysis(data) {
     const localWin = Number(boat.localWinRate || boat.localRate || 0);
     const motor2 = Number(boat.motor2Rate || boat.motorRate || 0);
     const exhibit = Number(boat.exhibitTime || boat.exhibitionTime || 0);
+　　　const lap = Number(
+  boat.lapTime ||
+  boat.oneLapTime ||
+  boat.turnTime ||
+  0
+);
 
     let score = 50;
     const buffs = [];
@@ -1277,6 +1283,21 @@ if (exhibit > 0 && exhibit <= 6.75) {
   score -= 4;
   attackIndex -= 3;
   debuffs.push("展示気配ひと息");
+  // ダブルタイム理論
+if (
+  exhibit > 0 &&
+  lap > 0 &&
+  exhibit <= 6.75 &&
+  lap <= 37.20
+) {
+  score += 10;
+  attackIndex += 8;
+  flowIndex += 6;
+  roadIndex += 5;
+
+  buffs.push("ダブルタイム");
+  roleTags.push("ダブルタイム⚡");
+}
 }
 
     score = Math.max(1, Math.min(100, Math.round(score)));
