@@ -1119,6 +1119,12 @@ function buildBoatAnalysis(data) {
     const nationalWin = Number(boat.nationalWinRate || boat.winRate || 0);
     const localWin = Number(boat.localWinRate || boat.localRate || 0);
     const motor2 = Number(boat.motor2Rate || boat.motorRate || 0);
+    const synthOdds = Number(
+  boat.syntheticOdds ||
+  boat.compositeOdds ||
+  boat.aiOdds ||
+  0
+);
     const exhibit = Number(boat.exhibitTime || boat.exhibitionTime || 0);
 　　　const lap = Number(
   boat.lapTime ||
@@ -1130,6 +1136,7 @@ function buildBoatAnalysis(data) {
     let score = 50;
     const buffs = [];
     const debuffs = [];
+    const alerts = [];
     let attackIndex = 50;
     let flowIndex = 50;
     let roadIndex = 50;
@@ -1299,6 +1306,57 @@ if (
   roleTags.push("ダブルタイム⚡");
 }
 }
+// 新サム理論
+const samTotal = exhibit + lap;
+
+if (samTotal > 0) {
+
+  if (samTotal <= 43.80) {
+    score += 8;
+    attackIndex += 5;
+    flowIndex += 6;
+    roadIndex += 6;
+    buffs.push("新サム◎");
+    alerts.push("新サムアラート");
+  }
+
+  else if (samTotal <= 44.10) {
+    score += 4;
+    attackIndex += 3;
+    flowIndex += 3;
+    buffs.push("新サム○");
+  }
+
+  else if (samTotal >= 44.70) {
+    score -= 4;
+    attackIndex -= 2;
+    flowIndex -= 2;
+    debuffs.push("新サム△");
+  }
+
+}
+// 合成オッズ補正
+if (synthOdds > 0) {
+
+  if (synthOdds <= 8) {
+    score += 8;
+    flowIndex += 6;
+    buffs.push("合成オッズ上位");
+    alerts.push("オッズ注目");
+  }
+
+  else if (synthOdds <= 15) {
+    score += 4;
+    flowIndex += 3;
+    buffs.push("合成オッズ良好");
+  }
+
+  else if (synthOdds >= 40) {
+    score -= 3;
+    debuffs.push("人気薄");
+  }
+
+}
 
     score = Math.max(1, Math.min(100, Math.round(score)));
     attackIndex = Math.max(1, Math.min(100, Math.round(attackIndex)));
@@ -1363,6 +1421,7 @@ if (boatNo >= 5 && roadIndex >= 60) {
       roleTags,
       buffs,
       debuffs,
+      alerts,
       comment,
       raw: boat
     };
