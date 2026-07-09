@@ -439,66 +439,29 @@
   =============================== */
 
   function renderAiSummary(prediction) {
-  const aiCore = prediction.aiCore || {};
-  const coreAi = aiCore.ai || {};
-  const coreIndexes = aiCore.indexes || {};
-
-  const confidence =
-    coreAi.trust ??
-    coreAi.mainTrust ??
-    prediction.ai?.trust ??
-    prediction.ai?.mainTrust ??
-    prediction.confidence ??
-    0;
-
-  const manshuPower =
-    coreAi.manshu ??
-    coreAi.manshuPower ??
-    prediction.ai?.manshu ??
-    prediction.ai?.manshuPower ??
-    prediction.manshuPower ??
-    0;
-
+  const confidence = prediction.confidence || {};
+  const manshuPower = prediction.manshuPower || {};
   const finalAi = prediction.finalAi || {};
-
-  const indexes = {
-    ...(prediction.indexes || {}),
-    ...coreIndexes
-  };
+  const indexes = prediction.indexes || {};
 
   const confidenceScore =
-    typeof confidence === "number"
-      ? confidence
-      : confidence?.score ??
-        confidence?.value ??
-        confidence?.percent ??
-        prediction.confidenceScore ??
-        0;
+    confidence.score ??
+    confidence.value ??
+    confidence.percent ??
+    prediction.confidenceScore ??
+    0;
 
   const manshuScore =
-    typeof manshuPower === "number"
-      ? manshuPower
-      : manshuPower?.score ??
-        manshuPower?.value ??
-        manshuPower?.percent ??
-        prediction.manshuScore ??
-        0;
-
-  const confidenceReason =
-    typeof confidence === "object"
-      ? (confidence.reason || confidence.comment || "")
-      : "";
-
-  const manshuReason =
-    typeof manshuPower === "object"
-      ? (manshuPower.reason || manshuPower.comment || "")
-      : "";
+    manshuPower.score ??
+    manshuPower.value ??
+    manshuPower.percent ??
+    prediction.manshuScore ??
+    0;
 
   const summary =
     finalAi.summary ||
     finalAi.comment ||
     finalAi.text ||
-    coreAi.comment ||
     prediction.aiComment ||
     "AIまとめデータがありません。";
 
@@ -508,15 +471,28 @@
         "本命信頼度",
         confidenceScore,
         levelLabel(confidenceScore, "高信頼", "標準", "不安定"),
-        confidenceReason
+        confidence.reason || confidence.comment || ""
       )}
 
       ${renderAiMeter(
         "万舟期待度",
         manshuScore,
         levelLabel(manshuScore, "波乱注意", "中穴気配", "本線寄り"),
-        manshuReason
+        manshuPower.reason || manshuPower.comment || ""
       )}
+    </div>
+
+    <div class="v3-ai-summary-box">
+      <h3>AIまとめ</h3>
+      <p>${escapeHtml(summary)}</p>
+    </div>
+
+    ${renderIndexPanel(indexes)}
+  `;
+
+  return section("AI総合", body, "📊", "v3-ai-summary");
+}
+
     </div>
 
     <div class="v3-ai-summary-box">
