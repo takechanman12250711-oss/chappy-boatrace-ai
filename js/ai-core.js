@@ -1222,6 +1222,89 @@ if (boatNo >= 5 && roadIndex >= 60) {
     };
   }).sort((a, b) => b.score - a.score);
 }
+
+function buildRaceFlowEngine(boatAnalysis) {
+  const sorted = [...boatAnalysis].sort((a, b) => a.boatNo - b.boatNo);
+
+  const attackBoat =
+    sorted.find((boat) => boat.indexes?.attack >= 70 && boat.boatNo >= 3) ||
+    sorted.find((boat) => boat.boatNo === 3) ||
+    sorted[2];
+
+  const flowBoats = sorted
+    .filter((boat) => boat.indexes?.flow >= 60 || boat.indexes?.road >= 60)
+    .sort((a, b) => {
+      const ap = (a.indexes?.flow || 0) + (a.indexes?.road || 0);
+      const bp = (b.indexes?.flow || 0) + (b.indexes?.road || 0);
+      return bp - ap;
+    })
+    .slice(0, 3);
+
+  const localBoats = sorted
+    .filter((boat) => boat.indexes?.local >= 65)
+    .sort((a, b) => (b.indexes?.local || 0) - (a.indexes?.local || 0));
+
+  const riskBoats = sorted.filter((boat) => {
+    return (
+      (boat.debuffs || []).length >= 2 ||
+      boat.score <= 55
+    );
+  });
+
+  const scenarios = [];
+
+  const one = sorted.find((boat) => boat.boatNo === 1);
+  const two = sorted.find((boat) => boat.boatNo === 2);
+  const three = sorted.find((boat) => boat.boatNo === 3);
+  const four = sorted.find((boat) => boat.boatNo === 4);
+  const five = sorted.find((boat) => boat.boatNo === 5);
+  const six = sorted.find((boat) => boat.boatNo === 6);
+
+  if (one) {
+    scenarios.push({
+      type: "本命展開",
+      title: "1号艇逃げ中心",
+      boats: [one.boatNo, two?.boatNo, three?.boatNo, four?.boatNo].filter(Boolean),
+      comment: "1号艇が先マイできれば逃げ中心。2号艇の差し残し、3号艇の攻め残しが相手候補。"
+    });
+  }
+
+  if (three && three.indexes?.attack >= 65) {
+    scenarios.push({
+      type: "攻め展開",
+      title: "3号艇攻め",
+      boats: [three.boatNo, one?.boatNo, two?.boatNo, five?.boatNo, six?.boatNo].filter(Boolean),
+      comment: "3号艇の攻めが強い場合、内側の隊形が崩れやすい。2号艇は差し残し、5・6号艇は展開拾いで浮上。"
+    });
+  }
+
+  if (four && four.indexes?.attack >= 65) {
+    scenarios.push({
+      type: "カド展開",
+      title: "4号艇カド攻め",
+      boats: [four.boatNo, one?.boatNo, five?.boatNo, six?.boatNo, two?.boatNo].filter(Boolean),
+      comment: "4号艇がカドから踏み込めば一撃候補。外の5・6号艇は展開をもらいやすい。"
+    });
+  }
+
+  if ((five && five.indexes?.road >= 65) || (six && six.indexes?.road >= 65)) {
+    scenarios.push({
+      type: "穴展開",
+      title: "外枠の道中拾い",
+      boats: [five?.boatNo, six?.boatNo, one?.boatNo, two?.boatNo].filter(Boolean),
+      comment: "外枠に道中指数の高い艇がいるため、1マーク後の残しや2マーク逆転で3着浮上に注意。"
+    });
+  }
+
+  return {
+    attackBoat,
+    flowBoats,
+    localBoats,
+    riskBoats,
+    scenarios
+  };
+}
+
   function buildMainSheet(entries) {
   return buildSheetEntries(entries)
     .slice(0, 4)
