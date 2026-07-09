@@ -1639,3 +1639,63 @@ function renderFinalBlock(block) {
   };
 
 })();
+/* =========================================================
+  render.js Phase1
+  aiCore 優先表示アダプター
+========================================================= */
+
+(function () {
+  "use strict";
+
+  function hasAiCore(prediction) {
+    return !!(prediction && prediction.aiCore);
+  }
+
+  function applyAiCoreAdapter(prediction) {
+    if (!hasAiCore(prediction)) return prediction;
+
+    const core = prediction.aiCore;
+
+    return {
+      ...prediction,
+
+      ai: {
+        ...(prediction.ai || {}),
+        ...(core.ai || {})
+      },
+
+      indexes: {
+        ...(prediction.indexes || {}),
+        ...(core.indexes || {})
+      },
+
+      expectedBoats: core.expectedBoats || prediction.expectedBoats,
+      ranking: core.ranking || prediction.ranking,
+
+      mainSheet: core.mainSheet || prediction.mainSheet,
+      manshuSheet: core.manshuSheet || prediction.manshuSheet,
+
+      tickets: core.tickets || prediction.tickets,
+      buyTickets: core.tickets || prediction.buyTickets,
+
+      roleSummary: core.roleSummary || prediction.roleSummary,
+      manshuCandidates: core.manshuCandidates || prediction.manshuCandidates
+    };
+  }
+
+  const oldRenderAll = window.renderAll;
+
+  window.renderAll = function renderAllWithAiCore(prediction) {
+    const adaptedPrediction = applyAiCoreAdapter(prediction);
+
+    if (typeof oldRenderAll === "function") {
+      oldRenderAll(adaptedPrediction);
+    }
+  };
+
+  window.ChappyRenderAdapter = {
+    hasAiCore,
+    applyAiCoreAdapter
+  };
+
+})();
