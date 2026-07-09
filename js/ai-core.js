@@ -1445,6 +1445,8 @@ function buildSlitComment(data) {
   return parts.join(" ");
 }
 
+
+
 function buildRaceFlowEngine(boatAnalysis) {
   const sorted = [...boatAnalysis].sort((a, b) => a.boatNo - b.boatNo);
 
