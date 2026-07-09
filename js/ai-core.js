@@ -580,6 +580,7 @@ switch (exhibitionRank) {
   function buildVenueWeights(data) {
   const venue = getVenueProfile(data);
   const weather = getWeatherInfo(data);
+  const windDir = safeText(weather.windDirection).toUpperCase();
   const newEngine = isNewEngineRace(data);
 
   const weights = { ...DEFAULT_WEIGHTS };
@@ -630,7 +631,33 @@ switch (exhibitionRank) {
     weights.road += 3;
     weights.flow += 2;
   }
+// =============================
+// 風向補正
+// =============================
 
+if (
+  windDir.includes("追") ||
+  windDir.includes("TAIL")
+) {
+  weights.attack += 2;
+  weights.flow += 2;
+}
+
+if (
+  windDir.includes("向") ||
+  windDir.includes("HEAD")
+) {
+  weights.road += 3;
+  weights.local += 2;
+}
+
+if (
+  windDir.includes("横") ||
+  windDir.includes("CROSS")
+) {
+  weights.exhibition += 2;
+  weights.road += 2;
+}
   // 波補正
   if (weather.wave >= 5) {
     weights.road += 2;
@@ -1069,6 +1096,59 @@ switch (exhibitionRank) {
       `${localBoat.boatNo}号艇は当地指数が高く、この水面での残しに注意。`
     );
   }
+// スリットAI
+if (dashboard.slitEngine?.slitAlerts?.length) {
+  parts.push("🚨スリットアラート発動。スタート隊形の変化に注意。");
+}
+
+// ダブルタイム
+if (dashboard.doubleTime?.topBoat) {
+  parts.push(
+    `⚡ダブルタイムは${dashboard.doubleTime.topBoat}号艇が最上位評価。`
+  );
+}
+
+// 新サム理論
+if (dashboard.samTheory?.alertBoats?.length) {
+  parts.push(
+    `🟢新サムアラート：${dashboard.samTheory.alertBoats.join("・")}号艇`
+  );
+}
+
+// 新型エンジン
+if (dashboard.newEngine) {
+  parts.push(
+    "🛠新型エンジン開催のためモーター数字より展示・ST・選手技量を重視。"
+  );
+}
+// 24場特徴コメント
+const venue = dashboard.venue || {};
+
+if (venue.name) {
+  if (venue.inPower >= 70) {
+    parts.push(`🚤${venue.name}はイン有利度が高く、1号艇の先マイを重視。`);
+  }
+
+  if (venue.sashiPower >= 65) {
+    parts.push(`↘️${venue.name}は差し評価が高く、2コース差し残しに注意。`);
+  }
+
+  if (venue.makuriPower >= 65) {
+    parts.push(`🔥${venue.name}はまくり補正あり。3・4コースの攻めに注意。`);
+  }
+
+  if (venue.kadoPower >= 65) {
+    parts.push(`⚡${venue.name}はカド攻め補正あり。4号艇の攻め筋を確認。`);
+  }
+
+  if (venue.rough >= 70) {
+    parts.push(`🌊${venue.name}は水面影響が大きく、道中力・当地適性を重視。`);
+  }
+
+  if (venue.outsidePower >= 60) {
+    parts.push(`🌪${venue.name}は外枠の展開拾いも評価。5・6号艇の3着注意。`);
+  }
+}
 
   return parts.join(" ");
 }
