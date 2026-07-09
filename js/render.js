@@ -1550,3 +1550,92 @@ function renderFinalBlock(block) {
   };
 
 })();
+/* =========================================================
+  render.js Part 10 / 10
+  最終コメント整理 + シート視認性補助 + 完成仕上げ
+========================================================= */
+
+(function () {
+  "use strict";
+
+  function safeText(value, fallback = "-") {
+    if (value === null || value === undefined || value === "") return fallback;
+    return String(value);
+  }
+
+  function shortText(text, max = 70) {
+    const value = safeText(text, "");
+    if (!value) return "";
+    return value.length > max ? value.slice(0, max) + "…" : value;
+  }
+
+  function getFinalComment(prediction) {
+    const comment =
+      prediction?.finalComment ||
+      prediction?.comment ||
+      prediction?.ai?.comment ||
+      prediction?.summary?.comment ||
+      "";
+
+    if (!comment) {
+      return {
+        flow: "展開はイン中心に確認。",
+        aim: "本線は上位指数艇を重視。",
+        caution: "展示・直前気配で最終判断。"
+      };
+    }
+
+    return {
+      flow: shortText(prediction?.flowComment || comment, 55),
+      aim: shortText(prediction?.aimComment || comment, 55),
+      caution: shortText(prediction?.cautionComment || "オッズと展示気配のズレに注意。", 55)
+    };
+  }
+
+  function renderFinalCommentCompact(prediction) {
+    const area = document.getElementById("finalCommentArea");
+    if (!area) return;
+
+    const c = getFinalComment(prediction);
+
+    area.innerHTML = `
+      <section class="card final-comment-card">
+        <div class="section-title">
+          <span>📝 最終コメント</span>
+        </div>
+
+        <div class="final-comment-lines">
+          <p><strong>展開：</strong>${c.flow}</p>
+          <p><strong>狙い：</strong>${c.aim}</p>
+          <p><strong>注意：</strong>${c.caution}</p>
+        </div>
+      </section>
+    `;
+  }
+
+  function polishSheets() {
+    document
+      .querySelectorAll(".main-sheet-card, .manshu-sheet-card, .sheet-card")
+      .forEach((card) => {
+        card.classList.add("sheet-polished");
+      });
+
+    document
+      .querySelectorAll(".buff, .debuff, .buff-tag, .debuff-tag")
+      .forEach((tag) => {
+        tag.classList.add("compact-tag");
+      });
+  }
+
+  const oldRenderAll = window.renderAll;
+
+  window.renderAll = function renderAllWithPart10(prediction) {
+    if (typeof oldRenderAll === "function") {
+      oldRenderAll(prediction);
+    }
+
+    renderFinalCommentCompact(prediction);
+    polishSheets();
+  };
+
+})();
