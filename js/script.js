@@ -164,16 +164,36 @@
   }
 
   function createPredictionSafe(data) {
-    try {
-      if (typeof window.createPrediction === "function") {
-        return window.createPrediction(data);
-      }
-    } catch (error) {
-      console.warn("prediction.js error", error);
-    }
+  try {
+    if (typeof window.createPrediction === "function") {
+      const prediction = window.createPrediction(data);
 
-    return null;
+      if (prediction) {
+        return prediction;
+      }
+    }
+  } catch (error) {
+    console.error("prediction.js error", error);
   }
+
+  try {
+    if (
+      window.ChappyAICore &&
+      typeof window.ChappyAICore.analyze === "function"
+    ) {
+      return window.ChappyAICore.analyze(data);
+    }
+  } catch (error) {
+    console.error("ai-core fallback error", error);
+  }
+
+  return {
+    ok: true,
+    errorFallback: true,
+    message: "prediction.js fallback",
+    raw: data
+  };
+}
 
   function createTheorySafe(data) {
     try {
