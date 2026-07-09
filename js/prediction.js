@@ -4068,8 +4068,9 @@
   try {
     const prediction = __CHAPPY_BASE_CREATE_PREDICTION__(data);
     const enhanced = enhancePrediction(prediction);
+    const merged = useAiCorePrediction(enhanced, data);
 
-    return enhanced;
+    return merged;
   } catch (error) {
     console.error("createPrediction failed", error);
     return null;
