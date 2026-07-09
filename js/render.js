@@ -378,10 +378,10 @@
     { label: "日付", value: date },
     { label: "天候", value: tenki },
     { label: "風向", value: windDirection },
-    { label: "風速", value: formatUnit(windSpeed, "m") },
-    { label: "波高", value: formatUnit(waveHeight, "cm") },
-    { label: "気温", value: formatUnit(temperature, "℃") },
-    { label: "水温", value: formatUnit(waterTemperature, "℃") },
+    { label: "風速", value: windSpeed === "-" ? "-" : `${windSpeed}m` },
+    { label: "波高", value: waveHeight === "-" ? "-" : `${waveHeight}cm` },
+    { label: "気温", value: temperature === "-" ? "-" : `${temperature}℃` },
+    { label: "水温", value: waterTemperature === "-" ? "-" : `${waterTemperature}℃` },
     {
       label: "展示",
       value:
