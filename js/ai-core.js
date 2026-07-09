@@ -1291,71 +1291,61 @@ if (boatNo >= 5 && roadIndex >= 60) {
 }
 
   function buildCoreTickets(entries) {
-    const ranked = rankEntries(entries);
-    const a = ranked[0]?.boatNo;
-    const b = ranked[1]?.boatNo;
-    const c = ranked[2]?.boatNo;
-    const d = ranked[3]?.boatNo;
-    const e = ranked[4]?.boatNo;
+  const sheet = buildSheetEntries(entries);
+  const top = sheet.slice(0, 4);
 
-    const tickets = [];
+  if (top.length < 3) return [];
 
-    if (a && b && c) {
-      tickets.push({
-        rank: "S",
-        ticket: `${a}-${b}-${c}`,
-        reason: "総合指数上位3艇の本線"
-      });
+  const first = top[0];
+  const second = top[1];
+  const third = top[2];
+  const fourth = top[3] || top[2];
 
-      tickets.push({
-        rank: "A",
-        ticket: `${a}-${c}-${b}`,
-        reason: "本命軸の相手入れ替え"
-      });
-    }
+  const makeTicket = (rank, combo, hit, value, reason) => ({
+    rank,
+    combo,
+    hitRate: hit,
+    valueRate: value,
+    reason,
+    comment: `${rank}評価。的中期待${hit}、回収期待${value}。${reason}`
+  });
 
-    if (b && a && c) {
-      tickets.push({
-        rank: "A",
-        ticket: `${b}-${a}-${c}`,
-        reason: "対抗の差し・攻め切り押さえ"
-      });
-    }
+  const tickets = [
+    makeTicket(
+      "S",
+      `${first.boatNo}-${second.boatNo}-${third.boatNo}`,
+      "高",
+      "中",
+      `${first.boatNo}号艇を中心に、${second.boatNo}号艇と${third.boatNo}号艇を相手本線。`
+    ),
 
-    if (a && b && d) {
-      tickets.push({
-        rank: "B",
-        ticket: `${a}-${b}-${d}`,
-        reason: "4番手評価の3着拾い"
-      });
-    }
+    makeTicket(
+      "A",
+      `${first.boatNo}-${third.boatNo}-${second.boatNo}`,
+      "中高",
+      "中",
+      `${third.boatNo}号艇の浮上を見た押さえ本線。`
+    ),
 
-    if (c && a && b) {
-      tickets.push({
-        rank: "B",
-        ticket: `${c}-${a}-${b}`,
-        reason: "穴艇の攻め展開"
-      });
-    }
+    makeTicket(
+      "B",
+      `${second.boatNo}-${first.boatNo}-${third.boatNo}`,
+      "中",
+      "中高",
+      `${second.boatNo}号艇が先に攻める展開なら逆転候補。`
+    ),
 
-    if (d && a && b) {
-      tickets.push({
-        rank: "C",
-        ticket: `${d}-${a}-${b}`,
-        reason: "展開崩れの穴"
-      });
-    }
+    makeTicket(
+      "C",
+      `${third.boatNo}-${first.boatNo}-${fourth.boatNo}`,
+      "低中",
+      "高",
+      `${third.boatNo}号艇の一撃と${fourth.boatNo}号艇の絡みで高配当狙い。`
+    )
+  ];
 
-    if (e && a && b) {
-      tickets.push({
-        rank: "C",
-        ticket: `${e}-${a}-${b}`,
-        reason: "外枠・道中拾いの穴"
-      });
-    }
-
-    return tickets;
-  }
+  return tickets;
+}
 
   function buildPredictionCore(data) {
     const dashboard = buildAiDashboard(data);
