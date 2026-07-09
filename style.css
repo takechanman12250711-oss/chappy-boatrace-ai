@@ -1562,3 +1562,87 @@ input {
 .v3-index-row strong{
     font-size:14px;
 }
+/* =========================================================
+   Chappy UI Final Tune
+========================================================= */
+
+/* 本命・万舟カード */
+.v3-paper-card{
+    border-radius:10px;
+    margin:8px 0;
+    transition:.2s;
+}
+
+.v3-paper-card:hover{
+    transform:translateY(-1px);
+}
+
+/* コメント */
+.v3-paper-card p{
+    line-height:1.45;
+    margin:4px 0;
+}
+
+/* バフ・デバフ */
+.v3-paper-card ul{
+    margin:6px 0;
+    padding-left:18px;
+}
+
+.v3-paper-card li{
+    margin:2px 0;
+}
+
+/* スコア */
+.v3-paper-score{
+    min-width:42px;
+}
+
+/* AI総合 */
+.ai-summary-card{
+    margin-top:8px;
+}
+
+.index-mini-grid{
+    margin-top:10px;
+}
+
+/* AI買い目 */
+.ticket-row{
+    padding:6px 0;
+    border-bottom:1px solid #f1f1f1;
+}
+
+.ticket-row:last-child{
+    border:none;
+}
+
+.ticket-more summary{
+    cursor:pointer;
+    color:#2563eb;
+    font-weight:700;
+    padding:8px 0;
+}
+
+/* 最終コメント */
+.final-comment-card p{
+    margin:6px 0;
+    line-height:1.45;
+}
+
+/* スマホ */
+@media (max-width:768px){
+
+    .card,
+    .v3-paper-card{
+        margin:8px 0;
+    }
+
+    .section-title{
+        font-size:17px;
+    }
+
+    .ticket-row{
+        font-size:13px;
+    }
+}
