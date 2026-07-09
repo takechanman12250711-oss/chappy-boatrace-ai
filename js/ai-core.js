@@ -719,11 +719,29 @@ switch (exhibitionRank) {
 
   // 新型エンジン
   if (newEngine) {
-    next.motor -= 5;
-    next.exhibition += 4;
-    next.st += 2;
-    next.total += 1;
+
+  // 新型エンジンは展示・ST・技量重視
+  weights.exhibition += 6;
+  weights.st += 4;
+  weights.road += 3;
+  weights.local += 2;
+
+  // モーター2連率は過信しない
+  weights.motor -= 6;
+
+  // 強風時はさらに展示重視
+  if (weather.windSpeed >= 5) {
+    weights.exhibition += 3;
+    weights.road += 2;
   }
+
+  // 波が高い時は道中能力重視
+  if (weather.wave >= 5) {
+    weights.road += 3;
+    weights.flow += 2;
+  }
+
+}
 
   Object.keys(next).forEach((key) => {
     next[key] = clamp(round(next[key], 1));
@@ -1110,6 +1128,13 @@ switch (exhibitionRank) {
 
 function buildBoatAnalysis(data) {
   const entries = Array.isArray(data?.entries) ? data.entries : [];
+  const venueCode = String(
+  data?.stadiumCode ||
+  data?.jcd ||
+  data?.venueCode ||
+  data?.raceInfo?.stadiumCode ||
+  "24"
+).padStart(2, "0");
 　const slitEngine = buildSlitEngine(entries);
 
   return entries.map((boat) => {
@@ -1357,7 +1382,37 @@ if (synthOdds > 0) {
   }
 
 }
+// =======================================
+// 24場補正（第1段階）
+// =======================================
 
+switch (venueCode) {
+
+  case "24":
+    if (boatNo === 1) score += 3;
+    break;
+
+  case "20":
+    roadIndex += 4;
+    break;
+
+  case "22":
+    flowIndex += 4;
+    break;
+
+  case "03":
+    roadIndex += 6;
+    attackIndex -= 2;
+    break;
+
+  case "17":
+    flowIndex += 3;
+    break;
+
+  case "05":
+    attackIndex += 2;
+    break;
+}
     score = Math.max(1, Math.min(100, Math.round(score)));
     attackIndex = Math.max(1, Math.min(100, Math.round(attackIndex)));
     flowIndex = Math.max(1, Math.min(100, Math.round(flowIndex)));
