@@ -4083,7 +4083,8 @@ function useAiCorePrediction(prediction, data) {
     return prediction;
   }
 
-  const merged = window.ChappyAICore.mergeWithPrediction(prediction, data);
+  const merged =
+  window.ChappyAICore.mergeWithPrediction(prediction, data) || prediction;
   const core = merged.aiCore || {};
   const coreAi = core.ai || {};
 
