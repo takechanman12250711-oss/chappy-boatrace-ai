@@ -4092,8 +4092,15 @@ function useAiCorePrediction(prediction, data) {
       summary: coreAi.comment || merged.finalAi?.summary || ""
     },
 
-    confidence: coreAi.trust ?? coreAi.mainTrust ?? merged.confidence,
-    manshuPower: coreAi.manshu ?? coreAi.manshuPower ?? merged.manshuPower,
+    confidence: {
+  score: coreAi.trust ?? coreAi.mainTrust ?? merged.confidence?.score ?? merged.confidence ?? 0,
+  reason: coreAi.comment || merged.confidence?.reason || ""
+},
+
+manshuPower: {
+  score: coreAi.manshu ?? coreAi.manshuPower ?? merged.manshuPower?.score ?? merged.manshuPower ?? 0,
+  reason: coreAi.comment || merged.manshuPower?.reason || ""
+},
 
     ticketRanks: core.tickets || merged.ticketRanks,
     tickets: core.tickets || merged.tickets,
