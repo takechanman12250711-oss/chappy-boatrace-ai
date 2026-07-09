@@ -1804,3 +1804,65 @@ input {
     padding:7px;
   }
 }
+/* =========================================================
+  表・解説文の表示切れ対策
+========================================================= */
+
+.table-card,
+.sheet-card,
+.prediction-card,
+.ai-card,
+.comment-card,
+.entry-card,
+.panel {
+  overflow: visible;
+}
+
+.table-card *,
+.sheet-card *,
+.prediction-card *,
+.ai-card *,
+.comment-card *,
+.entry-card *,
+.panel * {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.55;
+}
+
+td,
+th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  vertical-align: top;
+}
+
+.reason,
+.comment,
+.description,
+.ai-comment,
+.short-comment,
+.sheet-comment,
+.buff,
+.debuff,
+.tag,
+.card-text {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  display: block;
+  max-height: none;
+  line-height: 1.55;
+}
+
+.buffs,
+.debuffs,
+.tags,
+.comment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow: visible;
+}
