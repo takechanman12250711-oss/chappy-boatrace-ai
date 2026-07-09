@@ -245,23 +245,39 @@
   }
 
   function calcExhibitionScore(entry) {
-    const exhibitionTime = toNumber(getEntryValue(entry, [
-      "exhibitionTime", "tenjiTime", "displayTime", "展示タイム"
-    ], 6.85), 6.85);
 
-    const lapTime = toNumber(getEntryValue(entry, [
-      "lapTime", "turnTime", "oneLapTime", "一周タイム"
-    ], 37.5), 37.5);
+  const exhibitionTime = toNumber(getEntryValue(entry, [
+    "exhibitionTime",
+    "tenjiTime",
+    "displayTime",
+    "展示タイム"
+  ], 6.85), 6.85);
 
-    const exhibitScore = normalize(exhibitionTime, 6.65, 7.10, true);
-    const lapScore = normalize(lapTime, 36.0, 39.0, true);
+  const exhibitionST = toNumber(getEntryValue(entry, [
+    "exhibitionST",
+    "tenjiST",
+    "displayST",
+    "展示ST"
+  ], 0.16), 0.16);
 
-    return round(
-      exhibitScore * 0.65 +
-      lapScore * 0.35,
+  const lapTime = toNumber(getEntryValue(entry, [
+    "lapTime",
+    "turnTime",
+    "oneLapTime",
+    "一周タイム"
+  ], 37.50), 37.50);
+
+  const timeScore = normalize(exhibitionTime, 6.65, 7.10, true);
+  const stScore = normalize(exhibitionST, 0.05, 0.25, true);
+  const lapScore = normalize(lapTime, 36.0, 39.0, true);
+
+  return round(
+      timeScore * 0.50 +
+      stScore * 0.25 +
+      lapScore * 0.25,
       1
-    );
-  }
+  );
+}
 
   function calcMotorScore(entry) {
     const motor2 = toNumber(getEntryValue(entry, [
