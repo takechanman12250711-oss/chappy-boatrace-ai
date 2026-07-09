@@ -493,22 +493,6 @@
   return section("AI総合", body, "📊", "v3-ai-summary");
 }
 
-    </div>
-
-    <div class="v3-ai-summary-box">
-      <h3>AIまとめ</h3>
-      <p>${escapeHtml(summary)}</p>
-    </div>
-
-    ${renderIndexPanel(indexes)}
-  `;
-
-  return section("AI総合", body, "📊", "v3-ai-summary");
-}
-
-    return section("AI総合", body, "📊", "v3-ai-section");
-  }
-
   function renderAiMeter(label, score, level, comment) {
     return `
       <div class="v3-ai-meter">
