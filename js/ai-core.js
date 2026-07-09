@@ -1208,14 +1208,16 @@ if (venue.name) {
 
 function buildBoatAnalysis(data) {
   const entries = Array.isArray(data?.entries) ? data.entries : [];
+
   const venueCode = String(
-  data?.stadiumCode ||
-  data?.jcd ||
-  data?.venueCode ||
-  data?.raceInfo?.stadiumCode ||
-  "24"
-).padStart(2, "0");
-　const slitEngine = buildSlitEngine(entries);
+    data?.stadiumCode ||
+    data?.jcd ||
+    data?.venueCode ||
+    data?.raceInfo?.stadiumCode ||
+    "24"
+  ).padStart(2, "0");
+
+  const slitEngine = buildSlitEngine(entries);
 
   return entries.map((boat) => {
     const boatNo = Number(boat.boatNo || boat.number || boat.course || 0);
@@ -1224,275 +1226,253 @@ function buildBoatAnalysis(data) {
     const nationalWin = Number(boat.nationalWinRate || boat.winRate || 0);
     const localWin = Number(boat.localWinRate || boat.localRate || 0);
     const motor2 = Number(boat.motor2Rate || boat.motorRate || 0);
+
     const synthOdds = Number(
-  boat.syntheticOdds ||
-  boat.compositeOdds ||
-  boat.aiOdds ||
-  0
-);
+      boat.syntheticOdds ||
+      boat.compositeOdds ||
+      boat.aiOdds ||
+      0
+    );
+
     const exhibit = Number(boat.exhibitTime || boat.exhibitionTime || 0);
-　　　const lap = Number(
-  boat.lapTime ||
-  boat.oneLapTime ||
-  boat.turnTime ||
-  0
-);
+
+    const lap = Number(
+      boat.lapTime ||
+      boat.oneLapTime ||
+      boat.turnTime ||
+      0
+    );
 
     let score = 50;
     const buffs = [];
     const debuffs = [];
     const alerts = [];
+    const roleTags = [];
+
     let attackIndex = 50;
     let flowIndex = 50;
     let roadIndex = 50;
     let localIndex = 50;
-　　　const slit = slitEngine.stRanking.find(
-  (item) => Number(item.number) === boatNo
-);
 
-if (slit) {
+    const slit = slitEngine.stRanking.find(
+      (item) => Number(item.number) === boatNo
+    );
 
-  score += slit.slitBonus || 0;
+    if (slit) {
+      score += slit.slitBonus || 0;
 
-  if (slit.stRank === 1) {
-    attackIndex += 10;
-    flowIndex += 8;
-  }
-
-  else if (slit.stRank === 2) {
-    attackIndex += 6;
-    flowIndex += 5;
-  }
-
-  else if (slit.stRank >= 5) {
-    attackIndex -= 5;
-    flowIndex -= 4;
-  }
-
-}
-}
+      if (slit.stRank === 1) {
+        attackIndex += 10;
+        flowIndex += 8;
+      } else if (slit.stRank === 2) {
+        attackIndex += 6;
+        flowIndex += 5;
+      } else if (slit.stRank >= 5) {
+        attackIndex -= 5;
+        flowIndex -= 4;
+      }
+    }
 
     // コース補正
-if (boatNo === 1) {
-  score += 18;
-  attackIndex += 8;
-  flowIndex += 10;
-  roadIndex += 4;
-  buffs.push("イン有利");
-} else if (boatNo === 2) {
-  score += 8;
-  attackIndex += 4;
-  flowIndex += 9;
-  roadIndex += 6;
-  buffs.push("差し残し候補");
-} else if (boatNo === 3) {
-  score += 6;
-  attackIndex += 12;
-  flowIndex += 5;
-  roadIndex += 5;
-  buffs.push("攻め展開候補");
-} else if (boatNo === 4) {
-  score += 3;
-  attackIndex += 10;
-  flowIndex += 6;
-  roadIndex += 6;
-  buffs.push("カド攻め候補");
-} else if (boatNo >= 5) {
-  score -= 4;
-  attackIndex += 3;
-  flowIndex += 10;
-  roadIndex += 12;
-  buffs.push("展開待ち");
-  debuffs.push("外枠不利");
-}
+    if (boatNo === 1) {
+      score += 18;
+      attackIndex += 8;
+      flowIndex += 10;
+      roadIndex += 4;
+      buffs.push("イン有利");
+    } else if (boatNo === 2) {
+      score += 8;
+      attackIndex += 4;
+      flowIndex += 9;
+      roadIndex += 6;
+      buffs.push("差し残し候補");
+    } else if (boatNo === 3) {
+      score += 6;
+      attackIndex += 12;
+      flowIndex += 5;
+      roadIndex += 5;
+      buffs.push("攻め展開候補");
+    } else if (boatNo === 4) {
+      score += 3;
+      attackIndex += 10;
+      flowIndex += 6;
+      roadIndex += 6;
+      buffs.push("カド攻め候補");
+    } else if (boatNo >= 5) {
+      score -= 4;
+      attackIndex += 3;
+      flowIndex += 10;
+      roadIndex += 12;
+      buffs.push("展開待ち");
+      debuffs.push("外枠不利");
+    }
 
     // ST評価
-if (st > 0 && st <= 0.13) {
-  score += 12;
-  attackIndex += 14;
-  flowIndex += 4;
-  buffs.push("ST鋭い");
-} else if (st <= 0.16) {
-  score += 7;
-  attackIndex += 8;
-  flowIndex += 3;
-  buffs.push("ST安定");
-} else if (st >= 0.20) {
-  score -= 8;
-  attackIndex -= 10;
-  flowIndex -= 4;
-  debuffs.push("ST遅め");
-}
+    if (st > 0 && st <= 0.13) {
+      score += 12;
+      attackIndex += 14;
+      flowIndex += 4;
+      buffs.push("ST鋭い");
+    } else if (st <= 0.16) {
+      score += 7;
+      attackIndex += 8;
+      flowIndex += 3;
+      buffs.push("ST安定");
+    } else if (st >= 0.20) {
+      score -= 8;
+      attackIndex -= 10;
+      flowIndex -= 4;
+      debuffs.push("ST遅め");
+    }
 
     // 全国勝率
-if (nationalWin >= 6.5) {
-  score += 12;
-  attackIndex += 7;
-  flowIndex += 5;
-  roadIndex += 10;
-  buffs.push("選手技量上位");
-} else if (nationalWin >= 5.5) {
-  score += 7;
-  attackIndex += 4;
-  flowIndex += 3;
-  roadIndex += 6;
-  buffs.push("実力安定");
-} else if (nationalWin > 0 && nationalWin < 4.5) {
-  score -= 6;
-  attackIndex -= 4;
-  roadIndex -= 5;
-  debuffs.push("勝率低め");
-}
+    if (nationalWin >= 6.5) {
+      score += 12;
+      attackIndex += 7;
+      flowIndex += 5;
+      roadIndex += 10;
+      buffs.push("選手技量上位");
+    } else if (nationalWin >= 5.5) {
+      score += 7;
+      attackIndex += 4;
+      flowIndex += 3;
+      roadIndex += 6;
+      buffs.push("実力安定");
+    } else if (nationalWin > 0 && nationalWin < 4.5) {
+      score -= 6;
+      attackIndex -= 4;
+      roadIndex -= 5;
+      debuffs.push("勝率低め");
+    }
 
     // 当地勝率
-if (localWin >= 6.5) {
-  score += 9;
-  localIndex += 18;
-  roadIndex += 6;
-  buffs.push("当地巧者");
-} else if (localWin >= 5.5) {
-  score += 5;
-  localIndex += 10;
-  roadIndex += 3;
-  buffs.push("当地実績あり");
-} else if (localWin > 0 && localWin < 4.5) {
-  score -= 4;
-  localIndex -= 8;
-  debuffs.push("当地不安");
-}
+    if (localWin >= 6.5) {
+      score += 9;
+      localIndex += 18;
+      roadIndex += 6;
+      buffs.push("当地巧者");
+    } else if (localWin >= 5.5) {
+      score += 5;
+      localIndex += 10;
+      roadIndex += 3;
+      buffs.push("当地実績あり");
+    } else if (localWin > 0 && localWin < 4.5) {
+      score -= 4;
+      localIndex -= 8;
+      debuffs.push("当地不安");
+    }
+
     // モーター評価
-if (motor2 >= 40) {
-  score += 8;
-  attackIndex += 5;
-  flowIndex += 5;
-  roadIndex += 5;
-  buffs.push("モーター上位");
-} else if (motor2 >= 33) {
-  score += 4;
-  attackIndex += 3;
-  flowIndex += 3;
-  buffs.push("モーター並以上");
-} else if (motor2 > 0 && motor2 < 25) {
-  score -= 5;
-  attackIndex -= 4;
-  flowIndex -= 3;
-  debuffs.push("モーター弱め");
-}
+    if (motor2 >= 40) {
+      score += 8;
+      attackIndex += 5;
+      flowIndex += 5;
+      roadIndex += 5;
+      buffs.push("モーター上位");
+    } else if (motor2 >= 33) {
+      score += 4;
+      attackIndex += 3;
+      flowIndex += 3;
+      buffs.push("モーター並以上");
+    } else if (motor2 > 0 && motor2 < 25) {
+      score -= 5;
+      attackIndex -= 4;
+      flowIndex -= 3;
+      debuffs.push("モーター弱め");
+    }
 
     // 展示タイム評価
-if (exhibit > 0 && exhibit <= 6.75) {
-  score += 8;
-  attackIndex += 6;
-  flowIndex += 4;
-  roadIndex += 4;
-  buffs.push("展示気配◎");
-} else if (exhibit > 0 && exhibit <= 6.85) {
-  score += 4;
-  attackIndex += 3;
-  flowIndex += 2;
-  buffs.push("展示気配○");
-} else if (exhibit >= 6.95) {
-  score -= 4;
-  attackIndex -= 3;
-  debuffs.push("展示気配ひと息");
-  // ダブルタイム理論
-if (
-  exhibit > 0 &&
-  lap > 0 &&
-  exhibit <= 6.75 &&
-  lap <= 37.20
-) {
-  score += 10;
-  attackIndex += 8;
-  flowIndex += 6;
-  roadIndex += 5;
+    if (exhibit > 0 && exhibit <= 6.75) {
+      score += 8;
+      attackIndex += 6;
+      flowIndex += 4;
+      roadIndex += 4;
+      buffs.push("展示気配◎");
+    } else if (exhibit > 0 && exhibit <= 6.85) {
+      score += 4;
+      attackIndex += 3;
+      flowIndex += 2;
+      buffs.push("展示気配○");
+    } else if (exhibit >= 6.95) {
+      score -= 4;
+      attackIndex -= 3;
+      debuffs.push("展示気配ひと息");
+    }
 
-  buffs.push("ダブルタイム");
-  roleTags.push("ダブルタイム⚡");
-}
-}
-// 新サム理論
-const samTotal = exhibit + lap;
+    // ダブルタイム理論
+    if (exhibit > 0 && lap > 0 && exhibit <= 6.75 && lap <= 37.20) {
+      score += 10;
+      attackIndex += 8;
+      flowIndex += 6;
+      roadIndex += 5;
+      buffs.push("ダブルタイム");
+      roleTags.push("ダブルタイム⚡");
+    }
 
-if (samTotal > 0) {
+    // 新サム理論
+    const samTotal = exhibit + lap;
 
-  if (samTotal <= 43.80) {
-    score += 8;
-    attackIndex += 5;
-    flowIndex += 6;
-    roadIndex += 6;
-    buffs.push("新サム◎");
-    alerts.push("新サムアラート");
-  }
+    if (samTotal > 0) {
+      if (samTotal <= 43.80) {
+        score += 8;
+        attackIndex += 5;
+        flowIndex += 6;
+        roadIndex += 6;
+        buffs.push("新サム◎");
+        alerts.push("新サムアラート");
+      } else if (samTotal <= 44.10) {
+        score += 4;
+        attackIndex += 3;
+        flowIndex += 3;
+        buffs.push("新サム○");
+      } else if (samTotal >= 44.70) {
+        score -= 4;
+        attackIndex -= 2;
+        flowIndex -= 2;
+        debuffs.push("新サム△");
+      }
+    }
 
-  else if (samTotal <= 44.10) {
-    score += 4;
-    attackIndex += 3;
-    flowIndex += 3;
-    buffs.push("新サム○");
-  }
+    // 合成オッズ補正
+    if (synthOdds > 0) {
+      if (synthOdds <= 8) {
+        score += 8;
+        flowIndex += 6;
+        buffs.push("合成オッズ上位");
+        alerts.push("オッズ注目");
+      } else if (synthOdds <= 15) {
+        score += 4;
+        flowIndex += 3;
+        buffs.push("合成オッズ良好");
+      } else if (synthOdds >= 40) {
+        score -= 3;
+        debuffs.push("人気薄");
+      }
+    }
 
-  else if (samTotal >= 44.70) {
-    score -= 4;
-    attackIndex -= 2;
-    flowIndex -= 2;
-    debuffs.push("新サム△");
-  }
+    // 24場補正 第1段階
+    switch (venueCode) {
+      case "24":
+        if (boatNo === 1) score += 3;
+        break;
+      case "20":
+        roadIndex += 4;
+        break;
+      case "22":
+        flowIndex += 4;
+        break;
+      case "03":
+        roadIndex += 6;
+        attackIndex -= 2;
+        break;
+      case "17":
+        flowIndex += 3;
+        break;
+      case "05":
+        attackIndex += 2;
+        break;
+    }
 
-}
-// 合成オッズ補正
-if (synthOdds > 0) {
-
-  if (synthOdds <= 8) {
-    score += 8;
-    flowIndex += 6;
-    buffs.push("合成オッズ上位");
-    alerts.push("オッズ注目");
-  }
-
-  else if (synthOdds <= 15) {
-    score += 4;
-    flowIndex += 3;
-    buffs.push("合成オッズ良好");
-  }
-
-  else if (synthOdds >= 40) {
-    score -= 3;
-    debuffs.push("人気薄");
-  }
-
-}
-// =======================================
-// 24場補正（第1段階）
-// =======================================
-
-switch (venueCode) {
-
-  case "24":
-    if (boatNo === 1) score += 3;
-    break;
-
-  case "20":
-    roadIndex += 4;
-    break;
-
-  case "22":
-    flowIndex += 4;
-    break;
-
-  case "03":
-    roadIndex += 6;
-    attackIndex -= 2;
-    break;
-
-  case "17":
-    flowIndex += 3;
-    break;
-
-  case "05":
-    attackIndex += 2;
-    break;
-}
     score = Math.max(1, Math.min(100, Math.round(score)));
     attackIndex = Math.max(1, Math.min(100, Math.round(attackIndex)));
     flowIndex = Math.max(1, Math.min(100, Math.round(flowIndex)));
@@ -1506,35 +1486,14 @@ switch (venueCode) {
     if (boatNo === 4) style = "カド攻め型";
     if (boatNo >= 5) style = "展開拾い型";
 
-    const roleTags = [];
+    if (attackIndex >= 65) roleTags.push("攻め艇🔥");
+    if (flowIndex >= 65) roleTags.push("展開艇🌊");
+    if (roadIndex >= 65) roleTags.push("道中艇⚡");
+    if (localIndex >= 65) roleTags.push("当地巧者🏠");
+    if (boatNo === 1 && score >= 70) roleTags.push("逃げ中心🚤");
+    if (boatNo === 2 && flowIndex >= 60) roleTags.push("差し残し注意");
+    if (boatNo >= 5 && roadIndex >= 60) roleTags.push("3着拾い注意");
 
-if (attackIndex >= 65) {
-  roleTags.push("攻め艇🔥");
-}
-
-if (flowIndex >= 65) {
-  roleTags.push("展開艇🌊");
-}
-
-if (roadIndex >= 65) {
-  roleTags.push("道中艇⚡");
-}
-
-if (localIndex >= 65) {
-  roleTags.push("当地巧者🏠");
-}
-
-if (boatNo === 1 && score >= 70) {
-  roleTags.push("逃げ中心🚤");
-}
-
-if (boatNo === 2 && flowIndex >= 60) {
-  roleTags.push("差し残し注意");
-}
-
-if (boatNo >= 5 && roadIndex >= 60) {
-  roleTags.push("3着拾い注意");
-}
     let comment = "総合的には押さえ評価。";
     if (score >= 85) comment = "中心候補。展開・数値ともに上位。";
     else if (score >= 75) comment = "相手筆頭。舟券には厚く入れたい。";
@@ -1547,11 +1506,11 @@ if (boatNo >= 5 && roadIndex >= 60) {
       name: boat.name || boat.playerName || "",
       score,
       indexes: {
-  attack: attackIndex,
-  flow: flowIndex,
-  road: roadIndex,
-  local: localIndex
-},
+        attack: attackIndex,
+        flow: flowIndex,
+        road: roadIndex,
+        local: localIndex
+      },
       style,
       roleTags,
       buffs,
