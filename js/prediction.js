@@ -4065,10 +4065,15 @@
   const __CHAPPY_BASE_CREATE_PREDICTION__ = createPrediction;
 
   window.createPrediction = function(data) {
-  const prediction = __CHAPPY_BASE_CREATE_PREDICTION__(data);
-  const enhanced = enhancePrediction(prediction);
+  try {
+    const prediction = __CHAPPY_BASE_CREATE_PREDICTION__(data);
+    const enhanced = enhancePrediction(prediction);
 
-  return useAiCorePrediction(enhanced, data);
+    return enhanced;
+  } catch (error) {
+    console.error("createPrediction failed", error);
+    return null;
+  }
 };
 
   window.debugPrediction = debugPrediction;
