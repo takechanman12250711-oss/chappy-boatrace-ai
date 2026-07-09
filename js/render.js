@@ -1684,7 +1684,6 @@ function renderFinalBlock(block) {
     }
 
     renderAiSummaryCard(prediction);
-    renderAiTicketsCompact(prediction);
   };
 
 })();
