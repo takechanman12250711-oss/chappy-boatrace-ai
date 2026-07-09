@@ -1225,19 +1225,70 @@ if (boatNo >= 5 && roadIndex >= 60) {
 }
 
   function buildManshuSheet(entries) {
-    return buildSheetEntries(entries)
-      .slice()
-      .sort((a, b) => {
-        const ap = toNumber(a.indexes?.road, 0) + toNumber(a.indexes?.local, 0) + (a.boatNo >= 4 ? 15 : 0);
-        const bp = toNumber(b.indexes?.road, 0) + toNumber(b.indexes?.local, 0) + (b.boatNo >= 4 ? 15 : 0);
-        return bp - ap;
-      })
-      .slice(0, 4)
-      .map((entry) => ({
+  return buildSheetEntries(entries)
+    .filter((entry) => entry.mark !== "◎")
+    .map((entry) => {
+      const idx = entry.indexes || {};
+
+      let manshuScore = 0;
+      const manshuReasons = [];
+
+      if (entry.boatNo >= 4) {
+        manshuScore += 18;
+        manshuReasons.push("外寄りで人気が落ちやすい");
+      }
+
+      if (idx.attack >= 65) {
+        manshuScore += 15;
+        manshuReasons.push("攻め指数が高い");
+      }
+
+      if (idx.flow >= 65) {
+        manshuScore += 12;
+        manshuReasons.push("展開を拾える");
+      }
+
+      if (idx.road >= 65) {
+        manshuScore += 15;
+        manshuReasons.push("道中で残せる");
+      }
+
+      if (idx.local >= 65) {
+        manshuScore += 10;
+        manshuReasons.push("当地適性がある");
+      }
+
+      if ((entry.roleTags || []).includes("3着拾い注意")) {
+        manshuScore += 10;
+        manshuReasons.push("3着拾いの形がある");
+      }
+
+      if ((entry.debuffs || []).length >= 2) {
+        manshuScore -= 8;
+        manshuReasons.push("不安材料もある");
+      }
+
+      manshuScore = Math.max(1, Math.min(100, Math.round(manshuScore)));
+
+      return {
         ...entry,
-        comment: `${entry.boatNo}号艇は${entry.role}として3着・穴絡みに注意。`
-      }));
-  }
+        manshuScore,
+        manshuReasons,
+        manshuPoint: `${entry.boatNo}号艇 ${entry.name}`,
+        manshuType:
+          idx.attack >= 70 ? "一撃型" :
+          idx.road >= 70 ? "道中拾い型" :
+          idx.flow >= 70 ? "展開待ち型" :
+          "押さえ穴型",
+        shortComment:
+          manshuReasons.length
+            ? manshuReasons.join("・")
+            : "展開次第で穴候補。"
+      };
+    })
+    .sort((a, b) => b.manshuScore - a.manshuScore)
+    .slice(0, 4);
+}
 
   function buildCoreTickets(entries) {
     const ranked = rankEntries(entries);
