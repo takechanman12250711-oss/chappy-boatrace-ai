@@ -1629,7 +1629,6 @@ function renderFinalBlock(block) {
     </div>
   `;
 }
-}
   function renderAiTicketsCompact(prediction) {
     const area = document.getElementById("aiTicketsArea");
     if (!area) return;
