@@ -4049,9 +4049,15 @@
   const __CHAPPY_BASE_CREATE_PREDICTION__ = createPrediction;
 
   window.createPrediction = function(data) {
-    const prediction = __CHAPPY_BASE_CREATE_PREDICTION__(data);
-    return enhancePrediction(prediction);
-  };
+  const prediction = __CHAPPY_BASE_CREATE_PREDICTION__(data);
+  const enhanced = enhancePrediction(prediction);
+
+  if (window.ChappyAICore) {
+    return window.ChappyAICore.mergeWithPrediction(enhanced, data);
+  }
+
+  return enhanced;
+};
 
   window.debugPrediction = debugPrediction;
 
