@@ -83,7 +83,22 @@
 
       console.log("✅ API成功 entries=", data?.entries?.length || 0, data);
 
-      const prediction = createPredictionSafe(data);
+      const prediction = createPredictionSafe(data) || createEmergencyPrediction(data);
+      function createEmergencyPrediction(data) {
+  return {
+    ok: true,
+    version: "emergency",
+    race: data,
+    indexes: { scores: [], totalRanking: [] },
+    mainSheet: { evaluations: [], formation: {} },
+    manshuSheet: { candidates: [], formation: [] },
+    formation: {},
+    finalComment: {
+      title: "緊急表示",
+      comment: "prediction.jsが失敗したため、取得データのみ表示します。"
+    }
+  };
+}
       const theory = createTheorySafe(data);
       const ai = createAISafe(data);
       const odds = data?.odds || null;
