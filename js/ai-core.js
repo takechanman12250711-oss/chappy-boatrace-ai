@@ -1229,8 +1229,7 @@ if (boatNo >= 5 && roadIndex >= 60) {
 ========================================================= */
 
 function buildSlitEngine(boats) {
-  const list = normalizeBoats(boats);
-
+  const list = safeArray(boats);
   const analyzed = list.map((boat) => {
     const course = Number(boat.course || boat.number || boat.waku || 0);
     const st = toNumber(
