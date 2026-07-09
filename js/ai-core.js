@@ -1223,6 +1223,229 @@ if (boatNo >= 5 && roadIndex >= 60) {
   }).sort((a, b) => b.score - a.score);
 }
 
+/* =========================================================
+  Phase3 Step10
+  スリットAI / buildSlitEngine()
+========================================================= */
+
+function buildSlitEngine(boats) {
+  const list = normalizeBoats(boats);
+
+  const analyzed = list.map((boat) => {
+    const course = Number(boat.course || boat.number || boat.waku || 0);
+    const st = toNumber(
+      boat.exhibitionST ??
+      boat.tenjiST ??
+      boat.st ??
+      boat.avgST ??
+      boat.averageST,
+      0.18
+    );
+
+    const score = Math.round((0.25 - st) * 1000);
+
+    let startRankType = "普通";
+    if (st <= 0.10) startRankType = "超速";
+    else if (st <= 0.13) startRankType = "速い";
+    else if (st <= 0.16) startRankType = "安定";
+    else if (st >= 0.21) startRankType = "遅れ注意";
+
+    return {
+      number: boat.number || boat.waku || course,
+      name: boat.name || boat.playerName || "",
+      course,
+      st,
+      score,
+      startRankType
+    };
+  });
+
+  const sorted = [...analyzed].sort((a, b) => a.st - b.st);
+
+  const withRank = analyzed.map((boat) => {
+    const rank = sorted.findIndex((b) => b.number === boat.number) + 1;
+    return {
+      ...boat,
+      stRank: rank
+    };
+  });
+
+  const alerts = [];
+  const dents = [];
+  const attackCandidates = [];
+  const stableStarters = [];
+
+  withRank.forEach((boat) => {
+    const inner = withRank.find((b) => b.course === boat.course - 1);
+    const outer = withRank.find((b) => b.course === boat.course + 1);
+
+    const innerGap = inner ? inner.st - boat.st : 0;
+    const outerGap = outer ? outer.st - boat.st : 0;
+
+    if (inner && Math.abs(innerGap) >= 0.10) {
+      alerts.push({
+        number: boat.number,
+        type: "🚨スリットアラート",
+        target: inner.number,
+        gap: Math.abs(innerGap).toFixed(2),
+        comment:
+          innerGap > 0
+            ? `${boat.number}号艇が${inner.number}号艇より大きく先行。攻め起点候補。`
+            : `${boat.number}号艇は内の${inner.number}号艇に対して遅れ注意。`
+      });
+    }
+
+    if (outer && Math.abs(outerGap) >= 0.10) {
+      alerts.push({
+        number: boat.number,
+        type: "🚨スリットアラート",
+        target: outer.number,
+        gap: Math.abs(outerGap).toFixed(2),
+        comment:
+          outerGap > 0
+            ? `${boat.number}号艇が${outer.number}号艇より大きく先行。外を止める可能性。`
+            : `${boat.number}号艇は外の${outer.number}号艇に対して遅れ注意。`
+      });
+    }
+
+    if (boat.st >= 0.21) {
+      dents.push({
+        number: boat.number,
+        risk: "凹み予測",
+        comment: `${boat.number}号艇はST遅れリスクあり。隣艇の攻め場になりやすい。`
+      });
+    }
+
+    if (boat.st <= 0.13) {
+      attackCandidates.push({
+        number: boat.number,
+        course: boat.course,
+        comment: `${boat.number}号艇はスリット先行候補。攻めの起点になりやすい。`
+      });
+    }
+
+    if (boat.st <= 0.16) {
+      stableStarters.push({
+        number: boat.number,
+        comment: `${boat.number}号艇はST安定。隊形を崩しにくい。`
+      });
+    }
+  });
+
+  const fastest = sorted[0];
+  const slowest = sorted[sorted.length - 1];
+
+  const makuriBase =
+    fastest && fastest.course >= 3
+      ? Math.min(85, 45 + fastest.score)
+      : fastest && fastest.course === 2
+      ? Math.min(70, 35 + fastest.score)
+      : 30;
+
+  const sashiBase =
+    fastest && fastest.course <= 2
+      ? Math.min(80, 45 + fastest.score)
+      : 35;
+
+  const makuriSashiBase =
+    fastest && fastest.course >= 4
+      ? Math.min(80, 40 + fastest.score)
+      : 30;
+
+  let startTrigger = null;
+
+  if (fastest) {
+    if (fastest.course === 1) {
+      startTrigger = {
+        type: "イン主導",
+        boat: fastest.number,
+        comment: "1号艇がスリット優勢なら逃げ主導。"
+      };
+    } else if (fastest.course === 2) {
+      startTrigger = {
+        type: "差し起点",
+        boat: fastest.number,
+        comment: "2号艇がスリット優勢。差し抜け、差し残しに注意。"
+      };
+    } else if (fastest.course === 3) {
+      startTrigger = {
+        type: "まくり起点",
+        boat: fastest.number,
+        comment: "3号艇がスリット優勢。まくり・まくり差しの展開開始艇。"
+      };
+    } else if (fastest.course >= 4) {
+      startTrigger = {
+        type: "外攻め起点",
+        boat: fastest.number,
+        comment: `${fastest.number}号艇が外からスリット優勢。まくり差し・展開突きに注意。`
+      };
+    }
+  }
+
+  return {
+    stRanking: sorted.map((boat, index) => ({
+      rank: index + 1,
+      number: boat.number,
+      name: boat.name,
+      st: boat.st,
+      type: boat.startRankType
+    })),
+
+    slitAlerts: alerts,
+    dentPredictions: dents,
+    attackCandidates,
+    stableStarters,
+
+    fastestStarter: fastest || null,
+    slowestStarter: slowest || null,
+
+    makuriRate: Math.max(0, Math.round(makuriBase)),
+    sashiRate: Math.max(0, Math.round(sashiBase)),
+    makuriSashiRate: Math.max(0, Math.round(makuriSashiBase)),
+
+    startTrigger,
+
+    comment: buildSlitComment({
+      fastest,
+      slowest,
+      alerts,
+      makuriRate: Math.max(0, Math.round(makuriBase)),
+      sashiRate: Math.max(0, Math.round(sashiBase)),
+      makuriSashiRate: Math.max(0, Math.round(makuriSashiBase))
+    })
+  };
+}
+
+function buildSlitComment(data) {
+  if (!data.fastest) {
+    return "スリット情報が不足しているため、平均STベースで判定。";
+  }
+
+  const parts = [];
+
+  parts.push(
+    `スリット最速候補は${data.fastest.number}号艇。`
+  );
+
+  if (data.alerts && data.alerts.length > 0) {
+    parts.push("隣艇との差が大きいスリットアラートあり。");
+  }
+
+  if (data.makuriRate >= 60) {
+    parts.push("まくり展開の発生率が高め。");
+  }
+
+  if (data.sashiRate >= 60) {
+    parts.push("差し展開も成立しやすい。");
+  }
+
+  if (data.makuriSashiRate >= 60) {
+    parts.push("外のまくり差し・展開突きに注意。");
+  }
+
+  return parts.join(" ");
+}
+
 function buildRaceFlowEngine(boatAnalysis) {
   const sorted = [...boatAnalysis].sort((a, b) => a.boatNo - b.boatNo);
 
@@ -1483,6 +1706,7 @@ function buildRaceFlowEngine(boatAnalysis) {
       manshuCandidates: dashboard.manshuCandidates,
 
       indexes: buildIndexSummary(entries),
+      slitEngine: buildSlitEngine(entries),
 
       ai: {
         ...dashboard.ai,
