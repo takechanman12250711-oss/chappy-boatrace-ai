@@ -627,7 +627,7 @@
     }
 
     if (items.length === 0) {
-      return section("本命新聞", emptyBox("本命シートデータがありません"), "📰", "v3-main-newspaper");
+      return section("本命", emptyBox("本命シートデータがありません"), "📰", "v3-main-newspaper");
     }
 
     const body = `
@@ -680,7 +680,7 @@
       "";
 
     if (items.length === 0 && !comment) {
-      return section("万舟新聞", emptyBox("万舟シートデータがありません"), "🌸", "v3-manshu-newspaper");
+      return section("万舟", emptyBox("万舟シートデータがありません"), "🌸", "v3-manshu-newspaper");
     }
 
     const body = `
