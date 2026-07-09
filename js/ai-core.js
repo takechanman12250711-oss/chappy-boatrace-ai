@@ -975,7 +975,133 @@
       };
     });
   }
+/* =========================================================
+  Step1：各艇AI評価生成
+========================================================= */
 
+function buildBoatAnalysis(data) {
+  const entries = Array.isArray(data?.entries) ? data.entries : [];
+
+  return entries.map((boat) => {
+    const boatNo = Number(boat.boatNo || boat.number || boat.course || 0);
+
+    const st = Number(boat.avgSt || boat.averageSt || boat.st || 0.18);
+    const nationalWin = Number(boat.nationalWinRate || boat.winRate || 0);
+    const localWin = Number(boat.localWinRate || boat.localRate || 0);
+    const motor2 = Number(boat.motor2Rate || boat.motorRate || 0);
+    const exhibit = Number(boat.exhibitTime || boat.exhibitionTime || 0);
+
+    let score = 50;
+    const buffs = [];
+    const debuffs = [];
+
+    // コース補正
+    if (boatNo === 1) {
+      score += 18;
+      buffs.push("イン有利");
+    } else if (boatNo === 2) {
+      score += 8;
+      buffs.push("差し残し候補");
+    } else if (boatNo === 3) {
+      score += 6;
+      buffs.push("攻め展開候補");
+    } else if (boatNo === 4) {
+      score += 3;
+      buffs.push("カド攻め候補");
+    } else if (boatNo >= 5) {
+      score -= 4;
+      buffs.push("展開待ち");
+      debuffs.push("外枠不利");
+    }
+
+    // ST評価
+    if (st > 0 && st <= 0.13) {
+      score += 12;
+      buffs.push("ST鋭い");
+    } else if (st <= 0.16) {
+      score += 7;
+      buffs.push("ST安定");
+    } else if (st >= 0.20) {
+      score -= 8;
+      debuffs.push("ST遅め");
+    }
+
+    // 全国勝率
+    if (nationalWin >= 6.5) {
+      score += 12;
+      buffs.push("選手技量上位");
+    } else if (nationalWin >= 5.5) {
+      score += 7;
+      buffs.push("実力安定");
+    } else if (nationalWin > 0 && nationalWin < 4.5) {
+      score -= 6;
+      debuffs.push("勝率低め");
+    }
+
+    // 当地勝率
+    if (localWin >= 6.5) {
+      score += 9;
+      buffs.push("当地巧者");
+    } else if (localWin >= 5.5) {
+      score += 5;
+      buffs.push("当地実績あり");
+    } else if (localWin > 0 && localWin < 4.5) {
+      score -= 4;
+      debuffs.push("当地不安");
+    }
+
+    // モーター評価
+    if (motor2 >= 40) {
+      score += 8;
+      buffs.push("モーター上位");
+    } else if (motor2 >= 33) {
+      score += 4;
+      buffs.push("モーター並以上");
+    } else if (motor2 > 0 && motor2 < 25) {
+      score -= 5;
+      debuffs.push("モーター弱め");
+    }
+
+    // 展示タイム評価
+    if (exhibit > 0 && exhibit <= 6.75) {
+      score += 8;
+      buffs.push("展示気配◎");
+    } else if (exhibit > 0 && exhibit <= 6.85) {
+      score += 4;
+      buffs.push("展示気配○");
+    } else if (exhibit >= 6.95) {
+      score -= 4;
+      debuffs.push("展示気配ひと息");
+    }
+
+    score = Math.max(1, Math.min(100, Math.round(score)));
+
+    let style = "自在型";
+    if (boatNo === 1) style = "逃げ型";
+    if (boatNo === 2) style = "差し型";
+    if (boatNo === 3) style = "まくり型";
+    if (boatNo === 4) style = "カド攻め型";
+    if (boatNo >= 5) style = "展開拾い型";
+
+    let comment = "総合的には押さえ評価。";
+    if (score >= 85) comment = "中心候補。展開・数値ともに上位。";
+    else if (score >= 75) comment = "相手筆頭。舟券には厚く入れたい。";
+    else if (score >= 65) comment = "連絡み候補。展開次第で浮上。";
+    else if (score >= 55) comment = "3着候補。拾い目で注意。";
+    else comment = "条件待ち。強く買うには展開の助けが必要。";
+
+    return {
+      boatNo,
+      name: boat.name || boat.playerName || "",
+      score,
+      style,
+      buffs,
+      debuffs,
+      comment,
+      raw: boat
+    };
+  }).sort((a, b) => b.score - a.score);
+}
   function buildMainSheet(entries) {
     return buildSheetEntries(entries)
       .filter((entry) => ["◎", "○", "▲", "△"].includes(entry.mark))
@@ -1068,6 +1194,8 @@
     const dashboard = buildAiDashboard(data);
     const entries = dashboard.entries;
 
+    const boatAnalysis = buildBoatAnalysis(dashboard);
+
     return {
       aiCoreVersion: CORE_VERSION,
 
@@ -1076,6 +1204,9 @@
       weights: dashboard.weights,
 
       entries,
+      
+      boatAnalysis,
+      
       ranking: dashboard.ranking,
       expectedBoats: dashboard.expectedBoats,
       roleSummary: dashboard.roleSummary,
@@ -1090,9 +1221,9 @@
         comment: buildAiComment(dashboard)
       },
 
-      mainSheet: buildMainSheet(entries),
-      manshuSheet: buildManshuSheet(entries),
-      tickets: buildCoreTickets(entries)
+      mainSheet: buildMainSheet(boatAnalysis),
+      manshuSheet: buildManshuSheet(boatAnalysis),
+      tickets: buildCoreTickets(boatAnalysis)
     };
   }
 
