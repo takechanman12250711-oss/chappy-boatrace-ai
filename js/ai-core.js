@@ -1801,6 +1801,45 @@
     };
 
   }
+  /* ===============================
+    prediction.js結合用
+  =============================== */
+
+  function mergeWithPrediction(prediction, data) {
+
+    const aiCore = buildPredictionData(data);
+
+    return {
+      ...(prediction || {}),
+
+      aiCore,
+
+      ai: {
+        ...((prediction && prediction.ai) || {}),
+        ranking: aiCore.ranking,
+        comments: aiCore.comments,
+        marks: aiCore.marks
+      },
+
+      indexes: {
+        ...((prediction && prediction.indexes) || {}),
+        ai: aiCore.ranking
+      },
+
+      formations: {
+        ...((prediction && prediction.formations) || {}),
+        ...aiCore.formations
+      },
+
+      mainSheet: aiCore.mainSheet,
+      longshotSheet: aiCore.longshotSheet,
+      slit: aiCore.slit,
+      doubleTime: aiCore.doubleTime,
+      newSam: aiCore.newSam,
+      comments: aiCore.comments
+    };
+
+  }
 
   /* ===============================
     AI順位取得
