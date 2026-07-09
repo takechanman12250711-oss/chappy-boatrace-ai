@@ -994,87 +994,141 @@ function buildBoatAnalysis(data) {
     let score = 50;
     const buffs = [];
     const debuffs = [];
+    let attackIndex = 50;
+    let flowIndex = 50;
+    let roadIndex = 50;
+    let localIndex = 50;
 
     // コース補正
-    if (boatNo === 1) {
-      score += 18;
-      buffs.push("イン有利");
-    } else if (boatNo === 2) {
-      score += 8;
-      buffs.push("差し残し候補");
-    } else if (boatNo === 3) {
-      score += 6;
-      buffs.push("攻め展開候補");
-    } else if (boatNo === 4) {
-      score += 3;
-      buffs.push("カド攻め候補");
-    } else if (boatNo >= 5) {
-      score -= 4;
-      buffs.push("展開待ち");
-      debuffs.push("外枠不利");
-    }
+if (boatNo === 1) {
+  score += 18;
+  attackIndex += 8;
+  flowIndex += 10;
+  roadIndex += 4;
+  buffs.push("イン有利");
+} else if (boatNo === 2) {
+  score += 8;
+  attackIndex += 4;
+  flowIndex += 9;
+  roadIndex += 6;
+  buffs.push("差し残し候補");
+} else if (boatNo === 3) {
+  score += 6;
+  attackIndex += 12;
+  flowIndex += 5;
+  roadIndex += 5;
+  buffs.push("攻め展開候補");
+} else if (boatNo === 4) {
+  score += 3;
+  attackIndex += 10;
+  flowIndex += 6;
+  roadIndex += 6;
+  buffs.push("カド攻め候補");
+} else if (boatNo >= 5) {
+  score -= 4;
+  attackIndex += 3;
+  flowIndex += 10;
+  roadIndex += 12;
+  buffs.push("展開待ち");
+  debuffs.push("外枠不利");
+}
 
     // ST評価
-    if (st > 0 && st <= 0.13) {
-      score += 12;
-      buffs.push("ST鋭い");
-    } else if (st <= 0.16) {
-      score += 7;
-      buffs.push("ST安定");
-    } else if (st >= 0.20) {
-      score -= 8;
-      debuffs.push("ST遅め");
-    }
+if (st > 0 && st <= 0.13) {
+  score += 12;
+  attackIndex += 14;
+  flowIndex += 4;
+  buffs.push("ST鋭い");
+} else if (st <= 0.16) {
+  score += 7;
+  attackIndex += 8;
+  flowIndex += 3;
+  buffs.push("ST安定");
+} else if (st >= 0.20) {
+  score -= 8;
+  attackIndex -= 10;
+  flowIndex -= 4;
+  debuffs.push("ST遅め");
+}
 
     // 全国勝率
-    if (nationalWin >= 6.5) {
-      score += 12;
-      buffs.push("選手技量上位");
-    } else if (nationalWin >= 5.5) {
-      score += 7;
-      buffs.push("実力安定");
-    } else if (nationalWin > 0 && nationalWin < 4.5) {
-      score -= 6;
-      debuffs.push("勝率低め");
-    }
+if (nationalWin >= 6.5) {
+  score += 12;
+  attackIndex += 7;
+  flowIndex += 5;
+  roadIndex += 10;
+  buffs.push("選手技量上位");
+} else if (nationalWin >= 5.5) {
+  score += 7;
+  attackIndex += 4;
+  flowIndex += 3;
+  roadIndex += 6;
+  buffs.push("実力安定");
+} else if (nationalWin > 0 && nationalWin < 4.5) {
+  score -= 6;
+  attackIndex -= 4;
+  roadIndex -= 5;
+  debuffs.push("勝率低め");
+}
 
     // 当地勝率
-    if (localWin >= 6.5) {
-      score += 9;
-      buffs.push("当地巧者");
-    } else if (localWin >= 5.5) {
-      score += 5;
-      buffs.push("当地実績あり");
-    } else if (localWin > 0 && localWin < 4.5) {
-      score -= 4;
-      debuffs.push("当地不安");
-    }
-
+if (localWin >= 6.5) {
+  score += 9;
+  localIndex += 18;
+  roadIndex += 6;
+  buffs.push("当地巧者");
+} else if (localWin >= 5.5) {
+  score += 5;
+  localIndex += 10;
+  roadIndex += 3;
+  buffs.push("当地実績あり");
+} else if (localWin > 0 && localWin < 4.5) {
+  score -= 4;
+  localIndex -= 8;
+  debuffs.push("当地不安");
+}
     // モーター評価
-    if (motor2 >= 40) {
-      score += 8;
-      buffs.push("モーター上位");
-    } else if (motor2 >= 33) {
-      score += 4;
-      buffs.push("モーター並以上");
-    } else if (motor2 > 0 && motor2 < 25) {
-      score -= 5;
-      debuffs.push("モーター弱め");
-    }
+if (motor2 >= 40) {
+  score += 8;
+  attackIndex += 5;
+  flowIndex += 5;
+  roadIndex += 5;
+  buffs.push("モーター上位");
+} else if (motor2 >= 33) {
+  score += 4;
+  attackIndex += 3;
+  flowIndex += 3;
+  buffs.push("モーター並以上");
+} else if (motor2 > 0 && motor2 < 25) {
+  score -= 5;
+  attackIndex -= 4;
+  flowIndex -= 3;
+  debuffs.push("モーター弱め");
+}
 
     // 展示タイム評価
-    if (exhibit > 0 && exhibit <= 6.75) {
-      score += 8;
-      buffs.push("展示気配◎");
-    } else if (exhibit > 0 && exhibit <= 6.85) {
-      score += 4;
-      buffs.push("展示気配○");
-    } else if (exhibit >= 6.95) {
-      score -= 4;
-      debuffs.push("展示気配ひと息");
-    }
+if (exhibit > 0 && exhibit <= 6.75) {
+  score += 8;
+  attackIndex += 6;
+  flowIndex += 4;
+  roadIndex += 4;
+  buffs.push("展示気配◎");
+} else if (exhibit > 0 && exhibit <= 6.85) {
+  score += 4;
+  attackIndex += 3;
+  flowIndex += 2;
+  buffs.push("展示気配○");
+} else if (exhibit >= 6.95) {
+  score -= 4;
+  attackIndex -= 3;
+  debuffs.push("展示気配ひと息");
+}
 
     score = Math.max(1, Math.min(100, Math.round(score)));
+    attackIndex = Math.max(1, Math.min(100, Math.round(attackIndex)));
+    flowIndex = Math.max(1, Math.min(100, Math.round(flowIndex)));
+    roadIndex = Math.max(1, Math.min(100, Math.round(roadIndex)));
+    localIndex = Math.max(1, Math.min(100, Math.round(localIndex)));
 
     let style = "自在型";
     if (boatNo === 1) style = "逃げ型";
@@ -1094,6 +1148,12 @@ function buildBoatAnalysis(data) {
       boatNo,
       name: boat.name || boat.playerName || "",
       score,
+      indexes: {
+  attack: attackIndex,
+  flow: flowIndex,
+  road: roadIndex,
+  local: localIndex
+},
       style,
       buffs,
       debuffs,
