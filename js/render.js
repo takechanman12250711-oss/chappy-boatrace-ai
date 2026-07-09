@@ -1376,3 +1376,177 @@ function renderFinalBlock(block) {
   console.info(`[Chappy BoatRace AI] render.js loaded: ${RENDER_VERSION}`);
 
 })();
+/* =========================================================
+  render.js Part 9 / 10
+  AI総合カード統合 + 買い目 最大3件＋もっと見る
+========================================================= */
+
+(function () {
+  "use strict";
+
+  function safeText(value, fallback = "-") {
+    if (value === null || value === undefined || value === "") return fallback;
+    return String(value);
+  }
+
+  function safeArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function getBoatColorClass(boatNo) {
+    return `boat-${boatNo || 0}`;
+  }
+
+  function renderAiSummaryCard(prediction) {
+    const area = document.getElementById("aiSummaryArea");
+    if (!area) return;
+
+    const ai = prediction?.ai || prediction?.summary || {};
+    const indexes = prediction?.indexes || prediction?.scores || {};
+    const picks = safeArray(prediction?.expectedBoats || prediction?.ranking || prediction?.boats);
+
+    const trust = ai.trust ?? ai.mainTrust ?? prediction?.trust ?? "-";
+    const manshu = ai.manshu ?? ai.manshuPower ?? prediction?.manshuPower ?? "-";
+
+    const attack = indexes.attack ?? ai.attackIndex ?? "-";
+    const flow = indexes.flow ?? ai.flowIndex ?? "-";
+    const road = indexes.road ?? ai.roadIndex ?? "-";
+    const local = indexes.local ?? ai.localIndex ?? "-";
+
+    const topPicks = picks.slice(0, 3).map((item, index) => {
+      const boatNo = item.boatNo || item.frame || item.number || item.course || index + 1;
+      const name = item.name || item.playerName || item.racer || "";
+      const score = item.score ?? item.total ?? item.point ?? "-";
+
+      return `
+        <div class="ai-pick-row">
+          <span class="rank-badge">${index + 1}</span>
+          <span class="boat-badge ${getBoatColorClass(boatNo)}">${boatNo}</span>
+          <span class="ai-pick-name">${safeText(name, `${boatNo}号艇`)}</span>
+          <strong>${score}点</strong>
+        </div>
+      `;
+    }).join("");
+
+    area.innerHTML = `
+      <section class="card ai-summary-card">
+        <div class="section-title">
+          <span>📊 AI総合分析</span>
+        </div>
+
+        <div class="ai-summary-grid">
+          <div class="ai-summary-box main">
+            <span>本命信頼度</span>
+            <strong>${safeText(trust)}%</strong>
+          </div>
+
+          <div class="ai-summary-box manshu">
+            <span>万舟期待度</span>
+            <strong>${safeText(manshu)}%</strong>
+          </div>
+        </div>
+
+        <div class="index-mini-grid">
+          <div><span>🔥 攻め</span><strong>${safeText(attack)}</strong></div>
+          <div><span>🌊 展開</span><strong>${safeText(flow)}</strong></div>
+          <div><span>⚡ 道中</span><strong>${safeText(road)}</strong></div>
+          <div><span>🏠 当地</span><strong>${safeText(local)}</strong></div>
+        </div>
+
+        <div class="ai-pick-block">
+          <h3>🎯 AI注目艇</h3>
+          ${topPicks || `<p class="empty-text">注目艇データなし</p>`}
+        </div>
+
+        <p class="ai-short-comment">
+          ${safeText(ai.comment || ai.summary || prediction?.comment, "展開・指数・気配を総合して評価中。")}
+        </p>
+      </section>
+    `;
+  }
+
+  function groupTicketsByRank(tickets) {
+    const groups = { S: [], A: [], B: [], C: [] };
+
+    safeArray(tickets).forEach((ticket) => {
+      const rank = String(ticket.rank || ticket.grade || "C").toUpperCase();
+      if (!groups[rank]) groups[rank] = [];
+      groups[rank].push(ticket);
+    });
+
+    return groups;
+  }
+
+  function renderTicketRow(ticket) {
+    const mark = ticket.ticket || ticket.bet || ticket.formation || ticket.line || "-";
+    const reason = ticket.reason || ticket.comment || "";
+    const odds = ticket.odds || ticket.expectedOdds || "";
+
+    return `
+      <div class="ticket-row">
+        <strong>${safeText(mark)}</strong>
+        ${odds ? `<span class="ticket-odds">${odds}</span>` : ""}
+        ${reason ? `<p>${safeText(reason)}</p>` : ""}
+      </div>
+    `;
+  }
+
+  function renderAiTicketsCompact(prediction) {
+    const area = document.getElementById("aiTicketsArea");
+    if (!area) return;
+
+    const tickets =
+      prediction?.tickets ||
+      prediction?.buyTickets ||
+      prediction?.aiTickets ||
+      prediction?.formations?.tickets ||
+      [];
+
+    const groups = groupTicketsByRank(tickets);
+    const ranks = ["S", "A", "B", "C"];
+
+    area.innerHTML = `
+      <section class="card ai-ticket-card">
+        <div class="section-title">
+          <span>🏆 AI買い目一覧</span>
+        </div>
+
+        ${ranks.map((rank) => {
+          const items = groups[rank] || [];
+          if (!items.length) return "";
+
+          const visible = items.slice(0, 3);
+          const hidden = items.slice(3);
+          const uid = `ticket-more-${rank}-${Math.random().toString(36).slice(2, 8)}`;
+
+          return `
+            <div class="ticket-rank-block rank-${rank}">
+              <h3>${rank}ランク</h3>
+
+              ${visible.map(renderTicketRow).join("")}
+
+              ${hidden.length ? `
+                <details class="ticket-more" id="${uid}">
+                  <summary>もっと見る（${hidden.length}件）</summary>
+                  ${hidden.map(renderTicketRow).join("")}
+                </details>
+              ` : ""}
+            </div>
+          `;
+        }).join("") || `<p class="empty-text">買い目データなし</p>`}
+      </section>
+    `;
+  }
+
+  const oldRenderAll = window.renderAll;
+
+  window.renderAll = function renderAllWithPart9(prediction) {
+    if (typeof oldRenderAll === "function") {
+      oldRenderAll(prediction);
+    }
+
+    renderAiSummaryCard(prediction);
+    renderAiTicketsCompact(prediction);
+  };
+
+})();
