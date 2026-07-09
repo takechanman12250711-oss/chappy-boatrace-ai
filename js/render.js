@@ -636,7 +636,7 @@
       </div>
     `;
 
-    return section("本命新聞", body, "📰", "v3-main-newspaper");
+    return section("本命", body, "🎯", "v3-main-newspaper");
   }
 
   function renderManshuNewspaper(prediction) {
@@ -697,7 +697,7 @@
       }
     `;
 
-    return section("万舟新聞", body, "🌸", "v3-manshu-newspaper");
+    return section("万舟", body, "💣", "v3-manshu-newspaper");
   }
 
   function normalizeSheetItem(item, role) {
