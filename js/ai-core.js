@@ -270,13 +270,37 @@
   const timeScore = normalize(exhibitionTime, 6.65, 7.10, true);
   const stScore = normalize(exhibitionST, 0.05, 0.25, true);
   const lapScore = normalize(lapTime, 36.0, 39.0, true);
+  const exhibitionRank = toNumber(getEntryValue(entry, [
+  "exhibitionRank",
+  "tenjiRank",
+  "展示順位"
+], 4), 4);
 
-  return round(
-      timeScore * 0.50 +
-      stScore * 0.25 +
-      lapScore * 0.25,
-      1
-  );
+let rankBonus = 0;
+
+switch (exhibitionRank) {
+  case 1:
+    rankBonus = 8;
+    break;
+  case 2:
+    rankBonus = 6;
+    break;
+  case 3:
+    rankBonus = 4;
+    break;
+  case 4:
+    rankBonus = 2;
+    break;
+  default:
+    rankBonus = 0;
+}
+  return clamp(round(
+    timeScore * 0.45 +
+    stScore * 0.25 +
+    lapScore * 0.20 +
+    rankBonus,
+    1
+));
 }
 
   function calcMotorScore(entry) {
