@@ -608,15 +608,23 @@
     return renderMainNewspaper(prediction);
   }
 
-  function renderMainNewspaper(prediction) {
-    const sheet = prediction.mainSheet || {};
+   function renderMainNewspaper(prediction) {
+  const sheet = prediction.mainSheet || {};
+  const items = [];
 
-    const items = [
+  if (Array.isArray(sheet)) {
+    sheet.forEach((item, index) => {
+      const roles = ["honmei", "taikou", "ana", "osa"];
+      const normalized = normalizeSheetItem(item, item.role || roles[index] || "osa");
+      if (normalized) items.push(normalized);
+    });
+  } else {
+    [
       normalizeSheetItem(sheet.honmei || sheet.main || sheet["◎"] || sheet.top, "honmei"),
       normalizeSheetItem(sheet.taikou || sheet.rival || sheet["○"] || sheet.second, "taikou"),
       normalizeSheetItem(sheet.ana || sheet.hole || sheet["▲"] || sheet.third, "ana"),
       normalizeSheetItem(sheet.osa || sheet.osae || sheet["△"] || sheet.support, "osa")
-    ].filter(Boolean);
+    ].filter(Boolean).forEach((item) => items.push(item));
 
     if (items.length === 0 && Array.isArray(sheet.items)) {
       sheet.items.forEach((item, index) => {
@@ -625,23 +633,31 @@
         if (normalized) items.push(normalized);
       });
     }
-
-    if (items.length === 0) {
-      return section("本命", emptyBox("本命シートデータがありません"), "📰", "v3-main-newspaper");
-    }
-
-    const body = `
-      <div class="v3-newspaper-list">
-        ${items.map(renderNewspaperCard).join("")}
-      </div>
-    `;
-
-    return section("本命", body, "🎯", "v3-main-newspaper");
   }
 
-  function renderManshuNewspaper(prediction) {
-    const sheet = prediction.manshuSheet || {};
+  if (items.length === 0) {
+    return section("本命", emptyBox("本命データがありません"), "🎯", "v3-main-newspaper");
+  }
 
+  const body = `
+    <div class="v3-newspaper-list">
+      ${items.map(renderNewspaperCard).join("")}
+    </div>
+  `;
+
+  return section("本命", body, "🎯", "v3-main-newspaper");
+}
+
+  function renderManshuNewspaper(prediction) {
+  const sheet = prediction.manshuSheet || {};
+  const items = [];
+
+  if (Array.isArray(sheet)) {
+    sheet.forEach((item) => {
+      const normalized = normalizeSheetItem(item, item.role || "manshu");
+      if (normalized) items.push(normalized);
+    });
+  } else {
     const candidates = arrayify(
       sheet.candidates ||
       sheet.items ||
@@ -666,39 +682,40 @@
       []
     );
 
-    const items = [
+    [
       ...candidates.map((item) => normalizeSheetItem(item, "manshu")),
       ...nokoshi.map((item) => normalizeSheetItem(item, "nokoshi")),
       ...hiroi.map((item) => normalizeSheetItem(item, "hiroi"))
-    ].filter(Boolean);
+    ].filter(Boolean).forEach((item) => items.push(item));
+  }
 
-    const comment =
-      sheet.comment ||
-      sheet.reason ||
-      sheet.text ||
-      sheet.summary ||
-      "";
+  const comment =
+    sheet.comment ||
+    sheet.reason ||
+    sheet.text ||
+    sheet.summary ||
+    "";
 
-    if (items.length === 0 && !comment) {
-      return section("万舟", emptyBox("万舟シートデータがありません"), "🌸", "v3-manshu-newspaper");
+  if (items.length === 0 && !comment) {
+    return section("万舟", emptyBox("万舟データがありません"), "💣", "v3-manshu-newspaper");
+  }
+
+  const body = `
+    ${
+      items.length
+        ? `<div class="v3-newspaper-list">${items.map(renderNewspaperCard).join("")}</div>`
+        : ""
     }
 
-    const body = `
-      ${
-        items.length
-          ? `<div class="v3-newspaper-list">${items.map(renderNewspaperCard).join("")}</div>`
-          : ""
-      }
+    ${
+      comment
+        ? `<div class="v3-note v3-manshu-note">${escapeHtml(comment)}</div>`
+        : ""
+    }
+  `;
 
-      ${
-        comment
-          ? `<div class="v3-note v3-manshu-note">${escapeHtml(comment)}</div>`
-          : ""
-      }
-    `;
-
-    return section("万舟", body, "💣", "v3-manshu-newspaper");
-  }
+  return section("万舟", body, "💣", "v3-manshu-newspaper");
+}
 
   function normalizeSheetItem(item, role) {
     if (!item) return null;
