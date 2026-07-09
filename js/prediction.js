@@ -4052,25 +4052,46 @@
   const prediction = __CHAPPY_BASE_CREATE_PREDICTION__(data);
   const enhanced = enhancePrediction(prediction);
 
-  if (window.ChappyAICore) {
-    const merged = window.ChappyAICore.mergeWithPrediction(enhanced, data);
-
-    console.log("🚤 ChappyAICore 接続OK", {
-      aiCoreVersion: merged.aiCore?.aiCoreVersion,
-      venue: merged.aiCore?.venue,
-      newEngine: merged.aiCore?.newEngine,
-      ai: merged.aiCore?.ai,
-      indexes: merged.aiCore?.indexes,
-      expectedBoats: merged.aiCore?.expectedBoats,
-      tickets: merged.aiCore?.tickets
-    });
-
-    return merged;
-  }
-
-  return enhanced;
+  return useAiCorePrediction(enhanced, data);
 };
 
   window.debugPrediction = debugPrediction;
 
+/* =========================================================
+  prediction.js 軽量化 Phase1
+  aiCore 優先データ整理
+========================================================= */
+
+function useAiCorePrediction(prediction, data) {
+  if (!window.ChappyAICore) {
+    return prediction;
+  }
+
+  const merged = window.ChappyAICore.mergeWithPrediction(prediction, data);
+  const core = merged.aiCore || {};
+
+  return {
+    ...merged,
+
+    ai: {
+      ...(merged.ai || {}),
+      ...(core.ai || {})
+    },
+
+    indexes: {
+      ...(merged.indexes || {}),
+      ...(core.indexes || {})
+    },
+
+    mainSheet: core.mainSheet || merged.mainSheet,
+    manshuSheet: core.manshuSheet || merged.manshuSheet,
+    tickets: core.tickets || merged.tickets,
+    buyTickets: core.tickets || merged.buyTickets,
+
+    expectedBoats: core.expectedBoats || merged.expectedBoats,
+    ranking: core.ranking || merged.ranking,
+    roleSummary: core.roleSummary || merged.roleSummary,
+    manshuCandidates: core.manshuCandidates || merged.manshuCandidates
+  };
+}
 })();
