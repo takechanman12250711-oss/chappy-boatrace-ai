@@ -407,7 +407,11 @@
     </div>
   `;
 
-  setHTML("raceInfoArea", renderSection("🚤 レース情報", body));
+  const raceInfoArea = document.getElementById("raceInfoArea");
+
+if (raceInfoArea) {
+  raceInfoArea.innerHTML = renderSection("🚤 レース情報", body);
+}
 }
 
   function renderInfoCell(item) {
