@@ -1,668 +1,202 @@
-/* ==========================================================
-   チャッピーボートレースAI
-   theory.js 完全版 Part1/3
-   独自理論・評価エンジン
-========================================================== */
+/* =========================================================
+  チャッピーボートレースAI
+  js/theory.js 完全版
+========================================================= */
 
-function clampTheory(value, min = 0, max = 100){
-  return Math.max(min, Math.min(max, Math.round(value)));
-}
+(function () {
+  "use strict";
 
-function createTheoryResult(){
+  const U = window.ChappyUtils;
 
-  return {
-    score:0,
-    buffs:[],
-    debuffs:[],
-    alerts:[],
-    detail:[]
-  };
+  function getEntries(data) {
+    return data?.entries || data?.racers || data?.entry || [];
+  }
 
-}
+  function calcSlitAlerts(entries) {
+    const list = [];
 
-/* ==========================
-   スリットアラート
-========================== */
+    entries.forEach((boat, index) => {
+      const st = U.safeNumber(boat.exhibitionST ?? boat.st ?? boat.avgST, null);
+      if (st === null) return;
 
-function slitAlert(entries){
+      const before = entries[index - 1];
+      const after = entries[index + 1];
 
-  const result=[];
+      const beforeST = before
+        ? U.safeNumber(before.exhibitionST ?? before.st ?? before.avgST, null)
+        : null;
 
-  entries.forEach((boat,index)=>{
+      const afterST = after
+        ? U.safeNumber(after.exhibitionST ?? after.st ?? after.avgST, null)
+        : null;
 
-    if(index===0) return;
+      const diffBefore = beforeST !== null ? Math.abs(st - beforeST) : 0;
+      const diffAfter = afterST !== null ? Math.abs(st - afterST) : 0;
 
-    const left=Number(entries[index-1].exhibitionST||0);
-    const current=Number(boat.exhibitionST||0);
-
-    if(Math.abs(left-current)>=0.10){
-
-      result.push({
-
-        boat:boat.boat,
-        type:"SLIT",
-        score:15,
-        message:`${boat.boat}号艇 スリット差0.10以上`
-
-      });
-
-    }
-
-  });
-
-  return result;
-
-}
-
-/* ==========================
-   ダブルタイム理論
-========================== */
-
-function doubleTimeTheory(entries){
-
-  if(!entries.length) return [];
-
-  const exhibition=[...entries].sort((a,b)=>
-    Number(a.exhibitionTime)-Number(b.exhibitionTime)
-  );
-
-  const lap=[...entries].sort((a,b)=>
-    Number(a.lapTime)-Number(b.lapTime)
-  );
-
-  const bestExhibition=exhibition[0];
-  const bestLap=lap[0];
-
-  const result=[];
-
-  if(bestExhibition){
-
-    result.push({
-
-      boat:bestExhibition.boat,
-      score:12,
-      type:"展示最速"
-
+      if (diffBefore >= 0.1 || diffAfter >= 0.1) {
+        list.push({
+          boatNo: boat.boatNo ?? boat.number ?? index + 1,
+          name: boat.name ?? boat.racerName ?? "-",
+          value: st,
+          comment: "隣艇とスリット差0.10以上。隊形変化に注意。"
+        });
+      }
     });
 
+    return list;
   }
 
-  if(bestLap){
-
-    result.push({
-
-      boat:bestLap.boat,
-      score:12,
-      type:"一周最速"
-
-    });
-
-  }
-
-  if(
-    bestExhibition &&
-    bestLap &&
-    bestExhibition.boat===bestLap.boat
-  ){
-
-    result.push({
-
-      boat:bestLap.boat,
-      score:25,
-      type:"ダブルタイム"
-
-    });
-
-  }
-
-  return result;
-
-}
-
-/* ==========================
-   新サム理論
-========================== */
-
-function newSamTheory(entries){
-
-  const result=[];
-
-  entries.forEach(racer=>{
-
-    const exhibition=Number(racer.exhibitionTime||0);
-
-    const lap=Number(racer.lapTime||0);
-
-    if(!exhibition||!lap) return;
-
-    const total=exhibition+lap;
-
-    if(total<=43.80){
-
-      result.push({
-
-        boat:racer.boat,
-        score:20,
-        type:"新サム◎"
-
-      });
-
-    }
-    else if(total<=44.10){
-
-      result.push({
-
-        boat:racer.boat,
-        score:10,
-        type:"新サム○"
-
-      });
-
-    }
-
-  });
-
-  return result;
-
-}
-
-/* ==========================
-   攻め艇
-========================== */
-
-function attackTheory(racer){
-
-  let score=0;
-
-  score+=Number(racer.attackIndex||0)*0.6;
-
-  score+=Number(racer.exhibitionIndex||0)*0.4;
-
-  return clampTheory(score);
-
-}
-
-/* ==========================
-   展開艇
-========================== */
-
-function flowTheory(racer){
-
-  let score=0;
-
-  score+=Number(racer.flowIndex||0)*0.7;
-
-  score+=Number(racer.localIndex||0)*0.3;
-
-  return clampTheory(score);
-
-}
-
-/* ==========================
-   道中艇
-========================== */
-
-function raceTheory(racer){
-
-  let score=0;
-
-  score+=Number(racer.raceIndex||0)*0.7;
-
-  score+=Number(racer.localIndex||0)*0.3;
-
-  return clampTheory(score);
-
-}
-
-/* ==========================
-   当地巧者
-========================== */
-
-function localTheory(racer){
-
-  let score=0;
-
-  score+=Number(racer.localIndex||0);
-
-  return clampTheory(score);
-
-}
-/* ==========================
-   展開崩れ理論
-========================== */
-
-function collapseTheory(racers){
-
-  const alerts=[];
-
-  racers.forEach(racer=>{
-
-    if(
-      racer.attackIndex>=80 &&
-      racer.flowIndex<=60
-    ){
-
-      alerts.push({
-
-        boat:racer.boat,
-
-        type:"攻め失敗",
-
-        score:12,
-
-        message:`${racer.boat}号艇は攻めるが残れない可能性`
-
-      });
-
-    }
-
-  });
-
-  return alerts;
-
-}
-
-/* ==========================
-   展開拾い理論
-========================== */
-
-function pickupTheory(racers){
-
-  const result=[];
-
-  racers.forEach(racer=>{
-
-    const score=
-
-      racer.flowIndex*0.45+
-
-      racer.raceIndex*0.35+
-
-      racer.localIndex*0.20;
-
-    if(score>=78){
-
-      result.push({
-
-        boat:racer.boat,
-
-        score:Math.round(score),
-
-        type:"展開拾い"
-
-      });
-
-    }
-
-  });
-
-  return result;
-
-}
-
-/* ==========================
-   万舟アラート
-========================== */
-
-function manshuAlert(racers){
-
-  const result=[];
-
-  racers.forEach(racer=>{
-
-    let score=0;
-
-    if(Number(racer.boat)>=4) score+=18;
-
-    score+=Math.max(0,racer.attackIndex-70);
-
-    score+=Math.max(0,racer.flowIndex-70);
-
-    score+=Math.max(0,racer.raceIndex-70);
-
-    score+=Math.max(0,racer.localIndex-70);
-
-    if(score>=35){
-
-      result.push({
-
-        boat:racer.boat,
-
-        score:Math.round(score),
-
-        type:"万舟候補"
-
-      });
-
-    }
-
-  });
-
-  return result;
-
-}
-
-/* ==========================
-   バフ生成
-========================== */
-
-function theoryBuffs(racer){
-
-  const buffs=[];
-
-  if(racer.attackIndex>=80)
-    buffs.push("攻め足が強い");
-
-  if(racer.flowIndex>=80)
-    buffs.push("展開を拾える");
-
-  if(racer.raceIndex>=80)
-    buffs.push("道中逆転が期待できる");
-
-  if(racer.localIndex>=80)
-    buffs.push("当地巧者");
-
-  if(racer.motorIndex>=80)
-    buffs.push("機力上位");
-
-  if(racer.exhibitionIndex>=80)
-    buffs.push("展示気配良好");
-
-  return buffs;
-
-}
-
-/* ==========================
-   デバフ生成
-========================== */
-
-function theoryDebuffs(racer){
-
-  const debuffs=[];
-
-  if(racer.attackIndex<=55)
-    debuffs.push("攻め弱め");
-
-  if(racer.flowIndex<=55)
-    debuffs.push("展開待ち");
-
-  if(racer.raceIndex<=55)
-    debuffs.push("道中不安");
-
-  if(racer.localIndex<=55)
-    debuffs.push("当地実績不足");
-
-  if(racer.motorIndex<=55)
-    debuffs.push("機力劣勢");
-
-  if(racer.exhibitionIndex<=55)
-    debuffs.push("展示気配弱い");
-
-  return debuffs;
-
-}
-
-/* ==========================
-   風・波補正
-========================== */
-
-function weatherTheory(racer,raceData){
-
-  const weather=raceData?.weather||{};
-
-  const wind=Number(weather.windSpeed||0);
-
-  const wave=Number(weather.waveHeight||0);
-
-  let adjust=0;
-
-  if(wind>=5){
-
-    if(Number(racer.boat)>=4){
-
-      adjust+=5;
-
-    }else{
-
-      adjust-=3;
-
-    }
-
-  }
-
-  if(wave>=5){
-
-    if(racer.localIndex>=80){
-
-      adjust+=3;
-
-    }
-
-  }
-
-  return adjust;
-
-}
-
-/* ==========================
-   場特性補正
-========================== */
-
-function venueTheory(racer,raceData){
-
-  const place=String(raceData?.race?.place||"");
-
-  let adjust=0;
-
-  switch(place){
-
-    case "大村":
-
-      if(Number(racer.boat)===1) adjust+=6;
-      if(Number(racer.boat)===3) adjust+=3;
-      break;
-
-    case "若松":
-
-      if(racer.localIndex>=80) adjust+=5;
-      break;
-
-    case "宮島":
-
-      if(racer.flowIndex>=80) adjust+=4;
-      break;
-
-    case "多摩川":
-
-      if(racer.attackIndex>=80) adjust+=4;
-      break;
-
-    default:
-
-      break;
-
-  }
-
-  return adjust;
-
-}
-/* ==========================================================
-   theory.js 完全版 Part3/3
-   全理論統合エンジン
-========================================================== */
-
-function applyTheoryEngine(raceData, racers){
-
-  const slit = slitAlert(racers);
-  const doubleTime = doubleTimeTheory(racers);
-  const newSam = newSamTheory(racers);
-  const collapse = collapseTheory(racers);
-  const pickup = pickupTheory(racers);
-  const manshu = manshuAlert(racers);
-
-  const theoryMap = {};
-
-  racers.forEach(racer=>{
-
-    theoryMap[racer.boat]={
-
-      boat:racer.boat,
-
-      score:0,
-
-      buffs:[],
-
-      debuffs:[],
-
-      alerts:[]
-
+  function calcDoubleTime(entries) {
+    const ranked = entries
+      .map((boat, index) => {
+        const exhibition = U.safeNumber(boat.exhibitionTime ?? boat.tenjiTime, 99);
+        const lap = U.safeNumber(boat.lapTime ?? boat.roundTime ?? boat.oneLapTime, 99);
+
+        return {
+          boatNo: boat.boatNo ?? boat.number ?? index + 1,
+          name: boat.name ?? boat.racerName ?? "-",
+          exhibition,
+          lap,
+          total: exhibition + lap
+        };
+      })
+      .filter(x => x.exhibition < 99 || x.lap < 99);
+
+    const exhibitionTop = [...ranked].sort((a, b) => a.exhibition - b.exhibition)[0] || null;
+    const lapTop = [...ranked].sort((a, b) => a.lap - b.lap)[0] || null;
+
+    return {
+      exhibitionTop,
+      lapTop,
+      isDouble:
+        exhibitionTop &&
+        lapTop &&
+        exhibitionTop.boatNo === lapTop.boatNo
     };
-
-  });
-
-  function addAlert(list){
-
-    list.forEach(item=>{
-
-      const target=theoryMap[item.boat];
-
-      if(!target) return;
-
-      target.score+=Number(item.score||0);
-
-      target.alerts.push(item.type);
-
-    });
-
   }
 
-  addAlert(slit);
-  addAlert(doubleTime);
-  addAlert(newSam);
-  addAlert(collapse);
-  addAlert(pickup);
-  addAlert(manshu);
+  function calcNewSam(entries) {
+    const list = entries
+      .map((boat, index) => {
+        const exhibition = U.safeNumber(boat.exhibitionTime ?? boat.tenjiTime, null);
+        const lap = U.safeNumber(boat.lapTime ?? boat.roundTime ?? boat.oneLapTime, null);
 
-  racers.forEach(racer=>{
+        if (exhibition === null || lap === null) return null;
 
-    const target=theoryMap[racer.boat];
+        return {
+          boatNo: boat.boatNo ?? boat.number ?? index + 1,
+          name: boat.name ?? boat.racerName ?? "-",
+          total: exhibition + lap
+        };
+      })
+      .filter(Boolean);
 
-    const weatherAdjust=weatherTheory(racer,raceData);
+    if (!list.length) return [];
 
-    const venueAdjust=venueTheory(racer,raceData);
+    const avg =
+      list.reduce((sum, x) => sum + x.total, 0) / list.length;
 
-    target.score+=weatherAdjust;
-    target.score+=venueAdjust;
+    return list
+      .map(x => ({
+        ...x,
+        diff: avg - x.total
+      }))
+      .filter(x => x.diff > 0)
+      .sort((a, b) => b.diff - a.diff);
+  }
 
-    target.buffs=theoryBuffs(racer);
+  function analyzeTheory(data) {
+    const entries = getEntries(data);
 
-    target.debuffs=theoryDebuffs(racer);
+    return {
+      slitAlerts: calcSlitAlerts(entries),
+      doubleTime: calcDoubleTime(entries),
+      newSam: calcNewSam(entries)
+    };
+  }
 
-    target.attackScore=attackTheory(racer);
+  function renderTheory(data) {
+    const theory = analyzeTheory(data);
 
-    target.flowScore=flowTheory(racer);
+    const slitHtml = theory.slitAlerts.length
+      ? theory.slitAlerts.map(x => `
+          <div class="v3-theory-item">
+            <div class="v3-theory-main">
+              ${U.boatBadge(x.boatNo, "mini")}
+              <strong>${U.escapeHtml(x.name)}</strong>
+            </div>
+            <p>${U.escapeHtml(x.comment)}</p>
+          </div>
+        `).join("")
+      : U.showEmpty("スリットアラートなし");
 
-    target.raceScore=raceTheory(racer);
+    const d = theory.doubleTime;
+    const doubleHtml = `
+      <div class="v3-theory-item">
+        <span class="v3-theory-label">展示1位</span>
+        <div class="v3-theory-main">
+          ${d.exhibitionTop ? U.boatBadge(d.exhibitionTop.boatNo, "mini") : ""}
+          <strong>${U.escapeHtml(d.exhibitionTop?.name || "-")}</strong>
+        </div>
+        <p>展示タイム：${d.exhibitionTop?.exhibition ?? "-"}</p>
+      </div>
+      <div class="v3-theory-item">
+        <span class="v3-theory-label">一周1位</span>
+        <div class="v3-theory-main">
+          ${d.lapTop ? U.boatBadge(d.lapTop.boatNo, "mini") : ""}
+          <strong>${U.escapeHtml(d.lapTop?.name || "-")}</strong>
+        </div>
+        <p>一周タイム：${d.lapTop?.lap ?? "-"}</p>
+      </div>
+    `;
 
-    target.localScore=localTheory(racer);
+    const newSamHtml = theory.newSam.length
+      ? theory.newSam.slice(0, 3).map(x => `
+          <div class="v3-theory-item">
+            <div class="v3-theory-main">
+              ${U.boatBadge(x.boatNo, "mini")}
+              <strong>${U.escapeHtml(x.name)}</strong>
+            </div>
+            <p>新サム差：+${U.round(x.diff, 3)}</p>
+          </div>
+        `).join("")
+      : U.showEmpty("新サムプラスなし");
 
-    target.totalTheoryScore=clampTheory(
+    U.setHtml("theorySummaryArea", `
+      <div class="v3-theory-grid">
+        ${doubleHtml}
+      </div>
+    `);
 
-      target.score+
+    U.setHtml("theoryAlertArea", `
+      <div class="v3-section">
+        <div class="v3-section-head">
+          <h2>🚨 スリットアラート</h2>
+        </div>
+        <div class="v3-theory-grid">
+          ${slitHtml}
+        </div>
+      </div>
 
-      target.attackScore*0.25+
+      <div class="v3-section">
+        <div class="v3-section-head">
+          <h2>🌊 新サムアラート</h2>
+        </div>
+        <div class="v3-theory-grid">
+          ${newSamHtml}
+        </div>
+      </div>
+    `);
 
-      target.flowScore*0.25+
+    return theory;
+  }
 
-      target.raceScore*0.25+
-
-      target.localScore*0.25
-
-    );
-
-  });
-
-  return Object.values(theoryMap)
-
-    .sort((a,b)=>b.totalTheoryScore-a.totalTheoryScore);
-
-}
-
-/* ==========================
-   AI展開ツリー
-========================== */
-
-function buildFlowTree(racers){
-
-  const attack=[...racers].sort((a,b)=>b.attackIndex-a.attackIndex)[0];
-
-  const flow=[...racers].sort((a,b)=>b.flowIndex-a.flowIndex)[0];
-
-  const race=[...racers].sort((a,b)=>b.raceIndex-a.raceIndex)[0];
-
-  const local=[...racers].sort((a,b)=>b.localIndex-a.localIndex)[0];
-
-  return{
-
-    attackBoat:attack?.boat,
-
-    flowBoat:flow?.boat,
-
-    raceBoat:race?.boat,
-
-    localBoat:local?.boat,
-
-    summary:[
-      `${attack?.boat}号艇が攻める`,
-      `${flow?.boat}号艇が展開を拾う`,
-      `${race?.boat}号艇が道中浮上`,
-      `${local?.boat}号艇が連争い`
-    ]
-
+  window.ChappyTheory = {
+    getEntries,
+    calcSlitAlerts,
+    calcDoubleTime,
+    calcNewSam,
+    analyzeTheory,
+    renderTheory
   };
-
-}
-
-/* ==========================
-   理論統合
-========================== */
-
-function buildTheoryData(raceData, racers){
-
-  const theoryResult=applyTheoryEngine(
-
-    raceData,
-
-    racers
-
-  );
-
-  const flowTree=buildFlowTree(racers);
-
-  return{
-
-    theoryResult,
-
-    flowTree,
-
-    alerts:theoryResult.filter(r=>r.alerts.length),
-
-    attackBoat:flowTree.attackBoat,
-
-    flowBoat:flowTree.flowBoat,
-
-    raceBoat:flowTree.raceBoat,
-
-    localBoat:flowTree.localBoat
-
-  };
-
-}
-
-/* ==========================
-   外部公開
-========================== */
-
-window.buildTheoryData=buildTheoryData;
-window.applyTheoryEngine=applyTheoryEngine;
-window.buildFlowTree=buildFlowTree;
+})();
