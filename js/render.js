@@ -439,22 +439,45 @@
   =============================== */
 
   function renderAiSummary(prediction) {
-    const confidence = prediction.confidence || {};
-    const manshuPower = prediction.manshuPower || {};
-    const finalAi = prediction.finalAi || {};
-    const indexes = prediction.indexes || {};
+  const aiCore = prediction.aiCore || {};
+  const coreAi = aiCore.ai || {};
+  const coreIndexes = aiCore.indexes || {};
+
+  const confidence =
+    coreAi.trust ??
+    coreAi.mainTrust ??
+    prediction.ai?.trust ??
+    prediction.ai?.mainTrust ??
+    prediction.confidence;
+
+  const manshuPower =
+    coreAi.manshu ??
+    coreAi.manshuPower ??
+    prediction.ai?.manshu ??
+    prediction.ai?.manshuPower ??
+    prediction.manshuPower;
+
+  const finalAi = prediction.finalAi || {};
+  const indexes = {
+    ...(prediction.indexes || {}),
+    ...coreIndexes
+  };
 
     const confidenceScore =
-      confidence.score ??
-      confidence.value ??
-      confidence.percent ??
+  typeof confidence === "number"
+    ? confidence
+    : confidence?.score ??
+      confidence?.value ??
+      confidence?.percent ??
       prediction.confidenceScore ??
       0;
 
-    const manshuScore =
-      manshuPower.score ??
-      manshuPower.value ??
-      manshuPower.percent ??
+const manshuScore =
+  typeof manshuPower === "number"
+    ? manshuPower
+    : manshuPower?.score ??
+      manshuPower?.value ??
+      manshuPower?.percent ??
       prediction.manshuScore ??
       0;
 
@@ -472,15 +495,17 @@
           "本命信頼度",
           confidenceScore,
           levelLabel(confidenceScore, "高信頼", "標準", "不安定"),
-          confidence.reason || confidence.comment || ""
-        )}
+          typeof confidence === "object"
+  ? (confidence.reason || confidence.comment || "")
+  : ""
 
         ${renderAiMeter(
           "万舟期待度",
           manshuScore,
           levelLabel(manshuScore, "波乱注意", "中穴気配", "本線寄り"),
-          manshuPower.reason || manshuPower.comment || ""
-        )}
+          typeof manshuPower === "object"
+  ? (manshuPower.reason || manshuPower.comment || "")
+  : ""
 
       </div>
 
