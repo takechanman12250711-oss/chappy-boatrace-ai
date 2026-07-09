@@ -240,53 +240,55 @@
   =============================== */
 
   function renderAll(prediction) {
-    const root = getRoot();
+  const root = getRoot();
 
-    if (!prediction || typeof prediction !== "object") {
-      root.innerHTML = renderError(
-        "予想データがありません",
-        "prediction.js から prediction オブジェクトが返っていません。"
-      );
-      return;
-    }
-
-    const html = `
-      <div class="v3-root" data-render-version="${escapeHtml(RENDER_VERSION)}">
-
-        ${renderRaceInfo(prediction)}
-        ${divider()}
-
-        ${renderEntryTable(prediction)}
-        ${divider()}
-
-        ${renderAiSummary(prediction)}
-        ${divider()}
-
-        ${renderNewspaperSheet(prediction, "main")}
-        ${divider()}
-
-        ${renderFormationSection(prediction, "main")}
-        ${divider()}
-
-        ${renderNewspaperSheet(prediction, "manshu")}
-        ${divider()}
-
-        ${renderFormationSection(prediction, "manshu")}
-        ${divider()}
-
-        ${renderTicketRanking(prediction)}
-        ${divider()}
-
-        ${renderTheoryPanel(prediction)}
-        ${divider()}
-
-        ${renderFinalComment(prediction)}
-
-      </div>
-    `;
-
-    root.innerHTML = html;
+  if (!prediction || typeof prediction !== "object") {
+    root.innerHTML = renderError(
+      "予想データがありません",
+      "prediction.js から prediction オブジェクトが返っていません。"
+    );
+    return;
   }
+
+  const html = `
+    <div class="v3-root" data-render-version="${escapeHtml(RENDER_VERSION)}">
+
+      ${renderRaceInfo(prediction)}
+      ${divider()}
+
+      ${renderEntryTable(prediction)}
+      ${divider()}
+
+      ${renderAiSummary(prediction)}
+      ${divider()}
+
+      ${renderFormationSection(prediction, "main")}
+      ${divider()}
+
+      ${renderFormationSection(prediction, "manshu")}
+      ${divider()}
+
+      ${renderNewspaperSheet(prediction, "main")}
+      ${divider()}
+
+      ${renderNewspaperSheet(prediction, "manshu")}
+      ${divider()}
+
+      ${renderTheoryPanel(prediction)}
+      ${divider()}
+
+      ${renderTicketRanking(prediction)}
+      ${divider()}
+
+      ${renderFinalComment(prediction)}
+
+      ${renderDebug(prediction)}
+
+    </div>
+  `;
+
+  root.innerHTML = html;
+}
 
   function renderError(title, message) {
     return `
