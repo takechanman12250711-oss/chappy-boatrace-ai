@@ -1193,10 +1193,36 @@ if (boatNo >= 5 && roadIndex >= 60) {
   }).sort((a, b) => b.score - a.score);
 }
   function buildMainSheet(entries) {
-    return buildSheetEntries(entries)
-      .filter((entry) => ["◎", "○", "▲", "△"].includes(entry.mark))
-      .slice(0, 4);
-  }
+  return buildSheetEntries(entries)
+    .slice(0, 4)
+    .map((entry, index) => {
+      const marks = ["◎", "○", "▲", "△"];
+      const idx = entry.indexes || {};
+
+      const reasonParts = [];
+
+      if (idx.attack >= 65) reasonParts.push("攻め指数高め");
+      if (idx.flow >= 65) reasonParts.push("展開対応力あり");
+      if (idx.road >= 65) reasonParts.push("道中で拾える");
+      if (idx.local >= 65) reasonParts.push("当地適性あり");
+      if ((entry.buffs || []).length) reasonParts.push(entry.buffs[0]);
+
+      const reason = reasonParts.length
+        ? reasonParts.join("・")
+        : "総合バランスで上位評価";
+
+      return {
+        ...entry,
+        mark: marks[index],
+        reason,
+        mainPoint: `${marks[index]} ${entry.boatNo}号艇 ${entry.name}`,
+        indexText:
+          `攻${idx.attack || 0} / 展${idx.flow || 0} / 道${idx.road || 0} / 当${idx.local || 0}`,
+        shortComment:
+          `${entry.style || "総合型"}。${reason}。`
+      };
+    });
+}
 
   function buildManshuSheet(entries) {
     return buildSheetEntries(entries)
