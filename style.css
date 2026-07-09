@@ -553,8 +553,13 @@ input {
 /* 本命・万舟 */
 
 .v3-paper-card {
-  border-left: 5px solid #111827;
-  padding: 7px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #111827;
+  border-radius: 10px;
+  padding: 9px;
+  margin: 8px 0;
+  box-shadow: none;
 }
 
 .v3-paper-head {
@@ -562,23 +567,30 @@ input {
   justify-content: space-between;
   gap: 6px;
   align-items: flex-start;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #eeeeee;
 }
 
 .v3-role {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
   color: #1d4ed8;
   font-weight: 900;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
+  line-height: 1.2;
 }
 
 .v3-paper-score {
-  min-width: 40px;
+  min-width: 38px;
   background: #111827;
   color: #ffffff;
   border-radius: 8px;
   padding: 4px 5px;
   text-align: center;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
 }
 
 .v3-paper-score span {
