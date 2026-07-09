@@ -4069,13 +4069,14 @@ function useAiCorePrediction(prediction, data) {
 
   const merged = window.ChappyAICore.mergeWithPrediction(prediction, data);
   const core = merged.aiCore || {};
+  const coreAi = core.ai || {};
 
   return {
     ...merged,
 
     ai: {
       ...(merged.ai || {}),
-      ...(core.ai || {})
+      ...coreAi
     },
 
     indexes: {
@@ -4083,10 +4084,23 @@ function useAiCorePrediction(prediction, data) {
       ...(core.indexes || {})
     },
 
-    mainSheet: core.mainSheet || merged.mainSheet,
-    manshuSheet: core.manshuSheet || merged.manshuSheet,
+    finalAi: {
+      ...(merged.finalAi || {}),
+      confidence: coreAi.trust ?? coreAi.mainTrust ?? merged.confidence,
+      manshuPower: coreAi.manshu ?? coreAi.manshuPower ?? merged.manshuPower,
+      ticketRanks: core.tickets || merged.ticketRanks || [],
+      summary: coreAi.comment || merged.finalAi?.summary || ""
+    },
+
+    confidence: coreAi.trust ?? coreAi.mainTrust ?? merged.confidence,
+    manshuPower: coreAi.manshu ?? coreAi.manshuPower ?? merged.manshuPower,
+
+    ticketRanks: core.tickets || merged.ticketRanks,
     tickets: core.tickets || merged.tickets,
     buyTickets: core.tickets || merged.buyTickets,
+
+    mainSheet: core.mainSheet || merged.mainSheet,
+    manshuSheet: core.manshuSheet || merged.manshuSheet,
 
     expectedBoats: core.expectedBoats || merged.expectedBoats,
     ranking: core.ranking || merged.ranking,
