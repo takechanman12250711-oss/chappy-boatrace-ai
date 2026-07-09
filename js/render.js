@@ -310,44 +310,105 @@
   =============================== */
 
   function renderRaceInfo(prediction) {
-    const race = prediction.race || {};
-    const venue = prediction.venue || {};
-    const weather = prediction.weather || {};
-    const exhibition = prediction.exhibition || {};
+  const race = prediction.race || {};
+  const venue = prediction.venue || {};
+  const weather = prediction.weather || {};
+  const exhibition = prediction.exhibition || {};
 
-    const place = race.place || venue.name || venue.venueName || "-";
-    const raceNo = race.raceNo || race.rno || "-";
-    const date = race.date || prediction.date || "-";
+  const raw = race.raw || {};
+  const rawWeather = raw.weather || {};
 
-    const info = [
-      { label: "場", value: place },
-      { label: "R", value: raceNo },
-      { label: "日付", value: date },
-      { label: "締切", value: race.deadline || race.closeTime || "-" },
-      { label: "風", value: weather.wind || weather.windText || "-", sub: weather.windSpeed ? `${weather.windSpeed}m` : "" },
-      { label: "波", value: weather.wave || weather.waveHeight || "-" },
-      { label: "天候", value: weather.weather || weather.condition || "-" },
-      { label: "展示", value: exhibition.status || exhibition.comment || "展示補正" }
-    ];
+  const place =
+    race.place ||
+    race.stadiumName ||
+    venue.name ||
+    prediction.venueName ||
+    "-";
 
-    const note =
-      weather.comment ||
-      venue.feature ||
-      race.comment ||
-      "展示・ST・場傾向を優先して評価。";
+  const raceNo =
+    race.raceNo ||
+    race.rno ||
+    prediction.raceNo ||
+    "-";
 
-    const body = `
-      <div class="v3-race-grid">
-        ${info.map((item) => renderInfoCell(item)).join("")}
-      </div>
+  const date =
+    race.date ||
+    prediction.date ||
+    "-";
 
-      <div class="v3-note">
-        ${escapeHtml(limitText(note, 110))}
-      </div>
-    `;
+  const windDirection =
+    weather.windDirection ||
+    rawWeather.windDirection ||
+    rawWeather.windDir ||
+    "-";
 
-    return section("レース情報", body, "🚤", "v3-race-section");
-  }
+  const windSpeed =
+    weather.windSpeed ??
+    rawWeather.windSpeed ??
+    rawWeather.wind ??
+    "-";
+
+  const waveHeight =
+    weather.waveHeight ??
+    rawWeather.waveHeight ??
+    rawWeather.wave ??
+    "-";
+
+  const tenki =
+    weather.weather ||
+    rawWeather.weather ||
+    rawWeather.condition ||
+    "-";
+
+  const temperature =
+    weather.temperature ??
+    rawWeather.temperature ??
+    rawWeather.temp ??
+    "-";
+
+  const waterTemperature =
+    weather.waterTemperature ??
+    rawWeather.waterTemperature ??
+    rawWeather.waterTemp ??
+    "-";
+
+  const info = [
+    { label: "場", value: place },
+    { label: "R", value: raceNo },
+    { label: "日付", value: date },
+    { label: "天候", value: tenki },
+    { label: "風向", value: windDirection },
+    { label: "風速", value: formatUnit(windSpeed, "m") },
+    { label: "波高", value: formatUnit(waveHeight, "cm") },
+    { label: "気温", value: formatUnit(temperature, "℃") },
+    { label: "水温", value: formatUnit(waterTemperature, "℃") },
+    {
+      label: "展示",
+      value:
+        exhibition.comment ||
+        "展示・ST・気象を総合して評価。"
+    }
+  ];
+
+  const note =
+    weather.comment ||
+    venue.memo ||
+    venue.feature ||
+    race.comment ||
+    "展示・ST・気象を総合して評価。";
+
+  const body = `
+    <div class="v3-race-grid">
+      ${info.map((item) => renderInfoCell(item.label, item.value)).join("")}
+    </div>
+
+    <div class="v3-note">
+      ${escapeHtml(note)}
+    </div>
+  `;
+
+  setHTML("raceInfoArea", renderSection("🚤 レース情報", body));
+}
 
   function renderInfoCell(item) {
     return `
