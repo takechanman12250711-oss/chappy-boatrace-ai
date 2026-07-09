@@ -4122,8 +4122,13 @@ manshuPower: {
     tickets: core.tickets || merged.tickets,
     buyTickets: core.tickets || merged.buyTickets,
 
-    mainSheet: core.mainSheet || merged.mainSheet,
-    manshuSheet: core.manshuSheet || merged.manshuSheet,
+    mainSheet: Array.isArray(core.mainSheet)
+  ? { items: core.mainSheet }
+  : core.mainSheet || merged.mainSheet,
+
+manshuSheet: Array.isArray(core.manshuSheet)
+  ? { items: core.manshuSheet }
+  : core.manshuSheet || merged.manshuSheet,
 
     expectedBoats: core.expectedBoats || merged.expectedBoats,
     ranking: core.ranking || merged.ranking,
