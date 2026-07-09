@@ -1558,19 +1558,48 @@ function renderFinalBlock(block) {
   }
 
   function renderTicketRow(ticket) {
-    const mark = ticket.ticket || ticket.bet || ticket.formation || ticket.line || "-";
-    const reason = ticket.reason || ticket.comment || "";
-    const odds = ticket.odds || ticket.expectedOdds || "";
+  const mark =
+    ticket.ticket ||
+    ticket.bet ||
+    ticket.mark ||
+    "-";
 
-    return `
-      <div class="ticket-row">
+  const score =
+    ticket.score ||
+    ticket.point ||
+    ticket.index ||
+    ticket.aiScore ||
+    "-";
+
+  const rank =
+    ticket.rank ||
+    ticket.type ||
+    ticket.label ||
+    "";
+
+  const reason =
+    ticket.reason ||
+    ticket.comment ||
+    ticket.description ||
+    "";
+
+  const odds =
+    ticket.odds ||
+    ticket.expectedOdds ||
+    "";
+
+  return `
+    <div class="ticket-row">
+      <div class="ticket-main">
         <strong>${safeText(mark)}</strong>
-        ${odds ? `<span class="ticket-odds">${odds}</span>` : ""}
-        ${reason ? `<p>${safeText(reason)}</p>` : ""}
+        <span class="ticket-score">${safeText(score)}点</span>
+        ${rank ? `<span class="ticket-rank">${safeText(rank)}</span>` : ""}
+        ${odds ? `<span class="ticket-odds">${safeText(odds)}</span>` : ""}
       </div>
-    `;
-  }
-
+      ${reason ? `<p class="ticket-reason">${safeText(reason)}</p>` : ""}
+    </div>
+  `;
+}
   function renderAiTicketsCompact(prediction) {
     const area = document.getElementById("aiTicketsArea");
     if (!area) return;
