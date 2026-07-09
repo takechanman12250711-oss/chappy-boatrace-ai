@@ -615,54 +615,82 @@
 }
 
   function applyVenueBonusToIndexes(entry, indexes, data) {
-    const venue = getVenueProfile(data);
-    const weather = getWeatherInfo(data);
-    const newEngine = isNewEngineRace(data);
 
-    const next = { ...indexes };
+  const venue = getVenueProfile(data);
+  const weather = getWeatherInfo(data);
+  const newEngine = isNewEngineRace(data);
 
-    const boatNo = entry.boatNo;
+  const next = { ...indexes };
 
-    if (venue.inPower >= 68 && boatNo === 1) {
-      next.flow += 5;
-      next.total += 3;
-    }
+  const boatNo = entry.boatNo;
 
-    if (venue.inPower <= 52 && boatNo >= 4) {
-      next.attack += 3;
-      next.total += 2;
-    }
-
-    if (venue.road >= 75 && boatNo >= 5) {
-      next.road += 6;
-      next.total += 3;
-    }
-
-    if (venue.rough >= 70 && boatNo >= 4) {
-      next.exhibition += 3;
-      next.road += 3;
-      next.total += 2;
-    }
-
-    if (weather.windSpeed >= 5 || weather.wave >= 5) {
-      next.exhibition += 3;
-      next.road += 4;
-      next.total += 2;
-    }
-
-    if (newEngine) {
-      next.exhibition += 4;
-      next.st += 2;
-      next.motor -= 5;
-      next.total += 1;
-    }
-
-    Object.keys(next).forEach((key) => {
-      next[key] = clamp(round(next[key], 1));
-    });
-
-    return next;
+  // イン有利
+  if (boatNo === 1 && venue.inPower >= 70) {
+    next.flow += 6;
+    next.total += 3;
   }
+
+  // 差し場
+  if (boatNo === 2 && venue.sashiPower >= 65) {
+    next.attack += 4;
+    next.flow += 4;
+    next.total += 2;
+  }
+
+  // まくり場
+  if (boatNo === 3 && venue.makuriPower >= 65) {
+    next.attack += 6;
+    next.total += 3;
+  }
+
+  // カド場
+  if (boatNo === 4 && venue.kadoPower >= 65) {
+    next.attack += 5;
+    next.flow += 3;
+    next.total += 3;
+  }
+
+  // 外枠有利
+  if (boatNo >= 5 && venue.outsidePower >= 60) {
+    next.road += 5;
+    next.flow += 3;
+    next.total += 2;
+  }
+
+  // 荒水面
+  if (venue.rough >= 70) {
+    next.exhibition += 3;
+    next.road += 3;
+    next.total += 2;
+  }
+
+  // 強風
+  if (weather.windSpeed >= 5) {
+    next.exhibition += 3;
+    next.road += 3;
+    next.total += 2;
+  }
+
+  // 高波
+  if (weather.wave >= 5) {
+    next.road += 2;
+    next.local += 2;
+  }
+
+  // 新型エンジン
+  if (newEngine) {
+    next.motor -= 5;
+    next.exhibition += 4;
+    next.st += 2;
+    next.total += 1;
+  }
+
+  Object.keys(next).forEach((key) => {
+    next[key] = clamp(round(next[key], 1));
+  });
+
+  return next;
+}
 
   function analyzeEntriesWithVenue(data) {
     const weights = buildVenueWeights(data);
