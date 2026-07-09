@@ -1110,6 +1110,7 @@ switch (exhibitionRank) {
 
 function buildBoatAnalysis(data) {
   const entries = Array.isArray(data?.entries) ? data.entries : [];
+　const slitEngine = buildSlitEngine(entries);
 
   return entries.map((boat) => {
     const boatNo = Number(boat.boatNo || boat.number || boat.course || 0);
@@ -1127,6 +1128,31 @@ function buildBoatAnalysis(data) {
     let flowIndex = 50;
     let roadIndex = 50;
     let localIndex = 50;
+　　　const slit = slitEngine.stRanking.find(
+  (item) => Number(item.number) === boatNo
+);
+
+if (slit) {
+
+  score += slit.slitBonus || 0;
+
+  if (slit.stRank === 1) {
+    attackIndex += 10;
+    flowIndex += 8;
+  }
+
+  else if (slit.stRank === 2) {
+    attackIndex += 6;
+    flowIndex += 5;
+  }
+
+  else if (slit.stRank >= 5) {
+    attackIndex -= 5;
+    flowIndex -= 4;
+  }
+
+}
+}
 
     // コース補正
 if (boatNo === 1) {
