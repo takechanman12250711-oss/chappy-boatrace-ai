@@ -897,34 +897,64 @@
   =============================== */
 
   function buildAiComment(dashboard) {
-    const top = dashboard?.expectedBoats?.[0];
-    const second = dashboard?.expectedBoats?.[1];
-    const venue = dashboard?.venue;
+  const entries = buildBoatAnalysis(dashboard);
+  const top = entries[0];
+  const second = entries[1];
+  const third = entries[2];
+  const hole = entries.find((entry) => entry.boatNo >= 4 && entry.score >= 60) || entries[3];
 
-    const parts = [];
-
-    if (top) {
-      parts.push(`${top.boatNo}号艇が総合指数トップ`);
-    }
-
-    if (second) {
-      parts.push(`${second.boatNo}号艇が相手筆頭`);
-    }
-
-    if (venue?.inPower >= 68) {
-      parts.push(`${venue.name}はイン寄り補正`);
-    }
-
-    if (venue?.road >= 75) {
-      parts.push(`${venue.name}は道中力も重視`);
-    }
-
-    if (dashboard?.newEngine) {
-      parts.push("新型エンジン補正で展示・STを重視");
-    }
-
-    return parts.join("。") + "。";
+  if (!top) {
+    return "出走データ不足のため、AIコメントを生成できません。";
   }
+
+  const parts = [];
+
+  parts.push(
+    `${top.boatNo}号艇${top.name}は総合${top.score}点で中心評価。${top.comment}`
+  );
+
+  if (second) {
+    parts.push(
+      `${second.boatNo}号艇${second.name}は${second.style}として相手筆頭。${(second.roleTags || []).join("・") || "バランス型"}。`
+    );
+  }
+
+  if (third) {
+    parts.push(
+      `${third.boatNo}号艇${third.name}は3番手評価。${third.buffs?.[0] || "展開次第で連絡み"}。`
+    );
+  }
+
+  if (hole) {
+    parts.push(
+      `穴では${hole.boatNo}号艇${hole.name}に注意。${(hole.roleTags || []).join("・") || "展開待ち"}で、3着拾いまで警戒。`
+    );
+  }
+
+  const attackBoat = entries.find((entry) => entry.indexes?.attack >= 70);
+  const roadBoat = entries.find((entry) => entry.indexes?.road >= 70 && entry.boatNo >= 4);
+  const localBoat = entries.find((entry) => entry.indexes?.local >= 70);
+
+  if (attackBoat) {
+    parts.push(
+      `展開面では${attackBoat.boatNo}号艇の攻め指数が高く、スリットから動く可能性がある。`
+    );
+  }
+
+  if (roadBoat) {
+    parts.push(
+      `${roadBoat.boatNo}号艇は道中指数が高く、1マークで遅れても2・3着に拾う形がある。`
+    );
+  }
+
+  if (localBoat) {
+    parts.push(
+      `${localBoat.boatNo}号艇は当地指数が高く、この水面での残しに注意。`
+    );
+  }
+
+  return parts.join(" ");
+}
 
   function buildIndexSummary(entries) {
     const ranked = rankEntries(entries);
