@@ -1137,6 +1137,35 @@ if (exhibit > 0 && exhibit <= 6.75) {
     if (boatNo === 4) style = "カド攻め型";
     if (boatNo >= 5) style = "展開拾い型";
 
+    const roleTags = [];
+
+if (attackIndex >= 65) {
+  roleTags.push("攻め艇🔥");
+}
+
+if (flowIndex >= 65) {
+  roleTags.push("展開艇🌊");
+}
+
+if (roadIndex >= 65) {
+  roleTags.push("道中艇⚡");
+}
+
+if (localIndex >= 65) {
+  roleTags.push("当地巧者🏠");
+}
+
+if (boatNo === 1 && score >= 70) {
+  roleTags.push("逃げ中心🚤");
+}
+
+if (boatNo === 2 && flowIndex >= 60) {
+  roleTags.push("差し残し注意");
+}
+
+if (boatNo >= 5 && roadIndex >= 60) {
+  roleTags.push("3着拾い注意");
+}
     let comment = "総合的には押さえ評価。";
     if (score >= 85) comment = "中心候補。展開・数値ともに上位。";
     else if (score >= 75) comment = "相手筆頭。舟券には厚く入れたい。";
@@ -1155,6 +1184,7 @@ if (exhibit > 0 && exhibit <= 6.75) {
   local: localIndex
 },
       style,
+      roleTags,
       buffs,
       debuffs,
       comment,
