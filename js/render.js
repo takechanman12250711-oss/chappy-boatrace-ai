@@ -1546,16 +1546,41 @@ function renderFinalBlock(block) {
   }
 
   function groupTicketsByRank(tickets) {
-    const groups = { S: [], A: [], B: [], C: [] };
+  const groups = { S: [], A: [], B: [], C: [] };
 
-    safeArray(tickets).forEach((ticket) => {
-      const rank = String(ticket.rank || ticket.grade || "C").toUpperCase();
-      if (!groups[rank]) groups[rank] = [];
-      groups[rank].push(ticket);
+  safeArray(tickets).forEach((ticket) => {
+    const score = Number(
+      ticket.score ??
+      ticket.point ??
+      ticket.index ??
+      ticket.aiScore ??
+      0
+    );
+
+    let rank = ticket.rank || "";
+
+    if (!rank) {
+      if (score >= 85) rank = "S";
+      else if (score >= 75) rank = "A";
+      else if (score >= 65) rank = "B";
+      else rank = "C";
+    }
+
+    if (!groups[rank]) groups[rank] = [];
+
+    groups[rank].push({
+      ...ticket,
+      score,
+      rank
     });
+  });
 
-    return groups;
-  }
+  Object.keys(groups).forEach((rank) => {
+    groups[rank].sort((a, b) => Number(b.score) - Number(a.score));
+  });
+
+  return groups;
+}
 
   function renderTicketRow(ticket) {
   const mark =
@@ -1565,10 +1590,10 @@ function renderFinalBlock(block) {
     "-";
 
   const score =
-    ticket.score ||
-    ticket.point ||
-    ticket.index ||
-    ticket.aiScore ||
+    ticket.score ??
+    ticket.point ??
+    ticket.index ??
+    ticket.aiScore ??
     "-";
 
   const rank =
@@ -1589,16 +1614,21 @@ function renderFinalBlock(block) {
     "";
 
   return `
-    <div class="ticket-row">
+    <div class="ticket-row ticket-rank-${safeText(rank)}">
       <div class="ticket-main">
         <strong>${safeText(mark)}</strong>
-        <span class="ticket-score">${safeText(score)}点</span>
-        ${rank ? `<span class="ticket-rank">${safeText(rank)}</span>` : ""}
-        ${odds ? `<span class="ticket-odds">${safeText(odds)}</span>` : ""}
+        <span class="ticket-score">AI指数 ${safeText(score)}点</span>
+        ${rank ? `<span class="ticket-rank-badge">信頼度 ${safeText(rank)}</span>` : ""}
+        ${odds ? `<span class="ticket-odds">オッズ ${safeText(odds)}</span>` : ""}
       </div>
-      ${reason ? `<p class="ticket-reason">${safeText(reason)}</p>` : ""}
+      ${
+        reason
+          ? `<p class="ticket-reason">📝 ${safeText(reason)}</p>`
+          : `<p class="ticket-reason">📝 AI評価から選出</p>`
+      }
     </div>
   `;
+}
 }
   function renderAiTicketsCompact(prediction) {
     const area = document.getElementById("aiTicketsArea");
