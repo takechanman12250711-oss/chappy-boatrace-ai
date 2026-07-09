@@ -1341,7 +1341,19 @@ function buildSlitEngine(boats) {
     );
 
     const score = Math.round((0.25 - st) * 1000);
+　　　let slitBonus = 0;
 
+if (st <= 0.10) {
+  slitBonus = 12;
+} else if (st <= 0.12) {
+  slitBonus = 10;
+} else if (st <= 0.14) {
+  slitBonus = 8;
+} else if (st <= 0.16) {
+  slitBonus = 5;
+} else if (st >= 0.22) {
+  slitBonus = -8;
+}
     let startRankType = "普通";
     if (st <= 0.10) startRankType = "超速";
     else if (st <= 0.13) startRankType = "速い";
@@ -1354,6 +1366,7 @@ function buildSlitEngine(boats) {
       course,
       st,
       score,
+      slitBonus,
       startRankType
     };
   });
