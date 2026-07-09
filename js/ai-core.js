@@ -943,38 +943,38 @@
   }
 
   function buildSheetEntries(entries) {
-    return classifyEntries(entries).map((entry) => {
-      const idx = entry.indexes || {};
+  return entries.map((entry, index) => {
+    const idx = entry.indexes || {};
 
-      const buffs = [];
-      const debuffs = [];
+    const markList = ["◎", "○", "▲", "△", "☆", "注"];
 
-      if (idx.attack >= 75) buffs.push(`攻め指数${idx.attack}`);
-      if (idx.flow >= 75) buffs.push(`展開指数${idx.flow}`);
-      if (idx.road >= 75) buffs.push(`道中指数${idx.road}`);
-      if (idx.local >= 75) buffs.push(`当地指数${idx.local}`);
-      if (idx.exhibition >= 75) buffs.push(`展示指数${idx.exhibition}`);
-      if (idx.st >= 75) buffs.push(`ST指数${idx.st}`);
+    const buffs = [
+      ...(entry.buffs || []),
+      ...(entry.roleTags || [])
+    ];
 
-      if (idx.motor <= 40) debuffs.push(`モーター指数${idx.motor}`);
-      if (idx.st <= 40) debuffs.push(`ST不安${idx.st}`);
-      if (idx.exhibition <= 40) debuffs.push(`展示弱め${idx.exhibition}`);
+    const debuffs = [
+      ...(entry.debuffs || [])
+    ];
 
-      return {
-        boatNo: entry.boatNo,
-        name: entry.name,
-        class: entry.class,
-        mark: entry.mark,
-        label: entry.label,
-        role: entry.role,
-        score: entry.totalScore,
-        indexes: idx,
-        buffs,
-        debuffs,
-        comment: `${entry.role}。総合${entry.totalScore}点で${entry.label}評価。`
-      };
-    });
-  }
+    return {
+      boatNo: entry.boatNo,
+      name: entry.name,
+      class: entry.class || entry.raw?.class || "",
+      mark: markList[index] || "注",
+      label: entry.style || entry.label || "",
+      role: entry.style || entry.role || "",
+      score: entry.score || entry.totalScore || 0,
+      indexes: idx,
+      roleTags: entry.roleTags || [],
+      buffs,
+      debuffs,
+      comment:
+        entry.comment ||
+        `${entry.style || "総合評価"}。総合${entry.score || entry.totalScore || 0}点。`
+    };
+  });
+}
 /* =========================================================
   Step1：各艇AI評価生成
 ========================================================= */
