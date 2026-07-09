@@ -4053,7 +4053,19 @@
   const enhanced = enhancePrediction(prediction);
 
   if (window.ChappyAICore) {
-    return window.ChappyAICore.mergeWithPrediction(enhanced, data);
+    const merged = window.ChappyAICore.mergeWithPrediction(enhanced, data);
+
+    console.log("🚤 ChappyAICore 接続OK", {
+      aiCoreVersion: merged.aiCore?.aiCoreVersion,
+      venue: merged.aiCore?.venue,
+      newEngine: merged.aiCore?.newEngine,
+      ai: merged.aiCore?.ai,
+      indexes: merged.aiCore?.indexes,
+      expectedBoats: merged.aiCore?.expectedBoats,
+      tickets: merged.aiCore?.tickets
+    });
+
+    return merged;
   }
 
   return enhanced;
