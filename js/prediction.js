@@ -2935,23 +2935,39 @@
     ]);
 
     return {
-      main,
-      cover,
-      nagashi,
-      hole,
-      all,
-      summary: createFormationSummary({
-        main,
-        cover,
-        nagashi,
-        hole,
-        axis,
-        secondAxis,
-        holeAxis,
-        coverAxis,
-        context
-      })
-    };
+  main,
+  honmei: main,
+  normal: main,
+  base: main,
+
+  cover,
+  safety: cover,
+  osae: cover,
+
+  nagashi,
+  flow: nagashi,
+
+  hole,
+  ana: hole,
+
+  manshu: hole,
+  longshot: hole,
+  highPay: hole,
+
+  all,
+
+  summary: createFormationSummary({
+    main,
+    cover,
+    nagashi,
+    hole,
+    axis,
+    secondAxis,
+    holeAxis,
+    coverAxis,
+    context
+  })
+};
   }
 
   function createMainFormationTickets(params) {
