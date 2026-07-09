@@ -84,13 +84,25 @@
   =============================== */
 
   function getEntries(data) {
-    return (
-      safeArray(data?.entries) ||
-      safeArray(data?.racers) ||
-      safeArray(data?.boats) ||
-      safeArray(data?.entryList)
-    );
+  const candidates = [
+    data?.entries,
+    data?.racers,
+    data?.boats,
+    data?.entryList,
+    data?.race?.entries,
+    data?.race?.entry,
+    data?.raceInfo?.entries,
+    data?.raceInfo?.entry
+  ];
+
+  for (const list of candidates) {
+    if (Array.isArray(list) && list.length) {
+      return list;
+    }
   }
+
+  return [];
+}
 
   function getBoatNo(entry, index) {
     return toNumber(
