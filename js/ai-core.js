@@ -442,31 +442,31 @@
   =============================== */
 
   const VENUE_PROFILE = {
-    "01": { name: "桐生", key: "kiryu", type: "lake", night: true, inPower: 68, rough: 42, road: 58 },
-    "02": { name: "戸田", key: "toda", type: "river", night: false, inPower: 48, rough: 70, road: 66 },
-    "03": { name: "江戸川", key: "edogawa", type: "river", night: false, inPower: 42, rough: 92, road: 82 },
-    "04": { name: "平和島", key: "heiwajima", type: "sea", night: false, inPower: 52, rough: 70, road: 66 },
-    "05": { name: "多摩川", key: "tamagawa", type: "river", night: false, inPower: 58, rough: 52, road: 58 },
-    "06": { name: "浜名湖", key: "hamanako", type: "lake", night: false, inPower: 54, rough: 62, road: 64 },
-    "07": { name: "蒲郡", key: "gamagori", type: "sea", night: true, inPower: 62, rough: 50, road: 60 },
-    "08": { name: "常滑", key: "tokoname", type: "sea", night: false, inPower: 56, rough: 58, road: 60 },
-    "09": { name: "津", key: "tsu", type: "sea", night: false, inPower: 58, rough: 54, road: 58 },
-    "10": { name: "三国", key: "mikuni", type: "sea", night: false, inPower: 64, rough: 50, road: 56 },
-    "11": { name: "びわこ", key: "biwako", type: "lake", night: false, inPower: 50, rough: 72, road: 70 },
-    "12": { name: "住之江", key: "suminoe", type: "city", night: true, inPower: 66, rough: 42, road: 56 },
-    "13": { name: "尼崎", key: "amagasaki", type: "city", night: false, inPower: 62, rough: 44, road: 54 },
-    "14": { name: "鳴門", key: "naruto", type: "sea", night: false, inPower: 52, rough: 76, road: 72 },
-    "15": { name: "丸亀", key: "marugame", type: "sea", night: true, inPower: 64, rough: 50, road: 58 },
-    "16": { name: "児島", key: "kojima", type: "sea", night: false, inPower: 60, rough: 56, road: 60 },
-    "17": { name: "宮島", key: "miyajima", type: "sea", night: false, inPower: 58, rough: 68, road: 66 },
-    "18": { name: "徳山", key: "tokuyama", type: "sea", night: false, inPower: 70, rough: 42, road: 54 },
-    "19": { name: "下関", key: "shimonoseki", type: "sea", night: true, inPower: 66, rough: 48, road: 58 },
-    "20": { name: "若松", key: "wakamatsu", type: "sea", night: true, inPower: 58, rough: 72, road: 82 },
-    "21": { name: "芦屋", key: "ashiya", type: "sea", night: false, inPower: 68, rough: 44, road: 54 },
-    "22": { name: "福岡", key: "fukuoka", type: "sea", night: false, inPower: 50, rough: 82, road: 78 },
-    "23": { name: "唐津", key: "karatsu", type: "sea", night: false, inPower: 66, rough: 46, road: 56 },
-    "24": { name: "大村", key: "omura", type: "sea", night: true, inPower: 76, rough: 38, road: 54 }
-  };
+  "01": { name:"桐生", key:"kiryu", type:"lake", night:true,  inPower:68, sashiPower:58, makuriPower:48, kadoPower:46, outsidePower:42, rough:42, road:58 },
+  "02": { name:"戸田", key:"toda", type:"river", night:false, inPower:48, sashiPower:72, makuriPower:68, kadoPower:70, outsidePower:58, rough:70, road:66 },
+  "03": { name:"江戸川", key:"edogawa", type:"river", night:false, inPower:42, sashiPower:78, makuriPower:72, kadoPower:74, outsidePower:68, rough:92, road:82 },
+  "04": { name:"平和島", key:"heiwajima", type:"sea", night:false, inPower:52, sashiPower:64, makuriPower:62, kadoPower:60, outsidePower:56, rough:70, road:66 },
+  "05": { name:"多摩川", key:"tamagawa", type:"river", night:false, inPower:58, sashiPower:60, makuriPower:58, kadoPower:58, outsidePower:52, rough:52, road:58 },
+  "06": { name:"浜名湖", key:"hamanako", type:"lake", night:false, inPower:54, sashiPower:62, makuriPower:60, kadoPower:60, outsidePower:56, rough:62, road:64 },
+  "07": { name:"蒲郡", key:"gamagori", type:"sea", night:true, inPower:62, sashiPower:56, makuriPower:54, kadoPower:56, outsidePower:48, rough:50, road:60 },
+  "08": { name:"常滑", key:"tokoname", type:"sea", night:false, inPower:56, sashiPower:58, makuriPower:60, kadoPower:60, outsidePower:52, rough:58, road:60 },
+  "09": { name:"津", key:"tsu", type:"sea", night:false, inPower:58, sashiPower:58, makuriPower:60, kadoPower:58, outsidePower:50, rough:54, road:58 },
+  "10": { name:"三国", key:"mikuni", type:"sea", night:false, inPower:64, sashiPower:54, makuriPower:52, kadoPower:52, outsidePower:46, rough:50, road:56 },
+  "11": { name:"びわこ", key:"biwako", type:"lake", night:false, inPower:50, sashiPower:72, makuriPower:66, kadoPower:68, outsidePower:60, rough:72, road:70 },
+  "12": { name:"住之江", key:"suminoe", type:"city", night:true, inPower:66, sashiPower:54, makuriPower:52, kadoPower:54, outsidePower:46, rough:42, road:56 },
+  "13": { name:"尼崎", key:"amagasaki", type:"city", night:false, inPower:62, sashiPower:56, makuriPower:54, kadoPower:54, outsidePower:48, rough:44, road:54 },
+  "14": { name:"鳴門", key:"naruto", type:"sea", night:false, inPower:52, sashiPower:74, makuriPower:66, kadoPower:68, outsidePower:60, rough:76, road:72 },
+  "15": { name:"丸亀", key:"marugame", type:"sea", night:true, inPower:64, sashiPower:56, makuriPower:58, kadoPower:58, outsidePower:50, rough:50, road:58 },
+  "16": { name:"児島", key:"kojima", type:"sea", night:false, inPower:60, sashiPower:58, makuriPower:56, kadoPower:56, outsidePower:50, rough:56, road:60 },
+  "17": { name:"宮島", key:"miyajima", type:"sea", night:false, inPower:58, sashiPower:68, makuriPower:62, kadoPower:62, outsidePower:56, rough:68, road:66 },
+  "18": { name:"徳山", key:"tokuyama", type:"sea", night:false, inPower:70, sashiPower:50, makuriPower:48, kadoPower:48, outsidePower:42, rough:42, road:54 },
+  "19": { name:"下関", key:"shimonoseki", type:"sea", night:true, inPower:66, sashiPower:54, makuriPower:54, kadoPower:56, outsidePower:48, rough:48, road:58 },
+  "20": { name:"若松", key:"wakamatsu", type:"sea", night:true, inPower:58, sashiPower:74, makuriPower:68, kadoPower:70, outsidePower:62, rough:72, road:82 },
+  "21": { name:"芦屋", key:"ashiya", type:"sea", night:false, inPower:68, sashiPower:52, makuriPower:50, kadoPower:52, outsidePower:44, rough:44, road:54 },
+  "22": { name:"福岡", key:"fukuoka", type:"sea", night:false, inPower:50, sashiPower:76, makuriPower:70, kadoPower:68, outsidePower:62, rough:82, road:78 },
+  "23": { name:"唐津", key:"karatsu", type:"sea", night:false, inPower:66, sashiPower:54, makuriPower:52, kadoPower:52, outsidePower:46, rough:46, road:56 },
+  "24": { name:"大村", key:"omura", type:"sea", night:true, inPower:76, sashiPower:64, makuriPower:62, kadoPower:52, outsidePower:40, rough:38, road:54 }
+};
 
   const VENUE_NAME_TO_CODE = Object.keys(VENUE_PROFILE).reduce((map, code) => {
     const v = VENUE_PROFILE[code];
@@ -538,50 +538,81 @@
   }
 
   function buildVenueWeights(data) {
-    const venue = getVenueProfile(data);
-    const weather = getWeatherInfo(data);
-    const newEngine = isNewEngineRace(data);
+  const venue = getVenueProfile(data);
+  const weather = getWeatherInfo(data);
+  const newEngine = isNewEngineRace(data);
 
-    const weights = { ...DEFAULT_WEIGHTS };
+  const weights = { ...DEFAULT_WEIGHTS };
 
-    if (venue.inPower >= 68) {
-      weights.flow += 3;
-      weights.local += 2;
-      weights.attack -= 1;
-    }
-
-    if (venue.road >= 75) {
-      weights.road += 5;
-      weights.flow += 2;
-    }
-
-    if (venue.rough >= 70) {
-      weights.exhibition += 3;
-      weights.road += 3;
-      weights.motor -= 2;
-    }
-
-    if (weather.windSpeed >= 5 || weather.wave >= 5) {
-      weights.exhibition += 4;
-      weights.road += 4;
-      weights.flow += 2;
-      weights.motor -= 2;
-    }
-
-    if (newEngine) {
-      weights.exhibition += 5;
-      weights.st += 3;
-      weights.road += 2;
-      weights.motor -= 5;
-      weights.local += 1;
-    }
-
-    Object.keys(weights).forEach((key) => {
-      weights[key] = Math.max(1, weights[key]);
-    });
-
-    return weights;
+  // イン有利
+  if (venue.inPower >= 65) {
+    weights.flow += 3;
+    weights.local += 2;
   }
+
+  // 差し補正
+  if (venue.sashiPower >= 65) {
+    weights.flow += 3;
+    weights.road += 2;
+  }
+
+  // まくり補正
+  if (venue.makuriPower >= 65) {
+    weights.attack += 3;
+  }
+
+  // カド補正
+  if (venue.kadoPower >= 65) {
+    weights.attack += 2;
+    weights.flow += 1;
+  }
+
+  // 外枠補正
+  if (venue.outsidePower >= 60) {
+    weights.road += 3;
+    weights.flow += 2;
+  }
+
+  // 荒水面
+  if (venue.rough >= 70) {
+    weights.exhibition += 3;
+    weights.road += 3;
+    weights.motor -= 2;
+  }
+
+  // 風補正
+  if (weather.windSpeed >= 3) {
+    weights.exhibition += 2;
+  }
+
+  if (weather.windSpeed >= 5) {
+    weights.exhibition += 2;
+    weights.road += 3;
+    weights.flow += 2;
+  }
+
+  // 波補正
+  if (weather.wave >= 5) {
+    weights.road += 2;
+    weights.local += 2;
+  }
+
+  // 新型エンジン補正
+  if (newEngine) {
+    weights.motor -= 5;
+    weights.exhibition += 3;
+    weights.st += 3;
+    weights.local += 2;
+    weights.road += 2;
+  }
+
+  // 最低値保証
+  Object.keys(weights).forEach((key) => {
+    weights[key] = Math.max(1, weights[key]);
+  });
+
+  return weights;
+}
 
   function applyVenueBonusToIndexes(entry, indexes, data) {
     const venue = getVenueProfile(data);
