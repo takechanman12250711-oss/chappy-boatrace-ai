@@ -489,33 +489,35 @@ const manshuScore =
       "AIまとめデータがありません。";
 
     const body = `
-      <div class="v3-ai-grid">
+  <div class="v3-ai-grid">
 
-        ${renderAiMeter(
-          "本命信頼度",
-          confidenceScore,
-          levelLabel(confidenceScore, "高信頼", "標準", "不安定"),
-          typeof confidence === "object"
-  ? (confidence.reason || confidence.comment || "")
-  : ""
+    ${renderAiMeter(
+      "本命信頼度",
+      confidenceScore,
+      levelLabel(confidenceScore, "高信頼", "標準", "不安定"),
+      typeof confidence === "object"
+        ? (confidence.reason || confidence.comment || "")
+        : ""
+    )}
 
-        ${renderAiMeter(
-          "万舟期待度",
-          manshuScore,
-          levelLabel(manshuScore, "波乱注意", "中穴気配", "本線寄り"),
-          typeof manshuPower === "object"
-  ? (manshuPower.reason || manshuPower.comment || "")
-  : ""
+    ${renderAiMeter(
+      "万舟期待度",
+      manshuScore,
+      levelLabel(manshuScore, "波乱注意", "中穴気配", "本線寄り"),
+      typeof manshuPower === "object"
+        ? (manshuPower.reason || manshuPower.comment || "")
+        : ""
+    )}
 
-      </div>
+  </div>
 
-      <div class="v3-ai-summary-box">
-        <h3>AIまとめ</h3>
-        <p>${escapeHtml(summary)}</p>
-      </div>
+  <div class="v3-ai-summary-box">
+    <h3>AIまとめ</h3>
+    <p>${escapeHtml(summary)}</p>
+  </div>
 
-      ${renderIndexPanel(indexes)}
-    `;
+  ${renderIndexPanel(indexes)}
+`;
 
     return section("AI総合", body, "📊", "v3-ai-section");
   }
