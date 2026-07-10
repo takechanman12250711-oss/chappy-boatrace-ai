@@ -857,43 +857,77 @@ if (raceInfoArea) {
   }
 
   function renderNewspaperCard(item) {
-    const role = ROLE_LABELS[item.role] || item.role || "評価";
-    const c = boatColor(item.no);
+  const rawRole =
+    ROLE_LABELS[item.role] ||
+    item.role ||
+    "評価";
 
-    return `
-      <article class="v3-paper-card" style="border-left-color:${c.border};">
+  const roleItems = [...new Set(
+    String(rawRole)
+      .split("/")
+      .map((text) => text.trim())
+      .filter(Boolean)
+  )].slice(0, 3);
 
-        <div class="v3-paper-head">
-          <div class="v3-paper-title">
-            <span class="v3-role">${escapeHtml(role)}</span>
-            ${boatTitle(item.no, item.name)}
+  const c = boatColor(item.no);
+
+  return `
+    <article class="v3-paper-card" style="border-left-color:${c.border};">
+
+      <div class="v3-paper-head">
+        <div class="v3-paper-title">
+
+          <div class="v3-role-list">
+            ${roleItems
+              .map((role) => `<span class="v3-role">${escapeHtml(role)}</span>`)
+              .join("")}
           </div>
 
-          ${
-            item.score !== ""
-              ? `<div class="v3-paper-score"><span>AI</span><strong>${escapeHtml(Math.round(safeNum(item.score, 0)))}</strong></div>`
-              : ""
-          }
+          ${boatTitle(item.no, item.name)}
         </div>
 
         ${
-          item.tags && item.tags.length
-            ? `<div class="v3-tag-row">${item.tags.map((t) => tag(t, "paper")).join("")}</div>`
+          item.score !== ""
+            ? `
+              <div class="v3-paper-score">
+                <span>AI</span>
+                <strong>${escapeHtml(Math.round(safeNum(item.score, 0)))}</strong>
+              </div>
+            `
             : ""
         }
+      </div>
 
-        ${renderFactorLine(item.buffs, "plus")}
-        ${renderFactorLine(item.debuffs, "minus")}
+      ${
+        item.tags && item.tags.length
+          ? `
+            <div class="v3-tag-row">
+              ${item.tags
+                .slice(0, 3)
+                .map((tagText) => tag(tagText, "paper"))
+                .join("")}
+            </div>
+          `
+          : ""
+      }
 
-        ${
-          item.comment
-            ? `<div class="v3-paper-comment"><strong>狙い</strong><p>${escapeHtml(limitText(item.comment, 85))}</p></div>`
-            : ""
-        }
+      ${renderFactorLine(item.buffs, "plus")}
+      ${renderFactorLine(item.debuffs, "minus")}
 
-      </article>
-    `;
-  }
+      ${
+        item.comment
+          ? `
+            <div class="v3-paper-comment">
+              <strong>狙い</strong>
+              <p>${escapeHtml(limitText(item.comment, 65))}</p>
+            </div>
+          `
+          : ""
+      }
+
+    </article>
+  `;
+}
 
   function renderFactorLine(list, type) {
     const items = arrayify(list)
