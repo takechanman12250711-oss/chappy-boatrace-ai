@@ -1580,32 +1580,111 @@ aiComment: comment
   =============================== */
 
   function buildBoatAnalyses(data) {
+  const entries = getRaceEntries(data);
 
-    const entries = getRaceEntries(data);
+  const analyses = entries
+    .map((boat) =>
+      buildBoatAnalysis(
+        boat,
+        entries,
+        data
+      )
+    )
+    .filter(Boolean);
 
-    const analyses =
-      entries.map((boat) =>
-        buildBoatAnalysis(
-          boat,
-          entries,
-          data
-        )
-      );
+  /* ===============================
+    各指数ランキング
+  =============================== */
 
-    analyses.sort((a, b) =>
-      b.indexes.total -
-      a.indexes.total
-    );
+  function setRanking(rankKey, getScore) {
+    [...analyses]
+      .sort((a, b) => {
+        const scoreA = Number(getScore(a) || 0);
+        const scoreB = Number(getScore(b) || 0);
 
-    analyses.forEach((boat, index) => {
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
 
-      boat.aiRank = index + 1;
-
-    });
-
-    return analyses;
-
+        return Number(a.boatNo || 0) - Number(b.boatNo || 0);
+      })
+      .forEach((boat, index) => {
+        boat[rankKey] = index + 1;
+      });
   }
+
+  setRanking(
+    "totalRank",
+    (boat) => boat.indexes?.total
+  );
+
+  setRanking(
+    "attackRank",
+    (boat) => boat.roleScores?.attack
+  );
+
+  setRanking(
+    "flowRank",
+    (boat) => boat.roleScores?.flow
+  );
+
+  setRanking(
+    "roadRank",
+    (boat) => boat.roleScores?.road
+  );
+
+  setRanking(
+    "holdRank",
+    (boat) => boat.roleScores?.hold
+  );
+
+  setRanking(
+    "pickupRank",
+    (boat) => boat.roleScores?.pickup
+  );
+
+  /* ===============================
+    最終AI順位
+  =============================== */
+
+  analyses.sort((a, b) => {
+    const totalA = Number(a.indexes?.total || 0);
+    const totalB = Number(b.indexes?.total || 0);
+
+    if (totalB !== totalA) {
+      return totalB - totalA;
+    }
+
+    const attackA = Number(a.roleScores?.attack || 0);
+    const attackB = Number(b.roleScores?.attack || 0);
+
+    if (attackB !== attackA) {
+      return attackB - attackA;
+    }
+
+    return Number(a.boatNo || 0) - Number(b.boatNo || 0);
+  });
+
+  analyses.forEach((boat, index) => {
+    boat.aiRank = index + 1;
+
+    boat.roleRanks = {
+      attack: boat.attackRank || 0,
+      flow: boat.flowRank || 0,
+      road: boat.roadRank || 0,
+      hold: boat.holdRank || 0,
+      pickup: boat.pickupRank || 0
+    };
+
+    boat.isTopAttack = boat.attackRank === 1;
+    boat.isTopFlow = boat.flowRank === 1;
+    boat.isTopRoad = boat.roadRank === 1;
+    boat.isTopHold = boat.holdRank === 1;
+    boat.isTopPickup = boat.pickupRank === 1;
+  });
+
+  return analyses;
+}
 
   /* ===============================
     AIコメント生成
