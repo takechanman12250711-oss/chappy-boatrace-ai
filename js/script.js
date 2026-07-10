@@ -184,11 +184,11 @@ function createPredictionSafe(data) {
       return window.createPrediction(data);
     }
   } catch (error) {
-    console.warn("prediction.js error", error);
-  }
-
-  return null;
+  console.error("prediction.js error", error);
+  throw error;
 }
+
+return null;
 
   function createTheorySafe(data) {
     try {
