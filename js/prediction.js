@@ -1378,27 +1378,39 @@
     const boat2Rate = toNumberOrNull(entry.boat?.secondRate);
 
     if (nationalWinRate !== null && nationalWinRate > 0) {
-      const bonus = nationalWinRate * 2;
-      attack += bonus * weights.skill;
-      michu += bonus * weights.skill;
+  const nationalDiff = nationalWinRate - 5.0;
+  const nationalBonus = nationalDiff * 5;
 
-      if (nationalWinRate >= 6) {
-        buffs.push(`全国勝率高い ${nationalWinRate}`);
-      } else if (nationalWinRate <= 4) {
-        debuffs.push(`全国勝率低め ${nationalWinRate}`);
-      }
-    }
+  attack += nationalBonus * weights.skill;
+  michu += nationalBonus * 0.85 * weights.skill;
+
+  if (nationalWinRate >= 6.5) {
+    buffs.push(`全国勝率上位 ${nationalWinRate}`);
+  } else if (nationalWinRate >= 5.5) {
+    buffs.push(`全国勝率安定 ${nationalWinRate}`);
+  } else if (nationalWinRate <= 4.0) {
+    debuffs.push(`全国勝率低め ${nationalWinRate}`);
+  }
+}
 
     if (localWinRate !== null && localWinRate > 0) {
-      const bonus = localWinRate * 4;
-      local += bonus * weights.local;
-      michu += localWinRate * 1.5 * weights.local;
+  const localDiff = localWinRate - 5.0;
+  const localBonus = localDiff * 7;
 
-      if (localWinRate >= 6) {
-        buffs.push(`当地勝率高い ${localWinRate}`);
-        expected += 7;
-      }
-    }
+  local += localBonus * weights.local;
+  michu += localBonus * 0.35 * weights.local;
+
+  if (localWinRate >= 6.5) {
+    buffs.push(`当地勝率上位 ${localWinRate}`);
+    expected += 6;
+  } else if (localWinRate >= 5.5) {
+    buffs.push(`当地勝率安定 ${localWinRate}`);
+    expected += 3;
+  } else if (localWinRate <= 4.0) {
+    debuffs.push(`当地勝率低め ${localWinRate}`);
+    expected -= 3;
+  }
+}
 
     if (motor2Rate !== null && motor2Rate > 0) {
       const motorBonus = (motor2Rate - 30) / 2.5;
