@@ -1332,38 +1332,120 @@
       calcTotalIndex(indexes, weights);
 
     /* ===============================
-       役割タグ
-    =============================== */
+  役割判定 Ver2
+  - 攻め
+  - 展開
+  - 道中
+  - 残し
+  - 拾い
+=============================== */
 
-    const roleTags = [];
+const boatNo = getBoatNo(boat);
 
-    if (indexes.attack >= 75) {
-      roleTags.push("攻め艇🔥");
-    }
+const roleScores = {
+  attack: clamp(
+    round(
+      indexes.attack * 0.42 +
+      indexes.st * 0.30 +
+      indexes.exhibition * 0.18 +
+      indexes.raceFlow * 0.10
+    ),
+    INDEX_LIMIT.min,
+    INDEX_LIMIT.max
+  ),
 
-    if (indexes.raceFlow >= 75) {
-      roleTags.push("展開艇🌊");
-    }
+  flow: clamp(
+    round(
+      indexes.raceFlow * 0.42 +
+      indexes.attack * 0.20 +
+      indexes.turn * 0.18 +
+      indexes.exhibition * 0.12 +
+      indexes.local * 0.08
+    ),
+    INDEX_LIMIT.min,
+    INDEX_LIMIT.max
+  ),
 
-    if (indexes.turn >= 75) {
-      roleTags.push("道中艇⚡");
-    }
+  road: clamp(
+    round(
+      indexes.turn * 0.42 +
+      indexes.local * 0.23 +
+      indexes.national * 0.18 +
+      indexes.exhibition * 0.10 +
+      indexes.motor * 0.07
+    ),
+    INDEX_LIMIT.min,
+    INDEX_LIMIT.max
+  ),
 
-    if (indexes.local >= 75) {
-      roleTags.push("当地巧者🏠");
-    }
+  hold: clamp(
+    round(
+      indexes.raceFlow * 0.30 +
+      indexes.turn * 0.25 +
+      indexes.local * 0.18 +
+      indexes.national * 0.15 +
+      indexes.st * 0.12 +
+      (boatNo === 1 ? 10 : 0) +
+      (boatNo === 2 ? 7 : 0) +
+      (boatNo === 4 ? 3 : 0)
+    ),
+    INDEX_LIMIT.min,
+    INDEX_LIMIT.max
+  ),
 
-    if (indexes.motor >= 75) {
-      roleTags.push("機力上位🔧");
-    }
+  pickup: clamp(
+    round(
+      indexes.turn * 0.30 +
+      indexes.raceFlow * 0.26 +
+      indexes.local * 0.20 +
+      indexes.exhibition * 0.12 +
+      indexes.national * 0.12 +
+      (boatNo >= 5 ? 7 : 0)
+    ),
+    INDEX_LIMIT.min,
+    INDEX_LIMIT.max
+  )
+};
 
-    if (indexes.st >= 75) {
-      roleTags.push("スタート巧者🚀");
-    }
+const roleRanking = [
+  { key: "attack", label: "攻め艇🔥", score: roleScores.attack },
+  { key: "flow", label: "展開艇🌊", score: roleScores.flow },
+  { key: "road", label: "道中艇⚡", score: roleScores.road },
+  { key: "hold", label: "残し艇🛟", score: roleScores.hold },
+  { key: "pickup", label: "拾い艇🎯", score: roleScores.pickup }
+].sort((a, b) => b.score - a.score);
 
-    if (indexes.exhibition >= 75) {
-      roleTags.push("展示気配◎");
-    }
+const primaryRole = roleRanking[0];
+
+const roleTags = [];
+
+if (primaryRole && primaryRole.score >= 62) {
+  roleTags.push(primaryRole.label);
+}
+
+roleRanking
+  .slice(1)
+  .filter((role) => role.score >= 75)
+  .slice(0, 2)
+  .forEach((role) => {
+    roleTags.push(role.label);
+  });
+
+if (indexes.local >= 75) {
+  roleTags.push("当地巧者🏠");
+}
+
+if (indexes.motor >= 75) {
+  roleTags.push("機力上位🔧");
+}
+
+if (indexes.st >= 75) {
+  roleTags.push("スタート巧者🚀");
+}
+
+if (indexes.exhibition >= 75) {
+  roleTags.push("展示気配◎");
+}
 
     /* ===============================
        バフ
@@ -1469,13 +1551,25 @@
 
       indexes,
 
-      roleTags,
+roleScores,
 
-      buffs,
+primaryRole: primaryRole
+  ? {
+      key: primaryRole.key,
+      label: primaryRole.label,
+      score: primaryRole.score
+    }
+  : null,
 
-      debuffs,
+roleRanking,
 
-      aiComment: comment
+roleTags,
+
+buffs,
+
+debuffs,
+
+aiComment: comment
 
     };
 
