@@ -2593,11 +2593,18 @@
 
   }
 
-  function createManshuScore(entry,index,context){
+  function createManshuScore(entry, index, context) {
 
-    let manshu=45;
-    let hold=45;
-    let pickup=45;
+  index = index || {
+    attack: 50,
+    tenkai: 50,
+    michu: 50,
+    local: 50,
+    total: 50,
+    expected: 50
+  };
+
+  let manshu = 45;
 
     const buffs=[];
     const debuffs=[];
