@@ -607,13 +607,30 @@
     if (!Array.isArray(entries)) return [];
 
     return entries.map((entry, index) => {
-      const boatNo = toBoatNo(
-        entry.boatNo ??
-        entry.boat ??
-        entry.waku ??
-        entry.course ??
-        index + 1
-      );
+      const boatNoCandidates = [
+  entry.waku,
+  entry.course,
+  entry.cource,
+  entry.lane,
+  entry.frame,
+  entry.boatNo,
+  entry.boat
+];
+
+let boatNo = 0;
+
+for (const candidate of boatNoCandidates) {
+  const parsed = toBoatNo(candidate);
+
+  if (parsed >= 1 && parsed <= 6) {
+    boatNo = parsed;
+    break;
+  }
+}
+
+if (boatNo === 0) {
+  boatNo = index + 1;
+}
 
       const national = {
         winRate: toNumber(entry.nationalWinRate ?? entry.national?.winRate ?? entry.national?.rate),
