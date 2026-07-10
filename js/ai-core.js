@@ -902,37 +902,70 @@
   }
 
   function calcRaceFlowIndex(boat, entries, venueFeature, data) {
-    const boatNo = getBoatNo(boat);
-    const stIndex = calcStIndex(boat, entries);
-    const localIndex = calcLocalIndex(boat);
-    const turnIndex = calcTurnIndex(boat);
-    const wind = getWindSpeed(data);
-    const wave = getWaveHeight(data);
+  const boatNo = getBoatNo(boat);
 
-    let score = 45;
+  const stIndex = calcStIndex(boat, entries);
+  const exhibitionIndex = calcExhibitionIndex(boat, entries);
+  const localIndex = calcLocalIndex(boat);
+  const turnIndex = calcTurnIndex(boat);
+  const attackIndex = calcAttackIndex(boat, entries, venueFeature);
 
-    score += turnIndex * 0.25;
-    score += localIndex * 0.20;
-    score += stIndex * 0.12;
+  const wind = getWindSpeed(data);
+  const wave = getWaveHeight(data);
 
-    if (boatNo === 1) score += venueFeature.inPower * 0.14;
-    if (boatNo === 2) score += venueFeature.sashi * 0.13;
-    if (boatNo === 3) score += venueFeature.makuri * 0.10;
-    if (boatNo === 4) score += venueFeature.kado * 0.10;
-    if (boatNo >= 5) score += venueFeature.outside * 0.12;
+  let score = 45;
 
-    if (wind >= 5 || wave >= 5) {
-      score += venueFeature.roughWater * 0.10;
-      if (boatNo >= 5) score += 6;
-      if (localIndex >= 70) score += 5;
-    }
+  score += turnIndex * 0.20;
+  score += localIndex * 0.16;
+  score += stIndex * 0.16;
+  score += exhibitionIndex * 0.14;
+  score += attackIndex * 0.14;
 
-    if (boatNo === 6 && localIndex >= 75 && turnIndex >= 70) {
-      score += 8;
-    }
-
-    return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
+  if (boatNo === 1) {
+    score += venueFeature.inPower * 0.18;
+    if (stIndex >= 75) score += 4;
   }
+
+  if (boatNo === 2) {
+    score += venueFeature.sashi * 0.18;
+    score += 5;
+    if (turnIndex >= 70) score += 5;
+  }
+
+  if (boatNo === 3) {
+    score += venueFeature.makuri * 0.18;
+    if (stIndex >= 75) score += 6;
+    if (attackIndex >= 75) score += 5;
+  }
+
+  if (boatNo === 4) {
+    score += venueFeature.kado * 0.18;
+    score += venueFeature.makuriSashi * 0.10;
+    if (stIndex >= 75) score += 5;
+  }
+
+  if (boatNo >= 5) {
+    score += venueFeature.outside * 0.16;
+    score += venueFeature.makuriSashi * 0.12;
+    if (turnIndex >= 75 || localIndex >= 75) score += 6;
+  }
+
+  if (wind >= 5 || wave >= 5) {
+    score += venueFeature.roughWater * 0.10;
+
+    if (boatNo === 1) score -= 4;
+    if (boatNo >= 4) score += 5;
+    if (boatNo >= 5) score += 5;
+    if (localIndex >= 70) score += 4;
+    if (turnIndex >= 70) score += 4;
+  }
+
+  if (boatNo === 6 && localIndex >= 75 && turnIndex >= 75) {
+    score += 8;
+  }
+
+  return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
+}
 
   function calcTotalIndex(indexes, weights) {
 
