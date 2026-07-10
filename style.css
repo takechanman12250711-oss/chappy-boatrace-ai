@@ -2001,3 +2001,49 @@ th {
 .ticket-rank-C {
   border-left: 5px solid #9ca3af;
 }
+/* =========================================================
+  選手名・カード文字折り返し調整
+========================================================= */
+
+.v3-boat-title strong,
+.v3-entry-player strong,
+.ai-pick-name,
+.v3-paper-title strong {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.v3-paper-title {
+  min-width: 0;
+}
+
+.v3-paper-title .v3-boat-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.v3-paper-head {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.v3-paper-score {
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .v3-paper-title strong {
+    font-size: 16px;
+  }
+
+  .v3-paper-title {
+    flex-wrap: nowrap;
+  }
+
+  .v3-entry-player strong {
+    font-size: 14px;
+  }
+}
