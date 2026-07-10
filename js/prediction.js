@@ -2594,7 +2594,6 @@
   }
 
   function createManshuScore(entry, index, context) {
-
   index = index || {
     attack: 50,
     tenkai: 50,
@@ -2604,136 +2603,150 @@
     expected: 50
   };
 
+  context = context || {};
+  context.weather = context.weather || {};
+  context.newEngine = context.newEngine || {};
+
   let manshu = 45;
+  let hold = 45;
+  let pickup = 45;
 
-    const buffs=[];
-    const debuffs=[];
+  const buffs = [];
+  const debuffs = [];
 
-    const boatNo=entry.boatNo;
+  const boatNo = Number(entry?.boatNo || 0);
 
-    /* 外枠補正 */
+  /* ===============================
+    外枠補正
+  =============================== */
 
-    if(boatNo>=4){
+  if (boatNo >= 4) {
+    manshu += 18;
+    pickup += 10;
 
-      manshu+=18;
-      pickup+=10;
-
-      buffs.push("外枠高配当");
-
-    }
-
-    /* 2差し */
-
-    if(boatNo===2){
-
-      hold+=18;
-      pickup+=8;
-
-      buffs.push("2コース差し");
-
-    }
-
-    /* イン残し */
-
-    if(boatNo===1){
-
-      hold+=20;
-      manshu-=8;
-
-      buffs.push("イン残し");
-
-    }
-
-    /* 攻め */
-
-    if(index.attack>=75){
-
-      manshu+=10;
-      buffs.push("攻め指数高い");
-
-    }
-
-    if(index.expected>=75){
-
-      manshu+=14;
-      buffs.push("期待値高い");
-
-    }
-
-    if(index.michu>=75){
-
-      pickup+=14;
-      buffs.push("道中指数高い");
-
-    }
-
-    if(index.local>=75){
-
-      pickup+=10;
-      hold+=8;
-
-      buffs.push("当地巧者");
-
-    }
-
-    if(context.weather.outsideChance>=65){
-
-      manshu+=8;
-      pickup+=8;
-
-      buffs.push("風で外有利");
-
-    }
-
-    if(context.weather.insideRisk>=65){
-
-      if(boatNo===1){
-
-        hold-=6;
-
-        debuffs.push("インリスク");
-
-      }
-
-    }
-
-    if(context.newEngine.updated){
-
-      if(index.attack>=70){
-
-        manshu+=5;
-
-        buffs.push("新型エンジン期は展示重視");
-
-      }
-
-    }
-
-    manshu=clampScore(manshu);
-    hold=clampScore(hold);
-    pickup=clampScore(pickup);
-
-    return{
-
-      boatNo,
-
-      name:entry.racerName||entry.name,
-
-      manshuScore:manshu,
-
-      holdScore:hold,
-
-      pickupScore:pickup,
-
-      reason:buffs.join(" / "),
-
-      buffs,
-
-      debuffs
-
-    };
-
+    buffs.push("外枠高配当");
   }
+
+  /* ===============================
+    2コース差し・残し
+  =============================== */
+
+  if (boatNo === 2) {
+    hold += 18;
+    pickup += 8;
+
+    buffs.push("2コース差し");
+  }
+
+  /* ===============================
+    イン残し
+  =============================== */
+
+  if (boatNo === 1) {
+    hold += 20;
+    manshu -= 8;
+
+    buffs.push("イン残し");
+  }
+
+  /* ===============================
+    攻め指数
+  =============================== */
+
+  if (Number(index.attack) >= 75) {
+    manshu += 10;
+
+    buffs.push("攻め指数高い");
+  }
+
+  /* ===============================
+    期待値指数
+  =============================== */
+
+  if (Number(index.expected) >= 75) {
+    manshu += 14;
+
+    buffs.push("期待値高い");
+  }
+
+  /* ===============================
+    道中指数
+  =============================== */
+
+  if (Number(index.michu) >= 75) {
+    pickup += 14;
+
+    buffs.push("道中指数高い");
+  }
+
+  /* ===============================
+    当地指数
+  =============================== */
+
+  if (Number(index.local) >= 75) {
+    pickup += 10;
+    hold += 8;
+
+    buffs.push("当地巧者");
+  }
+
+  /* ===============================
+    風・水面補正
+  =============================== */
+
+  if (Number(context.weather.outsideChance) >= 65) {
+    manshu += 8;
+    pickup += 8;
+
+    buffs.push("風で外有利");
+  }
+
+  if (
+    Number(context.weather.insideRisk) >= 65 &&
+    boatNo === 1
+  ) {
+    hold -= 6;
+
+    debuffs.push("インリスク");
+  }
+
+  /* ===============================
+    新型エンジン補正
+  =============================== */
+
+  if (context.newEngine.updated) {
+    if (Number(index.attack) >= 70) {
+      manshu += 5;
+
+      buffs.push("新型エンジン期は展示重視");
+    }
+  }
+
+  manshu = clampScore(manshu);
+  hold = clampScore(hold);
+  pickup = clampScore(pickup);
+
+  return {
+    boatNo,
+
+    name:
+      entry?.racerName ||
+      entry?.name ||
+      `${boatNo}号艇`,
+
+    manshuScore: manshu,
+    holdScore: hold,
+    pickupScore: pickup,
+
+    reason:
+      buffs.length
+        ? buffs.join(" / ")
+        : "展開と指数を総合評価",
+
+    buffs: uniqueList(buffs),
+    debuffs: uniqueList(debuffs)
+  };
+}
 
   function createManshuFormation(
     candidates,
