@@ -1115,7 +1115,14 @@ if (raceInfoArea) {
 
         <div class="v3-formation-tags">
           ${item.label ? tag(item.label, type) : ""}
-          ${item.score !== "" ? tag(`評価 ${item.score}`, "score") : ""}
+          $${
+  item.score !== undefined &&
+  item.score !== null &&
+  item.score !== "" &&
+  item.score !== "undefined"
+    ? tag(`評価 ${item.score}`, "score")
+    : ""
+}
           ${item.odds ? tag(`合成 ${item.odds}`, "odds") : ""}
         </div>
 
