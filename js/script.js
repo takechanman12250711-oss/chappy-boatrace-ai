@@ -189,7 +189,7 @@ function createPredictionSafe(data) {
 }
 
 return null;
-
+}
   function createTheorySafe(data) {
     try {
       if (typeof window.createTheory === "function") {
