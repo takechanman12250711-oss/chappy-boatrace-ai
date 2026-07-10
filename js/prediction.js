@@ -2389,6 +2389,7 @@
       }),
       comment: createMainEvaluationComment({
         boatNo,
+        fallbackBoatNo: boatNo,
         entry,
         score,
         buffs,
@@ -2445,7 +2446,12 @@
   }
 
   function createMainEvaluationComment(params) {
-    const boatNo = params.boatNo;
+    const boatNo =
+  Number(params.boatNo) >= 1 && Number(params.boatNo) <= 6
+    ? Number(params.boatNo)
+    : Number(params.entry?.boatNo) >= 1 && Number(params.entry?.boatNo) <= 6
+      ? Number(params.entry.boatNo)
+      : Number(params.fallbackBoatNo) || 0;
     const name = params.entry.racerName || params.entry.name || "";
     const role = params.role;
 
