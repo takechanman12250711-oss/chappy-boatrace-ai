@@ -78,15 +78,35 @@
   }
 
   function getBoatNo(boat) {
-    return toNumber(
-      boat.boatNo ??
-      boat.number ??
-      boat.waku ??
-      boat.course ??
-      boat.cource,
-      0
-    );
+  if (!boat || typeof boat !== "object") {
+    return 0;
   }
+
+  const candidates = [
+    boat.boatNo,
+    boat.waku,
+    boat.course,
+    boat.cource,
+    boat.lane,
+    boat.frame
+  ];
+
+  for (const value of candidates) {
+    const no = Number(value);
+
+    if (Number.isFinite(no) && no >= 1 && no <= 6) {
+      return no;
+    }
+  }
+
+  const number = Number(boat.number);
+
+  if (Number.isFinite(number) && number >= 1 && number <= 6) {
+    return number;
+  }
+
+  return 0;
+}
 
   function getPlayerName(boat) {
     return safeText(
