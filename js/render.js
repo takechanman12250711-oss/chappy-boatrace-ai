@@ -713,6 +713,35 @@ if (raceInfoArea) {
     }
   }
 
+const raceEntries =
+  prediction.race?.entries ||
+  prediction.entries ||
+  [];
+
+items.forEach((item) => {
+  const entry = raceEntries.find((boat) => {
+    const entryBoatNo = Number(
+      boat.boatNo ||
+      boat.no ||
+      boat.waku ||
+      boat.course ||
+      0
+    );
+
+    return entryBoatNo === Number(item.no);
+  });
+
+  if (!entry) return;
+
+  item.className =
+    item.className ||
+    entry.className ||
+    entry.grade ||
+    entry.class ||
+    entry.rank ||
+    "";
+});
+
   if (items.length === 0) {
     return section("本命", emptyBox("本命データがありません"), "🎯", "v3-main-newspaper");
   }
@@ -773,7 +802,34 @@ if (raceInfoArea) {
     sheet.text ||
     sheet.summary ||
     "";
+  const raceEntries =
+  prediction.race?.entries ||
+  prediction.entries ||
+  [];
 
+items.forEach((item) => {
+  const entry = raceEntries.find((boat) => {
+    const entryBoatNo = Number(
+      boat.boatNo ||
+      boat.no ||
+      boat.waku ||
+      boat.course ||
+      0
+    );
+
+    return entryBoatNo === Number(item.no);
+  });
+
+  if (!entry) return;
+
+  item.className =
+    item.className ||
+    entry.className ||
+    entry.grade ||
+    entry.class ||
+    entry.rank ||
+    "";
+});
   if (items.length === 0 && !comment) {
     return section("万舟", emptyBox("万舟データがありません"), "💣", "v3-manshu-newspaper");
   }
