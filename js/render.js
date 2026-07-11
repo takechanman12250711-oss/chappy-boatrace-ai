@@ -399,7 +399,7 @@
 
   const body = `
     <div class="v3-race-grid">
-      ${info.map((item) => renderInfoCell(item.label, item.value)).join("")}
+      ${info.map((item) => renderInfoCell(item)).join("")}
     </div>
 
     <div class="v3-note">
@@ -410,7 +410,12 @@
   const raceInfoArea = document.getElementById("raceInfoArea");
 
 if (raceInfoArea) {
-  raceInfoArea.innerHTML = renderSection("🚤 レース情報", body);
+  raceInfoArea.innerHTML = section(
+  "レース情報",
+  body,
+  "🚤",
+  "v3-race-info-section"
+);
 }
 }
 
