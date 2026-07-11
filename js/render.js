@@ -932,7 +932,7 @@ if (raceInfoArea) {
           ? `
             <div class="v3-paper-comment">
               <strong>狙い</strong>
-              <p>${escapeHtml(limitText(item.comment, 65))}</p>
+              <p>${escapeHtml(item.comment || "")}</p>
             </div>
           `
           : ""
