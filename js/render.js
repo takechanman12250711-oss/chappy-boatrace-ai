@@ -241,6 +241,8 @@
 
   function renderAll(prediction) {
   const root = getRoot();
+  
+　renderTodayAiSummary(prediction);
 
   if (!prediction || typeof prediction !== "object") {
     root.innerHTML = renderError(
