@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.0.0";
+  const CORE_VERSION = "ai-core-v3.0.1-debuff-fixed";
 
   /* ===============================
     基本ユーティリティ
