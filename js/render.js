@@ -1882,5 +1882,139 @@ function renderFinalBlock(block) {
     hasAiCore,
     applyAiCoreAdapter
   };
+/* =========================================================
+  今日のAIおすすめ
+========================================================= */
 
+function renderTodayAiSummary(prediction) {
+  const mainSheet = prediction?.mainSheet || {};
+  const manshuSheet = prediction?.manshuSheet || {};
+  const weather = prediction?.weather || {};
+  const finalAi = prediction?.finalAi || {};
+  const confidence = prediction?.confidence || {};
+  const manshuPower = prediction?.manshuPower || {};
+
+  const honmei =
+    mainSheet.honmei ||
+    mainSheet.main ||
+    mainSheet.top ||
+    null;
+
+  const manshu =
+    manshuSheet.candidates?.[0] ||
+    prediction?.manshuCandidates?.[0] ||
+    null;
+
+  const confidenceScore = Math.round(
+    Number(
+      confidence.score ??
+      finalAi.confidence?.score ??
+      finalAi.confidence ??
+      honmei?.score ??
+      0
+    ) || 0
+  );
+
+  const manshuScore = Math.round(
+    Number(
+      manshuPower.score ??
+      finalAi.manshuPower?.score ??
+      finalAi.manshuPower ??
+      manshu?.manshuScore ??
+      manshu?.score ??
+      0
+    ) || 0
+  );
+
+  const mainText = honmei
+    ? `${honmei.boatNo || honmei.no || "-"}号艇 ${honmei.name || honmei.playerName || ""}`
+    : "解析待ち";
+
+  const manshuText = manshu
+    ? `${manshu.boatNo || manshu.no || "-"}号艇 ${manshu.name || manshu.playerName || ""}`
+    : "解析待ち";
+
+  const waterParts = [];
+
+  if (weather.windDirection) {
+    waterParts.push(weather.windDirection);
+  }
+
+  if (
+    weather.windSpeed !== null &&
+    weather.windSpeed !== undefined &&
+    weather.windSpeed !== ""
+  ) {
+    waterParts.push(`風${weather.windSpeed}m`);
+  }
+
+  if (
+    weather.waveHeight !== null &&
+    weather.waveHeight !== undefined &&
+    weather.waveHeight !== ""
+  ) {
+    waterParts.push(`波${weather.waveHeight}cm`);
+  }
+
+  const waterText = waterParts.length
+    ? waterParts.join("・")
+    : "確認待ち";
+
+  let judgeText = "解析待ち";
+
+  if (confidenceScore >= 82) {
+    judgeText = "本命強め";
+  } else if (confidenceScore >= 70) {
+    judgeText = "本命寄り";
+  } else if (manshuScore >= 72) {
+    judgeText = "万舟警戒";
+  } else if (confidenceScore > 0) {
+    judgeText = "混戦";
+  }
+
+  setTodayAiText(
+    "todayMainPick",
+    mainText,
+    confidenceScore > 0
+      ? `本命期待度 ${confidenceScore}%`
+      : "総合指数上位"
+  );
+
+  setTodayAiText(
+    "todayManshuPick",
+    manshuText,
+    manshuScore > 0
+      ? `万舟期待度 ${manshuScore}%`
+      : "妙味・展開候補"
+  );
+
+  setTodayAiText(
+    "todayWaterCondition",
+    waterText,
+    weather.comment || "風・波・潮汐"
+  );
+
+  setTodayAiText(
+    "todayAiJudge",
+    judgeText,
+    finalAi.summary ||
+      prediction?.finalComment?.title ||
+      "買い／見送り判断"
+  );
+}
+
+function setTodayAiText(id, mainText, subText) {
+  const main = document.getElementById(id);
+
+  if (!main) return;
+
+  main.textContent = mainText || "-";
+
+  const card = main.closest(".today-ai-card");
+  const small = card?.querySelector("small");
+
+  if (small) {
+    small.textContent = subText || "-";
+  }
+}
 })();
