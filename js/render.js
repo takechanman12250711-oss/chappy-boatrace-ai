@@ -932,7 +932,7 @@ if (raceInfoArea) {
           ? `
             <div class="v3-paper-comment">
               <strong>狙い</strong>
-              <p>${escapeHtml(item.comment || "")}</p>
+              <p>${escapeHtml(createCompactPaperComment(item))}</p>
             </div>
           `
           : ""
@@ -942,6 +942,92 @@ if (raceInfoArea) {
   `;
 }
 
+/* =========================================================
+  本命・万舟カード用 短文コメント
+========================================================= */
+
+function createCompactPaperComment(item) {
+  const data = item || {};
+
+  const boatNo =
+    Number(data.boatNo || data.no || data.waku || 0);
+
+  const name =
+    data.name ||
+    data.playerName ||
+    data.racerName ||
+    "";
+
+  const score =
+    Number(
+      data.score ??
+      data.total ??
+      data.aiScore ??
+      data.manshuScore ??
+      0
+    ) || 0;
+
+  const buffs = arrayify(data.buffs)
+    .map(formatFactor)
+    .filter(Boolean);
+
+  const debuffs = arrayify(data.debuffs)
+    .map(formatFactor)
+    .filter(Boolean);
+
+  const roleText =
+    data.role ||
+    data.label ||
+    data.primaryRole?.label ||
+    "";
+
+  const points = [];
+
+  if (roleText) {
+    points.push(roleText.split("/")[0].trim());
+  }
+
+  buffs.forEach((text) => {
+    if (points.length >= 3) return;
+    if (!points.includes(text)) {
+      points.push(text);
+    }
+  });
+
+  if (points.length < 3 && debuffs.length) {
+    points.push(`注意：${debuffs[0]}`);
+  }
+
+  if (!points.length && data.shortComment) {
+    points.push(data.shortComment);
+  }
+
+  if (!points.length && data.comment) {
+    points.push(data.comment);
+  }
+
+  const heading =
+    boatNo >= 1 && boatNo <= 6
+      ? `${boatNo}号艇${name ? ` ${name}` : ""}`
+      : name || "評価艇";
+
+  const scoreText =
+    score > 0
+      ? `AI${Math.round(score)}点`
+      : "";
+
+  const detail = points
+    .slice(0, 3)
+    .map((text) => `・${String(text).replace(/[。]+$/g, "")}`)
+    .join("\n");
+
+  return [
+    [heading, scoreText].filter(Boolean).join(" "),
+    detail
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
   function renderFactorLine(list, type) {
     const items = arrayify(list)
       .map(formatFactor)
