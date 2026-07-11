@@ -2589,3 +2589,54 @@ body {
     text-align: center;
   }
 }
+/* =========================================================
+  AI予想画面 表示順・余白統一
+========================================================= */
+
+.app-prediction-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.app-prediction-layout > .v3-section {
+  margin: 0;
+  border: 1px solid #e4e9f0;
+  border-radius: 17px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 5px 16px rgba(20, 43, 80, 0.06);
+}
+
+.app-prediction-layout .v3-section-head {
+  margin: 0;
+  padding: 14px 15px 11px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.app-prediction-layout .v3-section-head h2 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.app-prediction-layout .v3-section-body {
+  padding: 14px;
+}
+
+.app-prediction-layout .v3-divider {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .app-prediction-layout {
+    gap: 11px;
+  }
+
+  .app-prediction-layout .v3-section-head {
+    padding: 12px 13px 10px;
+  }
+
+  .app-prediction-layout .v3-section-body {
+    padding: 12px;
+  }
+}
