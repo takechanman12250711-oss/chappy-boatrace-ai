@@ -924,67 +924,323 @@
   function calcRaceFlowIndex(boat, entries, venueFeature, data) {
   const boatNo = getBoatNo(boat);
 
+  /* ===============================
+    自艇の基本指数
+  =============================== */
+
   const stIndex = calcStIndex(boat, entries);
   const exhibitionIndex = calcExhibitionIndex(boat, entries);
   const localIndex = calcLocalIndex(boat);
   const turnIndex = calcTurnIndex(boat);
-  const attackIndex = calcAttackIndex(boat, entries, venueFeature);
+  const attackIndex = calcAttackIndex(
+    boat,
+    entries,
+    venueFeature
+  );
 
   const wind = getWindSpeed(data);
   const wave = getWaveHeight(data);
 
-  let score = 45;
+  /* ===============================
+    各コース艇を取得
+  =============================== */
 
-  score += turnIndex * 0.20;
-  score += localIndex * 0.16;
-  score += stIndex * 0.16;
-  score += exhibitionIndex * 0.14;
-  score += attackIndex * 0.14;
+  const boat1 = entries.find(
+    (entry) => getBoatNo(entry) === 1
+  );
+
+  const boat2 = entries.find(
+    (entry) => getBoatNo(entry) === 2
+  );
+
+  const boat3 = entries.find(
+    (entry) => getBoatNo(entry) === 3
+  );
+
+  const boat4 = entries.find(
+    (entry) => getBoatNo(entry) === 4
+  );
+
+  const boat5 = entries.find(
+    (entry) => getBoatNo(entry) === 5
+  );
+
+  const boat6 = entries.find(
+    (entry) => getBoatNo(entry) === 6
+  );
+
+  /* ===============================
+    各艇のST指数
+  =============================== */
+
+  const st1 = boat1
+    ? calcStIndex(boat1, entries)
+    : 50;
+
+  const st2 = boat2
+    ? calcStIndex(boat2, entries)
+    : 50;
+
+  const st3 = boat3
+    ? calcStIndex(boat3, entries)
+    : 50;
+
+  const st4 = boat4
+    ? calcStIndex(boat4, entries)
+    : 50;
+
+  const st5 = boat5
+    ? calcStIndex(boat5, entries)
+    : 50;
+
+  const st6 = boat6
+    ? calcStIndex(boat6, entries)
+    : 50;
+
+  /* ===============================
+    各艇の展示指数
+  =============================== */
+
+  const ex1 = boat1
+    ? calcExhibitionIndex(boat1, entries)
+    : 50;
+
+  const ex2 = boat2
+    ? calcExhibitionIndex(boat2, entries)
+    : 50;
+
+  const ex3 = boat3
+    ? calcExhibitionIndex(boat3, entries)
+    : 50;
+
+  const ex4 = boat4
+    ? calcExhibitionIndex(boat4, entries)
+    : 50;
+
+  const ex5 = boat5
+    ? calcExhibitionIndex(boat5, entries)
+    : 50;
+
+  const ex6 = boat6
+    ? calcExhibitionIndex(boat6, entries)
+    : 50;
+
+  /* ===============================
+    最初に基本展開点を作る
+  =============================== */
+
+  let score = 20;
+
+  score += turnIndex * 0.16;
+  score += localIndex * 0.12;
+  score += stIndex * 0.14;
+  score += exhibitionIndex * 0.13;
+  score += attackIndex * 0.12;
+
+  /* ===============================
+    展開シナリオ判定
+
+    数字単独ではなく、
+    隣艇との比較で攻めを判断
+  =============================== */
+
+  const oneCanEscape =
+    st1 >= 58 &&
+    ex1 >= 50 &&
+    st1 >= st2 - 10 &&
+    st1 >= st3 - 12;
+
+  const twoCanSashi =
+    st2 >= 58 &&
+    ex2 >= 50 &&
+    st2 >= st1 - 8;
+
+  const threeCanAttack =
+    st3 >= 68 &&
+    ex3 >= 58 &&
+    st3 >= st2 + 3;
+
+  const fourCanAttack =
+    st4 >= 68 &&
+    ex4 >= 58 &&
+    st4 >= st3 + 3;
+
+  const fiveCanMakuriSashi =
+    st5 >= 70 &&
+    ex5 >= 62 &&
+    (
+      threeCanAttack ||
+      fourCanAttack
+    );
+
+  const sixCanPickup =
+    (
+      st6 >= 65 ||
+      ex6 >= 65
+    ) &&
+    (
+      localIndex >= 65 ||
+      turnIndex >= 68
+    );
+
+  /* ===============================
+    1号艇の逃げ・残し
+  =============================== */
+
+  if (oneCanEscape) {
+    if (boatNo === 1) score += 16;
+    if (boatNo === 2) score += 7;
+    if (boatNo === 3) score += 4;
+    if (boatNo === 4) score += 2;
+  } else {
+    if (boatNo === 1) score -= 7;
+    if (boatNo === 2) score += 5;
+    if (boatNo === 3) score += 5;
+    if (boatNo === 4) score += 4;
+  }
+
+  /* ===============================
+    2号艇の差し
+
+    2コース差し・残しを切らない
+  =============================== */
+
+  if (twoCanSashi) {
+    if (boatNo === 2) score += 12;
+    if (boatNo === 1) score += 5;
+    if (boatNo === 3) score += 3;
+  } else {
+    if (boatNo === 2) score += 3;
+  }
+
+  /* ===============================
+    3号艇が攻める展開
+
+    3が攻める
+    →1・2が残る
+    →4は攻め場が狭くなる
+    →5にまくり差し場
+  =============================== */
+
+  if (threeCanAttack) {
+    if (boatNo === 3) score += 13;
+    if (boatNo === 1) score += 6;
+    if (boatNo === 2) score += 5;
+    if (boatNo === 4) score -= 5;
+    if (boatNo === 5) score += 9;
+    if (boatNo === 6) score += 3;
+  }
+
+  /* ===============================
+    4号艇のカド攻め
+
+    3が強く攻める時は、
+    4の攻め場を下げる
+  =============================== */
+
+  if (fourCanAttack && !threeCanAttack) {
+    if (boatNo === 4) score += 13;
+    if (boatNo === 1) score += 5;
+    if (boatNo === 2) score += 3;
+    if (boatNo === 5) score += 8;
+    if (boatNo === 6) score += 4;
+  }
+
+  if (fourCanAttack && threeCanAttack) {
+    if (boatNo === 4) score += 2;
+  }
+
+  /* ===============================
+    5号艇のまくり差し・展開拾い
+  =============================== */
+
+  if (fiveCanMakuriSashi) {
+    if (boatNo === 5) score += 12;
+    if (boatNo === 1) score += 4;
+    if (boatNo === 3) score += 3;
+    if (boatNo === 4) score += 2;
+  } else if (boatNo === 5) {
+    score -= 5;
+  }
+
+  /* ===============================
+    6号艇の最内差し・道中拾い
+
+    頭評価より、2・3着候補として加点
+  =============================== */
+
+  if (sixCanPickup) {
+    if (boatNo === 6) score += 9;
+  } else if (boatNo === 6) {
+    score -= 7;
+  }
+
+  /* ===============================
+    コース別の基本
+  =============================== */
 
   if (boatNo === 1) {
-    score += venueFeature.inPower * 0.18;
-    if (stIndex >= 75) score += 4;
+    score += venueFeature.inPower * 0.16;
   }
 
   if (boatNo === 2) {
-    score += venueFeature.sashi * 0.18;
+    score += venueFeature.sashi * 0.16;
     score += 5;
-    if (turnIndex >= 70) score += 5;
   }
 
   if (boatNo === 3) {
-    score += venueFeature.makuri * 0.18;
-    if (stIndex >= 75) score += 6;
-    if (attackIndex >= 75) score += 5;
+    score += venueFeature.makuri * 0.14;
   }
 
   if (boatNo === 4) {
-    score += venueFeature.kado * 0.18;
-    score += venueFeature.makuriSashi * 0.10;
-    if (stIndex >= 75) score += 5;
+    score += venueFeature.kado * 0.14;
+    score += venueFeature.makuriSashi * 0.08;
   }
 
-  if (boatNo >= 5) {
-    score += venueFeature.outside * 0.16;
+  if (boatNo === 5) {
+    score += venueFeature.outside * 0.10;
     score += venueFeature.makuriSashi * 0.12;
-    if (turnIndex >= 75 || localIndex >= 75) score += 6;
   }
+
+  if (boatNo === 6) {
+    score += venueFeature.outside * 0.08;
+  }
+
+  /* ===============================
+    荒水面補正
+  =============================== */
 
   if (wind >= 5 || wave >= 5) {
-    score += venueFeature.roughWater * 0.10;
+    score += venueFeature.roughWater * 0.08;
 
     if (boatNo === 1) score -= 4;
-    if (boatNo >= 4) score += 5;
-    if (boatNo >= 5) score += 5;
+    if (boatNo === 2) score += 2;
+    if (boatNo === 4) score += 4;
+    if (boatNo === 5) score += 5;
+    if (boatNo === 6) score += 4;
+
     if (localIndex >= 70) score += 4;
     if (turnIndex >= 70) score += 4;
   }
 
-  if (boatNo === 6 && localIndex >= 75 && turnIndex >= 75) {
-    score += 8;
+  /* ===============================
+    新型エンジン補正
+
+    モーター数字ではなく、
+    ST・展示・ターンを優先
+  =============================== */
+
+  if (isNewEngineMode(data)) {
+    if (stIndex >= 72) score += 3;
+    if (exhibitionIndex >= 72) score += 4;
+    if (turnIndex >= 72) score += 3;
   }
 
-  return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
+  return clamp(
+    round(score),
+    INDEX_LIMIT.min,
+    INDEX_LIMIT.max
+  );
 }
 
   function calcTotalIndex(indexes, weights) {
