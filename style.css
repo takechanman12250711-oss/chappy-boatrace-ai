@@ -2741,3 +2741,130 @@ body {
   color: #e15c00;
   font-size: 12px;
 }
+/* =========================================================
+  本命・万舟カード 横書き完全修正
+========================================================= */
+
+/* カード内を必ず横書きに戻す */
+.v3-paper-card,
+.v3-paper-card * {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+/* 全体指定の anywhere による1文字折り返しを解除 */
+.v3-paper-card * {
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+/* カード上部 */
+.v3-paper-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 10px !important;
+  width: 100%;
+}
+
+.v3-paper-title {
+  display: block !important;
+  min-width: 0;
+  width: 100%;
+}
+
+.v3-role-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+.v3-role {
+  display: inline-block !important;
+  width: auto !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* 選手名・級別 */
+.v3-paper-player-line {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  width: 100%;
+}
+
+.v3-paper-player-line .v3-boat-title,
+.v3-paper-player-line strong,
+.v3-paper-grade {
+  width: auto !important;
+}
+
+.v3-paper-player-line strong {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+}
+
+/* タグ・バフ・デバフ */
+.v3-tag-row,
+.v3-factor-line,
+.v3-formation-tags {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-start !important;
+  gap: 5px !important;
+  width: 100%;
+}
+
+.v3-tag,
+.v3-paper-card [class*="tag"],
+.v3-paper-card [class*="factor"] {
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+}
+
+/* 狙い・解説 */
+.v3-paper-comment {
+  display: block !important;
+  width: 100% !important;
+  margin-top: 10px !important;
+}
+
+.v3-paper-comment strong {
+  display: block !important;
+  width: 100%;
+  white-space: nowrap !important;
+}
+
+.v3-paper-comment p {
+  display: block !important;
+  width: 100% !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.55 !important;
+}
+
+/* スマホではカードを1列にして横幅を確保 */
+@media (max-width: 480px) {
+  .v3-newspaper-list {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .v3-paper-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 12px !important;
+  }
+}
