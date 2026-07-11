@@ -923,9 +923,15 @@ odds:
               .join("")}
           </div>
 
-          ${boatTitle(item.no, item.name)}
-        </div>
+          <div class="v3-paper-player-line">
+  ${boatTitle(item.no, item.name)}
 
+  ${
+    item.className
+      ? `<span class="v3-paper-grade">${escapeHtml(item.className)}</span>`
+      : ""
+  }
+</div>
         ${
           item.score !== ""
             ? `
@@ -936,6 +942,23 @@ odds:
             `
             : ""
         }
+            : ""
+}
+
+${
+  item.odds !== "" &&
+  item.odds !== null &&
+  item.odds !== undefined
+    ? `
+      <div class="v3-paper-odds">
+        <span>オッズ</span>
+        <strong>${escapeHtml(item.odds)}倍</strong>
+      </div>
+    `
+    : ""
+}
+
+</div>
       </div>
 
       ${
