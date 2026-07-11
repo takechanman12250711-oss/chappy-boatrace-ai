@@ -415,18 +415,16 @@
     </div>
   `;
 
-　　const body = `
-  <div class="v3-race-grid">
-    ${info.map((item) => renderInfoCell(item)).join("")}
-  </div>
+　　const raceInfoArea = document.getElementById("raceInfoArea");
 
-  <div class="v3-note">
-    ${escapeHtml(note)}
-  </div>
-`;
-
-return section("レース情報", body, "🚤", "v3-race-section");
-}
+if (raceInfoArea) {
+  raceInfoArea.innerHTML = section(
+    "レース情報",
+    body,
+    "🚤",
+    "v3-race-section"
+  );
+　　}
 　　}
 
   function renderInfoCell(item) {
