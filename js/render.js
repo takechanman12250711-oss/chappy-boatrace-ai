@@ -241,49 +241,53 @@
 
   function renderAll(prediction) {
   const root = getRoot();
-  
-　if (typeof window.renderTodayAiSummary === "function") {
-  window.renderTodayAiSummary(prediction);
-}
+
+  if (typeof window.renderTodayAiSummary === "function") {
+    window.renderTodayAiSummary(prediction);
+  }
 
   if (!prediction || typeof prediction !== "object") {
     root.innerHTML = renderError(
       "予想データがありません",
-      "prediction.js から prediction オブジェクトが返っていません。"
+      "prediction.js から予想データが返っていません。"
     );
     return;
   }
 
   const html = `
-    <div class="v3-root" data-render-version="${escapeHtml(RENDER_VERSION)}">
+    <div
+      class="v3-root app-prediction-layout"
+      data-render-version="${escapeHtml(RENDER_VERSION)}"
+    >
 
+      <!-- 1. レース基本情報 -->
       ${renderRaceInfo(prediction)}
-      ${divider()}
 
+      <!-- 2. 出走表 -->
       ${renderEntryTable(prediction)}
-      ${divider()}
 
+      <!-- 3. AI総合評価 -->
       ${renderAiSummary(prediction)}
-      ${divider()}
 
-      ${renderFormationSection(prediction, "main")}
-      ${divider()}
-
-      ${renderFormationSection(prediction, "manshu")}
-      ${divider()}
-
+      <!-- 4. 本命評価 -->
       ${renderNewspaperSheet(prediction, "main")}
-      ${divider()}
 
+      <!-- 5. 本命フォーメーション -->
+      ${renderFormationSection(prediction, "main")}
+
+      <!-- 6. 万舟評価 -->
       ${renderNewspaperSheet(prediction, "manshu")}
-      ${divider()}
 
-      ${renderTheoryPanel(prediction)}
-      ${divider()}
+      <!-- 7. 万舟フォーメーション -->
+      ${renderFormationSection(prediction, "manshu")}
 
+      <!-- 8. AI推奨買い目 -->
       ${renderTicketRanking(prediction)}
-      ${divider()}
 
+      <!-- 9. チャッピー理論 -->
+      ${renderTheoryPanel(prediction)}
+
+      <!-- 10. 最終結論 -->
       ${renderFinalComment(prediction)}
 
       ${renderDebug(prediction)}
