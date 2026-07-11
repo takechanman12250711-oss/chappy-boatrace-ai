@@ -2264,6 +2264,7 @@ if (boatNo === 0) {
       return {
         boatNo,
         name: entry.racerName || entry.name || "",
+        className: entry.className || entry.grade || entry.class || "",
         score: scoreData.score,
         buffs: scoreData.buffs,
         debuffs: scoreData.debuffs,
@@ -2768,6 +2769,8 @@ if (boatNo === 0) {
       entry?.racerName ||
       entry?.name ||
       `${boatNo}号艇`,
+      
+      className: entry.className || entry.grade || entry.class || "",
 
     manshuScore: manshu,
     holdScore: hold,
