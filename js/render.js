@@ -887,7 +887,15 @@ items.forEach((item) => {
       role: item.role || role,
       no,
       name: item.name || item.racerName || item.player || `${safeText(no)}号艇`,
-      score: item.score ?? item.index ?? item.point ?? item.value ?? "",
+      score:
+  item.score ??
+  item.manshuScore ??
+  item.holdScore ??
+  item.pickupScore ??
+  item.index ??
+  item.point ??
+  item.value ??
+  "",
       tags: normalizeTags(rawTags, item),
       buffs: arrayify(item.buffs || item.buff || item.plus || item.positive),
       debuffs: arrayify(item.debuffs || item.debuff || item.minus || item.negative),
@@ -1106,16 +1114,6 @@ function createCompactPaperComment(item) {
   const buffs = arrayify(data.buffs)
     .map(formatFactor)
     .filter(Boolean);
-
-  const debuffs = arrayify(data.debuffs)
-    .map(formatFactor)
-    .filter(Boolean);
-
-  const roleText =
-    data.role ||
-    data.label ||
-    data.primaryRole?.label ||
-    "";
 
   const points = [];
 
