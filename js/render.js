@@ -242,7 +242,9 @@
   function renderAll(prediction) {
   const root = getRoot();
   
-　renderTodayAiSummary(prediction);
+　if (typeof window.renderTodayAiSummary === "function") {
+  window.renderTodayAiSummary(prediction);
+}
 
   if (!prediction || typeof prediction !== "object") {
     root.innerHTML = renderError(
@@ -1886,7 +1888,7 @@ function renderFinalBlock(block) {
   今日のAIおすすめ
 ========================================================= */
 
-function renderTodayAiSummary(prediction) {
+window.renderTodayAiSummary = function renderTodayAiSummary(prediction) {
   const mainSheet = prediction?.mainSheet || {};
   const manshuSheet = prediction?.manshuSheet || {};
   const weather = prediction?.weather || {};
@@ -2001,7 +2003,7 @@ function renderTodayAiSummary(prediction) {
       prediction?.finalComment?.title ||
       "買い／見送り判断"
   );
-}
+  };
 
 function setTodayAiText(id, mainText, subText) {
   const main = document.getElementById(id);
