@@ -836,6 +836,16 @@ if (raceInfoArea) {
       debuffs: arrayify(item.debuffs || item.debuff || item.minus || item.negative),
       comment: item.comment || item.reason || item.text || item.shortComment || "",
       sub: item.sub || item.type || item.tactic || item.style || ""
+      className:
+  item.className ||
+  item.grade ||
+  item.class ||
+  item.rank ||
+  item.raw?.entry?.className ||
+  item.raw?.entry?.grade ||
+  item.entry?.className ||
+  item.entry?.grade ||
+  "",
     };
   }
 
