@@ -834,9 +834,19 @@ if (raceInfoArea) {
       tags: normalizeTags(rawTags, item),
       buffs: arrayify(item.buffs || item.buff || item.plus || item.positive),
       debuffs: arrayify(item.debuffs || item.debuff || item.minus || item.negative),
-      comment: item.comment || item.reason || item.text || item.shortComment || "",
-      sub: item.sub || item.type || item.tactic || item.style || ""
-      className:
+      comment:
+  item.comment ||
+  item.reason ||
+  item.shortComment ||
+  "",
+
+sub:
+  item.sub ||
+  item.type ||
+  item.tactic ||
+  "",
+
+className:
   item.className ||
   item.grade ||
   item.class ||
@@ -846,7 +856,14 @@ if (raceInfoArea) {
   item.entry?.className ||
   item.entry?.grade ||
   "",
-    };
+
+odds:
+  item.odds ??
+  item.odd ??
+  item.compositeOdds ??
+  item.gouseiOdds ??
+  ""
+};
   }
 
   function normalizeTags(rawTags, item) {
