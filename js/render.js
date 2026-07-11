@@ -415,17 +415,8 @@
     </div>
   `;
 
-  const raceInfoArea = document.getElementById("raceInfoArea");
-
-if (raceInfoArea) {
-  raceInfoArea.innerHTML = section(
-  "レース情報",
-  body,
-  "🚤",
-  "v3-race-info-section"
-);
-}
-}
+　　return renderSection("🚤 レース情報", body);
+　　}
 
   function renderInfoCell(item) {
     return `
