@@ -980,26 +980,28 @@ odds:
           </div>
 
           <div class="v3-paper-player-line">
+  <div class="v3-paper-player-line">
   ${boatTitle(item.no, item.name)}
-
   ${
     item.className
       ? `<span class="v3-paper-grade">${escapeHtml(item.className)}</span>`
       : ""
   }
 </div>
-        ${
-          item.score !== ""
-            ? `
-              <div class="v3-paper-score">
-                <span>AI</span>
-                <strong>${escapeHtml(Math.round(safeNum(item.score, 0)))}</strong>
-              </div>
-            `
-            : ""
-        }
-            : ""
+
+${
+  item.score !== "" &&
+  item.score !== null &&
+  item.score !== undefined
+    ? `
+      <div class="v3-paper-score">
+        <span>AI</span>
+        <strong>${escapeHtml(Math.round(Number(item.score) || 0))}</strong>
+      </div>
+    `
+    : ""
 }
+
 ${
   item.odds !== "" &&
   item.odds !== null &&
