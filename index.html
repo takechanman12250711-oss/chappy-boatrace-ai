@@ -2,171 +2,763 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+
+  <meta
+    name="theme-color"
+    content="#0878f9"
+  />
+
   <title>チャッピーボートレースAI</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  />
 </head>
 
 <body>
-  <header class="app-header">
-    <div>
-      <h1>🚤 チャッピーボートレースAI</h1>
-      <p>情報 → 展開 → スコア → フォーメーション → 解説</p>
+
+  <!-- =====================================================
+    アプリヘッダー
+  ====================================================== -->
+
+  <header class="app-header dashboard-header">
+
+    <div class="header-brand">
+
+      <div class="header-logo">
+        🚤
+      </div>
+
+      <div class="header-copy">
+        <p class="header-eyebrow">
+          BOAT RACE AI
+        </p>
+
+        <h1>
+          チャッピーボートレースAI
+        </h1>
+
+        <p class="header-description">
+          情報 → 展開 → スコア → 買い目
+        </p>
+      </div>
+
     </div>
+
+    <div class="header-status">
+
+      <span class="status-dot"></span>
+
+      <span>
+        AI解析システム
+      </span>
+
+    </div>
+
   </header>
 
-  <main class="app">
 
-    <section class="panel control-panel">
-      <h2>レース選択</h2>
+  <!-- =====================================================
+    メイン
+  ====================================================== -->
 
-      <div class="form-grid">
-        <label>
-          場
-          <select id="placeSelect">
-            <option value="桐生">桐生</option>
-            <option value="戸田">戸田</option>
-            <option value="江戸川">江戸川</option>
-            <option value="平和島">平和島</option>
-            <option value="多摩川">多摩川</option>
-            <option value="浜名湖">浜名湖</option>
-            <option value="蒲郡">蒲郡</option>
-            <option value="常滑">常滑</option>
-            <option value="津">津</option>
-            <option value="三国">三国</option>
-            <option value="びわこ">びわこ</option>
-            <option value="住之江">住之江</option>
-            <option value="尼崎">尼崎</option>
-            <option value="鳴門">鳴門</option>
-            <option value="丸亀">丸亀</option>
-            <option value="児島">児島</option>
-            <option value="宮島">宮島</option>
-            <option value="徳山">徳山</option>
-            <option value="下関">下関</option>
-            <option value="若松">若松</option>
-            <option value="芦屋">芦屋</option>
-            <option value="福岡">福岡</option>
-            <option value="唐津">唐津</option>
-            <option value="大村">大村</option>
-          </select>
-        </label>
+  <main class="app dashboard-app">
 
-        <label>
-          レース
-          <select id="raceSelect">
-            <option value="1R">1R</option>
-            <option value="2R">2R</option>
-            <option value="3R">3R</option>
-            <option value="4R">4R</option>
-            <option value="5R">5R</option>
-            <option value="6R">6R</option>
-            <option value="7R">7R</option>
-            <option value="8R">8R</option>
-            <option value="9R">9R</option>
-            <option value="10R">10R</option>
-            <option value="11R">11R</option>
-            <option value="12R">12R</option>
-          </select>
-        </label>
 
-        <label>
-          日付
-          <input id="dateInput" type="date" />
-        </label>
+    <!-- ===================================================
+      今日のAIおすすめ
+    ==================================================== -->
+
+    <section class="dashboard-section today-ai-section">
+
+      <div class="dashboard-section-head">
+
+        <div>
+          <p class="section-eyebrow">
+            TODAY
+          </p>
+
+          <h2>
+            ✨ 今日のAIおすすめ
+          </h2>
+        </div>
+
+        <span class="section-status-badge">
+          データ取得後に更新
+        </span>
+
       </div>
 
-      <div class="button-row">
-        <button id="fetchRaceBtn" class="primary-btn">出走表取得して予想</button>
-        <button id="refreshOddsBtn" class="sub-btn">オッズ更新</button>
-        <button id="reloadRaceBtn" class="sub-btn">再取得</button>
+
+      <div class="today-ai-grid">
+
+        <article class="today-ai-card today-ai-main">
+
+          <span class="today-ai-label">
+            🎯 本命注目
+          </span>
+
+          <strong id="todayMainPick">
+            解析待ち
+          </strong>
+
+          <small>
+            総合指数上位
+          </small>
+
+        </article>
+
+
+        <article class="today-ai-card today-ai-manshu">
+
+          <span class="today-ai-label">
+            💣 万舟注目
+          </span>
+
+          <strong id="todayManshuPick">
+            解析待ち
+          </strong>
+
+          <small>
+            妙味・展開候補
+          </small>
+
+        </article>
+
+
+        <article class="today-ai-card">
+
+          <span class="today-ai-label">
+            🌊 水面
+          </span>
+
+          <strong id="todayWaterCondition">
+            確認待ち
+          </strong>
+
+          <small>
+            風・波・潮汐
+          </small>
+
+        </article>
+
+
+        <article class="today-ai-card">
+
+          <span class="today-ai-label">
+            🧠 AI判断
+          </span>
+
+          <strong id="todayAiJudge">
+            解析待ち
+          </strong>
+
+          <small>
+            買い／見送り判断
+          </small>
+
+        </article>
+
       </div>
 
-      <div id="statusArea" class="status">待機中</div>
     </section>
 
-    <section id="errorArea"></section>
 
-    <section class="layout-grid">
+    <!-- ===================================================
+      レース選択
+    ==================================================== -->
+
+    <section
+      id="raceSection"
+      class="dashboard-section race-select-section"
+    >
+
+      <div class="dashboard-section-head">
+
+        <div>
+          <p class="section-eyebrow">
+            RACE
+          </p>
+
+          <h2>
+            🚤 レースを選ぶ
+          </h2>
+        </div>
+
+      </div>
+
+
+      <div class="race-select-card">
+
+        <div class="race-select-grid">
+
+          <label class="select-field">
+
+            <span>
+              場
+            </span>
+
+            <select id="placeSelect">
+
+              <option value="桐生">桐生</option>
+              <option value="戸田">戸田</option>
+              <option value="江戸川">江戸川</option>
+              <option value="平和島">平和島</option>
+              <option value="多摩川">多摩川</option>
+              <option value="浜名湖">浜名湖</option>
+              <option value="蒲郡">蒲郡</option>
+              <option value="常滑">常滑</option>
+              <option value="津">津</option>
+              <option value="三国">三国</option>
+              <option value="びわこ">びわこ</option>
+              <option value="住之江">住之江</option>
+              <option value="尼崎">尼崎</option>
+              <option value="鳴門">鳴門</option>
+              <option value="丸亀">丸亀</option>
+              <option value="児島">児島</option>
+              <option value="宮島">宮島</option>
+              <option value="徳山">徳山</option>
+              <option value="下関">下関</option>
+              <option value="若松">若松</option>
+              <option value="芦屋">芦屋</option>
+              <option value="福岡">福岡</option>
+              <option value="唐津">唐津</option>
+              <option value="大村">大村</option>
+
+            </select>
+
+          </label>
+
+
+          <label class="select-field">
+
+            <span>
+              レース
+            </span>
+
+            <select id="raceSelect">
+
+              <option value="1R">1R</option>
+              <option value="2R">2R</option>
+              <option value="3R">3R</option>
+              <option value="4R">4R</option>
+              <option value="5R">5R</option>
+              <option value="6R">6R</option>
+              <option value="7R">7R</option>
+              <option value="8R">8R</option>
+              <option value="9R">9R</option>
+              <option value="10R">10R</option>
+              <option value="11R">11R</option>
+              <option value="12R">12R</option>
+
+            </select>
+
+          </label>
+
+
+          <label class="select-field select-date-field">
+
+            <span>
+              日付
+            </span>
+
+            <input
+              id="dateInput"
+              type="date"
+            />
+
+          </label>
+
+        </div>
+
+
+        <div class="race-main-action">
+
+          <button
+            id="fetchRaceBtn"
+            class="primary-btn dashboard-primary-btn"
+            type="button"
+          >
+            <span>
+              AI予想を開始
+            </span>
+
+            <small>
+              出走表・展示・指数を解析
+            </small>
+          </button>
+
+        </div>
+
+
+        <div class="race-sub-actions">
+
+          <button
+            id="refreshOddsBtn"
+            class="sub-btn"
+            type="button"
+          >
+            💹 オッズ更新
+          </button>
+
+          <button
+            id="reloadRaceBtn"
+            class="sub-btn"
+            type="button"
+          >
+            🔄 再取得
+          </button>
+
+        </div>
+
+
+        <div
+          id="statusArea"
+          class="status dashboard-status"
+        >
+          待機中
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+      エラー
+    ==================================================== -->
+
+    <section
+      id="errorArea"
+      class="dashboard-error-area"
+    ></section>
+
+
+    <!-- ===================================================
+      AI予想結果
+    ==================================================== -->
+
+    <section
+      id="predictionSection"
+      class="dashboard-section prediction-section"
+    >
+
+      <div class="dashboard-section-head">
+
+        <div>
+          <p class="section-eyebrow">
+            AI PREDICTION
+          </p>
+
+          <h2>
+            📊 AI予想
+          </h2>
+        </div>
+
+        <span class="section-status-badge">
+          本命・万舟・買い目
+        </span>
+
+      </div>
+
+
+      <!-- render.js メイン描画先 -->
+
+      <div
+        id="resultArea"
+        class="prediction-result-area"
+      ></div>
+
+    </section>
+
+
+    <!-- ===================================================
+      旧描画ID互換エリア
+      JavaScript互換性維持のため残す
+    ==================================================== -->
+
+    <section
+      id="legacyRenderArea"
+      class="legacy-render-area"
+      aria-hidden="true"
+    >
+
       <div id="raceListArea"></div>
       <div id="engineArea"></div>
-    </section>
-        <section class="layout-grid">
       <div id="raceFlowArea"></div>
       <div id="mainSheetArea"></div>
       <div id="formationArea"></div>
       <div id="manshuSheetArea"></div>
-    </section>
-
-    <section class="layout-grid">
       <div id="alertArea"></div>
       <div id="oddsArea"></div>
+
+      <div id="raceInfoArea"></div>
+      <div id="aiSummaryArea"></div>
+      <div id="aiTicketsArea"></div>
+      <div id="finalCommentArea"></div>
+
     </section>
 
-　　　　<section class="layout-grid">
 
-        <div class="panel">
+    <!-- ===================================================
+      成績管理
+    ==================================================== -->
 
-          <div id="resultArea"></div>
+    <section
+      id="resultSection"
+      class="dashboard-section result-management-section"
+    >
 
+      <div class="dashboard-section-head">
+
+        <div>
+          <p class="section-eyebrow">
+            RESULT
+          </p>
+
+          <h2>
+            📈 結果分析
+          </h2>
         </div>
-
-　　　　</section>
-      <section class="layout-grid">
-
-        <div class="panel">
-          
-          <h2>📊 成績管理</h2>
-
-        <div class="result-inputs">
-
-          <input
-            id="raceResultInput"
-            type="text"
-            placeholder="例：1-2-3"
-          />
-
-          <input
-            id="oddsInput"
-            type="number"
-            placeholder="オッズ"
-          />
-
-          <input
-            id="betAmountInput"
-            type="number"
-            value="100"
-            placeholder="購入金額"
-          />
-
-        </div>
-
-        <div id="autoPayoutText">
-          払戻金：0円
-        </div>
-
-        <div class="result-buttons">
-          <button id="saveResultBtn">保存</button>
-          <button id="undoResultBtn">取り消し</button>
-        </div>
-
-        <div id="statsArea"></div>
 
       </div>
 
-      <div class="panel">
 
-        <h2>📁 データ確認</h2>
+      <div class="result-dashboard-grid">
 
-        <div id="missingArea"></div>
+        <article class="dashboard-card result-input-card">
 
-        <div id="historyArea"></div>
+          <div class="dashboard-card-head">
+
+            <div>
+              <span class="card-icon">
+                🧾
+              </span>
+
+              <h3>
+                レース結果を記録
+              </h3>
+            </div>
+
+          </div>
+
+
+          <div class="result-inputs">
+
+            <label>
+
+              <span>
+                結果
+              </span>
+
+              <input
+                id="raceResultInput"
+                type="text"
+                inputmode="numeric"
+                placeholder="例：1-2-3"
+              />
+
+            </label>
+
+
+            <label>
+
+              <span>
+                オッズ
+              </span>
+
+              <input
+                id="oddsInput"
+                type="number"
+                inputmode="decimal"
+                placeholder="例：12.5"
+              />
+
+            </label>
+
+
+            <label>
+
+              <span>
+                購入金額
+              </span>
+
+              <input
+                id="betAmountInput"
+                type="number"
+                inputmode="numeric"
+                value="100"
+                placeholder="100"
+              />
+
+            </label>
+
+          </div>
+
+
+          <div
+            id="autoPayoutText"
+            class="payout-display"
+          >
+            払戻金：0円
+          </div>
+
+
+          <div class="result-buttons">
+
+            <button
+              id="saveResultBtn"
+              class="primary-btn"
+              type="button"
+            >
+              保存
+            </button>
+
+            <button
+              id="undoResultBtn"
+              class="sub-btn"
+              type="button"
+            >
+              取り消し
+            </button>
+
+          </div>
+
+
+          <div id="statsArea"></div>
+
+        </article>
+
+
+        <article class="dashboard-card data-card">
+
+          <div class="dashboard-card-head">
+
+            <div>
+              <span class="card-icon">
+                📁
+              </span>
+
+              <h3>
+                データ・履歴
+              </h3>
+            </div>
+
+          </div>
+
+
+          <div id="missingArea"></div>
+
+          <div id="historyArea"></div>
+
+        </article>
 
       </div>
 
     </section>
-      </main>
 
-  <!-- JavaScript -->
+
+    <!-- ===================================================
+      チャッピー理論
+    ==================================================== -->
+
+    <section
+      id="theorySection"
+      class="dashboard-section theory-guide-section"
+    >
+
+      <div class="dashboard-section-head">
+
+        <div>
+          <p class="section-eyebrow">
+            THEORY
+          </p>
+
+          <h2>
+            🧠 チャッピーAI理論
+          </h2>
+        </div>
+
+      </div>
+
+
+      <div class="theory-guide-grid">
+
+        <article class="theory-guide-card">
+
+          <span>
+            ⏱
+          </span>
+
+          <div>
+            <strong>
+              スリットアラート
+            </strong>
+
+            <p>
+              隣艇とのST差0.10以上を検出
+            </p>
+          </div>
+
+        </article>
+
+
+        <article class="theory-guide-card">
+
+          <span>
+            🏁
+          </span>
+
+          <div>
+            <strong>
+              ダブルタイム
+            </strong>
+
+            <p>
+              展示タイムと一周タイムの両方を評価
+            </p>
+          </div>
+
+        </article>
+
+
+        <article class="theory-guide-card">
+
+          <span>
+            📈
+          </span>
+
+          <div>
+            <strong>
+              新サム理論
+            </strong>
+
+            <p>
+              展示と一周の合計差から気配を判定
+            </p>
+          </div>
+
+        </article>
+
+
+        <article class="theory-guide-card">
+
+          <span>
+            🔧
+          </span>
+
+          <div>
+            <strong>
+              新型エンジン理論
+            </strong>
+
+            <p>
+              モーター数字より展示・ST・技量を優先
+            </p>
+          </div>
+
+        </article>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- =====================================================
+    下部固定ナビ
+  ====================================================== -->
+
+  <nav class="bottom-nav">
+
+    <a
+      href="#"
+      class="bottom-nav-item is-active"
+      aria-label="ホーム"
+    >
+      <span>
+        🏠
+      </span>
+
+      <small>
+        ホーム
+      </small>
+    </a>
+
+
+    <a
+      href="#raceSection"
+      class="bottom-nav-item"
+      aria-label="レース"
+    >
+      <span>
+        🚤
+      </span>
+
+      <small>
+        レース
+      </small>
+    </a>
+
+
+    <a
+      href="#predictionSection"
+      class="bottom-nav-item"
+      aria-label="AI予想"
+    >
+      <span>
+        🎯
+      </span>
+
+      <small>
+        AI予想
+      </small>
+    </a>
+
+
+    <a
+      href="#resultSection"
+      class="bottom-nav-item"
+      aria-label="成績"
+    >
+      <span>
+        📊
+      </span>
+
+      <small>
+        成績
+      </small>
+    </a>
+
+
+    <a
+      href="#theorySection"
+      class="bottom-nav-item"
+      aria-label="理論"
+    >
+      <span>
+        🧠
+      </span>
+
+      <small>
+        理論
+      </small>
+    </a>
+
+  </nav>
+
+
+  <!-- =====================================================
+    JavaScript
+    読み込み順は変更しない
+  ====================================================== -->
 
   <script src="js/utils.js"></script>
   <script src="js/storage.js"></script>
@@ -176,7 +768,9 @@
   <script src="js/ai-core.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/prediction.js"></script>
-  <script src="./js/render.js?v=20260709-1"></script>
+
+  <script src="./js/render.js?v=20260711-1"></script>
+
   <script src="js/script.js"></script>
 
 </body>
