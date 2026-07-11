@@ -261,7 +261,7 @@
     >
 
       <!-- 1. レース基本情報 -->
-      ${renderRaceInfo(prediction)}
+      <div id="raceInfoArea"></div>
 
       <!-- 2. 出走表 -->
       ${renderEntryTable(prediction)}
@@ -296,6 +296,7 @@
   `;
 
   root.innerHTML = html;
+  renderRaceInfo(prediction);
 }
 
   function renderError(title, message) {
