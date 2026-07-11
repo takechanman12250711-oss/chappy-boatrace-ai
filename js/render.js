@@ -959,64 +959,93 @@ odds:
     item.role ||
     "評価";
 
-  const roleItems = [...new Set(
-    String(rawRole)
-      .split("/")
-      .map((text) => text.trim())
-      .filter(Boolean)
-  )].slice(0, 3);
+  const roleItems = [
+    ...new Set(
+      String(rawRole)
+        .split("/")
+        .map((text) => text.trim())
+        .filter(Boolean)
+    )
+  ].slice(0, 3);
 
   const c = boatColor(item.no);
 
-  return `
-    <article class="v3-paper-card" style="border-left-color:${c.border};">
+  const hasScore =
+    item.score !== "" &&
+    item.score !== null &&
+    item.score !== undefined &&
+    Number.isFinite(Number(item.score));
 
+  const hasOdds =
+    item.odds !== "" &&
+    item.odds !== null &&
+    item.odds !== undefined;
+
+  return `
+    <article
+      class="v3-paper-card"
+      style="border-left-color:${c.border};"
+    >
       <div class="v3-paper-head">
+
         <div class="v3-paper-title">
 
-          <div class="v3-role-list">
-            ${roleItems
-              .map((role) => `<span class="v3-role">${escapeHtml(role)}</span>`)
-              .join("")}
-          </div>
+          ${
+            roleItems.length
+              ? `
+                <div class="v3-role-list">
+                  ${roleItems
+                    .map(
+                      (role) =>
+                        `<span class="v3-role">${escapeHtml(role)}</span>`
+                    )
+                    .join("")}
+                </div>
+              `
+              : ""
+          }
 
           <div class="v3-paper-player-line">
-  <div class="v3-paper-player-line">
-  ${boatTitle(item.no, item.name)}
-  ${
-    item.className
-      ? `<span class="v3-paper-grade">${escapeHtml(item.className)}</span>`
-      : ""
-  }
-</div>
+            ${boatTitle(item.no, item.name)}
 
-${
-  item.score !== "" &&
-  item.score !== null &&
-  item.score !== undefined
-    ? `
-      <div class="v3-paper-score">
-        <span>AI</span>
-        <strong>${escapeHtml(Math.round(Number(item.score) || 0))}</strong>
-      </div>
-    `
-    : ""
-}
+            ${
+              item.className
+                ? `
+                  <span class="v3-paper-grade">
+                    ${escapeHtml(item.className)}
+                  </span>
+                `
+                : ""
+            }
+          </div>
 
-${
-  item.odds !== "" &&
-  item.odds !== null &&
-  item.odds !== undefined
-    ? `
-      <div class="v3-paper-odds">
-        <span>オッズ</span>
-        <strong>${escapeHtml(item.odds)}倍</strong>
+        </div>
+
+        ${
+          hasScore
+            ? `
+              <div class="v3-paper-score">
+                <span>AI</span>
+                <strong>
+                  ${escapeHtml(Math.round(Number(item.score)))}
+                </strong>
+              </div>
+            `
+            : ""
+        }
+
       </div>
-    `
-    : ""
-}
-</div>
-      </div>
+
+      ${
+        hasOdds
+          ? `
+            <div class="v3-paper-odds">
+              <span>オッズ</span>
+              <strong>${escapeHtml(item.odds)}倍</strong>
+            </div>
+          `
+          : ""
+      }
 
       ${
         item.tags && item.tags.length
