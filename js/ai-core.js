@@ -1426,6 +1426,109 @@ const roleScores = {
     INDEX_LIMIT.max
   )
 };
+/* ===============================
+  展開優先・本命総合指数 Ver3
+
+  評価順：
+  1. 展開
+  2. コース
+  3. ST・スリット
+  4. 展示・足
+  5. 残し・拾い
+  6. 当地・水面
+  7. 選手実力
+  8. モーター
+=============================== */
+
+const courseBaseIndex = {
+  1: 90,
+  2: 74,
+  3: 69,
+  4: 64,
+  5: 53,
+  6: 47
+};
+
+const courseIndex =
+  courseBaseIndex[boatNo] || 50;
+
+/*
+  外枠が本命になるには、
+  展開・攻め・STまたは展示の裏付けが必要
+*/
+const hasOuterHeadEvidence =
+  boatNo >= 5 &&
+  roleScores.flow >= 78 &&
+  roleScores.attack >= 72 &&
+  (
+    indexes.st >= 68 ||
+    indexes.exhibition >= 68
+  );
+
+/*
+  コース基本補正
+  1は簡単に軽視しない
+  2差し・3攻め・4残しを維持
+  5・6は展開根拠なしで頭評価を上げない
+*/
+let courseAdjustment = 0;
+
+if (boatNo === 1) {
+  courseAdjustment = 8;
+
+  if (
+    indexes.st <= 45 ||
+    indexes.exhibition <= 42 ||
+    indexes.raceFlow <= 45
+  ) {
+    courseAdjustment = 2;
+  }
+}
+
+if (boatNo === 2) {
+  courseAdjustment = 4;
+}
+
+if (boatNo === 3) {
+  courseAdjustment = 2;
+}
+
+if (boatNo === 4) {
+  courseAdjustment = 1;
+}
+
+if (boatNo === 5) {
+  courseAdjustment =
+    hasOuterHeadEvidence ? -1 : -7;
+}
+
+if (boatNo === 6) {
+  courseAdjustment =
+    hasOuterHeadEvidence ? -3 : -11;
+}
+
+/*
+  選手実力・モーターは最後の補助点。
+  全国実績だけで外枠が本命にならない配分。
+*/
+indexes.total = clamp(
+  round(
+    roleScores.flow * 0.22 +
+    courseIndex * 0.20 +
+    roleScores.attack * 0.13 +
+    indexes.st * 0.11 +
+    indexes.exhibition * 0.10 +
+    roleScores.hold * 0.07 +
+    roleScores.pickup * 0.05 +
+    indexes.local * 0.05 +
+    indexes.turn * 0.03 +
+    indexes.national * 0.025 +
+    indexes.motor * 0.015 +
+    courseAdjustment
+  ),
+  INDEX_LIMIT.min,
+  INDEX_LIMIT.max
+);
 
 const roleRanking = [
   { key: "attack", label: "攻め艇🔥", score: roleScores.attack },
