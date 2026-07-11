@@ -1028,6 +1028,28 @@ function createCompactPaperComment(item) {
     .filter(Boolean)
     .join("\n");
 }
+
+/* =========================================================
+  選手級別取得
+========================================================= */
+
+function getPaperClassName(item) {
+  const data = item || {};
+  const raw = data.raw || {};
+  const entry = raw.entry || data.entry || {};
+
+  return String(
+    data.className ??
+    data.grade ??
+    data.class ??
+    data.rank ??
+    entry.className ??
+    entry.grade ??
+    entry.class ??
+    entry.rank ??
+    ""
+  ).trim();
+}
   function renderFactorLine(list, type) {
     const items = arrayify(list)
       .map(formatFactor)
