@@ -2640,3 +2640,66 @@ body {
     padding: 12px;
   }
 }
+/* =========================================================
+  本命・万舟カード 最終コンパクト化
+========================================================= */
+
+.v3-paper-card {
+  min-width: 0;
+  padding: 12px !important;
+}
+
+.v3-paper-comment {
+  margin-top: 10px !important;
+}
+
+.v3-paper-comment strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.v3-paper-comment p {
+  margin: 0;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  white-space: pre-line !important;
+  overflow: visible !important;
+  max-height: none !important;
+  text-overflow: clip !important;
+  word-break: break-word;
+}
+
+.v3-paper-card [class*="tag"],
+.v3-paper-card [class*="factor"] {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  max-width: 100%;
+  margin: 2px 3px 2px 0;
+  padding: 4px 7px;
+  line-height: 1.25;
+}
+
+.v3-paper-card h3,
+.v3-paper-card .v3-paper-name {
+  line-height: 1.3;
+}
+
+@media (max-width: 480px) {
+  .v3-paper-card {
+    padding: 10px !important;
+  }
+
+  .v3-paper-comment p {
+    font-size: 12.5px !important;
+    line-height: 1.5 !important;
+  }
+
+  .v3-paper-card [class*="tag"],
+  .v3-paper-card [class*="factor"] {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+}
