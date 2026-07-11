@@ -1117,9 +1117,26 @@ function createCompactPaperComment(item) {
 
   const points = [];
 
-  if (roleText) {
-    points.push(roleText.split("/")[0].trim());
-  }
+const displayRole = String(
+  data.role ||
+  data.label ||
+  data.primaryRole?.label ||
+  ""
+).trim();
+
+const hiddenRoles = [
+  "manshu",
+  "longshot",
+  "nokoshi",
+  "hiroi"
+];
+
+if (
+  displayRole &&
+  !hiddenRoles.includes(displayRole.toLowerCase())
+) {
+  points.push(displayRole.split("/")[0].trim());
+}
 
   buffs.forEach((text) => {
     if (points.length >= 3) return;
