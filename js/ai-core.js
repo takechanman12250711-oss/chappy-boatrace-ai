@@ -2503,12 +2503,12 @@ function buildRaceScenarios(analyses, data) {
     hasComparison(1, 3)
   ) {
     if (innerThreat >= 10) {
-      escapeScore -= 16;
-    } else if (innerThreat >= 6) {
-      escapeScore -= 9;
-    } else {
-      escapeScore += 5;
-    }
+  escapeScore -= 8;
+} else if (innerThreat >= 6) {
+  escapeScore -= 5;
+} else {
+  escapeScore += 3;
+}
   }
 
   let sashiScore =
@@ -2521,12 +2521,12 @@ function buildRaceScenarios(analyses, data) {
 
   if (hasComparison(2, 1)) {
     if (twoVsOne >= 8) {
-      sashiScore += 14;
-    } else if (twoVsOne >= 4) {
-      sashiScore += 8;
-    } else if (twoVsOne <= -8) {
-      sashiScore -= 8;
-    }
+  sashiScore += 8;
+} else if (twoVsOne >= 4) {
+  sashiScore += 4;
+} else if (twoVsOne <= -8) {
+  sashiScore -= 6;
+}
   }
 
   let threeAttackScore =
@@ -2646,10 +2646,10 @@ function buildRaceScenarios(analyses, data) {
         }
 
         if (no === 2) {
-          secondScore += 10;
-          thirdScore += 7;
-          reasons.push("2コース差し残り");
-        }
+  secondScore += 10;
+  thirdScore += 7;
+  reasons.push("2コース差し残り");
+}
 
         if (no === 3) {
           secondScore += 6;
@@ -2665,10 +2665,10 @@ function buildRaceScenarios(analyses, data) {
 
       if (type === "sashi") {
         if (no === 2) {
-          firstScore += 18;
-          secondScore += 10;
-          reasons.push("2コース差し");
-        }
+  firstScore += 12;
+  secondScore += 10;
+  reasons.push("2コース差し");
+}
 
         if (no === 1) {
           secondScore += 14;
