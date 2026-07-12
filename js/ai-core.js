@@ -77,9 +77,37 @@
     return [...array].sort((a, b) => toNumber(a[key], 999) - toNumber(b[key], 999));
   }
 
-  function getBoatNo(boat) {
+function getBoatNo(boat) {
   if (!boat || typeof boat !== "object") {
     return 0;
+  }
+
+  function parseBoatNo(value) {
+    if (isNil(value)) return 0;
+
+    if (typeof value === "number") {
+      return Number.isFinite(value) &&
+        value >= 1 &&
+        value <= 6
+          ? value
+          : 0;
+    }
+
+    const text = String(value).trim();
+
+    /*
+      "1"・"1号艇"・"1コース"などから
+      1〜6の艇番を取り出す。
+    */
+    const match = text.match(/[1-6]/);
+
+    if (!match) return 0;
+
+    const no = Number(match[0]);
+
+    return no >= 1 && no <= 6
+      ? no
+      : 0;
   }
 
   const candidates = [
@@ -88,21 +116,21 @@
     boat.course,
     boat.cource,
     boat.lane,
-    boat.frame
+    boat.frame,
+    boat.number,
+    boat.teiban,
+    boat.racer?.boatNo,
+    boat.raw?.boatNo,
+    boat.raw?.waku,
+    boat.raw?.course
   ];
 
   for (const value of candidates) {
-    const no = Number(value);
+    const no = parseBoatNo(value);
 
-    if (Number.isFinite(no) && no >= 1 && no <= 6) {
+    if (no >= 1 && no <= 6) {
       return no;
     }
-  }
-
-  const number = Number(boat.number);
-
-  if (Number.isFinite(number) && number >= 1 && number <= 6) {
-    return number;
   }
 
   return 0;
