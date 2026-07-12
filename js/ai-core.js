@@ -3617,6 +3617,8 @@ const slit =
 
       analyses,
 
+      raceScenarios,
+
       ranking,
 
       marks,
@@ -3981,6 +3983,8 @@ return {
     buildBoatAnalysis,
 
     buildBoatAnalyses,
+    
+    buildRaceScenarios,
     
     mergeWithPrediction,
 
