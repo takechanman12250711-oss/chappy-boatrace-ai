@@ -120,7 +120,11 @@
     } catch (error) {
       console.error("❌ fetchAndRenderRace error", error);
       updateStatus("エラー");
-      showError(error.message || "取得に失敗しました");
+      showError(
+  `${error.message || "取得に失敗しました"}
+
+${error.stack || "スタック情報を取得できません"}`
+);
     }
   }
 
