@@ -19,6 +19,39 @@
     rel="stylesheet"
     href="style.css"
   />
+  
+  <script>
+  window.addEventListener("error", function (event) {
+    const detail = [
+      event.message || "不明なエラー",
+      event.filename
+        ? "ファイル: " + event.filename.split("/").pop()
+        : "",
+      event.lineno
+        ? "行: " + event.lineno
+        : "",
+      event.colno
+        ? "列: " + event.colno
+        : ""
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    setTimeout(function () {
+      const errorArea =
+        document.getElementById("errorArea") ||
+        document.getElementById("statusArea");
+
+      if (errorArea) {
+        errorArea.style.whiteSpace = "pre-wrap";
+        errorArea.textContent = detail;
+      }
+
+      console.error("[Chappy Error Detail]", detail);
+    }, 0);
+  });
+</script>
+
 </head>
 
 <body>
