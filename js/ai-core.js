@@ -1833,7 +1833,6 @@ if (indexes.exhibition >= 75) {
     const buffs = [];
     const debuffs = [];
     
-
     if (indexes.st >= 75)
       buffs.push("平均ST優秀");
 
