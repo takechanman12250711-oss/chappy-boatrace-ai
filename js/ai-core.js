@@ -3561,9 +3561,15 @@ function buildRaceScenarios(analyses, data) {
     const venueFeature = getVenueFeature(data);
 
     const analyses =
-      buildBoatAnalyses(data);
+  buildBoatAnalyses(data);
 
-    const slit =
+const raceScenarios =
+  buildRaceScenarios(
+    analyses,
+    data
+  );
+
+const slit =
       buildSlitAnalysis(
         entries,
         venueFeature
