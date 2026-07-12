@@ -2356,85 +2356,196 @@ aiComment: comment
   =============================== */
 
   function buildFormations(analyses) {
+  const marks = buildMarks(analyses);
 
-    const rank = [...analyses]
-      .sort((a, b) => b.indexes.total - a.indexes.total);
+  const main = [];
+  const safety = [];
+  const longshot = [];
 
-    const r1 = rank[0];
-    const r2 = rank[1];
-    const r3 = rank[2];
-    const r4 = rank[3];
-    const r5 = rank[4];
+  function addTicket(target, first, second, third) {
+    const numbers = [
+      Number(first),
+      Number(second),
+      Number(third)
+    ];
 
-    const main = [];
-    const safety = [];
-    const longshot = [];
-
-    if (r1 && r2 && r3) {
-      main.push(
-        `${r1.boatNo}-${r2.boatNo}-${r3.boatNo}`
+    const isValid =
+      numbers.every((no) =>
+        Number.isFinite(no) &&
+        no >= 1 &&
+        no <= 6
       );
+
+    if (!isValid) return;
+
+    if (new Set(numbers).size !== 3) return;
+
+    const ticket =
+      `${numbers[0]}-${numbers[1]}-${numbers[2]}`;
+
+    if (!target.includes(ticket)) {
+      target.push(ticket);
     }
-
-    if (r1 && r3 && r2) {
-      main.push(
-        `${r1.boatNo}-${r3.boatNo}-${r2.boatNo}`
-      );
-    }
-
-    if (r2 && r1 && r3) {
-      safety.push(
-        `${r2.boatNo}-${r1.boatNo}-${r3.boatNo}`
-      );
-    }
-
-    if (r1 && r2 && r4) {
-      safety.push(
-        `${r1.boatNo}-${r2.boatNo}-${r4.boatNo}`
-      );
-    }
-
-    if (r2 && r3 && r1) {
-      longshot.push(
-        `${r2.boatNo}-${r3.boatNo}-${r1.boatNo}`
-      );
-    }
-
-    if (r3 && r1 && r2) {
-      longshot.push(
-        `${r3.boatNo}-${r1.boatNo}-${r2.boatNo}`
-      );
-    }
-
-    if (r3 && r2 && r1) {
-      longshot.push(
-        `${r3.boatNo}-${r2.boatNo}-${r1.boatNo}`
-      );
-    }
-
-    if (r5) {
-
-      longshot.push(
-        `${r5.boatNo}-${r1.boatNo}-${r2.boatNo}`
-      );
-
-      longshot.push(
-        `${r1.boatNo}-${r5.boatNo}-${r2.boatNo}`
-      );
-
-    }
-
-    return {
-
-      main,
-
-      safety,
-
-      longshot
-
-    };
-
   }
+
+  const honmei = Number(marks.honmei?.boatNo || 0);
+  const taikou = Number(marks.taikou?.boatNo || 0);
+  const ana = Number(marks.ana?.boatNo || 0);
+  const osae = Number(marks.osae?.boatNo || 0);
+
+  const evidence = marks.evidence || {};
+
+  /*
+    1号艇の逃げ本線
+    2差し・3攻め・4残しを相手にする。
+  */
+  if (evidence.oneEscape) {
+    addTicket(main, 1, 2, 3);
+    addTicket(main, 1, 3, 2);
+    addTicket(main, 1, 2, 4);
+    addTicket(main, 1, 3, 4);
+
+    addTicket(safety, 2, 1, 3);
+    addTicket(safety, 2, 1, 4);
+    addTicket(safety, 3, 1, 2);
+    addTicket(safety, 1, 4, 2);
+    addTicket(safety, 1, 4, 3);
+
+    if (evidence.threeAttack) {
+      addTicket(longshot, 3, 1, 5);
+      addTicket(longshot, 3, 2, 5);
+      addTicket(longshot, 1, 3, 5);
+      addTicket(longshot, 1, 5, 3);
+    }
+
+    if (evidence.fourAttack) {
+      addTicket(longshot, 4, 1, 5);
+      addTicket(longshot, 4, 2, 5);
+      addTicket(longshot, 1, 4, 5);
+      addTicket(longshot, 1, 5, 4);
+    }
+  }
+
+  /*
+    2コース差し展開
+    1の残しを基本に、3・4まで。
+  */
+  if (
+    evidence.twoSashi &&
+    !evidence.oneEscape
+  ) {
+    addTicket(main, 2, 1, 3);
+    addTicket(main, 2, 1, 4);
+    addTicket(main, 2, 3, 1);
+
+    addTicket(safety, 1, 2, 3);
+    addTicket(safety, 1, 3, 2);
+    addTicket(safety, 3, 2, 1);
+    addTicket(safety, 2, 4, 1);
+
+    addTicket(longshot, 3, 2, 4);
+    addTicket(longshot, 4, 2, 5);
+  }
+
+  /*
+    3号艇の攻め
+    1・2残し、5のまくり差しを入れる。
+    4は攻め場が狭くなるため頭を厚くしない。
+  */
+  if (
+    evidence.threeAttack &&
+    !evidence.oneEscape
+  ) {
+    addTicket(main, 3, 1, 2);
+    addTicket(main, 3, 2, 1);
+    addTicket(main, 1, 3, 2);
+    addTicket(main, 1, 2, 3);
+
+    addTicket(safety, 2, 3, 1);
+    addTicket(safety, 2, 1, 3);
+    addTicket(safety, 3, 1, 5);
+    addTicket(safety, 3, 2, 5);
+
+    addTicket(longshot, 3, 5, 1);
+    addTicket(longshot, 3, 5, 2);
+    addTicket(longshot, 5, 3, 1);
+    addTicket(longshot, 5, 1, 3);
+  }
+
+  /*
+    4カド攻め
+    5のまくり差し、6の最内差し・拾いを相手にする。
+  */
+  if (
+    evidence.fourAttack &&
+    !evidence.oneEscape &&
+    !evidence.threeAttack
+  ) {
+    addTicket(main, 4, 1, 5);
+    addTicket(main, 4, 2, 5);
+    addTicket(main, 4, 5, 1);
+    addTicket(main, 1, 4, 5);
+
+    addTicket(safety, 1, 4, 2);
+    addTicket(safety, 2, 4, 1);
+    addTicket(safety, 4, 1, 2);
+    addTicket(safety, 4, 5, 2);
+
+    addTicket(longshot, 5, 4, 1);
+    addTicket(longshot, 5, 1, 4);
+
+    if (evidence.sixPickup) {
+      addTicket(longshot, 4, 5, 6);
+      addTicket(longshot, 5, 4, 6);
+      addTicket(longshot, 4, 6, 5);
+    }
+  }
+
+  /*
+    明確なシナリオがない場合のみ、
+    印を使った標準買い目を作る。
+  */
+  if (!main.length) {
+    addTicket(main, honmei, taikou, ana);
+    addTicket(main, honmei, ana, taikou);
+    addTicket(main, honmei, taikou, osae);
+
+    addTicket(safety, taikou, honmei, ana);
+    addTicket(safety, honmei, osae, taikou);
+    addTicket(safety, osae, honmei, taikou);
+
+    addTicket(longshot, ana, honmei, taikou);
+    addTicket(longshot, ana, taikou, honmei);
+  }
+
+  /*
+    印から不足分を補完する。
+  */
+  addTicket(main, honmei, taikou, ana);
+  addTicket(main, honmei, ana, taikou);
+
+  addTicket(safety, taikou, honmei, osae);
+  addTicket(safety, osae, honmei, taikou);
+
+  addTicket(longshot, ana, honmei, osae);
+  addTicket(longshot, ana, osae, honmei);
+
+  return {
+    main: main.slice(0, 6),
+    safety: safety.slice(0, 8),
+    longshot: longshot.slice(0, 8),
+
+    scenario: marks.scenario,
+    evidence,
+
+    axis: {
+      honmei,
+      taikou,
+      ana,
+      osae
+    }
+  };
+}
 
   /* ===============================
     本命シート
