@@ -938,8 +938,71 @@
     venueFeature
   );
 
-  const wind = getWindSpeed(data);
-  const wave = getWaveHeight(data);
+    const weather = getWeather(data);
+
+  const rawWind =
+    weather?.windSpeed ??
+    weather?.wind ??
+    weather?.wind_velocity ??
+    data?.windSpeed;
+
+  const rawWave =
+    weather?.waveHeight ??
+    weather?.wave ??
+    weather?.wave_height ??
+    data?.waveHeight;
+
+  const hasWindData = !isNil(rawWind);
+  const hasWaveData = !isNil(rawWave);
+
+  const wind = hasWindData
+    ? toNumber(rawWind, 0)
+    : null;
+
+  const wave = hasWaveData
+    ? toNumber(rawWave, 0)
+    : null;
+
+  function hasAverageStData(entry) {
+    if (!entry) return false;
+
+    const value =
+      entry.averageSt ??
+      entry.avgSt ??
+      entry.st ??
+      entry.startTiming ??
+      entry.nationalSt;
+
+    return !isNil(value) && toNumber(value, 0) > 0;
+  }
+
+  function hasExhibitionData(entry) {
+    if (!entry) return false;
+
+    const time =
+      entry.exhibitionTime ??
+      entry.tenjiTime ??
+      entry.displayTime ??
+      entry.exTime;
+
+    const exhibitionSt =
+      entry.exhibitionSt ??
+      entry.tenjiSt ??
+      entry.displaySt ??
+      entry.startExhibition;
+
+    const lap =
+      entry.lapTime ??
+      entry.oneLapTime ??
+      entry.roundTime ??
+      entry.turnTime;
+
+    return (
+      (!isNil(time) && toNumber(time, 0) > 0) ||
+      (!isNil(exhibitionSt) && toNumber(exhibitionSt, 0) >= 0) ||
+      (!isNil(lap) && toNumber(lap, 0) > 0)
+    );
+  }
 
   /* ===============================
     各コース艇を取得
@@ -1044,44 +1107,128 @@
     隣艇との比較で攻めを判断
   =============================== */
 
-  const oneCanEscape =
-    st1 >= 58 &&
-    ex1 >= 50 &&
-    st1 >= st2 - 10 &&
-    st1 >= st3 - 12;
+    const hasSt1 = hasAverageStData(boat1);
+  const hasSt2 = hasAverageStData(boat2);
+  const hasSt3 = hasAverageStData(boat3);
+  const hasSt4 = hasAverageStData(boat4);
+  const hasSt5 = hasAverageStData(boat5);
+  const hasSt6 = hasAverageStData(boat6);
 
+  const hasEx1 = hasExhibitionData(boat1);
+  const hasEx2 = hasExhibitionData(boat2);
+  const hasEx3 = hasExhibitionData(boat3);
+  const hasEx4 = hasExhibitionData(boat4);
+  const hasEx5 = hasExhibitionData(boat5);
+  const hasEx6 = hasExhibitionData(boat6);
+
+  const hasInnerComparison =
+    (hasSt1 && hasSt2 && hasSt3) ||
+    (hasEx1 && hasEx2 && hasEx3);
+
+  /*
+    1号艇は、明確な崩れ材料がない限り逃げ・残しを維持する。
+    データ不足だけを理由に評価を落とさない。
+  */
+  const oneHasClearCollapse =
+    (
+      hasSt1 &&
+      (
+        (hasSt2 && st1 <= st2 - 12) ||
+        (hasSt3 && st1 <= st3 - 14)
+      )
+    ) ||
+    (
+      hasEx1 &&
+      (
+        (hasEx2 && ex1 <= ex2 - 12) ||
+        (hasEx3 && ex1 <= ex3 - 14)
+      )
+    );
+
+  const oneCanEscape = !oneHasClearCollapse;
+
+  /*
+    2号艇は差し切りだけでなく、2・3着残しを常に残す。
+    頭まで上げる時だけST・展示の裏付けを必要とする。
+  */
   const twoCanSashi =
-    st2 >= 58 &&
-    ex2 >= 50 &&
-    st2 >= st1 - 8;
+    (
+      hasSt1 &&
+      hasSt2 &&
+      st2 >= 60 &&
+      st2 >= st1 - 7
+    ) ||
+    (
+      hasEx1 &&
+      hasEx2 &&
+      ex2 >= 60 &&
+      ex2 >= ex1 - 6
+    );
+
+  /*
+    3攻めは、STまたは展示の実データと2号艇比較が必要。
+    データがない場合はコース傾向だけで攻めを断定しない。
+  */
+  const threeHasStAttack =
+    hasSt2 &&
+    hasSt3 &&
+    st3 >= 66 &&
+    st3 >= st2 + 4;
+
+  const threeHasExAttack =
+    hasEx2 &&
+    hasEx3 &&
+    ex3 >= 62 &&
+    ex3 >= ex2 + 4;
 
   const threeCanAttack =
-    st3 >= 68 &&
-    ex3 >= 58 &&
-    st3 >= st2 + 3;
+    hasInnerComparison &&
+    (threeHasStAttack || threeHasExAttack) &&
+    attackIndex >= 66;
+
+  /*
+    4カドも3号艇との実データ比較を必須にする。
+  */
+  const fourHasStAttack =
+    hasSt3 &&
+    hasSt4 &&
+    st4 >= 67 &&
+    st4 >= st3 + 4;
+
+  const fourHasExAttack =
+    hasEx3 &&
+    hasEx4 &&
+    ex4 >= 63 &&
+    ex4 >= ex3 + 4;
 
   const fourCanAttack =
-    st4 >= 68 &&
-    ex4 >= 58 &&
-    st4 >= st3 + 3;
+    (fourHasStAttack || fourHasExAttack) &&
+    attackIndex >= 67;
+
+  /*
+    5号艇は3・4の攻めに乗れる時だけ展開を上げる。
+    5自身にもSTまたは展示の実データが必要。
+  */
+  const fiveHasOwnEvidence =
+    (hasSt5 && st5 >= 67) ||
+    (hasEx5 && ex5 >= 64);
 
   const fiveCanMakuriSashi =
-    st5 >= 70 &&
-    ex5 >= 62 &&
-    (
-      threeCanAttack ||
-      fourCanAttack
-    );
+    fiveHasOwnEvidence &&
+    (threeCanAttack || fourCanAttack);
+
+  /*
+    6号艇は頭評価ではなく、道中の2・3着拾い。
+    実データと当地・道中の両方を必要とする。
+  */
+  const sixHasOwnEvidence =
+    (hasSt6 && st6 >= 67) ||
+    (hasEx6 && ex6 >= 67);
 
   const sixCanPickup =
-    (
-      st6 >= 65 ||
-      ex6 >= 65
-    ) &&
-    (
-      localIndex >= 65 ||
-      turnIndex >= 68
-    );
+    sixHasOwnEvidence &&
+    localIndex >= 65 &&
+    turnIndex >= 65;
 
   /* ===============================
     1号艇の逃げ・残し
@@ -1092,11 +1239,14 @@
     if (boatNo === 2) score += 7;
     if (boatNo === 3) score += 4;
     if (boatNo === 4) score += 2;
-  } else {
-    if (boatNo === 1) score -= 7;
+    } else {
+    if (boatNo === 1) {
+      score -= oneHasClearCollapse ? 5 : 0;
+    }
+
     if (boatNo === 2) score += 5;
     if (boatNo === 3) score += 5;
-    if (boatNo === 4) score += 4;
+    if (boatNo === 4) score += 3;
   }
 
   /* ===============================
@@ -1697,52 +1847,47 @@ const roleScores = {
 =============================== */
 
 const courseBaseIndex = {
-  1: 90,
-  2: 74,
-  3: 69,
+  1: 92,
+  2: 77,
+  3: 70,
   4: 64,
-  5: 53,
-  6: 47
+  5: 50,
+  6: 43
 };
 
 const courseIndex =
   courseBaseIndex[boatNo] || 50;
 
 /*
-  外枠が本命になるには、
-  展開・攻め・STまたは展示の裏付けが必要
+  外枠が頭候補になるには、
+  展開・攻めに加えてSTか展示の強い裏付けを必須にする。
 */
 const hasOuterHeadEvidence =
   boatNo >= 5 &&
+  indexes.raceFlow >= 80 &&
   roleScores.flow >= 78 &&
-  roleScores.attack >= 72 &&
+  roleScores.attack >= 74 &&
   (
-    indexes.st >= 68 ||
-    indexes.exhibition >= 68
+    indexes.st >= 72 ||
+    indexes.exhibition >= 72
   );
 
 /*
-  コース基本補正
-  1は簡単に軽視しない
-  2差し・3攻め・4残しを維持
-  5・6は展開根拠なしで頭評価を上げない
+  コース補正。
+  1号艇は明確な崩れ根拠がある時だけ基礎点を下げる。
 */
 let courseAdjustment = 0;
 
 if (boatNo === 1) {
-  courseAdjustment = 8;
+  courseAdjustment = 9;
 
-  if (
-    indexes.st <= 45 ||
-    indexes.exhibition <= 42 ||
-    indexes.raceFlow <= 45
-  ) {
-    courseAdjustment = 2;
+  if (indexes.raceFlow <= 48) {
+    courseAdjustment = 3;
   }
 }
 
 if (boatNo === 2) {
-  courseAdjustment = 4;
+  courseAdjustment = 5;
 }
 
 if (boatNo === 3) {
@@ -1755,31 +1900,32 @@ if (boatNo === 4) {
 
 if (boatNo === 5) {
   courseAdjustment =
-    hasOuterHeadEvidence ? -1 : -7;
+    hasOuterHeadEvidence ? -2 : -9;
 }
 
 if (boatNo === 6) {
   courseAdjustment =
-    hasOuterHeadEvidence ? -3 : -11;
+    hasOuterHeadEvidence ? -5 : -14;
 }
 
 /*
-  選手実力・モーターは最後の補助点。
-  全国実績だけで外枠が本命にならない配分。
+  本命総合指数。
+  展開とコースを最優先にし、
+  拾い評価は頭順位へ強く反映させない。
 */
 indexes.total = clamp(
   round(
-    roleScores.flow * 0.22 +
-    courseIndex * 0.20 +
-    roleScores.attack * 0.13 +
-    indexes.st * 0.11 +
-    indexes.exhibition * 0.10 +
-    roleScores.hold * 0.07 +
-    roleScores.pickup * 0.05 +
+    indexes.raceFlow * 0.25 +
+    courseIndex * 0.24 +
+    roleScores.attack * 0.11 +
+    indexes.st * 0.10 +
+    indexes.exhibition * 0.09 +
+    roleScores.hold * 0.08 +
+    roleScores.pickup * 0.03 +
     indexes.local * 0.05 +
-    indexes.turn * 0.03 +
-    indexes.national * 0.025 +
-    indexes.motor * 0.015 +
+    indexes.turn * 0.025 +
+    indexes.national * 0.02 +
+    indexes.motor * 0.005 +
     courseAdjustment
   ),
   INDEX_LIMIT.min,
