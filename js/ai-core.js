@@ -2287,6 +2287,588 @@ aiComment: comment
   return analyses;
 }
 
+/* ===============================
+  レース全体・展開シナリオ生成
+
+  順位や買い目は作らない。
+  6艇の関係から展開と着順候補を作る。
+=============================== */
+
+function buildRaceScenarios(analyses, data) {
+  const list = Array.isArray(analyses)
+    ? [...analyses]
+    : [];
+
+  const entries = getRaceEntries(data);
+  const venue = getVenueFeature(data);
+
+  const byBoat = {};
+
+  list.forEach((boat) => {
+    const no = Number(boat?.boatNo || 0);
+
+    if (no >= 1 && no <= 6) {
+      byBoat[no] = boat;
+    }
+  });
+
+  function getAnalysis(no) {
+    return byBoat[Number(no)] || null;
+  }
+
+  function getEntry(no) {
+    return entries.find(
+      (entry) => getBoatNo(entry) === Number(no)
+    ) || null;
+  }
+
+  function total(no) {
+    return toNumber(
+      getAnalysis(no)?.indexes?.total,
+      0
+    );
+  }
+
+  function st(no) {
+    return toNumber(
+      getAnalysis(no)?.indexes?.st,
+      50
+    );
+  }
+
+  function exhibition(no) {
+    return toNumber(
+      getAnalysis(no)?.indexes?.exhibition,
+      50
+    );
+  }
+
+  function flow(no) {
+    return toNumber(
+      getAnalysis(no)?.indexes?.raceFlow,
+      50
+    );
+  }
+
+  function attack(no) {
+    return toNumber(
+      getAnalysis(no)?.roleScores?.attack,
+      50
+    );
+  }
+
+  function hold(no) {
+    return toNumber(
+      getAnalysis(no)?.roleScores?.hold,
+      50
+    );
+  }
+
+  function pickup(no) {
+    return toNumber(
+      getAnalysis(no)?.roleScores?.pickup,
+      50
+    );
+  }
+
+  function road(no) {
+    return toNumber(
+      getAnalysis(no)?.roleScores?.road,
+      50
+    );
+  }
+
+  function hasAverageSt(no) {
+    const entry = getEntry(no);
+
+    if (!entry) return false;
+
+    const value =
+      entry.averageSt ??
+      entry.averageST ??
+      entry.avgSt ??
+      entry.avgST ??
+      entry.st ??
+      entry.startTiming ??
+      entry.nationalSt;
+
+    return (
+      !isNil(value) &&
+      toNumber(value, 0) > 0
+    );
+  }
+
+  function hasExhibition(no) {
+    const entry = getEntry(no);
+
+    if (!entry) return false;
+
+    const time =
+      entry.exhibitionTime ??
+      entry.tenjiTime ??
+      entry.displayTime ??
+      entry.exTime;
+
+    const exhibitionSt =
+      entry.exhibitionSt ??
+      entry.exhibitionST ??
+      entry.tenjiSt ??
+      entry.tenjiST ??
+      entry.displaySt ??
+      entry.displayST;
+
+    const lap =
+      entry.lapTime ??
+      entry.oneLapTime ??
+      entry.roundTime ??
+      entry.turnTime;
+
+    return (
+      (!isNil(time) && toNumber(time, 0) > 0) ||
+      (!isNil(exhibitionSt) &&
+        toNumber(exhibitionSt, -1) >= 0) ||
+      (!isNil(lap) && toNumber(lap, 0) > 0)
+    );
+  }
+
+  function hasComparison(leftNo, rightNo) {
+    return (
+      (
+        hasAverageSt(leftNo) &&
+        hasAverageSt(rightNo)
+      ) ||
+      (
+        hasExhibition(leftNo) &&
+        hasExhibition(rightNo)
+      )
+    );
+  }
+
+  function relationEdge(targetNo, opponentNo) {
+    let edge = 0;
+    let evidenceCount = 0;
+
+    if (
+      hasAverageSt(targetNo) &&
+      hasAverageSt(opponentNo)
+    ) {
+      edge += st(targetNo) - st(opponentNo);
+      evidenceCount += 1;
+    }
+
+    if (
+      hasExhibition(targetNo) &&
+      hasExhibition(opponentNo)
+    ) {
+      edge +=
+        exhibition(targetNo) -
+        exhibition(opponentNo);
+
+      evidenceCount += 1;
+    }
+
+    return evidenceCount
+      ? edge / evidenceCount
+      : 0;
+  }
+
+  /*
+    展開成立度
+  */
+
+  let escapeScore =
+    venue.inPower * 0.30 +
+    flow(1) * 0.28 +
+    hold(1) * 0.22 +
+    st(1) * 0.12 +
+    exhibition(1) * 0.08;
+
+  const twoVsOne =
+    relationEdge(2, 1);
+
+  const threeVsTwo =
+    relationEdge(3, 2);
+
+  const fourVsThree =
+    relationEdge(4, 3);
+
+  const innerThreat =
+    Math.max(
+      relationEdge(2, 1),
+      relationEdge(3, 1)
+    );
+
+  if (
+    hasComparison(1, 2) ||
+    hasComparison(1, 3)
+  ) {
+    if (innerThreat >= 10) {
+      escapeScore -= 16;
+    } else if (innerThreat >= 6) {
+      escapeScore -= 9;
+    } else {
+      escapeScore += 5;
+    }
+  }
+
+  let sashiScore =
+    venue.sashi * 0.25 +
+    flow(2) * 0.25 +
+    hold(2) * 0.20 +
+    attack(2) * 0.15 +
+    road(2) * 0.10 +
+    total(2) * 0.05;
+
+  if (hasComparison(2, 1)) {
+    if (twoVsOne >= 8) {
+      sashiScore += 14;
+    } else if (twoVsOne >= 4) {
+      sashiScore += 8;
+    } else if (twoVsOne <= -8) {
+      sashiScore -= 8;
+    }
+  }
+
+  let threeAttackScore =
+    venue.makuri * 0.20 +
+    flow(3) * 0.30 +
+    attack(3) * 0.25 +
+    st(3) * 0.12 +
+    exhibition(3) * 0.08 +
+    total(3) * 0.05;
+
+  if (hasComparison(3, 2)) {
+    if (threeVsTwo >= 10) {
+      threeAttackScore += 18;
+    } else if (threeVsTwo >= 6) {
+      threeAttackScore += 11;
+    } else if (threeVsTwo <= -8) {
+      threeAttackScore -= 12;
+    }
+  } else {
+    /*
+      隣艇比較がない時は3攻めを断定しない。
+    */
+    threeAttackScore -= 15;
+  }
+
+  let fourAttackScore =
+    venue.kado * 0.22 +
+    flow(4) * 0.28 +
+    attack(4) * 0.25 +
+    st(4) * 0.12 +
+    exhibition(4) * 0.08 +
+    total(4) * 0.05;
+
+  if (hasComparison(4, 3)) {
+    if (fourVsThree >= 10) {
+      fourAttackScore += 18;
+    } else if (fourVsThree >= 6) {
+      fourAttackScore += 11;
+    } else if (fourVsThree <= -8) {
+      fourAttackScore -= 12;
+    }
+  } else {
+    /*
+      3との比較がない時はカド攻めを断定しない。
+    */
+    fourAttackScore -= 15;
+  }
+
+  /*
+    3が攻める場合は4の攻め場を狭くする。
+  */
+  if (threeAttackScore >= 72) {
+    fourAttackScore -= 12;
+  }
+
+  escapeScore = clamp(
+    round(escapeScore),
+    1,
+    100
+  );
+
+  sashiScore = clamp(
+    round(sashiScore),
+    1,
+    100
+  );
+
+  threeAttackScore = clamp(
+    round(threeAttackScore),
+    1,
+    100
+  );
+
+  fourAttackScore = clamp(
+    round(fourAttackScore),
+    1,
+    100
+  );
+
+  /*
+    シナリオ内の着順適性を計算する。
+    固定買い目は作らない。
+  */
+
+  function buildOutcome(type) {
+    const outcome = list.map((boat) => {
+      const no = Number(boat.boatNo);
+
+      let firstScore =
+        total(no) * 0.30 +
+        flow(no) * 0.30 +
+        attack(no) * 0.25 +
+        st(no) * 0.10 +
+        exhibition(no) * 0.05;
+
+      let secondScore =
+        hold(no) * 0.32 +
+        flow(no) * 0.25 +
+        total(no) * 0.18 +
+        road(no) * 0.15 +
+        attack(no) * 0.10;
+
+      let thirdScore =
+        pickup(no) * 0.32 +
+        road(no) * 0.27 +
+        hold(no) * 0.18 +
+        flow(no) * 0.13 +
+        total(no) * 0.10;
+
+      const reasons = [];
+
+      if (type === "escape") {
+        if (no === 1) {
+          firstScore += 20;
+          secondScore += 10;
+          reasons.push("イン逃げ・残し");
+        }
+
+        if (no === 2) {
+          secondScore += 10;
+          thirdScore += 7;
+          reasons.push("2コース差し残り");
+        }
+
+        if (no === 3) {
+          secondScore += 6;
+          thirdScore += 6;
+          reasons.push("センター追走");
+        }
+
+        if (no === 4) {
+          thirdScore += 4;
+          reasons.push("4コース残し");
+        }
+      }
+
+      if (type === "sashi") {
+        if (no === 2) {
+          firstScore += 18;
+          secondScore += 10;
+          reasons.push("2コース差し");
+        }
+
+        if (no === 1) {
+          secondScore += 14;
+          thirdScore += 8;
+          reasons.push("イン残し");
+        }
+
+        if (no === 3) {
+          secondScore += 6;
+          thirdScore += 7;
+          reasons.push("差し展開の外側追走");
+        }
+      }
+
+      if (type === "threeAttack") {
+        if (no === 3) {
+          firstScore += 18;
+          secondScore += 8;
+          reasons.push("3コース攻め");
+        }
+
+        if (no === 1) {
+          secondScore += 12;
+          thirdScore += 8;
+          reasons.push("3攻め時のイン残し");
+        }
+
+        if (no === 2) {
+          secondScore += 9;
+          thirdScore += 9;
+          reasons.push("差し・内残し");
+        }
+
+        if (no === 4) {
+          firstScore -= 12;
+          secondScore -= 7;
+          reasons.push("3攻めで攻め場減少");
+        }
+
+        if (no === 5) {
+          secondScore += 9;
+          thirdScore += 13;
+          reasons.push("3攻めに乗るまくり差し");
+        }
+
+        if (no === 6) {
+          thirdScore += 6;
+          reasons.push("最内差し・道中拾い");
+        }
+      }
+
+      if (type === "fourAttack") {
+        if (no === 4) {
+          firstScore += 18;
+          secondScore += 8;
+          reasons.push("4カド攻め");
+        }
+
+        if (no === 1) {
+          secondScore += 10;
+          thirdScore += 8;
+          reasons.push("カド攻め時のイン残し");
+        }
+
+        if (no === 2) {
+          thirdScore += 7;
+          reasons.push("差し残り");
+        }
+
+        if (no === 5) {
+          secondScore += 12;
+          thirdScore += 13;
+          reasons.push("カド攻めに乗るまくり差し");
+        }
+
+        if (no === 6) {
+          secondScore += 5;
+          thirdScore += 10;
+          reasons.push("最内差し・展開拾い");
+        }
+      }
+
+      return {
+        boatNo: no,
+        playerName: boat.playerName,
+
+        firstScore: clamp(
+          round(firstScore),
+          1,
+          100
+        ),
+
+        secondScore: clamp(
+          round(secondScore),
+          1,
+          100
+        ),
+
+        thirdScore: clamp(
+          round(thirdScore),
+          1,
+          100
+        ),
+
+        reasons
+      };
+    });
+
+    return {
+      firstCandidates: [...outcome]
+        .sort((a, b) =>
+          b.firstScore - a.firstScore
+        )
+        .slice(0, 3),
+
+      secondCandidates: [...outcome]
+        .sort((a, b) =>
+          b.secondScore - a.secondScore
+        )
+        .slice(0, 4),
+
+      thirdCandidates: [...outcome]
+        .sort((a, b) =>
+          b.thirdScore - a.thirdScore
+        )
+        .slice(0, 5),
+
+      boats: outcome
+    };
+  }
+
+  const scenarios = [
+    {
+      type: "escape",
+      label: "1号艇逃げ",
+      score: escapeScore,
+      attacker: 1,
+      blockedBoats: [],
+      outcome: buildOutcome("escape")
+    },
+    {
+      type: "sashi",
+      label: "2コース差し",
+      score: sashiScore,
+      attacker: 2,
+      blockedBoats: [],
+      outcome: buildOutcome("sashi")
+    },
+    {
+      type: "threeAttack",
+      label: "3コース攻め",
+      score: threeAttackScore,
+      attacker: 3,
+      blockedBoats:
+        threeAttackScore >= 72
+          ? [4]
+          : [],
+      outcome: buildOutcome("threeAttack")
+    },
+    {
+      type: "fourAttack",
+      label: "4カド攻め",
+      score: fourAttackScore,
+      attacker: 4,
+      blockedBoats: [],
+      outcome: buildOutcome("fourAttack")
+    }
+  ].sort((a, b) => b.score - a.score);
+
+  scenarios.forEach((scenario, index) => {
+    scenario.rank = index + 1;
+  });
+
+  return {
+    mainScenario:
+      scenarios[0] || null,
+
+    subScenario:
+      scenarios[1] || null,
+
+    scenarios,
+
+    relations: {
+      twoVsOne: round(twoVsOne),
+      threeVsTwo: round(threeVsTwo),
+      fourVsThree: round(fourVsThree)
+    },
+
+    dataStatus: {
+      hasSt:
+        [1, 2, 3, 4, 5, 6]
+          .some(hasAverageSt),
+
+      hasExhibition:
+        [1, 2, 3, 4, 5, 6]
+          .some(hasExhibition)
+    }
+  };
+}
+
   /* ===============================
     AIコメント生成
   =============================== */
