@@ -2356,29 +2356,78 @@ aiComment: comment
   =============================== */
 
   function buildFormations(analyses) {
-  const marks = buildMarks(analyses);
+  const list = Array.isArray(analyses)
+    ? [...analyses]
+    : [];
+
+  const marks = buildMarks(list);
+  const evidence = marks.evidence || {};
 
   const main = [];
   const safety = [];
   const longshot = [];
 
+  function boatNo(boat) {
+    return Number(boat?.boatNo || 0);
+  }
+
+  function total(boat) {
+    return toNumber(boat?.indexes?.total, 0);
+  }
+
+  function flow(boat) {
+    return toNumber(boat?.indexes?.raceFlow, 0);
+  }
+
+  function attack(boat) {
+    return toNumber(boat?.roleScores?.attack, 0);
+  }
+
+  function hold(boat) {
+    return toNumber(boat?.roleScores?.hold, 0);
+  }
+
+  function pickup(boat) {
+    return toNumber(boat?.roleScores?.pickup, 0);
+  }
+
+  function road(boat) {
+    return toNumber(boat?.roleScores?.road, 0);
+  }
+
+  function uniqueBoats(boats) {
+    const used = new Set();
+
+    return (boats || []).filter((boat) => {
+      const no = boatNo(boat);
+
+      if (no < 1 || no > 6) return false;
+      if (used.has(no)) return false;
+
+      used.add(no);
+      return true;
+    });
+  }
+
   function addTicket(target, first, second, third) {
     const numbers = [
-      Number(first),
-      Number(second),
-      Number(third)
+      boatNo(first),
+      boatNo(second),
+      boatNo(third)
     ];
 
-    const isValid =
-      numbers.every((no) =>
-        Number.isFinite(no) &&
-        no >= 1 &&
-        no <= 6
-      );
+    if (
+      numbers.some((no) =>
+        no < 1 ||
+        no > 6
+      )
+    ) {
+      return;
+    }
 
-    if (!isValid) return;
-
-    if (new Set(numbers).size !== 3) return;
+    if (new Set(numbers).size !== 3) {
+      return;
+    }
 
     const ticket =
       `${numbers[0]}-${numbers[1]}-${numbers[2]}`;
@@ -2388,161 +2437,215 @@ aiComment: comment
     }
   }
 
-  const honmei = Number(marks.honmei?.boatNo || 0);
-  const taikou = Number(marks.taikou?.boatNo || 0);
-  const ana = Number(marks.ana?.boatNo || 0);
-  const osae = Number(marks.osae?.boatNo || 0);
-
-  const evidence = marks.evidence || {};
-
   /*
-    1号艇の逃げ本線
-    2差し・3攻め・4残しを相手にする。
+    2着候補：
+    展開・残し・総合・攻めから毎回選ぶ。
   */
-  if (evidence.oneEscape) {
-    addTicket(main, 1, 2, 3);
-    addTicket(main, 1, 3, 2);
-    addTicket(main, 1, 2, 4);
-    addTicket(main, 1, 3, 4);
+  function secondScore(boat) {
+    let score =
+      flow(boat) * 0.30 +
+      hold(boat) * 0.28 +
+      total(boat) * 0.22 +
+      attack(boat) * 0.12 +
+      road(boat) * 0.08;
 
-    addTicket(safety, 2, 1, 3);
-    addTicket(safety, 2, 1, 4);
-    addTicket(safety, 3, 1, 2);
-    addTicket(safety, 1, 4, 2);
-    addTicket(safety, 1, 4, 3);
+    const no = boatNo(boat);
 
-    if (evidence.threeAttack) {
-      addTicket(longshot, 3, 1, 5);
-      addTicket(longshot, 3, 2, 5);
-      addTicket(longshot, 1, 3, 5);
-      addTicket(longshot, 1, 5, 3);
+    if (no === 1) {
+      score += hold(boat) >= 70 ? 6 : 0;
     }
 
-    if (evidence.fourAttack) {
-      addTicket(longshot, 4, 1, 5);
-      addTicket(longshot, 4, 2, 5);
-      addTicket(longshot, 1, 4, 5);
-      addTicket(longshot, 1, 5, 4);
+    if (no === 2) {
+      score += hold(boat) >= 68 ? 5 : 0;
+    }
+
+    if (no === 4) {
+      score += hold(boat) >= 68 ? 3 : 0;
+    }
+
+    if (no >= 5 && flow(boat) < 75) {
+      score -= 8;
+    }
+
+    return score;
+  }
+
+  /*
+    3着候補：
+    拾い・道中・残し・展開から毎回選ぶ。
+  */
+  function thirdScore(boat) {
+    let score =
+      pickup(boat) * 0.30 +
+      road(boat) * 0.25 +
+      hold(boat) * 0.20 +
+      flow(boat) * 0.15 +
+      total(boat) * 0.10;
+
+    const no = boatNo(boat);
+
+    if (no === 2 || no === 4) {
+      score += 3;
+    }
+
+    if (no >= 5 && pickup(boat) >= 72) {
+      score += 5;
+    }
+
+    return score;
+  }
+
+  const secondRanking = [...list]
+    .sort((a, b) =>
+      secondScore(b) - secondScore(a)
+    );
+
+  const thirdRanking = [...list]
+    .sort((a, b) =>
+      thirdScore(b) - thirdScore(a)
+    );
+
+  /*
+    本線の頭はbuildMarks()が展開から決めた本命。
+    艇番を固定しない。
+  */
+  const mainHeads = uniqueBoats([
+    marks.honmei
+  ]);
+
+  /*
+    押さえ頭：
+    対抗と、実際に攻め根拠を持つ艇だけ。
+  */
+  const safetyHeads = uniqueBoats([
+    marks.taikou,
+
+    evidence.twoSashi
+      ? list.find((boat) => boatNo(boat) === 2)
+      : null,
+
+    evidence.threeAttack
+      ? list.find((boat) => boatNo(boat) === 3)
+      : null,
+
+    evidence.fourAttack
+      ? list.find((boat) => boatNo(boat) === 4)
+      : null
+  ]);
+
+  /*
+    穴頭：
+    穴印と、展開・攻めの裏付けがある艇だけ。
+    5・6を外枠という理由だけでは頭にしない。
+  */
+  const longshotHeads = uniqueBoats([
+    marks.ana,
+
+    evidence.fiveFollow
+      ? list.find((boat) => boatNo(boat) === 5)
+      : null,
+
+    evidence.sixPickup &&
+    attack(
+      list.find((boat) => boatNo(boat) === 6)
+    ) >= 72
+      ? list.find((boat) => boatNo(boat) === 6)
+      : null
+  ]);
+
+  function generateTickets(
+    target,
+    heads,
+    secondCandidates,
+    thirdCandidates,
+    limit
+  ) {
+    for (const head of heads) {
+      for (const second of secondCandidates) {
+        if (boatNo(second) === boatNo(head)) {
+          continue;
+        }
+
+        for (const third of thirdCandidates) {
+          if (boatNo(third) === boatNo(head)) {
+            continue;
+          }
+
+          if (boatNo(third) === boatNo(second)) {
+            continue;
+          }
+
+          addTicket(
+            target,
+            head,
+            second,
+            third
+          );
+
+          if (target.length >= limit) {
+            return;
+          }
+        }
+      }
     }
   }
 
-  /*
-    2コース差し展開
-    1の残しを基本に、3・4まで。
-  */
-  if (
-    evidence.twoSashi &&
-    !evidence.oneEscape
-  ) {
-    addTicket(main, 2, 1, 3);
-    addTicket(main, 2, 1, 4);
-    addTicket(main, 2, 3, 1);
+  generateTickets(
+    main,
+    mainHeads,
+    secondRanking.slice(0, 4),
+    thirdRanking.slice(0, 5),
+    6
+  );
 
-    addTicket(safety, 1, 2, 3);
-    addTicket(safety, 1, 3, 2);
-    addTicket(safety, 3, 2, 1);
-    addTicket(safety, 2, 4, 1);
+  generateTickets(
+    safety,
+    safetyHeads,
+    secondRanking.slice(0, 4),
+    thirdRanking.slice(0, 5),
+    8
+  );
 
-    addTicket(longshot, 3, 2, 4);
-    addTicket(longshot, 4, 2, 5);
-  }
-
-  /*
-    3号艇の攻め
-    1・2残し、5のまくり差しを入れる。
-    4は攻め場が狭くなるため頭を厚くしない。
-  */
-  if (
-    evidence.threeAttack &&
-    !evidence.oneEscape
-  ) {
-    addTicket(main, 3, 1, 2);
-    addTicket(main, 3, 2, 1);
-    addTicket(main, 1, 3, 2);
-    addTicket(main, 1, 2, 3);
-
-    addTicket(safety, 2, 3, 1);
-    addTicket(safety, 2, 1, 3);
-    addTicket(safety, 3, 1, 5);
-    addTicket(safety, 3, 2, 5);
-
-    addTicket(longshot, 3, 5, 1);
-    addTicket(longshot, 3, 5, 2);
-    addTicket(longshot, 5, 3, 1);
-    addTicket(longshot, 5, 1, 3);
-  }
-
-  /*
-    4カド攻め
-    5のまくり差し、6の最内差し・拾いを相手にする。
-  */
-  if (
-    evidence.fourAttack &&
-    !evidence.oneEscape &&
-    !evidence.threeAttack
-  ) {
-    addTicket(main, 4, 1, 5);
-    addTicket(main, 4, 2, 5);
-    addTicket(main, 4, 5, 1);
-    addTicket(main, 1, 4, 5);
-
-    addTicket(safety, 1, 4, 2);
-    addTicket(safety, 2, 4, 1);
-    addTicket(safety, 4, 1, 2);
-    addTicket(safety, 4, 5, 2);
-
-    addTicket(longshot, 5, 4, 1);
-    addTicket(longshot, 5, 1, 4);
-
-    if (evidence.sixPickup) {
-      addTicket(longshot, 4, 5, 6);
-      addTicket(longshot, 5, 4, 6);
-      addTicket(longshot, 4, 6, 5);
-    }
-  }
-
-  /*
-    明確なシナリオがない場合のみ、
-    印を使った標準買い目を作る。
-  */
-  if (!main.length) {
-    addTicket(main, honmei, taikou, ana);
-    addTicket(main, honmei, ana, taikou);
-    addTicket(main, honmei, taikou, osae);
-
-    addTicket(safety, taikou, honmei, ana);
-    addTicket(safety, honmei, osae, taikou);
-    addTicket(safety, osae, honmei, taikou);
-
-    addTicket(longshot, ana, honmei, taikou);
-    addTicket(longshot, ana, taikou, honmei);
-  }
-
-  /*
-    印から不足分を補完する。
-  */
-  addTicket(main, honmei, taikou, ana);
-  addTicket(main, honmei, ana, taikou);
-
-  addTicket(safety, taikou, honmei, osae);
-  addTicket(safety, osae, honmei, taikou);
-
-  addTicket(longshot, ana, honmei, osae);
-  addTicket(longshot, ana, osae, honmei);
+  generateTickets(
+    longshot,
+    longshotHeads,
+    secondRanking.slice(0, 5),
+    thirdRanking.slice(0, 6),
+    8
+  );
 
   return {
-    main: main.slice(0, 6),
-    safety: safety.slice(0, 8),
-    longshot: longshot.slice(0, 8),
+    main,
+    safety,
+    longshot,
 
     scenario: marks.scenario,
     evidence,
 
     axis: {
-      honmei,
-      taikou,
-      ana,
-      osae
+      honmei:
+        boatNo(marks.honmei),
+
+      taikou:
+        boatNo(marks.taikou),
+
+      ana:
+        boatNo(marks.ana),
+
+      osae:
+        boatNo(marks.osae)
+    },
+
+    rankings: {
+      second: secondRanking.map((boat) => ({
+        boatNo: boatNo(boat),
+        score: round(secondScore(boat))
+      })),
+
+      third: thirdRanking.map((boat) => ({
+        boatNo: boatNo(boat),
+        score: round(thirdScore(boat))
+      }))
     }
   };
 }
