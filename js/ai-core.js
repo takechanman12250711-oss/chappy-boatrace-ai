@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.0.1-debuff-fixed";
+  const CORE_VERSION = "ai-core-v3.0.2-flow-fixed";
 
   /* ===============================
     基本ユーティリティ
@@ -2929,13 +2929,13 @@ aiComment: comment
   =============================== */
 
   window.ChappyAICoreVersion = CORE_VERSION;
-
+  alert("読み込み確認：" + CORE_VERSION);
   if (typeof console !== "undefined") {
     console.log(
       `%cチャッピーボートレースAI ${CORE_VERSION}`,
       "color:#2196f3;font-weight:bold;"
     );
-    console.log("ai-core.js v3.0.1-debuff-fixed 読み込み完了");
+    console.log("ai-core.js v3.0.2-flow-fixed 読み込み完了");
   }
 
   /* ===============================
