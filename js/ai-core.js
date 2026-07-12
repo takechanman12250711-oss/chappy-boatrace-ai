@@ -2545,20 +2545,215 @@ aiComment: comment
   =============================== */
 
   function buildMarks(analyses) {
+  const list = Array.isArray(analyses)
+    ? [...analyses]
+    : [];
 
+  if (!list.length) {
     return {
-
-      honmei: analyses[0] || null,
-
-      taikou: analyses[1] || null,
-
-      ana: analyses[2] || null,
-
-      osae: analyses[3] || null
-
+      honmei: null,
+      taikou: null,
+      ana: null,
+      osae: null,
+      scenario: "データ不足"
     };
-
   }
+
+  const byBoat = {};
+
+  list.forEach((boat) => {
+    byBoat[Number(boat.boatNo)] = boat;
+  });
+
+  const boat1 = byBoat[1] || null;
+  const boat2 = byBoat[2] || null;
+  const boat3 = byBoat[3] || null;
+  const boat4 = byBoat[4] || null;
+  const boat5 = byBoat[5] || null;
+  const boat6 = byBoat[6] || null;
+
+  const total = (boat) =>
+    toNumber(boat?.indexes?.total, 0);
+
+  const flow = (boat) =>
+    toNumber(boat?.indexes?.raceFlow, 0);
+
+  const attack = (boat) =>
+    toNumber(boat?.roleScores?.attack, 0);
+
+  const hold = (boat) =>
+    toNumber(boat?.roleScores?.hold, 0);
+
+  const pickup = (boat) =>
+    toNumber(boat?.roleScores?.pickup, 0);
+
+  /*
+    展開シナリオ判定
+  */
+  const oneEscape =
+    boat1 &&
+    total(boat1) >= 72 &&
+    flow(boat1) >= 62;
+
+  const twoSashi =
+    boat2 &&
+    total(boat2) >= 72 &&
+    flow(boat2) >= 65;
+
+  const threeAttack =
+    boat3 &&
+    flow(boat3) >= 78 &&
+    attack(boat3) >= 72;
+
+  const fourAttack =
+    boat4 &&
+    flow(boat4) >= 78 &&
+    attack(boat4) >= 74 &&
+    !threeAttack;
+
+  const fiveFollow =
+    boat5 &&
+    pickup(boat5) >= 75 &&
+    (threeAttack || fourAttack);
+
+  const sixPickup =
+    boat6 &&
+    pickup(boat6) >= 78 &&
+    flow(boat6) >= 72;
+
+  let scenario = "総合展開";
+  let honmei = null;
+  let taikou = null;
+
+  /*
+    頭評価は展開順に決定する。
+    選手実力だけでは決めない。
+  */
+  if (oneEscape) {
+    scenario = "1号艇逃げ本線";
+    honmei = boat1;
+
+    if (twoSashi) {
+      taikou = boat2;
+    } else if (threeAttack) {
+      taikou = boat3;
+    } else {
+      taikou = [boat2, boat3, boat4]
+        .filter(Boolean)
+        .sort((a, b) => total(b) - total(a))[0] || null;
+    }
+  } else if (twoSashi) {
+    scenario = "2コース差し";
+    honmei = boat2;
+    taikou = boat1 || boat3 || null;
+  } else if (threeAttack) {
+    scenario = "3コース攻め";
+    honmei = boat3;
+    taikou = boat1 || boat2 || boat5 || null;
+  } else if (fourAttack) {
+    scenario = "4カド攻め";
+    honmei = boat4;
+    taikou = boat1 || boat5 || boat2 || null;
+  } else {
+    const innerCandidates = [
+      boat1,
+      boat2,
+      boat3,
+      boat4
+    ]
+      .filter(Boolean)
+      .sort((a, b) => total(b) - total(a));
+
+    honmei = innerCandidates[0] || list[0] || null;
+    taikou = innerCandidates
+      .find((boat) => boat !== honmei) || list[1] || null;
+  }
+
+  /*
+    穴は展開を突ける艇。
+    5・6は拾い根拠がある場合だけ選ぶ。
+  */
+  const selected = new Set([
+    honmei?.boatNo,
+    taikou?.boatNo
+  ].filter(Boolean));
+
+  const holeCandidates = [
+    threeAttack ? boat5 : null,
+    fourAttack ? boat5 : null,
+    fiveFollow ? boat5 : null,
+    sixPickup ? boat6 : null,
+    boat4,
+    boat3,
+    boat5,
+    boat6
+  ]
+    .filter(Boolean)
+    .filter((boat) => !selected.has(boat.boatNo))
+    .sort((a, b) => {
+      const scoreA =
+        flow(a) * 0.45 +
+        attack(a) * 0.30 +
+        pickup(a) * 0.25;
+
+      const scoreB =
+        flow(b) * 0.45 +
+        attack(b) * 0.30 +
+        pickup(b) * 0.25;
+
+      return scoreB - scoreA;
+    });
+
+  const ana = holeCandidates[0] || null;
+
+  if (ana) {
+    selected.add(ana.boatNo);
+  }
+
+  /*
+    押さえは1・2・4の残しを優先する。
+  */
+  const holdCandidates = [
+    boat1,
+    boat2,
+    boat4,
+    boat3,
+    boat5,
+    boat6
+  ]
+    .filter(Boolean)
+    .filter((boat) => !selected.has(boat.boatNo))
+    .sort((a, b) => {
+      const scoreA =
+        hold(a) * 0.65 +
+        total(a) * 0.35;
+
+      const scoreB =
+        hold(b) * 0.65 +
+        total(b) * 0.35;
+
+      return scoreB - scoreA;
+    });
+
+  const osae = holdCandidates[0] || null;
+
+  return {
+    honmei,
+    taikou,
+    ana,
+    osae,
+    scenario,
+
+    evidence: {
+      oneEscape: Boolean(oneEscape),
+      twoSashi: Boolean(twoSashi),
+      threeAttack: Boolean(threeAttack),
+      fourAttack: Boolean(fourAttack),
+      fiveFollow: Boolean(fiveFollow),
+      sixPickup: Boolean(sixPickup)
+    }
+  };
+}
     /* ===============================
     prediction.jsへ渡すAIデータ生成
   =============================== */
