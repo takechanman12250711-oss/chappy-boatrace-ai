@@ -1858,8 +1858,6 @@ if (indexes.exhibition >= 75) {
        デバフ
     =============================== */
 
-    const debuffs = [];
-
     if (indexes.st <= 45)
       debuffs.push("ST不安");
 
