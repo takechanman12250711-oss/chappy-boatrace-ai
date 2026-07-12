@@ -2929,7 +2929,6 @@ aiComment: comment
   =============================== */
 
   window.ChappyAICoreVersion = CORE_VERSION;
-  alert("読み込み確認：" + CORE_VERSION);
   if (typeof console !== "undefined") {
     console.log(
       `%cチャッピーボートレースAI ${CORE_VERSION}`,
