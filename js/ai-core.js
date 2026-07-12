@@ -3651,6 +3651,41 @@ const slit =
         : {};
 
     const aiCore = buildPredictionData(data);
+    
+    const raceScenarios =
+  aiCore.raceScenarios || {};
+
+const scenarioList =
+  Array.isArray(raceScenarios.scenarios)
+    ? raceScenarios.scenarios
+    : [];
+
+const mainScenario =
+  raceScenarios.mainScenario || null;
+
+const mainFirstCandidates =
+  mainScenario?.outcome?.firstCandidates || [];
+
+const scenarioScores =
+  scenarioList
+    .map((scenario) =>
+      `${scenario.label}${scenario.score}点`
+    )
+    .join(" / ");
+
+const firstCandidateText =
+  mainFirstCandidates
+    .map((boat) =>
+      `${boat.boatNo}号艇${boat.firstScore}点`
+    )
+    .join("・");
+
+const scenarioSummary =
+  mainScenario
+    ? `展開判定：${mainScenario.label}が最有力（${mainScenario.score}点）。` +
+      `各展開：${scenarioScores}。` +
+      `この展開の1着候補：${firstCandidateText || "確認待ち"}。`
+    : "展開判定：データ不足。";
 
     /*
       prediction.jsの表示形式へ変換する。
@@ -3793,6 +3828,11 @@ return {
       ...basePrediction,
 
       aiCore: compatibleAiCore,
+      
+      finalAi: {
+  ...(basePrediction.finalAi || {}),
+  summary: scenarioSummary
+},
 
       ai: {
         ...(basePrediction.ai || {}),
