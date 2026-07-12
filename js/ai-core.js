@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.0.2-flow-fixed";
+  const CORE_VERSION = "ai-core-v3.0.3-merge-fixed";
 
   /* ===============================
     基本ユーティリティ
