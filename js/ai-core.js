@@ -2568,40 +2568,183 @@ aiComment: comment
     prediction.js結合用
   =============================== */
 
-  function mergeWithPrediction(prediction, data) {
+    function mergeWithPrediction(prediction, data) {
+    const basePrediction =
+      prediction && typeof prediction === "object"
+        ? prediction
+        : {};
 
     const aiCore = buildPredictionData(data);
 
+    /*
+      prediction.jsの表示形式へ変換する。
+      STEP1ではAIコアの総合順位と艇別評価だけを反映する。
+      フォーメーション・万舟・最終コメントはまだ変更しない。
+    */
+    const coreEvaluations = (aiCore.analyses || []).map((analysis) => {
+      const indexes = analysis.indexes || {};
+      const roleScores = analysis.roleScores || {};
+
+      const role =
+        Array.isArray(analysis.roleTags) &&
+        analysis.roleTags.length
+          ? analysis.roleTags.join(" / ")
+          : analysis.primaryRole?.label || "展開候補";
+
+      const buffs =
+        Array.isArray(analysis.buffs)
+          ? analysis.buffs
+          : [];
+
+      const debuffs =
+        Array.isArray(analysis.debuffs)
+          ? analysis.debuffs
+          : [];
+
+      return {
+        boatNo: analysis.boatNo,
+        name: analysis.playerName,
+        playerName: analysis.playerName,
+        className: analysis.className,
+
+        score: indexes.total,
+        total: indexes.total,
+
+        attack:
+          roleScores.attack ??
+          indexes.attack ??
+          50,
+
+        tenkai:
+          roleScores.flow ??
+          indexes.raceFlow ??
+          50,
+
+        michu:
+          roleScores.road ??
+          indexes.turn ??
+          50,
+
+        local:
+          indexes.local ??
+          50,
+
+        expected:
+          roleScores.pickup ??
+          indexes.raceFlow ??
+          50,
+
+        raceFlow:
+          indexes.raceFlow ??
+          50,
+
+        hold:
+          roleScores.hold ??
+          50,
+
+        pickup:
+          roleScores.pickup ??
+          50,
+
+        role,
+        label: role,
+
+        buffs,
+        debuffs,
+
+        shortComment:
+          analysis.aiComment ||
+          `${analysis.boatNo}号艇は展開・コースから評価。`,
+
+        comment:
+          `${analysis.boatNo}号艇 ${analysis.playerName}は${role}。` +
+          `AI総合${indexes.total}点。` +
+          (
+            buffs.length
+              ? `プラス材料は${buffs.slice(0, 2).join("、")}。`
+              : ""
+          ) +
+          (
+            debuffs.length
+              ? `マイナス材料は${debuffs.slice(0, 2).join("、")}。`
+              : ""
+          ),
+
+        indexes,
+        roleScores,
+        raw: analysis
+      };
+    });
+
+    const honmei =
+      coreEvaluations[0] || null;
+
+    const taikou =
+      coreEvaluations[1] || null;
+
+    const ana =
+      coreEvaluations[2] || null;
+
+    const osae =
+      coreEvaluations[3] || null;
+
+    const oldMainSheet =
+      basePrediction.mainSheet &&
+      !Array.isArray(basePrediction.mainSheet)
+        ? basePrediction.mainSheet
+        : {};
+
     return {
-      ...(prediction || {}),
+      ...basePrediction,
 
       aiCore,
 
       ai: {
-        ...((prediction && prediction.ai) || {}),
+        ...(basePrediction.ai || {}),
         ranking: aiCore.ranking,
         comments: aiCore.comments,
         marks: aiCore.marks
       },
 
       indexes: {
-        ...((prediction && prediction.indexes) || {}),
-        ai: aiCore.ranking
+        ...(basePrediction.indexes || {}),
+        ai: aiCore.ranking,
+        aiCore: aiCore.analyses
       },
 
-      formations: {
-        ...((prediction && prediction.formations) || {}),
-        ...aiCore.formations
+      /*
+        STEP1確認用：
+        AIコアの順位を既存UI形式へ変換する。
+      */
+      mainSheet: {
+        ...oldMainSheet,
+        honmei,
+        taikou,
+        ana,
+        osae,
+        evaluations: coreEvaluations
       },
 
-      mainSheet: aiCore.mainSheet,
-      longshotSheet: aiCore.longshotSheet,
+      /*
+        次工程までは旧フォーメーションを維持する。
+      */
+      formation: basePrediction.formation,
+      formations: basePrediction.formations,
+
+      /*
+        万舟シートも今回は変更しない。
+      */
+      manshuSheet: basePrediction.manshuSheet,
+      longshotSheet: basePrediction.longshotSheet,
+
       slit: aiCore.slit,
       doubleTime: aiCore.doubleTime,
       newSam: aiCore.newSam,
-      comments: aiCore.comments
-    };
 
+      comments: aiCore.comments,
+
+      coreRanking: aiCore.ranking
+    };
   }
 
   /* ===============================
