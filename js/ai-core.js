@@ -819,23 +819,70 @@
   }
 
   function calcMotorIndex(boat, data) {
-    const motor2 = getMotorRate(boat);
-    const motor3 = getMotor3Rate(boat);
-    const boat2 = getBoatRate(boat);
+  const rawMotor2 =
+    boat.motorRate ??
+    boat.motor2Rate ??
+    boat.motorTwoRate ??
+    boat.motorWinRate ??
+    boat.motor?.twoRate ??
+    boat.motor?.secondRate ??
+    boat.motor?.quinellaRate;
 
-    let score = 45;
+  const rawMotor3 =
+    boat.motor3Rate ??
+    boat.motorThreeRate ??
+    boat.motor?.threeRate ??
+    boat.motor?.thirdRate ??
+    boat.motor?.trioRate;
 
-    score += motor2 * 0.75;
-    score += motor3 * 0.22;
-    score += boat2 * 0.20;
+  const rawBoat2 =
+    boat.boatRate ??
+    boat.boat2Rate ??
+    boat.boatTwoRate ??
+    boat.boat?.twoRate ??
+    boat.boat?.secondRate ??
+    boat.boat?.quinellaRate;
 
-    if (isNewEngineMode(data)) {
-      score = score * 0.82;
-      score += 10;
-    }
+  const hasMotor2 = !isNil(rawMotor2);
+  const hasMotor3 = !isNil(rawMotor3);
+  const hasBoat2 = !isNil(rawBoat2);
 
-    return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
+  /*
+    モーター情報がない場合は中立50点。
+    仮の30%・45%を上位評価として扱わない。
+  */
+  if (!hasMotor2 && !hasMotor3 && !hasBoat2) {
+    return 50;
   }
+
+  const motor2 = hasMotor2
+    ? toNumber(rawMotor2, 30)
+    : 30;
+
+  const motor3 = hasMotor3
+    ? toNumber(rawMotor3, 45)
+    : 45;
+
+  const boat2 = hasBoat2
+    ? toNumber(rawBoat2, 30)
+    : 30;
+
+  let score = 50;
+
+  score += (motor2 - 30) * 0.75;
+  score += (motor3 - 45) * 0.22;
+  score += (boat2 - 30) * 0.20;
+
+  if (isNewEngineMode(data)) {
+    score = 50 + (score - 50) * 0.45;
+  }
+
+  return clamp(
+    round(score),
+    INDEX_LIMIT.min,
+    INDEX_LIMIT.max
+  );
+}
 
   function calcLocalIndex(boat) {
     const win = getLocalWinRate(boat);
@@ -2602,10 +2649,15 @@ aiComment: comment
           : [];
 
       return {
-        boatNo: analysis.boatNo,
-        name: analysis.playerName,
-        playerName: analysis.playerName,
-        className: analysis.className,
+  boatNo: analysis.boatNo,
+  number: analysis.boatNo,
+  waku: analysis.boatNo,
+
+  name: analysis.playerName,
+  playerName: analysis.playerName,
+  racerName: analysis.playerName,
+
+  className: analysis.className,
 
         score: indexes.total,
         total: indexes.total,
