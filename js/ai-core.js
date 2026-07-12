@@ -3680,12 +3680,28 @@ const firstCandidateText =
     )
     .join("・");
 
+const dataStatus =
+  raceScenarios.dataStatus || {};
+
+const relations =
+  raceScenarios.relations || {};
+
+const dataStatusText =
+  `ST実データ：${dataStatus.hasSt ? "あり" : "なし"} / ` +
+  `展示実データ：${dataStatus.hasExhibition ? "あり" : "なし"}`;
+
+const relationText =
+  `比較差：2対1=${relations.twoVsOne ?? 0} / ` +
+  `3対2=${relations.threeVsTwo ?? 0} / ` +
+  `4対3=${relations.fourVsThree ?? 0}`;
+
 const scenarioSummary =
   mainScenario
     ? `展開判定：${mainScenario.label}が最有力（${mainScenario.score}点）。` +
       `各展開：${scenarioScores}。` +
-      `この展開の1着候補：${firstCandidateText || "確認待ち"}。`
-    : "展開判定：データ不足。";
+      `この展開の1着候補：${firstCandidateText || "確認待ち"}。` +
+      `${dataStatusText}。${relationText}。`
+    : `展開判定：データ不足。${dataStatusText}。`;
 
     /*
       prediction.jsの表示形式へ変換する。
