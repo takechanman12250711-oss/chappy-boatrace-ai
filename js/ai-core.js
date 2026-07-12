@@ -2752,6 +2752,8 @@ aiComment: comment
     buildBoatAnalysis,
 
     buildBoatAnalyses,
+    
+    mergeWithPrediction,
 
     /* ==========================
        AI指数
