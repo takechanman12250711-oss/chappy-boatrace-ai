@@ -3079,7 +3079,7 @@ aiComment: comment
       `%cチャッピーボートレースAI ${CORE_VERSION}`,
       "color:#2196f3;font-weight:bold;"
     );
-    console.log("ai-core.js v3.0.2-flow-fixed 読み込み完了");
+    console.log("ai-core.js v3.0.3-merge-fixed 読み込み完了");
   }
 
   /* ===============================
