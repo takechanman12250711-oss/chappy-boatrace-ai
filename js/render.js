@@ -1093,8 +1093,13 @@ odds:
 function createCompactPaperComment(item) {
   const data = item || {};
 
-  const boatNo =
-    Number(data.boatNo || data.no || data.waku || 0);
+  const boatNo = Number(
+    data.boatNo ||
+    data.no ||
+    data.waku ||
+    data.course ||
+    0
+  );
 
   const name =
     data.name ||
@@ -1102,51 +1107,58 @@ function createCompactPaperComment(item) {
     data.racerName ||
     "";
 
-  const score =
-    Number(
-      data.score ??
-      data.total ??
-      data.aiScore ??
-      data.manshuScore ??
-      0
-    ) || 0;
+  const score = Number(
+    data.score ??
+    data.total ??
+    data.aiScore ??
+    data.manshuScore ??
+    0
+  ) || 0;
 
-  const buffs = arrayify(data.buffs)
+  const safeBuffs = arrayify(
+    data.buffs ||
+    data.buff ||
+    data.plus ||
+    data.positive
+  )
     .map(formatFactor)
     .filter(Boolean);
 
+  const safeDebuffs = arrayify(
+    data.debuffs ||
+    data.debuff ||
+    data.minus ||
+    data.negative
+  )
+    .map(formatFactor)
+    .filter(Boolean);
+
+  const roleText =
+    data.role ||
+    data.label ||
+    data.primaryRole?.label ||
+    "";
+
   const points = [];
 
-const displayRole = String(
-  data.role ||
-  data.label ||
-  data.primaryRole?.label ||
-  ""
-).trim();
+  if (roleText) {
+    points.push(
+      String(roleText)
+        .split("/")[0]
+        .trim()
+    );
+  }
 
-const hiddenRoles = [
-  "manshu",
-  "longshot",
-  "nokoshi",
-  "hiroi"
-];
-
-if (
-  displayRole &&
-  !hiddenRoles.includes(displayRole.toLowerCase())
-) {
-  points.push(displayRole.split("/")[0].trim());
-}
-
-  buffs.forEach((text) => {
+  safeBuffs.forEach((text) => {
     if (points.length >= 3) return;
+
     if (!points.includes(text)) {
       points.push(text);
     }
   });
 
-  if (points.length < 3 && debuffs.length) {
-    points.push(`注意：${debuffs[0]}`);
+  if (points.length < 3 && safeDebuffs.length) {
+    points.push(`注意：${safeDebuffs[0]}`);
   }
 
   if (!points.length && data.shortComment) {
@@ -1169,11 +1181,15 @@ if (
 
   const detail = points
     .slice(0, 3)
-    .map((text) => `・${String(text).replace(/[。]+$/g, "")}`)
+    .map((text) => {
+      return `・${String(text).replace(/[。]+$/g, "")}`;
+    })
     .join("\n");
 
   return [
-    [heading, scoreText].filter(Boolean).join(" "),
+    [heading, scoreText]
+      .filter(Boolean)
+      .join(" "),
     detail
   ]
     .filter(Boolean)
