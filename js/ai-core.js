@@ -2689,15 +2689,29 @@ aiComment: comment
       coreEvaluations[3] || null;
 
     const oldMainSheet =
-      basePrediction.mainSheet &&
-      !Array.isArray(basePrediction.mainSheet)
-        ? basePrediction.mainSheet
-        : {};
+  basePrediction.mainSheet &&
+  !Array.isArray(basePrediction.mainSheet)
+    ? basePrediction.mainSheet
+    : {};
 
-    return {
+const compatibleMainSheet = {
+  ...oldMainSheet,
+  honmei,
+  taikou,
+  ana,
+  osae,
+  evaluations: coreEvaluations
+};
+
+const compatibleAiCore = {
+  ...aiCore,
+  mainSheet: compatibleMainSheet
+};
+
+return {
       ...basePrediction,
 
-      aiCore,
+      aiCore: compatibleAiCore,
 
       ai: {
         ...(basePrediction.ai || {}),
@@ -2716,14 +2730,7 @@ aiComment: comment
         STEP1確認用：
         AIコアの順位を既存UI形式へ変換する。
       */
-      mainSheet: {
-        ...oldMainSheet,
-        honmei,
-        taikou,
-        ana,
-        osae,
-        evaluations: coreEvaluations
-      },
+      mainSheet: compatibleMainSheet,
 
       /*
         次工程までは旧フォーメーションを維持する。
