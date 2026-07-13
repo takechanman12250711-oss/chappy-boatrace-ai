@@ -1916,36 +1916,68 @@ return {
   }
 
   function selectHoldBoats(scores, context) {
-    return [...scores]
-      .map(item => {
-        let score = item.tenkai * 0.35 + item.michu * 0.35 + item.total * 0.3;
-        const reasons = [];
+  return [...scores]
+    .map(item => {
+      let score =
+        item.tenkai * 0.35 +
+        item.michu * 0.35 +
+        item.total * 0.30;
 
-        if (item.boatNo === 1) {
-          score += context.venue?.inPower >= 70 ? 12 : 4;
-          reasons.push("イン残し");
-        }
+      const reasons = [];
 
-        if (item.boatNo === 2) {
-          score += 10;
-          reasons.push("差し残り・内残し");
-        }
+      const boatNo = toBoatNo(
+        item.boatNo
+      );
 
-        if (item.boatNo === 4) {
-          score += 4;
-          reasons.push("カド残し");
-        }
+      const courseCandidate = toBoatNo(
+        item.course ??
+        boatNo
+      );
 
-        if (item.total >= 75) reasons.push("総合指数上位");
+      const course =
+        courseCandidate >= 1 &&
+        courseCandidate <= 6
+          ? courseCandidate
+          : boatNo;
 
-        return {
-          ...item,
-          flowScore: clampScore(score),
-          flowReason: reasons.length ? reasons.join(" / ") : "着残し候補"
-        };
-      })
-      .sort((a, b) => b.flowScore - a.flowScore);
-  }
+      if (course === 1) {
+        score +=
+          context.venue?.inPower >= 70
+            ? 12
+            : 4;
+
+        reasons.push("イン残し");
+      }
+
+      if (course === 2) {
+        score += 10;
+        reasons.push("差し残り・内残し");
+      }
+
+      if (course === 4) {
+        score += 4;
+        reasons.push("カド残し");
+      }
+
+      if (item.total >= 75) {
+        reasons.push("総合指数上位");
+      }
+
+      return {
+        ...item,
+        course,
+        flowScore: clampScore(score),
+        flowReason:
+          reasons.length
+            ? reasons.join(" / ")
+            : "着残し候補"
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.flowScore - a.flowScore
+    );
+}
 
   function createAttackFlowReason(item, context) {
   const reasons = [];
