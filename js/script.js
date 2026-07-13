@@ -185,10 +185,21 @@ ${error.stack || "スタック情報を取得できません"}`
 function createPredictionSafe(data) {
   try {
     if (typeof window.createPrediction === "function") {
-      return window.createPrediction(data);
-    }
   } catch (error) {
   console.error("prediction.js error", error);
+
+  const emergency =
+    createEmergencyPrediction(data);
+
+  emergency.finalComment = {
+    title: "prediction.jsエラー詳細",
+    comment:
+      `${error?.name || "Error"}：` +
+      `${error?.message || String(error)}`
+  };
+
+  return emergency;
+}rror);
   throw error;
 }
 
