@@ -1480,19 +1480,19 @@ return {
     }
 
     applyVenueAdjustment({
-      boatNo,
-      venue: params.venue,
-      weather: params.weather,
-      values: {
-        attackRef: v => attack += v,
-        tenkaiRef: v => tenkai += v,
-        michuRef: v => michu += v,
-        localRef: v => local += v,
-        expectedRef: v => expected += v
-      },
-      buffs,
-      debuffs
-    });
+  boatNo: course,
+  venue: params.venue,
+  weather: params.weather,
+  values: {
+    attackRef: value => attack += value,
+    tenkaiRef: value => tenkai += value,
+    michuRef: value => michu += value,
+    localRef: value => local += value,
+    expectedRef: value => expected += value
+  },
+  buffs,
+  debuffs
+});
 
     attack = clampScore(attack);
     tenkai = clampScore(tenkai);
