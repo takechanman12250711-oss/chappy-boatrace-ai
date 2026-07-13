@@ -2187,54 +2187,68 @@ currentSTCount: currentSTValues.length,
 }
 
   function createStartPhase(race, context, scores) {
-    const stSorted = [...scores]
-      .map(item => {
-        const entry = findByBoatNo(race.entries, item.boatNo);
-        const stNumber = toSTNumber(entry?.avgST);
+  const stSorted = [...scores]
+    .map(item => {
+      const useCurrentST =
+        Number(item.currentSTCount) >= 2 &&
+        Number.isFinite(Number(item.currentSTAverage));
 
-        return {
-          ...item,
-          avgST: entry?.avgST || "",
-          stNumber
-        };
-      })
-      .filter(item => item.stNumber !== null)
-      .sort((a, b) => a.stNumber - b.stNumber);
+      const stNumber = useCurrentST
+        ? Number(item.currentSTAverage)
+        : toSTNumber(item.avgST);
 
-    const top = stSorted[0] || null;
-    const slow = stSorted[stSorted.length - 1] || null;
-
-    if (!top) {
       return {
-        title: "スタート",
-        leader: null,
-        risk: null,
-        comment: "平均STデータが薄いため、展示STとコース傾向で補正。"
+        ...item,
+        stNumber,
+        stValue: stNumber,
+        stSource: useCurrentST ? "今節ST" : "平均ST"
       };
-    }
+    })
+    .filter(item => item.stNumber !== null)
+    .sort((a, b) => a.stNumber - b.stNumber);
 
-    const comment = slow && slow.stNumber - top.stNumber >= 0.05
-      ? `${top.boatNo}号艇が平均STで優位。${slow.boatNo}号艇は遅れリスク。`
-      : `${top.boatNo}号艇がST入口でやや優位。全体は大きな差まではない。`;
+  const top = stSorted[0] || null;
+  const slow = stSorted[stSorted.length - 1] || null;
 
+  if (!top) {
     return {
       title: "スタート",
-      leader: {
-        boatNo: top.boatNo,
-        name: top.name,
-        st: formatST(top.avgST),
-        score: top.attack
-      },
-      risk: slow
+      leader: null,
+      risk: null,
+      comment: "今節ST・平均STデータが薄いため、展示STとコース傾向で補正。"
+    };
+  }
+
+  const hasClearDifference =
+    slow &&
+    slow.boatNo !== top.boatNo &&
+    slow.stNumber - top.stNumber >= 0.05;
+
+  const comment = hasClearDifference
+    ? `${top.boatNo}号艇が${top.stSource}で優位。${slow.boatNo}号艇は${slow.stSource}で遅れリスク。`
+    : `${top.boatNo}号艇が${top.stSource}でやや優位。全体は大きな差まではない。`;
+
+  return {
+    title: "スタート",
+    leader: {
+      boatNo: top.boatNo,
+      name: top.name,
+      st: formatST(top.stValue),
+      source: top.stSource,
+      score: top.attack
+    },
+    risk:
+      slow && slow.boatNo !== top.boatNo
         ? {
             boatNo: slow.boatNo,
             name: slow.name,
-            st: formatST(slow.avgST)
+            st: formatST(slow.stValue),
+            source: slow.stSource
           }
         : null,
-      comment
-    };
-  }
+    comment
+  };
+}
 
   function createSlitPhase(race, context, scores) {
     const exhibitionList = [
