@@ -177,33 +177,52 @@ ${error.stack || "スタック情報を取得できません"}`
 
     if (!res.ok) {
       throw new Error(`APIエラー：${res.status}`);
-    }
-
-    return await res.json();
-  }
-
 function createPredictionSafe(data) {
   try {
-    if (typeof window.createPrediction === "function") {
+    if (typeof window.createPrediction !== "function") {
+      throw new Error(
+        "window.createPrediction が見つかりません"
+      );
+    }
+
+    return window.createPrediction(data);
+
   } catch (error) {
-  console.error("prediction.js error", error);
+    console.error(
+      "prediction.js error",
+      error
+    );
 
-  const emergency =
-    createEmergencyPrediction(data);
+    return {
+      ok: false,
+      version: "prediction-error",
+      race: data,
 
-  emergency.finalComment = {
-    title: "prediction.jsエラー詳細",
-    comment:
-      `${error?.name || "Error"}：` +
-      `${error?.message || String(error)}`
-  };
+      indexes: {
+        scores: [],
+        totalRanking: []
+      },
 
-  return emergency;
-}rror);
-  throw error;
-}
+      mainSheet: {
+        evaluations: [],
+        formation: {}
+      },
 
-return null;
+      manshuSheet: {
+        candidates: [],
+        formation: []
+      },
+
+      formation: {},
+
+      finalComment: {
+        title: "prediction.jsエラー詳細",
+        comment:
+          `${error?.name || "Error"}：` +
+          `${error?.message || String(error)}`
+      }
+    };
+  }
 }
   function createTheorySafe(data) {
     try {
