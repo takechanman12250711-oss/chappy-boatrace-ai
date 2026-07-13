@@ -4133,11 +4133,23 @@ if (boatNo === 0) {
       return aiCorePrediction;
     }
   } catch (error) {
-    console.error("AI Core統合エラー", error);
-  }
+  console.error("AI Core統合エラー", error);
 
-  return enhanced;
-};
+  return {
+    ...enhanced,
+
+    finalAi: {
+      ...(enhanced.finalAi || {}),
+
+      summary:
+        `AI Core統合エラー：` +
+        `${error?.name || "Error"} / ` +
+        `${error?.message || String(error)}`
+    }
+  };
+}
+
+return enhanced;
 
   window.debugPrediction = debugPrediction;
 
