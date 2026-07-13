@@ -158,82 +158,85 @@ ${error.stack || "スタック情報を取得できません"}`
     };
   }
 
-  async function fetchRaceData(params) {
-  if (
-    window.ChappyAPI &&
-    typeof window.ChappyAPI.getRace === "function"
-  ) {
-    return await window.ChappyAPI.getRace(params);
-  }
-
-  if (
-    window.ChappyAPI &&
-    typeof window.ChappyAPI.fetchRace === "function"
-  ) {
-    return await window.ChappyAPI.fetchRace(params);
-  }
-
-  if (typeof window.fetchRace === "function") {
-    return await window.fetchRace(params);
-  }
-
-  const url =
-    `/api/race?jcd=${encodeURIComponent(params.jcd)}` +
-    `&rno=${encodeURIComponent(params.rno)}` +
-    `&date=${encodeURIComponent(params.date)}`;
-
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    throw new Error(`APIエラー：${res.status}`);
-  }
-
-  return await res.json();
-}
-
-function createPredictionSafe(data) {
-  try {
-    if (typeof window.createPrediction !== "function") {
-      throw new Error(
-        "window.createPrediction が見つかりません"
-      );
+    async function fetchRaceData(params) {
+    if (
+      window.ChappyAPI &&
+      typeof window.ChappyAPI.getRace === "function"
+    ) {
+      return await window.ChappyAPI.getRace(params);
     }
 
-    return window.createPrediction(data);
-  } catch (error) {
-    console.error("prediction.js error", error);
+    if (
+      window.ChappyAPI &&
+      typeof window.ChappyAPI.fetchRace === "function"
+    ) {
+      return await window.ChappyAPI.fetchRace(params);
+    }
 
-    return {
-      ok: false,
-      version: "prediction-error",
-      race: data,
+    if (typeof window.fetchRace === "function") {
+      return await window.fetchRace(params);
+    }
 
-      indexes: {
-        scores: [],
-        totalRanking: []
-      },
+    const url =
+      `/api/race?jcd=${encodeURIComponent(params.jcd)}` +
+      `&rno=${encodeURIComponent(params.rno)}` +
+      `&date=${encodeURIComponent(params.date)}`;
 
-      mainSheet: {
-        evaluations: [],
-        formation: {}
-      },
+    const res = await fetch(url);
 
-      manshuSheet: {
-        candidates: [],
-        formation: []
-      },
+    if (!res.ok) {
+      throw new Error(`APIエラー：${res.status}`);
+    }
 
-      formation: {},
-
-      finalComment: {
-        title: "prediction.jsエラー詳細",
-        comment:
-          `${error?.name || "Error"}：` +
-          `${error?.message || String(error)}`
-      }
-    };
+    return await res.json();
   }
-}
+
+  function createPredictionSafe(data) {
+    try {
+      if (typeof window.createPrediction !== "function") {
+        throw new Error(
+          "window.createPrediction が見つかりません"
+        );
+      }
+
+      return window.createPrediction(data);
+
+    } catch (error) {
+      console.error("prediction.js error", error);
+
+      return {
+        ok: false,
+        version: "prediction-error",
+        race: data,
+
+        indexes: {
+          scores: [],
+          totalRanking: []
+        },
+
+        mainSheet: {
+          evaluations: [],
+          formation: {}
+        },
+
+        manshuSheet: {
+          candidates: [],
+          formation: []
+        },
+
+        formation: {},
+
+        finalComment: {
+          title: "prediction.jsエラー詳細",
+          comment:
+            `${error?.name || "Error"}：` +
+            `${error?.message || String(error)}`
+        }
+      };
+    }
+  }
+
+
   function createTheorySafe(data) {
     try {
       if (typeof window.createTheory === "function") {
