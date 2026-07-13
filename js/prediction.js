@@ -2648,42 +2648,115 @@ if (boatNo === 0) {
     return holdCandidate || sorted.find(item => !used.has(item.boatNo)) || sorted[3] || null;
   }
 
-  function createMainSheetReason(params) {
-    const venue = params.context.venue;
-    const weather = params.context.weather;
-    const newEngine = params.context.newEngine;
+    function createMainSheetReason(params) {
+    const context = params?.context || {};
+    const venue = context.venue || {};
+    const weather = context.weather || {};
+    const newEngine = context.newEngine || {};
 
     const parts = [];
 
-    if (params.honmei) {
-      parts.push(`本命は${params.honmei.boatNo}号艇。総合${params.honmei.score}点で中心評価`);
+    function cleanText(value) {
+      return String(value || "")
+        .trim()
+        .replace(/[。]+$/, "");
     }
 
-    if (params.taikou) {
-      parts.push(`対抗は${params.taikou.boatNo}号艇。${params.taikou.role || "相手本線"}`);
+    function getScenarioLabel(item) {
+      const boatNo = Number(item?.boatNo || 0);
+
+      if (boatNo === 1) {
+        return "イン逃げ・残し";
+      }
+
+      if (boatNo === 2) {
+        return "2コース差し・残し";
+      }
+
+      if (boatNo === 3) {
+        return "3コースからの攻め";
+      }
+
+      if (boatNo === 4) {
+        return "カド攻め・展開突き";
+      }
+
+      if (boatNo === 5) {
+        return "まくり差し・展開拾い";
+      }
+
+      if (boatNo === 6) {
+        return "最内差し・道中拾い";
+      }
+
+      return "展開対応";
     }
 
-    if (params.ana) {
-      parts.push(`穴は${params.ana.boatNo}号艇。期待値・展開ズレを評価`);
+    function getIndexSummary(item) {
+      const values = [];
+
+      const score = Number(item?.score);
+      const attack = Number(item?.attack);
+      const tenkai = Number(item?.tenkai);
+      const michu = Number(item?.michu);
+
+      if (Number.isFinite(score)) {
+        values.push(`AI${Math.round(score)}`);
+      }
+
+      if (Number.isFinite(attack)) {
+        values.push(`攻め${Math.round(attack)}`);
+      }
+
+      if (Number.isFinite(tenkai)) {
+        values.push(`展開${Math.round(tenkai)}`);
+      }
+
+      if (Number.isFinite(michu)) {
+        values.push(`道中${Math.round(michu)}`);
+      }
+
+      return values.join("・");
     }
 
-    if (params.osae) {
-      parts.push(`押さえは${params.osae.boatNo}号艇。残し・拾いで残す`);
+    function addBoatReason(label, item) {
+      if (!item) return;
+
+      const boatNo = Number(item.boatNo || 0);
+      const scenario = getScenarioLabel(item);
+      const indexes = getIndexSummary(item);
+
+      const reason = indexes
+        ? `${label}は${boatNo}号艇。${scenario}を軸に、${indexes}を評価`
+        : `${label}は${boatNo}号艇。${scenario}を評価`;
+
+      parts.push(reason);
     }
 
-    if (venue) {
-      parts.push(`${venue.name}は${venue.memo}`);
+    addBoatReason("本命", params?.honmei);
+    addBoatReason("対抗", params?.taikou);
+    addBoatReason("穴", params?.ana);
+    addBoatReason("押さえ", params?.osae);
+
+    if (venue?.name && venue?.memo) {
+      parts.push(
+        `${cleanText(venue.name)}は${cleanText(venue.memo)}`
+      );
     }
 
     if (weather?.comment) {
-      parts.push(weather.comment);
+      parts.push(cleanText(weather.comment));
     }
 
-    if (newEngine?.updated) {
-      parts.push(newEngine.rule);
+    if (newEngine?.updated && newEngine?.rule) {
+      parts.push(cleanText(newEngine.rule));
     }
 
-    return parts.join("。") + "。";
+    if (!parts.length) {
+      return "展開・コース・ST・展示を優先して本線を組み立てる。";
+    }
+
+    return `${parts.join("。")}。`;
   }
     /* ===============================
      ピンクシート生成（万舟）
