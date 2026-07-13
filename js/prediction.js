@@ -2204,10 +2204,22 @@ if (boatNo === 0) {
       };
     }
 
-    return {
-      title: "外枠展開突き",
-      summary: `${mainAttack.boatNo}号艇は外から展開を突く形。頭固定より2・3着絡みと万舟側で評価。`
-    };
+    if (mainAttack.boatNo === 1) {
+  return {
+    title: "イン先マイ・外攻め警戒",
+    summary:
+      `1号艇の先マイを基準に、` +
+      `${mainPickup?.boatNo || 5}号艇の外からの攻め・まくり差しを警戒。` +
+      `1号艇は残し、外攻め艇は頭まで評価。`
+  };
+}
+
+return {
+  title: "外枠展開突き",
+  summary:
+    `${mainAttack.boatNo}号艇は外から展開を突く形。` +
+    `攻め切れば頭まで、届かない場合は2・3着で評価。`
+};
   }
     /* ===============================
     青シート生成
