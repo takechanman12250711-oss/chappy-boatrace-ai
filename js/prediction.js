@@ -1343,9 +1343,21 @@ return {
   }
 
   function calculateBoatIndexes(entry, params) {
-    const boatNo = params.boatNo;
-    const base = COURSE_BASE[boatNo] || DEFAULT_INDEX;
-    const weights = params.newEngine?.weights || createNewEngineWeights(NEW_ENGINE_PHASE.NONE);
+  const boatNo = params.boatNo;
+
+  const courseCandidate = toBoatNo(
+    params.exhibition?.course ?? boatNo
+  );
+
+  const course =
+    courseCandidate >= 1 && courseCandidate <= 6
+      ? courseCandidate
+      : boatNo;
+
+  const base = COURSE_BASE[course] || DEFAULT_INDEX;
+  const weights =
+    params.newEngine?.weights ||
+    createNewEngineWeights(NEW_ENGINE_PHASE.NONE);
 
     let attack = base.attack;
     let tenkai = base.tenkai;
