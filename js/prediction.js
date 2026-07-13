@@ -1912,37 +1912,76 @@ return {
 }
 
   function selectPickupBoats(scores, context) {
-    return [...scores]
-      .map(item => {
-        let score = item.michu * 0.45 + item.tenkai * 0.35 + item.local * 0.2;
-        const reasons = [];
+  return [...scores]
+    .map(item => {
+      let score =
+        item.michu * 0.45 +
+        item.tenkai * 0.35 +
+        item.local * 0.20;
 
-        if (item.boatNo >= 5) {
-          score += 8;
-          reasons.push("外の展開拾い");
-        }
+      const reasons = [];
 
-        if (item.boatNo === 2) {
-          score += 6;
-          reasons.push("2コース差し残り");
-        }
+      const boatNo = toBoatNo(
+        item.boatNo
+      );
 
-        if (item.michu >= 75) reasons.push("道中指数上位");
-        if (item.local >= 75) reasons.push("当地指数上位");
+      const courseCandidate = toBoatNo(
+        item.course ??
+        boatNo
+      );
 
-        if (context.weather?.pickupChance >= 62) {
-          score += 7;
-          reasons.push("水面荒れで拾い上昇");
-        }
+      const course =
+        courseCandidate >= 1 &&
+        courseCandidate <= 6
+          ? courseCandidate
+          : boatNo;
 
-        return {
-          ...item,
-          flowScore: clampScore(score),
-          flowReason: reasons.length ? reasons.join(" / ") : item.shortComment
-        };
-      })
-      .sort((a, b) => b.flowScore - a.flowScore);
-  }
+      if (course >= 5) {
+        score += 8;
+        reasons.push(
+          "外コースの展開拾い"
+        );
+      }
+
+      if (course === 2) {
+        score += 6;
+        reasons.push(
+          "2コース差し残り"
+        );
+      }
+
+      if (item.michu >= 75) {
+        reasons.push("道中指数上位");
+      }
+
+      if (item.local >= 75) {
+        reasons.push("当地指数上位");
+      }
+
+      if (
+        context.weather?.pickupChance >= 62
+      ) {
+        score += 7;
+        reasons.push(
+          "水面荒れで拾い上昇"
+        );
+      }
+
+      return {
+        ...item,
+        course,
+        flowScore: clampScore(score),
+        flowReason:
+          reasons.length
+            ? reasons.join(" / ")
+            : item.shortComment
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.flowScore - a.flowScore
+    );
+}
 
   function selectHoldBoats(scores, context) {
   return [...scores]
