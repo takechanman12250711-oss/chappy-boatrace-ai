@@ -1115,17 +1115,27 @@ if (boatNo === 0) {
       const weight = safeString(before?.weight ?? entry.weight);
       const partsExchange = safeString(before?.partsExchange);
 
-      return {
-        boatNo,
-        name: entry.racerName || entry.name || "",
-        exhibitionTime,
-        exhibitionST,
-        exhibitionSTNumber,
-        lapTime,
-        tilt,
-        weight,
-        partsExchange
-      };
+const courseCandidate = toBoatNo(
+  start?.course ?? boatNo
+);
+
+const course =
+  courseCandidate >= 1 && courseCandidate <= 6
+    ? courseCandidate
+    : boatNo;
+
+return {
+  boatNo,
+  course,
+  name: entry.racerName || entry.name || "",
+  exhibitionTime,
+  exhibitionST,
+  exhibitionSTNumber,
+  lapTime,
+  tilt,
+  weight,
+  partsExchange
+};
     });
 
     const exhibitionRank = rankSmallNumber(list, "exhibitionTime");
