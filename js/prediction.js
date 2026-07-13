@@ -2213,18 +2213,145 @@ if (boatNo === 0) {
     青シート生成
   =============================== */
 
-  function createMainSheet(race, context) {
-    const evaluations = createMainEvaluations(race, context);
-    const sorted = [...evaluations].sort((a, b) => b.score - a.score);
+    function createMainSheet(race, context) {
+    const safeContext = context || {};
+    const evaluations = createMainEvaluations(race, safeContext);
 
-    const honmei = sorted[0] || null;
-    const taikou = sorted[1] || null;
-    const ana = selectAnaCandidate(sorted, context);
-    const osae = selectOsaeCandidate(sorted, context, {
+    const mainAttackBoatNo = Number(
+      safeContext.raceFlow?.attackBoats?.[0]?.boatNo || 0
+    );
+
+    const insideRisk = Number(
+      safeContext.weather?.insideRisk ?? 0
+    );
+
+    const rankedRows = evaluations
+      .map(item => {
+        const boatNo = Number(item.boatNo || 0);
+        const attack = Number(item.attack ?? 50);
+        const tenkai = Number(item.tenkai ?? 50);
+        const michu = Number(item.michu ?? 50);
+        const expected = Number(item.expected ?? 50);
+        const local = Number(item.local ?? 50);
+        const total = Number(item.total ?? 50);
+        const score = Number(item.score ?? 50);
+
+        let priority =
+          tenkai * 0.30 +
+          attack * 0.23 +
+          michu * 0.15 +
+          expected * 0.12 +
+          total * 0.08 +
+          local * 0.07 +
+          score * 0.05;
+
+        let canHead = boatNo === 1 || boatNo === 2;
+
+        if (boatNo === 1) {
+          priority += insideRisk < 65 ? 8 : 2;
+        }
+
+        if (boatNo === 2) {
+          priority += 4;
+        }
+
+        if (boatNo === 3) {
+          if (attack >= 70 && tenkai >= 60) {
+            priority += 4;
+            canHead = true;
+          }
+        }
+
+        if (boatNo === 4) {
+          if (attack >= 72 && tenkai >= 65) {
+            priority += 4;
+            canHead = true;
+          }
+        }
+
+        if (boatNo >= 5) {
+          const outsideEvidence =
+            attack >= 75 &&
+            tenkai >= 75 &&
+            (michu >= 70 || expected >= 75);
+
+          if (outsideEvidence) {
+            priority += 3;
+            canHead = true;
+          } else {
+            priority -= 8;
+          }
+        }
+
+        if (boatNo === mainAttackBoatNo) {
+          priority += 6;
+        }
+
+        if (mainAttackBoatNo === 3) {
+          if (boatNo === 4) {
+            priority -= 4;
+          }
+
+          if ([1, 2, 5].includes(boatNo)) {
+            priority += 3;
+          }
+        }
+
+        if (
+          mainAttackBoatNo === 4 &&
+          [5, 6].includes(boatNo)
+        ) {
+          priority += 4;
+        }
+
+        return {
+          item,
+          boatNo,
+          attack,
+          tenkai,
+          priority,
+          canHead
+        };
+      })
+      .sort((a, b) =>
+        b.priority - a.priority ||
+        b.tenkai - a.tenkai ||
+        b.attack - a.attack ||
+        a.boatNo - b.boatNo
+      );
+
+    const headRow =
+      rankedRows.find(row => row.canHead) ||
+      rankedRows[0] ||
+      null;
+
+    const honmei = headRow?.item || null;
+
+    const remainingRows = rankedRows.filter(
+      row => row.item !== honmei
+    );
+
+    const taikou = remainingRows[0]?.item || null;
+
+    const scenarioSorted = [
       honmei,
-      taikou,
-      ana
-    });
+      ...remainingRows.map(row => row.item)
+    ].filter(Boolean);
+
+    const ana = selectAnaCandidate(
+      scenarioSorted,
+      safeContext
+    );
+
+    const osae = selectOsaeCandidate(
+      scenarioSorted,
+      safeContext,
+      {
+        honmei,
+        taikou,
+        ana
+      }
+    );
 
     return {
       honmei,
@@ -2233,7 +2360,7 @@ if (boatNo === 0) {
       osae,
       reason: createMainSheetReason({
         race,
-        context,
+        context: safeContext,
         honmei,
         taikou,
         ana,
