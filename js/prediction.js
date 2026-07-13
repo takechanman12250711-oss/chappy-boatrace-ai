@@ -2421,9 +2421,17 @@ return {
       });
 
       return {
-        boatNo,
-        name: entry.racerName || entry.name || "",
-        className: entry.className || entry.grade || entry.class || "",
+  boatNo,
+  course:
+    indexData.course ??
+    exhibition?.course ??
+    boatNo,
+  name: entry.racerName || entry.name || "",
+  className:
+    entry.className ||
+    entry.grade ||
+    entry.class ||
+    "",
         score: scoreData.score,
         buffs: scoreData.buffs,
         debuffs: scoreData.debuffs,
