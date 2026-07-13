@@ -159,24 +159,38 @@ ${error.stack || "スタック情報を取得できません"}`
   }
 
   async function fetchRaceData(params) {
-    if (window.ChappyAPI && typeof window.ChappyAPI.getRace === "function") {
-      return await window.ChappyAPI.getRace(params);
-    }
+  if (
+    window.ChappyAPI &&
+    typeof window.ChappyAPI.getRace === "function"
+  ) {
+    return await window.ChappyAPI.getRace(params);
+  }
 
-    if (window.ChappyAPI && typeof window.ChappyAPI.fetchRace === "function") {
-      return await window.ChappyAPI.fetchRace(params);
-    }
+  if (
+    window.ChappyAPI &&
+    typeof window.ChappyAPI.fetchRace === "function"
+  ) {
+    return await window.ChappyAPI.fetchRace(params);
+  }
 
-    if (typeof window.fetchRace === "function") {
-      return await window.fetchRace(params);
-    }
+  if (typeof window.fetchRace === "function") {
+    return await window.fetchRace(params);
+  }
 
-    const url = `/api/race?jcd=${encodeURIComponent(params.jcd)}&rno=${encodeURIComponent(params.rno)}&date=${encodeURIComponent(params.date)}`;
+  const url =
+    `/api/race?jcd=${encodeURIComponent(params.jcd)}` +
+    `&rno=${encodeURIComponent(params.rno)}` +
+    `&date=${encodeURIComponent(params.date)}`;
 
-    const res = await fetch(url);
+  const res = await fetch(url);
 
-    if (!res.ok) {
-      throw new Error(`APIエラー：${res.status}`);
+  if (!res.ok) {
+    throw new Error(`APIエラー：${res.status}`);
+  }
+
+  return await res.json();
+}
+
 function createPredictionSafe(data) {
   try {
     if (typeof window.createPrediction !== "function") {
@@ -186,12 +200,8 @@ function createPredictionSafe(data) {
     }
 
     return window.createPrediction(data);
-
   } catch (error) {
-    console.error(
-      "prediction.js error",
-      error
-    );
+    console.error("prediction.js error", error);
 
     return {
       ok: false,
