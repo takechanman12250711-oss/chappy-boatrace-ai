@@ -3632,34 +3632,46 @@ if (
     const lines = [];
 
     function getScenarioLabel(item) {
-      const boatNo = Number(item?.boatNo || 0);
+  const boatNo = toBoatNo(
+    item?.boatNo
+  );
 
-      if (boatNo === 1) {
-        return "イン逃げ・先マイ・残し";
-      }
+  const courseCandidate = toBoatNo(
+    item?.course ??
+    boatNo
+  );
 
-      if (boatNo === 2) {
-        return "2コース差し・残し";
-      }
+  const course =
+    courseCandidate >= 1 && courseCandidate <= 6
+      ? courseCandidate
+      : boatNo;
 
-      if (boatNo === 3) {
-        return "3コースからの攻め";
-      }
+  if (course === 1) {
+    return "イン逃げ・先マイ・残し";
+  }
 
-      if (boatNo === 4) {
-        return "カド攻め・展開突き";
-      }
+  if (course === 2) {
+    return "2コース差し・残し";
+  }
 
-      if (boatNo === 5) {
-        return "まくり差し・展開拾い";
-      }
+  if (course === 3) {
+    return "3コースからの攻め";
+  }
 
-      if (boatNo === 6) {
-        return "最内差し・道中拾い";
-      }
+  if (course === 4) {
+    return "カド攻め・展開突き";
+  }
 
-      return "展開対応";
-    }
+  if (course === 5) {
+    return "まくり差し・展開拾い";
+  }
+
+  if (course === 6) {
+    return "最内差し・道中拾い";
+  }
+
+  return "展開対応";
+}
 
     function getIndexText(item) {
       const values = [];
