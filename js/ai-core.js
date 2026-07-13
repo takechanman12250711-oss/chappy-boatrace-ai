@@ -3014,15 +3014,52 @@ if (hasComparison(3, 1)) {
     },
 
     dataStatus: {
-      hasSt:
-        [1, 2, 3, 4, 5, 6]
-          .some(hasAverageSt),
+  hasSt:
+    [1, 2, 3, 4, 5, 6]
+      .some(hasAverageSt),
 
-      hasExhibition:
-        [1, 2, 3, 4, 5, 6]
-          .some(hasExhibition)
-    }
-  };
+  hasExhibition:
+    [1, 2, 3, 4, 5, 6]
+      .some(hasExhibition),
+
+  beforeCount:
+    Array.isArray(data?.beforeInfo)
+      ? data.beforeInfo.length
+      : 0,
+
+  rawBeforeCount:
+    Array.isArray(data?.raw?.beforeInfo)
+      ? data.raw.beforeInfo.length
+      : 0,
+
+  startCount:
+    Array.isArray(data?.startExhibition)
+      ? data.startExhibition.length
+      : 0,
+
+  rawStartCount:
+    Array.isArray(data?.raw?.startExhibition)
+      ? data.raw.startExhibition.length
+      : 0,
+
+  mergedExhibition:
+    entries.map((entry) => ({
+      boatNo: getBoatNo(entry),
+
+      time:
+        entry.exhibitionTime ??
+        entry.tenjiTime ??
+        entry.displayTime ??
+        null,
+
+      st:
+        entry.exhibitionSt ??
+        entry.exhibitionST ??
+        entry.tenjiSt ??
+        entry.displaySt ??
+        entry.displayST ??
+        null
+    }))
 }
 
   /* ===============================
@@ -3844,7 +3881,12 @@ const relations =
 
 const dataStatusText =
   `ST実データ：${dataStatus.hasSt ? "あり" : "なし"} / ` +
-  `展示実データ：${dataStatus.hasExhibition ? "あり" : "なし"}`;
+  `展示実データ：${dataStatus.hasExhibition ? "あり" : "なし"} / ` +
+  `before=${dataStatus.beforeCount || 0}件 / ` +
+  `raw.before=${dataStatus.rawBeforeCount || 0}件 / ` +
+  `start=${dataStatus.startCount || 0}件 / ` +
+  `raw.start=${dataStatus.rawStartCount || 0}件 / ` +
+  `取込値=${JSON.stringify(dataStatus.mergedExhibition || [])}`;
 
 const relationText =
   `比較差：2対1=${relations.twoVsOne ?? 0} / ` +
