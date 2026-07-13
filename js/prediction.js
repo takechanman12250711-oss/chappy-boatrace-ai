@@ -1414,7 +1414,39 @@ return {
       }
     }
 
-    const nationalWinRate = toNumberOrNull(entry.national?.winRate);
+    const currentSTValues = (
+  Array.isArray(entry.currentSeries?.st)
+    ? entry.currentSeries.st
+    : []
+)
+  .map(value => toSTNumber(value))
+  .filter(value => value !== null);
+
+const currentSTAverage = currentSTValues.length
+  ? currentSTValues.reduce((sum, value) => sum + value, 0) /
+    currentSTValues.length
+  : null;
+
+if (currentSTAverage !== null) {
+  if (currentSTAverage <= 0.12) {
+    attack += 18 * weights.st;
+    tenkai += 12 * weights.st;
+    expected += 8;
+    buffs.push(`今節ST速い ${formatST(currentSTAverage)}`);
+  } else if (currentSTAverage <= 0.15) {
+    attack += 12 * weights.st;
+    tenkai += 8 * weights.st;
+    expected += 4;
+    buffs.push(`今節ST安定 ${formatST(currentSTAverage)}`);
+  } else if (currentSTAverage >= 0.20) {
+    attack -= 15 * weights.st;
+    tenkai -= 10 * weights.st;
+    expected -= 5;
+    debuffs.push(`今節ST遅め ${formatST(currentSTAverage)}`);
+  }
+}
+
+const nationalWinRate = toNumberOrNull(entry.national?.winRate);
     const localWinRate = toNumberOrNull(entry.local?.winRate);
     const motor2Rate = toNumberOrNull(entry.motor?.secondRate);
     const boat2Rate = toNumberOrNull(entry.boat?.secondRate);
