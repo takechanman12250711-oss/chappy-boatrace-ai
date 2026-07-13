@@ -2449,78 +2449,110 @@ return {
   }
 
   function calculateMainSheetScore(params) {
-    const entry = params.entry;
-    const boatNo = entry.boatNo;
-    const indexData = params.indexData || {};
-    const exhibition = params.exhibition || {};
-    const context = params.context || {};
+  const entry = params.entry;
+  const boatNo = entry.boatNo;
+  const indexData = params.indexData || {};
+  const exhibition = params.exhibition || {};
+  const context = params.context || {};
 
-    let score = Number(indexData.total ?? 50);
+  const courseCandidate = toBoatNo(
+    indexData.course ??
+    exhibition.course ??
+    boatNo
+  );
 
-    const buffs = [];
-    const debuffs = [];
+  const course =
+    courseCandidate >= 1 && courseCandidate <= 6
+      ? courseCandidate
+      : boatNo;
 
-    if (Array.isArray(indexData.buffs)) buffs.push(...indexData.buffs);
-    if (Array.isArray(indexData.debuffs)) debuffs.push(...indexData.debuffs);
+  let score = Number(indexData.total ?? 50);
 
-    const venue = context.venue;
-    const weather = context.weather;
-    const newEngine = context.newEngine;
+  const buffs = [];
+  const debuffs = [];
 
-    if (boatNo === 1) {
-      if (venue?.inPower >= 72 && weather?.insideRisk < 65) {
-        score += 8;
-        buffs.push("イン逃げ本線");
-      }
+  if (Array.isArray(indexData.buffs)) {
+    buffs.push(...indexData.buffs);
+  }
 
-      if (weather?.insideRisk >= 65) {
-        score -= 5;
-        debuffs.push("風波でイン過信注意");
-      }
+  if (Array.isArray(indexData.debuffs)) {
+    debuffs.push(...indexData.debuffs);
+  }
+
+  const venue = context.venue;
+  const weather = context.weather;
+  const newEngine = context.newEngine;
+
+  if (course === 1) {
+    if (
+      venue?.inPower >= 72 &&
+      weather?.insideRisk < 65
+    ) {
+      score += 8;
+      buffs.push("イン逃げ本線");
     }
 
-    if (boatNo === 2) {
+    if (weather?.insideRisk >= 65) {
+      score -= 5;
+      debuffs.push("風波でイン過信注意");
+    }
+  }
+
+  if (course === 2) {
+    score += 4;
+    buffs.push("2コース差し・残しを切らない");
+
+    if (venue?.sashi >= 60) {
+      score += 5;
+      buffs.push("差し水面補正");
+    }
+  }
+
+  if (course === 3) {
+    if (venue?.makuri >= 58) {
       score += 4;
-      buffs.push("2コース差し・残しを切らない");
-
-      if (venue?.sashi >= 60) {
-        score += 5;
-        buffs.push("差し水面補正");
-      }
+      buffs.push("3コース攻め警戒");
     }
 
-    if (boatNo === 3) {
-      if (venue?.makuri >= 58) {
-        score += 4;
-        buffs.push("3コース攻め警戒");
-      }
-
-      if (newEngine?.updated && newEngine.phase !== NEW_ENGINE_PHASE.NONE) {
-        score += 3;
-        buffs.push("新型エンジン期の3攻め警戒");
-      }
+    if (
+      newEngine?.updated &&
+      newEngine.phase !== NEW_ENGINE_PHASE.NONE
+    ) {
+      score += 3;
+      buffs.push("新型エンジン期の3攻め警戒");
     }
+  }
 
-    if (boatNo === 4) {
-      score += 2;
-      buffs.push("4コース残しを切らない");
+  if (course === 4) {
+    score += 2;
+    buffs.push("4コース残しを切らない");
 
-      const mainAttack = context.raceFlow?.attackBoats?.[0];
-      if (Number(mainAttack?.boatNo) === 3) {
-        score -= 3;
-        debuffs.push("3攻め時は攻め場が狭くなる");
-      }
+    const mainAttack =
+      context.raceFlow?.attackBoats?.[0];
+
+    const mainAttackCourse = toBoatNo(
+      mainAttack?.course ??
+      mainAttack?.boatNo
+    );
+
+    if (mainAttackCourse === 3) {
+      score -= 3;
+      debuffs.push("3攻め時は攻め場が狭くなる");
     }
+  }
 
-    if (boatNo >= 5) {
-      if (indexData.michu >= 70 || indexData.local >= 70) {
-        score += 5;
-        buffs.push("外枠でも拾い評価");
-      } else {
-        score -= 3;
-        debuffs.push("外枠で展開待ち");
-      }
+  if (course >= 5) {
+    if (
+      indexData.michu >= 70 ||
+      indexData.local >= 70
+    ) {
+      score += 5;
+      buffs.push("外コースでも拾い評価");
+    } else {
+      score -= 3;
+      debuffs.push("外コースで展開待ち");
     }
+  }
 
     if (exhibition?.score >= 70) {
       score += 5;
