@@ -4149,7 +4149,8 @@ if (boatNo === 0) {
   };
 }
 
-return enhanced;
+    return enhanced;
+  }
 
   window.debugPrediction = debugPrediction;
 
