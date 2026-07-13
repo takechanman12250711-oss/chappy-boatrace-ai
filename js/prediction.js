@@ -609,9 +609,6 @@
     return entries.map((entry, index) => {
       const boatNoCandidates = [
   entry.waku,
-  entry.course,
-  entry.cource,
-  entry.lane,
   entry.frame,
   entry.boatNo,
   entry.boat
