@@ -4006,23 +4006,65 @@ const scenarioSummary =
       };
     });
 
-    const honmei =
-      coreEvaluations[0] || null;
-
-    const taikou =
-      coreEvaluations[1] || null;
-
-    const ana =
-      coreEvaluations[2] || null;
-
-    const osae =
-      coreEvaluations[3] || null;
-
     const oldMainSheet =
   basePrediction.mainSheet &&
   !Array.isArray(basePrediction.mainSheet)
     ? basePrediction.mainSheet
     : {};
+
+function getMarkBoatNo(mark) {
+  return Number(
+    mark?.boatNo ??
+    mark?.number ??
+    mark?.waku ??
+    0
+  );
+}
+
+function findCoreEvaluation(mark) {
+  const boatNo = getMarkBoatNo(mark);
+
+  if (!boatNo) return null;
+
+  return (
+    coreEvaluations.find(
+      item => Number(item?.boatNo) === boatNo
+    ) ||
+    mark
+  );
+}
+
+function findUnusedEvaluation(...marks) {
+  const usedBoatNos = new Set(
+    marks
+      .map(getMarkBoatNo)
+      .filter(Boolean)
+  );
+
+  return (
+    coreEvaluations.find(
+      item => !usedBoatNos.has(Number(item?.boatNo))
+    ) ||
+    null
+  );
+}
+
+const honmei =
+  findCoreEvaluation(oldMainSheet.honmei) ||
+  coreEvaluations[0] ||
+  null;
+
+const taikou =
+  findCoreEvaluation(oldMainSheet.taikou) ||
+  findUnusedEvaluation(honmei);
+
+const ana =
+  findCoreEvaluation(oldMainSheet.ana) ||
+  findUnusedEvaluation(honmei, taikou);
+
+const osae =
+  findCoreEvaluation(oldMainSheet.osae) ||
+  findUnusedEvaluation(honmei, taikou, ana);
 
 const compatibleMainSheet = {
   ...oldMainSheet,
