@@ -2260,60 +2260,70 @@ return {
     const rankedRows = evaluations
       .map(item => {
         const boatNo = Number(item.boatNo || 0);
-        const attack = Number(item.attack ?? 50);
-        const tenkai = Number(item.tenkai ?? 50);
-        const michu = Number(item.michu ?? 50);
-        const expected = Number(item.expected ?? 50);
-        const local = Number(item.local ?? 50);
-        const total = Number(item.total ?? 50);
-        const score = Number(item.score ?? 50);
 
-        let priority =
-          tenkai * 0.30 +
-          attack * 0.23 +
-          michu * 0.15 +
-          expected * 0.12 +
-          total * 0.08 +
-          local * 0.07 +
-          score * 0.05;
+const courseCandidate = toBoatNo(
+  item.course ?? boatNo
+);
 
-        let canHead = boatNo === 1 || boatNo === 2;
+const course =
+  courseCandidate >= 1 && courseCandidate <= 6
+    ? courseCandidate
+    : boatNo;
 
-        if (boatNo === 1) {
-          priority += insideRisk < 65 ? 8 : 2;
-        }
+const attack = Number(item.attack ?? 50);
+const tenkai = Number(item.tenkai ?? 50);
+const michu = Number(item.michu ?? 50);
+const expected = Number(item.expected ?? 50);
+const local = Number(item.local ?? 50);
+const total = Number(item.total ?? 50);
+const score = Number(item.score ?? 50);
 
-        if (boatNo === 2) {
-          priority += 4;
-        }
+let priority =
+  tenkai * 0.30 +
+  attack * 0.23 +
+  michu * 0.15 +
+  expected * 0.12 +
+  total * 0.08 +
+  local * 0.07 +
+  score * 0.05;
 
-        if (boatNo === 3) {
-          if (attack >= 70 && tenkai >= 60) {
-            priority += 4;
-            canHead = true;
-          }
-        }
+let canHead = course === 1 || course === 2;
 
-        if (boatNo === 4) {
-          if (attack >= 72 && tenkai >= 65) {
-            priority += 4;
-            canHead = true;
-          }
-        }
+if (course === 1) {
+  priority += insideRisk < 65 ? 8 : 2;
+}
 
-        if (boatNo >= 5) {
-          const outsideEvidence =
-            attack >= 75 &&
-            tenkai >= 75 &&
-            (michu >= 70 || expected >= 75);
+if (course === 2) {
+  priority += 4;
+}
 
-          if (outsideEvidence) {
-            priority += 3;
-            canHead = true;
-          } else {
-            priority -= 8;
-          }
-        }
+if (course === 3) {
+  if (attack >= 70 && tenkai >= 60) {
+    priority += 4;
+    canHead = true;
+  }
+}
+
+if (course === 4) {
+  if (attack >= 72 && tenkai >= 65) {
+    priority += 4;
+    canHead = true;
+  }
+}
+
+if (course >= 5) {
+  const outsideEvidence =
+    attack >= 75 &&
+    tenkai >= 75 &&
+    (michu >= 70 || expected >= 75);
+
+  if (outsideEvidence) {
+    priority += 3;
+    canHead = true;
+  } else {
+    priority -= 8;
+  }
+}
 
         if (boatNo === mainAttackBoatNo) {
           priority += 6;
