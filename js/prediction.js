@@ -2642,27 +2642,61 @@ if (
   }
 
   function createMainRole(params) {
-    const boatNo = params.boatNo;
-    const indexData = params.indexData || {};
-    const roles = [];
+  const boatNo = params.boatNo;
+  const indexData = params.indexData || {};
+  const roles = [];
 
-    if (indexData.attack >= 75) roles.push("🔥攻め艇");
-    if (indexData.tenkai >= 75) roles.push("🌊展開艇");
-    if (indexData.michu >= 75) roles.push("⚡道中艇");
-    if (indexData.local >= 75) roles.push("🏠当地巧者");
+  const courseCandidate = toBoatNo(
+    params.course ??
+    indexData.course ??
+    boatNo
+  );
 
-    if (boatNo === 1) roles.push("🛟イン残し");
-    if (boatNo === 2) roles.push("🛟差し残し");
-    if (boatNo >= 5) roles.push("💣外枠妙味");
+  const course =
+    courseCandidate >= 1 && courseCandidate <= 6
+      ? courseCandidate
+      : boatNo;
 
-    if (!roles.length) {
-      if (params.score >= 75) roles.push("⭐軸候補");
-      else if (params.score >= 65) roles.push("○相手候補");
-      else roles.push("△押さえ");
-    }
-
-    return uniqueList(roles).join(" / ");
+  if (indexData.attack >= 75) {
+    roles.push("🔥攻め艇");
   }
+
+  if (indexData.tenkai >= 75) {
+    roles.push("🌊展開艇");
+  }
+
+  if (indexData.michu >= 75) {
+    roles.push("⚡道中艇");
+  }
+
+  if (indexData.local >= 75) {
+    roles.push("🏠当地巧者");
+  }
+
+  if (course === 1) {
+    roles.push("🛟イン残し");
+  }
+
+  if (course === 2) {
+    roles.push("🛟差し残し");
+  }
+
+  if (course >= 5) {
+    roles.push("💣外コース妙味");
+  }
+
+  if (!roles.length) {
+    if (params.score >= 75) {
+      roles.push("⭐軸候補");
+    } else if (params.score >= 65) {
+      roles.push("○相手候補");
+    } else {
+      roles.push("△押さえ");
+    }
+  }
+
+  return uniqueList(roles).join(" / ");
+}
 
   function createMainEvaluationShortComment(params) {
     const boatNo = params.boatNo;
