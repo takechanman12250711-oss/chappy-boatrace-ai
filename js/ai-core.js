@@ -168,18 +168,151 @@ function getBoatNo(boat) {
   }
 
   function getRaceEntries(data) {
-    if (!data) return [];
+  if (!data) return [];
 
-    const entries =
-      data.entries ??
-      data.boats ??
-      data.racers ??
-      data.entry ??
-      data.raceEntries ??
-      [];
+  const entries =
+    data.entries ??
+    data.boats ??
+    data.racers ??
+    data.entry ??
+    data.raceEntries ??
+    [];
 
-    return Array.isArray(entries) ? entries : [];
+  if (!Array.isArray(entries)) {
+    return [];
   }
+
+  const beforeInfo =
+    data.beforeInfo ??
+    data.before ??
+    data.exhibitionInfo ??
+    [];
+
+  const startExhibition =
+    data.startExhibition ??
+    data.startInfo ??
+    [];
+
+  function getItemBoatNo(item, fallback = 0) {
+    if (!item || typeof item !== "object") {
+      return fallback;
+    }
+
+    const candidates = [
+      item.boatNo,
+      item.boat,
+      item.waku,
+      item.course,
+      item.cource,
+      item.lane,
+      item.frame,
+      item.number,
+      item.teiban
+    ];
+
+    for (const value of candidates) {
+      const text = String(value ?? "");
+      const match = text.match(/[1-6]/);
+
+      if (match) {
+        return Number(match[0]);
+      }
+    }
+
+    return fallback;
+  }
+
+  return entries.map((entry, index) => {
+    const boatNo =
+      getBoatNo(entry) ||
+      getItemBoatNo(entry, index + 1);
+
+    const before = Array.isArray(beforeInfo)
+      ? beforeInfo.find(
+          (item, itemIndex) =>
+            getItemBoatNo(item, itemIndex + 1) === boatNo
+        )
+      : null;
+
+    const start = Array.isArray(startExhibition)
+      ? startExhibition.find(
+          (item, itemIndex) =>
+            getItemBoatNo(item, itemIndex + 1) === boatNo
+        )
+      : null;
+
+    const exhibitionTime =
+      before?.exhibitionTime ??
+      before?.displayTime ??
+      before?.tenjiTime ??
+      before?.exhibition?.displayTime ??
+      before?.exhibition?.time ??
+      entry.exhibitionTime ??
+      entry.displayTime ??
+      entry.tenjiTime ??
+      entry.exhibition?.displayTime ??
+      entry.exhibition?.time;
+
+    const exhibitionSt =
+      before?.exhibitionSt ??
+      before?.exhibitionST ??
+      before?.displaySt ??
+      before?.displayST ??
+      before?.st ??
+      before?.exhibition?.st ??
+      start?.st ??
+      start?.startTime ??
+      entry.exhibitionSt ??
+      entry.exhibitionST ??
+      entry.displaySt ??
+      entry.displayST ??
+      entry.exhibition?.st;
+
+    const lapTime =
+      before?.lapTime ??
+      before?.oneLapTime ??
+      before?.roundTime ??
+      before?.exhibition?.lapTime ??
+      before?.exhibition?.oneLapTime ??
+      entry.lapTime ??
+      entry.oneLapTime ??
+      entry.roundTime ??
+      entry.exhibition?.lapTime;
+
+    return {
+      ...entry,
+
+      boatNo,
+
+      exhibitionTime,
+      tenjiTime: exhibitionTime,
+      displayTime: exhibitionTime,
+
+      exhibitionSt,
+      exhibitionST: exhibitionSt,
+      tenjiSt: exhibitionSt,
+      displaySt: exhibitionSt,
+
+      lapTime,
+      oneLapTime: lapTime,
+
+      tilt:
+        before?.tilt ??
+        before?.exhibition?.tilt ??
+        entry.tilt ??
+        entry.exhibition?.tilt,
+
+      partsExchange:
+        before?.partsExchange ??
+        before?.parts ??
+        before?.exhibition?.partsExchange ??
+        entry.partsExchange,
+
+      beforeInfo: before || null,
+      startExhibition: start || null
+    };
+  });
+}
 
   function getVenueName(data) {
     return safeText(
