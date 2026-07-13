@@ -1838,49 +1838,78 @@ return {
 }
 
   function selectDangerBoats(scores, context) {
-    return [...scores]
-      .map(item => {
-        let score = 40;
-        const reasons = [];
+  return [...scores]
+    .map(item => {
+      let score = 40;
+      const reasons = [];
 
-        if (item.boatNo === 1) {
-          score += 18;
-          reasons.push("攻めを受ける側");
-        }
+      const boatNo = toBoatNo(
+        item.boatNo
+      );
 
-        if (item.boatNo === 2) {
-          score += 10;
-          reasons.push("3コース攻めを受ける位置");
-        }
+      const courseCandidate = toBoatNo(
+        item.course ??
+        boatNo
+      );
 
-        if (item.boatNo === 4) {
-          score += 8;
-          reasons.push("3が攻めると攻め場が狭くなる");
-        }
+      const course =
+        courseCandidate >= 1 &&
+        courseCandidate <= 6
+          ? courseCandidate
+          : boatNo;
 
-        if (item.attack < 55) {
-          score += 8;
-          reasons.push("攻め指数控えめ");
-        }
+      if (course === 1) {
+        score += 18;
+        reasons.push("攻めを受ける側");
+      }
 
-        if (item.total < 58) {
-          score += 6;
-          reasons.push("総合指数控えめ");
-        }
+      if (course === 2) {
+        score += 10;
+        reasons.push(
+          "3コース攻めを受ける位置"
+        );
+      }
 
-        if (context.weather?.insideRisk >= 65 && item.boatNo <= 2) {
-          score += 8;
-          reasons.push("風波で内リスク");
-        }
+      if (course === 4) {
+        score += 8;
+        reasons.push(
+          "3コース艇が攻めると攻め場が狭くなる"
+        );
+      }
 
-        return {
-          ...item,
-          flowScore: clampScore(score),
-          flowReason: reasons.length ? reasons.join(" / ") : "展開を受けた時のリスク"
-        };
-      })
-      .sort((a, b) => b.flowScore - a.flowScore);
-  }
+      if (item.attack < 55) {
+        score += 8;
+        reasons.push("攻め指数控えめ");
+      }
+
+      if (item.total < 58) {
+        score += 6;
+        reasons.push("総合指数控えめ");
+      }
+
+      if (
+        context.weather?.insideRisk >= 65 &&
+        course <= 2
+      ) {
+        score += 8;
+        reasons.push("風波で内リスク");
+      }
+
+      return {
+        ...item,
+        course,
+        flowScore: clampScore(score),
+        flowReason:
+          reasons.length
+            ? reasons.join(" / ")
+            : "展開を受けた時のリスク"
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.flowScore - a.flowScore
+    );
+}
 
   function selectPickupBoats(scores, context) {
     return [...scores]
