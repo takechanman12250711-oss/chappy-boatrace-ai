@@ -3454,65 +3454,157 @@ if (boatNo === 0) {
     最終コメント生成
   =============================== */
 
-  function createFinalComment(race, context) {
-    const mainSheet = context.mainSheet || {};
-    const manshuSheet = context.manshuSheet || {};
-    const formation = context.formation || {};
-    const raceFlow = context.raceFlow || {};
-    const venue = context.venue || {};
-    const weather = context.weather || {};
-    const newEngine = context.newEngine || {};
-    const exhibition = context.exhibition || {};
+    function createFinalComment(race, context) {
+    const safeContext = context || {};
 
-    const honmei = mainSheet.honmei;
-    const taikou = mainSheet.taikou;
-    const ana = mainSheet.ana;
-    const osae = mainSheet.osae;
+    const mainSheet = safeContext.mainSheet || {};
+    const manshuSheet = safeContext.manshuSheet || {};
+    const formation = safeContext.formation || {};
+    const raceFlow = safeContext.raceFlow || {};
+    const venue = safeContext.venue || {};
+    const weather = safeContext.weather || {};
+    const newEngine = safeContext.newEngine || {};
+
+    const honmei = mainSheet.honmei || null;
+    const taikou = mainSheet.taikou || null;
+    const ana = mainSheet.ana || null;
+    const osae = mainSheet.osae || null;
 
     const lines = [];
 
-    if (honmei) {
-      lines.push(`本命は${honmei.boatNo}号艇。総合${honmei.score}点で中心評価。`);
+    function getScenarioLabel(item) {
+      const boatNo = Number(item?.boatNo || 0);
+
+      if (boatNo === 1) {
+        return "イン逃げ・先マイ・残し";
+      }
+
+      if (boatNo === 2) {
+        return "2コース差し・残し";
+      }
+
+      if (boatNo === 3) {
+        return "3コースからの攻め";
+      }
+
+      if (boatNo === 4) {
+        return "カド攻め・展開突き";
+      }
+
+      if (boatNo === 5) {
+        return "まくり差し・展開拾い";
+      }
+
+      if (boatNo === 6) {
+        return "最内差し・道中拾い";
+      }
+
+      return "展開対応";
     }
 
-    if (taikou) {
-      lines.push(`対抗は${taikou.boatNo}号艇。${taikou.role || "相手本線"}として評価。`);
+    function getIndexText(item) {
+      const values = [];
+
+      const score = Number(item?.score);
+      const attack = Number(item?.attack);
+      const tenkai = Number(item?.tenkai);
+      const michu = Number(item?.michu);
+
+      if (Number.isFinite(score)) {
+        values.push(`AI${Math.round(score)}`);
+      }
+
+      if (Number.isFinite(attack)) {
+        values.push(`攻め${Math.round(attack)}`);
+      }
+
+      if (Number.isFinite(tenkai)) {
+        values.push(`展開${Math.round(tenkai)}`);
+      }
+
+      if (Number.isFinite(michu)) {
+        values.push(`道中${Math.round(michu)}`);
+      }
+
+      return values.join("・");
     }
 
-    if (ana) {
-      lines.push(`穴は${ana.boatNo}号艇。攻め・期待値・展開ズレを拾う。`);
+    function addBoatLine(label, item) {
+      if (!item) return;
+
+      const boatNo = Number(item.boatNo || 0);
+      const scenario = getScenarioLabel(item);
+      const indexes = getIndexText(item);
+
+      if (indexes) {
+        lines.push(
+          `${label}は${boatNo}号艇。` +
+          `${scenario}を軸に、${indexes}で評価`
+        );
+      } else {
+        lines.push(
+          `${label}は${boatNo}号艇。${scenario}で評価`
+        );
+      }
     }
 
-    if (osae) {
-      lines.push(`押さえは${osae.boatNo}号艇。道中・残し・当地適性で残す。`);
+    const attackBoatNo = Number(
+      raceFlow.attackBoats?.[0]?.boatNo || 0
+    );
+
+    if (attackBoatNo === 1) {
+      if (Number(honmei?.boatNo) >= 4) {
+        lines.push(
+          `展開は1号艇の先マイを基準に、` +
+          `${honmei.boatNo}号艇の外からの展開対応を上位評価`
+        );
+      } else {
+        lines.push(
+          "展開は1号艇の先マイとイン残しを中心に判断"
+        );
+      }
+    } else if (attackBoatNo === 2) {
+      lines.push(
+        "展開は2号艇の差しと1号艇の残しを中心に判断"
+      );
+    } else if (attackBoatNo === 3) {
+      lines.push(
+        "展開は3号艇の攻めを基準に、1・2号艇の残しと5号艇の展開拾いを評価"
+      );
+    } else if (attackBoatNo === 4) {
+      lines.push(
+        "展開は4号艇のカド攻めを基準に、5・6号艇の展開拾いを評価"
+      );
+    } else if (attackBoatNo === 5) {
+      lines.push(
+        "展開は5号艇のまくり差しと、内側艇の残りを中心に判断"
+      );
+    } else if (attackBoatNo === 6) {
+      lines.push(
+        "展開は6号艇の最内差し・道中拾いと、内側艇の残りを中心に判断"
+      );
+    } else if (honmei) {
+      lines.push(
+        `展開は${honmei.boatNo}号艇の` +
+        `${getScenarioLabel(honmei)}を中心に判断`
+      );
     }
 
-    if (raceFlow?.summary) {
-      lines.push(`展開は「${raceFlow.summary}」`);
+    addBoatLine("本命", honmei);
+    addBoatLine("対抗", taikou);
+    addBoatLine("穴", ana);
+    addBoatLine("押さえ", osae);
+
+    if (newEngine?.updated && newEngine?.rule) {
+      lines.push(
+        String(newEngine.rule).replace(/[。]+$/, "")
+      );
     }
 
-    if (exhibition?.comment) {
-      lines.push(exhibition.comment);
-    }
-
-    if (weather?.comment) {
-      lines.push(weather.comment);
-    }
-
-    if (venue?.memo) {
-      lines.push(`${venue.name || race.stadiumName}の場傾向：${venue.memo}`);
-    }
-
-    if (newEngine?.updated) {
-      lines.push(newEngine.rule);
-    }
-
-    if (formation?.summary) {
-      lines.push(formation.summary);
-    }
-
-    if (manshuSheet?.reason) {
-      lines.push(`万舟側は${manshuSheet.reason}`);
+    if (!lines.length) {
+      lines.push(
+        "展開・コース・ST・展示を優先して予想を組み立てる"
+      );
     }
 
     return {
@@ -3524,7 +3616,9 @@ if (boatNo === 0) {
         weather,
         newEngine
       }),
-      comment: lines.join(" "),
+
+      comment: `${lines.join("。")}。`,
+
       buyLevel: createBuyLevel({
         honmei,
         taikou,
@@ -3532,12 +3626,17 @@ if (boatNo === 0) {
         osae,
         weather
       }),
+
       memo: createFinalMemo({
         venue,
         weather,
         newEngine,
         raceFlow
-      })
+      }),
+
+      formation,
+      manshuSheet,
+      race
     };
   }
 
