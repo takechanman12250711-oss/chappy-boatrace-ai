@@ -1948,26 +1948,70 @@ return {
   }
 
   function createAttackFlowReason(item, context) {
-    const reasons = [];
+  const reasons = [];
 
-    if (item.attack >= 75) reasons.push("攻め指数上位");
-    if (item.boatNo === 2) reasons.push("2コース差し");
-    if (item.boatNo === 3) reasons.push("3コース攻め");
-    if (item.boatNo === 4) reasons.push("カド攻め");
-    if (item.boatNo >= 5) reasons.push("外から展開突き");
+  const boatNo = toBoatNo(
+    item?.boatNo
+  );
 
-    if (context.exhibition?.topST?.boatNo === item.boatNo) {
-      reasons.push("展示ST1位");
-    }
+  const courseCandidate = toBoatNo(
+    item?.course ??
+    boatNo
+  );
 
-    if (context.exhibition?.topExhibition?.boatNo === item.boatNo) {
-      reasons.push("展示タイム1位");
-    }
+  const course =
+    courseCandidate >= 1 &&
+    courseCandidate <= 6
+      ? courseCandidate
+      : boatNo;
 
-    if (!reasons.length) reasons.push(item.shortComment || "攻め候補");
-
-    return reasons.join(" / ");
+  if (item.attack >= 75) {
+    reasons.push("攻め指数上位");
   }
+
+  if (course === 1) {
+    reasons.push("イン先マイ");
+  }
+
+  if (course === 2) {
+    reasons.push("2コース差し");
+  }
+
+  if (course === 3) {
+    reasons.push("3コース攻め");
+  }
+
+  if (course === 4) {
+    reasons.push("カド攻め");
+  }
+
+  if (course >= 5) {
+    reasons.push("外コースから展開突き");
+  }
+
+  if (
+    context.exhibition?.topST?.boatNo ===
+    boatNo
+  ) {
+    reasons.push("展示ST1位");
+  }
+
+  if (
+    context.exhibition?.topExhibition?.boatNo ===
+    boatNo
+  ) {
+    reasons.push("展示タイム1位");
+  }
+
+  if (!reasons.length) {
+    reasons.push(
+      item.shortComment ||
+      "攻め候補"
+    );
+  }
+
+  return reasons.join(" / ");
+}
 
   function toFlowBoat(item) {
   const boatNo = toBoatNo(
