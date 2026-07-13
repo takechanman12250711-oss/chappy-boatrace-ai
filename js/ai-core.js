@@ -2530,27 +2530,50 @@ function buildRaceScenarios(analyses, data) {
   }
 
   let threeAttackScore =
-    venue.makuri * 0.20 +
-    flow(3) * 0.30 +
-    attack(3) * 0.25 +
-    st(3) * 0.12 +
-    exhibition(3) * 0.08 +
-    total(3) * 0.05;
+  venue.makuri * 0.20 +
+  flow(3) * 0.30 +
+  attack(3) * 0.25 +
+  st(3) * 0.12 +
+  exhibition(3) * 0.08 +
+  total(3) * 0.05;
 
-  if (hasComparison(3, 2)) {
-    if (threeVsTwo >= 10) {
-      threeAttackScore += 18;
-    } else if (threeVsTwo >= 6) {
-      threeAttackScore += 11;
-    } else if (threeVsTwo <= -8) {
-      threeAttackScore -= 12;
-    }
-  } else {
-    /*
-      隣艇比較がない時は3攻めを断定しない。
-    */
-    threeAttackScore -= 15;
+const threeVsOne =
+  relationEdge(3, 1);
+
+/*
+  3攻めの入口は、まず2号艇との比較で判定する。
+*/
+if (hasComparison(3, 2)) {
+  if (threeVsTwo >= 10) {
+    threeAttackScore += 18;
+  } else if (threeVsTwo >= 6) {
+    threeAttackScore += 11;
+  } else if (threeVsTwo <= -8) {
+    threeAttackScore -= 12;
   }
+} else {
+  /*
+    2号艇との比較データがない時は、
+    3攻めを強く断定しない。
+  */
+  threeAttackScore -= 15;
+}
+
+/*
+  3が2より速くても、1が3より明確に速い場合は
+  1号艇を潰す攻めにはなりにくい。
+
+  3対2だけで3攻めを最有力にしない。
+*/
+if (hasComparison(3, 1)) {
+  if (threeVsOne <= -10) {
+    threeAttackScore -= 14;
+  } else if (threeVsOne <= -6) {
+    threeAttackScore -= 9;
+  } else if (threeVsOne >= 6) {
+    threeAttackScore += 4;
+  }
+}
 
   let fourAttackScore =
     venue.kado * 0.22 +
