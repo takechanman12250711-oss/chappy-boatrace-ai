@@ -1935,14 +1935,35 @@ return {
   }
 
   function toFlowBoat(item) {
-    return {
-      boatNo: item.boatNo,
-      label: item.name,
-      name: item.name,
-      score: item.flowScore ?? item.total ?? "-",
-      reason: item.flowReason || item.shortComment || "展開候補"
-    };
-  }
+  const boatNo = toBoatNo(
+    item?.boatNo
+  );
+
+  const courseCandidate = toBoatNo(
+    item?.course ??
+    boatNo
+  );
+
+  const course =
+    courseCandidate >= 1 && courseCandidate <= 6
+      ? courseCandidate
+      : boatNo;
+
+  return {
+    boatNo,
+    course,
+    label: item?.name || "",
+    name: item?.name || "",
+    score:
+      item?.flowScore ??
+      item?.total ??
+      "-",
+    reason:
+      item?.flowReason ||
+      item?.shortComment ||
+      "展開候補"
+  };
+}
 
   function createStartPhase(race, context, scores) {
     const stSorted = [...scores]
