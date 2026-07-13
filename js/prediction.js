@@ -2254,51 +2254,104 @@ return {
   }
 
   function createFirstMarkPhase(race, context, flow) {
-    const mainAttack = flow.attackBoats[0] || null;
-    const secondAttack = flow.attackBoats[1] || null;
-    const mainHold = flow.holdBoats[0] || null;
-    const mainDanger = flow.dangerBoats[0] || null;
+  const mainAttack =
+    flow.attackBoats[0] || null;
 
-    let pattern = "standard";
-    let comment = "1マークは内の残しとセンター攻めの比較。";
+  const secondAttack =
+    flow.attackBoats[1] || null;
 
-    if (mainAttack) {
-      if (mainAttack.boatNo === 1) {
-        pattern = "escape";
-        comment = `1マークは${mainAttack.boatNo}号艇の逃げが基本線。相手は差し残し・外の拾い。`;
-      } else if (mainAttack.boatNo === 2) {
-        pattern = "sashi";
-        comment = `2コース差しが展開の入口。1が残すか、2が差し届くかを見る。`;
-      } else if (mainAttack.boatNo === 3) {
-        pattern = "center_attack";
-        comment = `3コース攻めが入口。1・2が受ける形になり、4は攻め場が狭くなる可能性。`;
-      } else if (mainAttack.boatNo === 4) {
-        pattern = "kado";
-        comment = `4カド攻めが入口。内が流れれば外のまくり差し・拾いが浮上。`;
-      } else {
-        pattern = "outside";
-        comment = `${mainAttack.boatNo}号艇は外から展開突き。頭より2・3着の拾いを厚めに見る。`;
-      }
+  const mainHold =
+    flow.holdBoats[0] || null;
+
+  const mainDanger =
+    flow.dangerBoats[0] || null;
+
+  let pattern = "standard";
+  let comment =
+    "1マークは内の残しとセンター攻めの比較。";
+
+  const attackBoatNo = toBoatNo(
+    mainAttack?.boatNo
+  );
+
+  const attackCourseCandidate = toBoatNo(
+    mainAttack?.course ??
+    attackBoatNo
+  );
+
+  const attackCourse =
+    attackCourseCandidate >= 1 &&
+    attackCourseCandidate <= 6
+      ? attackCourseCandidate
+      : attackBoatNo;
+
+  if (mainAttack) {
+    if (attackCourse === 1) {
+      pattern = "escape";
+      comment =
+        `1マークは${attackBoatNo}号艇の` +
+        `イン逃げが基本線。` +
+        `相手は差し残し・外の拾い。`;
+    } else if (attackCourse === 2) {
+      pattern = "sashi";
+      comment =
+        `${attackBoatNo}号艇の2コース差しが展開の入口。` +
+        `インが残すか、差しが届くかを見る。`;
+    } else if (attackCourse === 3) {
+      pattern = "center_attack";
+      comment =
+        `${attackBoatNo}号艇の3コース攻めが入口。` +
+        `内の1・2コース艇が受ける形になり、` +
+        `4コース艇は攻め場が狭くなる可能性。`;
+    } else if (attackCourse === 4) {
+      pattern = "kado";
+      comment =
+        `${attackBoatNo}号艇の4カド攻めが入口。` +
+        `内が流れれば外のまくり差し・拾いが浮上。`;
+    } else {
+      pattern = "outside";
+      comment =
+        `${attackBoatNo}号艇は${attackCourse}コースから` +
+        `展開突き。頭と2・3着の両方で評価。`;
     }
-
-    if (context.weather?.insideRisk >= 68 && mainAttack?.boatNo !== 1) {
-      comment += " 風波で内が流れるリスクも加味。";
-    }
-
-    if (mainDanger) {
-      comment += ` 飛ぶ・流れる候補は${mainDanger.boatNo}号艇。`;
-    }
-
-    return {
-      title: "1マーク",
-      pattern,
-      mainAttack: mainAttack ? toFlowBoat(mainAttack) : null,
-      secondAttack: secondAttack ? toFlowBoat(secondAttack) : null,
-      mainHold: mainHold ? toFlowBoat(mainHold) : null,
-      mainDanger: mainDanger ? toFlowBoat(mainDanger) : null,
-      comment
-    };
   }
+
+  if (
+    context.weather?.insideRisk >= 68 &&
+    attackCourse !== 1
+  ) {
+    comment +=
+      " 風波で内が流れるリスクも加味。";
+  }
+
+  if (mainDanger) {
+    comment +=
+      ` 飛ぶ・流れる候補は` +
+      `${mainDanger.boatNo}号艇。`;
+  }
+
+  return {
+    title: "1マーク",
+    pattern,
+    mainAttack:
+      mainAttack
+        ? toFlowBoat(mainAttack)
+        : null,
+    secondAttack:
+      secondAttack
+        ? toFlowBoat(secondAttack)
+        : null,
+    mainHold:
+      mainHold
+        ? toFlowBoat(mainHold)
+        : null,
+    mainDanger:
+      mainDanger
+        ? toFlowBoat(mainDanger)
+        : null,
+    comment
+  };
+}
 
   function createBackPhase(race, context, flow) {
     const hold = flow.holdBoats[0] || null;
