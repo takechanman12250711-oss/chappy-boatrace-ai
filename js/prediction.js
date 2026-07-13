@@ -2745,7 +2745,18 @@ if (
     if (!Array.isArray(sorted) || !sorted.length) return null;
 
     const candidate = [...sorted]
-      .filter(item => item.expected >= 65 || item.attack >= 70 || item.boatNo >= 4)
+      .filter(item => {
+  const course = toBoatNo(
+    item.course ??
+    item.boatNo
+  );
+
+  return (
+    item.expected >= 65 ||
+    item.attack >= 70 ||
+    course >= 4
+  );
+})
       .filter(item => item.boatNo !== sorted[0]?.boatNo)
       .filter(item => item.boatNo !== sorted[1]?.boatNo)
       .sort((a, b) => {
