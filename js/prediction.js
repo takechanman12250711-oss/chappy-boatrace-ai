@@ -4015,47 +4015,86 @@ if (
       }
     }
 
-    const attackBoatNo = Number(
-      raceFlow.attackBoats?.[0]?.boatNo || 0
-    );
+    const attackBoat =
+  raceFlow.attackBoats?.[0] || null;
 
-    if (attackBoatNo === 1) {
-      if (Number(honmei?.boatNo) >= 4) {
-        lines.push(
-          `展開は1号艇の先マイを基準に、` +
-          `${honmei.boatNo}号艇の外からの展開対応を上位評価`
-        );
-      } else {
-        lines.push(
-          "展開は1号艇の先マイとイン残しを中心に判断"
-        );
-      }
-    } else if (attackBoatNo === 2) {
-      lines.push(
-        "展開は2号艇の差しと1号艇の残しを中心に判断"
-      );
-    } else if (attackBoatNo === 3) {
-      lines.push(
-        "展開は3号艇の攻めを基準に、1・2号艇の残しと5号艇の展開拾いを評価"
-      );
-    } else if (attackBoatNo === 4) {
-      lines.push(
-        "展開は4号艇のカド攻めを基準に、5・6号艇の展開拾いを評価"
-      );
-    } else if (attackBoatNo === 5) {
-      lines.push(
-        "展開は5号艇のまくり差しと、内側艇の残りを中心に判断"
-      );
-    } else if (attackBoatNo === 6) {
-      lines.push(
-        "展開は6号艇の最内差し・道中拾いと、内側艇の残りを中心に判断"
-      );
-    } else if (honmei) {
-      lines.push(
-        `展開は${honmei.boatNo}号艇の` +
-        `${getScenarioLabel(honmei)}を中心に判断`
-      );
-    }
+const attackBoatNo = toBoatNo(
+  attackBoat?.boatNo
+);
+
+const attackCourseCandidate = toBoatNo(
+  attackBoat?.course ??
+  attackBoatNo
+);
+
+const attackCourse =
+  attackCourseCandidate >= 1 &&
+  attackCourseCandidate <= 6
+    ? attackCourseCandidate
+    : attackBoatNo;
+
+const honmeiBoatNo = toBoatNo(
+  honmei?.boatNo
+);
+
+const honmeiCourseCandidate = toBoatNo(
+  honmei?.course ??
+  honmeiBoatNo
+);
+
+const honmeiCourse =
+  honmeiCourseCandidate >= 1 &&
+  honmeiCourseCandidate <= 6
+    ? honmeiCourseCandidate
+    : honmeiBoatNo;
+
+if (attackCourse === 1) {
+  if (
+    honmei &&
+    honmeiBoatNo !== attackBoatNo &&
+    honmeiCourse >= 4
+  ) {
+    lines.push(
+      `展開は${attackBoatNo}号艇のイン先マイを基準に、` +
+      `${honmeiBoatNo}号艇の外からの展開対応を上位評価`
+    );
+  } else {
+    lines.push(
+      `展開は${attackBoatNo}号艇の` +
+      `イン先マイと残しを中心に判断`
+    );
+  }
+} else if (attackCourse === 2) {
+  lines.push(
+    `展開は${attackBoatNo}号艇の2コース差しと、` +
+    `イン艇の残しを中心に判断`
+  );
+} else if (attackCourse === 3) {
+  lines.push(
+    `展開は${attackBoatNo}号艇の3コース攻めを基準に、` +
+    `内側艇の残しと外コース艇の展開拾いを評価`
+  );
+} else if (attackCourse === 4) {
+  lines.push(
+    `展開は${attackBoatNo}号艇の4カド攻めを基準に、` +
+    `外コース艇の展開拾いを評価`
+  );
+} else if (attackCourse === 5) {
+  lines.push(
+    `展開は${attackBoatNo}号艇の5コースからの` +
+    `まくり差しと、内側艇の残りを中心に判断`
+  );
+} else if (attackCourse === 6) {
+  lines.push(
+    `展開は${attackBoatNo}号艇の6コースからの` +
+    `最内差し・道中拾いと、内側艇の残りを中心に判断`
+  );
+} else if (honmei) {
+  lines.push(
+    `展開は${honmeiBoatNo}号艇の` +
+    `${getScenarioLabel(honmei)}を中心に判断`
+  );
+}
 
     addBoatLine("本命", honmei);
     addBoatLine("対抗", taikou);
