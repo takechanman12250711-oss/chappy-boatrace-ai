@@ -42,7 +42,6 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ script.js 読み込みOK");
-
     setDefaultDate();
 
     const fetchBtn = document.getElementById("fetchRaceBtn");
