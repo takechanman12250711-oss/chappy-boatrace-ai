@@ -2195,7 +2195,14 @@ return {
   }
 
   function createSlitPhase(race, context, scores) {
-    const exhibitionList = context.exhibition?.list || [];
+    const exhibitionList = [
+  ...(context.exhibition?.list || [])
+].sort((a, b) => {
+  const courseA = Number(a.course || a.boatNo);
+  const courseB = Number(b.course || b.boatNo);
+
+  return courseA - courseB;
+});
 
     const stList = exhibitionList
       .filter(item => item.exhibitionSTNumber !== null)
