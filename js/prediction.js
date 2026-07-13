@@ -768,7 +768,13 @@ if (boatNo === 0) {
     return {
       ...current,
       results: current.results || current.result || current.着順 || [],
-      st: current.st || current.ST || current.startTiming || current.スタート || [],
+      st:
+  current.stList ||
+  current.st ||
+  current.ST ||
+  current.startTiming ||
+  current.スタート ||
+  [],
       text: current.text || ""
     };
   }
