@@ -2776,22 +2776,21 @@ if (
     ].filter(Boolean));
 
     const holdCandidate = [...sorted]
-      .filter(item => !used.has(item.boatNo))
-      .filter(item => {
-        .filter(item => {
-  const course = toBoatNo(
-    item.course ??
-    item.boatNo
-  );
+  .filter(item => !used.has(item.boatNo))
+  .filter(item => {
+    const course = toBoatNo(
+      item.course ??
+      item.boatNo
+    );
 
-  if (course === 2) return true;
-  if (course === 4) return true;
-  if (item.michu >= 68) return true;
-  if (item.local >= 68) return true;
-  if (item.total >= 60) return true;
+    if (course === 2) return true;
+    if (course === 4) return true;
+    if (item.michu >= 68) return true;
+    if (item.local >= 68) return true;
+    if (item.total >= 60) return true;
 
-  return false;
-})
+    return false;
+  })[0];
 
     return holdCandidate || sorted.find(item => !used.has(item.boatNo)) || sorted[3] || null;
   }
