@@ -1819,17 +1819,23 @@ currentSTCount: currentSTValues.length,
   }
 
   function selectAttackBoats(scores, context) {
+  const exhibitionList = [
+    ...(context.exhibition?.list || [])
+  ].sort((a, b) => {
+    const courseA = Number(a.course || a.boatNo);
+    const courseB = Number(b.course || b.boatNo);
+
+    return courseA - courseB;
+  });
+
   return [...scores]
     .map(item => {
       let score = item.attack;
 
-      const boatNo = toBoatNo(
-        item.boatNo
-      );
+      const boatNo = toBoatNo(item.boatNo);
 
       const courseCandidate = toBoatNo(
-        item.course ??
-        boatNo
+        item.course ?? boatNo
       );
 
       const course =
@@ -1837,6 +1843,38 @@ currentSTCount: currentSTValues.length,
         courseCandidate <= 6
           ? courseCandidate
           : boatNo;
+
+      const currentIndex = exhibitionList.findIndex(
+        exhibitionItem =>
+          toBoatNo(exhibitionItem.boatNo) === boatNo
+      );
+
+      const currentExhibition =
+        currentIndex >= 0
+          ? exhibitionList[currentIndex]
+          : null;
+
+      const currentST = toSTNumber(
+        currentExhibition?.exhibitionSTNumber
+      );
+
+      const neighborSTValues = [
+        exhibitionList[currentIndex - 1]?.exhibitionSTNumber,
+        exhibitionList[currentIndex + 1]?.exhibitionSTNumber
+      ]
+        .map(value => toSTNumber(value))
+        .filter(value => value !== null);
+
+      const slitDiff =
+        currentST !== null && neighborSTValues.length
+          ? Math.max(
+              ...neighborSTValues.map(
+                neighborST => neighborST - currentST
+              )
+            )
+          : 0;
+
+      const hasSlitAlert = slitDiff >= 0.1;
 
       if (
         course === 2 &&
@@ -1859,18 +1897,39 @@ currentSTCount: currentSTValues.length,
         score += 4;
       }
 
+      if (hasSlitAlert) {
+        score +=
+          12 +
+          Math.min(
+            6,
+            Math.round((slitDiff - 0.1) * 50)
+          );
+      }
+
+      const flowReasons = [
+        createAttackFlowReason(
+          {
+            ...item,
+            course
+          },
+          context
+        )
+      ];
+
+      if (hasSlitAlert) {
+        flowReasons.push(
+          `スリットアラート 隣艇より${slitDiff.toFixed(2)}速い`
+        );
+      }
+
       return {
         ...item,
         course,
+        slitAlert: hasSlitAlert,
+        slitDiff:
+          Math.round(slitDiff * 100) / 100,
         flowScore: clampScore(score),
-        flowReason:
-          createAttackFlowReason(
-            {
-              ...item,
-              course
-            },
-            context
-          )
+        flowReason: flowReasons.join(" / ")
       };
     })
     .sort(
