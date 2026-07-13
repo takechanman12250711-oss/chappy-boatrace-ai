@@ -2329,22 +2329,36 @@ if (course >= 5) {
           priority += 6;
         }
 
-        if (mainAttackBoatNo === 3) {
-          if (boatNo === 4) {
-            priority -= 4;
-          }
+        const mainAttack =
+  safeContext.raceFlow?.attackBoats?.[0];
 
-          if ([1, 2, 5].includes(boatNo)) {
-            priority += 3;
-          }
-        }
+const mainAttackCourseCandidate = toBoatNo(
+  mainAttack?.course ??
+  mainAttack?.boatNo
+);
 
-        if (
-          mainAttackBoatNo === 4 &&
-          [5, 6].includes(boatNo)
-        ) {
-          priority += 4;
-        }
+const mainAttackCourse =
+  mainAttackCourseCandidate >= 1 &&
+  mainAttackCourseCandidate <= 6
+    ? mainAttackCourseCandidate
+    : 0;
+
+if (mainAttackCourse === 3) {
+  if (course === 4) {
+    priority -= 4;
+  }
+
+  if ([1, 2, 5].includes(course)) {
+    priority += 3;
+  }
+}
+
+if (
+  mainAttackCourse === 4 &&
+  [5, 6].includes(course)
+) {
+  priority += 4;
+}
 
         return {
           item,
