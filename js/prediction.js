@@ -2204,64 +2204,107 @@ return {
   }
 
   function createRaceScenario(params) {
-    const mainAttack = params.mainAttack;
-    const mainPickup = params.mainPickup;
-    const mainHold = params.mainHold;
-    const venue = params.context.venue;
-    const weather = params.context.weather;
+  const mainAttack = params.mainAttack;
+  const mainPickup = params.mainPickup;
+  const mainHold = params.mainHold;
+  const venue = params.context.venue;
+  const weather = params.context.weather;
 
-    if (!mainAttack) {
-      return {
-        title: "AI展開シミュレーション",
-        summary: "攻め艇・残し艇・拾い艇を分けて評価。"
-      };
-    }
+  if (!mainAttack) {
+    return {
+      title: "AI展開シミュレーション",
+      summary:
+        "攻め艇・残し艇・拾い艇を分けて評価。"
+    };
+  }
 
-    if (mainAttack.boatNo === 1 && venue?.inPower >= 70 && weather?.insideRisk < 65) {
-      return {
-        title: "イン逃げ本線",
-        summary: `基本は1号艇の逃げ。相手は${mainHold?.boatNo || 2}号艇の残し、${mainPickup?.boatNo || 3}号艇の拾い。`
-      };
-    }
+  const attackBoatNo = toBoatNo(
+    mainAttack.boatNo
+  );
 
-    if (mainAttack.boatNo === 2) {
-      return {
-        title: "2コース差し本線",
-        summary: `2号艇の差しが展開の入口。1号艇の残しと、${mainPickup?.boatNo || 3}号艇の2・3着拾いを重視。`
-      };
-    }
+  const attackCourseCandidate = toBoatNo(
+    mainAttack.course ??
+    attackBoatNo
+  );
 
-    if (mainAttack.boatNo === 3) {
-      return {
-        title: "3コース攻め警戒",
-        summary: `3号艇が攻める展開。1・2の残し、外の${mainPickup?.boatNo || 5}号艇の拾いまで見る。`
-      };
-    }
+  const attackCourse =
+    attackCourseCandidate >= 1 &&
+    attackCourseCandidate <= 6
+      ? attackCourseCandidate
+      : attackBoatNo;
 
-    if (mainAttack.boatNo === 4) {
-      return {
-        title: "4カド攻め警戒",
-        summary: `4号艇の攻めが入口。内が流れた時は${mainPickup?.boatNo || 5}号艇のまくり差し・拾いが浮上。`
-      };
-    }
+  const holdBoatNo =
+    toBoatNo(mainHold?.boatNo) || 1;
 
-    if (mainAttack.boatNo === 1) {
+  const pickupBoatNo =
+    toBoatNo(mainPickup?.boatNo) || 5;
+
+  const insideRisk = Number(
+    weather?.insideRisk ?? 0
+  );
+
+  if (
+    attackCourse === 1 &&
+    venue?.inPower >= 70 &&
+    insideRisk < 65
+  ) {
+    return {
+      title: "イン逃げ本線",
+      summary:
+        `基本は${attackBoatNo}号艇のイン逃げ。` +
+        `相手は${holdBoatNo}号艇の残し、` +
+        `${pickupBoatNo}号艇の拾い。`
+    };
+  }
+
+  if (attackCourse === 2) {
+    return {
+      title: "2コース差し本線",
+      summary:
+        `${attackBoatNo}号艇の2コース差しが展開の入口。` +
+        `${holdBoatNo}号艇の残しと、` +
+        `${pickupBoatNo}号艇の2・3着拾いを重視。`
+    };
+  }
+
+  if (attackCourse === 3) {
+    return {
+      title: "3コース攻め警戒",
+      summary:
+        `${attackBoatNo}号艇の3コース攻めが入口。` +
+        `内の残しと、${pickupBoatNo}号艇の展開拾いまで見る。`
+    };
+  }
+
+  if (attackCourse === 4) {
+    return {
+      title: "4カド攻め警戒",
+      summary:
+        `${attackBoatNo}号艇の4カド攻めが入口。` +
+        `内が流れた時は${pickupBoatNo}号艇の` +
+        `まくり差し・拾いが浮上。`
+    };
+  }
+
+  if (attackCourse === 1) {
+    return {
+      title: "イン先マイ・外攻め警戒",
+      summary:
+        `${attackBoatNo}号艇の先マイを基準に、` +
+        `${pickupBoatNo}号艇の外からの攻め・` +
+        `まくり差しを警戒。` +
+        `${attackBoatNo}号艇は残し、外攻め艇は頭まで評価。`
+    };
+  }
+
   return {
-    title: "イン先マイ・外攻め警戒",
+    title: "外コース展開突き",
     summary:
-      `1号艇の先マイを基準に、` +
-      `${mainPickup?.boatNo || 5}号艇の外からの攻め・まくり差しを警戒。` +
-      `1号艇は残し、外攻め艇は頭まで評価。`
+      `${attackBoatNo}号艇は${attackCourse}コースから` +
+      `展開を突く形。` +
+      `攻め切れば頭まで、届かない場合は2・3着で評価。`
   };
 }
-
-return {
-  title: "外枠展開突き",
-  summary:
-    `${mainAttack.boatNo}号艇は外から展開を突く形。` +
-    `攻め切れば頭まで、届かない場合は2・3着で評価。`
-};
-  }
     /* ===============================
     青シート生成
   =============================== */
