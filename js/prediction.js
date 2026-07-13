@@ -1519,9 +1519,10 @@ return {
     });
 
     return {
-      boatNo,
-      name: entry.racerName || entry.name || "",
-      className: entry.className || "",
+  boatNo,
+  course,
+  name: entry.racerName || entry.name || "",
+  className: entry.className || "",
       attack,
       tenkai,
       michu,
