@@ -1777,30 +1777,65 @@ return {
   }
 
   function selectAttackBoats(scores, context) {
-    return [...scores]
-      .map(item => {
-        let score = item.attack;
+  return [...scores]
+    .map(item => {
+      let score = item.attack;
 
-        if (item.boatNo === 2 && context.venue?.sashi >= 60) {
-          score += 8;
-        }
+      const boatNo = toBoatNo(
+        item.boatNo
+      );
 
-        if ((item.boatNo === 3 || item.boatNo === 4) && context.venue?.makuri >= 60) {
-          score += 8;
-        }
+      const courseCandidate = toBoatNo(
+        item.course ??
+        boatNo
+      );
 
-        if (item.boatNo >= 4 && item.expected >= 70) {
-          score += 4;
-        }
+      const course =
+        courseCandidate >= 1 &&
+        courseCandidate <= 6
+          ? courseCandidate
+          : boatNo;
 
-        return {
-          ...item,
-          flowScore: clampScore(score),
-          flowReason: createAttackFlowReason(item, context)
-        };
-      })
-      .sort((a, b) => b.flowScore - a.flowScore);
-  }
+      if (
+        course === 2 &&
+        context.venue?.sashi >= 60
+      ) {
+        score += 8;
+      }
+
+      if (
+        (course === 3 || course === 4) &&
+        context.venue?.makuri >= 60
+      ) {
+        score += 8;
+      }
+
+      if (
+        course >= 4 &&
+        item.expected >= 70
+      ) {
+        score += 4;
+      }
+
+      return {
+        ...item,
+        course,
+        flowScore: clampScore(score),
+        flowReason:
+          createAttackFlowReason(
+            {
+              ...item,
+              course
+            },
+            context
+          )
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.flowScore - a.flowScore
+    );
+}
 
   function selectDangerBoats(scores, context) {
     return [...scores]
