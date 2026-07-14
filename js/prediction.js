@@ -1698,11 +1698,38 @@ const nationalWinRate = toNumberOrNull(entry.national?.winRate);
     );
   }
 }
-      if (boat2Rate !== null && boat2Rate > 0) {
-      const boatBonus = (boat2Rate - 30) / 4;
-      michu += boatBonus;
-    }
+      if (
+  boat2Rate !== null &&
+  boat2Rate > 0
+) {
+  const rawBoatBonus =
+    (boat2Rate - 30) / 4;
 
+  const boatBonus =
+    Math.max(
+      -4,
+      Math.min(
+        4,
+        rawBoatBonus
+      )
+    );
+
+  const boatSupportWeight = 0.50;
+
+  michu +=
+    boatBonus *
+    boatSupportWeight;
+
+  if (boat2Rate >= 40) {
+    buffs.push(
+      `ボート2連率上位 ${boat2Rate}%`
+    );
+  } else if (boat2Rate <= 25) {
+    debuffs.push(
+      `ボート2連率低め ${boat2Rate}%`
+    );
+  }
+}
     if (params.exhibition) {
       attack += (params.exhibition.score - 50) * 0.7 * weights.exhibition;
       michu += (params.exhibition.score - 50) * 0.5 * weights.exhibition;
