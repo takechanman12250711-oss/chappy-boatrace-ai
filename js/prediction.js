@@ -1536,10 +1536,50 @@ const nationalWinRate = toNumberOrNull(entry.national?.winRate);
     const motor2Rate = toNumberOrNull(entry.motor?.secondRate);
     const boat2Rate = toNumberOrNull(entry.boat?.secondRate);
 
-    if (nationalWinRate !== null && nationalWinRate > 0) {
-  const nationalDiff = nationalWinRate - 5.0;
-  const nationalBonus = nationalDiff * 5;
+  if (
+  nationalWinRate !== null &&
+  nationalWinRate > 0
+) {
+  const nationalDiff =
+    nationalWinRate - 5.0;
 
+  const rawNationalBonus =
+    nationalDiff * 5;
+
+  const nationalBonus =
+    Math.max(
+      -8,
+      Math.min(
+        8,
+        rawNationalBonus
+      )
+    );
+
+  attack +=
+    nationalBonus *
+    weights.skill *
+    skillSupportWeight;
+
+  michu +=
+    nationalBonus *
+    0.85 *
+    weights.skill *
+    skillSupportWeight;
+
+  if (nationalWinRate >= 6.5) {
+    buffs.push(
+      `全国勝率上位 ${nationalWinRate}`
+    );
+  } else if (nationalWinRate >= 5.5) {
+    buffs.push(
+      `全国勝率安定 ${nationalWinRate}`
+    );
+  } else if (nationalWinRate <= 4.0) {
+    debuffs.push(
+      `全国勝率低め ${nationalWinRate}`
+    );
+  }
+}
   attack += nationalBonus * weights.skill;
   michu += nationalBonus * 0.85 * weights.skill;
 
