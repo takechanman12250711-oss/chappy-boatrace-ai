@@ -1567,6 +1567,25 @@ function getPaperClassName(item) {
       ? `<span class="ticket-rank-badge">${escapeHtml(r.oddsValue)}</span>`
       : ""
   }
+
+  ${
+    Number(
+      r.recommendedAmount || 0
+    ) > 0
+      ? `
+        <span class="ticket-score">
+          推奨
+          ${escapeHtml(
+            Number(
+              r.recommendedAmount
+            ).toLocaleString(
+              "ja-JP"
+            )
+          )}円
+        </span>
+      `
+      : ""
+  }
 </div>
           </div>
 
