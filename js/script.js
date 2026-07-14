@@ -400,6 +400,60 @@ ${error.stack || "スタック情報を取得できません"}`
       };
     }
 
+        try {
+      const predictionSnapshot = {
+        raceKey:
+          `${params.date}-` +
+          `${params.jcd}-` +
+          `${params.rno}`,
+        place: params.place,
+        jcd: params.jcd,
+        raceNo: params.rno,
+        date: params.date,
+        savedAt:
+          new Date().toISOString(),
+        ticketRanks:
+          Array.isArray(
+            prediction.ticketRanks
+          )
+            ? prediction.ticketRanks.map(
+                item => ({
+                  ticket:
+                    String(
+                      item?.ticket || ""
+                    ),
+                  rank:
+                    String(
+                      item?.rank || ""
+                    ),
+                  score:
+                    Number(
+                      item?.score || 0
+                    ),
+                  odds:
+                    item?.odds ?? null,
+                  oddsValue:
+                    String(
+                      item?.oddsValue || ""
+                    )
+                })
+              )
+            : []
+      };
+
+      localStorage.setItem(
+        "chappy_latest_prediction_v1",
+        JSON.stringify(
+          predictionSnapshot
+        )
+      );
+    } catch (storageError) {
+      console.warn(
+        "予想履歴の一時保存に失敗",
+        storageError
+      );
+    }
+
     if (
       typeof window.renderAll ===
       "function"
