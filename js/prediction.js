@@ -1492,21 +1492,79 @@ const nationalWinRate = toNumberOrNull(entry.national?.winRate);
 }
 
     if (localWinRate !== null && localWinRate > 0) {
-  const localDiff = localWinRate - 5.0;
-  const localBonus = localDiff * 7;
+  const localDiff =
+    localWinRate - 5.0;
 
-  local += localBonus * weights.local;
-  michu += localBonus * 0.35 * weights.local;
+  const localBonus =
+    localDiff * 7;
 
-  if (localWinRate >= 6.5) {
-    buffs.push(`当地勝率上位 ${localWinRate}`);
+  local +=
+    localBonus * weights.local;
+
+  michu +=
+    localBonus *
+    0.35 *
+    weights.local;
+
+  const localRanking = (
+    params.race?.entries || []
+  )
+    .map((raceEntry, index) => ({
+      boatNo:
+        raceEntry.boatNo ||
+        index + 1,
+
+      localWinRate:
+        toNumberOrNull(
+          raceEntry.local?.winRate
+        )
+    }))
+    .filter(
+      value =>
+        value.localWinRate !== null &&
+        value.localWinRate > 0
+    )
+    .sort(
+      (a, b) =>
+        b.localWinRate -
+        a.localWinRate
+    );
+
+  const localRank =
+    localRanking.findIndex(
+      value =>
+        Number(value.boatNo) ===
+        Number(boatNo)
+    ) + 1;
+
+  if (localRank === 1) {
+    local += 8;
     expected += 6;
-  } else if (localWinRate >= 5.5) {
-    buffs.push(`当地勝率安定 ${localWinRate}`);
-    expected += 3;
-  } else if (localWinRate <= 4.0) {
-    debuffs.push(`当地勝率低め ${localWinRate}`);
-    expected -= 3;
+
+    buffs.push(
+      `当地勝率1位 ${localWinRate}`
+    );
+  } else if (localRank === 2) {
+    local += 5;
+    expected += 4;
+
+    buffs.push(
+      `当地勝率2位 ${localWinRate}`
+    );
+  } else if (localRank === 3) {
+    local += 2;
+    expected += 2;
+
+    buffs.push(
+      `当地勝率3位 ${localWinRate}`
+    );
+  } else if (localRank >= 5) {
+    local -= 4;
+    expected -= 2;
+
+    debuffs.push(
+      `当地勝率下位 ${localWinRate}`
+    );
   }
 }
 
