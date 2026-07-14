@@ -268,11 +268,127 @@ ${error.stack || "スタック情報を取得できません"}`
     return null;
   }
 
-  function refreshOddsOnly() {
-    if (!lastRaceData) {
-      updateStatus("先に出走表を取得してください");
-      return;
+  async function refreshOddsOnly() {
+  if (!lastRaceData) {
+    updateStatus(
+      "先に出走表を取得してください"
+    );
+    return;
+  }
+
+  try {
+    clearErrorArea();
+    updateStatus("オッズ取得中...");
+
+    const params = getRaceParams();
+
+    const url =
+      `/api/odds` +
+      `?jcd=${encodeURIComponent(params.jcd)}` +
+      `&rno=${encodeURIComponent(params.rno)}` +
+      `&date=${encodeURIComponent(params.date)}`;
+
+    const response = await fetch(url);
+    const oddsData = await response.json();
+
+    if (
+      !response.ok ||
+      !oddsData ||
+      oddsData.ok === false
+    ) {
+      throw new Error(
+        oddsData?.error ||
+        `オッズAPIエラー：${response.status}`
+      );
     }
+
+    lastRaceData = {
+      ...lastRaceData,
+      odds: oddsData
+    };
+
+    const prediction =
+      createPredictionSafe(lastRaceData);
+
+    if (
+      !prediction ||
+      typeof prediction !== "object"
+    ) {
+      throw new Error(
+        "予想データを再作成できませんでした"
+      );
+    }
+
+    const byTicket =
+      oddsData.byTicket || {};
+
+    const attachOdds = list =>
+      Array.isArray(list)
+        ? list.map(item => {
+            const odds =
+              byTicket[item?.ticket];
+
+            if (
+              odds === undefined ||
+              odds === null
+            ) {
+              return item;
+            }
+
+            return {
+              ...item,
+              odds: Number(odds)
+            };
+          })
+        : [];
+
+    prediction.ticketRanks =
+      attachOdds(
+        prediction.ticketRanks
+      );
+
+    if (prediction.finalAi) {
+      prediction.finalAi = {
+        ...prediction.finalAi,
+        ticketRanks:
+          attachOdds(
+            prediction.finalAi.ticketRanks
+          ),
+        topTickets:
+          attachOdds(
+            prediction.finalAi.topTickets
+          ),
+        manshuTickets:
+          attachOdds(
+            prediction.finalAi.manshuTickets
+          )
+      };
+    }
+
+    if (
+      typeof window.renderAll ===
+      "function"
+    ) {
+      window.renderAll(prediction);
+    }
+
+    updateStatus(
+      `オッズ更新完了（` +
+      `${oddsData.count || 0}通り）`
+    );
+  } catch (error) {
+    console.error(error);
+
+    updateStatus(
+      "オッズ更新エラー"
+    );
+
+    showError(
+      error?.message ||
+      "オッズ更新に失敗しました"
+    );
+  }
+}
 
     try {
       if (typeof window.renderOdds === "function") {
