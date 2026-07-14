@@ -1109,10 +1109,10 @@ if (boatNo === 0) {
       );
 
       const exhibitionST = normalizeST(
-        before?.exhibitionST ??
-        start?.st ??
-        entry.exhibitionST
-      );
+  before?.exhibitionST ||
+  start?.st ||
+  entry.exhibitionST
+);
 
       const exhibitionSTNumber = toSTNumber(exhibitionST);
 
