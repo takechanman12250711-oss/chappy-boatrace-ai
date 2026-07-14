@@ -2489,7 +2489,9 @@ body {
 }
 
 .theory-guide-card strong {
-  font-size: 14px;
+  font-size: clamp(11px, 3vw, 14px);
+  line-height: 1.35;
+  white-space: nowrap;
 }
 
 .theory-guide-card p {
