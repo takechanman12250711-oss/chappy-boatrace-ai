@@ -1772,7 +1772,30 @@ currentSTCount: currentSTValues.length,
 
     const attackBoats = selectAttackBoats(scores, context);
     const dangerBoats = selectDangerBoats(scores, context);
-    const pickupBoats = selectPickupBoats(scores, context);
+    const pickupCandidates =
+  selectPickupBoats(scores, context);
+
+const mustKeepPickupBoats = [5, 6]
+  .map(course =>
+    pickupCandidates.find(
+      item => Number(item.course) === course
+    )
+  )
+  .filter(Boolean);
+
+const pickupBoats = [
+  pickupCandidates[0],
+  ...mustKeepPickupBoats,
+  ...pickupCandidates
+].filter(
+  (item, index, list) =>
+    item &&
+    list.findIndex(
+      value =>
+        Number(value.boatNo) ===
+        Number(item.boatNo)
+    ) === index
+);
     const holdCandidates =
   selectHoldBoats(scores, context);
 
