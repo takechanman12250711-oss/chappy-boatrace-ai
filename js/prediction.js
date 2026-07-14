@@ -1698,18 +1698,7 @@ const nationalWinRate = toNumberOrNull(entry.national?.winRate);
     );
   }
 }
-      const motorBonus = (motor2Rate - 30) / 2.5;
-      attack += motorBonus * weights.motor;
-      tenkai += motorBonus * 0.7 * weights.motor;
-
-      if (motor2Rate >= 40) {
-        buffs.push(`M2連率上位 ${motor2Rate}%`);
-      } else if (motor2Rate <= 25) {
-        debuffs.push(`M2連率低め ${motor2Rate}%`);
-      }
-    }
-
-    if (boat2Rate !== null && boat2Rate > 0) {
+      if (boat2Rate !== null && boat2Rate > 0) {
       const boatBonus = (boat2Rate - 30) / 4;
       michu += boatBonus;
     }
