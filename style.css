@@ -2870,3 +2870,48 @@ body {
     padding: 12px !important;
   }
 }
+/* =========================================================
+  AI買い目・推奨金額 スマホ整列
+========================================================= */
+
+.v3-ticket-inline {
+  display: grid;
+  grid-template-columns:
+    max-content minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+}
+
+.v3-ticket-inline > .ticket {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.v3-ticket-inline
+.v3-ticket-arrow {
+  flex-wrap: nowrap !important;
+}
+
+.v3-ticket-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.v3-ticket-values > span {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .v3-ticket-inline {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .v3-ticket-values {
+    justify-content: flex-start;
+  }
+}
