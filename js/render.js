@@ -1547,12 +1547,21 @@ function getPaperClassName(item) {
               ${ticketArrow(r.ticket||"-")}
             </span>
 
-            ${
-              r.score!==undefined
-              ?`<span class="score">${r.score}</span>`
-              :""
-            }
+            <div class="v3-ticket-values">
+  ${
+    r.score !== undefined
+      ? `<span class="score">${escapeHtml(r.score)}</span>`
+      : ""
+  }
 
+  ${
+    r.odds !== undefined &&
+    r.odds !== null &&
+    r.odds !== ""
+      ? `<span class="ticket-odds">オッズ ${escapeHtml(r.odds)}倍</span>`
+      : ""
+  }
+</div>
           </div>
 
         `).join("")}
