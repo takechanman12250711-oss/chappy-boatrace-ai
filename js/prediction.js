@@ -3864,9 +3864,22 @@ if (exhibition?.score >= 70) {
 
     const evaluations = createManshuEvaluations(race, context);
 
-    const candidates = [...evaluations]
-      .sort((a,b)=>b.manshuScore-a.manshuScore)
-      .slice(0,3);
+    const mainBoatNo = Number(
+  context.mainSheet?.honmei?.boatNo || 0
+);
+
+const candidates = [...evaluations]
+  .filter(
+    item =>
+      Number(item.boatNo) !==
+      mainBoatNo
+  )
+  .sort(
+    (a, b) =>
+      b.manshuScore -
+      a.manshuScore
+  )
+  .slice(0, 3);
 
     const holdBoats = [...evaluations]
       .sort((a,b)=>b.holdScore-a.holdScore)
