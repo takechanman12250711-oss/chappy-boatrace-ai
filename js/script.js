@@ -377,20 +377,6 @@ ${error.stack || "スタック情報を取得できません"}`
       })
     : [];
 
-            if (
-              odds === undefined ||
-              odds === null
-            ) {
-              return item;
-            }
-
-            return {
-              ...item,
-              odds: Number(odds)
-            };
-          })
-        : [];
-
     prediction.ticketRanks =
       attachOdds(
         prediction.ticketRanks
