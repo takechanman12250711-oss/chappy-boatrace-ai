@@ -1561,6 +1561,12 @@ function getPaperClassName(item) {
       ? `<span class="ticket-odds">オッズ ${escapeHtml(r.odds)}倍</span>`
       : ""
   }
+
+  ${
+    r.oddsValue
+      ? `<span class="ticket-rank-badge">${escapeHtml(r.oddsValue)}</span>`
+      : ""
+  }
 </div>
           </div>
 
