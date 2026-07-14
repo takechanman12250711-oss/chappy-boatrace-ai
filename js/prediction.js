@@ -1057,7 +1057,7 @@ if (venue?.tideInfluence >= 65) {
   pickupChance += 8;
   outsideChance += 5;
   buffs.push("潮汐影響がある場");
-}、
+}
 
     if (venue?.roughInfluence >= 70) {
       roughScore += 8;
