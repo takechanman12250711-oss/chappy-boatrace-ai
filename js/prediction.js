@@ -2168,12 +2168,17 @@ const holdBoats = [
           ? courseCandidate
           : boatNo;
 
-      if (course >= 5) {
-        score += 8;
-        reasons.push(
-          "外コースの展開拾い"
-        );
-      }
+      if (course === 5) {
+  score += 12;
+  reasons.push(
+    "5コースまくり差し拾い"
+  );
+} else if (course === 6) {
+  score += 10;
+  reasons.push(
+    "6コース最内差し・道中拾い"
+  );
+}
 
       if (course === 2) {
         score += 6;
