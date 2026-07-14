@@ -1239,10 +1239,12 @@ return {
         buffs.push(`展示ST上位 ${formatST(item.exhibitionST)}`);
       }
 
-      if (item.exhibitionSTNumber >= 0.25) {
-        score -= 8;
-        debuffs.push(`展示ST遅め ${formatST(item.exhibitionST)}`);
-      }
+      if (ranks.stRank >= 5) {
+  score -= 8;
+  debuffs.push(
+    `展示ST下位 ${formatST(item.exhibitionST)}`
+  );
+}
     }
 
     if (item.lapTime !== null) {
