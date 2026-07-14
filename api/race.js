@@ -35,14 +35,11 @@ module.exports = async function handler(req, res) {
     const entryHtml = await entryRes.text();
     const beforeHtml = beforeRes.ok ? await beforeRes.text() : "";
 
-    const parsed = parseOfficialRaceHtml(entryHtml, {
-      jcd: String(jcd),
-      rno: String(rno),
-      date: String(date),
-      entryUrl,
-      beforeInfoUrl,
-      beforeHtml
-    });
+    const parsed =
+  parseOfficialRaceHtml(
+    entryHtml,
+    beforeHtml
+  );
 
     return res.status(200).json({
       ok: true,
