@@ -1659,7 +1659,45 @@ const nationalWinRate = toNumberOrNull(entry.national?.winRate);
   }
 }
 
-    if (motor2Rate !== null && motor2Rate > 0) {
+     if (
+  motor2Rate !== null &&
+  motor2Rate > 0
+) {
+  const rawMotorBonus =
+    (motor2Rate - 30) / 2.5;
+
+  const motorBonus =
+    Math.max(
+      -6,
+      Math.min(
+        6,
+        rawMotorBonus
+      )
+    );
+
+  const motorSupportWeight = 0.50;
+
+  attack +=
+    motorBonus *
+    weights.motor *
+    motorSupportWeight;
+
+  tenkai +=
+    motorBonus *
+    0.70 *
+    weights.motor *
+    motorSupportWeight;
+
+  if (motor2Rate >= 40) {
+    buffs.push(
+      `M2連率上位 ${motor2Rate}%`
+    );
+  } else if (motor2Rate <= 25) {
+    debuffs.push(
+      `M2連率低め ${motor2Rate}%`
+    );
+  }
+}
       const motorBonus = (motor2Rate - 30) / 2.5;
       attack += motorBonus * weights.motor;
       tenkai += motorBonus * 0.7 * weights.motor;
