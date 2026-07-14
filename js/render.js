@@ -480,11 +480,17 @@ if (raceInfoArea) {
       "-";
 
     const local =
-      e.localRate ||
-      e.venueRate ||
-      e.courseRate ||
-      e.local ||
-      "-";
+  e.localRate ??
+  e.venueRate ??
+  e.courseRate ??
+  e.local?.winRate ??
+  e.local?.rate ??
+  (
+    typeof e.local !== "object"
+      ? e.local
+      : null
+  ) ??
+  "-";
 
     return `
       <div class="v3-entry-row">
