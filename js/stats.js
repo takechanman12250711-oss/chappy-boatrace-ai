@@ -15,15 +15,96 @@
     return Math.floor(o * a);
   }
 
-  function buildResultRecord({ result, odds, amount }) {
+    function buildResultRecord({
+    result,
+    odds,
+    amount
+  }) {
+    const normalizedResult =
+      (
+        String(result || "")
+          .match(/[1-6]/g) || []
+      )
+        .slice(0, 3)
+        .join("-");
+
+    let predictionSnapshot = null;
+
+    try {
+      const raw =
+        localStorage.getItem(
+          "chappy_latest_prediction_v1"
+        );
+
+      predictionSnapshot =
+        raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      console.warn(
+        "保存予想の読み込みに失敗",
+        error
+      );
+    }
+
+    const predictionTickets =
+      Array.isArray(
+        predictionSnapshot?.ticketRanks
+      )
+        ? predictionSnapshot.ticketRanks
+        : [];
+
+    const matchedTicket =
+      predictionTickets.find(item => {
+        const normalizedTicket =
+          (
+            String(item?.ticket || "")
+              .match(/[1-6]/g) || []
+          )
+            .slice(0, 3)
+            .join("-");
+
+        return (
+          normalizedResult &&
+          normalizedTicket ===
+            normalizedResult
+        );
+      }) || null;
+
     return {
-      result: U.safeText(result),
-      odds: U.safeNumber(odds, 0),
-      amount: U.safeNumber(amount, 0),
-      payout: calcPayout(odds, amount)
+      result:
+        U.safeText(result),
+      odds:
+        U.safeNumber(odds, 0),
+      amount:
+        U.safeNumber(amount, 0),
+      payout:
+        calcPayout(odds, amount),
+
+      predictionChecked:
+        Boolean(predictionSnapshot),
+      predictionHit:
+        Boolean(matchedTicket),
+      predictionRank:
+        matchedTicket?.rank || "",
+      predictionScore:
+        matchedTicket?.score || 0,
+      predictionOdds:
+        matchedTicket?.odds ?? null,
+      predictionOddsValue:
+        matchedTicket?.oddsValue || "",
+
+      predictionRaceKey:
+        predictionSnapshot?.raceKey || "",
+      predictionPlace:
+        predictionSnapshot?.place || "",
+      predictionRaceNo:
+        predictionSnapshot?.raceNo || 0,
+      predictionDate:
+        predictionSnapshot?.date || "",
+
+      predictionTickets
     };
   }
-
+  
   function calcStats(results) {
     const list = Array.isArray(results) ? results : [];
     const count = list.length;
