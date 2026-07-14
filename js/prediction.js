@@ -2267,22 +2267,6 @@ const holdBoats = [
   );
 }
 
-      if (course === 4) {
-  const currentST =
-    item.currentSTAverage;
-
-  const averageST =
-    item.avgSTNumber;
-
-  const kadoST =
-    currentST !== null &&
-    currentST !== undefined
-      ? Number(currentST)
-      : averageST !== null &&
-        averageST !== undefined
-        ? Number(averageST)
-        : null;
-
   if (course === 4) {
   const currentST =
     item.currentSTAverage;
