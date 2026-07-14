@@ -2260,9 +2260,33 @@ const holdBoats = [
       }
 
       if (course === 4) {
-        score += 4;
-        reasons.push("カド残し");
-      }
+  const currentST =
+    item.currentSTAverage;
+
+  const averageST =
+    item.avgSTNumber;
+
+  const kadoST =
+    currentST !== null &&
+    currentST !== undefined
+      ? Number(currentST)
+      : averageST !== null &&
+        averageST !== undefined
+        ? Number(averageST)
+        : null;
+
+  const hasKadoST =
+    Number.isFinite(kadoST) &&
+    kadoST <= 0.15;
+
+  score += hasKadoST ? 10 : 4;
+
+  reasons.push(
+    hasKadoST
+      ? `4カドST決めて残し ${formatST(kadoST)}`
+      : "4コース残し候補"
+  );
+}
 
       if (item.total >= 75) {
         reasons.push("総合指数上位");
