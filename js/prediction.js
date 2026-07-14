@@ -2255,9 +2255,17 @@ const holdBoats = [
       }
 
       if (course === 2) {
-        score += 10;
-        reasons.push("差し残り・内残し");
-      }
+  const isOmura =
+    context.venue?.name === "大村";
+
+  score += isOmura ? 12 : 10;
+
+  reasons.push(
+    isOmura
+      ? "大村2差し・2着残り"
+      : "2コース差し残り"
+  );
+}
 
       if (course === 4) {
   const currentST =
