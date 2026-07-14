@@ -556,7 +556,44 @@
     renderStats();
   }
 
-  function     initStatsEvents
+    function initStatsEvents() {
+    U.byId("oddsInput")
+      ?.addEventListener(
+        "input",
+        updateAutoPayout
+      );
+
+    U.byId("betAmountInput")
+      ?.addEventListener(
+        "input",
+        updateAutoPayout
+      );
+
+    U.byId("saveResultBtn")
+      ?.addEventListener(
+        "click",
+        saveCurrentResult
+      );
+
+    U.byId("undoResultBtn")
+      ?.addEventListener(
+        "click",
+        undoLatestResult
+      );
+
+    updateAutoPayout();
+    renderStats();
+  }
+
+  window.ChappyStats = {
+    calcPayout,
+    buildResultRecord,
+    calcStats,
+    renderStats,
+    updateAutoPayout,
+    saveCurrentResult,
+    undoLatestResult,
+    initStatsEvents
   };
 
   document.addEventListener(
