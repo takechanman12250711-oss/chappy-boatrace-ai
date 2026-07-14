@@ -1248,14 +1248,21 @@ return {
     }
 
     if (item.lapTime !== null) {
-      if (ranks.lapRank === 1) {
-        score += 12;
-        buffs.push(`一周1位 ${item.lapTime}`);
-      } else if (ranks.lapRank <= 3) {
-        score += 6;
-        buffs.push(`一周上位 ${item.lapTime}`);
-      }
-    }
+  if (ranks.lapRank === 1) {
+    score += 12;
+    buffs.push(`一周1位 ${item.lapTime}`);
+  } else if (ranks.lapRank <= 3) {
+    score += 6;
+    buffs.push(`一周上位 ${item.lapTime}`);
+  }
+
+  if (ranks.lapRank >= 5) {
+    score -= 8;
+    debuffs.push(
+      `一周タイム下位 ${item.lapTime}`
+    );
+  }
+}
 
     if (String(item.tilt).includes("3")) {
       score += 8;
