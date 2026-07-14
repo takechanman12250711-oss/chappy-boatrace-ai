@@ -1932,10 +1932,17 @@ currentSTCount: currentSTValues.length,
         flowReason: flowReasons.join(" / ")
       };
     })
-    .sort(
-      (a, b) =>
-        b.flowScore - a.flowScore
-    );
+        .sort((a, b) => {
+      const alertDifference =
+        Number(b.slitAlert) -
+        Number(a.slitAlert);
+
+      if (alertDifference !== 0) {
+        return alertDifference;
+      }
+
+      return b.flowScore - a.flowScore;
+    });
 }
 
   function selectDangerBoats(scores, context) {
