@@ -105,20 +105,229 @@
     };
   }
   
-  function calcStats(results) {
-    const list = Array.isArray(results) ? results : [];
+    function calcStats(results) {
+    const list =
+      Array.isArray(results)
+        ? results
+        : [];
+
     const count = list.length;
-    const totalBet = list.reduce((sum, r) => sum + U.safeNumber(r.amount, 0), 0);
-    const totalPayout = list.reduce((sum, r) => sum + U.safeNumber(r.payout, 0), 0);
-    const profit = totalPayout - totalBet;
-    const recoveryRate = totalBet > 0 ? (totalPayout / totalBet) * 100 : 0;
+
+    const totalBet =
+      list.reduce(
+        (sum, record) =>
+          sum +
+          U.safeNumber(
+            record.amount,
+            0
+          ),
+        0
+      );
+
+    const totalPayout =
+      list.reduce(
+        (sum, record) =>
+          sum +
+          U.safeNumber(
+            record.payout,
+            0
+          ),
+        0
+      );
+
+    const profit =
+      totalPayout - totalBet;
+
+    const recoveryRate =
+      totalBet > 0
+        ? (
+            totalPayout /
+            totalBet
+          ) * 100
+        : 0;
+
+    const normalizeTicket = value =>
+      (
+        String(value || "")
+          .match(/[1-6]/g) || []
+      )
+        .slice(0, 3)
+        .join("-");
+
+    const createBucket = label => ({
+      label,
+      ticketCount: 0,
+      hitCount: 0,
+      theoreticalBet: 0,
+      theoreticalPayout: 0
+    });
+
+    const rankStats = {
+      S: createBucket("S"),
+      A: createBucket("A"),
+      B: createBucket("B"),
+      C: createBucket("C")
+    };
+
+    const oddsValueStats = {};
+
+    const checkedResults =
+      list.filter(
+        record =>
+          record?.predictionChecked &&
+          Array.isArray(
+            record.predictionTickets
+          )
+      );
+
+    checkedResults.forEach(record => {
+      const actualTicket =
+        normalizeTicket(record.result);
+
+      record.predictionTickets.forEach(
+        ticket => {
+          const predictedTicket =
+            normalizeTicket(
+              ticket?.ticket
+            );
+
+          const isHit =
+            Boolean(actualTicket) &&
+            predictedTicket ===
+              actualTicket;
+
+          const rank =
+            String(
+              ticket?.rank || ""
+            ).toUpperCase();
+
+          const oddsValue =
+            String(
+              ticket?.oddsValue ||
+              "未判定"
+            );
+
+          const odds =
+            U.safeNumber(
+              ticket?.odds,
+              0
+            );
+
+          const updateBucket =
+            bucket => {
+              bucket.ticketCount += 1;
+              bucket.theoreticalBet +=
+                100;
+
+              if (isHit) {
+                bucket.hitCount += 1;
+                bucket.theoreticalPayout +=
+                  Math.round(
+                    odds * 100
+                  );
+              }
+            };
+
+          if (rankStats[rank]) {
+            updateBucket(
+              rankStats[rank]
+            );
+          }
+
+          if (
+            !oddsValueStats[
+              oddsValue
+            ]
+          ) {
+            oddsValueStats[
+              oddsValue
+            ] = createBucket(
+              oddsValue
+            );
+          }
+
+          updateBucket(
+            oddsValueStats[
+              oddsValue
+            ]
+          );
+        }
+      );
+    });
+
+    const finalizeBucket =
+      bucket => ({
+        ...bucket,
+        hitRate:
+          bucket.ticketCount > 0
+            ? (
+                bucket.hitCount /
+                bucket.ticketCount
+              ) * 100
+            : 0,
+        recoveryRate:
+          bucket.theoreticalBet > 0
+            ? (
+                bucket
+                  .theoreticalPayout /
+                bucket
+                  .theoreticalBet
+              ) * 100
+            : 0
+      });
+
+    const finalizedRankStats =
+      Object.fromEntries(
+        Object.entries(
+          rankStats
+        ).map(
+          ([key, bucket]) => [
+            key,
+            finalizeBucket(bucket)
+          ]
+        )
+      );
+
+    const finalizedOddsValueStats =
+      Object.fromEntries(
+        Object.entries(
+          oddsValueStats
+        ).map(
+          ([key, bucket]) => [
+            key,
+            finalizeBucket(bucket)
+          ]
+        )
+      );
+
+    const predictionHitCount =
+      checkedResults.filter(
+        record =>
+          record.predictionHit
+      ).length;
 
     return {
       count,
       totalBet,
       totalPayout,
       profit,
-      recoveryRate
+      recoveryRate,
+
+      predictionRaceCount:
+        checkedResults.length,
+      predictionHitCount,
+      predictionHitRate:
+        checkedResults.length > 0
+          ? (
+              predictionHitCount /
+              checkedResults.length
+            ) * 100
+          : 0,
+
+      rankStats:
+        finalizedRankStats,
+      oddsValueStats:
+        finalizedOddsValueStats
     };
   }
 
