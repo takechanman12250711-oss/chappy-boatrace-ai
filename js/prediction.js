@@ -1441,16 +1441,36 @@ if (String(item.tilt).includes("3")) {
 
     buffs.push(base.comment);
 
-    const classBonus = getClassBonus(entry.className);
+    const classBonus =
+  getClassBonus(entry.className);
 
-    attack += classBonus.attack * weights.skill;
-    tenkai += classBonus.tenkai * weights.skill;
-    michu += classBonus.michu * weights.skill;
-    local += classBonus.local * weights.skill;
+const skillSupportWeight = 0.60;
 
-    if (boatNo >= 4) {
-      expected += classBonus.expectedOuter;
-    }
+attack +=
+  classBonus.attack *
+  weights.skill *
+  skillSupportWeight;
+
+tenkai +=
+  classBonus.tenkai *
+  weights.skill *
+  skillSupportWeight;
+
+michu +=
+  classBonus.michu *
+  weights.skill *
+  skillSupportWeight;
+
+local +=
+  classBonus.local *
+  weights.skill *
+  skillSupportWeight;
+
+if (boatNo >= 4) {
+  expected +=
+    classBonus.expectedOuter *
+    skillSupportWeight;
+}
 
     if (String(entry.className).includes("A1")) {
       buffs.push("A1格上");
