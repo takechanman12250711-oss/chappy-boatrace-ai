@@ -1939,18 +1939,24 @@ currentSTCount: currentSTValues.length,
 }
 
   function selectDangerBoats(scores, context) {
+  const exhibitionList = [
+    ...(context.exhibition?.list || [])
+  ].sort((a, b) => {
+    const courseA = Number(a.course || a.boatNo);
+    const courseB = Number(b.course || b.boatNo);
+
+    return courseA - courseB;
+  });
+
   return [...scores]
     .map(item => {
       let score = 40;
       const reasons = [];
 
-      const boatNo = toBoatNo(
-        item.boatNo
-      );
+      const boatNo = toBoatNo(item.boatNo);
 
       const courseCandidate = toBoatNo(
-        item.course ??
-        boatNo
+        item.course ?? boatNo
       );
 
       const course =
@@ -1958,6 +1964,38 @@ currentSTCount: currentSTValues.length,
         courseCandidate <= 6
           ? courseCandidate
           : boatNo;
+
+      const currentIndex = exhibitionList.findIndex(
+        exhibitionItem =>
+          toBoatNo(exhibitionItem.boatNo) === boatNo
+      );
+
+      const currentExhibition =
+        currentIndex >= 0
+          ? exhibitionList[currentIndex]
+          : null;
+
+      const currentST = toSTNumber(
+        currentExhibition?.exhibitionSTNumber
+      );
+
+      const neighborSTValues = [
+        exhibitionList[currentIndex - 1]?.exhibitionSTNumber,
+        exhibitionList[currentIndex + 1]?.exhibitionSTNumber
+      ]
+        .map(value => toSTNumber(value))
+        .filter(value => value !== null);
+
+      const slitLossDiff =
+        currentST !== null && neighborSTValues.length
+          ? Math.max(
+              ...neighborSTValues.map(
+                neighborST => currentST - neighborST
+              )
+            )
+          : 0;
+
+      const hasSlitRisk = slitLossDiff >= 0.1;
 
       if (course === 1) {
         score += 18;
@@ -1996,9 +2034,25 @@ currentSTCount: currentSTValues.length,
         reasons.push("風波で内リスク");
       }
 
+      if (hasSlitRisk) {
+        score +=
+          14 +
+          Math.min(
+            6,
+            Math.round((slitLossDiff - 0.1) * 50)
+          );
+
+        reasons.push(
+          `スリット遅れ 隣艇より${slitLossDiff.toFixed(2)}遅い`
+        );
+      }
+
       return {
         ...item,
         course,
+        slitRisk: hasSlitRisk,
+        slitLossDiff:
+          Math.round(slitLossDiff * 100) / 100,
         flowScore: clampScore(score),
         flowReason:
           reasons.length
