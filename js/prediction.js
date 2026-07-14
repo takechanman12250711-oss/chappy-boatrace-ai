@@ -5407,9 +5407,33 @@ if (attackCourse === 1) {
     const nagashi = rankTickets(formation.nagashi || [], "流し", 65);
     const hole = rankTickets(formation.hole || [], "万舟", 58);
 
-    return [...main, ...cover, ...nagashi, ...hole]
-      .filter(item => isValidExactTicket(item.ticket))
-      .sort((a, b) => b.score - a.score);
+    const rankedTickets =
+  [...main, ...cover, ...nagashi, ...hole]
+    .filter(
+      item =>
+        isValidExactTicket(item.ticket)
+    )
+    .sort(
+      (a, b) =>
+        b.score - a.score
+    );
+
+const seenTickets = new Set();
+
+return rankedTickets.filter(item => {
+  const ticketText =
+    normalizeTicket(item.ticket);
+
+  if (
+    !ticketText ||
+    seenTickets.has(ticketText)
+  ) {
+    return false;
+  }
+
+  seenTickets.add(ticketText);
+  return true;
+});
   }
 
   function rankTickets(tickets, type, baseScore) {
