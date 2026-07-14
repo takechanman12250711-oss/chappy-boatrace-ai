@@ -323,10 +323,59 @@ ${error.stack || "スタック情報を取得できません"}`
       oddsData.byTicket || {};
 
     const attachOdds = list =>
-      Array.isArray(list)
-        ? list.map(item => {
-            const odds =
-              byTicket[item?.ticket];
+  Array.isArray(list)
+    ? list.map(item => {
+        const odds =
+          byTicket[item?.ticket];
+
+        if (
+          odds === undefined ||
+          odds === null
+        ) {
+          return item;
+        }
+
+        const numericOdds =
+          Number(odds);
+
+        const aiScore =
+          Number(item?.score || 0);
+
+        let oddsValue = "標準";
+
+        if (
+          aiScore < 65 &&
+          numericOdds >= 10
+        ) {
+          oddsValue = "高配当注意";
+        } else if (
+          aiScore >= 65 &&
+          numericOdds >= 100
+        ) {
+          oddsValue = "大穴妙味";
+        } else if (
+          aiScore >= 65 &&
+          numericOdds >= 30
+        ) {
+          oddsValue = "穴妙味";
+        } else if (
+          aiScore >= 75 &&
+          numericOdds >= 10
+        ) {
+          oddsValue = "妙味あり";
+        } else if (
+          numericOdds < 5
+        ) {
+          oddsValue = "低配当";
+        }
+
+        return {
+          ...item,
+          odds: numericOdds,
+          oddsValue
+        };
+      })
+    : [];
 
             if (
               odds === undefined ||
