@@ -2283,9 +2283,39 @@ const holdBoats = [
         ? Number(averageST)
         : null;
 
+  if (course === 4) {
+  const currentST =
+    item.currentSTAverage;
+
+  const averageST =
+    item.avgSTNumber;
+
+  const kadoST =
+    currentST !== null &&
+    currentST !== undefined
+      ? Number(currentST)
+      : averageST !== null &&
+        averageST !== undefined
+        ? Number(averageST)
+        : null;
+
   const hasKadoST =
     Number.isFinite(kadoST) &&
     kadoST <= 0.15;
+
+  const isOmura =
+    context.venue?.name === "大村";
+
+  const course3Boat = scores.find(
+    value =>
+      Number(
+        value.course ??
+        value.boatNo
+      ) === 3
+  );
+
+  const hasCourse3Attack =
+    Number(course3Boat?.attack) >= 75;
 
   score += hasKadoST ? 10 : 4;
 
@@ -2294,6 +2324,18 @@ const holdBoats = [
       ? `4カドST決めて残し ${formatST(kadoST)}`
       : "4コース残し候補"
   );
+
+  if (
+    isOmura &&
+    hasCourse3Attack &&
+    !hasKadoST
+  ) {
+    score -= 8;
+
+    reasons.push(
+      "大村3攻め時は4の攻め場縮小 -8"
+    );
+  }
 }
 
       if (item.total >= 75) {
