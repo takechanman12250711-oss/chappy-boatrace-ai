@@ -281,8 +281,100 @@
       <!-- 7. 万舟フォーメーション -->
       ${renderFormationSection(prediction, "manshu")}
 
-      <!-- 8. AI推奨買い目 -->
+            <!-- 8. AI推奨買い目 -->
       ${renderTicketRanking(prediction)}
+
+      ${
+        Array.isArray(
+          prediction.oddsMovements
+        ) &&
+        prediction.oddsMovements.length
+          ? section(
+              "オッズ変動アラート",
+              prediction.oddsMovements
+                .map(item => {
+                  const isDrop =
+                    item?.direction ===
+                    "急落";
+
+                  const changeRate =
+                    Math.abs(
+                      safeNum(
+                        item?.changeRate,
+                        0
+                      )
+                    ).toFixed(1);
+
+                  return `
+                    <div
+                      class="
+                        ticket-row
+                        ${
+                          isDrop
+                            ? "ticket-rank-A"
+                            : "ticket-rank-C"
+                        }
+                      "
+                    >
+                      <div
+                        class="ticket-main"
+                      >
+                        <strong>
+                          ${ticketArrow(
+                            item?.ticket ||
+                            "-"
+                          )}
+                        </strong>
+
+                        <span
+                          class="
+                            ticket-rank-badge
+                          "
+                        >
+                          ${
+                            isDrop
+                              ? "🔻 急落"
+                              : "🔺 上昇"
+                          }
+                          ${escapeHtml(
+                            changeRate
+                          )}%
+                        </span>
+
+                        <span
+                          class="ticket-odds"
+                        >
+                          ${escapeHtml(
+                            item?.previousOdds
+                          )}倍
+                          →
+                          ${escapeHtml(
+                            item?.currentOdds
+                          )}倍
+                        </span>
+                      </div>
+
+                      <p
+                        class="ticket-reason"
+                      >
+                        ${
+                          isDrop
+                            ? "人気が集まり、オッズが急落しています。"
+                            : "オッズが上昇し、人気が下がっています。"
+                        }
+                      </p>
+                    </div>
+                  `;
+                })
+                .join(""),
+              "📈",
+              "v3-odds-movement-section"
+            )
+          : ""
+      }
+
+      <!-- 9. チャッピー理論 -->
+      ${renderTheoryPanel(prediction)}
 
       <!-- 9. チャッピー理論 -->
       ${renderTheoryPanel(prediction)}
