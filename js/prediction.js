@@ -1773,7 +1773,30 @@ currentSTCount: currentSTValues.length,
     const attackBoats = selectAttackBoats(scores, context);
     const dangerBoats = selectDangerBoats(scores, context);
     const pickupBoats = selectPickupBoats(scores, context);
-    const holdBoats = selectHoldBoats(scores, context);
+    const holdCandidates =
+  selectHoldBoats(scores, context);
+
+const mustKeepHoldBoats = [2, 4]
+  .map(course =>
+    holdCandidates.find(
+      item => Number(item.course) === course
+    )
+  )
+  .filter(Boolean);
+
+const holdBoats = [
+  holdCandidates[0],
+  ...mustKeepHoldBoats,
+  ...holdCandidates
+].filter(
+  (item, index, list) =>
+    item &&
+    list.findIndex(
+      value =>
+        Number(value.boatNo) ===
+        Number(item.boatNo)
+    ) === index
+);
 
     const startPhase = createStartPhase(race, context, scores);
     const slitPhase = createSlitPhase(race, context, scores);
