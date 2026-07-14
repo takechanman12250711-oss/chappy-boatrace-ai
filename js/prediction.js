@@ -2279,7 +2279,8 @@ currentSTCount: currentSTValues.length,
   );
 
   const course =
-    courseCandidate >= 1 && courseCandidate <= 6
+    courseCandidate >= 1 &&
+    courseCandidate <= 6
       ? courseCandidate
       : boatNo;
 
@@ -2288,10 +2289,20 @@ currentSTCount: currentSTValues.length,
     course,
     label: item?.name || "",
     name: item?.name || "",
+
+    slitAlert: Boolean(item?.slitAlert),
+    slitDiff: Number(item?.slitDiff || 0),
+
+    slitRisk: Boolean(item?.slitRisk),
+    slitLossDiff: Number(
+      item?.slitLossDiff || 0
+    ),
+
     score:
       item?.flowScore ??
       item?.total ??
       "-",
+
     reason:
       item?.flowReason ||
       item?.shortComment ||
