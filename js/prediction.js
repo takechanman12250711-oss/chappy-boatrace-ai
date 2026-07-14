@@ -2024,7 +2024,45 @@ const holdBoats = [
     ) === index
 );
 
-    const startPhase = createStartPhase(race, context, scores);
+    const primaryAttackBoatNo =
+  Number(attackBoats[0]?.boatNo || 0);
+
+if (primaryAttackBoatNo > 0) {
+  const pickupAttackIndex =
+    pickupBoats.findIndex(
+      item =>
+        Number(item.boatNo) ===
+        primaryAttackBoatNo
+    );
+
+  if (pickupAttackIndex >= 0) {
+    pickupBoats.splice(
+      pickupAttackIndex,
+      1
+    );
+  }
+
+  const holdAttackIndex =
+    holdBoats.findIndex(
+      item =>
+        Number(item.boatNo) ===
+        primaryAttackBoatNo
+    );
+
+  if (holdAttackIndex >= 0) {
+    holdBoats.splice(
+      holdAttackIndex,
+      1
+    );
+  }
+}
+
+const startPhase =
+  createStartPhase(
+    race,
+    context,
+    scores
+  );
     const slitPhase = createSlitPhase(race, context, scores);
     const firstMarkPhase = createFirstMarkPhase(race, context, {
       attackBoats,
