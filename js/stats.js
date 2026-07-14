@@ -12,7 +12,7 @@
   function calcPayout(odds, amount) {
     const o = U.safeNumber(odds, 0);
     const a = U.safeNumber(amount, 0);
-    return Math.floor(o * a);
+    return Math.round(o * a);
   }
 
     function buildResultRecord({
