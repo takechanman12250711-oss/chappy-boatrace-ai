@@ -390,18 +390,6 @@ ${error.stack || "スタック情報を取得できません"}`
   }
 }
 
-    try {
-      if (typeof window.renderOdds === "function") {
-        window.renderOdds(lastRaceData, lastRaceData.odds || null);
-      }
-
-      updateStatus("オッズ更新完了");
-    } catch (error) {
-      console.error(error);
-      showError("オッズ更新に失敗しました");
-    }
-  }
-
   function updateStatus(message) {
     const el = document.getElementById("statusArea");
     if (el) el.textContent = message;
