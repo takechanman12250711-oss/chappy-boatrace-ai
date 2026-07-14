@@ -1011,12 +1011,53 @@ if (boatNo === 0) {
       }
     }
 
-    if (venue?.tideInfluence >= 65) {
-      roughScore += 8;
-      pickupChance += 8;
-      outsideChance += 5;
-      buffs.push("潮汐影響がある場");
-    }
+    const waterType =
+  String(venue?.water || "");
+
+const isVariableWater = [
+  "海水",
+  "汽水",
+  "河口",
+  "河川"
+].includes(waterType);
+
+const hasStrongWind =
+  windSpeed !== null &&
+  windSpeed >= 4;
+
+const hasWaveEffect =
+  waveHeight !== null &&
+  waveHeight >= 3;
+
+if (
+  isVariableWater &&
+  (
+    hasStrongWind ||
+    hasWaveEffect
+  )
+) {
+  const waterSurfaceBonus =
+    hasStrongWind &&
+    hasWaveEffect
+      ? 8
+      : 6;
+
+  roughScore += waterSurfaceBonus;
+  insideRisk += 4;
+  outsideChance += 4;
+  pickupChance += waterSurfaceBonus;
+
+  buffs.push(
+    `${waterType}の風波補正 +${waterSurfaceBonus}`
+  );
+}
+
+if (venue?.tideInfluence >= 65) {
+  roughScore += 8;
+  pickupChance += 8;
+  outsideChance += 5;
+  buffs.push("潮汐影響がある場");
+}
 
     if (venue?.roughInfluence >= 70) {
       roughScore += 8;
