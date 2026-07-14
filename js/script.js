@@ -319,8 +319,128 @@ ${error.stack || "スタック情報を取得できません"}`
       );
     }
 
-    const byTicket =
+        const byTicket =
       oddsData.byTicket || {};
+
+    const oddsHistoryKey =
+      `chappy_odds_history_` +
+      `${params.date}_` +
+      `${params.jcd}_` +
+      `${params.rno}`;
+
+    let previousByTicket = {};
+
+    try {
+      const previousRaw =
+        localStorage.getItem(
+          oddsHistoryKey
+        );
+
+      if (previousRaw) {
+        const previousData =
+          JSON.parse(previousRaw);
+
+        previousByTicket =
+          previousData?.byTicket ||
+          previousData ||
+          {};
+      }
+    } catch (historyError) {
+      console.warn(
+        "前回オッズの読み込みに失敗",
+        historyError
+      );
+    }
+
+    const oddsMovements =
+      Object.entries(byTicket)
+        .map(
+          ([
+            ticket,
+            currentRaw
+          ]) => {
+            const currentOdds =
+              Number(currentRaw);
+
+            const previousOdds =
+              Number(
+                previousByTicket[
+                  ticket
+                ]
+              );
+
+            if (
+              !Number.isFinite(
+                currentOdds
+              ) ||
+              !Number.isFinite(
+                previousOdds
+              ) ||
+              currentOdds <= 0 ||
+              previousOdds <= 0
+            ) {
+              return null;
+            }
+
+            const changeRate =
+              (
+                (
+                  currentOdds -
+                  previousOdds
+                ) /
+                previousOdds
+              ) * 100;
+
+            if (
+              Math.abs(changeRate) <
+              20
+            ) {
+              return null;
+            }
+
+            return {
+              ticket,
+              previousOdds,
+              currentOdds,
+              changeRate,
+              direction:
+                changeRate < 0
+                  ? "急落"
+                  : "上昇"
+            };
+          }
+        )
+        .filter(Boolean)
+        .sort(
+          (a, b) =>
+            Math.abs(
+              b.changeRate
+            ) -
+            Math.abs(
+              a.changeRate
+            )
+        )
+        .slice(0, 10);
+
+    prediction.oddsMovements =
+      oddsMovements;
+
+    try {
+      localStorage.setItem(
+        oddsHistoryKey,
+        JSON.stringify({
+          savedAt:
+            new Date()
+              .toISOString(),
+          byTicket
+        })
+      );
+    } catch (historyError) {
+      console.warn(
+        "今回オッズの保存に失敗",
+        historyError
+      );
+    }
 
     const attachOdds = list =>
   Array.isArray(list)
