@@ -1264,10 +1264,23 @@ return {
   }
 }
 
-    if (String(item.tilt).includes("3")) {
-      score += 8;
-      buffs.push("チルト3度の一撃型");
-    }
+    if (
+  ranks.exRank === 1 &&
+  ranks.lapRank === 1
+) {
+  const doubleTimeBonus =
+    item.course >= 4 ? 12 : 8;
+
+  score += doubleTimeBonus;
+  buffs.push(
+    `ダブルタイム +${doubleTimeBonus}`
+  );
+}
+
+if (String(item.tilt).includes("3")) {
+  score += 8;
+  buffs.push("チルト3度の一撃型");
+}
 
     score = clampScore(score);
 
