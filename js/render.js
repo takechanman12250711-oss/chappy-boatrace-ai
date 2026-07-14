@@ -1437,7 +1437,7 @@ function getPaperClassName(item) {
 
         <div class="v3-formation-tags">
           ${item.label ? tag(item.label, type) : ""}
-          $${
+        ${
   item.score !== undefined &&
   item.score !== null &&
   item.score !== "" &&
