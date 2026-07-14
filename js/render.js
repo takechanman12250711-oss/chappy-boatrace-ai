@@ -464,7 +464,12 @@ if (raceInfoArea) {
     const no = e.no || e.waku || e.course || e.boatNo || index + 1;
     const name = e.name || e.racerName || e.player || "-";
     const grade = e.grade || e.class || e.rank || "";
-    const st = e.st || e.avgSt || e.averageST || "-";
+    const st =
+  e.st ||
+  e.avgST ||
+  e.avgSt ||
+  e.averageST ||
+  "-";
 
     const motorObj = e.motor || e.motorInfo || {};
     const motor =
