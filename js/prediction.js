@@ -1222,9 +1222,11 @@ return {
         buffs.push(`展示3位 ${item.exhibitionTime}`);
       }
 
-      if (item.exhibitionTime >= 7.0) {
+            if (ranks.exRank >= 5) {
         score -= 8;
-        debuffs.push(`展示重め ${item.exhibitionTime}`);
+        debuffs.push(
+          `展示タイム下位 ${item.exhibitionTime}`
+        );
       }
     }
 
