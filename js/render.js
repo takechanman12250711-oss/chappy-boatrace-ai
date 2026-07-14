@@ -1750,7 +1750,7 @@ function renderFinalBlock(block) {
   return `
     <div class="v3-final-block">
       <h3>■ ${escapeHtml(block.title)}</h3>
-      <p>${escapeHtml(limitText(block.text, 140))}</p>
+      <p>${escapeHtml(block.text)}</p>
     </div>
   `;
 }
