@@ -3069,7 +3069,62 @@ if (
     }
   }
 
-    if (exhibition?.score >= 70) {
+    const slitAlertData = (
+  context.raceFlow?.phases?.slit?.alerts || []
+).find(
+  item =>
+    toBoatNo(item.boatNo) === boatNo
+);
+
+const slitRiskData = (
+  context.raceFlow?.dangerBoats || []
+).find(
+  item =>
+    toBoatNo(item.boatNo) === boatNo &&
+    item.slitRisk
+);
+
+if (slitAlertData) {
+  const slitDiff = Number(
+    slitAlertData.diff || 0
+  );
+
+  score +=
+    8 +
+    Math.min(
+      4,
+      Math.max(
+        0,
+        Math.round((slitDiff - 0.1) * 20)
+      )
+    );
+
+  buffs.push(
+    `スリットアラート 隣艇より${slitDiff.toFixed(2)}速い`
+  );
+}
+
+if (slitRiskData) {
+  const slitLossDiff = Number(
+    slitRiskData.slitLossDiff || 0
+  );
+
+  score -=
+    8 +
+    Math.min(
+      4,
+      Math.max(
+        0,
+        Math.round((slitLossDiff - 0.1) * 20)
+      )
+    );
+
+  debuffs.push(
+    `スリット遅れ 隣艇より${slitLossDiff.toFixed(2)}遅い`
+  );
+}
+
+if (exhibition?.score >= 70) {
       score += 5;
       buffs.push("展示気配上位");
     } else if (exhibition?.score <= 42) {
