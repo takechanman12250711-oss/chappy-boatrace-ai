@@ -1057,7 +1057,7 @@ if (venue?.tideInfluence >= 65) {
   pickupChance += 8;
   outsideChance += 5;
   buffs.push("潮汐影響がある場");
-}
+}、
 
     if (venue?.roughInfluence >= 70) {
       roughScore += 8;
@@ -2245,12 +2245,32 @@ const holdBoats = [
   function selectPickupBoats(scores, context) {
   return [...scores]
     .map(item => {
-      let score =
-        item.michu * 0.45 +
-        item.tenkai * 0.35 +
-        item.local * 0.20;
+      const isRoughWater =
+  Number(
+    context.weather?.roughScore
+  ) >= 65;
 
-      const reasons = [];
+const michuWeight =
+  isRoughWater ? 0.40 : 0.45;
+
+const tenkaiWeight =
+  isRoughWater ? 0.30 : 0.35;
+
+const localWeight =
+  isRoughWater ? 0.30 : 0.20;
+
+let score =
+  item.michu * michuWeight +
+  item.tenkai * tenkaiWeight +
+  item.local * localWeight;
+
+const reasons = [];
+
+if (isRoughWater) {
+  reasons.push(
+    "荒れ水面で当地・道中重視"
+  );
+}
 
       const boatNo = toBoatNo(
         item.boatNo
