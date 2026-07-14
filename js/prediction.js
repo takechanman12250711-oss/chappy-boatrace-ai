@@ -1580,17 +1580,7 @@ const nationalWinRate = toNumberOrNull(entry.national?.winRate);
     );
   }
 }
-  attack += nationalBonus * weights.skill;
-  michu += nationalBonus * 0.85 * weights.skill;
-
-  if (nationalWinRate >= 6.5) {
-    buffs.push(`全国勝率上位 ${nationalWinRate}`);
-  } else if (nationalWinRate >= 5.5) {
-    buffs.push(`全国勝率安定 ${nationalWinRate}`);
-  } else if (nationalWinRate <= 4.0) {
-    debuffs.push(`全国勝率低め ${nationalWinRate}`);
-  }
-}
+  
 
     if (localWinRate !== null && localWinRate > 0) {
   const localDiff =
