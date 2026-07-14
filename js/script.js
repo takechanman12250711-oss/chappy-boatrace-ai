@@ -377,25 +377,198 @@ ${error.stack || "スタック情報を取得できません"}`
       })
     : [];
 
-    prediction.ticketRanks =
+        const ticketRanksWithOdds =
       attachOdds(
         prediction.ticketRanks
+      );
+
+    const budgetInput =
+      document.getElementById(
+        "allocationBudgetInput"
+      );
+
+    const requestedBudget =
+      Number(
+        budgetInput?.value || 1000
+      );
+
+    const totalBudget =
+      Math.max(
+        100,
+        Math.floor(
+          (
+            Number.isFinite(
+              requestedBudget
+            )
+              ? requestedBudget
+              : 1000
+          ) / 100
+        ) * 100
+      );
+
+    const valueMultiplier = {
+      低配当: 0.55,
+      標準: 0.9,
+      妙味あり: 1.2,
+      穴妙味: 1.1,
+      大穴妙味: 0.8,
+      高配当注意: 0.4,
+      未判定: 0.7
+    };
+
+    const weightedTickets =
+      ticketRanksWithOdds.map(
+        (item, index) => {
+          const score =
+            Math.max(
+              1,
+              Number(
+                item?.score || 1
+              )
+            );
+
+          const multiplier =
+            valueMultiplier[
+              item?.oddsValue
+            ] ?? 0.8;
+
+          return {
+            ticket:
+              String(
+                item?.ticket || ""
+              ),
+            index,
+            weight:
+              score * multiplier
+          };
+        }
+      );
+
+    const totalWeight =
+      weightedTickets.reduce(
+        (sum, item) =>
+          sum + item.weight,
+        0
+      );
+
+    const budgetUnits =
+      Math.floor(
+        totalBudget / 100
+      );
+
+    const allocationRows =
+      weightedTickets.map(item => {
+        const exactUnits =
+          totalWeight > 0
+            ? (
+                budgetUnits *
+                item.weight
+              ) / totalWeight
+            : 0;
+
+        const units =
+          Math.floor(exactUnits);
+
+        return {
+          ...item,
+          units,
+          remainder:
+            exactUnits - units
+        };
+      });
+
+    const usedUnits =
+      allocationRows.reduce(
+        (sum, item) =>
+          sum + item.units,
+        0
+      );
+
+    const remainingUnits =
+      budgetUnits - usedUnits;
+
+    allocationRows.sort(
+      (a, b) =>
+        b.remainder -
+          a.remainder ||
+        a.index - b.index
+    );
+
+    for (
+      let index = 0;
+      index < remainingUnits;
+      index += 1
+    ) {
+      if (!allocationRows.length) {
+        break;
+      }
+
+      allocationRows[
+        index %
+        allocationRows.length
+      ].units += 1;
+    }
+
+    const allocationByTicket =
+      new Map(
+        allocationRows.map(
+          item => [
+            item.ticket,
+            item.units * 100
+          ]
+        )
+      );
+
+    const applyAllocation =
+      list =>
+        attachOdds(list).map(
+          item => ({
+            ...item,
+            recommendedAmount:
+              allocationByTicket.get(
+                String(
+                  item?.ticket || ""
+                )
+              ) || 0
+          })
+        );
+
+    prediction.ticketRanks =
+      applyAllocation(
+        prediction.ticketRanks
+      );
+
+    prediction.allocationBudget =
+      totalBudget;
+
+    prediction.allocatedTotal =
+      prediction.ticketRanks.reduce(
+        (sum, item) =>
+          sum +
+          Number(
+            item?.recommendedAmount ||
+            0
+          ),
+        0
       );
 
     if (prediction.finalAi) {
       prediction.finalAi = {
         ...prediction.finalAi,
         ticketRanks:
-          attachOdds(
-            prediction.finalAi.ticketRanks
+          applyAllocation(
+            prediction.finalAi
+              .ticketRanks
           ),
         topTickets:
-          attachOdds(
-            prediction.finalAi.topTickets
+          applyAllocation(
+            prediction.finalAi
+              .topTickets
           ),
         manshuTickets:
-          attachOdds(
-            prediction.finalAi.manshuTickets
+          applyAllocation(
+            prediction.finalAi
+              .manshuTickets
           )
       };
     }
