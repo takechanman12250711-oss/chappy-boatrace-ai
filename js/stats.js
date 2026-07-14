@@ -331,9 +331,85 @@
     };
   }
 
-  function renderStats() {
-    const results = S.loadResults();
-    const stats = calcStats(results);
+    function renderStats() {
+    const results =
+      S.loadResults();
+
+    const stats =
+      calcStats(results);
+
+    const renderBucketRows =
+      buckets => {
+        if (!buckets.length) {
+          return `
+            <tr>
+              <td colspan="4">
+                検証データがありません
+              </td>
+            </tr>
+          `;
+        }
+
+        return buckets
+          .map(bucket => `
+            <tr>
+              <td>
+                ${U.safeText(
+                  bucket.label
+                )}
+              </td>
+              <td>
+                ${bucket.ticketCount}点
+              </td>
+              <td>
+                ${bucket.hitCount}件
+                （${U.round(
+                  bucket.hitRate,
+                  1
+                )}%）
+              </td>
+              <td>
+                ${U.round(
+                  bucket.recoveryRate,
+                  1
+                )}%
+              </td>
+            </tr>
+          `)
+          .join("");
+      };
+
+    const rankBuckets =
+      ["S", "A", "B", "C"]
+        .map(
+          rank =>
+            stats.rankStats?.[rank]
+        )
+        .filter(Boolean);
+
+    const oddsValueOrder = [
+      "低配当",
+      "標準",
+      "妙味あり",
+      "穴妙味",
+      "大穴妙味",
+      "高配当注意",
+      "未判定"
+    ];
+
+    const oddsValueBuckets =
+      oddsValueOrder
+        .map(
+          label =>
+            stats.oddsValueStats?.[
+              label
+            ]
+        )
+        .filter(
+          bucket =>
+            bucket &&
+            bucket.ticketCount > 0
+        );
 
     U.setHtml("statsArea", `
       <div class="v3-final-grid">
@@ -341,21 +417,107 @@
           <h3>購入数</h3>
           <p>${stats.count}件</p>
         </div>
+
         <div class="v3-final-block">
           <h3>総購入</h3>
-          <p>${U.formatMoney(stats.totalBet)}</p>
+          <p>
+            ${U.formatMoney(
+              stats.totalBet
+            )}
+          </p>
         </div>
+
         <div class="v3-final-block">
           <h3>総払戻</h3>
-          <p>${U.formatMoney(stats.totalPayout)}</p>
+          <p>
+            ${U.formatMoney(
+              stats.totalPayout
+            )}
+          </p>
         </div>
+
         <div class="v3-final-block">
           <h3>収支</h3>
-          <p>${U.formatMoney(stats.profit)}</p>
+          <p>
+            ${U.formatMoney(
+              stats.profit
+            )}
+          </p>
         </div>
+
         <div class="v3-final-block">
           <h3>回収率</h3>
-          <p>${U.round(stats.recoveryRate, 1)}%</p>
+          <p>
+            ${U.round(
+              stats.recoveryRate,
+              1
+            )}%
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>AI予想検証</h3>
+          <p>
+            ${stats.predictionRaceCount}
+            レース中
+            ${stats.predictionHitCount}
+            レース的中
+          </p>
+          <p>
+            的中率
+            ${U.round(
+              stats.predictionHitRate,
+              1
+            )}%
+          </p>
+        </div>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>
+          S・A・B・C評価別
+        </h3>
+
+        <div class="v3-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>評価</th>
+                <th>候補</th>
+                <th>的中</th>
+                <th>理論回収率</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderBucketRows(
+                rankBuckets
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>
+          オッズ妙味別
+        </h3>
+
+        <div class="v3-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>判定</th>
+                <th>候補</th>
+                <th>的中</th>
+                <th>理論回収率</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderBucketRows(
+                oddsValueBuckets
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     `);
