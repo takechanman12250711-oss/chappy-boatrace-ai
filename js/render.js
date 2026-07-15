@@ -1218,101 +1218,215 @@ if (raceInfoArea) {
     `;
   }
 
-  function renderManshuNewspaper(prediction) {
-  const sheet = prediction.manshuSheet || {};
-  const items = [];
+    function renderManshuNewspaper(prediction) {
+    const sheet =
+      prediction.manshuSheet || {};
 
-  if (Array.isArray(sheet)) {
-    sheet.forEach((item) => {
-      const normalized = normalizeSheetItem(item, item.role || "manshu");
-      if (normalized) items.push(normalized);
+    const sourceTickets = arrayify(
+      sheet.tickets ||
+      prediction.ticketSheets?.hole ||
+      []
+    );
+
+    const rows = sourceTickets
+      .map(item => {
+        const row =
+          typeof item === "string"
+            ? { ticket: item }
+            : item || {};
+
+        const numericOdds =
+          Number(row.odds);
+
+        const hasOdds =
+          row.odds !== null &&
+          row.odds !== undefined &&
+          row.odds !== "" &&
+          Number.isFinite(
+            numericOdds
+          ) &&
+          numericOdds > 0;
+
+        const isManshu =
+          hasOdds &&
+          numericOdds >= 100;
+
+        const category =
+          row.category ||
+          (
+            isManshu
+              ? "万舟"
+              : hasOdds
+                ? "高配当候補"
+                : "穴候補"
+          );
+
+        return {
+          ticket:
+            row.ticket ||
+            row.line ||
+            row.formation ||
+            "",
+
+          category,
+
+          oddsText:
+            hasOdds
+              ? `${numericOdds}倍`
+              : row.oddsText ||
+                "オッズ未取得",
+
+          scenarioType:
+            row.scenarioType ||
+            "穴展開",
+
+          scenarioTitle:
+            row.scenarioTitle ||
+            prediction.raceFlow?.title ||
+            "",
+
+          scenarioSummary:
+            row.scenarioSummary ||
+            prediction.raceFlow?.summary ||
+            "",
+
+          isManshu
+        };
+      })
+      .filter(item => item.ticket);
+
+    if (!rows.length) {
+      return section(
+        "万舟",
+        emptyBox(
+          "成立する穴展開の買い目がありません"
+        ),
+        "💣",
+        "v3-manshu-newspaper"
+      );
+    }
+
+    const groups = {
+      万舟: [],
+      高配当候補: [],
+      穴候補: []
+    };
+
+    rows.forEach(item => {
+      if (item.isManshu) {
+        groups["万舟"].push({
+          ...item,
+          category: "万舟"
+        });
+        return;
+      }
+
+      if (
+        item.category ===
+        "高配当候補"
+      ) {
+        groups["高配当候補"]
+          .push(item);
+        return;
+      }
+
+      groups["穴候補"].push({
+        ...item,
+        category: "穴候補"
+      });
     });
-  } else {
-    const candidates = arrayify(
-      sheet.candidates ||
-      sheet.items ||
-      sheet.manshu ||
-      sheet.longshot ||
-      []
-    );
 
-    const nokoshi = arrayify(
-      sheet.nokoshi ||
-      sheet.remain ||
-      sheet.keep ||
-      sheet.nokoshiCandidates ||
-      []
-    );
+    const renderGroup = (
+      title,
+      items,
+      type
+    ) => {
+      if (!items.length) return "";
 
-    const hiroi = arrayify(
-      sheet.hiroi ||
-      sheet.pickup ||
-      sheet.pick ||
-      sheet.hiroiCandidates ||
-      []
-    );
+      return `
+        <div class="v3-formation-group">
+          <h3>${escapeHtml(title)}</h3>
 
-    [
-      ...candidates.map((item) => normalizeSheetItem(item, "manshu")),
-      ...nokoshi.map((item) => normalizeSheetItem(item, "nokoshi")),
-      ...hiroi.map((item) => normalizeSheetItem(item, "hiroi"))
-    ].filter(Boolean).forEach((item) => items.push(item));
+          <div
+            class="v3-formation-list
+              v3-formation-${escapeHtml(type)}"
+          >
+            ${items
+              .map(item => `
+                <div
+                  class="v3-formation-row
+                    v3-formation-row-${escapeHtml(type)}"
+                >
+                  <div class="v3-formation-ticket">
+                    ${ticketArrow(item.ticket)}
+                  </div>
+
+                  <div class="v3-formation-tags">
+                    ${tag(
+                      item.category,
+                      type
+                    )}
+
+                    ${tag(
+                      item.oddsText,
+                      "odds"
+                    )}
+
+                    ${tag(
+                      item.scenarioType,
+                      "flow"
+                    )}
+                  </div>
+
+                  ${item.scenarioSummary
+                    ? `
+                      <div class="v3-formation-reason">
+                        ${escapeHtml(
+                          limitText(
+                            item.scenarioSummary,
+                            90
+                          )
+                        )}
+                      </div>
+                    `
+                    : ""}
+                </div>
+              `)
+              .join("")}
+          </div>
+        </div>
+      `;
+    };
+
+    const body = [
+      renderGroup(
+        "万舟（実オッズ100倍以上）",
+        groups["万舟"],
+        "manshu"
+      ),
+
+      renderGroup(
+        "100倍未満の高配当候補",
+        groups["高配当候補"],
+        "highpay"
+      ),
+
+      renderGroup(
+        "穴候補（オッズ未取得）",
+        groups["穴候補"],
+        "hole"
+      )
+    ]
+      .filter(Boolean)
+      .join("");
+
+    return section(
+      "万舟",
+      body,
+      "💣",
+      "v3-manshu-newspaper"
+    );
   }
-
-  const comment =
-    sheet.comment ||
-    sheet.reason ||
-    sheet.text ||
-    sheet.summary ||
-    "";
-  const raceEntries =
-  prediction.race?.entries ||
-  prediction.entries ||
-  [];
-
-items.forEach((item) => {
-  const entry = raceEntries.find((boat) => {
-    const entryBoatNo = Number(
-      boat.boatNo ||
-      boat.no ||
-      boat.waku ||
-      boat.course ||
-      0
-    );
-
-    return entryBoatNo === Number(item.no);
-  });
-
-  if (!entry) return;
-
-  item.className =
-    item.className ||
-    entry.className ||
-    entry.grade ||
-    entry.class ||
-    entry.rank ||
-    "";
-});
-  if (items.length === 0 && !comment) {
-    return section("万舟", emptyBox("万舟データがありません"), "💣", "v3-manshu-newspaper");
-  }
-
-  const body = `
-    ${
-      items.length
-        ? `<div class="v3-newspaper-list">${items.map(renderNewspaperCard).join("")}</div>`
-        : ""
-    }
-
-    ${
-      comment
-        ? `<div class="v3-note v3-manshu-note">${escapeHtml(comment)}</div>`
-        : ""
-    }
-  `;
-
-  return section("万舟", body, "💣", "v3-manshu-newspaper");
-}
 
   function normalizeSheetItem(item, role) {
     if (!item) return null;
