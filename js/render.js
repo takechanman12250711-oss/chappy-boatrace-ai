@@ -894,74 +894,329 @@ if (raceInfoArea) {
     return renderMainNewspaper(prediction);
   }
 
-   function renderMainNewspaper(prediction) {
-  const sheet = prediction.mainSheet || {};
-  const items = [];
+     function renderMainNewspaper(prediction) {
+    const sheet =
+      prediction.mainSheet || {};
 
-  if (Array.isArray(sheet)) {
-    sheet.forEach((item, index) => {
-      const roles = ["honmei", "taikou", "ana", "osa"];
-      const normalized = normalizeSheetItem(item, item.role || roles[index] || "osa");
-      if (normalized) items.push(normalized);
-    });
-  } else {
+    const boatSheet =
+      prediction.boatEvaluation ||
+      sheet;
+
+    const boatItems = [];
+
     [
-      normalizeSheetItem(sheet.honmei || sheet.main || sheet["◎"] || sheet.top, "honmei"),
-      normalizeSheetItem(sheet.taikou || sheet.rival || sheet["○"] || sheet.second, "taikou"),
-      normalizeSheetItem(sheet.ana || sheet.hole || sheet["▲"] || sheet.third, "ana"),
-      normalizeSheetItem(sheet.osa || sheet.osae || sheet["△"] || sheet.support, "osa")
-    ].filter(Boolean).forEach((item) => items.push(item));
+      normalizeSheetItem(
+        boatSheet.honmei ||
+        boatSheet.main ||
+        boatSheet["◎"] ||
+        boatSheet.top,
+        "honmei"
+      ),
+      normalizeSheetItem(
+        boatSheet.taikou ||
+        boatSheet.rival ||
+        boatSheet["○"] ||
+        boatSheet.second,
+        "taikou"
+      ),
+      normalizeSheetItem(
+        boatSheet.ana ||
+        boatSheet.hole ||
+        boatSheet["▲"] ||
+        boatSheet.third,
+        "ana"
+      ),
+      normalizeSheetItem(
+        boatSheet.osa ||
+        boatSheet.osae ||
+        boatSheet["△"] ||
+        boatSheet.support,
+        "osa"
+      )
+    ]
+      .filter(Boolean)
+      .forEach(item =>
+        boatItems.push(item)
+      );
 
-    if (items.length === 0 && Array.isArray(sheet.items)) {
-      sheet.items.forEach((item, index) => {
-        const roles = ["honmei", "taikou", "ana", "osa"];
-        const normalized = normalizeSheetItem(item, item.role || roles[index] || "osa");
-        if (normalized) items.push(normalized);
-      });
+    if (
+      !boatItems.length &&
+      Array.isArray(
+        boatSheet.evaluations
+      )
+    ) {
+      boatSheet.evaluations
+        .slice(0, 6)
+        .forEach((item, index) => {
+          const roles = [
+            "honmei",
+            "taikou",
+            "ana",
+            "osa",
+            "osa",
+            "osa"
+          ];
+
+          const normalized =
+            normalizeSheetItem(
+              item,
+              item?.role ||
+              roles[index] ||
+              "osa"
+            );
+
+          if (normalized) {
+            boatItems.push(normalized);
+          }
+        });
     }
-  }
 
-const raceEntries =
-  prediction.race?.entries ||
-  prediction.entries ||
-  [];
+    const raceEntries =
+      prediction.race?.entries ||
+      prediction.entries ||
+      [];
 
-items.forEach((item) => {
-  const entry = raceEntries.find((boat) => {
-    const entryBoatNo = Number(
-      boat.boatNo ||
-      boat.no ||
-      boat.waku ||
-      boat.course ||
-      0
+    boatItems.forEach(item => {
+      const entry =
+        raceEntries.find(boat => {
+          const entryBoatNo =
+            Number(
+              boat.boatNo ||
+              boat.no ||
+              boat.waku ||
+              boat.course ||
+              0
+            );
+
+          return (
+            entryBoatNo ===
+            Number(item.no)
+          );
+        });
+
+      if (!entry) return;
+
+      item.className =
+        item.className ||
+        entry.className ||
+        entry.grade ||
+        entry.class ||
+        entry.rank ||
+        "";
+    });
+
+    const mainTickets = arrayify(
+      sheet.tickets ||
+      prediction.ticketSheets?.main ||
+      []
     );
 
-    return entryBoatNo === Number(item.no);
-  });
+    const coverTickets = arrayify(
+      sheet.coverTickets ||
+      prediction.ticketSheets?.cover ||
+      []
+    );
 
-  if (!entry) return;
+    const flowTickets = arrayify(
+      sheet.flowTickets ||
+      prediction.ticketSheets?.flow ||
+      []
+    );
 
-  item.className =
-    item.className ||
-    entry.className ||
-    entry.grade ||
-    entry.class ||
-    entry.rank ||
-    "";
-});
+    const normalizeTicketRow = (
+      item,
+      fallbackCategory,
+      fallbackScenario
+    ) => {
+      const row =
+        typeof item === "string"
+          ? { ticket: item }
+          : item || {};
 
-  if (items.length === 0) {
-    return section("本命", emptyBox("本命データがありません"), "🎯", "v3-main-newspaper");
+      const numericOdds =
+        Number(row.odds);
+
+      const hasOdds =
+        row.odds !== null &&
+        row.odds !== undefined &&
+        row.odds !== "" &&
+        Number.isFinite(
+          numericOdds
+        ) &&
+        numericOdds > 0;
+
+      return {
+        ticket:
+          row.ticket ||
+          row.line ||
+          row.formation ||
+          "",
+
+        category:
+          row.category ||
+          fallbackCategory,
+
+        scenarioType:
+          row.scenarioType ||
+          fallbackScenario,
+
+        oddsText:
+          hasOdds
+            ? `${numericOdds}倍`
+            : row.oddsText ||
+              "オッズ未取得",
+
+        scenarioTitle:
+          row.scenarioTitle ||
+          prediction.raceFlow?.title ||
+          "",
+
+        scenarioSummary:
+          row.scenarioSummary ||
+          prediction.raceFlow?.summary ||
+          ""
+      };
+    };
+
+    const renderTicketRows = (
+      title,
+      list,
+      type,
+      fallbackCategory,
+      fallbackScenario
+    ) => {
+      const rows = arrayify(list)
+        .map(item =>
+          normalizeTicketRow(
+            item,
+            fallbackCategory,
+            fallbackScenario
+          )
+        )
+        .filter(item => item.ticket);
+
+      if (!rows.length) return "";
+
+      return `
+        <div class="v3-formation-group">
+          <h3>${escapeHtml(title)}</h3>
+
+          <div
+            class="v3-formation-list
+              v3-formation-${escapeHtml(type)}"
+          >
+            ${rows
+              .map(item => `
+                <div
+                  class="v3-formation-row
+                    v3-formation-row-${escapeHtml(type)}"
+                >
+                  <div class="v3-formation-ticket">
+                    ${ticketArrow(item.ticket)}
+                  </div>
+
+                  <div class="v3-formation-tags">
+                    ${tag(
+                      item.category,
+                      type
+                    )}
+
+                    ${tag(
+                      item.oddsText,
+                      "odds"
+                    )}
+
+                    ${item.scenarioType
+                      ? tag(
+                          item.scenarioType,
+                          "flow"
+                        )
+                      : ""}
+                  </div>
+
+                  ${item.scenarioSummary
+                    ? `
+                      <div class="v3-formation-reason">
+                        ${escapeHtml(
+                          limitText(
+                            item.scenarioSummary,
+                            90
+                          )
+                        )}
+                      </div>
+                    `
+                    : ""}
+                </div>
+              `)
+              .join("")}
+          </div>
+        </div>
+      `;
+    };
+
+    const boatBody =
+      boatItems.length
+        ? `
+          <div class="v3-newspaper-list">
+            ${boatItems
+              .map(renderNewspaperCard)
+              .join("")}
+          </div>
+        `
+        : emptyBox(
+            "艇評価データがありません"
+          );
+
+    const ticketBody = [
+      renderTicketRows(
+        "本線",
+        mainTickets,
+        "main",
+        "本命",
+        "中心展開"
+      ),
+
+      renderTicketRows(
+        "押さえ",
+        coverTickets,
+        "safety",
+        "押さえ",
+        "安全押さえ"
+      ),
+
+      renderTicketRows(
+        "流し",
+        flowTickets,
+        "flow",
+        "流し",
+        "流し展開"
+      )
+    ]
+      .filter(Boolean)
+      .join("");
+
+    const boatSection = section(
+      "AI総合／艇評価",
+      boatBody,
+      "📊",
+      "v3-boat-evaluation"
+    );
+
+    const ticketSection = section(
+      "本命",
+      ticketBody ||
+        emptyBox(
+          "本命買い目データがありません"
+        ),
+      "🎯",
+      "v3-main-newspaper"
+    );
+
+    return `
+      ${boatSection}
+      ${ticketSection}
+    `;
   }
-
-  const body = `
-    <div class="v3-newspaper-list">
-      ${items.map(renderNewspaperCard).join("")}
-    </div>
-  `;
-
-  return section("本命", body, "🎯", "v3-main-newspaper");
-}
 
   function renderManshuNewspaper(prediction) {
   const sheet = prediction.manshuSheet || {};
