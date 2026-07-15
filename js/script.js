@@ -1881,7 +1881,16 @@
         place: params.place,
         jcd: params.jcd,
         raceNo: params.rno,
-        date: params.date,
+                date: params.date,
+
+        predictionMode:
+          "pre_deadline",
+
+        isRetrospective:
+          false,
+
+        officialResultUsedForPrediction:
+          false,
         savedAt:
           new Date().toISOString(),
         ticketRanks:
