@@ -683,6 +683,167 @@
       }
     };
 
+        const oddsByTicket =
+      race.odds?.byTicket || {};
+
+    const createTicketRow = (
+      ticketValue,
+      category,
+      scenarioType
+    ) => {
+      const ticketText =
+        normalizeTicket(ticketValue);
+
+      const rawOdds =
+        oddsByTicket[ticketText];
+
+      const numericOdds =
+        Number(rawOdds);
+
+      const hasOdds =
+        rawOdds !== undefined &&
+        rawOdds !== null &&
+        rawOdds !== "" &&
+        Number.isFinite(numericOdds) &&
+        numericOdds > 0;
+
+      return {
+        ticket: ticketText,
+        category,
+        scenarioType,
+
+        odds:
+          hasOdds
+            ? numericOdds
+            : null,
+
+        oddsText:
+          hasOdds
+            ? `${numericOdds}倍`
+            : "オッズ未取得",
+
+        hasOdds,
+
+        isManshu:
+          hasOdds &&
+          numericOdds >= 100,
+
+        scenarioTitle:
+          raceFlow?.title || "",
+
+        scenarioSummary:
+          raceFlow?.summary || ""
+      };
+    };
+
+    const mainTicketRows =
+      (formation.main || [])
+        .map(ticketText =>
+          createTicketRow(
+            ticketText,
+            "本命",
+            "中心展開"
+          )
+        )
+        .filter(item => item.ticket);
+
+    const coverTicketRows =
+      (formation.cover || [])
+        .map(ticketText =>
+          createTicketRow(
+            ticketText,
+            "押さえ",
+            "安全押さえ"
+          )
+        )
+        .filter(item => item.ticket);
+
+    const flowTicketRows =
+      (formation.nagashi || [])
+        .map(ticketText =>
+          createTicketRow(
+            ticketText,
+            "流し",
+            "流し展開"
+          )
+        )
+        .filter(item => item.ticket);
+
+    const holeTicketRows =
+      (formation.hole || [])
+        .map(ticketText => {
+          const row =
+            createTicketRow(
+              ticketText,
+              "穴候補",
+              "穴展開"
+            );
+
+          return {
+            ...row,
+
+            category:
+              row.isManshu
+                ? "万舟"
+                : row.hasOdds
+                  ? "高配当候補"
+                  : "穴候補"
+          };
+        })
+        .filter(item => item.ticket);
+
+    const aiTicketMap =
+      new Map();
+
+    [
+      ...mainTicketRows,
+      ...coverTicketRows,
+      ...flowTicketRows,
+      ...holeTicketRows
+    ].forEach(item => {
+      const existing =
+        aiTicketMap.get(item.ticket);
+
+      if (!existing) {
+        aiTicketMap.set(
+          item.ticket,
+          {
+            ...item,
+            categories: [
+              item.category
+            ],
+            scenarioTypes: [
+              item.scenarioType
+            ]
+          }
+        );
+
+        return;
+      }
+
+      existing.categories =
+        uniqueList([
+          ...(existing.categories || []),
+          item.category
+        ]);
+
+      existing.scenarioTypes =
+        uniqueList([
+          ...(existing.scenarioTypes || []),
+          item.scenarioType
+        ]);
+
+      if (
+        item.isManshu &&
+        !existing.isManshu
+      ) {
+        existing.isManshu = true;
+      }
+    });
+
+    const aiTicketList =
+      [...aiTicketMap.values()];
+
     return {
       ok: true,
       version: VERSION,
@@ -694,11 +855,56 @@
       exhibition,
       indexes,
       raceFlow,
+
+      boatEvaluation:
+        mainSheet,
+
       mainSheet: {
         ...mainSheet,
+
+        sheetRole:
+          "中心展開から作る本命3連単",
+
+        tickets:
+          mainTicketRows,
+
+        coverTickets:
+          coverTicketRows,
+
+        flowTickets:
+          flowTicketRows,
+
         formation
       },
-      manshuSheet,
+
+      manshuSheet: {
+        ...manshuSheet,
+
+        sheetRole:
+          "成立する穴展開・高配当・万舟買い目",
+
+        tickets:
+          holeTicketRows
+      },
+
+      ticketSheets: {
+        main:
+          mainTicketRows,
+
+        cover:
+          coverTicketRows,
+
+        flow:
+          flowTicketRows,
+
+        hole:
+          holeTicketRows,
+
+        all:
+          aiTicketList
+      },
+
+      aiTicketList,
       formation,
       finalComment
     };
