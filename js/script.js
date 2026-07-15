@@ -40,31 +40,175 @@
 
   let lastRaceData = null;
 
-  document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", () => {
     console.log("✅ script.js 読み込みOK");
+
     setDefaultDate();
 
-    const fetchBtn = document.getElementById("fetchRaceBtn");
-    const reloadBtn = document.getElementById("reloadRaceBtn");
-    const oddsBtn = document.getElementById("refreshOddsBtn");
+    const fetchBtn =
+      document.getElementById(
+        "fetchRaceBtn"
+      );
 
-    if (fetchBtn) fetchBtn.addEventListener("click", fetchAndRenderRace);
-    if (reloadBtn) reloadBtn.addEventListener("click", fetchAndRenderRace);
-    if (oddsBtn) oddsBtn.addEventListener("click", refreshOddsOnly);
+    const reloadBtn =
+      document.getElementById(
+        "reloadRaceBtn"
+      );
 
-    updateStatus("待機中");
+    const oddsBtn =
+      document.getElementById(
+        "refreshOddsBtn"
+      );
+
+    const modeSelect =
+      document.getElementById(
+        "raceModeSelect"
+      );
+
+    if (fetchBtn) {
+      fetchBtn.addEventListener(
+        "click",
+        fetchAndRenderRace
+      );
+    }
+
+    if (reloadBtn) {
+      reloadBtn.addEventListener(
+        "click",
+        fetchAndRenderRace
+      );
+    }
+
+    if (oddsBtn) {
+      oddsBtn.addEventListener(
+        "click",
+        refreshOddsOnly
+      );
+    }
+
+    if (modeSelect) {
+      modeSelect.addEventListener(
+        "change",
+        applyRaceMode
+      );
+    }
+
+    applyRaceMode();
   });
 
-  function setDefaultDate() {
-    const input = document.getElementById("dateInput");
-    if (!input || input.value) return;
+  function setDefaultDate(
+    forceToday = false
+  ) {
+    const input =
+      document.getElementById(
+        "dateInput"
+      );
 
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
+    if (
+      !input ||
+      (
+        input.value &&
+        !forceToday
+      )
+    ) {
+      return;
+    }
 
-    input.value = `${yyyy}-${mm}-${dd}`;
+    const today =
+      new Date();
+
+    const yyyy =
+      today.getFullYear();
+
+    const mm =
+      String(
+        today.getMonth() + 1
+      ).padStart(2, "0");
+
+    const dd =
+      String(
+        today.getDate()
+      ).padStart(2, "0");
+
+    input.value =
+      `${yyyy}-${mm}-${dd}`;
+  }
+
+  function applyRaceMode() {
+    const modeSelect =
+      document.getElementById(
+        "raceModeSelect"
+      );
+
+    const dateInput =
+      document.getElementById(
+        "dateInput"
+      );
+
+    const help =
+      document.getElementById(
+        "raceModeHelp"
+      );
+
+    const fetchBtn =
+      document.getElementById(
+        "fetchRaceBtn"
+      );
+
+    const mode =
+      modeSelect?.value ||
+      "live";
+
+    const isReview =
+      mode === "review";
+
+    if (dateInput) {
+      dateInput.disabled =
+        !isReview;
+
+      if (!isReview) {
+        setDefaultDate(true);
+      }
+    }
+
+    if (help) {
+      help.textContent =
+        isReview
+          ? "終了済みレースを選び、予想と公式結果を別々に表示します"
+          : "本日開催中の締切前レースだけを表示します";
+    }
+
+    if (fetchBtn) {
+      const mainText =
+        fetchBtn.querySelector(
+          "span"
+        );
+
+      const subText =
+        fetchBtn.querySelector(
+          "small"
+        );
+
+      if (mainText) {
+        mainText.textContent =
+          isReview
+            ? "振り返り予想を開始"
+            : "AI予想を開始";
+      }
+
+      if (subText) {
+        subText.textContent =
+          isReview
+            ? "結果を予想に使わず、予想後に公式結果を表示"
+            : "開催中の締切前レースを解析";
+      }
+    }
+
+    updateStatus(
+      isReview
+        ? "終了レースを選んでください"
+        : "開催中レースを確認します"
+    );
   }
 
   async function fetchAndRenderRace() {
