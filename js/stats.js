@@ -162,11 +162,27 @@
       theoreticalPayout: 0
     });
 
-    const rankStats = {
+        const rankStats = {
       S: createBucket("S"),
       A: createBucket("A"),
       B: createBucket("B"),
       C: createBucket("C")
+    };
+
+    const roleStats = {
+      本命:
+        createBucket("本命"),
+
+      押さえ:
+        createBucket("押さえ"),
+
+      流し:
+        createBucket("流し"),
+
+      "穴・万舟候補":
+        createBucket(
+          "穴・万舟候補"
+        )
     };
 
     const oddsValueStats = {};
@@ -201,6 +217,11 @@
               ticket?.rank || ""
             ).toUpperCase();
 
+          const role =
+            String(
+              ticket?.role || ""
+            );
+
           const oddsValue =
             String(
               ticket?.oddsValue ||
@@ -216,11 +237,13 @@
           const updateBucket =
             bucket => {
               bucket.ticketCount += 1;
+
               bucket.theoreticalBet +=
                 100;
 
               if (isHit) {
                 bucket.hitCount += 1;
+
                 bucket.theoreticalPayout +=
                   Math.round(
                     odds * 100
@@ -231,6 +254,12 @@
           if (rankStats[rank]) {
             updateBucket(
               rankStats[rank]
+            );
+          }
+
+          if (roleStats[role]) {
+            updateBucket(
+              roleStats[role]
             );
           }
 
@@ -258,6 +287,7 @@
     const finalizeBucket =
       bucket => ({
         ...bucket,
+
         hitRate:
           bucket.ticketCount > 0
             ? (
@@ -265,6 +295,7 @@
                 bucket.ticketCount
               ) * 100
             : 0,
+
         recoveryRate:
           bucket.theoreticalBet > 0
             ? (
@@ -280,6 +311,18 @@
       Object.fromEntries(
         Object.entries(
           rankStats
+        ).map(
+          ([key, bucket]) => [
+            key,
+            finalizeBucket(bucket)
+          ]
+        )
+      );
+
+    const finalizedRoleStats =
+      Object.fromEntries(
+        Object.entries(
+          roleStats
         ).map(
           ([key, bucket]) => [
             key,
@@ -315,7 +358,9 @@
 
       predictionRaceCount:
         checkedResults.length,
+
       predictionHitCount,
+
       predictionHitRate:
         checkedResults.length > 0
           ? (
@@ -326,11 +371,14 @@
 
       rankStats:
         finalizedRankStats,
+
+      roleStats:
+        finalizedRoleStats,
+
       oddsValueStats:
         finalizedOddsValueStats
     };
   }
-
     function renderStats() {
     const results =
       S.loadResults();
