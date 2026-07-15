@@ -427,11 +427,16 @@
           .join("");
       };
 
-    const rankBuckets =
-      ["S", "A", "B", "C"]
+        const roleBuckets =
+      [
+        "本命",
+        "押さえ",
+        "流し",
+        "穴・万舟候補"
+      ]
         .map(
-          rank =>
-            stats.rankStats?.[rank]
+          role =>
+            stats.roleStats?.[role]
         )
         .filter(Boolean);
 
@@ -505,12 +510,14 @@
 
         <div class="v3-final-block">
           <h3>AI予想検証</h3>
+
           <p>
             ${stats.predictionRaceCount}
             レース中
             ${stats.predictionHitCount}
             レース的中
           </p>
+
           <p>
             的中率
             ${U.round(
@@ -523,22 +530,23 @@
 
       <div class="v3-final-block">
         <h3>
-          S・A・B・C評価別
+          買い目役割別
         </h3>
 
         <div class="v3-table-wrap">
           <table class="table">
             <thead>
               <tr>
-                <th>評価</th>
+                <th>役割</th>
                 <th>候補</th>
                 <th>的中</th>
                 <th>理論回収率</th>
               </tr>
             </thead>
+
             <tbody>
               ${renderBucketRows(
-                rankBuckets
+                roleBuckets
               )}
             </tbody>
           </table>
