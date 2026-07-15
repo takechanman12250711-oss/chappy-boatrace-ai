@@ -680,64 +680,561 @@
     }
   }
 
-  async function fetchAndRenderRace() {
+    async function fetchAndRenderRace() {
     try {
       clearErrorArea();
-      updateStatus("取得中...");
 
-      const params = getRaceParams();
+      updateStatus(
+        "取得中..."
+      );
 
-      console.log("🚤 race params", params);
+      const params =
+        getRaceParams();
 
-      const data = await fetchRaceData(params);
+      const mode =
+        getRaceMode();
 
-      lastRaceData = data;
+      const isReview =
+        mode === "review";
 
-      console.log("✅ API成功 entries=", data?.entries?.length || 0, data);
+      if (!isReview) {
+        await verifyLiveDeadline(
+          params
+        );
 
-      const prediction = createPredictionSafe(data) || createEmergencyPrediction(data);
-      function createEmergencyPrediction(data) {
-  return {
-    ok: true,
-    version: "emergency",
-    race: data,
-    indexes: { scores: [], totalRanking: [] },
-    mainSheet: { evaluations: [], formation: {} },
-    manshuSheet: { candidates: [], formation: [] },
-    formation: {},
-    finalComment: {
-      title: "緊急表示",
-      comment: "prediction.jsが失敗したため、取得データのみ表示します。"
-    }
-  };
-}
-      const theory = createTheorySafe(data);
-      const ai = createAISafe(data);
-      const odds = data?.odds || null;
-
-      console.log("✅ prediction確認", prediction);
-　　　　
-      if (!prediction || typeof prediction !== "object") {
-        throw new Error("prediction.js から有効な予想データが返っていません。");
+        clearReviewResult();
       }
 
-      if (typeof window.renderAll === "function") {
-        window.renderAll(prediction);
+      console.log(
+        "🚤 race params",
+        params
+      );
+
+      const data =
+        await fetchRaceData(
+          params
+        );
+
+      lastRaceData =
+        data;
+
+      console.log(
+        "✅ API成功 entries=",
+        data?.entries?.length || 0,
+        data
+      );
+
+      const prediction =
+        createPredictionSafe(
+          data
+        ) ||
+        createEmergencyPrediction(
+          data
+        );
+
+      function createEmergencyPrediction(
+        raceData
+      ) {
+        return {
+          ok: true,
+
+          version:
+            "emergency",
+
+          race:
+            raceData,
+
+          indexes: {
+            scores: [],
+            totalRanking: []
+          },
+
+          mainSheet: {
+            evaluations: [],
+            formation: {}
+          },
+
+          manshuSheet: {
+            candidates: [],
+            formation: []
+          },
+
+          formation: {},
+
+          finalComment: {
+            title:
+              "緊急表示",
+
+            comment:
+              "prediction.jsが失敗したため、取得データのみ表示します。"
+          }
+        };
+      }
+
+      createTheorySafe(data);
+      createAISafe(data);
+
+      if (
+        !prediction ||
+        typeof prediction !==
+          "object"
+      ) {
+        throw new Error(
+          "prediction.js から有効な予想データが返っていません。"
+        );
+      }
+
+      prediction.predictionMode =
+        isReview
+          ? "retrospective_reference"
+          : "pre_deadline";
+
+      prediction.isRetrospective =
+        isReview;
+
+      prediction
+        .officialResultUsedForPrediction =
+        false;
+
+      if (
+        typeof window.renderAll ===
+        "function"
+      ) {
+        window.renderAll(
+          prediction
+        );
       } else {
-        throw new Error("renderAll() が見つかりません。render.jsを確認してください。");
+        throw new Error(
+          "renderAll() が見つかりません。render.jsを確認してください。"
+        );
       }
 
-      updateStatus("取得完了");
+      if (isReview) {
+        updateStatus(
+          "予想完了・公式結果を取得中..."
+        );
 
+        try {
+          const officialResult =
+            await fetchOfficialResult(
+              params
+            );
+
+          renderReviewResult(
+            officialResult,
+            params
+          );
+
+          updateStatus(
+            officialResult
+              .resultAvailable
+              ? "振り返り予想と公式結果を表示しました"
+              : "振り返り予想を表示しました。公式結果は未確定です"
+          );
+        } catch (
+          resultError
+        ) {
+          console.error(
+            "official result error",
+            resultError
+          );
+
+          renderReviewResultError(
+            resultError,
+            params
+          );
+
+          updateStatus(
+            "振り返り予想を表示しました。公式結果の取得に失敗しました"
+          );
+        }
+      } else {
+        updateStatus(
+          "取得完了"
+        );
+      }
     } catch (error) {
-      console.error("❌ fetchAndRenderRace error", error);
-      updateStatus("エラー");
-      showError(
-  `${error.message || "取得に失敗しました"}
+      console.error(
+        "❌ fetchAndRenderRace error",
+        error
+      );
 
-${error.stack || "スタック情報を取得できません"}`
-);
+      updateStatus(
+        "エラー"
+      );
+
+      showError(
+        `${
+          error.message ||
+          "取得に失敗しました"
+        }\n\n${
+          error.stack ||
+          "スタック情報を取得できません"
+        }`
+      );
     }
+  }
+
+  async function verifyLiveDeadline(
+    params
+  ) {
+    updateStatus(
+      "締切時刻を再確認中..."
+    );
+
+    const schedule =
+      await requestSchedule(
+        params.date,
+        params.jcd
+      );
+
+    const races =
+      Array.isArray(
+        schedule
+          .selectedVenue
+          ?.races
+      )
+        ? schedule
+            .selectedVenue
+            .races
+        : [];
+
+    const selectedRace =
+      races.find(
+        race =>
+          Number(
+            race.raceNo
+          ) ===
+          Number(
+            params.rno
+          )
+      );
+
+    if (
+      !selectedRace?.selectable
+    ) {
+      await loadVenueChoices();
+
+      throw new Error(
+        "選択したレースは締切を過ぎました。次の締切前レースを選び直しました。"
+      );
+    }
+  }
+
+  async function fetchOfficialResult(
+    params
+  ) {
+    const url =
+      `/api/result` +
+      `?date=${encodeURIComponent(
+        params.date
+      )}` +
+      `&jcd=${encodeURIComponent(
+        params.jcd
+      )}` +
+      `&rno=${encodeURIComponent(
+        params.rno
+      )}`;
+
+    const response =
+      await fetch(url);
+
+    const result =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !result?.ok
+    ) {
+      throw new Error(
+        result?.error ||
+        `公式結果APIエラー：` +
+        `${response.status}`
+      );
+    }
+
+    return result;
+  }
+
+  function ensureReviewResultArea() {
+    let area =
+      document.getElementById(
+        "reviewResultArea"
+      );
+
+    if (area) {
+      return area;
+    }
+
+    const host =
+      document.getElementById(
+        "predictionSection"
+      );
+
+    if (!host) {
+      return null;
+    }
+
+    area =
+      document.createElement(
+        "section"
+      );
+
+    area.id =
+      "reviewResultArea";
+
+    area.className =
+      "dashboard-section result-management-section";
+
+    host.appendChild(
+      area
+    );
+
+    return area;
+  }
+
+  function clearReviewResult() {
+    const area =
+      document.getElementById(
+        "reviewResultArea"
+      );
+
+    if (!area) {
+      return;
+    }
+
+    area.innerHTML = "";
+
+    area.style.display =
+      "none";
+  }
+
+  function renderReviewResult(
+    result,
+    params
+  ) {
+    const area =
+      ensureReviewResultArea();
+
+    if (!area) {
+      return;
+    }
+
+    area.style.display =
+      "block";
+
+    const trifecta =
+      result?.trifecta;
+
+    const finishers =
+      Array.isArray(
+        result?.finishers
+      )
+        ? result.finishers
+        : [];
+
+    const starts =
+      Array.isArray(
+        result?.starts
+      )
+        ? result.starts
+        : [];
+
+    const resultBody =
+      result?.resultAvailable
+        ? `
+          <div class="race-select-card">
+
+            <p>
+              <strong>
+                3連単：
+                ${escapeHTML(
+                  trifecta
+                    ?.combination ||
+                  "-"
+                )}
+              </strong>
+            </p>
+
+            <p>
+              払戻：
+              ${escapeHTML(
+                trifecta
+                  ?.payoutText ||
+                "-"
+              )}
+              ／
+              ${escapeHTML(
+                trifecta
+                  ?.popularity ??
+                "-"
+              )}番人気
+            </p>
+
+            <p>
+              決まり手：
+              ${escapeHTML(
+                result
+                  ?.winningMethod ||
+                "-"
+              )}
+            </p>
+
+            <div class="result-dashboard-grid">
+
+              <article class="dashboard-card">
+
+                <h3>
+                  着順
+                </h3>
+
+                ${finishers
+                  .map(item => `
+                    <p>
+                      ${escapeHTML(
+                        item.rank
+                      )}着　
+                      ${escapeHTML(
+                        item.boat
+                      )}号艇　
+                      ${escapeHTML(
+                        item.racerName ||
+                        "-"
+                      )}
+                    </p>
+                  `)
+                  .join("")}
+
+              </article>
+
+              <article class="dashboard-card">
+
+                <h3>
+                  スタート情報
+                </h3>
+
+                ${starts
+                  .map(item => `
+                    <p>
+                      ${escapeHTML(
+                        item.course
+                      )}コース／
+                      ${escapeHTML(
+                        item.boat
+                      )}号艇　
+                      ST
+                      ${escapeHTML(
+                        item.raw ||
+                        item.st ||
+                        "-"
+                      )}
+                    </p>
+                  `)
+                  .join("")}
+
+              </article>
+
+            </div>
+
+          </div>
+        `
+        : `
+          <div class="race-select-card">
+
+            <p>
+              公式結果はまだ確定していません。
+            </p>
+
+          </div>
+        `;
+
+    area.innerHTML = `
+      <div class="dashboard-section-head">
+
+        <div>
+
+          <p class="section-eyebrow">
+            OFFICIAL RESULT
+          </p>
+
+          <h2>
+            🏁 公式レース結果
+          </h2>
+
+        </div>
+
+        <span class="section-status-badge">
+          予想とは別表示
+        </span>
+
+      </div>
+
+      <div class="status dashboard-status">
+
+        ${escapeHTML(
+          params.place
+        )}
+        ${escapeHTML(
+          params.rno
+        )}R：
+
+        この結果はAI予想の計算に使用していません
+
+      </div>
+
+      ${resultBody}
+    `;
+  }
+
+  function renderReviewResultError(
+    error,
+    params
+  ) {
+    const area =
+      ensureReviewResultArea();
+
+    if (!area) {
+      return;
+    }
+
+    area.style.display =
+      "block";
+
+    area.innerHTML = `
+      <div class="dashboard-section-head">
+
+        <div>
+
+          <p class="section-eyebrow">
+            OFFICIAL RESULT
+          </p>
+
+          <h2>
+            🏁 公式レース結果
+          </h2>
+
+        </div>
+
+      </div>
+
+      <div class="dashboard-error-area">
+
+        ${escapeHTML(
+          params.place
+        )}
+        ${escapeHTML(
+          params.rno
+        )}Rの結果を取得できませんでした。
+
+        <br>
+
+        ${escapeHTML(
+          error?.message ||
+          String(error)
+        )}
+
+      </div>
+    `;
   }
 
   function getRaceParams() {
