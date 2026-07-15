@@ -134,7 +134,7 @@
       `${yyyy}-${mm}-${dd}`;
   }
 
-  function applyRaceMode() {
+    async function applyRaceMode() {
     const modeSelect =
       document.getElementById(
         "raceModeSelect"
@@ -155,12 +155,16 @@
         "fetchRaceBtn"
       );
 
-    const mode =
-      modeSelect?.value ||
-      "live";
+    const placeSelect =
+      document.getElementById(
+        "placeSelect"
+      );
 
     const isReview =
-      mode === "review";
+      (
+        modeSelect?.value ||
+        "live"
+      ) === "review";
 
     if (dateInput) {
       dateInput.disabled =
@@ -169,6 +173,30 @@
       if (!isReview) {
         setDefaultDate(true);
       }
+
+      dateInput.max =
+        dateInput.value;
+
+      dateInput.onchange = () => {
+        if (
+          getRaceMode() ===
+          "review"
+        ) {
+          loadVenueChoices()
+            .catch(
+              handleRaceSelectionError
+            );
+        }
+      };
+    }
+
+    if (placeSelect) {
+      placeSelect.onchange = () => {
+        loadRaceChoices()
+          .catch(
+            handleRaceSelectionError
+          );
+      };
     }
 
     if (help) {
@@ -204,11 +232,452 @@
       }
     }
 
+    clearErrorArea();
+
     updateStatus(
-      isReview
-        ? "終了レースを選んでください"
-        : "開催中レースを確認します"
+      "開催情報を確認中..."
     );
+
+    try {
+      await loadVenueChoices();
+    } catch (error) {
+      handleRaceSelectionError(
+        error
+      );
+    }
+  }
+
+  function getRaceMode() {
+    return (
+      document.getElementById(
+        "raceModeSelect"
+      )?.value ||
+      "live"
+    );
+  }
+
+  function getScheduleDate() {
+    return String(
+      document.getElementById(
+        "dateInput"
+      )?.value ||
+      ""
+    ).replaceAll("-", "");
+  }
+
+  async function requestSchedule(
+    date,
+    jcd = ""
+  ) {
+    let url =
+      `/api/schedule` +
+      `?date=${encodeURIComponent(
+        date
+      )}`;
+
+    if (jcd) {
+      url +=
+        `&jcd=${encodeURIComponent(
+          jcd
+        )}`;
+    }
+
+    const response =
+      await fetch(url);
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data?.ok
+    ) {
+      throw new Error(
+        data?.error ||
+        `開催情報APIエラー：` +
+        `${response.status}`
+      );
+    }
+
+    return data;
+  }
+
+  function replaceSelectOptions(
+    select,
+    items
+  ) {
+    if (!select) {
+      return;
+    }
+
+    select.innerHTML = "";
+
+    items.forEach(item => {
+      const option =
+        document.createElement(
+          "option"
+        );
+
+      option.value =
+        item.value;
+
+      option.textContent =
+        item.label;
+
+      if (item.jcd) {
+        option.dataset.jcd =
+          item.jcd;
+      }
+
+      select.appendChild(
+        option
+      );
+    });
+  }
+
+  async function loadVenueChoices() {
+    const mode =
+      getRaceMode();
+
+    const date =
+      getScheduleDate();
+
+    const placeSelect =
+      document.getElementById(
+        "placeSelect"
+      );
+
+    const raceSelect =
+      document.getElementById(
+        "raceSelect"
+      );
+
+    const fetchBtn =
+      document.getElementById(
+        "fetchRaceBtn"
+      );
+
+    if (
+      !/^\d{8}$/.test(date)
+    ) {
+      throw new Error(
+        "日付を入力してください"
+      );
+    }
+
+    const data =
+      await requestSchedule(
+        date
+      );
+
+    const venues =
+      mode === "live"
+        ? (
+            Array.isArray(
+              data.liveVenues
+            )
+              ? data.liveVenues
+              : []
+          )
+        : (
+            Array.isArray(
+              data.venues
+            )
+              ? data.venues
+              : []
+          );
+
+    if (!venues.length) {
+      replaceSelectOptions(
+        placeSelect,
+        [{
+          value: "",
+
+          label:
+            mode === "live"
+              ? "締切前の開催場はありません"
+              : "開催場がありません"
+        }]
+      );
+
+      replaceSelectOptions(
+        raceSelect,
+        [{
+          value: "",
+
+          label:
+            "選択できるレースはありません"
+        }]
+      );
+
+      if (fetchBtn) {
+        fetchBtn.disabled =
+          true;
+      }
+
+      updateStatus(
+        mode === "live"
+          ? "本日の締切前レースはありません。振り返りモードを選べます"
+          : "この日付の終了レースはありません"
+      );
+
+      return;
+    }
+
+    const currentPlace =
+      placeSelect?.value ||
+      "";
+
+    const preferredJcd =
+      mode === "live"
+        ? String(
+            data.nextRace?.jcd ||
+            ""
+          )
+        : String(
+            PLACE_CODE_MAP[
+              currentPlace
+            ] ||
+            venues[0]?.jcd ||
+            ""
+          );
+
+    replaceSelectOptions(
+      placeSelect,
+
+      venues.map(venue => ({
+        value:
+          venue.place,
+
+        jcd:
+          venue.jcd,
+
+        label:
+          mode === "live"
+            ? (
+                `${venue.place}` +
+                `（${venue.currentRaceNo}R ` +
+                `締切 ${venue.nextDeadline}）`
+              )
+            : venue.place
+      }))
+    );
+
+    const preferredVenue =
+      venues.find(
+        venue =>
+          String(venue.jcd) ===
+          preferredJcd
+      ) ||
+      venues[0];
+
+    if (
+      placeSelect &&
+      preferredVenue
+    ) {
+      placeSelect.value =
+        preferredVenue.place;
+    }
+
+    if (fetchBtn) {
+      fetchBtn.disabled =
+        false;
+    }
+
+    await loadRaceChoices(
+      mode === "live"
+        ? Number(
+            data.nextRace?.raceNo ||
+            0
+          )
+        : 0
+    );
+  }
+
+  async function loadRaceChoices(
+    preferredRaceNo = 0
+  ) {
+    const mode =
+      getRaceMode();
+
+    const date =
+      getScheduleDate();
+
+    const placeSelect =
+      document.getElementById(
+        "placeSelect"
+      );
+
+    const raceSelect =
+      document.getElementById(
+        "raceSelect"
+      );
+
+    const fetchBtn =
+      document.getElementById(
+        "fetchRaceBtn"
+      );
+
+    const selectedOption =
+      placeSelect?.options?.[
+        placeSelect.selectedIndex
+      ];
+
+    const jcd =
+      selectedOption?.dataset?.jcd ||
+      PLACE_CODE_MAP[
+        placeSelect?.value
+      ];
+
+    if (!jcd) {
+      throw new Error(
+        "開催場を選択してください"
+      );
+    }
+
+    updateStatus(
+      "レース締切を確認中..."
+    );
+
+    const data =
+      await requestSchedule(
+        date,
+        jcd
+      );
+
+    const allRaces =
+      Array.isArray(
+        data.selectedVenue?.races
+      )
+        ? data.selectedVenue.races
+        : [];
+
+    const races =
+      allRaces.filter(
+        race =>
+          mode === "live"
+            ? race.selectable
+            : (
+                race.status ===
+                "closed"
+              )
+      );
+
+    if (!races.length) {
+      replaceSelectOptions(
+        raceSelect,
+        [{
+          value: "",
+
+          label:
+            mode === "live"
+              ? "締切前レースはありません"
+              : "終了レースはありません"
+        }]
+      );
+
+      if (fetchBtn) {
+        fetchBtn.disabled =
+          true;
+      }
+
+      updateStatus(
+        mode === "live"
+          ? "この場の発売は終了しました"
+          : "終了レースはまだありません"
+      );
+
+      return;
+    }
+
+    replaceSelectOptions(
+      raceSelect,
+
+      races.map(race => ({
+        value:
+          `${race.raceNo}R`,
+
+        label:
+          mode === "live"
+            ? (
+                `${race.raceNo}R` +
+                `（締切 ${race.deadline}）`
+              )
+            : (
+                `${race.raceNo}R` +
+                `（終了・締切 ${race.deadline}）`
+              )
+      }))
+    );
+
+    const preferred =
+      mode === "live"
+        ? (
+            races.find(
+              race =>
+                race.raceNo ===
+                preferredRaceNo
+            ) ||
+            races[0]
+          )
+        : races[
+            races.length - 1
+          ];
+
+    if (
+      raceSelect &&
+      preferred
+    ) {
+      raceSelect.value =
+        `${preferred.raceNo}R`;
+    }
+
+    if (fetchBtn) {
+      fetchBtn.disabled =
+        false;
+    }
+
+    updateStatus(
+      mode === "live"
+        ? (
+            `${placeSelect.value} ` +
+            `${preferred.raceNo}Rを` +
+            `自動選択しました`
+          )
+        : (
+            `${placeSelect.value} ` +
+            `${preferred.raceNo}Rまで` +
+            `振り返れます`
+          )
+    );
+  }
+
+  function handleRaceSelectionError(
+    error
+  ) {
+    console.error(
+      "race selection error",
+      error
+    );
+
+    updateStatus(
+      "開催情報の取得に失敗しました"
+    );
+
+    showError(
+      error?.message ||
+      String(error)
+    );
+
+    const fetchBtn =
+      document.getElementById(
+        "fetchRaceBtn"
+      );
+
+    if (fetchBtn) {
+      fetchBtn.disabled =
+        true;
+    }
   }
 
   async function fetchAndRenderRace() {
