@@ -417,7 +417,7 @@
 
       updateStatus(
                 label:
-          venue.place
+          venue.place 
       }))
     );
 
