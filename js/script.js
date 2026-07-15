@@ -653,10 +653,69 @@ ${error.stack || "スタック情報を取得できません"}`
           })
         );
 
-    prediction.ticketRanks =
+        prediction.ticketRanks =
       applyAllocation(
         prediction.ticketRanks
       );
+
+    prediction.aiTicketList =
+      applyAllocation(
+        prediction.aiTicketList
+      );
+
+    if (prediction.ticketSheets) {
+      prediction.ticketSheets = {
+        ...prediction.ticketSheets,
+
+        main: applyAllocation(
+          prediction.ticketSheets.main
+        ),
+
+        cover: applyAllocation(
+          prediction.ticketSheets.cover
+        ),
+
+        flow: applyAllocation(
+          prediction.ticketSheets.flow
+        ),
+
+        hole: applyAllocation(
+          prediction.ticketSheets.hole
+        ),
+
+        all: applyAllocation(
+          prediction.ticketSheets.all
+        )
+      };
+    }
+
+    if (prediction.mainSheet) {
+      prediction.mainSheet = {
+        ...prediction.mainSheet,
+
+        tickets: applyAllocation(
+          prediction.mainSheet.tickets
+        ),
+
+        coverTickets: applyAllocation(
+          prediction.mainSheet.coverTickets
+        ),
+
+        flowTickets: applyAllocation(
+          prediction.mainSheet.flowTickets
+        )
+      };
+    }
+
+    if (prediction.manshuSheet) {
+      prediction.manshuSheet = {
+        ...prediction.manshuSheet,
+
+        tickets: applyAllocation(
+          prediction.manshuSheet.tickets
+        )
+      };
+    }
 
     prediction.allocationBudget =
       totalBudget;
