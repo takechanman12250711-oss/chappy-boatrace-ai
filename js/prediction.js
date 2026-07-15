@@ -4571,121 +4571,381 @@ const candidates = [...evaluations]
     - 万舟
   =============================== */
 
-  function createFormation(race, context) {
-    const mainSheet = context.mainSheet || {};
-    const manshuSheet = context.manshuSheet || {};
+    function createFormation(race, context) {
     const raceFlow = context.raceFlow || {};
-    const indexes = context.indexes || {};
+    const byBoat = context.indexes?.byBoat || {};
+    const exhibitionList = context.exhibition?.list || [];
 
-    const honmei = mainSheet.honmei;
-    const taikou = mainSheet.taikou;
-    const ana = mainSheet.ana;
-    const osae = mainSheet.osae;
+    const courseByBoat = {};
 
-    const totalRanking = indexes.totalRanking || [];
-    const pickupRanking = indexes.michuRanking || [];
-    const expectedRanking = indexes.expectedRanking || [];
+    (race.entries || []).forEach((entry, index) => {
+      const boatNo = toBoatNo(
+        entry?.boatNo ?? index + 1
+      );
 
-    const axis = honmei?.boatNo || totalRanking[0]?.boatNo || 1;
-    const secondAxis = taikou?.boatNo || totalRanking[1]?.boatNo || 2;
-    const holeAxis = ana?.boatNo || expectedRanking[0]?.boatNo || 3;
-    const coverAxis = osae?.boatNo || pickupRanking[0]?.boatNo || 4;
+      const exhibition = findByBoatNo(
+        exhibitionList,
+        boatNo
+      );
 
-    const secondGroup = uniqueNumbers([
-      secondAxis,
-      holeAxis,
-      coverAxis,
-      totalRanking[2]?.boatNo,
-      pickupRanking[0]?.boatNo
-    ]).filter(n => n !== axis).slice(0, 4);
+      const courseCandidate = toBoatNo(
+        byBoat[boatNo]?.course ??
+        exhibition?.course ??
+        boatNo
+      );
 
-    const thirdGroup = uniqueNumbers([
-      secondAxis,
-      holeAxis,
-      coverAxis,
-      pickupRanking[0]?.boatNo,
-      pickupRanking[1]?.boatNo,
-      expectedRanking[0]?.boatNo,
-      expectedRanking[1]?.boatNo
-    ]).filter(n => n !== axis).slice(0, 5);
-
-    const main = createMainFormationTickets({
-      axis,
-      secondAxis,
-      holeAxis,
-      coverAxis,
-      secondGroup,
-      thirdGroup,
-      context
+      courseByBoat[boatNo] =
+        courseCandidate >= 1 &&
+        courseCandidate <= 6
+          ? courseCandidate
+          : boatNo;
     });
 
-    const cover = createCoverFormationTickets({
-      axis,
-      secondAxis,
-      holeAxis,
-      coverAxis,
-      totalRanking,
-      pickupRanking,
-      context
+    const boatAtCourse = course => {
+      const found = Object.entries(
+        courseByBoat
+      ).find(
+        ([, value]) =>
+          Number(value) === Number(course)
+      );
+
+      return found
+        ? Number(found[0])
+        : Number(course);
+    };
+
+    const insideBoat = boatAtCourse(1);
+    const secondBoat = boatAtCourse(2);
+    const thirdBoat = boatAtCourse(3);
+    const fourthBoat = boatAtCourse(4);
+    const fifthBoat = boatAtCourse(5);
+    const sixthBoat = boatAtCourse(6);
+
+    const primaryAttack =
+      raceFlow.attackBoats?.[0] || null;
+
+    const attackBoat = toBoatNo(
+      primaryAttack?.boatNo
+    );
+
+    const attackCourseCandidate = toBoatNo(
+      primaryAttack?.course ??
+      courseByBoat[attackBoat] ??
+      attackBoat
+    );
+
+    const attackCourse =
+      attackCourseCandidate >= 1 &&
+      attackCourseCandidate <= 6
+        ? attackCourseCandidate
+        : 0;
+
+    const alternateAttackBoat = toBoatNo(
+      raceFlow.attackBoats?.find(item => {
+        const boatNo = toBoatNo(
+          item?.boatNo
+        );
+
+        const course = toBoatNo(
+          item?.course ??
+          courseByBoat[boatNo] ??
+          boatNo
+        );
+
+        return (
+          boatNo !== insideBoat &&
+          course >= 3
+        );
+      })?.boatNo
+    );
+
+    const challengerBoat =
+      attackBoat &&
+      attackBoat !== insideBoat
+        ? attackBoat
+        : alternateAttackBoat ||
+          thirdBoat;
+
+    const holdBoats = uniqueNumbers([
+      secondBoat,
+      fourthBoat,
+      ...(raceFlow.holdBoats || [])
+        .map(item => item?.boatNo)
+    ]).filter(isValidBoatNo);
+
+    const pickupBoats = uniqueNumbers([
+      ...(raceFlow.pickupBoats || [])
+        .map(item => item?.boatNo),
+      fifthBoat,
+      sixthBoat
+    ]).filter(isValidBoatNo);
+
+    const scenarioTitle =
+      String(raceFlow.title || "");
+
+    const mainHead =
+      scenarioTitle === "2コース差し本線" &&
+      attackCourse === 2
+        ? attackBoat
+        : insideBoat;
+
+    const addTickets = (
+      target,
+      head,
+      seconds,
+      thirds,
+      limit,
+      perSecondLimit = Infinity
+    ) => {
+      if (!isValidBoatNo(head)) return;
+
+      uniqueNumbers(seconds)
+        .filter(
+          second =>
+            isValidBoatNo(second) &&
+            second !== head
+        )
+        .forEach(second => {
+          let addedForSecond = 0;
+
+          uniqueNumbers(thirds)
+            .filter(
+              third =>
+                isValidBoatNo(third) &&
+                third !== head &&
+                third !== second
+            )
+            .forEach(third => {
+              if (
+                target.length >= limit ||
+                addedForSecond >=
+                  perSecondLimit
+              ) {
+                return;
+              }
+
+              const ticketText = ticket(
+                head,
+                second,
+                third
+              );
+
+              if (
+                ticketText &&
+                !target.includes(ticketText)
+              ) {
+                target.push(ticketText);
+                addedForSecond += 1;
+              }
+            });
+        });
+    };
+
+    const main = [];
+    const cover = [];
+    const nagashi = [];
+    const hole = [];
+
+    const mainSeconds = uniqueNumbers([
+      mainHead === secondBoat
+        ? insideBoat
+        : secondBoat,
+      challengerBoat,
+      thirdBoat,
+      fourthBoat
+    ]);
+
+    const mainThirds = uniqueNumbers([
+      secondBoat,
+      thirdBoat,
+      fourthBoat,
+      ...holdBoats,
+      ...pickupBoats
+    ]);
+
+    addTickets(
+      main,
+      mainHead,
+      mainSeconds,
+      mainThirds,
+      8,
+      2
+    );
+
+    if (
+      mainHead === secondBoat &&
+      insideBoat !== mainHead
+    ) {
+      addTickets(
+        main,
+        insideBoat,
+        [secondBoat, challengerBoat],
+        [secondBoat, thirdBoat, fourthBoat],
+        8,
+        2
+      );
+    }
+
+    addTickets(
+      cover,
+      secondBoat,
+      [insideBoat, challengerBoat],
+      [insideBoat, thirdBoat, fourthBoat],
+      6,
+      2
+    );
+
+    addTickets(
+      cover,
+      insideBoat,
+      [fourthBoat, challengerBoat],
+      [secondBoat, fourthBoat, ...pickupBoats],
+      10,
+      2
+    );
+
+    if (
+      challengerBoat !== insideBoat &&
+      challengerBoat !== secondBoat
+    ) {
+      addTickets(
+        cover,
+        challengerBoat,
+        [insideBoat, secondBoat],
+        [insideBoat, secondBoat, fourthBoat, ...pickupBoats],
+        10,
+        2
+      );
+    }
+
+    addTickets(
+      nagashi,
+      mainHead,
+      mainSeconds,
+      mainThirds,
+      12
+    );
+
+    if (
+      challengerBoat !== mainHead
+    ) {
+      addTickets(
+        nagashi,
+        challengerBoat,
+        [insideBoat, secondBoat, fourthBoat],
+        [insideBoat, secondBoat, fourthBoat, ...pickupBoats],
+        18
+      );
+    }
+
+    if (
+      challengerBoat !== mainHead
+    ) {
+      addTickets(
+        hole,
+        challengerBoat,
+        [insideBoat, secondBoat, fourthBoat, ...pickupBoats],
+        [insideBoat, secondBoat, fourthBoat, ...pickupBoats],
+        8,
+        2
+      );
+    }
+
+    pickupBoats.forEach(pickupBoat => {
+      if (
+        pickupBoat === mainHead ||
+        hole.length >= 12
+      ) {
+        return;
+      }
+
+      addTickets(
+        hole,
+        pickupBoat,
+        [insideBoat, challengerBoat, secondBoat],
+        [insideBoat, challengerBoat, secondBoat, fourthBoat],
+        12,
+        2
+      );
     });
 
-    const nagashi = createNagashiTickets({
-      axis,
-      secondGroup,
-      thirdGroup,
-      raceFlow,
-      context
-    });
+    const cleanMain =
+      cleanExactTickets(main)
+        .slice(0, 8);
 
-    const hole = createHoleFormationTickets({
-      manshuSheet,
-      expectedRanking,
-      pickupRanking,
-      totalRanking,
-      context
-    });
+    const cleanCover =
+      cleanExactTickets(cover)
+        .filter(
+          item =>
+            !cleanMain.includes(item)
+        )
+        .slice(0, 10);
+
+    const cleanNagashi =
+      cleanExactTickets(nagashi)
+        .slice(0, 18);
+
+    const cleanHole =
+      cleanExactTickets(hole)
+        .filter(
+          item =>
+            !cleanMain.includes(item)
+        )
+        .slice(0, 12);
 
     const all = uniqueList([
-      ...main,
-      ...cover,
-      ...nagashi,
-      ...hole
+      ...cleanMain,
+      ...cleanCover,
+      ...cleanNagashi,
+      ...cleanHole
     ]);
 
     return {
-  main,
-  honmei: main,
-  normal: main,
-  base: main,
+      main: cleanMain,
+      honmei: cleanMain,
+      normal: cleanMain,
+      base: cleanMain,
 
-  cover,
-  safety: cover,
-  osae: cover,
+      cover: cleanCover,
+      safety: cleanCover,
+      osae: cleanCover,
 
-  nagashi,
-  flow: nagashi,
+      nagashi: cleanNagashi,
+      flow: cleanNagashi,
 
-  hole,
-  ana: hole,
+      hole: cleanHole,
+      ana: cleanHole,
 
-  manshu: hole,
-  longshot: hole,
-  highPay: hole,
+      manshu: cleanHole,
+      longshot: cleanHole,
+      highPay: cleanHole,
 
-  all,
+      all,
 
-  summary: createFormationSummary({
-    main,
-    cover,
-    nagashi,
-    hole,
-    axis,
-    secondAxis,
-    holeAxis,
-    coverAxis,
-    context
-  })
-};
+      source: {
+        type: "raceFlow",
+        scenarioTitle,
+        scenarioSummary:
+          raceFlow.summary || "",
+        mainHead,
+        attackBoat: challengerBoat,
+        attackCourse,
+        holdBoats,
+        pickupBoats
+      },
+
+      summary: createFormationSummary({
+        main: cleanMain,
+        cover: cleanCover,
+        nagashi: cleanNagashi,
+        hole: cleanHole,
+        axis: mainHead,
+        secondAxis: secondBoat,
+        holeAxis: challengerBoat,
+        coverAxis: fourthBoat,
+        context
+      })
+    };
   }
 
   function createMainFormationTickets(params) {
