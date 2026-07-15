@@ -268,22 +268,16 @@
 
       <!-- 3. AI総合評価 -->
       ${renderAiSummary(prediction)}
-
-      <!-- 4. 本命評価 -->
+     
+      <!-- 4. 本命買い目 -->
       ${renderNewspaperSheet(prediction, "main")}
 
-      <!-- 5. 本命フォーメーション -->
-      ${renderFormationSection(prediction, "main")}
-
-      <!-- 6. 万舟評価 -->
+      <!-- 5. 万舟買い目 -->
       ${renderNewspaperSheet(prediction, "manshu")}
 
-      <!-- 7. 万舟フォーメーション -->
-      ${renderFormationSection(prediction, "manshu")}
-
-            <!-- 8. AI推奨買い目 -->
+      <!-- 6. AI買い目一覧 -->
       ${renderTicketRanking(prediction)}
-
+      
       ${
         Array.isArray(
           prediction.oddsMovements
