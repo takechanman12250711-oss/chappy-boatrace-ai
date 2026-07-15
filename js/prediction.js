@@ -536,7 +536,12 @@
       exhibition,
       indexes,
       raceFlow,
-        const hasNumber = value =>
+      mainSheet,
+      manshuSheet,
+      formation
+    });
+
+    const hasNumber = value =>
       value !== null &&
       value !== undefined &&
       value !== "" &&
