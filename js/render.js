@@ -1834,11 +1834,14 @@ function getPaperClassName(item) {
     5. フォーメーション
   =============================== */
 
-  function renderFormationSection(prediction, mode) {
+    function renderFormationSection(prediction, mode) {
     const formation = prediction.formation || {};
+    const ticketSheets = prediction.ticketSheets || {};
 
     if (mode === "manshu") {
       const manshu =
+        prediction.manshuSheet?.tickets ||
+        ticketSheets.hole ||
         formation.manshu ||
         formation.longshot ||
         formation.highPay ||
@@ -1854,6 +1857,8 @@ function getPaperClassName(item) {
     }
 
     const main =
+      prediction.mainSheet?.tickets ||
+      ticketSheets.main ||
       formation.main ||
       formation.honmei ||
       formation.normal ||
@@ -1862,16 +1867,19 @@ function getPaperClassName(item) {
       [];
 
     const safety =
+      prediction.mainSheet?.coverTickets ||
+      ticketSheets.cover ||
       formation.safety ||
       formation.osae ||
       formation.cover ||
       prediction.safetyFormation ||
       [];
 
-    const hole =
-      formation.hole ||
-      formation.ana ||
-      formation.sub ||
+    const flow =
+      prediction.mainSheet?.flowTickets ||
+      ticketSheets.flow ||
+      formation.nagashi ||
+      formation.flow ||
       [];
 
     const body = `
@@ -1886,11 +1894,11 @@ function getPaperClassName(item) {
       </div>
 
       ${
-        arrayify(hole).length
+        arrayify(flow).length
           ? `
             <div class="v3-formation-group">
-              <h3>穴</h3>
-              ${renderFormationBody(hole, "hole")}
+              <h3>流し</h3>
+              ${renderFormationBody(flow, "flow")}
             </div>
           `
           : ""
@@ -1899,7 +1907,12 @@ function getPaperClassName(item) {
       ${renderFormationNote(formation)}
     `;
 
-    return section("本線フォーメーション", body, "🎫", "v3-main-formation");
+    return section(
+      "本線フォーメーション",
+      body,
+      "🎫",
+      "v3-main-formation"
+    );
   }
 
   function renderFormationBody(list, type) {
@@ -1920,7 +1933,10 @@ function getPaperClassName(item) {
     if (!list) return [];
 
     if (typeof list === "string") {
-      return [{ ticket: list }];
+      return [{
+        ticket: list,
+        oddsText: "オッズ未取得"
+      }];
     }
 
     if (Array.isArray(list)) {
@@ -1929,8 +1945,16 @@ function getPaperClassName(item) {
           if (!item) return null;
 
           if (typeof item === "string") {
-            return { ticket: item };
+            return {
+              ticket: item,
+              oddsText: "オッズ未取得"
+            };
           }
+
+          const numericOdds = Number(item.odds);
+          const hasActualOdds =
+            Number.isFinite(numericOdds) &&
+            numericOdds > 0;
 
           return {
             ticket:
@@ -1940,19 +1964,31 @@ function getPaperClassName(item) {
               item.bet ||
               item.kumi ||
               "",
-            label: item.label || item.type || item.rank || "",
+
+            label:
+              item.label ||
+              item.category ||
+              item.type ||
+              item.rank ||
+              "",
+
+            scenarioType:
+              item.scenarioType ||
+              "",
+
             score:
               item.score !== undefined &&
               item.score !== null &&
               item.score !== "undefined"
                 ? item.score
                 : "",
-            odds:
-              item.odds ||
-              item.syntheticOdds ||
-              item.gouseiOdds ||
-              "",
+
+            oddsText: hasActualOdds
+              ? `${numericOdds}倍`
+              : item.oddsText || "オッズ未取得",
+
             reason:
+              item.scenarioSummary ||
               item.reason ||
               item.comment ||
               item.text ||
@@ -1968,11 +2004,28 @@ function getPaperClassName(item) {
           if (!value) return null;
 
           if (typeof value === "string") {
-            return { label, ticket: value };
+            return {
+              label,
+              ticket: value,
+              oddsText: "オッズ未取得"
+            };
           }
 
+          const numericOdds = Number(value.odds);
+          const hasActualOdds =
+            Number.isFinite(numericOdds) &&
+            numericOdds > 0;
+
           return {
-            label,
+            label:
+              value.label ||
+              value.category ||
+              label,
+
+            scenarioType:
+              value.scenarioType ||
+              "",
+
             ticket:
               value.ticket ||
               value.line ||
@@ -1980,18 +2033,20 @@ function getPaperClassName(item) {
               value.bet ||
               value.kumi ||
               "",
+
             score:
               value.score !== undefined &&
               value.score !== null &&
               value.score !== "undefined"
                 ? value.score
                 : "",
-            odds:
-              value.odds ||
-              value.syntheticOdds ||
-              value.gouseiOdds ||
-              "",
+
+            oddsText: hasActualOdds
+              ? `${numericOdds}倍`
+              : value.oddsText || "オッズ未取得",
+
             reason:
+              value.scenarioSummary ||
               value.reason ||
               value.comment ||
               value.text ||
@@ -2013,20 +2068,32 @@ function getPaperClassName(item) {
 
         <div class="v3-formation-tags">
           ${item.label ? tag(item.label, type) : ""}
-        ${
-  item.score !== undefined &&
-  item.score !== null &&
-  item.score !== "" &&
-  item.score !== "undefined"
-    ? tag(`評価 ${item.score}`, "score")
-    : ""
-}
-          ${item.odds ? tag(`合成 ${item.odds}`, "odds") : ""}
+          ${
+            item.scenarioType
+              ? tag(item.scenarioType, "scenario")
+              : ""
+          }
+          ${
+            item.score !== undefined &&
+            item.score !== null &&
+            item.score !== "" &&
+            item.score !== "undefined"
+              ? tag(`評価 ${item.score}`, "score")
+              : ""
+          }
+          ${tag(
+            item.oddsText || "オッズ未取得",
+            "odds"
+          )}
         </div>
 
         ${
           item.reason
-            ? `<div class="v3-formation-reason">${escapeHtml(limitText(item.reason, 60))}</div>`
+            ? `
+              <div class="v3-formation-reason">
+                ${escapeHtml(limitText(item.reason, 60))}
+              </div>
+            `
             : ""
         }
       </div>
