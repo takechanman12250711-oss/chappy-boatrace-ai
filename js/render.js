@@ -661,10 +661,117 @@ if (raceInfoArea) {
       )}
     </div>
 
-    <div class="v3-ai-summary-box">
+        <div class="v3-ai-summary-box">
       <h3>AIまとめ</h3>
       <p>${escapeHtml(summary)}</p>
     </div>
+
+    ${
+      prediction.dataQuality &&
+      typeof prediction
+        .dataQuality === "object"
+        ? `
+          <div
+            class="v3-ai-summary-box"
+          >
+            <h3>
+              データ充足度
+              ${escapeHtml(
+                prediction
+                  .dataQuality
+                  .score ?? 0
+              )}%
+              （${escapeHtml(
+                prediction
+                  .dataQuality
+                  .level || "低"
+              )}）
+            </h3>
+
+            <div class="v3-ai-bar">
+              <div
+                style="
+                  width:
+                    ${Math.max(
+                      0,
+                      Math.min(
+                        100,
+                        safeNum(
+                          prediction
+                            .dataQuality
+                            .score,
+                          0
+                        )
+                      )
+                    )}%;
+                  background:
+                    ${
+                      safeNum(
+                        prediction
+                          .dataQuality
+                          .score,
+                        0
+                      ) >= 90
+                        ? "#16a34a"
+                        : safeNum(
+                            prediction
+                              .dataQuality
+                              .score,
+                            0
+                          ) >= 70
+                          ? "#f59e0b"
+                          : "#ef4444"
+                    };
+                "
+              ></div>
+            </div>
+
+            ${
+              arrayify(
+                prediction
+                  .dataQuality
+                  .warnings
+              ).length
+                ? `
+                  <div
+                    class="v3-tag-row"
+                  >
+                    ${arrayify(
+                      prediction
+                        .dataQuality
+                        .warnings
+                    )
+                      .map(
+                        warning => `
+                          <span
+                            class="v3-tag"
+                          >
+                            ⚠️
+                            ${escapeHtml(
+                              warning
+                            )}
+                          </span>
+                        `
+                      )
+                      .join("")}
+                  </div>
+
+                  <p>
+                    不足データがあるため、
+                    予想精度が下がる可能性があります。
+                  </p>
+                `
+                : `
+                  <p>
+                    必要な予想データは
+                    揃っています。
+                  </p>
+                `
+            }
+          </div>
+        `
+        : ""
+    }
 
     ${renderIndexPanel(indexes)}
   `;
