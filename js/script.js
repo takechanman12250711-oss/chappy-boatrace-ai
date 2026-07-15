@@ -768,27 +768,131 @@ ${error.stack || "スタック情報を取得できません"}`
           Array.isArray(
             prediction.ticketRanks
           )
-            ? prediction.ticketRanks.map(
-                item => ({
-                  ticket:
+                        ? prediction.ticketRanks.map(
+                item => {
+                  const ticket =
                     String(
                       item?.ticket || ""
-                    ),
-                  rank:
-                    String(
-                      item?.rank || ""
-                    ),
-                  score:
-                    Number(
-                      item?.score || 0
-                    ),
-                  odds:
-                    item?.odds ?? null,
-                  oddsValue:
-                    String(
-                      item?.oddsValue || ""
+                    );
+
+                  const aiTicket =
+                    Array.isArray(
+                      prediction.aiTicketList
                     )
-                })
+                      ? prediction.aiTicketList.find(
+                          row =>
+                            String(
+                              row?.ticket || ""
+                            ) === ticket
+                        )
+                      : null;
+
+                  const rawCategories =
+                    aiTicket?.categories ||
+                    aiTicket?.category ||
+                    item?.type ||
+                    [];
+
+                  const categories = [
+                    ...new Set(
+                      (
+                        Array.isArray(
+                          rawCategories
+                        )
+                          ? rawCategories
+                          : [rawCategories]
+                      )
+                        .map(value => {
+                          const category =
+                            String(
+                              value || ""
+                            );
+
+                          if (
+                            category === "本線"
+                          ) {
+                            return "本命";
+                          }
+
+                          if (
+                            category === "万舟" ||
+                            category === "穴候補"
+                          ) {
+                            return "穴・万舟候補";
+                          }
+
+                          return category;
+                        })
+                        .filter(Boolean)
+                    )
+                  ];
+
+                  const role =
+                    [
+                      "本命",
+                      "押さえ",
+                      "流し",
+                      "穴・万舟候補"
+                    ].find(value =>
+                      categories.includes(
+                        value
+                      )
+                    ) || "分類未保存";
+
+                  const rawScenarios =
+                    aiTicket?.scenarioTypes ||
+                    aiTicket?.scenarioType ||
+                    [];
+
+                  const scenarioTypes = [
+                    ...new Set(
+                      (
+                        Array.isArray(
+                          rawScenarios
+                        )
+                          ? rawScenarios
+                          : [rawScenarios]
+                      )
+                        .map(value =>
+                          String(
+                            value || ""
+                          )
+                        )
+                        .filter(Boolean)
+                    )
+                  ];
+
+                  return {
+                    ticket,
+                    role,
+                    categories,
+                    scenarioTypes,
+
+                    rank:
+                      String(
+                        item?.rank || ""
+                      ),
+
+                    score:
+                      Number(
+                        item?.score || 0
+                      ),
+
+                    odds:
+                      item?.odds ?? null,
+
+                    oddsValue:
+                      String(
+                        item?.oddsValue || ""
+                      ),
+
+                    recommendedAmount:
+                      Number(
+                        item?.recommendedAmount ||
+                        0
+                      )
+                  };
+                }
               )
             : []
       };
