@@ -1378,7 +1378,17 @@
     return null;
   }
 
-  async function refreshOddsOnly() {
+    async function refreshOddsOnly() {
+    if (
+      getRaceMode() ===
+      "review"
+    ) {
+      updateStatus(
+        "振り返り予想は参考表示のため、オッズ更新・予想保存を行いません"
+      );
+
+      return;
+    }
   if (!lastRaceData) {
     updateStatus(
       "先に出走表を取得してください"
