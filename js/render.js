@@ -2049,135 +2049,309 @@ function getPaperClassName(item) {
     6. AI買い目一覧
   =============================== */
 
-  function renderTicketRanking(prediction) {
+    function renderTicketRanking(prediction) {
+    const sourceList = arrayify(
+      prediction.aiTicketList ||
+      prediction.ticketSheets?.all ||
+      prediction.ticketRanks ||
+      []
+    );
 
-  const list = arrayify(
-    prediction.ticketRanks ||
-    prediction.ticketRank ||
-    prediction.ranking ||
-    []
-  );
+    if (!sourceList.length) {
+      return section(
+        "AI買い目一覧",
+        emptyBox(
+          "AI買い目データがありません"
+        ),
+        "🏆",
+        "v3-ticket-section"
+      );
+    }
 
-  if (!list.length) {
+    const rankByTicket =
+      new Map(
+        arrayify(
+          prediction.ticketRanks
+        ).map(item => [
+          String(
+            item?.ticket || ""
+          ),
+          item
+        ])
+      );
+
+    const seenTickets =
+      new Set();
+
+    const normalizedRows =
+      sourceList
+        .map(item => {
+          const row =
+            typeof item === "string"
+              ? { ticket: item }
+              : item || {};
+
+          const ticketText =
+            String(
+              row.ticket ||
+              row.line ||
+              row.formation ||
+              ""
+            );
+
+          if (
+            !ticketText ||
+            seenTickets.has(ticketText)
+          ) {
+            return null;
+          }
+
+          seenTickets.add(ticketText);
+
+          const rankRow =
+            rankByTicket.get(
+              ticketText
+            ) || {};
+
+          const categories = [
+            ...new Set(
+              arrayify(
+                row.categories ||
+                row.category ||
+                rankRow.type ||
+                "買い目"
+              )
+                .map(value =>
+                  String(value || "")
+                )
+                .filter(Boolean)
+            )
+          ];
+
+          const scenarioTypes = [
+            ...new Set(
+              arrayify(
+                row.scenarioTypes ||
+                row.scenarioType ||
+                []
+              )
+                .map(value =>
+                  String(value || "")
+                )
+                .filter(Boolean)
+            )
+          ];
+
+          const oddsCandidate =
+            row.odds ??
+            rankRow.odds;
+
+          const numericOdds =
+            Number(oddsCandidate);
+
+          const hasOdds =
+            oddsCandidate !== null &&
+            oddsCandidate !==
+              undefined &&
+            oddsCandidate !== "" &&
+            Number.isFinite(
+              numericOdds
+            ) &&
+            numericOdds > 0;
+
+          return {
+            ticket: ticketText,
+            categories,
+            scenarioTypes,
+
+            oddsText:
+              hasOdds
+                ? `${numericOdds}倍`
+                : row.oddsText ||
+                  "オッズ未取得",
+
+            oddsValue:
+              rankRow.oddsValue ||
+              "",
+
+            recommendedAmount:
+              Number(
+                rankRow
+                  .recommendedAmount ||
+                row.recommendedAmount ||
+                0
+              ),
+
+            scenarioSummary:
+              row.scenarioSummary ||
+              prediction.raceFlow
+                ?.summary ||
+              ""
+          };
+        })
+        .filter(Boolean);
+
+    const groups = {
+      main: [],
+      cover: [],
+      flow: [],
+      hole: []
+    };
+
+    normalizedRows.forEach(item => {
+      if (
+        item.categories.includes(
+          "本命"
+        ) ||
+        item.categories.includes(
+          "本線"
+        )
+      ) {
+        groups.main.push(item);
+        return;
+      }
+
+      if (
+        item.categories.includes(
+          "押さえ"
+        )
+      ) {
+        groups.cover.push(item);
+        return;
+      }
+
+      if (
+        item.categories.includes(
+          "流し"
+        )
+      ) {
+        groups.flow.push(item);
+        return;
+      }
+
+      groups.hole.push(item);
+    });
+
+    const renderGroup = (
+      title,
+      rows,
+      type
+    ) => {
+      if (!rows.length) return "";
+
+      return `
+        <div class="v3-ticket-group">
+          <div
+            class="v3-ticket-group-title"
+          >
+            ${escapeHtml(title)}
+          </div>
+
+          ${rows
+            .map(item => `
+              <div class="v3-ticket-inline">
+                <span class="ticket">
+                  ${ticketArrow(
+                    item.ticket
+                  )}
+                </span>
+
+                <div class="v3-ticket-values">
+                  ${item.categories
+                    .map(category =>
+                      tag(
+                        category,
+                        type
+                      )
+                    )
+                    .join("")}
+
+                  ${item.scenarioTypes
+                    .map(scenario =>
+                      tag(
+                        scenario,
+                        "flow"
+                      )
+                    )
+                    .join("")}
+
+                  ${tag(
+                    item.oddsText,
+                    "odds"
+                  )}
+
+                  ${item.oddsValue
+                    ? tag(
+                        item.oddsValue,
+                        "score"
+                      )
+                    : ""}
+
+                  ${item.recommendedAmount > 0
+                    ? tag(
+                        `推奨 ${item.recommendedAmount
+                          .toLocaleString(
+                            "ja-JP"
+                          )}円`,
+                        "amount"
+                      )
+                    : ""}
+                </div>
+
+                ${item.scenarioSummary
+                  ? `
+                    <div class="v3-formation-reason">
+                      ${escapeHtml(
+                        limitText(
+                          item.scenarioSummary,
+                          90
+                        )
+                      )}
+                    </div>
+                  `
+                  : ""}
+              </div>
+            `)
+            .join("")}
+        </div>
+      `;
+    };
+
+    const body = [
+      renderGroup(
+        "本命",
+        groups.main,
+        "main"
+      ),
+
+      renderGroup(
+        "押さえ",
+        groups.cover,
+        "safety"
+      ),
+
+      renderGroup(
+        "流し",
+        groups.flow,
+        "flow"
+      ),
+
+      renderGroup(
+        "穴・万舟候補",
+        groups.hole,
+        "manshu"
+      )
+    ]
+      .filter(Boolean)
+      .join("");
+
     return section(
       "AI買い目一覧",
-      emptyBox("買い目ランキングデータがありません"),
+      body,
       "🏆",
       "v3-ticket-section"
     );
   }
-
-  const groups = {
-    S: [],
-    A: [],
-    B: [],
-    C: []
-  };
-
-  list.forEach((item, i) => {
-
-    if (typeof item === "string") {
-      item = {
-        ticket: item,
-        rank: "B"
-      };
-    }
-
-    const rank = String(item.rank || item.order || "B").toUpperCase();
-
-    if (!groups[rank]) groups.B.push(item);
-    else groups[rank].push(item);
-
-  });
-
-  function block(title, color, rows) {
-
-    if (!rows.length) return "";
-
-    return `
-      <div class="v3-ticket-group">
-
-        <div class="v3-ticket-group-title"
-             style="border-left:5px solid ${color};">
-
-          ${title}
-
-        </div>
-
-        ${rows.slice(0,5).map(r=>`
-
-          <div class="v3-ticket-inline">
-
-            <span class="ticket">
-              ${ticketArrow(r.ticket||"-")}
-            </span>
-
-            <div class="v3-ticket-values">
-  ${
-    r.score !== undefined
-      ? `<span class="score">${escapeHtml(r.score)}</span>`
-      : ""
-  }
-
-  ${
-    r.odds !== undefined &&
-    r.odds !== null &&
-    r.odds !== ""
-      ? `<span class="ticket-odds">オッズ ${escapeHtml(r.odds)}倍</span>`
-      : ""
-  }
-
-  ${
-    r.oddsValue
-      ? `<span class="ticket-rank-badge">${escapeHtml(r.oddsValue)}</span>`
-      : ""
-  }
-
-  ${
-    Number(
-      r.recommendedAmount || 0
-    ) > 0
-      ? `
-        <span class="ticket-score">
-          推奨
-          ${escapeHtml(
-            Number(
-              r.recommendedAmount
-            ).toLocaleString(
-              "ja-JP"
-            )
-          )}円
-        </span>
-      `
-      : ""
-  }
-</div>
-          </div>
-
-        `).join("")}
-
-      </div>
-    `;
-  }
-
-  return section(
-
-    "AI買い目一覧",
-
-    `
-      ${block("S評価（本線）","#ef4444",groups.S)}
-      ${block("A評価（対抗）","#2563eb",groups.A)}
-      ${block("B評価（押さえ）","#16a34a",groups.B)}
-      ${block("C評価（穴）","#f59e0b",groups.C)}
-    `,
-
-    "🏆",
-
-    "v3-ticket-section"
-
-  );
-
-}
 
   /* ===============================
     7. 舟券太郎理論
