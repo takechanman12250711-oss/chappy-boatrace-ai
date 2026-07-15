@@ -1072,6 +1072,9 @@ if (raceInfoArea) {
       };
     };
 
+        const displayedTickets =
+      new Set();
+
     const renderTicketRows = (
       title,
       list,
@@ -1087,7 +1090,27 @@ if (raceInfoArea) {
             fallbackScenario
           )
         )
-        .filter(item => item.ticket);
+        .filter(item => {
+          const ticket =
+            String(
+              item.ticket || ""
+            ).trim();
+
+          if (
+            !ticket ||
+            displayedTickets.has(
+              ticket
+            )
+          ) {
+            return false;
+          }
+
+          displayedTickets.add(
+            ticket
+          );
+
+          return true;
+        });
 
       if (!rows.length) return "";
 
@@ -1147,7 +1170,6 @@ if (raceInfoArea) {
         </div>
       `;
     };
-
     const boatBody =
       boatItems.length
         ? `
