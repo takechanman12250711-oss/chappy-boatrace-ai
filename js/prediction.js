@@ -536,15 +536,153 @@
       exhibition,
       indexes,
       raceFlow,
-      mainSheet,
-      manshuSheet,
-      formation
-    });
+        const hasNumber = value =>
+      value !== null &&
+      value !== undefined &&
+      value !== "" &&
+      Number.isFinite(
+        Number(value)
+      );
+
+    const entryCount =
+      Math.min(
+        race.entries.length,
+        6
+      );
+
+    const avgSTCount =
+      race.entries.filter(
+        entry =>
+          hasNumber(entry.avgST)
+      ).length;
+
+    const exhibitionCount =
+      race.entries.filter(
+        entry =>
+          hasNumber(
+            entry.exhibitionTime
+          )
+      ).length;
+
+    const startCount =
+      race.startExhibition.filter(
+        entry =>
+          hasNumber(entry.st)
+      ).length;
+
+    const localCount =
+      race.entries.filter(
+        entry =>
+          hasNumber(
+            entry.local?.winRate
+          )
+      ).length;
+
+    const motorCount =
+      race.entries.filter(
+        entry =>
+          hasNumber(
+            entry.motor?.secondRate
+          )
+      ).length;
+
+    const weatherCount =
+      [
+        race.weather.temperature,
+        race.weather.windSpeed,
+        race.weather
+          .waterTemperature,
+        race.weather.waveHeight
+      ].filter(hasNumber).length;
+
+    const qualityWarnings = [];
+
+    if (entryCount < 6) {
+      qualityWarnings.push(
+        `出走表 ${entryCount}/6艇`
+      );
+    }
+
+    if (avgSTCount < 6) {
+      qualityWarnings.push(
+        `平均ST ${avgSTCount}/6艇`
+      );
+    }
+
+    if (exhibitionCount < 6) {
+      qualityWarnings.push(
+        `展示タイム ${exhibitionCount}/6艇`
+      );
+    }
+
+    if (startCount < 6) {
+      qualityWarnings.push(
+        `展示ST ${startCount}/6艇`
+      );
+    }
+
+    if (localCount < 6) {
+      qualityWarnings.push(
+        `当地勝率 ${localCount}/6艇`
+      );
+    }
+
+    if (motorCount < 6) {
+      qualityWarnings.push(
+        `モーター2連率 ${motorCount}/6艇`
+      );
+    }
+
+    if (weatherCount < 4) {
+      qualityWarnings.push(
+        `気象・水面 ${weatherCount}/4項目`
+      );
+    }
+
+    const availableQualityPoints =
+      entryCount +
+      avgSTCount +
+      exhibitionCount +
+      startCount +
+      localCount +
+      motorCount +
+      weatherCount;
+
+    const qualityScore =
+      Math.round(
+        (
+          availableQualityPoints /
+          40
+        ) * 100
+      );
+
+    const dataQuality = {
+      score: qualityScore,
+      level:
+        qualityScore >= 90
+          ? "高"
+          : qualityScore >= 70
+            ? "中"
+            : "低",
+      warnings:
+        qualityWarnings,
+      counts: {
+        entry: entryCount,
+        avgST: avgSTCount,
+        exhibition:
+          exhibitionCount,
+        start: startCount,
+        local: localCount,
+        motor: motorCount,
+        weather: weatherCount
+      }
+    };
 
     return {
       ok: true,
       version: VERSION,
       race,
+      dataQuality,
       venue,
       newEngine,
       weather,
