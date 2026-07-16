@@ -740,6 +740,362 @@
     }
   }
 
+  function renderOfficialRacePicker(
+    data,
+    mode
+  ) {
+    const panel =
+      document.getElementById(
+        "officialRacePanel"
+      );
+
+    const grid =
+      document.getElementById(
+        "officialRaceGrid"
+      );
+
+    const raceSelect =
+      document.getElementById(
+        "raceSelect"
+      );
+
+    const placeSelect =
+      document.getElementById(
+        "placeSelect"
+      );
+
+    const selectedRaceText =
+      document.getElementById(
+        "officialSelectedRace"
+      );
+
+    const linkDescription =
+      document.getElementById(
+        "officialLinkDescription"
+      );
+
+    const officialLink =
+      document.getElementById(
+        "officialRaceLink"
+      );
+
+    if (
+      !panel ||
+      !grid ||
+      !raceSelect ||
+      !placeSelect
+    ) {
+      return;
+    }
+
+    const allRaces =
+      Array.isArray(
+        data?.selectedVenue?.races
+      )
+        ? data.selectedVenue.races
+        : [];
+
+    const selectedRaceNo =
+      Number(
+        String(
+          raceSelect.value ||
+          ""
+        ).replace("R", "")
+      );
+
+    const disableOfficialLink =
+      () => {
+        if (!officialLink) {
+          return;
+        }
+
+        officialLink.href =
+          "#";
+
+        officialLink.setAttribute(
+          "aria-disabled",
+          "true"
+        );
+
+        officialLink.setAttribute(
+          "tabindex",
+          "-1"
+        );
+      };
+
+    const updateOfficialLink =
+      race => {
+        const date =
+          getScheduleDate();
+
+        const selectedOption =
+          placeSelect.options[
+            placeSelect.selectedIndex
+          ];
+
+        const jcd =
+          selectedOption
+            ?.dataset?.jcd ||
+          PLACE_CODE_MAP[
+            placeSelect.value
+          ];
+
+        const raceNo =
+          Number(
+            race?.raceNo ||
+            0
+          );
+
+        if (
+          !officialLink ||
+          !jcd ||
+          !raceNo ||
+          !date
+        ) {
+          disableOfficialLink();
+          return;
+        }
+
+        const officialPage =
+          mode === "review"
+            ? "raceresult"
+            : "racelist";
+
+        officialLink.href =
+          "https://www.boatrace.jp" +
+          "/owpc/pc/race/" +
+          officialPage +
+          "?rno=" +
+          encodeURIComponent(
+            raceNo
+          ) +
+          "&jcd=" +
+          encodeURIComponent(
+            jcd
+          ) +
+          "&hd=" +
+          encodeURIComponent(
+            date
+          );
+
+        officialLink.textContent =
+          mode === "review"
+            ? "公式結果を見る →"
+            : "公式出走表を見る →";
+
+        officialLink.setAttribute(
+          "aria-disabled",
+          "false"
+        );
+
+        officialLink.removeAttribute(
+          "tabindex"
+        );
+
+        if (linkDescription) {
+          linkDescription.textContent =
+            `${placeSelect.value} ` +
+            `${raceNo}Rを` +
+            "公式サイトで確認";
+        }
+      };
+
+    const updateSelectedRace =
+      race => {
+        const raceNo =
+          Number(
+            race?.raceNo ||
+            0
+          );
+
+        if (!raceNo) {
+          if (selectedRaceText) {
+            selectedRaceText
+              .textContent =
+              "レース未選択";
+          }
+
+          disableOfficialLink();
+          return;
+        }
+
+        if (selectedRaceText) {
+          const statusText =
+            mode === "review"
+              ? "終了"
+              : "締切予定";
+
+          const deadline =
+            race.deadline
+              ? ` ${race.deadline}`
+              : "";
+
+          selectedRaceText
+            .textContent =
+              `${placeSelect.value} ` +
+              `${raceNo}R ` +
+              `${statusText}` +
+              `${deadline}`;
+        }
+
+        updateOfficialLink(
+          race
+        );
+      };
+
+    grid.innerHTML = "";
+
+    if (!allRaces.length) {
+      grid.innerHTML =
+        '<p class="official-picker-message">レース情報を取得できませんでした</p>';
+
+      panel.hidden =
+        false;
+
+      updateSelectedRace(
+        null
+      );
+
+      return;
+    }
+
+    allRaces.forEach(race => {
+      const selectable =
+        mode === "live"
+          ? Boolean(
+              race.selectable
+            )
+          : (
+              race.status ===
+              "closed"
+            );
+
+      const button =
+        document.createElement(
+          "button"
+        );
+
+      button.type =
+        "button";
+
+      button.className =
+        "official-race-button";
+
+      if (selectable) {
+        button.classList.add(
+          "is-selectable"
+        );
+      }
+
+      if (
+        selectable &&
+        Number(race.raceNo) ===
+          selectedRaceNo
+      ) {
+        button.classList.add(
+          "is-selected"
+        );
+      }
+
+      button.disabled =
+        !selectable;
+
+      button.dataset.raceNo =
+        String(race.raceNo);
+
+      const number =
+        document.createElement(
+          "span"
+        );
+
+      number.className =
+        "official-race-number";
+
+      number.textContent =
+        `${race.raceNo}R`;
+
+      const time =
+        document.createElement(
+          "span"
+        );
+
+      time.className =
+        "official-race-time";
+
+      time.textContent =
+        race.status === "closed"
+          ? (
+              race.deadline
+                ? `終了 ${race.deadline}`
+                : "終了"
+            )
+          : (
+              race.deadline ||
+              "時刻未定"
+            );
+
+      button.append(
+        number,
+        time
+      );
+
+      button.addEventListener(
+        "click",
+        () => {
+          raceSelect.value =
+            `${race.raceNo}R`;
+
+          if (
+            typeof
+              raceSelect.onchange ===
+            "function"
+          ) {
+            raceSelect.onchange();
+          }
+
+          grid
+            .querySelectorAll(
+              ".official-race-button"
+            )
+            .forEach(item => {
+              item.classList.toggle(
+                "is-selected",
+                item === button
+              );
+            });
+
+          updateSelectedRace(
+            race
+          );
+        }
+      );
+
+      grid.appendChild(
+        button
+      );
+    });
+
+    const selectedRace =
+      allRaces.find(
+        race =>
+          Number(race.raceNo) ===
+            selectedRaceNo &&
+          (
+            mode === "live"
+              ? race.selectable
+              : race.status ===
+                "closed"
+          )
+      ) || null;
+
+    panel.hidden =
+      false;
+
+    updateSelectedRace(
+      selectedRace
+    );
+  }
+
   async function loadVenueChoices() {
     const mode =
       getRaceMode();
