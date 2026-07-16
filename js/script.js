@@ -1387,7 +1387,15 @@
         `${preferred.raceNo}R`;
     }
 
-　　　    renderOfficialRacePicker(
+　　　        if (
+      typeof
+        raceSelect?.onchange ===
+      "function"
+    ) {
+      raceSelect.onchange();
+    }
+
+    renderOfficialRacePicker(
       data,
       mode
     );
