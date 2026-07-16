@@ -1609,7 +1609,14 @@
       prediction
         .officialResultUsedForPrediction =
         false;
-
+        
+      if (!isReview) {
+        savePredictionSnapshot(
+          params,
+          prediction
+        );
+      }
+      
       if (
         typeof window.renderAll ===
         "function"
