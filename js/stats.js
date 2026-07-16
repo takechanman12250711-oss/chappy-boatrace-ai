@@ -105,6 +105,238 @@
     };
   }
   
+    function calcActualStats(
+    results
+  ) {
+    const list =
+      Array.isArray(results)
+        ? results
+        : [];
+
+    const purchases =
+      typeof S.loadActualPurchases ===
+        "function"
+        ? S.loadActualPurchases()
+        : [];
+
+    const normalizeTicket =
+      value => {
+        const boats =
+          String(value || "")
+            .match(/[1-6]/g) || [];
+
+        if (
+          boats.length !== 3 ||
+          new Set(boats).size !== 3
+        ) {
+          return "";
+        }
+
+        return boats.join("-");
+      };
+
+    const officialResultMap =
+      new Map();
+
+    list.forEach(record => {
+      const raceKey =
+        S.buildRaceKey(record);
+
+      const resultTicket =
+        normalizeTicket(
+          record?.result
+        );
+
+      const payoutPer100 =
+        U.safeNumber(
+          record
+            ?.officialPayoutPer100,
+          0
+        );
+
+      const isOfficial =
+        record?.recordType ===
+          "official_result" ||
+        record?.resultSource ===
+          "boatrace-official";
+
+      if (
+        !raceKey ||
+        !resultTicket ||
+        payoutPer100 <= 0 ||
+        !isOfficial ||
+        officialResultMap.has(
+          raceKey
+        )
+      ) {
+        return;
+      }
+
+      officialResultMap.set(
+        raceKey,
+        {
+          resultTicket,
+          payoutPer100
+        }
+      );
+    });
+
+    const seenPurchaseKeys =
+      new Set();
+
+    const purchaseRaceKeys =
+      new Set();
+
+    const settledRaceKeys =
+      new Set();
+
+    const hitRaceKeys =
+      new Set();
+
+    let purchaseTicketCount = 0;
+    let settledTicketCount = 0;
+    let pendingTicketCount = 0;
+    let hitTicketCount = 0;
+    let totalPurchaseAmount = 0;
+    let pendingBet = 0;
+    let totalBet = 0;
+    let totalPayout = 0;
+
+    purchases.forEach(purchase => {
+      const raceKey =
+        S.buildRaceKey(purchase);
+
+      const ticket =
+        normalizeTicket(
+          purchase?.ticket
+        );
+
+      const amount =
+        U.safeNumber(
+          purchase?.amount,
+          0
+        );
+
+      const purchaseKey =
+        raceKey && ticket
+          ? (
+              raceKey +
+              "-" +
+              ticket
+            )
+          : "";
+
+      if (
+        !raceKey ||
+        !ticket ||
+        !purchaseKey ||
+        amount <= 0 ||
+        seenPurchaseKeys.has(
+          purchaseKey
+        )
+      ) {
+        return;
+      }
+
+      seenPurchaseKeys.add(
+        purchaseKey
+      );
+
+      purchaseTicketCount += 1;
+      totalPurchaseAmount += amount;
+
+      purchaseRaceKeys.add(
+        raceKey
+      );
+
+      const officialResult =
+        officialResultMap.get(
+          raceKey
+        );
+
+      if (!officialResult) {
+        pendingTicketCount += 1;
+        pendingBet += amount;
+        return;
+      }
+
+      settledTicketCount += 1;
+      totalBet += amount;
+
+      settledRaceKeys.add(
+        raceKey
+      );
+
+      const isHit =
+        ticket ===
+        officialResult
+          .resultTicket;
+
+      if (!isHit) {
+        return;
+      }
+
+      hitTicketCount += 1;
+
+      hitRaceKeys.add(
+        raceKey
+      );
+
+      totalPayout +=
+        Math.round(
+          (
+            officialResult
+              .payoutPer100 /
+            100
+          ) * amount
+        );
+    });
+
+    const profit =
+      totalPayout - totalBet;
+
+    const recoveryRate =
+      totalBet > 0
+        ? (
+            totalPayout /
+            totalBet
+          ) * 100
+        : 0;
+
+    const hitRate =
+      settledRaceKeys.size > 0
+        ? (
+            hitRaceKeys.size /
+            settledRaceKeys.size
+          ) * 100
+        : 0;
+
+    return {
+      purchaseTicketCount,
+
+      purchaseRaceCount:
+        purchaseRaceKeys.size,
+
+      settledTicketCount,
+      pendingTicketCount,
+      hitTicketCount,
+
+      settledRaceCount:
+        settledRaceKeys.size,
+
+      hitRaceCount:
+        hitRaceKeys.size,
+
+      totalPurchaseAmount,
+      pendingBet,
+      totalBet,
+      totalPayout,
+      profit,
+      recoveryRate,
+      hitRate
+    };
+  }
+  
       function calcStats(results) {
     const list =
       Array.isArray(results)
