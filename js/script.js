@@ -2192,6 +2192,302 @@
     return null;
   }
 
+      function savePredictionSnapshot(
+    params,
+    prediction
+  ) {
+    try {
+      const storage =
+        window.ChappyStorage;
+
+      if (
+        !storage ||
+        typeof storage
+          .upsertPrediction !==
+          "function"
+      ) {
+        throw new Error(
+          "ChappyStorage.upsertPrediction が見つかりません"
+        );
+      }
+
+      const normalizeCategory =
+        value => {
+          const category =
+            String(
+              value || ""
+            ).trim();
+
+          if (
+            category === "本線"
+          ) {
+            return "本命";
+          }
+
+          if (
+            category === "万舟" ||
+            category === "穴候補" ||
+            category === "高配当候補"
+          ) {
+            return "穴・万舟候補";
+          }
+
+          return category;
+        };
+
+      const aiTicketList =
+        Array.isArray(
+          prediction?.aiTicketList
+        )
+          ? prediction.aiTicketList
+          : [];
+
+      const rankedSource =
+        Array.isArray(
+          prediction?.ticketRanks
+        ) &&
+        prediction.ticketRanks
+          .length > 0
+          ? prediction.ticketRanks
+          : aiTicketList;
+
+      const ticketRanks =
+        rankedSource
+          .map(item => {
+            const ticket =
+              String(
+                item?.ticket || ""
+              ).trim();
+
+            const aiTicket =
+              aiTicketList.find(
+                row =>
+                  String(
+                    row?.ticket || ""
+                  ).trim() ===
+                  ticket
+              ) || null;
+
+            const rawCategories =
+              aiTicket?.categories ||
+              aiTicket?.category ||
+              item?.categories ||
+              item?.category ||
+              item?.type ||
+              item?.role ||
+              [];
+
+            const categories = [
+              ...new Set(
+                (
+                  Array.isArray(
+                    rawCategories
+                  )
+                    ? rawCategories
+                    : [rawCategories]
+                )
+                  .map(
+                    normalizeCategory
+                  )
+                  .filter(Boolean)
+              )
+            ];
+
+            const role =
+              [
+                "本命",
+                "押さえ",
+                "流し",
+                "拾い",
+                "穴・万舟候補"
+              ].find(value =>
+                categories.includes(
+                  value
+                )
+              ) ||
+              normalizeCategory(
+                item?.role
+              ) ||
+              "分類未保存";
+
+            const rawScenarios =
+              aiTicket
+                ?.scenarioTypes ||
+              aiTicket
+                ?.scenarioType ||
+              item?.scenarioTypes ||
+              item?.scenarioType ||
+              [];
+
+            const scenarioTypes = [
+              ...new Set(
+                (
+                  Array.isArray(
+                    rawScenarios
+                  )
+                    ? rawScenarios
+                    : [rawScenarios]
+                )
+                  .map(value =>
+                    String(
+                      value || ""
+                    ).trim()
+                  )
+                  .filter(Boolean)
+              )
+            ];
+
+            const odds =
+              item?.odds ??
+              aiTicket?.odds ??
+              null;
+
+            const recommendedAmount =
+              Number(
+                item
+                  ?.recommendedAmount ??
+                aiTicket
+                  ?.recommendedAmount ??
+                0
+              );
+
+            return {
+              ticket,
+              role,
+              categories,
+              scenarioTypes,
+
+              rank:
+                String(
+                  item?.rank ||
+                  aiTicket?.rank ||
+                  ""
+                ),
+
+              score:
+                Number(
+                  item?.score ??
+                  aiTicket?.score ??
+                  0
+                ),
+
+              odds:
+                odds === null ||
+                odds === undefined ||
+                odds === ""
+                  ? null
+                  : Number(odds),
+
+              oddsValue:
+                String(
+                  item?.oddsValue ||
+                  aiTicket?.oddsValue ||
+                  ""
+                ),
+
+              recommendedAmount:
+                Number.isFinite(
+                  recommendedAmount
+                )
+                  ? recommendedAmount
+                  : 0,
+
+              isManshu:
+                Boolean(
+                  aiTicket?.isManshu
+                ) ||
+                Number(odds) >= 100
+            };
+          })
+          .filter(
+            item =>
+              item.ticket
+          );
+
+      const oddsCaptured =
+        ticketRanks.some(
+          item =>
+            Number.isFinite(
+              Number(item.odds)
+            ) &&
+            Number(item.odds) > 0
+        );
+
+      const summarySource =
+        prediction?.finalAi
+          ?.summary ||
+        prediction?.finalComment
+          ?.comment ||
+        prediction?.finalComment
+          ?.title ||
+        "";
+
+      const summary =
+        typeof summarySource ===
+          "string"
+          ? summarySource
+          : "";
+
+      const snapshot = {
+        raceKey:
+          `${params.date}-` +
+          `${params.jcd}-` +
+          `${params.rno}`,
+
+        place: params.place,
+        jcd: params.jcd,
+        raceNo: params.rno,
+        date: params.date,
+
+        predictionMode:
+          prediction
+            ?.predictionMode ||
+          "pre_deadline",
+
+        isRetrospective:
+          Boolean(
+            prediction
+              ?.isRetrospective
+          ),
+
+        officialResultUsedForPrediction:
+          false,
+
+        oddsCaptured,
+
+        allocationBudget:
+          Number(
+            prediction
+              ?.allocationBudget ||
+            0
+          ),
+
+        allocatedTotal:
+          Number(
+            prediction
+              ?.allocatedTotal ||
+            0
+          ),
+
+        summary,
+        ticketRanks
+      };
+
+      return storage
+        .upsertPrediction(
+          snapshot
+        );
+
+    } catch (storageError) {
+      console.warn(
+        "レース別予想の保存に失敗",
+        storageError
+      );
+
+      return null;
+    }
+  }
+
     async function refreshOddsOnly() {
     if (
       getRaceMode() ===
