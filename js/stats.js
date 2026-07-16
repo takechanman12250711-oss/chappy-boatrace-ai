@@ -105,7 +105,7 @@
     };
   }
   
-    function calcStats(results) {
+      function calcStats(results) {
     const list =
       Array.isArray(results)
         ? results
@@ -146,23 +146,25 @@
           ) * 100
         : 0;
 
-    const normalizeTicket = value =>
-      (
-        String(value || "")
-          .match(/[1-6]/g) || []
-      )
-        .slice(0, 3)
-        .join("-");
+    const normalizeTicket =
+      value =>
+        (
+          String(value || "")
+            .match(/[1-6]/g) || []
+        )
+          .slice(0, 3)
+          .join("-");
 
-    const createBucket = label => ({
-      label,
-      ticketCount: 0,
-      hitCount: 0,
-      theoreticalBet: 0,
-      theoreticalPayout: 0
-    });
+    const createBucket =
+      label => ({
+        label,
+        ticketCount: 0,
+        hitCount: 0,
+        theoreticalBet: 0,
+        theoreticalPayout: 0
+      });
 
-        const rankStats = {
+    const rankStats = {
       S: createBucket("S"),
       A: createBucket("A"),
       B: createBucket("B"),
@@ -179,6 +181,9 @@
       流し:
         createBucket("流し"),
 
+      拾い:
+        createBucket("拾い"),
+
       "穴・万舟候補":
         createBucket(
           "穴・万舟候補"
@@ -187,101 +192,254 @@
 
     const oddsValueStats = {};
 
-    const checkedResults =
-      list.filter(
-        record =>
-          record?.predictionChecked &&
-          Array.isArray(
-            record.predictionTickets
+    let predictionRaceCount = 0;
+    let predictionHitCount = 0;
+    let theoryTicketCount = 0;
+    let theoryTotalBet = 0;
+    let theoryTotalPayout = 0;
+
+    const officialResults =
+      list.filter(record => {
+        const raceKey =
+          S.buildRaceKey(record);
+
+        const resultTicket =
+          normalizeTicket(
+            record?.result
+          );
+
+        const payoutPer100 =
+          U.safeNumber(
+            record
+              ?.officialPayoutPer100,
+            0
+          );
+
+        const isOfficial =
+          record?.recordType ===
+            "official_result" ||
+          record?.resultSource ===
+            "boatrace-official";
+
+        return Boolean(
+          raceKey &&
+          resultTicket &&
+          payoutPer100 > 0 &&
+          isOfficial
+        );
+      });
+
+    officialResults.forEach(record => {
+      const raceKey =
+        S.buildRaceKey(record);
+
+      const savedPredictionKey =
+        S.buildRaceKey(
+          record?.predictionRaceKey ||
+          ""
+        );
+
+      if (
+        savedPredictionKey &&
+        savedPredictionKey !==
+          raceKey
+      ) {
+        return;
+      }
+
+      const prediction =
+        S.findPredictionByRaceKey(
+          raceKey
+        );
+
+      if (
+        !prediction ||
+        prediction.isRetrospective ||
+        prediction.predictionMode ===
+          "retrospective_reference"
+      ) {
+        return;
+      }
+
+      const seenTickets =
+        new Set();
+
+      const theoryTickets = [];
+
+      (
+        Array.isArray(
+          prediction.ticketRanks
+        )
+          ? prediction.ticketRanks
+          : []
+      ).forEach(ticket => {
+        const normalizedTicket =
+          normalizeTicket(
+            ticket?.ticket
+          );
+
+        const recommendedAmount =
+          U.safeNumber(
+            ticket
+              ?.recommendedAmount,
+            0
+          );
+
+        if (
+          !normalizedTicket ||
+          recommendedAmount <= 0 ||
+          seenTickets.has(
+            normalizedTicket
           )
-      );
+        ) {
+          return;
+        }
 
-    checkedResults.forEach(record => {
+        seenTickets.add(
+          normalizedTicket
+        );
+
+        theoryTickets.push({
+          ...ticket,
+          normalizedTicket,
+          recommendedAmount
+        });
+      });
+
+      if (!theoryTickets.length) {
+        return;
+      }
+
       const actualTicket =
-        normalizeTicket(record.result);
+        normalizeTicket(
+          record.result
+        );
 
-      record.predictionTickets.forEach(
-        ticket => {
-          const predictedTicket =
-            normalizeTicket(
-              ticket?.ticket
-            );
+      const payoutPer100 =
+        U.safeNumber(
+          record
+            .officialPayoutPer100,
+          0
+        );
 
-          const isHit =
-            Boolean(actualTicket) &&
-            predictedTicket ===
-              actualTicket;
+      const matchedTicket =
+        theoryTickets.find(
+          ticket =>
+            ticket
+              .normalizedTicket ===
+            actualTicket
+        ) || null;
 
-          const rank =
-            String(
-              ticket?.rank || ""
-            ).toUpperCase();
+      const raceBet =
+        theoryTickets.reduce(
+          (sum, ticket) =>
+            sum +
+            ticket.recommendedAmount,
+          0
+        );
 
-          const role =
-            String(
-              ticket?.role || ""
-            );
+      const racePayout =
+        matchedTicket
+          ? Math.round(
+              (
+                payoutPer100 /
+                100
+              ) *
+              matchedTicket
+                .recommendedAmount
+            )
+          : 0;
 
-          const oddsValue =
-            String(
-              ticket?.oddsValue ||
-              "未判定"
-            );
+      predictionRaceCount += 1;
 
-          const odds =
-            U.safeNumber(
-              ticket?.odds,
-              0
-            );
+      theoryTicketCount +=
+        theoryTickets.length;
 
-          const updateBucket =
-            bucket => {
-              bucket.ticketCount += 1;
+      theoryTotalBet +=
+        raceBet;
 
-              bucket.theoreticalBet +=
-                100;
+      theoryTotalPayout +=
+        racePayout;
 
-              if (isHit) {
-                bucket.hitCount += 1;
+      if (matchedTicket) {
+        predictionHitCount += 1;
+      }
 
-                bucket.theoreticalPayout +=
-                  Math.round(
-                    odds * 100
-                  );
-              }
-            };
+      theoryTickets.forEach(ticket => {
+        const isHit =
+          ticket.normalizedTicket ===
+          actualTicket;
 
-          if (rankStats[rank]) {
-            updateBucket(
-              rankStats[rank]
-            );
-          }
+        const rank =
+          String(
+            ticket?.rank || ""
+          ).toUpperCase();
 
-          if (roleStats[role]) {
-            updateBucket(
-              roleStats[role]
-            );
-          }
+        const role =
+          String(
+            ticket?.role || ""
+          );
 
-          if (
-            !oddsValueStats[
-              oddsValue
-            ]
-          ) {
-            oddsValueStats[
-              oddsValue
-            ] = createBucket(
-              oddsValue
-            );
-          }
+        const oddsValue =
+          String(
+            ticket?.oddsValue ||
+            "未判定"
+          );
 
+        const updateBucket =
+          bucket => {
+            bucket.ticketCount += 1;
+
+            bucket.theoreticalBet +=
+              ticket
+                .recommendedAmount;
+
+            if (isHit) {
+              bucket.hitCount += 1;
+
+              bucket
+                .theoreticalPayout +=
+                Math.round(
+                  (
+                    payoutPer100 /
+                    100
+                  ) *
+                  ticket
+                    .recommendedAmount
+                );
+            }
+          };
+
+        if (rankStats[rank]) {
           updateBucket(
-            oddsValueStats[
-              oddsValue
-            ]
+            rankStats[rank]
           );
         }
-      );
+
+        if (roleStats[role]) {
+          updateBucket(
+            roleStats[role]
+          );
+        }
+
+        if (
+          !oddsValueStats[
+            oddsValue
+          ]
+        ) {
+          oddsValueStats[
+            oddsValue
+          ] = createBucket(
+            oddsValue
+          );
+        }
+
+        updateBucket(
+          oddsValueStats[
+            oddsValue
+          ]
+        );
+      });
     });
 
     const finalizeBucket =
@@ -343,11 +501,17 @@
         )
       );
 
-    const predictionHitCount =
-      checkedResults.filter(
-        record =>
-          record.predictionHit
-      ).length;
+    const theoryProfit =
+      theoryTotalPayout -
+      theoryTotalBet;
+
+    const theoryRecoveryRate =
+      theoryTotalBet > 0
+        ? (
+            theoryTotalPayout /
+            theoryTotalBet
+          ) * 100
+        : 0;
 
     return {
       count,
@@ -356,18 +520,22 @@
       profit,
       recoveryRate,
 
-      predictionRaceCount:
-        checkedResults.length,
-
+      predictionRaceCount,
       predictionHitCount,
 
       predictionHitRate:
-        checkedResults.length > 0
+        predictionRaceCount > 0
           ? (
               predictionHitCount /
-              checkedResults.length
+              predictionRaceCount
             ) * 100
           : 0,
+
+      theoryTicketCount,
+      theoryTotalBet,
+      theoryTotalPayout,
+      theoryProfit,
+      theoryRecoveryRate,
 
       rankStats:
         finalizedRankStats,
