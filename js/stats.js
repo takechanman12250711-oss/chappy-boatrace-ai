@@ -794,11 +794,27 @@
     `);
   }
 
-  function updateAutoPayout() {
-    const odds = U.byId("oddsInput")?.value;
-    const amount = U.byId("betAmountInput")?.value;
-    const payout = calcPayout(odds, amount);
-    U.setText("autoPayoutText", `払戻金：${U.formatMoney(payout)}`);
+    function updateAutoPayout() {
+    const odds =
+      U.byId(
+        "oddsInput"
+      )?.value;
+
+    const amount =
+      U.byId(
+        "betAmountInput"
+      )?.value;
+
+    const estimatedPayout =
+      calcPayout(
+        odds,
+        amount
+      );
+
+    U.setText(
+      "autoPayoutText",
+      `的中時の想定払戻：${U.formatMoney(estimatedPayout)}`
+    );
   }
 
     function saveCurrentResult() {
