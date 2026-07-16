@@ -801,25 +801,122 @@
     U.setText("autoPayoutText", `払戻金：${U.formatMoney(payout)}`);
   }
 
-  function saveCurrentResult() {
-    const result = U.byId("raceResultInput")?.value;
-    const odds = U.byId("oddsInput")?.value;
-    const amount = U.byId("betAmountInput")?.value;
+    function saveCurrentResult() {
+    const ticketInput =
+      U.byId(
+        "raceResultInput"
+      )?.value;
 
-    if (!result) {
-      alert("結果を入力してください");
+    const odds =
+      U.byId(
+        "oddsInput"
+      )?.value;
+
+    const amount =
+      U.byId(
+        "betAmountInput"
+      )?.value;
+
+    const boats =
+      String(ticketInput || "")
+        .match(/[1-6]/g) || [];
+
+    if (
+      boats.length !== 3 ||
+      new Set(boats).size !== 3
+    ) {
+      alert(
+        "購入した3連単を入力してください（例：1-2-3）"
+      );
+
       return;
     }
 
-    const record = buildResultRecord({ result, odds, amount });
-    S.addResult(record);
+    const purchaseAmount =
+      U.safeNumber(amount, 0);
 
-    U.byId("raceResultInput").value = "";
-    U.byId("oddsInput").value = "";
-    U.byId("betAmountInput").value = "100";
+    if (purchaseAmount <= 0) {
+      alert(
+        "購入金額を入力してください"
+      );
 
-    updateAutoPayout();
-    renderStats();
+      return;
+    }
+
+    try {
+      const getRaceParams =
+        window
+          .ChappyRaceSelection
+          ?.getRaceParams;
+
+      if (
+        typeof getRaceParams !==
+        "function"
+      ) {
+        throw new Error(
+          "選択中のレース情報を取得できません"
+        );
+      }
+
+      const params =
+        getRaceParams();
+
+      const raceKey =
+        S.buildRaceKey({
+          date: params.date,
+          jcd: params.jcd,
+          raceNo: params.rno
+        });
+
+      if (!raceKey) {
+        throw new Error(
+          "実購入を保存するレースを特定できません"
+        );
+      }
+
+      S.upsertActualPurchase({
+        recordType:
+          "actual_purchase",
+
+        raceKey,
+        date: params.date,
+        place: params.place,
+        jcd: params.jcd,
+        raceNo: params.rno,
+
+        ticket:
+          boats.join("-"),
+
+        amount:
+          purchaseAmount,
+
+        purchaseOdds:
+          U.safeNumber(odds, 0)
+      });
+
+      U.byId(
+        "raceResultInput"
+      ).value = "";
+
+      U.byId(
+        "oddsInput"
+      ).value = "";
+
+      U.byId(
+        "betAmountInput"
+      ).value = "100";
+
+      updateAutoPayout();
+      renderStats();
+
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        error?.message ||
+        "実購入の保存に失敗しました"
+      );
+    }
   }
 
   function undoLatestResult() {
