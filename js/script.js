@@ -591,15 +591,15 @@
         value:
           `${race.raceNo}R`,
 
-        label:
+                label:
           mode === "live"
             ? (
                 `${race.raceNo}R` +
-                `（締切 ${race.deadline}）`
+                `（${race.deadline}）`
               )
             : (
                 `${race.raceNo}R` +
-                `（終了・締切 ${race.deadline}）`
+                `（終了 ${race.deadline}）`
               )
       }))
     );
