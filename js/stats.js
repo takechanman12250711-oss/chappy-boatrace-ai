@@ -873,6 +873,163 @@
     U.setHtml("statsArea", `
             <div class="v3-final-block">
         <h3>
+          実購入成績
+        </h3>
+
+        <p>
+          実際に保存した買い目を、
+          同じレースの公式結果・公式払戻だけで
+          照合した成績です。
+          結果待ちは収支・回収率に含めません。
+        </p>
+      </div>
+
+      <div class="v3-final-grid">
+        <div class="v3-final-block">
+          <h3>
+            記録レース
+          </h3>
+
+          <p>
+            ${actualStats.purchaseRaceCount}
+            レース
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            記録買い目
+          </h3>
+
+          <p>
+            ${actualStats.purchaseTicketCount}
+            点
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            確定買い目
+          </h3>
+
+          <p>
+            ${actualStats.settledTicketCount}
+            点
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            結果待ち
+          </h3>
+
+          <p>
+            ${actualStats.pendingTicketCount}
+            点
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            実購入総額
+          </h3>
+
+          <p>
+            ${U.formatMoney(
+              actualStats
+                .totalPurchaseAmount
+            )}
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            結果待ち購入
+          </h3>
+
+          <p>
+            ${U.formatMoney(
+              actualStats.pendingBet
+            )}
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            成績対象購入
+          </h3>
+
+          <p>
+            ${U.formatMoney(
+              actualStats.totalBet
+            )}
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            公式払戻
+          </h3>
+
+          <p>
+            ${U.formatMoney(
+              actualStats.totalPayout
+            )}
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            実収支
+          </h3>
+
+          <p>
+            ${U.formatMoney(
+              actualStats.profit
+            )}
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            実回収率
+          </h3>
+
+          <p>
+            ${U.round(
+              actualStats.recoveryRate,
+              1
+            )}%
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            的中レース
+          </h3>
+
+          <p>
+            ${actualStats.hitRaceCount}
+            /
+            ${actualStats.settledRaceCount}
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            的中率
+          </h3>
+
+          <p>
+            ${U.round(
+              actualStats.hitRate,
+              1
+            )}%
+          </p>
+        </div>
+      </div>
+            <div class="v3-final-block">
+        <h3>
           AI理論成績
         </h3>
 
