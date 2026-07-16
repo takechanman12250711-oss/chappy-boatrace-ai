@@ -3143,12 +3143,10 @@
             : []
       };
 
-      localStorage.setItem(
-        "chappy_latest_prediction_v1",
-        JSON.stringify(
-          predictionSnapshot
-        )
-      );
+      savePredictionSnapshot(
+      params,
+      prediction
+　　　);
     } catch (storageError) {
       console.warn(
         "予想履歴の一時保存に失敗",
