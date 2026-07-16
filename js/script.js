@@ -205,7 +205,83 @@
           ? "終了済みレースを選び、予想と公式結果を別々に表示します"
           : "本日開催中の締切前レースだけを表示します";
     }
+    const raceSelect =
+      document.getElementById(
+        "raceSelect"
+      );
 
+    if (raceSelect) {
+      raceSelect.addEventListener(
+        "change",
+        () => {
+          lastRaceData = null;
+
+          clearReviewResult();
+
+          const resultArea =
+            document.getElementById(
+              "resultArea"
+            );
+
+          if (resultArea) {
+            resultArea.innerHTML = "";
+          }
+
+          const todayItems = [
+            {
+              id: "todayMainPick",
+              main: "解析待ち",
+              sub: "総合指数上位"
+            },
+            {
+              id: "todayManshuPick",
+              main: "解析待ち",
+              sub: "妙味・展開候補"
+            },
+            {
+              id: "todayWaterCondition",
+              main: "確認待ち",
+              sub: "風・波・潮汐"
+            },
+            {
+              id: "todayAiJudge",
+              main: "解析待ち",
+              sub: "買い／見送り判断"
+            }
+          ];
+
+          todayItems.forEach(item => {
+            const element =
+              document.getElementById(
+                item.id
+              );
+
+            if (!element) {
+              return;
+            }
+
+            element.textContent =
+              item.main;
+
+            if (
+              element.nextElementSibling
+            ) {
+              element
+                .nextElementSibling
+                .textContent =
+                item.sub;
+            }
+          });
+
+          updateStatus(
+            getRaceMode() === "review"
+              ? "レースを変更しました。「振り返り予想を開始」を押してください"
+              : "レースを変更しました。「AI予想を開始」を押してください"
+          );
+        }
+      );
+    }
+    
     if (fetchBtn) {
       const mainText =
         fetchBtn.querySelector(
