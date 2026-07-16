@@ -785,6 +785,11 @@
 
     const stats =
       calcStats(results);
+      
+          const actualStats =
+      calcActualStats(
+        results
+      );
 
     const renderBucketRows =
       buckets => {
