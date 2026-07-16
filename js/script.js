@@ -415,9 +415,45 @@
           true;
       }
 
-      updateStatus(
-                label:
-          venue.place 
+            updateStatus(
+        mode === "live"
+          ? "本日の締切前レースはありません。振り返りモードを選べます"
+          : "この日付の終了レースはありません"
+      );
+
+      return;
+    }
+
+    const currentPlace =
+      placeSelect?.value ||
+      "";
+
+    const preferredJcd =
+      mode === "live"
+        ? String(
+            data.nextRace?.jcd ||
+            ""
+          )
+        : String(
+            PLACE_CODE_MAP[
+              currentPlace
+            ] ||
+            venues[0]?.jcd ||
+            ""
+          );
+
+    replaceSelectOptions(
+      placeSelect,
+
+      venues.map(venue => ({
+        value:
+          venue.place,
+
+        jcd:
+          venue.jcd,
+
+        label:
+          venue.place
       }))
     );
 
