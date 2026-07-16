@@ -408,6 +408,338 @@
     });
   }
 
+  function renderOfficialVenuePicker(
+    data,
+    mode
+  ) {
+    const grid =
+      document.getElementById(
+        "officialVenueGrid"
+      );
+
+    const status =
+      document.getElementById(
+        "officialScheduleStatus"
+      );
+
+    const panel =
+      document.getElementById(
+        "officialRacePanel"
+      );
+
+    const selectedVenueText =
+      document.getElementById(
+        "officialSelectedVenue"
+      );
+
+    const eventGradeText =
+      document.getElementById(
+        "officialEventGrade"
+      );
+
+    const raceGrid =
+      document.getElementById(
+        "officialRaceGrid"
+      );
+
+    const selectedRaceText =
+      document.getElementById(
+        "officialSelectedRace"
+      );
+
+    const officialLink =
+      document.getElementById(
+        "officialRaceLink"
+      );
+
+    const placeSelect =
+      document.getElementById(
+        "placeSelect"
+      );
+
+    if (
+      !grid ||
+      !placeSelect
+    ) {
+      return;
+    }
+
+    const availableVenues =
+      Array.isArray(
+        data?.venues
+      )
+        ? data.venues
+        : [];
+
+    const venueByJcd =
+      new Map(
+        availableVenues.map(
+          venue => [
+            String(venue.jcd),
+            venue
+          ]
+        )
+      );
+
+    const currentJcd =
+      String(
+        PLACE_CODE_MAP[
+          placeSelect.value
+        ] ||
+        ""
+      );
+
+    const preferredJcd =
+      mode === "live"
+        ? String(
+            data?.nextRace?.jcd ||
+            ""
+          )
+        : (
+            venueByJcd.has(
+              currentJcd
+            )
+              ? currentJcd
+              : String(
+                  availableVenues[0]
+                    ?.jcd ||
+                  ""
+                )
+          );
+
+    grid.innerHTML = "";
+
+    Object.entries(
+      PLACE_CODE_MAP
+    ).forEach(
+      ([place, jcd]) => {
+        const venue =
+          venueByJcd.get(
+            String(jcd)
+          );
+
+        const selectable =
+          mode === "live"
+            ? Boolean(
+                venue?.selectable
+              )
+            : Boolean(venue);
+
+        const grade =
+          String(
+            venue?.eventGrade ||
+            ""
+          );
+
+        const statusText =
+          !venue
+            ? "本日なし"
+            : (
+                grade ||
+                (
+                  venue.finalClosed
+                    ? "開催終了"
+                    : "開催"
+                )
+              );
+
+        const button =
+          document.createElement(
+            "button"
+          );
+
+        button.type =
+          "button";
+
+        button.className =
+          "official-venue-button";
+
+        if (selectable) {
+          button.classList.add(
+            "is-open"
+          );
+        }
+
+        if (
+          selectable &&
+          String(jcd) ===
+            preferredJcd
+        ) {
+          button.classList.add(
+            "is-selected"
+          );
+        }
+
+        button.disabled =
+          !selectable;
+
+        button.dataset.jcd =
+          String(jcd);
+
+        button.dataset.place =
+          place;
+
+        const name =
+          document.createElement(
+            "span"
+          );
+
+        name.className =
+          "official-venue-name";
+
+        name.textContent =
+          place;
+
+        const venueStatus =
+          document.createElement(
+            "span"
+          );
+
+        venueStatus.className =
+          "official-venue-status";
+
+        venueStatus.textContent =
+          statusText;
+
+        if (grade) {
+          venueStatus.classList.add(
+            "official-event-grade"
+          );
+
+          const gradeClass =
+            grade === "一般"
+              ? "grade-general"
+              : (
+                  "grade-" +
+                  grade.toLowerCase()
+                );
+
+          venueStatus.classList.add(
+            gradeClass
+          );
+        }
+
+        button.append(
+          name,
+          venueStatus
+        );
+
+        button.addEventListener(
+          "click",
+          () => {
+            placeSelect.value =
+              place;
+
+            grid
+              .querySelectorAll(
+                ".official-venue-button"
+              )
+              .forEach(item => {
+                item.classList.toggle(
+                  "is-selected",
+                  item === button
+                );
+              });
+
+            if (panel) {
+              panel.hidden =
+                false;
+            }
+
+            if (
+              selectedVenueText
+            ) {
+              selectedVenueText
+                .textContent =
+                place;
+            }
+
+            if (
+              eventGradeText
+            ) {
+              eventGradeText
+                .textContent =
+                grade ||
+                "開催";
+            }
+
+            if (raceGrid) {
+              raceGrid.innerHTML =
+                '<p class="official-picker-message">レース情報を取得しています</p>';
+            }
+
+            if (
+              selectedRaceText
+            ) {
+              selectedRaceText
+                .textContent =
+                "レースを選択してください";
+            }
+
+            if (officialLink) {
+              officialLink.href =
+                "#";
+
+              officialLink.setAttribute(
+                "aria-disabled",
+                "true"
+              );
+
+              officialLink.setAttribute(
+                "tabindex",
+                "-1"
+              );
+            }
+
+            loadRaceChoices()
+              .catch(
+                handleRaceSelectionError
+              );
+          }
+        );
+
+        grid.appendChild(
+          button
+        );
+      }
+    );
+
+    if (status) {
+      status.textContent =
+        `${availableVenues.length}場開催`;
+    }
+
+    const selectedVenue =
+      venueByJcd.get(
+        preferredJcd
+      );
+
+    if (
+      panel &&
+      selectedVenue
+    ) {
+      panel.hidden =
+        false;
+    }
+
+    if (
+      selectedVenueText &&
+      selectedVenue
+    ) {
+      selectedVenueText.textContent =
+        selectedVenue.place;
+    }
+
+    if (
+      eventGradeText &&
+      selectedVenue
+    ) {
+      eventGradeText.textContent =
+        selectedVenue.eventGrade ||
+        "開催";
+    }
+  }
+
   async function loadVenueChoices() {
     const mode =
       getRaceMode();
