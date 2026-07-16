@@ -633,61 +633,107 @@
         );
 
     U.setHtml("statsArea", `
+            <div class="v3-final-block">
+        <h3>
+          AI理論成績
+        </h3>
+
+        <p>
+          AIの推奨購入額を使い、
+          公式結果と自動照合した成績です
+        </p>
+      </div>
+
       <div class="v3-final-grid">
         <div class="v3-final-block">
-          <h3>購入数</h3>
-          <p>${stats.count}件</p>
+          <h3>
+            対象レース
+          </h3>
+
+          <p>
+            ${stats.predictionRaceCount}
+            レース
+          </p>
         </div>
 
         <div class="v3-final-block">
-          <h3>総購入</h3>
+          <h3>
+            理論購入点数
+          </h3>
+
+          <p>
+            ${stats.theoryTicketCount}
+            点
+          </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            理論購入
+          </h3>
+
           <p>
             ${U.formatMoney(
-              stats.totalBet
+              stats.theoryTotalBet
             )}
           </p>
         </div>
 
         <div class="v3-final-block">
-          <h3>総払戻</h3>
+          <h3>
+            理論払戻
+          </h3>
+
           <p>
             ${U.formatMoney(
-              stats.totalPayout
+              stats.theoryTotalPayout
             )}
           </p>
         </div>
 
         <div class="v3-final-block">
-          <h3>収支</h3>
+          <h3>
+            理論収支
+          </h3>
+
           <p>
             ${U.formatMoney(
-              stats.profit
+              stats.theoryProfit
             )}
           </p>
         </div>
 
         <div class="v3-final-block">
-          <h3>回収率</h3>
+          <h3>
+            理論回収率
+          </h3>
+
           <p>
             ${U.round(
-              stats.recoveryRate,
+              stats.theoryRecoveryRate,
               1
             )}%
           </p>
         </div>
 
         <div class="v3-final-block">
-          <h3>AI予想検証</h3>
+          <h3>
+            的中レース
+          </h3>
 
           <p>
-            ${stats.predictionRaceCount}
-            レース中
             ${stats.predictionHitCount}
-            レース的中
+            /
+            ${stats.predictionRaceCount}
           </p>
+        </div>
+
+        <div class="v3-final-block">
+          <h3>
+            的中率
+          </h3>
 
           <p>
-            的中率
             ${U.round(
               stats.predictionHitRate,
               1
