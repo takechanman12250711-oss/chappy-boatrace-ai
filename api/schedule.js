@@ -116,8 +116,38 @@ function parseVenues(
 
     seen.add(jcd);
 
-    const text =
+        const text =
       stripHtml(block);
+
+    const gradeMatch =
+      block.match(
+        /\bis-(SG|PG1|G1|G2|G3|ippan)b?\b/i
+      );
+
+    const gradeKey =
+      gradeMatch
+        ? String(
+            gradeMatch[1]
+          )
+        : "";
+
+    const eventGrade =
+      gradeKey.toLowerCase() ===
+      "ippan"
+        ? "一般"
+        : gradeKey.toUpperCase();
+
+    const eventMatch =
+      block.match(
+        /raceindex\?jcd=\d{2}&(?:amp;)?hd=\d{8}"[^>]*>([\s\S]*?)<\/a>/i
+      );
+
+    const eventTitle =
+      eventMatch
+        ? stripHtml(
+            eventMatch[1]
+          )
+        : "";
 
     const raceMatch = block.match(
       new RegExp(
@@ -171,6 +201,9 @@ function parseVenues(
         decodeHtml(
           venueMatch[2]
         ).trim(),
+
+      eventTitle,
+      eventGrade,
 
       currentRaceNo,
       nextDeadline,
