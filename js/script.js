@@ -1742,7 +1742,7 @@
     }
   }
 
-  async function fetchOfficialResult(
+    async function fetchOfficialResult(
     params
   ) {
     const url =
@@ -1774,9 +1774,140 @@
       );
     }
 
+    if (result.resultAvailable) {
+      try {
+        const storage =
+          window.ChappyStorage;
+
+        if (
+          !storage ||
+          typeof storage
+            .buildRaceKey !==
+            "function" ||
+          typeof storage
+            .findPredictionByRaceKey !==
+            "function" ||
+          typeof storage
+            .upsertResult !==
+            "function"
+        ) {
+          throw new Error(
+            "公式結果のレース別保存機能が見つかりません"
+          );
+        }
+
+        const requestedRaceKey =
+          storage.buildRaceKey({
+            date: params.date,
+            jcd: params.jcd,
+            raceNo: params.rno
+          });
+
+        const officialRaceKey =
+          storage.buildRaceKey({
+            date: result.date,
+            jcd: result.jcd,
+            raceNo: result.raceNo
+          });
+
+        if (
+          !requestedRaceKey ||
+          !officialRaceKey ||
+          requestedRaceKey !==
+            officialRaceKey
+        ) {
+          throw new Error(
+            "選択レースと公式結果のレース情報が一致しません"
+          );
+        }
+
+        const matchedPrediction =
+          storage
+            .findPredictionByRaceKey(
+              officialRaceKey
+            );
+
+        storage.upsertResult({
+          raceKey:
+            officialRaceKey,
+
+          recordType:
+            "official_result",
+
+          resultSource:
+            result.source ||
+            "boatrace-official",
+
+          date:
+            String(result.date),
+
+          place:
+            params.place,
+
+          jcd:
+            String(result.jcd),
+
+          raceNo:
+            Number(result.raceNo),
+
+          result:
+            String(
+              result.trifecta
+                ?.combination ||
+              ""
+            ),
+
+          officialPayoutPer100:
+            Number(
+              result.trifecta
+                ?.payout ||
+              0
+            ),
+
+          officialPayoutText:
+            String(
+              result.trifecta
+                ?.payoutText ||
+              ""
+            ),
+
+          officialPopularity:
+            result.trifecta
+              ?.popularity ??
+            null,
+
+          winningMethod:
+            String(
+              result.winningMethod ||
+              ""
+            ),
+
+          officialCheckedAt:
+            result.checkedAt ||
+            new Date()
+              .toISOString(),
+
+          officialResultUrl:
+            String(
+              result.resultUrl ||
+              ""
+            ),
+
+          predictionRaceKey:
+            matchedPrediction
+              ?.raceKey ||
+            ""
+        });
+      } catch (storageError) {
+        console.warn(
+          "公式結果のレース別保存に失敗",
+          storageError
+        );
+      }
+    }
+
     return result;
   }
-
   function ensureReviewResultArea() {
     let area =
       document.getElementById(
