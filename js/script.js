@@ -2219,6 +2219,10 @@
     };
   }
 
+  window.ChappyRaceSelection = {
+    getRaceParams
+  };
+
     async function fetchRaceData(params) {
     if (
       window.ChappyAPI &&
