@@ -595,11 +595,12 @@
           .join("");
       };
 
-        const roleBuckets =
+            const roleBuckets =
       [
         "本命",
         "押さえ",
         "流し",
+        "拾い",
         "穴・万舟候補"
       ]
         .map(
