@@ -919,8 +919,8 @@
     }
   }
 
-  function undoLatestResult() {
-    S.removeLatestResult();
+    function undoLatestResult() {
+    S.removeLatestActualPurchase();
     renderStats();
   }
 
