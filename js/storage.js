@@ -566,3 +566,239 @@
   };
 
 })();
+  /* =====================================================
+    実購入データ
+  ===================================================== */
+
+  const ACTUAL_PURCHASE_KEY =
+    "chappy_actual_purchases_v1";
+
+  function normalizeActualTicket(
+    value
+  ) {
+    return (
+      String(value || "")
+        .match(/[1-6]/g) || []
+    )
+      .slice(0, 3)
+      .join("-");
+  }
+
+  function buildActualPurchaseKey(
+    source
+  ) {
+    if (
+      typeof source === "string"
+    ) {
+      return source.trim();
+    }
+
+    if (
+      !source ||
+      typeof source !== "object"
+    ) {
+      return "";
+    }
+
+    const savedKey =
+      String(
+        source.purchaseKey ||
+        ""
+      ).trim();
+
+    if (savedKey) {
+      return savedKey;
+    }
+
+    const raceKey =
+      buildRaceKey(source);
+
+    const ticket =
+      normalizeActualTicket(
+        source.ticket
+      );
+
+    if (
+      !raceKey ||
+      !ticket
+    ) {
+      return "";
+    }
+
+    return (
+      raceKey + "-" + ticket
+    );
+  }
+
+  function loadActualPurchases() {
+    const purchases =
+      readJson(
+        ACTUAL_PURCHASE_KEY,
+        []
+      );
+
+    return Array.isArray(
+      purchases
+    )
+      ? purchases
+      : [];
+  }
+
+  function saveActualPurchases(
+    purchases
+  ) {
+    const list =
+      Array.isArray(purchases)
+        ? purchases
+        : [];
+
+    return writeJson(
+      ACTUAL_PURCHASE_KEY,
+      list
+    );
+  }
+
+  function upsertActualPurchase(
+    purchase
+  ) {
+    if (
+      !purchase ||
+      typeof purchase !== "object"
+    ) {
+      return null;
+    }
+
+    const raceKey =
+      buildRaceKey(purchase);
+
+    const ticket =
+      normalizeActualTicket(
+        purchase.ticket
+      );
+
+    const amount =
+      Number(purchase.amount);
+
+    if (
+      !raceKey ||
+      !ticket ||
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      throw new Error(
+        "実購入保存に必要なレース情報・買い目・購入額がありません"
+      );
+    }
+
+    const purchaseKey =
+      raceKey + "-" + ticket;
+
+    const list =
+      loadActualPurchases();
+
+    const index =
+      list.findIndex(
+        item =>
+          buildActualPurchaseKey(
+            item
+          ) === purchaseKey
+      );
+
+    const existing =
+      index >= 0
+        ? list[index]
+        : null;
+
+    const now =
+      new Date().toISOString();
+
+    const merged = {
+      ...(existing || {}),
+      ...purchase,
+      purchaseKey,
+      raceKey,
+      ticket,
+      amount,
+
+      savedAt:
+        existing?.savedAt ||
+        purchase.savedAt ||
+        now,
+
+      updatedAt: now
+    };
+
+    if (index >= 0) {
+      list[index] = merged;
+    } else {
+      list.unshift(merged);
+    }
+
+    list.sort(
+      (a, b) =>
+        String(
+          b.updatedAt ||
+          b.savedAt ||
+          ""
+        ).localeCompare(
+          String(
+            a.updatedAt ||
+            a.savedAt ||
+            ""
+          )
+        )
+    );
+
+    saveActualPurchases(list);
+
+    return merged;
+  }
+
+  function findActualPurchasesByRaceKey(
+    raceKey
+  ) {
+    const normalizedKey =
+      buildRaceKey(raceKey);
+
+    if (!normalizedKey) {
+      return [];
+    }
+
+    return loadActualPurchases()
+      .filter(
+        purchase =>
+          buildRaceKey(
+            purchase
+          ) === normalizedKey
+      );
+  }
+
+  function removeLatestActualPurchase() {
+    const list =
+      loadActualPurchases();
+
+    list.shift();
+
+    saveActualPurchases(list);
+
+    return list;
+  }
+
+  function clearActualPurchases() {
+    localStorage.removeItem(
+      ACTUAL_PURCHASE_KEY
+    );
+  }
+
+  Object.assign(
+    window.ChappyStorage,
+    {
+      buildActualPurchaseKey,
+      loadActualPurchases,
+      saveActualPurchases,
+      upsertActualPurchase,
+      findActualPurchasesByRaceKey,
+      removeLatestActualPurchase,
+      clearActualPurchases
+    }
+  );
