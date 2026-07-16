@@ -1234,6 +1234,11 @@
         preferredVenue.place;
     }
 
+        renderOfficialVenuePicker(
+      data,
+      mode
+    );
+
     if (fetchBtn) {
       fetchBtn.disabled =
         false;
@@ -1247,6 +1252,47 @@
           )
         : 0
     );
+
+    const officialPicker =
+      document.getElementById(
+        "officialRacePicker"
+      );
+
+    const raceSelectGrid =
+      document.querySelector(
+        ".race-select-grid"
+      );
+
+    const placeField =
+      placeSelect?.closest(
+        "label"
+      );
+
+    const raceField =
+      raceSelect?.closest(
+        "label"
+      );
+
+    if (officialPicker) {
+      officialPicker.hidden =
+        false;
+    }
+
+    if (placeField) {
+      placeField.hidden =
+        true;
+    }
+
+    if (raceField) {
+      raceField.hidden =
+        true;
+    }
+
+    if (raceSelectGrid) {
+      raceSelectGrid.style
+        .gridTemplateColumns =
+        "1fr 1fr";
+    }
   }
 
   async function loadRaceChoices(
