@@ -1387,6 +1387,11 @@
         `${preferred.raceNo}R`;
     }
 
+　　　    renderOfficialRacePicker(
+      data,
+      mode
+    );
+
     if (fetchBtn) {
       fetchBtn.disabled =
         false;
