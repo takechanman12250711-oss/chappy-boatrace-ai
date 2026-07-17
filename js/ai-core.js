@@ -3042,24 +3042,26 @@ if (hasComparison(3, 1)) {
       ? data.raw.startExhibition.length
       : 0,
 
-  mergedExhibition:
-    entries.map((entry) => ({
-      boatNo: getBoatNo(entry),
+        mergedExhibition:
+        entries.map((entry) => ({
+          boatNo: getBoatNo(entry),
 
-      time:
-        entry.exhibitionTime ??
-        entry.tenjiTime ??
-        entry.displayTime ??
-        null,
+          time:
+            entry.exhibitionTime ??
+            entry.tenjiTime ??
+            entry.displayTime ??
+            null,
 
-      st:
-        entry.exhibitionSt ??
-        entry.exhibitionST ??
-        entry.tenjiSt ??
-        entry.displaySt ??
-        entry.displayST ??
-        null
-    }))
+          st:
+            entry.exhibitionSt ??
+            entry.exhibitionST ??
+            entry.tenjiSt ??
+            entry.displaySt ??
+            entry.displayST ??
+            null
+        }))
+    }
+  };
 }
 
   /* ===============================
