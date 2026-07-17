@@ -2970,7 +2970,292 @@ function getPaperClassName(item) {
         );
       }
     }
-    pushTheoryFromRanking(items, "road", indexes.michuRanking || indexes.roadRanking);
+        {
+      const roadTheoryRows = arrayify(
+        indexes.michuRanking ||
+        indexes.roadRanking
+      )
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(item =>
+          typeof item === "number" ||
+          typeof item === "string"
+            ? { boatNo: item }
+            : item
+        );
+
+      if (!roadTheoryRows.length) {
+        pushTheoryText(
+          items,
+          "road",
+          "道中指数の順位データがないため、道中艇理論は判定できません。"
+        );
+      } else {
+        const getRoadBoatNo = item =>
+          Number(
+            item?.boatNo ||
+            item?.no ||
+            item?.waku ||
+            item?.course ||
+            item?.number ||
+            0
+          );
+
+        const getRoadScore = item =>
+          item?.score ??
+          item?.value ??
+          item?.point ??
+          "";
+
+        const roadPhaseSummary = [
+          raceFlow.phases
+            ?.back?.comment,
+          raceFlow.phases
+            ?.secondMark?.comment,
+          raceFlow.phases
+            ?.goal?.comment
+        ]
+          .filter(Boolean)
+          .map(value =>
+            String(value)
+              .trim()
+              .replace(/[。]+$/, "")
+          )
+          .join(" / ");
+
+        const expectedOrder =
+          arrayify(
+            raceFlow.phases
+              ?.goal?.expectedOrder
+          );
+
+        roadTheoryRows.forEach(
+          (item, position) => {
+            const boatNo =
+              getRoadBoatNo(item);
+
+            const score =
+              getRoadScore(item);
+
+            const indexItem =
+              indexes.byBoat?.[boatNo] ||
+              arrayify(indexes.scores).find(
+                row =>
+                  Number(row?.boatNo) ===
+                  boatNo
+              ) ||
+              {};
+
+            const courseCandidate = Number(
+              indexItem.course ??
+              item.course ??
+              boatNo
+            );
+
+            const course =
+              courseCandidate >= 1 &&
+              courseCandidate <= 6
+                ? courseCandidate
+                : boatNo;
+
+            const comparedItem =
+              roadTheoryRows[
+                position === 0 ? 1 : 0
+              ] ||
+              null;
+
+            const comparedBoatNo =
+              getRoadBoatNo(
+                comparedItem
+              );
+
+            const comparedScore =
+              getRoadScore(
+                comparedItem
+              );
+
+            const scoreNumber =
+              Number(score);
+
+            const comparedScoreNumber =
+              Number(comparedScore);
+
+            const hasScore =
+              score !== "" &&
+              score !== null &&
+              score !== undefined &&
+              Number.isFinite(
+                scoreNumber
+              );
+
+            const hasComparedScore =
+              comparedScore !== "" &&
+              comparedScore !== null &&
+              comparedScore !== undefined &&
+              Number.isFinite(
+                comparedScoreNumber
+              );
+
+            let comparison =
+              "比較できる相手艇の道中指数がないため、単独で確認。";
+
+            if (comparedBoatNo) {
+              if (
+                hasScore &&
+                hasComparedScore
+              ) {
+                const difference =
+                  Math.round(
+                    Math.abs(
+                      scoreNumber -
+                      comparedScoreNumber
+                    ) * 10
+                  ) / 10;
+
+                if (difference === 0) {
+                  comparison =
+                    `${comparedBoatNo}号艇と道中指数${scoreNumber}で同値。`;
+                } else if (
+                  scoreNumber >
+                  comparedScoreNumber
+                ) {
+                  comparison =
+                    `${comparedBoatNo}号艇より道中指数が${difference}高い。`;
+                } else {
+                  comparison =
+                    `${comparedBoatNo}号艇に次ぐ道中指数で、差は${difference}。`;
+                }
+              } else {
+                comparison =
+                  `${comparedBoatNo}号艇との比較対象だが、指数差の数値は未取得。`;
+              }
+            }
+
+            let development =
+              "コースを確定できないため、バック・2マークの補足材料として確認する。";
+
+            if (course === 1) {
+              development =
+                "1コースは先マイ後にバックで内を守り、2マークで差し返しを防いで残す道中を確認する。";
+            } else if (course === 2) {
+              development =
+                "2コースは差し後のバックでの伸び比べと、2マークの位置取りで1着・残しを確認する。";
+            } else if (course === 3) {
+              development =
+                "3コースは攻めた後のバックで内を捕らえ、2マークで着を残せるか確認する。";
+            } else if (course === 4) {
+              development =
+                "4コースはカド攻め後のバックから2マークで位置を守り、残しと拾いを確認する。";
+            } else if (course === 5) {
+              development =
+                "5コースは内の攻めで空いた差し場をバックで拾い、2マークで2・3着へ残す道中を確認する。";
+            } else if (course === 6) {
+              development =
+                "6コースは最外から空いた水面を追走し、バック・2マークで2・3着へ届く拾いを確認する。";
+            }
+
+            const expectedPosition =
+              expectedOrder.findIndex(
+                row =>
+                  getRoadBoatNo(row) ===
+                  boatNo
+              );
+
+            const goalPosition =
+              expectedPosition >= 0
+                ? `既存のゴール想定では${expectedPosition + 1}番手。`
+                : "既存のゴール想定3艇には入っていないため、着を押し上げる道中の補足評価。";
+
+            const reflectedRoles = [];
+
+            const honmeiBoatNo = Number(
+              prediction.mainSheet
+                ?.honmei?.boatNo ||
+              prediction.mainSheet
+                ?.main?.boatNo ||
+              0
+            );
+
+            if (
+              honmeiBoatNo === boatNo
+            ) {
+              reflectedRoles.push(
+                "1着候補"
+              );
+            }
+
+            if (
+              arrayify(
+                raceFlow.holdBoats
+              ).some(
+                row =>
+                  getRoadBoatNo(row) ===
+                  boatNo
+              )
+            ) {
+              reflectedRoles.push(
+                "残し"
+              );
+            }
+
+            if (
+              arrayify(
+                raceFlow.pickupBoats
+              ).some(
+                row =>
+                  getRoadBoatNo(row) ===
+                  boatNo
+              )
+            ) {
+              reflectedRoles.push(
+                "拾い"
+              );
+            }
+
+            const reflection =
+              reflectedRoles.length
+                ? `現在の予想では${reflectedRoles.join("・")}へ反映。`
+                : "現在の予想では1着候補・残し・拾いへ直接反映せず、道中評価の補足材料。";
+
+            const phaseContext =
+              roadPhaseSummary
+                ? `バックからゴールまでの既存分析は「${roadPhaseSummary}」。`
+                : "バック・2マーク・ゴールの分析コメントは未取得。";
+
+            const sourceReason = String(
+              item.comment ||
+              item.reason ||
+              item.text ||
+              indexItem.shortComment ||
+              ""
+            )
+              .trim()
+              .replace(/[。]+$/, "");
+
+            const reasonText =
+              sourceReason
+                ? `指数側の根拠は「${sourceReason}」。`
+                : "指数側の個別根拠は未取得。";
+
+            items.push({
+              key: "road",
+              label:
+                THEORY_LABELS.road,
+              no: boatNo || "",
+              score,
+              text:
+                `${boatNo}号艇を道中艇理論の既存表示${position + 1}位として確認。` +
+                comparison +
+                development +
+                goalPosition +
+                reflection +
+                phaseContext +
+                reasonText
+            });
+          }
+        );
+      }
+    }
     pushTheoryFromRanking(items, "local", indexes.localRanking);
 
         const slitPhase =
