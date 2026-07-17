@@ -367,9 +367,6 @@
           : ""
       }
 
-      <!-- 9. チャッピー理論 -->
-      ${renderTheoryPanel(prediction)}
-
       <!-- 10. 最終結論 -->
       ${renderFinalComment(prediction)}
 
