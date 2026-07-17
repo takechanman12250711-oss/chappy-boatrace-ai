@@ -739,7 +739,265 @@
         "開催";
     }
   }
+  /* ===============================
+    レース一覧用AI期待度
 
+    買い目・オッズ・成績保存には接続しない。
+    同じレースは短時間キャッシュし、3レースずつ取得する。
+  =============================== */
+
+  const raceTrendCache = new Map();
+  let raceTrendScanId = 0;
+
+  function buildRaceTrendCacheKey(date, jcd, raceNo) {
+    return [
+      String(date || ""),
+      String(jcd || "").padStart(2, "0"),
+      Number(raceNo || 0)
+    ].join("-");
+  }
+
+  function setRaceTrendMessage(
+    button,
+    message,
+    state = "is-loading"
+  ) {
+    const panel = button?.querySelector(
+      ".official-race-trend"
+    );
+
+    if (!panel) return;
+
+    panel.className = `official-race-trend ${state}`;
+    panel.textContent = message;
+    delete button.dataset.honmeiTrend;
+    delete button.dataset.manshuTrend;
+  }
+
+  function renderRaceTrendEvaluation(button, evaluation) {
+    const panel = button?.querySelector(
+      ".official-race-trend"
+    );
+
+    if (!panel) return;
+
+    if (!evaluation?.ready) {
+      const reason =
+        evaluation?.honmei?.reasons?.[0] ||
+        "判定に必要なデータを確認中";
+
+      setRaceTrendMessage(
+        button,
+        `判定準備中：${reason}`,
+        "is-pending"
+      );
+      return;
+    }
+
+    const honmei = Number(evaluation.honmei?.score || 0);
+    const manshu = Number(evaluation.manshu?.score || 0);
+    const honmeiReason =
+      evaluation.honmei?.reasons?.[0] || "内展開を確認";
+    const manshuReason =
+      evaluation.manshu?.reasons?.[0] || "攻め展開を確認";
+
+    button.dataset.honmeiTrend = String(honmei);
+    button.dataset.manshuTrend = String(manshu);
+    panel.className = "official-race-trend is-ready";
+    panel.innerHTML = `
+      <span class="official-race-trend-scores">
+        <span class="official-race-trend-score is-honmei">
+          <span class="official-race-trend-label">本命AI期待度</span>
+          <strong class="official-race-trend-value">${Math.round(honmei)}%</strong>
+        </span>
+        <span class="official-race-trend-score is-manshu">
+          <span class="official-race-trend-label">万舟展開期待度</span>
+          <strong class="official-race-trend-value">${Math.round(manshu)}%</strong>
+        </span>
+      </span>
+      <span class="official-race-trend-reason"></span>
+      <span class="official-race-trend-status"></span>
+    `;
+
+    const reason = panel.querySelector(
+      ".official-race-trend-reason"
+    );
+    const status = panel.querySelector(
+      ".official-race-trend-status"
+    );
+
+    reason.textContent =
+      `根拠：${honmeiReason}／${manshuReason}`;
+    reason.title = [
+      ...(evaluation.honmei?.reasons || []),
+      ...(evaluation.manshu?.reasons || [])
+    ].join("／");
+    status.textContent =
+      evaluation.dataStatus?.label || "展示前・暫定";
+  }
+
+  function markRaceTrendLeaders(grid) {
+    const buttons = [...grid.querySelectorAll(
+      ".official-race-button"
+    )];
+
+    buttons.forEach(button => button.classList.remove(
+      "is-honmei-top",
+      "is-manshu-top"
+    ));
+
+    const evaluated = buttons.filter(button =>
+      button.dataset.honmeiTrend != null &&
+      button.dataset.manshuTrend != null
+    );
+
+    if (!evaluated.length) return;
+
+    const topHonmei = Math.max(...evaluated.map(button =>
+      Number(button.dataset.honmeiTrend)
+    ));
+    const topManshu = Math.max(...evaluated.map(button =>
+      Number(button.dataset.manshuTrend)
+    ));
+
+    evaluated.forEach(button => {
+      button.classList.toggle(
+        "is-honmei-top",
+        Number(button.dataset.honmeiTrend) === topHonmei
+      );
+      button.classList.toggle(
+        "is-manshu-top",
+        Number(button.dataset.manshuTrend) === topManshu
+      );
+    });
+  }
+
+  async function loadOfficialRaceTrends(data, mode, grid) {
+    const scanId = ++raceTrendScanId;
+    const core = window.ChappyAICore;
+    const races = Array.isArray(data?.selectedVenue?.races)
+      ? data.selectedVenue.races
+      : [];
+    const targets = races.filter(race =>
+      mode === "live"
+        ? Boolean(race.selectable)
+        : race.status === "closed"
+    );
+
+    const getButton = raceNo => grid.querySelector(
+      `[data-race-no="${Number(raceNo)}"]`
+    );
+
+    if (
+      !core ||
+      typeof core.buildRaceTrendEvaluation !== "function"
+    ) {
+      targets.forEach(race => setRaceTrendMessage(
+        getButton(race.raceNo),
+        "AI判定準備中",
+        "is-pending"
+      ));
+      return;
+    }
+
+    const placeSelect = document.getElementById("placeSelect");
+    const selectedOption = placeSelect?.options?.[
+      placeSelect.selectedIndex
+    ];
+    const jcd =
+      selectedOption?.dataset?.jcd ||
+      data?.selectedVenue?.jcd ||
+      PLACE_CODE_MAP[placeSelect?.value];
+    const date = getScheduleDate();
+
+    if (!jcd || !date || !targets.length) return;
+
+    targets.forEach(race => setRaceTrendMessage(
+      getButton(race.raceNo),
+      "AI期待度を計算中..."
+    ));
+
+    let nextIndex = 0;
+
+    const worker = async () => {
+      while (
+        scanId === raceTrendScanId &&
+        nextIndex < targets.length
+      ) {
+        const race = targets[nextIndex++];
+        const raceNo = Number(race.raceNo || 0);
+        const button = getButton(raceNo);
+
+        if (!button || !raceNo) continue;
+
+        const cacheKey = buildRaceTrendCacheKey(
+          date,
+          jcd,
+          raceNo
+        );
+        const cached = raceTrendCache.get(cacheKey);
+        const cacheAge = cached
+          ? Date.now() - cached.checkedAt
+          : Infinity;
+        const maxAge =
+          cached?.evaluation?.dataStatus?.stage === "final"
+            ? 90 * 1000
+            : 30 * 1000;
+
+        if (cached?.evaluation && cacheAge >= 0 && cacheAge < maxAge) {
+          renderRaceTrendEvaluation(button, cached.evaluation);
+          continue;
+        }
+
+        try {
+          const raceData = await fetchRaceData({
+            jcd,
+            rno: raceNo,
+            date
+          });
+
+          if (!raceData || raceData.ok === false) {
+            throw new Error(
+              raceData?.error || "レースデータを取得できませんでした"
+            );
+          }
+
+          const evaluation =
+            core.buildRaceTrendEvaluation(raceData);
+
+          raceTrendCache.set(cacheKey, {
+            evaluation,
+            checkedAt: Date.now()
+          });
+
+          if (scanId !== raceTrendScanId) return;
+
+          renderRaceTrendEvaluation(button, evaluation);
+        } catch (error) {
+          console.warn(`race trend ${raceNo}R`, error);
+
+          if (scanId === raceTrendScanId) {
+            setRaceTrendMessage(
+              button,
+              "判定準備中",
+              "is-pending"
+            );
+          }
+        }
+      }
+    };
+
+    await Promise.all(
+      Array.from(
+        { length: Math.min(3, targets.length) },
+        () => worker()
+      )
+    );
+
+    if (scanId === raceTrendScanId) {
+      markRaceTrendLeaders(grid);
+    }
+  }
   function renderOfficialRacePicker(
     data,
     mode
