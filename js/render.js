@@ -2945,7 +2945,577 @@ function getPaperClassName(item) {
         "展示タイムと一周タイムがそろった艇がないため、新サムは判定できない。"
       );
     }
-    pushTheoryText(items, "odds", finalAi.syntheticOdds || prediction.syntheticOdds);
+        const engineTheory =
+      prediction.newEngine ||
+      {};
+
+    const engineVenue =
+      prediction.venue ||
+      {};
+
+    const engineWeather =
+      prediction.weather ||
+      {};
+
+    const engineEntries =
+      arrayify(
+        prediction.race?.entries
+      );
+
+    const engineVenueName =
+      engineTheory.venueName ||
+      engineVenue.name ||
+      prediction.race?.stadiumName ||
+      "この場";
+
+    const enginePhaseText =
+      engineTheory.phaseLabel &&
+      engineTheory.phaseLabel !==
+        "通常"
+        ? engineTheory.phaseLabel
+        : "対象期間";
+
+    const hasEngineNumber =
+      value =>
+        value !== null &&
+        value !== undefined &&
+        value !== "" &&
+        Number.isFinite(
+          Number(value)
+        );
+
+    if (!engineTheory.updated) {
+      items.push({
+        key: "newEngine",
+
+        label:
+          "🔧 新型エンジン",
+
+        no: "",
+
+        score: "",
+
+        text:
+          `${engineVenueName}は新型エンジン対象期間として登録されていないため、` +
+          "新型エンジン理論は発動していない。" +
+          "通常どおり展開・コース・ST・展示を優先して判断する。"
+      });
+    } else {
+      const engineRoles =
+        new Map();
+
+      const addEngineRole = (
+        candidate,
+        role
+      ) => {
+        const boatNo =
+          Number(
+            candidate?.boatNo ||
+            candidate?.no ||
+            0
+          );
+
+        if (
+          boatNo < 1 ||
+          boatNo > 6
+        ) {
+          return;
+        }
+
+        const roles =
+          engineRoles.get(
+            boatNo
+          ) ||
+          [];
+
+        if (
+          !roles.includes(
+            role
+          )
+        ) {
+          roles.push(
+            role
+          );
+        }
+
+        engineRoles.set(
+          boatNo,
+          roles
+        );
+      };
+
+      addEngineRole(
+        prediction.mainSheet
+          ?.honmei ||
+        prediction.mainSheet
+          ?.main,
+        "1着候補"
+      );
+
+      arrayify(
+        raceFlow.holdBoats
+      ).forEach(
+        item =>
+          addEngineRole(
+            item,
+            "残し"
+          )
+      );
+
+      arrayify(
+        raceFlow.pickupBoats
+      ).forEach(
+        item =>
+          addEngineRole(
+            item,
+            "拾い"
+          )
+      );
+
+      const engineExhibitionRows =
+        doubleTimeList
+          .filter(
+            item =>
+              hasEngineNumber(
+                item?.exhibitionTime
+              ) &&
+              Number(
+                item.exhibitionTime
+              ) > 0
+          )
+          .sort(
+            (a, b) =>
+              Number(
+                a.exhibitionTime
+              ) -
+              Number(
+                b.exhibitionTime
+              )
+          );
+
+      const engineStRows =
+        doubleTimeList
+          .filter(
+            item =>
+              hasEngineNumber(
+                item?.exhibitionSTNumber
+              )
+          )
+          .sort(
+            (a, b) =>
+              Number(
+                a.exhibitionSTNumber
+              ) -
+              Number(
+                b.exhibitionSTNumber
+              )
+          );
+
+      const waterParts = [];
+
+      if (
+        hasEngineNumber(
+          engineWeather.windSpeed
+        )
+      ) {
+        waterParts.push(
+          `風${engineWeather.windSpeed}m`
+        );
+      }
+
+      if (
+        hasEngineNumber(
+          engineWeather.waveHeight
+        )
+      ) {
+        waterParts.push(
+          `波${engineWeather.waveHeight}cm`
+        );
+      }
+
+      if (
+        arrayify(
+          engineVenue.bias
+        ).length
+      ) {
+        waterParts.push(
+          arrayify(
+            engineVenue.bias
+          ).join("・")
+        );
+      }
+
+      const createEngineComparison = (
+        item,
+        rankKey,
+        rows,
+        label
+      ) => {
+        const rank =
+          Number(
+            item?.[rankKey] ||
+            0
+          );
+
+        if (!rank) {
+          return "";
+        }
+
+        if (rank === 1) {
+          const second =
+            rows.find(
+              row =>
+                Number(
+                  row?.boatNo
+                ) !==
+                Number(
+                  item?.boatNo
+                )
+            );
+
+          return second
+            ? `${label}は${second.boatNo}号艇との比較で1位`
+            : `${label}1位`;
+        }
+
+        const top =
+          rows[0];
+
+        return top
+          ? `${label}1位${top.boatNo}号艇との比較で${rank}位`
+          : "";
+      };
+
+      if (
+        engineRoles.size === 0
+      ) {
+        items.push({
+          key: "newEngine",
+
+          label:
+            "🔧 新型エンジン",
+
+          no: "",
+
+          score:
+            enginePhaseText,
+
+          text:
+            `${engineVenueName}は新型エンジン${enginePhaseText}。` +
+            "モーター数字を過信せず、展示・ST・今節気配・技量・当地・水面を確認したが、" +
+            "現在の予想に1着候補・残し・拾いがないため、艇別の直接反映はない。"
+        });
+      } else {
+        engineRoles.forEach(
+          (roles, boatNo) => {
+            const entry =
+              engineEntries.find(
+                item =>
+                  Number(
+                    item?.boatNo
+                  ) === boatNo
+              ) ||
+              {};
+
+            const exhibitionItem =
+              doubleTimeList.find(
+                item =>
+                  Number(
+                    item?.boatNo
+                  ) === boatNo
+              ) ||
+              {};
+
+            const indexItem =
+              indexes.byBoat?.[
+                boatNo
+              ] ||
+              arrayify(
+                indexes.scores
+              ).find(
+                item =>
+                  Number(
+                    item?.boatNo
+                  ) === boatNo
+              ) ||
+              {};
+
+            const evidence = [];
+
+            let hasCurrentForm =
+              false;
+
+            if (
+              hasEngineNumber(
+                indexItem.currentSTAverage
+              ) &&
+              Number(
+                indexItem.currentSTCount
+              ) > 0
+            ) {
+              evidence.push(
+                `今節ST平均${Number(indexItem.currentSTAverage).toFixed(2)}` +
+                `・${indexItem.currentSTCount}走`
+              );
+
+              hasCurrentForm =
+                true;
+            } else if (
+              entry.avgST
+            ) {
+              evidence.push(
+                `平均ST${entry.avgST}`
+              );
+            }
+
+            const currentForm =
+              safeText(
+                entry.currentSeries
+                  ?.text,
+                ""
+              );
+
+            if (currentForm) {
+              evidence.push(
+                `今節気配${limitText(currentForm, 40)}`
+              );
+
+              hasCurrentForm =
+                true;
+            }
+
+            if (!hasCurrentForm) {
+              evidence.push(
+                "今節気配未取得"
+              );
+            }
+
+            if (
+              hasEngineNumber(
+                exhibitionItem
+                  .exhibitionSTNumber
+              )
+            ) {
+              evidence.push(
+                `展示ST${Number(exhibitionItem.exhibitionSTNumber).toFixed(2)}` +
+                (
+                  exhibitionItem.stRank
+                    ? `・${exhibitionItem.stRank}位`
+                    : ""
+                )
+              );
+            }
+
+            if (
+              hasEngineNumber(
+                exhibitionItem
+                  .exhibitionTime
+              ) &&
+              Number(
+                exhibitionItem
+                  .exhibitionTime
+              ) > 0
+            ) {
+              evidence.push(
+                `展示${Number(exhibitionItem.exhibitionTime).toFixed(2)}` +
+                (
+                  exhibitionItem
+                    .exhibitionRank
+                    ? `・${exhibitionItem.exhibitionRank}位`
+                    : ""
+                )
+              );
+            } else {
+              evidence.push(
+                "展示未取得"
+              );
+            }
+
+            if (
+              waterParts.length
+            ) {
+              evidence.push(
+                `水面${waterParts.join("・")}`
+              );
+            } else {
+              evidence.push(
+                "水面データ未取得"
+              );
+            }
+
+            const localWinRate =
+              Number(
+                entry.local?.winRate
+              );
+
+            if (
+              Number.isFinite(
+                localWinRate
+              ) &&
+              localWinRate > 0
+            ) {
+              evidence.push(
+                `当地${localWinRate}`
+              );
+            } else {
+              evidence.push(
+                "当地データ未取得"
+              );
+            }
+
+            const skillParts = [];
+
+            if (entry.className) {
+              skillParts.push(
+                entry.className
+              );
+            }
+
+            const nationalWinRate =
+              Number(
+                entry.national?.winRate
+              );
+
+            if (
+              Number.isFinite(
+                nationalWinRate
+              ) &&
+              nationalWinRate > 0
+            ) {
+              skillParts.push(
+                `全国${nationalWinRate}`
+              );
+            }
+
+            evidence.push(
+              skillParts.length
+                ? `技量${skillParts.join("・")}`
+                : "技量データ未取得"
+            );
+
+            const comparisons = [
+              createEngineComparison(
+                exhibitionItem,
+                "stRank",
+                engineStRows,
+                "展示ST"
+              ),
+
+              createEngineComparison(
+                exhibitionItem,
+                "exhibitionRank",
+                engineExhibitionRows,
+                "展示"
+              )
+            ].filter(Boolean);
+
+            const comparisonText =
+              comparisons.length
+                ? `${comparisons.join("、")}。`
+                : "展示・展示STの比較データが不足しているため、今節ST・技量・当地・水面で補足。";
+
+            const motorParts = [];
+
+            if (entry.motor?.no) {
+              motorParts.push(
+                `モーター${entry.motor.no}`
+              );
+            }
+
+            const motorSecondRate =
+              Number(
+                entry.motor?.secondRate
+              );
+
+            if (
+              Number.isFinite(
+                motorSecondRate
+              ) &&
+              motorSecondRate > 0
+            ) {
+              motorParts.push(
+                `2連率${motorSecondRate}%`
+              );
+            }
+
+            const motorNote =
+              motorParts.length
+                ? `${motorParts.join("・")}は参考止まりで、中心評価にはしない。`
+                : "モーター数字は未取得のため使わず、他の気配を優先。";
+
+            const course =
+              Number(
+                exhibitionItem.course ||
+                indexItem.course ||
+                boatNo
+              );
+
+            let development =
+              "展開全体の補足材料として確認する。";
+
+            if (course === 1) {
+              development =
+                "イン先マイと内残しを確認する。";
+            } else if (
+              course === 2
+            ) {
+              development =
+                "2コース差しと2残しを確認する。";
+            } else if (
+              course === 3
+            ) {
+              development =
+                "3コース攻めから内の残しと外の拾いを確認する。";
+            } else if (
+              course === 4
+            ) {
+              development =
+                "4コース攻めと4残し、外の拾いを確認する。";
+            } else if (
+              course >= 5
+            ) {
+              development =
+                "外からの展開突きとして、1着固定ではなく拾いまで確認する。";
+            }
+
+            const racerName =
+              entry.racerName ||
+              entry.name ||
+              indexItem.name ||
+              "";
+
+            items.push({
+              key: "newEngine",
+
+              label:
+                "🔧 新型エンジン",
+
+              no:
+                boatNo,
+
+              score:
+                enginePhaseText,
+
+              text:
+                `${engineVenueName}の新型エンジン${enginePhaseText}。` +
+                `${boatNo}号艇${racerName ? ` ${racerName}` : ""}は` +
+                development +
+                `現在の予想では${roles.join("・")}へ反映。` +
+                `${evidence.join("、")}。` +
+                comparisonText +
+                motorNote
+            });
+          }
+        );
+      }
+    }
+
+    pushTheoryText(
+      items,
+      "odds",
+      finalAi.syntheticOdds ||
+        prediction.syntheticOdds
+    );
 
     if (items.length === 0) {
       return section("舟券太郎理論", emptyBox("理論表示データがありません"), "🧠", "v3-theory-section");
