@@ -2795,8 +2795,12 @@ function getPaperClassName(item) {
             ...row,
 
             diff:
-              averageTotal -
-              row.total
+              Math.round(
+                (
+                  averageTotal -
+                  row.total
+                ) * 1000
+              ) / 1000
           }))
           .filter(
             row =>
