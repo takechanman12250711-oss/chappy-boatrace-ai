@@ -1209,6 +1209,393 @@
           )
       );
   }
+  
+    function renderRaceHistory(results) {
+    const history =
+      buildRaceHistory(results);
+
+    if (!history.length) {
+      U.setHtml(
+        "historyArea",
+        `
+          <div class="v3-final-block">
+            <h3>
+              レース別履歴
+            </h3>
+
+            <p>
+              保存された予想・公式結果・実購入はありません
+            </p>
+          </div>
+        `
+      );
+
+      return;
+    }
+
+    const escapeText = value =>
+      typeof U.escapeHtml === "function"
+        ? U.escapeHtml(value)
+        : String(value || "");
+
+    const formatDate = value => {
+      const digits =
+        String(value || "")
+          .replace(/\D/g, "")
+          .slice(0, 8);
+
+      if (digits.length !== 8) {
+        return "日付不明";
+      }
+
+      return (
+        digits.slice(0, 4) +
+        "/" +
+        digits.slice(4, 6) +
+        "/" +
+        digits.slice(6, 8)
+      );
+    };
+
+    const formatResultMoney = value =>
+      value === null
+        ? "-"
+        : U.formatMoney(value);
+
+    const renderPredictionRows = item =>
+      item.predictionTickets
+        .map(ticket => {
+          const scenarioText =
+            Array.isArray(
+              ticket?.scenarioTypes
+            ) &&
+            ticket.scenarioTypes.length > 0
+              ? ticket.scenarioTypes
+                  .map(escapeText)
+                  .join(" / ")
+              : "-";
+
+          const resultText =
+            item.raceStatus !== "結果確定"
+              ? "結果待ち"
+              : ticket.ticket ===
+                item.resultTicket
+                ? "結果一致"
+                : "-";
+
+          const amountText =
+            ticket.recommendedAmount > 0
+              ? U.formatMoney(
+                  ticket.recommendedAmount
+                )
+              : "未配分";
+
+          return `
+            <tr>
+              <td>
+                ${escapeText(ticket.ticket)}
+              </td>
+              <td>
+                ${escapeText(
+                  ticket.role ||
+                  "分類未保存"
+                )}
+              </td>
+              <td>
+                ${scenarioText}
+              </td>
+              <td>
+                ${amountText}
+              </td>
+              <td>
+                ${resultText}
+              </td>
+            </tr>
+          `;
+        })
+        .join("");
+
+    const renderActualRows = item =>
+      item.actualPurchases
+        .map(purchase => {
+          const purchaseOdds =
+            U.safeNumber(
+              purchase?.purchaseOdds,
+              0
+            );
+
+          const oddsText =
+            purchaseOdds > 0
+              ? U.formatOdds(
+                  purchaseOdds
+                )
+              : "-";
+
+          const resultText =
+            item.raceStatus !== "結果確定"
+              ? "結果待ち"
+              : purchase.isHit
+                ? "的中"
+                : "不的中";
+
+          return `
+            <tr>
+              <td>
+                ${escapeText(
+                  purchase.ticket
+                )}
+              </td>
+              <td>
+                ${U.formatMoney(
+                  purchase.amount
+                )}
+              </td>
+              <td>
+                ${oddsText}
+              </td>
+              <td>
+                ${resultText}
+              </td>
+            </tr>
+          `;
+        })
+        .join("");
+
+    U.setHtml(
+      "historyArea",
+      `
+        <div class="v3-final-block">
+          <h3>
+            レース別履歴
+          </h3>
+
+          <p>
+            予想・公式結果・的中・実購入・払戻・収支を
+            同じレースごとに表示します
+          </p>
+        </div>
+
+        ${history
+          .map(item => {
+            const placeText =
+              item.place
+                ? escapeText(item.place)
+                : item.jcd
+                  ? "場コード" +
+                    escapeText(item.jcd)
+                  : "場不明";
+
+            const officialPopularity =
+              U.safeNumber(
+                item.officialPopularity,
+                0
+              );
+
+            const popularityText =
+              officialPopularity > 0
+                ? " / " +
+                  officialPopularity +
+                  "番人気"
+                : "";
+
+            const winningMethodText =
+              item.winningMethod
+                ? " / 決まり手 " +
+                  escapeText(
+                    item.winningMethod
+                  )
+                : "";
+
+            const resultHtml =
+              item.raceStatus ===
+                "結果確定"
+                ? `
+                    <p>
+                      結果：
+                      <strong>
+                        ${escapeText(
+                          item.resultTicket
+                        )}
+                      </strong>
+                      / 公式100円払戻：
+                      <strong>
+                        ${U.formatMoney(
+                          item.payoutPer100
+                        )}
+                      </strong>
+                      ${popularityText}
+                      ${winningMethodText}
+                    </p>
+                  `
+                : `
+                    <p>
+                      公式結果：結果待ち
+                    </p>
+                  `;
+
+            const predictionHtml =
+              item.predictionTickets.length > 0
+                ? `
+                    <div class="v3-table-wrap">
+                      <table class="table">
+                        <thead>
+                          <tr>
+                            <th>AI買い目</th>
+                            <th>役割</th>
+                            <th>成立展開</th>
+                            <th>推奨購入</th>
+                            <th>結果</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          ${renderPredictionRows(
+                            item
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  `
+                : `
+                    <p>
+                      保存されたAI予想はありません
+                    </p>
+                  `;
+
+            const actualHtml =
+              item.actualPurchases.length > 0
+                ? `
+                    <div class="v3-table-wrap">
+                      <table class="table">
+                        <thead>
+                          <tr>
+                            <th>実購入</th>
+                            <th>購入額</th>
+                            <th>購入時オッズ</th>
+                            <th>結果</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          ${renderActualRows(
+                            item
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  `
+                : `
+                    <p>
+                      実購入は記録されていません
+                    </p>
+                  `;
+
+            return `
+              <article class="v3-final-block">
+                <h3>
+                  ${formatDate(item.date)}
+                  ${placeText}
+                  ${item.raceNo}R
+                </h3>
+
+                <p>
+                  ${escapeText(item.raceStatus)}
+                </p>
+
+                ${resultHtml}
+
+                <h4>
+                  レース成績
+                </h4>
+
+                <div class="v3-table-wrap">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>区分</th>
+                        <th>判定</th>
+                        <th>購入</th>
+                        <th>払戻</th>
+                        <th>収支</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr>
+                        <td>AI理論</td>
+                        <td>
+                          ${escapeText(
+                            item.theoryStatus
+                          )}
+                        </td>
+                        <td>
+                          ${U.formatMoney(
+                            item.theoryBet
+                          )}
+                        </td>
+                        <td>
+                          ${formatResultMoney(
+                            item.theoryProfit ===
+                              null
+                              ? null
+                              : item.theoryPayout
+                          )}
+                        </td>
+                        <td>
+                          ${formatResultMoney(
+                            item.theoryProfit
+                          )}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td>実購入</td>
+                        <td>
+                          ${escapeText(
+                            item.actualStatus
+                          )}
+                        </td>
+                        <td>
+                          ${U.formatMoney(
+                            item.actualBet
+                          )}
+                        </td>
+                        <td>
+                          ${formatResultMoney(
+                            item.actualProfit ===
+                              null
+                              ? null
+                              : item.actualPayout
+                          )}
+                        </td>
+                        <td>
+                          ${formatResultMoney(
+                            item.actualProfit
+                          )}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <h4>
+                  AI予想
+                </h4>
+
+                ${predictionHtml}
+
+                <h4>
+                  実購入明細
+                </h4>
+
+                ${actualHtml}
+              </article>
+            `;
+          })
+          .join("")}
+      `
+    );
+  }
     function renderStats() {
     const results =
       S.loadResults();
