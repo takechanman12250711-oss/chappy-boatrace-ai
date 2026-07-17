@@ -4681,12 +4681,451 @@ function getPaperClassName(item) {
       }
     }
 
-    pushTheoryText(
-      items,
-      "odds",
-      finalAi.syntheticOdds ||
-        prediction.syntheticOdds
-    );
+        {
+      const rawSyntheticOdds =
+        finalAi.syntheticOdds ||
+        prediction.syntheticOdds ||
+        "";
+
+      const toSyntheticText = value => {
+        if (!value) return "";
+
+        if (Array.isArray(value)) {
+          return value
+            .map(toSyntheticText)
+            .filter(Boolean)
+            .join(" / ");
+        }
+
+        if (
+          typeof value === "object"
+        ) {
+          return toSyntheticText(
+            value.text ||
+            value.comment ||
+            value.reason ||
+            value.label ||
+            ""
+          );
+        }
+
+        return String(value)
+          .trim()
+          .replace(/[。]+$/, "");
+      };
+
+      const syntheticText =
+        toSyntheticText(
+          rawSyntheticOdds
+        );
+
+      const ticketRankRows =
+        arrayify(
+          prediction.ticketRanks
+        );
+
+      const finalRankRows =
+        arrayify(
+          finalAi.ticketRanks
+        );
+
+      const aiTicketRows =
+        arrayify(
+          prediction.aiTicketList
+        );
+
+      const sourceRows =
+        ticketRankRows.length
+          ? ticketRankRows
+          : finalRankRows.length
+            ? finalRankRows
+            : aiTicketRows;
+
+      const getTicketText = item =>
+        String(
+          item?.ticket ||
+          item?.line ||
+          item?.formation ||
+          item ||
+          ""
+        ).trim();
+
+      const aiTicketByTicket =
+        new Map(
+          aiTicketRows
+            .map(item => [
+              getTicketText(item),
+              item
+            ])
+            .filter(
+              ([ticket]) =>
+                Boolean(ticket)
+            )
+        );
+
+      const seenTickets =
+        new Set();
+
+      const ticketRows =
+        sourceRows
+          .map(sourceItem => {
+            const item =
+              typeof sourceItem ===
+                "string"
+                ? { ticket: sourceItem }
+                : sourceItem || {};
+
+            const ticket =
+              getTicketText(item);
+
+            if (
+              !ticket ||
+              seenTickets.has(ticket)
+            ) {
+              return null;
+            }
+
+            seenTickets.add(ticket);
+
+            const aiItem =
+              aiTicketByTicket.get(
+                ticket
+              ) ||
+              {};
+
+            return {
+              ...aiItem,
+              ...item,
+              ticket,
+
+              odds:
+                item.odds ??
+                aiItem.odds ??
+                null,
+
+              recommendedAmount:
+                item.recommendedAmount ??
+                aiItem.recommendedAmount ??
+                0,
+
+              oddsValue:
+                item.oddsValue ||
+                aiItem.oddsValue ||
+                ""
+            };
+          })
+          .filter(Boolean);
+
+      const hasActualOdds = value =>
+        value !== null &&
+        value !== undefined &&
+        value !== "" &&
+        Number.isFinite(
+          Number(value)
+        ) &&
+        Number(value) > 0;
+
+      const formatOdds = value =>
+        Number(value)
+          .toFixed(2)
+          .replace(/\.?0+$/, "");
+
+      const actualOddsRows =
+        ticketRows.filter(
+          item =>
+            hasActualOdds(
+              item.odds
+            )
+        );
+
+      if (!ticketRows.length) {
+        items.push({
+          key: "odds",
+          label:
+            THEORY_LABELS.odds,
+          no: "",
+          score: "判定不可",
+          text:
+            "展開とコースから作成済みのAI買い目がないため、合成オッズ理論は判定できない。" +
+            "買い目作成前にオッズから候補を追加・削除しない。"
+        });
+      } else if (
+        !actualOddsRows.length
+      ) {
+        items.push({
+          key: "odds",
+          label:
+            THEORY_LABELS.odds,
+          no: "",
+          score: "未取得",
+          text:
+            `展開とコースから作成済みのAI買い目は${ticketRows.length}点あるが、` +
+            "実オッズが未取得のため、買い目同士の倍率比較・オッズ評価・資金配分は判定できない。" +
+            (
+              syntheticText
+                ? `既存の合成オッズ分析は「${syntheticText}」。`
+                : "合成オッズの既存分析データも未取得。"
+            ) +
+            "オッズ未取得でも作成済み買い目は維持し、数字だけで追加・削除しない。"
+        });
+      } else {
+        const displayOddsRows =
+          actualOddsRows.slice(
+            0,
+            2
+          );
+
+        const getTheoryBoatNo = item =>
+          Number(
+            item?.boatNo ||
+            item?.no ||
+            item ||
+            0
+          );
+
+        const honmeiBoatNo = Number(
+          prediction.mainSheet
+            ?.honmei?.boatNo ||
+          prediction.mainSheet
+            ?.main?.boatNo ||
+          0
+        );
+
+        const holdBoatNumbers =
+          new Set(
+            arrayify(
+              raceFlow.holdBoats
+            )
+              .map(getTheoryBoatNo)
+              .filter(Boolean)
+          );
+
+        const pickupBoatNumbers =
+          new Set(
+            arrayify(
+              raceFlow.pickupBoats
+            )
+              .map(getTheoryBoatNo)
+              .filter(Boolean)
+          );
+
+        const normalizeTextList =
+          value =>
+            arrayify(value)
+              .map(item =>
+                String(item || "")
+                  .trim()
+              )
+              .filter(Boolean);
+
+        displayOddsRows.forEach(
+          (row, position) => {
+            const odds =
+              Number(row.odds);
+
+            const comparedRow =
+              displayOddsRows[
+                position === 0 ? 1 : 0
+              ] ||
+              null;
+
+            let comparison =
+              "実オッズが確認できた他の買い目がないため、倍率差は比較できない。";
+
+            if (
+              comparedRow &&
+              hasActualOdds(
+                comparedRow.odds
+              )
+            ) {
+              const comparedOdds =
+                Number(
+                  comparedRow.odds
+                );
+
+              const oddsDifference =
+                Math.round(
+                  Math.abs(
+                    odds -
+                    comparedOdds
+                  ) * 100
+                ) / 100;
+
+              if (
+                oddsDifference === 0
+              ) {
+                comparison =
+                  `${comparedRow.ticket}と同じ${formatOdds(odds)}倍。`;
+              } else if (
+                odds > comparedOdds
+              ) {
+                comparison =
+                  `${comparedRow.ticket}の${formatOdds(comparedOdds)}倍より${formatOdds(oddsDifference)}倍高い。`;
+              } else {
+                comparison =
+                  `${comparedRow.ticket}の${formatOdds(comparedOdds)}倍より${formatOdds(oddsDifference)}倍低い。`;
+              }
+            }
+
+            const ticketBoats =
+              String(row.ticket)
+                .split("-")
+                .map(Number)
+                .filter(
+                  boatNo =>
+                    boatNo >= 1 &&
+                    boatNo <= 6
+                );
+
+            const positionText =
+              ticketBoats.length === 3
+                ? `${ticketBoats[0]}号艇を1着、${ticketBoats[1]}号艇を2着、${ticketBoats[2]}号艇を3着に構成。`
+                : "着順構成は未取得。";
+
+            const roleText =
+              ticketBoats.length
+                ? ticketBoats
+                    .map(boatNo => {
+                      const roles = [];
+
+                      if (
+                        boatNo ===
+                        honmeiBoatNo
+                      ) {
+                        roles.push(
+                          "1着候補"
+                        );
+                      }
+
+                      if (
+                        holdBoatNumbers.has(
+                          boatNo
+                        )
+                      ) {
+                        roles.push(
+                          "残し"
+                        );
+                      }
+
+                      if (
+                        pickupBoatNumbers.has(
+                          boatNo
+                        )
+                      ) {
+                        roles.push(
+                          "拾い"
+                        );
+                      }
+
+                      return (
+                        `${boatNo}号艇=` +
+                        (
+                          roles.length
+                            ? roles.join("・")
+                            : "買い目構成艇"
+                        )
+                      );
+                    })
+                    .join("、")
+                : "艇別の反映先は未取得";
+
+            const categoryText = [
+              ...new Set([
+                ...normalizeTextList(
+                  row.categories ||
+                  row.category
+                ),
+                ...normalizeTextList(
+                  row.type
+                )
+              ])
+            ].join("・") ||
+              "分類未取得";
+
+            const aiEvidence = [];
+
+            if (row.rank) {
+              aiEvidence.push(
+                `AIランク${row.rank}`
+              );
+            }
+
+            if (
+              row.score !== null &&
+              row.score !== undefined &&
+              row.score !== "" &&
+              Number.isFinite(
+                Number(row.score)
+              )
+            ) {
+              aiEvidence.push(
+                `AIスコア${Number(row.score)}`
+              );
+            }
+
+            const oddsValueText =
+              row.oddsValue
+                ? `既存のオッズ分類は「${row.oddsValue}」。`
+                : "オッズ分類は未判定。";
+
+            const recommendedAmount =
+              Number(
+                row.recommendedAmount ||
+                0
+              );
+
+            const allocationText =
+              recommendedAmount > 0
+                ? `推奨購入額は${recommendedAmount.toLocaleString("ja-JP")}円。`
+                : "推奨購入額は未配分。";
+
+            const scenarioSummary =
+              String(
+                row.scenarioSummary ||
+                raceFlow.summary ||
+                ""
+              )
+                .trim()
+                .replace(/[。]+$/, "");
+
+            const scenarioText =
+              scenarioSummary
+                ? `成立展開は「${scenarioSummary}」。`
+                : "成立展開コメントは未取得。";
+
+            const syntheticEvidence =
+              syntheticText
+                ? `既存の合成オッズ分析は「${syntheticText}」。`
+                : "合成オッズの追加分析データはない。";
+
+            items.push({
+              key: "odds",
+              label:
+                THEORY_LABELS.odds,
+              no: "",
+              score:
+                `${formatOdds(odds)}倍`,
+              text:
+                `買い目${row.ticket}を、作成済みAI買い目の既存表示${position + 1}番として確認。` +
+                comparison +
+                positionText +
+                `艇別の反映は${roleText}。` +
+                `買い目分類は${categoryText}。` +
+                (
+                  aiEvidence.length
+                    ? `${aiEvidence.join("・")}。`
+                    : "AIランク・スコアは未取得。"
+                ) +
+                scenarioText +
+                oddsValueText +
+                allocationText +
+                syntheticEvidence +
+                "オッズは買い目作成後の表示・分類・資金配分だけに使用し、数字だけで買い目を追加・削除しない。"
+            });
+          }
+        );
+      }
+    }
 
     if (items.length === 0) {
       return section("舟券太郎理論", emptyBox("理論表示データがありません"), "🧠", "v3-theory-section");
