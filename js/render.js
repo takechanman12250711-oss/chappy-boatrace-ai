@@ -2482,7 +2482,251 @@ function getPaperClassName(item) {
           "スリットアラートの判定データがありません。"
       );
     }
-    pushTheoryText(items, "doubleTime", finalAi.doubleTime || exhibition.doubleTime);
+        const doubleTimeBoat =
+      exhibition.doubleTimeBoat ||
+      null;
+
+    const doubleTimeList =
+      arrayify(
+        exhibition.list
+      );
+
+    const exhibitionTop =
+      exhibition.topExhibition ||
+      doubleTimeList.find(
+        item =>
+          Number(
+            item?.exhibitionRank
+          ) === 1
+      ) ||
+      null;
+
+    const lapTop =
+      exhibition.topLap ||
+      doubleTimeList.find(
+        item =>
+          Number(
+            item?.lapRank
+          ) === 1
+      ) ||
+      null;
+
+    if (doubleTimeBoat) {
+      const boatNo =
+        Number(
+          doubleTimeBoat.boatNo ||
+          0
+        );
+
+      const course =
+        Number(
+          doubleTimeBoat.course ||
+          boatNo
+        );
+
+      const exhibitionSecond =
+        doubleTimeList.find(
+          item =>
+            Number(
+              item?.exhibitionRank
+            ) === 2
+        ) ||
+        null;
+
+      const lapSecond =
+        doubleTimeList.find(
+          item =>
+            Number(
+              item?.lapRank
+            ) === 2
+        ) ||
+        null;
+
+      const comparison = [];
+
+      if (exhibitionSecond) {
+        comparison.push(
+          `展示${doubleTimeBoat.exhibitionTime}` +
+          `（2位${exhibitionSecond.boatNo}号艇 ` +
+          `${exhibitionSecond.exhibitionTime}）`
+        );
+      } else {
+        comparison.push(
+          `展示${doubleTimeBoat.exhibitionTime}`
+        );
+      }
+
+      if (lapSecond) {
+        comparison.push(
+          `一周${doubleTimeBoat.lapTime}` +
+          `（2位${lapSecond.boatNo}号艇 ` +
+          `${lapSecond.lapTime}）`
+        );
+      } else {
+        comparison.push(
+          `一周${doubleTimeBoat.lapTime}`
+        );
+      }
+
+      let development =
+        "展示直線と回り足の両方が上位で、展開を作れる足。";
+
+      if (course === 1) {
+        development =
+          "イン先マイを後押しし、1着候補として確認する足。";
+      } else if (course === 2) {
+        development =
+          "2コース差しの入口となり、1着候補と内の残しを比較する足。";
+      } else if (
+        course === 3 ||
+        course === 4
+      ) {
+        development =
+          `${course}コース攻めの入口となり、` +
+          "内の残しと外の拾いを比較する足。";
+      } else if (course >= 5) {
+        development =
+          "外から展開を突く足で、1着固定ではなく拾いまで確認する。";
+      }
+
+      const reflectedRoles = [];
+
+      const honmeiBoatNo =
+        Number(
+          prediction.mainSheet
+            ?.honmei?.boatNo ||
+          prediction.mainSheet
+            ?.main?.boatNo ||
+          0
+        );
+
+      if (
+        honmeiBoatNo === boatNo
+      ) {
+        reflectedRoles.push(
+          "1着候補"
+        );
+      }
+
+      if (
+        arrayify(
+          raceFlow.holdBoats
+        ).some(
+          item =>
+            Number(
+              item?.boatNo
+            ) === boatNo
+        )
+      ) {
+        reflectedRoles.push(
+          "残し"
+        );
+      }
+
+      if (
+        arrayify(
+          raceFlow.pickupBoats
+        ).some(
+          item =>
+            Number(
+              item?.boatNo
+            ) === boatNo
+        )
+      ) {
+        reflectedRoles.push(
+          "拾い"
+        );
+      }
+
+      const reflection =
+        reflectedRoles.length
+          ? `現在の予想では` +
+            `${reflectedRoles.join("・")}へ反映。`
+          : "現在の予想では1着候補・残し・拾いへ直接反映せず、展示評価の補足材料。";
+
+      pushTheoryText(
+        items,
+        "doubleTime",
+        {
+          boatNo,
+
+          score:
+            doubleTimeBoat.score ??
+            "",
+
+          comment:
+            `${boatNo}号艇が` +
+            `${comparison.join("、")}でともに1位。` +
+            "展示1位＋一周1位が一致し、ダブルタイム発動。" +
+            development +
+            reflection
+        }
+      );
+    } else if (
+      exhibitionTop &&
+      lapTop
+    ) {
+      const exhibitionBoatNo =
+        Number(
+          exhibitionTop.boatNo ||
+          0
+        );
+
+      const lapBoatNo =
+        Number(
+          lapTop.boatNo ||
+          0
+        );
+
+      const sameTop =
+        exhibitionBoatNo ===
+        lapBoatNo;
+
+      const reason =
+        sameTop
+          ? "展示1位と一周1位は同じ艇だが、ダブルタイム判定データが成立していないため発動していない。"
+          : `展示1位は${exhibitionBoatNo}号艇` +
+            `（${exhibitionTop.exhibitionTime}）、` +
+            `一周1位は${lapBoatNo}号艇` +
+            `（${lapTop.lapTime}）で一致しないため、` +
+            "ダブルタイムは発動していない。";
+
+      pushTheoryText(
+        items,
+        "doubleTime",
+        reason +
+          "それぞれ展示気配と回り足の補足材料とし、1着候補・残し・拾いは展開全体から判断する。"
+      );
+    } else {
+      const missing = [];
+
+      if (!exhibitionTop) {
+        missing.push(
+          "展示タイム"
+        );
+      }
+
+      if (!lapTop) {
+        missing.push(
+          "一周タイム"
+        );
+      }
+
+      const knownTop =
+        exhibitionTop
+          ? `展示1位は${exhibitionTop.boatNo}号艇だが、`
+          : lapTop
+            ? `一周1位は${lapTop.boatNo}号艇だが、`
+            : "";
+
+      pushTheoryText(
+        items,
+        "doubleTime",
+        knownTop +
+          `${missing.join("・")}が不足しているため、` +
+          "ダブルタイムは判定できない。"
+      );
+    }
     pushTheoryText(items, "shinsam", finalAi.shinsam || exhibition.shinsam);
     pushTheoryText(items, "odds", finalAi.syntheticOdds || prediction.syntheticOdds);
 
