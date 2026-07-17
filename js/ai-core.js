@@ -3861,47 +3861,55 @@ const mainScenario =
 const mainFirstCandidates =
   mainScenario?.outcome?.firstCandidates || [];
 
-const scenarioScores =
-  scenarioList
-    .map((scenario) =>
-      `${scenario.label}${scenario.score}点`
-    )
-    .join(" / ");
+const subScenario =
+  raceScenarios.subScenario ||
+  scenarioList[1] ||
+  null;
 
 const firstCandidateText =
   mainFirstCandidates
+    .slice(0, 3)
     .map((boat) =>
-      `${boat.boatNo}号艇${boat.firstScore}点`
+      `${boat.boatNo}号艇`
     )
     .join("・");
 
-const dataStatus =
-  raceScenarios.dataStatus || {};
+const secondCandidateText =
+  (mainScenario?.outcome?.secondCandidates || [])
+    .slice(0, 3)
+    .map((boat) =>
+      `${boat.boatNo}号艇`
+    )
+    .join("・");
 
-const relations =
-  raceScenarios.relations || {};
-
-const dataStatusText =
-  `ST実データ：${dataStatus.hasSt ? "あり" : "なし"} / ` +
-  `展示実データ：${dataStatus.hasExhibition ? "あり" : "なし"} / ` +
-  `before=${dataStatus.beforeCount || 0}件 / ` +
-  `raw.before=${dataStatus.rawBeforeCount || 0}件 / ` +
-  `start=${dataStatus.startCount || 0}件 / ` +
-  `raw.start=${dataStatus.rawStartCount || 0}件 / ` +
-  `取込値=${JSON.stringify(dataStatus.mergedExhibition || [])}`;
-
-const relationText =
-  `比較差：2対1=${relations.twoVsOne ?? 0} / ` +
-  `3対2=${relations.threeVsTwo ?? 0} / ` +
-  `4対3=${relations.fourVsThree ?? 0}`;
+const thirdCandidateText =
+  (mainScenario?.outcome?.thirdCandidates || [])
+    .slice(0, 3)
+    .map((boat) =>
+      `${boat.boatNo}号艇`
+    )
+    .join("・");
 
 const scenarioSummary =
   mainScenario
-    ? `展開判定：${mainScenario.label}が最有力（${mainScenario.score}点）。` +
-      `各展開：${scenarioScores}。` +
-      `この展開の1着候補：${firstCandidateText || "確認待ち"}。` +
-      `${dataStatusText}。${relationText}。`
-    : `展開判定：データ不足。${dataStatusText}。`;
+    ? `最有力展開は${mainScenario.label}（${mainScenario.score}点）。` +
+      (
+        subScenario
+          ? `対抗展開は${subScenario.label}（${subScenario.score}点）。`
+          : ""
+      ) +
+      `1着候補は${firstCandidateText || "確認待ち"}。` +
+      (
+        secondCandidateText
+          ? `2着残し候補は${secondCandidateText}。`
+          : ""
+      ) +
+      (
+        thirdCandidateText
+          ? `3着拾い候補は${thirdCandidateText}。`
+          : ""
+      )
+    : "展開・コース・ST・展示データが不足し、最終展開を判定できません。";
 
     /*
       prediction.jsの表示形式へ変換する。
