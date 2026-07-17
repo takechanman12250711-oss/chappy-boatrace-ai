@@ -779,6 +779,436 @@
         finalizedOddsValueStats
     };
   }
+    function buildRaceHistory(results) {
+    const resultList =
+      Array.isArray(results) ? results : [];
+
+    const predictionList =
+      typeof S.loadPredictionHistory === "function"
+        ? S.loadPredictionHistory()
+        : [];
+
+    const purchaseList =
+      typeof S.loadActualPurchases === "function"
+        ? S.loadActualPurchases()
+        : [];
+
+    const normalizeTicket = value => {
+      const boats =
+        String(value || "").match(/[1-6]/g) || [];
+
+      if (
+        boats.length !== 3 ||
+        new Set(boats).size !== 3
+      ) {
+        return "";
+      }
+
+      return boats.join("-");
+    };
+
+    const raceMap = new Map();
+
+    const ensureRace = source => {
+      const raceKey = S.buildRaceKey(source);
+
+      if (!raceKey) {
+        return null;
+      }
+
+      const keyParts = raceKey.split("-");
+
+      if (!raceMap.has(raceKey)) {
+        raceMap.set(raceKey, {
+          raceKey,
+          date: keyParts[0] || "",
+          jcd: keyParts[1] || "",
+          raceNo: Number(keyParts[2] || 0),
+          place: "",
+          prediction: null,
+          officialResult: null,
+          actualPurchases: [],
+          latestAt: ""
+        });
+      }
+
+      const entry = raceMap.get(raceKey);
+
+      const place = String(
+        source?.place ||
+        source?.predictionPlace ||
+        ""
+      ).trim();
+
+      if (place) {
+        entry.place = place;
+      }
+
+      const date = String(
+        source?.date ||
+        source?.predictionDate ||
+        ""
+      )
+        .replace(/\D/g, "")
+        .slice(0, 8);
+
+      if (date.length === 8) {
+        entry.date = date;
+      }
+
+      const rawJcd = String(
+        source?.jcd ||
+        source?.predictionJcd ||
+        ""
+      ).replace(/\D/g, "");
+
+      const jcd = rawJcd
+        ? rawJcd.padStart(2, "0").slice(-2)
+        : "";
+
+      if (jcd) {
+        entry.jcd = jcd;
+      }
+
+      const raceNo = Number(
+        source?.raceNo ??
+        source?.rno ??
+        source?.predictionRaceNo ??
+        0
+      );
+
+      if (raceNo >= 1 && raceNo <= 12) {
+        entry.raceNo = raceNo;
+      }
+
+      [
+        source?.updatedAt,
+        source?.officialCheckedAt,
+        source?.savedAt
+      ]
+        .map(value => String(value || ""))
+        .filter(Boolean)
+        .forEach(value => {
+          if (value > entry.latestAt) {
+            entry.latestAt = value;
+          }
+        });
+
+      return entry;
+    };
+
+    predictionList.forEach(prediction => {
+      if (
+        !prediction ||
+        prediction.isRetrospective ||
+        prediction.predictionMode ===
+          "retrospective_reference"
+      ) {
+        return;
+      }
+
+      const entry = ensureRace(prediction);
+
+      if (entry && !entry.prediction) {
+        entry.prediction = prediction;
+      }
+    });
+
+    resultList.forEach(record => {
+      const isOfficial =
+        record?.recordType ===
+          "official_result" ||
+        record?.resultSource ===
+          "boatrace-official";
+
+      const resultTicket =
+        normalizeTicket(record?.result);
+
+      const payoutPer100 = U.safeNumber(
+        record?.officialPayoutPer100,
+        0
+      );
+
+      if (
+        !isOfficial ||
+        !resultTicket ||
+        payoutPer100 <= 0
+      ) {
+        return;
+      }
+
+      const entry = ensureRace(record);
+
+      if (entry && !entry.officialResult) {
+        entry.officialResult = record;
+      }
+    });
+
+    purchaseList.forEach(purchase => {
+      const entry = ensureRace(purchase);
+
+      if (entry) {
+        entry.actualPurchases.push(purchase);
+      }
+    });
+
+    return Array.from(raceMap.values())
+      .map(entry => {
+        const officialResult =
+          entry.officialResult;
+
+        const resultTicket =
+          normalizeTicket(
+            officialResult?.result
+          );
+
+        const payoutPer100 = U.safeNumber(
+          officialResult
+            ?.officialPayoutPer100,
+          0
+        );
+
+        const isSettled = Boolean(
+          officialResult &&
+          resultTicket &&
+          payoutPer100 > 0
+        );
+
+        const predictionTickets = [];
+        const seenPredictionTickets =
+          new Set();
+
+        const sourceTickets = Array.isArray(
+          entry.prediction?.ticketRanks
+        )
+          ? entry.prediction.ticketRanks
+          : [];
+
+        sourceTickets.forEach(ticket => {
+          const normalizedTicket =
+            normalizeTicket(ticket?.ticket);
+
+          if (
+            !normalizedTicket ||
+            seenPredictionTickets.has(
+              normalizedTicket
+            )
+          ) {
+            return;
+          }
+
+          seenPredictionTickets.add(
+            normalizedTicket
+          );
+
+          predictionTickets.push({
+            ...ticket,
+            ticket: normalizedTicket,
+            recommendedAmount: U.safeNumber(
+              ticket?.recommendedAmount,
+              0
+            )
+          });
+        });
+
+        const theoryTickets =
+          predictionTickets.filter(
+            ticket =>
+              ticket.recommendedAmount > 0
+          );
+
+        const theoryBet =
+          theoryTickets.reduce(
+            (sum, ticket) =>
+              sum +
+              ticket.recommendedAmount,
+            0
+          );
+
+        const theoryHitTicket = isSettled
+          ? (
+              theoryTickets.find(
+                ticket =>
+                  ticket.ticket ===
+                  resultTicket
+              ) || null
+            )
+          : null;
+
+        const theoryPayout =
+          theoryHitTicket
+            ? Math.round(
+                (
+                  payoutPer100 /
+                  100
+                ) *
+                theoryHitTicket
+                  .recommendedAmount
+              )
+            : 0;
+
+        const theoryProfit =
+          isSettled &&
+          theoryTickets.length > 0
+            ? theoryPayout - theoryBet
+            : null;
+
+        let theoryStatus = "予想なし";
+
+        if (entry.prediction) {
+          if (!isSettled) {
+            theoryStatus = "結果待ち";
+          } else if (!theoryTickets.length) {
+            theoryStatus = "購入額なし";
+          } else {
+            theoryStatus = theoryHitTicket
+              ? "的中"
+              : "不的中";
+          }
+        }
+
+        const actualPurchases = [];
+        const seenActualTickets = new Set();
+
+        entry.actualPurchases.forEach(
+          purchase => {
+            const ticket =
+              normalizeTicket(
+                purchase?.ticket
+              );
+
+            const amount = U.safeNumber(
+              purchase?.amount,
+              0
+            );
+
+            if (
+              !ticket ||
+              amount <= 0 ||
+              seenActualTickets.has(ticket)
+            ) {
+              return;
+            }
+
+            seenActualTickets.add(ticket);
+
+            actualPurchases.push({
+              ...purchase,
+              ticket,
+              amount,
+              isHit:
+                isSettled &&
+                ticket === resultTicket
+            });
+          }
+        );
+
+        const actualBet =
+          actualPurchases.reduce(
+            (sum, purchase) =>
+              sum + purchase.amount,
+            0
+          );
+
+        const actualHitPurchase =
+          isSettled
+            ? (
+                actualPurchases.find(
+                  purchase =>
+                    purchase.ticket ===
+                    resultTicket
+                ) || null
+              )
+            : null;
+
+        const actualPayout =
+          actualHitPurchase
+            ? Math.round(
+                (
+                  payoutPer100 /
+                  100
+                ) *
+                actualHitPurchase.amount
+              )
+            : 0;
+
+        const actualProfit =
+          isSettled &&
+          actualPurchases.length > 0
+            ? actualPayout - actualBet
+            : null;
+
+        let actualStatus = "実購入なし";
+
+        if (actualPurchases.length > 0) {
+          if (!isSettled) {
+            actualStatus = "結果待ち";
+          } else {
+            actualStatus =
+              actualHitPurchase
+                ? "的中"
+                : "不的中";
+          }
+        }
+
+        return {
+          raceKey: entry.raceKey,
+          date: entry.date,
+          place: entry.place,
+          jcd: entry.jcd,
+          raceNo: entry.raceNo,
+          latestAt: entry.latestAt,
+
+          prediction: entry.prediction,
+          predictionTickets,
+
+          officialResult,
+          resultTicket,
+          payoutPer100,
+
+          winningMethod: String(
+            officialResult
+              ?.winningMethod || ""
+          ),
+
+          officialPopularity:
+            officialResult
+              ?.officialPopularity ?? null,
+
+          raceStatus:
+            isSettled
+              ? "結果確定"
+              : "結果待ち",
+
+          theoryTickets,
+          theoryBet,
+          theoryPayout,
+          theoryProfit,
+          theoryHitTicket,
+          theoryStatus,
+
+          actualPurchases,
+          actualBet,
+          actualPayout,
+          actualProfit,
+          actualHitPurchase,
+          actualStatus
+        };
+      })
+      .sort(
+        (a, b) =>
+          String(
+            b.latestAt || ""
+          ).localeCompare(
+            String(a.latestAt || "")
+          ) ||
+          String(b.raceKey).localeCompare(
+            String(a.raceKey),
+            "ja",
+            { numeric: true }
+          )
+      );
+  }
     function renderStats() {
     const results =
       S.loadResults();
