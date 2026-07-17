@@ -1369,6 +1369,17 @@
     updateSelectedRace(
       selectedRace
     );
+
+    loadOfficialRaceTrends(
+      data,
+      mode,
+      grid
+    ).catch(error => {
+      console.warn(
+        "race trend list",
+        error
+      );
+    });
   }
 
   async function loadVenueChoices() {
