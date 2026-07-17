@@ -2571,7 +2571,7 @@ function getPaperClassName(item) {
 
         ${
           item.text
-            ? `<p>${escapeHtml(limitText(item.text, 45))}</p>`
+      ? `<p>${escapeHtml(item.text)}</p>`
             : ""
         }
       </div>
