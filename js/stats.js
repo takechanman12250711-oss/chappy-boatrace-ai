@@ -2002,7 +2002,11 @@
           </table>
         </div>
       </div>
-    `);
+        `);
+
+    renderRaceHistory(
+      results
+    );
   }
 
     function updateAutoPayout() {
