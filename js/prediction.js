@@ -3125,70 +3125,214 @@ if (isRoughWater) {
 }
 
   function createSlitPhase(race, context, scores) {
-    const exhibitionList = [
-  ...(context.exhibition?.list || [])
-].sort((a, b) => {
-  const courseA = Number(a.course || a.boatNo);
-  const courseB = Number(b.course || b.boatNo);
+  const exhibitionList = [
+    ...(context.exhibition?.list || [])
+  ].sort((a, b) => {
+    const courseA = Number(a.course || a.boatNo);
+    const courseB = Number(b.course || b.boatNo);
 
-  return courseA - courseB;
-});
+    return courseA - courseB;
+  });
 
-    const stList = exhibitionList
-      .filter(item => item.exhibitionSTNumber !== null)
-      .sort((a, b) => a.exhibitionSTNumber - b.exhibitionSTNumber);
+  const stList = exhibitionList
+    .filter(
+      item =>
+        toSTNumber(
+          item.exhibitionSTNumber
+        ) !== null
+    )
+    .sort(
+      (a, b) =>
+        toSTNumber(a.exhibitionSTNumber) -
+        toSTNumber(b.exhibitionSTNumber)
+    );
 
-    const alerts = [];
+  const alerts = [];
+  let comparisonCount = 0;
 
-    for (let i = 0; i < exhibitionList.length; i++) {
-      const current = exhibitionList[i];
-      if (current.exhibitionSTNumber === null) continue;
+  for (
+    let i = 0;
+    i < exhibitionList.length;
+    i++
+  ) {
+    const current = exhibitionList[i];
 
-      const left = exhibitionList[i - 1];
-      const right = exhibitionList[i + 1];
+    const currentST = toSTNumber(
+      current.exhibitionSTNumber
+    );
 
-      const diffs = [];
-
-      if (left?.exhibitionSTNumber !== null && left?.exhibitionSTNumber !== undefined) {
-        diffs.push(left.exhibitionSTNumber - current.exhibitionSTNumber);
-      }
-
-      if (right?.exhibitionSTNumber !== null && right?.exhibitionSTNumber !== undefined) {
-        diffs.push(right.exhibitionSTNumber - current.exhibitionSTNumber);
-      }
-
-      const maxDiff = diffs.length ? Math.max(...diffs) : 0;
-
-      if (maxDiff >= 0.1) {
-        alerts.push({
-          boatNo: current.boatNo,
-          name: current.name,
-          diff: Math.round(maxDiff * 100) / 100,
-          score: clampScore(70 + maxDiff * 100),
-          reason: `隣艇より${maxDiff.toFixed(2)}速い`
-        });
-      }
+    if (currentST === null) {
+      continue;
     }
 
-    const top = stList[0] || null;
+    const neighbors = [
+      {
+        side: "内側",
+        boat: exhibitionList[i - 1]
+      },
+      {
+        side: "外側",
+        boat: exhibitionList[i + 1]
+      }
+    ]
+      .map(item => {
+        const neighborST = toSTNumber(
+          item.boat?.exhibitionSTNumber
+        );
 
-    return {
-      title: "スリット",
-      top: top
-        ? {
-            boatNo: top.boatNo,
-            name: top.name,
-            st: formatST(top.exhibitionST)
-          }
-        : null,
-      alerts,
-      comment: alerts.length
-        ? `${alerts.map(v => `${v.boatNo}号艇`).join("・")}にスリットアラート。0.10以上の差で攻めの入口。`
-        : top
-          ? `展示STは${top.boatNo}号艇が上位。明確な0.10差アラートはなし。`
-          : "展示STデータが薄いため、平均STで補正。"
-    };
+        if (
+          !item.boat ||
+          neighborST === null
+        ) {
+          return null;
+        }
+
+        return {
+          boatNo: toBoatNo(
+            item.boat.boatNo
+          ),
+          name: item.boat.name || "",
+          side: item.side,
+          st: neighborST,
+          diff: neighborST - currentST
+        };
+      })
+      .filter(Boolean);
+
+    comparisonCount += neighbors.length;
+
+    const compared = [...neighbors]
+      .sort(
+        (a, b) =>
+          b.diff - a.diff
+      )[0] || null;
+
+    if (
+      !compared ||
+      compared.diff < 0.1
+    ) {
+      continue;
+    }
+
+    const boatNo = toBoatNo(
+      current.boatNo
+    );
+
+    const course =
+      toBoatNo(
+        current.course ?? boatNo
+      ) || boatNo;
+
+    const diff =
+      Math.round(
+        compared.diff * 100
+      ) / 100;
+
+    let development =
+      "スリット優位を展開全体と照合する。";
+
+    if (course === 1) {
+      development =
+        "イン先マイの後押しとなり、1着候補として展開全体と照合する。";
+    } else if (course === 2) {
+      development =
+        "2コース差しの入口となり、1着候補と1号艇の残しを比較する。";
+    } else if (
+      course === 3 ||
+      course === 4
+    ) {
+      development =
+        `${course}コース攻めの入口となり、内側の残しと外側の拾いを比較する。`;
+    } else if (course >= 5) {
+      development =
+        "外から展開を突く材料として、1着固定ではなく拾いも含めて確認する。";
+    }
+
+    alerts.push({
+      boatNo,
+      name: current.name,
+      course,
+
+      st: currentST,
+
+      comparedBoatNo:
+        compared.boatNo,
+
+      comparedName:
+        compared.name,
+
+      comparedSide:
+        compared.side,
+
+      comparedST:
+        compared.st,
+
+      diff,
+
+      score:
+        clampScore(
+          70 + diff * 100
+        ),
+
+      reason:
+        `${compared.side}の` +
+        `${compared.boatNo}号艇より` +
+        `展示STで${diff.toFixed(2)}速い`,
+
+      comment:
+        `${boatNo}号艇は` +
+        `${compared.side}の` +
+        `${compared.boatNo}号艇との比較で` +
+        `展示STが${diff.toFixed(2)}速く、` +
+        `スリットアラート発動。` +
+        development
+    });
   }
+
+  const top =
+    stList[0] || null;
+
+  let comment = "";
+
+  if (alerts.length) {
+    comment = alerts
+      .map(item => item.comment)
+      .join(" ");
+  } else if (
+    top &&
+    comparisonCount > 0
+  ) {
+    comment =
+      `展示ST最上位は${top.boatNo}号艇だが、` +
+      `隣接艇との差はすべて0.10未満のため、` +
+      `スリットアラートは発動していない。`;
+  } else if (top) {
+    comment =
+      `展示STは${top.boatNo}号艇が上位だが、` +
+      `比較できる隣接艇の展示STが不足しているため、` +
+      `スリットアラートは発動していない。`;
+  } else {
+    comment =
+      "展示STデータが不足しているため、スリットアラートは判定できない。";
+  }
+
+  return {
+    title: "スリット",
+
+    top: top
+      ? {
+          boatNo: top.boatNo,
+          name: top.name,
+          st: formatST(
+            top.exhibitionST
+          )
+        }
+      : null,
+
+    alerts,
+    comment
+  };
+}
 
   function createFirstMarkPhase(race, context, flow) {
   const mainAttack =
