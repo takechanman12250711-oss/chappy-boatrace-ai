@@ -1292,9 +1292,26 @@
               "時刻未定"
             );
 
+            const trend =
+        document.createElement(
+          "span"
+        );
+
+      trend.className =
+        "official-race-trend";
+
+      trend.setAttribute(
+        "aria-live",
+        "polite"
+      );
+
+      trend.hidden =
+        !selectable;
+
       button.append(
         number,
-        time
+        time,
+        trend
       );
 
       button.addEventListener(
