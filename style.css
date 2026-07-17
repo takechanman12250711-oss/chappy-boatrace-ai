@@ -3313,3 +3313,266 @@ body {
     font-size: 11px;
   }
 }
+/* =========================================================
+  レース一覧・本命AI期待度／万舟展開期待度
+========================================================= */
+
+.official-race-grid {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.official-race-button {
+  position: relative;
+  grid-template-columns:
+    minmax(0, 1fr) auto;
+  grid-template-areas:
+    "race-number race-time"
+    "race-trend race-trend";
+  place-items: initial;
+  align-items: center;
+  align-content: start;
+  gap: 6px 8px;
+  min-height: 64px;
+  padding: 9px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.official-race-number {
+  grid-area: race-number;
+}
+
+.official-race-time {
+  grid-area: race-time;
+  justify-self: end;
+}
+
+.official-race-trend {
+  grid-area: race-trend;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 6px;
+  padding-top: 7px;
+  border-top: 1px solid #dce7f4;
+  box-sizing: border-box;
+}
+
+.official-race-trend[hidden] {
+  display: none;
+}
+
+.official-race-trend.is-loading,
+.official-race-trend.is-pending {
+  min-height: 42px;
+  place-items: center;
+  color: var(--app-subtext);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.official-race-trend.is-pending {
+  color: #8a5a20;
+}
+
+.official-race-trend-scores {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  min-width: 0;
+}
+
+.official-race-trend-score {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  box-sizing: border-box;
+}
+
+.official-race-trend-score.is-honmei {
+  border-color: #b9d9ff;
+  background: #eaf4ff;
+  color: #096bd8;
+}
+
+.official-race-trend-score.is-manshu {
+  border-color: #ffd3a5;
+  background: #fff3e5;
+  color: #c75b00;
+}
+
+.official-race-trend-label {
+  min-width: 0;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.official-race-trend-value {
+  font-size: 20px;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.official-race-trend-reason {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--app-text);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.official-race-trend-status {
+  width: fit-content;
+  max-width: 100%;
+  justify-self: end;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #edf1f6;
+  color: var(--app-subtext);
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.official-race-button.is-honmei-top {
+  border-color: #2787f5;
+}
+
+.official-race-button.is-manshu-top {
+  border-color: #ef851d;
+}
+
+.official-race-button.is-honmei-top.is-manshu-top {
+  border-color: #7867ce;
+}
+
+.official-race-button.is-honmei-top
+  .official-race-trend-score.is-honmei,
+.official-race-button.is-manshu-top
+  .official-race-trend-score.is-manshu {
+  border-width: 2px;
+  box-shadow: 0 3px 9px rgba(23, 66, 120, 0.14);
+}
+
+.official-race-button.is-honmei-top
+  .official-race-trend-score.is-honmei::after,
+.official-race-button.is-manshu-top
+  .official-race-trend-score.is-manshu::after {
+  content: "TOP";
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  padding: 1px 3px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 7px;
+  font-weight: 950;
+  line-height: 1.2;
+}
+
+.official-race-button.is-honmei-top
+  .official-race-trend-score.is-honmei::after {
+  background: #096bd8;
+}
+
+.official-race-button.is-manshu-top
+  .official-race-trend-score.is-manshu::after {
+  background: #c75b00;
+}
+
+.official-race-button.is-selected
+  .official-race-trend {
+  border-top-color: rgba(255, 255, 255, 0.34);
+}
+
+.official-race-button.is-selected
+  .official-race-trend-score.is-honmei {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
+  color: #096bd8;
+}
+
+.official-race-button.is-selected
+  .official-race-trend-score.is-manshu {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
+  color: #c75b00;
+}
+
+.official-race-button.is-selected
+  .official-race-trend-reason,
+.official-race-button.is-selected
+  .official-race-trend.is-loading,
+.official-race-button.is-selected
+  .official-race-trend.is-pending {
+  color: #ffffff;
+}
+
+.official-race-button.is-selected
+  .official-race-trend-status {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+@media (max-width: 430px) {
+  .official-race-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .official-race-button {
+    gap: 5px 7px;
+    padding: 8px;
+  }
+
+  .official-race-trend-scores {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .official-race-trend-score {
+    grid-template-columns:
+      minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 6px;
+  }
+
+  .official-race-trend-label {
+    font-size: 9px;
+  }
+
+  .official-race-trend-value {
+    font-size: 17px;
+  }
+
+  .official-race-button.is-honmei-top
+    .official-race-trend-score.is-honmei::after,
+  .official-race-button.is-manshu-top
+    .official-race-trend-score.is-manshu::after {
+    display: none;
+  }
+}
+
+@media (max-width: 350px) {
+  .official-race-grid {
+    grid-template-columns: 1fr;
+  }
+}
