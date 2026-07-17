@@ -1579,12 +1579,6 @@
                 </div>
 
                 <h4>
-                  AI予想
-                </h4>
-
-                ${predictionHtml}
-
-                <h4>
                   実購入明細
                 </h4>
 
