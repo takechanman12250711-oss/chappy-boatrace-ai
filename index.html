@@ -620,11 +620,79 @@
               最新購入を取り消す
             </button>
 
+                    </div>
+
+
+          <div class="v3-final-block">
+
+            <h4>
+              📷 スクショからまとめて入力
+            </h4>
+
+
+            <div class="result-inputs">
+
+              <label>
+
+                <span>
+                  購入スクショ（複数選択可）
+                </span>
+
+                <input
+                  id="purchaseScreenshotInput"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  multiple
+                />
+
+              </label>
+
+            </div>
+
+
+            <p class="v3-note">
+              同じレースのスクショを複数選択できます。
+              重複した買い目は1件にまとめ、画像自体は保存しません。
+            </p>
+
+
+            <div class="result-buttons">
+
+              <button
+                id="readPurchaseScreenshotsBtn"
+                class="sub-btn"
+                type="button"
+              >
+                スクショを読み取る
+              </button>
+
+              <button
+                id="saveScreenshotPurchasesBtn"
+                class="primary-btn"
+                type="button"
+                disabled
+              >
+                読み取り結果を一括保存
+              </button>
+
+            </div>
+
+
+            <div
+              id="purchaseScreenshotStatus"
+              class="dashboard-status"
+              aria-live="polite"
+            >
+              スクショはまだ選択されていません
+            </div>
+
+
+            <div id="purchaseScreenshotPreview"></div>
+
           </div>
 
 
           <div id="statsArea"></div>
-
         </article>
 
 
