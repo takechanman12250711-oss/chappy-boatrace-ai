@@ -3063,7 +3063,386 @@ if (hasComparison(3, 1)) {
     }
   };
 }
+/* ===============================
+  レース一覧用・本命／万舟展開期待度
 
+  実際の的中確率ではなく、最終AI Coreの成立展開を
+  0〜100へ要約した一覧比較用のAI評価。
+  買い目・オッズ・保存処理には使用しない。
+=============================== */
+
+function buildRaceTrendEvaluation(data) {
+  const entries = getRaceEntries(data);
+
+  const hasAverageSt = (entry) => {
+    const value =
+      entry?.averageSt ??
+      entry?.averageST ??
+      entry?.avgSt ??
+      entry?.avgST ??
+      entry?.st ??
+      entry?.startTiming ??
+      entry?.nationalSt;
+
+    return !isNil(value) && toNumber(value, 0) > 0;
+  };
+
+  const hasExhibition = (entry) => {
+    const time =
+      entry?.exhibitionTime ??
+      entry?.tenjiTime ??
+      entry?.displayTime ??
+      entry?.exTime;
+
+    const st =
+      entry?.exhibitionSt ??
+      entry?.exhibitionST ??
+      entry?.tenjiSt ??
+      entry?.tenjiST ??
+      entry?.displaySt ??
+      entry?.displayST;
+
+    const lap =
+      entry?.lapTime ??
+      entry?.oneLapTime ??
+      entry?.roundTime ??
+      entry?.turnTime;
+
+    return (
+      (!isNil(time) && toNumber(time, 0) > 0) ||
+      (!isNil(st) && toNumber(st, -1) >= 0) ||
+      (!isNil(lap) && toNumber(lap, 0) > 0)
+    );
+  };
+
+  const entryCount = new Set(
+    entries
+      .map((entry) => getBoatNo(entry))
+      .filter((no) => no >= 1 && no <= 6)
+  ).size;
+
+  const stCount = entries.filter(hasAverageSt).length;
+  const exhibitionCount = entries.filter(hasExhibition).length;
+
+  const dataStatus = {
+    stage: exhibitionCount >= 4 ? "final" : "provisional",
+    label: exhibitionCount >= 4
+      ? "展示反映済み"
+      : "展示前・暫定",
+    completeness: clamp(
+      round(
+        Math.min(entryCount, 6) / 6 * 40 +
+        Math.min(stCount, 6) / 6 * 30 +
+        Math.min(exhibitionCount, 6) / 6 * 30
+      ),
+      0,
+      100
+    ),
+    entryCount,
+    stCount,
+    exhibitionCount
+  };
+
+  const makePending = (reasons) => ({
+    ready: false,
+    raceNo: getRaceNo(data),
+    venue: getVenueFeature(data).name,
+    honmei: {
+      score: null,
+      level: "準備中",
+      reasons
+    },
+    manshu: {
+      score: null,
+      level: "準備中",
+      reasons
+    },
+    dataStatus: {
+      ...dataStatus,
+      stage: "insufficient",
+      label: "判定準備中"
+    },
+    evidence: null
+  });
+
+  if (entryCount < 6 || stCount < 4) {
+    const reasons = [];
+
+    if (entryCount < 6) {
+      reasons.push(`出走データ${entryCount}/6艇`);
+    }
+
+    if (stCount < 4) {
+      reasons.push(`STデータ${stCount}/6艇`);
+    }
+
+    return makePending(reasons);
+  }
+
+  const analyses = buildBoatAnalyses(data);
+
+  if (analyses.length < 6) {
+    return makePending([
+      `AI分析データ${analyses.length}/6艇`
+    ]);
+  }
+
+  const raceScenarios = buildRaceScenarios(analyses, data);
+  const scenarioByType = Object.fromEntries(
+    raceScenarios.scenarios.map((scenario) => [
+      scenario.type,
+      scenario
+    ])
+  );
+
+  const escape = scenarioByType.escape;
+  const sashi = scenarioByType.sashi;
+  const threeAttack = scenarioByType.threeAttack;
+  const fourAttack = scenarioByType.fourAttack;
+
+  const scoreOf = (scenario) =>
+    toNumber(scenario?.score, 0);
+
+  const innerScenario =
+    scoreOf(escape) >= scoreOf(sashi)
+      ? escape
+      : sashi;
+
+  const attackScenario =
+    scoreOf(threeAttack) >= scoreOf(fourAttack)
+      ? threeAttack
+      : fourAttack;
+
+  if (!innerScenario || !attackScenario) {
+    return makePending(["成立展開データ不足"]);
+  }
+
+  const mainScenario = raceScenarios.mainScenario;
+  const subScenario = raceScenarios.subScenario;
+  const mainGap = Math.max(
+    0,
+    scoreOf(mainScenario) - scoreOf(subScenario)
+  );
+  const innerEdge =
+    scoreOf(innerScenario) - scoreOf(attackScenario);
+
+  const byBoat = Object.fromEntries(
+    analyses.map((boat) => [
+      Number(boat.boatNo),
+      boat
+    ])
+  );
+
+  const roleScore = (boatNo, role) =>
+    toNumber(byBoat[boatNo]?.roleScores?.[role], 0);
+
+  const outcomeScore = (scenario, boatNos, key) => {
+    const boats = Array.isArray(scenario?.outcome?.boats)
+      ? scenario.outcome.boats
+      : [];
+
+    return Math.max(
+      0,
+      ...boatNos.map((boatNo) => {
+        const boat = boats.find(
+          (item) => Number(item?.boatNo) === boatNo
+        );
+
+        return toNumber(boat?.[key], 0);
+      })
+    );
+  };
+
+  const holdCandidates = [1, 2, 4]
+    .map((boatNo) => ({
+      boatNo,
+      score: roleScore(boatNo, "hold")
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  const pickupCandidates = [5, 6]
+    .map((boatNo) => ({
+      boatNo,
+      score: roleScore(boatNo, "pickup")
+    }))
+    .sort((a, b) => b.score - a.score);
+
+  const innerHead = outcomeScore(
+    innerScenario,
+    [1, 2],
+    "firstScore"
+  );
+  const innerHold =
+    holdCandidates[0].score * 0.65 +
+    holdCandidates[1].score * 0.35;
+  const outerHead = outcomeScore(
+    attackScenario,
+    [3, 4, 5, 6],
+    "firstScore"
+  );
+  const outerPickup = pickupCandidates[0].score;
+
+  const innerEdgeScore = clamp(
+    50 + innerEdge * 2.2,
+    10,
+    95
+  );
+  const attackEdgeScore = clamp(
+    50 - innerEdge * 2.2,
+    10,
+    95
+  );
+  const volatility = clamp(
+    78 - mainGap * 3,
+    20,
+    90
+  );
+  const attackRelation = Math.max(
+    0,
+    toNumber(raceScenarios.relations?.threeVsTwo, 0),
+    toNumber(raceScenarios.relations?.fourVsThree, 0)
+  );
+  const innerResistance =
+    scoreOf(escape) * 0.70 +
+    roleScore(1, "hold") * 0.20 +
+    roleScore(2, "hold") * 0.10;
+  const innerCollapse = clamp(
+    100 - innerResistance + attackRelation,
+    5,
+    95
+  );
+
+  const honmeiScore = clamp(
+    round(
+      scoreOf(innerScenario) * 0.45 +
+      innerHead * 0.20 +
+      innerHold * 0.18 +
+      innerEdgeScore * 0.17
+    ),
+    1,
+    100
+  );
+
+  const manshuScore = clamp(
+    round(
+      scoreOf(attackScenario) * 0.38 +
+      outerHead * 0.18 +
+      outerPickup * 0.12 +
+      attackEdgeScore * 0.15 +
+      volatility * 0.10 +
+      innerCollapse * 0.07
+    ),
+    1,
+    100
+  );
+
+  const levelOf = (score) => {
+    if (score >= 70) return "高";
+    if (score >= 55) return "中";
+    return "低";
+  };
+
+  const edgeText = innerEdge >= 5
+    ? `内展開が攻めを${round(innerEdge)}点上回る`
+    : innerEdge <= -5
+      ? `${attackScenario.label}が内展開を${round(Math.abs(innerEdge))}点上回る`
+      : "内と攻めの成立度が拮抗";
+
+  const honmeiReasons = [
+    `${innerScenario.label}${round(innerScenario.score)}点`,
+    edgeText
+  ];
+  const holdLabels = {
+    1: "1号艇のイン残し",
+    2: "2差し・残り",
+    4: "4号艇の現実的な残し"
+  };
+  const bestHold = holdCandidates[0];
+
+  if (bestHold.score >= 60) {
+    honmeiReasons.push(
+      `${holdLabels[bestHold.boatNo]}${round(bestHold.score)}点`
+    );
+  }
+
+  const manshuReasons = [
+    `${attackScenario.label}${round(attackScenario.score)}点`,
+    innerEdge <= -5
+      ? `攻め展開が内を${round(Math.abs(innerEdge))}点上回る`
+      : innerEdge < 5
+        ? "内と攻めの成立度が拮抗"
+        : `内展開が攻めを${round(innerEdge)}点上回る`
+  ];
+  const bestPickup = pickupCandidates[0];
+
+  if (bestPickup.score >= 60) {
+    manshuReasons.push(
+      `${bestPickup.boatNo}号艇の展開拾い${round(bestPickup.score)}点`
+    );
+  } else if (mainGap <= 5) {
+    manshuReasons.push(
+      `上位展開差${round(mainGap)}点で拮抗`
+    );
+  }
+
+  return {
+    ready: true,
+    raceNo: getRaceNo(data),
+    venue: getVenueFeature(data).name,
+    honmei: {
+      score: honmeiScore,
+      level: levelOf(honmeiScore),
+      reasons: honmeiReasons
+    },
+    manshu: {
+      score: manshuScore,
+      level: levelOf(manshuScore),
+      reasons: manshuReasons
+    },
+    dataStatus,
+    evidence: {
+      mainScenario: mainScenario
+        ? {
+            type: mainScenario.type,
+            label: mainScenario.label,
+            score: mainScenario.score
+          }
+        : null,
+      subScenario: subScenario
+        ? {
+            type: subScenario.type,
+            label: subScenario.label,
+            score: subScenario.score
+          }
+        : null,
+      scenarioScores: {
+        escape: scoreOf(escape),
+        sashi: scoreOf(sashi),
+        threeAttack: scoreOf(threeAttack),
+        fourAttack: scoreOf(fourAttack)
+      },
+      mainGap: round(mainGap),
+      innerEdge: round(innerEdge),
+      components: {
+        honmei: {
+          innerScenario: round(innerScenario.score),
+          innerHead: round(innerHead),
+          innerHold: round(innerHold),
+          innerEdge: round(innerEdgeScore)
+        },
+        manshu: {
+          attackScenario: round(attackScenario.score),
+          outerHead: round(outerHead),
+          outerPickup: round(outerPickup),
+          attackEdge: round(attackEdgeScore),
+          volatility: round(volatility),
+          innerCollapse: round(innerCollapse)
+        }
+      },
+      relations: raceScenarios.relations
+    }
+  };
+}
   /* ===============================
     AIコメント生成
   =============================== */
