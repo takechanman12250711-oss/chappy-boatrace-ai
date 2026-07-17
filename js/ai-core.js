@@ -4670,6 +4670,8 @@ return {
     buildBoatAnalyses,
     
     buildRaceScenarios,
+
+    buildRaceTrendEvaluation,
     
     mergeWithPrediction,
 
