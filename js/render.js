@@ -654,7 +654,15 @@ if (raceInfoArea) {
         manshuPower.reason || manshuPower.comment || ""
       )}
     </div>
-
+    ${
+      prediction.dataQuality &&
+      typeof prediction
+        .dataQuality === "object"
+        ? `
+          <div
+            class="v3-ai-summary-box"
+          >
+            <h3>
               データ充足度
               ${escapeHtml(
                 prediction
