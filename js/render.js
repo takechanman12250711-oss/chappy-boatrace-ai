@@ -3256,7 +3256,373 @@ function getPaperClassName(item) {
         );
       }
     }
-    pushTheoryFromRanking(items, "local", indexes.localRanking);
+        {
+      const localTheoryRows = arrayify(
+        indexes.localRanking
+      )
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(item =>
+          typeof item === "number" ||
+          typeof item === "string"
+            ? { boatNo: item }
+            : item
+        );
+
+      if (!localTheoryRows.length) {
+        pushTheoryText(
+          items,
+          "local",
+          "当地指数の順位データがないため、当地巧者理論は判定できません。"
+        );
+      } else {
+        const getLocalBoatNo = item =>
+          Number(
+            item?.boatNo ||
+            item?.no ||
+            item?.waku ||
+            item?.course ||
+            item?.number ||
+            0
+          );
+
+        const getLocalScore = item =>
+          item?.score ??
+          item?.value ??
+          item?.point ??
+          "";
+
+        const localEntries =
+          arrayify(
+            prediction.race?.entries
+          );
+
+        const getLocalEntry = boatNo =>
+          localEntries.find(
+            entry =>
+              Number(entry?.boatNo) ===
+              boatNo
+          ) ||
+          {};
+
+        const hasLocalRate = value =>
+          value !== null &&
+          value !== undefined &&
+          value !== "" &&
+          Number.isFinite(
+            Number(value)
+          ) &&
+          Number(value) > 0;
+
+        const formatLocalRate = value =>
+          Number(value)
+            .toFixed(2)
+            .replace(/\.?0+$/, "");
+
+        const localVenue =
+          prediction.venue ||
+          {};
+
+        const localWeather =
+          prediction.weather ||
+          {};
+
+        const venueName =
+          localVenue.name ||
+          prediction.race
+            ?.stadiumName ||
+          "この場";
+
+        const venueContextParts = [
+          `${venueName}・${localVenue.water || "水面種別未取得"}`,
+          localVenue.memo,
+          localWeather.comment
+        ]
+          .filter(Boolean)
+          .map(value =>
+            String(value)
+              .trim()
+              .replace(/[。]+$/, "")
+          );
+
+        const venueContext =
+          venueContextParts.length
+            ? `当地・水面の既存分析は「${venueContextParts.join(" / ")}」。`
+            : "当地・水面の分析コメントは未取得。";
+
+        localTheoryRows.forEach(
+          (item, position) => {
+            const boatNo =
+              getLocalBoatNo(item);
+
+            const score =
+              getLocalScore(item);
+
+            const indexItem =
+              indexes.byBoat?.[boatNo] ||
+              arrayify(indexes.scores).find(
+                row =>
+                  Number(row?.boatNo) ===
+                  boatNo
+              ) ||
+              {};
+
+            const entry =
+              getLocalEntry(boatNo);
+
+            const localRate =
+              entry.local?.winRate;
+
+            const courseCandidate = Number(
+              indexItem.course ??
+              item.course ??
+              boatNo
+            );
+
+            const course =
+              courseCandidate >= 1 &&
+              courseCandidate <= 6
+                ? courseCandidate
+                : boatNo;
+
+            const comparedItem =
+              localTheoryRows[
+                position === 0 ? 1 : 0
+              ] ||
+              null;
+
+            const comparedBoatNo =
+              getLocalBoatNo(
+                comparedItem
+              );
+
+            const comparedScore =
+              getLocalScore(
+                comparedItem
+              );
+
+            const comparedEntry =
+              getLocalEntry(
+                comparedBoatNo
+              );
+
+            const comparedLocalRate =
+              comparedEntry.local
+                ?.winRate;
+
+            const scoreNumber =
+              Number(score);
+
+            const comparedScoreNumber =
+              Number(comparedScore);
+
+            const hasScore =
+              score !== "" &&
+              score !== null &&
+              score !== undefined &&
+              Number.isFinite(
+                scoreNumber
+              );
+
+            const hasComparedScore =
+              comparedScore !== "" &&
+              comparedScore !== null &&
+              comparedScore !== undefined &&
+              Number.isFinite(
+                comparedScoreNumber
+              );
+
+            let comparison =
+              "比較できる相手艇の当地指数がないため、単独で確認。";
+
+            if (comparedBoatNo) {
+              if (
+                hasScore &&
+                hasComparedScore
+              ) {
+                const difference =
+                  Math.round(
+                    Math.abs(
+                      scoreNumber -
+                      comparedScoreNumber
+                    ) * 10
+                  ) / 10;
+
+                if (difference === 0) {
+                  comparison =
+                    `${comparedBoatNo}号艇と当地指数${scoreNumber}で同値。`;
+                } else if (
+                  scoreNumber >
+                  comparedScoreNumber
+                ) {
+                  comparison =
+                    `${comparedBoatNo}号艇より当地指数が${difference}高い。`;
+                } else {
+                  comparison =
+                    `${comparedBoatNo}号艇に次ぐ当地指数で、差は${difference}。`;
+                }
+              } else {
+                comparison =
+                  `${comparedBoatNo}号艇との比較対象だが、指数差の数値は未取得。`;
+              }
+            }
+
+            let rateComparison =
+              "当地勝率データがないため、当地巧者としての直接比較はできない。";
+
+            if (
+              hasLocalRate(localRate)
+            ) {
+              if (
+                hasLocalRate(
+                  comparedLocalRate
+                ) &&
+                comparedBoatNo
+              ) {
+                const rateDifference =
+                  Math.round(
+                    Math.abs(
+                      Number(localRate) -
+                      Number(
+                        comparedLocalRate
+                      )
+                    ) * 100
+                  ) / 100;
+
+                if (
+                  rateDifference === 0
+                ) {
+                  rateComparison =
+                    `当地勝率は両艇とも${formatLocalRate(localRate)}。`;
+                } else if (
+                  Number(localRate) >
+                  Number(
+                    comparedLocalRate
+                  )
+                ) {
+                  rateComparison =
+                    `当地勝率${formatLocalRate(localRate)}で、` +
+                    `${comparedBoatNo}号艇の${formatLocalRate(comparedLocalRate)}より${rateDifference}高い。`;
+                } else {
+                  rateComparison =
+                    `当地勝率${formatLocalRate(localRate)}で、` +
+                    `${comparedBoatNo}号艇の${formatLocalRate(comparedLocalRate)}より${rateDifference}低い。`;
+                }
+              } else {
+                rateComparison =
+                  `当地勝率は${formatLocalRate(localRate)}。比較艇の当地勝率は未取得。`;
+              }
+            }
+
+            let development =
+              "コースを確定できないため、当地・水面適応は展開の補足材料として確認する。";
+
+            if (course === 1) {
+              development =
+                "1コースでは当地・水面適応をイン先マイと内残しの補足に使う。";
+            } else if (course === 2) {
+              development =
+                "2コースでは当地・水面適応を2差しと差し残しの補足に使う。";
+            } else if (course === 3) {
+              development =
+                "3コースでは当地・水面適応をまくり・まくり差し後の残しと拾いの補足に使う。";
+            } else if (course === 4) {
+              development =
+                "4コースでは当地・水面適応をカド攻め後の残しと外側の拾いの補足に使う。";
+            } else if (course === 5) {
+              development =
+                "5コースでは当地・水面適応を展開に乗るまくり差しと2・3着拾いの補足に使う。";
+            } else if (course === 6) {
+              development =
+                "6コースでは当地・水面適応を最外からの追走と2・3着拾いの補足に使う。";
+            }
+
+            const reflectedRoles = [];
+
+            const honmeiBoatNo = Number(
+              prediction.mainSheet
+                ?.honmei?.boatNo ||
+              prediction.mainSheet
+                ?.main?.boatNo ||
+              0
+            );
+
+            if (
+              honmeiBoatNo === boatNo
+            ) {
+              reflectedRoles.push(
+                "1着候補"
+              );
+            }
+
+            if (
+              arrayify(
+                raceFlow.holdBoats
+              ).some(
+                row =>
+                  getLocalBoatNo(row) ===
+                  boatNo
+              )
+            ) {
+              reflectedRoles.push(
+                "残し"
+              );
+            }
+
+            if (
+              arrayify(
+                raceFlow.pickupBoats
+              ).some(
+                row =>
+                  getLocalBoatNo(row) ===
+                  boatNo
+              )
+            ) {
+              reflectedRoles.push(
+                "拾い"
+              );
+            }
+
+            const reflection =
+              reflectedRoles.length
+                ? `現在の予想では${reflectedRoles.join("・")}へ反映。`
+                : "現在の予想では1着候補・残し・拾いへ直接反映せず、当地・水面評価の補足材料。";
+
+            const sourceReason = String(
+              item.comment ||
+              item.reason ||
+              item.text ||
+              indexItem.shortComment ||
+              ""
+            )
+              .trim()
+              .replace(/[。]+$/, "");
+
+            const reasonText =
+              sourceReason
+                ? `指数側の根拠は「${sourceReason}」。`
+                : "指数側の個別根拠は未取得。";
+
+            items.push({
+              key: "local",
+              label:
+                THEORY_LABELS.local,
+              no: boatNo || "",
+              score,
+              text:
+                `${boatNo}号艇を当地巧者理論の既存表示${position + 1}位として確認。` +
+                comparison +
+                rateComparison +
+                development +
+                reflection +
+                venueContext +
+                "当地評価は展開・コース・ST・展示の後に補正し、当地数字だけで1着候補や買い目を決めない。" +
+                reasonText
+            });
+          }
+        );
+      }
+    }
 
         const slitPhase =
       raceFlow.phases?.slit || null;
