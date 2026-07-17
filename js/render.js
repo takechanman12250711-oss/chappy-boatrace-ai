@@ -655,20 +655,6 @@ if (raceInfoArea) {
       )}
     </div>
 
-        <div class="v3-ai-summary-box">
-      <h3>AIまとめ</h3>
-      <p>${escapeHtml(summary)}</p>
-    </div>
-
-    ${
-      prediction.dataQuality &&
-      typeof prediction
-        .dataQuality === "object"
-        ? `
-          <div
-            class="v3-ai-summary-box"
-          >
-            <h3>
               データ充足度
               ${escapeHtml(
                 prediction
