@@ -2453,7 +2453,35 @@ function getPaperClassName(item) {
     pushTheoryFromRanking(items, "road", indexes.michuRanking || indexes.roadRanking);
     pushTheoryFromRanking(items, "local", indexes.localRanking);
 
-    pushTheoryText(items, "slit", finalAi.slitAlert || exhibition.slitAlert || raceFlow.slitAlert);
+        const slitPhase =
+      raceFlow.phases?.slit || null;
+
+    if (
+      Array.isArray(
+        slitPhase?.alerts
+      ) &&
+      slitPhase.alerts.length
+    ) {
+      slitPhase.alerts.forEach(
+        alert => {
+          pushTheoryText(
+            items,
+            "slit",
+            alert
+          );
+        }
+      );
+    } else {
+      pushTheoryText(
+        items,
+        "slit",
+        slitPhase?.comment ||
+          finalAi.slitAlert ||
+          exhibition.slitAlert ||
+          raceFlow.slitAlert ||
+          "スリットアラートの判定データがありません。"
+      );
+    }
     pushTheoryText(items, "doubleTime", finalAi.doubleTime || exhibition.doubleTime);
     pushTheoryText(items, "shinsam", finalAi.shinsam || exhibition.shinsam);
     pushTheoryText(items, "odds", finalAi.syntheticOdds || prediction.syntheticOdds);
