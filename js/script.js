@@ -807,11 +807,14 @@
     panel.innerHTML = `
       <span class="official-race-trend-scores">
         <span class="official-race-trend-score is-honmei">
-          <span class="official-race-trend-label">本命AI期待度</span>
+    panel.innerHTML = `
+      <span class="official-race-trend-scores">
+        <span class="official-race-trend-score is-honmei">
+          <span class="official-race-trend-label">イン逃げ期待度</span>
           <strong class="official-race-trend-value">${Math.round(honmei)}%</strong>
         </span>
         <span class="official-race-trend-score is-manshu">
-          <span class="official-race-trend-label">万舟展開期待度</span>
+          <span class="official-race-trend-label">万舟波乱期待度</span>
           <strong class="official-race-trend-value">${Math.round(manshu)}%</strong>
         </span>
       </span>
