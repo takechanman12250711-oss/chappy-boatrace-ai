@@ -1027,7 +1027,7 @@
         "officialSelectedRace"
       );
 
-    const linkDescription =
+        const linkDescription =
       document.getElementById(
         "officialLinkDescription"
       );
@@ -1035,6 +1035,11 @@
     const officialLink =
       document.getElementById(
         "officialRaceLink"
+      );
+
+    const officialVoteLink =
+      document.getElementById(
+        "officialVoteLink"
       );
 
     if (
