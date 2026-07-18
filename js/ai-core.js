@@ -3312,95 +3312,368 @@ function buildRaceTrendEvaluation(data) {
     95
   );
 
-  const honmeiScore = clamp(
-    round(
-      scoreOf(innerScenario) * 0.45 +
-      innerHead * 0.20 +
-      innerHold * 0.18 +
-      innerEdgeScore * 0.17
-    ),
-    1,
+    /*
+    一覧比較専用指数。
+
+    本命：
+    1号艇がイン逃げできる構成か。
+
+    万舟：
+    3〜6号艇の人気になりにくい艇に、
+    現実的な攻め・拾い展開があるか。
+
+    判定順：
+    1. 選手の実力構成
+    2. 各艇の展開
+    3. 場の特性
+
+    買い目作成・削除・自動絞り込みには使用しない。
+  */
+  const venueFeature = getVenueFeature(data);
+
+  const classNameOf = (boatNo) =>
+    safeText(
+      getClassName(byBoat[boatNo]),
+      "級別不明"
+    ).toUpperCase();
+
+  const classAbilityOf = (boatNo) => {
+    const className = classNameOf(boatNo);
+
+    if (className.includes("A1")) return 100;
+    if (className.includes("A2")) return 78;
+    if (className.includes("B1")) return 52;
+    if (className.includes("B2")) return 30;
+
+    return 50;
+  };
+
+  /*
+    万舟構成では、外側のA1・A2は
+    実力上位として予想されやすいため評価を抑える。
+  */
+  const longshotClassOf = (boatNo) => {
+    const className = classNameOf(boatNo);
+
+    if (className.includes("A1")) return 12;
+    if (className.includes("A2")) return 28;
+    if (className.includes("B1")) return 70;
+    if (className.includes("B2")) return 85;
+
+    return 50;
+  };
+
+  const isStrongClass = (boatNo) => {
+    const className = classNameOf(boatNo);
+
+    return (
+      className.includes("A1") ||
+      className.includes("A2")
+    );
+  };
+
+  const indexScore = (boatNo, key) =>
+    toNumber(byBoat[boatNo]?.indexes?.[key], 0);
+
+  /*
+    数字が簡単に高くならないようにする。
+    通常構成は20〜40台、
+    根拠が揃った場合だけ50以上とする。
+  */
+  const strictScore = (rawScore) =>
+    clamp(
+      round((rawScore - 40) * 1.35),
+      5,
+      85
+    );
+
+  /* ===============================
+    本命＝1号艇のイン逃げ
+  =============================== */
+
+  const courseThreatRate = {
+    2: 0.95,
+    3: 0.90,
+    4: 0.85,
+    5: 0.72,
+    6: 0.65
+  };
+
+  const challengerCandidates = [2, 3, 4, 5, 6]
+    .map((boatNo) => ({
+      boatNo,
+      className: classNameOf(boatNo),
+      classAbility: classAbilityOf(boatNo),
+      effectiveAbility:
+        classAbilityOf(boatNo) *
+        courseThreatRate[boatNo]
+    }))
+    .sort(
+      (a, b) =>
+        b.effectiveAbility -
+        a.effectiveAbility
+    );
+
+  const strongestChallenger =
+    challengerCandidates[0];
+
+  const boat1ClassAbility =
+    classAbilityOf(1);
+
+  const escapeSkillControl = clamp(
+    boat1ClassAbility * 0.65 +
+    (
+      100 -
+      strongestChallenger.effectiveAbility
+    ) * 0.35,
+    0,
     100
   );
 
-  const manshuScore = clamp(
-    round(
-      scoreOf(attackScenario) * 0.38 +
-      outerHead * 0.18 +
-      outerPickup * 0.12 +
-      attackEdgeScore * 0.15 +
-      volatility * 0.10 +
-      innerCollapse * 0.07
-    ),
-    1,
+  const escapeScenarioScore =
+    scoreOf(escape);
+
+  const strongestOpposingScenarioScore =
+    Math.max(
+      scoreOf(sashi),
+      scoreOf(threeAttack),
+      scoreOf(fourAttack)
+    );
+
+  const strictEscapeEdge =
+    escapeScenarioScore -
+    strongestOpposingScenarioScore;
+
+  const escapeScenarioControl = clamp(
+    escapeScenarioScore +
+    strictEscapeEdge * 1.5,
+    0,
     100
   );
+
+  const boat1Hold =
+    roleScore(1, "hold");
+
+  const boat1Flow = Math.max(
+    roleScore(1, "flow"),
+    indexScore(1, "raceFlow")
+  );
+
+  const oneEscapeFlow = clamp(
+    escapeScenarioControl * 0.65 +
+    boat1Hold * 0.20 +
+    boat1Flow * 0.15,
+    0,
+    100
+  );
+
+  const honmeiRaw =
+    escapeSkillControl * 0.50 +
+    oneEscapeFlow * 0.35 +
+    toNumber(venueFeature.inPower, 65) * 0.15;
+
+  const honmeiScore =
+    strictScore(honmeiRaw);
+
+  /* ===============================
+    万舟＝外側からの波乱
+  =============================== */
+
+  const outerScenarioScore = Math.max(
+    scoreOf(threeAttack),
+    scoreOf(fourAttack)
+  );
+
+  const outerScenarioPressure = clamp(
+    50 +
+    (
+      outerScenarioScore -
+      escapeScenarioScore
+    ) * 2,
+    0,
+    100
+  );
+
+  const venueScoreForBoat = (boatNo) => {
+    if (boatNo === 3) {
+      return average([
+        venueFeature.makuri,
+        venueFeature.makuriSashi
+      ], 55);
+    }
+
+    if (boatNo === 4) {
+      return toNumber(
+        venueFeature.kado,
+        55
+      );
+    }
+
+    return toNumber(
+      venueFeature.outside,
+      50
+    );
+  };
+
+  const outerCandidates = [3, 4, 5, 6]
+    .map((boatNo) => {
+      const attack = roleScore(
+        boatNo,
+        "attack"
+      );
+
+      const flow = Math.max(
+        roleScore(boatNo, "flow"),
+        indexScore(boatNo, "raceFlow")
+      );
+
+      const pickup = roleScore(
+        boatNo,
+        "pickup"
+      );
+
+      let courseFlow = 0;
+      let roleLabel = "展開拾い";
+
+      if (boatNo === 3) {
+        courseFlow =
+          attack * 0.55 +
+          flow * 0.35 +
+          pickup * 0.10;
+
+        roleLabel = "3コース攻め";
+      } else if (boatNo === 4) {
+        courseFlow =
+          attack * 0.50 +
+          flow * 0.30 +
+          pickup * 0.20;
+
+        roleLabel = "4カド攻め";
+      } else {
+        courseFlow =
+          attack * 0.25 +
+          flow * 0.30 +
+          pickup * 0.45;
+
+        roleLabel =
+          `${boatNo}号艇の展開拾い`;
+      }
+
+      const flowEvidence = clamp(
+        courseFlow * 0.70 +
+        outerScenarioPressure * 0.30,
+        0,
+        100
+      );
+
+      const classLongshot =
+        longshotClassOf(boatNo);
+
+      const venueScore =
+        venueScoreForBoat(boatNo);
+
+      const rawScore =
+        classLongshot * 0.50 +
+        flowEvidence * 0.35 +
+        venueScore * 0.15;
+
+      return {
+        boatNo,
+        className: classNameOf(boatNo),
+        roleLabel,
+        classLongshot,
+        flowEvidence,
+        venueScore,
+        rawScore
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.rawScore -
+        a.rawScore
+    );
+
+  const bestOuter =
+    outerCandidates[0];
+
+  const strongOuterCount = [3, 4, 5, 6]
+    .filter(isStrongClass)
+    .length;
+
+  /*
+    外側にA1・A2がいる場合は、
+    外決着でも万舟になりにくい構成として抑える。
+  */
+  const manshuRaw =
+    bestOuter.rawScore -
+    Math.min(
+      strongOuterCount * 5,
+      15
+    );
+
+  const manshuScore =
+    strictScore(manshuRaw);
 
   const levelOf = (score) => {
     if (score >= 70) return "高";
-    if (score >= 55) return "中";
+    if (score >= 50) return "中";
     return "低";
   };
 
-  const edgeText = innerEdge >= 5
-    ? `内展開が攻めを${round(innerEdge)}点上回る`
-    : innerEdge <= -5
-      ? `${attackScenario.label}が内展開を${round(Math.abs(innerEdge))}点上回る`
-      : "内と攻めの成立度が拮抗";
+  const escapeDifferenceText =
+    strictEscapeEdge >= 5
+      ? `1逃げが対抗展開を${round(strictEscapeEdge)}点上回る`
+      : strictEscapeEdge <= -5
+        ? `対抗展開が1逃げを${round(Math.abs(strictEscapeEdge))}点上回る`
+        : "1逃げと対抗展開が拮抗";
 
   const honmeiReasons = [
-    `${innerScenario.label}${round(innerScenario.score)}点`,
-    edgeText
+    `1号艇${classNameOf(1)}・相手最上位${strongestChallenger.boatNo}号艇${strongestChallenger.className}`,
+    `1逃げ展開${round(escapeScenarioScore)}点`,
+    escapeDifferenceText,
+    `${venueFeature.name}イン傾向${round(venueFeature.inPower)}点`
   ];
-  const holdLabels = {
-    1: "1号艇のイン残し",
-    2: "2差し・残り",
-    4: "4号艇の現実的な残し"
-  };
-  const bestHold = holdCandidates[0];
-
-  if (bestHold.score >= 60) {
-    honmeiReasons.push(
-      `${holdLabels[bestHold.boatNo]}${round(bestHold.score)}点`
-    );
-  }
 
   const manshuReasons = [
-    `${attackScenario.label}${round(attackScenario.score)}点`,
-    innerEdge <= -5
-      ? `攻め展開が内を${round(Math.abs(innerEdge))}点上回る`
-      : innerEdge < 5
-        ? "内と攻めの成立度が拮抗"
-        : `内展開が攻めを${round(innerEdge)}点上回る`
+    `${bestOuter.boatNo}号艇${bestOuter.className}の${bestOuter.roleLabel}`,
+    `攻め・拾い成立度${round(bestOuter.flowEvidence)}点`,
+    strongOuterCount > 0
+      ? `外側のA1・A2が${strongOuterCount}艇のため万舟評価を抑制`
+      : "外側にA1・A2不在",
+    `${venueFeature.name}外展開傾向${round(bestOuter.venueScore)}点`
   ];
-  const bestPickup = pickupCandidates[0];
-
-  if (bestPickup.score >= 60) {
-    manshuReasons.push(
-      `${bestPickup.boatNo}号艇の展開拾い${round(bestPickup.score)}点`
-    );
-  } else if (mainGap <= 5) {
-    manshuReasons.push(
-      `上位展開差${round(mainGap)}点で拮抗`
-    );
-  }
 
   return {
     ready: true,
     raceNo: getRaceNo(data),
-    venue: getVenueFeature(data).name,
+    venue: venueFeature.name,
+
     honmei: {
       score: honmeiScore,
       level: levelOf(honmeiScore),
       reasons: honmeiReasons
     },
+
     manshu: {
       score: manshuScore,
       level: levelOf(manshuScore),
       reasons: manshuReasons
     },
+
     dataStatus,
+
     evidence: {
+      purpose: {
+        honmei: "1号艇のイン逃げ",
+        manshu: "3〜6号艇からの万舟波乱"
+      },
+
+      priority: [
+        "選手の実力構成",
+        "各艇の展開",
+        "場の特性"
+      ],
+
       mainScenario: mainScenario
         ? {
             type: mainScenario.type,
@@ -3408,6 +3681,7 @@ function buildRaceTrendEvaluation(data) {
             score: mainScenario.score
           }
         : null,
+
       subScenario: subScenario
         ? {
             type: subScenario.type,
@@ -3415,30 +3689,56 @@ function buildRaceTrendEvaluation(data) {
             score: subScenario.score
           }
         : null,
+
       scenarioScores: {
         escape: scoreOf(escape),
         sashi: scoreOf(sashi),
         threeAttack: scoreOf(threeAttack),
         fourAttack: scoreOf(fourAttack)
       },
+
       mainGap: round(mainGap),
-      innerEdge: round(innerEdge),
+      innerEdge: round(strictEscapeEdge),
+
       components: {
         honmei: {
-          innerScenario: round(innerScenario.score),
-          innerHead: round(innerHead),
-          innerHold: round(innerHold),
-          innerEdge: round(innerEdgeScore)
+          boat1Class: classNameOf(1),
+          boat1ClassAbility:
+            round(boat1ClassAbility),
+          strongestChallenger:
+            strongestChallenger.boatNo,
+          strongestChallengerClass:
+            strongestChallenger.className,
+          skillControl:
+            round(escapeSkillControl),
+          escapeScenario:
+            round(escapeScenarioScore),
+          escapeFlow:
+            round(oneEscapeFlow),
+          venueInPower:
+            round(venueFeature.inPower),
+          rawScore:
+            round(honmeiRaw)
         },
+
         manshu: {
-          attackScenario: round(attackScenario.score),
-          outerHead: round(outerHead),
-          outerPickup: round(outerPickup),
-          attackEdge: round(attackEdgeScore),
-          volatility: round(volatility),
-          innerCollapse: round(innerCollapse)
+          targetBoat:
+            bestOuter.boatNo,
+          targetClass:
+            bestOuter.className,
+          classLongshot:
+            round(bestOuter.classLongshot),
+          outerFlow:
+            round(bestOuter.flowEvidence),
+          venueOutside:
+            round(bestOuter.venueScore),
+          strongOuterCount,
+          rawScore:
+            round(manshuRaw)
         }
       },
+
+      outerCandidates,
       relations: raceScenarios.relations
     }
   };
