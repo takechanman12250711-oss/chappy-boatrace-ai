@@ -807,9 +807,6 @@
     panel.innerHTML = `
       <span class="official-race-trend-scores">
         <span class="official-race-trend-score is-honmei">
-    panel.innerHTML = `
-      <span class="official-race-trend-scores">
-        <span class="official-race-trend-score is-honmei">
           <span class="official-race-trend-label">イン逃げ期待度</span>
           <strong class="official-race-trend-value">${Math.round(honmei)}%</strong>
         </span>
