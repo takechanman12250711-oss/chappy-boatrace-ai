@@ -479,6 +479,11 @@
   function createPrediction(data) {
     const race = normalizeRaceData(data);
 
+    const officialHistory =
+      createOfficialHistoryAnalysis(
+        race
+      );
+
     const venue = analyzeVenue(race);
     const newEngine = analyzeNewEngine(race, venue);
     const weather = analyzeWeather(race, venue);
