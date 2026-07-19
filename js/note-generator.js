@@ -121,92 +121,183 @@
     };
   }
 
-    function createPracticalSelection(prediction) {
-    const lists = ticketLists(prediction);
+      function createPracticalSelection(prediction) {
+    const lists =
+      ticketLists(prediction);
+
     const selected = [];
     const used = new Set();
 
-    function add(list, limit, category) {
+    const mainScore =
+      getScore(
+        prediction?.confidence ||
+        prediction?.finalAi?.confidence
+      );
+
+    const waveScore =
+      getScore(
+        prediction?.manshuPower ||
+        prediction?.finalAi?.manshuPower
+      );
+
+    const isWave =
+      waveScore > mainScore;
+
+    function add(
+      list,
+      limit,
+      category
+    ) {
       let added = 0;
 
-      arrayify(list).forEach(item => {
-        if (added >= limit || selected.length >= 7) return;
+      arrayify(list).forEach(
+        item => {
+          if (
+            added >= limit ||
+            selected.length >= 7
+          ) {
+            return;
+          }
 
-        const row = normalizeTicket(item, category);
+          const row =
+            normalizeTicket(
+              item,
+              category
+            );
 
-        if (!row.ticket || used.has(row.ticket)) return;
+          if (
+            !row.ticket ||
+            used.has(row.ticket)
+          ) {
+            return;
+          }
 
-        used.add(row.ticket);
-        selected.push({ ...row, category });
-        added += 1;
-      });
+          used.add(row.ticket);
+
+          selected.push({
+            ...row,
+            category
+          });
+
+          added += 1;
+        }
+      );
     }
 
-    add(lists.main, 3, "本線");
-    add(lists.cover, 2, "押さえ");
-    add(lists.flow, 1, "流し");
-    add(lists.hole, 1, "万舟・穴");
-
-    if (selected.length < 5) {
-      add(lists.main, 7, "本線");
-      add(lists.cover, 7, "押さえ");
-      add(lists.flow, 7, "流し");
-      add(lists.hole, 7, "万舟・穴");
-    }
-
-    const requestedBudget =
-      safeNumber(
-        prediction?.allocationBudget,
-        1000
-      ) || 1000;
-
-    const budgetUnits =
-      Math.max(
-        1,
-        Math.floor(
-          requestedBudget / 100
-        )
+    if (isWave) {
+      add(
+        lists.hole,
+        7,
+        "波乱候補"
+      );
+    } else {
+      add(
+        lists.main,
+        3,
+        "中心候補"
       );
 
-    const practical =
-      selected.slice(
-        0,
-        Math.min(
+      add(
+        lists.cover,
+        2,
+        "展開対応"
+      );
+
+      add(
+        lists.flow,
+        2,
+        "相手拡張"
+      );
+
+      if (
+        selected.length < 7
+      ) {
+        add(
+          lists.main,
           7,
-          budgetUnits
-        )
+          "中心候補"
+        );
+
+        add(
+          lists.cover,
+          7,
+          "展開対応"
+        );
+
+        add(
+          lists.flow,
+          7,
+          "相手拡張"
+        );
+      }
+    }
+
+    return selected
+      .slice(0, 7)
+      .map(item => ({
+        ...item,
+        amount: 0
+      }));
+  }
+
+  function createDisplayCandidates(
+    prediction
+  ) {
+    const lists =
+      ticketLists(prediction);
+
+    const mainScore =
+      getScore(
+        prediction?.confidence ||
+        prediction?.finalAi?.confidence
       );
 
-    if (!practical.length) {
-      return [];
-    }
+    const waveScore =
+      getScore(
+        prediction?.manshuPower ||
+        prediction?.finalAi?.manshuPower
+      );
 
-    const allocatedUnits =
-      practical.map(() => 1);
+    const isWave =
+      waveScore > mainScore;
 
-    let remainingUnits =
-      budgetUnits -
-      practical.length;
+    const sources =
+      isWave
+        ? [lists.hole]
+        : [
+            lists.main,
+            lists.cover,
+            lists.flow
+          ];
 
-    let index = 0;
+    const candidates = [];
+    const used = new Set();
 
-    while (remainingUnits > 0) {
-      allocatedUnits[
-        index % practical.length
-      ] += 1;
+    sources.forEach(list => {
+      arrayify(list).forEach(
+        item => {
+          const row =
+            normalizeTicket(
+              item,
+              "AI候補"
+            );
 
-      remainingUnits -= 1;
-      index += 1;
-    }
+          if (
+            !row.ticket ||
+            used.has(row.ticket)
+          ) {
+            return;
+          }
 
-    return practical.map(
-      (item, itemIndex) => ({
-        ...item,
-        amount:
-          allocatedUnits[
-            itemIndex
-          ] * 100
-      })
+          used.add(row.ticket);
+          candidates.push(row);
+        }
+      );
+    });
+
+    return candidates.slice(
+      0,
+      24
     );
   }
 
