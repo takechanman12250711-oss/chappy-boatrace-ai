@@ -388,36 +388,78 @@
                   )}
                 </td>
 
-                <td>
+                                <td>
                   ${row.samples}
                 </td>
 
                 <td>
-                  ${formatRate(
-                    row.winRate
-                  )}
+                  <strong>
+                    ${formatRate(
+                      row.winRate
+                    )}
+                  </strong>
+                  <br>
+                  <small>
+                    場平均
+                    ${formatRate(
+                      row.venueWinRate
+                    )}
+                    ／ 差
+                    ${formatRateDifference(
+                      row.winRateDifference
+                    )}
+                  </small>
                 </td>
 
                 <td>
-                  ${formatRate(
-                    row.top3Rate
-                  )}
+                  <strong>
+                    ${formatRate(
+                      row.top3Rate
+                    )}
+                  </strong>
+                  <br>
+                  <small>
+                    場平均
+                    ${formatRate(
+                      row.venueTop3Rate
+                    )}
+                    ／ 差
+                    ${formatRateDifference(
+                      row.top3RateDifference
+                    )}
+                  </small>
                 </td>
 
                 <td>
-                  ${formatSt(
-                    row.averageSt
-                  )}
+                  <strong>
+                    ${formatSt(
+                      row.averageSt
+                    )}
+                  </strong>
+                  <br>
+                  <small>
+                    場平均
+                    ${formatSt(
+                      row.venueAverageSt
+                    )}
+                    ／ 差
+                    ${formatStDifference(
+                      row.averageStDifference
+                    )}
+                  </small>
                 </td>
 
                 <td>
-                  ${
-                    row.samples === 0
-                      ? "データなし"
-                      : row.usable
-                        ? "参考可"
-                        : "サンプル不足"
-                  }
+                  <strong>
+                    ${escapeHtml(
+                      row.compatibility
+                    )}
+                  </strong>
+                  <br>
+                  <small>
+                    本人${row.samples}走
+                    ／ 場${row.venueSamples}走
+                  </small>
                 </td>
               </tr>
             `)
