@@ -53,14 +53,22 @@
             )
         : [];
 
+        const historyContext =
+      prediction?.race
+        ?.historyContext || {};
+
     const racers =
       Array.isArray(
-        prediction?.race
-          ?.historyContext?.racers
+        historyContext.racers
       )
-        ? prediction.race
-            .historyContext.racers
+        ? historyContext.racers
         : [];
+
+    const venue =
+      historyContext.venue || null;
+
+    const venueFrames =
+      venue?.boatPerformance || {};
 
     return entries.map(entry => {
       const boatNo =
