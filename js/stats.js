@@ -1591,417 +1591,599 @@
     );
   }
     function renderStats() {
-    const results =
-      S.loadResults();
+  const results = S.loadResults();
+  const history = buildRaceHistory(results);
 
-    const stats =
-      calcStats(results);
-      
-          const actualStats =
-      calcActualStats(
-        results
-      );
+  const normalizeTicket = value => {
+    const boats =
+      String(value || "")
+        .match(/[1-6]/g) || [];
 
-    const renderBucketRows =
-      buckets => {
-        if (!buckets.length) {
-          return `
+    return (
+      boats.length === 3 &&
+      new Set(boats).size === 3
+    )
+      ? boats.join("-")
+      : "";
+  };
+
+  const rate = (
+    hits,
+    total
+  ) =>
+    total > 0
+      ? U.round(
+          (hits / total) * 100,
+          1
+        )
+      : 0;
+
+  const derivePracticalTickets =
+    tickets => {
+      const source =
+        Array.isArray(tickets)
+          ? tickets
+          : [];
+
+      const selected = [];
+      const used = new Set();
+
+      const add = (
+        role,
+        limit
+      ) => {
+        let added = 0;
+
+        source.forEach(item => {
+          const ticket =
+            normalizeTicket(
+              item?.ticket
+            );
+
+          if (
+            added >= limit ||
+            selected.length >= 7 ||
+            String(
+              item?.role || ""
+            ) !== role ||
+            !ticket ||
+            used.has(ticket)
+          ) {
+            return;
+          }
+
+          used.add(ticket);
+          selected.push(ticket);
+          added += 1;
+        });
+      };
+
+      const hasMain =
+        source.some(
+          item =>
+            String(
+              item?.role || ""
+            ) === "本命"
+        );
+
+      if (!hasMain) {
+        return [];
+      }
+
+      add("本命", 3);
+      add("押さえ", 2);
+      add("流し", 1);
+      add("穴・万舟候補", 1);
+
+      if (selected.length < 5) {
+        source.forEach(item => {
+          const ticket =
+            normalizeTicket(
+              item?.ticket
+            );
+
+          if (
+            selected.length < 7 &&
+            ticket &&
+            !used.has(ticket)
+          ) {
+            used.add(ticket);
+            selected.push(ticket);
+          }
+        });
+      }
+
+      return selected;
+    };
+
+  const predictionRows =
+    history
+      .filter(item =>
+        Boolean(item?.prediction)
+      )
+      .map(item => {
+        const resultTicket =
+          normalizeTicket(
+            item?.resultTicket
+          );
+
+        const mainTicket =
+          (
+            item.predictionTickets ||
+            []
+          ).find(
+            ticket =>
+              String(
+                ticket?.role || ""
+              ) === "本命"
+          ) ||
+          item.predictionTickets?.[0] ||
+          null;
+
+        const honmeiBoat =
+          normalizeTicket(
+            mainTicket?.ticket
+          ).split("-")[0] || "";
+
+        const practicalTickets =
+          derivePracticalTickets(
+            item.predictionTickets
+          );
+
+        const settled =
+          item.raceStatus ===
+            "結果確定" &&
+          Boolean(resultTicket);
+
+        return {
+          ...item,
+          resultTicket,
+          honmeiBoat,
+          practicalTickets,
+          settled,
+
+          honmeiHit:
+            settled &&
+            resultTicket
+              .split("-")[0] ===
+              honmeiBoat,
+
+          practicalHit:
+            settled &&
+            practicalTickets.includes(
+              resultTicket
+            )
+        };
+      });
+
+  const settledRows =
+    predictionRows.filter(
+      item => item.settled
+    );
+
+  const honmeiHits =
+    settledRows.filter(
+      item => item.honmeiHit
+    ).length;
+
+  const practicalRows =
+    settledRows.filter(
+      item =>
+        item.practicalTickets
+          .length > 0
+    );
+
+  const practicalHits =
+    practicalRows.filter(
+      item => item.practicalHit
+    ).length;
+
+  const buildGroups = (
+    list,
+    getLabel
+  ) => {
+    const map = new Map();
+
+    list.forEach(item => {
+      const label =
+        String(
+          getLabel(item) ||
+          "不明"
+        );
+
+      if (!map.has(label)) {
+        map.set(label, {
+          label,
+          count: 0,
+          honmeiHits: 0,
+          practicalCount: 0,
+          practicalHits: 0
+        });
+      }
+
+      const bucket =
+        map.get(label);
+
+      bucket.count += 1;
+
+      if (item.honmeiHit) {
+        bucket.honmeiHits += 1;
+      }
+
+      if (
+        item.practicalTickets
+          .length > 0
+      ) {
+        bucket.practicalCount += 1;
+
+        if (item.practicalHit) {
+          bucket.practicalHits += 1;
+        }
+      }
+    });
+
+    return Array.from(
+      map.values()
+    ).sort(
+      (a, b) =>
+        b.count - a.count ||
+        a.label.localeCompare(
+          b.label,
+          "ja"
+        )
+    );
+  };
+
+  const venueGroups =
+    buildGroups(
+      settledRows,
+      item =>
+        item.place ||
+        `場コード${item.jcd}`
+    );
+
+  const methodGroups =
+    buildGroups(
+      settledRows,
+      item =>
+        item.winningMethod ||
+        "不明"
+    );
+
+  const renderGroupRows =
+    groups =>
+      groups.length
+        ? groups
+            .map(group => `
+              <tr>
+                <td>
+                  ${U.safeText(
+                    group.label
+                  )}
+                </td>
+
+                <td>
+                  ${group.count}R
+                </td>
+
+                <td>
+                  ${group.honmeiHits}
+                  /
+                  ${group.count}
+                  （${rate(
+                    group.honmeiHits,
+                    group.count
+                  )}%）
+                </td>
+
+                <td>
+                  ${group.practicalHits}
+                  /
+                  ${group.practicalCount}
+                  （${rate(
+                    group.practicalHits,
+                    group.practicalCount
+                  )}%）
+                </td>
+              </tr>
+            `)
+            .join("")
+        : `
             <tr>
               <td colspan="4">
                 検証データがありません
               </td>
             </tr>
           `;
-        }
 
-        return buckets
-          .map(bucket => `
+  const recentRows =
+    settledRows.slice(0, 10);
+
+  const recentHtml =
+    recentRows.length
+      ? recentRows
+          .map(item => `
             <tr>
               <td>
                 ${U.safeText(
-                  bucket.label
+                  item.date || "-"
                 )}
               </td>
+
               <td>
-                ${bucket.ticketCount}点
+                ${U.safeText(
+                  item.place ||
+                  item.jcd ||
+                  "-"
+                )}
+                ${item.raceNo || "-"}R
               </td>
+
               <td>
-                ${bucket.hitCount}件
-                （${U.round(
-                  bucket.hitRate,
-                  1
-                )}%）
+                ${
+                  item.honmeiBoat
+                    ? `${item.honmeiBoat}号艇`
+                    : "-"
+                }
               </td>
+
               <td>
-                ${U.round(
-                  bucket.recoveryRate,
-                  1
-                )}%
+                ${U.safeText(
+                  item.resultTicket
+                )}
+              </td>
+
+              <td>
+                ${item.honmeiHit
+                  ? "◎"
+                  : "×"}
+              </td>
+
+              <td>
+                ${
+                  item.practicalTickets
+                    .length === 0
+                    ? "見送り"
+                    : item.practicalHit
+                      ? "的中"
+                      : "不的中"
+                }
               </td>
             </tr>
           `)
-          .join("");
-      };
+          .join("")
+      : `
+          <tr>
+            <td colspan="6">
+              公式結果と照合できる予想がありません
+            </td>
+          </tr>
+        `;
 
-            const roleBuckets =
-      [
-        "本命",
-        "押さえ",
-        "流し",
-        "拾い",
-        "穴・万舟候補"
-      ]
-        .map(
-          role =>
-            stats.roleStats?.[role]
-        )
-        .filter(Boolean);
+  const sampleMessage =
+    settledRows.length < 30
+      ? `
+        ⚠️ サンプル不足：
+        現在${settledRows.length}レース。
+        30レース未満の数値は参考値として扱います。
+      `
+      : `
+        ${settledRows.length}レースの
+        公式結果で検証しています。
+      `;
 
-    const oddsValueOrder = [
-      "低配当",
-      "標準",
-      "妙味あり",
-      "穴妙味",
-      "大穴妙味",
-      "高配当注意",
-      "未判定"
-    ];
+  U.setHtml("statsArea", `
+    <div class="v3-final-block">
 
-    const oddsValueBuckets =
-      oddsValueOrder
-        .map(
-          label =>
-            stats.oddsValueStats?.[
-              label
-            ]
-        )
-        .filter(
-          bucket =>
-            bucket &&
-            bucket.ticketCount > 0
-        );
+      <h3>
+        AI予想の検証結果
+      </h3>
 
-    U.setHtml("statsArea", `
-            <div class="v3-final-block">
-        <h3>
-          実購入成績
-        </h3>
+      <p>
+        購入金額や回収率は使わず、
+        保存済みの事前予想と同じレースの
+        公式結果だけを照合しています。
+      </p>
+
+      <p>
+        ${sampleMessage}
+      </p>
+
+    </div>
+
+
+    <div class="v3-final-grid">
+
+      <div class="v3-final-block">
+        <h3>AI予想数</h3>
 
         <p>
-          実際に保存した買い目を、
-          同じレースの公式結果・公式払戻だけで
-          照合した成績です。
-          結果待ちは収支・回収率に含めません。
+          ${predictionRows.length}
+          レース
         </p>
       </div>
 
-      <div class="v3-final-grid">
-        <div class="v3-final-block">
-          <h3>
-            記録レース
-          </h3>
 
-          <p>
-            ${actualStats.purchaseRaceCount}
-            レース
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            記録買い目
-          </h3>
-
-          <p>
-            ${actualStats.purchaseTicketCount}
-            点
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            確定買い目
-          </h3>
-
-          <p>
-            ${actualStats.settledTicketCount}
-            点
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            結果待ち
-          </h3>
-
-          <p>
-            ${actualStats.pendingTicketCount}
-            点
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            実購入総額
-          </h3>
-
-          <p>
-            ${U.formatMoney(
-              actualStats
-                .totalPurchaseAmount
-            )}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            結果待ち購入
-          </h3>
-
-          <p>
-            ${U.formatMoney(
-              actualStats.pendingBet
-            )}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            成績対象購入
-          </h3>
-
-          <p>
-            ${U.formatMoney(
-              actualStats.totalBet
-            )}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            公式払戻
-          </h3>
-
-          <p>
-            ${U.formatMoney(
-              actualStats.totalPayout
-            )}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            実収支
-          </h3>
-
-          <p>
-            ${U.formatMoney(
-              actualStats.profit
-            )}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            実回収率
-          </h3>
-
-          <p>
-            ${U.round(
-              actualStats.recoveryRate,
-              1
-            )}%
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            的中レース
-          </h3>
-
-          <p>
-            ${actualStats.hitRaceCount}
-            /
-            ${actualStats.settledRaceCount}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            的中率
-          </h3>
-
-          <p>
-            ${U.round(
-              actualStats.hitRate,
-              1
-            )}%
-          </p>
-        </div>
-      </div>
-            <div class="v3-final-block">
-        <h3>
-          AI理論成績
-        </h3>
+      <div class="v3-final-block">
+        <h3>結果確定</h3>
 
         <p>
-          AIの推奨購入額を使い、
-          公式結果と自動照合した成績です
+          ${settledRows.length}
+          レース
         </p>
       </div>
 
-      <div class="v3-final-grid">
-        <div class="v3-final-block">
-          <h3>
-            対象レース
-          </h3>
-
-          <p>
-            ${stats.predictionRaceCount}
-            レース
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            理論購入点数
-          </h3>
-
-          <p>
-            ${stats.theoryTicketCount}
-            点
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            理論購入
-          </h3>
-
-          <p>
-            ${U.formatMoney(
-              stats.theoryTotalBet
-            )}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            理論払戻
-          </h3>
-
-          <p>
-            ${U.formatMoney(
-              stats.theoryTotalPayout
-            )}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            理論収支
-          </h3>
-
-          <p>
-            ${U.formatMoney(
-              stats.theoryProfit
-            )}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            理論回収率
-          </h3>
-
-          <p>
-            ${U.round(
-              stats.theoryRecoveryRate,
-              1
-            )}%
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            的中レース
-          </h3>
-
-          <p>
-            ${stats.predictionHitCount}
-            /
-            ${stats.predictionRaceCount}
-          </p>
-        </div>
-
-        <div class="v3-final-block">
-          <h3>
-            的中率
-          </h3>
-
-          <p>
-            ${U.round(
-              stats.predictionHitRate,
-              1
-            )}%
-          </p>
-        </div>
-      </div>
 
       <div class="v3-final-block">
-        <h3>
-          買い目役割別
-        </h3>
+        <h3>結果待ち</h3>
 
-        <div class="v3-table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>役割</th>
-                <th>候補</th>
-                <th>的中</th>
-                <th>理論回収率</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              ${renderBucketRows(
-                roleBuckets
-              )}
-            </tbody>
-          </table>
-        </div>
+        <p>
+          ${
+            predictionRows.length -
+            settledRows.length
+          }
+          レース
+        </p>
       </div>
+
 
       <div class="v3-final-block">
+        <h3>◎1着率</h3>
+
+        <p>
+          ${honmeiHits}
+          /
+          ${settledRows.length}
+          （${rate(
+            honmeiHits,
+            settledRows.length
+          )}%）
+        </p>
+      </div>
+
+
+      <div class="v3-final-block">
+        <h3>実戦厳選対象</h3>
+
+        <p>
+          ${practicalRows.length}
+          レース
+        </p>
+      </div>
+
+
+      <div class="v3-final-block">
+        <h3>実戦厳選的中率</h3>
+
+        <p>
+          ${practicalHits}
+          /
+          ${practicalRows.length}
+          （${rate(
+            practicalHits,
+            practicalRows.length
+          )}%）
+        </p>
+      </div>
+
+    </div>
+
+
+    <div class="v3-final-block">
+
+      <h3>
+        予想と公式着順の比較
+      </h3>
+
+      <div class="v3-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>レース</th>
+              <th>◎</th>
+              <th>公式着順</th>
+              <th>◎1着</th>
+              <th>実戦厳選</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${recentHtml}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+
+    <div class="v3-final-block">
+
+      <h3>
+        場別傾向
+      </h3>
+
+      <div class="v3-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>場</th>
+              <th>対象</th>
+              <th>◎1着率</th>
+              <th>厳選的中率</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${renderGroupRows(
+              venueGroups
+            )}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+
+    <div class="v3-final-block">
+
+      <h3>
+        決まり手別傾向
+      </h3>
+
+      <div class="v3-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>決まり手</th>
+              <th>対象</th>
+              <th>◎1着率</th>
+              <th>厳選的中率</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${renderGroupRows(
+              methodGroups
+            )}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+  `);
+
+  U.setHtml(
+    "historyArea",
+    `
+      <div class="v3-final-block">
+
         <h3>
-          オッズ妙味別
+          検証について
         </h3>
 
-        <div class="v3-table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>判定</th>
-                <th>候補</th>
-                <th>的中</th>
-                <th>理論回収率</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${renderBucketRows(
-                oddsValueBuckets
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-        `);
+        <p>
+          振り返り予想は成績に含めず、
+          レース前に保存されたAI予想だけを
+          公式結果と照合します。
+        </p>
 
-    renderRaceHistory(
-      results
-    );
-  }
+      </div>
+    `
+  );
+}
 
     function updateAutoPayout() {
     const odds =
