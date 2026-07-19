@@ -1066,24 +1066,29 @@
         ).replace("R", "")
       );
 
-    const disableOfficialLink =
+        const disableOfficialLink =
       () => {
-        if (!officialLink) {
-          return;
-        }
+        [
+          officialLink,
+          officialVoteLink
+        ].forEach(link => {
+          if (!link) {
+            return;
+          }
 
-        officialLink.href =
-          "#";
+          link.href =
+            "#";
 
-        officialLink.setAttribute(
-          "aria-disabled",
-          "true"
-        );
+          link.setAttribute(
+            "aria-disabled",
+            "true"
+          );
 
-        officialLink.setAttribute(
-          "tabindex",
-          "-1"
-        );
+          link.setAttribute(
+            "tabindex",
+            "-1"
+          );
+        });
       };
 
     const updateOfficialLink =
