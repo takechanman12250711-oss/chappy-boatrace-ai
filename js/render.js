@@ -5624,7 +5624,151 @@ function getPaperClassName(item) {
     /* ===============================
     8. 最終コメント
   =============================== */
+function renderOfficialHistory(
+  prediction
+) {
+  const history =
+    prediction?.officialHistory || null;
 
+  if (!history?.ready) {
+    return "";
+  }
+
+  const venue =
+    history.venue || null;
+
+  const methods =
+    Array.isArray(
+      venue?.winningMethods
+    )
+      ? venue.winningMethods
+      : [];
+
+  const getMethodRate = key => {
+    const item =
+      methods.find(
+        row =>
+          String(row?.key || "") ===
+          key
+      );
+
+    const rate =
+      Number(item?.rate);
+
+    return Number.isFinite(rate)
+      ? `${rate.toFixed(1)}%`
+      : "-";
+  };
+
+  const samples =
+    Number(
+      venue?.samples || 0
+    );
+
+  const manshuRate =
+    Number(
+      venue?.payoutBands
+        ?.over10000?.rate
+    );
+
+  const averageWinningSt =
+    Number(
+      venue?.averageWinningSt
+    );
+
+  const usableRacers =
+    Array.isArray(history.racers)
+      ? history.racers.filter(
+          racer => racer?.usable
+        )
+      : [];
+
+  const statusText =
+    venue?.usable
+      ? "参考補正に使用可能"
+      : "サンプル不足・参考表示のみ";
+
+  const warningText =
+    Array.isArray(history.warnings) &&
+    history.warnings.length
+      ? history.warnings.join("／")
+      : "履歴は展開・コース判断後の参考情報として使用します";
+
+  const body = `
+    <div class="v3-final-grid">
+
+      <div class="v3-final-block">
+        <h3>
+          ■ ${escapeHtml(
+            venue?.place || "開催場"
+          )}の公式履歴
+        </h3>
+
+        <p>
+          集計：${samples}レース
+          ／ ${escapeHtml(statusText)}
+        </p>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>■ 決まり手率</h3>
+
+        <p>
+          逃げ ${getMethodRate("逃げ")}
+          ／ 差し ${getMethodRate("差し")}
+          ／ まくり ${getMethodRate("まくり")}
+          ／ まくり差し ${getMethodRate("まくり差し")}
+        </p>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>■ 配当・スタート傾向</h3>
+
+        <p>
+          万舟率 ${
+            Number.isFinite(manshuRate)
+              ? `${manshuRate.toFixed(1)}%`
+              : "-"
+          }
+          ／ 勝ち艇平均ST ${
+            Number.isFinite(
+              averageWinningSt
+            )
+              ? averageWinningSt
+                  .toFixed(3)
+              : "-"
+          }
+        </p>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>■ 選手別履歴</h3>
+
+        <p>
+          参考補正可能：
+          ${usableRacers.length}名
+          ／ 出場6名
+        </p>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>■ 使用条件</h3>
+
+        <p>
+          ${escapeHtml(warningText)}
+        </p>
+      </div>
+
+    </div>
+  `;
+
+  return section(
+    "公式履歴分析",
+    body,
+    "📚",
+    "v3-official-history-section"
+  );
+}
   function renderFinalComment(prediction) {
   const finalAi = prediction.finalAi || {};
   const raceFlow = prediction.raceFlow || {};
