@@ -558,38 +558,66 @@
     ].join("\n");
   }
 
-  function buildBoatAnalysis(prediction) {
-    const rows = arrayify(
-      prediction?.mainSheet?.evaluations
-    );
+    function buildBoatAnalysis(
+    prediction
+  ) {
+    const rows =
+      arrayify(
+        prediction
+          ?.mainSheet
+          ?.evaluations
+      );
 
     if (!rows.length) {
       return "艇別評価データはありません。";
     }
 
-    return rows.map(item => {
-      const buffs =
-        uniqueText(item.buffs).join("／") ||
-        "補正なし";
+    return rows
+      .map(item => {
+        const buffs =
+          uniqueText(
+            item.buffs
+          )
+            .slice(0, 2)
+            .join("・") ||
+          "補正なし";
 
-      const debuffs =
-        uniqueText(item.debuffs).join("／") ||
-        "大きな減点なし";
+        const debuffs =
+          uniqueText(
+            item.debuffs
+          )
+            .slice(0, 1)
+            .join("・");
 
-      const comment = safeText(
-        firstValue([
-          item.shortComment,
-          item.comment,
-          item.role
-        ]),
-        "総合評価"
-      );
+        const comment =
+          safeText(
+            firstValue([
+              item.shortComment,
+              item.comment,
+              item.role
+            ]),
+            "総合評価"
+          );
 
-      return `${boatLabel(item)}　スコア${Math.round(safeNumber(item.score, 0))}\n` +
-        `⬆️ ${buffs}\n` +
-        `⬇️ ${debuffs}\n` +
-        `${comment}`;
-    }).join("\n\n");
+        const caution =
+          debuffs
+            ? `｜注意：${debuffs}`
+            : "";
+
+        return (
+          `${boatLabel(item)}　` +
+          `${Math.round(
+            safeNumber(
+              item.score,
+              0
+            )
+          )}点｜` +
+          `${buffs}` +
+          `${caution}｜` +
+          `${comment}`
+        );
+      })
+      .join("\n");
   }
 
   function buildTicketGroup(
