@@ -124,7 +124,47 @@
         Number(
           frame?.starts || 0
         );
+      const winRate =
+        frame?.winRate;
 
+      const top3Rate =
+        frame?.top3Rate;
+
+      const averageSt =
+        frame?.averageSt;
+
+      const venueSamples =
+        Number(
+          venueFrame?.starts || 0
+        );
+
+      const venueWinRate =
+        venueFrame?.winRate;
+
+      const venueTop3Rate =
+        venueFrame?.top3Rate;
+
+      const venueAverageSt =
+        venueFrame?.averageSt;
+
+      const winRateDifference =
+        calculateDifference(
+          winRate,
+          venueWinRate
+        );
+
+      const top3RateDifference =
+        calculateDifference(
+          top3Rate,
+          venueTop3Rate
+        );
+
+      const averageStDifference =
+        calculateDifference(
+          averageSt,
+          venueAverageSt,
+          3
+        );
       return {
         boatNo,
         racerName:
