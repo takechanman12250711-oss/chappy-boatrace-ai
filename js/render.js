@@ -2119,9 +2119,209 @@ function getPaperClassName(item) {
 
     return `<div class="v3-note">${escapeHtml(limitText(note, 100))}</div>`;
   }
-    /* ===============================
+  /* ===============================
     6. AI買い目一覧
   =============================== */
+
+  function createTicketSpecificComment(
+    prediction,
+    ticketText,
+    categories
+  ) {
+    const boats = String(
+      ticketText || ""
+    )
+      .match(/[1-6]/g)
+      ?.slice(0, 3)
+      .map(Number) || [];
+
+    if (boats.length !== 3) {
+      return "";
+    }
+
+    const [
+      firstBoat,
+      secondBoat,
+      thirdBoat
+    ] = boats;
+
+    const raceFlow =
+      prediction?.raceFlow || {};
+
+    const mainSheet =
+      prediction?.mainSheet || {};
+
+    const boatNoOf = item =>
+      Number(
+        item?.boatNo ??
+        item?.no ??
+        item?.waku ??
+        item?.number ??
+        0
+      );
+
+    const honmeiNo =
+      boatNoOf(mainSheet.honmei);
+
+    const taikouNo =
+      boatNoOf(mainSheet.taikou);
+
+    const anaNo =
+      boatNoOf(mainSheet.ana);
+
+    const osaeNo =
+      boatNoOf(mainSheet.osae);
+
+    const boatSet = source =>
+      new Set(
+        arrayify(source)
+          .map(boatNoOf)
+          .filter(
+            boatNo =>
+              boatNo >= 1 &&
+              boatNo <= 6
+          )
+      );
+
+    const attackBoats =
+      boatSet(raceFlow.attackBoats);
+
+    const holdBoats =
+      boatSet(raceFlow.holdBoats);
+
+    const pickupBoats =
+      boatSet(raceFlow.pickupBoats);
+
+    const roleOf = (
+      boatNo,
+      position
+    ) => {
+      if (boatNo === 1) {
+        return position === "first"
+          ? "イン逃げ"
+          : "イン残し";
+      }
+
+      if (attackBoats.has(boatNo)) {
+        if (boatNo === 2) {
+          return "2コース差し";
+        }
+
+        if (boatNo === 3) {
+          return "3コース攻め";
+        }
+
+        if (boatNo === 4) {
+          return "4カド攻め";
+        }
+
+        if (boatNo === 5) {
+          return "まくり差し";
+        }
+
+        return "外からの攻め";
+      }
+
+      if (holdBoats.has(boatNo)) {
+        if (boatNo === 2) {
+          return "2差し・残り";
+        }
+
+        if (boatNo === 4) {
+          return "4残し";
+        }
+
+        return "展開残し";
+      }
+
+      if (pickupBoats.has(boatNo)) {
+        return `${boatNo}号艇の展開拾い`;
+      }
+
+      if (boatNo === honmeiNo) {
+        return "中心展開";
+      }
+
+      if (boatNo === taikouNo) {
+        return "対抗展開";
+      }
+
+      if (boatNo === anaNo) {
+        return "穴展開";
+      }
+
+      if (boatNo === osaeNo) {
+        return "押さえ評価";
+      }
+
+      if (boatNo === 2) {
+        return "2差し・残り";
+      }
+
+      if (boatNo === 4) {
+        return "4残し";
+      }
+
+      if (boatNo >= 5) {
+        return "外の展開拾い";
+      }
+
+      return "相手評価";
+    };
+
+    const firstRole =
+      roleOf(firstBoat, "first");
+
+    const secondRole =
+      roleOf(secondBoat, "second");
+
+    const thirdRole =
+      roleOf(thirdBoat, "third");
+
+    const categoryText =
+      arrayify(categories)
+        .map(value => String(value || ""))
+        .join("・");
+
+    if (
+      categoryText.includes("本線") ||
+      categoryText.includes("本命")
+    ) {
+      return (
+        `${firstBoat}号艇の${firstRole}を頭に、` +
+        `${secondBoat}号艇の${secondRole}を2着、` +
+        `${thirdBoat}号艇の${thirdRole}を3着に置く本線。`
+      );
+    }
+
+    if (
+      categoryText.includes("押さえ")
+    ) {
+      return (
+        `本線の着順ズレに備え、` +
+        `${firstBoat}号艇の${firstRole}を頭に、` +
+        `${secondBoat}号艇の${secondRole}と` +
+        `${thirdBoat}号艇の${thirdRole}を残す押さえ。`
+      );
+    }
+
+    if (
+      categoryText.includes("流し")
+    ) {
+      return (
+        `${firstBoat}号艇の${firstRole}を軸に、` +
+        `${secondBoat}号艇の${secondRole}と` +
+        `${thirdBoat}号艇の${thirdRole}まで` +
+        `着順変化を拾う流し。`
+      );
+    }
+
+    return (
+      `${firstBoat}号艇の${firstRole}が頭まで届き、` +
+      `${secondBoat}号艇の${secondRole}と` +
+      `${thirdBoat}号艇の${thirdRole}が絡む波乱形。`
+    );
+  }
 
     function renderTicketRanking(prediction) {
     const sourceList = arrayify(
