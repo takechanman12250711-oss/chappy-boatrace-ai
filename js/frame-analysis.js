@@ -115,6 +115,11 @@
           String(boatNo)
         ] || null;
 
+      const venueFrame =
+        venueFrames[
+          String(boatNo)
+        ] || null;
+
       const samples =
         Number(
           frame?.starts || 0
