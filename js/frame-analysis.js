@@ -264,13 +264,26 @@
           entry?.racerName ||
           racer?.racerName ||
           "-",
-        samples,
-        winRate:
-          frame?.winRate,
-        top3Rate:
-          frame?.top3Rate,
-        averageSt:
-          frame?.averageSt,
+                samples,
+        winRate,
+        top3Rate,
+        averageSt,
+
+        venueSamples,
+        venueWinRate,
+        venueTop3Rate,
+        venueAverageSt,
+
+        winRateDifference,
+        top3RateDifference,
+        averageStDifference,
+
+        compatibility:
+          compatibility.label,
+
+        compatibilityScore:
+          compatibility.score,
+
         usable:
           samples >=
           MIN_FRAME_SAMPLES
