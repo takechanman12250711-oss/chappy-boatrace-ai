@@ -41,7 +41,21 @@
   let lastRaceData = null;
 
     document.addEventListener("DOMContentLoaded", () => {
-    console.log("✅ script.js 読み込みOK");
+        console.log("✅ script.js 読み込みOK");
+
+    window.ChappyRaceHistory
+      ?.load()
+      .then(() => {
+        console.log(
+          "✅ 公式履歴統計 読み込みOK"
+        );
+      })
+      .catch(error => {
+        console.warn(
+          "⚠️ 公式履歴統計を読み込めませんでした",
+          error?.message || error
+        );
+      });
 
     setDefaultDate();
 
