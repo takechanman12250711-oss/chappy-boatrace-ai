@@ -3236,261 +3236,90 @@
         };
       })
     : [];
+const applyOdds = list =>
+  attachOdds(list);
 
-        const ticketRanksWithOdds =
-      attachOdds(
-        prediction.ticketRanks
-      );
+prediction.ticketRanks =
+  applyOdds(
+    prediction.ticketRanks
+  );
 
-    const budgetInput =
-      document.getElementById(
-        "allocationBudgetInput"
-      );
+prediction.aiTicketList =
+  applyOdds(
+    prediction.aiTicketList
+  );
 
-    const requestedBudget =
-      Number(
-        budgetInput?.value || 1000
-      );
+if (prediction.ticketSheets) {
+  prediction.ticketSheets = {
+    ...prediction.ticketSheets,
 
-    const totalBudget =
-      Math.max(
-        100,
-        Math.floor(
-          (
-            Number.isFinite(
-              requestedBudget
-            )
-              ? requestedBudget
-              : 1000
-          ) / 100
-        ) * 100
-      );
+    main: applyOdds(
+      prediction.ticketSheets.main
+    ),
 
-    const valueMultiplier = {
-      低配当: 0.55,
-      標準: 0.9,
-      妙味あり: 1.2,
-      穴妙味: 1.1,
-      大穴妙味: 0.8,
-      高配当注意: 0.4,
-      未判定: 0.7
-    };
+    cover: applyOdds(
+      prediction.ticketSheets.cover
+    ),
 
-    const weightedTickets =
-      ticketRanksWithOdds.map(
-        (item, index) => {
-          const score =
-            Math.max(
-              1,
-              Number(
-                item?.score || 1
-              )
-            );
+    flow: applyOdds(
+      prediction.ticketSheets.flow
+    ),
 
-          const multiplier =
-            valueMultiplier[
-              item?.oddsValue
-            ] ?? 0.8;
+    hole: applyOdds(
+      prediction.ticketSheets.hole
+    ),
 
-          return {
-            ticket:
-              String(
-                item?.ticket || ""
-              ),
-            index,
-            weight:
-              score * multiplier
-          };
-        }
-      );
+    all: applyOdds(
+      prediction.ticketSheets.all
+    )
+  };
+}
 
-    const totalWeight =
-      weightedTickets.reduce(
-        (sum, item) =>
-          sum + item.weight,
-        0
-      );
+if (prediction.mainSheet) {
+  prediction.mainSheet = {
+    ...prediction.mainSheet,
 
-    const budgetUnits =
-      Math.floor(
-        totalBudget / 100
-      );
+    tickets: applyOdds(
+      prediction.mainSheet.tickets
+    ),
 
-    const allocationRows =
-      weightedTickets.map(item => {
-        const exactUnits =
-          totalWeight > 0
-            ? (
-                budgetUnits *
-                item.weight
-              ) / totalWeight
-            : 0;
+    coverTickets: applyOdds(
+      prediction.mainSheet.coverTickets
+    ),
 
-        const units =
-          Math.floor(exactUnits);
+    flowTickets: applyOdds(
+      prediction.mainSheet.flowTickets
+    )
+  };
+}
 
-        return {
-          ...item,
-          units,
-          remainder:
-            exactUnits - units
-        };
-      });
+if (prediction.manshuSheet) {
+  prediction.manshuSheet = {
+    ...prediction.manshuSheet,
 
-    const usedUnits =
-      allocationRows.reduce(
-        (sum, item) =>
-          sum + item.units,
-        0
-      );
+    tickets: applyOdds(
+      prediction.manshuSheet.tickets
+    )
+  };
+}
 
-    const remainingUnits =
-      budgetUnits - usedUnits;
+if (prediction.finalAi) {
+  prediction.finalAi = {
+    ...prediction.finalAi,
 
-    allocationRows.sort(
-      (a, b) =>
-        b.remainder -
-          a.remainder ||
-        a.index - b.index
-    );
+    ticketRanks: applyOdds(
+      prediction.finalAi.ticketRanks
+    ),
 
-    for (
-      let index = 0;
-      index < remainingUnits;
-      index += 1
-    ) {
-      if (!allocationRows.length) {
-        break;
-      }
+    topTickets: applyOdds(
+      prediction.finalAi.topTickets
+    ),
 
-      allocationRows[
-        index %
-        allocationRows.length
-      ].units += 1;
-    }
-
-    const allocationByTicket =
-      new Map(
-        allocationRows.map(
-          item => [
-            item.ticket,
-            item.units * 100
-          ]
-        )
-      );
-
-    const applyAllocation =
-      list =>
-        attachOdds(list).map(
-          item => ({
-            ...item,
-            recommendedAmount:
-              allocationByTicket.get(
-                String(
-                  item?.ticket || ""
-                )
-              ) || 0
-          })
-        );
-
-        prediction.ticketRanks =
-      applyAllocation(
-        prediction.ticketRanks
-      );
-
-    prediction.aiTicketList =
-      applyAllocation(
-        prediction.aiTicketList
-      );
-
-    if (prediction.ticketSheets) {
-      prediction.ticketSheets = {
-        ...prediction.ticketSheets,
-
-        main: applyAllocation(
-          prediction.ticketSheets.main
-        ),
-
-        cover: applyAllocation(
-          prediction.ticketSheets.cover
-        ),
-
-        flow: applyAllocation(
-          prediction.ticketSheets.flow
-        ),
-
-        hole: applyAllocation(
-          prediction.ticketSheets.hole
-        ),
-
-        all: applyAllocation(
-          prediction.ticketSheets.all
-        )
-      };
-    }
-
-    if (prediction.mainSheet) {
-      prediction.mainSheet = {
-        ...prediction.mainSheet,
-
-        tickets: applyAllocation(
-          prediction.mainSheet.tickets
-        ),
-
-        coverTickets: applyAllocation(
-          prediction.mainSheet.coverTickets
-        ),
-
-        flowTickets: applyAllocation(
-          prediction.mainSheet.flowTickets
-        )
-      };
-    }
-
-    if (prediction.manshuSheet) {
-      prediction.manshuSheet = {
-        ...prediction.manshuSheet,
-
-        tickets: applyAllocation(
-          prediction.manshuSheet.tickets
-        )
-      };
-    }
-
-    prediction.allocationBudget =
-      totalBudget;
-
-    prediction.allocatedTotal =
-      prediction.ticketRanks.reduce(
-        (sum, item) =>
-          sum +
-          Number(
-            item?.recommendedAmount ||
-            0
-          ),
-        0
-      );
-
-    if (prediction.finalAi) {
-      prediction.finalAi = {
-        ...prediction.finalAi,
-        ticketRanks:
-          applyAllocation(
-            prediction.finalAi
-              .ticketRanks
-          ),
-        topTickets:
-          applyAllocation(
-            prediction.finalAi
-              .topTickets
-          ),
-        manshuTickets:
-          applyAllocation(
-            prediction.finalAi
-              .manshuTickets
-          )
-      };
-    }
+    manshuTickets: applyOdds(
+      prediction.finalAi.manshuTickets
+    )
+  };
+}
 
         try {
       const predictionSnapshot = {
