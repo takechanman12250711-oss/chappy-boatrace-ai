@@ -385,7 +385,101 @@
 
     return `${prefix}【${formatDate(meta.date)} ${meta.place}${meta.raceNo || "-"}R】${flowTitle}｜チャッピーボートレースAI厳選予想`;
   }
+  function buildOfficialHistorySection(
+    prediction
+  ) {
+    const history =
+      prediction?.officialHistory || null;
 
+    if (!history?.ready) {
+      return "";
+    }
+
+    const venue =
+      history.venue || null;
+
+    if (!venue) {
+      return "";
+    }
+
+    const methods =
+      arrayify(
+        venue.winningMethods
+      );
+
+    const getMethodRate = key => {
+      const item =
+        methods.find(
+          row =>
+            safeText(
+              row?.key,
+              ""
+            ) === key
+        );
+
+      const rate =
+        Number(item?.rate);
+
+      return Number.isFinite(rate)
+        ? `${rate.toFixed(1)}%`
+        : "-";
+    };
+
+    const samples =
+      safeNumber(
+        venue.samples,
+        0
+      );
+
+    const manshuRate =
+      Number(
+        venue?.payoutBands
+          ?.over10000?.rate
+      );
+
+    const averageWinningSt =
+      Number(
+        venue.averageWinningSt
+      );
+
+    const statusText =
+      venue.usable
+        ? "十分なサンプルあり・参考補正対象"
+        : "サンプル不足・参考表示のみ";
+
+    return [
+      "【公式履歴分析】",
+
+      `${safeText(
+        venue.place,
+        "開催場"
+      )}公式結果 ${samples}レース集計`,
+
+      `逃げ ${getMethodRate(
+        "逃げ"
+      )}｜差し ${getMethodRate(
+        "差し"
+      )}｜まくり ${getMethodRate(
+        "まくり"
+      )}｜まくり差し ${getMethodRate(
+        "まくり差し"
+      )}`,
+
+      `万舟率 ${
+        Number.isFinite(manshuRate)
+          ? `${manshuRate.toFixed(1)}%`
+          : "-"
+      }｜勝ち艇平均ST ${
+        Number.isFinite(
+          averageWinningSt
+        )
+          ? averageWinningSt.toFixed(3)
+          : "-"
+      }`,
+
+      `※${statusText}。展開・コースを優先し、履歴数字だけで買い目を変更しません。`
+    ].join("\n");
+  }
       function buildFreeSection(
     prediction,
     options = {}
