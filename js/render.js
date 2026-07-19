@@ -1135,22 +1135,22 @@ if (raceInfoArea) {
                   </div>
 
                   <div class="v3-formation-tags">
-                    ${tag(
-                      item.category,
-                      type
-                    )}
+                  ${tag(
+                    item.category,
+                    type
+                  )}
 
-                    ${tag(
-                      item.oddsText,
-                      "odds"
-                    )}
+                  ${item.scenarioType
+                    ? tag(
+                        item.scenarioType,
+                        "flow"
+                      )
+                    : ""}
 
-                    ${item.scenarioType
-                      ? tag(
-                          item.scenarioType,
-                          "flow"
-                        )
-                      : ""}
+                  ${tag(
+                    item.oddsText,
+                    "odds"
+                  )}
                   </div>
 
                   ${item.scenarioSummary
