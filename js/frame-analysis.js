@@ -39,6 +39,43 @@
       ? number.toFixed(3)
       : "-";
   }
+    function formatRateDifference(
+    value
+  ) {
+    const number =
+      Number(value);
+
+    if (!Number.isFinite(number)) {
+      return "-";
+    }
+
+    const sign =
+      number > 0 ? "+" : "";
+
+    return (
+      `${sign}${number.toFixed(1)}` +
+      "pt"
+    );
+  }
+
+  function formatStDifference(
+    value
+  ) {
+    const number =
+      Number(value);
+
+    if (!Number.isFinite(number)) {
+      return "-";
+    }
+
+    const sign =
+      number > 0 ? "+" : "";
+
+    return (
+      `${sign}${number.toFixed(3)}` +
+      "秒"
+    );
+  }
   function calculateDifference(
     value,
     baseline,
