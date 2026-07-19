@@ -1091,7 +1091,7 @@
         });
       };
 
-    const updateOfficialLink =
+        const updateOfficialLink =
       race => {
         const date =
           getScheduleDate();
@@ -1160,11 +1160,43 @@
           "tabindex"
         );
 
+        if (officialVoteLink) {
+          if (mode === "review") {
+            officialVoteLink.href =
+              "#";
+
+            officialVoteLink.setAttribute(
+              "aria-disabled",
+              "true"
+            );
+
+            officialVoteLink.setAttribute(
+              "tabindex",
+              "-1"
+            );
+          } else {
+            officialVoteLink.href =
+              "https://mb.brtb.jp/";
+
+            officialVoteLink.textContent =
+              "公式で投票する →";
+
+            officialVoteLink.setAttribute(
+              "aria-disabled",
+              "false"
+            );
+
+            officialVoteLink.removeAttribute(
+              "tabindex"
+            );
+          }
+        }
+
         if (linkDescription) {
           linkDescription.textContent =
-            `${placeSelect.value} ` +
-            `${raceNo}Rを` +
-            "公式サイトで確認";
+            mode === "review"
+              ? `${placeSelect.value} ${raceNo}Rを公式サイトで確認`
+              : `${placeSelect.value} ${raceNo}Rの公式確認・投票`;
         }
       };
 
