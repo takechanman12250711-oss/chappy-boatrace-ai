@@ -2456,11 +2456,12 @@ function getPaperClassName(item) {
                 0
               ),
 
-            scenarioSummary:
-              row.scenarioSummary ||
-              prediction.raceFlow
-                ?.summary ||
-              ""
+                        scenarioSummary:
+              createTicketSpecificComment(
+                prediction,
+                ticketText,
+                categories
+              )
           };
         })
         .filter(Boolean);
