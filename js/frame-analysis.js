@@ -364,9 +364,11 @@
     const rows =
       getFrameRows(prediction);
 
-    const usableCount =
+        const usableCount =
       rows.filter(
-        row => row.usable
+        row =>
+          row.usable &&
+          row.venueSamples >= 30
       ).length;
 
     const rowsHtml =
