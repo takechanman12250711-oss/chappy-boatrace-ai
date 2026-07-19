@@ -3434,12 +3434,6 @@ if (prediction.finalAi) {
                       String(
                         item?.oddsValue || ""
                       ),
-
-                    recommendedAmount:
-                      Number(
-                        item?.recommendedAmount ||
-                        0
-                      )
                   };
                 }
               )
