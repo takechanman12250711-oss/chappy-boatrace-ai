@@ -37,6 +37,9 @@ function racerReliability(samples) {
 function createPattern() {
   return {
     totalRaces: 0,
+
+    boatPerformance: {},
+
     winningBoats: {},
     winningCourses: {},
     winningMethods: {},
