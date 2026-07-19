@@ -5467,17 +5467,6 @@ function getPaperClassName(item) {
                 ? `既存のオッズ分類は「${row.oddsValue}」。`
                 : "オッズ分類は未判定。";
 
-            const recommendedAmount =
-              Number(
-                row.recommendedAmount ||
-                0
-              );
-
-            const allocationText =
-              recommendedAmount > 0
-                ? `推奨購入額は${recommendedAmount.toLocaleString("ja-JP")}円。`
-                : "推奨購入額は未配分。";
-
             const scenarioSummary =
               String(
                 row.scenarioSummary ||
@@ -5517,9 +5506,8 @@ function getPaperClassName(item) {
                 ) +
                 scenarioText +
                 oddsValueText +
-                allocationText +
                 syntheticEvidence +
-                "オッズは買い目作成後の表示・分類・資金配分だけに使用し、数字だけで買い目を追加・削除しない。"
+                "オッズは買い目作成後の表示・分類だけに使用し、数字だけで買い目を追加・削除しない。"
             });
           }
         );
