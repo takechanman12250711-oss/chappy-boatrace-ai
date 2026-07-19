@@ -386,29 +386,50 @@
     return `${prefix}【${formatDate(meta.date)} ${meta.place}${meta.raceNo || "-"}R】${flowTitle}｜チャッピーボートレースAI厳選予想`;
   }
 
-    function buildFreeSection(prediction, options = {}) {
-    const meta = getRaceMeta(prediction);
-    const weather = prediction?.weather || {};
-    const venue = prediction?.venue || {};
-    const flow = prediction?.raceFlow || {};
-    const main = prediction?.mainSheet || {};
-    const manshuSheet = prediction?.manshuSheet || {};
+      function buildFreeSection(
+    prediction,
+    options = {}
+  ) {
+    const meta =
+      getRaceMeta(prediction);
 
-    const mainScore = getScore(
-      prediction?.confidence ||
-      prediction?.finalAi?.confidence
-    );
+    const weather =
+      prediction?.weather || {};
 
-    const waveScore = getScore(
-      prediction?.manshuPower ||
-      prediction?.finalAi?.manshuPower
-    );
+    const venue =
+      prediction?.venue || {};
+
+    const flow =
+      prediction?.raceFlow || {};
+
+    const main =
+      prediction?.mainSheet || {};
+
+    const manshuSheet =
+      prediction?.manshuSheet || {};
+
+    const mainScore =
+      getScore(
+        prediction?.confidence ||
+        prediction?.finalAi?.confidence
+      );
+
+    const waveScore =
+      getScore(
+        prediction?.manshuPower ||
+        prediction?.finalAi?.manshuPower
+      );
 
     const rawSelectionType =
-      classifyRace(prediction, options);
+      classifyRace(
+        prediction,
+        options
+      );
 
     const isWave =
-      /万舟|波乱/.test(rawSelectionType);
+      /万舟|波乱/.test(
+        rawSelectionType
+      );
 
     const selectionType =
       isWave
@@ -465,27 +486,13 @@
 
     const abilitySignals =
       uniqueText([
-        /^[AB][12]$/.test(className)
+        /^[AB][12]$/.test(
+          className
+        )
           ? `${className}級`
           : "",
         ...skillSignals
       ]);
-
-    const directionReason =
-      safeText(
-        isWave
-          ? firstValue([
-              manshuSheet.reason,
-              options.selectionReason,
-              flow.summary
-            ])
-          : firstValue([
-              options.selectionReason,
-              flow.summary,
-              main.reason
-            ]),
-        "展開・コース・ST・展示を総合して掲載候補に選定しました。"
-      );
 
     const abilityReason =
       focusBoat
@@ -500,61 +507,54 @@
             )}は選手技量の明確な加点材料が未取得。`
         : "選手技量データ未取得。";
 
-    const scoreReason =
-      `${directionReason} ${abilityReason}`;
+    const empathy =
+      isWave
+        ? "人気どおりでは決まりにくい一戦を狙いたい方へ。"
+        : "買い目を広げすぎず、軸を決めて勝負したい方へ。";
 
-    return [
-      "🚤 今回の厳選レース",
-      "",
-      `${formatDate(meta.date)}　${meta.place}${meta.raceNo || "-"}R`,
-      `締切予定　${meta.deadline}`,
-      `選定区分　${selectionType}`,
-      "",
-            `${scoreLabel}　${displayedScore}点`,
-      "※点数はAI評価であり、的中確率ではありません。",
-      "",
-      `【${scoreLabel}の根拠】`,
-      scoreReason,
-      "判定基準　展開→コース→ST・スリット→展示・足→残し・拾い→当地・水面→選手技量→モーター",
-      "",
-      "【水面・気象】",
-      `水面　${safeText(
-        venue.water,
-        "未取得"
-      )}`,
-      `風　${safeText(
-        weather.windDirection,
-        "-"
-      )} ${weather.windSpeed ?? "-"}m`,
-      `波　${weather.waveHeight ?? "-"}cm`,
-      safeText(
-        firstValue([
-          weather.comment,
-          venue.memo
-        ]),
-        "展示・ST・気象を総合して評価。"
-      ),
-      "",
-      "【中心展開】",
-      safeText(
-        flow.title,
-        "展開タイトル未取得"
-      ),
+    const conclusion =
       safeText(
         flow.summary,
-        "展開概要未取得"
-      ),
+        isWave
+          ? safeText(
+              manshuSheet.reason,
+              "波乱展開を評価。"
+            )
+          : safeText(
+              main.reason,
+              "中心展開を評価。"
+            )
+      );
+
+    return [
+      `🚤 ${formatDate(
+        meta.date
+      )} ${meta.place}${meta.raceNo || "-"}R｜締切${meta.deadline}`,
+      empathy,
       "",
-      "【注目艇】",
-      `中心候補　${boatLabel(
-        main.honmei
-      )}`,
-      `相手候補　${boatLabel(
-        main.taikou
-      )}`,
+      `${selectionType}｜${scoreLabel} ${displayedScore}点`,
+      "※点数はAI評価であり、的中確率ではありません。",
       "",
-      "ここから先では、展開から導いた本線・押さえ・流し・万舟候補と、実際に購入する最大7点を公開します。",
-      "買い目は数字やオッズだけでは作成せず、固定した判定基準の順番で分析して決定しています。"
+      "【結論】",
+      `${safeText(
+        flow.title,
+        "展開注目"
+      )}。${conclusion}`,
+      "",
+      "【根拠】",
+      abilityReason,
+      "評価順　展開→コース→ST→展示→残し・拾い→水面→選手技量→モーター",
+      "",
+      "【水面】",
+      `${safeText(
+        venue.water,
+        "未取得"
+      )}｜風${safeText(
+        weather.windDirection,
+        "-"
+      )}${weather.windSpeed ?? "-"}m｜波${weather.waveHeight ?? "-"}cm`,
+      "",
+      "ここから先で、6艇評価・AI優先候補・厳選7点を公開します。"
     ].join("\n");
   }
 
