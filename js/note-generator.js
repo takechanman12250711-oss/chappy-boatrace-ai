@@ -968,7 +968,85 @@
         "本線買い目の1着軸が◎本命艇と一致していません"
       );
     }
+    let claimedHeadBoatNo = 0;
 
+    if (
+      /外攻め艇は頭まで評価/.test(
+        flowSummary
+      )
+    ) {
+      const outsideMatch =
+        flowSummary.match(
+          /([1-6])号艇の外からの攻め/
+        );
+
+      claimedHeadBoatNo =
+        outsideMatch
+          ? Number(
+              outsideMatch[1]
+            )
+          : 0;
+    } else if (
+      /攻め切れば頭まで/.test(
+        flowSummary
+      )
+    ) {
+      const attackMatch =
+        flowSummary.match(
+          /([1-6])号艇は[1-6]コースから/
+        );
+
+      claimedHeadBoatNo =
+        attackMatch
+          ? Number(
+              attackMatch[1]
+            )
+          : 0;
+    }
+
+    if (claimedHeadBoatNo) {
+      const claimedEvaluation =
+        arrayify(
+          main?.evaluations
+        ).find(
+          item =>
+            safeNumber(
+              item?.boatNo,
+              0
+            ) ===
+            claimedHeadBoatNo
+        ) || null;
+
+      const claimedScore =
+        safeNumber(
+          claimedEvaluation?.score,
+          0
+        );
+
+      const displayCandidates =
+        createDisplayCandidates(
+          prediction
+        );
+
+      const hasClaimedHeadTicket =
+        displayCandidates.some(
+          item =>
+            Number(
+              item.ticket
+                .split("-")[0]
+            ) ===
+            claimedHeadBoatNo
+        );
+
+      if (
+        claimedScore < 72 ||
+        !hasClaimedHeadTicket
+      ) {
+        rejectionReasons.push(
+          `${claimedHeadBoatNo}号艇を頭まで評価していますが、艇評価または1着買い目が条件を満たしていません`
+        );
+      }
+    }
     function boatsBeforeRole(
       text,
       role
