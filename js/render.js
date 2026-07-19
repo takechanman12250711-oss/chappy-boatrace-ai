@@ -1056,10 +1056,18 @@ if (raceInfoArea) {
           prediction.raceFlow?.title ||
           "",
 
-        scenarioSummary:
-          row.scenarioSummary ||
-          prediction.raceFlow?.summary ||
-          ""
+                scenarioSummary:
+          createTicketSpecificComment(
+            prediction,
+            row.ticket ||
+              row.line ||
+              row.formation ||
+              "",
+            [
+              row.category ||
+              fallbackCategory
+            ]
+          )
       };
     };
 
