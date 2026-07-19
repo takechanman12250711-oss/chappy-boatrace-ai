@@ -268,6 +268,11 @@
 
       <!-- 3. AI総合評価 -->
       ${renderAiSummary(prediction)}
+
+      <!-- 3.5 公式履歴分析 -->
+      ${renderOfficialHistory(
+        prediction
+      )}
      
       <!-- 4. 本命買い目 -->
       ${renderNewspaperSheet(prediction, "main")}
