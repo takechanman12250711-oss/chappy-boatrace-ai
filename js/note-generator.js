@@ -252,9 +252,16 @@
           )}円`
         : "";
 
+        const displayCategory =
+      item.category === "万舟・穴"
+        ? item.odds >= 100
+          ? "万舟"
+          : "穴候補"
+        : item.category;
+
     const categoryText =
       includeAmount
-        ? `${item.category}　`
+        ? `${displayCategory}　`
         : "";
 
     return (
