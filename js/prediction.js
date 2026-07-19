@@ -946,6 +946,10 @@
       beforeInfo,
       startExhibition,
       weather,
+
+      historyContext:
+        raw.historyContext || null,
+
       odds: raw.odds || null,
       missingNumbers: raw.missingNumbers || raw.missing || [],
       raw
