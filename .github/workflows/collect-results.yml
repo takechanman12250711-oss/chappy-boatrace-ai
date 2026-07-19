@@ -35,7 +35,9 @@ jobs:
       - name: Collect official results
         env:
           COLLECT_DATE: ${{ inputs.date }}
-        run: node scripts/collect-results.js
+                run: |
+          node scripts/collect-results.js
+          node scripts/build-race-stats.js
 
       - name: Save collected results
         run: |
