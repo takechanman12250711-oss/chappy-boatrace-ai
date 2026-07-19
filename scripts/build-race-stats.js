@@ -209,7 +209,8 @@ function addRacers(racers, race) {
       wins: 0,
       top3: 0,
       stSum: 0,
-      stSamples: 0
+      stSamples: 0,
+      byBoat: {}
     };
 
     racer.racerName =
@@ -238,7 +239,89 @@ function addRacers(racers, race) {
       racer.stSum += st;
       racer.stSamples += 1;
     }
+
+    const boatNo =
+      Number(finisher.boat);
+
+    if (
+      Number.isInteger(boatNo) &&
+      boatNo >= 1 &&
+      boatNo <= 6
+    ) {
+      const boatStats =
+        racer.byBoat[boatNo] ||= {
+          boatNo,
+          starts: 0,
+          wins: 0,
+          top3: 0,
+          stSum: 0,
+          stSamples: 0
+        };
+
+      boatStats.starts += 1;
+
+      if (rank === 1) {
+        boatStats.wins += 1;
+      }
+
+      if (rank >= 1 && rank <= 3) {
+        boatStats.top3 += 1;
+      }
+
+      if (Number.isFinite(st)) {
+        boatStats.stSum += st;
+        boatStats.stSamples += 1;
+      }
+    }
   }
+}
+
+function finalizeRacerBoats(
+  byBoat
+) {
+  return Object.fromEntries(
+    Object.values(byBoat || {})
+      .sort(
+        (a, b) =>
+          a.boatNo - b.boatNo
+      )
+      .map(item => [
+        String(item.boatNo),
+        {
+          boatNo: item.boatNo,
+          starts: item.starts,
+
+          reliability:
+            racerReliability(
+              item.starts
+            ),
+
+          wins: item.wins,
+
+          winRate: percent(
+            item.wins,
+            item.starts
+          ),
+
+          top3: item.top3,
+
+          top3Rate: percent(
+            item.top3,
+            item.starts
+          ),
+
+          averageSt:
+            item.stSamples
+              ? Number(
+                  (
+                    item.stSum /
+                    item.stSamples
+                  ).toFixed(3)
+                )
+              : null
+        }
+      ])
+  );
 }
 
 function finalizeRacers(racers) {
@@ -283,7 +366,12 @@ function finalizeRacers(racers) {
                     racer.stSamples
                   ).toFixed(3)
                 )
-              : null
+              : null,
+
+          byBoat:
+            finalizeRacerBoats(
+              racer.byBoat
+            )
         }
       ])
   );
