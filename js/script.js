@@ -3702,5 +3702,332 @@
       return [];
     }
   }
+  /* ===============================
+    note投稿アシスト接続
+  =============================== */
 
+  let lastNotePrediction = null;
+  let lastNoteArticle = null;
+
+  function setupNoteAssistant() {
+    const generateBtn =
+      document.getElementById(
+        "noteGenerateBtn"
+      );
+
+    const copyTitleBtn =
+      document.getElementById(
+        "noteCopyTitleBtn"
+      );
+
+    const copyFullBtn =
+      document.getElementById(
+        "noteCopyFullBtn"
+      );
+
+    if (generateBtn) {
+      generateBtn.addEventListener(
+        "click",
+        generateNoteArticle
+      );
+    }
+
+    if (copyTitleBtn) {
+      copyTitleBtn.addEventListener(
+        "click",
+        () => copyNoteText(
+          lastNoteArticle?.title || "",
+          "タイトルをコピーしました"
+        )
+      );
+    }
+
+    if (copyFullBtn) {
+      copyFullBtn.addEventListener(
+        "click",
+        () => copyNoteText(
+          lastNoteArticle?.fullText || "",
+          "記事全文をコピーしました"
+        )
+      );
+    }
+  }
+
+  function updateNoteAssistant(
+    prediction
+  ) {
+    const section =
+      document.getElementById(
+        "noteAssistantSection"
+      );
+
+    const generateBtn =
+      document.getElementById(
+        "noteGenerateBtn"
+      );
+
+    const copyTitleBtn =
+      document.getElementById(
+        "noteCopyTitleBtn"
+      );
+
+    const copyFullBtn =
+      document.getElementById(
+        "noteCopyFullBtn"
+      );
+
+    const titlePreview =
+      document.getElementById(
+        "noteTitlePreview"
+      );
+
+    const articlePreview =
+      document.getElementById(
+        "noteArticlePreview"
+      );
+
+    if (!section) return;
+
+    if (
+      !prediction ||
+      typeof prediction !== "object" ||
+      prediction.isRetrospective ||
+      prediction.ok === false
+    ) {
+      section.hidden = true;
+      lastNotePrediction = null;
+      lastNoteArticle = null;
+      return;
+    }
+
+    section.hidden = false;
+    lastNotePrediction = prediction;
+    lastNoteArticle = null;
+
+    if (titlePreview) {
+      titlePreview.value = "";
+    }
+
+    if (articlePreview) {
+      articlePreview.value = "";
+    }
+
+    if (copyTitleBtn) {
+      copyTitleBtn.disabled = true;
+    }
+
+    if (copyFullBtn) {
+      copyFullBtn.disabled = true;
+    }
+
+    const generatorReady =
+      window.ChappyNoteGenerator &&
+      typeof window
+        .ChappyNoteGenerator
+        .generateArticle ===
+        "function";
+
+    if (generateBtn) {
+      generateBtn.disabled =
+        !generatorReady;
+    }
+
+    setNoteStatus(
+      generatorReady
+        ? "記事生成できます"
+        : "生成機能を読み込めません"
+    );
+  }
+
+  function generateNoteArticle() {
+    if (!lastNotePrediction) {
+      setNoteStatus(
+        "先にAI予想を表示してください"
+      );
+
+      return;
+    }
+
+    try {
+      const article =
+        window.ChappyNoteGenerator
+          .generateArticle(
+            lastNotePrediction
+          );
+
+      if (!article?.ok) {
+        throw new Error(
+          article?.error ||
+          "記事を生成できませんでした"
+        );
+      }
+
+      lastNoteArticle = article;
+
+      const titlePreview =
+        document.getElementById(
+          "noteTitlePreview"
+        );
+
+      const articlePreview =
+        document.getElementById(
+          "noteArticlePreview"
+        );
+
+      const copyTitleBtn =
+        document.getElementById(
+          "noteCopyTitleBtn"
+        );
+
+      const copyFullBtn =
+        document.getElementById(
+          "noteCopyFullBtn"
+        );
+
+      if (titlePreview) {
+        titlePreview.value =
+          article.title;
+      }
+
+      if (articlePreview) {
+        articlePreview.value =
+          article.fullText;
+      }
+
+      if (copyTitleBtn) {
+        copyTitleBtn.disabled = false;
+      }
+
+      if (copyFullBtn) {
+        copyFullBtn.disabled = false;
+      }
+
+      setNoteStatus(
+        `記事生成済み・実戦${article.practicalTickets.length}点`
+      );
+    } catch (error) {
+      console.error(
+        "note記事生成エラー",
+        error
+      );
+
+      setNoteStatus(
+        error?.message ||
+        "記事生成エラー"
+      );
+    }
+  }
+
+  async function copyNoteText(
+    text,
+    successMessage
+  ) {
+    if (!text) {
+      setNoteStatus(
+        "先に記事を生成してください"
+      );
+
+      return;
+    }
+
+    try {
+      if (
+        navigator.clipboard &&
+        window.isSecureContext
+      ) {
+        await navigator.clipboard
+          .writeText(text);
+      } else {
+        const temporary =
+          document.createElement(
+            "textarea"
+          );
+
+        temporary.value = text;
+
+        temporary.setAttribute(
+          "readonly",
+          ""
+        );
+
+        temporary.style.position =
+          "fixed";
+
+        temporary.style.opacity =
+          "0";
+
+        document.body.appendChild(
+          temporary
+        );
+
+        temporary.select();
+
+        document.execCommand(
+          "copy"
+        );
+
+        temporary.remove();
+      }
+
+      setNoteStatus(
+        successMessage
+      );
+    } catch (error) {
+      console.error(
+        "noteコピーエラー",
+        error
+      );
+
+      setNoteStatus(
+        "コピーできませんでした"
+      );
+    }
+  }
+
+  function setNoteStatus(message) {
+    const badge =
+      document.getElementById(
+        "noteStatusBadge"
+      );
+
+    if (badge) {
+      badge.textContent = message;
+    }
+  }
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    setupNoteAssistant
+  );
+
+  const originalRenderAll =
+    window.renderAll;
+
+  if (
+    typeof originalRenderAll ===
+    "function" &&
+    !originalRenderAll
+      .noteAssistantWrapped
+  ) {
+    const wrappedRenderAll =
+      function (prediction) {
+        const result =
+          originalRenderAll.apply(
+            this,
+            arguments
+          );
+
+        updateNoteAssistant(
+          prediction
+        );
+
+        return result;
+      };
+
+    wrappedRenderAll
+      .noteAssistantWrapped = true;
+
+    window.renderAll =
+      wrappedRenderAll;
+  }
 })();
