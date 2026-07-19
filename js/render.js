@@ -2234,8 +2234,8 @@ function getPaperClassName(item) {
         return "展開残し";
       }
 
-      if (pickupBoats.has(boatNo)) {
-        return `${boatNo}号艇の展開拾い`;
+        if (pickupBoats.has(boatNo)) {
+        return "展開拾い";
       }
 
       if (boatNo === honmeiNo) {
