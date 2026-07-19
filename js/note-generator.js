@@ -536,10 +536,17 @@
       "※点数はAI評価であり、的中確率ではありません。",
       "",
       "【結論】",
-      `${safeText(
-        flow.title,
-        "展開注目"
-      )}。${conclusion}`,
+            isWave
+        ? `${safeText(
+            flow.title,
+            "展開注目"
+          )}。${conclusion}`
+        : `${boatLabel(
+            main.honmei
+          )}を軸に、${safeText(
+            flow.title,
+            "展開注目"
+          )}。${conclusion}`,
       "",
       "【根拠】",
       abilityReason,
