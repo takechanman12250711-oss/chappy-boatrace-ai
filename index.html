@@ -580,250 +580,79 @@
     <!-- ===================================================
       成績管理
     ==================================================== -->
+<section
+  id="resultSection"
+  class="dashboard-section result-management-section"
+>
 
-    <section
-      id="resultSection"
-      class="dashboard-section result-management-section"
-    >
-
-      <div class="dashboard-section-head">
-
-        <div>
-          <p class="section-eyebrow">
-            RESULT
-          </p>
-
-          <h2>
-            📈 結果分析
-          </h2>
-        </div>
-
-      </div>
-
-
-      <div class="result-dashboard-grid">
-
-        <article class="dashboard-card result-input-card">
-
-  <div class="dashboard-card-head">
+  <div class="dashboard-section-head">
 
     <div>
-      <span class="card-icon">
-        📊
-      </span>
+      <p class="section-eyebrow">
+        RESULT
+      </p>
 
-      <h3>
-        AI予想を検証
-      </h3>
+      <h2>
+        📈 結果分析
+      </h2>
     </div>
 
   </div>
 
-  <p class="v3-note">
-    保存されたAI予想と公式結果をレースごとに照合し、
-    予想精度と傾向を分析します。
-  </p>
 
-  <div id="statsArea"></div>
+  <div class="result-dashboard-grid">
 
-</article>
+    <article class="dashboard-card result-input-card">
 
-          <div class="dashboard-card-head">
+      <div class="dashboard-card-head">
 
-            <div>
-              <span class="card-icon">
-                🧾
-              </span>
+        <div>
+          <span class="card-icon">
+            📊
+          </span>
 
-              <h3>
-                実購入を記録
-              </h3>
-            </div>
-
-          </div>
-
-
-          <div class="result-inputs">
-
-            <label>
-
-              <span>
-                購入した3連単
-              </span>
-
-              <input
-                id="raceResultInput"
-                type="text"
-                inputmode="numeric"
-                placeholder="例：1-2-3"
-              />
-
-            </label>
-
-
-            <label>
-
-              <span>
-                購入時オッズ
-              </span>
-
-              <input
-                id="oddsInput"
-                type="number"
-                inputmode="decimal"
-                placeholder="例：12.5"
-              />
-
-            </label>
-
-
-            <label>
-
-              <span>
-                購入金額
-              </span>
-
-              <input
-                id="betAmountInput"
-                type="number"
-                inputmode="numeric"
-                value="100"
-                placeholder="100"
-              />
-
-            </label>
-
-          </div>
-
-
-          <div
-            id="autoPayoutText"
-            class="payout-display"
-          >
-            的中時の想定払戻：0円
-          </div>
-
-
-          <div class="result-buttons">
-
-            <button
-              id="saveResultBtn"
-              class="primary-btn"
-              type="button"
-            >
-              実購入を保存
-            </button>
-
-            <button
-              id="undoResultBtn"
-              class="sub-btn"
-              type="button"
-            >
-              最新購入を取り消す
-            </button>
-
-                    </div>
-
-
-          <div class="v3-final-block">
-
-            <h4>
-              📷 スクショからまとめて入力
-            </h4>
-
-
-            <div class="result-inputs">
-
-              <label>
-
-                <span>
-                  購入スクショ（複数選択可）
-                </span>
-
-                <input
-                  id="purchaseScreenshotInput"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  multiple
-                />
-
-              </label>
-
-            </div>
-
-
-            <p class="v3-note">
-              同じレースのスクショを複数選択できます。
-              重複した買い目は1件にまとめ、画像自体は保存しません。
-            </p>
-
-
-            <div class="result-buttons">
-
-              <button
-                id="readPurchaseScreenshotsBtn"
-                class="sub-btn"
-                type="button"
-              >
-                スクショを読み取る
-              </button>
-
-              <button
-                id="saveScreenshotPurchasesBtn"
-                class="primary-btn"
-                type="button"
-                disabled
-              >
-                読み取り結果を一括保存
-              </button>
-
-            </div>
-
-
-            <div
-              id="purchaseScreenshotStatus"
-              class="dashboard-status"
-              aria-live="polite"
-            >
-              スクショはまだ選択されていません
-            </div>
-
-
-            <div id="purchaseScreenshotPreview"></div>
-
-          </div>
-
-
-          <div id="statsArea"></div>
-        </article>
-
-
-        <article class="dashboard-card data-card">
-
-          <div class="dashboard-card-head">
-
-            <div>
-              <span class="card-icon">
-                📁
-              </span>
-
-              <h3>
-                データ・履歴
-              </h3>
-            </div>
-
-          </div>
-
-
-          <div id="missingArea"></div>
-
-          <div id="historyArea"></div>
-
-        </article>
+          <h3>
+            AI予想を検証
+          </h3>
+        </div>
 
       </div>
 
-    </section>
+      <p class="v3-note">
+        保存されたAI予想と公式結果をレースごとに照合し、
+        予想精度と傾向を分析します。
+      </p>
+
+      <div id="statsArea"></div>
+
+    </article>
+
+
+    <article class="dashboard-card data-card">
+
+      <div class="dashboard-card-head">
+
+        <div>
+          <span class="card-icon">
+            📁
+          </span>
+
+          <h3>
+            データ・履歴
+          </h3>
+        </div>
+
+      </div>
+
+      <div id="missingArea"></div>
+
+      <div id="historyArea"></div>
+
+    </article>
+
+  </div>
+
+</section>
 
   </main>
 
