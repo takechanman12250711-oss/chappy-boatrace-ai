@@ -955,7 +955,142 @@
       raw
     };
   }
+  function createOfficialHistoryAnalysis(
+    race
+  ) {
+    const context =
+      race?.historyContext || null;
 
+    if (!context?.ready) {
+      return {
+        ready: false,
+        usable: false,
+        source: "",
+        generatedAt: "",
+        venue: null,
+        racers: [],
+        warnings: [
+          "公式履歴統計はまだ利用できません"
+        ]
+      };
+    }
+
+    const venue =
+      context.venue || null;
+
+    const racers =
+      Array.isArray(context.racers)
+        ? context.racers
+        : [];
+
+    return {
+      ready: true,
+
+      usable:
+        Boolean(
+          context.usableVenueHistory ||
+          context.usableRacerHistory
+        ),
+
+      source:
+        context.source || "",
+
+      generatedAt:
+        context.generatedAt || "",
+
+      venue:
+        venue
+          ? {
+              jcd:
+                String(
+                  venue.jcd || ""
+                ),
+
+              place:
+                venue.place ||
+                race?.stadiumName ||
+                "",
+
+              samples:
+                Number(
+                  venue.samples ||
+                  venue.totalRaces ||
+                  0
+                ),
+
+              usable:
+                Boolean(venue.usable),
+
+              winningCourses:
+                Array.isArray(
+                  venue.winningCourses
+                )
+                  ? venue.winningCourses
+                  : [],
+
+              winningMethods:
+                Array.isArray(
+                  venue.winningMethods
+                )
+                  ? venue.winningMethods
+                  : [],
+
+              averageWinningSt:
+                Number(
+                  venue.averageWinningSt ||
+                  0
+                ),
+
+              payoutBands:
+                venue.payoutBands || null
+            }
+          : null,
+
+      racers:
+        racers.map(racer => ({
+          registerNo:
+            String(
+              racer.registerNo || ""
+            ),
+
+          racerName:
+            racer.racerName || "",
+
+          samples:
+            Number(
+              racer.samples ||
+              racer.starts ||
+              0
+            ),
+
+          usable:
+            Boolean(racer.usable),
+
+          winRate:
+            Number(
+              racer.winRate || 0
+            ),
+
+          top3Rate:
+            Number(
+              racer.top3Rate || 0
+            ),
+
+          averageSt:
+            Number(
+              racer.averageSt || 0
+            )
+        })),
+
+      warnings:
+        Array.isArray(context.warnings)
+          ? context.warnings
+          : [],
+
+      usagePolicy:
+        "展開・コースを優先し、十分なサンプルがある場合だけ参考補正に使用する"
+    };
+  }
   function normalizeEntries(entries) {
     if (!Array.isArray(entries)) return [];
 
