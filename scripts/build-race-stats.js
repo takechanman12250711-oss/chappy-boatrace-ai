@@ -64,7 +64,75 @@ function addCount(target, key) {
 
   target[key] = (target[key] || 0) + 1;
 }
+function addBoatPerformance(
+  pattern,
+  race
+) {
+  for (
+    const finisher of
+    race.finishers || []
+  ) {
+    const boatNo =
+      Number(finisher.boat);
 
+    if (
+      !Number.isInteger(boatNo) ||
+      boatNo < 1 ||
+      boatNo > 6
+    ) {
+      continue;
+    }
+
+    const boat =
+      pattern.boatPerformance[
+        boatNo
+      ] ||= {
+        boatNo,
+        starts: 0,
+        wins: 0,
+        top3: 0,
+        stSum: 0,
+        stSamples: 0
+      };
+
+    boat.starts += 1;
+
+    const rank =
+      Number(finisher.rank);
+
+    if (rank === 1) {
+      boat.wins += 1;
+    }
+
+    if (
+      rank >= 1 &&
+      rank <= 3
+    ) {
+      boat.top3 += 1;
+    }
+
+    const start =
+      race.starts?.find(
+        item =>
+          Number(item.boat) ===
+          boatNo
+      );
+
+    const rawSt = start?.st;
+
+    const st =
+      rawSt === null ||
+      rawSt === undefined ||
+      rawSt === ""
+        ? NaN
+        : Number(rawSt);
+
+    if (Number.isFinite(st)) {
+      boat.stSum += st;
+      boat.stSamples += 1;
+    }
+  }
+}
 function addRace(pattern, race) {
   const winner = race.finishers?.find(
     item => Number(item.rank) === 1
