@@ -844,12 +844,15 @@
       ) {
         existing.isManshu = true;
       }
-    });
-
-    const aiTicketList =
-      [...aiTicketMap.values()];
-
     return {
+      ok: true,
+      version: VERSION,
+      race,
+      dataQuality,
+
+      officialHistory,
+
+      venue,
       ok: true,
       version: VERSION,
       race,
