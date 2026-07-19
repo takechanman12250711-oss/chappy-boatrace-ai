@@ -649,6 +649,12 @@
         "-"
       )}${weather.windSpeed ?? "-"}m｜波${weather.waveHeight ?? "-"}cm`,
       "",
+
+      buildOfficialHistorySection(
+        prediction
+      ),
+
+      "",
       "ここから先で、6艇評価・AI優先候補・厳選7点を公開します。"
     ].join("\n");
   }
