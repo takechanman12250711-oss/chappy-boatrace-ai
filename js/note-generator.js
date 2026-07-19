@@ -428,11 +428,6 @@
     const scoreReason =
       `${directionReason} ${abilityReason}`;
 
-    const attack =
-      arrayify(
-        flow.attackBoats
-      )[0];
-
     return [
       "🚤 今回の厳選レース",
       "",
@@ -440,7 +435,8 @@
       `締切予定　${meta.deadline}`,
       `選定区分　${selectionType}`,
       "",
-      `${scoreLabel}　${displayedScore}点`,
+            `${scoreLabel}　${displayedScore}点`,
+      "※点数はAI評価であり、的中確率ではありません。",
       "",
       `【${scoreLabel}の根拠】`,
       scoreReason,
@@ -480,9 +476,6 @@
       )}`,
       `相手候補　${boatLabel(
         main.taikou
-      )}`,
-      `攻め警戒　${boatLabel(
-        attack
       )}`,
       "",
       "ここから先では、展開から導いた本線・押さえ・流し・万舟候補と、実際に購入する最大7点を公開します。",
