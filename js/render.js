@@ -2778,15 +2778,6 @@ function getPaperClassName(item) {
                       )
                     : ""}
 
-                  ${item.recommendedAmount > 0
-                    ? tag(
-                        `推奨 ${item.recommendedAmount
-                          .toLocaleString(
-                            "ja-JP"
-                          )}円`,
-                        "amount"
-                      )
-                    : ""}
                 </div>
 
                 ${item.scenarioSummary
