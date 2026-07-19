@@ -2411,13 +2411,33 @@ function getPaperClassName(item) {
           return;
         }
 
-        usedTickets.add(ticket);
+                usedTickets.add(ticket);
+
+        const numericOdds =
+          Number(row.odds);
+
+        const hasOdds =
+          row.odds !== null &&
+          row.odds !== undefined &&
+          row.odds !== "" &&
+          Number.isFinite(
+            numericOdds
+          ) &&
+          numericOdds > 0;
 
         selected.push({
           ticket,
           category,
+
           scenarioType:
             row.scenarioType || "",
+
+          oddsText:
+            hasOdds
+              ? `${numericOdds}倍`
+              : row.oddsText ||
+                "オッズ未取得",
+
           comment:
             createTicketSpecificComment(
               prediction,
