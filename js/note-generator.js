@@ -121,17 +121,21 @@
     };
   }
 
-  function createPracticalSelection(prediction) {
+    function createPracticalSelection(prediction) {
     const lists = ticketLists(prediction);
     const selected = [];
     const used = new Set();
 
     function add(list, limit, category) {
       let added = 0;
+
       arrayify(list).forEach(item => {
         if (added >= limit || selected.length >= 7) return;
+
         const row = normalizeTicket(item, category);
+
         if (!row.ticket || used.has(row.ticket)) return;
+
         used.add(row.ticket);
         selected.push({ ...row, category });
         added += 1;
@@ -150,7 +154,60 @@
       add(lists.hole, 7, "万舟・穴");
     }
 
-    return selected.slice(0, 7);
+    const requestedBudget =
+      safeNumber(
+        prediction?.allocationBudget,
+        1000
+      ) || 1000;
+
+    const budgetUnits =
+      Math.max(
+        1,
+        Math.floor(
+          requestedBudget / 100
+        )
+      );
+
+    const practical =
+      selected.slice(
+        0,
+        Math.min(
+          7,
+          budgetUnits
+        )
+      );
+
+    if (!practical.length) {
+      return [];
+    }
+
+    const allocatedUnits =
+      practical.map(() => 1);
+
+    let remainingUnits =
+      budgetUnits -
+      practical.length;
+
+    let index = 0;
+
+    while (remainingUnits > 0) {
+      allocatedUnits[
+        index % practical.length
+      ] += 1;
+
+      remainingUnits -= 1;
+      index += 1;
+    }
+
+    return practical.map(
+      (item, itemIndex) => ({
+        ...item,
+        amount:
+          allocatedUnits[
+            itemIndex
+          ] * 100
+      })
+    );
   }
 
   function boatRole(boatNo, position) {
