@@ -41,7 +41,7 @@ jobs:
 
       - name: Save collected results
         run: |
-          git add data/results
+        git add data/results data/stats
 
           if git diff --cached --quiet; then
             echo "保存する変更はありません"
