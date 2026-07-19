@@ -337,514 +337,82 @@
     };
   }
   
-      function calcStats(results) {
-    const list =
-      Array.isArray(results)
-        ? results
-        : [];
+      function buildRaceHistory(results) {
+  const resultList =
+    Array.isArray(results)
+      ? results
+      : [];
 
-    const count = list.length;
+  const predictionList =
+    typeof S.loadPredictionHistory ===
+      "function"
+      ? S.loadPredictionHistory()
+      : [];
 
-    const totalBet =
-      list.reduce(
-        (sum, record) =>
-          sum +
-          U.safeNumber(
-            record.amount,
-            0
+  const normalizeTicket = value => {
+    const boats =
+      String(value || "")
+        .match(/[1-6]/g) || [];
+
+    return (
+      boats.length === 3 &&
+      new Set(boats).size === 3
+    )
+      ? boats.join("-")
+      : "";
+  };
+
+  const raceMap = new Map();
+
+  const ensureRace = source => {
+    const raceKey =
+      S.buildRaceKey(source);
+
+    if (!raceKey) {
+      return null;
+    }
+
+    const parts =
+      raceKey.split("-");
+
+    if (!raceMap.has(raceKey)) {
+      raceMap.set(raceKey, {
+        raceKey,
+
+        date:
+          parts[0] || "",
+
+        jcd:
+          parts[1] || "",
+
+        raceNo:
+          Number(
+            parts[2] || 0
           ),
-        0
-      );
 
-    const totalPayout =
-      list.reduce(
-        (sum, record) =>
-          sum +
-          U.safeNumber(
-            record.payout,
-            0
-          ),
-        0
-      );
-
-    const profit =
-      totalPayout - totalBet;
-
-    const recoveryRate =
-      totalBet > 0
-        ? (
-            totalPayout /
-            totalBet
-          ) * 100
-        : 0;
-
-    const normalizeTicket =
-      value =>
-        (
-          String(value || "")
-            .match(/[1-6]/g) || []
-        )
-          .slice(0, 3)
-          .join("-");
-
-    const createBucket =
-      label => ({
-        label,
-        ticketCount: 0,
-        hitCount: 0,
-        theoreticalBet: 0,
-        theoreticalPayout: 0
+        place: "",
+        prediction: null,
+        officialResult: null,
+        latestAt: ""
       });
+    }
 
-    const rankStats = {
-      S: createBucket("S"),
-      A: createBucket("A"),
-      B: createBucket("B"),
-      C: createBucket("C")
-    };
+    const entry =
+      raceMap.get(raceKey);
 
-    const roleStats = {
-      本命:
-        createBucket("本命"),
-
-      押さえ:
-        createBucket("押さえ"),
-
-      流し:
-        createBucket("流し"),
-
-      拾い:
-        createBucket("拾い"),
-
-      "穴・万舟候補":
-        createBucket(
-          "穴・万舟候補"
-        )
-    };
-
-    const oddsValueStats = {};
-
-    let predictionRaceCount = 0;
-    let predictionHitCount = 0;
-    let theoryTicketCount = 0;
-    let theoryTotalBet = 0;
-    let theoryTotalPayout = 0;
-
-    const officialResults =
-      list.filter(record => {
-        const raceKey =
-          S.buildRaceKey(record);
-
-        const resultTicket =
-          normalizeTicket(
-            record?.result
-          );
-
-        const payoutPer100 =
-          U.safeNumber(
-            record
-              ?.officialPayoutPer100,
-            0
-          );
-
-        const isOfficial =
-          record?.recordType ===
-            "official_result" ||
-          record?.resultSource ===
-            "boatrace-official";
-
-        return Boolean(
-          raceKey &&
-          resultTicket &&
-          payoutPer100 > 0 &&
-          isOfficial
-        );
-      });
-
-    officialResults.forEach(record => {
-      const raceKey =
-        S.buildRaceKey(record);
-
-      const savedPredictionKey =
-        S.buildRaceKey(
-          record?.predictionRaceKey ||
-          ""
-        );
-
-      if (
-        savedPredictionKey &&
-        savedPredictionKey !==
-          raceKey
-      ) {
-        return;
-      }
-
-      const prediction =
-        S.findPredictionByRaceKey(
-          raceKey
-        );
-
-      if (
-        !prediction ||
-        prediction.isRetrospective ||
-        prediction.predictionMode ===
-          "retrospective_reference"
-      ) {
-        return;
-      }
-
-      const seenTickets =
-        new Set();
-
-      const theoryTickets = [];
-
-      (
-        Array.isArray(
-          prediction.ticketRanks
-        )
-          ? prediction.ticketRanks
-          : []
-      ).forEach(ticket => {
-        const normalizedTicket =
-          normalizeTicket(
-            ticket?.ticket
-          );
-
-        const recommendedAmount =
-          U.safeNumber(
-            ticket
-              ?.recommendedAmount,
-            0
-          );
-
-        if (
-          !normalizedTicket ||
-          recommendedAmount <= 0 ||
-          seenTickets.has(
-            normalizedTicket
-          )
-        ) {
-          return;
-        }
-
-        seenTickets.add(
-          normalizedTicket
-        );
-
-        theoryTickets.push({
-          ...ticket,
-          normalizedTicket,
-          recommendedAmount
-        });
-      });
-
-      if (!theoryTickets.length) {
-        return;
-      }
-
-      const actualTicket =
-        normalizeTicket(
-          record.result
-        );
-
-      const payoutPer100 =
-        U.safeNumber(
-          record
-            .officialPayoutPer100,
-          0
-        );
-
-      const matchedTicket =
-        theoryTickets.find(
-          ticket =>
-            ticket
-              .normalizedTicket ===
-            actualTicket
-        ) || null;
-
-      const raceBet =
-        theoryTickets.reduce(
-          (sum, ticket) =>
-            sum +
-            ticket.recommendedAmount,
-          0
-        );
-
-      const racePayout =
-        matchedTicket
-          ? Math.round(
-              (
-                payoutPer100 /
-                100
-              ) *
-              matchedTicket
-                .recommendedAmount
-            )
-          : 0;
-
-      predictionRaceCount += 1;
-
-      theoryTicketCount +=
-        theoryTickets.length;
-
-      theoryTotalBet +=
-        raceBet;
-
-      theoryTotalPayout +=
-        racePayout;
-
-      if (matchedTicket) {
-        predictionHitCount += 1;
-      }
-
-      theoryTickets.forEach(ticket => {
-        const isHit =
-          ticket.normalizedTicket ===
-          actualTicket;
-
-        const rank =
-          String(
-            ticket?.rank || ""
-          ).toUpperCase();
-
-        const role =
-          String(
-            ticket?.role || ""
-          );
-
-        const oddsValue =
-          String(
-            ticket?.oddsValue ||
-            "未判定"
-          );
-
-        const updateBucket =
-          bucket => {
-            bucket.ticketCount += 1;
-
-            bucket.theoreticalBet +=
-              ticket
-                .recommendedAmount;
-
-            if (isHit) {
-              bucket.hitCount += 1;
-
-              bucket
-                .theoreticalPayout +=
-                Math.round(
-                  (
-                    payoutPer100 /
-                    100
-                  ) *
-                  ticket
-                    .recommendedAmount
-                );
-            }
-          };
-
-        if (rankStats[rank]) {
-          updateBucket(
-            rankStats[rank]
-          );
-        }
-
-        if (roleStats[role]) {
-          updateBucket(
-            roleStats[role]
-          );
-        }
-
-        if (
-          !oddsValueStats[
-            oddsValue
-          ]
-        ) {
-          oddsValueStats[
-            oddsValue
-          ] = createBucket(
-            oddsValue
-          );
-        }
-
-        updateBucket(
-          oddsValueStats[
-            oddsValue
-          ]
-        );
-      });
-    });
-
-    const finalizeBucket =
-      bucket => ({
-        ...bucket,
-
-        hitRate:
-          bucket.ticketCount > 0
-            ? (
-                bucket.hitCount /
-                bucket.ticketCount
-              ) * 100
-            : 0,
-
-        recoveryRate:
-          bucket.theoreticalBet > 0
-            ? (
-                bucket
-                  .theoreticalPayout /
-                bucket
-                  .theoreticalBet
-              ) * 100
-            : 0
-      });
-
-    const finalizedRankStats =
-      Object.fromEntries(
-        Object.entries(
-          rankStats
-        ).map(
-          ([key, bucket]) => [
-            key,
-            finalizeBucket(bucket)
-          ]
-        )
-      );
-
-    const finalizedRoleStats =
-      Object.fromEntries(
-        Object.entries(
-          roleStats
-        ).map(
-          ([key, bucket]) => [
-            key,
-            finalizeBucket(bucket)
-          ]
-        )
-      );
-
-    const finalizedOddsValueStats =
-      Object.fromEntries(
-        Object.entries(
-          oddsValueStats
-        ).map(
-          ([key, bucket]) => [
-            key,
-            finalizeBucket(bucket)
-          ]
-        )
-      );
-
-    const theoryProfit =
-      theoryTotalPayout -
-      theoryTotalBet;
-
-    const theoryRecoveryRate =
-      theoryTotalBet > 0
-        ? (
-            theoryTotalPayout /
-            theoryTotalBet
-          ) * 100
-        : 0;
-
-    return {
-      count,
-      totalBet,
-      totalPayout,
-      profit,
-      recoveryRate,
-
-      predictionRaceCount,
-      predictionHitCount,
-
-      predictionHitRate:
-        predictionRaceCount > 0
-          ? (
-              predictionHitCount /
-              predictionRaceCount
-            ) * 100
-          : 0,
-
-      theoryTicketCount,
-      theoryTotalBet,
-      theoryTotalPayout,
-      theoryProfit,
-      theoryRecoveryRate,
-
-      rankStats:
-        finalizedRankStats,
-
-      roleStats:
-        finalizedRoleStats,
-
-      oddsValueStats:
-        finalizedOddsValueStats
-    };
-  }
-    function buildRaceHistory(results) {
-    const resultList =
-      Array.isArray(results) ? results : [];
-
-    const predictionList =
-      typeof S.loadPredictionHistory === "function"
-        ? S.loadPredictionHistory()
-        : [];
-
-    const purchaseList =
-      typeof S.loadActualPurchases === "function"
-        ? S.loadActualPurchases()
-        : [];
-
-    const normalizeTicket = value => {
-      const boats =
-        String(value || "").match(/[1-6]/g) || [];
-
-      if (
-        boats.length !== 3 ||
-        new Set(boats).size !== 3
-      ) {
-        return "";
-      }
-
-      return boats.join("-");
-    };
-
-    const raceMap = new Map();
-
-    const ensureRace = source => {
-      const raceKey = S.buildRaceKey(source);
-
-      if (!raceKey) {
-        return null;
-      }
-
-      const keyParts = raceKey.split("-");
-
-      if (!raceMap.has(raceKey)) {
-        raceMap.set(raceKey, {
-          raceKey,
-          date: keyParts[0] || "",
-          jcd: keyParts[1] || "",
-          raceNo: Number(keyParts[2] || 0),
-          place: "",
-          prediction: null,
-          officialResult: null,
-          actualPurchases: [],
-          latestAt: ""
-        });
-      }
-
-      const entry = raceMap.get(raceKey);
-
-      const place = String(
+    const place =
+      String(
         source?.place ||
         source?.predictionPlace ||
         ""
       ).trim();
 
-      if (place) {
-        entry.place = place;
-      }
+    if (place) {
+      entry.place = place;
+    }
 
-      const date = String(
+    const date =
+      String(
         source?.date ||
         source?.predictionDate ||
         ""
@@ -852,69 +420,95 @@
         .replace(/\D/g, "")
         .slice(0, 8);
 
-      if (date.length === 8) {
-        entry.date = date;
-      }
+    if (date.length === 8) {
+      entry.date = date;
+    }
 
-      const rawJcd = String(
+    const rawJcd =
+      String(
         source?.jcd ||
         source?.predictionJcd ||
         ""
       ).replace(/\D/g, "");
 
-      const jcd = rawJcd
-        ? rawJcd.padStart(2, "0").slice(-2)
-        : "";
+    if (rawJcd) {
+      entry.jcd =
+        rawJcd
+          .padStart(2, "0")
+          .slice(-2);
+    }
 
-      if (jcd) {
-        entry.jcd = jcd;
-      }
-
-      const raceNo = Number(
+    const raceNo =
+      Number(
         source?.raceNo ??
         source?.rno ??
-        source?.predictionRaceNo ??
+        source
+          ?.predictionRaceNo ??
         0
       );
 
-      if (raceNo >= 1 && raceNo <= 12) {
-        entry.raceNo = raceNo;
-      }
+    if (
+      raceNo >= 1 &&
+      raceNo <= 12
+    ) {
+      entry.raceNo =
+        raceNo;
+    }
 
-      [
-        source?.updatedAt,
-        source?.officialCheckedAt,
-        source?.savedAt
-      ]
-        .map(value => String(value || ""))
-        .filter(Boolean)
-        .forEach(value => {
-          if (value > entry.latestAt) {
-            entry.latestAt = value;
-          }
-        });
+    [
+      source?.updatedAt,
+      source?.officialCheckedAt,
+      source?.savedAt
+    ]
+      .map(value =>
+        String(value || "")
+      )
+      .filter(Boolean)
+      .forEach(value => {
+        if (
+          value >
+          entry.latestAt
+        ) {
+          entry.latestAt =
+            value;
+        }
+      });
 
-      return entry;
-    };
+    return entry;
+  };
 
-    predictionList.forEach(prediction => {
+
+  predictionList.forEach(
+    prediction => {
       if (
         !prediction ||
-        prediction.isRetrospective ||
-        prediction.predictionMode ===
+        prediction
+          .isRetrospective ||
+        prediction
+          .predictionMode ===
           "retrospective_reference"
       ) {
         return;
       }
 
-      const entry = ensureRace(prediction);
+      const entry =
+        ensureRace(
+          prediction
+        );
 
-      if (entry && !entry.prediction) {
-        entry.prediction = prediction;
+      if (
+        entry &&
+        !entry.prediction
+      ) {
+        entry.prediction =
+          prediction;
       }
-    });
+    }
+  );
 
-    resultList.forEach(record => {
+
+  resultList.forEach(
+    record => {
       const isOfficial =
         record?.recordType ===
           "official_result" ||
@@ -922,674 +516,156 @@
           "boatrace-official";
 
       const resultTicket =
-        normalizeTicket(record?.result);
-
-      const payoutPer100 = U.safeNumber(
-        record?.officialPayoutPer100,
-        0
-      );
+        normalizeTicket(
+          record?.result
+        );
 
       if (
         !isOfficial ||
-        !resultTicket ||
-        payoutPer100 <= 0
+        !resultTicket
       ) {
         return;
       }
 
-      const entry = ensureRace(record);
+      const entry =
+        ensureRace(record);
 
-      if (entry && !entry.officialResult) {
-        entry.officialResult = record;
+      if (
+        entry &&
+        !entry.officialResult
+      ) {
+        entry.officialResult =
+          record;
       }
-    });
+    }
+  );
 
-    purchaseList.forEach(purchase => {
-      const entry = ensureRace(purchase);
 
-      if (entry) {
-        entry.actualPurchases.push(purchase);
-      }
-    });
-
-    return Array.from(raceMap.values())
-      .map(entry => {
-        const officialResult =
-          entry.officialResult;
-
-        const resultTicket =
-          normalizeTicket(
-            officialResult?.result
-          );
-
-        const payoutPer100 = U.safeNumber(
-          officialResult
-            ?.officialPayoutPer100,
-          0
+  return Array.from(
+    raceMap.values()
+  )
+    .map(entry => {
+      const resultTicket =
+        normalizeTicket(
+          entry.officialResult
+            ?.result
         );
 
-        const isSettled = Boolean(
-          officialResult &&
-          resultTicket &&
-          payoutPer100 > 0
-        );
+      const predictionTickets =
+        [];
 
-        const predictionTickets = [];
-        const seenPredictionTickets =
-          new Set();
+      const seen =
+        new Set();
 
-        const sourceTickets = Array.isArray(
-          entry.prediction?.ticketRanks
+      const sourceTickets =
+        Array.isArray(
+          entry.prediction
+            ?.ticketRanks
         )
-          ? entry.prediction.ticketRanks
+          ? entry.prediction
+              .ticketRanks
           : [];
 
-        sourceTickets.forEach(ticket => {
-          const normalizedTicket =
-            normalizeTicket(ticket?.ticket);
+      sourceTickets.forEach(
+        item => {
+          const ticket =
+            normalizeTicket(
+              item?.ticket
+            );
 
           if (
-            !normalizedTicket ||
-            seenPredictionTickets.has(
-              normalizedTicket
-            )
+            !ticket ||
+            seen.has(ticket)
           ) {
             return;
           }
 
-          seenPredictionTickets.add(
-            normalizedTicket
-          );
+          seen.add(ticket);
 
           predictionTickets.push({
-            ...ticket,
-            ticket: normalizedTicket,
-            recommendedAmount: U.safeNumber(
-              ticket?.recommendedAmount,
-              0
-            )
+            ...item,
+            ticket
           });
-        });
-
-        const theoryTickets =
-          predictionTickets.filter(
-            ticket =>
-              ticket.recommendedAmount > 0
-          );
-
-        const theoryBet =
-          theoryTickets.reduce(
-            (sum, ticket) =>
-              sum +
-              ticket.recommendedAmount,
-            0
-          );
-
-        const theoryHitTicket = isSettled
-          ? (
-              theoryTickets.find(
-                ticket =>
-                  ticket.ticket ===
-                  resultTicket
-              ) || null
-            )
-          : null;
-
-        const theoryPayout =
-          theoryHitTicket
-            ? Math.round(
-                (
-                  payoutPer100 /
-                  100
-                ) *
-                theoryHitTicket
-                  .recommendedAmount
-              )
-            : 0;
-
-        const theoryProfit =
-          isSettled &&
-          theoryTickets.length > 0
-            ? theoryPayout - theoryBet
-            : null;
-
-        let theoryStatus = "予想なし";
-
-        if (entry.prediction) {
-          if (!isSettled) {
-            theoryStatus = "結果待ち";
-          } else if (!theoryTickets.length) {
-            theoryStatus = "購入額なし";
-          } else {
-            theoryStatus = theoryHitTicket
-              ? "的中"
-              : "不的中";
-          }
         }
+      );
 
-        const actualPurchases = [];
-        const seenActualTickets = new Set();
+      return {
+        raceKey:
+          entry.raceKey,
 
-        entry.actualPurchases.forEach(
-          purchase => {
-            const ticket =
-              normalizeTicket(
-                purchase?.ticket
-              );
+        date:
+          entry.date,
 
-            const amount = U.safeNumber(
-              purchase?.amount,
-              0
-            );
+        place:
+          entry.place,
 
-            if (
-              !ticket ||
-              amount <= 0 ||
-              seenActualTickets.has(ticket)
-            ) {
-              return;
-            }
+        jcd:
+          entry.jcd,
 
-            seenActualTickets.add(ticket);
+        raceNo:
+          entry.raceNo,
 
-            actualPurchases.push({
-              ...purchase,
-              ticket,
-              amount,
-              isHit:
-                isSettled &&
-                ticket === resultTicket
-            });
-          }
-        );
+        latestAt:
+          entry.latestAt,
 
-        const actualBet =
-          actualPurchases.reduce(
-            (sum, purchase) =>
-              sum + purchase.amount,
+        prediction:
+          entry.prediction,
+
+        predictionTickets,
+
+        officialResult:
+          entry.officialResult,
+
+        resultTicket,
+
+        payoutPer100:
+          U.safeNumber(
+            entry.officialResult
+              ?.officialPayoutPer100,
             0
-          );
-
-        const actualHitPurchase =
-          isSettled
-            ? (
-                actualPurchases.find(
-                  purchase =>
-                    purchase.ticket ===
-                    resultTicket
-                ) || null
-              )
-            : null;
-
-        const actualPayout =
-          actualHitPurchase
-            ? Math.round(
-                (
-                  payoutPer100 /
-                  100
-                ) *
-                actualHitPurchase.amount
-              )
-            : 0;
-
-        const actualProfit =
-          isSettled &&
-          actualPurchases.length > 0
-            ? actualPayout - actualBet
-            : null;
-
-        let actualStatus = "実購入なし";
-
-        if (actualPurchases.length > 0) {
-          if (!isSettled) {
-            actualStatus = "結果待ち";
-          } else {
-            actualStatus =
-              actualHitPurchase
-                ? "的中"
-                : "不的中";
-          }
-        }
-
-        return {
-          raceKey: entry.raceKey,
-          date: entry.date,
-          place: entry.place,
-          jcd: entry.jcd,
-          raceNo: entry.raceNo,
-          latestAt: entry.latestAt,
-
-          prediction: entry.prediction,
-          predictionTickets,
-
-          officialResult,
-          resultTicket,
-          payoutPer100,
-
-          winningMethod: String(
-            officialResult
-              ?.winningMethod || ""
           ),
 
-          officialPopularity:
-            officialResult
-              ?.officialPopularity ?? null,
-
-          raceStatus:
-            isSettled
-              ? "結果確定"
-              : "結果待ち",
-
-          theoryTickets,
-          theoryBet,
-          theoryPayout,
-          theoryProfit,
-          theoryHitTicket,
-          theoryStatus,
-
-          actualPurchases,
-          actualBet,
-          actualPayout,
-          actualProfit,
-          actualHitPurchase,
-          actualStatus
-        };
-      })
-      .sort(
-        (a, b) =>
+        winningMethod:
           String(
-            b.latestAt || ""
-          ).localeCompare(
-            String(a.latestAt || "")
-          ) ||
-          String(b.raceKey).localeCompare(
-            String(a.raceKey),
-            "ja",
-            { numeric: true }
+            entry.officialResult
+              ?.winningMethod ||
+            ""
+          ),
+
+        officialPopularity:
+          entry.officialResult
+            ?.officialPopularity ??
+          null,
+
+        raceStatus:
+          entry.officialResult &&
+          resultTicket
+            ? "結果確定"
+            : "結果待ち"
+      };
+    })
+    .sort(
+      (a, b) =>
+        String(
+          b.latestAt || ""
+        ).localeCompare(
+          String(
+            a.latestAt || ""
           )
-      );
-  }
-  
-    function renderRaceHistory(results) {
-    const history =
-      buildRaceHistory(results);
-
-    if (!history.length) {
-      U.setHtml(
-        "historyArea",
-        `
-          <div class="v3-final-block">
-            <h3>
-              レース別履歴
-            </h3>
-
-            <p>
-              保存された予想・公式結果・実購入はありません
-            </p>
-          </div>
-        `
-      );
-
-      return;
-    }
-
-    const escapeText = value =>
-      typeof U.escapeHtml === "function"
-        ? U.escapeHtml(value)
-        : String(value || "");
-
-    const formatDate = value => {
-      const digits =
-        String(value || "")
-          .replace(/\D/g, "")
-          .slice(0, 8);
-
-      if (digits.length !== 8) {
-        return "日付不明";
-      }
-
-      return (
-        digits.slice(0, 4) +
-        "/" +
-        digits.slice(4, 6) +
-        "/" +
-        digits.slice(6, 8)
-      );
-    };
-
-    const formatResultMoney = value =>
-      value === null
-        ? "-"
-        : U.formatMoney(value);
-
-    const renderPredictionRows = item =>
-      item.predictionTickets
-        .map(ticket => {
-          const scenarioText =
-            Array.isArray(
-              ticket?.scenarioTypes
-            ) &&
-            ticket.scenarioTypes.length > 0
-              ? ticket.scenarioTypes
-                  .map(escapeText)
-                  .join(" / ")
-              : "-";
-
-          const resultText =
-            item.raceStatus !== "結果確定"
-              ? "結果待ち"
-              : ticket.ticket ===
-                item.resultTicket
-                ? "結果一致"
-                : "-";
-
-          const amountText =
-            ticket.recommendedAmount > 0
-              ? U.formatMoney(
-                  ticket.recommendedAmount
-                )
-              : "未配分";
-
-          return `
-            <tr>
-              <td>
-                ${escapeText(ticket.ticket)}
-              </td>
-              <td>
-                ${escapeText(
-                  ticket.role ||
-                  "分類未保存"
-                )}
-              </td>
-              <td>
-                ${scenarioText}
-              </td>
-              <td>
-                ${amountText}
-              </td>
-              <td>
-                ${resultText}
-              </td>
-            </tr>
-          `;
-        })
-        .join("");
-
-    const renderActualRows = item =>
-      item.actualPurchases
-        .map(purchase => {
-          const purchaseOdds =
-            U.safeNumber(
-              purchase?.purchaseOdds,
-              0
-            );
-
-          const oddsText =
-            purchaseOdds > 0
-              ? U.formatOdds(
-                  purchaseOdds
-                )
-              : "-";
-
-          const resultText =
-            item.raceStatus !== "結果確定"
-              ? "結果待ち"
-              : purchase.isHit
-                ? "的中"
-                : "不的中";
-
-          return `
-            <tr>
-              <td>
-                ${escapeText(
-                  purchase.ticket
-                )}
-              </td>
-              <td>
-                ${U.formatMoney(
-                  purchase.amount
-                )}
-              </td>
-              <td>
-                ${oddsText}
-              </td>
-              <td>
-                ${resultText}
-              </td>
-            </tr>
-          `;
-        })
-        .join("");
-
-    U.setHtml(
-      "historyArea",
-      `
-        <div class="v3-final-block">
-          <h3>
-            レース別履歴
-          </h3>
-
-          <p>
-            予想・公式結果・的中・実購入・払戻・収支を
-            同じレースごとに表示します
-          </p>
-        </div>
-
-        ${history
-          .map(item => {
-            const placeText =
-              item.place
-                ? escapeText(item.place)
-                : item.jcd
-                  ? "場コード" +
-                    escapeText(item.jcd)
-                  : "場不明";
-
-            const officialPopularity =
-              U.safeNumber(
-                item.officialPopularity,
-                0
-              );
-
-            const popularityText =
-              officialPopularity > 0
-                ? " / " +
-                  officialPopularity +
-                  "番人気"
-                : "";
-
-            const winningMethodText =
-              item.winningMethod
-                ? " / 決まり手 " +
-                  escapeText(
-                    item.winningMethod
-                  )
-                : "";
-
-            const resultHtml =
-              item.raceStatus ===
-                "結果確定"
-                ? `
-                    <p>
-                      結果：
-                      <strong>
-                        ${escapeText(
-                          item.resultTicket
-                        )}
-                      </strong>
-                      / 公式100円払戻：
-                      <strong>
-                        ${U.formatMoney(
-                          item.payoutPer100
-                        )}
-                      </strong>
-                      ${popularityText}
-                      ${winningMethodText}
-                    </p>
-                  `
-                : `
-                    <p>
-                      公式結果：結果待ち
-                    </p>
-                  `;
-
-            const predictionHtml =
-              item.predictionTickets.length > 0
-                ? `
-                    <div class="v3-table-wrap">
-                      <table class="table">
-                        <thead>
-                          <tr>
-                            <th>AI買い目</th>
-                            <th>役割</th>
-                            <th>成立展開</th>
-                            <th>推奨購入</th>
-                            <th>結果</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          ${renderPredictionRows(
-                            item
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  `
-                : `
-                    <p>
-                      保存されたAI予想はありません
-                    </p>
-                  `;
-
-            const actualHtml =
-              item.actualPurchases.length > 0
-                ? `
-                    <div class="v3-table-wrap">
-                      <table class="table">
-                        <thead>
-                          <tr>
-                            <th>実購入</th>
-                            <th>購入額</th>
-                            <th>購入時オッズ</th>
-                            <th>結果</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          ${renderActualRows(
-                            item
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  `
-                : `
-                    <p>
-                      実購入は記録されていません
-                    </p>
-                  `;
-
-            return `
-              <article class="v3-final-block">
-                <h3>
-                  ${formatDate(item.date)}
-                  ${placeText}
-                  ${item.raceNo}R
-                </h3>
-
-                <p>
-                  ${escapeText(item.raceStatus)}
-                </p>
-
-                ${resultHtml}
-
-                <h4>
-                  レース成績
-                </h4>
-
-                <div class="v3-table-wrap">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>区分</th>
-                        <th>判定</th>
-                        <th>購入</th>
-                        <th>払戻</th>
-                        <th>収支</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      <tr>
-                        <td>AI理論</td>
-                        <td>
-                          ${escapeText(
-                            item.theoryStatus
-                          )}
-                        </td>
-                        <td>
-                          ${U.formatMoney(
-                            item.theoryBet
-                          )}
-                        </td>
-                        <td>
-                          ${formatResultMoney(
-                            item.theoryProfit ===
-                              null
-                              ? null
-                              : item.theoryPayout
-                          )}
-                        </td>
-                        <td>
-                          ${formatResultMoney(
-                            item.theoryProfit
-                          )}
-                        </td>
-                      </tr>
-
-                      <tr>
-                        <td>実購入</td>
-                        <td>
-                          ${escapeText(
-                            item.actualStatus
-                          )}
-                        </td>
-                        <td>
-                          ${U.formatMoney(
-                            item.actualBet
-                          )}
-                        </td>
-                        <td>
-                          ${formatResultMoney(
-                            item.actualProfit ===
-                              null
-                              ? null
-                              : item.actualPayout
-                          )}
-                        </td>
-                        <td>
-                          ${formatResultMoney(
-                            item.actualProfit
-                          )}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <h4>
-                  実購入明細
-                </h4>
-
-                ${actualHtml}
-              </article>
-            `;
-          })
-          .join("")}
-      `
+        ) ||
+        String(
+          b.raceKey
+        ).localeCompare(
+          String(
+            a.raceKey
+          ),
+          "ja",
+          {
+            numeric: true
+          }
+        )
     );
-  }
+}
     function renderStats() {
   const results = S.loadResults();
   const history = buildRaceHistory(results);
@@ -2190,7 +1266,6 @@
 }
 
 window.ChappyStats = {
-  calcStats,
   renderStats,
   initStatsEvents
 };
