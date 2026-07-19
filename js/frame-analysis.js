@@ -39,7 +39,30 @@
       ? number.toFixed(3)
       : "-";
   }
+  function calculateDifference(
+    value,
+    baseline,
+    digits = 1
+  ) {
+    const current =
+      Number(value);
 
+    const standard =
+      Number(baseline);
+
+    if (
+      !Number.isFinite(current) ||
+      !Number.isFinite(standard)
+    ) {
+      return null;
+    }
+
+    return Number(
+      (
+        current - standard
+      ).toFixed(digits)
+    );
+  }
   function getFrameRows(prediction) {
     const entries =
       Array.isArray(
