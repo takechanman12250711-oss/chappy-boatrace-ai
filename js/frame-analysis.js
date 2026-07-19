@@ -511,7 +511,7 @@
               <th>1着率</th>
               <th>3連対率</th>
               <th>平均ST</th>
-              <th>判定</th>
+              <th>枠相性</th>
             </tr>
           </thead>
 
