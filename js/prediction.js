@@ -4827,11 +4827,17 @@ const candidates = [...evaluations]
     const scenarioTitle =
       String(raceFlow.title || "");
 
+        const markedHead = toBoatNo(
+      context.mainSheet?.honmei?.boatNo
+    );
+
     const mainHead =
-      scenarioTitle === "2コース差し本線" &&
-      attackCourse === 2
-        ? attackBoat
-        : insideBoat;
+      isValidBoatNo(markedHead)
+        ? markedHead
+        : scenarioTitle === "2コース差し本線" &&
+            attackCourse === 2
+          ? attackBoat
+          : insideBoat;
 
     const addTickets = (
       target,
