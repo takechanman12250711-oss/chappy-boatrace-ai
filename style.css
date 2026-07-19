@@ -3576,3 +3576,129 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* =========================================================
+  note投稿アシスト
+========================================================= */
+
+.note-assistant-section {
+  border-top: 4px solid #41c9b4;
+}
+
+.note-assistant-section[hidden] {
+  display: none;
+}
+
+.note-assistant-actions {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.note-assistant-actions button,
+.note-assistant-actions a {
+  min-height: 46px;
+  padding: 11px 12px;
+  border: 1px solid #ccd7df;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #222222;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.note-assistant-actions
+  #noteGenerateBtn {
+  border-color: #41c9b4;
+  background: #41c9b4;
+  color: #ffffff;
+}
+
+.note-assistant-actions
+  #noteOpenBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-color: #41c9b4;
+  color: #168b7a;
+}
+
+.note-assistant-actions
+  button:disabled {
+  border-color: #d8e0e6;
+  background: #edf1f4;
+  color: #8c99a3;
+  cursor: not-allowed;
+}
+
+.note-preview-label {
+  display: block;
+  margin-top: 14px;
+  color: #37434c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.note-preview-label input,
+.note-preview-label textarea {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+  padding: 12px;
+  border: 1px solid #ccd7df;
+  border-radius: 10px;
+  outline: none;
+  background: #ffffff;
+  color: #222222;
+  font: inherit;
+  font-size: 14px;
+}
+
+.note-preview-label input {
+  min-height: 46px;
+}
+
+.note-preview-label textarea {
+  min-height: 420px;
+  resize: vertical;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.note-preview-label input:focus,
+.note-preview-label textarea:focus {
+  border-color: #41c9b4;
+  box-shadow:
+    0 0 0 3px
+    rgba(65, 201, 180, 0.15);
+}
+
+#noteStatusBadge {
+  border-color: #b8e9e1;
+  background: #effbf9;
+  color: #168b7a;
+}
+
+@media (max-width: 430px) {
+  .note-assistant-actions {
+    gap: 8px;
+  }
+
+  .note-assistant-actions button,
+  .note-assistant-actions a {
+    min-height: 44px;
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .note-preview-label textarea {
+    min-height: 360px;
+    font-size: 13px;
+  }
+}
