@@ -326,7 +326,19 @@
       `${boats[2]}号艇の${boatRole(boats[2], "third")}を組み合わせる${category}。`;
   }
 
-      
+        function formatTicketLine(
+    item
+  ) {
+    const oddsText =
+      item.odds > 0
+        ? `${item.odds}倍`
+        : "オッズ未取得";
+
+    return (
+      `・${item.ticket}　` +
+      oddsText
+    );
+  }
 
   function boatLabel(item) {
     if (!item) return "該当艇なし";
