@@ -2852,15 +2852,6 @@
               aiTicket?.odds ??
               null;
 
-            const recommendedAmount =
-              Number(
-                item
-                  ?.recommendedAmount ??
-                aiTicket
-                  ?.recommendedAmount ??
-                0
-              );
-
             return {
               ticket,
               role,
@@ -2894,13 +2885,6 @@
                   aiTicket?.oddsValue ||
                   ""
                 ),
-
-              recommendedAmount:
-                Number.isFinite(
-                  recommendedAmount
-                )
-                  ? recommendedAmount
-                  : 0,
 
               isManshu:
                 Boolean(
@@ -2964,20 +2948,6 @@
           false,
 
         oddsCaptured,
-
-        allocationBudget:
-          Number(
-            prediction
-              ?.allocationBudget ||
-            0
-          ),
-
-        allocatedTotal:
-          Number(
-            prediction
-              ?.allocatedTotal ||
-            0
-          ),
 
         summary,
         ticketRanks
@@ -3320,6 +3290,7 @@ if (prediction.finalAi) {
     )
   };
 }
+
 
         try {
       const predictionSnapshot = {
