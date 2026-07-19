@@ -203,7 +203,62 @@ function finalizeCounts(counts, total) {
         )
     );
 }
+function finalizeBoatPerformance(
+  boatPerformance
+) {
+  return Object.fromEntries(
+    Object.values(
+      boatPerformance || {}
+    )
+      .sort(
+        (a, b) =>
+          a.boatNo - b.boatNo
+      )
+      .map(boat => [
+        String(boat.boatNo),
+        {
+          boatNo:
+            boat.boatNo,
 
+          starts:
+            boat.starts,
+
+          reliability:
+            racerReliability(
+              boat.starts
+            ),
+
+          wins:
+            boat.wins,
+
+          winRate:
+            percent(
+              boat.wins,
+              boat.starts
+            ),
+
+          top3:
+            boat.top3,
+
+          top3Rate:
+            percent(
+              boat.top3,
+              boat.starts
+            ),
+
+          averageSt:
+            boat.stSamples
+              ? Number(
+                  (
+                    boat.stSum /
+                    boat.stSamples
+                  ).toFixed(3)
+                )
+              : null
+        }
+      ])
+  );
+}
 function finalizePattern(pattern) {
   const total = pattern.totalRaces;
 
