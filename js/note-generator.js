@@ -178,18 +178,39 @@
       `${boats[2]}号艇の${boatRole(boats[2], "third")}を組み合わせる${category}。`;
   }
 
-  function formatTicketLine(item, includeAmount = false) {
-    const oddsText = item.odds > 0 ? `${item.odds}倍` : "オッズ未取得";
+    function formatTicketLine(
+    item,
+    includeAmount = false
+  ) {
+    const oddsText =
+      item.odds > 0
+        ? `${item.odds}倍`
+        : "オッズ未取得";
+
     const amountText =
-      includeAmount && item.amount > 0
+      includeAmount &&
+      item.amount > 0
         ? `／${item.amount.toLocaleString("ja-JP")}円`
         : "";
 
     const reason =
-      item.comment ||
-      ticketComment(item.ticket, item.category);
+      item.ticket
+        ? ticketComment(
+            item.ticket,
+            item.category
+          )
+        : (
+            item.comment ||
+            `${item.category}として展開から選んだ買い目。`
+          );
 
-    return `・${item.category}　${item.ticket}　${oddsText}${amountText}\n  ${reason}`;
+    return (
+      `・${item.category}　` +
+      `${item.ticket}　` +
+      `${oddsText}` +
+      `${amountText}\n` +
+      `  ${reason}`
+    );
   }
 
   function boatLabel(item) {
