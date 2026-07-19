@@ -91,14 +91,24 @@
       "秒"
     );
   }
-  function calculateDifference(
+    function calculateDifference(
     value,
     baseline,
     digits = 1
   ) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === "" ||
+      baseline === null ||
+      baseline === undefined ||
+      baseline === ""
+    ) {
+      return null;
+    }
+
     const current =
       Number(value);
-
     const standard =
       Number(baseline);
 
