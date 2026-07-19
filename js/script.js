@@ -3849,10 +3849,46 @@
     }
 
     try {
+            const deadlineText =
+        document.querySelector(
+          ".official-race-button.is-selected .official-race-time"
+        )
+          ?.textContent
+          ?.trim() || "";
+
+      const deadlineMatch =
+        deadlineText.match(
+          /[0-2]?\d:[0-5]\d/
+        );
+
+      const predictionForNote = {
+        ...lastNotePrediction,
+
+        race: {
+          ...(
+            lastNotePrediction
+              .race || {}
+          ),
+
+          raceInfo: {
+            ...(
+              lastNotePrediction
+                .race
+                ?.raceInfo || {}
+            ),
+
+            deadline:
+              deadlineMatch
+                ? deadlineMatch[0]
+                : ""
+          }
+        }
+      };
+
       const article =
         window.ChappyNoteGenerator
           .generateArticle(
-            lastNotePrediction
+            predictionForNote
           );
 
       if (!article?.ok) {
