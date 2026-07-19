@@ -138,10 +138,14 @@ function addRace(pattern, race) {
     item => Number(item.rank) === 1
   );
 
-  if (!winner) return;
+    if (!winner) return;
+
+  addBoatPerformance(
+    pattern,
+    race
+  );
 
   const winnerBoat = Number(winner.boat);
-
   const start = race.starts?.find(
     item => Number(item.boat) === winnerBoat
   );
