@@ -65,9 +65,17 @@
     );
   }
 
-  function formatStDifference(
+    function formatStDifference(
     value
   ) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      return "-";
+    }
+
     const number =
       Number(value);
 
