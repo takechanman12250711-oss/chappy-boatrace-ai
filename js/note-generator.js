@@ -648,106 +648,126 @@
       .join("\n")}`;
   }
 
-  function buildPaidSection(prediction) {
+    function buildPaidSection(
+    prediction
+  ) {
     const main =
       prediction?.mainSheet || {};
 
     const manshu =
       prediction?.manshuSheet || {};
 
-    const lists =
-      ticketLists(prediction);
-
     const practical =
-      createPracticalSelection(prediction);
-
-    const budget =
-      practical.reduce(
-        (sum, item) =>
-          sum +
-          safeNumber(
-            item.amount,
-            0
-          ),
-        0
+      createPracticalSelection(
+        prediction
       );
 
-    const finalComment = safeText(
-      firstValue([
-        prediction?.finalComment?.comment,
-        prediction?.finalComment?.title,
-        prediction?.finalComment?.memo,
-        typeof prediction?.finalComment === "string"
-          ? prediction.finalComment
-          : "",
-        prediction?.finalAi?.summary
-      ]),
-      "展開とコースを中心に、買い目ごとの役割を確認してください。"
-    );
+    const candidates =
+      createDisplayCandidates(
+        prediction
+      );
+
+    const mainScore =
+      getScore(
+        prediction?.confidence ||
+        prediction?.finalAi?.confidence
+      );
+
+    const waveScore =
+      getScore(
+        prediction?.manshuPower ||
+        prediction?.finalAi?.manshuPower
+      );
+
+    const isWave =
+      waveScore > mainScore;
+
+    const waveAxis =
+      arrayify(
+        manshu.candidates
+      )[0];
+
+    const waveHold =
+      arrayify(
+        manshu.holdBoats
+      )[0];
+
+    const wavePickup =
+      arrayify(
+        manshu.pickupBoats
+      )[0];
+
+    const marks =
+      isWave
+        ? (
+            `波乱軸 ${boatLabel(
+              waveAxis
+            )}｜` +
+            `残し ${boatLabel(
+              waveHold
+            )}｜` +
+            `拾い ${boatLabel(
+              wavePickup
+            )}`
+          )
+        : (
+            `◎ ${boatLabel(
+              main.honmei
+            )}｜` +
+            `○ ${boatLabel(
+              main.taikou
+            )}｜` +
+            `▲ ${boatLabel(
+              main.ana
+            )}｜` +
+            `△ ${boatLabel(
+              main.osae
+            )}`
+          );
 
     return [
-      "🔵 本命予想",
+      isWave
+        ? "🌸 波乱予想"
+        : "🔵 本命予想",
       "",
-      `◎ ${boatLabel(main.honmei)}`,
-      `○ ${boatLabel(main.taikou)}`,
-      `▲ ${boatLabel(main.ana)}`,
-      `△ ${boatLabel(main.osae)}`,
-      "",
+      marks,
+      isWave
+        ? safeText(
+            manshu.reason,
+            "波乱展開を評価。"
+          )
+        : "",
+      isWave ? "" : null,
       "【6艇評価】",
-      buildBoatAnalysis(prediction),
-      "",
-      buildTicketGroup(
-        "【本線】",
-        lists.main,
-        "本線"
+      buildBoatAnalysis(
+        prediction
       ),
       "",
-      buildTicketGroup(
-        "【押さえ】",
-        lists.cover,
-        "押さえ"
-      ),
-      "",
-      buildTicketGroup(
-        "【流し】",
-        lists.flow,
-        "流し"
-      ),
-      "",
-      "🌸 万舟・高配当予想",
-      "",
-      safeText(
-        manshu.reason,
-        "穴展開・高配当候補を展開から評価。"
-      ),
-      "",
-      buildTicketGroup(
-        "【万舟・高配当候補】",
-        lists.hole,
-        "万舟・穴"
-      ),
+      "【AI買い目候補・優先順／最大24点】",
+      candidates.length
+        ? candidates
+            .map(
+              formatTicketLine
+            )
+            .join("\n")
+        : "候補買い目なし",
       "",
       "🔥 実戦厳選買い目",
-      "",
       practical.length
         ? practical
-            .map(item =>
-              formatTicketLine(
-                item,
-                true
-              )
+            .map(
+              formatTicketLine
             )
             .join("\n")
         : "主軸となる展開が定まらないため見送り。",
       "",
-      `実戦購入候補　${practical.length}点／最大7点`,
-      budget > 0
-        ? `購入予算　${budget.toLocaleString("ja-JP")}円`
-        : "購入予算　資金配分後に表示",
-      "",
-      "【最終コメント】",
-      finalComment
-    ].join("\n");
+      `厳選買い目　${practical.length}点／最大7点`
+    ]
+      .filter(
+        value =>
+          value !== null
+      )
+      .join("\n");
   }
 
   function buildTags(
