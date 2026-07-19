@@ -1,0 +1,52 @@
+name: Collect official race results
+
+on:
+  schedule:
+    - cron: "30 14 * * *"
+
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "収集日（YYYYMMDD・空欄なら本日）"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect-official-results
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Collect official results
+        env:
+          COLLECT_DATE: ${{ inputs.date }}
+        run: node scripts/collect-results.js
+
+      - name: Save collected results
+        run: |
+          git add data/results
+
+          if git diff --cached --quiet; then
+            echo "保存する変更はありません"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Collect official race results"
+          git push
