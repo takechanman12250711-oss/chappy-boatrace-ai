@@ -1175,11 +1175,11 @@
               "-1"
             );
           } else {
-            officialVoteLink.href =
-              "https://mb.brtb.jp/";
+                        officialVoteLink.href =
+              "shortcuts://run-shortcut?name=BOATRACE%E6%8A%95%E7%A5%A8";
 
             officialVoteLink.textContent =
-              "公式で投票する →";
+              "BOATRACEアプリで投票する →";
 
             officialVoteLink.setAttribute(
               "aria-disabled",
@@ -1188,6 +1188,10 @@
 
             officialVoteLink.removeAttribute(
               "tabindex"
+            );
+
+            officialVoteLink.removeAttribute(
+              "target"
             );
           }
         }
