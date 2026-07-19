@@ -481,7 +481,97 @@
 
     </section>
 
+    <!-- ===================================================
+      note投稿アシスト
+    ==================================================== -->
 
+    <section
+      id="noteAssistantSection"
+      class="dashboard-section note-assistant-section"
+      hidden
+    >
+
+      <div class="dashboard-section-head">
+
+        <div>
+          <p class="section-eyebrow">
+            NOTE ASSISTANT
+          </p>
+
+          <h2>
+            📝 note投稿アシスト
+          </h2>
+        </div>
+
+        <span
+          id="noteStatusBadge"
+          class="section-status-badge"
+        >
+          予想待ち
+        </span>
+
+      </div>
+
+      <div class="note-assistant-actions">
+
+        <button
+          id="noteGenerateBtn"
+          type="button"
+          disabled
+        >
+          📝 記事を自動生成
+        </button>
+
+        <button
+          id="noteCopyTitleBtn"
+          type="button"
+          disabled
+        >
+          タイトルをコピー
+        </button>
+
+        <button
+          id="noteCopyFullBtn"
+          type="button"
+          disabled
+        >
+          全文をコピー
+        </button>
+
+        <a
+          id="noteOpenBtn"
+          href="https://note.com/notes/new"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          noteを開く
+        </a>
+
+      </div>
+
+      <label class="note-preview-label">
+        生成されたタイトル
+
+        <input
+          id="noteTitlePreview"
+          type="text"
+          readonly
+          placeholder="予想後に自動生成できます"
+        />
+      </label>
+
+      <label class="note-preview-label">
+        記事プレビュー
+
+        <textarea
+          id="noteArticlePreview"
+          rows="18"
+          readonly
+          placeholder="ここに無料部分・有料部分・買い目が表示されます"
+        ></textarea>
+      </label>
+
+    </section>
     <!-- ===================================================
       旧描画ID互換エリア
       JavaScript互換性維持のため残す
