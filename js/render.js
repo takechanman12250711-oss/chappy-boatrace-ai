@@ -2335,7 +2335,182 @@ function getPaperClassName(item) {
       `${thirdBoat}号艇の${thirdRole}が絡む波乱形。`
     );
   }
+  function renderPracticalSelection(prediction) {
+    const mainTickets = arrayify(
+      prediction.mainSheet?.tickets ||
+      prediction.ticketSheets?.main ||
+      []
+    );
 
+    const coverTickets = arrayify(
+      prediction.mainSheet?.coverTickets ||
+      prediction.ticketSheets?.cover ||
+      []
+    );
+
+    const flowTickets = arrayify(
+      prediction.mainSheet?.flowTickets ||
+      prediction.ticketSheets?.flow ||
+      []
+    );
+
+    const holeTickets = arrayify(
+      prediction.manshuSheet?.tickets ||
+      prediction.ticketSheets?.hole ||
+      []
+    );
+
+    if (!mainTickets.length) {
+      return section(
+        "実戦厳選",
+        emptyBox(
+          "主軸となる本線展開が定まらないため、このレースは見送りです。"
+        ),
+        "🔥",
+        "v3-practical-section"
+      );
+    }
+
+    const selected = [];
+    const usedTickets = new Set();
+
+    const addTickets = (
+      list,
+      limit,
+      category
+    ) => {
+      let added = 0;
+
+      arrayify(list).forEach(item => {
+        if (
+          added >= limit ||
+          selected.length >= 7
+        ) {
+          return;
+        }
+
+        const row =
+          typeof item === "string"
+            ? { ticket: item }
+            : item || {};
+
+        const ticket = String(
+          row.ticket ||
+          row.line ||
+          row.formation ||
+          ""
+        ).trim();
+
+        if (
+          !ticket ||
+          usedTickets.has(ticket)
+        ) {
+          return;
+        }
+
+        usedTickets.add(ticket);
+
+        selected.push({
+          ticket,
+          category,
+          scenarioType:
+            row.scenarioType || "",
+          comment:
+            createTicketSpecificComment(
+              prediction,
+              ticket,
+              [category]
+            )
+        });
+
+        added += 1;
+      });
+    };
+
+    // 展開とコースから作られた現在の並び順を維持して厳選
+    addTickets(mainTickets, 3, "本線");
+    addTickets(coverTickets, 2, "押さえ");
+    addTickets(flowTickets, 1, "流し");
+    addTickets(holeTickets, 1, "万舟・穴");
+
+    // 5点未満の場合だけ、残っている展開買い目から補充
+    if (selected.length < 5) {
+      addTickets(mainTickets, 7, "本線");
+      addTickets(coverTickets, 7, "押さえ");
+      addTickets(flowTickets, 7, "流し");
+      addTickets(holeTickets, 7, "万舟・穴");
+    }
+
+    const typeOf = category => {
+      if (category === "本線") return "main";
+      if (category === "押さえ") return "safety";
+      if (category === "流し") return "flow";
+      return "manshu";
+    };
+
+    const body = `
+      <div class="v3-note">
+        展開とコースを優先して厳選。
+        数字・オッズだけによる削除はしていません。
+      </div>
+
+      <div class="v3-formation-list">
+        ${selected
+          .map(item => {
+            const type =
+              typeOf(item.category);
+
+            return `
+              <div
+                class="v3-formation-row
+                  v3-formation-row-${escapeHtml(type)}"
+              >
+                <div class="v3-formation-ticket">
+                  ${ticketArrow(item.ticket)}
+                </div>
+
+                <div class="v3-formation-tags">
+                  ${tag(
+                    item.category,
+                    type
+                  )}
+
+                  ${item.scenarioType
+                    ? tag(
+                        item.scenarioType,
+                        "flow"
+                      )
+                    : ""}
+                </div>
+
+                <div class="v3-formation-reason">
+                  ${escapeHtml(
+                    limitText(
+                      item.comment,
+                      90
+                    )
+                  )}
+                </div>
+              </div>
+            `;
+          })
+          .join("")}
+      </div>
+
+      <div class="v3-note">
+        実戦購入候補：
+        ${selected.length}点
+        ／最大7点
+      </div>
+    `;
+
+    return section(
+      "実戦厳選",
+      body,
+      "🔥",
+      "v3-practical-section"
+    );
+  }
     function renderTicketRanking(prediction) {
     const sourceList = arrayify(
       prediction.aiTicketList ||
