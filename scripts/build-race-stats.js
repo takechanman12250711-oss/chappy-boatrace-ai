@@ -262,9 +262,14 @@ function finalizeBoatPerformance(
 function finalizePattern(pattern) {
   const total = pattern.totalRaces;
 
-  return {
+    return {
     totalRaces: total,
     reliability: reliability(total),
+
+    boatPerformance:
+      finalizeBoatPerformance(
+        pattern.boatPerformance
+      ),
 
     winningBoats: finalizeCounts(
       pattern.winningBoats,
