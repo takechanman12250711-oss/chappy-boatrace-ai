@@ -1870,10 +1870,32 @@
         params
       );
 
-      const data =
+      const fetchedData =
         await fetchRaceData(
           params
         );
+
+      const historyContext =
+        window.ChappyRaceHistory
+          ?.getContext({
+            jcd: params.jcd,
+
+            registerNos:
+              Array.isArray(
+                fetchedData?.entries
+              )
+                ? fetchedData.entries
+                    .map(entry =>
+                      entry?.registerNo
+                    )
+                    .filter(Boolean)
+                : []
+          }) || null;
+
+      const data = {
+        ...fetchedData,
+        historyContext
+      };
 
       lastRaceData =
         data;
