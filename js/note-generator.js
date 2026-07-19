@@ -683,10 +683,7 @@
     );
   }
 
-  function generateArticle(
-    prediction,
-    options = {}
-  ) {
+    function generateArticle(prediction, options = {}) {
     if (
       !prediction ||
       typeof prediction !== "object"
@@ -695,6 +692,291 @@
         ok: false,
         version: VERSION,
         error: "予想データがありません。"
+      };
+    }
+
+    const rejectionReasons = [];
+    const main =
+      prediction?.mainSheet || {};
+    const flow =
+      prediction?.raceFlow || {};
+    const lists =
+      ticketLists(prediction);
+
+    const practicalTickets =
+      createPracticalSelection(
+        prediction
+      );
+
+    const honmeiNo =
+      safeNumber(
+        main?.honmei?.boatNo,
+        0
+      );
+
+    const honmeiEvaluation =
+      arrayify(
+        main?.evaluations
+      ).find(
+        item =>
+          safeNumber(
+            item?.boatNo,
+            0
+          ) === honmeiNo
+      ) ||
+      main?.honmei ||
+      null;
+
+    const honmeiCourse =
+      safeNumber(
+        firstValue([
+          honmeiEvaluation?.course,
+          main?.honmei?.course,
+          honmeiNo
+        ]),
+        0
+      );
+
+    const honmeiScore =
+      safeNumber(
+        honmeiEvaluation?.score,
+        0
+      );
+
+    const flowTitle =
+      safeText(
+        flow?.title,
+        ""
+      );
+
+    const flowSummary =
+      safeText(
+        flow?.summary,
+        ""
+      );
+
+    let requiredMainCourse = 0;
+
+    if (
+      /イン逃げ本線/.test(
+        flowTitle
+      )
+    ) {
+      requiredMainCourse = 1;
+    } else {
+      const courseMatch =
+        flowTitle.match(
+          /([1-6])コース[^。]*本線/
+        );
+
+      requiredMainCourse =
+        courseMatch
+          ? Number(courseMatch[1])
+          : 0;
+    }
+
+    if (!honmeiNo) {
+      rejectionReasons.push(
+        "◎本命艇を取得できません"
+      );
+    }
+
+    if (
+      requiredMainCourse &&
+      honmeiCourse !==
+        requiredMainCourse
+    ) {
+      rejectionReasons.push(
+        `中心展開は${requiredMainCourse}コース本線ですが、◎は${honmeiNo || "-"}号艇です`
+      );
+    }
+
+    if (
+      honmeiNo &&
+      honmeiScore < 72
+    ) {
+      rejectionReasons.push(
+        `◎${honmeiNo}号艇の艇評価が${Math.round(
+          honmeiScore
+        )}点で、頭候補の基準を満たしていません`
+      );
+    }
+
+    const honmeiComment =
+      safeText(
+        firstValue([
+          honmeiEvaluation
+            ?.shortComment,
+          honmeiEvaluation
+            ?.comment
+        ]),
+        ""
+      );
+
+    if (
+      honmeiNo &&
+      /相手・3着|押さえ候補|展開待ち|厚くは買わない|厳しい条件/.test(
+        honmeiComment
+      )
+    ) {
+      rejectionReasons.push(
+        `◎${honmeiNo}号艇の艇評価が「頭候補」ではありません`
+      );
+    }
+
+    const mainTickets =
+      arrayify(
+        lists.main
+      )
+        .map(item =>
+          normalizeTicket(
+            item,
+            "本線"
+          )
+        )
+        .filter(
+          item => item.ticket
+        );
+
+    if (!mainTickets.length) {
+      rejectionReasons.push(
+        "本線買い目を生成できません"
+      );
+    } else if (
+      honmeiNo &&
+      mainTickets.some(
+        item =>
+          Number(
+            item.ticket
+              .split("-")[0]
+          ) !== honmeiNo
+      )
+    ) {
+      rejectionReasons.push(
+        "本線買い目の1着軸が◎本命艇と一致していません"
+      );
+    }
+
+    function boatsBeforeRole(
+      text,
+      role
+    ) {
+      const boats = [];
+      let searchFrom = 0;
+
+      while (
+        searchFrom <
+        text.length
+      ) {
+        const roleIndex =
+          text.indexOf(
+            role,
+            searchFrom
+          );
+
+        if (roleIndex < 0) {
+          break;
+        }
+
+        const prefix =
+          text.slice(
+            0,
+            roleIndex
+          );
+
+        const matches = [
+          ...prefix.matchAll(
+            /([1-6])号艇/g
+          )
+        ];
+
+        const nearest =
+          matches[
+            matches.length - 1
+          ];
+
+        if (nearest) {
+          boats.push(
+            Number(nearest[1])
+          );
+        }
+
+        searchFrom =
+          roleIndex +
+          role.length;
+      }
+
+      return uniqueText(
+        boats
+      ).map(Number);
+    }
+
+    const holdBoats =
+      boatsBeforeRole(
+        flowSummary,
+        "残し"
+      );
+
+    const pickupBoats =
+      boatsBeforeRole(
+        flowSummary,
+        "拾い"
+      );
+
+    const duplicatedRoles =
+      holdBoats.filter(
+        boatNo =>
+          pickupBoats.includes(
+            boatNo
+          )
+      );
+
+    if (
+      duplicatedRoles.length
+    ) {
+      rejectionReasons.push(
+        `${duplicatedRoles.join(
+          "・"
+        )}号艇が「残し」と「拾い」に重複しています`
+      );
+    }
+
+    if (
+      String(
+        prediction
+          ?.dataQuality
+          ?.level || ""
+      ) === "低"
+    ) {
+      rejectionReasons.push(
+        "予想データの品質判定が低です"
+      );
+    }
+
+    if (
+      !practicalTickets.length
+    ) {
+      rejectionReasons.push(
+        "実戦厳選買い目を生成できません"
+      );
+    }
+
+    if (
+      rejectionReasons.length
+    ) {
+      return {
+        ok: false,
+        publishable: false,
+        version: VERSION,
+        error:
+          `販売見送り：` +
+          uniqueText(
+            rejectionReasons
+          ).join("／"),
+        rejectionReasons:
+          uniqueText(
+            rejectionReasons
+          )
       };
     }
 
@@ -712,19 +994,13 @@
 
     const paidText =
       buildPaidSection(
-        prediction,
-        options
+        prediction
       );
 
     const tags =
       buildTags(
         prediction,
         options
-      );
-
-    const practicalTickets =
-      createPracticalSelection(
-        prediction
       );
 
     const notice =
@@ -744,6 +1020,7 @@
 
     return {
       ok: true,
+      publishable: true,
       version: VERSION,
       title,
       freeText,
@@ -754,7 +1031,9 @@
       tags,
       practicalTickets,
       meta:
-        getRaceMeta(prediction)
+        getRaceMeta(
+          prediction
+        )
     };
   }
 
