@@ -326,42 +326,7 @@
       `${boats[2]}号艇の${boatRole(boats[2], "third")}を組み合わせる${category}。`;
   }
 
-      function formatTicketLine(
-    item,
-    includeAmount = false
-  ) {
-    const oddsText =
-      item.odds > 0
-        ? `${item.odds}倍`
-        : "オッズ未取得";
-
-    const amountText =
-      includeAmount &&
-      item.amount > 0
-        ? `／${item.amount.toLocaleString(
-            "ja-JP"
-          )}円`
-        : "";
-
-        const displayCategory =
-      item.category === "万舟・穴"
-        ? item.odds >= 100
-          ? "万舟"
-          : "穴候補"
-        : item.category;
-
-    const categoryText =
-      includeAmount
-        ? `${displayCategory}　`
-        : "";
-
-    return (
-      `・${categoryText}` +
-      `${item.ticket}　` +
-      `${oddsText}` +
-      `${amountText}`
-    );
-  }
+      
 
   function boatLabel(item) {
     if (!item) return "該当艇なし";
