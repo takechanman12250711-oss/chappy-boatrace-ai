@@ -242,12 +242,22 @@
           venueTop3Rate
         );
 
-      const averageStDifference =
+            const averageStDifference =
         calculateDifference(
           averageSt,
           venueAverageSt,
           3
         );
+
+      const compatibility =
+        judgeFrameCompatibility({
+          samples,
+          venueSamples,
+          winRateDifference,
+          top3RateDifference,
+          averageStDifference
+        });
+
       return {
         boatNo,
         racerName:
