@@ -2493,17 +2493,17 @@ function getPaperClassName(item) {
                 </div>
 
                 <div class="v3-formation-tags">
-                  ${tag(
-                    item.category,
-                    type
-                  )}
-
                   ${item.scenarioType
                     ? tag(
                         item.scenarioType,
                         "flow"
                       )
                     : ""}
+
+                  ${tag(
+                    item.oddsText,
+                    "odds"
+                  )}
                 </div>
 
                 <div class="v3-formation-reason">
