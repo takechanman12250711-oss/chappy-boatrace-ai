@@ -2664,14 +2664,6 @@ function getPaperClassName(item) {
               rankRow.oddsValue ||
               "",
 
-            recommendedAmount:
-              Number(
-                rankRow
-                  .recommendedAmount ||
-                row.recommendedAmount ||
-                0
-              ),
-
                         scenarioSummary:
               createTicketSpecificComment(
                 prediction,
@@ -5202,11 +5194,6 @@ function getPaperClassName(item) {
                 aiItem.odds ??
                 null,
 
-              recommendedAmount:
-                item.recommendedAmount ??
-                aiItem.recommendedAmount ??
-                0,
-
               oddsValue:
                 item.oddsValue ||
                 aiItem.oddsValue ||
@@ -5507,7 +5494,7 @@ function getPaperClassName(item) {
                 scenarioText +
                 oddsValueText +
                 syntheticEvidence +
-                "オッズは買い目作成後の表示・分類だけに使用し、数字だけで買い目を追加・削除しない。"
+                "オッズは買い目作成後の表示・分類だけに使用し、数字だけで買い目を追加・削除しない。" 
             });
           }
         );
