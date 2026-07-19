@@ -275,7 +275,10 @@
       <!-- 5. 万舟買い目 -->
       ${renderNewspaperSheet(prediction, "manshu")}
 
-      <!-- 6. AI買い目一覧 -->
+            <!-- 6. 実戦厳選 -->
+      ${renderPracticalSelection(prediction)}
+
+      <!-- 7. AI買い目一覧 -->
       ${renderTicketRanking(prediction)}
       
       ${
