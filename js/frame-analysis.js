@@ -63,6 +63,89 @@
       ).toFixed(digits)
     );
   }
+    function judgeFrameCompatibility({
+    samples,
+    venueSamples,
+    winRateDifference,
+    top3RateDifference,
+    averageStDifference
+  }) {
+    if (
+      samples <
+        MIN_FRAME_SAMPLES ||
+      venueSamples < 30
+    ) {
+      return {
+        label: "判定保留",
+        score: 0
+      };
+    }
+
+    let score = 0;
+
+    if (
+      winRateDifference !== null
+    ) {
+      if (
+        winRateDifference >= 5
+      ) {
+        score += 1;
+      } else if (
+        winRateDifference <= -5
+      ) {
+        score -= 1;
+      }
+    }
+
+    if (
+      top3RateDifference !== null
+    ) {
+      if (
+        top3RateDifference >= 8
+      ) {
+        score += 1;
+      } else if (
+        top3RateDifference <= -8
+      ) {
+        score -= 1;
+      }
+    }
+
+    if (
+      averageStDifference !== null
+    ) {
+      if (
+        averageStDifference <=
+        -0.02
+      ) {
+        score += 1;
+      } else if (
+        averageStDifference >=
+        0.02
+      ) {
+        score -= 1;
+      }
+    }
+
+    if (score >= 2) {
+      return {
+        label: "強い",
+        score
+      };
+    }
+
+    if (score <= -2) {
+      return {
+        label: "弱い",
+        score
+      };
+    }
+
+    return {
+      label: "標準",
+      score
+    };
+  }
   function getFrameRows(prediction) {
     const entries =
       Array.isArray(
