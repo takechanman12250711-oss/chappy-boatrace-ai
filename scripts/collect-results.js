@@ -20,13 +20,27 @@ function getTargetDate() {
     value => value.startsWith("--date=")
   );
 
-  const date =
+  const rawDate = String(
     argument?.split("=")[1] ||
     process.env.COLLECT_DATE ||
-    getJstDate();
+    ""
+  ).trim();
+
+  const isEmpty =
+    !rawDate ||
+    rawDate.toLowerCase() === "null" ||
+    rawDate.toLowerCase() === "undefined";
+
+  const date = isEmpty
+    ? getJstDate()
+    : rawDate
+        .replaceAll("-", "")
+        .replaceAll("/", "");
 
   if (!/^\d{8}$/.test(date)) {
-    throw new Error("日付はYYYYMMDD形式で指定してください");
+    throw new Error(
+      `日付はYYYYMMDD形式で指定してください：${rawDate}`
+    );
   }
 
   return date;
