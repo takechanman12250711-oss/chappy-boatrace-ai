@@ -16,7 +16,117 @@
       .replace(/\D/g, "")
       .slice(0, 8);
   }
+  function getPendingPredictions() {
+    const predictions =
+      typeof S
+        .loadPredictionHistory ===
+        "function"
+        ? S.loadPredictionHistory()
+        : [];
 
+    const results =
+      typeof S.loadResults ===
+        "function"
+        ? S.loadResults()
+        : [];
+
+    const officialResultKeys =
+      new Set(
+        results
+          .filter(record =>
+            record?.recordType ===
+              "official_result" ||
+            record?.resultSource ===
+              "boatrace-official"
+          )
+          .map(record =>
+            S.buildRaceKey(record)
+          )
+          .filter(Boolean)
+      );
+
+    const today =
+      getTodayKey();
+
+    const usedKeys =
+      new Set();
+
+    return (
+      Array.isArray(predictions)
+        ? predictions
+        : []
+    )
+      .map(prediction => {
+        if (
+          !prediction ||
+          prediction
+            .isRetrospective ||
+          prediction
+            .predictionMode ===
+            "retrospective_reference"
+        ) {
+          return null;
+        }
+
+        const raceKey =
+          S.buildRaceKey(
+            prediction
+          );
+
+        if (
+          !raceKey ||
+          usedKeys.has(raceKey) ||
+          officialResultKeys.has(
+            raceKey
+          )
+        ) {
+          return null;
+        }
+
+        const parts =
+          raceKey.split("-");
+
+        const date =
+          normalizeDateKey(
+            parts[0]
+          );
+
+        const jcd =
+          String(parts[1] || "")
+            .padStart(2, "0");
+
+        const raceNo =
+          Number(parts[2] || 0);
+
+        if (
+          date.length !== 8 ||
+          date > today ||
+          !/^\d{2}$/.test(jcd) ||
+          raceNo < 1 ||
+          raceNo > 12
+        ) {
+          return null;
+        }
+
+        usedKeys.add(raceKey);
+
+        return {
+          raceKey,
+          date,
+          jcd,
+          raceNo,
+
+          place:
+            String(
+              prediction.place ||
+              prediction
+                .race?.place ||
+              ""
+            )
+        };
+      })
+      .filter(Boolean);
+  }
   function getTodayKey() {
     const now = new Date();
 
@@ -58,6 +168,7 @@
       delete area.dataset.state;
     }
   }
+  
   function buildRaceHistory(results) {
   const resultList =
     Array.isArray(results)
