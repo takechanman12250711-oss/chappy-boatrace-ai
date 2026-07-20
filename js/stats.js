@@ -956,6 +956,29 @@
       ? "相手抜け"
       : "完全抜け";
   };
+  
+    const getHonmeiFinish = (
+    honmeiBoat,
+    resultTicket
+  ) => {
+    if (
+      !honmeiBoat ||
+      !resultTicket
+    ) {
+      return "-";
+    }
+
+    const position =
+      resultTicket
+        .split("-")
+        .indexOf(
+          String(honmeiBoat)
+        );
+
+    return position >= 0
+      ? `${position + 1}着`
+      : "4着以下";
+  };
   const predictionRows =
     history
       .filter(item =>
