@@ -999,8 +999,16 @@
           ...item,
           resultTicket,
           honmeiBoat,
-          practicalTickets,
+                    practicalTickets,
           settled,
+
+          missType:
+            settled
+              ? classifyPracticalResult(
+                  practicalTickets,
+                  resultTicket
+                )
+              : "結果待ち",
 
           honmeiHit:
             settled &&
