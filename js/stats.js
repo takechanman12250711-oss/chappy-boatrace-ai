@@ -11,6 +11,53 @@
   const OFFICIAL_SYNC_CONCURRENCY = 3;
 
   let officialSyncPromise = null;
+    function normalizeDateKey(value) {
+    return String(value || "")
+      .replace(/\D/g, "")
+      .slice(0, 8);
+  }
+
+  function getTodayKey() {
+    const now = new Date();
+
+    const year =
+      now.getFullYear();
+
+    const month =
+      String(
+        now.getMonth() + 1
+      ).padStart(2, "0");
+
+    const day =
+      String(
+        now.getDate()
+      ).padStart(2, "0");
+
+    return `${year}${month}${day}`;
+  }
+
+  function setOfficialSyncStatus(
+    message,
+    state = ""
+  ) {
+    const area =
+      document.getElementById(
+        "resultSyncStatus"
+      );
+
+    if (!area) {
+      return;
+    }
+
+    area.textContent =
+      String(message || "");
+
+    if (state) {
+      area.dataset.state = state;
+    } else {
+      delete area.dataset.state;
+    }
+  }
   function buildRaceHistory(results) {
   const resultList =
     Array.isArray(results)
