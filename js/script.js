@@ -2949,7 +2949,38 @@
 
         oddsCaptured,
 
-        summary,
+                summary,
+
+        predictedScenarioTitle:
+          String(
+            prediction?.raceFlow?.title ||
+            ""
+          ),
+
+        predictedScenarioSummary:
+          String(
+            prediction?.raceFlow?.summary ||
+            ""
+          ),
+
+        predictedAttackBoat:
+          Number(
+            prediction?.raceFlow
+              ?.attackBoats?.[0]
+              ?.boatNo || 0
+          ) || null,
+
+        predictedAttackCourse:
+          Number(
+            prediction?.raceFlow
+              ?.attackBoats?.[0]
+              ?.course ||
+            prediction?.raceFlow
+              ?.attackBoats?.[0]
+              ?.boatNo ||
+            0
+          ) || null,
+
         ticketRanks
       };
 
