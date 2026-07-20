@@ -1388,7 +1388,8 @@
 
 window.ChappyStats = {
   renderStats,
-  initStatsEvents
+  initStatsEvents,
+  syncPendingOfficialResults
 };
 
   document.addEventListener(
