@@ -876,7 +876,86 @@
 
       return selected;
     };
+  const classifyPracticalResult = (
+    tickets,
+    resultTicket
+  ) => {
+    const actual =
+      normalizeTicket(
+        resultTicket
+      );
 
+    const selected =
+      (Array.isArray(tickets)
+        ? tickets
+        : []
+      )
+        .map(normalizeTicket)
+        .filter(Boolean);
+
+    if (!actual || selected.length === 0) {
+      return "見送り";
+    }
+
+    if (selected.includes(actual)) {
+      return "的中";
+    }
+
+    const actualBoats =
+      actual.split("-");
+
+    const actualWinner =
+      actualBoats[0];
+
+    const winnerSelected =
+      selected.some(ticket =>
+        ticket.split("-")[0] ===
+        actualWinner
+      );
+
+    if (!winnerSelected) {
+      return "頭外れ";
+    }
+
+    const sameBoatSet =
+      selected.some(ticket => {
+        const boats =
+          ticket.split("-");
+
+        return actualBoats.every(
+          boat =>
+            boats.includes(boat)
+        );
+      });
+
+    if (sameBoatSet) {
+      return "着順違い";
+    }
+
+    const maxOverlap =
+      selected.reduce(
+        (max, ticket) => {
+          const boats =
+            ticket.split("-");
+
+          const overlap =
+            actualBoats.filter(
+              boat =>
+                boats.includes(boat)
+            ).length;
+
+          return Math.max(
+            max,
+            overlap
+          );
+        },
+        0
+      );
+
+    return maxOverlap >= 2
+      ? "相手抜け"
+      : "完全抜け";
+  };
   const predictionRows =
     history
       .filter(item =>
