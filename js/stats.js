@@ -8,8 +8,10 @@
 
   const U = window.ChappyUtils;
   const S = window.ChappyStorage;
-  
-      function buildRaceHistory(results) {
+  const OFFICIAL_SYNC_CONCURRENCY = 3;
+
+  let officialSyncPromise = null;
+  function buildRaceHistory(results) {
   const resultList =
     Array.isArray(results)
       ? results
