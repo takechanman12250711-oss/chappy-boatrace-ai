@@ -1366,9 +1366,25 @@
   );
 }
 
-    function initStatsEvents() {
-  renderStats();
-}
+  async function initStatsEvents() {
+    renderStats();
+
+    try {
+      await syncPendingOfficialResults();
+    } catch (error) {
+      console.error(
+        "公式結果の自動照合エラー",
+        error
+      );
+
+      setOfficialSyncStatus(
+        "公式結果を自動照合できませんでした",
+        "warning"
+      );
+    }
+
+    renderStats();
+  }
 
 window.ChappyStats = {
   renderStats,
