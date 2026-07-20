@@ -8,8 +8,441 @@
 
   const U = window.ChappyUtils;
   const S = window.ChappyStorage;
-  
-      function buildRaceHistory(results) {
+  const OFFICIAL_SYNC_CONCURRENCY = 3;
+
+  let officialSyncPromise = null;
+    function normalizeDateKey(value) {
+    return String(value || "")
+      .replace(/\D/g, "")
+      .slice(0, 8);
+  }
+  function getPendingPredictions() {
+    const predictions =
+      typeof S
+        .loadPredictionHistory ===
+        "function"
+        ? S.loadPredictionHistory()
+        : [];
+
+    const results =
+      typeof S.loadResults ===
+        "function"
+        ? S.loadResults()
+        : [];
+
+    const officialResultKeys =
+      new Set(
+        results
+          .filter(record =>
+            record?.recordType ===
+              "official_result" ||
+            record?.resultSource ===
+              "boatrace-official"
+          )
+          .map(record =>
+            S.buildRaceKey(record)
+          )
+          .filter(Boolean)
+      );
+
+    const today =
+      getTodayKey();
+
+    const usedKeys =
+      new Set();
+
+    return (
+      Array.isArray(predictions)
+        ? predictions
+        : []
+    )
+      .map(prediction => {
+        if (
+          !prediction ||
+          prediction
+            .isRetrospective ||
+          prediction
+            .predictionMode ===
+            "retrospective_reference"
+        ) {
+          return null;
+        }
+
+        const raceKey =
+          S.buildRaceKey(
+            prediction
+          );
+
+        if (
+          !raceKey ||
+          usedKeys.has(raceKey) ||
+          officialResultKeys.has(
+            raceKey
+          )
+        ) {
+          return null;
+        }
+
+        const parts =
+          raceKey.split("-");
+
+        const date =
+          normalizeDateKey(
+            parts[0]
+          );
+
+        const jcd =
+          String(parts[1] || "")
+            .padStart(2, "0");
+
+        const raceNo =
+          Number(parts[2] || 0);
+
+        if (
+          date.length !== 8 ||
+          date > today ||
+          !/^\d{2}$/.test(jcd) ||
+          raceNo < 1 ||
+          raceNo > 12
+        ) {
+          return null;
+        }
+
+        usedKeys.add(raceKey);
+
+        return {
+          raceKey,
+          date,
+          jcd,
+          raceNo,
+
+          place:
+            String(
+              prediction.place ||
+              prediction
+                .race?.place ||
+              ""
+            )
+        };
+      })
+      .filter(Boolean);
+  }
+  function getTodayKey() {
+    const now = new Date();
+
+    const year =
+      now.getFullYear();
+
+    const month =
+      String(
+        now.getMonth() + 1
+      ).padStart(2, "0");
+
+    const day =
+      String(
+        now.getDate()
+      ).padStart(2, "0");
+
+    return `${year}${month}${day}`;
+  }
+
+  function setOfficialSyncStatus(
+    message,
+    state = ""
+  ) {
+    const area =
+      document.getElementById(
+        "resultSyncStatus"
+      );
+
+    if (!area) {
+      return;
+    }
+
+    area.textContent =
+      String(message || "");
+
+    if (state) {
+      area.dataset.state = state;
+    } else {
+      delete area.dataset.state;
+    }
+  }
+    async function syncOneOfficialResult(
+    target
+  ) {
+    const url =
+      `/api/result` +
+      `?date=${encodeURIComponent(
+        target.date
+      )}` +
+      `&jcd=${encodeURIComponent(
+        target.jcd
+      )}` +
+      `&rno=${encodeURIComponent(
+        target.raceNo
+      )}`;
+
+    const response =
+      await fetch(url);
+
+    const result =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !result?.ok
+    ) {
+      throw new Error(
+        result?.error ||
+        `公式結果APIエラー：` +
+        `${response.status}`
+      );
+    }
+
+    if (!result.resultAvailable) {
+      return {
+        status: "pending",
+        raceKey: target.raceKey
+      };
+    }
+
+    const resultTicket =
+      String(
+        result.trifecta
+          ?.combination || ""
+      )
+        .match(/[1-6]/g)
+        ?.slice(0, 3)
+        .join("-") || "";
+
+    if (
+      !/^[1-6]-[1-6]-[1-6]$/
+        .test(resultTicket) ||
+      new Set(
+        resultTicket.split("-")
+      ).size !== 3
+    ) {
+      return {
+        status: "pending",
+        raceKey: target.raceKey
+      };
+    }
+
+    const officialRaceKey =
+      S.buildRaceKey({
+        date: result.date,
+        jcd: result.jcd,
+        raceNo: result.raceNo
+      });
+
+    if (
+      !officialRaceKey ||
+      officialRaceKey !==
+        target.raceKey
+    ) {
+      throw new Error(
+        "保存済み予想と公式結果のレース情報が一致しません"
+      );
+    }
+
+    S.upsertResult({
+      raceKey:
+        officialRaceKey,
+
+      recordType:
+        "official_result",
+
+      resultSource:
+        result.source ||
+        "boatrace-official",
+
+      date:
+        String(result.date),
+
+      place:
+        target.place,
+
+      jcd:
+        String(result.jcd),
+
+      raceNo:
+        Number(result.raceNo),
+
+      result:
+        resultTicket,
+
+      officialPayoutPer100:
+        Number(
+          result.trifecta
+            ?.payout || 0
+        ),
+
+      officialPayoutText:
+        String(
+          result.trifecta
+            ?.payoutText || ""
+        ),
+
+      officialPopularity:
+        result.trifecta
+          ?.popularity ??
+        null,
+
+      winningMethod:
+        String(
+          result.winningMethod ||
+          ""
+        ),
+
+      officialCheckedAt:
+        result.checkedAt ||
+        new Date()
+          .toISOString(),
+
+      officialResultUrl:
+        String(
+          result.resultUrl ||
+          ""
+        ),
+
+      predictionRaceKey:
+        officialRaceKey
+    });
+
+    return {
+      status: "saved",
+      raceKey: officialRaceKey
+    };
+  }
+    async function syncPendingOfficialResults() {
+    if (officialSyncPromise) {
+      return officialSyncPromise;
+    }
+
+    officialSyncPromise =
+      (async () => {
+        const targets =
+          getPendingPredictions();
+
+        if (!targets.length) {
+          setOfficialSyncStatus(
+            "公式結果の照合対象はありません",
+            "ready"
+          );
+
+          return {
+            checked: 0,
+            saved: 0,
+            pending: 0,
+            errors: 0
+          };
+        }
+
+        let nextIndex = 0;
+        let checked = 0;
+        let saved = 0;
+        let pending = 0;
+        let errors = 0;
+
+        setOfficialSyncStatus(
+          `公式結果を自動照合中… ` +
+          `0 / ${targets.length}`,
+          "loading"
+        );
+
+        const worker =
+          async () => {
+            while (
+              nextIndex <
+              targets.length
+            ) {
+              const target =
+                targets[
+                  nextIndex++
+                ];
+
+              try {
+                const result =
+                  await syncOneOfficialResult(
+                    target
+                  );
+
+                if (
+                  result.status ===
+                  "saved"
+                ) {
+                  saved += 1;
+                } else {
+                  pending += 1;
+                }
+              } catch (error) {
+                errors += 1;
+
+                console.warn(
+                  "公式結果の自動照合に失敗",
+                  target.raceKey,
+                  error
+                );
+              }
+
+              checked += 1;
+
+              setOfficialSyncStatus(
+                `公式結果を自動照合中… ` +
+                `${checked} / ` +
+                `${targets.length}`,
+                "loading"
+              );
+            }
+          };
+
+        await Promise.all(
+          Array.from(
+            {
+              length:
+                Math.min(
+                  OFFICIAL_SYNC_CONCURRENCY,
+                  targets.length
+                )
+            },
+            () => worker()
+          )
+        );
+
+        const message = [
+          `公式結果を${checked}レース確認`,
+          `新たに${saved}レース確定`,
+          `結果待ち${pending}レース`,
+          errors
+            ? `取得失敗${errors}レース`
+            : ""
+        ]
+          .filter(Boolean)
+          .join(" ／ ");
+
+        setOfficialSyncStatus(
+          message,
+          errors
+            ? "warning"
+            : "ready"
+        );
+
+        return {
+          checked,
+          saved,
+          pending,
+          errors
+        };
+      })()
+        .finally(() => {
+          officialSyncPromise =
+            null;
+        });
+
+    return officialSyncPromise;
+  }
+  function buildRaceHistory(results) {
   const resultList =
     Array.isArray(results)
       ? results
@@ -723,14 +1156,16 @@
   U.setHtml("statsArea", `
     <div class="v3-final-block">
 
-      <h3>
-        AI予想の検証結果
+            <h3>
+        公式結果との照合状況
       </h3>
 
       <p>
         購入金額や回収率は使わず、
         保存済みの事前予想と同じレースの
-        公式結果だけを照合しています。
+        公式結果だけを照合します。
+        結果待ちはアプリ起動時に
+        自動確認します。
       </p>
 
       <p>
@@ -933,13 +1368,30 @@
   );
 }
 
-    function initStatsEvents() {
-  renderStats();
-}
+  async function initStatsEvents() {
+    renderStats();
+
+    try {
+      await syncPendingOfficialResults();
+    } catch (error) {
+      console.error(
+        "公式結果の自動照合エラー",
+        error
+      );
+
+      setOfficialSyncStatus(
+        "公式結果を自動照合できませんでした",
+        "warning"
+      );
+    }
+
+    renderStats();
+  }
 
 window.ChappyStats = {
   renderStats,
-  initStatsEvents
+  initStatsEvents,
+  syncPendingOfficialResults
 };
 
   document.addEventListener(

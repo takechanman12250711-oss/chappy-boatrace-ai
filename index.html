@@ -575,83 +575,49 @@
       <div id="finalCommentArea"></div>
 
     </section>
+<!-- ===================================================
+  AI予想の検証
+==================================================== -->
 
-
-    <!-- ===================================================
-      成績管理
-    ==================================================== -->
 <section
   id="resultSection"
   class="dashboard-section result-management-section"
 >
-
   <div class="dashboard-section-head">
-
     <div>
       <p class="section-eyebrow">
         RESULT
       </p>
 
       <h2>
-        📈 結果分析
+        📈 AI予想の検証
       </h2>
     </div>
-
   </div>
 
-
   <div class="result-dashboard-grid">
-
     <article class="dashboard-card result-input-card">
-
-      <div class="dashboard-card-head">
-
-        <div>
-          <span class="card-icon">
-            📊
-          </span>
-
-          <h3>
-            AI予想を検証
-          </h3>
-        </div>
-
-      </div>
-
       <p class="v3-note">
-        保存されたAI予想と公式結果をレースごとに照合し、
+        レース前に保存したAI予想を、
+        同じレースの公式結果と自動照合し、
         予想精度と傾向を分析します。
       </p>
 
-      <div id="statsArea"></div>
-
-    </article>
-
-
-    <article class="dashboard-card data-card">
-
-      <div class="dashboard-card-head">
-
-        <div>
-          <span class="card-icon">
-            📁
-          </span>
-
-          <h3>
-            データ・履歴
-          </h3>
-        </div>
-
+      <div
+        id="resultSyncStatus"
+        class="status dashboard-status"
+        aria-live="polite"
+      >
+        保存済み予想の公式結果を確認します
       </div>
 
-      <div id="missingArea"></div>
+      <div id="statsArea"></div>
 
-      <div id="historyArea"></div>
-
+      <!-- 旧機能との互換性維持用。画面には表示しない -->
+      <div id="missingArea" hidden></div>
+      <div id="historyArea" hidden></div>
     </article>
-
   </div>
-
 </section>
 
   </main>
@@ -732,7 +698,7 @@
 
   <script src="js/utils.js"></script>
   <script src="js/storage.js"></script>
-  <script src="js/stats.js"></script>
+  <script src="js/stats.js?v=20260720-autosync1"></script>
   <script src="js/api.js"></script>
   <script src="js/theory.js"></script>
   <script src="js/race-history.js?v=20260719-1"></script>
