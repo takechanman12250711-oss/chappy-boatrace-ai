@@ -315,6 +315,133 @@
       raceKey: officialRaceKey
     };
   }
+    async function syncPendingOfficialResults() {
+    if (officialSyncPromise) {
+      return officialSyncPromise;
+    }
+
+    officialSyncPromise =
+      (async () => {
+        const targets =
+          getPendingPredictions();
+
+        if (!targets.length) {
+          setOfficialSyncStatus(
+            "公式結果の照合対象はありません",
+            "ready"
+          );
+
+          return {
+            checked: 0,
+            saved: 0,
+            pending: 0,
+            errors: 0
+          };
+        }
+
+        let nextIndex = 0;
+        let checked = 0;
+        let saved = 0;
+        let pending = 0;
+        let errors = 0;
+
+        setOfficialSyncStatus(
+          `公式結果を自動照合中… ` +
+          `0 / ${targets.length}`,
+          "loading"
+        );
+
+        const worker =
+          async () => {
+            while (
+              nextIndex <
+              targets.length
+            ) {
+              const target =
+                targets[
+                  nextIndex++
+                ];
+
+              try {
+                const result =
+                  await syncOneOfficialResult(
+                    target
+                  );
+
+                if (
+                  result.status ===
+                  "saved"
+                ) {
+                  saved += 1;
+                } else {
+                  pending += 1;
+                }
+              } catch (error) {
+                errors += 1;
+
+                console.warn(
+                  "公式結果の自動照合に失敗",
+                  target.raceKey,
+                  error
+                );
+              }
+
+              checked += 1;
+
+              setOfficialSyncStatus(
+                `公式結果を自動照合中… ` +
+                `${checked} / ` +
+                `${targets.length}`,
+                "loading"
+              );
+            }
+          };
+
+        await Promise.all(
+          Array.from(
+            {
+              length:
+                Math.min(
+                  OFFICIAL_SYNC_CONCURRENCY,
+                  targets.length
+                )
+            },
+            () => worker()
+          )
+        );
+
+        const message = [
+          `公式結果を${checked}レース確認`,
+          `新たに${saved}レース確定`,
+          `結果待ち${pending}レース`,
+          errors
+            ? `取得失敗${errors}レース`
+            : ""
+        ]
+          .filter(Boolean)
+          .join(" ／ ");
+
+        setOfficialSyncStatus(
+          message,
+          errors
+            ? "warning"
+            : "ready"
+        );
+
+        return {
+          checked,
+          saved,
+          pending,
+          errors
+        };
+      })()
+        .finally(() => {
+          officialSyncPromise =
+            null;
+        });
+
+    return officialSyncPromise;
+  }
   function buildRaceHistory(results) {
   const resultList =
     Array.isArray(results)
