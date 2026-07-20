@@ -766,7 +766,6 @@ if (raceInfoArea) {
         : ""
     }
 
-    ${renderIndexPanel(indexes)}
   `;
 
   return section("AI総合", body, "📊", "v3-ai-summary");
