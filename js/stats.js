@@ -1021,8 +1021,17 @@
         return {
           ...item,
           resultTicket,
-          honmeiBoat,
-                    practicalTickets,
+                    honmeiBoat,
+
+          honmeiFinish:
+            settled
+              ? getHonmeiFinish(
+                  honmeiBoat,
+                  resultTicket
+                )
+              : "-",
+
+          practicalTickets,
           settled,
 
           missType:
