@@ -39,7 +39,175 @@
       ? number.toFixed(3)
       : "-";
   }
+    function formatRateDifference(
+    value
+  ) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      return "-";
+    }
+    const number =
+      Number(value);
 
+    if (!Number.isFinite(number)) {
+      return "-";
+    }
+
+    const sign =
+      number > 0 ? "+" : "";
+
+    return (
+      `${sign}${number.toFixed(1)}` +
+      "pt"
+    );
+  }
+
+    function formatStDifference(
+    value
+  ) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      return "-";
+    }
+
+    const number =
+      Number(value);
+
+    if (!Number.isFinite(number)) {
+      return "-";
+    }
+
+    const sign =
+      number > 0 ? "+" : "";
+
+    return (
+      `${sign}${number.toFixed(3)}` +
+      "秒"
+    );
+  }
+    function calculateDifference(
+    value,
+    baseline,
+    digits = 1
+  ) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === "" ||
+      baseline === null ||
+      baseline === undefined ||
+      baseline === ""
+    ) {
+      return null;
+    }
+
+    const current =
+      Number(value);
+    const standard =
+      Number(baseline);
+
+    if (
+      !Number.isFinite(current) ||
+      !Number.isFinite(standard)
+    ) {
+      return null;
+    }
+
+    return Number(
+      (
+        current - standard
+      ).toFixed(digits)
+    );
+  }
+    function judgeFrameCompatibility({
+    samples,
+    venueSamples,
+    winRateDifference,
+    top3RateDifference,
+    averageStDifference
+  }) {
+    if (
+      samples <
+        MIN_FRAME_SAMPLES ||
+      venueSamples < 30
+    ) {
+      return {
+        label: "判定保留",
+        score: 0
+      };
+    }
+
+    let score = 0;
+
+    if (
+      winRateDifference !== null
+    ) {
+      if (
+        winRateDifference >= 5
+      ) {
+        score += 1;
+      } else if (
+        winRateDifference <= -5
+      ) {
+        score -= 1;
+      }
+    }
+
+    if (
+      top3RateDifference !== null
+    ) {
+      if (
+        top3RateDifference >= 8
+      ) {
+        score += 1;
+      } else if (
+        top3RateDifference <= -8
+      ) {
+        score -= 1;
+      }
+    }
+
+    if (
+      averageStDifference !== null
+    ) {
+      if (
+        averageStDifference <=
+        -0.02
+      ) {
+        score += 1;
+      } else if (
+        averageStDifference >=
+        0.02
+      ) {
+        score -= 1;
+      }
+    }
+
+    if (score >= 2) {
+      return {
+        label: "強い",
+        score
+      };
+    }
+
+    if (score <= -2) {
+      return {
+        label: "弱い",
+        score
+      };
+    }
+
+    return {
+      label: "標準",
+      score
+    };
+  }
   function getFrameRows(prediction) {
     const entries =
       Array.isArray(
@@ -53,14 +221,22 @@
             )
         : [];
 
+        const historyContext =
+      prediction?.race
+        ?.historyContext || {};
+
     const racers =
       Array.isArray(
-        prediction?.race
-          ?.historyContext?.racers
+        historyContext.racers
       )
-        ? prediction.race
-            .historyContext.racers
+        ? historyContext.racers
         : [];
+
+    const venue =
+      historyContext.venue || null;
+
+    const venueFrames =
+      venue?.boatPerformance || {};
 
     return entries.map(entry => {
       const boatNo =
@@ -84,10 +260,65 @@
           String(boatNo)
         ] || null;
 
+      const venueFrame =
+        venueFrames[
+          String(boatNo)
+        ] || null;
+
       const samples =
         Number(
           frame?.starts || 0
         );
+      const winRate =
+        frame?.winRate;
+
+      const top3Rate =
+        frame?.top3Rate;
+
+      const averageSt =
+        frame?.averageSt;
+
+      const venueSamples =
+        Number(
+          venueFrame?.starts || 0
+        );
+
+      const venueWinRate =
+        venueFrame?.winRate;
+
+      const venueTop3Rate =
+        venueFrame?.top3Rate;
+
+      const venueAverageSt =
+        venueFrame?.averageSt;
+
+      const winRateDifference =
+        calculateDifference(
+          winRate,
+          venueWinRate
+        );
+
+      const top3RateDifference =
+        calculateDifference(
+          top3Rate,
+          venueTop3Rate
+        );
+
+            const averageStDifference =
+        calculateDifference(
+          averageSt,
+          venueAverageSt,
+          3
+        );
+
+      const compatibility =
+        judgeFrameCompatibility({
+          samples,
+          venueSamples,
+          winRateDifference,
+          top3RateDifference,
+          averageStDifference
+        });
 
       return {
         boatNo,
@@ -95,13 +326,26 @@
           entry?.racerName ||
           racer?.racerName ||
           "-",
-        samples,
-        winRate:
-          frame?.winRate,
-        top3Rate:
-          frame?.top3Rate,
-        averageSt:
-          frame?.averageSt,
+                samples,
+        winRate,
+        top3Rate,
+        averageSt,
+
+        venueSamples,
+        venueWinRate,
+        venueTop3Rate,
+        venueAverageSt,
+
+        winRateDifference,
+        top3RateDifference,
+        averageStDifference,
+
+        compatibility:
+          compatibility.label,
+
+        compatibilityScore:
+          compatibility.score,
+
         usable:
           samples >=
           MIN_FRAME_SAMPLES
@@ -130,9 +374,11 @@
     const rows =
       getFrameRows(prediction);
 
-    const usableCount =
+        const usableCount =
       rows.filter(
-        row => row.usable
+        row =>
+          row.usable &&
+          row.venueSamples >= 30
       ).length;
 
     const rowsHtml =
@@ -154,36 +400,78 @@
                   )}
                 </td>
 
-                <td>
+                                <td>
                   ${row.samples}
                 </td>
 
                 <td>
-                  ${formatRate(
-                    row.winRate
-                  )}
+                  <strong>
+                    ${formatRate(
+                      row.winRate
+                    )}
+                  </strong>
+                  <br>
+                  <small>
+                    場平均
+                    ${formatRate(
+                      row.venueWinRate
+                    )}
+                    ／ 差
+                    ${formatRateDifference(
+                      row.winRateDifference
+                    )}
+                  </small>
                 </td>
 
                 <td>
-                  ${formatRate(
-                    row.top3Rate
-                  )}
+                  <strong>
+                    ${formatRate(
+                      row.top3Rate
+                    )}
+                  </strong>
+                  <br>
+                  <small>
+                    場平均
+                    ${formatRate(
+                      row.venueTop3Rate
+                    )}
+                    ／ 差
+                    ${formatRateDifference(
+                      row.top3RateDifference
+                    )}
+                  </small>
                 </td>
 
                 <td>
-                  ${formatSt(
-                    row.averageSt
-                  )}
+                  <strong>
+                    ${formatSt(
+                      row.averageSt
+                    )}
+                  </strong>
+                  <br>
+                  <small>
+                    場平均
+                    ${formatSt(
+                      row.venueAverageSt
+                    )}
+                    ／ 差
+                    ${formatStDifference(
+                      row.averageStDifference
+                    )}
+                  </small>
                 </td>
 
                 <td>
-                  ${
-                    row.samples === 0
-                      ? "データなし"
-                      : row.usable
-                        ? "参考可"
-                        : "サンプル不足"
-                  }
+                  <strong>
+                    ${escapeHtml(
+                      row.compatibility
+                    )}
+                  </strong>
+                  <br>
+                  <small>
+                    本人${row.samples}走
+                    ／ 場${row.venueSamples}走
+                  </small>
                 </td>
               </tr>
             `)
@@ -205,16 +493,22 @@
     block.innerHTML = `
       <h3>■ 枠別分析</h3>
 
-      <p>
-        現在の艇番と同じ枠で
-        12走以上：
-        ${usableCount}名
-        ／ 出場${rows.length}名
+            <p>
+        現在と同じ枠での選手成績を、
+        選択中の場における同枠平均と比較します。
       </p>
 
       <p>
-        この段階では予想点へ加算せず、
-        公式履歴の参考表示だけに使用します。
+        比較可能：
+        ${usableCount}名
+        ／ 出場${rows.length}名
+        （本人12走以上・場30走以上）
+      </p>
+
+      <p>
+        1着率・3連対率・平均STの3項目から
+        枠相性を「強い・標準・弱い」で表示します。
+        この段階では予想点や買い目へ加算しません。
       </p>
 
       <div class="v3-table-wrap">
@@ -227,7 +521,7 @@
               <th>1着率</th>
               <th>3連対率</th>
               <th>平均ST</th>
-              <th>判定</th>
+              <th>枠相性</th>
             </tr>
           </thead>
 
