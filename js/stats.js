@@ -1115,12 +1115,19 @@
               </td>
 
               <td>
+                ${U.safeText(
+                  item.honmeiFinish ||
+                  "-"
+                )}
+              </td>
+
+              <td>
                 ${item.honmeiHit
                   ? "◎"
                   : "×"}
               </td>
 
-                            <td>
+              <td>
                 ${
                   item.practicalTickets
                     .length === 0
@@ -1129,6 +1136,13 @@
                       ? "的中"
                       : "不的中"
                 }
+              </td>
+
+              <td>
+                ${U.safeText(
+                  item.missType ||
+                  "-"
+                )}
               </td>
 
               <td>
