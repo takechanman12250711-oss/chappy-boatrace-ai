@@ -1453,7 +1453,6 @@
     </div>
     <div class="v3-final-block">
     
-    </div>
       <h3>
         予想と公式着順の比較
       </h3>
