@@ -1307,7 +1307,51 @@
 
 
     <div class="v3-final-block">
+    <div class="v3-final-block">
 
+      <h3>
+        実戦厳選の判定内訳
+      </h3>
+
+      <div class="v3-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>判定</th>
+              <th>件数</th>
+              <th>割合</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${missTypeSummary
+              .map(item => `
+                <tr>
+                  <td>
+                    ${U.safeText(
+                      item.label
+                    )}
+                  </td>
+
+                  <td>
+                    ${item.count}R
+                  </td>
+
+                  <td>
+                    ${item.percentage}%
+                  </td>
+                </tr>
+              `)
+              .join("")}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
       <h3>
         予想と公式着順の比較
       </h3>
