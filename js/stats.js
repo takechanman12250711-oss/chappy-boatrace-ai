@@ -1220,7 +1220,8 @@
               </td>
             </tr>
           `;
-
+  const recentRows =
+    settledRows.slice(0, 10);
     const recentHtml =
     recentRows.length
       ? recentRows
