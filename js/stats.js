@@ -1144,6 +1144,14 @@
                   "-"
                 )}
               </td>
+              
+
+              <td>
+                ${U.safeText(
+                  item.missType ||
+                  "-"
+                )}
+              </td>
 
               <td>
                 ${U.safeText(
