@@ -1,0 +1,64 @@
+name: Check Chappy AI Charter
+
+on:
+  pull_request:
+    paths:
+      - "config/chappy-charter.json"
+      - "docs/CHAPPY_CHARTER.md"
+      - "js/ai-core.js"
+      - "js/note-generator.js"
+      - "js/prediction.js"
+      - "js/render.js"
+      - "scripts/check-charter.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/match-predictions.js"
+      - "scripts/test-match-predictions.js"
+  push:
+    branches:
+      - main
+    paths:
+      - "config/chappy-charter.json"
+      - "docs/CHAPPY_CHARTER.md"
+      - "js/ai-core.js"
+      - "js/note-generator.js"
+      - "js/prediction.js"
+      - "js/render.js"
+      - "scripts/check-charter.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/match-predictions.js"
+      - "scripts/test-match-predictions.js"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  charter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/script.js
+          node --check js/ai-core.js
+          node --check js/prediction.js
+          node --check js/render.js
+          node --check js/note-generator.js
+          node --check scripts/check-charter.js
+          node --check scripts/collect-predictions.js
+          node --check scripts/match-predictions.js
+          node --check scripts/test-match-predictions.js
+
+      - name: Enforce charter
+        run: |
+          node scripts/check-charter.js
+          node scripts/test-match-predictions.js

@@ -762,6 +762,7 @@
 
   const raceTrendCache = new Map();
   let raceTrendScanId = 0;
+  const LIVE_AUTO_PICK_MIN_SCORE = 70;
 
   function buildRaceTrendCacheKey(date, jcd, raceNo) {
     return [
@@ -884,6 +885,161 @@
         Number(button.dataset.manshuTrend) === topManshu
       );
     });
+  }
+
+  async function selectBestLiveRace(
+    date,
+    venues
+  ) {
+    const core = window.ChappyAICore;
+    const targets = (Array.isArray(venues) ? venues : [])
+      .map(venue => ({
+        jcd: String(venue?.jcd || "").padStart(2, "0"),
+        place: String(venue?.place || ""),
+        raceNo: Number(venue?.currentRaceNo || 0),
+        deadlineAt: String(venue?.deadlineAt || "")
+      }))
+      .filter(target => target.jcd && target.raceNo);
+
+    if (
+      !core ||
+      typeof core.buildRaceTrendEvaluation !== "function" ||
+      !targets.length
+    ) {
+      return null;
+    }
+
+    updateStatus(
+      `締切前${targets.length}場をAI比較中...`
+    );
+
+    const results = [];
+    let nextIndex = 0;
+
+    const worker = async () => {
+      while (nextIndex < targets.length) {
+        const target = targets[nextIndex++];
+        const cacheKey = buildRaceTrendCacheKey(
+          date,
+          target.jcd,
+          target.raceNo
+        );
+
+        try {
+          let evaluation = raceTrendCache.get(
+            cacheKey
+          )?.evaluation;
+
+          if (!evaluation) {
+            const raceData = await fetchRaceData({
+              jcd: target.jcd,
+              rno: target.raceNo,
+              date
+            });
+
+            if (!raceData || raceData.ok === false) {
+              throw new Error(
+                raceData?.error ||
+                "レースデータを取得できませんでした"
+              );
+            }
+
+            evaluation =
+              core.buildRaceTrendEvaluation(raceData);
+
+            raceTrendCache.set(cacheKey, {
+              evaluation,
+              checkedAt: Date.now()
+            });
+          }
+
+          if (!evaluation?.ready) continue;
+
+          const honmei = Number(
+            evaluation.honmei?.score || 0
+          );
+          const manshu = Number(
+            evaluation.manshu?.score || 0
+          );
+          const type =
+            honmei >= manshu
+              ? "本線"
+              : "波乱";
+
+          results.push({
+            ...target,
+            type,
+            score: Math.max(honmei, manshu),
+            honmei,
+            manshu,
+            completeness: Number(
+              evaluation.dataStatus?.completeness || 0
+            ),
+            stage:
+              evaluation.dataStatus?.stage ||
+              "provisional"
+          });
+        } catch (error) {
+          console.warn(
+            `live auto pick ${target.place} ${target.raceNo}R`,
+            error
+          );
+        }
+      }
+    };
+
+    await Promise.all(
+      Array.from(
+        { length: Math.min(3, targets.length) },
+        () => worker()
+      )
+    );
+
+    results.sort((a, b) =>
+      b.score - a.score ||
+      b.completeness - a.completeness ||
+      Date.parse(a.deadlineAt || 0) -
+        Date.parse(b.deadlineAt || 0)
+    );
+
+    const best = results[0] || null;
+
+    return {
+      checked: targets.length,
+      evaluated: results.length,
+      selected:
+        Boolean(best) &&
+        best.score >= LIVE_AUTO_PICK_MIN_SCORE,
+      minScore: LIVE_AUTO_PICK_MIN_SCORE,
+      best
+    };
+  }
+
+  function renderLiveAutoSelection(
+    selection
+  ) {
+    const status = document.getElementById(
+      "officialScheduleStatus"
+    );
+    const best = selection?.best;
+
+    if (!status || !selection) return;
+
+    if (selection.selected && best) {
+      status.textContent =
+        `${selection.checked}場比較・` +
+        `${best.place} ${best.raceNo}Rを自動選定` +
+        `（${best.type}${Math.round(best.score)}点）`;
+      return;
+    }
+
+    status.textContent = best
+      ? (
+          `${selection.checked}場比較・見送り` +
+          `（最高${Math.round(best.score)}点／` +
+          `基準${selection.minScore}点）`
+        )
+      : `${selection.checked}場比較・判定データ不足`;
   }
 
   async function loadOfficialRaceTrends(data, mode, grid) {
@@ -1535,10 +1691,22 @@
       placeSelect?.value ||
       "";
 
+    const liveAutoSelection =
+      mode === "live"
+        ? await selectBestLiveRace(
+            date,
+            venues
+          )
+        : null;
+
     const preferredJcd =
       mode === "live"
         ? String(
-            data.nextRace?.jcd ||
+            (
+              liveAutoSelection?.selected
+                ? liveAutoSelection.best?.jcd
+                : data.nextRace?.jcd
+            ) ||
             ""
           )
         : String(
@@ -1593,11 +1761,36 @@
     await loadRaceChoices(
       mode === "live"
         ? Number(
-            data.nextRace?.raceNo ||
+            (
+              liveAutoSelection?.selected
+                ? liveAutoSelection.best?.raceNo
+                : data.nextRace?.raceNo
+            ) ||
             0
           )
         : 0
     );
+
+    if (mode === "live") {
+      renderLiveAutoSelection(
+        liveAutoSelection
+      );
+
+      if (liveAutoSelection?.selected) {
+        const best = liveAutoSelection.best;
+
+        updateStatus(
+          `${best.place} ${best.raceNo}Rを自動選定しました` +
+          `（${best.type}${Math.round(best.score)}点）`
+        );
+      } else if (liveAutoSelection?.best) {
+        updateStatus(
+          `自動選定は見送りです` +
+          `（最高${Math.round(liveAutoSelection.best.score)}点／` +
+          `基準${liveAutoSelection.minScore}点）`
+        );
+      }
+    }
 
     const officialPicker =
       document.getElementById(
