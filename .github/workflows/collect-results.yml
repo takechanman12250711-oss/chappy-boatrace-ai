@@ -37,11 +37,12 @@ jobs:
           COLLECT_DATE: ${{ inputs.date }}
         run: |
           node scripts/collect-results.js
+          node scripts/match-predictions.js
           node scripts/build-race-stats.js
 
       - name: Save collected results
         run: |
-          git add data/results data/stats
+          git add data/results data/predictions data/stats
 
           if git diff --cached --quiet; then
             echo "保存する変更はありません"

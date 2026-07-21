@@ -1,0 +1,154 @@
+"use strict";
+
+const fs = require("fs");
+const path = require("path");
+
+const root = path.resolve(__dirname, "..");
+const read = relativePath =>
+  fs.readFileSync(path.join(root, relativePath), "utf8");
+const charter = JSON.parse(read("config/chappy-charter.json"));
+
+const expectedPriority = [
+  "展開",
+  "コース",
+  "ST・スリット",
+  "展示・足",
+  "残し・拾い",
+  "当地・水面",
+  "技量",
+  "モーター"
+];
+
+const failures = [];
+const assert = (condition, message) => {
+  if (!condition) failures.push(message);
+};
+const includesAll = (source, values) =>
+  values.every(value => source.includes(value));
+
+assert(
+  JSON.stringify(charter.predictionPriority) ===
+    JSON.stringify(expectedPriority),
+  "予想の優先順位が憲章と一致しません"
+);
+
+assert(
+  charter.principles?.insideAdvantageIsDefault === true,
+  "内側優位の原則が無効です"
+);
+assert(
+  charter.principles?.preserveRealisticSecondCourseSashi === true &&
+    charter.principles?.preserveRealisticFourthBoatHold === true,
+  "2差し・4残しの保護が無効です"
+);
+assert(
+  charter.principles?.numbersAloneMayCreateTickets === false &&
+    charter.principles?.numbersAloneMayDeleteTickets === false,
+  "数字だけで買い目を変更できる設定です"
+);
+assert(
+  charter.principles?.oddsUsage ===
+    "post_selection_display_classification_funding_only",
+  "オッズの用途が買い目作成後に限定されていません"
+);
+assert(
+  charter.principles?.skipWhenMainScenarioIsMissing === true,
+  "本線不成立時の見送りが無効です"
+);
+
+const practical = charter.practicalTickets || {};
+const allocation = practical.allocationMaximum || {};
+assert(
+  practical.standard === 5 && practical.maximum === 7,
+  "実戦厳選は基本5点・最大7点でなければなりません"
+);
+assert(
+  allocation.main === 3 &&
+    allocation.cover === 2 &&
+    allocation.flow === 1 &&
+    allocation.longshot === 1 &&
+    Object.values(allocation).reduce((sum, value) => sum + value, 0) === 7,
+  "実戦厳選の配分上限が3・2・1・1ではありません"
+);
+
+assert(
+  charter.newEngine?.motorWeightMaximum === 0.05,
+  "新エンジン期のモーター上限は0.05でなければなりません"
+);
+assert(
+  includesAll(charter.newEngine?.keywords || [], [
+    "新エンジン",
+    "新型エンジン",
+    "新モーター",
+    "新燃料"
+  ]),
+  "新エンジン判定語が不足しています"
+);
+
+assert(
+  charter.automation?.mayChangePredictionLogicWithoutApproval === false,
+  "同意なしの予想ロジック変更が許可されています"
+);
+assert(
+  includesAll(charter.automation?.logicChangeRequires || [], [
+    "what",
+    "why",
+    "impact",
+    "ownerApproval"
+  ]),
+  "ロジック変更手続きの必須条件が不足しています"
+);
+
+const aiCore = read("js/ai-core.js");
+const render = read("js/render.js");
+const noteGenerator = read("js/note-generator.js");
+
+const newEngineWeightMatch = aiCore.match(
+  /const NEW_ENGINE_WEIGHTS\s*=\s*\{([\s\S]*?)\};/
+);
+const newEngineMotorMatch = newEngineWeightMatch?.[1]?.match(
+  /motor:\s*([0-9.]+)/
+);
+const actualNewEngineMotorWeight = Number(newEngineMotorMatch?.[1]);
+
+assert(
+  Number.isFinite(actualNewEngineMotorWeight) &&
+    actualNewEngineMotorWeight <= charter.newEngine.motorWeightMaximum,
+  "実装の新エンジン期モーター比重が憲章上限を超えています"
+);
+assert(
+  /新エンジン\|新型エンジン\|新モーター\|新燃料/.test(aiCore),
+  "実装に新エンジン判定語がそろっていません"
+);
+assert(
+  render.includes("数字・オッズだけによる削除はしていません"),
+  "実戦厳選に数字・オッズ単独削除の禁止表示がありません"
+);
+assert(
+  render.includes("addTickets(mainTickets, 3, \"本線\")") &&
+    render.includes("addTickets(coverTickets, 2, \"押さえ\")") &&
+    render.includes("addTickets(flowTickets, 1, \"流し\")") &&
+    render.includes("addTickets(holeTickets, 1, \"万舟・穴\")"),
+  "実戦厳選の実装配分が憲章と一致しません"
+);
+assert(
+  noteGenerator.includes("主軸となる展開が定まらないため見送り。"),
+  "note原稿に本線不成立時の見送りがありません"
+);
+assert(
+  noteGenerator
+    .replaceAll("選手技量", "技量")
+    .includes(expectedPriority.join("→")),
+  "note原稿の評価順が憲章と一致しません"
+);
+
+if (failures.length) {
+  console.error("チャッピーAI憲章チェック: 失敗");
+  failures.forEach(message => console.error(`- ${message}`));
+  process.exit(1);
+}
+
+console.log("チャッピーAI憲章チェック: 合格");
+console.log(`- 優先順位: ${expectedPriority.join(" → ")}`);
+console.log("- 実戦厳選: 基本5点・最大7点");
+console.log("- 同意なしの予想ロジック変更: 禁止");

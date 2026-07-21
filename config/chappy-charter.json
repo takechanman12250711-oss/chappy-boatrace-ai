@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "enactedOn": "2026-07-21",
+  "owner": "あっくん",
+  "predictionPriority": [
+    "展開",
+    "コース",
+    "ST・スリット",
+    "展示・足",
+    "残し・拾い",
+    "当地・水面",
+    "技量",
+    "モーター"
+  ],
+  "principles": {
+    "insideAdvantageIsDefault": true,
+    "preserveRealisticSecondCourseSashi": true,
+    "preserveRealisticFourthBoatHold": true,
+    "numbersAloneMayCreateTickets": false,
+    "numbersAloneMayDeleteTickets": false,
+    "oddsUsage": "post_selection_display_classification_funding_only",
+    "skipWhenMainScenarioIsMissing": true
+  },
+  "practicalTickets": {
+    "standard": 5,
+    "maximum": 7,
+    "allocationMaximum": {
+      "main": 3,
+      "cover": 2,
+      "flow": 1,
+      "longshot": 1
+    }
+  },
+  "newEngine": {
+    "keywords": [
+      "新エンジン",
+      "新型エンジン",
+      "新モーター",
+      "新燃料"
+    ],
+    "motorWeightMaximum": 0.05,
+    "prioritize": [
+      "展示",
+      "ST",
+      "今節気配",
+      "技量",
+      "当地・水面"
+    ]
+  },
+  "automation": {
+    "mayProposeImprovements": true,
+    "mayChangePredictionLogicWithoutApproval": false,
+    "logicChangeRequires": [
+      "what",
+      "why",
+      "impact",
+      "ownerApproval"
+    ]
+  }
+}
