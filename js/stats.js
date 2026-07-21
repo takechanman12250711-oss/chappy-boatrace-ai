@@ -1174,7 +1174,32 @@
         item.winningMethod ||
         "不明"
     );
+  const honmeiCourseGroups =
+    buildGroups(
+      settledRows,
+      item => {
+        const boatNo =
+          Number(
+            item.honmeiBoat || 0
+          );
 
+        return (
+          boatNo >= 1 &&
+          boatNo <= 6
+        )
+          ? `${boatNo}号艇◎`
+          : "不明";
+      }
+    );
+
+  const predictedScenarioGroups =
+    buildGroups(
+      settledRows,
+      item =>
+        item.prediction
+          ?.predictedScenarioTitle ||
+        "不明"
+    );
   const renderGroupRows =
     groups =>
       groups.length
@@ -1539,6 +1564,68 @@
           <tbody>
             ${renderGroupRows(
               methodGroups
+            )}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+        <div class="v3-final-block">
+
+      <h3>
+        本命コース別傾向
+      </h3>
+
+      <div class="v3-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>本命コース</th>
+              <th>対象</th>
+              <th>◎1着率</th>
+              <th>厳選的中率</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${renderGroupRows(
+              honmeiCourseGroups
+            )}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+
+    <div class="v3-final-block">
+
+      <h3>
+        予想した中心展開別傾向
+      </h3>
+
+      <div class="v3-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>中心展開</th>
+              <th>対象</th>
+              <th>◎1着率</th>
+              <th>厳選的中率</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${renderGroupRows(
+              predictedScenarioGroups
             )}
           </tbody>
 
