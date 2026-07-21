@@ -208,6 +208,122 @@
       score
     };
   }
+    function findPerformanceScore(
+    prediction,
+    boatNo
+  ) {
+    const candidates = [
+      prediction?.analysis?.boats,
+      prediction?.boatAnalysis,
+      prediction?.ai?.boats,
+      prediction?.boats,
+      prediction?.ranking
+    ];
+
+    for (const list of candidates) {
+      if (!Array.isArray(list)) {
+        continue;
+      }
+
+      const boat = list.find(
+        item =>
+          Number(
+            item?.boatNo ||
+            item?.boat ||
+            item?.number ||
+            0
+          ) === Number(boatNo)
+      );
+
+      if (!boat) {
+        continue;
+      }
+
+      const scoreCandidates = [
+        boat?.performanceScore,
+        boat?.totalScore,
+        boat?.finalScore,
+        boat?.aiScore,
+        boat?.score
+      ];
+
+      const score = scoreCandidates.find(
+        value =>
+          Number.isFinite(
+            Number(value)
+          )
+      );
+
+      if (score !== undefined) {
+        return Number(score);
+      }
+    }
+
+    return null;
+  }
+    function judgeFramePerformanceMatch(
+    compatibility,
+    performanceScore
+  ) {
+    const score =
+      Number(performanceScore);
+
+    if (
+      !compatibility ||
+      compatibility === "判定保留" ||
+      !Number.isFinite(score)
+    ) {
+      return {
+        label: "参考外",
+        level: 0
+      };
+    }
+
+    if (
+      compatibility === "強い" &&
+      score >= 70
+    ) {
+      return {
+        label: "強く一致",
+        level: 3
+      };
+    }
+
+    if (
+      compatibility === "強い" &&
+      score >= 55
+    ) {
+      return {
+        label: "相性上昇",
+        level: 2
+      };
+    }
+
+    if (
+      compatibility === "弱い" &&
+      score < 55
+    ) {
+      return {
+        label: "重い注意",
+        level: -2
+      };
+    }
+
+    if (
+      compatibility === "弱い" &&
+      score >= 70
+    ) {
+      return {
+        label: "性能で補う",
+        level: 1
+      };
+    }
+
+    return {
+      label: "標準一致",
+      level: 0
+    };
+  }
   function getFrameRows(prediction) {
     const entries =
       Array.isArray(
@@ -319,7 +435,16 @@
           top3RateDifference,
           averageStDifference
         });
-
+      const performanceScore =
+        findPerformanceScore(
+          prediction,
+          boatNo
+        );
+      const framePerformanceMatch =
+        judgeFramePerformanceMatch(
+          compatibility.label,
+          performanceScore
+        );
       return {
         boatNo,
         racerName:
@@ -346,6 +471,14 @@
         compatibilityScore:
           compatibility.score,
 
+        performanceScore,
+
+        framePerformanceLabel:
+          framePerformanceMatch.label,
+
+        framePerformanceLevel:
+          framePerformanceMatch.level,
+          
         usable:
           samples >=
           MIN_FRAME_SAMPLES
@@ -473,6 +606,39 @@
                     ／ 場${row.venueSamples}走
                   </small>
                 </td>
+                                <td>
+                  <strong>
+                    ${
+                      Number.isFinite(
+                        Number(
+                          row.performanceScore
+                        )
+                      )
+                        ? Number(
+                            row.performanceScore
+                          ).toFixed(1)
+                        : "-"
+                    }
+                  </strong>
+                </td>
+<td>
+  <span
+    class="frame-performance-badge
+      ${
+        row.framePerformanceLevel >= 3
+          ? "is-strong"
+          : row.framePerformanceLevel >= 1
+            ? "is-positive"
+            : row.framePerformanceLevel <= -2
+              ? "is-warning"
+              : "is-neutral"
+      }"
+  >
+    ${escapeHtml(
+      row.framePerformanceLabel
+    )}
+  </span>
+</td>
               </tr>
             `)
             .join("")
@@ -522,6 +688,8 @@
               <th>3連対率</th>
               <th>平均ST</th>
               <th>枠相性</th>
+              <th>性能スコア</th>
+              <th>枠×性能</th>
             </tr>
           </thead>
 
