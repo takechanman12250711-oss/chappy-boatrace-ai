@@ -876,7 +876,109 @@
 
       return selected;
     };
+  const classifyPracticalResult = (
+    tickets,
+    resultTicket
+  ) => {
+    const actual =
+      normalizeTicket(
+        resultTicket
+      );
 
+    const selected =
+      (Array.isArray(tickets)
+        ? tickets
+        : []
+      )
+        .map(normalizeTicket)
+        .filter(Boolean);
+
+    if (!actual || selected.length === 0) {
+      return "見送り";
+    }
+
+    if (selected.includes(actual)) {
+      return "的中";
+    }
+
+    const actualBoats =
+      actual.split("-");
+
+    const actualWinner =
+      actualBoats[0];
+
+    const winnerSelected =
+      selected.some(ticket =>
+        ticket.split("-")[0] ===
+        actualWinner
+      );
+
+    if (!winnerSelected) {
+      return "頭外れ";
+    }
+
+    const sameBoatSet =
+      selected.some(ticket => {
+        const boats =
+          ticket.split("-");
+
+        return actualBoats.every(
+          boat =>
+            boats.includes(boat)
+        );
+      });
+
+    if (sameBoatSet) {
+      return "着順違い";
+    }
+
+    const maxOverlap =
+      selected.reduce(
+        (max, ticket) => {
+          const boats =
+            ticket.split("-");
+
+          const overlap =
+            actualBoats.filter(
+              boat =>
+                boats.includes(boat)
+            ).length;
+
+          return Math.max(
+            max,
+            overlap
+          );
+        },
+        0
+      );
+
+    return maxOverlap >= 2
+      ? "相手抜け"
+      : "完全抜け";
+  };
+  
+    const getHonmeiFinish = (
+    honmeiBoat,
+    resultTicket
+  ) => {
+    if (
+      !honmeiBoat ||
+      !resultTicket
+    ) {
+      return "-";
+    }
+
+    const position =
+      resultTicket
+        .split("-")
+        .indexOf(
+          String(honmeiBoat)
+        );
+
+    return position >= 0
+      ? `${position + 1}着`
+      : "4着以下";
+  };
   const predictionRows =
     history
       .filter(item =>
@@ -919,9 +1021,26 @@
         return {
           ...item,
           resultTicket,
-          honmeiBoat,
+                    honmeiBoat,
+
+          honmeiFinish:
+            settled
+              ? getHonmeiFinish(
+                  honmeiBoat,
+                  resultTicket
+                )
+              : "-",
+
           practicalTickets,
           settled,
+
+          missType:
+            settled
+              ? classifyPracticalResult(
+                  practicalTickets,
+                  resultTicket
+                )
+              : "結果待ち",
 
           honmeiHit:
             settled &&
@@ -1101,11 +1220,9 @@
               </td>
             </tr>
           `;
-
   const recentRows =
     settledRows.slice(0, 10);
-
-  const recentHtml =
+    const recentHtml =
     recentRows.length
       ? recentRows
           .map(item => `
@@ -1169,32 +1286,16 @@
                   "-"
                 )}
               </td>
-              
-
-              <td>
-                ${U.safeText(
-                  item.missType ||
-                  "-"
-                )}
-              </td>
-
-              <td>
-                ${U.safeText(
-                  item.missType ||
-                  "-"
-                )}
-              </td>
             </tr>
           `)
           .join("")
       : `
           <tr>
-            <td colspan="6">
+            <td colspan="8">
               公式結果と照合できる予想がありません
             </td>
           </tr>
         `;
-
   const sampleMessage =
     settledRows.length < 30
       ? `
@@ -1305,7 +1406,51 @@
 
     </div>
 
+    <div class="v3-final-block">
 
+      <h3>
+        実戦厳選の判定内訳
+      </h3>
+
+      <div class="v3-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>判定</th>
+              <th>件数</th>
+              <th>割合</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${missTypeSummary
+              .map(item => `
+                <tr>
+                  <td>
+                    ${U.safeText(
+                      item.label
+                    )}
+                  </td>
+
+                  <td>
+                    ${item.count}R
+                  </td>
+
+                  <td>
+                    ${item.percentage}%
+                  </td>
+                </tr>
+              `)
+              .join("")}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
     <div class="v3-final-block">
     <div class="v3-final-block">
 
@@ -1366,8 +1511,10 @@
               <th>レース</th>
               <th>◎</th>
               <th>公式着順</th>
+              <th>◎着順</th>
               <th>◎1着</th>
               <th>実戦厳選</th>
+              <th>判定</th>
             </tr>
           </thead>
 
