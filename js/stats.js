@@ -958,7 +958,32 @@
     practicalRows.filter(
       item => item.practicalHit
     ).length;
+  const missTypeLabels = [
+    "的中",
+    "頭外れ",
+    "相手抜け",
+    "着順違い",
+    "完全抜け"
+  ];
 
+  const missTypeSummary =
+    missTypeLabels.map(label => {
+      const count =
+        practicalRows.filter(
+          item =>
+            item.missType === label
+        ).length;
+
+      return {
+        label,
+        count,
+        percentage:
+          rate(
+            count,
+            practicalRows.length
+          )
+      };
+    });
   const buildGroups = (
     list,
     getLabel
