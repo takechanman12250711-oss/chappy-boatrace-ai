@@ -1077,7 +1077,32 @@
     practicalRows.filter(
       item => item.practicalHit
     ).length;
+  const missTypeLabels = [
+    "的中",
+    "頭外れ",
+    "相手抜け",
+    "着順違い",
+    "完全抜け"
+  ];
 
+  const missTypeSummary =
+    missTypeLabels.map(label => {
+      const count =
+        practicalRows.filter(
+          item =>
+            item.missType === label
+        ).length;
+
+      return {
+        label,
+        count,
+        percentage:
+          rate(
+            count,
+            practicalRows.length
+          )
+      };
+    });
   const buildGroups = (
     list,
     getLabel
@@ -1380,7 +1405,51 @@
 
     </div>
 
+    <div class="v3-final-block">
 
+      <h3>
+        実戦厳選の判定内訳
+      </h3>
+
+      <div class="v3-table-wrap">
+
+        <table class="table">
+
+          <thead>
+            <tr>
+              <th>判定</th>
+              <th>件数</th>
+              <th>割合</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${missTypeSummary
+              .map(item => `
+                <tr>
+                  <td>
+                    ${U.safeText(
+                      item.label
+                    )}
+                  </td>
+
+                  <td>
+                    ${item.count}R
+                  </td>
+
+                  <td>
+                    ${item.percentage}%
+                  </td>
+                </tr>
+              `)
+              .join("")}
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
     <div class="v3-final-block">
 
       <h3>
