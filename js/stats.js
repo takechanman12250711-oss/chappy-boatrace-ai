@@ -1196,10 +1196,7 @@
             </tr>
           `;
 
-  const recentRows =
-    settledRows.slice(0, 10);
-
-  const recentHtml =
+    const recentHtml =
     recentRows.length
       ? recentRows
           .map(item => `
@@ -1234,6 +1231,13 @@
               </td>
 
               <td>
+                ${U.safeText(
+                  item.honmeiFinish ||
+                  "-"
+                )}
+              </td>
+
+              <td>
                 ${item.honmeiHit
                   ? "◎"
                   : "×"}
@@ -1249,17 +1253,23 @@
                       : "不的中"
                 }
               </td>
+
+              <td>
+                ${U.safeText(
+                  item.missType ||
+                  "-"
+                )}
+              </td>
             </tr>
           `)
           .join("")
       : `
           <tr>
-            <td colspan="6">
+            <td colspan="8">
               公式結果と照合できる予想がありません
             </td>
           </tr>
         `;
-
   const sampleMessage =
     settledRows.length < 30
       ? `
