@@ -59,7 +59,11 @@ jobs:
 
       - name: Save predictions and note drafts
         run: |
-          git add data/predictions data/notes
+          git add data/predictions
+
+          if [ -d data/notes ]; then
+            git add data/notes
+          fi
 
           if git diff --cached --quiet; then
             echo "保存する新しい予想はありません"
