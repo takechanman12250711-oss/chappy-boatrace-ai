@@ -3867,3 +3867,43 @@ body {
     text-align: center;
   }
 }
+/* =========================================
+   枠相性 × 性能スコア 判定バッジ
+========================================= */
+
+.frame-performance-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.frame-performance-badge.is-strong {
+  background: #d9f7e8;
+  color: #087443;
+  border: 1px solid #7bd6aa;
+}
+
+.frame-performance-badge.is-positive {
+  background: #e7f1ff;
+  color: #175ea8;
+  border: 1px solid #91bcec;
+}
+
+.frame-performance-badge.is-warning {
+  background: #ffe7e7;
+  color: #b42318;
+  border: 1px solid #f3a3a3;
+}
+
+.frame-performance-badge.is-neutral {
+  background: #f1f3f5;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
