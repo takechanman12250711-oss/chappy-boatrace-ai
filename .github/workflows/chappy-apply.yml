@@ -1,0 +1,213 @@
+name: Chappy Auto Apply
+
+on:
+  issues:
+    types:
+      - opened
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  apply-change:
+    if: >
+      github.event.issue.user.login == 'takechanman12250711-oss' &&
+      startsWith(github.event.issue.title, '[CHAPPY-APPLY]')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Read and validate request
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python3 <<'PY'
+          import base64
+          import json
+          import os
+          import pathlib
+          import re
+          import sys
+
+          body = os.environ.get("ISSUE_BODY", "")
+
+          match = re.search(
+              r"<!-- CHAPPY_PAYLOAD_START -->(.*?)<!-- CHAPPY_PAYLOAD_END -->",
+              body,
+              re.DOTALL,
+          )
+
+          if not match:
+              print("Chappy payload was not found.")
+              sys.exit(1)
+
+          try:
+              payload = json.loads(match.group(1).strip())
+          except json.JSONDecodeError as error:
+              print(f"Invalid JSON payload: {error}")
+              sys.exit(1)
+
+          path = str(payload.get("path", "")).strip()
+          content_base64 = str(payload.get("content_base64", "")).strip()
+          message = str(
+              payload.get("message", "Apply Chappy update")
+          ).strip()
+
+          allowed_paths = (
+              "js/",
+              "api/",
+              "css/",
+              ".github/",
+          )
+
+          allowed_files = {
+              "index.html",
+              "style.css",
+              "script.js",
+              "render.js",
+              "prediction.js",
+              "ai-core.js",
+          }
+
+          if not path:
+              print("File path is missing.")
+              sys.exit(1)
+
+          if (
+              path.startswith("/")
+              or ".." in pathlib.PurePosixPath(path).parts
+              or not (
+                  path.startswith(allowed_paths)
+                  or path in allowed_files
+              )
+          ):
+              print(f"Path is not permitted: {path}")
+              sys.exit(1)
+
+          try:
+              content = base64.b64decode(
+                  content_base64,
+                  validate=True,
+              )
+              text = content.decode("utf-8")
+          except Exception as error:
+              print(f"Unable to decode file content: {error}")
+              sys.exit(1)
+
+          target = pathlib.Path(path)
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_text(text, encoding="utf-8")
+
+          pathlib.Path("/tmp/chappy-message.txt").write_text(
+              message,
+              encoding="utf-8",
+          )
+
+          pathlib.Path("/tmp/chappy-path.txt").write_text(
+              path,
+              encoding="utf-8",
+          )
+
+          print(f"Prepared update for {path}")
+          PY
+
+      - name: Run JavaScript syntax check
+        run: |
+          TARGET_PATH="$(cat /tmp/chappy-path.txt)"
+
+          if [[ "$TARGET_PATH" == *.js ]]; then
+            node --check "$TARGET_PATH"
+          else
+            echo "JavaScript syntax check not required."
+          fi
+
+      - name: Check whether anything changed
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create change branch
+        if: steps.changes.outputs.changed == 'true'
+        id: branch
+        run: |
+          BRANCH="chappy/issue-${{ github.event.issue.number }}"
+
+          git config user.name "Chappy BoatRace AI"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add "$(cat /tmp/chappy-path.txt)"
+          git commit -m "$(cat /tmp/chappy-message.txt)"
+          git push --set-upstream origin "$BRANCH"
+
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        if: steps.changes.outputs.changed == 'true'
+        id: pull-request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+        run: |
+          PR_URL="$(
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "$(cat /tmp/chappy-message.txt)" \
+              --body "チャッピーの自動修正です。
+
+          元の指示：Issue #${{ github.event.issue.number }}
+
+          実行済み確認：
+          - 対象パス検証
+          - UTF-8検証
+          - JavaScriptの場合は構文チェック"
+          )"
+
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Merge pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ steps.pull-request.outputs.url }}
+        run: |
+          gh pr merge "$PR_URL" \
+            --squash \
+            --delete-branch \
+            --admin
+
+      - name: Report success
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment \
+            "${{ github.event.issue.number }}" \
+            --body "✅ 修正・構文確認・PR作成・mainへのマージまで完了しました。"
+
+          gh issue close \
+            "${{ github.event.issue.number }}"
+
+      - name: Report no changes
+        if: steps.changes.outputs.changed == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment \
+            "${{ github.event.issue.number }}" \
+            --body "ℹ️ 指定された内容は現在のファイルと同じだったため、変更はありませんでした。"
+
+          gh issue close \
+            "${{ github.event.issue.number }}"
