@@ -111,7 +111,6 @@ function getBoatNo(boat) {
   }
 
   const candidates = [
-    boat.boatNo,
     boat.boat,
     boat.waku,
     boat.course,
@@ -120,6 +119,7 @@ function getBoatNo(boat) {
     boat.frame,
     boat.number,
     boat.teiban,
+    boat.boatNo,
     boat.racer?.boatNo,
     boat.raw?.boatNo,
     boat.raw?.boat,

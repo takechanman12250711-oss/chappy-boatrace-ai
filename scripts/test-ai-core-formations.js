@@ -6,6 +6,31 @@ global.window = global;
 require("../js/ai-core");
 const aiCore = global.ChappyAICore;
 
+const officialEntriesWithEquipmentNumbers = Array.from(
+  { length: 6 },
+  (_, index) => ({
+    boat: index + 1,
+    // 公式APIのboatNoは枠番ではなくボート機材番号。
+    // 1〜6の値でもboat（枠番）を上書きしてはならない。
+    boatNo: [65, 46, 3, 2, 62, 10][index],
+    racerName: `${index + 1}号艇`,
+    className: "A1",
+    avgSt: 0.15,
+    nationalWinRate: 6,
+    localWinRate: 6,
+    motor2Rate: 35,
+    exhibition: { displayTime: 6.8 + index * 0.01 }
+  })
+);
+
+const officialEntryEvaluation = aiCore.buildRaceTrendEvaluation({
+  stadiumCode: "15",
+  raceNo: 12,
+  entries: officialEntriesWithEquipmentNumbers
+});
+
+assert.equal(officialEntryEvaluation.dataStatus.entryCount, 6);
+
 function boat(boatNo, total, raceFlow, attack, hold, pickup, road = 65) {
   return {
     boatNo,
