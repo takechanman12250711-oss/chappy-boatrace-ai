@@ -19,6 +19,9 @@ const historyStats = require(
 const historyInsights = require(
   "../js/history-insights"
 );
+const predictionConditions = require(
+  "../js/prediction-conditions"
+);
 
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
@@ -88,7 +91,7 @@ function compactEvaluation(evaluation) {
   };
 }
 
-function compactPrediction(prediction, practicalTickets) {
+function compactPrediction(prediction, practicalTickets, raceData) {
   return {
     version: prediction?.version || "",
     predictionMode: "server_pre_deadline",
@@ -100,7 +103,8 @@ function compactPrediction(prediction, practicalTickets) {
     ticketRanks: Array.isArray(prediction?.ticketRanks)
       ? prediction.ticketRanks
       : [],
-    practicalTickets
+    practicalTickets,
+    preRaceConditions: predictionConditions.capture(raceData, prediction)
   };
 }
 
@@ -346,7 +350,7 @@ async function main() {
       threshold: MIN_SCORE,
       evaluation: compactEvaluation(best.evaluation)
     },
-    prediction: compactPrediction(prediction, practicalTickets),
+    prediction: compactPrediction(prediction, practicalTickets, best.raceData),
     note: {
       publishable: Boolean(article?.publishable),
       title: article?.title || "",

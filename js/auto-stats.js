@@ -48,6 +48,8 @@
           officialPayoutPer100: Number(item?.result?.payout || 0),
           officialPopularity: item?.result?.popularity ?? null,
           winningMethod: item?.result?.winningMethod || "",
+          finishers: item?.result?.finishers || [],
+          starts: item?.result?.starts || [],
           officialCheckedAt: item?.result?.settledAt || "",
           automaticResult: true,
           automaticVerification:

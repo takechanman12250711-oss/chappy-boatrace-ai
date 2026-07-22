@@ -329,6 +329,16 @@
           ""
         ),
 
+      finishers:
+        Array.isArray(result.finishers)
+          ? result.finishers
+          : [],
+
+      starts:
+        Array.isArray(result.starts)
+          ? result.starts
+          : [],
+
       officialCheckedAt:
         result.checkedAt ||
         new Date()
@@ -1139,7 +1149,9 @@
               result: resultTicket,
               officialPayoutPer100: item.payoutPer100,
               officialPopularity: item.officialPopularity,
-              winningMethod: item.winningMethod
+              winningMethod: item.winningMethod,
+              finishers: item.officialResult?.finishers || [],
+              starts: item.officialResult?.starts || []
             })
           : null;
 
@@ -1189,6 +1201,9 @@
                   resultTicket
                 )
               : "結果待ち",
+
+          priorityReview:
+            verification?.priorityReview || null,
 
           honmeiHit:
             settled &&
@@ -1241,7 +1256,8 @@
         simulatedProfit: 0,
         simulatedRecoveryRate: 0,
         categorySummary: [],
-        markSummary: []
+        markSummary: [],
+        priorityStageSummary: []
       };
   const missTypeLabels = [
     "的中",
@@ -1579,12 +1595,23 @@
                   "-"
                 )}
               </td>
+
+              <td>
+                ${U.safeText(
+                  item.priorityReview?.primaryStage || "判定保留"
+                )}
+                <small>
+                  ${U.safeText(
+                    item.priorityReview?.primaryEvidence || "保存済みデータを蓄積中"
+                  )}
+                </small>
+              </td>
             </tr>
           `)
           .join("")
       : `
           <tr>
-            <td colspan="11">
+            <td colspan="12">
               公式結果と照合できる予想がありません
             </td>
           </tr>
@@ -1810,6 +1837,28 @@
 
     <div class="v3-final-block">
 
+      <h3>外れ原因の8段階分析</h3>
+
+      <p class="v3-note">
+        展開→コース→ST・スリット→展示・足→残し・拾い→当地・水面→技量→モーターの順で、
+        最初に要確認となった段階を集計します。データ不足は原因認定せず判定保留にします。
+      </p>
+
+      <div class="v3-table-wrap">
+        <table class="table">
+          <thead><tr><th>確認段階</th><th>主原因候補</th></tr></thead>
+          <tbody>
+            ${(verificationSummary.priorityStageSummary || []).map(item => `
+              <tr><td>${U.safeText(item.label)}</td><td>${item.count}R</td></tr>
+            `).join("") || `<tr><td colspan="2">検証データがありません</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <div class="v3-final-block">
+
       <h3>
         改善候補（自動分析）
       </h3>
@@ -1844,6 +1893,7 @@
           <thead>
             <tr>
               <th>判定</th>
+              <th>8段階の主確認点</th>
               <th>件数</th>
               <th>割合</th>
             </tr>

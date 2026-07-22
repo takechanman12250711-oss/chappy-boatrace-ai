@@ -5,10 +5,13 @@
 ========================================================= */
 
 (function (root, factory) {
-  const api = factory();
+  const conditions = typeof module === "object" && module.exports
+    ? require("./prediction-conditions")
+    : root?.ChappyPredictionConditions;
+  const api = factory(conditions);
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.ChappyPredictionVerification = api;
-})(typeof window !== "undefined" ? window : globalThis, function () {
+})(typeof window !== "undefined" ? window : globalThis, function (Conditions) {
   "use strict";
 
   const MARKS = [
@@ -19,6 +22,10 @@
   ];
 
   const CATEGORY_ORDER = ["本線", "押さえ", "流し", "万舟・穴", "その他"];
+  const PRIORITY_STAGES = Conditions?.PRIORITY_STAGES || [
+    "展開", "コース", "ST・スリット", "展示・足",
+    "残し・拾い", "当地・水面", "技量", "モーター"
+  ];
 
   function normalizeTicket(value) {
     const boats = String(value || "").match(/[1-6]/g) || [];
@@ -149,6 +156,119 @@
     });
   }
 
+  function conditionBoat(prediction, boatNo) {
+    return (prediction?.preRaceConditions?.boats || [])
+      .find(boat => boatNoOf(boat) === Number(boatNo)) || null;
+  }
+
+  function classRank(value) {
+    return ({ A1: 4, A2: 3, B1: 2, B2: 1 })[String(value || "")] || 0;
+  }
+
+  function actualStart(result, boatNo) {
+    const row = (Array.isArray(result?.starts) ? result.starts : [])
+      .find(item => boatNoOf(item) === Number(boatNo));
+    return row ? numberOrZero(row.st) : 0;
+  }
+
+  function reviewStage(stage, status, evidence) {
+    return { stage, status, evidence: String(evidence || "") };
+  }
+
+  function buildPriorityReview(prediction, result, detail) {
+    if (!detail.settled) {
+      return {
+        primaryStage: "結果待ち",
+        primaryEvidence: "公式結果の確定後に8段階で照合します。",
+        stages: PRIORITY_STAGES.map(stage => reviewStage(stage, "結果待ち", ""))
+      };
+    }
+    if (detail.practicalHit) {
+      return {
+        primaryStage: "的中",
+        primaryEvidence: "実戦厳選の買い目が公式結果と一致しました。",
+        stages: PRIORITY_STAGES.map(stage => reviewStage(stage, "対象外", "的中のため原因判定なし"))
+      };
+    }
+
+    const winner = Number(detail.resultTicket.split("-")[0] || 0);
+    const honmei = boatNoOf(prediction?.mainSheet?.honmei);
+    const winnerBoat = conditionBoat(prediction, winner);
+    const honmeiBoat = conditionBoat(prediction, honmei);
+    const weather = prediction?.preRaceConditions?.weather || {};
+    const stages = [];
+
+    stages.push(detail.scenarioMatched === false
+      ? reviewStage("展開", "要確認", `予想展開「${detail.scenarioTitle || "-"}」と決まり手「${detail.winningMethod || "-"}」が不一致`)
+      : detail.scenarioMatched === true
+        ? reviewStage("展開", "一致", "中心展開と公式決まり手が一致")
+        : reviewStage("展開", "判定保留", "公式決まり手と直接比較できる展開情報が不足"));
+
+    stages.push(honmei && winner && honmei !== winner
+      ? reviewStage("コース", "要確認", `◎${honmei}号艇に対し、1着は${winner}号艇`)
+      : honmei && winner
+        ? reviewStage("コース", "一致", `◎${honmei}号艇が1着`)
+        : reviewStage("コース", "判定保留", "◎または1着艇を特定できない"));
+
+    const winnerActualSt = actualStart(result, winner);
+    const honmeiActualSt = actualStart(result, honmei);
+    const preStAvailable = Boolean(
+      winnerBoat && honmeiBoat &&
+      (winnerBoat.exhibitionST !== null || winnerBoat.currentST !== null || winnerBoat.avgST !== null) &&
+      (honmeiBoat.exhibitionST !== null || honmeiBoat.currentST !== null || honmeiBoat.avgST !== null)
+    );
+    stages.push(winnerActualSt && honmeiActualSt && winnerActualSt + 0.03 <= honmeiActualSt
+      ? reviewStage("ST・スリット", "要確認", `実戦STは1着艇${winnerActualSt.toFixed(2)}、◎${honmeiActualSt.toFixed(2)}`)
+      : preStAvailable
+        ? reviewStage("ST・スリット", "確認済み", "予想時点の平均・今節・展示STを保存済み")
+        : reviewStage("ST・スリット", "判定保留", "予想時点の比較可能なSTが不足"));
+
+    const winnerEx = Number(winnerBoat?.exhibitionTime || 0);
+    const honmeiEx = Number(honmeiBoat?.exhibitionTime || 0);
+    stages.push(winnerEx && honmeiEx && winnerEx + 0.05 <= honmeiEx
+      ? reviewStage("展示・足", "要確認", `展示は1着艇${winnerEx.toFixed(2)}、◎${honmeiEx.toFixed(2)}`)
+      : winnerEx && honmeiEx
+        ? reviewStage("展示・足", "確認済み", `展示は1着艇${winnerEx.toFixed(2)}、◎${honmeiEx.toFixed(2)}`)
+        : reviewStage("展示・足", "判定保留", "予想時点の展示比較データが不足"));
+
+    stages.push(["相手抜け", "着順違い"].includes(detail.missType)
+      ? reviewStage("残し・拾い", "要確認", `外れ方は「${detail.missType}」`)
+      : reviewStage("残し・拾い", "確認済み", `外れ方は「${detail.missType}」`));
+
+    const roughWater = Number(weather.windSpeed || 0) >= 5 ||
+      Number(weather.waveHeight || 0) >= 5 ||
+      Number(weather.venueTideInfluence || 0) >= 65;
+    stages.push(roughWater
+      ? reviewStage("当地・水面", "要確認", `風${weather.windSpeed ?? "-"}m・波${weather.waveHeight ?? "-"}cm・潮影響${weather.venueTideInfluence ?? "-"}`)
+      : weather.windSpeed !== null || weather.waveHeight !== null || weather.venueTideInfluence !== null
+        ? reviewStage("当地・水面", "確認済み", `風${weather.windSpeed ?? "-"}m・波${weather.waveHeight ?? "-"}cm・潮影響${weather.venueTideInfluence ?? "-"}`)
+        : reviewStage("当地・水面", "判定保留", "予想時点の風・波・潮データが不足"));
+
+    const strongerWinner = classRank(winnerBoat?.className) > classRank(honmeiBoat?.className) ||
+      Number(winnerBoat?.nationalWinRate || 0) >= Number(honmeiBoat?.nationalWinRate || 0) + 1;
+    stages.push(winnerBoat && honmeiBoat
+      ? reviewStage("技量", strongerWinner ? "要確認" : "確認済み",
+        `1着艇${winnerBoat.className || "-"}・全国${winnerBoat.nationalWinRate ?? "-"}、◎${honmeiBoat.className || "-"}・全国${honmeiBoat.nationalWinRate ?? "-"}`)
+      : reviewStage("技量", "判定保留", "予想時点の選手技量データが不足"));
+
+    const newEngineMode = Boolean(prediction?.preRaceConditions?.newEngineMode);
+    const motorGap = Number(winnerBoat?.motor2Rate || 0) - Number(honmeiBoat?.motor2Rate || 0);
+    stages.push(newEngineMode
+      ? reviewStage("モーター", "参考外", "新エンジン期のためモーター数字を原因認定しない")
+      : winnerBoat && honmeiBoat &&
+        winnerBoat.motor2Rate !== null && honmeiBoat.motor2Rate !== null
+        ? reviewStage("モーター", motorGap >= 10 ? "要確認" : "確認済み",
+          `1着艇${winnerBoat.motor2Rate}%、◎${honmeiBoat.motor2Rate}%`)
+        : reviewStage("モーター", "判定保留", "予想時点のモーター比較データが不足"));
+
+    const primary = stages.find(item => item.status === "要確認");
+    return {
+      primaryStage: primary?.stage || "判定保留",
+      primaryEvidence: primary?.evidence || "保存済みデータだけでは主原因を絞れません。",
+      stages
+    };
+  }
+
   function verifyPrediction(prediction, result) {
     const resultTicket = normalizeTicket(
       result?.resultTicket || result?.result || result?.trifecta?.combination
@@ -171,8 +291,8 @@
     const simulatedStake = practicalRows.length * 100;
     const simulatedReturn = hitRow ? payoutPer100 : 0;
 
-    return {
-      schemaVersion: 2,
+    const base = {
+      schemaVersion: 3,
       settled,
       resultTicket,
       winningMethod,
@@ -198,6 +318,8 @@
         : 0,
       usagePolicy: "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
     };
+    const priorityReview = buildPriorityReview(prediction, result, base);
+    return { ...base, priorityReview };
   }
 
   function buildSummary(items) {
@@ -209,6 +331,12 @@
     const scenarioHits = scenarioComparable.filter(item => item.scenarioMatched);
     const totalStake = practical.reduce((sum, item) => sum + item.simulatedStake, 0);
     const totalReturn = practical.reduce((sum, item) => sum + item.simulatedReturn, 0);
+    const priorityStageSummary = PRIORITY_STAGES.map(label => ({
+      label,
+      count: practical.filter(item =>
+        !item.practicalHit && item.priorityReview?.primaryStage === label
+      ).length
+    }));
 
     const categorySummary = CATEGORY_ORDER.map(label => {
       const count = hits.filter(item => item.hitCategory === label).length;
@@ -246,18 +374,21 @@
         ? Math.round((totalReturn / totalStake) * 1000) / 10
         : 0,
       categorySummary,
-      markSummary
+      markSummary,
+      priorityStageSummary
     };
   }
 
   return {
     MARKS,
     CATEGORY_ORDER,
+    PRIORITY_STAGES,
     normalizeTicket,
     normalizeCategory,
     classifyMiss,
     expectedWinningMethods,
     expectedWinningMethod,
+    buildPriorityReview,
     verifyPrediction,
     buildSummary
   };

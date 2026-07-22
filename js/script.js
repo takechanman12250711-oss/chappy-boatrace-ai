@@ -2461,6 +2461,16 @@
               ""
             ),
 
+          finishers:
+            Array.isArray(result.finishers)
+              ? result.finishers
+              : [],
+
+          starts:
+            Array.isArray(result.starts)
+              ? result.starts
+              : [],
+
           officialCheckedAt:
             result.checkedAt ||
             new Date()
@@ -3191,6 +3201,14 @@
               ?.boatNo ||
             0
           ) || null,
+
+        preRaceConditions:
+          window.ChappyPredictionConditions?.capture
+            ? window.ChappyPredictionConditions.capture(
+                lastRaceData || {},
+                prediction
+              )
+            : null,
 
         ticketRanks
       };
