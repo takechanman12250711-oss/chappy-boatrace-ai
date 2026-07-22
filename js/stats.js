@@ -9,6 +9,7 @@
   const U = window.ChappyUtils;
   const S = window.ChappyStorage;
   const A = window.ChappyAutoStats;
+  const I = window.ChappyImprovementSuggestions;
   const OFFICIAL_SYNC_CONCURRENCY = 3;
 
   let officialSyncPromise = null;
@@ -1304,6 +1305,63 @@
           ?.predictedScenarioTitle ||
         "不明"
     );
+  const improvementAnalysis =
+    I?.buildImprovementSuggestions
+      ? I.buildImprovementSuggestions({
+          settledCount: settledRows.length,
+          practicalCount: practicalRows.length,
+          venueGroups,
+          scenarioGroups: predictedScenarioGroups,
+          missTypeSummary
+        })
+      : {
+          minimumSample: 5,
+          settledCount: settledRows.length,
+          practicalCount: practicalRows.length,
+          sampleReady: false,
+          suggestions: [],
+          axisStatus: {
+            venue: "分析準備中",
+            scenario: "分析準備中",
+            miss: "分析準備中"
+          }
+        };
+
+  const improvementHtml =
+    improvementAnalysis.suggestions.length
+      ? improvementAnalysis.suggestions
+          .map(item => `
+            <article class="improvement-suggestion-card">
+              <div class="improvement-suggestion-head">
+                <span class="improvement-category">
+                  ${U.safeText(item.category)}
+                </span>
+                <strong>
+                  ${U.safeText(item.target)}
+                </strong>
+                <span class="improvement-priority improvement-priority-${item.priority === "高" ? "high" : "medium"}">
+                  優先度${U.safeText(item.priority)}
+                </span>
+              </div>
+
+              <p><b>根拠：</b>${U.safeText(item.evidence)}</p>
+              <p><b>何を：</b>${U.safeText(item.what)}</p>
+              <p><b>なぜ：</b>${U.safeText(item.why)}</p>
+              <p><b>どう変える候補か：</b>${U.safeText(item.how)}</p>
+              <p><b>影響：</b>${U.safeText(item.impact)}</p>
+              <p class="improvement-approval">
+                🔒 あっくんの同意待ち・未反映
+              </p>
+            </article>
+          `)
+          .join("")
+      : `
+          <div class="v3-empty">
+            ${improvementAnalysis.sampleReady
+              ? "現在の成績に、変更を検討するほど偏った弱点はありません。"
+              : `サンプル蓄積中です。結果確定${improvementAnalysis.settledCount}R／実戦厳選${improvementAnalysis.practicalCount}R。最低${improvementAnalysis.minimumSample}Rまでは改善案を確定しません。`}
+          </div>
+        `;
   const renderGroupRows =
     groups =>
       groups.length
@@ -1561,6 +1619,29 @@
             practicalRows.length
           )}%）
         </p>
+      </div>
+
+    </div>
+
+    <div class="v3-final-block">
+
+      <h3>
+        改善候補（自動分析）
+      </h3>
+
+      <p class="v3-note">
+        場別・展開別・外れ方別に弱点を検出します。
+        ここに表示されるのは提案だけで、予想ロジックや買い目は自動変更しません。
+      </p>
+
+      <div class="improvement-axis-grid">
+        <div><b>場別</b><span>${U.safeText(improvementAnalysis.axisStatus.venue)}</span></div>
+        <div><b>展開別</b><span>${U.safeText(improvementAnalysis.axisStatus.scenario)}</span></div>
+        <div><b>外れ方別</b><span>${U.safeText(improvementAnalysis.axisStatus.miss)}</span></div>
+      </div>
+
+      <div class="improvement-suggestion-list">
+        ${improvementHtml}
       </div>
 
     </div>

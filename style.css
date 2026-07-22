@@ -774,6 +774,88 @@ input {
   line-height: 1.45;
 }
 
+.improvement-axis-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.improvement-axis-grid > div {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  font-size: 11px;
+}
+
+.improvement-axis-grid span {
+  color: #475569;
+}
+
+.improvement-suggestion-list {
+  display: grid;
+  gap: 8px;
+}
+
+.improvement-suggestion-card {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid #2563eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.improvement-suggestion-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.improvement-category,
+.improvement-priority {
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.improvement-category {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.improvement-priority-high {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.improvement-priority-medium {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.improvement-suggestion-card p {
+  margin-top: 4px;
+}
+
+.improvement-suggestion-card .improvement-approval {
+  margin-top: 8px;
+  color: #9f1239;
+  font-weight: 900;
+}
+
+@media (max-width: 520px) {
+  .improvement-axis-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .v3-empty {
   border: 1px dashed #cbd5e1;
   border-radius: 10px;
