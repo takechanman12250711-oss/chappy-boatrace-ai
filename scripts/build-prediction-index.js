@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const DEFAULT_LIMIT = 500;
+const DEFAULT_VERIFICATION_LIMIT = 1500;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -18,6 +19,8 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
 
   const runs = [];
   const predictions = [];
+  const candidatePredictions = [];
+  const shadowPredictions = [];
 
   files.forEach(name => {
     const data = readJson(path.join(directory, name));
@@ -45,17 +48,37 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     (Array.isArray(data?.predictions) ? data.predictions : []).forEach(prediction => {
       predictions.push({ ...prediction, date: String(prediction?.date || date) });
     });
+    (Array.isArray(data?.candidatePredictions) ? data.candidatePredictions : [])
+      .forEach(prediction => {
+        candidatePredictions.push({
+          ...prediction,
+          date: String(prediction?.date || date)
+        });
+      });
+    (Array.isArray(data?.shadowPredictions) ? data.shadowPredictions : [])
+      .forEach(prediction => {
+        shadowPredictions.push({
+          ...prediction,
+          date: String(prediction?.date || date)
+        });
+      });
   });
 
   runs.sort((a, b) => String(b?.checkedAt || "").localeCompare(String(a?.checkedAt || "")));
   predictions.sort((a, b) => String(b?.selectedAt || "").localeCompare(String(a?.selectedAt || "")));
+  const sortCaptured = (a, b) =>
+    String(b?.capturedAt || "").localeCompare(String(a?.capturedAt || ""));
+  candidatePredictions.sort(sortCaptured);
+  shadowPredictions.sort(sortCaptured);
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     sourceFileCount: files.length,
     runs: runs.slice(0, limit),
-    predictions: predictions.slice(0, limit)
+    predictions: predictions.slice(0, limit),
+    candidatePredictions: candidatePredictions.slice(0, DEFAULT_VERIFICATION_LIMIT),
+    shadowPredictions: shadowPredictions.slice(0, DEFAULT_VERIFICATION_LIMIT)
   };
 }
 
@@ -75,7 +98,11 @@ function main() {
   const directory = path.join(process.cwd(), "data", "predictions");
   const outputPath = path.join(directory, "index.json");
   const index = writePredictionIndex(directory, outputPath);
-  console.log(`自動予想索引を更新：採用${index.predictions.length}件／実行${index.runs.length}件`);
+  console.log(
+    `自動予想索引を更新：採用${index.predictions.length}件／` +
+    `候補検証${index.candidatePredictions.length}件／` +
+    `シャドー${index.shadowPredictions.length}件／実行${index.runs.length}件`
+  );
 }
 
 if (require.main === module) main();

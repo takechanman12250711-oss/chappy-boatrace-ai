@@ -53,6 +53,7 @@ jobs:
         run: |
           node --check scripts/collect-predictions.js
           node scripts/check-charter.js
+          node scripts/test-shadow-predictions.js
 
       - name: Compare and predict live races
         env:

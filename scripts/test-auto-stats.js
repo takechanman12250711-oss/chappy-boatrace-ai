@@ -24,6 +24,23 @@ const normalized = normalizeIndex({
         hitCategory: "本線"
       }
     }
+  }],
+  candidatePredictions: [{
+    raceKey: "20260722-08-2",
+    capturedAt: "2026-07-22T01:01:00Z",
+    selection: { score: 71 },
+    prediction: { ticketRanks: [] }
+  }],
+  shadowPredictions: [{
+    raceKey: "20260722-08-3",
+    capturedAt: "2026-07-22T01:02:00Z",
+    selection: { score: 63 },
+    prediction: { practicalTickets: [{ ticket: "1-2-3" }] },
+    result: {
+      settled: true,
+      resultTicket: "1-3-2",
+      verification: { practicalHit: false, missType: "着順違い" }
+    }
   }]
 });
 
@@ -34,5 +51,11 @@ assert.equal(normalized.results[0].officialPayoutPer100, 1230);
 assert.equal(normalized.results[0].automaticVerification.scenarioMatched, true);
 assert.equal(normalized.results[0].automaticVerification.hitCategory, "本線");
 assert.equal(normalized.runs.length, 1);
+assert.equal(normalized.candidatePredictions.length, 1);
+assert.equal(normalized.candidatePredictions[0].predictionSource, "automatic_candidate");
+assert.equal(normalized.shadowPredictions.length, 1);
+assert.equal(normalized.shadowPredictions[0].predictionSource, "automatic_shadow");
+assert.equal(normalized.shadowPredictions[0].automaticSelection.score, 63);
+assert.equal(normalized.shadowResults.length, 1);
 
 console.log("自動予想成績変換テスト: 合格");

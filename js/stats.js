@@ -17,6 +17,10 @@
   let automaticStats = {
     predictions: [],
     results: [],
+    candidatePredictions: [],
+    candidateResults: [],
+    shadowPredictions: [],
+    shadowResults: [],
     runs: []
   };
   let automaticStatsLoaded = false;
@@ -853,6 +857,69 @@
     automaticRuns.filter(
       run => !run?.selected
     ).length;
+  const verificationRate = (hits, total) =>
+    total > 0 ? U.round(hits / total * 100, 1) : 0;
+  const summarizeVerificationRecords = records => {
+    const source = Array.isArray(records) ? records : [];
+    const settled = source.filter(item => item?.automaticResult?.settled);
+    const hits = settled.filter(item => item.automaticResult?.practicalHit);
+    const comparable = settled.filter(
+      item => item.automaticResult?.scenarioMatched !== null &&
+        item.automaticResult?.scenarioMatched !== undefined
+    );
+    const scenarioHits = comparable.filter(
+      item => item.automaticResult?.scenarioMatched === true
+    );
+    const stake = settled.reduce(
+      (sum, item) => sum + Number(item.automaticResult?.simulatedStake || 0),
+      0
+    );
+    const returned = settled.reduce(
+      (sum, item) => sum + Number(item.automaticResult?.simulatedReturn || 0),
+      0
+    );
+
+    return {
+      total: source.length,
+      settled: settled.length,
+      hits: hits.length,
+      hitRate: verificationRate(hits.length, settled.length),
+      scenarioRate: verificationRate(scenarioHits.length, comparable.length),
+      stake,
+      returned,
+      recoveryRate: stake > 0 ? U.round(returned / stake * 100, 1) : 0
+    };
+  };
+  const qualifiedVerification = [
+    ...(Array.isArray(automaticStats.predictions)
+      ? automaticStats.predictions
+      : []),
+    ...(Array.isArray(automaticStats.candidatePredictions)
+      ? automaticStats.candidatePredictions
+      : [])
+  ];
+  const shadowVerification = Array.isArray(automaticStats.shadowPredictions)
+    ? automaticStats.shadowPredictions
+    : [];
+  const qualifiedVerificationSummary = summarizeVerificationRecords(
+    qualifiedVerification
+  );
+  const shadowVerificationSummary = summarizeVerificationRecords(
+    shadowVerification
+  );
+  const shadowScoreBands = [
+    { label: "0～49点", min: 0, max: 50 },
+    { label: "50～59点", min: 50, max: 60 },
+    { label: "60～69点", min: 60, max: 70 }
+  ].map(band => ({
+    ...band,
+    summary: summarizeVerificationRecords(
+      shadowVerification.filter(item => {
+        const score = Number(item?.automaticSelection?.score || 0);
+        return score >= band.min && score < band.max;
+      })
+    )
+  }));
 
   const normalizeTicket = value => {
     const boats =
@@ -1771,6 +1838,60 @@
         <small>
           各買い目100円均等・投資${verificationSummary.totalStake.toLocaleString("ja-JP")}円／払戻${verificationSummary.totalReturn.toLocaleString("ja-JP")}円
         </small>
+      </div>
+
+    </div>
+
+    <div class="v3-final-block">
+
+      <h3>シャドー予想の検証（実戦成績とは別集計）</h3>
+
+      <p class="v3-note">
+        70点未満は購入・note・実戦成績へ入れず、締切前に裏側だけで保存しています。
+        回収率は各買い目100円均等の検証値で、予想ロジックや70点基準を自動変更しません。
+      </p>
+
+      <div class="v3-table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>区分</th><th>保存</th><th>確定</th><th>的中率</th><th>展開一致率</th><th>検証回収率</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>70点以上</td>
+              <td>${qualifiedVerificationSummary.total}R</td>
+              <td>${qualifiedVerificationSummary.settled}R</td>
+              <td>${qualifiedVerificationSummary.hitRate}%</td>
+              <td>${qualifiedVerificationSummary.scenarioRate}%</td>
+              <td>${qualifiedVerificationSummary.recoveryRate}%</td>
+            </tr>
+            <tr>
+              <td>70点未満（シャドー）</td>
+              <td>${shadowVerificationSummary.total}R</td>
+              <td>${shadowVerificationSummary.settled}R</td>
+              <td>${shadowVerificationSummary.hitRate}%</td>
+              <td>${shadowVerificationSummary.scenarioRate}%</td>
+              <td>${shadowVerificationSummary.recoveryRate}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="v3-table-wrap">
+        <table class="table">
+          <thead><tr><th>シャドー点数帯</th><th>保存</th><th>確定</th><th>的中率</th><th>検証回収率</th></tr></thead>
+          <tbody>
+            ${shadowScoreBands.map(band => `
+              <tr>
+                <td>${band.label}</td>
+                <td>${band.summary.total}R</td>
+                <td>${band.summary.settled}R</td>
+                <td>${band.summary.hitRate}%</td>
+                <td>${band.summary.recoveryRate}%</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
       </div>
 
     </div>

@@ -17,26 +17,33 @@
   function normalizeIndex(data) {
     const predictions = [];
     const results = [];
+    const candidatePredictions = [];
+    const candidateResults = [];
+    const shadowPredictions = [];
+    const shadowResults = [];
 
-    (Array.isArray(data?.predictions) ? data.predictions : []).forEach(item => {
+    function normalizeRecords(source, predictionTarget, resultTarget, sourceLabel) {
+      (Array.isArray(source) ? source : []).forEach(item => {
       const raceKey = String(item?.raceKey || "");
       if (!raceKey) return;
 
-      predictions.push({
+      predictionTarget.push({
         ...(item?.prediction || {}),
         raceKey,
         date: item?.date || "",
         jcd: item?.jcd || "",
         place: item?.place || "",
         raceNo: item?.raceNo || 0,
-        savedAt: item?.selectedAt || "",
+        savedAt: item?.selectedAt || item?.capturedAt || "",
         automaticSelection: item?.selection || null,
-        predictionSource: "automatic"
+        predictionSource: sourceLabel,
+        verificationOnly: Boolean(item?.verificationOnly),
+        automaticResult: item?.result || null
       });
 
       const resultTicket = normalizeTicket(item?.result?.resultTicket);
       if (item?.result?.settled && resultTicket) {
-        results.push({
+        resultTarget.push({
           raceKey,
           date: item?.date || "",
           jcd: item?.jcd || "",
@@ -56,10 +63,33 @@
             item?.result?.verification || item?.result || null
         });
       }
-    });
+      });
+    }
+
+    normalizeRecords(data?.predictions, predictions, results, "automatic");
+    normalizeRecords(
+      data?.candidatePredictions,
+      candidatePredictions,
+      candidateResults,
+      "automatic_candidate"
+    );
+    normalizeRecords(
+      data?.shadowPredictions,
+      shadowPredictions,
+      shadowResults,
+      "automatic_shadow"
+    );
 
     const runs = (Array.isArray(data?.runs) ? data.runs : []).map(run => ({ ...run }));
-    return { predictions, results, runs };
+    return {
+      predictions,
+      results,
+      candidatePredictions,
+      candidateResults,
+      shadowPredictions,
+      shadowResults,
+      runs
+    };
   }
 
   return { normalizeTicket, normalizeIndex };

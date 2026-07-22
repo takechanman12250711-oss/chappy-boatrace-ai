@@ -91,10 +91,15 @@ function compactEvaluation(evaluation) {
   };
 }
 
-function compactPrediction(prediction, practicalTickets, raceData) {
+function compactPrediction(
+  prediction,
+  practicalTickets,
+  raceData,
+  predictionMode = "server_pre_deadline"
+) {
   return {
     version: prediction?.version || "",
-    predictionMode: "server_pre_deadline",
+    predictionMode,
     raceFlow: prediction?.raceFlow || null,
     confidence: prediction?.confidence || null,
     manshuPower: prediction?.manshuPower || null,
@@ -103,6 +108,43 @@ function compactPrediction(prediction, practicalTickets, raceData) {
     ticketRanks: Array.isArray(prediction?.ticketRanks)
       ? prediction.ticketRanks
       : [],
+    practicalTickets,
+    preRaceConditions: predictionConditions.capture(raceData, prediction)
+  };
+}
+
+function compactMark(value) {
+  if (!value || typeof value !== "object") return null;
+  return {
+    boatNo: Number(value.boatNo || value.no || value.boat || 0),
+    name: String(value.name || value.playerName || "")
+  };
+}
+
+function compactVerificationPrediction(
+  prediction,
+  practicalTickets,
+  raceData,
+  predictionMode
+) {
+  return {
+    version: prediction?.version || "",
+    predictionMode,
+    raceFlow: {
+      title: prediction?.raceFlow?.title || "",
+      summary: prediction?.raceFlow?.summary || "",
+      scenario: prediction?.raceFlow?.scenario?.title
+        ? { title: prediction.raceFlow.scenario.title }
+        : null
+    },
+    confidence: prediction?.confidence || null,
+    manshuPower: prediction?.manshuPower || null,
+    mainSheet: {
+      honmei: compactMark(prediction?.mainSheet?.honmei),
+      taikou: compactMark(prediction?.mainSheet?.taikou),
+      ana: compactMark(prediction?.mainSheet?.ana),
+      osae: compactMark(prediction?.mainSheet?.osae)
+    },
     practicalTickets,
     preRaceConditions: predictionConditions.capture(raceData, prediction)
   };
@@ -218,7 +260,23 @@ async function evaluateTargets(date, targets) {
   );
 }
 
-function saveRun(date, comparison, selectedData) {
+function upsertByRaceKey(list, records) {
+  const output = Array.isArray(list) ? [...list] : [];
+  (Array.isArray(records) ? records : []).forEach(record => {
+    const index = output.findIndex(item => item?.raceKey === record?.raceKey);
+    if (index >= 0) output[index] = record;
+    else output.push(record);
+  });
+  return output;
+}
+
+function saveRun(
+  date,
+  comparison,
+  selectedData,
+  candidatePredictions = [],
+  shadowPredictions = []
+) {
   const outputPath = path.join(
     process.cwd(),
     "data",
@@ -226,11 +284,14 @@ function saveRun(date, comparison, selectedData) {
     `${date}.json`
   );
   const existing = loadJson(outputPath, {
-    schemaVersion: 1,
+    schemaVersion: 2,
     date,
     runs: [],
-    predictions: []
+    predictions: [],
+    candidatePredictions: [],
+    shadowPredictions: []
   });
+  existing.schemaVersion = 2;
 
   const best = comparison[0] || null;
   const selected = Boolean(selectedData);
@@ -283,9 +344,99 @@ function saveRun(date, comparison, selectedData) {
     else existing.predictions.push(selectedData);
   }
 
+  const currentCandidateKeys = new Set(
+    candidatePredictions.map(item => item?.raceKey).filter(Boolean)
+  );
+  const currentShadowKeys = new Set(
+    shadowPredictions.map(item => item?.raceKey).filter(Boolean)
+  );
+  existing.candidatePredictions = upsertByRaceKey(
+    (existing.candidatePredictions || []).filter(
+      item => !currentShadowKeys.has(item?.raceKey)
+    ),
+    candidatePredictions
+  );
+  existing.shadowPredictions = upsertByRaceKey(
+    (existing.shadowPredictions || []).filter(
+      item => !currentCandidateKeys.has(item?.raceKey)
+    ),
+    shadowPredictions
+  );
+
+  const selectedKeys = new Set(
+    (existing.predictions || []).map(item => item?.raceKey).filter(Boolean)
+  );
+  const candidateKeys = new Set(
+    (existing.candidatePredictions || []).map(item => item?.raceKey).filter(Boolean)
+  );
+  existing.candidatePredictions = existing.candidatePredictions.filter(
+    item => !selectedKeys.has(item?.raceKey)
+  );
+  existing.shadowPredictions = existing.shadowPredictions.filter(
+    item => !selectedKeys.has(item?.raceKey) && !candidateKeys.has(item?.raceKey)
+  );
+
   existing.updatedAt = new Date().toISOString();
   existing.runs = existing.runs.slice(-MAX_RUNS_PER_DAY);
   writeJson(outputPath, existing);
+}
+
+function buildVerificationPrediction(date, item, selectionClass) {
+  const prediction = global.createPrediction(item.raceData);
+  prediction.predictionMode = selectionClass === "shadow"
+    ? "server_shadow_pre_deadline"
+    : "server_candidate_pre_deadline";
+  prediction.officialResultUsedForPrediction = false;
+  const practicalTickets = global.ChappyNoteGenerator.createPracticalSelection(
+    prediction
+  );
+
+  return {
+    raceKey: `${date}-${item.jcd}-${item.raceNo}`,
+    date,
+    jcd: item.jcd,
+    place: item.place,
+    raceNo: item.raceNo,
+    deadlineAt: item.deadlineAt,
+    capturedAt: new Date().toISOString(),
+    verificationOnly: true,
+    selectionClass,
+    selection: {
+      type: item.type,
+      score: item.score,
+      threshold: MIN_SCORE,
+      evaluation: compactEvaluation(item.evaluation)
+    },
+    prediction: compactVerificationPrediction(
+      prediction,
+      practicalTickets,
+      item.raceData,
+      prediction.predictionMode
+    )
+  };
+}
+
+function buildVerificationPredictions(date, comparison, selectedRaceKey = "") {
+  const candidatePredictions = [];
+  const shadowPredictions = [];
+
+  comparison.forEach(item => {
+    const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
+    if (raceKey === selectedRaceKey) return;
+
+    try {
+      const selectionClass = item.score >= MIN_SCORE ? "qualified" : "shadow";
+      const record = buildVerificationPrediction(date, item, selectionClass);
+      if (selectionClass === "qualified") candidatePredictions.push(record);
+      else shadowPredictions.push(record);
+    } catch (error) {
+      console.warn(
+        `${item.place || item.jcd} ${item.raceNo}Rの検証予想保存失敗：${error?.message || error}`
+      );
+    }
+  });
+
+  return { candidatePredictions, shadowPredictions };
 }
 
 function saveNote(date, selected, article) {
@@ -316,15 +467,36 @@ async function main() {
 
   if (!best) {
     console.log("比較に必要なデータが不足しています");
-    if (!dryRun) saveRun(date, comparison, null);
+    if (!dryRun) saveRun(date, comparison, null, [], []);
     return;
   }
+
+  const selectedRaceKey = best.score >= MIN_SCORE
+    ? `${date}-${best.jcd}-${best.raceNo}`
+    : "";
+  const verificationPredictions = buildVerificationPredictions(
+    date,
+    comparison,
+    selectedRaceKey
+  );
 
   if (best.score < MIN_SCORE) {
     console.log(
       `見送り：最高${Math.round(best.score)}点／基準${MIN_SCORE}点`
     );
-    if (!dryRun) saveRun(date, comparison, null);
+    if (!dryRun) {
+      saveRun(
+        date,
+        comparison,
+        null,
+        verificationPredictions.candidatePredictions,
+        verificationPredictions.shadowPredictions
+      );
+    }
+    console.log(
+      `検証保存：候補${verificationPredictions.candidatePredictions.length}R／` +
+      `シャドー${verificationPredictions.shadowPredictions.length}R`
+    );
     return;
   }
 
@@ -360,7 +532,13 @@ async function main() {
 
   if (!dryRun) {
     selectedData.note.path = saveNote(date, best, article);
-    saveRun(date, comparison, selectedData);
+    saveRun(
+      date,
+      comparison,
+      selectedData,
+      verificationPredictions.candidatePredictions,
+      verificationPredictions.shadowPredictions
+    );
   }
 
   console.log(
@@ -368,13 +546,27 @@ async function main() {
   );
   console.log(`実戦厳選：${practicalTickets.length}点`);
   console.log(
+    `検証保存：候補${verificationPredictions.candidatePredictions.length}R／` +
+    `シャドー${verificationPredictions.shadowPredictions.length}R`
+  );
+  console.log(
     article?.publishable
       ? "note下書き：生成可能"
       : `note下書き：販売見送り（${(article?.rejectionReasons || []).join("／")}）`
   );
 }
 
-main().catch(error => {
-  console.error(error?.stack || error?.message || error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch(error => {
+    console.error(error?.stack || error?.message || error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  MIN_SCORE,
+  upsertByRaceKey,
+  buildVerificationPrediction,
+  buildVerificationPredictions,
+  saveRun
+};

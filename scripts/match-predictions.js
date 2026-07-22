@@ -133,7 +133,7 @@ function matchPredictions(predictionData, resultData) {
     ])
   );
 
-  const predictions = (predictionData?.predictions || []).map(prediction => {
+  const matchList = source => (Array.isArray(source) ? source : []).map(prediction => {
     const result = resultMap.get(prediction.raceKey);
     if (!result?.resultAvailable) return prediction;
 
@@ -142,11 +142,18 @@ function matchPredictions(predictionData, resultData) {
       result: settlePrediction(prediction, result)
     };
   });
+  const predictions = matchList(predictionData?.predictions);
+  const candidatePredictions = matchList(predictionData?.candidatePredictions);
+  const shadowPredictions = matchList(predictionData?.shadowPredictions);
 
   return {
     ...predictionData,
     predictions,
+    candidatePredictions,
+    shadowPredictions,
     resultSummary: buildSummary(predictions),
+    candidateResultSummary: buildSummary(candidatePredictions),
+    shadowResultSummary: buildSummary(shadowPredictions),
     resultsMatchedAt: new Date().toISOString()
   };
 }
@@ -181,7 +188,9 @@ function main() {
 
   console.log(
     `結果照合完了：${matched.resultSummary.settledCount}/${matched.resultSummary.predictionCount}R、` +
-    `的中${matched.resultSummary.practicalHits}R`
+    `的中${matched.resultSummary.practicalHits}R／` +
+    `候補検証${matched.candidateResultSummary.settledCount}R／` +
+    `シャドー検証${matched.shadowResultSummary.settledCount}R`
   );
 }
 
