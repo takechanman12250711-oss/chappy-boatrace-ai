@@ -13,6 +13,13 @@ require("../js/prediction");
 require("../js/practical-selection");
 require("../js/note-generator");
 
+const historyStats = require(
+  "../data/stats/venue-race-patterns.json"
+);
+const historyInsights = require(
+  "../js/history-insights"
+);
+
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
 
@@ -157,13 +164,32 @@ async function evaluateTargets(date, targets) {
 
         const honmei = Number(evaluation.honmei?.score || 0);
         const manshu = Number(evaluation.manshu?.score || 0);
+        const type =
+          honmei >= manshu ? "本線" : "波乱";
+        const historyPattern =
+          historyInsights.getPattern(
+            historyStats,
+            target.jcd,
+            target.raceNo
+          );
+        const historyTrend =
+          historyInsights.buildTrend(
+            historyPattern
+          );
+        const historySupport =
+          historyInsights.supportForType(
+            historyTrend,
+            type
+          );
 
         results.push({
           ...target,
           raceData,
           evaluation,
           score: Math.max(honmei, manshu),
-          type: honmei >= manshu ? "本線" : "波乱",
+          type,
+          historySupport,
+          historyTrend,
           completeness: Number(evaluation.dataStatus?.completeness || 0)
         });
       } catch (error) {
@@ -182,6 +208,7 @@ async function evaluateTargets(date, targets) {
 
   return results.sort((a, b) =>
     b.score - a.score ||
+    b.historySupport - a.historySupport ||
     b.completeness - a.completeness ||
     Date.parse(a.deadlineAt || 0) - Date.parse(b.deadlineAt || 0)
   );
@@ -219,6 +246,10 @@ function saveRun(date, comparison, selectedData) {
           deadlineAt: best.deadlineAt,
           type: best.type,
           score: best.score,
+          historySupport:
+            best.historySupport || 0,
+          historyTrend:
+            best.historyTrend || null,
           evaluation: compactEvaluation(best.evaluation)
         }
       : null,
@@ -228,6 +259,10 @@ function saveRun(date, comparison, selectedData) {
       raceNo: item.raceNo,
       type: item.type,
       score: item.score,
+      historySupport:
+        item.historySupport || 0,
+      historyTrend:
+        item.historyTrend || null,
       evaluation: compactEvaluation(item.evaluation)
     }))
   };

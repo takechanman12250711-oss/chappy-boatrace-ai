@@ -1516,7 +1516,7 @@ if (raceInfoArea) {
       return section(
         "出てない目TOP30",
         emptyBox(
-          "オッズ更新後に、公式1年履歴と現在オッズを照合して表示します。"
+          "オッズ更新後に、公式3年履歴と現在オッズを照合して表示します。"
         ),
         "🔎",
         "v3-missing-numbers"
@@ -1576,11 +1576,23 @@ if (raceInfoArea) {
               "odds"
             )}
             ${tag(
-              `出現0/${safeNum(
-                item.sampleSize,
+              item.label ||
+              `直近0/${safeNum(
+                item.recentSampleSize,
+                data.recentSampleSize ||
                 data.sampleSize
               )}`,
               "manshu"
+            )}
+            ${tag(
+              `3年${safeNum(
+                item.threeYearOccurrences,
+                0
+              )}/${safeNum(
+                item.threeYearSampleSize,
+                data.threeYearSampleSize
+              )}`,
+              "history"
             )}
           </div>
         </div>
@@ -1602,10 +1614,12 @@ if (raceInfoArea) {
 
     const body = `
       <div class="v3-note">
-        公式結果${escapeHtml(
-          data.sampleSize
+        直近1年${escapeHtml(
+          data.recentSampleSize || data.sampleSize
+        )}レース・3年${escapeHtml(
+          data.threeYearSampleSize || data.sampleSize
         )}レースを対象に、
-        同じ開催場・同じR番号で出現0回の目を
+        同じ開催場・同じR番号で直近1年出現0回の目を
         現在オッズの低い順に表示。
         買い目の作成・削除には使用しません。
         ${

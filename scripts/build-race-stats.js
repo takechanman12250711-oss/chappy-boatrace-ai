@@ -23,6 +23,16 @@ const TRIFECTA_OUTPUT_FILE = path.join(
   "trifecta-by-venue-race.json"
 );
 
+const VENUE_RACE_OUTPUT_FILE = path.join(
+  ROOT,
+  "data",
+  "stats",
+  "venue-race-patterns.json"
+);
+
+const THREE_YEAR_DAYS = 1095;
+const RECENT_YEAR_DAYS = 365;
+
 function percent(value, total) {
   return total
     ? Number((value * 100 / total).toFixed(1))
@@ -55,6 +65,9 @@ function createPattern() {
       from3000To9999: 0,
       over10000: 0
     },
+    roughRaces: 0,
+    outsideWins: 0,
+    boatOneOutsideTop3: 0,
     winningStSum: 0,
     winningStSamples: 0
   };
@@ -106,6 +119,34 @@ function finalizeTrifectaPattern(pattern) {
   };
 }
 
+function createTrifectaWindows() {
+  return {
+    all3Years: createTrifectaPattern(),
+    recent1Year: createTrifectaPattern(),
+    previous2Years: createTrifectaPattern()
+  };
+}
+
+function finalizeTrifectaWindows(windows) {
+  const all3Years =
+    finalizeTrifectaPattern(
+      windows.all3Years
+    );
+
+  return {
+    ...all3Years,
+    all3Years,
+    recent1Year:
+      finalizeTrifectaPattern(
+        windows.recent1Year
+      ),
+    previous2Years:
+      finalizeTrifectaPattern(
+        windows.previous2Years
+      )
+  };
+}
+
 function addCount(target, key) {
   if (
     key === undefined ||
@@ -143,6 +184,8 @@ function addBoatPerformance(
         boatNo,
         starts: 0,
         wins: 0,
+        seconds: 0,
+        thirds: 0,
         top3: 0,
         stSum: 0,
         stSamples: 0
@@ -155,6 +198,14 @@ function addBoatPerformance(
 
     if (rank === 1) {
       boat.wins += 1;
+    }
+
+    if (rank === 2) {
+      boat.seconds += 1;
+    }
+
+    if (rank === 3) {
+      boat.thirds += 1;
     }
 
     if (
@@ -239,6 +290,35 @@ function addRace(pattern, race) {
       pattern.payoutBands.under3000 += 1;
     }
   }
+
+  const boatOneRank = Number(
+    race.finishers?.find(
+      item => Number(item.boat) === 1
+    )?.rank
+  );
+
+  const outsideWin =
+    winnerBoat >= 4 && winnerBoat <= 6;
+
+  const boatOneMiss =
+    Number.isFinite(boatOneRank) &&
+    boatOneRank > 3;
+
+  const manshu =
+    Number.isFinite(payout) &&
+    payout >= 10000;
+
+  if (outsideWin) {
+    pattern.outsideWins += 1;
+  }
+
+  if (boatOneMiss) {
+    pattern.boatOneOutsideTop3 += 1;
+  }
+
+  if (manshu || outsideWin || boatOneMiss) {
+    pattern.roughRaces += 1;
+  }
 }
 
 function finalizeCounts(counts, total) {
@@ -290,12 +370,45 @@ function finalizeBoatPerformance(
               boat.starts
             ),
 
+          seconds:
+            boat.seconds,
+
+          secondRate:
+            percent(
+              boat.seconds,
+              boat.starts
+            ),
+
+          thirds:
+            boat.thirds,
+
+          thirdRate:
+            percent(
+              boat.thirds,
+              boat.starts
+            ),
+
           top3:
             boat.top3,
 
           top3Rate:
             percent(
               boat.top3,
+              boat.starts
+            ),
+
+          outsideTop3:
+            Math.max(
+              0,
+              boat.starts - boat.top3
+            ),
+
+          outsideTop3Rate:
+            percent(
+              Math.max(
+                0,
+                boat.starts - boat.top3
+              ),
               boat.starts
             ),
 
@@ -378,7 +491,74 @@ function finalizePattern(pattern) {
           total
         )
       }
+    },
+
+    turbulence: {
+      definition:
+        "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+      roughRaces: {
+        count: pattern.roughRaces,
+        rate: percent(
+          pattern.roughRaces,
+          total
+        )
+      },
+      outsideWins: {
+        count: pattern.outsideWins,
+        rate: percent(
+          pattern.outsideWins,
+          total
+        )
+      },
+      boatOneOutsideTop3: {
+        count:
+          pattern.boatOneOutsideTop3,
+        rate: percent(
+          pattern.boatOneOutsideTop3,
+          total
+        )
+      }
     }
+  };
+}
+
+function parseRaceDate(value) {
+  const text = String(value || "");
+
+  if (!/^\d{8}$/.test(text)) {
+    return null;
+  }
+
+  return new Date(Date.UTC(
+    Number(text.slice(0, 4)),
+    Number(text.slice(4, 6)) - 1,
+    Number(text.slice(6, 8))
+  ));
+}
+
+function subtractDays(date, days) {
+  return new Date(
+    date.getTime() -
+    days * 24 * 60 * 60 * 1000
+  );
+}
+
+function createVenueRaceWindows() {
+  return {
+    all3Years: createPattern(),
+    recent1Year: createPattern(),
+    previous2Years: createPattern()
+  };
+}
+
+function finalizeVenueRaceWindows(windows) {
+  return {
+    all3Years:
+      finalizePattern(windows.all3Years),
+    recent1Year:
+      finalizePattern(windows.recent1Year),
+    previous2Years:
+      finalizePattern(windows.previous2Years)
   };
 }
 
@@ -621,12 +801,40 @@ function main() {
     }
   }
 
-  const races = [
+  const allRaces = [
     ...racesById.values()
   ];
 
+  const latestRaceDate = allRaces
+    .map(race => parseRaceDate(race.date))
+    .filter(Boolean)
+    .sort((a, b) => b - a)[0] || null;
+
+  const threeYearStart = latestRaceDate
+    ? subtractDays(
+        latestRaceDate,
+        THREE_YEAR_DAYS - 1
+      )
+    : null;
+
+  const recentYearStart = latestRaceDate
+    ? subtractDays(
+        latestRaceDate,
+        RECENT_YEAR_DAYS - 1
+      )
+    : null;
+
+  const races = allRaces.filter(race => {
+    const date = parseRaceDate(race.date);
+    return (
+      date &&
+      (!threeYearStart || date >= threeYearStart)
+    );
+  });
+
   const overall = createPattern();
   const venuePatterns = {};
+  const venueRacePatterns = {};
   const trifectaByVenueRace = {};
   const racers = {};
 
@@ -643,9 +851,37 @@ function main() {
 
     addRace(venue.pattern, race);
 
+    const raceDate =
+      parseRaceDate(race.date);
+
     const raceNo = Number(
       race.raceNo
     );
+
+    if (
+      Number.isInteger(raceNo) &&
+      raceNo >= 1 &&
+      raceNo <= 12
+    ) {
+      const venueRace =
+        venueRacePatterns[race.jcd] ||= {};
+
+      const windows =
+        venueRace[raceNo] ||=
+          createVenueRaceWindows();
+
+      addRace(windows.all3Years, race);
+
+      if (
+        raceDate &&
+        recentYearStart &&
+        raceDate >= recentYearStart
+      ) {
+        addRace(windows.recent1Year, race);
+      } else {
+        addRace(windows.previous2Years, race);
+      }
+    }
 
     if (
       Number.isInteger(raceNo) &&
@@ -659,12 +895,28 @@ function main() {
 
       const trifectaPattern =
         venueRace[raceNo] ||=
-          createTrifectaPattern();
+          createTrifectaWindows();
 
       addTrifectaRace(
-        trifectaPattern,
+        trifectaPattern.all3Years,
         race
       );
+
+      if (
+        raceDate &&
+        recentYearStart &&
+        raceDate >= recentYearStart
+      ) {
+        addTrifectaRace(
+          trifectaPattern.recent1Year,
+          race
+        );
+      } else {
+        addTrifectaRace(
+          trifectaPattern.previous2Years,
+          race
+        );
+      }
     }
 
     addRacers(racers, race);
@@ -692,6 +944,29 @@ function main() {
     raceCount:
       races.length,
 
+    analysisWindow: {
+      policy:
+        "直近1年を優先し、過去2年を裏付けに使用",
+      latestDate:
+        latestRaceDate
+          ? latestRaceDate
+              .toISOString()
+              .slice(0, 10)
+              .replaceAll("-", "")
+          : null,
+      firstDate:
+        threeYearStart
+          ? threeYearStart
+              .toISOString()
+              .slice(0, 10)
+              .replaceAll("-", "")
+          : null,
+      recentYearDays:
+        RECENT_YEAR_DAYS,
+      totalDays:
+        THREE_YEAR_DAYS
+    },
+
     overall:
       finalizePattern(overall),
 
@@ -717,6 +992,40 @@ function main() {
 
     racers:
       finalizeRacers(racers)
+  };
+
+  const venueRaceOutput = {
+    schemaVersion: 1,
+    source: "boatrace-official",
+    usagePolicy:
+      "場＋R別の参考補強のみ。買い目・予想点・70点基準は変更しない",
+    generatedAt: output.generatedAt,
+    firstDate: output.firstDate,
+    lastDate: output.lastDate,
+    analysisWindow: output.analysisWindow,
+    byVenueRace:
+      Object.fromEntries(
+        Object.entries(venueRacePatterns)
+          .sort(([a], [b]) =>
+            a.localeCompare(b)
+          )
+          .map(([jcd, raceMap]) => [
+            jcd,
+            Object.fromEntries(
+              Object.entries(raceMap)
+                .sort(
+                  ([a], [b]) =>
+                    Number(a) - Number(b)
+                )
+                .map(([raceNo, windows]) => [
+                  raceNo,
+                  finalizeVenueRaceWindows(
+                    windows
+                  )
+                ])
+            )
+          ])
+      )
   };
 
   const trifectaOutput = {
@@ -750,7 +1059,7 @@ function main() {
                 .map(
                   ([raceNo, pattern]) => [
                     raceNo,
-                    finalizeTrifectaPattern(
+                    finalizeTrifectaWindows(
                       pattern
                     )
                   ]
@@ -783,10 +1092,33 @@ function main() {
     "utf8"
   );
 
+  fs.writeFileSync(
+    VENUE_RACE_OUTPUT_FILE,
+    JSON.stringify(
+      venueRaceOutput
+    ) + "\n",
+    "utf8"
+  );
+
   console.log(
     `公式結果${files.length}日分・` +
     `${races.length}レースを集計しました`
   );
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  THREE_YEAR_DAYS,
+  RECENT_YEAR_DAYS,
+  createPattern,
+  addRace,
+  finalizePattern,
+  parseRaceDate,
+  createVenueRaceWindows,
+  finalizeVenueRaceWindows,
+  createTrifectaWindows,
+  finalizeTrifectaWindows
+};

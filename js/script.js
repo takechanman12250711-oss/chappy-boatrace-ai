@@ -966,12 +966,28 @@
               ? "本線"
               : "波乱";
 
+          const historyTrend =
+            window.ChappyRaceHistory
+              ?.getVenueRace(
+                target.jcd,
+                target.raceNo
+              )?.trend || null;
+
+          const historySupport =
+            window.ChappyHistoryInsights
+              ?.supportForType(
+                historyTrend,
+                type
+              ) || 0;
+
           results.push({
             ...target,
             type,
             score: Math.max(honmei, manshu),
             honmei,
             manshu,
+            historySupport,
+            historyTrend,
             completeness: Number(
               evaluation.dataStatus?.completeness || 0
             ),
@@ -997,6 +1013,7 @@
 
     results.sort((a, b) =>
       b.score - a.score ||
+      b.historySupport - a.historySupport ||
       b.completeness - a.completeness ||
       Date.parse(a.deadlineAt || 0) -
         Date.parse(b.deadlineAt || 0)
@@ -2072,6 +2089,7 @@
         window.ChappyRaceHistory
           ?.getContext({
             jcd: params.jcd,
+            raceNo: params.rno,
 
             registerNos:
               Array.isArray(

@@ -2853,6 +2853,48 @@ body {
   font-size: 12px;
   font-weight: 800;
 }
+
+.history-trend-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eef6ff;
+}
+
+.history-trend-head strong {
+  color: #075985;
+  font-size: 18px;
+}
+
+.history-trend-metrics {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.history-trend-metrics span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #dbeafe;
+  border-radius: 9px;
+  background: #f8fbff;
+  color: #475569;
+  font-size: 12px;
+}
+
+.history-trend-metrics strong {
+  color: #0f172a;
+  font-size: 17px;
+}
 /* =========================================================
   本命・万舟カード 横書き完全修正
 ========================================================= */

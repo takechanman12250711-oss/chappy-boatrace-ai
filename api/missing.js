@@ -69,14 +69,30 @@ function buildMissingNumbers(
       jcd
     ]?.[String(raceNo)] || null;
 
+  const recent =
+    pattern?.recent1Year || pattern;
+
+  const all3Years =
+    pattern?.all3Years || pattern;
+
   const sampleSize = Number(
-    pattern?.totalRaces || 0
+    recent?.totalRaces || 0
   );
 
-  const counts =
-    pattern?.counts &&
-    typeof pattern.counts === "object"
-      ? pattern.counts
+  const threeYearSampleSize = Number(
+    all3Years?.totalRaces || 0
+  );
+
+  const recentCounts =
+    recent?.counts &&
+    typeof recent.counts === "object"
+      ? recent.counts
+      : {};
+
+  const threeYearCounts =
+    all3Years?.counts &&
+    typeof all3Years.counts === "object"
+      ? all3Years.counts
       : {};
 
   const available =
@@ -85,22 +101,43 @@ function buildMissingNumbers(
   return {
     available,
     sampleSize,
+    recentSampleSize: sampleSize,
+    threeYearSampleSize,
     reliability:
-      pattern?.reliability ||
+      recent?.reliability ||
       "low",
     missingNumbers:
       available
         ? ALL_TRIFECTAS
             .filter(ticket =>
               Number(
-                counts[ticket] || 0
+                recentCounts[ticket] || 0
               ) === 0
             )
-            .map(ticket => ({
-              ticket,
-              occurrences: 0,
-              sampleSize
-            }))
+            .map(ticket => {
+              const threeYearOccurrences =
+                Number(
+                  threeYearCounts[ticket] || 0
+                );
+
+              return {
+                ticket,
+                occurrences: 0,
+                recentOccurrences: 0,
+                threeYearOccurrences,
+                sampleSize,
+                recentSampleSize: sampleSize,
+                threeYearSampleSize,
+                classification:
+                  threeYearOccurrences === 0
+                    ? "strong_missing"
+                    : "recent_missing",
+                label:
+                  threeYearOccurrences === 0
+                    ? "3年未出"
+                    : "直近1年未出"
+              };
+            })
         : []
   };
 }
