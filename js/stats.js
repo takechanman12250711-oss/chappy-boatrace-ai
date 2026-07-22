@@ -1737,6 +1737,12 @@
       </div>
 
       <div class="v3-final-block">
+        <h3>自動復旧</h3>
+        <p>${collectionHealth?.recoveredCount ?? 0}レース</p>
+        <small>再取得中${collectionHealth?.retryingCount ?? 0}／最終未取得${collectionHealth?.finalUncollectedCount ?? 0}</small>
+      </div>
+
+      <div class="v3-final-block">
         <h3>公式結果待ち</h3>
         <p>${collectionHealth?.resultWaitingCount ?? 0}レース</p>
         <small>保存${collectionHealth?.predictionCount ?? 0}／照合済み${collectionHealth?.settledCount ?? 0}</small>
@@ -1876,21 +1882,36 @@
     <div class="v3-final-block">
       <h3>場別の自動収集状況</h3>
       <p class="v3-note">
-        開催中かつ締切前に取得対象となったレースだけを集計します。未来レース・締切後・中止は未保存に含めません。
+        締切前に取得対象となったレースを追跡します。情報不足は締切まで再取得し、復旧しなかった場合だけ最終未取得として残します。
       </p>
       <div class="v3-table-wrap">
         <table class="v3-table">
-          <thead><tr><th>場</th><th>対象</th><th>保存</th><th>未保存</th><th>取得失敗</th></tr></thead>
+          <thead><tr><th>場</th><th>対象</th><th>保存</th><th>復旧</th><th>再取得中</th><th>最終未取得</th></tr></thead>
           <tbody>
             ${(collectionHealth?.venues || []).map(item => `
               <tr>
                 <td>${U.safeText(item.place)}</td>
                 <td>${item.targetCount}R</td>
                 <td>${item.savedCount}R</td>
-                <td>${item.missingCount}R</td>
-                <td>${item.failedCount}R</td>
+                <td>${item.recoveredCount}R</td>
+                <td>${item.retryingCount}R</td>
+                <td>${item.finalUncollectedCount}R</td>
               </tr>
-            `).join("") || `<tr><td colspan="5">監視データを蓄積中です</td></tr>`}
+            `).join("") || `<tr><td colspan="6">監視データを蓄積中です</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="v3-final-block">
+      <h3>事前データ不足の内訳</h3>
+      <div class="v3-table-wrap">
+        <table class="v3-table">
+          <thead><tr><th>不足項目</th><th>レース数</th></tr></thead>
+          <tbody>
+            ${(collectionHealth?.missingReasons || []).map(item => `
+              <tr><td>${U.safeText(item.reason)}</td><td>${item.count}R</td></tr>
+            `).join("") || `<tr><td colspan="2">不足項目を蓄積中です</td></tr>`}
           </tbody>
         </table>
       </div>
