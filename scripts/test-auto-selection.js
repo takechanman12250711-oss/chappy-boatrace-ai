@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const {
   buildViewModel,
+  buildNotePackage,
   parseNoteDraft,
   ticketLabel
 } = require("../js/auto-selection");
@@ -14,6 +15,15 @@ assert.equal(parsed.body, "無料部分\n\n---\n\n有料部分");
 const withoutHeading = parseNoteDraft("本文だけ", "保存済みタイトル");
 assert.equal(withoutHeading.title, "保存済みタイトル");
 assert.equal(withoutHeading.body, "本文だけ");
+
+assert.equal(
+  buildNotePackage(parsed),
+  "# 常滑1Rの予想\n\n無料部分\n\n---\n\n有料部分"
+);
+assert.equal(
+  buildNotePackage({ title: "", body: "本文だけ" }),
+  "本文だけ"
+);
 
 const view = buildViewModel({
   runs: [{
