@@ -10,6 +10,7 @@ const raceApi = require("../api/race");
 global.window = global;
 require("../js/ai-core");
 require("../js/prediction");
+require("../js/practical-selection");
 require("../js/note-generator");
 
 const MIN_SCORE = 70;
