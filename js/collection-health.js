@@ -38,7 +38,17 @@
     const failed = monitored.filter(item =>
       ["fetch_failed", "prediction_failed", "not_attempted"].includes(item.status)
     );
+    const finalUncollected = monitored.filter(item => item.status === "final_uncollected");
+    const recovered = monitored.filter(item => item.recoveryState === "recovered");
+    const retrying = monitored.filter(item => item.recoveryState === "retrying");
     const missing = monitored.filter(item => item.status !== "saved");
+    const missingReasons = new Map();
+    monitored.forEach(item => {
+      (Array.isArray(item?.missingReasons) ? item.missingReasons : []).forEach(reason => {
+        const key = String(reason || "").trim();
+        if (key) missingReasons.set(key, (missingReasons.get(key) || 0) + 1);
+      });
+    });
     const predictionKeys = new Set(
       (Array.isArray(data?.predictions) ? data.predictions : [])
         .map(item => String(item?.raceKey || ""))
@@ -60,7 +70,10 @@
           targetCount: 0,
           savedCount: 0,
           missingCount: 0,
-          failedCount: 0
+          failedCount: 0,
+          recoveredCount: 0,
+          retryingCount: 0,
+          finalUncollectedCount: 0
         });
       }
       const venue = venues.get(key);
@@ -70,6 +83,9 @@
       if (["fetch_failed", "prediction_failed", "not_attempted"].includes(item.status)) {
         venue.failedCount += 1;
       }
+      if (item.recoveryState === "recovered") venue.recoveredCount += 1;
+      if (item.recoveryState === "retrying") venue.retryingCount += 1;
+      if (item.status === "final_uncollected") venue.finalUncollectedCount += 1;
     });
 
     const lastCheckedAt = monitored.reduce(
@@ -83,6 +99,12 @@
       missingCount: missing.length,
       insufficientDataCount: insufficient.length,
       failedCount: failed.length,
+      recoveredCount: recovered.length,
+      retryingCount: retrying.length,
+      finalUncollectedCount: finalUncollected.length,
+      missingReasons: [...missingReasons.entries()]
+        .map(([reason, count]) => ({ reason, count }))
+        .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason)),
       coverageRate: percentage(saved.length, monitored.length),
       predictionCount: predictionKeys.size,
       settledCount: settledKeys.size,

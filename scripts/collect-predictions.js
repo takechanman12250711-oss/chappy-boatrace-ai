@@ -26,6 +26,10 @@ const predictionConditions = require(
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
 
+function predictionFilePath(date) {
+  return path.join(process.cwd(), "data", "predictions", `${date}.json`);
+}
+
 function getArgument(name) {
   const prefix = `--${name}=`;
   const argument = process.argv.find(value => value.startsWith(prefix));
@@ -170,6 +174,95 @@ function writeJson(filePath, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n", "utf8");
 }
 
+function uniqueStrings(values) {
+  return [...new Set((Array.isArray(values) ? values : [])
+    .map(value => String(value || "").trim())
+    .filter(Boolean))];
+}
+
+function insufficientReasons(evaluation) {
+  const status = evaluation?.dataStatus || {};
+  const reasons = uniqueStrings([
+    ...(evaluation?.honmei?.reasons || []),
+    ...(evaluation?.manshu?.reasons || [])
+  ]);
+  if (reasons.length) return reasons;
+
+  if (Number(status.entryCount || 0) < 6) {
+    reasons.push(`出走データ${Number(status.entryCount || 0)}/6艇`);
+  }
+  if (Number(status.stCount || 0) < 4) {
+    reasons.push(`STデータ${Number(status.stCount || 0)}/6艇`);
+  }
+  if (Number(status.exhibitionCount || 0) < 4) {
+    reasons.push(`展示データ${Number(status.exhibitionCount || 0)}/6艇`);
+  }
+  return reasons.length ? reasons : ["比較に必要な事前データが不足"];
+}
+
+function latestHealthTargets(data) {
+  const latest = new Map();
+  (Array.isArray(data?.runs) ? data.runs : []).forEach(run => {
+    const checkedAt = String(run?.collectionHealth?.checkedAt || run?.checkedAt || "");
+    (Array.isArray(run?.collectionHealth?.targets) ? run.collectionHealth.targets : [])
+      .forEach(target => {
+        const raceKey = String(target?.raceKey || "");
+        if (!raceKey) return;
+        const previous = latest.get(raceKey);
+        if (!previous || checkedAt >= previous.checkedAt) {
+          latest.set(raceKey, { ...target, checkedAt });
+        }
+      });
+  });
+  return latest;
+}
+
+function buildRecoveryPlan(date, liveTargets, data, now = new Date()) {
+  const retryable = new Set([
+    "insufficient_data",
+    "fetch_failed",
+    "prediction_failed",
+    "not_attempted"
+  ]);
+  const targetMap = new Map();
+  (Array.isArray(liveTargets) ? liveTargets : []).forEach(target => {
+    targetMap.set(`${date}-${target.jcd}-${target.raceNo}`, { ...target });
+  });
+  const finalizedTargets = [];
+
+  latestHealthTargets(data).forEach((target, raceKey) => {
+    if (!raceKey.startsWith(`${date}-`) || !retryable.has(target.status)) return;
+    const deadline = Date.parse(target.deadlineAt || "");
+    const previous = {
+      ...target,
+      recoveryAttempt: true,
+      previousStatus: target.status,
+      attemptCount: Number(target.attemptCount || 1),
+      firstDetectedAt: target.firstDetectedAt || target.checkedAt || ""
+    };
+
+    if (Number.isFinite(deadline) && deadline <= now.getTime()) {
+      finalizedTargets.push({
+        ...previous,
+        status: "final_uncollected",
+        finalAt: now.toISOString()
+      });
+      targetMap.delete(raceKey);
+      return;
+    }
+
+    targetMap.set(raceKey, {
+      ...previous,
+      ...(targetMap.get(raceKey) || {})
+    });
+  });
+
+  return {
+    targets: [...targetMap.values()],
+    finalizedTargets
+  };
+}
+
 async function loadTargets(date) {
   const forcedJcd = getArgument("jcd");
   const forcedRaceNo = Number(getArgument("rno"));
@@ -214,10 +307,12 @@ async function evaluateTargets(date, targets) {
         const evaluation = global.ChappyAICore.buildRaceTrendEvaluation(raceData);
 
         if (!evaluation?.ready) {
+          const missingReasons = insufficientReasons(evaluation);
           attempts.push({
             ...target,
             status: "insufficient_data",
-            error: "比較に必要な事前データが不足"
+            error: missingReasons.join("／"),
+            missingReasons
           });
           continue;
         }
@@ -347,7 +442,14 @@ function buildVerificationPredictions(date, comparison, selectedRaceKey = "") {
   return records;
 }
 
-function buildCollectionHealth(date, targets, attempts, verificationPredictions) {
+function buildCollectionHealth(
+  date,
+  targets,
+  attempts,
+  verificationPredictions,
+  finalizedTargets = [],
+  checkedAt = new Date().toISOString()
+) {
   const savedKeys = new Set(
     (Array.isArray(verificationPredictions) ? verificationPredictions : [])
       .map(item => String(item?.raceKey || ""))
@@ -359,11 +461,23 @@ function buildCollectionHealth(date, targets, attempts, verificationPredictions)
       item
     ])
   );
-  const monitoredTargets = (Array.isArray(targets) ? targets : []).map(target => {
+  const monitoredTargets = [
+    ...(Array.isArray(targets) ? targets : []),
+    ...(Array.isArray(finalizedTargets) ? finalizedTargets : [])
+  ].map(target => {
     const raceKey = `${date}-${target.jcd}-${target.raceNo}`;
     const attempt = attemptByKey.get(raceKey) || null;
-    let status = savedKeys.has(raceKey) ? "saved" : attempt?.status || "not_attempted";
+    let status = target.status === "final_uncollected"
+      ? "final_uncollected"
+      : savedKeys.has(raceKey) ? "saved" : attempt?.status || "not_attempted";
     if (status === "evaluated") status = "prediction_failed";
+    const recoveryAttempt = Boolean(target.recoveryAttempt);
+    const attemptCount = Number(target.attemptCount || 0) +
+      (status === "final_uncollected" ? 0 : 1);
+    const missingReasons = uniqueStrings([
+      ...(target.missingReasons || []),
+      ...(attempt?.missingReasons || [])
+    ]);
     return {
       raceKey,
       jcd: target.jcd,
@@ -371,18 +485,30 @@ function buildCollectionHealth(date, targets, attempts, verificationPredictions)
       raceNo: target.raceNo,
       deadlineAt: target.deadlineAt,
       status,
-      error: status === "saved" ? "" : String(attempt?.error || "").slice(0, 240)
+      error: status === "saved" ? "" : String(attempt?.error || target.error || "").slice(0, 240),
+      missingReasons,
+      attemptCount,
+      firstDetectedAt: target.firstDetectedAt || checkedAt,
+      lastAttemptAt: status === "final_uncollected" ? target.lastAttemptAt || "" : checkedAt,
+      recoveryState: status === "saved"
+        ? recoveryAttempt ? "recovered" : "not_needed"
+        : status === "final_uncollected" ? "final_uncollected" : "retrying",
+      recoveredAt: status === "saved" && recoveryAttempt ? checkedAt : "",
+      finalAt: status === "final_uncollected" ? target.finalAt || checkedAt : ""
     };
   });
   const count = status => monitoredTargets.filter(item => item.status === status).length;
 
   return {
-    schemaVersion: 1,
-    checkedAt: new Date().toISOString(),
+    schemaVersion: 2,
+    checkedAt,
     targetCount: monitoredTargets.length,
     savedCount: count("saved"),
     insufficientDataCount: count("insufficient_data"),
     failedCount: count("fetch_failed") + count("prediction_failed") + count("not_attempted"),
+    recoveredCount: monitoredTargets.filter(item => item.recoveryState === "recovered").length,
+    retryingCount: monitoredTargets.filter(item => item.recoveryState === "retrying").length,
+    finalUncollectedCount: count("final_uncollected"),
     complete: monitoredTargets.length > 0 && count("saved") === monitoredTargets.length,
     targets: monitoredTargets
   };
@@ -393,17 +519,13 @@ function logCollectionHealth(health) {
   const missing = Math.max(0, health.targetCount - health.savedCount);
   console.log(
     `収集監視：対象${health.targetCount}R／保存${health.savedCount}R／未保存${missing}R` +
-    `（データ不足${health.insufficientDataCount}R／取得失敗${health.failedCount}R）`
+    `（データ不足${health.insufficientDataCount}R／取得失敗${health.failedCount}R／` +
+    `復旧${health.recoveredCount}R／最終未取得${health.finalUncollectedCount}R）`
   );
 }
 
 function saveRun(date, comparison, selectedData, verificationPredictions = [], collectionHealth = null) {
-  const outputPath = path.join(
-    process.cwd(),
-    "data",
-    "predictions",
-    `${date}.json`
-  );
+  const outputPath = predictionFilePath(date);
   const existing = loadJson(outputPath, {
     schemaVersion: 2,
     date,
@@ -490,9 +612,12 @@ function saveNote(date, selected, article) {
 async function main() {
   const date = getTargetDate();
   const dryRun = hasFlag("dry-run");
-  const targets = await loadTargets(date);
+  const liveTargets = await loadTargets(date);
+  const existing = loadJson(predictionFilePath(date), { runs: [] });
+  const recoveryPlan = buildRecoveryPlan(date, liveTargets, existing);
+  const targets = recoveryPlan.targets;
 
-  if (!targets.length) {
+  if (!targets.length && !recoveryPlan.finalizedTargets.length) {
     console.log(`${date}は現在、締切前レースがありません`);
     return;
   }
@@ -508,7 +633,8 @@ async function main() {
       date,
       targets,
       evaluationResult.attempts,
-      []
+      [],
+      recoveryPlan.finalizedTargets
     );
     logCollectionHealth(collectionHealth);
     if (!dryRun) saveRun(date, comparison, null, [], collectionHealth);
@@ -527,7 +653,8 @@ async function main() {
     date,
     targets,
     evaluationResult.attempts,
-    verificationPredictions
+    verificationPredictions,
+    recoveryPlan.finalizedTargets
   );
   logCollectionHealth(collectionHealth);
   const selectedBase = verificationPredictions.find(
@@ -597,6 +724,8 @@ module.exports = {
   upsertByRaceKey,
   compactStoredVerification,
   buildCollectionHealth,
+  buildRecoveryPlan,
+  insufficientReasons,
   buildStoredPrediction,
   buildVerificationPredictions,
   saveRun

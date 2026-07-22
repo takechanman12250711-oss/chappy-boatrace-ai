@@ -4,6 +4,8 @@ const assert = require("node:assert/strict");
 const {
   MIN_SCORE,
   buildCollectionHealth,
+  buildRecoveryPlan,
+  insufficientReasons,
   compactStoredVerification,
   upsertByRaceKey
 } = require("./collect-predictions");
@@ -33,6 +35,73 @@ assert.equal(collectionHealth.complete, false);
 assert.equal(collectionHealth.targets[0].status, "saved");
 assert.equal(collectionHealth.targets[1].status, "insufficient_data");
 assert.equal(collectionHealth.targets[2].status, "fetch_failed");
+
+assert.deepEqual(insufficientReasons({
+  ready: false,
+  honmei: { reasons: ["出走データ5/6艇", "STデータ3/6艇"] },
+  manshu: { reasons: ["STデータ3/6艇"] }
+}), ["出走データ5/6艇", "STデータ3/6艇"]);
+
+const recoveryPlan = buildRecoveryPlan(
+  "20260722",
+  [{ jcd: "24", place: "大村", raceNo: 7, deadlineAt: "2026-07-22T20:25:00+09:00" }],
+  {
+    runs: [{
+      checkedAt: "2026-07-22T10:00:00.000Z",
+      collectionHealth: {
+        targets: [
+          {
+            raceKey: "20260722-15-11",
+            jcd: "15",
+            place: "丸亀",
+            raceNo: 11,
+            deadlineAt: "2026-07-22T20:06:00+09:00",
+            status: "insufficient_data",
+            missingReasons: ["STデータ3/6艇"],
+            attemptCount: 1
+          },
+          {
+            raceKey: "20260722-19-10",
+            jcd: "19",
+            place: "下関",
+            raceNo: 10,
+            deadlineAt: "2026-07-22T19:45:00+09:00",
+            status: "fetch_failed",
+            attemptCount: 2
+          }
+        ]
+      }
+    }]
+  },
+  new Date("2026-07-22T11:00:00.000Z")
+);
+
+assert.equal(recoveryPlan.targets.length, 2);
+assert.equal(recoveryPlan.targets.find(item => item.jcd === "15").recoveryAttempt, true);
+assert.equal(recoveryPlan.finalizedTargets.length, 1);
+assert.equal(recoveryPlan.finalizedTargets[0].status, "final_uncollected");
+
+const recoveredHealth = buildCollectionHealth(
+  "20260722",
+  recoveryPlan.targets,
+  [
+    { jcd: "15", raceNo: 11, status: "evaluated" },
+    { jcd: "24", raceNo: 7, status: "evaluated" }
+  ],
+  [
+    { raceKey: "20260722-15-11" },
+    { raceKey: "20260722-24-7" }
+  ],
+  recoveryPlan.finalizedTargets,
+  "2026-07-22T11:01:00.000Z"
+);
+assert.equal(recoveredHealth.recoveredCount, 1);
+assert.equal(recoveredHealth.finalUncollectedCount, 1);
+assert.equal(recoveredHealth.targets.find(item => item.jcd === "15").attemptCount, 2);
+assert.deepEqual(
+  recoveredHealth.targets.find(item => item.jcd === "15").missingReasons,
+  ["STデータ3/6艇"]
+);
 
 const records = upsertByRaceKey(
   [
