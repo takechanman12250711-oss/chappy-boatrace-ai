@@ -108,6 +108,54 @@ function compactPrediction(prediction, practicalTickets, raceData) {
   };
 }
 
+function compactMark(value) {
+  if (!value || typeof value !== "object") return null;
+  return {
+    boatNo: Number(value.boatNo || value.no || value.boat || 0),
+    name: String(value.name || value.playerName || "")
+  };
+}
+
+function compactVerificationPayload(
+  prediction,
+  practicalTickets,
+  preRaceConditions
+) {
+  return {
+    version: prediction?.version || "",
+    predictionMode: prediction?.predictionMode || "server_pre_deadline_shadow",
+    raceFlow: {
+      title: prediction?.raceFlow?.title || "",
+      summary: prediction?.raceFlow?.summary || "",
+      scenario: prediction?.raceFlow?.scenario?.title
+        ? { title: prediction.raceFlow.scenario.title }
+        : null
+    },
+    confidence: prediction?.confidence || null,
+    manshuPower: prediction?.manshuPower || null,
+    mainSheet: {
+      honmei: compactMark(prediction?.mainSheet?.honmei),
+      taikou: compactMark(prediction?.mainSheet?.taikou),
+      ana: compactMark(prediction?.mainSheet?.ana),
+      osae: compactMark(prediction?.mainSheet?.osae)
+    },
+    practicalTickets: Array.isArray(practicalTickets) ? practicalTickets : [],
+    preRaceConditions: preRaceConditions || null
+  };
+}
+
+function compactStoredVerification(record) {
+  const prediction = record?.prediction || {};
+  return {
+    ...record,
+    prediction: compactVerificationPayload(
+      prediction,
+      prediction.practicalTickets,
+      prediction.preRaceConditions
+    )
+  };
+}
+
 function loadJson(filePath, fallback) {
   try {
     return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -258,7 +306,11 @@ function buildStoredPrediction(date, item, selected = false) {
       selected,
       evaluation: compactEvaluation(item.evaluation)
     },
-    prediction: compactPrediction(prediction, practicalTickets, item.raceData)
+    prediction: compactVerificationPayload(
+      prediction,
+      practicalTickets,
+      predictionConditions.capture(item.raceData, prediction)
+    )
   };
 }
 
@@ -349,7 +401,7 @@ function saveRun(date, comparison, selectedData, verificationPredictions = []) {
   existing.verificationPredictions = upsertByRaceKey(
     existing.verificationPredictions,
     verificationPredictions
-  );
+  ).map(compactStoredVerification);
 
   existing.updatedAt = new Date().toISOString();
   existing.runs = existing.runs.slice(-MAX_RUNS_PER_DAY);
@@ -461,6 +513,7 @@ if (require.main === module) {
 module.exports = {
   MIN_SCORE,
   upsertByRaceKey,
+  compactStoredVerification,
   buildStoredPrediction,
   buildVerificationPredictions,
   saveRun
