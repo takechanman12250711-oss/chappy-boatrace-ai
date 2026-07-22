@@ -93,6 +93,30 @@ const analyses = [
 const data = {
   stadiumCode: "12",
   raceNo: 8,
+  historyContext: {
+    venueRace: {
+      trend: {
+        frameMovement: {
+          "1": {
+            samples: 180,
+            reliability: "high",
+            riseRate: 0,
+            stayRate: 72.2,
+            sinkRate: 27.8,
+            label: "沈下"
+          },
+          "5": {
+            samples: 178,
+            reliability: "high",
+            riseRate: 38.2,
+            stayRate: 25.3,
+            sinkRate: 36.5,
+            label: "浮上"
+          }
+        }
+      }
+    }
+  },
   entries: analyses.map((analysis) => ({
     boat: analysis.boatNo,
     racerName: analysis.playerName,
@@ -120,11 +144,17 @@ assert.equal(result.followers[0], 5);
 assert.equal(result.pickupCandidates[0], 5);
 assert.equal(result.roadRaceBoats[0], 6);
 assert.deepEqual(result.localExperts, [5, 6]);
+assert.equal(result.frameMovement.length, 6);
+assert.equal(result.frameMovement[0].samples, 180);
+assert.equal(result.frameMovement[0].appliedToScore, false);
+assert.equal(result.frameMovement[4].label, "浮上");
+assert.equal(result.frameMovement[1].label, "判定保留");
 
 assert.equal(result.evidence.scenario, "3コース攻め");
 assert.equal(result.evidence.score, result.confidence);
 assert.ok(result.evidence.mainGap >= 0);
 assert.ok(result.evidence.firstCandidates.includes(3));
+assert.equal(result.evidence.frameMovement.length, 2);
 assert.equal(result.dataStatus.hasSt, true);
 assert.equal(result.dataStatus.hasExhibition, true);
 

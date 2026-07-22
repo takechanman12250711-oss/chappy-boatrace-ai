@@ -187,6 +187,9 @@ function addBoatPerformance(
         seconds: 0,
         thirds: 0,
         top3: 0,
+        rises: 0,
+        stays: 0,
+        sinks: 0,
         stSum: 0,
         stSamples: 0
       };
@@ -213,6 +216,19 @@ function addBoatPerformance(
       rank <= 3
     ) {
       boat.top3 += 1;
+    }
+
+    /*
+      枠別浮沈率：
+      枠番より着順が上なら浮上、同じなら維持、
+      下なら沈下として公式着順だけから集計する。
+    */
+    if (rank < boatNo) {
+      boat.rises += 1;
+    } else if (rank === boatNo) {
+      boat.stays += 1;
+    } else if (rank > boatNo) {
+      boat.sinks += 1;
     }
 
     const start =
@@ -394,6 +410,33 @@ function finalizeBoatPerformance(
           top3Rate:
             percent(
               boat.top3,
+              boat.starts
+            ),
+
+          rises:
+            boat.rises,
+
+          riseRate:
+            percent(
+              boat.rises,
+              boat.starts
+            ),
+
+          stays:
+            boat.stays,
+
+          stayRate:
+            percent(
+              boat.stays,
+              boat.starts
+            ),
+
+          sinks:
+            boat.sinks,
+
+          sinkRate:
+            percent(
+              boat.sinks,
               boat.starts
             ),
 
