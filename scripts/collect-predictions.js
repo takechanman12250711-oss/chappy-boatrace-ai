@@ -94,7 +94,7 @@ function compactEvaluation(evaluation) {
 function compactPrediction(prediction, practicalTickets, raceData) {
   return {
     version: prediction?.version || "",
-    predictionMode: "server_pre_deadline",
+    predictionMode: prediction?.predictionMode || "server_pre_deadline",
     raceFlow: prediction?.raceFlow || null,
     confidence: prediction?.confidence || null,
     manshuPower: prediction?.manshuPower || null,
@@ -218,7 +218,68 @@ async function evaluateTargets(date, targets) {
   );
 }
 
-function saveRun(date, comparison, selectedData) {
+function upsertByRaceKey(list, records) {
+  const output = Array.isArray(list) ? [...list] : [];
+  (Array.isArray(records) ? records : []).forEach(record => {
+    if (!record?.raceKey) return;
+    const index = output.findIndex(item => item?.raceKey === record.raceKey);
+    if (index >= 0) output[index] = record;
+    else output.push(record);
+  });
+  return output;
+}
+
+function buildStoredPrediction(date, item, selected = false) {
+  const prediction = global.createPrediction(item.raceData);
+  prediction.predictionMode = selected
+    ? "server_pre_deadline"
+    : "server_pre_deadline_shadow";
+  prediction.officialResultUsedForPrediction = false;
+
+  const practicalTickets =
+    global.ChappyNoteGenerator.createPracticalSelection(prediction);
+  const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
+
+  return {
+    raceKey,
+    date,
+    jcd: item.jcd,
+    place: item.place,
+    raceNo: item.raceNo,
+    deadlineAt: item.deadlineAt,
+    selectedAt: new Date().toISOString(),
+    verificationMode: selected ? "selected" : "shadow",
+    scoreBand: item.score >= MIN_SCORE ? "70_plus" : "under_70",
+    selection: {
+      type: item.type,
+      score: item.score,
+      threshold: MIN_SCORE,
+      qualified: item.score >= MIN_SCORE,
+      selected,
+      evaluation: compactEvaluation(item.evaluation)
+    },
+    prediction: compactPrediction(prediction, practicalTickets, item.raceData)
+  };
+}
+
+function buildVerificationPredictions(date, comparison, selectedRaceKey = "") {
+  const records = [];
+
+  comparison.forEach(item => {
+    const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
+    try {
+      records.push(buildStoredPrediction(date, item, raceKey === selectedRaceKey));
+    } catch (error) {
+      console.warn(
+        `${item.place || item.jcd} ${item.raceNo}Rの検証予想生成失敗：${error?.message || error}`
+      );
+    }
+  });
+
+  return records;
+}
+
+function saveRun(date, comparison, selectedData, verificationPredictions = []) {
   const outputPath = path.join(
     process.cwd(),
     "data",
@@ -226,10 +287,11 @@ function saveRun(date, comparison, selectedData) {
     `${date}.json`
   );
   const existing = loadJson(outputPath, {
-    schemaVersion: 1,
+    schemaVersion: 2,
     date,
     runs: [],
-    predictions: []
+    predictions: [],
+    verificationPredictions: []
   });
 
   const best = comparison[0] || null;
@@ -283,6 +345,12 @@ function saveRun(date, comparison, selectedData) {
     else existing.predictions.push(selectedData);
   }
 
+  existing.schemaVersion = 2;
+  existing.verificationPredictions = upsertByRaceKey(
+    existing.verificationPredictions,
+    verificationPredictions
+  );
+
   existing.updatedAt = new Date().toISOString();
   existing.runs = existing.runs.slice(-MAX_RUNS_PER_DAY);
   writeJson(outputPath, existing);
@@ -316,57 +384,66 @@ async function main() {
 
   if (!best) {
     console.log("比較に必要なデータが不足しています");
-    if (!dryRun) saveRun(date, comparison, null);
+    if (!dryRun) saveRun(date, comparison, null, []);
     return;
   }
 
-  if (best.score < MIN_SCORE) {
+  const selectedRaceKey = best.score >= MIN_SCORE
+    ? `${date}-${best.jcd}-${best.raceNo}`
+    : "";
+  const verificationPredictions = buildVerificationPredictions(
+    date,
+    comparison,
+    selectedRaceKey
+  );
+  const selectedBase = verificationPredictions.find(
+    item => item.raceKey === selectedRaceKey
+  ) || null;
+  let selectedData = null;
+  let article = null;
+
+  if (selectedBase) {
+    const selectedPrediction = global.createPrediction(best.raceData);
+    selectedPrediction.predictionMode = "server_pre_deadline";
+    selectedPrediction.officialResultUsedForPrediction = false;
+    article = global.ChappyNoteGenerator.generateArticle(selectedPrediction);
+    const practicalTickets = article?.practicalTickets ||
+      global.ChappyNoteGenerator.createPracticalSelection(selectedPrediction);
+    selectedData = {
+      ...selectedBase,
+      prediction: compactPrediction(
+        selectedPrediction,
+        practicalTickets,
+        best.raceData
+      ),
+      note: {
+        publishable: Boolean(article?.publishable),
+        title: article?.title || "",
+        rejectionReasons: article?.rejectionReasons || []
+      }
+    };
+  }
+
+  if (!dryRun) {
+    if (selectedData) selectedData.note.path = saveNote(date, best, article);
+    saveRun(date, comparison, selectedData, verificationPredictions);
+  }
+
+  console.log(
+    `検証保存：${verificationPredictions.length}R（70点以上${verificationPredictions.filter(item => item.scoreBand === "70_plus").length}R／70点未満${verificationPredictions.filter(item => item.scoreBand === "under_70").length}R）`
+  );
+
+  if (!selectedData) {
     console.log(
       `見送り：最高${Math.round(best.score)}点／基準${MIN_SCORE}点`
     );
-    if (!dryRun) saveRun(date, comparison, null);
     return;
-  }
-
-  const prediction = global.createPrediction(best.raceData);
-  prediction.predictionMode = "server_pre_deadline";
-  prediction.officialResultUsedForPrediction = false;
-
-  const article = global.ChappyNoteGenerator.generateArticle(prediction);
-  const practicalTickets = article?.practicalTickets ||
-    global.ChappyNoteGenerator.createPracticalSelection(prediction);
-  const raceKey = `${date}-${best.jcd}-${best.raceNo}`;
-  const selectedData = {
-    raceKey,
-    date,
-    jcd: best.jcd,
-    place: best.place,
-    raceNo: best.raceNo,
-    deadlineAt: best.deadlineAt,
-    selectedAt: new Date().toISOString(),
-    selection: {
-      type: best.type,
-      score: best.score,
-      threshold: MIN_SCORE,
-      evaluation: compactEvaluation(best.evaluation)
-    },
-    prediction: compactPrediction(prediction, practicalTickets, best.raceData),
-    note: {
-      publishable: Boolean(article?.publishable),
-      title: article?.title || "",
-      rejectionReasons: article?.rejectionReasons || []
-    }
-  };
-
-  if (!dryRun) {
-    selectedData.note.path = saveNote(date, best, article);
-    saveRun(date, comparison, selectedData);
   }
 
   console.log(
     `自動選定：${best.place || best.jcd} ${best.raceNo}R（${best.type}${Math.round(best.score)}点）`
   );
-  console.log(`実戦厳選：${practicalTickets.length}点`);
+  console.log(`実戦厳選：${selectedData.prediction.practicalTickets.length}点`);
   console.log(
     article?.publishable
       ? "note下書き：生成可能"
@@ -374,7 +451,17 @@ async function main() {
   );
 }
 
-main().catch(error => {
-  console.error(error?.stack || error?.message || error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch(error => {
+    console.error(error?.stack || error?.message || error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  MIN_SCORE,
+  upsertByRaceKey,
+  buildStoredPrediction,
+  buildVerificationPredictions,
+  saveRun
+};

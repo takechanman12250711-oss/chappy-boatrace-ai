@@ -17,8 +17,13 @@
   function normalizeIndex(data) {
     const predictions = [];
     const results = [];
+    const selectedRaceKeys = new Set(
+      (Array.isArray(data?.predictions) ? data.predictions : [])
+        .map(item => String(item?.raceKey || ""))
+        .filter(Boolean)
+    );
 
-    (Array.isArray(data?.predictions) ? data.predictions : []).forEach(item => {
+    function append(item, predictionSource) {
       const raceKey = String(item?.raceKey || "");
       if (!raceKey) return;
 
@@ -31,7 +36,11 @@
         raceNo: item?.raceNo || 0,
         savedAt: item?.selectedAt || "",
         automaticSelection: item?.selection || null,
-        predictionSource: "automatic"
+        verificationMode: item?.verificationMode ||
+          (predictionSource === "automatic" ? "selected" : "shadow"),
+        scoreBand: item?.scoreBand ||
+          (Number(item?.selection?.score || 0) >= 70 ? "70_plus" : "under_70"),
+        predictionSource
       });
 
       const resultTicket = normalizeTicket(item?.result?.resultTicket);
@@ -52,14 +61,35 @@
           starts: item?.result?.starts || [],
           officialCheckedAt: item?.result?.settledAt || "",
           automaticResult: true,
+          verificationMode: item?.verificationMode ||
+            (predictionSource === "automatic" ? "selected" : "shadow"),
+          scoreBand: item?.scoreBand ||
+            (Number(item?.selection?.score || 0) >= 70 ? "70_plus" : "under_70"),
           automaticVerification:
             item?.result?.verification || item?.result || null
         });
       }
-    });
+    }
+
+    (Array.isArray(data?.predictions) ? data.predictions : [])
+      .forEach(item => append(item, "automatic"));
+
+    (Array.isArray(data?.verificationPredictions)
+      ? data.verificationPredictions
+      : [])
+      .filter(item => !selectedRaceKeys.has(String(item?.raceKey || "")))
+      .forEach(item => append(item, "automatic_shadow"));
 
     const runs = (Array.isArray(data?.runs) ? data.runs : []).map(run => ({ ...run }));
-    return { predictions, results, runs };
+    return {
+      predictions,
+      results,
+      runs,
+      selectedCount: selectedRaceKeys.size,
+      shadowCount: predictions.filter(
+        item => item.predictionSource === "automatic_shadow"
+      ).length
+    };
   }
 
   return { normalizeTicket, normalizeIndex };

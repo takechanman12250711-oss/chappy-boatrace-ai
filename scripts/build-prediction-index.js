@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const DEFAULT_LIMIT = 500;
+const VERIFICATION_LIMIT = 5000;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -18,6 +19,7 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
 
   const runs = [];
   const predictions = [];
+  const verificationPredictions = [];
 
   files.forEach(name => {
     const data = readJson(path.join(directory, name));
@@ -45,17 +47,33 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     (Array.isArray(data?.predictions) ? data.predictions : []).forEach(prediction => {
       predictions.push({ ...prediction, date: String(prediction?.date || date) });
     });
+
+    (Array.isArray(data?.verificationPredictions)
+      ? data.verificationPredictions
+      : []).forEach(prediction => {
+      verificationPredictions.push({
+        ...prediction,
+        date: String(prediction?.date || date)
+      });
+    });
   });
 
   runs.sort((a, b) => String(b?.checkedAt || "").localeCompare(String(a?.checkedAt || "")));
   predictions.sort((a, b) => String(b?.selectedAt || "").localeCompare(String(a?.selectedAt || "")));
+  verificationPredictions.sort((a, b) =>
+    String(b?.selectedAt || "").localeCompare(String(a?.selectedAt || ""))
+  );
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     sourceFileCount: files.length,
     runs: runs.slice(0, limit),
-    predictions: predictions.slice(0, limit)
+    predictions: predictions.slice(0, limit),
+    verificationPredictions: verificationPredictions.slice(
+      0,
+      Math.max(limit, VERIFICATION_LIMIT)
+    )
   };
 }
 
@@ -75,7 +93,9 @@ function main() {
   const directory = path.join(process.cwd(), "data", "predictions");
   const outputPath = path.join(directory, "index.json");
   const index = writePredictionIndex(directory, outputPath);
-  console.log(`自動予想索引を更新：採用${index.predictions.length}件／実行${index.runs.length}件`);
+  console.log(
+    `自動予想索引を更新：採用${index.predictions.length}件／検証${index.verificationPredictions.length}件／実行${index.runs.length}件`
+  );
 }
 
 if (require.main === module) main();
