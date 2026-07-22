@@ -10,6 +10,7 @@
   const S = window.ChappyStorage;
   const A = window.ChappyAutoStats;
   const I = window.ChappyImprovementSuggestions;
+  const V = window.ChappyPredictionVerification;
   const OFFICIAL_SYNC_CONCURRENCY = 3;
 
   let officialSyncPromise = null;
@@ -1119,6 +1120,29 @@
             "結果確定" &&
           Boolean(resultTicket);
 
+        const verificationPrediction = {
+          ...item.prediction,
+          practicalTickets: isAutomatic
+            ? item.prediction?.practicalTickets || []
+            : practicalTickets.map(ticket => {
+                const source = (item.predictionTickets || [])
+                  .find(row => normalizeTicket(row?.ticket) === ticket);
+                return {
+                  ticket,
+                  category: source?.role || source?.category || ""
+                };
+              })
+        };
+        const verification = V?.verifyPrediction
+          ? V.verifyPrediction(verificationPrediction, {
+              resultAvailable: settled,
+              result: resultTicket,
+              officialPayoutPer100: item.payoutPer100,
+              officialPopularity: item.officialPopularity,
+              winningMethod: item.winningMethod
+            })
+          : null;
+
         return {
           ...item,
           resultTicket,
@@ -1139,9 +1163,28 @@
           practicalTickets,
           settled,
 
+          verification,
+          marks: verification?.marks || [],
+          predictedScenarioTitle:
+            verification?.scenarioTitle ||
+            item.prediction?.predictedScenarioTitle ||
+            item.prediction?.raceFlow?.title ||
+            "",
+          expectedWinningMethod:
+            verification?.expectedMethod || "",
+          scenarioMatched:
+            verification?.scenarioMatched ?? null,
+          hitCategory:
+            verification?.hitCategory || "",
+          simulatedStake:
+            verification?.simulatedStake || 0,
+          simulatedReturn:
+            verification?.simulatedReturn || 0,
+
           missType:
             settled
-              ? classifyPracticalResult(
+              ? verification?.missType ||
+                classifyPracticalResult(
                   practicalTickets,
                   resultTicket
                 )
@@ -1154,10 +1197,11 @@
               honmeiBoat,
 
           practicalHit:
-            settled &&
-            practicalTickets.includes(
-              resultTicket
-            )
+            settled && (verification
+              ? verification.practicalHit
+              : practicalTickets.includes(
+                  resultTicket
+                ))
         };
       });
 
@@ -1182,6 +1226,23 @@
     practicalRows.filter(
       item => item.practicalHit
     ).length;
+  const verificationSummary = V?.buildSummary
+    ? V.buildSummary(
+        settledRows
+          .map(item => item.verification)
+          .filter(Boolean)
+      )
+    : {
+        scenarioComparableCount: 0,
+        scenarioHits: 0,
+        scenarioMatchRate: 0,
+        totalStake: 0,
+        totalReturn: 0,
+        simulatedProfit: 0,
+        simulatedRecoveryRate: 0,
+        categorySummary: [],
+        markSummary: []
+      };
   const missTypeLabels = [
     "的中",
     "頭外れ",
@@ -1227,7 +1288,9 @@
           count: 0,
           honmeiHits: 0,
           practicalCount: 0,
-          practicalHits: 0
+          practicalHits: 0,
+          scenarioComparable: 0,
+          scenarioHits: 0
         });
       }
 
@@ -1238,6 +1301,11 @@
 
       if (item.honmeiHit) {
         bucket.honmeiHits += 1;
+      }
+
+      if (item.scenarioMatched !== null) {
+        bucket.scenarioComparable += 1;
+        if (item.scenarioMatched) bucket.scenarioHits += 1;
       }
 
       if (
@@ -1272,6 +1340,13 @@
         `場コード${item.jcd}`
     );
 
+  const venueRaceGroups =
+    buildGroups(
+      settledRows,
+      item =>
+        `${item.place || `場コード${item.jcd}`} ${item.raceNo}R`
+    );
+
   const methodGroups =
     buildGroups(
       settledRows,
@@ -1301,8 +1376,7 @@
     buildGroups(
       settledRows,
       item =>
-        item.prediction
-          ?.predictedScenarioTitle ||
+        item.predictedScenarioTitle ||
         "不明"
     );
   const improvementAnalysis =
@@ -1397,18 +1471,35 @@
                     group.practicalCount
                   )}%）
                 </td>
+
+                <td>
+                  ${group.scenarioHits}
+                  /
+                  ${group.scenarioComparable}
+                  （${rate(
+                    group.scenarioHits,
+                    group.scenarioComparable
+                  )}%）
+                </td>
               </tr>
             `)
             .join("")
         : `
             <tr>
-              <td colspan="4">
+              <td colspan="5">
                 検証データがありません
               </td>
             </tr>
           `;
   const recentRows =
     settledRows.slice(0, 10);
+  const formatMarks = marks =>
+    (Array.isArray(marks) ? marks : [])
+      .filter(mark => mark?.boatNo)
+      .map(mark =>
+        `${mark.symbol}${mark.boatNo}号艇 ${mark.finishLabel}`
+      )
+      .join("／") || "-";
     const recentHtml =
     recentRows.length
       ? recentRows
@@ -1451,15 +1542,24 @@
 
               <td>
                 ${U.safeText(
-                  item.honmeiFinish ||
-                  "-"
+                  item.predictedScenarioTitle || "-"
                 )}
               </td>
 
               <td>
-                ${item.honmeiHit
-                  ? "◎"
-                  : "×"}
+                ${U.safeText(item.winningMethod || "-")}
+              </td>
+
+              <td>
+                ${item.scenarioMatched === null
+                  ? "判定不可"
+                  : item.scenarioMatched
+                    ? "一致"
+                    : "不一致"}
+              </td>
+
+              <td>
+                ${U.safeText(formatMarks(item.marks))}
               </td>
 
               <td>
@@ -1468,7 +1568,7 @@
                     .length === 0
                     ? "見送り"
                     : item.practicalHit
-                      ? "的中"
+                      ? `的中（${U.safeText(item.hitCategory || "区分不明")}）`
                       : "不的中"
                 }
               </td>
@@ -1484,7 +1584,7 @@
           .join("")
       : `
           <tr>
-            <td colspan="9">
+            <td colspan="11">
               公式結果と照合できる予想がありません
             </td>
           </tr>
@@ -1509,9 +1609,11 @@
       </h3>
 
       <p>
-        購入金額や回収率は使わず、
         保存済みの事前予想と同じレースの
         公式結果だけを照合します。
+        検証回収率は実購入額ではなく、
+        保存された実戦厳選を各点100円で
+        均等購入した場合の比較値です。
         結果待ちはアプリ起動時に
         自動確認します。
       </p>
@@ -1621,6 +1723,89 @@
         </p>
       </div>
 
+      <div class="v3-final-block">
+        <h3>中心展開一致率</h3>
+
+        <p>
+          ${verificationSummary.scenarioHits}
+          /
+          ${verificationSummary.scenarioComparableCount}
+          （${verificationSummary.scenarioMatchRate}%）
+        </p>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>検証回収率</h3>
+
+        <p>
+          ${verificationSummary.simulatedRecoveryRate}%
+        </p>
+
+        <small>
+          各買い目100円均等・投資${verificationSummary.totalStake.toLocaleString("ja-JP")}円／払戻${verificationSummary.totalReturn.toLocaleString("ja-JP")}円
+        </small>
+      </div>
+
+    </div>
+
+    <div class="v3-final-block">
+
+      <h3>印別の実着順</h3>
+
+      <div class="v3-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>印</th>
+              <th>対象</th>
+              <th>1着率</th>
+              <th>3着内率</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${verificationSummary.markSummary.length
+              ? verificationSummary.markSummary.map(mark => `
+                  <tr>
+                    <td>${mark.symbol} ${U.safeText(mark.label)}</td>
+                    <td>${mark.count}R</td>
+                    <td>${mark.first}/${mark.count}（${mark.firstRate}%）</td>
+                    <td>${mark.top3}/${mark.count}（${mark.top3Rate}%）</td>
+                  </tr>
+                `).join("")
+              : `<tr><td colspan="4">検証データがありません</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <div class="v3-final-block">
+
+      <h3>的中した買い目区分</h3>
+
+      <div class="v3-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>区分</th>
+              <th>的中数</th>
+              <th>的中内割合</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${verificationSummary.categorySummary.length
+              ? verificationSummary.categorySummary.map(category => `
+                  <tr>
+                    <td>${U.safeText(category.label)}</td>
+                    <td>${category.count}R</td>
+                    <td>${category.percentage}%</td>
+                  </tr>
+                `).join("")
+              : `<tr><td colspan="3">検証データがありません</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+
     </div>
 
     <div class="v3-final-block">
@@ -1708,8 +1893,10 @@
               <th>レース</th>
               <th>◎</th>
               <th>公式着順</th>
-              <th>◎着順</th>
-              <th>◎1着</th>
+              <th>予想した中心展開</th>
+              <th>決まり手</th>
+              <th>展開一致</th>
+              <th>◎○▲△の実着順</th>
               <th>実戦厳選</th>
               <th>判定</th>
             </tr>
@@ -1742,6 +1929,7 @@
               <th>対象</th>
               <th>◎1着率</th>
               <th>厳選的中率</th>
+              <th>展開一致率</th>
             </tr>
           </thead>
 
@@ -1753,6 +1941,30 @@
 
         </table>
 
+      </div>
+
+    </div>
+
+
+    <div class="v3-final-block">
+
+      <h3>場＋R番号別傾向</h3>
+
+      <div class="v3-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>場・R</th>
+              <th>対象</th>
+              <th>◎1着率</th>
+              <th>厳選的中率</th>
+              <th>展開一致率</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderGroupRows(venueRaceGroups)}
+          </tbody>
+        </table>
       </div>
 
     </div>
@@ -1774,6 +1986,7 @@
               <th>対象</th>
               <th>◎1着率</th>
               <th>厳選的中率</th>
+              <th>展開一致率</th>
             </tr>
           </thead>
 
@@ -1804,6 +2017,7 @@
               <th>対象</th>
               <th>◎1着率</th>
               <th>厳選的中率</th>
+              <th>展開一致率</th>
             </tr>
           </thead>
 
@@ -1836,6 +2050,7 @@
               <th>対象</th>
               <th>◎1着率</th>
               <th>厳選的中率</th>
+              <th>展開一致率</th>
             </tr>
           </thead>
 

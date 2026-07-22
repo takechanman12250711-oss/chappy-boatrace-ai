@@ -49,7 +49,9 @@
           officialPopularity: item?.result?.popularity ?? null,
           winningMethod: item?.result?.winningMethod || "",
           officialCheckedAt: item?.result?.settledAt || "",
-          automaticResult: true
+          automaticResult: true,
+          automaticVerification:
+            item?.result?.verification || item?.result || null
         });
       }
     });
