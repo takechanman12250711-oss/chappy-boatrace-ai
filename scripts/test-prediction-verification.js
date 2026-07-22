@@ -43,6 +43,7 @@ assert.equal(hit.marks.find(item => item.symbol === "△").finishLabel, "4着以
 assert.equal(hit.simulatedStake, 500);
 assert.equal(hit.simulatedReturn, 4080);
 assert.equal(hit.simulatedRecoveryRate, 816);
+assert.equal(hit.priorityReview.primaryStage, "的中");
 
 const miss = verification.verifyPrediction(prediction, {
   resultAvailable: true,
@@ -54,6 +55,11 @@ assert.equal(miss.scenarioMatched, false);
 assert.equal(miss.practicalHit, false);
 assert.equal(miss.missType, "相手抜け");
 assert.equal(miss.simulatedReturn, 0);
+assert.equal(miss.priorityReview.primaryStage, "展開");
+assert.deepEqual(
+  miss.priorityReview.stages.map(item => item.stage),
+  verification.PRIORITY_STAGES
+);
 
 const summary = verification.buildSummary([hit, miss]);
 assert.equal(summary.settledCount, 2);
@@ -63,6 +69,10 @@ assert.equal(summary.scenarioMatchRate, 50);
 assert.equal(summary.totalStake, 1000);
 assert.equal(summary.totalReturn, 4080);
 assert.equal(summary.simulatedRecoveryRate, 408);
+assert.equal(
+  summary.priorityStageSummary.find(item => item.label === "展開").count,
+  1
+);
 assert.equal(
   summary.categorySummary.find(item => item.label === "本線").count,
   1

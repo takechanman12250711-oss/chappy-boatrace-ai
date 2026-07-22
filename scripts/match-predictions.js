@@ -84,6 +84,8 @@ function settlePrediction(prediction, result) {
     settledAt: new Date().toISOString(),
     payout: Number(result?.trifecta?.payout || 0),
     popularity: Number(result?.trifecta?.popularity || 0),
+    finishers: Array.isArray(result?.finishers) ? result.finishers : [],
+    starts: Array.isArray(result?.starts) ? result.starts : [],
     honmeiBoat,
     honmeiFirst: Boolean(honmeiBoat && resultTicket.split("-")[0] === honmeiBoat),
     verification: detail
@@ -99,7 +101,7 @@ function buildSummary(predictions) {
   );
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     predictionCount: predictions.length,
     settledCount: settled.length,
     practicalHits: hits.length,
@@ -118,7 +120,8 @@ function buildSummary(predictions) {
     simulatedProfit: verificationSummary.simulatedProfit,
     simulatedRecoveryRate: verificationSummary.simulatedRecoveryRate,
     categorySummary: verificationSummary.categorySummary,
-    markSummary: verificationSummary.markSummary
+    markSummary: verificationSummary.markSummary,
+    priorityStageSummary: verificationSummary.priorityStageSummary
   };
 }
 

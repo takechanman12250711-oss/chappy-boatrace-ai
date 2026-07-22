@@ -17,6 +17,8 @@ on:
       - "scripts/match-predictions.js"
       - "scripts/test-match-predictions.js"
       - "js/prediction-verification.js"
+      - "js/prediction-conditions.js"
+      - "scripts/test-prediction-conditions.js"
       - "scripts/test-prediction-verification.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
@@ -50,6 +52,8 @@ on:
       - "scripts/match-predictions.js"
       - "scripts/test-match-predictions.js"
       - "js/prediction-verification.js"
+      - "js/prediction-conditions.js"
+      - "scripts/test-prediction-conditions.js"
       - "scripts/test-prediction-verification.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
@@ -97,6 +101,8 @@ jobs:
           node --check scripts/match-predictions.js
           node --check scripts/test-match-predictions.js
           node --check js/prediction-verification.js
+          node --check js/prediction-conditions.js
+          node --check scripts/test-prediction-conditions.js
           node --check scripts/test-prediction-verification.js
           node --check scripts/build-prediction-index.js
           node --check scripts/test-build-prediction-index.js
@@ -119,6 +125,7 @@ jobs:
           node scripts/check-charter.js
           node scripts/test-match-predictions.js
           node scripts/test-prediction-verification.js
+          node scripts/test-prediction-conditions.js
           node scripts/test-build-prediction-index.js
           node scripts/test-auto-stats.js
           node scripts/test-practical-selection.js

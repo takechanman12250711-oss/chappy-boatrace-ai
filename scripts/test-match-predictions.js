@@ -49,6 +49,7 @@ assert.equal(matched.predictions[0].result.practicalHit, true);
 assert.equal(matched.predictions[0].result.payout, 4080);
 assert.equal(matched.predictions[0].result.scenarioMatched, true);
 assert.equal(matched.predictions[0].result.hitCategory, "本線");
+assert.equal(matched.predictions[0].result.priorityReview.primaryStage, "的中");
 assert.equal(matched.predictions[0].result.verification.marks[0].finishLabel, "1着");
 assert.equal(matched.resultSummary.scenarioMatchRate, 100);
 assert.equal(matched.resultSummary.simulatedStake, 100);
