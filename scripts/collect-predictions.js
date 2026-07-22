@@ -120,6 +120,77 @@ function compactMark(value) {
   };
 }
 
+function compactScenario(value) {
+  if (!value || typeof value !== "object") return null;
+
+  return {
+    type: String(value.type || ""),
+    label: String(value.label || ""),
+    score: Number(value.score || 0),
+    frameMovementAdjustment: Number(
+      value.frameMovementAdjustment || 0
+    ),
+    attacker: Number(value.attacker || 0) || null,
+    blockedBoats: Array.isArray(value.blockedBoats)
+      ? value.blockedBoats.map(Number).filter(Boolean)
+      : []
+  };
+}
+
+function compactVerificationEvidence(prediction) {
+  if (
+    prediction?.verificationEvidence &&
+    typeof prediction.verificationEvidence === "object"
+  ) {
+    return prediction.verificationEvidence;
+  }
+
+  const aiCore = prediction?.aiCore || {};
+  const raceScenarios = aiCore.raceScenarios || {};
+  const marks = aiCore.marks || {};
+  const formations = aiCore.formations || {};
+  const evidence = raceScenarios.evidence || {};
+
+  if (!raceScenarios.mainScenario) return null;
+
+  return {
+    sourceCommit: String(process.env.GITHUB_SHA || ""),
+    aiCoreVersion: String(
+      aiCore.version || global.ChappyAICoreVersion || ""
+    ),
+    mainScenario: compactScenario(raceScenarios.mainScenario),
+    subScenario: compactScenario(raceScenarios.subScenario),
+    scenarios: Array.isArray(raceScenarios.scenarios)
+      ? raceScenarios.scenarios.map(compactScenario).filter(Boolean)
+      : [],
+    roles: {
+      attacker: Number(raceScenarios.attacker || 0) || null,
+      wallBoat: Number(raceScenarios.wallBoat || 0) || null,
+      remainers: [...(raceScenarios.remainers || [])],
+      followers: [...(raceScenarios.followers || [])],
+      pickupCandidates: [...(raceScenarios.pickupCandidates || [])],
+      roadRaceBoats: [...(raceScenarios.roadRaceBoats || [])],
+      localExperts: [...(raceScenarios.localExperts || [])],
+      blockedBoats: [...(raceScenarios.blockedBoats || [])]
+    },
+    marks: {
+      honmei: compactMark(marks.honmei),
+      taikou: compactMark(marks.taikou),
+      ana: compactMark(marks.ana),
+      osae: compactMark(marks.osae)
+    },
+    formation: {
+      mainEstablished: formations.mainEstablished === true,
+      axis: formations.axis || null,
+      scenarioType: String(formations?.evidence?.scenarioType || "")
+    },
+    relations: evidence.relations || raceScenarios.relations || null,
+    frameMovement: Array.isArray(evidence.frameMovement)
+      ? evidence.frameMovement
+      : []
+  };
+}
+
 function compactVerificationPayload(
   prediction,
   practicalTickets,
@@ -144,7 +215,8 @@ function compactVerificationPayload(
       osae: compactMark(prediction?.mainSheet?.osae)
     },
     practicalTickets: Array.isArray(practicalTickets) ? practicalTickets : [],
-    preRaceConditions: preRaceConditions || null
+    preRaceConditions: preRaceConditions || null,
+    verificationEvidence: compactVerificationEvidence(prediction)
   };
 }
 
