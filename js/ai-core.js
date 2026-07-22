@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.1.0-unified-bets";
+  const CORE_VERSION = "ai-core-v3.1.1-diversified-main";
 
   /* ===============================
     基本ユーティリティ
@@ -4464,7 +4464,59 @@ function buildRaceTrendEvaluation(data) {
     }
   }
 
-  generateTickets(
+  /*
+    実戦本線3点は、2着1位へ3点を固定しない。
+    2着1位を2点、2着2位を1点に分散して、
+    展開上の残し艇が2着へ入る組み合わせを拾う。
+  */
+  function generateDiversifiedMainTickets(
+    target,
+    heads,
+    secondCandidates,
+    thirdCandidates,
+    limit
+  ) {
+    for (const head of heads) {
+      const seconds = secondCandidates.filter(
+        (boat) => boatNo(boat) !== boatNo(head)
+      );
+
+      const preferredPairs = [];
+
+      for (const second of seconds.slice(0, 2)) {
+        const validThirds = thirdCandidates.filter(
+          (third) =>
+            boatNo(third) !== boatNo(head) &&
+            boatNo(third) !== boatNo(second)
+        );
+
+        const thirdLimit =
+          second === seconds[0] ? 2 : 1;
+
+        for (const third of validThirds.slice(0, thirdLimit)) {
+          preferredPairs.push([second, third]);
+        }
+      }
+
+      for (const [second, third] of preferredPairs) {
+        addTicket(target, head, second, third);
+
+        if (target.length >= limit) {
+          return;
+        }
+      }
+    }
+
+    generateTickets(
+      target,
+      heads,
+      secondCandidates,
+      thirdCandidates,
+      limit
+    );
+  }
+
+  generateDiversifiedMainTickets(
     main,
     mainHeads,
     secondRanking.slice(0, 4),

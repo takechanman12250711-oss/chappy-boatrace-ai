@@ -126,6 +126,24 @@ assert.ok(
   connected.main.every((ticket) => ticket.startsWith("3-")),
   "本線の頭を最有力展開の◎3号艇へ接続する"
 );
+const practicalMain = connected.main
+  .slice(0, 3)
+  .map((ticket) => ticket.split("-").map(Number));
+assert.equal(
+  practicalMain[0][1],
+  practicalMain[1][1],
+  "本線1・2点目は2着1位を使う"
+);
+assert.notEqual(
+  practicalMain[0][2],
+  practicalMain[1][2],
+  "本線1・2点目は3着候補を分ける"
+);
+assert.notEqual(
+  practicalMain[2][1],
+  practicalMain[0][1],
+  "本線3点目は2着2位へ分散する"
+);
 assert.ok(
   connected.safety.every((ticket) => ticket.startsWith("1-")),
   "押さえの頭をイン残しの○1号艇へ接続する"
