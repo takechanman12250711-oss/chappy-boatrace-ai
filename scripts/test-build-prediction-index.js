@@ -16,7 +16,15 @@ try {
   }));
   fs.writeFileSync(path.join(directory, "20260722.json"), JSON.stringify({
     date: "20260722",
-    runs: [{ checkedAt: "2026-07-22T01:00:00Z", selected: true }],
+    runs: [{
+      checkedAt: "2026-07-22T01:00:00Z",
+      selected: true,
+      collectionHealth: {
+        targetCount: 1,
+        savedCount: 1,
+        targets: [{ raceKey: "20260722-08-1", status: "saved" }]
+      }
+    }],
     predictions: [{ raceKey: "20260722-08-1", selectedAt: "2026-07-22T01:00:01Z" }],
     verificationPredictions: [
       { raceKey: "20260722-08-1", selectedAt: "2026-07-22T01:00:01Z", scoreBand: "70_plus" },
@@ -43,6 +51,8 @@ try {
   assert.equal(index.sourceFileCount, 2);
   assert.equal(index.runs.length, 2);
   assert.equal(index.runs[0].date, "20260722");
+  assert.equal(index.runs[0].collectionHealth.savedCount, 1);
+  assert.equal(index.runs[0].collectionHealth.targets[0].status, "saved");
   assert.equal(index.predictions.length, 1);
   assert.equal(index.predictions[0].raceKey, "20260722-08-1");
   assert.equal(index.verificationPredictions.length, 2);

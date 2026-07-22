@@ -3,11 +3,36 @@
 const assert = require("node:assert/strict");
 const {
   MIN_SCORE,
+  buildCollectionHealth,
   compactStoredVerification,
   upsertByRaceKey
 } = require("./collect-predictions");
 
 assert.equal(MIN_SCORE, 70);
+
+const collectionHealth = buildCollectionHealth(
+  "20260722",
+  [
+    { jcd: "08", place: "常滑", raceNo: 1, deadlineAt: "2026-07-22T10:00:00+09:00" },
+    { jcd: "19", place: "下関", raceNo: 2, deadlineAt: "2026-07-22T10:05:00+09:00" },
+    { jcd: "24", place: "大村", raceNo: 3, deadlineAt: "2026-07-22T10:10:00+09:00" }
+  ],
+  [
+    { jcd: "08", raceNo: 1, status: "evaluated", error: "" },
+    { jcd: "19", raceNo: 2, status: "insufficient_data", error: "データ不足" },
+    { jcd: "24", raceNo: 3, status: "fetch_failed", error: "HTTP 500" }
+  ],
+  [{ raceKey: "20260722-08-1" }]
+);
+
+assert.equal(collectionHealth.targetCount, 3);
+assert.equal(collectionHealth.savedCount, 1);
+assert.equal(collectionHealth.insufficientDataCount, 1);
+assert.equal(collectionHealth.failedCount, 1);
+assert.equal(collectionHealth.complete, false);
+assert.equal(collectionHealth.targets[0].status, "saved");
+assert.equal(collectionHealth.targets[1].status, "insufficient_data");
+assert.equal(collectionHealth.targets[2].status, "fetch_failed");
 
 const records = upsertByRaceKey(
   [
