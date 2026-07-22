@@ -14,6 +14,7 @@ on:
       - "js/render.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/test-shadow-predictions.js"
       - "scripts/match-predictions.js"
       - "scripts/test-match-predictions.js"
       - "js/prediction-verification.js"
@@ -49,6 +50,7 @@ on:
       - "js/render.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/test-shadow-predictions.js"
       - "scripts/match-predictions.js"
       - "scripts/test-match-predictions.js"
       - "js/prediction-verification.js"
@@ -98,6 +100,7 @@ jobs:
           node --check js/practical-selection.js
           node --check scripts/check-charter.js
           node --check scripts/collect-predictions.js
+          node --check scripts/test-shadow-predictions.js
           node --check scripts/match-predictions.js
           node --check scripts/test-match-predictions.js
           node --check js/prediction-verification.js
@@ -123,6 +126,7 @@ jobs:
       - name: Enforce charter
         run: |
           node scripts/check-charter.js
+          node scripts/test-shadow-predictions.js
           node scripts/test-match-predictions.js
           node scripts/test-prediction-verification.js
           node scripts/test-prediction-conditions.js

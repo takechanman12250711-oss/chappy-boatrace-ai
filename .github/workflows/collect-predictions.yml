@@ -8,12 +8,14 @@ on:
       - ".github/workflows/collect-predictions.yml"
       - "scripts/collect-predictions.js"
       - "scripts/build-prediction-index.js"
+      - "scripts/test-shadow-predictions.js"
       - "api/schedule.js"
       - "api/race.js"
       - "js/ai-core.js"
       - "js/prediction.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
+      - "js/prediction-conditions.js"
 
   schedule:
     - cron: "*/15 22-23 * * *" # 07:00-08:45 JST
@@ -52,6 +54,7 @@ jobs:
       - name: Check charter and source
         run: |
           node --check scripts/collect-predictions.js
+          node scripts/test-shadow-predictions.js
           node scripts/check-charter.js
 
       - name: Compare and predict live races

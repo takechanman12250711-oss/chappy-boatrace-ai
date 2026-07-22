@@ -17,7 +17,9 @@
   let automaticStats = {
     predictions: [],
     results: [],
-    runs: []
+    runs: [],
+    selectedCount: 0,
+    shadowCount: 0
   };
   let automaticStatsLoaded = false;
   let automaticStatsError = "";
@@ -846,9 +848,9 @@
       ? automaticStats.runs
       : [];
   const automaticSelectedRuns =
-    Array.isArray(automaticStats.predictions)
-      ? automaticStats.predictions.length
-      : 0;
+    Number(automaticStats.selectedCount || 0);
+  const automaticShadowRuns =
+    Number(automaticStats.shadowCount || 0);
   const automaticSkippedRuns =
     automaticRuns.filter(
       run => !run?.selected
@@ -1065,9 +1067,10 @@
       )
       .map(item => {
         const isAutomatic =
-          item.prediction
-            ?.predictionSource ===
-            "automatic";
+          String(item.prediction?.predictionSource || "")
+            .startsWith("automatic");
+        const isShadow =
+          item.prediction?.predictionSource === "automatic_shadow";
 
         const resultTicket =
           normalizeTicket(
@@ -1160,9 +1163,15 @@
           resultTicket,
           honmeiBoat,
           predictionSource:
-            isAutomatic
-              ? "自動選定"
+            isShadow
+              ? "シャドー予想"
+              : isAutomatic
+                ? "自動選定"
               : "手動保存",
+          isShadow,
+          automaticScore: Number(
+            item.prediction?.automaticSelection?.score || 0
+          ),
 
           honmeiFinish:
             settled
@@ -1225,13 +1234,17 @@
       item => item.settled
     );
 
+  const realSettledRows = settledRows.filter(item => !item.isShadow);
+  const shadowSettledRows = settledRows.filter(item => item.isShadow);
+  const realPredictionRows = predictionRows.filter(item => !item.isShadow);
+
   const honmeiHits =
-    settledRows.filter(
+    realSettledRows.filter(
       item => item.honmeiHit
     ).length;
 
   const practicalRows =
-    settledRows.filter(
+    realSettledRows.filter(
       item =>
         item.practicalTickets
           .length > 0
@@ -1243,7 +1256,7 @@
     ).length;
   const verificationSummary = V?.buildSummary
     ? V.buildSummary(
-        settledRows
+        realSettledRows
           .map(item => item.verification)
           .filter(Boolean)
       )
@@ -1285,6 +1298,35 @@
           )
       };
     });
+
+  const buildScoreBand = (label, rows) => {
+    const summary = V?.buildSummary
+      ? V.buildSummary(rows.map(item => item.verification).filter(Boolean))
+      : null;
+    return {
+      label,
+      count: rows.length,
+      honmeiHits: rows.filter(item => item.honmeiHit).length,
+      scenarioHits: summary?.scenarioHits || 0,
+      scenarioComparable: summary?.scenarioComparableCount || 0,
+      practicalHits: summary?.practicalHits || 0,
+      practicalCount: summary?.practicalCount || 0,
+      recoveryRate: summary?.simulatedRecoveryRate || 0
+    };
+  };
+  const automaticSettledRows = settledRows.filter(item =>
+    ["自動選定", "シャドー予想"].includes(item.predictionSource)
+  );
+  const scoreBandRows = [
+    buildScoreBand(
+      "70点以上",
+      automaticSettledRows.filter(item => item.automaticScore >= 70)
+    ),
+    buildScoreBand(
+      "70点未満（シャドー）",
+      automaticSettledRows.filter(item => item.automaticScore < 70)
+    )
+  ];
   const buildGroups = (
     list,
     getLabel
@@ -1350,7 +1392,7 @@
 
   const venueGroups =
     buildGroups(
-      settledRows,
+      realSettledRows,
       item =>
         item.place ||
         `場コード${item.jcd}`
@@ -1358,21 +1400,21 @@
 
   const venueRaceGroups =
     buildGroups(
-      settledRows,
+      realSettledRows,
       item =>
         `${item.place || `場コード${item.jcd}`} ${item.raceNo}R`
     );
 
   const methodGroups =
     buildGroups(
-      settledRows,
+      realSettledRows,
       item =>
         item.winningMethod ||
         "不明"
     );
   const honmeiCourseGroups =
     buildGroups(
-      settledRows,
+      realSettledRows,
       item => {
         const boatNo =
           Number(
@@ -1390,7 +1432,7 @@
 
   const predictedScenarioGroups =
     buildGroups(
-      settledRows,
+      realSettledRows,
       item =>
         item.predictedScenarioTitle ||
         "不明"
@@ -1398,7 +1440,7 @@
   const improvementAnalysis =
     I?.buildImprovementSuggestions
       ? I.buildImprovementSuggestions({
-          settledCount: settledRows.length,
+          settledCount: realSettledRows.length,
           practicalCount: practicalRows.length,
           venueGroups,
           scenarioGroups: predictedScenarioGroups,
@@ -1406,7 +1448,7 @@
         })
       : {
           minimumSample: 5,
-          settledCount: settledRows.length,
+          settledCount: realSettledRows.length,
           practicalCount: practicalRows.length,
           sampleReady: false,
           suggestions: [],
@@ -1617,14 +1659,14 @@
           </tr>
         `;
   const sampleMessage =
-    settledRows.length < 30
+    realSettledRows.length < 30
       ? `
         ⚠️ サンプル不足：
-        現在${settledRows.length}レース。
+        現在${realSettledRows.length}レース。
         30レース未満の数値は参考値として扱います。
       `
       : `
-        ${settledRows.length}レースの
+        ${realSettledRows.length}レースの
         公式結果で検証しています。
       `;
 
@@ -1651,7 +1693,7 @@
 
       <p>
         ${automaticStatsLoaded
-          ? `自動選定履歴：採用${automaticSelectedRuns}回／見送り${automaticSkippedRuns}回を読み込み済みです。`
+          ? `自動選定履歴：採用${automaticSelectedRuns}回／シャドー${automaticShadowRuns}R／見送り${automaticSkippedRuns}回を読み込み済みです。`
           : automaticStatsError
             ? `⚠️ 自動選定履歴を取得できませんでした（${U.safeText(automaticStatsError)}）`
             : "自動選定履歴を読み込んでいます。"}
@@ -1687,12 +1729,22 @@
         </p>
       </div>
 
+      <div class="v3-final-block">
+        <h3>シャドー予想</h3>
+
+        <p>
+          ${automaticShadowRuns}レース
+        </p>
+
+        <small>検証専用・購入／note対象外</small>
+      </div>
+
 
       <div class="v3-final-block">
         <h3>結果確定</h3>
 
         <p>
-          ${settledRows.length}
+          ${realSettledRows.length}
           レース
         </p>
       </div>
@@ -1703,10 +1755,18 @@
 
         <p>
           ${
-            predictionRows.length -
-            settledRows.length
+            realPredictionRows.length -
+            realSettledRows.length
           }
           レース
+        </p>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>シャドー結果確定</h3>
+
+        <p>
+          ${shadowSettledRows.length}レース
         </p>
       </div>
 
@@ -1717,10 +1777,10 @@
         <p>
           ${honmeiHits}
           /
-          ${settledRows.length}
+          ${realSettledRows.length}
           （${rate(
             honmeiHits,
-            settledRows.length
+            realSettledRows.length
           )}%）
         </p>
       </div>
@@ -1771,6 +1831,44 @@
         <small>
           各買い目100円均等・投資${verificationSummary.totalStake.toLocaleString("ja-JP")}円／払戻${verificationSummary.totalReturn.toLocaleString("ja-JP")}円
         </small>
+      </div>
+
+    </div>
+
+    <div class="v3-final-block">
+
+      <h3>70点基準のシャドー比較</h3>
+
+      <p class="v3-note">
+        70点未満は実購入・noteへ出さず、同じ買い目生成結果を各点100円で仮定して検証します。
+        この比較結果から基準やAI重みを自動変更することはありません。
+      </p>
+
+      <div class="v3-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>点数帯</th>
+              <th>結果確定</th>
+              <th>◎1着率</th>
+              <th>展開一致率</th>
+              <th>仮想的中率</th>
+              <th>仮想回収率</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${scoreBandRows.map(row => `
+              <tr>
+                <td>${U.safeText(row.label)}</td>
+                <td>${row.count}R</td>
+                <td>${row.honmeiHits}/${row.count}（${rate(row.honmeiHits, row.count)}%）</td>
+                <td>${row.scenarioHits}/${row.scenarioComparable}（${rate(row.scenarioHits, row.scenarioComparable)}%）</td>
+                <td>${row.practicalHits}/${row.practicalCount}（${rate(row.practicalHits, row.practicalCount)}%）</td>
+                <td>${row.recoveryRate}%</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
       </div>
 
     </div>

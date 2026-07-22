@@ -133,7 +133,7 @@ function matchPredictions(predictionData, resultData) {
     ])
   );
 
-  const predictions = (predictionData?.predictions || []).map(prediction => {
+  const settleList = source => (Array.isArray(source) ? source : []).map(prediction => {
     const result = resultMap.get(prediction.raceKey);
     if (!result?.resultAvailable) return prediction;
 
@@ -142,11 +142,27 @@ function matchPredictions(predictionData, resultData) {
       result: settlePrediction(prediction, result)
     };
   });
+  const predictions = settleList(predictionData?.predictions);
+  const verificationPredictions = settleList(
+    predictionData?.verificationPredictions
+  );
+  const qualifiedVerification = verificationPredictions.filter(
+    item => item?.scoreBand === "70_plus" || Number(item?.selection?.score || 0) >= 70
+  );
+  const shadowVerification = verificationPredictions.filter(
+    item => item?.scoreBand === "under_70" || Number(item?.selection?.score || 0) < 70
+  );
 
   return {
     ...predictionData,
     predictions,
+    verificationPredictions,
     resultSummary: buildSummary(predictions),
+    verificationResultSummary: {
+      all: buildSummary(verificationPredictions),
+      score70Plus: buildSummary(qualifiedVerification),
+      under70: buildSummary(shadowVerification)
+    },
     resultsMatchedAt: new Date().toISOString()
   };
 }

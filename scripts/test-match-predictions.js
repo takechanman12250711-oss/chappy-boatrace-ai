@@ -25,6 +25,25 @@ const matched = matchPredictions(
         mainSheet: { honmei: { boatNo: 2 } },
         practicalTickets: [{ ticket: "2-1-4", category: "本線" }]
       }
+    }],
+    verificationPredictions: [{
+      raceKey: "20260719-01-1",
+      scoreBand: "70_plus",
+      selection: { score: 74 },
+      prediction: {
+        raceFlow: { title: "2差し本線" },
+        mainSheet: { honmei: { boatNo: 2 } },
+        practicalTickets: [{ ticket: "2-1-4", category: "本線" }]
+      }
+    }, {
+      raceKey: "20260719-01-2",
+      scoreBand: "under_70",
+      selection: { score: 58 },
+      prediction: {
+        raceFlow: { title: "1逃げ本線" },
+        mainSheet: { honmei: { boatNo: 1 } },
+        practicalTickets: [{ ticket: "1-2-3", category: "本線" }]
+      }
     }]
   },
   {
@@ -38,6 +57,16 @@ const matched = matchPredictions(
         combination: "2-1-4",
         payout: 4080,
         popularity: 14
+      }
+    }, {
+      jcd: "01",
+      raceNo: 2,
+      resultAvailable: true,
+      winningMethod: "逃げ",
+      trifecta: {
+        combination: "1-3-2",
+        payout: 1250,
+        popularity: 5
       }
     }]
   }
@@ -54,5 +83,9 @@ assert.equal(matched.predictions[0].result.verification.marks[0].finishLabel, "1
 assert.equal(matched.resultSummary.scenarioMatchRate, 100);
 assert.equal(matched.resultSummary.simulatedStake, 100);
 assert.equal(matched.resultSummary.simulatedReturn, 4080);
+assert.equal(matched.verificationPredictions.length, 2);
+assert.equal(matched.verificationResultSummary.score70Plus.settledCount, 1);
+assert.equal(matched.verificationResultSummary.under70.settledCount, 1);
+assert.equal(matched.verificationResultSummary.under70.practicalHits, 0);
 
 console.log("自動予想・公式結果照合テスト: 合格");

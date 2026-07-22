@@ -17,7 +17,11 @@ try {
   fs.writeFileSync(path.join(directory, "20260722.json"), JSON.stringify({
     date: "20260722",
     runs: [{ checkedAt: "2026-07-22T01:00:00Z", selected: true }],
-    predictions: [{ raceKey: "20260722-08-1", selectedAt: "2026-07-22T01:00:01Z" }]
+    predictions: [{ raceKey: "20260722-08-1", selectedAt: "2026-07-22T01:00:01Z" }],
+    verificationPredictions: [
+      { raceKey: "20260722-08-1", selectedAt: "2026-07-22T01:00:01Z", scoreBand: "70_plus" },
+      { raceKey: "20260722-12-1", selectedAt: "2026-07-22T01:00:02Z", scoreBand: "under_70" }
+    ]
   }));
   fs.writeFileSync(path.join(directory, "index.json"), "{}");
 
@@ -27,6 +31,8 @@ try {
   assert.equal(index.runs[0].date, "20260722");
   assert.equal(index.predictions.length, 1);
   assert.equal(index.predictions[0].raceKey, "20260722-08-1");
+  assert.equal(index.verificationPredictions.length, 2);
+  assert.equal(index.verificationPredictions[0].raceKey, "20260722-12-1");
 } finally {
   fs.rmSync(directory, { recursive: true, force: true });
 }
