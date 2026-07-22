@@ -16,6 +16,9 @@ require("../js/note-generator");
 const historyStats = require(
   "../data/stats/venue-race-patterns.json"
 );
+const officialHistoryStats = require(
+  "../data/stats/race-patterns.json"
+);
 const historyInsights = require(
   "../js/history-insights"
 );
@@ -84,6 +87,39 @@ function callApi(handler, query) {
 
 function wait(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+function attachVenueRaceHistory(raceData, jcd, raceNo) {
+  const historyPattern =
+    historyInsights.getPattern(
+      historyStats,
+      jcd,
+      raceNo
+    );
+  const historyTrend =
+    historyInsights.buildTrend(
+      historyPattern,
+      officialHistoryStats.overall || null
+    );
+
+  return {
+    raceData: {
+      ...raceData,
+      historyContext: {
+        ready: Boolean(historyPattern),
+        source: officialHistoryStats.source || "",
+        generatedAt:
+          officialHistoryStats.generatedAt || "",
+        venueRace: historyPattern
+          ? {
+              ...historyPattern,
+              trend: historyTrend
+            }
+          : null
+      }
+    },
+    historyTrend
+  };
 }
 
 function compactEvaluation(evaluation) {
@@ -321,16 +357,12 @@ async function evaluateTargets(date, targets) {
         const manshu = Number(evaluation.manshu?.score || 0);
         const type =
           honmei >= manshu ? "本線" : "波乱";
-        const historyPattern =
-          historyInsights.getPattern(
-            historyStats,
-            target.jcd,
-            target.raceNo
-          );
-        const historyTrend =
-          historyInsights.buildTrend(
-            historyPattern
-          );
+        const history = attachVenueRaceHistory(
+          raceData,
+          target.jcd,
+          target.raceNo
+        );
+        const historyTrend = history.historyTrend;
         const historySupport =
           historyInsights.supportForType(
             historyTrend,
@@ -339,7 +371,7 @@ async function evaluateTargets(date, targets) {
 
         results.push({
           ...target,
-          raceData,
+          raceData: history.raceData,
           evaluation,
           score: Math.max(honmei, manshu),
           type,
@@ -721,6 +753,7 @@ if (require.main === module) {
 
 module.exports = {
   MIN_SCORE,
+  attachVenueRaceHistory,
   upsertByRaceKey,
   compactStoredVerification,
   buildCollectionHealth,
