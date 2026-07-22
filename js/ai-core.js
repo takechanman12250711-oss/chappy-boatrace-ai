@@ -3939,17 +3939,54 @@ function buildRaceTrendEvaluation(data) {
     フォーメーション生成
   =============================== */
 
-  function buildFormations(analyses) {
+  function buildFormations(analyses, raceScenarios) {
   const list = Array.isArray(analyses)
     ? [...analyses]
     : [];
 
   /*
-    Phase2 STEP2では買い目をまだ変更しない。
-    フォーメーションは従来の印判定を維持する。
+    Phase2 STEP3：
+    買う・見送る条件は従来判定を維持し、
+    印と着順候補だけを展開シナリオへ接続する。
+    raceScenarios 未指定時は従来結果を返す。
   */
-  const marks = buildLegacyMarks(list);
-  const evidence = marks.evidence || {};
+  const legacyMarks = buildLegacyMarks(list);
+  const hasScenario = Boolean(raceScenarios?.mainScenario);
+  const marks = hasScenario
+    ? buildMarks(list, raceScenarios)
+    : legacyMarks;
+  const legacyEvidence = legacyMarks.evidence || {};
+  const evidence = hasScenario
+    ? {
+        ...legacyEvidence,
+        source: "raceScenarios",
+        scenarioType:
+          raceScenarios.mainScenario?.type || "",
+        confidence: toNumber(
+          raceScenarios.confidence,
+          0
+        ),
+        mainGap: toNumber(
+          raceScenarios?.evidence?.mainGap,
+          0
+        ),
+        attacker:
+          Number(raceScenarios.attacker || 0) || null,
+        wallBoat:
+          Number(raceScenarios.wallBoat || 0) || null,
+        remainers: [...(raceScenarios.remainers || [])],
+        followers: [...(raceScenarios.followers || [])],
+        pickupCandidates: [
+          ...(raceScenarios.pickupCandidates || [])
+        ],
+        roadRaceBoats: [
+          ...(raceScenarios.roadRaceBoats || [])
+        ],
+        blockedBoats: [
+          ...(raceScenarios.blockedBoats || [])
+        ]
+      }
+    : legacyEvidence;
 
   const main = [];
   const safety = [];
@@ -4084,21 +4121,57 @@ function buildRaceTrendEvaluation(data) {
     return score;
   }
 
-  const secondRanking = [...list]
+  const legacySecondRanking = [...list]
     .sort((a, b) =>
       secondScore(b) - secondScore(a)
     );
 
-  const thirdRanking = [...list]
+  const legacyThirdRanking = [...list]
     .sort((a, b) =>
       thirdScore(b) - thirdScore(a)
     );
+
+  function scenarioRanking(candidates, fallback) {
+    if (!hasScenario) return fallback;
+
+    const byNo = new Map(
+      list.map((boat) => [boatNo(boat), boat])
+    );
+
+    return uniqueBoats([
+      ...(candidates || []).map((candidate) =>
+        byNo.get(
+          Number(candidate?.boatNo ?? candidate ?? 0)
+        )
+      ),
+      ...fallback
+    ]);
+  }
+
+  const secondRanking = scenarioRanking(
+    raceScenarios?.mainScenario?.outcome?.secondCandidates,
+    legacySecondRanking
+  );
+
+  const thirdRanking = scenarioRanking(
+    raceScenarios?.mainScenario?.outcome?.thirdCandidates,
+    legacyThirdRanking
+  );
+
+  const scenarioOutcomeByBoat = new Map(
+    (raceScenarios?.mainScenario?.outcome?.boats || [])
+      .map((boat) => [Number(boat?.boatNo || 0), boat])
+  );
+
+  const mainEstablished = hasScenario
+    ? Boolean(legacyMarks.established && marks.established)
+    : marks.established === true;
 
   /*
     本線の頭はbuildMarks()が展開から決めた本命。
     艇番を固定しない。
   */
-  const mainHeads = marks.established
+  const mainHeads = mainEstablished
     ? uniqueBoats([marks.honmei])
     : [];
 
@@ -4106,20 +4179,41 @@ function buildRaceTrendEvaluation(data) {
     押さえ頭：
     対抗と、実際に攻め根拠を持つ艇だけ。
   */
+  const scenarioEvidenceKey = {
+    escape: "oneEscape",
+    sashi: "twoSashi",
+    threeAttack: "threeAttack",
+    fourAttack: "fourAttack"
+  };
+
+  const supportedSubScenarioHeads = hasScenario
+    ? (raceScenarios.scenarios || [])
+        .filter((scenario) =>
+          scenario !== raceScenarios.mainScenario &&
+          evidence[
+            scenarioEvidenceKey[scenario?.type]
+          ] === true
+        )
+        .map((scenario) =>
+          list.find((boat) =>
+            boatNo(boat) === Number(scenario?.attacker)
+          )
+        )
+    : [
+        evidence.twoSashi
+          ? list.find((boat) => boatNo(boat) === 2)
+          : null,
+        evidence.threeAttack
+          ? list.find((boat) => boatNo(boat) === 3)
+          : null,
+        evidence.fourAttack
+          ? list.find((boat) => boatNo(boat) === 4)
+          : null
+      ];
+
   const safetyHeads = uniqueBoats([
     marks.taikou,
-
-    evidence.twoSashi
-      ? list.find((boat) => boatNo(boat) === 2)
-      : null,
-
-    evidence.threeAttack
-      ? list.find((boat) => boatNo(boat) === 3)
-      : null,
-
-    evidence.fourAttack
-      ? list.find((boat) => boatNo(boat) === 4)
-      : null
+    ...supportedSubScenarioHeads
   ]);
 
   /*
@@ -4127,34 +4221,41 @@ function buildRaceTrendEvaluation(data) {
     穴印と、展開・攻めの裏付けがある艇だけ。
     5・6を外枠という理由だけでは頭にしない。
   */
-  const longshotHeads = uniqueBoats([
-    marks.ana,
-
-    evidence.fiveFollow
-      ? list.find((boat) => boatNo(boat) === 5)
-      : null,
-
-    evidence.sixPickup &&
-    attack(
-      list.find((boat) => boatNo(boat) === 6)
-    ) >= 72
-      ? list.find((boat) => boatNo(boat) === 6)
-      : null
-  ]);
-
-  const flowHeads = marks.established && evidence.flow
-    ? uniqueBoats([
-        evidence.twoSashi && boatNo(marks.honmei) !== 2
-          ? list.find((boat) => boatNo(boat) === 2)
+  const longshotHeads = hasScenario
+    ? uniqueBoats([marks.ana])
+    : uniqueBoats([
+        marks.ana,
+        evidence.fiveFollow
+          ? list.find((boat) => boatNo(boat) === 5)
           : null,
-        evidence.threeAttack && boatNo(marks.honmei) !== 3
-          ? list.find((boat) => boatNo(boat) === 3)
-          : null,
-        evidence.fourAttack && boatNo(marks.honmei) !== 4
-          ? list.find((boat) => boatNo(boat) === 4)
-          : null,
-        marks.taikou
-      ])
+        evidence.sixPickup &&
+        attack(
+          list.find((boat) => boatNo(boat) === 6)
+        ) >= 72
+          ? list.find((boat) => boatNo(boat) === 6)
+          : null
+      ]);
+
+  const flowHeads = mainEstablished && evidence.flow
+    ? uniqueBoats(
+        hasScenario
+          ? [
+              ...supportedSubScenarioHeads,
+              marks.taikou
+            ]
+          : [
+              evidence.twoSashi && boatNo(marks.honmei) !== 2
+                ? list.find((boat) => boatNo(boat) === 2)
+                : null,
+              evidence.threeAttack && boatNo(marks.honmei) !== 3
+                ? list.find((boat) => boatNo(boat) === 3)
+                : null,
+              evidence.fourAttack && boatNo(marks.honmei) !== 4
+                ? list.find((boat) => boatNo(boat) === 4)
+                : null,
+              marks.taikou
+            ]
+      )
     : [];
 
   function generateTickets(
@@ -4233,7 +4334,7 @@ function buildRaceTrendEvaluation(data) {
     longshot,
 
     scenario: marks.scenario,
-    mainEstablished: marks.established === true,
+    mainEstablished,
     evidence,
 
     axis: {
@@ -4253,12 +4354,18 @@ function buildRaceTrendEvaluation(data) {
     rankings: {
       second: secondRanking.map((boat) => ({
         boatNo: boatNo(boat),
-        score: round(secondScore(boat))
+        score: round(
+          scenarioOutcomeByBoat.get(boatNo(boat))
+            ?.secondScore ?? secondScore(boat)
+        )
       })),
 
       third: thirdRanking.map((boat) => ({
         boatNo: boatNo(boat),
-        score: round(thirdScore(boat))
+        score: round(
+          scenarioOutcomeByBoat.get(boatNo(boat))
+            ?.thirdScore ?? thirdScore(boat)
+        )
       }))
     }
   };
@@ -4797,7 +4904,10 @@ const slit =
       buildNewSam(entries);
 
     const formations =
-      buildFormations(analyses);
+      buildFormations(
+        analyses,
+        raceScenarios
+      );
 
     const marks =
       buildMarks(
