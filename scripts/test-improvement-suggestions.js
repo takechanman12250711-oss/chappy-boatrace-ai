@@ -13,23 +13,23 @@ const insufficient = buildImprovementSuggestions({
 
 assert.equal(insufficient.sampleReady, false);
 assert.equal(insufficient.suggestions.length, 0);
-assert.equal(insufficient.axisStatus.venue, "蓄積中 2/5R");
+assert.equal(insufficient.axisStatus.venue, "蓄積中 2/30R");
 
 const result = buildImprovementSuggestions({
-  settledCount: 10,
-  practicalCount: 10,
+  settledCount: 30,
+  practicalCount: 30,
   venueGroups: [
-    { label: "常滑", practicalCount: 5, practicalHits: 1 },
-    { label: "大村", practicalCount: 5, practicalHits: 4 }
+    { label: "常滑", practicalCount: 12, practicalHits: 2 },
+    { label: "大村", practicalCount: 12, practicalHits: 10 }
   ],
   scenarioGroups: [
-    { label: "2差し本線", practicalCount: 6, practicalHits: 1 }
+    { label: "2差し本線", practicalCount: 12, practicalHits: 2 }
   ],
   missTypeSummary: [
-    { label: "的中", count: 2, percentage: 20 },
-    { label: "相手抜け", count: 5, percentage: 50 },
-    { label: "頭外れ", count: 2, percentage: 20 },
-    { label: "完全抜け", count: 1, percentage: 10 }
+    { label: "的中", count: 6, percentage: 20 },
+    { label: "相手抜け", count: 15, percentage: 50 },
+    { label: "頭外れ", count: 6, percentage: 20 },
+    { label: "完全抜け", count: 3, percentage: 10 }
   ]
 });
 

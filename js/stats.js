@@ -11,6 +11,7 @@
   const A = window.ChappyAutoStats;
   const I = window.ChappyImprovementSuggestions;
   const V = window.ChappyPredictionVerification;
+  const R = window.ChappyVerificationReadiness;
   const OFFICIAL_SYNC_CONCURRENCY = 3;
 
   let officialSyncPromise = null;
@@ -1317,16 +1318,25 @@
   const automaticSettledRows = settledRows.filter(item =>
     ["自動選定", "シャドー予想"].includes(item.predictionSource)
   );
-  const scoreBandRows = [
-    buildScoreBand(
-      "70点以上",
-      automaticSettledRows.filter(item => item.automaticScore >= 70)
-    ),
-    buildScoreBand(
-      "70点未満（シャドー）",
-      automaticSettledRows.filter(item => item.automaticScore < 70)
-    )
-  ];
+  const verificationReadiness = R?.getSampleStage
+    ? R.getSampleStage(automaticSettledRows.length)
+    : {
+        label: automaticSettledRows.length >= 100 ? "改善検討可能" : "蓄積中",
+        count: automaticSettledRows.length,
+        remaining: Math.max(0, 100 - automaticSettledRows.length),
+        message: "検証データを蓄積しています。",
+        referenceOnly: automaticSettledRows.length < 100
+      };
+  const scoreBandRows = (R?.buildScoreBands
+    ? R.buildScoreBands(automaticSettledRows)
+    : [
+        { label: "70点以上", rows: automaticSettledRows.filter(item => item.automaticScore >= 70), readiness: verificationReadiness },
+        { label: "70点未満（シャドー）", rows: automaticSettledRows.filter(item => item.automaticScore < 70), readiness: verificationReadiness }
+      ]
+  ).map(band => ({
+    ...buildScoreBand(band.label, band.rows),
+    readiness: band.readiness
+  }));
   const buildGroups = (
     list,
     getLabel
@@ -1447,7 +1457,7 @@
           missTypeSummary
         })
       : {
-          minimumSample: 5,
+          minimumSample: 30,
           settledCount: realSettledRows.length,
           practicalCount: practicalRows.length,
           sampleReady: false,
@@ -1837,7 +1847,35 @@
 
     <div class="v3-final-block">
 
-      <h3>70点基準のシャドー比較</h3>
+      <h3>検証データの蓄積段階</h3>
+
+      <div class="v3-final-grid">
+        <div class="v3-final-block">
+          <h3>現在</h3>
+          <p>${automaticSettledRows.length}R</p>
+          <small>${U.safeText(verificationReadiness.label)}</small>
+        </div>
+        <div class="v3-final-block">
+          <h3>段階判定</h3>
+          <p>${U.safeText(verificationReadiness.message)}</p>
+        </div>
+        <div class="v3-final-block">
+          <h3>判断ルール</h3>
+          <p>${verificationReadiness.referenceOnly ? "参考表示のみ" : "改善候補を比較可能"}</p>
+          <small>変更は必ず説明・同意後</small>
+        </div>
+      </div>
+
+      <p class="v3-note">
+        30Rで初期比較、50Rで傾向確認、100Rで改善検討可能とします。
+        100R到達後も、70点基準・AI重み・買い目を自動変更しません。
+      </p>
+
+    </div>
+
+    <div class="v3-final-block">
+
+      <h3>点数帯別のシャドー比較</h3>
 
       <p class="v3-note">
         70点未満は実購入・noteへ出さず、同じ買い目生成結果を各点100円で仮定して検証します。
@@ -1849,6 +1887,7 @@
           <thead>
             <tr>
               <th>点数帯</th>
+              <th>判断状態</th>
               <th>結果確定</th>
               <th>◎1着率</th>
               <th>展開一致率</th>
@@ -1860,6 +1899,7 @@
             ${scoreBandRows.map(row => `
               <tr>
                 <td>${U.safeText(row.label)}</td>
+                <td>${U.safeText(row.readiness?.label || "蓄積中")}</td>
                 <td>${row.count}R</td>
                 <td>${row.honmeiHits}/${row.count}（${rate(row.honmeiHits, row.count)}%）</td>
                 <td>${row.scenarioHits}/${row.scenarioComparable}（${rate(row.scenarioHits, row.scenarioComparable)}%）</td>
