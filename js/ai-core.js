@@ -3944,7 +3944,11 @@ function buildRaceTrendEvaluation(data) {
     ? [...analyses]
     : [];
 
-  const marks = buildMarks(list);
+  /*
+    Phase2 STEP2では買い目をまだ変更しない。
+    フォーメーションは従来の印判定を維持する。
+  */
+  const marks = buildLegacyMarks(list);
   const evidence = marks.evidence || {};
 
   const main = [];
@@ -4368,7 +4372,7 @@ function buildRaceTrendEvaluation(data) {
     本命・対抗・穴
   =============================== */
 
-  function buildMarks(analyses) {
+  function buildLegacyMarks(analyses) {
   const list = Array.isArray(analyses)
     ? [...analyses]
     : [];
@@ -4601,6 +4605,166 @@ function buildRaceTrendEvaluation(data) {
     }
   };
 }
+
+  /* ===============================
+    Phase2 STEP2 展開シナリオ印
+
+    buildRaceScenarios() の最有力展開と役割艇から
+    ◎○▲△を決める。raceScenarios が未指定の場合は、
+    既存互換のため従来判定を返す。
+  =============================== */
+  function buildMarks(analyses, raceScenarios) {
+    const list = Array.isArray(analyses)
+      ? [...analyses]
+      : [];
+
+    const mainScenario = raceScenarios?.mainScenario || null;
+
+    if (!mainScenario || !list.length) {
+      return buildLegacyMarks(list);
+    }
+
+    const byBoat = {};
+
+    list.forEach((boat) => {
+      const no = Number(boat?.boatNo || 0);
+
+      if (no >= 1 && no <= 6) {
+        byBoat[no] = boat;
+      }
+    });
+
+    const used = new Set();
+
+    function selectBoat(candidates) {
+      for (const candidate of candidates || []) {
+        const no = Number(
+          candidate?.boatNo ?? candidate ?? 0
+        );
+
+        if (
+          no >= 1 &&
+          no <= 6 &&
+          byBoat[no] &&
+          !used.has(no)
+        ) {
+          used.add(no);
+          return byBoat[no];
+        }
+      }
+
+      return null;
+    }
+
+    const firstCandidates =
+      mainScenario?.outcome?.firstCandidates || [];
+
+    const secondCandidates =
+      mainScenario?.outcome?.secondCandidates || [];
+
+    const thirdCandidates =
+      mainScenario?.outcome?.thirdCandidates || [];
+
+    /*
+      ◎は最有力シナリオを作る艇を最優先。
+      シナリオ側に攻め艇がない場合だけ1着候補へ戻す。
+    */
+    const honmei = selectBoat([
+      raceScenarios.attacker,
+      mainScenario.attacker,
+      ...firstCandidates
+    ]);
+
+    /*
+      ○は2着残し候補を優先。
+      内の残し・壁・シナリオ内の2着適性を反映する。
+    */
+    const taikou = selectBoat([
+      ...secondCandidates,
+      raceScenarios.wallBoat,
+      ...(raceScenarios.remainers || []),
+      ...(raceScenarios.followers || []),
+      ...firstCandidates
+    ]);
+
+    /*
+      ▲は攻めに乗る展開艇・拾い艇を優先。
+      3攻め時に4の攻め場が消えるなど、blockedBoats は除外する。
+    */
+    const blocked = new Set(
+      (raceScenarios.blockedBoats || [])
+        .map((no) => Number(no))
+    );
+
+    const anaCandidates = [
+      ...(raceScenarios.followers || []),
+      ...(raceScenarios.pickupCandidates || []),
+      ...thirdCandidates,
+      ...(raceScenarios.roadRaceBoats || []),
+      ...firstCandidates
+    ].filter((candidate) => {
+      const no = Number(
+        candidate?.boatNo ?? candidate ?? 0
+      );
+
+      return !blocked.has(no);
+    });
+
+    const ana = selectBoat(anaCandidates);
+
+    /*
+      △は残し・道中・当地の順で補完する。
+    */
+    const osae = selectBoat([
+      ...(raceScenarios.remainers || []),
+      ...(raceScenarios.roadRaceBoats || []),
+      ...(raceScenarios.localExperts || []),
+      ...secondCandidates,
+      ...thirdCandidates,
+      ...list
+    ]);
+
+    const confidence = toNumber(
+      raceScenarios.confidence ?? mainScenario.score,
+      0
+    );
+
+    return {
+      honmei,
+      taikou,
+      ana,
+      osae,
+      scenario: mainScenario.label || "総合展開",
+      established: Boolean(honmei && mainScenario),
+      confidence,
+
+      evidence: {
+        source: "raceScenarios",
+        scenarioType: mainScenario.type || "",
+        scenarioScore: confidence,
+        mainGap: toNumber(
+          raceScenarios?.evidence?.mainGap,
+          0
+        ),
+        attacker: Number(raceScenarios.attacker || 0) || null,
+        wallBoat: Number(raceScenarios.wallBoat || 0) || null,
+        remainers: [...(raceScenarios.remainers || [])],
+        followers: [...(raceScenarios.followers || [])],
+        pickupCandidates: [
+          ...(raceScenarios.pickupCandidates || [])
+        ],
+        roadRaceBoats: [
+          ...(raceScenarios.roadRaceBoats || [])
+        ],
+        localExperts: [
+          ...(raceScenarios.localExperts || [])
+        ],
+        blockedBoats: [
+          ...(raceScenarios.blockedBoats || [])
+        ]
+      }
+    };
+  }
     /* ===============================
     prediction.jsへ渡すAIデータ生成
   =============================== */
@@ -4636,7 +4800,10 @@ const slit =
       buildFormations(analyses);
 
     const marks =
-      buildMarks(analyses);
+      buildMarks(
+        analyses,
+        raceScenarios
+      );
 
     const mainSheet =
       buildMainSheet(analyses);
