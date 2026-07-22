@@ -2452,6 +2452,72 @@ function buildRaceScenarios(analyses, data) {
         frameMovementSource[String(boatNo)] || {};
       const samples = toNumber(source.samples, 0);
       const usable = samples >= 30;
+      const hasBaseline =
+        typeof source.hasBaseline === "boolean"
+          ? source.hasBaseline
+          : Boolean(
+              !isNil(source.baselineRiseRate) &&
+              !isNil(source.baselineSinkRate)
+            );
+      const movementDelta = hasBaseline
+        ? toNumber(
+            source.movementDelta,
+            (
+              toNumber(source.riseRate, 0) -
+              toNumber(source.sinkRate, 0)
+            ) - (
+              toNumber(
+                source.baselineRiseRate,
+                0
+              ) -
+              toNumber(
+                source.baselineSinkRate,
+                0
+              )
+            )
+          )
+        : 0;
+
+      /*
+        枠ごとの全国基準との差だけを使う。
+        生の浮上率は枠番による構造差が大きいため、
+        そのまま比較・加点しない。
+      */
+      let scoreAdjustment = 0;
+
+      if (
+        usable &&
+        hasBaseline &&
+        Math.abs(movementDelta) >= 5
+      ) {
+        const sampleWeight =
+          samples >= 120
+            ? 1
+            : samples >= 60
+              ? 0.75
+              : 0.5;
+        const direction =
+          movementDelta > 0 ? 1 : -1;
+        const strength = Math.min(
+          5,
+          Math.max(
+            1,
+            Math.round(
+              (Math.abs(movementDelta) - 1) / 4
+            )
+          )
+        );
+
+        scoreAdjustment = clamp(
+          round(
+            direction *
+            strength *
+            sampleWeight
+          ),
+          -5,
+          5
+        );
+      }
 
       return {
         boatNo,
@@ -2461,11 +2527,29 @@ function buildRaceScenarios(analyses, data) {
         riseRate: toNumber(source.riseRate, 0),
         stayRate: toNumber(source.stayRate, 0),
         sinkRate: toNumber(source.sinkRate, 0),
+        baselineRiseRate: toNumber(
+          source.baselineRiseRate,
+          0
+        ),
+        baselineStayRate: toNumber(
+          source.baselineStayRate,
+          0
+        ),
+        baselineSinkRate: toNumber(
+          source.baselineSinkRate,
+          0
+        ),
+        movementDelta: round(movementDelta),
+        scoreAdjustment,
         label: usable
           ? (source.label || "維持")
           : "判定保留",
         usable,
-        appliedToScore: false
+        hasBaseline,
+        appliedToScore:
+          usable &&
+          hasBaseline &&
+          scoreAdjustment !== 0
       };
     }
   );
@@ -2651,6 +2735,15 @@ function buildRaceScenarios(analyses, data) {
     st(1) * 0.12 +
     exhibition(1) * 0.08;
 
+  function frameMovementAdjustment(no) {
+    return toNumber(
+      frameMovement.find(
+        (item) => item.boatNo === Number(no)
+      )?.scoreAdjustment,
+      0
+    );
+  }
+
   const twoVsOne =
     relationEdge(2, 1);
 
@@ -2679,6 +2772,8 @@ function buildRaceScenarios(analyses, data) {
 }
   }
 
+  escapeScore += frameMovementAdjustment(1);
+
   let sashiScore =
     venue.sashi * 0.25 +
     flow(2) * 0.25 +
@@ -2696,6 +2791,8 @@ function buildRaceScenarios(analyses, data) {
   sashiScore -= 6;
 }
   }
+
+  sashiScore += frameMovementAdjustment(2);
 
   let threeAttackScore =
   venue.makuri * 0.20 +
@@ -2743,6 +2840,8 @@ if (hasComparison(3, 1)) {
   }
 }
 
+  threeAttackScore += frameMovementAdjustment(3);
+
   let fourAttackScore =
     venue.kado * 0.22 +
     flow(4) * 0.28 +
@@ -2765,6 +2864,9 @@ if (hasComparison(3, 1)) {
     */
     fourAttackScore -= 15;
   }
+
+
+  fourAttackScore += frameMovementAdjustment(4);
 
   /*
     3が攻める場合は4の攻め場を狭くする。
@@ -2996,6 +3098,8 @@ if (hasComparison(3, 1)) {
       type: "escape",
       label: "1号艇逃げ",
       score: escapeScore,
+      frameMovementAdjustment:
+        frameMovementAdjustment(1),
       attacker: 1,
       blockedBoats: [],
       outcome: buildOutcome("escape")
@@ -3004,6 +3108,8 @@ if (hasComparison(3, 1)) {
       type: "sashi",
       label: "2コース差し",
       score: sashiScore,
+      frameMovementAdjustment:
+        frameMovementAdjustment(2),
       attacker: 2,
       blockedBoats: [],
       outcome: buildOutcome("sashi")
@@ -3012,6 +3118,8 @@ if (hasComparison(3, 1)) {
       type: "threeAttack",
       label: "3コース攻め",
       score: threeAttackScore,
+      frameMovementAdjustment:
+        frameMovementAdjustment(3),
       attacker: 3,
       blockedBoats:
         threeAttackScore >= 72
@@ -3023,6 +3131,8 @@ if (hasComparison(3, 1)) {
       type: "fourAttack",
       label: "4カド攻め",
       score: fourAttackScore,
+      frameMovementAdjustment:
+        frameMovementAdjustment(4),
       attacker: 4,
       blockedBoats: [],
       outcome: buildOutcome("fourAttack")
@@ -3147,7 +3257,19 @@ if (hasComparison(3, 1)) {
         stayRate: item.stayRate,
         sinkRate: item.sinkRate,
         label: item.label,
-        samples: item.samples
+        samples: item.samples,
+        baselineRiseRate:
+          item.baselineRiseRate,
+        baselineStayRate:
+          item.baselineStayRate,
+        baselineSinkRate:
+          item.baselineSinkRate,
+        movementDelta:
+          item.movementDelta,
+        scoreAdjustment:
+          item.scoreAdjustment,
+        appliedToScore:
+          item.appliedToScore
       }))
   };
 

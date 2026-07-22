@@ -254,7 +254,10 @@
       ...pattern,
       trend:
         window.ChappyHistoryInsights
-          ?.buildTrend(pattern) || null
+          ?.buildTrend(
+            pattern,
+            stats.overall || null
+          ) || null
     };
   }
 

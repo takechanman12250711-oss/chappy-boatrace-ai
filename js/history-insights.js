@@ -80,7 +80,10 @@
       return number(value?.rate, 0);
     }
 
-    function buildTrend(pattern) {
+    function buildTrend(
+      pattern,
+      baselinePattern = null
+    ) {
       if (!pattern) return null;
 
       const recent =
@@ -109,10 +112,30 @@
             primary.boatPerformance?.[
               String(boatNo)
             ] || {};
+          const baselineFrame =
+            baselinePattern?.boatPerformance?.[
+              String(boatNo)
+            ] || {};
           const samples = number(frame.starts);
           const riseRate = number(frame.riseRate);
           const stayRate = number(frame.stayRate);
           const sinkRate = number(frame.sinkRate);
+          const baselineRiseRate = number(
+            baselineFrame.riseRate
+          );
+          const baselineStayRate = number(
+            baselineFrame.stayRate
+          );
+          const baselineSinkRate = number(
+            baselineFrame.sinkRate
+          );
+          const movementDelta = Number((
+            (riseRate - sinkRate) -
+            (
+              baselineRiseRate -
+              baselineSinkRate
+            )
+          ).toFixed(1));
 
           let label = "維持";
 
@@ -130,6 +153,16 @@
             riseRate,
             stayRate,
             sinkRate,
+            baselineRiseRate,
+            baselineStayRate,
+            baselineSinkRate,
+            movementDelta,
+            hasBaseline:
+              Boolean(
+                baselinePattern?.boatPerformance?.[
+                  String(boatNo)
+                ]
+              ),
             label,
             definition:
               "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
