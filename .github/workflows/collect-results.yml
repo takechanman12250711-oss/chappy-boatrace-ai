@@ -36,10 +36,7 @@ jobs:
         env:
           COLLECT_DATE: ${{ inputs.date }}
         run: |
-          node scripts/collect-results.js
-          node scripts/match-predictions.js
-          node scripts/build-prediction-index.js
-          node scripts/build-race-stats.js
+          node scripts/repair-recent-results.js
 
       - name: Save collected results
         run: |
