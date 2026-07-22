@@ -37,6 +37,8 @@ on:
       - "scripts/test-ai-core-formations.js"
       - "api/missing.js"
       - "scripts/build-race-stats.js"
+      - "scripts/repair-recent-results.js"
+      - "scripts/test-repair-recent-results.js"
       - "scripts/test-missing-numbers.js"
       - "js/odds-insights.js"
       - "scripts/test-odds-insights.js"
@@ -81,6 +83,8 @@ on:
       - "scripts/test-ai-core-formations.js"
       - "api/missing.js"
       - "scripts/build-race-stats.js"
+      - "scripts/repair-recent-results.js"
+      - "scripts/test-repair-recent-results.js"
       - "scripts/test-missing-numbers.js"
       - "js/odds-insights.js"
       - "scripts/test-odds-insights.js"
@@ -137,6 +141,8 @@ jobs:
           node --check scripts/test-ai-core-formations.js
           node --check api/missing.js
           node --check scripts/build-race-stats.js
+          node --check scripts/repair-recent-results.js
+          node --check scripts/test-repair-recent-results.js
           node --check scripts/test-missing-numbers.js
           node --check js/odds-insights.js
           node --check scripts/test-odds-insights.js
@@ -159,6 +165,7 @@ jobs:
           node scripts/test-improvement-suggestions.js
           node scripts/test-practical-selection.js
           node scripts/test-ai-core-formations.js
+          node scripts/test-repair-recent-results.js
           node scripts/test-missing-numbers.js
           node scripts/test-odds-insights.js
           node scripts/test-history-insights.js
