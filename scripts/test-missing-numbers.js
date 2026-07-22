@@ -26,11 +26,22 @@ const stats = {
   trifectaByVenueRace: {
     "24": {
       "1": {
-        totalRaces: 45,
-        reliability: "medium",
-        counts: {
-          "1-2-3": 12,
-          "2-1-3": 3
+        recent1Year: {
+          totalRaces: 45,
+          reliability: "medium",
+          counts: {
+            "1-2-3": 12,
+            "2-1-3": 3
+          }
+        },
+        all3Years: {
+          totalRaces: 120,
+          reliability: "high",
+          counts: {
+            "1-2-3": 30,
+            "2-1-3": 8,
+            "3-1-2": 2
+          }
         }
       },
       "2": {
@@ -53,6 +64,10 @@ const available =
 assert.equal(available.available, true);
 assert.equal(available.sampleSize, 45);
 assert.equal(
+  available.threeYearSampleSize,
+  120
+);
+assert.equal(
   available.missingNumbers.length,
   118
 );
@@ -63,12 +78,16 @@ assert.equal(
   false
 );
 assert.equal(
-  available.missingNumbers.every(
-    item =>
-      item.occurrences === 0 &&
-      item.sampleSize === 45
-  ),
-  true
+  available.missingNumbers.find(
+    item => item.ticket === "3-1-2"
+  )?.classification,
+  "recent_missing"
+);
+assert.equal(
+  available.missingNumbers.find(
+    item => item.ticket === "4-1-2"
+  )?.classification,
+  "strong_missing"
 );
 
 const insufficient =

@@ -6,6 +6,8 @@ on:
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
+      - "js/script.js"
+      - "js/race-history.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
       - "js/prediction.js"
@@ -25,6 +27,9 @@ on:
       - "scripts/test-missing-numbers.js"
       - "js/odds-insights.js"
       - "scripts/test-odds-insights.js"
+      - "js/history-insights.js"
+      - "js/venue-race-analysis.js"
+      - "scripts/test-history-insights.js"
   push:
     branches:
       - main
@@ -32,6 +37,8 @@ on:
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
+      - "js/script.js"
+      - "js/race-history.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
       - "js/prediction.js"
@@ -51,6 +58,9 @@ on:
       - "scripts/test-missing-numbers.js"
       - "js/odds-insights.js"
       - "scripts/test-odds-insights.js"
+      - "js/history-insights.js"
+      - "js/venue-race-analysis.js"
+      - "scripts/test-history-insights.js"
   workflow_dispatch:
 
 permissions:
@@ -93,6 +103,10 @@ jobs:
           node --check scripts/test-missing-numbers.js
           node --check js/odds-insights.js
           node --check scripts/test-odds-insights.js
+          node --check js/history-insights.js
+          node --check js/race-history.js
+          node --check js/venue-race-analysis.js
+          node --check scripts/test-history-insights.js
 
       - name: Enforce charter
         run: |
@@ -104,3 +118,4 @@ jobs:
           node scripts/test-ai-core-formations.js
           node scripts/test-missing-numbers.js
           node scripts/test-odds-insights.js
+          node scripts/test-history-insights.js

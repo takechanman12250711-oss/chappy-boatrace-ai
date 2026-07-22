@@ -7,6 +7,9 @@
   const STATS_URL =
     "/data/stats/race-patterns.json";
 
+  const VENUE_RACE_STATS_URL =
+    "/data/stats/venue-race-patterns.json";
+
   const MIN_VENUE_SAMPLES = 30;
   const MIN_RACER_SAMPLES = 12;
 
@@ -103,30 +106,34 @@
 
     lastError = null;
 
-    loadingPromise = fetch(
-      STATS_URL,
+    const fetchJson = url => fetch(
+      url,
       {
-        cache: force
-          ? "reload"
-          : "default",
-
-        headers: {
-          accept: "application/json"
-        }
+        cache: force ? "reload" : "default",
+        headers: { accept: "application/json" }
       }
-    )
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(
-            "履歴統計の取得に失敗しました：" +
-            response.status
-          );
-        }
+    ).then(response => {
+      if (!response.ok) {
+        throw new Error(
+          "履歴統計の取得に失敗しました：" +
+          response.status
+        );
+      }
+      return response.json();
+    });
 
-        return response.json();
-      })
-      .then(data => {
-        stats = validateStats(data);
+    loadingPromise = Promise.all([
+      fetchJson(STATS_URL),
+      fetchJson(VENUE_RACE_STATS_URL)
+    ])
+      .then(([data, venueRaceData]) => {
+        stats = validateStats({
+          ...data,
+          analysisWindow:
+            venueRaceData.analysisWindow || null,
+          byVenueRace:
+            venueRaceData.byVenueRace || {}
+        });
         return stats;
       })
       .catch(error => {
@@ -227,6 +234,30 @@
     };
   }
 
+  function getVenueRace(
+    jcd,
+    raceNo
+  ) {
+    if (!stats) return null;
+
+    const pattern =
+      window.ChappyHistoryInsights
+        ?.getPattern(
+          stats,
+          jcd,
+          raceNo
+        ) || null;
+
+    if (!pattern) return null;
+
+    return {
+      ...pattern,
+      trend:
+        window.ChappyHistoryInsights
+          ?.buildTrend(pattern) || null
+    };
+  }
+
   function getContext(
     options = {}
   ) {
@@ -236,6 +267,12 @@
 
     const venue =
       getVenue(options.jcd);
+
+    const venueRace =
+      getVenueRace(
+        options.jcd,
+        options.raceNo || options.rno
+      );
 
     const registerNos =
       Array.isArray(
@@ -290,6 +327,7 @@
         stats.lastDate || "",
 
       venue,
+      venueRace,
       racers,
 
       usableVenueHistory:
@@ -325,6 +363,7 @@
       getStatus,
       getSummary,
       getVenue,
+      getVenueRace,
       getRacer,
       getContext,
 

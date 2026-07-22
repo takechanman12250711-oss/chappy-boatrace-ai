@@ -2,11 +2,18 @@
   "schemaVersion": 1,
   "source": "boatrace-official",
   "usagePolicy": "固定評価順を補助する参考統計。単独で予想や重み変更を行わない",
-  "generatedAt": "2026-07-21T16:00:46.150Z",
+  "generatedAt": "2026-07-22T09:14:26.823Z",
   "sourceFileCount": 371,
   "firstDate": "20250717",
   "lastDate": "20260722",
   "raceCount": 55562,
+  "analysisWindow": {
+    "policy": "直近1年を優先し、過去2年を裏付けに使用",
+    "latestDate": "20260721",
+    "firstDate": "20230723",
+    "recentYearDays": 365,
+    "totalDays": 1095
+  },
   "overall": {
     "totalRaces": 55562,
     "reliability": "high",
@@ -17,8 +24,14 @@
         "reliability": "high",
         "wins": 30412,
         "winRate": 55.4,
+        "seconds": 9471,
+        "secondRate": 17.2,
+        "thirds": 4998,
+        "thirdRate": 9.1,
         "top3": 44881,
         "top3Rate": 81.7,
+        "outsideTop3": 10044,
+        "outsideTop3Rate": 18.3,
         "averageSt": 0.152
       },
       "2": {
@@ -27,8 +40,14 @@
         "reliability": "high",
         "wins": 7518,
         "winRate": 13.7,
+        "seconds": 13817,
+        "secondRate": 25.2,
+        "thirds": 10506,
+        "thirdRate": 19.1,
         "top3": 31841,
         "top3Rate": 58,
+        "outsideTop3": 23038,
+        "outsideTop3Rate": 42,
         "averageSt": 0.163
       },
       "3": {
@@ -37,8 +56,14 @@
         "reliability": "high",
         "wins": 7092,
         "winRate": 12.9,
+        "seconds": 12023,
+        "secondRate": 21.9,
+        "thirds": 10920,
+        "thirdRate": 19.9,
         "top3": 30035,
         "top3Rate": 54.8,
+        "outsideTop3": 24763,
+        "outsideTop3Rate": 45.2,
         "averageSt": 0.158
       },
       "4": {
@@ -47,8 +72,14 @@
         "reliability": "high",
         "wins": 5564,
         "winRate": 10.1,
+        "seconds": 9073,
+        "secondRate": 16.5,
+        "thirds": 10751,
+        "thirdRate": 19.6,
         "top3": 25388,
         "top3Rate": 46.3,
+        "outsideTop3": 29453,
+        "outsideTop3Rate": 53.7,
         "averageSt": 0.161
       },
       "5": {
@@ -57,8 +88,14 @@
         "reliability": "high",
         "wins": 3296,
         "winRate": 6,
+        "seconds": 6783,
+        "secondRate": 12.4,
+        "thirds": 9925,
+        "thirdRate": 18.1,
         "top3": 20004,
         "top3Rate": 36.6,
+        "outsideTop3": 34716,
+        "outsideTop3Rate": 63.4,
         "averageSt": 0.167
       },
       "6": {
@@ -67,8 +104,14 @@
         "reliability": "high",
         "wins": 1681,
         "winRate": 3.1,
+        "seconds": 4398,
+        "secondRate": 8,
+        "thirds": 8474,
+        "thirdRate": 15.5,
         "top3": 14553,
         "top3Rate": 26.6,
+        "outsideTop3": 40222,
+        "outsideTop3Rate": 73.4,
         "averageSt": 0.179
       }
     },
@@ -187,6 +230,21 @@
         "count": 9238,
         "rate": 16.6
       }
+    },
+    "turbulence": {
+      "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+      "roughRaces": {
+        "count": 18751,
+        "rate": 33.7
+      },
+      "outsideWins": {
+        "count": 10541,
+        "rate": 19
+      },
+      "boatOneOutsideTop3": {
+        "count": 10044,
+        "rate": 18.1
+      }
     }
   },
   "byVenue": {
@@ -202,8 +260,14 @@
           "reliability": "high",
           "wins": 1127,
           "winRate": 51.4,
+          "seconds": 424,
+          "secondRate": 19.3,
+          "thirds": 194,
+          "thirdRate": 8.9,
           "top3": 1745,
           "top3Rate": 79.6,
+          "outsideTop3": 447,
+          "outsideTop3Rate": 20.4,
           "averageSt": 0.152
         },
         "2": {
@@ -212,8 +276,14 @@
           "reliability": "high",
           "wins": 333,
           "winRate": 15.1,
+          "seconds": 533,
+          "secondRate": 24.2,
+          "thirds": 406,
+          "thirdRate": 18.4,
           "top3": 1272,
           "top3Rate": 57.8,
+          "outsideTop3": 929,
+          "outsideTop3Rate": 42.2,
           "averageSt": 0.167
         },
         "3": {
@@ -222,8 +292,14 @@
           "reliability": "high",
           "wins": 334,
           "winRate": 15.2,
+          "seconds": 476,
+          "secondRate": 21.6,
+          "thirds": 405,
+          "thirdRate": 18.4,
           "top3": 1215,
           "top3Rate": 55.2,
+          "outsideTop3": 985,
+          "outsideTop3Rate": 44.8,
           "averageSt": 0.161
         },
         "4": {
@@ -232,8 +308,14 @@
           "reliability": "high",
           "wins": 210,
           "winRate": 9.6,
+          "seconds": 374,
+          "secondRate": 17.1,
+          "thirds": 430,
+          "thirdRate": 19.6,
           "top3": 1014,
           "top3Rate": 46.3,
+          "outsideTop3": 1176,
+          "outsideTop3Rate": 53.7,
           "averageSt": 0.166
         },
         "5": {
@@ -242,8 +324,14 @@
           "reliability": "high",
           "wins": 140,
           "winRate": 6.4,
+          "seconds": 252,
+          "secondRate": 11.5,
+          "thirds": 427,
+          "thirdRate": 19.5,
           "top3": 819,
           "top3Rate": 37.4,
+          "outsideTop3": 1369,
+          "outsideTop3Rate": 62.6,
           "averageSt": 0.172
         },
         "6": {
@@ -252,8 +340,14 @@
           "reliability": "high",
           "wins": 77,
           "winRate": 3.5,
+          "seconds": 162,
+          "secondRate": 7.4,
+          "thirds": 361,
+          "thirdRate": 16.4,
           "top3": 600,
           "top3Rate": 27.3,
+          "outsideTop3": 1595,
+          "outsideTop3Rate": 72.7,
           "averageSt": 0.183
         }
       },
@@ -367,6 +461,21 @@
           "count": 414,
           "rate": 18.6
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 777,
+          "rate": 35
+        },
+        "outsideWins": {
+          "count": 427,
+          "rate": 19.2
+        },
+        "boatOneOutsideTop3": {
+          "count": 447,
+          "rate": 20.1
+        }
       }
     },
     "11": {
@@ -381,8 +490,14 @@
           "reliability": "high",
           "wins": 1243,
           "winRate": 53.7,
+          "seconds": 424,
+          "secondRate": 18.3,
+          "thirds": 204,
+          "thirdRate": 8.8,
           "top3": 1871,
           "top3Rate": 80.9,
+          "outsideTop3": 442,
+          "outsideTop3Rate": 19.1,
           "averageSt": 0.151
         },
         "2": {
@@ -391,8 +506,14 @@
           "reliability": "high",
           "wins": 326,
           "winRate": 14.1,
+          "seconds": 560,
+          "secondRate": 24.2,
+          "thirds": 453,
+          "thirdRate": 19.6,
           "top3": 1339,
           "top3Rate": 57.8,
+          "outsideTop3": 978,
+          "outsideTop3Rate": 42.2,
           "averageSt": 0.165
         },
         "3": {
@@ -401,8 +522,14 @@
           "reliability": "high",
           "wins": 333,
           "winRate": 14.4,
+          "seconds": 510,
+          "secondRate": 22,
+          "thirds": 457,
+          "thirdRate": 19.7,
           "top3": 1300,
           "top3Rate": 56.1,
+          "outsideTop3": 1016,
+          "outsideTop3Rate": 43.9,
           "averageSt": 0.163
         },
         "4": {
@@ -411,8 +538,14 @@
           "reliability": "high",
           "wins": 230,
           "winRate": 9.9,
+          "seconds": 390,
+          "secondRate": 16.8,
+          "thirds": 465,
+          "thirdRate": 20,
           "top3": 1085,
           "top3Rate": 46.8,
+          "outsideTop3": 1235,
+          "outsideTop3Rate": 53.2,
           "averageSt": 0.176
         },
         "5": {
@@ -421,8 +554,14 @@
           "reliability": "high",
           "wins": 168,
           "winRate": 7.3,
+          "seconds": 287,
+          "secondRate": 12.4,
+          "thirds": 399,
+          "thirdRate": 17.3,
           "top3": 854,
           "top3Rate": 37,
+          "outsideTop3": 1455,
+          "outsideTop3Rate": 63,
           "averageSt": 0.181
         },
         "6": {
@@ -431,8 +570,14 @@
           "reliability": "high",
           "wins": 46,
           "winRate": 2,
+          "seconds": 175,
+          "secondRate": 7.5,
+          "thirds": 369,
+          "thirdRate": 15.9,
           "top3": 590,
           "top3Rate": 25.4,
+          "outsideTop3": 1731,
+          "outsideTop3Rate": 74.6,
           "averageSt": 0.193
         }
       },
@@ -546,6 +691,21 @@
           "count": 387,
           "rate": 16.5
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 810,
+          "rate": 34.5
+        },
+        "outsideWins": {
+          "count": 444,
+          "rate": 18.9
+        },
+        "boatOneOutsideTop3": {
+          "count": 442,
+          "rate": 18.8
+        }
       }
     },
     "12": {
@@ -560,8 +720,14 @@
           "reliability": "high",
           "wins": 1360,
           "winRate": 57.1,
+          "seconds": 408,
+          "secondRate": 17.1,
+          "thirds": 202,
+          "thirdRate": 8.5,
           "top3": 1970,
           "top3Rate": 82.7,
+          "outsideTop3": 413,
+          "outsideTop3Rate": 17.3,
           "averageSt": 0.149
         },
         "2": {
@@ -570,8 +736,14 @@
           "reliability": "high",
           "wins": 342,
           "winRate": 14.3,
+          "seconds": 606,
+          "secondRate": 25.4,
+          "thirds": 452,
+          "thirdRate": 19,
           "top3": 1400,
           "top3Rate": 58.7,
+          "outsideTop3": 984,
+          "outsideTop3Rate": 41.3,
           "averageSt": 0.155
         },
         "3": {
@@ -580,8 +752,14 @@
           "reliability": "high",
           "wins": 278,
           "winRate": 11.7,
+          "seconds": 529,
+          "secondRate": 22.2,
+          "thirds": 508,
+          "thirdRate": 21.4,
           "top3": 1315,
           "top3Rate": 55.3,
+          "outsideTop3": 1064,
+          "outsideTop3Rate": 44.7,
           "averageSt": 0.149
         },
         "4": {
@@ -590,8 +768,14 @@
           "reliability": "high",
           "wins": 239,
           "winRate": 10,
+          "seconds": 405,
+          "secondRate": 17,
+          "thirds": 434,
+          "thirdRate": 18.2,
           "top3": 1078,
           "top3Rate": 45.3,
+          "outsideTop3": 1302,
+          "outsideTop3Rate": 54.7,
           "averageSt": 0.142
         },
         "5": {
@@ -600,8 +784,14 @@
           "reliability": "high",
           "wins": 134,
           "winRate": 5.6,
+          "seconds": 283,
+          "secondRate": 11.9,
+          "thirds": 404,
+          "thirdRate": 17,
           "top3": 821,
           "top3Rate": 34.6,
+          "outsideTop3": 1551,
+          "outsideTop3Rate": 65.4,
           "averageSt": 0.147
         },
         "6": {
@@ -610,8 +800,14 @@
           "reliability": "high",
           "wins": 58,
           "winRate": 2.4,
+          "seconds": 180,
+          "secondRate": 7.6,
+          "thirds": 411,
+          "thirdRate": 17.3,
           "top3": 649,
           "top3Rate": 27.3,
+          "outsideTop3": 1724,
+          "outsideTop3Rate": 72.7,
           "averageSt": 0.164
         }
       },
@@ -725,6 +921,21 @@
           "count": 415,
           "rate": 17.2
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 777,
+          "rate": 32.2
+        },
+        "outsideWins": {
+          "count": 431,
+          "rate": 17.9
+        },
+        "boatOneOutsideTop3": {
+          "count": 413,
+          "rate": 17.1
+        }
       }
     },
     "13": {
@@ -739,8 +950,14 @@
           "reliability": "high",
           "wins": 1202,
           "winRate": 60.6,
+          "seconds": 313,
+          "secondRate": 15.8,
+          "thirds": 178,
+          "thirdRate": 9,
           "top3": 1693,
           "top3Rate": 85.3,
+          "outsideTop3": 292,
+          "outsideTop3Rate": 14.7,
           "averageSt": 0.169
         },
         "2": {
@@ -749,8 +966,14 @@
           "reliability": "high",
           "wins": 226,
           "winRate": 11.4,
+          "seconds": 505,
+          "secondRate": 25.6,
+          "thirds": 370,
+          "thirdRate": 18.7,
           "top3": 1101,
           "top3Rate": 55.7,
+          "outsideTop3": 875,
+          "outsideTop3Rate": 44.3,
           "averageSt": 0.175
         },
         "3": {
@@ -759,8 +982,14 @@
           "reliability": "high",
           "wins": 235,
           "winRate": 11.9,
+          "seconds": 432,
+          "secondRate": 21.9,
+          "thirds": 400,
+          "thirdRate": 20.3,
           "top3": 1067,
           "top3Rate": 54.1,
+          "outsideTop3": 905,
+          "outsideTop3Rate": 45.9,
           "averageSt": 0.163
         },
         "4": {
@@ -769,8 +998,14 @@
           "reliability": "high",
           "wins": 188,
           "winRate": 9.5,
+          "seconds": 343,
+          "secondRate": 17.3,
+          "thirds": 408,
+          "thirdRate": 20.6,
           "top3": 939,
           "top3Rate": 47.5,
+          "outsideTop3": 1039,
+          "outsideTop3Rate": 52.5,
           "averageSt": 0.16
         },
         "5": {
@@ -779,8 +1014,14 @@
           "reliability": "high",
           "wins": 105,
           "winRate": 5.3,
+          "seconds": 248,
+          "secondRate": 12.5,
+          "thirds": 368,
+          "thirdRate": 18.6,
           "top3": 721,
           "top3Rate": 36.5,
+          "outsideTop3": 1257,
+          "outsideTop3Rate": 63.5,
           "averageSt": 0.164
         },
         "6": {
@@ -789,8 +1030,14 @@
           "reliability": "high",
           "wins": 49,
           "winRate": 2.5,
+          "seconds": 165,
+          "secondRate": 8.4,
+          "thirds": 280,
+          "thirdRate": 14.2,
           "top3": 494,
           "top3Rate": 25,
+          "outsideTop3": 1481,
+          "outsideTop3Rate": 75,
           "averageSt": 0.172
         }
       },
@@ -904,6 +1151,21 @@
           "count": 286,
           "rate": 14.3
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 587,
+          "rate": 29.3
+        },
+        "outsideWins": {
+          "count": 342,
+          "rate": 17.1
+        },
+        "boatOneOutsideTop3": {
+          "count": 292,
+          "rate": 14.6
+        }
       }
     },
     "14": {
@@ -918,8 +1180,14 @@
           "reliability": "high",
           "wins": 1056,
           "winRate": 49,
+          "seconds": 379,
+          "secondRate": 17.6,
+          "thirds": 210,
+          "thirdRate": 9.7,
           "top3": 1645,
           "top3Rate": 76.3,
+          "outsideTop3": 510,
+          "outsideTop3Rate": 23.7,
           "averageSt": 0.142
         },
         "2": {
@@ -928,8 +1196,14 @@
           "reliability": "high",
           "wins": 309,
           "winRate": 14.4,
+          "seconds": 524,
+          "secondRate": 24.4,
+          "thirds": 414,
+          "thirdRate": 19.3,
           "top3": 1247,
           "top3Rate": 58.1,
+          "outsideTop3": 899,
+          "outsideTop3Rate": 41.9,
           "averageSt": 0.152
         },
         "3": {
@@ -938,8 +1212,14 @@
           "reliability": "high",
           "wins": 351,
           "winRate": 16.3,
+          "seconds": 451,
+          "secondRate": 20.9,
+          "thirds": 399,
+          "thirdRate": 18.5,
           "top3": 1201,
           "top3Rate": 55.7,
+          "outsideTop3": 957,
+          "outsideTop3Rate": 44.3,
           "averageSt": 0.146
         },
         "4": {
@@ -948,8 +1228,14 @@
           "reliability": "high",
           "wins": 259,
           "winRate": 12,
+          "seconds": 379,
+          "secondRate": 17.6,
+          "thirds": 433,
+          "thirdRate": 20.1,
           "top3": 1071,
           "top3Rate": 49.6,
+          "outsideTop3": 1088,
+          "outsideTop3Rate": 50.4,
           "averageSt": 0.147
         },
         "5": {
@@ -958,8 +1244,14 @@
           "reliability": "high",
           "wins": 147,
           "winRate": 6.8,
+          "seconds": 255,
+          "secondRate": 11.9,
+          "thirds": 382,
+          "thirdRate": 17.8,
           "top3": 784,
           "top3Rate": 36.4,
+          "outsideTop3": 1367,
+          "outsideTop3Rate": 63.6,
           "averageSt": 0.156
         },
         "6": {
@@ -968,8 +1260,14 @@
           "reliability": "high",
           "wins": 69,
           "winRate": 3.2,
+          "seconds": 203,
+          "secondRate": 9.4,
+          "thirds": 355,
+          "thirdRate": 16.5,
           "top3": 627,
           "top3Rate": 29.1,
+          "outsideTop3": 1531,
+          "outsideTop3Rate": 70.9,
           "averageSt": 0.171
         }
       },
@@ -1083,6 +1381,21 @@
           "count": 427,
           "rate": 19.5
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 876,
+          "rate": 40
+        },
+        "outsideWins": {
+          "count": 475,
+          "rate": 21.7
+        },
+        "boatOneOutsideTop3": {
+          "count": 510,
+          "rate": 23.3
+        }
       }
     },
     "15": {
@@ -1097,8 +1410,14 @@
           "reliability": "high",
           "wins": 1339,
           "winRate": 56.2,
+          "seconds": 418,
+          "secondRate": 17.5,
+          "thirds": 203,
+          "thirdRate": 8.5,
           "top3": 1960,
           "top3Rate": 82.3,
+          "outsideTop3": 422,
+          "outsideTop3Rate": 17.7,
           "averageSt": 0.151
         },
         "2": {
@@ -1107,8 +1426,14 @@
           "reliability": "high",
           "wins": 307,
           "winRate": 12.9,
+          "seconds": 636,
+          "secondRate": 26.7,
+          "thirds": 454,
+          "thirdRate": 19,
           "top3": 1397,
           "top3Rate": 58.6,
+          "outsideTop3": 988,
+          "outsideTop3Rate": 41.4,
           "averageSt": 0.163
         },
         "3": {
@@ -1117,8 +1442,14 @@
           "reliability": "high",
           "wins": 300,
           "winRate": 12.6,
+          "seconds": 493,
+          "secondRate": 20.7,
+          "thirds": 461,
+          "thirdRate": 19.3,
           "top3": 1254,
           "top3Rate": 52.6,
+          "outsideTop3": 1129,
+          "outsideTop3Rate": 47.4,
           "averageSt": 0.156
         },
         "4": {
@@ -1127,8 +1458,14 @@
           "reliability": "high",
           "wins": 223,
           "winRate": 9.4,
+          "seconds": 391,
+          "secondRate": 16.4,
+          "thirds": 493,
+          "thirdRate": 20.7,
           "top3": 1107,
           "top3Rate": 46.4,
+          "outsideTop3": 1278,
+          "outsideTop3Rate": 53.6,
           "averageSt": 0.159
         },
         "5": {
@@ -1137,8 +1474,14 @@
           "reliability": "high",
           "wins": 157,
           "winRate": 6.6,
+          "seconds": 263,
+          "secondRate": 11,
+          "thirds": 408,
+          "thirdRate": 17.1,
           "top3": 828,
           "top3Rate": 34.8,
+          "outsideTop3": 1554,
+          "outsideTop3Rate": 65.2,
           "averageSt": 0.165
         },
         "6": {
@@ -1147,8 +1490,14 @@
           "reliability": "high",
           "wins": 86,
           "winRate": 3.6,
+          "seconds": 211,
+          "secondRate": 8.9,
+          "thirds": 393,
+          "thirdRate": 16.6,
           "top3": 690,
           "top3Rate": 29.2,
+          "outsideTop3": 1677,
+          "outsideTop3Rate": 70.8,
           "averageSt": 0.175
         }
       },
@@ -1262,6 +1611,21 @@
           "count": 414,
           "rate": 17.2
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 801,
+          "rate": 33.2
+        },
+        "outsideWins": {
+          "count": 466,
+          "rate": 19.3
+        },
+        "boatOneOutsideTop3": {
+          "count": 422,
+          "rate": 17.5
+        }
       }
     },
     "16": {
@@ -1276,8 +1640,14 @@
           "reliability": "high",
           "wins": 1230,
           "winRate": 55.9,
+          "seconds": 381,
+          "secondRate": 17.3,
+          "thirds": 203,
+          "thirdRate": 9.2,
           "top3": 1814,
           "top3Rate": 82.4,
+          "outsideTop3": 388,
+          "outsideTop3Rate": 17.6,
           "averageSt": 0.152
         },
         "2": {
@@ -1286,8 +1656,14 @@
           "reliability": "high",
           "wins": 279,
           "winRate": 12.7,
+          "seconds": 560,
+          "secondRate": 25.5,
+          "thirds": 373,
+          "thirdRate": 17,
           "top3": 1212,
           "top3Rate": 55.3,
+          "outsideTop3": 980,
+          "outsideTop3Rate": 44.7,
           "averageSt": 0.163
         },
         "3": {
@@ -1296,8 +1672,14 @@
           "reliability": "high",
           "wins": 292,
           "winRate": 13.3,
+          "seconds": 433,
+          "secondRate": 19.7,
+          "thirds": 417,
+          "thirdRate": 19,
           "top3": 1142,
           "top3Rate": 52,
+          "outsideTop3": 1054,
+          "outsideTop3Rate": 48,
           "averageSt": 0.154
         },
         "4": {
@@ -1306,8 +1688,14 @@
           "reliability": "high",
           "wins": 219,
           "winRate": 10,
+          "seconds": 377,
+          "secondRate": 17.2,
+          "thirds": 454,
+          "thirdRate": 20.7,
           "top3": 1050,
           "top3Rate": 47.8,
+          "outsideTop3": 1145,
+          "outsideTop3Rate": 52.2,
           "averageSt": 0.15
         },
         "5": {
@@ -1316,8 +1704,14 @@
           "reliability": "high",
           "wins": 122,
           "winRate": 5.6,
+          "seconds": 268,
+          "secondRate": 12.2,
+          "thirds": 413,
+          "thirdRate": 18.9,
           "top3": 803,
           "top3Rate": 36.7,
+          "outsideTop3": 1387,
+          "outsideTop3Rate": 63.3,
           "averageSt": 0.156
         },
         "6": {
@@ -1326,8 +1720,14 @@
           "reliability": "high",
           "wins": 76,
           "winRate": 3.5,
+          "seconds": 199,
+          "secondRate": 9.1,
+          "thirds": 359,
+          "thirdRate": 16.4,
           "top3": 634,
           "top3Rate": 28.9,
+          "outsideTop3": 1559,
+          "outsideTop3Rate": 71.1,
           "averageSt": 0.169
         }
       },
@@ -1441,6 +1841,21 @@
           "count": 399,
           "rate": 18
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 752,
+          "rate": 33.9
+        },
+        "outsideWins": {
+          "count": 417,
+          "rate": 18.8
+        },
+        "boatOneOutsideTop3": {
+          "count": 388,
+          "rate": 17.5
+        }
       }
     },
     "17": {
@@ -1455,8 +1870,14 @@
           "reliability": "high",
           "wins": 1397,
           "winRate": 57.4,
+          "seconds": 403,
+          "secondRate": 16.6,
+          "thirds": 198,
+          "thirdRate": 8.1,
           "top3": 1998,
           "top3Rate": 82.2,
+          "outsideTop3": 434,
+          "outsideTop3Rate": 17.8,
           "averageSt": 0.149
         },
         "2": {
@@ -1465,8 +1886,14 @@
           "reliability": "high",
           "wins": 313,
           "winRate": 12.9,
+          "seconds": 633,
+          "secondRate": 26.1,
+          "thirds": 484,
+          "thirdRate": 20,
           "top3": 1430,
           "top3Rate": 59,
+          "outsideTop3": 995,
+          "outsideTop3Rate": 41,
           "averageSt": 0.161
         },
         "3": {
@@ -1475,8 +1902,14 @@
           "reliability": "high",
           "wins": 319,
           "winRate": 13.1,
+          "seconds": 543,
+          "secondRate": 22.4,
+          "thirds": 520,
+          "thirdRate": 21.4,
           "top3": 1382,
           "top3Rate": 56.9,
+          "outsideTop3": 1046,
+          "outsideTop3Rate": 43.1,
           "averageSt": 0.158
         },
         "4": {
@@ -1485,8 +1918,14 @@
           "reliability": "high",
           "wins": 240,
           "winRate": 9.9,
+          "seconds": 397,
+          "secondRate": 16.3,
+          "thirds": 466,
+          "thirdRate": 19.2,
           "top3": 1103,
           "top3Rate": 45.4,
+          "outsideTop3": 1326,
+          "outsideTop3Rate": 54.6,
           "averageSt": 0.167
         },
         "5": {
@@ -1495,8 +1934,14 @@
           "reliability": "high",
           "wins": 132,
           "winRate": 5.5,
+          "seconds": 310,
+          "secondRate": 12.8,
+          "thirds": 442,
+          "thirdRate": 18.3,
           "top3": 884,
           "top3Rate": 36.6,
+          "outsideTop3": 1530,
+          "outsideTop3Rate": 63.4,
           "averageSt": 0.172
         },
         "6": {
@@ -1505,8 +1950,14 @@
           "reliability": "high",
           "wins": 64,
           "winRate": 2.6,
+          "seconds": 177,
+          "secondRate": 7.3,
+          "thirds": 356,
+          "thirdRate": 14.7,
           "top3": 597,
           "top3Rate": 24.6,
+          "outsideTop3": 1830,
+          "outsideTop3Rate": 75.4,
           "averageSt": 0.181
         }
       },
@@ -1625,6 +2076,21 @@
           "count": 431,
           "rate": 17.5
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 793,
+          "rate": 32.2
+        },
+        "outsideWins": {
+          "count": 436,
+          "rate": 17.7
+        },
+        "boatOneOutsideTop3": {
+          "count": 434,
+          "rate": 17.6
+        }
       }
     },
     "18": {
@@ -1639,8 +2105,14 @@
           "reliability": "high",
           "wins": 1522,
           "winRate": 62.7,
+          "seconds": 401,
+          "secondRate": 16.5,
+          "thirds": 177,
+          "thirdRate": 7.3,
           "top3": 2100,
           "top3Rate": 86.5,
+          "outsideTop3": 329,
+          "outsideTop3Rate": 13.5,
           "averageSt": 0.155
         },
         "2": {
@@ -1649,8 +2121,14 @@
           "reliability": "high",
           "wins": 301,
           "winRate": 12.4,
+          "seconds": 687,
+          "secondRate": 28.3,
+          "thirds": 457,
+          "thirdRate": 18.8,
           "top3": 1445,
           "top3Rate": 59.5,
+          "outsideTop3": 983,
+          "outsideTop3Rate": 40.5,
           "averageSt": 0.166
         },
         "3": {
@@ -1659,8 +2137,14 @@
           "reliability": "high",
           "wins": 272,
           "winRate": 11.2,
+          "seconds": 535,
+          "secondRate": 22.1,
+          "thirds": 506,
+          "thirdRate": 20.9,
           "top3": 1313,
           "top3Rate": 54.2,
+          "outsideTop3": 1110,
+          "outsideTop3Rate": 45.8,
           "averageSt": 0.158
         },
         "4": {
@@ -1669,8 +2153,14 @@
           "reliability": "high",
           "wins": 207,
           "winRate": 8.6,
+          "seconds": 401,
+          "secondRate": 16.6,
+          "thirds": 522,
+          "thirdRate": 21.7,
           "top3": 1130,
           "top3Rate": 46.9,
+          "outsideTop3": 1281,
+          "outsideTop3Rate": 53.1,
           "averageSt": 0.16
         },
         "5": {
@@ -1679,8 +2169,14 @@
           "reliability": "high",
           "wins": 92,
           "winRate": 3.8,
+          "seconds": 256,
+          "secondRate": 10.6,
+          "thirds": 434,
+          "thirdRate": 17.9,
           "top3": 782,
           "top3Rate": 32.3,
+          "outsideTop3": 1640,
+          "outsideTop3Rate": 67.7,
           "averageSt": 0.167
         },
         "6": {
@@ -1689,8 +2185,14 @@
           "reliability": "high",
           "wins": 54,
           "winRate": 2.2,
+          "seconds": 168,
+          "secondRate": 7,
+          "thirds": 353,
+          "thirdRate": 14.6,
           "top3": 575,
           "top3Rate": 23.8,
+          "outsideTop3": 1841,
+          "outsideTop3Rate": 76.2,
           "averageSt": 0.179
         }
       },
@@ -1804,6 +2306,21 @@
           "count": 365,
           "rate": 14.9
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 673,
+          "rate": 27.5
+        },
+        "outsideWins": {
+          "count": 353,
+          "rate": 14.4
+        },
+        "boatOneOutsideTop3": {
+          "count": 329,
+          "rate": 13.4
+        }
       }
     },
     "19": {
@@ -1818,8 +2335,14 @@
           "reliability": "high",
           "wins": 1328,
           "winRate": 61.1,
+          "seconds": 376,
+          "secondRate": 17.3,
+          "thirds": 177,
+          "thirdRate": 8.1,
           "top3": 1881,
           "top3Rate": 86.5,
+          "outsideTop3": 293,
+          "outsideTop3Rate": 13.5,
           "averageSt": 0.151
         },
         "2": {
@@ -1828,8 +2351,14 @@
           "reliability": "high",
           "wins": 271,
           "winRate": 12.5,
+          "seconds": 529,
+          "secondRate": 24.4,
+          "thirds": 445,
+          "thirdRate": 20.5,
           "top3": 1245,
           "top3Rate": 57.3,
+          "outsideTop3": 926,
+          "outsideTop3Rate": 42.7,
           "averageSt": 0.161
         },
         "3": {
@@ -1838,8 +2367,14 @@
           "reliability": "high",
           "wins": 254,
           "winRate": 11.8,
+          "seconds": 509,
+          "secondRate": 23.6,
+          "thirds": 461,
+          "thirdRate": 21.3,
           "top3": 1224,
           "top3Rate": 56.7,
+          "outsideTop3": 936,
+          "outsideTop3Rate": 43.3,
           "averageSt": 0.153
         },
         "4": {
@@ -1848,8 +2383,14 @@
           "reliability": "high",
           "wins": 182,
           "winRate": 8.4,
+          "seconds": 341,
+          "secondRate": 15.7,
+          "thirds": 422,
+          "thirdRate": 19.5,
           "top3": 945,
           "top3Rate": 43.6,
+          "outsideTop3": 1222,
+          "outsideTop3Rate": 56.4,
           "averageSt": 0.158
         },
         "5": {
@@ -1858,8 +2399,14 @@
           "reliability": "high",
           "wins": 87,
           "winRate": 4,
+          "seconds": 255,
+          "secondRate": 11.8,
+          "thirds": 373,
+          "thirdRate": 17.2,
           "top3": 715,
           "top3Rate": 33,
+          "outsideTop3": 1453,
+          "outsideTop3Rate": 67,
           "averageSt": 0.163
         },
         "6": {
@@ -1868,8 +2415,14 @@
           "reliability": "high",
           "wins": 70,
           "winRate": 3.2,
+          "seconds": 182,
+          "secondRate": 8.4,
+          "thirds": 314,
+          "thirdRate": 14.5,
           "top3": 566,
           "top3Rate": 26.2,
+          "outsideTop3": 1595,
+          "outsideTop3Rate": 73.8,
           "averageSt": 0.169
         }
       },
@@ -1983,6 +2536,21 @@
           "count": 328,
           "rate": 15
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 615,
+          "rate": 28.1
+        },
+        "outsideWins": {
+          "count": 339,
+          "rate": 15.5
+        },
+        "boatOneOutsideTop3": {
+          "count": 293,
+          "rate": 13.4
+        }
       }
     },
     "20": {
@@ -1997,8 +2565,14 @@
           "reliability": "high",
           "wins": 1311,
           "winRate": 58.5,
+          "seconds": 363,
+          "secondRate": 16.2,
+          "thirds": 221,
+          "thirdRate": 9.9,
           "top3": 1895,
           "top3Rate": 84.6,
+          "outsideTop3": 346,
+          "outsideTop3Rate": 15.4,
           "averageSt": 0.156
         },
         "2": {
@@ -2007,8 +2581,14 @@
           "reliability": "high",
           "wins": 302,
           "winRate": 13.5,
+          "seconds": 555,
+          "secondRate": 24.8,
+          "thirds": 449,
+          "thirdRate": 20,
           "top3": 1306,
           "top3Rate": 58.3,
+          "outsideTop3": 934,
+          "outsideTop3Rate": 41.7,
           "averageSt": 0.167
         },
         "3": {
@@ -2017,8 +2597,14 @@
           "reliability": "high",
           "wins": 252,
           "winRate": 11.3,
+          "seconds": 521,
+          "secondRate": 23.3,
+          "thirds": 472,
+          "thirdRate": 21.1,
           "top3": 1245,
           "top3Rate": 55.6,
+          "outsideTop3": 995,
+          "outsideTop3Rate": 44.4,
           "averageSt": 0.162
         },
         "4": {
@@ -2027,8 +2613,14 @@
           "reliability": "high",
           "wins": 197,
           "winRate": 8.8,
+          "seconds": 380,
+          "secondRate": 17,
+          "thirds": 405,
+          "thirdRate": 18.2,
           "top3": 982,
           "top3Rate": 44.1,
+          "outsideTop3": 1247,
+          "outsideTop3Rate": 55.9,
           "averageSt": 0.166
         },
         "5": {
@@ -2037,8 +2629,14 @@
           "reliability": "high",
           "wins": 120,
           "winRate": 5.4,
+          "seconds": 253,
+          "secondRate": 11.4,
+          "thirds": 364,
+          "thirdRate": 16.3,
           "top3": 737,
           "top3Rate": 33.1,
+          "outsideTop3": 1490,
+          "outsideTop3Rate": 66.9,
           "averageSt": 0.175
         },
         "6": {
@@ -2047,8 +2645,14 @@
           "reliability": "high",
           "wins": 81,
           "winRate": 3.6,
+          "seconds": 191,
+          "secondRate": 8.5,
+          "thirds": 352,
+          "thirdRate": 15.7,
           "top3": 624,
           "top3Rate": 27.9,
+          "outsideTop3": 1616,
+          "outsideTop3Rate": 72.1,
           "averageSt": 0.185
         }
       },
@@ -2162,6 +2766,21 @@
           "count": 354,
           "rate": 15.6
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 695,
+          "rate": 30.7
+        },
+        "outsideWins": {
+          "count": 398,
+          "rate": 17.6
+        },
+        "boatOneOutsideTop3": {
+          "count": 346,
+          "rate": 15.3
+        }
       }
     },
     "21": {
@@ -2176,8 +2795,14 @@
           "reliability": "high",
           "wins": 1446,
           "winRate": 60.1,
+          "seconds": 389,
+          "secondRate": 16.2,
+          "thirds": 200,
+          "thirdRate": 8.3,
           "top3": 2035,
           "top3Rate": 84.5,
+          "outsideTop3": 372,
+          "outsideTop3Rate": 15.5,
           "averageSt": 0.147
         },
         "2": {
@@ -2186,8 +2811,14 @@
           "reliability": "high",
           "wins": 257,
           "winRate": 10.7,
+          "seconds": 567,
+          "secondRate": 23.6,
+          "thirds": 492,
+          "thirdRate": 20.5,
           "top3": 1316,
           "top3Rate": 54.7,
+          "outsideTop3": 1088,
+          "outsideTop3Rate": 45.3,
           "averageSt": 0.159
         },
         "3": {
@@ -2196,8 +2827,14 @@
           "reliability": "high",
           "wins": 270,
           "winRate": 11.3,
+          "seconds": 534,
+          "secondRate": 22.3,
+          "thirds": 471,
+          "thirdRate": 19.6,
           "top3": 1275,
           "top3Rate": 53.2,
+          "outsideTop3": 1122,
+          "outsideTop3Rate": 46.8,
           "averageSt": 0.152
         },
         "4": {
@@ -2206,8 +2843,14 @@
           "reliability": "high",
           "wins": 241,
           "winRate": 10,
+          "seconds": 449,
+          "secondRate": 18.7,
+          "thirds": 450,
+          "thirdRate": 18.7,
           "top3": 1140,
           "top3Rate": 47.4,
+          "outsideTop3": 1265,
+          "outsideTop3Rate": 52.6,
           "averageSt": 0.153
         },
         "5": {
@@ -2216,8 +2859,14 @@
           "reliability": "high",
           "wins": 146,
           "winRate": 6.1,
+          "seconds": 326,
+          "secondRate": 13.6,
+          "thirds": 453,
+          "thirdRate": 18.9,
           "top3": 925,
           "top3Rate": 38.6,
+          "outsideTop3": 1474,
+          "outsideTop3Rate": 61.4,
           "averageSt": 0.159
         },
         "6": {
@@ -2226,8 +2875,14 @@
           "reliability": "high",
           "wins": 79,
           "winRate": 3.3,
+          "seconds": 174,
+          "secondRate": 7.3,
+          "thirds": 374,
+          "thirdRate": 15.6,
           "top3": 627,
           "top3Rate": 26.1,
+          "outsideTop3": 1772,
+          "outsideTop3Rate": 73.9,
           "averageSt": 0.177
         }
       },
@@ -2341,6 +2996,21 @@
           "count": 412,
           "rate": 16.9
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 775,
+          "rate": 31.8
+        },
+        "outsideWins": {
+          "count": 466,
+          "rate": 19.1
+        },
+        "boatOneOutsideTop3": {
+          "count": 372,
+          "rate": 15.3
+        }
       }
     },
     "22": {
@@ -2355,8 +3025,14 @@
           "reliability": "high",
           "wins": 1386,
           "winRate": 57.8,
+          "seconds": 409,
+          "secondRate": 17,
+          "thirds": 210,
+          "thirdRate": 8.8,
           "top3": 2005,
           "top3Rate": 83.5,
+          "outsideTop3": 395,
+          "outsideTop3Rate": 16.5,
           "averageSt": 0.154
         },
         "2": {
@@ -2365,8 +3041,14 @@
           "reliability": "high",
           "wins": 360,
           "winRate": 15.1,
+          "seconds": 660,
+          "secondRate": 27.6,
+          "thirds": 479,
+          "thirdRate": 20,
           "top3": 1499,
           "top3Rate": 62.7,
+          "outsideTop3": 893,
+          "outsideTop3Rate": 37.3,
           "averageSt": 0.163
         },
         "3": {
@@ -2375,8 +3057,14 @@
           "reliability": "high",
           "wins": 355,
           "winRate": 14.9,
+          "seconds": 559,
+          "secondRate": 23.4,
+          "thirds": 439,
+          "thirdRate": 18.4,
           "top3": 1353,
           "top3Rate": 56.7,
+          "outsideTop3": 1033,
+          "outsideTop3Rate": 43.3,
           "averageSt": 0.159
         },
         "4": {
@@ -2385,8 +3073,14 @@
           "reliability": "high",
           "wins": 182,
           "winRate": 7.6,
+          "seconds": 383,
+          "secondRate": 16.1,
+          "thirds": 532,
+          "thirdRate": 22.3,
           "top3": 1097,
           "top3Rate": 46,
+          "outsideTop3": 1289,
+          "outsideTop3Rate": 54,
           "averageSt": 0.171
         },
         "5": {
@@ -2395,8 +3089,14 @@
           "reliability": "high",
           "wins": 88,
           "winRate": 3.7,
+          "seconds": 292,
+          "secondRate": 12.2,
+          "thirds": 434,
+          "thirdRate": 18.2,
           "top3": 814,
           "top3Rate": 34.1,
+          "outsideTop3": 1572,
+          "outsideTop3Rate": 65.9,
           "averageSt": 0.178
         },
         "6": {
@@ -2405,8 +3105,14 @@
           "reliability": "high",
           "wins": 52,
           "winRate": 2.2,
+          "seconds": 120,
+          "secondRate": 5,
+          "thirds": 329,
+          "thirdRate": 13.8,
           "top3": 501,
           "top3Rate": 21,
+          "outsideTop3": 1887,
+          "outsideTop3Rate": 79,
           "averageSt": 0.189
         }
       },
@@ -2520,6 +3226,21 @@
           "count": 342,
           "rate": 14.1
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 688,
+          "rate": 28.4
+        },
+        "outsideWins": {
+          "count": 322,
+          "rate": 13.3
+        },
+        "boatOneOutsideTop3": {
+          "count": 395,
+          "rate": 16.3
+        }
       }
     },
     "23": {
@@ -2534,8 +3255,14 @@
           "reliability": "high",
           "wins": 1184,
           "winRate": 55.6,
+          "seconds": 404,
+          "secondRate": 19,
+          "thirds": 176,
+          "thirdRate": 8.3,
           "top3": 1764,
           "top3Rate": 82.9,
+          "outsideTop3": 364,
+          "outsideTop3Rate": 17.1,
           "averageSt": 0.145
         },
         "2": {
@@ -2544,8 +3271,14 @@
           "reliability": "high",
           "wins": 320,
           "winRate": 15,
+          "seconds": 540,
+          "secondRate": 25.3,
+          "thirds": 426,
+          "thirdRate": 20,
           "top3": 1286,
           "top3Rate": 60.3,
+          "outsideTop3": 845,
+          "outsideTop3Rate": 39.7,
           "averageSt": 0.155
         },
         "3": {
@@ -2554,8 +3287,14 @@
           "reliability": "high",
           "wins": 252,
           "winRate": 11.9,
+          "seconds": 474,
+          "secondRate": 22.3,
+          "thirds": 461,
+          "thirdRate": 21.7,
           "top3": 1187,
           "top3Rate": 55.9,
+          "outsideTop3": 936,
+          "outsideTop3Rate": 44.1,
           "averageSt": 0.156
         },
         "4": {
@@ -2564,8 +3303,14 @@
           "reliability": "high",
           "wins": 207,
           "winRate": 9.8,
+          "seconds": 328,
+          "secondRate": 15.5,
+          "thirds": 434,
+          "thirdRate": 20.5,
           "top3": 969,
           "top3Rate": 45.8,
+          "outsideTop3": 1149,
+          "outsideTop3Rate": 54.2,
           "averageSt": 0.164
         },
         "5": {
@@ -2574,8 +3319,14 @@
           "reliability": "high",
           "wins": 125,
           "winRate": 5.9,
+          "seconds": 252,
+          "secondRate": 11.9,
+          "thirds": 372,
+          "thirdRate": 17.6,
           "top3": 749,
           "top3Rate": 35.4,
+          "outsideTop3": 1364,
+          "outsideTop3Rate": 64.6,
           "averageSt": 0.168
         },
         "6": {
@@ -2584,8 +3335,14 @@
           "reliability": "high",
           "wins": 65,
           "winRate": 3.1,
+          "seconds": 155,
+          "secondRate": 7.3,
+          "thirds": 284,
+          "thirdRate": 13.4,
           "top3": 504,
           "top3Rate": 23.7,
+          "outsideTop3": 1623,
+          "outsideTop3Rate": 76.3,
           "averageSt": 0.177
         }
       },
@@ -2699,6 +3456,21 @@
           "count": 326,
           "rate": 15.1
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 694,
+          "rate": 32.2
+        },
+        "outsideWins": {
+          "count": 397,
+          "rate": 18.4
+        },
+        "boatOneOutsideTop3": {
+          "count": 364,
+          "rate": 16.9
+        }
       }
     },
     "24": {
@@ -2713,8 +3485,14 @@
           "reliability": "high",
           "wins": 1514,
           "winRate": 61.8,
+          "seconds": 413,
+          "secondRate": 16.9,
+          "thirds": 195,
+          "thirdRate": 8,
           "top3": 2122,
           "top3Rate": 86.6,
+          "outsideTop3": 329,
+          "outsideTop3Rate": 13.4,
           "averageSt": 0.138
         },
         "2": {
@@ -2723,8 +3501,14 @@
           "reliability": "high",
           "wins": 286,
           "winRate": 11.7,
+          "seconds": 647,
+          "secondRate": 26.5,
+          "thirds": 470,
+          "thirdRate": 19.3,
           "top3": 1403,
           "top3Rate": 57.5,
+          "outsideTop3": 1037,
+          "outsideTop3Rate": 42.5,
           "averageSt": 0.151
         },
         "3": {
@@ -2733,8 +3517,14 @@
           "reliability": "high",
           "wins": 282,
           "winRate": 11.6,
+          "seconds": 573,
+          "secondRate": 23.5,
+          "thirds": 514,
+          "thirdRate": 21.1,
           "top3": 1369,
           "top3Rate": 56.2,
+          "outsideTop3": 1066,
+          "outsideTop3Rate": 43.8,
           "averageSt": 0.148
         },
         "4": {
@@ -2743,8 +3533,14 @@
           "reliability": "high",
           "wins": 201,
           "winRate": 8.3,
+          "seconds": 375,
+          "secondRate": 15.4,
+          "thirds": 483,
+          "thirdRate": 19.9,
           "top3": 1059,
           "top3Rate": 43.5,
+          "outsideTop3": 1373,
+          "outsideTop3Rate": 56.5,
           "averageSt": 0.154
         },
         "5": {
@@ -2753,8 +3549,14 @@
           "reliability": "high",
           "wins": 129,
           "winRate": 5.3,
+          "seconds": 289,
+          "secondRate": 11.9,
+          "thirds": 426,
+          "thirdRate": 17.5,
           "top3": 844,
           "top3Rate": 34.6,
+          "outsideTop3": 1594,
+          "outsideTop3Rate": 65.4,
           "averageSt": 0.157
         },
         "6": {
@@ -2763,8 +3565,14 @@
           "reliability": "high",
           "wins": 59,
           "winRate": 2.4,
+          "seconds": 174,
+          "secondRate": 7.1,
+          "thirds": 385,
+          "thirdRate": 15.8,
           "top3": 618,
           "top3Rate": 25.3,
+          "outsideTop3": 1823,
+          "outsideTop3Rate": 74.7,
           "averageSt": 0.168
         }
       },
@@ -2878,6 +3686,21 @@
           "count": 384,
           "rate": 15.5
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 701,
+          "rate": 28.4
+        },
+        "outsideWins": {
+          "count": 389,
+          "rate": 15.7
+        },
+        "boatOneOutsideTop3": {
+          "count": 329,
+          "rate": 13.3
+        }
       }
     },
     "01": {
@@ -2892,8 +3715,14 @@
           "reliability": "high",
           "wins": 1182,
           "winRate": 49.1,
+          "seconds": 437,
+          "secondRate": 18.2,
+          "thirds": 240,
+          "thirdRate": 10,
           "top3": 1859,
           "top3Rate": 77.3,
+          "outsideTop3": 547,
+          "outsideTop3Rate": 22.7,
           "averageSt": 0.168
         },
         "2": {
@@ -2902,8 +3731,14 @@
           "reliability": "high",
           "wins": 293,
           "winRate": 12.2,
+          "seconds": 588,
+          "secondRate": 24.4,
+          "thirds": 437,
+          "thirdRate": 18.2,
           "top3": 1318,
           "top3Rate": 54.8,
+          "outsideTop3": 1087,
+          "outsideTop3Rate": 45.2,
           "averageSt": 0.178
         },
         "3": {
@@ -2912,8 +3747,14 @@
           "reliability": "high",
           "wins": 333,
           "winRate": 13.9,
+          "seconds": 524,
+          "secondRate": 21.9,
+          "thirds": 450,
+          "thirdRate": 18.8,
           "top3": 1307,
           "top3Rate": 54.6,
+          "outsideTop3": 1088,
+          "outsideTop3Rate": 45.4,
           "averageSt": 0.169
         },
         "4": {
@@ -2922,8 +3763,14 @@
           "reliability": "high",
           "wins": 316,
           "winRate": 13.1,
+          "seconds": 346,
+          "secondRate": 14.4,
+          "thirds": 461,
+          "thirdRate": 19.2,
           "top3": 1123,
           "top3Rate": 46.7,
+          "outsideTop3": 1283,
+          "outsideTop3Rate": 53.3,
           "averageSt": 0.165
         },
         "5": {
@@ -2932,8 +3779,14 @@
           "reliability": "high",
           "wins": 206,
           "winRate": 8.6,
+          "seconds": 330,
+          "secondRate": 13.8,
+          "thirds": 469,
+          "thirdRate": 19.6,
           "top3": 1005,
           "top3Rate": 42.1,
+          "outsideTop3": 1383,
+          "outsideTop3Rate": 57.9,
           "averageSt": 0.165
         },
         "6": {
@@ -2942,8 +3795,14 @@
           "reliability": "high",
           "wins": 101,
           "winRate": 4.2,
+          "seconds": 206,
+          "secondRate": 8.6,
+          "thirds": 375,
+          "thirdRate": 15.7,
           "top3": 682,
           "top3Rate": 28.5,
+          "outsideTop3": 1714,
+          "outsideTop3Rate": 71.5,
           "averageSt": 0.178
         }
       },
@@ -3057,6 +3916,21 @@
           "count": 467,
           "rate": 19.2
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 1008,
+          "rate": 41.5
+        },
+        "outsideWins": {
+          "count": 623,
+          "rate": 25.6
+        },
+        "boatOneOutsideTop3": {
+          "count": 547,
+          "rate": 22.5
+        }
       }
     },
     "02": {
@@ -3071,8 +3945,14 @@
           "reliability": "high",
           "wins": 970,
           "winRate": 43.5,
+          "seconds": 404,
+          "secondRate": 18.1,
+          "thirds": 256,
+          "thirdRate": 11.5,
           "top3": 1630,
           "top3Rate": 73.1,
+          "outsideTop3": 599,
+          "outsideTop3Rate": 26.9,
           "averageSt": 0.157
         },
         "2": {
@@ -3081,8 +3961,14 @@
           "reliability": "high",
           "wins": 394,
           "winRate": 17.7,
+          "seconds": 524,
+          "secondRate": 23.6,
+          "thirds": 385,
+          "thirdRate": 17.3,
           "top3": 1303,
           "top3Rate": 58.6,
+          "outsideTop3": 922,
+          "outsideTop3Rate": 41.4,
           "averageSt": 0.162
         },
         "3": {
@@ -3091,8 +3977,14 @@
           "reliability": "high",
           "wins": 368,
           "winRate": 16.6,
+          "seconds": 457,
+          "secondRate": 20.6,
+          "thirds": 392,
+          "thirdRate": 17.7,
           "top3": 1217,
           "top3Rate": 54.8,
+          "outsideTop3": 1003,
+          "outsideTop3Rate": 45.2,
           "averageSt": 0.157
         },
         "4": {
@@ -3101,8 +3993,14 @@
           "reliability": "high",
           "wins": 286,
           "winRate": 12.8,
+          "seconds": 373,
+          "secondRate": 16.7,
+          "thirds": 423,
+          "thirdRate": 19,
           "top3": 1082,
           "top3Rate": 48.5,
+          "outsideTop3": 1148,
+          "outsideTop3Rate": 51.5,
           "averageSt": 0.162
         },
         "5": {
@@ -3111,8 +4009,14 @@
           "reliability": "high",
           "wins": 160,
           "winRate": 7.2,
+          "seconds": 312,
+          "secondRate": 14,
+          "thirds": 433,
+          "thirdRate": 19.5,
           "top3": 905,
           "top3Rate": 40.7,
+          "outsideTop3": 1318,
+          "outsideTop3Rate": 59.3,
           "averageSt": 0.17
         },
         "6": {
@@ -3121,8 +4025,14 @@
           "reliability": "high",
           "wins": 77,
           "winRate": 3.5,
+          "seconds": 186,
+          "secondRate": 8.4,
+          "thirds": 365,
+          "thirdRate": 16.4,
           "top3": 628,
           "top3Rate": 28.3,
+          "outsideTop3": 1594,
+          "outsideTop3Rate": 71.7,
           "averageSt": 0.185
         }
       },
@@ -3236,6 +4146,21 @@
           "count": 390,
           "rate": 17.3
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 989,
+          "rate": 43.9
+        },
+        "outsideWins": {
+          "count": 523,
+          "rate": 23.2
+        },
+        "boatOneOutsideTop3": {
+          "count": 599,
+          "rate": 26.6
+        }
       }
     },
     "03": {
@@ -3250,8 +4175,14 @@
           "reliability": "high",
           "wins": 984,
           "winRate": 47.8,
+          "seconds": 409,
+          "secondRate": 19.9,
+          "thirds": 223,
+          "thirdRate": 10.8,
           "top3": 1616,
           "top3Rate": 78.5,
+          "outsideTop3": 443,
+          "outsideTop3Rate": 21.5,
           "averageSt": 0.159
         },
         "2": {
@@ -3260,8 +4191,14 @@
           "reliability": "high",
           "wins": 376,
           "winRate": 18.1,
+          "seconds": 495,
+          "secondRate": 23.9,
+          "thirds": 376,
+          "thirdRate": 18.1,
           "top3": 1247,
           "top3Rate": 60.1,
+          "outsideTop3": 827,
+          "outsideTop3Rate": 39.9,
           "averageSt": 0.168
         },
         "3": {
@@ -3270,8 +4207,14 @@
           "reliability": "high",
           "wins": 302,
           "winRate": 14.7,
+          "seconds": 454,
+          "secondRate": 22.1,
+          "thirds": 392,
+          "thirdRate": 19.1,
           "top3": 1148,
           "top3Rate": 55.9,
+          "outsideTop3": 904,
+          "outsideTop3Rate": 44.1,
           "averageSt": 0.166
         },
         "4": {
@@ -3280,8 +4223,14 @@
           "reliability": "high",
           "wins": 259,
           "winRate": 12.4,
+          "seconds": 315,
+          "secondRate": 15.1,
+          "thirds": 361,
+          "thirdRate": 17.3,
           "top3": 935,
           "top3Rate": 44.9,
+          "outsideTop3": 1148,
+          "outsideTop3Rate": 55.1,
           "averageSt": 0.179
         },
         "5": {
@@ -3290,8 +4239,14 @@
           "reliability": "high",
           "wins": 139,
           "winRate": 6.7,
+          "seconds": 261,
+          "secondRate": 12.6,
+          "thirds": 428,
+          "thirdRate": 20.7,
           "top3": 828,
           "top3Rate": 40,
+          "outsideTop3": 1240,
+          "outsideTop3Rate": 60,
           "averageSt": 0.192
         },
         "6": {
@@ -3300,8 +4255,14 @@
           "reliability": "high",
           "wins": 52,
           "winRate": 2.5,
+          "seconds": 178,
+          "secondRate": 8.6,
+          "thirds": 332,
+          "thirdRate": 16.1,
           "top3": 562,
           "top3Rate": 27.2,
+          "outsideTop3": 1506,
+          "outsideTop3Rate": 72.8,
           "averageSt": 0.215
         }
       },
@@ -3415,6 +4376,21 @@
           "count": 394,
           "rate": 18.7
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 825,
+          "rate": 39.1
+        },
+        "outsideWins": {
+          "count": 450,
+          "rate": 21.3
+        },
+        "boatOneOutsideTop3": {
+          "count": 443,
+          "rate": 21
+        }
       }
     },
     "04": {
@@ -3429,8 +4405,14 @@
           "reliability": "high",
           "wins": 892,
           "winRate": 46.3,
+          "seconds": 370,
+          "secondRate": 19.2,
+          "thirds": 214,
+          "thirdRate": 11.1,
           "top3": 1476,
           "top3Rate": 76.7,
+          "outsideTop3": 449,
+          "outsideTop3Rate": 23.3,
           "averageSt": 0.14
         },
         "2": {
@@ -3439,8 +4421,14 @@
           "reliability": "high",
           "wins": 314,
           "winRate": 16.2,
+          "seconds": 444,
+          "secondRate": 23,
+          "thirds": 391,
+          "thirdRate": 20.2,
           "top3": 1149,
           "top3Rate": 59.4,
+          "outsideTop3": 784,
+          "outsideTop3Rate": 40.6,
           "averageSt": 0.15
         },
         "3": {
@@ -3449,8 +4437,14 @@
           "reliability": "high",
           "wins": 300,
           "winRate": 15.5,
+          "seconds": 382,
+          "secondRate": 19.8,
+          "thirds": 367,
+          "thirdRate": 19,
           "top3": 1049,
           "top3Rate": 54.4,
+          "outsideTop3": 881,
+          "outsideTop3Rate": 45.6,
           "averageSt": 0.144
         },
         "4": {
@@ -3459,8 +4453,14 @@
           "reliability": "high",
           "wins": 261,
           "winRate": 13.5,
+          "seconds": 331,
+          "secondRate": 17.1,
+          "thirds": 353,
+          "thirdRate": 18.3,
           "top3": 945,
           "top3Rate": 48.9,
+          "outsideTop3": 988,
+          "outsideTop3Rate": 51.1,
           "averageSt": 0.146
         },
         "5": {
@@ -3469,8 +4469,14 @@
           "reliability": "high",
           "wins": 132,
           "winRate": 6.8,
+          "seconds": 253,
+          "secondRate": 13.1,
+          "thirds": 319,
+          "thirdRate": 16.5,
           "top3": 704,
           "top3Rate": 36.5,
+          "outsideTop3": 1224,
+          "outsideTop3Rate": 63.5,
           "averageSt": 0.153
         },
         "6": {
@@ -3479,8 +4485,14 @@
           "reliability": "high",
           "wins": 59,
           "winRate": 3.1,
+          "seconds": 178,
+          "secondRate": 9.2,
+          "thirds": 314,
+          "thirdRate": 16.2,
           "top3": 551,
           "top3Rate": 28.5,
+          "outsideTop3": 1383,
+          "outsideTop3Rate": 71.5,
           "averageSt": 0.167
         }
       },
@@ -3594,6 +4606,21 @@
           "count": 338,
           "rate": 17.3
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 798,
+          "rate": 40.8
+        },
+        "outsideWins": {
+          "count": 452,
+          "rate": 23.1
+        },
+        "boatOneOutsideTop3": {
+          "count": 449,
+          "rate": 22.9
+        }
       }
     },
     "05": {
@@ -3608,8 +4635,14 @@
           "reliability": "high",
           "wins": 1263,
           "winRate": 54.6,
+          "seconds": 380,
+          "secondRate": 16.4,
+          "thirds": 220,
+          "thirdRate": 9.5,
           "top3": 1863,
           "top3Rate": 80.5,
+          "outsideTop3": 451,
+          "outsideTop3Rate": 19.5,
           "averageSt": 0.16
         },
         "2": {
@@ -3618,8 +4651,14 @@
           "reliability": "high",
           "wins": 304,
           "winRate": 13.1,
+          "seconds": 558,
+          "secondRate": 24.1,
+          "thirds": 464,
+          "thirdRate": 20.1,
           "top3": 1326,
           "top3Rate": 57.4,
+          "outsideTop3": 986,
+          "outsideTop3Rate": 42.6,
           "averageSt": 0.17
         },
         "3": {
@@ -3628,8 +4667,14 @@
           "reliability": "high",
           "wins": 296,
           "winRate": 12.8,
+          "seconds": 486,
+          "secondRate": 21.1,
+          "thirds": 455,
+          "thirdRate": 19.7,
           "top3": 1237,
           "top3Rate": 53.6,
+          "outsideTop3": 1071,
+          "outsideTop3Rate": 46.4,
           "averageSt": 0.162
         },
         "4": {
@@ -3638,8 +4683,14 @@
           "reliability": "high",
           "wins": 249,
           "winRate": 10.8,
+          "seconds": 391,
+          "secondRate": 16.9,
+          "thirds": 443,
+          "thirdRate": 19.2,
           "top3": 1083,
           "top3Rate": 46.9,
+          "outsideTop3": 1225,
+          "outsideTop3Rate": 53.1,
           "averageSt": 0.156
         },
         "5": {
@@ -3648,8 +4699,14 @@
           "reliability": "high",
           "wins": 152,
           "winRate": 6.6,
+          "seconds": 323,
+          "secondRate": 14,
+          "thirds": 412,
+          "thirdRate": 17.9,
           "top3": 887,
           "top3Rate": 38.5,
+          "outsideTop3": 1417,
+          "outsideTop3Rate": 61.5,
           "averageSt": 0.158
         },
         "6": {
@@ -3658,8 +4715,14 @@
           "reliability": "high",
           "wins": 71,
           "winRate": 3.1,
+          "seconds": 197,
+          "secondRate": 8.6,
+          "thirds": 341,
+          "thirdRate": 14.8,
           "top3": 609,
           "top3Rate": 26.5,
+          "outsideTop3": 1690,
+          "outsideTop3Rate": 73.5,
           "averageSt": 0.172
         }
       },
@@ -3773,6 +4836,21 @@
           "count": 404,
           "rate": 17.3
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 815,
+          "rate": 34.9
+        },
+        "outsideWins": {
+          "count": 472,
+          "rate": 20.2
+        },
+        "boatOneOutsideTop3": {
+          "count": 451,
+          "rate": 19.3
+        }
       }
     },
     "06": {
@@ -3787,8 +4865,14 @@
           "reliability": "high",
           "wins": 1356,
           "winRate": 53.5,
+          "seconds": 447,
+          "secondRate": 17.6,
+          "thirds": 230,
+          "thirdRate": 9.1,
           "top3": 2033,
           "top3Rate": 80.2,
+          "outsideTop3": 502,
+          "outsideTop3Rate": 19.8,
           "averageSt": 0.15
         },
         "2": {
@@ -3797,8 +4881,14 @@
           "reliability": "high",
           "wins": 348,
           "winRate": 13.8,
+          "seconds": 631,
+          "secondRate": 25,
+          "thirds": 463,
+          "thirdRate": 18.3,
           "top3": 1442,
           "top3Rate": 57,
+          "outsideTop3": 1087,
+          "outsideTop3Rate": 43,
           "averageSt": 0.163
         },
         "3": {
@@ -3807,8 +4897,14 @@
           "reliability": "high",
           "wins": 348,
           "winRate": 13.8,
+          "seconds": 532,
+          "secondRate": 21,
+          "thirds": 516,
+          "thirdRate": 20.4,
           "top3": 1396,
           "top3Rate": 55.2,
+          "outsideTop3": 1133,
+          "outsideTop3Rate": 44.8,
           "averageSt": 0.161
         },
         "4": {
@@ -3817,8 +4913,14 @@
           "reliability": "high",
           "wins": 258,
           "winRate": 10.2,
+          "seconds": 403,
+          "secondRate": 15.9,
+          "thirds": 457,
+          "thirdRate": 18,
           "top3": 1118,
           "top3Rate": 44.1,
+          "outsideTop3": 1415,
+          "outsideTop3Rate": 55.9,
           "averageSt": 0.168
         },
         "5": {
@@ -3827,8 +4929,14 @@
           "reliability": "high",
           "wins": 162,
           "winRate": 6.4,
+          "seconds": 332,
+          "secondRate": 13.1,
+          "thirds": 495,
+          "thirdRate": 19.5,
           "top3": 989,
           "top3Rate": 39,
+          "outsideTop3": 1545,
+          "outsideTop3Rate": 61,
           "averageSt": 0.174
         },
         "6": {
@@ -3837,8 +4945,14 @@
           "reliability": "high",
           "wins": 93,
           "winRate": 3.7,
+          "seconds": 221,
+          "secondRate": 8.7,
+          "thirds": 403,
+          "thirdRate": 15.9,
           "top3": 717,
           "top3Rate": 28.3,
+          "outsideTop3": 1820,
+          "outsideTop3Rate": 71.7,
           "averageSt": 0.185
         }
       },
@@ -3952,6 +5066,21 @@
           "count": 423,
           "rate": 16.5
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 898,
+          "rate": 35
+        },
+        "outsideWins": {
+          "count": 513,
+          "rate": 20
+        },
+        "boatOneOutsideTop3": {
+          "count": 502,
+          "rate": 19.6
+        }
       }
     },
     "07": {
@@ -3966,8 +5095,14 @@
           "reliability": "high",
           "wins": 1357,
           "winRate": 57.1,
+          "seconds": 367,
+          "secondRate": 15.4,
+          "thirds": 243,
+          "thirdRate": 10.2,
           "top3": 1967,
           "top3Rate": 82.7,
+          "outsideTop3": 411,
+          "outsideTop3Rate": 17.3,
           "averageSt": 0.16
         },
         "2": {
@@ -3976,8 +5111,14 @@
           "reliability": "high",
           "wins": 310,
           "winRate": 13.1,
+          "seconds": 628,
+          "secondRate": 26.5,
+          "thirds": 442,
+          "thirdRate": 18.6,
           "top3": 1380,
           "top3Rate": 58.2,
+          "outsideTop3": 991,
+          "outsideTop3Rate": 41.8,
           "averageSt": 0.17
         },
         "3": {
@@ -3986,8 +5127,14 @@
           "reliability": "high",
           "wins": 244,
           "winRate": 10.3,
+          "seconds": 546,
+          "secondRate": 23.1,
+          "thirds": 492,
+          "thirdRate": 20.8,
           "top3": 1282,
           "top3Rate": 54.3,
+          "outsideTop3": 1081,
+          "outsideTop3Rate": 45.7,
           "averageSt": 0.164
         },
         "4": {
@@ -3996,8 +5143,14 @@
           "reliability": "high",
           "wins": 246,
           "winRate": 10.4,
+          "seconds": 415,
+          "secondRate": 17.6,
+          "thirds": 470,
+          "thirdRate": 19.9,
           "top3": 1131,
           "top3Rate": 47.9,
+          "outsideTop3": 1232,
+          "outsideTop3Rate": 52.1,
           "averageSt": 0.165
         },
         "5": {
@@ -4006,8 +5159,14 @@
           "reliability": "high",
           "wins": 155,
           "winRate": 6.6,
+          "seconds": 274,
+          "secondRate": 11.7,
+          "thirds": 427,
+          "thirdRate": 18.2,
           "top3": 856,
           "top3Rate": 36.5,
+          "outsideTop3": 1488,
+          "outsideTop3Rate": 63.5,
           "averageSt": 0.17
         },
         "6": {
@@ -4016,8 +5175,14 @@
           "reliability": "high",
           "wins": 85,
           "winRate": 3.6,
+          "seconds": 167,
+          "secondRate": 7.1,
+          "thirds": 323,
+          "thirdRate": 13.7,
           "top3": 575,
           "top3Rate": 24.4,
+          "outsideTop3": 1778,
+          "outsideTop3Rate": 75.6,
           "averageSt": 0.181
         }
       },
@@ -4131,6 +5296,21 @@
           "count": 347,
           "rate": 14.5
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 789,
+          "rate": 32.9
+        },
+        "outsideWins": {
+          "count": 486,
+          "rate": 20.3
+        },
+        "boatOneOutsideTop3": {
+          "count": 411,
+          "rate": 17.1
+        }
       }
     },
     "08": {
@@ -4145,8 +5325,14 @@
           "reliability": "high",
           "wins": 1440,
           "winRate": 57.3,
+          "seconds": 395,
+          "secondRate": 15.7,
+          "thirds": 218,
+          "thirdRate": 8.7,
           "top3": 2053,
           "top3Rate": 81.7,
+          "outsideTop3": 459,
+          "outsideTop3Rate": 18.3,
           "averageSt": 0.155
         },
         "2": {
@@ -4155,8 +5341,14 @@
           "reliability": "high",
           "wins": 333,
           "winRate": 13.2,
+          "seconds": 596,
+          "secondRate": 23.7,
+          "thirds": 498,
+          "thirdRate": 19.8,
           "top3": 1427,
           "top3Rate": 56.7,
+          "outsideTop3": 1089,
+          "outsideTop3Rate": 43.3,
           "averageSt": 0.171
         },
         "3": {
@@ -4165,8 +5357,14 @@
           "reliability": "high",
           "wins": 274,
           "winRate": 10.9,
+          "seconds": 566,
+          "secondRate": 22.5,
+          "thirds": 489,
+          "thirdRate": 19.5,
           "top3": 1329,
           "top3Rate": 52.9,
+          "outsideTop3": 1183,
+          "outsideTop3Rate": 47.1,
           "averageSt": 0.169
         },
         "4": {
@@ -4175,8 +5373,14 @@
           "reliability": "high",
           "wins": 245,
           "winRate": 9.7,
+          "seconds": 399,
+          "secondRate": 15.9,
+          "thirds": 476,
+          "thirdRate": 18.9,
           "top3": 1120,
           "top3Rate": 44.5,
+          "outsideTop3": 1396,
+          "outsideTop3Rate": 55.5,
           "averageSt": 0.174
         },
         "5": {
@@ -4185,8 +5389,14 @@
           "reliability": "high",
           "wins": 159,
           "winRate": 6.3,
+          "seconds": 346,
+          "secondRate": 13.8,
+          "thirds": 452,
+          "thirdRate": 18,
           "top3": 957,
           "top3Rate": 38.2,
+          "outsideTop3": 1551,
+          "outsideTop3Rate": 61.8,
           "averageSt": 0.175
         },
         "6": {
@@ -4195,8 +5405,14 @@
           "reliability": "high",
           "wins": 87,
           "winRate": 3.5,
+          "seconds": 237,
+          "secondRate": 9.4,
+          "thirds": 405,
+          "thirdRate": 16.1,
           "top3": 729,
           "top3Rate": 29.1,
+          "outsideTop3": 1779,
+          "outsideTop3Rate": 70.9,
           "averageSt": 0.184
         }
       },
@@ -4310,6 +5526,21 @@
           "count": 412,
           "rate": 16.2
         }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 863,
+          "rate": 34
+        },
+        "outsideWins": {
+          "count": 491,
+          "rate": 19.3
+        },
+        "boatOneOutsideTop3": {
+          "count": 459,
+          "rate": 18.1
+        }
       }
     },
     "09": {
@@ -4324,8 +5555,14 @@
           "reliability": "high",
           "wins": 1323,
           "winRate": 57.7,
+          "seconds": 357,
+          "secondRate": 15.6,
+          "thirds": 206,
+          "thirdRate": 9,
           "top3": 1886,
           "top3Rate": 82.3,
+          "outsideTop3": 407,
+          "outsideTop3Rate": 17.7,
           "averageSt": 0.149
         },
         "2": {
@@ -4334,8 +5571,14 @@
           "reliability": "high",
           "wins": 314,
           "winRate": 13.8,
+          "seconds": 611,
+          "secondRate": 26.8,
+          "thirds": 426,
+          "thirdRate": 18.7,
           "top3": 1351,
           "top3Rate": 59.2,
+          "outsideTop3": 931,
+          "outsideTop3Rate": 40.8,
           "averageSt": 0.158
         },
         "3": {
@@ -4344,8 +5587,14 @@
           "reliability": "high",
           "wins": 248,
           "winRate": 10.8,
+          "seconds": 504,
+          "secondRate": 22,
+          "thirds": 476,
+          "thirdRate": 20.8,
           "top3": 1228,
           "top3Rate": 53.6,
+          "outsideTop3": 1065,
+          "outsideTop3Rate": 46.4,
           "averageSt": 0.154
         },
         "4": {
@@ -4354,8 +5603,14 @@
           "reliability": "high",
           "wins": 219,
           "winRate": 9.6,
+          "seconds": 387,
+          "secondRate": 16.9,
+          "thirds": 476,
+          "thirdRate": 20.8,
           "top3": 1082,
           "top3Rate": 47.4,
+          "outsideTop3": 1203,
+          "outsideTop3Rate": 52.6,
           "averageSt": 0.162
         },
         "5": {
@@ -4364,8 +5619,14 @@
           "reliability": "high",
           "wins": 139,
           "winRate": 6.1,
+          "seconds": 263,
+          "secondRate": 11.5,
+          "thirds": 391,
+          "thirdRate": 17.1,
           "top3": 793,
           "top3Rate": 34.7,
+          "outsideTop3": 1493,
+          "outsideTop3Rate": 65.3,
           "averageSt": 0.168
         },
         "6": {
@@ -4374,8 +5635,14 @@
           "reliability": "high",
           "wins": 71,
           "winRate": 3.1,
+          "seconds": 192,
+          "secondRate": 8.4,
+          "thirds": 341,
+          "thirdRate": 15,
           "top3": 604,
           "top3Rate": 26.5,
+          "outsideTop3": 1673,
+          "outsideTop3Rate": 73.5,
           "averageSt": 0.178
         }
       },
@@ -4488,6 +5755,21 @@
         "over10000": {
           "count": 379,
           "rate": 16.4
+        }
+      },
+      "turbulence": {
+        "definition": "3連単1万円以上・4〜6号艇1着・1号艇着外のいずれか",
+        "roughRaces": {
+          "count": 752,
+          "rate": 32.5
+        },
+        "outsideWins": {
+          "count": 429,
+          "rate": 18.5
+        },
+        "boatOneOutsideTop3": {
+          "count": 407,
+          "rate": 17.6
         }
       }
     }

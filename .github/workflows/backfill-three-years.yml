@@ -1,0 +1,116 @@
+name: Backfill three years of official race results
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/backfill-three-years.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect-official-results
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    name: ${{ matrix.period.from }} - ${{ matrix.period.to }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        period:
+          - from: "20230722"
+            to: "20230731"
+          - from: "20230801"
+            to: "20230831"
+          - from: "20230901"
+            to: "20230930"
+          - from: "20231001"
+            to: "20231031"
+          - from: "20231101"
+            to: "20231130"
+          - from: "20231201"
+            to: "20231231"
+          - from: "20240101"
+            to: "20240131"
+          - from: "20240201"
+            to: "20240229"
+          - from: "20240301"
+            to: "20240331"
+          - from: "20240401"
+            to: "20240430"
+          - from: "20240501"
+            to: "20240531"
+          - from: "20240601"
+            to: "20240630"
+          - from: "20240701"
+            to: "20240731"
+          - from: "20240801"
+            to: "20240831"
+          - from: "20240901"
+            to: "20240930"
+          - from: "20241001"
+            to: "20241031"
+          - from: "20241101"
+            to: "20241130"
+          - from: "20241201"
+            to: "20241231"
+          - from: "20250101"
+            to: "20250131"
+          - from: "20250201"
+            to: "20250228"
+          - from: "20250301"
+            to: "20250331"
+          - from: "20250401"
+            to: "20250430"
+          - from: "20250501"
+            to: "20250531"
+          - from: "20250601"
+            to: "20250630"
+          - from: "20250701"
+            to: "20250719"
+
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Sync latest main
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Backfill official results
+        run: |
+          node scripts/backfill-results.js \
+            --from="${{ matrix.period.from }}" \
+            --to="${{ matrix.period.to }}"
+
+      - name: Commit collected results
+        run: |
+          git add data/results data/stats
+
+          if git diff --cached --quiet; then
+            echo "変更はありません"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Backfill three-year official results ${{ matrix.period.from }}-${{ matrix.period.to }}"
+          git pull --rebase origin main
+          git push origin HEAD:main
