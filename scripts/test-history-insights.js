@@ -98,7 +98,20 @@ const pattern = insights.getPattern(
   "24",
   1
 );
-const trend = insights.buildTrend(pattern);
+const baselinePattern = {
+  boatPerformance: {
+    ...finalized.boatPerformance,
+    "1": {
+      riseRate: 0,
+      stayRate: 50,
+      sinkRate: 50
+    }
+  }
+};
+const trend = insights.buildTrend(
+  pattern,
+  baselinePattern
+);
 
 assert.equal(trend.available, true);
 assert.equal(trend.label, "本線傾向");
@@ -111,6 +124,18 @@ assert.equal(
 assert.equal(
   trend.frameMovement["4"].riseRate,
   33.3
+);
+assert.equal(
+  trend.frameMovement["1"].baselineSinkRate,
+  50
+);
+assert.equal(
+  trend.frameMovement["1"].movementDelta,
+  16.7
+);
+assert.equal(
+  trend.frameMovement["1"].hasBaseline,
+  true
 );
 assert.equal(
   insights.supportForType(trend, "本線"),

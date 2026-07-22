@@ -103,7 +103,38 @@ const data = {
             riseRate: 0,
             stayRate: 72.2,
             sinkRate: 27.8,
-            label: "沈下"
+            label: "沈下",
+            hasBaseline: true,
+            baselineRiseRate: 0,
+            baselineStayRate: 55.2,
+            baselineSinkRate: 44.8,
+            movementDelta: 34
+          },
+          "3": {
+            samples: 180,
+            reliability: "high",
+            riseRate: 25,
+            stayRate: 18,
+            sinkRate: 57,
+            label: "沈下",
+            hasBaseline: true,
+            baselineRiseRate: 34.6,
+            baselineStayRate: 20.1,
+            baselineSinkRate: 45.3,
+            movementDelta: -21.3
+          },
+          "4": {
+            samples: 180,
+            reliability: "high",
+            riseRate: 48,
+            stayRate: 19,
+            sinkRate: 33,
+            label: "浮上",
+            hasBaseline: true,
+            baselineRiseRate: 46.8,
+            baselineStayRate: 19.3,
+            baselineSinkRate: 34,
+            movementDelta: 2.2
           },
           "5": {
             samples: 178,
@@ -146,7 +177,23 @@ assert.equal(result.roadRaceBoats[0], 6);
 assert.deepEqual(result.localExperts, [5, 6]);
 assert.equal(result.frameMovement.length, 6);
 assert.equal(result.frameMovement[0].samples, 180);
-assert.equal(result.frameMovement[0].appliedToScore, false);
+assert.equal(result.frameMovement[0].appliedToScore, true);
+assert.equal(result.frameMovement[0].scoreAdjustment, 5);
+assert.equal(result.frameMovement[2].scoreAdjustment, -5);
+assert.equal(result.frameMovement[3].scoreAdjustment, 0);
+assert.equal(result.frameMovement[4].appliedToScore, false);
+assert.equal(
+  result.scenarios.find(
+    scenario => scenario.type === "escape"
+  ).frameMovementAdjustment,
+  5
+);
+assert.equal(
+  result.scenarios.find(
+    scenario => scenario.type === "threeAttack"
+  ).frameMovementAdjustment,
+  -5
+);
 assert.equal(result.frameMovement[4].label, "浮上");
 assert.equal(result.frameMovement[1].label, "判定保留");
 
@@ -154,7 +201,7 @@ assert.equal(result.evidence.scenario, "3コース攻め");
 assert.equal(result.evidence.score, result.confidence);
 assert.ok(result.evidence.mainGap >= 0);
 assert.ok(result.evidence.firstCandidates.includes(3));
-assert.equal(result.evidence.frameMovement.length, 2);
+assert.equal(result.evidence.frameMovement.length, 4);
 assert.equal(result.dataStatus.hasSt, true);
 assert.equal(result.dataStatus.hasExhibition, true);
 
