@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/collect-predictions.yml"
       - "scripts/collect-predictions.js"
+      - "scripts/build-prediction-index.js"
       - "api/schedule.js"
       - "api/race.js"
       - "js/ai-core.js"
@@ -55,7 +56,9 @@ jobs:
       - name: Compare and predict live races
         env:
           PREDICT_DATE: ${{ inputs.date }}
-        run: node scripts/collect-predictions.js
+        run: |
+          node scripts/collect-predictions.js
+          node scripts/build-prediction-index.js
 
       - name: Save predictions and note drafts
         run: |

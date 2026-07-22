@@ -8,9 +8,41 @@
 
   const U = window.ChappyUtils;
   const S = window.ChappyStorage;
+  const A = window.ChappyAutoStats;
   const OFFICIAL_SYNC_CONCURRENCY = 3;
 
   let officialSyncPromise = null;
+  let automaticStats = {
+    predictions: [],
+    results: [],
+    runs: []
+  };
+  let automaticStatsLoaded = false;
+  let automaticStatsError = "";
+
+  async function loadAutomaticStats() {
+    if (!A?.normalizeIndex) return automaticStats;
+
+    try {
+      const response = await fetch(
+        `/data/predictions/index.json?t=${Date.now()}`,
+        { cache: "no-store" }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      automaticStats = A.normalizeIndex(await response.json());
+      automaticStatsLoaded = true;
+      automaticStatsError = "";
+    } catch (error) {
+      automaticStatsError = String(error?.message || error);
+      console.error("自動予想履歴の取得に失敗", error);
+    }
+
+    return automaticStats;
+  }
     function normalizeDateKey(value) {
     return String(value || "")
       .replace(/\D/g, "")
@@ -442,17 +474,29 @@
 
     return officialSyncPromise;
   }
-  function buildRaceHistory(results) {
+  function buildRaceHistory(
+    results,
+    additionalPredictions = []
+  ) {
   const resultList =
     Array.isArray(results)
       ? results
       : [];
 
-  const predictionList =
+  const localPredictionList =
     typeof S.loadPredictionHistory ===
       "function"
       ? S.loadPredictionHistory()
       : [];
+
+  const predictionList = [
+    ...(Array.isArray(localPredictionList)
+      ? localPredictionList
+      : []),
+    ...(Array.isArray(additionalPredictions)
+      ? additionalPredictions
+      : [])
+  ];
 
   const normalizeTicket = value => {
     const boats =
@@ -772,8 +816,31 @@
     );
 }
     function renderStats() {
-  const results = S.loadResults();
-  const history = buildRaceHistory(results);
+  const localResults = S.loadResults();
+  const results = [
+    ...(Array.isArray(localResults)
+      ? localResults
+      : []),
+    ...(Array.isArray(automaticStats.results)
+      ? automaticStats.results
+      : [])
+  ];
+  const history = buildRaceHistory(
+    results,
+    automaticStats.predictions
+  );
+  const automaticRuns =
+    Array.isArray(automaticStats.runs)
+      ? automaticStats.runs
+      : [];
+  const automaticSelectedRuns =
+    Array.isArray(automaticStats.predictions)
+      ? automaticStats.predictions.length
+      : 0;
+  const automaticSkippedRuns =
+    automaticRuns.filter(
+      run => !run?.selected
+    ).length;
 
   const normalizeTicket = value => {
     const boats =
@@ -985,6 +1052,11 @@
         Boolean(item?.prediction)
       )
       .map(item => {
+        const isAutomatic =
+          item.prediction
+            ?.predictionSource ===
+            "automatic";
+
         const resultTicket =
           normalizeTicket(
             item?.resultTicket
@@ -1003,15 +1075,43 @@
           item.predictionTickets?.[0] ||
           null;
 
+        const directHonmeiBoat =
+          Number(
+            item.prediction
+              ?.mainSheet
+              ?.honmei
+              ?.boatNo || 0
+          );
+
         const honmeiBoat =
-          normalizeTicket(
-            mainTicket?.ticket
-          ).split("-")[0] || "";
+          directHonmeiBoat >= 1 &&
+          directHonmeiBoat <= 6
+            ? String(directHonmeiBoat)
+            : normalizeTicket(
+                mainTicket?.ticket
+              ).split("-")[0] || "";
 
         const practicalTickets =
-          derivePracticalTickets(
-            item.predictionTickets
-          );
+          isAutomatic
+            ? (Array.isArray(
+                item.prediction
+                  ?.practicalTickets
+              )
+                ? item.prediction
+                    .practicalTickets
+                : []
+              )
+                .map(ticket =>
+                  normalizeTicket(
+                    ticket?.ticket ||
+                    ticket
+                  )
+                )
+                .filter(Boolean)
+                .slice(0, 7)
+            : derivePracticalTickets(
+                item.predictionTickets
+              );
 
         const settled =
           item.raceStatus ===
@@ -1021,7 +1121,11 @@
         return {
           ...item,
           resultTicket,
-                    honmeiBoat,
+          honmeiBoat,
+          predictionSource:
+            isAutomatic
+              ? "自動選定"
+              : "手動保存",
 
           honmeiFinish:
             settled
@@ -1260,6 +1364,12 @@
 
               <td>
                 ${U.safeText(
+                  item.predictionSource
+                )}
+              </td>
+
+              <td>
+                ${U.safeText(
                   item.place ||
                   item.jcd ||
                   "-"
@@ -1316,7 +1426,7 @@
           .join("")
       : `
           <tr>
-            <td colspan="8">
+            <td colspan="9">
               公式結果と照合できる予想がありません
             </td>
           </tr>
@@ -1352,6 +1462,14 @@
         ${sampleMessage}
       </p>
 
+      <p>
+        ${automaticStatsLoaded
+          ? `自動選定履歴：採用${automaticSelectedRuns}回／見送り${automaticSkippedRuns}回を読み込み済みです。`
+          : automaticStatsError
+            ? `⚠️ 自動選定履歴を取得できませんでした（${U.safeText(automaticStatsError)}）`
+            : "自動選定履歴を読み込んでいます。"}
+      </p>
+
     </div>
 
 
@@ -1363,6 +1481,22 @@
         <p>
           ${predictionRows.length}
           レース
+        </p>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>自動選定採用</h3>
+
+        <p>
+          ${automaticSelectedRuns}回
+        </p>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>自動見送り判定</h3>
+
+        <p>
+          ${automaticSkippedRuns}回
         </p>
       </div>
 
@@ -1489,6 +1623,7 @@
           <thead>
             <tr>
               <th>日付</th>
+              <th>保存元</th>
               <th>レース</th>
               <th>◎</th>
               <th>公式着順</th>
@@ -1659,12 +1794,19 @@
   async function initStatsEvents() {
     renderStats();
 
-    try {
-      await syncPendingOfficialResults();
-    } catch (error) {
+    const [, officialResult] =
+      await Promise.allSettled([
+        loadAutomaticStats(),
+        syncPendingOfficialResults()
+      ]);
+
+    if (
+      officialResult.status ===
+      "rejected"
+    ) {
       console.error(
         "公式結果の自動照合エラー",
-        error
+        officialResult.reason
       );
 
       setOfficialSyncStatus(
@@ -1679,7 +1821,8 @@
 window.ChappyStats = {
   renderStats,
   initStatsEvents,
-  syncPendingOfficialResults
+  syncPendingOfficialResults,
+  loadAutomaticStats
 };
 
   document.addEventListener(
