@@ -21,8 +21,9 @@ const matched = matchPredictions(
     predictions: [{
       raceKey: "20260719-01-1",
       prediction: {
+        raceFlow: { title: "2差し本線" },
         mainSheet: { honmei: { boatNo: 2 } },
-        practicalTickets: [{ ticket: "2-1-4", category: "中心候補" }]
+        practicalTickets: [{ ticket: "2-1-4", category: "本線" }]
       }
     }]
   },
@@ -46,5 +47,11 @@ assert.equal(matched.resultSummary.settledCount, 1);
 assert.equal(matched.resultSummary.practicalHits, 1);
 assert.equal(matched.predictions[0].result.practicalHit, true);
 assert.equal(matched.predictions[0].result.payout, 4080);
+assert.equal(matched.predictions[0].result.scenarioMatched, true);
+assert.equal(matched.predictions[0].result.hitCategory, "本線");
+assert.equal(matched.predictions[0].result.verification.marks[0].finishLabel, "1着");
+assert.equal(matched.resultSummary.scenarioMatchRate, 100);
+assert.equal(matched.resultSummary.simulatedStake, 100);
+assert.equal(matched.resultSummary.simulatedReturn, 4080);
 
 console.log("自動予想・公式結果照合テスト: 合格");

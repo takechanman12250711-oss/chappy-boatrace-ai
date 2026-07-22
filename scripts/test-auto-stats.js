@@ -18,7 +18,11 @@ const normalized = normalizeIndex({
       resultTicket: "1→2→3",
       payout: 1230,
       popularity: 4,
-      winningMethod: "逃げ"
+      winningMethod: "逃げ",
+      verification: {
+        scenarioMatched: true,
+        hitCategory: "本線"
+      }
     }
   }]
 });
@@ -27,6 +31,8 @@ assert.equal(normalized.predictions.length, 1);
 assert.equal(normalized.predictions[0].predictionSource, "automatic");
 assert.equal(normalized.results[0].result, "1-2-3");
 assert.equal(normalized.results[0].officialPayoutPer100, 1230);
+assert.equal(normalized.results[0].automaticVerification.scenarioMatched, true);
+assert.equal(normalized.results[0].automaticVerification.hitCategory, "本線");
 assert.equal(normalized.runs.length, 1);
 
 console.log("自動予想成績変換テスト: 合格");

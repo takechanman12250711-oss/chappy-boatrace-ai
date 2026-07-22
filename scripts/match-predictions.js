@@ -3,6 +3,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const verification = require("../js/prediction-verification");
 
 function getArgument(name) {
   const prefix = `--${name}=`;
@@ -69,31 +70,23 @@ function getHonmeiBoat(prediction) {
 }
 
 function settlePrediction(prediction, result) {
-  const resultTicket = normalizeTicket(result?.trifecta?.combination);
-  const practicalTickets = [
-    ...new Set(
-      (prediction?.prediction?.practicalTickets || [])
-        .map(item => normalizeTicket(item?.ticket || item))
-        .filter(Boolean)
-    )
-  ];
+  const detail = verification.verifyPrediction(
+    prediction?.prediction || {},
+    result || {}
+  );
+  const resultTicket = detail.resultTicket;
+  const practicalTickets = detail.practicalTickets;
   const honmeiBoat = getHonmeiBoat(prediction);
-  const hit = Boolean(resultTicket) && practicalTickets.includes(resultTicket);
 
   return {
+    ...detail,
     settled: Boolean(result?.resultAvailable && resultTicket),
     settledAt: new Date().toISOString(),
-    resultTicket,
-    winningMethod: result?.winningMethod || "",
     payout: Number(result?.trifecta?.payout || 0),
     popularity: Number(result?.trifecta?.popularity || 0),
-    practicalTickets,
-    practicalHit: hit,
     honmeiBoat,
     honmeiFirst: Boolean(honmeiBoat && resultTicket.split("-")[0] === honmeiBoat),
-    missType: resultTicket
-      ? classifyMiss(practicalTickets, resultTicket)
-      : "結果待ち"
+    verification: detail
   };
 }
 
@@ -101,8 +94,12 @@ function buildSummary(predictions) {
   const settled = predictions.filter(item => item?.result?.settled);
   const hits = settled.filter(item => item.result.practicalHit);
   const honmeiFirst = settled.filter(item => item.result.honmeiFirst);
+  const verificationSummary = verification.buildSummary(
+    settled.map(item => item.result?.verification || item.result)
+  );
 
   return {
+    schemaVersion: 2,
     predictionCount: predictions.length,
     settledCount: settled.length,
     practicalHits: hits.length,
@@ -112,7 +109,16 @@ function buildSummary(predictions) {
     honmeiFirstCount: honmeiFirst.length,
     honmeiFirstRate: settled.length
       ? Math.round(honmeiFirst.length / settled.length * 1000) / 10
-      : 0
+      : 0,
+    scenarioComparableCount: verificationSummary.scenarioComparableCount,
+    scenarioHits: verificationSummary.scenarioHits,
+    scenarioMatchRate: verificationSummary.scenarioMatchRate,
+    simulatedStake: verificationSummary.totalStake,
+    simulatedReturn: verificationSummary.totalReturn,
+    simulatedProfit: verificationSummary.simulatedProfit,
+    simulatedRecoveryRate: verificationSummary.simulatedRecoveryRate,
+    categorySummary: verificationSummary.categorySummary,
+    markSummary: verificationSummary.markSummary
   };
 }
 
