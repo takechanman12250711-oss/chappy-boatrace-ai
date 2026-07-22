@@ -1,8 +1,52 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-22T13:00:46.767Z",
+  "generatedAt": "2026-07-22T13:08:23.222Z",
   "sourceFileCount": 1,
   "runs": [
+    {
+      "date": "20260722",
+      "runKey": "20260722-24-11-final-skipped",
+      "checkedAt": "2026-07-22T13:08:23.181Z",
+      "threshold": 70,
+      "selected": false,
+      "collectionHealth": {
+        "schemaVersion": 2,
+        "checkedAt": "2026-07-22T13:08:23.178Z",
+        "targetCount": 1,
+        "savedCount": 1,
+        "insufficientDataCount": 0,
+        "failedCount": 0,
+        "recoveredCount": 0,
+        "retryingCount": 0,
+        "finalUncollectedCount": 0,
+        "complete": true,
+        "targets": [
+          {
+            "raceKey": "20260722-24-11",
+            "jcd": "24",
+            "place": "大村",
+            "raceNo": 11,
+            "deadlineAt": "2026-07-22T22:16:00+09:00",
+            "status": "saved",
+            "error": "",
+            "missingReasons": [],
+            "attemptCount": 1,
+            "firstDetectedAt": "2026-07-22T13:08:23.178Z",
+            "lastAttemptAt": "2026-07-22T13:08:23.178Z",
+            "recoveryState": "not_needed",
+            "recoveredAt": "",
+            "finalAt": ""
+          }
+        ]
+      },
+      "best": {
+        "jcd": "24",
+        "place": "大村",
+        "raceNo": 11,
+        "type": "本線",
+        "score": 60.5
+      }
+    },
     {
       "date": "20260722",
       "runKey": "20260722-24-11-provisional-skipped",
@@ -445,44 +489,44 @@
       "place": "大村",
       "raceNo": 11,
       "deadlineAt": "2026-07-22T22:16:00+09:00",
-      "selectedAt": "2026-07-22T13:00:46.726Z",
+      "selectedAt": "2026-07-22T13:08:23.177Z",
       "verificationMode": "shadow",
       "scoreBand": "under_70",
       "selection": {
         "type": "本線",
-        "score": 57.1,
+        "score": 60.5,
         "threshold": 70,
         "qualified": false,
         "selected": false,
         "evaluation": {
           "ready": true,
           "honmei": {
-            "score": 57.1,
+            "score": 60.5,
             "level": "中",
             "reasons": [
               "1号艇A1・相手最上位4号艇A2",
-              "1逃げ展開88点",
-              "1逃げと対抗展開が拮抗",
+              "1逃げ展開89.6点",
+              "1逃げが対抗展開を14.8点上回る",
               "大村イン傾向82点"
             ]
           },
           "manshu": {
-            "score": 22.1,
+            "score": 17.4,
             "level": "低",
             "reasons": [
               "3号艇B1の3コース攻め",
-              "攻め・拾い成立度65.5点",
+              "攻め・拾い成立度55.4点",
               "外側のA1・A2が2艇のため万舟評価を抑制",
               "大村外展開傾向56.5点"
             ]
           },
           "dataStatus": {
-            "stage": "provisional",
-            "label": "展示前・暫定",
-            "completeness": 70,
+            "stage": "final",
+            "label": "展示反映済み",
+            "completeness": 100,
             "entryCount": 6,
             "stCount": 6,
-            "exhibitionCount": 0
+            "exhibitionCount": 6
           }
         }
       },
@@ -491,13 +535,13 @@
         "predictionMode": "server_pre_deadline_shadow",
         "raceFlow": {
           "title": "イン逃げ本線",
-          "summary": "最有力展開は1号艇逃げ（88点）。対抗展開は4カド攻め（87.5点）。1着候補は1号艇・2号艇・4号艇。2着残し候補は1号艇・2号艇・4号艇。3着拾い候補は4号艇・2号艇・1号艇。",
+          "summary": "最有力展開は1号艇逃げ（89.6点）。対抗展開は4カド攻め（74.8点）。1着候補は1号艇・2号艇・4号艇。2着残し候補は1号艇・2号艇・4号艇。3着拾い候補は4号艇・2号艇・1号艇。",
           "scenario": {
-            "title": "イン逃げ本線"
+            "title": "外コース展開突き"
           }
         },
         "confidence": {
-          "score": 91,
+          "score": 99,
           "reason": "軸と相手が比較的はっきりしている"
         },
         "manshuPower": {
@@ -518,8 +562,8 @@
             "name": "芦澤望"
           },
           "osae": {
-            "boatNo": 3,
-            "name": "上野拓馬"
+            "boatNo": 6,
+            "name": "木下大將"
           }
         },
         "practicalTickets": [
@@ -592,8 +636,8 @@
               "className": "",
               "avgST": null,
               "currentST": null,
-              "exhibitionST": null,
-              "exhibitionTime": null,
+              "exhibitionST": 0.08,
+              "exhibitionTime": 6.89,
               "lapTime": null,
               "localWinRate": null,
               "nationalWinRate": null,
@@ -606,8 +650,8 @@
               "className": "",
               "avgST": null,
               "currentST": null,
-              "exhibitionST": null,
-              "exhibitionTime": null,
+              "exhibitionST": 0.15,
+              "exhibitionTime": 6.93,
               "lapTime": null,
               "localWinRate": null,
               "nationalWinRate": null,
@@ -620,8 +664,8 @@
               "className": "",
               "avgST": null,
               "currentST": null,
-              "exhibitionST": null,
-              "exhibitionTime": null,
+              "exhibitionST": 0.23,
+              "exhibitionTime": 6.98,
               "lapTime": null,
               "localWinRate": null,
               "nationalWinRate": null,
@@ -634,8 +678,8 @@
               "className": "",
               "avgST": null,
               "currentST": null,
-              "exhibitionST": null,
-              "exhibitionTime": null,
+              "exhibitionST": 0.24,
+              "exhibitionTime": 6.96,
               "lapTime": null,
               "localWinRate": null,
               "nationalWinRate": null,
@@ -648,8 +692,8 @@
               "className": "",
               "avgST": null,
               "currentST": null,
-              "exhibitionST": null,
-              "exhibitionTime": null,
+              "exhibitionST": 0.11,
+              "exhibitionTime": 6.97,
               "lapTime": null,
               "localWinRate": null,
               "nationalWinRate": null,
@@ -662,8 +706,8 @@
               "className": "",
               "avgST": null,
               "currentST": null,
-              "exhibitionST": null,
-              "exhibitionTime": null,
+              "exhibitionST": 0.03,
+              "exhibitionTime": 6.95,
               "lapTime": null,
               "localWinRate": null,
               "nationalWinRate": null,
@@ -673,7 +717,7 @@
           "weather": {
             "weather": "",
             "windDirection": "",
-            "windSpeed": 2,
+            "windSpeed": 1,
             "waveHeight": 1,
             "temperature": 29,
             "waterTemperature": 32,
@@ -684,8 +728,8 @@
           "dataAvailability": {
             "entries": 0,
             "averageST": 0,
-            "exhibitionST": 0,
-            "exhibitionTime": 0,
+            "exhibitionST": 6,
+            "exhibitionTime": 6,
             "wind": true,
             "wave": true,
             "tide": true
