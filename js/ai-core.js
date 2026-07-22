@@ -2998,14 +2998,189 @@ if (hasComparison(3, 1)) {
     scenario.rank = index + 1;
   });
 
-  return {
-    mainScenario:
-      scenarios[0] || null,
+  const mainScenario = scenarios[0] || null;
+  const subScenario = scenarios[1] || null;
 
-    subScenario:
-      scenarios[1] || null,
+  /*
+    Phase2の役割判定。
+
+    ここでは印や買い目へ接続せず、既に計算済みの役割点と
+    最有力シナリオから「誰がどの役割か」だけを固定形式で返す。
+  */
+  function rankedBoatNumbers(scoreGetter, options = {}) {
+    const {
+      exclude = [],
+      limit = 3,
+      minimum = 0
+    } = options;
+
+    const excluded = new Set(
+      exclude.map((no) => Number(no))
+    );
+
+    return [...list]
+      .filter((boat) => {
+        const no = Number(boat?.boatNo || 0);
+        return no >= 1 && no <= 6 && !excluded.has(no);
+      })
+      .map((boat) => ({
+        boatNo: Number(boat.boatNo),
+        score: toNumber(scoreGetter(boat), 0)
+      }))
+      .filter((boat) => boat.score >= minimum)
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.boatNo - b.boatNo;
+      })
+      .slice(0, limit)
+      .map((boat) => boat.boatNo);
+  }
+
+  const attacker = Number(mainScenario?.attacker || 0) || null;
+
+  const wallBoat = attacker
+    ? (
+        attacker >= 2
+          ? attacker - 1
+          : rankedBoatNumbers(
+              (boat) => boat?.roleScores?.hold,
+              { exclude: [attacker], limit: 1 }
+            )[0] || null
+      )
+    : null;
+
+  const remainers = rankedBoatNumbers(
+    (boat) => boat?.roleScores?.hold,
+    { limit: 3 }
+  );
+
+  const followers = rankedBoatNumbers(
+    (boat) => boat?.roleScores?.flow,
+    { exclude: attacker ? [attacker] : [], limit: 3 }
+  );
+
+  const pickupCandidates = rankedBoatNumbers(
+    (boat) => boat?.roleScores?.pickup,
+    { limit: 3 }
+  );
+
+  const roadRaceBoats = rankedBoatNumbers(
+    (boat) => boat?.roleScores?.road,
+    { limit: 3 }
+  );
+
+  const localExperts = rankedBoatNumbers(
+    (boat) => boat?.indexes?.local,
+    { limit: 3, minimum: 75 }
+  );
+
+  const blockedBoats = Array.isArray(mainScenario?.blockedBoats)
+    ? [...mainScenario.blockedBoats]
+    : [];
+
+  const mainGap = Math.max(
+    0,
+    toNumber(mainScenario?.score, 0) -
+      toNumber(subScenario?.score, 0)
+  );
+
+  const confidence = toNumber(mainScenario?.score, 0);
+
+  const evidence = {
+    scenario: mainScenario?.label || "",
+    score: confidence,
+    mainGap: round(mainGap),
+    relations: {
+      twoVsOne: round(twoVsOne),
+      threeVsTwo: round(threeVsTwo),
+      fourVsThree: round(fourVsThree)
+    },
+    firstCandidates:
+      mainScenario?.outcome?.firstCandidates
+        ?.map((boat) => boat.boatNo) || [],
+    secondCandidates:
+      mainScenario?.outcome?.secondCandidates
+        ?.map((boat) => boat.boatNo) || [],
+    thirdCandidates:
+      mainScenario?.outcome?.thirdCandidates
+        ?.map((boat) => boat.boatNo) || []
+  };
+
+  const dataStatus = {
+    hasSt:
+      [1, 2, 3, 4, 5, 6]
+        .some(hasAverageSt),
+
+    hasExhibition:
+      [1, 2, 3, 4, 5, 6]
+        .some(hasExhibition),
+
+    beforeCount:
+      Array.isArray(data?.beforeInfo)
+        ? data.beforeInfo.length
+        : 0,
+
+    rawBeforeCount:
+      Array.isArray(data?.raw?.beforeInfo)
+        ? data.raw.beforeInfo.length
+        : 0,
+
+    startCount:
+      Array.isArray(data?.startExhibition)
+        ? data.startExhibition.length
+        : 0,
+
+    rawStartCount:
+      Array.isArray(data?.raw?.startExhibition)
+        ? data.raw.startExhibition.length
+        : 0,
+
+    mergedExhibition:
+      entries.map((entry) => ({
+        boatNo: getBoatNo(entry),
+
+        time:
+          entry.exhibitionTime ??
+          entry.tenjiTime ??
+          entry.displayTime ??
+          null,
+
+        st:
+          entry.exhibitionSt ??
+          entry.exhibitionST ??
+          entry.tenjiSt ??
+          entry.displaySt ??
+          entry.displayST ??
+          null
+      }))
+  };
+
+  return {
+    mainScenario,
+
+    subScenario,
 
     scenarios,
+
+    attacker,
+
+    wallBoat,
+
+    remainers,
+
+    followers,
+
+    pickupCandidates,
+
+    roadRaceBoats,
+
+    localExperts,
+
+    blockedBoats,
+
+    confidence,
+
+    evidence,
 
     relations: {
       twoVsOne: round(twoVsOne),
@@ -3013,54 +3188,7 @@ if (hasComparison(3, 1)) {
       fourVsThree: round(fourVsThree)
     },
 
-    dataStatus: {
-  hasSt:
-    [1, 2, 3, 4, 5, 6]
-      .some(hasAverageSt),
-
-  hasExhibition:
-    [1, 2, 3, 4, 5, 6]
-      .some(hasExhibition),
-
-  beforeCount:
-    Array.isArray(data?.beforeInfo)
-      ? data.beforeInfo.length
-      : 0,
-
-  rawBeforeCount:
-    Array.isArray(data?.raw?.beforeInfo)
-      ? data.raw.beforeInfo.length
-      : 0,
-
-  startCount:
-    Array.isArray(data?.startExhibition)
-      ? data.startExhibition.length
-      : 0,
-
-  rawStartCount:
-    Array.isArray(data?.raw?.startExhibition)
-      ? data.raw.startExhibition.length
-      : 0,
-
-        mergedExhibition:
-        entries.map((entry) => ({
-          boatNo: getBoatNo(entry),
-
-          time:
-            entry.exhibitionTime ??
-            entry.tenjiTime ??
-            entry.displayTime ??
-            null,
-
-          st:
-            entry.exhibitionSt ??
-            entry.exhibitionST ??
-            entry.tenjiSt ??
-            entry.displaySt ??
-            entry.displayST ??
-            null
-        }))
-    }
+    dataStatus
   };
 }
 /* ===============================
