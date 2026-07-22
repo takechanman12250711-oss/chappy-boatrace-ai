@@ -131,4 +131,4 @@ assert.equal(result.dataStatus.hasExhibition, true);
 console.log("展開シナリオエンジン専用テスト: 合格");
 console.log("- 4展開: 1逃げ・2差し・3攻め・4カド");
 console.log("- 役割: 攻め・壁・残し・展開・拾い・道中・当地");
-console.log("- 印・買い目への接続: なし");
+console.log("- このテスト範囲: 展開と役割出力");
