@@ -25,6 +25,12 @@ on:
       - "scripts/test-build-prediction-index.js"
       - "js/auto-stats.js"
       - "scripts/test-auto-stats.js"
+      - "index.html"
+      - "js/stats.js"
+      - "js/verification-readiness.js"
+      - "scripts/test-verification-readiness.js"
+      - "js/improvement-suggestions.js"
+      - "scripts/test-improvement-suggestions.js"
       - "scripts/test-practical-selection.js"
       - "scripts/test-ai-core-formations.js"
       - "api/missing.js"
@@ -61,6 +67,12 @@ on:
       - "scripts/test-build-prediction-index.js"
       - "js/auto-stats.js"
       - "scripts/test-auto-stats.js"
+      - "index.html"
+      - "js/stats.js"
+      - "js/verification-readiness.js"
+      - "scripts/test-verification-readiness.js"
+      - "js/improvement-suggestions.js"
+      - "scripts/test-improvement-suggestions.js"
       - "scripts/test-practical-selection.js"
       - "scripts/test-ai-core-formations.js"
       - "api/missing.js"
@@ -111,6 +123,10 @@ jobs:
           node --check scripts/test-build-prediction-index.js
           node --check js/auto-stats.js
           node --check scripts/test-auto-stats.js
+          node --check js/verification-readiness.js
+          node --check scripts/test-verification-readiness.js
+          node --check js/improvement-suggestions.js
+          node --check scripts/test-improvement-suggestions.js
           node --check scripts/test-practical-selection.js
           node --check scripts/test-ai-core-formations.js
           node --check api/missing.js
@@ -132,6 +148,8 @@ jobs:
           node scripts/test-prediction-conditions.js
           node scripts/test-build-prediction-index.js
           node scripts/test-auto-stats.js
+          node scripts/test-verification-readiness.js
+          node scripts/test-improvement-suggestions.js
           node scripts/test-practical-selection.js
           node scripts/test-ai-core-formations.js
           node scripts/test-missing-numbers.js

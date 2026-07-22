@@ -11,8 +11,8 @@
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
-  const MIN_SETTLED_SAMPLE = 5;
-  const MIN_GROUP_SAMPLE = 5;
+  const MIN_SETTLED_SAMPLE = 30;
+  const MIN_GROUP_SAMPLE = 12;
   const LOW_HIT_RATE = 40;
   const MISS_SHARE_ALERT = 40;
   const MAX_SUGGESTIONS = 6;
