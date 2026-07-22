@@ -75,10 +75,18 @@
 .auto-selection-tickets > span { display: grid; padding: 9px; border-radius: 10px; background: #f8fafc; }
 .auto-selection-tickets strong { font-size: 15px; }
 .auto-selection-tickets small { color: #64748b; font-size: 10px; }
-.auto-selection-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.auto-selection-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
 .auto-selection-actions button,
 .auto-selection-actions a { display: flex; align-items: center; justify-content: center; min-height: 42px; padding: 9px; border: 1px solid #7c3aed; border-radius: 10px; background: #7c3aed; color: #fff; font: inherit; font-size: 13px; font-weight: 900; text-decoration: none; cursor: pointer; }
 .auto-selection-actions a { background: #fff; color: #6d28d9; }
+.auto-selection-actions button:disabled { border-color: #cbd5e1; background: #e2e8f0; color: #64748b; cursor: not-allowed; }
+.auto-note-preview { margin-top: 12px; padding: 13px; border: 1px solid #ddd6fe; border-radius: 12px; background: #faf5ff; }
+.auto-note-preview[hidden] { display: none; }
+.auto-note-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+.auto-note-preview-head strong { font-size: 14px; }
+.auto-note-preview-head span { color: #6d28d9; font-size: 10px; font-weight: 900; }
+.auto-note-preview textarea { width: 100%; min-height: 280px; padding: 12px; border: 1px solid #c4b5fd; border-radius: 10px; background: #fff; color: #1e293b; font: inherit; font-size: 13px; line-height: 1.65; resize: vertical; box-sizing: border-box; }
+.auto-note-preview p { margin: 8px 0 0; color: #64748b; font-size: 10px; }
 .auto-selection-empty,
 .auto-selection-error { padding: 22px 12px; color: #64748b; text-align: center; }
 .auto-selection-error small { display: block; margin-top: 5px; }
@@ -86,10 +94,12 @@
 @media (max-width: 700px) {
   .auto-selection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .auto-selection-tickets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .auto-selection-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 390px) {
   .auto-selection-status-line,
-  .auto-selection-saved-head { align-items: flex-start; flex-direction: column; }
+  .auto-selection-saved-head,
+  .auto-note-preview-head { align-items: flex-start; flex-direction: column; }
   .auto-selection-actions { grid-template-columns: 1fr; }
 }
