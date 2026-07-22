@@ -101,18 +101,53 @@
           total: exhibition + lap
         };
       })
-      .filter(x => x.exhibition < 99 || x.lap < 99);
+      .filter(x => x.exhibition < 99 && x.lap < 99);
 
     const exhibitionTop = [...ranked].sort((a, b) => a.exhibition - b.exhibition)[0] || null;
     const lapTop = [...ranked].sort((a, b) => a.lap - b.lap)[0] || null;
 
+    const isDouble = Boolean(
+      exhibitionTop &&
+      lapTop &&
+      exhibitionTop.boatNo === lapTop.boatNo
+    );
+    const exhibitionSecond = [...ranked]
+      .sort((a, b) => a.exhibition - b.exhibition)[1] || null;
+    const lapSecond = [...ranked]
+      .sort((a, b) => a.lap - b.lap)[1] || null;
+    const exhibitionGap = isDouble && exhibitionSecond
+      ? Math.max(
+          0,
+          exhibitionSecond.exhibition - exhibitionTop.exhibition
+        )
+      : 0;
+    const lapGap = isDouble && lapSecond
+      ? Math.max(0, lapSecond.lap - lapTop.lap)
+      : 0;
+    const confidence = isDouble
+      ? Math.max(
+          70,
+          Math.min(
+            100,
+            70 +
+            Math.min(15, Math.round(exhibitionGap * 150)) +
+            Math.min(15, Math.round(lapGap * 75))
+          )
+        )
+      : 0;
+    const topBoatNo = isDouble
+      ? Number(exhibitionTop.boatNo)
+      : null;
+
     return {
       exhibitionTop,
       lapTop,
-      isDouble:
-        exhibitionTop &&
-        lapTop &&
-        exhibitionTop.boatNo === lapTop.boatNo
+      isDouble,
+      topBoat: topBoatNo,
+      confidence,
+      exhibitionGap: U.round(exhibitionGap, 3),
+      lapGap: U.round(lapGap, 3),
+      isOuterTarget: Boolean(topBoatNo >= 4 && topBoatNo <= 6)
     };
   }
 
@@ -188,6 +223,24 @@
           <strong>${U.escapeHtml(d.lapTop?.name || "-")}</strong>
         </div>
         <p>一周タイム：${d.lapTop?.lap ?? "-"}</p>
+      </div>
+      <div class="v3-theory-item">
+        <span class="v3-theory-label">判定</span>
+        <div class="v3-theory-main">
+          ${d.isDouble && d.topBoat ? U.boatBadge(d.topBoat, "mini") : ""}
+          <strong>${
+            d.isDouble
+              ? `信頼度 ${d.confidence}点`
+              : "ダブルタイム不成立"
+          }</strong>
+        </div>
+        <p>${
+          d.isDouble
+            ? d.isOuterTarget
+              ? "4・5・6号艇の実戦対象。連絡み条件は展開側で確認。"
+              : "1〜3号艇は気配情報として使用。"
+            : "展示1位と一周1位が一致していません。"
+        }</p>
       </div>
     `;
 
