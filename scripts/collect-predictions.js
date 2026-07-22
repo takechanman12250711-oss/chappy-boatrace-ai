@@ -198,6 +198,7 @@ async function loadTargets(date) {
 
 async function evaluateTargets(date, targets) {
   const results = [];
+  const attempts = [];
   let nextIndex = 0;
 
   async function worker() {
@@ -212,7 +213,14 @@ async function evaluateTargets(date, targets) {
         });
         const evaluation = global.ChappyAICore.buildRaceTrendEvaluation(raceData);
 
-        if (!evaluation?.ready) continue;
+        if (!evaluation?.ready) {
+          attempts.push({
+            ...target,
+            status: "insufficient_data",
+            error: "比較に必要な事前データが不足"
+          });
+          continue;
+        }
 
         const honmei = Number(evaluation.honmei?.score || 0);
         const manshu = Number(evaluation.manshu?.score || 0);
@@ -244,7 +252,13 @@ async function evaluateTargets(date, targets) {
           historyTrend,
           completeness: Number(evaluation.dataStatus?.completeness || 0)
         });
+        attempts.push({ ...target, status: "evaluated", error: "" });
       } catch (error) {
+        attempts.push({
+          ...target,
+          status: "fetch_failed",
+          error: String(error?.message || error).slice(0, 240)
+        });
         console.warn(
           `${target.place || target.jcd} ${target.raceNo}Rの比較失敗：${error?.message || error}`
         );
@@ -258,12 +272,14 @@ async function evaluateTargets(date, targets) {
     Array.from({ length: Math.min(3, targets.length) }, () => worker())
   );
 
-  return results.sort((a, b) =>
+  const comparison = results.sort((a, b) =>
     b.score - a.score ||
     b.historySupport - a.historySupport ||
     b.completeness - a.completeness ||
     Date.parse(a.deadlineAt || 0) - Date.parse(b.deadlineAt || 0)
   );
+
+  return { comparison, attempts };
 }
 
 function upsertByRaceKey(list, records) {
@@ -331,7 +347,57 @@ function buildVerificationPredictions(date, comparison, selectedRaceKey = "") {
   return records;
 }
 
-function saveRun(date, comparison, selectedData, verificationPredictions = []) {
+function buildCollectionHealth(date, targets, attempts, verificationPredictions) {
+  const savedKeys = new Set(
+    (Array.isArray(verificationPredictions) ? verificationPredictions : [])
+      .map(item => String(item?.raceKey || ""))
+      .filter(Boolean)
+  );
+  const attemptByKey = new Map(
+    (Array.isArray(attempts) ? attempts : []).map(item => [
+      `${date}-${item.jcd}-${item.raceNo}`,
+      item
+    ])
+  );
+  const monitoredTargets = (Array.isArray(targets) ? targets : []).map(target => {
+    const raceKey = `${date}-${target.jcd}-${target.raceNo}`;
+    const attempt = attemptByKey.get(raceKey) || null;
+    let status = savedKeys.has(raceKey) ? "saved" : attempt?.status || "not_attempted";
+    if (status === "evaluated") status = "prediction_failed";
+    return {
+      raceKey,
+      jcd: target.jcd,
+      place: target.place,
+      raceNo: target.raceNo,
+      deadlineAt: target.deadlineAt,
+      status,
+      error: status === "saved" ? "" : String(attempt?.error || "").slice(0, 240)
+    };
+  });
+  const count = status => monitoredTargets.filter(item => item.status === status).length;
+
+  return {
+    schemaVersion: 1,
+    checkedAt: new Date().toISOString(),
+    targetCount: monitoredTargets.length,
+    savedCount: count("saved"),
+    insufficientDataCount: count("insufficient_data"),
+    failedCount: count("fetch_failed") + count("prediction_failed") + count("not_attempted"),
+    complete: monitoredTargets.length > 0 && count("saved") === monitoredTargets.length,
+    targets: monitoredTargets
+  };
+}
+
+function logCollectionHealth(health) {
+  if (!health) return;
+  const missing = Math.max(0, health.targetCount - health.savedCount);
+  console.log(
+    `収集監視：対象${health.targetCount}R／保存${health.savedCount}R／未保存${missing}R` +
+    `（データ不足${health.insufficientDataCount}R／取得失敗${health.failedCount}R）`
+  );
+}
+
+function saveRun(date, comparison, selectedData, verificationPredictions = [], collectionHealth = null) {
   const outputPath = path.join(
     process.cwd(),
     "data",
@@ -356,6 +422,7 @@ function saveRun(date, comparison, selectedData, verificationPredictions = []) {
     checkedAt: new Date().toISOString(),
     threshold: MIN_SCORE,
     selected,
+    collectionHealth,
     best: best
       ? {
           jcd: best.jcd,
@@ -431,12 +498,20 @@ async function main() {
   }
 
   console.log(`${date}の締切前${targets.length}場を比較します`);
-  const comparison = await evaluateTargets(date, targets);
+  const evaluationResult = await evaluateTargets(date, targets);
+  const comparison = evaluationResult.comparison;
   const best = comparison[0] || null;
 
   if (!best) {
     console.log("比較に必要なデータが不足しています");
-    if (!dryRun) saveRun(date, comparison, null, []);
+    const collectionHealth = buildCollectionHealth(
+      date,
+      targets,
+      evaluationResult.attempts,
+      []
+    );
+    logCollectionHealth(collectionHealth);
+    if (!dryRun) saveRun(date, comparison, null, [], collectionHealth);
     return;
   }
 
@@ -448,6 +523,13 @@ async function main() {
     comparison,
     selectedRaceKey
   );
+  const collectionHealth = buildCollectionHealth(
+    date,
+    targets,
+    evaluationResult.attempts,
+    verificationPredictions
+  );
+  logCollectionHealth(collectionHealth);
   const selectedBase = verificationPredictions.find(
     item => item.raceKey === selectedRaceKey
   ) || null;
@@ -478,7 +560,7 @@ async function main() {
 
   if (!dryRun) {
     if (selectedData) selectedData.note.path = saveNote(date, best, article);
-    saveRun(date, comparison, selectedData, verificationPredictions);
+    saveRun(date, comparison, selectedData, verificationPredictions, collectionHealth);
   }
 
   console.log(
@@ -514,6 +596,7 @@ module.exports = {
   MIN_SCORE,
   upsertByRaceKey,
   compactStoredVerification,
+  buildCollectionHealth,
   buildStoredPrediction,
   buildVerificationPredictions,
   saveRun

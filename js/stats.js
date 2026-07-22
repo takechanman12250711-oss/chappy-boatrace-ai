@@ -12,6 +12,7 @@
   const I = window.ChappyImprovementSuggestions;
   const V = window.ChappyPredictionVerification;
   const R = window.ChappyVerificationReadiness;
+  const H = window.ChappyCollectionHealth;
   const OFFICIAL_SYNC_CONCURRENCY = 3;
 
   let officialSyncPromise = null;
@@ -856,6 +857,9 @@
     automaticRuns.filter(
       run => !run?.selected
     ).length;
+  const collectionHealth = H?.buildReport
+    ? H.buildReport(automaticStats)
+    : null;
 
   const normalizeTicket = value => {
     const boats =
@@ -1715,6 +1719,30 @@
     <div class="v3-final-grid">
 
       <div class="v3-final-block">
+        <h3>収集監視対象</h3>
+        <p>${collectionHealth?.monitoredCount ?? 0}レース</p>
+        <small>監視機能追加後の締切前レース</small>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>事前予想保存率</h3>
+        <p>${collectionHealth?.coverageRate ?? 0}%</p>
+        <small>${collectionHealth?.savedCount ?? 0}/${collectionHealth?.monitoredCount ?? 0}レース</small>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>未保存</h3>
+        <p>${collectionHealth?.missingCount ?? 0}レース</p>
+        <small>データ不足${collectionHealth?.insufficientDataCount ?? 0}／取得失敗${collectionHealth?.failedCount ?? 0}</small>
+      </div>
+
+      <div class="v3-final-block">
+        <h3>公式結果待ち</h3>
+        <p>${collectionHealth?.resultWaitingCount ?? 0}レース</p>
+        <small>保存${collectionHealth?.predictionCount ?? 0}／照合済み${collectionHealth?.settledCount ?? 0}</small>
+      </div>
+
+      <div class="v3-final-block">
         <h3>AI予想数</h3>
 
         <p>
@@ -1843,6 +1871,29 @@
         </small>
       </div>
 
+    </div>
+
+    <div class="v3-final-block">
+      <h3>場別の自動収集状況</h3>
+      <p class="v3-note">
+        開催中かつ締切前に取得対象となったレースだけを集計します。未来レース・締切後・中止は未保存に含めません。
+      </p>
+      <div class="v3-table-wrap">
+        <table class="v3-table">
+          <thead><tr><th>場</th><th>対象</th><th>保存</th><th>未保存</th><th>取得失敗</th></tr></thead>
+          <tbody>
+            ${(collectionHealth?.venues || []).map(item => `
+              <tr>
+                <td>${U.safeText(item.place)}</td>
+                <td>${item.targetCount}R</td>
+                <td>${item.savedCount}R</td>
+                <td>${item.missingCount}R</td>
+                <td>${item.failedCount}R</td>
+              </tr>
+            `).join("") || `<tr><td colspan="5">監視データを蓄積中です</td></tr>`}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="v3-final-block">

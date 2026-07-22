@@ -70,6 +70,7 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
         checkedAt: run?.checkedAt || "",
         threshold: Number(run?.threshold || 0),
         selected: Boolean(run?.selected),
+        collectionHealth: run?.collectionHealth || null,
         best: run?.best
           ? {
               jcd: run.best.jcd || "",

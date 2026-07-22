@@ -9,6 +9,8 @@ on:
       - "scripts/collect-predictions.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-shadow-predictions.js"
+      - "js/collection-health.js"
+      - "scripts/test-collection-health.js"
       - "api/schedule.js"
       - "api/race.js"
       - "js/ai-core.js"
@@ -55,6 +57,7 @@ jobs:
         run: |
           node --check scripts/collect-predictions.js
           node scripts/test-shadow-predictions.js
+          node scripts/test-collection-health.js
           node scripts/check-charter.js
 
       - name: Compare and predict live races
