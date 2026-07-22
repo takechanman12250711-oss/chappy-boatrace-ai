@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-22T13:30:36.617Z",
+  "generatedAt": "2026-07-22T14:32:55.385Z",
   "sourceFileCount": 1,
   "runs": [
     {
@@ -825,6 +825,388 @@
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
         }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "4-5-1",
+        "winningMethod": "まくり差し",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": false,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 3,
+            "finishLabel": "3着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 6,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 4,
+            "finish": 1,
+            "finishLabel": "1着"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-3",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-4",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-6",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-3",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-4",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-6",
+            "category": "流し"
+          },
+          {
+            "ticket": "6-1-3",
+            "category": "万舟・穴"
+          }
+        ],
+        "practicalTickets": [
+          "1-2-3",
+          "1-2-4",
+          "1-2-6",
+          "2-1-3",
+          "2-1-4",
+          "2-1-6",
+          "6-1-3"
+        ],
+        "practicalPointCount": 7,
+        "practicalHit": false,
+        "hitCategory": "",
+        "missType": "頭外れ",
+        "payoutPer100": 14290,
+        "popularity": 59,
+        "simulatedStake": 700,
+        "simulatedReturn": 0,
+        "simulatedProfit": -700,
+        "simulatedRecoveryRate": 0,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "展開",
+          "primaryEvidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "要確認",
+              "evidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致"
+            },
+            {
+              "stage": "コース",
+              "status": "要確認",
+              "evidence": "◎1号艇に対し、1着は4号艇"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "確認済み",
+              "evidence": "予想時点の平均・今節・展示STを保存済み"
+            },
+            {
+              "stage": "展示・足",
+              "status": "確認済み",
+              "evidence": "展示は1着艇6.96、◎6.97"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "確認済み",
+              "evidence": "外れ方は「頭外れ」"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "確認済み",
+              "evidence": "風1m・波1cm・潮影響55"
+            },
+            {
+              "stage": "技量",
+              "status": "確認済み",
+              "evidence": "1着艇-・全国-、◎-・全国-"
+            },
+            {
+              "stage": "モーター",
+              "status": "判定保留",
+              "evidence": "予想時点のモーター比較データが不足"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 14290,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 4,
+            "registerNo": "4357",
+            "racerName": "田中和也",
+            "raceTime": "1'51\"1"
+          },
+          {
+            "rank": 2,
+            "boat": 5,
+            "registerNo": "4305",
+            "racerName": "金子拓矢",
+            "raceTime": "1'52\"3"
+          },
+          {
+            "rank": 3,
+            "boat": 1,
+            "registerNo": "4256",
+            "racerName": "渡辺浩司",
+            "raceTime": "1'54\"4"
+          },
+          {
+            "rank": 4,
+            "boat": 3,
+            "registerNo": "4025",
+            "racerName": "山本隆幸",
+            "raceTime": "1'55\"5"
+          },
+          {
+            "rank": 5,
+            "boat": 6,
+            "registerNo": "4518",
+            "racerName": "大須賀友",
+            "raceTime": ""
+          },
+          {
+            "rank": 6,
+            "boat": 2,
+            "registerNo": "3256",
+            "racerName": "三角哲男",
+            "raceTime": ""
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.19,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".19"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.39,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".39"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.26,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".26"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.19,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".19 まくり差し"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.22,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".22"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.26,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".26"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": false,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "4-5-1",
+          "winningMethod": "まくり差し",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": false,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 3,
+              "finishLabel": "3着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 6,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 4,
+              "finish": 1,
+              "finishLabel": "1着"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-3",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-4",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-6",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-3",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-4",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-6",
+              "category": "流し"
+            },
+            {
+              "ticket": "6-1-3",
+              "category": "万舟・穴"
+            }
+          ],
+          "practicalTickets": [
+            "1-2-3",
+            "1-2-4",
+            "1-2-6",
+            "2-1-3",
+            "2-1-4",
+            "2-1-6",
+            "6-1-3"
+          ],
+          "practicalPointCount": 7,
+          "practicalHit": false,
+          "hitCategory": "",
+          "missType": "頭外れ",
+          "payoutPer100": 14290,
+          "popularity": 0,
+          "simulatedStake": 700,
+          "simulatedReturn": 0,
+          "simulatedProfit": -700,
+          "simulatedRecoveryRate": 0,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "展開",
+            "primaryEvidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "要確認",
+                "evidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致"
+              },
+              {
+                "stage": "コース",
+                "status": "要確認",
+                "evidence": "◎1号艇に対し、1着は4号艇"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "確認済み",
+                "evidence": "予想時点の平均・今節・展示STを保存済み"
+              },
+              {
+                "stage": "展示・足",
+                "status": "確認済み",
+                "evidence": "展示は1着艇6.96、◎6.97"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "確認済み",
+                "evidence": "外れ方は「頭外れ」"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "確認済み",
+                "evidence": "風1m・波1cm・潮影響55"
+              },
+              {
+                "stage": "技量",
+                "status": "確認済み",
+                "evidence": "1着艇-・全国-、◎-・全国-"
+              },
+              {
+                "stage": "モーター",
+                "status": "判定保留",
+                "evidence": "予想時点のモーター比較データが不足"
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -1082,6 +1464,388 @@
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
         }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "1-2-5",
+        "winningMethod": "逃げ",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": true,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 2,
+            "finishLabel": "2着"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 4,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 6,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-4",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-5",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-6",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-4",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-5",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-6",
+            "category": "流し"
+          },
+          {
+            "ticket": "4-1-2",
+            "category": "万舟・穴"
+          }
+        ],
+        "practicalTickets": [
+          "1-2-4",
+          "1-2-5",
+          "1-2-6",
+          "2-1-4",
+          "2-1-5",
+          "2-1-6",
+          "4-1-2"
+        ],
+        "practicalPointCount": 7,
+        "practicalHit": true,
+        "hitCategory": "本線",
+        "missType": "的中",
+        "payoutPer100": 1410,
+        "popularity": 4,
+        "simulatedStake": 700,
+        "simulatedReturn": 1410,
+        "simulatedProfit": 710,
+        "simulatedRecoveryRate": 201.4,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "的中",
+          "primaryEvidence": "実戦厳選の買い目が公式結果と一致しました。",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "コース",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "展示・足",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "技量",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "モーター",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 1410,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 1,
+            "registerNo": "4475",
+            "racerName": "末永祐輝",
+            "raceTime": "1'50\"9"
+          },
+          {
+            "rank": 2,
+            "boat": 2,
+            "registerNo": "5350",
+            "racerName": "網代良芽",
+            "raceTime": "1'51\"9"
+          },
+          {
+            "rank": 3,
+            "boat": 5,
+            "registerNo": "4821",
+            "racerName": "妻鳥晋也",
+            "raceTime": "1'53\"7"
+          },
+          {
+            "rank": 4,
+            "boat": 6,
+            "registerNo": "4403",
+            "racerName": "木下大將",
+            "raceTime": "1'54\"6"
+          },
+          {
+            "rank": 5,
+            "boat": 3,
+            "registerNo": "5130",
+            "racerName": "上野拓馬",
+            "raceTime": ""
+          },
+          {
+            "rank": 6,
+            "boat": 4,
+            "registerNo": "4053",
+            "racerName": "芦澤望",
+            "raceTime": ""
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.06,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".06 逃げ"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.13,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".13"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.26,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".26"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.19,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".19"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": true,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "1-2-5",
+          "winningMethod": "逃げ",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": true,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 2,
+              "finishLabel": "2着"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 4,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 6,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-4",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-5",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-6",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-4",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-5",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-6",
+              "category": "流し"
+            },
+            {
+              "ticket": "4-1-2",
+              "category": "万舟・穴"
+            }
+          ],
+          "practicalTickets": [
+            "1-2-4",
+            "1-2-5",
+            "1-2-6",
+            "2-1-4",
+            "2-1-5",
+            "2-1-6",
+            "4-1-2"
+          ],
+          "practicalPointCount": 7,
+          "practicalHit": true,
+          "hitCategory": "本線",
+          "missType": "的中",
+          "payoutPer100": 1410,
+          "popularity": 0,
+          "simulatedStake": 700,
+          "simulatedReturn": 1410,
+          "simulatedProfit": 710,
+          "simulatedRecoveryRate": 201.4,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "的中",
+            "primaryEvidence": "実戦厳選の買い目が公式結果と一致しました。",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "コース",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "展示・足",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "技量",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "モーター",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -1330,6 +2094,378 @@
           },
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
+        }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "1-2-4",
+        "winningMethod": "逃げ",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": true,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 2,
+            "finishLabel": "2着"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 4,
+            "finish": 3,
+            "finishLabel": "3着"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 3,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-4",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-6",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-5",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-4",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-6",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-5",
+            "category": "流し"
+          }
+        ],
+        "practicalTickets": [
+          "1-2-4",
+          "1-2-6",
+          "1-2-5",
+          "2-1-4",
+          "2-1-6",
+          "2-1-5"
+        ],
+        "practicalPointCount": 6,
+        "practicalHit": true,
+        "hitCategory": "本線",
+        "missType": "的中",
+        "payoutPer100": 1210,
+        "popularity": 5,
+        "simulatedStake": 600,
+        "simulatedReturn": 1210,
+        "simulatedProfit": 610,
+        "simulatedRecoveryRate": 201.7,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "的中",
+          "primaryEvidence": "実戦厳選の買い目が公式結果と一致しました。",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "コース",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "展示・足",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "技量",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "モーター",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 1210,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 1,
+            "registerNo": "4675",
+            "racerName": "井手良太",
+            "raceTime": "1'51\"8"
+          },
+          {
+            "rank": 2,
+            "boat": 2,
+            "registerNo": "4808",
+            "racerName": "松尾拓",
+            "raceTime": "1'52\"9"
+          },
+          {
+            "rank": 3,
+            "boat": 4,
+            "registerNo": "3567",
+            "racerName": "吉岡誠",
+            "raceTime": "1'54\"7"
+          },
+          {
+            "rank": 4,
+            "boat": 5,
+            "registerNo": "5345",
+            "racerName": "牧村俊輝",
+            "raceTime": "1'55\"5"
+          },
+          {
+            "rank": 5,
+            "boat": 3,
+            "registerNo": "4803",
+            "racerName": "飯田庄吾",
+            "raceTime": ""
+          },
+          {
+            "rank": 6,
+            "boat": 6,
+            "registerNo": "5261",
+            "racerName": "岡暢祐",
+            "raceTime": ""
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.1,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".10 逃げ"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.13,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".13"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.13,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".13"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.18,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".18"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.15,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".15"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.23,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".23"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": true,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "1-2-4",
+          "winningMethod": "逃げ",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": true,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 2,
+              "finishLabel": "2着"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 4,
+              "finish": 3,
+              "finishLabel": "3着"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 3,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-4",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-6",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-5",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-4",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-6",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-5",
+              "category": "流し"
+            }
+          ],
+          "practicalTickets": [
+            "1-2-4",
+            "1-2-6",
+            "1-2-5",
+            "2-1-4",
+            "2-1-6",
+            "2-1-5"
+          ],
+          "practicalPointCount": 6,
+          "practicalHit": true,
+          "hitCategory": "本線",
+          "missType": "的中",
+          "payoutPer100": 1210,
+          "popularity": 0,
+          "simulatedStake": 600,
+          "simulatedReturn": 1210,
+          "simulatedProfit": 610,
+          "simulatedRecoveryRate": 201.7,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "的中",
+            "primaryEvidence": "実戦厳選の買い目が公式結果と一致しました。",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "コース",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "展示・足",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "技量",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "モーター",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              }
+            ]
+          }
         }
       }
     },
@@ -1588,6 +2724,388 @@
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
         }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "1-3-6",
+        "winningMethod": "逃げ",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": true,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 3,
+            "finish": 2,
+            "finishLabel": "2着"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 6,
+            "finish": 3,
+            "finishLabel": "3着"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-6",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-3",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-5",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-6",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-3",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-5",
+            "category": "流し"
+          },
+          {
+            "ticket": "3-1-6",
+            "category": "万舟・穴"
+          }
+        ],
+        "practicalTickets": [
+          "1-2-6",
+          "1-2-3",
+          "1-2-5",
+          "2-1-6",
+          "2-1-3",
+          "2-1-5",
+          "3-1-6"
+        ],
+        "practicalPointCount": 7,
+        "practicalHit": false,
+        "hitCategory": "",
+        "missType": "着順違い",
+        "payoutPer100": 760,
+        "popularity": 2,
+        "simulatedStake": 700,
+        "simulatedReturn": 0,
+        "simulatedProfit": -700,
+        "simulatedRecoveryRate": 0,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "残し・拾い",
+          "primaryEvidence": "外れ方は「着順違い」",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "一致",
+              "evidence": "中心展開と公式決まり手が一致"
+            },
+            {
+              "stage": "コース",
+              "status": "一致",
+              "evidence": "◎1号艇が1着"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "確認済み",
+              "evidence": "予想時点の平均・今節・展示STを保存済み"
+            },
+            {
+              "stage": "展示・足",
+              "status": "確認済み",
+              "evidence": "展示は1着艇6.78、◎6.78"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "要確認",
+              "evidence": "外れ方は「着順違い」"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "確認済み",
+              "evidence": "風1m・波1cm・潮影響55"
+            },
+            {
+              "stage": "技量",
+              "status": "確認済み",
+              "evidence": "1着艇-・全国-、◎-・全国-"
+            },
+            {
+              "stage": "モーター",
+              "status": "判定保留",
+              "evidence": "予想時点のモーター比較データが不足"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 760,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 1,
+            "registerNo": "4885",
+            "racerName": "大山千広",
+            "raceTime": "1'49\"9"
+          },
+          {
+            "rank": 2,
+            "boat": 3,
+            "registerNo": "4050",
+            "racerName": "田口節子",
+            "raceTime": "1'50\"9"
+          },
+          {
+            "rank": 3,
+            "boat": 6,
+            "registerNo": "5163",
+            "racerName": "清水愛海",
+            "raceTime": "1'52\"5"
+          },
+          {
+            "rank": 4,
+            "boat": 5,
+            "registerNo": "3801",
+            "racerName": "五反田忍",
+            "raceTime": "1'53\"5"
+          },
+          {
+            "rank": 5,
+            "boat": 2,
+            "registerNo": "3618",
+            "racerName": "海野ゆかり",
+            "raceTime": ""
+          },
+          {
+            "rank": 6,
+            "boat": 4,
+            "registerNo": "4484",
+            "racerName": "稲生夏季",
+            "raceTime": ""
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.17,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".17 逃げ"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.18,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".18"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.16,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".16"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.23,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".23"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.17,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".17"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.23,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".23"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": true,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "1-3-6",
+          "winningMethod": "逃げ",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": true,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 3,
+              "finish": 2,
+              "finishLabel": "2着"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 6,
+              "finish": 3,
+              "finishLabel": "3着"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-6",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-3",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-5",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-6",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-3",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-5",
+              "category": "流し"
+            },
+            {
+              "ticket": "3-1-6",
+              "category": "万舟・穴"
+            }
+          ],
+          "practicalTickets": [
+            "1-2-6",
+            "1-2-3",
+            "1-2-5",
+            "2-1-6",
+            "2-1-3",
+            "2-1-5",
+            "3-1-6"
+          ],
+          "practicalPointCount": 7,
+          "practicalHit": false,
+          "hitCategory": "",
+          "missType": "着順違い",
+          "payoutPer100": 760,
+          "popularity": 0,
+          "simulatedStake": 700,
+          "simulatedReturn": 0,
+          "simulatedProfit": -700,
+          "simulatedRecoveryRate": 0,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "残し・拾い",
+            "primaryEvidence": "外れ方は「着順違い」",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "一致",
+                "evidence": "中心展開と公式決まり手が一致"
+              },
+              {
+                "stage": "コース",
+                "status": "一致",
+                "evidence": "◎1号艇が1着"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "確認済み",
+                "evidence": "予想時点の平均・今節・展示STを保存済み"
+              },
+              {
+                "stage": "展示・足",
+                "status": "確認済み",
+                "evidence": "展示は1着艇6.78、◎6.78"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "要確認",
+                "evidence": "外れ方は「着順違い」"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "確認済み",
+                "evidence": "風1m・波1cm・潮影響55"
+              },
+              {
+                "stage": "技量",
+                "status": "確認済み",
+                "evidence": "1着艇-・全国-、◎-・全国-"
+              },
+              {
+                "stage": "モーター",
+                "status": "判定保留",
+                "evidence": "予想時点のモーター比較データが不足"
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -1844,6 +3362,388 @@
           },
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
+        }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "3-5-4",
+        "winningMethod": "差し",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": false,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 5,
+            "finish": 2,
+            "finishLabel": "2着"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 4,
+            "finish": 3,
+            "finishLabel": "3着"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-6",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-5",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-4",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-6",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-5",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-4",
+            "category": "流し"
+          },
+          {
+            "ticket": "5-1-6",
+            "category": "万舟・穴"
+          }
+        ],
+        "practicalTickets": [
+          "1-2-6",
+          "1-2-5",
+          "1-2-4",
+          "2-1-6",
+          "2-1-5",
+          "2-1-4",
+          "5-1-6"
+        ],
+        "practicalPointCount": 7,
+        "practicalHit": false,
+        "hitCategory": "",
+        "missType": "頭外れ",
+        "payoutPer100": 19210,
+        "popularity": 51,
+        "simulatedStake": 700,
+        "simulatedReturn": 0,
+        "simulatedProfit": -700,
+        "simulatedRecoveryRate": 0,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "展開",
+          "primaryEvidence": "予想展開「イン逃げ本線」と決まり手「差し」が不一致",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "要確認",
+              "evidence": "予想展開「イン逃げ本線」と決まり手「差し」が不一致"
+            },
+            {
+              "stage": "コース",
+              "status": "要確認",
+              "evidence": "◎1号艇に対し、1着は3号艇"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "要確認",
+              "evidence": "実戦STは1着艇0.14、◎0.25"
+            },
+            {
+              "stage": "展示・足",
+              "status": "確認済み",
+              "evidence": "展示は1着艇6.85、◎6.82"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "確認済み",
+              "evidence": "外れ方は「頭外れ」"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "確認済み",
+              "evidence": "風1m・波1cm・潮影響55"
+            },
+            {
+              "stage": "技量",
+              "status": "要確認",
+              "evidence": "1着艇A2・全国5.73、◎-・全国-"
+            },
+            {
+              "stage": "モーター",
+              "status": "判定保留",
+              "evidence": "予想時点のモーター比較データが不足"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 19210,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 3,
+            "registerNo": "4009",
+            "racerName": "小林一樹",
+            "raceTime": "1'51\"6"
+          },
+          {
+            "rank": 2,
+            "boat": 5,
+            "registerNo": "4788",
+            "racerName": "小池哲也",
+            "raceTime": "1'52\"4"
+          },
+          {
+            "rank": 3,
+            "boat": 4,
+            "registerNo": "4471",
+            "racerName": "新田泰章",
+            "raceTime": "1'53\"2"
+          },
+          {
+            "rank": 4,
+            "boat": 1,
+            "registerNo": "3854",
+            "racerName": "吉川元浩",
+            "raceTime": "1'54\"4"
+          },
+          {
+            "rank": 5,
+            "boat": 6,
+            "registerNo": "4516",
+            "racerName": "野口勝弘",
+            "raceTime": "1'56\"3"
+          },
+          {
+            "rank": 6,
+            "boat": 2,
+            "registerNo": "4189",
+            "racerName": "川上剛",
+            "raceTime": "2'14\"0"
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.25,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".25"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.14,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".14"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.14,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".14 差し"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.11,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".11"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.11,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".11"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": false,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "3-5-4",
+          "winningMethod": "差し",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": false,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 5,
+              "finish": 2,
+              "finishLabel": "2着"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 4,
+              "finish": 3,
+              "finishLabel": "3着"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-6",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-5",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-4",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-6",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-5",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-4",
+              "category": "流し"
+            },
+            {
+              "ticket": "5-1-6",
+              "category": "万舟・穴"
+            }
+          ],
+          "practicalTickets": [
+            "1-2-6",
+            "1-2-5",
+            "1-2-4",
+            "2-1-6",
+            "2-1-5",
+            "2-1-4",
+            "5-1-6"
+          ],
+          "practicalPointCount": 7,
+          "practicalHit": false,
+          "hitCategory": "",
+          "missType": "頭外れ",
+          "payoutPer100": 19210,
+          "popularity": 0,
+          "simulatedStake": 700,
+          "simulatedReturn": 0,
+          "simulatedProfit": -700,
+          "simulatedRecoveryRate": 0,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "展開",
+            "primaryEvidence": "予想展開「イン逃げ本線」と決まり手「差し」が不一致",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "要確認",
+                "evidence": "予想展開「イン逃げ本線」と決まり手「差し」が不一致"
+              },
+              {
+                "stage": "コース",
+                "status": "要確認",
+                "evidence": "◎1号艇に対し、1着は3号艇"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "要確認",
+                "evidence": "実戦STは1着艇0.14、◎0.25"
+              },
+              {
+                "stage": "展示・足",
+                "status": "確認済み",
+                "evidence": "展示は1着艇6.85、◎6.82"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "確認済み",
+                "evidence": "外れ方は「頭外れ」"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "確認済み",
+                "evidence": "風1m・波1cm・潮影響55"
+              },
+              {
+                "stage": "技量",
+                "status": "要確認",
+                "evidence": "1着艇A2・全国5.73、◎-・全国-"
+              },
+              {
+                "stage": "モーター",
+                "status": "判定保留",
+                "evidence": "予想時点のモーター比較データが不足"
+              }
+            ]
+          }
         }
       }
     },
@@ -2102,6 +4002,374 @@
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
         }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "1-2-3",
+        "winningMethod": "逃げ",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": true,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 2,
+            "finishLabel": "2着"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 3,
+            "finish": 3,
+            "finishLabel": "3着"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 5,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-3",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-5",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-6",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-3",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-5",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-6",
+            "category": "流し"
+          },
+          {
+            "ticket": "3-1-5",
+            "category": "万舟・穴"
+          }
+        ],
+        "practicalTickets": [
+          "1-2-3",
+          "1-2-5",
+          "1-2-6",
+          "2-1-3",
+          "2-1-5",
+          "2-1-6",
+          "3-1-5"
+        ],
+        "practicalPointCount": 7,
+        "practicalHit": true,
+        "hitCategory": "本線",
+        "missType": "的中",
+        "payoutPer100": 270,
+        "popularity": 2,
+        "simulatedStake": 700,
+        "simulatedReturn": 270,
+        "simulatedProfit": -430,
+        "simulatedRecoveryRate": 38.6,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "的中",
+          "primaryEvidence": "実戦厳選の買い目が公式結果と一致しました。",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "コース",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "展示・足",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "技量",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            },
+            {
+              "stage": "モーター",
+              "status": "対象外",
+              "evidence": "的中のため原因判定なし"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 270,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 1,
+            "registerNo": "4305",
+            "racerName": "金子拓矢",
+            "raceTime": "1'52\"3"
+          },
+          {
+            "rank": 2,
+            "boat": 2,
+            "registerNo": "4684",
+            "racerName": "楠原翔太",
+            "raceTime": "1'53\"2"
+          },
+          {
+            "rank": 3,
+            "boat": 3,
+            "registerNo": "5111",
+            "racerName": "三村岳人",
+            "raceTime": "1'55\"1"
+          },
+          {
+            "rank": 4,
+            "boat": 4,
+            "registerNo": "4245",
+            "racerName": "高橋直哉",
+            "raceTime": "1'58\"1"
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.02,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".02 逃げ"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.05,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".05"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.02,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".02"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.02,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".02"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.06,
+            "marker": "F",
+            "falseStart": true,
+            "lateStart": false,
+            "raw": "F.06"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.09,
+            "marker": "F",
+            "falseStart": true,
+            "lateStart": false,
+            "raw": "F.09"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": true,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "1-2-3",
+          "winningMethod": "逃げ",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": true,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 2,
+              "finishLabel": "2着"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 3,
+              "finish": 3,
+              "finishLabel": "3着"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 5,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-3",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-5",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-6",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-3",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-5",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-6",
+              "category": "流し"
+            },
+            {
+              "ticket": "3-1-5",
+              "category": "万舟・穴"
+            }
+          ],
+          "practicalTickets": [
+            "1-2-3",
+            "1-2-5",
+            "1-2-6",
+            "2-1-3",
+            "2-1-5",
+            "2-1-6",
+            "3-1-5"
+          ],
+          "practicalPointCount": 7,
+          "practicalHit": true,
+          "hitCategory": "本線",
+          "missType": "的中",
+          "payoutPer100": 270,
+          "popularity": 0,
+          "simulatedStake": 700,
+          "simulatedReturn": 270,
+          "simulatedProfit": -430,
+          "simulatedRecoveryRate": 38.6,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "的中",
+            "primaryEvidence": "実戦厳選の買い目が公式結果と一致しました。",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "コース",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "展示・足",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "技量",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              },
+              {
+                "stage": "モーター",
+                "status": "対象外",
+                "evidence": "的中のため原因判定なし"
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -2358,6 +4626,388 @@
           },
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
+        }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "1-5-3",
+        "winningMethod": "逃げ",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": true,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 3,
+            "finish": 3,
+            "finishLabel": "3着"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 4,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-3-4",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-3-2",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-3-5",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-3",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-4",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-5",
+            "category": "流し"
+          },
+          {
+            "ticket": "3-1-4",
+            "category": "万舟・穴"
+          }
+        ],
+        "practicalTickets": [
+          "1-3-4",
+          "1-3-2",
+          "1-3-5",
+          "2-1-3",
+          "2-1-4",
+          "2-1-5",
+          "3-1-4"
+        ],
+        "practicalPointCount": 7,
+        "practicalHit": false,
+        "hitCategory": "",
+        "missType": "着順違い",
+        "payoutPer100": 2650,
+        "popularity": 9,
+        "simulatedStake": 700,
+        "simulatedReturn": 0,
+        "simulatedProfit": -700,
+        "simulatedRecoveryRate": 0,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "残し・拾い",
+          "primaryEvidence": "外れ方は「着順違い」",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "一致",
+              "evidence": "中心展開と公式決まり手が一致"
+            },
+            {
+              "stage": "コース",
+              "status": "一致",
+              "evidence": "◎1号艇が1着"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "判定保留",
+              "evidence": "予想時点の比較可能なSTが不足"
+            },
+            {
+              "stage": "展示・足",
+              "status": "判定保留",
+              "evidence": "予想時点の展示比較データが不足"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "要確認",
+              "evidence": "外れ方は「着順違い」"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "確認済み",
+              "evidence": "風2m・波2cm・潮影響55"
+            },
+            {
+              "stage": "技量",
+              "status": "確認済み",
+              "evidence": "1着艇-・全国-、◎-・全国-"
+            },
+            {
+              "stage": "モーター",
+              "status": "判定保留",
+              "evidence": "予想時点のモーター比較データが不足"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 2650,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 1,
+            "registerNo": "3900",
+            "racerName": "香川素子",
+            "raceTime": "1'49\"5"
+          },
+          {
+            "rank": 2,
+            "boat": 5,
+            "registerNo": "4014",
+            "racerName": "片岡恵里",
+            "raceTime": "1'51\"3"
+          },
+          {
+            "rank": 3,
+            "boat": 3,
+            "registerNo": "4502",
+            "racerName": "遠藤エミ",
+            "raceTime": "1'51\"8"
+          },
+          {
+            "rank": 4,
+            "boat": 4,
+            "registerNo": "4556",
+            "racerName": "竹井奈美",
+            "raceTime": "1'53\"2"
+          },
+          {
+            "rank": 5,
+            "boat": 2,
+            "registerNo": "4844",
+            "racerName": "村上奈穂",
+            "raceTime": ""
+          },
+          {
+            "rank": 6,
+            "boat": 6,
+            "registerNo": "4479",
+            "racerName": "矢野真梨菜",
+            "raceTime": ""
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.15,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".15 逃げ"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.16,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".16"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.19,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".19"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.19,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".19"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.22,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".22"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.25,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".25"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": true,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "1-5-3",
+          "winningMethod": "逃げ",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": true,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 3,
+              "finish": 3,
+              "finishLabel": "3着"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 4,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-3-4",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-3-2",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-3-5",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-3",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-4",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-5",
+              "category": "流し"
+            },
+            {
+              "ticket": "3-1-4",
+              "category": "万舟・穴"
+            }
+          ],
+          "practicalTickets": [
+            "1-3-4",
+            "1-3-2",
+            "1-3-5",
+            "2-1-3",
+            "2-1-4",
+            "2-1-5",
+            "3-1-4"
+          ],
+          "practicalPointCount": 7,
+          "practicalHit": false,
+          "hitCategory": "",
+          "missType": "着順違い",
+          "payoutPer100": 2650,
+          "popularity": 0,
+          "simulatedStake": 700,
+          "simulatedReturn": 0,
+          "simulatedProfit": -700,
+          "simulatedRecoveryRate": 0,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "残し・拾い",
+            "primaryEvidence": "外れ方は「着順違い」",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "一致",
+                "evidence": "中心展開と公式決まり手が一致"
+              },
+              {
+                "stage": "コース",
+                "status": "一致",
+                "evidence": "◎1号艇が1着"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "判定保留",
+                "evidence": "予想時点の比較可能なSTが不足"
+              },
+              {
+                "stage": "展示・足",
+                "status": "判定保留",
+                "evidence": "予想時点の展示比較データが不足"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "要確認",
+                "evidence": "外れ方は「着順違い」"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "確認済み",
+                "evidence": "風2m・波2cm・潮影響55"
+              },
+              {
+                "stage": "技量",
+                "status": "確認済み",
+                "evidence": "1着艇-・全国-、◎-・全国-"
+              },
+              {
+                "stage": "モーター",
+                "status": "判定保留",
+                "evidence": "予想時点のモーター比較データが不足"
+              }
+            ]
+          }
         }
       }
     },
@@ -2616,6 +5266,388 @@
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
         }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "3-1-5",
+        "winningMethod": "まくり差し",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": false,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 2,
+            "finishLabel": "2着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 4,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 3,
+            "finish": 1,
+            "finishLabel": "1着"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-4",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-3",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-5",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-4",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-3",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-5",
+            "category": "流し"
+          },
+          {
+            "ticket": "4-2-1",
+            "category": "万舟・穴"
+          }
+        ],
+        "practicalTickets": [
+          "1-2-4",
+          "1-2-3",
+          "1-2-5",
+          "2-1-4",
+          "2-1-3",
+          "2-1-5",
+          "4-2-1"
+        ],
+        "practicalPointCount": 7,
+        "practicalHit": false,
+        "hitCategory": "",
+        "missType": "頭外れ",
+        "payoutPer100": 14970,
+        "popularity": 36,
+        "simulatedStake": 700,
+        "simulatedReturn": 0,
+        "simulatedProfit": -700,
+        "simulatedRecoveryRate": 0,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "展開",
+          "primaryEvidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "要確認",
+              "evidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致"
+            },
+            {
+              "stage": "コース",
+              "status": "要確認",
+              "evidence": "◎1号艇に対し、1着は3号艇"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "要確認",
+              "evidence": "実戦STは1着艇0.08、◎0.12"
+            },
+            {
+              "stage": "展示・足",
+              "status": "判定保留",
+              "evidence": "予想時点の展示比較データが不足"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "確認済み",
+              "evidence": "外れ方は「頭外れ」"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "確認済み",
+              "evidence": "風1m・波1cm・潮影響55"
+            },
+            {
+              "stage": "技量",
+              "status": "確認済み",
+              "evidence": "1着艇-・全国-、◎-・全国-"
+            },
+            {
+              "stage": "モーター",
+              "status": "判定保留",
+              "evidence": "予想時点のモーター比較データが不足"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 14970,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 3,
+            "registerNo": "4394",
+            "racerName": "永嶋裕一",
+            "raceTime": "1'51\"1"
+          },
+          {
+            "rank": 2,
+            "boat": 1,
+            "registerNo": "4654",
+            "racerName": "篠田優也",
+            "raceTime": "1'52\"5"
+          },
+          {
+            "rank": 3,
+            "boat": 5,
+            "registerNo": "5352",
+            "racerName": "西岡蒼志",
+            "raceTime": "1'53\"7"
+          },
+          {
+            "rank": 4,
+            "boat": 4,
+            "registerNo": "4163",
+            "racerName": "山崎裕司",
+            "raceTime": "1'54\"9"
+          },
+          {
+            "rank": 5,
+            "boat": 2,
+            "registerNo": "4075",
+            "racerName": "中野次郎",
+            "raceTime": "1'56\"0"
+          },
+          {
+            "rank": 6,
+            "boat": 6,
+            "registerNo": "4631",
+            "racerName": "新井英孝",
+            "raceTime": "1'59\"0"
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.1,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".10"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.08,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".08 まくり差し"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.11,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".11"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.11,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".11"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.17,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".17"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": false,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "3-1-5",
+          "winningMethod": "まくり差し",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": false,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 2,
+              "finishLabel": "2着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 4,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 3,
+              "finish": 1,
+              "finishLabel": "1着"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-4",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-3",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-5",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-4",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-3",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-5",
+              "category": "流し"
+            },
+            {
+              "ticket": "4-2-1",
+              "category": "万舟・穴"
+            }
+          ],
+          "practicalTickets": [
+            "1-2-4",
+            "1-2-3",
+            "1-2-5",
+            "2-1-4",
+            "2-1-3",
+            "2-1-5",
+            "4-2-1"
+          ],
+          "practicalPointCount": 7,
+          "practicalHit": false,
+          "hitCategory": "",
+          "missType": "頭外れ",
+          "payoutPer100": 14970,
+          "popularity": 0,
+          "simulatedStake": 700,
+          "simulatedReturn": 0,
+          "simulatedProfit": -700,
+          "simulatedRecoveryRate": 0,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "展開",
+            "primaryEvidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "要確認",
+                "evidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致"
+              },
+              {
+                "stage": "コース",
+                "status": "要確認",
+                "evidence": "◎1号艇に対し、1着は3号艇"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "要確認",
+                "evidence": "実戦STは1着艇0.08、◎0.12"
+              },
+              {
+                "stage": "展示・足",
+                "status": "判定保留",
+                "evidence": "予想時点の展示比較データが不足"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "確認済み",
+                "evidence": "外れ方は「頭外れ」"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "確認済み",
+                "evidence": "風1m・波1cm・潮影響55"
+              },
+              {
+                "stage": "技量",
+                "status": "確認済み",
+                "evidence": "1着艇-・全国-、◎-・全国-"
+              },
+              {
+                "stage": "モーター",
+                "status": "判定保留",
+                "evidence": "予想時点のモーター比較データが不足"
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -2873,6 +5905,388 @@
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
         }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "4-1-3",
+        "winningMethod": "まくり差し",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": false,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 2,
+            "finishLabel": "2着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 4,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 3,
+            "finish": 3,
+            "finishLabel": "3着"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-4-2",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-4-6",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-4-3",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-4",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-6",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-3",
+            "category": "流し"
+          },
+          {
+            "ticket": "4-1-2",
+            "category": "万舟・穴"
+          }
+        ],
+        "practicalTickets": [
+          "1-4-2",
+          "1-4-6",
+          "1-4-3",
+          "2-1-4",
+          "2-1-6",
+          "2-1-3",
+          "4-1-2"
+        ],
+        "practicalPointCount": 7,
+        "practicalHit": false,
+        "hitCategory": "",
+        "missType": "着順違い",
+        "payoutPer100": 6560,
+        "popularity": 23,
+        "simulatedStake": 700,
+        "simulatedReturn": 0,
+        "simulatedProfit": -700,
+        "simulatedRecoveryRate": 0,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "展開",
+          "primaryEvidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "要確認",
+              "evidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致"
+            },
+            {
+              "stage": "コース",
+              "status": "要確認",
+              "evidence": "◎1号艇に対し、1着は4号艇"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "確認済み",
+              "evidence": "予想時点の平均・今節・展示STを保存済み"
+            },
+            {
+              "stage": "展示・足",
+              "status": "確認済み",
+              "evidence": "展示は1着艇7.01、◎6.96"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "要確認",
+              "evidence": "外れ方は「着順違い」"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "確認済み",
+              "evidence": "風2m・波1cm・潮影響55"
+            },
+            {
+              "stage": "技量",
+              "status": "確認済み",
+              "evidence": "1着艇-・全国-、◎-・全国-"
+            },
+            {
+              "stage": "モーター",
+              "status": "判定保留",
+              "evidence": "予想時点のモーター比較データが不足"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.346Z",
+        "payout": 6560,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 4,
+            "registerNo": "3888",
+            "racerName": "山本英志",
+            "raceTime": "1'52\"5"
+          },
+          {
+            "rank": 2,
+            "boat": 1,
+            "registerNo": "4357",
+            "racerName": "田中和也",
+            "raceTime": "1'54\"2"
+          },
+          {
+            "rank": 3,
+            "boat": 3,
+            "registerNo": "4981",
+            "racerName": "牧山敦也",
+            "raceTime": "1'55\"2"
+          },
+          {
+            "rank": 4,
+            "boat": 5,
+            "registerNo": "5130",
+            "racerName": "上野拓馬",
+            "raceTime": "1'55\"6"
+          },
+          {
+            "rank": 5,
+            "boat": 6,
+            "registerNo": "4301",
+            "racerName": "関裕也",
+            "raceTime": ""
+          },
+          {
+            "rank": 6,
+            "boat": 2,
+            "registerNo": "5313",
+            "racerName": "鈴木唯央",
+            "raceTime": ""
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.1,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".10"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.18,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".18"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          },
+          {
+            "course": 4,
+            "boat": 6,
+            "st": 0.4,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".40"
+          },
+          {
+            "course": 5,
+            "boat": 4,
+            "st": 0.09,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".09 まくり差し"
+          },
+          {
+            "course": 6,
+            "boat": 5,
+            "st": 0.14,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".14"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": false,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "4-1-3",
+          "winningMethod": "まくり差し",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": false,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 2,
+              "finishLabel": "2着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 4,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 3,
+              "finish": 3,
+              "finishLabel": "3着"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-4-2",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-4-6",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-4-3",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-4",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-6",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-3",
+              "category": "流し"
+            },
+            {
+              "ticket": "4-1-2",
+              "category": "万舟・穴"
+            }
+          ],
+          "practicalTickets": [
+            "1-4-2",
+            "1-4-6",
+            "1-4-3",
+            "2-1-4",
+            "2-1-6",
+            "2-1-3",
+            "4-1-2"
+          ],
+          "practicalPointCount": 7,
+          "practicalHit": false,
+          "hitCategory": "",
+          "missType": "着順違い",
+          "payoutPer100": 6560,
+          "popularity": 0,
+          "simulatedStake": 700,
+          "simulatedReturn": 0,
+          "simulatedProfit": -700,
+          "simulatedRecoveryRate": 0,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "展開",
+            "primaryEvidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "要確認",
+                "evidence": "予想展開「イン逃げ本線」と決まり手「まくり差し」が不一致"
+              },
+              {
+                "stage": "コース",
+                "status": "要確認",
+                "evidence": "◎1号艇に対し、1着は4号艇"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "確認済み",
+                "evidence": "予想時点の平均・今節・展示STを保存済み"
+              },
+              {
+                "stage": "展示・足",
+                "status": "確認済み",
+                "evidence": "展示は1着艇7.01、◎6.96"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "要確認",
+                "evidence": "外れ方は「着順違い」"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "確認済み",
+                "evidence": "風2m・波1cm・潮影響55"
+              },
+              {
+                "stage": "技量",
+                "status": "確認済み",
+                "evidence": "1着艇-・全国-、◎-・全国-"
+              },
+              {
+                "stage": "モーター",
+                "status": "判定保留",
+                "evidence": "予想時点のモーター比較データが不足"
+              }
+            ]
+          }
+        }
       }
     },
     {
@@ -3121,6 +6535,378 @@
           },
           "newEngineMode": false,
           "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
+        }
+      },
+      "result": {
+        "schemaVersion": 3,
+        "settled": true,
+        "resultTicket": "1-3-2",
+        "winningMethod": "逃げ",
+        "scenarioTitle": "イン逃げ本線",
+        "expectedMethod": "逃げ",
+        "scenarioMatched": true,
+        "marks": [
+          {
+            "key": "honmei",
+            "symbol": "◎",
+            "label": "本命",
+            "boatNo": 1,
+            "finish": 1,
+            "finishLabel": "1着"
+          },
+          {
+            "key": "taikou",
+            "symbol": "○",
+            "label": "対抗",
+            "boatNo": 2,
+            "finish": 3,
+            "finishLabel": "3着"
+          },
+          {
+            "key": "ana",
+            "symbol": "▲",
+            "label": "穴",
+            "boatNo": 5,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          },
+          {
+            "key": "osae",
+            "symbol": "△",
+            "label": "押さえ",
+            "boatNo": 4,
+            "finish": 4,
+            "finishLabel": "4着以下"
+          }
+        ],
+        "practicalRows": [
+          {
+            "ticket": "1-2-5",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-6",
+            "category": "本線"
+          },
+          {
+            "ticket": "1-2-4",
+            "category": "本線"
+          },
+          {
+            "ticket": "2-1-5",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-6",
+            "category": "押さえ"
+          },
+          {
+            "ticket": "2-1-4",
+            "category": "流し"
+          }
+        ],
+        "practicalTickets": [
+          "1-2-5",
+          "1-2-6",
+          "1-2-4",
+          "2-1-5",
+          "2-1-6",
+          "2-1-4"
+        ],
+        "practicalPointCount": 6,
+        "practicalHit": false,
+        "hitCategory": "",
+        "missType": "相手抜け",
+        "payoutPer100": 2600,
+        "popularity": 11,
+        "simulatedStake": 600,
+        "simulatedReturn": 0,
+        "simulatedProfit": -600,
+        "simulatedRecoveryRate": 0,
+        "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+        "priorityReview": {
+          "primaryStage": "残し・拾い",
+          "primaryEvidence": "外れ方は「相手抜け」",
+          "stages": [
+            {
+              "stage": "展開",
+              "status": "一致",
+              "evidence": "中心展開と公式決まり手が一致"
+            },
+            {
+              "stage": "コース",
+              "status": "一致",
+              "evidence": "◎1号艇が1着"
+            },
+            {
+              "stage": "ST・スリット",
+              "status": "確認済み",
+              "evidence": "予想時点の平均・今節・展示STを保存済み"
+            },
+            {
+              "stage": "展示・足",
+              "status": "確認済み",
+              "evidence": "展示は1着艇6.80、◎6.80"
+            },
+            {
+              "stage": "残し・拾い",
+              "status": "要確認",
+              "evidence": "外れ方は「相手抜け」"
+            },
+            {
+              "stage": "当地・水面",
+              "status": "確認済み",
+              "evidence": "風1m・波1cm・潮影響55"
+            },
+            {
+              "stage": "技量",
+              "status": "確認済み",
+              "evidence": "1着艇-・全国-、◎-・全国-"
+            },
+            {
+              "stage": "モーター",
+              "status": "判定保留",
+              "evidence": "予想時点のモーター比較データが不足"
+            }
+          ]
+        },
+        "settledAt": "2026-07-22T14:32:55.345Z",
+        "payout": 2600,
+        "finishers": [
+          {
+            "rank": 1,
+            "boat": 1,
+            "registerNo": "4611",
+            "racerName": "今井美亜",
+            "raceTime": "1'49\"6"
+          },
+          {
+            "rank": 2,
+            "boat": 3,
+            "registerNo": "3580",
+            "racerName": "水口由紀",
+            "raceTime": "1'52\"5"
+          },
+          {
+            "rank": 3,
+            "boat": 2,
+            "registerNo": "4525",
+            "racerName": "真子奈津実",
+            "raceTime": "1'53\"9"
+          },
+          {
+            "rank": 4,
+            "boat": 5,
+            "registerNo": "4536",
+            "racerName": "喜井つかさ",
+            "raceTime": "1'54\"4"
+          },
+          {
+            "rank": 5,
+            "boat": 4,
+            "registerNo": "4098",
+            "racerName": "赤澤文香",
+            "raceTime": ""
+          },
+          {
+            "rank": 6,
+            "boat": 6,
+            "registerNo": "5129",
+            "racerName": "山口真喜子",
+            "raceTime": ""
+          }
+        ],
+        "starts": [
+          {
+            "course": 1,
+            "boat": 1,
+            "st": 0.13,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".13 逃げ"
+          },
+          {
+            "course": 2,
+            "boat": 2,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          },
+          {
+            "course": 3,
+            "boat": 3,
+            "st": 0.1,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".10"
+          },
+          {
+            "course": 4,
+            "boat": 4,
+            "st": 0.23,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".23"
+          },
+          {
+            "course": 5,
+            "boat": 5,
+            "st": 0.18,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".18"
+          },
+          {
+            "course": 6,
+            "boat": 6,
+            "st": 0.12,
+            "marker": "",
+            "falseStart": false,
+            "lateStart": false,
+            "raw": ".12"
+          }
+        ],
+        "honmeiBoat": "1",
+        "honmeiFirst": true,
+        "verification": {
+          "schemaVersion": 3,
+          "settled": true,
+          "resultTicket": "1-3-2",
+          "winningMethod": "逃げ",
+          "scenarioTitle": "イン逃げ本線",
+          "expectedMethod": "逃げ",
+          "scenarioMatched": true,
+          "marks": [
+            {
+              "key": "honmei",
+              "symbol": "◎",
+              "label": "本命",
+              "boatNo": 1,
+              "finish": 1,
+              "finishLabel": "1着"
+            },
+            {
+              "key": "taikou",
+              "symbol": "○",
+              "label": "対抗",
+              "boatNo": 2,
+              "finish": 3,
+              "finishLabel": "3着"
+            },
+            {
+              "key": "ana",
+              "symbol": "▲",
+              "label": "穴",
+              "boatNo": 5,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            },
+            {
+              "key": "osae",
+              "symbol": "△",
+              "label": "押さえ",
+              "boatNo": 4,
+              "finish": 4,
+              "finishLabel": "4着以下"
+            }
+          ],
+          "practicalRows": [
+            {
+              "ticket": "1-2-5",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-6",
+              "category": "本線"
+            },
+            {
+              "ticket": "1-2-4",
+              "category": "本線"
+            },
+            {
+              "ticket": "2-1-5",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-6",
+              "category": "押さえ"
+            },
+            {
+              "ticket": "2-1-4",
+              "category": "流し"
+            }
+          ],
+          "practicalTickets": [
+            "1-2-5",
+            "1-2-6",
+            "1-2-4",
+            "2-1-5",
+            "2-1-6",
+            "2-1-4"
+          ],
+          "practicalPointCount": 6,
+          "practicalHit": false,
+          "hitCategory": "",
+          "missType": "相手抜け",
+          "payoutPer100": 2600,
+          "popularity": 0,
+          "simulatedStake": 600,
+          "simulatedReturn": 0,
+          "simulatedProfit": -600,
+          "simulatedRecoveryRate": 0,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない",
+          "priorityReview": {
+            "primaryStage": "残し・拾い",
+            "primaryEvidence": "外れ方は「相手抜け」",
+            "stages": [
+              {
+                "stage": "展開",
+                "status": "一致",
+                "evidence": "中心展開と公式決まり手が一致"
+              },
+              {
+                "stage": "コース",
+                "status": "一致",
+                "evidence": "◎1号艇が1着"
+              },
+              {
+                "stage": "ST・スリット",
+                "status": "確認済み",
+                "evidence": "予想時点の平均・今節・展示STを保存済み"
+              },
+              {
+                "stage": "展示・足",
+                "status": "確認済み",
+                "evidence": "展示は1着艇6.80、◎6.80"
+              },
+              {
+                "stage": "残し・拾い",
+                "status": "要確認",
+                "evidence": "外れ方は「相手抜け」"
+              },
+              {
+                "stage": "当地・水面",
+                "status": "確認済み",
+                "evidence": "風1m・波1cm・潮影響55"
+              },
+              {
+                "stage": "技量",
+                "status": "確認済み",
+                "evidence": "1着艇-・全国-、◎-・全国-"
+              },
+              {
+                "stage": "モーター",
+                "status": "判定保留",
+                "evidence": "予想時点のモーター比較データが不足"
+              }
+            ]
+          }
         }
       }
     }
