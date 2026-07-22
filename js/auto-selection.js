@@ -57,6 +57,32 @@
     );
   }
 
+  function parseNoteDraft(markdown, fallbackTitle = "") {
+    const source = text(markdown, "").replace(/^\uFEFF/, "").trim();
+    const match = source.match(/^#\s+(.+?)(?:\r?\n|$)/);
+    const title = match ? match[1].trim() : text(fallbackTitle, "");
+    const body = match ? source.slice(match[0].length).trim() : source;
+    return { title, body };
+  }
+
+  async function copyText(value) {
+    const source = text(value, "");
+    if (!source) throw new Error("コピーする内容がありません");
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(source);
+      return;
+    }
+    const temporary = document.createElement("textarea");
+    temporary.value = source;
+    temporary.setAttribute("readonly", "");
+    temporary.style.position = "fixed";
+    temporary.style.opacity = "0";
+    document.body.appendChild(temporary);
+    temporary.select();
+    document.execCommand("copy");
+    temporary.remove();
+  }
+
   function buildViewModel(data) {
     const run = latest(data?.runs, "checkedAt");
     const saved = latest(data?.predictions, "selectedAt");
@@ -111,6 +137,7 @@
         `).join("")}</div>`
       : '<p class="auto-selection-empty">厳選買い目は保存データを確認中です</p>';
     const notePath = text(view.saved?.note?.path, "");
+    const noteTitle = text(view.saved?.note?.title, "");
     return `
       <div class="auto-selection-saved">
         <div class="auto-selection-saved-head">
@@ -123,8 +150,23 @@
         ${ticketRows}
         <div class="auto-selection-actions">
           <button id="autoOpenPredictionBtn" type="button">AI予想を開く</button>
-          ${notePath ? `<a href="${escapeHtml(notePath)}" target="_blank" rel="noopener noreferrer">note原稿を見る</a>` : ""}
+          ${notePath ? `
+            <button id="autoNotePreviewBtn" type="button">note原稿を確認</button>
+            <button id="autoNoteCopyTitleBtn" type="button" data-note-title="${escapeHtml(noteTitle)}">タイトルをコピー</button>
+            <button id="autoNoteCopyFullBtn" type="button" disabled>全文をコピー</button>
+            <a href="https://note.com/notes/new" target="_blank" rel="noopener noreferrer">noteを開く</a>
+          ` : ""}
         </div>
+        ${notePath ? `
+          <div id="autoNotePreview" class="auto-note-preview" hidden>
+            <div class="auto-note-preview-head">
+              <strong>${escapeHtml(noteTitle || "note原稿")}</strong>
+              <span id="autoNotePreviewStatus">原稿を読み込んでいます</span>
+            </div>
+            <textarea id="autoNotePreviewText" rows="18" readonly aria-label="自動生成されたnote原稿"></textarea>
+            <p>タイトルと本文を確認してからnoteへ貼り付けてください。自動公開はされません。</p>
+          </div>
+        ` : ""}
       </div>`;
   }
 
@@ -163,6 +205,80 @@
     if (openButton && view.saved) {
       openButton.addEventListener("click", () => openSavedPrediction(view.saved));
     }
+    setupNoteDraft(view);
+  }
+
+  function setupNoteDraft(view) {
+    const notePath = text(view.saved?.note?.path, "");
+    if (!notePath) return;
+
+    const previewButton = document.getElementById("autoNotePreviewBtn");
+    const titleButton = document.getElementById("autoNoteCopyTitleBtn");
+    const fullButton = document.getElementById("autoNoteCopyFullBtn");
+    const preview = document.getElementById("autoNotePreview");
+    const previewText = document.getElementById("autoNotePreviewText");
+    const status = document.getElementById("autoNotePreviewStatus");
+    let draft = null;
+    let loading = null;
+
+    async function loadDraft() {
+      if (draft) return draft;
+      if (loading) return loading;
+      loading = fetch(`${notePath}?t=${Date.now()}`, { cache: "no-store" })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.text();
+        })
+        .then(markdown => {
+          draft = parseNoteDraft(markdown, view.saved?.note?.title);
+          if (previewText) previewText.value = draft.body;
+          if (status) status.textContent = "原稿を取得しました";
+          if (fullButton) fullButton.disabled = !draft.body;
+          return draft;
+        })
+        .catch(error => {
+          if (status) status.textContent = `取得失敗：${error?.message || error}`;
+          throw error;
+        })
+        .finally(() => {
+          loading = null;
+        });
+      return loading;
+    }
+
+    previewButton?.addEventListener("click", async () => {
+      if (preview) preview.hidden = false;
+      if (status) status.textContent = "原稿を読み込んでいます";
+      try {
+        await loadDraft();
+        preview?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } catch (error) {
+        console.error("note原稿取得エラー", error);
+      }
+    });
+
+    titleButton?.addEventListener("click", async () => {
+      try {
+        if (preview) preview.hidden = false;
+        const current = await loadDraft();
+        const title = titleButton.dataset.noteTitle || current.title;
+        await copyText(title);
+        if (status) status.textContent = "タイトルをコピーしました";
+      } catch (error) {
+        if (status) status.textContent = error?.message || "コピーできませんでした";
+      }
+    });
+
+    fullButton?.addEventListener("click", async () => {
+      try {
+        if (preview) preview.hidden = false;
+        const current = await loadDraft();
+        await copyText(current.body);
+        if (status) status.textContent = "記事全文をコピーしました";
+      } catch (error) {
+        if (status) status.textContent = error?.message || "コピーできませんでした";
+      }
+    });
   }
 
   function openSavedPrediction(saved) {
@@ -212,7 +328,7 @@
   }
 
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { buildViewModel, jstDate, ticketLabel };
+    module.exports = { buildViewModel, jstDate, ticketLabel, parseNoteDraft };
   }
   if (root.document) {
     root.document.addEventListener("DOMContentLoaded", start);
