@@ -162,23 +162,58 @@
         return {
           boatNo: boat.boatNo ?? boat.number ?? index + 1,
           name: boat.name ?? boat.racerName ?? "-",
-          total: exhibition + lap
+          exhibitionTime: exhibition,
+          lapTime: lap,
+          total: U.round(exhibition + lap, 3)
         };
       })
       .filter(Boolean);
 
-    if (!list.length) return [];
+    const validBoatNos = new Set(
+      list.map((boat) => Number(boat.boatNo))
+    );
+    const missingBoatNos = [1, 2, 3, 4, 5, 6]
+      .filter((boatNo) => !validBoatNos.has(boatNo));
+    const isFormal = list.length === 6 && missingBoatNos.length === 0;
+
+    if (!list.length) {
+      return {
+        ranking: [],
+        average: 0,
+        isFormal: false,
+        missingBoatNos
+      };
+    }
 
     const avg =
       list.reduce((sum, x) => sum + x.total, 0) / list.length;
 
-    return list
+    function gradeOf(diff) {
+      if (diff >= 0.300) return "S";
+      if (diff >= 0.200) return "A";
+      if (diff >= 0.150) return "B";
+      if (diff >= 0) return "C";
+      return "D";
+    }
+
+    const ranking = list
       .map(x => ({
         ...x,
-        diff: avg - x.total
+        diff: U.round(avg - x.total, 3)
       }))
-      .filter(x => x.diff > 0)
-      .sort((a, b) => b.diff - a.diff);
+      .map(x => ({
+        ...x,
+        grade: gradeOf(x.diff),
+        isFormal
+      }))
+      .sort((a, b) => b.diff - a.diff || a.boatNo - b.boatNo);
+
+    return {
+      ranking,
+      average: U.round(avg, 3),
+      isFormal,
+      missingBoatNos
+    };
   }
 
   function analyzeTheory(data) {
@@ -244,16 +279,21 @@
       </div>
     `;
 
-    const newSamHtml = theory.newSam.length
-      ? theory.newSam.slice(0, 3).map(x => `
+    const newSamRanking = theory.newSam.ranking || [];
+    const newSamHtml = newSamRanking.length
+      ? newSamRanking.slice(0, 6).map(x => `
           <div class="v3-theory-item">
             <div class="v3-theory-main">
               ${U.boatBadge(x.boatNo, "mini")}
               <strong>${U.escapeHtml(x.name)}</strong>
             </div>
-            <p>新サム差：+${U.round(x.diff, 3)}</p>
+            <p>新サム${x.grade}：${x.diff >= 0 ? "+" : ""}${U.round(x.diff, 3)}</p>
           </div>
-        `).join("")
+        `).join("") + (
+          theory.newSam.isFormal
+            ? ""
+            : `<div class="v3-theory-item"><p>6艇分がそろっていないため参考表示のみ（不足：${theory.newSam.missingBoatNos.join("・")}号艇）</p></div>`
+        )
       : U.showEmpty("新サムプラスなし");
 
     U.setHtml("theorySummaryArea", `

@@ -1,6 +1,6 @@
 /* =========================================================
   チャッピーボートレースAI
-  ai-core.js 完全版 v3.3.0 Part 1 / 8
+  ai-core.js 完全版 v3.4.0 Part 1 / 8
 
   役割：
   - AI指数計算の中核
@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.3.0-double-time";
+  const CORE_VERSION = "ai-core-v3.4.0-new-sam";
 
   /* ===============================
     基本ユーティリティ
@@ -2069,62 +2069,154 @@ function getBoatNo(boat) {
     新サム理論
   =============================== */
 
-  function buildNewSam(entries) {
+  function buildNewSam(entries, analyses = []) {
 
-    const list = entries.map((boat) => {
+    const analysisByBoat = new Map(
+      (Array.isArray(analyses) ? analyses : []).map((boat) => [
+        Number(boat?.boatNo),
+        boat
+      ])
+    );
 
-      const ex = getExhibitionTime(boat);
-      const lap = getLapTime(boat);
+    const list = (Array.isArray(entries) ? entries : [])
+      .map((boat) => {
+        const boatNo = getBoatNo(boat);
+        const exhibitionTime = getExhibitionTime(boat);
+        const lapTime = getLapTime(boat);
 
-      const sum =
-        (ex > 0 ? ex : 0) +
-        (lap > 0 ? lap : 0);
+        if (
+          boatNo < 1 ||
+          boatNo > 6 ||
+          exhibitionTime <= 0 ||
+          lapTime <= 0
+        ) {
+          return null;
+        }
 
-      return {
+        return {
+          boatNo,
+          course: Number(boat?.course || boatNo),
+          name: getPlayerName(boat),
+          exhibitionTime,
+          lapTime,
+          sum: round(exhibitionTime + lapTime, 3)
+        };
+      })
+      .filter(Boolean);
 
-        boatNo: getBoatNo(boat),
+    const validBoatNos = new Set(list.map((boat) => boat.boatNo));
+    const missingBoatNos = [1, 2, 3, 4, 5, 6]
+      .filter((boatNo) => !validBoatNos.has(boatNo));
+    const isFormal = list.length === 6 && missingBoatNos.length === 0;
+    const avg = list.length
+      ? average(list.map((boat) => boat.sum))
+      : 0;
 
-        name: getPlayerName(boat),
+    function gradeOf(diff) {
+      if (diff >= 0.300) return "S";
+      if (diff >= 0.200) return "A";
+      if (diff >= 0.150) return "B";
+      if (diff >= 0) return "C";
+      return "D";
+    }
 
-        sum: round(sum, 2)
+    function adjustmentOf(grade) {
+      if (grade === "S") return 6;
+      if (grade === "A") return 4;
+      if (grade === "B") return 2;
+      return 0;
+    }
 
-      };
+    function roleOf(boatNo, analysis) {
+      const roleScores = analysis?.roleScores || {};
+      const indexes = analysis?.indexes || {};
+      let role = "";
+      let roleScore = 0;
 
+      if (boatNo === 1) {
+        role = "逃げ・残し";
+        roleScore = round(
+          toNumber(roleScores.flow, 0) * 0.45 +
+          toNumber(roleScores.hold, 0) * 0.35 +
+          toNumber(indexes.total, 0) * 0.20
+        );
+      } else if (boatNo === 2) {
+        role = "差し・残し";
+        roleScore = round(
+          toNumber(roleScores.attack, 0) * 0.35 +
+          toNumber(roleScores.hold, 0) * 0.35 +
+          toNumber(roleScores.flow, 0) * 0.20 +
+          toNumber(indexes.total, 0) * 0.10
+        );
+      } else if (boatNo === 3 || boatNo === 4) {
+        role = "攻め";
+        roleScore = round(
+          toNumber(roleScores.attack, 0) * 0.45 +
+          toNumber(roleScores.flow, 0) * 0.35 +
+          toNumber(indexes.total, 0) * 0.20
+        );
+      } else {
+        role = "拾い";
+        roleScore = round(
+          toNumber(roleScores.pickup, 0) * 0.45 +
+          toNumber(roleScores.road, 0) * 0.35 +
+          toNumber(roleScores.flow, 0) * 0.20
+        );
+      }
+
+      return { role, roleScore };
+    }
+
+    list.forEach((boat) => {
+      const analysis = analysisByBoat.get(boat.boatNo) || null;
+      const diff = round(avg - boat.sum, 3);
+      const grade = gradeOf(diff);
+      const { role, roleScore } = roleOf(boat.boatNo, analysis);
+      const isRoleAligned = Boolean(analysis && roleScore >= 60);
+      const scoreAdjustment =
+        isFormal && isRoleAligned
+          ? adjustmentOf(grade)
+          : 0;
+
+      boat.diff = diff;
+      boat.grade = grade;
+      boat.samAlert = isFormal && scoreAdjustment > 0;
+      boat.isFormal = isFormal;
+      boat.role = role;
+      boat.roleScore = roleScore;
+      boat.isRoleAligned = isRoleAligned;
+      boat.isActionable = scoreAdjustment > 0;
+      boat.scoreAdjustment = scoreAdjustment;
+      boat.comment = !isFormal
+        ? "6艇データ不足のため参考表示のみ"
+        : scoreAdjustment > 0
+          ? `新サム${grade}評価・${role}へ反映`
+          : grade === "C"
+            ? "新サムC評価・表示のみ"
+            : grade === "D"
+              ? "新サムD評価・採用なし"
+              : `${role}の裏付け不足のため表示のみ`;
     });
 
-    const valid =
-      list.filter(v => v.sum > 0);
-
-    const avg =
-      average(valid.map(v => v.sum));
-
-    valid.forEach((boat) => {
-
-      boat.diff =
-        round(avg - boat.sum, 2);
-
-      boat.samAlert =
-        boat.diff >= 0.20;
-
-    });
-
-    valid.sort((a, b) => b.diff - a.diff);
-
-    valid.forEach((boat, index) => {
+    list.sort((a, b) => b.diff - a.diff || a.boatNo - b.boatNo);
+    list.forEach((boat, index) => {
       boat.rank = index + 1;
     });
 
+    const activeBoats = list
+      .filter((boat) => boat.isActionable)
+      .map((boat) => boat.boatNo);
+
     return {
-
-      ranking: valid,
-
-      average: round(avg, 2),
-
+      ranking: list,
+      average: round(avg, 3),
+      isFormal,
+      missingBoatNos,
+      activeBoats,
       topBoat:
-        valid.length
-          ? valid[0].boatNo
+        isFormal && list.length && list[0].diff >= 0
+          ? list[0].boatNo
           : null
-
     };
 
   }
@@ -2677,6 +2769,7 @@ function buildRaceScenarios(analyses, data) {
   const venue = getVenueFeature(data);
   const slit = buildSlitAnalysis(entries, venue);
   const doubleTime = buildDoubleTime(entries, list);
+  const newSam = buildNewSam(entries, list);
 
   /*
     場＋R別の枠別浮沈率。
@@ -3018,6 +3111,28 @@ function buildRaceScenarios(analyses, data) {
     };
   }
 
+  function newSamBoat(no) {
+    return newSam.ranking.find(
+      (boat) => boat.boatNo === Number(no)
+    ) || null;
+  }
+
+  function newSamScenarioAdjustment(no, scenarioType) {
+    const boat = newSamBoat(no);
+
+    if (!boat?.isActionable) return 0;
+
+    const roleMatches =
+      (no === 1 && scenarioType === "escape") ||
+      (no === 2 && scenarioType === "sashi") ||
+      (no === 3 && scenarioType === "threeAttack") ||
+      (no === 4 && scenarioType === "fourAttack");
+
+    return roleMatches
+      ? boat.scoreAdjustment
+      : 0;
+  }
+
   /*
     展開成立度
   */
@@ -3033,6 +3148,12 @@ function buildRaceScenarios(analyses, data) {
   const sashiSlit = slitScenarioAdjustment(2, 1);
   const threeAttackSlit = slitScenarioAdjustment(3, 2);
   const fourAttackSlit = slitScenarioAdjustment(4, 3);
+  const escapeNewSam = newSamScenarioAdjustment(1, "escape");
+  const sashiNewSam = newSamScenarioAdjustment(2, "sashi");
+  const threeAttackNewSam =
+    newSamScenarioAdjustment(3, "threeAttack");
+  const fourAttackNewSam =
+    newSamScenarioAdjustment(4, "fourAttack");
 
   function frameMovementAdjustment(no) {
     return toNumber(
@@ -3073,6 +3194,7 @@ function buildRaceScenarios(analyses, data) {
 
   escapeScore += frameMovementAdjustment(1);
   escapeScore += escapeSlit.score;
+  escapeScore += escapeNewSam;
 
   let sashiScore =
     venue.sashi * 0.25 +
@@ -3094,6 +3216,7 @@ function buildRaceScenarios(analyses, data) {
 
   sashiScore += frameMovementAdjustment(2);
   sashiScore += sashiSlit.score;
+  sashiScore += sashiNewSam;
 
   let threeAttackScore =
   venue.makuri * 0.20 +
@@ -3143,6 +3266,7 @@ if (hasComparison(3, 1)) {
 
   threeAttackScore += frameMovementAdjustment(3);
   threeAttackScore += threeAttackSlit.score;
+  threeAttackScore += threeAttackNewSam;
 
   let fourAttackScore =
     venue.kado * 0.22 +
@@ -3170,6 +3294,7 @@ if (hasComparison(3, 1)) {
 
   fourAttackScore += frameMovementAdjustment(4);
   fourAttackScore += fourAttackSlit.score;
+  fourAttackScore += fourAttackNewSam;
 
   if (doubleTime.activeBoat === 4) {
     fourAttackScore += doubleTime.scoreAdjustment;
@@ -3390,6 +3515,62 @@ if (hasComparison(3, 1)) {
         }
       }
 
+      const newSamEvidence = newSamBoat(no);
+
+      if (newSamEvidence?.isActionable) {
+        const adjustment = newSamEvidence.scoreAdjustment;
+        const label =
+          `新サム${newSamEvidence.grade}・` +
+          `${newSamEvidence.role}`;
+
+        if (no === 1 && type === "escape") {
+          firstScore += adjustment;
+          secondScore += Math.ceil(adjustment / 2);
+          reasons.push(`${label} +${adjustment}`);
+        } else if (
+          no === 1 &&
+          (type === "threeAttack" || type === "fourAttack")
+        ) {
+          secondScore += adjustment;
+          thirdScore += Math.ceil(adjustment / 2);
+          reasons.push(`${label} +${adjustment}`);
+        }
+
+        if (no === 2 && type === "sashi") {
+          firstScore += adjustment;
+          secondScore += adjustment;
+          reasons.push(`${label} +${adjustment}`);
+        } else if (
+          no === 2 &&
+          (type === "threeAttack" || type === "fourAttack")
+        ) {
+          secondScore += adjustment;
+          thirdScore += adjustment;
+          reasons.push(`${label} +${adjustment}`);
+        }
+
+        if (no === 3 && type === "threeAttack") {
+          firstScore += adjustment;
+          secondScore += adjustment;
+          reasons.push(`${label} +${adjustment}`);
+        }
+
+        if (no === 4 && type === "fourAttack") {
+          firstScore += adjustment;
+          secondScore += adjustment;
+          reasons.push(`${label} +${adjustment}`);
+        }
+
+        if (
+          (no === 5 || no === 6) &&
+          (type === "threeAttack" || type === "fourAttack")
+        ) {
+          secondScore += Math.ceil(adjustment / 2);
+          thirdScore += adjustment;
+          reasons.push(`${label} +${adjustment}`);
+        }
+      }
+
       return {
         boatNo: no,
         playerName: boat.playerName,
@@ -3446,6 +3627,7 @@ if (hasComparison(3, 1)) {
       score: escapeScore,
       slitAdjustment: escapeSlit.score,
       slitReasons: escapeSlit.reasons,
+      newSamAdjustment: escapeNewSam,
       frameMovementAdjustment:
         frameMovementAdjustment(1),
       attacker: 1,
@@ -3458,6 +3640,7 @@ if (hasComparison(3, 1)) {
       score: sashiScore,
       slitAdjustment: sashiSlit.score,
       slitReasons: sashiSlit.reasons,
+      newSamAdjustment: sashiNewSam,
       frameMovementAdjustment:
         frameMovementAdjustment(2),
       attacker: 2,
@@ -3470,6 +3653,7 @@ if (hasComparison(3, 1)) {
       score: threeAttackScore,
       slitAdjustment: threeAttackSlit.score,
       slitReasons: threeAttackSlit.reasons,
+      newSamAdjustment: threeAttackNewSam,
       frameMovementAdjustment:
         frameMovementAdjustment(3),
       attacker: 3,
@@ -3489,6 +3673,7 @@ if (hasComparison(3, 1)) {
         doubleTime.activeBoat === 4
           ? doubleTime.scoreAdjustment
           : 0,
+      newSamAdjustment: fourAttackNewSam,
       frameMovementAdjustment:
         frameMovementAdjustment(4),
       attacker: 4,
@@ -3624,6 +3809,21 @@ if (hasComparison(3, 1)) {
       linkRole: doubleTime.linkRole,
       linkScore: doubleTime.linkScore,
       scoreAdjustment: doubleTime.scoreAdjustment
+    },
+    newSam: {
+      isFormal: newSam.isFormal,
+      average: newSam.average,
+      missingBoatNos: [...newSam.missingBoatNos],
+      activeBoats: [...newSam.activeBoats],
+      ranking: newSam.ranking.map((boat) => ({
+        boatNo: boat.boatNo,
+        diff: boat.diff,
+        grade: boat.grade,
+        role: boat.role,
+        roleScore: boat.roleScore,
+        isRoleAligned: boat.isRoleAligned,
+        scoreAdjustment: boat.scoreAdjustment
+      }))
     },
     firstCandidates:
       mainScenario?.outcome?.firstCandidates
@@ -5507,7 +5707,7 @@ const slit =
       buildDoubleTime(entries, analyses);
 
     const newSam =
-      buildNewSam(entries);
+      buildNewSam(entries, analyses);
 
     const formations =
       buildFormations(
