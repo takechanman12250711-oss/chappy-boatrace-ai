@@ -59,6 +59,18 @@ assert.equal(
   10
 );
 assert.equal(
+  finalized.boatPerformance["1"].stayRate,
+  66.7
+);
+assert.equal(
+  finalized.boatPerformance["1"].sinkRate,
+  33.3
+);
+assert.equal(
+  finalized.boatPerformance["4"].riseRate,
+  33.3
+);
+assert.equal(
   finalized.turbulence.roughRaces.rate,
   33.3
 );
@@ -92,6 +104,14 @@ assert.equal(trend.available, true);
 assert.equal(trend.label, "本線傾向");
 assert.equal(trend.escapeRate, 66.7);
 assert.equal(trend.roughRate, 33.3);
+assert.equal(
+  trend.frameMovement["1"].label,
+  "沈下"
+);
+assert.equal(
+  trend.frameMovement["4"].riseRate,
+  33.3
+);
 assert.equal(
   insights.supportForType(trend, "本線"),
   66.7

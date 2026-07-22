@@ -2435,6 +2435,41 @@ function buildRaceScenarios(analyses, data) {
   const entries = getRaceEntries(data);
   const venue = getVenueFeature(data);
 
+  /*
+    場＋R別の枠別浮沈率。
+    この工程では展開点・印・買い目へ加算せず、
+    シナリオ判断に使える公式履歴の根拠として保持する。
+  */
+  const frameMovementSource =
+    data?.historyContext?.venueRace?.trend
+      ?.frameMovement || {};
+
+  const frameMovement = Array.from(
+    { length: 6 },
+    (_, index) => {
+      const boatNo = index + 1;
+      const source =
+        frameMovementSource[String(boatNo)] || {};
+      const samples = toNumber(source.samples, 0);
+      const usable = samples >= 30;
+
+      return {
+        boatNo,
+        samples,
+        reliability:
+          source.reliability || "low",
+        riseRate: toNumber(source.riseRate, 0),
+        stayRate: toNumber(source.stayRate, 0),
+        sinkRate: toNumber(source.sinkRate, 0),
+        label: usable
+          ? (source.label || "維持")
+          : "判定保留",
+        usable,
+        appliedToScore: false
+      };
+    }
+  );
+
   const byBoat = {};
 
   list.forEach((boat) => {
@@ -3103,7 +3138,17 @@ if (hasComparison(3, 1)) {
         ?.map((boat) => boat.boatNo) || [],
     thirdCandidates:
       mainScenario?.outcome?.thirdCandidates
-        ?.map((boat) => boat.boatNo) || []
+        ?.map((boat) => boat.boatNo) || [],
+    frameMovement: frameMovement
+      .filter((item) => item.usable)
+      .map((item) => ({
+        boatNo: item.boatNo,
+        riseRate: item.riseRate,
+        stayRate: item.stayRate,
+        sinkRate: item.sinkRate,
+        label: item.label,
+        samples: item.samples
+      }))
   };
 
   const dataStatus = {
@@ -3175,6 +3220,8 @@ if (hasComparison(3, 1)) {
     roadRaceBoats,
 
     localExperts,
+
+    frameMovement,
 
     blockedBoats,
 

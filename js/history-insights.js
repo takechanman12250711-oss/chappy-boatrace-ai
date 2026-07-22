@@ -102,6 +102,41 @@
           ? recent
           : all;
 
+      const frameMovement = Object.fromEntries(
+        Array.from({ length: 6 }, (_, index) => {
+          const boatNo = index + 1;
+          const frame =
+            primary.boatPerformance?.[
+              String(boatNo)
+            ] || {};
+          const samples = number(frame.starts);
+          const riseRate = number(frame.riseRate);
+          const stayRate = number(frame.stayRate);
+          const sinkRate = number(frame.sinkRate);
+
+          let label = "維持";
+
+          if (riseRate > sinkRate) {
+            label = "浮上";
+          } else if (sinkRate > riseRate) {
+            label = "沈下";
+          }
+
+          return [String(boatNo), {
+            boatNo,
+            samples,
+            reliability:
+              frame.reliability || "low",
+            riseRate,
+            stayRate,
+            sinkRate,
+            label,
+            definition:
+              "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+          }];
+        })
+      );
+
       const recentBoatOne =
         primary.boatPerformance?.["1"] ||
         {};
@@ -160,6 +195,7 @@
           primary.winningMethods || [],
         boatPerformance:
           primary.boatPerformance || {},
+        frameMovement,
         comparison: {
           escapeRate: Number((
             escapeRate -
