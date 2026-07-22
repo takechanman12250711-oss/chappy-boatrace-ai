@@ -7,6 +7,7 @@ on:
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
       - "js/note-generator.js"
+      - "js/practical-selection.js"
       - "js/prediction.js"
       - "js/render.js"
       - "scripts/check-charter.js"
@@ -17,6 +18,8 @@ on:
       - "scripts/test-build-prediction-index.js"
       - "js/auto-stats.js"
       - "scripts/test-auto-stats.js"
+      - "scripts/test-practical-selection.js"
+      - "scripts/test-ai-core-formations.js"
   push:
     branches:
       - main
@@ -25,6 +28,7 @@ on:
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
       - "js/note-generator.js"
+      - "js/practical-selection.js"
       - "js/prediction.js"
       - "js/render.js"
       - "scripts/check-charter.js"
@@ -35,6 +39,8 @@ on:
       - "scripts/test-build-prediction-index.js"
       - "js/auto-stats.js"
       - "scripts/test-auto-stats.js"
+      - "scripts/test-practical-selection.js"
+      - "scripts/test-ai-core-formations.js"
   workflow_dispatch:
 
 permissions:
@@ -61,6 +67,7 @@ jobs:
           node --check js/prediction.js
           node --check js/render.js
           node --check js/note-generator.js
+          node --check js/practical-selection.js
           node --check scripts/check-charter.js
           node --check scripts/collect-predictions.js
           node --check scripts/match-predictions.js
@@ -69,6 +76,8 @@ jobs:
           node --check scripts/test-build-prediction-index.js
           node --check js/auto-stats.js
           node --check scripts/test-auto-stats.js
+          node --check scripts/test-practical-selection.js
+          node --check scripts/test-ai-core-formations.js
 
       - name: Enforce charter
         run: |
@@ -76,3 +85,5 @@ jobs:
           node scripts/test-match-predictions.js
           node scripts/test-build-prediction-index.js
           node scripts/test-auto-stats.js
+          node scripts/test-practical-selection.js
+          node scripts/test-ai-core-formations.js

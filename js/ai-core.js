@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.0.3-merge-fixed";
+  const CORE_VERSION = "ai-core-v3.1.0-unified-bets";
 
   /* ===============================
     基本ユーティリティ
@@ -3821,6 +3821,7 @@ function buildRaceTrendEvaluation(data) {
 
   const main = [];
   const safety = [];
+  const flowTickets = [];
   const longshot = [];
 
   function boatNo(boat) {
@@ -3965,9 +3966,9 @@ function buildRaceTrendEvaluation(data) {
     本線の頭はbuildMarks()が展開から決めた本命。
     艇番を固定しない。
   */
-  const mainHeads = uniqueBoats([
-    marks.honmei
-  ]);
+  const mainHeads = marks.established
+    ? uniqueBoats([marks.honmei])
+    : [];
 
   /*
     押さえ頭：
@@ -4008,6 +4009,21 @@ function buildRaceTrendEvaluation(data) {
       ? list.find((boat) => boatNo(boat) === 6)
       : null
   ]);
+
+  const flowHeads = marks.established && evidence.flow
+    ? uniqueBoats([
+        evidence.twoSashi && boatNo(marks.honmei) !== 2
+          ? list.find((boat) => boatNo(boat) === 2)
+          : null,
+        evidence.threeAttack && boatNo(marks.honmei) !== 3
+          ? list.find((boat) => boatNo(boat) === 3)
+          : null,
+        evidence.fourAttack && boatNo(marks.honmei) !== 4
+          ? list.find((boat) => boatNo(boat) === 4)
+          : null,
+        marks.taikou
+      ])
+    : [];
 
   function generateTickets(
     target,
@@ -4063,6 +4079,14 @@ function buildRaceTrendEvaluation(data) {
   );
 
   generateTickets(
+    flowTickets,
+    flowHeads,
+    secondRanking.slice(0, 4),
+    thirdRanking.slice(0, 5),
+    6
+  );
+
+  generateTickets(
     longshot,
     longshotHeads,
     secondRanking.slice(0, 5),
@@ -4073,9 +4097,11 @@ function buildRaceTrendEvaluation(data) {
   return {
     main,
     safety,
+    flow: flowTickets,
     longshot,
 
     scenario: marks.scenario,
+    mainEstablished: marks.established === true,
     evidence,
 
     axis: {
@@ -4225,7 +4251,9 @@ function buildRaceTrendEvaluation(data) {
       taikou: null,
       ana: null,
       osae: null,
-      scenario: "データ不足"
+      scenario: "データ不足",
+      established: false,
+      evidence: {}
     };
   }
 
@@ -4290,6 +4318,24 @@ function buildRaceTrendEvaluation(data) {
     boat6 &&
     pickup(boat6) >= 78 &&
     flow(boat6) >= 72;
+
+  const established = Boolean(
+    oneEscape || twoSashi || threeAttack || fourAttack
+  );
+
+  const primaryEvidenceCount = [
+    oneEscape,
+    twoSashi,
+    threeAttack,
+    fourAttack
+  ].filter(Boolean).length;
+
+  const flowEvidence = established && primaryEvidenceCount >= 2;
+  const longshotEvidence = established && Boolean(
+    (oneEscape && (threeAttack || fourAttack)) ||
+    fiveFollow ||
+    sixPickup
+  );
 
   let scenario = "総合展開";
   let honmei = null;
@@ -4413,6 +4459,7 @@ function buildRaceTrendEvaluation(data) {
     ana,
     osae,
     scenario,
+    established,
 
     evidence: {
       oneEscape: Boolean(oneEscape),
@@ -4420,7 +4467,9 @@ function buildRaceTrendEvaluation(data) {
       threeAttack: Boolean(threeAttack),
       fourAttack: Boolean(fourAttack),
       fiveFollow: Boolean(fiveFollow),
-      sixPickup: Boolean(sixPickup)
+      sixPickup: Boolean(sixPickup),
+      flow: Boolean(flowEvidence),
+      longshot: Boolean(longshotEvidence)
     }
   };
 }
@@ -4592,8 +4641,7 @@ const scenarioSummary =
 
     /*
       prediction.jsの表示形式へ変換する。
-      STEP1ではAIコアの総合順位と艇別評価だけを反映する。
-      フォーメーション・万舟・最終コメントはまだ変更しない。
+      艇別評価・印・フォーメーションを同じAIコア判断へそろえる。
     */
     const coreEvaluations = (aiCore.analyses || []).map((analysis) => {
       const indexes = analysis.indexes || {};
@@ -4739,21 +4787,30 @@ function findUnusedEvaluation(...marks) {
 }
 
 const honmei =
-  findCoreEvaluation(oldMainSheet.honmei) ||
-  coreEvaluations[0] ||
+  findCoreEvaluation(aiCore.marks?.honmei) ||
   null;
 
 const taikou =
-  findCoreEvaluation(oldMainSheet.taikou) ||
-  findUnusedEvaluation(honmei);
+  findCoreEvaluation(aiCore.marks?.taikou) ||
+  null;
 
 const ana =
-  findCoreEvaluation(oldMainSheet.ana) ||
-  findUnusedEvaluation(honmei, taikou);
+  findCoreEvaluation(aiCore.marks?.ana) ||
+  null;
 
 const osae =
-  findCoreEvaluation(oldMainSheet.osae) ||
-  findUnusedEvaluation(honmei, taikou, ana);
+  findCoreEvaluation(aiCore.marks?.osae) ||
+  null;
+
+const coreFormations = aiCore.formations || {};
+const compatibleFormation = {
+  main: coreFormations.main || [],
+  cover: coreFormations.safety || [],
+  nagashi: coreFormations.flow || [],
+  hole: coreFormations.longshot || [],
+  mainEstablished: coreFormations.mainEstablished === true,
+  evidence: coreFormations.evidence || {}
+};
 
 const compatibleMainSheet = {
   ...oldMainSheet,
@@ -4761,7 +4818,34 @@ const compatibleMainSheet = {
   taikou,
   ana,
   osae,
+  tickets: compatibleFormation.main,
+  coverTickets: compatibleFormation.cover,
+  flowTickets: compatibleFormation.nagashi,
   evaluations: coreEvaluations
+};
+
+const compatibleManshuSheet = {
+  ...(basePrediction.manshuSheet || {}),
+  tickets: compatibleFormation.hole
+};
+
+const coreScenarioTitle = (() => {
+  const scenario = String(coreFormations.scenario || "");
+  if (scenario.includes("1号艇逃げ")) return "イン逃げ本線";
+  if (scenario.includes("2コース差し")) return "2コース差し本線";
+  if (scenario.includes("3コース攻め")) return "3コース攻め本線";
+  if (scenario.includes("4カド攻め")) return "4コース・4カド攻め本線";
+  return scenario || "本線展開不成立";
+})();
+
+const compatibleRaceFlow = {
+  ...(basePrediction.raceFlow || {}),
+  title: coreScenarioTitle,
+  summary: scenarioSummary,
+  attackBoats: mainFirstCandidates,
+  holdBoats: mainScenario?.outcome?.secondCandidates || [],
+  pickupBoats: mainScenario?.outcome?.thirdCandidates || [],
+  mainEstablished: compatibleFormation.mainEstablished
 };
 
 const compatibleAiCore = {
@@ -4792,22 +4876,24 @@ return {
         aiCore: aiCore.analyses
       },
 
+      raceFlow: compatibleRaceFlow,
+
       /*
         STEP1確認用：
         AIコアの順位を既存UI形式へ変換する。
       */
       mainSheet: compatibleMainSheet,
 
-      /*
-        次工程までは旧フォーメーションを維持する。
-      */
-      formation: basePrediction.formation,
-      formations: basePrediction.formations,
+      formation: compatibleFormation,
+      formations: coreFormations,
+      ticketSheets: {
+        main: compatibleFormation.main,
+        cover: compatibleFormation.cover,
+        flow: compatibleFormation.nagashi,
+        hole: compatibleFormation.hole
+      },
 
-      /*
-        万舟シートも今回は変更しない。
-      */
-      manshuSheet: basePrediction.manshuSheet,
+      manshuSheet: compatibleManshuSheet,
       longshotSheet: basePrediction.longshotSheet,
 
       slit: aiCore.slit,
@@ -5156,7 +5242,7 @@ return {
       `%cチャッピーボートレースAI ${CORE_VERSION}`,
       "color:#2196f3;font-weight:bold;"
     );
-    console.log("ai-core.js v3.0.3-merge-fixed 読み込み完了");
+    console.log(`${CORE_VERSION} 読み込み完了`);
   }
 
   /* ===============================

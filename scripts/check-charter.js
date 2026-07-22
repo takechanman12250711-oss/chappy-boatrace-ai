@@ -102,6 +102,7 @@ assert(
 const aiCore = read("js/ai-core.js");
 const render = read("js/render.js");
 const noteGenerator = read("js/note-generator.js");
+const practicalSelection = read("js/practical-selection.js");
 
 const newEngineWeightMatch = aiCore.match(
   /const NEW_ENGINE_WEIGHTS\s*=\s*\{([\s\S]*?)\};/
@@ -125,15 +126,20 @@ assert(
   "実戦厳選に数字・オッズ単独削除の禁止表示がありません"
 );
 assert(
-  render.includes("addTickets(mainTickets, 3, \"本線\")") &&
-    render.includes("addTickets(coverTickets, 2, \"押さえ\")") &&
-    render.includes("addTickets(flowTickets, 1, \"流し\")") &&
-    render.includes("addTickets(holeTickets, 1, \"万舟・穴\")"),
+  practicalSelection.includes("take(lists.main, 3, \"本線\")") &&
+    practicalSelection.includes("take(lists.cover, 2, \"押さえ\")") &&
+    practicalSelection.includes("take(lists.flow, 1, \"流し\")") &&
+    practicalSelection.includes("take(lists.longshot, 1, \"万舟・穴\")"),
   "実戦厳選の実装配分が憲章と一致しません"
 );
 assert(
-  noteGenerator.includes("主軸となる展開が定まらないため見送り。"),
+  practicalSelection.includes("主軸となる展開が定まらないため見送り。"),
   "note原稿に本線不成立時の見送りがありません"
+);
+assert(
+  render.includes("ChappyPracticalSelection") &&
+    noteGenerator.includes("ChappyPracticalSelection"),
+  "アプリとnoteが共通の実戦厳選処理を使用していません"
 );
 assert(
   noteGenerator

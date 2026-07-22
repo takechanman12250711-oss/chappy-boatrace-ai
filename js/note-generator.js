@@ -121,123 +121,14 @@
     };
   }
 
-      function createPracticalSelection(prediction) {
-    const lists =
-      ticketLists(prediction);
+  function createPracticalSelection(prediction) {
+    const selector = root.ChappyPracticalSelection;
 
-    const selected = [];
-    const used = new Set();
-
-    const mainScore =
-      getScore(
-        prediction?.confidence ||
-        prediction?.finalAi?.confidence
-      );
-
-    const waveScore =
-      getScore(
-        prediction?.manshuPower ||
-        prediction?.finalAi?.manshuPower
-      );
-
-    const isWave =
-      waveScore > mainScore;
-
-    function add(
-      list,
-      limit,
-      category
-    ) {
-      let added = 0;
-
-      arrayify(list).forEach(
-        item => {
-          if (
-            added >= limit ||
-            selected.length >= 7
-          ) {
-            return;
-          }
-
-          const row =
-            normalizeTicket(
-              item,
-              category
-            );
-
-          if (
-            !row.ticket ||
-            used.has(row.ticket)
-          ) {
-            return;
-          }
-
-          used.add(row.ticket);
-
-          selected.push({
-            ...row,
-            category
-          });
-
-          added += 1;
-        }
-      );
+    if (!selector || typeof selector.createPracticalSelection !== "function") {
+      return [];
     }
 
-    if (isWave) {
-      add(
-        lists.hole,
-        7,
-        "波乱候補"
-      );
-    } else {
-      add(
-        lists.main,
-        3,
-        "中心候補"
-      );
-
-      add(
-        lists.cover,
-        2,
-        "展開対応"
-      );
-
-      add(
-        lists.flow,
-        2,
-        "相手拡張"
-      );
-
-      if (
-        selected.length < 7
-      ) {
-        add(
-          lists.main,
-          7,
-          "中心候補"
-        );
-
-        add(
-          lists.cover,
-          7,
-          "展開対応"
-        );
-
-        add(
-          lists.flow,
-          7,
-          "相手拡張"
-        );
-      }
-    }
-
-    return selected
-      .slice(0, 7)
-      .map(item => ({
-        ...item,
-        amount: 0
-      }));
+    return selector.createPracticalSelection(prediction);
   }
 
   function createDisplayCandidates(

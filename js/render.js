@@ -2343,34 +2343,20 @@ function getPaperClassName(item) {
     );
   }
   function renderPracticalSelection(prediction) {
-    const mainTickets = arrayify(
-      prediction.mainSheet?.tickets ||
-      prediction.ticketSheets?.main ||
-      []
-    );
+    const selector = window.ChappyPracticalSelection;
+    const result = selector && typeof selector.select === "function"
+      ? selector.select(prediction)
+      : {
+          status: "skipped",
+          reason: "実戦厳選の共通処理を読み込めないため見送り。",
+          tickets: []
+        };
 
-    const coverTickets = arrayify(
-      prediction.mainSheet?.coverTickets ||
-      prediction.ticketSheets?.cover ||
-      []
-    );
-
-    const flowTickets = arrayify(
-      prediction.mainSheet?.flowTickets ||
-      prediction.ticketSheets?.flow ||
-      []
-    );
-
-    const holeTickets = arrayify(
-      prediction.manshuSheet?.tickets ||
-      prediction.ticketSheets?.hole ||
-      []
-    );
-
-    if (!mainTickets.length) {
+    if (result.status !== "selected") {
       return section(
         "実戦厳選",
         emptyBox(
+          result.reason ||
           "主軸となる本線展開が定まらないため、このレースは見送りです。"
         ),
         "🔥",
@@ -2378,95 +2364,17 @@ function getPaperClassName(item) {
       );
     }
 
-    const selected = [];
-    const usedTickets = new Set();
-
-    const addTickets = (
-      list,
-      limit,
-      category
-    ) => {
-      let added = 0;
-
-      arrayify(list).forEach(item => {
-        if (
-          added >= limit ||
-          selected.length >= 7
-        ) {
-          return;
-        }
-
-        const row =
-          typeof item === "string"
-            ? { ticket: item }
-            : item || {};
-
-        const ticket = String(
-          row.ticket ||
-          row.line ||
-          row.formation ||
-          ""
-        ).trim();
-
-        if (
-          !ticket ||
-          usedTickets.has(ticket)
-        ) {
-          return;
-        }
-
-                usedTickets.add(ticket);
-
-        const numericOdds =
-          Number(row.odds);
-
-        const hasOdds =
-          row.odds !== null &&
-          row.odds !== undefined &&
-          row.odds !== "" &&
-          Number.isFinite(
-            numericOdds
-          ) &&
-          numericOdds > 0;
-
-        selected.push({
-          ticket,
-          category,
-
-          scenarioType:
-            row.scenarioType || "",
-
-          oddsText:
-            hasOdds
-              ? `${numericOdds}倍`
-              : row.oddsText ||
-                "オッズ未取得",
-
-          comment:
-            createTicketSpecificComment(
-              prediction,
-              ticket,
-              [category]
-            )
-        });
-
-        added += 1;
-      });
-    };
-
-    // 展開とコースから作られた現在の並び順を維持して厳選
-    addTickets(mainTickets, 3, "本線");
-    addTickets(coverTickets, 2, "押さえ");
-    addTickets(flowTickets, 1, "流し");
-    addTickets(holeTickets, 1, "万舟・穴");
-
-    // 5点未満の場合だけ、残っている展開買い目から補充
-    if (selected.length < 5) {
-      addTickets(mainTickets, 7, "本線");
-      addTickets(coverTickets, 7, "押さえ");
-      addTickets(flowTickets, 7, "流し");
-      addTickets(holeTickets, 7, "万舟・穴");
-    }
+    const selected = result.tickets.map(item => ({
+      ...item,
+      oddsText: item.odds > 0
+        ? `${item.odds}倍`
+        : item.oddsText || "オッズ未取得",
+      comment: item.comment || createTicketSpecificComment(
+        prediction,
+        item.ticket,
+        [item.category]
+      )
+    }));
 
     const typeOf = category => {
       if (category === "本線") return "main";
