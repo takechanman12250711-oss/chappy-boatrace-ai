@@ -2,6 +2,7 @@
   "use strict";
 
   const DATA_ROOT = "data/predictions";
+  const NOTE_NEW_URL = "https://note.com/notes/new";
 
   function jstDate(now = new Date()) {
     return new Intl.DateTimeFormat("sv-SE", {
@@ -63,6 +64,15 @@
     const title = match ? match[1].trim() : text(fallbackTitle, "");
     const body = match ? source.slice(match[0].length).trim() : source;
     return { title, body };
+  }
+
+  function buildNotePackage(draft) {
+    const title = text(draft?.title, "");
+    const body = text(draft?.body, "");
+    return [
+      title ? `# ${title}` : "",
+      body
+    ].filter(Boolean).join("\n\n");
   }
 
   async function copyText(value) {
@@ -154,7 +164,14 @@
             <button id="autoNotePreviewBtn" type="button">note原稿を確認</button>
             <button id="autoNoteCopyTitleBtn" type="button" data-note-title="${escapeHtml(noteTitle)}">タイトルをコピー</button>
             <button id="autoNoteCopyFullBtn" type="button" disabled>全文をコピー</button>
-            <a href="https://note.com/notes/new" target="_blank" rel="noopener noreferrer">noteを開く</a>
+            <a
+              id="autoNotePrepareBtn"
+              href="${NOTE_NEW_URL}"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-disabled="true"
+              tabindex="-1"
+            >確認後、note投稿準備</a>
           ` : ""}
         </div>
         ${notePath ? `
@@ -164,7 +181,11 @@
               <span id="autoNotePreviewStatus">原稿を読み込んでいます</span>
             </div>
             <textarea id="autoNotePreviewText" rows="18" readonly aria-label="自動生成されたnote原稿"></textarea>
-            <p>タイトルと本文を確認してからnoteへ貼り付けてください。自動公開はされません。</p>
+            <label class="auto-note-confirm">
+              <input id="autoNoteConfirmCheck" type="checkbox" disabled />
+              <span>タイトル・無料部分・有料部分・買い目を確認しました</span>
+            </label>
+            <p>確認後のボタンで原稿一式をコピーしてnoteを開きます。公開はされません。</p>
           </div>
         ` : ""}
       </div>`;
@@ -215,6 +236,8 @@
     const previewButton = document.getElementById("autoNotePreviewBtn");
     const titleButton = document.getElementById("autoNoteCopyTitleBtn");
     const fullButton = document.getElementById("autoNoteCopyFullBtn");
+    const prepareButton = document.getElementById("autoNotePrepareBtn");
+    const confirmCheck = document.getElementById("autoNoteConfirmCheck");
     const preview = document.getElementById("autoNotePreview");
     const previewText = document.getElementById("autoNotePreviewText");
     const status = document.getElementById("autoNotePreviewStatus");
@@ -232,8 +255,9 @@
         .then(markdown => {
           draft = parseNoteDraft(markdown, view.saved?.note?.title);
           if (previewText) previewText.value = draft.body;
-          if (status) status.textContent = "原稿を取得しました";
+          if (status) status.textContent = "原稿を取得しました。内容を確認してください";
           if (fullButton) fullButton.disabled = !draft.body;
+          if (confirmCheck) confirmCheck.disabled = !draft.body;
           return draft;
         })
         .catch(error => {
@@ -278,6 +302,36 @@
       } catch (error) {
         if (status) status.textContent = error?.message || "コピーできませんでした";
       }
+    });
+
+    confirmCheck?.addEventListener("change", () => {
+      const ready = Boolean(confirmCheck.checked && draft?.body);
+      if (prepareButton) {
+        prepareButton.setAttribute("aria-disabled", ready ? "false" : "true");
+        prepareButton.tabIndex = ready ? 0 : -1;
+      }
+      if (status) {
+        status.textContent = ready
+          ? "確認済みです。note投稿準備へ進めます"
+          : "内容を確認してチェックしてください";
+      }
+    });
+
+    prepareButton?.addEventListener("click", event => {
+      const ready = Boolean(confirmCheck?.checked && draft?.body);
+      if (!ready) {
+        event.preventDefault();
+        if (status) status.textContent = "先に原稿を確認してチェックしてください";
+        return;
+      }
+
+      copyText(buildNotePackage(draft))
+        .then(() => {
+          if (status) status.textContent = "原稿一式をコピーしてnoteを開きました";
+        })
+        .catch(error => {
+          if (status) status.textContent = error?.message || "コピーできませんでした";
+        });
     });
   }
 
@@ -328,7 +382,13 @@
   }
 
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { buildViewModel, jstDate, ticketLabel, parseNoteDraft };
+    module.exports = {
+      buildViewModel,
+      jstDate,
+      ticketLabel,
+      parseNoteDraft,
+      buildNotePackage
+    };
   }
   if (root.document) {
     root.document.addEventListener("DOMContentLoaded", start);
