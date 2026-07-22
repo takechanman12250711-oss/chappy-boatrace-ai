@@ -1,6 +1,6 @@
 /* =========================================================
   チャッピーボートレースAI
-  ai-core.js 完全版 v3.2.0 Part 1 / 8
+  ai-core.js 完全版 v3.3.0 Part 1 / 8
 
   役割：
   - AI指数計算の中核
@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.2.0-st-slit";
+  const CORE_VERSION = "ai-core-v3.3.0-double-time";
 
   /* ===============================
     基本ユーティリティ
@@ -1871,17 +1871,18 @@ function getBoatNo(boat) {
     ダブルタイム理論
   =============================== */
 
-  function buildDoubleTime(entries) {
+  function buildDoubleTime(entries, analyses = []) {
+
+    const analysisByBoat = new Map(
+      (Array.isArray(analyses) ? analyses : [])
+        .map((boat) => [Number(boat?.boatNo || 0), boat])
+        .filter(([boatNo]) => boatNo >= 1 && boatNo <= 6)
+    );
 
     const list = entries.map((boat) => {
 
       const exTime = getExhibitionTime(boat);
       const lapTime = getLapTime(boat);
-
-      let total = 0;
-
-      if (exTime > 0) total += exTime;
-      if (lapTime > 0) total += lapTime;
 
       return {
 
@@ -1893,7 +1894,10 @@ function getBoatNo(boat) {
 
         lapTime,
 
-        totalTime: round(total, 2)
+        totalTime:
+          exTime > 0 && lapTime > 0
+            ? round(exTime + lapTime, 2)
+            : null
 
       };
 
@@ -1919,33 +1923,143 @@ function getBoatNo(boat) {
 
     const totalRanking =
       [...list]
-      .filter(v => v.totalTime > 0)
+      .filter(v => v.totalTime !== null)
       .sort((a, b) => a.totalTime - b.totalTime);
 
     totalRanking.forEach((v, i) => {
       v.doubleRank = i + 1;
     });
 
+    const exhibitionTop = exhibitionRanking[0] || null;
+    const exhibitionSecond = exhibitionRanking[1] || null;
+    const lapTop = lapRanking[0] || null;
+    const lapSecond = lapRanking[1] || null;
+    const sameTop = Boolean(
+      exhibitionTop &&
+      lapTop &&
+      exhibitionTop.boatNo === lapTop.boatNo
+    );
+
+    const exhibitionGap = sameTop && exhibitionSecond
+      ? Math.max(
+          0,
+          exhibitionSecond.exhibitionTime -
+            exhibitionTop.exhibitionTime
+        )
+      : 0;
+
+    const lapGap = sameTop && lapSecond
+      ? Math.max(0, lapSecond.lapTime - lapTop.lapTime)
+      : 0;
+
+    const confidence = sameTop
+      ? clamp(
+          70 +
+          Math.min(15, Math.round(exhibitionGap * 150)) +
+          Math.min(15, Math.round(lapGap * 75)),
+          70,
+          100
+        )
+      : 0;
+
+    const topBoatNo = sameTop
+      ? exhibitionTop.boatNo
+      : null;
+    const topAnalysis = topBoatNo
+      ? analysisByBoat.get(topBoatNo) || null
+      : null;
+    const isOuterTarget = Boolean(
+      topBoatNo >= 4 && topBoatNo <= 6
+    );
+
+    let linkRole = "";
+    let linkScore = 0;
+
+    if (topBoatNo === 4) {
+      linkRole = "攻め";
+      linkScore = round(
+        toNumber(topAnalysis?.roleScores?.attack, 0) * 0.45 +
+        toNumber(topAnalysis?.roleScores?.flow, 0) * 0.35 +
+        toNumber(topAnalysis?.indexes?.total, 0) * 0.20
+      );
+    } else if (topBoatNo === 5 || topBoatNo === 6) {
+      linkRole = "拾い";
+      linkScore = round(
+        toNumber(topAnalysis?.roleScores?.pickup, 0) * 0.45 +
+        toNumber(topAnalysis?.roleScores?.road, 0) * 0.35 +
+        toNumber(topAnalysis?.roleScores?.flow, 0) * 0.20
+      );
+    }
+
+    const isLinkable = Boolean(
+      isOuterTarget &&
+      topAnalysis &&
+      linkScore >= 60
+    );
+    const isActionable = Boolean(
+      sameTop && isOuterTarget && isLinkable
+    );
+    const scoreAdjustment = isActionable
+      ? clamp(
+          Math.round(4 + ((confidence - 70) / 30) * 4),
+          4,
+          8
+        )
+      : 0;
+
     totalRanking.forEach((boat) => {
+      const isTop = sameTop && boat.boatNo === topBoatNo;
 
-      boat.doubleAlert =
-        boat.doubleRank <= 2;
-
-      boat.comment =
-        boat.doubleAlert
-          ? "ダブルタイム注目"
-          : "";
-
+      boat.doubleAlert = isTop;
+      boat.confidence = isTop ? confidence : 0;
+      boat.isOuterTarget = isTop && isOuterTarget;
+      boat.isLinkable = isTop && isLinkable;
+      boat.isActionable = isTop && isActionable;
+      boat.linkRole = isTop ? linkRole : "";
+      boat.linkScore = isTop ? linkScore : 0;
+      boat.scoreAdjustment = isTop ? scoreAdjustment : 0;
+      boat.comment = isTop
+        ? (
+            isActionable
+              ? `ダブルタイム発動・${linkRole}へ反映`
+              : isOuterTarget
+                ? "ダブルタイム成立・連絡み条件は未成立"
+                : "ダブルタイム成立・内枠は気配情報のみ"
+          )
+        : "";
     });
 
     return {
 
       ranking: totalRanking,
 
-      topBoat:
-        totalRanking.length
-          ? totalRanking[0].boatNo
-          : null
+      exhibitionTop,
+
+      lapTop,
+
+      isDouble: sameTop,
+
+      topBoat: topBoatNo,
+
+      activeBoat: isActionable ? topBoatNo : null,
+
+      confidence,
+
+      exhibitionGap: round(exhibitionGap, 3),
+
+      lapGap: round(lapGap, 3),
+
+      isOuterTarget,
+
+      isLinkable,
+
+      isActionable,
+
+      linkRole,
+
+      linkScore,
+
+      scoreAdjustment
 
     };
 
@@ -2562,6 +2676,7 @@ function buildRaceScenarios(analyses, data) {
   const entries = getRaceEntries(data);
   const venue = getVenueFeature(data);
   const slit = buildSlitAnalysis(entries, venue);
+  const doubleTime = buildDoubleTime(entries, list);
 
   /*
     場＋R別の枠別浮沈率。
@@ -3056,6 +3171,10 @@ if (hasComparison(3, 1)) {
   fourAttackScore += frameMovementAdjustment(4);
   fourAttackScore += fourAttackSlit.score;
 
+  if (doubleTime.activeBoat === 4) {
+    fourAttackScore += doubleTime.scoreAdjustment;
+  }
+
   /*
     3が攻める場合は4の攻め場を狭くする。
   */
@@ -3232,6 +3351,45 @@ if (hasComparison(3, 1)) {
         }
       }
 
+      if (
+        doubleTime.isActionable &&
+        no === doubleTime.activeBoat
+      ) {
+        const adjustment = doubleTime.scoreAdjustment;
+
+        if (no === 4 && type === "fourAttack") {
+          firstScore += adjustment;
+          secondScore += adjustment;
+          reasons.push(
+            `ダブルタイム・4カド攻め +${adjustment}`
+          );
+        }
+
+        if (
+          no === 5 &&
+          (type === "threeAttack" || type === "fourAttack")
+        ) {
+          secondScore += adjustment;
+          thirdScore += adjustment;
+          reasons.push(
+            `ダブルタイム・外の拾い +${adjustment}`
+          );
+        }
+
+        if (
+          no === 6 &&
+          (type === "threeAttack" || type === "fourAttack")
+        ) {
+          secondScore += type === "fourAttack"
+            ? Math.ceil(adjustment / 2)
+            : 0;
+          thirdScore += adjustment;
+          reasons.push(
+            `ダブルタイム・最内差し拾い +${adjustment}`
+          );
+        }
+      }
+
       return {
         boatNo: no,
         playerName: boat.playerName,
@@ -3327,6 +3485,10 @@ if (hasComparison(3, 1)) {
       score: fourAttackScore,
       slitAdjustment: fourAttackSlit.score,
       slitReasons: fourAttackSlit.reasons,
+      doubleTimeAdjustment:
+        doubleTime.activeBoat === 4
+          ? doubleTime.scoreAdjustment
+          : 0,
       frameMovementAdjustment:
         frameMovementAdjustment(4),
       attacker: 4,
@@ -3450,6 +3612,18 @@ if (hasComparison(3, 1)) {
         delayedByBoatNo: boat.delayedByBoatNo,
         diff: boat.slitLossDiff
       }))
+    },
+    doubleTime: {
+      topBoat: doubleTime.topBoat,
+      activeBoat: doubleTime.activeBoat,
+      confidence: doubleTime.confidence,
+      exhibitionGap: doubleTime.exhibitionGap,
+      lapGap: doubleTime.lapGap,
+      isOuterTarget: doubleTime.isOuterTarget,
+      isLinkable: doubleTime.isLinkable,
+      linkRole: doubleTime.linkRole,
+      linkScore: doubleTime.linkScore,
+      scoreAdjustment: doubleTime.scoreAdjustment
     },
     firstCandidates:
       mainScenario?.outcome?.firstCandidates
@@ -5330,7 +5504,7 @@ const slit =
       );
 
     const doubleTime =
-      buildDoubleTime(entries);
+      buildDoubleTime(entries, analyses);
 
     const newSam =
       buildNewSam(entries);
