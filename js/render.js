@@ -4402,217 +4402,44 @@ function getPaperClassName(item) {
           "ダブルタイムは判定できない。"
       );
     }
-        const newSamRows =
-      doubleTimeList
-        .map(item => {
-          const exhibitionTime =
-            Number(
-              item?.exhibitionTime
-            );
+    const newSamTheory = prediction.newSam || {};
+    const newSamRows = arrayify(newSamTheory.ranking);
 
-          const lapTime =
-            Number(
-              item?.lapTime
-            );
+    if (newSamRows.length) {
+      newSamRows.forEach((row) => {
+        const diff = Number(row?.diff || 0);
+        const diffText = `${diff >= 0 ? "+" : ""}${diff.toFixed(3)}`;
+        const adjustment = Number(row?.scoreAdjustment || 0);
+        const reflection = adjustment > 0
+          ? `${row.role}へ+${adjustment}点の範囲で反映。`
+          : row?.comment || "参考表示のみ。";
 
-          if (
-            !Number.isFinite(
-              exhibitionTime
-            ) ||
-            exhibitionTime <= 0 ||
-            !Number.isFinite(
-              lapTime
-            ) ||
-            lapTime <= 0
-          ) {
-            return null;
-          }
-
-          const boatNo =
-            Number(
-              item?.boatNo ||
-              0
-            );
-
-          return {
-            boatNo,
-
-            course:
-              Number(
-                item?.course ||
-                boatNo
-              ),
-
-            exhibitionTime,
-            lapTime,
-
-            total:
-              exhibitionTime +
-              lapTime
-          };
-        })
-        .filter(Boolean);
-
-    if (
-      newSamRows.length >= 2
-    ) {
-      const averageTotal =
-        newSamRows.reduce(
-          (sum, row) =>
-            sum + row.total,
-          0
-        ) /
-        newSamRows.length;
-
-      const positiveRows =
-        newSamRows
-          .map(row => ({
-            ...row,
-
-            diff:
-              Math.round(
-                (
-                  averageTotal -
-                  row.total
-                ) * 1000
-              ) / 1000
-          }))
-          .filter(
-            row =>
-              row.diff > 0
-          )
-          .sort(
-            (a, b) =>
-              b.diff - a.diff ||
-              a.total - b.total
-          );
-
-      if (positiveRows.length) {
-        positiveRows.forEach(
-          row => {
-            let development =
-              "展示直線と回り足の合計が平均より良く、展開上の補足材料。";
-
-            if (row.course === 1) {
-              development =
-                "イン先マイを支える直線・回り足で、1着候補と残しを確認する。";
-            } else if (
-              row.course === 2
-            ) {
-              development =
-                "2コース差しと残しの両面を確認する足。";
-            } else if (
-              row.course === 3 ||
-              row.course === 4
-            ) {
-              development =
-                `${row.course}コース攻めから、` +
-                "内の残しと外の拾いを比較する足。";
-            } else if (
-              row.course >= 5
-            ) {
-              development =
-                "外から展開を突く材料で、1着固定ではなく拾いまで確認する。";
-            }
-
-            const reflectedRoles = [];
-
-            const honmeiBoatNo =
-              Number(
-                prediction.mainSheet
-                  ?.honmei?.boatNo ||
-                prediction.mainSheet
-                  ?.main?.boatNo ||
-                0
-              );
-
-            if (
-              honmeiBoatNo ===
-              row.boatNo
-            ) {
-              reflectedRoles.push(
-                "1着候補"
-              );
-            }
-
-            if (
-              arrayify(
-                raceFlow.holdBoats
-              ).some(
-                item =>
-                  Number(
-                    item?.boatNo
-                  ) === row.boatNo
-              )
-            ) {
-              reflectedRoles.push(
-                "残し"
-              );
-            }
-
-            if (
-              arrayify(
-                raceFlow.pickupBoats
-              ).some(
-                item =>
-                  Number(
-                    item?.boatNo
-                  ) === row.boatNo
-              )
-            ) {
-              reflectedRoles.push(
-                "拾い"
-              );
-            }
-
-            const reflection =
-              reflectedRoles.length
-                ? `現在の予想では` +
-                  `${reflectedRoles.join("・")}へ反映。`
-                : "現在の予想では1着候補・残し・拾いへ直接反映せず、展示・回り足評価の補足材料。";
-
-            pushTheoryText(
-              items,
-              "shinsam",
-              {
-                boatNo:
-                  row.boatNo,
-
-                score:
-                  `+${row.diff.toFixed(3)}`,
-
-                comment:
-                  `${row.boatNo}号艇は` +
-                  `展示${row.exhibitionTime.toFixed(2)}＋` +
-                  `一周${row.lapTime.toFixed(2)}＝` +
-                  `合計${row.total.toFixed(2)}。` +
-                  `有効${newSamRows.length}艇平均` +
-                  `${averageTotal.toFixed(2)}との比較で` +
-                  `${row.diff.toFixed(3)}速く、` +
-                  "新サムはプラスで発動。" +
-                  development +
-                  reflection
-              }
-            );
-          }
-        );
-      } else {
         pushTheoryText(
           items,
           "shinsam",
-          `有効${newSamRows.length}艇の展示＋一周合計が同値で、` +
-            "平均との差がプラスになる艇がないため、新サムは発動していない。"
+          {
+            boatNo: Number(row?.boatNo || 0),
+            score: `${row?.grade || "-"} ${diffText}`,
+            comment:
+              `${row?.boatNo}号艇は展示` +
+              `${Number(row?.exhibitionTime || 0).toFixed(2)}＋一周` +
+              `${Number(row?.lapTime || 0).toFixed(2)}＝合計` +
+              `${Number(row?.sum || 0).toFixed(3)}。` +
+              `6艇平均${Number(newSamTheory.average || 0).toFixed(3)}との差は` +
+              `${diffText}、新サム${row?.grade || "-"}評価。` +
+              reflection
+          }
+        );
+      });
+
+      if (!newSamTheory.isFormal) {
+        pushTheoryText(
+          items,
+          "shinsam",
+          `6艇分がそろっていないため参考表示のみ。` +
+            `不足：${arrayify(newSamTheory.missingBoatNos).join("・") || "不明"}号艇。`
         );
       }
-    } else if (
-      newSamRows.length === 1
-    ) {
-      pushTheoryText(
-        items,
-        "shinsam",
-        `展示＋一周がそろったのは${newSamRows[0].boatNo}号艇だけで、` +
-          "合計タイムの平均との差を比較できないため、新サムは判定できない。"
-      );
     } else {
       pushTheoryText(
         items,
