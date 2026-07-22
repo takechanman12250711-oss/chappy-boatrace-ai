@@ -4,10 +4,48 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const DEFAULT_LIMIT = 500;
-const VERIFICATION_LIMIT = 5000;
+const VERIFICATION_LIMIT = 1500;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
+
+function compactMark(value) {
+  if (!value || typeof value !== "object") return null;
+  return {
+    boatNo: Number(value.boatNo || value.no || value.boat || 0),
+    name: String(value.name || value.playerName || "")
+  };
+}
+
+function compactIndexVerification(record) {
+  const prediction = record?.prediction || {};
+  return {
+    ...record,
+    prediction: {
+      version: prediction.version || "",
+      predictionMode: prediction.predictionMode || "server_pre_deadline_shadow",
+      raceFlow: {
+        title: prediction?.raceFlow?.title || "",
+        summary: prediction?.raceFlow?.summary || "",
+        scenario: prediction?.raceFlow?.scenario?.title
+          ? { title: prediction.raceFlow.scenario.title }
+          : null
+      },
+      confidence: prediction.confidence || null,
+      manshuPower: prediction.manshuPower || null,
+      mainSheet: {
+        honmei: compactMark(prediction?.mainSheet?.honmei),
+        taikou: compactMark(prediction?.mainSheet?.taikou),
+        ana: compactMark(prediction?.mainSheet?.ana),
+        osae: compactMark(prediction?.mainSheet?.osae)
+      },
+      practicalTickets: Array.isArray(prediction.practicalTickets)
+        ? prediction.practicalTickets
+        : [],
+      preRaceConditions: prediction.preRaceConditions || null
+    }
+  };
 }
 
 function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
@@ -51,10 +89,10 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     (Array.isArray(data?.verificationPredictions)
       ? data.verificationPredictions
       : []).forEach(prediction => {
-      verificationPredictions.push({
+      verificationPredictions.push(compactIndexVerification({
         ...prediction,
         date: String(prediction?.date || date)
-      });
+      }));
     });
   });
 
@@ -100,4 +138,8 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { buildPredictionIndex, writePredictionIndex };
+module.exports = {
+  buildPredictionIndex,
+  compactIndexVerification,
+  writePredictionIndex
+};
