@@ -19,6 +19,7 @@
     rel="stylesheet"
     href="style.css?v=20260720-frame1"
   />
+  <link rel="stylesheet" href="css/auto-selection.css?v=20260722-1" />
   
   <script>
   window.addEventListener("error", function (event) {
@@ -412,6 +413,44 @@
 
 
     <!-- ===================================================
+      自動選定結果
+    ==================================================== -->
+
+    <section
+      id="autoSelectionSection"
+      class="dashboard-section auto-selection-section"
+    >
+      <div class="dashboard-section-head">
+        <div>
+          <p class="section-eyebrow">AUTO SELECTION</p>
+          <h2>🤖 自動選定結果</h2>
+        </div>
+
+        <div class="auto-selection-head-actions">
+          <span
+            id="autoSelectionBadge"
+            class="section-status-badge"
+          >取得中</span>
+
+          <button
+            id="autoSelectionRefreshBtn"
+            class="auto-selection-refresh"
+            type="button"
+          >🔄 更新</button>
+        </div>
+      </div>
+
+      <div
+        id="autoSelectionArea"
+        aria-live="polite"
+      >
+        <p class="auto-selection-empty">
+          自動選定結果を取得しています…
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================================================
       エラー
     ==================================================== -->
 
@@ -708,6 +747,7 @@
   <script src="./js/render.js?v=20260720-frame1"></script>
   <script src="js/frame-analysis.js?v=20260720-2"></script>
   <script src="js/script.js?v=20260719-history1"></script>
+  <script src="js/auto-selection.js?v=20260722-1"></script>
 
 </body>
 </html>
