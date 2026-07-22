@@ -14,31 +14,72 @@
 
   function calcSlitAlerts(entries) {
     const list = [];
+    const ordered = entries
+      .map((boat, index) => ({
+        boat,
+        boatNo: boat.boatNo ?? boat.number ?? index + 1,
+        course: Number(
+          boat.course ??
+          boat.entryCourse ??
+          boat.boatNo ??
+          boat.number ??
+          index + 1
+        )
+      }))
+      .sort((a, b) => a.course - b.course);
 
-    entries.forEach((boat, index) => {
-      const st = U.safeNumber(boat.exhibitionST ?? boat.st ?? boat.avgST, null);
+    ordered.forEach((item, index) => {
+      const boat = item.boat;
+      const st = U.safeNumber(
+        boat.exhibitionST ??
+        boat.exhibitionSt ??
+        boat.displayST ??
+        boat.displaySt,
+        null
+      );
       if (st === null) return;
 
-      const before = entries[index - 1];
-      const after = entries[index + 1];
+      const before = ordered[index - 1] || null;
+      const after = ordered[index + 1] || null;
 
       const beforeST = before
-        ? U.safeNumber(before.exhibitionST ?? before.st ?? before.avgST, null)
+        ? U.safeNumber(
+            before.boat.exhibitionST ?? before.boat.exhibitionSt ??
+            before.boat.displayST ?? before.boat.displaySt,
+            null
+          )
         : null;
 
       const afterST = after
-        ? U.safeNumber(after.exhibitionST ?? after.st ?? after.avgST, null)
+        ? U.safeNumber(
+            after.boat.exhibitionST ?? after.boat.exhibitionSt ??
+            after.boat.displayST ?? after.boat.displaySt,
+            null
+          )
         : null;
 
-      const diffBefore = beforeST !== null ? Math.abs(st - beforeST) : 0;
-      const diffAfter = afterST !== null ? Math.abs(st - afterST) : 0;
+      const comparisons = [
+        beforeST !== null
+          ? { boatNo: before.boatNo, diff: beforeST - st }
+          : null,
+        afterST !== null
+          ? { boatNo: after.boatNo, diff: afterST - st }
+          : null
+      ].filter(Boolean);
 
-      if (diffBefore >= 0.1 || diffAfter >= 0.1) {
+      const fastest = comparisons
+        .sort((a, b) => b.diff - a.diff)[0] || null;
+
+      if (fastest && fastest.diff >= 0.1) {
         list.push({
-          boatNo: boat.boatNo ?? boat.number ?? index + 1,
+          boatNo: item.boatNo,
           name: boat.name ?? boat.racerName ?? "-",
           value: st,
-          comment: "隣艇とスリット差0.10以上。隊形変化に注意。"
+          comparedBoatNo: fastest.boatNo,
+          diff: Math.round(fastest.diff * 100) / 100,
+          comment:
+            `隣の${fastest.boatNo}号艇より展示STで` +
+            `${fastest.diff.toFixed(2)}速い。隊形変化に注意。`
         });
       }
     });

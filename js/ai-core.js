@@ -1,6 +1,6 @@
 /* =========================================================
   チャッピーボートレースAI
-  ai-core.js 完全版 v3.0.0 Part 1 / 8
+  ai-core.js 完全版 v3.2.0 Part 1 / 8
 
   役割：
   - AI指数計算の中核
@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.1.1-diversified-main";
+  const CORE_VERSION = "ai-core-v3.2.0-st-slit";
 
   /* ===============================
     基本ユーティリティ
@@ -785,6 +785,24 @@ function getBoatNo(boat) {
     );
   }
 
+  function getOptionalAverageSt(boat) {
+    const value =
+      boat.averageSt ??
+      boat.averageST ??
+      boat.avgSt ??
+      boat.avgST ??
+      boat.st ??
+      boat.startTiming ??
+      boat.nationalSt;
+
+    if (isNil(value)) return null;
+
+    const st = toNumber(value, NaN);
+    return Number.isFinite(st) && st > 0
+      ? st
+      : null;
+  }
+
   function getExhibitionTime(boat) {
     return toNumber(
       boat.exhibitionTime ??
@@ -803,6 +821,48 @@ function getBoatNo(boat) {
       boat.startExhibition,
       0.15
     );
+  }
+
+  function getOptionalExhibitionSt(boat) {
+    const value =
+      boat.exhibitionSt ??
+      boat.exhibitionST ??
+      boat.tenjiSt ??
+      boat.tenjiST ??
+      boat.displaySt ??
+      boat.displayST ??
+      boat.startExhibition;
+
+    if (isNil(value)) return null;
+
+    const st = toNumber(value, NaN);
+    return Number.isFinite(st) && st >= 0
+      ? st
+      : null;
+  }
+
+  function getCurrentSeriesSt(boat) {
+    const source =
+      boat.currentSeries?.st ??
+      boat.currentRace?.st ??
+      boat.series?.st ??
+      boat.thisTermSt ??
+      [];
+
+    const values = (Array.isArray(source) ? source : [source])
+      .map((value) => toNumber(value, NaN))
+      .filter((value) => Number.isFinite(value) && value >= 0);
+
+    return {
+      values,
+      count: values.length,
+      average: values.length
+        ? average(values, null)
+        : null,
+      spread: values.length >= 2
+        ? Math.max(...values) - Math.min(...values)
+        : null
+    };
   }
 
   function getLapTime(boat) {
@@ -1654,13 +1714,20 @@ function getBoatNo(boat) {
   =============================== */
 
   function buildSlitAnalysis(entries, venueFeature) {
-
-    const list = entries.map((boat) => {
+    const list = entries.map((boat, index) => {
 
       const boatNo = getBoatNo(boat);
-
-      const avgSt = getAverageSt(boat);
-      const exSt = getExhibitionSt(boat);
+      const avgSt = getOptionalAverageSt(boat);
+      const exSt = getOptionalExhibitionSt(boat);
+      const currentSt = getCurrentSeriesSt(boat);
+      const course = toNumber(
+        boat.course ??
+        boat.entryCourse ??
+        boat.exhibitionCourse ??
+        boatNo ??
+        index + 1,
+        boatNo || index + 1
+      );
 
       const stIndex = calcStIndex(boat, entries);
       const attackIndex = calcAttackIndex(
@@ -1670,15 +1737,19 @@ function getBoatNo(boat) {
       );
 
       const slitScore =
-        (100 - avgSt * 100) * 0.45 +
-        (100 - exSt * 100) * 0.35 +
+        (avgSt === null ? 50 : 100 - avgSt * 100) * 0.45 +
+        (exSt === null ? 50 : 100 - exSt * 100) * 0.35 +
         attackIndex * 0.20;
 
       return {
         boatNo,
+        course,
         name: getPlayerName(boat),
         avgSt,
         exSt,
+        currentStAverage: currentSt.average,
+        currentStCount: currentSt.count,
+        currentStSpread: currentSt.spread,
         stIndex,
         attackIndex,
         slitScore: round(slitScore)
@@ -1692,39 +1763,91 @@ function getBoatNo(boat) {
       boat.slitRank = index + 1;
     });
 
-    const averageSt =
-      average(list.map(v => v.avgSt), 0.18);
+    const courseOrder = [...list]
+      .sort((a, b) => a.course - b.course);
 
-    list.forEach((boat) => {
+    courseOrder.forEach((boat, index) => {
+      const neighbors = [
+        courseOrder[index - 1],
+        courseOrder[index + 1]
+      ].filter(
+        (neighbor) =>
+          neighbor &&
+          boat.exSt !== null &&
+          neighbor.exSt !== null
+      );
 
-      boat.slitDiff =
-        round(averageSt - boat.avgSt, 3);
+      const fastEdges = neighbors.map((neighbor) => ({
+        boatNo: neighbor.boatNo,
+        course: neighbor.course,
+        diff: round(neighbor.exSt - boat.exSt, 3)
+      }));
 
-      boat.slitAlert =
-        boat.slitDiff >= 0.10;
+      const slowEdges = neighbors.map((neighbor) => ({
+        boatNo: neighbor.boatNo,
+        course: neighbor.course,
+        diff: round(boat.exSt - neighbor.exSt, 3)
+      }));
 
-      boat.isAttackBoat =
-        boat.slitRank <= 2;
+      const fastestEdge = [...fastEdges]
+        .sort((a, b) => b.diff - a.diff)[0] || null;
+      const slowestEdge = [...slowEdges]
+        .sort((a, b) => b.diff - a.diff)[0] || null;
 
+      boat.slitDiff = Math.max(0, fastestEdge?.diff || 0);
+      boat.slitLossDiff = Math.max(0, slowestEdge?.diff || 0);
+      boat.comparedBoatNo = fastestEdge?.boatNo || null;
+      boat.delayedByBoatNo = slowestEdge?.boatNo || null;
+      boat.slitAlert = boat.slitDiff >= 0.10;
+      boat.slitRisk = boat.slitLossDiff >= 0.10;
+
+      const supportSt =
+        boat.currentStCount >= 2
+          ? boat.currentStAverage
+          : boat.avgSt;
+
+      boat.hasStartSupport =
+        boat.currentStCount >= 2 ||
+        boat.avgSt !== null;
       boat.isStableBoat =
-        boat.stIndex >= 75;
-
-      boat.slitComment =
-        boat.slitAlert
-          ? "スリットアラート"
+        boat.hasStartSupport &&
+        supportSt !== null &&
+        supportSt <= 0.16 &&
+        (
+          boat.currentStCount < 2 ||
+          boat.currentStSpread <= 0.05
+        );
+      boat.isAttackBoat = boat.slitAlert;
+      boat.isDelayedBoat = boat.slitRisk;
+      boat.isWallBoat = !boat.slitRisk && boat.isStableBoat;
+      boat.slitComment = boat.slitAlert
+        ? `隣艇より展示STで${boat.slitDiff.toFixed(2)}速い`
+        : boat.slitRisk
+          ? `隣艇より展示STで${boat.slitLossDiff.toFixed(2)}遅い`
           : "";
-
     });
 
-    const attackBoat =
-      list.find(v => v.slitRank === 1);
+    const alerts = [...list]
+      .filter((boat) => boat.slitAlert)
+      .sort((a, b) =>
+        b.slitDiff - a.slitDiff ||
+        b.slitScore - a.slitScore
+      );
 
-    const secondBoat =
-      list.find(v => v.slitRank === 2);
+    const risks = [...list]
+      .filter((boat) => boat.slitRisk)
+      .sort((a, b) => b.slitLossDiff - a.slitLossDiff);
+
+    const attackBoat = alerts[0] || null;
+    const secondBoat = alerts[1] || null;
 
     return {
 
       ranking: list,
+
+      alerts,
+
+      risks,
 
       attackBoat:
         attackBoat
@@ -1734,7 +1857,11 @@ function getBoatNo(boat) {
       secondBoat:
         secondBoat
           ? secondBoat.boatNo
-          : null
+          : null,
+
+      threshold: 0.10,
+
+      source: "neighbor-exhibition-st"
 
     };
 
@@ -2434,6 +2561,7 @@ function buildRaceScenarios(analyses, data) {
 
   const entries = getRaceEntries(data);
   const venue = getVenueFeature(data);
+  const slit = buildSlitAnalysis(entries, venue);
 
   /*
     場＋R別の枠別浮沈率。
@@ -2724,6 +2852,57 @@ function buildRaceScenarios(analyses, data) {
       : 0;
   }
 
+  function slitBoat(no) {
+    return slit.ranking.find(
+      (boat) => boat.boatNo === Number(no)
+    ) || null;
+  }
+
+  function slitScenarioAdjustment(attackerNo, wallNo) {
+    const attacker = slitBoat(attackerNo);
+    const wall = slitBoat(wallNo);
+    let adjustment = 0;
+    const reasons = [];
+
+    if (attacker?.slitAlert) {
+      if (attacker.isStableBoat) {
+        adjustment += 8;
+        reasons.push(
+          `${attackerNo}号艇が隣艇より展示STで` +
+          `${attacker.slitDiff.toFixed(2)}速く、` +
+          `平均・今節STの裏付けあり（+8）`
+        );
+      } else {
+        reasons.push(
+          `${attackerNo}号艇は隣艇より展示STで` +
+          `${attacker.slitDiff.toFixed(2)}速いが、` +
+          "平均・今節STの裏付け不足のため表示のみ"
+        );
+      }
+    }
+
+    if (attacker?.slitRisk && attacker.hasStartSupport) {
+      adjustment -= 6;
+      reasons.push(
+        `${attackerNo}号艇が隣艇より展示STで` +
+        `${attacker.slitLossDiff.toFixed(2)}遅い（-6）`
+      );
+    }
+
+    if (wall?.slitRisk && wall.hasStartSupport) {
+      adjustment += 3;
+      reasons.push(`${wallNo}号艇のスリット遅れ（+3）`);
+    } else if (wall?.slitAlert && wall.hasStartSupport) {
+      adjustment -= 3;
+      reasons.push(`${wallNo}号艇のスリット先行（-3）`);
+    }
+
+    return {
+      score: clamp(round(adjustment), -8, 8),
+      reasons
+    };
+  }
+
   /*
     展開成立度
   */
@@ -2734,6 +2913,11 @@ function buildRaceScenarios(analyses, data) {
     hold(1) * 0.22 +
     st(1) * 0.12 +
     exhibition(1) * 0.08;
+
+  const escapeSlit = slitScenarioAdjustment(1, 2);
+  const sashiSlit = slitScenarioAdjustment(2, 1);
+  const threeAttackSlit = slitScenarioAdjustment(3, 2);
+  const fourAttackSlit = slitScenarioAdjustment(4, 3);
 
   function frameMovementAdjustment(no) {
     return toNumber(
@@ -2773,6 +2957,7 @@ function buildRaceScenarios(analyses, data) {
   }
 
   escapeScore += frameMovementAdjustment(1);
+  escapeScore += escapeSlit.score;
 
   let sashiScore =
     venue.sashi * 0.25 +
@@ -2793,6 +2978,7 @@ function buildRaceScenarios(analyses, data) {
   }
 
   sashiScore += frameMovementAdjustment(2);
+  sashiScore += sashiSlit.score;
 
   let threeAttackScore =
   venue.makuri * 0.20 +
@@ -2841,6 +3027,7 @@ if (hasComparison(3, 1)) {
 }
 
   threeAttackScore += frameMovementAdjustment(3);
+  threeAttackScore += threeAttackSlit.score;
 
   let fourAttackScore =
     venue.kado * 0.22 +
@@ -2867,6 +3054,7 @@ if (hasComparison(3, 1)) {
 
 
   fourAttackScore += frameMovementAdjustment(4);
+  fourAttackScore += fourAttackSlit.score;
 
   /*
     3が攻める場合は4の攻め場を狭くする。
@@ -3098,6 +3286,8 @@ if (hasComparison(3, 1)) {
       type: "escape",
       label: "1号艇逃げ",
       score: escapeScore,
+      slitAdjustment: escapeSlit.score,
+      slitReasons: escapeSlit.reasons,
       frameMovementAdjustment:
         frameMovementAdjustment(1),
       attacker: 1,
@@ -3108,6 +3298,8 @@ if (hasComparison(3, 1)) {
       type: "sashi",
       label: "2コース差し",
       score: sashiScore,
+      slitAdjustment: sashiSlit.score,
+      slitReasons: sashiSlit.reasons,
       frameMovementAdjustment:
         frameMovementAdjustment(2),
       attacker: 2,
@@ -3118,6 +3310,8 @@ if (hasComparison(3, 1)) {
       type: "threeAttack",
       label: "3コース攻め",
       score: threeAttackScore,
+      slitAdjustment: threeAttackSlit.score,
+      slitReasons: threeAttackSlit.reasons,
       frameMovementAdjustment:
         frameMovementAdjustment(3),
       attacker: 3,
@@ -3131,6 +3325,8 @@ if (hasComparison(3, 1)) {
       type: "fourAttack",
       label: "4カド攻め",
       score: fourAttackScore,
+      slitAdjustment: fourAttackSlit.score,
+      slitReasons: fourAttackSlit.reasons,
       frameMovementAdjustment:
         frameMovementAdjustment(4),
       attacker: 4,
@@ -3239,6 +3435,21 @@ if (hasComparison(3, 1)) {
       twoVsOne: round(twoVsOne),
       threeVsTwo: round(threeVsTwo),
       fourVsThree: round(fourVsThree)
+    },
+    slit: {
+      threshold: slit.threshold,
+      source: slit.source,
+      alerts: slit.alerts.map((boat) => ({
+        boatNo: boat.boatNo,
+        comparedBoatNo: boat.comparedBoatNo,
+        diff: boat.slitDiff,
+        stable: boat.isStableBoat
+      })),
+      risks: slit.risks.map((boat) => ({
+        boatNo: boat.boatNo,
+        delayedByBoatNo: boat.delayedByBoatNo,
+        diff: boat.slitLossDiff
+      }))
     },
     firstCandidates:
       mainScenario?.outcome?.firstCandidates
