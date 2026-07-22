@@ -280,6 +280,11 @@
       <!-- 5. 万舟買い目 -->
       ${renderNewspaperSheet(prediction, "manshu")}
 
+      <!-- 5.5 出てない目TOP30 -->
+      ${renderMissingNumbers(
+        prediction
+      )}
+
             <!-- 6. 実戦厳選 -->
       ${renderPracticalSelection(prediction)}
 
@@ -886,6 +891,27 @@ if (raceInfoArea) {
     return renderMainNewspaper(prediction);
   }
 
+  function renderCombinedOddsTag(
+    prediction,
+    key
+  ) {
+    const odds = Number(
+      prediction.combinedOdds?.[key]
+    );
+
+    if (
+      !Number.isFinite(odds) ||
+      odds <= 0
+    ) {
+      return "";
+    }
+
+    return tag(
+      `合成 ${odds.toFixed(1)}倍`,
+      "odds"
+    );
+  }
+
      function renderMainNewspaper(prediction) {
     const sheet =
       prediction.mainSheet || {};
@@ -1122,7 +1148,17 @@ if (raceInfoArea) {
 
       return `
         <div class="v3-formation-group">
-          <h3>${escapeHtml(title)}</h3>
+          <h3>
+            ${escapeHtml(title)}
+            ${renderCombinedOddsTag(
+              prediction,
+              type === "main"
+                ? "main"
+                : type === "safety"
+                  ? "cover"
+                  : "flow"
+            )}
+          </h3>
 
           <div
             class="v3-formation-list
@@ -1425,7 +1461,22 @@ if (raceInfoArea) {
       `;
     };
 
+    const manshuCombinedOdds =
+      renderCombinedOddsTag(
+        prediction,
+        "manshu"
+      );
+
     const body = [
+      manshuCombinedOdds
+        ? `
+          <div class="v3-note">
+            万舟候補全体の
+            ${manshuCombinedOdds}
+          </div>
+        `
+        : "",
+
       renderGroup(
         "万舟（実オッズ100倍以上）",
         groups["万舟"],
@@ -1452,6 +1503,147 @@ if (raceInfoArea) {
       body,
       "💣",
       "v3-manshu-newspaper"
+    );
+  }
+
+  function renderMissingNumbers(
+    prediction
+  ) {
+    const data =
+      prediction.missingNumbersData;
+
+    if (!data) {
+      return section(
+        "出てない目TOP30",
+        emptyBox(
+          "オッズ更新後に、公式1年履歴と現在オッズを照合して表示します。"
+        ),
+        "🔎",
+        "v3-missing-numbers"
+      );
+    }
+
+    if (!data.available) {
+      return section(
+        "出てない目TOP30",
+        emptyBox(
+          data.reason ||
+          "同条件の公式履歴が不足しているため、参考判定を停止しました。"
+        ),
+        "🔎",
+        "v3-missing-numbers"
+      );
+    }
+
+    const rows = arrayify(
+      data.top30
+    );
+
+    if (!rows.length) {
+      return section(
+        "出てない目TOP30",
+        emptyBox(
+          "出現0回の組み合わせ、または現在オッズを確認できませんでした。"
+        ),
+        "🔎",
+        "v3-missing-numbers"
+      );
+    }
+
+    const renderRow = item => {
+      const odds = Number(
+        item.odds
+      );
+
+      const oddsText =
+        Number.isFinite(odds) &&
+        odds > 0
+          ? `${odds}倍`
+          : "オッズ未取得";
+
+      return `
+        <div class="v3-formation-row v3-formation-row-manshu">
+          <div class="v3-formation-ticket">
+            <span class="v3-missing-rank">
+              ${escapeHtml(item.rank)}位
+            </span>
+            ${ticketArrow(item.ticket)}
+          </div>
+
+          <div class="v3-formation-tags">
+            ${tag(
+              oddsText,
+              "odds"
+            )}
+            ${tag(
+              `出現0/${safeNum(
+                item.sampleSize,
+                data.sampleSize
+              )}`,
+              "manshu"
+            )}
+          </div>
+        </div>
+      `;
+    };
+
+    const visibleRows =
+      rows.slice(0, 10);
+
+    const hiddenRows =
+      rows.slice(10);
+
+    const period = [
+      data.firstDate,
+      data.lastDate
+    ]
+      .filter(Boolean)
+      .join("〜");
+
+    const body = `
+      <div class="v3-note">
+        公式結果${escapeHtml(
+          data.sampleSize
+        )}レースを対象に、
+        同じ開催場・同じR番号で出現0回の目を
+        現在オッズの低い順に表示。
+        買い目の作成・削除には使用しません。
+        ${
+          period
+            ? `集計期間：${escapeHtml(period)}`
+            : ""
+        }
+      </div>
+
+      <div class="v3-formation-list v3-formation-manshu">
+        ${visibleRows
+          .map(renderRow)
+          .join("")}
+      </div>
+
+      ${
+        hiddenRows.length
+          ? `
+            <details class="v3-missing-more">
+              <summary>
+                11〜${escapeHtml(rows.length)}位を見る
+              </summary>
+              <div class="v3-formation-list v3-formation-manshu">
+                ${hiddenRows
+                  .map(renderRow)
+                  .join("")}
+              </div>
+            </details>
+          `
+          : ""
+      }
+    `;
+
+    return section(
+      "出てない目TOP30",
+      body,
+      "🔎",
+      "v3-missing-numbers"
     );
   }
 

@@ -16,6 +16,13 @@ const OUTPUT_FILE = path.join(
   "race-patterns.json"
 );
 
+const TRIFECTA_OUTPUT_FILE = path.join(
+  ROOT,
+  "data",
+  "stats",
+  "trifecta-by-venue-race.json"
+);
+
 function percent(value, total) {
   return total
     ? Number((value * 100 / total).toFixed(1))
@@ -50,6 +57,52 @@ function createPattern() {
     },
     winningStSum: 0,
     winningStSamples: 0
+  };
+}
+
+function createTrifectaPattern() {
+  return {
+    totalRaces: 0,
+    counts: {}
+  };
+}
+
+function normalizeTrifecta(value) {
+  const match = String(value || "")
+    .match(/^([1-6])-([1-6])-([1-6])$/);
+
+  if (!match) return "";
+
+  const boats = match.slice(1).map(Number);
+
+  return new Set(boats).size === 3
+    ? boats.join("-")
+    : "";
+}
+
+function addTrifectaRace(pattern, race) {
+  const ticket = normalizeTrifecta(
+    race.trifecta?.combination
+  );
+
+  if (!ticket) return;
+
+  pattern.totalRaces += 1;
+  addCount(pattern.counts, ticket);
+}
+
+function finalizeTrifectaPattern(pattern) {
+  return {
+    totalRaces: pattern.totalRaces,
+    reliability: reliability(
+      pattern.totalRaces
+    ),
+    counts: Object.fromEntries(
+      Object.entries(pattern.counts)
+        .sort(([ticketA], [ticketB]) =>
+          ticketA.localeCompare(ticketB)
+        )
+    )
   };
 }
 
@@ -574,6 +627,7 @@ function main() {
 
   const overall = createPattern();
   const venuePatterns = {};
+  const trifectaByVenueRace = {};
   const racers = {};
 
   for (const race of races) {
@@ -588,6 +642,31 @@ function main() {
       };
 
     addRace(venue.pattern, race);
+
+    const raceNo = Number(
+      race.raceNo
+    );
+
+    if (
+      Number.isInteger(raceNo) &&
+      raceNo >= 1 &&
+      raceNo <= 12
+    ) {
+      const venueRace =
+        trifectaByVenueRace[
+          race.jcd
+        ] ||= {};
+
+      const trifectaPattern =
+        venueRace[raceNo] ||=
+          createTrifectaPattern();
+
+      addTrifectaRace(
+        trifectaPattern,
+        race
+      );
+    }
+
     addRacers(racers, race);
   }
 
@@ -640,6 +719,47 @@ function main() {
       finalizeRacers(racers)
   };
 
+  const trifectaOutput = {
+    schemaVersion: 1,
+    source: "boatrace-official",
+    usagePolicy:
+      "参考表示のみ。買い目の作成・削除には使用しない",
+    generatedAt:
+      output.generatedAt,
+    firstDate:
+      output.firstDate,
+    lastDate:
+      output.lastDate,
+    trifectaByVenueRace:
+      Object.fromEntries(
+        Object.entries(
+          trifectaByVenueRace
+        )
+          .sort(([jcdA], [jcdB]) =>
+            jcdA.localeCompare(jcdB)
+          )
+          .map(([jcd, races]) => [
+            jcd,
+            Object.fromEntries(
+              Object.entries(races)
+                .sort(
+                  ([raceA], [raceB]) =>
+                    Number(raceA) -
+                    Number(raceB)
+                )
+                .map(
+                  ([raceNo, pattern]) => [
+                    raceNo,
+                    finalizeTrifectaPattern(
+                      pattern
+                    )
+                  ]
+                )
+            )
+          ])
+      )
+  };
+
   fs.mkdirSync(
     path.dirname(OUTPUT_FILE),
     { recursive: true }
@@ -651,6 +771,14 @@ function main() {
       output,
       null,
       2
+    ) + "\n",
+    "utf8"
+  );
+
+  fs.writeFileSync(
+    TRIFECTA_OUTPUT_FILE,
+    JSON.stringify(
+      trifectaOutput
     ) + "\n",
     "utf8"
   );

@@ -20,6 +20,11 @@ on:
       - "scripts/test-auto-stats.js"
       - "scripts/test-practical-selection.js"
       - "scripts/test-ai-core-formations.js"
+      - "api/missing.js"
+      - "scripts/build-race-stats.js"
+      - "scripts/test-missing-numbers.js"
+      - "js/odds-insights.js"
+      - "scripts/test-odds-insights.js"
   push:
     branches:
       - main
@@ -41,6 +46,11 @@ on:
       - "scripts/test-auto-stats.js"
       - "scripts/test-practical-selection.js"
       - "scripts/test-ai-core-formations.js"
+      - "api/missing.js"
+      - "scripts/build-race-stats.js"
+      - "scripts/test-missing-numbers.js"
+      - "js/odds-insights.js"
+      - "scripts/test-odds-insights.js"
   workflow_dispatch:
 
 permissions:
@@ -78,6 +88,11 @@ jobs:
           node --check scripts/test-auto-stats.js
           node --check scripts/test-practical-selection.js
           node --check scripts/test-ai-core-formations.js
+          node --check api/missing.js
+          node --check scripts/build-race-stats.js
+          node --check scripts/test-missing-numbers.js
+          node --check js/odds-insights.js
+          node --check scripts/test-odds-insights.js
 
       - name: Enforce charter
         run: |
@@ -87,3 +102,5 @@ jobs:
           node scripts/test-auto-stats.js
           node scripts/test-practical-selection.js
           node scripts/test-ai-core-formations.js
+          node scripts/test-missing-numbers.js
+          node scripts/test-odds-insights.js

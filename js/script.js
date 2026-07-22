@@ -3192,6 +3192,189 @@
     }
   }
 
+  async function fetchMissingNumbers(
+    params
+  ) {
+    try {
+      const url =
+        `/api/missing` +
+        `?jcd=${encodeURIComponent(params.jcd)}` +
+        `&rno=${encodeURIComponent(params.rno)}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (
+        !response.ok ||
+        !data ||
+        data.ok === false
+      ) {
+        throw new Error(
+          data?.error ||
+          `出てない目APIエラー：${response.status}`
+        );
+      }
+
+      return data;
+    } catch (error) {
+      console.warn(
+        "出てない目の取得に失敗",
+        error?.message || error
+      );
+
+      return {
+        ok: false,
+        available: false,
+        sampleSize: 0,
+        missingNumbers: [],
+        reason:
+          "公式履歴の出てない目を取得できませんでした"
+      };
+    }
+  }
+
+  function buildMissingTop30(
+    missingData,
+    byTicket
+  ) {
+    if (
+      typeof window.ChappyOddsInsights
+        ?.buildMissingTop30 ===
+      "function"
+    ) {
+      return window.ChappyOddsInsights
+        .buildMissingTop30(
+          missingData,
+          byTicket,
+          30
+        );
+    }
+
+    const source =
+      Array.isArray(
+        missingData?.missingNumbers
+      )
+        ? missingData.missingNumbers
+        : [];
+
+    const rows = source
+      .map(item => {
+        const ticket = String(
+          item?.ticket || ""
+        );
+
+        const odds = Number(
+          byTicket?.[ticket]
+        );
+
+        return {
+          ...item,
+          ticket,
+          odds:
+            Number.isFinite(odds) &&
+            odds > 0
+              ? odds
+              : null
+        };
+      })
+      .filter(item =>
+        /^[1-6]-[1-6]-[1-6]$/.test(
+          item.ticket
+        )
+      )
+      .sort((a, b) => {
+        const oddsA =
+          Number.isFinite(a.odds)
+            ? a.odds
+            : Number.POSITIVE_INFINITY;
+
+        const oddsB =
+          Number.isFinite(b.odds)
+            ? b.odds
+            : Number.POSITIVE_INFINITY;
+
+        return (
+          oddsA - oddsB ||
+          a.ticket.localeCompare(
+            b.ticket
+          )
+        );
+      })
+      .slice(0, 30)
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1
+      }));
+
+    return {
+      ...missingData,
+      top30: rows,
+      displayedCount: rows.length,
+      sort:
+        "current-odds-ascending"
+    };
+  }
+
+  function combinedOddsOf(list) {
+    if (!Array.isArray(list)) {
+      return null;
+    }
+
+    const oddsList = list
+      .map(item => Number(item?.odds))
+      .filter(odds =>
+        Number.isFinite(odds) &&
+        odds > 0
+      );
+
+    if (!oddsList.length) {
+      return null;
+    }
+
+    return (
+      window.ChappyAICore
+        ?.calculateCombinedOdds(
+          oddsList
+        ) ?? null
+    );
+  }
+
+  function attachCombinedOdds(
+    prediction
+  ) {
+    if (
+      typeof window.ChappyOddsInsights
+        ?.buildCombinedOdds ===
+      "function"
+    ) {
+      prediction.combinedOdds =
+        window.ChappyOddsInsights
+          .buildCombinedOdds(
+            prediction
+          );
+
+      return;
+    }
+
+    prediction.combinedOdds = {
+      source: "boatrace-official",
+      formula:
+        "1 / Σ(1 / 個別オッズ)",
+      main: combinedOddsOf(
+        prediction.mainSheet?.tickets
+      ),
+      cover: combinedOddsOf(
+        prediction.mainSheet?.coverTickets
+      ),
+      flow: combinedOddsOf(
+        prediction.mainSheet?.flowTickets
+      ),
+      manshu: combinedOddsOf(
+        prediction.manshuSheet?.tickets
+      )
+    };
+  }
+
     async function refreshOddsOnly() {
     if (
       getRaceMode() ===
@@ -3222,8 +3405,14 @@
       `&rno=${encodeURIComponent(params.rno)}` +
       `&date=${encodeURIComponent(params.date)}`;
 
+    const missingPromise =
+      fetchMissingNumbers(params);
+
     const response = await fetch(url);
     const oddsData = await response.json();
+
+    const missingData =
+      await missingPromise;
 
     if (
       !response.ok ||
@@ -3514,6 +3703,14 @@ if (prediction.finalAi) {
     )
   };
 }
+
+prediction.missingNumbersData =
+  buildMissingTop30(
+    missingData,
+    byTicket
+  );
+
+attachCombinedOdds(prediction);
 
 
         try {
