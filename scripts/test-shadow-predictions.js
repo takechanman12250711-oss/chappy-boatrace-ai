@@ -7,10 +7,24 @@ const {
   buildRecoveryPlan,
   insufficientReasons,
   compactStoredVerification,
+  attachVenueRaceHistory,
   upsertByRaceKey
 } = require("./collect-predictions");
 
 assert.equal(MIN_SCORE, 70);
+
+const historyAttached = attachVenueRaceHistory(
+  { stadiumCode: "24", raceNo: 5 },
+  "24",
+  5
+);
+const frameOne =
+  historyAttached.historyTrend?.frameMovement?.["1"];
+
+assert.equal(historyAttached.raceData.historyContext.ready, true);
+assert.ok(frameOne.samples >= 30);
+assert.equal(frameOne.hasBaseline, true);
+assert.ok(Number.isFinite(frameOne.movementDelta));
 
 const collectionHealth = buildCollectionHealth(
   "20260722",
