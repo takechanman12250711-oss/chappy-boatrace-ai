@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.3.0-racer-skill-theory";
+  const CORE_VERSION = "ai-core-v4.4.0-course-structure-v2";
 
   /* ===============================
     基本ユーティリティ
@@ -1428,6 +1428,314 @@ function getBoatNo(boat) {
     }
 
     return toNumber(fallback, 0);
+  }
+
+  const COURSE_STRUCTURE_BASE = Object.freeze({
+    1: 35,
+    2: 27,
+    3: 22,
+    4: 18,
+    5: 12,
+    6: 8
+  });
+
+  const LEGACY_COURSE_INDEX = Object.freeze({
+    1: 92,
+    2: 77,
+    3: 70,
+    4: 64,
+    5: 50,
+    6: 43
+  });
+
+  function hasFormalStartCourseMapping(
+    entries
+  ) {
+    const rows = (entries || [])
+      .map((entry, index) => {
+        const start =
+          entry?.startExhibition || {};
+        return {
+          boatNo:
+            getBoatNo(entry) || index + 1,
+          course:
+            toNumber(start.course, 0),
+          isOfficial:
+            start.isOfficialCourse === true ||
+            start.mappingSource ===
+              "official-start-image"
+        };
+      });
+    const boats = new Set(
+      rows.map(item => item.boatNo)
+    );
+    const courses = new Set(
+      rows.map(item => item.course)
+    );
+
+    return (
+      rows.length === 6 &&
+      rows.every(
+        item =>
+          item.isOfficial &&
+          item.boatNo >= 1 &&
+          item.boatNo <= 6 &&
+          item.course >= 1 &&
+          item.course <= 6
+      ) &&
+      boats.size === 6 &&
+      courses.size === 6
+    );
+  }
+
+  function courseStructureGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function buildCourseStructureEvaluation(
+    boat,
+    entries,
+    data,
+    options = {}
+  ) {
+    const boatNo = getBoatNo(boat);
+    const formalMapping =
+      hasFormalStartCourseMapping(entries);
+    const actualCourse =
+      formalMapping
+        ? getAttackTheoryCourse(
+            boat,
+            boatNo
+          )
+        : boatNo;
+    const context =
+      data?.historyContext
+        ?.courseStructure || {};
+    const venueWindows =
+      context.venue || {};
+    const overallWindows =
+      context.overall || {};
+    const venueAll =
+      venueWindows.all3Years
+        ?.byCourse?.[
+          String(actualCourse)
+        ] || null;
+    const overallAll =
+      overallWindows.all3Years
+        ?.byCourse?.[
+          String(actualCourse)
+        ] || null;
+    const recent =
+      venueWindows.recent1Year
+        ?.byCourse?.[
+          String(actualCourse)
+        ] || null;
+    const previous =
+      venueWindows.previous2Years
+        ?.byCourse?.[
+          String(actualCourse)
+        ] || null;
+    const minimumSamples = toNumber(
+      context.thresholds
+        ?.formalVenueCourseSamples,
+      100
+    );
+    const trendSamples = toNumber(
+      context.thresholds
+        ?.recentTrendSamples,
+      30
+    );
+    const venueSamples =
+      toNumber(venueAll?.starts, 0);
+    const hasFormalStats =
+      Boolean(venueAll && overallAll) &&
+      venueSamples >= minimumSamples;
+    const isFormal =
+      formalMapping &&
+      hasFormalStats;
+    const basicStructure =
+      COURSE_STRUCTURE_BASE[
+        actualCourse
+      ] || 0;
+    const venueWin =
+      hasFormalStats
+        ? clamp(
+            round(
+              10 +
+              (
+                toNumber(
+                  venueAll.winRate,
+                  0
+                ) -
+                toNumber(
+                  overallAll.winRate,
+                  0
+                )
+              ) * 0.8
+            ),
+            0,
+            20
+          )
+        : 0;
+    const venueTop3 =
+      hasFormalStats
+        ? clamp(
+            round(
+              7.5 +
+              (
+                toNumber(
+                  venueAll.top3Rate,
+                  0
+                ) -
+                toNumber(
+                  overallAll.top3Rate,
+                  0
+                )
+              ) * 0.3
+            ),
+            0,
+            15
+          )
+        : 0;
+    const hasTrend =
+      toNumber(recent?.starts, 0) >=
+        trendSamples &&
+      toNumber(previous?.starts, 0) > 0;
+    const periodTrend =
+      hasTrend
+        ? clamp(
+            round(
+              5 +
+              (
+                toNumber(
+                  recent.winRate,
+                  0
+                ) -
+                toNumber(
+                  previous.winRate,
+                  0
+                )
+              ) * 0.35 +
+              (
+                toNumber(
+                  recent.top3Rate,
+                  0
+                ) -
+                toNumber(
+                  previous.top3Rate,
+                  0
+                )
+              ) * 0.10
+            ),
+            0,
+            10
+          )
+        : 0;
+    const courseChange =
+      !formalMapping
+        ? 0
+        : actualCourse === boatNo
+          ? 10
+          : actualCourse < boatNo
+            ? 6
+            : Math.max(
+                2,
+                6 -
+                (
+                  actualCourse -
+                  boatNo
+                ) * 2
+              );
+    const mappingReliability =
+      formalMapping ? 10 : 0;
+    const score = round(clamp(
+      basicStructure +
+      venueWin +
+      venueTop3 +
+      periodTrend +
+      courseChange +
+      mappingReliability,
+      0,
+      100
+    ));
+    const legacyAdjustment =
+      toNumber(
+        options.legacyAdjustment,
+        0
+      );
+    const legacyEffectiveIndex =
+      (
+        LEGACY_COURSE_INDEX[
+          actualCourse
+        ] || 50
+      ) +
+      legacyAdjustment / 0.24;
+    const neutralScore =
+      (
+        COURSE_STRUCTURE_BASE[
+          actualCourse
+        ] || 0
+      ) + 42.5;
+    const statsDelta =
+      isFormal
+        ? clamp(
+            (score - neutralScore) *
+              0.25,
+            -4,
+            4
+          )
+        : 0;
+
+    return {
+      boatNo,
+      course: actualCourse,
+      frame: boatNo,
+      score,
+      grade:
+        courseStructureGrade(score),
+      status:
+        isFormal
+          ? "正式反映"
+          : "暫定・現行枠番評価",
+      isFormal,
+      mappingFormal:
+        formalMapping,
+      statsFormal:
+        hasFormalStats,
+      venueSamples,
+      minimumSamples,
+      appliedIndex:
+        legacyEffectiveIndex +
+        statsDelta,
+      appliedToScore: isFormal,
+      components: {
+        basicStructure,
+        venueWin,
+        venueTop3,
+        periodTrend,
+        courseChange,
+        mappingReliability
+      },
+      reason: [
+        `展示進入${actualCourse}コース`,
+        `基本構造${basicStructure}/35`,
+        `場別1着率${venueWin}/20`,
+        `場別3連率${venueTop3}/15`,
+        `期間推移${periodTrend}/10`,
+        `進入変動${courseChange}/10`,
+        `取得信頼度${mappingReliability}/10`,
+        formalMapping
+          ? "公式艇番画像で6艇進入確定"
+          : "進入未確定のため枠番評価を維持",
+        hasFormalStats
+          ? `場×コース${venueSamples}走`
+          : `場×コース${venueSamples}走で正式数未達`
+      ].join(" / ")
+    };
   }
 
   function attackTheoryRole(course) {
@@ -5653,24 +5961,20 @@ const roleScores = {
   8. モーター
 =============================== */
 
-const courseBaseIndex = {
-  1: 92,
-  2: 77,
-  3: 70,
-  4: 64,
-  5: 50,
-  6: 43
-};
-
-const courseIndex =
-  courseBaseIndex[boatNo] || 50;
+const scoringCourse =
+  hasFormalStartCourseMapping(entries)
+    ? getAttackTheoryCourse(
+        boat,
+        boatNo
+      )
+    : boatNo;
 
 /*
   外枠が頭候補になるには、
   展開・攻めに加えてSTか展示の強い裏付けを必須にする。
 */
 const hasOuterHeadEvidence =
-  boatNo >= 5 &&
+  scoringCourse >= 5 &&
   indexes.raceFlow >= 80 &&
   roleScores.flow >= 78 &&
   roleScores.attack >= 74 &&
@@ -5680,40 +5984,53 @@ const hasOuterHeadEvidence =
   );
 
 /*
-  コース補正。
-  1号艇は明確な崩れ根拠がある時だけ基礎点を下げる。
+  既存予想との互換基準。
+  ここでは別加点せず、コース24％枠へ統合する基準値にだけ使う。
 */
-let courseAdjustment = 0;
+let legacyCourseOffset = 0;
 
-if (boatNo === 1) {
-  courseAdjustment = 9;
+if (scoringCourse === 1) {
+  legacyCourseOffset = 9;
 
   if (indexes.raceFlow <= 48) {
-    courseAdjustment = 3;
+    legacyCourseOffset = 3;
   }
 }
 
-if (boatNo === 2) {
-  courseAdjustment = 5;
+if (scoringCourse === 2) {
+  legacyCourseOffset = 5;
 }
 
-if (boatNo === 3) {
-  courseAdjustment = 2;
+if (scoringCourse === 3) {
+  legacyCourseOffset = 2;
 }
 
-if (boatNo === 4) {
-  courseAdjustment = 1;
+if (scoringCourse === 4) {
+  legacyCourseOffset = 1;
 }
 
-if (boatNo === 5) {
-  courseAdjustment =
+if (scoringCourse === 5) {
+  legacyCourseOffset =
     hasOuterHeadEvidence ? -2 : -9;
 }
 
-if (boatNo === 6) {
-  courseAdjustment =
+if (scoringCourse === 6) {
+  legacyCourseOffset =
     hasOuterHeadEvidence ? -5 : -14;
 }
+
+const courseStructureTheory =
+  buildCourseStructureEvaluation(
+    boat,
+    entries,
+    data,
+    {
+      legacyAdjustment:
+        legacyCourseOffset
+    }
+  );
+const courseIndex =
+  courseStructureTheory.appliedIndex;
 
 /*
   本命総合指数。
@@ -5732,8 +6049,7 @@ indexes.total = clamp(
     indexes.local * 0.05 +
     indexes.turn * 0.025 +
     indexes.national * 0.02 +
-    indexes.motor * 0.005 +
-    courseAdjustment
+    indexes.motor * 0.005
   ),
   INDEX_LIMIT.min,
   INDEX_LIMIT.max
@@ -5895,6 +6211,8 @@ primaryRole: primaryRole
 roleRanking,
 
 roleTags,
+
+courseStructureTheory,
 
 buffs,
 
@@ -9016,6 +9334,35 @@ function buildRaceTrendEvaluation(data) {
 const analyses =
   buildBoatAnalyses(data);
 
+const courseStructureTheory = {
+  ranking: analyses
+    .map(
+      boat =>
+        boat.courseStructureTheory
+    )
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.course - b.course
+    ),
+  roles: analyses
+    .map(
+      boat =>
+        boat.courseStructureTheory
+    )
+    .filter(Boolean),
+  isFormal:
+    analyses.length === 6 &&
+    analyses.every(
+      boat =>
+        boat.courseStructureTheory
+          ?.isFormal
+    ),
+  source:
+    "ai-core-course-structure-v2"
+};
+
 const attackTheory = {
   ranking: analyses
     .map((boat) => boat.attackTheory)
@@ -9246,6 +9593,8 @@ const slit =
       venueFeature,
 
       analyses,
+
+      courseStructureTheory,
 
       attackTheory,
 
@@ -9599,6 +9948,9 @@ return {
         ...(basePrediction.indexes || {}),
         ai: aiCore.ranking,
         aiCore: aiCore.analyses,
+        courseStructureRanking:
+          aiCore.courseStructureTheory
+            ?.ranking || [],
         attackRanking: aiCore.attackTheory?.ranking || [],
         wallRanking: aiCore.wallTheory?.ranking || [],
         flowRanking: aiCore.flowTheory?.ranking || [],
@@ -9639,6 +9991,8 @@ return {
       newSam: aiCore.newSam,
 
       attackTheory: aiCore.attackTheory,
+      courseStructureTheory:
+        aiCore.courseStructureTheory,
       wallTheory: aiCore.wallTheory,
       flowTheory: aiCore.flowTheory,
       roadTheory: aiCore.roadTheory,
@@ -9802,6 +10156,8 @@ return {
     buildBoatAnalysis,
 
     buildBoatAnalyses,
+
+    buildCourseStructureEvaluation,
     
     buildRaceScenarios,
 

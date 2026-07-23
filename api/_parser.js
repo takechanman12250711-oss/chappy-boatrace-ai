@@ -327,15 +327,63 @@ function parseBeforeBlock(block) {
 }
 
 function parseStartExhibition(html) {
-  const text = getBeforeText(html);
-  const start = text.indexOf("スタート展示");
+  const source = String(html || "");
+  const start = source.indexOf("スタート展示");
   if (start < 0) return [];
 
-  const end = text.indexOf("水面気象情報", start);
-  const section = end >= 0 ? text.slice(start, end) : text.slice(start, start + 1500);
+  const end = source.indexOf("水面気象情報", start);
+  const rawSection =
+    end >= 0
+      ? source.slice(start, end)
+      : source.slice(start, start + 5000);
+
+  /*
+    公式の「並び」は艇番画像で表現される。
+    img_boat2_4.png なら4号艇。画像を消す前に艇番トークンへ
+    置き換え、コース・艇番・STを同じ行として解析する。
+  */
+  const markedSection = rawSection.replace(
+    /<img\b[^>]*\bsrc=["'][^"']*img_boat2_([1-6])\.png[^"']*["'][^>]*>/gi,
+    " BOAT_$1 "
+  );
+  const section = cleanText(
+    stripHtml(markedSection)
+  );
+  const officialRows = [];
+  const rowRe =
+    /(?:^|\s)([1-6])\s+BOAT_([1-6])\s+([FL])?\s*\.?(\d{2})(?=\s|$)/g;
+  let rowMatch;
+
+  while ((rowMatch = rowRe.exec(section)) !== null) {
+    officialRows.push({
+      course: Number(rowMatch[1]),
+      boat: Number(rowMatch[2]),
+      st: Number(`0.${rowMatch[4]}`),
+      marker: rowMatch[3] || "",
+      mappingSource: "official-start-image",
+      isOfficialCourse: true
+    });
+  }
+
+  const courses = new Set(
+    officialRows.map(item => item.course)
+  );
+  const boats = new Set(
+    officialRows.map(item => item.boat)
+  );
+
+  if (
+    officialRows.length === 6 &&
+    courses.size === 6 &&
+    boats.size === 6
+  ) {
+    return officialRows.sort(
+      (a, b) => a.course - b.course
+    );
+  }
 
   const stValues = [];
-  const stRe = /\.(\d{2})/g;
+  const stRe = /(?:[FL]\s*)?\.(\d{2})/g;
   let m;
 
   while ((m = stRe.exec(section)) !== null) {
@@ -347,7 +395,10 @@ function parseStartExhibition(html) {
     result.push({
       course: i + 1,
       boat: i + 1,
-      st: stValues[i]
+      st: stValues[i],
+      marker: "",
+      mappingSource: "legacy-course-order",
+      isOfficialCourse: false
     });
   }
 

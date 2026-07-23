@@ -1207,6 +1207,11 @@ if (boatNo === 0) {
         boatNo,
         course: Number(item.course || boatNo),
         st: normalizeST(item.st ?? item.startTime),
+        marker: safeString(item.marker),
+        mappingSource:
+          safeString(item.mappingSource),
+        isOfficialCourse:
+          item.isOfficialCourse === true,
         raw: item
       };
     });
