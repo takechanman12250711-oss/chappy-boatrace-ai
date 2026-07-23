@@ -1,6 +1,6 @@
 /* =========================================================
   チャッピーボートレースAI
-  ai-core.js 完全版 v3.5.0 Part 1 / 8
+  ai-core.js 完全版 v3.6.0 Part 1 / 8
 
   役割：
   - AI指数計算の中核
@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.5.0-attacker-theory";
+  const CORE_VERSION = "ai-core-v3.6.0-flow-theory";
 
   /* ===============================
     基本ユーティリティ
@@ -1413,6 +1413,278 @@ function getBoatNo(boat) {
         .filter((boat) => boat.isAdopted)
         .map((boat) => boat.boatNo),
       source: "ai-core-attack-theory-v1"
+    };
+  }
+
+  function flowTheoryGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function buildFlowTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios,
+    attackTheory
+  ) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const venueFeature = getVenueFeature(data);
+    const slit = buildSlitAnalysis(sourceEntries, venueFeature);
+    const slitByBoat = new Map(
+      (slit.ranking || []).map((boat) => [Number(boat.boatNo), boat])
+    );
+    const entryByBoat = new Map(
+      sourceEntries.map((boat) => [getBoatNo(boat), boat])
+    );
+    const secondCandidates = new Set(
+      (mainScenario?.outcome?.secondCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const thirdCandidates = new Set(
+      (mainScenario?.outcome?.thirdCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const blockedBoats = new Set(
+      (mainScenario?.blockedBoats || [])
+        .map((boatNo) => Number(boatNo))
+        .filter(Boolean)
+    );
+    const exhibitionTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        time: getExhibitionTime(boat)
+      }))
+      .filter((item) => item.time > 0)
+      .sort((a, b) => a.time - b.time);
+    const lapTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        time: getLapTime(boat)
+      }))
+      .filter((item) => item.time > 0)
+      .sort((a, b) => a.time - b.time);
+    const exhibitionReady =
+      sourceEntries.length === 6 &&
+      sourceEntries.every((boat) => getExhibitionTime(boat) > 0);
+
+    function rankScore(list, boatNo) {
+      const rank = list.findIndex((item) => item.boatNo === boatNo);
+      if (rank < 0) return null;
+      return [10, 8, 6, 4, 2, 0][rank] ?? 0;
+    }
+
+    const scenarioAttackerCourse =
+      Number(mainScenario?.attacker || 0) || null;
+    const scenarioAttackerBoatNo =
+      Number(mainScenario?.attackTheory?.boatNo || 0) ||
+      (attackTheory?.roles || []).find(
+        (boat) => Number(boat.course) === scenarioAttackerCourse
+      )?.boatNo ||
+      scenarioAttackerCourse;
+
+    const rows = sourceAnalyses.map((analysis) => {
+      const boatNo = Number(analysis?.boatNo || 0);
+      const entry = entryByBoat.get(boatNo) || {};
+      const course = getAttackTheoryCourse(entry, boatNo);
+      const isAttackSource =
+        boatNo === Number(scenarioAttackerBoatNo || 0);
+      const isSecondCandidate = secondCandidates.has(boatNo);
+      const isThirdCandidate = thirdCandidates.has(boatNo);
+      const isScenarioCandidate =
+        isSecondCandidate || isThirdCandidate;
+      const isBlocked = blockedBoats.has(boatNo);
+      const role = isSecondCandidate
+        ? "残し"
+        : isThirdCandidate
+          ? "拾い"
+          : "展開外";
+
+      const scenarioMatch = isSecondCandidate
+        ? 40
+        : isThirdCandidate
+          ? 34
+          : 0;
+
+      const courseDistance =
+        scenarioAttackerCourse === null
+          ? 6
+          : Math.abs(course - scenarioAttackerCourse);
+      let positionRelation = 0;
+      if (isScenarioCandidate && !isAttackSource) {
+        positionRelation = course < scenarioAttackerCourse
+          ? Math.max(12, 20 - Math.max(0, courseDistance - 1) * 2)
+          : Math.max(11, 20 - Math.max(0, courseDistance - 1) * 3);
+      }
+
+      const holdScore = toNumber(analysis?.roleScores?.hold, 0);
+      const pickupScore = toNumber(analysis?.roleScores?.pickup, 0);
+      const roleAptitudeBase =
+        role === "残し"
+          ? holdScore
+          : role === "拾い"
+            ? pickupScore
+            : Math.max(holdScore, pickupScore);
+      const holdPickup = clamp(
+        round(roleAptitudeBase * 0.15),
+        0,
+        15
+      );
+
+      const slitBoat = slitByBoat.get(boatNo) || {};
+      const currentSt = getCurrentSeriesSt(entry);
+      const avgSt = getOptionalAverageSt(entry);
+      const supportSt =
+        currentSt.count >= 2 ? currentSt.average : avgSt;
+      let startAndSlit = 0;
+      if (supportSt !== null) {
+        if (supportSt <= 0.12) startAndSlit = 8;
+        else if (supportSt <= 0.14) startAndSlit = 7;
+        else if (supportSt <= 0.16) startAndSlit = 6;
+        else if (supportSt <= 0.18) startAndSlit = 5;
+        else if (supportSt <= 0.20) startAndSlit = 3;
+        else startAndSlit = 1;
+      }
+      if (slitBoat.slitAlert) startAndSlit += 2;
+      else if (slitBoat.slitRisk) startAndSlit -= 2;
+      startAndSlit = clamp(startAndSlit, 0, 10);
+
+      const exhibitionRankScore = rankScore(exhibitionTimes, boatNo);
+      const lapRankScore = rankScore(lapTimes, boatNo);
+      const exhibitionDenominator =
+        Number(exhibitionRankScore !== null) +
+        Number(lapRankScore !== null);
+      const exhibitionFoot = exhibitionDenominator
+        ? round(
+            (
+              toNumber(exhibitionRankScore, 0) +
+              toNumber(lapRankScore, 0)
+            ) / exhibitionDenominator
+          )
+        : 0;
+
+      const venueCourseScore =
+        course === 1
+          ? venueFeature.inPower
+          : course === 2
+            ? venueFeature.sashi
+            : course === 3
+              ? venueFeature.makuri
+              : course === 4
+                ? Math.max(venueFeature.kado, venueFeature.makuriSashi)
+                : course === 5
+                  ? venueFeature.makuriSashi
+                  : venueFeature.outside;
+      const isRoughCondition =
+        getWindSpeed(data) >= 4 ||
+        getWaveHeight(data) >= 4;
+      const venueWaterBase = isRoughCondition
+        ? venueCourseScore * 0.7 + venueFeature.roughWater * 0.3
+        : venueCourseScore;
+      const venueWater = clamp(round(venueWaterBase * 0.05), 0, 5);
+
+      const score = round(
+        clamp(
+          scenarioMatch +
+            positionRelation +
+            holdPickup +
+            startAndSlit +
+            exhibitionFoot +
+            venueWater,
+          0,
+          100
+        )
+      );
+      const grade = flowTheoryGrade(score);
+      const isFormal =
+        Boolean(mainScenario) && exhibitionReady;
+      const isAdopted =
+        isFormal &&
+        isScenarioCandidate &&
+        !isAttackSource &&
+        !isBlocked &&
+        score >= 65;
+
+      let status = "不成立";
+      if (!isFormal && isScenarioCandidate && !isAttackSource) {
+        status = "暫定";
+      } else if (isAttackSource) {
+        status = "攻め起点";
+      } else if (isBlocked) {
+        status = "展開除外";
+      } else if (isAdopted) {
+        status = "正式採用";
+      } else if (score >= 55) {
+        status = "参考";
+      }
+
+      const reasons = [
+        `展開一致${scenarioMatch}/40`,
+        `位置・コース${positionRelation}/20`,
+        `残し・拾い${holdPickup}/15`,
+        `ST・スリット${startAndSlit}/10`,
+        `展示・足${exhibitionFoot}/10`,
+        `場・水面${venueWater}/5`
+      ];
+      if (!exhibitionReady) reasons.push("展示前のため暫定");
+      if (isAttackSource) reasons.push("攻め艇自身は展開艇から分離");
+      if (isBlocked) reasons.push("最有力展開で飛び候補");
+      if (!isScenarioCandidate) {
+        reasons.push("最有力展開の2・3着候補と不一致");
+      }
+
+      return {
+        boatNo,
+        playerName: analysis?.playerName || getPlayerName(entry),
+        course,
+        role,
+        score,
+        grade,
+        status,
+        isFormal,
+        isAdopted,
+        isAttackSource,
+        isBlocked,
+        isSecondCandidate,
+        isThirdCandidate,
+        scenarioType: mainScenario?.type || "",
+        scenarioLabel: mainScenario?.label || "",
+        attackerBoatNo: Number(scenarioAttackerBoatNo || 0) || null,
+        attackerCourse: scenarioAttackerCourse,
+        components: {
+          scenarioMatch,
+          positionRelation,
+          holdPickup,
+          startAndSlit,
+          exhibitionFoot,
+          venueWater
+        },
+        reason: reasons.join(" / ")
+      };
+    });
+
+    const ranking = rows
+      .filter((boat) => !boat.isAttackSource)
+      .sort((a, b) => b.score - a.score || a.course - b.course);
+
+    return {
+      ranking,
+      roles: rows,
+      isFormal: Boolean(mainScenario) && exhibitionReady,
+      adoptedBoats: ranking
+        .filter((boat) => boat.isAdopted)
+        .map((boat) => boat.boatNo),
+      scenarioType: mainScenario?.type || "",
+      scenarioLabel: mainScenario?.label || "",
+      attackerBoatNo: Number(scenarioAttackerBoatNo || 0) || null,
+      source: "ai-core-flow-theory-v1"
     };
   }
 
@@ -5943,6 +6215,24 @@ const raceScenarios =
     data
   );
 
+const flowTheory =
+  buildFlowTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios,
+    attackTheory
+  );
+
+const flowTheoryByBoat = new Map(
+  flowTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  boat.flowTheory =
+    flowTheoryByBoat.get(Number(boat.boatNo)) || null;
+});
+
 const slit =
       buildSlitAnalysis(
         entries,
@@ -5998,6 +6288,8 @@ const slit =
       analyses,
 
       attackTheory,
+
+      flowTheory,
 
       raceScenarios,
 
@@ -6333,7 +6625,8 @@ return {
         ...(basePrediction.indexes || {}),
         ai: aiCore.ranking,
         aiCore: aiCore.analyses,
-        attackRanking: aiCore.attackTheory?.ranking || []
+        attackRanking: aiCore.attackTheory?.ranking || [],
+        flowRanking: aiCore.flowTheory?.ranking || []
       },
 
       raceFlow: compatibleRaceFlow,
@@ -6361,6 +6654,7 @@ return {
       newSam: aiCore.newSam,
 
       attackTheory: aiCore.attackTheory,
+      flowTheory: aiCore.flowTheory,
 
       comments: aiCore.comments,
 
@@ -6540,6 +6834,8 @@ return {
     calcAttackIndex,
 
     buildAttackTheory,
+
+    buildFlowTheory,
 
     calcRaceFlowIndex,
 
