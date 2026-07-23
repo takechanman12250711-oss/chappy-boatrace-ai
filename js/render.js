@@ -813,7 +813,7 @@ if (raceInfoArea) {
 
   addIndexRows(rows, indexes.attackRanking, "🔥攻め");
   addIndexRows(rows, indexes.tenkaiRanking || indexes.flowRanking, "🌊展開");
-  addIndexRows(rows, indexes.michuRanking || indexes.roadRanking, "⚡道中");
+  addIndexRows(rows, indexes.roadRanking || indexes.michuRanking, "⚡道中");
   addIndexRows(rows, indexes.localRanking, "🏠当地");
   addIndexRows(rows, indexes.expectedRanking, "🎯期待");
 
@@ -3210,6 +3210,7 @@ function getPaperClassName(item) {
     }
         {
       const roadTheoryRows = arrayify(
+        prediction.roadTheory?.ranking ||
         indexes.michuRanking ||
         indexes.roadRanking
       )
@@ -3482,13 +3483,37 @@ function getPaperClassName(item) {
               no: boatNo || "",
               score,
               text:
-                `${boatNo}号艇を道中艇理論の既存表示${position + 1}位として確認。` +
-                comparison +
-                development +
-                goalPosition +
-                reflection +
-                phaseContext +
-                reasonText
+                item.components
+                  ? (
+                    `${boatNo}号艇・${course}コースは${item.status || "参考"}` +
+                    `（${item.grade || "-"}評価・${item.role || "道中"}）。` +
+                    `内訳はゴール想定${item.components.scenarioMatch ?? 0}/30、` +
+                    `一周・回り足・展示${item.components.lapAndFoot ?? 0}/25、` +
+                    `今節安定${item.components.seriesStability ?? 0}/15、` +
+                    `進入・位置${item.components.coursePosition ?? 0}/15、` +
+                    `当地・水面${item.components.localWater ?? 0}/10、` +
+                    `技量${item.components.playerSkill ?? 0}/5。` +
+                    (
+                      item.isAdopted
+                        ? "65点以上で最有力展開のゴール想定と一致し、正式な道中艇として採用。"
+                        : item.status === "暫定"
+                          ? "一周タイムまたは今節成績の裏付け不足により、予想へ正式反映しない。"
+                          : item.isBlocked
+                            ? "最有力展開の飛び候補のため、正式採用しない。"
+                            : "成立点またはゴール想定との一致条件が未達のため、補足表示のみ。"
+                    ) +
+                    phaseContext +
+                    reasonText
+                  )
+                  : (
+                    `${boatNo}号艇を道中艇理論の既存表示${position + 1}位として確認。` +
+                    comparison +
+                    development +
+                    goalPosition +
+                    reflection +
+                    phaseContext +
+                    reasonText
+                  )
             });
           }
         );

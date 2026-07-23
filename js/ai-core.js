@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.6.0-flow-theory";
+  const CORE_VERSION = "ai-core-v3.7.0-road-theory";
 
   /* ===============================
     基本ユーティリティ
@@ -1685,6 +1685,247 @@ function getBoatNo(boat) {
       scenarioLabel: mainScenario?.label || "",
       attackerBoatNo: Number(scenarioAttackerBoatNo || 0) || null,
       source: "ai-core-flow-theory-v1"
+    };
+  }
+
+  function roadTheoryGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function buildRoadTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  ) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const venueFeature = getVenueFeature(data);
+    const entryByBoat = new Map(
+      sourceEntries.map((boat) => [getBoatNo(boat), boat])
+    );
+    const firstCandidates = new Set(
+      (mainScenario?.outcome?.firstCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const secondCandidates = new Set(
+      (mainScenario?.outcome?.secondCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const thirdCandidates = new Set(
+      (mainScenario?.outcome?.thirdCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const blockedBoats = new Set(
+      (mainScenario?.blockedBoats || raceScenarios?.blockedBoats || [])
+        .map((boatNo) => Number(boatNo))
+        .filter(Boolean)
+    );
+    const lapTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        time: getLapTime(boat)
+      }))
+      .filter((item) => item.time > 0)
+      .sort((a, b) => a.time - b.time);
+    const exhibitionTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        time: getExhibitionTime(boat)
+      }))
+      .filter((item) => item.time > 0)
+      .sort((a, b) => a.time - b.time);
+    const scenarioAttackerCourse =
+      Number(mainScenario?.attacker || 0) || null;
+
+    function rankScore(list, boatNo, points) {
+      const rank = list.findIndex((item) => item.boatNo === boatNo);
+      if (rank < 0) return 0;
+      return points[rank] ?? 0;
+    }
+
+    const rows = sourceAnalyses.map((analysis) => {
+      const boatNo = Number(analysis?.boatNo || 0);
+      const entry = entryByBoat.get(boatNo) || {};
+      const course = getAttackTheoryCourse(entry, boatNo);
+      const results = getThisTermResults(entry)
+        .map((value) => toNumber(value, NaN))
+        .filter((value) => Number.isFinite(value) && value >= 1 && value <= 6);
+      const lapTime = getLapTime(entry);
+      const hasRoadEvidence = lapTime > 0 || results.length > 0;
+      const isFirstCandidate = firstCandidates.has(boatNo);
+      const isSecondCandidate = secondCandidates.has(boatNo);
+      const isThirdCandidate = thirdCandidates.has(boatNo);
+      const isGoalCandidate =
+        isFirstCandidate || isSecondCandidate || isThirdCandidate;
+      const isBlocked = blockedBoats.has(boatNo);
+      const isAttackSource =
+        (course === 3 || course === 4) &&
+        course === scenarioAttackerCourse;
+
+      let role = "展開外";
+      if (isAttackSource) role = "攻め後の粘り";
+      else if (course === 1 || course === 2 || course === 4) role = "残し";
+      else if (course === 5 || course === 6) role = "拾い";
+      else if (course === 3) role = "攻め後の粘り";
+
+      const scenarioMatch = isFirstCandidate
+        ? 30
+        : isSecondCandidate
+          ? 28
+          : isThirdCandidate
+            ? 24
+            : 0;
+      const lapAndFoot =
+        rankScore(lapTimes, boatNo, [15, 12, 9, 6, 3, 0]) +
+        rankScore(exhibitionTimes, boatNo, [10, 8, 6, 4, 2, 0]);
+
+      let seriesStability = 0;
+      if (results.length) {
+        const avgRank = average(results, 3.5);
+        const top3Rate =
+          results.filter((rank) => rank <= 3).length / results.length;
+        const averageRankPoint =
+          avgRank <= 1.8 ? 8
+            : avgRank <= 2.5 ? 7
+              : avgRank <= 3.2 ? 5
+                : avgRank <= 4 ? 3
+                  : 1;
+        seriesStability = clamp(
+          averageRankPoint + round(top3Rate * 7),
+          0,
+          15
+        );
+      }
+
+      const coursePositionBase = {
+        1: 15,
+        2: 14,
+        3: 10,
+        4: 12,
+        5: 9,
+        6: 7
+      };
+      const coursePosition = coursePositionBase[course] || 0;
+      const isRoughCondition =
+        getWindSpeed(data) >= 4 ||
+        getWaveHeight(data) >= 4;
+      const localScore = toNumber(analysis?.indexes?.local, 0);
+      const localWater = clamp(
+        round(
+          localScore * 0.07 +
+          (isRoughCondition ? venueFeature.roughWater * 0.03 : 0)
+        ),
+        0,
+        10
+      );
+      const playerSkill = clamp(
+        round(toNumber(analysis?.indexes?.national, 0) * 0.05),
+        0,
+        5
+      );
+      const score = round(
+        clamp(
+          scenarioMatch +
+            lapAndFoot +
+            seriesStability +
+            coursePosition +
+            localWater +
+            playerSkill,
+          0,
+          100
+        )
+      );
+      const grade = roadTheoryGrade(score);
+      const isFormal = Boolean(mainScenario) && hasRoadEvidence;
+      const isAdopted =
+        isFormal &&
+        isGoalCandidate &&
+        !isBlocked &&
+        score >= 65;
+
+      let status = "不成立";
+      if (!isFormal && isGoalCandidate) status = "暫定";
+      else if (isBlocked) status = "展開除外";
+      else if (isAdopted) status = "正式採用";
+      else if (score >= 55) status = "参考";
+
+      const reasons = [
+        `ゴール想定${scenarioMatch}/30`,
+        `一周・足${lapAndFoot}/25`,
+        `今節安定${seriesStability}/15`,
+        `進入・位置${coursePosition}/15`,
+        `当地・水面${localWater}/10`,
+        `技量${playerSkill}/5`
+      ];
+      if (!hasRoadEvidence) {
+        reasons.push("一周タイム・今節成績不足のため暫定");
+      }
+      if (!isGoalCandidate) {
+        reasons.push("最有力展開のゴール想定と不一致");
+      }
+      if (isBlocked) reasons.push("最有力展開で飛び候補");
+
+      return {
+        boatNo,
+        playerName: analysis?.playerName || getPlayerName(entry),
+        course,
+        role,
+        score,
+        grade,
+        status,
+        isFormal,
+        isAdopted,
+        isBlocked,
+        isAttackSource,
+        isGoalCandidate,
+        isFirstCandidate,
+        isSecondCandidate,
+        isThirdCandidate,
+        hasRoadEvidence,
+        lapTime: lapTime || null,
+        seriesResultCount: results.length,
+        scenarioType: mainScenario?.type || "",
+        scenarioLabel: mainScenario?.label || "",
+        components: {
+          scenarioMatch,
+          lapAndFoot,
+          seriesStability,
+          coursePosition,
+          localWater,
+          playerSkill
+        },
+        reason: reasons.join(" / ")
+      };
+    });
+
+    const ranking = rows.sort(
+      (a, b) =>
+        Number(b.isAdopted) - Number(a.isAdopted) ||
+        b.score - a.score ||
+        a.course - b.course
+    );
+
+    return {
+      ranking,
+      roles: rows,
+      isFormal:
+        Boolean(mainScenario) &&
+        rows.some((boat) => boat.hasRoadEvidence),
+      adoptedBoats: ranking
+        .filter((boat) => boat.isAdopted)
+        .map((boat) => boat.boatNo),
+      scenarioType: mainScenario?.type || "",
+      scenarioLabel: mainScenario?.label || "",
+      source: "ai-core-road-theory-v1"
     };
   }
 
@@ -6233,6 +6474,23 @@ analyses.forEach((boat) => {
     flowTheoryByBoat.get(Number(boat.boatNo)) || null;
 });
 
+const roadTheory =
+  buildRoadTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  );
+
+const roadTheoryByBoat = new Map(
+  roadTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  boat.roadTheory =
+    roadTheoryByBoat.get(Number(boat.boatNo)) || null;
+});
+
 const slit =
       buildSlitAnalysis(
         entries,
@@ -6290,6 +6548,8 @@ const slit =
       attackTheory,
 
       flowTheory,
+
+      roadTheory,
 
       raceScenarios,
 
@@ -6626,7 +6886,8 @@ return {
         ai: aiCore.ranking,
         aiCore: aiCore.analyses,
         attackRanking: aiCore.attackTheory?.ranking || [],
-        flowRanking: aiCore.flowTheory?.ranking || []
+        flowRanking: aiCore.flowTheory?.ranking || [],
+        roadRanking: aiCore.roadTheory?.ranking || []
       },
 
       raceFlow: compatibleRaceFlow,
@@ -6655,6 +6916,7 @@ return {
 
       attackTheory: aiCore.attackTheory,
       flowTheory: aiCore.flowTheory,
+      roadTheory: aiCore.roadTheory,
 
       comments: aiCore.comments,
 
@@ -6836,6 +7098,8 @@ return {
     buildAttackTheory,
 
     buildFlowTheory,
+
+    buildRoadTheory,
 
     calcRaceFlowIndex,
 
