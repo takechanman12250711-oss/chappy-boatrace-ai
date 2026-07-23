@@ -13,6 +13,9 @@
   const RACER_SKILL_STATS_URL =
     "/data/stats/racer-skill-patterns.json?v=20260723-skill1";
 
+  const COURSE_STRUCTURE_STATS_URL =
+    "/data/stats/course-structure-patterns.json?v=20260723-course2";
+
   const MIN_VENUE_SAMPLES = 30;
   const MIN_RACER_SAMPLES = 12;
 
@@ -128,12 +131,14 @@
     loadingPromise = Promise.all([
       fetchJson(STATS_URL),
       fetchJson(VENUE_RACE_STATS_URL),
-      fetchJson(RACER_SKILL_STATS_URL)
+      fetchJson(RACER_SKILL_STATS_URL),
+      fetchJson(COURSE_STRUCTURE_STATS_URL)
     ])
       .then(([
         data,
         venueRaceData,
-        racerSkillData
+        racerSkillData,
+        courseStructureData
       ]) => {
         if (
           racerSkillData?.source !==
@@ -142,6 +147,16 @@
         ) {
           throw new Error(
             "選手技量履歴の形式が正しくありません"
+          );
+        }
+        if (
+          courseStructureData?.source !==
+            "boatrace-official" ||
+          !courseStructureData?.overall ||
+          !courseStructureData?.byVenue
+        ) {
+          throw new Error(
+            "進入・コース構造履歴の形式が正しくありません"
           );
         }
 
@@ -168,7 +183,9 @@
             venueRaceData.analysisWindow ||
             null,
           byVenueRace:
-            venueRaceData.byVenueRace || {}
+            venueRaceData.byVenueRace || {},
+          courseStructure:
+            courseStructureData
         });
         return stats;
       })
@@ -367,6 +384,18 @@
 
       venue,
       venueRace,
+      courseStructure: {
+        overall:
+          stats.courseStructure?.overall ||
+          null,
+        venue:
+          stats.courseStructure?.byVenue?.[
+            normalizeJcd(options.jcd)
+          ] || null,
+        thresholds:
+          stats.courseStructure?.thresholds ||
+          null
+      },
       racers,
 
       usableVenueHistory:

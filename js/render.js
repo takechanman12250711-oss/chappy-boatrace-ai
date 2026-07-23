@@ -43,6 +43,7 @@
   };
 
   const THEORY_LABELS = {
+    courseStructure: "🧭 進入・コース構造",
     attack: "🔥 攻め艇",
     wall: "🧱 壁艇",
     flow: "🌊 展開艇",
@@ -2996,6 +2997,71 @@ function getPaperClassName(item) {
     const finalAi = prediction.finalAi || {};
 
     const items = [];
+
+    {
+      const courseTheory =
+        prediction.courseStructureTheory ||
+        prediction.aiCore
+          ?.courseStructureTheory ||
+        null;
+      const rows = arrayify(
+        courseTheory?.ranking ||
+        indexes.courseStructureRanking
+      )
+        .filter(Boolean)
+        .slice(0, 2);
+
+      if (!courseTheory || !rows.length) {
+        items.push({
+          key: "courseStructure",
+          label:
+            THEORY_LABELS.courseStructure,
+          no: "",
+          score: "暫定",
+          text:
+            "公式スタート展示の6艇進入、または場×実進入コース統計が不足しているため、現在の枠番評価を維持する。"
+        });
+      } else {
+        rows.forEach(item => {
+          const components =
+            item.components || {};
+          const mappingText =
+            item.mappingFormal
+              ? "公式の艇番画像から6艇の進入を重複なく取得。"
+              : "進入の欠落・重複・未取得があるため、枠番評価を維持。";
+          const statsText =
+            item.statsFormal
+              ? `場×${item.course}コース${item.venueSamples || 0}走で正式統計。`
+              : `場×${item.course}コース${item.venueSamples || 0}走で100走未満のため暫定。`;
+
+          items.push({
+            key: "courseStructure",
+            label:
+              THEORY_LABELS.courseStructure,
+            no: item.boatNo || "",
+            score:
+              `${item.score ?? 0}点・` +
+              `${item.grade || "-"}`,
+            text:
+              `${item.boatNo}号艇は${item.frame}枠から展示進入${item.course}コース、${item.status}。` +
+              `内訳は基本構造${components.basicStructure ?? 0}/35、` +
+              `場別1着率${components.venueWin ?? 0}/20、` +
+              `場別3連率${components.venueTop3 ?? 0}/15、` +
+              `直近1年・過去2年推移${components.periodTrend ?? 0}/10、` +
+              `枠番からの進入変動${components.courseChange ?? 0}/10、` +
+              `取得信頼度${components.mappingReliability ?? 0}/10。` +
+              mappingText +
+              statsText +
+              (
+                item.isFormal
+                  ? "既存のコース24％枠へ統合して反映。"
+                  : "予想点へ新しい点を加えず、従来の枠番評価を使用。"
+              ) +
+              "前付けを無条件で有利にせず、選手技量・ST・展示・水面・展開を二重加算しない。"
+          });
+        });
+      }
+    }
 
     {
       const attackTheoryRows = arrayify(

@@ -37,6 +37,13 @@ const RACER_SKILL_OUTPUT_FILE = path.join(
   "racer-skill-patterns.json"
 );
 
+const COURSE_STRUCTURE_OUTPUT_FILE = path.join(
+  ROOT,
+  "data",
+  "stats",
+  "course-structure-patterns.json"
+);
+
 const THREE_YEAR_DAYS = 1095;
 const RECENT_YEAR_DAYS = 365;
 
@@ -56,6 +63,156 @@ function racerReliability(samples) {
   if (samples >= 30) return "high";
   if (samples >= 12) return "medium";
   return "low";
+}
+
+function createCourseStructurePattern() {
+  return {
+    totalStarts: 0,
+    byCourse: {}
+  };
+}
+
+function addCourseStructureRace(
+  pattern,
+  race
+) {
+  const rankByBoat = new Map(
+    (race.finishers || [])
+      .map(item => [
+        Number(item.boat),
+        Number(item.rank)
+      ])
+      .filter(
+        ([boat, rank]) =>
+          Number.isInteger(boat) &&
+          boat >= 1 &&
+          boat <= 6 &&
+          Number.isInteger(rank) &&
+          rank >= 1 &&
+          rank <= 6
+      )
+  );
+
+  const seenCourses = new Set();
+  const seenBoats = new Set();
+  const starts = (race.starts || [])
+    .map(item => ({
+      course: Number(item.course),
+      boat: Number(item.boat)
+    }))
+    .filter(
+      item =>
+        Number.isInteger(item.course) &&
+        item.course >= 1 &&
+        item.course <= 6 &&
+        Number.isInteger(item.boat) &&
+        item.boat >= 1 &&
+        item.boat <= 6 &&
+        rankByBoat.has(item.boat)
+    );
+
+  if (
+    starts.length !== 6 ||
+    starts.some(item => {
+      const duplicate =
+        seenCourses.has(item.course) ||
+        seenBoats.has(item.boat);
+      seenCourses.add(item.course);
+      seenBoats.add(item.boat);
+      return duplicate;
+    })
+  ) {
+    return false;
+  }
+
+  starts.forEach(item => {
+    const course =
+      pattern.byCourse[item.course] ||= {
+        course: item.course,
+        starts: 0,
+        wins: 0,
+        top3: 0
+      };
+    const rank = rankByBoat.get(item.boat);
+
+    course.starts += 1;
+    if (rank === 1) course.wins += 1;
+    if (rank <= 3) course.top3 += 1;
+    pattern.totalStarts += 1;
+  });
+
+  return true;
+}
+
+function finalizeCourseStructurePattern(
+  pattern
+) {
+  return {
+    totalStarts:
+      Number(pattern?.totalStarts || 0),
+    byCourse: Object.fromEntries(
+      Array.from({ length: 6 }, (_, index) => {
+        const courseNo = index + 1;
+        const item =
+          pattern?.byCourse?.[courseNo] || {
+            course: courseNo,
+            starts: 0,
+            wins: 0,
+            top3: 0
+          };
+
+        return [
+          String(courseNo),
+          {
+            course: courseNo,
+            starts: item.starts,
+            reliability:
+              reliability(item.starts),
+            wins: item.wins,
+            winRate: percent(
+              item.wins,
+              item.starts
+            ),
+            top3: item.top3,
+            top3Rate: percent(
+              item.top3,
+              item.starts
+            )
+          }
+        ];
+      })
+    )
+  };
+}
+
+function createCourseStructureWindows() {
+  return {
+    all3Years:
+      createCourseStructurePattern(),
+    recent1Year:
+      createCourseStructurePattern(),
+    previous2Years:
+      createCourseStructurePattern()
+  };
+}
+
+function finalizeCourseStructureWindows(
+  windows
+) {
+  return {
+    all3Years:
+      finalizeCourseStructurePattern(
+        windows.all3Years
+      ),
+    recent1Year:
+      finalizeCourseStructurePattern(
+        windows.recent1Year
+      ),
+    previous2Years:
+      finalizeCourseStructurePattern(
+        windows.previous2Years
+      )
+  };
 }
 
 function createPattern() {
@@ -1097,6 +1254,9 @@ function main() {
   const venueRacePatterns = {};
   const trifectaByVenueRace = {};
   const racers = {};
+  const courseStructureOverall =
+    createCourseStructureWindows();
+  const courseStructureByVenue = {};
 
   for (const race of races) {
     addRace(overall, race);
@@ -1187,6 +1347,33 @@ function main() {
       raceDate >= recentYearStart
         ? "recent1Year"
         : "previous2Years"
+    );
+
+    const periodKey =
+      raceDate &&
+      recentYearStart &&
+      raceDate >= recentYearStart
+        ? "recent1Year"
+        : "previous2Years";
+    const venueCourseWindows =
+      courseStructureByVenue[race.jcd] ||=
+        createCourseStructureWindows();
+
+    addCourseStructureRace(
+      courseStructureOverall.all3Years,
+      race
+    );
+    addCourseStructureRace(
+      courseStructureOverall[periodKey],
+      race
+    );
+    addCourseStructureRace(
+      venueCourseWindows.all3Years,
+      race
+    );
+    addCourseStructureRace(
+      venueCourseWindows[periodKey],
+      race
     );
   }
 
@@ -1300,6 +1487,39 @@ function main() {
       )
   };
 
+  const courseStructureOutput = {
+    schemaVersion: 1,
+    source: "boatrace-official",
+    usagePolicy:
+      "場×実進入コースの構造評価専用。選手技量・ST・展示・展開を二重加算しない",
+    generatedAt: output.generatedAt,
+    firstDate: output.firstDate,
+    lastDate: output.lastDate,
+    raceCount: races.length,
+    analysisWindow:
+      output.analysisWindow,
+    thresholds: {
+      formalVenueCourseSamples: 100,
+      recentTrendSamples: 30
+    },
+    overall:
+      finalizeCourseStructureWindows(
+        courseStructureOverall
+      ),
+    byVenue: Object.fromEntries(
+      Object.entries(courseStructureByVenue)
+        .sort(([a], [b]) =>
+          a.localeCompare(b)
+        )
+        .map(([jcd, windows]) => [
+          jcd,
+          finalizeCourseStructureWindows(
+            windows
+          )
+        ])
+    )
+  };
+
   const venueRaceOutput = {
     schemaVersion: 1,
     source: "boatrace-official",
@@ -1399,6 +1619,14 @@ function main() {
   );
 
   fs.writeFileSync(
+    COURSE_STRUCTURE_OUTPUT_FILE,
+    JSON.stringify(
+      courseStructureOutput
+    ) + "\n",
+    "utf8"
+  );
+
+  fs.writeFileSync(
     TRIFECTA_OUTPUT_FILE,
     JSON.stringify(
       trifectaOutput
@@ -1434,5 +1662,10 @@ module.exports = {
   createVenueRaceWindows,
   finalizeVenueRaceWindows,
   createTrifectaWindows,
-  finalizeTrifectaWindows
+  finalizeTrifectaWindows,
+  createCourseStructurePattern,
+  addCourseStructureRace,
+  finalizeCourseStructurePattern,
+  createCourseStructureWindows,
+  finalizeCourseStructureWindows
 };
