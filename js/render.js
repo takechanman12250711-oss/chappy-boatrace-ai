@@ -895,8 +895,51 @@ if (raceInfoArea) {
     prediction,
     key
   ) {
+    const combined =
+      prediction.combinedOdds || {};
+
+    const category =
+      combined.categories?.[key];
+
+    if (category) {
+      if (!category.totalCount) {
+        return "";
+      }
+
+      const countText =
+        `取得 ${category.availableCount}/${category.totalCount}`;
+
+      if (category.isFormal) {
+        return tag(
+          `合成 ${Number(category.combinedOdds).toFixed(1)}倍・${countText}`,
+          "odds"
+        );
+      }
+
+      if (
+        Number.isFinite(
+          Number(
+            category.referenceCombinedOdds
+          )
+        ) &&
+        Number(
+          category.referenceCombinedOdds
+        ) > 0
+      ) {
+        return tag(
+          `参考 ${Number(category.referenceCombinedOdds).toFixed(1)}倍・${countText}`,
+          "odds"
+        );
+      }
+
+      return tag(
+        `オッズ ${countText}`,
+        "odds"
+      );
+    }
+
     const odds = Number(
-      prediction.combinedOdds?.[key]
+      combined[key]
     );
 
     if (
@@ -5012,6 +5055,78 @@ function getPaperClassName(item) {
       }
     }
 
+    const compositeCategories =
+      prediction.combinedOdds
+        ?.categories;
+
+    if (compositeCategories) {
+      Object.values(
+        compositeCategories
+      )
+        .filter(category =>
+          category?.totalCount > 0
+        )
+        .forEach(category => {
+          const countText =
+            `${category.availableCount}/${category.totalCount}点`;
+
+          const coverageText =
+            `${Number(category.coverageRate).toFixed(1)}%`;
+
+          const referenceOdds =
+            Number(
+              category.referenceCombinedOdds
+            );
+
+          const hasReferenceOdds =
+            Number.isFinite(
+              referenceOdds
+            ) &&
+            referenceOdds > 0;
+
+          const allocationText =
+            category.isFormal &&
+            Array.isArray(
+              category.allocation
+            )
+              ? category.allocation
+                  .map(row =>
+                    `${row.ticket}=${Number(row.allocationRate).toFixed(1)}%`
+                  )
+                  .join("、")
+              : "";
+
+          const margin = Number(
+            category
+              .theoreticalRecoveryMarginPercent
+          );
+
+          const formalText =
+            category.isFormal
+              ? `全点取得のため正式判定。合成オッズは${Number(category.combinedOdds).toFixed(1)}倍、理論回収余力は${margin.toFixed(1)}%。` +
+                `等払戻配分率は${allocationText}。`
+              : hasReferenceOdds
+                ? `未取得点があるため正式判定せず、取得済み分の参考合成オッズは${referenceOdds.toFixed(1)}倍。配分率は算出しない。`
+                : "実オッズが未取得のため、合成オッズと配分率は算出しない。";
+
+          items.push({
+            key: "odds",
+            label:
+              `${THEORY_LABELS.odds}・${category.label}`,
+            no: "",
+            score:
+              category.isFormal
+                ? `合成 ${Number(category.combinedOdds).toFixed(1)}倍`
+                : hasReferenceOdds
+                  ? `参考 ${referenceOdds.toFixed(1)}倍`
+                  : "未取得",
+            text:
+              `${category.label}は公式オッズ${countText}を取得し、データ充足率${coverageText}。` +
+              formalText +
+              "オッズは予想完成後の表示・分類・配分比率だけに使い、買い目の追加・削除、展開、印、最大7点には反映しない。"
+          });
+        });
+    } else {
         {
       const rawSyntheticOdds =
         finalAi.syntheticOdds ||
@@ -5439,6 +5554,7 @@ function getPaperClassName(item) {
           }
         );
       }
+    }
     }
 
     if (items.length === 0) {

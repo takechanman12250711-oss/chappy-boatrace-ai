@@ -57,37 +57,215 @@
         : null;
     }
 
-    function combinedOddsOf(list) {
-      return calculateCombinedOdds(
-        Array.isArray(list)
-          ? list.map(item =>
-              item?.odds
-            )
-          : []
+    function round(value, digits = 1) {
+      const scale = 10 ** digits;
+
+      return Math.round(
+        (Number(value) + Number.EPSILON) *
+          scale
+      ) / scale;
+    }
+
+    function buildAllocation(rows) {
+      const inverseTotal = rows.reduce(
+        (sum, row) =>
+          sum + 1 / row.odds,
+        0
       );
+
+      if (inverseTotal <= 0) {
+        return [];
+      }
+
+      let allocated = 0;
+
+      return rows.map((row, index) => {
+        const isLast =
+          index === rows.length - 1;
+
+        const allocationRate = isLast
+          ? round(100 - allocated, 1)
+          : round(
+              (
+                (1 / row.odds) /
+                inverseTotal
+              ) * 100,
+              1
+            );
+
+        allocated = round(
+          allocated + allocationRate,
+          1
+        );
+
+        return {
+          ticket: row.ticket,
+          odds: row.odds,
+          allocationRate
+        };
+      });
+    }
+
+    function analyzeCategory(
+      key,
+      label,
+      list
+    ) {
+      const tickets = Array.isArray(list)
+        ? list
+        : [];
+
+      const rows = tickets
+        .map((item, index) => {
+          const odds = Number(
+            item?.odds
+          );
+
+          if (
+            !Number.isFinite(odds) ||
+            odds <= 0
+          ) {
+            return null;
+          }
+
+          return {
+            ticket: String(
+              item?.ticket ||
+              item?.line ||
+              item?.formation ||
+              `買い目${index + 1}`
+            ).trim(),
+            odds
+          };
+        })
+        .filter(Boolean);
+
+      const totalCount = tickets.length;
+      const availableCount = rows.length;
+      const coverageRate = totalCount
+        ? round(
+            availableCount /
+              totalCount * 100,
+            1
+          )
+        : 0;
+
+      const isFormal =
+        totalCount > 0 &&
+        availableCount === totalCount;
+
+      const referenceCombinedOdds =
+        calculateCombinedOdds(
+          rows.map(row => row.odds)
+        );
+
+      const inverseTotal = rows.reduce(
+        (sum, row) =>
+          sum + 1 / row.odds,
+        0
+      );
+
+      const exactCombinedOdds =
+        inverseTotal > 0
+          ? 1 / inverseTotal
+          : null;
+
+      return {
+        key,
+        label,
+        totalCount,
+        availableCount,
+        coverageRate,
+        isFormal,
+        combinedOdds: isFormal
+          ? referenceCombinedOdds
+          : null,
+        referenceCombinedOdds,
+        theoreticalRecoveryMarginPercent:
+          isFormal &&
+          exactCombinedOdds !== null
+            ? round(
+                (
+                  exactCombinedOdds - 1
+                ) * 100,
+                1
+              )
+            : null,
+        allocation: isFormal
+          ? buildAllocation(rows)
+          : []
+      };
     }
 
     function buildCombinedOdds(
       prediction
     ) {
+      const categories = {
+        main: analyzeCategory(
+          "main",
+          "本線",
+          prediction?.mainSheet?.tickets
+        ),
+        cover: analyzeCategory(
+          "cover",
+          "押さえ",
+          prediction?.mainSheet
+            ?.coverTickets
+        ),
+        flow: analyzeCategory(
+          "flow",
+          "流し",
+          prediction?.mainSheet
+            ?.flowTickets
+        ),
+        manshu: analyzeCategory(
+          "manshu",
+          "万舟",
+          prediction?.manshuSheet?.tickets
+        )
+      };
+
+      const categoryList =
+        Object.values(categories);
+
+      const totalCount =
+        categoryList.reduce(
+          (sum, category) =>
+            sum + category.totalCount,
+          0
+        );
+
+      const availableCount =
+        categoryList.reduce(
+          (sum, category) =>
+            sum + category.availableCount,
+          0
+        );
+
       return {
         source: "boatrace-official",
         formula:
           "1 / Σ(1 / 個別オッズ)",
-        main: combinedOddsOf(
-          prediction?.mainSheet?.tickets
-        ),
-        cover: combinedOddsOf(
-          prediction?.mainSheet
-            ?.coverTickets
-        ),
-        flow: combinedOddsOf(
-          prediction?.mainSheet
-            ?.flowTickets
-        ),
-        manshu: combinedOddsOf(
-          prediction?.manshuSheet?.tickets
-        )
+        allocationFormula:
+          "(1 / 個別オッズ) / 逆数合計",
+        totalCount,
+        availableCount,
+        coverageRate: totalCount
+          ? round(
+              availableCount /
+                totalCount * 100,
+              1
+            )
+          : 0,
+        categories,
+        main:
+          categories.main.combinedOdds,
+        cover:
+          categories.cover.combinedOdds,
+        flow:
+          categories.flow.combinedOdds,
+        manshu:
+          categories.manshu.combinedOdds
       };
     }
 
@@ -176,6 +354,7 @@
 
     return {
       calculateCombinedOdds,
+      analyzeCategory,
       buildCombinedOdds,
       buildMissingTop30
     };
