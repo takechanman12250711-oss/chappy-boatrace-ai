@@ -1,0 +1,30 @@
+name: Trigger PR53 implementation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  trigger:
+    if: github.head_ref == 'agent/strengthen-local-water-theory-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/strengthen-local-water-theory-v2
+          fetch-depth: 0
+      - name: Trigger implementation workflow
+        shell: bash
+        run: |
+          printf '\n# triggered by PR\n' >> .github/workflows/pr53-build.yml
+          rm .github/workflows/pr53-trigger.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/pr53-build.yml .github/workflows/pr53-trigger.yml
+          git commit -m "Trigger PR53 implementation"
+          git push origin HEAD:agent/strengthen-local-water-theory-v2
