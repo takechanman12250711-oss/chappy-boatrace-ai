@@ -27,8 +27,14 @@ const combined =
   insights.buildCombinedOdds({
     mainSheet: {
       tickets: [
-        { odds: 10 },
-        { odds: 20 }
+        {
+          ticket: "1-2-3",
+          odds: 10
+        },
+        {
+          ticket: "1-3-2",
+          odds: 20
+        }
       ],
       coverTickets: [
         { odds: 30 }
@@ -56,6 +62,140 @@ assert.deepEqual(
     flow: null,
     manshu: 66.7
   }
+);
+
+assert.equal(
+  combined.totalCount,
+  5
+);
+
+assert.equal(
+  combined.availableCount,
+  5
+);
+
+assert.equal(
+  combined.coverageRate,
+  100
+);
+
+assert.deepEqual(
+  {
+    isFormal:
+      combined.categories.main
+        .isFormal,
+    availableCount:
+      combined.categories.main
+        .availableCount,
+    totalCount:
+      combined.categories.main
+        .totalCount,
+    coverageRate:
+      combined.categories.main
+        .coverageRate,
+    recoveryMargin:
+      combined.categories.main
+        .theoreticalRecoveryMarginPercent,
+    allocation:
+      combined.categories.main
+        .allocation
+        .map(item => [
+          item.ticket,
+          item.allocationRate
+        ])
+  },
+  {
+    isFormal: true,
+    availableCount: 2,
+    totalCount: 2,
+    coverageRate: 100,
+    recoveryMargin: 566.7,
+    allocation: [
+      ["1-2-3", 66.7],
+      ["1-3-2", 33.3]
+    ]
+  }
+);
+
+const incomplete =
+  insights.buildCombinedOdds({
+    mainSheet: {
+      tickets: [
+        {
+          ticket: "1-2-3",
+          odds: 10
+        },
+        {
+          ticket: "1-3-2",
+          odds: null
+        }
+      ]
+    }
+  });
+
+assert.deepEqual(
+  {
+    formal: incomplete.main,
+    reference:
+      incomplete.categories.main
+        .referenceCombinedOdds,
+    availableCount:
+      incomplete.categories.main
+        .availableCount,
+    totalCount:
+      incomplete.categories.main
+        .totalCount,
+    coverageRate:
+      incomplete.categories.main
+        .coverageRate,
+    isFormal:
+      incomplete.categories.main
+        .isFormal,
+    recoveryMargin:
+      incomplete.categories.main
+        .theoreticalRecoveryMarginPercent,
+    allocation:
+      incomplete.categories.main
+        .allocation
+  },
+  {
+    formal: null,
+    reference: 10,
+    availableCount: 1,
+    totalCount: 2,
+    coverageRate: 50,
+    isFormal: false,
+    recoveryMargin: null,
+    allocation: []
+  }
+);
+
+const updated =
+  insights.buildCombinedOdds({
+    mainSheet: {
+      tickets: [
+        {
+          ticket: "1-2-3",
+          odds: 20
+        },
+        {
+          ticket: "1-3-2",
+          odds: 20
+        }
+      ]
+    }
+  });
+
+assert.equal(updated.main, 10);
+assert.notEqual(
+  updated.main,
+  combined.main
+);
+assert.deepEqual(
+  updated.categories.main
+    .allocation
+    .map(item => item.allocationRate),
+  [50, 50]
 );
 
 const top =
