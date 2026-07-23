@@ -30,6 +30,13 @@ const VENUE_RACE_OUTPUT_FILE = path.join(
   "venue-race-patterns.json"
 );
 
+const RACER_SKILL_OUTPUT_FILE = path.join(
+  ROOT,
+  "data",
+  "stats",
+  "racer-skill-patterns.json"
+);
+
 const THREE_YEAR_DAYS = 1095;
 const RECENT_YEAR_DAYS = 365;
 
@@ -605,7 +612,126 @@ function finalizeVenueRaceWindows(windows) {
   };
 }
 
-function addRacers(racers, race) {
+function createRacerPerformance() {
+  return {
+    starts: 0,
+    wins: 0,
+    top3: 0,
+    stSum: 0,
+    stSamples: 0,
+    winningMethods: {},
+    byBoat: {},
+    byCourse: {}
+  };
+}
+
+function addRacerPerformance(
+  performance,
+  race,
+  finisher
+) {
+  performance.starts += 1;
+
+  const rank = Number(finisher.rank);
+
+  if (rank === 1) performance.wins += 1;
+
+  if (rank >= 1 && rank <= 3) {
+    performance.top3 += 1;
+  }
+
+  const start = race.starts?.find(
+    item =>
+      Number(item.boat) ===
+      Number(finisher.boat)
+  );
+
+  const st = Number(start?.st);
+
+  if (Number.isFinite(st)) {
+    performance.stSum += st;
+    performance.stSamples += 1;
+  }
+
+  if (rank === 1) {
+    addCount(
+      performance.winningMethods,
+      race.winningMethod || "不明"
+    );
+  }
+
+  const boatNo = Number(finisher.boat);
+
+  if (
+    Number.isInteger(boatNo) &&
+    boatNo >= 1 &&
+    boatNo <= 6
+  ) {
+    const boatStats =
+      performance.byBoat[boatNo] ||= {
+        boatNo,
+        starts: 0,
+        wins: 0,
+        top3: 0,
+        stSum: 0,
+        stSamples: 0
+      };
+
+    boatStats.starts += 1;
+
+    if (rank === 1) boatStats.wins += 1;
+    if (rank >= 1 && rank <= 3) boatStats.top3 += 1;
+
+    if (Number.isFinite(st)) {
+      boatStats.stSum += st;
+      boatStats.stSamples += 1;
+    }
+  }
+
+  const course = Number(start?.course);
+
+  if (
+    Number.isInteger(course) &&
+    course >= 1 &&
+    course <= 6
+  ) {
+    const courseStats =
+      performance.byCourse[course] ||= {
+        course,
+        starts: 0,
+        wins: 0,
+        top3: 0,
+        stSum: 0,
+        stSamples: 0,
+        winningMethods: {}
+      };
+
+    courseStats.starts += 1;
+
+    if (rank === 1) {
+      courseStats.wins += 1;
+      addCount(
+        courseStats.winningMethods,
+        race.winningMethod || "不明"
+      );
+    }
+
+    if (rank >= 1 && rank <= 3) {
+      courseStats.top3 += 1;
+    }
+
+    if (Number.isFinite(st)) {
+      courseStats.stSum += st;
+      courseStats.stSamples += 1;
+    }
+  }
+}
+
+function addRacers(
+  racers,
+  race,
+  periodKey
+) {
   for (const finisher of race.finishers || []) {
     const registerNo = String(
       finisher.registerNo || ""
@@ -616,74 +742,35 @@ function addRacers(racers, race) {
     const racer = racers[registerNo] ||= {
       registerNo,
       racerName: finisher.racerName || "",
-      starts: 0,
-      wins: 0,
-      top3: 0,
-      stSum: 0,
-      stSamples: 0,
-      byBoat: {}
+      windows: {
+        all3Years:
+          createRacerPerformance(),
+        recent1Year:
+          createRacerPerformance(),
+        previous2Years:
+          createRacerPerformance()
+      }
     };
 
     racer.racerName =
       finisher.racerName ||
       racer.racerName;
 
-    racer.starts += 1;
-
-    const rank = Number(finisher.rank);
-
-    if (rank === 1) racer.wins += 1;
-
-    if (rank >= 1 && rank <= 3) {
-      racer.top3 += 1;
-    }
-
-    const start = race.starts?.find(
-      item =>
-        Number(item.boat) ===
-        Number(finisher.boat)
+    addRacerPerformance(
+      racer.windows.all3Years,
+      race,
+      finisher
     );
 
-    const st = Number(start?.st);
-
-    if (Number.isFinite(st)) {
-      racer.stSum += st;
-      racer.stSamples += 1;
-    }
-
-    const boatNo =
-      Number(finisher.boat);
-
-    if (
-      Number.isInteger(boatNo) &&
-      boatNo >= 1 &&
-      boatNo <= 6
-    ) {
-      const boatStats =
-        racer.byBoat[boatNo] ||= {
-          boatNo,
-          starts: 0,
-          wins: 0,
-          top3: 0,
-          stSum: 0,
-          stSamples: 0
-        };
-
-      boatStats.starts += 1;
-
-      if (rank === 1) {
-        boatStats.wins += 1;
-      }
-
-      if (rank >= 1 && rank <= 3) {
-        boatStats.top3 += 1;
-      }
-
-      if (Number.isFinite(st)) {
-        boatStats.stSum += st;
-        boatStats.stSamples += 1;
-      }
-    }
+    addRacerPerformance(
+      racer.windows[
+        periodKey === "recent1Year"
+          ? "recent1Year"
+          : "previous2Years"
+      ],
+      race,
+      finisher
+    );
   }
 }
 
@@ -735,6 +822,101 @@ function finalizeRacerBoats(
   );
 }
 
+function finalizeRacerCourses(
+  byCourse
+) {
+  return Object.fromEntries(
+    Object.values(byCourse || {})
+      .sort(
+        (a, b) =>
+          a.course - b.course
+      )
+      .map(item => [
+        String(item.course),
+        {
+          course: item.course,
+          starts: item.starts,
+          reliability:
+            racerReliability(
+              item.starts
+            ),
+          wins: item.wins,
+          winRate: percent(
+            item.wins,
+            item.starts
+          ),
+          top3: item.top3,
+          top3Rate: percent(
+            item.top3,
+            item.starts
+          ),
+          averageSt:
+            item.stSamples
+              ? Number(
+                  (
+                    item.stSum /
+                    item.stSamples
+                  ).toFixed(3)
+                )
+              : null,
+          winningMethods:
+            finalizeCounts(
+              item.winningMethods,
+              item.wins
+            )
+        }
+      ])
+  );
+}
+
+function finalizeRacerPerformance(
+  performance
+) {
+  const source =
+    performance ||
+    createRacerPerformance();
+
+  return {
+    starts: source.starts,
+    reliability:
+      racerReliability(
+        source.starts
+      ),
+    wins: source.wins,
+    winRate: percent(
+      source.wins,
+      source.starts
+    ),
+    top3: source.top3,
+    top3Rate: percent(
+      source.top3,
+      source.starts
+    ),
+    averageSt:
+      source.stSamples
+        ? Number(
+            (
+              source.stSum /
+              source.stSamples
+            ).toFixed(3)
+          )
+        : null,
+    winningMethods:
+      finalizeCounts(
+        source.winningMethods,
+        source.wins
+      ),
+    byBoat:
+      finalizeRacerBoats(
+        source.byBoat
+      ),
+    byCourse:
+      finalizeRacerCourses(
+        source.byCourse
+      )
+  };
+}
+
 function finalizeRacers(racers) {
   return Object.fromEntries(
     Object.values(racers)
@@ -745,46 +927,81 @@ function finalizeRacers(racers) {
       )
       .map(racer => [
         racer.registerNo,
-        {
-          registerNo: racer.registerNo,
-          racerName: racer.racerName,
-          starts: racer.starts,
+        (() => {
+          const all3Years =
+            finalizeRacerPerformance(
+              racer.windows.all3Years
+            );
 
-          reliability:
-            racerReliability(
-              racer.starts
-            ),
-
-          wins: racer.wins,
-
-          winRate: percent(
-            racer.wins,
-            racer.starts
-          ),
-
-          top3: racer.top3,
-
-          top3Rate: percent(
-            racer.top3,
-            racer.starts
-          ),
-
-          averageSt:
-            racer.stSamples
-              ? Number(
-                  (
-                    racer.stSum /
-                    racer.stSamples
-                  ).toFixed(3)
-                )
-              : null,
-
-          byBoat:
-            finalizeRacerBoats(
-              racer.byBoat
-            )
-        }
+          return {
+            registerNo: racer.registerNo,
+            racerName: racer.racerName,
+            starts: all3Years.starts,
+            reliability:
+              all3Years.reliability,
+            wins: all3Years.wins,
+            winRate: all3Years.winRate,
+            top3: all3Years.top3,
+            top3Rate: all3Years.top3Rate,
+            averageSt:
+              all3Years.averageSt,
+            byBoat: all3Years.byBoat
+          };
+        })()
       ])
+  );
+}
+
+function finalizeRacerSkillRacers(
+  racers
+) {
+  return Object.fromEntries(
+    Object.values(racers)
+      .sort((a, b) =>
+        a.registerNo.localeCompare(
+          b.registerNo
+        )
+      )
+      .map(racer => {
+        const finalizeWindow =
+          performance => {
+            const finalized =
+              finalizeRacerPerformance(
+                performance
+              );
+
+            return {
+              starts:
+                finalized.starts,
+              byCourse:
+                finalized.byCourse
+            };
+          };
+
+        return [
+          racer.registerNo,
+          {
+            registerNo:
+              racer.registerNo,
+            racerName:
+              racer.racerName,
+            windows: {
+              all3Years:
+                finalizeWindow(
+                  racer.windows.all3Years
+                ),
+              recent1Year:
+                finalizeWindow(
+                  racer.windows.recent1Year
+                ),
+              previous2Years:
+                finalizeWindow(
+                  racer.windows.previous2Years
+                )
+            }
+          }
+        ];
+      })
   );
 }
 
@@ -962,7 +1179,15 @@ function main() {
       }
     }
 
-    addRacers(racers, race);
+    addRacers(
+      racers,
+      race,
+      raceDate &&
+      recentYearStart &&
+      raceDate >= recentYearStart
+        ? "recent1Year"
+        : "previous2Years"
+    );
   }
 
   const output = {
@@ -1035,6 +1260,44 @@ function main() {
 
     racers:
       finalizeRacers(racers)
+  };
+
+  const racerSkillOutput = {
+    schemaVersion: 1,
+    source: "boatrace-official",
+    usagePolicy:
+      "実進入コース別の技量・戦法適性を補足する公式履歴。単独で印・展開・買い目を変更しない",
+    generatedAt:
+      new Date().toISOString(),
+    firstDate:
+      files[0]?.date || null,
+    lastDate:
+      files.at(-1)?.date || null,
+    raceCount:
+      races.length,
+    analysisWindow: {
+      policy:
+        "直近1年を優先し、過去2年を裏付けに使用",
+      latestDate:
+        latestRaceDate
+          ? latestRaceDate
+              .toISOString()
+              .slice(0, 10)
+              .replaceAll("-", "")
+          : null,
+      recentYearDays:
+        RECENT_YEAR_DAYS,
+      totalDays:
+        THREE_YEAR_DAYS
+    },
+    thresholds: {
+      minimumSamples: 12,
+      highReliabilitySamples: 30
+    },
+    racers:
+      finalizeRacerSkillRacers(
+        racers
+      )
   };
 
   const venueRaceOutput = {
@@ -1123,6 +1386,14 @@ function main() {
       output,
       null,
       2
+    ) + "\n",
+    "utf8"
+  );
+
+  fs.writeFileSync(
+    RACER_SKILL_OUTPUT_FILE,
+    JSON.stringify(
+      racerSkillOutput
     ) + "\n",
     "utf8"
   );
