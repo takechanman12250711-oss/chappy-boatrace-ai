@@ -127,8 +127,7 @@
   const NEW_ENGINE_PHASE = {
     NONE: "none",
     EARLY: "early",
-    MIDDLE: "middle",
-    LATE: "late"
+    MIDDLE: "middle"
   };
 
   const PLACE_CODE_MAP = {
@@ -451,24 +450,6 @@
       wind: 50,
       rough: 45,
       memo: "全国屈指のイン水面。ただし新型エンジン期は展示・今節ST・技量重視。"
-    }
-  };
-
-  /* ===============================
-    新型エンジン仮DB
-    ※ 後で engineUpdateData.js に分離予定
-  =============================== */
-
-  const ENGINE_UPDATE_DATA = {
-    大村: {
-      updated: true,
-      updateDate: "20250524",
-      memo: "新型エンジン期。モーター数字を過信せず、展示・今節ST・技量・当地を重視。"
-    },
-    多摩川: {
-      updated: true,
-      updateDate: "",
-      memo: "新エンジン期は数字より展示・実戦気配を重視。"
     }
   };
 
@@ -1345,37 +1326,59 @@ if (boatNo === 0) {
 
   function analyzeNewEngine(race, venue) {
     const venueName = venue?.name || race.stadiumName || "";
-    const config = ENGINE_UPDATE_DATA[venueName] || {
-      updated: false,
-      updateDate: "",
-      memo: "通常エンジン評価。モーター数字と展示をバランス評価。"
-    };
-
-    const phase = detectEnginePhase(race.date, config.updateDate, config.updated);
+    const period =
+      window.ChappyAICore?.getNewEnvironmentPeriod
+        ? window.ChappyAICore.getNewEnvironmentPeriod({
+            ...(race.raw || {}),
+            date: race.date,
+            stadiumName: venueName,
+            raceInfo: race.raceInfo
+          })
+        : {
+            venueName,
+            deployments: [],
+            activeLabels: [],
+            isActive: false,
+            isProvisional: false,
+            isStable: false
+          };
+    const activeDeployment =
+      period.deployments?.find(item => item.isActive) || null;
+    const provisionalDeployment =
+      period.deployments?.find(item => item.isProvisional) || null;
+    const phase =
+      activeDeployment?.phase === "early"
+        ? NEW_ENGINE_PHASE.EARLY
+        : activeDeployment?.phase === "middle"
+          ? NEW_ENGINE_PHASE.MIDDLE
+          : NEW_ENGINE_PHASE.NONE;
 
     const weights = createNewEngineWeights(phase);
 
     return {
-      venueName,
-      updated: Boolean(config.updated),
-      updateDate: config.updateDate || "",
+      venueName: period.venueName || venueName,
+      updated: period.isActive === true,
+      updateDate:
+        activeDeployment?.introducedAt ||
+        provisionalDeployment?.introducedAt ||
+        "",
       phase,
-      phaseLabel: createEnginePhaseLabel(phase),
+      phaseLabel:
+        period.isProvisional
+          ? "暫定"
+          : createEnginePhaseLabel(phase),
       weights,
-      memo: config.memo,
-      rule: createNewEngineRuleText(phase)
+      memo:
+        period.isProvisional
+          ? "導入日不明のため新環境補正は発動せず、参考表示のみ。"
+          : createNewEngineRuleText(phase),
+      rule: createNewEngineRuleText(phase),
+      deployments: period.deployments || [],
+      activeLabels: period.activeLabels || [],
+      isProvisional: period.isProvisional === true,
+      isStable: period.isStable === true,
+      source: period.source || "ai-core-new-environment-period-v1"
     };
-  }
-
-  function detectEnginePhase(raceDate, updateDate, updated) {
-    if (!updated || !updateDate) return NEW_ENGINE_PHASE.NONE;
-
-    const diffDays = diffDateDays(updateDate, raceDate);
-
-    if (diffDays === null) return NEW_ENGINE_PHASE.MIDDLE;
-    if (diffDays <= 45) return NEW_ENGINE_PHASE.EARLY;
-    if (diffDays <= 120) return NEW_ENGINE_PHASE.MIDDLE;
-    return NEW_ENGINE_PHASE.LATE;
   }
 
   function createNewEngineWeights(phase) {
@@ -1403,18 +1406,6 @@ if (boatNo === 0) {
       };
     }
 
-    if (phase === NEW_ENGINE_PHASE.LATE) {
-      return {
-        motor: 1.0,
-        exhibition: 1.08,
-        current: 1.08,
-        st: 1.08,
-        skill: 1.05,
-        local: 1.05,
-        water: 1.03
-      };
-    }
-
     return {
       motor: 1.0,
       exhibition: 1.0,
@@ -1429,7 +1420,6 @@ if (boatNo === 0) {
   function createEnginePhaseLabel(phase) {
     if (phase === NEW_ENGINE_PHASE.EARLY) return "初期";
     if (phase === NEW_ENGINE_PHASE.MIDDLE) return "中期";
-    if (phase === NEW_ENGINE_PHASE.LATE) return "後期";
     return "通常";
   }
 
@@ -1440,10 +1430,6 @@ if (boatNo === 0) {
 
     if (phase === NEW_ENGINE_PHASE.MIDDLE) {
       return "新型エンジン中期。モーター数字も見始めるが、展示・今節気配をまだ重視。";
-    }
-
-    if (phase === NEW_ENGINE_PHASE.LATE) {
-      return "新型エンジン後期。モーター数字と展示をバランス評価。";
     }
 
     return "通常エンジン評価。モーター数字・展示・選手技量を総合評価。";
@@ -5905,33 +5891,6 @@ if (attackCourse === 1) {
     return [...new Set((list || []).filter(v => v !== null && v !== undefined && v !== ""))];
   }
 
-  function diffDateDays(fromDate, toDate) {
-    if (!fromDate || !toDate) return null;
-
-    const f = parseDate(fromDate);
-    const t = parseDate(toDate);
-
-    if (!f || !t) return null;
-
-    const diff = t.getTime() - f.getTime();
-    return Math.floor(diff / 86400000);
-  }
-
-  function parseDate(v) {
-    const s = String(v || "").replace(/[^\d]/g, "");
-
-    if (s.length !== 8) return null;
-
-    const y = Number(s.slice(0, 4));
-    const m = Number(s.slice(4, 6)) - 1;
-    const d = Number(s.slice(6, 8));
-
-    const date = new Date(y, m, d);
-
-    if (!Number.isFinite(date.getTime())) return null;
-
-    return date;
-  }
 　  /* ===============================
     Part8 修正版
     - 未定義対策
