@@ -3067,10 +3067,18 @@ function getPaperClassName(item) {
     }
         {
       const flowTheoryRows = arrayify(
+        prediction.flowTheory?.ranking ||
         indexes.tenkaiRanking ||
         indexes.flowRanking
       )
-        .filter(Boolean)
+        .filter(item =>
+          item &&
+          (
+            item.isAdopted ||
+            item.status === "暫定" ||
+            item.status === "参考"
+          )
+        )
         .slice(0, 2)
         .map(item =>
           typeof item === "number" ||
@@ -3083,7 +3091,9 @@ function getPaperClassName(item) {
         pushTheoryText(
           items,
           "flow",
-          "展開指数の順位データがないため、展開艇理論は判定できません。"
+          prediction.flowTheory?.isFormal
+            ? "最有力展開と一致する65点以上の展開艇はありません。"
+            : "展示または成立展開のデータが不足しているため、展開艇理論は参考判定です。"
         );
       } else {
         const getFlowBoatNo = item =>
@@ -3111,7 +3121,7 @@ function getPaperClassName(item) {
           .replace(/[。]+$/, "");
 
         flowTheoryRows.forEach(
-          (item, position) => {
+          (item) => {
             const boatNo =
               getFlowBoatNo(item);
 
@@ -3139,167 +3149,6 @@ function getPaperClassName(item) {
                 ? courseCandidate
                 : boatNo;
 
-            const comparedItem =
-              flowTheoryRows[
-                position === 0 ? 1 : 0
-              ] ||
-              null;
-
-            const comparedBoatNo =
-              getFlowBoatNo(
-                comparedItem
-              );
-
-            const comparedScore =
-              getFlowScore(
-                comparedItem
-              );
-
-            const scoreNumber =
-              Number(score);
-
-            const comparedScoreNumber =
-              Number(comparedScore);
-
-            const hasScore =
-              score !== "" &&
-              score !== null &&
-              score !== undefined &&
-              Number.isFinite(
-                scoreNumber
-              );
-
-            const hasComparedScore =
-              comparedScore !== "" &&
-              comparedScore !== null &&
-              comparedScore !== undefined &&
-              Number.isFinite(
-                comparedScoreNumber
-              );
-
-            let comparison =
-              "比較できる相手艇の展開指数がないため、単独で確認。";
-
-            if (comparedBoatNo) {
-              if (
-                hasScore &&
-                hasComparedScore
-              ) {
-                const difference =
-                  Math.round(
-                    Math.abs(
-                      scoreNumber -
-                      comparedScoreNumber
-                    ) * 10
-                  ) / 10;
-
-                if (difference === 0) {
-                  comparison =
-                    `${comparedBoatNo}号艇と展開指数${scoreNumber}で同値。`;
-                } else if (
-                  scoreNumber >
-                  comparedScoreNumber
-                ) {
-                  comparison =
-                    `${comparedBoatNo}号艇より展開指数が${difference}高い。`;
-                } else {
-                  comparison =
-                    `${comparedBoatNo}号艇に次ぐ展開指数で、差は${difference}。`;
-                }
-              } else {
-                comparison =
-                  `${comparedBoatNo}号艇との比較対象だが、指数差の数値は未取得。`;
-              }
-            }
-
-            let development =
-              "コースを確定できないため、成立展開の補足材料として確認する。";
-
-            if (course === 1) {
-              development =
-                "1コースの先マイを軸に、2コース差しを受け止めて内側を残す展開を確認する。";
-            } else if (course === 2) {
-              development =
-                "2コース差しが成立展開。自身の1着候補と、1号艇のイン残しを同時に確認する。";
-            } else if (course === 3) {
-              development =
-                "3コースのまくり・まくり差しから、1・2号艇の残しと外側の拾いを確認する。";
-            } else if (course === 4) {
-              development =
-                "4コースのカド攻めから、内側の残しと5・6号艇の拾いが生まれる展開を確認する。";
-            } else if (course === 5) {
-              development =
-                "5コースは内側の攻めに連動する展開。まくり差しと2・3着の拾いを中心に確認する。";
-            } else if (course === 6) {
-              development =
-                "6コースは内側の攻めを待つ展開。1着固定にせず、2・3着の拾いを中心に確認する。";
-            }
-
-            const isAttackSource =
-              arrayify(
-                raceFlow.attackBoats
-              ).some(
-                row =>
-                  getFlowBoatNo(row) ===
-                  boatNo
-              );
-
-            const flowPosition =
-              isAttackSource
-                ? "現在の成立展開では攻めの起点として扱う。"
-                : "現在の成立展開では攻め艇の動きから生まれる相手側として確認する。";
-
-            const reflectedRoles = [];
-
-            const honmeiBoatNo = Number(
-              prediction.mainSheet
-                ?.honmei?.boatNo ||
-              prediction.mainSheet
-                ?.main?.boatNo ||
-              0
-            );
-
-            if (
-              honmeiBoatNo === boatNo
-            ) {
-              reflectedRoles.push(
-                "1着候補"
-              );
-            }
-
-            if (
-              arrayify(
-                raceFlow.holdBoats
-              ).some(
-                row =>
-                  getFlowBoatNo(row) ===
-                  boatNo
-              )
-            ) {
-              reflectedRoles.push(
-                "残し"
-              );
-            }
-
-            if (
-              arrayify(
-                raceFlow.pickupBoats
-              ).some(
-                row =>
-                  getFlowBoatNo(row) ===
-                  boatNo
-              )
-            ) {
-              reflectedRoles.push(
-                "拾い"
-              );
-            }
-
-            const reflection =
-              reflectedRoles.length
-                ? `現在の予想では${reflectedRoles.join("・")}へ反映。`
-                : "現在の予想では1着候補・残し・拾いへ直接反映せず、成立展開の補足材料。";
-
             const raceContext =
               flowSummary
                 ? `レース全体の成立展開は「${flowSummary}」。`
@@ -3320,6 +3169,18 @@ function getPaperClassName(item) {
                 ? `指数側の根拠は「${sourceReason}」。`
                 : "指数側の個別根拠は未取得。";
 
+            const status = String(
+              item.status ||
+              (item.isAdopted ? "正式採用" : "参考")
+            );
+            const grade = String(item.grade || "");
+            const components = item.components || {};
+            const formalReflection = item.isAdopted
+              ? "最有力展開の2・3着候補と一致し、正式な展開艇として採用。"
+              : item.status === "暫定"
+                ? "展示前の暫定値で、予想へ正式反映しない。"
+                : "成立点または採用条件が未達のため、補足表示のみ。";
+
             items.push({
               key: "flow",
               label:
@@ -3327,13 +3188,21 @@ function getPaperClassName(item) {
               no: boatNo || "",
               score,
               text:
-                `${boatNo}号艇を展開艇理論の既存表示${position + 1}位として確認。` +
-                comparison +
-                development +
-                flowPosition +
-                reflection +
+                `${boatNo}号艇・${course}コースは${status}（${grade}評価）。` +
+                `内訳は展開一致${components.scenarioMatch ?? 0}/40、` +
+                `位置・コース${components.positionRelation ?? 0}/20、` +
+                `残し・拾い${components.holdPickup ?? 0}/15、` +
+                `ST・スリット${components.startAndSlit ?? 0}/10、` +
+                `展示・足${components.exhibitionFoot ?? 0}/10、` +
+                `場・水面${components.venueWater ?? 0}/5。` +
+                formalReflection +
                 raceContext +
-                reasonText
+                reasonText +
+                (
+                  item.isBlocked
+                    ? "最有力展開で飛び候補のため除外。"
+                    : ""
+                )
             });
           }
         );
