@@ -4241,9 +4241,115 @@ function getPaperClassName(item) {
         "展示タイムと一周タイムがそろった艇がないため、新サムは判定できない。"
       );
     }
-        const engineTheory =
-      prediction.newEngine ||
-      {};
+    const newEnvironmentTheory =
+      prediction.newEnvironmentTheory ||
+      prediction.aiCore?.newEnvironmentTheory ||
+      null;
+
+    if (newEnvironmentTheory) {
+      const deployments =
+        arrayify(newEnvironmentTheory.deployments)
+          .filter(item => item?.enabled);
+      const deploymentText =
+        deployments.length
+          ? deployments
+              .map(item =>
+                `${item.label}${item.introducedAt ? `（${item.introducedAt}導入）` : ""}・${item.status}`
+              )
+              .join("、")
+          : "新型エンジン・新燃料とも対象登録なし";
+      const environmentLabel =
+        deployments.map(item => item.label).join("・") ||
+        "新型エンジン・新燃料";
+      const displayRows =
+        arrayify(newEnvironmentTheory.ranking)
+          .filter(item =>
+            item &&
+            (
+              item.isAdopted ||
+              item.status === "暫定" ||
+              item.status === "参考"
+            )
+          )
+          .slice(0, 2);
+
+      if (!newEnvironmentTheory.isTarget) {
+        items.push({
+          key: "newEngine",
+          label: "🔧 新型エンジン・新燃料",
+          no: "",
+          score: "",
+          text:
+            `${newEnvironmentTheory.venueName || "この場"}は対象期間として登録されていない。` +
+            "通常どおり展開・コース・ST・展示を優先し、モーター数字は補助材料として扱う。"
+        });
+      } else if (newEnvironmentTheory.isStable) {
+        items.push({
+          key: "newEngine",
+          label: `🔧 ${environmentLabel}`,
+          no: "",
+          score: "通常評価",
+          text:
+            `${deploymentText}。導入から121日以上の安定期に入っているため、` +
+            "新環境補正は終了し、通常評価へ戻している。"
+        });
+      } else if (!displayRows.length) {
+        items.push({
+          key: "newEngine",
+          label: `🔧 ${environmentLabel}`,
+          no: "",
+          score:
+            newEnvironmentTheory.isProvisional
+              ? "暫定"
+              : "成立なし",
+          text:
+            `${deploymentText}。` +
+            (
+              newEnvironmentTheory.isProvisional
+                ? "導入日が不明なため正式判定せず、予想への新環境補正も発動していない。"
+                : "65点以上かつ最有力展開と一致する正式な適応艇はいない。"
+            )
+        });
+      } else {
+        displayRows.forEach(item => {
+          const components = item.components || {};
+          const evidenceText =
+            item.hasAdaptationEvidence
+              ? "展示または今節実績の裏付けあり"
+              : "展示・今節実績不足";
+          const adoptionText =
+            item.isAdopted
+              ? "65点以上で最有力展開と一致し、正式な適応艇として採用。"
+              : item.status === "暫定"
+                ? "導入日または実績データ不足のため、予想へ正式反映しない。"
+                : item.isBlocked
+                  ? "飛び候補のため正式採用しない。"
+                  : "成立点または展開一致条件が未達のため、補足表示のみ。";
+
+          items.push({
+            key: "newEngine",
+            label: `🔧 ${environmentLabel}`,
+            no: item.boatNo || "",
+            score: `${item.score ?? 0}点・${item.grade || "-"}`,
+            text:
+              `${deploymentText}。` +
+              `${item.boatNo}号艇・${item.course}コースは${item.status}` +
+              `（${item.role || "展開外"}）。` +
+              `内訳は展示・足${components.exhibitionFoot ?? 0}/30、` +
+              `今節ST・スリット${components.startAndSlit ?? 0}/20、` +
+              `今節・道中${components.currentAndRoad ?? 0}/20、` +
+              `展開役割${components.scenarioRole ?? 0}/15、` +
+              `技量${components.playerSkill ?? 0}/10、` +
+              `当地・水面${components.localWater ?? 0}/5。` +
+              `${evidenceText}。${adoptionText}` +
+              "新環境適応点だけで印・展開・買い目を変更せず、モーター2連率・3連率は直接加点しない。"
+          });
+        });
+      }
+    } else {
+      const engineTheory =
+        prediction.newEngine ||
+        {};
 
     const engineVenue =
       prediction.venue ||
@@ -4804,6 +4910,8 @@ function getPaperClassName(item) {
           }
         );
       }
+    }
+
     }
 
     const compositeCategories =
