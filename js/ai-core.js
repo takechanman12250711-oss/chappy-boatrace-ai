@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.4.0-course-structure-v2";
+  const CORE_VERSION = "ai-core-v4.5.0-st-slit-v2";
 
   /* ===============================
     基本ユーティリティ
@@ -1206,7 +1206,10 @@ function getBoatNo(boat) {
     指数計算
   =============================== */
 
-  function calcStIndex(boat, entries) {
+  function calcLegacyStIndex(
+    boat,
+    entries
+  ) {
     const st = getAverageSt(boat);
     const stList = entries.map(getAverageSt);
     const avg = average(stList, 0.18);
@@ -1226,6 +1229,341 @@ function getBoatNo(boat) {
     score += hasClassPower(boat) * 4;
 
     return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
+  }
+
+  function stSpeedScore(
+    st,
+    maximum
+  ) {
+    if (
+      st === null ||
+      st === undefined ||
+      !Number.isFinite(Number(st))
+    ) {
+      return 0;
+    }
+
+    const value = Number(st);
+    const normalized = clamp(
+      (0.23 - value) / 0.12,
+      0,
+      1
+    );
+
+    return round(
+      normalized * maximum
+    );
+  }
+
+  function stStabilityScore(
+    spread,
+    stdDev,
+    maximum
+  ) {
+    const value =
+      Number.isFinite(Number(stdDev))
+        ? Number(stdDev)
+        : Number.isFinite(Number(spread))
+          ? Number(spread) / 2
+          : null;
+
+    if (value === null) return 0;
+    if (value <= 0.018) return maximum;
+    if (value <= 0.025) {
+      return round(maximum * 0.8);
+    }
+    if (value <= 0.035) {
+      return round(maximum * 0.5);
+    }
+    if (value <= 0.05) {
+      return round(maximum * 0.2);
+    }
+    return 0;
+  }
+
+  function getFCount(boat) {
+    const candidates = [
+      boat?.fCount,
+      boat?.flyingCount,
+      boat?.flying,
+      boat?.f
+    ];
+
+    for (const value of candidates) {
+      if (isNil(value) || value === "") {
+        continue;
+      }
+      const parsed = toNumber(value, NaN);
+      if (
+        Number.isFinite(parsed) &&
+        parsed >= 0
+      ) {
+        return parsed;
+      }
+    }
+
+    const text = safeText(
+      boat?.fl ??
+      boat?.flyingLate,
+      ""
+    );
+    const match = text.match(/F\s*(\d+)/i);
+    return match
+      ? Number(match[1])
+      : null;
+  }
+
+  function buildStFoundationEvaluation(
+    boat,
+    entries,
+    data
+  ) {
+    const boatNo = getBoatNo(boat);
+    const course =
+      hasFormalStartCourseMapping(entries)
+        ? getAttackTheoryCourse(
+            boat,
+            boatNo
+          )
+        : boatNo;
+    const registerNo =
+      getRacerRegisterNo(boat);
+    const history = (
+      data?.historyContext?.racers || []
+    ).find(
+      racer =>
+        String(racer?.registerNo || "") ===
+        registerNo
+    ) || null;
+    const windows =
+      history?.skillHistory?.windows ||
+      history?.windows ||
+      {};
+    const allCourse =
+      windows.all3Years?.byCourse?.[
+        String(course)
+      ] || null;
+    const recentCourse =
+      windows.recent1Year?.byCourse?.[
+        String(course)
+      ] || null;
+    const previousCourse =
+      windows.previous2Years?.byCourse?.[
+        String(course)
+      ] || null;
+    const samples =
+      toNumber(allCourse?.starts, 0);
+    const current =
+      getCurrentSeriesSt(boat);
+    const officialAverage =
+      getOptionalAverageSt(boat);
+    const fCount =
+      getFCount(boat);
+
+    const currentSeries =
+      current.count >= 2
+        ? clamp(
+            stSpeedScore(
+              current.average,
+              20
+            ) +
+            stStabilityScore(
+              current.spread,
+              null,
+              5
+            ),
+            0,
+            25
+          )
+        : 0;
+    const recentCourseSt =
+      recentCourse?.averageSt;
+    const recentCourseScore =
+      toNumber(
+        recentCourse?.starts,
+        0
+      ) >= 6
+        ? clamp(
+            stSpeedScore(
+              recentCourseSt,
+              16
+            ) +
+            stStabilityScore(
+              recentCourse?.stRange,
+              recentCourse?.stStdDev,
+              4
+            ),
+            0,
+            20
+          )
+        : 0;
+    const trend =
+      (
+        toNumber(
+          recentCourse?.starts,
+          0
+        ) >= 6 &&
+        toNumber(
+          previousCourse?.starts,
+          0
+        ) >= 6 &&
+        Number.isFinite(
+          Number(recentCourse?.averageSt)
+        ) &&
+        Number.isFinite(
+          Number(previousCourse?.averageSt)
+        )
+      )
+        ? clamp(
+            round(
+              8 +
+              (
+                Number(
+                  previousCourse.averageSt
+                ) -
+                Number(
+                  recentCourse.averageSt
+                )
+              ) * 200
+            ),
+            0,
+            15
+          )
+        : 0;
+    const threeYear =
+      samples >= 12
+        ? clamp(
+            stSpeedScore(
+              allCourse?.averageSt,
+              12
+            ) +
+            stStabilityScore(
+              allCourse?.stRange,
+              allCourse?.stStdDev,
+              3
+            ),
+            0,
+            15
+          )
+        : 0;
+    const nationalAverage =
+      stSpeedScore(
+        officialAverage,
+        10
+      );
+    const flyingRisk =
+      fCount === null
+        ? 0
+        : fCount <= 0
+          ? 5
+          : fCount === 1
+            ? 2
+            : 0;
+    const reliability =
+      samples >= 30
+        ? 10
+        : samples >= 12
+          ? 7
+          : 0;
+    const score = round(clamp(
+      currentSeries +
+      recentCourseScore +
+      trend +
+      threeYear +
+      nationalAverage +
+      flyingRisk +
+      reliability,
+      0,
+      100
+    ));
+    const mappingFormal =
+      hasFormalStartCourseMapping(entries);
+    const isFormal =
+      mappingFormal &&
+      Boolean(history && allCourse) &&
+      samples >= 12;
+    const legacyIndex =
+      calcLegacyStIndex(
+        boat,
+        entries
+      );
+
+    return {
+      boatNo,
+      course,
+      registerNo,
+      score,
+      appliedIndex:
+        isFormal
+          ? score
+          : legacyIndex,
+      grade:
+        courseStructureGrade(score),
+      status:
+        isFormal
+          ? "正式反映"
+          : "暫定・現行ST評価",
+      isFormal,
+      appliedToScore: isFormal,
+      mappingFormal,
+      samples,
+      reliability:
+        samples >= 30
+          ? "high"
+          : samples >= 12
+            ? "medium"
+            : "low",
+      currentStCount:
+        current.count,
+      currentStAverage:
+        current.average,
+      currentStSpread:
+        current.spread,
+      fCount,
+      components: {
+        currentSeries,
+        recentCourse:
+          recentCourseScore,
+        periodTrend: trend,
+        threeYear,
+        nationalAverage,
+        flyingRisk,
+        reliability
+      },
+      history: {
+        all3Years: allCourse,
+        recent1Year: recentCourse,
+        previous2Years:
+          previousCourse
+      },
+      reason: [
+        `今節ST${currentSeries}/25`,
+        `直近1年コース別ST${recentCourseScore}/20`,
+        `期間推移${trend}/15`,
+        `3年コース別ST${threeYear}/15`,
+        `全国平均ST${nationalAverage}/10`,
+        `Fリスク${flyingRisk}/5`,
+        `取得信頼度${reliability}/10`,
+        mappingFormal
+          ? "公式展示進入6艇確定"
+          : "実進入未確定",
+        samples >= 12
+          ? `実進入${course}コース${samples}走`
+          : `実進入${course}コース${samples}走で判定数未達`
+      ].join(" / ")
+    };
+  }
+
+  function calcStIndex(
+    boat,
+    entries,
+    data
+  ) {
+    return buildStFoundationEvaluation(
+      boat,
+      entries,
+      data
+    ).appliedIndex;
   }
 
   function calcExhibitionIndex(boat, entries) {
@@ -1386,9 +1724,18 @@ function getBoatNo(boat) {
     return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
   }
 
-  function calcAttackIndex(boat, entries, venueFeature) {
+  function calcAttackIndex(
+    boat,
+    entries,
+    venueFeature,
+    data
+  ) {
     const boatNo = getBoatNo(boat);
-    const stIndex = calcStIndex(boat, entries);
+    const stIndex = calcStIndex(
+      boat,
+      entries,
+      data
+    );
     const exIndex = calcExhibitionIndex(boat, entries);
     const clsPower = hasClassPower(boat);
 
@@ -1757,7 +2104,11 @@ function getBoatNo(boat) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
     const venueFeature = getVenueFeature(data);
-    const slit = buildSlitAnalysis(sourceEntries, venueFeature);
+    const slit = buildSlitAnalysis(
+      sourceEntries,
+      venueFeature,
+      data
+    );
     const slitByBoat = new Map(
       (slit.ranking || []).map((boat) => [Number(boat.boatNo), boat])
     );
@@ -1963,7 +2314,11 @@ function getBoatNo(boat) {
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
     const mainScenario = raceScenarios?.mainScenario || null;
     const venueFeature = getVenueFeature(data);
-    const slit = buildSlitAnalysis(sourceEntries, venueFeature);
+    const slit = buildSlitAnalysis(
+      sourceEntries,
+      venueFeature,
+      data
+    );
     const slitByBoat = new Map(
       (slit.ranking || []).map((boat) => [Number(boat.boatNo), boat])
     );
@@ -4799,14 +5154,19 @@ function getBoatNo(boat) {
     自艇の基本指数
   =============================== */
 
-  const stIndex = calcStIndex(boat, entries);
+  const stIndex = calcStIndex(
+    boat,
+    entries,
+    data
+  );
   const exhibitionIndex = calcExhibitionIndex(boat, entries);
   const localIndex = calcLocalIndex(boat);
   const turnIndex = calcTurnIndex(boat);
   const attackIndex = calcAttackIndex(
     boat,
     entries,
-    venueFeature
+    venueFeature,
+    data
   );
 
     const weather = getWeather(data);
@@ -4908,27 +5268,27 @@ function getBoatNo(boat) {
   =============================== */
 
   const st1 = boat1
-    ? calcStIndex(boat1, entries)
+    ? calcStIndex(boat1, entries, data)
     : 50;
 
   const st2 = boat2
-    ? calcStIndex(boat2, entries)
+    ? calcStIndex(boat2, entries, data)
     : 50;
 
   const st3 = boat3
-    ? calcStIndex(boat3, entries)
+    ? calcStIndex(boat3, entries, data)
     : 50;
 
   const st4 = boat4
-    ? calcStIndex(boat4, entries)
+    ? calcStIndex(boat4, entries, data)
     : 50;
 
   const st5 = boat5
-    ? calcStIndex(boat5, entries)
+    ? calcStIndex(boat5, entries, data)
     : 50;
 
   const st6 = boat6
-    ? calcStIndex(boat6, entries)
+    ? calcStIndex(boat6, entries, data)
     : 50;
 
   /* ===============================
@@ -5314,7 +5674,11 @@ function getBoatNo(boat) {
     スリットAI
   =============================== */
 
-  function buildSlitAnalysis(entries, venueFeature) {
+  function buildSlitAnalysis(
+    entries,
+    venueFeature,
+    data
+  ) {
     const list = entries.map((boat, index) => {
 
       const boatNo = getBoatNo(boat);
@@ -5333,17 +5697,15 @@ function getBoatNo(boat) {
         boatNo || index + 1
       );
 
-      const stIndex = calcStIndex(boat, entries);
-      const attackIndex = calcAttackIndex(
-        boat,
-        entries,
-        venueFeature
-      );
-
-      const slitScore =
-        (avgSt === null ? 50 : 100 - avgSt * 100) * 0.45 +
-        (exSt === null ? 50 : 100 - exSt * 100) * 0.35 +
-        attackIndex * 0.20;
+      const stTheory =
+        buildStFoundationEvaluation(
+          boat,
+          entries,
+          data
+        );
+      const stIndex =
+        stTheory.appliedIndex;
+      const slitScore = stIndex;
 
       return {
         boatNo,
@@ -5355,7 +5717,7 @@ function getBoatNo(boat) {
         currentStCount: currentSt.count,
         currentStSpread: currentSt.spread,
         stIndex,
-        attackIndex,
+        stTheory,
         slitScore: round(slitScore)
       };
 
@@ -5402,8 +5764,39 @@ function getBoatNo(boat) {
       boat.slitLossDiff = Math.max(0, slowestEdge?.diff || 0);
       boat.comparedBoatNo = fastestEdge?.boatNo || null;
       boat.delayedByBoatNo = slowestEdge?.boatNo || null;
-      boat.slitAlert = boat.slitDiff >= 0.10;
-      boat.slitRisk = boat.slitLossDiff >= 0.10;
+      const formalSlit =
+        hasFormalStartCourseMapping(
+          entries
+        ) &&
+        courseOrder.length === 6 &&
+        courseOrder.every(
+          item => item.exSt !== null
+        );
+      boat.slitLevel =
+        boat.slitDiff >= 0.10
+          ? "明確な攻め警報"
+          : boat.slitDiff >= 0.05
+            ? "攻め優勢候補"
+            : boat.slitLossDiff >= 0.10
+              ? "明確なスリット後手"
+              : boat.slitLossDiff >= 0.05
+                ? "壁・残し不安"
+                : "互角";
+      boat.slitAlert =
+        formalSlit &&
+        boat.slitDiff >= 0.10;
+      boat.slitAdvantage =
+        formalSlit &&
+        boat.slitDiff >= 0.05 &&
+        boat.slitDiff < 0.10;
+      boat.slitRisk =
+        formalSlit &&
+        boat.slitLossDiff >= 0.10;
+      boat.slitConcern =
+        formalSlit &&
+        boat.slitLossDiff >= 0.05 &&
+        boat.slitLossDiff < 0.10;
+      boat.isFormalSlit = formalSlit;
 
       const supportSt =
         boat.currentStCount >= 2
@@ -5421,18 +5814,36 @@ function getBoatNo(boat) {
           boat.currentStCount < 2 ||
           boat.currentStSpread <= 0.05
         );
-      boat.isAttackBoat = boat.slitAlert;
+      boat.isAttackBoat =
+        boat.slitAlert &&
+        boat.stTheory.isFormal &&
+        (
+          boat.stTheory.fCount === null ||
+          boat.stTheory.fCount <= 0 ||
+          boat.currentStCount >= 2
+        );
       boat.isDelayedBoat = boat.slitRisk;
       boat.isWallBoat = !boat.slitRisk && boat.isStableBoat;
-      boat.slitComment = boat.slitAlert
-        ? `隣艇より展示STで${boat.slitDiff.toFixed(2)}速い`
-        : boat.slitRisk
-          ? `隣艇より展示STで${boat.slitLossDiff.toFixed(2)}遅い`
-          : "";
+      boat.slitComment =
+        !formalSlit
+          ? "展示STまたは実進入不足のため暫定"
+          : boat.slitAlert
+            ? `隣艇より展示STで${boat.slitDiff.toFixed(2)}速い`
+            : boat.slitAdvantage
+              ? `隣艇より展示STで${boat.slitDiff.toFixed(2)}速い攻め優勢候補`
+              : boat.slitRisk
+                ? `隣艇より展示STで${boat.slitLossDiff.toFixed(2)}遅い`
+                : boat.slitConcern
+                  ? `隣艇より展示STで${boat.slitLossDiff.toFixed(2)}遅い壁・残し不安`
+                  : "";
     });
 
     const alerts = [...list]
-      .filter((boat) => boat.slitAlert)
+      .filter(
+        (boat) =>
+          boat.slitAlert &&
+          boat.isAttackBoat
+      )
       .sort((a, b) =>
         b.slitDiff - a.slitDiff ||
         b.slitScore - a.slitScore
@@ -5441,6 +5852,21 @@ function getBoatNo(boat) {
     const risks = [...list]
       .filter((boat) => boat.slitRisk)
       .sort((a, b) => b.slitLossDiff - a.slitLossDiff);
+
+    const advantages = [...list]
+      .filter((boat) => boat.slitAdvantage)
+      .sort((a, b) =>
+        b.slitDiff - a.slitDiff ||
+        b.slitScore - a.slitScore
+      );
+
+    const concerns = [...list]
+      .filter((boat) => boat.slitConcern)
+      .sort(
+        (a, b) =>
+          b.slitLossDiff -
+          a.slitLossDiff
+      );
 
     const attackBoat = alerts[0] || null;
     const secondBoat = alerts[1] || null;
@@ -5453,6 +5879,10 @@ function getBoatNo(boat) {
 
       risks,
 
+      advantages,
+
+      concerns,
+
       attackBoat:
         attackBoat
           ? attackBoat.boatNo
@@ -5464,6 +5894,14 @@ function getBoatNo(boat) {
           : null,
 
       threshold: 0.10,
+
+      secondaryThreshold: 0.05,
+
+      isFormal:
+        list.length === 6 &&
+        list.every(
+          boat => boat.isFormalSlit
+        ),
 
       source: "neighbor-exhibition-st"
 
@@ -5833,10 +6271,16 @@ function getBoatNo(boat) {
 
     const venueFeature = getVenueFeature(data);
     const weights = getWeights(data);
+    const stTheory =
+      buildStFoundationEvaluation(
+        boat,
+        entries,
+        data
+      );
 
     const indexes = {
 
-      st: calcStIndex(boat, entries),
+      st: stTheory.appliedIndex,
 
       exhibition: calcExhibitionIndex(
         boat,
@@ -5855,7 +6299,8 @@ function getBoatNo(boat) {
       attack: calcAttackIndex(
         boat,
         entries,
-        venueFeature
+        venueFeature,
+        data
       ),
 
       raceFlow: calcRaceFlowIndex(
@@ -6214,6 +6659,8 @@ roleTags,
 
 courseStructureTheory,
 
+stTheory,
+
 buffs,
 
 debuffs,
@@ -6364,7 +6811,11 @@ function buildRaceScenarios(analyses, data) {
 
   const entries = getRaceEntries(data);
   const venue = getVenueFeature(data);
-  const slit = buildSlitAnalysis(entries, venue);
+  const slit = buildSlitAnalysis(
+    entries,
+    venue,
+    data
+  );
   const doubleTime = buildDoubleTime(entries, list);
   const newSam = buildNewSam(entries, list);
 
@@ -6680,7 +7131,7 @@ function buildRaceScenarios(analyses, data) {
     let adjustment = 0;
     const reasons = [];
 
-    if (attacker?.slitAlert) {
+    if (attacker?.isAttackBoat) {
       if (attacker.isStableBoat) {
         adjustment += 8;
         reasons.push(
@@ -6695,6 +7146,15 @@ function buildRaceScenarios(analyses, data) {
           "平均・今節STの裏付け不足のため表示のみ"
         );
       }
+    } else if (
+      attacker?.slitAdvantage &&
+      attacker.hasStartSupport
+    ) {
+      adjustment += 4;
+      reasons.push(
+        `${attackerNo}号艇が隣艇より展示STで` +
+        `${attacker.slitDiff.toFixed(2)}速い攻め優勢候補（+4）`
+      );
     }
 
     if (attacker?.slitRisk && attacker.hasStartSupport) {
@@ -6703,14 +7163,38 @@ function buildRaceScenarios(analyses, data) {
         `${attackerNo}号艇が隣艇より展示STで` +
         `${attacker.slitLossDiff.toFixed(2)}遅い（-6）`
       );
+    } else if (
+      attacker?.slitConcern &&
+      attacker.hasStartSupport
+    ) {
+      adjustment -= 3;
+      reasons.push(
+        `${attackerNo}号艇が隣艇より展示STで` +
+        `${attacker.slitLossDiff.toFixed(2)}遅く、壁・残し不安（-3）`
+      );
     }
 
     if (wall?.slitRisk && wall.hasStartSupport) {
       adjustment += 3;
       reasons.push(`${wallNo}号艇のスリット遅れ（+3）`);
-    } else if (wall?.slitAlert && wall.hasStartSupport) {
+    } else if (
+      wall?.slitConcern &&
+      wall.hasStartSupport
+    ) {
+      adjustment += 2;
+      reasons.push(`${wallNo}号艇の壁・残し不安（+2）`);
+    } else if (
+      wall?.isAttackBoat &&
+      wall.hasStartSupport
+    ) {
       adjustment -= 3;
       reasons.push(`${wallNo}号艇のスリット先行（-3）`);
+    } else if (
+      wall?.slitAdvantage &&
+      wall.hasStartSupport
+    ) {
+      adjustment -= 2;
+      reasons.push(`${wallNo}号艇のスリット優勢（-2）`);
     }
 
     return {
@@ -9334,6 +9818,37 @@ function buildRaceTrendEvaluation(data) {
 const analyses =
   buildBoatAnalyses(data);
 
+const stSlitTheory = {
+  ranking: analyses
+    .map(
+      boat => boat.stTheory
+    )
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.samples - a.samples ||
+        a.course - b.course
+    ),
+  roles: analyses
+    .map(
+      boat => boat.stTheory
+    )
+    .filter(Boolean),
+  isFormal:
+    analyses.length === 6 &&
+    analyses.every(
+      boat =>
+        boat.stTheory?.isFormal
+    ),
+  sampleThreshold: 12,
+  highReliabilityThreshold: 30,
+  currentSeriesThreshold: 2,
+  appliedWeight: 0.10,
+  source:
+    "ai-core-st-slit-theory-v2"
+};
+
 const courseStructureTheory = {
   ranking: analyses
     .map(
@@ -9543,7 +10058,8 @@ analyses.forEach((boat) => {
 const slit =
       buildSlitAnalysis(
         entries,
-        venueFeature
+        venueFeature,
+        data
       );
 
     const doubleTime =
@@ -9593,6 +10109,8 @@ const slit =
       venueFeature,
 
       analyses,
+
+      stSlitTheory,
 
       courseStructureTheory,
 
@@ -9951,6 +10469,9 @@ return {
         courseStructureRanking:
           aiCore.courseStructureTheory
             ?.ranking || [],
+        stSlitRanking:
+          aiCore.stSlitTheory
+            ?.ranking || [],
         attackRanking: aiCore.attackTheory?.ranking || [],
         wallRanking: aiCore.wallTheory?.ranking || [],
         flowRanking: aiCore.flowTheory?.ranking || [],
@@ -9991,6 +10512,8 @@ return {
       newSam: aiCore.newSam,
 
       attackTheory: aiCore.attackTheory,
+      stSlitTheory:
+        aiCore.stSlitTheory,
       courseStructureTheory:
         aiCore.courseStructureTheory,
       wallTheory: aiCore.wallTheory,
@@ -10156,6 +10679,8 @@ return {
     buildBoatAnalysis,
 
     buildBoatAnalyses,
+
+    buildStFoundationEvaluation,
 
     buildCourseStructureEvaluation,
     

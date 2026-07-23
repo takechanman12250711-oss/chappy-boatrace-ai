@@ -65,6 +65,25 @@ function racerReliability(samples) {
   return "low";
 }
 
+function stStandardDeviation(
+  sum,
+  squaredSum,
+  samples
+) {
+  if (samples < 2) return null;
+
+  const mean = sum / samples;
+  const variance = Math.max(
+    0,
+    squaredSum / samples -
+      mean * mean
+  );
+
+  return Number(
+    Math.sqrt(variance).toFixed(3)
+  );
+}
+
 function createCourseStructurePattern() {
   return {
     totalStarts: 0,
@@ -775,7 +794,10 @@ function createRacerPerformance() {
     wins: 0,
     top3: 0,
     stSum: 0,
+    stSquaredSum: 0,
     stSamples: 0,
+    stMin: null,
+    stMax: null,
     winningMethods: {},
     byBoat: {},
     byCourse: {}
@@ -807,7 +829,23 @@ function addRacerPerformance(
 
   if (Number.isFinite(st)) {
     performance.stSum += st;
+    performance.stSquaredSum +=
+      st * st;
     performance.stSamples += 1;
+    performance.stMin =
+      performance.stMin === null
+        ? st
+        : Math.min(
+            performance.stMin,
+            st
+          );
+    performance.stMax =
+      performance.stMax === null
+        ? st
+        : Math.max(
+            performance.stMax,
+            st
+          );
   }
 
   if (rank === 1) {
@@ -831,7 +869,10 @@ function addRacerPerformance(
         wins: 0,
         top3: 0,
         stSum: 0,
-        stSamples: 0
+        stSquaredSum: 0,
+        stSamples: 0,
+        stMin: null,
+        stMax: null
       };
 
     boatStats.starts += 1;
@@ -841,7 +882,23 @@ function addRacerPerformance(
 
     if (Number.isFinite(st)) {
       boatStats.stSum += st;
+      boatStats.stSquaredSum +=
+        st * st;
       boatStats.stSamples += 1;
+      boatStats.stMin =
+        boatStats.stMin === null
+          ? st
+          : Math.min(
+              boatStats.stMin,
+              st
+            );
+      boatStats.stMax =
+        boatStats.stMax === null
+          ? st
+          : Math.max(
+              boatStats.stMax,
+              st
+            );
     }
   }
 
@@ -859,7 +916,10 @@ function addRacerPerformance(
         wins: 0,
         top3: 0,
         stSum: 0,
+        stSquaredSum: 0,
         stSamples: 0,
+        stMin: null,
+        stMax: null,
         winningMethods: {}
       };
 
@@ -879,7 +939,23 @@ function addRacerPerformance(
 
     if (Number.isFinite(st)) {
       courseStats.stSum += st;
+      courseStats.stSquaredSum +=
+        st * st;
       courseStats.stSamples += 1;
+      courseStats.stMin =
+        courseStats.stMin === null
+          ? st
+          : Math.min(
+              courseStats.stMin,
+              st
+            );
+      courseStats.stMax =
+        courseStats.stMax === null
+          ? st
+          : Math.max(
+              courseStats.stMax,
+              st
+            );
     }
   }
 }
@@ -973,6 +1049,21 @@ function finalizeRacerBoats(
                     item.stSamples
                   ).toFixed(3)
                 )
+              : null,
+          stStdDev:
+            stStandardDeviation(
+              item.stSum,
+              item.stSquaredSum,
+              item.stSamples
+            ),
+          stRange:
+            item.stSamples >= 2
+              ? Number(
+                  (
+                    item.stMax -
+                    item.stMin
+                  ).toFixed(3)
+                )
               : null
         }
       ])
@@ -1016,6 +1107,21 @@ function finalizeRacerCourses(
                   ).toFixed(3)
                 )
               : null,
+          stStdDev:
+            stStandardDeviation(
+              item.stSum,
+              item.stSquaredSum,
+              item.stSamples
+            ),
+          stRange:
+            item.stSamples >= 2
+              ? Number(
+                  (
+                    item.stMax -
+                    item.stMin
+                  ).toFixed(3)
+                )
+              : null,
           winningMethods:
             finalizeCounts(
               item.winningMethods,
@@ -1055,6 +1161,21 @@ function finalizeRacerPerformance(
             (
               source.stSum /
               source.stSamples
+            ).toFixed(3)
+          )
+        : null,
+    stStdDev:
+      stStandardDeviation(
+        source.stSum,
+        source.stSquaredSum,
+        source.stSamples
+      ),
+    stRange:
+      source.stSamples >= 2
+        ? Number(
+            (
+              source.stMax -
+              source.stMin
             ).toFixed(3)
           )
         : null,
@@ -1667,5 +1788,6 @@ module.exports = {
   addCourseStructureRace,
   finalizeCourseStructurePattern,
   createCourseStructureWindows,
-  finalizeCourseStructureWindows
+  finalizeCourseStructureWindows,
+  stStandardDeviation
 };

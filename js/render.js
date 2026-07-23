@@ -44,6 +44,7 @@
 
   const THEORY_LABELS = {
     courseStructure: "🧭 進入・コース構造",
+    stSlit: "⏱ ST・スリット Ver2",
     attack: "🔥 攻め艇",
     wall: "🧱 壁艇",
     flow: "🌊 展開艇",
@@ -3058,6 +3059,68 @@ function getPaperClassName(item) {
                   : "予想点へ新しい点を加えず、従来の枠番評価を使用。"
               ) +
               "前付けを無条件で有利にせず、選手技量・ST・展示・水面・展開を二重加算しない。"
+          });
+        });
+      }
+    }
+
+    {
+      const stTheory =
+        prediction.stSlitTheory ||
+        prediction.aiCore
+          ?.stSlitTheory ||
+        null;
+      const rows = arrayify(
+        stTheory?.ranking ||
+        indexes.stSlitRanking
+      )
+        .filter(Boolean)
+        .slice(0, 2);
+
+      if (!stTheory || !rows.length) {
+        items.push({
+          key: "stSlit",
+          label:
+            THEORY_LABELS.stSlit,
+          no: "",
+          score: "暫定",
+          text:
+            "公式の実進入コース別ST履歴、または展示進入が不足しているため、現在のST評価を維持する。"
+        });
+      } else {
+        rows.forEach(item => {
+          const components =
+            item.components || {};
+          const fText =
+            item.fCount === null ||
+            item.fCount === undefined
+              ? "F情報未取得"
+              : `F${item.fCount}`;
+
+          items.push({
+            key: "stSlit",
+            label:
+              THEORY_LABELS.stSlit,
+            no: item.boatNo || "",
+            score:
+              `${item.score ?? 0}点・` +
+              `${item.grade || "-"}`,
+            text:
+              `${item.boatNo}号艇は展示進入${item.course}コース、${item.status}。` +
+              `内訳は今節ST${components.currentSeries ?? 0}/25、` +
+              `直近1年コース別ST${components.recentCourse ?? 0}/20、` +
+              `期間推移${components.periodTrend ?? 0}/15、` +
+              `3年コース別ST${components.threeYear ?? 0}/15、` +
+              `全国平均ST${components.nationalAverage ?? 0}/10、` +
+              `${fText}の慎重化評価${components.flyingRisk ?? 0}/5、` +
+              `取得信頼度${components.reliability ?? 0}/10。` +
+              `実進入${item.course}コース${item.samples || 0}走。` +
+              (
+                item.isFormal
+                  ? "既存のST10％枠を置き換えて反映。"
+                  : "新しい点は加えず、従来のST評価を維持。"
+              ) +
+              "級別・攻め指数・展示ST差をST基礎点へ二重加算しない。"
           });
         });
       }
