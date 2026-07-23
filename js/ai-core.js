@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.1.0-motor-maintenance-theory";
+  const CORE_VERSION = "ai-core-v4.2.0-wall-theory";
 
   /* ===============================
     基本ユーティリティ
@@ -3537,6 +3537,408 @@ function getBoatNo(boat) {
     };
   }
 
+  function wallTheoryGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function buildWallTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  ) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const attackerNo =
+      Number(
+        raceScenarios?.attacker ??
+        mainScenario?.attacker ??
+        0
+      ) || null;
+    const entryByBoat = new Map(
+      sourceEntries.map((boat) => [getBoatNo(boat), boat])
+    );
+    const courseRows = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        course: getAttackTheoryCourse(
+          boat,
+          getBoatNo(boat)
+        )
+      }))
+      .filter(
+        (item) =>
+          item.boatNo >= 1 &&
+          item.boatNo <= 6 &&
+          item.course >= 1 &&
+          item.course <= 6
+      );
+    const attackerEntry =
+      entryByBoat.get(attackerNo) || null;
+    const attackerCourse = attackerEntry
+      ? getAttackTheoryCourse(attackerEntry, attackerNo)
+      : 0;
+    const wallCourse =
+      attackerCourse >= 2 ? attackerCourse - 1 : null;
+    const wallCandidateNo =
+      wallCourse === null
+        ? null
+        : courseRows.find(
+            (item) => item.course === wallCourse
+          )?.boatNo || null;
+    const blockedBoats = new Set(
+      (
+        mainScenario?.blockedBoats ||
+        raceScenarios?.blockedBoats ||
+        []
+      )
+        .map((boatNo) => Number(boatNo))
+        .filter(Boolean)
+    );
+    const exhibitionTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getExhibitionTime(boat)
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.value - b.value);
+    const lapTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getLapTime(boat)
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.value - b.value);
+    const exhibitionReady = exhibitionTimes.length === 6;
+    const lapReady = lapTimes.length === 6;
+    const venueFeature = getVenueFeature(data);
+    const weather = getWeather(data);
+    const hasSurfaceEvidence = [
+      weather?.windSpeed,
+      weather?.wind,
+      weather?.wind_velocity,
+      weather?.waveHeight,
+      weather?.wave,
+      weather?.wave_height,
+      data?.windSpeed,
+      data?.waveHeight
+    ].some((value) => !isNil(value));
+
+    function rankedScore(rows, boatNo, points) {
+      const rank = rows.findIndex(
+        (item) => item.boatNo === Number(boatNo)
+      );
+      return rank < 0 ? 0 : (points[rank] ?? 0);
+    }
+
+    function compareStart(
+      wallValue,
+      attackValue,
+      maximum
+    ) {
+      if (wallValue === null || attackValue === null) return 0;
+      const lag = wallValue - attackValue;
+
+      if (lag <= 0.01) return maximum;
+      if (lag <= 0.03) return Math.ceil(maximum * 0.7);
+      if (lag <= 0.05) return Math.ceil(maximum * 0.4);
+      return 0;
+    }
+
+    const roles = sourceAnalyses.map((analysis) => {
+      const boatNo = Number(analysis?.boatNo || 0);
+      const entry = entryByBoat.get(boatNo) || {};
+      const course = getAttackTheoryCourse(entry, boatNo);
+      const isAdjacent =
+        Boolean(wallCandidateNo) &&
+        boatNo === wallCandidateNo &&
+        course === wallCourse;
+      const currentSt = getCurrentSeriesSt(entry);
+      const attackerCurrentSt =
+        getCurrentSeriesSt(attackerEntry || {});
+      const avgSt = getOptionalAverageSt(entry);
+      const attackerAvgSt =
+        getOptionalAverageSt(attackerEntry || {});
+      const exhibitionSt =
+        getOptionalExhibitionSt(entry);
+      const attackerExhibitionSt =
+        getOptionalExhibitionSt(attackerEntry || {});
+      const hasExhibitionStComparison =
+        exhibitionSt !== null &&
+        attackerExhibitionSt !== null;
+      const hasCurrentStComparison =
+        currentSt.average !== null &&
+        attackerCurrentSt.average !== null;
+      const hasAverageStComparison =
+        avgSt !== null &&
+        attackerAvgSt !== null;
+      const hasStartEvidence =
+        hasExhibitionStComparison ||
+        hasCurrentStComparison ||
+        hasAverageStComparison;
+      const hasExhibitionEvidence =
+        (
+          getExhibitionTime(entry) > 0 &&
+          getExhibitionTime(attackerEntry || {}) > 0
+        ) ||
+        (
+          getLapTime(entry) > 0 &&
+          getLapTime(attackerEntry || {}) > 0
+        );
+
+      const startComparison = clamp(
+        compareStart(
+          exhibitionSt,
+          attackerExhibitionSt,
+          8
+        ) +
+        compareStart(
+          currentSt.average,
+          attackerCurrentSt.average,
+          7
+        ) +
+        compareStart(
+          avgSt,
+          attackerAvgSt,
+          10
+        ),
+        0,
+        25
+      );
+      let startStability = 0;
+
+      if (currentSt.count >= 2) {
+        if (currentSt.average <= 0.15) {
+          startStability += 8;
+        } else if (currentSt.average <= 0.17) {
+          startStability += 5;
+        } else if (currentSt.average <= 0.19) {
+          startStability += 2;
+        }
+
+        if (
+          currentSt.spread !== null &&
+          currentSt.spread <= 0.04
+        ) {
+          startStability += 4;
+        }
+      }
+
+      if (avgSt !== null) {
+        if (avgSt <= 0.15) {
+          startStability += 12;
+        } else if (avgSt <= 0.16) {
+          startStability += 9;
+        } else if (avgSt <= 0.18) {
+          startStability += 4;
+        }
+      }
+      startStability = clamp(startStability, 0, 15);
+
+      const courseAdjacency = isAdjacent ? 15 : 0;
+      let exhibitionFoot = 0;
+
+      if (exhibitionReady && lapReady) {
+        exhibitionFoot =
+          rankedScore(
+            exhibitionTimes,
+            boatNo,
+            [8, 7, 6, 4, 2, 1]
+          ) +
+          rankedScore(
+            lapTimes,
+            boatNo,
+            [7, 6, 5, 4, 2, 1]
+          );
+      } else if (exhibitionReady) {
+        exhibitionFoot = rankedScore(
+          exhibitionTimes,
+          boatNo,
+          [15, 13, 11, 8, 5, 2]
+        );
+      } else if (lapReady) {
+        exhibitionFoot = rankedScore(
+          lapTimes,
+          boatNo,
+          [15, 13, 11, 8, 5, 2]
+        );
+      }
+      exhibitionFoot = clamp(exhibitionFoot, 0, 15);
+
+      const holdRoad = clamp(
+        Math.round(
+          toNumber(analysis?.roleScores?.hold, 0) * 0.11 +
+          toNumber(analysis?.indexes?.turn, 0) * 0.03 +
+          toNumber(analysis?.roleScores?.road, 0) * 0.05
+        ),
+        0,
+        15
+      );
+      const skillCourse = clamp(
+        Math.round(
+          toNumber(analysis?.indexes?.national, 0) * 0.05 +
+          toNumber(analysis?.indexes?.local, 0) * 0.04 +
+          (course >= 1 && course <= 4 ? 1 : 0)
+        ),
+        0,
+        10
+      );
+      const surfaceAdaptation = hasSurfaceEvidence
+        ? clamp(
+            Math.round(
+              toNumber(analysis?.indexes?.local, 0) * 0.03 +
+              toNumber(venueFeature?.roughWater, 0) * 0.02
+            ),
+            0,
+            5
+          )
+        : 0;
+      const score = Math.round(clamp(
+        startComparison +
+        startStability +
+        courseAdjacency +
+        exhibitionFoot +
+        holdRoad +
+        skillCourse +
+        surfaceAdaptation,
+        0,
+        100
+      ));
+      const grade = wallTheoryGrade(score);
+      const clearStartLag =
+        (
+          hasExhibitionStComparison &&
+          exhibitionSt - attackerExhibitionSt >= 0.06
+        ) ||
+        (
+          hasCurrentStComparison &&
+          currentSt.average - attackerCurrentSt.average >= 0.05
+        ) ||
+        (
+          hasAverageStComparison &&
+          avgSt - attackerAvgSt >= 0.05
+        );
+      const isBlocked = blockedBoats.has(boatNo);
+      const isFormal =
+        Boolean(mainScenario) &&
+        Boolean(attackerNo && attackerNo >= 2) &&
+        isAdjacent &&
+        (hasStartEvidence || hasExhibitionEvidence);
+      const isAdopted =
+        isFormal &&
+        !clearStartLag &&
+        !isBlocked &&
+        score >= 65;
+
+      let status = "参考";
+      if (isAdjacent && !isFormal) {
+        status = "暫定";
+      } else if (isBlocked && isAdjacent) {
+        status = "展開除外";
+      } else if (isAdjacent && clearStartLag) {
+        status = "壁崩れ";
+      } else if (isAdopted) {
+        status = "壁成立";
+      } else if (isFormal && score >= 55) {
+        status = "互角・不安定";
+      } else if (isFormal) {
+        status = "不成立";
+      }
+
+      const reasons = [
+        `攻め艇とのST比較${startComparison}/25`,
+        `ST安定性${startStability}/15`,
+        `展示進入・隣接${courseAdjacency}/15`,
+        `展示直線・一周・足${exhibitionFoot}/15`,
+        `残し・回り足・道中${holdRoad}/15`,
+        `技量・コース適性${skillCourse}/10`,
+        `場・水面・風適応${surfaceAdaptation}/5`
+      ];
+      if (!isAdjacent) reasons.push("攻め艇の内側隣接艇ではない");
+      if (!hasStartEvidence) reasons.push("ST比較の裏付け不足");
+      if (!hasExhibitionEvidence) reasons.push("展示・足の比較不足");
+      if (clearStartLag) reasons.push("攻め艇より明確にSTが遅い");
+      if (isBlocked) reasons.push("最有力展開で飛び候補");
+
+      return {
+        boatNo,
+        playerName:
+          analysis?.playerName || getPlayerName(entry),
+        course,
+        attackerNo,
+        attackerCourse,
+        wallCourse,
+        isAdjacent,
+        score,
+        grade,
+        status,
+        isFormal,
+        isAdopted,
+        isBlocked,
+        clearStartLag,
+        hasStartEvidence,
+        hasExhibitionEvidence,
+        components: {
+          startComparison,
+          startStability,
+          courseAdjacency,
+          exhibitionFoot,
+          holdRoad,
+          skillCourse,
+          surfaceAdaptation
+        },
+        reason: reasons.join(" / ")
+      };
+    });
+    const ranking = [...roles].sort(
+      (a, b) =>
+        Number(b.isAdopted) - Number(a.isAdopted) ||
+        Number(b.isAdjacent) - Number(a.isAdjacent) ||
+        b.score - a.score ||
+        a.course - b.course
+    );
+    const wallCandidate =
+      roles.find((boat) => boat.isAdjacent) || null;
+    const wallBoat =
+      wallCandidate?.isAdopted
+        ? wallCandidate.boatNo
+        : null;
+
+    return {
+      attackerNo,
+      attackerCourse,
+      wallCourse,
+      wallCandidateNo,
+      wallBoat,
+      state:
+        wallCandidate?.status ||
+        (attackerCourse === 1 ? "対象外" : "暫定"),
+      score: wallCandidate?.score ?? null,
+      grade: wallCandidate?.grade || "",
+      scoreAdjustment:
+        wallCandidate?.isAdopted
+          ? -3
+          : wallCandidate?.clearStartLag
+            ? 3
+            : 0,
+      adjustmentApplied: false,
+      isFormal: wallCandidate?.isFormal === true,
+      isProvisional:
+        !wallCandidate || wallCandidate.isFormal !== true,
+      ranking,
+      roles,
+      adoptedBoats: wallBoat ? [wallBoat] : [],
+      scenarioType: mainScenario?.type || "",
+      scenarioLabel: mainScenario?.label || "",
+      source: "ai-core-wall-theory-v1"
+    };
+  }
+
   function calcRaceFlowIndex(boat, entries, venueFeature, data) {
   const boatNo = getBoatNo(boat);
 
@@ -6075,7 +6477,7 @@ if (hasComparison(3, 1)) {
 
   const attacker = Number(mainScenario?.attacker || 0) || null;
 
-  const wallBoat = attacker
+  const legacyWallBoat = attacker
     ? (
         attacker >= 2
           ? attacker - 1
@@ -6114,6 +6516,20 @@ if (hasComparison(3, 1)) {
   const blockedBoats = Array.isArray(mainScenario?.blockedBoats)
     ? [...mainScenario.blockedBoats]
     : [];
+
+  const wallTheory = buildWallTheory(
+    entries,
+    list,
+    data,
+    {
+      mainScenario,
+      attacker,
+      blockedBoats
+    }
+  );
+
+  const wallBoat =
+    Number(wallTheory.wallBoat || 0) || null;
 
   const mainGap = Math.max(
     0,
@@ -6173,6 +6589,19 @@ if (hasComparison(3, 1)) {
         isRoleAligned: boat.isRoleAligned,
         scoreAdjustment: boat.scoreAdjustment
       }))
+    },
+    wall: {
+      attackerNo: wallTheory.attackerNo,
+      attackerCourse: wallTheory.attackerCourse,
+      wallCourse: wallTheory.wallCourse,
+      wallCandidateNo: wallTheory.wallCandidateNo,
+      wallBoat: wallTheory.wallBoat,
+      legacyWallBoat,
+      state: wallTheory.state,
+      score: wallTheory.score,
+      grade: wallTheory.grade,
+      scoreAdjustment: wallTheory.scoreAdjustment,
+      adjustmentApplied: wallTheory.adjustmentApplied
     },
     firstCandidates:
       mainScenario?.outcome?.firstCandidates
@@ -6266,6 +6695,8 @@ if (hasComparison(3, 1)) {
     attacker,
 
     wallBoat,
+
+    wallTheory,
 
     remainers,
 
@@ -8064,6 +8495,24 @@ const raceScenarios =
     data
   );
 
+const wallTheory =
+  raceScenarios.wallTheory ||
+  buildWallTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  );
+
+const wallTheoryByBoat = new Map(
+  wallTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  boat.wallTheory =
+    wallTheoryByBoat.get(Number(boat.boatNo)) || null;
+});
+
 const flowTheory =
   buildFlowTheory(
     entries,
@@ -8222,6 +8671,8 @@ const slit =
       analyses,
 
       attackTheory,
+
+      wallTheory,
 
       flowTheory,
 
@@ -8570,6 +9021,7 @@ return {
         ai: aiCore.ranking,
         aiCore: aiCore.analyses,
         attackRanking: aiCore.attackTheory?.ranking || [],
+        wallRanking: aiCore.wallTheory?.ranking || [],
         flowRanking: aiCore.flowTheory?.ranking || [],
         roadRanking: aiCore.roadTheory?.ranking || [],
         localRanking: aiCore.localTheory?.ranking || [],
@@ -8606,6 +9058,7 @@ return {
       newSam: aiCore.newSam,
 
       attackTheory: aiCore.attackTheory,
+      wallTheory: aiCore.wallTheory,
       flowTheory: aiCore.flowTheory,
       roadTheory: aiCore.roadTheory,
       localTheory: aiCore.localTheory,
@@ -8791,6 +9244,8 @@ return {
     calcAttackIndex,
 
     buildAttackTheory,
+
+    buildWallTheory,
 
     buildFlowTheory,
 
