@@ -1,6 +1,6 @@
 /* =========================================================
   チャッピーボートレースAI
-  ai-core.js 完全版 v3.6.0 Part 1 / 8
+  ai-core.js 完全版 v3.9.0 Part 1 / 8
 
   役割：
   - AI指数計算の中核
@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.8.0-local-theory";
+  const CORE_VERSION = "ai-core-v3.9.0-new-environment-theory";
 
   /* ===============================
     基本ユーティリティ
@@ -746,25 +746,216 @@ function getBoatNo(boat) {
     max: 100
   };
 
-  function isNewEngineMode(data) {
-    const flag =
-      data?.isNewEngine ??
-      data?.newEngine ??
-      data?.raceInfo?.isNewEngine ??
-      data?.raceInfo?.newEngine;
+  const NEW_ENVIRONMENT_UPDATE_DATA = {
+    大村: {
+      engine: {
+        enabled: true,
+        introducedAt: "20250524",
+        memo: "新型エンジン導入"
+      },
+      fuel: {
+        enabled: false,
+        introducedAt: "",
+        memo: ""
+      }
+    },
+    多摩川: {
+      engine: {
+        enabled: true,
+        introducedAt: "",
+        memo: "導入日は未確認"
+      },
+      fuel: {
+        enabled: false,
+        introducedAt: "",
+        memo: ""
+      }
+    }
+  };
+  const NEW_ENVIRONMENT_KEYWORDS =
+    /新エンジン|新型エンジン|新モーター|新燃料/;
 
-    if (flag === true) return true;
+  function normalizeEnvironmentDate(value) {
+    const digits = safeText(value, "").replace(/\D/g, "");
+    return digits.length === 8 ? digits : "";
+  }
 
-    const text = [
+  function environmentDiffDays(startValue, endValue) {
+    const start = normalizeEnvironmentDate(startValue);
+    const end = normalizeEnvironmentDate(endValue);
+
+    if (!start || !end) return null;
+
+    const toUtc = (value) => Date.UTC(
+      Number(value.slice(0, 4)),
+      Number(value.slice(4, 6)) - 1,
+      Number(value.slice(6, 8))
+    );
+    const diff = Math.floor(
+      (toUtc(end) - toUtc(start)) / 86400000
+    );
+
+    return Number.isFinite(diff) ? diff : null;
+  }
+
+  function getNewEnvironmentPeriod(data) {
+    const venueName = getVenueName(data);
+    const configured =
+      NEW_ENVIRONMENT_UPDATE_DATA[venueName] || {};
+    const rawEnvironment =
+      data?.newEnvironment ??
+      data?.raceInfo?.newEnvironment ??
+      {};
+    const raceDate = normalizeEnvironmentDate(
+      data?.date ??
+      data?.raceDate ??
+      data?.raceInfo?.date
+    );
+    const sourceText = [
       data?.engineType,
       data?.motorTerm,
+      data?.fuelType,
       data?.raceInfo?.engineType,
       data?.raceInfo?.motorTerm,
+      data?.raceInfo?.fuelType,
       data?.raceInfo?.memo,
       data?.memo
-    ].map((v) => safeText(v, "")).join(" ");
+    ].map((value) => safeText(value, "")).join(" ");
+    const sourceDetected =
+      NEW_ENVIRONMENT_KEYWORDS.test(sourceText);
 
-    return /新エンジン|新型エンジン|新モーター|新燃料/.test(text);
+    function buildDeployment(type, label, defaults, aliases) {
+      const explicit = rawEnvironment?.[type] || {};
+      const enabledFlag = aliases.flags
+        .map((path) => path())
+        .find((value) => value !== undefined && value !== null);
+      const textDetected = aliases.pattern.test(sourceText);
+      const enabled =
+        explicit.enabled !== undefined
+          ? explicit.enabled === true
+          : enabledFlag !== undefined
+            ? enabledFlag === true
+            : defaults?.enabled === true || textDetected;
+      const introducedAt = normalizeEnvironmentDate(
+        explicit.introducedAt ??
+        explicit.updateDate ??
+        aliases.dates.map((path) => path()).find((value) => !isNil(value)) ??
+        defaults?.introducedAt
+      );
+      const elapsedDays = enabled
+        ? environmentDiffDays(introducedAt, raceDate)
+        : null;
+
+      let phase = "none";
+      let status = "対象外";
+      let isActive = false;
+      let isProvisional = false;
+
+      if (enabled && !introducedAt) {
+        phase = "unknown";
+        status = "導入日不明";
+        isProvisional = true;
+      } else if (enabled && elapsedDays !== null && elapsedDays < 0) {
+        phase = "scheduled";
+        status = "導入前";
+      } else if (enabled && elapsedDays !== null && elapsedDays <= 45) {
+        phase = "early";
+        status = "初期";
+        isActive = true;
+      } else if (enabled && elapsedDays !== null && elapsedDays <= 120) {
+        phase = "middle";
+        status = "中期";
+        isActive = true;
+      } else if (enabled && elapsedDays !== null) {
+        phase = "stable";
+        status = "安定期";
+      } else if (enabled) {
+        phase = "unknown";
+        status = "日付判定不可";
+        isProvisional = true;
+      }
+
+      return {
+        type,
+        label,
+        enabled,
+        introducedAt,
+        elapsedDays,
+        phase,
+        status,
+        isActive,
+        isProvisional,
+        memo: safeText(explicit.memo ?? defaults?.memo, "")
+      };
+    }
+
+    const deployments = [
+      buildDeployment(
+        "engine",
+        "新型エンジン",
+        configured.engine,
+        {
+          flags: [
+            () => data?.isNewEngine,
+            () => data?.newEngine,
+            () => data?.raceInfo?.isNewEngine,
+            () => data?.raceInfo?.newEngine
+          ],
+          dates: [
+            () => data?.engineUpdateDate,
+            () => data?.newEngineDate,
+            () => data?.raceInfo?.engineUpdateDate,
+            () => data?.raceInfo?.newEngineDate
+          ],
+          pattern: /新エンジン|新型エンジン|新モーター/
+        }
+      ),
+      buildDeployment(
+        "fuel",
+        "新燃料",
+        configured.fuel,
+        {
+          flags: [
+            () => data?.isNewFuel,
+            () => data?.newFuel,
+            () => data?.raceInfo?.isNewFuel,
+            () => data?.raceInfo?.newFuel
+          ],
+          dates: [
+            () => data?.fuelUpdateDate,
+            () => data?.newFuelDate,
+            () => data?.raceInfo?.fuelUpdateDate,
+            () => data?.raceInfo?.newFuelDate
+          ],
+          pattern: /新燃料/
+        }
+      )
+    ];
+    const active = deployments.filter((item) => item.isActive);
+    const provisional = deployments.filter((item) => item.isProvisional);
+    const targeted = deployments.filter((item) => item.enabled);
+
+    return {
+      venueName,
+      raceDate,
+      deployments,
+      activeTypes: active.map((item) => item.type),
+      activeLabels: active.map((item) => item.label),
+      isActive: active.length > 0,
+      isProvisional: provisional.length > 0,
+      isTarget: targeted.length > 0,
+      isStable:
+        targeted.length > 0 &&
+        targeted.every((item) =>
+          item.phase === "stable" || item.phase === "scheduled"
+        ),
+      sourceDetected,
+      source: "ai-core-new-environment-period-v1"
+    };
+  }
+
+  function isNewEngineMode(data) {
+    return getNewEnvironmentPeriod(data).isActive;
   }
 
   function getWeights(data) {
@@ -2193,6 +2384,312 @@ function getBoatNo(boat) {
       scenarioType: mainScenario?.type || "",
       scenarioLabel: mainScenario?.label || "",
       source: "ai-core-local-theory-v1"
+    };
+  }
+
+  function newEnvironmentTheoryGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function buildNewEnvironmentTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  ) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const period = getNewEnvironmentPeriod(data);
+    const venueFeature = getVenueFeature(data);
+    const entryByBoat = new Map(
+      sourceEntries.map((boat) => [getBoatNo(boat), boat])
+    );
+    const firstCandidates = new Set(
+      (mainScenario?.outcome?.firstCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const secondCandidates = new Set(
+      (mainScenario?.outcome?.secondCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const thirdCandidates = new Set(
+      (mainScenario?.outcome?.thirdCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const blockedBoats = new Set(
+      (mainScenario?.blockedBoats || raceScenarios?.blockedBoats || [])
+        .map((boatNo) => Number(boatNo))
+        .filter(Boolean)
+    );
+    const exhibitionTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getExhibitionTime(boat)
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.value - b.value);
+    const lapTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getLapTime(boat)
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.value - b.value);
+    const currentStRows = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getCurrentSeriesSt(boat).average
+      }))
+      .filter((item) => item.value !== null)
+      .sort((a, b) => a.value - b.value);
+    const exhibitionStRows = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getOptionalExhibitionSt(boat)
+      }))
+      .filter((item) => item.value !== null)
+      .sort((a, b) => a.value - b.value);
+    const isRoughCondition =
+      getWindSpeed(data) >= 4 ||
+      getWaveHeight(data) >= 4;
+
+    function rankedScore(rows, boatNo, points) {
+      const rank = rows.findIndex((item) => item.boatNo === boatNo);
+      return rank < 0 ? 0 : (points[rank] ?? 0);
+    }
+
+    const rows = sourceAnalyses.map((analysis) => {
+      const boatNo = Number(analysis?.boatNo || 0);
+      const entry = entryByBoat.get(boatNo) || {};
+      const course = getAttackTheoryCourse(entry, boatNo);
+      const currentSt = getCurrentSeriesSt(entry);
+      const results = getThisTermResults(entry);
+      const exhibitionTime = getExhibitionTime(entry);
+      const lapTime = getLapTime(entry);
+      const hasExhibitionEvidence =
+        exhibitionTime > 0 || lapTime > 0;
+      const hasCurrentEvidence =
+        currentSt.count > 0 || results.length > 0;
+      const hasAdaptationEvidence =
+        hasExhibitionEvidence || hasCurrentEvidence;
+      const isFirstCandidate = firstCandidates.has(boatNo);
+      const isSecondCandidate = secondCandidates.has(boatNo);
+      const isThirdCandidate = thirdCandidates.has(boatNo);
+      const isScenarioCandidate =
+        isFirstCandidate || isSecondCandidate || isThirdCandidate;
+      const isBlocked = blockedBoats.has(boatNo);
+
+      let role = "展開外";
+      if (isFirstCandidate) {
+        role = course === 1
+          ? "逃げ"
+          : course === 2
+            ? "差し"
+            : "攻め";
+      } else if (isSecondCandidate) {
+        role = "残し";
+      } else if (isThirdCandidate) {
+        role = "拾い";
+      }
+
+      const exhibitionFoot = clamp(
+        rankedScore(
+          exhibitionTimes,
+          boatNo,
+          [18, 15, 12, 9, 6, 3]
+        ) +
+        rankedScore(
+          lapTimes,
+          boatNo,
+          [12, 10, 8, 6, 4, 2]
+        ),
+        0,
+        30
+      );
+      const startAndSlit = clamp(
+        rankedScore(
+          currentStRows,
+          boatNo,
+          [12, 10, 8, 6, 4, 2]
+        ) +
+        rankedScore(
+          exhibitionStRows,
+          boatNo,
+          [8, 7, 6, 4, 2, 1]
+        ),
+        0,
+        20
+      );
+
+      let currentAndRoad = 0;
+      if (results.length) {
+        const averageFinish = average(results, 3.5);
+        const top3Rate =
+          results.filter((result) => result <= 3).length /
+          results.length;
+        currentAndRoad += clamp(
+          round((4.5 - averageFinish) * 3 + top3Rate * 5),
+          0,
+          12
+        );
+      }
+      if (currentSt.count >= 2 && currentSt.spread !== null) {
+        currentAndRoad +=
+          currentSt.spread <= 0.04 ? 8
+            : currentSt.spread <= 0.07 ? 6
+              : currentSt.spread <= 0.10 ? 4
+                : 2;
+      } else if (currentSt.count === 1) {
+        currentAndRoad += 3;
+      }
+      currentAndRoad = clamp(currentAndRoad, 0, 20);
+
+      const scenarioRole =
+        isFirstCandidate ? 15
+          : isSecondCandidate ? 13
+            : isThirdCandidate ? 11
+              : 0;
+      const playerSkill = clamp(
+        round(toNumber(analysis?.indexes?.national, 0) * 0.10),
+        0,
+        10
+      );
+      const courseVenueScore =
+        course === 1 ? venueFeature.inPower
+          : course === 2 ? venueFeature.sashi
+            : course === 3 ? venueFeature.makuri
+              : course === 4
+                ? Math.max(venueFeature.kado, venueFeature.makuriSashi)
+                : course === 5
+                  ? venueFeature.makuriSashi
+                  : venueFeature.outside;
+      const localWater = clamp(
+        round(
+          toNumber(analysis?.indexes?.local, 0) * 0.03 +
+          courseVenueScore * 0.02 +
+          (isRoughCondition ? venueFeature.roughWater * 0.01 : 0)
+        ),
+        0,
+        5
+      );
+      const score = round(
+        clamp(
+          exhibitionFoot +
+          startAndSlit +
+          currentAndRoad +
+          scenarioRole +
+          playerSkill +
+          localWater,
+          0,
+          100
+        )
+      );
+      const grade = newEnvironmentTheoryGrade(score);
+      const isFormal =
+        period.isActive &&
+        !period.isProvisional &&
+        Boolean(mainScenario) &&
+        hasAdaptationEvidence;
+      const isAdopted =
+        isFormal &&
+        isScenarioCandidate &&
+        !isBlocked &&
+        score >= 65;
+
+      let status = "不成立";
+      if (!period.isTarget) status = "対象外";
+      else if (period.isStable) status = "通常評価";
+      else if (
+        period.isProvisional ||
+        !hasAdaptationEvidence ||
+        !mainScenario
+      ) {
+        status = isScenarioCandidate ? "暫定" : "参考";
+      } else if (isBlocked) status = "展開除外";
+      else if (isAdopted) status = "正式採用";
+      else if (score >= 55) status = "参考";
+
+      const reasons = [
+        `展示・足${exhibitionFoot}/30`,
+        `今節ST・スリット${startAndSlit}/20`,
+        `今節・道中${currentAndRoad}/20`,
+        `展開役割${scenarioRole}/15`,
+        `技量${playerSkill}/10`,
+        `当地・水面${localWater}/5`
+      ];
+      if (period.isProvisional) {
+        reasons.push("導入日不明のため暫定");
+      }
+      if (!hasAdaptationEvidence) {
+        reasons.push("展示または今節実績の裏付け不足");
+      }
+      if (!isScenarioCandidate) {
+        reasons.push("最有力展開の1〜3着候補と不一致");
+      }
+      if (isBlocked) reasons.push("最有力展開で飛び候補");
+
+      return {
+        boatNo,
+        playerName: analysis?.playerName || getPlayerName(entry),
+        course,
+        role,
+        score,
+        grade,
+        status,
+        isFormal,
+        isAdopted,
+        isBlocked,
+        isScenarioCandidate,
+        isFirstCandidate,
+        isSecondCandidate,
+        isThirdCandidate,
+        hasExhibitionEvidence,
+        hasCurrentEvidence,
+        hasAdaptationEvidence,
+        scenarioType: mainScenario?.type || "",
+        scenarioLabel: mainScenario?.label || "",
+        components: {
+          exhibitionFoot,
+          startAndSlit,
+          currentAndRoad,
+          scenarioRole,
+          playerSkill,
+          localWater
+        },
+        reason: reasons.join(" / ")
+      };
+    });
+
+    const ranking = rows.sort(
+      (a, b) =>
+        Number(b.isAdopted) - Number(a.isAdopted) ||
+        b.score - a.score ||
+        a.course - b.course
+    );
+
+    return {
+      ...period,
+      ranking,
+      roles: rows,
+      isFormal:
+        period.isActive &&
+        !period.isProvisional &&
+        Boolean(mainScenario) &&
+        rows.some((boat) => boat.hasAdaptationEvidence),
+      adoptedBoats: ranking
+        .filter((boat) => boat.isAdopted)
+        .map((boat) => boat.boatNo),
+      scenarioType: mainScenario?.type || "",
+      scenarioLabel: mainScenario?.label || "",
+      source: "ai-core-new-environment-theory-v1"
     };
   }
 
@@ -6775,6 +7272,23 @@ analyses.forEach((boat) => {
     localTheoryByBoat.get(Number(boat.boatNo)) || null;
 });
 
+const newEnvironmentTheory =
+  buildNewEnvironmentTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  );
+
+const newEnvironmentTheoryByBoat = new Map(
+  newEnvironmentTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  boat.newEnvironmentTheory =
+    newEnvironmentTheoryByBoat.get(Number(boat.boatNo)) || null;
+});
+
 const slit =
       buildSlitAnalysis(
         entries,
@@ -6836,6 +7350,8 @@ const slit =
       roadTheory,
 
       localTheory,
+
+      newEnvironmentTheory,
 
       raceScenarios,
 
@@ -7174,7 +7690,9 @@ return {
         attackRanking: aiCore.attackTheory?.ranking || [],
         flowRanking: aiCore.flowTheory?.ranking || [],
         roadRanking: aiCore.roadTheory?.ranking || [],
-        localRanking: aiCore.localTheory?.ranking || []
+        localRanking: aiCore.localTheory?.ranking || [],
+        newEnvironmentRanking:
+          aiCore.newEnvironmentTheory?.ranking || []
       },
 
       raceFlow: compatibleRaceFlow,
@@ -7205,6 +7723,7 @@ return {
       flowTheory: aiCore.flowTheory,
       roadTheory: aiCore.roadTheory,
       localTheory: aiCore.localTheory,
+      newEnvironmentTheory: aiCore.newEnvironmentTheory,
 
       comments: aiCore.comments,
 
@@ -7390,6 +7909,10 @@ return {
     buildRoadTheory,
 
     buildLocalTheory,
+
+    getNewEnvironmentPeriod,
+
+    buildNewEnvironmentTheory,
 
     calcRaceFlowIndex,
 
