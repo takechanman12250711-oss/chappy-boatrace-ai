@@ -64,11 +64,17 @@ assert.ok(
         racer.windows?.all3Years?.byCourse || {}
       ).some(course =>
         course.starts >= 30 &&
+        Number.isFinite(
+          Number(course.stStdDev)
+        ) &&
+        Number.isFinite(
+          Number(course.stRange)
+        ) &&
         Array.isArray(course.winningMethods) &&
         course.winningMethods.length > 0
       )
     ),
-  "実進入コース別の使用数・決まり手を生成する"
+  "実進入コース別の使用数・ST安定性・決まり手を生成する"
 );
 
 function courseStats({
