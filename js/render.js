@@ -4241,6 +4241,98 @@ function getPaperClassName(item) {
         "展示タイムと一周タイムがそろった艇がないため、新サムは判定できない。"
       );
     }
+    const waterWeatherTheory =
+      prediction.waterWeatherTheory ||
+      prediction.aiCore?.waterWeatherTheory ||
+      null;
+
+    if (waterWeatherTheory) {
+      const surface = waterWeatherTheory.surface || {};
+      const wind = waterWeatherTheory.wind || {};
+      const conditionText = [
+        wind.label || "風向不明",
+        waterWeatherTheory.windSpeed !== null
+          ? `風速${waterWeatherTheory.windSpeed}m`
+          : "風速不明",
+        waterWeatherTheory.waveHeight !== null
+          ? `波高${waterWeatherTheory.waveHeight}cm`
+          : "波高不明",
+        surface.waterType || "水面種別不明",
+        surface.hasLiveTide
+          ? `潮${surface.tideFlow || surface.tideLevel}`
+          : surface.isTidal
+            ? "現在潮位・潮流なし"
+            : "潮汐影響小"
+      ].join("・");
+      const displayRows =
+        arrayify(waterWeatherTheory.ranking)
+          .filter(item =>
+            item &&
+            (
+              item.isAdopted ||
+              item.status === "暫定" ||
+              item.status === "参考"
+            )
+          )
+          .slice(0, 2);
+
+      if (!displayRows.length) {
+        items.push({
+          key: "waterWeather",
+          label: "🌊 水面・気象適応",
+          no: "",
+          score: waterWeatherTheory.isProvisional ? "暫定" : "成立なし",
+          text:
+            `${conditionText}。` +
+            (
+              waterWeatherTheory.isProvisional
+                ? "実測値または分類根拠が不足するため、正式な適応艇は採用していない。"
+                : "65点以上かつ最有力展開と一致する正式な水面適応艇はいない。"
+            ) +
+            "既存の風・波補正だけを維持し、適応点は印・展開・買い目へ二重加算しない。"
+        });
+      } else {
+        displayRows.forEach(item => {
+          const components = item.components || {};
+          const adoptionText =
+            item.isAdopted
+              ? "65点以上で最有力展開と一致し、正式な水面適応艇として採用。"
+              : item.isBlocked
+                ? "飛び候補のため正式採用しない。"
+                : item.status === "暫定"
+                  ? "風・波・潮または展示の根拠不足により、正式採用しない。"
+                  : "成立点または展開一致条件が未達のため、補足表示のみ。";
+
+          items.push({
+            key: "waterWeather",
+            label: "🌊 水面・気象適応",
+            no: item.boatNo || "",
+            score: `${item.score ?? 0}点・${item.grade || "-"}`,
+            text:
+              `${conditionText}。` +
+              `${item.boatNo}号艇・${item.course}コースは${item.status}` +
+              `（${item.role || "展開外"}）。` +
+              `内訳は風向・風速とコース${components.windCourse ?? 0}/20、` +
+              `波・展示・回り足${components.waveExhibition ?? 0}/20、` +
+              `水面・潮汐${components.surfaceTide ?? 0}/15、` +
+              `展開役割${components.scenarioRole ?? 0}/20、` +
+              `当地・道中${components.localRoad ?? 0}/15、` +
+              `ST・技量${components.stSkill ?? 0}/10。` +
+              `${adoptionText}` +
+              "適応点だけで印・展開・買い目を変更せず、既存の風・波補正へ二重加算しない。"
+          });
+        });
+      }
+    } else {
+      items.push({
+        key: "waterWeather",
+        label: "🌊 水面・気象適応",
+        no: "",
+        score: "判定不可",
+        text: "共通の水面・気象適応データがないため、正式判定できない。"
+      });
+    }
+
     const newEnvironmentTheory =
       prediction.newEnvironmentTheory ||
       prediction.aiCore?.newEnvironmentTheory ||

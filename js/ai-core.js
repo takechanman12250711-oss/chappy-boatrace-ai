@@ -1,6 +1,6 @@
 /* =========================================================
   チャッピーボートレースAI
-  ai-core.js 完全版 v3.9.0 Part 1 / 8
+  ai-core.js 完全版 v4.0.0 Part 1 / 8
 
   役割：
   - AI指数計算の中核
@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.9.0-new-environment-theory";
+  const CORE_VERSION = "ai-core-v4.0.0-water-weather-theory";
 
   /* ===============================
     基本ユーティリティ
@@ -368,6 +368,35 @@ function getBoatNo(boat) {
       data?.waveHeight,
       0
     );
+  }
+
+  function getOptionalWeatherNumber(data, keys) {
+    const weather = getWeather(data);
+    const sources = [weather, data];
+
+    for (const source of sources) {
+      for (const key of keys) {
+        const value = source?.[key];
+        if (isNil(value)) continue;
+
+        const number = toNumber(value, NaN);
+        if (Number.isFinite(number) && number >= 0) return number;
+      }
+    }
+
+    return null;
+  }
+
+  function getWindDirection(data) {
+    const weather = getWeather(data);
+    return safeText(
+      weather.windDirection ??
+      weather.windDir ??
+      weather.wind_direction ??
+      data?.windDirection ??
+      data?.windDir,
+      ""
+    ).trim();
   }
 
   function getWaterTemp(data) {
@@ -2690,6 +2719,356 @@ function getBoatNo(boat) {
       scenarioType: mainScenario?.type || "",
       scenarioLabel: mainScenario?.label || "",
       source: "ai-core-new-environment-theory-v1"
+    };
+  }
+
+  const WATER_SURFACE_TYPES = {
+    桐生: "淡水", 戸田: "淡水", 江戸川: "河川", 平和島: "海水",
+    多摩川: "淡水", 浜名湖: "汽水", 蒲郡: "海水", 常滑: "海水",
+    津: "海水", 三国: "淡水", びわこ: "淡水", 住之江: "淡水",
+    尼崎: "淡水", 鳴門: "海水", 丸亀: "海水", 児島: "海水",
+    宮島: "海水", 徳山: "海水", 下関: "海水", 若松: "海水",
+    芦屋: "淡水", 福岡: "河口", 唐津: "淡水", 大村: "海水"
+  };
+
+  const TIDAL_WATER_TYPES = new Set(["海水", "汽水", "河口", "河川"]);
+
+  function normalizeWindDirection(data) {
+    const raw = getWindDirection(data);
+    const compact = raw.replace(/\s/g, "");
+    const windSpeed = getOptionalWeatherNumber(
+      data,
+      ["windSpeed", "wind", "wind_velocity"]
+    );
+
+    if (windSpeed !== null && windSpeed <= 2) {
+      return {
+        raw,
+        type: "calm",
+        label: "弱風",
+        isKnown: true
+      };
+    }
+
+    if (/向かい風|向い風|向風|headwind/i.test(compact)) {
+      return { raw, type: "head", label: "向かい風", isKnown: true };
+    }
+    if (/追い風|追風|tailwind/i.test(compact)) {
+      return { raw, type: "tail", label: "追い風", isKnown: true };
+    }
+    if (/横風|crosswind/i.test(compact)) {
+      return { raw, type: "cross", label: "横風", isKnown: true };
+    }
+
+    return {
+      raw,
+      type: "unknown",
+      label: raw || "風向不明",
+      isKnown: false
+    };
+  }
+
+  function getWaterSurfaceContext(data) {
+    const weather = getWeather(data);
+    const venueName = getVenueName(data);
+    const waterType = safeText(
+      weather.waterType ??
+      data?.waterType ??
+      data?.venue?.water ??
+      data?.raceInfo?.waterType ??
+      WATER_SURFACE_TYPES[venueName],
+      "不明"
+    );
+    const tideLevel = getOptionalWeatherNumber(
+      data,
+      ["tideLevel", "currentTideLevel", "潮位"]
+    );
+    const tideFlow = safeText(
+      weather.tideFlow ??
+      weather.currentTide ??
+      weather.tidePhase ??
+      weather.tideDirection ??
+      data?.tideFlow ??
+      data?.currentTide ??
+      data?.tidePhase ??
+      data?.tideDirection,
+      ""
+    ).trim();
+    const hasLiveTide = tideLevel !== null || Boolean(tideFlow);
+    const isTidal = TIDAL_WATER_TYPES.has(waterType);
+
+    return {
+      venueName,
+      waterType,
+      isTidal,
+      tideLevel,
+      tideFlow,
+      hasLiveTide
+    };
+  }
+
+  function waterWeatherTheoryGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function buildWaterWeatherTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  ) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const venueFeature = getVenueFeature(data);
+    const wind = normalizeWindDirection(data);
+    const surface = getWaterSurfaceContext(data);
+    const windSpeed = getOptionalWeatherNumber(
+      data,
+      ["windSpeed", "wind", "wind_velocity"]
+    );
+    const waveHeight = getOptionalWeatherNumber(
+      data,
+      ["waveHeight", "wave", "wave_height"]
+    );
+    const entryByBoat = new Map(
+      sourceEntries.map((boat) => [getBoatNo(boat), boat])
+    );
+    const firstCandidates = new Set(
+      (mainScenario?.outcome?.firstCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const secondCandidates = new Set(
+      (mainScenario?.outcome?.secondCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const thirdCandidates = new Set(
+      (mainScenario?.outcome?.thirdCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const blockedBoats = new Set(
+      (mainScenario?.blockedBoats || raceScenarios?.blockedBoats || [])
+        .map((boatNo) => Number(boatNo))
+        .filter(Boolean)
+    );
+    const exhibitionTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getExhibitionTime(boat)
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.value - b.value);
+    const lapTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getLapTime(boat)
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.value - b.value);
+    const hasWeatherEvidence =
+      windSpeed !== null && waveHeight !== null;
+    const tideReady = !surface.isTidal || surface.hasLiveTide;
+    const isProvisional =
+      !hasWeatherEvidence || !wind.isKnown || !tideReady;
+
+    function rankedScore(rows, boatNo, points) {
+      const rank = rows.findIndex((item) => item.boatNo === boatNo);
+      return rank < 0 ? 0 : (points[rank] ?? 0);
+    }
+
+    function windCourseScore(course) {
+      const table = {
+        calm: [20, 18, 16, 14, 12, 10],
+        head: [15, 12, 20, 19, 14, 10],
+        tail: [17, 20, 13, 11, 10, 8],
+        cross: [16, 15, 15, 14, 12, 10]
+      };
+      return table[wind.type]?.[course - 1] ?? 0;
+    }
+
+    const roles = sourceAnalyses.map((analysis) => {
+      const boatNo = Number(analysis?.boatNo || 0);
+      const entry = entryByBoat.get(boatNo) || {};
+      const course = getAttackTheoryCourse(entry, boatNo);
+      const hasExhibitionEvidence =
+        getExhibitionTime(entry) > 0 || getLapTime(entry) > 0;
+      const isFirstCandidate = firstCandidates.has(boatNo);
+      const isSecondCandidate = secondCandidates.has(boatNo);
+      const isThirdCandidate = thirdCandidates.has(boatNo);
+      const isScenarioCandidate =
+        isFirstCandidate || isSecondCandidate || isThirdCandidate;
+      const isBlocked = blockedBoats.has(boatNo);
+
+      let role = "展開外";
+      if (isFirstCandidate) {
+        role = course === 1
+          ? "逃げ"
+          : course === 2
+            ? "差し"
+            : "攻め";
+      } else if (isSecondCandidate) {
+        role = "残し";
+      } else if (isThirdCandidate) {
+        role = "拾い";
+      }
+
+      const windCourse = windCourseScore(course);
+      const waveExhibition = clamp(
+        rankedScore(
+          exhibitionTimes,
+          boatNo,
+          [12, 10, 8, 6, 4, 2]
+        ) +
+        rankedScore(
+          lapTimes,
+          boatNo,
+          [8, 7, 6, 5, 3, 1]
+        ),
+        0,
+        20
+      );
+      const surfaceTide = clamp(
+        (surface.waterType !== "不明"
+          ? round(venueFeature.roughWater * 0.05)
+          : 0) +
+        (surface.hasLiveTide ? 10 : surface.isTidal ? 0 : 10),
+        0,
+        15
+      );
+      const scenarioRole =
+        isFirstCandidate ? 20
+          : isSecondCandidate ? 18
+            : isThirdCandidate ? 16
+              : 0;
+      const localRoad = clamp(
+        round(
+          toNumber(analysis?.indexes?.local, 0) * 0.08 +
+          toNumber(analysis?.indexes?.turn, 0) * 0.07
+        ),
+        0,
+        15
+      );
+      const stSkill = clamp(
+        round(
+          toNumber(analysis?.indexes?.st, 0) * 0.06 +
+          toNumber(analysis?.indexes?.national, 0) * 0.04
+        ),
+        0,
+        10
+      );
+      const score = round(clamp(
+        windCourse +
+        waveExhibition +
+        surfaceTide +
+        scenarioRole +
+        localRoad +
+        stSkill,
+        0,
+        100
+      ));
+      const grade = waterWeatherTheoryGrade(score);
+      const isFormal =
+        !isProvisional &&
+        Boolean(mainScenario) &&
+        hasExhibitionEvidence;
+      const isAdopted =
+        isFormal &&
+        isScenarioCandidate &&
+        !isBlocked &&
+        score >= 65;
+
+      let status = "不成立";
+      if (
+        isProvisional ||
+        !mainScenario ||
+        !hasExhibitionEvidence
+      ) {
+        status = isScenarioCandidate ? "暫定" : "参考";
+      } else if (isBlocked) {
+        status = "展開除外";
+      } else if (isAdopted) {
+        status = "正式採用";
+      } else if (score >= 55) {
+        status = "参考";
+      }
+
+      const reasons = [
+        `風向・風速とコース${windCourse}/20`,
+        `波・展示・回り足${waveExhibition}/20`,
+        `水面・潮汐${surfaceTide}/15`,
+        `展開役割${scenarioRole}/20`,
+        `当地・道中${localRoad}/15`,
+        `ST・技量${stSkill}/10`
+      ];
+      if (!hasWeatherEvidence) reasons.push("風速または波高の実測値不足");
+      if (!wind.isKnown) reasons.push("風向を正確に分類できないため暫定");
+      if (!tideReady) reasons.push("潮汐場の現在潮位・潮流が不足");
+      if (!hasExhibitionEvidence) reasons.push("展示・一周・回り足の裏付け不足");
+      if (!isScenarioCandidate) reasons.push("最有力展開の1〜3着候補と不一致");
+      if (isBlocked) reasons.push("最有力展開で飛び候補");
+
+      return {
+        boatNo,
+        playerName: analysis?.playerName || getPlayerName(entry),
+        course,
+        role,
+        score,
+        grade,
+        status,
+        isFormal,
+        isAdopted,
+        isBlocked,
+        isScenarioCandidate,
+        isFirstCandidate,
+        isSecondCandidate,
+        isThirdCandidate,
+        hasExhibitionEvidence,
+        scenarioType: mainScenario?.type || "",
+        scenarioLabel: mainScenario?.label || "",
+        components: {
+          windCourse,
+          waveExhibition,
+          surfaceTide,
+          scenarioRole,
+          localRoad,
+          stSkill
+        },
+        reason: reasons.join(" / ")
+      };
+    });
+    const ranking = roles.sort(
+      (a, b) =>
+        Number(b.isAdopted) - Number(a.isAdopted) ||
+        b.score - a.score ||
+        a.course - b.course
+    );
+
+    return {
+      venueName: surface.venueName,
+      wind,
+      windSpeed,
+      waveHeight,
+      surface,
+      isProvisional,
+      isFormal:
+        !isProvisional &&
+        Boolean(mainScenario) &&
+        roles.some((boat) => boat.hasExhibitionEvidence),
+      ranking,
+      roles,
+      adoptedBoats: ranking
+        .filter((boat) => boat.isAdopted)
+        .map((boat) => boat.boatNo),
+      scenarioType: mainScenario?.type || "",
+      scenarioLabel: mainScenario?.label || "",
+      source: "ai-core-water-weather-theory-v1"
     };
   }
 
@@ -7289,6 +7668,23 @@ analyses.forEach((boat) => {
     newEnvironmentTheoryByBoat.get(Number(boat.boatNo)) || null;
 });
 
+const waterWeatherTheory =
+  buildWaterWeatherTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  );
+
+const waterWeatherTheoryByBoat = new Map(
+  waterWeatherTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  boat.waterWeatherTheory =
+    waterWeatherTheoryByBoat.get(Number(boat.boatNo)) || null;
+});
+
 const slit =
       buildSlitAnalysis(
         entries,
@@ -7352,6 +7748,8 @@ const slit =
       localTheory,
 
       newEnvironmentTheory,
+
+      waterWeatherTheory,
 
       raceScenarios,
 
@@ -7692,7 +8090,9 @@ return {
         roadRanking: aiCore.roadTheory?.ranking || [],
         localRanking: aiCore.localTheory?.ranking || [],
         newEnvironmentRanking:
-          aiCore.newEnvironmentTheory?.ranking || []
+          aiCore.newEnvironmentTheory?.ranking || [],
+        waterWeatherRanking:
+          aiCore.waterWeatherTheory?.ranking || []
       },
 
       raceFlow: compatibleRaceFlow,
@@ -7724,6 +8124,7 @@ return {
       roadTheory: aiCore.roadTheory,
       localTheory: aiCore.localTheory,
       newEnvironmentTheory: aiCore.newEnvironmentTheory,
+      waterWeatherTheory: aiCore.waterWeatherTheory,
 
       comments: aiCore.comments,
 
@@ -7913,6 +8314,8 @@ return {
     getNewEnvironmentPeriod,
 
     buildNewEnvironmentTheory,
+
+    buildWaterWeatherTheory,
 
     calcRaceFlowIndex,
 
