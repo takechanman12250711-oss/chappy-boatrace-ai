@@ -44,6 +44,7 @@
 
   const THEORY_LABELS = {
     attack: "🔥 攻め艇",
+    wall: "🧱 壁艇",
     flow: "🌊 展開艇",
     road: "⚡ 道中艇",
     michu: "⚡ 道中艇",
@@ -3062,6 +3063,65 @@ function getPaperClassName(item) {
               evidence +
               reflection
           });
+        });
+      }
+    }
+    {
+      const wallTheory =
+        prediction.wallTheory ||
+        prediction.aiCore?.wallTheory ||
+        null;
+      const wallCandidate =
+        arrayify(wallTheory?.roles)
+          .find((item) => item?.isAdjacent) ||
+        null;
+
+      if (!wallTheory || !wallCandidate) {
+        items.push({
+          key: "wall",
+          label: THEORY_LABELS.wall,
+          no: "",
+          score:
+            wallTheory?.state === "対象外"
+              ? "対象外"
+              : "暫定",
+          text:
+            wallTheory?.state === "対象外"
+              ? "最有力展開が1号艇逃げのため、内側隣接の壁艇は設定しない。"
+              : "攻め艇または展示進入の隣接関係を確定できないため、壁艇は正式採用しない。"
+        });
+      } else {
+        const components = wallCandidate.components || {};
+        const reflection =
+          wallCandidate.isAdopted
+            ? "65点以上で実際の進入・STまたは展示の裏付けがそろい、正式な壁艇として相手候補へ接続。"
+            : wallCandidate.status === "壁崩れ"
+              ? "攻め艇より明確にSTが遅く、壁崩れ候補として判定。壁艇として相手候補へ接続しない。"
+              : wallCandidate.status === "互角・不安定"
+                ? "壁成立点が65点未満のため、互角・不安定として正式採用しない。"
+                : wallCandidate.status === "展開除外"
+                  ? "最有力展開の飛び候補に該当するため、正式採用しない。"
+                  : "進入・ST・展示の根拠が不足するため、暫定表示に止める。";
+
+        items.push({
+          key: "wall",
+          label: THEORY_LABELS.wall,
+          no: wallCandidate.boatNo || "",
+          score:
+            `${wallCandidate.score ?? 0}点・` +
+            `${wallCandidate.grade || "-"}`,
+          text:
+            `${wallCandidate.boatNo}号艇・${wallCandidate.course}コースは` +
+            `${wallCandidate.status}。攻め艇は${wallTheory.attackerNo || "-"}号艇。` +
+            `内訳は攻め艇とのST比較${components.startComparison ?? 0}/25、` +
+            `ST安定性${components.startStability ?? 0}/15、` +
+            `展示進入・隣接${components.courseAdjacency ?? 0}/15、` +
+            `展示直線・一周・足${components.exhibitionFoot ?? 0}/15、` +
+            `残し・回り足・道中${components.holdRoad ?? 0}/15、` +
+            `技量・コース適性${components.skillCourse ?? 0}/10、` +
+            `場・水面・風適応${components.surfaceAdaptation ?? 0}/5。` +
+            reflection +
+            "既存の壁補正は最大±3点の範囲を維持し、壁成立点を重ねて加算しない。"
         });
       }
     }
