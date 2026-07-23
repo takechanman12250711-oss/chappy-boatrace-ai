@@ -5,10 +5,13 @@
   "use strict";
 
   const STATS_URL =
-    "/data/stats/race-patterns.json";
+    "/data/stats/race-patterns.json?v=20260723-skill1";
 
   const VENUE_RACE_STATS_URL =
     "/data/stats/venue-race-patterns.json";
+
+  const RACER_SKILL_STATS_URL =
+    "/data/stats/racer-skill-patterns.json?v=20260723-skill1";
 
   const MIN_VENUE_SAMPLES = 30;
   const MIN_RACER_SAMPLES = 12;
@@ -124,13 +127,46 @@
 
     loadingPromise = Promise.all([
       fetchJson(STATS_URL),
-      fetchJson(VENUE_RACE_STATS_URL)
+      fetchJson(VENUE_RACE_STATS_URL),
+      fetchJson(RACER_SKILL_STATS_URL)
     ])
-      .then(([data, venueRaceData]) => {
+      .then(([
+        data,
+        venueRaceData,
+        racerSkillData
+      ]) => {
+        if (
+          racerSkillData?.source !==
+            "boatrace-official" ||
+          !racerSkillData?.racers
+        ) {
+          throw new Error(
+            "選手技量履歴の形式が正しくありません"
+          );
+        }
+
+        const racers = Object.fromEntries(
+          Object.entries(
+            data.racers || {}
+          ).map(([registerNo, racer]) => [
+            registerNo,
+            {
+              ...racer,
+              skillHistory:
+                racerSkillData.racers[
+                  registerNo
+                ] || null
+            }
+          ])
+        );
+
         stats = validateStats({
           ...data,
+          racers,
           analysisWindow:
-            venueRaceData.analysisWindow || null,
+            racerSkillData.analysisWindow ||
+            venueRaceData.analysisWindow ||
+            null,
           byVenueRace:
             venueRaceData.byVenueRace || {}
         });

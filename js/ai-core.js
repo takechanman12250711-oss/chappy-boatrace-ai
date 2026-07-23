@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.2.0-wall-theory";
+  const CORE_VERSION = "ai-core-v4.3.0-racer-skill-theory";
 
   /* ===============================
     基本ユーティリティ
@@ -3069,6 +3069,551 @@ function getBoatNo(boat) {
       scenarioType: mainScenario?.type || "",
       scenarioLabel: mainScenario?.label || "",
       source: "ai-core-water-weather-theory-v1"
+    };
+  }
+
+  function racerSkillTheoryGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function getRacerRegisterNo(boat) {
+    const candidates = [
+      boat?.registerNo,
+      boat?.registrationNo,
+      boat?.racerNo,
+      boat?.playerNo,
+      boat?.racer?.registerNo,
+      boat?.raw?.registerNo
+    ];
+
+    for (const value of candidates) {
+      const text = String(value ?? "").trim();
+      if (/^\d{4}$/.test(text)) return text;
+    }
+
+    return "";
+  }
+
+  function getHistoryMethodRate(
+    courseStats,
+    methodNames
+  ) {
+    const names = new Set(
+      (Array.isArray(methodNames) ? methodNames : [])
+        .map((name) => String(name || "").trim())
+        .filter(Boolean)
+    );
+
+    return (courseStats?.winningMethods || [])
+      .filter((item) => names.has(String(item?.key || "")))
+      .reduce(
+        (sum, item) =>
+          sum + toNumber(item?.rate, 0),
+        0
+      );
+  }
+
+  function getRacerSkillRole(
+    mainScenario,
+    boatNo
+  ) {
+    const firstCandidates = new Set(
+      (mainScenario?.outcome?.firstCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const secondCandidates = new Set(
+      (mainScenario?.outcome?.secondCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const thirdCandidates = new Set(
+      (mainScenario?.outcome?.thirdCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+
+    if (firstCandidates.has(boatNo)) {
+      const type = String(mainScenario?.type || "");
+      if (type === "escape") {
+        return {
+          role: "逃げ",
+          expectedMethods: ["逃げ"],
+          isScenarioCandidate: true,
+          isFirstCandidate: true
+        };
+      }
+      if (type === "sashi") {
+        return {
+          role: "差し",
+          expectedMethods: ["差し"],
+          isScenarioCandidate: true,
+          isFirstCandidate: true
+        };
+      }
+      if (
+        type === "threeAttack" ||
+        type === "fourAttack"
+      ) {
+        return {
+          role: "攻め",
+          expectedMethods: ["まくり", "まくり差し"],
+          isScenarioCandidate: true,
+          isFirstCandidate: true
+        };
+      }
+    }
+
+    if (secondCandidates.has(boatNo)) {
+      return {
+        role: "残し",
+        expectedMethods: [],
+        isScenarioCandidate: true,
+        isSecondCandidate: true
+      };
+    }
+
+    if (thirdCandidates.has(boatNo)) {
+      return {
+        role: "拾い",
+        expectedMethods: [],
+        isScenarioCandidate: true,
+        isThirdCandidate: true
+      };
+    }
+
+    return {
+      role: "展開外",
+      expectedMethods: [],
+      isScenarioCandidate: false
+    };
+  }
+
+  function buildRacerSkillTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  ) {
+    const sourceEntries =
+      Array.isArray(entries) ? entries : [];
+    const sourceAnalyses =
+      Array.isArray(analyses) ? analyses : [];
+    const mainScenario =
+      raceScenarios?.mainScenario || null;
+    const entryByBoat = new Map(
+      sourceEntries.map((boat) => [
+        getBoatNo(boat),
+        boat
+      ])
+    );
+    const historyRacers = new Map(
+      (
+        data?.historyContext?.racers || []
+      )
+        .map((racer) => [
+          String(racer?.registerNo || ""),
+          racer
+        ])
+        .filter(([registerNo]) =>
+          /^\d{4}$/.test(registerNo)
+        )
+    );
+    const blockedBoats = new Set(
+      (
+        mainScenario?.blockedBoats ||
+        raceScenarios?.blockedBoats ||
+        []
+      )
+        .map((boatNo) => Number(boatNo))
+        .filter(Boolean)
+    );
+
+    function coursePerformanceScore(stats) {
+      if (!stats) return 0;
+      return clamp(
+        round(
+          toNumber(stats.winRate, 0) * 0.22 +
+          toNumber(stats.top3Rate, 0) * 0.12
+        ),
+        0,
+        25
+      );
+    }
+
+    function startScore(stats) {
+      const st = isNil(stats?.averageSt)
+        ? null
+        : toNumber(stats.averageSt, null);
+
+      if (st === null) return 0;
+      if (st <= 0.12) return 15;
+      if (st <= 0.14) return 13;
+      if (st <= 0.16) return 10;
+      if (st <= 0.18) return 7;
+      if (st <= 0.20) return 4;
+      return 2;
+    }
+
+    function trendScore(recent, previous) {
+      const recentSamples =
+        toNumber(recent?.starts, 0);
+      const previousSamples =
+        toNumber(previous?.starts, 0);
+
+      if (
+        recentSamples < 6 ||
+        previousSamples < 6
+      ) {
+        return 0;
+      }
+
+      const recentValue =
+        toNumber(recent?.winRate, 0) * 0.45 +
+        toNumber(recent?.top3Rate, 0) * 0.55;
+      const previousValue =
+        toNumber(previous?.winRate, 0) * 0.45 +
+        toNumber(previous?.top3Rate, 0) * 0.55;
+
+      return clamp(
+        round(
+          8 +
+          (recentValue - previousValue) * 0.25
+        ),
+        0,
+        15
+      );
+    }
+
+    function classNationalScore(entry) {
+      const className =
+        getClassName(entry).toUpperCase();
+      const classPoints =
+        className.includes("A1") ? 7
+          : className.includes("A2") ? 5
+            : className.includes("B1") ? 3
+              : className.includes("B2") ? 1
+                : 0;
+      const nationalWinRate =
+        getNationalWinRate(entry);
+      const nationalPoints = clamp(
+        round(
+          (nationalWinRate - 3) * 1.6
+        ),
+        0,
+        8
+      );
+
+      return clamp(
+        classPoints + nationalPoints,
+        0,
+        15
+      );
+    }
+
+    const roles = sourceAnalyses.map((analysis) => {
+      const boatNo =
+        Number(analysis?.boatNo || 0);
+      const entry =
+        entryByBoat.get(boatNo) || {};
+      const course =
+        getAttackTheoryCourse(
+          entry,
+          boatNo
+        );
+      const registerNo =
+        getRacerRegisterNo(entry);
+      const history =
+        historyRacers.get(registerNo) || null;
+      const windows =
+        history?.skillHistory?.windows ||
+        history?.windows ||
+        {};
+      const allCourse =
+        windows.all3Years?.byCourse?.[
+          String(course)
+        ] ||
+        history?.byCourse?.[
+          String(course)
+        ] ||
+        null;
+      const recentCourse =
+        windows.recent1Year?.byCourse?.[
+          String(course)
+        ] || null;
+      const previousCourse =
+        windows.previous2Years?.byCourse?.[
+          String(course)
+        ] || null;
+      const samples =
+        toNumber(allCourse?.starts, 0);
+      const roleInfo =
+        getRacerSkillRole(
+          mainScenario,
+          boatNo
+        );
+      const isBlocked =
+        blockedBoats.has(boatNo);
+
+      const coursePerformance =
+        coursePerformanceScore(allCourse);
+      const courseStart =
+        startScore(allCourse);
+
+      let methodFit = 0;
+      let methodLabel = "戦法根拠不足";
+
+      if (roleInfo.expectedMethods.length) {
+        const methodRate =
+          getHistoryMethodRate(
+            allCourse,
+            roleInfo.expectedMethods
+          );
+        const methodWins =
+          (allCourse?.winningMethods || [])
+            .filter((item) =>
+              roleInfo.expectedMethods.includes(
+                String(item?.key || "")
+              )
+            )
+            .reduce(
+              (sum, item) =>
+                sum + toNumber(item?.count, 0),
+              0
+            );
+
+        if (methodWins >= 3) {
+          methodFit = clamp(
+            round(methodRate * 0.20),
+            0,
+            20
+          );
+          methodLabel =
+            `${roleInfo.expectedMethods.join("・")} ${round(methodRate)}%`;
+        }
+      } else {
+        const methods =
+          allCourse?.winningMethods || [];
+        const methodWins = methods.reduce(
+          (sum, item) =>
+            sum + toNumber(item?.count, 0),
+          0
+        );
+        const usefulMethods = methods.filter(
+          (item) =>
+            toNumber(item?.count, 0) >= 2 &&
+            toNumber(item?.rate, 0) >= 15
+        );
+
+        if (methodWins >= 5) {
+          methodFit = clamp(
+            6 +
+            usefulMethods.length * 3 +
+            Math.min(5, methodWins * 0.25),
+            0,
+            20
+          );
+          methodLabel =
+            usefulMethods.length >= 2
+              ? "複数戦法の実績あり"
+              : safeText(
+                  methods[0]?.key,
+                  "実績戦法あり"
+                );
+        }
+      }
+
+      const recentTrend =
+        trendScore(
+          recentCourse,
+          previousCourse
+        );
+      const classNational =
+        classNationalScore(entry);
+      const currentResults =
+        getThisTermResults(entry);
+      const seriesRoad =
+        currentResults.length
+          ? clamp(
+              round(
+                (
+                  4.5 -
+                  average(
+                    currentResults,
+                    3.5
+                  )
+                ) * 1.5 +
+                (
+                  currentResults.filter(
+                    (rank) => rank <= 3
+                  ).length /
+                  currentResults.length
+                ) * 3
+              ),
+              0,
+              5
+            )
+          : 0;
+      const scenarioRole =
+        roleInfo.isFirstCandidate ? 5
+          : roleInfo.isSecondCandidate ? 4
+            : roleInfo.isThirdCandidate ? 3
+              : 0;
+      const score = round(clamp(
+        coursePerformance +
+        courseStart +
+        methodFit +
+        recentTrend +
+        classNational +
+        seriesRoad +
+        scenarioRole,
+        0,
+        100
+      ));
+      const grade =
+        racerSkillTheoryGrade(score);
+      const hasCourseHistory =
+        Boolean(history && allCourse);
+      const isFormal =
+        Boolean(mainScenario) &&
+        hasCourseHistory &&
+        samples >= 12;
+      const isHighReliability =
+        samples >= 30;
+      const isAdopted =
+        isFormal &&
+        roleInfo.isScenarioCandidate &&
+        !isBlocked &&
+        score >= 65;
+
+      let status = "参考";
+      if (!hasCourseHistory || samples < 12) {
+        status = "暫定";
+      } else if (isBlocked) {
+        status = "展開除外";
+      } else if (isAdopted) {
+        status = "正式採用";
+      } else if (score >= 55) {
+        status = "標準・参考";
+      } else {
+        status = "適性不足・根拠不足";
+      }
+
+      const reasons = [
+        `現在コース1着・3連率${coursePerformance}/25`,
+        `コース別ST・安定性${courseStart}/15`,
+        `得意戦法一致${methodFit}/20`,
+        `直近1年・過去2年推移${recentTrend}/15`,
+        `級別・全国勝率${classNational}/15`,
+        `今節着順・道中${seriesRoad}/5`,
+        `最有力展開役割${scenarioRole}/5`
+      ];
+      if (!registerNo) {
+        reasons.push("登録番号未取得");
+      }
+      if (!hasCourseHistory) {
+        reasons.push("公式の実進入コース別履歴なし");
+      } else if (samples < 12) {
+        reasons.push(`実進入${course}コース${samples}走で判定数未達`);
+      } else if (!isHighReliability) {
+        reasons.push(`実進入${course}コース${samples}走で中信頼`);
+      }
+      if (!recentTrend) {
+        reasons.push("期間別推移の必要使用数未達");
+      }
+      if (!methodFit) {
+        reasons.push("決まり手の件数・割合不足");
+      }
+      if (!roleInfo.isScenarioCandidate) {
+        reasons.push("最有力展開の1〜3着候補と不一致");
+      }
+      if (isBlocked) {
+        reasons.push("最有力展開で飛び候補");
+      }
+
+      return {
+        boatNo,
+        playerName:
+          analysis?.playerName ||
+          getPlayerName(entry),
+        registerNo,
+        course,
+        role: roleInfo.role,
+        methodLabel,
+        samples,
+        reliability:
+          isHighReliability
+            ? "high"
+            : samples >= 12
+              ? "medium"
+              : "low",
+        score,
+        grade,
+        status,
+        isFormal,
+        isAdopted,
+        isBlocked,
+        isScenarioCandidate:
+          roleInfo.isScenarioCandidate,
+        isFirstCandidate:
+          roleInfo.isFirstCandidate === true,
+        isSecondCandidate:
+          roleInfo.isSecondCandidate === true,
+        isThirdCandidate:
+          roleInfo.isThirdCandidate === true,
+        appliedToScore: false,
+        courseHistory: {
+          all3Years: allCourse,
+          recent1Year: recentCourse,
+          previous2Years: previousCourse
+        },
+        components: {
+          coursePerformance,
+          courseStart,
+          methodFit,
+          recentTrend,
+          classNational,
+          seriesRoad,
+          scenarioRole
+        },
+        reason: reasons.join(" / ")
+      };
+    });
+    const ranking = [...roles].sort(
+      (a, b) =>
+        Number(b.isAdopted) -
+          Number(a.isAdopted) ||
+        b.score - a.score ||
+        b.samples - a.samples ||
+        a.course - b.course
+    );
+
+    return {
+      ranking,
+      roles,
+      isFormal:
+        Boolean(mainScenario) &&
+        roles.some((boat) => boat.isFormal),
+      isProvisional:
+        !mainScenario ||
+        !roles.some((boat) => boat.isFormal),
+      adoptedBoats: ranking
+        .filter((boat) => boat.isAdopted)
+        .map((boat) => boat.boatNo),
+      scenarioType:
+        mainScenario?.type || "",
+      scenarioLabel:
+        mainScenario?.label || "",
+      sampleThreshold: 12,
+      highReliabilityThreshold: 30,
+      skillWeightLimit: 0.10,
+      appliedToScore: false,
+      source:
+        "ai-core-racer-skill-theory-v1"
     };
   }
 
@@ -8599,6 +9144,38 @@ analyses.forEach((boat) => {
     waterWeatherTheoryByBoat.get(Number(boat.boatNo)) || null;
 });
 
+const racerSkillTheory =
+  buildRacerSkillTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  );
+
+const racerSkillTheoryByBoat = new Map(
+  racerSkillTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  const skillTheory =
+    racerSkillTheoryByBoat.get(Number(boat.boatNo)) || null;
+
+  boat.racerSkillTheory = skillTheory;
+  boat.roleEvidence = {
+    ...(boat.roleEvidence || {}),
+    racerSkill:
+      skillTheory?.isAdopted
+        ? {
+            score: skillTheory.score,
+            grade: skillTheory.grade,
+            role: skillTheory.role,
+            methodLabel: skillTheory.methodLabel,
+            samples: skillTheory.samples
+          }
+        : null
+  };
+});
+
 const motorMaintenanceTheory =
   buildMotorMaintenanceTheory(
     entries,
@@ -8683,6 +9260,8 @@ const slit =
       newEnvironmentTheory,
 
       waterWeatherTheory,
+
+      racerSkillTheory,
 
       motorMaintenanceTheory,
 
@@ -9029,6 +9608,8 @@ return {
           aiCore.newEnvironmentTheory?.ranking || [],
         waterWeatherRanking:
           aiCore.waterWeatherTheory?.ranking || [],
+        racerSkillRanking:
+          aiCore.racerSkillTheory?.ranking || [],
         motorMaintenanceRanking:
           aiCore.motorMaintenanceTheory?.ranking || []
       },
@@ -9064,6 +9645,7 @@ return {
       localTheory: aiCore.localTheory,
       newEnvironmentTheory: aiCore.newEnvironmentTheory,
       waterWeatherTheory: aiCore.waterWeatherTheory,
+      racerSkillTheory: aiCore.racerSkillTheory,
       motorMaintenanceTheory: aiCore.motorMaintenanceTheory,
 
       comments: aiCore.comments,
@@ -9258,6 +9840,8 @@ return {
     buildNewEnvironmentTheory,
 
     buildWaterWeatherTheory,
+
+    buildRacerSkillTheory,
 
     buildMotorMaintenanceTheory,
 

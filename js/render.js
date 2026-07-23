@@ -49,6 +49,7 @@
     road: "⚡ 道中艇",
     michu: "⚡ 道中艇",
     local: "🏠 当地巧者",
+    racerSkill: "🧭 選手技量・戦法適性",
     slit: "⏱ スリット",
     doubleTime: "🏁 ダブルタイム",
     shinsam: "📈 新サム",
@@ -3979,6 +3980,81 @@ function getPaperClassName(item) {
             });
           }
         );
+      }
+    }
+
+    {
+      const racerSkillTheory =
+        prediction.racerSkillTheory ||
+        prediction.aiCore?.racerSkillTheory ||
+        null;
+      const displayRows =
+        arrayify(racerSkillTheory?.ranking)
+          .filter(item =>
+            item &&
+            (
+              item.isAdopted ||
+              item.status === "暫定" ||
+              item.status === "標準・参考"
+            )
+          )
+          .slice(0, 2);
+
+      if (!racerSkillTheory || !displayRows.length) {
+        items.push({
+          key: "racerSkill",
+          label: THEORY_LABELS.racerSkill,
+          no: "",
+          score:
+            racerSkillTheory?.isProvisional
+              ? "暫定"
+              : "成立なし",
+          text:
+            racerSkillTheory
+              ? "公式の実進入コース別履歴が12走未満、または65点以上で最有力展開と一致する艇がないため、正式な技量評価は採用していない。級別だけで印を上げず、B級だけで消さない。"
+              : "共通の選手技量・戦法適性データがないため、正式判定できない。"
+        });
+      } else {
+        displayRows.forEach(item => {
+          const components =
+            item.components || {};
+          const adoptionText =
+            item.isAdopted
+              ? "65点以上・実進入12走以上・最有力展開一致により、正式な技量評価として展開役割の根拠へ接続。"
+              : item.isBlocked
+                ? "飛び候補のため正式採用しない。"
+                : item.status === "暫定"
+                  ? `実進入${item.course}コース${item.samples || 0}走で必要使用数に届かず、推測表示に止める。`
+                  : "成立点または展開一致条件が未達のため、補足表示のみ。";
+          const reliabilityText =
+            item.reliability === "high"
+              ? "30走以上・高信頼"
+              : item.reliability === "medium"
+                ? "12走以上・中信頼"
+                : "12走未満・低信頼";
+
+          items.push({
+            key: "racerSkill",
+            label: THEORY_LABELS.racerSkill,
+            no: item.boatNo || "",
+            score:
+              `${item.score ?? 0}点・` +
+              `${item.grade || "-"}`,
+            text:
+              `${item.boatNo}号艇・実進入${item.course}コースは${item.status}` +
+              `（${item.role || "展開外"}・${reliabilityText}）。` +
+              `内訳は現在コース1着率・3連率${components.coursePerformance ?? 0}/25、` +
+              `コース別ST・安定性${components.courseStart ?? 0}/15、` +
+              `得意戦法一致${components.methodFit ?? 0}/20、` +
+              `直近1年・過去2年推移${components.recentTrend ?? 0}/15、` +
+              `級別・全国勝率${components.classNational ?? 0}/15、` +
+              `今節着順・道中${components.seriesRoad ?? 0}/5、` +
+              `最有力展開役割${components.scenarioRole ?? 0}/5。` +
+              `戦法根拠は${item.methodLabel || "不足"}。` +
+              adoptionText +
+              "技量適性点は既存の技量枠へ二重加算せず、展開・コース・ST・展示・当地水面の判断を逆転させない。"
+          });
+        });
       }
     }
 
