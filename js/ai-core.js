@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.0.0-water-weather-theory";
+  const CORE_VERSION = "ai-core-v4.1.0-motor-maintenance-theory";
 
   /* ===============================
     基本ユーティリティ
@@ -3069,6 +3069,471 @@ function getBoatNo(boat) {
       scenarioType: mainScenario?.type || "",
       scenarioLabel: mainScenario?.label || "",
       source: "ai-core-water-weather-theory-v1"
+    };
+  }
+
+  function motorMaintenanceTheoryGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function getRawMotorRates(boat) {
+    const rawMotor2 =
+      boat.motorRate ??
+      boat.motor2Rate ??
+      boat.motorTwoRate ??
+      boat.motorWinRate ??
+      boat.motor?.twoRate ??
+      boat.motor?.secondRate ??
+      boat.motor?.quinellaRate;
+    const rawMotor3 =
+      boat.motor3Rate ??
+      boat.motorThreeRate ??
+      boat.motor?.threeRate ??
+      boat.motor?.thirdRate ??
+      boat.motor?.trioRate;
+
+    return {
+      motor2:
+        isNil(rawMotor2)
+          ? null
+          : toNumber(rawMotor2, null),
+      motor3:
+        isNil(rawMotor3)
+          ? null
+          : toNumber(rawMotor3, null)
+    };
+  }
+
+  function hasKnownMotorTerm(data) {
+    const candidates = [
+      data?.motorUsageRaces,
+      data?.motorUsageSeries,
+      data?.motorTermStart,
+      data?.motorUpdateDate,
+      data?.engineUpdateDate,
+      data?.raceInfo?.motorUsageRaces,
+      data?.raceInfo?.motorUsageSeries,
+      data?.raceInfo?.motorTermStart,
+      data?.raceInfo?.motorUpdateDate,
+      data?.raceInfo?.engineUpdateDate
+    ];
+
+    return candidates.some((value) => !isNil(value));
+  }
+
+  function getMaintenanceComparison(boat) {
+    const comparison =
+      boat.maintenanceComparison ??
+      boat.partsExchangeChange ??
+      boat.adjustmentComparison ??
+      boat.maintenance?.comparison ??
+      {};
+    const before =
+      comparison.before ??
+      boat.maintenance?.before ??
+      boat.beforeMaintenance ??
+      {};
+    const after =
+      comparison.after ??
+      boat.maintenance?.after ??
+      boat.afterMaintenance ??
+      {};
+    const partsExchange = safeText(
+      boat.partsExchange ??
+      boat.parts ??
+      boat.exhibition?.partsExchange ??
+      boat.beforeInfo?.partsExchange ??
+      boat.beforeInfo?.exhibition?.partsExchange,
+      ""
+    ).trim();
+    const metrics = [
+      {
+        key: "exhibition",
+        points: 4,
+        before:
+          before.exhibitionTime ??
+          before.displayTime ??
+          before.exhibition?.time,
+        after:
+          after.exhibitionTime ??
+          after.displayTime ??
+          after.exhibition?.time
+      },
+      {
+        key: "lap",
+        points: 4,
+        before:
+          before.lapTime ??
+          before.oneLapTime ??
+          before.turnTime,
+        after:
+          after.lapTime ??
+          after.oneLapTime ??
+          after.turnTime
+      },
+      {
+        key: "st",
+        points: 3,
+        before:
+          before.st ??
+          before.exhibitionSt ??
+          before.averageSt,
+        after:
+          after.st ??
+          after.exhibitionSt ??
+          after.averageSt
+      },
+      {
+        key: "finish",
+        points: 4,
+        before:
+          before.finish ??
+          before.result ??
+          before.averageFinish,
+        after:
+          after.finish ??
+          after.result ??
+          after.averageFinish
+      }
+    ];
+    let score = 0;
+    let comparableCount = 0;
+    let improvedCount = 0;
+    let worsenedCount = 0;
+
+    metrics.forEach((metric) => {
+      if (isNil(metric.before) || isNil(metric.after)) return;
+      const beforeValue = toNumber(metric.before, NaN);
+      const afterValue = toNumber(metric.after, NaN);
+      if (!Number.isFinite(beforeValue) || !Number.isFinite(afterValue)) {
+        return;
+      }
+
+      comparableCount += 1;
+      if (afterValue < beforeValue) {
+        improvedCount += 1;
+        score += metric.points;
+      } else if (afterValue > beforeValue) {
+        worsenedCount += 1;
+      }
+    });
+
+    let trend = "交換なし";
+    if (partsExchange && !comparableCount) trend = "交換情報のみ";
+    else if (improvedCount > worsenedCount) trend = "改善";
+    else if (worsenedCount > improvedCount) trend = "悪化";
+    else if (comparableCount) trend = "変化なし";
+
+    return {
+      partsExchange,
+      score: clamp(score, 0, 15),
+      comparableCount,
+      improvedCount,
+      worsenedCount,
+      trend,
+      hasComparison: comparableCount > 0
+    };
+  }
+
+  function buildMotorMaintenanceTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  ) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const entryByBoat = new Map(
+      sourceEntries.map((boat) => [getBoatNo(boat), boat])
+    );
+    const firstCandidates = new Set(
+      (mainScenario?.outcome?.firstCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const secondCandidates = new Set(
+      (mainScenario?.outcome?.secondCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const thirdCandidates = new Set(
+      (mainScenario?.outcome?.thirdCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const blockedBoats = new Set(
+      (mainScenario?.blockedBoats || raceScenarios?.blockedBoats || [])
+        .map((boatNo) => Number(boatNo))
+        .filter(Boolean)
+    );
+    const exhibitionTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getExhibitionTime(boat)
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.value - b.value);
+    const lapTimes = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getLapTime(boat)
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => a.value - b.value);
+    const currentStRows = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getCurrentSeriesSt(boat).average
+      }))
+      .filter((item) => item.value !== null)
+      .sort((a, b) => a.value - b.value);
+    const exhibitionStRows = sourceEntries
+      .map((boat) => ({
+        boatNo: getBoatNo(boat),
+        value: getOptionalExhibitionSt(boat)
+      }))
+      .filter((item) => item.value !== null)
+      .sort((a, b) => a.value - b.value);
+    const motorRows = sourceEntries
+      .map((boat) => {
+        const rates = getRawMotorRates(boat);
+        return {
+          boatNo: getBoatNo(boat),
+          value:
+            rates.motor2 !== null
+              ? rates.motor2 * 0.7 + (rates.motor3 ?? 45) * 0.3
+              : null
+        };
+      })
+      .filter((item) => item.value !== null)
+      .sort((a, b) => b.value - a.value);
+    const newEnvironment = getNewEnvironmentPeriod(data);
+    const motorTermKnown = hasKnownMotorTerm(data);
+    const motorStatsReady =
+      !newEnvironment.isActive &&
+      motorTermKnown &&
+      motorRows.length === 6;
+
+    function rankedScore(rows, boatNo, points) {
+      const rank = rows.findIndex((item) => item.boatNo === boatNo);
+      return rank < 0 ? 0 : (points[rank] ?? 0);
+    }
+
+    const roles = sourceAnalyses.map((analysis) => {
+      const boatNo = Number(analysis?.boatNo || 0);
+      const entry = entryByBoat.get(boatNo) || {};
+      const course = getAttackTheoryCourse(entry, boatNo);
+      const results = getThisTermResults(entry);
+      const currentSt = getCurrentSeriesSt(entry);
+      const maintenance = getMaintenanceComparison(entry);
+      const hasExhibitionEvidence =
+        getExhibitionTime(entry) > 0 || getLapTime(entry) > 0;
+      const hasCurrentEvidence =
+        results.length > 0 || currentSt.count > 0;
+      const hasPracticalEvidence =
+        hasExhibitionEvidence || results.length > 0;
+      const isFirstCandidate = firstCandidates.has(boatNo);
+      const isSecondCandidate = secondCandidates.has(boatNo);
+      const isThirdCandidate = thirdCandidates.has(boatNo);
+      const isScenarioCandidate =
+        isFirstCandidate || isSecondCandidate || isThirdCandidate;
+      const isBlocked = blockedBoats.has(boatNo);
+
+      let role = "展開外";
+      if (isFirstCandidate) {
+        role = course === 1
+          ? "逃げ"
+          : course === 2
+            ? "差し"
+            : "攻め";
+      } else if (isSecondCandidate) {
+        role = "残し";
+      } else if (isThirdCandidate) {
+        role = "拾い";
+      }
+
+      const exhibitionFoot = clamp(
+        rankedScore(exhibitionTimes, boatNo, [15, 13, 11, 8, 5, 2]) +
+        rankedScore(lapTimes, boatNo, [10, 8, 7, 5, 3, 1]),
+        0,
+        25
+      );
+
+      let currentRoad = clamp(
+        round(toNumber(analysis?.indexes?.turn, 0) * 0.08),
+        0,
+        8
+      );
+      if (results.length) {
+        const averageFinish = average(results, 3.5);
+        const top3Rate =
+          results.filter((result) => result <= 3).length /
+          results.length;
+        currentRoad += clamp(
+          round((4.5 - averageFinish) * 2 + top3Rate * 6),
+          0,
+          12
+        );
+      }
+      currentRoad = clamp(currentRoad, 0, 20);
+
+      const startAndSlit = clamp(
+        rankedScore(currentStRows, boatNo, [9, 8, 7, 5, 3, 1]) +
+        rankedScore(exhibitionStRows, boatNo, [6, 5, 4, 3, 2, 1]),
+        0,
+        15
+      );
+      const maintenanceChange = maintenance.score;
+      const relativeMotor = motorStatsReady
+        ? rankedScore(motorRows, boatNo, [10, 8, 6, 4, 2, 1])
+        : 0;
+      const scenarioRole =
+        isFirstCandidate ? 10
+          : isSecondCandidate ? 9
+            : isThirdCandidate ? 8
+              : 0;
+      const playerAdjustment = clamp(
+        round(
+          toNumber(analysis?.indexes?.national, 0) * 0.03 +
+          toNumber(analysis?.indexes?.local, 0) * 0.02
+        ),
+        0,
+        5
+      );
+      const score = round(clamp(
+        exhibitionFoot +
+        currentRoad +
+        startAndSlit +
+        maintenanceChange +
+        relativeMotor +
+        scenarioRole +
+        playerAdjustment,
+        0,
+        100
+      ));
+      const grade = motorMaintenanceTheoryGrade(score);
+      const isFormal =
+        Boolean(mainScenario) &&
+        hasPracticalEvidence;
+      const isAdopted =
+        isFormal &&
+        isScenarioCandidate &&
+        !isBlocked &&
+        score >= 65;
+
+      let status = "不成立";
+      if (!mainScenario || !hasPracticalEvidence) {
+        status = isScenarioCandidate ? "暫定" : "参考";
+      } else if (isBlocked) {
+        status = "展開除外";
+      } else if (isAdopted) {
+        status = "正式採用";
+      } else if (score >= 55) {
+        status = "参考";
+      }
+
+      const reasons = [
+        `展示・一周・回り足${exhibitionFoot}/25`,
+        `今節・道中${currentRoad}/20`,
+        `今節ST・スリット${startAndSlit}/15`,
+        `整備後変化${maintenanceChange}/15`,
+        `場内相対モーター${relativeMotor}/10`,
+        `展開役割${scenarioRole}/10`,
+        `調整力・当地${playerAdjustment}/5`
+      ];
+      if (maintenance.partsExchange && !maintenance.hasComparison) {
+        reasons.push("部品交換後の比較不足のため非加点");
+      }
+      if (maintenance.trend === "悪化") {
+        reasons.push("交換後悪化のため参考扱い");
+      }
+      if (newEnvironment.isActive) {
+        reasons.push("新型エンジン期のためモーター数字は非加点");
+      } else if (!motorTermKnown) {
+        reasons.push("更新時期・使用節数不明のためモーター数字は暫定");
+      } else if (motorRows.length < 6) {
+        reasons.push("6艇のモーター数字不足");
+      }
+      if (!hasPracticalEvidence) {
+        reasons.push("展示または今節実績の裏付け不足");
+      }
+      if (!isScenarioCandidate) {
+        reasons.push("最有力展開の1〜3着候補と不一致");
+      }
+      if (isBlocked) reasons.push("最有力展開で飛び候補");
+
+      return {
+        boatNo,
+        playerName: analysis?.playerName || getPlayerName(entry),
+        course,
+        role,
+        score,
+        grade,
+        status,
+        isFormal,
+        isAdopted,
+        isBlocked,
+        isScenarioCandidate,
+        isFirstCandidate,
+        isSecondCandidate,
+        isThirdCandidate,
+        hasExhibitionEvidence,
+        hasCurrentEvidence,
+        hasPracticalEvidence,
+        maintenance,
+        motorRates: getRawMotorRates(entry),
+        scenarioType: mainScenario?.type || "",
+        scenarioLabel: mainScenario?.label || "",
+        components: {
+          exhibitionFoot,
+          currentRoad,
+          startAndSlit,
+          maintenanceChange,
+          relativeMotor,
+          scenarioRole,
+          playerAdjustment
+        },
+        reason: reasons.join(" / ")
+      };
+    });
+    const ranking = roles.sort(
+      (a, b) =>
+        Number(b.isAdopted) - Number(a.isAdopted) ||
+        b.score - a.score ||
+        a.course - b.course
+    );
+
+    return {
+      ranking,
+      roles,
+      isFormal:
+        Boolean(mainScenario) &&
+        roles.some((boat) => boat.hasPracticalEvidence),
+      isProvisional:
+        !mainScenario ||
+        !roles.some((boat) => boat.hasPracticalEvidence),
+      motorTermKnown,
+      motorStatsReady,
+      motorStatsStatus:
+        newEnvironment.isActive
+          ? "新型エンジン期・非加点"
+          : !motorTermKnown
+            ? "更新時期不明・暫定"
+            : motorRows.length < 6
+              ? "6艇データ不足"
+              : "場内相対評価",
+      newEnvironmentActive: newEnvironment.isActive,
+      adoptedBoats: ranking
+        .filter((boat) => boat.isAdopted)
+        .map((boat) => boat.boatNo),
+      scenarioType: mainScenario?.type || "",
+      scenarioLabel: mainScenario?.label || "",
+      source: "ai-core-motor-maintenance-theory-v1"
     };
   }
 
@@ -7685,6 +8150,23 @@ analyses.forEach((boat) => {
     waterWeatherTheoryByBoat.get(Number(boat.boatNo)) || null;
 });
 
+const motorMaintenanceTheory =
+  buildMotorMaintenanceTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  );
+
+const motorMaintenanceTheoryByBoat = new Map(
+  motorMaintenanceTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  boat.motorMaintenanceTheory =
+    motorMaintenanceTheoryByBoat.get(Number(boat.boatNo)) || null;
+});
+
 const slit =
       buildSlitAnalysis(
         entries,
@@ -7750,6 +8232,8 @@ const slit =
       newEnvironmentTheory,
 
       waterWeatherTheory,
+
+      motorMaintenanceTheory,
 
       raceScenarios,
 
@@ -8092,7 +8576,9 @@ return {
         newEnvironmentRanking:
           aiCore.newEnvironmentTheory?.ranking || [],
         waterWeatherRanking:
-          aiCore.waterWeatherTheory?.ranking || []
+          aiCore.waterWeatherTheory?.ranking || [],
+        motorMaintenanceRanking:
+          aiCore.motorMaintenanceTheory?.ranking || []
       },
 
       raceFlow: compatibleRaceFlow,
@@ -8125,6 +8611,7 @@ return {
       localTheory: aiCore.localTheory,
       newEnvironmentTheory: aiCore.newEnvironmentTheory,
       waterWeatherTheory: aiCore.waterWeatherTheory,
+      motorMaintenanceTheory: aiCore.motorMaintenanceTheory,
 
       comments: aiCore.comments,
 
@@ -8316,6 +8803,8 @@ return {
     buildNewEnvironmentTheory,
 
     buildWaterWeatherTheory,
+
+    buildMotorMaintenanceTheory,
 
     calcRaceFlowIndex,
 

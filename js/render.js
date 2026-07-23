@@ -4333,6 +4333,90 @@ function getPaperClassName(item) {
       });
     }
 
+    const motorMaintenanceTheory =
+      prediction.motorMaintenanceTheory ||
+      prediction.aiCore?.motorMaintenanceTheory ||
+      null;
+
+    if (motorMaintenanceTheory) {
+      const displayRows =
+        arrayify(motorMaintenanceTheory.ranking)
+          .filter(item =>
+            item &&
+            (
+              item.isAdopted ||
+              item.status === "暫定" ||
+              item.status === "参考"
+            )
+          )
+          .slice(0, 2);
+
+      if (!displayRows.length) {
+        items.push({
+          key: "motorMaintenance",
+          label: "🔩 モーター・整備気配",
+          no: "",
+          score:
+            motorMaintenanceTheory.isProvisional
+              ? "暫定"
+              : "成立なし",
+          text:
+            `${motorMaintenanceTheory.motorStatsStatus || "モーター数字は参考"}。` +
+            (
+              motorMaintenanceTheory.isProvisional
+                ? "展示または今節実績の裏付けが不足するため、正式な実戦機力艇は採用していない。"
+                : "65点以上かつ実走根拠・最有力展開がそろう正式な実戦機力艇はいない。"
+            ) +
+            "実戦機力点だけで印・展開・買い目は変更しない。"
+        });
+      } else {
+        displayRows.forEach(item => {
+          const components = item.components || {};
+          const maintenance = item.maintenance || {};
+          const partsText =
+            maintenance.partsExchange
+              ? `部品交換は${maintenance.partsExchange}、交換後判定は${maintenance.trend || "比較不足"}。`
+              : "部品交換情報なし。";
+          const adoptionText =
+            item.isAdopted
+              ? "65点以上で実走根拠と最有力展開が一致し、正式な機力評価として採用。"
+              : item.isBlocked
+                ? "飛び候補のため正式採用しない。"
+                : item.status === "暫定"
+                  ? "展示または今節実績が不足するため、正式採用しない。"
+                  : "成立点または展開一致条件が未達のため、補足表示のみ。";
+
+          items.push({
+            key: "motorMaintenance",
+            label: "🔩 モーター・整備気配",
+            no: item.boatNo || "",
+            score: `${item.score ?? 0}点・${item.grade || "-"}`,
+            text:
+              `${item.boatNo}号艇・${item.course}コースは${item.status}` +
+              `（${item.role || "展開外"}）。` +
+              `内訳は展示・一周・回り足${components.exhibitionFoot ?? 0}/25、` +
+              `今節・道中${components.currentRoad ?? 0}/20、` +
+              `今節ST・スリット${components.startAndSlit ?? 0}/15、` +
+              `整備後変化${components.maintenanceChange ?? 0}/15、` +
+              `場内相対モーター${components.relativeMotor ?? 0}/10、` +
+              `展開役割${components.scenarioRole ?? 0}/10、` +
+              `調整力・当地${components.playerAdjustment ?? 0}/5。` +
+              `${partsText}${motorMaintenanceTheory.motorStatsStatus || ""}。` +
+              `${adoptionText}` +
+              "モーターとボート成績を分離し、実戦機力点だけで印・展開・買い目を変更しない。"
+          });
+        });
+      }
+    } else {
+      items.push({
+        key: "motorMaintenance",
+        label: "🔩 モーター・整備気配",
+        no: "",
+        score: "判定不可",
+        text: "共通のモーター・整備気配データがないため、正式判定できない。"
+      });
+    }
+
     const newEnvironmentTheory =
       prediction.newEnvironmentTheory ||
       prediction.aiCore?.newEnvironmentTheory ||

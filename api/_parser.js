@@ -250,6 +250,55 @@ function splitBeforeBlocks(html) {
   return blocks;
 }
 
+function parsePartsExchange(text) {
+  const source = cleanText(text);
+  const knownParts = [
+    {
+      label: "ピストンリング",
+      pattern: /ピストンリング(?:\s*[×xX]\s*(\d+)|\s+(\d+)個)?/
+    },
+    {
+      label: "ピストン",
+      pattern: /ピストン(?!リング)(?:\s*[×xX]\s*(\d+)|\s+(\d+)個)?/
+    },
+    {
+      label: "リング",
+      pattern: /(?<!ピストン)リング(?:\s*[×xX]\s*(\d+)|\s+(\d+)個)?/
+    },
+    {
+      label: "キャリアボデー",
+      pattern: /キャリアボデー(?:\s*[×xX]\s*(\d+)|\s+(\d+)個)?/
+    },
+    {
+      label: "ギヤケース組",
+      pattern: /ギヤケース組(?:\s*[×xX]\s*(\d+)|\s+(\d+)個)?/
+    },
+    {
+      label: "ギヤケース",
+      pattern: /ギヤケース(?!組)(?:\s*[×xX]\s*(\d+)|\s+(\d+)個)?/
+    },
+    {
+      label: "クランクシャフト",
+      pattern: /クランクシャフト(?:\s*[×xX]\s*(\d+)|\s+(\d+)個)?/
+    }
+  ];
+  const found = [];
+
+  knownParts.forEach((part) => {
+    const match = source.match(part.pattern);
+    if (!match) return;
+
+    const count = Number(match[1] || match[2] || 1);
+    found.push(
+      count > 1
+        ? `${part.label}×${count}`
+        : part.label
+    );
+  });
+
+  return [...new Set(found)].join("・");
+}
+
 function parseBeforeBlock(block) {
   const text = cleanText(block.text);
 
@@ -271,7 +320,7 @@ function parseBeforeBlock(block) {
       weight: weightMatch ? toNumber(weightMatch[1]) : null,
       adjustedWeight: null,
       propeller: /\s新\s/.test(text) ? "新" : "",
-      partsExchange: ""
+      partsExchange: parsePartsExchange(text)
     },
     rawBlock: text
   };
