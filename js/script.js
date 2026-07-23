@@ -3351,30 +3351,6 @@
     };
   }
 
-  function combinedOddsOf(list) {
-    if (!Array.isArray(list)) {
-      return null;
-    }
-
-    const oddsList = list
-      .map(item => Number(item?.odds))
-      .filter(odds =>
-        Number.isFinite(odds) &&
-        odds > 0
-      );
-
-    if (!oddsList.length) {
-      return null;
-    }
-
-    return (
-      window.ChappyAICore
-        ?.calculateCombinedOdds(
-          oddsList
-        ) ?? null
-    );
-  }
-
   function attachCombinedOdds(
     prediction
   ) {
@@ -3396,18 +3372,9 @@
       source: "boatrace-official",
       formula:
         "1 / Σ(1 / 個別オッズ)",
-      main: combinedOddsOf(
-        prediction.mainSheet?.tickets
-      ),
-      cover: combinedOddsOf(
-        prediction.mainSheet?.coverTickets
-      ),
-      flow: combinedOddsOf(
-        prediction.mainSheet?.flowTickets
-      ),
-      manshu: combinedOddsOf(
-        prediction.manshuSheet?.tickets
-      )
+      available: false,
+      reason:
+        "公式オッズ共通計算を読み込めませんでした"
     };
   }
 
