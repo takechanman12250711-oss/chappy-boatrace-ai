@@ -2995,252 +2995,74 @@ function getPaperClassName(item) {
 
     const items = [];
 
-        {
+    {
       const attackTheoryRows = arrayify(
+        prediction.attackTheory?.ranking ||
         indexes.attackRanking
-      )
-        .filter(Boolean)
-        .slice(0, 2)
-        .map(item =>
-          typeof item === "number" ||
-          typeof item === "string"
-            ? { boatNo: item }
-            : item
-        );
+      ).filter(Boolean);
 
       if (!attackTheoryRows.length) {
         pushTheoryText(
           items,
           "attack",
-          "攻め指数の順位データがないため、攻め艇理論は判定できません。"
+          "3・4コースの攻め成立データがないため、攻め艇理論は判定できません。"
         );
       } else {
-        attackTheoryRows.forEach(
-          (item, position) => {
-            const boatNo = Number(
-              item.boatNo ||
-              item.no ||
-              item.waku ||
-              item.course ||
-              item.number ||
-              0
+        attackTheoryRows.forEach((item) => {
+          const boatNo = Number(item.boatNo || 0);
+          const course = Number(item.course || boatNo);
+          const score = Number(item.score || 0);
+          const grade = String(item.grade || "");
+          const status = String(
+            item.status ||
+            (item.isAdopted ? "正式採用" : "参考")
+          );
+          const components = item.components || {};
+          const development =
+            course === 3
+              ? "3コースのまくり・まくり差しを確認。"
+              : "4コースのカド攻めを確認。";
+          const mainScenarioType = String(
+            prediction.aiCore?.raceScenarios
+              ?.mainScenario?.type ||
+            ""
+          );
+          const isScenarioAligned =
+            item.isAdopted &&
+            (
+              (course === 3 &&
+                mainScenarioType === "threeAttack") ||
+              (course === 4 &&
+                mainScenarioType === "fourAttack")
             );
+          const reflection = isScenarioAligned
+            ? "正式な攻め判定と最有力展開が一致。展開根拠として反映。"
+            : item.isAdopted
+              ? "正式な攻め判定だが最有力展開とは不一致。補足表示のみ。"
+            : item.isFormal
+              ? "成立条件未達のため予想へ反映しない。"
+              : "展示前の暫定値で、予想へ正式反映しない。";
+          const evidence = item.hasStartEvidence
+            ? "ST・隣艇比較の裏付けあり。"
+            : "ST・隣艇比較の裏付け不足。";
 
-            const score =
-              item.score ??
-              item.value ??
-              item.point ??
-              "";
-
-            const indexItem =
-              indexes.byBoat?.[boatNo] ||
-              arrayify(indexes.scores).find(
-                row =>
-                  Number(row?.boatNo) ===
-                  boatNo
-              ) ||
-              {};
-
-            const courseCandidate = Number(
-              indexItem.course ??
-              item.course ??
-              boatNo
-            );
-
-            const course =
-              courseCandidate >= 1 &&
-              courseCandidate <= 6
-                ? courseCandidate
-                : boatNo;
-
-            const comparedItem =
-              attackTheoryRows[
-                position === 0 ? 1 : 0
-              ] ||
-              null;
-
-            const comparedBoatNo = Number(
-              comparedItem?.boatNo ||
-              comparedItem?.no ||
-              comparedItem?.waku ||
-              comparedItem?.course ||
-              comparedItem?.number ||
-              0
-            );
-
-            const comparedScore =
-              comparedItem?.score ??
-              comparedItem?.value ??
-              comparedItem?.point ??
-              "";
-
-            const scoreNumber =
-              Number(score);
-
-            const comparedScoreNumber =
-              Number(comparedScore);
-
-            const hasScore =
-              score !== "" &&
-              score !== null &&
-              score !== undefined &&
-              Number.isFinite(scoreNumber);
-
-            const hasComparedScore =
-              comparedScore !== "" &&
-              comparedScore !== null &&
-              comparedScore !== undefined &&
-              Number.isFinite(
-                comparedScoreNumber
-              );
-
-            let comparison =
-              "比較できる相手艇の攻め指数がないため、単独で確認。";
-
-            if (comparedBoatNo) {
-              if (
-                hasScore &&
-                hasComparedScore
-              ) {
-                const difference =
-                  Math.round(
-                    Math.abs(
-                      scoreNumber -
-                      comparedScoreNumber
-                    ) * 10
-                  ) / 10;
-
-                if (difference === 0) {
-                  comparison =
-                    `${comparedBoatNo}号艇と攻め指数${scoreNumber}で同値。`;
-                } else if (
-                  scoreNumber >
-                  comparedScoreNumber
-                ) {
-                  comparison =
-                    `${comparedBoatNo}号艇より攻め指数が${difference}高い。`;
-                } else {
-                  comparison =
-                    `${comparedBoatNo}号艇に次ぐ攻め指数で、差は${difference}。`;
-                }
-              } else {
-                comparison =
-                  `${comparedBoatNo}号艇との比較対象だが、指数差の数値は未取得。`;
-              }
-            }
-
-            let development =
-              "コースを確定できないため、攻めの起点だけを確認する。";
-
-            if (course === 1) {
-              development =
-                "1コースの先マイへつながる攻め。基本どおりインの1着と残しを優先して確認する。";
-            } else if (course === 2) {
-              development =
-                "2コース差しが攻め筋。1着候補だけでなく、2差しの残しも確認する。";
-            } else if (course === 3) {
-              development =
-                "3コースのまくり・まくり差しが攻め筋。内側の残しと外側の拾いが生まれる展開を確認する。";
-            } else if (course === 4) {
-              development =
-                "4コースのカド攻めが攻め筋。内側の残しと5・6コースの拾いが生まれる展開を確認する。";
-            } else if (course === 5) {
-              development =
-                "5コースは内の攻めに連動するまくり差しが中心。1着固定にせず、外の拾いまで確認する。";
-            } else if (course === 6) {
-              development =
-                "6コースは最外からの展開待ち。内側を優先し、拾いとして届く余地を確認する。";
-            }
-
-            const reflectedRoles = [];
-
-            const honmeiBoatNo = Number(
-              prediction.mainSheet
-                ?.honmei?.boatNo ||
-              prediction.mainSheet
-                ?.main?.boatNo ||
-              0
-            );
-
-            if (
-              honmeiBoatNo === boatNo
-            ) {
-              reflectedRoles.push(
-                "1着候補"
-              );
-            }
-
-            if (
-              arrayify(
-                raceFlow.holdBoats
-              ).some(
-                row =>
-                  Number(
-                    row?.boatNo ||
-                    row?.no ||
-                    row ||
-                    0
-                  ) === boatNo
-              )
-            ) {
-              reflectedRoles.push(
-                "残し"
-              );
-            }
-
-            if (
-              arrayify(
-                raceFlow.pickupBoats
-              ).some(
-                row =>
-                  Number(
-                    row?.boatNo ||
-                    row?.no ||
-                    row ||
-                    0
-                  ) === boatNo
-              )
-            ) {
-              reflectedRoles.push(
-                "拾い"
-              );
-            }
-
-            const reflection =
-              reflectedRoles.length
-                ? `現在の予想では${reflectedRoles.join("・")}へ反映。`
-                : "現在の予想では1着候補・残し・拾いへ直接反映せず、攻め展開の補足材料。";
-
-            const sourceReason = String(
-              item.comment ||
-              item.reason ||
-              item.text ||
-              indexItem.shortComment ||
-              ""
-            )
-              .trim()
-              .replace(/[。]+$/, "");
-
-            const reasonText =
-              sourceReason
-                ? `指数側の根拠は「${sourceReason}」。`
-                : "指数側の個別根拠は未取得。";
-
-            items.push({
-              key: "attack",
-              label:
-                THEORY_LABELS.attack,
-              no: boatNo || "",
-              score,
-              text:
-                `${boatNo}号艇を攻め艇理論の既存表示${position + 1}位として確認。` +
-                comparison +
-                development +
-                reflection +
-                reasonText
-            });
-          }
-        );
+          items.push({
+            key: "attack",
+            label: THEORY_LABELS.attack,
+            no: boatNo || "",
+            score,
+            text:
+              `${boatNo}号艇・${course}コースは${status}（${grade}評価）。` +
+              `内訳は展開${components.development ?? 0}/40、` +
+              `コース${components.course ?? 0}/20、` +
+              `ST・スリット${components.startAndSlit ?? 0}/20、` +
+              `展示・足${components.exhibitionFoot ?? 0}/10、` +
+              `場傾向${components.venueCourse ?? 0}/10。` +
+              development +
+              evidence +
+              reflection
+          });
+        });
       }
     }
         {
