@@ -2222,38 +2222,6 @@ function getBoatNo(boat) {
   }
 
   /* ===============================
-    合成オッズ
-  =============================== */
-
-  function calculateCombinedOdds(oddsList) {
-
-    if (!Array.isArray(oddsList)) {
-      return null;
-    }
-
-    const values =
-      oddsList
-        .map(v => toNumber(v))
-        .filter(v => v > 0);
-
-    if (!values.length) {
-      return null;
-    }
-
-    let inverse = 0;
-
-    values.forEach((odd) => {
-      inverse += 1 / odd;
-    });
-
-    if (inverse <= 0) {
-      return null;
-    }
-
-    return round(1 / inverse, 1);
-
-  }
-    /* ===============================
     艇別AI解析
   =============================== */
 
@@ -6303,8 +6271,6 @@ return {
     buildDoubleTime,
 
     buildNewSam,
-
-    calculateCombinedOdds,
 
     /* ==========================
        シート
