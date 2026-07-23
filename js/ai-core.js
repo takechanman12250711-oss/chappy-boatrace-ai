@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v3.7.0-road-theory";
+  const CORE_VERSION = "ai-core-v3.8.0-local-theory";
 
   /* ===============================
     基本ユーティリティ
@@ -1926,6 +1926,273 @@ function getBoatNo(boat) {
       scenarioType: mainScenario?.type || "",
       scenarioLabel: mainScenario?.label || "",
       source: "ai-core-road-theory-v1"
+    };
+  }
+
+  function localTheoryGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
+
+  function buildLocalTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  ) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const venueFeature = getVenueFeature(data);
+    const entryByBoat = new Map(
+      sourceEntries.map((boat) => [getBoatNo(boat), boat])
+    );
+    const firstCandidates = new Set(
+      (mainScenario?.outcome?.firstCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const secondCandidates = new Set(
+      (mainScenario?.outcome?.secondCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const thirdCandidates = new Set(
+      (mainScenario?.outcome?.thirdCandidates || [])
+        .map((boat) => Number(boat?.boatNo || boat || 0))
+        .filter(Boolean)
+    );
+    const blockedBoats = new Set(
+      (mainScenario?.blockedBoats || raceScenarios?.blockedBoats || [])
+        .map((boatNo) => Number(boatNo))
+        .filter(Boolean)
+    );
+    const isRoughCondition =
+      getWindSpeed(data) >= 4 ||
+      getWaveHeight(data) >= 4;
+
+    function optionalNumber(...values) {
+      const value = values.find(
+        (item) =>
+          item !== null &&
+          item !== undefined &&
+          item !== "" &&
+          Number.isFinite(Number(item))
+      );
+      return value === undefined ? null : Number(value);
+    }
+
+    function courseVenueScore(course) {
+      if (course === 1) return venueFeature.inPower;
+      if (course === 2) return venueFeature.sashi;
+      if (course === 3) return venueFeature.makuri;
+      if (course === 4) {
+        return Math.max(venueFeature.kado, venueFeature.makuriSashi);
+      }
+      if (course === 5) return venueFeature.makuriSashi;
+      return venueFeature.outside;
+    }
+
+    const rows = sourceAnalyses.map((analysis) => {
+      const boatNo = Number(analysis?.boatNo || 0);
+      const entry = entryByBoat.get(boatNo) || {};
+      const course = getAttackTheoryCourse(entry, boatNo);
+      const localWinRate = optionalNumber(
+        entry.localWinRate,
+        entry.localRate,
+        entry.local?.winRate
+      );
+      const local2Rate = optionalNumber(
+        entry.local2Rate,
+        entry.localTwoRate,
+        entry.local?.twoRate
+      );
+      const local3Rate = optionalNumber(
+        entry.local3Rate,
+        entry.localThreeRate,
+        entry.local?.threeRate
+      );
+      const nationalWinRate = optionalNumber(
+        entry.nationalWinRate,
+        entry.winRate,
+        entry.rate,
+        entry.national?.winRate
+      );
+      const hasLocalEvidence =
+        localWinRate !== null &&
+        nationalWinRate !== null &&
+        (local2Rate !== null || local3Rate !== null);
+      const isFirstCandidate = firstCandidates.has(boatNo);
+      const isSecondCandidate = secondCandidates.has(boatNo);
+      const isThirdCandidate = thirdCandidates.has(boatNo);
+      const isScenarioCandidate =
+        isFirstCandidate || isSecondCandidate || isThirdCandidate;
+      const isBlocked = blockedBoats.has(boatNo);
+
+      let role = "展開外";
+      if (isFirstCandidate) {
+        role = course === 1
+          ? "逃げ"
+          : course === 2
+            ? "差し"
+            : "攻め";
+      } else if (isSecondCandidate) {
+        role = "残し";
+      } else if (isThirdCandidate) {
+        role = "拾い";
+      }
+
+      let localVsNational = 0;
+      if (localWinRate !== null && nationalWinRate !== null) {
+        const difference = localWinRate - nationalWinRate;
+        localVsNational =
+          difference >= 1.0 ? 25
+            : difference >= 0.6 ? 22
+              : difference >= 0.3 ? 19
+                : difference >= 0 ? 15
+                  : difference >= -0.3 ? 10
+                    : 5;
+      }
+
+      let localResults = 0;
+      if (localWinRate !== null) {
+        localResults += clamp(round((localWinRate - 4) * 3), 0, 8);
+      }
+      if (local2Rate !== null) {
+        localResults += clamp(round((local2Rate - 20) * 0.2), 0, 6);
+      }
+      if (local3Rate !== null) {
+        localResults += clamp(round((local3Rate - 35) * 0.15), 0, 6);
+      }
+      localResults = clamp(localResults, 0, 20);
+
+      const scenarioRole = isFirstCandidate
+        ? 20
+        : isSecondCandidate
+          ? 18
+          : isThirdCandidate
+            ? 15
+            : 0;
+      const venueCourse = clamp(
+        round(courseVenueScore(course) * 0.15),
+        0,
+        15
+      );
+      const venueWater = clamp(
+        round(
+          courseVenueScore(course) * 0.10 +
+          (
+            isRoughCondition
+              ? venueFeature.roughWater * 0.05
+              : 5
+          )
+        ),
+        0,
+        15
+      );
+      const playerSkill = clamp(
+        round(toNumber(analysis?.indexes?.national, 0) * 0.05),
+        0,
+        5
+      );
+      const score = round(
+        clamp(
+          localVsNational +
+            localResults +
+            scenarioRole +
+            venueCourse +
+            venueWater +
+            playerSkill,
+          0,
+          100
+        )
+      );
+      const grade = localTheoryGrade(score);
+      const isFormal = Boolean(mainScenario) && hasLocalEvidence;
+      const isAdopted =
+        isFormal &&
+        isScenarioCandidate &&
+        !isBlocked &&
+        score >= 65;
+
+      let status = "不成立";
+      if (!isFormal && isScenarioCandidate) status = "暫定";
+      else if (isBlocked) status = "展開除外";
+      else if (isAdopted) status = "正式採用";
+      else if (score >= 55) status = "参考";
+
+      const reasons = [
+        `当地・全国比較${localVsNational}/25`,
+        `当地成績${localResults}/20`,
+        `展開役割${scenarioRole}/20`,
+        `進入適合${venueCourse}/15`,
+        `場・水面${venueWater}/15`,
+        `技量${playerSkill}/5`
+      ];
+      if (!hasLocalEvidence) {
+        reasons.push("当地勝率・全国勝率・当地連率不足のため暫定");
+      }
+      if (!isScenarioCandidate) {
+        reasons.push("最有力展開の1〜3着候補と不一致");
+      }
+      if (isBlocked) reasons.push("最有力展開で飛び候補");
+
+      return {
+        boatNo,
+        playerName: analysis?.playerName || getPlayerName(entry),
+        course,
+        role,
+        score,
+        grade,
+        status,
+        isFormal,
+        isAdopted,
+        isBlocked,
+        isScenarioCandidate,
+        isFirstCandidate,
+        isSecondCandidate,
+        isThirdCandidate,
+        hasLocalEvidence,
+        localWinRate,
+        nationalWinRate,
+        local2Rate,
+        local3Rate,
+        scenarioType: mainScenario?.type || "",
+        scenarioLabel: mainScenario?.label || "",
+        components: {
+          localVsNational,
+          localResults,
+          scenarioRole,
+          venueCourse,
+          venueWater,
+          playerSkill
+        },
+        reason: reasons.join(" / ")
+      };
+    });
+
+    const ranking = rows.sort(
+      (a, b) =>
+        Number(b.isAdopted) - Number(a.isAdopted) ||
+        b.score - a.score ||
+        a.course - b.course
+    );
+
+    return {
+      ranking,
+      roles: rows,
+      isFormal:
+        Boolean(mainScenario) &&
+        rows.some((boat) => boat.hasLocalEvidence),
+      adoptedBoats: ranking
+        .filter((boat) => boat.isAdopted)
+        .map((boat) => boat.boatNo),
+      scenarioType: mainScenario?.type || "",
+      scenarioLabel: mainScenario?.label || "",
+      source: "ai-core-local-theory-v1"
     };
   }
 
@@ -6491,6 +6758,23 @@ analyses.forEach((boat) => {
     roadTheoryByBoat.get(Number(boat.boatNo)) || null;
 });
 
+const localTheory =
+  buildLocalTheory(
+    entries,
+    analyses,
+    data,
+    raceScenarios
+  );
+
+const localTheoryByBoat = new Map(
+  localTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  boat.localTheory =
+    localTheoryByBoat.get(Number(boat.boatNo)) || null;
+});
+
 const slit =
       buildSlitAnalysis(
         entries,
@@ -6550,6 +6834,8 @@ const slit =
       flowTheory,
 
       roadTheory,
+
+      localTheory,
 
       raceScenarios,
 
@@ -6887,7 +7173,8 @@ return {
         aiCore: aiCore.analyses,
         attackRanking: aiCore.attackTheory?.ranking || [],
         flowRanking: aiCore.flowTheory?.ranking || [],
-        roadRanking: aiCore.roadTheory?.ranking || []
+        roadRanking: aiCore.roadTheory?.ranking || [],
+        localRanking: aiCore.localTheory?.ranking || []
       },
 
       raceFlow: compatibleRaceFlow,
@@ -6917,6 +7204,7 @@ return {
       attackTheory: aiCore.attackTheory,
       flowTheory: aiCore.flowTheory,
       roadTheory: aiCore.roadTheory,
+      localTheory: aiCore.localTheory,
 
       comments: aiCore.comments,
 
@@ -7100,6 +7388,8 @@ return {
     buildFlowTheory,
 
     buildRoadTheory,
+
+    buildLocalTheory,
 
     calcRaceFlowIndex,
 

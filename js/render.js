@@ -3521,9 +3521,17 @@ function getPaperClassName(item) {
     }
         {
       const localTheoryRows = arrayify(
+        prediction.localTheory?.ranking ||
         indexes.localRanking
       )
-        .filter(Boolean)
+        .filter(item =>
+          item &&
+          (
+            item.isAdopted ||
+            item.status === "暫定" ||
+            item.status === "参考"
+          )
+        )
         .slice(0, 2)
         .map(item =>
           typeof item === "number" ||
@@ -3536,7 +3544,9 @@ function getPaperClassName(item) {
         pushTheoryText(
           items,
           "local",
-          "当地指数の順位データがないため、当地巧者理論は判定できません。"
+          prediction.localTheory?.isFormal
+            ? "最有力展開と一致する65点以上の当地巧者はいません。"
+            : "当地・全国成績または成立展開のデータが不足しているため、当地巧者理論は参考判定です。"
         );
       } else {
         const getLocalBoatNo = item =>
@@ -3873,14 +3883,39 @@ function getPaperClassName(item) {
               no: boatNo || "",
               score,
               text:
-                `${boatNo}号艇を当地巧者理論の既存表示${position + 1}位として確認。` +
-                comparison +
-                rateComparison +
-                development +
-                reflection +
-                venueContext +
-                "当地評価は展開・コース・ST・展示の後に補正し、当地数字だけで1着候補や買い目を決めない。" +
-                reasonText
+                item.components
+                  ? (
+                    `${boatNo}号艇・${course}コースは${item.status || "参考"}` +
+                    `（${item.grade || "-"}評価・${item.role || "展開外"}）。` +
+                    `内訳は当地・全国比較${item.components.localVsNational ?? 0}/25、` +
+                    `当地成績${item.components.localResults ?? 0}/20、` +
+                    `展開役割${item.components.scenarioRole ?? 0}/20、` +
+                    `進入適合${item.components.venueCourse ?? 0}/15、` +
+                    `場・水面${item.components.venueWater ?? 0}/15、` +
+                    `技量${item.components.playerSkill ?? 0}/5。` +
+                    (
+                      item.isAdopted
+                        ? "65点以上で最有力展開の1〜3着候補と一致し、正式な当地巧者として採用。"
+                        : item.status === "暫定"
+                          ? "当地勝率・全国勝率・当地2連率または3連率の裏付け不足により、予想へ正式反映しない。"
+                          : item.isBlocked
+                            ? "最有力展開の飛び候補のため、正式採用しない。"
+                            : "成立点または展開一致条件が未達のため、補足表示のみ。"
+                    ) +
+                    venueContext +
+                    "当地評価だけで印・展開・買い目を変更しない。" +
+                    reasonText
+                  )
+                  : (
+                    `${boatNo}号艇を当地巧者理論の既存表示${position + 1}位として確認。` +
+                    comparison +
+                    rateComparison +
+                    development +
+                    reflection +
+                    venueContext +
+                    "当地評価は展開・コース・ST・展示の後に補正し、当地数字だけで1着候補や買い目を決めない。" +
+                    reasonText
+                  )
             });
           }
         );
