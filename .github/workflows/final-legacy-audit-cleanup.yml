@@ -1,0 +1,63 @@
+name: Final legacy audit cleanup
+
+on:
+  push:
+    branches:
+      - agent/final-legacy-audit-cleanup
+    paths:
+      - ".github/workflows/final-legacy-audit-cleanup.yml"
+      - "scripts/final-legacy-audit-cleanup.js"
+      - "style.css"
+      - "scripts/check-charter.js"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: final-legacy-audit-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/final-legacy-audit-cleanup
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Remove orphaned legacy residue
+        run: node scripts/final-legacy-audit-cleanup.js
+
+      - name: Remove one-time audit files
+        run: |
+          rm .github/workflows/final-legacy-audit-cleanup.yml
+          rm scripts/final-legacy-audit-cleanup.js
+
+      - name: Validate final state
+        run: |
+          node --check js/render.js
+          node --check scripts/check-charter.js
+          node scripts/check-charter.js
+          node scripts/test-theory-integration.js
+          if grep -R "v3-theory-\|renderTheoryPanel\|THEORY_LABELS\|cleanup-remaining-legacy-ui" index.html style.css js scripts .github/workflows --exclude=check-charter.js; then
+            echo "旧残骸が残っています"
+            exit 1
+          fi
+
+      - name: Commit final cleanup
+        run: |
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "別視点監査で残った旧UI残骸を削除"
+          git pull --rebase origin agent/final-legacy-audit-cleanup
+          git push origin agent/final-legacy-audit-cleanup
