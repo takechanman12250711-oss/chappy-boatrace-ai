@@ -29,8 +29,13 @@ const jsFiles = fs.readdirSync(path.join(root, "js"))
   .filter(name => name.endsWith(".js"))
   .map(name => `js/${name}`);
 const jsText = jsFiles.map(file => `${file}\n${read(file)}`).join("\n");
+const generatedIds = [...jsText.matchAll(/\bid=["']([^"']+)["']/g)].map(m => m[1]);
+const allKnownIds = new Set([...ids, ...generatedIds]);
 const domRefs = [...jsText.matchAll(/getElementById\(\s*["']([^"']+)["']\s*\)/g)].map(m => m[1]);
-const missingDomRefs = [...new Set(domRefs.filter(id => !ids.includes(id)))].sort();
+const optionalLegacyIds = new Set(["raceInfoArea", "reviewResultArea"]);
+const missingDomRefs = [...new Set(domRefs.filter(id =>
+  !allKnownIds.has(id) && !optionalLegacyIds.has(id)
+))].sort();
 
 const deletedFeatureTokens = [
   "purchaseScreenshotInput",
@@ -58,6 +63,7 @@ const report = {
   emptyHashLinks,
   counts: {
     htmlIds: ids.length,
+    generatedIds: generatedIds.length,
     localAssets: localRefs.length,
     jsFiles: jsFiles.length,
     domRefs: domRefs.length
@@ -72,6 +78,12 @@ fs.writeFileSync(
 
 console.log(JSON.stringify(report, null, 2));
 
-if (duplicateIds.length || missingAssets.length || deletedFeatureResidue.length || brokenHashLinks.length) {
+if (
+  duplicateIds.length ||
+  missingAssets.length ||
+  missingDomRefs.length ||
+  deletedFeatureResidue.length ||
+  brokenHashLinks.length
+) {
   process.exitCode = 1;
 }
