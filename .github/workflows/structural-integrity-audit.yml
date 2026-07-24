@@ -1,0 +1,44 @@
+name: Structural integrity audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "index.html"
+      - "style.css"
+      - "js/**"
+      - "scripts/audit-structural-integrity.js"
+      - ".github/workflows/structural-integrity-audit.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    if: github.head_ref == 'agent/structural-integrity-audit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run structural audit
+        run: node scripts/audit-structural-integrity.js || true
+      - name: Commit report
+        run: |
+          git add structural-integrity-report.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            echo "監査結果に変更なし"
+            exit 0
+          fi
+          git commit -m "構造整合性監査結果を保存"
+          git push origin HEAD:${{ github.head_ref }}
