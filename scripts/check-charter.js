@@ -125,6 +125,8 @@ assert(
 
 const aiCore = read("js/ai-core.js");
 const render = read("js/render.js");
+const script = read("js/script.js");
+const index = read("index.html");
 const noteGenerator = read("js/note-generator.js");
 const practicalSelection = read("js/practical-selection.js");
 
@@ -170,6 +172,25 @@ assert(
     .replaceAll("選手技量", "技量")
     .includes(expectedPriority.join("→")),
   "note原稿の評価順が憲章と一致しません"
+);
+assert(
+  !index.includes("legacyRenderArea") &&
+    !index.includes('id="oddsArea"'),
+  "旧描画互換エリアが画面に残っています"
+);
+assert(
+  !script.includes("todayMainPick") &&
+    !render.includes("renderTodayAiSummary"),
+  "削除済みの「今日のAIおすすめ」処理が残っています"
+);
+assert(
+  aiCore.includes(
+    "aiTicketList:\n        compatibleAiTicketList"
+  ) &&
+    aiCore.includes(
+      "all:\n          compatibleAiTicketList"
+    ),
+  "全表示が最新AIコアの共通買い目を使用していません"
 );
 
 if (failures.length) {

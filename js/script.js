@@ -239,52 +239,6 @@
           resultArea.innerHTML = "";
         }
 
-        const todayItems = [
-          {
-            id: "todayMainPick",
-            main: "解析待ち",
-            sub: "総合指数上位"
-          },
-          {
-            id: "todayManshuPick",
-            main: "解析待ち",
-            sub: "妙味・展開候補"
-          },
-          {
-            id: "todayWaterCondition",
-            main: "確認待ち",
-            sub: "風・波・潮汐"
-          },
-          {
-            id: "todayAiJudge",
-            main: "解析待ち",
-            sub: "買い／見送り判断"
-          }
-        ];
-
-        todayItems.forEach(item => {
-          const element =
-            document.getElementById(
-              item.id
-            );
-
-          if (!element) {
-            return;
-          }
-
-          element.textContent =
-            item.main;
-
-          if (
-            element.nextElementSibling
-          ) {
-            element
-              .nextElementSibling
-              .textContent =
-              item.sub;
-          }
-        });
-
         updateStatus(
           getRaceMode() === "review"
             ? "レースを変更しました。「振り返り予想を開始」を押してください"

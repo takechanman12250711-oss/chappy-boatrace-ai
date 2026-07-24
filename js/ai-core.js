@@ -11262,21 +11262,157 @@ const compatibleFormation = {
   evidence: coreFormations.evidence || {}
 };
 
+/*
+  AIコアのフォーメーションは買い目文字列を正本として維持する。
+  画面・実戦厳選へ渡す時だけ、prediction.js が作成した共通行へ戻し、
+  公式オッズ・分類・展開種別を全表示で共有する。
+*/
+const baseTicketByValue =
+  new Map(
+    (Array.isArray(basePrediction.aiTicketList)
+      ? basePrediction.aiTicketList
+      : []
+    ).map((item) => [
+      String(item?.ticket || ""),
+      item
+    ])
+  );
+
+const oddsByTicket =
+  data?.odds?.byTicket || {};
+
+function hydrateCompatibleTickets(
+  tickets,
+  category,
+  scenarioType
+) {
+  return (Array.isArray(tickets) ? tickets : [])
+    .map((ticketValue) => {
+      const ticket =
+        String(
+          ticketValue?.ticket ||
+          ticketValue ||
+          ""
+        );
+      const baseRow =
+        baseTicketByValue.get(ticket) || {};
+      const rawOdds =
+        baseRow.odds ??
+        oddsByTicket[ticket];
+      const numericOdds =
+        Number(rawOdds);
+      const hasOdds =
+        rawOdds !== null &&
+        rawOdds !== undefined &&
+        rawOdds !== "" &&
+        Number.isFinite(numericOdds) &&
+        numericOdds > 0;
+
+      return {
+        ...baseRow,
+        ticket,
+        category,
+        categories: [category],
+        scenarioType,
+        scenarioTypes: [scenarioType],
+        odds:
+          hasOdds
+            ? numericOdds
+            : null,
+        oddsText:
+          hasOdds
+            ? `${numericOdds}倍`
+            : "オッズ未取得",
+        hasOdds,
+        isManshu:
+          hasOdds &&
+          numericOdds >= 100
+      };
+    })
+    .filter((item) => item.ticket);
+}
+
+const compatibleTicketSheets = {
+  main:
+    hydrateCompatibleTickets(
+      compatibleFormation.main,
+      "本命",
+      "中心展開"
+    ),
+  cover:
+    hydrateCompatibleTickets(
+      compatibleFormation.cover,
+      "押さえ",
+      "安全押さえ"
+    ),
+  flow:
+    hydrateCompatibleTickets(
+      compatibleFormation.nagashi,
+      "流し",
+      "流し展開"
+    ),
+  hole:
+    hydrateCompatibleTickets(
+      compatibleFormation.hole,
+      "穴候補",
+      "穴展開"
+    )
+};
+
+const compatibleAiTicketMap =
+  new Map();
+
+Object.values(
+  compatibleTicketSheets
+).flat().forEach((item) => {
+  const existing =
+    compatibleAiTicketMap.get(
+      item.ticket
+    );
+
+  if (!existing) {
+    compatibleAiTicketMap.set(
+      item.ticket,
+      { ...item }
+    );
+    return;
+  }
+
+  existing.categories = [
+    ...new Set([
+      ...(existing.categories || []),
+      ...(item.categories || [])
+    ])
+  ];
+  existing.scenarioTypes = [
+    ...new Set([
+      ...(existing.scenarioTypes || []),
+      ...(item.scenarioTypes || [])
+    ])
+  ];
+  existing.isManshu =
+    existing.isManshu ||
+    item.isManshu;
+});
+
+const compatibleAiTicketList =
+  [...compatibleAiTicketMap.values()];
+
 const compatibleMainSheet = {
   ...oldMainSheet,
   honmei,
   taikou,
   ana,
   osae,
-  tickets: compatibleFormation.main,
-  coverTickets: compatibleFormation.cover,
-  flowTickets: compatibleFormation.nagashi,
+  tickets: compatibleTicketSheets.main,
+  coverTickets: compatibleTicketSheets.cover,
+  flowTickets: compatibleTicketSheets.flow,
   evaluations: coreEvaluations
 };
 
 const compatibleManshuSheet = {
   ...(basePrediction.manshuSheet || {}),
-  tickets: compatibleFormation.hole
+  tickets: compatibleTicketSheets.hole
 };
 
 const coreScenarioTitle = (() => {
@@ -11363,13 +11499,14 @@ return {
       formation: compatibleFormation,
       formations: coreFormations,
       ticketSheets: {
-        main: compatibleFormation.main,
-        cover: compatibleFormation.cover,
-        flow: compatibleFormation.nagashi,
-        hole: compatibleFormation.hole
+        ...compatibleTicketSheets,
+        all:
+          compatibleAiTicketList
       },
 
       manshuSheet: compatibleManshuSheet,
+      aiTicketList:
+        compatibleAiTicketList,
       longshotSheet: basePrediction.longshotSheet,
 
       slit: aiCore.slit,
