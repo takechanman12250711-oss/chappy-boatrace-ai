@@ -1,0 +1,42 @@
+name: Connect venue frame highlights
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "js/venue-frame-highlights.js"
+      - "scripts/connect-venue-frame-highlights.js"
+      - ".github/workflows/connect-venue-frame-highlights.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: connect-venue-frame-highlights
+  cancel-in-progress: false
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Connect script
+        run: node scripts/connect-venue-frame-highlights.js
+      - name: Commit when changed
+        run: |
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No index change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Connect venue frame highlights"
+          git pull --rebase origin main
+          git push origin main
