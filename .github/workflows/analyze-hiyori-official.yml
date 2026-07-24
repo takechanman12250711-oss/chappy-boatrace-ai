@@ -1,0 +1,39 @@
+name: Analyze Hiyori and official results
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "50 18 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Test analyzer
+        run: node scripts/test-hiyori-official-comparison.js
+
+      - name: Build comparison report
+        run: node scripts/analyze-hiyori-official-comparison.js --output data/analysis/hiyori-official-comparison.json
+
+      - name: Commit report when changed
+        run: |
+          if git diff --quiet -- data/analysis/hiyori-official-comparison.json; then
+            echo "No report changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/analysis/hiyori-official-comparison.json
+          git commit -m "Update Hiyori official comparison report"
+          git push
