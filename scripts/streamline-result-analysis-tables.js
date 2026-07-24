@@ -53,31 +53,33 @@ if (!rendererPattern.test(text)) {
   throw new Error("集計行レンダラーを特定できません");
 }
 
-const rendererReplacement = `  const renderVenueRows = groups =>
-    groups.length
-      ? groups.map(group => \\`
-          <tr>
-            <td>\${U.safeText(group.label)}</td>
-            <td>\${group.count}R</td>
-            <td>\${group.honmeiHits}/\${group.count}（\${rate(group.honmeiHits, group.count)}%）</td>
-            <td>\${group.practicalHits}/\${group.practicalCount}（\${rate(group.practicalHits, group.practicalCount)}%）</td>
-          </tr>
-        \\`).join("")
-      : \\`<tr><td colspan="4">検証データがありません</td></tr>\\`;
-
-  const renderScenarioRows = groups =>
-    groups.length
-      ? groups.map(group => \\`
-          <tr>
-            <td>\${U.safeText(group.label)}</td>
-            <td>\${group.count}R</td>
-            <td>\${group.scenarioHits}/\${group.scenarioComparable}（\${rate(group.scenarioHits, group.scenarioComparable)}%）</td>
-            <td>\${group.practicalHits}/\${group.practicalCount}（\${rate(group.practicalHits, group.practicalCount)}%）</td>
-          </tr>
-        \\`).join("")
-      : \\`<tr><td colspan="4">検証データがありません</td></tr>\\`;
-
-  const recentRows =`;
+const rendererReplacement = [
+  "  const renderVenueRows = groups =>",
+  "    groups.length",
+  "      ? groups.map(group => `",
+  "          <tr>",
+  "            <td>${U.safeText(group.label)}</td>",
+  "            <td>${group.count}R</td>",
+  "            <td>${group.honmeiHits}/${group.count}（${rate(group.honmeiHits, group.count)}%）</td>",
+  "            <td>${group.practicalHits}/${group.practicalCount}（${rate(group.practicalHits, group.practicalCount)}%）</td>",
+  "          </tr>",
+  "        `).join(\"\")",
+  "      : `<tr><td colspan=\"4\">検証データがありません</td></tr>`;",
+  "",
+  "  const renderScenarioRows = groups =>",
+  "    groups.length",
+  "      ? groups.map(group => `",
+  "          <tr>",
+  "            <td>${U.safeText(group.label)}</td>",
+  "            <td>${group.count}R</td>",
+  "            <td>${group.scenarioHits}/${group.scenarioComparable}（${rate(group.scenarioHits, group.scenarioComparable)}%）</td>",
+  "            <td>${group.practicalHits}/${group.practicalCount}（${rate(group.practicalHits, group.practicalCount)}%）</td>",
+  "          </tr>",
+  "        `).join(\"\")",
+  "      : `<tr><td colspan=\"4\">検証データがありません</td></tr>`;",
+  "",
+  "  const recentRows ="
+].join("\n");
 
 text = text.replace(rendererPattern, rendererReplacement);
 
@@ -87,16 +89,16 @@ text = text
     `<th>場</th>\n               <th>対象</th>\n               <th>◎1着率</th>\n               <th>厳選的中率</th>`
   )
   .replace(
-    `${'${renderGroupRows(\n               venueGroups\n             )}'}`,
-    `${'${renderVenueRows(\n               venueGroups\n             )}'}`
+    "${renderGroupRows(\n               venueGroups\n             )}",
+    "${renderVenueRows(\n               venueGroups\n             )}"
   )
   .replace(
     `<th>中心展開</th>\n               <th>対象</th>\n               <th>◎1着率</th>\n               <th>厳選的中率</th>\n               <th>展開一致率</th>`,
     `<th>中心展開</th>\n               <th>対象</th>\n               <th>展開一致率</th>\n               <th>厳選的中率</th>`
   )
   .replace(
-    `${'${renderGroupRows(\n               predictedScenarioGroups\n             )}'}`,
-    `${'${renderScenarioRows(\n               predictedScenarioGroups\n             )}'}`
+    "${renderGroupRows(\n               predictedScenarioGroups\n             )}",
+    "${renderScenarioRows(\n               predictedScenarioGroups\n             )}"
   );
 
 for (const removed of [
