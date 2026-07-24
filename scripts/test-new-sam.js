@@ -60,11 +60,11 @@ assert.equal(result.isFormal, true);
 assert.equal(result.average, 44.5);
 assert.deepEqual(result.missingBoatNos, []);
 assert.equal(result.ranking.find((boat) => boat.boatNo === 1).grade, "S");
-assert.equal(result.ranking.find((boat) => boat.boatNo === 1).scoreAdjustment, 6);
+assert.equal(result.ranking.find((boat) => boat.boatNo === 1).scoreAdjustment, 0);
 assert.equal(result.ranking.find((boat) => boat.boatNo === 2).grade, "A");
-assert.equal(result.ranking.find((boat) => boat.boatNo === 2).scoreAdjustment, 4);
+assert.equal(result.ranking.find((boat) => boat.boatNo === 2).scoreAdjustment, 0);
 assert.equal(result.ranking.find((boat) => boat.boatNo === 3).grade, "B");
-assert.equal(result.ranking.find((boat) => boat.boatNo === 3).scoreAdjustment, 2);
+assert.equal(result.ranking.find((boat) => boat.boatNo === 3).scoreAdjustment, 0);
 assert.equal(result.ranking.find((boat) => boat.boatNo === 4).grade, "C");
 assert.equal(result.ranking.find((boat) => boat.boatNo === 4).scoreAdjustment, 0);
 assert.equal(result.ranking.find((boat) => boat.boatNo === 5).grade, "D");
@@ -78,17 +78,17 @@ const scenarios = aiCore.buildRaceScenarios(analyses, {
 assert.equal(
   scenarios.scenarios.find((scenario) => scenario.type === "escape")
     .newSamAdjustment,
-  6
+  0
 );
 assert.equal(
   scenarios.scenarios.find((scenario) => scenario.type === "sashi")
     .newSamAdjustment,
-  4
+  0
 );
 assert.equal(
   scenarios.scenarios.find((scenario) => scenario.type === "threeAttack")
     .newSamAdjustment,
-  2
+  0
 );
 assert.equal(
   scenarios.scenarios.find((scenario) => scenario.type === "fourAttack")
@@ -142,10 +142,10 @@ const boat5 = outerThreeAttack.outcome.boats.find(
 );
 
 assert.ok(
-  boat5.reasons.some((reason) =>
-    reason.includes("新サムS・拾い +6")
+  boat5.reasons.every((reason) =>
+    !reason.includes("新サム")
   ),
-  "5号艇のS評価は攻め展開の拾いへだけ反映する"
+  "新サムを攻め展開の拾いへ別枠加点しない"
 );
 
 const theoryResult = theory.calcNewSam(entries);
@@ -164,5 +164,5 @@ assert.equal(
 console.log("新サム理論専用テスト: 合格");
 console.log("- 展示＋一周が6艇分そろった場合だけ正式判定");
 console.log("- S/A/B/C/Dを小数3桁で統一");
-console.log("- 既存展開と役割が一致した場合だけ最大+6点");
-console.log("- 欠損・役割裏付け不足は表示のみ");
+console.log("- 展示・足100点内の20点要素として統合");
+console.log("- 展開・役割・着順候補への別枠加点なし");

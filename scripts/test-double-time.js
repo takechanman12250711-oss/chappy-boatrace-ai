@@ -63,7 +63,7 @@ assert.equal(result.linkRole, "攻め");
 assert.equal(result.exhibitionGap, 0.06);
 assert.equal(result.lapGap, 0.12);
 assert.equal(result.confidence, 88);
-assert.equal(result.scoreAdjustment, 6);
+assert.equal(result.scoreAdjustment, 0);
 
 const scenarios = aiCore.buildRaceScenarios(analyses, {
   stadiumCode: "12",
@@ -76,11 +76,12 @@ const boat4Outcome = fourAttack.outcome.boats.find(
   (boat) => boat.boatNo === 4
 );
 
-assert.equal(fourAttack.doubleTimeAdjustment, 6);
+assert.equal(fourAttack.doubleTimeAdjustment, 0);
 assert.ok(
-  boat4Outcome.reasons.some((reason) =>
-    reason.includes("ダブルタイム・4カド攻め +6")
-  )
+  boat4Outcome.reasons.every((reason) =>
+    !reason.includes("ダブルタイム")
+  ),
+  "ダブルタイムを展開・着順候補へ別枠加点しない"
 );
 assert.equal(scenarios.evidence.doubleTime.activeBoat, 4);
 
@@ -92,7 +93,7 @@ const weakResult = aiCore.buildDoubleTime(entries, weakAnalyses);
 assert.equal(weakResult.isDouble, true);
 assert.equal(weakResult.topBoat, 4);
 assert.equal(weakResult.isLinkable, false);
-assert.equal(weakResult.activeBoat, null);
+assert.equal(weakResult.activeBoat, 4);
 assert.equal(weakResult.scoreAdjustment, 0);
 
 const innerEntries = entries.map((boat) => ({ ...boat }));
@@ -103,7 +104,7 @@ const innerResult = aiCore.buildDoubleTime(innerEntries, analyses);
 assert.equal(innerResult.isDouble, true);
 assert.equal(innerResult.topBoat, 1);
 assert.equal(innerResult.isOuterTarget, false);
-assert.equal(innerResult.activeBoat, null);
+assert.equal(innerResult.activeBoat, 1);
 assert.equal(innerResult.scoreAdjustment, 0);
 
 const incompleteEntries = entries.map((boat) => ({ ...boat }));
@@ -137,5 +138,5 @@ assert.equal(theoryResult.isOuterTarget, true);
 console.log("ダブルタイム理論専用テスト: 合格");
 console.log("- 展示1位＋一周1位が同じ艇のときだけ成立");
 console.log("- 2位との差から信頼度70〜100点");
-console.log("- 4・5・6号艇かつ連絡み条件成立時だけ最大8点");
-console.log("- 1〜3号艇とデータ不足は実戦加点なし");
+console.log("- 展示・足100点内の5点要素として統合");
+console.log("- 展開・役割・着順候補への別枠加点なし");

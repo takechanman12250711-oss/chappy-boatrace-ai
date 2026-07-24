@@ -44,7 +44,20 @@ assert.strictEqual(JSON.stringify(source), originalJson, "元データを変更�
 assert(result.motorMaintenanceTheoryV2.isFormal, "正式評価を返す");
 assert(received.entries[0].motorMaintenanceTheoryV2.isFormal, "展示・今節根拠で正式評価");
 assert.notStrictEqual(received.entries[0].motorRate, source.entries[0].motorRate, "既存motor入力を置換する");
-assert.strictEqual(received.entries[0].motorMaintenanceTheoryV2.weightPolicy, "既存motor枠内・追加加点なし");
+assert.strictEqual(
+  received.entries[0].motorMaintenanceTheoryV2.weightPolicy,
+  "展示・STは確認条件のみ・motor枠内"
+);
+assert(
+  received.entries.every(
+    (entry) =>
+      entry.motorMaintenanceTheoryV2
+        .components.exhibitionFoot === 15 &&
+      entry.motorMaintenanceTheoryV2
+        .components.startGoing === 7.5
+  ),
+  "展示・一周・STをモーター点へ再加算しない"
+);
 
 const newEngine = motorApi.enhanceData({ isNewEngine: true, entries: entries() }, window.ChappyAICore);
 const normal = motorApi.enhanceData({ entries: entries() }, window.ChappyAICore);

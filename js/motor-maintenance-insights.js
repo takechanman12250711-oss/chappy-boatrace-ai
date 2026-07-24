@@ -165,7 +165,11 @@
 
       const exhibition = context.exhibition.get(no) || 0;
       const lap = context.lap.get(no) || 0;
-      const exhibitionFoot = clamp(exhibition + lap, 0, 30);
+      /*
+        展示・一周は展示・足9％枠で評価済み。
+        モーター理論では整備効果の確認条件だけに使う。
+      */
+      const exhibitionFoot = 15;
       const hasExhibitionEvidence = exhibition > 0 || lap > 0;
 
       let currentRoad = 0;
@@ -182,11 +186,11 @@
       currentRoad = clamp(currentRoad, 0, 20);
       const hasCurrentEvidence = results.length > 0 || currentSt.count > 0;
 
-      let startGoing = context.exhibitionSt.get(no) || 0;
-      if (supportSt !== null) {
-        startGoing += supportSt <= 0.12 ? 10 : supportSt <= 0.14 ? 8 : supportSt <= 0.16 ? 6 : supportSt <= 0.18 ? 4 : supportSt <= 0.20 ? 2 : 0;
-      }
-      startGoing = clamp(startGoing, 0, 15);
+      /*
+        ST・展示STはST・スリット側だけで評価する。
+        既存配点の中立値を固定し、モーター点へ再加算しない。
+      */
+      const startGoing = 7.5;
 
       const motor = motorRecord(entry, newEnvironment);
       const maintenance = partsText(entry);
@@ -234,7 +238,7 @@
         hasCurrentEvidence,
         maintenance,
         maintenanceImproved: Boolean(maintenance && moderateEvidence),
-        weightPolicy: "既存motor枠内・追加加点なし",
+        weightPolicy: "展示・STは確認条件のみ・motor枠内",
         components: {
           exhibitionFoot,
           currentRoad,
@@ -275,7 +279,7 @@
           version: VERSION,
           isFormal: rows.some((row) => row.isFormal),
           rows,
-          weightPolicy: "既存motor枠内・追加加点なし"
+          weightPolicy: "展示・STは確認条件のみ・motor枠内"
         }
       };
       for (const key of ENTRY_KEYS) {
