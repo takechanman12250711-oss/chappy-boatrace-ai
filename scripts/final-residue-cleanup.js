@@ -1,6 +1,6 @@
 "use strict";
 
-// PR同期で最終整理と分割済み全検査を実行する。
+// 診断付きの分割検査で最終整理を実行する。
 const fs = require("fs");
 const path = require("path");
 
