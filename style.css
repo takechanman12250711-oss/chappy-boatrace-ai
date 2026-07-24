@@ -3350,15 +3350,14 @@ body {
   }
 }
 /* =========================================================
-  結果分析・スクショ入力 スマホ横ズレ修正
+  結果分析 スマホ横ズレ修正
 ========================================================= */
 
 @media (max-width: 768px) {
   #resultSection,
   #resultSection .result-dashboard-grid,
   #resultSection .dashboard-card,
-  #resultSection .v3-final-block,
-  #purchaseScreenshotPreview {
+  #resultSection .v3-final-block {
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -3380,69 +3379,6 @@ body {
     padding: 10px 6px;
     white-space: normal;
     overflow-wrap: anywhere;
-  }
-
-  #purchaseScreenshotPreview {
-    overflow: hidden;
-  }
-
-  #purchaseScreenshotPreview .v3-note {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  #purchaseScreenshotPreview .v3-table-wrap {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
-  #purchaseScreenshotPreview .table {
-    width: 100%;
-    min-width: 0;
-    table-layout: fixed;
-  }
-
-  #purchaseScreenshotPreview .table th,
-  #purchaseScreenshotPreview .table td {
-    padding: 6px 4px;
-    overflow: hidden;
-  }
-
-  #purchaseScreenshotPreview .table th:nth-child(1),
-  #purchaseScreenshotPreview .table td:nth-child(1) {
-    width: 42%;
-  }
-
-  #purchaseScreenshotPreview .table th:nth-child(2),
-  #purchaseScreenshotPreview .table td:nth-child(2) {
-    width: 34%;
-  }
-
-  #purchaseScreenshotPreview .table th:nth-child(3),
-  #purchaseScreenshotPreview .table td:nth-child(3) {
-    width: 24%;
-  }
-
-  #purchaseScreenshotPreview input,
-  #purchaseScreenshotPreview button {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-
-  #purchaseScreenshotPreview input {
-    padding: 8px 6px;
-    font-size: 13px;
-  }
-
-  #purchaseScreenshotPreview button {
-    padding: 8px 3px;
-    font-size: 11px;
   }
 }
 /* =========================================================
