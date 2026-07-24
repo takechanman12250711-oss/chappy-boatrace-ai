@@ -1,0 +1,39 @@
+name: Analyze reference tag effectiveness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "35 18 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Test analyzer
+        run: node scripts/test-reference-tag-effectiveness.js
+
+      - name: Build effectiveness report
+        run: node scripts/analyze-reference-tag-effectiveness.js --output data/analysis/reference-tag-effectiveness.json
+
+      - name: Commit report when changed
+        run: |
+          if git diff --quiet -- data/analysis/reference-tag-effectiveness.json; then
+            echo "No report changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/analysis/reference-tag-effectiveness.json
+          git commit -m "Update reference tag effectiveness report"
+          git push
