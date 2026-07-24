@@ -200,6 +200,12 @@ assert(
   "旧理論CSSまたは一回限りの整理処理が残っています"
 );
 assert(
+  !index.includes('id="missingArea"') &&
+    !index.includes('id="historyArea"') &&
+    !read("js/stats.js").includes('"historyArea"'),
+  "非表示の旧互換DOMまたは描画処理が残っています"
+);
+assert(
   aiCore.includes(
     "aiTicketList:\n        compatibleAiTicketList"
   ) &&

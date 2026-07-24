@@ -2158,7 +2158,8 @@
               <th>展開一致</th>
               <th>◎○▲△の実着順</th>
               <th>実戦厳選</th>
-              <th>判定</th>
+               <th>判定</th>
+               <th>8段階の主確認点</th>
             </tr>
           </thead>
 
@@ -2326,25 +2327,6 @@
 
     </div>
   `);
-
-  U.setHtml(
-    "historyArea",
-    `
-      <div class="v3-final-block">
-
-        <h3>
-          検証について
-        </h3>
-
-        <p>
-          振り返り予想は成績に含めず、
-          レース前に保存されたAI予想だけを
-          公式結果と照合します。
-        </p>
-
-      </div>
-    `
-  );
 }
 
   async function initStatsEvents() {
