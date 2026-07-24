@@ -118,3 +118,4 @@ for (const required of ["外れ方分析", "場別成績", "展開別成績", "r
 
 fs.writeFileSync(path, text);
 console.log("result analysis tables streamlined");
+// temporary workflow trigger
