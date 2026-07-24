@@ -3,6 +3,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const referenceTags = require("../js/reference-tags.js");
 
 const DEFAULT_INPUTS = [
   "data/predictions",
@@ -78,7 +79,17 @@ function extractTags(record) {
     record.prediction?.tags,
     record.analysis?.referenceTags
   ];
-  const raw = sources.find(Array.isArray) || [];
+  let raw = sources.find(Array.isArray) || [];
+
+  if (!raw.length && referenceTags && typeof referenceTags.build === "function") {
+    try {
+      raw = referenceTags.build(record.prediction || record);
+    } catch (error) {
+      console.warn(`[tag-skip] ${record.__file || raceKey(record)}: ${error.message}`);
+      raw = [];
+    }
+  }
+
   return raw.map(item => {
     if (typeof item === "string") return { key: item, label: item, strength: 1 };
     return {
