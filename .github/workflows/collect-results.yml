@@ -2,7 +2,8 @@ name: Collect official race results
 
 on:
   schedule:
-    - cron: "30 14 * * *"
+    - cron: "30 14 * * *" # 23:30 JST
+    - cron: "15 15 * * *" # 00:15 JST・遅延結果と後追加予想を再照合
 
   workflow_dispatch:
     inputs:
