@@ -1724,33 +1724,6 @@
       </div>
 
       <div class="v3-final-block">
-        <h3>自動選定採用</h3>
-
-        <p>
-          ${automaticSelectedRuns}回
-        </p>
-      </div>
-
-      <div class="v3-final-block">
-        <h3>自動見送り判定</h3>
-
-        <p>
-          ${automaticSkippedRuns}回
-        </p>
-      </div>
-
-      <div class="v3-final-block">
-        <h3>シャドー予想</h3>
-
-        <p>
-          ${automaticShadowRuns}レース
-        </p>
-
-        <small>検証専用・購入／note対象外</small>
-      </div>
-
-
-      <div class="v3-final-block">
         <h3>結果確定</h3>
 
         <p>
@@ -1773,15 +1746,6 @@
       </div>
 
       <div class="v3-final-block">
-        <h3>シャドー結果確定</h3>
-
-        <p>
-          ${shadowSettledRows.length}レース
-        </p>
-      </div>
-
-
-      <div class="v3-final-block">
         <h3>◎1着率</h3>
 
         <p>
@@ -1792,16 +1756,6 @@
             honmeiHits,
             realSettledRows.length
           )}%）
-        </p>
-      </div>
-
-
-      <div class="v3-final-block">
-        <h3>実戦厳選対象</h3>
-
-        <p>
-          ${practicalRows.length}
-          レース
         </p>
       </div>
 
