@@ -19,25 +19,35 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout branch
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref }}
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node scripts/final-residue-cleanup.js
-      - run: |
-          rm scripts/final-residue-cleanup.js
+      - name: Apply final cleanup
+        run: node scripts/final-residue-cleanup.js
+      - name: Remove temporary cleanup script
+        run: rm -f scripts/final-residue-cleanup.js
+      - name: Syntax check
+        run: |
           node --check js/render.js
           node --check scripts/check-charter.js
-          node scripts/check-charter.js
-          node scripts/test-theory-integration.js
+      - name: Charter check
+        run: node scripts/check-charter.js
+      - name: Theory integration test
+        run: node scripts/test-theory-integration.js
+      - name: Residue grep check
+        run: |
           if grep -R "v3-theory-\|renderTheoryPanel\|THEORY_LABELS\|cleanup-remaining-legacy-ui" index.html style.css js scripts .github/workflows --exclude=check-charter.js --exclude=final-residue-cleanup.yml; then
             echo "旧残骸が残っています"
             exit 1
           fi
-      - run: |
+      - name: Commit cleanup
+        run: |
           git add -A
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
