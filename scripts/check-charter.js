@@ -127,6 +127,7 @@ const aiCore = read("js/ai-core.js");
 const render = read("js/render.js");
 const script = read("js/script.js");
 const index = read("index.html");
+const style = read("style.css");
 const noteGenerator = read("js/note-generator.js");
 const practicalSelection = read("js/practical-selection.js");
 
@@ -191,6 +192,12 @@ assert(
     !render.includes("renderTheoryItem") &&
     !render.includes("旧互換・非表示"),
   "非表示の旧理論描画処理が残っています"
+);
+assert(
+  !style.includes("v3-theory-") &&
+    !fs.existsSync(path.join(root, ".github/workflows/cleanup-remaining-legacy-ui.yml")) &&
+    !fs.existsSync(path.join(root, "scripts/cleanup-remaining-legacy-ui.js")),
+  "旧理論CSSまたは一回限りの整理処理が残っています"
 );
 assert(
   aiCore.includes(
