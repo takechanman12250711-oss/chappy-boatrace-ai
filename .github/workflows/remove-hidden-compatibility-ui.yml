@@ -1,0 +1,62 @@
+name: Remove hidden compatibility UI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "scripts/remove-hidden-compatibility-ui.js"
+      - "index.html"
+      - "js/stats.js"
+      - "scripts/check-charter.js"
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'agent/remove-hidden-compatibility-ui'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply cleanup
+        run: node scripts/remove-hidden-compatibility-ui.js
+      - name: Remove temporary script
+        run: rm -f scripts/remove-hidden-compatibility-ui.js
+      - name: Validate
+        run: |
+          node --check js/stats.js
+          node --check scripts/check-charter.js
+          node scripts/check-charter.js
+          if grep -R 'id="missingArea"\|id="historyArea"\|"historyArea"' index.html js/stats.js; then
+            echo "非表示の旧互換参照が残っています"
+            exit 1
+          fi
+          node - <<'NODE'
+          const fs = require('fs');
+          const stats = fs.readFileSync('js/stats.js', 'utf8');
+          const head = stats.match(/<h3>\s*予想と公式着順の比較[\s\S]*?<thead>([\s\S]*?)<\/thead>/)?.[1] || '';
+          const thCount = (head.match(/<th>/g) || []).length;
+          if (thCount !== 12) throw new Error(`検証表の見出し列数が${thCount}列です`);
+          console.log('検証表の見出し列数: 12列');
+          NODE
+      - name: Commit changes
+        run: |
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            echo "追加変更なし"
+            exit 0
+          fi
+          git commit -m "非表示の旧互換UIと検証表の列ずれを修正"
+          git push origin HEAD:${{ github.head_ref }}
