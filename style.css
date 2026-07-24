@@ -339,7 +339,6 @@ input {
 .v3-race-grid,
 .v3-ai-grid,
 .v3-index-grid,
-.v3-theory-grid,
 .v3-newspaper-list,
 .v3-formation-list {
   display: grid;
@@ -349,7 +348,6 @@ input {
 
 .v3-info-cell,
 .v3-index-cell,
-.v3-theory-item,
 .v3-paper-card,
 .v3-formation-row,
 .v3-ticket-row,
@@ -368,8 +366,7 @@ input {
 }
 
 .v3-info-cell span,
-.v3-index-cell span,
-.v3-theory-label {
+.v3-index-cell span {
   display: block;
   font-size: 10px;
   color: #6b7280;
@@ -536,13 +533,11 @@ input {
   font-size: 12px;
 }
 
-.v3-index-cell,
-.v3-theory-item {
+.v3-index-cell {
   padding: 6px;
 }
 
-.v3-index-cell strong,
-.v3-theory-main {
+.v3-index-cell strong {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -742,17 +737,7 @@ input {
   font-weight: 900;
 }
 
-/* 理論・最終コメント */
-
-.v3-theory-main strong {
-  font-size: 13px;
-}
-
-.v3-theory-item p {
-  margin: 4px 0 0;
-  font-size: 10px;
-  color: #4b5563;
-}
+/* 最終コメント */
 
 .v3-final-grid {
   display: grid;
@@ -919,7 +904,6 @@ input {
 .v3-race-grid,
 .v3-ai-grid,
 .v3-index-grid,
-.v3-theory-grid,
 .v3-newspaper-list,
 .v3-formation-list {
   width: 100%;
