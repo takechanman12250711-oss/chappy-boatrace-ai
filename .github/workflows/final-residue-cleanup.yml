@@ -36,8 +36,15 @@ jobs:
         run: |
           node --check js/render.js
           node --check scripts/check-charter.js
-      - name: Charter check
-        run: node scripts/check-charter.js
+      - name: Charter check with diagnostics
+        run: |
+          if ! node scripts/check-charter.js; then
+            echo "--- v3-theory CSS remaining ---"
+            grep -n "v3-theory-" style.css || true
+            echo "--- one-time files remaining ---"
+            ls -l .github/workflows/cleanup-remaining-legacy-ui.yml scripts/cleanup-remaining-legacy-ui.js 2>/dev/null || true
+            exit 1
+          fi
       - name: Theory integration test
         run: node scripts/test-theory-integration.js
       - name: Residue grep check
