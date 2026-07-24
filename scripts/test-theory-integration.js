@@ -302,9 +302,104 @@ assert.ok(
   "最大7点を維持する"
 );
 
+const withoutOdds =
+  global.createPrediction(
+    clone(appInput)
+  );
+const formationTickets = [
+  ...(withoutOdds.formation?.main || []),
+  ...(withoutOdds.formation?.cover || []),
+  ...(withoutOdds.formation?.nagashi || []),
+  ...(withoutOdds.formation?.hole || [])
+];
+const oddsInput =
+  clone(appInput);
+
+oddsInput.odds = {
+  byTicket:
+    Object.fromEntries(
+      formationTickets.map(
+        (ticket, index) => [
+          ticket,
+          10 + index
+        ]
+      )
+    )
+};
+
+const predictionWithOdds =
+  global.createPrediction(
+    oddsInput
+  );
+const displayedTicketLists = [
+  predictionWithOdds.mainSheet
+    .tickets,
+  predictionWithOdds.mainSheet
+    .coverTickets,
+  predictionWithOdds.mainSheet
+    .flowTickets,
+  predictionWithOdds.manshuSheet
+    .tickets,
+  predictionWithOdds.ticketSheets
+    .all,
+  predictionWithOdds
+    .aiTicketList
+].filter((list) => list.length);
+
+assert.ok(
+  displayedTicketLists.length >= 3,
+  "本命・押さえ・全買い目の表示データを作成する"
+);
+
+displayedTicketLists.forEach(
+  (list) => {
+    list.forEach((item) => {
+      assert.equal(
+        typeof item,
+        "object",
+        "全表示へ共通の買い目オブジェクトを渡す"
+      );
+      assert.ok(
+        item.ticket,
+        "全表示の買い目にticketを保持する"
+      );
+      assert.equal(
+        item.odds,
+        oddsInput.odds
+          .byTicket[item.ticket],
+        "本命・万舟・実戦厳選・一覧で同じ公式オッズを使う"
+      );
+      assert.notEqual(
+        item.oddsText,
+        "オッズ未取得",
+        "取得済みオッズを未取得表示へ戻さない"
+      );
+    });
+  }
+);
+
+assert.deepEqual(
+  predictionWithOdds.aiTicketList
+    .map((item) => item.ticket),
+  predictionWithOdds.ticketSheets
+    .all
+    .map((item) => item.ticket),
+  "AI買い目一覧も最新AIコアの共通買い目を使う"
+);
+assert.equal(
+  new Set(
+    predictionWithOdds
+      .aiTicketList
+      .map((item) => item.ticket)
+  ).size,
+  predictionWithOdds
+    .aiTicketList.length,
+  "複数分類に入る同一買い目は一覧で重複させない"
+);
+
 console.log(
   "全理論統合テスト: OK"
 );
 console.log(
-  "- 共通入力・当地出走数・風向・潮汐未取得・3経路一致を確認"
+  "- 共通入力・当地出走数・風向・潮汐未取得・3経路・全表示オッズ一致を確認"
 );
