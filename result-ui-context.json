@@ -1,0 +1,53 @@
+{
+  "count": 12,
+  "hits": [
+    {
+      "line": 1205,
+      "context": "1197:             item.prediction?.raceFlow?.title ||\n1198:             \"\",\n1199:           expectedWinningMethod:\n1200:             verification?.expectedMethod || \"\",\n1201:           scenarioMatched:\n1202:             verification?.scenarioMatched ?? null,\n1203:           hitCategory:\n1204:             verification?.hitCategory || \"\",\n1205:           simulatedStake:\n1206:             verification?.simulatedStake || 0,\n1207:           simulatedReturn:\n1208:             verification?.simulatedReturn || 0,\n1209: \n1210:           missType:\n1211:             settled\n1212:               ? verification?.missType ||\n1213:                 classifyPracticalResult("
+    },
+    {
+      "line": 1206,
+      "context": "1198:             \"\",\n1199:           expectedWinningMethod:\n1200:             verification?.expectedMethod || \"\",\n1201:           scenarioMatched:\n1202:             verification?.scenarioMatched ?? null,\n1203:           hitCategory:\n1204:             verification?.hitCategory || \"\",\n1205:           simulatedStake:\n1206:             verification?.simulatedStake || 0,\n1207:           simulatedReturn:\n1208:             verification?.simulatedReturn || 0,\n1209: \n1210:           missType:\n1211:             settled\n1212:               ? verification?.missType ||\n1213:                 classifyPracticalResult(\n1214:                   practicalTickets,"
+    },
+    {
+      "line": 1207,
+      "context": "1199:           expectedWinningMethod:\n1200:             verification?.expectedMethod || \"\",\n1201:           scenarioMatched:\n1202:             verification?.scenarioMatched ?? null,\n1203:           hitCategory:\n1204:             verification?.hitCategory || \"\",\n1205:           simulatedStake:\n1206:             verification?.simulatedStake || 0,\n1207:           simulatedReturn:\n1208:             verification?.simulatedReturn || 0,\n1209: \n1210:           missType:\n1211:             settled\n1212:               ? verification?.missType ||\n1213:                 classifyPracticalResult(\n1214:                   practicalTickets,\n1215:                   resultTicket"
+    },
+    {
+      "line": 1208,
+      "context": "1200:             verification?.expectedMethod || \"\",\n1201:           scenarioMatched:\n1202:             verification?.scenarioMatched ?? null,\n1203:           hitCategory:\n1204:             verification?.hitCategory || \"\",\n1205:           simulatedStake:\n1206:             verification?.simulatedStake || 0,\n1207:           simulatedReturn:\n1208:             verification?.simulatedReturn || 0,\n1209: \n1210:           missType:\n1211:             settled\n1212:               ? verification?.missType ||\n1213:                 classifyPracticalResult(\n1214:                   practicalTickets,\n1215:                   resultTicket\n1216:                 )"
+    },
+    {
+      "line": 1274,
+      "context": "1266:           .filter(Boolean)\n1267:       )\n1268:     : {\n1269:         scenarioComparableCount: 0,\n1270:         scenarioHits: 0,\n1271:         scenarioMatchRate: 0,\n1272:         totalStake: 0,\n1273:         totalReturn: 0,\n1274:         simulatedProfit: 0,\n1275:         simulatedRecoveryRate: 0,\n1276:         categorySummary: [],\n1277:         markSummary: [],\n1278:         priorityStageSummary: []\n1279:       };\n1280:   const missTypeLabels = [\n1281:     \"的中\",\n1282:     \"頭外れ\","
+    },
+    {
+      "line": 1275,
+      "context": "1267:       )\n1268:     : {\n1269:         scenarioComparableCount: 0,\n1270:         scenarioHits: 0,\n1271:         scenarioMatchRate: 0,\n1272:         totalStake: 0,\n1273:         totalReturn: 0,\n1274:         simulatedProfit: 0,\n1275:         simulatedRecoveryRate: 0,\n1276:         categorySummary: [],\n1277:         markSummary: [],\n1278:         priorityStageSummary: []\n1279:       };\n1280:   const missTypeLabels = [\n1281:     \"的中\",\n1282:     \"頭外れ\",\n1283:     \"相手抜け\","
+    },
+    {
+      "line": 1319,
+      "context": "1311:     return {\n1312:       label,\n1313:       count: rows.length,\n1314:       honmeiHits: rows.filter(item => item.honmeiHit).length,\n1315:       scenarioHits: summary?.scenarioHits || 0,\n1316:       scenarioComparable: summary?.scenarioComparableCount || 0,\n1317:       practicalHits: summary?.practicalHits || 0,\n1318:       practicalCount: summary?.practicalCount || 0,\n1319:       recoveryRate: summary?.simulatedRecoveryRate || 0\n1320:     };\n1321:   };\n1322:   const automaticSettledRows = settledRows.filter(item =>\n1323:     [\"自動選定\", \"シャドー予想\"].includes(item.predictionSource)\n1324:   );\n1325:   const verificationReadiness = R?.getSampleStage\n1326:     ? R.getSampleStage(automaticSettledRows.length)\n1327:     : {"
+    },
+    {
+      "line": 1697,
+      "context": "1689: \n1690:             <h3>\n1691:         公式結果との照合状況\n1692:       </h3>\n1693: \n1694:       <p>\n1695:         保存済みの事前予想と同じレースの\n1696:         公式結果だけを照合します。\n1697:         検証回収率は実購入額ではなく、\n1698:         保存された実戦厳選を各点100円で\n1699:         均等購入した場合の比較値です。\n1700:         結果待ちはアプリ起動時に\n1701:         自動確認します。\n1702:       </p>\n1703: \n1704:       <p>\n1705:         ${sampleMessage}"
+    },
+    {
+      "line": 1869,
+      "context": "1861:           ${verificationSummary.scenarioHits}\n1862:           /\n1863:           ${verificationSummary.scenarioComparableCount}\n1864:           （${verificationSummary.scenarioMatchRate}%）\n1865:         </p>\n1866:       </div>\n1867: \n1868:       <div class=\"v3-final-block\">\n1869:         <h3>検証回収率</h3>\n1870: \n1871:         <p>\n1872:           ${verificationSummary.simulatedRecoveryRate}%\n1873:         </p>\n1874: \n1875:         <small>\n1876:           各買い目100円均等・投資${verificationSummary.totalStake.toLocaleString(\"ja-JP\")}円／払戻${verificationSummary.totalReturn.toLocaleString(\"ja-JP\")}円\n1877:         </small>"
+    },
+    {
+      "line": 1872,
+      "context": "1864:           （${verificationSummary.scenarioMatchRate}%）\n1865:         </p>\n1866:       </div>\n1867: \n1868:       <div class=\"v3-final-block\">\n1869:         <h3>検証回収率</h3>\n1870: \n1871:         <p>\n1872:           ${verificationSummary.simulatedRecoveryRate}%\n1873:         </p>\n1874: \n1875:         <small>\n1876:           各買い目100円均等・投資${verificationSummary.totalStake.toLocaleString(\"ja-JP\")}円／払戻${verificationSummary.totalReturn.toLocaleString(\"ja-JP\")}円\n1877:         </small>\n1878:       </div>\n1879: \n1880:     </div>"
+    },
+    {
+      "line": 1966,
+      "context": "1958:         <table class=\"table\">\n1959:           <thead>\n1960:             <tr>\n1961:               <th>点数帯</th>\n1962:               <th>判断状態</th>\n1963:               <th>結果確定</th>\n1964:               <th>◎1着率</th>\n1965:               <th>展開一致率</th>\n1966:               <th>仮想的中率</th>\n1967:               <th>仮想回収率</th>\n1968:             </tr>\n1969:           </thead>\n1970:           <tbody>\n1971:             ${scoreBandRows.map(row => `\n1972:               <tr>\n1973:                 <td>${U.safeText(row.label)}</td>\n1974:                 <td>${U.safeText(row.readiness?.label || \"蓄積中\")}</td>"
+    },
+    {
+      "line": 1967,
+      "context": "1959:           <thead>\n1960:             <tr>\n1961:               <th>点数帯</th>\n1962:               <th>判断状態</th>\n1963:               <th>結果確定</th>\n1964:               <th>◎1着率</th>\n1965:               <th>展開一致率</th>\n1966:               <th>仮想的中率</th>\n1967:               <th>仮想回収率</th>\n1968:             </tr>\n1969:           </thead>\n1970:           <tbody>\n1971:             ${scoreBandRows.map(row => `\n1972:               <tr>\n1973:                 <td>${U.safeText(row.label)}</td>\n1974:                 <td>${U.safeText(row.readiness?.label || \"蓄積中\")}</td>\n1975:                 <td>${row.count}R</td>"
+    }
+  ]
+}
