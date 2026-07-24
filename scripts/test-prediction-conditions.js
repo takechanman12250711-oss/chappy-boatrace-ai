@@ -6,6 +6,9 @@ const conditions = require("../js/prediction-conditions");
 const snapshot = conditions.capture({
   entries: Array.from({ length: 6 }, (_, index) => ({
     boat: index + 1,
+    // 公式データのboatNoは艇番ではなくボート機材番号。
+    // 艇番のboatを優先しないと、1〜6号艇の選手情報が欠落する。
+    boatNo: 50 + index,
     racerName: `選手${index + 1}`,
     className: index === 2 ? "A1" : "B1",
     avgSt: 0.14 + index * 0.01,
@@ -34,7 +37,11 @@ const snapshot = conditions.capture({
 assert.equal(snapshot.sourceTiming, "pre_deadline");
 assert.equal(snapshot.officialResultUsed, false);
 assert.equal(snapshot.boats.length, 6);
+assert.equal(snapshot.dataAvailability.entries, 6);
+assert.equal(snapshot.dataAvailability.averageST, 6);
+assert.equal(snapshot.boats[0].racerName, "選手1");
 assert.equal(snapshot.boats[2].className, "A1");
+assert.equal(snapshot.boats[0].motor2Rate, 30);
 assert.equal(snapshot.boats[0].exhibitionST, 0.1);
 assert.equal(snapshot.boats[0].exhibitionTime, 6.7);
 assert.equal(snapshot.weather.windSpeed, 4);
