@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.6.0-exhibition-performance-v2";
+  const CORE_VERSION = "ai-core-v4.7.0-hold-pickup-v2";
 
   /* ===============================
     基本ユーティリティ
@@ -5200,13 +5200,19 @@ function getBoatNo(boat) {
         : courseRows.find(
             (item) => item.course === wallCourse
           )?.boatNo || null;
+    const boatByCourse = new Map(
+      courseRows.map((item) => [item.course, item.boatNo])
+    );
     const blockedBoats = new Set(
       (
         mainScenario?.blockedBoats ||
         raceScenarios?.blockedBoats ||
         []
       )
-        .map((boatNo) => Number(boatNo))
+        .map((courseOrBoat) => {
+          const value = Number(courseOrBoat);
+          return boatByCourse.get(value) || value;
+        })
         .filter(Boolean)
     );
     const exhibitionTimes = sourceEntries
@@ -7083,6 +7089,426 @@ aiComment: comment
 }
 
 /* ===============================
+  残し・拾い理論 Ver2
+
+  最有力展開・実進入・壁判定を受け取り、
+  2着残しと3着拾いを独立した100点で確定する。
+
+  ST・展示・当地・技量・モーターはここで再加点しない。
+=============================== */
+
+function holdPickupGrade(score) {
+  if (score >= 85) return "S";
+  if (score >= 75) return "A";
+  if (score >= 65) return "B";
+  if (score >= 55) return "C";
+  return "D";
+}
+
+function buildHoldPickupTheory(
+  entries,
+  analyses,
+  scenario,
+  wallTheory,
+  options = {}
+) {
+  const sourceEntries = Array.isArray(entries) ? entries : [];
+  const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+  const scenarioType = scenario?.type || "";
+  const scenarioLabel = scenario?.label || "";
+  const courseRows = sourceEntries
+    .map((entry) => {
+      const boatNo = getBoatNo(entry);
+
+      return {
+        boatNo,
+        course: getAttackTheoryCourse(entry, boatNo),
+        entry
+      };
+    })
+    .filter(
+      (row) =>
+        row.boatNo >= 1 &&
+        row.boatNo <= 6 &&
+        row.course >= 1 &&
+        row.course <= 6
+    );
+  const courseByBoat = new Map(
+    courseRows.map((row) => [row.boatNo, row.course])
+  );
+  const boatByCourse = new Map(
+    courseRows.map((row) => [row.course, row.boatNo])
+  );
+  const scenarioAttackerCourse =
+    Number(options.attackerCourse ?? scenario?.attacker ?? 0) || null;
+  const attackerBoatNo =
+    Number(
+      options.attackerBoatNo ??
+      boatByCourse.get(scenarioAttackerCourse) ??
+      scenario?.attacker ??
+      0
+    ) || null;
+  const hasExplicitBlockedBoats =
+    Array.isArray(options.blockedBoats);
+  const blockedCoursesOrBoats =
+    hasExplicitBlockedBoats
+      ? options.blockedBoats
+      : scenario?.blockedBoats || [];
+  const blockedBoats = new Set(
+    blockedCoursesOrBoats
+      .map((courseOrBoat) => {
+        const value = Number(courseOrBoat);
+        return hasExplicitBlockedBoats
+          ? value
+          : boatByCourse.get(value) || value;
+      })
+      .filter(Boolean)
+  );
+  const completeRace =
+    sourceEntries.length === 6 &&
+    sourceAnalyses.length === 6 &&
+    courseRows.length === 6 &&
+    new Set(courseRows.map((row) => row.boatNo)).size === 6 &&
+    new Set(courseRows.map((row) => row.course)).size === 6;
+  const mappingFormal =
+    hasFormalStartCourseMapping(sourceEntries);
+  const wallBoat = Number(wallTheory?.wallBoat || 0) || null;
+  const wallCandidateNo =
+    Number(wallTheory?.wallCandidateNo || 0) || null;
+  const wallState = wallTheory?.state || "暫定";
+
+  const scenarioCourses = {
+    escape: {
+      hold: [2, 3, 4],
+      pickup: [3, 4, 5, 6]
+    },
+    sashi: {
+      hold: [1, 3, 4],
+      pickup: [3, 4, 5, 6]
+    },
+    threeAttack: {
+      hold: [1, 2],
+      pickup: [5, 6]
+    },
+    fourAttack: {
+      hold: [1, 3, 5],
+      pickup: [2, 5, 6]
+    }
+  };
+
+  const holdPositionPoints = {
+    escape: { 2: 25, 3: 21, 4: 18 },
+    sashi: { 1: 25, 3: 20, 4: 18 },
+    threeAttack: { 1: 25, 2: 20 },
+    fourAttack: { 1: 22, 3: 25, 5: 20 }
+  };
+  const pickupPositionPoints = {
+    escape: { 3: 25, 4: 23, 5: 20, 6: 17 },
+    sashi: { 3: 25, 4: 23, 5: 20, 6: 17 },
+    threeAttack: { 5: 25, 6: 20 },
+    fourAttack: { 2: 18, 5: 25, 6: 22 }
+  };
+  const holdPathPoints = {
+    1: 10,
+    2: 10,
+    3: 8,
+    4: 8,
+    5: 6,
+    6: 4
+  };
+  const pickupPathPoints = {
+    1: 4,
+    2: 8,
+    3: 7,
+    4: 8,
+    5: 10,
+    6: 10
+  };
+
+  function wallHoldPoints(boatNo, course) {
+    if (boatNo === wallBoat) return 20;
+    if (
+      boatNo === wallCandidateNo &&
+      wallState === "壁崩れ"
+    ) {
+      return 0;
+    }
+    if (
+      scenarioAttackerCourse &&
+      course < scenarioAttackerCourse
+    ) {
+      return course <= 2 ? 15 : 12;
+    }
+    if (course === 4) return 8;
+    if (
+      scenarioType === "fourAttack" &&
+      course === 5
+    ) {
+      return 20;
+    }
+    return 0;
+  }
+
+  function wallPickupPoints(course) {
+    if (!scenarioAttackerCourse) return 0;
+    if (course === scenarioAttackerCourse + 1) return 20;
+    if (course > scenarioAttackerCourse) {
+      return course === 6 ? 15 : 12;
+    }
+    if (
+      scenarioType === "fourAttack" &&
+      course === 2
+    ) {
+      return 10;
+    }
+    return 0;
+  }
+
+  function buildRoleScore(boatNo, role) {
+    const course = courseByBoat.get(boatNo) || boatNo;
+    const allowedCourses =
+      scenarioCourses[scenarioType]?.[role] || [];
+    const isScenarioMatch = allowedCourses.includes(course);
+    const isAttackSource = boatNo === attackerBoatNo;
+    const isBlocked = blockedBoats.has(boatNo);
+
+    if (
+      !scenarioType ||
+      !completeRace
+    ) {
+      return {
+        score: 50,
+        grade: "D",
+        status: "暫定",
+        isFormal: false,
+        isAdopted: false,
+        isReference: false,
+        components:
+          role === "hold"
+            ? {
+                scenarioMatch: 0,
+                positionRelation: 0,
+                wallRoute: 0,
+                firstMarkRoute: 0,
+                dataReliability: 0
+              }
+            : {
+                scenarioLink: 0,
+                openWater: 0,
+                positionRelation: 0,
+                backstretchRoute: 0,
+                dataReliability: 0
+              },
+        reason: "展開または6艇の進入関係が不足し、中立50点で暫定"
+      };
+    }
+
+    if (isAttackSource || isBlocked || !isScenarioMatch) {
+      const exclusionReason = isAttackSource
+        ? "1着中心艇のため2・3着候補から除外"
+        : isBlocked
+          ? "最有力展開で攻め場を失うため除外"
+          : `最有力展開の${role === "hold" ? "残し" : "拾い"}経路なし`;
+
+      return {
+        score: 1,
+        grade: "D",
+        status: "不成立",
+        isFormal: true,
+        isAdopted: false,
+        isReference: false,
+        components:
+          role === "hold"
+            ? {
+                scenarioMatch: 0,
+                positionRelation: 0,
+                wallRoute: 0,
+                firstMarkRoute: 0,
+                dataReliability: mappingFormal ? 5 : 0
+              }
+            : {
+                scenarioLink: 0,
+                openWater: 0,
+                positionRelation: 0,
+                backstretchRoute: 0,
+                dataReliability: mappingFormal ? 5 : 0
+              },
+        reason: exclusionReason
+      };
+    }
+
+    const dataReliability = mappingFormal ? 5 : 0;
+    let components;
+
+    if (role === "hold") {
+      components = {
+        scenarioMatch: 40,
+        positionRelation:
+          holdPositionPoints[scenarioType]?.[course] || 0,
+        wallRoute: wallHoldPoints(boatNo, course),
+        firstMarkRoute: holdPathPoints[course] || 0,
+        dataReliability
+      };
+    } else {
+      components = {
+        scenarioLink: 40,
+        openWater: wallPickupPoints(course),
+        positionRelation:
+          pickupPositionPoints[scenarioType]?.[course] || 0,
+        backstretchRoute: pickupPathPoints[course] || 0,
+        dataReliability
+      };
+    }
+
+    const score = round(
+      clamp(
+        Object.values(components)
+          .reduce((sum, value) => sum + value, 0),
+        0,
+        100
+      )
+    );
+    const isAdopted = score >= 65;
+    const isReference = score >= 55 && score < 65;
+    const status = isAdopted
+      ? "正式採用"
+      : isReference
+        ? "参考"
+        : "不成立";
+    const reason = role === "hold"
+      ? [
+          `最有力展開一致${components.scenarioMatch}/40`,
+          `実進入・位置関係${components.positionRelation}/25`,
+          `壁・内側残存経路${components.wallRoute}/20`,
+          `1マーク後の残し経路${components.firstMarkRoute}/10`,
+          `取得信頼度${components.dataReliability}/5`
+        ].join(" / ")
+      : [
+          `最有力展開連動${components.scenarioLink}/40`,
+          `差し場・空き水面${components.openWater}/25`,
+          `実進入・位置関係${components.positionRelation}/15`,
+          `バック・2マーク到達${components.backstretchRoute}/15`,
+          `取得信頼度${components.dataReliability}/5`
+        ].join(" / ");
+
+    return {
+      score,
+      grade: holdPickupGrade(score),
+      status,
+      isFormal: true,
+      isAdopted,
+      isReference,
+      components,
+      reason
+    };
+  }
+
+  const roles = sourceAnalyses
+    .map((analysis) => {
+      const boatNo = Number(analysis?.boatNo || 0);
+      const course = courseByBoat.get(boatNo) || boatNo;
+      const hold = buildRoleScore(boatNo, "hold");
+      const pickup = buildRoleScore(boatNo, "pickup");
+
+      return {
+        boatNo,
+        playerName: analysis?.playerName || "",
+        course,
+        isAttackSource: boatNo === attackerBoatNo,
+        isBlocked: blockedBoats.has(boatNo),
+        hold,
+        pickup,
+        hasIndependentDualEvidence:
+          hold.isAdopted &&
+          pickup.isAdopted &&
+          hold.reason !== pickup.reason
+      };
+    })
+    .filter((boat) => boat.boatNo >= 1 && boat.boatNo <= 6);
+
+  function rankRole(role, limit) {
+    const ranked = roles
+      .filter((boat) => boat[role].isAdopted)
+      .sort(
+        (a, b) =>
+          b[role].score - a[role].score ||
+          a.course - b.course
+      )
+      .slice(0, limit)
+      .map((boat) => ({
+        boatNo: boat.boatNo,
+        playerName: boat.playerName,
+        course: boat.course,
+        score: boat[role].score,
+        grade: boat[role].grade,
+        status: boat[role].status,
+        reason: boat[role].reason,
+        components: boat[role].components
+      }));
+
+    ranked.forEach((boat, index) => {
+      boat.rank = index + 1;
+      boat.isEquivalentToPrevious =
+        index > 0 &&
+        Math.abs(
+          boat.score - ranked[index - 1].score
+        ) <= 2;
+    });
+
+    return ranked;
+  }
+
+  const secondCandidates = rankRole("hold", 3);
+  const thirdCandidates = rankRole("pickup", 4);
+
+  return {
+    scenarioType,
+    scenarioLabel,
+    attackerBoatNo,
+    attackerCourse: scenarioAttackerCourse,
+    wallBoat,
+    wallCandidateNo,
+    wallState,
+    mappingFormal,
+    isFormal: Boolean(scenarioType) && completeRace,
+    isProvisional: !scenarioType || !completeRace,
+    secondCandidates,
+    thirdCandidates,
+    referenceHold: roles
+      .filter((boat) => boat.hold.isReference)
+      .map((boat) => boat.boatNo),
+    referencePickup: roles
+      .filter((boat) => boat.pickup.isReference)
+      .map((boat) => boat.boatNo),
+    roles,
+    thresholds: {
+      adopted: 65,
+      reference: 55,
+      equivalentDifference: 2,
+      secondLimit: 3,
+      thirdLimit: 4
+    },
+    weights: {
+      hold: {
+        scenarioMatch: 40,
+        positionRelation: 25,
+        wallRoute: 20,
+        firstMarkRoute: 10,
+        dataReliability: 5
+      },
+      pickup: {
+        scenarioLink: 40,
+        openWater: 25,
+        positionRelation: 15,
+        backstretchRoute: 15,
+        dataReliability: 5
+      }
+    },
+    source: "ai-core-hold-pickup-theory-v2"
+  };
+}
+
+/* ===============================
   レース全体・展開シナリオ生成
 
   順位や買い目は作らない。
@@ -8083,12 +8509,37 @@ if (hasComparison(3, 1)) {
       .map((boat) => boat.boatNo);
   }
 
-  const attacker = Number(mainScenario?.attacker || 0) || null;
+  const attackerCourse =
+    Number(mainScenario?.attacker || 0) || null;
+  const boatByCourse = new Map(
+    entries
+      .map((entry) => ({
+        boatNo: getBoatNo(entry),
+        course: getAttackTheoryCourse(
+          entry,
+          getBoatNo(entry)
+        )
+      }))
+      .filter(
+        (row) =>
+          row.boatNo >= 1 &&
+          row.boatNo <= 6 &&
+          row.course >= 1 &&
+          row.course <= 6
+      )
+      .map((row) => [row.course, row.boatNo])
+  );
+  const attacker =
+    Number(
+      boatByCourse.get(attackerCourse) ??
+      attackerCourse ??
+      0
+    ) || null;
 
   const legacyWallBoat = attacker
     ? (
-        attacker >= 2
-          ? attacker - 1
+        attackerCourse >= 2
+          ? boatByCourse.get(attackerCourse - 1) || null
           : rankedBoatNumbers(
               (boat) => boat?.roleScores?.hold,
               { exclude: [attacker], limit: 1 }
@@ -8096,7 +8547,7 @@ if (hasComparison(3, 1)) {
       )
     : null;
 
-  const remainers = rankedBoatNumbers(
+  let remainers = rankedBoatNumbers(
     (boat) => boat?.roleScores?.hold,
     { limit: 3 }
   );
@@ -8106,7 +8557,7 @@ if (hasComparison(3, 1)) {
     { exclude: attacker ? [attacker] : [], limit: 3 }
   );
 
-  const pickupCandidates = rankedBoatNumbers(
+  let pickupCandidates = rankedBoatNumbers(
     (boat) => boat?.roleScores?.pickup,
     { limit: 3 }
   );
@@ -8122,7 +8573,12 @@ if (hasComparison(3, 1)) {
   );
 
   const blockedBoats = Array.isArray(mainScenario?.blockedBoats)
-    ? [...mainScenario.blockedBoats]
+    ? mainScenario.blockedBoats
+        .map((courseOrBoat) =>
+          boatByCourse.get(Number(courseOrBoat)) ||
+          Number(courseOrBoat)
+        )
+        .filter(Boolean)
     : [];
 
   const wallTheory = buildWallTheory(
@@ -8138,6 +8594,34 @@ if (hasComparison(3, 1)) {
 
   const wallBoat =
     Number(wallTheory.wallBoat || 0) || null;
+
+  /*
+    残し・拾いVer2は、展開と壁を確定した後に一度だけ計算する。
+    以降の印・買い目はこの確定候補をそのまま利用する。
+  */
+  const holdPickupTheory = buildHoldPickupTheory(
+    entries,
+    list,
+    mainScenario,
+    wallTheory,
+    {
+      attackerCourse,
+      attackerBoatNo: attacker,
+      blockedBoats
+    }
+  );
+
+  if (mainScenario?.outcome) {
+    mainScenario.outcome.secondCandidates =
+      holdPickupTheory.secondCandidates;
+    mainScenario.outcome.thirdCandidates =
+      holdPickupTheory.thirdCandidates;
+  }
+
+  remainers = holdPickupTheory.secondCandidates
+    .map((boat) => boat.boatNo);
+  pickupCandidates = holdPickupTheory.thirdCandidates
+    .map((boat) => boat.boatNo);
 
   const mainGap = Math.max(
     0,
@@ -8210,6 +8694,26 @@ if (hasComparison(3, 1)) {
       grade: wallTheory.grade,
       scoreAdjustment: wallTheory.scoreAdjustment,
       adjustmentApplied: wallTheory.adjustmentApplied
+    },
+    holdPickup: {
+      isFormal: holdPickupTheory.isFormal,
+      isProvisional: holdPickupTheory.isProvisional,
+      attackerBoatNo: holdPickupTheory.attackerBoatNo,
+      attackerCourse: holdPickupTheory.attackerCourse,
+      secondCandidates:
+        holdPickupTheory.secondCandidates.map((boat) => ({
+          boatNo: boat.boatNo,
+          course: boat.course,
+          score: boat.score,
+          grade: boat.grade
+        })),
+      thirdCandidates:
+        holdPickupTheory.thirdCandidates.map((boat) => ({
+          boatNo: boat.boatNo,
+          course: boat.course,
+          score: boat.score,
+          grade: boat.grade
+        }))
     },
     firstCandidates:
       mainScenario?.outcome?.firstCandidates
@@ -8305,6 +8809,8 @@ if (hasComparison(3, 1)) {
     wallBoat,
 
     wallTheory,
+
+    holdPickupTheory,
 
     remainers,
 
@@ -9280,6 +9786,16 @@ function buildRaceTrendEvaluation(data) {
       list.map((boat) => [boatNo(boat), boat])
     );
 
+    if (raceScenarios?.holdPickupTheory?.isFormal === true) {
+      return uniqueBoats(
+        (candidates || []).map((candidate) =>
+          byNo.get(
+            Number(candidate?.boatNo ?? candidate ?? 0)
+          )
+        )
+      );
+    }
+
     return uniqueBoats([
       ...(candidates || []).map((candidate) =>
         byNo.get(
@@ -9303,6 +9819,18 @@ function buildRaceTrendEvaluation(data) {
   const scenarioOutcomeByBoat = new Map(
     (raceScenarios?.mainScenario?.outcome?.boats || [])
       .map((boat) => [Number(boat?.boatNo || 0), boat])
+  );
+  const holdScoreByBoat = new Map(
+    (
+      raceScenarios?.holdPickupTheory
+        ?.secondCandidates || []
+    ).map((boat) => [Number(boat.boatNo), boat.score])
+  );
+  const pickupScoreByBoat = new Map(
+    (
+      raceScenarios?.holdPickupTheory
+        ?.thirdCandidates || []
+    ).map((boat) => [Number(boat.boatNo), boat.score])
   );
 
   const mainEstablished = hasScenario
@@ -9549,16 +10077,20 @@ function buildRaceTrendEvaluation(data) {
       second: secondRanking.map((boat) => ({
         boatNo: boatNo(boat),
         score: round(
+          holdScoreByBoat.get(boatNo(boat)) ??
           scenarioOutcomeByBoat.get(boatNo(boat))
-            ?.secondScore ?? secondScore(boat)
+            ?.secondScore ??
+          secondScore(boat)
         )
       })),
 
       third: thirdRanking.map((boat) => ({
         boatNo: boatNo(boat),
         score: round(
+          pickupScoreByBoat.get(boatNo(boat)) ??
           scenarioOutcomeByBoat.get(boatNo(boat))
-            ?.thirdScore ?? thirdScore(boat)
+            ?.thirdScore ??
+          thirdScore(boat)
         )
       }))
     }
@@ -9965,6 +10497,8 @@ function buildRaceTrendEvaluation(data) {
 
     const thirdCandidates =
       mainScenario?.outcome?.thirdCandidates || [];
+    const holdPickupFormal =
+      raceScenarios?.holdPickupTheory?.isFormal === true;
 
     /*
       ◎は最有力シナリオを作る艇を最優先。
@@ -9982,10 +10516,16 @@ function buildRaceTrendEvaluation(data) {
     */
     const taikou = selectBoat([
       ...secondCandidates,
-      raceScenarios.wallBoat,
-      ...(raceScenarios.remainers || []),
-      ...(raceScenarios.followers || []),
-      ...firstCandidates
+      ...(
+        holdPickupFormal
+          ? []
+          : [
+              raceScenarios.wallBoat,
+              ...(raceScenarios.remainers || []),
+              ...(raceScenarios.followers || []),
+              ...firstCandidates
+            ]
+      )
     ]);
 
     /*
@@ -9998,11 +10538,17 @@ function buildRaceTrendEvaluation(data) {
     );
 
     const anaCandidates = [
-      ...(raceScenarios.followers || []),
-      ...(raceScenarios.pickupCandidates || []),
       ...thirdCandidates,
-      ...(raceScenarios.roadRaceBoats || []),
-      ...firstCandidates
+      ...(
+        holdPickupFormal
+          ? []
+          : [
+              ...(raceScenarios.followers || []),
+              ...(raceScenarios.pickupCandidates || []),
+              ...(raceScenarios.roadRaceBoats || []),
+              ...firstCandidates
+            ]
+      )
     ].filter((candidate) => {
       const no = Number(
         candidate?.boatNo ?? candidate ?? 0
@@ -10017,12 +10563,18 @@ function buildRaceTrendEvaluation(data) {
       △は残し・道中・当地の順で補完する。
     */
     const osae = selectBoat([
-      ...(raceScenarios.remainers || []),
-      ...(raceScenarios.roadRaceBoats || []),
-      ...(raceScenarios.localExperts || []),
       ...secondCandidates,
       ...thirdCandidates,
-      ...list
+      ...(
+        holdPickupFormal
+          ? []
+          : [
+              ...(raceScenarios.remainers || []),
+              ...(raceScenarios.roadRaceBoats || []),
+              ...(raceScenarios.localExperts || []),
+              ...list
+            ]
+      )
     ]);
 
     const confidence = toNumber(
@@ -10199,6 +10751,27 @@ const wallTheoryByBoat = new Map(
 analyses.forEach((boat) => {
   boat.wallTheory =
     wallTheoryByBoat.get(Number(boat.boatNo)) || null;
+});
+
+const holdPickupTheory =
+  raceScenarios.holdPickupTheory ||
+  buildHoldPickupTheory(
+    entries,
+    analyses,
+    raceScenarios.mainScenario,
+    wallTheory,
+    {
+      attackerBoatNo: raceScenarios.attacker,
+      blockedBoats: raceScenarios.blockedBoats
+    }
+  );
+const holdPickupByBoat = new Map(
+  holdPickupTheory.roles.map((boat) => [boat.boatNo, boat])
+);
+
+analyses.forEach((boat) => {
+  boat.holdPickupTheory =
+    holdPickupByBoat.get(Number(boat.boatNo)) || null;
 });
 
 const flowTheory =
@@ -10400,6 +10973,8 @@ const slit =
       attackTheory,
 
       wallTheory,
+
+      holdPickupTheory,
 
       flowTheory,
 
@@ -10760,6 +11335,10 @@ return {
             ?.roles || [],
         attackRanking: aiCore.attackTheory?.ranking || [],
         wallRanking: aiCore.wallTheory?.ranking || [],
+        holdRanking:
+          aiCore.holdPickupTheory?.secondCandidates || [],
+        pickupRanking:
+          aiCore.holdPickupTheory?.thirdCandidates || [],
         flowRanking: aiCore.flowTheory?.ranking || [],
         roadRanking: aiCore.roadTheory?.ranking || [],
         localRanking: aiCore.localTheory?.ranking || [],
@@ -10805,6 +11384,7 @@ return {
       exhibitionPerformanceTheory:
         aiCore.exhibitionPerformanceTheory,
       wallTheory: aiCore.wallTheory,
+      holdPickupTheory: aiCore.holdPickupTheory,
       flowTheory: aiCore.flowTheory,
       roadTheory: aiCore.roadTheory,
       localTheory: aiCore.localTheory,
@@ -10999,6 +11579,8 @@ return {
     buildAttackTheory,
 
     buildWallTheory,
+
+    buildHoldPickupTheory,
 
     buildFlowTheory,
 

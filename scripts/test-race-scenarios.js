@@ -169,7 +169,11 @@ assert.equal(result.wallBoat, 2);
 assert.deepEqual(result.blockedBoats, [4]);
 assert.equal(result.confidence, result.mainScenario.score);
 
-assert.deepEqual(result.remainers, [1, 2, 4]);
+assert.deepEqual(
+  result.remainers,
+  [1, 2],
+  "3攻めでは4号艇を残し候補へ強制追加しない"
+);
 assert.ok(!result.followers.includes(result.attacker));
 assert.equal(result.followers[0], 5);
 assert.equal(result.pickupCandidates[0], 5);

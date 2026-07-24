@@ -173,10 +173,26 @@ const practical = selector.select({
 });
 
 assert.equal(practical.status, "selected");
-assert.equal(practical.tickets.length, 7);
 assert.deepEqual(
-  practical.tickets.map((ticket) => ticket.category),
-  ["本線", "本線", "本線", "押さえ", "押さえ", "流し", "万舟・穴"]
+  practical.tickets
+    .slice(0, 5)
+    .map((ticket) => ticket.category),
+  ["本線", "本線", "本線", "押さえ", "押さえ"],
+  "Ver2でも基本5点を維持する"
+);
+assert.ok(
+  practical.tickets.length >= 5 &&
+  practical.tickets.length <= 7,
+  "弱い候補で埋めず、実戦厳選は基本5点・最大7点にする"
+);
+assert.ok(
+  practical.tickets
+    .slice(5)
+    .every((ticket) =>
+      ticket.category === "流し" ||
+      ticket.category === "万舟・穴"
+    ),
+  "追加点は根拠が成立した流し・万舟だけにする"
 );
 
 const unclear = [
