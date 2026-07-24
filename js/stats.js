@@ -1507,61 +1507,30 @@
               : `サンプル蓄積中です。結果確定${improvementAnalysis.settledCount}R／実戦厳選${improvementAnalysis.practicalCount}R。最低${improvementAnalysis.minimumSample}Rまでは改善案を確定しません。`}
           </div>
         `;
-  const renderGroupRows =
-    groups =>
-      groups.length
-        ? groups
-            .map(group => `
-              <tr>
-                <td>
-                  ${U.safeText(
-                    group.label
-                  )}
-                </td>
+  const renderVenueRows = groups =>
+    groups.length
+      ? groups.map(group => `
+          <tr>
+            <td>${U.safeText(group.label)}</td>
+            <td>${group.count}R</td>
+            <td>${group.honmeiHits}/${group.count}（${rate(group.honmeiHits, group.count)}%）</td>
+            <td>${group.practicalHits}/${group.practicalCount}（${rate(group.practicalHits, group.practicalCount)}%）</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="4">検証データがありません</td></tr>`;
 
-                <td>
-                  ${group.count}R
-                </td>
+  const renderScenarioRows = groups =>
+    groups.length
+      ? groups.map(group => `
+          <tr>
+            <td>${U.safeText(group.label)}</td>
+            <td>${group.count}R</td>
+            <td>${group.scenarioHits}/${group.scenarioComparable}（${rate(group.scenarioHits, group.scenarioComparable)}%）</td>
+            <td>${group.practicalHits}/${group.practicalCount}（${rate(group.practicalHits, group.practicalCount)}%）</td>
+          </tr>
+        `).join("")
+      : `<tr><td colspan="4">検証データがありません</td></tr>`;
 
-                <td>
-                  ${group.honmeiHits}
-                  /
-                  ${group.count}
-                  （${rate(
-                    group.honmeiHits,
-                    group.count
-                  )}%）
-                </td>
-
-                <td>
-                  ${group.practicalHits}
-                  /
-                  ${group.practicalCount}
-                  （${rate(
-                    group.practicalHits,
-                    group.practicalCount
-                  )}%）
-                </td>
-
-                <td>
-                  ${group.scenarioHits}
-                  /
-                  ${group.scenarioComparable}
-                  （${rate(
-                    group.scenarioHits,
-                    group.scenarioComparable
-                  )}%）
-                </td>
-              </tr>
-            `)
-            .join("")
-        : `
-            <tr>
-              <td colspan="5">
-                検証データがありません
-              </td>
-            </tr>
-          `;
   const recentRows =
     settledRows.slice(0, 10);
   const formatMarks = marks =>
@@ -1887,28 +1856,6 @@
 
     <div class="v3-final-block">
 
-      <h3>外れ原因の8段階分析</h3>
-
-      <p class="v3-note">
-        展開→コース→ST・スリット→展示・足→残し・拾い→当地・水面→技量→モーターの順で、
-        最初に要確認となった段階を集計します。データ不足は原因認定せず判定保留にします。
-      </p>
-
-      <div class="v3-table-wrap">
-        <table class="table">
-          <thead><tr><th>確認段階</th><th>主原因候補</th></tr></thead>
-          <tbody>
-            ${(verificationSummary.priorityStageSummary || []).map(item => `
-              <tr><td>${U.safeText(item.label)}</td><td>${item.count}R</td></tr>
-            `).join("") || `<tr><td colspan="2">検証データがありません</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-
-    </div>
-
-    <div class="v3-final-block">
-
       <h3>
         改善候補（自動分析）
       </h3>
@@ -1933,7 +1880,7 @@
     <div class="v3-final-block">
 
       <h3>
-        実戦厳選の判定内訳
+        外れ方分析
       </h3>
 
       <div class="v3-table-wrap">
@@ -1943,7 +1890,6 @@
           <thead>
             <tr>
               <th>判定</th>
-              <th>8段階の主確認点</th>
               <th>件数</th>
               <th>割合</th>
             </tr>
@@ -2017,7 +1963,7 @@
     <div class="v3-final-block">
 
       <h3>
-        場別傾向
+        場別成績
       </h3>
 
       <div class="v3-table-wrap">
@@ -2027,105 +1973,16 @@
           <thead>
             <tr>
               <th>場</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
+               <th>対象</th>
+               <th>◎1着率</th>
+               <th>厳選的中率</th>
             </tr>
           </thead>
 
           <tbody>
-            ${renderGroupRows(
-              venueGroups
-            )}
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-
-
-    <div class="v3-final-block">
-
-      <h3>場＋R番号別傾向</h3>
-
-      <div class="v3-table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>場・R</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${renderGroupRows(venueRaceGroups)}
-          </tbody>
-        </table>
-      </div>
-
-    </div>
-
-
-    <div class="v3-final-block">
-
-      <h3>
-        決まり手別傾向
-      </h3>
-
-      <div class="v3-table-wrap">
-
-        <table class="table">
-
-          <thead>
-            <tr>
-              <th>決まり手</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            ${renderGroupRows(
-              methodGroups
-            )}
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-        <div class="v3-final-block">
-
-      <h3>
-        本命コース別傾向
-      </h3>
-
-      <div class="v3-table-wrap">
-
-        <table class="table">
-
-          <thead>
-            <tr>
-              <th>本命コース</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            ${renderGroupRows(
-              honmeiCourseGroups
-            )}
+            ${renderVenueRows(
+               venueGroups
+             )}
           </tbody>
 
         </table>
@@ -2138,7 +1995,7 @@
     <div class="v3-final-block">
 
       <h3>
-        予想した中心展開別傾向
+        展開別成績
       </h3>
 
       <div class="v3-table-wrap">
@@ -2148,17 +2005,16 @@
           <thead>
             <tr>
               <th>中心展開</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
+               <th>対象</th>
+               <th>展開一致率</th>
+               <th>厳選的中率</th>
             </tr>
           </thead>
 
           <tbody>
-            ${renderGroupRows(
-              predictedScenarioGroups
-            )}
+            ${renderScenarioRows(
+               predictedScenarioGroups
+             )}
           </tbody>
 
         </table>
