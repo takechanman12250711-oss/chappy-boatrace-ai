@@ -1,5 +1,6 @@
 "use strict";
 
+// ワークフロー存在後の再pushで、監査と自己削除を確実に実行する。
 const fs = require("fs");
 const path = require("path");
 
