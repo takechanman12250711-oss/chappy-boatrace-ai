@@ -1672,30 +1672,114 @@ return {
 };
     });
 
-    const exhibitionRank = rankSmallNumber(list, "exhibitionTime");
-    const stRank = rankSmallNumber(list, "exhibitionSTNumber");
-    const lapRank = rankSmallNumber(list, "lapTime");
+    const stRank = rankSmallNumber(
+      list,
+      "exhibitionSTNumber"
+    );
+    const exhibitionTheory =
+      window.ChappyAICore
+        ?.buildExhibitionPerformanceEvaluation
+        ? window.ChappyAICore
+            .buildExhibitionPerformanceEvaluation(
+              list,
+              race
+            )
+        : {
+            version:
+              "exhibition-performance-v2",
+            mode: "provisional",
+            modeLabel: "暫定・中立評価",
+            status: "暫定・中立50点",
+            isFormal: false,
+            appliedToScore: false,
+            exhibitionCount: list.filter(
+              item =>
+                item.exhibitionTime !== null
+            ).length,
+            lapCount: list.filter(
+              item => item.lapTime !== null
+            ).length,
+            source: {
+              label: "出典未確定"
+            },
+            roles: list.map(item => ({
+              boatNo: item.boatNo,
+              exhibitionRank: null,
+              lapRank: null,
+              score: 50,
+              appliedIndex: 50,
+              grade: "D",
+              reason:
+                "統一展示判定を利用できないため中立50点"
+            }))
+          };
+    const theoryByBoat = new Map(
+      exhibitionTheory.roles.map(
+        item => [Number(item.boatNo), item]
+      )
+    );
 
     const enriched = list.map(item => {
-      const exRank = exhibitionRank[item.boatNo] || null;
-      const stR = stRank[item.boatNo] || null;
-      const lapR = lapRank[item.boatNo] || null;
+      const theory =
+        theoryByBoat.get(Number(item.boatNo)) ||
+        {};
+      const stR =
+        stRank[item.boatNo] || null;
+      const buffs = [];
+      const debuffs = [];
 
-      const scoreData = calculateExhibitionScore(item, {
-        exRank,
-        stRank: stR,
-        lapRank: lapR
-      });
+      if (
+        theory.isFormal &&
+        ["S", "A"].includes(theory.grade)
+      ) {
+        buffs.push(
+          `展示・足${theory.grade}評価`
+        );
+      }
+
+      if (theory.isDoubleTime) {
+        buffs.push(
+          "ダブルタイム成立・展示足内へ統合"
+        );
+      }
+
+      if (
+        theory.isFormal &&
+        theory.grade === "D"
+      ) {
+        debuffs.push("展示・足D評価");
+      }
 
       return {
         ...item,
-        exhibitionRank: exRank,
+        exhibitionRank:
+          theory.exhibitionRank || null,
         stRank: stR,
-        lapRank: lapR,
-        score: scoreData.score,
-        buffs: scoreData.buffs,
-        debuffs: scoreData.debuffs,
-        comment: scoreData.comment
+        lapRank: theory.lapRank || null,
+        score:
+          theory.appliedIndex ?? 50,
+        rawExhibitionScore:
+          theory.score ?? 50,
+        grade: theory.grade || "D",
+        theoryMode:
+          theory.mode ||
+          exhibitionTheory.mode,
+        theoryStatus:
+          theory.status ||
+          exhibitionTheory.status,
+        source:
+          theory.source ||
+          exhibitionTheory.source?.label ||
+          "出典未確定",
+        components:
+          theory.components || {},
+        reason: theory.reason || "",
+        buffs,
+        debuffs,
+        comment:
+          theory.isFormal
+            ? `${item.boatNo}号艇は展示・足${theory.grade}（${theory.appliedIndex}点）。${theory.reason}`
+            : `${item.boatNo}号艇は展示データ不足のため中立50点。`
       };
     });
 
@@ -1712,10 +1796,11 @@ return {
       .sort((a, b) => a.lapTime - b.lapTime)[0] || null;
 
     const doubleTimeBoat =
-      topExhibition &&
-      topLap &&
-      topExhibition.boatNo === topLap.boatNo
-        ? topExhibition
+      exhibitionTheory.doubleTimeBoat
+        ? findByBoatNo(
+            enriched,
+            exhibitionTheory.doubleTimeBoat
+          )
         : null;
 
     return {
@@ -1724,110 +1809,23 @@ return {
       topST,
       topLap,
       doubleTimeBoat,
+      theory: exhibitionTheory,
+      mode: exhibitionTheory.mode,
+      modeLabel:
+        exhibitionTheory.modeLabel,
+      status: exhibitionTheory.status,
+      isFormal:
+        exhibitionTheory.isFormal === true,
+      source:
+        exhibitionTheory.source,
       comment: createExhibitionComment({
         topExhibition,
         topST,
         topLap,
-        doubleTimeBoat
+        doubleTimeBoat,
+        theory: exhibitionTheory
       })
     };
-  }
-
-  function calculateExhibitionScore(item, ranks) {
-    let score = 50;
-    const buffs = [];
-    const debuffs = [];
-
-    if (item.exhibitionTime !== null) {
-      if (ranks.exRank === 1) {
-        score += 16;
-        buffs.push(`展示1位 ${item.exhibitionTime}`);
-      } else if (ranks.exRank === 2) {
-        score += 10;
-        buffs.push(`展示2位 ${item.exhibitionTime}`);
-      } else if (ranks.exRank === 3) {
-        score += 5;
-        buffs.push(`展示3位 ${item.exhibitionTime}`);
-      }
-
-            if (ranks.exRank >= 5) {
-        score -= 8;
-        debuffs.push(
-          `展示タイム下位 ${item.exhibitionTime}`
-        );
-      }
-    }
-
-    if (item.exhibitionSTNumber !== null) {
-      if (ranks.stRank === 1) {
-        score += 12;
-        buffs.push(`展示ST1位 ${formatST(item.exhibitionST)}`);
-      } else if (ranks.stRank <= 3) {
-        score += 6;
-        buffs.push(`展示ST上位 ${formatST(item.exhibitionST)}`);
-      }
-
-      if (ranks.stRank >= 5) {
-  score -= 8;
-  debuffs.push(
-    `展示ST下位 ${formatST(item.exhibitionST)}`
-  );
-}
-    }
-
-    if (item.lapTime !== null) {
-  if (ranks.lapRank === 1) {
-    score += 12;
-    buffs.push(`一周1位 ${item.lapTime}`);
-  } else if (ranks.lapRank <= 3) {
-    score += 6;
-    buffs.push(`一周上位 ${item.lapTime}`);
-  }
-
-  if (ranks.lapRank >= 5) {
-    score -= 8;
-    debuffs.push(
-      `一周タイム下位 ${item.lapTime}`
-    );
-  }
-}
-
-    if (
-      ranks.exRank === 1 &&
-      ranks.lapRank === 1
-    ) {
-      buffs.push("ダブルタイム成立");
-    }
-
-if (String(item.tilt).includes("3")) {
-  score += 8;
-  buffs.push("チルト3度の一撃型");
-}
-
-    score = clampScore(score);
-
-    return {
-      score,
-      buffs,
-      debuffs,
-      comment: createExhibitionShortComment(item.boatNo, score, buffs, debuffs)
-    };
-  }
-
-  function createExhibitionShortComment(boatNo, score, buffs, debuffs) {
-    if (score >= 75) {
-      return `${boatNo}号艇は展示気配上位。${buffs.slice(0, 2).join("、")}を評価。`;
-    }
-
-    if (score >= 62) {
-      return `${boatNo}号艇は展示悪くない。連絡み候補。`;
-    }
-
-    if (debuffs.length) {
-      return `${boatNo}号艇は${debuffs[0]}が気になる。`;
-    }
-
-    return `${boatNo}号艇は展示標準。展開次第。`;
   }
 
   function createExhibitionComment(params) {
@@ -1835,10 +1833,6 @@ if (String(item.tilt).includes("3")) {
 
     if (params.topExhibition) {
       parts.push(`展示タイム1位は${params.topExhibition.boatNo}号艇`);
-    }
-
-    if (params.topST) {
-      parts.push(`展示ST1位は${params.topST.boatNo}号艇`);
     }
 
     if (params.topLap) {
@@ -1850,10 +1844,17 @@ if (String(item.tilt).includes("3")) {
     }
 
     if (!parts.length) {
-      return "展示データが薄いため、平均ST・成績・場傾向で補正。";
+      return "展示データ不足のため、展示・足は中立50点。";
     }
 
-    return `${parts.join(" / ")}。展示上位はスコアと展開評価に反映。`;
+    const mode =
+      params.theory?.modeLabel ||
+      "暫定・中立評価";
+    const source =
+      params.theory?.source?.label ||
+      "出典未確定";
+
+    return `${parts.join(" / ")}。${mode}・出典：${source}。展示・足9％枠だけへ反映。`;
   }
 
   /* ===============================
@@ -2212,10 +2213,6 @@ const nationalWinRate = toNumberOrNull(entry.national?.winRate);
   }
 }
     if (params.exhibition) {
-      attack += (params.exhibition.score - 50) * 0.7 * weights.exhibition;
-      michu += (params.exhibition.score - 50) * 0.5 * weights.exhibition;
-      expected += (params.exhibition.score - 50) * 0.35;
-
       if (params.exhibition.buffs?.length) {
         buffs.push(...params.exhibition.buffs.slice(0, 2));
       }
@@ -4150,14 +4147,6 @@ if (slitRiskData) {
   );
 }
 
-if (exhibition?.score >= 70) {
-      score += 5;
-      buffs.push("展示気配上位");
-    } else if (exhibition?.score <= 42) {
-      score -= 5;
-      debuffs.push("展示気配重め");
-    }
-
     if (newEngine?.updated && newEngine.phase === NEW_ENGINE_PHASE.EARLY) {
       const motor2Rate = toNumberOrNull(entry.motor?.secondRate);
 
@@ -4166,9 +4155,9 @@ if (exhibition?.score >= 70) {
         debuffs.push("新型初期はM数字過信注意");
       }
 
-      if (exhibition?.score >= 62 || indexData.attack >= 70) {
+      if (indexData.attack >= 70) {
         score += 3;
-        buffs.push("新型初期は展示・STを重視");
+        buffs.push("新型初期はST・攻めを重視");
       }
     }
 

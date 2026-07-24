@@ -75,6 +75,30 @@ assert(
   charter.newEngine?.motorWeightMaximum === 0.05,
   "新エンジン期のモーター上限は0.05でなければなりません"
 );
+
+const exhibitionPerformance =
+  charter.exhibitionPerformance || {};
+assert(
+  exhibitionPerformance.version === 2 &&
+    exhibitionPerformance.weight === 0.09,
+  "展示・足Ver2は総合9％枠でなければなりません"
+);
+assert(
+  exhibitionPerformance.neutralScoreWhenIncomplete === 50 &&
+    exhibitionPerformance.tieToleranceSeconds === 0.01,
+  "展示欠損時50点・0.01秒同等評価が固定されていません"
+);
+assert(
+  exhibitionPerformance.officialModeRequiresExhibitionBoats === 6 &&
+    exhibitionPerformance.fullModeRequiresLapBoats === 6,
+  "展示モードの6艇成立条件が固定されていません"
+);
+assert(
+  exhibitionPerformance.exhibitionStBelongsTo === "ST・スリット" &&
+    exhibitionPerformance.doubleTimeAndNewSamAreIntegrated === true &&
+    exhibitionPerformance.mayAdjustRolesOrFinishingCandidatesSeparately === false,
+  "展示ST・ダブルタイム・新サムの二重加点防止が無効です"
+);
 assert(
   includesAll(charter.newEngine?.keywords || [], [
     "新エンジン",

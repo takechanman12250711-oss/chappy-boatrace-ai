@@ -45,6 +45,7 @@
   const THEORY_LABELS = {
     courseStructure: "🧭 進入・コース構造",
     stSlit: "⏱ ST・スリット Ver2",
+    exhibitionPerformance: "🏁 展示・足 Ver2",
     attack: "🔥 攻め艇",
     wall: "🧱 壁艇",
     flow: "🌊 展開艇",
@@ -3127,6 +3128,87 @@ function getPaperClassName(item) {
     }
 
     {
+      const exhibitionTheory =
+        prediction.exhibitionPerformanceTheory ||
+        prediction.aiCore
+          ?.exhibitionPerformanceTheory ||
+        exhibition.theory ||
+        null;
+      const rows = arrayify(
+        exhibitionTheory?.roles ||
+        indexes.exhibitionPerformanceRanking
+      )
+        .filter(Boolean)
+        .sort(
+          (a, b) =>
+            Number(b.appliedIndex || 0) -
+              Number(a.appliedIndex || 0) ||
+            Number(a.boatNo || 0) -
+              Number(b.boatNo || 0)
+        )
+        .slice(0, 2);
+      const sourceLabel =
+        exhibitionTheory?.source?.label ||
+        "出典未確定";
+
+      if (!exhibitionTheory || !rows.length) {
+        items.push({
+          key: "exhibitionPerformance",
+          label:
+            THEORY_LABELS.exhibitionPerformance,
+          no: "",
+          score: "暫定",
+          text:
+            "展示タイム6艇がそろっていないため、展示・足は中立50点。ST・スリット、役割点、着順候補へは再加算しない。"
+        });
+      } else {
+        rows.forEach(item => {
+          const components =
+            item.components || {};
+          const officialBreakdown =
+            exhibitionTheory.mode === "official"
+              ? `展示順位${components.exhibitionRank ?? 0}/35、` +
+                `6艇平均との差${components.exhibitionAverageDiff ?? 0}/35、` +
+                `1位・隣接差${components.exhibitionNeighborGap ?? 0}/20、` +
+                `取得信頼度${components.reliability ?? 0}/10。`
+              : exhibitionTheory.mode === "full"
+                ? `展示順位・差${
+                    Number(components.exhibitionRank || 0) +
+                    Number(components.exhibitionAverageDiff || 0)
+                  }/30、` +
+                  `一周順位・差${
+                    Number(components.lapRank || 0) +
+                    Number(components.lapAverageDiff || 0)
+                  }/35、` +
+                  `新サム${components.newSam ?? 0}/20、` +
+                  `ダブルタイム${components.doubleTime ?? 0}/5、` +
+                  `取得信頼度${components.reliability ?? 0}/10。`
+                : "展示データ不足のため中立50点。";
+
+          items.push({
+            key: "exhibitionPerformance",
+            label:
+              THEORY_LABELS.exhibitionPerformance,
+            no: item.boatNo || "",
+            score:
+              `${item.appliedIndex ?? 50}点・` +
+              `${item.grade || "-"}`,
+            text:
+              `${item.boatNo}号艇は${exhibitionTheory.modeLabel || "暫定・中立評価"}、${item.status || exhibitionTheory.status}。` +
+              officialBreakdown +
+              `出典：${sourceLabel}。` +
+              (
+                item.isFormal
+                  ? "既存の展示・足9％枠へ統合して反映。"
+                  : "予想点へ新しい点を加えず中立50点。"
+              ) +
+              "展示STはST・スリット側のみ、ダブルタイムと新サムはこの100点内だけで評価する。"
+          });
+        });
+      }
+    }
+
+    {
       const attackTheoryRows = arrayify(
         prediction.attackTheory?.ranking ||
         indexes.attackRanking
@@ -4391,9 +4473,8 @@ function getPaperClassName(item) {
           comment:
             `${boatNo}号艇が` +
             `${comparison.join("、")}でともに1位。` +
-            "展示1位＋一周1位が一致し、ダブルタイム発動。" +
-            development +
-            reflection
+            "展示1位＋一周1位が一致し、ダブルタイム成立。" +
+            "展示・足100点内の5点要素として統合し、展開・役割・着順候補へ別枠加点しない。"
         }
       );
     } else if (

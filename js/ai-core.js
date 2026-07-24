@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.5.0-st-slit-v2";
+  const CORE_VERSION = "ai-core-v4.6.0-exhibition-performance-v2";
 
   /* ===============================
     基本ユーティリティ
@@ -1566,37 +1566,474 @@ function getBoatNo(boat) {
     ).appliedIndex;
   }
 
-  function calcExhibitionIndex(boat, entries) {
-    const time = getExhibitionTime(boat);
-    const exSt = getExhibitionSt(boat);
-    const lap = getLapTime(boat);
+  const EXHIBITION_TIE_TOLERANCE = 0.01;
+  const EXHIBITION_TIME_RANGE = Object.freeze({
+    min: 6.0,
+    max: 8.0
+  });
+  const LAP_TIME_RANGE = Object.freeze({
+    min: 30.0,
+    max: 50.0
+  });
 
-    const validTimes = entries.map(getExhibitionTime).filter((v) => v > 0);
-    const validLaps = entries.map(getLapTime).filter((v) => v > 0);
+  function exhibitionPerformanceGrade(score) {
+    if (score >= 85) return "S";
+    if (score >= 75) return "A";
+    if (score >= 65) return "B";
+    if (score >= 55) return "C";
+    return "D";
+  }
 
-    let score = 55;
+  function normalizedTimingValue(value, range) {
+    if (isNil(value)) return null;
 
-    if (time > 0 && validTimes.length) {
-      const best = Math.min(...validTimes);
-      const avg = average(validTimes, time);
-      score += (avg - time) * 80;
-      score += (time === best ? 12 : 0);
+    const number = toNumber(value, NaN);
+
+    if (
+      !Number.isFinite(number) ||
+      number < range.min ||
+      number > range.max
+    ) {
+      return null;
     }
 
-    if (lap > 0 && validLaps.length) {
-      const bestLap = Math.min(...validLaps);
-      const avgLap = average(validLaps, lap);
-      score += (avgLap - lap) * 45;
-      score += (lap === bestLap ? 8 : 0);
+    return number;
+  }
+
+  function buildToleranceRanking(rows, key) {
+    const sorted = rows
+      .filter((row) => row[key] !== null)
+      .sort(
+        (a, b) =>
+          a[key] - b[key] ||
+          a.boatNo - b.boatNo
+      );
+
+    let groupRank = 0;
+    let groupValue = null;
+
+    sorted.forEach((row) => {
+      if (
+        groupValue === null ||
+        row[key] - groupValue >
+          EXHIBITION_TIE_TOLERANCE + 1e-9
+      ) {
+        groupRank += 1;
+        groupValue = row[key];
+      }
+
+      row[`${key}Rank`] = groupRank;
+    });
+
+    return sorted;
+  }
+
+  function rankComponent(rank, maximum) {
+    if (!rank) return maximum / 2;
+
+    const ratioByRank = [
+      1,
+      0.82,
+      0.64,
+      0.46,
+      0.28,
+      0.10
+    ];
+
+    return round(
+      maximum *
+      (ratioByRank[Math.min(5, rank - 1)] ?? 0.10),
+      1
+    );
+  }
+
+  function averageDiffComponent(diff, maximum, fullRange) {
+    return round(
+      clamp(
+        maximum / 2 +
+        (diff / fullRange) * (maximum / 2),
+        0,
+        maximum
+      ),
+      1
+    );
+  }
+
+  function nearestGapComponent(row, ranking, key, maximum) {
+    const others = ranking.filter(
+      (candidate) => candidate.boatNo !== row.boatNo
+    );
+
+    if (!others.length || row[key] === null) {
+      return maximum / 2;
     }
 
-    if (exSt <= 0.05) score += 8;
-    else if (exSt <= 0.10) score += 6;
-    else if (exSt <= 0.15) score += 3;
-    else if (exSt >= 0.25) score -= 8;
-    else if (exSt >= 0.20) score -= 4;
+    const nearest = [...others].sort(
+      (a, b) =>
+        Math.abs(a[key] - row[key]) -
+        Math.abs(b[key] - row[key])
+    )[0];
+    const signedGap = nearest[key] - row[key];
 
-    return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
+    return round(
+      clamp(
+        maximum / 2 +
+        signedGap * (maximum / 0.20),
+        0,
+        maximum
+      ),
+      1
+    );
+  }
+
+  function resolveExhibitionSource(entries, data, fullMode) {
+    const explicitExhibitionSource = entries
+      .map(
+        (boat) =>
+          boat?.exhibitionSource ??
+          boat?.beforeInfo?.exhibitionSource ??
+          boat?.beforeInfo?.source
+      )
+      .find((value) => !isNil(value));
+    const explicitLapSource = entries
+      .map(
+        (boat) =>
+          boat?.lapTimeSource ??
+          boat?.beforeInfo?.lapTimeSource
+      )
+      .find((value) => !isNil(value));
+    const rootSource =
+      data?.beforeInfoSource ??
+      data?.exhibitionSource ??
+      data?.source?.exhibition;
+
+    return {
+      exhibition:
+        safeText(
+          explicitExhibitionSource ?? rootSource,
+          "BOAT RACE公式"
+        ),
+      lap:
+        fullMode
+          ? safeText(explicitLapSource, "外部取得")
+          : "",
+      label:
+        fullMode
+          ? `${safeText(
+              explicitExhibitionSource ?? rootSource,
+              "BOAT RACE公式"
+            )}＋${safeText(explicitLapSource, "外部取得")}`
+          : safeText(
+              explicitExhibitionSource ?? rootSource,
+              "BOAT RACE公式"
+            )
+    };
+  }
+
+  function buildExhibitionPerformanceEvaluation(
+    entries,
+    data = {}
+  ) {
+    const sourceEntries = Array.isArray(entries)
+      ? entries
+      : [];
+    const rows = sourceEntries.map((boat, index) => ({
+      boatNo: getBoatNo(boat) || index + 1,
+      name: getPlayerName(boat),
+      exhibitionTime: normalizedTimingValue(
+        getExhibitionTime(boat),
+        EXHIBITION_TIME_RANGE
+      ),
+      lapTime: normalizedTimingValue(
+        getLapTime(boat),
+        LAP_TIME_RANGE
+      )
+    }));
+    const validBoatNos = rows
+      .map((row) => row.boatNo)
+      .filter((boatNo) => boatNo >= 1 && boatNo <= 6);
+    const uniqueBoatNos = new Set(validBoatNos);
+    const boatMappingFormal =
+      rows.length === 6 &&
+      uniqueBoatNos.size === 6 &&
+      [1, 2, 3, 4, 5, 6].every(
+        (boatNo) => uniqueBoatNos.has(boatNo)
+      );
+    const exhibitionCount = rows.filter(
+      (row) => row.exhibitionTime !== null
+    ).length;
+    const lapCount = rows.filter(
+      (row) => row.lapTime !== null
+    ).length;
+    const officialMode =
+      boatMappingFormal &&
+      exhibitionCount === 6;
+    const fullMode =
+      officialMode &&
+      lapCount === 6;
+    const mode = fullMode
+      ? "full"
+      : officialMode
+        ? "official"
+        : "provisional";
+    const modeLabel = fullMode
+      ? "展示・一周フルモード"
+      : officialMode
+        ? "公式展示モード"
+        : "暫定・中立評価";
+    const source = resolveExhibitionSource(
+      sourceEntries,
+      data,
+      fullMode
+    );
+    const exhibitionRanking = buildToleranceRanking(
+      rows,
+      "exhibitionTime"
+    );
+    const lapRanking = buildToleranceRanking(
+      rows,
+      "lapTime"
+    );
+    const exhibitionAverage = officialMode
+      ? average(
+          rows.map((row) => row.exhibitionTime),
+          0
+        )
+      : 0;
+    const lapAverage = fullMode
+      ? average(
+          rows.map((row) => row.lapTime),
+          0
+        )
+      : 0;
+    const sumAverage = fullMode
+      ? average(
+          rows.map(
+            (row) =>
+              row.exhibitionTime + row.lapTime
+          ),
+          0
+        )
+      : 0;
+    const exhibitionTop =
+      exhibitionRanking[0] || null;
+    const lapTop = lapRanking[0] || null;
+    const doubleTimeBoatNo =
+      fullMode &&
+      exhibitionTop &&
+      lapTop &&
+      exhibitionTop.boatNo === lapTop.boatNo
+        ? exhibitionTop.boatNo
+        : null;
+
+    const roles = rows.map((row) => {
+      let score = 50;
+      let components = {
+        neutral: 50
+      };
+
+      if (officialMode && !fullMode) {
+        const rank = rankComponent(
+          row.exhibitionTimeRank,
+          35
+        );
+        const averageDiff = averageDiffComponent(
+          exhibitionAverage - row.exhibitionTime,
+          35,
+          0.20
+        );
+        const neighborGap = nearestGapComponent(
+          row,
+          exhibitionRanking,
+          "exhibitionTime",
+          20
+        );
+        const reliability = 10;
+
+        components = {
+          exhibitionRank: rank,
+          exhibitionAverageDiff: averageDiff,
+          exhibitionNeighborGap: neighborGap,
+          reliability
+        };
+        score =
+          rank +
+          averageDiff +
+          neighborGap +
+          reliability;
+      }
+
+      if (fullMode) {
+        const exhibitionRank = rankComponent(
+          row.exhibitionTimeRank,
+          18
+        );
+        const exhibitionDiff = averageDiffComponent(
+          exhibitionAverage - row.exhibitionTime,
+          12,
+          0.20
+        );
+        const lapRank = rankComponent(
+          row.lapTimeRank,
+          21
+        );
+        const lapDiff = averageDiffComponent(
+          lapAverage - row.lapTime,
+          14,
+          0.40
+        );
+        const newSam = averageDiffComponent(
+          sumAverage -
+            (row.exhibitionTime + row.lapTime),
+          20,
+          0.40
+        );
+        const doubleTime =
+          row.boatNo === doubleTimeBoatNo
+            ? 5
+            : 0;
+        const reliability = 10;
+
+        components = {
+          exhibitionRank,
+          exhibitionAverageDiff: exhibitionDiff,
+          lapRank,
+          lapAverageDiff: lapDiff,
+          newSam,
+          doubleTime,
+          reliability
+        };
+        score =
+          exhibitionRank +
+          exhibitionDiff +
+          lapRank +
+          lapDiff +
+          newSam +
+          doubleTime +
+          reliability;
+      }
+
+      score = clamp(round(score), 1, 100);
+
+      return {
+        ...row,
+        exhibitionRank:
+          row.exhibitionTimeRank || null,
+        lapRank: row.lapTimeRank || null,
+        sumTime:
+          fullMode
+            ? round(
+                row.exhibitionTime + row.lapTime,
+                3
+              )
+            : null,
+        sumDiff:
+          fullMode
+            ? round(
+                sumAverage -
+                  (row.exhibitionTime + row.lapTime),
+                3
+              )
+            : null,
+        isDoubleTime:
+          row.boatNo === doubleTimeBoatNo,
+        score,
+        appliedIndex:
+          officialMode
+            ? score
+            : 50,
+        grade:
+          exhibitionPerformanceGrade(score),
+        mode,
+        modeLabel,
+        status:
+          officialMode
+            ? "正式反映"
+            : "暫定・中立50点",
+        isFormal: officialMode,
+        appliedToScore: officialMode,
+        source: source.label,
+        components,
+        reason:
+          mode === "official"
+            ? [
+                `展示順位${components.exhibitionRank}/35`,
+                `6艇平均との差${components.exhibitionAverageDiff}/35`,
+                `1位・隣接差${components.exhibitionNeighborGap}/20`,
+                `取得信頼度${components.reliability}/10`
+              ].join(" / ")
+            : mode === "full"
+              ? [
+                  `展示順位・差${
+                    components.exhibitionRank +
+                    components.exhibitionAverageDiff
+                  }/30`,
+                  `一周順位・差${
+                    components.lapRank +
+                    components.lapAverageDiff
+                  }/35`,
+                  `新サム${components.newSam}/20`,
+                  `ダブルタイム${components.doubleTime}/5`,
+                  `取得信頼度${components.reliability}/10`
+                ].join(" / ")
+              : `展示${exhibitionCount}/6艇・一周${lapCount}/6艇のため中立50点`
+      };
+    });
+
+    return {
+      version: "exhibition-performance-v2",
+      mode,
+      modeLabel,
+      status:
+        officialMode
+          ? "正式反映"
+          : "暫定・中立50点",
+      isFormal: officialMode,
+      isFullMode: fullMode,
+      appliedToScore: officialMode,
+      exhibitionCount,
+      lapCount,
+      tieTolerance: EXHIBITION_TIE_TOLERANCE,
+      exhibitionAverage: round(
+        exhibitionAverage,
+        3
+      ),
+      lapAverage: round(lapAverage, 3),
+      sumAverage: round(sumAverage, 3),
+      doubleTimeBoat: doubleTimeBoatNo,
+      source,
+      missingBoatNos: [1, 2, 3, 4, 5, 6]
+        .filter((boatNo) => {
+          const row = roles.find(
+            (item) => item.boatNo === boatNo
+          );
+
+          return (
+            !row ||
+            row.exhibitionTime === null ||
+            (fullMode && row.lapTime === null)
+          );
+        }),
+      roles
+    };
+  }
+
+  function calcExhibitionIndex(
+    boat,
+    entries,
+    data = {}
+  ) {
+    const boatNo = getBoatNo(boat);
+    const theory =
+      buildExhibitionPerformanceEvaluation(
+        entries,
+        data
+      );
+    const role = theory.roles.find(
+      (item) => item.boatNo === boatNo
+    );
+
+    return role?.appliedIndex ?? 50;
   }
 
   function calcMotorIndex(boat, data) {
@@ -1702,7 +2139,6 @@ function getBoatNo(boat) {
 
   function calcTurnIndex(boat) {
     const results = getThisTermResults(boat);
-    const lap = getLapTime(boat);
     const cls = hasClassPower(boat);
 
     let score = 50 + cls * 15;
@@ -1713,12 +2149,6 @@ function getBoatNo(boat) {
 
       const top3 = results.filter((r) => r <= 3).length / results.length;
       score += top3 * 12;
-    }
-
-    if (lap > 0) {
-      if (lap <= 37.2) score += 8;
-      else if (lap <= 37.6) score += 5;
-      else if (lap >= 38.5) score -= 6;
     }
 
     return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
@@ -1736,13 +2166,17 @@ function getBoatNo(boat) {
       entries,
       data
     );
-    const exIndex = calcExhibitionIndex(boat, entries);
     const clsPower = hasClassPower(boat);
 
     let score = 42;
 
     score += stIndex * 0.30;
-    score += exIndex * 0.20;
+    /*
+      展示・足は最終総合の9％枠だけで反映する。
+      攻め指数では従来の中立値相当を固定し、
+      展示データによる二重加点を行わない。
+    */
+    score += 10;
     score += clsPower * 10;
 
     if (boatNo === 1) score += venueFeature.inPower * 0.12;
@@ -1753,7 +2187,6 @@ function getBoatNo(boat) {
     if (boatNo === 6) score += venueFeature.outside * 0.12;
 
     if (boatNo >= 4 && stIndex >= 70) score += 7;
-    if (boatNo >= 5 && exIndex >= 75) score += 5;
 
     return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
   }
@@ -2194,19 +2627,7 @@ function getBoatNo(boat) {
       }
 
       const startAndSlit = clamp(startSupport + slitSupport, 0, 20);
-      const exhibitionRankScore = rankScore(exhibitionTimes, boatNo);
-      const lapRankScore = rankScore(lapTimes, boatNo);
-      const exhibitionDenominator =
-        Number(exhibitionRankScore !== null) +
-        Number(lapRankScore !== null);
-      const exhibitionFoot = exhibitionDenominator
-        ? round(
-            (
-              toNumber(exhibitionRankScore, 0) +
-              toNumber(lapRankScore, 0)
-            ) / exhibitionDenominator
-          )
-        : 0;
+      const exhibitionFoot = 5;
       const venueCourseScore =
         course === 3
           ? venueFeature.makuri
@@ -2245,9 +2666,11 @@ function getBoatNo(boat) {
         reasons.push(`展開${development}/40`);
         reasons.push(`コース${courseAptitude}/20`);
         reasons.push(`ST・スリット${startAndSlit}/20`);
-        reasons.push(`展示・足${exhibitionFoot}/10`);
+        reasons.push(`展示・足は9％枠へ分離`);
         reasons.push(`場傾向${venueCourse}/10`);
-        if (!exhibitionReady) reasons.push("展示前のため暫定");
+        if (!exhibitionReady) {
+          reasons.push("展示6艇未取得のため役割判定は暫定");
+        }
         if (!hasStartEvidence) reasons.push("ST・隣艇比較の裏付け不足");
       } else {
         reasons.push(`${course}コースは${role}として評価`);
@@ -2261,7 +2684,9 @@ function getBoatNo(boat) {
         score,
         grade,
         status,
-        isFormal: exhibitionReady,
+        isFormal:
+          exhibitionReady &&
+          hasStartEvidence,
         isAttackCourse,
         isAdopted,
         hasStartEvidence,
@@ -2439,19 +2864,7 @@ function getBoatNo(boat) {
       else if (slitBoat.slitRisk) startAndSlit -= 2;
       startAndSlit = clamp(startAndSlit, 0, 10);
 
-      const exhibitionRankScore = rankScore(exhibitionTimes, boatNo);
-      const lapRankScore = rankScore(lapTimes, boatNo);
-      const exhibitionDenominator =
-        Number(exhibitionRankScore !== null) +
-        Number(lapRankScore !== null);
-      const exhibitionFoot = exhibitionDenominator
-        ? round(
-            (
-              toNumber(exhibitionRankScore, 0) +
-              toNumber(lapRankScore, 0)
-            ) / exhibitionDenominator
-          )
-        : 0;
+      const exhibitionFoot = 5;
 
       const venueCourseScore =
         course === 1
@@ -2487,7 +2900,8 @@ function getBoatNo(boat) {
       );
       const grade = flowTheoryGrade(score);
       const isFormal =
-        Boolean(mainScenario) && exhibitionReady;
+        Boolean(mainScenario) &&
+        exhibitionReady;
       const isAdopted =
         isFormal &&
         isScenarioCandidate &&
@@ -2513,10 +2927,12 @@ function getBoatNo(boat) {
         `位置・コース${positionRelation}/20`,
         `残し・拾い${holdPickup}/15`,
         `ST・スリット${startAndSlit}/10`,
-        `展示・足${exhibitionFoot}/10`,
+        `展示・足は9％枠へ分離`,
         `場・水面${venueWater}/5`
       ];
-      if (!exhibitionReady) reasons.push("展示前のため暫定");
+      if (!exhibitionReady) {
+        reasons.push("展示6艇未取得のため役割判定は暫定");
+      }
       if (isAttackSource) reasons.push("攻め艇自身は展開艇から分離");
       if (isBlocked) reasons.push("最有力展開で飛び候補");
       if (!isScenarioCandidate) {
@@ -2643,7 +3059,7 @@ function getBoatNo(boat) {
         .map((value) => toNumber(value, NaN))
         .filter((value) => Number.isFinite(value) && value >= 1 && value <= 6);
       const lapTime = getLapTime(entry);
-      const hasRoadEvidence = lapTime > 0 || results.length > 0;
+      const hasRoadEvidence = results.length > 0;
       const isFirstCandidate = firstCandidates.has(boatNo);
       const isSecondCandidate = secondCandidates.has(boatNo);
       const isThirdCandidate = thirdCandidates.has(boatNo);
@@ -2667,9 +3083,7 @@ function getBoatNo(boat) {
           : isThirdCandidate
             ? 24
             : 0;
-      const lapAndFoot =
-        rankScore(lapTimes, boatNo, [15, 12, 9, 6, 3, 0]) +
-        rankScore(exhibitionTimes, boatNo, [10, 8, 6, 4, 2, 0]);
+      const lapAndFoot = 12.5;
 
       let seriesStability = 0;
       if (results.length) {
@@ -2743,14 +3157,14 @@ function getBoatNo(boat) {
 
       const reasons = [
         `ゴール想定${scenarioMatch}/30`,
-        `一周・足${lapAndFoot}/25`,
+        `展示・一周は9％枠へ分離`,
         `今節安定${seriesStability}/15`,
         `進入・位置${coursePosition}/15`,
         `当地・水面${localWater}/10`,
         `技量${playerSkill}/5`
       ];
       if (!hasRoadEvidence) {
-        reasons.push("一周タイム・今節成績不足のため暫定");
+        reasons.push("今節成績不足のため暫定");
       }
       if (!isGoalCandidate) {
         reasons.push("最有力展開のゴール想定と不一致");
@@ -3171,7 +3585,7 @@ function getBoatNo(boat) {
       const hasCurrentEvidence =
         currentSt.count > 0 || results.length > 0;
       const hasAdaptationEvidence =
-        hasExhibitionEvidence || hasCurrentEvidence;
+        hasCurrentEvidence;
       const isFirstCandidate = firstCandidates.has(boatNo);
       const isSecondCandidate = secondCandidates.has(boatNo);
       const isThirdCandidate = thirdCandidates.has(boatNo);
@@ -3192,20 +3606,7 @@ function getBoatNo(boat) {
         role = "拾い";
       }
 
-      const exhibitionFoot = clamp(
-        rankedScore(
-          exhibitionTimes,
-          boatNo,
-          [18, 15, 12, 9, 6, 3]
-        ) +
-        rankedScore(
-          lapTimes,
-          boatNo,
-          [12, 10, 8, 6, 4, 2]
-        ),
-        0,
-        30
-      );
+      const exhibitionFoot = 15;
       const startAndSlit = clamp(
         rankedScore(
           currentStRows,
@@ -3310,7 +3711,7 @@ function getBoatNo(boat) {
       else if (score >= 55) status = "参考";
 
       const reasons = [
-        `展示・足${exhibitionFoot}/30`,
+        `展示・足は9％枠へ分離`,
         `今節ST・スリット${startAndSlit}/20`,
         `今節・道中${currentAndRoad}/20`,
         `展開役割${scenarioRole}/15`,
@@ -4565,12 +4966,12 @@ function getBoatNo(boat) {
         role = "拾い";
       }
 
-      const exhibitionFoot = clamp(
-        rankedScore(exhibitionTimes, boatNo, [15, 13, 11, 8, 5, 2]) +
-        rankedScore(lapTimes, boatNo, [10, 8, 7, 5, 3, 1]),
-        0,
-        25
-      );
+      /*
+        展示・一周は展示・足9％枠で評価済み。
+        モーター理論では実走確認の有無だけを使い、
+        順位点は加算しない。
+      */
+      const exhibitionFoot = 12.5;
 
       let currentRoad = clamp(
         round(toNumber(analysis?.indexes?.turn, 0) * 0.08),
@@ -4646,7 +5047,7 @@ function getBoatNo(boat) {
       }
 
       const reasons = [
-        `展示・一周・回り足${exhibitionFoot}/25`,
+        `展示・一周は確認条件のみ`,
         `今節・道中${currentRoad}/20`,
         `今節ST・スリット${startAndSlit}/15`,
         `整備後変化${maintenanceChange}/15`,
@@ -4949,34 +5350,11 @@ function getBoatNo(boat) {
       startStability = clamp(startStability, 0, 15);
 
       const courseAdjacency = isAdjacent ? 15 : 0;
-      let exhibitionFoot = 0;
-
-      if (exhibitionReady && lapReady) {
-        exhibitionFoot =
-          rankedScore(
-            exhibitionTimes,
-            boatNo,
-            [8, 7, 6, 4, 2, 1]
-          ) +
-          rankedScore(
-            lapTimes,
-            boatNo,
-            [7, 6, 5, 4, 2, 1]
-          );
-      } else if (exhibitionReady) {
-        exhibitionFoot = rankedScore(
-          exhibitionTimes,
-          boatNo,
-          [15, 13, 11, 8, 5, 2]
-        );
-      } else if (lapReady) {
-        exhibitionFoot = rankedScore(
-          lapTimes,
-          boatNo,
-          [15, 13, 11, 8, 5, 2]
-        );
-      }
-      exhibitionFoot = clamp(exhibitionFoot, 0, 15);
+      /*
+        旧配点の成立基準を保つ校正常数。
+        艇ごとの展示・一周順位はここへ再加算しない。
+      */
+      const exhibitionFoot = 13;
 
       const holdRoad = clamp(
         Math.round(
@@ -5062,14 +5440,13 @@ function getBoatNo(boat) {
         `攻め艇とのST比較${startComparison}/25`,
         `ST安定性${startStability}/15`,
         `展示進入・隣接${courseAdjacency}/15`,
-        `展示直線・一周・足${exhibitionFoot}/15`,
+        `展示・一周は9％枠へ分離`,
         `残し・回り足・道中${holdRoad}/15`,
         `技量・コース適性${skillCourse}/10`,
         `場・水面・風適応${surfaceAdaptation}/5`
       ];
       if (!isAdjacent) reasons.push("攻め艇の内側隣接艇ではない");
       if (!hasStartEvidence) reasons.push("ST比較の裏付け不足");
-      if (!hasExhibitionEvidence) reasons.push("展示・足の比較不足");
       if (clearStartLag) reasons.push("攻め艇より明確にSTが遅い");
       if (isBlocked) reasons.push("最有力展開で飛び候補");
 
@@ -5159,7 +5536,6 @@ function getBoatNo(boat) {
     entries,
     data
   );
-  const exhibitionIndex = calcExhibitionIndex(boat, entries);
   const localIndex = calcLocalIndex(boat);
   const turnIndex = calcTurnIndex(boat);
   const attackIndex = calcAttackIndex(
@@ -5205,34 +5581,6 @@ function getBoatNo(boat) {
       entry.nationalSt;
 
     return !isNil(value) && toNumber(value, 0) > 0;
-  }
-
-  function hasExhibitionData(entry) {
-    if (!entry) return false;
-
-    const time =
-      entry.exhibitionTime ??
-      entry.tenjiTime ??
-      entry.displayTime ??
-      entry.exTime;
-
-    const exhibitionSt =
-      entry.exhibitionSt ??
-      entry.tenjiSt ??
-      entry.displaySt ??
-      entry.startExhibition;
-
-    const lap =
-      entry.lapTime ??
-      entry.oneLapTime ??
-      entry.roundTime ??
-      entry.turnTime;
-
-    return (
-      (!isNil(time) && toNumber(time, 0) > 0) ||
-      (!isNil(exhibitionSt) && toNumber(exhibitionSt, 0) >= 0) ||
-      (!isNil(lap) && toNumber(lap, 0) > 0)
-    );
   }
 
   /* ===============================
@@ -5295,30 +5643,6 @@ function getBoatNo(boat) {
     各艇の展示指数
   =============================== */
 
-  const ex1 = boat1
-    ? calcExhibitionIndex(boat1, entries)
-    : 50;
-
-  const ex2 = boat2
-    ? calcExhibitionIndex(boat2, entries)
-    : 50;
-
-  const ex3 = boat3
-    ? calcExhibitionIndex(boat3, entries)
-    : 50;
-
-  const ex4 = boat4
-    ? calcExhibitionIndex(boat4, entries)
-    : 50;
-
-  const ex5 = boat5
-    ? calcExhibitionIndex(boat5, entries)
-    : 50;
-
-  const ex6 = boat6
-    ? calcExhibitionIndex(boat6, entries)
-    : 50;
-
   /* ===============================
     最初に基本展開点を作る
   =============================== */
@@ -5328,7 +5652,7 @@ function getBoatNo(boat) {
   score += turnIndex * 0.16;
   score += localIndex * 0.12;
   score += stIndex * 0.14;
-  score += exhibitionIndex * 0.13;
+  score += 6.5;
   score += attackIndex * 0.12;
 
   /* ===============================
@@ -5345,16 +5669,8 @@ function getBoatNo(boat) {
   const hasSt5 = hasAverageStData(boat5);
   const hasSt6 = hasAverageStData(boat6);
 
-  const hasEx1 = hasExhibitionData(boat1);
-  const hasEx2 = hasExhibitionData(boat2);
-  const hasEx3 = hasExhibitionData(boat3);
-  const hasEx4 = hasExhibitionData(boat4);
-  const hasEx5 = hasExhibitionData(boat5);
-  const hasEx6 = hasExhibitionData(boat6);
-
   const hasInnerComparison =
-    (hasSt1 && hasSt2 && hasSt3) ||
-    (hasEx1 && hasEx2 && hasEx3);
+    hasSt1 && hasSt2 && hasSt3;
 
   /*
     1号艇は、明確な崩れ材料がない限り逃げ・残しを維持する。
@@ -5366,13 +5682,6 @@ function getBoatNo(boat) {
       (
         (hasSt2 && st1 <= st2 - 12) ||
         (hasSt3 && st1 <= st3 - 14)
-      )
-    ) ||
-    (
-      hasEx1 &&
-      (
-        (hasEx2 && ex1 <= ex2 - 12) ||
-        (hasEx3 && ex1 <= ex3 - 14)
       )
     );
 
@@ -5388,12 +5697,6 @@ function getBoatNo(boat) {
       hasSt2 &&
       st2 >= 60 &&
       st2 >= st1 - 7
-    ) ||
-    (
-      hasEx1 &&
-      hasEx2 &&
-      ex2 >= 60 &&
-      ex2 >= ex1 - 6
     );
 
   /*
@@ -5406,15 +5709,9 @@ function getBoatNo(boat) {
     st3 >= 66 &&
     st3 >= st2 + 4;
 
-  const threeHasExAttack =
-    hasEx2 &&
-    hasEx3 &&
-    ex3 >= 62 &&
-    ex3 >= ex2 + 4;
-
   const threeCanAttack =
     hasInnerComparison &&
-    (threeHasStAttack || threeHasExAttack) &&
+    threeHasStAttack &&
     attackIndex >= 66;
 
   /*
@@ -5426,14 +5723,8 @@ function getBoatNo(boat) {
     st4 >= 67 &&
     st4 >= st3 + 4;
 
-  const fourHasExAttack =
-    hasEx3 &&
-    hasEx4 &&
-    ex4 >= 63 &&
-    ex4 >= ex3 + 4;
-
   const fourCanAttack =
-    (fourHasStAttack || fourHasExAttack) &&
+    fourHasStAttack &&
     attackIndex >= 67;
 
   /*
@@ -5441,8 +5732,7 @@ function getBoatNo(boat) {
     5自身にもSTまたは展示の実データが必要。
   */
   const fiveHasOwnEvidence =
-    (hasSt5 && st5 >= 67) ||
-    (hasEx5 && ex5 >= 64);
+    hasSt5 && st5 >= 67;
 
   const fiveCanMakuriSashi =
     fiveHasOwnEvidence &&
@@ -5453,8 +5743,7 @@ function getBoatNo(boat) {
     実データと当地・道中の両方を必要とする。
   */
   const sixHasOwnEvidence =
-    (hasSt6 && st6 >= 67) ||
-    (hasEx6 && ex6 >= 67);
+    hasSt6 && st6 >= 67;
 
   const sixCanPickup =
     sixHasOwnEvidence &&
@@ -5613,7 +5902,6 @@ function getBoatNo(boat) {
 
   if (isNewEngineMode(data)) {
     if (stIndex >= 72) score += 3;
-    if (exhibitionIndex >= 72) score += 4;
     if (turnIndex >= 72) score += 3;
   }
 
@@ -5626,23 +5914,27 @@ function getBoatNo(boat) {
 
   function calcTotalIndex(indexes, weights) {
 
+  const exhibitionWeight = 0.09;
+  const flowWeight =
+    weights.raceFlow +
+    Math.max(
+      0,
+      weights.exhibition - exhibitionWeight
+    );
+
   let total =
     indexes.st * weights.st +
-    indexes.exhibition * weights.exhibition +
+    indexes.exhibition * exhibitionWeight +
     indexes.motor * weights.motor +
     indexes.local * weights.local +
     indexes.national * weights.national +
     indexes.attack * weights.attack +
-    indexes.raceFlow * weights.raceFlow +
+    indexes.raceFlow * flowWeight +
     indexes.turn * weights.turn;
 
   // STが非常に良い
   if (indexes.st >= 90) total += 4;
   else if (indexes.st >= 80) total += 2;
-
-  // 展示気配が良い
-  if (indexes.exhibition >= 90) total += 4;
-  else if (indexes.exhibition >= 80) total += 2;
 
   // 攻め指数
   if (indexes.attack >= 85) total += 3;
@@ -5655,14 +5947,6 @@ function getBoatNo(boat) {
 
   // モーターが極端に悪い
   if (indexes.motor <= 35) total -= 2;
-
-  // STと展示が両方優秀なら相乗効果
-  if (
-    indexes.st >= 85 &&
-    indexes.exhibition >= 85
-  ) {
-    total += 3;
-  }
 
   return clamp(
     round(total),
@@ -6038,16 +6322,12 @@ function getBoatNo(boat) {
       topAnalysis &&
       linkScore >= 60
     );
-    const isActionable = Boolean(
-      sameTop && isOuterTarget && isLinkable
-    );
-    const scoreAdjustment = isActionable
-      ? clamp(
-          Math.round(4 + ((confidence - 70) / 30) * 4),
-          4,
-          8
-        )
-      : 0;
+    /*
+      Ver2ではダブルタイムを展示・足100点内へ統合する。
+      展開・役割・着順候補への別枠加点は行わない。
+    */
+    const isActionable = false;
+    const scoreAdjustment = 0;
 
     totalRanking.forEach((boat) => {
       const isTop = sameTop && boat.boatNo === topBoatNo;
@@ -6083,7 +6363,7 @@ function getBoatNo(boat) {
 
       topBoat: topBoatNo,
 
-      activeBoat: isActionable ? topBoatNo : null,
+      activeBoat: sameTop ? topBoatNo : null,
 
       confidence,
 
@@ -6162,13 +6442,6 @@ function getBoatNo(boat) {
       return "D";
     }
 
-    function adjustmentOf(grade) {
-      if (grade === "S") return 6;
-      if (grade === "A") return 4;
-      if (grade === "B") return 2;
-      return 0;
-    }
-
     function roleOf(boatNo, analysis) {
       const roleScores = analysis?.roleScores || {};
       const indexes = analysis?.indexes || {};
@@ -6215,24 +6488,27 @@ function getBoatNo(boat) {
       const grade = gradeOf(diff);
       const { role, roleScore } = roleOf(boat.boatNo, analysis);
       const isRoleAligned = Boolean(analysis && roleScore >= 60);
-      const scoreAdjustment =
-        isFormal && isRoleAligned
-          ? adjustmentOf(grade)
-          : 0;
+      /*
+        新サムは展示・足100点の20点枠へ統合済み。
+        展開・役割・着順候補へ追加点を付けない。
+      */
+      const scoreAdjustment = 0;
 
       boat.diff = diff;
       boat.grade = grade;
-      boat.samAlert = isFormal && scoreAdjustment > 0;
+      boat.samAlert =
+        isFormal &&
+        ["S", "A", "B"].includes(grade);
       boat.isFormal = isFormal;
       boat.role = role;
       boat.roleScore = roleScore;
       boat.isRoleAligned = isRoleAligned;
-      boat.isActionable = scoreAdjustment > 0;
+      boat.isActionable = false;
       boat.scoreAdjustment = scoreAdjustment;
       boat.comment = !isFormal
         ? "6艇データ不足のため参考表示のみ"
-        : scoreAdjustment > 0
-          ? `新サム${grade}評価・${role}へ反映`
+        : ["S", "A", "B"].includes(grade)
+          ? `新サム${grade}評価・展示足100点へ統合`
           : grade === "C"
             ? "新サムC評価・表示のみ"
             : grade === "D"
@@ -6246,7 +6522,7 @@ function getBoatNo(boat) {
     });
 
     const activeBoats = list
-      .filter((boat) => boat.isActionable)
+      .filter((boat) => boat.samAlert)
       .map((boat) => boat.boatNo);
 
     return {
@@ -6277,15 +6553,24 @@ function getBoatNo(boat) {
         entries,
         data
       );
+    const exhibitionPerformanceTheory =
+      buildExhibitionPerformanceEvaluation(
+        entries,
+        data
+      );
+    const exhibitionPerformanceRole =
+      exhibitionPerformanceTheory.roles.find(
+        (item) =>
+          item.boatNo === getBoatNo(boat)
+      ) || null;
 
     const indexes = {
 
       st: stTheory.appliedIndex,
 
-      exhibition: calcExhibitionIndex(
-        boat,
-        entries
-      ),
+      exhibition:
+        exhibitionPerformanceRole?.appliedIndex ??
+        50,
 
       motor: calcMotorIndex(
         boat,
@@ -6333,8 +6618,8 @@ const roleScores = {
     round(
       indexes.attack * 0.42 +
       indexes.st * 0.30 +
-      indexes.exhibition * 0.18 +
-      indexes.raceFlow * 0.10
+      indexes.raceFlow * 0.10 +
+      9
     ),
     INDEX_LIMIT.min,
     INDEX_LIMIT.max
@@ -6345,8 +6630,8 @@ const roleScores = {
       indexes.raceFlow * 0.42 +
       indexes.attack * 0.20 +
       indexes.turn * 0.18 +
-      indexes.exhibition * 0.12 +
-      indexes.local * 0.08
+      indexes.local * 0.08 +
+      6
     ),
     INDEX_LIMIT.min,
     INDEX_LIMIT.max
@@ -6357,8 +6642,8 @@ const roleScores = {
       indexes.turn * 0.42 +
       indexes.local * 0.23 +
       indexes.national * 0.18 +
-      indexes.exhibition * 0.10 +
-      indexes.motor * 0.07
+      indexes.motor * 0.07 +
+      5
     ),
     INDEX_LIMIT.min,
     INDEX_LIMIT.max
@@ -6384,8 +6669,8 @@ const roleScores = {
       indexes.turn * 0.30 +
       indexes.raceFlow * 0.26 +
       indexes.local * 0.20 +
-      indexes.exhibition * 0.12 +
       indexes.national * 0.12 +
+      6 +
       (boatNo >= 5 ? 7 : 0)
     ),
     INDEX_LIMIT.min,
@@ -6423,10 +6708,7 @@ const hasOuterHeadEvidence =
   indexes.raceFlow >= 80 &&
   roleScores.flow >= 78 &&
   roleScores.attack >= 74 &&
-  (
-    indexes.st >= 72 ||
-    indexes.exhibition >= 72
-  );
+  indexes.st >= 72;
 
 /*
   既存予想との互換基準。
@@ -6660,6 +6942,9 @@ roleTags,
 courseStructureTheory,
 
 stTheory,
+
+exhibitionPerformanceTheory:
+  exhibitionPerformanceRole,
 
 buffs,
 
@@ -6972,13 +7257,6 @@ function buildRaceScenarios(analyses, data) {
     );
   }
 
-  function exhibition(no) {
-    return toNumber(
-      getAnalysis(no)?.indexes?.exhibition,
-      50
-    );
-  }
-
   function flow(no) {
     return toNumber(
       getAnalysis(no)?.indexes?.raceFlow,
@@ -7080,14 +7358,8 @@ function buildRaceScenarios(analyses, data) {
 
   function hasComparison(leftNo, rightNo) {
     return (
-      (
-        hasAverageSt(leftNo) &&
-        hasAverageSt(rightNo)
-      ) ||
-      (
-        hasExhibition(leftNo) &&
-        hasExhibition(rightNo)
-      )
+      hasAverageSt(leftNo) &&
+      hasAverageSt(rightNo)
     );
   }
 
@@ -7100,17 +7372,6 @@ function buildRaceScenarios(analyses, data) {
       hasAverageSt(opponentNo)
     ) {
       edge += st(targetNo) - st(opponentNo);
-      evidenceCount += 1;
-    }
-
-    if (
-      hasExhibition(targetNo) &&
-      hasExhibition(opponentNo)
-    ) {
-      edge +=
-        exhibition(targetNo) -
-        exhibition(opponentNo);
-
       evidenceCount += 1;
     }
 
@@ -7234,7 +7495,7 @@ function buildRaceScenarios(analyses, data) {
     flow(1) * 0.28 +
     hold(1) * 0.22 +
     st(1) * 0.12 +
-    exhibition(1) * 0.08;
+    4;
 
   const escapeSlit = slitScenarioAdjustment(1, 2);
   const sashiSlit = slitScenarioAdjustment(2, 1);
@@ -7315,8 +7576,8 @@ function buildRaceScenarios(analyses, data) {
   flow(3) * 0.30 +
   attack(3) * 0.25 +
   st(3) * 0.12 +
-  exhibition(3) * 0.08 +
-  total(3) * 0.05;
+  total(3) * 0.05 +
+  4;
 
 const threeVsOne =
   relationEdge(3, 1);
@@ -7365,8 +7626,8 @@ if (hasComparison(3, 1)) {
     flow(4) * 0.28 +
     attack(4) * 0.25 +
     st(4) * 0.12 +
-    exhibition(4) * 0.08 +
-    total(4) * 0.05;
+    total(4) * 0.05 +
+    4;
 
   if (hasComparison(4, 3)) {
     if (fourVsThree >= 10) {
@@ -7437,7 +7698,7 @@ if (hasComparison(3, 1)) {
         flow(no) * 0.30 +
         attack(no) * 0.25 +
         st(no) * 0.10 +
-        exhibition(no) * 0.05;
+        2.5;
 
       let secondScore =
         hold(no) * 0.32 +
@@ -9878,6 +10139,26 @@ const courseStructureTheory = {
     "ai-core-course-structure-v2"
 };
 
+const exhibitionPerformanceTheory =
+  buildExhibitionPerformanceEvaluation(
+    entries,
+    data
+  );
+
+const exhibitionPerformanceByBoat =
+  new Map(
+    exhibitionPerformanceTheory.roles.map(
+      (boat) => [boat.boatNo, boat]
+    )
+  );
+
+analyses.forEach((boat) => {
+  boat.exhibitionPerformanceTheory =
+    exhibitionPerformanceByBoat.get(
+      Number(boat.boatNo)
+    ) || null;
+});
+
 const attackTheory = {
   ranking: analyses
     .map((boat) => boat.attackTheory)
@@ -10113,6 +10394,8 @@ const slit =
       stSlitTheory,
 
       courseStructureTheory,
+
+      exhibitionPerformanceTheory,
 
       attackTheory,
 
@@ -10472,6 +10755,9 @@ return {
         stSlitRanking:
           aiCore.stSlitTheory
             ?.ranking || [],
+        exhibitionPerformanceRanking:
+          aiCore.exhibitionPerformanceTheory
+            ?.roles || [],
         attackRanking: aiCore.attackTheory?.ranking || [],
         wallRanking: aiCore.wallTheory?.ranking || [],
         flowRanking: aiCore.flowTheory?.ranking || [],
@@ -10516,6 +10802,8 @@ return {
         aiCore.stSlitTheory,
       courseStructureTheory:
         aiCore.courseStructureTheory,
+      exhibitionPerformanceTheory:
+        aiCore.exhibitionPerformanceTheory,
       wallTheory: aiCore.wallTheory,
       flowTheory: aiCore.flowTheory,
       roadTheory: aiCore.roadTheory,
@@ -10683,6 +10971,8 @@ return {
     buildStFoundationEvaluation,
 
     buildCourseStructureEvaluation,
+
+    buildExhibitionPerformanceEvaluation,
     
     buildRaceScenarios,
 

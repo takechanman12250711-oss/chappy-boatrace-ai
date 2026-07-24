@@ -12,6 +12,11 @@ on:
       - "js/practical-selection.js"
       - "js/prediction.js"
       - "js/render.js"
+      - "js/motor-maintenance-insights.js"
+      - "scripts/test-exhibition-performance.js"
+      - "scripts/test-double-time.js"
+      - "scripts/test-new-sam.js"
+      - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-shadow-predictions.js"
@@ -58,6 +63,11 @@ on:
       - "js/practical-selection.js"
       - "js/prediction.js"
       - "js/render.js"
+      - "js/motor-maintenance-insights.js"
+      - "scripts/test-exhibition-performance.js"
+      - "scripts/test-double-time.js"
+      - "scripts/test-new-sam.js"
+      - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-shadow-predictions.js"
@@ -116,6 +126,11 @@ jobs:
           node --check js/ai-core.js
           node --check js/prediction.js
           node --check js/render.js
+          node --check js/motor-maintenance-insights.js
+          node --check scripts/test-exhibition-performance.js
+          node --check scripts/test-double-time.js
+          node --check scripts/test-new-sam.js
+          node --check tools/test-motor-maintenance-theory-v2.js
           node --check js/note-generator.js
           node --check js/practical-selection.js
           node --check scripts/check-charter.js
@@ -168,6 +183,10 @@ jobs:
           node scripts/test-improvement-suggestions.js
           node scripts/test-practical-selection.js
           node scripts/test-ai-core-formations.js
+          node scripts/test-exhibition-performance.js
+          node scripts/test-double-time.js
+          node scripts/test-new-sam.js
+          node tools/test-motor-maintenance-theory-v2.js
           node scripts/test-race-scenarios.js
           node scripts/test-scenario-marks.js
           node scripts/test-scenario-formations.js
