@@ -1,4 +1,4 @@
-name: Inspect result UI
+name: Simplify result UI
 
 on:
   push:
@@ -9,19 +9,23 @@ permissions:
   contents: write
 
 jobs:
-  inspect:
+  simplify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Inspect result UI references
-        run: node scripts/inspect-result-ui.js
-      - name: Commit inspection report
+      - name: Simplify result analysis UI
+        run: node scripts/simplify-result-ui.js
+      - name: Syntax check
+        run: node --check js/stats.js
+      - name: Verification tests
+        run: node scripts/test-prediction-verification.js
+      - name: Commit result UI cleanup
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add result-ui-context.json
-          git diff --cached --quiet || git commit -m "結果分析UIの参照箇所を記録"
+          git add js/stats.js
+          git diff --cached --quiet || git commit -m "結果分析から不要な仮想収支表示を削除"
           git push
