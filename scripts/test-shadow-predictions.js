@@ -148,7 +148,29 @@ const compacted = compactStoredVerification({
     manshuSheet: { oversized: true },
     ticketRanks: Array.from({ length: 30 }, () => ({ ticket: "1-2-3" })),
     practicalTickets: [{ ticket: "1-2-3", category: "本線" }],
-    preRaceConditions: { weather: { windSpeed: 3 } }
+    preRaceConditions: { weather: { windSpeed: 3 } },
+    verificationEvidence: {
+      sourceCommit: "abc123",
+      aiCoreVersion: "ai-core-test",
+      mainScenario: {
+        type: "threeAttack",
+        label: "3コース攻め",
+        score: 88,
+        frameMovementAdjustment: -2,
+        attacker: 3,
+        blockedBoats: [4]
+      },
+      roles: {
+        attacker: 3,
+        wallBoat: 2,
+        remainers: [1, 2],
+        followers: [5],
+        pickupCandidates: [5, 6],
+        roadRaceBoats: [6],
+        localExperts: [],
+        blockedBoats: [4]
+      }
+    }
   }
 });
 
@@ -157,8 +179,90 @@ assert.equal(compacted.prediction.raceFlow.title, "1逃げ本線");
 assert.equal(compacted.prediction.mainSheet.honmei.boatNo, 1);
 assert.equal(compacted.prediction.practicalTickets.length, 1);
 assert.equal(compacted.prediction.preRaceConditions.weather.windSpeed, 3);
+assert.equal(
+  compacted.prediction.verificationEvidence.mainScenario.type,
+  "threeAttack"
+);
+assert.equal(
+  compacted.prediction.verificationEvidence.roles.attacker,
+  3
+);
 assert.equal(compacted.prediction.manshuSheet, undefined);
 assert.equal(compacted.prediction.ticketRanks, undefined);
 assert.equal(compacted.prediction.mainSheet.tickets, undefined);
+
+const generatedEvidence = compactStoredVerification({
+  raceKey: "20260723-24-1",
+  prediction: {
+    version: "prediction-test",
+    aiCore: {
+      version: "ai-core-v4.8.0-theory-integration",
+      raceScenarios: {
+        mainScenario: {
+          type: "fourAttack",
+          label: "4カド攻め",
+          score: 91,
+          frameMovementAdjustment: 3,
+          attacker: 4,
+          blockedBoats: []
+        },
+        subScenario: {
+          type: "escape",
+          label: "1号艇逃げ",
+          score: 86,
+          frameMovementAdjustment: -1,
+          attacker: 1,
+          blockedBoats: []
+        },
+        scenarios: [],
+        attacker: 4,
+        wallBoat: 3,
+        remainers: [1, 2],
+        followers: [5],
+        pickupCandidates: [5, 6],
+        roadRaceBoats: [6],
+        localExperts: [1],
+        blockedBoats: [],
+        evidence: {
+          relations: { fourVsThree: 9 },
+          frameMovement: [{ boatNo: 4, scoreAdjustment: 3 }]
+        }
+      },
+      marks: {
+        honmei: { boatNo: 4, playerName: "4号艇" },
+        taikou: { boatNo: 1, playerName: "1号艇" },
+        ana: { boatNo: 5, playerName: "5号艇" },
+        osae: { boatNo: 2, playerName: "2号艇" }
+      },
+      formations: {
+        mainEstablished: true,
+        axis: { honmei: 4, taikou: 1, ana: 5, osae: 2 },
+        evidence: { scenarioType: "fourAttack" }
+      }
+    }
+  }
+});
+
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.aiCoreVersion,
+  "ai-core-v4.8.0-theory-integration"
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.mainScenario.type,
+  "fourAttack"
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.mainScenario
+    .frameMovementAdjustment,
+  3
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.marks.honmei.boatNo,
+  4
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.formation.scenarioType,
+  "fourAttack"
+);
 
 console.log("シャドー予想保存テスト: 合格");
