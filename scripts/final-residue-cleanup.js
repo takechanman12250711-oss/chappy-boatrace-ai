@@ -1,6 +1,6 @@
 "use strict";
 
-// 診断付きの分割検査で最終整理を実行する。
+// 整理結果をブランチへ保存してから全検査する。
 const fs = require("fs");
 const path = require("path");
 
