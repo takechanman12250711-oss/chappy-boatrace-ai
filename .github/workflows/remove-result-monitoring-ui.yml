@@ -1,0 +1,31 @@
+name: Remove result monitoring UI
+
+on:
+  push:
+    branches:
+      - agent/remove-result-monitoring-ui
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Remove internal monitoring UI
+        run: node scripts/remove-result-monitoring-ui.js
+      - name: Syntax check
+        run: node --check js/stats.js
+      - name: Verification tests
+        run: node scripts/test-prediction-verification.js
+      - name: Commit cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/stats.js
+          git diff --cached --quiet || git commit -m "結果分析から内部監視表示を削除"
+          git push
