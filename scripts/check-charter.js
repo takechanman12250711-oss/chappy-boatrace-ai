@@ -184,6 +184,15 @@ assert(
   "削除済みの「今日のAIおすすめ」処理が残っています"
 );
 assert(
+  !render.includes("THEORY_LABELS") &&
+    !render.includes("renderTheoryPanel") &&
+    !render.includes("pushTheoryFromRanking") &&
+    !render.includes("pushTheoryText") &&
+    !render.includes("renderTheoryItem") &&
+    !render.includes("旧互換・非表示"),
+  "非表示の旧理論描画処理が残っています"
+);
+assert(
   aiCore.includes(
     "aiTicketList:\n        compatibleAiTicketList"
   ) &&
