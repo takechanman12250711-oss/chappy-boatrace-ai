@@ -44,6 +44,13 @@ const COURSE_STRUCTURE_OUTPUT_FILE = path.join(
   "course-structure-patterns.json"
 );
 
+const RACER_VENUE_STARTS_OUTPUT_FILE = path.join(
+  ROOT,
+  "data",
+  "stats",
+  "racer-venue-starts.json"
+);
+
 const THREE_YEAR_DAYS = 1095;
 const RECENT_YEAR_DAYS = 365;
 
@@ -1007,6 +1014,69 @@ function addRacers(
   }
 }
 
+function addRacerVenueStarts(
+  racerVenueStarts,
+  race
+) {
+  const jcd = String(
+    race?.jcd || ""
+  ).padStart(2, "0");
+
+  if (!/^\d{2}$/.test(jcd)) return;
+
+  for (const finisher of race.finishers || []) {
+    const registerNo = String(
+      finisher?.registerNo || ""
+    ).trim();
+
+    if (!/^\d{4}$/.test(registerNo)) {
+      continue;
+    }
+
+    const racer =
+      racerVenueStarts[registerNo] ||= {
+        registerNo,
+        totalStarts: 0,
+        venues: {}
+      };
+
+    racer.totalStarts += 1;
+    racer.venues[jcd] =
+      Number(racer.venues[jcd] || 0) + 1;
+  }
+}
+
+function finalizeRacerVenueStarts(
+  racerVenueStarts
+) {
+  return Object.fromEntries(
+    Object.values(racerVenueStarts)
+      .sort((a, b) =>
+        a.registerNo.localeCompare(
+          b.registerNo
+        )
+      )
+      .map((racer) => [
+        racer.registerNo,
+        {
+          registerNo: racer.registerNo,
+          totalStarts:
+            Number(racer.totalStarts || 0),
+          venues: Object.fromEntries(
+            Object.entries(racer.venues || {})
+              .sort(([a], [b]) =>
+                a.localeCompare(b)
+              )
+              .map(([jcd, starts]) => [
+                jcd,
+                Number(starts || 0)
+              ])
+          )
+        }
+      ])
+  );
+}
+
 function finalizeRacerBoats(
   byBoat
 ) {
@@ -1375,6 +1445,7 @@ function main() {
   const venueRacePatterns = {};
   const trifectaByVenueRace = {};
   const racers = {};
+  const racerVenueStarts = {};
   const courseStructureOverall =
     createCourseStructureWindows();
   const courseStructureByVenue = {};
@@ -1468,6 +1539,10 @@ function main() {
       raceDate >= recentYearStart
         ? "recent1Year"
         : "previous2Years"
+    );
+    addRacerVenueStarts(
+      racerVenueStarts,
+      race
     );
 
     const periodKey =
@@ -1641,6 +1716,27 @@ function main() {
     )
   };
 
+  const racerVenueStartsOutput = {
+    schemaVersion: 1,
+    source: "boatrace-official",
+    usagePolicy:
+      "選手×場の当地出走数のみ。12走以上で正式、30走以上で高信頼。単独加点しない",
+    generatedAt: output.generatedAt,
+    firstDate: output.firstDate,
+    lastDate: output.lastDate,
+    raceCount: races.length,
+    analysisWindow:
+      output.analysisWindow,
+    thresholds: {
+      formalStarts: 12,
+      highReliabilityStarts: 30
+    },
+    racers:
+      finalizeRacerVenueStarts(
+        racerVenueStarts
+      )
+  };
+
   const venueRaceOutput = {
     schemaVersion: 1,
     source: "boatrace-official",
@@ -1748,6 +1844,14 @@ function main() {
   );
 
   fs.writeFileSync(
+    RACER_VENUE_STARTS_OUTPUT_FILE,
+    JSON.stringify(
+      racerVenueStartsOutput
+    ) + "\n",
+    "utf8"
+  );
+
+  fs.writeFileSync(
     TRIFECTA_OUTPUT_FILE,
     JSON.stringify(
       trifectaOutput
@@ -1783,6 +1887,8 @@ module.exports = {
   createVenueRaceWindows,
   finalizeVenueRaceWindows,
   createTrifectaWindows,
+  addRacerVenueStarts,
+  finalizeRacerVenueStarts,
   finalizeTrifectaWindows,
   createCourseStructurePattern,
   addCourseStructureRace,

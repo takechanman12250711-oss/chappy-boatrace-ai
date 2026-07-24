@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.7.0-hold-pickup-v2";
+  const CORE_VERSION = "ai-core-v4.8.0-theory-integration";
 
   /* ===============================
     基本ユーティリティ

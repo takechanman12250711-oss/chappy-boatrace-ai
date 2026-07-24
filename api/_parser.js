@@ -412,13 +412,63 @@ function parseWeatherFromBeforeHtml(html) {
   const windSpeedMatch = text.match(/風速\s+([\d.]+)m/);
   const waterTemperatureMatch = text.match(/水温\s+([\d.]+)℃/);
   const waveHeightMatch = text.match(/波高\s+([\d.]+)cm/);
+  const windCodeMatch = String(html || "").match(
+    /weather1_bodyUnitImage\s+is-wind(\d{1,2})(?=["'\s>])/i
+  );
+  const windDirectionCode = windCodeMatch
+    ? toNumber(windCodeMatch[1])
+    : null;
+  const windDirection = (() => {
+    if (windDirectionCode === 17) return "無風";
+    if ([4, 5, 6].includes(windDirectionCode)) {
+      return "向かい風";
+    }
+    if ([12, 13, 14].includes(windDirectionCode)) {
+      return "追い風";
+    }
+    if (
+      windDirectionCode !== null &&
+      windDirectionCode >= 1 &&
+      windDirectionCode <= 16
+    ) {
+      return "横風";
+    }
+    return "";
+  })();
+  const tideLevelMatch = text.match(/潮位\s+([\d.]+)cm/);
+  const tideFlowMatch = text.match(
+    /(?:潮汐|潮流|潮位)[^。]{0,20}(満潮|干潮|上げ潮|下げ潮)/
+  );
+  const tideLevel = tideLevelMatch
+    ? toNumber(tideLevelMatch[1])
+    : null;
+  const tideFlow = tideFlowMatch
+    ? tideFlowMatch[1]
+    : "";
+  const liveTideAvailable =
+    tideLevel !== null ||
+    Boolean(tideFlow);
 
   return {
     temperature: temperatureMatch ? toNumber(temperatureMatch[1]) : null,
     windSpeed: windSpeedMatch ? toNumber(windSpeedMatch[1]) : null,
     waterTemperature: waterTemperatureMatch ? toNumber(waterTemperatureMatch[1]) : null,
     waveHeight: waveHeightMatch ? toNumber(waveHeightMatch[1]) : null,
-    windDirection: ""
+    windDirection,
+    windDirectionCode,
+    tideLevel,
+    tideFlow,
+    liveTideAvailable,
+    inputStatus: {
+      windDirection:
+        windDirection
+          ? "acquired"
+          : "unavailable",
+      tide:
+        liveTideAvailable
+          ? "acquired"
+          : "unavailable"
+    }
   };
 }
 

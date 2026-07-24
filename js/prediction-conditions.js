@@ -94,6 +94,10 @@
       ),
       motor2Rate: numberOrNull(
         entry?.motor2Rate ?? entry?.motor?.secondRate ?? entry?.motor?.quinellaRate
+      ),
+      localStarts: numberOrNull(
+        entry?.localStarts ?? entry?.localRaces ??
+        entry?.localRaceCount ?? entry?.local?.starts
       )
     };
   }
@@ -103,10 +107,26 @@
     const predictionWeather = prediction?.weather || {};
     const venue = prediction?.venue || prediction?.venueProfile || {};
 
+    const tideLevel = numberOrNull(
+      weather?.tideLevel ?? weather?.tide ??
+      raceData?.tideLevel ?? raceData?.tide
+    );
+    const tidePhase = text(
+      weather?.tideFlow || weather?.tidePhase ||
+      raceData?.tideFlow || raceData?.tidePhase
+    );
+    const liveTideAvailable =
+      weather?.liveTideAvailable === true ||
+      tideLevel !== null ||
+      Boolean(tidePhase);
+
     return {
       weather: text(weather?.weather || weather?.condition || predictionWeather?.weather),
       windDirection: text(
         weather?.windDirection || weather?.wind_direction || predictionWeather?.windDirection
+      ),
+      windDirectionCode: numberOrNull(
+        weather?.windDirectionCode ?? raceData?.windDirectionCode
       ),
       windSpeed: numberOrNull(
         weather?.windSpeed ?? weather?.wind ?? weather?.wind_velocity ??
@@ -123,13 +143,16 @@
         weather?.waterTemperature ?? weather?.waterTemp ??
         predictionWeather?.waterTemperature
       ),
-      tideLevel: numberOrNull(
-        weather?.tideLevel ?? weather?.tide ?? raceData?.tideLevel ?? raceData?.tide
+      waterType: text(
+        weather?.waterType || raceData?.waterType
       ),
-      tidePhase: text(
-        weather?.tidePhase || weather?.tideStatus || raceData?.tidePhase ||
-        raceData?.tideStatus
-      ),
+      tideLevel,
+      tidePhase,
+      tideStatus:
+        liveTideAvailable
+          ? "acquired"
+          : "unavailable",
+      liveTideAvailable,
       venueTideInfluence: numberOrNull(
         venue?.tideInfluence ?? prediction?.water?.tideInfluence
       )
@@ -151,7 +174,7 @@
     });
 
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       sourceTiming: "pre_deadline",
       officialResultUsed: false,
       boats,
@@ -163,8 +186,8 @@
         exhibitionTime: countAvailable(boats, ["exhibitionTime", "lapTime"]),
         wind: weather.windSpeed !== null,
         wave: weather.waveHeight !== null,
-        tide: weather.tideLevel !== null || Boolean(weather.tidePhase) ||
-          weather.venueTideInfluence !== null
+        tide:
+          weather.liveTideAvailable === true
       },
       newEngineMode: Boolean(
         prediction?.isNewEngineMode ||

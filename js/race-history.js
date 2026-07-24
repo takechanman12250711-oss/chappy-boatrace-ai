@@ -16,6 +16,9 @@
   const COURSE_STRUCTURE_STATS_URL =
     "/data/stats/course-structure-patterns.json?v=20260723-course2";
 
+  const RACER_VENUE_STARTS_URL =
+    "/data/stats/racer-venue-starts.json?v=20260724-integration1";
+
   const MIN_VENUE_SAMPLES = 30;
   const MIN_RACER_SAMPLES = 12;
 
@@ -132,13 +135,15 @@
       fetchJson(STATS_URL),
       fetchJson(VENUE_RACE_STATS_URL),
       fetchJson(RACER_SKILL_STATS_URL),
-      fetchJson(COURSE_STRUCTURE_STATS_URL)
+      fetchJson(COURSE_STRUCTURE_STATS_URL),
+      fetchJson(RACER_VENUE_STARTS_URL)
     ])
       .then(([
         data,
         venueRaceData,
         racerSkillData,
-        courseStructureData
+        courseStructureData,
+        racerVenueStartsData
       ]) => {
         if (
           racerSkillData?.source !==
@@ -157,6 +162,15 @@
         ) {
           throw new Error(
             "進入・コース構造履歴の形式が正しくありません"
+          );
+        }
+        if (
+          racerVenueStartsData?.source !==
+            "boatrace-official" ||
+          !racerVenueStartsData?.racers
+        ) {
+          throw new Error(
+            "当地出走数履歴の形式が正しくありません"
           );
         }
 
@@ -184,6 +198,8 @@
             null,
           byVenueRace:
             venueRaceData.byVenueRace || {},
+          racerVenueStarts:
+            racerVenueStartsData,
           courseStructure:
             courseStructureData
         });
@@ -258,7 +274,10 @@
     };
   }
 
-  function getRacer(registerNo) {
+  function getRacer(
+    registerNo,
+    jcd = ""
+  ) {
     if (!stats) return null;
 
     const code =
@@ -269,18 +288,49 @@
     if (!code) return null;
 
     const racer =
-      stats.racers?.[code];
+      stats.racers?.[code] || null;
+    const venueHistory =
+      stats.racerVenueStarts
+        ?.racers?.[code] || null;
 
-    if (!racer) return null;
+    if (!racer && !venueHistory) {
+      return null;
+    }
 
     const samples =
       Number(
-        racer.starts || 0
+        racer?.starts ??
+        venueHistory?.totalStarts ??
+        0
       );
+    const venueCode =
+      normalizeJcd(jcd);
+    const currentVenueStarts =
+      venueCode
+        ? Number(
+            venueHistory
+              ?.venues?.[venueCode] ??
+            0
+          )
+        : null;
 
     return {
-      ...racer,
+      ...(racer || {
+        registerNo: code,
+        racerName: ""
+      }),
       samples,
+      localStarts:
+        currentVenueStarts,
+      currentVenueStarts,
+      localReliability:
+        currentVenueStarts === null
+          ? "unknown"
+          : currentVenueStarts >= 30
+            ? "high"
+            : currentVenueStarts >= 12
+              ? "medium"
+              : "low",
       usable:
         samples >=
         MIN_RACER_SAMPLES
@@ -339,7 +389,12 @@
 
     const racers =
       registerNos
-        .map(getRacer)
+        .map((registerNo) =>
+          getRacer(
+            registerNo,
+            options.jcd
+          )
+        )
         .filter(Boolean);
 
     const usableRacers =
