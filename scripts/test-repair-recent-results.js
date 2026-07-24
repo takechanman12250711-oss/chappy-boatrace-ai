@@ -8,7 +8,8 @@ const path = require("node:path");
 const {
   normalizeDateKey,
   getRecentDateKeys,
-  isCompleteResultFile
+  isCompleteResultFile,
+  hasUnsettledPredictions
 } = require("./repair-recent-results");
 
 assert.equal(normalizeDateKey("2026-07-22"), "20260722");
@@ -21,6 +22,7 @@ const tempDirectory = fs.mkdtempSync(
   path.join(os.tmpdir(), "repair-recent-results-")
 );
 const resultPath = path.join(tempDirectory, "20260720.json");
+const predictionPath = path.join(tempDirectory, "predictions.json");
 
 fs.writeFileSync(resultPath, JSON.stringify({
   source: "boatrace-official",
@@ -44,6 +46,25 @@ fs.writeFileSync(resultPath, JSON.stringify({
 }));
 assert.equal(isCompleteResultFile(resultPath, "20260720"), false);
 
+fs.writeFileSync(predictionPath, JSON.stringify({
+  predictions: [],
+  verificationPredictions: [
+    { raceKey: "20260720-24-11" }
+  ]
+}));
+assert.equal(hasUnsettledPredictions(predictionPath), true);
+
+fs.writeFileSync(predictionPath, JSON.stringify({
+  predictions: [
+    {
+      raceKey: "20260720-24-11",
+      result: { settled: true }
+    }
+  ],
+  verificationPredictions: []
+}));
+assert.equal(hasUnsettledPredictions(predictionPath), false);
+
 fs.rmSync(tempDirectory, { recursive: true, force: true });
 
-console.log("直近3日間の結果自動復旧テストに合格しました");
+console.log("直近3日間の結果自動復旧・予想照合テストに合格しました");
