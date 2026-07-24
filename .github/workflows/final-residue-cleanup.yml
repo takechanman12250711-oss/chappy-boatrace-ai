@@ -32,6 +32,17 @@ jobs:
         run: node scripts/final-residue-cleanup.js
       - name: Remove temporary cleanup script
         run: rm -f scripts/final-residue-cleanup.js
+      - name: Save cleanup result to branch
+        run: |
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            echo "追加変更なし"
+          else
+            git commit -m "残っていた旧UI残骸を完全削除"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
       - name: Syntax check
         run: |
           node --check js/render.js
@@ -53,14 +64,3 @@ jobs:
             echo "旧残骸が残っています"
             exit 1
           fi
-      - name: Commit cleanup
-        run: |
-          git add -A
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --cached --quiet; then
-            echo "追加変更なし"
-            exit 0
-          fi
-          git commit -m "残っていた旧UI残骸を完全削除"
-          git push origin HEAD:${{ github.head_ref }}
