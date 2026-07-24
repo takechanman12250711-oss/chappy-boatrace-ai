@@ -5,6 +5,14 @@
   "use strict";
 
   const REPORT_URL = "data/stats/frame-rise-sink-patterns.json";
+  const PLACE_TO_JCD = {
+    桐生: "01", 戸田: "02", 江戸川: "03", 平和島: "04", 多摩川: "05", 浜名湖: "06",
+    蒲郡: "07", 常滑: "08", 津: "09", 三国: "10", びわこ: "11", 住之江: "12",
+    尼崎: "13", 鳴門: "14", 丸亀: "15", 児島: "16", 宮島: "17", 徳山: "18",
+    下関: "19", 若松: "20", 芦屋: "21", 福岡: "22", 唐津: "23", 大村: "24"
+  };
+
+  let cachedReport = null;
 
   function esc(value) {
     return String(value ?? "")
@@ -26,16 +34,43 @@
     return "低";
   }
 
-  function frameRows(report) {
-    const frames = report?.overall?.frames || {};
+  function selectedPlace() {
+    return String(document.getElementById("placeSelect")?.value || "").trim();
+  }
+
+  function selectedPattern(report) {
+    const place = selectedPlace();
+    const jcd = PLACE_TO_JCD[place];
+    const venue = jcd ? report?.byVenue?.[jcd] : null;
+
+    if (venue?.raceCount > 0) {
+      return {
+        scope: "venue",
+        title: `${place}の枠別浮沈率`,
+        pattern: venue,
+        place
+      };
+    }
+
+    return {
+      scope: "overall",
+      title: "全場の枠別浮沈率",
+      pattern: report?.overall || {},
+      place: "全場"
+    };
+  }
+
+  function frameRows(pattern) {
+    const frames = pattern?.frames || {};
     return Object.keys(frames)
       .sort((a, b) => Number(a) - Number(b))
       .map(key => frames[key]);
   }
 
   function render(report) {
-    const rows = frameRows(report);
-    const raceCount = Number(report?.overall?.raceCount || 0);
+    const selected = selectedPattern(report);
+    const rows = frameRows(selected.pattern);
+    const raceCount = Number(selected.pattern?.raceCount || 0);
 
     if (!rows.length || !raceCount) {
       return `
@@ -46,10 +81,15 @@
     }
 
     return `
+      <div class="frame-rise-sink-scope">
+        <strong>${esc(selected.title)}</strong>
+        <small>${selected.scope === "venue" ? "選択中の場に絞った参考値" : "場別データ不足のため全場集計を表示"}</small>
+      </div>
+
       <div class="frame-rise-sink-summary">
         <span>対象 ${esc(raceCount)}レース</span>
         <span>期間 ${esc(report?.firstDate || "-")}〜${esc(report?.lastDate || "-")}</span>
-        <span>信頼度 ${esc(reliabilityLabel(report?.overall?.reliability))}</span>
+        <span>信頼度 ${esc(reliabilityLabel(selected.pattern?.reliability))}</span>
       </div>
 
       <div class="frame-rise-sink-table-wrap">
@@ -95,6 +135,8 @@
       .frame-rise-sink-card{margin-top:18px;padding:16px;border:1px solid #dbe6f3;border-radius:16px;background:#fff}
       .frame-rise-sink-card h3{margin:0 0 6px;font-size:17px}
       .frame-rise-sink-card>p{margin:0 0 12px;color:#64748b;font-size:13px}
+      .frame-rise-sink-scope{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+      .frame-rise-sink-scope strong{font-size:14px}.frame-rise-sink-scope small{color:#64748b}
       .frame-rise-sink-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
       .frame-rise-sink-summary span{padding:5px 8px;border-radius:999px;background:#f1f5f9;font-size:12px}
       .frame-rise-sink-table-wrap{overflow-x:auto}
@@ -114,6 +156,15 @@
     return response.json();
   }
 
+  function paint(card) {
+    if (!cachedReport || !card) return;
+    card.innerHTML = `
+      <h3>📊 枠別浮沈率</h3>
+      <p>公式結果から、各枠の浮上・維持・沈下と実進入の傾向を集計します。</p>
+      ${render(cachedReport)}
+    `;
+  }
+
   async function install() {
     ensureStyle();
     const statsArea = document.getElementById("statsArea");
@@ -130,12 +181,9 @@
     statsArea.insertAdjacentElement("afterend", card);
 
     try {
-      const report = await load();
-      card.innerHTML = `
-        <h3>📊 枠別浮沈率</h3>
-        <p>公式結果から、各枠の浮上・維持・沈下と実進入の傾向を集計します。</p>
-        ${render(report)}
-      `;
+      cachedReport = await load();
+      paint(card);
+      document.getElementById("placeSelect")?.addEventListener("change", () => paint(card));
     } catch (error) {
       card.innerHTML = `
         <h3>📊 枠別浮沈率</h3>
