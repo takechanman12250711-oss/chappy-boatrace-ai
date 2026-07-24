@@ -35,7 +35,7 @@
 
   function boatNoOf(value, fallback = 0) {
     const number = Number(
-      value?.boatNo ?? value?.boat ?? value?.no ?? value?.waku ?? value ?? fallback
+      value?.boat ?? value?.waku ?? value?.no ?? value?.boatNo ?? value ?? fallback
     );
     return number >= 1 && number <= 6 ? number : 0;
   }
