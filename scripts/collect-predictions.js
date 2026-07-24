@@ -9,6 +9,11 @@ const raceApi = require("../api/race");
 
 global.window = global;
 require("../js/ai-core");
+require("../js/history-insights");
+require("../js/motor-maintenance-insights");
+const theoryInput = require(
+  "../js/theory-input"
+);
 require("../js/prediction");
 require("../js/practical-selection");
 require("../js/note-generator");
@@ -18,6 +23,9 @@ const historyStats = require(
 );
 const officialHistoryStats = require(
   "../data/stats/race-patterns.json"
+);
+const racerVenueStarts = require(
+  "../data/stats/racer-venue-starts.json"
 );
 const historyInsights = require(
   "../js/history-insights"
@@ -101,6 +109,52 @@ function attachVenueRaceHistory(raceData, jcd, raceNo) {
       historyPattern,
       officialHistoryStats.overall || null
     );
+  const racers = (
+    Array.isArray(raceData?.entries)
+      ? raceData.entries
+      : []
+  ).map((entry) => {
+    const registerNo = String(
+      entry?.registerNo || ""
+    ).trim();
+    const stats =
+      (
+        officialHistoryStats.racers ||
+        {}
+      )[registerNo] || null;
+    const venueStats =
+      (
+        racerVenueStarts.racers ||
+        {}
+      )[registerNo] || null;
+    if (!stats && !venueStats) {
+      return null;
+    }
+    const localStarts = Number(
+      venueStats?.venues?.[
+          String(jcd).padStart(2, "0")
+        ] ?? 0
+    );
+
+    return {
+      registerNo,
+      racerName:
+        stats?.racerName ||
+        entry?.racerName ||
+        "",
+      samples:
+        Number(stats?.starts || 0),
+      localStarts,
+      currentVenueStarts:
+        localStarts,
+      localReliability:
+        localStarts >= 30
+          ? "high"
+          : localStarts >= 12
+            ? "medium"
+            : "low"
+    };
+  }).filter((racer) => racer?.registerNo);
 
   return {
     raceData: {
@@ -110,6 +164,7 @@ function attachVenueRaceHistory(raceData, jcd, raceNo) {
         source: officialHistoryStats.source || "",
         generatedAt:
           officialHistoryStats.generatedAt || "",
+        racers,
         venueRace: historyPattern
           ? {
               ...historyPattern,
@@ -340,7 +395,21 @@ async function evaluateTargets(date, targets) {
           jcd: target.jcd,
           rno: String(target.raceNo)
         });
-        const evaluation = global.ChappyAICore.buildRaceTrendEvaluation(raceData);
+        const history = attachVenueRaceHistory(
+          raceData,
+          target.jcd,
+          target.raceNo
+        );
+        const preparedRaceData =
+          theoryInput.prepare(
+            history.raceData,
+            global.ChappyAICore
+          );
+        const evaluation =
+          global.ChappyAICore
+            .buildRaceTrendEvaluation(
+              preparedRaceData
+            );
 
         if (!evaluation?.ready) {
           const missingReasons = insufficientReasons(evaluation);
@@ -357,11 +426,6 @@ async function evaluateTargets(date, targets) {
         const manshu = Number(evaluation.manshu?.score || 0);
         const type =
           honmei >= manshu ? "本線" : "波乱";
-        const history = attachVenueRaceHistory(
-          raceData,
-          target.jcd,
-          target.raceNo
-        );
         const historyTrend = history.historyTrend;
         const historySupport =
           historyInsights.supportForType(
@@ -371,7 +435,7 @@ async function evaluateTargets(date, targets) {
 
         results.push({
           ...target,
-          raceData: history.raceData,
+          raceData: preparedRaceData,
           evaluation,
           score: Math.max(honmei, manshu),
           type,

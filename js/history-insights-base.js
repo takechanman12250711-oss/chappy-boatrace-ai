@@ -771,6 +771,15 @@
         }
       };
     }
+    if (
+      data?.localWaterTheoryV2?.version ===
+      VERSION
+    ) {
+      return {
+        data,
+        theory: data.localWaterTheoryV2
+      };
+    }
 
     const source = findEntries(data);
     const rows = source.entries.map(

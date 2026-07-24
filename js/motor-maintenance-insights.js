@@ -260,6 +260,15 @@
       if (!data || typeof data !== "object") {
         return { data, theory: { version: VERSION, isFormal: false, rows: [] } };
       }
+      if (
+        data?.motorMaintenanceTheoryV2?.version ===
+        VERSION
+      ) {
+        return {
+          data,
+          theory: data.motorMaintenanceTheoryV2
+        };
+      }
       const source = findEntries(data);
       const context = buildContext(source.entries);
       const rows = source.entries.map((entry, index) => scoreEntry(entry, index, data, context, core));

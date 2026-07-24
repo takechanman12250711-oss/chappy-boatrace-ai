@@ -944,8 +944,19 @@
               );
             }
 
+            const preparedRaceData =
+              await prepareRaceDataForTheories(
+                raceData,
+                {
+                  jcd: target.jcd,
+                  rno: target.raceNo
+                }
+              );
+
             evaluation =
-              core.buildRaceTrendEvaluation(raceData);
+              core.buildRaceTrendEvaluation(
+                preparedRaceData
+              );
 
             raceTrendCache.set(cacheKey, {
               evaluation,
@@ -1149,8 +1160,19 @@
             );
           }
 
+          const preparedRaceData =
+            await prepareRaceDataForTheories(
+              raceData,
+              {
+                jcd,
+                rno: raceNo
+              }
+            );
+
           const evaluation =
-            core.buildRaceTrendEvaluation(raceData);
+            core.buildRaceTrendEvaluation(
+              preparedRaceData
+            );
 
           raceTrendCache.set(cacheKey, {
             evaluation,
@@ -2050,6 +2072,60 @@
     }
   }
 
+  async function prepareRaceDataForTheories(
+    raceData,
+    params = {}
+  ) {
+    try {
+      await window.ChappyRaceHistory
+        ?.load();
+    } catch (error) {
+      console.warn(
+        "⚠️ 公式履歴を共通入力へ接続できませんでした",
+        error?.message || error
+      );
+    }
+
+    const jcd =
+      String(
+        params.jcd ??
+        raceData?.stadiumCode ??
+        raceData?.jcd ??
+        ""
+      ).padStart(2, "0");
+    const raceNo =
+      Number(
+        params.rno ??
+        params.raceNo ??
+        raceData?.raceNo ??
+        0
+      );
+    const historyContext =
+      window.ChappyRaceHistory
+        ?.getContext({
+          jcd,
+          raceNo,
+          registerNos:
+            Array.isArray(raceData?.entries)
+              ? raceData.entries
+                  .map((entry) =>
+                    entry?.registerNo
+                  )
+                  .filter(Boolean)
+              : []
+        }) || null;
+    const input = {
+      ...raceData,
+      historyContext
+    };
+
+    return window.ChappyTheoryInput
+      ?.prepare(
+        input,
+        window.ChappyAICore
+      ) || input;
+  }
+
     async function fetchAndRenderRace() {
     try {
       clearErrorArea();
@@ -2085,28 +2161,11 @@
           params
         );
 
-      const historyContext =
-        window.ChappyRaceHistory
-          ?.getContext({
-            jcd: params.jcd,
-            raceNo: params.rno,
-
-            registerNos:
-              Array.isArray(
-                fetchedData?.entries
-              )
-                ? fetchedData.entries
-                    .map(entry =>
-                      entry?.registerNo
-                    )
-                    .filter(Boolean)
-                : []
-          }) || null;
-
-      const data = {
-        ...fetchedData,
-        historyContext
-      };
+      const data =
+        await prepareRaceDataForTheories(
+          fetchedData,
+          params
+        );
 
       lastRaceData =
         data;

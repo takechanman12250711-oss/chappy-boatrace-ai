@@ -39,6 +39,13 @@ assert.equal(snapshot.boats[0].exhibitionST, 0.1);
 assert.equal(snapshot.boats[0].exhibitionTime, 6.7);
 assert.equal(snapshot.weather.windSpeed, 4);
 assert.equal(snapshot.weather.venueTideInfluence, 70);
+assert.equal(snapshot.weather.tideStatus, "unavailable");
+assert.equal(snapshot.weather.liveTideAvailable, false);
+assert.equal(
+  snapshot.dataAvailability.tide,
+  false,
+  "場の固定潮傾向を実潮汐の取得済み扱いにしない"
+);
 assert.equal(snapshot.dataAvailability.exhibitionST, 6);
 assert.deepEqual(conditions.PRIORITY_STAGES, [
   "展開", "コース", "ST・スリット", "展示・足",

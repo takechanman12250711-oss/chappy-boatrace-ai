@@ -11,7 +11,7 @@
   }
 
   if (typeof document !== "undefined" && typeof document.write === "function") {
-    document.write('<script src="js/history-insights-base.js?v=20260723-localwater2"><\/script>');
-    document.write('<script src="js/motor-maintenance-insights.js?v=20260724-exhibition2"><\/script>');
+    document.write('<script src="js/history-insights-base.js?v=20260724-integration1"><\/script>');
+    document.write('<script src="js/motor-maintenance-insights.js?v=20260724-integration1"><\/script>');
   }
 })(typeof window !== "undefined" ? window : globalThis);
