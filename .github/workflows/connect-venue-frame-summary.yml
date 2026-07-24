@@ -1,0 +1,48 @@
+name: Connect venue frame summary
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "js/venue-frame-summary.js"
+      - "scripts/connect-venue-frame-summary.js"
+      - ".github/workflows/connect-venue-frame-summary.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: connect-venue-frame-summary
+  cancel-in-progress: false
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Connect script
+        run: node scripts/connect-venue-frame-summary.js
+
+      - name: Commit when changed
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No connection changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Connect venue frame summary"
+          git pull --rebase origin main
+          git push origin main
