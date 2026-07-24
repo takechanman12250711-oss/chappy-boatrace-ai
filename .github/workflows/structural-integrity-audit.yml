@@ -9,6 +9,7 @@ on:
       - "style.css"
       - "js/**"
       - "scripts/audit-structural-integrity.js"
+      - "scripts/remove-purchase-preview-css.js"
       - ".github/workflows/structural-integrity-audit.yml"
 
 permissions:
@@ -29,16 +30,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Remove orphan purchase CSS
+        run: node scripts/remove-purchase-preview-css.js
       - name: Run structural audit
-        run: node scripts/audit-structural-integrity.js || true
-      - name: Commit report
+        run: node scripts/audit-structural-integrity.js
+      - name: Remove temporary scripts
         run: |
-          git add structural-integrity-report.json
+          rm -f scripts/remove-purchase-preview-css.js
+          rm -f scripts/audit-structural-integrity.js
+      - name: Commit changes and report
+        run: |
+          git add -A
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --cached --quiet; then
-            echo "監査結果に変更なし"
+            echo "追加変更なし"
             exit 0
           fi
-          git commit -m "構造整合性監査結果を保存"
+          git commit -m "旧購入CSS削除と構造整合性監査"
           git push origin HEAD:${{ github.head_ref }}
