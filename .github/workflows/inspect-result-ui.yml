@@ -1,6 +1,9 @@
 name: Simplify result UI
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - agent/simplify-result-ui
@@ -13,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -23,9 +28,10 @@ jobs:
       - name: Verification tests
         run: node scripts/test-prediction-verification.js
       - name: Commit result UI cleanup
+        if: github.event_name == 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add js/stats.js
           git diff --cached --quiet || git commit -m "結果分析から不要な仮想収支表示を削除"
-          git push
+          git push origin HEAD:${{ github.head_ref }}
