@@ -99,6 +99,27 @@ function isCompleteResultFile(filePath, date) {
   }
 }
 
+function hasUnsettledPredictions(predictionPath) {
+  if (!fs.existsSync(predictionPath)) return false;
+
+  try {
+    const data = JSON.parse(fs.readFileSync(predictionPath, "utf8"));
+    const predictions = [
+      ...(Array.isArray(data?.predictions) ? data.predictions : []),
+      ...(Array.isArray(data?.verificationPredictions)
+        ? data.verificationPredictions
+        : [])
+    ];
+
+    return predictions.some(prediction => !prediction?.result?.settled);
+  } catch (error) {
+    console.warn(
+      `予想ファイルを確認できません：${predictionPath} (${error?.message || error})`
+    );
+    return false;
+  }
+}
+
 function runNodeScript(scriptName, args = []) {
   const scriptPath = path.join(process.cwd(), "scripts", scriptName);
   const result = spawnSync(process.execPath, [scriptPath, ...args], {
@@ -117,33 +138,48 @@ function main() {
   const anchorDate = normalizeDateKey(readArgument("date"));
   const dates = getRecentDateKeys(anchorDate);
   const resultsDirectory = path.join(process.cwd(), "data", "results");
+  const predictionsDirectory = path.join(process.cwd(), "data", "predictions");
   const repairedDates = [];
+  const matchedDates = [];
 
   console.log(`直近${dates.length}日間の公式結果を確認します：${dates.join(", ")}`);
 
   for (const date of dates) {
-    const outputPath = path.join(resultsDirectory, `${date}.json`);
+    const resultPath = path.join(resultsDirectory, `${date}.json`);
+    const predictionPath = path.join(predictionsDirectory, `${date}.json`);
 
-    if (isCompleteResultFile(outputPath, date)) {
-      console.log(`${date}：完成済みのため変更しません`);
-      continue;
+    if (isCompleteResultFile(resultPath, date)) {
+      console.log(`${date}：公式結果は完成済みです`);
+    } else {
+      console.log(`${date}：未完成のため公式結果を再取得します`);
+      runNodeScript("collect-results.js", [`--date=${date}`]);
+      repairedDates.push(date);
     }
 
-    console.log(`${date}：未完成のため公式結果を再取得します`);
-    runNodeScript("collect-results.js", [`--date=${date}`]);
-    runNodeScript("match-predictions.js", [`--date=${date}`]);
-    repairedDates.push(date);
+    if (
+      isCompleteResultFile(resultPath, date) &&
+      hasUnsettledPredictions(predictionPath)
+    ) {
+      console.log(`${date}：未照合の事前予想を公式結果と照合します`);
+      runNodeScript("match-predictions.js", [`--date=${date}`]);
+      matchedDates.push(date);
+    }
   }
 
-  if (!repairedDates.length) {
-    console.log("直近3日間はすべて完成済みです");
+  if (!repairedDates.length && !matchedDates.length) {
+    console.log("直近3日間の公式結果・予想照合はすべて完成済みです");
     return;
   }
 
   runNodeScript("build-prediction-index.js");
   runNodeScript("build-race-stats.js");
 
-  console.log(`自動復旧完了：${repairedDates.join(", ")}`);
+  if (repairedDates.length) {
+    console.log(`公式結果の自動復旧完了：${repairedDates.join(", ")}`);
+  }
+  if (matchedDates.length) {
+    console.log(`事前予想の自動照合完了：${matchedDates.join(", ")}`);
+  }
 }
 
 if (require.main === module) {
@@ -159,5 +195,6 @@ module.exports = {
   normalizeDateKey,
   formatDateKey,
   getRecentDateKeys,
-  isCompleteResultFile
+  isCompleteResultFile,
+  hasUnsettledPredictions
 };
