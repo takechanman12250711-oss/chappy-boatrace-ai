@@ -1973,81 +1973,16 @@
           <thead>
             <tr>
               <th>場</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
+               <th>対象</th>
+               <th>◎1着率</th>
+               <th>厳選的中率</th>
             </tr>
           </thead>
 
           <tbody>
-            ${renderGroupRows(
-              venueGroups
-            )}
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-
-
-    <div class="v3-final-block">
-
-      <h3>
-        決まり手別傾向
-      </h3>
-
-      <div class="v3-table-wrap">
-
-        <table class="table">
-
-          <thead>
-            <tr>
-              <th>決まり手</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            ${renderGroupRows(
-              methodGroups
-            )}
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-        <div class="v3-final-block">
-
-      <h3>
-        本命コース別傾向
-      </h3>
-
-      <div class="v3-table-wrap">
-
-        <table class="table">
-
-          <thead>
-            <tr>
-              <th>本命コース</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            ${renderGroupRows(
-              honmeiCourseGroups
-            )}
+            ${renderVenueRows(
+               venueGroups
+             )}
           </tbody>
 
         </table>
@@ -2070,17 +2005,16 @@
           <thead>
             <tr>
               <th>中心展開</th>
-              <th>対象</th>
-              <th>◎1着率</th>
-              <th>厳選的中率</th>
-              <th>展開一致率</th>
+               <th>対象</th>
+               <th>展開一致率</th>
+               <th>厳選的中率</th>
             </tr>
           </thead>
 
           <tbody>
-            ${renderGroupRows(
-              predictedScenarioGroups
-            )}
+            ${renderScenarioRows(
+               predictedScenarioGroups
+             )}
           </tbody>
 
         </table>
