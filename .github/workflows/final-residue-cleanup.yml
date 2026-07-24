@@ -1,0 +1,49 @@
+name: Final residue cleanup
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "scripts/final-residue-cleanup.js"
+      - "style.css"
+      - "scripts/check-charter.js"
+      - ".github/workflows/cleanup-remaining-legacy-ui.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.head_ref == 'agent/complete-legacy-cleanup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/final-residue-cleanup.js
+      - run: |
+          rm scripts/final-residue-cleanup.js
+          node --check js/render.js
+          node --check scripts/check-charter.js
+          node scripts/check-charter.js
+          node scripts/test-theory-integration.js
+          if grep -R "v3-theory-\|renderTheoryPanel\|THEORY_LABELS\|cleanup-remaining-legacy-ui" index.html style.css js scripts .github/workflows --exclude=check-charter.js --exclude=final-residue-cleanup.yml; then
+            echo "旧残骸が残っています"
+            exit 1
+          fi
+      - run: |
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            echo "追加変更なし"
+            exit 0
+          fi
+          git commit -m "残っていた旧UI残骸を完全削除"
+          git push origin HEAD:${{ github.head_ref }}
