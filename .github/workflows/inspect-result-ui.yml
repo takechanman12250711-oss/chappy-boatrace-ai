@@ -1,0 +1,27 @@
+name: Inspect result UI
+
+on:
+  push:
+    branches:
+      - agent/simplify-result-ui
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Inspect result UI references
+        run: node scripts/inspect-result-ui.js
+      - name: Commit inspection report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add result-ui-context.json
+          git diff --cached --quiet || git commit -m "結果分析UIの参照箇所を記録"
+          git push
