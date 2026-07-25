@@ -18,7 +18,8 @@
     "js/hiyori-production-checklist.js",
     "js/hiyori-production-simulator.js",
     "js/hiyori-final-presentation.js",
-    "js/hiyori-final-approval-ui.js"
+    "js/hiyori-final-approval-ui.js",
+    "js/hiyori-runtime-diagnostics.js"
   ];
 
   const styles = [
@@ -96,6 +97,7 @@
         globalProductionLock: true
       }
     }));
+    window.ChappyHiyoriRuntimeDiagnostics?.run?.();
   }
 
   window.addEventListener("chappy:hiyori-snapshot-created", syncCompatibilityKeys);
