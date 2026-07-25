@@ -9,6 +9,7 @@
   window.__CHAPPY_HIYORI_RUNTIME_LOADED__ = true;
 
   const scripts = [
+    "js/hiyori-event-monitor.js",
     "js/hiyori-learning-snapshot.js",
     "js/hiyori-learning-correlation.js",
     "js/hiyori-correlation-confidence.js",
