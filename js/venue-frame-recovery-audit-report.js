@@ -119,9 +119,19 @@
     document.head.appendChild(style);
   }
 
+  function loadHiyoriRuntime() {
+    if (window.ChappyHiyoriRuntimeLoader || document.getElementById("chappy-hiyori-runtime-bootstrap")) return;
+    const script = document.createElement("script");
+    script.id = "chappy-hiyori-runtime-bootstrap";
+    script.src = "js/hiyori-runtime-loader.js?v=20260725-connect1";
+    script.async = false;
+    document.head.appendChild(script);
+  }
+
   function install() {
     ensureStyle();
     render();
+    loadHiyoriRuntime();
     window.addEventListener("storage", render);
     window.addEventListener("chappy:venue-frame-quarantine-updated", render);
     window.addEventListener("chappy:venue-frame-restore-updated", render);
