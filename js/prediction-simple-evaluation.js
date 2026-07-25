@@ -36,6 +36,7 @@
     const finalAi = prediction?.finalAi || {};
     const ai = prediction?.ai || {};
     const weather = prediction?.weather || prediction?.race?.weather || {};
+    const engine = prediction?.predictionEngine || finalAi.engine || {};
 
     const mainScore = clamp(
       finalAi.confidence ??
@@ -61,6 +62,9 @@
     const score = showChaos ? chaosScore : mainScore;
 
     const mainComment = firstText([
+      engine.finalComment,
+      engine.mainComment,
+      prediction?.flowPriority?.comment,
       prediction?.raceFlow?.comment,
       prediction?.raceFlow?.title,
       prediction?.final?.comment,
@@ -69,10 +73,26 @@
     ]);
 
     const notes = [];
+    if (Array.isArray(engine.supportComments)) {
+      notes.push(...engine.supportComments.filter(Boolean).slice(0, 2));
+    }
+
     const memo = prediction?.final?.memo;
-    if (Array.isArray(memo)) notes.push(...memo.filter(Boolean).slice(0, 2));
-    if (!notes.length && weather.insideRisk >= 70) notes.push("内側の取りこぼしに注意");
-    if (!notes.length && prediction?.newEngine?.updated) notes.push("新エンジン期は展示気配を優先");
+    if (!notes.length && Array.isArray(memo)) {
+      notes.push(...memo.filter(Boolean).slice(0, 2));
+    }
+
+    if (!notes.length && weather.insideRisk >= 70) {
+      notes.push("内側の取りこぼしに注意");
+    }
+
+    if (!notes.length && prediction?.newEngine?.updated) {
+      notes.push("新エンジン期は展示気配を優先");
+    }
+
+    if (engine.complete === false && Array.isArray(engine.missingLayers) && engine.missingLayers.length) {
+      notes.push(`未接続層：${engine.missingLayers.join(" / ")}`);
+    }
 
     return {
       mode: showChaos ? "chaos" : "main",
@@ -80,10 +100,13 @@
       level: level(score),
       score,
       mainComment,
-      notes,
+      notes: [...new Set(notes)].slice(0, 3),
+      engineComplete: engine.complete !== false,
       internal: {
         mainScore,
-        chaosScore
+        chaosScore,
+        engineStatus: engine.status || "unknown",
+        missingLayers: Array.isArray(engine.missingLayers) ? engine.missingLayers.slice() : []
       }
     };
   }
