@@ -123,7 +123,7 @@
     if (window.ChappyHiyoriRuntimeLoader || document.getElementById("chappy-hiyori-runtime-bootstrap")) return;
     const script = document.createElement("script");
     script.id = "chappy-hiyori-runtime-bootstrap";
-    script.src = "js/hiyori-runtime-loader.js?v=20260725-connect1";
+    script.src = "js/hiyori-runtime-loader.js?v=20260725-compact2";
     script.async = false;
     document.head.appendChild(script);
   }
