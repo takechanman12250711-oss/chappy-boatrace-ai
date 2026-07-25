@@ -9,6 +9,12 @@
   window.__CHAPPY_HIYORI_RUNTIME_LOADED__ = true;
 
   const scripts = [
+    "js/hiyori-learning-snapshot.js",
+    "js/hiyori-learning-correlation.js",
+    "js/hiyori-correlation-confidence.js",
+    "js/hiyori-learning-adoption-candidates.js",
+    "js/hiyori-adoption-proposals.js",
+    "js/hiyori-proposal-approval.js",
     "js/hiyori-shadow-validation-loader.js",
     "js/hiyori-shadow-performance-loader.js",
     "js/hiyori-production-readiness-loader.js",
@@ -55,6 +61,21 @@
         status: row.readyForPresentation === true ? "passed" : "blocked"
       })));
     }
+
+    const adoptionProposals = read("chappy_hiyori_adoption_proposals_v1", null);
+    const changeProposals = read("chappy_hiyori_change_proposals_v1", null);
+    if (adoptionProposals && !changeProposals) {
+      const proposals = Array.isArray(adoptionProposals)
+        ? adoptionProposals
+        : Array.isArray(adoptionProposals.proposals)
+          ? adoptionProposals.proposals
+          : [];
+      write("chappy_hiyori_change_proposals_v1", {
+        createdAt: adoptionProposals.createdAt || new Date().toISOString(),
+        source: "chappy_hiyori_adoption_proposals_v1",
+        proposals
+      });
+    }
   }
 
   function ensureStyle(href) {
@@ -88,8 +109,10 @@
   async function install() {
     syncCompatibilityKeys();
     styles.forEach(ensureStyle);
-    for (const src of scripts) await loadScript(src);
-    syncCompatibilityKeys();
+    for (const src of scripts) {
+      await loadScript(src);
+      syncCompatibilityKeys();
+    }
     window.dispatchEvent(new CustomEvent("chappy:hiyori-runtime-ready", {
       detail: {
         connected: true,
@@ -102,8 +125,13 @@
     window.ChappyHiyoriOperationsDashboard?.render?.();
   }
 
-  window.addEventListener("chappy:hiyori-snapshot-created", syncCompatibilityKeys);
-  window.addEventListener("chappy:hiyori-production-checklist-updated", syncCompatibilityKeys);
+  [
+    "chappy:hiyori-snapshot-created",
+    "chappy:hiyori-learning-adoption-updated",
+    "chappy:hiyori-adoption-proposals-updated",
+    "chappy:hiyori-production-checklist-updated"
+  ].forEach(name => window.addEventListener(name, syncCompatibilityKeys));
+
   window.addEventListener("storage", event => {
     if (event.key && event.key.startsWith("chappy_hiyori_")) syncCompatibilityKeys();
   });
