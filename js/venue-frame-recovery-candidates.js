@@ -162,3 +162,14 @@
     install();
   }
 })();
+
+(function () {
+  "use strict";
+  if (window.ChappyHiyoriRuntimeLoader || document.getElementById("chappy-hiyori-runtime-bridge")) return;
+  const script = document.createElement("script");
+  script.id = "chappy-hiyori-runtime-bridge";
+  script.src = "js/hiyori-runtime-loader.js?v=20260725-runtime2";
+  script.async = false;
+  script.onerror = () => console.warn("[hiyori-runtime-bridge] loader failed");
+  document.head.appendChild(script);
+})();
