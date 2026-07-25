@@ -3,6 +3,7 @@
 (function(){
   "use strict";
   const ROOT_ID="hiyoriCompactDashboard";
+  const HIDDEN_CLASS="chappy-compact-hidden-legacy";
   const DETAIL_SCRIPTS=[
     "js/hiyori-shadow-validation-loader.js",
     "js/hiyori-shadow-performance-loader.js",
@@ -25,10 +26,55 @@
   ];
   let detailLoading=false;
   let detailLoaded=false;
+  let observer=null;
   function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||"null")??fallback}catch(_){return fallback}}
   function count(value){if(Array.isArray(value))return value.length;if(Array.isArray(value?.items))return value.items.length;if(Array.isArray(value?.rows))return value.rows.length;if(Array.isArray(value?.proposals))return value.proposals.length;return value?1:0}
   function findMount(){return document.getElementById("statsArea")||document.getElementById("resultSection")||document.querySelector("main")||document.body}
   function loadScript(src){return new Promise(resolve=>{if([...document.scripts].some(s=>s.src&&s.src.includes(src))){resolve();return}const s=document.createElement("script");s.src=src;s.async=false;s.onload=resolve;s.onerror=resolve;document.head.appendChild(s)})}
+  function normalizeText(value){return String(value||"").replace(/\s+/g," ").trim()}
+  function legacyTargetFromHeading(heading){
+    if(!heading||heading.closest(`#${ROOT_ID}`))return null;
+    const text=normalizeText(heading.textContent);
+    const matched=/予想と公式|公式.*比較|ボートレース日和|日和.*分析|日和.*比較|日和.*学習/.test(text);
+    if(!matched)return null;
+    let target=heading.closest("section,article,details");
+    if(!target){
+      let node=heading.parentElement;
+      while(node&&node.parentElement&&node.parentElement!==document.body){
+        if(node.parentElement.id==="statsArea"||node.parentElement.id==="resultSection"||node.parentElement.tagName==="MAIN"){target=node;break}
+        node=node.parentElement;
+      }
+    }
+    if(!target||target.id===ROOT_ID||target.contains(document.getElementById(ROOT_ID)))return null;
+    return target;
+  }
+  function suppressLegacyPanels(){
+    const directIds=[
+      "hiyoriOperationsDashboard",
+      "hiyoriLearningPanel",
+      "hiyoriAnalysisPanel",
+      "hiyoriComparisonPanel",
+      "predictionOfficialComparison",
+      "predictionOfficialCompare",
+      "officialPredictionComparison"
+    ];
+    directIds.forEach(id=>{const el=document.getElementById(id);if(el&&el.id!==ROOT_ID)el.classList.add(HIDDEN_CLASS)});
+    document.querySelectorAll("h2,h3,h4,.section-title,.panel-title,.card-title,strong").forEach(heading=>{
+      const target=legacyTargetFromHeading(heading);
+      if(target)target.classList.add(HIDDEN_CLASS);
+    });
+  }
+  function startLegacyObserver(){
+    if(observer)return;
+    suppressLegacyPanels();
+    observer=new MutationObserver(()=>requestAnimationFrame(suppressLegacyPanels));
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
+  function revealDiagnostics(){
+    document.querySelectorAll(`.${HIDDEN_CLASS}`).forEach(el=>{
+      if(el.id==="hiyoriOperationsDashboard"||/hiyori/i.test(el.id||""))el.classList.remove(HIDDEN_CLASS);
+    });
+  }
   async function loadDetails(button){
     if(detailLoading)return;
     const existing=document.getElementById("hiyoriOperationsDashboard");
@@ -36,6 +82,7 @@
     detailLoading=true;button.disabled=true;button.textContent="診断を読み込み中…";
     for(const src of DETAIL_SCRIPTS)await loadScript(src);
     detailLoaded=true;detailLoading=false;button.disabled=false;button.textContent="開発・診断を閉じる";
+    revealDiagnostics();
     const panel=document.getElementById("hiyoriOperationsDashboard");if(panel)panel.hidden=false;
   }
   function status(){
@@ -64,9 +111,11 @@
     const s=status();
     root.innerHTML=`<div class="hiyori-compact-head"><div><small>分析・比較</small><h3>必要な要点だけ表示</h3></div><span>軽量表示</span></div><div class="hiyori-compact-grid">${card("🤖","AI予想",s.predictionLabel,s.predictionSub)}${card("🏁","公式との比較",s.officialLabel,s.officialSub)}${card("🌤","ボートレース日和",s.hiyoriLabel,s.hiyoriSub)}</div><button type="button" class="hiyori-detail-button">開発・診断を開く</button><p class="hiyori-compact-note">詳細診断はボタンを押した時だけ読み込みます。予想ロジック・買い目は変更しません。</p>`;
     root.querySelector(".hiyori-detail-button")?.addEventListener("click",e=>loadDetails(e.currentTarget));
+    suppressLegacyPanels();
   }
   function install(){
     const style=document.createElement("style");style.id="hiyoriCompactDashboardStyle";style.textContent=`
+      .${HIDDEN_CLASS}{display:none!important}
       #hiyoriOperationsDashboard[hidden]{display:none!important}
       .hiyori-compact-dashboard{margin-top:16px;padding:14px;border:1px solid #dbe6f3;border-radius:16px;background:#fff;content-visibility:auto;contain-intrinsic-size:420px}
       .hiyori-compact-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.hiyori-compact-head small{color:#64748b;font-weight:700}.hiyori-compact-head h3{margin:2px 0 0;font-size:18px}.hiyori-compact-head span{font-size:11px;padding:4px 8px;border-radius:999px;background:#ecfdf5;color:#166534;font-weight:700}
@@ -74,10 +123,10 @@
       .hiyori-detail-button{width:100%;margin-top:10px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:11px;background:#fff;font-weight:700;cursor:pointer}.hiyori-detail-button:disabled{opacity:.6}.hiyori-compact-note{margin:8px 2px 0;font-size:11px;color:#64748b;line-height:1.5}
       @media(max-width:720px){.hiyori-compact-grid{grid-template-columns:1fr}.hiyori-compact-card{padding:11px}.hiyori-compact-dashboard{padding:12px}}
     `;if(!document.getElementById(style.id))document.head.appendChild(style);
-    const old=document.getElementById("hiyoriOperationsDashboard");if(old)old.hidden=true;
+    startLegacyObserver();
     render();
     ["chappy:prediction-ready","chappy:race-result-ready","chappy:hiyori-learning-correlation-updated","chappy:hiyori-correlation-confidence-updated","chappy:hiyori-learning-adoption-updated","chappy:hiyori-adoption-proposals-updated"].forEach(name=>window.addEventListener(name,()=>requestAnimationFrame(render)));
   }
-  window.ChappyHiyoriCompactDashboard={render,loadDetails,status};
+  window.ChappyHiyoriCompactDashboard={render,loadDetails,status,suppressLegacyPanels};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});else install();
 })();
