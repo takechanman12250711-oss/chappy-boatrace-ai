@@ -18,7 +18,6 @@ on:
       - "js/prediction-skill-local-support.js"
       - "js/prediction-motor-engine-support.js"
       - "js/prediction-engine-integration.js"
-      - "js/prediction-scenario-output-bridge.js"
       - "js/prediction-simple-evaluation.js"
       - "js/hiyori-runtime-loader.js"
       - "js/motor-maintenance-insights.js"
@@ -52,7 +51,6 @@ on:
       - "scripts/test-race-scenarios.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
-      - "scripts/test-prediction-scenario-output-bridge.js"
       - "api/missing.js"
       - "scripts/build-race-stats.js"
       - "scripts/repair-recent-results.js"
@@ -82,7 +80,6 @@ on:
       - "js/prediction-skill-local-support.js"
       - "js/prediction-motor-engine-support.js"
       - "js/prediction-engine-integration.js"
-      - "js/prediction-scenario-output-bridge.js"
       - "js/prediction-simple-evaluation.js"
       - "js/hiyori-runtime-loader.js"
       - "js/motor-maintenance-insights.js"
@@ -116,7 +113,6 @@ on:
       - "scripts/test-race-scenarios.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
-      - "scripts/test-prediction-scenario-output-bridge.js"
       - "api/missing.js"
       - "scripts/build-race-stats.js"
       - "scripts/repair-recent-results.js"
@@ -158,7 +154,6 @@ jobs:
           node --check js/prediction-skill-local-support.js
           node --check js/prediction-motor-engine-support.js
           node --check js/prediction-engine-integration.js
-          node --check js/prediction-scenario-output-bridge.js
           node --check js/prediction-simple-evaluation.js
           node --check js/hiyori-runtime-loader.js
           node --check js/motor-maintenance-insights.js
@@ -192,7 +187,6 @@ jobs:
           node --check scripts/test-race-scenarios.js
           node --check scripts/test-scenario-marks.js
           node --check scripts/test-scenario-formations.js
-          node --check scripts/test-prediction-scenario-output-bridge.js
           node --check api/missing.js
           node --check scripts/build-race-stats.js
           node --check scripts/repair-recent-results.js
@@ -226,7 +220,6 @@ jobs:
           node scripts/test-race-scenarios.js
           node scripts/test-scenario-marks.js
           node scripts/test-scenario-formations.js
-          node scripts/test-prediction-scenario-output-bridge.js
           node scripts/test-repair-recent-results.js
           node scripts/test-missing-numbers.js
           node scripts/test-odds-insights.js
