@@ -9,6 +9,7 @@
   const scripts=[
     "js/prediction-flow-priority.js",
     "js/prediction-st-exhibition-support.js",
+    "js/prediction-skill-local-support.js",
     "js/prediction-simple-evaluation.js",
     "js/hiyori-event-monitor.js",
     "js/hiyori-learning-snapshot.js",
@@ -59,6 +60,7 @@
     window.dispatchEvent(new CustomEvent("chappy:hiyori-runtime-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true}}));
     window.ChappyPredictionFlowPriority?.install?.();
     window.ChappyPredictionSTExhibitionSupport?.install?.();
+    window.ChappyPredictionSkillLocalSupport?.install?.();
     window.ChappyPredictionSimpleEvaluation?.install?.();
     window.ChappyHiyoriRuntimeDiagnostics?.run?.();
     window.ChappyHiyoriOperationsDashboard?.render?.();
