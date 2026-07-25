@@ -1,8 +1,52 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-25T11:48:43.517Z",
+  "generatedAt": "2026-07-25T13:00:51.287Z",
   "sourceFileCount": 4,
   "runs": [
+    {
+      "date": "20260725",
+      "runKey": "20260725-24-11-provisional-skipped",
+      "checkedAt": "2026-07-25T13:00:51.190Z",
+      "threshold": 70,
+      "selected": false,
+      "collectionHealth": {
+        "schemaVersion": 2,
+        "checkedAt": "2026-07-25T13:00:51.181Z",
+        "targetCount": 1,
+        "savedCount": 1,
+        "insufficientDataCount": 0,
+        "failedCount": 0,
+        "recoveredCount": 0,
+        "retryingCount": 0,
+        "finalUncollectedCount": 0,
+        "complete": true,
+        "targets": [
+          {
+            "raceKey": "20260725-24-11",
+            "jcd": "24",
+            "place": "大村",
+            "raceNo": 11,
+            "deadlineAt": "2026-07-25T22:20:00+09:00",
+            "status": "saved",
+            "error": "",
+            "missingReasons": [],
+            "attemptCount": 1,
+            "firstDetectedAt": "2026-07-25T13:00:51.181Z",
+            "lastAttemptAt": "2026-07-25T13:00:51.181Z",
+            "recoveryState": "not_needed",
+            "recoveredAt": "",
+            "finalAt": ""
+          }
+        ]
+      },
+      "best": {
+        "jcd": "24",
+        "place": "大村",
+        "raceNo": 11,
+        "type": "本線",
+        "score": 54.7
+      }
+    },
     {
       "date": "20260725",
       "runKey": "20260725-24-8-final-skipped",
@@ -4950,6 +4994,338 @@
   ],
   "predictions": [],
   "verificationPredictions": [
+    {
+      "raceKey": "20260725-24-11",
+      "date": "20260725",
+      "jcd": "24",
+      "place": "大村",
+      "raceNo": 11,
+      "deadlineAt": "2026-07-25T22:20:00+09:00",
+      "selectedAt": "2026-07-25T13:00:51.180Z",
+      "verificationMode": "shadow",
+      "scoreBand": "under_70",
+      "selection": {
+        "type": "本線",
+        "score": 54.7,
+        "threshold": 70,
+        "qualified": false,
+        "selected": false,
+        "evaluation": {
+          "ready": true,
+          "honmei": {
+            "score": 54.7,
+            "level": "中",
+            "reasons": [
+              "1号艇A1・相手最上位2号艇A1",
+              "1逃げ展開94.3点",
+              "1逃げが対抗展開を17.1点上回る",
+              "大村イン傾向82点"
+            ]
+          },
+          "manshu": {
+            "score": 5,
+            "level": "低",
+            "reasons": [
+              "3号艇A2の3コース攻め",
+              "攻め・拾い成立度53.7点",
+              "外側のA1・A2が4艇のため万舟評価を抑制",
+              "大村外展開傾向56.5点"
+            ]
+          },
+          "dataStatus": {
+            "stage": "provisional",
+            "label": "展示前・暫定",
+            "completeness": 70,
+            "entryCount": 6,
+            "stCount": 6,
+            "exhibitionCount": 0
+          }
+        }
+      },
+      "prediction": {
+        "version": "prediction-v1.0.0",
+        "predictionMode": "server_pre_deadline_shadow",
+        "raceFlow": {
+          "title": "イン逃げ本線",
+          "summary": "最有力展開は1号艇逃げ（94.3点）。対抗展開は2コース差し（77.2点）。1着候補は1号艇・2号艇・4号艇。2着残し候補は2号艇・4号艇・3号艇。3着拾い候補は3号艇・4号艇・5号艇。",
+          "scenario": {
+            "title": "4カド攻め警戒"
+          }
+        },
+        "confidence": {
+          "score": 87,
+          "reason": "軸と相手が比較的はっきりしている"
+        },
+        "manshuPower": {
+          "score": 79,
+          "reason": "外枠・ズレ目・拾いの期待値が高い"
+        },
+        "mainSheet": {
+          "honmei": {
+            "boatNo": 1,
+            "name": "大須賀友"
+          },
+          "taikou": {
+            "boatNo": 2,
+            "name": "三角哲男"
+          },
+          "ana": {
+            "boatNo": 3,
+            "name": "中田元泰"
+          },
+          "osae": {
+            "boatNo": 4,
+            "name": "金子拓矢"
+          }
+        },
+        "practicalTickets": [
+          {
+            "ticket": "1-2-3",
+            "category": "本線",
+            "categories": [
+              "本命"
+            ],
+            "scenarioType": "中心展開",
+            "scenarioTypes": [
+              "中心展開"
+            ],
+            "odds": 0,
+            "oddsText": "オッズ未取得",
+            "hasOdds": false,
+            "isManshu": false,
+            "amount": 0,
+            "comment": ""
+          },
+          {
+            "ticket": "1-2-4",
+            "category": "本線",
+            "categories": [
+              "本命"
+            ],
+            "scenarioType": "中心展開",
+            "scenarioTypes": [
+              "中心展開"
+            ],
+            "odds": 0,
+            "oddsText": "オッズ未取得",
+            "hasOdds": false,
+            "isManshu": false,
+            "amount": 0,
+            "comment": ""
+          },
+          {
+            "ticket": "1-4-3",
+            "category": "本線",
+            "categories": [
+              "本命"
+            ],
+            "scenarioType": "中心展開",
+            "scenarioTypes": [
+              "中心展開"
+            ],
+            "odds": 0,
+            "oddsText": "オッズ未取得",
+            "hasOdds": false,
+            "isManshu": false,
+            "amount": 0,
+            "comment": ""
+          },
+          {
+            "ticket": "2-4-3",
+            "category": "押さえ",
+            "scenarioType": "安全押さえ",
+            "odds": 0,
+            "oddsText": "オッズ未取得",
+            "hasOdds": false,
+            "isManshu": false,
+            "scenarioTitle": "4カド攻め警戒",
+            "scenarioSummary": "4号艇の4カド攻めが入口。内が流れた時は5号艇のまくり差し・拾いが浮上。",
+            "categories": [
+              "押さえ"
+            ],
+            "scenarioTypes": [
+              "安全押さえ"
+            ],
+            "amount": 0,
+            "comment": "4号艇の4カド攻めが入口。内が流れた時は5号艇のまくり差し・拾いが浮上。"
+          },
+          {
+            "ticket": "2-4-5",
+            "category": "押さえ",
+            "categories": [
+              "押さえ"
+            ],
+            "scenarioType": "安全押さえ",
+            "scenarioTypes": [
+              "安全押さえ"
+            ],
+            "odds": 0,
+            "oddsText": "オッズ未取得",
+            "hasOdds": false,
+            "isManshu": false,
+            "amount": 0,
+            "comment": ""
+          },
+          {
+            "ticket": "2-4-6",
+            "category": "流し",
+            "categories": [
+              "流し"
+            ],
+            "scenarioType": "流し展開",
+            "scenarioTypes": [
+              "流し展開"
+            ],
+            "odds": 0,
+            "oddsText": "オッズ未取得",
+            "hasOdds": false,
+            "isManshu": false,
+            "amount": 0,
+            "comment": ""
+          },
+          {
+            "ticket": "3-2-4",
+            "category": "万舟・穴",
+            "categories": [
+              "穴候補"
+            ],
+            "scenarioType": "穴展開",
+            "scenarioTypes": [
+              "穴展開"
+            ],
+            "odds": 0,
+            "oddsText": "オッズ未取得",
+            "hasOdds": false,
+            "isManshu": false,
+            "amount": 0,
+            "comment": ""
+          }
+        ],
+        "preRaceConditions": {
+          "schemaVersion": 2,
+          "sourceTiming": "pre_deadline",
+          "officialResultUsed": false,
+          "boats": [
+            {
+              "boatNo": 1,
+              "course": 1,
+              "racerName": "大須賀友",
+              "className": "A1",
+              "avgST": 0.16,
+              "currentST": 0.18,
+              "exhibitionST": null,
+              "exhibitionTime": null,
+              "lapTime": null,
+              "localWinRate": 6.9,
+              "nationalWinRate": 6.76,
+              "motor2Rate": 31.2,
+              "localStarts": 44
+            },
+            {
+              "boatNo": 2,
+              "course": 2,
+              "racerName": "三角哲男",
+              "className": "A1",
+              "avgST": 0.15,
+              "currentST": 0.16,
+              "exhibitionST": null,
+              "exhibitionTime": null,
+              "lapTime": null,
+              "localWinRate": 0,
+              "nationalWinRate": 6.19,
+              "motor2Rate": 32.99,
+              "localStarts": 6
+            },
+            {
+              "boatNo": 3,
+              "course": 3,
+              "racerName": "中田元泰",
+              "className": "A2",
+              "avgST": 0.16,
+              "currentST": 0.188,
+              "exhibitionST": null,
+              "exhibitionTime": null,
+              "lapTime": null,
+              "localWinRate": 4.6,
+              "nationalWinRate": 5.96,
+              "motor2Rate": 32.22,
+              "localStarts": 10
+            },
+            {
+              "boatNo": 4,
+              "course": 4,
+              "racerName": "金子拓矢",
+              "className": "A1",
+              "avgST": 0.15,
+              "currentST": 0.145,
+              "exhibitionST": null,
+              "exhibitionTime": null,
+              "lapTime": null,
+              "localWinRate": 6.06,
+              "nationalWinRate": 6.89,
+              "motor2Rate": 29.4,
+              "localStarts": 18
+            },
+            {
+              "boatNo": 5,
+              "course": 5,
+              "racerName": "馬野耀",
+              "className": "A2",
+              "avgST": 0.16,
+              "currentST": 0.15,
+              "exhibitionST": null,
+              "exhibitionTime": null,
+              "lapTime": null,
+              "localWinRate": 5.9,
+              "nationalWinRate": 6,
+              "motor2Rate": 25.9,
+              "localStarts": 23
+            },
+            {
+              "boatNo": 6,
+              "course": 6,
+              "racerName": "松尾拓",
+              "className": "A2",
+              "avgST": 0.16,
+              "currentST": 0.16,
+              "exhibitionST": null,
+              "exhibitionTime": null,
+              "lapTime": null,
+              "localWinRate": 5.86,
+              "nationalWinRate": 5.94,
+              "motor2Rate": 32.99,
+              "localStarts": 33
+            }
+          ],
+          "weather": {
+            "weather": "",
+            "windDirection": "横風",
+            "windDirectionCode": 7,
+            "windSpeed": 1,
+            "waveHeight": 1,
+            "temperature": 30,
+            "waterTemperature": 33,
+            "waterType": "海水",
+            "tideLevel": null,
+            "tidePhase": "",
+            "tideStatus": "unavailable",
+            "liveTideAvailable": false,
+            "venueTideInfluence": 55
+          },
+          "dataAvailability": {
+            "entries": 6,
+            "averageST": 6,
+            "exhibitionST": 0,
+            "exhibitionTime": 0,
+            "wind": true,
+            "wave": true,
+            "tide": false
+          },
+          "newEngineMode": false,
+          "usagePolicy": "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
+        }
+      }
+    },
     {
       "raceKey": "20260725-24-8",
       "date": "20260725",
