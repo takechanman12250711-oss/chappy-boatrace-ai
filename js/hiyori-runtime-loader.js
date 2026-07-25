@@ -60,14 +60,12 @@
   async function install(){
     syncCompatibilityKeys();styles.forEach(ensureStyle);
     for(const src of scripts){await loadScript(src);syncCompatibilityKeys()}
+
+    // 各予想モジュールは読み込み時に自動で install() する。
+    // ここで再度 install() を直接呼ぶと、外側ラッパーに隠れた識別子を検知できず
+    // createPrediction が二重・多重にラップされる可能性があるため、readyイベントだけ通知する。
     window.dispatchEvent(new CustomEvent("chappy:hiyori-runtime-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true}}));
-    window.ChappyPredictionFlowPriority?.install?.();
-    window.ChappyPredictionSTExhibitionSupport?.install?.();
-    window.ChappyPredictionVenueWaterSupport?.install?.();
-    window.ChappyPredictionSkillLocalSupport?.install?.();
-    window.ChappyPredictionMotorEngineSupport?.install?.();
-    window.ChappyPredictionEngineIntegration?.install?.();
-    window.ChappyPredictionSimpleEvaluation?.install?.();
+
     window.ChappyHiyoriRuntimeDiagnostics?.run?.();
     window.ChappyHiyoriOperationsDashboard?.render?.();
     window.ChappyHiyoriEventHealth?.render?.();
