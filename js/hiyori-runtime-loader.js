@@ -23,7 +23,7 @@
     "js/hiyori-learning-adoption-candidates.js",
     "js/hiyori-adoption-proposals.js",
     "js/hiyori-proposal-approval.js",
-    "js/hiyori-compact-dashboard.js"
+    "js/hiyori-compact-dashboard.js?v=20260725-compact3"
   ];
 
   function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||"null")??fallback}catch(_){return fallback}}
@@ -41,9 +41,10 @@
     }
   }
   function loadScript(src){return new Promise(resolve=>{
-    if([...document.scripts].some(script=>script.src&&script.src.includes(src))){resolve();return}
+    const clean=src.split("?")[0];
+    if([...document.scripts].some(script=>script.src&&script.src.includes(clean))){resolve();return}
     const script=document.createElement("script");
-    script.src=src;script.async=false;script.dataset.chappyHiyoriModule=src;
+    script.src=src;script.async=false;script.dataset.chappyHiyoriModule=clean;
     script.onload=resolve;
     script.onerror=()=>{console.warn("[hiyori-runtime-loader] load failed:",src);resolve()};
     document.head.appendChild(script);
