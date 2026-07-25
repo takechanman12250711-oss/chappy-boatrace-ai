@@ -1,0 +1,56 @@
+/* 最終チェックリスト・本番反映シミュレーター */
+.hiyori-production-safety {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #d8dee9;
+  border-radius: 14px;
+  background: #fff;
+}
+.hiyori-production-safety h3 { margin: 0 0 12px; }
+.hiyori-safety-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.hiyori-safety-card {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fafafa;
+}
+.hiyori-safety-card.is-pass { border-color: #86efac; }
+.hiyori-safety-card.is-fail { border-color: #fca5a5; }
+.hiyori-safety-status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.hiyori-safety-status.pass { background: #dcfce7; }
+.hiyori-safety-status.fail { background: #fee2e2; }
+.hiyori-safety-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 13px;
+}
+.hiyori-safety-table th,
+.hiyori-safety-table td {
+  padding: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+.hiyori-production-lock {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fff7ed;
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .hiyori-production-safety { padding: 12px; }
+  .hiyori-safety-table { font-size: 12px; }
+  .hiyori-safety-table th,
+  .hiyori-safety-table td { padding: 6px; }
+}
