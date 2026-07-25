@@ -29,7 +29,8 @@
     "js/hiyori-event-health.js",
     "js/hiyori-operations-summary.js",
     "js/hiyori-operations-snapshot.js",
-    "js/hiyori-operations-snapshot-compare.js"
+    "js/hiyori-operations-snapshot-compare.js",
+    "js/hiyori-operations-report.js"
   ];
   const styles=["css/hiyori-production-rollback.css","css/hiyori-final-approval.css"];
   function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||"null")??fallback}catch(_){return fallback}}
@@ -58,6 +59,7 @@
     window.ChappyHiyoriOperationsSummary?.render?.();
     window.ChappyHiyoriOperationsSnapshot?.render?.();
     window.ChappyHiyoriOperationsSnapshotCompare?.render?.();
+    window.ChappyHiyoriOperationsReport?.render?.();
   }
   ["chappy:hiyori-snapshot-created","chappy:hiyori-learning-adoption-updated","chappy:hiyori-adoption-proposals-updated","chappy:hiyori-production-checklist-updated"].forEach(name=>window.addEventListener(name,syncCompatibilityKeys));
   window.addEventListener("storage",event=>{if(event.key&&event.key.startsWith("chappy_hiyori_"))syncCompatibilityKeys()});
