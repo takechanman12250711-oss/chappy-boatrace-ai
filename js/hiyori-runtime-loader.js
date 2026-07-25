@@ -8,6 +8,7 @@
   window.__CHAPPY_HIYORI_RUNTIME_LOADED__=true;
   const scripts=[
     "js/prediction-flow-priority.js",
+    "js/prediction-st-exhibition-support.js",
     "js/prediction-simple-evaluation.js",
     "js/hiyori-event-monitor.js",
     "js/hiyori-learning-snapshot.js",
@@ -57,6 +58,7 @@
     for(const src of scripts){await loadScript(src);syncCompatibilityKeys()}
     window.dispatchEvent(new CustomEvent("chappy:hiyori-runtime-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true}}));
     window.ChappyPredictionFlowPriority?.install?.();
+    window.ChappyPredictionSTExhibitionSupport?.install?.();
     window.ChappyPredictionSimpleEvaluation?.install?.();
     window.ChappyHiyoriRuntimeDiagnostics?.run?.();
     window.ChappyHiyoriOperationsDashboard?.render?.();
