@@ -27,7 +27,8 @@
     "js/hiyori-final-presentation.js",
     "js/hiyori-final-approval-ui.js",
     "js/hiyori-runtime-diagnostics.js",
-    "js/hiyori-operations-dashboard.js"
+    "js/hiyori-operations-dashboard.js",
+    "js/hiyori-event-health.js"
   ];
 
   const styles = [
@@ -124,6 +125,7 @@
     }));
     window.ChappyHiyoriRuntimeDiagnostics?.run?.();
     window.ChappyHiyoriOperationsDashboard?.render?.();
+    window.ChappyHiyoriEventHealth?.render?.();
   }
 
   [
