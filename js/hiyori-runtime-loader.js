@@ -13,7 +13,6 @@
     "js/prediction-skill-local-support.js",
     "js/prediction-motor-engine-support.js",
     "js/prediction-engine-integration.js",
-    "js/prediction-scenario-output-bridge.js",
     "js/prediction-simple-evaluation.js",
     "js/hiyori-event-monitor.js",
     "js/hiyori-learning-snapshot.js",
