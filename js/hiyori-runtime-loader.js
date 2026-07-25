@@ -27,7 +27,8 @@
     "js/hiyori-runtime-diagnostics.js",
     "js/hiyori-operations-dashboard.js",
     "js/hiyori-event-health.js",
-    "js/hiyori-operations-summary.js"
+    "js/hiyori-operations-summary.js",
+    "js/hiyori-operations-snapshot.js"
   ];
   const styles=["css/hiyori-production-rollback.css","css/hiyori-final-approval.css"];
   function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||"null")??fallback}catch(_){return fallback}}
@@ -54,6 +55,7 @@
     window.ChappyHiyoriOperationsDashboard?.render?.();
     window.ChappyHiyoriEventHealth?.render?.();
     window.ChappyHiyoriOperationsSummary?.render?.();
+    window.ChappyHiyoriOperationsSnapshot?.render?.();
   }
   ["chappy:hiyori-snapshot-created","chappy:hiyori-learning-adoption-updated","chappy:hiyori-adoption-proposals-updated","chappy:hiyori-production-checklist-updated"].forEach(name=>window.addEventListener(name,syncCompatibilityKeys));
   window.addEventListener("storage",event=>{if(event.key&&event.key.startsWith("chappy_hiyori_"))syncCompatibilityKeys()});
