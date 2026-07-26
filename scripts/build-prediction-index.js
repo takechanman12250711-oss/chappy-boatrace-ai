@@ -5,6 +5,7 @@ const path = require("node:path");
 
 const DEFAULT_LIMIT = 500;
 const VERIFICATION_LIMIT = 1500;
+const SHADOW_V2_LIMIT = 2500;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -58,6 +59,7 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
   const runs = [];
   const predictions = [];
   const verificationPredictions = [];
+  const shadowV2Predictions = [];
 
   files.forEach(name => {
     const data = readJson(path.join(directory, name));
@@ -95,6 +97,15 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
         date: String(prediction?.date || date)
       }));
     });
+
+    (Array.isArray(data?.shadowV2Predictions)
+      ? data.shadowV2Predictions
+      : []).forEach(prediction => {
+      shadowV2Predictions.push({
+        ...prediction,
+        date: String(prediction?.date || date)
+      });
+    });
   });
 
   runs.sort((a, b) => String(b?.checkedAt || "").localeCompare(String(a?.checkedAt || "")));
@@ -102,9 +113,12 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
   verificationPredictions.sort((a, b) =>
     String(b?.selectedAt || "").localeCompare(String(a?.selectedAt || ""))
   );
+  shadowV2Predictions.sort((a, b) =>
+    String(b?.capturedAt || "").localeCompare(String(a?.capturedAt || ""))
+  );
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedAt: new Date().toISOString(),
     sourceFileCount: files.length,
     runs: runs.slice(0, limit),
@@ -112,7 +126,12 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     verificationPredictions: verificationPredictions.slice(
       0,
       Math.max(limit, VERIFICATION_LIMIT)
-    )
+    ),
+    shadowV2Predictions:
+      shadowV2Predictions.slice(
+        0,
+        Math.max(limit, SHADOW_V2_LIMIT)
+      )
   };
 }
 
@@ -133,7 +152,8 @@ function main() {
   const outputPath = path.join(directory, "index.json");
   const index = writePredictionIndex(directory, outputPath);
   console.log(
-    `自動予想索引を更新：採用${index.predictions.length}件／検証${index.verificationPredictions.length}件／実行${index.runs.length}件`
+    `自動予想索引を更新：採用${index.predictions.length}件／検証${index.verificationPredictions.length}件／` +
+    `V2シャドー${index.shadowV2Predictions.length}件／実行${index.runs.length}件`
   );
 }
 

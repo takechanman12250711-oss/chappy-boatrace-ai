@@ -33,7 +33,12 @@ on:
       - "scripts/test-match-predictions.js"
       - "js/prediction-verification.js"
       - "js/prediction-conditions.js"
+      - "js/shadow-selection-v2.js"
       - "scripts/test-prediction-conditions.js"
+      - "scripts/test-shadow-selection-v2.js"
+      - "scripts/test-race-parser.js"
+      - "scripts/test-theory-integration.js"
+      - "scripts/test-auto-selection.js"
       - "scripts/test-prediction-verification.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
@@ -62,6 +67,8 @@ on:
       - "js/history-insights.js"
       - "js/history-insights-base.js"
       - "js/theory-input.js"
+      - "api/_parser.js"
+      - "api/race.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
       - "tools/test-local-water-theory-v2.js"
@@ -99,7 +106,12 @@ on:
       - "scripts/test-match-predictions.js"
       - "js/prediction-verification.js"
       - "js/prediction-conditions.js"
+      - "js/shadow-selection-v2.js"
       - "scripts/test-prediction-conditions.js"
+      - "scripts/test-shadow-selection-v2.js"
+      - "scripts/test-race-parser.js"
+      - "scripts/test-theory-integration.js"
+      - "scripts/test-auto-selection.js"
       - "scripts/test-prediction-verification.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
@@ -128,6 +140,8 @@ on:
       - "js/history-insights.js"
       - "js/history-insights-base.js"
       - "js/theory-input.js"
+      - "api/_parser.js"
+      - "api/race.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
       - "tools/test-local-water-theory-v2.js"
@@ -178,7 +192,12 @@ jobs:
           node --check scripts/test-match-predictions.js
           node --check js/prediction-verification.js
           node --check js/prediction-conditions.js
+          node --check js/shadow-selection-v2.js
           node --check scripts/test-prediction-conditions.js
+          node --check scripts/test-shadow-selection-v2.js
+          node --check scripts/test-race-parser.js
+          node --check scripts/test-theory-integration.js
+          node --check scripts/test-auto-selection.js
           node --check scripts/test-prediction-verification.js
           node --check scripts/build-prediction-index.js
           node --check scripts/test-build-prediction-index.js
@@ -205,6 +224,8 @@ jobs:
           node --check js/history-insights.js
           node --check js/history-insights-base.js
           node --check js/theory-input.js
+          node --check api/_parser.js
+          node --check api/race.js
           node --check js/race-history.js
           node --check js/venue-race-analysis.js
           node --check scripts/test-history-insights.js
@@ -217,6 +238,10 @@ jobs:
           node scripts/test-match-predictions.js
           node scripts/test-prediction-verification.js
           node scripts/test-prediction-conditions.js
+          node scripts/test-shadow-selection-v2.js
+          node scripts/test-race-parser.js
+          node scripts/test-theory-integration.js
+          node scripts/test-auto-selection.js
           node scripts/test-build-prediction-index.js
           node scripts/test-auto-stats.js
           node scripts/test-collection-health.js

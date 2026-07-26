@@ -44,6 +44,16 @@ const matched = matchPredictions(
         mainSheet: { honmei: { boatNo: 1 } },
         practicalTickets: [{ ticket: "1-2-3", category: "本線" }]
       }
+    }],
+    shadowV2Predictions: [{
+      recordKey: "20260719-01-1:logic-a:config-a",
+      raceKey: "20260719-01-1",
+      capturedAt: "2026-07-19T01:00:00Z",
+      calibrationEligible: true,
+      evaluation: {
+        totalScore: 61.2
+      },
+      officialResultUsedForEvaluation: false
     }]
   },
   {
@@ -87,5 +97,19 @@ assert.equal(matched.verificationPredictions.length, 2);
 assert.equal(matched.verificationResultSummary.score70Plus.settledCount, 1);
 assert.equal(matched.verificationResultSummary.under70.settledCount, 1);
 assert.equal(matched.verificationResultSummary.under70.practicalHits, 0);
+assert.deepEqual(
+  matched.shadowV2Predictions,
+  [{
+    recordKey: "20260719-01-1:logic-a:config-a",
+    raceKey: "20260719-01-1",
+    capturedAt: "2026-07-19T01:00:00Z",
+    calibrationEligible: true,
+    evaluation: {
+      totalScore: 61.2
+    },
+    officialResultUsedForEvaluation: false
+  }],
+  "V2シャドーは現行の結果照合から独立して保持する"
+);
 
 console.log("自動予想・公式結果照合テスト: 合格");

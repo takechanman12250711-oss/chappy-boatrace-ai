@@ -43,12 +43,34 @@ try {
           preRaceConditions: { weather: { waveHeight: 2 } }
         }
       }
-    ]
+    ],
+    shadowV2Predictions: [{
+      recordKey: "20260722-12-1:logic-a:config-a",
+      raceKey: "20260722-12-1",
+      capturedAt: "2026-07-22T01:00:03Z",
+      complete: true,
+      calibrationEligible: true,
+      evaluation: {
+        totalScore: 61.2,
+        components: [{
+          key: "flow",
+          score: 80,
+          formal: true
+        }]
+      },
+      versions: {
+        logicFingerprint: "logic-a"
+      },
+      snapshot: {
+        boats: [{ boatNo: 1, avgST: 0.13 }]
+      }
+    }]
   }));
   fs.writeFileSync(path.join(directory, "index.json"), "{}");
 
   const index = buildPredictionIndex(directory);
   assert.equal(index.sourceFileCount, 2);
+  assert.equal(index.schemaVersion, 3);
   assert.equal(index.runs.length, 2);
   assert.equal(index.runs[0].date, "20260722");
   assert.equal(index.runs[0].collectionHealth.savedCount, 1);
@@ -61,6 +83,23 @@ try {
   assert.equal(index.verificationPredictions[0].prediction.mainSheet.honmei.boatNo, 2);
   assert.equal(index.verificationPredictions[0].prediction.manshuSheet, undefined);
   assert.equal(index.verificationPredictions[0].prediction.mainSheet.tickets, undefined);
+  assert.equal(index.shadowV2Predictions.length, 1);
+  assert.equal(
+    index.shadowV2Predictions[0].recordKey,
+    "20260722-12-1:logic-a:config-a"
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].calibrationEligible,
+    true
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].evaluation.totalScore,
+    61.2
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].snapshot.boats[0].avgST,
+    0.13
+  );
 } finally {
   fs.rmSync(directory, { recursive: true, force: true });
 }

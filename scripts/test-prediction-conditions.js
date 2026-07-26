@@ -14,7 +14,12 @@ const snapshot = conditions.capture({
     avgSt: 0.14 + index * 0.01,
     nationalWinRate: 5 + index * 0.2,
     localWinRate: 4.8 + index * 0.2,
-    motor2Rate: 30 + index
+    motor2Rate: 30 + index,
+    motor3Rate: 45 + index,
+    boat2Rate: 28 + index,
+    currentRace: {
+      stList: [0.11 + index * 0.01]
+    }
   })),
   beforeInfo: Array.from({ length: 6 }, (_, index) => ({
     boat: index + 1,
@@ -23,7 +28,9 @@ const snapshot = conditions.capture({
   startExhibition: Array.from({ length: 6 }, (_, index) => ({
     boat: index + 1,
     course: index + 1,
-    st: 0.1 + index * 0.01
+    st: 0.1 + index * 0.01,
+    isOfficialCourse: true,
+    mappingSource: "official-start-image"
   })),
   weather: {
     windSpeed: 4,
@@ -35,13 +42,25 @@ const snapshot = conditions.capture({
 });
 
 assert.equal(snapshot.sourceTiming, "pre_deadline");
+assert.equal(snapshot.schemaVersion, 3);
 assert.equal(snapshot.officialResultUsed, false);
 assert.equal(snapshot.boats.length, 6);
 assert.equal(snapshot.dataAvailability.entries, 6);
 assert.equal(snapshot.dataAvailability.averageST, 6);
+assert.equal(snapshot.dataAvailability.currentST, 6);
+assert.equal(snapshot.dataAvailability.officialCourses, 6);
+assert.equal(snapshot.dataAvailability.skill, 6);
+assert.equal(snapshot.dataAvailability.motor, 6);
+assert.equal(snapshot.dataAvailability.windDirection, true);
 assert.equal(snapshot.boats[0].racerName, "選手1");
 assert.equal(snapshot.boats[2].className, "A1");
 assert.equal(snapshot.boats[0].motor2Rate, 30);
+assert.equal(snapshot.boats[0].motor3Rate, 45);
+assert.equal(snapshot.boats[0].boat2Rate, 28);
+assert.equal(
+  snapshot.boats[0].courseMappingSource,
+  "official-start-image"
+);
 assert.equal(snapshot.boats[0].exhibitionST, 0.1);
 assert.equal(snapshot.boats[0].exhibitionTime, 6.7);
 assert.equal(snapshot.weather.windSpeed, 4);
@@ -54,6 +73,20 @@ assert.equal(
   "場の固定潮傾向を実潮汐の取得済み扱いにしない"
 );
 assert.equal(snapshot.dataAvailability.exhibitionST, 6);
+
+const boatsAlias = conditions.capture({
+  boats: Array.from({ length: 6 }, (_, index) => ({
+    boat: index + 1,
+    boatNo: 80 + index,
+    racerName: `別名選手${index + 1}`,
+    className: "B1"
+  }))
+});
+assert.equal(
+  boatsAlias.boats[0].racerName,
+  "別名選手1",
+  "entries以外の艇配列でも艇番を機材番号と取り違えない"
+);
 assert.deepEqual(conditions.PRIORITY_STAGES, [
   "展開", "コース", "ST・スリット", "展示・足",
   "残し・拾い", "当地・水面", "技量", "モーター"

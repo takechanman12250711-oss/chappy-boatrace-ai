@@ -58,6 +58,61 @@
     "doubleTimeAndNewSamAreIntegrated": true,
     "mayAdjustRolesOrFinishingCandidatesSeparately": false
   },
+  "shadowSelectionV2": {
+    "enabled": true,
+    "mode": "shadow_only",
+    "cutoffSeconds": 120,
+    "doesNotAffectLegacySelection": true,
+    "doesNotAffectTickets": true,
+    "doesNotAffectNotePublication": true,
+    "oddsUsedForScore": false,
+    "officialResultUsedForScore": false,
+    "priority": [
+      "展開",
+      "コース",
+      "ST・スリット",
+      "展示・足",
+      "残し・拾い",
+      "当地・水面",
+      "技量",
+      "モーター"
+    ],
+    "weights": {
+      "normal": {
+        "flow": 30,
+        "course": 20,
+        "stSlit": 15,
+        "exhibition": 12,
+        "holdPickup": 9,
+        "localWater": 7,
+        "skill": 4,
+        "motor": 3
+      },
+      "newEngine": {
+        "flow": 30,
+        "course": 20,
+        "stSlit": 16,
+        "exhibition": 14,
+        "holdPickup": 9,
+        "localWater": 7,
+        "skill": 3,
+        "motor": 1
+      }
+    },
+    "requiredData": {
+      "entries": 6,
+      "officialCourses": 6,
+      "averageST": 6,
+      "exhibitionST": 6,
+      "exhibitionTime": 6,
+      "skill": 6,
+      "motor": 6,
+      "windDirection": true,
+      "windSpeed": true,
+      "waveHeight": true,
+      "liveTideWhenTidal": true
+    }
+  },
   "automation": {
     "mayProposeImprovements": true,
     "mayChangePredictionLogicWithoutApproval": false,

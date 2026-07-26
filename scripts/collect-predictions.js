@@ -3,6 +3,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 
 const scheduleApi = require("../api/schedule");
 const raceApi = require("../api/race");
@@ -27,15 +28,65 @@ const officialHistoryStats = require(
 const racerVenueStarts = require(
   "../data/stats/racer-venue-starts.json"
 );
+const racerSkillStats = require(
+  "../data/stats/racer-skill-patterns.json"
+);
+const courseStructureStats = require(
+  "../data/stats/course-structure-patterns.json"
+);
 const historyInsights = require(
   "../js/history-insights"
 );
 const predictionConditions = require(
   "../js/prediction-conditions"
 );
+const shadowSelectionV2 = require(
+  "../js/shadow-selection-v2"
+);
 
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
+const REPOSITORY_ROOT = path.resolve(__dirname, "..");
+
+function fingerprintFiles(relativePaths) {
+  const hash = crypto.createHash("sha256");
+  relativePaths.forEach(relativePath => {
+    hash.update(relativePath);
+    hash.update("\0");
+    hash.update(
+      fs.readFileSync(
+        path.join(REPOSITORY_ROOT, relativePath)
+      )
+    );
+    hash.update("\0");
+  });
+  return hash.digest("hex").slice(0, 20);
+}
+
+const SHADOW_LOGIC_FINGERPRINT = fingerprintFiles([
+  "scripts/collect-predictions.js",
+  "config/chappy-charter.json",
+  "api/schedule.js",
+  "api/race.js",
+  "api/_parser.js",
+  "js/ai-core.js",
+  "js/history-insights-base.js",
+  "js/motor-maintenance-insights.js",
+  "js/history-insights.js",
+  "js/prediction.js",
+  "js/note-generator.js",
+  "js/practical-selection.js",
+  "js/theory-input.js",
+  "js/prediction-conditions.js",
+  "js/shadow-selection-v2.js"
+]);
+const SHADOW_REFERENCE_DATA_FINGERPRINT = fingerprintFiles([
+  "data/stats/venue-race-patterns.json",
+  "data/stats/race-patterns.json",
+  "data/stats/racer-venue-starts.json",
+  "data/stats/racer-skill-patterns.json",
+  "data/stats/course-structure-patterns.json"
+]);
 
 function predictionFilePath(date) {
   return path.join(process.cwd(), "data", "predictions", `${date}.json`);
@@ -174,6 +225,82 @@ function attachVenueRaceHistory(raceData, jcd, raceNo) {
       }
     },
     historyTrend
+  };
+}
+
+function attachShadowReferenceHistory(
+  raceData,
+  jcd
+) {
+  const code = String(jcd || "").padStart(2, "0");
+  const context = raceData?.historyContext || {};
+  const starts = new Map(
+    (
+      Array.isArray(raceData?.startExhibition)
+        ? raceData.startExhibition
+        : []
+    ).map(row => [
+      Number(row?.boat),
+      row
+    ])
+  );
+  const entries = (
+    Array.isArray(raceData?.entries)
+      ? raceData.entries
+      : []
+  ).map((entry, index) => {
+    const boatNo = Number(
+      entry?.boat ??
+      entry?.waku ??
+      entry?.no ??
+      entry?.boatNo ??
+      index + 1
+    );
+    const start = starts.get(boatNo) || {};
+    return {
+      ...entry,
+      boatNo,
+      startExhibition: {
+        ...(entry?.startExhibition || {}),
+        ...start
+      }
+    };
+  });
+  const racers = (
+    Array.isArray(context.racers)
+      ? context.racers
+      : []
+  ).map(racer => {
+    const registerNo = String(
+      racer?.registerNo || ""
+    ).trim();
+    return {
+      ...racer,
+      skillHistory:
+        racerSkillStats?.racers?.[
+          registerNo
+        ] || null
+    };
+  });
+
+  return {
+    ...raceData,
+    entries,
+    historyContext: {
+      ...context,
+      racers,
+      courseStructure: {
+        overall:
+          courseStructureStats?.overall || null,
+        venue:
+          courseStructureStats?.byVenue?.[
+            code
+          ] || null,
+        thresholds:
+          courseStructureStats?.thresholds || null
+      },
+      shadowReferenceOnly: true
+    }
   };
 }
 
@@ -336,8 +463,23 @@ function loadJson(filePath, fallback) {
 }
 
 function writeJson(filePath, data) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n", "utf8");
+  const directory = path.dirname(filePath);
+  const temporaryPath =
+    `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  fs.mkdirSync(directory, { recursive: true });
+
+  try {
+    fs.writeFileSync(
+      temporaryPath,
+      JSON.stringify(data, null, 2) + "\n",
+      "utf8"
+    );
+    fs.renameSync(temporaryPath, filePath);
+  } finally {
+    if (fs.existsSync(temporaryPath)) {
+      fs.unlinkSync(temporaryPath);
+    }
+  }
 }
 
 function uniqueStrings(values) {
@@ -480,6 +622,21 @@ async function evaluateTargets(date, targets) {
             history.raceData,
             global.ChappyAICore
           );
+        let shadowPreparedRaceData = null;
+        try {
+          shadowPreparedRaceData =
+            theoryInput.prepare(
+              attachShadowReferenceHistory(
+                history.raceData,
+                target.jcd
+              ),
+              global.ChappyAICore
+            );
+        } catch (shadowError) {
+          console.warn(
+            `V2専用入力生成失敗：${shadowError?.message || shadowError}`
+          );
+        }
         const evaluation =
           global.ChappyAICore
             .buildRaceTrendEvaluation(
@@ -510,7 +667,13 @@ async function evaluateTargets(date, targets) {
 
         results.push({
           ...target,
+          capturedAt:
+            String(raceData?.fetchedAt || "") ||
+            new Date().toISOString(),
+          rawRaceData: history.raceData,
           raceData: preparedRaceData,
+          shadowRaceData:
+            shadowPreparedRaceData,
           evaluation,
           score: Math.max(honmei, manshu),
           type,
@@ -559,16 +722,125 @@ function upsertByRaceKey(list, records) {
   return output;
 }
 
-function buildStoredPrediction(date, item, selected = false) {
-  const prediction = global.createPrediction(item.raceData);
+function safelyBuildShadowV2(
+  options,
+  builder = shadowSelectionV2.buildRecord
+) {
+  try {
+    return builder(options);
+  } catch (error) {
+    console.warn(
+      `V2シャドー生成失敗：${error?.message || error}`
+    );
+    return null;
+  }
+}
+
+function captureStoredConditions(
+  item,
+  prediction
+) {
+  let shadow = {};
+
+  try {
+    shadow = predictionConditions.capture(
+      item?.rawRaceData ||
+        item?.raceData ||
+        {},
+      {}
+    );
+  } catch (error) {
+    console.warn(
+      `V2シャドー取得条件保存失敗：${error?.message || error}`
+    );
+  }
+
+  return {
+    legacy: predictionConditions.capture(
+      item?.raceData || {},
+      prediction
+    ),
+    shadow
+  };
+}
+
+function selectedRaceKeyFor(
+  date,
+  best
+) {
+  return Number(best?.score || 0) >= MIN_SCORE
+    ? `${date}-${best.jcd}-${best.raceNo}`
+    : "";
+}
+
+function buildStoredPrediction(
+  date,
+  item,
+  selected = false,
+  capturedAt =
+    item?.capturedAt ||
+    new Date().toISOString(),
+  dependencies = {}
+) {
+  const createPrediction =
+    dependencies.createPrediction ||
+    global.createPrediction;
+  const createPracticalSelection =
+    dependencies.createPracticalSelection ||
+    global.ChappyNoteGenerator
+      .createPracticalSelection;
+  const prediction = createPrediction(
+    item.raceData
+  );
   prediction.predictionMode = selected
     ? "server_pre_deadline"
     : "server_pre_deadline_shadow";
   prediction.officialResultUsedForPrediction = false;
 
   const practicalTickets =
-    global.ChappyNoteGenerator.createPracticalSelection(prediction);
+    createPracticalSelection(prediction);
   const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
+  const capturedConditions =
+    captureStoredConditions(
+      item,
+      prediction
+    );
+  const legacyPreRaceConditions =
+    capturedConditions.legacy;
+  const shadowPreRaceConditions =
+    capturedConditions.shadow;
+  const selection = {
+    type: item.type,
+    score: item.score,
+    threshold: MIN_SCORE,
+    qualified: item.score >= MIN_SCORE,
+    selected,
+    evaluation: compactEvaluation(item.evaluation)
+  };
+  const shadowV2 = safelyBuildShadowV2({
+    raceKey,
+    date,
+    jcd: item.jcd,
+    place: item.place,
+    raceNo: item.raceNo,
+    deadlineAt: item.deadlineAt,
+    capturedAt,
+    sourceCommit: process.env.GITHUB_SHA || "",
+    logicFingerprint: SHADOW_LOGIC_FINGERPRINT,
+    referenceDataFingerprint:
+      SHADOW_REFERENCE_DATA_FINGERPRINT,
+    theoryInputVersion: theoryInput.VERSION || "",
+    selection,
+    preRaceConditions: shadowPreRaceConditions,
+    preparedRaceData:
+      item.shadowRaceData ||
+      item.raceData,
+    practicalTickets,
+    prediction,
+    coreApi:
+      dependencies.coreApi ||
+      global.ChappyAICore
+  }, dependencies.shadowBuilder);
 
   return {
     raceKey,
@@ -577,21 +849,15 @@ function buildStoredPrediction(date, item, selected = false) {
     place: item.place,
     raceNo: item.raceNo,
     deadlineAt: item.deadlineAt,
-    selectedAt: new Date().toISOString(),
+    selectedAt: capturedAt,
     verificationMode: selected ? "selected" : "shadow",
     scoreBand: item.score >= MIN_SCORE ? "70_plus" : "under_70",
-    selection: {
-      type: item.type,
-      score: item.score,
-      threshold: MIN_SCORE,
-      qualified: item.score >= MIN_SCORE,
-      selected,
-      evaluation: compactEvaluation(item.evaluation)
-    },
+    selection,
+    shadowV2,
     prediction: compactVerificationPayload(
       prediction,
       practicalTickets,
-      predictionConditions.capture(item.raceData, prediction)
+      legacyPreRaceConditions
     )
   };
 }
@@ -695,14 +961,22 @@ function logCollectionHealth(health) {
   );
 }
 
-function saveRun(date, comparison, selectedData, verificationPredictions = [], collectionHealth = null) {
+function saveRun(
+  date,
+  comparison,
+  selectedData,
+  verificationPredictions = [],
+  shadowV2Predictions = [],
+  collectionHealth = null
+) {
   const outputPath = predictionFilePath(date);
   const existing = loadJson(outputPath, {
-    schemaVersion: 2,
+    schemaVersion: 3,
     date,
     runs: [],
     predictions: [],
-    verificationPredictions: []
+    verificationPredictions: [],
+    shadowV2Predictions: []
   });
 
   const best = comparison[0] || null;
@@ -757,11 +1031,16 @@ function saveRun(date, comparison, selectedData, verificationPredictions = [], c
     else existing.predictions.push(selectedData);
   }
 
-  existing.schemaVersion = 2;
+  existing.schemaVersion = 3;
   existing.verificationPredictions = upsertByRaceKey(
     existing.verificationPredictions,
     verificationPredictions
   ).map(compactStoredVerification);
+  existing.shadowV2Predictions =
+    shadowSelectionV2.upsertSnapshots(
+      existing.shadowV2Predictions,
+      shadowV2Predictions
+    );
 
   existing.updatedAt = new Date().toISOString();
   existing.runs = existing.runs.slice(-MAX_RUNS_PER_DAY);
@@ -808,18 +1087,41 @@ async function main() {
       recoveryPlan.finalizedTargets
     );
     logCollectionHealth(collectionHealth);
-    if (!dryRun) saveRun(date, comparison, null, [], collectionHealth);
+    if (!dryRun) {
+      saveRun(
+        date,
+        comparison,
+        null,
+        [],
+        [],
+        collectionHealth
+      );
+    }
     return;
   }
 
-  const selectedRaceKey = best.score >= MIN_SCORE
-    ? `${date}-${best.jcd}-${best.raceNo}`
-    : "";
-  const verificationPredictions = buildVerificationPredictions(
+  const selectedRaceKey =
+    selectedRaceKeyFor(
+      date,
+      best
+    );
+  const builtVerificationPredictions = buildVerificationPredictions(
     date,
     comparison,
     selectedRaceKey
   );
+  const shadowV2Predictions =
+    builtVerificationPredictions
+      .map(item => item?.shadowV2)
+      .filter(Boolean);
+  const verificationPredictions =
+    builtVerificationPredictions.map(item => {
+      const {
+        shadowV2: _shadowV2,
+        ...legacyRecord
+      } = item;
+      return legacyRecord;
+    });
   const collectionHealth = buildCollectionHealth(
     date,
     targets,
@@ -858,11 +1160,22 @@ async function main() {
 
   if (!dryRun) {
     if (selectedData) selectedData.note.path = saveNote(date, best, article);
-    saveRun(date, comparison, selectedData, verificationPredictions, collectionHealth);
+    saveRun(
+      date,
+      comparison,
+      selectedData,
+      verificationPredictions,
+      shadowV2Predictions,
+      collectionHealth
+    );
   }
 
   console.log(
     `検証保存：${verificationPredictions.length}R（70点以上${verificationPredictions.filter(item => item.scoreBand === "70_plus").length}R／70点未満${verificationPredictions.filter(item => item.scoreBand === "under_70").length}R）`
+  );
+  console.log(
+    `V2校正対象：${shadowV2Predictions.filter(item => item.calibrationEligible).length}/${shadowV2Predictions.length}R` +
+    `（完全データ${shadowV2Predictions.filter(item => item.complete).length}R・シャドー専用）`
   );
 
   if (!selectedData) {
@@ -892,7 +1205,14 @@ if (require.main === module) {
 
 module.exports = {
   MIN_SCORE,
+  SHADOW_LOGIC_FINGERPRINT,
+  SHADOW_REFERENCE_DATA_FINGERPRINT,
+  fingerprintFiles,
   attachVenueRaceHistory,
+  attachShadowReferenceHistory,
+  safelyBuildShadowV2,
+  captureStoredConditions,
+  selectedRaceKeyFor,
   upsertByRaceKey,
   compactStoredVerification,
   buildCollectionHealth,

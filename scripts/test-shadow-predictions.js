@@ -1,6 +1,12 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const theoryInput = require(
+  "../js/theory-input"
+);
 const {
   MIN_SCORE,
   buildCollectionHealth,
@@ -8,10 +14,306 @@ const {
   insufficientReasons,
   compactStoredVerification,
   attachVenueRaceHistory,
-  upsertByRaceKey
+  attachShadowReferenceHistory,
+  safelyBuildShadowV2,
+  captureStoredConditions,
+  selectedRaceKeyFor,
+  buildStoredPrediction,
+  upsertByRaceKey,
+  saveRun
 } = require("./collect-predictions");
 
 assert.equal(MIN_SCORE, 70);
+
+const provenanceConditions =
+  captureStoredConditions(
+    {
+      rawRaceData: {
+        entries: [{
+          boat: 1,
+          racerName: "公式値",
+          avgSt: 0.14
+        }],
+        weather: {
+          windDirection: "向かい風",
+          windSpeed: 2,
+          waveHeight: 1
+        }
+      },
+      raceData: {
+        entries: [{
+          boat: 1,
+          racerName: "補正値",
+          avgSt: 0.09
+        }],
+        weather: {
+          windDirection: "追い風",
+          windSpeed: 9,
+          waveHeight: 8
+        }
+      }
+    },
+    {
+      weather: {
+        windDirection: "横風",
+        windSpeed: 7,
+        waveHeight: 6
+      }
+    }
+  );
+assert.equal(
+  provenanceConditions.shadow.boats[0].racerName,
+  "公式値"
+);
+assert.equal(
+  provenanceConditions.shadow.boats[0].avgST,
+  0.14
+);
+assert.equal(
+  provenanceConditions.shadow.weather.windSpeed,
+  2
+);
+assert.equal(
+  provenanceConditions.legacy.weather.windSpeed,
+  9
+);
+
+const rawWeatherMissing =
+  captureStoredConditions(
+    {
+      rawRaceData: {
+        entries: []
+      },
+      raceData: {
+        weather: {
+          windDirection: "追い風",
+          windSpeed: 9,
+          waveHeight: 8
+        }
+      }
+    },
+    {
+      weather: {
+        windDirection: "横風",
+        windSpeed: 7,
+        waveHeight: 6
+      }
+    }
+  );
+assert.equal(
+  rawWeatherMissing.shadow
+    .dataAvailability.windDirection,
+  false
+);
+assert.equal(
+  rawWeatherMissing.shadow
+    .dataAvailability.wind,
+  false
+);
+assert.equal(
+  rawWeatherMissing.shadow
+    .dataAvailability.wave,
+  false,
+  "V2完全性へ予想側の気象値を補完しない"
+);
+
+const rawCaptureFailure = {};
+Object.defineProperty(
+  rawCaptureFailure,
+  "entries",
+  {
+    get() {
+      throw new Error(
+        "shadow snapshot failure"
+      );
+    }
+  }
+);
+let captureWarning = "";
+const warnBeforeCapture = console.warn;
+console.warn = message => {
+  captureWarning = String(message || "");
+};
+const isolatedCapture =
+  captureStoredConditions(
+    {
+      rawRaceData: rawCaptureFailure,
+      raceData: {
+        entries: [{
+          boat: 1,
+          racerName: "現行予想"
+        }]
+      }
+    },
+    fakePrediction()
+  );
+console.warn = warnBeforeCapture;
+assert.equal(
+  isolatedCapture.legacy.boats[0].racerName,
+  "現行予想"
+);
+assert.deepEqual(
+  isolatedCapture.shadow,
+  {},
+  "V2スナップショット障害時も現行予想を保持する"
+);
+assert.ok(
+  captureWarning.includes(
+    "shadow snapshot failure"
+  )
+);
+
+const originalWarn = console.warn;
+let isolatedWarning = "";
+console.warn = message => {
+  isolatedWarning = String(message || "");
+};
+const isolatedFailure = safelyBuildShadowV2(
+  { raceKey: "test" },
+  () => {
+    throw new Error("V2 test failure");
+  }
+);
+console.warn = originalWarn;
+assert.equal(isolatedFailure, null);
+assert.ok(
+  isolatedWarning.includes("V2 test failure"),
+  "V2障害を現行予想から分離して記録する"
+);
+
+function fakePrediction() {
+  return {
+    version: "prediction-fake",
+    raceFlow: {
+      title: "1逃げ"
+    },
+    mainSheet: {
+      honmei: {
+        boatNo: 1,
+        name: "1号艇"
+      }
+    },
+    aiCore: {
+      version: "core-fake"
+    }
+  };
+}
+
+const legacyItem = {
+  jcd: "12",
+  place: "住之江",
+  raceNo: 8,
+  deadlineAt:
+    "2026-07-26T10:02:00.000Z",
+  capturedAt:
+    "2026-07-26T10:00:00.000Z",
+  score: 69.9,
+  type: "本線",
+  evaluation: {
+    ready: true,
+    honmei: { score: 69.9 },
+    manshu: { score: 40 }
+  },
+  rawRaceData: {
+    entries: [],
+    weather: {}
+  },
+  raceData: {
+    entries: [],
+    weather: {}
+  },
+  shadowRaceData: {
+    entries: []
+  }
+};
+const practicalTickets = [{
+  ticket: "1-2-3",
+  category: "本線"
+}];
+const highShadowRecord =
+  buildStoredPrediction(
+    "20260726",
+    legacyItem,
+    false,
+    legacyItem.capturedAt,
+    {
+      createPrediction: fakePrediction,
+      createPracticalSelection() {
+        return practicalTickets;
+      },
+      shadowBuilder() {
+        return {
+          evaluation: {
+            totalScore: 100
+          }
+        };
+      },
+      coreApi: {}
+    }
+  );
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    legacyItem
+  ),
+  "",
+  "V2が100点でも現行69.9点は選定しない"
+);
+assert.equal(
+  highShadowRecord.scoreBand,
+  "under_70"
+);
+assert.equal(
+  highShadowRecord.selection.selected,
+  false
+);
+assert.deepEqual(
+  highShadowRecord.prediction.practicalTickets,
+  practicalTickets,
+  "V2追加後も現行の実戦買い目をそのまま保存する"
+);
+
+const thresholdItem = {
+  ...legacyItem,
+  score: 70
+};
+const lowShadowRecord =
+  buildStoredPrediction(
+    "20260726",
+    thresholdItem,
+    true,
+    thresholdItem.capturedAt,
+    {
+      createPrediction: fakePrediction,
+      createPracticalSelection() {
+        return practicalTickets;
+      },
+      shadowBuilder() {
+        return {
+          evaluation: {
+            totalScore: 1
+          }
+        };
+      },
+      coreApi: {}
+    }
+  );
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    thresholdItem
+  ),
+  "20260726-12-8",
+  "V2が低得点でも現行70点は選定する"
+);
+assert.equal(
+  lowShadowRecord.scoreBand,
+  "70_plus"
+);
+assert.equal(
+  lowShadowRecord.selection.selected,
+  true
+);
 
 const historyAttached = attachVenueRaceHistory(
   { stadiumCode: "24", raceNo: 5 },
@@ -25,6 +327,331 @@ assert.equal(historyAttached.raceData.historyContext.ready, true);
 assert.ok(frameOne.samples >= 30);
 assert.equal(frameOne.hasBaseline, true);
 assert.ok(Number.isFinite(frameOne.movementDelta));
+
+const referenceBase = attachVenueRaceHistory(
+  {
+    entries: [{
+      boat: 1,
+      boatNo: 88,
+      registerNo: "2014",
+      racerName: "参照選手"
+    }],
+    startExhibition: [{
+      boat: 1,
+      course: 2,
+      st: 0.11,
+      mappingSource: "official-start-image",
+      isOfficialCourse: true
+    }]
+  },
+  "24",
+  5
+).raceData;
+const shadowReference =
+  attachShadowReferenceHistory(
+    referenceBase,
+    "24"
+  );
+assert.ok(
+  shadowReference.historyContext
+    .courseStructure.venue
+    .all3Years,
+  "V2専用入力へ場×実進入コース履歴を接続する"
+);
+assert.ok(
+  shadowReference.historyContext
+    .racers[0].skillHistory
+    .windows.all3Years,
+  "V2専用入力へ選手の実進入ST履歴を接続する"
+);
+assert.equal(
+  shadowReference.entries[0].boatNo,
+  1,
+  "V2専用入力だけで機材番号を艇番へ正規化する"
+);
+assert.equal(
+  shadowReference.entries[0]
+    .startExhibition
+    .isOfficialCourse,
+  true,
+  "V2専用入力へ公式展示進入の取得元を保持する"
+);
+assert.equal(
+  referenceBase.entries[0].boatNo,
+  88,
+  "現行予想入力の艇番号は変更しない"
+);
+assert.equal(
+  referenceBase.historyContext
+    .courseStructure,
+  undefined,
+  "現行予想入力にはV2専用参照履歴を混在させない"
+);
+
+const completeRegisterNos = [
+  "2878",
+  "3075",
+  "3107",
+  "3161",
+  "3175",
+  "3233"
+];
+const completeRacerNames = [
+  "富山弘幸",
+  "中村裕将",
+  "平岡重典",
+  "古場輝義",
+  "渡辺千草",
+  "小畑実成"
+];
+const completeRawRaceData = {
+  ok: true,
+  source: "boatrace-official-fixture",
+  stadiumCode: "12",
+  raceNo: 8,
+  date: "20260726",
+  fetchedAt:
+    "2026-07-26T10:00:00.000Z",
+  waterType: "淡水",
+  weather: {
+    weather: "晴",
+    windDirection: "向かい風",
+    windDirectionCode: 5,
+    windSpeed: 3,
+    waveHeight: 2,
+    temperature: 29,
+    waterTemperature: 27,
+    waterType: "淡水",
+    liveTideAvailable: false
+  },
+  entries:
+    completeRegisterNos.map(
+      (registerNo, index) => {
+        const boat = index + 1;
+        return {
+          boat,
+          registerNo,
+          racerName:
+            completeRacerNames[index],
+          className:
+            boat <= 2 ? "A1" : "A2",
+          avgSt:
+            0.11 + boat * 0.01,
+          nationalWinRate:
+            7.3 - boat * 0.15,
+          national2Rate: 45 + boat,
+          national3Rate: 65 + boat,
+          localWinRate:
+            7 - boat * 0.12,
+          local2Rate: 44 + boat,
+          local3Rate: 64 + boat,
+          motor2Rate: 32 + boat,
+          motor3Rate: 48 + boat,
+          boat2Rate: 31 + boat,
+          currentRace: {
+            stList: [
+              0.10 + boat * 0.005,
+              0.12 + boat * 0.005
+            ]
+          },
+          currentResults: [2, 3, 2],
+          exhibition: {
+            displayTime:
+              6.70 + boat * 0.02,
+            partsExchange: ""
+          }
+        };
+      }
+    ),
+  startExhibition:
+    completeRegisterNos.map(
+      (_registerNo, index) => ({
+        boat: index + 1,
+        course: index + 1,
+        st: 0.09 + index * 0.01,
+        isOfficialCourse: true,
+        mappingSource:
+          "official-start-image"
+      })
+    ),
+  beforeInfo:
+    completeRegisterNos.map(
+      (_registerNo, index) => ({
+        boat: index + 1,
+        racerName:
+          completeRacerNames[index],
+        exhibition: {
+          displayTime:
+            6.72 + index * 0.02,
+          lapTime: 37 + index * 0.1
+        }
+      })
+    )
+};
+const completeHistory =
+  attachVenueRaceHistory(
+    completeRawRaceData,
+    "12",
+    8
+  );
+const completeLegacyInput =
+  theoryInput.prepare(
+    JSON.parse(
+      JSON.stringify(
+        completeHistory.raceData
+      )
+    ),
+    global.ChappyAICore
+  );
+const completeShadowInput =
+  theoryInput.prepare(
+    attachShadowReferenceHistory(
+      JSON.parse(
+        JSON.stringify(
+          completeHistory.raceData
+        )
+      ),
+      "12"
+    ),
+    global.ChappyAICore
+  );
+const completeEvaluation =
+  global.ChappyAICore
+    .buildRaceTrendEvaluation(
+      completeLegacyInput
+    );
+const completeHonmeiScore = Number(
+  completeEvaluation.honmei?.score || 0
+);
+const completeManshuScore = Number(
+  completeEvaluation.manshu?.score || 0
+);
+const completeStored =
+  buildStoredPrediction(
+    "20260726",
+    {
+      jcd: "12",
+      place: "住之江",
+      raceNo: 8,
+      deadlineAt:
+        "2026-07-26T10:02:00.000Z",
+      capturedAt:
+        "2026-07-26T10:00:00.000Z",
+      score: Math.max(
+        completeHonmeiScore,
+        completeManshuScore
+      ),
+      type:
+        completeHonmeiScore >=
+        completeManshuScore
+          ? "本線"
+          : "波乱",
+      evaluation:
+        completeEvaluation,
+      rawRaceData:
+        completeHistory.raceData,
+      raceData:
+        completeLegacyInput,
+      shadowRaceData:
+        completeShadowInput
+    },
+    false,
+    "2026-07-26T10:00:00.000Z"
+  );
+const completeV2 =
+  completeStored.shadowV2;
+
+assert.equal(
+  completeEvaluation.ready,
+  true,
+  "現行収集経路の評価が成立する"
+);
+assert.equal(
+  completeV2.status,
+  "ready"
+);
+assert.equal(
+  completeV2.complete,
+  true
+);
+assert.equal(
+  completeV2.calibrationEligible,
+  true,
+  "実収集経路の完全データを校正対象にできる"
+);
+assert.equal(
+  completeV2.readiness
+    .formalComponentCount,
+  8
+);
+assert.equal(
+  completeV2.readiness
+    .allComponentsFormal,
+  true
+);
+assert.deepEqual(
+  completeV2.missingReasonCodes,
+  []
+);
+assert.deepEqual(
+  completeV2.eligibilityReasonCodes,
+  []
+);
+assert.equal(
+  completeV2.timing
+    .secondsBeforeDeadline,
+  120
+);
+assert.equal(
+  completeV2.timing.beforeCutoff,
+  true
+);
+[
+  "entries",
+  "officialCourses",
+  "averageST",
+  "exhibitionST",
+  "exhibitionTime",
+  "skill",
+  "motor"
+].forEach(key => {
+  assert.equal(
+    completeV2.availability[key],
+    6,
+    `${key}を6艇保存する`
+  );
+});
+assert.equal(
+  completeV2.availability
+    .windDirection,
+  true
+);
+assert.equal(
+  completeV2.availability.wind,
+  true
+);
+assert.equal(
+  completeV2.availability.wave,
+  true
+);
+assert.equal(
+  completeV2.availability
+    .tideRequired,
+  false
+);
+assert.equal(
+  completeV2.evaluation
+    .components.length,
+  8
+);
+assert.ok(
+  completeV2.evaluation
+    .components.every(
+      component =>
+        component.score !== null &&
+        component.formal === true
+    )
+);
 
 const collectionHealth = buildCollectionHealth(
   "20260722",
@@ -264,5 +891,87 @@ assert.equal(
   generatedEvidence.prediction.verificationEvidence.formation.scenarioType,
   "fourAttack"
 );
+
+const temporaryRoot = fs.mkdtempSync(
+  path.join(
+    os.tmpdir(),
+    "chappy-shadow-v2-save-"
+  )
+);
+const originalCwd = process.cwd();
+try {
+  process.chdir(temporaryRoot);
+  saveRun(
+    "20260726",
+    [],
+    null,
+    [{
+      raceKey: "20260726-12-8",
+      selection: {
+        score: 45,
+        threshold: 70
+      },
+      prediction: {}
+    }],
+    [{
+      recordKey:
+        "20260726-12-8:logic-a:config-a",
+      raceKey: "20260726-12-8",
+      calibrationEligible: true,
+      evaluation: {
+        totalScore: 59.8
+      }
+    }],
+    null
+  );
+
+  const saved = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        temporaryRoot,
+        "data",
+        "predictions",
+        "20260726.json"
+      ),
+      "utf8"
+    )
+  );
+  assert.equal(saved.schemaVersion, 3);
+  assert.equal(
+    saved.verificationPredictions.length,
+    1
+  );
+  assert.equal(
+    saved.verificationPredictions[0].shadowV2,
+    undefined,
+    "現行検証レコードへV2を混在させない"
+  );
+  assert.equal(saved.shadowV2Predictions.length, 1);
+  assert.equal(
+    saved.shadowV2Predictions[0]
+      .calibrationEligible,
+    true
+  );
+  assert.deepEqual(
+    fs.readdirSync(
+      path.join(
+        temporaryRoot,
+        "data",
+        "predictions"
+      )
+    ),
+    ["20260726.json"],
+    "一時ファイルを残さず日次JSONを原子的に確定する"
+  );
+} finally {
+  process.chdir(originalCwd);
+  fs.rmSync(
+    temporaryRoot,
+    {
+      recursive: true,
+      force: true
+    }
+  );
+}
 
 console.log("シャドー予想保存テスト: 合格");

@@ -6,18 +6,31 @@ on:
       - main
     paths:
       - ".github/workflows/collect-predictions.yml"
+      - "config/chappy-charter.json"
+      - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-shadow-predictions.js"
+      - "scripts/test-shadow-selection-v2.js"
+      - "scripts/test-prediction-conditions.js"
+      - "scripts/test-race-parser.js"
+      - "scripts/test-theory-integration.js"
+      - "scripts/test-auto-selection.js"
       - "js/collection-health.js"
       - "scripts/test-collection-health.js"
       - "api/schedule.js"
       - "api/race.js"
+      - "api/_parser.js"
       - "js/ai-core.js"
+      - "js/history-insights.js"
+      - "js/history-insights-base.js"
+      - "js/motor-maintenance-insights.js"
       - "js/prediction.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
       - "js/prediction-conditions.js"
+      - "js/shadow-selection-v2.js"
+      - "js/theory-input.js"
 
   schedule:
     - cron: "*/15 22-23 * * *" # 07:00-08:45 JST
@@ -56,7 +69,13 @@ jobs:
       - name: Check charter and source
         run: |
           node --check scripts/collect-predictions.js
+          node --check js/shadow-selection-v2.js
           node scripts/test-shadow-predictions.js
+          node scripts/test-shadow-selection-v2.js
+          node scripts/test-prediction-conditions.js
+          node scripts/test-race-parser.js
+          node scripts/test-theory-integration.js
+          node scripts/test-auto-selection.js
           node scripts/test-collection-health.js
           node scripts/check-charter.js
 

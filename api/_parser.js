@@ -226,7 +226,7 @@ function splitBeforeBlocks(html) {
   const text = getBeforeMainText(html);
   const blocks = [];
   const starts = [];
-  const re = /(?:^|\s)([1-6])\s+([一-龥ぁ-んァ-ヶー\s]{2,16})\s+(?:\d{2}\.\dkg|\d{2}\.\d|6\.\d{2}|7\.\d{2}|R\s+進入)/g;
+  const re = /(?:^|\s)([1-6])\s+([一-龥々ぁ-んァ-ヶー\s]{2,16})\s+(?:\d{2}\.\dkg|\d{2}\.\d|6\.\d{2}|7\.\d{2}|R\s+進入)/g;
 
   let m;
   while ((m = re.exec(text)) !== null) {
