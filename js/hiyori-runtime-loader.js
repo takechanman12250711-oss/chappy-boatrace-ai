@@ -23,7 +23,7 @@
     "js/hiyori-learning-adoption-candidates.js",
     "js/hiyori-adoption-proposals.js",
     "js/hiyori-proposal-approval.js",
-    "js/hiyori-compact-dashboard.js?v=20260725-compact4"
+    "js/hiyori-compact-dashboard.js?v=20260726-results2"
   ];
 
   function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||"null")??fallback}catch(_){return fallback}}

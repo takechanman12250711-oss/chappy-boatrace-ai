@@ -25,7 +25,7 @@
     return Array.isArray(value) ? value : [];
   }
 
-  function buildGroupSuggestions(category, groups) {
+  function buildGroupSuggestions(category, groups, sampleLabel) {
     return safeGroups(groups)
       .filter(group =>
         Number(group?.practicalCount || 0) >= MIN_GROUP_SAMPLE &&
@@ -39,11 +39,11 @@
           category,
           target: String(group?.label || "不明"),
           priority: hitRate < 20 ? "高" : "中",
-          evidence: `実戦厳選${group.practicalCount}R中${group.practicalHits}R的中（${hitRate}%）`,
+          evidence: `${sampleLabel}${group.practicalCount}R中${group.practicalHits}R的中（${hitRate}%）`,
           what: isVenue
             ? `${group.label}での補正条件を再検証する`
             : `${group.label}と判定した条件を再検証する`,
-          why: `最低${MIN_GROUP_SAMPLE}Rを超え、実戦厳選的中率が注意基準${LOW_HIT_RATE}%を下回っています。`,
+          why: `最低${MIN_GROUP_SAMPLE}Rを超え、${sampleLabel}の的中率が注意基準${LOW_HIT_RATE}%を下回っています。`,
           how: isVenue
             ? "展開→コース→ST・スリット→展示・足→残し・拾いの順を保ち、当地・水面補正が判定を押し上げ過ぎていないか対象レースを比較します。"
             : "予想した中心展開と実際の決まり手を照合し、展開判定の成立条件を1項目ずつ確認します。数字だけで買い目を追加・削除しません。",
@@ -74,7 +74,11 @@
     }
   };
 
-  function buildMissSuggestions(missTypeSummary, practicalCount) {
+  function buildMissSuggestions(
+    missTypeSummary,
+    practicalCount,
+    sampleLabel
+  ) {
     if (practicalCount < MIN_SETTLED_SAMPLE) return [];
 
     return safeGroups(missTypeSummary)
@@ -92,7 +96,7 @@
           category: "外れ方別",
           target: item.label,
           priority: item.percentage >= 60 ? "高" : "中",
-          evidence: `実戦厳選${practicalCount}R中${item.count}R（${item.percentage}%）`,
+          evidence: `${sampleLabel}${practicalCount}R中${item.count}R（${item.percentage}%）`,
           what: guidance.what,
           why: `この外れ方が${MISS_SHARE_ALERT}%以上を占め、同じ弱点が3R以上続いています。`,
           how: guidance.how,
@@ -105,10 +109,23 @@
   function buildImprovementSuggestions(input = {}) {
     const settledCount = Number(input.settledCount || 0);
     const practicalCount = Number(input.practicalCount || 0);
+    const sampleLabel = String(input.sampleLabel || "実戦厳選");
 
-    const venue = buildGroupSuggestions("場別", input.venueGroups);
-    const scenario = buildGroupSuggestions("展開別", input.scenarioGroups);
-    const miss = buildMissSuggestions(input.missTypeSummary, practicalCount);
+    const venue = buildGroupSuggestions(
+      "場別",
+      input.venueGroups,
+      sampleLabel
+    );
+    const scenario = buildGroupSuggestions(
+      "展開別",
+      input.scenarioGroups,
+      sampleLabel
+    );
+    const miss = buildMissSuggestions(
+      input.missTypeSummary,
+      practicalCount,
+      sampleLabel
+    );
     const suggestions = [...venue, ...scenario, ...miss]
       .sort((a, b) =>
         (a.priority === "高" ? 0 : 1) - (b.priority === "高" ? 0 : 1) ||

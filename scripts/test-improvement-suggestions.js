@@ -18,6 +18,7 @@ assert.equal(insufficient.axisStatus.venue, "蓄積中 2/30R");
 const result = buildImprovementSuggestions({
   settledCount: 30,
   practicalCount: 30,
+  sampleLabel: "シャドーを含む検証買い目",
   venueGroups: [
     { label: "常滑", practicalCount: 12, practicalHits: 2 },
     { label: "大村", practicalCount: 12, practicalHits: 10 }
@@ -40,6 +41,12 @@ assert.ok(result.suggestions.some(item => item.category === "展開別" && item.
 assert.ok(result.suggestions.some(item => item.category === "外れ方別" && item.target === "相手抜け"));
 assert.ok(result.suggestions.every(item => item.approvalRequired === true));
 assert.ok(result.suggestions.every(item => item.what && item.why && item.how && item.impact));
+assert.ok(
+  result.suggestions.every(item =>
+    item.evidence.startsWith("シャドーを含む検証買い目")
+  ),
+  "シャドー検証を実戦成績と誤表示しない"
+);
 assert.ok(!result.suggestions.some(item => item.target === "大村"));
 
 console.log("改善候補生成テスト: 合格");
