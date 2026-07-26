@@ -932,6 +932,25 @@
         weightedComponents.every(
           item => item.formal === true
         );
+      const logicFingerprintValue =
+        String(
+          logicFingerprint || ""
+        ).trim();
+      const referenceFingerprintValue =
+        String(
+          referenceDataFingerprint || ""
+        ).trim();
+      const fingerprintAvailable = value =>
+        Boolean(value) &&
+        value.toLowerCase() !==
+          "unavailable";
+      const versionIdentityComplete =
+        fingerprintAvailable(
+          logicFingerprintValue
+        ) &&
+        fingerprintAvailable(
+          referenceFingerprintValue
+        );
       const eligibilityReasons =
         weightedComponents
           .filter(item => item.formal !== true)
@@ -941,9 +960,42 @@
             expected: true,
             actual: item.formal
           }));
+      [
+        {
+          key: "logicFingerprint",
+          value: logicFingerprintValue,
+          label: "ロジック世代"
+        },
+        {
+          key: "referenceDataFingerprint",
+          value: referenceFingerprintValue,
+          label: "参照データ世代"
+        }
+      ].forEach(identity => {
+        if (
+          fingerprintAvailable(
+            identity.value
+          )
+        ) {
+          return;
+        }
+
+        eligibilityReasons.push({
+          code:
+            `version.${identity.key}.unknown`,
+          label:
+            `${identity.label}を識別できない`,
+          expected:
+            "stable_fingerprint",
+          actual:
+            identity.value || null
+        });
+      });
       const complete = missingReasons.length === 0;
       const calibrationEligible =
-        complete && allComponentsFormal;
+        complete &&
+        allComponentsFormal &&
+        versionIdentityComplete;
       const dataComplete = !missingReasons.some(
         reason => reason.code.startsWith("data.")
       );
@@ -963,9 +1015,10 @@
       );
       const versions = {
         sourceCommit: String(sourceCommit || ""),
-        logicFingerprint: String(logicFingerprint || ""),
+        logicFingerprint:
+          logicFingerprintValue,
         referenceDataFingerprint:
-          String(referenceDataFingerprint || ""),
+          referenceFingerprintValue,
         evaluator: VERSION,
         config: profile.id,
         configHash,
@@ -1029,7 +1082,8 @@
             weightedComponents.filter(
               item => item.formal === true
             ).length,
-          allComponentsFormal
+          allComponentsFormal,
+          versionIdentityComplete
         },
         missingReasonCodes:
           missingReasons.map(reason => reason.code),

@@ -586,6 +586,56 @@ assert.ok(
     .includes("component.course.provisional")
 );
 
+const unknownLogicGeneration =
+  buildRecord({
+    logicFingerprint:
+      "unavailable"
+  });
+assert.equal(
+  unknownLogicGeneration.complete,
+  true,
+  "世代不明でも診断用完全データは保存する"
+);
+assert.equal(
+  unknownLogicGeneration
+    .calibrationEligible,
+  false,
+  "世代不明レコードを校正母集団へ入れない"
+);
+assert.equal(
+  unknownLogicGeneration.status,
+  "provisional"
+);
+assert.equal(
+  unknownLogicGeneration.readiness
+    .versionIdentityComplete,
+  false
+);
+assert.ok(
+  unknownLogicGeneration
+    .eligibilityReasonCodes
+    .includes(
+      "version.logicFingerprint.unknown"
+    )
+);
+
+const unknownReferenceGeneration =
+  buildRecord({
+    referenceDataFingerprint: ""
+  });
+assert.equal(
+  unknownReferenceGeneration
+    .calibrationEligible,
+  false
+);
+assert.ok(
+  unknownReferenceGeneration
+    .eligibilityReasonCodes
+    .includes(
+      "version.referenceDataFingerprint.unknown"
+    )
+);
+
 const missingCoursePrediction = buildPrediction();
 missingCoursePrediction
   .aiCore
