@@ -3,6 +3,7 @@ name: Check Chappy AI Charter
 on:
   pull_request:
     paths:
+      - ".github/workflows/charter-check.yml"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
@@ -59,12 +60,16 @@ on:
       - "js/odds-insights.js"
       - "scripts/test-odds-insights.js"
       - "js/history-insights.js"
+      - "js/history-insights-base.js"
+      - "js/theory-input.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
+      - "tools/test-local-water-theory-v2.js"
   push:
     branches:
       - main
     paths:
+      - ".github/workflows/charter-check.yml"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
@@ -121,8 +126,11 @@ on:
       - "js/odds-insights.js"
       - "scripts/test-odds-insights.js"
       - "js/history-insights.js"
+      - "js/history-insights-base.js"
+      - "js/theory-input.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
+      - "tools/test-local-water-theory-v2.js"
   workflow_dispatch:
 
 permissions:
@@ -195,9 +203,12 @@ jobs:
           node --check js/odds-insights.js
           node --check scripts/test-odds-insights.js
           node --check js/history-insights.js
+          node --check js/history-insights-base.js
+          node --check js/theory-input.js
           node --check js/race-history.js
           node --check js/venue-race-analysis.js
           node --check scripts/test-history-insights.js
+          node --check tools/test-local-water-theory-v2.js
 
       - name: Enforce charter
         run: |
@@ -224,3 +235,4 @@ jobs:
           node scripts/test-missing-numbers.js
           node scripts/test-odds-insights.js
           node scripts/test-history-insights.js
+          node tools/test-local-water-theory-v2.js
