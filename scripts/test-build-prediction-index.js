@@ -55,7 +55,11 @@ try {
         components: [{
           key: "flow",
           score: 80,
-          formal: true
+          formal: true,
+          reasons: ["日次だけに保持"],
+          detail: {
+            oversized: true
+          }
         }]
       },
       versions: {
@@ -63,6 +67,11 @@ try {
       },
       snapshot: {
         boats: [{ boatNo: 1, avgST: 0.13 }]
+      },
+      predictionReference: {
+        practicalTickets: [{
+          ticket: "1-2-3"
+        }]
       }
     }]
   }));
@@ -97,8 +106,21 @@ try {
     61.2
   );
   assert.equal(
-    index.shadowV2Predictions[0].snapshot.boats[0].avgST,
-    0.13
+    index.shadowV2Predictions[0].snapshot,
+    undefined,
+    "完全スナップショットは日次JSONだけに保持する"
+  );
+  assert.equal(
+    index.shadowV2Predictions[0]
+      .predictionReference,
+    undefined
+  );
+  assert.equal(
+    index.shadowV2Predictions[0]
+      .evaluation.components[0]
+      .reasons,
+    undefined,
+    "集約indexはV2要約だけにする"
   );
 } finally {
   fs.rmSync(directory, { recursive: true, force: true });

@@ -9,6 +9,8 @@ const theoryInput = require(
 );
 const {
   MIN_SCORE,
+  loadOptionalV2Dependency,
+  safeFingerprintFiles,
   buildCollectionHealth,
   buildRecoveryPlan,
   insufficientReasons,
@@ -16,6 +18,7 @@ const {
   attachVenueRaceHistory,
   attachShadowReferenceHistory,
   safelyBuildShadowV2,
+  safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
   buildStoredPrediction,
@@ -179,6 +182,70 @@ assert.equal(isolatedFailure, null);
 assert.ok(
   isolatedWarning.includes("V2 test failure"),
   "V2障害を現行予想から分離して記録する"
+);
+
+let startupWarning = "";
+console.warn = message => {
+  startupWarning += String(message || "");
+};
+const optionalFallback =
+  loadOptionalV2Dependency(
+    () => {
+      throw new Error(
+        "optional module failure"
+      );
+    },
+    { ready: false },
+    "テスト"
+  );
+const unavailableFingerprint =
+  safeFingerprintFiles(
+    ["not-used"],
+    "テスト",
+    () => {
+      throw new Error(
+        "fingerprint failure"
+      );
+    }
+  );
+const existingShadow = [{
+  recordKey: "existing"
+}];
+const preservedShadow =
+  safelyUpsertShadowSnapshots(
+    existingShadow,
+    [{ recordKey: "incoming" }],
+    () => {
+      throw new Error(
+        "upsert failure"
+      );
+    }
+  );
+console.warn = originalWarn;
+assert.deepEqual(
+  optionalFallback,
+  { ready: false }
+);
+assert.equal(
+  unavailableFingerprint,
+  "unavailable"
+);
+assert.deepEqual(
+  preservedShadow,
+  existingShadow,
+  "V2保存統合障害時も既存データを維持する"
+);
+assert.ok(
+  startupWarning.includes(
+    "optional module failure"
+  ) &&
+    startupWarning.includes(
+      "fingerprint failure"
+    ) &&
+    startupWarning.includes(
+      "upsert failure"
+    ),
+  "V2起動・識別・保存の障害を診断できる"
 );
 
 function fakePrediction() {

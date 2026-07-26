@@ -5,6 +5,21 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
+function loadOptionalV2Dependency(
+  loader,
+  fallback,
+  label
+) {
+  try {
+    return loader();
+  } catch (error) {
+    console.warn(
+      `V2シャドー専用${label}読込失敗：${error?.message || error}`
+    );
+    return fallback;
+  }
+}
+
 const scheduleApi = require("../api/schedule");
 const raceApi = require("../api/race");
 
@@ -28,21 +43,40 @@ const officialHistoryStats = require(
 const racerVenueStarts = require(
   "../data/stats/racer-venue-starts.json"
 );
-const racerSkillStats = require(
-  "../data/stats/racer-skill-patterns.json"
-);
-const courseStructureStats = require(
-  "../data/stats/course-structure-patterns.json"
-);
+const racerSkillStats =
+  loadOptionalV2Dependency(
+    () => require(
+      "../data/stats/racer-skill-patterns.json"
+    ),
+    { racers: {} },
+    "選手履歴"
+  );
+const courseStructureStats =
+  loadOptionalV2Dependency(
+    () => require(
+      "../data/stats/course-structure-patterns.json"
+    ),
+    {
+      overall: null,
+      byVenue: {},
+      thresholds: null
+    },
+    "進入履歴"
+  );
 const historyInsights = require(
   "../js/history-insights"
 );
 const predictionConditions = require(
   "../js/prediction-conditions"
 );
-const shadowSelectionV2 = require(
-  "../js/shadow-selection-v2"
-);
+const shadowSelectionV2 =
+  loadOptionalV2Dependency(
+    () => require(
+      "../js/shadow-selection-v2"
+    ),
+    null,
+    "評価器"
+  );
 
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
@@ -63,7 +97,22 @@ function fingerprintFiles(relativePaths) {
   return hash.digest("hex").slice(0, 20);
 }
 
-const SHADOW_LOGIC_FINGERPRINT = fingerprintFiles([
+function safeFingerprintFiles(
+  relativePaths,
+  label,
+  fingerprinter = fingerprintFiles
+) {
+  try {
+    return fingerprinter(relativePaths);
+  } catch (error) {
+    console.warn(
+      `V2シャドー${label}識別失敗：${error?.message || error}`
+    );
+    return "unavailable";
+  }
+}
+
+const SHADOW_LOGIC_FINGERPRINT = safeFingerprintFiles([
   "scripts/collect-predictions.js",
   "config/chappy-charter.json",
   "api/schedule.js",
@@ -79,14 +128,14 @@ const SHADOW_LOGIC_FINGERPRINT = fingerprintFiles([
   "js/theory-input.js",
   "js/prediction-conditions.js",
   "js/shadow-selection-v2.js"
-]);
-const SHADOW_REFERENCE_DATA_FINGERPRINT = fingerprintFiles([
+], "ロジック");
+const SHADOW_REFERENCE_DATA_FINGERPRINT = safeFingerprintFiles([
   "data/stats/venue-race-patterns.json",
   "data/stats/race-patterns.json",
   "data/stats/racer-venue-starts.json",
   "data/stats/racer-skill-patterns.json",
   "data/stats/course-structure-patterns.json"
-]);
+], "参照データ");
 
 function predictionFilePath(date) {
   return path.join(process.cwd(), "data", "predictions", `${date}.json`);
@@ -724,15 +773,57 @@ function upsertByRaceKey(list, records) {
 
 function safelyBuildShadowV2(
   options,
-  builder = shadowSelectionV2.buildRecord
+  builder = null
 ) {
   try {
-    return builder(options);
+    const activeBuilder =
+      builder ||
+      shadowSelectionV2?.buildRecord;
+
+    if (
+      typeof activeBuilder !== "function"
+    ) {
+      return null;
+    }
+
+    return activeBuilder(options);
   } catch (error) {
     console.warn(
       `V2シャドー生成失敗：${error?.message || error}`
     );
     return null;
+  }
+}
+
+function safelyUpsertShadowSnapshots(
+  existing,
+  incoming,
+  upserter = null
+) {
+  try {
+    const activeUpserter =
+      upserter ||
+      shadowSelectionV2?.upsertSnapshots;
+
+    if (
+      typeof activeUpserter !== "function"
+    ) {
+      return Array.isArray(existing)
+        ? existing
+        : [];
+    }
+
+    return activeUpserter(
+      existing,
+      incoming
+    );
+  } catch (error) {
+    console.warn(
+      `V2シャドー保存統合失敗：${error?.message || error}`
+    );
+    return Array.isArray(existing)
+      ? existing
+      : [];
   }
 }
 
@@ -1037,7 +1128,7 @@ function saveRun(
     verificationPredictions
   ).map(compactStoredVerification);
   existing.shadowV2Predictions =
-    shadowSelectionV2.upsertSnapshots(
+    safelyUpsertShadowSnapshots(
       existing.shadowV2Predictions,
       shadowV2Predictions
     );
@@ -1207,10 +1298,13 @@ module.exports = {
   MIN_SCORE,
   SHADOW_LOGIC_FINGERPRINT,
   SHADOW_REFERENCE_DATA_FINGERPRINT,
+  loadOptionalV2Dependency,
   fingerprintFiles,
+  safeFingerprintFiles,
   attachVenueRaceHistory,
   attachShadowReferenceHistory,
   safelyBuildShadowV2,
+  safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
   upsertByRaceKey,

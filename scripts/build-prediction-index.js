@@ -5,7 +5,7 @@ const path = require("node:path");
 
 const DEFAULT_LIMIT = 500;
 const VERIFICATION_LIMIT = 1500;
-const SHADOW_V2_LIMIT = 2500;
+const SHADOW_V2_LIMIT = 1000;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -46,6 +46,113 @@ function compactIndexVerification(record) {
         : [],
       preRaceConditions: prediction.preRaceConditions || null
     }
+  };
+}
+
+function compactShadowV2(record) {
+  const evaluation =
+    record?.evaluation || {};
+
+  return {
+    schemaVersion:
+      Number(record?.schemaVersion || 0),
+    evaluatorVersion:
+      String(record?.evaluatorVersion || ""),
+    recordKey:
+      String(record?.recordKey || ""),
+    raceKey:
+      String(record?.raceKey || ""),
+    date:
+      String(record?.date || ""),
+    jcd:
+      String(record?.jcd || ""),
+    place:
+      String(record?.place || ""),
+    raceNo:
+      Number(record?.raceNo || 0),
+    verificationMode:
+      String(
+        record?.verificationMode ||
+        "shadow_v2"
+      ),
+    capturedAt:
+      String(record?.capturedAt || ""),
+    deadlineAt:
+      String(record?.deadlineAt || ""),
+    timing: record?.timing || null,
+    status:
+      String(record?.status || ""),
+    complete:
+      record?.complete === true,
+    calibrationEligible:
+      record?.calibrationEligible === true,
+    readiness: record?.readiness || null,
+    availability:
+      record?.availability || null,
+    missingReasonCodes:
+      Array.isArray(
+        record?.missingReasonCodes
+      )
+        ? record.missingReasonCodes
+        : [],
+    eligibilityReasonCodes:
+      Array.isArray(
+        record?.eligibilityReasonCodes
+      )
+        ? record.eligibilityReasonCodes
+        : [],
+    profile: record?.profile || null,
+    evaluation: {
+      totalScore:
+        evaluation?.totalScore ?? null,
+      priority:
+        Array.isArray(evaluation?.priority)
+          ? evaluation.priority
+          : [],
+      axisBoatNo:
+        Number(evaluation?.axisBoatNo || 0) ||
+        null,
+      scenario:
+        evaluation?.scenario || null,
+      components:
+        (
+          Array.isArray(
+            evaluation?.components
+          )
+            ? evaluation.components
+            : []
+        ).map(component => ({
+          key:
+            String(component?.key || ""),
+          label:
+            String(component?.label || ""),
+          score:
+            component?.score ?? null,
+          source:
+            String(component?.source || ""),
+          focusBoatNo:
+            Number(
+              component?.focusBoatNo || 0
+            ) || null,
+          focusBoatNos:
+            component?.focusBoatNos || null,
+          formal:
+            component?.formal === true,
+          weight:
+            Number(component?.weight || 0),
+          contribution:
+            component?.contribution ?? null
+        }))
+    },
+    versions: record?.versions || null,
+    cohortKey:
+      String(record?.cohortKey || ""),
+    selectionReference:
+      record?.selectionReference || null,
+    officialResultUsedForEvaluation:
+      record
+        ?.officialResultUsedForEvaluation ===
+      true
   };
 }
 
@@ -101,10 +208,12 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     (Array.isArray(data?.shadowV2Predictions)
       ? data.shadowV2Predictions
       : []).forEach(prediction => {
-      shadowV2Predictions.push({
+      shadowV2Predictions.push(
+        compactShadowV2({
         ...prediction,
         date: String(prediction?.date || date)
-      });
+        })
+      );
     });
   });
 
@@ -162,5 +271,6 @@ if (require.main === module) main();
 module.exports = {
   buildPredictionIndex,
   compactIndexVerification,
+  compactShadowV2,
   writePredictionIndex
 };
