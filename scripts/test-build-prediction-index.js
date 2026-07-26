@@ -43,12 +43,43 @@ try {
           preRaceConditions: { weather: { waveHeight: 2 } }
         }
       }
-    ]
+    ],
+    shadowV2Predictions: [{
+      recordKey: "20260722-12-1:logic-a:config-a",
+      raceKey: "20260722-12-1",
+      capturedAt: "2026-07-22T01:00:03Z",
+      complete: true,
+      calibrationEligible: true,
+      evaluation: {
+        totalScore: 61.2,
+        components: [{
+          key: "flow",
+          score: 80,
+          formal: true,
+          reasons: ["日次だけに保持"],
+          detail: {
+            oversized: true
+          }
+        }]
+      },
+      versions: {
+        logicFingerprint: "logic-a"
+      },
+      snapshot: {
+        boats: [{ boatNo: 1, avgST: 0.13 }]
+      },
+      predictionReference: {
+        practicalTickets: [{
+          ticket: "1-2-3"
+        }]
+      }
+    }]
   }));
   fs.writeFileSync(path.join(directory, "index.json"), "{}");
 
   const index = buildPredictionIndex(directory);
   assert.equal(index.sourceFileCount, 2);
+  assert.equal(index.schemaVersion, 3);
   assert.equal(index.runs.length, 2);
   assert.equal(index.runs[0].date, "20260722");
   assert.equal(index.runs[0].collectionHealth.savedCount, 1);
@@ -61,6 +92,36 @@ try {
   assert.equal(index.verificationPredictions[0].prediction.mainSheet.honmei.boatNo, 2);
   assert.equal(index.verificationPredictions[0].prediction.manshuSheet, undefined);
   assert.equal(index.verificationPredictions[0].prediction.mainSheet.tickets, undefined);
+  assert.equal(index.shadowV2Predictions.length, 1);
+  assert.equal(
+    index.shadowV2Predictions[0].recordKey,
+    "20260722-12-1:logic-a:config-a"
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].calibrationEligible,
+    true
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].evaluation.totalScore,
+    61.2
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].snapshot,
+    undefined,
+    "完全スナップショットは日次JSONだけに保持する"
+  );
+  assert.equal(
+    index.shadowV2Predictions[0]
+      .predictionReference,
+    undefined
+  );
+  assert.equal(
+    index.shadowV2Predictions[0]
+      .evaluation.components[0]
+      .reasons,
+    undefined,
+    "集約indexはV2要約だけにする"
+  );
 } finally {
   fs.rmSync(directory, { recursive: true, force: true });
 }

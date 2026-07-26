@@ -53,23 +53,63 @@
     ) || null;
   }
 
+  function findEntries(raceData) {
+    const keys = [
+      "entries",
+      "boats",
+      "racers",
+      "entry",
+      "raceEntries"
+    ];
+
+    for (const key of keys) {
+      if (Array.isArray(raceData?.[key])) {
+        return raceData[key];
+      }
+    }
+
+    return [];
+  }
+
   function getCurrentSt(entry) {
     const current = entry?.currentRace || entry?.currentSeries || entry?.series || {};
-    const source = current.stList || current.starts || current.startTimings || [];
+    const source =
+      current.stList ||
+      current.st ||
+      current.starts ||
+      current.startTimings ||
+      [];
     return average((Array.isArray(source) ? source : [source]).map(item =>
       item?.st ?? item?.startTime ?? item
     ));
   }
 
   function captureBoat(raceData, boatNo) {
-    const entry = findBoat(raceData?.entries, boatNo) || {};
+    const entry = findBoat(findEntries(raceData), boatNo) || {};
     const before = findBoat(raceData?.beforeInfo, boatNo) || {};
     const start = findBoat(raceData?.startExhibition, boatNo) || {};
     const exhibition = before?.exhibition || entry?.exhibition || {};
+    const registerNo = text(
+      entry?.registerNo ??
+      entry?.registrationNo ??
+      entry?.racerNo
+    );
+    const historyRacer = (
+      Array.isArray(raceData?.historyContext?.racers)
+        ? raceData.historyContext.racers
+        : []
+    ).find(
+      racer =>
+        registerNo &&
+        text(racer?.registerNo) === registerNo
+    ) || {};
 
     return {
       boatNo,
       course: numberOrNull(start?.course ?? entry?.course ?? boatNo) || boatNo,
+      courseOfficial: start?.isOfficialCourse === true,
+      courseMappingSource: text(start?.mappingSource),
+      registerNo,
       racerName: text(entry?.racerName || entry?.name || entry?.playerName),
       className: text(entry?.className || entry?.class || entry?.grade),
       avgST: numberOrNull(entry?.avgST ?? entry?.avgSt ?? entry?.averageST ?? entry?.st),
@@ -92,12 +132,26 @@
       nationalWinRate: numberOrNull(
         entry?.nationalWinRate ?? entry?.national?.winRate ?? entry?.national?.rate
       ),
+      national2Rate: numberOrNull(
+        entry?.national2Rate ?? entry?.national?.secondRate
+      ),
+      national3Rate: numberOrNull(
+        entry?.national3Rate ?? entry?.national?.thirdRate
+      ),
       motor2Rate: numberOrNull(
         entry?.motor2Rate ?? entry?.motor?.secondRate ?? entry?.motor?.quinellaRate
       ),
+      motor3Rate: numberOrNull(
+        entry?.motor3Rate ?? entry?.motor?.thirdRate ?? entry?.motor?.trioRate
+      ),
+      boat2Rate: numberOrNull(
+        entry?.boat2Rate ?? entry?.boat?.secondRate ?? entry?.boat?.quinellaRate
+      ),
       localStarts: numberOrNull(
         entry?.localStarts ?? entry?.localRaces ??
-        entry?.localRaceCount ?? entry?.local?.starts
+        entry?.localRaceCount ?? entry?.local?.starts ??
+        historyRacer?.localStarts ??
+        historyRacer?.currentVenueStarts
       )
     };
   }
@@ -174,16 +228,32 @@
     });
 
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       sourceTiming: "pre_deadline",
       officialResultUsed: false,
       boats,
       weather,
       dataAvailability: {
         entries: boats.filter(boat => boat.racerName || boat.className).length,
-        averageST: countAvailable(boats, ["avgST", "currentST"]),
+        officialCourses:
+          boats.filter(boat => boat.courseOfficial === true).length,
+        averageST: countAvailable(boats, ["avgST"]),
+        currentST: countAvailable(boats, ["currentST"]),
         exhibitionST: countAvailable(boats, ["exhibitionST"]),
-        exhibitionTime: countAvailable(boats, ["exhibitionTime", "lapTime"]),
+        exhibitionTime: countAvailable(boats, ["exhibitionTime"]),
+        lapTime: countAvailable(boats, ["lapTime"]),
+        skill:
+          boats.filter(boat =>
+            Boolean(boat.className) &&
+            boat.nationalWinRate !== null &&
+            boat.localWinRate !== null
+          ).length,
+        motor:
+          boats.filter(boat =>
+            boat.motor2Rate !== null &&
+            boat.motor3Rate !== null
+          ).length,
+        windDirection: Boolean(weather.windDirection),
         wind: weather.windSpeed !== null,
         wave: weather.waveHeight !== null,
         tide:

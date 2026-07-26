@@ -5,6 +5,7 @@ const path = require("node:path");
 
 const DEFAULT_LIMIT = 500;
 const VERIFICATION_LIMIT = 1500;
+const SHADOW_V2_LIMIT = 1000;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -48,6 +49,113 @@ function compactIndexVerification(record) {
   };
 }
 
+function compactShadowV2(record) {
+  const evaluation =
+    record?.evaluation || {};
+
+  return {
+    schemaVersion:
+      Number(record?.schemaVersion || 0),
+    evaluatorVersion:
+      String(record?.evaluatorVersion || ""),
+    recordKey:
+      String(record?.recordKey || ""),
+    raceKey:
+      String(record?.raceKey || ""),
+    date:
+      String(record?.date || ""),
+    jcd:
+      String(record?.jcd || ""),
+    place:
+      String(record?.place || ""),
+    raceNo:
+      Number(record?.raceNo || 0),
+    verificationMode:
+      String(
+        record?.verificationMode ||
+        "shadow_v2"
+      ),
+    capturedAt:
+      String(record?.capturedAt || ""),
+    deadlineAt:
+      String(record?.deadlineAt || ""),
+    timing: record?.timing || null,
+    status:
+      String(record?.status || ""),
+    complete:
+      record?.complete === true,
+    calibrationEligible:
+      record?.calibrationEligible === true,
+    readiness: record?.readiness || null,
+    availability:
+      record?.availability || null,
+    missingReasonCodes:
+      Array.isArray(
+        record?.missingReasonCodes
+      )
+        ? record.missingReasonCodes
+        : [],
+    eligibilityReasonCodes:
+      Array.isArray(
+        record?.eligibilityReasonCodes
+      )
+        ? record.eligibilityReasonCodes
+        : [],
+    profile: record?.profile || null,
+    evaluation: {
+      totalScore:
+        evaluation?.totalScore ?? null,
+      priority:
+        Array.isArray(evaluation?.priority)
+          ? evaluation.priority
+          : [],
+      axisBoatNo:
+        Number(evaluation?.axisBoatNo || 0) ||
+        null,
+      scenario:
+        evaluation?.scenario || null,
+      components:
+        (
+          Array.isArray(
+            evaluation?.components
+          )
+            ? evaluation.components
+            : []
+        ).map(component => ({
+          key:
+            String(component?.key || ""),
+          label:
+            String(component?.label || ""),
+          score:
+            component?.score ?? null,
+          source:
+            String(component?.source || ""),
+          focusBoatNo:
+            Number(
+              component?.focusBoatNo || 0
+            ) || null,
+          focusBoatNos:
+            component?.focusBoatNos || null,
+          formal:
+            component?.formal === true,
+          weight:
+            Number(component?.weight || 0),
+          contribution:
+            component?.contribution ?? null
+        }))
+    },
+    versions: record?.versions || null,
+    cohortKey:
+      String(record?.cohortKey || ""),
+    selectionReference:
+      record?.selectionReference || null,
+    officialResultUsedForEvaluation:
+      record
+        ?.officialResultUsedForEvaluation ===
+      true
+  };
+}
+
 function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
   const files = fs.existsSync(directory)
     ? fs.readdirSync(directory)
@@ -58,6 +166,7 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
   const runs = [];
   const predictions = [];
   const verificationPredictions = [];
+  const shadowV2Predictions = [];
 
   files.forEach(name => {
     const data = readJson(path.join(directory, name));
@@ -95,6 +204,17 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
         date: String(prediction?.date || date)
       }));
     });
+
+    (Array.isArray(data?.shadowV2Predictions)
+      ? data.shadowV2Predictions
+      : []).forEach(prediction => {
+      shadowV2Predictions.push(
+        compactShadowV2({
+        ...prediction,
+        date: String(prediction?.date || date)
+        })
+      );
+    });
   });
 
   runs.sort((a, b) => String(b?.checkedAt || "").localeCompare(String(a?.checkedAt || "")));
@@ -102,9 +222,12 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
   verificationPredictions.sort((a, b) =>
     String(b?.selectedAt || "").localeCompare(String(a?.selectedAt || ""))
   );
+  shadowV2Predictions.sort((a, b) =>
+    String(b?.capturedAt || "").localeCompare(String(a?.capturedAt || ""))
+  );
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedAt: new Date().toISOString(),
     sourceFileCount: files.length,
     runs: runs.slice(0, limit),
@@ -112,7 +235,12 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     verificationPredictions: verificationPredictions.slice(
       0,
       Math.max(limit, VERIFICATION_LIMIT)
-    )
+    ),
+    shadowV2Predictions:
+      shadowV2Predictions.slice(
+        0,
+        Math.max(limit, SHADOW_V2_LIMIT)
+      )
   };
 }
 
@@ -133,7 +261,8 @@ function main() {
   const outputPath = path.join(directory, "index.json");
   const index = writePredictionIndex(directory, outputPath);
   console.log(
-    `自動予想索引を更新：採用${index.predictions.length}件／検証${index.verificationPredictions.length}件／実行${index.runs.length}件`
+    `自動予想索引を更新：採用${index.predictions.length}件／検証${index.verificationPredictions.length}件／` +
+    `V2シャドー${index.shadowV2Predictions.length}件／実行${index.runs.length}件`
   );
 }
 
@@ -142,5 +271,6 @@ if (require.main === module) main();
 module.exports = {
   buildPredictionIndex,
   compactIndexVerification,
+  compactShadowV2,
   writePredictionIndex
 };

@@ -34,6 +34,7 @@ module.exports = async function handler(req, res) {
 
     const entryHtml = await entryRes.text();
     const beforeHtml = beforeRes.ok ? await beforeRes.text() : "";
+    const fetchedAt = new Date().toISOString();
 
     const parsed =
   parseOfficialRaceHtml(
@@ -47,6 +48,7 @@ module.exports = async function handler(req, res) {
       stadiumCode: String(jcd),
       raceNo: Number(rno),
       date: String(date),
+      fetchedAt,
       entryUrl,
       beforeInfoUrl,
       ...parsed

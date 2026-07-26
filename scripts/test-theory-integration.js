@@ -16,6 +16,12 @@ require("../js/motor-maintenance-insights");
 const theoryInput = require(
   "../js/theory-input"
 );
+const predictionConditions = require(
+  "../js/prediction-conditions"
+);
+const shadowSelectionV2 = require(
+  "../js/shadow-selection-v2"
+);
 require("../js/prediction");
 require("../js/practical-selection");
 require("../js/note-generator");
@@ -395,6 +401,72 @@ assert.equal(
   predictionWithOdds
     .aiTicketList.length,
   "複数分類に入る同一買い目は一覧で重複させない"
+);
+
+const integratedPrediction =
+  global.createPrediction(appInput);
+const integratedPracticalTickets =
+  global.ChappyNoteGenerator
+    .createPracticalSelection(
+      integratedPrediction
+    );
+const integratedShadow =
+  shadowSelectionV2.buildRecord({
+    raceKey: "20260724-24-8",
+    date: "20260724",
+    jcd: "24",
+    place: "大村",
+    raceNo: 8,
+    deadlineAt:
+      "2026-07-24T10:02:00.000Z",
+    capturedAt:
+      "2026-07-24T10:00:00.000Z",
+    logicFingerprint: "integration-test",
+    referenceDataFingerprint: "stats-test",
+    theoryInputVersion:
+      theoryInput.VERSION,
+    selection: {
+      type: "本線",
+      score: 45,
+      threshold: 70,
+      qualified: false
+    },
+    preRaceConditions:
+      predictionConditions.capture(
+        rawRaceData,
+        integratedPrediction
+      ),
+    preparedRaceData: appInput,
+    practicalTickets:
+      integratedPracticalTickets,
+    prediction: integratedPrediction,
+    coreApi: global.ChappyAICore
+  });
+
+assert.equal(
+  integratedShadow.evaluation.components.length,
+  8,
+  "実際の予想出力からV2の8項目を作る"
+);
+assert.ok(
+  integratedShadow.evaluation.components.every(
+    item => item.score !== null
+  ),
+  "実際の予想出力で8項目を数値保存する"
+);
+assert.equal(
+  integratedShadow.selectionReference.threshold,
+  70,
+  "V2作成後も現行70点基準を参照値として保持する"
+);
+assert.equal(
+  integratedShadow.snapshot.boats[0].localWinRate,
+  rawRaceData.entries[0].localWinRate,
+  "V2スナップショットへ理論補正前の公式値を保存する"
+);
+assert.equal(
+  integratedShadow.officialResultUsedForEvaluation,
+  false
 );
 
 console.log(

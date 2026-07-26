@@ -99,6 +99,80 @@ assert(
     exhibitionPerformance.mayAdjustRolesOrFinishingCandidatesSeparately === false,
   "展示ST・ダブルタイム・新サムの二重加点防止が無効です"
 );
+
+const shadowV2 = charter.shadowSelectionV2 || {};
+const expectedNormalWeights = {
+  flow: 30,
+  course: 20,
+  stSlit: 15,
+  exhibition: 12,
+  holdPickup: 9,
+  localWater: 7,
+  skill: 4,
+  motor: 3
+};
+const expectedNewEngineWeights = {
+  flow: 30,
+  course: 20,
+  stSlit: 16,
+  exhibition: 14,
+  holdPickup: 9,
+  localWater: 7,
+  skill: 3,
+  motor: 1
+};
+assert(
+  shadowV2.enabled === true &&
+    shadowV2.mode === "shadow_only" &&
+    shadowV2.cutoffSeconds === 120,
+  "自動選定V2は締切2分前までのシャドー専用でなければなりません"
+);
+assert(
+  shadowV2.doesNotAffectLegacySelection === true &&
+    shadowV2.doesNotAffectTickets === true &&
+    shadowV2.doesNotAffectNotePublication === true,
+  "自動選定V2が現行選定・買い目・noteへ接続されています"
+);
+assert(
+  shadowV2.oddsUsedForScore === false &&
+    shadowV2.officialResultUsedForScore === false,
+  "自動選定V2の採点へオッズまたは公式結果を混在できる設定です"
+);
+assert(
+  JSON.stringify(shadowV2.priority) ===
+    JSON.stringify(expectedPriority),
+  "自動選定V2の8項目順が憲章と一致しません"
+);
+assert(
+  JSON.stringify(shadowV2.weights?.normal) ===
+    JSON.stringify(expectedNormalWeights) &&
+    JSON.stringify(shadowV2.weights?.newEngine) ===
+    JSON.stringify(expectedNewEngineWeights),
+  "自動選定V2の通常・新エンジン配点が承認値と一致しません"
+);
+assert(
+  Object.values(shadowV2.weights?.normal || {})
+    .reduce((sum, value) => sum + value, 0) === 100 &&
+    Object.values(shadowV2.weights?.newEngine || {})
+      .reduce((sum, value) => sum + value, 0) === 100,
+  "自動選定V2の配点合計が100ではありません"
+);
+assert(
+  [
+    "entries",
+    "officialCourses",
+    "averageST",
+    "exhibitionST",
+    "exhibitionTime",
+    "skill",
+    "motor"
+  ].every(key => shadowV2.requiredData?.[key] === 6) &&
+    shadowV2.requiredData?.windDirection === true &&
+    shadowV2.requiredData?.windSpeed === true &&
+    shadowV2.requiredData?.waveHeight === true &&
+    shadowV2.requiredData?.liveTideWhenTidal === true,
+  "自動選定V2の完全データ条件が不足しています"
+);
 assert(
   includesAll(charter.newEngine?.keywords || [], [
     "新エンジン",
@@ -130,6 +204,8 @@ const index = read("index.html");
 const style = read("style.css");
 const noteGenerator = read("js/note-generator.js");
 const practicalSelection = read("js/practical-selection.js");
+const shadowSelectionV2 = read("js/shadow-selection-v2.js");
+const collectPredictions = read("scripts/collect-predictions.js");
 
 const newEngineWeightMatch = aiCore.match(
   /const NEW_ENGINE_WEIGHTS\s*=\s*\{([\s\S]*?)\};/
@@ -213,6 +289,12 @@ assert(
       "all:\n          compatibleAiTicketList"
     ),
   "全表示が最新AIコアの共通買い目を使用していません"
+);
+assert(
+  collectPredictions.includes("const MIN_SCORE = 70;") &&
+    collectPredictions.includes("shadowV2Predictions") &&
+    shadowSelectionV2.includes("現行の予想・買い目・70点基準には接続しない"),
+  "現行70点判定と自動選定V2の分離が固定されていません"
 );
 
 if (failures.length) {
