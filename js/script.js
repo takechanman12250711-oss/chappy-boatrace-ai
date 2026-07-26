@@ -311,7 +311,7 @@
     jcd = ""
   ) {
     let url =
-      `/api/schedule` +
+      `https://chappy-boatrace-api.vercel.app/api/schedule` +
       `?date=${encodeURIComponent(
         date
       )}`;
@@ -2338,7 +2338,7 @@
     params
   ) {
     const url =
-      `/api/result` +
+      `https://chappy-boatrace-api.vercel.app/api/result` +
       `?date=${encodeURIComponent(
         params.date
       )}` +
@@ -2845,7 +2845,7 @@
     }
 
     const url =
-      `/api/race?jcd=${encodeURIComponent(params.jcd)}` +
+      `https://chappy-boatrace-api.vercel.app/api/race?jcd=${encodeURIComponent(params.jcd)}` +
       `&rno=${encodeURIComponent(params.rno)}` +
       `&date=${encodeURIComponent(params.date)}`;
 
@@ -3246,7 +3246,7 @@
   ) {
     try {
       const url =
-        `/api/missing` +
+        `https://chappy-boatrace-api.vercel.app/api/missing` +
         `?jcd=${encodeURIComponent(params.jcd)}` +
         `&rno=${encodeURIComponent(params.rno)}`;
 
@@ -3416,7 +3416,7 @@
     const params = getRaceParams();
 
     const url =
-      `/api/odds` +
+      `https://chappy-boatrace-api.vercel.app/api/odds` +
       `?jcd=${encodeURIComponent(params.jcd)}` +
       `&rno=${encodeURIComponent(params.rno)}` +
       `&date=${encodeURIComponent(params.date)}`;

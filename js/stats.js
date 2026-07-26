@@ -210,7 +210,7 @@
     target
   ) {
     const url =
-      `/api/result` +
+      `https://chappy-boatrace-api.vercel.app/api/result` +
       `?date=${encodeURIComponent(
         target.date
       )}` +

@@ -6,7 +6,7 @@
 (function () {
   "use strict";
 
-  const API_BASE = "https://chappy-boatrace-ai.vercel.app";
+  const API_BASE = "https://chappy-boatrace-api.vercel.app";
 
   async function fetchRace(params) {
     const jcd = params?.jcd;
