@@ -457,7 +457,7 @@ assert.ok(
 assert.equal(
   integratedShadow.selectionReference.threshold,
   70,
-  "V2作成後も現行70点基準を参照値として保持する"
+  "V2自動選定と同じ70点基準を監査参照として保持する"
 );
 assert.equal(
   integratedShadow.snapshot.boats[0].localWinRate,

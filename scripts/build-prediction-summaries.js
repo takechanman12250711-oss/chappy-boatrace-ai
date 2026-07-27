@@ -27,6 +27,17 @@ function compactCompared(item) {
     deadlineAt: String(item?.deadlineAt || ""),
     type: String(item?.type || ""),
     score: Number(item?.score || 0),
+    scoreSource: String(item?.scoreSource || ""),
+    scenarioLabel: String(item?.scenarioLabel || ""),
+    selectionReady:
+      item?.selectionReady === true,
+    selectionStatus: String(
+      item?.selectionStatus || ""
+    ),
+    legacyType: String(item?.legacyType || ""),
+    legacyScore: Number(
+      item?.legacyScore || 0
+    ),
     historySupport: Number(item?.historySupport || 0),
     evaluation: compactEvaluation(item?.evaluation)
   };

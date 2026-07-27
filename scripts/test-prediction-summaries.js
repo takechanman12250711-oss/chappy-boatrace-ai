@@ -23,8 +23,15 @@ const summary = buildPredictionSummary({
         jcd: "12",
         place: "住之江",
         raceNo: 11,
-        type: "本線",
+        type: "8項目V2",
         score: 72.5,
+        scoreSource:
+          "shadowSelectionV2.evaluation.totalScore",
+        scenarioLabel: "2コース差し",
+        selectionReady: true,
+        selectionStatus: "ready",
+        legacyType: "本線",
+        legacyScore: 59.3,
         evaluation: {
           ready: true,
           honmei: {
@@ -67,6 +74,22 @@ assert.equal(summary.schemaVersion, 1);
 assert.equal(summary.runs.length, 1);
 assert.equal(summary.runs[0].checkedAt, "2026-07-27T08:00:00.000Z");
 assert.equal(summary.runs[0].best.score, 72.5);
+assert.equal(
+  summary.runs[0].best.scoreSource,
+  "shadowSelectionV2.evaluation.totalScore"
+);
+assert.equal(
+  summary.runs[0].best.scenarioLabel,
+  "2コース差し"
+);
+assert.equal(
+  summary.runs[0].best.selectionReady,
+  true
+);
+assert.equal(
+  summary.runs[0].best.legacyScore,
+  59.3
+);
 assert.equal(summary.runs[0].compared.length, 2);
 assert.equal(summary.predictions.length, 1);
 assert.equal(summary.predictions[0].prediction.practicalTickets.length, 7);
