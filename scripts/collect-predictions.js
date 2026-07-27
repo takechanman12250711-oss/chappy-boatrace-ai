@@ -857,9 +857,86 @@ function selectedRaceKeyFor(
   date,
   best
 ) {
-  return Number(best?.score || 0) >= MIN_SCORE
-    ? `${date}-${best.jcd}-${best.raceNo}`
-    : "";
+  const selection = best?.selection || null;
+  const ready = selection
+    ? selection.ready === true
+    : best?.selectionReady === true;
+  const rawScore = selection
+    ? selection.score
+    : best?.score;
+  const score =
+    rawScore === null ||
+    rawScore === undefined ||
+    rawScore === ""
+      ? Number.NaN
+      : Number(rawScore);
+
+  if (
+    !ready ||
+    !Number.isFinite(score) ||
+    score < MIN_SCORE
+  ) {
+    return "";
+  }
+
+  return (
+    String(best?.raceKey || "") ||
+    `${date}-${best.jcd}-${best.raceNo}`
+  );
+}
+
+function buildActiveV2Selection(
+  shadowV2,
+  legacySelection,
+  selected = false
+) {
+  const rawScore =
+    shadowV2?.evaluation?.totalScore;
+  const score =
+    rawScore === null ||
+    rawScore === undefined ||
+    rawScore === ""
+      ? null
+      : Number(rawScore);
+  const ready =
+    shadowV2?.calibrationEligible === true &&
+    Number.isFinite(score);
+  const qualified =
+    ready &&
+    score >= MIN_SCORE;
+
+  return {
+    evaluator: "shadow-selection-v2",
+    label: "8項目V2",
+    type: "8項目V2",
+    scenarioLabel: String(
+      shadowV2?.evaluation?.scenario?.label ||
+      ""
+    ),
+    score: ready ? score : null,
+    threshold: MIN_SCORE,
+    ready,
+    qualified,
+    selected:
+      selected === true &&
+      qualified,
+    status:
+      ready
+        ? "ready"
+        : String(
+            shadowV2?.status ||
+            "unavailable"
+          ),
+    eligibilityReasonCodes:
+      Array.isArray(
+        shadowV2?.eligibilityReasonCodes
+      )
+        ? shadowV2.eligibilityReasonCodes
+        : [],
+    legacy: {
+      ...legacySelection
+    }
+  };
 }
 
 function buildStoredPrediction(
@@ -898,12 +975,13 @@ function buildStoredPrediction(
     capturedConditions.legacy;
   const shadowPreRaceConditions =
     capturedConditions.shadow;
-  const selection = {
+  const legacySelection = {
     type: item.type,
     score: item.score,
     threshold: MIN_SCORE,
     qualified: item.score >= MIN_SCORE,
-    selected,
+    selected: false,
+    usedForAutomaticSelection: false,
     evaluation: compactEvaluation(item.evaluation)
   };
   const shadowV2 = safelyBuildShadowV2({
@@ -921,7 +999,7 @@ function buildStoredPrediction(
     referenceGenerationId:
       SHADOW_REFERENCE_GENERATION_ID,
     theoryInputVersion: theoryInput.VERSION || "",
-    selection,
+    selection: legacySelection,
     preRaceConditions: shadowPreRaceConditions,
     preparedRaceData:
       item.shadowRaceData ||
@@ -932,6 +1010,16 @@ function buildStoredPrediction(
       dependencies.coreApi ||
       global.ChappyAICore
   }, dependencies.shadowBuilder);
+  const selection =
+    buildActiveV2Selection(
+      shadowV2,
+      legacySelection,
+      selected
+    );
+  prediction.predictionMode =
+    selection.selected
+      ? "server_pre_deadline"
+      : "server_pre_deadline_shadow";
 
   return {
     raceKey,
@@ -941,8 +1029,14 @@ function buildStoredPrediction(
     raceNo: item.raceNo,
     deadlineAt: item.deadlineAt,
     selectedAt: capturedAt,
-    verificationMode: selected ? "selected" : "shadow",
-    scoreBand: item.score >= MIN_SCORE ? "70_plus" : "under_70",
+    verificationMode:
+      selection.selected
+        ? "selected"
+        : "shadow",
+    scoreBand:
+      selection.qualified
+        ? "70_plus"
+        : "under_70",
     selection,
     shadowV2,
     prediction: compactVerificationPayload(
@@ -968,6 +1062,129 @@ function buildVerificationPredictions(date, comparison, selectedRaceKey = "") {
   });
 
   return records;
+}
+
+function buildActiveV2Comparison(
+  date,
+  comparison,
+  records
+) {
+  const recordByRaceKey = new Map(
+    (Array.isArray(records) ? records : [])
+      .map(record => [
+        String(record?.raceKey || ""),
+        record
+      ])
+      .filter(([raceKey]) => raceKey)
+  );
+
+  return (
+    Array.isArray(comparison)
+      ? comparison
+      : []
+  )
+    .map(item => {
+      const raceKey =
+        `${date}-${item.jcd}-${item.raceNo}`;
+      const record =
+        recordByRaceKey.get(raceKey) ||
+        null;
+      const selection =
+        record?.selection ||
+        null;
+
+      return {
+        ...item,
+        raceKey,
+        type: "8項目V2",
+        scenarioLabel:
+          String(
+            selection?.scenarioLabel ||
+            ""
+          ),
+        score:
+          selection?.ready === true
+            ? selection.score
+            : null,
+        scoreSource:
+          "shadowSelectionV2.evaluation.totalScore",
+        selectionReady:
+          selection?.ready === true,
+        selectionStatus:
+          String(
+            selection?.status ||
+            "unavailable"
+          ),
+        legacyType:
+          String(item?.type || ""),
+        legacyScore:
+          Number(item?.score || 0)
+      };
+    })
+    .sort((a, b) => {
+      if (
+        a.selectionReady !==
+        b.selectionReady
+      ) {
+        return a.selectionReady
+          ? -1
+          : 1;
+      }
+
+      if (
+        a.selectionReady &&
+        b.selectionReady
+      ) {
+        const scoreDifference =
+          Number(b.score) -
+          Number(a.score);
+        if (scoreDifference) {
+          return scoreDifference;
+        }
+      }
+
+      return String(a.raceKey)
+        .localeCompare(
+          String(b.raceKey)
+        );
+    });
+}
+
+function applySelectedRaceKey(
+  records,
+  selectedRaceKey
+) {
+  return (
+    Array.isArray(records)
+      ? records
+      : []
+  ).map(record => {
+    const selected =
+      Boolean(selectedRaceKey) &&
+      record?.raceKey ===
+        selectedRaceKey &&
+      record?.selection?.qualified ===
+        true;
+
+    return {
+      ...record,
+      verificationMode:
+        selected
+          ? "selected"
+          : "shadow",
+      selection: {
+        ...(record?.selection || {}),
+        selected
+      },
+      prediction: {
+        ...(record?.prediction || {}),
+        predictionMode:
+          selected
+            ? "server_pre_deadline"
+            : "server_pre_deadline_shadow"
+      }
+    };
+  });
 }
 
 function buildCollectionHealth(
@@ -1089,6 +1306,22 @@ function saveRun(
           deadlineAt: best.deadlineAt,
           type: best.type,
           score: best.score,
+          scoreSource:
+            best.scoreSource ||
+            "",
+          scenarioLabel:
+            best.scenarioLabel ||
+            "",
+          selectionReady:
+            best.selectionReady === true,
+          selectionStatus:
+            best.selectionStatus ||
+            "",
+          legacyType:
+            best.legacyType ||
+            "",
+          legacyScore:
+            Number(best.legacyScore || 0),
           historySupport:
             best.historySupport || 0,
           historyTrend:
@@ -1102,6 +1335,22 @@ function saveRun(
       raceNo: item.raceNo,
       type: item.type,
       score: item.score,
+      scoreSource:
+        item.scoreSource ||
+        "",
+      scenarioLabel:
+        item.scenarioLabel ||
+        "",
+      selectionReady:
+        item.selectionReady === true,
+      selectionStatus:
+        item.selectionStatus ||
+        "",
+      legacyType:
+        item.legacyType ||
+        "",
+      legacyScore:
+        Number(item.legacyScore || 0),
       historySupport:
         item.historySupport || 0,
       historyTrend:
@@ -1165,10 +1414,10 @@ async function main() {
 
   console.log(`${date}の締切前${targets.length}場を比較します`);
   const evaluationResult = await evaluateTargets(date, targets);
-  const comparison = evaluationResult.comparison;
-  const best = comparison[0] || null;
+  const legacyComparison =
+    evaluationResult.comparison;
 
-  if (!best) {
+  if (!legacyComparison.length) {
     console.log("比較に必要なデータが不足しています");
     const collectionHealth = buildCollectionHealth(
       date,
@@ -1181,7 +1430,7 @@ async function main() {
     if (!dryRun) {
       saveRun(
         date,
-        comparison,
+        [],
         null,
         [],
         [],
@@ -1191,16 +1440,33 @@ async function main() {
     return;
   }
 
+  const provisionalPredictions =
+    buildVerificationPredictions(
+      date,
+      legacyComparison
+    );
+  const comparison =
+    buildActiveV2Comparison(
+      date,
+      legacyComparison,
+      provisionalPredictions
+    );
+  const best =
+    comparison.find(
+      item =>
+        item.selectionReady === true
+    ) ||
+    null;
   const selectedRaceKey =
     selectedRaceKeyFor(
       date,
       best
     );
-  const builtVerificationPredictions = buildVerificationPredictions(
-    date,
-    comparison,
-    selectedRaceKey
-  );
+  const builtVerificationPredictions =
+    applySelectedRaceKey(
+      provisionalPredictions,
+      selectedRaceKey
+    );
   const shadowV2Predictions =
     builtVerificationPredictions
       .map(item => item?.shadowV2)
@@ -1265,19 +1531,25 @@ async function main() {
     `検証保存：${verificationPredictions.length}R（70点以上${verificationPredictions.filter(item => item.scoreBand === "70_plus").length}R／70点未満${verificationPredictions.filter(item => item.scoreBand === "under_70").length}R）`
   );
   console.log(
-    `V2校正対象：${shadowV2Predictions.filter(item => item.calibrationEligible).length}/${shadowV2Predictions.length}R` +
-    `（完全データ${shadowV2Predictions.filter(item => item.complete).length}R・シャドー専用）`
+    `V2自動選定対象：${shadowV2Predictions.filter(item => item.calibrationEligible).length}/${shadowV2Predictions.length}R` +
+    `（完全データ${shadowV2Predictions.filter(item => item.complete).length}R・基準${MIN_SCORE}点）`
   );
 
   if (!selectedData) {
-    console.log(
-      `見送り：最高${Math.round(best.score)}点／基準${MIN_SCORE}点`
-    );
+    if (best) {
+      console.log(
+        `見送り：V2最高${Math.round(best.score)}点／基準${MIN_SCORE}点`
+      );
+    } else {
+      console.log(
+        "見送り：8項目V2の完全データがありません"
+      );
+    }
     return;
   }
 
   console.log(
-    `自動選定：${best.place || best.jcd} ${best.raceNo}R（${best.type}${Math.round(best.score)}点）`
+    `自動選定：${best.place || best.jcd} ${best.raceNo}R（${best.scenarioLabel || best.type}・V2 ${Math.round(best.score)}点）`
   );
   console.log(`実戦厳選：${selectedData.prediction.practicalTickets.length}点`);
   console.log(
@@ -1308,6 +1580,9 @@ module.exports = {
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
+  buildActiveV2Selection,
+  buildActiveV2Comparison,
+  applySelectedRaceKey,
   upsertByRaceKey,
   compactStoredVerification,
   buildCollectionHealth,

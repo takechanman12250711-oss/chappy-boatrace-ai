@@ -123,15 +123,26 @@ const expectedNewEngineWeights = {
 };
 assert(
   shadowV2.enabled === true &&
-    shadowV2.mode === "shadow_only" &&
+    shadowV2.mode === "active_selection" &&
     shadowV2.cutoffSeconds === 120,
-  "自動選定V2は締切2分前までのシャドー専用でなければなりません"
+  "自動選定V2は締切2分前までの完全データで稼働しなければなりません"
 );
 assert(
-  shadowV2.doesNotAffectLegacySelection === true &&
-    shadowV2.doesNotAffectTickets === true &&
-    shadowV2.doesNotAffectNotePublication === true,
-  "自動選定V2が現行選定・買い目・noteへ接続されています"
+  shadowV2.drivesAutomaticSelection === true &&
+    shadowV2.selectionScoreSource ===
+      "shadowSelectionV2.evaluation.totalScore" &&
+    shadowV2.selectionThreshold === 70 &&
+    shadowV2.requiresCalibrationEligible === true &&
+    shadowV2.legacyEvaluationUsage === "audit_only" &&
+    shadowV2.onV2Unavailable ===
+      "skip_without_legacy_fallback",
+  "自動選定V2と70点判定の接続条件が固定されていません"
+);
+assert(
+  shadowV2.doesNotAffectTicketComposition === true &&
+    shadowV2.doesNotAffectNoteContentRules === true &&
+    shadowV2.doesNotPublishNoteAutomatically === true,
+  "自動選定V2が買い目構成またはnote内容・公開規則を変更しています"
 );
 assert(
   shadowV2.oddsUsedForScore === false &&
@@ -293,8 +304,12 @@ assert(
 assert(
   collectPredictions.includes("const MIN_SCORE = 70;") &&
     collectPredictions.includes("shadowV2Predictions") &&
-    shadowSelectionV2.includes("現行の予想・買い目・70点基準には接続しない"),
-  "現行70点判定と自動選定V2の分離が固定されていません"
+    collectPredictions.includes("buildActiveV2Comparison") &&
+    collectPredictions.includes("calibrationEligible === true") &&
+    shadowSelectionV2.includes(
+      "校正対象として成立した総合点だけを70点の自動選定へ使う"
+    ),
+  "自動選定V2の有効スコアと70点判定の接続が固定されていません"
 );
 
 if (failures.length) {

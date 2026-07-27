@@ -21,6 +21,8 @@ const {
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
+  buildActiveV2Comparison,
+  applySelectedRaceKey,
   buildStoredPrediction,
   upsertByRaceKey,
   saveRun
@@ -310,8 +312,14 @@ const highShadowRecord =
       },
       shadowBuilder() {
         return {
+          status: "ready",
+          complete: true,
+          calibrationEligible: true,
           evaluation: {
-            totalScore: 100
+            totalScore: 100,
+            scenario: {
+              label: "2コース差し"
+            }
           }
         };
       },
@@ -321,14 +329,23 @@ const highShadowRecord =
 assert.equal(
   selectedRaceKeyFor(
     "20260726",
-    legacyItem
+    highShadowRecord
   ),
-  "",
-  "V2が100点でも現行69.9点は選定しない"
+  "20260726-12-8",
+  "旧評価69.9点でもV2が100点なら選定する"
 );
 assert.equal(
   highShadowRecord.scoreBand,
-  "under_70"
+  "70_plus"
+);
+assert.equal(
+  highShadowRecord.selection.score,
+  100
+);
+assert.equal(
+  highShadowRecord.selection.legacy.score,
+  69.9,
+  "旧評価は監査用に保持する"
 );
 assert.equal(
   highShadowRecord.selection.selected,
@@ -342,7 +359,8 @@ assert.deepEqual(
 
 const thresholdItem = {
   ...legacyItem,
-  score: 70
+  raceNo: 9,
+  score: 99
 };
 const lowShadowRecord =
   buildStoredPrediction(
@@ -357,6 +375,9 @@ const lowShadowRecord =
       },
       shadowBuilder() {
         return {
+          status: "ready",
+          complete: true,
+          calibrationEligible: true,
           evaluation: {
             totalScore: 1
           }
@@ -368,18 +389,114 @@ const lowShadowRecord =
 assert.equal(
   selectedRaceKeyFor(
     "20260726",
-    thresholdItem
+    lowShadowRecord
   ),
-  "20260726-12-8",
-  "V2が低得点でも現行70点は選定する"
+  "",
+  "旧評価99点でもV2が1点なら選定しない"
 );
 assert.equal(
   lowShadowRecord.scoreBand,
-  "70_plus"
+  "under_70"
 );
 assert.equal(
   lowShadowRecord.selection.selected,
+  false
+);
+
+const activeComparison =
+  buildActiveV2Comparison(
+    "20260726",
+    [
+      thresholdItem,
+      legacyItem
+    ],
+    [
+      lowShadowRecord,
+      highShadowRecord
+    ]
+  );
+assert.equal(
+  activeComparison[0].raceKey,
+  "20260726-12-8",
+  "旧評価順ではなくV2総合点で並べる"
+);
+assert.equal(
+  activeComparison[0].score,
+  100
+);
+assert.equal(
+  activeComparison[0].legacyScore,
+  69.9
+);
+assert.equal(
+  activeComparison[0].type,
+  "8項目V2"
+);
+assert.equal(
+  activeComparison[0].scenarioLabel,
+  "2コース差し"
+);
+
+const markedRecords =
+  applySelectedRaceKey(
+    [
+      lowShadowRecord,
+      highShadowRecord
+    ],
+    "20260726-12-8"
+  );
+assert.equal(
+  markedRecords.find(
+    item =>
+      item.raceKey ===
+      "20260726-12-8"
+  ).selection.selected,
   true
+);
+assert.equal(
+  markedRecords.find(
+    item =>
+      item.raceKey ===
+      "20260726-12-9"
+  ).selection.selected,
+  false
+);
+
+const unavailableV2 =
+  buildStoredPrediction(
+    "20260726",
+    {
+      ...legacyItem,
+      raceNo: 10,
+      score: 99
+    },
+    true,
+    legacyItem.capturedAt,
+    {
+      createPrediction: fakePrediction,
+      createPracticalSelection() {
+        return practicalTickets;
+      },
+      shadowBuilder() {
+        return {
+          status: "incomplete",
+          complete: false,
+          calibrationEligible: false,
+          evaluation: {
+            totalScore: 95
+          }
+        };
+      },
+      coreApi: {}
+    }
+  );
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    unavailableV2
+  ),
+  "",
+  "V2が不完全な場合は旧99点へ戻さず見送る"
 );
 
 const historyAttached = attachVenueRaceHistory(
