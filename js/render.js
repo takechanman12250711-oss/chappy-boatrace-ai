@@ -243,15 +243,129 @@
       class="v3-root app-prediction-layout"
       data-render-version="${escapeHtml(RENDER_VERSION)}"
     >
-      ${renderCompactPredictionSummary(prediction)}
-      ${renderPracticalSelection(prediction)}
-      ${renderFinalComment(prediction)}
 
-      <details class="v3-prediction-details">
-        <summary>出走表・分析根拠を見る</summary>
-        ${renderEntryTable(prediction)}
-        ${renderOfficialHistory(prediction)}
-      </details>
+      <!-- 1. レース基本情報 -->
+      <div id="raceInfoArea"></div>
+
+      <!-- 2. 出走表 -->
+      ${renderEntryTable(prediction)}
+
+      <!-- 3. AI総合評価 -->
+      ${renderAiSummary(prediction)}
+
+      <!-- 3.5 公式履歴分析 -->
+      ${renderOfficialHistory(
+        prediction
+      )}
+
+      <!-- 4. 本命買い目 -->
+      ${renderNewspaperSheet(prediction, "main")}
+
+      <!-- 5. 万舟買い目 -->
+      ${renderNewspaperSheet(prediction, "manshu")}
+
+      <!-- 5.5 出てない目TOP30 -->
+      ${renderMissingNumbers(
+        prediction
+      )}
+
+            <!-- 6. 実戦厳選 -->
+      ${renderPracticalSelection(prediction)}
+
+      <!-- 7. AI買い目一覧 -->
+      ${renderTicketRanking(prediction)}
+
+      ${
+        Array.isArray(
+          prediction.oddsMovements
+        ) &&
+        prediction.oddsMovements.length
+          ? section(
+              "オッズ変動アラート",
+              prediction.oddsMovements
+                .map(item => {
+                  const isDrop =
+                    item?.direction ===
+                    "急落";
+
+                  const changeRate =
+                    Math.abs(
+                      safeNum(
+                        item?.changeRate,
+                        0
+                      )
+                    ).toFixed(1);
+
+                  return `
+                    <div
+                      class="
+                        ticket-row
+                        ${
+                          isDrop
+                            ? "ticket-rank-A"
+                            : "ticket-rank-C"
+                        }
+                      "
+                    >
+                      <div
+                        class="ticket-main"
+                      >
+                        <strong>
+                          ${ticketArrow(
+                            item?.ticket ||
+                            "-"
+                          )}
+                        </strong>
+
+                        <span
+                          class="
+                            ticket-rank-badge
+                          "
+                        >
+                          ${
+                            isDrop
+                              ? "🔻 急落"
+                              : "🔺 上昇"
+                          }
+                          ${escapeHtml(
+                            changeRate
+                          )}%
+                        </span>
+
+                        <span
+                          class="ticket-odds"
+                        >
+                          ${escapeHtml(
+                            item?.previousOdds
+                          )}倍
+                          →
+                          ${escapeHtml(
+                            item?.currentOdds
+                          )}倍
+                        </span>
+                      </div>
+
+                      <p
+                        class="ticket-reason"
+                      >
+                        ${
+                          isDrop
+                            ? "人気が集まり、オッズが急落しています。"
+                            : "オッズが上昇し、人気が下がっています。"
+                        }
+                      </p>
+                    </div>
+                  `;
+                })
+                .join(""),
+              "📈",
+              "v3-odds-movement-section"
+            )
+          : ""
+      }
+
+      <!-- 10. 最終結論 -->
+      ${renderFinalComment(prediction)}
 
       ${renderDebug(prediction)}
 
@@ -259,95 +373,8 @@
   `;
 
   root.innerHTML = html;
+  renderRaceInfo(prediction);
 }
-
-  function renderCompactPredictionSummary(prediction) {
-    const race = prediction.race || {};
-    const confidence = prediction.confidence || {};
-    const manshuPower = prediction.manshuPower || {};
-    const quality = prediction.dataQuality || {};
-    const flow = prediction.raceFlow || {};
-    const sheet =
-      prediction.boatEvaluation ||
-      prediction.mainSheet ||
-      {};
-    const marks = [
-      ["◎", sheet.honmei || sheet.main || sheet["◎"]],
-      ["○", sheet.taikou || sheet.rival || sheet["○"]],
-      ["▲", sheet.ana || sheet.hole || sheet["▲"]],
-      ["△", sheet.osa || sheet.osae || sheet["△"]]
-    ]
-      .map(([mark, item]) => {
-        const normalized = normalizeSheetItem(item, "");
-        if (!normalized) return "";
-        return `
-          <span class="v3-key-mark">
-            <b>${mark}</b>
-            ${boatBadge(normalized.no, "mini")}
-            ${escapeHtml(normalized.name)}
-          </span>
-        `;
-      })
-      .filter(Boolean)
-      .join("");
-    const confidenceScore = safeNum(
-      confidence.score ??
-      confidence.value ??
-      prediction.confidenceScore,
-      0
-    );
-    const manshuScore = safeNum(
-      manshuPower.score ??
-      manshuPower.value ??
-      prediction.manshuScore,
-      0
-    );
-    const place =
-      race.place ||
-      race.stadiumName ||
-      prediction.venueName ||
-      "-";
-    const raceNo =
-      race.raceNo ||
-      race.rno ||
-      prediction.raceNo ||
-      "-";
-
-    const body = `
-      <div class="v3-key-race">
-        <strong>${escapeHtml(place)} ${escapeHtml(raceNo)}R</strong>
-        <span>本命 ${Math.round(confidenceScore)}%</span>
-        <span>波乱 ${Math.round(manshuScore)}%</span>
-        ${
-          quality.score !== undefined
-            ? `<span>データ ${escapeHtml(quality.score)}%</span>`
-            : ""
-        }
-      </div>
-      ${
-        flow.title || flow.summary
-          ? `
-            <p class="v3-key-flow">
-              <b>${escapeHtml(flow.title || "展開")}</b>
-              ${escapeHtml(limitText(flow.summary || flow.comment || "", 100))}
-            </p>
-          `
-          : ""
-      }
-      ${
-        marks
-          ? `<div class="v3-key-marks">${marks}</div>`
-          : ""
-      }
-    `;
-
-    return section(
-      "予想の要点",
-      body,
-      "🎯",
-      "v3-key-summary"
-    );
-  }
 
   function renderError(title, message) {
     return `
