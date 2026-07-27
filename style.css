@@ -4909,3 +4909,62 @@ body {
   color: #495057;
   border: 1px solid #ced4da;
 }
+
+/* 予想結果は要点を先に、分析根拠は必要時だけ表示する */
+.v3-key-race,
+.v3-key-marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.v3-key-race strong {
+  margin-right: auto;
+  font-size: 18px;
+}
+
+.v3-key-race span,
+.v3-key-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.v3-key-flow {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid #0878f9;
+  border-radius: 8px;
+  background: #f8fafc;
+  line-height: 1.65;
+}
+
+.v3-prediction-details {
+  margin-top: 14px;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.v3-prediction-details > summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  color: #475569;
+  font-weight: 700;
+}
+
+.v3-prediction-details[open] {
+  padding-bottom: 8px;
+}
+
+.v3-prediction-details[open] > summary {
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 8px;
+}

@@ -2,7 +2,9 @@
   "use strict";
 
   const DATA_ROOT = "data/predictions";
+  const SUMMARY_ROOT = `${DATA_ROOT}/summaries`;
   const NOTE_NEW_URL = "https://note.com/notes/new";
+  const dateDataPromises = new Map();
 
   function jstDate(now = new Date()) {
     return new Intl.DateTimeFormat("sv-SE", {
@@ -49,6 +51,44 @@
     return [...(Array.isArray(items) ? items : [])].sort((a, b) =>
       Date.parse(b?.[key] || 0) - Date.parse(a?.[key] || 0)
     )[0] || null;
+  }
+
+  async function fetchJson(url, cache) {
+    const response = await fetch(url, { cache });
+    if (!response.ok) {
+      const error = new Error(`HTTP ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
+    return response.json();
+  }
+
+  function loadDateData(date, options = {}) {
+    const key = String(date || "");
+    const force = options.force === true;
+
+    if (!force && dateDataPromises.has(key)) {
+      return dateDataPromises.get(key);
+    }
+
+    const request = fetchJson(
+      `${SUMMARY_ROOT}/${key}.json?v=1`,
+      force ? "reload" : "default"
+    ).catch(error => {
+      if (error?.status !== 404) throw error;
+      return fetchJson(
+        `${DATA_ROOT}/${key}.json`,
+        force ? "reload" : "default"
+      );
+    });
+
+    dateDataPromises.set(key, request);
+    request.catch(() => {
+      if (dateDataPromises.get(key) === request) {
+        dateDataPromises.delete(key);
+      }
+    });
+    return request;
   }
 
   function ticketLabel(item) {
@@ -201,9 +241,8 @@
     const statusClass = selected ? "is-selected" : "is-skipped";
     const statusText = selected ? "予想採用" : "見送り";
     const reason = selected
-      ? `${view.threshold}点以上のため予想を保存しました`
-      : `基準${view.threshold}点まであと${view.gap.toFixed(1)}点`;
-    const dataStatus = text(view.best?.evaluation?.dataStatus?.label, "判定データ確認中");
+      ? `基準${view.threshold}点を通過`
+      : `基準まであと${view.gap.toFixed(1)}点`;
 
     area.innerHTML = `
       <div class="auto-selection-summary ${statusClass}">
@@ -212,21 +251,25 @@
           <small>最終実行 ${escapeHtml(formatJstTime(view.run.checkedAt))}</small>
         </div>
         <div class="auto-selection-grid">
-          <div><small>比較対象</small><strong>${view.venues}場・${view.races}レース</strong></div>
-          <div><small>最高評価</small><strong>${escapeHtml(view.best?.place)} ${number(view.best?.raceNo)}R</strong></div>
-          <div><small>${escapeHtml(view.scoreType)}評価</small><strong>${view.score.toFixed(1)}点</strong></div>
-          <div><small>データ状態</small><strong>${escapeHtml(dataStatus)}</strong></div>
+          <div><small>候補レース</small><strong>${escapeHtml(view.best?.place)} ${number(view.best?.raceNo)}R</strong></div>
+          <div><small>${escapeHtml(view.scoreType)}評価</small><strong>${view.score.toFixed(1)} / ${view.threshold}点</strong></div>
         </div>
         <p class="auto-selection-judgement">${escapeHtml(reason)}</p>
-        ${reasonsHtml(view)}
       </div>
-      ${ticketsHtml(view)}`;
+      ${
+        view.saved
+          ? `
+            <div class="auto-selection-actions">
+              <button id="autoOpenPredictionBtn" type="button">予想を見る</button>
+            </div>
+          `
+          : ""
+      }`;
 
     const openButton = document.getElementById("autoOpenPredictionBtn");
     if (openButton && view.saved) {
       openButton.addEventListener("click", () => openSavedPrediction(view.saved));
     }
-    setupNoteDraft(view);
   }
 
   function setupNoteDraft(view) {
@@ -349,7 +392,7 @@
     document.getElementById("predictionSection")?.scrollIntoView({ behavior: "smooth" });
   }
 
-  async function loadAutoSelection() {
+  async function loadAutoSelection(options = {}) {
     const area = document.getElementById("autoSelectionArea");
     const badge = document.getElementById("autoSelectionBadge");
     if (!area) return;
@@ -357,16 +400,17 @@
     if (badge) badge.textContent = "更新中";
     try {
       const date = jstDate();
-      const response = await fetch(`${DATA_ROOT}/${date}.json?t=${Date.now()}`, {
-        cache: "no-store"
-      });
-      if (response.status === 404) {
+      let data;
+      try {
+        data = await loadDateData(date, {
+          force: options.force === true
+        });
+      } catch (error) {
+        if (error?.status !== 404) throw error;
         area.innerHTML = '<p class="auto-selection-empty">本日の初回自動比較を待っています</p>';
         if (badge) badge.textContent = "実行待ち";
         return;
       }
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
       renderData(area, data);
       if (badge) badge.textContent = "自動更新済み";
     } catch (error) {
@@ -377,7 +421,9 @@
 
   function start() {
     document.getElementById("autoSelectionRefreshBtn")
-      ?.addEventListener("click", loadAutoSelection);
+      ?.addEventListener("click", () =>
+        loadAutoSelection({ force: true })
+      );
     loadAutoSelection();
   }
 
@@ -387,9 +433,15 @@
       jstDate,
       ticketLabel,
       parseNoteDraft,
-      buildNotePackage
+      buildNotePackage,
+      loadDateData
     };
   }
+  root.ChappyAutoSelection = Object.freeze({
+    loadDateData,
+    loadAutoSelection,
+    buildViewModel
+  });
   if (root.document) {
     root.document.addEventListener("DOMContentLoaded", start);
   }

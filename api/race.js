@@ -2,6 +2,18 @@
 // 公式HTML取得 → _parser.parseOfficialRaceHtml 実行版
 
 const { parseOfficialRaceHtml } = require("./_parser");
+const { buildHistoryContext } = require("./_history");
+
+function getJstDateText(date = new Date()) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  })
+    .format(date)
+    .replaceAll("-", "");
+}
 
 module.exports = async function handler(req, res) {
   try {
@@ -42,6 +54,19 @@ module.exports = async function handler(req, res) {
     beforeHtml
   );
 
+    const historyContext = buildHistoryContext({
+      jcd,
+      raceNo: rno,
+      entries: parsed?.entries
+    });
+
+    res.setHeader?.(
+      "Cache-Control",
+      String(date) === getJstDateText()
+        ? "public, max-age=0, s-maxage=15, stale-while-revalidate=45"
+        : "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800"
+    );
+
     return res.status(200).json({
       ok: true,
       source: "boatrace-official",
@@ -51,7 +76,8 @@ module.exports = async function handler(req, res) {
       fetchedAt,
       entryUrl,
       beforeInfoUrl,
-      ...parsed
+      ...parsed,
+      historyContext
     });
 
   } catch (error) {

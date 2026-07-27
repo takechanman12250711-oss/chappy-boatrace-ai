@@ -256,6 +256,7 @@ function buildRecord({
   prediction = null,
   preparedRaceData = null,
   logicFingerprint = "logic-test",
+  referenceGenerationId = "reference-generation-test",
   referenceDataFingerprint = "stats-test",
   coreOverride = coreApi,
   practicalTickets = [
@@ -295,6 +296,7 @@ function buildRecord({
     capturedAt,
     sourceCommit: "abc123",
     logicFingerprint,
+    referenceGenerationId,
     referenceDataFingerprint,
     theoryInputVersion: "theory-input-test",
     selection: {
@@ -388,6 +390,7 @@ assert.ok(normal.versions.configHash);
 assert.ok(normal.versions.prediction);
 assert.ok(normal.versions.aiCore);
 assert.ok(normal.versions.theoryInput);
+assert.ok(normal.versions.referenceGenerationId);
 assert.ok(normal.versions.referenceDataFingerprint);
 
 const newEngine = buildRecord({
@@ -619,9 +622,26 @@ assert.ok(
     )
 );
 
-const unknownReferenceGeneration =
+const unknownReferenceSnapshot =
   buildRecord({
     referenceDataFingerprint: ""
+  });
+assert.equal(
+  unknownReferenceSnapshot
+    .calibrationEligible,
+  false
+);
+assert.ok(
+  unknownReferenceSnapshot
+    .eligibilityReasonCodes
+    .includes(
+      "version.referenceDataFingerprint.unknown"
+    )
+);
+
+const unknownReferenceGeneration =
+  buildRecord({
+    referenceGenerationId: ""
   });
 assert.equal(
   unknownReferenceGeneration
@@ -632,7 +652,7 @@ assert.ok(
   unknownReferenceGeneration
     .eligibilityReasonCodes
     .includes(
-      "version.referenceDataFingerprint.unknown"
+      "version.referenceGenerationId.unknown"
     )
 );
 
@@ -702,7 +722,21 @@ const referenceGenerations =
 assert.equal(
   referenceGenerations.length,
   2,
-  "異なる参照データ世代を同じレースでも混ぜない"
+  "異なる参照データスナップショットを監査レコード上は区別する"
+);
+assert.equal(
+  otherReferenceGeneration.cohortKey,
+  normal.cohortKey,
+  "日々の参照データ更新では校正母集団を分断しない"
+);
+
+const otherReferenceCompatibilityGeneration = buildRecord({
+  referenceGenerationId: "reference-generation-next"
+});
+assert.notEqual(
+  otherReferenceCompatibilityGeneration.cohortKey,
+  normal.cohortKey,
+  "参照データの生成方式が変わった場合だけ校正母集団を分ける"
 );
 
 console.log(

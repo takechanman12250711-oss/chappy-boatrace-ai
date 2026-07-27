@@ -15,6 +15,7 @@
   const OFFICIAL_SYNC_CONCURRENCY = 3;
 
   let officialSyncPromise = null;
+  let statsInitPromise = null;
   let automaticStats = {
     predictions: [],
     results: [],
@@ -31,8 +32,8 @@
 
     try {
       const response = await fetch(
-        `/data/predictions/index.json?t=${Date.now()}`,
-        { cache: "no-store" }
+        "data/predictions/index.json?v=20260727-fast1",
+        { cache: "no-cache" }
       );
 
       if (!response.ok) {
@@ -1676,7 +1677,7 @@
         };
 
   const recentRows =
-    settledRows.slice(0, 10);
+    settledRows.slice(0, 5);
   const formatMarks = marks =>
     (Array.isArray(marks) ? marks : [])
       .filter(mark => mark?.boatNo)
@@ -1883,33 +1884,30 @@
       <section class="result-overview" aria-labelledby="resultOverviewTitle">
         <header class="result-overview-head">
           <div>
-            <p class="result-kicker">OFFICIAL VERIFICATION</p>
-            <h3 id="resultOverviewTitle">結果分析ダッシュボード</h3>
-            <p>
-              保存済みの事前予想を、同じレースの公式結果だけで照合します。
-              ${E(sampleMessage)}
-            </p>
+            <p class="result-kicker">RESULT</p>
+            <h3 id="resultOverviewTitle">成績の要点</h3>
+            <p>${E(sampleMessage)}</p>
           </div>
           <span class="result-sample-badge ${
             settledRows.length >= 30
               ? "is-ready"
               : "is-building"
           }">
-            結果確定 ${settledRows.length}R
+            ${settledRows.length}R
           </span>
         </header>
 
         <div class="result-kpi-grid">
           ${renderMetricCard({
             icon: "🎯",
-            label: "厳選買い目的中率",
+            label: "厳選的中率",
             value: `${analysisHitRate}%`,
-            detail: `${resultHeadline.practicalHits}/${resultHeadline.practicalCount}R的中`,
+            detail: `${resultHeadline.practicalHits}/${resultHeadline.practicalCount}R`,
             tone: "blue"
           })}
           ${renderMetricCard({
             icon: "💴",
-            label: "シミュレーション回収率",
+            label: "回収率",
             value: `${recoveryRate}%`,
             detail:
               `投資${formatMoney(resultHeadline.totalStake)}・払戻${formatMoney(resultHeadline.totalReturn)}`,
@@ -1922,338 +1920,152 @@
           })}
           ${renderMetricCard({
             icon: "🌊",
-            label: "中心展開一致率",
+            label: "展開一致率",
             value: `${resultHeadline.scenarioMatchRate}%`,
             detail:
-              `${resultHeadline.scenarioHits}/${resultHeadline.scenarioComparableCount}R一致`,
+              `${resultHeadline.scenarioHits}/${resultHeadline.scenarioComparableCount}R`,
             tone: "navy"
           })}
         </div>
 
-        <div class="result-context-strip" aria-label="検証データの内訳">
-          <span>予想 ${predictionRows.length}R</span>
-          <span>結果待ち ${pendingCount}R</span>
-          <span>◎1着 ${formatCountRate(honmeiHits, settledRows.length)}</span>
-          <span>実戦・手動 ${realSettledRows.length}R</span>
-          <span>シャドー検証 ${shadowSettledRows.length}R</span>
-        </div>
-
         <p class="result-mode-note">
-          上の3指標はシャドー予想を含む検証値です。
-          シャドー予想は実購入・note公開には使っていません。
-          回収率は各買い目を1点100円で均等購入した検証値です。
-          ${dataLoadMessage}
+          1点100円の検証値です。詳しい校正・品質診断は画面へ出さず、裏側で継続します。
         </p>
       </section>
 
-      <section class="result-panel result-v2-panel" aria-labelledby="resultV2Title">
+      <section class="result-panel" aria-labelledby="recentResultTitle">
         <header class="result-panel-head">
           <div>
-            <p class="result-kicker">SHADOW V2</p>
-            <h3 id="resultV2Title">完全データ500Rの進捗</h3>
-            <p>
-              同一ロジック世代・8項目正式で、公式結果を取得できた校正候補だけを数えます。
-            </p>
+            <p class="result-kicker">RECENT</p>
+            <h3 id="recentResultTitle">直近の結果</h3>
           </div>
-          <span class="result-generation-chip">
-            世代 ${E(v2GenerationLabel)}
+          <span class="result-sample-badge">
+            最新${recentRows.length}R
           </span>
         </header>
-
-        <div class="result-v2-summary">
-          <strong>
-            ${shadowV2Progress.resultJoinedCount}
-            <small>/ ${shadowV2Progress.target}R</small>
-          </strong>
-          <p>
-            次の${shadowV2Progress.nextMilestone}Rまで
-            あと${shadowV2Progress.remainingToNext}R
-          </p>
-        </div>
-
-        <div
-          class="result-progress"
-          role="progressbar"
-          aria-label="V2公式結果取得済みの校正候補"
-          aria-valuemin="0"
-          aria-valuemax="${shadowV2Progress.target}"
-          aria-valuenow="${Math.min(
-            shadowV2Progress.target,
-            shadowV2Progress.resultJoinedCount
-          )}"
-        >
-          <span
-            class="result-progress-fill"
-            style="width:${shadowV2Progress.progressPercent}%"
-          ></span>
-          ${shadowV2Progress.milestones.map(item => `
-            <span
-              class="result-progress-marker ${item.reached ? "is-reached" : ""}"
-              style="left:${Math.min(
-                100,
-                (item.value / shadowV2Progress.target) * 100
-              )}%"
-              aria-hidden="true"
-            ></span>
-          `).join("")}
-        </div>
-
-        <div class="result-progress-labels" aria-hidden="true">
-          ${shadowV2Progress.milestones.map(item => `
-            <span class="${item.reached ? "is-reached" : ""}">
-              ${item.value}R
-            </span>
-          `).join("")}
-        </div>
-
-        <dl class="result-v2-facts">
-          ${renderFact(
-            "同一世代の完全データ",
-            `${shadowV2Progress.completeCount}R`
-          )}
-          ${renderFact(
-            "校正対象（8項目正式）",
-            `${shadowV2Progress.eligibleCount}R`
-          )}
-          ${renderFact(
-            "公式結果待ち",
-            `${shadowV2Progress.awaitingResultCount}R`
-          )}
-          ${renderFact(
-            "校正対象外",
-            `${shadowV2Progress.excludedCount}R`
-          )}
-        </dl>
-
-        <p class="result-lock-note">
-          🔒 500R到達後も、予想ロジックや70点基準は承認なしで変更しません。
-        </p>
-      </section>
-
-      <section class="result-panel" aria-labelledby="resultMissTitle">
-        <header class="result-panel-head">
-          <div>
-            <p class="result-kicker">OUTCOME</p>
-            <h3 id="resultMissTitle">的中と外れ方</h3>
-            <p>外れの中心が、頭・相手・着順のどこかを一目で確認できます。</p>
-          </div>
-        </header>
-
-        <div class="result-outcome-list">
-          ${missTypeSummary.map(item => `
-            <div class="result-outcome-row">
-              <div>
-                <strong>${E(item.label)}</strong>
-                <span>${item.count}R</span>
-              </div>
-              <div class="result-outcome-bar" aria-hidden="true">
-                <span
-                  class="${item.label === "的中" ? "is-hit" : "is-miss"}"
-                  style="width:${Math.min(100, item.percentage)}%"
-                ></span>
-              </div>
-              <b>${item.percentage}%</b>
-            </div>
-          `).join("")}
+        <div class="result-race-list">
+          ${recentHtml}
         </div>
       </section>
-
-      <details
-        class="result-accordion"
-        data-result-panel="accuracy"
-        ${panelOpen("accuracy", true)}
-      >
-        <summary>
-          <span class="result-accordion-icon" aria-hidden="true">📊</span>
-          <h3 class="result-accordion-title">
-            <span class="result-accordion-name">予想精度の詳しい内訳</span>
-            <small>点数帯・印・的中した買い目区分</small>
-          </h3>
-          <span class="result-accordion-meta">${settledRows.length}R</span>
-        </summary>
-
-        <div class="result-accordion-body">
-          <section class="result-subsection">
-            <header>
-              <h4>点数帯別</h4>
-              <p>
-                数値は比較表示のみ。基準やAI重みを自動変更しません。
-              </p>
-            </header>
-            <div class="result-data-grid">
-              ${renderScoreBandCards(scoreBandRows)}
-            </div>
-          </section>
-
-          <div class="result-detail-columns">
-            <section class="result-subsection">
-              <header>
-                <h4>印別の実着順</h4>
-              </header>
-              <div class="result-compact-list">
-                ${verificationSummary.markSummary.length
-                  ? verificationSummary.markSummary.map(mark => `
-                      <article>
-                        <strong>${E(mark.symbol)} ${E(mark.label)}</strong>
-                        <span>${mark.count}R</span>
-                        <small>
-                          1着 ${mark.firstRate}%・3着内 ${mark.top3Rate}%
-                        </small>
-                      </article>
-                    `).join("")
-                  : renderEmpty("印別の検証データがありません")}
-              </div>
-            </section>
-
-            <section class="result-subsection">
-              <header>
-                <h4>的中した買い目区分</h4>
-              </header>
-              <div class="result-compact-list">
-                ${verificationSummary.categorySummary.length
-                  ? verificationSummary.categorySummary.map(category => `
-                      <article>
-                        <strong>${E(category.label)}</strong>
-                        <span>${category.count}R</span>
-                        <small>的中内 ${category.percentage}%</small>
-                      </article>
-                    `).join("")
-                  : renderEmpty("買い目区分の検証データがありません")}
-              </div>
-            </section>
-          </div>
-        </div>
-      </details>
-
-      <details
-        class="result-accordion result-approval-accordion"
-        data-result-panel="improvements"
-        ${panelOpen("improvements")}
-      >
-        <summary>
-          <span class="result-accordion-icon" aria-hidden="true">🔒</span>
-          <h3 class="result-accordion-title">
-            <span class="result-accordion-name">改善候補</span>
-            <small>分析結果から作った未反映の提案</small>
-          </h3>
-          <span class="result-approval-chip ${improvementStatus.className}">
-            ${improvementStatus.label}
-          </span>
-        </summary>
-
-        <div class="result-accordion-body">
-          <p class="result-panel-note">
-            場別・展開別・外れ方別に弱点を検出します。
-            表示されるのは提案だけで、予想ロジックや買い目は変更しません。
-          </p>
-
-          <div class="improvement-axis-grid">
-            <div>
-              <b>場別</b>
-              <span>${E(improvementAnalysis.axisStatus.venue)}</span>
-            </div>
-            <div>
-              <b>展開別</b>
-              <span>${E(improvementAnalysis.axisStatus.scenario)}</span>
-            </div>
-            <div>
-              <b>外れ方別</b>
-              <span>${E(improvementAnalysis.axisStatus.miss)}</span>
-            </div>
-          </div>
-
-          <div class="improvement-suggestion-list">
-            ${improvementHtml}
-          </div>
-        </div>
-      </details>
-      <details
-        class="result-accordion"
-        data-result-panel="recent"
-        ${panelOpen("recent")}
-      >
-        <summary>
-          <span class="result-accordion-icon" aria-hidden="true">🏁</span>
-          <h3 class="result-accordion-title">
-            <span class="result-accordion-name">最近の予想と公式結果</span>
-            <small>最新10Rをカードで比較</small>
-          </h3>
-          <span class="result-accordion-meta">${recentRows.length}R</span>
-        </summary>
-
-        <div class="result-accordion-body">
-          <div class="result-race-list">
-            ${recentHtml}
-          </div>
-        </div>
-      </details>
-
-
-      <details
-        class="result-accordion"
-        data-result-panel="breakdowns"
-        ${panelOpen("breakdowns")}
-      >
-        <summary>
-          <span class="result-accordion-icon" aria-hidden="true">🧭</span>
-          <h3 class="result-accordion-title">
-            <span class="result-accordion-name">場別・展開別の成績</span>
-            <small>条件ごとの得意・不得意を比較</small>
-          </h3>
-          <span class="result-accordion-meta">
-            ${venueGroups.length}場
-          </span>
-        </summary>
-
-        <div class="result-accordion-body">
-          <section class="result-subsection">
-            <header>
-              <h4>場別成績</h4>
-            </header>
-            <div class="result-data-grid">
-              ${renderVenueCards(venueGroups)}
-            </div>
-          </section>
-
-          <section class="result-subsection">
-            <header>
-              <h4>展開別成績</h4>
-            </header>
-            <div class="result-data-grid">
-              ${renderScenarioCards(predictedScenarioGroups)}
-            </div>
-          </section>
-        </div>
-      </details>
     </div>
   `);
 }
 
-  async function initStatsEvents() {
-    renderStats();
-
-    const [, officialResult] =
-      await Promise.allSettled([
-        loadAutomaticStats(),
-        syncPendingOfficialResults()
-      ]);
-
-    if (
-      officialResult.status ===
-      "rejected"
-    ) {
-      console.error(
-        "公式結果の自動照合エラー",
-        officialResult.reason
-      );
-
-      setOfficialSyncStatus(
-        "公式結果を自動照合できませんでした",
-        "warning"
-      );
+  function initStatsEvents() {
+    if (statsInitPromise) {
+      return statsInitPromise;
     }
 
-    renderStats();
+    statsInitPromise = (async () => {
+      window.dispatchEvent(
+        new CustomEvent(
+          "chappy:stats-hydrating"
+        )
+      );
+      renderStats();
+
+      const [, officialResult] =
+        await Promise.allSettled([
+          loadAutomaticStats(),
+          syncPendingOfficialResults()
+        ]);
+
+      if (
+        officialResult.status ===
+        "rejected"
+      ) {
+        console.error(
+          "公式結果の自動照合エラー",
+          officialResult.reason
+        );
+
+        setOfficialSyncStatus(
+          "公式結果を自動照合できませんでした",
+          "warning"
+        );
+      }
+
+      renderStats();
+      window.dispatchEvent(
+        new CustomEvent(
+          "chappy:stats-updated"
+        )
+      );
+    })();
+
+    return statsInitPromise;
+  }
+
+  function setupLazyStats() {
+    const section =
+      document.getElementById(
+        "resultSection"
+      );
+    const area =
+      document.getElementById(
+        "statsArea"
+      );
+    const status =
+      document.getElementById(
+        "resultSyncStatus"
+      );
+    let observer = null;
+    let started = false;
+
+    const start = () => {
+      if (started) return;
+      started = true;
+      observer?.disconnect();
+      if (status) {
+        status.textContent =
+          "結果分析を読み込んでいます…";
+      }
+      initStatsEvents();
+    };
+
+    if (area) {
+      area.innerHTML =
+        '<div class="result-empty-state">結果分析は、この画面を開いた時に読み込みます。</div>';
+    }
+    if (status) {
+      status.textContent =
+        "結果分析は必要な時だけ読み込みます";
+    }
+
+    document
+      .querySelector(
+        'a[href="#resultSection"]'
+      )
+      ?.addEventListener(
+        "click",
+        start,
+        { once: true }
+      );
+    window.addEventListener(
+      "chappy:stats-requested",
+      start,
+      { once: true }
+    );
+
+    if (
+      section &&
+      "IntersectionObserver" in window
+    ) {
+      observer = new IntersectionObserver(
+        entries => {
+          if (
+            entries.some(
+              entry =>
+                entry.isIntersecting
+            )
+          ) {
+            start();
+          }
+        },
+        { rootMargin: "300px 0px" }
+      );
+      observer.observe(section);
+    }
   }
 
 window.ChappyStats = {
@@ -2265,7 +2077,7 @@ window.ChappyStats = {
 
   document.addEventListener(
     "DOMContentLoaded",
-    initStatsEvents
+    setupLazyStats
   );
 
 })();

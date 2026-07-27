@@ -10,6 +10,10 @@ on:
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
       - "scripts/build-prediction-index.js"
+      - "scripts/build-prediction-summaries.js"
+      - "scripts/test-prediction-summaries.js"
+      - "scripts/test-load-performance.js"
+      - "js/prediction-runtime-loader.js"
       - "scripts/test-shadow-predictions.js"
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-prediction-conditions.js"
@@ -20,7 +24,10 @@ on:
       - "scripts/test-collection-health.js"
       - "api/schedule.js"
       - "api/race.js"
+      - "api/_history.js"
       - "api/_parser.js"
+      - "scripts/test-api-history.js"
+      - "scripts/test-api-client-cache.js"
       - "js/ai-core.js"
       - "js/history-insights.js"
       - "js/history-insights-base.js"
@@ -76,6 +83,10 @@ jobs:
           node scripts/test-race-parser.js
           node scripts/test-theory-integration.js
           node scripts/test-auto-selection.js
+          node scripts/test-api-history.js
+          node scripts/test-api-client-cache.js
+          node scripts/test-prediction-summaries.js
+          node scripts/test-load-performance.js
           node scripts/test-collection-health.js
           node scripts/check-charter.js
 
@@ -85,6 +96,7 @@ jobs:
         run: |
           node scripts/collect-predictions.js
           node scripts/build-prediction-index.js
+          node scripts/build-prediction-summaries.js
 
       - name: Save predictions and note drafts
         run: |

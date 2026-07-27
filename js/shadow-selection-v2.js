@@ -854,6 +854,7 @@
       capturedAt = new Date().toISOString(),
       sourceCommit = "",
       logicFingerprint = "",
+      referenceGenerationId = "",
       referenceDataFingerprint = "",
       theoryInputVersion = "",
       selection = null,
@@ -940,6 +941,10 @@
         String(
           referenceDataFingerprint || ""
         ).trim();
+      const referenceGenerationValue =
+        String(
+          referenceGenerationId || ""
+        ).trim();
       const fingerprintAvailable = value =>
         Boolean(value) &&
         value.toLowerCase() !==
@@ -947,6 +952,9 @@
       const versionIdentityComplete =
         fingerprintAvailable(
           logicFingerprintValue
+        ) &&
+        fingerprintAvailable(
+          referenceGenerationValue
         ) &&
         fingerprintAvailable(
           referenceFingerprintValue
@@ -965,6 +973,11 @@
           key: "logicFingerprint",
           value: logicFingerprintValue,
           label: "ロジック世代"
+        },
+        {
+          key: "referenceGenerationId",
+          value: referenceGenerationValue,
+          label: "参照データ生成世代"
         },
         {
           key: "referenceDataFingerprint",
@@ -1017,6 +1030,8 @@
         sourceCommit: String(sourceCommit || ""),
         logicFingerprint:
           logicFingerprintValue,
+        referenceGenerationId:
+          referenceGenerationValue,
         referenceDataFingerprint:
           referenceFingerprintValue,
         evaluator: VERSION,
@@ -1111,8 +1126,8 @@
         versions,
         cohortKey: [
           versions.logicFingerprint || "local",
-          versions.referenceDataFingerprint ||
-            "unknown-reference",
+          versions.referenceGenerationId ||
+            "unknown-reference-generation",
           versions.evaluator,
           versions.configHash,
           versions.prediction || "unknown-prediction",

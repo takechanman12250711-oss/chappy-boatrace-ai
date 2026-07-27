@@ -7,24 +7,29 @@
   const SCRIPT_ID="chappy-hiyori-runtime-loader";
   if(window.__CHAPPY_HIYORI_RUNTIME_LOADED__)return;
   window.__CHAPPY_HIYORI_RUNTIME_LOADED__=true;
+  let corePromise=null;
+  let backgroundPromise=null;
+  let installPromise=null;
 
-  const scripts=[
+  const coreScripts=[
     "js/prediction-flow-priority.js",
     "js/prediction-st-exhibition-support.js",
     "js/prediction-venue-water-support.js",
     "js/prediction-skill-local-support.js",
     "js/prediction-motor-engine-support.js",
     "js/prediction-engine-integration.js",
-    "js/prediction-simple-evaluation.js",
+    "js/prediction-simple-evaluation.js"
+  ];
+  const backgroundScripts=[
     "js/hiyori-event-monitor.js",
     "js/hiyori-learning-snapshot.js",
     "js/hiyori-learning-correlation.js",
     "js/hiyori-correlation-confidence.js",
     "js/hiyori-learning-adoption-candidates.js",
     "js/hiyori-adoption-proposals.js",
-    "js/hiyori-proposal-approval.js",
-    "js/hiyori-compact-dashboard.js?v=20260726-results2"
+    "js/hiyori-proposal-approval.js"
   ];
+  const scripts=[...coreScripts,...backgroundScripts];
 
   function read(key,fallback){try{return JSON.parse(localStorage.getItem(key)||"null")??fallback}catch(_){return fallback}}
   function write(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(_){}}
@@ -49,14 +54,44 @@
     script.onerror=()=>{console.warn("[hiyori-runtime-loader] load failed:",src);resolve()};
     document.head.appendChild(script);
   })}
-  async function install(){
-    syncCompatibilityKeys();
-    for(const src of scripts){await loadScript(src);syncCompatibilityKeys()}
-    window.dispatchEvent(new CustomEvent("chappy:hiyori-runtime-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true,compactMode:true,lazyDiagnostics:true}}));
-    window.ChappyHiyoriCompactDashboard?.render?.();
+  function installCore(){
+    if(corePromise)return corePromise;
+    corePromise=(async()=>{
+      await window.ChappyPredictionRuntime
+        ?.ensureReady?.();
+      syncCompatibilityKeys();
+      for(const src of coreScripts){await loadScript(src)}
+      window.dispatchEvent(new CustomEvent("chappy:hiyori-core-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true}}));
+    })();
+    return corePromise;
+  }
+  function installBackground(){
+    if(backgroundPromise)return backgroundPromise;
+    backgroundPromise=(async()=>{
+      await installCore();
+      for(const src of backgroundScripts){await loadScript(src)}
+      syncCompatibilityKeys();
+      window.dispatchEvent(new CustomEvent("chappy:hiyori-runtime-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true,compactMode:true,lazyDiagnostics:true}}));
+    })();
+    return backgroundPromise;
+  }
+  function install(){
+    if(installPromise)return installPromise;
+    installPromise=installBackground();
+    return installPromise;
+  }
+  function scheduleInstall(){
+    const run=()=>install().catch(error=>{
+      console.warn("[hiyori-runtime-loader] install failed:",error);
+    });
+    if("requestIdleCallback" in window){
+      window.requestIdleCallback(run,{timeout:5000});
+    }else{
+      window.setTimeout(run,1500);
+    }
   }
   ["chappy:hiyori-snapshot-created","chappy:hiyori-learning-adoption-updated","chappy:hiyori-adoption-proposals-updated","chappy:hiyori-production-checklist-updated"].forEach(name=>window.addEventListener(name,syncCompatibilityKeys));
   window.addEventListener("storage",event=>{if(event.key&&event.key.startsWith("chappy_hiyori_"))syncCompatibilityKeys()});
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});else install();
-  window.ChappyHiyoriRuntimeLoader={id:SCRIPT_ID,install,syncCompatibilityKeys,scripts:scripts.slice(),compactMode:true};
+  window.addEventListener("chappy:prediction-rendered",scheduleInstall,{once:true});
+  window.ChappyHiyoriRuntimeLoader={id:SCRIPT_ID,install,ensureReady:installCore,syncCompatibilityKeys,scripts:scripts.slice(),coreScripts:coreScripts.slice(),backgroundScripts:backgroundScripts.slice(),compactMode:true};
 })();

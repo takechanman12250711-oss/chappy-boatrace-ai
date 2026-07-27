@@ -113,22 +113,20 @@ function safeFingerprintFiles(
 }
 
 const SHADOW_LOGIC_FINGERPRINT = safeFingerprintFiles([
-  "scripts/collect-predictions.js",
   "config/chappy-charter.json",
-  "api/schedule.js",
-  "api/race.js",
   "api/_parser.js",
   "js/ai-core.js",
   "js/history-insights-base.js",
   "js/motor-maintenance-insights.js",
   "js/history-insights.js",
   "js/prediction.js",
-  "js/note-generator.js",
-  "js/practical-selection.js",
   "js/theory-input.js",
   "js/prediction-conditions.js",
   "js/shadow-selection-v2.js"
 ], "ロジック");
+const SHADOW_REFERENCE_GENERATION_ID = safeFingerprintFiles([
+  "scripts/build-race-stats.js"
+], "参照データ生成世代");
 const SHADOW_REFERENCE_DATA_FINGERPRINT = safeFingerprintFiles([
   "data/stats/venue-race-patterns.json",
   "data/stats/race-patterns.json",
@@ -920,6 +918,8 @@ function buildStoredPrediction(
     logicFingerprint: SHADOW_LOGIC_FINGERPRINT,
     referenceDataFingerprint:
       SHADOW_REFERENCE_DATA_FINGERPRINT,
+    referenceGenerationId:
+      SHADOW_REFERENCE_GENERATION_ID,
     theoryInputVersion: theoryInput.VERSION || "",
     selection,
     preRaceConditions: shadowPreRaceConditions,
@@ -1297,6 +1297,7 @@ if (require.main === module) {
 module.exports = {
   MIN_SCORE,
   SHADOW_LOGIC_FINGERPRINT,
+  SHADOW_REFERENCE_GENERATION_ID,
   SHADOW_REFERENCE_DATA_FINGERPRINT,
   loadOptionalV2Dependency,
   fingerprintFiles,
