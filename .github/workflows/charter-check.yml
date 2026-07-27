@@ -13,6 +13,11 @@ on:
       - "js/practical-selection.js"
       - "js/prediction.js"
       - "js/render.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/auto-selection.js"
+      - "js/api.js"
+      - "style.css"
+      - "css/auto-selection.css"
       - "js/prediction-flow-priority.js"
       - "js/prediction-st-exhibition-support.js"
       - "js/prediction-venue-water-support.js"
@@ -69,6 +74,12 @@ on:
       - "js/theory-input.js"
       - "api/_parser.js"
       - "api/race.js"
+      - "api/_history.js"
+      - "scripts/test-api-history.js"
+      - "scripts/test-api-client-cache.js"
+      - "scripts/build-prediction-summaries.js"
+      - "scripts/test-prediction-summaries.js"
+      - "scripts/test-load-performance.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
       - "tools/test-local-water-theory-v2.js"
@@ -86,6 +97,11 @@ on:
       - "js/practical-selection.js"
       - "js/prediction.js"
       - "js/render.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/auto-selection.js"
+      - "js/api.js"
+      - "style.css"
+      - "css/auto-selection.css"
       - "js/prediction-flow-priority.js"
       - "js/prediction-st-exhibition-support.js"
       - "js/prediction-venue-water-support.js"
@@ -142,6 +158,12 @@ on:
       - "js/theory-input.js"
       - "api/_parser.js"
       - "api/race.js"
+      - "api/_history.js"
+      - "scripts/test-api-history.js"
+      - "scripts/test-api-client-cache.js"
+      - "scripts/build-prediction-summaries.js"
+      - "scripts/test-prediction-summaries.js"
+      - "scripts/test-load-performance.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
       - "tools/test-local-water-theory-v2.js"
@@ -170,6 +192,8 @@ jobs:
           node --check js/ai-core.js
           node --check js/prediction.js
           node --check js/render.js
+          node --check js/prediction-runtime-loader.js
+          node --check js/api.js
           node --check js/prediction-flow-priority.js
           node --check js/prediction-st-exhibition-support.js
           node --check js/prediction-venue-water-support.js
@@ -226,6 +250,12 @@ jobs:
           node --check js/theory-input.js
           node --check api/_parser.js
           node --check api/race.js
+          node --check api/_history.js
+          node --check scripts/build-prediction-summaries.js
+          node --check scripts/test-api-history.js
+          node --check scripts/test-api-client-cache.js
+          node --check scripts/test-prediction-summaries.js
+          node --check scripts/test-load-performance.js
           node --check js/race-history.js
           node --check js/venue-race-analysis.js
           node --check scripts/test-history-insights.js
@@ -260,4 +290,8 @@ jobs:
           node scripts/test-missing-numbers.js
           node scripts/test-odds-insights.js
           node scripts/test-history-insights.js
+          node scripts/test-api-history.js
+          node scripts/test-api-client-cache.js
+          node scripts/test-prediction-summaries.js
+          node scripts/test-load-performance.js
           node tools/test-local-water-theory-v2.js

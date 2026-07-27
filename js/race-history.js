@@ -5,19 +5,19 @@
   "use strict";
 
   const STATS_URL =
-    "/data/stats/race-patterns.json?v=20260723-skill1";
+    "data/stats/race-patterns.json?v=20260723-skill1";
 
   const VENUE_RACE_STATS_URL =
-    "/data/stats/venue-race-patterns.json";
+    "data/stats/venue-race-patterns.json";
 
   const RACER_SKILL_STATS_URL =
-    "/data/stats/racer-skill-patterns.json?v=20260723-stslit2";
+    "data/stats/racer-skill-patterns.json?v=20260723-stslit2";
 
   const COURSE_STRUCTURE_STATS_URL =
-    "/data/stats/course-structure-patterns.json?v=20260723-course2";
+    "data/stats/course-structure-patterns.json?v=20260723-course2";
 
   const RACER_VENUE_STARTS_URL =
-    "/data/stats/racer-venue-starts.json?v=20260724-integration1";
+    "data/stats/racer-venue-starts.json?v=20260724-integration1";
 
   const MIN_VENUE_SAMPLES = 30;
   const MIN_RACER_SAMPLES = 12;

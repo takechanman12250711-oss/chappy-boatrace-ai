@@ -43,20 +43,6 @@
     document.addEventListener("DOMContentLoaded", () => {
         console.log("✅ script.js 読み込みOK");
 
-    window.ChappyRaceHistory
-      ?.load()
-      .then(() => {
-        console.log(
-          "✅ 公式履歴統計 読み込みOK"
-        );
-      })
-      .catch(error => {
-        console.warn(
-          "⚠️ 公式履歴統計を読み込めませんでした",
-          error?.message || error
-        );
-      });
-
     setDefaultDate();
 
     const fetchBtn =
@@ -1024,6 +1010,128 @@
       : `${selection.checked}場比較・判定データ不足`;
   }
 
+  async function loadStoredLiveSelection(
+    date,
+    venues
+  ) {
+    try {
+      const data =
+        await window.ChappyAutoSelection
+          ?.loadDateData?.(date);
+      const run = [
+        ...(Array.isArray(data?.runs)
+          ? data.runs
+          : [])
+      ].sort((a, b) =>
+        String(b?.checkedAt || "")
+          .localeCompare(
+            String(a?.checkedAt || "")
+          )
+      )[0] || null;
+
+      if (!run?.best) return null;
+
+      const compared =
+        Array.isArray(run.compared)
+          ? run.compared
+          : [];
+      const best = {
+        ...run.best,
+        jcd: String(
+          run.best.jcd || ""
+        ).padStart(2, "0"),
+        raceNo: Number(
+          run.best.raceNo || 0
+        ),
+        score: Number(
+          run.best.score || 0
+        )
+      };
+      const threshold =
+        Number(run.threshold || 70);
+
+      return {
+        checked:
+          compared.length ||
+          (Array.isArray(venues)
+            ? venues.length
+            : 0),
+        evaluated: compared.length,
+        selected:
+          run.selected === true &&
+          best.score >= threshold,
+        minScore: threshold,
+        best,
+        compared,
+        checkedAt:
+          String(run.checkedAt || ""),
+        source:
+          "server_prediction_summary"
+      };
+    } catch (error) {
+      console.warn(
+        "保存済み自動選定の取得に失敗",
+        error?.message || error
+      );
+      return null;
+    }
+  }
+
+  let latestStoredLiveSelection = null;
+
+  function renderStoredRaceTrends(
+    data,
+    grid
+  ) {
+    const jcd = String(
+      data?.selectedVenue?.jcd || ""
+    ).padStart(2, "0");
+    const compared =
+      Array.isArray(
+        latestStoredLiveSelection?.compared
+      )
+        ? latestStoredLiveSelection.compared
+        : [];
+    const rows = compared.filter(
+      item =>
+        String(item?.jcd || "")
+          .padStart(2, "0") === jcd
+    );
+    const byRace = new Map(
+      rows.map(item => [
+        Number(item?.raceNo || 0),
+        item
+      ])
+    );
+
+    [
+      ...grid.querySelectorAll(
+        ".official-race-button"
+      )
+    ].forEach(button => {
+      const raceNo = Number(
+        button.dataset.raceNo || 0
+      );
+      const stored = byRace.get(raceNo);
+
+      if (stored?.evaluation?.ready) {
+        renderRaceTrendEvaluation(
+          button,
+          stored.evaluation
+        );
+        return;
+      }
+
+      setRaceTrendMessage(
+        button,
+        "AI予想開始時に詳しく評価",
+        "is-pending"
+      );
+    });
+
+    markRaceTrendLeaders(grid);
+  }
+
   async function loadOfficialRaceTrends(data, mode, grid) {
     const scanId = ++raceTrendScanId;
     const core = window.ChappyAICore;
@@ -1579,16 +1687,10 @@
       selectedRace
     );
 
-    loadOfficialRaceTrends(
+    renderStoredRaceTrends(
       data,
-      mode,
       grid
-    ).catch(error => {
-      console.warn(
-        "race trend list",
-        error
-      );
-    });
+    );
   }
 
   async function loadVenueChoices() {
@@ -1686,11 +1788,13 @@
 
     const liveAutoSelection =
       mode === "live"
-        ? await selectBestLiveRace(
+        ? await loadStoredLiveSelection(
             date,
             venues
           )
         : null;
+    latestStoredLiveSelection =
+      liveAutoSelection;
 
     const preferredJcd =
       mode === "live"
@@ -1978,6 +2082,16 @@
       mode
     );
 
+    window.ChappyAPI
+      ?.prefetchRace?.({
+        jcd,
+        rno: preferred.raceNo,
+        date
+      })
+      .catch(() => {
+        // 先読み失敗は、予想開始時の通常取得で再試行する。
+      });
+
     if (fetchBtn) {
       fetchBtn.disabled =
         false;
@@ -2030,9 +2144,27 @@
     raceData,
     params = {}
   ) {
+    await window.ChappyPredictionRuntime
+      ?.ensureReady?.();
+
     try {
-      await window.ChappyRaceHistory
-        ?.load();
+      await window.ChappyHiyoriRuntimeLoader
+        ?.ensureReady?.();
+    } catch (error) {
+      console.warn(
+        "⚠️ 予想補助モジュールを準備できませんでした",
+        error?.message || error
+      );
+    }
+
+    try {
+      if (
+        raceData?.historyContext?.ready !==
+        true
+      ) {
+        await window.ChappyRaceHistory
+          ?.load();
+      }
     } catch (error) {
       console.warn(
         "⚠️ 公式履歴を共通入力へ接続できませんでした",
@@ -2055,19 +2187,24 @@
         0
       );
     const historyContext =
-      window.ChappyRaceHistory
-        ?.getContext({
-          jcd,
-          raceNo,
-          registerNos:
-            Array.isArray(raceData?.entries)
-              ? raceData.entries
-                  .map((entry) =>
-                    entry?.registerNo
-                  )
-                  .filter(Boolean)
-              : []
-        }) || null;
+      raceData?.historyContext?.ready ===
+      true
+        ? raceData.historyContext
+        : (
+            window.ChappyRaceHistory
+              ?.getContext({
+                jcd,
+                raceNo,
+                registerNos:
+                  Array.isArray(raceData?.entries)
+                    ? raceData.entries
+                        .map((entry) =>
+                          entry?.registerNo
+                        )
+                        .filter(Boolean)
+                    : []
+              }) || null
+          );
     const input = {
       ...raceData,
       historyContext
@@ -2110,10 +2247,24 @@
         params
       );
 
-      const fetchedData =
-        await fetchRaceData(
-          params
-        );
+      const predictionRuntime =
+        window.ChappyPredictionRuntime
+          ?.ensureReady?.();
+      const hiyoriRuntime =
+        window.ChappyHiyoriRuntimeLoader
+          ?.ensureReady?.()
+          .catch(error => {
+            console.warn(
+              "⚠️ 予想補助モジュールを準備できませんでした",
+              error?.message || error
+            );
+          });
+      const [fetchedData] =
+        await Promise.all([
+          fetchRaceData(params),
+          predictionRuntime,
+          hiyoriRuntime
+        ]);
 
       const data =
         await prepareRaceDataForTheories(
@@ -2215,6 +2366,19 @@
       ) {
         window.renderAll(
           prediction
+        );
+        window.dispatchEvent(
+          new CustomEvent(
+            "chappy:prediction-rendered",
+            {
+              detail: {
+                place: params.place,
+                jcd: params.jcd,
+                raceNo: params.rno,
+                date: params.date
+              }
+            }
+          )
         );
       } else {
         throw new Error(
