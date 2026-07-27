@@ -200,6 +200,8 @@
 
     area.textContent =
       String(message || "");
+    area.hidden =
+      state === "ready";
 
     if (state) {
       area.dataset.state = state;
@@ -1238,6 +1240,40 @@
 
   const realSettledRows = settledRows.filter(item => !item.isShadow);
   const shadowSettledRows = settledRows.filter(item => item.isShadow);
+  const userPracticalRows =
+    realSettledRows.filter(
+      item =>
+        item.practicalTickets
+          .length > 0
+    );
+  const userPracticalHits =
+    userPracticalRows.filter(
+      item => item.practicalHit
+    ).length;
+  const userVerificationSummary =
+    V?.buildSummary
+      ? V.buildSummary(
+          realSettledRows
+            .map(item => item.verification)
+            .filter(Boolean)
+        )
+      : {
+          scenarioComparableCount: 0,
+          scenarioHits: 0,
+          scenarioMatchRate: 0,
+          practicalCount:
+            userPracticalRows.length,
+          practicalHits:
+            userPracticalHits,
+          practicalHitRate:
+            rate(
+              userPracticalHits,
+              userPracticalRows.length
+            ),
+          totalStake: 0,
+          totalReturn: 0,
+          simulatedRecoveryRate: 0
+        };
 
   const honmeiHits =
     settledRows.filter(
@@ -1677,14 +1713,7 @@
         };
 
   const recentRows =
-    settledRows.slice(0, 5);
-  const formatMarks = marks =>
-    (Array.isArray(marks) ? marks : [])
-      .filter(mark => mark?.boatNo)
-      .map(mark =>
-        `${mark.symbol}${mark.boatNo}号艇 ${mark.finishLabel}`
-      )
-      .join("／") || "-";
+    realSettledRows.slice(0, 5);
   const recentHtml =
     recentRows.length
       ? recentRows
@@ -1756,28 +1785,6 @@
                 </span>
               </div>
 
-              <details class="result-race-details">
-                <summary>照合の詳細を見る</summary>
-                <dl>
-                  ${renderFact(
-                    "◎○▲△の実着順",
-                    formatMarks(item.marks)
-                  )}
-                  ${renderFact(
-                    "厳選買い目",
-                    item.practicalTickets.join("／") || "見送り"
-                  )}
-                  ${renderFact(
-                    "8段階の主確認点",
-                    item.priorityReview?.primaryStage || "判定保留"
-                  )}
-                  ${renderFact(
-                    "確認根拠",
-                    item.priorityReview?.primaryEvidence ||
-                      "保存済みデータを蓄積中"
-                  )}
-                </dl>
-              </details>
             </article>
           `)
           .join("")
@@ -1785,9 +1792,9 @@
           "公式結果と照合できる予想がありません"
         );
   const sampleMessage =
-    settledRows.length < 30
-      ? `サンプル蓄積中：現在${settledRows.length}R。30R未満の数値は参考値です。`
-      : `${settledRows.length}Rの公式結果で検証しています。`;
+    realSettledRows.length < 30
+      ? `サンプル蓄積中：現在${realSettledRows.length}R。30R未満の数値は参考値です。`
+      : `${realSettledRows.length}Rの公式結果で検証しています。`;
 
   const previousDashboard =
     document.querySelector(
@@ -1819,36 +1826,37 @@
   const resultHeadline =
     A?.buildResultHeadline
       ? A.buildResultHeadline(
-          verificationSummary
+          userVerificationSummary
         )
       : {
           practicalCount:
-            practicalRows.length,
-          practicalHits,
+            userPracticalRows.length,
+          practicalHits:
+            userPracticalHits,
           practicalHitRate:
             rate(
-              practicalHits,
-              practicalRows.length
+              userPracticalHits,
+              userPracticalRows.length
             ),
           totalStake:
-            verificationSummary
+            userVerificationSummary
               .totalStake || 0,
           totalReturn:
-            verificationSummary
+            userVerificationSummary
               .totalReturn || 0,
           simulatedRecoveryRate:
             Number(
-              verificationSummary
+              userVerificationSummary
                 .simulatedRecoveryRate || 0
             ),
           scenarioComparableCount:
-            verificationSummary
+            userVerificationSummary
               .scenarioComparableCount || 0,
           scenarioHits:
-            verificationSummary
+            userVerificationSummary
               .scenarioHits || 0,
           scenarioMatchRate:
-            verificationSummary
+            userVerificationSummary
               .scenarioMatchRate || 0
         };
   const analysisHitRate =
@@ -1889,11 +1897,11 @@
             <p>${E(sampleMessage)}</p>
           </div>
           <span class="result-sample-badge ${
-            settledRows.length >= 30
+            realSettledRows.length >= 30
               ? "is-ready"
               : "is-building"
           }">
-            ${settledRows.length}R
+            ${realSettledRows.length}R
           </span>
         </header>
 
@@ -1919,17 +1927,23 @@
                   : "red"
           })}
           ${renderMetricCard({
-            icon: "🌊",
-            label: "展開一致率",
-            value: `${resultHeadline.scenarioMatchRate}%`,
-            detail:
-              `${resultHeadline.scenarioHits}/${resultHeadline.scenarioComparableCount}R`,
-            tone: "navy"
+            icon: "📊",
+            label: "検証収支",
+            value: formatMoney(
+              resultHeadline.totalReturn -
+                resultHeadline.totalStake
+            ),
+            detail: "1点100円で計算",
+            tone:
+              resultHeadline.totalReturn >=
+              resultHeadline.totalStake
+                ? "green"
+                : "red"
           })}
         </div>
 
         <p class="result-mode-note">
-          1点100円の検証値です。詳しい校正・品質診断は画面へ出さず、裏側で継続します。
+          1点100円の検証値です。
         </p>
       </section>
 
@@ -2017,6 +2031,7 @@
       started = true;
       observer?.disconnect();
       if (status) {
+        status.hidden = false;
         status.textContent =
           "結果分析を読み込んでいます…";
       }
@@ -2028,6 +2043,7 @@
         '<div class="result-empty-state">結果分析は、この画面を開いた時に読み込みます。</div>';
     }
     if (status) {
+      status.hidden = false;
       status.textContent =
         "結果分析は必要な時だけ読み込みます";
     }

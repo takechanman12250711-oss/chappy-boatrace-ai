@@ -178,32 +178,16 @@
 
   function ticketsHtml(view) {
     if (!view.saved) return "";
-    const ticketRows = view.tickets.length
-      ? `<div class="auto-selection-tickets">${view.tickets.map(item => `
-          <span>
-            <strong>${escapeHtml(ticketLabel(item))}</strong>
-            <small>${escapeHtml(item?.category || item?.type || "厳選")}</small>
-          </span>
-        `).join("")}</div>`
-      : '<p class="auto-selection-empty">厳選買い目は保存データを確認中です</p>';
     const notePath = text(view.saved?.note?.path, "");
     const noteTitle = text(view.saved?.note?.title, "");
     return `
       <div class="auto-selection-saved">
-        <div class="auto-selection-saved-head">
-          <div>
-            <small>本日の保存済み予想</small>
-            <strong>${escapeHtml(view.saved.place)} ${number(view.saved.raceNo)}R</strong>
-          </div>
-          <span>${escapeHtml(view.saved.selection?.type || "採用")} ${number(view.saved.selection?.score).toFixed(1)}点</span>
-        </div>
-        ${ticketRows}
         <div class="auto-selection-actions">
-          <button id="autoOpenPredictionBtn" type="button">AI予想を開く</button>
+          <button id="autoOpenPredictionBtn" type="button">予想を見る</button>
           ${notePath ? `
             <button id="autoNotePreviewBtn" type="button">note原稿を確認</button>
-            <button id="autoNoteCopyTitleBtn" type="button" data-note-title="${escapeHtml(noteTitle)}">タイトルをコピー</button>
-            <button id="autoNoteCopyFullBtn" type="button" disabled>全文をコピー</button>
+            <button id="autoNoteCopyTitleBtn" type="button" data-note-title="${escapeHtml(noteTitle)}" hidden>タイトルをコピー</button>
+            <button id="autoNoteCopyFullBtn" type="button" disabled hidden>全文をコピー</button>
             <a
               id="autoNotePrepareBtn"
               href="${NOTE_NEW_URL}"
@@ -211,6 +195,7 @@
               rel="noopener noreferrer"
               aria-disabled="true"
               tabindex="-1"
+              hidden
             >確認後、note投稿準備</a>
           ` : ""}
         </div>
@@ -256,20 +241,13 @@
         </div>
         <p class="auto-selection-judgement">${escapeHtml(reason)}</p>
       </div>
-      ${
-        view.saved
-          ? `
-            <div class="auto-selection-actions">
-              <button id="autoOpenPredictionBtn" type="button">予想を見る</button>
-            </div>
-          `
-          : ""
-      }`;
+      ${ticketsHtml(view)}`;
 
     const openButton = document.getElementById("autoOpenPredictionBtn");
     if (openButton && view.saved) {
       openButton.addEventListener("click", () => openSavedPrediction(view.saved));
     }
+    setupNoteDraft(view);
   }
 
   function setupNoteDraft(view) {
@@ -318,6 +296,9 @@
       if (status) status.textContent = "原稿を読み込んでいます";
       try {
         await loadDraft();
+        if (titleButton) titleButton.hidden = false;
+        if (fullButton) fullButton.hidden = false;
+        if (prepareButton) prepareButton.hidden = false;
         preview?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       } catch (error) {
         console.error("note原稿取得エラー", error);

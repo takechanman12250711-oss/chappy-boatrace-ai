@@ -130,14 +130,90 @@ assert.equal(
   "裏側の学習診断を初期表示直後に起動しない"
 );
 assert.equal(
-  render.includes("renderCompactPredictionSummary(prediction)"),
+  predictionRuntime.includes(
+    '"js/history-insights-base.js"'
+  ),
   true,
-  "予想画面は要点を先に表示する"
+  "履歴本体を遅延ローダーから直接読み込む"
 );
 assert.equal(
-  render.includes("<summary>出走表・分析根拠を見る</summary>"),
+  predictionRuntime.includes(
+    '"js/motor-maintenance-insights.js"'
+  ),
   true,
-  "詳細分析は折りたたむ"
+  "モーター理論を遅延ローダーから直接読み込む"
+);
+assert.equal(
+  predictionRuntime.includes(
+    '"js/history-insights.js"'
+  ),
+  false,
+  "document.writeを使う互換ローダーは遅延読込しない"
+);
+[
+  'renderNewspaperSheet(prediction, "main")',
+  'renderNewspaperSheet(prediction, "manshu")',
+  "renderPracticalSelection(prediction)",
+  "renderTicketRanking(prediction)"
+].forEach(sectionCall => {
+  assert.equal(
+    render.includes(sectionCall),
+    true,
+    `${sectionCall} を予想画面に残す`
+  );
+});
+
+const statsUi = stats.slice(
+  stats.indexOf('U.setHtml("statsArea", `'),
+  stats.indexOf("function initStatsEvents()")
+);
+[
+  "成績の要点",
+  "直近の結果",
+  "厳選的中率",
+  "回収率",
+  "検証収支"
+].forEach(label => {
+  assert.equal(
+    statsUi.includes(label),
+    true,
+    `${label} を結果画面に表示する`
+  );
+});
+[
+  "完全データ500Rの進捗",
+  "点数帯別",
+  "改善候補",
+  "場別比較",
+  "品質診断",
+  "復旧診断",
+  "展開一致率",
+  "シャドー"
+].forEach(label => {
+  assert.equal(
+    statsUi.includes(label),
+    false,
+    `${label} をユーザー向け結果画面に表示しない`
+  );
+});
+assert.equal(
+  (statsUi.match(/renderMetricCard\(\{/g) || []).length,
+  3,
+  "結果画面の指標は3項目に絞る"
+);
+assert.equal(
+  stats.includes(
+    "realSettledRows.slice(0, 5)"
+  ),
+  true,
+  "直近結果はシャドーを除いた最大5Rにする"
+);
+assert.equal(
+  stats.includes(
+    "A.buildResultHeadline(\n          userVerificationSummary"
+  ),
+  true,
+  "ユーザー向けKPIへシャドー集計を混ぜない"
 );
 
 const summaryDirectory = path.join(

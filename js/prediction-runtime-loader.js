@@ -7,7 +7,8 @@
   const VERSION = "20260727-fast1";
   const scripts = [
     "js/theory.js",
-    "js/history-insights.js",
+    "js/history-insights-base.js",
+    "js/motor-maintenance-insights.js",
     "js/theory-input.js",
     "js/race-history.js",
     "js/odds-insights.js",
