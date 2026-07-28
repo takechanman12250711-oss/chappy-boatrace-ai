@@ -108,7 +108,9 @@
       comment: safeText(
         firstValue([row.scenarioSummary, row.comment, row.reason]),
         ""
-      )
+      ),
+      selectionTier: safeText(row.selectionTier, ""),
+      expansionReason: safeText(row.expansionReason, "")
     };
   }
 
@@ -225,9 +227,32 @@
         ? `${item.odds}倍`
         : "オッズ未取得";
 
+    const tier =
+      item.selectionTier === "展開追加"
+        ? "［展開追加］"
+        : "";
+    const category =
+      item.category
+        ? `［${item.category}］`
+        : "";
+    const comment =
+      safeText(
+        item.comment ||
+        ticketComment(
+          item.ticket,
+          item.category || "買い目"
+        ),
+        ""
+      );
+
     return (
       `・${item.ticket}　` +
-      oddsText
+      `${category}${tier}　${oddsText}` +
+      (
+        comment
+          ? `\n　${comment}`
+          : ""
+      )
     );
   }
 
@@ -546,7 +571,7 @@
       ),
 
       "",
-      "ここから先で、6艇評価・AI優先候補・厳選7点を公開します。"
+      "ここから先で、6艇評価・AI優先候補・実戦厳選（基本5〜7点、成立展開時最大10点）を公開します。"
     ].join("\n");
   }
 
@@ -753,7 +778,7 @@
             .join("\n")
         : "主軸となる展開が定まらないため見送り。",
       "",
-      `厳選買い目　${practical.length}点／最大7点`
+      `厳選買い目　${practical.length}点／最大10点`
     ]
       .filter(
         value =>

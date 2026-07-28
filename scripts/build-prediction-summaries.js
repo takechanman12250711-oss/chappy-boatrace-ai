@@ -81,7 +81,7 @@ function compactPrediction(prediction) {
       practicalTickets: Array.isArray(
         prediction?.prediction?.practicalTickets
       )
-        ? prediction.prediction.practicalTickets.slice(0, 7)
+        ? prediction.prediction.practicalTickets.slice(0, 10)
         : []
     }
   };

@@ -42,6 +42,15 @@ assert(
   "2差し・4残しの保護が無効です"
 );
 assert(
+  charter.principles
+    ?.preserveEvaluatedScenarioCandidatesForEveryBoat === true &&
+    charter.principles
+      ?.candidateGenerationPrecedesTicketLimit === true &&
+    charter.principles
+      ?.excludedCandidatesRequireStructuredReason === true,
+  "評価済み展開の全艇共通保護または除外理由の保存が無効です"
+);
+assert(
   charter.principles?.numbersAloneMayCreateTickets === false &&
     charter.principles?.numbersAloneMayDeleteTickets === false,
   "数字だけで買い目を変更できる設定です"
@@ -59,8 +68,10 @@ assert(
 const practical = charter.practicalTickets || {};
 const allocation = practical.allocationMaximum || {};
 assert(
-  practical.standard === 5 && practical.maximum === 7,
-  "実戦厳選は基本5点・最大7点でなければなりません"
+  practical.standard === 5 &&
+    practical.normalMaximum === 7 &&
+    practical.maximum === 10,
+  "実戦厳選は基本5点・通常最大7点・成立展開時最大10点でなければなりません"
 );
 assert(
   allocation.main === 3 &&
@@ -69,6 +80,23 @@ assert(
     allocation.longshot === 1 &&
     Object.values(allocation).reduce((sum, value) => sum + value, 0) === 7,
   "実戦厳選の配分上限が3・2・1・1ではありません"
+);
+assert(
+  practical.scenarioExpansion?.enabled === true &&
+    practical.scenarioExpansion
+      ?.requiresStructuredEvidence === true &&
+    practical.scenarioExpansion
+      ?.minimumRoleScore === 65 &&
+    practical.scenarioExpansion
+      ?.candidateRequirementDoesNotImplyPurchase === true &&
+    practical.scenarioExpansion
+      ?.categoryScopedPresentation === true &&
+    practical.scenarioExpansion?.fillsToMaximum === false &&
+    practical.scenarioExpansion
+      ?.preservesCandidatePool === true &&
+    practical.scenarioExpansion
+      ?.requiresExclusionReason === true,
+  "8〜10点目の展開追加条件が固定されていません"
 );
 
 assert(
@@ -215,6 +243,10 @@ const index = read("index.html");
 const style = read("style.css");
 const noteGenerator = read("js/note-generator.js");
 const practicalSelection = read("js/practical-selection.js");
+const evaluatedScenarioCandidates =
+  read("js/evaluated-scenario-candidates.js");
+const predictionRuntimeLoader =
+  read("js/prediction-runtime-loader.js");
 const shadowSelectionV2 = read("js/shadow-selection-v2.js");
 const collectPredictions = read("scripts/collect-predictions.js");
 
@@ -242,13 +274,48 @@ assert(
 assert(
   practicalSelection.includes("take(lists.main, 3, \"本線\")") &&
     practicalSelection.includes("take(lists.cover, 2, \"押さえ\")") &&
-    practicalSelection.includes("take(lists.flow, 1, \"流し\")") &&
-    practicalSelection.includes("take(lists.longshot, 1, \"万舟・穴\")"),
+    practicalSelection.includes("lists.flow,\n        1,\n        \"流し\",\n        true") &&
+    practicalSelection.includes("lists.longshot,") &&
+    practicalSelection.includes("const NORMAL_MAXIMUM_COUNT = 7;") &&
+    practicalSelection.includes("const MAXIMUM_COUNT = 10;") &&
+    practicalSelection.includes("lists.possibility") &&
+    practicalSelection.includes("requireActionableRole") &&
+    practicalSelection.includes("rawExpansionCandidates") &&
+    practicalSelection.includes("\"独立展開\"") &&
+    practicalSelection.includes("row.purchaseEligible") &&
+    practicalSelection.includes("excludedCandidates") &&
+    practicalSelection.includes("INDEPENDENT_SCENARIO") &&
+    practicalSelection.includes("CANDIDATE_ONLY_EVALUATION"),
   "実戦厳選の実装配分が憲章と一致しません"
 );
 assert(
   practicalSelection.includes("主軸となる展開が定まらないため見送り。"),
   "note原稿に本線不成立時の見送りがありません"
+);
+assert(
+  evaluatedScenarioCandidates.includes("MARK_DEFINITIONS") &&
+    evaluatedScenarioCandidates.includes("candidatePool") &&
+    evaluatedScenarioCandidates.includes("physicalCoverage") &&
+    evaluatedScenarioCandidates.includes("independent-scenario") &&
+    !evaluatedScenarioCandidates.includes("fourContinuation") &&
+    !evaluatedScenarioCandidates.includes("threeAttackBoatNo"),
+  "評価済み展開の候補生成が全艇共通処理になっていません"
+);
+assert(
+  predictionRuntimeLoader.indexOf(
+    "\"js/evaluated-scenario-candidates.js\""
+  ) <
+    predictionRuntimeLoader.indexOf("\"js/ai-core.js\""),
+  "評価済み展開候補をAIコアより先に読み込んでいません"
+);
+assert(
+  script.includes("practicalSelectionAudit") &&
+    script.includes("targetDecisions") &&
+    script.includes("excludedIndependentCandidates") &&
+    collectPredictions.includes(
+      "compactPracticalSelection"
+    ),
+  "評価艇・買い目・非採用理由をブラウザと自動保存へ残していません"
 );
 assert(
   render.includes("ChappyPracticalSelection") &&
@@ -320,5 +387,5 @@ if (failures.length) {
 
 console.log("チャッピーAI憲章チェック: 合格");
 console.log(`- 優先順位: ${expectedPriority.join(" → ")}`);
-console.log("- 実戦厳選: 基本5点・最大7点");
+console.log("- 実戦厳選: 基本5点・通常5〜7点・成立展開時最大10点");
 console.log("- 同意なしの予想ロジック変更: 禁止");

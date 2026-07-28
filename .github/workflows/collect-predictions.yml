@@ -29,6 +29,7 @@ on:
       - "scripts/test-api-history.js"
       - "scripts/test-api-client-cache.js"
       - "js/ai-core.js"
+      - "js/evaluated-scenario-candidates.js"
       - "js/history-insights.js"
       - "js/history-insights-base.js"
       - "js/motor-maintenance-insights.js"
@@ -76,6 +77,7 @@ jobs:
       - name: Check charter and source
         run: |
           node --check scripts/collect-predictions.js
+          node --check js/evaluated-scenario-candidates.js
           node --check js/shadow-selection-v2.js
           node scripts/test-shadow-predictions.js
           node scripts/test-shadow-selection-v2.js
@@ -83,6 +85,7 @@ jobs:
           node scripts/test-race-parser.js
           node scripts/test-theory-integration.js
           node scripts/test-auto-selection.js
+          node scripts/test-evaluated-scenario-consistency.js
           node scripts/test-api-history.js
           node scripts/test-api-client-cache.js
           node scripts/test-prediction-summaries.js

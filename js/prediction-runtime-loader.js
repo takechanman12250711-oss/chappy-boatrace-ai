@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260727-fast1";
+  const VERSION = "20260728-scenarios1";
   const scripts = [
     "js/theory.js",
     "js/history-insights-base.js",
@@ -12,6 +12,7 @@
     "js/theory-input.js",
     "js/race-history.js",
     "js/odds-insights.js",
+    "js/evaluated-scenario-candidates.js",
     "js/ai-core.js",
     "js/prediction.js",
     "js/practical-selection.js",

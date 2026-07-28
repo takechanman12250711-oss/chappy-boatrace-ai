@@ -3319,6 +3319,108 @@
           "string"
           ? summarySource
           : "";
+      const practicalSelection =
+        typeof window
+          .ChappyPracticalSelection
+          ?.select === "function"
+          ? window
+              .ChappyPracticalSelection
+              .select(prediction)
+          : null;
+      const compactMark =
+        mark => ({
+          boatNo:
+            Number(
+              mark?.boatNo ??
+              mark?.number ??
+              mark?.waku ??
+              0
+            ) || null,
+          name:
+            String(
+              mark?.name ||
+              mark?.playerName ||
+              mark?.racerName ||
+              ""
+            ),
+          score:
+            Number(
+              mark?.score ??
+              mark?.total ??
+              0
+            )
+        });
+      const practicalTickets =
+        (
+          practicalSelection
+            ?.tickets || []
+        ).map(item => ({
+          ticket:
+            String(item?.ticket || ""),
+          category:
+            String(
+              item?.category || ""
+            ),
+          comment:
+            String(
+              item?.comment || ""
+            ),
+          selectionTier:
+            String(
+              item?.selectionTier || ""
+            ),
+          branchIds: [
+            ...(item?.validBranchIds ||
+              item?.branchIds ||
+              [])
+          ],
+          requirementIds: [
+            ...(item
+              ?.validRequirementIds ||
+              item
+                ?.requirementIds ||
+              [])
+          ],
+          evidenceReasons: [
+            ...(item
+              ?.evidenceReasons || [])
+          ]
+        }));
+      const practicalSelectionAudit =
+        practicalSelection
+          ? {
+              status:
+                practicalSelection.status,
+              reason:
+                practicalSelection.reason,
+              standardCount:
+                practicalSelection
+                  .standardCount,
+              normalMaximumCount:
+                practicalSelection
+                  .normalMaximumCount,
+              maximumCount:
+                practicalSelection
+                  .maximumCount,
+              targetDecisions: [
+                ...(practicalSelection
+                  .targetDecisions || [])
+              ],
+              excludedIndependentCandidates:
+                (
+                  practicalSelection
+                    .excludedCandidates ||
+                  []
+                ).filter(
+                  item =>
+                    (
+                      item
+                        ?.requirementIds ||
+                      []
+                    ).length > 0
+                )
+            }
+          : null;
 
       const snapshot = {
         raceKey:
@@ -3386,6 +3488,34 @@
                 prediction
               )
             : null,
+
+        marks: {
+          honmei:
+            compactMark(
+              prediction
+                ?.mainSheet?.honmei
+            ),
+          taikou:
+            compactMark(
+              prediction
+                ?.mainSheet?.taikou
+            ),
+          ana:
+            compactMark(
+              prediction
+                ?.mainSheet?.ana
+            ),
+          osae:
+            compactMark(
+              prediction
+                ?.mainSheet?.osae
+            )
+        },
+
+        practicalTickets,
+
+        practicalSelection:
+          practicalSelectionAudit,
 
         ticketRanks
       };

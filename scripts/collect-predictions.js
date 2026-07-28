@@ -360,7 +360,72 @@ function compactEvaluation(evaluation) {
   };
 }
 
+function compactPracticalSelection(
+  selection
+) {
+  if (
+    !selection ||
+    typeof selection !== "object"
+  ) {
+    return null;
+  }
+
+  return {
+    status:
+      String(selection.status || ""),
+    reason:
+      String(selection.reason || ""),
+    standardCount:
+      Number(
+        selection.standardCount || 0
+      ),
+    normalMaximumCount:
+      Number(
+        selection
+          .normalMaximumCount || 0
+      ),
+    maximumCount:
+      Number(
+        selection.maximumCount || 0
+      ),
+    targetDecisions:
+      Array.isArray(
+        selection.targetDecisions
+      )
+        ? selection.targetDecisions
+        : [],
+    excludedIndependentCandidates:
+      (
+        Array.isArray(
+          selection
+            .excludedCandidates
+        )
+          ? selection
+              .excludedCandidates
+          : []
+      ).filter(
+        item =>
+          (
+            item?.requirementIds ||
+            []
+          ).length > 0
+      )
+  };
+}
+
 function compactPrediction(prediction, practicalTickets, raceData) {
+  const practicalSelection =
+    global.ChappyPracticalSelection &&
+    typeof global
+      .ChappyPracticalSelection
+      .select === "function"
+      ? global
+          .ChappyPracticalSelection
+          .select(prediction)
+      : prediction
+          ?.practicalSelection ||
+        null;
+
   return {
     version: prediction?.version || "",
     predictionMode: prediction?.predictionMode || "server_pre_deadline",
@@ -373,6 +438,10 @@ function compactPrediction(prediction, practicalTickets, raceData) {
       ? prediction.ticketRanks
       : [],
     practicalTickets,
+    practicalSelection:
+      compactPracticalSelection(
+        practicalSelection
+      ),
     preRaceConditions: predictionConditions.capture(raceData, prediction)
   };
 }
@@ -483,6 +552,11 @@ function compactVerificationPayload(
       osae: compactMark(prediction?.mainSheet?.osae)
     },
     practicalTickets: Array.isArray(practicalTickets) ? practicalTickets : [],
+    practicalSelection:
+      compactPracticalSelection(
+        prediction
+          ?.practicalSelection
+      ),
     preRaceConditions: preRaceConditions || null,
     verificationEvidence: compactVerificationEvidence(prediction)
   };
@@ -963,8 +1037,22 @@ function buildStoredPrediction(
     : "server_pre_deadline_shadow";
   prediction.officialResultUsedForPrediction = false;
 
+  const practicalSelection =
+    !dependencies
+      .createPracticalSelection &&
+    global.ChappyPracticalSelection &&
+    typeof global
+      .ChappyPracticalSelection
+      .select === "function"
+      ? global
+          .ChappyPracticalSelection
+          .select(prediction)
+      : null;
   const practicalTickets =
+    practicalSelection?.tickets ||
     createPracticalSelection(prediction);
+  prediction.practicalSelection =
+    practicalSelection;
   const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
   const capturedConditions =
     captureStoredConditions(

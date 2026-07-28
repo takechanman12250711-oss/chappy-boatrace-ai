@@ -76,7 +76,7 @@
         used.add(row.ticket);
         return true;
       })
-      .slice(0, 7);
+      .slice(0, 10);
   }
 
   function classifyMiss(tickets, resultTicket) {
