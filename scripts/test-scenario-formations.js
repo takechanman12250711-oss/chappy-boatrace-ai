@@ -112,6 +112,15 @@ const legacy = aiCore.buildFormations(threeAttack);
 const connected = aiCore.buildFormations(threeAttack, scenarios);
 
 assert.equal(scenarios.mainScenario.type, "threeAttack");
+assert.equal(
+  scenarios.fourContinuation.qualified,
+  false,
+  "攻め・残し・STの複合根拠がない4号艇は保持対象にしない"
+);
+assert.ok(
+  scenarios.blockedBoats.includes(4),
+  "独立根拠がない4号艇は従来どおり3攻め時に除外する"
+);
 assert.equal(connected.evidence.source, "raceScenarios");
 assert.equal(connected.evidence.scenarioType, "threeAttack");
 assert.equal(connected.mainEstablished, true);

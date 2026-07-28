@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.8.0-theory-integration";
+  const CORE_VERSION = "ai-core-v4.8.1-scenario-preservation";
 
   /* ===============================
     基本ユーティリティ
@@ -7176,6 +7176,8 @@ function buildHoldPickupTheory(
   const wallCandidateNo =
     Number(wallTheory?.wallCandidateNo || 0) || null;
   const wallState = wallTheory?.state || "暫定";
+  const fourContinuationSupported =
+    options?.fourContinuation?.qualified === true;
 
   const scenarioCourses = {
     escape: {
@@ -7187,7 +7189,9 @@ function buildHoldPickupTheory(
       pickup: [3, 4, 5, 6]
     },
     threeAttack: {
-      hold: [1, 2],
+      hold: fourContinuationSupported
+        ? [1, 2, 4]
+        : [1, 2],
       pickup: [5, 6]
     },
     fourAttack: {
@@ -7199,7 +7203,9 @@ function buildHoldPickupTheory(
   const holdPositionPoints = {
     escape: { 2: 25, 3: 21, 4: 18 },
     sashi: { 1: 25, 3: 20, 4: 18 },
-    threeAttack: { 1: 25, 2: 20 },
+    threeAttack: fourContinuationSupported
+      ? { 1: 25, 2: 20, 4: 18 }
+      : { 1: 25, 2: 20 },
     fourAttack: { 1: 22, 3: 25, 5: 20 }
   };
   const pickupPositionPoints = {
@@ -7515,7 +7521,11 @@ function buildHoldPickupTheory(
   6艇の関係から展開と着順候補を作る。
 =============================== */
 
-function buildRaceScenarios(analyses, data) {
+function buildRaceScenarios(
+  analyses,
+  data,
+  options = {}
+) {
   const list = Array.isArray(analyses)
     ? [...analyses]
     : [];
@@ -7952,6 +7962,98 @@ function buildRaceScenarios(analyses, data) {
   const fourVsThree =
     relationEdge(4, 3);
 
+  /*
+    3コース攻めが主筋でも、4号艇自身に
+    「4コース攻め評価・残し評価・ST」の独立根拠が揃う時は、
+    4号艇を頭へ昇格させず、追走・残しの展開を維持する。
+
+    進入変更時に別艇の根拠を混ぜないため、攻め・残し・STは
+    すべて「4号艇自身が実4コース」の場合だけ接続する。
+  */
+  const fourEntry = getEntry(4);
+  const threeEntry = getEntry(3);
+  const fourCourse = fourEntry
+    ? getAttackTheoryCourse(fourEntry, 4)
+    : null;
+  const threeCourse = threeEntry
+    ? getAttackTheoryCourse(threeEntry, 3)
+    : null;
+  const mappingMatched =
+    fourCourse === 4 &&
+    threeCourse === 3;
+  const fourAttackTheory =
+    attackTheoryFor(4);
+  const fourSlit = slitBoat(4);
+  const innerSlit = slit.ranking.find(
+    (boat) => Number(boat?.course) === 3
+  ) || null;
+  const fourCurrentSt =
+    fourSlit?.currentStCount > 0
+      ? toNumber(
+          fourSlit.currentStAverage,
+          null
+        )
+      : null;
+  const hasCurrentSeriesStart =
+    mappingMatched &&
+    fourCurrentSt !== null &&
+    fourCurrentSt <= 0.15;
+  const formalSlitEdge =
+    mappingMatched &&
+    fourSlit?.isFormalSlit === true &&
+    innerSlit?.isFormalSlit === true &&
+    fourSlit?.exSt !== null &&
+    innerSlit?.exSt !== null
+      ? round(
+          toNumber(innerSlit.exSt, 0) -
+          toNumber(fourSlit.exSt, 0),
+          3
+        )
+      : 0;
+  const hasFormalSlitSupport =
+    formalSlitEdge >= slit.secondaryThreshold;
+  const attackTheoryScore =
+    round(toNumber(fourAttackTheory?.score, 0));
+  const holdScore = round(hold(4));
+  const evidenceQualified =
+    options?.preserveFourthContinuation === true &&
+    mappingMatched &&
+    attackTheoryScore >= 65 &&
+    holdScore >= 65 &&
+    (
+      hasCurrentSeriesStart ||
+      hasFormalSlitSupport
+    );
+  const supportReason =
+    hasCurrentSeriesStart
+      ? `今節ST${fourCurrentSt.toFixed(3)}`
+      : hasFormalSlitSupport
+        ? `実3コース艇との公式展示ST差${formalSlitEdge.toFixed(3)}`
+        : "";
+  const fourContinuation = {
+    boatNo: 4,
+    course: fourCourse,
+    comparedBoatNo:
+      Number(innerSlit?.boatNo || 0) || null,
+    mappingMatched,
+    evaluationSupported:
+      options?.preserveFourthContinuation === true,
+    evidenceQualified,
+    mainScenarioSupported: false,
+    qualified: false,
+    attackTheoryScore,
+    holdScore,
+    currentSt: fourCurrentSt,
+    formalSlitEdge,
+    formalSlitSupport: hasFormalSlitSupport,
+    reason:
+      options?.preserveFourthContinuation !== true
+        ? "元の艇評価で4号艇押さえが不成立"
+        : !mappingMatched
+          ? "3・4号艇の実進入が3・4コースと一致しない"
+          : "4号艇の攻め・残し・STの複合根拠不足"
+  };
+
   const innerThreat =
     Math.max(
       relationEdge(2, 1),
@@ -8111,6 +8213,46 @@ if (hasComparison(3, 1)) {
   );
 
   /*
+    この例外は「3号艇攻めで4号艇が消える」矛盾だけを直す。
+    逃げ・差し・5号艇中心など、別の主筋へ3-4の枝を持ち込まない。
+
+    同点時は scenarios の元配列順と同じ判定にして、
+    実際の mainScenario と条件がずれないようにする。
+  */
+  const threeAttackIsMain =
+    threeAttackScore > escapeScore &&
+    threeAttackScore > sashiScore &&
+    threeAttackScore >= fourAttackScore;
+  const blockedByThreeAttack =
+    threeAttackScore >= 72;
+
+  fourContinuation.mainScenarioSupported =
+    threeAttackIsMain;
+  fourContinuation.blockedByThreeAttack =
+    blockedByThreeAttack;
+  fourContinuation.qualified =
+    evidenceQualified &&
+    threeAttackIsMain &&
+    blockedByThreeAttack;
+
+  if (fourContinuation.qualified) {
+    fourContinuation.reason =
+      `4号艇の4コース攻め・残し評価に${supportReason}の裏付け`;
+  } else if (
+    evidenceQualified &&
+    !threeAttackIsMain
+  ) {
+    fourContinuation.reason =
+      "3号艇攻めが最有力展開ではない";
+  } else if (
+    evidenceQualified &&
+    !blockedByThreeAttack
+  ) {
+    fourContinuation.reason =
+      "4号艇を除外する強度の3号艇攻めではない";
+  }
+
+  /*
     シナリオ内の着順適性を計算する。
     固定買い目は作らない。
   */
@@ -8208,8 +8350,15 @@ if (hasComparison(3, 1)) {
 
         if (no === 4) {
           firstScore -= 12;
-          secondScore -= 7;
-          reasons.push("3攻めで攻め場減少");
+
+          if (fourContinuation.qualified) {
+            reasons.push(
+              `3攻めで頭評価は下げるが追走・残しは維持（${fourContinuation.reason}）`
+            );
+          } else {
+            secondScore -= 7;
+            reasons.push("3攻めで攻め場減少");
+          }
         }
 
         if (no === 5) {
@@ -8440,9 +8589,11 @@ if (hasComparison(3, 1)) {
         frameMovementAdjustment(3),
       attacker: 3,
       blockedBoats:
-        threeAttackScore >= 72
+        threeAttackScore >= 72 &&
+        !fourContinuation.qualified
           ? [4]
           : [],
+      fourContinuation,
       outcome: buildOutcome("threeAttack")
     },
     {
@@ -8607,7 +8758,9 @@ if (hasComparison(3, 1)) {
     {
       attackerCourse,
       attackerBoatNo: attacker,
-      blockedBoats
+      blockedBoats,
+      fourContinuation:
+        mainScenario?.fourContinuation || null
     }
   );
 
@@ -8825,6 +8978,9 @@ if (hasComparison(3, 1)) {
     frameMovement,
 
     blockedBoats,
+
+    fourContinuation:
+      mainScenario?.fourContinuation || null,
 
     confidence,
 
@@ -9632,7 +9788,12 @@ function buildRaceTrendEvaluation(data) {
         ],
         blockedBoats: [
           ...(raceScenarios.blockedBoats || [])
-        ]
+        ],
+        fourContinuation:
+          raceScenarios?.fourContinuation || null,
+        flow:
+          legacyEvidence.flow === true ||
+          raceScenarios?.fourContinuation?.qualified === true
       }
     : legacyEvidence;
 
@@ -9833,6 +9994,120 @@ function buildRaceTrendEvaluation(data) {
     ).map((boat) => [Number(boat.boatNo), boat.score])
   );
 
+  /*
+    3攻めに4号艇が追走できる時は、残しと拾いを着順へ固定せず、
+    同じ成立展開から派生する複数の着順を候補として保持する。
+
+    - 4が2着に残り、展開拾い艇または内艇が3着
+    - 最上位の内残し艇が2着、4が3着
+
+    4頭にはせず、最終の実戦厳選は既存の最大7点処理へ任せる。
+  */
+  function buildFourthContinuationBranches() {
+    if (
+      !hasScenario ||
+      raceScenarios?.fourContinuation?.qualified !== true ||
+      raceScenarios?.mainScenario?.type !== "threeAttack"
+    ) {
+      return [];
+    }
+
+    const head = marks.honmei;
+    const continuationBoat = list.find(
+      (boat) =>
+        boatNo(boat) ===
+        Number(raceScenarios.fourContinuation.boatNo)
+    );
+
+    if (
+      !head ||
+      !continuationBoat ||
+      boatNo(head) !== Number(raceScenarios.attacker)
+    ) {
+      return [];
+    }
+
+    const byNo = new Map(
+      list.map((boat) => [boatNo(boat), boat])
+    );
+    const innerHoldBoats = (
+      raceScenarios?.holdPickupTheory
+        ?.secondCandidates || []
+    )
+      .filter(
+        (candidate) =>
+          Number(candidate?.course || 0) <
+          Number(raceScenarios.fourContinuation.course || 4)
+      )
+      .map((candidate) =>
+        byNo.get(Number(candidate?.boatNo || 0))
+      )
+      .filter(
+        (boat) =>
+          boat &&
+          boatNo(boat) !== boatNo(head) &&
+          boatNo(boat) !== boatNo(continuationBoat)
+      );
+    const pickupBoat = thirdRanking.find(
+      (boat) =>
+        boatNo(boat) !== boatNo(head) &&
+        boatNo(boat) !== boatNo(continuationBoat)
+    );
+    const primaryInner = innerHoldBoats[0] || null;
+    const secondaryInner = innerHoldBoats[1] || null;
+
+    return [
+      {
+        type: "pickup-third",
+        first: head,
+        second: continuationBoat,
+        third: pickupBoat,
+        useAsCover: false
+      },
+      {
+        type: "inner-third",
+        first: head,
+        second: continuationBoat,
+        third: primaryInner,
+        useAsCover: true
+      },
+      {
+        type: "continuation-third",
+        first: head,
+        second: primaryInner,
+        third: continuationBoat,
+        useAsCover: true
+      },
+      {
+        type: "second-inner-third",
+        first: head,
+        second: continuationBoat,
+        third: secondaryInner,
+        useAsCover: false
+      }
+    ].filter(
+      (branch) =>
+        branch.first &&
+        branch.second &&
+        branch.third
+    );
+  }
+
+  const fourthContinuationBranches =
+    buildFourthContinuationBranches();
+  const fourthContinuationTickets = [];
+
+  fourthContinuationBranches.forEach(
+    ({ first, second, third }) => {
+      addTicket(
+        fourthContinuationTickets,
+        first,
+        second,
+        third
+      );
+    }
+  );
+
   const mainEstablished = hasScenario
     ? Boolean(legacyMarks.established && marks.established)
     : marks.established === true;
@@ -9935,6 +10210,10 @@ function buildRaceTrendEvaluation(data) {
     thirdCandidates,
     limit
   ) {
+    if (target.length >= limit) {
+      return;
+    }
+
     for (const head of heads) {
       for (const second of secondCandidates) {
         if (boatNo(second) === boatNo(head)) {
@@ -9977,6 +10256,10 @@ function buildRaceTrendEvaluation(data) {
     thirdCandidates,
     limit
   ) {
+    if (target.length >= limit) {
+      return;
+    }
+
     for (const head of heads) {
       const seconds = secondCandidates.filter(
         (boat) => boatNo(boat) !== boatNo(head)
@@ -10017,6 +10300,31 @@ function buildRaceTrendEvaluation(data) {
     );
   }
 
+  if (fourthContinuationBranches.length) {
+    /*
+      最上位の3着拾い艇に対し、採用済みの各2着残し候補を
+      1点ずつ先に並べる。4号艇だけを順位外から強制せず、
+      1・2・4の残し筋を同じ条件で比較できる並びにする。
+    */
+    for (const head of mainHeads) {
+      for (const second of secondRanking.slice(0, 3)) {
+        const third = thirdRanking.find(
+          (candidate) =>
+            boatNo(candidate) !== boatNo(head) &&
+            boatNo(candidate) !== boatNo(second)
+        );
+
+        addTicket(main, head, second, third);
+      }
+    }
+
+    fourthContinuationBranches.forEach(
+      ({ first, second, third }) => {
+        addTicket(main, first, second, third);
+      }
+    );
+  }
+
   generateDiversifiedMainTickets(
     main,
     mainHeads,
@@ -10025,12 +10333,33 @@ function buildRaceTrendEvaluation(data) {
     6
   );
 
+  /*
+    継続艇が2着・3着へ残る着順違いは、同じ3攻め本線の押さえ。
+    実戦厳選の押さえ2枠へ先に渡し、成立した展開を消さない。
+  */
+  fourthContinuationBranches
+    .filter((branch) => branch.useAsCover)
+    .forEach(({ first, second, third }) => {
+      addTicket(safety, first, second, third);
+    });
+
   generateTickets(
     safety,
     safetyHeads,
     secondRanking.slice(0, 4),
     thirdRanking.slice(0, 5),
     8
+  );
+
+  fourthContinuationBranches.forEach(
+    ({ first, second, third }) => {
+      addTicket(
+        flowTickets,
+        first,
+        second,
+        third
+      );
+    }
   );
 
   generateTickets(
@@ -10048,6 +10377,13 @@ function buildRaceTrendEvaluation(data) {
     thirdRanking.slice(0, 6),
     8
   );
+
+  if (evidence.fourContinuation) {
+    evidence.fourContinuation = {
+      ...evidence.fourContinuation,
+      candidateTickets: [...fourthContinuationTickets]
+    };
+  }
 
   return {
     main,
@@ -10499,6 +10835,10 @@ function buildRaceTrendEvaluation(data) {
       mainScenario?.outcome?.thirdCandidates || [];
     const holdPickupFormal =
       raceScenarios?.holdPickupTheory?.isFormal === true;
+    const continuationCandidates =
+      raceScenarios?.fourContinuation?.qualified === true
+        ? [byBoat[4]].filter(Boolean)
+        : [];
 
     /*
       ◎は最有力シナリオを作る艇を最優先。
@@ -10563,6 +10903,7 @@ function buildRaceTrendEvaluation(data) {
       △は残し・道中・当地の順で補完する。
     */
     const osae = selectBoat([
+      ...continuationCandidates,
       ...secondCandidates,
       ...thirdCandidates,
       ...(
@@ -10622,7 +10963,10 @@ function buildRaceTrendEvaluation(data) {
     prediction.jsへ渡すAIデータ生成
   =============================== */
 
-  function buildPredictionData(data) {
+  function buildPredictionData(
+    data,
+    options = {}
+  ) {
 
     const entries = getRaceEntries(data);
 
@@ -10732,7 +11076,8 @@ const attackTheory = {
 const raceScenarios =
   buildRaceScenarios(
     analyses,
-    data
+    data,
+    options
   );
 
 const wallTheory =
@@ -10762,7 +11107,9 @@ const holdPickupTheory =
     wallTheory,
     {
       attackerBoatNo: raceScenarios.attacker,
-      blockedBoats: raceScenarios.blockedBoats
+      blockedBoats: raceScenarios.blockedBoats,
+      fourContinuation:
+        raceScenarios.fourContinuation || null
     }
   );
 const holdPickupByBoat = new Map(
@@ -11023,7 +11370,25 @@ const slit =
         ? prediction
         : {};
 
-    const aiCore = buildPredictionData(data);
+    const legacyOsae =
+      basePrediction?.boatEvaluation?.osae ||
+      basePrediction?.mainSheet?.osae ||
+      null;
+    const legacyOsaeBoatNo = Number(
+      legacyOsae?.boatNo ??
+      legacyOsae?.number ??
+      legacyOsae?.waku ??
+      0
+    );
+    const preserveFourthContinuation =
+      legacyOsaeBoatNo === 4;
+
+    const aiCore = buildPredictionData(
+      data,
+      {
+        preserveFourthContinuation
+      }
+    );
     
     const raceScenarios =
   aiCore.raceScenarios || {};

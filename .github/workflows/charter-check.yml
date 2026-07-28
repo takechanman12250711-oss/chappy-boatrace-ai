@@ -62,6 +62,7 @@ on:
       - "scripts/test-race-scenarios.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
+      - "scripts/test-edogawa-fourth-boat-scenario.js"
       - "api/missing.js"
       - "scripts/build-race-stats.js"
       - "scripts/repair-recent-results.js"
@@ -146,6 +147,7 @@ on:
       - "scripts/test-race-scenarios.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
+      - "scripts/test-edogawa-fourth-boat-scenario.js"
       - "api/missing.js"
       - "scripts/build-race-stats.js"
       - "scripts/repair-recent-results.js"
@@ -238,6 +240,7 @@ jobs:
           node --check scripts/test-race-scenarios.js
           node --check scripts/test-scenario-marks.js
           node --check scripts/test-scenario-formations.js
+          node --check scripts/test-edogawa-fourth-boat-scenario.js
           node --check api/missing.js
           node --check scripts/build-race-stats.js
           node --check scripts/repair-recent-results.js
@@ -286,6 +289,7 @@ jobs:
           node scripts/test-race-scenarios.js
           node scripts/test-scenario-marks.js
           node scripts/test-scenario-formations.js
+          node scripts/test-edogawa-fourth-boat-scenario.js
           node scripts/test-repair-recent-results.js
           node scripts/test-missing-numbers.js
           node scripts/test-odds-insights.js
