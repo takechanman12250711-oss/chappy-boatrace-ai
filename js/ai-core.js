@@ -11646,6 +11646,59 @@ const baseTicketByValue =
 const oddsByTicket =
   data?.odds?.byTicket || {};
 
+const fourthContinuationEvidence =
+  compatibleFormation.evidence
+    ?.fourContinuation || null;
+
+const fourthContinuationTicketSet =
+  new Set(
+    Array.isArray(
+      fourthContinuationEvidence
+        ?.candidateTickets
+    )
+      ? fourthContinuationEvidence
+          .candidateTickets
+          .map(String)
+      : []
+  );
+
+function buildFourthContinuationTicketSummary(
+  ticket
+) {
+  if (!fourthContinuationTicketSet.has(ticket)) {
+    return null;
+  }
+
+  const summaries = {
+    "3-4-5":
+      "3号艇攻めを主筋に、4号艇が2着へ追走・残し、5号艇が3着で展開を拾う筋。",
+    "3-4-1":
+      "3号艇攻めを主筋に、4号艇が2着へ追走・残し、1号艇が内で3着に残る筋。",
+    "3-1-4":
+      "3号艇攻めを主筋に、1号艇が内で2着に残り、4号艇の3着残りを拾う筋。",
+    "3-4-2":
+      "3号艇攻めを主筋に、4号艇が2着へ追走・残し、2号艇が内で3着に残る筋。"
+  };
+  const summary = summaries[ticket];
+
+  if (!summary) return null;
+
+  const reason = String(
+    fourthContinuationEvidence?.reason || ""
+  ).trim();
+
+  return {
+    title: "3攻め＋4追走・残し",
+    summary:
+      summary +
+      (
+        reason
+          ? `根拠は${reason}。`
+          : ""
+      )
+  };
+}
+
 function hydrateCompatibleTickets(
   tickets,
   category,
@@ -11672,6 +11725,10 @@ function hydrateCompatibleTickets(
         rawOdds !== "" &&
         Number.isFinite(numericOdds) &&
         numericOdds > 0;
+      const fourthContinuation =
+        buildFourthContinuationTicketSummary(
+          ticket
+        );
 
       return {
         ...baseRow,
@@ -11691,7 +11748,21 @@ function hydrateCompatibleTickets(
         hasOdds,
         isManshu:
           hasOdds &&
-          numericOdds >= 100
+          numericOdds >= 100,
+        ...(
+          fourthContinuation
+            ? {
+                scenarioTitle:
+                  fourthContinuation.title,
+                scenarioSummary:
+                  fourthContinuation.summary,
+                reason:
+                  fourthContinuation.summary,
+                comment:
+                  fourthContinuation.summary
+              }
+            : {}
+        )
       };
     })
     .filter((item) => item.ticket);

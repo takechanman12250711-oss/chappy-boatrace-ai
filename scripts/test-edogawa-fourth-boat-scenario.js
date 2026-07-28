@@ -216,6 +216,24 @@ const expectedContinuationTickets = [
   "3-1-4",
   "3-4-2"
 ];
+const expectedContinuationComments = new Map([
+  [
+    "3-4-5",
+    "4号艇が2着へ追走・残し、5号艇が3着で展開を拾う"
+  ],
+  [
+    "3-4-1",
+    "4号艇が2着へ追走・残し、1号艇が内で3着に残る"
+  ],
+  [
+    "3-1-4",
+    "1号艇が内で2着に残り、4号艇の3着残りを拾う"
+  ],
+  [
+    "3-4-2",
+    "4号艇が2着へ追走・残し、2号艇が内で3着に残る"
+  ]
+]);
 
 assert.equal(practical.status, "selected");
 assert.ok(
@@ -234,6 +252,36 @@ assert.deepEqual(
   expectedContinuationTickets,
   "江戸川1Rでは成立した4号艇絡み4展開を実戦7点へ通す"
 );
+practicalWithFour.forEach((item) => {
+  const expectedComment =
+    expectedContinuationComments.get(
+      item.ticket
+    );
+
+  assert.equal(
+    item.scenarioTitle,
+    "3攻め＋4追走・残し",
+    `${item.ticket}へ4号艇継続の展開名を渡す`
+  );
+  assert.ok(
+    expectedComment &&
+    item.comment.includes(expectedComment),
+    `${item.ticket}へ着順別の4号艇継続根拠を渡す`
+  );
+  assert.ok(
+    item.comment.includes(
+      prediction.aiCore.formations.evidence
+        .fourContinuation.reason
+    ),
+    `${item.ticket}へ4号艇自身のST・攻め・残し根拠を渡す`
+  );
+  assert.ok(
+    !item.comment.includes(
+      "内の残しと5号艇の展開拾い"
+    ),
+    `${item.ticket}へ旧汎用コメントを残さない`
+  );
+});
 assert.deepEqual(
   practical.tickets.map((item) => item.ticket),
   [
