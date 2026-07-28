@@ -139,6 +139,22 @@ assert(
   "自動選定V2と70点判定の接続条件が固定されていません"
 );
 assert(
+  shadowV2.verificationMinimumScore === 60 &&
+    shadowV2.score70PlusUsage ===
+      "automatic_selection_and_verification" &&
+    shadowV2.score60To69Usage ===
+      "verification_only" &&
+    shadowV2.scoreBelow60Usage ===
+      "reference_only",
+  "自動選定V2の点数帯別用途が固定されていません"
+);
+assert(
+  shadowV2.latestStableVerificationCohortOnly === true &&
+    shadowV2.officialResultsArePostEvaluationOnly === true &&
+    shadowV2.preserveStoredScoreDuringResultMatch === true,
+  "V2検証のコホートまたは採点後照合の保護が無効です"
+);
+assert(
   shadowV2.doesNotAffectTicketComposition === true &&
     shadowV2.doesNotAffectNoteContentRules === true &&
     shadowV2.doesNotPublishNoteAutomatically === true,
@@ -217,6 +233,8 @@ const noteGenerator = read("js/note-generator.js");
 const practicalSelection = read("js/practical-selection.js");
 const shadowSelectionV2 = read("js/shadow-selection-v2.js");
 const collectPredictions = read("scripts/collect-predictions.js");
+const matchPredictions = read("scripts/match-predictions.js");
+const autoStats = read("js/auto-stats.js");
 
 const newEngineWeightMatch = aiCore.match(
   /const NEW_ENGINE_WEIGHTS\s*=\s*\{([\s\S]*?)\};/
@@ -303,13 +321,23 @@ assert(
 );
 assert(
   collectPredictions.includes("const MIN_SCORE = 70;") &&
+    collectPredictions.includes("const VERIFICATION_MIN_SCORE = 60;") &&
     collectPredictions.includes("shadowV2Predictions") &&
     collectPredictions.includes("buildActiveV2Comparison") &&
     collectPredictions.includes("calibrationEligible === true") &&
+    collectPredictions.includes('mode: "verification_only"') &&
+    collectPredictions.includes('mode: "reference_only"') &&
     shadowSelectionV2.includes(
       "校正対象として成立した総合点だけを70点の自動選定へ使う"
     ),
   "自動選定V2の有効スコアと70点判定の接続が固定されていません"
+);
+assert(
+  matchPredictions.includes("verificationResult:") &&
+    matchPredictions.includes("buildVerificationCohortKey") &&
+    autoStats.includes("score60To69Count") &&
+    autoStats.includes("referenceOnlyCount"),
+  "V2の60点以上検証・採点後結果照合が実装へ接続されていません"
 );
 
 if (failures.length) {

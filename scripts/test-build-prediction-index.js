@@ -63,8 +63,14 @@ try {
         }]
       },
       versions: {
-        logicFingerprint: "logic-a"
+        logicFingerprint: "logic-a",
+        evaluator: "v2",
+        configHash: "config-a",
+        prediction: "prediction-a",
+        aiCore: "core-a"
       },
+      cohortKey:
+        "logic-a:daily-reference:v2:config-a:prediction-a:core-a",
       snapshot: {
         boats: [{ boatNo: 1, avgST: 0.13 }]
       },
@@ -72,6 +78,22 @@ try {
         practicalTickets: [{
           ticket: "1-2-3"
         }]
+      },
+      verificationResult: {
+        settled: true,
+        settledAt: "2026-07-23T00:00:00Z",
+        resultTicket: "1-2-3",
+        winningMethod: "逃げ",
+        practicalTickets: ["1-2-3"],
+        practicalHit: true,
+        hitCategory: "本線",
+        simulatedStake: 100,
+        simulatedReturn: 810,
+        payout: 810,
+        popularity: 2,
+        oversizedDebugPayload: {
+          mustNotReachIndex: true
+        }
       }
     }]
   }));
@@ -104,6 +126,35 @@ try {
   assert.equal(
     index.shadowV2Predictions[0].evaluation.totalScore,
     61.2
+  );
+  assert.match(
+    index.shadowV2Predictions[0]
+      .verificationCohortKey,
+    /^legacy-v1:logic-a:v2:config-a:prediction-a:core-a$/
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].scoreBand,
+    "60_69"
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].verificationTier,
+    "verification"
+  );
+  assert.equal(
+    index.shadowV2Predictions[0].verificationEligible,
+    true
+  );
+  assert.equal(
+    index.shadowV2Predictions[0]
+      .verificationResult.resultTicket,
+    "1-2-3"
+  );
+  assert.equal(
+    index.shadowV2Predictions[0]
+      .verificationResult
+      .oversizedDebugPayload,
+    undefined,
+    "集約indexへ照合デバッグ詳細を持ち込まない"
   );
   assert.equal(
     index.shadowV2Predictions[0].snapshot,

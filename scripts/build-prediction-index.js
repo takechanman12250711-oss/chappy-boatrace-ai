@@ -2,6 +2,9 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const {
+  buildVerificationCohortKey
+} = require("../js/shadow-selection-v2");
 
 const DEFAULT_LIMIT = 500;
 const VERIFICATION_LIMIT = 1500;
@@ -47,6 +50,97 @@ function compactIndexVerification(record) {
       preRaceConditions: prediction.preRaceConditions || null
     }
   };
+}
+
+function compactVerificationResult(
+  value
+) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    value?.settled !== true
+  ) {
+    return null;
+  }
+
+  return {
+    settled: true,
+    settledAt:
+      String(value?.settledAt || ""),
+    resultTicket:
+      String(value?.resultTicket || ""),
+    winningMethod:
+      String(value?.winningMethod || ""),
+    expectedMethod:
+      String(value?.expectedMethod || ""),
+    scenarioMatched:
+      value?.scenarioMatched ?? null,
+    practicalTickets:
+      Array.isArray(
+        value?.practicalTickets
+      )
+        ? value.practicalTickets
+        : [],
+    practicalHit:
+      value?.practicalHit === true,
+    hitCategory:
+      String(value?.hitCategory || ""),
+    missType:
+      String(value?.missType || ""),
+    simulatedStake:
+      Number(value?.simulatedStake || 0),
+    simulatedReturn:
+      Number(value?.simulatedReturn || 0),
+    payout:
+      Number(value?.payout || 0),
+    popularity:
+      Number(value?.popularity || 0),
+    honmeiBoat:
+      String(value?.honmeiBoat || ""),
+    honmeiFirst:
+      value?.honmeiFirst === true
+  };
+}
+
+function verificationBandOf(record) {
+  if (
+    record?.calibrationEligible !== true ||
+    record?.officialResultUsedForEvaluation === true
+  ) {
+    return "ineligible";
+  }
+
+  const rawScore =
+    record?.evaluation?.totalScore;
+  if (
+    rawScore === null ||
+    rawScore === undefined ||
+    rawScore === ""
+  ) {
+    return "ineligible";
+  }
+  const score = Number(rawScore);
+  if (!Number.isFinite(score)) {
+    return "ineligible";
+  }
+  if (score >= 70) return "70_plus";
+  if (score >= 60) return "60_69";
+  return "under_60";
+}
+
+function verificationTierOf(record) {
+  const band =
+    verificationBandOf(record);
+  if (band === "70_plus") {
+    return "high_confidence";
+  }
+  if (band === "60_69") {
+    return "verification";
+  }
+  if (band === "under_60") {
+    return "reference";
+  }
+  return "ineligible";
 }
 
 function compactShadowV2(record) {
@@ -147,6 +241,29 @@ function compactShadowV2(record) {
     versions: record?.versions || null,
     cohortKey:
       String(record?.cohortKey || ""),
+    verificationCohortKey:
+      buildVerificationCohortKey(record),
+    scoreBand:
+      String(
+        record?.scoreBand ||
+        verificationBandOf(record)
+      ),
+    verificationTier:
+      String(
+        record?.verificationTier ||
+        verificationTierOf(record)
+      ),
+    verificationEligible:
+      [
+        "70_plus",
+        "60_69"
+      ].includes(
+        verificationBandOf(record)
+      ),
+    verificationResult:
+      compactVerificationResult(
+        record?.verificationResult
+      ),
     selectionReference:
       record?.selectionReference || null,
     officialResultUsedForEvaluation:
@@ -272,5 +389,8 @@ module.exports = {
   buildPredictionIndex,
   compactIndexVerification,
   compactShadowV2,
+  compactVerificationResult,
+  verificationBandOf,
+  verificationTierOf,
   writePredictionIndex
 };

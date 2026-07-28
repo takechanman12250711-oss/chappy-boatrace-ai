@@ -110,8 +110,41 @@ function hasUnsettledPredictions(predictionPath) {
         ? data.verificationPredictions
         : [])
     ];
+    const unsettledV2 = (
+      Array.isArray(
+        data?.shadowV2Predictions
+      )
+        ? data.shadowV2Predictions
+        : []
+    ).some(record => {
+      const rawScore =
+        record?.evaluation?.totalScore;
+      const score =
+        rawScore === null ||
+        rawScore === undefined ||
+        rawScore === ""
+          ? Number.NaN
+          : Number(rawScore);
+      return (
+        record?.calibrationEligible ===
+          true &&
+        record
+          ?.officialResultUsedForEvaluation !==
+          true &&
+        Number.isFinite(score) &&
+        score >= 60 &&
+        record?.verificationResult
+          ?.settled !== true
+      );
+    });
 
-    return predictions.some(prediction => !prediction?.result?.settled);
+    return (
+      predictions.some(
+        prediction =>
+          !prediction?.result?.settled
+      ) ||
+      unsettledV2
+    );
   } catch (error) {
     console.warn(
       `予想ファイルを確認できません：${predictionPath} (${error?.message || error})`

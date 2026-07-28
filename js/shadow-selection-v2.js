@@ -128,6 +128,74 @@
       return (hash >>> 0).toString(16).padStart(8, "0");
     }
 
+    function buildVerificationCohortKey(record = {}) {
+      const explicit = String(
+        record?.verificationCohortKey || ""
+      ).trim();
+      if (explicit) return explicit;
+
+      const versions =
+        record?.versions &&
+        typeof record.versions === "object"
+          ? record.versions
+          : record;
+      const storedCohortKey = String(
+        record?.cohortKey || ""
+      ).trim();
+      const storedParts = storedCohortKey
+        .split(":");
+      const logicFingerprint = String(
+        versions?.logicFingerprint ||
+        storedParts[0] ||
+        "local"
+      );
+      const referenceGenerationId = String(
+        versions?.referenceGenerationId || ""
+      ).trim();
+      const evaluator = String(
+        versions?.evaluator ||
+        record?.evaluatorVersion ||
+        storedParts[2] ||
+        VERSION
+      );
+      const configHash = String(
+        versions?.configHash ||
+        storedParts[3] ||
+        "unknown-config"
+      );
+      const predictionVersion = String(
+        versions?.prediction ||
+        storedParts[4] ||
+        "unknown-prediction"
+      );
+      const aiCoreVersion = String(
+        versions?.aiCore ||
+        storedParts[5] ||
+        "unknown-core"
+      );
+
+      if (referenceGenerationId) {
+        const currentCohort = storedCohortKey || [
+          logicFingerprint,
+          referenceGenerationId,
+          evaluator,
+          configHash,
+          predictionVersion,
+          aiCoreVersion
+        ].join(":");
+        return `explicit-v1:${currentCohort}`;
+      }
+
+      return [
+        "legacy-v1",
+        logicFingerprint,
+        evaluator,
+        configHash,
+        predictionVersion,
+        aiCoreVersion
+      ].join(":");
+    }
+
     function rolesOf(theory) {
       return Array.isArray(theory?.roles)
         ? theory.roles
@@ -1049,6 +1117,15 @@
       const normalizedRaceKey =
         String(raceKey || "") ||
         `${date}-${String(jcd).padStart(2, "0")}-${Number(raceNo || 0)}`;
+      const cohortKey = [
+        versions.logicFingerprint || "local",
+        versions.referenceGenerationId ||
+          "unknown-reference-generation",
+        versions.evaluator,
+        versions.configHash,
+        versions.prediction || "unknown-prediction",
+        versions.aiCore || "unknown-core"
+      ].join(":");
 
       return {
         schemaVersion: SCHEMA_VERSION,
@@ -1125,15 +1202,12 @@
           components: weightedComponents
         },
         versions,
-        cohortKey: [
-          versions.logicFingerprint || "local",
-          versions.referenceGenerationId ||
-            "unknown-reference-generation",
-          versions.evaluator,
-          versions.configHash,
-          versions.prediction || "unknown-prediction",
-          versions.aiCore || "unknown-core"
-        ].join(":"),
+        cohortKey,
+        verificationCohortKey:
+          buildVerificationCohortKey({
+            cohortKey,
+            versions
+          }),
         selectionReference: selection
           ? {
               type: String(selection.type || ""),
@@ -1333,6 +1407,7 @@
       timingOf,
       buildAvailability,
       buildRecord,
+      buildVerificationCohortKey,
       preferSnapshot,
       upsertSnapshots
     };

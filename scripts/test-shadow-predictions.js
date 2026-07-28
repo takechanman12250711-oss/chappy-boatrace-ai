@@ -9,6 +9,7 @@ const theoryInput = require(
 );
 const {
   MIN_SCORE,
+  VERIFICATION_MIN_SCORE,
   loadOptionalV2Dependency,
   safeFingerprintFiles,
   buildCollectionHealth,
@@ -21,6 +22,7 @@ const {
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
+  verificationUsageFor,
   buildActiveV2Comparison,
   applySelectedRaceKey,
   buildStoredPrediction,
@@ -29,6 +31,35 @@ const {
 } = require("./collect-predictions");
 
 assert.equal(MIN_SCORE, 70);
+assert.equal(VERIFICATION_MIN_SCORE, 60);
+assert.equal(
+  verificationUsageFor({
+    ready: true,
+    score: 59.9
+  }).scoreBand,
+  "under_60"
+);
+assert.equal(
+  verificationUsageFor({
+    ready: true,
+    score: 60
+  }).mode,
+  "verification_only"
+);
+assert.equal(
+  verificationUsageFor({
+    ready: true,
+    score: 69.9
+  }).scoreBand,
+  "60_69"
+);
+assert.equal(
+  verificationUsageFor({
+    ready: true,
+    score: 70
+  }).scoreBand,
+  "70_plus"
+);
 
 const provenanceConditions =
   captureStoredConditions(
@@ -396,7 +427,11 @@ assert.equal(
 );
 assert.equal(
   lowShadowRecord.scoreBand,
-  "under_70"
+  "under_60"
+);
+assert.equal(
+  lowShadowRecord.verificationMode,
+  "reference_only"
 );
 assert.equal(
   lowShadowRecord.selection.selected,
@@ -460,6 +495,14 @@ assert.equal(
       "20260726-12-9"
   ).selection.selected,
   false
+);
+assert.equal(
+  markedRecords.find(
+    item =>
+      item.raceKey ===
+      "20260726-12-9"
+  ).verificationMode,
+  "reference_only"
 );
 
 const unavailableV2 =

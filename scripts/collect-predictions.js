@@ -79,6 +79,7 @@ const shadowSelectionV2 =
   );
 
 const MIN_SCORE = 70;
+const VERIFICATION_MIN_SCORE = 60;
 const MAX_RUNS_PER_DAY = 100;
 const REPOSITORY_ROOT = path.resolve(__dirname, "..");
 
@@ -885,6 +886,51 @@ function selectedRaceKeyFor(
   );
 }
 
+function verificationUsageFor(
+  selection
+) {
+  const rawScore = selection?.score;
+  const score =
+    rawScore === null ||
+    rawScore === undefined ||
+    rawScore === ""
+      ? null
+      : Number(rawScore);
+  const ready =
+    selection?.ready === true &&
+    Number.isFinite(score);
+
+  if (!ready) {
+    return {
+      scoreBand: "ineligible",
+      mode: "reference_only",
+      verificationEligible: false
+    };
+  }
+
+  if (score >= MIN_SCORE) {
+    return {
+      scoreBand: "70_plus",
+      mode: "verification_only",
+      verificationEligible: true
+    };
+  }
+
+  if (score >= VERIFICATION_MIN_SCORE) {
+    return {
+      scoreBand: "60_69",
+      mode: "verification_only",
+      verificationEligible: true
+    };
+  }
+
+  return {
+    scoreBand: "under_60",
+    mode: "reference_only",
+    verificationEligible: false
+  };
+}
+
 function buildActiveV2Selection(
   shadowV2,
   legacySelection,
@@ -1016,6 +1062,8 @@ function buildStoredPrediction(
       legacySelection,
       selected
     );
+  const verificationUsage =
+    verificationUsageFor(selection);
   prediction.predictionMode =
     selection.selected
       ? "server_pre_deadline"
@@ -1032,11 +1080,12 @@ function buildStoredPrediction(
     verificationMode:
       selection.selected
         ? "selected"
-        : "shadow",
+        : verificationUsage.mode,
     scoreBand:
-      selection.qualified
-        ? "70_plus"
-        : "under_70",
+      verificationUsage.scoreBand,
+    verificationEligible:
+      verificationUsage
+        .verificationEligible,
     selection,
     shadowV2,
     prediction: compactVerificationPayload(
@@ -1165,13 +1214,22 @@ function applySelectedRaceKey(
         selectedRaceKey &&
       record?.selection?.qualified ===
         true;
+    const verificationUsage =
+      verificationUsageFor(
+        record?.selection
+      );
 
     return {
       ...record,
       verificationMode:
         selected
           ? "selected"
-          : "shadow",
+          : verificationUsage.mode,
+      scoreBand:
+        verificationUsage.scoreBand,
+      verificationEligible:
+        verificationUsage
+          .verificationEligible,
       selection: {
         ...(record?.selection || {}),
         selected
@@ -1528,7 +1586,9 @@ async function main() {
   }
 
   console.log(
-    `検証保存：${verificationPredictions.length}R（70点以上${verificationPredictions.filter(item => item.scoreBand === "70_plus").length}R／70点未満${verificationPredictions.filter(item => item.scoreBand === "under_70").length}R）`
+    `検証保存：${verificationPredictions.length}R（70点以上${verificationPredictions.filter(item => item.scoreBand === "70_plus").length}R／` +
+    `60〜69点${verificationPredictions.filter(item => item.scoreBand === "60_69").length}R／` +
+    `60点未満・対象外${verificationPredictions.filter(item => !item.verificationEligible).length}R）`
   );
   console.log(
     `V2自動選定対象：${shadowV2Predictions.filter(item => item.calibrationEligible).length}/${shadowV2Predictions.length}R` +
@@ -1568,6 +1628,7 @@ if (require.main === module) {
 
 module.exports = {
   MIN_SCORE,
+  VERIFICATION_MIN_SCORE,
   SHADOW_LOGIC_FINGERPRINT,
   SHADOW_REFERENCE_GENERATION_ID,
   SHADOW_REFERENCE_DATA_FINGERPRINT,
@@ -1580,6 +1641,7 @@ module.exports = {
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
+  verificationUsageFor,
   buildActiveV2Selection,
   buildActiveV2Comparison,
   applySelectedRaceKey,

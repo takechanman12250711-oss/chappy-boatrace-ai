@@ -160,6 +160,116 @@
       : current;
   }
 
+  function verificationCohortKeyOf(
+    record
+  ) {
+    const explicit = String(
+      record
+        ?.verificationCohortKey || ""
+    ).trim();
+    if (explicit) return explicit;
+
+    const versions =
+      record?.versions || {};
+    const storedCohortKey = String(
+      record?.cohortKey || ""
+    ).trim();
+    const parts =
+      storedCohortKey.split(":");
+    const logicFingerprint = String(
+      versions?.logicFingerprint ||
+      parts[0] ||
+      "local"
+    );
+    const referenceGenerationId =
+      String(
+        versions
+          ?.referenceGenerationId ||
+        ""
+      ).trim();
+    const evaluator = String(
+      versions?.evaluator ||
+      record?.evaluatorVersion ||
+      parts[2] ||
+      "unknown-evaluator"
+    );
+    const configHash = String(
+      versions?.configHash ||
+      parts[3] ||
+      "unknown-config"
+    );
+    const prediction = String(
+      versions?.prediction ||
+      parts[4] ||
+      "unknown-prediction"
+    );
+    const aiCore = String(
+      versions?.aiCore ||
+      parts[5] ||
+      "unknown-core"
+    );
+
+    if (referenceGenerationId) {
+      const stableCohort =
+        storedCohortKey || [
+          logicFingerprint,
+          referenceGenerationId,
+          evaluator,
+          configHash,
+          prediction,
+          aiCore
+        ].join(":");
+      return `explicit-v1:${stableCohort}`;
+    }
+
+    return [
+      "legacy-v1",
+      logicFingerprint,
+      evaluator,
+      configHash,
+      prediction,
+      aiCore
+    ].join(":");
+  }
+
+  function shadowV2ScoreOf(record) {
+    const rawScore =
+      record?.evaluation?.totalScore;
+    if (
+      rawScore === null ||
+      rawScore === undefined ||
+      rawScore === ""
+    ) {
+      return null;
+    }
+    const score = Number(rawScore);
+    return Number.isFinite(score)
+      ? score
+      : null;
+  }
+
+  function shadowV2ScoreBandOf(
+    record
+  ) {
+    if (
+      record?.calibrationEligible !==
+        true ||
+      record
+        ?.officialResultUsedForEvaluation ===
+        true
+    ) {
+      return "ineligible";
+    }
+    const score =
+      shadowV2ScoreOf(record);
+    if (score === null) {
+      return "ineligible";
+    }
+    if (score >= 70) return "70_plus";
+    if (score >= 60) return "60_69";
+    return "under_60";
+  }
+
   function buildShadowV2Progress(
     records,
     options = {}
@@ -174,12 +284,45 @@
               : []
           );
     const identified = source
-      .filter(item => String(item?.cohortKey || ""))
+      .filter(item =>
+        item?.calibrationEligible ===
+          true &&
+        item
+          ?.officialResultUsedForEvaluation !==
+          true &&
+        shadowV2ScoreOf(item) !== null
+      )
+      .map(item => ({
+        ...item,
+        verificationCohortKey:
+          verificationCohortKeyOf(item)
+      }))
       .sort((a, b) => toTimestamp(b?.capturedAt) - toTimestamp(a?.capturedAt));
     const latest = identified[0] || null;
-    const cohortKey = String(latest?.cohortKey || "");
-    const cohortSource = cohortKey
-      ? source.filter(item => String(item?.cohortKey || "") === cohortKey)
+    const verificationCohortKey =
+      String(
+        latest
+          ?.verificationCohortKey || ""
+      );
+    const cohortKey = String(
+      latest?.cohortKey || ""
+    );
+    const cohortSource =
+      verificationCohortKey
+      ? source
+          .map(item => ({
+            ...item,
+            verificationCohortKey:
+              verificationCohortKeyOf(
+                item
+              )
+          }))
+          .filter(
+            item =>
+              item
+                .verificationCohortKey ===
+              verificationCohortKey
+          )
       : [];
     const uniqueByRace = new Map();
 
@@ -194,14 +337,51 @@
 
     const cohortRecords = Array.from(uniqueByRace.values());
     const completeCount = cohortRecords.filter(item => item?.complete === true).length;
-    const calibrationRecords = cohortRecords.filter(
+    const calibrationRecords =
+      cohortRecords.filter(
       item =>
         item?.calibrationEligible === true &&
-        item?.officialResultUsedForEvaluation !== true
+        item?.officialResultUsedForEvaluation !== true &&
+        shadowV2ScoreOf(item) !== null
     );
-    const eligibleCount = calibrationRecords.length;
-    const resultJoinedCount = calibrationRecords.filter(
-      item => officialResultRaceKeys.has(String(item?.raceKey || ""))
+    const verificationRecords =
+      calibrationRecords.filter(
+        item =>
+          Number(
+            shadowV2ScoreOf(item)
+          ) >= 60
+      );
+    const referenceOnlyRecords =
+      calibrationRecords.filter(
+        item =>
+          Number(
+            shadowV2ScoreOf(item)
+          ) < 60
+      );
+    const score70PlusRecords =
+      verificationRecords.filter(
+        item =>
+          Number(
+            shadowV2ScoreOf(item)
+          ) >= 70
+      );
+    const score60To69Records =
+      verificationRecords.filter(
+        item =>
+          Number(
+            shadowV2ScoreOf(item)
+          ) < 70
+      );
+    const hasJoinedResult = item =>
+      item?.verificationResult
+        ?.settled === true ||
+      officialResultRaceKeys.has(
+        String(item?.raceKey || "")
+      );
+    const eligibleCount =
+      verificationRecords.length;
+    const resultJoinedCount = verificationRecords.filter(
+      hasJoinedResult
     ).length;
     const awaitingResultCount = Math.max(
       0,
@@ -212,19 +392,40 @@
       SHADOW_V2_MILESTONES.find(value => resultJoinedCount < value) || target;
     const logicFingerprint = String(
       latest?.versions?.logicFingerprint ||
+      verificationCohortKey
+        .split(":")[1] ||
       cohortKey.split(":")[0] ||
       ""
     );
 
     return {
       cohortKey,
+      verificationCohortKey,
       logicFingerprint,
       recordCount: cohortRecords.length,
       completeCount,
       eligibleCount,
+      score70PlusCount:
+        score70PlusRecords.length,
+      score60To69Count:
+        score60To69Records.length,
+      referenceOnlyCount:
+        referenceOnlyRecords.length,
+      score70PlusResultJoinedCount:
+        score70PlusRecords.filter(
+          hasJoinedResult
+        ).length,
+      score60To69ResultJoinedCount:
+        score60To69Records.filter(
+          hasJoinedResult
+        ).length,
       resultJoinedCount,
       awaitingResultCount,
-      excludedCount: Math.max(0, cohortRecords.length - eligibleCount),
+      excludedCount: Math.max(
+        0,
+        cohortRecords.length -
+          calibrationRecords.length
+      ),
       target,
       nextMilestone,
       remainingToNext: Math.max(0, nextMilestone - resultJoinedCount),
@@ -243,6 +444,9 @@
     normalizeTicket,
     normalizeIndex,
     buildResultHeadline,
+    verificationCohortKeyOf,
+    shadowV2ScoreOf,
+    shadowV2ScoreBandOf,
     buildShadowV2Progress
   };
 });

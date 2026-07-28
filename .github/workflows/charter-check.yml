@@ -3,9 +3,13 @@ name: Check Chappy AI Charter
 on:
   pull_request:
     paths:
+      - "AGENTS.md"
+      - ".gitignore"
+      - ".github/workflows/chappy-apply.yml"
       - ".github/workflows/charter-check.yml"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
+      - "docs/OPERATIONS.md"
       - "js/ai-core.js"
       - "js/script.js"
       - "js/race-history.js"
@@ -80,6 +84,8 @@ on:
       - "scripts/build-prediction-summaries.js"
       - "scripts/test-prediction-summaries.js"
       - "scripts/test-load-performance.js"
+      - "scripts/preflight-connections.js"
+      - "scripts/test-preflight-connections.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
       - "tools/test-local-water-theory-v2.js"
@@ -87,9 +93,13 @@ on:
     branches:
       - main
     paths:
+      - "AGENTS.md"
+      - ".gitignore"
+      - ".github/workflows/chappy-apply.yml"
       - ".github/workflows/charter-check.yml"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
+      - "docs/OPERATIONS.md"
       - "js/ai-core.js"
       - "js/script.js"
       - "js/race-history.js"
@@ -164,6 +174,8 @@ on:
       - "scripts/build-prediction-summaries.js"
       - "scripts/test-prediction-summaries.js"
       - "scripts/test-load-performance.js"
+      - "scripts/preflight-connections.js"
+      - "scripts/test-preflight-connections.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
       - "tools/test-local-water-theory-v2.js"
@@ -256,6 +268,8 @@ jobs:
           node --check scripts/test-api-client-cache.js
           node --check scripts/test-prediction-summaries.js
           node --check scripts/test-load-performance.js
+          node --check scripts/preflight-connections.js
+          node --check scripts/test-preflight-connections.js
           node --check js/race-history.js
           node --check js/venue-race-analysis.js
           node --check scripts/test-history-insights.js
@@ -294,4 +308,5 @@ jobs:
           node scripts/test-api-client-cache.js
           node scripts/test-prediction-summaries.js
           node scripts/test-load-performance.js
+          node scripts/test-preflight-connections.js
           node tools/test-local-water-theory-v2.js

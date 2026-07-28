@@ -65,6 +65,59 @@ fs.writeFileSync(predictionPath, JSON.stringify({
 }));
 assert.equal(hasUnsettledPredictions(predictionPath), false);
 
+fs.writeFileSync(predictionPath, JSON.stringify({
+  predictions: [],
+  verificationPredictions: [],
+  shadowV2Predictions: [{
+    raceKey: "20260720-24-11",
+    calibrationEligible: true,
+    officialResultUsedForEvaluation: false,
+    evaluation: { totalScore: 60 }
+  }]
+}));
+assert.equal(
+  hasUnsettledPredictions(predictionPath),
+  true,
+  "60点以上のV2未照合だけでも復旧対象にする"
+);
+
+fs.writeFileSync(predictionPath, JSON.stringify({
+  predictions: [],
+  verificationPredictions: [],
+  shadowV2Predictions: [{
+    raceKey: "20260720-24-11",
+    calibrationEligible: true,
+    officialResultUsedForEvaluation: false,
+    evaluation: { totalScore: 60 },
+    verificationResult: { settled: true }
+  }]
+}));
+assert.equal(
+  hasUnsettledPredictions(predictionPath),
+  false
+);
+
+fs.writeFileSync(predictionPath, JSON.stringify({
+  predictions: [],
+  verificationPredictions: [],
+  shadowV2Predictions: [{
+    raceKey: "20260720-24-11",
+    calibrationEligible: true,
+    officialResultUsedForEvaluation: false,
+    evaluation: { totalScore: 59.9 }
+  }, {
+    raceKey: "20260720-24-12",
+    calibrationEligible: true,
+    officialResultUsedForEvaluation: false,
+    evaluation: { totalScore: null }
+  }]
+}));
+assert.equal(
+  hasUnsettledPredictions(predictionPath),
+  false,
+  "60点未満と欠損点は検証進捗の復旧対象にしない"
+);
+
 fs.rmSync(tempDirectory, { recursive: true, force: true });
 
 console.log("直近3日間の結果自動復旧・予想照合テストに合格しました");

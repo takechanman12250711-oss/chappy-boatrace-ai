@@ -392,6 +392,11 @@ assert.ok(normal.versions.aiCore);
 assert.ok(normal.versions.theoryInput);
 assert.ok(normal.versions.referenceGenerationId);
 assert.ok(normal.versions.referenceDataFingerprint);
+assert.match(
+  normal.verificationCohortKey,
+  /^explicit-v1:/,
+  "新形式の検証母集団を旧形式と明示的に分離する"
+);
 
 const newEngine = buildRecord({
   newEngine: true
@@ -729,6 +734,12 @@ assert.equal(
   normal.cohortKey,
   "日々の参照データ更新では校正母集団を分断しない"
 );
+assert.equal(
+  otherReferenceGeneration
+    .verificationCohortKey,
+  normal.verificationCohortKey,
+  "日々の参照データ更新では検証母集団も分断しない"
+);
 
 const otherReferenceCompatibilityGeneration = buildRecord({
   referenceGenerationId: "reference-generation-next"
@@ -737,6 +748,12 @@ assert.notEqual(
   otherReferenceCompatibilityGeneration.cohortKey,
   normal.cohortKey,
   "参照データの生成方式が変わった場合だけ校正母集団を分ける"
+);
+assert.notEqual(
+  otherReferenceCompatibilityGeneration
+    .verificationCohortKey,
+  normal.verificationCohortKey,
+  "参照データ生成方式が変わった検証結果を混ぜない"
 );
 
 console.log(

@@ -6,6 +6,9 @@ const path = require("node:path");
 const {
   normalizeIndex,
   buildResultHeadline,
+  verificationCohortKeyOf,
+  shadowV2ScoreOf,
+  shadowV2ScoreBandOf,
   buildShadowV2Progress
 } = require("../js/auto-stats");
 const {
@@ -87,7 +90,8 @@ const v2Progress = buildShadowV2Progress([
     capturedAt: "2026-07-22T01:00:00Z",
     complete: true,
     calibrationEligible: true,
-    officialResultUsedForEvaluation: true
+    officialResultUsedForEvaluation: true,
+    evaluation: { totalScore: 75 }
   },
   {
     recordKey: "race-1:new-incomplete",
@@ -107,6 +111,7 @@ const v2Progress = buildShadowV2Progress([
     complete: true,
     calibrationEligible: true,
     officialResultUsedForEvaluation: true,
+    evaluation: { totalScore: 72 },
     versions: { logicFingerprint: "logic-new" }
   },
   {
@@ -117,6 +122,7 @@ const v2Progress = buildShadowV2Progress([
     complete: true,
     calibrationEligible: true,
     officialResultUsedForEvaluation: false,
+    evaluation: { totalScore: 72 },
     versions: { logicFingerprint: "logic-new" }
   },
   {
@@ -127,6 +133,7 @@ const v2Progress = buildShadowV2Progress([
     complete: true,
     calibrationEligible: true,
     officialResultUsedForEvaluation: false,
+    evaluation: { totalScore: 65 },
     versions: { logicFingerprint: "logic-new" }
   }
 ]);
@@ -135,6 +142,9 @@ assert.equal(v2Progress.logicFingerprint, "logic-new");
 assert.equal(v2Progress.recordCount, 2, "同じレースの再取得を重複計上しない");
 assert.equal(v2Progress.completeCount, 2);
 assert.equal(v2Progress.eligibleCount, 2);
+assert.equal(v2Progress.score70PlusCount, 1);
+assert.equal(v2Progress.score60To69Count, 1);
+assert.equal(v2Progress.referenceOnlyCount, 0);
 assert.equal(v2Progress.resultJoinedCount, 0);
 assert.equal(v2Progress.awaitingResultCount, 2);
 assert.equal(v2Progress.nextMilestone, 100);
@@ -149,7 +159,8 @@ const contaminatedProgress = buildShadowV2Progress([
     capturedAt: "2026-07-22T02:03:00Z",
     complete: true,
     calibrationEligible: true,
-    officialResultUsedForEvaluation: true
+    officialResultUsedForEvaluation: true,
+    evaluation: { totalScore: 72 }
   }
 ], {
   officialResultRaceKeys: ["race-3"]
@@ -171,7 +182,8 @@ const resultJoinedProgress = buildShadowV2Progress(
       capturedAt: "2026-07-22T02:01:00Z",
       complete: true,
       calibrationEligible: true,
-      officialResultUsedForEvaluation: false
+      officialResultUsedForEvaluation: false,
+      evaluation: { totalScore: 72 }
     },
     {
       recordKey: "race-2:new",
@@ -180,7 +192,8 @@ const resultJoinedProgress = buildShadowV2Progress(
       capturedAt: "2026-07-22T02:02:00Z",
       complete: true,
       calibrationEligible: true,
-      officialResultUsedForEvaluation: false
+      officialResultUsedForEvaluation: false,
+      evaluation: { totalScore: 65 }
     }
   ],
   {
@@ -194,6 +207,194 @@ assert.equal(
   "同一レースの公式結果が索引にあれば結果取得済み候補として数える"
 );
 assert.equal(resultJoinedProgress.awaitingResultCount, 1);
+
+const legacyDailyReferenceProgress =
+  buildShadowV2Progress(
+    [
+      {
+        raceKey: "20260726-12-11",
+        cohortKey:
+          "logic-old:ref-day-1:v2:config:prediction:core",
+        capturedAt:
+          "2026-07-26T01:00:00Z",
+        complete: true,
+        calibrationEligible: true,
+        officialResultUsedForEvaluation: false,
+        evaluation: { totalScore: 80.3 },
+        versions: {
+          logicFingerprint: "logic-old",
+          evaluator: "v2",
+          configHash: "config",
+          prediction: "prediction",
+          aiCore: "core"
+        }
+      },
+      {
+        raceKey: "20260726-12-11",
+        cohortKey:
+          "logic-new:ref-day-1:v2:config:prediction:core",
+        capturedAt:
+          "2026-07-26T02:00:00Z",
+        complete: true,
+        calibrationEligible: true,
+        officialResultUsedForEvaluation: false,
+        evaluation: { totalScore: 80.3 },
+        versions: {
+          logicFingerprint: "logic-new",
+          evaluator: "v2",
+          configHash: "config",
+          prediction: "prediction",
+          aiCore: "core"
+        }
+      },
+      {
+        raceKey: "20260726-01-12",
+        cohortKey:
+          "logic-new:ref-day-1:v2:config:prediction:core",
+        capturedAt:
+          "2026-07-26T02:01:00Z",
+        complete: true,
+        calibrationEligible: true,
+        officialResultUsedForEvaluation: false,
+        evaluation: { totalScore: 69.8 },
+        versions: {
+          logicFingerprint: "logic-new",
+          evaluator: "v2",
+          configHash: "config",
+          prediction: "prediction",
+          aiCore: "core"
+        }
+      },
+      {
+        raceKey: "20260727-02-9",
+        cohortKey:
+          "logic-new:ref-day-2:v2:config:prediction:core",
+        capturedAt:
+          "2026-07-27T01:00:00Z",
+        complete: true,
+        calibrationEligible: true,
+        officialResultUsedForEvaluation: false,
+        evaluation: { totalScore: 75.6 },
+        versions: {
+          logicFingerprint: "logic-new",
+          evaluator: "v2",
+          configHash: "config",
+          prediction: "prediction",
+          aiCore: "core"
+        }
+      },
+      {
+        raceKey: "20260727-10-2",
+        cohortKey:
+          "logic-new:ref-day-2:v2:config:prediction:core",
+        capturedAt:
+          "2026-07-27T01:01:00Z",
+        complete: true,
+        calibrationEligible: true,
+        officialResultUsedForEvaluation: false,
+        evaluation: { totalScore: 76.1 },
+        versions: {
+          logicFingerprint: "logic-new",
+          evaluator: "v2",
+          configHash: "config",
+          prediction: "prediction",
+          aiCore: "core"
+        }
+      },
+      {
+        raceKey: "20260727-10-3",
+        cohortKey:
+          "logic-new:ref-day-2:v2:config:prediction:core",
+        capturedAt:
+          "2026-07-27T01:02:00Z",
+        complete: true,
+        calibrationEligible: true,
+        officialResultUsedForEvaluation: false,
+        evaluation: { totalScore: 59.9 },
+        versions: {
+          logicFingerprint: "logic-new",
+          evaluator: "v2",
+          configHash: "config",
+          prediction: "prediction",
+          aiCore: "core"
+        }
+      }
+    ],
+    {
+      officialResultRaceKeys: [
+        "20260726-12-11",
+        "20260726-01-12",
+        "20260727-02-9",
+        "20260727-10-2",
+        "20260727-10-3"
+      ]
+    }
+  );
+
+assert.match(
+  legacyDailyReferenceProgress
+    .verificationCohortKey,
+  /^legacy-v1:logic-new:/,
+  "旧形式は日々変わる参照データ指紋を検証母集団から除外する"
+);
+assert.equal(
+  legacyDailyReferenceProgress
+    .score70PlusCount,
+  3
+);
+assert.equal(
+  legacyDailyReferenceProgress
+    .score60To69Count,
+  1
+);
+assert.equal(
+  legacyDailyReferenceProgress
+    .referenceOnlyCount,
+  1
+);
+assert.equal(
+  legacyDailyReferenceProgress
+    .eligibleCount,
+  4,
+  "60点未満は検証進捗の分母へ含めない"
+);
+assert.equal(
+  legacyDailyReferenceProgress
+    .resultJoinedCount,
+  4
+);
+assert.notEqual(
+  verificationCohortKeyOf({
+    cohortKey:
+      "logic-new:ref-day-2:v2:config:prediction:core",
+    versions: {
+      logicFingerprint: "logic-new",
+      referenceGenerationId:
+        "stable-reference-generation",
+      evaluator: "v2",
+      configHash: "config",
+      prediction: "prediction",
+      aiCore: "core"
+    }
+  }),
+  legacyDailyReferenceProgress
+    .verificationCohortKey,
+  "新形式と旧形式の検証母集団を混ぜない"
+);
+assert.equal(
+  shadowV2ScoreOf({
+    evaluation: { totalScore: null }
+  }),
+  null
+);
+assert.equal(
+  shadowV2ScoreBandOf({
+    calibrationEligible: true,
+    evaluation: { totalScore: "" }
+  }),
+  "ineligible",
+  "欠損点を0点扱いしない"
+);
 
 const verificationRows = Array.from({ length: 202 }, (_, index) => ({
   settled: true,

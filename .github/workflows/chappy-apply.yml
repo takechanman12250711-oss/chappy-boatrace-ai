@@ -1,5 +1,7 @@
 name: Chappy Auto Apply
 
+# Legacy compatibility bridge. It may prepare a draft PR, but it must never
+# alter workflow files or merge without review and required checks.
 on:
   issues:
     types:
@@ -23,6 +25,11 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
       - name: Read and validate request
         env:
@@ -64,7 +71,6 @@ jobs:
               "js/",
               "api/",
               "css/",
-              ".github/",
           )
 
           allowed_files = {
@@ -128,10 +134,15 @@ jobs:
             echo "JavaScript syntax check not required."
           fi
 
+      - name: Enforce charter
+        run: node scripts/check-charter.js
+
       - name: Check whether anything changed
         id: changes
         run: |
-          if git diff --quiet; then
+          TARGET_PATH="$(cat /tmp/chappy-path.txt)"
+
+          if [[ -z "$(git status --porcelain -- "$TARGET_PATH")" ]]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -164,6 +175,7 @@ jobs:
             gh pr create \
               --base main \
               --head "$BRANCH" \
+              --draft \
               --title "$(cat /tmp/chappy-message.txt)" \
               --body "チャッピーの自動修正です。
 
@@ -172,21 +184,11 @@ jobs:
           実行済み確認：
           - 対象パス検証
           - UTF-8検証
-          - JavaScriptの場合は構文チェック"
+          - JavaScriptの場合は構文チェック
+          - チャッピーAI憲章チェック"
           )"
 
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
-
-      - name: Merge pull request
-        if: steps.changes.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_URL: ${{ steps.pull-request.outputs.url }}
-        run: |
-          gh pr merge "$PR_URL" \
-            --squash \
-            --delete-branch \
-            --admin
 
       - name: Report success
         if: steps.changes.outputs.changed == 'true'
@@ -195,7 +197,9 @@ jobs:
         run: |
           gh issue comment \
             "${{ github.event.issue.number }}" \
-            --body "✅ 修正・構文確認・PR作成・mainへのマージまで完了しました。"
+            --body "✅ 修正・憲章確認・Draft PR作成まで完了しました。CIとレビュー後に、明示承認のうえでマージしてください。
+
+          PR: ${{ steps.pull-request.outputs.url }}"
 
           gh issue close \
             "${{ github.event.issue.number }}"
