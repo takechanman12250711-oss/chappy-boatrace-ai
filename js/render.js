@@ -1042,7 +1042,10 @@ if (raceInfoArea) {
           prediction.raceFlow?.title ||
           "",
 
-                scenarioSummary:
+        scenarioSummary:
+          row.scenarioSummary ||
+          row.comment ||
+          row.reason ||
           createTicketSpecificComment(
             prediction,
             row.ticket ||
@@ -2539,12 +2542,14 @@ function getPaperClassName(item) {
       if (category === "本線") return "main";
       if (category === "押さえ") return "safety";
       if (category === "流し") return "flow";
+      if (category === "独立展開") return "flow";
       return "manshu";
     };
 
     const body = `
       <div class="v3-note">
-        展開とコースを優先して厳選。
+        展開とコースを優先し、基本5〜7点で厳選。
+        独立した成立展開がある場合だけ最大10点まで追加します。
         数字・オッズだけによる削除はしていません。
       </div>
 
@@ -2567,6 +2572,13 @@ function getPaperClassName(item) {
                   ${item.scenarioType
                     ? tag(
                         item.scenarioType,
+                        "flow"
+                      )
+                    : ""}
+
+                  ${item.selectionTier === "展開追加"
+                    ? tag(
+                        "展開追加",
                         "flow"
                       )
                     : ""}
@@ -2594,7 +2606,7 @@ function getPaperClassName(item) {
       <div class="v3-note">
         実戦購入候補：
         ${selected.length}点
-        ／最大7点
+        ／最大${result.maximumCount || 10}点
       </div>
     `;
 

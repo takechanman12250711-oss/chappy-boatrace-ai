@@ -60,7 +60,7 @@ const summary = buildPredictionSummary({
     },
     prediction: {
       practicalTickets: Array.from(
-        { length: 9 },
+        { length: 12 },
         (_, index) => ({
           ticket: `1-2-${(index % 4) + 3}`
         })
@@ -92,7 +92,7 @@ assert.equal(
 );
 assert.equal(summary.runs[0].compared.length, 2);
 assert.equal(summary.predictions.length, 1);
-assert.equal(summary.predictions[0].prediction.practicalTickets.length, 7);
+assert.equal(summary.predictions[0].prediction.practicalTickets.length, 10);
 assert.equal(summary.predictions[0].prediction.oversized, undefined);
 assert.ok(
   Buffer.byteLength(JSON.stringify(summary)) < 20_000,

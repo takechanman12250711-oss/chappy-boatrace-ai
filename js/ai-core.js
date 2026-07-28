@@ -15,7 +15,8 @@
 (function () {
   "use strict";
 
-  const CORE_VERSION = "ai-core-v4.8.0-theory-integration";
+  const CORE_VERSION =
+    "ai-core-v4.8.2-evaluated-scenario-preservation";
 
   /* ===============================
     基本ユーティリティ
@@ -7176,6 +7177,32 @@ function buildHoldPickupTheory(
   const wallCandidateNo =
     Number(wallTheory?.wallCandidateNo || 0) || null;
   const wallState = wallTheory?.state || "暫定";
+  const preservedHoldCourses = new Set(
+    (
+      Array.isArray(options?.preservations)
+        ? options.preservations
+        : []
+    )
+      .filter(
+        (preservation) =>
+          preservation?.qualified === true &&
+          (preservation?.roles || []).includes("hold") &&
+          (preservation?.eligiblePositions || []).includes(2)
+      )
+      .map((preservation) =>
+        Number(preservation?.course || 0)
+      )
+      .filter((course) => course >= 1 && course <= 6)
+  );
+  const withPreservedCourses = (
+    baseCourses,
+    preservedCourses
+  ) => [
+    ...new Set([
+      ...baseCourses,
+      ...preservedCourses
+    ])
+  ];
 
   const scenarioCourses = {
     escape: {
@@ -7187,7 +7214,10 @@ function buildHoldPickupTheory(
       pickup: [3, 4, 5, 6]
     },
     threeAttack: {
-      hold: [1, 2],
+      hold: withPreservedCourses(
+        [1, 2],
+        preservedHoldCourses
+      ),
       pickup: [5, 6]
     },
     fourAttack: {
@@ -7199,7 +7229,15 @@ function buildHoldPickupTheory(
   const holdPositionPoints = {
     escape: { 2: 25, 3: 21, 4: 18 },
     sashi: { 1: 25, 3: 20, 4: 18 },
-    threeAttack: { 1: 25, 2: 20 },
+    threeAttack: Object.fromEntries(
+      withPreservedCourses(
+        [1, 2],
+        preservedHoldCourses
+      ).map((course) => [
+        course,
+        ({ 1: 25, 2: 20 })[course] || 18
+      ])
+    ),
     fourAttack: { 1: 22, 3: 25, 5: 20 }
   };
   const pickupPositionPoints = {
@@ -7515,7 +7553,11 @@ function buildHoldPickupTheory(
   6艇の関係から展開と着順候補を作る。
 =============================== */
 
-function buildRaceScenarios(analyses, data) {
+function buildRaceScenarios(
+  analyses,
+  data,
+  options = {}
+) {
   const list = Array.isArray(analyses)
     ? [...analyses]
     : [];
@@ -7952,6 +7994,155 @@ function buildRaceScenarios(analyses, data) {
   const fourVsThree =
     relationEdge(4, 3);
 
+  /*
+    評価済みの艇が主攻め艇の外から追走・残しできる場合は、
+    艇番を固定せず、実コースと役割単位で可能性を保持する。
+
+    この処理は評価点を加算しない。既に存在する構造化された
+    ◎○▲△評価と、攻め・残し・STの独立根拠を接続するだけ。
+  */
+  /*
+    旧互換の特定コース保護要求は実行しない。
+    評価済み展開の保持は mergeWithPrediction の全艇共通
+    候補モジュールだけを正本とする。
+  */
+  const preservationRequests = [];
+  const entryAtCourse = (course) =>
+    entries.find((entry) =>
+      getAttackTheoryCourse(
+        entry,
+        getBoatNo(entry)
+      ) === Number(course)
+    ) || null;
+  const threeAttackEntry = entryAtCourse(3);
+  const continuationEntry = entryAtCourse(4);
+  const threeAttackBoatNo = getBoatNo(threeAttackEntry);
+  const continuationBoatNo = getBoatNo(continuationEntry);
+  const continuationRequest =
+    preservationRequests.find(
+      (request) =>
+        Number(request?.boatNo || 0) ===
+          continuationBoatNo &&
+        (request?.roleIntents || []).some(
+          (role) =>
+            role === "hold" ||
+            role === "pickup"
+        )
+    ) || null;
+  const continuationCourse = continuationEntry
+    ? getAttackTheoryCourse(
+        continuationEntry,
+        continuationBoatNo
+      )
+    : null;
+  const threeAttackCourse = threeAttackEntry
+    ? getAttackTheoryCourse(
+        threeAttackEntry,
+        threeAttackBoatNo
+      )
+    : null;
+  const mappingMatched =
+    threeAttackBoatNo === 3 &&
+    threeAttackCourse === 3 &&
+    continuationBoatNo >= 1 &&
+    continuationBoatNo <= 6 &&
+    continuationCourse === 4;
+  const continuationAttackTheory =
+    attackTheoryFor(continuationBoatNo);
+  const continuationSlit =
+    slitBoat(continuationBoatNo);
+  const innerSlit = slit.ranking.find(
+    (boat) => Number(boat?.course) === 3
+  ) || null;
+  const continuationCurrentSt =
+    continuationSlit?.currentStCount > 0
+      ? toNumber(
+          continuationSlit.currentStAverage,
+          null
+        )
+      : null;
+  const hasCurrentSeriesStart =
+    mappingMatched &&
+    continuationCurrentSt !== null &&
+    continuationCurrentSt <= 0.15;
+  const formalSlitEdge =
+    mappingMatched &&
+    continuationSlit?.isFormalSlit === true &&
+    innerSlit?.isFormalSlit === true &&
+    continuationSlit?.exSt !== null &&
+    innerSlit?.exSt !== null
+      ? round(
+          toNumber(innerSlit.exSt, 0) -
+          toNumber(continuationSlit.exSt, 0),
+          3
+        )
+      : 0;
+  const hasFormalSlitSupport =
+    formalSlitEdge >= slit.secondaryThreshold;
+  const attackTheoryScore =
+    round(
+      toNumber(
+        continuationAttackTheory?.score,
+        0
+      )
+    );
+  const holdScore =
+    round(hold(continuationBoatNo));
+  const evidenceQualified =
+    Boolean(continuationRequest) &&
+    mappingMatched &&
+    attackTheoryScore >= 65 &&
+    holdScore >= 65 &&
+    (
+      hasCurrentSeriesStart ||
+      hasFormalSlitSupport
+    );
+  const supportReason =
+    hasCurrentSeriesStart
+      ? `今節ST${continuationCurrentSt.toFixed(3)}`
+      : hasFormalSlitSupport
+        ? `実3コース艇との公式展示ST差${formalSlitEdge.toFixed(3)}`
+        : "";
+  const continuationPreservation = {
+    id:
+      `threeAttack:course4:${continuationBoatNo || "none"}`,
+    scenarioType: "threeAttack",
+    attackerBoatNo: threeAttackBoatNo || null,
+    attackerCourse: threeAttackCourse,
+    boatNo: continuationBoatNo || null,
+    course: continuationCourse,
+    sourceRequestIds:
+      continuationRequest
+        ? [continuationRequest.id]
+        : [],
+    sourceMarks:
+      continuationRequest?.symbol
+        ? [continuationRequest.symbol]
+        : [],
+    roles: ["hold"],
+    eligiblePositions: [2, 3],
+    mappingMatched,
+    evaluationSupported:
+      Boolean(continuationRequest),
+    evidenceQualified,
+    mainScenarioSupported: false,
+    blockedByMainScenario: false,
+    qualified: false,
+    attackTheoryScore,
+    holdScore,
+    currentSt: continuationCurrentSt,
+    comparedBoatNo:
+      Number(innerSlit?.boatNo || 0) || null,
+    formalSlitEdge,
+    formalSlitSupport: hasFormalSlitSupport,
+    reason:
+      !continuationRequest
+        ? "構造化された評価印に追走・残し対象艇がない"
+        : !mappingMatched
+          ? "主攻め艇と追走艇の実進入が3・4コースに一致しない"
+          : "追走艇自身の攻め・残し・STの複合根拠不足"
+  };
+
   const innerThreat =
     Math.max(
       relationEdge(2, 1),
@@ -8111,6 +8302,51 @@ if (hasComparison(3, 1)) {
   );
 
   /*
+    追走・残しの保持は、該当する攻めが実際の主筋で、
+    元の除外が発生する強度の時だけ成立させる。
+
+    艇全体の評価を上げず、2・3着の役割だけを保持する。
+  */
+  const threeAttackIsMain =
+    threeAttackScore > escapeScore &&
+    threeAttackScore > sashiScore &&
+    threeAttackScore >= fourAttackScore;
+  const blockedByThreeAttack =
+    threeAttackScore >= 72;
+
+  continuationPreservation.mainScenarioSupported =
+    threeAttackIsMain;
+  continuationPreservation.blockedByMainScenario =
+    blockedByThreeAttack;
+  continuationPreservation.qualified =
+    evidenceQualified &&
+    threeAttackIsMain &&
+    blockedByThreeAttack;
+
+  if (continuationPreservation.qualified) {
+    continuationPreservation.reason =
+      `${continuationBoatNo}号艇の4コース攻め・残し評価に` +
+      `${supportReason}の裏付け`;
+  } else if (
+    evidenceQualified &&
+    !threeAttackIsMain
+  ) {
+    continuationPreservation.reason =
+      "3号艇攻めが最有力展開ではない";
+  } else if (
+    evidenceQualified &&
+    !blockedByThreeAttack
+  ) {
+    continuationPreservation.reason =
+      `${continuationBoatNo}号艇を除外する強度の3号艇攻めではない`;
+  }
+
+  const preservations =
+    continuationPreservation.boatNo
+      ? [continuationPreservation]
+      : [];
+
+  /*
     シナリオ内の着順適性を計算する。
     固定買い目は作らない。
   */
@@ -8206,10 +8442,21 @@ if (hasComparison(3, 1)) {
           reasons.push("差し・内残し");
         }
 
-        if (no === 4) {
+        if (
+          no ===
+          Number(continuationPreservation.boatNo)
+        ) {
           firstScore -= 12;
-          secondScore -= 7;
-          reasons.push("3攻めで攻め場減少");
+
+          if (continuationPreservation.qualified) {
+            reasons.push(
+              `3攻めで頭評価は下げるが追走・残しは維持（` +
+              `${continuationPreservation.reason}）`
+            );
+          } else {
+            secondScore -= 7;
+            reasons.push("3攻めで攻め場減少");
+          }
         }
 
         if (no === 5) {
@@ -8440,9 +8687,12 @@ if (hasComparison(3, 1)) {
         frameMovementAdjustment(3),
       attacker: 3,
       blockedBoats:
-        threeAttackScore >= 72
-          ? [4]
+        threeAttackScore >= 72 &&
+        !continuationPreservation.qualified &&
+        continuationBoatNo
+          ? [continuationBoatNo]
           : [],
+      preservations,
       outcome: buildOutcome("threeAttack")
     },
     {
@@ -8607,7 +8857,9 @@ if (hasComparison(3, 1)) {
     {
       attackerCourse,
       attackerBoatNo: attacker,
-      blockedBoats
+      blockedBoats,
+      preservations:
+        mainScenario?.preservations || []
     }
   );
 
@@ -8825,6 +9077,9 @@ if (hasComparison(3, 1)) {
     frameMovement,
 
     blockedBoats,
+
+    preservations:
+      mainScenario?.preservations || [],
 
     confidence,
 
@@ -9632,7 +9887,17 @@ function buildRaceTrendEvaluation(data) {
         ],
         blockedBoats: [
           ...(raceScenarios.blockedBoats || [])
-        ]
+        ],
+        preservations: [
+          ...(raceScenarios?.preservations || [])
+        ],
+        flow:
+          legacyEvidence.flow === true ||
+          (raceScenarios?.preservations || [])
+            .some(
+              (preservation) =>
+                preservation?.qualified === true
+            )
       }
     : legacyEvidence;
 
@@ -9833,6 +10098,190 @@ function buildRaceTrendEvaluation(data) {
     ).map((boat) => [Number(boat.boatNo), boat.score])
   );
 
+  /*
+    評価済みの追走・残し艇は、艇番に関係なく役割別の枝として
+    候補プールへ保持する。艇全体を頭へ昇格させず、成立した
+    2・3着位置だけを生成する。
+  */
+  function buildPreservedScenarioBranches() {
+    if (!hasScenario) return [];
+
+    const head = marks.honmei;
+    const byNo = new Map(
+      list.map((boat) => [boatNo(boat), boat])
+    );
+
+    if (
+      !head ||
+      boatNo(head) !== Number(raceScenarios.attacker)
+    ) {
+      return [];
+    }
+
+    return (raceScenarios?.preservations || [])
+      .filter(
+        (preservation) =>
+          preservation?.qualified === true &&
+          preservation?.scenarioType ===
+            raceScenarios?.mainScenario?.type
+      )
+      .flatMap((preservation) => {
+        const continuationBoat = byNo.get(
+          Number(preservation?.boatNo || 0)
+        );
+
+        if (!continuationBoat) return [];
+
+        const innerHoldBoats = (
+          raceScenarios?.holdPickupTheory
+            ?.secondCandidates || []
+        )
+          .filter(
+            (candidate) =>
+              Number(candidate?.course || 0) <
+              Number(preservation?.course || 0)
+          )
+          .map((candidate) =>
+            byNo.get(Number(candidate?.boatNo || 0))
+          )
+          .filter(
+            (boat) =>
+              boat &&
+              boatNo(boat) !== boatNo(head) &&
+              boatNo(boat) !== boatNo(continuationBoat)
+          );
+        const pickupBoat = thirdRanking.find(
+          (boat) =>
+            boatNo(boat) !== boatNo(head) &&
+            boatNo(boat) !== boatNo(continuationBoat)
+        );
+        const primaryInner = innerHoldBoats[0] || null;
+        const secondaryInner = innerHoldBoats[1] || null;
+        const rawBranches = [
+          {
+            type: "pickup-third",
+            first: head,
+            second: continuationBoat,
+            third: pickupBoat,
+            useAsCover: false
+          },
+          {
+            type: "inner-third",
+            first: head,
+            second: continuationBoat,
+            third: primaryInner,
+            useAsCover: true
+          },
+          {
+            type: "continuation-third",
+            first: head,
+            second: primaryInner,
+            third: continuationBoat,
+            useAsCover: true
+          },
+          {
+            type: "second-inner-third",
+            first: head,
+            second: continuationBoat,
+            third: secondaryInner,
+            useAsCover: false
+          }
+        ].filter(
+          (branch) =>
+            branch.first &&
+            branch.second &&
+            branch.third
+        );
+
+        return rawBranches.map((branch) => {
+          const firstNo = boatNo(branch.first);
+          const secondNo = boatNo(branch.second);
+          const thirdNo = boatNo(branch.third);
+          const continuationNo =
+            boatNo(continuationBoat);
+          const continuationPosition =
+            secondNo === continuationNo ? 2 : 3;
+          const otherNo =
+            continuationPosition === 2
+              ? thirdNo
+              : secondNo;
+          const otherRole =
+            branch.type === "pickup-third"
+              ? "展開を拾う"
+              : "内で残る";
+          const summary =
+            continuationPosition === 2
+              ? `${firstNo}号艇の攻めを主筋に、` +
+                `${continuationNo}号艇が2着へ追走・残し、` +
+                `${otherNo}号艇が3着で${otherRole}筋。`
+              : `${firstNo}号艇の攻めを主筋に、` +
+                `${otherNo}号艇が内で2着に残り、` +
+                `${continuationNo}号艇の3着残りを拾う筋。`;
+
+          return {
+            ...branch,
+            id: `${preservation.id}:${branch.type}`,
+            preservationId: preservation.id,
+            ticket:
+              `${firstNo}-${secondNo}-${thirdNo}`,
+            scenarioId:
+              preservation.scenarioType,
+            scenarioType:
+              preservation.scenarioType,
+            scenarioLabel:
+              raceScenarios?.mainScenario?.label || "",
+            coverageKey:
+              `${preservation.id}:${branch.type}`,
+            targetBoatNo: continuationNo,
+            targetPosition: continuationPosition,
+            evidenceQualified: true,
+            expansionEligible: true,
+            priorityScore: round(
+              toNumber(
+                preservation.attackTheoryScore,
+                0
+              ) * 0.45 +
+              toNumber(
+                preservation.holdScore,
+                0
+              ) * 0.55
+            ),
+            title:
+              `${firstNo}攻め＋${continuationNo}追走・残し`,
+            summary:
+              summary +
+              (
+                preservation.reason
+                  ? `根拠は${preservation.reason}。`
+                  : ""
+              ),
+            evidence: {
+              preservationId: preservation.id,
+              sourceRequestIds: [
+                ...(preservation.sourceRequestIds || [])
+              ],
+              reason: preservation.reason,
+              attackTheoryScore:
+                preservation.attackTheoryScore,
+              holdScore: preservation.holdScore,
+              currentSt: preservation.currentSt,
+              formalSlitEdge:
+                preservation.formalSlitEdge
+            }
+          };
+        });
+      });
+  }
+
+  const preservedScenarioBranches =
+    buildPreservedScenarioBranches();
+  const ticketEvidence = Object.fromEntries(
+    preservedScenarioBranches.map((branch) => [
+      branch.ticket,
+      branch
+    ])
+  );
+
   const mainEstablished = hasScenario
     ? Boolean(legacyMarks.established && marks.established)
     : marks.established === true;
@@ -9935,6 +10384,10 @@ function buildRaceTrendEvaluation(data) {
     thirdCandidates,
     limit
   ) {
+    if (target.length >= limit) {
+      return;
+    }
+
     for (const head of heads) {
       for (const second of secondCandidates) {
         if (boatNo(second) === boatNo(head)) {
@@ -9977,6 +10430,10 @@ function buildRaceTrendEvaluation(data) {
     thirdCandidates,
     limit
   ) {
+    if (target.length >= limit) {
+      return;
+    }
+
     for (const head of heads) {
       const seconds = secondCandidates.filter(
         (boat) => boatNo(boat) !== boatNo(head)
@@ -10017,6 +10474,31 @@ function buildRaceTrendEvaluation(data) {
     );
   }
 
+  if (preservedScenarioBranches.length) {
+    /*
+      最上位の3着拾い艇に対し、採用済みの各2着残し候補を
+      1点ずつ先に並べる。4号艇だけを順位外から強制せず、
+      1・2・4の残し筋を同じ条件で比較できる並びにする。
+    */
+    for (const head of mainHeads) {
+      for (const second of secondRanking.slice(0, 3)) {
+        const third = thirdRanking.find(
+          (candidate) =>
+            boatNo(candidate) !== boatNo(head) &&
+            boatNo(candidate) !== boatNo(second)
+        );
+
+        addTicket(main, head, second, third);
+      }
+    }
+
+    preservedScenarioBranches.forEach(
+      ({ first, second, third }) => {
+        addTicket(main, first, second, third);
+      }
+    );
+  }
+
   generateDiversifiedMainTickets(
     main,
     mainHeads,
@@ -10025,12 +10507,33 @@ function buildRaceTrendEvaluation(data) {
     6
   );
 
+  /*
+    継続艇が2着・3着へ残る着順違いは、同じ3攻め本線の押さえ。
+    実戦厳選の押さえ2枠へ先に渡し、成立した展開を消さない。
+  */
+  preservedScenarioBranches
+    .filter((branch) => branch.useAsCover)
+    .forEach(({ first, second, third }) => {
+      addTicket(safety, first, second, third);
+    });
+
   generateTickets(
     safety,
     safetyHeads,
     secondRanking.slice(0, 4),
     thirdRanking.slice(0, 5),
     8
+  );
+
+  preservedScenarioBranches.forEach(
+    ({ first, second, third }) => {
+      addTicket(
+        flowTickets,
+        first,
+        second,
+        third
+      );
+    }
   );
 
   generateTickets(
@@ -10049,6 +10552,19 @@ function buildRaceTrendEvaluation(data) {
     8
   );
 
+  evidence.preservations = (
+    evidence.preservations || []
+  ).map((preservation) => ({
+    ...preservation,
+    candidateTickets:
+      preservedScenarioBranches
+        .filter(
+          (branch) =>
+            branch.preservationId === preservation.id
+        )
+        .map((branch) => branch.ticket)
+  }));
+
   return {
     main,
     safety,
@@ -10058,6 +10574,11 @@ function buildRaceTrendEvaluation(data) {
     scenario: marks.scenario,
     mainEstablished,
     evidence,
+    possibilityCandidates:
+      preservedScenarioBranches.map(
+        (branch) => ({ ...branch })
+      ),
+    ticketEvidence,
 
     axis: {
       honmei:
@@ -10499,6 +11020,24 @@ function buildRaceTrendEvaluation(data) {
       mainScenario?.outcome?.thirdCandidates || [];
     const holdPickupFormal =
       raceScenarios?.holdPickupTheory?.isFormal === true;
+    const continuationCandidates =
+      (raceScenarios?.preservations || [])
+        .filter(
+          (preservation) =>
+            preservation?.qualified === true &&
+            (preservation?.eligiblePositions || [])
+              .some(
+                (position) =>
+                  position === 2 ||
+                  position === 3
+              )
+        )
+        .map((preservation) =>
+          byBoat[
+            Number(preservation?.boatNo || 0)
+          ]
+        )
+        .filter(Boolean);
 
     /*
       ◎は最有力シナリオを作る艇を最優先。
@@ -10563,6 +11102,7 @@ function buildRaceTrendEvaluation(data) {
       △は残し・道中・当地の順で補完する。
     */
     const osae = selectBoat([
+      ...continuationCandidates,
       ...secondCandidates,
       ...thirdCandidates,
       ...(
@@ -10622,7 +11162,10 @@ function buildRaceTrendEvaluation(data) {
     prediction.jsへ渡すAIデータ生成
   =============================== */
 
-  function buildPredictionData(data) {
+  function buildPredictionData(
+    data,
+    options = {}
+  ) {
 
     const entries = getRaceEntries(data);
 
@@ -10732,7 +11275,8 @@ const attackTheory = {
 const raceScenarios =
   buildRaceScenarios(
     analyses,
-    data
+    data,
+    options
   );
 
 const wallTheory =
@@ -10762,7 +11306,9 @@ const holdPickupTheory =
     wallTheory,
     {
       attackerBoatNo: raceScenarios.attacker,
-      blockedBoats: raceScenarios.blockedBoats
+      blockedBoats: raceScenarios.blockedBoats,
+      preservations:
+        raceScenarios.preservations || []
     }
   );
 const holdPickupByBoat = new Map(
@@ -11017,13 +11563,74 @@ const slit =
     prediction.js結合用
   =============================== */
 
-    function mergeWithPrediction(prediction, data) {
+    function mergeWithPredictionLegacyCompatibility(
+      prediction,
+      data
+    ) {
     const basePrediction =
       prediction && typeof prediction === "object"
         ? prediction
         : {};
 
-    const aiCore = buildPredictionData(data);
+    const legacyMarks =
+      basePrediction?.boatEvaluation &&
+      !Array.isArray(basePrediction.boatEvaluation)
+        ? basePrediction.boatEvaluation
+        : basePrediction?.mainSheet || {};
+    const markDefinitions = [
+      {
+        key: "honmei",
+        symbol: "◎",
+        roleIntents: ["head"]
+      },
+      {
+        key: "taikou",
+        symbol: "○",
+        roleIntents: ["head", "hold"]
+      },
+      {
+        key: "ana",
+        symbol: "▲",
+        roleIntents: ["alternate-head", "pickup"]
+      },
+      {
+        key: "osae",
+        symbol: "△",
+        roleIntents: ["hold", "pickup"]
+      }
+    ];
+    const preservationRequests =
+      markDefinitions
+        .map((definition) => {
+          const mark = legacyMarks?.[definition.key];
+          const boatNo = Number(
+            mark?.boatNo ??
+            mark?.number ??
+            mark?.waku ??
+            0
+          );
+
+          if (boatNo < 1 || boatNo > 6) {
+            return null;
+          }
+
+          return {
+            id: `legacy-mark:${definition.key}:${boatNo}`,
+            boatNo,
+            markKey: definition.key,
+            symbol: definition.symbol,
+            roleIntents: [...definition.roleIntents],
+            source: "structured-boat-evaluation"
+          };
+        })
+        .filter(Boolean);
+
+    const aiCore = buildPredictionData(
+      data,
+      {
+        preservationRequests
+      }
+    );
     
     const raceScenarios =
   aiCore.raceScenarios || {};
@@ -11237,19 +11844,31 @@ function findUnusedEvaluation(...marks) {
 }
 
 const honmei =
-  findCoreEvaluation(aiCore.marks?.honmei) ||
+  findCoreEvaluation(
+    legacyMarks?.honmei ||
+    aiCore.marks?.honmei
+  ) ||
   null;
 
 const taikou =
-  findCoreEvaluation(aiCore.marks?.taikou) ||
+  findCoreEvaluation(
+    legacyMarks?.taikou ||
+    aiCore.marks?.taikou
+  ) ||
   null;
 
 const ana =
-  findCoreEvaluation(aiCore.marks?.ana) ||
+  findCoreEvaluation(
+    legacyMarks?.ana ||
+    aiCore.marks?.ana
+  ) ||
   null;
 
 const osae =
-  findCoreEvaluation(aiCore.marks?.osae) ||
+  findCoreEvaluation(
+    legacyMarks?.osae ||
+    aiCore.marks?.osae
+  ) ||
   null;
 
 const coreFormations = aiCore.formations || {};
@@ -11258,6 +11877,10 @@ const compatibleFormation = {
   cover: coreFormations.safety || [],
   nagashi: coreFormations.flow || [],
   hole: coreFormations.longshot || [],
+  possibilityCandidates:
+    coreFormations.possibilityCandidates || [],
+  ticketEvidence:
+    coreFormations.ticketEvidence || {},
   mainEstablished: coreFormations.mainEstablished === true,
   evidence: coreFormations.evidence || {}
 };
@@ -11280,6 +11903,65 @@ const baseTicketByValue =
 
 const oddsByTicket =
   data?.odds?.byTicket || {};
+
+const structuredTicketEvidence =
+  compatibleFormation.ticketEvidence || {};
+
+function buildTicketPresentation(
+  ticket,
+  category
+) {
+  const evidence =
+    structuredTicketEvidence[ticket] || null;
+  const numbers = String(ticket)
+    .split("-")
+    .map(Number);
+
+  if (
+    numbers.length !== 3 ||
+    numbers.some(
+      (boatNo) =>
+        boatNo < 1 ||
+        boatNo > 6
+    )
+  ) {
+    return {
+      title: "",
+      summary: "",
+      evidence
+    };
+  }
+
+  const [first, second, third] = numbers;
+  const scenarioLabel =
+    String(
+      evidence?.scenarioLabel ||
+      raceScenarios?.mainScenario?.label ||
+      ""
+    ).trim();
+  const categoryPrefix =
+    category === "本命"
+      ? `${scenarioLabel || `${first}号艇の1着展開`}を主筋に`
+      : category === "押さえ"
+        ? "主筋に対する残し・着順違いとして"
+        : category === "流し"
+          ? "成立する別展開として"
+          : "波乱時の成立順として";
+  const generatedSummary =
+    `${categoryPrefix}、${first}号艇1着、` +
+    `${second}号艇の2着残し、` +
+    `${third}号艇の3着拾いを見る。`;
+
+  return {
+    title:
+      String(evidence?.title || "").trim() ||
+      `${first}-${second}-${third}の成立展開`,
+    summary:
+      String(evidence?.summary || "").trim() ||
+      generatedSummary,
+    evidence
+  };
+}
 
 function hydrateCompatibleTickets(
   tickets,
@@ -11307,6 +11989,11 @@ function hydrateCompatibleTickets(
         rawOdds !== "" &&
         Number.isFinite(numericOdds) &&
         numericOdds > 0;
+      const presentation =
+        buildTicketPresentation(
+          ticket,
+          category
+        );
 
       return {
         ...baseRow,
@@ -11326,7 +12013,35 @@ function hydrateCompatibleTickets(
         hasOdds,
         isManshu:
           hasOdds &&
-          numericOdds >= 100
+          numericOdds >= 100,
+        scenarioTitle:
+          presentation.title,
+        scenarioSummary:
+          presentation.summary,
+        reason:
+          presentation.summary,
+        comment:
+          presentation.summary,
+        evidenceQualified:
+          presentation.evidence
+            ?.evidenceQualified === true,
+        expansionEligible:
+          presentation.evidence
+            ?.expansionEligible === true,
+        coverageKey:
+          presentation.evidence
+            ?.coverageKey || "",
+        preservationId:
+          presentation.evidence
+            ?.preservationId || "",
+        priorityScore:
+          toNumber(
+            presentation.evidence
+              ?.priorityScore,
+            0
+          ),
+        structuredEvidence:
+          presentation.evidence
       };
     })
     .filter((item) => item.ticket);
@@ -11359,12 +12074,261 @@ const compatibleTicketSheets = {
     )
 };
 
+const activeEvaluationTargets =
+  preservationRequests.map((request) => ({
+    id: request.id,
+    boatNo: request.boatNo,
+    markKey: request.markKey,
+    symbol: request.symbol,
+    roleIntents: [...request.roleIntents],
+    source: request.source,
+    candidateTickets: []
+  }));
+const exactTicketPattern =
+  /^[1-6]-[1-6]-[1-6]$/;
+const normalizedBaseRows =
+  [...baseTicketByValue.values()]
+    .map((row) => {
+      const ticket = String(row?.ticket || "").trim();
+      const rawCategory = String(
+        row?.category ||
+        (row?.categories || [])[0] ||
+        ""
+      );
+      const category =
+        /本命|本線|中心/.test(rawCategory)
+          ? "本命"
+          : /押さえ|安全/.test(rawCategory)
+            ? "押さえ"
+            : /流し/.test(rawCategory)
+              ? "流し"
+              : "穴候補";
+      const presentation =
+        buildTicketPresentation(ticket, category);
+
+      return {
+        ...row,
+        ticket,
+        category,
+        categories: [category],
+        scenarioType:
+          String(row?.scenarioType || "") ||
+          (
+            category === "本命"
+              ? "中心展開"
+              : category === "押さえ"
+                ? "安全押さえ"
+                : category === "流し"
+                  ? "流し展開"
+                  : "穴展開"
+          ),
+        scenarioTypes: [
+          String(row?.scenarioType || "") ||
+          (
+            category === "本命"
+              ? "中心展開"
+              : category === "押さえ"
+                ? "安全押さえ"
+                : category === "流し"
+                  ? "流し展開"
+                  : "穴展開"
+          )
+        ],
+        scenarioTitle:
+          presentation.title,
+        scenarioSummary:
+          presentation.summary,
+        reason:
+          presentation.summary,
+        comment:
+          presentation.summary
+      };
+    })
+    .filter(
+      (row) =>
+        exactTicketPattern.test(row.ticket) &&
+        new Set(row.ticket.split("-")).size === 3
+    );
+const possibilitySourceRows = [
+  ...Object.values(compatibleTicketSheets).flat(),
+  ...normalizedBaseRows
+];
+const possibilityMap = new Map();
+const activeHonmeiBoatNo = getMarkBoatNo(honmei);
+
+function rolePositions(roleIntents) {
+  const positions = new Set();
+
+  (roleIntents || []).forEach((role) => {
+    if (
+      role === "head" ||
+      role === "alternate-head"
+    ) {
+      positions.add(1);
+    }
+
+    if (role === "hold") {
+      positions.add(2);
+      positions.add(3);
+    }
+
+    if (role === "pickup") {
+      positions.add(3);
+    }
+  });
+
+  return [...positions];
+}
+
+activeEvaluationTargets.forEach((target) => {
+  const positions = rolePositions(target.roleIntents);
+  const targetCandidates =
+    possibilitySourceRows
+      .filter((row) => {
+        const boats = String(row.ticket)
+          .split("-")
+          .map(Number);
+        const targetPosition =
+          boats.indexOf(Number(target.boatNo)) + 1;
+
+        if (!positions.includes(targetPosition)) {
+          return false;
+        }
+
+        if (targetPosition === 1) {
+          return true;
+        }
+
+        return boats[0] === activeHonmeiBoatNo;
+      })
+      .map((row) => {
+        const boats = String(row.ticket)
+          .split("-")
+          .map(Number);
+        const targetPosition =
+          boats.indexOf(Number(target.boatNo)) + 1;
+        const structured =
+          row?.structuredEvidence || null;
+        const categoryPriority =
+          row.category === "本命"
+            ? 30
+            : row.category === "押さえ"
+              ? 24
+              : row.category === "流し"
+                ? 18
+                : 12;
+        const positionPriority =
+          targetPosition === 1
+            ? 30
+            : targetPosition === 2
+              ? 26
+              : 22;
+
+        return {
+          ...row,
+          targetBoatNo: target.boatNo,
+          targetPosition,
+          coveredEvaluationIds: [target.id],
+          coveredBoatNos: [target.boatNo],
+          evidenceQualified: true,
+          expansionEligible:
+            structured?.expansionEligible === true ||
+            (
+              boats[0] === activeHonmeiBoatNo &&
+              targetPosition >= 2
+            ),
+          preservationRequired:
+            structured?.evidenceQualified === true,
+          coverageKey:
+            structured?.coverageKey ||
+            `evaluation:${target.boatNo}:${targetPosition}`,
+          priorityScore:
+            toNumber(
+              structured?.priorityScore,
+              categoryPriority + positionPriority
+            ),
+          evidenceReasons: [
+            `構造化された${target.symbol}評価`,
+            `${target.boatNo}号艇の${targetPosition}着役割`
+          ],
+          selectionTier: "展開追加"
+        };
+      })
+      .sort(
+        (a, b) =>
+          Number(b.preservationRequired) -
+            Number(a.preservationRequired) ||
+          toNumber(b.priorityScore, 0) -
+            toNumber(a.priorityScore, 0) ||
+          a.ticket.localeCompare(b.ticket)
+      );
+
+  target.candidateTickets =
+    targetCandidates.map((row) => row.ticket);
+
+  targetCandidates.forEach((row) => {
+    const existing =
+      possibilityMap.get(row.ticket);
+
+    if (!existing) {
+      possibilityMap.set(
+        row.ticket,
+        { ...row }
+      );
+      return;
+    }
+
+    existing.coveredEvaluationIds = [
+      ...new Set([
+        ...(existing.coveredEvaluationIds || []),
+        ...(row.coveredEvaluationIds || [])
+      ])
+    ];
+    existing.coveredBoatNos = [
+      ...new Set([
+        ...(existing.coveredBoatNos || []),
+        ...(row.coveredBoatNos || [])
+      ])
+    ];
+    existing.evidenceReasons = [
+      ...new Set([
+        ...(existing.evidenceReasons || []),
+        ...(row.evidenceReasons || [])
+      ])
+    ];
+    existing.preservationRequired =
+      existing.preservationRequired === true ||
+      row.preservationRequired === true;
+    existing.expansionEligible =
+      existing.expansionEligible === true ||
+      row.expansionEligible === true;
+    existing.priorityScore = Math.max(
+      toNumber(existing.priorityScore, 0),
+      toNumber(row.priorityScore, 0)
+    );
+  });
+});
+
+compatibleTicketSheets.possibility = [
+  ...possibilityMap.values()
+].sort(
+  (a, b) =>
+    Number(b.preservationRequired) -
+      Number(a.preservationRequired) ||
+    toNumber(b.priorityScore, 0) -
+      toNumber(a.priorityScore, 0) ||
+    a.ticket.localeCompare(b.ticket)
+);
+
 const compatibleAiTicketMap =
   new Map();
 
-Object.values(
-  compatibleTicketSheets
-).flat().forEach((item) => {
+[
+  ...compatibleTicketSheets.main,
+  ...compatibleTicketSheets.cover,
+  ...compatibleTicketSheets.flow,
+  ...compatibleTicketSheets.hole
+].forEach((item) => {
   const existing =
     compatibleAiTicketMap.get(
       item.ticket
@@ -11393,11 +12357,80 @@ Object.values(
   existing.isManshu =
     existing.isManshu ||
     item.isManshu;
+  existing.coveredEvaluationIds = [
+    ...new Set([
+      ...(existing.coveredEvaluationIds || []),
+      ...(item.coveredEvaluationIds || [])
+    ])
+  ];
+  existing.coveredBoatNos = [
+    ...new Set([
+      ...(existing.coveredBoatNos || []),
+      ...(item.coveredBoatNos || [])
+    ])
+  ];
+  existing.evidenceReasons = [
+    ...new Set([
+      ...(existing.evidenceReasons || []),
+      ...(item.evidenceReasons || [])
+    ])
+  ];
+  existing.evidenceQualified =
+    existing.evidenceQualified === true ||
+    item.evidenceQualified === true;
+  existing.expansionEligible =
+    existing.expansionEligible === true ||
+    item.expansionEligible === true;
+  existing.preservationRequired =
+    existing.preservationRequired === true ||
+    item.preservationRequired === true;
+  existing.priorityScore = Math.max(
+    toNumber(existing.priorityScore, 0),
+    toNumber(item.priorityScore, 0)
+  );
 });
 
 const compatibleAiTicketList =
   [...compatibleAiTicketMap.values()];
 
+const evaluationIntegrity = {
+  targets: activeEvaluationTargets.map((target) => ({
+    ...target,
+    status:
+      target.candidateTickets.length
+        ? "candidate-generated"
+        : "no-physical-route"
+  })),
+  missingCandidateTargetIds:
+    activeEvaluationTargets
+      .filter(
+        (target) =>
+          !target.candidateTickets.length
+      )
+      .map((target) => target.id)
+};
+
+compatibleFormation.possibilityCandidates =
+  compatibleTicketSheets.possibility;
+compatibleFormation.ticketEvidence =
+  structuredTicketEvidence;
+compatibleFormation.evidence = {
+  ...(compatibleFormation.evidence || {}),
+  evaluatedTargets:
+    evaluationIntegrity.targets,
+  evaluationIntegrity
+};
+
+const preservedEvaluations =
+  Array.isArray(
+    basePrediction?.boatEvaluation?.evaluations
+  ) &&
+  basePrediction.boatEvaluation.evaluations.length
+    ? basePrediction.boatEvaluation.evaluations
+    : Array.isArray(oldMainSheet?.evaluations) &&
+        oldMainSheet.evaluations.length
+      ? oldMainSheet.evaluations
+      : coreEvaluations;
 const compatibleMainSheet = {
   ...oldMainSheet,
   honmei,
@@ -11407,7 +12440,15 @@ const compatibleMainSheet = {
   tickets: compatibleTicketSheets.main,
   coverTickets: compatibleTicketSheets.cover,
   flowTickets: compatibleTicketSheets.flow,
-  evaluations: coreEvaluations
+  evaluations: preservedEvaluations
+};
+const compatibleBoatEvaluation = {
+  ...(basePrediction.boatEvaluation || {}),
+  honmei,
+  taikou,
+  ana,
+  osae,
+  evaluations: preservedEvaluations
 };
 
 const compatibleManshuSheet = {
@@ -11434,8 +12475,30 @@ const compatibleRaceFlow = {
   mainEstablished: compatibleFormation.mainEstablished
 };
 
+const reconciledMarks = {
+  ...(aiCore.marks || {}),
+  honmei,
+  taikou,
+  ana,
+  osae,
+  evidence: {
+    ...(aiCore.marks?.evidence || {}),
+    source: "reconciled-structured-evaluation"
+  }
+};
+const compatibleFormations = {
+  ...coreFormations,
+  possibilityCandidates:
+    compatibleTicketSheets.possibility,
+  ticketEvidence:
+    structuredTicketEvidence,
+  evidence:
+    compatibleFormation.evidence
+};
 const compatibleAiCore = {
   ...aiCore,
+  marks: reconciledMarks,
+  formations: compatibleFormations,
   mainSheet: compatibleMainSheet
 };
 
@@ -11453,7 +12516,7 @@ return {
         ...(basePrediction.ai || {}),
         ranking: aiCore.ranking,
         comments: aiCore.comments,
-        marks: aiCore.marks
+        marks: reconciledMarks
       },
 
       indexes: {
@@ -11490,6 +12553,9 @@ return {
 
       raceFlow: compatibleRaceFlow,
 
+      boatEvaluation:
+        compatibleBoatEvaluation,
+
       /*
         STEP1確認用：
         AIコアの順位を既存UI形式へ変換する。
@@ -11497,7 +12563,7 @@ return {
       mainSheet: compatibleMainSheet,
 
       formation: compatibleFormation,
-      formations: coreFormations,
+      formations: compatibleFormations,
       ticketSheets: {
         ...compatibleTicketSheets,
         all:
@@ -11533,6 +12599,911 @@ return {
       comments: aiCore.comments,
 
       coreRanking: aiCore.ranking
+    };
+  }
+
+  function getEvaluatedScenarioCandidateApi() {
+    if (
+      typeof window !== "undefined" &&
+      window.ChappyEvaluatedScenarioCandidates
+    ) {
+      return window.ChappyEvaluatedScenarioCandidates;
+    }
+
+    if (
+      typeof module !== "undefined" &&
+      module.exports &&
+      typeof require === "function"
+    ) {
+      return require(
+        "./evaluated-scenario-candidates"
+      );
+    }
+
+    return null;
+  }
+
+  /*
+    最終予想の正本は prediction.js が展開から作った艇評価・印とする。
+    AIコアは理論値を補足するが、旧評価を別の印・買い目へ上書きしない。
+
+    評価済み展開は専用モジュールで全物理枝へ展開し、通常買い目と
+    8〜10点候補の双方へ同じ枝ID・艇・着順・理由を渡す。
+  */
+  function mergeWithPrediction(prediction, data) {
+    const basePrediction =
+      prediction &&
+      typeof prediction === "object"
+        ? prediction
+        : {};
+    const candidateApi =
+      getEvaluatedScenarioCandidateApi();
+
+    if (!candidateApi?.build) {
+      throw new Error(
+        "評価済み展開候補モジュールが未読込です"
+      );
+    }
+
+    const aiCore =
+      buildPredictionData(data);
+    const decision =
+      candidateApi.build(basePrediction);
+    const oldMainSheet =
+      basePrediction.mainSheet &&
+      !Array.isArray(basePrediction.mainSheet)
+        ? basePrediction.mainSheet
+        : {};
+    const oldManshuSheet =
+      basePrediction.manshuSheet &&
+      !Array.isArray(basePrediction.manshuSheet)
+        ? basePrediction.manshuSheet
+        : {};
+    const baseFormation =
+      basePrediction.formation || {};
+    const oddsByTicket =
+      data?.odds?.byTicket || {};
+    const baseTicketByValue =
+      new Map(
+        (
+          Array.isArray(
+            basePrediction.aiTicketList
+          )
+            ? basePrediction.aiTicketList
+            : []
+        ).map((item) => [
+          String(item?.ticket || ""),
+          item
+        ])
+      );
+
+    function ticketValue(value) {
+      return String(
+        value?.ticket ||
+        value ||
+        ""
+      ).trim();
+    }
+
+    function ticketStrings(...sources) {
+      return [
+        ...new Set(
+          sources
+            .flatMap((source) =>
+              Array.isArray(source)
+                ? source
+                : []
+            )
+            .map(ticketValue)
+            .filter((value) =>
+              candidateApi.exactTicket(value)
+            )
+        )
+      ];
+    }
+
+    function hydrateTicket(
+      value,
+      category,
+      scenarioType
+    ) {
+      const ticket =
+        ticketValue(value);
+      const baseRow =
+        (
+          value &&
+          typeof value === "object"
+            ? value
+            : baseTicketByValue.get(ticket)
+        ) || {};
+      const candidate =
+        decision.candidateByTicket
+          .get(ticket) || null;
+      const presentationGroup =
+        category === "本命"
+          ? "main"
+          : category === "押さえ"
+            ? "cover"
+            : category === "流し"
+              ? "flow"
+              : category === "穴候補"
+                ? "hole"
+                : "";
+      const isPossibility =
+        presentationGroup === "";
+      const presentationByGroup =
+        candidate
+          ?.presentationByGroup &&
+        typeof candidate
+          .presentationByGroup ===
+          "object"
+          ? candidate
+              .presentationByGroup
+          : {};
+      const groupPresentation =
+        presentationGroup
+          ? presentationByGroup[
+              presentationGroup
+            ] || null
+          : null;
+      const uniqueIds =
+        (...sources) => [
+          ...new Set(
+            sources
+              .flatMap((source) =>
+                Array.isArray(source)
+                  ? source
+                  : []
+              )
+              .map((id) =>
+                String(id || "")
+              )
+              .filter(Boolean)
+          )
+        ];
+      const independentBranchIds =
+        uniqueIds(
+          candidate
+            ?.independentBranchIds
+        );
+      const candidateSupportingIndependentBranchIds =
+        uniqueIds(
+          candidate
+            ?.supportingIndependentBranchIds
+        );
+      const groupBranchIds =
+        uniqueIds(
+          groupPresentation
+            ?.branchIds,
+          groupPresentation
+            ?.structuredEvidence
+            ?.branchIds
+        );
+      const supportingIndependentBranchIds =
+        isPossibility
+          ? candidateSupportingIndependentBranchIds
+          : uniqueIds(
+              groupPresentation
+                ?.supportingIndependentBranchIds
+            );
+      const presentationBranchIds =
+        Object.values(
+          presentationByGroup
+        ).flatMap(
+          (presentation) =>
+            uniqueIds(
+              presentation
+                ?.branchIds,
+              presentation
+                ?.structuredEvidence
+                ?.branchIds,
+              presentation
+                ?.supportingIndependentBranchIds
+            )
+        );
+      const allBranchIds =
+        uniqueIds(
+          candidate
+            ?.allBranchIds,
+          candidate?.branchIds,
+          independentBranchIds,
+          candidateSupportingIndependentBranchIds,
+          presentationBranchIds
+        );
+      const activeBranchIds =
+        isPossibility
+          ? allBranchIds
+          : groupBranchIds;
+      const activePresentation =
+        isPossibility
+          ? candidate
+          : groupPresentation;
+      const rawOdds =
+        baseRow.odds ??
+        oddsByTicket[ticket];
+      const numericOdds =
+        Number(rawOdds);
+      const hasOdds =
+        rawOdds !== null &&
+        rawOdds !== undefined &&
+        rawOdds !== "" &&
+        Number.isFinite(numericOdds) &&
+        numericOdds > 0;
+      const numbers =
+        candidateApi.exactTicket(ticket);
+      const generatedSummary =
+        numbers
+          ? `${decision.scenarioTitle}から作られた` +
+            `${category}候補。` +
+            `${numbers[0]}号艇1着、` +
+            `${numbers[1]}号艇2着、` +
+            `${numbers[2]}号艇3着の順で評価する。`
+          : "";
+      const hasStructuredCandidate =
+        isPossibility
+          ? candidate
+              ?.evidenceQualified ===
+              true
+          : activeBranchIds.length > 0;
+      const hasIndependentCandidate =
+        isPossibility
+          ? candidate
+              ?.expansionEligible ===
+              true
+          : supportingIndependentBranchIds
+              .length > 0;
+      const scenarioSummary =
+        String(
+          activePresentation
+            ?.scenarioSummary ||
+          activePresentation
+            ?.summary ||
+          generatedSummary
+        ).trim();
+      const scenarioTitle =
+        String(
+          activePresentation
+            ?.scenarioTitle ||
+          activePresentation
+            ?.title ||
+          (
+            presentationGroup
+              ? `${ticket}の${category}展開`
+              : candidate
+                  ?.scenarioTitle
+          ) ||
+          decision.scenarioTitle
+        ).trim();
+      const presentationSource =
+        String(
+          activePresentation
+            ?.source ||
+          activePresentation
+            ?.structuredEvidence
+            ?.source ||
+          (
+            presentationGroup &&
+            activeBranchIds.length
+              ? `base-formation:` +
+                presentationGroup
+              : ""
+          )
+        ).trim();
+      const structuredEvidence =
+        activePresentation
+          ?.structuredEvidence ||
+        (
+          presentationGroup &&
+          activeBranchIds.length
+            ? {
+                branchIds: [
+                  ...activeBranchIds
+                ],
+                source:
+                  presentationSource
+              }
+            : null
+        );
+
+      return {
+        ...baseRow,
+        ticket,
+        category,
+        categories: [
+          category
+        ],
+        scenarioType,
+        scenarioTypes: [
+          scenarioType
+        ],
+        odds:
+          hasOdds
+            ? numericOdds
+            : null,
+        oddsText:
+          hasOdds
+            ? `${numericOdds}倍`
+            : "オッズ未取得",
+        hasOdds,
+        isManshu:
+          hasOdds &&
+          numericOdds >= 100,
+        scenarioTitle,
+        scenarioSummary,
+        reason: scenarioSummary,
+        comment: scenarioSummary,
+        source:
+          presentationSource,
+        presentationSource,
+        candidateId:
+          candidate?.id || "",
+        candidateKind:
+          candidate?.candidateKind ||
+          "categorized-ticket",
+        branchIds: [
+          ...activeBranchIds
+        ],
+        allBranchIds: [
+          ...allBranchIds
+        ],
+        independentBranchIds: [
+          ...independentBranchIds
+        ],
+        supportingIndependentBranchIds: [
+          ...supportingIndependentBranchIds
+        ],
+        requirementIds: [
+          ...(candidate?.requirementIds || [])
+        ],
+        coverage: [
+          ...(candidate?.coverage || [])
+        ],
+        physicalCoverage: [
+          ...(candidate?.physicalCoverage || [])
+        ],
+        coveredEvaluationIds: [
+          ...(candidate
+            ?.coveredEvaluationIds || [])
+        ],
+        coveredBoatNos: [
+          ...(candidate?.coveredBoatNos || [])
+        ],
+        candidateOnlyEvaluationIds: [
+          ...(candidate
+            ?.candidateOnlyEvaluationIds || [])
+        ],
+        evidenceReasons: [
+          ...(candidate
+            ?.evidenceReasons || [])
+        ],
+        evidenceQualified:
+          hasStructuredCandidate,
+        expansionEligible:
+          hasIndependentCandidate,
+        preservationRequired:
+          isPossibility
+            ? candidate
+                ?.preservationRequired ===
+                true
+            : supportingIndependentBranchIds
+                .length > 0,
+        coverageKey:
+          candidate?.coverageKey || "",
+        priorityScore:
+          toNumber(
+            candidate?.priorityScore,
+            0
+          ),
+        structuredEvidence:
+          structuredEvidence,
+        presentationGroup,
+        presentationByGroup
+      };
+    }
+
+    const baseMainTickets =
+      ticketStrings(
+        oldMainSheet.tickets,
+        baseFormation.main
+      );
+    const mainTickets =
+      baseMainTickets.filter(
+        (ticket) =>
+          Number(
+            ticket.split("-")[0]
+          ) ===
+          decision.mainHeadBoatNo
+      );
+    const alternateHeadTickets =
+      baseMainTickets.filter(
+        (ticket) =>
+          !mainTickets.includes(ticket)
+      );
+    const coverTickets =
+      ticketStrings(
+        oldMainSheet.coverTickets,
+        baseFormation.cover,
+        baseFormation.safety,
+        alternateHeadTickets
+      ).filter(
+        (ticket) =>
+          !mainTickets.includes(ticket)
+      );
+    const flowTickets =
+      ticketStrings(
+        oldMainSheet.flowTickets,
+        baseFormation.nagashi,
+        baseFormation.flow
+      );
+    const holeTickets =
+      ticketStrings(
+        oldManshuSheet.tickets,
+        baseFormation.hole,
+        baseFormation.longshot
+      ).filter(
+        (ticket) =>
+          !mainTickets.includes(ticket)
+      );
+    const ticketSheets = {
+      main:
+        mainTickets.map((ticket) =>
+          hydrateTicket(
+            ticket,
+            "本命",
+            "中心展開"
+          )
+        ),
+      cover:
+        coverTickets.map((ticket) =>
+          hydrateTicket(
+            ticket,
+            "押さえ",
+            "安全押さえ"
+          )
+        ),
+      flow:
+        flowTickets.map((ticket) =>
+          hydrateTicket(
+            ticket,
+            "流し",
+            "流し展開"
+          )
+        ),
+      hole:
+        holeTickets.map((ticket) =>
+          hydrateTicket(
+            ticket,
+            "穴候補",
+            "穴展開"
+          )
+        ),
+      possibility:
+        decision.candidatePool.map(
+          (candidate) =>
+            hydrateTicket(
+              candidate,
+              "展開候補",
+              candidate.candidateKind
+            )
+        )
+    };
+    const allTicketMap =
+      new Map();
+
+    [
+      ...ticketSheets.main,
+      ...ticketSheets.cover,
+      ...ticketSheets.flow,
+      ...ticketSheets.hole
+    ].forEach((item) => {
+      const existing =
+        allTicketMap.get(item.ticket);
+
+      if (!existing) {
+        allTicketMap.set(
+          item.ticket,
+          { ...item }
+        );
+        return;
+      }
+
+      existing.categories = [
+        ...new Set([
+          ...(existing.categories || []),
+          ...(item.categories || [])
+        ])
+      ];
+      existing.scenarioTypes = [
+        ...new Set([
+          ...(existing.scenarioTypes || []),
+          ...(item.scenarioTypes || [])
+        ])
+      ];
+    });
+
+    const canonicalRanking = [
+      ...new Set([
+        decision.mainHeadBoatNo,
+        ...[
+          decision.marks.taikou,
+          decision.marks.ana,
+          decision.marks.osae
+        ].map((mark) =>
+          Number(mark?.boatNo || 0)
+        ),
+        ...decision.evaluations.map(
+          (evaluation) =>
+            Number(
+              evaluation?.boatNo || 0
+            )
+        )
+      ])
+    ]
+      .filter(
+        (boatNo) =>
+          boatNo >= 1 &&
+          boatNo <= 6
+      )
+      .map((boatNo) =>
+        decision.evaluations.find(
+          (evaluation) =>
+            Number(
+              evaluation?.boatNo || 0
+            ) === boatNo
+        )
+      )
+      .filter(Boolean);
+    const holdByBoat =
+      new Map(
+        (
+          basePrediction.raceFlow
+            ?.holdBoats || []
+        ).map((row) => [
+          Number(row?.boatNo || 0),
+          row
+        ])
+      );
+    const pickupByBoat =
+      new Map(
+        (
+          basePrediction.raceFlow
+            ?.pickupBoats || []
+        ).map((row) => [
+          Number(row?.boatNo || 0),
+          row
+        ])
+      );
+    const canonicalHoldPickupTheory = {
+      source:
+        "canonical-race-flow",
+      isFormal: true,
+      isProvisional: false,
+      attackerBoatNo:
+        decision.primaryAttackerBoatNo,
+      roles:
+        decision.evaluations.map(
+          (evaluation) => {
+            const boatNo =
+              Number(
+                evaluation?.boatNo || 0
+              );
+            const hold =
+              holdByBoat.get(boatNo);
+            const pickup =
+              pickupByBoat.get(boatNo);
+
+            return {
+              boatNo,
+              hold:
+                hold
+                  ? {
+                      score:
+                        toNumber(
+                          hold.score,
+                          0
+                        ),
+                      reason:
+                        String(
+                          hold.reason || ""
+                        ),
+                      isFormal: true,
+                      status:
+                        "構造化展開"
+                    }
+                  : null,
+              pickup:
+                pickup
+                  ? {
+                      score:
+                        toNumber(
+                          pickup.score,
+                          0
+                        ),
+                      reason:
+                        String(
+                          pickup.reason || ""
+                        ),
+                      isFormal: true,
+                      status:
+                        "構造化展開"
+                    }
+                  : null
+            };
+          }
+        ),
+      secondCandidates:
+        [
+          ...holdByBoat.values()
+        ],
+      thirdCandidates:
+        [
+          ...pickupByBoat.values()
+        ]
+    };
+    const canonicalMarks = {
+      ...decision.marks,
+      evidence: {
+        source:
+          "canonical-boat-evaluation",
+        evaluatedTargetIds:
+          decision.targets.map(
+            (target) => target.id
+          )
+      }
+    };
+    const canonicalBoatEvaluation = {
+      ...(basePrediction.boatEvaluation || {}),
+      ...decision.marks,
+      evaluations:
+        decision.evaluations
+    };
+    const canonicalMainSheet = {
+      ...oldMainSheet,
+      ...decision.marks,
+      evaluations:
+        decision.evaluations,
+      tickets:
+        ticketSheets.main,
+      coverTickets:
+        ticketSheets.cover,
+      flowTickets:
+        ticketSheets.flow
+    };
+    const rawFormationEvidence =
+      aiCore.formations?.evidence || {};
+    const mainEstablished =
+      decision.mainHeadBoatNo >= 1 &&
+      mainTickets.length >= 3 &&
+      coverTickets.length >= 2;
+    const formationEvidence = {
+      ...rawFormationEvidence,
+      source:
+        "canonical-evaluated-scenario",
+      flow:
+        rawFormationEvidence.flow === true,
+      longshot:
+        rawFormationEvidence.longshot === true,
+      evaluatedTargets:
+        decision.targets,
+      branches:
+        decision.branches,
+      evaluationIntegrity:
+        decision.integrity,
+      primaryAttackerBoatNo:
+        decision.primaryAttackerBoatNo,
+      candidateGeneration:
+        "before-ticket-limit"
+    };
+    const canonicalFormations = {
+      ...baseFormation,
+      main: mainTickets,
+      safety: coverTickets,
+      cover: coverTickets,
+      flow: flowTickets,
+      nagashi: flowTickets,
+      longshot: holeTickets,
+      hole: holeTickets,
+      possibilityCandidates:
+        ticketSheets.possibility,
+      mainEstablished,
+      evidence:
+        formationEvidence
+    };
+    const canonicalMainScenario = {
+      type:
+        "canonical-evaluated-scenario",
+      label:
+        decision.scenarioTitle,
+      score:
+        toNumber(
+          decision.marks.honmei?.score ??
+          decision.marks.honmei?.total,
+          0
+        ),
+      attacker:
+        decision.primaryAttackerBoatNo,
+      attackerBoatNo:
+        decision.primaryAttackerBoatNo,
+      headBoatNo:
+        decision.mainHeadBoatNo,
+      qualified:
+        mainEstablished,
+      branches:
+        decision.branches,
+      outcome: {
+        boats:
+          decision.evaluations,
+        firstCandidates: [
+          decision.marks.honmei
+        ].filter(Boolean),
+        secondCandidates: [
+          decision.marks.taikou,
+          decision.marks.osae
+        ].filter(Boolean),
+        thirdCandidates: [
+          decision.marks.ana,
+          decision.marks.osae
+        ].filter(Boolean)
+      }
+    };
+    const analysisRaceScenarios =
+      aiCore.raceScenarios || {};
+    const analysisScenarioList =
+      Array.isArray(
+        analysisRaceScenarios
+          .scenarios
+      )
+        ? analysisRaceScenarios
+            .scenarios
+        : [];
+    const canonicalRaceScenarios = {
+      mainScenario:
+        canonicalMainScenario,
+      scenarios: [
+        canonicalMainScenario,
+        ...analysisScenarioList
+      ],
+      subScenario:
+        analysisRaceScenarios
+          .mainScenario || null,
+      attacker:
+        decision.primaryAttackerBoatNo,
+      blockedBoats: [],
+      analysisBlockedBoats: [
+        ...(
+          analysisRaceScenarios
+            .blockedBoats || []
+        )
+      ],
+      preservations:
+        decision.branches.filter(
+          (branch) =>
+            branch.kind ===
+            "independent-scenario"
+        ),
+      evidence: {
+        source:
+          "canonical-evaluated-scenario",
+        branches:
+          decision.branches,
+        candidateCount:
+          decision.candidatePool.length
+      },
+      holdPickupTheory:
+        canonicalHoldPickupTheory
+    };
+    const canonicalAiCore = {
+      ...aiCore,
+      analysisRaceScenarios:
+        analysisRaceScenarios,
+      analysisRanking:
+        aiCore.ranking,
+      raceScenarios:
+        canonicalRaceScenarios,
+      ranking:
+        canonicalRanking,
+      marks:
+        canonicalMarks,
+      formations:
+        canonicalFormations,
+      holdPickupTheory:
+        canonicalHoldPickupTheory,
+      mainSheet:
+        canonicalMainSheet,
+      ai: {
+        ...(aiCore.ai || {}),
+        marks:
+          canonicalMarks,
+        comment:
+          basePrediction.finalAi?.summary ||
+          basePrediction.finalComment ||
+          decision.scenarioSummary
+      }
+    };
+
+    return {
+      ...basePrediction,
+      aiCore:
+        canonicalAiCore,
+      ai: {
+        ...(basePrediction.ai || {}),
+        marks:
+          canonicalMarks
+      },
+      raceFlow:
+        basePrediction.raceFlow,
+      boatEvaluation:
+        canonicalBoatEvaluation,
+      mainSheet:
+        canonicalMainSheet,
+      formation:
+        canonicalFormations,
+      formations:
+        canonicalFormations,
+      ticketSheets: {
+        ...ticketSheets,
+        all: [
+          ...allTicketMap.values()
+        ]
+      },
+      manshuSheet: {
+        ...oldManshuSheet,
+        tickets:
+          ticketSheets.hole
+      },
+      aiTicketList: [
+        ...allTicketMap.values()
+      ],
+      slit: aiCore.slit,
+      doubleTime: aiCore.doubleTime,
+      newSam: aiCore.newSam,
+      attackTheory:
+        aiCore.attackTheory,
+      stSlitTheory:
+        aiCore.stSlitTheory,
+      courseStructureTheory:
+        aiCore.courseStructureTheory,
+      exhibitionPerformanceTheory:
+        aiCore.exhibitionPerformanceTheory,
+      wallTheory:
+        aiCore.wallTheory,
+      holdPickupTheory:
+        canonicalHoldPickupTheory,
+      flowTheory:
+        aiCore.flowTheory,
+      roadTheory:
+        aiCore.roadTheory,
+      localTheory:
+        aiCore.localTheory,
+      newEnvironmentTheory:
+        aiCore.newEnvironmentTheory,
+      waterWeatherTheory:
+        aiCore.waterWeatherTheory,
+      racerSkillTheory:
+        aiCore.racerSkillTheory,
+      motorMaintenanceTheory:
+        aiCore.motorMaintenanceTheory,
+      comments:
+        decision.targets.map(
+          (target) =>
+            `${target.symbol}${target.boatNo}号艇：` +
+            String(
+              target.evaluation?.comment ||
+              target.evaluation
+                ?.shortComment ||
+              ""
+            )
+        ),
+      coreRanking:
+        canonicalRanking,
+      compatibilityAudit: {
+        source:
+          "canonical-boat-evaluation",
+        analyticalCore:
+          aiCore.marks,
+        candidateCount:
+          decision.candidatePool.length
+      }
     };
   }
 

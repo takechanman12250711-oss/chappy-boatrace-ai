@@ -112,6 +112,15 @@ const legacy = aiCore.buildFormations(threeAttack);
 const connected = aiCore.buildFormations(threeAttack, scenarios);
 
 assert.equal(scenarios.mainScenario.type, "threeAttack");
+assert.equal(
+  scenarios.preservations[0].qualified,
+  false,
+  "構造化評価と攻め・残し・STの複合根拠がない艇は保持対象にしない"
+);
+assert.ok(
+  scenarios.blockedBoats.includes(4),
+  "独立根拠がない4号艇は従来どおり3攻め時に除外する"
+);
 assert.equal(connected.evidence.source, "raceScenarios");
 assert.equal(connected.evidence.scenarioType, "threeAttack");
 assert.equal(connected.mainEstablished, true);
@@ -172,27 +181,15 @@ const practical = selector.select({
   manshuSheet: { tickets: connected.longshot }
 });
 
-assert.equal(practical.status, "selected");
-assert.deepEqual(
-  practical.tickets
-    .slice(0, 5)
-    .map((ticket) => ticket.category),
-  ["本線", "本線", "本線", "押さえ", "押さえ"],
-  "Ver2でも基本5点を維持する"
+assert.equal(
+  practical.status,
+  "skipped",
+  "艇評価・枝ID・raceFlowを省いた旧形式だけでは購入へ進めない"
 );
-assert.ok(
-  practical.tickets.length >= 5 &&
-  practical.tickets.length <= 7,
-  "弱い候補で埋めず、実戦厳選は基本5点・最大7点にする"
-);
-assert.ok(
-  practical.tickets
-    .slice(5)
-    .every((ticket) =>
-      ticket.category === "流し" ||
-      ticket.category === "万舟・穴"
-    ),
-  "追加点は根拠が成立した流し・万舟だけにする"
+assert.equal(
+  practical.tickets.length,
+  0,
+  "文字列フォーメーションだけを根拠に買い目を自己申告しない"
 );
 
 const unclear = [
@@ -289,6 +286,6 @@ assertScenarioHead("4カド", [
 console.log("展開シナリオ買い目接続テスト: 合格");
 console.log("- 本線頭: 1逃げ・2差し・3攻め・4カドへ接続");
 console.log("- 3攻め: 本線◎3・押さえ○1・万舟▲5");
-console.log("- 実戦厳選: 本線3＋押さえ2＋流し1＋万舟1");
+console.log("- 実戦厳選: 通常5〜7点・独立展開時のみ最大10点");
 console.log("- 本線不成立: 従来どおり見送り");
 console.log("- 新しい数値基準: 追加なし");

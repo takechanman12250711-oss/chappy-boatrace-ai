@@ -304,8 +304,8 @@ assert.deepEqual(
   "アプリとサーバー自動予想の印・買い目を一致させる"
 );
 assert.ok(
-  appPrediction.practical.length <= 7,
-  "最大7点を維持する"
+  appPrediction.practical.length <= 10,
+  "通常5〜7点・成立展開時最大10点を維持する"
 );
 
 const withoutOdds =

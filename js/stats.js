@@ -1127,7 +1127,7 @@
                   )
                 )
                 .filter(Boolean)
-                .slice(0, 7)
+                .slice(0, 10)
             : derivePracticalTickets(
                 item.predictionTickets
               );

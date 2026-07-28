@@ -7,6 +7,7 @@ on:
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
+      - "js/evaluated-scenario-candidates.js"
       - "js/script.js"
       - "js/race-history.js"
       - "js/note-generator.js"
@@ -62,6 +63,8 @@ on:
       - "scripts/test-race-scenarios.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
+      - "scripts/test-edogawa-fourth-boat-scenario.js"
+      - "scripts/test-evaluated-scenario-consistency.js"
       - "api/missing.js"
       - "scripts/build-race-stats.js"
       - "scripts/repair-recent-results.js"
@@ -91,6 +94,7 @@ on:
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
+      - "js/evaluated-scenario-candidates.js"
       - "js/script.js"
       - "js/race-history.js"
       - "js/note-generator.js"
@@ -146,6 +150,8 @@ on:
       - "scripts/test-race-scenarios.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
+      - "scripts/test-edogawa-fourth-boat-scenario.js"
+      - "scripts/test-evaluated-scenario-consistency.js"
       - "api/missing.js"
       - "scripts/build-race-stats.js"
       - "scripts/repair-recent-results.js"
@@ -190,6 +196,7 @@ jobs:
         run: |
           node --check js/script.js
           node --check js/ai-core.js
+          node --check js/evaluated-scenario-candidates.js
           node --check js/prediction.js
           node --check js/render.js
           node --check js/prediction-runtime-loader.js
@@ -238,6 +245,8 @@ jobs:
           node --check scripts/test-race-scenarios.js
           node --check scripts/test-scenario-marks.js
           node --check scripts/test-scenario-formations.js
+          node --check scripts/test-edogawa-fourth-boat-scenario.js
+          node --check scripts/test-evaluated-scenario-consistency.js
           node --check api/missing.js
           node --check scripts/build-race-stats.js
           node --check scripts/repair-recent-results.js
@@ -286,6 +295,8 @@ jobs:
           node scripts/test-race-scenarios.js
           node scripts/test-scenario-marks.js
           node scripts/test-scenario-formations.js
+          node scripts/test-edogawa-fourth-boat-scenario.js
+          node scripts/test-evaluated-scenario-consistency.js
           node scripts/test-repair-recent-results.js
           node scripts/test-missing-numbers.js
           node scripts/test-odds-insights.js

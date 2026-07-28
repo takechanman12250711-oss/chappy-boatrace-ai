@@ -146,7 +146,7 @@
     const compared = Array.isArray(run?.compared) ? run.compared : [];
     const venues = new Set(compared.map(item => item?.jcd).filter(Boolean)).size;
     const tickets = Array.isArray(saved?.prediction?.practicalTickets)
-      ? saved.prediction.practicalTickets.slice(0, 7)
+      ? saved.prediction.practicalTickets.slice(0, 10)
       : [];
 
     return {

@@ -16,6 +16,9 @@
     "insideAdvantageIsDefault": true,
     "preserveRealisticSecondCourseSashi": true,
     "preserveRealisticFourthBoatHold": true,
+    "preserveEvaluatedScenarioCandidatesForEveryBoat": true,
+    "candidateGenerationPrecedesTicketLimit": true,
+    "excludedCandidatesRequireStructuredReason": true,
     "numbersAloneMayCreateTickets": false,
     "numbersAloneMayDeleteTickets": false,
     "oddsUsage": "post_selection_display_classification_funding_only",
@@ -23,12 +26,23 @@
   },
   "practicalTickets": {
     "standard": 5,
-    "maximum": 7,
+    "normalMaximum": 7,
+    "maximum": 10,
     "allocationMaximum": {
       "main": 3,
       "cover": 2,
       "flow": 1,
       "longshot": 1
+    },
+    "scenarioExpansion": {
+      "enabled": true,
+      "requiresStructuredEvidence": true,
+      "minimumRoleScore": 65,
+      "candidateRequirementDoesNotImplyPurchase": true,
+      "categoryScopedPresentation": true,
+      "fillsToMaximum": false,
+      "preservesCandidatePool": true,
+      "requiresExclusionReason": true
     }
   },
   "newEngine": {
