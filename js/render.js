@@ -176,12 +176,6 @@
     return n > 0 ? `+${n}` : String(n);
   }
 
-  function limitText(value, max = 70) {
-    const text = safeText(value, "");
-    if (!text) return "";
-    return text.length > max ? `${text.slice(0, max)}…` : text;
-  }
-
   /* ===============================
     艇番
   =============================== */
@@ -1034,7 +1028,7 @@ if (raceInfoArea) {
 
         ${
           comment
-            ? `<p>${escapeHtml(limitText(comment, 60))}</p>`
+            ? `<p>${escapeHtml(comment)}</p>`
             : ""
         }
       </div>
@@ -1405,10 +1399,7 @@ if (raceInfoArea) {
                     ? `
                       <div class="v3-formation-reason">
                         ${escapeHtml(
-                          limitText(
-                            item.scenarioSummary,
-                            90
-                          )
+                          item.scenarioSummary
                         )}
                       </div>
                     `
@@ -1552,6 +1543,9 @@ if (raceInfoArea) {
             "",
 
                     scenarioSummary:
+            row.scenarioSummary ||
+            row.comment ||
+            row.reason ||
             createTicketSpecificComment(
               prediction,
               row.ticket ||
@@ -1653,10 +1647,7 @@ if (raceInfoArea) {
                     ? `
                       <div class="v3-formation-reason">
                         ${escapeHtml(
-                          limitText(
-                            item.scenarioSummary,
-                            90
-                          )
+                          item.scenarioSummary
                         )}
                       </div>
                     `
@@ -2186,6 +2177,17 @@ function createCompactPaperComment(item) {
     points.push(data.comment);
   }
 
+  const fullComment =
+    String(
+      data.comment || ""
+    ).trim();
+  if (
+    fullComment &&
+    !points.includes(fullComment)
+  ) {
+    points.push(fullComment);
+  }
+
   const heading =
     boatNo >= 1 && boatNo <= 6
       ? `${boatNo}号艇${name ? ` ${name}` : ""}`
@@ -2197,7 +2199,6 @@ function createCompactPaperComment(item) {
       : "";
 
   const detail = points
-    .slice(0, 3)
     .map((text) => {
       return `・${String(text).replace(/[。]+$/g, "")}`;
     })
@@ -2532,7 +2533,7 @@ function getPaperClassName(item) {
           item.reason
             ? `
               <div class="v3-formation-reason">
-                ${escapeHtml(limitText(item.reason, 60))}
+                ${escapeHtml(item.reason)}
               </div>
             `
             : ""
@@ -2551,7 +2552,7 @@ function getPaperClassName(item) {
 
     if (!note) return "";
 
-    return `<div class="v3-note">${escapeHtml(limitText(note, 100))}</div>`;
+    return `<div class="v3-note">${escapeHtml(note)}</div>`;
   }
   /* ===============================
     6. AI買い目一覧
@@ -2960,11 +2961,8 @@ function getPaperClassName(item) {
                               </div>
                               <p>
                                 ${escapeHtml(
-                                  limitText(
-                                    row.reason ||
-                                    "候補判定理由を確認中",
-                                    120
-                                  )
+                                  row.reason ||
+                                  "候補判定理由を確認中"
                                 )}
                               </p>
                             </div>
@@ -3094,10 +3092,7 @@ function getPaperClassName(item) {
 
                 <div class="v3-formation-reason">
                   ${escapeHtml(
-                    limitText(
-                      item.comment,
-                      90
-                    )
+                    item.comment
                   )}
                 </div>
               </div>
@@ -3273,6 +3268,12 @@ function getPaperClassName(item) {
               "",
 
                         scenarioSummary:
+              row.scenarioSummary ||
+              row.comment ||
+              row.reason ||
+              rankRow.scenarioSummary ||
+              rankRow.comment ||
+              rankRow.reason ||
               createTicketSpecificComment(
                 prediction,
                 ticketText,
@@ -3384,10 +3385,7 @@ function getPaperClassName(item) {
                   ? `
                     <div class="v3-formation-reason">
                       ${escapeHtml(
-                        limitText(
-                          item.scenarioSummary,
-                          90
-                        )
+                        item.scenarioSummary
                       )}
                     </div>
                   `

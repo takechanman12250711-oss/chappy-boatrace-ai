@@ -136,6 +136,21 @@
   "automation": {
     "mayProposeImprovements": true,
     "mayChangePredictionLogicWithoutApproval": false,
+    "improvementReview": {
+      "windowSize": 100,
+      "population": "same_generation_completed_auto_selected",
+      "shadowCountsTowardWindow": false,
+      "legacyCountsTowardWindow": false,
+      "minimumRoleSchemaVersion": 1,
+      "minimumTheorySchemaVersion": 1,
+      "requiresPreRaceRoleAttribution": true,
+      "requiresPreRaceTheoryAttribution": true,
+      "retroactiveTheoryAttribution": false,
+      "automaticApplication": false,
+      "approvalDoesNotApplyChange": true,
+      "applicationRequiresSeparatePullRequest": true,
+      "applicationRequiresNewGeneration": true
+    },
     "logicChangeRequires": [
       "what",
       "why",

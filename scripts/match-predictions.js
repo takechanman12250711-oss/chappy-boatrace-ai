@@ -3,6 +3,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const verification = require("../js/prediction-verification");
 
 function getArgument(name) {
@@ -69,11 +70,150 @@ function getHonmeiBoat(prediction) {
   return normalizeTicket(mainTicket?.ticket).split("-")[0] || "";
 }
 
+function supportIdentityOfRecord(
+  record,
+  baseIdentity = null
+) {
+  const evidence =
+    record?.prediction
+      ?.verificationEvidence ||
+    record?.verificationEvidence ||
+    {};
+  const generation =
+    evidence?.generation || {};
+  const reference =
+    record?.shadowV2Reference || {};
+  const source =
+    baseIdentity &&
+    typeof baseIdentity === "object"
+      ? baseIdentity
+      : {};
+
+  return {
+    ...source,
+    roleSchemaVersion:
+      Number(
+        source.roleSchemaVersion ??
+        evidence.roleSchemaVersion ??
+        0
+      ),
+    theorySchemaVersion:
+      Number(
+        source.theorySchemaVersion ??
+        evidence.theorySchemaVersion ??
+        0
+      ),
+    theorySetFingerprint:
+      String(
+        source.theorySetFingerprint ||
+        evidence
+          .theorySetFingerprint ||
+        ""
+      ),
+    generation: {
+      logicFingerprint:
+        String(
+          source
+            ?.generation
+            ?.logicFingerprint ||
+          generation
+            ?.logicFingerprint ||
+          ""
+        ),
+      confidenceDefinitionVersion:
+        String(
+          source
+            ?.generation
+            ?.confidenceDefinitionVersion ||
+          generation
+            ?.confidenceDefinitionVersion ||
+          ""
+        ),
+      ticketPolicyVersion:
+        String(
+          source
+            ?.generation
+            ?.ticketPolicyVersion ||
+          generation
+            ?.ticketPolicyVersion ||
+          ""
+        )
+    },
+    evaluator:
+      String(
+        record?.selection?.evaluator ||
+        source.evaluator ||
+        ""
+      ),
+    evaluatorVersion:
+      String(
+        reference.evaluatorVersion ||
+        source.evaluatorVersion ||
+        ""
+      ),
+    selectorCohortKey:
+      String(
+        reference.cohortKey ||
+        source.selectorCohortKey ||
+        ""
+      ),
+    logicFingerprint:
+      String(
+        reference.logicFingerprint ||
+        source.logicFingerprint ||
+        ""
+      ),
+    theoryInputVersion:
+      String(
+        reference.theoryInputVersion ||
+        source.theoryInputVersion ||
+        ""
+      )
+  };
+}
+
+function verificationInputFingerprint(
+  record
+) {
+  const payload = {
+    selection:
+      record?.selection || null,
+    shadowV2Reference:
+      record
+        ?.shadowV2Reference ||
+      null,
+    prediction:
+      record?.prediction || null
+  };
+
+  return crypto
+    .createHash("sha256")
+    .update(
+      JSON.stringify(payload)
+    )
+    .digest("hex")
+    .slice(0, 32);
+}
+
 function settlePrediction(prediction, result) {
-  const detail = verification.verifyPrediction(
+  const verified =
+    verification.verifyPrediction(
     prediction?.prediction || {},
     result || {}
   );
+  const detail = {
+    ...verified,
+    supportIdentity:
+      supportIdentityOfRecord(
+        prediction,
+        verified
+          ?.supportIdentity
+      ),
+    verificationInputFingerprint:
+      verificationInputFingerprint(
+        prediction
+      )
+  };
   const resultTicket = detail.resultTicket;
   const practicalTickets = detail.practicalTickets;
   const honmeiBoat = getHonmeiBoat(prediction);
@@ -129,8 +269,195 @@ function buildSummary(predictions) {
     ticketCategorySummary:
       verificationSummary.ticketCategorySummary,
     roleSummary: verificationSummary.roleSummary,
+    rolePerformanceSummary:
+      verificationSummary.rolePerformanceSummary,
+    theoryPerformanceSummary:
+      verificationSummary.theoryPerformanceSummary,
     markSummary: verificationSummary.markSummary,
     priorityStageSummary: verificationSummary.priorityStageSummary
+  };
+}
+
+function selectionGenerationKey(
+  item
+) {
+  const identity =
+    supportIdentityOfRecord(item);
+  const generation =
+    identity.generation || {};
+  const values = [
+    generation
+      .logicFingerprint,
+    generation
+      .confidenceDefinitionVersion,
+    generation
+      .ticketPolicyVersion,
+    identity.roleSchemaVersion >= 1
+      ? identity.roleSchemaVersion
+      : "",
+    identity.theorySchemaVersion >= 1
+      ? identity.theorySchemaVersion
+      : "",
+    identity
+      .theorySetFingerprint,
+    identity.evaluator,
+    identity.evaluatorVersion,
+    identity.selectorCohortKey,
+    identity.logicFingerprint,
+    identity.theoryInputVersion,
+    Number.isFinite(
+      Number(
+        item
+          ?.selection
+          ?.threshold
+      )
+    )
+      ? Number(
+          item
+            .selection
+            .threshold
+        )
+      : ""
+  ].map(value =>
+    String(value || "")
+  );
+
+  return values.every(Boolean)
+    ? JSON.stringify(values)
+    : "";
+}
+
+function isCurrentV2Selection(
+  item
+) {
+  return (
+    item?.selection?.evaluator ===
+      "shadow-selection-v2"
+  );
+}
+
+function buildSelectionCohorts(
+  verificationPredictions
+) {
+  const source =
+    Array.isArray(
+      verificationPredictions
+    )
+      ? verificationPredictions
+      : [];
+  const v2Rows =
+    source.filter(
+      isCurrentV2Selection
+    );
+  const hasGeneration =
+    item =>
+      Boolean(
+        selectionGenerationKey(
+          item
+        )
+      );
+  const activeGenerationKey =
+    v2Rows
+      .map(item => ({
+        item,
+        key:
+          selectionGenerationKey(
+            item
+          )
+      }))
+      .filter(row =>
+        row.key
+      )
+      .sort((a, b) =>
+        String(
+          b.item?.selectedAt ||
+          ""
+        ).localeCompare(
+          String(
+            a.item?.selectedAt ||
+            ""
+          )
+        )
+      )[0]?.key ||
+    "";
+  const activeV2 =
+    v2Rows.filter(item =>
+      activeGenerationKey &&
+      hasGeneration(item) &&
+      selectionGenerationKey(
+        item
+      ) === activeGenerationKey
+    );
+  const ready =
+    activeV2.filter(
+      item =>
+        item?.selection?.ready ===
+          true &&
+        item?.selection?.status ===
+          "ready" &&
+        Number.isFinite(
+          Number(
+            item?.selection?.score
+          )
+        )
+    );
+
+  return {
+    activeGenerationKey,
+    score70Plus:
+      ready.filter(
+        item =>
+          Number(
+            item.selection.score
+          ) >= 70
+      ),
+    score60To69:
+      ready.filter(item => {
+        const score =
+          Number(
+            item.selection.score
+          );
+        return (
+          score >= 60 &&
+          score < 70
+        );
+      }),
+    readyBelow60:
+      ready.filter(
+        item =>
+          Number(
+            item.selection.score
+          ) < 60
+      ),
+    notReady:
+      activeV2.filter(
+        item =>
+          !ready.includes(item)
+      ),
+    legacy:
+      source.filter(
+        item =>
+          !isCurrentV2Selection(
+            item
+          )
+      ),
+    missingGeneration:
+      v2Rows.filter(
+        item =>
+          !hasGeneration(item)
+      ),
+    otherGeneration:
+      v2Rows.filter(
+        item =>
+          hasGeneration(item) &&
+          (
+            !activeGenerationKey ||
+            selectionGenerationKey(
+              item
+            ) !==
+              activeGenerationKey
+          )
+      )
   };
 }
 
@@ -142,10 +469,104 @@ function matchPredictions(predictionData, resultData) {
     ])
   );
 
+  let changed = false;
   const settleList = source => (Array.isArray(source) ? source : []).map(prediction => {
     const result = resultMap.get(prediction.raceKey);
     if (!result?.resultAvailable) return prediction;
+    const officialTicket =
+      normalizeTicket(
+        result?.trifecta
+          ?.combination
+      );
+    const existing =
+      prediction?.result;
+    const existingTicket =
+      normalizeTicket(
+        existing?.resultTicket
+      );
+    const officialPayout =
+      Number(
+        result?.trifecta
+          ?.payout || 0
+      );
+    const officialPopularity =
+      Number(
+        result?.trifecta
+          ?.popularity || 0
+      );
+    const officialMethod =
+      String(
+        result
+          ?.winningMethod || ""
+      );
+    const officialFinishers =
+      Array.isArray(
+        result?.finishers
+      )
+        ? result.finishers
+        : [];
+    const officialStarts =
+      Array.isArray(
+        result?.starts
+      )
+        ? result.starts
+        : [];
+    const currentFingerprint =
+      verificationInputFingerprint(
+        prediction
+      );
+    const existingFingerprint =
+      String(
+        existing
+          ?.verification
+          ?.verificationInputFingerprint ||
+        existing
+          ?.verificationInputFingerprint ||
+        ""
+      );
 
+    if (
+      existing?.settled === true &&
+      officialTicket &&
+      existingTicket ===
+        officialTicket &&
+      Number(
+        existing?.payout || 0
+      ) === officialPayout &&
+      Number(
+        existing?.popularity || 0
+      ) === officialPopularity &&
+      String(
+        existing
+          ?.winningMethod || ""
+      ) === officialMethod &&
+      JSON.stringify(
+        Array.isArray(
+          existing?.finishers
+        )
+          ? existing.finishers
+          : []
+      ) ===
+        JSON.stringify(
+          officialFinishers
+        ) &&
+      JSON.stringify(
+        Array.isArray(
+          existing?.starts
+        )
+          ? existing.starts
+          : []
+      ) ===
+        JSON.stringify(
+          officialStarts
+        ) &&
+      existingFingerprint ===
+        currentFingerprint
+    ) {
+      return prediction;
+    }
+
+    changed = true;
     return {
       ...prediction,
       result: settlePrediction(prediction, result)
@@ -155,12 +576,16 @@ function matchPredictions(predictionData, resultData) {
   const verificationPredictions = settleList(
     predictionData?.verificationPredictions
   );
-  const qualifiedVerification = verificationPredictions.filter(
-    item => item?.scoreBand === "70_plus" || Number(item?.selection?.score || 0) >= 70
-  );
-  const shadowVerification = verificationPredictions.filter(
-    item => item?.scoreBand === "under_70" || Number(item?.selection?.score || 0) < 70
-  );
+  const selectionCohorts =
+    buildSelectionCohorts(
+      verificationPredictions
+    );
+  const under70 = [
+    ...selectionCohorts
+      .score60To69,
+    ...selectionCohorts
+      .readyBelow60
+  ];
 
   return {
     ...predictionData,
@@ -169,10 +594,53 @@ function matchPredictions(predictionData, resultData) {
     resultSummary: buildSummary(predictions),
     verificationResultSummary: {
       all: buildSummary(verificationPredictions),
-      score70Plus: buildSummary(qualifiedVerification),
-      under70: buildSummary(shadowVerification)
+      activeGenerationKey:
+        selectionCohorts
+          .activeGenerationKey,
+      score70Plus:
+        buildSummary(
+          selectionCohorts
+            .score70Plus
+        ),
+      score60To69:
+        buildSummary(
+          selectionCohorts
+            .score60To69
+        ),
+      readyBelow60:
+        buildSummary(
+          selectionCohorts
+            .readyBelow60
+        ),
+      notReady:
+        buildSummary(
+          selectionCohorts
+            .notReady
+        ),
+      legacy:
+        buildSummary(
+          selectionCohorts
+            .legacy
+        ),
+      missingGeneration:
+        buildSummary(
+          selectionCohorts
+            .missingGeneration
+        ),
+      otherGeneration:
+        buildSummary(
+          selectionCohorts
+            .otherGeneration
+        ),
+      under70:
+        buildSummary(under70)
     },
-    resultsMatchedAt: new Date().toISOString()
+    resultsMatchedAt:
+      changed
+        ? new Date().toISOString()
+        : predictionData
+            ?.resultsMatchedAt ||
+          new Date().toISOString()
   };
 }
 
@@ -224,5 +692,9 @@ module.exports = {
   classifyMiss,
   settlePrediction,
   buildSummary,
+  supportIdentityOfRecord,
+  verificationInputFingerprint,
+  selectionGenerationKey,
+  buildSelectionCohorts,
   matchPredictions
 };

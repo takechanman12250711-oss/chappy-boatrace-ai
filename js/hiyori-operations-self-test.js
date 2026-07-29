@@ -52,7 +52,14 @@
     const holder=root();if(!holder)return null;
     const result=read(RESULT_KEY,null);
     const failed=(result?.checks||[]).filter(row=>!row.passed);
-    holder.innerHTML=`<details><summary style="font-weight:700;cursor:pointer">運用基盤セルフテスト ${result?`— ${result.status==="passed"?"正常":"要確認"}`:""}</summary><div style="margin-top:9px"><button type="button" data-run-ops-self-test style="width:100%;padding:10px 12px;border:0;border-radius:10px;background:#334155;color:#fff;font-weight:700">セルフテストを実行</button>${result?`<div style="margin-top:9px;padding:9px;border-radius:10px;background:${result.status==="passed"?"#ecfdf5":"#fff7ed"}"><b>${result.passed}/${result.required} 項目正常</b><small style="display:block;margin-top:3px;color:#64748b">任意キー未生成 ${result.advisoryMissing}件</small>${failed.length?`<div style="margin-top:7px;font-size:11px">${failed.slice(0,8).map(row=>`・${row.name}：${row.detail}`).join("<br>")}</div>`:"<small style="display:block;margin-top:5px">重大な接続異常はありません。</small>"}</div>`:"<small style="display:block;margin-top:8px;color:#64748b">未実行です。</small>"}<small style="display:block;margin-top:6px;color:#64748b">確認専用です。予想・買い目・本番設定は変更しません。</small></div></details>`;
+    const statusLabel=result?`— ${result.status==="passed"?"正常":"要確認"}`:"";
+    const failedHtml=failed.length
+      ?`<div style="margin-top:7px;font-size:11px">${failed.slice(0,8).map(row=>`・${row.name}：${row.detail}`).join("<br>")}</div>`
+      :"<small style=\"display:block;margin-top:5px\">重大な接続異常はありません。</small>";
+    const resultHtml=result
+      ?`<div style="margin-top:9px;padding:9px;border-radius:10px;background:${result.status==="passed"?"#ecfdf5":"#fff7ed"}"><b>${result.passed}/${result.required} 項目正常</b><small style="display:block;margin-top:3px;color:#64748b">任意キー未生成 ${result.advisoryMissing}件</small>${failedHtml}</div>`
+      :"<small style=\"display:block;margin-top:8px;color:#64748b\">未実行です。</small>";
+    holder.innerHTML=`<details><summary style="font-weight:700;cursor:pointer">運用基盤セルフテスト ${statusLabel}</summary><div style="margin-top:9px"><button type="button" data-run-ops-self-test style="width:100%;padding:10px 12px;border:0;border-radius:10px;background:#334155;color:#fff;font-weight:700">セルフテストを実行</button>${resultHtml}<small style="display:block;margin-top:6px;color:#64748b">確認専用です。予想・買い目・本番設定は変更しません。</small></div></details>`;
     holder.querySelector("[data-run-ops-self-test]")?.addEventListener("click",run);
     return result;
   }

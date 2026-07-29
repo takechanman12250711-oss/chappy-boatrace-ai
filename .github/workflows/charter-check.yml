@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - ".github/workflows/charter-check.yml"
+      - ".github/workflows/collect-predictions.yml"
+      - ".github/workflows/collect-results.yml"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
@@ -15,6 +17,7 @@ on:
       - "js/prediction.js"
       - "js/render.js"
       - "js/prediction-runtime-loader.js"
+      - "js/stats-runtime-loader.js"
       - "js/auto-selection.js"
       - "js/api.js"
       - "style.css"
@@ -34,6 +37,8 @@ on:
       - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/collect-results.js"
+      - "scripts/test-collect-results.js"
       - "scripts/test-shadow-predictions.js"
       - "scripts/match-predictions.js"
       - "scripts/test-match-predictions.js"
@@ -60,7 +65,12 @@ on:
       - "js/verification-readiness.js"
       - "scripts/test-verification-readiness.js"
       - "js/improvement-suggestions.js"
+      - "js/improvement-review.js"
       - "scripts/test-improvement-suggestions.js"
+      - "scripts/build-improvement-review.js"
+      - "scripts/test-improvement-review.js"
+      - "scripts/test-stats-runtime-loader.js"
+      - "data/predictions/improvement-review.json"
       - "scripts/test-practical-selection.js"
       - "scripts/test-prediction-transparency-ui.js"
       - "scripts/test-stats-methodology.js"
@@ -97,6 +107,8 @@ on:
       - main
     paths:
       - ".github/workflows/charter-check.yml"
+      - ".github/workflows/collect-predictions.yml"
+      - ".github/workflows/collect-results.yml"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
@@ -108,6 +120,7 @@ on:
       - "js/prediction.js"
       - "js/render.js"
       - "js/prediction-runtime-loader.js"
+      - "js/stats-runtime-loader.js"
       - "js/auto-selection.js"
       - "js/api.js"
       - "style.css"
@@ -127,6 +140,8 @@ on:
       - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/collect-results.js"
+      - "scripts/test-collect-results.js"
       - "scripts/test-shadow-predictions.js"
       - "scripts/match-predictions.js"
       - "scripts/test-match-predictions.js"
@@ -153,7 +168,12 @@ on:
       - "js/verification-readiness.js"
       - "scripts/test-verification-readiness.js"
       - "js/improvement-suggestions.js"
+      - "js/improvement-review.js"
       - "scripts/test-improvement-suggestions.js"
+      - "scripts/build-improvement-review.js"
+      - "scripts/test-improvement-review.js"
+      - "scripts/test-stats-runtime-loader.js"
+      - "data/predictions/improvement-review.json"
       - "scripts/test-practical-selection.js"
       - "scripts/test-prediction-transparency-ui.js"
       - "scripts/test-stats-methodology.js"
@@ -212,6 +232,7 @@ jobs:
           node --check js/prediction.js
           node --check js/render.js
           node --check js/prediction-runtime-loader.js
+          node --check js/stats-runtime-loader.js
           node --check js/api.js
           node --check js/prediction-flow-priority.js
           node --check js/prediction-st-exhibition-support.js
@@ -230,6 +251,8 @@ jobs:
           node --check js/practical-selection.js
           node --check scripts/check-charter.js
           node --check scripts/collect-predictions.js
+          node --check scripts/collect-results.js
+          node --check scripts/test-collect-results.js
           node --check scripts/test-shadow-predictions.js
           node --check scripts/match-predictions.js
           node --check scripts/test-match-predictions.js
@@ -254,7 +277,11 @@ jobs:
           node --check js/verification-readiness.js
           node --check scripts/test-verification-readiness.js
           node --check js/improvement-suggestions.js
+          node --check js/improvement-review.js
           node --check scripts/test-improvement-suggestions.js
+          node --check scripts/build-improvement-review.js
+          node --check scripts/test-improvement-review.js
+          node --check scripts/test-stats-runtime-loader.js
           node --check scripts/test-practical-selection.js
           node --check scripts/test-prediction-transparency-ui.js
           node --check scripts/test-stats-methodology.js
@@ -292,6 +319,7 @@ jobs:
         run: |
           node scripts/check-charter.js
           node scripts/test-shadow-predictions.js
+          node scripts/test-collect-results.js
           node scripts/test-match-predictions.js
           node scripts/test-prediction-verification.js
           node scripts/test-prediction-calibration.js
@@ -305,6 +333,8 @@ jobs:
           node scripts/test-collection-health.js
           node scripts/test-verification-readiness.js
           node scripts/test-improvement-suggestions.js
+          node scripts/test-improvement-review.js
+          node scripts/test-stats-runtime-loader.js
           node scripts/test-practical-selection.js
           node scripts/test-prediction-transparency-ui.js
           node scripts/test-stats-methodology.js

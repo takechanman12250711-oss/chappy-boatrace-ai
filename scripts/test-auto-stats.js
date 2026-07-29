@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const {
   normalizeIndex,
+  classifySelectionCohort,
   buildResultHeadline,
   buildShadowV2Progress
 } = require("../js/auto-stats");
@@ -69,7 +70,7 @@ const normalized = normalizeIndex({
 assert.equal(normalized.predictions.length, 2);
 assert.equal(normalized.predictions[0].predictionSource, "automatic");
 assert.equal(normalized.predictions[1].predictionSource, "automatic_shadow");
-assert.equal(normalized.predictions[1].scoreBand, "under_70");
+assert.equal(normalized.predictions[1].scoreBand, "legacy");
 assert.equal(normalized.results[0].result, "1-2-3");
 assert.equal(normalized.results[0].officialPayoutPer100, 1230);
 assert.equal(normalized.results[0].automaticVerification.scenarioMatched, true);
@@ -78,6 +79,197 @@ assert.equal(normalized.runs.length, 1);
 assert.equal(normalized.selectedCount, 1);
 assert.equal(normalized.shadowCount, 1);
 assert.equal(normalized.shadowV2Predictions.length, 1);
+
+const activeGeneration = {
+  logicFingerprint: "logic-v2",
+  confidenceDefinitionVersion:
+    "confidence-v1",
+  ticketPolicyVersion:
+    "tickets-v1"
+};
+const activeEvidence = {
+  roleSchemaVersion: 1,
+  theorySchemaVersion: 1,
+  theorySetFingerprint:
+    "structured-ticket-support-v1:flow+holdPickup",
+  generation:
+    activeGeneration
+};
+const activeShadowReference = {
+  cohortKey:
+    "selector-cohort-current",
+  evaluatorVersion:
+    "shadow-selection-v2.0.0",
+  logicFingerprint:
+    "selector-logic-current",
+  theoryInputVersion:
+    "theory-input-v1.0.0"
+};
+const activeGenerationKey =
+  JSON.stringify([
+    activeGeneration
+      .logicFingerprint,
+    activeGeneration
+      .confidenceDefinitionVersion,
+    activeGeneration
+      .ticketPolicyVersion,
+    "1",
+    "1",
+    activeEvidence
+      .theorySetFingerprint,
+    "shadow-selection-v2",
+    activeShadowReference
+      .evaluatorVersion,
+    activeShadowReference
+      .cohortKey,
+    activeShadowReference
+      .logicFingerprint,
+    activeShadowReference
+      .theoryInputVersion,
+    "70"
+  ]);
+const generationRecord = {
+  shadowV2Reference:
+    activeShadowReference,
+  prediction: {
+    verificationEvidence: {
+      ...activeEvidence
+    }
+  }
+};
+assert.equal(
+  classifySelectionCohort({
+    ...generationRecord,
+    selection: {
+      score: 80,
+      ready: true
+    }
+  }, activeGenerationKey).key,
+  "legacy",
+  "旧評価80点をV2の70点以上へ混ぜない"
+);
+assert.equal(
+  classifySelectionCohort({
+    ...generationRecord,
+    selection: {
+      evaluator:
+        "shadow-selection-v2",
+      score: 75,
+      threshold: 70,
+      ready: true,
+      status: "ready"
+    }
+  }, activeGenerationKey).key,
+  "v2_70_plus"
+);
+assert.equal(
+  classifySelectionCohort({
+    ...generationRecord,
+    selection: {
+      evaluator:
+        "shadow-selection-v2",
+      score: 66,
+      threshold: 70,
+      ready: true,
+      status: "ready"
+    }
+  }, activeGenerationKey).key,
+  "v2_60_69"
+);
+assert.equal(
+  classifySelectionCohort({
+    ...generationRecord,
+    selection: {
+      evaluator:
+        "shadow-selection-v2",
+      score: 75,
+      threshold: 70,
+      ready: false,
+      status: "incomplete"
+    }
+  }, activeGenerationKey).key,
+  "v2_not_ready"
+);
+assert.equal(
+  classifySelectionCohort({
+    shadowV2Reference:
+      activeShadowReference,
+    prediction: {
+      verificationEvidence: {
+        ...activeEvidence,
+        generation: {
+          ...activeGeneration,
+          logicFingerprint:
+            "other"
+        }
+      }
+    },
+    selection: {
+      evaluator:
+        "shadow-selection-v2",
+      score: 82,
+      threshold: 70,
+      ready: true,
+      status: "ready"
+    }
+  }, activeGenerationKey).key,
+  "v2_other_generation"
+);
+assert.equal(
+  classifySelectionCohort({
+    ...generationRecord,
+    shadowV2Reference: {
+      ...activeShadowReference,
+      cohortKey:
+        "selector-cohort-next"
+    },
+    selection: {
+      evaluator:
+        "shadow-selection-v2",
+      score: 82,
+      threshold: 70,
+      ready: true,
+      status: "ready"
+    }
+  }, activeGenerationKey).key,
+  "v2_other_generation",
+  "評価器cohortが違うV2を同じ点数帯へ混ぜない"
+);
+assert.equal(
+  classifySelectionCohort({
+    ...generationRecord,
+    prediction: {
+      verificationEvidence: {
+        ...activeEvidence,
+        theorySetFingerprint:
+          "structured-ticket-support-v2"
+      }
+    },
+    selection: {
+      evaluator:
+        "shadow-selection-v2",
+      score: 82,
+      threshold: 70,
+      ready: true,
+      status: "ready"
+    }
+  }, activeGenerationKey).key,
+  "v2_other_generation",
+  "理論帰属集合が違うV2を同じ点数帯へ混ぜない"
+);
+assert.equal(
+  classifySelectionCohort({
+    selection: {
+      evaluator:
+        "shadow-selection-v2",
+      score: 75,
+      threshold: 70,
+      ready: true,
+      status: "ready"
+    }
+  }, activeGenerationKey).key,
+  "v2_missing_generation"
+);
 
 const v2Progress = buildShadowV2Progress([
   {
@@ -295,7 +487,7 @@ assert.match(
 );
 assert.match(
   indexSource,
-  /style\.css\?v=20260729-transparency1/,
+  /style\.css\?v=20260729-review2/,
   "結果分析CSSのキャッシュ更新が不足しています"
 );
 assert.match(

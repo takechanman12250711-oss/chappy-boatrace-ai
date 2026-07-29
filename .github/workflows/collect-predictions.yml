@@ -10,9 +10,11 @@ on:
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
       - "scripts/build-prediction-index.js"
+      - "scripts/test-build-prediction-index.js"
       - "scripts/build-prediction-summaries.js"
       - "scripts/test-prediction-summaries.js"
       - "scripts/test-load-performance.js"
+      - "js/stats-runtime-loader.js"
       - "scripts/test-prediction-runtime-loader.js"
       - "js/prediction-runtime-loader.js"
       - "scripts/test-shadow-predictions.js"
@@ -90,6 +92,7 @@ jobs:
           node scripts/test-api-history.js
           node scripts/test-api-client-cache.js
           node scripts/test-prediction-summaries.js
+          node scripts/test-build-prediction-index.js
           node scripts/test-load-performance.js
           node scripts/test-prediction-runtime-loader.js
           node scripts/test-collection-health.js

@@ -3,6 +3,17 @@
 const assert = require("node:assert/strict");
 const verification = require("../js/prediction-verification");
 
+const GENERATION_V1 = {
+  logicFingerprint:
+    "evaluated-scenarios-v1",
+  confidenceDefinitionVersion:
+    "internal-score-v1",
+  ticketPolicyVersion:
+    "practical-5-7-10-v1"
+};
+const THEORY_SET_V1 =
+  "structured-ticket-support-v1:flow+holdPickup";
+
 const prediction = {
   raceFlow: { title: "2差し本線" },
   internalEvaluation: {
@@ -13,14 +24,10 @@ const prediction = {
   },
   verificationEvidence: {
     roleSchemaVersion: 1,
-    generation: {
-      logicFingerprint:
-        "evaluated-scenarios-v1",
-      confidenceDefinitionVersion:
-        "internal-score-v1",
-      ticketPolicyVersion:
-        "practical-5-7-10-v1"
-    },
+    theorySchemaVersion: 1,
+    theorySetFingerprint:
+      THEORY_SET_V1,
+    generation: GENERATION_V1,
     mainScenario: {
       label: "2差し本線",
       headBoatNo: 2,
@@ -116,7 +123,18 @@ assert.equal(hit.simulatedRecoveryRate, 816);
 assert.equal(hit.priorityReview.primaryStage, "的中");
 assert.equal(
   hit.schemaVersion,
-  4
+  5
+);
+assert.deepEqual(
+  hit.supportIdentity,
+  {
+    roleSchemaVersion: 1,
+    theorySchemaVersion: 1,
+    theorySetFingerprint:
+      THEORY_SET_V1,
+    generation: GENERATION_V1
+  },
+  "検証結果へ正規化した支持根拠の世代識別子を保存する"
 );
 assert.equal(
   hit
@@ -307,6 +325,522 @@ assert.equal(
     .structuredScenarioMatchRate,
   50
 );
+const attackPerformance =
+  summary.rolePerformanceSummary
+    .find(
+      row =>
+        row.key === "attack"
+    );
+assert.deepEqual(
+  {
+    key:
+      attackPerformance.key,
+    label:
+      attackPerformance.label,
+    raceCount:
+      attackPerformance
+        .raceCount,
+    ticketCount:
+      attackPerformance
+        .ticketCount,
+    hitTickets:
+      attackPerformance
+        .hitTickets,
+    stake:
+      attackPerformance.stake,
+    return:
+      attackPerformance.return,
+    profit:
+      attackPerformance.profit,
+    recoveryRate:
+      attackPerformance
+        .recoveryRate,
+    supportCohort:
+      attackPerformance
+        .supportCohort,
+    overlappingCohort:
+      attackPerformance
+        .overlappingCohort,
+    notAdditive:
+      attackPerformance
+        .notAdditive
+  },
+  {
+    key: "attack",
+    label: "攻め・頭",
+    raceCount: 2,
+    ticketCount: 2,
+    hitTickets: 1,
+    stake: 200,
+    return: 4080,
+    profit: 3880,
+    recoveryRate: 2040,
+    supportCohort: true,
+    overlappingCohort: true,
+    notAdditive: true
+  },
+  "役割が支持した買い目群の投資・払戻を買い目単位で集計する"
+);
+assert.deepEqual(
+  attackPerformance
+    .supportIdentity,
+  hit.supportIdentity
+);
+assert.equal(
+  attackPerformance
+    .roleSchemaVersion,
+  1
+);
+assert.equal(
+  attackPerformance
+    .supportIdentityKey,
+  verification
+    .supportIdentityKey(
+      hit.supportIdentity
+    )
+);
+assert.equal(
+  summary.theoryPerformanceSummary.status,
+  "collecting_pre_race_attribution",
+  "旧履歴へ理論を結果後に推測して付けない"
+);
+assert.deepEqual(
+  summary.theoryPerformanceSummary.rows,
+  []
+);
+assert.equal(
+  summary
+    .theoryPerformanceSummary
+    .omittedCount,
+  0
+);
+
+const theoryClaimsV1 = [{
+  theoryKey: "flow",
+  label: "展開",
+  theoryVersion:
+    "evaluated-scenarios-v1",
+  formal: true,
+  source:
+    "structured-purchase-branch"
+}, {
+  theoryKey: "temporary",
+  label: "暫定理論",
+  theoryVersion: "draft-v1",
+  formal: false,
+  source: "provisional-branch"
+}, {
+  theoryKey: "missing-source",
+  label: "出典なし",
+  theoryVersion: "v1",
+  formal: true,
+  source: ""
+}, {
+  theoryKey: "missing-version",
+  label: "版なし",
+  theoryVersion: "",
+  formal: true,
+  source: "structured-branch"
+}];
+const theorySupported = verification.verifyPrediction({
+  ...prediction,
+  practicalTickets: [{
+    ticket: "2-1-4",
+    category: "本線",
+    theoryClaims: theoryClaimsV1
+  }],
+  verificationEvidence: {
+    ...prediction.verificationEvidence,
+    tickets: [{
+      ticket: "2-1-4",
+      categories: ["本線"],
+      roleClaims:
+        prediction
+          .verificationEvidence
+          .tickets[0]
+          .roleClaims,
+      theoryClaims: theoryClaimsV1
+    }]
+  }
+}, {
+  resultAvailable: true,
+  winningMethod: "差し",
+  trifecta: {
+    combination: "2-1-4",
+    payout: 4080
+  }
+});
+theorySupported.supportIdentity =
+  verification
+    .normalizeSupportIdentity({
+      ...theorySupported
+        .supportIdentity,
+      evaluator:
+        "shadow-selection-v2",
+      evaluatorVersion:
+        "shadow-selection-v2.0.0",
+      selectorCohortKey:
+        "selector-cohort-v1",
+      logicFingerprint:
+        "selector-logic-v1",
+      theoryInputVersion:
+        "theory-input-v1"
+    });
+const theorySummary = verification.buildSummary([
+  theorySupported
+]).theoryPerformanceSummary;
+assert.equal(theorySummary.status, "available");
+assert.equal(
+  theorySummary.rows[0].key,
+  "flow",
+  "既存利用側との互換性のためkeyはtheoryKeyを維持する"
+);
+assert.equal(theorySummary.rows[0].stake, 100);
+assert.equal(theorySummary.rows[0].return, 4080);
+assert.equal(theorySummary.rows[0].notAdditive, true);
+assert.equal(
+  theorySummary.rows[0].version,
+  "evaluated-scenarios-v1"
+);
+assert.equal(
+  theorySummary.rows[0].source,
+  "structured-purchase-branch"
+);
+assert.equal(
+  theorySummary.rows[0].formal,
+  true
+);
+assert.equal(
+  theorySummary.rows[0]
+    .theorySetFingerprint,
+  THEORY_SET_V1
+);
+assert.deepEqual(
+  theorySummary.rows[0]
+    .supportIdentity,
+  theorySupported.supportIdentity
+);
+assert.equal(
+  theorySummary.omittedCount,
+  3,
+  "暫定・版なし・出典なしの理論主張を除外件数として明示する"
+);
+assert.equal(
+  theorySummary.rows.some(
+    row =>
+      row.key === "temporary"
+  ),
+  false,
+  "暫定理論を正式な理論別回収率へ混ぜない"
+);
+const supportIdentityV2 =
+  verification
+    .normalizeSupportIdentity({
+      roleSchemaVersion: 1,
+      theorySchemaVersion: 1,
+      theorySetFingerprint:
+        "structured-ticket-support-v2:flow+holdPickup",
+      generation: {
+        ...GENERATION_V1,
+        logicFingerprint:
+          "evaluated-scenarios-v2"
+      },
+      evaluator:
+        "automatic-selection",
+      evaluatorVersion:
+        "selector-v2",
+      selectorCohortKey:
+        "selector-cohort-v2",
+      logicFingerprint:
+        "selector-logic-v2",
+      theoryInputVersion:
+        "theory-input-v2"
+    });
+assert.equal(
+  supportIdentityV2
+    .selectorCohortKey,
+  "selector-cohort-v2",
+  "照合側が追加する選定器の識別子を正規化時に失わない"
+);
+assert.equal(
+  supportIdentityV2
+    .theoryInputVersion,
+  "theory-input-v2"
+);
+const theorySupportedV2 = {
+  ...theorySupported,
+  supportIdentity:
+    supportIdentityV2,
+  practicalRows:
+    theorySupported
+      .practicalRows
+      .map(row => ({
+        ...row,
+        theoryClaims: [{
+          theoryKey: "flow",
+          label: "展開",
+          version:
+            "evaluated-scenarios-v2",
+          formal: true,
+          source:
+            "structured-purchase-branch-v2"
+        }]
+      }))
+};
+const theoryVersionSplit =
+  verification
+    .buildTheoryPerformanceSummary([
+      theorySupported,
+      theorySupportedV2
+    ]);
+assert.deepEqual(
+  theoryVersionSplit.rows
+    .map(row => row.key),
+  ["flow", "flow"],
+  "同名理論の互換keyを保ったまま別行にする"
+);
+assert.deepEqual(
+  theoryVersionSplit.rows
+    .map(row => row.version)
+    .sort(),
+  [
+    "evaluated-scenarios-v1",
+    "evaluated-scenarios-v2"
+  ],
+  "同名理論でも版が違えば実績を分離する"
+);
+assert.deepEqual(
+  theoryVersionSplit.rows
+    .map(
+      row =>
+        row
+          .theorySetFingerprint
+    )
+    .sort(),
+  [
+    THEORY_SET_V1,
+    "structured-ticket-support-v2:flow+holdPickup"
+  ].sort(),
+  "理論セットの指紋が違う実績を混ぜない"
+);
+assert.deepEqual(
+  theoryVersionSplit.rows
+    .map(row => row.source)
+    .sort(),
+  [
+    "structured-purchase-branch",
+    "structured-purchase-branch-v2"
+  ]
+);
+assert.ok(
+  theoryVersionSplit.rows
+    .every(
+      row =>
+        row.ticketCount === 1
+    ),
+  "別世代の支持買い目を同じ集計行へ合算しない"
+);
+
+const identityOnlySplit =
+  verification
+    .buildTheoryPerformanceSummary([
+      theorySupported,
+      {
+        ...theorySupported,
+        supportIdentity:
+          supportIdentityV2
+      }
+    ]);
+assert.equal(
+  identityOnlySplit.rows.length,
+  2,
+  "理論名・版・出典が同じでも理論セットの指紋が違えば別行にする"
+);
+assert.ok(
+  identityOnlySplit.rows
+    .every(
+      row =>
+        row.version ===
+          "evaluated-scenarios-v1" &&
+        row.source ===
+          "structured-purchase-branch"
+    )
+);
+
+const sourceOnlySplit =
+  verification
+    .buildTheoryPerformanceSummary([
+      theorySupported,
+      {
+        ...theorySupported,
+        practicalRows:
+          theorySupported
+            .practicalRows
+            .map(row => ({
+              ...row,
+              theoryClaims: [{
+                theoryKey: "flow",
+                label: "展開",
+                version:
+                  "evaluated-scenarios-v1",
+                formal: true,
+                source:
+                  "independent-source"
+              }]
+            }))
+      }
+    ]);
+assert.equal(
+  sourceOnlySplit.rows.length,
+  2,
+  "同一世代・同一版でも出典が違う理論支持を別行にする"
+);
+
+const splitRoleRows =
+  verification
+    .buildRolePerformanceSummary([
+      theorySupported,
+      theorySupportedV2
+    ])
+    .filter(
+      row =>
+        row.key === "attack"
+    );
+assert.equal(
+  splitRoleRows.length,
+  2,
+  "同じ役割でも支持根拠・選定器の世代が違えば別行にする"
+);
+assert.ok(
+  splitRoleRows.every(
+    row =>
+      row.ticketCount === 1
+  )
+);
+assert.notEqual(
+  splitRoleRows[0]
+    .supportIdentityKey,
+  splitRoleRows[1]
+    .supportIdentityKey
+);
+
+const selectorIdentityA =
+  verification
+    .normalizeSupportIdentity({
+      ...theorySupported
+        .supportIdentity,
+      evaluator:
+        "automatic-selection",
+      evaluatorVersion:
+        "selector-v2",
+      selectorCohortKey:
+        "selector-a",
+      logicFingerprint:
+        "selector-logic",
+      theoryInputVersion:
+        "theory-input-v2"
+    });
+const selectorIdentityB =
+  verification
+    .normalizeSupportIdentity({
+      ...selectorIdentityA,
+      selectorCohortKey:
+        "selector-b"
+    });
+const selectorSplitRoleRows =
+  verification
+    .buildRolePerformanceSummary([
+      {
+        ...theorySupported,
+        supportIdentity:
+          selectorIdentityA
+      },
+      {
+        ...theorySupported,
+        supportIdentity:
+          selectorIdentityB
+      }
+    ])
+    .filter(
+      row =>
+        row.key === "attack"
+    );
+assert.equal(
+  selectorSplitRoleRows.length,
+  2,
+  "同じ予想世代でも選定器コホートが違う役割実績を混ぜない"
+);
+assert.deepEqual(
+  selectorSplitRoleRows
+    .map(
+      row =>
+        row
+          .supportIdentity
+          .selectorCohortKey
+    )
+    .sort(),
+  [
+    "selector-a",
+    "selector-b"
+  ]
+);
+
+const invalidIdentitySummary =
+  verification
+    .buildTheoryPerformanceSummary([{
+      ...theorySupported,
+      supportIdentity: {
+        ...theorySupported
+          .supportIdentity,
+        generation: {
+          logicFingerprint:
+            "incomplete"
+        }
+      }
+    }]);
+assert.equal(
+  invalidIdentitySummary.status,
+  "collecting_pre_race_attribution"
+);
+assert.deepEqual(
+  invalidIdentitySummary.rows,
+  []
+);
+assert.equal(
+  invalidIdentitySummary
+    .omittedCount,
+  theoryClaimsV1.length,
+  "世代識別が不完全な理論主張を正式実績へ含めない"
+);
+[
+  "evaluator",
+  "evaluatorVersion",
+  "selectorCohortKey",
+  "logicFingerprint",
+  "theoryInputVersion"
+].forEach(key => {
+  const incomplete =
+    verification
+      .buildTheoryPerformanceSummary([{
+        ...theorySupported,
+        supportIdentity: {
+          ...theorySupported
+            .supportIdentity,
+          [key]: ""
+        }
+      }]);
+
+  assert.deepEqual(
+    incomplete.rows,
+    [],
+    `${key}がない理論帰属を正式実績へ含めない`
+  );
+  assert.equal(
+    incomplete.omittedCount,
+    theoryClaimsV1.length,
+    `${key}不足を除外件数へ含める`
+  );
+});
 
 const legacy = verification.verifyPrediction(
   {

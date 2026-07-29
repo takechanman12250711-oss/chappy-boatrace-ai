@@ -140,6 +140,198 @@
     );
   }
 
+  function normalizeGeneration(
+    value
+  ) {
+    const generation =
+      value &&
+      typeof value === "object"
+        ? value
+        : {};
+
+    return {
+      logicFingerprint:
+        String(
+          generation
+            .logicFingerprint ||
+          ""
+        ).trim(),
+      confidenceDefinitionVersion:
+        String(
+          generation
+            .confidenceDefinitionVersion ||
+          ""
+        ).trim(),
+      ticketPolicyVersion:
+        String(
+          generation
+            .ticketPolicyVersion ||
+          ""
+        ).trim()
+    };
+  }
+
+  function normalizeSchemaVersion(
+    value
+  ) {
+    const version =
+      Number(value);
+    return (
+      Number.isInteger(version) &&
+      version > 0
+    )
+      ? version
+      : 0;
+  }
+
+  function normalizeSupportIdentity(
+    value
+  ) {
+    const source =
+      value &&
+      typeof value === "object"
+        ? value
+        : {};
+    const identity = {
+      roleSchemaVersion:
+        normalizeSchemaVersion(
+          source
+            .roleSchemaVersion
+        ),
+      theorySchemaVersion:
+        normalizeSchemaVersion(
+          source
+            .theorySchemaVersion
+        ),
+      theorySetFingerprint:
+        String(
+          source
+            .theorySetFingerprint ||
+          ""
+        ).trim(),
+      generation:
+        normalizeGeneration(
+          source.generation
+        )
+    };
+
+    [
+      "evaluator",
+      "evaluatorVersion",
+      "selectorCohortKey",
+      "logicFingerprint",
+      "theoryInputVersion"
+    ].forEach(key => {
+      const normalized =
+        String(
+          source[key] || ""
+        ).trim();
+      if (normalized) {
+        identity[key] =
+          normalized;
+      }
+    });
+
+    return identity;
+  }
+
+  function generationIsComplete(
+    value
+  ) {
+    const generation =
+      normalizeGeneration(value);
+    return Boolean(
+      generation
+        .logicFingerprint &&
+      generation
+        .confidenceDefinitionVersion &&
+      generation
+        .ticketPolicyVersion
+    );
+  }
+
+  function roleSupportIdentityIsValid(
+    value
+  ) {
+    const identity =
+      normalizeSupportIdentity(
+        value
+      );
+    return (
+      identity
+        .roleSchemaVersion >= 1 &&
+      generationIsComplete(
+        identity.generation
+      )
+    );
+  }
+
+  function theorySupportIdentityIsValid(
+    value
+  ) {
+    const identity =
+      normalizeSupportIdentity(
+        value
+      );
+    return (
+      identity
+        .theorySchemaVersion >= 1 &&
+      Boolean(
+        identity
+          .theorySetFingerprint
+      ) &&
+      Boolean(
+        identity.evaluator &&
+        identity
+          .evaluatorVersion &&
+        identity
+          .selectorCohortKey &&
+        identity
+          .logicFingerprint &&
+        identity
+          .theoryInputVersion
+      ) &&
+      generationIsComplete(
+        identity.generation
+      )
+    );
+  }
+
+  function supportIdentityKey(
+    value
+  ) {
+    const identity =
+      normalizeSupportIdentity(
+        value
+      );
+    const generation =
+      identity.generation;
+
+    return JSON.stringify([
+      identity
+        .roleSchemaVersion,
+      identity
+        .theorySchemaVersion,
+      identity
+        .theorySetFingerprint,
+      generation
+        .logicFingerprint,
+      generation
+        .confidenceDefinitionVersion,
+      generation
+        .ticketPolicyVersion,
+      identity.evaluator || "",
+      identity
+        .evaluatorVersion || "",
+      identity
+        .selectorCohortKey || "",
+      identity
+        .logicFingerprint || "",
+      identity
+        .theoryInputVersion || ""
+    ]);
+  }
+
   function normalizeRoleClaims(
     claims
   ) {
@@ -189,6 +381,46 @@
             .expectedPositions
             .length
       );
+  }
+
+  function normalizeTheoryClaims(
+    claims
+  ) {
+    return (
+      Array.isArray(claims)
+        ? claims
+        : []
+    )
+      .map(claim => {
+        const theoryKey =
+          String(
+            claim?.theoryKey ||
+            claim?.key ||
+            ""
+          ).trim();
+
+        return {
+          theoryKey,
+          label:
+            String(
+              claim?.label ||
+              claim?.theoryLabel ||
+              theoryKey
+            ).trim(),
+          version:
+            String(
+              claim?.theoryVersion ||
+              claim?.version ||
+              ""
+            ).trim(),
+          formal:
+            claim?.formal === true,
+          source:
+            String(
+              claim?.source || ""
+            ).trim()
+        };
+      });
   }
 
   function getPracticalRows(prediction) {
@@ -293,6 +525,12 @@
                 : []
             )
           );
+        const theoryClaims =
+          normalizeTheoryClaims(
+            evidenceTicket
+              .theoryClaims ||
+            row.theoryClaims
+          );
 
         return {
           ticket,
@@ -310,7 +548,8 @@
                 .selectionTier ||
               ""
             ),
-          roleClaims
+          roleClaims,
+          theoryClaims
         };
       })
       .filter(row => {
@@ -319,6 +558,337 @@
         return true;
       })
       .slice(0, 10);
+  }
+
+  function buildSupportPerformance(
+    items,
+    claimField,
+    options
+  ) {
+    const rows =
+      Array.isArray(items)
+        ? items.filter(
+            item =>
+              item?.settled
+          )
+        : [];
+    const groups =
+      new Map();
+    let omittedCount = 0;
+
+    rows.forEach(
+      (item, raceIndex) => {
+        const supportIdentity =
+          normalizeSupportIdentity(
+            item
+              ?.supportIdentity
+          );
+        const identityValid =
+          options
+            .identityIsValid(
+              supportIdentity
+            );
+        const identityKey =
+          supportIdentityKey(
+            supportIdentity
+          );
+        const resultTicket =
+          normalizeTicket(
+            item?.resultTicket
+          );
+        const payout =
+          numberOrZero(
+            item?.payoutPer100
+          );
+
+        (
+          Array.isArray(
+            item?.practicalRows
+          )
+            ? item.practicalRows
+            : []
+        ).forEach(ticketRow => {
+          const ticket =
+            normalizeTicket(
+              ticketRow?.ticket
+            );
+          const uniqueClaims =
+            new Map();
+
+          (
+            Array.isArray(
+              ticketRow?.[claimField]
+            )
+              ? ticketRow[claimField]
+              : []
+          ).forEach(claim => {
+            const descriptor =
+              identityValid
+                ? options
+                    .describeClaim(
+                      claim,
+                      supportIdentity
+                    )
+                : null;
+
+            if (!descriptor) {
+              omittedCount += 1;
+              return;
+            }
+
+            const cohortKey =
+              JSON.stringify([
+                identityKey,
+                descriptor.groupKey
+              ]);
+            if (
+              !uniqueClaims.has(
+                cohortKey
+              )
+            ) {
+              uniqueClaims.set(
+                cohortKey,
+                descriptor
+              );
+            }
+          });
+
+          uniqueClaims.forEach(
+            (
+              descriptor,
+              cohortKey
+            ) => {
+              if (
+                !groups.has(
+                  cohortKey
+                )
+              ) {
+                groups.set(
+                  cohortKey,
+                  {
+                    key:
+                      descriptor.key,
+                    label:
+                      String(
+                        descriptor.label ||
+                        descriptor.key
+                      ),
+                    metadata:
+                      descriptor
+                        .metadata || {},
+                    raceIndexes:
+                      new Set(),
+                    ticketCount: 0,
+                    hitTickets: 0,
+                    stake: 0,
+                    return: 0
+                  }
+                );
+              }
+
+              const group =
+                groups.get(
+                  cohortKey
+                );
+              group.raceIndexes
+                .add(raceIndex);
+              group.ticketCount += 1;
+              group.stake += 100;
+
+              if (
+                ticket &&
+                ticket === resultTicket
+              ) {
+                group.hitTickets += 1;
+                group.return += payout;
+              }
+            }
+          );
+        });
+      }
+    );
+
+    return {
+      omittedCount,
+      rows: [
+        ...groups.values()
+      ].map(group => ({
+        key: group.key,
+        label: group.label,
+        raceCount:
+          group.raceIndexes.size,
+        ticketCount:
+          group.ticketCount,
+        hitTickets:
+          group.hitTickets,
+        stake:
+          group.stake,
+        return:
+          group.return,
+        profit:
+          group.return -
+          group.stake,
+        recoveryRate:
+          group.stake
+            ? Math.round(
+                group.return /
+                group.stake *
+                1000
+              ) / 10
+            : 0,
+        supportCohort: true,
+        overlappingCohort: true,
+        notAdditive: true,
+        ...group.metadata
+      }))
+    };
+  }
+
+  function buildRolePerformanceSummary(
+    items
+  ) {
+    return buildSupportPerformance(
+      items,
+      "roleClaims",
+      {
+        identityIsValid:
+          roleSupportIdentityIsValid,
+        describeClaim: (
+          claim,
+          supportIdentity
+        ) => {
+          const key =
+            normalizeRole(
+              claim?.role
+            );
+          if (!key) return null;
+
+          return {
+            groupKey: key,
+            key,
+            label:
+              ROLE_ORDER.find(
+                role =>
+                  role.key === key
+              )?.label ||
+              claim?.label ||
+              key,
+            metadata: {
+              supportIdentity,
+              supportIdentityKey:
+                supportIdentityKey(
+                  supportIdentity
+                ),
+              roleSchemaVersion:
+                supportIdentity
+                  .roleSchemaVersion
+            }
+          };
+        }
+      }
+    ).rows;
+  }
+
+  function buildTheoryPerformanceSummary(
+    items
+  ) {
+    const result =
+      buildSupportPerformance(
+        items,
+        "theoryClaims",
+        {
+          identityIsValid:
+            theorySupportIdentityIsValid,
+          describeClaim: (
+            claim,
+            supportIdentity
+          ) => {
+            const theoryKey =
+              String(
+                claim?.theoryKey ||
+                ""
+              ).trim();
+            const version =
+              String(
+                claim?.version ||
+                ""
+              ).trim();
+            const source =
+              String(
+                claim?.source ||
+                ""
+              ).trim();
+            const formal =
+              claim?.formal === true;
+
+            if (
+              !formal ||
+              !theoryKey ||
+              !version ||
+              !source
+            ) {
+              return null;
+            }
+
+            const label =
+              String(
+                claim?.label ||
+                claim?.theoryKey ||
+                theoryKey
+              );
+
+            return {
+              groupKey:
+                JSON.stringify([
+                  theoryKey,
+                  version,
+                  source
+                ]),
+              key: theoryKey,
+              label:
+                `${label}（${version}）`,
+              metadata: {
+                theoryKey,
+                version,
+                theoryVersion:
+                  version,
+                source,
+                formal: true,
+                supportIdentity,
+                supportIdentityKey:
+                  supportIdentityKey(
+                    supportIdentity
+                  ),
+                theorySchemaVersion:
+                  supportIdentity
+                    .theorySchemaVersion,
+                theorySetFingerprint:
+                  supportIdentity
+                    .theorySetFingerprint
+              }
+            };
+          }
+        }
+      );
+    const rows =
+      result.rows;
+
+    return {
+      status:
+        rows.length
+          ? "available"
+          : "collecting_pre_race_attribution",
+      rows,
+      omittedCount:
+        result.omittedCount,
+      description:
+        rows.length
+          ? "各理論が予想時点で支持した買い目群の実績。行同士は重複し、全体収支へ合算しません。"
+          : "予想時点の理論帰属が保存されたレースから集計します。旧履歴を結果後に推測して補完しません。",
+      supportCohort: true,
+      overlappingCohort: true,
+      notAdditive: true
+    };
   }
 
   function classifyMiss(tickets, resultTicket) {
@@ -793,9 +1363,13 @@
       verificationEvidenceOf(
         prediction
       );
+    const supportIdentity =
+      normalizeSupportIdentity(
+        verificationEvidence
+      );
 
     const base = {
-      schemaVersion: 4,
+      schemaVersion: 5,
       settled,
       resultTicket,
       winningMethod,
@@ -824,10 +1398,10 @@
       scenarioVerification,
       roleResults,
       ticketCategoryResults,
+      supportIdentity,
       calibrationKey:
-        verificationEvidence
-          ?.generation ||
-        null,
+        supportIdentity
+          .generation,
       internalEvaluation:
         prediction
           ?.internalEvaluation ||
@@ -960,6 +1534,14 @@
               .status ===
             "matched"
         );
+    const rolePerformanceSummary =
+      buildRolePerformanceSummary(
+        settled
+      );
+    const theoryPerformanceSummary =
+      buildTheoryPerformanceSummary(
+        settled
+      );
 
     const markSummary = MARKS.map(mark => {
       const rows = settled
@@ -1007,6 +1589,8 @@
       categorySummary,
       ticketCategorySummary,
       roleSummary,
+      rolePerformanceSummary,
+      theoryPerformanceSummary,
       markSummary,
       priorityStageSummary
     };
@@ -1019,11 +1603,15 @@
     PRIORITY_STAGES,
     normalizeTicket,
     normalizeCategory,
+    normalizeSupportIdentity,
+    supportIdentityKey,
     classifyMiss,
     expectedWinningMethods,
     expectedWinningMethod,
     buildScenarioVerification,
     buildRoleResults,
+    buildRolePerformanceSummary,
+    buildTheoryPerformanceSummary,
     buildTicketCategoryResults,
     buildPriorityReview,
     verifyPrediction,

@@ -122,6 +122,7 @@ const SHADOW_LOGIC_FINGERPRINT = safeFingerprintFiles([
   "js/motor-maintenance-insights.js",
   "js/history-insights.js",
   "js/prediction.js",
+  "js/practical-selection.js",
   "js/theory-input.js",
   "js/prediction-conditions.js",
   "js/shadow-selection-v2.js"
@@ -464,12 +465,6 @@ function compactScenario(value) {
 
 function compactVerificationEvidence(prediction) {
   if (
-    prediction?.verificationEvidence &&
-    typeof prediction.verificationEvidence === "object"
-  ) {
-    return prediction.verificationEvidence;
-  }
-  if (
     prediction?.practicalSelection
       ?.verificationEvidence &&
     typeof prediction
@@ -480,6 +475,12 @@ function compactVerificationEvidence(prediction) {
     return prediction
       .practicalSelection
       .verificationEvidence;
+  }
+  if (
+    prediction?.verificationEvidence &&
+    typeof prediction.verificationEvidence === "object"
+  ) {
+    return prediction.verificationEvidence;
   }
 
   const aiCore = prediction?.aiCore || {};
@@ -1187,6 +1188,64 @@ function buildVerificationPredictions(date, comparison, selectedRaceKey = "") {
   return records;
 }
 
+function detachShadowV2(
+  item
+) {
+  const {
+    shadowV2,
+    ...record
+  } = item || {};
+
+  return {
+    ...record,
+    shadowV2Reference:
+      shadowV2
+        ? {
+            recordKey:
+              String(
+                shadowV2
+                  .recordKey || ""
+              ),
+            cohortKey:
+              String(
+                shadowV2
+                  .cohortKey || ""
+              ),
+            capturedAt:
+              String(
+                shadowV2
+                  .capturedAt || ""
+              ),
+            evaluatorVersion:
+              String(
+                shadowV2
+                  .evaluatorVersion ||
+                ""
+              ),
+            logicFingerprint:
+              String(
+                shadowV2
+                  ?.versions
+                  ?.logicFingerprint ||
+                ""
+              ),
+            theoryInputVersion:
+              String(
+                shadowV2
+                  ?.versions
+                  ?.theoryInput ||
+                ""
+              ),
+            totalScore:
+              shadowV2
+                ?.evaluation
+                ?.totalScore ??
+              null
+          }
+        : null
+  };
+}
+
 function buildActiveV2Comparison(
   date,
   comparison,
@@ -1318,8 +1377,15 @@ function buildCollectionHealth(
   finalizedTargets = [],
   checkedAt = new Date().toISOString()
 ) {
+  const verificationRows =
+    Array.isArray(
+      verificationPredictions
+    )
+      ? verificationPredictions
+          .filter(Boolean)
+      : [];
   const savedKeys = new Set(
-    (Array.isArray(verificationPredictions) ? verificationPredictions : [])
+    verificationRows
       .map(item => String(item?.raceKey || ""))
       .filter(Boolean)
   );
@@ -1366,9 +1432,116 @@ function buildCollectionHealth(
     };
   });
   const count = status => monitoredTargets.filter(item => item.status === status).length;
+  const readyRows =
+    verificationRows.filter(
+      item =>
+        item?.selection?.ready ===
+          true &&
+        String(
+          item?.selection?.status ||
+          ""
+        )
+          .trim()
+          .toLowerCase() ===
+          "ready"
+    );
+  const reasonSummary =
+    new Map();
+  verificationRows.forEach(item => {
+    const shadow =
+      item?.shadowV2 || {};
+    const reasons = [
+      ...(
+        Array.isArray(
+          shadow?.missingReasons
+        )
+          ? shadow.missingReasons
+          : []
+      ),
+      ...(
+        Array.isArray(
+          shadow?.eligibilityReasons
+        )
+          ? shadow
+              .eligibilityReasons
+          : []
+      )
+    ];
+    const reasonCodes =
+      uniqueStrings([
+        ...(
+          Array.isArray(
+            shadow
+              ?.missingReasonCodes
+          )
+            ? shadow
+                .missingReasonCodes
+            : []
+        ),
+        ...(
+          Array.isArray(
+            shadow
+              ?.eligibilityReasonCodes
+          )
+            ? shadow
+                .eligibilityReasonCodes
+            : []
+        ),
+        ...(
+          Array.isArray(
+            item
+              ?.selection
+              ?.eligibilityReasonCodes
+          )
+            ? item
+                .selection
+                .eligibilityReasonCodes
+            : []
+        )
+      ]);
+    const labelByCode =
+      new Map(
+        reasons
+          .map(reason => [
+            String(
+              reason?.code || ""
+            ),
+            String(
+              reason?.label || ""
+            )
+          ])
+          .filter(([code]) =>
+            code
+          )
+      );
+
+    reasonCodes.forEach(code => {
+      const previous =
+        reasonSummary.get(code) || {
+          code,
+          label:
+            labelByCode.get(code) ||
+            code,
+          count: 0
+        };
+      previous.count += 1;
+      if (
+        previous.label ===
+          previous.code &&
+        labelByCode.get(code)
+      ) {
+        previous.label =
+          labelByCode.get(code);
+      }
+      reasonSummary.set(
+        code,
+        previous
+      );
+    });
+  });
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     checkedAt,
     targetCount: monitoredTargets.length,
     savedCount: count("saved"),
@@ -1378,6 +1551,59 @@ function buildCollectionHealth(
     retryingCount: monitoredTargets.filter(item => item.recoveryState === "retrying").length,
     finalUncollectedCount: count("final_uncollected"),
     complete: monitoredTargets.length > 0 && count("saved") === monitoredTargets.length,
+    v2: {
+      evaluatedCount:
+        verificationRows.length,
+      readyCount:
+        readyRows.length,
+      qualifiedCount:
+        readyRows.filter(
+          item =>
+            item
+              ?.selection
+              ?.qualified === true
+        ).length,
+      selectedCount:
+        readyRows.filter(
+          item =>
+            item
+              ?.selection
+              ?.selected === true
+        ).length,
+      belowThresholdCount:
+        readyRows.filter(
+          item =>
+            item
+              ?.selection
+              ?.qualified !== true
+        ).length,
+      notReadyCount:
+        Math.max(
+          0,
+          verificationRows.length -
+          readyRows.length
+        ),
+      readinessRate:
+        verificationRows.length
+          ? Math.round(
+              readyRows.length /
+              verificationRows.length *
+              1000
+            ) / 10
+          : 0,
+      missingReasons:
+        [
+          ...reasonSummary
+            .values()
+        ].sort(
+          (left, right) =>
+            right.count -
+              left.count ||
+            left.code.localeCompare(
+              right.code
+            )
+        )
+    },
     targets: monitoredTargets
   };
 }
@@ -1388,7 +1614,9 @@ function logCollectionHealth(health) {
   console.log(
     `収集監視：対象${health.targetCount}R／保存${health.savedCount}R／未保存${missing}R` +
     `（データ不足${health.insufficientDataCount}R／取得失敗${health.failedCount}R／` +
-    `復旧${health.recoveredCount}R／最終未取得${health.finalUncollectedCount}R）`
+    `復旧${health.recoveredCount}R／最終未取得${health.finalUncollectedCount}R）` +
+    `／V2判定可能${Number(health?.v2?.readyCount || 0)}` +
+    `/${Number(health?.v2?.evaluatedCount || 0)}R`
   );
 }
 
@@ -1595,18 +1823,13 @@ async function main() {
       .map(item => item?.shadowV2)
       .filter(Boolean);
   const verificationPredictions =
-    builtVerificationPredictions.map(item => {
-      const {
-        shadowV2: _shadowV2,
-        ...legacyRecord
-      } = item;
-      return legacyRecord;
-    });
+    builtVerificationPredictions
+      .map(detachShadowV2);
   const collectionHealth = buildCollectionHealth(
     date,
     targets,
     evaluationResult.attempts,
-    verificationPredictions,
+    builtVerificationPredictions,
     recoveryPlan.finalizedTargets
   );
   logCollectionHealth(collectionHealth);
@@ -1713,5 +1936,6 @@ module.exports = {
   insufficientReasons,
   buildStoredPrediction,
   buildVerificationPredictions,
+  detachShadowV2,
   saveRun
 };

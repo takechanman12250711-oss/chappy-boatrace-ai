@@ -226,6 +226,29 @@ assert(
   charter.automation?.mayChangePredictionLogicWithoutApproval === false,
   "同意なしの予想ロジック変更が許可されています"
 );
+const improvementReviewPolicy =
+  charter.automation
+    ?.improvementReview || {};
+assert(
+  improvementReviewPolicy.windowSize === 100 &&
+    improvementReviewPolicy.population ===
+      "same_generation_completed_auto_selected" &&
+    improvementReviewPolicy.shadowCountsTowardWindow === false &&
+    improvementReviewPolicy.legacyCountsTowardWindow === false &&
+    improvementReviewPolicy.minimumRoleSchemaVersion === 1 &&
+    improvementReviewPolicy.minimumTheorySchemaVersion === 1 &&
+    improvementReviewPolicy.requiresPreRaceRoleAttribution === true &&
+    improvementReviewPolicy.requiresPreRaceTheoryAttribution === true &&
+    improvementReviewPolicy.retroactiveTheoryAttribution === false,
+  "100R改善レビューの母集団が固定されていません"
+);
+assert(
+  improvementReviewPolicy.automaticApplication === false &&
+    improvementReviewPolicy.approvalDoesNotApplyChange === true &&
+    improvementReviewPolicy.applicationRequiresSeparatePullRequest === true &&
+    improvementReviewPolicy.applicationRequiresNewGeneration === true,
+  "改善提案と実装の二重ロックが固定されていません"
+);
 assert(
   includesAll(charter.automation?.logicChangeRequires || [], [
     "what",
@@ -249,6 +272,12 @@ const predictionRuntimeLoader =
   read("js/prediction-runtime-loader.js");
 const shadowSelectionV2 = read("js/shadow-selection-v2.js");
 const collectPredictions = read("scripts/collect-predictions.js");
+const improvementReview =
+  read("js/improvement-review.js");
+const improvementReviewBuilder =
+  read(
+    "scripts/build-improvement-review.js"
+  );
 
 const newEngineWeightMatch = aiCore.match(
   /const NEW_ENGINE_WEIGHTS\s*=\s*\{([\s\S]*?)\};/
@@ -385,6 +414,24 @@ assert(
       "校正対象として成立した総合点だけを70点の自動選定へ使う"
     ),
   "自動選定V2の有効スコアと70点判定の接続が固定されていません"
+);
+assert(
+  improvementReview.includes(
+    "const REVIEW_SIZE = 100;"
+  ) &&
+    improvementReview.includes(
+      "applicationLock: true"
+    ) &&
+    improvementReview.includes(
+      "automaticApplication:"
+    ) &&
+    improvementReviewBuilder.includes(
+      "improvement-review.json"
+    ) &&
+    !collectPredictions.includes(
+      "improvement-review.json"
+    ),
+  "100R改善レビューが提案専用の独立経路になっていません"
 );
 
 if (failures.length) {

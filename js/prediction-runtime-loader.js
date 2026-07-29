@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260729-transparency1";
+  const VERSION = "20260729-review2";
   const scripts = [
     "js/theory.js",
     "js/history-insights-base.js",

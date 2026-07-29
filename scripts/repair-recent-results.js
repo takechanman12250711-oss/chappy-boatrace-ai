@@ -4,6 +4,9 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
+const {
+  verificationInputFingerprint
+} = require("./match-predictions");
 
 const RECENT_DAY_COUNT = 3;
 
@@ -120,6 +123,214 @@ function hasUnsettledPredictions(predictionPath) {
   }
 }
 
+function hasMatchableUnsettledPredictions(
+  predictionPath,
+  resultPath
+) {
+  return hasPredictionsNeedingResultUpdate(
+    predictionPath,
+    resultPath
+  );
+}
+
+function normalizeTicket(value) {
+  const boats =
+    String(value || "")
+      .match(/[1-6]/g) ||
+    [];
+  return (
+    boats.length >= 3 &&
+    new Set(
+      boats.slice(0, 3)
+    ).size === 3
+  )
+    ? boats
+        .slice(0, 3)
+        .join("-")
+    : "";
+}
+
+function hasPredictionsNeedingResultUpdate(
+  predictionPath,
+  resultPath
+) {
+  if (
+    !fs.existsSync(predictionPath) ||
+    !fs.existsSync(resultPath)
+  ) {
+    return false;
+  }
+
+  try {
+    const predictionData =
+      JSON.parse(
+        fs.readFileSync(
+          predictionPath,
+          "utf8"
+        )
+      );
+    const resultData =
+      JSON.parse(
+        fs.readFileSync(
+          resultPath,
+          "utf8"
+        )
+      );
+    const officialByRaceKey =
+      new Map(
+        (
+          Array.isArray(
+            resultData?.races
+          )
+            ? resultData.races
+            : []
+        )
+          .filter(
+            race =>
+              race?.resultAvailable &&
+              normalizeTicket(
+                race?.trifecta
+                  ?.combination
+              )
+          )
+          .map(race => [
+            `${resultData.date}-` +
+              `${String(
+                race?.jcd || ""
+              ).padStart(2, "0")}-` +
+              `${Number(
+                race?.raceNo || 0
+              )}`,
+            race
+          ])
+      );
+    const predictions = [
+      ...(Array.isArray(
+        predictionData?.predictions
+      )
+        ? predictionData.predictions
+        : []),
+      ...(Array.isArray(
+        predictionData
+          ?.verificationPredictions
+      )
+        ? predictionData
+            .verificationPredictions
+        : [])
+    ];
+
+    return predictions.some(
+      prediction => {
+        const official =
+          officialByRaceKey.get(
+            String(
+              prediction?.raceKey ||
+              ""
+            )
+          );
+        if (!official) {
+          return false;
+        }
+
+        const stored =
+          prediction?.result;
+        if (
+          stored?.settled !== true
+        ) {
+          return true;
+        }
+
+        const currentFingerprint =
+          verificationInputFingerprint(
+            prediction
+          );
+        const storedFingerprint =
+          String(
+            stored
+              ?.verification
+              ?.verificationInputFingerprint ||
+            stored
+              ?.verificationInputFingerprint ||
+            ""
+          );
+
+        return (
+          storedFingerprint !==
+            currentFingerprint ||
+          normalizeTicket(
+            stored.resultTicket
+          ) !==
+            normalizeTicket(
+              official
+                ?.trifecta
+                ?.combination
+            ) ||
+          Number(
+            stored.payout || 0
+          ) !==
+            Number(
+              official
+                ?.trifecta
+                ?.payout || 0
+            ) ||
+          Number(
+            stored.popularity || 0
+          ) !==
+            Number(
+              official
+                ?.trifecta
+                ?.popularity || 0
+            ) ||
+          String(
+            stored
+              .winningMethod || ""
+          ) !==
+            String(
+              official
+                ?.winningMethod || ""
+            ) ||
+          JSON.stringify(
+            Array.isArray(
+              stored.finishers
+            )
+              ? stored.finishers
+              : []
+          ) !==
+            JSON.stringify(
+              Array.isArray(
+                official
+                  ?.finishers
+              )
+                ? official
+                    .finishers
+                : []
+            ) ||
+          JSON.stringify(
+            Array.isArray(
+              stored.starts
+            )
+              ? stored.starts
+              : []
+          ) !==
+            JSON.stringify(
+              Array.isArray(
+                official
+                  ?.starts
+              )
+                ? official.starts
+                : []
+            )
+        );
+      }
+    );
+  } catch (error) {
+    console.warn(
+      `照合可能な公式結果を確認できません：${error?.message || error}`
+    );
+    return false;
+  }
+}
+
 function runNodeScript(scriptName, args = []) {
   const scriptPath = path.join(process.cwd(), "scripts", scriptName);
   const result = spawnSync(process.execPath, [scriptPath, ...args], {
@@ -132,6 +343,51 @@ function runNodeScript(scriptName, args = []) {
   if (result.status !== 0) {
     throw new Error(`${scriptName}が終了コード${result.status}で失敗しました`);
   }
+}
+
+function readResultRevision(
+  resultPath
+) {
+  if (
+    !fs.existsSync(resultPath)
+  ) {
+    return "";
+  }
+
+  return fs.readFileSync(
+    resultPath,
+    "utf8"
+  );
+}
+
+function refreshOfficialResultFile(
+  resultPath,
+  date,
+  runner = runNodeScript
+) {
+  const wasComplete =
+    isCompleteResultFile(
+      resultPath,
+      date
+    );
+  const before =
+    readResultRevision(
+      resultPath
+    );
+
+  runner(
+    "collect-results.js",
+    [`--date=${date}`]
+  );
+
+  return {
+    wasComplete,
+    changed:
+      before !==
+      readResultRevision(
+        resultPath
+      )
+  };
 }
 
 function main() {
@@ -148,19 +404,45 @@ function main() {
     const resultPath = path.join(resultsDirectory, `${date}.json`);
     const predictionPath = path.join(predictionsDirectory, `${date}.json`);
 
-    if (isCompleteResultFile(resultPath, date)) {
-      console.log(`${date}：公式結果は完成済みです`);
+    if (
+      isCompleteResultFile(
+        resultPath,
+        date
+      )
+    ) {
+      console.log(
+        `${date}：完成済み結果の公式訂正・明細補完を確認します`
+      );
     } else {
-      console.log(`${date}：未完成のため公式結果を再取得します`);
-      runNodeScript("collect-results.js", [`--date=${date}`]);
+      console.log(
+        `${date}：未完成のため公式結果を再取得します`
+      );
+    }
+
+    const refresh =
+      refreshOfficialResultFile(
+        resultPath,
+        date
+      );
+    if (refresh.changed) {
       repairedDates.push(date);
+    } else if (
+      refresh.wasComplete
+    ) {
+      console.log(
+        `${date}：公式訂正はありません`
+      );
     }
 
     if (
-      isCompleteResultFile(resultPath, date) &&
-      hasUnsettledPredictions(predictionPath)
+      hasPredictionsNeedingResultUpdate(
+        predictionPath,
+        resultPath
+      )
     ) {
-      console.log(`${date}：未照合の事前予想を公式結果と照合します`);
+      console.log(
+        `${date}：取得済みの公式結果と新規・訂正対象の事前予想を照合します`
+      );
       runNodeScript("match-predictions.js", [`--date=${date}`]);
       matchedDates.push(date);
     }
@@ -173,6 +455,7 @@ function main() {
 
   runNodeScript("build-prediction-index.js");
   runNodeScript("build-prediction-calibration.js");
+  runNodeScript("build-improvement-review.js");
   runNodeScript("build-race-stats.js");
 
   if (repairedDates.length) {
@@ -197,5 +480,9 @@ module.exports = {
   formatDateKey,
   getRecentDateKeys,
   isCompleteResultFile,
-  hasUnsettledPredictions
+  hasUnsettledPredictions,
+  hasMatchableUnsettledPredictions,
+  hasPredictionsNeedingResultUpdate,
+  readResultRevision,
+  refreshOfficialResultFile
 };

@@ -19,10 +19,482 @@ function compactMark(value) {
   };
 }
 
+function compactSelection(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    evaluator:
+      String(value.evaluator || ""),
+    label:
+      String(value.label || ""),
+    type:
+      String(value.type || ""),
+    scenarioLabel:
+      String(
+        value.scenarioLabel || ""
+      ),
+    score:
+      value.score ?? null,
+    threshold:
+      Number(value.threshold || 0),
+    ready:
+      value.ready === true,
+    qualified:
+      value.qualified === true,
+    selected:
+      value.selected === true,
+    status:
+      String(value.status || ""),
+    eligibilityReasonCodes:
+      Array.isArray(
+        value
+          .eligibilityReasonCodes
+      )
+        ? value
+            .eligibilityReasonCodes
+        : []
+  };
+}
+
+function compactRoleClaim(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    role:
+      String(value.role || ""),
+    boatNo:
+      Number(value.boatNo || 0),
+    expectedPositions:
+      Array.isArray(
+        value.expectedPositions
+      )
+        ? value.expectedPositions
+            .map(Number)
+        : []
+  };
+}
+
+function compactTheoryClaim(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    theoryKey:
+      String(
+        value.theoryKey ||
+        value.key ||
+        ""
+      ),
+    label:
+      String(
+        value.label ||
+        value.theoryLabel ||
+        ""
+      ),
+    theoryVersion:
+      String(
+        value.theoryVersion ||
+        value.version ||
+        ""
+      ),
+    formal:
+      value.formal === true,
+    source:
+      String(value.source || "")
+  };
+}
+
+function compactClaims(
+  values,
+  mapper
+) {
+  return (
+    Array.isArray(values)
+      ? values
+      : []
+  )
+    .map(mapper)
+    .filter(Boolean);
+}
+
+function compactPracticalTicket(value) {
+  const row =
+    typeof value === "string"
+      ? { ticket: value }
+      : value || {};
+
+  return {
+    ticket:
+      String(
+        row.ticket ||
+        row.line ||
+        row.formation ||
+        ""
+      ),
+    category:
+      String(row.category || ""),
+    role:
+      String(row.role || ""),
+    categories:
+      Array.isArray(row.categories)
+        ? row.categories
+        : [],
+    selectionTier:
+      String(
+        row.selectionTier || ""
+      ),
+    roleClaims:
+      compactClaims(
+        row.roleClaims,
+        compactRoleClaim
+      ),
+    theoryClaims:
+      compactClaims(
+        row.theoryClaims,
+        compactTheoryClaim
+      )
+  };
+}
+
+function compactVerificationEvidence(
+  value
+) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    roleSchemaVersion:
+      Number(
+        value.roleSchemaVersion || 0
+      ),
+    theorySchemaVersion:
+      Number(
+        value.theorySchemaVersion ||
+        0
+      ),
+    theorySetFingerprint:
+      String(
+        value.theorySetFingerprint ||
+        ""
+      ),
+    generation:
+      value.generation || null,
+    mainScenario:
+      value.mainScenario || null,
+    roleClaims:
+      compactClaims(
+        value.roleClaims,
+        compactRoleClaim
+      ),
+    theoryClaims:
+      compactClaims(
+        value.theoryClaims,
+        compactTheoryClaim
+      ),
+    tickets:
+      (
+        Array.isArray(
+          value.tickets
+        )
+          ? value.tickets
+          : []
+      ).map(
+        compactPracticalTicket
+      )
+  };
+}
+
+function compactPreRaceConditions(
+  value
+) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const weather =
+    value.weather || {};
+
+  return {
+    schemaVersion:
+      Number(
+        value.schemaVersion || 0
+      ),
+    sourceTiming:
+      value.sourceTiming || null,
+    officialResultUsed:
+      value.officialResultUsed ===
+        true,
+    newEngineMode:
+      value.newEngineMode === true,
+    weather: {
+      windSpeed:
+        weather.windSpeed ?? null,
+      waveHeight:
+        weather.waveHeight ?? null,
+      venueTideInfluence:
+        weather
+          .venueTideInfluence ??
+        null
+    },
+    boats:
+      (
+        Array.isArray(value.boats)
+          ? value.boats
+          : []
+      ).map(boat => ({
+        boatNo:
+          Number(boat?.boatNo || 0),
+        exhibitionST:
+          boat?.exhibitionST ?? null,
+        currentST:
+          boat?.currentST ?? null,
+        avgST:
+          boat?.avgST ?? null,
+        exhibitionTime:
+          boat?.exhibitionTime ?? null,
+        className:
+          String(
+            boat?.className || ""
+          ),
+        nationalWinRate:
+          boat?.nationalWinRate ??
+          null,
+        motor2Rate:
+          boat?.motor2Rate ?? null
+      }))
+  };
+}
+
+function compactResult(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const verification =
+    value.verification || value;
+  const supportIdentity =
+    verification
+      ?.supportIdentity ||
+    value?.supportIdentity ||
+    null;
+
+  return {
+    schemaVersion:
+      Number(
+        verification
+          ?.schemaVersion ||
+        value?.schemaVersion ||
+        0
+      ),
+    settled:
+      value.settled === true,
+    resultTicket:
+      String(
+        value.resultTicket || ""
+      ),
+    winningMethod:
+      String(
+        value.winningMethod || ""
+      ),
+    payout:
+      Number(value.payout || 0),
+    popularity:
+      Number(
+        value.popularity || 0
+      ),
+    finishers:
+      Array.isArray(value.finishers)
+        ? value.finishers
+        : [],
+    starts:
+      Array.isArray(value.starts)
+        ? value.starts
+        : [],
+    settledAt:
+      String(value.settledAt || ""),
+    supportIdentity:
+      supportIdentity
+        ? {
+            roleSchemaVersion:
+              Number(
+                supportIdentity
+                  .roleSchemaVersion ||
+                0
+              ),
+            theorySchemaVersion:
+              Number(
+                supportIdentity
+                  .theorySchemaVersion ||
+                0
+              ),
+            theorySetFingerprint:
+              String(
+                supportIdentity
+                  .theorySetFingerprint ||
+                ""
+              ),
+            generation:
+              supportIdentity
+                .generation ||
+              null,
+            evaluator:
+              String(
+                supportIdentity
+                  .evaluator ||
+                ""
+              ),
+            evaluatorVersion:
+              String(
+                supportIdentity
+                  .evaluatorVersion ||
+                ""
+              ),
+            selectorCohortKey:
+              String(
+                supportIdentity
+                  .selectorCohortKey ||
+                ""
+              ),
+            logicFingerprint:
+              String(
+                supportIdentity
+                  .logicFingerprint ||
+                ""
+              ),
+            theoryInputVersion:
+              String(
+                supportIdentity
+                  .theoryInputVersion ||
+                ""
+              )
+          }
+        : null,
+    verificationInputFingerprint:
+      String(
+        verification
+          ?.verificationInputFingerprint ||
+        value
+          ?.verificationInputFingerprint ||
+        ""
+      ),
+    scenarioVerification:
+      verification
+        ?.scenarioVerification ||
+      null
+  };
+}
+
+function compactInternalEvaluation(
+  value
+) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    mode:
+      String(value.mode || ""),
+    label:
+      String(value.label || ""),
+    score:
+      value.score ?? null,
+    probability:
+      value.probability === true
+  };
+}
+
+function compactShadowV2Reference(
+  value
+) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    recordKey:
+      String(value.recordKey || ""),
+    cohortKey:
+      String(value.cohortKey || ""),
+    evaluatorVersion:
+      String(
+        value.evaluatorVersion || ""
+      ),
+    logicFingerprint:
+      String(
+        value.logicFingerprint || ""
+      ),
+    theoryInputVersion:
+      String(
+        value.theoryInputVersion || ""
+      )
+  };
+}
+
 function compactIndexVerification(record) {
   const prediction = record?.prediction || {};
   return {
-    ...record,
+    raceKey:
+      String(record?.raceKey || ""),
+    date:
+      String(record?.date || ""),
+    jcd:
+      String(record?.jcd || ""),
+    place:
+      String(record?.place || ""),
+    raceNo:
+      Number(record?.raceNo || 0),
+    deadlineAt:
+      String(
+        record?.deadlineAt || ""
+      ),
+    selectedAt:
+      String(
+        record?.selectedAt || ""
+      ),
+    capturedAt:
+      String(
+        record?.capturedAt || ""
+      ),
+    verificationMode:
+      String(
+        record
+          ?.verificationMode || ""
+      ),
+    scoreBand:
+      String(
+        record?.scoreBand || ""
+      ),
+    isRetrospective:
+      record?.isRetrospective ===
+        true,
+    officialResultUsedForEvaluation:
+      record
+        ?.officialResultUsedForEvaluation ===
+      true,
+    complete:
+      record?.complete === true,
+    calibrationEligible:
+      record?.calibrationEligible ===
+        true,
+    timing:
+      record?.timing || null,
+    selection:
+      compactSelection(
+        record?.selection
+      ),
+    shadowV2Reference:
+      compactShadowV2Reference(
+        record
+          ?.shadowV2Reference
+      ),
+    result:
+      compactResult(
+        record?.result
+      ),
     prediction: {
       version: prediction.version || "",
       predictionMode: prediction.predictionMode || "server_pre_deadline_shadow",
@@ -42,15 +514,30 @@ function compactIndexVerification(record) {
         osae: compactMark(prediction?.mainSheet?.osae)
       },
       practicalTickets: Array.isArray(prediction.practicalTickets)
-        ? prediction.practicalTickets
+        ? prediction
+            .practicalTickets
+            .map(
+              compactPracticalTicket
+            )
         : [],
       verificationEvidence:
-        prediction.verificationEvidence ||
-        null,
+        compactVerificationEvidence(
+          prediction
+            .verificationEvidence
+        ),
       internalEvaluation:
-        prediction.internalEvaluation ||
-        null,
-      preRaceConditions: prediction.preRaceConditions || null
+        compactInternalEvaluation(
+          prediction
+            .internalEvaluation
+        ),
+      preRaceConditions:
+        compactPreRaceConditions(
+          prediction
+            .preRaceConditions
+        ),
+      isRetrospective:
+        prediction
+          .isRetrospective === true
     }
   };
 }
@@ -199,7 +686,16 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     });
 
     (Array.isArray(data?.predictions) ? data.predictions : []).forEach(prediction => {
-      predictions.push({ ...prediction, date: String(prediction?.date || date) });
+      predictions.push(
+        compactIndexVerification({
+          ...prediction,
+          date:
+            String(
+              prediction?.date ||
+              date
+            )
+        })
+      );
     });
 
     (Array.isArray(data?.verificationPredictions)
@@ -233,7 +729,7 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
   );
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     generatedAt: new Date().toISOString(),
     sourceFileCount: files.length,
     runs: runs.slice(0, limit),
@@ -258,7 +754,11 @@ function writePredictionIndex(directory, outputPath) {
     if (comparable(existing) === comparable(index)) return existing;
   }
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, JSON.stringify(index, null, 2) + "\n", "utf8");
+  fs.writeFileSync(
+    outputPath,
+    JSON.stringify(index) + "\n",
+    "utf8"
+  );
   return index;
 }
 
@@ -276,6 +776,12 @@ if (require.main === module) main();
 
 module.exports = {
   buildPredictionIndex,
+  compactSelection,
+  compactPracticalTicket,
+  compactVerificationEvidence,
+  compactPreRaceConditions,
+  compactResult,
+  compactShadowV2Reference,
   compactIndexVerification,
   compactShadowV2,
   writePredictionIndex
