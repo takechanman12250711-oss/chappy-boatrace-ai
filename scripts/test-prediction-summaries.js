@@ -1,8 +1,12 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const {
-  buildPredictionSummary
+  buildPredictionSummary,
+  buildPredictionSummaries
 } = require("./build-prediction-summaries");
 
 const summary = buildPredictionSummary({
@@ -98,5 +102,77 @@ assert.ok(
   Buffer.byteLength(JSON.stringify(summary)) < 20_000,
   "起動画面用の要約は20KB未満に保つ"
 );
+
+const temporaryDirectory =
+  fs.mkdtempSync(
+    path.join(
+      os.tmpdir(),
+      "chappy-summary-"
+    )
+  );
+
+try {
+  const sourcePath =
+    path.join(
+      temporaryDirectory,
+      "20260727.json"
+    );
+  fs.writeFileSync(
+    sourcePath,
+    JSON.stringify({
+      date: "20260727",
+      runs: summary.runs,
+      predictions:
+        summary.predictions
+    }),
+    "utf8"
+  );
+
+  const outputs =
+    buildPredictionSummaries(
+      temporaryDirectory
+    );
+  const outputPath =
+    outputs[0].outputPath;
+  const payload =
+    fs.readFileSync(
+      outputPath,
+      "utf8"
+    );
+  const parsed =
+    JSON.parse(payload);
+
+  assert.deepEqual(
+    parsed,
+    buildPredictionSummary(
+      JSON.parse(
+        fs.readFileSync(
+          sourcePath,
+          "utf8"
+        )
+      ),
+      "20260727"
+    ),
+    "空白を除いても要約内容を変えない"
+  );
+  assert.equal(
+    outputs[0].bytes,
+    fs.statSync(outputPath).size,
+    "容量ログは実際の保存サイズと一致させる"
+  );
+  assert.equal(
+    payload,
+    `${JSON.stringify(parsed)}\n`,
+    "起動画面用要約はcompact JSONで保存する"
+  );
+} finally {
+  fs.rmSync(
+    temporaryDirectory,
+    {
+      recursive: true,
+      force: true
+    }
+  );
+}
 
 console.log("軽量予想要約テスト: 合格");

@@ -172,6 +172,7 @@ function main() {
   }
 
   runNodeScript("build-prediction-index.js");
+  runNodeScript("build-prediction-calibration.js");
   runNodeScript("build-race-stats.js");
 
   if (repairedDates.length) {

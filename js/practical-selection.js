@@ -16,6 +16,20 @@
   const STANDARD_COUNT = 5;
   const NORMAL_MAXIMUM_COUNT = 7;
   const MAXIMUM_COUNT = 10;
+  const TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT =
+    1;
+  const TARGET_EXCLUDED_PREVIEW_COUNT =
+    3;
+  const EXCLUDED_INDEPENDENT_PREVIEW_COUNT =
+    10;
+  const ROLE_LABELS = Object.freeze({
+    head: "1着軸",
+    "alternate-head": "攻め頭",
+    attack: "攻め",
+    hold: "残し",
+    inside: "内残し",
+    pickup: "拾い"
+  });
 
   function arrayify(value) {
     if (Array.isArray(value)) return value;
@@ -72,6 +86,393 @@
         )
       )
     ];
+  }
+
+  function roleLabel(
+    role,
+    position
+  ) {
+    if (role === "hold") {
+      return position === 2
+        ? "2着残し"
+        : position === 3
+          ? "3着残り"
+          : ROLE_LABELS.hold;
+    }
+    if (role === "pickup") {
+      return position === 3
+        ? "3着拾い"
+        : ROLE_LABELS.pickup;
+    }
+    if (role === "alternate-head") {
+      return "別頭";
+    }
+    return (
+      ROLE_LABELS[role] ||
+      `${position}着役割`
+    );
+  }
+
+  function roleLabelsFor(row) {
+    const boats =
+      ticketBoats(row?.ticket);
+    const byPosition =
+      new Map();
+
+    arrayify(row?.coverage)
+      .filter(claim => {
+        const position =
+          Number(
+            claim?.position || 0
+          );
+        const targetBoatNo =
+          Number(
+            claim?.boatNo || 0
+          );
+
+        return (
+          position >= 1 &&
+          position <= 3 &&
+          boats[position - 1] ===
+            targetBoatNo
+        );
+      })
+      .forEach(claim => {
+        const position =
+          Number(claim.position);
+        const role =
+          String(
+            claim.role || ""
+          );
+        const key =
+          `${claim.boatNo}|${role}`;
+
+        if (
+          !byPosition.has(position)
+        ) {
+          byPosition.set(
+            position,
+            new Map()
+          );
+        }
+
+        byPosition
+          .get(position)
+          .set(key, {
+            boatNo:
+              Number(claim.boatNo),
+            position,
+          role,
+          label:
+              roleLabel(
+                role,
+                position
+              ),
+            structured: true
+          });
+      });
+
+    return boats.flatMap(
+      (targetBoatNo, index) => {
+        const position = index + 1;
+        const structured =
+          byPosition.has(position)
+            ? [
+                ...byPosition
+                  .get(position)
+                  .values()
+              ]
+            : [];
+
+        return structured.length
+          ? structured
+          : [{
+              boatNo:
+                targetBoatNo,
+              position,
+              role: "position",
+              label:
+                `${position}着候補`,
+              structured: false
+            }];
+      }
+    );
+  }
+
+  function compactRoleLabels(
+    roles
+  ) {
+    return arrayify(roles)
+      .map(role => ({
+        boatNo:
+          Number(
+            role?.boatNo || 0
+          ),
+        position:
+          Number(
+            role?.position || 0
+          ),
+        role:
+          String(
+            role?.role || ""
+          ),
+        label:
+          String(
+            role?.label || ""
+          ),
+        structured:
+          role?.structured === true
+      }))
+      .filter(
+        role =>
+          role.boatNo &&
+          role.position
+      );
+  }
+
+  function compactAudit(selection) {
+    if (
+      !selection ||
+      typeof selection !== "object"
+    ) {
+      return null;
+    }
+
+    const excludedIndependent =
+      arrayify(
+        selection
+          .excludedCandidates
+      )
+        .filter(
+          item =>
+            arrayify(
+              item
+                ?.requirementIds
+            ).length > 0
+        )
+        .sort(
+          (a, b) =>
+            numeric(
+              b?.priorityScore,
+              0
+            ) -
+              numeric(
+                a?.priorityScore,
+                0
+              ) ||
+            String(
+              a?.ticket || ""
+            ).localeCompare(
+              String(
+                b?.ticket || ""
+              )
+            )
+        );
+
+    return {
+      status:
+        String(
+          selection.status || ""
+        ),
+      reason:
+        String(
+          selection.reason || ""
+        ),
+      standardCount:
+        Number(
+          selection
+            .standardCount || 0
+        ),
+      normalMaximumCount:
+        Number(
+          selection
+            .normalMaximumCount || 0
+        ),
+      maximumCount:
+        Number(
+          selection
+            .maximumCount || 0
+        ),
+      expansionSummary:
+        selection
+          .expansionSummary ||
+        null,
+      targetDecisions:
+        arrayify(
+          selection
+            .targetDecisions
+        ).map(decision => ({
+          evaluationId:
+            String(
+              decision
+                ?.evaluationId || ""
+            ),
+          boatNo:
+            Number(
+              decision?.boatNo || 0
+            ),
+          symbol:
+            String(
+              decision?.symbol || ""
+            ),
+          selected:
+            decision?.selected === true,
+          selectedTickets:
+            arrayify(
+              decision
+                ?.selectedTickets
+            ).map(String),
+          adoptionSupported:
+            decision
+              ?.adoptionSupported === true,
+          supportedSelectedTickets:
+            arrayify(
+              decision
+                ?.supportedSelectedTickets
+            ).map(String),
+          candidateCount:
+            Number(
+              decision
+                ?.candidateCount || 0
+            ),
+          selectedCandidateCount:
+            Number(
+              decision
+                ?.selectedCandidateCount ||
+              0
+            ),
+          excludedCandidateCount:
+            Number(
+              decision
+                ?.excludedCandidateCount ||
+              0
+            ),
+          hiddenCandidateCount:
+            Number(
+              decision
+                ?.hiddenCandidateCount ||
+              0
+            ),
+          candidateDecisions:
+            arrayify(
+              decision
+                ?.candidateDecisions
+            ).map(row => ({
+              ticket:
+                String(
+                  row?.ticket || ""
+                ),
+              ticketSelected:
+                row
+                  ?.ticketSelected ===
+                true,
+              relation:
+                String(
+                  row?.relation || ""
+                ),
+              reasonCode:
+                String(
+                  row
+                    ?.reasonCode || ""
+                ),
+              reason:
+                String(
+                  row?.reason || ""
+                ),
+              priorityScore:
+                numeric(
+                  row
+                    ?.priorityScore,
+                  0
+                ),
+              roleLabels:
+                compactRoleLabels(
+                  row?.roleLabels
+                )
+            })),
+          bestCandidateTicket:
+            String(
+              decision
+                ?.bestCandidateTicket ||
+              ""
+            ),
+          bestCandidateScore:
+            numeric(
+              decision
+                ?.bestCandidateScore,
+              0
+            ),
+          selectionBoundary:
+            decision
+              ?.selectionBoundary ??
+            null,
+          comparisonTicket:
+            String(
+              decision
+                ?.comparisonTicket ||
+              ""
+            ),
+          comparisonScore:
+            decision
+              ?.comparisonScore ??
+            null,
+          scoreGap:
+            decision?.scoreGap ??
+            null,
+          reasonCode:
+            String(
+              decision
+                ?.reasonCode || ""
+            ),
+          reason:
+            String(
+              decision?.reason || ""
+            )
+        })),
+      excludedIndependentCount:
+        excludedIndependent.length,
+      excludedIndependentCandidates:
+        excludedIndependent
+          .slice(
+            0,
+            EXCLUDED_INDEPENDENT_PREVIEW_COUNT
+          )
+          .map(item => ({
+            ticket:
+              String(
+                item?.ticket || ""
+              ),
+            requirementIds:
+              arrayify(
+                item
+                  ?.requirementIds
+              ).map(String),
+            branchIds:
+              arrayify(
+                item?.branchIds
+              ).map(String),
+            coveredEvaluationIds:
+              arrayify(
+                item
+                  ?.coveredEvaluationIds
+              ).map(String),
+            priorityScore:
+              numeric(
+                item
+                  ?.priorityScore,
+                0
+              ),
+            reasonCode:
+              String(
+                item
+                  ?.reasonCode || ""
+              ),
+            reason:
+              String(
+                item?.reason || ""
+              )
+          }))
+    };
   }
 
   function categoryKey(category) {
@@ -1661,9 +2062,15 @@
               row,
               validationContext
             );
+          const enriched =
+            applyValidation(
+              row,
+              validation
+            );
 
           return {
-            ticket: row.ticket,
+            ticket:
+              enriched.ticket,
             selected: false,
             reasonCode:
               "RACE_SKIPPED",
@@ -1672,10 +2079,175 @@
               validation.reasonCode ||
               "",
             branchIds: [
-              ...row.branchIds
-            ]
+              ...arrayify(
+                enriched
+                  .validBranchIds
+              )
+            ],
+            coveredEvaluationIds: [
+              ...arrayify(
+                enriched
+                  .coveredEvaluationIds
+              )
+            ],
+            candidateOnlyEvaluationIds: [
+              ...arrayify(
+                enriched
+                  .candidateOnlyEvaluationIds
+              )
+            ],
+            physicalCoverage: [
+              ...arrayify(
+                enriched
+                  .physicalCoverage
+              )
+            ],
+            priorityScore:
+              numeric(
+                enriched
+                  .priorityScore,
+                0
+              ),
+            roleLabels:
+              roleLabelsFor(
+                enriched
+              )
           };
         });
+      const targetDecisions =
+        evidence.evaluatedTargets
+          .map((target) => {
+            const evaluationId =
+              String(
+                target?.id || ""
+              );
+            const related =
+              [
+                ...new Map(
+                  candidates
+                    .filter(candidate =>
+                      arrayify(
+                        candidate
+                          .coveredEvaluationIds
+                      ).includes(
+                        evaluationId
+                      ) ||
+                      arrayify(
+                        candidate
+                          .candidateOnlyEvaluationIds
+                      ).includes(
+                        evaluationId
+                      ) ||
+                      arrayify(
+                        candidate
+                          .physicalCoverage
+                      ).some(
+                        claim =>
+                          claim
+                            ?.evaluationId ===
+                          evaluationId
+                      ) ||
+                      ticketBoats(
+                        candidate.ticket
+                      ).includes(
+                        Number(
+                          target
+                            ?.boatNo || 0
+                        )
+                      )
+                    )
+                    .map(candidate => [
+                      candidate.ticket,
+                      {
+                        ticket:
+                          candidate
+                            .ticket,
+                        ticketSelected:
+                          false,
+                        relation:
+                          arrayify(
+                            candidate
+                              .coveredEvaluationIds
+                          ).includes(
+                            evaluationId
+                          )
+                            ? "structured"
+                            : "physical-only",
+                        reasonCode:
+                          "RACE_SKIPPED",
+                        reason,
+                        priorityScore:
+                          candidate
+                            .priorityScore,
+                        roleLabels: [
+                          ...candidate
+                            .roleLabels
+                        ]
+                      }
+                    ])
+                ).values()
+              ].sort(
+                (a, b) =>
+                  b.priorityScore -
+                    a.priorityScore ||
+                  a.ticket.localeCompare(
+                    b.ticket
+                  )
+              );
+            const visible =
+              related.slice(
+                0,
+                TARGET_EXCLUDED_PREVIEW_COUNT
+              );
+            const best =
+              related[0] || null;
+
+            return {
+              evaluationId,
+              boatNo:
+                Number(
+                  target?.boatNo || 0
+                ),
+              symbol:
+                String(
+                  target?.symbol || ""
+                ),
+              selected: false,
+              selectedTickets: [],
+              adoptionSupported:
+                false,
+              supportedSelectedTickets:
+                [],
+              candidateCount:
+                related.length,
+              selectedCandidateCount:
+                0,
+              excludedCandidateCount:
+                related.length,
+              hiddenCandidateCount:
+                Math.max(
+                  0,
+                  related.length -
+                    visible.length
+                ),
+              candidateDecisions:
+                visible,
+              bestCandidateTicket:
+                best?.ticket || "",
+              bestCandidateScore:
+                best
+                  ?.priorityScore || 0,
+              selectionBoundary:
+                null,
+              comparisonTicket: "",
+              comparisonScore:
+                null,
+              scoreGap: null,
+              reasonCode:
+                "RACE_SKIPPED",
+              reason
+            };
+          });
 
       return {
         status: "skipped",
@@ -1686,34 +2258,28 @@
           NORMAL_MAXIMUM_COUNT,
         maximumCount:
           MAXIMUM_COUNT,
+        evidence,
         tickets: [],
         excludedCandidates:
           candidates,
         candidateDecisions:
           candidates,
-        targetDecisions:
-          evidence.evaluatedTargets
-            .map((target) => ({
-              evaluationId:
-                String(
-                  target?.id || ""
-                ),
-              boatNo:
-                Number(
-                  target?.boatNo || 0
-                ),
-              selected: false,
-              selectedTickets: [],
-              bestCandidateTicket: "",
-              bestCandidateScore: 0,
-              selectionBoundary: null,
-              comparisonTicket: "",
-              comparisonScore: null,
-              scoreGap: null,
-              reasonCode:
-                "RACE_SKIPPED",
-              reason
-            }))
+        candidateOutcomes:
+          candidates,
+        targetDecisions,
+        expansionSummary: {
+          normalCount: 0,
+          addedCount: 0,
+          finalCount: 0,
+          hasIndependentAdditions:
+            false,
+          exceededNormalMaximum:
+            false,
+          addedTickets: [],
+          reason
+        },
+        verificationEvidence:
+          null
       };
     }
 
@@ -1855,6 +2421,8 @@
         true
       );
     }
+    const normalTicketCount =
+      selected.length;
 
     function recordDecision(
       row,
@@ -1898,6 +2466,37 @@
             row.coveredBoatNos
           )
         ],
+        candidateOnlyEvaluationIds: [
+          ...arrayify(
+            row
+              .candidateOnlyEvaluationIds
+          )
+        ],
+        physicalCoverage: [
+          ...arrayify(
+            row.physicalCoverage
+          )
+        ],
+        category:
+          String(
+            row.category || ""
+          ),
+        selectionTier:
+          String(
+            row.selectionTier || ""
+          ),
+        roleLabels:
+          roleLabelsFor(row),
+        scenarioTitle:
+          String(
+            row.scenarioTitle || ""
+          ),
+        scenarioSummary:
+          String(
+            row.scenarioSummary ||
+            row.comment ||
+            ""
+          ),
         selected:
           selectedFlag,
         reasonCode,
@@ -2245,6 +2844,25 @@
     const holdExpansionCandidates = [];
     const alternateHeadByAttacker =
       new Map();
+    const expansionExclusionByTicket =
+      new Map();
+    const rememberExpansionExclusion =
+      (
+        row,
+        reasonCode,
+        reason
+      ) => {
+        if (
+          !expansionExclusionByTicket
+            .has(row.ticket)
+        ) {
+          expansionExclusionByTicket
+            .set(row.ticket, {
+              reasonCode,
+              reason
+            });
+        }
+      };
 
     rawExpansionCandidates
       .sort(expansionSort)
@@ -2277,7 +2895,14 @@
               "alternate-head"
           );
 
-        if (!alternateBranch) return;
+        if (!alternateBranch) {
+          rememberExpansionExclusion(
+            row,
+            "UNSUPPORTED_INDEPENDENT_KIND",
+            "購入可能な独立枝ではあるが、残し継続・別頭のどちらにも該当しないため追加しない。"
+          );
+          return;
+        }
 
         const attackerBoatNo =
           Number(
@@ -2285,19 +2910,50 @@
               .attackerBoatNo || 0
           );
 
-        if (
-          attackerBoatNo < 1 ||
-          selected.some(
+        if (attackerBoatNo < 1) {
+          rememberExpansionExclusion(
+            row,
+            "MISSING_ATTACKER",
+            "別頭の攻め艇を特定できないため、候補だけ保持する。"
+          );
+          return;
+        }
+
+        const representedHead =
+          selected.find(
             item =>
               ticketBoats(
                 item.ticket
               )[0] ===
               attackerBoatNo
-          ) ||
-          alternateHeadByAttacker.has(
+          );
+
+        if (representedHead) {
+          rememberExpansionExclusion(
+            row,
+            "HEAD_ALREADY_REPRESENTED",
+            `${attackerBoatNo}号艇頭は` +
+            `${representedHead.ticket}を通常枠で採用済みのため、` +
+            `同じ頭の追加点にはしない。`
+          );
+          return;
+        }
+
+        const strongerSameAttacker =
+          alternateHeadByAttacker.get(
             attackerBoatNo
-          )
-        ) {
+          );
+
+        if (strongerSameAttacker) {
+          rememberExpansionExclusion(
+            row,
+            "LOWER_PRIORITY_SAME_ATTACKER",
+            `同じ${attackerBoatNo}号艇頭では` +
+            `${strongerSameAttacker.ticket}` +
+            `（${strongerSameAttacker.priorityScore}点）を優先し、` +
+            `当該候補${row.ticket}` +
+            `（${row.priorityScore}点）は候補に保持する。`
+          );
           return;
         }
 
@@ -2393,17 +3049,21 @@
           return;
         }
 
-        const selectedExpansionScores =
+        const rememberedExclusion =
+          expansionExclusionByTicket
+            .get(row.ticket);
+        const selectedExpansions =
           selected
             .filter(
               (item) =>
                 item.selectionTier ===
                 "展開追加"
-            )
-            .map(
-              (item) =>
-                item.priorityScore
             );
+        const selectedExpansionScores =
+          selectedExpansions.map(
+            (item) =>
+              item.priorityScore
+          );
         const comparisonFloor =
           selectedExpansionScores.length
             ? Math.min(
@@ -2411,17 +3071,189 @@
               )
             : 0;
 
+        if (rememberedExclusion) {
+          recordDecision(
+            row,
+            false,
+            rememberedExclusion
+              .reasonCode,
+            rememberedExclusion
+              .reason
+          );
+          return;
+        }
+
+        if (
+          selected.length >=
+          MAXIMUM_COUNT
+        ) {
+          recordDecision(
+            row,
+            false,
+            "MAXIMUM_REACHED",
+            `最大10点に達したため候補プールへ保持。` +
+            `当該候補${row.priorityScore}点、` +
+            `選択済み独立展開の最低値` +
+            `${comparisonFloor}点。`
+          );
+          return;
+        }
+
+        const comparison =
+          [...selectedExpansions]
+            .sort(
+              (a, b) =>
+                b.priorityScore -
+                  a.priorityScore ||
+                a.ticket.localeCompare(
+                  b.ticket
+                )
+            )[0];
         recordDecision(
           row,
           false,
-          "MAXIMUM_REACHED",
-          `最大10点との比較で候補プールへ保持。` +
-          `当該候補${row.priorityScore}点、` +
-          `選択済み独立展開の最低値` +
-          `${comparisonFloor}点。`
+          "LOWER_PRIORITY_INDEPENDENT_BRANCH",
+          comparison
+            ? `独立展開では${comparison.ticket}` +
+              `（${comparison.priorityScore}点）を優先し、` +
+              `当該候補${row.ticket}` +
+              `（${row.priorityScore}点）は候補に保持する。`
+            : "独立展開の代表候補へ進まなかったため、購入せず候補に保持する。"
         );
       }
     );
+    const candidateOutcomesByTicket =
+      new Map();
+
+    candidateDecisions.forEach(
+      decision => {
+        const structuredEvaluationIds =
+          unique(
+            decision
+              .coveredEvaluationIds
+          ).map(String);
+        const physicalEvaluationIds =
+          unique([
+            ...arrayify(
+              decision
+                .candidateOnlyEvaluationIds
+            ),
+            ...arrayify(
+              decision.physicalCoverage
+            ).map(
+              claim =>
+                claim?.evaluationId
+            )
+          ]).map(String);
+        const evaluationIds =
+          unique([
+            ...structuredEvaluationIds,
+            ...physicalEvaluationIds
+          ]);
+        const current =
+          candidateOutcomesByTicket
+            .get(decision.ticket);
+        const shouldReplace =
+          !current ||
+          (
+            decision.selected &&
+            !current.selected
+          ) ||
+          (
+            decision.selected ===
+              current.selected &&
+            current.reasonCode ===
+              "ALREADY_SELECTED" &&
+            decision.reasonCode !==
+              "ALREADY_SELECTED"
+          );
+        const preferred =
+          shouldReplace
+            ? decision
+            : current;
+        const roleLabels =
+          [
+            ...new Map(
+              [
+                ...arrayify(
+                  current?.roleLabels
+                ),
+                ...arrayify(
+                  decision.roleLabels
+                )
+              ].map(role => [
+                `${role?.boatNo}|` +
+                `${role?.position}|` +
+                `${role?.role}`,
+                role
+              ])
+            ).values()
+          ];
+
+        candidateOutcomesByTicket.set(
+          decision.ticket,
+          {
+            ...preferred,
+            evaluationIds:
+              unique([
+                ...arrayify(
+                  current
+                    ?.evaluationIds
+                ),
+                ...evaluationIds
+              ]),
+            structuredEvaluationIds:
+              unique([
+                ...arrayify(
+                  current
+                    ?.structuredEvaluationIds
+                ),
+                ...structuredEvaluationIds
+              ]),
+            physicalOnlyEvaluationIds:
+              unique([
+                ...arrayify(
+                  current
+                    ?.physicalOnlyEvaluationIds
+                ),
+                ...physicalEvaluationIds
+              ]).filter(
+                evaluationId =>
+                  !unique([
+                    ...arrayify(
+                      current
+                        ?.structuredEvaluationIds
+                    ),
+                    ...structuredEvaluationIds
+                  ]).includes(
+                    evaluationId
+                  )
+              ),
+            roleLabels
+          }
+        );
+      }
+    );
+    const candidateOutcomes =
+      [
+        ...candidateOutcomesByTicket
+          .values()
+      ].sort(
+        (a, b) =>
+          Number(b.selected) -
+            Number(a.selected) ||
+          numeric(
+            b.priorityScore,
+            0
+          ) -
+            numeric(
+              a.priorityScore,
+              0
+            ) ||
+          a.ticket.localeCompare(
+            b.ticket
+          )
+      );
 
     const selectedExpansionBoundary =
       [...selected]
@@ -2494,6 +3326,14 @@
                 )
               );
             });
+          const supportedSelectedTickets =
+            selected.filter(row =>
+              arrayify(
+                row.coveredEvaluationIds
+              ).includes(
+                evaluationId
+              )
+            );
           const targetCandidates =
             candidates
               .map(({ row }) => row)
@@ -2569,6 +3409,90 @@
                         MAXIMUM_COUNT
                       ? "MAXIMUM_REACHED"
                       : "LOWER_PRIORITY_THAN_SELECTION";
+          const targetCandidateOutcomes =
+            candidateOutcomes
+              .filter(outcome =>
+                arrayify(
+                  outcome.evaluationIds
+                ).includes(
+                  evaluationId
+                )
+              )
+              .map(outcome => ({
+                ticket:
+                  outcome.ticket,
+                ticketSelected:
+                  outcome.selected,
+                relation:
+                  arrayify(
+                    outcome
+                      .structuredEvaluationIds
+                  ).includes(
+                    evaluationId
+                  )
+                    ? "structured"
+                    : "physical-only",
+                reasonCode:
+                  outcome.reasonCode,
+                reason:
+                  outcome.reason,
+                priorityScore:
+                  outcome
+                    .priorityScore,
+                roleLabels: [
+                  ...arrayify(
+                    outcome.roleLabels
+                  )
+                ]
+              }));
+          const visibleTargetCandidateOutcomes =
+            [
+              ...targetCandidateOutcomes
+                .filter(
+                  outcome =>
+                    outcome
+                      .ticketSelected &&
+                    outcome.relation ===
+                      "structured"
+                ),
+              ...targetCandidateOutcomes
+                .filter(
+                  outcome =>
+                    outcome
+                      .ticketSelected &&
+                    outcome.relation ===
+                      "physical-only"
+                )
+                .slice(
+                  0,
+                  TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT
+                ),
+              ...targetCandidateOutcomes
+                .filter(
+                  outcome =>
+                    !outcome
+                      .ticketSelected
+                )
+                .sort(
+                  (a, b) =>
+                    numeric(
+                      b.priorityScore,
+                      0
+                    ) -
+                      numeric(
+                        a.priorityScore,
+                        0
+                      ) ||
+                    a.ticket
+                      .localeCompare(
+                        b.ticket
+                      )
+                )
+                .slice(
+                  0,
+                  TARGET_EXCLUDED_PREVIEW_COUNT
+                )
+            ];
 
           return {
             evaluationId,
@@ -2586,6 +3510,42 @@
               selectedTickets.map(
                 (row) => row.ticket
               ),
+            adoptionSupported:
+              supportedSelectedTickets
+                .length > 0,
+            supportedSelectedTickets:
+              supportedSelectedTickets
+                .map(
+                  row => row.ticket
+                ),
+            candidateCount:
+              targetCandidateOutcomes
+                .length,
+            selectedCandidateCount:
+              targetCandidateOutcomes
+                .filter(
+                  outcome =>
+                    outcome.ticketSelected
+                )
+                .length,
+            excludedCandidateCount:
+              targetCandidateOutcomes
+                .filter(
+                  outcome =>
+                    !outcome
+                      .ticketSelected
+                )
+                .length,
+            hiddenCandidateCount:
+              Math.max(
+                0,
+                targetCandidateOutcomes
+                  .length -
+                  visibleTargetCandidateOutcomes
+                    .length
+              ),
+            candidateDecisions:
+              visibleTargetCandidateOutcomes,
             bestCandidateTicket:
               bestCandidate?.ticket || "",
             bestCandidateScore:
@@ -2635,6 +3595,232 @@
         (decision) =>
           !decision.selected
       );
+    const finalizedTickets =
+      selected.map(row => ({
+        ...row,
+        roleLabels:
+          roleLabelsFor(row)
+      }));
+    const addedTickets =
+      finalizedTickets
+        .filter(
+          row =>
+            row.selectionTier ===
+            "展開追加"
+        )
+        .map(row => ({
+          ticket: row.ticket,
+          scenarioTitle:
+            row.scenarioTitle || "",
+          scenarioSummary:
+            row.scenarioSummary ||
+            row.comment ||
+            "",
+          priorityScore:
+            row.priorityScore,
+          roleLabels: [
+            ...arrayify(
+              row.roleLabels
+            )
+          ]
+        }));
+    const expansionSummary = {
+      normalCount:
+        normalTicketCount,
+      addedCount:
+        addedTickets.length,
+      finalCount:
+        finalizedTickets.length,
+      hasIndependentAdditions:
+        addedTickets.length > 0,
+      exceededNormalMaximum:
+        finalizedTickets.length >
+          NORMAL_MAXIMUM_COUNT,
+      addedTickets,
+      reason:
+        addedTickets.length
+          ? "通常枠とは別に、時系列と艇・着順・役割が一致した独立展開だけを追加。"
+          : "購入可能な独立展開がないため、通常枠の点数を維持。"
+    };
+    const verificationTickets =
+      finalizedTickets.map(row => {
+        const continuationBoatNos =
+          new Set(
+            arrayify(
+              row
+                .validIndependentBranchIds
+            )
+              .map(id =>
+                validationContext
+                  .branchesById.get(id)
+              )
+              .filter(
+                branch =>
+                  branch
+                    ?.phaseEvidence
+                    ?.kind ===
+                  "hold-continuation"
+              )
+              .map(branch =>
+                boatNo(
+                  branch
+                    ?.phaseEvidence
+                    ?.target
+                )
+              )
+              .filter(Boolean)
+          );
+        const roleClaims =
+          roleLabelsFor(row)
+            .filter(
+              role =>
+                role.structured
+            )
+            .flatMap(role => {
+              const normalizedRole =
+                role.role === "head" ||
+                role.role ===
+                  "alternate-head" ||
+                role.role === "attack"
+                  ? "attack"
+                  : role.role ===
+                      "inside"
+                    ? "hold"
+                    : role.role;
+              const claims = [{
+                role:
+                  normalizedRole,
+                boatNo:
+                  role.boatNo,
+                expectedPositions: [
+                  role.position
+                ]
+              }];
+
+              if (
+                normalizedRole ===
+                  "hold" &&
+                continuationBoatNos.has(
+                  role.boatNo
+                )
+              ) {
+                claims.push({
+                  role:
+                    "continuation",
+                  boatNo:
+                    role.boatNo,
+                  expectedPositions: [
+                    role.position
+                  ]
+                });
+              }
+
+              return claims;
+            });
+
+        return {
+          ticket: row.ticket,
+          categories:
+            unique([
+              row.category,
+              ...arrayify(
+                row.categories
+              )
+            ]).map(String),
+          selectionTier:
+            String(
+              row.selectionTier || ""
+            ),
+          branchIds: [
+            ...arrayify(
+              row.validPurchaseBranchIds
+            )
+          ],
+          roleClaims
+        };
+      });
+    const verificationRoleClaims =
+      [
+        ...new Map(
+          verificationTickets
+            .flatMap(ticket =>
+              ticket.roleClaims
+            )
+            .map(claim => [
+              `${claim.role}|` +
+              `${claim.boatNo}`,
+              claim
+            ])
+        ).values()
+      ].map(claim => ({
+        ...claim,
+        expectedPositions:
+          unique(
+            verificationTickets
+              .flatMap(ticket =>
+                ticket.roleClaims
+              )
+              .filter(
+                row =>
+                  row.role ===
+                    claim.role &&
+                  row.boatNo ===
+                    claim.boatNo
+              )
+              .flatMap(
+                row =>
+                  row
+                    .expectedPositions
+              )
+          )
+            .map(Number)
+            .sort(
+              (a, b) => a - b
+            )
+      }));
+    const verificationEvidence = {
+      roleSchemaVersion: 1,
+      generation: {
+        logicFingerprint:
+          "evaluated-scenarios-v1",
+        confidenceDefinitionVersion:
+          "internal-score-v1",
+        ticketPolicyVersion:
+          "practical-5-7-10-v1"
+      },
+      mainScenario: {
+        type:
+          String(
+            evidence.scenarioType ||
+            evidence.raceFlow
+              ?.scenario
+              ?.type ||
+            ""
+          ),
+        label:
+          String(
+            evidence.raceFlow
+              ?.title ||
+            evidence.scenarioTitle ||
+            ""
+          ),
+        headBoatNo:
+          Number(
+            evidence.mainHeadBoatNo ||
+            0
+          ),
+        attackerBoatNo:
+          Number(
+            evidence
+              .primaryAttackerBoatNo ||
+            0
+          )
+      },
+      roleClaims:
+        verificationRoleClaims,
+      tickets:
+        verificationTickets
+    };
 
     return {
       status: "selected",
@@ -2651,10 +3837,13 @@
         MAXIMUM_COUNT,
       evidence,
       tickets:
-        selected,
+        finalizedTickets,
       excludedCandidates,
       candidateDecisions,
-      targetDecisions
+      candidateOutcomes,
+      targetDecisions,
+      expansionSummary,
+      verificationEvidence
     };
   }
 
@@ -2662,8 +3851,14 @@
     STANDARD_COUNT,
     NORMAL_MAXIMUM_COUNT,
     MAXIMUM_COUNT,
+    TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT,
+    TARGET_EXCLUDED_PREVIEW_COUNT,
+    EXCLUDED_INDEPENDENT_PREVIEW_COUNT,
+    ROLE_LABELS,
     validTicket,
     validateCandidate,
+    roleLabelsFor,
+    compactAudit,
     select,
     createPracticalSelection(
       prediction

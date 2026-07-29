@@ -31,7 +31,9 @@ const theoryInput = require(
   "../js/theory-input"
 );
 require("../js/prediction");
-require("../js/practical-selection");
+require("../js/prediction-simple-evaluation");
+const practicalSelectionApi =
+  require("../js/practical-selection");
 require("../js/note-generator");
 
 const historyStats = require(
@@ -363,54 +365,8 @@ function compactEvaluation(evaluation) {
 function compactPracticalSelection(
   selection
 ) {
-  if (
-    !selection ||
-    typeof selection !== "object"
-  ) {
-    return null;
-  }
-
-  return {
-    status:
-      String(selection.status || ""),
-    reason:
-      String(selection.reason || ""),
-    standardCount:
-      Number(
-        selection.standardCount || 0
-      ),
-    normalMaximumCount:
-      Number(
-        selection
-          .normalMaximumCount || 0
-      ),
-    maximumCount:
-      Number(
-        selection.maximumCount || 0
-      ),
-    targetDecisions:
-      Array.isArray(
-        selection.targetDecisions
-      )
-        ? selection.targetDecisions
-        : [],
-    excludedIndependentCandidates:
-      (
-        Array.isArray(
-          selection
-            .excludedCandidates
-        )
-          ? selection
-              .excludedCandidates
-          : []
-      ).filter(
-        item =>
-          (
-            item?.requirementIds ||
-            []
-          ).length > 0
-      )
-  };
+  return practicalSelectionApi
+    .compactAudit(selection);
 }
 
 function compactPrediction(prediction, practicalTickets, raceData) {
@@ -442,6 +398,41 @@ function compactPrediction(prediction, practicalTickets, raceData) {
       compactPracticalSelection(
         practicalSelection
       ),
+    verificationEvidence:
+      practicalSelection
+        ?.verificationEvidence ||
+      prediction
+        ?.verificationEvidence ||
+      null,
+    internalEvaluation: {
+      mode:
+        String(
+          prediction
+            ?.simpleEvaluation
+            ?.mode ||
+          ""
+        ),
+      label:
+        String(
+          prediction
+            ?.simpleEvaluation
+            ?.label ||
+          "AI評価"
+        ),
+      score:
+        Number(
+          prediction
+            ?.simpleEvaluation
+            ?.score ??
+          prediction
+            ?.confidence
+            ?.score ??
+          prediction
+            ?.confidence ??
+          0
+        ) || 0,
+      probability: false
+    },
     preRaceConditions: predictionConditions.capture(raceData, prediction)
   };
 }
@@ -477,6 +468,18 @@ function compactVerificationEvidence(prediction) {
     typeof prediction.verificationEvidence === "object"
   ) {
     return prediction.verificationEvidence;
+  }
+  if (
+    prediction?.practicalSelection
+      ?.verificationEvidence &&
+    typeof prediction
+      .practicalSelection
+      .verificationEvidence ===
+      "object"
+  ) {
+    return prediction
+      .practicalSelection
+      .verificationEvidence;
   }
 
   const aiCore = prediction?.aiCore || {};
@@ -557,6 +560,38 @@ function compactVerificationPayload(
         prediction
           ?.practicalSelection
       ),
+    internalEvaluation:
+      prediction
+        ?.internalEvaluation ||
+      {
+        mode:
+          String(
+            prediction
+              ?.simpleEvaluation
+              ?.mode ||
+            ""
+          ),
+        label:
+          String(
+            prediction
+              ?.simpleEvaluation
+              ?.label ||
+            "AI評価"
+          ),
+        score:
+          Number(
+            prediction
+              ?.simpleEvaluation
+              ?.score ??
+            prediction
+              ?.confidence
+              ?.score ??
+            prediction
+              ?.confidence ??
+            0
+          ) || 0,
+        probability: false
+      },
     preRaceConditions: preRaceConditions || null,
     verificationEvidence: compactVerificationEvidence(prediction)
   };

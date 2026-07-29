@@ -115,11 +115,20 @@ function buildSummary(predictions) {
     scenarioComparableCount: verificationSummary.scenarioComparableCount,
     scenarioHits: verificationSummary.scenarioHits,
     scenarioMatchRate: verificationSummary.scenarioMatchRate,
+    structuredScenarioComparableCount:
+      verificationSummary.structuredScenarioComparableCount,
+    structuredScenarioHits:
+      verificationSummary.structuredScenarioHits,
+    structuredScenarioMatchRate:
+      verificationSummary.structuredScenarioMatchRate,
     simulatedStake: verificationSummary.totalStake,
     simulatedReturn: verificationSummary.totalReturn,
     simulatedProfit: verificationSummary.simulatedProfit,
     simulatedRecoveryRate: verificationSummary.simulatedRecoveryRate,
     categorySummary: verificationSummary.categorySummary,
+    ticketCategorySummary:
+      verificationSummary.ticketCategorySummary,
+    roleSummary: verificationSummary.roleSummary,
     markSummary: verificationSummary.markSummary,
     priorityStageSummary: verificationSummary.priorityStageSummary
   };

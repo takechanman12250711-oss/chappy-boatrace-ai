@@ -3320,13 +3320,44 @@
           ? summarySource
           : "";
       const practicalSelection =
-        typeof window
-          .ChappyPracticalSelection
-          ?.select === "function"
-          ? window
+        prediction
+          ?.practicalSelection &&
+        typeof prediction
+          .practicalSelection ===
+          "object"
+          ? prediction
+              .practicalSelection
+          : typeof window
               .ChappyPracticalSelection
-              .select(prediction)
-          : null;
+              ?.select ===
+              "function"
+            ? window
+                .ChappyPracticalSelection
+                .select(prediction)
+            : null;
+
+      if (
+        practicalSelection &&
+        prediction &&
+        typeof prediction ===
+          "object"
+      ) {
+        prediction
+          .practicalSelection =
+          practicalSelection;
+
+        if (
+          !prediction
+            .verificationEvidence &&
+          practicalSelection
+            .verificationEvidence
+        ) {
+          prediction
+            .verificationEvidence =
+            practicalSelection
+              .verificationEvidence;
+        }
+      }
       const compactMark =
         mark => ({
           boatNo:
@@ -3384,42 +3415,20 @@
           evidenceReasons: [
             ...(item
               ?.evidenceReasons || [])
+          ],
+          roleLabels: [
+            ...(item
+              ?.roleLabels || [])
           ]
         }));
       const practicalSelectionAudit =
         practicalSelection
-          ? {
-              status:
-                practicalSelection.status,
-              reason:
-                practicalSelection.reason,
-              standardCount:
+          ? window
+              .ChappyPracticalSelection
+              ?.compactAudit?.(
                 practicalSelection
-                  .standardCount,
-              normalMaximumCount:
-                practicalSelection
-                  .normalMaximumCount,
-              maximumCount:
-                practicalSelection
-                  .maximumCount,
-              targetDecisions: [
-                ...(practicalSelection
-                  .targetDecisions || [])
-              ],
-              excludedIndependentCandidates:
-                (
-                  practicalSelection
-                    .excludedCandidates ||
-                  []
-                ).filter(
-                  item =>
-                    (
-                      item
-                        ?.requirementIds ||
-                      []
-                    ).length > 0
-                )
-            }
+              ) ||
+            null
           : null;
 
       const snapshot = {
@@ -3516,6 +3525,41 @@
 
         practicalSelection:
           practicalSelectionAudit,
+
+        verificationEvidence:
+          practicalSelection
+            ?.verificationEvidence ||
+          null,
+
+        internalEvaluation: {
+          mode:
+            String(
+              prediction
+                ?.simpleEvaluation
+                ?.mode ||
+              ""
+            ),
+          label:
+            String(
+              prediction
+                ?.simpleEvaluation
+                ?.label ||
+              "AI評価"
+            ),
+          score:
+            Number(
+              prediction
+                ?.simpleEvaluation
+                ?.score ??
+              prediction
+                ?.confidence
+                ?.score ??
+              prediction
+                ?.confidence ??
+              0
+            ) || 0,
+          probability: false
+        },
 
         ticketRanks
       };

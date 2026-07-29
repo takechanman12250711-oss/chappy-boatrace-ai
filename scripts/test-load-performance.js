@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const zlib = require("node:zlib");
 
 const root = path.resolve(__dirname, "..");
 const read = file =>
@@ -17,6 +18,53 @@ const hiyoriLoader = read("js/hiyori-runtime-loader.js");
 const render = read("js/render.js");
 const predictionRuntime = read(
   "js/prediction-runtime-loader.js"
+);
+const calibrationModulePath = path.join(
+  root,
+  "js",
+  "prediction-calibration.js"
+);
+const calibrationDataPath = path.join(
+  root,
+  "data",
+  "predictions",
+  "calibration.json"
+);
+const calibrationModule =
+  fs.readFileSync(
+    calibrationModulePath
+  );
+
+assert.ok(
+  calibrationModule.length <
+    35000,
+  "校正モジュールのrawサイズを35KB未満にする"
+);
+assert.ok(
+  zlib.gzipSync(
+    calibrationModule,
+    { level: 9 }
+  ).length < 8000,
+  "校正モジュールのgzip配信量を8KB未満にする"
+);
+assert.ok(
+  fs.statSync(calibrationDataPath).size <
+    10000,
+  "画面が読む校正JSONを10KB未満にする"
+);
+assert.equal(
+  html.includes(
+    'src="js/prediction-calibration.js'
+  ),
+  false,
+  "校正モジュールとJSONを初期表示で取得しない"
+);
+assert.equal(
+  predictionRuntime.includes(
+    '"js/prediction-calibration.js"'
+  ),
+  true,
+  "校正モジュールは予想開始時だけ遅延読込する"
 );
 
 [

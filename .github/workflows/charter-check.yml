@@ -38,6 +38,9 @@ on:
       - "scripts/match-predictions.js"
       - "scripts/test-match-predictions.js"
       - "js/prediction-verification.js"
+      - "js/prediction-calibration.js"
+      - "scripts/build-prediction-calibration.js"
+      - "scripts/test-prediction-calibration.js"
       - "js/prediction-conditions.js"
       - "js/shadow-selection-v2.js"
       - "scripts/test-prediction-conditions.js"
@@ -59,6 +62,8 @@ on:
       - "js/improvement-suggestions.js"
       - "scripts/test-improvement-suggestions.js"
       - "scripts/test-practical-selection.js"
+      - "scripts/test-prediction-transparency-ui.js"
+      - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
       - "scripts/test-race-scenarios.js"
       - "scripts/test-scenario-marks.js"
@@ -83,6 +88,7 @@ on:
       - "scripts/build-prediction-summaries.js"
       - "scripts/test-prediction-summaries.js"
       - "scripts/test-load-performance.js"
+      - "scripts/test-prediction-runtime-loader.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
       - "tools/test-local-water-theory-v2.js"
@@ -125,6 +131,9 @@ on:
       - "scripts/match-predictions.js"
       - "scripts/test-match-predictions.js"
       - "js/prediction-verification.js"
+      - "js/prediction-calibration.js"
+      - "scripts/build-prediction-calibration.js"
+      - "scripts/test-prediction-calibration.js"
       - "js/prediction-conditions.js"
       - "js/shadow-selection-v2.js"
       - "scripts/test-prediction-conditions.js"
@@ -146,6 +155,8 @@ on:
       - "js/improvement-suggestions.js"
       - "scripts/test-improvement-suggestions.js"
       - "scripts/test-practical-selection.js"
+      - "scripts/test-prediction-transparency-ui.js"
+      - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
       - "scripts/test-race-scenarios.js"
       - "scripts/test-scenario-marks.js"
@@ -170,6 +181,7 @@ on:
       - "scripts/build-prediction-summaries.js"
       - "scripts/test-prediction-summaries.js"
       - "scripts/test-load-performance.js"
+      - "scripts/test-prediction-runtime-loader.js"
       - "js/venue-race-analysis.js"
       - "scripts/test-history-insights.js"
       - "tools/test-local-water-theory-v2.js"
@@ -222,6 +234,9 @@ jobs:
           node --check scripts/match-predictions.js
           node --check scripts/test-match-predictions.js
           node --check js/prediction-verification.js
+          node --check js/prediction-calibration.js
+          node --check scripts/build-prediction-calibration.js
+          node --check scripts/test-prediction-calibration.js
           node --check js/prediction-conditions.js
           node --check js/shadow-selection-v2.js
           node --check scripts/test-prediction-conditions.js
@@ -241,6 +256,8 @@ jobs:
           node --check js/improvement-suggestions.js
           node --check scripts/test-improvement-suggestions.js
           node --check scripts/test-practical-selection.js
+          node --check scripts/test-prediction-transparency-ui.js
+          node --check scripts/test-stats-methodology.js
           node --check scripts/test-ai-core-formations.js
           node --check scripts/test-race-scenarios.js
           node --check scripts/test-scenario-marks.js
@@ -265,6 +282,7 @@ jobs:
           node --check scripts/test-api-client-cache.js
           node --check scripts/test-prediction-summaries.js
           node --check scripts/test-load-performance.js
+          node --check scripts/test-prediction-runtime-loader.js
           node --check js/race-history.js
           node --check js/venue-race-analysis.js
           node --check scripts/test-history-insights.js
@@ -276,6 +294,7 @@ jobs:
           node scripts/test-shadow-predictions.js
           node scripts/test-match-predictions.js
           node scripts/test-prediction-verification.js
+          node scripts/test-prediction-calibration.js
           node scripts/test-prediction-conditions.js
           node scripts/test-shadow-selection-v2.js
           node scripts/test-race-parser.js
@@ -287,6 +306,8 @@ jobs:
           node scripts/test-verification-readiness.js
           node scripts/test-improvement-suggestions.js
           node scripts/test-practical-selection.js
+          node scripts/test-prediction-transparency-ui.js
+          node scripts/test-stats-methodology.js
           node scripts/test-ai-core-formations.js
           node scripts/test-exhibition-performance.js
           node scripts/test-double-time.js
@@ -305,4 +326,5 @@ jobs:
           node scripts/test-api-client-cache.js
           node scripts/test-prediction-summaries.js
           node scripts/test-load-performance.js
+          node scripts/test-prediction-runtime-loader.js
           node tools/test-local-water-theory-v2.js

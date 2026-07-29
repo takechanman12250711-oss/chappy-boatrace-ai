@@ -39,6 +39,11 @@ jobs:
         run: |
           node scripts/repair-recent-results.js
 
+      - name: Build prediction calibration
+        run: |
+          node scripts/test-prediction-calibration.js
+          node scripts/build-prediction-calibration.js
+
       - name: Save collected results
         run: |
           git add data/results data/predictions data/stats

@@ -728,6 +728,30 @@ assert.equal(
   "main category scoped summary",
   "category scoped summaryをglobal bestで上書きしない"
 );
+assert.ok(
+  standard.tickets.every(
+    row =>
+      Array.isArray(
+        row.roleLabels
+      ) &&
+      row.roleLabels.length >= 3
+  ),
+  "各購入買い目へ艇・着順・役割ラベルを付ける"
+);
+assert.deepEqual(
+  standard.expansionSummary,
+  {
+    normalCount: 5,
+    addedCount: 0,
+    finalCount: 5,
+    hasIndependentAdditions: false,
+    exceededNormalMaximum: false,
+    addedTickets: [],
+    reason:
+      "購入可能な独立展開がないため、通常枠の点数を維持。"
+  },
+  "通常5点では拡張理由を作らない"
+);
 
 const normal =
   selector.select(
@@ -761,14 +785,35 @@ assert.equal(
   "rolesなし・priority 0のprovenanceだけでは流し・穴を購入しない"
 );
 
-assert.equal(
+const skippedAudit =
   selector.select(
     createFixture({
-      categoryMismatch: true
+      categoryMismatch: true,
+      possibilityExtras: [{
+        ticket: "1-4-6",
+        priorityScore: 50,
+        comment:
+          "見送り時も残す候補"
+      }]
     })
-  ).status,
+  );
+assert.equal(
+  skippedAudit.status,
   "skipped",
   "cover行へmain sourceを流用しない"
+);
+assert.ok(
+  skippedAudit
+    .targetDecisions
+    .some(decision =>
+      decision
+        .candidateDecisions
+        .some(row =>
+          row.reasonCode ===
+          "RACE_SKIPPED"
+        )
+    ),
+  "見送りでも艇別候補と非採用理由を表示用に残す"
 );
 
 const fakeBoolean =
@@ -870,6 +915,95 @@ assert.deepEqual(
     .map(row => row.ticket),
   [...MAIN, ...COVER],
   "高い独立枝でも基本coverを退けない"
+);
+assert.equal(
+  preserved
+    .expansionSummary
+    .normalCount,
+  7
+);
+assert.equal(
+  preserved
+    .expansionSummary
+    .addedCount,
+  3
+);
+assert.equal(
+  preserved
+    .expansionSummary
+    .finalCount,
+  10
+);
+assert.equal(
+  preserved
+    .expansionSummary
+    .exceededNormalMaximum,
+  true
+);
+assert.deepEqual(
+  preserved
+    .expansionSummary
+    .addedTickets
+    .map(row => row.ticket),
+  preserved.tickets
+    .filter(
+      row =>
+        row.selectionTier ===
+        "展開追加"
+    )
+    .map(row => row.ticket),
+  "7点超過理由へ実際に追加した独立展開を列挙する"
+);
+assert.ok(
+  preserved.targetDecisions
+    .every(
+      decision =>
+        Array.isArray(
+          decision
+            .candidateDecisions
+        ) &&
+        new Set(
+          decision
+            .candidateDecisions
+            .map(
+              row => row.ticket
+            )
+        ).size ===
+          decision
+            .candidateDecisions
+            .length &&
+        decision
+          .candidateDecisions
+          .every(
+            row =>
+              row.reason &&
+              [
+                "structured",
+                "physical-only"
+              ].includes(
+                row.relation
+              )
+          )
+    ),
+  "艇別候補を重複なしで採用・非採用理由へ接続する"
+);
+assert.ok(
+  preserved.targetDecisions
+    .every(decision =>
+      decision
+        .candidateDecisions
+        .length <=
+        decision
+          .candidateCount &&
+      decision
+        .hiddenCandidateCount ===
+        decision
+          .candidateCount -
+        decision
+          .candidateDecisions
+          .length
+    ),
+  "画面・保存用候補は総数と省略数を保持した軽量プレビューにする"
 );
 
 const weak =
@@ -989,6 +1123,25 @@ assert.ok(
         )
   ),
   "購入しないpartner違いも候補プールには全件保持する"
+);
+assert.ok(
+  maximumBranches
+    .slice(1)
+    .every(branch =>
+      capped
+        .candidateDecisions
+        .some(row =>
+          row.ticket ===
+            branch.ticket &&
+          row.selected === false &&
+          row.reasonCode ===
+            "LOWER_PRIORITY_SAME_ATTACKER" &&
+          row.reason.includes(
+            "を優先"
+          )
+        )
+    ),
+  "10点未満で落ちた同じ別頭候補は、最大到達でなく優先比較を理由にする"
 );
 assert.ok(
   capped.tickets

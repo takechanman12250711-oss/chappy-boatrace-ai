@@ -113,11 +113,13 @@ function readJson(filePath) {
 
 function writeJson(filePath, data) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const payload = JSON.stringify(data) + "\n";
   fs.writeFileSync(
     filePath,
-    JSON.stringify(data, null, 2) + "\n",
+    payload,
     "utf8"
   );
+  return Buffer.byteLength(payload);
 }
 
 function buildPredictionSummaries(
@@ -138,11 +140,14 @@ function buildPredictionSummaries(
       readJson(sourcePath),
       date
     );
-    writeJson(outputPath, summary);
+    const bytes = writeJson(
+      outputPath,
+      summary
+    );
     return {
       date,
       outputPath,
-      bytes: Buffer.byteLength(JSON.stringify(summary))
+      bytes
     };
   });
 }
