@@ -33,6 +33,13 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Verify result merge safety
+        run: |
+          node --check scripts/collect-results.js
+          node --check scripts/repair-recent-results.js
+          node scripts/test-collect-results.js
+          node scripts/test-repair-recent-results.js
+
       - name: Collect official results
         env:
           COLLECT_DATE: ${{ inputs.date }}
@@ -41,8 +48,16 @@ jobs:
 
       - name: Build prediction calibration
         run: |
+          node scripts/test-match-predictions.js
+          node scripts/test-repair-recent-results.js
+          node scripts/test-prediction-verification.js
           node scripts/test-prediction-calibration.js
           node scripts/build-prediction-calibration.js
+          node scripts/test-improvement-review.js
+          node scripts/build-improvement-review.js
+          node scripts/test-build-prediction-index.js
+          node scripts/build-prediction-index.js
+          node scripts/test-load-performance.js
 
       - name: Save collected results
         run: |

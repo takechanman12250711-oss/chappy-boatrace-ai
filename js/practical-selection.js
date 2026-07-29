@@ -22,6 +22,26 @@
     3;
   const EXCLUDED_INDEPENDENT_PREVIEW_COUNT =
     10;
+  const THEORY_SCHEMA_VERSION = 1;
+  const THEORY_SET_FINGERPRINT =
+    "structured-ticket-support-v1:flow+holdPickup";
+  const THEORY_DEFINITIONS =
+    Object.freeze({
+      flow: Object.freeze({
+        theoryKey: "flow",
+        label: "展開",
+        theoryVersion:
+          "evaluated-scenarios-v1"
+      }),
+      holdPickup:
+        Object.freeze({
+          theoryKey:
+            "holdPickup",
+          label: "残し・拾い",
+          theoryVersion:
+            "structured-role-evidence-v1"
+        })
+    });
   const ROLE_LABELS = Object.freeze({
     head: "1着軸",
     "alternate-head": "攻め頭",
@@ -3717,6 +3737,51 @@
 
               return claims;
             });
+        const branchIds = [
+          ...arrayify(
+            row
+              .validPurchaseBranchIds
+          )
+        ];
+        const theoryClaims = [];
+
+        if (
+          branchIds.length > 0 &&
+          (
+            evidence
+              .mainEstablished ||
+            evidence.raceFlow
+              ?.title
+          )
+        ) {
+          theoryClaims.push({
+            ...THEORY_DEFINITIONS
+              .flow,
+            formal: true,
+            source:
+              "structured-purchase-branch"
+          });
+        }
+
+        if (
+          roleClaims.some(claim =>
+            [
+              "hold",
+              "pickup",
+              "continuation"
+            ].includes(
+              claim.role
+            )
+          )
+        ) {
+          theoryClaims.push({
+            ...THEORY_DEFINITIONS
+              .holdPickup,
+            formal: true,
+            source:
+              "structured-role-claim"
+          });
+        }
 
         return {
           ticket: row.ticket,
@@ -3731,12 +3796,9 @@
             String(
               row.selectionTier || ""
             ),
-          branchIds: [
-            ...arrayify(
-              row.validPurchaseBranchIds
-            )
-          ],
-          roleClaims
+          branchIds,
+          roleClaims,
+          theoryClaims
         };
       });
     const verificationRoleClaims =
@@ -3780,6 +3842,10 @@
       }));
     const verificationEvidence = {
       roleSchemaVersion: 1,
+      theorySchemaVersion:
+        THEORY_SCHEMA_VERSION,
+      theorySetFingerprint:
+        THEORY_SET_FINGERPRINT,
       generation: {
         logicFingerprint:
           "evaluated-scenarios-v1",
@@ -3818,6 +3884,19 @@
       },
       roleClaims:
         verificationRoleClaims,
+      theoryClaims: [
+        ...new Map(
+          verificationTickets
+            .flatMap(ticket =>
+              ticket
+                .theoryClaims
+            )
+            .map(claim => [
+              claim.theoryKey,
+              claim
+            ])
+        ).values()
+      ],
       tickets:
         verificationTickets
     };
@@ -3851,6 +3930,8 @@
     STANDARD_COUNT,
     NORMAL_MAXIMUM_COUNT,
     MAXIMUM_COUNT,
+    THEORY_SCHEMA_VERSION,
+    THEORY_SET_FINGERPRINT,
     TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT,
     TARGET_EXCLUDED_PREVIEW_COUNT,
     EXCLUDED_INDEPENDENT_PREVIEW_COUNT,

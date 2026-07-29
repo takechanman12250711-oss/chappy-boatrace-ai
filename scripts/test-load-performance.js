@@ -12,6 +12,9 @@ const read = file =>
 const html = read("index.html");
 const script = read("js/script.js");
 const stats = read("js/stats.js");
+const statsRuntime = read(
+  "js/stats-runtime-loader.js"
+);
 const autoSelection = read("js/auto-selection.js");
 const api = read("js/api.js");
 const hiyoriLoader = read("js/hiyori-runtime-loader.js");
@@ -30,6 +33,20 @@ const calibrationDataPath = path.join(
   "predictions",
   "calibration.json"
 );
+const predictionIndexPath =
+  path.join(
+    root,
+    "data",
+    "predictions",
+    "index.json"
+  );
+const improvementReviewPath =
+  path.join(
+    root,
+    "data",
+    "predictions",
+    "improvement-review.json"
+  );
 const calibrationModule =
   fs.readFileSync(
     calibrationModulePath
@@ -133,6 +150,85 @@ assert.equal(
   true,
   "結果データは遅延読み込みにする"
 );
+[
+  "js/collection-health.js",
+  "js/prediction-verification.js",
+  "js/auto-stats.js",
+  "js/verification-readiness.js",
+  "js/improvement-suggestions.js",
+  "js/stats.js"
+].forEach(file => {
+  assert.equal(
+    html.includes(
+      `src="${file}`
+    ),
+    false,
+    `${file} は初期表示で直接読み込まない`
+  );
+  assert.equal(
+    statsRuntime.includes(
+      `"${file}"`
+    ),
+    true,
+    `${file} は結果画面用ローダーへ登録する`
+  );
+});
+[
+  "js/verification-readiness.js",
+  "js/improvement-suggestions.js"
+].forEach(file => {
+  assert.ok(
+    statsRuntime.indexOf(`"${file}"`) <
+      statsRuntime.indexOf('"js/stats.js"'),
+    `${file} は参照元のstats.jsより先に読み込む`
+  );
+});
+assert.equal(
+  html.includes(
+    "js/stats-runtime-loader.js"
+  ),
+  true,
+  "結果画面の軽量ローダーだけを初期読込する"
+);
+[
+  "style.css?v=20260729-review2",
+  "js/stats-runtime-loader.js?v=20260729-review2",
+  "js/prediction-runtime-loader.js?v=20260729-review2"
+].forEach(asset => {
+  assert.equal(
+    html.includes(asset),
+    true,
+    `${asset} の更新版を既存端末へ配信する`
+  );
+});
+assert.equal(
+  predictionRuntime.includes(
+    'const VERSION = "20260729-review2"'
+  ),
+  true,
+  "全文表示を含む予想モジュールのキャッシュ世代を更新する"
+);
+assert.equal(
+  statsRuntime.includes(
+    '"20260729-review2"'
+  ),
+  true,
+  "結果分析モジュールのキャッシュ世代を更新する"
+);
+assert.equal(
+  statsRuntime.includes(
+    'a[href="#resultSection"]'
+  ),
+  true,
+  "成績タブの操作で結果分析を読み込む"
+);
+assert.equal(
+  statsRuntime.includes(
+    "IntersectionObserver"
+  ),
+  false,
+  "初期画面内に結果欄があっても統計を先読みしない"
+);
 assert.equal(
   stats.includes("成績の要点"),
   true
@@ -220,12 +316,27 @@ const statsUi = stats.slice(
   "直近の結果",
   "厳選的中率",
   "回収率",
-  "検証収支"
+  "検証収支",
+  "100R精度検証",
+  "data-stats-load-state"
 ].forEach(label => {
   assert.equal(
     statsUi.includes(label),
     true,
     `${label} を結果画面に表示する`
+  );
+});
+[
+  "自動履歴を取得できません",
+  "正式100Rへ入らない主因",
+  "除外の代表例",
+  "直近収集のV2判定可能",
+  "未完成の主因"
+].forEach(label => {
+  assert.equal(
+    stats.includes(label),
+    true,
+    `${label} を100R蓄積診断に表示する`
   );
 });
 [
@@ -262,6 +373,30 @@ assert.equal(
   ),
   true,
   "ユーザー向けKPIへシャドー集計を混ぜない"
+);
+
+const predictionIndex =
+  fs.readFileSync(
+    predictionIndexPath
+  );
+assert.ok(
+  predictionIndex.length <
+    3000000,
+  `集約indexは3MB未満 (${predictionIndex.length} bytes)`
+);
+assert.ok(
+  zlib.gzipSync(
+    predictionIndex,
+    { level: 9 }
+  ).length <
+    300000,
+  "集約indexのgzip配信量を300KB未満にする"
+);
+assert.ok(
+  fs.statSync(
+    improvementReviewPath
+  ).size < 20000,
+  "100R精度検証JSONを20KB未満にする"
 );
 
 const summaryDirectory = path.join(

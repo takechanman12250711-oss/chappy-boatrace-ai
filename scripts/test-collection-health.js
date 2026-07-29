@@ -17,6 +17,23 @@ const report = buildReport({
     {
       checkedAt: "2026-07-22T01:15:00.000Z",
       collectionHealth: {
+        checkedAt:
+          "2026-07-22T01:15:00.000Z",
+        v2: {
+          evaluatedCount: 3,
+          readyCount: 1,
+          qualifiedCount: 1,
+          selectedCount: 1,
+          belowThresholdCount: 0,
+          notReadyCount: 2,
+          readinessRate: 33.3,
+          missingReasons: [{
+            code: "data.tide",
+            label:
+              "潮汐場の現在潮位・潮流",
+            count: 2
+          }]
+        },
         targets: [
           { raceKey: "20260722-08-1", jcd: "08", place: "常滑", status: "saved" },
           { raceKey: "20260722-24-1", jcd: "24", place: "大村", status: "saved", recoveryState: "recovered" },
@@ -46,5 +63,11 @@ assert.equal(report.resultWaitingCount, 1);
 assert.equal(report.venues.find(item => item.jcd === "19").missingCount, 1);
 assert.equal(report.venues.find(item => item.jcd === "24").recoveredCount, 1);
 assert.equal(report.venues.find(item => item.jcd === "15").finalUncollectedCount, 1);
+assert.equal(report.v2.readyCount, 1);
+assert.equal(report.v2.notReadyCount, 2);
+assert.equal(
+  report.v2.missingReasons[0].label,
+  "潮汐場の現在潮位・潮流"
+);
 
 console.log("自動収集監視テスト: 合格");

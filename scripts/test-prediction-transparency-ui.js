@@ -1,6 +1,8 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const listeners = new Map();
 const resultArea = {
@@ -13,6 +15,24 @@ const calibrationElements = [];
 const calibrationInputs = [];
 let practicalMode = "selected";
 let practicalSelectCalls = 0;
+const longScenarioReason =
+  `${"長い展開根拠を全文で確認する。".repeat(10)}` +
+  "【長文末尾保持】";
+const emojiBoundaryComment =
+  `${"あ".repeat(59)}🛟` +
+  "絵文字の後ろも全文で確認する。【絵文字末尾保持】";
+const candidateReason =
+  `${"候補比較の根拠を省略せず確認する。".repeat(9)}` +
+  "【候補理由末尾保持】";
+const manshuSpecificReason =
+  `${"万舟固有の成立経路を確認する。".repeat(9)}` +
+  "【万舟固有理由末尾】";
+const rankingSpecificReason =
+  `${"順位固有の比較根拠を確認する。".repeat(9)}` +
+  "【ランキング固有理由末尾】";
+const boatSpecificComment =
+  `${"艇固有の評価コメントを全文で確認する。".repeat(10)}` +
+  "【艇コメント末尾保持】";
 
 global.window = global;
 global.window.addEventListener = (
@@ -86,6 +106,8 @@ global.ChappyPracticalSelection = {
         category: "独立展開",
         selectionTier: "展開追加",
         priorityScore: 72,
+        comment:
+          longScenarioReason,
         roleLabels: [{
           boatNo: 3,
           position: 1,
@@ -109,7 +131,7 @@ global.ChappyPracticalSelection = {
           ticketSelected: true,
           relation: "structured",
           reason:
-            "4号艇の2着残しが構造化展開と一致",
+            candidateReason,
           roleLabels: [{
             boatNo: 4,
             position: 2,
@@ -200,13 +222,51 @@ global.ChappyPracticalSelection = {
 require("../js/render");
 
 global.renderAll({
+  boatEvaluation: {
+    honmei: {
+      no: 1,
+      name: "全文確認艇",
+      role: "逃げ軸",
+      buffs: [
+        "コース評価",
+        "展示気配"
+      ],
+      comment:
+        boatSpecificComment
+    }
+  },
+  mainSheet: {
+    tickets: [{
+      ticket: "1-2-3",
+      category: "本線",
+      scenarioSummary:
+        longScenarioReason
+    }]
+  },
+  manshuSheet: {
+    tickets: [{
+      ticket: "4-5-6",
+      category: "万舟",
+      reason:
+        manshuSpecificReason
+    }]
+  },
+  aiTicketList: [{
+    ticket: "5-4-3",
+    category: "穴候補"
+  }],
+  ticketRanks: [{
+    ticket: "5-4-3",
+    comment:
+      rankingSpecificReason
+  }],
   simpleEvaluation: {
     mode: "main",
     label: "本線信頼度",
     level: "高",
     score: 82,
     mainComment:
-      "展開とコースを中心に比較"
+      emojiBoundaryComment
   }
 });
 
@@ -303,6 +363,41 @@ assert.match(
 assert.match(
   html,
   /data-calibration-retrospective="false"/
+);
+assert.match(
+  html,
+  /【長文末尾保持】/,
+  "90文字を超える展開説明を末尾まで表示する"
+);
+assert.match(
+  html,
+  /🛟絵文字の後ろも全文で確認する。【絵文字末尾保持】/,
+  "UTF-16境界の絵文字と後続文を分断しない"
+);
+assert.doesNotMatch(
+  html,
+  /\uFFFD/,
+  "説明文へ壊れた代替文字を混入させない"
+);
+assert.match(
+  html,
+  /【候補理由末尾保持】/,
+  "候補比較理由を120文字で切らない"
+);
+assert.match(
+  html,
+  /【万舟固有理由末尾】/,
+  "万舟行の固有理由を汎用文へ置き換えず全文表示する"
+);
+assert.match(
+  html,
+  /【ランキング固有理由末尾】/,
+  "ランキング行は順位データの固有理由を優先して全文表示する"
+);
+assert.match(
+  html,
+  /【艇コメント末尾保持】/,
+  "役割・buffと併存する艇コメントも末尾まで表示する"
 );
 
 assert.equal(
@@ -478,6 +573,28 @@ assert.equal(
   calibrationInputs.at(-1).mode,
   "chaos",
   "波乱入口の校正を本線信頼度へ混ぜない"
+);
+
+const styleCss = fs.readFileSync(
+  path.join(
+    __dirname,
+    "..",
+    "style.css"
+  ),
+  "utf8"
+);
+const raceTrendReasonRule =
+  styleCss.match(
+    /\.official-race-trend-reason\s*\{([\s\S]*?)\}/
+  );
+assert.ok(
+  raceTrendReasonRule,
+  "公式レース傾向の根拠表示CSSが存在する"
+);
+assert.doesNotMatch(
+  raceTrendReasonRule[1],
+  /-webkit-line-clamp|overflow:\s*hidden|display:\s*-webkit-box/,
+  "公式レース傾向の根拠をCSSで途中まで隠さない"
 );
 
 console.log(

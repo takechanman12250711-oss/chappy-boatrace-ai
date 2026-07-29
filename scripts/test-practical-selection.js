@@ -1095,6 +1095,61 @@ const capped =
     })
   );
 assert.equal(
+  capped
+    .verificationEvidence
+    .theorySchemaVersion,
+  1,
+  "理論実績は事前の構造化支持だけを新スキーマで保存する"
+);
+assert.equal(
+  capped
+    .verificationEvidence
+    .theorySetFingerprint,
+  "structured-ticket-support-v1:flow+holdPickup"
+);
+assert.ok(
+  capped
+    .verificationEvidence
+    .tickets
+    .every(ticket =>
+      ticket.theoryClaims
+        .some(
+          claim =>
+            claim.theoryKey ===
+              "flow" &&
+            claim.formal ===
+              true
+        )
+    ),
+  "展開枝が購入を支持した買い目だけへ展開理論を事前帰属する"
+);
+assert.ok(
+  capped
+    .verificationEvidence
+    .tickets
+    .filter(ticket =>
+      ticket.roleClaims
+        .some(claim =>
+          [
+            "hold",
+            "pickup",
+            "continuation"
+          ].includes(
+            claim.role
+          )
+        )
+    )
+    .every(ticket =>
+      ticket.theoryClaims
+        .some(
+          claim =>
+            claim.theoryKey ===
+              "holdPickup"
+        )
+    ),
+  "残し・拾いの構造化役割がある買い目だけへ同理論を事前帰属する"
+);
+assert.equal(
   capped.tickets.length,
   8,
   "同じ別頭のpartner総当たりで点数を増やさない"

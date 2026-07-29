@@ -12,6 +12,7 @@
   const I = window.ChappyImprovementSuggestions;
   const V = window.ChappyPredictionVerification;
   const R = window.ChappyVerificationReadiness;
+  const C = window.ChappyCollectionHealth;
   const OFFICIAL_SYNC_CONCURRENCY = 3;
   const NEW_METHOD_MINIMUM_COUNT = 30;
   const CURRENT_CALIBRATION_GENERATION = {
@@ -79,13 +80,19 @@
   };
   let automaticStatsLoaded = false;
   let automaticStatsError = "";
+  let improvementReview =
+    null;
+  let improvementReviewLoaded =
+    false;
+  let improvementReviewError =
+    "";
 
   async function loadAutomaticStats() {
     if (!A?.normalizeIndex) return automaticStats;
 
     try {
       const response = await fetch(
-        "data/predictions/index.json?v=20260727-fast1",
+        "data/predictions/index.json?v=20260729-review2",
         { cache: "no-cache" }
       );
 
@@ -102,6 +109,40 @@
     }
 
     return automaticStats;
+  }
+
+  async function loadImprovementReview() {
+    try {
+      const response = await fetch(
+        "data/predictions/improvement-review.json?v=20260729-review2",
+        { cache: "no-cache" }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+      }
+
+      improvementReview =
+        await response.json();
+      improvementReviewLoaded =
+        true;
+      improvementReviewError =
+        "";
+    } catch (error) {
+      improvementReviewError =
+        String(
+          error?.message ||
+          error
+        );
+      console.error(
+        "100R精度検証の取得に失敗",
+        error
+      );
+    }
+
+    return improvementReview;
   }
     function normalizeDateKey(value) {
     return String(value || "")
@@ -1229,6 +1270,20 @@
           automaticScore: Number(
             item.prediction?.automaticSelection?.score || 0
           ),
+          selectionCohort:
+            String(
+              item.prediction
+                ?.selectionCohort ||
+              "legacy"
+            ),
+          selectionActiveCohort:
+            item.prediction
+              ?.selectionActiveCohort ===
+              true,
+          thresholdComparable:
+            item.prediction
+              ?.thresholdComparable ===
+              true,
 
           honmeiFinish:
             settled
@@ -1455,9 +1510,20 @@
       practicalCount: summary?.practicalCount || 0
     };
   };
-  const automaticSettledRows = settledRows.filter(item =>
-    ["自動選定", "シャドー予想"].includes(item.predictionSource)
-  );
+  const automaticSettledRows =
+    settledRows.filter(
+      item =>
+        [
+          "自動選定",
+          "シャドー予想"
+        ].includes(
+          item.predictionSource
+        ) &&
+        item
+          .selectionActiveCohort &&
+        item
+          .thresholdComparable
+    );
   const verificationReadiness = R?.getSampleStage
     ? R.getSampleStage(automaticSettledRows.length)
     : {
@@ -1663,6 +1729,363 @@
       <dd>${E(value)}</dd>
     </div>
   `;
+  const latestAccuracyReview =
+    Array.isArray(
+      improvementReview?.reports
+    )
+      ? improvementReview
+          .reports
+          .at(-1) ||
+        null
+      : null;
+  const collectionReport =
+    C?.buildReport
+      ? C.buildReport(
+          automaticStats
+        )
+      : null;
+  const latestV2Health =
+    collectionReport?.v2 || null;
+  const latestV2ReasonText =
+    Array.isArray(
+      latestV2Health
+        ?.missingReasons
+    )
+      ? latestV2Health
+          .missingReasons
+          .slice(0, 3)
+          .map(reason =>
+            `${reason.label || reason.code} ${Number(reason.count || 0)}R`
+          )
+          .join(" ／ ")
+      : "";
+  const reviewProgress =
+    improvementReview
+      ?.progress || {};
+  const reviewCurrentCount =
+    Number(
+      reviewProgress
+        .currentWindowCount ||
+      0
+    );
+  const reviewTarget =
+    Number(
+      improvementReview
+        ?.reviewSize ||
+      100
+    );
+  const reviewExclusionLabels = {
+    notSettled:
+      "結果待ち",
+    legacySchema:
+      "旧方式",
+    retrospectiveReference:
+      "締切後の振り返り",
+    officialResultLeakage:
+      "結果参照あり",
+    calibrationUnavailable:
+      "校正未完了",
+    unsupportedCohort:
+      "対象外の収集世代",
+    incompleteInput:
+      "入力未完成",
+    preDeadlineUnconfirmed:
+      "締切前を未確認",
+    missingRaceKey:
+      "レース識別不足",
+    missingGeneration:
+      "予想世代不足",
+    missingSelectorCohort:
+      "選定世代不足",
+    missingTheorySetFingerprint:
+      "理論世代不足",
+    missingMode:
+      "検証種別不足",
+    unsupportedEvaluator:
+      "対象外の評価器",
+    incompleteShadowV2:
+      "V2判定未完成",
+    scenarioNotComparable:
+      "展開を比較不能",
+    missingSelectionScore:
+      "選定点不足",
+    invalidSelectionDecision:
+      "選定判定不正",
+    duplicateRace:
+      "同一レース重複",
+    nonActiveGeneration:
+      "現行と異なる世代"
+  };
+  const reviewExclusionRows =
+    Object.entries(
+      improvementReview
+        ?.source
+        ?.excluded || {}
+    )
+      .map(([code, count]) => ({
+        code,
+        count:
+          Number(count || 0)
+      }))
+      .filter(item =>
+        item.count > 0
+      )
+      .sort((left, right) =>
+        right.count - left.count
+      )
+      .slice(0, 5);
+  const reviewExcludedReasonText =
+    reviewExclusionRows
+      .map(item =>
+        `${reviewExclusionLabels[item.code] || item.code} ${item.count}R`
+      )
+      .join(" ／ ");
+  const reviewExcludedExampleText =
+    reviewExclusionRows
+      .map(item => {
+        const examples =
+          improvementReview
+            ?.source
+            ?.excludedExamples
+            ?.[item.code];
+        const raceKeys =
+          (
+            Array.isArray(examples)
+              ? examples
+              : []
+          )
+            .map(value =>
+              String(value || "")
+                .trim()
+            )
+            .filter(Boolean)
+            .slice(0, 3);
+
+        return raceKeys.length
+          ? `${
+              reviewExclusionLabels[
+                item.code
+              ] ||
+              item.code
+            }：${raceKeys.join("、")}`
+          : "";
+      })
+      .filter(Boolean)
+      .join(" ／ ");
+  const reviewRoleRows =
+    latestAccuracyReview
+      ?.cumulative
+      ?.selectedPerformance
+      ?.roleSupportPerformance ||
+    [];
+  const reviewTheorySupport =
+    latestAccuracyReview
+      ?.cumulative
+      ?.selectedPerformance
+      ?.theorySupportPerformance ||
+    null;
+  const reviewTheoryStages =
+    latestAccuracyReview
+      ?.cumulative
+      ?.selectedPerformance
+      ?.theoryStages ||
+    [];
+  const reviewPerformance =
+    latestAccuracyReview
+      ?.cumulative
+      ?.selectedPerformance ||
+    null;
+  const reviewProposals =
+    Array.isArray(
+      latestAccuracyReview
+        ?.proposals
+    )
+      ? latestAccuracyReview
+          .proposals
+      : [];
+  const renderReviewRoleRows = () =>
+    reviewRoleRows.length
+      ? reviewRoleRows
+          .map(row => `
+            <article class="result-data-card">
+              <header>
+                <h4>${E(row.label || row.key || "役割")}</h4>
+                <span>${Number(row.raceCount || 0)}R</span>
+              </header>
+              <dl class="result-data-facts">
+                ${renderFact(
+                  "支持買い目",
+                  `${Number(row.hitTickets || 0)}/${Number(row.ticketCount || 0)}点`
+                )}
+                ${renderFact(
+                  "回収率",
+                  `${Number(row.recoveryRate || 0)}%`
+                )}
+              </dl>
+            </article>
+          `)
+          .join("")
+      : renderEmpty(
+          "最初の100R到達後に、役割が支持した買い目群の実績を表示します"
+        );
+  const renderReviewProposals = () =>
+    reviewProposals.length
+      ? reviewProposals
+          .map(item => `
+            <article class="result-data-card">
+              <header>
+                <h4>${E(item.target || item.category || "検討提案")}</h4>
+                <span>承認待ち・未反映</span>
+              </header>
+              <p><b>根拠：</b>${E(item.evidence || item.why || "")}</p>
+              <p><b>何を：</b>${E(item.what || "")}</p>
+              <p><b>なぜ：</b>${E(item.why || "")}</p>
+              <p><b>方法：</b>${E(item.how || "")}</p>
+              <p><b>影響：</b>${E(item.impact || "")}</p>
+              <p class="result-panel-note">
+                🔒 自動反映なし。あっくんの明示承認後も、別PR・別世代でのみ実装します。
+              </p>
+            </article>
+          `)
+          .join("")
+      : renderEmpty(
+          latestAccuracyReview
+            ? "この100R区間では、変更を提案する根拠がありません"
+            : "100R到達までは変更提案を作りません"
+        );
+  const reviewDiagnosticsHtml = `
+    <p class="result-panel-note">
+      旧形式・未完成入力・締切後・結果を参照した記録・検証用の非採用予想は正式な100Rへ混ぜません。
+    </p>
+    ${
+      reviewExcludedReasonText
+        ? `
+            <p class="result-panel-note">
+              正式100Rへ入らない主因：${E(reviewExcludedReasonText)}
+            </p>
+          `
+        : ""
+    }
+    ${
+      reviewExcludedExampleText
+        ? `
+            <p class="result-panel-note">
+              除外の代表例：${E(reviewExcludedExampleText)}
+            </p>
+          `
+        : ""
+    }
+    ${
+      latestAccuracyReview
+        ? `
+            <p class="result-panel-note">
+              次の正式レビューまで：${reviewCurrentCount}/${reviewTarget}R
+            </p>
+          `
+        : ""
+    }
+    ${
+      latestV2Health
+        ? `
+            <p class="result-panel-note">
+              直近収集のV2判定可能：
+              ${Number(latestV2Health.readyCount || 0)}/${Number(latestV2Health.evaluatedCount || 0)}R
+              ${
+                latestV2ReasonText
+                  ? `（未完成の主因：${E(latestV2ReasonText)}）`
+                  : ""
+              }
+            </p>
+          `
+        : ""
+    }
+  `;
+  const improvementReviewHtml =
+    latestAccuracyReview &&
+    reviewPerformance
+      ? `
+          <div class="result-context-strip">
+            <span>
+              同一世代・自動厳選・完成入力 ${Number(latestAccuracyReview.milestone || 0)}R
+            </span>
+            <span>
+              的中${Number(reviewPerformance.practicalHits || 0)}/${Number(reviewPerformance.practicalCount || 0)}R
+            </span>
+            <span>
+              回収率${Number(reviewPerformance.recoveryRate || 0)}%
+            </span>
+          </div>
+          <section class="result-subsection">
+            <header>
+              <h4>役割が支持した買い目群</h4>
+              <p>
+                行同士は重複するため、合算して全体収支にはしません。
+              </p>
+            </header>
+            <div class="result-data-grid">
+              ${renderReviewRoleRows()}
+            </div>
+          </section>
+          <section class="result-subsection">
+            <header>
+              <h4>理論の事後検証</h4>
+              <p>
+                結果後の推測はせず、予想時点の帰属が保存された理論だけを集計します。
+              </p>
+            </header>
+            ${
+              reviewTheorySupport?.status === "available"
+                ? `<div class="result-data-grid">${
+                    (reviewTheorySupport.rows || []).map(row => `
+                      <article class="result-data-card">
+                        <header>
+                          <h4>${E(row.label || row.key || "理論")}</h4>
+                          <span>${Number(row.raceCount || 0)}R</span>
+                        </header>
+                        <dl class="result-data-facts">
+                          ${renderFact("支持買い目", `${Number(row.hitTickets || 0)}/${Number(row.ticketCount || 0)}点`)}
+                          ${renderFact("回収率", `${Number(row.recoveryRate || 0)}%`)}
+                        </dl>
+                      </article>
+                    `).join("")
+                  }</div>`
+                : renderEmpty(
+                    "新しい事前帰属データを蓄積中です。旧履歴を理論実績へ遡及補完しません"
+                  )
+            }
+            ${
+              reviewTheoryStages.length
+                ? `<p class="result-panel-note">要確認段階：${
+                    reviewTheoryStages
+                      .map(row => `${E(row.label)} ${Number(row.count || 0)}件`)
+                      .join(" ／ ")
+                  }</p>`
+                : ""
+            }
+          </section>
+          <section class="result-subsection">
+            <header>
+              <h4>承認待ちの提案</h4>
+              <p>
+                レポートは提案だけを生成し、予想基準・重み・買い目へ自動反映しません。
+              </p>
+            </header>
+            <div class="result-data-grid">
+              ${renderReviewProposals()}
+            </div>
+          </section>
+          ${reviewDiagnosticsHtml}
+        `
+      : `
+          ${renderEmpty(
+            improvementReviewLoaded
+              ? `同一世代・自動厳選・完成入力を蓄積中：${reviewCurrentCount}/${reviewTarget}R`
+              : improvementReviewError
+                ? "100R精度検証を読み込めませんでした"
+                : "100R精度検証を読み込んでいます"
+          )}
+          ${reviewDiagnosticsHtml}
+        `;
   const renderMetricCard = ({
     icon,
     label,
@@ -2232,7 +2655,7 @@
     automaticStatsLoaded
       ? `自動履歴：採用${automaticSelectedRuns}回・シャドー${automaticShadowRuns}R・見送り${automaticSkippedRuns}回`
       : automaticStatsError
-        ? `自動履歴を取得できません：${E(automaticStatsError)}`
+        ? `自動履歴を取得できません：${automaticStatsError}`
         : "自動履歴を読み込んでいます";
 
   U.setHtml("statsArea", `
@@ -2246,6 +2669,18 @@
             <p class="result-kicker">RESULT</p>
             <h3 id="resultOverviewTitle">成績の要点</h3>
             <p>${E(sampleMessage)}</p>
+            <p
+              class="result-panel-note"
+              data-stats-load-state="${
+                automaticStatsLoaded
+                  ? "ready"
+                  : automaticStatsError
+                    ? "error"
+                    : "loading"
+              }"
+            >
+              ${E(dataLoadMessage)}
+            </p>
           </div>
           <span class="result-sample-badge ${
             realSettledRows.length >= 30
@@ -2333,6 +2768,41 @@
         </div>
       </details>
 
+      <details
+        class="result-accordion"
+        data-result-panel="accuracy-review"
+        ${panelOpen(
+          "accuracy-review"
+        )}
+      >
+        <summary>
+          <span
+            class="result-accordion-icon"
+            aria-hidden="true"
+          >
+            🔬
+          </span>
+          <span class="result-accordion-title">
+            <span class="result-accordion-name">
+              100R精度検証
+            </span>
+            <small>
+              実績・回収率・役割・承認待ち提案
+            </small>
+          </span>
+          <span class="result-accordion-meta">
+            ${
+              latestAccuracyReview
+                ? `累計${Number(latestAccuracyReview.milestone || 0)}R・次${reviewCurrentCount}/${reviewTarget}R`
+                : `${reviewCurrentCount}/${reviewTarget}R`
+            }
+          </span>
+        </summary>
+        <div class="result-accordion-body">
+          ${improvementReviewHtml}
+        </div>
+      </details>
+
       <section class="result-panel" aria-labelledby="recentResultTitle">
         <header class="result-panel-head">
           <div>
@@ -2364,9 +2834,10 @@
       );
       renderStats();
 
-      const [, officialResult] =
+      const [, , officialResult] =
         await Promise.allSettled([
           loadAutomaticStats(),
+          loadImprovementReview(),
           syncPendingOfficialResults()
         ]);
 
@@ -2397,6 +2868,13 @@
   }
 
   function setupLazyStats() {
+    if (
+      typeof document
+        ?.getElementById !==
+        "function"
+    ) {
+      return;
+    }
     const section =
       document.getElementById(
         "resultSection"
@@ -2475,12 +2953,22 @@ window.ChappyStats = {
   initStatsEvents,
   syncPendingOfficialResults,
   loadAutomaticStats,
-  buildObservedRateDisplay
+  loadImprovementReview,
+  buildObservedRateDisplay,
+  setupLazyStats
 };
 
-  document.addEventListener(
-    "DOMContentLoaded",
-    setupLazyStats
-  );
+  if (
+    document.readyState ===
+    "loading"
+  ) {
+    document.addEventListener(
+      "DOMContentLoaded",
+      setupLazyStats,
+      { once: true }
+    );
+  } else {
+    setupLazyStats();
+  }
 
 })();

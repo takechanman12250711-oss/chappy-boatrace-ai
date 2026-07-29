@@ -18,6 +18,34 @@
   function buildReport(data) {
     const runs = Array.isArray(data?.runs) ? data.runs : [];
     const latestTargets = new Map();
+    const latestV2 =
+      runs
+        .map(run => ({
+          checkedAt:
+            String(
+              run
+                ?.collectionHealth
+                ?.checkedAt ||
+              run?.checkedAt ||
+              ""
+            ),
+          value:
+            run
+              ?.collectionHealth
+              ?.v2 ||
+            null
+        }))
+        .filter(row =>
+          row.value
+        )
+        .sort(
+          (left, right) =>
+            left.checkedAt.localeCompare(
+              right.checkedAt
+            )
+        )
+        .at(-1) ||
+      null;
 
     runs.forEach(run => {
       const health = run?.collectionHealth;
@@ -111,6 +139,14 @@
       resultWaitingCount: Math.max(0, predictionKeys.size - settledKeys.size),
       lastCheckedAt,
       healthy: monitored.length > 0 && missing.length === 0,
+      v2:
+        latestV2
+          ? {
+              ...latestV2.value,
+              checkedAt:
+                latestV2.checkedAt
+            }
+          : null,
       venues: [...venues.values()].sort((a, b) =>
         b.missingCount - a.missingCount || b.targetCount - a.targetCount || a.jcd.localeCompare(b.jcd)
       )

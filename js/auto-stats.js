@@ -14,6 +14,168 @@
     return boats.length >= 3 ? boats.slice(0, 3).join("-") : "";
   }
 
+  function selectionGenerationKey(
+    item
+  ) {
+    const evidence =
+      item?.prediction
+        ?.verificationEvidence
+        ||
+      item?.verificationEvidence
+        ||
+      {};
+    const generation =
+      evidence?.generation || {};
+    const reference =
+      item?.shadowV2Reference ||
+      {};
+    const values = [
+      generation
+        ?.logicFingerprint,
+      generation
+        ?.confidenceDefinitionVersion,
+      generation
+        ?.ticketPolicyVersion,
+      Number(
+        evidence
+          ?.roleSchemaVersion || 0
+      ) >= 1
+        ? Number(
+            evidence
+              .roleSchemaVersion
+          )
+        : "",
+      Number(
+        evidence
+          ?.theorySchemaVersion || 0
+      ) >= 1
+        ? Number(
+            evidence
+              .theorySchemaVersion
+          )
+        : "",
+      evidence
+        ?.theorySetFingerprint,
+      item?.selection?.evaluator,
+      reference.evaluatorVersion,
+      reference.cohortKey,
+      reference.logicFingerprint,
+      reference.theoryInputVersion,
+      Number.isFinite(
+        Number(
+          item
+            ?.selection
+            ?.threshold
+        )
+      )
+        ? Number(
+            item
+              .selection
+              .threshold
+          )
+        : ""
+    ].map(value =>
+      String(value || "").trim()
+    );
+
+    return values.every(Boolean)
+      ? JSON.stringify(values)
+      : "";
+  }
+
+  function classifySelectionCohort(
+    item,
+    activeGenerationKey = ""
+  ) {
+    const selection =
+      item?.selection || {};
+    const generationKey =
+      selectionGenerationKey(item);
+    const hasGeneration =
+      Boolean(generationKey);
+
+    if (
+      selection.evaluator !==
+        "shadow-selection-v2"
+    ) {
+      return {
+        key: "legacy",
+        generationKey,
+        active: false,
+        thresholdComparable:
+          false
+      };
+    }
+
+    if (!hasGeneration) {
+      return {
+        key:
+          "v2_missing_generation",
+        generationKey,
+        active: false,
+        thresholdComparable:
+          false
+      };
+    }
+
+    if (!activeGenerationKey) {
+      return {
+        key:
+          "v2_no_active_generation",
+        generationKey,
+        active: false,
+        thresholdComparable:
+          false
+      };
+    }
+
+    if (
+      generationKey !==
+        activeGenerationKey
+    ) {
+      return {
+        key:
+          "v2_other_generation",
+        generationKey,
+        active: false,
+        thresholdComparable:
+          false
+      };
+    }
+
+    if (
+      selection.ready !== true ||
+      selection.status !==
+        "ready" ||
+      !Number.isFinite(
+        Number(selection.score)
+      )
+    ) {
+      return {
+        key: "v2_not_ready",
+        generationKey,
+        active: true,
+        thresholdComparable:
+          false
+      };
+    }
+
+    const score =
+      Number(selection.score);
+    return {
+      key:
+        score >= 70
+          ? "v2_70_plus"
+          : score >= 60
+            ? "v2_60_69"
+            : "v2_ready_below_60",
+      generationKey,
+      active: true,
+      thresholdComparable:
+        true
+    };
+  }
+
   function normalizeIndex(data) {
     const predictions = [];
     const results = [];
@@ -22,10 +184,59 @@
         .map(item => String(item?.raceKey || ""))
         .filter(Boolean)
     );
+    const allIndexed = [
+      ...(Array.isArray(
+        data?.predictions
+      )
+        ? data.predictions
+        : []),
+      ...(Array.isArray(
+        data
+          ?.verificationPredictions
+      )
+        ? data
+            .verificationPredictions
+        : [])
+    ];
+    const activeGenerationKey =
+      allIndexed
+        .filter(
+          item =>
+            item?.selection
+              ?.evaluator ===
+              "shadow-selection-v2"
+        )
+        .map(item => ({
+          item,
+          key:
+            selectionGenerationKey(
+              item
+            )
+        }))
+        .filter(row =>
+          row.key
+        )
+        .sort((a, b) =>
+          String(
+            b.item?.selectedAt ||
+            ""
+          ).localeCompare(
+            String(
+              a.item?.selectedAt ||
+              ""
+            )
+          )
+        )[0]?.key ||
+      "";
 
     function append(item, predictionSource) {
       const raceKey = String(item?.raceKey || "");
       if (!raceKey) return;
+      const cohort =
+        classifySelectionCohort(
+          item,
+          activeGenerationKey
+        );
 
       predictions.push({
         ...(item?.prediction || {}),
@@ -38,8 +249,16 @@
         automaticSelection: item?.selection || null,
         verificationMode: item?.verificationMode ||
           (predictionSource === "automatic" ? "selected" : "shadow"),
-        scoreBand: item?.scoreBand ||
-          (Number(item?.selection?.score || 0) >= 70 ? "70_plus" : "under_70"),
+        scoreBand: cohort.key,
+        selectionCohort:
+          cohort.key,
+        selectionGenerationKey:
+          cohort.generationKey,
+        selectionActiveCohort:
+          cohort.active,
+        thresholdComparable:
+          cohort
+            .thresholdComparable,
         predictionSource
       });
 
@@ -63,8 +282,16 @@
           automaticResult: true,
           verificationMode: item?.verificationMode ||
             (predictionSource === "automatic" ? "selected" : "shadow"),
-          scoreBand: item?.scoreBand ||
-            (Number(item?.selection?.score || 0) >= 70 ? "70_plus" : "under_70"),
+          scoreBand: cohort.key,
+          selectionCohort:
+            cohort.key,
+          selectionGenerationKey:
+            cohort.generationKey,
+          selectionActiveCohort:
+            cohort.active,
+          thresholdComparable:
+            cohort
+              .thresholdComparable,
           automaticVerification:
             item?.result?.verification || item?.result || null
         });
@@ -92,6 +319,7 @@
       results,
       runs,
       shadowV2Predictions,
+      activeGenerationKey,
       selectedCount: selectedRaceKeys.size,
       shadowCount: predictions.filter(
         item => item.predictionSource === "automatic_shadow"
@@ -241,6 +469,8 @@
   return {
     SHADOW_V2_MILESTONES,
     normalizeTicket,
+    selectionGenerationKey,
+    classifySelectionCohort,
     normalizeIndex,
     buildResultHeadline,
     buildShadowV2Progress

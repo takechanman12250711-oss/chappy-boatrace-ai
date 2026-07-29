@@ -13,11 +13,12 @@ const insufficient = buildImprovementSuggestions({
 
 assert.equal(insufficient.sampleReady, false);
 assert.equal(insufficient.suggestions.length, 0);
-assert.equal(insufficient.axisStatus.venue, "蓄積中 2/30R");
+assert.equal(insufficient.axisStatus.venue, "蓄積中 2/100R");
 
 const result = buildImprovementSuggestions({
-  settledCount: 30,
-  practicalCount: 30,
+  reviewCount: 100,
+  settledCount: 100,
+  practicalCount: 100,
   sampleLabel: "シャドーを含む検証買い目",
   venueGroups: [
     { label: "常滑", practicalCount: 12, practicalHits: 2 },
@@ -40,6 +41,22 @@ assert.ok(result.suggestions.some(item => item.category === "場別" && item.tar
 assert.ok(result.suggestions.some(item => item.category === "展開別" && item.target === "2差し本線"));
 assert.ok(result.suggestions.some(item => item.category === "外れ方別" && item.target === "相手抜け"));
 assert.ok(result.suggestions.every(item => item.approvalRequired === true));
+assert.ok(
+  result.suggestions.every(
+    item =>
+      item.action ===
+        "proposal_only" &&
+      item.autoApply ===
+        false &&
+      item.applicationLock ===
+        true &&
+      item.decision ===
+        "pending" &&
+      item.applied ===
+        false
+  ),
+  "改善候補は承認待ちの提案専用データとして返す"
+);
 assert.ok(result.suggestions.every(item => item.what && item.why && item.how && item.impact));
 assert.ok(
   result.suggestions.every(item =>
@@ -48,5 +65,50 @@ assert.ok(
   "シャドー検証を実戦成績と誤表示しない"
 );
 assert.ok(!result.suggestions.some(item => item.target === "大村"));
+
+const noRecoveryProposal =
+  buildImprovementSuggestions({
+    reviewCount: 100,
+    settledCount: 100,
+    selectedCount: 100,
+    practicalCount: 29,
+    recoveryRate: 70,
+    sampleLabel: "今回の100R・"
+  });
+assert.equal(
+  noRecoveryProposal
+    .suggestions
+    .some(
+      item =>
+        item.category ===
+        "回収率"
+    ),
+  false,
+  "購入あり30R未満では回収率提案を作らない"
+);
+
+const recoveryProposal =
+  buildImprovementSuggestions({
+    reviewCount: 100,
+    settledCount: 100,
+    selectedCount: 100,
+    practicalCount: 30,
+    recoveryRate: 70,
+    sampleLabel: "今回の100R・"
+  })
+    .suggestions
+    .find(
+      item =>
+        item.category ===
+        "回収率"
+    );
+assert.ok(
+  recoveryProposal
+);
+assert.match(
+  recoveryProposal.evidence,
+  /購入あり30R/,
+  "回収率の根拠母数は購入ありレース数を表示する"
+);
 
 console.log("改善候補生成テスト: 合格");

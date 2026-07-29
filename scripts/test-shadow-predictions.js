@@ -24,6 +24,7 @@ const {
   buildActiveV2Comparison,
   applySelectedRaceKey,
   buildStoredPrediction,
+  detachShadowV2,
   upsertByRaceKey,
   saveRun
 } = require("./collect-predictions");
@@ -355,6 +356,86 @@ assert.deepEqual(
   highShadowRecord.prediction.practicalTickets,
   practicalTickets,
   "V2追加後も現行の実戦買い目をそのまま保存する"
+);
+const detachedShadowRecord =
+  detachShadowV2({
+    ...highShadowRecord,
+    shadowV2: {
+      ...highShadowRecord.shadowV2,
+      recordKey:
+        "shadow-record-a",
+      cohortKey:
+        "shadow-cohort-a",
+      capturedAt:
+        legacyItem.capturedAt,
+      evaluatorVersion:
+        "shadow-selection-v2.0.0",
+      versions: {
+        logicFingerprint:
+          "shadow-logic-a",
+        theoryInput:
+          "theory-input-v1"
+      },
+      evaluation: {
+        totalScore: 100
+      }
+    }
+  });
+assert.equal(
+  detachedShadowRecord.shadowV2,
+  undefined,
+  "検証行には重いV2原本を重複保存しない"
+);
+assert.deepEqual(
+  detachedShadowRecord
+    .shadowV2Reference,
+  {
+    recordKey:
+      "shadow-record-a",
+    cohortKey:
+      "shadow-cohort-a",
+    capturedAt:
+      legacyItem.capturedAt,
+    evaluatorVersion:
+      "shadow-selection-v2.0.0",
+    logicFingerprint:
+      "shadow-logic-a",
+    theoryInputVersion:
+      "theory-input-v1",
+    totalScore: 100
+  },
+  "100R集計でV2原本を厳密照合できる参照を保持する"
+);
+
+const staleEvidenceRecord =
+  compactStoredVerification({
+    raceKey:
+      "20260722-08-9",
+    prediction: {
+      verificationEvidence: {
+        roleSchemaVersion: 1,
+        theorySchemaVersion: 0,
+        theorySetFingerprint:
+          "stale"
+      },
+      practicalSelection: {
+        verificationEvidence: {
+          roleSchemaVersion: 1,
+          theorySchemaVersion: 1,
+          theorySetFingerprint:
+            "current"
+        }
+      },
+      practicalTickets: []
+    }
+  });
+assert.equal(
+  staleEvidenceRecord
+    .prediction
+    .verificationEvidence
+    .theorySetFingerprint,
+  "current",
+  "保存時は実戦選定が生成した最新の構造化根拠を優先する"
 );
 
 const thresholdItem = {
@@ -849,7 +930,43 @@ const collectionHealth = buildCollectionHealth(
     { jcd: "19", raceNo: 2, status: "insufficient_data", error: "データ不足" },
     { jcd: "24", raceNo: 3, status: "fetch_failed", error: "HTTP 500" }
   ],
-  [{ raceKey: "20260722-08-1" }]
+  [{
+    raceKey: "20260722-08-1",
+    selection: {
+      ready: true,
+      status: "ready",
+      qualified: true,
+      selected: true
+    }
+  }, {
+    raceKey: "20260722-08-1",
+    selection: {
+      ready: false,
+      status: "incomplete",
+      qualified: false,
+      selected: false,
+      eligibilityReasonCodes: [
+        "component.tide.provisional"
+      ]
+    },
+    shadowV2: {
+      missingReasonCodes: [
+        "data.tide"
+      ],
+      missingReasons: [{
+        code: "data.tide",
+        label: "潮汐場の現在潮位・潮流"
+      }],
+      eligibilityReasonCodes: [
+        "component.tide.provisional"
+      ],
+      eligibilityReasons: [{
+        code:
+          "component.tide.provisional",
+        label: "当地・水面が暫定"
+      }]
+    }
+  }]
 );
 
 assert.equal(collectionHealth.targetCount, 3);
@@ -860,6 +977,25 @@ assert.equal(collectionHealth.complete, false);
 assert.equal(collectionHealth.targets[0].status, "saved");
 assert.equal(collectionHealth.targets[1].status, "insufficient_data");
 assert.equal(collectionHealth.targets[2].status, "fetch_failed");
+assert.equal(collectionHealth.schemaVersion, 3);
+assert.equal(collectionHealth.v2.evaluatedCount, 2);
+assert.equal(collectionHealth.v2.readyCount, 1);
+assert.equal(collectionHealth.v2.qualifiedCount, 1);
+assert.equal(collectionHealth.v2.selectedCount, 1);
+assert.equal(collectionHealth.v2.notReadyCount, 1);
+assert.deepEqual(
+  collectionHealth.v2.missingReasons,
+  [{
+    code:
+      "component.tide.provisional",
+    label: "当地・水面が暫定",
+    count: 1
+  }, {
+    code: "data.tide",
+    label: "潮汐場の現在潮位・潮流",
+    count: 1
+  }]
+);
 
 assert.deepEqual(insufficientReasons({
   ready: false,
@@ -966,6 +1102,18 @@ const compacted = compactStoredVerification({
     },
     preRaceConditions: { weather: { windSpeed: 3 } },
     verificationEvidence: {
+      roleSchemaVersion: 1,
+      theorySchemaVersion: 1,
+      theorySetFingerprint:
+        "structured-ticket-support-v1:flow+holdPickup",
+      generation: {
+        logicFingerprint:
+          "evaluated-scenarios-v1",
+        confidenceDefinitionVersion:
+          "internal-score-v1",
+        ticketPolicyVersion:
+          "practical-5-7-10-v1"
+      },
       sourceCommit: "abc123",
       aiCoreVersion: "ai-core-test",
       mainScenario: {
@@ -985,7 +1133,34 @@ const compacted = compactStoredVerification({
         roadRaceBoats: [6],
         localExperts: [],
         blockedBoats: [4]
-      }
+      },
+      roleClaims: [{
+        role: "attack",
+        boatNo: 3,
+        expectedPositions: [1]
+      }],
+      theoryClaims: [{
+        theoryKey: "flow",
+        label: "展開",
+        formal: true,
+        source:
+          "pre_race_structured_branch"
+      }],
+      tickets: [{
+        ticket: "3-1-5",
+        roleClaims: [{
+          role: "attack",
+          boatNo: 3,
+          expectedPositions: [1]
+        }],
+        theoryClaims: [{
+          theoryKey: "flow",
+          label: "展開",
+          formal: true,
+          source:
+            "pre_race_structured_branch"
+        }]
+      }]
     }
   }
 });
@@ -1012,6 +1187,22 @@ assert.equal(
 assert.equal(
   compacted.prediction.verificationEvidence.roles.attacker,
   3
+);
+assert.equal(
+  compacted.prediction.verificationEvidence
+    .theorySchemaVersion,
+  1
+);
+assert.equal(
+  compacted.prediction.verificationEvidence
+    .theoryClaims[0].theoryKey,
+  "flow"
+);
+assert.equal(
+  compacted.prediction.verificationEvidence
+    .tickets[0].theoryClaims[0]
+    .source,
+  "pre_race_structured_branch"
 );
 assert.equal(compacted.prediction.manshuSheet, undefined);
 assert.equal(compacted.prediction.ticketRanks, undefined);
