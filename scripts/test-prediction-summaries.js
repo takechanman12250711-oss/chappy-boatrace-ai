@@ -23,6 +23,40 @@ const summary = buildPredictionSummary({
       checkedAt: "2026-07-27T08:00:00.000Z",
       threshold: 70,
       selected: true,
+      collectionHealth: {
+        checkedAt: "2026-07-27T08:00:00.000Z",
+        targetCount: 4,
+        savedCount: 4,
+        insufficientDataCount: 0,
+        failedCount: 0,
+        recoveredCount: 1,
+        finalUncollectedCount: 0,
+        complete: true,
+        targets: Array.from({ length: 100 }, (_, index) => ({
+          raceKey: `ignored-${index}`
+        })),
+        v2: {
+          evaluatedCount: 4,
+          readyCount: 2,
+          qualifiedCount: 1,
+          selectedCount: 1,
+          belowThresholdCount: 1,
+          notReadyCount: 2,
+          readinessRate: 50,
+          missingReasons: [
+            {
+              code: "missing_exhibition_st",
+              label: "展示ST不足",
+              count: 2
+            },
+            {
+              code: "cutoff_missed",
+              label: "締切後取得",
+              count: 1
+            }
+          ]
+        }
+      },
       best: {
         jcd: "12",
         place: "住之江",
@@ -95,6 +129,34 @@ assert.equal(
   59.3
 );
 assert.equal(summary.runs[0].compared.length, 2);
+assert.equal(
+  summary.runs[0].collectionHealth.v2.evaluatedCount,
+  4
+);
+assert.equal(
+  summary.runs[0].collectionHealth.v2.readyCount,
+  2
+);
+assert.deepEqual(
+  summary.runs[0].collectionHealth.v2.missingReasons,
+  [
+    {
+      code: "missing_exhibition_st",
+      label: "展示ST不足",
+      count: 2
+    },
+    {
+      code: "cutoff_missed",
+      label: "締切後取得",
+      count: 1
+    }
+  ]
+);
+assert.equal(
+  summary.runs[0].collectionHealth.targets,
+  undefined,
+  "レース単位の重い監視データは要約へ含めない"
+);
 assert.equal(summary.predictions.length, 1);
 assert.equal(summary.predictions[0].prediction.practicalTickets.length, 10);
 assert.equal(summary.predictions[0].prediction.oversized, undefined);
