@@ -114,6 +114,56 @@
     return [value];
   }
 
+  function resolvePracticalSelection(
+    prediction
+  ) {
+    if (
+      prediction
+        ?.practicalSelection &&
+      typeof prediction
+        .practicalSelection ===
+        "object"
+    ) {
+      return prediction
+        .practicalSelection;
+    }
+
+    const selector =
+      window
+        .ChappyPracticalSelection;
+    const selection =
+      selector &&
+      typeof selector.select ===
+        "function"
+        ? selector.select(
+            prediction
+          )
+        : null;
+
+    if (
+      selection &&
+      typeof selection ===
+        "object"
+    ) {
+      prediction.practicalSelection =
+        selection;
+
+      if (
+        !prediction
+          .verificationEvidence &&
+        selection
+          .verificationEvidence
+      ) {
+        prediction
+          .verificationEvidence =
+          selection
+            .verificationEvidence;
+      }
+    }
+
+    return selection;
+  }
+
   function percent(value) {
     const n = safeNum(value, null);
     if (n === null) return "-";
@@ -237,6 +287,14 @@
     );
     return;
   }
+
+  /*
+    実戦選定は1描画につき1回だけ生成し、
+    AI総合・実戦厳選・保存が同じ監査世代を見る。
+  */
+  resolvePracticalSelection(
+    prediction
+  );
 
   const html = `
     <div
@@ -607,9 +665,7 @@ if (raceInfoArea) {
 
   function renderAiSummary(prediction) {
   const confidence = prediction.confidence || {};
-  const manshuPower = prediction.manshuPower || {};
   const finalAi = prediction.finalAi || {};
-  const indexes = prediction.indexes || {};
 
   const confidenceScore =
     confidence.score ??
@@ -618,35 +674,141 @@ if (raceInfoArea) {
     prediction.confidenceScore ??
     0;
 
-  const manshuScore =
-    manshuPower.score ??
-    manshuPower.value ??
-    manshuPower.percent ??
-    prediction.manshuScore ??
-    0;
-
-  const summary =
-    finalAi.summary ||
-    finalAi.comment ||
-    finalAi.text ||
-    prediction.aiComment ||
-    "AIまとめデータがありません。";
+  const simpleEvaluation =
+    prediction.simpleEvaluation ||
+    finalAi.simpleEvaluation ||
+    (
+      window
+        .ChappyPredictionSimpleEvaluation
+        ?.build?.(prediction)
+    ) ||
+    {
+      mode: "main",
+      label: "本線信頼度",
+      level:
+        levelLabel(
+          confidenceScore,
+          "高",
+          "中",
+          "低"
+        ),
+      score: confidenceScore,
+      mainComment:
+        confidence.reason ||
+        confidence.comment ||
+        ""
+    };
+  const evaluationScore =
+    safeNum(
+      simpleEvaluation.score,
+      confidenceScore
+    );
+  const verificationEvidence =
+    prediction
+      .practicalSelection
+      ?.verificationEvidence ||
+    prediction.verificationEvidence ||
+    {};
+  const isRetrospective =
+    prediction.isRetrospective ===
+      true ||
+    String(
+      prediction.predictionMode ||
+      ""
+    )
+      .trim()
+      .toLowerCase() ===
+      "retrospective_reference";
+  const calibrationView =
+    window
+      .ChappyPredictionCalibration
+      ?.displayFor?.({
+        score: evaluationScore,
+        mode:
+          simpleEvaluation.mode ||
+          "",
+        isRetrospective,
+        predictionMode:
+          prediction.predictionMode ||
+          "",
+        generation:
+          verificationEvidence
+            .generation || {}
+      }) ||
+    {
+      status: "unavailable",
+      sampleSize: 0,
+      message:
+        "実績校正データを取得できません。予想はそのまま確認できます。"
+    };
+  const calibrationGenerationKey =
+    window
+      .ChappyPredictionCalibration
+      ?.generationKey?.(
+        verificationEvidence
+          .generation || {}
+      ) || "";
+  const calibrationMessage =
+    calibrationView.message ||
+    (
+      calibrationView.status ===
+        "collecting"
+        ? `実績校正：新方式データを蓄積中（${safeNum(calibrationView.sampleSize, 0)}/30R）`
+        : "実績校正データを確認できません"
+    );
 
   const body = `
-    <div class="v3-ai-grid">
+    <div class="v3-ai-grid v3-ai-grid-single">
       ${renderAiMeter(
-        "本命信頼度",
-        confidenceScore,
-        levelLabel(confidenceScore, "高信頼", "標準", "不安定"),
-        confidence.reason || confidence.comment || ""
+        `${simpleEvaluation.label || "AI評価"}（内部指数）`,
+        evaluationScore,
+        simpleEvaluation.level ||
+          levelLabel(
+            evaluationScore,
+            "高",
+            "中",
+            "低"
+          ),
+        simpleEvaluation.mainComment ||
+          confidence.reason ||
+          confidence.comment ||
+          "",
+        "点"
       )}
-
-      ${renderAiMeter(
-        "万舟期待度",
-        manshuScore,
-        levelLabel(manshuScore, "波乱注意", "中穴気配", "本線寄り"),
-        manshuPower.reason || manshuPower.comment || ""
-      )}
+    </div>
+    <div
+      class="v3-ai-calibration is-${escapeHtml(
+        calibrationView.status ||
+        "collecting"
+      )}"
+      data-calibration-status="${escapeHtml(
+        calibrationView.status ||
+        "collecting"
+      )}"
+      data-calibration-score="${escapeHtml(
+        evaluationScore
+      )}"
+      data-calibration-generation="${escapeHtml(
+        calibrationGenerationKey
+      )}"
+      data-calibration-mode="${escapeHtml(
+        simpleEvaluation.mode ||
+        ""
+      )}"
+      data-calibration-retrospective="${escapeHtml(
+        isRetrospective
+          ? "true"
+          : "false"
+      )}"
+      data-calibration-prediction-mode="${escapeHtml(
+        prediction.predictionMode ||
+        ""
+      )}"
+    >
+      <strong>${escapeHtml(calibrationMessage)}</strong>
+      <p>
+        内部指数は予想同士を比較する評価点で、的中確率ではありません。
+      </p>
     </div>
     ${
       prediction.dataQuality &&
@@ -760,7 +922,91 @@ if (raceInfoArea) {
   return section("AI総合", body, "📊", "v3-ai-summary");
 }
 
-  function renderAiMeter(label, score, level, comment) {
+  function refreshCalibrationDisplays() {
+    const calibration =
+      window
+        .ChappyPredictionCalibration;
+
+    document
+      .querySelectorAll(
+        ".v3-ai-calibration[data-calibration-score]"
+      )
+      .forEach(element => {
+        const view =
+          calibration?.displayFor
+            ? calibration.displayFor({
+                score:
+                  element.dataset
+                    .calibrationScore,
+                mode:
+                  element.dataset
+                    .calibrationMode,
+                isRetrospective:
+                  element.dataset
+                    .calibrationRetrospective ===
+                  "true",
+                predictionMode:
+                  element.dataset
+                    .calibrationPredictionMode,
+                generationKey:
+                  element.dataset
+                    .calibrationGeneration
+              })
+            : {
+                status:
+                  "unavailable",
+                message:
+                  "実績校正データを取得できません。予想はそのまま確認できます。"
+              };
+        const rawStatus =
+          String(
+            view?.status ||
+            "collecting"
+          );
+        const status =
+          [
+            "collecting",
+            "reference",
+            "trend",
+            "ready",
+            "unavailable"
+          ].includes(rawStatus)
+            ? rawStatus
+            : "unavailable";
+        const message =
+          element.querySelector(
+            "strong"
+          );
+
+        element.classList.remove(
+          "is-collecting",
+          "is-reference",
+          "is-trend",
+          "is-ready",
+          "is-unavailable"
+        );
+        element.classList.add(
+          `is-${status}`
+        );
+        element.dataset
+          .calibrationStatus =
+          status;
+
+        if (message) {
+          message.textContent =
+            view?.message ||
+            "実績校正データを確認できません";
+        }
+      });
+  }
+
+  function renderAiMeter(
+    label,
+    score,
+    level,
+    comment,
+    unit = "%"
+  ) {
     return `
       <div class="v3-ai-meter">
         <div class="v3-ai-meter-head">
@@ -773,7 +1019,13 @@ if (raceInfoArea) {
         </div>
 
         <div class="v3-ai-percent">
-          ${escapeHtml(percent(score))}
+          ${escapeHtml(
+            unit === "%"
+              ? percent(score)
+              : `${Math.round(
+                  safeNum(score, 0)
+                )}${unit}`
+          )}
         </div>
 
         <div class="v3-ai-bar">
@@ -2505,38 +2757,42 @@ function getPaperClassName(item) {
     );
   }
   function renderPracticalSelection(prediction) {
-    const selector = window.ChappyPracticalSelection;
-    const result = selector && typeof selector.select === "function"
-      ? selector.select(prediction)
-      : {
+    const result =
+      resolvePracticalSelection(
+        prediction
+      ) ||
+      {
           status: "skipped",
           reason: "実戦厳選の共通処理を読み込めないため見送り。",
           tickets: []
-        };
+      };
 
-    if (result.status !== "selected") {
-      return section(
-        "実戦厳選",
-        emptyBox(
-          result.reason ||
-          "主軸となる本線展開が定まらないため、このレースは見送りです。"
-        ),
-        "🔥",
-        "v3-practical-section"
-      );
-    }
-
-    const selected = result.tickets.map(item => ({
-      ...item,
-      oddsText: item.odds > 0
-        ? `${item.odds}倍`
-        : item.oddsText || "オッズ未取得",
-      comment: item.comment || createTicketSpecificComment(
-        prediction,
-        item.ticket,
-        [item.category]
-      )
-    }));
+    const isSelected =
+      result.status ===
+      "selected";
+    const selected =
+      isSelected
+        ? arrayify(
+            result.tickets
+          ).map(item => ({
+            ...item,
+            roleLabels:
+              arrayify(
+                item.roleLabels
+              ),
+            oddsText: item.odds > 0
+              ? `${item.odds}倍`
+              : item.oddsText ||
+                "オッズ未取得",
+            comment:
+              item.comment ||
+              createTicketSpecificComment(
+                prediction,
+                item.ticket,
+                [item.category]
+              )
+          }))
+        : [];
 
     const typeOf = category => {
       if (category === "本線") return "main";
@@ -2545,13 +2801,250 @@ function getPaperClassName(item) {
       if (category === "独立展開") return "flow";
       return "manshu";
     };
+    const renderRoleTags =
+      roles =>
+        [
+          ...new Map(
+            arrayify(roles)
+              .map(role => [
+                `${role?.boatNo}|` +
+                `${role?.position}|` +
+                `${role?.role}`,
+                role
+              ])
+          ).values()
+        ]
+          .map(role =>
+            tag(
+              `${role?.boatNo || "-"}号艇 ` +
+              `${role?.label || `${role?.position || "-"}着候補`}`,
+              role?.structured
+                ? "flow"
+                : "odds"
+            )
+          )
+          .join("");
+    const targetsById =
+      new Map(
+        arrayify(
+          result.evidence
+            ?.evaluatedTargets
+        ).map(target => [
+          String(
+            target?.id || ""
+          ),
+          target
+        ])
+      );
+    const targetDecisionHtml =
+      arrayify(
+        result.targetDecisions
+      )
+        .map(decision => {
+          const target =
+            targetsById.get(
+              String(
+                decision
+                  ?.evaluationId || ""
+              )
+            ) || {};
+          const evaluation =
+            target.evaluation || {};
+          const evaluationScore =
+            safeNum(
+              evaluation.score ??
+              evaluation.total,
+              0
+            );
+          const candidateRows =
+            arrayify(
+              decision
+                ?.candidateDecisions
+            );
+          const adoptedCount =
+            safeNum(
+              decision
+                ?.selectedCandidateCount,
+              candidateRows.filter(
+                row =>
+                  row.ticketSelected
+              ).length
+            );
+          const supportedCount =
+            arrayify(
+              decision
+                ?.supportedSelectedTickets
+            ).length ||
+            candidateRows.filter(
+              row =>
+                row.ticketSelected &&
+                row.relation ===
+                  "structured"
+            ).length;
+          const candidateCount =
+            safeNum(
+              decision
+                ?.candidateCount,
+              candidateRows.length
+            );
+          const hiddenCandidateCount =
+            safeNum(
+              decision
+                ?.hiddenCandidateCount,
+              0
+            );
 
-    const body = `
+          return `
+            <details
+              class="v3-adoption-card"
+              data-boat-no="${escapeHtml(
+                decision?.boatNo || ""
+              )}"
+            >
+              <summary>
+                <span class="v3-adoption-boat">
+                  ${escapeHtml(
+                    decision?.symbol || ""
+                  )}${boatBadge(
+                    decision?.boatNo,
+                    "small"
+                  )}
+                  <b>艇評価（買い目前）</b>
+                </span>
+                <span class="v3-adoption-counts">
+                  評価${escapeHtml(
+                    evaluationScore
+                  )}点
+                  ／候補${candidateCount}点
+                  ／根拠一致${supportedCount}点
+                </span>
+              </summary>
+
+              <div class="v3-adoption-body">
+                ${
+                  candidateRows.length
+                    ? candidateRows
+                        .map(row => {
+                          const relationIsStructured =
+                            row.relation ===
+                            "structured";
+                          const statusClass =
+                            row.ticketSelected
+                              ? relationIsStructured
+                                ? "is-selected"
+                                : "is-related"
+                              : "is-excluded";
+                          const statusText =
+                            row.ticketSelected
+                              ? relationIsStructured
+                                ? "評価根拠で採用"
+                                : "買い目採用・別根拠"
+                              : "候補保持・非採用";
+
+                          return `
+                            <div
+                              class="v3-adoption-row ${statusClass}"
+                            >
+                              <div class="v3-adoption-row-head">
+                                <strong>
+                                  ${ticketArrow(
+                                    row.ticket
+                                  )}
+                                </strong>
+                                <span>${escapeHtml(statusText)}</span>
+                              </div>
+                              <div class="v3-formation-tags">
+                                ${renderRoleTags(
+                                  row.roleLabels
+                                )}
+                              </div>
+                              <p>
+                                ${escapeHtml(
+                                  limitText(
+                                    row.reason ||
+                                    "候補判定理由を確認中",
+                                    120
+                                  )
+                                )}
+                              </p>
+                            </div>
+                          `;
+                        })
+                        .join("")
+                    : emptyBox(
+                        "この艇の候補判定データがありません"
+                      )
+                }
+                <p class="v3-adoption-note">
+                  買い目採用${adoptedCount}点。
+                  「別根拠」は買い目には入っていますが、
+                  この艇の評価を採用理由にはしていません。
+                  ${
+                    hiddenCandidateCount > 0
+                      ? `画面は評価根拠で採用された買い目、別根拠の代表、比較上位の非採用候補を表示し、残り${escapeHtml(hiddenCandidateCount)}点は総候補数に含めています。`
+                      : ""
+                  }
+                </p>
+              </div>
+            </details>
+          `;
+        })
+        .join("");
+    const expansion =
+      result.expansionSummary || {};
+    const expansionHtml =
+      expansion
+        .hasIndependentAdditions
+        ? `
+          <div class="v3-expansion-banner">
+            <strong>
+              ${
+                expansion
+                  .exceededNormalMaximum
+                  ? "8〜10点へ拡張"
+                  : "独立展開を追加"
+              }：
+              通常${escapeHtml(
+                expansion.normalCount
+              )}点
+              ＋独立${escapeHtml(
+                expansion.addedCount
+              )}点
+              ＝${escapeHtml(
+                expansion.finalCount
+              )}点
+            </strong>
+            <p>
+              ${escapeHtml(
+                expansion.reason || ""
+              )}
+            </p>
+            <div class="v3-formation-tags">
+              ${arrayify(
+                expansion.addedTickets
+              )
+                .map(item =>
+                  tag(
+                    `${item.ticket}・採用優先度 ${item.priorityScore || 0}（内部比較値）`,
+                    "flow"
+                  )
+                )
+                .join("")}
+            </div>
+          </div>
+        `
+        : "";
+
+    const selectionBody =
+      isSelected
+        ? `
       <div class="v3-note">
         展開とコースを優先し、基本5〜7点で厳選。
         独立した成立展開がある場合だけ最大10点まで追加します。
         数字・オッズだけによる削除はしていません。
       </div>
+
+      ${expansionHtml}
 
       <div class="v3-formation-list">
         ${selected
@@ -2569,6 +3062,12 @@ function getPaperClassName(item) {
                 </div>
 
                 <div class="v3-formation-tags">
+                  ${tag(
+                    item.category ||
+                    "買い目",
+                    type
+                  )}
+
                   ${item.scenarioType
                     ? tag(
                         item.scenarioType,
@@ -2582,6 +3081,10 @@ function getPaperClassName(item) {
                         "flow"
                       )
                     : ""}
+
+                  ${renderRoleTags(
+                    item.roleLabels
+                  )}
 
                   ${tag(
                     item.oddsText,
@@ -2607,6 +3110,33 @@ function getPaperClassName(item) {
         実戦購入候補：
         ${selected.length}点
         ／最大${result.maximumCount || 10}点
+      </div>
+    `
+        : `
+      ${emptyBox(
+        result.reason ||
+        "主軸となる本線展開が定まらないため、このレースは見送りです。"
+      )}
+      <div class="v3-note">
+        購入は見送りますが、艇ごとの候補と非採用理由は下に残します。
+      </div>
+    `;
+
+    const body = `
+      ${selectionBody}
+
+      <div class="v3-adoption-audit">
+        <div class="v3-adoption-head">
+          <h3>買い目採用判定</h3>
+          <p>
+            艇評価と購入判断を分け、
+            候補を消さずに採用・非採用の理由を表示します。
+          </p>
+        </div>
+        ${targetDecisionHtml ||
+          emptyBox(
+            "艇別の採用判定データがありません"
+          )}
       </div>
     `;
 
@@ -3148,6 +3678,18 @@ function renderFinalBlock(block) {
   window.renderAll = renderAll;
   window.renderPrediction = renderAll;
   window.CHAPPY_RENDER_VERSION = RENDER_VERSION;
+  window.addEventListener(
+    "chappy:prediction-calibration-loaded",
+    refreshCalibrationDisplays
+  );
+  window.addEventListener(
+    "chappy:prediction-calibration-unavailable",
+    refreshCalibrationDisplays
+  );
+  window.addEventListener(
+    "chappy:prediction-runtime-optional-unavailable",
+    refreshCalibrationDisplays
+  );
 
   console.info(`[Chappy BoatRace AI] render.js loaded: ${RENDER_VERSION}`);
 

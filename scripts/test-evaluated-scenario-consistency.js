@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 
 global.window = global;
 require("../js/ai-core");
@@ -240,6 +241,8 @@ const counters = {
   provenanceOnlyBlocked: 0,
   comparisonDecisions: 0,
   protectedHighRoleTargets: 0,
+  maximumAuditBytes: 0,
+  maximumVisibleCandidateRows: 0,
   selectedByScenarioKind: {
     "hold-continuation": 0,
     "alternate-head": 0
@@ -260,6 +263,7 @@ const counters = {
     ])
   )
 };
+const selectedTicketRows = [];
 
 DATES.forEach((date) => {
   const archive =
@@ -278,6 +282,57 @@ DATES.forEach((date) => {
       global.createPrediction(prepared);
     const practical =
       practicalSelector.select(prediction);
+    selectedTicketRows.push(
+      practical.tickets.map(
+        item => item.ticket
+      )
+    );
+    const visibleCandidateRows =
+      practical.targetDecisions
+        .reduce(
+          (sum, decision) =>
+            sum +
+            arrayify(
+              decision
+                .candidateDecisions
+            ).length,
+          0
+        );
+    const auditBytes =
+      Buffer.byteLength(
+        JSON.stringify({
+          practicalSelection:
+            practicalSelector
+              .compactAudit(
+                practical
+              ),
+          verificationEvidence:
+            practical
+              .verificationEvidence
+        }),
+        "utf8"
+      );
+    counters.maximumAuditBytes =
+      Math.max(
+        counters
+          .maximumAuditBytes,
+        auditBytes
+      );
+    counters
+      .maximumVisibleCandidateRows =
+      Math.max(
+        counters
+          .maximumVisibleCandidateRows,
+        visibleCandidateRows
+      );
+    assert.ok(
+      visibleCandidateRows <= 50,
+      `${raceKey}: 折りたたみ表示の候補行を50行以内にする`
+    );
+    assert.ok(
+      auditBytes <= 35000,
+      `${raceKey}: 保存用の透明性監査データを35KB以内にする`
+    );
     const evidence =
       prediction?.aiCore?.formations
         ?.evidence || {};
@@ -1204,6 +1259,19 @@ DATES.forEach((date) => {
           `${raceKey}: 非採用候補へ構造化理由を残す`
         );
       });
+    practical.candidateOutcomes
+      .filter(
+        outcome =>
+          outcome.reasonCode ===
+          "MAXIMUM_REACHED"
+      )
+      .forEach(() => {
+        assert.equal(
+          practical.tickets.length,
+          10,
+          `${raceKey}: 最大到達を理由にできるのは実際に10点の時だけ`
+        );
+      });
   });
 });
 
@@ -1211,6 +1279,20 @@ assert.equal(
   counters.races,
   281,
   "保存済み281レースを全件再計算する"
+);
+const selectionHash =
+  crypto
+    .createHash("sha256")
+    .update(
+      JSON.stringify(
+        selectedTicketRows
+      )
+    )
+    .digest("hex");
+assert.equal(
+  selectionHash,
+  "4f4d21bcacc365d9342a3389b2fdf5a45aed0f4fb0aa3ac22f1d20f83174bc34",
+  "透明性・検証表示の変更で281レースの買い目を変えない"
 );
 
 console.log("評価済み展開の全件整合テスト: 合格");
@@ -1243,4 +1325,11 @@ console.log(
 console.log(
   `- 非採用の具体比較: ${counters.comparisonDecisions}件 / ` +
   `高評価・正式役割保護: ${counters.protectedHighRoleTargets}件`
+);
+console.log(
+  `- 買い目固定SHA-256: ${selectionHash}`
+);
+console.log(
+  `- 透明性監査上限: ${counters.maximumAuditBytes} bytes / ` +
+  `${counters.maximumVisibleCandidateRows}表示行`
 );

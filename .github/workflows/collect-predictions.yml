@@ -13,6 +13,7 @@ on:
       - "scripts/build-prediction-summaries.js"
       - "scripts/test-prediction-summaries.js"
       - "scripts/test-load-performance.js"
+      - "scripts/test-prediction-runtime-loader.js"
       - "js/prediction-runtime-loader.js"
       - "scripts/test-shadow-predictions.js"
       - "scripts/test-shadow-selection-v2.js"
@@ -90,6 +91,7 @@ jobs:
           node scripts/test-api-client-cache.js
           node scripts/test-prediction-summaries.js
           node scripts/test-load-performance.js
+          node scripts/test-prediction-runtime-loader.js
           node scripts/test-collection-health.js
           node scripts/check-charter.js
 
@@ -100,6 +102,8 @@ jobs:
           node scripts/collect-predictions.js
           node scripts/build-prediction-index.js
           node scripts/build-prediction-summaries.js
+          node scripts/test-load-performance.js
+          node scripts/test-prediction-runtime-loader.js
 
       - name: Save predictions and note drafts
         run: |

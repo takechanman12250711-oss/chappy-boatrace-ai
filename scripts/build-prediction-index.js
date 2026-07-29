@@ -44,6 +44,12 @@ function compactIndexVerification(record) {
       practicalTickets: Array.isArray(prediction.practicalTickets)
         ? prediction.practicalTickets
         : [],
+      verificationEvidence:
+        prediction.verificationEvidence ||
+        null,
+      internalEvaluation:
+        prediction.internalEvaluation ||
+        null,
       preRaceConditions: prediction.preRaceConditions || null
     }
   };

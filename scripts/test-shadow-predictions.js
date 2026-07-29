@@ -959,6 +959,11 @@ const compacted = compactStoredVerification({
     manshuSheet: { oversized: true },
     ticketRanks: Array.from({ length: 30 }, () => ({ ticket: "1-2-3" })),
     practicalTickets: [{ ticket: "1-2-3", category: "本線" }],
+    simpleEvaluation: {
+      mode: "chaos",
+      label: "波乱入口",
+      score: 79
+    },
     preRaceConditions: { weather: { windSpeed: 3 } },
     verificationEvidence: {
       sourceCommit: "abc123",
@@ -989,6 +994,16 @@ assert.equal(compacted.result.settled, true);
 assert.equal(compacted.prediction.raceFlow.title, "1逃げ本線");
 assert.equal(compacted.prediction.mainSheet.honmei.boatNo, 1);
 assert.equal(compacted.prediction.practicalTickets.length, 1);
+assert.deepEqual(
+  compacted.prediction.internalEvaluation,
+  {
+    mode: "chaos",
+    label: "波乱入口",
+    score: 79,
+    probability: false
+  },
+  "自動保存でも本線・波乱modeを校正用に保持する"
+);
 assert.equal(compacted.prediction.preRaceConditions.weather.windSpeed, 3);
 assert.equal(
   compacted.prediction.verificationEvidence.mainScenario.type,

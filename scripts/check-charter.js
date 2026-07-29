@@ -310,8 +310,16 @@ assert(
 );
 assert(
   script.includes("practicalSelectionAudit") &&
-    script.includes("targetDecisions") &&
-    script.includes("excludedIndependentCandidates") &&
+    script.includes(".compactAudit?.(") &&
+    practicalSelection.includes(
+      "function compactAudit"
+    ) &&
+    practicalSelection.includes(
+      "targetDecisions:"
+    ) &&
+    practicalSelection.includes(
+      "excludedIndependentCandidates:"
+    ) &&
     collectPredictions.includes(
       "compactPracticalSelection"
     ),

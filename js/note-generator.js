@@ -110,7 +110,31 @@
         ""
       ),
       selectionTier: safeText(row.selectionTier, ""),
-      expansionReason: safeText(row.expansionReason, "")
+      expansionReason: safeText(row.expansionReason, ""),
+      roleLabels:
+        arrayify(row.roleLabels)
+          .map(role => ({
+            boatNo:
+              safeNumber(
+                role?.boatNo,
+                0
+              ),
+            position:
+              safeNumber(
+                role?.position,
+                0
+              ),
+            label:
+              safeText(
+                role?.label,
+                ""
+              )
+          }))
+          .filter(
+            role =>
+              role.boatNo &&
+              role.label
+          )
     };
   }
 
@@ -235,6 +259,13 @@
       item.category
         ? `［${item.category}］`
         : "";
+    const roles =
+      arrayify(item.roleLabels)
+        .map(role =>
+          `${role.boatNo}号艇${role.label}`
+        )
+        .filter(Boolean)
+        .join("・");
     const comment =
       safeText(
         item.comment ||
@@ -248,6 +279,11 @@
     return (
       `・${item.ticket}　` +
       `${category}${tier}　${oddsText}` +
+      (
+        roles
+          ? `\n　役割：${roles}`
+          : ""
+      ) +
       (
         comment
           ? `\n　${comment}`

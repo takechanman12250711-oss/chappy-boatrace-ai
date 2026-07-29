@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260728-scenarios1";
+  const VERSION = "20260729-transparency1";
   const scripts = [
     "js/theory.js",
     "js/history-insights-base.js",
@@ -19,7 +19,11 @@
     "js/note-generator.js",
     "js/render.js"
   ];
+  const optionalScripts = [
+    "js/prediction-calibration.js"
+  ];
   let readyPromise = null;
+  let optionalReadyPromise = null;
 
   function loadScript(src) {
     return new Promise((resolve, reject) => {
@@ -74,6 +78,12 @@
           { detail: { version: VERSION } }
         )
       );
+
+      /*
+        校正は表示を補足するだけで、予想エンジンの必須依存ではない。
+        404や校正JSON取得失敗でも、予想と買い目の生成を止めない。
+      */
+      void ensureOptionalReady();
       return true;
     })().catch(error => {
       readyPromise = null;
@@ -83,9 +93,62 @@
     return readyPromise;
   }
 
+  function ensureOptionalReady() {
+    if (
+      optionalReadyPromise
+    ) {
+      return optionalReadyPromise;
+    }
+
+    optionalReadyPromise =
+      (async () => {
+        for (
+          const src of
+            optionalScripts
+        ) {
+          await loadScript(src);
+        }
+
+        root.dispatchEvent(
+          new CustomEvent(
+            "chappy:prediction-runtime-optional-ready",
+            {
+              detail: {
+                version: VERSION
+              }
+            }
+          )
+        );
+        return true;
+      })().catch(error => {
+        root.dispatchEvent(
+          new CustomEvent(
+            "chappy:prediction-runtime-optional-unavailable",
+            {
+              detail: {
+                version: VERSION,
+                message:
+                  String(
+                    error?.message ||
+                    error ||
+                    ""
+                  )
+              }
+            }
+          )
+        );
+        return false;
+      });
+
+    return optionalReadyPromise;
+  }
+
   root.ChappyPredictionRuntime = Object.freeze({
     version: VERSION,
     scripts: scripts.slice(),
-    ensureReady
+    optionalScripts:
+      optionalScripts.slice(),
+    ensureReady,
+    ensureOptionalReady
   });
 })(window);

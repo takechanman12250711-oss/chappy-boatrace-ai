@@ -13,6 +13,59 @@
   const V = window.ChappyPredictionVerification;
   const R = window.ChappyVerificationReadiness;
   const OFFICIAL_SYNC_CONCURRENCY = 3;
+  const NEW_METHOD_MINIMUM_COUNT = 30;
+  const CURRENT_CALIBRATION_GENERATION = {
+    logicFingerprint:
+      "evaluated-scenarios-v1",
+    confidenceDefinitionVersion:
+      "internal-score-v1",
+    ticketPolicyVersion:
+      "practical-5-7-10-v1"
+  };
+
+  function buildObservedRateDisplay(
+    attempts,
+    matched
+  ) {
+    const sampleSize =
+      Math.max(
+        0,
+        Math.floor(
+          Number(attempts) || 0
+        )
+      );
+    const hitCount =
+      Math.min(
+        sampleSize,
+        Math.max(
+          0,
+          Math.floor(
+            Number(matched) || 0
+          )
+        )
+      );
+    const ready =
+      sampleSize >=
+      NEW_METHOD_MINIMUM_COUNT;
+
+    return {
+      ready,
+      sampleSize,
+      hitCount,
+      rate:
+        ready
+          ? Math.round(
+              hitCount /
+              sampleSize *
+              1000
+            ) / 10
+          : null,
+      message:
+        ready
+          ? `${hitCount}/${sampleSize}件`
+          : `新方式データ蓄積中：${sampleSize}/${NEW_METHOD_MINIMUM_COUNT}件`
+    };
+  }
 
   let officialSyncPromise = null;
   let statsInitPromise = null;
@@ -1309,6 +1362,58 @@
         markSummary: [],
         priorityStageSummary: []
       };
+  /*
+    役割・買い目区分・構造化展開の新方式実績は、
+    軽量校正へ接続できる保存値だけを別集計する。
+    旧履歴を混ぜて0%や見かけの率を作らない。
+  */
+  const newMethodVerifications =
+    realSettledRows
+      .map(item => item.verification)
+      .filter(
+        item => {
+          const generation =
+            item?.calibrationKey || {};
+          const sameGeneration =
+            Object.entries(
+              CURRENT_CALIBRATION_GENERATION
+            ).every(
+              ([key, value]) =>
+                generation?.[key] ===
+                value
+            );
+
+          return (
+            item?.settled === true &&
+            sameGeneration &&
+            Boolean(
+              item.internalEvaluation
+            ) &&
+            item
+              .scenarioVerification
+              ?.structured === true
+          );
+        }
+      );
+  const newMethodSummary =
+    V?.buildSummary
+      ? V.buildSummary(
+          newMethodVerifications
+        )
+      : {
+          structuredScenarioComparableCount:
+            0,
+          structuredScenarioHits: 0,
+          structuredScenarioMatchRate:
+            0,
+          ticketCategorySummary: [],
+          roleSummary: []
+        };
+  const newMethodCount =
+    newMethodVerifications.length;
+  const newMethodReady =
+    newMethodCount >=
+    NEW_METHOD_MINIMUM_COUNT;
   const missTypeLabels = [
     "的中",
     "頭外れ",
@@ -1665,6 +1770,252 @@
           </article>
         `).join("")
       : renderEmpty("点数帯別に比較できる検証データがありません");
+  const newMethodRoleRows =
+    (
+      newMethodSummary
+        .roleSummary || []
+    ).filter(
+      row =>
+        Number(row?.attempts || 0) >
+        0
+    );
+  const newMethodTicketCategoryRows =
+    (
+      newMethodSummary
+        .ticketCategorySummary || []
+    ).filter(
+      row =>
+        Number(row?.attempts || 0) >
+        0
+    );
+  const structuredScenarioCount =
+    Number(
+      newMethodSummary
+        .structuredScenarioComparableCount ||
+      0
+    );
+  const structuredScenarioHits =
+    Number(
+      newMethodSummary
+        .structuredScenarioHits || 0
+    );
+  const calibrationAvailable =
+    Boolean(
+      window
+        .ChappyPredictionCalibration
+    );
+  const calibrationCountStage =
+    newMethodReady
+      ? `${newMethodCount}件・参考確認段階`
+      : `${newMethodCount}/${NEW_METHOD_MINIMUM_COUNT}件・蓄積中`;
+  const renderNewMethodRoleCards = () =>
+    newMethodRoleRows.length
+      ? newMethodRoleRows
+          .map(row => {
+            const matched =
+              buildObservedRateDisplay(
+                row.attempts,
+                row.matched
+              );
+            const top3 =
+              buildObservedRateDisplay(
+                row.attempts,
+                row.top3
+              );
+
+            return `
+              <article class="result-data-card">
+                <header>
+                  <h4>${E(row.label || row.key || "役割")}</h4>
+                  <span>${matched.sampleSize}件</span>
+                </header>
+                ${
+                  matched.ready
+                    ? `
+                      <dl class="result-data-facts">
+                        ${renderFact(
+                          "期待着順一致",
+                          `${matched.message}（${matched.rate}%）`
+                        )}
+                        ${renderFact(
+                          "3着内",
+                          `${top3.message}（${top3.rate}%）`
+                        )}
+                      </dl>
+                    `
+                    : `
+                      <p class="result-data-state">
+                        ${E(matched.message)}
+                      </p>
+                    `
+                }
+              </article>
+            `;
+          })
+          .join("")
+      : renderEmpty(
+          "役割別の新方式データ蓄積中"
+        );
+  const renderNewMethodTicketCards = () =>
+    newMethodTicketCategoryRows.length
+      ? newMethodTicketCategoryRows
+          .map(row => {
+            const display =
+              buildObservedRateDisplay(
+                row.attempts,
+                row.matched
+              );
+
+            return `
+              <article class="result-data-card">
+                <header>
+                  <h4>${E(row.label || "買い目区分")}</h4>
+                  <span>${display.sampleSize}R</span>
+                </header>
+                ${
+                  display.ready
+                    ? `
+                      <dl class="result-data-facts">
+                        ${renderFact(
+                          "実績的中",
+                          `${display.hitCount}/${display.sampleSize}R`
+                        )}
+                        ${renderFact(
+                          "実績的中率",
+                          `${display.rate}%`
+                        )}
+                      </dl>
+                    `
+                    : `
+                      <p class="result-data-state">
+                        ${E(display.message)}
+                      </p>
+                    `
+                }
+              </article>
+            `;
+          })
+          .join("")
+      : renderEmpty(
+          "買い目区分別の新方式データ蓄積中"
+        );
+  const renderStructuredScenarioCard = () => {
+    const display =
+      buildObservedRateDisplay(
+        structuredScenarioCount,
+        structuredScenarioHits
+      );
+
+    return structuredScenarioCount > 0
+      ? `
+          <article class="result-data-card">
+            <header>
+              <h4>中心展開</h4>
+              <span>${structuredScenarioCount}R</span>
+            </header>
+            ${
+              display.ready
+                ? `
+                  <dl class="result-data-facts">
+                    ${renderFact(
+                      "展開一致",
+                      `${display.hitCount}/${display.sampleSize}R`
+                    )}
+                    ${renderFact(
+                      "実績一致率",
+                      `${display.rate}%`
+                    )}
+                  </dl>
+                `
+                : `
+                  <p class="result-data-state">
+                    ${E(display.message)}
+                  </p>
+                `
+            }
+          </article>
+        `
+      : renderEmpty(
+          "比較可能な構造化展開データを蓄積中"
+        );
+  };
+  const newMethodDetailsHtml =
+    newMethodReady
+      ? `
+          ${
+            calibrationAvailable
+              ? `
+                <div class="result-context-strip">
+                  <span>
+                    軽量校正：${E(calibrationCountStage)}
+                  </span>
+                </div>
+              `
+              : ""
+          }
+
+          <section class="result-subsection">
+            <header>
+              <h4>構造化展開</h4>
+              <p>
+                保存した中心展開と公式結果を事後照合しています。
+              </p>
+            </header>
+            <div class="result-data-grid">
+              ${renderStructuredScenarioCard()}
+            </div>
+          </section>
+
+          <section class="result-subsection">
+            <header>
+              <h4>役割別</h4>
+              <p>
+                攻め・追走・残し・拾いが、想定した着順になった実績です。
+              </p>
+            </header>
+            <div class="result-data-grid">
+              ${renderNewMethodRoleCards()}
+            </div>
+          </section>
+
+          <section class="result-subsection">
+            <header>
+              <h4>買い目区分別</h4>
+              <p>
+                本線・押さえ・流し・独立展開・万舟の実績を分けています。
+              </p>
+            </header>
+            <div class="result-data-grid">
+              ${renderNewMethodTicketCards()}
+            </div>
+          </section>
+
+          <p class="result-panel-note">
+            内部評価は的中確率ではありません。この表示は、保存済み予想と公式結果の事後実績です。
+          </p>
+        `
+      : `
+          ${renderEmpty(
+            `新方式データ蓄積中：` +
+            `${newMethodCount}/` +
+            `${NEW_METHOD_MINIMUM_COUNT}件。` +
+            "旧履歴は新方式の率へ混ぜません。"
+          )}
+          ${
+            calibrationAvailable
+              ? `
+                <div class="result-context-strip">
+                  <span>
+                    軽量校正：${E(calibrationCountStage)}
+                  </span>
+                </div>
+              `
+              : ""
+          }
+          <p class="result-panel-note">
+            30件に達するまで、役割別・買い目区分別・構造化展開の率は表示しません。内部評価は的中確率ではありません。
+          </p>
+        `;
   const shadowV2Progress =
     A?.buildShadowV2Progress
       ? A.buildShadowV2Progress(
@@ -1947,6 +2298,41 @@
         </p>
       </section>
 
+      <details
+        class="result-accordion"
+        data-result-panel="new-method-performance"
+        ${panelOpen(
+          "new-method-performance"
+        )}
+      >
+        <summary>
+          <span
+            class="result-accordion-icon"
+            aria-hidden="true"
+          >
+            🧭
+          </span>
+          <span class="result-accordion-title">
+            <span class="result-accordion-name">
+              新方式の詳細実績
+            </span>
+            <small>
+              役割別・買い目区分別・構造化展開
+            </small>
+          </span>
+          <span class="result-accordion-meta">
+            ${
+              newMethodReady
+                ? `${newMethodCount}件`
+                : "データ蓄積中"
+            }
+          </span>
+        </summary>
+        <div class="result-accordion-body">
+          ${newMethodDetailsHtml}
+        </div>
+      </details>
+
       <section class="result-panel" aria-labelledby="recentResultTitle">
         <header class="result-panel-head">
           <div>
@@ -2088,7 +2474,8 @@ window.ChappyStats = {
   renderStats,
   initStatsEvents,
   syncPendingOfficialResults,
-  loadAutomaticStats
+  loadAutomaticStats,
+  buildObservedRateDisplay
 };
 
   document.addEventListener(

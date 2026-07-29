@@ -4909,3 +4909,239 @@ body {
   color: #495057;
   border: 1px solid #ced4da;
 }
+
+/* =========================================================
+  艇評価 → 買い目採用の照合
+========================================================= */
+
+.v3-ai-grid-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.v3-ai-calibration {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid #d9e4f1;
+  border-radius: 10px;
+  background: #f7faff;
+}
+
+.v3-ai-calibration strong {
+  display: block;
+  color: #173a60;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.v3-ai-calibration p {
+  margin: 4px 0 0;
+  color: #5c697a;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.v3-ai-calibration.is-reference {
+  border-color: #efd19c;
+  background: #fff9ec;
+}
+
+.v3-ai-calibration.is-trend,
+.v3-ai-calibration.is-ready {
+  border-color: #bde2ca;
+  background: #f1fbf5;
+}
+
+.v3-expansion-banner,
+.v3-adoption-audit {
+  margin-top: 10px;
+  border: 1px solid #cfe2ff;
+  border-radius: 12px;
+  background: #f5f9ff;
+}
+
+.v3-expansion-banner {
+  padding: 10px;
+}
+
+.v3-expansion-banner strong {
+  display: block;
+  color: #0757a6;
+  font-size: 13px;
+}
+
+.v3-expansion-banner p,
+.v3-adoption-head p,
+.v3-adoption-row p,
+.v3-adoption-note {
+  margin: 5px 0 0;
+  color: #526174;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.v3-adoption-audit {
+  overflow: hidden;
+}
+
+.v3-adoption-head {
+  padding: 10px;
+  border-bottom: 1px solid #dce8f7;
+}
+
+.v3-adoption-head h3 {
+  margin: 0;
+  color: #173a60;
+  font-size: 14px;
+}
+
+.v3-adoption-card {
+  background: #ffffff;
+  border-bottom: 1px solid #e7edf5;
+}
+
+.v3-adoption-card:last-child {
+  border-bottom: 0;
+}
+
+.v3-adoption-card > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.v3-adoption-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.v3-adoption-card > summary::after {
+  content: "＋";
+  flex: 0 0 auto;
+  color: #64748b;
+  font-weight: 900;
+}
+
+.v3-adoption-card[open] > summary::after {
+  content: "−";
+}
+
+.v3-adoption-boat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.v3-adoption-boat b {
+  color: #1f2937;
+  font-size: 12px;
+}
+
+.v3-adoption-counts {
+  margin-left: auto;
+  color: #526174;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.v3-adoption-body {
+  display: grid;
+  gap: 7px;
+  padding: 0 10px 10px;
+}
+
+.v3-adoption-row {
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #94a3b8;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.v3-adoption-row.is-selected {
+  border-left-color: #14945b;
+  background: #f0fbf5;
+}
+
+.v3-adoption-row.is-related {
+  border-left-color: #2f7bd7;
+  background: #f3f8ff;
+}
+
+.v3-adoption-row.is-excluded {
+  border-left-color: #d29327;
+  background: #fffbf2;
+}
+
+.v3-adoption-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.v3-adoption-row-head strong {
+  color: #111827;
+  font-size: 12px;
+}
+
+.v3-adoption-row-head span {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.v3-adoption-row.is-selected
+.v3-adoption-row-head span {
+  background: #d5f5e4;
+  color: #087443;
+}
+
+.v3-adoption-row.is-related
+.v3-adoption-row-head span {
+  background: #dcecff;
+  color: #185da9;
+}
+
+.v3-adoption-row.is-excluded
+.v3-adoption-row-head span {
+  background: #fff0ce;
+  color: #8f5a00;
+}
+
+.v3-adoption-note {
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: #eef3f8;
+}
+
+@media (max-width: 480px) {
+  .v3-adoption-card > summary {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .v3-adoption-counts {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .v3-adoption-card > summary::after {
+    margin-left: auto;
+  }
+
+  .v3-adoption-row-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

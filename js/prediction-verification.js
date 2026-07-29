@@ -21,7 +21,32 @@
     { key: "osae", symbol: "△", label: "押さえ" }
   ];
 
-  const CATEGORY_ORDER = ["本線", "押さえ", "流し", "万舟・穴", "その他"];
+  const CATEGORY_ORDER = [
+    "本線",
+    "押さえ",
+    "流し",
+    "独立展開",
+    "万舟・穴",
+    "その他"
+  ];
+  const ROLE_ORDER = [
+    {
+      key: "attack",
+      label: "攻め・頭"
+    },
+    {
+      key: "continuation",
+      label: "追走・続行"
+    },
+    {
+      key: "hold",
+      label: "残し"
+    },
+    {
+      key: "pickup",
+      label: "拾い"
+    }
+  ];
   const PRIORITY_STAGES = Conditions?.PRIORITY_STAGES || [
     "展開", "コース", "ST・スリット", "展示・足",
     "残し・拾い", "当地・水面", "技量", "モーター"
@@ -53,8 +78,117 @@
     if (/本線|本命|中心/.test(text)) return "本線";
     if (/押さえ|安全/.test(text)) return "押さえ";
     if (/流し/.test(text)) return "流し";
+    if (/独立展開|展開追加/.test(text)) return "独立展開";
     if (/万舟|穴|高配当/.test(text)) return "万舟・穴";
     return "その他";
+  }
+
+  function unique(values) {
+    return [
+      ...new Set(
+        (Array.isArray(values)
+          ? values
+          : [values])
+          .filter(
+            value =>
+              value !== null &&
+              value !== undefined &&
+              value !== ""
+          )
+      )
+    ];
+  }
+
+  function normalizeRole(value) {
+    const role =
+      String(value || "");
+
+    if (
+      role === "head" ||
+      role === "alternate-head" ||
+      role === "attack"
+    ) {
+      return "attack";
+    }
+    if (
+      role === "continuation"
+    ) {
+      return "continuation";
+    }
+    if (
+      role === "hold" ||
+      role === "inside"
+    ) {
+      return "hold";
+    }
+    if (role === "pickup") {
+      return "pickup";
+    }
+    return "";
+  }
+
+  function verificationEvidenceOf(
+    prediction
+  ) {
+    return (
+      prediction
+        ?.verificationEvidence ||
+      prediction
+        ?.practicalSelection
+        ?.verificationEvidence ||
+      null
+    );
+  }
+
+  function normalizeRoleClaims(
+    claims
+  ) {
+    return (
+      Array.isArray(claims)
+        ? claims
+        : []
+    )
+      .map(claim => {
+        const role =
+          normalizeRole(
+            claim?.role
+          );
+        const targetBoatNo =
+          boatNoOf(claim);
+        const expectedPositions =
+          unique(
+            claim
+              ?.expectedPositions ||
+            claim
+              ?.eligiblePositions ||
+            claim?.position ||
+            []
+          )
+            .map(Number)
+            .filter(
+              position =>
+                position >= 1 &&
+                position <= 3
+            )
+            .sort(
+              (a, b) => a - b
+            );
+
+        return {
+          role,
+          boatNo:
+            targetBoatNo,
+          expectedPositions
+        };
+      })
+      .filter(
+        claim =>
+          claim.role &&
+          claim.boatNo &&
+          claim
+            .expectedPositions
+            .length
+      );
   }
 
   function getPracticalRows(prediction) {
@@ -62,13 +196,121 @@
       ? prediction.practicalTickets
       : [];
     const used = new Set();
+    const verificationEvidence =
+      verificationEvidenceOf(
+        prediction
+      );
+    const evidenceTickets =
+      new Map(
+        (
+          Array.isArray(
+            verificationEvidence
+              ?.tickets
+          )
+            ? verificationEvidence
+                .tickets
+            : []
+        ).map(row => [
+          normalizeTicket(
+            row?.ticket
+          ),
+          row
+        ])
+      );
 
     return source
       .map(item => {
         const row = typeof item === "string" ? { ticket: item } : item || {};
+        const ticket =
+          normalizeTicket(
+            row.ticket ||
+            row.line ||
+            row.formation
+          );
+        const evidenceTicket =
+          evidenceTickets.get(
+            ticket
+          ) || {};
+        const normalizedCategories =
+          unique([
+            row.category,
+            row.role,
+            ...(Array.isArray(
+              row.categories
+            )
+              ? row.categories
+              : []),
+            evidenceTicket.category,
+            ...(Array.isArray(
+              evidenceTicket
+                .categories
+            )
+              ? evidenceTicket
+                  .categories
+              : [])
+          ].map(
+            normalizeCategory
+          ));
+        const categories =
+          normalizedCategories
+            .some(
+              category =>
+                category !==
+                "その他"
+            )
+            ? normalizedCategories
+                .filter(
+                  category =>
+                    category !==
+                    "その他"
+                )
+            : normalizedCategories;
+        const roleClaims =
+          normalizeRoleClaims(
+            evidenceTicket
+              .roleClaims ||
+            row.roleClaims ||
+            (
+              Array.isArray(
+                row.roleLabels
+              )
+                ? row.roleLabels
+                    .filter(
+                      role =>
+                        role
+                          ?.structured !==
+                        false
+                    )
+                    .map(role => ({
+                      role:
+                        role.role,
+                      boatNo:
+                        role.boatNo,
+                      expectedPositions: [
+                        role.position
+                      ]
+                    }))
+                : []
+            )
+          );
+
         return {
-          ticket: normalizeTicket(row.ticket || row.line || row.formation),
-          category: normalizeCategory(row.category || row.role)
+          ticket,
+          category:
+            categories[0] ||
+            "その他",
+          categories:
+            categories.length
+              ? categories
+              : ["その他"],
+          selectionTier:
+            String(
+              row.selectionTier ||
+              evidenceTicket
+                .selectionTier ||
+              ""
+            ),
+          roleClaims
         };
       })
       .filter(row => {
@@ -138,6 +380,236 @@
     if (/抜き/.test(text)) return "抜き";
     if (/恵まれ/.test(text)) return "恵まれ";
     return text;
+  }
+
+  function buildScenarioVerification(
+    prediction,
+    resultTicket,
+    winningMethod
+  ) {
+    const evidence =
+      verificationEvidenceOf(
+        prediction
+      );
+    const structured =
+      Number(
+        evidence
+          ?.roleSchemaVersion || 0
+      ) >= 1;
+    const scenario =
+      evidence?.mainScenario || {};
+    const label =
+      String(
+        scenario.label ||
+        predictedScenarioTitle(
+          prediction
+        ) ||
+        ""
+      );
+    const expectedMethods =
+      unique(
+        scenario
+          .expectedWinningMethods ||
+        expectedWinningMethods(label)
+      );
+    const actualWinner =
+      Number(
+        normalizeTicket(
+          resultTicket
+        ).split("-")[0] ||
+        0
+      );
+    const expectedWinner =
+      Number(
+        scenario.headBoatNo ||
+        scenario.attackerBoatNo ||
+        0
+      );
+    const methodComparable =
+      [
+        "逃げ",
+        "差し",
+        "まくり",
+        "まくり差し",
+        "抜き",
+        "恵まれ"
+      ].includes(
+        winningMethod
+      ) &&
+      expectedMethods.length > 0;
+    const positionComparable =
+      structured &&
+      expectedWinner >= 1 &&
+      expectedWinner <= 6 &&
+      actualWinner >= 1 &&
+      actualWinner <= 6;
+    const positionMatched =
+      positionComparable
+        ? actualWinner ===
+            expectedWinner
+        : null;
+    const methodMatched =
+      methodComparable
+        ? expectedMethods.includes(
+            winningMethod
+          )
+        : null;
+    const status =
+      !structured ||
+      !positionComparable ||
+      !methodComparable
+        ? "not_comparable"
+        : positionMatched &&
+            methodMatched
+          ? "matched"
+          : "missed";
+
+    return {
+      status,
+      structured,
+      label,
+      expectedWinner:
+        expectedWinner || null,
+      actualWinner:
+        actualWinner || null,
+      expectedMethods,
+      winningMethod,
+      positionMatched,
+      methodMatched
+    };
+  }
+
+  function buildRoleResults(
+    prediction,
+    resultTicket
+  ) {
+    const evidence =
+      verificationEvidenceOf(
+        prediction
+      );
+
+    if (
+      Number(
+        evidence
+          ?.roleSchemaVersion || 0
+      ) < 1
+    ) {
+      return [];
+    }
+
+    const order =
+      normalizeTicket(
+        resultTicket
+      ).split("-").map(Number);
+    const claims =
+      normalizeRoleClaims(
+        evidence.roleClaims
+      );
+    const merged =
+      new Map();
+
+    claims.forEach(claim => {
+      const key =
+        `${claim.role}|` +
+        `${claim.boatNo}`;
+      const current =
+        merged.get(key) || {
+          role: claim.role,
+          boatNo:
+            claim.boatNo,
+          expectedPositions: []
+        };
+
+      current.expectedPositions =
+        unique([
+          ...current
+            .expectedPositions,
+          ...claim
+            .expectedPositions
+        ])
+          .map(Number)
+          .sort(
+            (a, b) => a - b
+          );
+      merged.set(key, current);
+    });
+
+    return [
+      ...merged.values()
+    ].map(claim => {
+      const index =
+        order.indexOf(
+          claim.boatNo
+        );
+      const actualFinish =
+        index >= 0
+          ? index + 1
+          : 4;
+      const matched =
+        claim
+          .expectedPositions
+          .includes(
+            actualFinish
+          );
+
+      return {
+        ...claim,
+        label:
+          ROLE_ORDER.find(
+            role =>
+              role.key ===
+                claim.role
+          )?.label ||
+          claim.role,
+        actualFinish,
+        status:
+          matched
+            ? "matched"
+            : "missed",
+        matched,
+        top3:
+          actualFinish <= 3
+      };
+    });
+  }
+
+  function buildTicketCategoryResults(
+    practicalRows,
+    resultTicket
+  ) {
+    return CATEGORY_ORDER
+      .map(label => {
+        const rows =
+          practicalRows.filter(
+            row =>
+              row.categories
+                .includes(label)
+          );
+
+        if (!rows.length) {
+          return null;
+        }
+
+        const matched =
+          rows.some(
+            row =>
+              row.ticket ===
+                resultTicket
+          );
+
+        return {
+          label,
+          attempted: true,
+          matched,
+          status:
+            matched
+              ? "matched"
+              : "missed",
+          ticketCount:
+            rows.length
+        };
+      })
+      .filter(Boolean);
   }
 
   function getMarkResults(prediction, resultTicket) {
@@ -282,7 +754,14 @@
     const scenarioTitle = predictedScenarioTitle(prediction);
     const expectedMethods = expectedWinningMethods(scenarioTitle);
     const expectedMethod = expectedMethods.join("／");
-    const comparableMethod = ["逃げ", "差し", "まくり", "まくり差し"]
+    const comparableMethod = [
+      "逃げ",
+      "差し",
+      "まくり",
+      "まくり差し",
+      "抜き",
+      "恵まれ"
+    ]
       .includes(winningMethod);
     const hitRow = practicalRows.find(row => row.ticket === resultTicket) || null;
     const payoutPer100 = numberOrZero(
@@ -290,9 +769,33 @@
     );
     const simulatedStake = practicalRows.length * 100;
     const simulatedReturn = hitRow ? payoutPer100 : 0;
+    const scenarioVerification =
+      buildScenarioVerification(
+        prediction,
+        resultTicket,
+        winningMethod
+      );
+    const roleResults =
+      settled
+        ? buildRoleResults(
+            prediction,
+            resultTicket
+          )
+        : [];
+    const ticketCategoryResults =
+      settled
+        ? buildTicketCategoryResults(
+            practicalRows,
+            resultTicket
+          )
+        : [];
+    const verificationEvidence =
+      verificationEvidenceOf(
+        prediction
+      );
 
     const base = {
-      schemaVersion: 3,
+      schemaVersion: 4,
       settled,
       resultTicket,
       winningMethod,
@@ -307,6 +810,8 @@
       practicalPointCount: practicalRows.length,
       practicalHit: Boolean(hitRow),
       hitCategory: hitRow?.category || "",
+      hitCategories:
+        hitRow?.categories || [],
       missType: settled ? classifyMiss(practicalTickets, resultTicket) : "結果待ち",
       payoutPer100,
       popularity: Number(result?.popularity ?? result?.officialPopularity ?? 0) || 0,
@@ -316,6 +821,17 @@
       simulatedRecoveryRate: simulatedStake
         ? Math.round((simulatedReturn / simulatedStake) * 1000) / 10
         : 0,
+      scenarioVerification,
+      roleResults,
+      ticketCategoryResults,
+      calibrationKey:
+        verificationEvidence
+          ?.generation ||
+        null,
+      internalEvaluation:
+        prediction
+          ?.internalEvaluation ||
+        null,
       usagePolicy: "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
     };
     const priorityReview = buildPriorityReview(prediction, result, base);
@@ -342,6 +858,108 @@
       const count = hits.filter(item => item.hitCategory === label).length;
       return { label, count, percentage: percentage(count, hits.length) };
     });
+    const ticketCategorySummary =
+      CATEGORY_ORDER.map(label => {
+        const rows =
+          settled
+            .map(item =>
+              (
+                item
+                  .ticketCategoryResults ||
+                []
+              ).find(
+                row =>
+                  row.label === label
+              )
+            )
+            .filter(Boolean);
+        const matched =
+          rows.filter(
+            row =>
+              row.status ===
+              "matched"
+          ).length;
+
+        return {
+          label,
+          attempts:
+            rows.length,
+          matched,
+          hitRate:
+            percentage(
+              matched,
+              rows.length
+            )
+        };
+      });
+    const roleSummary =
+      ROLE_ORDER.map(role => {
+        const rows =
+          settled.flatMap(item =>
+            (
+              item.roleResults ||
+              []
+            ).filter(
+              row =>
+                row.role ===
+                  role.key &&
+                (
+                  row.status ===
+                    "matched" ||
+                  row.status ===
+                    "missed"
+                )
+            )
+          );
+        const matched =
+          rows.filter(
+            row =>
+              row.status ===
+              "matched"
+          ).length;
+        const top3 =
+          rows.filter(
+            row => row.top3
+          ).length;
+
+        return {
+          ...role,
+          attempts:
+            rows.length,
+          matched,
+          matchRate:
+            percentage(
+              matched,
+              rows.length
+            ),
+          top3,
+          top3Rate:
+            percentage(
+              top3,
+              rows.length
+            )
+        };
+      });
+    const structuredScenarioComparable =
+      settled.filter(item =>
+        [
+          "matched",
+          "missed"
+        ].includes(
+          item
+            ?.scenarioVerification
+            ?.status
+        )
+      );
+    const structuredScenarioHits =
+      structuredScenarioComparable
+        .filter(
+          item =>
+            item
+              .scenarioVerification
+              .status ===
+            "matched"
+        );
 
     const markSummary = MARKS.map(mark => {
       const rows = settled
@@ -367,6 +985,19 @@
       scenarioComparableCount: scenarioComparable.length,
       scenarioHits: scenarioHits.length,
       scenarioMatchRate: percentage(scenarioHits.length, scenarioComparable.length),
+      structuredScenarioComparableCount:
+        structuredScenarioComparable
+          .length,
+      structuredScenarioHits:
+        structuredScenarioHits
+          .length,
+      structuredScenarioMatchRate:
+        percentage(
+          structuredScenarioHits
+            .length,
+          structuredScenarioComparable
+            .length
+        ),
       totalStake,
       totalReturn,
       simulatedProfit: totalReturn - totalStake,
@@ -374,6 +1005,8 @@
         ? Math.round((totalReturn / totalStake) * 1000) / 10
         : 0,
       categorySummary,
+      ticketCategorySummary,
+      roleSummary,
       markSummary,
       priorityStageSummary
     };
@@ -382,12 +1015,16 @@
   return {
     MARKS,
     CATEGORY_ORDER,
+    ROLE_ORDER,
     PRIORITY_STAGES,
     normalizeTicket,
     normalizeCategory,
     classifyMiss,
     expectedWinningMethods,
     expectedWinningMethod,
+    buildScenarioVerification,
+    buildRoleResults,
+    buildTicketCategoryResults,
     buildPriorityReview,
     verifyPrediction,
     buildSummary
