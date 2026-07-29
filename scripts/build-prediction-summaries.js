@@ -43,6 +43,50 @@ function compactCompared(item) {
   };
 }
 
+function compactCollectionHealth(health) {
+  if (!health || typeof health !== "object") return null;
+  const v2 = health.v2 && typeof health.v2 === "object"
+    ? health.v2
+    : {};
+  return {
+    checkedAt: String(health.checkedAt || ""),
+    targetCount: Number(health.targetCount || 0),
+    savedCount: Number(health.savedCount || 0),
+    insufficientDataCount: Number(
+      health.insufficientDataCount || 0
+    ),
+    failedCount: Number(health.failedCount || 0),
+    recoveredCount: Number(health.recoveredCount || 0),
+    finalUncollectedCount: Number(
+      health.finalUncollectedCount || 0
+    ),
+    complete: health.complete === true,
+    v2: {
+      evaluatedCount: Number(v2.evaluatedCount || 0),
+      readyCount: Number(v2.readyCount || 0),
+      qualifiedCount: Number(v2.qualifiedCount || 0),
+      selectedCount: Number(v2.selectedCount || 0),
+      belowThresholdCount: Number(
+        v2.belowThresholdCount || 0
+      ),
+      notReadyCount: Number(v2.notReadyCount || 0),
+      readinessRate: Number(v2.readinessRate || 0),
+      missingReasons: (
+        Array.isArray(v2.missingReasons)
+          ? v2.missingReasons
+          : []
+      )
+        .slice(0, 20)
+        .map(item => ({
+          code: String(item?.code || ""),
+          label: String(item?.label || ""),
+          count: Number(item?.count || 0)
+        }))
+        .filter(item => item.code)
+    }
+  };
+}
+
 function compactRun(run) {
   if (!run) return null;
   return {
@@ -50,6 +94,9 @@ function compactRun(run) {
     checkedAt: String(run.checkedAt || ""),
     threshold: Number(run.threshold || 70),
     selected: run.selected === true,
+    collectionHealth: compactCollectionHealth(
+      run.collectionHealth
+    ),
     best: run.best ? compactCompared(run.best) : null,
     compared: (Array.isArray(run.compared) ? run.compared : [])
       .map(compactCompared)
@@ -176,6 +223,7 @@ module.exports = {
   latest,
   compactEvaluation,
   compactCompared,
+  compactCollectionHealth,
   compactRun,
   compactPrediction,
   buildPredictionSummary,
