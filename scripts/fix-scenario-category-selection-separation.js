@@ -20,6 +20,14 @@ source = source.replace(
 
 fs.writeFileSync(path, source, "utf8");
 
+const testPath = "scripts/test-scenario-category-sync.js";
+let test = fs.readFileSync(testPath, "utf8");
+test = test.replace(
+  `assert(practical.includes("CATEGORY_LABELS[sourceCategory]"));\nassert(practical.includes("original.sourceCategory"));`,
+  `assert(practical.includes("displayCategory:"));\nassert(practical.includes("categoryKey(category)"));\nassert(!practical.includes("CATEGORY_LABELS[sourceCategory]"));`
+);
+fs.writeFileSync(testPath, test, "utf8");
+
 for (const cleanupPath of [
   "scripts/fix-scenario-category-selection-separation.js"
 ]) {
