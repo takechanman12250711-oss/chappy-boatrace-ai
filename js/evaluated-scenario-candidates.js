@@ -305,6 +305,72 @@
         .sort((a, b) => a - b);
     }
 
+    const SCENARIO_CATEGORY_LABELS = Object.freeze({
+      main: "本線",
+      cover: "押さえ",
+      flow: "流し",
+      hole: "万舟・穴"
+    });
+
+    function classifyScenarioCategory(
+      ticketBranches,
+      bestBranch
+    ) {
+      const branches = Array.isArray(ticketBranches)
+        ? ticketBranches
+        : [];
+      const sourceKeys = branches
+        .map((branch) =>
+          String(branch?.source || "")
+            .replace(/^base-formation:/, "")
+        )
+        .filter((key) =>
+          Object.prototype.hasOwnProperty.call(
+            SCENARIO_CATEGORY_LABELS,
+            key
+          )
+        );
+
+      if (sourceKeys.includes("main")) {
+        return { key: "main", label: SCENARIO_CATEGORY_LABELS.main, reason: "最有力の中心展開" };
+      }
+      if (sourceKeys.includes("cover")) {
+        return { key: "cover", label: SCENARIO_CATEGORY_LABELS.cover, reason: "中心展開の軽い崩れ" };
+      }
+      if (sourceKeys.includes("flow")) {
+        return { key: "flow", label: SCENARIO_CATEGORY_LABELS.flow, reason: "同一展開の3着違い" };
+      }
+      if (sourceKeys.includes("hole")) {
+        return { key: "hole", label: SCENARIO_CATEGORY_LABELS.hole, reason: "本線とは異なる成立展開" };
+      }
+
+      const roles = branches.flatMap((branch) =>
+        Array.isArray(branch?.roles) ? branch.roles : []
+      );
+      const type = String(bestBranch?.type || "");
+      const hasAlternateHead =
+        type.includes("alternate-head") ||
+        roles.some((role) => role?.role === "alternate-head");
+      const hasPickup = roles.some((role) =>
+        role?.role === "pickup" &&
+        (role?.eligiblePositions || []).includes(3)
+      );
+      const hasHold = roles.some((role) =>
+        role?.role === "hold"
+      );
+
+      if (hasAlternateHead) {
+        return { key: "hole", label: SCENARIO_CATEGORY_LABELS.hole, reason: "別頭の独立展開" };
+      }
+      if (hasPickup) {
+        return { key: "flow", label: SCENARIO_CATEGORY_LABELS.flow, reason: "3着拾いの展開違い" };
+      }
+      if (hasHold) {
+        return { key: "cover", label: SCENARIO_CATEGORY_LABELS.cover, reason: "残し艇を使う押さえ展開" };
+      }
+      return { key: "main", label: SCENARIO_CATEGORY_LABELS.main, reason: "中心の成立展開" };
+    }
+
     function build(basePrediction) {
       const base =
         basePrediction &&
@@ -2408,12 +2474,24 @@
                 )
               );
 
+            const scenarioCategory =
+              classifyScenarioCategory(
+                ticketBranches,
+                bestBranch
+              );
+
             candidatePool.push({
               id:
                 `candidate:${ticket}`,
               ticket,
               category:
-                "展開候補",
+                scenarioCategory.label,
+              sourceCategory:
+                scenarioCategory.key,
+              displayCategory:
+                scenarioCategory.label,
+              scenarioClassificationReason:
+                scenarioCategory.reason,
               candidateKind:
                 independentBranches
                   .length
@@ -2506,9 +2584,10 @@
                 `${ticket}は評価印の着順に対応する物理候補。` +
                 "構造化された成立枝がないため、自動購入へは昇格しない。",
               comment:
-                bestBranch?.summary ||
-                `${ticket}は候補として保持。` +
-                "構造化根拠を確認できるまで実戦厳選へ追加しない。",
+                bestBranch?.summary
+                  ? `【${scenarioCategory.label}】${bestBranch.summary}`
+                  : `【${scenarioCategory.label}】${ticket}は候補として保持。` +
+                    "構造化根拠を確認できるまで実戦厳選へ追加しない。",
               structuredEvidence:
                 bestBranch
                   ? {
