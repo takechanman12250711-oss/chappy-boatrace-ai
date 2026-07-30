@@ -25,7 +25,7 @@ function getOrigin(req, env = process.env) {
 function getPendingRaceKeys(purchases = []) {
   return [...new Set(
     purchases
-      .filter((purchase) => !purchase?.settlement || purchase.settlement.status === "pending")
+      .filter((purchase) => purchase?.settlementStatus !== "settled")
       .map((purchase) => purchase?.raceKey)
       .filter(Boolean)
   )];
@@ -77,14 +77,11 @@ async function handler(req, res, dependencies = {}) {
 
     const settled = purchases.map((purchase) => {
       const result = resultByRace.get(purchase.raceKey);
-      if (!result) return purchase;
-      return { ...purchase, settlement: settlement.settlePurchase(purchase, result) };
+      return result ? settlement.settlePurchase(purchase, result) : purchase;
     });
 
     await purchaseStore.savePurchases(settled, { env });
-    const summary = settlement.summarizeSettlements(
-      settled.map((purchase) => purchase.settlement).filter(Boolean)
-    );
+    const summary = settlement.summarizeSettlements(settled);
 
     return res.status(200).json({
       ok: true,
