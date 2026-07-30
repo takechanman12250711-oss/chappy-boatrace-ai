@@ -29,7 +29,9 @@
 5. 分析
    - レース、場、展開、買い目分類ごとの実購入成績を集計する。
 
-## 今回の基盤
+## 実装済み
+
+### 本体基盤
 
 `js/purchase-sync-core.js` が以下を担当する。
 
@@ -38,12 +40,65 @@
 - `raceKey`による事前予想との紐付け
 - 実戦厳選買い目に含まれるかの判定
 
+### 購入同期API
+
+`api/purchases.js` が以下を担当する。
+
+- `Bearer`トークン認証
+- `POST`による購入明細同期
+- 1回500件までの入力検証
+- 重複除外と再同期更新
+- `GET`による日付・`raceKey`別取得
+- `Cache-Control: no-store`
+
+### 保存層
+
+`api/_purchase-store.js` はUpstash Redis RESTまたはVercel KV互換環境変数を使用する。
+
+必要なVercel環境変数：
+
+- `CHAPPY_PURCHASE_SYNC_TOKEN`
+- `UPSTASH_REDIS_REST_URL` または `KV_REST_API_URL`
+- `UPSTASH_REDIS_REST_TOKEN` または `KV_REST_API_TOKEN`
+- `CHAPPY_PURCHASE_STORE_KEY`（任意）
+
+`CHAPPY_PURCHASE_SYNC_TOKEN`は端末側コネクタとAPIの間だけで使用し、テレボートの認証情報とは分離する。
+
+## API利用条件
+
+- `GET /api/purchases`
+- `GET /api/purchases?date=YYYYMMDD`
+- `GET /api/purchases?raceKey=YYYYMMDD-JCD-RNO`
+- `POST /api/purchases`
+
+すべてのリクエストで次のヘッダーが必要。
+
+```text
+Authorization: Bearer <CHAPPY_PURCHASE_SYNC_TOKEN>
+```
+
+`POST`本文：
+
+```json
+{
+  "purchases": [
+    {
+      "date": "20260731",
+      "jcd": "07",
+      "raceNo": 5,
+      "ticket": "1-2-4",
+      "amount": 500,
+      "contractId": "契約明細ID",
+      "purchasedAt": "2026-07-31T06:00:00+09:00"
+    }
+  ]
+}
+```
+
 ## 次工程
 
-1. Vercel側に購入同期APIを追加する。
-2. 購入データ保存層を追加する。
-3. 公式結果との自動照合を追加する。
-4. 端末側コネクタを実装する。
-5. 結果分析UIへ実購入成績を追加する。
+1. 公式結果との自動照合を追加する。
+2. 端末側コネクタを実装する。
+3. 結果分析UIへ実購入成績を追加する。
 
 端末側コネクタの方式は、公式の公開APIが提供されない限り、ログイン済みセッションから購入明細を読み取る方式を採用する。
