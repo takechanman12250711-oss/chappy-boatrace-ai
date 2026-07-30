@@ -20,6 +20,20 @@ assert.equal(
   true,
   "運用手順に正本・本番・マージ方針がある"
 );
+assert.equal(
+  preflight.normalizeRepository(
+    "git@github.com:takechanman12250711-oss/chappy-boatrace-ai.git"
+  ),
+  "takechanman12250711-oss/chappy-boatrace-ai",
+  "SSH形式のremoteを正規化できる"
+);
+assert.equal(
+  preflight.normalizeRepository(
+    "https://github.com/takechanman12250711-oss/chappy-boatrace-ai.git"
+  ),
+  "takechanman12250711-oss/chappy-boatrace-ai",
+  "HTTPS形式のremoteを正規化できる"
+);
 assert.match(
   operations,
   /GitHub `main`/,
