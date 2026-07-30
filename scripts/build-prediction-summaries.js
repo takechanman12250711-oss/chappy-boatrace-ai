@@ -9,17 +9,63 @@ function latest(items, key) {
   )[0] || null;
 }
 
-function compactEvaluation(evaluation) {
-  if (!evaluation || typeof evaluation !== "object") return null;
+function compactReasons(reasons, limit) {
+  return (
+    Array.isArray(reasons)
+      ? reasons
+      : []
+  )
+    .slice(0, limit)
+    .map(reason => String(reason || ""))
+    .filter(Boolean);
+}
+
+function compactTrendSide(side, reasonLimit) {
+  if (!side || typeof side !== "object") return null;
   return {
-    ready: evaluation.ready === true,
-    honmei: evaluation.honmei || null,
-    manshu: evaluation.manshu || null,
-    dataStatus: evaluation.dataStatus || null
+    score: Number(side.score || 0),
+    level: String(side.level || ""),
+    reasons: compactReasons(
+      side.reasons,
+      reasonLimit
+    )
   };
 }
 
-function compactCompared(item) {
+function compactDataStatus(status) {
+  if (!status || typeof status !== "object") return null;
+  return {
+    stage: String(status.stage || ""),
+    label: String(status.label || ""),
+    completeness: Number(status.completeness || 0)
+  };
+}
+
+function compactEvaluation(
+  evaluation,
+  reasonLimit = 1
+) {
+  if (!evaluation || typeof evaluation !== "object") return null;
+  return {
+    ready: evaluation.ready === true,
+    honmei: compactTrendSide(
+      evaluation.honmei,
+      reasonLimit
+    ),
+    manshu: compactTrendSide(
+      evaluation.manshu,
+      reasonLimit
+    ),
+    dataStatus: compactDataStatus(
+      evaluation.dataStatus
+    )
+  };
+}
+
+function compactCompared(
+  item,
+  { reasonLimit = 1 } = {}
+) {
   return {
     jcd: String(item?.jcd || ""),
     place: String(item?.place || ""),
@@ -39,7 +85,10 @@ function compactCompared(item) {
       item?.legacyScore || 0
     ),
     historySupport: Number(item?.historySupport || 0),
-    evaluation: compactEvaluation(item?.evaluation)
+    evaluation: compactEvaluation(
+      item?.evaluation,
+      reasonLimit
+    )
   };
 }
 
@@ -97,9 +146,65 @@ function compactRun(run) {
     collectionHealth: compactCollectionHealth(
       run.collectionHealth
     ),
-    best: run.best ? compactCompared(run.best) : null,
+    best: run.best
+      ? compactCompared(
+          run.best,
+          { reasonLimit: 4 }
+        )
+      : null,
     compared: (Array.isArray(run.compared) ? run.compared : [])
-      .map(compactCompared)
+      .slice(0, 24)
+      .map(item =>
+        compactCompared(
+          item,
+          { reasonLimit: 0 }
+        )
+      )
+  };
+}
+
+function compactSelection(selection) {
+  if (!selection || typeof selection !== "object") return null;
+  return {
+    evaluator: String(selection.evaluator || ""),
+    label: String(selection.label || ""),
+    type: String(selection.type || ""),
+    scenarioLabel: String(selection.scenarioLabel || ""),
+    score: Number(selection.score || 0),
+    threshold: Number(selection.threshold || 70),
+    ready: selection.ready === true,
+    qualified: selection.qualified === true,
+    selected: selection.selected === true,
+    status: String(selection.status || ""),
+    eligibilityReasonCodes: (
+      Array.isArray(selection.eligibilityReasonCodes)
+        ? selection.eligibilityReasonCodes
+        : []
+    )
+      .slice(0, 12)
+      .map(code => String(code || ""))
+      .filter(Boolean)
+  };
+}
+
+function compactPracticalTicket(value) {
+  const row =
+    typeof value === "string"
+      ? { ticket: value }
+      : value || {};
+  return {
+    ticket: String(
+      row.ticket ||
+      row.bet ||
+      row.mark ||
+      row.combination ||
+      row.line ||
+      row.formation ||
+      ""
+    ),
+    category: String(row.category || ""),
+    scenarioType: String(row.scenarioType || ""),
+    amount: Number(row.amount || 0)
   };
 }
 
@@ -113,7 +218,9 @@ function compactPrediction(prediction) {
     raceNo: Number(prediction.raceNo || 0),
     deadlineAt: String(prediction.deadlineAt || ""),
     selectedAt: String(prediction.selectedAt || ""),
-    selection: prediction.selection || null,
+    selection: compactSelection(
+      prediction.selection
+    ),
     note: prediction.note
       ? {
           path: String(prediction.note.path || ""),
@@ -121,6 +228,9 @@ function compactPrediction(prediction) {
           publishable: prediction.note.publishable === true,
           rejectionReasons: Array.isArray(prediction.note.rejectionReasons)
             ? prediction.note.rejectionReasons
+                .slice(0, 8)
+                .map(reason => String(reason || ""))
+                .filter(Boolean)
             : []
         }
       : null,
@@ -128,7 +238,10 @@ function compactPrediction(prediction) {
       practicalTickets: Array.isArray(
         prediction?.prediction?.practicalTickets
       )
-        ? prediction.prediction.practicalTickets.slice(0, 10)
+        ? prediction.prediction.practicalTickets
+            .slice(0, 10)
+            .map(compactPracticalTicket)
+            .filter(item => item.ticket)
         : []
     }
   };
@@ -221,10 +334,15 @@ if (require.main === module) {
 
 module.exports = {
   latest,
+  compactReasons,
+  compactTrendSide,
+  compactDataStatus,
   compactEvaluation,
   compactCompared,
   compactCollectionHealth,
   compactRun,
+  compactSelection,
+  compactPracticalTicket,
   compactPrediction,
   buildPredictionSummary,
   buildPredictionSummaries
