@@ -9,6 +9,11 @@ const {
   buildPredictionSummaries
 } = require("./build-prediction-summaries");
 
+const longReason =
+  "展開・コース・ST・展示・残し拾い・当地水面を確認した長い理由".repeat(
+    4
+  );
+
 const summary = buildPredictionSummary({
   date: "20260727",
   updatedAt: "2026-07-27T08:00:00.000Z",
@@ -74,12 +79,67 @@ const summary = buildPredictionSummary({
           ready: true,
           honmei: {
             score: 72.5,
-            reasons: ["展開成立"]
+            level: "高",
+            reasons: [
+              "展開成立",
+              "コース適性",
+              "ST優位",
+              "展示気配",
+              "5件目は要約へ含めない"
+            ]
+          },
+          manshu: {
+            score: 28,
+            level: "低",
+            reasons: [
+              "外攻めは限定的",
+              "2件目",
+              "3件目",
+              "4件目",
+              "5件目は要約へ含めない"
+            ]
+          },
+          dataStatus: {
+            stage: "final",
+            label: "展示反映済み",
+            completeness: 100,
+            entryCount: 6,
+            stCount: 6,
+            exhibitionCount: 6
           }
         }
       },
       compared: [
-        { jcd: "12", raceNo: 11, score: 72.5 },
+        {
+          jcd: "12",
+          raceNo: 11,
+          score: 72.5,
+          evaluation: {
+            ready: true,
+            honmei: {
+              score: 72.5,
+              level: "高",
+              reasons: [
+                "中心理由",
+                "比較一覧では省く理由"
+              ]
+            },
+            manshu: {
+              score: 28,
+              level: "低",
+              reasons: [
+                "波乱理由",
+                "比較一覧では省く理由"
+              ]
+            },
+            dataStatus: {
+              stage: "final",
+              label: "展示反映済み",
+              completeness: 100,
+              entryCount: 6
+            }
+          }
+        },
         { jcd: "01", raceNo: 6, score: 64 }
       ]
     }
@@ -100,7 +160,19 @@ const summary = buildPredictionSummary({
       practicalTickets: Array.from(
         { length: 12 },
         (_, index) => ({
-          ticket: `1-2-${(index % 4) + 3}`
+          ticket: `1-2-${(index % 4) + 3}`,
+          category: "本線",
+          scenarioType: "中心展開",
+          amount: 100,
+          comment: longReason,
+          roleClaims: Array.from(
+            { length: 20 },
+            () => ({ reason: longReason })
+          ),
+          theoryClaims: Array.from(
+            { length: 20 },
+            () => ({ reason: longReason })
+          )
         })
       ),
       oversized: "summaryへ含めない"
@@ -129,6 +201,30 @@ assert.equal(
   59.3
 );
 assert.equal(summary.runs[0].compared.length, 2);
+assert.deepEqual(
+  summary.runs[0].best.evaluation.honmei.reasons,
+  [
+    "展開成立",
+    "コース適性",
+    "ST優位",
+    "展示気配"
+  ],
+  "選定1レースは表示用の詳細理由を4件まで保持する"
+);
+assert.deepEqual(
+  summary.runs[0].compared[0].evaluation.honmei.reasons,
+  [],
+  "比較一覧は詳細理由を重複保持しない"
+);
+assert.deepEqual(
+  summary.runs[0].compared[0].evaluation.dataStatus,
+  {
+    stage: "final",
+    label: "展示反映済み",
+    completeness: 100
+  },
+  "比較一覧の完成状態は表示に必要な項目だけを保持する"
+);
 assert.equal(
   summary.runs[0].collectionHealth.v2.evaluatedCount,
   4
@@ -159,10 +255,132 @@ assert.equal(
 );
 assert.equal(summary.predictions.length, 1);
 assert.equal(summary.predictions[0].prediction.practicalTickets.length, 10);
+assert.deepEqual(
+  summary.predictions[0].prediction.practicalTickets[0],
+  {
+    ticket: "1-2-3",
+    category: "本線",
+    scenarioType: "中心展開",
+    amount: 100
+  },
+  "買い目は初期画面に必要な識別情報だけを保持する"
+);
 assert.equal(summary.predictions[0].prediction.oversized, undefined);
+assert.equal(
+  summary.predictions[0].prediction.practicalTickets[0].comment,
+  undefined,
+  "買い目の詳細理由は原本とnoteへ残し、軽量要約へ重複させない"
+);
 assert.ok(
   Buffer.byteLength(JSON.stringify(summary)) < 20_000,
   "起動画面用の要約は20KB未満に保つ"
+);
+
+const maximumVenueSummary = buildPredictionSummary({
+  date: "20260730",
+  runs: [{
+    checkedAt: "2026-07-30T08:00:00.000Z",
+    threshold: 70,
+    selected: true,
+    best: summary.runs[0].best,
+    collectionHealth: {
+      targetCount: 24,
+      savedCount: 24,
+      complete: true,
+      v2: {
+        evaluatedCount: 24,
+        readyCount: 24,
+        qualifiedCount: 1,
+        selectedCount: 1,
+        missingReasons: []
+      }
+    },
+    compared: Array.from(
+      { length: 24 },
+      (_, index) => ({
+        jcd: String(index + 1).padStart(2, "0"),
+        place: `第${index + 1}場`,
+        raceNo: 12,
+        deadlineAt: "2026-07-30T08:30:00.000Z",
+        type: "8項目V2",
+        score: 70 + index / 10,
+        selectionReady: true,
+        selectionStatus: "ready",
+        evaluation: {
+          ready: true,
+          honmei: {
+            score: 72,
+            level: "高",
+            reasons: [
+              longReason,
+              longReason
+            ]
+          },
+          manshu: {
+            score: 35,
+            level: "低",
+            reasons: [
+              longReason,
+              longReason
+            ]
+          },
+          dataStatus: {
+            stage: "final",
+            label: "展示反映済み",
+            completeness: 100,
+            entryCount: 6,
+            stCount: 6,
+            exhibitionCount: 6
+          }
+        }
+      })
+    )
+  }],
+  predictions: [{
+    selectedAt: "2026-07-30T08:00:01.000Z",
+    selection: {
+      evaluator: "shadow-selection-v2",
+      score: 78,
+      threshold: 70,
+      ready: true,
+      qualified: true,
+      selected: true,
+      legacy: {
+        evaluation: {
+          reasons: Array(100).fill(longReason)
+        }
+      }
+    },
+    prediction: {
+      practicalTickets: Array.from(
+        { length: 10 },
+        (_, index) => ({
+          ticket: `1-2-${(index % 4) + 3}`,
+          category: "本線",
+          scenarioType: "中心展開",
+          amount: 100,
+          comment: longReason,
+          roleClaims: Array(20).fill({
+            reason: longReason
+          }),
+          theoryClaims: Array(20).fill({
+            reason: longReason
+          })
+        })
+      )
+    }
+  }]
+});
+
+assert.equal(
+  maximumVenueSummary.runs[0].compared.length,
+  24
+);
+assert.ok(
+  Buffer.byteLength(
+    JSON.stringify(maximumVenueSummary)
+  ) < 20_000,
+  "24場・10買い目・長い根拠でも要約は20KB未満に保つ"
 );
 
 const temporaryDirectory =
