@@ -1,6 +1,12 @@
 name: Apply scenario category sync
 
 on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
   push:
     branches:
       - agent/scenario-category-sync
