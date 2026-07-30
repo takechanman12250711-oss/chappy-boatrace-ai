@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { execFileSync } = require("node:child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 const REQUIRED_PATHS = [
@@ -25,6 +26,33 @@ function exists(relativePath) {
 
 function readText(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), "utf8");
+}
+
+function normalizeRepository(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^git@github\.com:/, "")
+    .replace(/^https?:\/\/github\.com\//, "")
+    .replace(/^ssh:\/\/git@github\.com\//, "")
+    .replace(/\.git$/, "")
+    .replace(/^\/+|\/+$/g, "");
+}
+
+function readOriginRepository() {
+  try {
+    const origin = execFileSync(
+      "git",
+      ["config", "--get", "remote.origin.url"],
+      {
+        cwd: ROOT,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"]
+      }
+    );
+    return normalizeRepository(origin);
+  } catch {
+    return "";
+  }
 }
 
 function checkRepositoryShape() {
@@ -67,22 +95,23 @@ function checkOperationsDocument() {
 }
 
 function checkGitMetadata() {
-  const gitDir = path.join(ROOT, ".git");
-  const hasGit = fs.existsSync(gitDir);
-  const ciRepository = String(process.env.GITHUB_REPOSITORY || "");
-  const repositoryMatches =
-    !ciRepository || ciRepository === EXPECTED_REPOSITORY;
+  const ciRepository = normalizeRepository(
+    process.env.GITHUB_REPOSITORY || ""
+  );
+  const originRepository = readOriginRepository();
+  const actualRepository = ciRepository || originRepository;
+  const expectedRepository = normalizeRepository(EXPECTED_REPOSITORY);
 
   return {
-    ok: (hasGit || Boolean(ciRepository)) && repositoryMatches,
+    ok: Boolean(actualRepository) && actualRepository === expectedRepository,
     label: "git-context",
-    detail: !repositoryMatches
-      ? `対象外リポジトリ: ${ciRepository}`
-      : hasGit
-        ? "ローカルGit作業ツリーを確認"
+    detail: !actualRepository
+      ? "GitHub Actionsまたはremote.origin.urlを確認できない"
+      : actualRepository !== expectedRepository
+        ? `対象外リポジトリ: ${actualRepository}`
         : ciRepository
-          ? `GitHub Actions: ${ciRepository}`
-          : "Git情報を確認できない"
+          ? `GitHub Actions: ${actualRepository}`
+          : `remote.origin: ${actualRepository}`
   };
 }
 
@@ -113,6 +142,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+  normalizeRepository,
+  readOriginRepository,
   checkRepositoryShape,
   checkOperationsDocument,
   checkGitMetadata,
