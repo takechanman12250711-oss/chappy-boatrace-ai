@@ -32,6 +32,39 @@ jobs:
         run: |
           node scripts/apply-scenario-category-sync.js
           sed -i 's/hole: "万舟"/hole: "万舟・穴"/g' js/evaluated-scenario-candidates.js js/practical-selection.js
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'js/practical-selection.js';
+          let source = fs.readFileSync(path, 'utf8');
+          source = source.replace(`  const CATEGORY_LABELS = Object.freeze({
+            main: "本線",
+            cover: "押さえ",
+            flow: "流し",
+            hole: "万舟・穴",
+            possibility: "展開候補"
+          });
+`, '');
+          source = source.replace(`    const sourceCategory =
+            explicitSourceCategory ||
+            categoryKey(
+              original.sourceCategory ||
+              original.displayCategory ||
+              original.category ||
+              category
+            );`, `    const sourceCategory =
+            explicitSourceCategory ||
+            categoryKey(category);`);
+          source = source.replace(`      category:
+            CATEGORY_LABELS[sourceCategory] ||
+            category,
+          sourceCategory,`, `      category,
+          displayCategory:
+            original.displayCategory ||
+            original.category ||
+            category,
+          sourceCategory,`);
+          fs.writeFileSync(path, source, 'utf8');
+          NODE
 
       - name: Syntax checks
         run: |
