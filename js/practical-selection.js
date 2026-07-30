@@ -666,6 +666,10 @@
       ...row,
       ticket,
       category,
+      displayCategory:
+        original.displayCategory ||
+        original.category ||
+        category,
       sourceCategory,
       scenarioTitle:
         String(

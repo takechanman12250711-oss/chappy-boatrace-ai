@@ -83,7 +83,8 @@
       return fallback;
     }
 
-    return String(value);
+    return String(value)
+      .replace(/independent-scenario/g, "独立展開");
   }
 
   function safeNum(value, fallback = 0) {
