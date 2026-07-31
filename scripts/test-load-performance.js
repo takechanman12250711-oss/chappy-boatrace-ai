@@ -191,7 +191,7 @@ assert.equal(
   "結果画面の軽量ローダーだけを初期読込する"
 );
 [
-  "style.css?v=20260729-review2",
+  "style.css?v=20260731-ticket-wrap1",
   "js/stats-runtime-loader.js?v=20260729-review2",
   "js/prediction-runtime-loader.js?v=20260729-review2"
 ].forEach(asset => {
