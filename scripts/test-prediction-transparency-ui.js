@@ -597,6 +597,30 @@ assert.doesNotMatch(
   "公式レース傾向の根拠をCSSで途中まで隠さない"
 );
 
+const ticketReasonRule =
+  styleCss.match(
+    /\.v3-ticket-inline\s*>\s*\.v3-formation-reason\s*\{([\s\S]*?)\}/
+  );
+assert.ok(
+  ticketReasonRule,
+  "AI買い目の説明文を行全体へ配置するCSSが存在する"
+);
+assert.match(
+  ticketReasonRule[1],
+  /grid-column:\s*1\s*\/\s*-1/,
+  "AI買い目の説明文を暗黙の3列目へ押し出さない"
+);
+assert.match(
+  ticketReasonRule[1],
+  /overflow-wrap:\s*anywhere/,
+  "AI買い目の長い説明文をカード内で折り返す"
+);
+assert.doesNotMatch(
+  ticketReasonRule[1],
+  /white-space:\s*nowrap|overflow:\s*hidden|-webkit-line-clamp|max-height\s*:/,
+  "AI買い目の説明文をCSSで途中まで隠さない"
+);
+
 console.log(
   "予想透明性UIテスト: 合格"
 );
