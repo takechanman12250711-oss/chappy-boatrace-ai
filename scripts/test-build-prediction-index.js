@@ -4,7 +4,13 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { buildPredictionIndex } = require("./build-prediction-index");
+const {
+  RUN_LIMIT,
+  PREDICTION_LIMIT,
+  VERIFICATION_LIMIT,
+  SHADOW_V2_LIMIT,
+  buildPredictionIndex
+} = require("./build-prediction-index");
 const autoStats = require("../js/auto-stats");
 const verification = require("../js/prediction-verification");
 
@@ -182,8 +188,22 @@ try {
       winningMethod: "差し",
       payout: 1250,
       popularity: 4,
-      finishers: [],
-      starts: [],
+      finishers: [{
+        rank: 1,
+        boat: 2,
+        registerNo: "9999",
+        racerName: "日次だけに保持",
+        raceTime: "1'50\"0"
+      }],
+      starts: [{
+        course: 2,
+        boat: 2,
+        st: 0.08,
+        marker: "",
+        falseStart: false,
+        lateStart: false,
+        raw: ".08 差し"
+      }],
       settledAt:
         "2026-07-22T02:00:00Z",
       verification: {
@@ -280,6 +300,27 @@ try {
   const index = buildPredictionIndex(directory);
   assert.equal(index.sourceFileCount, 2);
   assert.equal(index.schemaVersion, 4);
+  assert.deepEqual(
+    index.sourceRecordCounts,
+    {
+      runs: 2,
+      predictions: 1,
+      verificationPredictions: 2,
+      shadowV2Predictions: 1
+    }
+  );
+  assert.deepEqual(
+    index.retentionLimits,
+    {
+      runs: RUN_LIMIT,
+      predictions:
+        PREDICTION_LIMIT,
+      verificationPredictions:
+        VERIFICATION_LIMIT,
+      shadowV2Predictions:
+        SHADOW_V2_LIMIT
+    }
+  );
   assert.equal(index.runs.length, 2);
   assert.equal(index.runs[0].date, "20260722");
   assert.equal(index.runs[0].collectionHealth.savedCount, 1);
@@ -362,6 +403,26 @@ try {
     "fingerprint-1234",
     "軽量indexでも照合済み支持根拠のfingerprintを保持する"
   );
+  assert.deepEqual(
+    index
+      .verificationPredictions[0]
+      .result.finishers,
+    [{ rank: 1, boat: 2 }],
+    "着順は事後検証に必要な順位と艇番だけを集約indexへ残す"
+  );
+  assert.deepEqual(
+    index
+      .verificationPredictions[0]
+      .result.starts,
+    [{
+      course: 2,
+      boat: 2,
+      st: 0.08,
+      falseStart: false,
+      lateStart: false
+    }],
+    "実戦STは検証に必要な項目だけを集約indexへ残す"
+  );
   assert.equal(
     index
       .verificationPredictions[0]
@@ -396,10 +457,9 @@ try {
   );
   assert.equal(
     index.shadowV2Predictions[0]
-      .evaluation.components[0]
-      .reasons,
+      .evaluation.components,
     undefined,
-    "集約indexはV2要約だけにする"
+    "V2の8項目詳細は日次JSONへ残し、集約indexは進捗要約だけにする"
   );
 
   const compactRecord =
@@ -483,6 +543,108 @@ try {
         richVerification.raceKey
     )?.result,
     "2-1-3"
+  );
+
+  const overflowDay = {
+    date: "20260720",
+    runs: Array.from(
+      { length: RUN_LIMIT + 5 },
+      (_, index) => ({
+        runKey: `old-run-${index}`,
+        checkedAt:
+          `2020-01-01T00:${String(
+            index % 60
+          ).padStart(2, "0")}:00Z`,
+        selected: false
+      })
+    ),
+    predictions: Array.from(
+      {
+        length:
+          PREDICTION_LIMIT + 5
+      },
+      (_, index) => ({
+        raceKey:
+          `old-selected-${index}`,
+        selectedAt:
+          `2020-01-01T00:${String(
+            index % 60
+          ).padStart(2, "0")}:00Z`
+      })
+    ),
+    verificationPredictions:
+      Array.from(
+        {
+          length:
+            VERIFICATION_LIMIT + 5
+        },
+        (_, index) => ({
+          raceKey:
+            `old-verification-${index}`,
+          selectedAt:
+            `2020-01-01T00:${String(
+              index % 60
+            ).padStart(2, "0")}:00Z`
+        })
+      ),
+    shadowV2Predictions:
+      Array.from(
+        {
+          length:
+            SHADOW_V2_LIMIT + 5
+        },
+        (_, index) => ({
+          recordKey:
+            `old-shadow-${index}`,
+          raceKey:
+            `old-shadow-${index}`,
+          capturedAt:
+            `2020-01-01T00:${String(
+              index % 60
+            ).padStart(2, "0")}:00Z`
+        })
+      )
+  };
+  fs.writeFileSync(
+    path.join(
+      directory,
+      "20260720.json"
+    ),
+    JSON.stringify(overflowDay)
+  );
+
+  const retained =
+    buildPredictionIndex(directory);
+  assert.equal(
+    retained.runs.length,
+    RUN_LIMIT,
+    "実行履歴は初期表示用の直近上限へ収める"
+  );
+  assert.equal(
+    retained.predictions.length,
+    PREDICTION_LIMIT,
+    "採用履歴は初期表示用の直近上限へ収める"
+  );
+  assert.equal(
+    retained
+      .verificationPredictions
+      .length,
+    VERIFICATION_LIMIT,
+    "完全な検証履歴は日次JSONへ残し、集約indexは直近上限へ収める"
+  );
+  assert.equal(
+    retained
+      .shadowV2Predictions
+      .length,
+    SHADOW_V2_LIMIT,
+    "V2進捗は500Rの節目を含む範囲で上限を固定する"
+  );
+  assert.equal(
+    retained
+      .sourceRecordCounts
+      .verificationPredictions,
+    VERIFICATION_LIMIT + 7,
+    "切り落とした完全履歴の総件数を監査用に残す"
   );
 } finally {
   fs.rmSync(directory, { recursive: true, force: true });
