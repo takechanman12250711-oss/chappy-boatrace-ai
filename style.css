@@ -3011,6 +3011,9 @@ body {
   display: grid;
   grid-template-columns:
     max-content minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   align-items: start;
   gap: 8px;
 }
@@ -3036,6 +3039,15 @@ body {
 
 .v3-ticket-values > span {
   white-space: nowrap;
+}
+
+.v3-ticket-inline > .v3-formation-reason {
+  grid-column: 1 / -1;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 @media (max-width: 480px) {
