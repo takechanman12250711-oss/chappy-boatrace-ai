@@ -1,0 +1,166 @@
+name: Verify production purchase flow
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-purchase-production.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-production-purchase-flow
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run non-destructive production E2E
+        env:
+          API_BASE_URL: ${{ secrets.CHAPPY_API_BASE_URL }}
+          SYNC_TOKEN: ${{ secrets.CHAPPY_PURCHASE_SYNC_TOKEN }}
+        run: |
+          node <<'NODE'
+          "use strict";
+
+          const baseUrl = String(process.env.API_BASE_URL || "").replace(/\/$/, "");
+          const token = String(process.env.SYNC_TOKEN || "");
+          const settlementFields = [
+            "settlementStatus",
+            "resultCombination",
+            "resultPayoutPer100",
+            "resultPopularity",
+            "winningMethod",
+            "hit",
+            "payout",
+            "profit",
+            "returnRate",
+            "settledAt"
+          ];
+
+          if (!/^https:\/\//.test(baseUrl)) {
+            throw new Error("CHAPPY_API_BASE_URL is missing or invalid");
+          }
+          if (!token) {
+            throw new Error("CHAPPY_PURCHASE_SYNC_TOKEN is missing");
+          }
+
+          async function request(path, options = {}) {
+            const response = await fetch(baseUrl + path, {
+              ...options,
+              headers: {
+                Authorization: "Bearer " + token,
+                ...(options.body ? { "Content-Type": "application/json" } : {}),
+                ...(options.headers || {})
+              },
+              signal: AbortSignal.timeout(60000)
+            });
+            const raw = await response.text();
+            let body;
+            try {
+              body = JSON.parse(raw);
+            } catch {
+              throw new Error((options.method || "GET") + " " + path + " returned invalid JSON");
+            }
+            if (!response.ok || body?.ok !== true) {
+              throw new Error(
+                (options.method || "GET") + " " + path + " failed with " +
+                response.status + ": " + String(body?.error || "unknown error")
+              );
+            }
+            return body;
+          }
+
+          async function main() {
+            const before = await request("/api/purchases");
+            if (!Array.isArray(before.purchases)) {
+              throw new Error("Purchase history response is invalid");
+            }
+            if (!before.purchases.length) {
+              throw new Error("No saved production purchase is available for a non-destructive E2E");
+            }
+
+            const sample =
+              before.purchases.find((item) => item?.settlementStatus !== "settled") ||
+              before.purchases.find((item) => item?.settlementStatus === "settled") ||
+              before.purchases[0];
+
+            const originalSettlement = Object.fromEntries(
+              settlementFields
+                .filter((field) => Object.prototype.hasOwnProperty.call(sample, field))
+                .map((field) => [field, sample[field]])
+            );
+
+            const payload = {
+              date: sample.date,
+              jcd: sample.jcd,
+              raceNo: sample.raceNo,
+              ticket: sample.ticket,
+              amount: sample.amount,
+              sourceId: sample.sourceId,
+              source: sample.source,
+              purchasedAt: sample.purchasedAt,
+              importedAt: sample.importedAt
+            };
+
+            const syncResult = await request("/api/purchases", {
+              method: "POST",
+              body: JSON.stringify({ purchases: [payload] })
+            });
+            if (syncResult.received !== 1 || syncResult.autoSettlement?.triggered !== true) {
+              throw new Error("Purchase sync did not trigger automatic settlement");
+            }
+
+            const afterSync = await request("/api/purchases");
+            const persisted = afterSync.purchases.find(
+              (item) => item?.purchaseKey === sample.purchaseKey
+            );
+            if (!persisted) {
+              throw new Error("Re-synced purchase was not persisted in Redis");
+            }
+            for (const field of ["raceKey", "ticket", "amount"]) {
+              if (persisted[field] !== sample[field]) {
+                throw new Error("Persisted purchase changed field: " + field);
+              }
+            }
+            for (const [field, value] of Object.entries(originalSettlement)) {
+              if (persisted[field] !== value) {
+                throw new Error("Re-sync lost settlement field: " + field);
+              }
+            }
+
+            const settlement = await request("/api/settle-purchases", { method: "POST" });
+            if (sample.settlementStatus !== "settled" && settlement.checkedRaces < 1) {
+              throw new Error("Pending purchase did not reach result reconciliation");
+            }
+
+            const afterSettlement = await request("/api/purchases");
+            const finalPurchase = afterSettlement.purchases.find(
+              (item) => item?.purchaseKey === sample.purchaseKey
+            );
+            if (!finalPurchase) {
+              throw new Error("Settled purchase could not be reloaded from Redis");
+            }
+
+            console.log(JSON.stringify({
+              ok: true,
+              authentication: "passed",
+              purchaseSync: "passed",
+              redisPersistence: "passed",
+              resultReconciliation:
+                sample.settlementStatus === "settled" ? "already-settled" : "checked",
+              settlement: "passed",
+              autoSettlement: true,
+              storedPurchases: afterSettlement.count,
+              finalStatus: finalPurchase.settlementStatus || "unsettled"
+            }));
+          }
+
+          main().catch((error) => {
+            console.error(error.message);
+            process.exitCode = 1;
+          });
+          NODE
