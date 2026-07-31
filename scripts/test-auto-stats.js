@@ -487,7 +487,7 @@ assert.match(
 );
 assert.match(
   indexSource,
-  /style\.css\?v=20260729-review2/,
+  /style\.css\?v=20260731-ticket-wrap1/,
   "結果分析CSSのキャッシュ更新が不足しています"
 );
 assert.match(
