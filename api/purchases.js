@@ -20,6 +20,51 @@ function isAuthorized(req, env = process.env) {
   return Boolean(expected) && getBearerToken(req) === expected;
 }
 
+function getOrigin(req, env = process.env) {
+  const configured = String(env.CHAPPY_API_BASE_URL || "").replace(/\/$/, "");
+  if (configured) return configured;
+
+  const host = String(
+    req?.headers?.["x-forwarded-host"] ||
+    req?.headers?.host ||
+    ""
+  );
+  const protocol = String(req?.headers?.["x-forwarded-proto"] || "https");
+  return host ? `${protocol}://${host}` : "";
+}
+
+async function triggerSettlement(req, env = process.env, fetchImpl = fetch) {
+  const origin = getOrigin(req, env);
+  const token = String(env.CHAPPY_PURCHASE_SYNC_TOKEN || "");
+
+  if (!origin || !token) {
+    return {
+      triggered: false,
+      reason: "settlement_endpoint_unavailable"
+    };
+  }
+
+  try {
+    const response = await fetchImpl(`${origin}/api/settle-purchases`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      signal: AbortSignal.timeout(20000)
+    });
+
+    return {
+      triggered: response.ok,
+      status: response.status
+    };
+  } catch (error) {
+    return {
+      triggered: false,
+      reason: String(error?.message || error)
+    };
+  }
+}
+
 function parseBody(req) {
   if (req?.body && typeof req.body === "object") return req.body;
   if (typeof req?.body !== "string" || !req.body.trim()) return {};
@@ -73,6 +118,7 @@ function filterPurchases(purchases, query = {}) {
 async function handler(req, res, dependencies = {}) {
   const env = dependencies.env || process.env;
   const purchaseStore = dependencies.store || store;
+  const fetchImpl = dependencies.fetchImpl || fetch;
 
   res.setHeader?.("Cache-Control", "no-store");
 
@@ -100,11 +146,14 @@ async function handler(req, res, dependencies = {}) {
       const merged = purchaseSync.mergePurchases(existing, incoming);
       await purchaseStore.savePurchases(merged, { env });
 
+      const autoSettlement = await triggerSettlement(req, env, fetchImpl);
+
       return res.status(200).json({
         ok: true,
         received: incoming.length,
         stored: merged.length,
         added: Math.max(0, merged.length - existing.length),
+        autoSettlement,
         syncedAt: new Date().toISOString()
       });
     }
@@ -132,6 +181,8 @@ module.exports._test = {
   MAX_BATCH_SIZE,
   getBearerToken,
   isAuthorized,
+  getOrigin,
+  triggerSettlement,
   parseBody,
   normalizeBatch,
   filterPurchases,
