@@ -1,0 +1,28 @@
+name: Post Vercel final check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify secrets
+        env:
+          API_BASE_URL: ${{ secrets.CHAPPY_API_BASE_URL }}
+          SYNC_TOKEN: ${{ secrets.CHAPPY_PURCHASE_SYNC_TOKEN }}
+        run: |
+          test -n "$API_BASE_URL"
+          test -n "$SYNC_TOKEN"
+      - name: Call settlement API
+        env:
+          API_BASE_URL: ${{ secrets.CHAPPY_API_BASE_URL }}
+          SYNC_TOKEN: ${{ secrets.CHAPPY_PURCHASE_SYNC_TOKEN }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --retry 2 \
+            --max-time 60 \
+            -X POST \
+            -H "Authorization: Bearer $SYNC_TOKEN" \
+            "${API_BASE_URL%/}/api/settle-purchases"
