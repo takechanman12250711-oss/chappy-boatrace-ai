@@ -3,9 +3,17 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const DEFAULT_LIMIT = 500;
-const VERIFICATION_LIMIT = 1500;
-const SHADOW_V2_LIMIT = 1000;
+/*
+  index.json は結果画面の初期表示用キャッシュで、完全履歴の正本ではない。
+  完全な予想・結果・検証根拠は日次JSONへ残し、初期表示には直近分だけを載せる。
+
+  1件の検証レコードは結果確定後に着順・ST明細が増えるため、件数上限を
+  分けないと、正常な結果収集だけで3MBの配信上限を超えて保存処理が止まる。
+*/
+const RUN_LIMIT = 100;
+const PREDICTION_LIMIT = 100;
+const VERIFICATION_LIMIT = 300;
+const SHADOW_V2_LIMIT = 600;
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -16,6 +24,172 @@ function compactMark(value) {
   return {
     boatNo: Number(value.boatNo || value.no || value.boat || 0),
     name: String(value.name || value.playerName || "")
+  };
+}
+
+function compactCollectionTarget(
+  value
+) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    raceKey:
+      String(value.raceKey || ""),
+    jcd:
+      String(value.jcd || ""),
+    place:
+      String(value.place || ""),
+    status:
+      String(value.status || ""),
+    missingReasons:
+      Array.isArray(
+        value.missingReasons
+      )
+        ? value.missingReasons
+            .map(String)
+        : [],
+    recoveryState:
+      String(
+        value.recoveryState || ""
+      )
+  };
+}
+
+function compactCollectionHealth(
+  value
+) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const numericKeys = [
+    "targetCount",
+    "savedCount",
+    "insufficientDataCount",
+    "failedCount",
+    "recoveredCount",
+    "retryingCount",
+    "finalUncollectedCount"
+  ];
+  const compact = {
+    checkedAt:
+      String(value.checkedAt || ""),
+    complete:
+      value.complete === true,
+    v2:
+      value.v2 &&
+      typeof value.v2 === "object"
+        ? {
+            evaluatedCount:
+              Number(
+                value.v2
+                  .evaluatedCount || 0
+              ),
+            readyCount:
+              Number(
+                value.v2
+                  .readyCount || 0
+              ),
+            qualifiedCount:
+              Number(
+                value.v2
+                  .qualifiedCount || 0
+              ),
+            selectedCount:
+              Number(
+                value.v2
+                  .selectedCount || 0
+              ),
+            belowThresholdCount:
+              Number(
+                value.v2
+                  .belowThresholdCount || 0
+              ),
+            notReadyCount:
+              Number(
+                value.v2
+                  .notReadyCount || 0
+              ),
+            readinessRate:
+              Number(
+                value.v2
+                  .readinessRate || 0
+              ),
+            missingReasons:
+              Array.isArray(
+                value.v2
+                  .missingReasons
+              )
+                ? value.v2
+                    .missingReasons
+                    .map(reason => ({
+                      code:
+                        String(
+                          reason?.code || ""
+                        ),
+                      label:
+                        String(
+                          reason?.label || ""
+                        ),
+                      count:
+                        Number(
+                          reason?.count || 0
+                        )
+                    }))
+                : []
+          }
+        : null,
+    targets:
+      (
+        Array.isArray(value.targets)
+          ? value.targets
+          : []
+      )
+        .map(
+          compactCollectionTarget
+        )
+        .filter(Boolean)
+  };
+
+  numericKeys.forEach(key => {
+    compact[key] =
+      Number(value[key] || 0);
+  });
+
+  return compact;
+}
+
+function compactRun(date, run) {
+  return {
+    date,
+    runKey:
+      String(run?.runKey || ""),
+    checkedAt:
+      String(run?.checkedAt || ""),
+    threshold:
+      Number(run?.threshold || 0),
+    selected:
+      run?.selected === true,
+    collectionHealth:
+      compactCollectionHealth(
+        run?.collectionHealth
+      ),
+    best: run?.best
+      ? {
+          jcd:
+            String(run.best.jcd || ""),
+          place:
+            String(run.best.place || ""),
+          raceNo:
+            Number(run.best.raceNo || 0),
+          type:
+            String(run.best.type || ""),
+          score:
+            Number(run.best.score || 0)
+        }
+      : null
   };
 }
 
@@ -307,13 +481,46 @@ function compactResult(value) {
         value.popularity || 0
       ),
     finishers:
-      Array.isArray(value.finishers)
-        ? value.finishers
-        : [],
+      (
+        Array.isArray(value.finishers)
+          ? value.finishers
+          : []
+      ).map(row => ({
+        rank:
+          Number(row?.rank || 0),
+        boat:
+          Number(
+            row?.boat ||
+            row?.boatNo ||
+            0
+          )
+      })),
     starts:
-      Array.isArray(value.starts)
-        ? value.starts
-        : [],
+      (
+        Array.isArray(value.starts)
+          ? value.starts
+          : []
+      ).map(row => ({
+        course:
+          Number(row?.course || 0),
+        boat:
+          Number(
+            row?.boat ||
+            row?.boatNo ||
+            0
+          ),
+        st:
+          row?.st !== null &&
+          row?.st !== undefined &&
+          row?.st !== "" &&
+          Number.isFinite(Number(row.st))
+            ? Number(row.st)
+            : null,
+        falseStart:
+          row?.falseStart === true,
+        lateStart:
+          row?.lateStart === true
+      })),
     settledAt:
       String(value.settledAt || ""),
     supportIdentity:
@@ -563,85 +770,41 @@ function compactShadowV2(record) {
       String(record?.place || ""),
     raceNo:
       Number(record?.raceNo || 0),
-    verificationMode:
-      String(
-        record?.verificationMode ||
-        "shadow_v2"
-      ),
     capturedAt:
       String(record?.capturedAt || ""),
-    deadlineAt:
-      String(record?.deadlineAt || ""),
-    timing: record?.timing || null,
-    status:
-      String(record?.status || ""),
     complete:
       record?.complete === true,
     calibrationEligible:
       record?.calibrationEligible === true,
-    readiness: record?.readiness || null,
-    availability:
-      record?.availability || null,
-    missingReasonCodes:
-      Array.isArray(
-        record?.missingReasonCodes
-      )
-        ? record.missingReasonCodes
-        : [],
-    eligibilityReasonCodes:
-      Array.isArray(
-        record?.eligibilityReasonCodes
-      )
-        ? record.eligibilityReasonCodes
-        : [],
-    profile: record?.profile || null,
+    readiness:
+      record?.readiness &&
+      typeof record.readiness ===
+        "object"
+        ? {
+            allComponentsFormal:
+              record.readiness
+                .allComponentsFormal ===
+              true
+          }
+        : null,
     evaluation: {
       totalScore:
-        evaluation?.totalScore ?? null,
-      priority:
-        Array.isArray(evaluation?.priority)
-          ? evaluation.priority
-          : [],
-      axisBoatNo:
-        Number(evaluation?.axisBoatNo || 0) ||
-        null,
-      scenario:
-        evaluation?.scenario || null,
-      components:
-        (
-          Array.isArray(
-            evaluation?.components
-          )
-            ? evaluation.components
-            : []
-        ).map(component => ({
-          key:
-            String(component?.key || ""),
-          label:
-            String(component?.label || ""),
-          score:
-            component?.score ?? null,
-          source:
-            String(component?.source || ""),
-          focusBoatNo:
-            Number(
-              component?.focusBoatNo || 0
-            ) || null,
-          focusBoatNos:
-            component?.focusBoatNos || null,
-          formal:
-            component?.formal === true,
-          weight:
-            Number(component?.weight || 0),
-          contribution:
-            component?.contribution ?? null
-        }))
+        evaluation?.totalScore ?? null
     },
-    versions: record?.versions || null,
+    versions:
+      record?.versions &&
+      typeof record.versions ===
+        "object"
+        ? {
+            logicFingerprint:
+              String(
+                record.versions
+                  .logicFingerprint || ""
+              )
+          }
+        : null,
     cohortKey:
       String(record?.cohortKey || ""),
-    selectionReference:
-      record?.selectionReference || null,
     officialResultUsedForEvaluation:
       record
         ?.officialResultUsedForEvaluation ===
@@ -649,7 +812,7 @@ function compactShadowV2(record) {
   };
 }
 
-function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
+function buildPredictionIndex(directory) {
   const files = fs.existsSync(directory)
     ? fs.readdirSync(directory)
         .filter(name => /^\d{8}\.json$/.test(name))
@@ -666,23 +829,9 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     const date = String(data?.date || name.slice(0, 8));
 
     (Array.isArray(data?.runs) ? data.runs : []).forEach(run => {
-      runs.push({
-        date,
-        runKey: run?.runKey || "",
-        checkedAt: run?.checkedAt || "",
-        threshold: Number(run?.threshold || 0),
-        selected: Boolean(run?.selected),
-        collectionHealth: run?.collectionHealth || null,
-        best: run?.best
-          ? {
-              jcd: run.best.jcd || "",
-              place: run.best.place || "",
-              raceNo: Number(run.best.raceNo || 0),
-              type: run.best.type || "",
-              score: Number(run.best.score || 0)
-            }
-          : null
-      });
+      runs.push(
+        compactRun(date, run)
+      );
     });
 
     (Array.isArray(data?.predictions) ? data.predictions : []).forEach(prediction => {
@@ -732,16 +881,40 @@ function buildPredictionIndex(directory, limit = DEFAULT_LIMIT) {
     schemaVersion: 4,
     generatedAt: new Date().toISOString(),
     sourceFileCount: files.length,
-    runs: runs.slice(0, limit),
-    predictions: predictions.slice(0, limit),
-    verificationPredictions: verificationPredictions.slice(
-      0,
-      Math.max(limit, VERIFICATION_LIMIT)
-    ),
+    sourceRecordCounts: {
+      runs: runs.length,
+      predictions:
+        predictions.length,
+      verificationPredictions:
+        verificationPredictions.length,
+      shadowV2Predictions:
+        shadowV2Predictions.length
+    },
+    retentionLimits: {
+      runs: RUN_LIMIT,
+      predictions:
+        PREDICTION_LIMIT,
+      verificationPredictions:
+        VERIFICATION_LIMIT,
+      shadowV2Predictions:
+        SHADOW_V2_LIMIT
+    },
+    runs:
+      runs.slice(0, RUN_LIMIT),
+    predictions:
+      predictions.slice(
+        0,
+        PREDICTION_LIMIT
+      ),
+    verificationPredictions:
+      verificationPredictions.slice(
+        0,
+        VERIFICATION_LIMIT
+      ),
     shadowV2Predictions:
       shadowV2Predictions.slice(
         0,
-        Math.max(limit, SHADOW_V2_LIMIT)
+        SHADOW_V2_LIMIT
       )
   };
 }
@@ -775,7 +948,14 @@ function main() {
 if (require.main === module) main();
 
 module.exports = {
+  RUN_LIMIT,
+  PREDICTION_LIMIT,
+  VERIFICATION_LIMIT,
+  SHADOW_V2_LIMIT,
   buildPredictionIndex,
+  compactCollectionTarget,
+  compactCollectionHealth,
+  compactRun,
   compactSelection,
   compactPracticalTicket,
   compactVerificationEvidence,
