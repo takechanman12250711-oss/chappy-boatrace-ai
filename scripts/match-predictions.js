@@ -8,6 +8,9 @@ const verification = require("../js/prediction-verification");
 const boatIdentity = require(
   "../js/boat-identity"
 );
+const scenarioLikelihoodV5Verification = require(
+  "../js/scenario-likelihood-v5-verification"
+);
 
 function boatIdentityInspection(record) {
   return boatIdentity.inspectPrediction(
@@ -246,6 +249,11 @@ function settlePrediction(prediction, result) {
     starts: Array.isArray(result?.starts) ? result.starts : [],
     honmeiBoat,
     honmeiFirst: Boolean(honmeiBoat && resultTicket.split("-")[0] === honmeiBoat),
+    scenarioLikelihoodV5Verification:
+      scenarioLikelihoodV5Verification.verify(
+        prediction?.scenarioLikelihoodV5,
+        result
+      ),
     verification: detail
   };
 }
@@ -268,6 +276,12 @@ function buildSummary(predictions) {
   const verificationSummary = verification.buildSummary(
     settled.map(item => item.result?.verification || item.result)
   );
+  const scenarioLikelihoodV5Summary =
+    scenarioLikelihoodV5Verification.buildSummary(
+      settled.map(item =>
+        item?.result?.scenarioLikelihoodV5Verification
+      )
+    );
 
   return {
     schemaVersion: 3,
@@ -306,7 +320,8 @@ function buildSummary(predictions) {
     theoryPerformanceSummary:
       verificationSummary.theoryPerformanceSummary,
     markSummary: verificationSummary.markSummary,
-    priorityStageSummary: verificationSummary.priorityStageSummary
+    priorityStageSummary: verificationSummary.priorityStageSummary,
+    scenarioLikelihoodV5Summary
   };
 }
 
