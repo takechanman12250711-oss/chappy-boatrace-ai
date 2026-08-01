@@ -3,7 +3,7 @@ name: Verify note regeneration 20260801
 on:
   push:
     branches:
-      - verify/note-regeneration-20260801
+      - main
     paths:
       - ".github/workflows/verify-note-regeneration-20260801.yml"
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: verify/note-regeneration-20260801
+          ref: main
           fetch-depth: 0
 
       - name: Snapshot existing note output
@@ -121,4 +121,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add verification/note-regeneration-20260801.json .github/workflows/verify-note-regeneration-20260801.yml
           git commit -m "8月1日note再生成の検証結果を記録"
-          git push origin HEAD:verify/note-regeneration-20260801
+          git push origin HEAD:main
