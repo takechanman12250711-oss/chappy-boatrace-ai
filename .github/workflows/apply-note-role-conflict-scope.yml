@@ -3,10 +3,8 @@ name: Apply note role conflict scope
 on:
   push:
     branches:
-      - fix/note-role-conflict-scope
+      - main
     paths:
-      - "scripts/apply-note-role-conflict-scope.js"
-      - "scripts/test-note-role-conflict-scope.js"
       - ".github/workflows/apply-note-role-conflict-scope.yml"
   workflow_dispatch:
 
@@ -23,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fix/note-role-conflict-scope
+          ref: main
           fetch-depth: 0
 
       - name: Apply focused patch
@@ -37,7 +35,7 @@ jobs:
           node scripts/test-theory-integration.js
           node scripts/check-charter.js
 
-      - name: Commit generated source change
+      - name: Keep validated source and test only
         run: |
           rm scripts/apply-note-role-conflict-scope.js
           rm .github/workflows/apply-note-role-conflict-scope.yml
@@ -45,6 +43,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add js/note-generator.js scripts/test-note-role-conflict-scope.js scripts/apply-note-role-conflict-scope.js .github/workflows/apply-note-role-conflict-scope.yml
           git commit -m "note役割重複判定を同一展開内に限定"
-          git push origin HEAD:fix/note-role-conflict-scope
-
-# trigger focused validation
+          git push origin HEAD:main
