@@ -1112,33 +1112,52 @@
       ).map(Number);
     }
 
-    const holdBoats =
-      boatsBeforeRole(
-        flowSummary,
-        "残し"
-      );
-
-    const pickupBoats =
-      boatsBeforeRole(
-        flowSummary,
-        "拾い"
-      );
-
-    const duplicatedRoles =
-      holdBoats.filter(
-        boatNo =>
-          pickupBoats.includes(
-            boatNo
+    function contradictoryRoleBoats(
+      text
+    ) {
+      const sentences =
+        safeText(text, "")
+          .split(/[。！？\n]+/)
+          .map(sentence =>
+            sentence.trim()
           )
+          .filter(Boolean);
+
+      return uniqueText(
+        sentences.flatMap(sentence => {
+          const holdBoats =
+            boatsBeforeRole(
+              sentence,
+              "残し"
+            );
+          const pickupBoats =
+            boatsBeforeRole(
+              sentence,
+              "拾い"
+            );
+
+          return holdBoats.filter(
+            boatNo =>
+              pickupBoats.includes(
+                boatNo
+              )
+          );
+        })
+      ).map(Number);
+    }
+
+    const contradictoryRoles =
+      contradictoryRoleBoats(
+        flowSummary
       );
 
     if (
-      duplicatedRoles.length
+      contradictoryRoles.length
     ) {
       rejectionReasons.push(
-        `${duplicatedRoles.join(
+        `${contradictoryRoles.join(
           "・"
-        )}号艇が「残し」と「拾い」に重複しています`
+        )}号艇が同一展開内で「残し」と「拾い」に重複しています`
       );
     }
 
@@ -1267,7 +1286,8 @@
     buildTags,
     createPracticalSelection,
     formatDeadlineLabel,
-    compactTicketComment
+    compactTicketComment,
+    contradictoryRoleBoats
   };
 
   root.ChappyNoteGenerator =
