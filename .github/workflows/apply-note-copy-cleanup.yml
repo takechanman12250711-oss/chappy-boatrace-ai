@@ -1,0 +1,55 @@
+name: Apply note copy cleanup
+
+on:
+  push:
+    branches:
+      - fix/note-copy-cleanup
+    paths:
+      - "scripts/apply-note-copy-cleanup.js"
+      - "scripts/test-note-copy-cleanup.js"
+      - ".github/workflows/apply-note-copy-cleanup.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/apply-note-copy-cleanup.js"
+      - "scripts/test-note-copy-cleanup.js"
+      - ".github/workflows/apply-note-copy-cleanup.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-note-copy-cleanup
+  cancel-in-progress: false
+
+jobs:
+  apply-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/note-copy-cleanup
+          fetch-depth: 0
+
+      - name: Apply focused patch
+        run: node scripts/apply-note-copy-cleanup.js
+
+      - name: Check and test
+        run: |
+          node --check js/note-generator.js
+          node scripts/test-note-copy-cleanup.js
+          node scripts/test-theory-integration.js
+          node scripts/check-charter.js
+
+      - name: Commit generated source change
+        if: github.event_name != 'pull_request'
+        run: |
+          rm scripts/apply-note-copy-cleanup.js
+          rm .github/workflows/apply-note-copy-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/note-generator.js scripts/test-note-copy-cleanup.js scripts/apply-note-copy-cleanup.js .github/workflows/apply-note-copy-cleanup.yml
+          git commit -m "note文章の締切重複と説明文重複を修正"
+          git push origin HEAD:fix/note-copy-cleanup
