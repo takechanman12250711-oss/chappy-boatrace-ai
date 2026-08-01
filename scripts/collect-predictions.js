@@ -82,6 +82,14 @@ const shadowSelectionV2 =
     null,
     "評価器"
   );
+const scenarioLikelihoodV5 =
+  loadOptionalV2Dependency(
+    () => require(
+      "../js/scenario-likelihood-v5"
+    ),
+    null,
+    "展開相対成立度"
+  );
 
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
@@ -129,7 +137,8 @@ const SHADOW_LOGIC_FINGERPRINT = safeFingerprintFiles([
   "js/practical-selection.js",
   "js/theory-input.js",
   "js/prediction-conditions.js",
-  "js/shadow-selection-v2.js"
+  "js/shadow-selection-v2.js",
+  "js/scenario-likelihood-v5.js"
 ], "ロジック");
 const SHADOW_REFERENCE_GENERATION_ID = safeFingerprintFiles([
   "scripts/build-race-stats.js"
@@ -936,6 +945,42 @@ function safelyBuildShadowV2(
   }
 }
 
+function safelyAnalyzeScenarioLikelihoodV5(
+  prediction,
+  analyzer = null
+) {
+  try {
+    const activeAnalyzer =
+      analyzer ||
+      scenarioLikelihoodV5?.analyze;
+
+    if (typeof activeAnalyzer !== "function") {
+      return {
+        status: "unavailable",
+        usableForPurchase: false,
+        scenarios: []
+      };
+    }
+
+    return activeAnalyzer(
+      prediction?.aiCore?.raceScenarios ||
+      prediction?.raceFlow ||
+      {}
+    );
+  } catch (error) {
+    console.warn(
+      "展開AI v5シャドー生成失敗：" +
+      (error?.message || error)
+    );
+    return {
+      status: "analysis-failed",
+      usableForPurchase: false,
+      scenarios: [],
+      error: String(error?.message || error)
+    };
+  }
+}
+
 function safelyUpsertShadowSnapshots(
   existing,
   incoming,
@@ -1167,6 +1212,11 @@ function buildStoredPrediction(
       dependencies.coreApi ||
       global.ChappyAICore
   }, dependencies.shadowBuilder);
+  const scenarioLikelihood =
+    safelyAnalyzeScenarioLikelihoodV5(
+      prediction,
+      dependencies.scenarioLikelihoodAnalyzer
+    );
   const selection =
     buildActiveV2Selection(
       shadowV2,
@@ -1196,6 +1246,8 @@ function buildStoredPrediction(
         : "under_70",
     selection,
     shadowV2,
+    scenarioLikelihoodV5:
+      scenarioLikelihood,
     prediction: compactVerificationPayload(
       prediction,
       practicalTickets,
@@ -1963,6 +2015,7 @@ module.exports = {
   attachVenueRaceHistory,
   attachShadowReferenceHistory,
   safelyBuildShadowV2,
+  safelyAnalyzeScenarioLikelihoodV5,
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
