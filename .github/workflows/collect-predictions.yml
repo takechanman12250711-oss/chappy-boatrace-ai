@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix/note-role-conflict-direct
     paths:
       - ".github/workflows/collect-predictions.yml"
       - "config/chappy-charter.json"
@@ -60,11 +61,51 @@ permissions:
   contents: write
 
 concurrency:
-  group: collect-automatic-predictions
+  group: collect-automatic-predictions-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  finalize-note-role-fix:
+    if: github.ref == 'refs/heads/fix/note-role-conflict-direct'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/note-role-conflict-direct
+          fetch-depth: 0
+
+      - name: Remove accidental public API and validate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('js/note-generator.js')
+          text = path.read_text()
+          old = '    compactTicketComment,\n    contradictoryRoleBoats\n  };'
+          new = '    compactTicketComment\n  };'
+          if old not in text:
+              raise SystemExit('公開API削除対象が見つかりません')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          rm -f scripts/test-note-role-conflict-scope.js
+          node --check js/note-generator.js
+          node scripts/test-theory-integration.js
+          node scripts/check-charter.js
+
+      - name: Restore workflow and commit validated source
+        run: |
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/collect-predictions.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/note-generator.js scripts/test-note-role-conflict-scope.js .github/workflows/collect-predictions.yml
+          git commit -m "note役割重複判定のスコープを修正"
+          git push origin HEAD:fix/note-role-conflict-direct
+
   predict:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
