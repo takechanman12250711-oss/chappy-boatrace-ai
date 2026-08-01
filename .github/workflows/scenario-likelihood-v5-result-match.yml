@@ -1,0 +1,29 @@
+name: Check scenario likelihood v5 result match
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-likelihood-v5-verification.js"
+      - "scripts/test-scenario-likelihood-v5-verification.js"
+      - "scripts/match-predictions.js"
+      - ".github/workflows/scenario-likelihood-v5-result-match.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify
+        run: |
+          node --check scripts/match-predictions.js
+          node --check js/scenario-likelihood-v5-verification.js
+          node scripts/test-scenario-likelihood-v5-verification.js
+          node scripts/test-match-predictions.js
+          node scripts/check-charter.js
