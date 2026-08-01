@@ -480,4 +480,107 @@ assert.deepEqual(
   "事前根拠と公式結果が同一なら再照合時刻を変えない"
 );
 
+const karatsuBoats = [
+  [1, "濱本優一"],
+  [2, "末永祐輝"],
+  [3, "島田一生"],
+  [4, "竹内来"],
+  [5, "梶原正"],
+  [6, "加藤政彦"]
+].map(([boatNo, racerName]) => ({
+  boatNo,
+  racerName
+}));
+const invalidKaratsuPrediction = {
+  raceKey: "20260801-23-2",
+  selection: {
+    evaluator:
+      "shadow-selection-v2",
+    score: 79.5,
+    threshold: 70,
+    ready: true,
+    status: "ready"
+  },
+  shadowV2Reference:
+    currentShadowReference,
+  prediction: {
+    preRaceConditions: {
+      boats: karatsuBoats
+    },
+    mainSheet: {
+      taikou: {
+        boatNo: 1,
+        name: "梶原正"
+      }
+    },
+    practicalTickets: [{
+      ticket: "2-1-3",
+      category: "本線"
+    }],
+    verificationEvidence: {
+      ...currentEvidence
+    }
+  }
+};
+const quarantined = matchPredictions(
+  {
+    date: "20260801",
+    predictions: [
+      invalidKaratsuPrediction
+    ],
+    verificationPredictions: [
+      invalidKaratsuPrediction
+    ]
+  },
+  {
+    date: "20260801",
+    races: [{
+      jcd: "23",
+      raceNo: 2,
+      resultAvailable: true,
+      trifecta: {
+        combination: "2-1-3",
+        payout: 1000,
+        popularity: 1
+      }
+    }]
+  }
+);
+assert.equal(
+  quarantined.predictions[0].result,
+  undefined,
+  "既存の艇番不整合予想を結果で上書きせず隔離する"
+);
+assert.equal(
+  quarantined.resultSummary
+    .sourcePredictionCount,
+  1
+);
+assert.equal(
+  quarantined.resultSummary
+    .predictionCount,
+  0,
+  "隔離予想を精度集計の分母へ入れない"
+);
+assert.equal(
+  quarantined.resultSummary
+    .quarantinedCount,
+  1
+);
+assert.equal(
+  quarantined
+    .verificationResultSummary
+    .all
+    .quarantinedCount,
+  1
+);
+assert.equal(
+  quarantined
+    .verificationResultSummary
+    .score70Plus
+    .predictionCount,
+  0,
+  "79.5点でも艇番不整合なら70点以上の精度母集団へ入れない"
+);
+
 console.log("自動予想・公式結果照合テスト: 合格");

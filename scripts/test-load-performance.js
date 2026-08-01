@@ -192,8 +192,8 @@ assert.equal(
 );
 [
   "style.css?v=20260731-ticket-wrap1",
-  "js/stats-runtime-loader.js?v=20260729-review2",
-  "js/prediction-runtime-loader.js?v=20260729-review2"
+  "js/stats-runtime-loader.js?v=20260801-boat-identity1",
+  "js/prediction-runtime-loader.js?v=20260801-boat-identity1"
 ].forEach(asset => {
   assert.equal(
     html.includes(asset),
@@ -203,14 +203,14 @@ assert.equal(
 });
 assert.equal(
   predictionRuntime.includes(
-    'const VERSION = "20260729-review2"'
+    'const VERSION = "20260801-boat-identity1"'
   ),
   true,
   "全文表示を含む予想モジュールのキャッシュ世代を更新する"
 );
 assert.equal(
   statsRuntime.includes(
-    '"20260729-review2"'
+    '"20260801-boat-identity1"'
   ),
   true,
   "結果分析モジュールのキャッシュ世代を更新する"

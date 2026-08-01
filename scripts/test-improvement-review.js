@@ -15,6 +15,7 @@ const improvementReview =
 const {
   assertProposalOnly,
   buildFromDirectory,
+  collectPredictionRecords,
   selectShadowV2Snapshot
 } = require(
   "./build-improvement-review"
@@ -1348,11 +1349,65 @@ try {
         row => row.snapshot
       )
   };
+  const quarantineBoats = [
+    "濱本優一",
+    "末永祐輝",
+    "島田一生",
+    "竹内来",
+    "梶原正",
+    "加藤政彦"
+  ].map((racerName, index) => ({
+    boatNo: index + 1,
+    racerName
+  }));
+  daily.predictions.push({
+    raceKey: "20260801-23-2",
+    prediction: {
+      preRaceConditions: {
+        boats: quarantineBoats
+      },
+      mainSheet: {
+        taikou: {
+          boatNo: 1,
+          name: "梶原正"
+        }
+      }
+    }
+  });
+  daily.shadowV2Predictions.push({
+    raceKey: "20260801-23-2",
+    snapshot: {
+      boats: quarantineBoats
+    },
+    predictionReference: {
+      marks: {
+        taikou: {
+          boatNo: 1,
+          name: "梶原正"
+        }
+      }
+    }
+  });
 
   fs.writeFileSync(
     dailyPath,
     JSON.stringify(daily),
     "utf8"
+  );
+
+  const collected =
+    collectPredictionRecords(
+      temporaryDirectory
+    );
+  assert.equal(
+    collected.records.length,
+    100,
+    "艇番不整合予想を改善レビュー母集団へ入れない"
+  );
+  assert.equal(
+    collected.shadowSnapshots.length,
+    100,
+    "艇番不整合V2を改善レビュー進捗へ入れない"
   );
 
   const first =

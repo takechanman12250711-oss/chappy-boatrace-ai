@@ -22,6 +22,9 @@ function loadOptionalV2Dependency(
 
 const scheduleApi = require("../api/schedule");
 const raceApi = require("../api/race");
+const boatIdentity = require(
+  "../js/boat-identity"
+);
 
 global.window = global;
 require("../js/ai-core");
@@ -121,6 +124,7 @@ const SHADOW_LOGIC_FINGERPRINT = safeFingerprintFiles([
   "js/history-insights-base.js",
   "js/motor-maintenance-insights.js",
   "js/history-insights.js",
+  "js/boat-identity.js",
   "js/prediction.js",
   "js/practical-selection.js",
   "js/theory-input.js",
@@ -298,13 +302,15 @@ function attachShadowReferenceHistory(
     Array.isArray(raceData?.entries)
       ? raceData.entries
       : []
-  ).map((entry, index) => {
+  );
+  const identity =
+    boatIdentity.inspectEntries(
+      entries,
+      { allowBoatNoFallback: false }
+    );
+  const normalizedEntries = entries.map((entry, index) => {
     const boatNo = Number(
-      entry?.boat ??
-      entry?.waku ??
-      entry?.no ??
-      entry?.boatNo ??
-      index + 1
+      identity.boatNos[index] || 0
     );
     const start = starts.get(boatNo) || {};
     return {
@@ -335,7 +341,7 @@ function attachShadowReferenceHistory(
 
   return {
     ...raceData,
-    entries,
+    entries: normalizedEntries,
     historyContext: {
       ...context,
       racers,
@@ -687,6 +693,7 @@ function buildRecoveryPlan(date, liveTargets, data, now = new Date()) {
     "insufficient_data",
     "fetch_failed",
     "prediction_failed",
+    "invalid_boat_identity",
     "not_attempted"
   ]);
   const targetMap = new Map();
@@ -769,6 +776,32 @@ async function evaluateTargets(date, targets) {
           jcd: target.jcd,
           rno: String(target.raceNo)
         });
+        const identity =
+          boatIdentity.inspectEntries(
+            raceData?.entries,
+            {
+              allowBoatNoFallback: false
+            }
+          );
+
+        if (!identity.valid) {
+          const reason =
+            boatIdentity.reasonText(
+              identity
+            ) ||
+            "1〜6号艇を一意に確認できません";
+          attempts.push({
+            ...target,
+            status:
+              "invalid_boat_identity",
+            error:
+              `艇番不整合：${reason}`,
+            missingReasons: [
+              `艇番不整合：${reason}`
+            ]
+          });
+          continue;
+        }
         const history = attachVenueRaceHistory(
           raceData,
           target.jcd,
@@ -1546,7 +1579,13 @@ function buildCollectionHealth(
     targetCount: monitoredTargets.length,
     savedCount: count("saved"),
     insufficientDataCount: count("insufficient_data"),
-    failedCount: count("fetch_failed") + count("prediction_failed") + count("not_attempted"),
+    failedCount:
+      count("fetch_failed") +
+      count("prediction_failed") +
+      count("invalid_boat_identity") +
+      count("not_attempted"),
+    invalidBoatIdentityCount:
+      count("invalid_boat_identity"),
     recoveredCount: monitoredTargets.filter(item => item.recoveryState === "recovered").length,
     retryingCount: monitoredTargets.filter(item => item.recoveryState === "retrying").length,
     finalUncollectedCount: count("final_uncollected"),
@@ -1613,7 +1652,8 @@ function logCollectionHealth(health) {
   const missing = Math.max(0, health.targetCount - health.savedCount);
   console.log(
     `収集監視：対象${health.targetCount}R／保存${health.savedCount}R／未保存${missing}R` +
-    `（データ不足${health.insufficientDataCount}R／取得失敗${health.failedCount}R／` +
+    `（データ不足${health.insufficientDataCount}R／失敗計${health.failedCount}R／` +
+    `うち艇番不整合${Number(health.invalidBoatIdentityCount || 0)}R／` +
     `復旧${health.recoveredCount}R／最終未取得${health.finalUncollectedCount}R）` +
     `／V2判定可能${Number(health?.v2?.readyCount || 0)}` +
     `/${Number(health?.v2?.evaluatedCount || 0)}R`

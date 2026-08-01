@@ -22,6 +22,7 @@ on:
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-race-parser.js"
       - "scripts/test-theory-integration.js"
+      - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "js/collection-health.js"
       - "scripts/test-collection-health.js"
@@ -37,6 +38,7 @@ on:
       - "js/history-insights-base.js"
       - "js/motor-maintenance-insights.js"
       - "js/prediction.js"
+      - "js/boat-identity.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
       - "js/prediction-conditions.js"
@@ -80,6 +82,7 @@ jobs:
       - name: Check charter and source
         run: |
           node --check scripts/collect-predictions.js
+          node --check js/boat-identity.js
           node --check js/evaluated-scenario-candidates.js
           node --check js/shadow-selection-v2.js
           node scripts/test-shadow-predictions.js
@@ -87,6 +90,7 @@ jobs:
           node scripts/test-prediction-conditions.js
           node scripts/test-race-parser.js
           node scripts/test-theory-integration.js
+          node scripts/test-boat-identity.js
           node scripts/test-auto-selection.js
           node scripts/test-evaluated-scenario-consistency.js
           node scripts/test-api-history.js

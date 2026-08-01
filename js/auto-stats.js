@@ -3,11 +3,30 @@
 ========================================================= */
 
 (function (root, factory) {
-  const api = factory();
+  const api = factory(root);
   if (typeof module === "object" && module.exports) module.exports = api;
   if (root) root.ChappyAutoStats = api;
-})(typeof window !== "undefined" ? window : globalThis, function () {
+})(typeof window !== "undefined" ? window : globalThis, function (root) {
   "use strict";
+
+  const boatIdentity =
+    root?.ChappyBoatIdentity ||
+    (
+      typeof require === "function"
+        ? require("./boat-identity")
+        : null
+    );
+
+  function isBoatIdentityQuarantined(record) {
+    const inspection =
+      boatIdentity?.inspectPrediction(
+        record
+      );
+    return (
+      inspection?.checked === true &&
+      inspection?.valid === false
+    );
+  }
 
   function normalizeTicket(value) {
     const boats = String(value || "").match(/[1-6]/g) || [];
@@ -179,24 +198,36 @@
   function normalizeIndex(data) {
     const predictions = [];
     const results = [];
+    const selectedRecords = (
+      Array.isArray(data?.predictions)
+        ? data.predictions
+        : []
+    ).filter(
+      item =>
+        !isBoatIdentityQuarantined(
+          item
+        )
+    );
+    const verificationRecords = (
+      Array.isArray(
+        data?.verificationPredictions
+      )
+        ? data.verificationPredictions
+        : []
+    ).filter(
+      item =>
+        !isBoatIdentityQuarantined(
+          item
+        )
+    );
     const selectedRaceKeys = new Set(
-      (Array.isArray(data?.predictions) ? data.predictions : [])
+      selectedRecords
         .map(item => String(item?.raceKey || ""))
         .filter(Boolean)
     );
     const allIndexed = [
-      ...(Array.isArray(
-        data?.predictions
-      )
-        ? data.predictions
-        : []),
-      ...(Array.isArray(
-        data
-          ?.verificationPredictions
-      )
-        ? data
-            .verificationPredictions
-        : [])
+      ...selectedRecords,
+      ...verificationRecords
     ];
     const activeGenerationKey =
       allIndexed
@@ -298,12 +329,10 @@
       }
     }
 
-    (Array.isArray(data?.predictions) ? data.predictions : [])
+    selectedRecords
       .forEach(item => append(item, "automatic"));
 
-    (Array.isArray(data?.verificationPredictions)
-      ? data.verificationPredictions
-      : [])
+    verificationRecords
       .filter(item => !selectedRaceKeys.has(String(item?.raceKey || "")))
       .forEach(item => append(item, "automatic_shadow"));
 
@@ -312,7 +341,14 @@
       Array.isArray(data?.shadowV2Predictions)
         ? data.shadowV2Predictions
         : []
-    ).map(item => ({ ...item }));
+    )
+      .filter(
+        item =>
+          !isBoatIdentityQuarantined(
+            item
+          )
+      )
+      .map(item => ({ ...item }));
 
     return {
       predictions,

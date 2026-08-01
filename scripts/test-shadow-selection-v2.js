@@ -319,6 +319,31 @@ assert.equal(normal.schemaVersion, 2);
 assert.equal(normal.complete, true);
 assert.equal(normal.calibrationEligible, true);
 assert.equal(normal.status, "ready");
+
+const malformedSnapshot = structuredClone(
+  normal.snapshot
+);
+malformedSnapshot.boats[4].boatNo = 1;
+const malformedPrediction = buildPrediction();
+const malformedIdentity = buildRecord({
+  snapshot: malformedSnapshot,
+  prediction: malformedPrediction
+});
+assert.equal(
+  malformedIdentity.complete,
+  false,
+  "艇番重複レースを完全データとして扱わない"
+);
+assert.equal(
+  malformedIdentity.calibrationEligible,
+  false,
+  "艇番重複レースをV2校正へ入れない"
+);
+assert.ok(
+  malformedIdentity.missingReasonCodes.includes(
+    "data.boatIdentity"
+  )
+);
 assert.equal(normal.timing.secondsBeforeDeadline, 120);
 assert.equal(normal.timing.beforeCutoff, true);
 assert.equal(

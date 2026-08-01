@@ -120,6 +120,20 @@ function createRuntime({
     createRuntime({
       failCalibration: true
     });
+  assert.ok(
+    failedOptional.runtime.scripts
+      .indexOf("js/boat-identity.js") <
+      failedOptional.runtime.scripts
+        .indexOf("js/theory-input.js"),
+    "艇番整合性を共通入力より先に読み込む"
+  );
+  assert.ok(
+    failedOptional.runtime.scripts
+      .indexOf("js/boat-identity.js") <
+      failedOptional.runtime.scripts
+        .indexOf("js/prediction.js"),
+    "艇番整合性を予想本体より先に読み込む"
+  );
   const ready =
     await failedOptional
       .runtime

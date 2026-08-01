@@ -3,6 +3,18 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const calibration = require("../js/prediction-calibration");
+const boatIdentity = require(
+  "../js/boat-identity"
+);
+
+function isBoatIdentityQuarantined(record) {
+  const inspection =
+    boatIdentity.inspectPrediction(record);
+  return (
+    inspection.checked === true &&
+    inspection.valid === false
+  );
+}
 
 const DAILY_FILE_PATTERN = /^\d{8}\.json$/;
 const MAX_CALIBRATION_BYTES = 10 * 1024;
@@ -171,6 +183,13 @@ function collectPredictionRecords(inputDirectory) {
     ].forEach(([collection, source]) => {
       if (!Array.isArray(source)) return;
       source.forEach(record => {
+        if (
+          isBoatIdentityQuarantined(
+            record
+          )
+        ) {
+          return;
+        }
         records.push({
           ...record,
           calibrationSource: {

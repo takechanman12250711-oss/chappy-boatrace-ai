@@ -182,6 +182,149 @@ assert.deepEqual(
   serverInput,
   "アプリとサーバー自動予想の共通入力を一致させる"
 );
+
+const karatsuNames = [
+  "濱本優一",
+  "末永祐輝",
+  "島田一生",
+  "竹内来",
+  "梶原正",
+  "加藤政彦"
+];
+const karatsuEquipmentNumbers = [
+  22, 13, 28, 30, 1, 47
+];
+const karatsuRaw =
+  clone(rawRaceData);
+karatsuRaw.stadiumCode = "23";
+karatsuRaw.raceNo = 2;
+karatsuRaw.entries =
+  karatsuRaw.entries.map(
+    (row, index) => ({
+      ...row,
+      boat: index + 1,
+      boatNo:
+        karatsuEquipmentNumbers[index],
+      racerName:
+        karatsuNames[index]
+    })
+  );
+const karatsuPrepared =
+  theoryInput.prepare(
+    karatsuRaw,
+    global.ChappyAICore
+  );
+
+for (const [label, rows] of [
+  ["共通入力", karatsuPrepared.entries],
+  [
+    "当地・水面理論",
+    karatsuPrepared
+      .localWaterTheoryV2
+      .rows
+  ],
+  [
+    "モーター理論",
+    karatsuPrepared
+      .motorMaintenanceTheoryV2
+      .rows
+  ]
+]) {
+  assert.deepEqual(
+    rows.map(row => row.boatNo),
+    [1, 2, 3, 4, 5, 6],
+    `${label}で機材番号を艇番として採用しない`
+  );
+}
+
+const karatsuPrediction =
+  global.createPrediction(
+    karatsuPrepared
+  );
+assert.deepEqual(
+  karatsuPrepared.entries.map(
+    row => row.boatNumber
+  ),
+  karatsuEquipmentNumbers,
+  "機材ボート番号は艇番と分離して共通入力へ保持する"
+);
+assert.deepEqual(
+  karatsuPrediction.race.entries
+    .map(row => row.boatNo),
+  [1, 2, 3, 4, 5, 6]
+);
+assert.deepEqual(
+  karatsuPrediction.race.entries
+    .map(row => row.boat.no),
+  karatsuEquipmentNumbers,
+  "予想出力でも機材ボート番号を失わない"
+);
+assert.deepEqual(
+  karatsuPrediction.mainSheet
+    .evaluations
+    .map(row => row.boatNo),
+  [1, 2, 3, 4, 5, 6],
+  "唐津2R型の6艇評価で5号艇を欠落させない"
+);
+assert.equal(
+  karatsuPrediction.mainSheet
+    .evaluations[0].name,
+  "濱本優一"
+);
+assert.equal(
+  karatsuPrediction.mainSheet
+    .evaluations[4].name,
+  "梶原正"
+);
+assert.equal(
+  karatsuPrediction
+    .dataQuality
+    .boatIdentity
+    .valid,
+  true
+);
+
+const malformedKaratsu =
+  clone(karatsuRaw);
+malformedKaratsu.entries[4].boat = 1;
+const malformedPrediction =
+  global.createPrediction(
+    theoryInput.prepare(
+      malformedKaratsu,
+      global.ChappyAICore
+    )
+  );
+assert.equal(
+  malformedPrediction
+    .dataQuality
+    .boatIdentity
+    .valid,
+  false
+);
+assert.equal(
+  malformedPrediction
+    .dataQuality
+    .score,
+  0,
+  "艇番不整合をデータ充足100点として扱わない"
+);
+const malformedArticle =
+  global.ChappyNoteGenerator
+    .generateArticle(
+      malformedPrediction
+    );
+assert.equal(
+  malformedArticle.publishable,
+  false
+);
+assert.ok(
+  malformedArticle.rejectionReasons
+    .some(reason =>
+      reason.includes("艇番不整合")
+    ),
+  "艇番が重複・欠落するnoteを販売可能にしない"
+);
+
 assert.equal(
   appInput.entries[0].localStarts,
   13

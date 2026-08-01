@@ -803,10 +803,41 @@ loaded
       path.join(os.tmpdir(), "prediction-calibration-")
     );
     try {
+      const invalidKaratsu = {
+        ...records[0],
+        raceKey: "20260801-23-2",
+        prediction: {
+          ...records[0].prediction,
+          preRaceConditions: {
+            boats: [
+              "濱本優一",
+              "末永祐輝",
+              "島田一生",
+              "竹内来",
+              "梶原正",
+              "加藤政彦"
+            ].map(
+              (racerName, index) => ({
+                boatNo: index + 1,
+                racerName
+              })
+            )
+          },
+          mainSheet: {
+            taikou: {
+              boatNo: 1,
+              name: "梶原正"
+            }
+          }
+        }
+      };
       fs.writeFileSync(
         path.join(temporaryDirectory, "20260729.json"),
         JSON.stringify({
-          predictions: [records[0]],
+          predictions: [
+            records[0],
+            invalidKaratsu
+          ],
           verificationPredictions: [records[1]]
         }),
         "utf8"
@@ -819,7 +850,11 @@ loaded
 
       const collected = collectPredictionRecords(temporaryDirectory);
       assert.deepEqual(collected.files, ["20260729.json"]);
-      assert.equal(collected.records.length, 2);
+      assert.equal(
+        collected.records.length,
+        2,
+        "艇番不整合予想を校正母集団へ入れない"
+      );
 
       const outputPath = path.join(
         temporaryDirectory,

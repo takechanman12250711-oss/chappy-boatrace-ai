@@ -383,6 +383,68 @@ assert.ok(
   "24場・10買い目・長い根拠でも要約は20KB未満に保つ"
 );
 
+const quarantinedSummary =
+  buildPredictionSummary({
+    date: "20260801",
+    runs: [{
+      checkedAt:
+        "2026-08-01T00:00:01Z",
+      selected: true,
+      best: {
+        jcd: "23",
+        raceNo: 2,
+        score: 79
+      },
+      compared: [{
+        jcd: "23",
+        raceNo: 2,
+        score: 79
+      }]
+    }],
+    predictions: [{
+      raceKey: "20260801-23-2",
+      selectedAt:
+        "2026-08-01T00:00:00Z",
+      note: {
+        path:
+          "data/notes/20260801-23-02R.md"
+      },
+      prediction: {
+        preRaceConditions: {
+          boats: [
+            "濱本優一",
+            "末永祐輝",
+            "島田一生",
+            "竹内来",
+            "梶原正",
+            "加藤政彦"
+          ].map(
+            (racerName, index) => ({
+              boatNo: index + 1,
+              racerName
+            })
+          )
+        },
+        mainSheet: {
+          taikou: {
+            boatNo: 1,
+            name: "梶原正"
+          }
+        }
+      }
+    }]
+  });
+assert.deepEqual(
+  quarantinedSummary.predictions,
+  [],
+  "艇番不整合noteを軽量要約へ掲載しない"
+);
+assert.deepEqual(
+  quarantinedSummary.runs,
+  [],
+  "艇番不整合レースを自動選定結果として掲載しない"
+);
+
 const temporaryDirectory =
   fs.mkdtempSync(
     path.join(

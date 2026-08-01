@@ -5,7 +5,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const {
-  verificationInputFingerprint
+  verificationInputFingerprint,
+  isBoatIdentityQuarantined
 } = require("./match-predictions");
 
 const RECENT_DAY_COUNT = 3;
@@ -114,7 +115,13 @@ function hasUnsettledPredictions(predictionPath) {
         : [])
     ];
 
-    return predictions.some(prediction => !prediction?.result?.settled);
+    return predictions.some(
+      prediction =>
+        !isBoatIdentityQuarantined(
+          prediction
+        ) &&
+        !prediction?.result?.settled
+    );
   } catch (error) {
     console.warn(
       `予想ファイルを確認できません：${predictionPath} (${error?.message || error})`
@@ -221,6 +228,13 @@ function hasPredictionsNeedingResultUpdate(
 
     return predictions.some(
       prediction => {
+        if (
+          isBoatIdentityQuarantined(
+            prediction
+          )
+        ) {
+          return false;
+        }
         const official =
           officialByRaceKey.get(
             String(

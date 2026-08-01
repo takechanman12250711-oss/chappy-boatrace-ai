@@ -4,8 +4,9 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260729-review2";
+  const VERSION = "20260801-boat-identity1";
   const scripts = [
+    "js/boat-identity.js",
     "js/theory.js",
     "js/history-insights-base.js",
     "js/motor-maintenance-insights.js",

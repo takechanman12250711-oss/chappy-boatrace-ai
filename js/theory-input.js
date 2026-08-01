@@ -21,7 +21,14 @@
   function (root) {
     "use strict";
 
-    const VERSION = "theory-input-v1.0.0";
+    const VERSION = "theory-input-v1.0.1-boat-identity";
+    const boatIdentity =
+      root?.ChappyBoatIdentity ||
+      (
+        typeof require === "function"
+          ? require("./boat-identity")
+          : null
+      );
     const ENTRY_KEYS = [
       "entries",
       "boats",
@@ -107,13 +114,14 @@
       );
     }
 
-    function normalizeEntry(entry, index, racerMap, starts) {
-      const boatNo = Number(
-        entry?.boatNo ??
-        entry?.boat ??
-        entry?.waku ??
-        index + 1
-      );
+    function normalizeEntry(
+      entry,
+      index,
+      racerMap,
+      starts,
+      canonicalBoatNo
+    ) {
+      const boatNo = Number(canonicalBoatNo || 0);
       const start = starts.get(boatNo) || {};
       const racer = racerMap.get(text(entry?.registerNo)) || {};
       const localStarts = finiteNumber(
@@ -125,9 +133,21 @@
         racer?.currentVenueStarts,
         racer?.venueStarts
       );
+      const equipmentBoatNo =
+        entry?.boatNumber ??
+        entry?.boatNoValue ??
+        (
+          boatIdentity?.primaryBoatNo(
+            entry
+          )
+            ? entry?.boatNo
+            : null
+        );
 
       return {
         ...entry,
+        boatNumber:
+          equipmentBoatNo ?? "",
         boatNo,
         exhibitionCourse: finiteNumber(
           entry?.exhibitionCourse,
@@ -245,6 +265,22 @@
       if (data?.theoryInput?.version === VERSION) return data;
 
       const source = findEntries(data);
+      const identity =
+        boatIdentity?.inspectEntries(
+          source.entries,
+          {
+            allowBoatNoFallback: false
+          }
+        ) || {
+          valid: false,
+          boatNos: source.entries.map(
+            () => 0
+          ),
+          reasons: [{
+            code: "identity_module_unavailable",
+            label: "艇番整合性を確認できません"
+          }]
+        };
       const racerMap = historyRacerMap(data);
       const starts = startByBoat(data);
       const entries = source.entries.map(
@@ -253,7 +289,8 @@
             entry,
             index,
             racerMap,
-            starts
+            starts,
+            identity.boatNos[index]
           )
       );
       const jcd = normalizeJcd(data);
@@ -267,6 +304,7 @@
         theoryInput: {
           version: VERSION,
           normalized: true,
+          boatIdentity: identity,
           localStartsCount:
             entries.filter(
               (entry) =>

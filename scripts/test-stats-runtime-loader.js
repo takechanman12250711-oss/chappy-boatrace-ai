@@ -170,6 +170,7 @@ async function main() {
   assert.deepEqual(
     loaded,
     [
+      "js/boat-identity.js",
       "js/collection-health.js",
       "js/prediction-verification.js",
       "js/auto-stats.js",

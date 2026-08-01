@@ -10,7 +10,7 @@
 (function (root, factory) {
   "use strict";
 
-  const api = factory();
+  const api = factory(root);
 
   if (typeof module === "object" && module.exports) {
     module.exports = api;
@@ -21,10 +21,15 @@
   }
 })(
   typeof window !== "undefined" ? window : globalThis,
-  function () {
+  function (root) {
     "use strict";
 
-    const VERSION = "shadow-selection-v2.0.0";
+    const VERSION = "shadow-selection-v2.0.1-boat-identity";
+    const boatIdentity =
+      root?.ChappyBoatIdentity ||
+      (typeof require === "function"
+        ? require("./boat-identity")
+        : null);
     const SCHEMA_VERSION = 2;
     const CUTOFF_SECONDS = 120;
     const TIDAL_WATER_TYPES = new Set([
@@ -930,6 +935,25 @@
         timing,
         weightedComponents
       );
+      const boatIdentityInspection =
+        boatIdentity?.inspectPrediction?.({
+          snapshot: preRaceConditions,
+          prediction
+        }) || null;
+      if (
+        boatIdentityInspection?.checked === true &&
+        boatIdentityInspection.valid === false
+      ) {
+        missingReasons.push({
+          code: "data.boatIdentity",
+          label:
+            boatIdentity.reasonText?.(
+              boatIdentityInspection
+            ) || "1〜6号艇の対応が不整合",
+          expected: "unique_boats_1_to_6",
+          actual: "invalid"
+        });
+      }
       const allComponentsFormal =
         weightedComponents.every(
           item => item.formal === true
@@ -1108,6 +1132,7 @@
           eligibilityReasons.map(reason => reason.code),
         eligibilityReasons,
         availability,
+        boatIdentity: boatIdentityInspection,
         profile: {
           id: profile.id,
           mode:

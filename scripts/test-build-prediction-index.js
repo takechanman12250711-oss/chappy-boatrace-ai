@@ -241,6 +241,33 @@ try {
       }
     }
   };
+  const quarantineBoats = [
+    "濱本優一",
+    "末永祐輝",
+    "島田一生",
+    "竹内来",
+    "梶原正",
+    "加藤政彦"
+  ].map((racerName, index) => ({
+    boatNo: index + 1,
+    racerName
+  }));
+  const invalidKaratsu = {
+    raceKey: "20260801-23-2",
+    selectedAt:
+      "2026-08-01T00:00:00Z",
+    prediction: {
+      preRaceConditions: {
+        boats: quarantineBoats
+      },
+      mainSheet: {
+        taikou: {
+          boatNo: 1,
+          name: "梶原正"
+        }
+      }
+    }
+  };
   const dayData = {
     date: "20260722",
     runs: [{
@@ -251,11 +278,21 @@ try {
         savedCount: 1,
         targets: [{ raceKey: "20260722-08-1", status: "saved" }]
       }
+    }, {
+      checkedAt: "2026-08-01T00:00:01Z",
+      selected: true,
+      best: {
+        raceKey: "20260801-23-2",
+        jcd: "23",
+        raceNo: 2,
+        score: 79
+      }
     }],
-    predictions: [{ raceKey: "20260722-08-1", selectedAt: "2026-07-22T01:00:01Z" }],
+    predictions: [{ raceKey: "20260722-08-1", selectedAt: "2026-07-22T01:00:01Z" }, invalidKaratsu],
     verificationPredictions: [
       { raceKey: "20260722-08-1", selectedAt: "2026-07-22T01:00:01Z", scoreBand: "70_plus" },
-      richVerification
+      richVerification,
+      invalidKaratsu
     ],
     shadowV2Predictions: [{
       recordKey: "20260722-12-1:logic-a:config-a",
@@ -286,6 +323,21 @@ try {
           ticket: "1-2-3"
         }]
       }
+    }, {
+      raceKey: "20260801-23-2",
+      capturedAt:
+        "2026-08-01T00:00:00Z",
+      snapshot: {
+        boats: quarantineBoats
+      },
+      predictionReference: {
+        marks: {
+          taikou: {
+            boatNo: 1,
+            name: "梶原正"
+          }
+        }
+      }
     }]
   };
   fs.writeFileSync(
@@ -310,6 +362,15 @@ try {
     }
   );
   assert.deepEqual(
+    index.quarantinedRecordCounts,
+    {
+      predictions: 1,
+      verificationPredictions: 1,
+      shadowV2Predictions: 1
+    },
+    "既存の唐津2R型記録を日次JSONから書き換えず集約indexだけで隔離する"
+  );
+  assert.deepEqual(
     index.retentionLimits,
     {
       runs: RUN_LIMIT,
@@ -322,6 +383,15 @@ try {
     }
   );
   assert.equal(index.runs.length, 2);
+  assert.equal(
+    index.runs.some(
+      run =>
+        run.best?.jcd === "23" &&
+        run.best?.raceNo === 2
+    ),
+    false,
+    "艇番不整合レースを自動選定runから隔離する"
+  );
   assert.equal(index.runs[0].date, "20260722");
   assert.equal(index.runs[0].collectionHealth.savedCount, 1);
   assert.equal(index.runs[0].collectionHealth.targets[0].status, "saved");
