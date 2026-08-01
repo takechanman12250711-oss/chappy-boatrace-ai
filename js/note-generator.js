@@ -44,6 +44,42 @@
     return [...new Set(arrayify(values).map(value => safeText(value, "")).filter(Boolean))];
   }
 
+  function formatDeadlineLabel(value) {
+    const deadline = safeText(value, "締切時刻未取得");
+    return /^締切/.test(deadline)
+      ? deadline
+      : `締切 ${deadline}`;
+  }
+
+  function compactTicketComment(value) {
+    const text = safeText(value, "");
+    if (!text) return "";
+
+    const sentences =
+      text.match(/[^。！？]+[。！？]?/g) ||
+      [text];
+    const seen = new Set();
+
+    return sentences
+      .map(sentence => sentence.trim())
+      .filter(Boolean)
+      .filter(sentence => {
+        const semanticKey = sentence
+          .replace(/\s+/g, "")
+          .replace(/([1-6])号艇が2着へ追走・残し/g, "$1号艇が2着に残り")
+          .replace(/([1-6])号艇が3着で展開を拾う筋/g, "$1号艇が3着に残る筋")
+          .replace(/([1-6])号艇が3着で拾う筋/g, "$1号艇が3着に残る筋")
+          .replace(/([1-6])号艇が3着で残る筋/g, "$1号艇が3着に残る筋");
+
+        if (seen.has(semanticKey)) {
+          return false;
+        }
+        seen.add(semanticKey);
+        return true;
+      })
+      .join(" ");
+  }
+
   function formatDate(value) {
     const text = safeText(value, "").replace(/[^0-9]/g, "");
     if (text.length !== 8) return safeText(value, "日付未取得");
@@ -267,13 +303,12 @@
         .filter(Boolean)
         .join("・");
     const comment =
-      safeText(
+      compactTicketComment(
         item.comment ||
         ticketComment(
           item.ticket,
           item.category || "買い目"
-        ),
-        ""
+        )
       );
 
     return (
@@ -575,7 +610,9 @@
     return [
       `🚤 ${formatDate(
         meta.date
-      )} ${meta.place}${meta.raceNo || "-"}R｜締切${meta.deadline}`,
+      )} ${meta.place}${meta.raceNo || "-"}R｜${formatDeadlineLabel(
+        meta.deadline
+      )}`,
       empathy,
       "",
       `${selectionType}｜${scoreLabel} ${displayedScore}点`,
@@ -1228,7 +1265,9 @@
     buildFreeSection,
     buildPaidSection,
     buildTags,
-    createPracticalSelection
+    createPracticalSelection,
+    formatDeadlineLabel,
+    compactTicketComment
   };
 
   root.ChappyNoteGenerator =
