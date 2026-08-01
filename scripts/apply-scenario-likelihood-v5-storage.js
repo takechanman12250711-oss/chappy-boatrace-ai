@@ -83,7 +83,8 @@ replaceOnce(
     );
   } catch (error) {
     console.warn(
-      `展開AI v5シャドー生成失敗：${error?.message || error}`
+      "展開AI v5シャドー生成失敗：" +
+      (error?.message || error)
     );
     return {
       status: "analysis-failed",
