@@ -7,6 +7,18 @@ const calibration = require("../js/prediction-calibration");
 const improvementReview = require("../js/improvement-review");
 const practicalSelection = require("../js/practical-selection");
 const charter = require("../config/chappy-charter.json");
+const boatIdentity = require(
+  "../js/boat-identity"
+);
+
+function isBoatIdentityQuarantined(record) {
+  const inspection =
+    boatIdentity.inspectPrediction(record);
+  return (
+    inspection.checked === true &&
+    inspection.valid === false
+  );
+}
 
 const DAILY_FILE_PATTERN = /^\d{8}\.json$/;
 const DEFAULT_OUTPUT_NAME =
@@ -278,6 +290,13 @@ function collectPredictionRecords(
             .shadowV2Predictions
         : []
     ).forEach(snapshot => {
+      if (
+        isBoatIdentityQuarantined(
+          snapshot
+        )
+      ) {
+        return;
+      }
       shadowSnapshots.push(
         snapshot
       );
@@ -325,6 +344,13 @@ function collectPredictionRecords(
         }
 
         source.forEach(record => {
+          if (
+            isBoatIdentityQuarantined(
+              record
+            )
+          ) {
+            return;
+          }
           const raceKey =
             String(
               record

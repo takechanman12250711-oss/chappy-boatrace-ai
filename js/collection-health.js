@@ -63,8 +63,16 @@
     const monitored = [...latestTargets.values()];
     const saved = monitored.filter(item => item.status === "saved");
     const insufficient = monitored.filter(item => item.status === "insufficient_data");
+    const invalidBoatIdentity = monitored.filter(
+      item => item.status === "invalid_boat_identity"
+    );
     const failed = monitored.filter(item =>
-      ["fetch_failed", "prediction_failed", "not_attempted"].includes(item.status)
+      [
+        "fetch_failed",
+        "prediction_failed",
+        "invalid_boat_identity",
+        "not_attempted"
+      ].includes(item.status)
     );
     const finalUncollected = monitored.filter(item => item.status === "final_uncollected");
     const recovered = monitored.filter(item => item.recoveryState === "recovered");
@@ -99,6 +107,7 @@
           savedCount: 0,
           missingCount: 0,
           failedCount: 0,
+          invalidBoatIdentityCount: 0,
           recoveredCount: 0,
           retryingCount: 0,
           finalUncollectedCount: 0
@@ -108,8 +117,16 @@
       venue.targetCount += 1;
       if (item.status === "saved") venue.savedCount += 1;
       else venue.missingCount += 1;
-      if (["fetch_failed", "prediction_failed", "not_attempted"].includes(item.status)) {
+      if ([
+        "fetch_failed",
+        "prediction_failed",
+        "invalid_boat_identity",
+        "not_attempted"
+      ].includes(item.status)) {
         venue.failedCount += 1;
+      }
+      if (item.status === "invalid_boat_identity") {
+        venue.invalidBoatIdentityCount += 1;
       }
       if (item.recoveryState === "recovered") venue.recoveredCount += 1;
       if (item.recoveryState === "retrying") venue.retryingCount += 1;
@@ -126,6 +143,8 @@
       savedCount: saved.length,
       missingCount: missing.length,
       insufficientDataCount: insufficient.length,
+      invalidBoatIdentityCount:
+        invalidBoatIdentity.length,
       failedCount: failed.length,
       recoveredCount: recovered.length,
       retryingCount: retrying.length,

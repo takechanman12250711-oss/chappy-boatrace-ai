@@ -5,6 +5,24 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const verification = require("../js/prediction-verification");
+const boatIdentity = require(
+  "../js/boat-identity"
+);
+
+function boatIdentityInspection(record) {
+  return boatIdentity.inspectPrediction(
+    record
+  );
+}
+
+function isBoatIdentityQuarantined(record) {
+  const inspection =
+    boatIdentityInspection(record);
+  return (
+    inspection.checked === true &&
+    inspection.valid === false
+  );
+}
 
 function getArgument(name) {
   const prefix = `--${name}=`;
@@ -233,7 +251,18 @@ function settlePrediction(prediction, result) {
 }
 
 function buildSummary(predictions) {
-  const settled = predictions.filter(item => item?.result?.settled);
+  const source =
+    Array.isArray(predictions)
+      ? predictions
+      : [];
+  const quarantined = source.filter(
+    isBoatIdentityQuarantined
+  );
+  const eligible = source.filter(
+    item =>
+      !isBoatIdentityQuarantined(item)
+  );
+  const settled = eligible.filter(item => item?.result?.settled);
   const hits = settled.filter(item => item.result.practicalHit);
   const honmeiFirst = settled.filter(item => item.result.honmeiFirst);
   const verificationSummary = verification.buildSummary(
@@ -242,7 +271,10 @@ function buildSummary(predictions) {
 
   return {
     schemaVersion: 3,
-    predictionCount: predictions.length,
+    predictionCount: eligible.length,
+    sourcePredictionCount: source.length,
+    quarantinedCount:
+      quarantined.length,
     settledCount: settled.length,
     practicalHits: hits.length,
     practicalHitRate: settled.length
@@ -339,12 +371,16 @@ function isCurrentV2Selection(
 function buildSelectionCohorts(
   verificationPredictions
 ) {
-  const source =
+  const source = (
     Array.isArray(
       verificationPredictions
     )
       ? verificationPredictions
-      : [];
+      : []
+  ).filter(
+    item =>
+      !isBoatIdentityQuarantined(item)
+  );
   const v2Rows =
     source.filter(
       isCurrentV2Selection
@@ -471,6 +507,13 @@ function matchPredictions(predictionData, resultData) {
 
   let changed = false;
   const settleList = source => (Array.isArray(source) ? source : []).map(prediction => {
+    if (
+      isBoatIdentityQuarantined(
+        prediction
+      )
+    ) {
+      return prediction;
+    }
     const result = resultMap.get(prediction.raceKey);
     if (!result?.resultAvailable) return prediction;
     const officialTicket =
@@ -692,6 +735,8 @@ module.exports = {
   classifyMiss,
   settlePrediction,
   buildSummary,
+  boatIdentityInspection,
+  isBoatIdentityQuarantined,
   supportIdentityOfRecord,
   verificationInputFingerprint,
   selectionGenerationKey,

@@ -80,6 +80,73 @@ assert.equal(normalized.selectedCount, 1);
 assert.equal(normalized.shadowCount, 1);
 assert.equal(normalized.shadowV2Predictions.length, 1);
 
+const karatsuBoats = [
+  "濱本優一",
+  "末永祐輝",
+  "島田一生",
+  "竹内来",
+  "梶原正",
+  "加藤政彦"
+].map((racerName, index) => ({
+  boatNo: index + 1,
+  racerName
+}));
+const invalidKaratsu = {
+  raceKey: "20260801-23-2",
+  prediction: {
+    preRaceConditions: {
+      boats: karatsuBoats
+    },
+    mainSheet: {
+      taikou: {
+        boatNo: 1,
+        name: "梶原正"
+      }
+    }
+  },
+  result: {
+    settled: true,
+    resultTicket: "2-1-3",
+    payout: 1000
+  }
+};
+const quarantinedIndex =
+  normalizeIndex({
+    predictions: [invalidKaratsu],
+    verificationPredictions: [
+      invalidKaratsu
+    ],
+    shadowV2Predictions: [{
+      raceKey: "20260801-23-2",
+      snapshot: {
+        boats: karatsuBoats
+      },
+      predictionReference: {
+        marks: {
+          taikou: {
+            boatNo: 1,
+            name: "梶原正"
+          }
+        }
+      }
+    }]
+  });
+assert.equal(
+  quarantinedIndex.predictions.length,
+  0
+);
+assert.equal(
+  quarantinedIndex.results.length,
+  0,
+  "艇番不整合の結果を成績・回収率へ混ぜない"
+);
+assert.equal(
+  quarantinedIndex
+    .shadowV2Predictions.length,
+  0,
+  "艇番不整合のV2記録を精度進捗へ混ぜない"
+);
+
 const activeGeneration = {
   logicFingerprint: "logic-v2",
   confidenceDefinitionVersion:

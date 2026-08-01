@@ -2,6 +2,62 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const boatIdentity = require(
+  "../js/boat-identity"
+);
+
+function isBoatIdentityQuarantined(record) {
+  const inspection =
+    boatIdentity.inspectPrediction(record);
+  return (
+    inspection.checked === true &&
+    inspection.valid === false
+  );
+}
+
+function raceKeyOf(value, fallbackDate = "") {
+  const direct = String(
+    value?.raceKey || ""
+  ).trim();
+  if (direct) return direct;
+
+  const date = String(
+    value?.date || fallbackDate || ""
+  ).trim();
+  const jcd = String(
+    value?.jcd || ""
+  ).padStart(2, "0");
+  const raceNo = Number(
+    value?.raceNo || 0
+  );
+
+  return date && jcd !== "00" && raceNo
+    ? `${date}-${jcd}-${raceNo}`
+    : "";
+}
+
+function quarantinedRaceKeys(
+  data,
+  fallbackDate = ""
+) {
+  const keys = new Set();
+  [
+    data?.predictions,
+    data?.verificationPredictions,
+    data?.shadowV2Predictions
+  ].forEach(source => {
+    (Array.isArray(source) ? source : [])
+      .filter(isBoatIdentityQuarantined)
+      .forEach(record => {
+        const raceKey = raceKeyOf(
+          record,
+          fallbackDate
+        );
+        if (raceKey) keys.add(raceKey);
+      });
+  });
+  return keys;
+}
 
 /*
   index.json は結果画面の初期表示用キャッシュで、完全履歴の正本ではない。
@@ -68,6 +124,7 @@ function compactCollectionHealth(
     "targetCount",
     "savedCount",
     "insufficientDataCount",
+    "invalidBoatIdentityCount",
     "failedCount",
     "recoveredCount",
     "retryingCount",
@@ -823,18 +880,41 @@ function buildPredictionIndex(directory) {
   const predictions = [];
   const verificationPredictions = [];
   const shadowV2Predictions = [];
+  const quarantinedRecordCounts = {
+    predictions: 0,
+    verificationPredictions: 0,
+    shadowV2Predictions: 0
+  };
 
   files.forEach(name => {
     const data = readJson(path.join(directory, name));
     const date = String(data?.date || name.slice(0, 8));
+    const quarantined =
+      quarantinedRaceKeys(data, date);
 
     (Array.isArray(data?.runs) ? data.runs : []).forEach(run => {
+      if (
+        quarantined.has(
+          raceKeyOf(run?.best, date)
+        )
+      ) {
+        return;
+      }
       runs.push(
         compactRun(date, run)
       );
     });
 
     (Array.isArray(data?.predictions) ? data.predictions : []).forEach(prediction => {
+      if (
+        isBoatIdentityQuarantined(
+          prediction
+        )
+      ) {
+        quarantinedRecordCounts
+          .predictions += 1;
+        return;
+      }
       predictions.push(
         compactIndexVerification({
           ...prediction,
@@ -850,6 +930,15 @@ function buildPredictionIndex(directory) {
     (Array.isArray(data?.verificationPredictions)
       ? data.verificationPredictions
       : []).forEach(prediction => {
+      if (
+        isBoatIdentityQuarantined(
+          prediction
+        )
+      ) {
+        quarantinedRecordCounts
+          .verificationPredictions += 1;
+        return;
+      }
       verificationPredictions.push(compactIndexVerification({
         ...prediction,
         date: String(prediction?.date || date)
@@ -859,6 +948,15 @@ function buildPredictionIndex(directory) {
     (Array.isArray(data?.shadowV2Predictions)
       ? data.shadowV2Predictions
       : []).forEach(prediction => {
+      if (
+        isBoatIdentityQuarantined(
+          prediction
+        )
+      ) {
+        quarantinedRecordCounts
+          .shadowV2Predictions += 1;
+        return;
+      }
       shadowV2Predictions.push(
         compactShadowV2({
         ...prediction,
@@ -890,6 +988,7 @@ function buildPredictionIndex(directory) {
       shadowV2Predictions:
         shadowV2Predictions.length
     },
+    quarantinedRecordCounts,
     retentionLimits: {
       runs: RUN_LIMIT,
       predictions:
@@ -953,6 +1052,8 @@ module.exports = {
   VERIFICATION_LIMIT,
   SHADOW_V2_LIMIT,
   buildPredictionIndex,
+  raceKeyOf,
+  quarantinedRaceKeys,
   compactCollectionTarget,
   compactCollectionHealth,
   compactRun,

@@ -1106,6 +1106,25 @@
     }
 
     if (
+      prediction
+        ?.dataQuality
+        ?.boatIdentity
+        ?.valid === false
+    ) {
+      const identityReason =
+        root.ChappyBoatIdentity
+          ?.reasonText(
+            prediction
+              .dataQuality
+              .boatIdentity
+          ) ||
+        "1〜6号艇を一意に確認できません";
+      rejectionReasons.push(
+        `艇番不整合：${identityReason}`
+      );
+    }
+
+    if (
       String(
         prediction
           ?.dataQuality

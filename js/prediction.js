@@ -18,7 +18,14 @@
     基本定数
   =============================== */
 
-  const VERSION = "prediction-v1.0.0";
+  const VERSION = "prediction-v1.0.1-boat-identity";
+  const boatIdentity =
+    window.ChappyBoatIdentity ||
+    (
+      typeof require === "function"
+        ? require("./boat-identity")
+        : null
+    );
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111" },
@@ -639,13 +646,26 @@
       motorCount +
       weatherCount;
 
-    const qualityScore =
-      Math.round(
-        (
-          availableQualityPoints /
-          40
-        ) * 100
+    if (!race.boatIdentity?.valid) {
+      qualityWarnings.push(
+        `艇番不整合：${
+          boatIdentity?.reasonText(
+            race.boatIdentity
+          ) ||
+          "1〜6号艇を確認できません"
+        }`
       );
+    }
+
+    const qualityScore =
+      race.boatIdentity?.valid
+        ? Math.round(
+            (
+              availableQualityPoints /
+              40
+            ) * 100
+          )
+        : 0;
 
     const dataQuality = {
       score: qualityScore,
@@ -666,7 +686,9 @@
         local: localCount,
         motor: motorCount,
         weather: weatherCount
-      }
+      },
+      boatIdentity:
+        race.boatIdentity || null
     };
 
         const oddsByTicket =
@@ -918,7 +940,28 @@
     const raceNo = Number(raw.raceNo || raw.rno || raw.raceInfo?.raceNo || 0);
     const date = String(raw.date || raw.raceInfo?.date || "");
 
-    const entries = normalizeEntries(raw.entries || []);
+    const rawEntries =
+      Array.isArray(raw.entries)
+        ? raw.entries
+        : [];
+    const entryIdentity =
+      boatIdentity?.inspectEntries(
+        rawEntries,
+        {
+          allowBoatNoFallback: false
+        }
+      ) || {
+        valid: false,
+        boatNos: rawEntries.map(() => 0),
+        reasons: [{
+          code: "identity_module_unavailable",
+          label: "艇番整合性を確認できません"
+        }]
+      };
+    const entries = normalizeEntries(
+      rawEntries,
+      entryIdentity
+    );
     const beforeInfo = normalizeBeforeInfo(raw.beforeInfo || []);
     const startExhibition = normalizeStartExhibition(raw.startExhibition || []);
     const weather = normalizeWeather(raw.weather || {});
@@ -932,6 +975,7 @@
       date,
       raceInfo,
       entries,
+      boatIdentity: entryIdentity,
       beforeInfo,
       startExhibition,
       weather,
@@ -1080,31 +1124,20 @@
         "展開・コースを優先し、十分なサンプルがある場合だけ参考補正に使用する"
     };
   }
-  function normalizeEntries(entries) {
+  function normalizeEntries(
+    entries,
+    entryIdentity = null
+  ) {
     if (!Array.isArray(entries)) return [];
 
     return entries.map((entry, index) => {
-      const boatNoCandidates = [
-  entry.waku,
-  entry.frame,
-  entry.boatNo,
-  entry.boat
-];
-
-let boatNo = 0;
-
-for (const candidate of boatNoCandidates) {
-  const parsed = toBoatNo(candidate);
-
-  if (parsed >= 1 && parsed <= 6) {
-    boatNo = parsed;
-    break;
-  }
-}
-
-if (boatNo === 0) {
-  boatNo = index + 1;
-}
+      const boatNo =
+        Number(
+          entryIdentity
+            ?.boatNos?.[index] ||
+          0
+        ) ||
+        index + 1;
 
       const national = {
         winRate: toNumber(entry.nationalWinRate ?? entry.national?.winRate ?? entry.national?.rate),
@@ -1125,7 +1158,19 @@ if (boatNo === 0) {
       };
 
       const boat = {
-        no: entry.boatNumber ?? entry.boatNoValue ?? entry.boatData?.no ?? entry.boat?.no ?? "",
+        no:
+          entry.boatNumber ??
+          entry.boatNoValue ??
+          (
+            boatIdentity?.primaryBoatNo(
+              entry
+            )
+              ? entry.boatNo
+              : null
+          ) ??
+          entry.boatData?.no ??
+          entry.boat?.no ??
+          "",
         secondRate: toPercentNumber(entry.boat2Rate ?? entry.boat?.secondRate ?? entry.boat?.quinellaRate),
         thirdRate: toPercentNumber(entry.boat3Rate ?? entry.boat?.thirdRate ?? entry.boat?.trioRate)
       };

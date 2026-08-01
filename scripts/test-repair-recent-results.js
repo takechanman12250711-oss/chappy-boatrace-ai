@@ -154,6 +154,53 @@ assert.equal(
   "日全体が未完成でも、取得済みレースの事前予想は照合する"
 );
 
+const quarantineBoats = [
+  "濱本優一",
+  "末永祐輝",
+  "島田一生",
+  "竹内来",
+  "梶原正",
+  "加藤政彦"
+].map((racerName, index) => ({
+  boatNo: index + 1,
+  racerName
+}));
+fs.writeFileSync(
+  predictionPath,
+  JSON.stringify({
+    predictions: [],
+    verificationPredictions: [{
+      raceKey: "20260720-24-11",
+      prediction: {
+        preRaceConditions: {
+          boats: quarantineBoats
+        },
+        mainSheet: {
+          taikou: {
+            boatNo: 1,
+            name: "梶原正"
+          }
+        }
+      }
+    }]
+  })
+);
+assert.equal(
+  hasUnsettledPredictions(
+    predictionPath
+  ),
+  false,
+  "隔離済み予想を未精算待ちへ戻さない"
+);
+assert.equal(
+  hasMatchableUnsettledPredictions(
+    predictionPath,
+    resultPath
+  ),
+  false,
+  "隔離済み予想で結果照合を毎回再実行しない"
+);
+
 const fullyMatchedPrediction = {
   raceKey: "20260720-24-11",
   prediction: {

@@ -8,8 +8,9 @@
   }
 
   const VERSION =
-    "20260729-review2";
+    "20260801-boat-identity1";
   const scripts = [
+    "js/boat-identity.js",
     "js/collection-health.js",
     "js/prediction-verification.js",
     "js/auto-stats.js",

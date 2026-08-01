@@ -2,6 +2,62 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const boatIdentity = require(
+  "../js/boat-identity"
+);
+
+function isBoatIdentityQuarantined(record) {
+  const inspection =
+    boatIdentity.inspectPrediction(record);
+  return (
+    inspection.checked === true &&
+    inspection.valid === false
+  );
+}
+
+function raceKeyOf(value, fallbackDate = "") {
+  const direct = String(
+    value?.raceKey || ""
+  ).trim();
+  if (direct) return direct;
+
+  const date = String(
+    value?.date || fallbackDate || ""
+  ).trim();
+  const jcd = String(
+    value?.jcd || ""
+  ).padStart(2, "0");
+  const raceNo = Number(
+    value?.raceNo || 0
+  );
+
+  return date && jcd !== "00" && raceNo
+    ? `${date}-${jcd}-${raceNo}`
+    : "";
+}
+
+function quarantinedRaceKeys(
+  data,
+  fallbackDate = ""
+) {
+  const keys = new Set();
+  [
+    data?.predictions,
+    data?.verificationPredictions,
+    data?.shadowV2Predictions
+  ].forEach(source => {
+    (Array.isArray(source) ? source : [])
+      .filter(isBoatIdentityQuarantined)
+      .forEach(record => {
+        const raceKey = raceKeyOf(
+          record,
+          fallbackDate
+        );
+        if (raceKey) keys.add(raceKey);
+      });
+  });
+  return keys;
+}
 
 function latest(items, key) {
   return [...(Array.isArray(items) ? items : [])].sort((a, b) =>
@@ -104,6 +160,9 @@ function compactCollectionHealth(health) {
     insufficientDataCount: Number(
       health.insufficientDataCount || 0
     ),
+    invalidBoatIdentityCount: Number(
+      health.invalidBoatIdentityCount || 0
+    ),
     failedCount: Number(health.failedCount || 0),
     recoveredCount: Number(health.recoveredCount || 0),
     finalUncollectedCount: Number(
@@ -136,7 +195,13 @@ function compactCollectionHealth(health) {
   };
 }
 
-function compactRun(run) {
+function compactRun(
+  run,
+  {
+    date = "",
+    quarantined = new Set()
+  } = {}
+) {
   if (!run) return null;
   return {
     runKey: String(run.runKey || ""),
@@ -153,6 +218,12 @@ function compactRun(run) {
         )
       : null,
     compared: (Array.isArray(run.compared) ? run.compared : [])
+      .filter(
+        item =>
+          !quarantined.has(
+            raceKeyOf(item, date)
+          )
+      )
       .slice(0, 24)
       .map(item =>
         compactCompared(
@@ -248,19 +319,50 @@ function compactPrediction(prediction) {
 }
 
 function buildPredictionSummary(data, fallbackDate = "") {
-  const run = latest(data?.runs, "checkedAt");
-  const prediction = latest(data?.predictions, "selectedAt");
+  const date = String(
+    data?.date || fallbackDate
+  );
+  const quarantined =
+    quarantinedRaceKeys(data, date);
+  const run = latest(
+    (Array.isArray(data?.runs)
+      ? data.runs
+      : []
+    ).filter(item =>
+      !quarantined.has(
+        raceKeyOf(item?.best, date)
+      )
+    ),
+    "checkedAt"
+  );
+  const prediction = latest(
+    (Array.isArray(data?.predictions)
+      ? data.predictions
+      : []
+    ).filter(
+      item =>
+        !isBoatIdentityQuarantined(
+          item
+        )
+    ),
+    "selectedAt"
+  );
 
   return {
     schemaVersion: 1,
-    date: String(data?.date || fallbackDate),
+    date,
     updatedAt: String(
       data?.updatedAt ||
       run?.checkedAt ||
       prediction?.selectedAt ||
       ""
     ),
-    runs: run ? [compactRun(run)] : [],
+    runs: run
+      ? [compactRun(run, {
+          date,
+          quarantined
+        })]
+      : [],
     predictions: prediction
       ? [compactPrediction(prediction)]
       : []
@@ -344,6 +446,8 @@ module.exports = {
   compactSelection,
   compactPracticalTicket,
   compactPrediction,
+  raceKeyOf,
+  quarantinedRaceKeys,
   buildPredictionSummary,
   buildPredictionSummaries
 };
