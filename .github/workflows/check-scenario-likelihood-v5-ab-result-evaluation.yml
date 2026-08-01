@@ -1,0 +1,26 @@
+name: Check scenario likelihood v5 A/B result evaluation
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-likelihood-v5-ab-verification.js"
+      - "scripts/match-predictions.js"
+      - "scripts/test-scenario-likelihood-v5-ab-verification.js"
+      - ".github/workflows/check-scenario-likelihood-v5-ab-result-evaluation.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify A/B result evaluation
+        run: |
+          node --check js/scenario-likelihood-v5-ab-verification.js
+          node --check scripts/match-predictions.js
+          node scripts/test-scenario-likelihood-v5-ab-verification.js
+          node scripts/test-match-predictions.js
+          node scripts/check-charter.js

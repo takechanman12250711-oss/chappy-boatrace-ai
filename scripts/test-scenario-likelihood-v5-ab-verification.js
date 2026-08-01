@@ -3,17 +3,23 @@
 const assert = require("node:assert/strict");
 const verification = require("../js/scenario-likelihood-v5-ab-verification");
 
+const KEY_BY_LABEL = {
+  "1逃げ": "inEscape",
+  "2差し": "course2Sashi",
+  "3攻め": "course3Attack",
+  "4カド": "course4Kado"
+};
+
 function variant(leader, runnerUp, actualLikelihood) {
   return {
-    leader: { label: leader },
-    runnerUp: { label: runnerUp },
+    leader: { key: KEY_BY_LABEL[leader], label: leader },
+    runnerUp: { key: KEY_BY_LABEL[runnerUp], label: runnerUp },
     ambiguity: "lean",
-    scenarios: [
-      { label: "1逃げ", relativeLikelihood: leader === "1逃げ" ? 55 : actualLikelihood },
-      { label: "2差し", relativeLikelihood: leader === "2差し" ? 55 : actualLikelihood },
-      { label: "3攻め", relativeLikelihood: leader === "3攻め" ? 55 : actualLikelihood },
-      { label: "4カド", relativeLikelihood: leader === "4カド" ? 55 : actualLikelihood }
-    ]
+    scenarios: Object.entries(KEY_BY_LABEL).map(([label, key]) => ({
+      key,
+      label,
+      relativeLikelihood: label === leader ? 55 : actualLikelihood
+    }))
   };
 }
 
