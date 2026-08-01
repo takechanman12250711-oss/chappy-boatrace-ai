@@ -1,0 +1,27 @@
+name: Check scenario likelihood v5 approval gate
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-likelihood-v5-approval-gate.js"
+      - "scripts/test-scenario-likelihood-v5-approval-gate.js"
+      - "scripts/build-scenario-likelihood-v5-calibration.js"
+      - ".github/workflows/scenario-likelihood-v5-approval-gate.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify approval gate
+        run: |
+          node --check js/scenario-likelihood-v5-approval-gate.js
+          node --check scripts/build-scenario-likelihood-v5-calibration.js
+          node --check scripts/test-scenario-likelihood-v5-approval-gate.js
+          node scripts/test-scenario-likelihood-v5-approval-gate.js
+          node scripts/test-scenario-likelihood-v5-calibration.js
+          node scripts/check-charter.js
