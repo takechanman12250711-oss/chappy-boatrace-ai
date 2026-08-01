@@ -1,0 +1,32 @@
+name: Check scenario likelihood v5 calibration
+
+on:
+  push:
+    paths:
+      - "js/scenario-likelihood-v5-calibration.js"
+      - "scripts/test-scenario-likelihood-v5-calibration.js"
+      - ".github/workflows/scenario-likelihood-v5-calibration.yml"
+  pull_request:
+    paths:
+      - "js/scenario-likelihood-v5-calibration.js"
+      - "scripts/test-scenario-likelihood-v5-calibration.js"
+      - ".github/workflows/scenario-likelihood-v5-calibration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify calibration proposals
+        run: |
+          node --check js/scenario-likelihood-v5-calibration.js
+          node --check scripts/test-scenario-likelihood-v5-calibration.js
+          node scripts/test-scenario-likelihood-v5-calibration.js
+          node scripts/check-charter.js
