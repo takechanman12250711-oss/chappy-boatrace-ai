@@ -1,0 +1,38 @@
+name: Check note regression
+
+on:
+  pull_request:
+    paths:
+      - "js/note-generator.js"
+      - "scripts/test-note-karatsu-regression.js"
+      - ".github/workflows/note-regression.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/note-generator.js"
+      - "scripts/test-note-karatsu-regression.js"
+      - ".github/workflows/note-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  note-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check note generator and regression
+        run: |
+          node --check js/note-generator.js
+          node --check scripts/test-note-karatsu-regression.js
+          node scripts/test-note-karatsu-regression.js
+          node scripts/test-theory-integration.js
+          node scripts/check-charter.js
