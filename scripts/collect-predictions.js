@@ -90,6 +90,22 @@ const scenarioLikelihoodV5 =
     null,
     "展開相対成立度"
   );
+const scenarioLikelihoodV5Ab =
+  loadOptionalV2Dependency(
+    () => require(
+      "../js/scenario-likelihood-v5-ab"
+    ),
+    null,
+    "展開A/B比較"
+  );
+const scenarioLikelihoodV5Calibration =
+  loadOptionalV2Dependency(
+    () => require(
+      "../data/stats/scenario-likelihood-v5-calibration.json"
+    ),
+    { approvalGate: { approvedCandidates: [] } },
+    "展開校正レポート"
+  );
 
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
@@ -138,7 +154,8 @@ const SHADOW_LOGIC_FINGERPRINT = safeFingerprintFiles([
   "js/theory-input.js",
   "js/prediction-conditions.js",
   "js/shadow-selection-v2.js",
-  "js/scenario-likelihood-v5.js"
+  "js/scenario-likelihood-v5.js",
+  "js/scenario-likelihood-v5-ab.js"
 ], "ロジック");
 const SHADOW_REFERENCE_GENERATION_ID = safeFingerprintFiles([
   "scripts/build-race-stats.js"
@@ -1217,6 +1234,20 @@ function buildStoredPrediction(
       prediction,
       dependencies.scenarioLikelihoodAnalyzer
     );
+  const scenarioLikelihoodAb =
+    typeof scenarioLikelihoodV5Ab?.build === "function"
+      ? scenarioLikelihoodV5Ab.build(
+          scenarioLikelihood,
+          scenarioLikelihoodV5Calibration,
+          { jcd: item.jcd }
+        )
+      : {
+          status: "unavailable",
+          usableForPrediction: false,
+          automaticApplication: false,
+          a: null,
+          b: null
+        };
   const selection =
     buildActiveV2Selection(
       shadowV2,
@@ -1248,6 +1279,8 @@ function buildStoredPrediction(
     shadowV2,
     scenarioLikelihoodV5:
       scenarioLikelihood,
+    scenarioLikelihoodV5Ab:
+      scenarioLikelihoodAb,
     prediction: compactVerificationPayload(
       prediction,
       practicalTickets,
