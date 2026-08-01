@@ -1,0 +1,27 @@
+name: Check scenario likelihood v5 shadow
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-likelihood-v5.js"
+      - "scripts/test-scenario-likelihood-v5.js"
+      - ".github/workflows/scenario-likelihood-v5.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check syntax and shadow likelihood
+        run: |
+          node --check js/scenario-likelihood-v5.js
+          node --check scripts/test-scenario-likelihood-v5.js
+          node scripts/test-scenario-likelihood-v5.js
+          node scripts/check-charter.js
