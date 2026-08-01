@@ -1286,8 +1286,7 @@
     buildTags,
     createPracticalSelection,
     formatDeadlineLabel,
-    compactTicketComment,
-    contradictoryRoleBoats
+    compactTicketComment
   };
 
   root.ChappyNoteGenerator =
