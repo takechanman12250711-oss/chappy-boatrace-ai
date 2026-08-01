@@ -1,0 +1,26 @@
+name: Check scenario likelihood v5 A/B
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-likelihood-v5-ab.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/test-scenario-likelihood-v5-ab.js"
+      - ".github/workflows/scenario-likelihood-v5-ab.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify A/B shadow comparison
+        run: |
+          node --check js/scenario-likelihood-v5-ab.js
+          node --check scripts/collect-predictions.js
+          node scripts/test-scenario-likelihood-v5-ab.js
+          node scripts/test-scenario-likelihood-v5-storage.js
+          node scripts/check-charter.js
