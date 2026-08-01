@@ -37,14 +37,17 @@ jobs:
         run: |
           node --check scripts/collect-results.js
           node --check scripts/repair-recent-results.js
+          node --check scripts/build-result-review.js
           node scripts/test-collect-results.js
           node scripts/test-repair-recent-results.js
+          node scripts/test-result-review.js
 
       - name: Collect official results
         env:
           COLLECT_DATE: ${{ inputs.date }}
         run: |
           node scripts/repair-recent-results.js
+          node scripts/build-result-review.js
 
       - name: Build prediction calibration
         run: |
@@ -52,6 +55,7 @@ jobs:
           node scripts/test-repair-recent-results.js
           node scripts/test-prediction-verification.js
           node scripts/test-prediction-calibration.js
+          node scripts/test-result-review.js
           node scripts/build-prediction-calibration.js
           node scripts/test-improvement-review.js
           node scripts/build-improvement-review.js
