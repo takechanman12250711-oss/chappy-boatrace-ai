@@ -1,0 +1,124 @@
+name: Verify note regeneration 20260801
+
+on:
+  push:
+    branches:
+      - verify/note-regeneration-20260801
+    paths:
+      - ".github/workflows/verify-note-regeneration-20260801.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: verify-note-regeneration-20260801
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: verify/note-regeneration-20260801
+          fetch-depth: 0
+
+      - name: Snapshot existing note output
+        run: |
+          mkdir -p /tmp/chappy-notes-before
+          cp data/notes/20260801-*.md /tmp/chappy-notes-before/ 2>/dev/null || true
+
+      - name: Regenerate August 1 predictions and notes
+        run: node scripts/collect-predictions.js --date=20260801
+
+      - name: Verify regenerated output
+        run: |
+          node <<'NODE'
+          "use strict";
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const crypto = require("node:crypto");
+
+          const notesDir = path.join(process.cwd(), "data", "notes");
+          const beforeDir = "/tmp/chappy-notes-before";
+          const files = fs.readdirSync(notesDir)
+            .filter((name) => /^20260801-.*\.md$/.test(name))
+            .sort();
+
+          function read(filePath) {
+            return fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf8") : "";
+          }
+
+          function normalizeCore(text) {
+            return text
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter((line) =>
+                /^(◎|○|▲|△|波乱軸|残し|拾い|・[1-6]-[1-6]-[1-6])/.test(line)
+              );
+          }
+
+          function digest(lines) {
+            return crypto.createHash("sha256").update(lines.join("\n")).digest("hex");
+          }
+
+          const details = files.map((name) => {
+            const after = read(path.join(notesDir, name));
+            const before = read(path.join(beforeDir, name));
+            const badDeadline = (after.match(/締切締切/g) || []).length;
+            const duplicateSemantic = (
+              after.match(/([1-6])号艇が3着で展開を拾う筋。[^\n]*\1号艇が3着で残る筋。/g) || []
+            ).length;
+            const afterCore = normalizeCore(after);
+            const beforeCore = normalizeCore(before);
+            return {
+              file: name,
+              badDeadline,
+              duplicateSemantic,
+              beforeCoreHash: digest(beforeCore),
+              afterCoreHash: digest(afterCore),
+              coreUnchanged: before ? digest(beforeCore) === digest(afterCore) : null,
+              beforeCoreLines: beforeCore.length,
+              afterCoreLines: afterCore.length
+            };
+          });
+
+          const report = {
+            checkedAt: new Date().toISOString(),
+            date: "20260801",
+            regeneratedNoteCount: files.length,
+            badDeadlineCount: details.reduce((sum, item) => sum + item.badDeadline, 0),
+            duplicateSemanticCount: details.reduce((sum, item) => sum + item.duplicateSemantic, 0),
+            comparableNoteCount: details.filter((item) => item.coreUnchanged !== null).length,
+            unchangedCoreCount: details.filter((item) => item.coreUnchanged === true).length,
+            changedCoreFiles: details.filter((item) => item.coreUnchanged === false).map((item) => item.file),
+            details
+          };
+
+          fs.mkdirSync("verification", { recursive: true });
+          fs.writeFileSync(
+            "verification/note-regeneration-20260801.json",
+            JSON.stringify(report, null, 2) + "\n"
+          );
+
+          if (!files.length) throw new Error("8月1日のnoteが再生成されませんでした");
+          if (report.badDeadlineCount) throw new Error("締切表示の重複が残っています");
+          if (report.duplicateSemanticCount) throw new Error("同義説明文の重複が残っています");
+          if (report.changedCoreFiles.length) {
+            throw new Error("印または買い目の中核表示が変化しました: " + report.changedCoreFiles.join(", "));
+          }
+
+          console.log(JSON.stringify(report, null, 2));
+          NODE
+
+      - name: Keep only verification report
+        run: |
+          git checkout -- data/predictions data/notes data/stats 2>/dev/null || true
+          rm .github/workflows/verify-note-regeneration-20260801.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add verification/note-regeneration-20260801.json .github/workflows/verify-note-regeneration-20260801.yml
+          git commit -m "8月1日note再生成の検証結果を記録"
+          git push origin HEAD:verify/note-regeneration-20260801
