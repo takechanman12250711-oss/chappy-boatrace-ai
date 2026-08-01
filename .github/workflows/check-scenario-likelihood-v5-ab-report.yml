@@ -1,0 +1,29 @@
+name: Check scenario likelihood v5 A/B report
+
+on:
+  pull_request:
+    paths:
+      - "scripts/build-scenario-likelihood-v5-ab-report.js"
+      - "scripts/test-build-scenario-likelihood-v5-ab-report.js"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/check-scenario-likelihood-v5-ab-report.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify A/B report
+        run: |
+          node --check scripts/build-scenario-likelihood-v5-ab-report.js
+          node scripts/test-build-scenario-likelihood-v5-ab-report.js
+          node scripts/test-scenario-likelihood-v5-ab-verification.js
+          node scripts/build-scenario-likelihood-v5-ab-report.js
+          node -e 'const r=require("./data/stats/scenario-likelihood-v5-ab-report.json"); if(r.usableForPrediction!==false||r.automaticApplication!==false) process.exit(1)'
+          node scripts/check-charter.js
