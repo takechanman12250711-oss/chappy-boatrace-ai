@@ -6,46 +6,37 @@ function round1(value) {
   return Math.round(Number(value || 0) * 10) / 10;
 }
 
-function verifyVariant(variant, actualScenario) {
+function verifyVariant(variant, actual) {
   const scenarios = Array.isArray(variant?.scenarios) ? variant.scenarios : [];
-  const leader = String(variant?.leader?.label || variant?.leader?.key || "");
-  const runnerUp = String(variant?.runnerUp?.label || variant?.runnerUp?.key || "");
-  const actualRow = scenarios.find(row =>
-    String(row?.label || row?.key || "") === actualScenario
-  );
+  const leaderKey = String(variant?.leader?.key || "");
+  const runnerUpKey = String(variant?.runnerUp?.key || "");
+  const actualRow = scenarios.find(row => String(row?.key || "") === actual.key);
   return {
-    leaderScenario: leader,
-    runnerUpScenario: runnerUp,
-    leaderHit: Boolean(actualScenario && leader === actualScenario),
-    topTwoHit: Boolean(actualScenario && (leader === actualScenario || runnerUp === actualScenario)),
+    leaderScenario: String(variant?.leader?.label || leaderKey),
+    runnerUpScenario: String(variant?.runnerUp?.label || runnerUpKey),
+    leaderHit: Boolean(actual.key && leaderKey === actual.key),
+    topTwoHit: Boolean(actual.key && (leaderKey === actual.key || runnerUpKey === actual.key)),
     actualLikelihood: Number(actualRow?.relativeLikelihood || 0),
     ambiguity: String(variant?.ambiguity || "unknown")
   };
 }
 
 function verify(snapshot, result) {
-  const actual = baseVerification.actualScenarioFromResult(result);
-  if (!actual?.comparable) {
-    return {
-      comparable: false,
-      reason: String(actual?.reason || "actual-scenario-unavailable"),
-      status: "not-comparable"
-    };
+  const actual = baseVerification.actualScenario(result);
+  if (!actual) {
+    return { comparable: false, reason: "actual-scenario-unavailable", status: "not-comparable" };
   }
-  const a = verifyVariant(snapshot?.a, actual.actualScenario);
-  const b = verifyVariant(snapshot?.b, actual.actualScenario);
+  const a = verifyVariant(snapshot?.a, actual);
+  const b = verifyVariant(snapshot?.b, actual);
   let winner = "tie";
   if (a.leaderHit !== b.leaderHit) winner = b.leaderHit ? "b" : "a";
   else if (a.topTwoHit !== b.topTwoHit) winner = b.topTwoHit ? "b" : "a";
-  else if (a.actualLikelihood !== b.actualLikelihood) {
-    winner = b.actualLikelihood > a.actualLikelihood ? "b" : "a";
-  }
+  else if (a.actualLikelihood !== b.actualLikelihood) winner = b.actualLikelihood > a.actualLikelihood ? "b" : "a";
   return {
     comparable: true,
     status: "shadow-only",
-    actualScenario: actual.actualScenario,
-    winningBoat: actual.winningBoat,
-    winningMethod: actual.winningMethod,
+    actualScenario: actual.label,
+    actualScenarioKey: actual.key,
     changed: snapshot?.changed === true,
     winner,
     a,
@@ -103,8 +94,7 @@ function groupSummary(rows, keyBuilder) {
     bucket.push(row);
     groups.set(key, bucket);
   });
-  return [...groups.entries()]
-    .map(([key, bucket]) => ({ key, ...summarizeRows(bucket) }))
+  return [...groups.entries()].map(([key, bucket]) => ({ key, ...summarizeRows(bucket) }))
     .sort((a, b) => b.samples - a.samples || a.key.localeCompare(b.key));
 }
 
