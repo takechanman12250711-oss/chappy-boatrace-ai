@@ -9,7 +9,6 @@ function makeRows(count, options = {}) {
   const jcd = String(options.jcd || "20");
   const scenario = String(options.scenario || "3攻め");
   const ambiguity = String(options.ambiguity || "clear");
-  const hits = Math.round(count * hitRate / 100);
   return Array.from({ length: count }, (_, index) => ({
     comparable: true,
     raceKey: `2026${String(101 + index).padStart(4, "0")}-${jcd}-${(index % 12) + 1}`,
@@ -18,7 +17,9 @@ function makeRows(count, options = {}) {
     leaderScenario: scenario,
     ambiguity,
     leaderLikelihood: expected,
-    leaderHit: index < hits,
+    leaderHit:
+      Math.floor((index + 1) * hitRate / 100) >
+      Math.floor(index * hitRate / 100),
     topTwoHit: true
   }));
 }
