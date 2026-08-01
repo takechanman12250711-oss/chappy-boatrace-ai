@@ -1,0 +1,27 @@
+name: Check Edogawa boat 4 regression
+
+on:
+  pull_request:
+    paths:
+      - "js/evaluated-scenario-candidates.js"
+      - "scripts/test-edogawa-boat4-regression.js"
+      - ".github/workflows/edogawa-boat4-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check syntax and boat 4 candidate coverage
+        run: |
+          node --check js/evaluated-scenario-candidates.js
+          node --check scripts/test-edogawa-boat4-regression.js
+          node scripts/test-edogawa-boat4-regression.js
+          node scripts/check-charter.js
