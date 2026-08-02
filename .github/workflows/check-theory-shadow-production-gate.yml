@@ -1,0 +1,27 @@
+name: Check theory shadow production gate
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-shadow-production-gate.js"
+      - "scripts/test-theory-shadow-production-gate.js"
+      - "scripts/build-theory-shadow-production-gate.js"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/check-theory-shadow-production-gate.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify production candidate gate
+        run: |
+          node --check js/theory-shadow-production-gate.js
+          node --check scripts/build-theory-shadow-production-gate.js
+          node scripts/test-theory-shadow-production-gate.js
+          node scripts/build-theory-shadow-production-gate.js
+          node scripts/check-charter.js
