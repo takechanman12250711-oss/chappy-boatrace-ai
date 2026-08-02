@@ -1,0 +1,17 @@
+name: Check home dashboard v2 phase2
+on:
+  pull_request:
+    paths:
+      - 'js/home-dashboard-v2.js'
+      - 'scripts/test-home-dashboard-v2-phase2.js'
+      - '.github/workflows/check-home-dashboard-v2-phase2.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/home-dashboard-v2.js
+      - run: node scripts/test-home-dashboard-v2-phase2.js
