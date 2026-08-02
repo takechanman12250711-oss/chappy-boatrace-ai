@@ -1,0 +1,23 @@
+name: Check scenario AI v6 display
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-ai-v6-display.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-scenario-ai-v6-display.js"
+      - ".github/workflows/check-scenario-ai-v6-display.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify scenario AI v6 display
+        run: |
+          node --check js/scenario-ai-v6-display.js
+          node --check js/prediction-runtime-loader.js
+          node scripts/test-scenario-ai-v6-display.js

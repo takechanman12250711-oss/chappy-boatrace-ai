@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260802-skip-ai-display1";
+  const VERSION = "20260802-scenario-v6-display1";
   const scripts = [
     "js/boat-identity.js",
     "js/theory.js",
@@ -21,7 +21,8 @@
     "js/scenario-ai-v6-shadow.js",
     "js/skip-ai-shadow.js",
     "js/render.js",
-    "js/skip-ai-display.js"
+    "js/skip-ai-display.js",
+    "js/scenario-ai-v6-display.js"
   ];
   const optionalScripts = [
     "js/prediction-calibration.js"
