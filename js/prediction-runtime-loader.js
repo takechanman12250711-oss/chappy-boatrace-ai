@@ -22,7 +22,8 @@
     "js/skip-ai-shadow.js",
     "js/render.js",
     "js/skip-ai-display.js",
-    "js/scenario-ai-v6-display.js"
+    "js/scenario-ai-v6-display.js",
+    "js/prediction-ui-phase4.js"
   ];
   const optionalScripts = [
     "js/prediction-calibration.js"
