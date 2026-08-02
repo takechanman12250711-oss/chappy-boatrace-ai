@@ -9,6 +9,9 @@ on:
       - "config/chappy-charter.json"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/build-scenario-ai-v6-snapshots.js"
+      - "scripts/test-scenario-ai-v6-storage.js"
+      - "js/scenario-ai-v6-shadow.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
       - "scripts/build-prediction-summaries.js"
@@ -82,9 +85,13 @@ jobs:
       - name: Check charter and source
         run: |
           node --check scripts/collect-predictions.js
+          node --check scripts/build-scenario-ai-v6-snapshots.js
+          node --check js/scenario-ai-v6-shadow.js
           node --check js/boat-identity.js
           node --check js/evaluated-scenario-candidates.js
           node --check js/shadow-selection-v2.js
+          node scripts/test-scenario-ai-v6-shadow.js
+          node scripts/test-scenario-ai-v6-storage.js
           node scripts/test-shadow-predictions.js
           node scripts/test-shadow-selection-v2.js
           node scripts/test-prediction-conditions.js
@@ -107,6 +114,7 @@ jobs:
           PREDICT_DATE: ${{ inputs.date }}
         run: |
           node scripts/collect-predictions.js
+          node scripts/build-scenario-ai-v6-snapshots.js
           node scripts/build-prediction-index.js
           node scripts/build-prediction-summaries.js
           node scripts/test-load-performance.js
