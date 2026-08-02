@@ -1,0 +1,24 @@
+name: Check scenario AI v6 shadow A/B
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-ai-v6-shadow-ab.js"
+      - "scripts/build-scenario-ai-v6-snapshots.js"
+      - "scripts/test-scenario-ai-v6-shadow-ab.js"
+      - ".github/workflows/check-scenario-ai-v6-shadow-ab.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify scenario AI v6 shadow A/B
+        run: |
+          node --check js/scenario-ai-v6-shadow-ab.js
+          node --check scripts/build-scenario-ai-v6-snapshots.js
+          node scripts/test-scenario-ai-v6-shadow-ab.js
+          node scripts/check-charter.js
