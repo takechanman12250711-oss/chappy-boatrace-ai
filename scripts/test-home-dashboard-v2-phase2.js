@@ -1,18 +1,20 @@
 const fs = require('fs');
 const source = fs.readFileSync('js/home-dashboard-v2.js', 'utf8');
 const required = [
-  'waitOption',
+  'waitForRaceOption',
   'syncAndOpen',
-  'btn.click()',
+  'fetchButton.click()',
   'state.selectedPlace',
   'state.selectedRace',
   'setView("prediction")',
-  '出走表・オッズ・AI予想'
+  'slice(0, 5)',
+  'sessionStorage',
+  'requestIdleCallback'
 ];
 for (const token of required) {
-  if (!source.includes(token)) throw new Error(`Home navigation token missing: ${token}`);
+  if (!source.includes(token)) throw new Error(`Home performance token missing: ${token}`);
 }
 if (/buildMarks|buildFormations|practicalTickets/.test(source)) {
-  throw new Error('Home UI must not modify prediction or ticket logic');
+  throw new Error('Home performance work must not modify prediction or ticket logic');
 }
-console.log('approved home navigation tests passed');
+console.log('home dashboard performance tests passed');
