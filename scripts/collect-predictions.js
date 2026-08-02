@@ -109,6 +109,17 @@ const scenarioLikelihoodV5Calibration =
 const theoryTagSnapshot = require(
   "../js/theory-tag-snapshot"
 );
+const theoryShadowAb = require(
+  "../js/theory-shadow-ab"
+);
+const theoryImprovementReport =
+  loadOptionalV2Dependency(
+    () => require(
+      "../data/stats/theory-improvement-proposals.json"
+    ),
+    { approvalGate: { approvedCandidates: [] } },
+    "理論改善承認候補"
+  );
 
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
@@ -1251,6 +1262,17 @@ function buildStoredPrediction(
           a: null,
           b: null
         };
+  const theorySnapshot =
+    theoryTagSnapshot.build(
+      prediction,
+      practicalTickets
+    );
+  const theoryShadowComparison =
+    theoryShadowAb.build(
+      theorySnapshot,
+      theoryImprovementReport,
+      { jcd: item.jcd }
+    );
   const selection =
     buildActiveV2Selection(
       shadowV2,
@@ -1285,10 +1307,9 @@ function buildStoredPrediction(
     scenarioLikelihoodV5Ab:
       scenarioLikelihoodAb,
     theoryTagSnapshot:
-      theoryTagSnapshot.build(
-        prediction,
-        practicalTickets
-      ),
+      theorySnapshot,
+    theoryShadowAb:
+      theoryShadowComparison,
     prediction: compactVerificationPayload(
       prediction,
       practicalTickets,

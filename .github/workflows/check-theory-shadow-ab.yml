@@ -1,0 +1,25 @@
+name: Check theory shadow A/B
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-shadow-ab.js"
+      - "scripts/test-theory-shadow-ab.js"
+      - "scripts/collect-predictions.js"
+      - ".github/workflows/check-theory-shadow-ab.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify theory shadow A/B
+        run: |
+          node --check js/theory-shadow-ab.js
+          node --check scripts/collect-predictions.js
+          node scripts/test-theory-shadow-ab.js
+          node scripts/check-charter.js
