@@ -1,0 +1,29 @@
+name: Check theory shadow A/B verification
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-shadow-ab-verification.js"
+      - "scripts/test-theory-shadow-ab-verification.js"
+      - "scripts/build-theory-shadow-ab-report.js"
+      - "scripts/test-build-theory-shadow-ab-report.js"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/theory-shadow-ab-verification.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify theory shadow A/B result comparison
+        run: |
+          node --check js/theory-shadow-ab-verification.js
+          node --check scripts/build-theory-shadow-ab-report.js
+          node scripts/test-theory-shadow-ab-verification.js
+          node scripts/test-build-theory-shadow-ab-report.js
+          node scripts/build-theory-shadow-ab-report.js
+          node scripts/check-charter.js
