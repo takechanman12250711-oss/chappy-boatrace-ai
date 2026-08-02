@@ -1,0 +1,31 @@
+name: Check scenario AI v6 monitor
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-ai-v6-monitor.js"
+      - "scripts/build-scenario-ai-v6-monitor.js"
+      - "scripts/test-scenario-ai-v6-monitor.js"
+      - ".github/workflows/check-scenario-ai-v6-monitor.yml"
+  push:
+    branches: [main]
+    paths:
+      - "js/scenario-ai-v6-monitor.js"
+      - "scripts/build-scenario-ai-v6-monitor.js"
+      - "scripts/test-scenario-ai-v6-monitor.js"
+      - ".github/workflows/check-scenario-ai-v6-monitor.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify scenario AI v6 monitor
+        run: |
+          node --check js/scenario-ai-v6-monitor.js
+          node --check scripts/build-scenario-ai-v6-monitor.js
+          node scripts/test-scenario-ai-v6-monitor.js
+          node scripts/check-charter.js
