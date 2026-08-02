@@ -1,0 +1,49 @@
+name: Build prediction gap report
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 15 * * *" # 00:45 JST・結果照合後
+  pull_request:
+    paths:
+      - "scripts/build-prediction-gap-report.js"
+      - "scripts/test-prediction-gap-report.js"
+      - ".github/workflows/prediction-gap-report.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prediction-gap-report
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify extractor
+        run: |
+          node --check scripts/build-prediction-gap-report.js
+          node scripts/test-prediction-gap-report.js
+      - name: Build report
+        if: github.event_name != 'pull_request'
+        run: |
+          node scripts/build-improvement-review.js
+          node scripts/build-prediction-gap-report.js
+      - name: Save report
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/improvement-review.json data/stats/prediction-gap-report.json
+          if git diff --cached --quiet; then
+            echo "保存する変更はありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Build prediction gap report"
+          git pull --rebase origin main
+          git push origin main
