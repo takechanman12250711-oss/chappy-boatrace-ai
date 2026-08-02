@@ -1,0 +1,22 @@
+name: Check scenario AI v6 approval
+
+on:
+  pull_request:
+    paths:
+      - "data/config/scenario-ai-v6-approval.json"
+      - "scripts/build-scenario-ai-v6-approval-status.js"
+      - "scripts/test-scenario-ai-v6-approval.js"
+      - ".github/workflows/check-scenario-ai-v6-approval.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify scenario AI v6 approval
+        run: |
+          node --check scripts/build-scenario-ai-v6-approval-status.js
+          node scripts/test-scenario-ai-v6-approval.js
