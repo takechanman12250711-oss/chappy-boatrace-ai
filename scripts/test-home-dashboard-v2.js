@@ -11,9 +11,9 @@ assert(html.includes("js/home-dashboard-v2.js"), "ホームv2 JSを読み込む"
 assert(js.includes("TODAY'S PICKS"), "今日のおすすめを表示する");
 assert(js.includes("モーニング"), "開催区分フィルターを持つ");
 assert(js.includes("syncAndOpen"), "既存レース選択へ同期する");
-assert(js.includes("fetchButton?.click()"), "レース選択後に既存取得処理を自動実行する");
+assert(js.includes("fetchButton.click()") || js.includes("fetchButton?.click()"), "レース選択後に既存取得処理を自動実行する");
 assert(css.includes("home-v2-recommend-list"), "おすすめカードのスマホ表示を持つ");
 assert(css.includes("is-deadline-red"), "締切色分けを持つ");
 assert(!js.includes("buildMarks("), "印ロジックを変更しない");
 assert(!js.includes("buildFormations("), "買い目ロジックを変更しない");
-console.log("ホーム画面v2 Phase1テスト: 合格");
+console.log("ホーム画面v2 Phase1回帰テスト: 合格");
