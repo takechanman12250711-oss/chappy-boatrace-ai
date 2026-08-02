@@ -1,0 +1,21 @@
+name: Check prediction UI phase4
+
+on:
+  pull_request:
+    paths:
+      - "js/home-dashboard-v2.js"
+      - "scripts/test-prediction-ui-phase4.js"
+      - ".github/workflows/check-prediction-ui-phase4.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify prediction UI phase4
+        run: |
+          node --check js/home-dashboard-v2.js
+          node scripts/test-prediction-ui-phase4.js
