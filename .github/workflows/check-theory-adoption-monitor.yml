@@ -1,0 +1,24 @@
+name: Check theory adoption monitor
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-adoption-monitor.js"
+      - "scripts/test-theory-adoption-monitor.js"
+      - "scripts/build-theory-adoption-monitor.js"
+      - ".github/workflows/check-theory-adoption-monitor.yml"
+      - ".github/workflows/collect-results.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify canary monitoring safeguards
+        run: |
+          node --check js/theory-adoption-monitor.js
+          node --check scripts/build-theory-adoption-monitor.js
+          node scripts/test-theory-adoption-monitor.js
