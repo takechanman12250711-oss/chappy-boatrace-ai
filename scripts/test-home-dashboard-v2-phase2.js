@@ -7,9 +7,13 @@ const required = [
   'state.selectedPlace',
   'state.selectedRace',
   'setView("prediction")',
-  'slice(0, 5)',
+  'PAGE_SIZE = 5',
+  'slice(0, state.visibleCount)',
   'sessionStorage',
-  'requestIdleCallback'
+  'requestIdleCallback',
+  'requestMap',
+  'renderRecommendations',
+  'renderSchedule'
 ];
 for (const token of required) {
   if (!source.includes(token)) throw new Error(`Home performance token missing: ${token}`);
