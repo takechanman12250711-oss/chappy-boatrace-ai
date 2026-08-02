@@ -3,7 +3,10 @@ name: Check skip AI shadow
 on:
   pull_request:
     paths:
+      - "js/scenario-ai-v6-shadow.js"
       - "js/skip-ai-shadow.js"
+      - "js/skip-ai-display.js"
+      - "js/prediction-runtime-loader.js"
       - "scripts/test-skip-ai-shadow.js"
       - ".github/workflows/check-skip-ai-shadow.yml"
 
@@ -15,7 +18,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Verify skip AI shadow
+      - name: Verify skip AI display
         run: |
+          node --check js/scenario-ai-v6-shadow.js
           node --check js/skip-ai-shadow.js
+          node --check js/skip-ai-display.js
+          node --check js/prediction-runtime-loader.js
           node scripts/test-skip-ai-shadow.js
