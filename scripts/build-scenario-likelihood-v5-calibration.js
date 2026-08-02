@@ -18,21 +18,66 @@ function loadJson(filePath, fallback) {
   }
 }
 
-function rowsFromRecord(record) {
+function scenarioName(value) {
+  if (value && typeof value === "object") {
+    return String(value.label || value.key || "");
+  }
+  return String(value || "");
+}
+
+function directVerificationRow(record) {
   const verification = record?.result?.scenarioLikelihoodV5Verification;
   if (!verification || verification.comparable !== true) return null;
+  const leader = verification.predictedLeader || null;
+  const runnerUp = verification.predictedRunnerUp || null;
   return {
     comparable: true,
     jcd: String(record?.jcd || "").padStart(2, "0"),
     raceKey: String(record?.raceKey || ""),
-    actualScenario: String(verification.actualScenario || ""),
-    leaderScenario: String(verification.leaderScenario || ""),
-    runnerUpScenario: String(verification.runnerUpScenario || ""),
+    actualScenario: scenarioName(verification.actualScenario),
+    leaderScenario: scenarioName(leader || verification.leaderScenario),
+    runnerUpScenario: scenarioName(runnerUp || verification.runnerUpScenario),
     ambiguity: String(verification.ambiguity || "unknown"),
-    leaderLikelihood: Number(verification.leaderLikelihood || 0),
+    leaderLikelihood: Number(
+      leader?.relativeLikelihood ?? verification.leaderLikelihood ?? 0
+    ),
     leaderHit: verification.leaderHit === true,
-    topTwoHit: verification.topTwoHit === true
+    topTwoHit:
+      verification.top2Hit === true ||
+      verification.topTwoHit === true
   };
+}
+
+function abVerificationRow(record) {
+  const verification = record?.result?.scenarioLikelihoodV5AbVerification;
+  const snapshot = record?.scenarioLikelihoodV5Ab?.a;
+  if (!verification || verification.comparable !== true || !verification.a) {
+    return null;
+  }
+  return {
+    comparable: true,
+    jcd: String(record?.jcd || "").padStart(2, "0"),
+    raceKey: String(record?.raceKey || ""),
+    actualScenario: scenarioName(verification.actualScenario),
+    leaderScenario: scenarioName(
+      snapshot?.leader || verification.a.leaderScenario
+    ),
+    runnerUpScenario: scenarioName(
+      snapshot?.runnerUp || verification.a.runnerUpScenario
+    ),
+    ambiguity: String(
+      snapshot?.ambiguity || verification.a.ambiguity || "unknown"
+    ),
+    leaderLikelihood: Number(
+      snapshot?.leader?.relativeLikelihood ?? 0
+    ),
+    leaderHit: verification.a.leaderHit === true,
+    topTwoHit: verification.a.topTwoHit === true
+  };
+}
+
+function rowsFromRecord(record) {
+  return directVerificationRow(record) || abVerificationRow(record);
 }
 
 function collectRows() {
@@ -84,4 +129,10 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { rowsFromRecord, collectRows };
+module.exports = {
+  scenarioName,
+  directVerificationRow,
+  abVerificationRow,
+  rowsFromRecord,
+  collectRows
+};
