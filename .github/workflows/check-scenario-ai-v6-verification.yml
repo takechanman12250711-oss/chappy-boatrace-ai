@@ -1,0 +1,25 @@
+name: Check scenario AI v6 verification
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-ai-v6-verification.js"
+      - "scripts/build-scenario-ai-v6-verification.js"
+      - "scripts/test-scenario-ai-v6-verification.js"
+      - ".github/workflows/check-scenario-ai-v6-verification.yml"
+      - ".github/workflows/collect-results.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify scenario AI v6 result matching
+        run: |
+          node --check js/scenario-ai-v6-verification.js
+          node --check scripts/build-scenario-ai-v6-verification.js
+          node scripts/test-scenario-ai-v6-verification.js
+          node scripts/check-charter.js
