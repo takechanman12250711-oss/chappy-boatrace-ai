@@ -5,6 +5,7 @@
 
   const VERSION = "20260802-sprint3";
   const loaded = new Map();
+  const groupReady = new Map();
   const groups = {
     race: [
       "js/utils.js",
@@ -55,11 +56,24 @@
     return promise;
   }
 
-  async function ensure(group) {
-    const scripts = groups[group] || [];
-    for (const src of scripts) await loadScript(src);
-    if (group === "stats") await root.ChappyStatsRuntime?.ensureReady?.();
-    return true;
+  function ensure(group) {
+    if (groupReady.has(group)) return groupReady.get(group);
+    const promise = (async () => {
+      const scripts = groups[group] || [];
+      for (const src of scripts) await loadScript(src);
+      if (group === "race") {
+        document.dispatchEvent(new Event("DOMContentLoaded"));
+      }
+      if (group === "stats") {
+        await root.ChappyStatsRuntime?.ensureReady?.();
+      }
+      return true;
+    })().catch(error => {
+      groupReady.delete(group);
+      throw error;
+    });
+    groupReady.set(group, promise);
+    return promise;
   }
 
   function replay(target) {
