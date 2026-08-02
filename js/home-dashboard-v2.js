@@ -4,7 +4,8 @@
   const API_ROOT = "https://chappy-boatrace-api.vercel.app/api";
   const SUMMARY_ROOT = "data/predictions/summaries";
   const CACHE_KEY = "chappy-home-v2-cache";
-  const CACHE_TTL = 60000;
+  const CACHE_TTL = 300000;
+  const PAGE_SIZE = 5;
   const TYPES = {
     morning: new Set(["三国", "鳴門", "徳山", "芦屋", "唐津", "大村"]),
     night: new Set(["桐生", "蒲郡", "住之江", "丸亀", "下関", "若松"])
@@ -13,18 +14,22 @@
     filter: "all",
     schedule: [],
     recommendations: [],
-    showAll: false,
+    visibleCount: PAGE_SIZE,
     selectedPlace: "",
     selectedRace: 0,
     loading: false,
     updatedAt: null,
-    bound: false
+    bound: false,
+    refreshPromise: null,
+    requestMap: new Map(),
+    renderKeys: { recommendations: "", schedule: "", updatedAt: "" }
   };
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   })[char]);
   const num = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+  const stable = value => JSON.stringify(value || null);
 
   function jstDate() {
     return new Intl.DateTimeFormat("sv-SE", {
@@ -91,12 +96,13 @@
 
   function readCache() {
     try {
-      const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
+      const raw = sessionStorage.getItem(CACHE_KEY) || localStorage.getItem(CACHE_KEY) || "null";
+      const cached = JSON.parse(raw);
       if (!cached || Date.now() - Number(cached.savedAt || 0) > CACHE_TTL) return false;
       state.schedule = Array.isArray(cached.schedule) ? cached.schedule : [];
       state.recommendations = Array.isArray(cached.recommendations) ? cached.recommendations : [];
       state.updatedAt = cached.updatedAt ? new Date(cached.updatedAt) : new Date(cached.savedAt);
-      return state.schedule.length > 0;
+      return state.schedule.length > 0 || state.recommendations.length > 0;
     } catch (_) {
       return false;
     }
@@ -104,24 +110,36 @@
 
   function writeCache() {
     try {
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+      const payload = JSON.stringify({
         savedAt: Date.now(),
         updatedAt: state.updatedAt?.toISOString() || null,
         schedule: state.schedule,
         recommendations: state.recommendations
-      }));
+      });
+      sessionStorage.setItem(CACHE_KEY, payload);
+      localStorage.setItem(CACHE_KEY, payload);
     } catch (_) {}
   }
 
-  async function getJson(url, force = false) {
-    const response = await fetch(url, { cache: force ? "reload" : "default" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+  function getJson(url, force = false) {
+    const key = `${force ? "reload:" : "default:"}${url}`;
+    if (state.requestMap.has(key)) return state.requestMap.get(key);
+    const request = fetch(url, { cache: force ? "reload" : "default" })
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .finally(() => state.requestMap.delete(key));
+    state.requestMap.set(key, request);
+    return request;
   }
 
   async function loadSchedule(force = false) {
     const data = await getJson(`${API_ROOT}/schedule?date=${encodeURIComponent(jstDate())}`, force);
-    state.schedule = Array.isArray(data?.venues) ? data.venues : [];
+    const next = Array.isArray(data?.venues) ? data.venues : [];
+    const changed = stable(next) !== stable(state.schedule);
+    state.schedule = next;
+    return changed;
   }
 
   async function loadRecommendations(force = false) {
@@ -130,14 +148,17 @@
       const data = await getJson(`${SUMMARY_ROOT}/${jstDate()}.json${suffix}`, force);
       const run = [...(Array.isArray(data?.runs) ? data.runs : [])]
         .sort((a, b) => Date.parse(b?.checkedAt || 0) - Date.parse(a?.checkedAt || 0))[0];
-      state.recommendations = (Array.isArray(run?.compared) ? run.compared : [])
+      const next = (Array.isArray(run?.compared) ? run.compared : [])
         .map(item => ({ ...item, decision: decisionFor(item) }))
         .filter(item => item?.place && num(item?.raceNo) > 0)
         .sort((a, b) => num(b?.decision?.score) - num(a?.decision?.score))
         .slice(0, 3);
+      const changed = stable(next) !== stable(state.recommendations);
+      state.recommendations = next;
+      return changed;
     } catch (error) {
-      if (!state.recommendations.length) state.recommendations = [];
       console.warn("ホームおすすめ取得エラー", error);
+      return false;
     }
   }
 
@@ -155,20 +176,19 @@
 
   async function syncAndOpen(place, raceNo) {
     if (state.loading) return;
-    const raceValue = `${num(raceNo)}R`;
-    const mode = document.getElementById("raceModeSelect");
-    const placeSelect = document.getElementById("placeSelect");
-    const raceSelect = document.getElementById("raceSelect");
-    const fetchButton = document.getElementById("fetchRaceBtn");
-    if (!placeSelect || !raceSelect || !fetchButton) return;
-
     state.loading = true;
-    state.selectedPlace = place;
-    state.selectedRace = num(raceNo);
-    document.querySelectorAll(".home-v2-race.is-selected").forEach(el => el.classList.remove("is-selected"));
-    document.querySelector(`.home-v2-race[data-place="${CSS.escape(place)}"][data-race="${num(raceNo)}"]`)?.classList.add("is-selected");
-
     try {
+      await root.ChappyAppRuntime?.ensure?.("race");
+      const raceValue = `${num(raceNo)}R`;
+      const mode = document.getElementById("raceModeSelect");
+      const placeSelect = document.getElementById("placeSelect");
+      const raceSelect = document.getElementById("raceSelect");
+      const fetchButton = document.getElementById("fetchRaceBtn");
+      if (!placeSelect || !raceSelect || !fetchButton) return;
+
+      state.selectedPlace = place;
+      state.selectedRace = num(raceNo);
+      updateSelectedRace();
       if (mode) mode.value = "live";
       placeSelect.value = place;
       placeSelect.dispatchEvent(new Event("change", { bubbles: true }));
@@ -203,7 +223,7 @@
     const place = String(venue?.place || "");
     const type = venueType(place);
     const rows = racesOf(venue).filter(row => row.selectable !== false).slice(0, 4);
-    return `<article class="home-v2-venue"><div class="home-v2-venue-info"><strong>${esc(place)} <span>≋</span></strong><small>${typeLabel(type)}</small></div><div class="home-v2-races">${rows.length ? rows.map(row => raceHtml(place, row)).join("") : '<span class="home-v2-no-race">締切前なし</span>'}</div><button class="home-v2-venue-next" type="button" data-open-venue="${esc(place)}">›</button></article>`;
+    return `<article class="home-v2-venue" data-venue="${esc(place)}"><div class="home-v2-venue-info"><strong>${esc(place)} <span>≋</span></strong><small>${typeLabel(type)}</small></div><div class="home-v2-races">${rows.length ? rows.map(row => raceHtml(place, row)).join("") : '<span class="home-v2-no-race">締切前なし</span>'}</div><button class="home-v2-venue-next" type="button" data-open-venue="${esc(place)}">›</button></article>`;
   }
 
   function filteredVenues() {
@@ -213,16 +233,62 @@
     });
   }
 
-  function render() {
-    const el = document.getElementById("homeDashboardV2");
+  function ensureShell() {
+    const el = ensureHome();
+    if (el.dataset.shellReady === "true") return el;
+    el.innerHTML = `<section class="home-v2-recommend"><div class="home-v2-title-row"><h2>TODAY'S PICKS　🔥 今日のおすすめレース</h2><span data-home-updated>最終更新 --:--</span></div><div class="home-v2-recommend-list" data-home-recommendations></div></section><section class="home-v2-filter-shell"><div class="home-v2-filters">${[["all","🌐 全場"],["morning","☀️ モーニング"],["day","☀️ デイ"],["night","🌙 ナイター"]].map(([key,label]) => `<button type="button" data-filter="${key}" class="${state.filter === key ? "is-active" : ""}">${label}</button>`).join("")}</div></section><section class="home-v2-schedule"><div class="home-v2-title-row home-v2-schedule-title"><h2>⚑ 開催場一覧</h2><div class="home-v2-legend"><span class="is-main">勝負</span><span class="is-upset">波乱</span><span class="is-skip">見送り</span><span class="is-before">展示前</span></div></div><div class="home-v2-venue-list" data-home-venues></div><button class="home-v2-more" type="button" data-show-all hidden></button></section>`;
+    el.dataset.shellReady = "true";
+    return el;
+  }
+
+  function renderRecommendations(force = false) {
+    const el = ensureShell().querySelector("[data-home-recommendations]");
     if (!el) return;
-    const recommendations = state.recommendations.length
+    const key = stable(state.recommendations);
+    if (!force && key === state.renderKeys.recommendations) return;
+    state.renderKeys.recommendations = key;
+    el.innerHTML = state.recommendations.length
       ? state.recommendations.map(recommendationHtml).join("")
       : '<p class="home-v2-empty">本日のおすすめ判定を準備しています</p>';
-    const venues = filteredVenues();
-    const shown = state.showAll ? venues : venues.slice(0, 5);
+  }
 
-    el.innerHTML = `<section class="home-v2-recommend"><div class="home-v2-title-row"><h2>TODAY'S PICKS　🔥 今日のおすすめレース</h2><span>最終更新 ${state.updatedAt ? timeOf(state.updatedAt) : "--:--"}</span></div><div class="home-v2-recommend-list">${recommendations}</div></section><section class="home-v2-filter-shell"><div class="home-v2-filters">${[["all","🌐 全場"],["morning","☀️ モーニング"],["day","☀️ デイ"],["night","🌙 ナイター"]].map(([key,label]) => `<button type="button" data-filter="${key}" class="${state.filter === key ? "is-active" : ""}">${label}</button>`).join("")}</div></section><section class="home-v2-schedule"><div class="home-v2-title-row home-v2-schedule-title"><h2>⚑ 開催場一覧</h2><div class="home-v2-legend"><span class="is-main">勝負</span><span class="is-upset">波乱</span><span class="is-skip">見送り</span><span class="is-before">展示前</span></div></div><div class="home-v2-venue-list">${shown.length ? shown.map(venueHtml).join("") : '<p class="home-v2-empty">該当する締切前レースがありません</p>'}</div>${venues.length > 5 ? `<button class="home-v2-more" type="button" data-show-all>${state.showAll ? "表示を戻す" : `他の場を見る（全${venues.length}場）`}⌄</button>` : ""}</section>`;
+  function renderSchedule(force = false) {
+    const shell = ensureShell();
+    const list = shell.querySelector("[data-home-venues]");
+    const more = shell.querySelector("[data-show-all]");
+    const venues = filteredVenues();
+    const shown = venues.slice(0, state.visibleCount);
+    const key = `${state.filter}:${state.visibleCount}:${stable(shown)}`;
+    if (list && (force || key !== state.renderKeys.schedule)) {
+      state.renderKeys.schedule = key;
+      list.innerHTML = shown.length ? shown.map(venueHtml).join("") : '<p class="home-v2-empty">該当する締切前レースがありません</p>';
+    }
+    shell.querySelectorAll("[data-filter]").forEach(button => button.classList.toggle("is-active", button.dataset.filter === state.filter));
+    if (more) {
+      const remains = venues.length - shown.length;
+      more.hidden = remains <= 0;
+      more.textContent = remains > 0 ? `他の場を見る（残り${remains}場）⌄` : "";
+    }
+  }
+
+  function renderUpdatedAt() {
+    const text = `最終更新 ${state.updatedAt ? timeOf(state.updatedAt) : "--:--"}`;
+    if (text === state.renderKeys.updatedAt) return;
+    state.renderKeys.updatedAt = text;
+    const el = ensureShell().querySelector("[data-home-updated]");
+    if (el) el.textContent = text;
+  }
+
+  function render(force = false) {
+    renderRecommendations(force);
+    renderSchedule(force);
+    renderUpdatedAt();
+  }
+
+  function updateSelectedRace() {
+    document.querySelectorAll(".home-v2-race.is-selected").forEach(el => el.classList.remove("is-selected"));
+    if (!state.selectedPlace || !state.selectedRace) return;
+    document.querySelector(`.home-v2-race[data-place="${CSS.escape(state.selectedPlace)}"][data-race="${state.selectedRace}"]`)?.classList.add("is-selected");
   }
 
   function bindOnce(el) {
@@ -234,13 +300,13 @@
       if (target.matches("[data-place][data-race]")) return syncAndOpen(target.dataset.place, target.dataset.race);
       if (target.matches("[data-filter]")) {
         state.filter = target.dataset.filter || "all";
-        state.showAll = false;
-        render();
+        state.visibleCount = PAGE_SIZE;
+        renderSchedule(true);
         return;
       }
       if (target.matches("[data-show-all]")) {
-        state.showAll = !state.showAll;
-        render();
+        state.visibleCount += PAGE_SIZE;
+        renderSchedule(true);
         return;
       }
       if (target.matches("[data-open-venue]")) {
@@ -253,7 +319,8 @@
 
   function installHeader() {
     const header = document.querySelector(".app-header");
-    if (!header) return;
+    if (!header || header.dataset.homeReady === "true") return;
+    header.dataset.homeReady = "true";
     header.innerHTML = `<div class="header-brand"><div class="header-logo">🚤</div><div class="header-copy"><h1>チャッピーボートレースAI</h1><p class="header-description">展開を読む、勝つためのAI予想</p></div></div><div class="home-header-actions"><button type="button" id="homeFavoriteBtn"><b>☆</b><small>お気に入り</small></button><button type="button" id="homeRefreshBtn"><b>↻</b><small>更新</small></button></div>`;
     document.getElementById("homeRefreshBtn")?.addEventListener("click", () => refresh(true));
     document.getElementById("homeFavoriteBtn")?.addEventListener("click", event => {
@@ -290,7 +357,8 @@
 
   function installNav() {
     const nav = document.querySelector(".bottom-nav");
-    if (!nav) return;
+    if (!nav || nav.dataset.homeReady === "true") return;
+    nav.dataset.homeReady = "true";
     nav.innerHTML = `<a href="#" class="bottom-nav-item is-active" data-view="home"><span>⌂</span><small>ホーム</small></a><a href="#raceSection" class="bottom-nav-item" data-view="race"><span>⚡</span><small>レース検索</small></a><a href="#predictionSection" class="bottom-nav-item" data-view="prediction"><span>◎</span><small>AI予想</small></a><a href="#resultSection" class="bottom-nav-item" data-view="result"><span>▥</span><small>成績分析</small></a><a href="#" class="bottom-nav-item" data-view="menu"><span>☰</span><small>メニュー</small></a>`;
     nav.addEventListener("click", event => {
       const item = event.target.closest("[data-view]");
@@ -303,32 +371,38 @@
     });
   }
 
-  async function refresh(force = false) {
+  function refresh(force = false) {
+    if (state.refreshPromise && !force) return state.refreshPromise;
     const el = ensureHome();
     if (force) el.classList.add("is-loading");
-    try {
-      await Promise.allSettled([loadSchedule(force), loadRecommendations(force)]);
-      state.updatedAt = new Date();
-      writeCache();
-      render();
-    } finally {
-      el.classList.remove("is-loading");
-    }
+    const scheduleTask = loadSchedule(force).then(changed => { if (changed) renderSchedule(); return changed; });
+    const recommendationTask = loadRecommendations(force).then(changed => { if (changed) renderRecommendations(); return changed; });
+    state.refreshPromise = Promise.allSettled([scheduleTask, recommendationTask])
+      .then(() => {
+        state.updatedAt = new Date();
+        writeCache();
+        renderUpdatedAt();
+      })
+      .finally(() => {
+        state.refreshPromise = null;
+        el.classList.remove("is-loading");
+      });
+    return state.refreshPromise;
   }
 
   function scheduleRefresh() {
     const run = () => refresh(false);
-    if ("requestIdleCallback" in root) root.requestIdleCallback(run, { timeout: 1200 });
-    else root.setTimeout(run, 80);
+    if ("requestIdleCallback" in root) root.requestIdleCallback(run, { timeout: 1500 });
+    else root.setTimeout(run, 120);
   }
 
   function init() {
-    ensureHome();
+    ensureShell();
     installHeader();
     installNav();
     setView("home");
-    if (readCache()) render();
-    else render();
+    readCache();
+    render(true);
     scheduleRefresh();
   }
 
