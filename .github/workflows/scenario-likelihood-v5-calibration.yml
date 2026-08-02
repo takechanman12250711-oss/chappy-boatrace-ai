@@ -4,12 +4,16 @@ on:
   push:
     paths:
       - "js/scenario-likelihood-v5-calibration.js"
+      - "scripts/build-scenario-likelihood-v5-calibration.js"
       - "scripts/test-scenario-likelihood-v5-calibration.js"
+      - "scripts/test-build-scenario-likelihood-v5-calibration.js"
       - ".github/workflows/scenario-likelihood-v5-calibration.yml"
   pull_request:
     paths:
       - "js/scenario-likelihood-v5-calibration.js"
+      - "scripts/build-scenario-likelihood-v5-calibration.js"
       - "scripts/test-scenario-likelihood-v5-calibration.js"
+      - "scripts/test-build-scenario-likelihood-v5-calibration.js"
       - ".github/workflows/scenario-likelihood-v5-calibration.yml"
   workflow_dispatch:
 
@@ -27,6 +31,11 @@ jobs:
       - name: Verify calibration proposals
         run: |
           node --check js/scenario-likelihood-v5-calibration.js
+          node --check scripts/build-scenario-likelihood-v5-calibration.js
           node --check scripts/test-scenario-likelihood-v5-calibration.js
+          node --check scripts/test-build-scenario-likelihood-v5-calibration.js
           node scripts/test-scenario-likelihood-v5-calibration.js
+          node scripts/test-build-scenario-likelihood-v5-calibration.js
+          node scripts/build-scenario-likelihood-v5-calibration.js
+          node -e 'const r=require("./data/stats/scenario-likelihood-v5-calibration.json"); if(r.usableForPrediction!==false||r.automaticApplication!==false) process.exit(1)'
           node scripts/check-charter.js
