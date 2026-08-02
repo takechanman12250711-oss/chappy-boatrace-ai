@@ -1,0 +1,20 @@
+name: Check entry UI phase3
+
+on:
+  pull_request:
+    paths:
+      - "css/home-dashboard-v2.css"
+      - "scripts/test-entry-ui-phase3.js"
+      - ".github/workflows/check-entry-ui-phase3.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify entry UI phase3
+        run: node scripts/test-entry-ui-phase3.js
