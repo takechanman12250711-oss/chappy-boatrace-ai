@@ -1,0 +1,23 @@
+name: Check result UI phase5
+
+on:
+  pull_request:
+    paths:
+      - "js/result-ui-phase5.js"
+      - "js/stats-runtime-loader.js"
+      - "scripts/test-result-ui-phase5.js"
+      - ".github/workflows/check-result-ui-phase5.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify result UI phase5
+        run: |
+          node --check js/result-ui-phase5.js
+          node --check js/stats-runtime-loader.js
+          node scripts/test-result-ui-phase5.js

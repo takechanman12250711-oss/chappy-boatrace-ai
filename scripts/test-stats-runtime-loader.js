@@ -176,7 +176,9 @@ async function main() {
       "js/auto-stats.js",
       "js/verification-readiness.js",
       "js/improvement-suggestions.js",
-      "js/stats.js"
+      "js/stats.js",
+      "js/theory-improvement-dashboard.js",
+      "js/result-ui-phase5.js"
     ],
     "一時失敗後も依存順どおり再読込する"
   );
@@ -194,6 +196,14 @@ async function main() {
     ) <
       loaded.indexOf(
         "js/stats.js"
+      )
+  );
+  assert.ok(
+    loaded.indexOf(
+      "js/stats.js"
+    ) <
+      loaded.indexOf(
+        "js/result-ui-phase5.js"
       )
   );
   assert.deepEqual(
