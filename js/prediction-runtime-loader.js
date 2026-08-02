@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260801-boat-identity1";
+  const VERSION = "20260802-skip-ai-display1";
   const scripts = [
     "js/boat-identity.js",
     "js/theory.js",
@@ -18,7 +18,10 @@
     "js/prediction.js",
     "js/practical-selection.js",
     "js/note-generator.js",
-    "js/render.js"
+    "js/scenario-ai-v6-shadow.js",
+    "js/skip-ai-shadow.js",
+    "js/render.js",
+    "js/skip-ai-display.js"
   ];
   const optionalScripts = [
     "js/prediction-calibration.js"
@@ -30,9 +33,7 @@
     return new Promise((resolve, reject) => {
       const clean = src.split("?")[0];
       const existing = [...document.scripts].find(
-        script =>
-          script.src &&
-          script.src.includes(clean)
+        script => script.src && script.src.includes(clean)
       );
 
       if (existing?.dataset.chappyLoaded === "true") {
@@ -43,21 +44,13 @@
       const script = existing || document.createElement("script");
       script.async = false;
       script.dataset.chappyPredictionModule = clean;
-      script.addEventListener(
-        "load",
-        () => {
-          script.dataset.chappyLoaded = "true";
-          resolve();
-        },
-        { once: true }
-      );
-      script.addEventListener(
-        "error",
-        () => reject(
-          new Error(`予想モジュールを読み込めません: ${clean}`)
-        ),
-        { once: true }
-      );
+      script.addEventListener("load", () => {
+        script.dataset.chappyLoaded = "true";
+        resolve();
+      }, { once: true });
+      script.addEventListener("error", () => reject(
+        new Error(`予想モジュールを読み込めません: ${clean}`)
+      ), { once: true });
 
       if (!existing) {
         script.src = `${clean}?v=${VERSION}`;
@@ -70,20 +63,11 @@
     if (readyPromise) return readyPromise;
 
     readyPromise = (async () => {
-      for (const src of scripts) {
-        await loadScript(src);
-      }
-      root.dispatchEvent(
-        new CustomEvent(
-          "chappy:prediction-runtime-ready",
-          { detail: { version: VERSION } }
-        )
-      );
-
-      /*
-        校正は表示を補足するだけで、予想エンジンの必須依存ではない。
-        404や校正JSON取得失敗でも、予想と買い目の生成を止めない。
-      */
+      for (const src of scripts) await loadScript(src);
+      root.dispatchEvent(new CustomEvent(
+        "chappy:prediction-runtime-ready",
+        { detail: { version: VERSION } }
+      ));
       void ensureOptionalReady();
       return true;
     })().catch(error => {
@@ -95,51 +79,22 @@
   }
 
   function ensureOptionalReady() {
-    if (
-      optionalReadyPromise
-    ) {
-      return optionalReadyPromise;
-    }
+    if (optionalReadyPromise) return optionalReadyPromise;
 
-    optionalReadyPromise =
-      (async () => {
-        for (
-          const src of
-            optionalScripts
-        ) {
-          await loadScript(src);
-        }
-
-        root.dispatchEvent(
-          new CustomEvent(
-            "chappy:prediction-runtime-optional-ready",
-            {
-              detail: {
-                version: VERSION
-              }
-            }
-          )
-        );
-        return true;
-      })().catch(error => {
-        root.dispatchEvent(
-          new CustomEvent(
-            "chappy:prediction-runtime-optional-unavailable",
-            {
-              detail: {
-                version: VERSION,
-                message:
-                  String(
-                    error?.message ||
-                    error ||
-                    ""
-                  )
-              }
-            }
-          )
-        );
-        return false;
-      });
+    optionalReadyPromise = (async () => {
+      for (const src of optionalScripts) await loadScript(src);
+      root.dispatchEvent(new CustomEvent(
+        "chappy:prediction-runtime-optional-ready",
+        { detail: { version: VERSION } }
+      ));
+      return true;
+    })().catch(error => {
+      root.dispatchEvent(new CustomEvent(
+        "chappy:prediction-runtime-optional-unavailable",
+        { detail: { version: VERSION, message: String(error?.message || error || "") } }
+      ));
+      return false;
+    });
 
     return optionalReadyPromise;
   }
@@ -147,8 +102,7 @@
   root.ChappyPredictionRuntime = Object.freeze({
     version: VERSION,
     scripts: scripts.slice(),
-    optionalScripts:
-      optionalScripts.slice(),
+    optionalScripts: optionalScripts.slice(),
     ensureReady,
     ensureOptionalReady
   });
