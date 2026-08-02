@@ -106,6 +106,9 @@ const scenarioLikelihoodV5Calibration =
     { approvalGate: { approvedCandidates: [] } },
     "展開校正レポート"
   );
+const theoryTagSnapshot = require(
+  "../js/theory-tag-snapshot"
+);
 
 const MIN_SCORE = 70;
 const MAX_RUNS_PER_DAY = 100;
@@ -1281,6 +1284,11 @@ function buildStoredPrediction(
       scenarioLikelihood,
     scenarioLikelihoodV5Ab:
       scenarioLikelihoodAb,
+    theoryTagSnapshot:
+      theoryTagSnapshot.build(
+        prediction,
+        practicalTickets
+      ),
     prediction: compactVerificationPayload(
       prediction,
       practicalTickets,
