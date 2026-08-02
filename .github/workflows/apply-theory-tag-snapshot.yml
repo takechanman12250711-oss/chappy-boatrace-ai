@@ -1,0 +1,45 @@
+name: Apply theory tag snapshot
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-tag-snapshot.js"
+      - "scripts/test-theory-tag-snapshot.js"
+      - "scripts/apply-theory-tag-snapshot.js"
+      - ".github/workflows/apply-theory-tag-snapshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Apply snapshot integration
+        run: node scripts/apply-theory-tag-snapshot.js
+      - name: Verify
+        run: |
+          node --check js/theory-tag-snapshot.js
+          node --check scripts/collect-predictions.js
+          node scripts/test-theory-tag-snapshot.js
+          node scripts/test-collect-predictions.js
+          node scripts/check-charter.js
+      - name: Commit applied source
+        run: |
+          if git diff --quiet -- scripts/collect-predictions.js; then
+            echo "No source change required"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/collect-predictions.js
+          git commit -m "Store race-level theory tag snapshots"
+          git push
