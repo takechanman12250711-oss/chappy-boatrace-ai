@@ -1,0 +1,26 @@
+name: Check scenario AI v6 storage
+
+on:
+  pull_request:
+    paths:
+      - "js/scenario-ai-v6-shadow.js"
+      - "scripts/build-scenario-ai-v6-snapshots.js"
+      - "scripts/test-scenario-ai-v6-storage.js"
+      - ".github/workflows/collect-predictions.yml"
+      - ".github/workflows/check-scenario-ai-v6-storage.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify scenario AI v6 storage
+        run: |
+          node --check js/scenario-ai-v6-shadow.js
+          node --check scripts/build-scenario-ai-v6-snapshots.js
+          node scripts/test-scenario-ai-v6-shadow.js
+          node scripts/test-scenario-ai-v6-storage.js
+          node scripts/check-charter.js
