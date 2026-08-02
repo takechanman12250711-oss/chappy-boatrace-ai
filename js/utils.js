@@ -3,6 +3,56 @@
   js/utils.js 完全版
 ========================================================= */
 
+(function installStartupGate(root) {
+  "use strict";
+
+  if (!root.document || root.ChappyStartupGate) return;
+
+  const originalAdd = document.addEventListener.bind(document);
+  const queuedRaceStarts = [];
+  let raceStarted = false;
+
+  document.addEventListener = function gatedAddEventListener(type, listener, options) {
+    const currentSource = String(document.currentScript?.src || "");
+    if (
+      type === "DOMContentLoaded" &&
+      currentSource.includes("/js/script.js") &&
+      typeof listener === "function"
+    ) {
+      queuedRaceStarts.push(listener);
+      return;
+    }
+    return originalAdd(type, listener, options);
+  };
+
+  function activateRace() {
+    if (raceStarted) return;
+    raceStarted = true;
+    const event = new Event("DOMContentLoaded");
+    queuedRaceStarts.splice(0).forEach(listener => {
+      try {
+        listener.call(document, event);
+      } catch (error) {
+        console.error("レース画面初期化エラー", error);
+      }
+    });
+  }
+
+  originalAdd("click", event => {
+    const target = event.target instanceof Element ? event.target.closest(
+      "[data-place][data-race], [data-open-venue], [data-view='race'], [data-view='prediction'], #fetchRaceBtn, #reloadRaceBtn, #refreshOddsBtn"
+    ) : null;
+    if (target) activateRace();
+  }, true);
+
+  root.ChappyStartupGate = Object.freeze({
+    activateRace,
+    get raceStarted() {
+      return raceStarted;
+    }
+  });
+})(window);
+
 (function () {
   "use strict";
 
