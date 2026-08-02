@@ -1,0 +1,30 @@
+name: Check theory improvement approval gate
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-improvement-approval-gate.js"
+      - "scripts/test-theory-improvement-approval-gate.js"
+      - "scripts/build-theory-improvement-proposals.js"
+      - ".github/workflows/theory-improvement-approval-gate.yml"
+      - ".github/workflows/collect-results.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify theory approval gate
+        run: |
+          node --check js/theory-improvement-approval-gate.js
+          node --check scripts/build-theory-improvement-proposals.js
+          node scripts/test-theory-improvement-proposals.js
+          node scripts/test-theory-improvement-approval-gate.js
+          node scripts/check-charter.js
