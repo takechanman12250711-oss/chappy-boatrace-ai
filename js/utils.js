@@ -38,6 +38,13 @@
     });
   }
 
+  originalAdd("click", event => {
+    const target = event.target instanceof Element ? event.target.closest(
+      "[data-place][data-race], [data-open-venue], [data-view='race'], [data-view='prediction'], #fetchRaceBtn, #reloadRaceBtn, #refreshOddsBtn"
+    ) : null;
+    if (target) activateRace();
+  }, true);
+
   root.ChappyStartupGate = Object.freeze({
     activateRace,
     get raceStarted() {
