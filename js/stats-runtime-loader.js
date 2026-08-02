@@ -8,7 +8,7 @@
   }
 
   const VERSION =
-    "20260801-boat-identity1";
+    "20260802-theory-dashboard1";
   const scripts = [
     "js/boat-identity.js",
     "js/collection-health.js",
@@ -16,7 +16,8 @@
     "js/auto-stats.js",
     "js/verification-readiness.js",
     "js/improvement-suggestions.js",
-    "js/stats.js"
+    "js/stats.js",
+    "js/theory-improvement-dashboard.js"
   ];
   let readyPromise = null;
 
