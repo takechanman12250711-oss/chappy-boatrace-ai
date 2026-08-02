@@ -39,7 +39,7 @@ assert.equal(render.includes("renderTicketRanking(prediction)"), true, "買い�
   "js/result-ui-phase5.js"
 ].forEach(file => assert.equal(statsRuntime.includes(`\"${file}\"`), true, `${file} を結果画面で遅延読込する`));
 
-assert.equal(resultUi.includes("resultSection"), true, "結果分析画面へPhase5表示を接続する");
+assert.equal(resultUi.includes("statsArea"), true, "結果分析描画先へPhase5表示を接続する");
 assert.equal(resultUi.includes("MutationObserver"), true, "結果再描画後も表示整理を維持する");
 
 assert.equal(html.includes('href="#predictionSection"'), true, "下部ナビから予想へ移動できる");
