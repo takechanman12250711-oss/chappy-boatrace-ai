@@ -1,0 +1,35 @@
+name: Check theory improvement proposals
+
+on:
+  push:
+    paths:
+      - "js/theory-improvement-proposals.js"
+      - "scripts/build-theory-improvement-proposals.js"
+      - "scripts/test-theory-improvement-proposals.js"
+      - ".github/workflows/theory-improvement-proposals.yml"
+  pull_request:
+    paths:
+      - "js/theory-improvement-proposals.js"
+      - "scripts/build-theory-improvement-proposals.js"
+      - "scripts/test-theory-improvement-proposals.js"
+      - ".github/workflows/theory-improvement-proposals.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify theory improvement proposals
+        run: |
+          node --check js/theory-improvement-proposals.js
+          node --check scripts/build-theory-improvement-proposals.js
+          node --check scripts/test-theory-improvement-proposals.js
+          node scripts/test-theory-improvement-proposals.js
+          node scripts/check-charter.js
