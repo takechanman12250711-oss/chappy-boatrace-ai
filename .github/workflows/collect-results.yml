@@ -48,6 +48,7 @@ jobs:
         run: |
           node scripts/repair-recent-results.js
           node scripts/build-result-review.js
+          node scripts/build-scenario-ai-v6-verification.js
 
       - name: Build prediction calibration
         run: |
@@ -56,6 +57,7 @@ jobs:
           node scripts/test-prediction-verification.js
           node scripts/test-prediction-calibration.js
           node scripts/test-result-review.js
+          node scripts/test-scenario-ai-v6-verification.js
           node scripts/build-prediction-calibration.js
           node scripts/test-improvement-review.js
           node scripts/build-improvement-review.js
