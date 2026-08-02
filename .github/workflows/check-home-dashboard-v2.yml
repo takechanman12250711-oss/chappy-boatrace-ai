@@ -1,0 +1,23 @@
+name: Check home dashboard v2
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "js/home-dashboard-v2.js"
+      - "css/home-dashboard-v2.css"
+      - "scripts/test-home-dashboard-v2.js"
+      - ".github/workflows/check-home-dashboard-v2.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify home dashboard v2
+        run: |
+          node --check js/home-dashboard-v2.js
+          node scripts/test-home-dashboard-v2.js
