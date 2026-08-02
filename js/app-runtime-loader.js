@@ -1,9 +1,11 @@
-// Sprint3: ホーム初期表示ではホーム専用コードだけを読み込む。
+// Sprint4: 再訪時の即時表示と、操作直前の先読みを行う。
 (function (root) {
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260802-sprint3";
+  const VERSION = "20260802-sprint4";
+  const HOME_CACHE_KEY = "chappy-home-v2-cache";
+  const HOME_CACHE_TTL = 300000;
   const loaded = new Map();
   const groupReady = new Map();
   const groups = {
@@ -27,6 +29,38 @@
       "js/auto-selection.js"
     ]
   };
+
+  function hydrateHomeCache() {
+    try {
+      const sessionValue = sessionStorage.getItem(HOME_CACHE_KEY);
+      if (sessionValue) return;
+      const localValue = localStorage.getItem(HOME_CACHE_KEY);
+      if (!localValue) return;
+      const parsed = JSON.parse(localValue);
+      const savedAt = Number(parsed?.savedAt || 0);
+      if (!savedAt || Date.now() - savedAt > HOME_CACHE_TTL) {
+        localStorage.removeItem(HOME_CACHE_KEY);
+        return;
+      }
+      sessionStorage.setItem(HOME_CACHE_KEY, localValue);
+    } catch (_) {}
+  }
+
+  function persistHomeCache() {
+    try {
+      const value = sessionStorage.getItem(HOME_CACHE_KEY);
+      if (!value) return;
+      const parsed = JSON.parse(value);
+      if (!Number(parsed?.savedAt || 0)) return;
+      localStorage.setItem(HOME_CACHE_KEY, value);
+    } catch (_) {}
+  }
+
+  hydrateHomeCache();
+  root.addEventListener("pagehide", persistHomeCache, { passive: true });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") persistHomeCache();
+  }, { passive: true });
 
   function loadScript(src) {
     const clean = src.split("?")[0];
@@ -76,26 +110,37 @@
     return promise;
   }
 
+  function requiredGroup(target) {
+    if (!target) return "";
+    const raceCard = target.matches("[data-place][data-race]");
+    const view = target.dataset.view || "";
+    if (view === "result" || target.getAttribute("href") === "#resultSection") return "stats";
+    if (raceCard || view === "race" || view === "prediction" || target.id === "fetchRaceBtn" || target.id === "reloadRaceBtn" || target.id === "refreshOddsBtn") return "race";
+    return "";
+  }
+
   function replay(target) {
     target.dataset.chappyRuntimeReady = "true";
     target.click();
     delete target.dataset.chappyRuntimeReady;
   }
 
+  document.addEventListener("pointerdown", event => {
+    const target = event.target.closest("button,a");
+    const group = requiredGroup(target);
+    if (group) void ensure(group).catch(() => {});
+  }, { capture: true, passive: true });
+
   document.addEventListener("click", event => {
     const target = event.target.closest("button,a");
     if (!target || target.dataset.chappyRuntimeReady === "true") return;
+    const group = requiredGroup(target);
+    if (!group) return;
 
-    const raceCard = target.matches("[data-place][data-race]");
-    const view = target.dataset.view || "";
-    const needsRace = raceCard || view === "race" || view === "prediction" || target.id === "fetchRaceBtn" || target.id === "reloadRaceBtn" || target.id === "refreshOddsBtn";
-    const needsStats = view === "result" || target.getAttribute("href") === "#resultSection";
-
-    if (!needsRace && !needsStats) return;
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    ensure(needsStats ? "stats" : "race")
+    ensure(group)
       .then(() => replay(target))
       .catch(error => {
         console.error("[app-runtime-loader]", error);
@@ -104,5 +149,5 @@
       });
   }, true);
 
-  root.ChappyAppRuntime = Object.freeze({ ensure, groups });
+  root.ChappyAppRuntime = Object.freeze({ ensure, groups, persistHomeCache });
 })(window);
