@@ -1,0 +1,21 @@
+name: Check skip AI shadow
+
+on:
+  pull_request:
+    paths:
+      - "js/skip-ai-shadow.js"
+      - "scripts/test-skip-ai-shadow.js"
+      - ".github/workflows/check-skip-ai-shadow.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify skip AI shadow
+        run: |
+          node --check js/skip-ai-shadow.js
+          node scripts/test-skip-ai-shadow.js
