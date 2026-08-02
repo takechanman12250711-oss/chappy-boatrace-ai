@@ -1,0 +1,27 @@
+name: Check theory adoption review report
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-adoption-review-report.js"
+      - "scripts/build-theory-adoption-review-report.js"
+      - "scripts/test-theory-adoption-review-report.js"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/check-theory-adoption-review-report.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify adoption review report
+        run: |
+          node --check js/theory-adoption-review-report.js
+          node --check scripts/build-theory-adoption-review-report.js
+          node scripts/test-theory-adoption-review-report.js
+          node scripts/build-theory-adoption-review-report.js
+          node scripts/check-charter.js
