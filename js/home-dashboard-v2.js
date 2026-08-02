@@ -282,3 +282,148 @@
   document.addEventListener("DOMContentLoaded", refresh);
   root.ChappyHomeDashboardV2 = Object.freeze({ refresh, syncAndOpen });
 })(window);
+
+(function (root) {
+  "use strict";
+
+  const NAV_ITEMS = [
+    { key: "main", label: "本命", patterns: [/本命/, /本線/] },
+    { key: "upset", label: "万舟", patterns: [/万舟/, /波乱/] },
+    { key: "tickets", label: "買い目", patterns: [/買い目一覧/, /買い目ランキング/, /AI買い目/] },
+    { key: "reason", label: "AI根拠", patterns: [/AI総合/, /AI評価/, /展開AI/, /見送りAI/] },
+    { key: "practical", label: "実戦厳選", patterns: [/実戦厳選/] }
+  ];
+
+  let observer = null;
+  let mutationObserver = null;
+  let scheduled = false;
+
+  function ensurePhase4Style() {
+    if (document.getElementById("predictionPhase4Style")) return;
+    const style = document.createElement("style");
+    style.id = "predictionPhase4Style";
+    style.textContent = `
+      .prediction-phase4-nav{position:sticky;top:0;z-index:45;display:flex;gap:7px;overflow-x:auto;padding:9px 8px;margin:0 0 14px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border:1px solid #dce7f3;border-radius:14px;box-shadow:0 7px 18px rgba(17,52,88,.09);scrollbar-width:none}
+      .prediction-phase4-nav::-webkit-scrollbar{display:none}
+      .prediction-phase4-nav button{flex:0 0 auto;border:1px solid #cedceb;background:#fff;color:#38536f;border-radius:999px;padding:9px 13px;font-size:.78rem;font-weight:800;white-space:nowrap}
+      .prediction-phase4-nav button.is-active{background:#0878f9;border-color:#0878f9;color:#fff;box-shadow:0 5px 12px rgba(8,120,249,.22)}
+      .prediction-phase4-target{scroll-margin-top:72px}
+      .prediction-phase4-reason-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;border:0;background:transparent;padding:0;color:inherit;text-align:left;font:inherit}
+      .prediction-phase4-reason-toggle::after{content:"⌄";font-size:1rem;color:#0878f9;transition:transform .2s ease}
+      .prediction-phase4-reason-toggle[aria-expanded="true"]::after{transform:rotate(180deg)}
+      .prediction-phase4-collapsible>.v3-section-body{display:none}
+      .prediction-phase4-collapsible.is-open>.v3-section-body{display:block}
+      .prediction-phase4-ticket-space .ticket-row,.prediction-phase4-ticket-space .v3-ticket-row{margin-bottom:10px}
+      @media(max-width:640px){.prediction-phase4-nav{top:0;border-radius:12px;margin-left:-4px;margin-right:-4px}.prediction-phase4-nav button{padding:9px 12px;font-size:.76rem}.prediction-phase4-target{scroll-margin-top:66px}}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function normalizeTitle(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function locateSections(rootElement) {
+    const sections = [...rootElement.querySelectorAll(".v3-section")];
+    const used = new Set();
+    return NAV_ITEMS.map(item => {
+      const section = sections.find(candidate => {
+        if (used.has(candidate)) return false;
+        const title = normalizeTitle(candidate.querySelector(".v3-section-head h2")?.textContent);
+        return item.patterns.some(pattern => pattern.test(title));
+      });
+      if (section) used.add(section);
+      return { ...item, section: section || null };
+    }).filter(item => item.section);
+  }
+
+  function setupReasonCollapse(item) {
+    if (item.key !== "reason") return;
+    const section = item.section;
+    const heading = section.querySelector(".v3-section-head h2");
+    const body = section.querySelector(":scope > .v3-section-body");
+    if (!heading || !body || section.dataset.phase4CollapseReady === "true") return;
+    section.dataset.phase4CollapseReady = "true";
+    section.classList.add("prediction-phase4-collapsible");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "prediction-phase4-reason-toggle";
+    button.setAttribute("aria-expanded", "false");
+    while (heading.firstChild) button.appendChild(heading.firstChild);
+    heading.appendChild(button);
+    button.addEventListener("click", () => {
+      const open = !section.classList.contains("is-open");
+      section.classList.toggle("is-open", open);
+      button.setAttribute("aria-expanded", String(open));
+    });
+  }
+
+  function mountNavigation() {
+    const result = document.getElementById("resultArea");
+    const rootElement = result?.querySelector(".v3-root");
+    if (!result || !rootElement) return;
+
+    const items = locateSections(rootElement);
+    if (!items.length) return;
+
+    result.querySelector(".prediction-phase4-nav")?.remove();
+    observer?.disconnect();
+
+    const nav = document.createElement("nav");
+    nav.className = "prediction-phase4-nav";
+    nav.setAttribute("aria-label", "AI予想内ナビゲーション");
+
+    items.forEach((item, index) => {
+      item.section.id = `predictionPhase4-${item.key}`;
+      item.section.classList.add("prediction-phase4-target");
+      if (item.key === "tickets") item.section.classList.add("prediction-phase4-ticket-space");
+      setupReasonCollapse(item);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = item.label;
+      button.dataset.target = item.section.id;
+      if (index === 0) button.classList.add("is-active");
+      button.addEventListener("click", () => {
+        item.section.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      nav.appendChild(button);
+    });
+
+    rootElement.insertBefore(nav, rootElement.firstChild);
+
+    observer = new IntersectionObserver(entries => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      nav.querySelectorAll("button").forEach(button => {
+        button.classList.toggle("is-active", button.dataset.target === visible.target.id);
+      });
+    }, { rootMargin: "-72px 0px -55% 0px", threshold: [0.05, 0.25, 0.5] });
+
+    items.forEach(item => observer.observe(item.section));
+  }
+
+  function scheduleMount() {
+    if (scheduled) return;
+    scheduled = true;
+    window.requestAnimationFrame(() => {
+      scheduled = false;
+      mountNavigation();
+    });
+  }
+
+  function start() {
+    ensurePhase4Style();
+    const result = document.getElementById("resultArea");
+    if (!result) return;
+    mutationObserver?.disconnect();
+    mutationObserver = new MutationObserver(scheduleMount);
+    mutationObserver.observe(result, { childList: true, subtree: false });
+    scheduleMount();
+  }
+
+  document.addEventListener("DOMContentLoaded", start);
+  root.ChappyPredictionPhase4 = Object.freeze({ refresh: scheduleMount });
+})(window);
