@@ -1,0 +1,23 @@
+name: Check theory operation panel
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-improvement-dashboard.js"
+      - "js/stats-runtime-loader.js"
+      - "scripts/test-theory-operation-panel.js"
+      - ".github/workflows/check-theory-operation-panel.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify theory operation panel
+        run: |
+          node --check js/theory-improvement-dashboard.js
+          node --check js/stats-runtime-loader.js
+          node scripts/test-theory-operation-panel.js
