@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260802-scenario-v6-display1";
+  const VERSION = "20260801-boat-identity1";
   const scripts = [
     "js/boat-identity.js",
     "js/theory.js",
