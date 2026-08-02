@@ -1,0 +1,28 @@
+name: Check theory adoption approval
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-adoption-approval.js"
+      - "scripts/build-theory-adoption-approval-status.js"
+      - "scripts/test-theory-adoption-approval.js"
+      - "data/config/theory-adoption-approval.json"
+      - ".github/workflows/check-theory-adoption-approval.yml"
+      - ".github/workflows/collect-results.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify explicit approval gate
+        run: |
+          node --check js/theory-adoption-approval.js
+          node --check scripts/build-theory-adoption-approval-status.js
+          node scripts/test-theory-adoption-approval.js
+          node scripts/build-theory-adoption-approval-status.js
+          node scripts/check-charter.js
