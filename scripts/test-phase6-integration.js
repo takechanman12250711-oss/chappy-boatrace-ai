@@ -18,9 +18,11 @@ const resultUi = read("js/result-ui-phase5.js");
   .forEach(asset => assert.equal(html.includes(asset), true, `${asset} を初期導線へ接続する`));
 
 assert.equal(home.includes("syncAndOpen"), true, "ホームから場・レース選択へ接続する");
-assert.equal(home.includes("btn.click()"), true, "レース選択後に既存取得処理を自動実行する");
+assert.equal(home.includes("fetchButton.click()"), true, "レース選択後に既存取得処理を自動実行する");
 assert.equal(home.includes('setView("prediction")'), true, "取得後にAI予想画面へ移動する");
 assert.equal(home.includes('data-view="result"'), true, "下部ナビから成績分析へ移動できる");
+assert.equal(home.includes("sessionStorage"), true, "ホーム再表示をキャッシュで高速化する");
+assert.equal(home.includes("requestIdleCallback"), true, "初期描画を通信より先に行う");
 
 ["js/ai-core.js","js/prediction.js","js/render.js","js/practical-selection.js"]
   .forEach(file => assert.equal(predictionRuntime.includes(`\"${file}\"`), true, `${file} を予想開始時に読み込む`));
@@ -37,4 +39,4 @@ assert.equal(html.includes('href="#predictionSection"'), true, "AI予想アン�
 assert.equal(html.includes('href="#resultSection"'), true, "結果分析アンカーを維持する");
 assert.equal(predictionRuntime.includes('const VERSION = "20260801-boat-identity1"'), true, "予想ローダーのキャッシュ世代を維持する");
 
-console.log("Phase6 全体統合テスト: 合格");
+console.log("Phase6 全体統合・ホーム高速化テスト: 合格");
