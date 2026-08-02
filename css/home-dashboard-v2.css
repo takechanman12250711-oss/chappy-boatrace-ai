@@ -1,100 +1,103 @@
-.home-dashboard-v2{display:grid;gap:18px}
-.home-v2-recommend,.home-v2-schedule{background:#fff;border:1px solid #dbe6f4;border-radius:22px;padding:18px;box-shadow:0 10px 28px rgba(20,63,110,.08)}
-.home-v2-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-.home-v2-title-row p{margin:0 0 3px;color:#0878f9;font-size:.74rem;font-weight:800;letter-spacing:.08em}
-.home-v2-title-row h2{margin:0;color:#102842;font-size:1.28rem}
-.home-v2-title-row>button{border:1px solid #cfe0f3;background:#fff;color:#0878f9;border-radius:999px;padding:9px 15px;font-weight:800}
-.home-v2-title-row>span{font-size:.82rem;color:#718096;font-weight:700}
-.home-v2-recommend-list{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,1fr);gap:12px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x mandatory}
-.home-v2-recommend-card{position:relative;display:grid;gap:8px;text-align:left;padding:16px;border-radius:18px;border:1px solid #dce6f2;background:#fff;scroll-snap-align:start;min-height:178px}
-.home-v2-recommend-card.is-main{border-color:#86d6a8;background:#f4fcf7}
-.home-v2-recommend-card.is-upset{border-color:#c6a4ff;background:#faf7ff}
-.home-v2-recommend-card.is-skip{border-color:#ff9ca3;background:#fff7f7}
-.home-v2-rank{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#edf3f9;color:#5d6d7e;font-weight:900}
-.home-v2-decision{justify-self:start;border-radius:999px;padding:5px 10px;background:#0878f9;color:#fff;font-size:.76rem;font-weight:800}
-.is-upset .home-v2-decision{background:#7d4bd1}.is-skip .home-v2-decision{background:#e8454f}.is-main .home-v2-decision{background:#1ea463}
-.home-v2-recommend-card strong{font-size:1.24rem;color:#102842;padding-right:40px}
-.home-v2-score-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.home-v2-score-row span{background:rgba(255,255,255,.78);border:1px solid #e6edf5;border-radius:12px;padding:10px;color:#5c6775;font-size:.8rem}
-.home-v2-score-row b{display:block;font-size:1.24rem;color:#102842}
-.home-v2-recommend-card small{color:#5e6875;line-height:1.45}
-.home-v2-note{margin:8px 0 0;color:#7a8796;font-size:.78rem}
-.home-v2-filters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.home-v2-filters button{border:1px solid #cedcec;background:#fff;border-radius:14px;padding:11px 6px;color:#3d5873;font-weight:800}
-.home-v2-filters button.is-active{background:#0878f9;border-color:#0878f9;color:#fff;box-shadow:0 6px 14px rgba(8,120,249,.22)}
-.home-v2-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:.72rem;color:#64758a}
-.home-v2-legend span{display:inline-flex;align-items:center;gap:5px}
-.home-v2-legend span::before{content:"";width:9px;height:9px;border-radius:50%;background:#a9b7c8}
-.home-v2-legend .is-deadline-green::before{background:#24ad68}.home-v2-legend .is-deadline-yellow::before{background:#efc21b}.home-v2-legend .is-deadline-orange::before{background:#f78b24}.home-v2-legend .is-deadline-red::before{background:#e8454f}
-.home-v2-venue-list{display:grid;gap:10px}
-.home-v2-venue{border:1px solid #dfe8f2;border-radius:17px;padding:12px;background:#fbfdff}
-.home-v2-venue-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.home-v2-venue-head>div{display:flex;align-items:center;gap:8px}
-.home-v2-venue-head strong{font-size:1.08rem;color:#102842}
-.home-v2-venue-head span{font-size:.7rem;font-weight:800;color:#0878f9;background:#eaf4ff;padding:4px 8px;border-radius:999px}
-.home-v2-expand{border:0;background:transparent;color:#0878f9;font-weight:800}
-.home-v2-races{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.home-v2-race{position:relative;border:1px solid #d9e4f0;border-radius:13px;background:#fff;padding:10px 4px;display:grid;gap:2px;color:#0f2d4b}
-.home-v2-race::before{content:"";position:absolute;left:8px;top:8px;width:7px;height:7px;border-radius:50%;background:#a9b7c8}
-.home-v2-race.is-deadline-green::before{background:#24ad68}.home-v2-race.is-deadline-yellow::before{background:#efc21b}.home-v2-race.is-deadline-orange::before{background:#f78b24}.home-v2-race.is-deadline-red::before{background:#e8454f}
-.home-v2-race.is-deadline-orange{border-color:#f5a455;background:#fffaf4}.home-v2-race.is-deadline-red{border-color:#f06b73;background:#fff6f6}
-.home-v2-race strong{font-size:1rem}.home-v2-race span{font-size:.72rem;color:#687c92}
-.home-v2-race:disabled{opacity:.45}
-.home-v2-empty,.home-v2-no-race{margin:0;padding:18px;text-align:center;color:#7b8795;background:#f6f9fc;border-radius:14px}
+/* Approved home layout — 2026-08-02 */
+:root{--home-blue:#0878f9;--home-ink:#102842;--home-line:#dbe6f4;--home-soft:#f7fbff;--home-green:#18aa63;--home-yellow:#f2b90b;--home-orange:#ff8a00;--home-red:#ef3340;--home-gray:#aeb9c7}
+*{box-sizing:border-box}
+body{overflow-x:hidden;background:#f7faff}
+.dashboard-header{position:sticky;top:0;z-index:40;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:14px!important;width:100%!important;max-width:none!important;padding:14px max(18px,env(safe-area-inset-left))!important;background:rgba(255,255,255,.96)!important;border-bottom:1px solid #e4ebf4!important;box-shadow:0 3px 14px rgba(23,54,88,.05)!important;backdrop-filter:blur(14px)}
+.header-brand{display:flex!important;align-items:center!important;gap:10px!important;min-width:0}
+.header-logo{display:grid!important;place-items:center!important;width:48px!important;height:48px!important;border-radius:14px!important;background:#eef6ff!important;font-size:27px!important;line-height:1!important}
+.header-copy{min-width:0}
+.header-copy h1{margin:0!important;color:var(--home-ink)!important;font-size:clamp(1.02rem,4vw,1.5rem)!important;line-height:1.2!important;white-space:nowrap!important}
+.header-copy .header-description{margin:5px 0 0!important;color:#6c7f93!important;font-size:.78rem!important;white-space:nowrap!important}
+.home-header-actions{display:flex;align-items:center;gap:13px;flex:0 0 auto}
+.home-header-actions button{display:grid;place-items:center;gap:1px;border:0;background:transparent;color:var(--home-ink);padding:2px;min-width:44px}
+.home-header-actions b{font-size:1.8rem;line-height:1;font-weight:500}
+.home-header-actions small{font-size:.61rem;font-weight:800;white-space:nowrap}
+.home-header-actions button.is-active b{color:#ffb000}
+.dashboard-app{width:100%!important;max-width:1120px!important;margin:0 auto!important;padding:14px 14px 104px!important}
+.home-dashboard-v2{display:grid;gap:14px;width:100%;min-width:0}
+.home-dashboard-v2 button{font:inherit;-webkit-tap-highlight-color:transparent}
+.home-dashboard-v2.is-loading{opacity:.72;pointer-events:none}
+.home-v2-recommend,.home-v2-schedule,.home-v2-filter-shell,.home-v2-hint{background:#fff;border:1px solid var(--home-line);border-radius:20px;box-shadow:0 6px 22px rgba(20,63,110,.065)}
+.home-v2-recommend,.home-v2-schedule{padding:16px}
+.home-v2-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.home-v2-title-row h2{margin:0;color:var(--home-ink);font-size:1.13rem;line-height:1.25}
+.home-v2-title-row>span{color:#75869a;font-size:.72rem;white-space:nowrap}
+.home-v2-recommend-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.home-v2-recommend-card{position:relative;display:grid;align-content:start;gap:7px;min-width:0;padding:13px;border:1.5px solid var(--home-line);border-radius:18px;background:#fff;text-align:center;color:var(--home-ink);box-shadow:0 3px 12px rgba(30,61,97,.045)}
+.home-v2-recommend-card.is-main{border-color:#85d3a7;background:linear-gradient(180deg,#fff 0%,#f4fcf7 100%)}
+.home-v2-recommend-card.is-upset{border-color:#f1ca73;background:linear-gradient(180deg,#fff 0%,#fffaf0 100%)}
+.home-v2-recommend-card.is-skip{border-color:#f69ba2;background:linear-gradient(180deg,#fff 0%,#fff6f7 100%)}
+.home-v2-card-top{display:grid;grid-template-columns:34px 1fr 20px;align-items:center;gap:6px}
+.home-v2-medal{font-size:1.55rem}
+.home-v2-decision{justify-self:start;border-radius:6px;padding:4px 8px;background:var(--home-blue);color:#fff;font-size:.69rem;font-weight:900;white-space:nowrap}
+.is-main .home-v2-decision{background:var(--home-green)}
+.is-upset .home-v2-decision{background:var(--home-orange)}
+.is-skip .home-v2-decision{background:var(--home-red)}
+.home-v2-arrow{justify-self:end;font-size:1.6rem;line-height:1}
+.home-v2-recommend-card>strong{font-size:1.18rem;line-height:1.2}
+.home-v2-deadline{font-size:.74rem;color:#53667b}
+.home-v2-deadline b{color:var(--home-red);font-size:.86rem}
+.home-v2-score-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:2px}
+.home-v2-score-row>span{display:grid;grid-template-columns:auto auto;justify-content:center;align-items:end;gap:2px;padding:8px 4px;border:1px solid #e7edf4;border-radius:11px;background:rgba(255,255,255,.82);color:#40546a;font-size:.63rem}
+.home-v2-score-row b{grid-column:1;font-size:1.35rem;line-height:1;color:#263c54}
+.home-v2-score-row small{grid-column:2;font-size:.62rem;color:#6f8092}
+.is-main .home-v2-score-row span:first-child b{color:var(--home-green)}
+.is-upset .home-v2-score-row span:last-child b{color:var(--home-orange)}
+.is-skip .home-v2-score-row b{color:var(--home-red)}
+.home-v2-reason{font-size:.7rem;color:#32475d;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-v2-recommend-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;color:#74859a;font-size:.69rem}
+.home-v2-recommend-foot button{border:0;background:transparent;color:#0878f9;font-weight:900;white-space:nowrap}
+.home-v2-filter-shell{padding:9px}
+.home-v2-filters{display:grid;grid-template-columns:repeat(4,1fr);overflow:hidden;border:1px solid #dbe5f0;border-radius:14px;background:#fff}
+.home-v2-filters button{border:0;border-right:1px solid #dbe5f0;background:#fff;color:#24425f;padding:11px 5px;font-weight:900;font-size:.82rem;white-space:nowrap}
+.home-v2-filters button:last-child{border-right:0}
+.home-v2-filters button.is-active{background:linear-gradient(135deg,#0878f9,#246ee9);color:#fff;box-shadow:0 7px 16px rgba(8,120,249,.22)}
+.home-v2-schedule-title{align-items:flex-end}
+.home-v2-legend{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;color:#66798f;font-size:.66rem}
+.home-v2-legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.home-v2-legend span::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--home-gray)}
+.home-v2-legend .is-main::before{background:var(--home-green)}
+.home-v2-legend .is-upset::before{background:var(--home-yellow)}
+.home-v2-legend .is-skip::before{background:var(--home-red)}
+.home-v2-venue-list{display:grid;gap:8px}
+.home-v2-venue{display:grid;grid-template-columns:150px minmax(0,1fr) 28px;align-items:center;gap:10px;padding:9px 10px;border:1px solid #dfe7f0;border-radius:15px;background:#fff}
+.home-v2-venue-info{display:grid;justify-items:start;gap:4px;min-width:0}
+.home-v2-venue-info strong{color:var(--home-ink);font-size:1rem;white-space:nowrap}
+.home-v2-venue-info strong span{color:#56a4ef}
+.home-v2-venue-info small{display:inline-flex;padding:3px 8px;border-radius:999px;background:#eaf4ff;color:#0878f9;font-size:.64rem;font-weight:900}
+.home-v2-races{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;min-width:0}
+.home-v2-race{display:grid;gap:2px;min-width:0;padding:8px 3px;border:1px solid #dce6f1;border-radius:11px;background:#fff;color:var(--home-ink);text-align:center}
+.home-v2-race strong{font-size:.91rem;line-height:1.1}
+.home-v2-race span{display:flex;align-items:center;justify-content:center;gap:4px;color:#66798e;font-size:.64rem;white-space:nowrap}
+.home-v2-race i{display:block;width:7px;height:7px;border-radius:50%;background:var(--home-gray)}
+.home-v2-race.is-main i{background:var(--home-green)}
+.home-v2-race.is-upset i{background:var(--home-yellow)}
+.home-v2-race.is-upset-hot i{background:var(--home-orange)}
+.home-v2-race.is-skip i{background:var(--home-red)}
+.home-v2-race.is-selected,.home-v2-race.is-main:focus{border-color:var(--home-green);background:#f2fcf6;box-shadow:0 0 0 1px var(--home-green) inset}
+.home-v2-race.is-upset-hot{border-color:var(--home-orange);background:#fff9f0}
+.home-v2-race.is-skip{border-color:var(--home-red);background:#fff5f6}
+.home-v2-race:disabled{opacity:.42}
+.home-v2-venue-next{border:0;background:transparent;color:var(--home-ink);font-size:1.8rem;line-height:1}
+.home-v2-more{display:block;margin:13px auto 0;border:0;background:transparent;color:#0878f9;font-weight:900;font-size:.8rem}
+.home-v2-hint{display:flex;align-items:center;gap:8px;padding:11px 15px;color:#24517e;font-size:.72rem}
+.home-v2-hint strong{white-space:nowrap}
+.home-v2-hint span{color:#334b63}
+.home-v2-empty,.home-v2-no-race{grid-column:1/-1;margin:0;padding:18px;text-align:center;color:#74859a;background:#f7faff;border-radius:13px}
+.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;padding-bottom:max(8px,env(safe-area-inset-bottom))!important;background:rgba(255,255,255,.97)!important;border-top:1px solid #dfe7f0!important;box-shadow:0 -6px 20px rgba(30,61,97,.08)!important}
+.bottom-nav-item{min-width:0!important;padding:8px 2px!important;color:#5f7186!important;text-decoration:none!important}
+.bottom-nav-item span{font-size:1.48rem!important;line-height:1!important}
+.bottom-nav-item small{font-size:.62rem!important;white-space:nowrap!important}
+.bottom-nav-item.is-active{color:#0878f9!important;background:#eef6ff!important;border-radius:14px!important}
 
-/* =========================================================
-  Phase3: 出走表UI
-  データ・予想ロジックは変えず、スマホ表示だけカード化する。
-========================================================= */
-.v3-entry-section .v3-section-body{padding-top:10px}
-.v3-entry-grid-table{width:100%}
-.v3-entry-row{transition:box-shadow .18s ease,transform .18s ease}
-
-@media(min-width:641px){
-  .v3-entry-row:not(.v3-entry-head):hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(25,65,105,.08)}
+/* Phase3 entry cards are preserved */
+.v3-entry-section .v3-section-body{padding-top:10px}.v3-entry-grid-table{width:100%}.v3-entry-row{transition:box-shadow .18s ease,transform .18s ease}
+@media(min-width:641px){.v3-entry-row:not(.v3-entry-head):hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(25,65,105,.08)}}
+@media(max-width:700px){
+  .dashboard-header{padding:10px 12px!important}.header-logo{width:40px!important;height:40px!important;font-size:23px!important;border-radius:12px!important}.header-copy h1{font-size:1rem!important}.header-copy .header-description{font-size:.67rem!important}.home-header-actions{gap:7px}.home-header-actions button{min-width:38px}.home-header-actions b{font-size:1.5rem}.home-header-actions small{font-size:.55rem}
+  .dashboard-app{padding:10px 9px 92px!important}.home-dashboard-v2{gap:10px}.home-v2-recommend,.home-v2-schedule{padding:11px;border-radius:16px}.home-v2-title-row{margin-bottom:10px}.home-v2-title-row h2{font-size:.96rem}.home-v2-title-row>span{font-size:.59rem}
+  .home-v2-recommend-list{gap:7px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}.home-v2-recommend-card{scroll-snap-align:start;min-width:0;padding:9px 7px;border-radius:14px;gap:5px}.home-v2-card-top{grid-template-columns:24px 1fr 14px;gap:3px}.home-v2-medal{font-size:1.15rem}.home-v2-decision{font-size:.58rem;padding:3px 5px}.home-v2-arrow{font-size:1.25rem}.home-v2-recommend-card>strong{font-size:.91rem}.home-v2-deadline{font-size:.6rem}.home-v2-deadline b{font-size:.7rem}.home-v2-score-row{gap:4px}.home-v2-score-row>span{padding:6px 1px;font-size:.53rem;border-radius:9px}.home-v2-score-row b{font-size:1rem}.home-v2-score-row small{font-size:.5rem}.home-v2-reason{font-size:.57rem}.home-v2-recommend-foot{font-size:.58rem;gap:6px}.home-v2-recommend-foot span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.home-v2-filter-shell{padding:6px;border-radius:15px}.home-v2-filters button{padding:9px 2px;font-size:.67rem}.home-v2-schedule-title{display:grid;gap:8px}.home-v2-legend{justify-content:flex-start;font-size:.58rem;gap:6px}
+  .home-v2-venue{grid-template-columns:76px minmax(0,1fr) 18px;gap:5px;padding:7px 6px;border-radius:12px}.home-v2-venue-info strong{font-size:.79rem}.home-v2-venue-info small{font-size:.53rem;padding:2px 5px}.home-v2-races{gap:4px}.home-v2-race{padding:7px 1px;border-radius:9px}.home-v2-race strong{font-size:.74rem}.home-v2-race span{font-size:.52rem;gap:2px}.home-v2-race i{width:6px;height:6px}.home-v2-venue-next{font-size:1.3rem}.home-v2-hint{padding:9px 10px;font-size:.59rem;gap:5px}.home-v2-hint span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bottom-nav-item span{font-size:1.25rem!important}.bottom-nav-item small{font-size:.55rem!important}
+  .v3-entry-section .v3-section-head{margin-bottom:8px}.v3-entry-section .v3-section-head::after{content:"6艇を一覧表示";margin-left:auto;color:#71849a;font-size:.7rem;font-weight:700}.v3-entry-grid-table{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;background:transparent;border:0;overflow:visible}.v3-entry-grid-table .v3-entry-head{display:none}.v3-entry-grid-table .v3-entry-row:not(.v3-entry-head){position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);grid-template-areas:"boat player" "boat stats";align-items:center;gap:7px 9px;min-width:0;padding:11px 10px;border:1px solid #dce6f1;border-radius:15px;background:#fff;box-shadow:0 5px 14px rgba(30,68,107,.06);overflow:hidden}.v3-entry-grid-table .v3-entry-row:not(.v3-entry-head)::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:#d9e4ef}.v3-entry-grid-table .v3-entry-row:nth-child(2)::before{background:#c9c9c9}.v3-entry-grid-table .v3-entry-row:nth-child(3)::before{background:#111}.v3-entry-grid-table .v3-entry-row:nth-child(4)::before{background:#e53935}.v3-entry-grid-table .v3-entry-row:nth-child(5)::before{background:#1e88e5}.v3-entry-grid-table .v3-entry-row:nth-child(6)::before{background:#fbc02d}.v3-entry-grid-table .v3-entry-row:nth-child(7)::before{background:#43a047}.v3-entry-boat{grid-area:boat;display:grid;place-items:center;align-self:stretch}.v3-entry-player{grid-area:player;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.v3-entry-player strong{display:block;max-width:100%;font-size:.94rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v3-entry-player span{display:inline-flex;border-radius:999px;background:#eef4fa;padding:3px 7px;color:#52677d;font-size:.64rem;font-weight:800}.v3-entry-num{font-size:.78rem;font-weight:800;color:#16324f;text-align:left;min-width:0}.v3-entry-section .v3-boat-badge{width:34px;height:34px;font-size:1rem;box-shadow:0 2px 6px rgba(0,0,0,.12)}
 }
-
-@media(max-width:640px){
-  .home-v2-recommend,.home-v2-schedule{padding:14px;border-radius:18px}
-  .home-v2-recommend-list{grid-auto-columns:84%}
-  .home-v2-title-row h2{font-size:1.08rem}
-  .home-v2-filters{gap:6px}
-  .home-v2-filters button{font-size:.78rem;padding:10px 3px}
-  .home-v2-races{grid-template-columns:repeat(4,minmax(0,1fr))}
-  .home-v2-race{padding:10px 2px}
-  .home-v2-venue{padding:10px}
-
-  .v3-entry-section .v3-section-head{margin-bottom:8px}
-  .v3-entry-section .v3-section-head::after{content:"6艇を一覧表示";margin-left:auto;color:#71849a;font-size:.7rem;font-weight:700}
-  .v3-entry-grid-table{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;background:transparent;border:0;overflow:visible}
-  .v3-entry-grid-table .v3-entry-head{display:none}
-  .v3-entry-grid-table .v3-entry-row:not(.v3-entry-head){position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);grid-template-areas:"boat player" "boat stats";align-items:center;gap:7px 9px;min-width:0;padding:11px 10px;border:1px solid #dce6f1;border-radius:15px;background:#fff;box-shadow:0 5px 14px rgba(30,68,107,.06);overflow:hidden}
-  .v3-entry-grid-table .v3-entry-row:not(.v3-entry-head)::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:#d9e4ef}
-  .v3-entry-grid-table .v3-entry-row:nth-child(2)::before{background:#c9c9c9}
-  .v3-entry-grid-table .v3-entry-row:nth-child(3)::before{background:#111}
-  .v3-entry-grid-table .v3-entry-row:nth-child(4)::before{background:#e53935}
-  .v3-entry-grid-table .v3-entry-row:nth-child(5)::before{background:#1e88e5}
-  .v3-entry-grid-table .v3-entry-row:nth-child(6)::before{background:#fbc02d}
-  .v3-entry-grid-table .v3-entry-row:nth-child(7)::before{background:#43a047}
-  .v3-entry-boat{grid-area:boat;display:grid;place-items:center;align-self:stretch}
-  .v3-entry-player{grid-area:player;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-  .v3-entry-player strong{display:block;max-width:100%;font-size:.94rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .v3-entry-player span{display:inline-flex;border-radius:999px;background:#eef4fa;padding:3px 7px;color:#52677d;font-size:.64rem;font-weight:800}
-  .v3-entry-num{font-size:.78rem;font-weight:800;color:#16324f;text-align:left;min-width:0}
-  .v3-entry-num:nth-of-type(3),.v3-entry-num:nth-of-type(4),.v3-entry-num:nth-of-type(5){grid-area:stats;display:inline-flex;align-items:center;gap:3px;margin-right:7px}
-  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(3)::before{content:"ST";color:#71849a;font-size:.6rem;font-weight:700}
-  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(4)::before{content:"M";color:#71849a;font-size:.6rem;font-weight:700}
-  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(5)::before{content:"当地";color:#71849a;font-size:.6rem;font-weight:700}
-  .v3-entry-row:not(.v3-entry-head){grid-auto-flow:column}
-  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(3){grid-column:2;grid-row:2}
-  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(4){grid-column:2;grid-row:2;margin-left:48px}
-  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(5){grid-column:2;grid-row:2;margin-left:91px}
-  .v3-entry-section .v3-boat-badge{width:34px;height:34px;font-size:1rem;box-shadow:0 2px 6px rgba(0,0,0,.12)}
-}
-
-@media(max-width:390px){
-  .v3-entry-grid-table{grid-template-columns:1fr}
-  .v3-entry-grid-table .v3-entry-row:not(.v3-entry-head){grid-template-columns:48px minmax(0,1fr);padding:11px 12px}
-  .v3-entry-player strong{font-size:1rem}
-  .v3-entry-num{font-size:.82rem}
-}
+@media(max-width:390px){.home-v2-recommend-list{grid-template-columns:repeat(3,minmax(110px,1fr));overflow-x:auto}.home-v2-venue{grid-template-columns:69px minmax(0,1fr) 16px}.home-v2-race strong{font-size:.7rem}.home-v2-race span{font-size:.49rem}.v3-entry-grid-table{grid-template-columns:1fr}}
