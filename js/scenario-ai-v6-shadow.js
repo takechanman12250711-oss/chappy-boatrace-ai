@@ -67,7 +67,7 @@
       };
     })).sort((a, b) => b.likelihood - a.likelihood || b.rawScore - a.rawScore).map((row, index) => ({ ...row, rank: index + 1 }));
     return {
-      version: "6.0.1-display",
+      version: "6.0.0-shadow",
       status: scenarios.length ? "shadow-ready" : "insufficient-evidence",
       scenarios,
       mainScenario: scenarios[0] || null,
