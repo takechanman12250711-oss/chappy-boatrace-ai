@@ -41,4 +41,60 @@
 .home-v2-race strong{font-size:1rem}.home-v2-race span{font-size:.72rem;color:#687c92}
 .home-v2-race:disabled{opacity:.45}
 .home-v2-empty,.home-v2-no-race{margin:0;padding:18px;text-align:center;color:#7b8795;background:#f6f9fc;border-radius:14px}
-@media(max-width:640px){.home-v2-recommend,.home-v2-schedule{padding:14px;border-radius:18px}.home-v2-recommend-list{grid-auto-columns:84%}.home-v2-title-row h2{font-size:1.08rem}.home-v2-filters{gap:6px}.home-v2-filters button{font-size:.78rem;padding:10px 3px}.home-v2-races{grid-template-columns:repeat(4,minmax(0,1fr))}.home-v2-race{padding:10px 2px}.home-v2-venue{padding:10px}}
+
+/* =========================================================
+  Phase3: 出走表UI
+  データ・予想ロジックは変えず、スマホ表示だけカード化する。
+========================================================= */
+.v3-entry-section .v3-section-body{padding-top:10px}
+.v3-entry-grid-table{width:100%}
+.v3-entry-row{transition:box-shadow .18s ease,transform .18s ease}
+
+@media(min-width:641px){
+  .v3-entry-row:not(.v3-entry-head):hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(25,65,105,.08)}
+}
+
+@media(max-width:640px){
+  .home-v2-recommend,.home-v2-schedule{padding:14px;border-radius:18px}
+  .home-v2-recommend-list{grid-auto-columns:84%}
+  .home-v2-title-row h2{font-size:1.08rem}
+  .home-v2-filters{gap:6px}
+  .home-v2-filters button{font-size:.78rem;padding:10px 3px}
+  .home-v2-races{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .home-v2-race{padding:10px 2px}
+  .home-v2-venue{padding:10px}
+
+  .v3-entry-section .v3-section-head{margin-bottom:8px}
+  .v3-entry-section .v3-section-head::after{content:"6艇を一覧表示";margin-left:auto;color:#71849a;font-size:.7rem;font-weight:700}
+  .v3-entry-grid-table{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;background:transparent;border:0;overflow:visible}
+  .v3-entry-grid-table .v3-entry-head{display:none}
+  .v3-entry-grid-table .v3-entry-row:not(.v3-entry-head){position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);grid-template-areas:"boat player" "boat stats";align-items:center;gap:7px 9px;min-width:0;padding:11px 10px;border:1px solid #dce6f1;border-radius:15px;background:#fff;box-shadow:0 5px 14px rgba(30,68,107,.06);overflow:hidden}
+  .v3-entry-grid-table .v3-entry-row:not(.v3-entry-head)::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:#d9e4ef}
+  .v3-entry-grid-table .v3-entry-row:nth-child(2)::before{background:#c9c9c9}
+  .v3-entry-grid-table .v3-entry-row:nth-child(3)::before{background:#111}
+  .v3-entry-grid-table .v3-entry-row:nth-child(4)::before{background:#e53935}
+  .v3-entry-grid-table .v3-entry-row:nth-child(5)::before{background:#1e88e5}
+  .v3-entry-grid-table .v3-entry-row:nth-child(6)::before{background:#fbc02d}
+  .v3-entry-grid-table .v3-entry-row:nth-child(7)::before{background:#43a047}
+  .v3-entry-boat{grid-area:boat;display:grid;place-items:center;align-self:stretch}
+  .v3-entry-player{grid-area:player;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .v3-entry-player strong{display:block;max-width:100%;font-size:.94rem;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .v3-entry-player span{display:inline-flex;border-radius:999px;background:#eef4fa;padding:3px 7px;color:#52677d;font-size:.64rem;font-weight:800}
+  .v3-entry-num{font-size:.78rem;font-weight:800;color:#16324f;text-align:left;min-width:0}
+  .v3-entry-num:nth-of-type(3),.v3-entry-num:nth-of-type(4),.v3-entry-num:nth-of-type(5){grid-area:stats;display:inline-flex;align-items:center;gap:3px;margin-right:7px}
+  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(3)::before{content:"ST";color:#71849a;font-size:.6rem;font-weight:700}
+  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(4)::before{content:"M";color:#71849a;font-size:.6rem;font-weight:700}
+  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(5)::before{content:"当地";color:#71849a;font-size:.6rem;font-weight:700}
+  .v3-entry-row:not(.v3-entry-head){grid-auto-flow:column}
+  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(3){grid-column:2;grid-row:2}
+  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(4){grid-column:2;grid-row:2;margin-left:48px}
+  .v3-entry-row:not(.v3-entry-head) .v3-entry-num:nth-child(5){grid-column:2;grid-row:2;margin-left:91px}
+  .v3-entry-section .v3-boat-badge{width:34px;height:34px;font-size:1rem;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+}
+
+@media(max-width:390px){
+  .v3-entry-grid-table{grid-template-columns:1fr}
+  .v3-entry-grid-table .v3-entry-row:not(.v3-entry-head){grid-template-columns:48px minmax(0,1fr);padding:11px 12px}
+  .v3-entry-player strong{font-size:1rem}
+  .v3-entry-num{font-size:.82rem}
+}
