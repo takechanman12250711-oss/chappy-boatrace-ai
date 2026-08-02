@@ -1,0 +1,30 @@
+name: Check theory performance report
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-performance-report.js"
+      - "scripts/build-theory-performance-report.js"
+      - "scripts/test-theory-performance-report.js"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/check-theory-performance-report.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify theory performance report
+        run: |
+          node --check js/theory-performance-report.js
+          node --check scripts/build-theory-performance-report.js
+          node scripts/test-theory-performance-report.js
+          node scripts/build-theory-performance-report.js
+          node -e 'const r=require("./data/stats/theory-performance-report.json"); if(r.usableForPrediction!==false||r.automaticApplication!==false) process.exit(1)'
+          node scripts/check-charter.js
