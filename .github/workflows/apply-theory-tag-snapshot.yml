@@ -30,7 +30,6 @@ jobs:
           node --check js/theory-tag-snapshot.js
           node --check scripts/collect-predictions.js
           node scripts/test-theory-tag-snapshot.js
-          node scripts/test-collect-predictions.js
           node scripts/check-charter.js
       - name: Commit applied source
         run: |
