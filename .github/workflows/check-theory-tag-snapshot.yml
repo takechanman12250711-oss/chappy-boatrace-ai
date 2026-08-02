@@ -1,0 +1,34 @@
+name: Check theory tag snapshot
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-tag-snapshot.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/test-theory-tag-snapshot.js"
+      - ".github/workflows/check-theory-tag-snapshot.yml"
+  push:
+    paths:
+      - "js/theory-tag-snapshot.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/test-theory-tag-snapshot.js"
+      - ".github/workflows/check-theory-tag-snapshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify theory tag snapshots
+        run: |
+          node --check js/theory-tag-snapshot.js
+          node --check scripts/collect-predictions.js
+          node scripts/test-theory-tag-snapshot.js
+          node scripts/check-charter.js
