@@ -3,7 +3,7 @@
 (function (root) {
   "use strict";
   if (root.ChappyStatsRuntime) return;
-  const VERSION = "20260802-result-ui-phase5";
+  const VERSION = "20260801-boat-identity1";
   const scripts = [
     "js/boat-identity.js",
     "js/collection-health.js",
