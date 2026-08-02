@@ -1,0 +1,54 @@
+name: Apply home dashboard v2 phase1
+
+on:
+  push:
+    branches:
+      - feature/home-dashboard-v2-phase1
+    paths:
+      - ".github/workflows/apply-home-dashboard-v2-phase1.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/home-dashboard-v2-phase1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Connect home dashboard assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("index.html")
+          text = path.read_text(encoding="utf-8")
+          css = '  <link rel="stylesheet" href="css/home-dashboard-v2.css?v=20260802-phase1" />\n'
+          js = '  <script src="js/home-dashboard-v2.js?v=20260802-phase1"></script>\n'
+          if "css/home-dashboard-v2.css" not in text:
+              marker = '  <link rel="stylesheet" href="css/auto-selection.css?v=20260727-fast1" />\n'
+              if marker not in text:
+                  raise SystemExit("CSS insertion marker not found")
+              text = text.replace(marker, marker + css, 1)
+          if "js/home-dashboard-v2.js" not in text:
+              marker = '  <script src="js/auto-selection.js?v=20260729-transparency1"></script>\n'
+              if marker not in text:
+                  raise SystemExit("JS insertion marker not found")
+              text = text.replace(marker, marker + js, 1)
+          path.write_text(text, encoding="utf-8")
+          Path(".github/workflows/apply-home-dashboard-v2-phase1.yml").unlink()
+          PY
+      - name: Verify
+        run: |
+          node --check js/home-dashboard-v2.js
+          node scripts/test-home-dashboard-v2.js
+      - name: Commit generated connection
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html .github/workflows/apply-home-dashboard-v2-phase1.yml
+          git commit -m "ホーム画面v2をアプリへ接続"
+          git push origin HEAD:feature/home-dashboard-v2-phase1
