@@ -2,8 +2,10 @@
 const fs = require("fs");
 const assert = require("assert");
 
-const source = fs.readFileSync("js/home-dashboard-v2.js", "utf8");
+const source = fs.readFileSync("js/prediction-ui-phase4.js", "utf8");
+const runtime = fs.readFileSync("js/prediction-runtime-loader.js", "utf8");
 
+assert(runtime.includes('"js/prediction-ui-phase4.js"'), "Phase4を予想時に遅延読込する");
 assert(source.includes("prediction-phase4-nav"), "固定ナビを追加する");
 assert(source.includes("本命"), "本命タブを持つ");
 assert(source.includes("万舟"), "万舟タブを持つ");
