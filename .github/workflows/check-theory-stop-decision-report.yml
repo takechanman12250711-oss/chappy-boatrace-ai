@@ -1,0 +1,24 @@
+name: Check theory stop decision report
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-stop-decision-report.js"
+      - "scripts/build-theory-stop-decision-report.js"
+      - "scripts/test-theory-stop-decision-report.js"
+      - ".github/workflows/check-theory-stop-decision-report.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify stop decision report
+        run: |
+          node --check js/theory-stop-decision-report.js
+          node --check scripts/build-theory-stop-decision-report.js
+          node scripts/test-theory-stop-decision-report.js
+          node scripts/build-theory-stop-decision-report.js
