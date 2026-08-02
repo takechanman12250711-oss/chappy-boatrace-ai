@@ -3,7 +3,7 @@
 (function (root) {
   "use strict";
   if (root.ChappyStatsRuntime) return;
-  const VERSION = "20260802-theory-operation1";
+  const VERSION = "20260802-result-ui-phase5";
   const scripts = [
     "js/boat-identity.js",
     "js/collection-health.js",
@@ -12,7 +12,8 @@
     "js/verification-readiness.js",
     "js/improvement-suggestions.js",
     "js/stats.js",
-    "js/theory-improvement-dashboard.js"
+    "js/theory-improvement-dashboard.js",
+    "js/result-ui-phase5.js"
   ];
   let readyPromise = null;
   function loadScript(src) {
