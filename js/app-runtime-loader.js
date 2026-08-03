@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260803-ui-fix2";
+  const VERSION = "20260803-race-init1";
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const HOME_CACHE_TTL = 300000;
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
@@ -126,7 +126,8 @@
       const scripts = groups[group] || [];
       for (const src of scripts) await loadScript(src);
       if (group === "race") {
-        document.dispatchEvent(new Event("DOMContentLoaded"));
+        root.ChappyRaceControls
+          ?.initialize?.();
       }
       if (group === "stats") {
         await root.ChappyStatsRuntime?.ensureReady?.();

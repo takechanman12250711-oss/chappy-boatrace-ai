@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 const zlib = require("node:zlib");
 
 const root = path.resolve(__dirname, "..");
@@ -264,7 +265,7 @@ assert.equal(
 [
   "style.css?v=20260803-ui-fix2",
   "css/home-dashboard-v2.css?v=20260803-ui-fix2",
-  "js/app-runtime-loader.js?v=20260803-ui-fix2",
+  "js/app-runtime-loader.js?v=20260803-race-init1",
   "js/home-dashboard-v2.js?v=20260803-ui-fix2"
 ].forEach(asset => {
   assert.equal(
@@ -275,10 +276,36 @@ assert.equal(
 });
 assert.equal(
   appRuntime.includes(
-    'const VERSION = "20260803-ui-fix2"'
+    'const VERSION = "20260803-race-init1"'
   ),
   true,
   "変更した通常画面モジュールのキャッシュ世代を更新する"
+);
+assert.equal(
+  script.includes("function initializeRaceControls()") &&
+    script.includes("document.readyState") &&
+    script.includes('window.addEventListener(\n      "DOMContentLoaded",') &&
+    script.includes("initializeRaceControls();") &&
+    script.includes("chappyRaceControlBound"),
+  true,
+  "遅延読込したレース操作をDOMContentLoaded後でも一度だけ初期化する"
+);
+assert.equal(
+  appRuntime.includes("root.ChappyRaceControls") &&
+    appRuntime.includes("?.initialize?.()") &&
+    !appRuntime.includes('dispatchEvent(new Event("DOMContentLoaded"))'),
+  true,
+  "レース読込時に全画面のDOMContentLoadedを再送せず専用初期化を呼ぶ"
+);
+assert.equal(
+  script.includes("function setupNoteAssistant()") &&
+    script.includes("chappyNoteControlBound") &&
+    script.includes("setupNoteAssistant();") &&
+    !script.includes(
+      'document.addEventListener(\n    "DOMContentLoaded",\n    setupNoteAssistant'
+    ),
+  true,
+  "遅延読込したnote操作もDOMContentLoaded後に重複なく初期化する"
 );
 assert.equal(
   predictionRuntime.includes(
@@ -542,5 +569,151 @@ for (const name of fs.readdirSync(summaryDirectory)) {
     `${name} は20KB未満 (${bytes} bytes)`
   );
 }
+
+class FakeControl {
+  constructor() {
+    this.dataset = {};
+    this.listeners = new Map();
+    this.value = "";
+    this.hidden = false;
+    this.disabled = false;
+    this.textContent = "";
+  }
+
+  addEventListener(type, listener) {
+    const listeners =
+      this.listeners.get(type) || [];
+    listeners.push(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  click() {
+    for (const listener of
+      this.listeners.get("click") || []) {
+      listener.call(this, {
+        currentTarget: this,
+        target: this
+      });
+    }
+  }
+
+  listenerCount(type) {
+    return (
+      this.listeners.get(type) || []
+    ).length;
+  }
+}
+
+const controlIds = [
+  "fetchRaceBtn",
+  "reloadRaceBtn",
+  "refreshOddsBtn",
+  "raceModeSelect",
+  "dateInput",
+  "homeDashboardV2",
+  "noteAssistantSection",
+  "noteGenerateBtn",
+  "noteCopyTitleBtn",
+  "noteCopyFullBtn",
+  "noteStatusBadge",
+  "noteTitlePreview",
+  "noteArticlePreview"
+];
+const controls = Object.fromEntries(
+  controlIds.map(id => [
+    id,
+    new FakeControl()
+  ])
+);
+controls.noteAssistantSection.hidden = true;
+controls.noteGenerateBtn.disabled = true;
+controls.noteCopyTitleBtn.disabled = true;
+controls.noteCopyFullBtn.disabled = true;
+let noteGeneratorCalls = 0;
+const lateWindow = {
+  addEventListener() {},
+  renderAll(prediction) {
+    return prediction;
+  },
+  ChappyNoteGenerator: {
+    generateArticle() {
+      noteGeneratorCalls += 1;
+      return {
+        ok: true,
+        title: "テスト記事",
+        fullText: "テスト本文",
+        practicalTickets: ["1-2-3"]
+      };
+    }
+  }
+};
+const lateDocument = {
+  readyState: "complete",
+  getElementById(id) {
+    return controls[id] || null;
+  },
+  querySelector() {
+    return null;
+  }
+};
+const lateContext = {
+  window: lateWindow,
+  document: lateDocument,
+  localStorage: {
+    getItem() {
+      return null;
+    },
+    setItem() {}
+  },
+  console: {
+    log() {},
+    error() {}
+  },
+  navigator: {},
+  setTimeout,
+  clearTimeout
+};
+vm.runInNewContext(script, lateContext);
+vm.runInNewContext(script, lateContext);
+lateWindow.ChappyRaceControls.initialize();
+lateWindow.ChappyRaceControls.initialize();
+
+[
+  ["fetchRaceBtn", "click"],
+  ["reloadRaceBtn", "click"],
+  ["refreshOddsBtn", "click"],
+  ["raceModeSelect", "change"],
+  ["noteGenerateBtn", "click"],
+  ["noteCopyTitleBtn", "click"],
+  ["noteCopyFullBtn", "click"]
+].forEach(([id, type]) => {
+  assert.equal(
+    controls[id].listenerCount(type),
+    1,
+    `${id} は遅延・二重読込後も一度だけ接続する`
+  );
+});
+assert.match(
+  controls.dateInput.value,
+  /^\d{4}-\d{2}-\d{2}$/,
+  "DOMContentLoaded後の遅延読込でも日付を初期化する"
+);
+lateWindow.renderAll({ ok: true });
+assert.equal(
+  controls.noteAssistantSection.hidden,
+  false,
+  "遅延読込後もnote操作を予想に接続する"
+);
+controls.noteGenerateBtn.click();
+assert.equal(
+  noteGeneratorCalls,
+  1,
+  "note生成クリックを重複実行しない"
+);
+assert.equal(
+  controls.noteTitlePreview.value,
+  "テスト記事",
+  "遅延読込後もnote記事を生成できる"
+);
 
 console.log("初期表示パフォーマンス回帰テスト: 合格");
