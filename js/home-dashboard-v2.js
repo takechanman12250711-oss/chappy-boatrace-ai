@@ -12,12 +12,15 @@
   };
   const state = {
     filter: "all",
+    scheduleDate: "",
     schedule: [],
     recommendations: [],
     visibleCount: PAGE_SIZE,
     selectedPlace: "",
     selectedRace: 0,
     loading: false,
+    pendingSelection: null,
+    selectionPromise: null,
     updatedAt: null,
     bound: false,
     refreshPromise: null,
@@ -100,6 +103,9 @@
       const cached = JSON.parse(raw);
       if (!cached || Date.now() - Number(cached.savedAt || 0) > CACHE_TTL) return false;
       state.schedule = Array.isArray(cached.schedule) ? cached.schedule : [];
+      state.scheduleDate = /^\d{8}$/.test(String(cached.scheduleDate || ""))
+        ? String(cached.scheduleDate)
+        : jstDate();
       state.recommendations = Array.isArray(cached.recommendations) ? cached.recommendations : [];
       state.updatedAt = cached.updatedAt ? new Date(cached.updatedAt) : new Date(cached.savedAt);
       return state.schedule.length > 0 || state.recommendations.length > 0;
@@ -113,6 +119,7 @@
       const payload = JSON.stringify({
         savedAt: Date.now(),
         updatedAt: state.updatedAt?.toISOString() || null,
+        scheduleDate: state.scheduleDate || jstDate(),
         schedule: state.schedule,
         recommendations: state.recommendations
       });
@@ -138,7 +145,17 @@
     const data = await getJson(`${API_ROOT}/schedule?date=${encodeURIComponent(jstDate())}`, force);
     const next = Array.isArray(data?.venues) ? data.venues : [];
     const changed = stable(next) !== stable(state.schedule);
+    state.scheduleDate = /^\d{8}$/.test(String(data?.date || ""))
+      ? String(data.date)
+      : jstDate();
     state.schedule = next;
+    root.dispatchEvent(new CustomEvent("chappy:home-schedule", {
+      detail: {
+        date: state.scheduleDate,
+        venues: next,
+        force
+      }
+    }));
     return changed;
   }
 
@@ -162,47 +179,49 @@
     }
   }
 
-  function waitForRaceOption(select, value, timeout = 5000) {
-    return new Promise((resolve, reject) => {
-      const started = Date.now();
-      const check = () => {
-        if ([...(select?.options || [])].some(option => option.value === value)) return resolve(true);
-        if (Date.now() - started >= timeout) return reject(new Error("選択したレース情報を取得できませんでした"));
-        root.setTimeout(check, 100);
-      };
-      check();
-    });
-  }
-
-  async function syncAndOpen(place, raceNo) {
-    if (state.loading) return;
-    state.loading = true;
-    try {
+  async function performSyncAndOpen(place, raceNo) {
       await root.ChappyAppRuntime?.ensure?.("race");
-      const raceValue = `${num(raceNo)}R`;
-      const mode = document.getElementById("raceModeSelect");
-      const placeSelect = document.getElementById("placeSelect");
-      const raceSelect = document.getElementById("raceSelect");
+      root.ChappyStartupGate?.activateRace?.();
       const fetchButton = document.getElementById("fetchRaceBtn");
-      if (!placeSelect || !raceSelect || !fetchButton) return;
+      if (!fetchButton || typeof root.ChappyRaceSelection?.select !== "function") return;
 
+      await root.ChappyRaceSelection.select({
+        mode: "live",
+        date: state.scheduleDate || jstDate(),
+        place,
+        raceNo: num(raceNo)
+      });
       state.selectedPlace = place;
       state.selectedRace = num(raceNo);
       updateSelectedRace();
-      if (mode) mode.value = "live";
-      placeSelect.value = place;
-      placeSelect.dispatchEvent(new Event("change", { bubbles: true }));
-      await waitForRaceOption(raceSelect, raceValue);
-      raceSelect.value = raceValue;
-      raceSelect.dispatchEvent(new Event("change", { bubbles: true }));
       fetchButton.click();
       setView("prediction");
       document.getElementById("predictionSection")?.scrollIntoView({ behavior: "auto", block: "start" });
-    } catch (error) {
+  }
+
+  function syncAndOpen(place, raceNo) {
+    state.pendingSelection = { place, raceNo: num(raceNo) };
+    if (state.selectionPromise) return state.selectionPromise;
+    state.loading = true;
+
+    state.selectionPromise = (async () => {
+      while (state.pendingSelection) {
+        const intent = state.pendingSelection;
+        state.pendingSelection = null;
+        try {
+          await performSyncAndOpen(intent.place, intent.raceNo);
+        } catch (error) {
+          if (!state.pendingSelection) throw error;
+        }
+      }
+    })().catch(error => {
       console.error("ホームレース選択エラー", error);
-    } finally {
+    }).finally(() => {
       state.loading = false;
-    }
+      state.selectionPromise = null;
+    });
+
+    return state.selectionPromise;
   }
 
   function recommendationHtml(item, index) {
@@ -223,13 +242,13 @@
     const place = String(venue?.place || "");
     const type = venueType(place);
     const rows = racesOf(venue).filter(row => row.selectable !== false).slice(0, 4);
-    return `<article class="home-v2-venue" data-venue="${esc(place)}"><div class="home-v2-venue-info"><strong>${esc(place)} <span>≋</span></strong><small>${typeLabel(type)}</small></div><div class="home-v2-races">${rows.length ? rows.map(row => raceHtml(place, row)).join("") : '<span class="home-v2-no-race">締切前なし</span>'}</div><button class="home-v2-venue-next" type="button" data-open-venue="${esc(place)}">›</button></article>`;
+    return `<article class="home-v2-venue" data-venue="${esc(place)}"><div class="home-v2-venue-info"><strong>${esc(place)} <span>≋</span></strong><small>${typeLabel(type)}</small></div><div class="home-v2-races">${rows.length ? rows.map(row => raceHtml(place, row)).join("") : '<span class="home-v2-no-race">1R〜12Rを読込中</span>'}</div><button class="home-v2-venue-next" type="button" data-open-venue="${esc(place)}">›</button></article>`;
   }
 
   function filteredVenues() {
     return state.schedule.filter(venue => {
       const place = String(venue?.place || "");
-      return racesOf(venue).some(row => row.selectable !== false) && (state.filter === "all" || venueType(place) === state.filter);
+      return state.filter === "all" || venueType(place) === state.filter;
     });
   }
 
@@ -405,6 +424,13 @@
     render(true);
     scheduleRefresh();
   }
+
+  root.ChappyHomeDashboardV2 = Object.freeze({
+    refresh,
+    setView,
+    getSchedule: () => state.schedule.slice(),
+    getDate: () => state.scheduleDate || jstDate()
+  });
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
