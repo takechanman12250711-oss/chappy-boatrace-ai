@@ -39,6 +39,24 @@
   };
 
   let lastRaceData = null;
+  let raceSelectionGeneration = 0;
+  let explicitSelectionGeneration = 0;
+  let predictionGeneration = 0;
+
+  function beginRaceSelection() {
+    raceSelectionGeneration += 1;
+    return raceSelectionGeneration;
+  }
+
+  function isCurrentRaceSelection(
+    generation,
+    mode,
+    date
+  ) {
+    return generation === raceSelectionGeneration &&
+      mode === getRaceMode() &&
+      date === getScheduleDate();
+  }
 
     document.addEventListener("DOMContentLoaded", () => {
         console.log("✅ script.js 読み込みOK");
@@ -135,6 +153,8 @@
   }
 
     async function applyRaceMode() {
+    const selectionGeneration =
+      beginRaceSelection();
     const modeSelect =
       document.getElementById(
         "raceModeSelect"
@@ -210,8 +230,9 @@
         "raceSelect"
       );
 
-        if (raceSelect) {
+    if (raceSelect) {
       raceSelect.onchange = () => {
+        predictionGeneration += 1;
         lastRaceData = null;
 
         clearReviewResult();
@@ -266,11 +287,18 @@
     );
 
     try {
-      await loadVenueChoices();
+      const loaded =
+        await loadVenueChoices(
+        selectionGeneration
+      );
+      return loaded
+        ? selectionGeneration
+        : 0;
     } catch (error) {
       handleRaceSelectionError(
         error
       );
+      return 0;
     }
   }
 
@@ -1693,7 +1721,10 @@
     );
   }
 
-  async function loadVenueChoices() {
+  async function loadVenueChoices(
+    selectionGeneration =
+      beginRaceSelection()
+  ) {
     const mode =
       getRaceMode();
 
@@ -1727,6 +1758,16 @@
       await requestSchedule(
         date
       );
+
+    if (
+      !isCurrentRaceSelection(
+        selectionGeneration,
+        mode,
+        date
+      )
+    ) {
+      return false;
+    }
 
     const venues =
       mode === "live"
@@ -1796,6 +1837,16 @@
     latestStoredLiveSelection =
       liveAutoSelection;
 
+    if (
+      !isCurrentRaceSelection(
+        selectionGeneration,
+        mode,
+        date
+      )
+    ) {
+      return false;
+    }
+
     const preferredJcd =
       mode === "live"
         ? String(
@@ -1855,7 +1906,8 @@
         false;
     }
 
-    await loadRaceChoices(
+    const raceChoicesLoaded =
+      await loadRaceChoices(
       mode === "live"
         ? Number(
             (
@@ -1865,8 +1917,20 @@
             ) ||
             0
           )
-        : 0
+        : 0,
+      selectionGeneration
     );
+
+    if (
+      !raceChoicesLoaded ||
+      !isCurrentRaceSelection(
+        selectionGeneration,
+        mode,
+        date
+      )
+    ) {
+      return false;
+    }
 
     if (mode === "live") {
       renderLiveAutoSelection(
@@ -1929,10 +1993,14 @@
         .gridTemplateColumns =
         "1fr 1fr";
     }
+
+    return true;
   }
 
   async function loadRaceChoices(
-    preferredRaceNo = 0
+    preferredRaceNo = 0,
+    selectionGeneration =
+      beginRaceSelection()
   ) {
     const mode =
       getRaceMode();
@@ -1966,6 +2034,10 @@
         placeSelect?.value
       ];
 
+    const selectedPlace =
+      placeSelect?.value ||
+      "";
+
     if (!jcd) {
       throw new Error(
         "開催場を選択してください"
@@ -1981,6 +2053,31 @@
         date,
         jcd
       );
+
+    const currentOption =
+      placeSelect?.options?.[
+        placeSelect.selectedIndex
+      ];
+
+    const currentJcd =
+      currentOption?.dataset?.jcd ||
+      PLACE_CODE_MAP[
+        placeSelect?.value
+      ];
+
+    if (
+      !isCurrentRaceSelection(
+        selectionGeneration,
+        mode,
+        date
+      ) ||
+      placeSelect?.value !==
+        selectedPlace ||
+      String(currentJcd || "") !==
+        String(jcd || "")
+    ) {
+      return false;
+    }
 
     const allRaces =
       Array.isArray(
@@ -2024,7 +2121,7 @@
           : "終了レースはまだありません"
       );
 
-      return;
+      return true;
     }
 
     replaceSelectOptions(
@@ -2110,6 +2207,322 @@
             `振り返れます`
           )
     );
+
+    return true;
+  }
+
+  async function performRaceSelection(
+    input = {}
+  ) {
+    const modeSelect =
+      document.getElementById(
+        "raceModeSelect"
+      );
+
+    const dateInput =
+      document.getElementById(
+        "dateInput"
+      );
+
+    const placeSelect =
+      document.getElementById(
+        "placeSelect"
+      );
+
+    const raceSelect =
+      document.getElementById(
+        "raceSelect"
+      );
+
+    const mode =
+      input.mode === "review"
+        ? "review"
+        : "live";
+
+    const date =
+      String(
+        input.date ||
+        ""
+      ).replace(/\D/g, "")
+        .slice(0, 8);
+
+    const place =
+      String(
+        input.place ||
+        ""
+      ).trim();
+
+    const jcd =
+      String(
+        input.jcd ||
+        PLACE_CODE_MAP[place] ||
+        ""
+      ).padStart(2, "0");
+
+    const raceNo =
+      Number(
+        input.raceNo ||
+        input.rno ||
+        0
+      );
+
+    if (
+      !modeSelect ||
+      !dateInput ||
+      !placeSelect ||
+      !raceSelect ||
+      !/^\d{8}$/.test(date) ||
+      !/^\d{2}$/.test(jcd) ||
+      raceNo < 1 ||
+      raceNo > 12
+    ) {
+      throw new Error(
+        "レース選択情報を確認できません"
+      );
+    }
+
+    modeSelect.value = mode;
+    dateInput.value =
+      `${date.slice(0, 4)}-` +
+      `${date.slice(4, 6)}-` +
+      `${date.slice(6, 8)}`;
+
+    const modeGeneration =
+      await applyRaceMode();
+
+    if (!modeGeneration) {
+      throw new Error(
+        "開催場の選択準備が完了しませんでした"
+      );
+    }
+
+    const venueOption =
+      [...placeSelect.options]
+        .find(option =>
+          option.value === place &&
+          String(
+            option.dataset.jcd ||
+            PLACE_CODE_MAP[
+              option.value
+            ] ||
+            ""
+          ).padStart(2, "0") ===
+            jcd
+        );
+
+    if (!venueOption) {
+      throw new Error(
+        "選択した開催場を確認できませんでした"
+      );
+    }
+
+    placeSelect.value = place;
+    const placeGeneration =
+      beginRaceSelection();
+    const racesLoaded =
+      await loadRaceChoices(
+        0,
+        placeGeneration
+      );
+
+    const raceValue =
+      `${raceNo}R`;
+
+    if (
+      !racesLoaded ||
+      ![...raceSelect.options]
+        .some(option =>
+          option.value === raceValue
+        )
+    ) {
+      throw new Error(
+        "選択したレース情報を取得できませんでした"
+      );
+    }
+
+    raceSelect.value = raceValue;
+    if (
+      typeof raceSelect.onchange ===
+      "function"
+    ) {
+      raceSelect.onchange();
+    }
+
+    return {
+      mode,
+      date,
+      place,
+      jcd,
+      raceNo
+    };
+  }
+
+  function captureRaceSelection() {
+    return {
+      mode:
+        document.getElementById(
+          "raceModeSelect"
+        )?.value ||
+        "live",
+      date:
+        document.getElementById(
+          "dateInput"
+        )?.value ||
+        "",
+      place:
+        document.getElementById(
+          "placeSelect"
+        )?.value ||
+        "",
+      race:
+        document.getElementById(
+          "raceSelect"
+        )?.value ||
+        ""
+    };
+  }
+
+  async function restoreRaceSelection(
+    previous
+  ) {
+    const modeSelect =
+      document.getElementById(
+        "raceModeSelect"
+      );
+
+    const dateInput =
+      document.getElementById(
+        "dateInput"
+      );
+
+    const placeSelect =
+      document.getElementById(
+        "placeSelect"
+      );
+
+    const raceSelect =
+      document.getElementById(
+        "raceSelect"
+      );
+
+    if (
+      !modeSelect ||
+      !dateInput ||
+      !placeSelect ||
+      !raceSelect
+    ) {
+      return false;
+    }
+
+    modeSelect.value =
+      previous.mode === "review"
+        ? "review"
+        : "live";
+    dateInput.value =
+      previous.date;
+
+    const modeGeneration =
+      await applyRaceMode();
+    if (!modeGeneration) return false;
+
+    if (
+      ![...placeSelect.options]
+        .some(option =>
+          option.value ===
+          previous.place
+        )
+    ) {
+      return false;
+    }
+
+    placeSelect.value =
+      previous.place;
+    const placeGeneration =
+      beginRaceSelection();
+    const racesLoaded =
+      await loadRaceChoices(
+        0,
+        placeGeneration
+      );
+
+    if (
+      !racesLoaded ||
+      ![...raceSelect.options]
+        .some(option =>
+          option.value ===
+          previous.race
+        )
+    ) {
+      return false;
+    }
+
+    raceSelect.value =
+      previous.race;
+    if (
+      typeof raceSelect.onchange ===
+      "function"
+    ) {
+      raceSelect.onchange();
+    }
+
+    return true;
+  }
+
+  async function selectRaceForPrediction(
+    input = {}
+  ) {
+    const selectionGeneration =
+      ++explicitSelectionGeneration;
+    const previous =
+      captureRaceSelection();
+
+    try {
+      const selected =
+        await performRaceSelection(
+        input
+      );
+      if (
+        selectionGeneration !==
+        explicitSelectionGeneration
+      ) {
+        const staleError =
+          new Error(
+            "新しいレース選択へ切り替えました"
+          );
+        staleError.name =
+          "AbortError";
+        throw staleError;
+      }
+      return selected;
+    } catch (error) {
+      if (
+        selectionGeneration !==
+        explicitSelectionGeneration
+      ) {
+        if (error?.name === "AbortError") {
+          throw error;
+        }
+        const staleError =
+          new Error(
+            "新しいレース選択へ切り替えました"
+          );
+        staleError.name =
+          "AbortError";
+        throw staleError;
+      }
+      beginRaceSelection();
+      try {
+        await restoreRaceSelection(
+          previous
+        );
+      } catch (restoreError) {
+        console.warn(
+          "レース選択の復元エラー",
+          restoreError
+        );
+      }
+      throw error;
+    }
   }
 
   function handleRaceSelectionError(
@@ -2218,6 +2631,11 @@
   }
 
     async function fetchAndRenderRace() {
+    const requestGeneration =
+      ++predictionGeneration;
+    const isCurrentRequest = () =>
+      requestGeneration ===
+      predictionGeneration;
     try {
       clearErrorArea();
 
@@ -2238,6 +2656,10 @@
         await verifyLiveDeadline(
           params
         );
+
+        if (!isCurrentRequest()) {
+          return false;
+        }
 
         clearReviewResult();
       }
@@ -2271,6 +2693,10 @@
           fetchedData,
           params
         );
+
+      if (!isCurrentRequest()) {
+        return false;
+      }
 
       lastRaceData =
         data;
@@ -2397,6 +2823,10 @@
               params
             );
 
+          if (!isCurrentRequest()) {
+            return false;
+          }
+
           renderReviewResult(
             officialResult,
             params
@@ -2411,6 +2841,9 @@
         } catch (
           resultError
         ) {
+          if (!isCurrentRequest()) {
+            return false;
+          }
           console.error(
             "official result error",
             resultError
@@ -2430,7 +2863,11 @@
           "取得完了"
         );
       }
+      return true;
     } catch (error) {
+      if (!isCurrentRequest()) {
+        return false;
+      }
       console.error(
         "❌ fetchAndRenderRace error",
         error
@@ -2449,6 +2886,7 @@
           "スタック情報を取得できません"
         }`
       );
+      return false;
     }
   }
 
@@ -2985,9 +3423,12 @@
     };
   }
 
-  window.ChappyRaceSelection = {
-    getRaceParams
-  };
+  window.ChappyRaceSelection =
+    Object.freeze({
+      getRaceParams,
+      select:
+        selectRaceForPrediction
+    });
 
     async function fetchRaceData(params) {
     if (
@@ -3747,6 +4188,12 @@
     return;
   }
 
+  const requestGeneration =
+    ++predictionGeneration;
+  const isCurrentRequest = () =>
+    requestGeneration ===
+    predictionGeneration;
+
   try {
     clearErrorArea();
     updateStatus("オッズ取得中...");
@@ -3767,6 +4214,10 @@
 
     const missingData =
       await missingPromise;
+
+    if (!isCurrentRequest()) {
+      return false;
+    }
 
     if (
       !response.ok ||
@@ -4067,6 +4518,10 @@ prediction.missingNumbersData =
 attachCombinedOdds(prediction);
 
 
+        if (!isCurrentRequest()) {
+      return false;
+    }
+
         try {
       const predictionSnapshot = {
         raceKey:
@@ -4230,6 +4685,9 @@ attachCombinedOdds(prediction);
       typeof window.renderAll ===
       "function"
     ) {
+      if (!isCurrentRequest()) {
+        return false;
+      }
       window.renderAll(prediction);
     }
 
@@ -4237,7 +4695,11 @@ attachCombinedOdds(prediction);
       `オッズ更新完了（` +
       `${oddsData.count || 0}通り）`
     );
+    return true;
   } catch (error) {
+    if (!isCurrentRequest()) {
+      return false;
+    }
     console.error(error);
 
     updateStatus(
@@ -4248,6 +4710,7 @@ attachCombinedOdds(prediction);
       error?.message ||
       "オッズ更新に失敗しました"
     );
+    return false;
   }
 }
 

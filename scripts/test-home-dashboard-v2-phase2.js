@@ -1,7 +1,8 @@
 const fs = require('fs');
 const source = fs.readFileSync('js/home-dashboard-v2.js', 'utf8');
 const required = [
-  'waitForRaceOption',
+  'ChappyRaceSelection.select',
+  'ChappyStartupGate?.activateRace',
   'syncAndOpen',
   'fetchButton.click()',
   'state.selectedPlace',
