@@ -3,6 +3,9 @@ name: Check entry UI phase3
 on:
   pull_request:
     paths:
+      - "js/render.js"
+      - "js/prediction.js"
+      - "style.css"
       - "css/home-dashboard-v2.css"
       - "scripts/test-entry-ui-phase3.js"
       - ".github/workflows/check-entry-ui-phase3.yml"
@@ -17,4 +20,7 @@ jobs:
         with:
           node-version: 20
       - name: Verify entry UI phase3
-        run: node scripts/test-entry-ui-phase3.js
+        run: |
+          node --check js/render.js
+          node --check js/prediction.js
+          node scripts/test-entry-ui-phase3.js

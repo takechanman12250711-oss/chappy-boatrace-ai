@@ -405,7 +405,7 @@
           ])
         );
       const marks = {};
-      const targets =
+      const formalTargets =
         MARK_DEFINITIONS
           .map((definition) => {
             const rawMark =
@@ -459,6 +459,86 @@
             };
           })
           .filter(Boolean);
+      const targetedBoatNos =
+        new Set(
+          formalTargets.map(
+            (target) => target.boatNo
+          )
+        );
+      const preservedTargets = [];
+
+      (
+        Array.isArray(
+          base.preservedEvaluationTargets
+        )
+          ? base.preservedEvaluationTargets
+          : []
+      ).forEach((preserved, index) => {
+        const targetBoatNo =
+          boatNo(
+            preserved?.evaluation ||
+            preserved
+          );
+
+        if (
+          targetBoatNo < 1 ||
+          targetBoatNo > 6 ||
+          targetedBoatNos.has(targetBoatNo)
+        ) {
+          return;
+        }
+
+        const definition =
+          MARK_DEFINITIONS.find(
+            (item) =>
+              item.key ===
+              preserved?.markKey
+          ) ||
+          MARK_DEFINITIONS[3];
+        const evaluation =
+          evaluationByBoat.get(
+            targetBoatNo
+          ) ||
+          preserved?.evaluation ||
+          preserved;
+
+        targetedBoatNos.add(
+          targetBoatNo
+        );
+        preservedTargets.push({
+          id:
+            `evaluation:preserved:` +
+            `${definition.key}:` +
+            `${targetBoatNo}:` +
+            `${index}`,
+          markKey:
+            definition.key,
+          symbol:
+            preserved?.symbol ||
+            definition.symbol,
+          boatNo:
+            targetBoatNo,
+          roleIntents: [
+            ...definition.roleIntents
+          ],
+          defaultRoleIntents: [
+            ...definition.roleIntents
+          ],
+          eligiblePositions: [
+            ...definition
+              .eligiblePositions
+          ],
+          evaluation,
+          source:
+            "displaced-legacy-mark",
+          candidateTickets: [],
+          qualifiedCandidateTickets: []
+        });
+      });
+      const targets = [
+        ...formalTargets,
+        ...preservedTargets
+      ];
       const boatNumbers =
         unique(
           evaluations
@@ -503,12 +583,34 @@
         base.raceFlow || {};
       const phases =
         raceFlow.phases || {};
+      const alternateScenarioRoles =
+        raceFlow.alternateScenarioRoles || {};
+      const alternatePhases =
+        alternateScenarioRoles.phases || {};
       const attackByBoat =
         roleMap(raceFlow.attackBoats);
       const holdByBoat =
         roleMap(raceFlow.holdBoats);
       const pickupByBoat =
         roleMap(raceFlow.pickupBoats);
+      const alternateAttackByBoat =
+        roleMap(
+          alternateScenarioRoles.attackBoats
+        );
+      const alternateHoldByBoat =
+        roleMap(
+          alternateScenarioRoles.holdBoats
+        );
+      const alternatePickupByBoat =
+        roleMap(
+          alternateScenarioRoles.pickupBoats
+        );
+      const preservedTargetBoatNos =
+        new Set(
+          preservedTargets.map(
+            (target) => target.boatNo
+          )
+        );
       const primaryAttackerBoatNo =
         boatNo(
           phases.firstMark?.mainAttack
@@ -623,6 +725,47 @@
                   {
                     ...row,
                     qualificationSource
+                  }
+                );
+            }
+          );
+        }
+      );
+      [
+        [
+          "attack",
+          alternateAttackByBoat,
+          "raceFlow.alternateScenarioRoles.attackBoats"
+        ],
+        [
+          "hold",
+          alternateHoldByBoat,
+          "raceFlow.alternateScenarioRoles.holdBoats"
+        ],
+        [
+          "pickup",
+          alternatePickupByBoat,
+          "raceFlow.alternateScenarioRoles.pickupBoats"
+        ]
+      ].forEach(
+        ([role, sourceMap, qualificationSource]) => {
+          sourceMap.forEach(
+            (row, targetBoatNo) => {
+              if (
+                !preservedTargetBoatNos.has(
+                  targetBoatNo
+                )
+              ) {
+                return;
+              }
+
+              roleEvidenceByType[role]
+                .set(
+                  targetBoatNo,
+                  {
+                    ...row,
+                    qualificationSource,
+                    isAlternateScenario: true
                   }
                 );
             }
@@ -1386,11 +1529,23 @@
           return;
         }
 
+        const usesAlternateHold =
+          preservedTargetBoatNos.has(
+            target.boatNo
+          ) &&
+          alternateHoldByBoat.has(
+            target.boatNo
+          );
         const rawTargetHold =
           target.boatNo === insideBoatNo
             ? insideEvidence
-            : holdByBoat.get(
-                target.boatNo
+            : (
+                holdByBoat.get(
+                  target.boatNo
+                ) ||
+                alternateHoldByBoat.get(
+                  target.boatNo
+                )
               );
         const targetHold =
           rawTargetHold
@@ -1403,25 +1558,35 @@
                     target.boatNo ===
                     insideBoatNo
                       ? "courseByBoat+boatEvaluation"
-                      : "raceFlow.holdBoats"
+                      : usesAlternateHold
+                        ? "raceFlow.alternateScenarioRoles.holdBoats"
+                        : "raceFlow.holdBoats"
                   )
               }
             : null;
+        const targetPhases =
+          usesAlternateHold
+            ? alternatePhases
+            : phases;
         const firstMarkHold =
-          phases.firstMark?.mainHold ||
+          targetPhases.firstMark?.mainHold ||
           null;
         const backHold =
-          phases.back?.hold || null;
+          targetPhases.back?.hold || null;
         const secondMarkHold =
-          phases.secondMark?.mainHold ||
+          targetPhases.secondMark?.mainHold ||
           null;
+        const phaseSourcePrefix =
+          usesAlternateHold
+            ? "raceFlow.alternateScenarioRoles.phases"
+            : "raceFlow.phases";
         const phaseRows = [
           {
             key: "first-mark-hold",
             label:
               "1マークで対象艇が残す",
             source:
-              "raceFlow.phases.firstMark.mainHold",
+              `${phaseSourcePrefix}.firstMark.mainHold`,
             row: firstMarkHold
           },
           {
@@ -1429,7 +1594,7 @@
             label:
               "バックで対象艇が残す",
             source:
-              "raceFlow.phases.back.hold",
+              `${phaseSourcePrefix}.back.hold`,
             row: backHold
           },
           {
@@ -1437,7 +1602,7 @@
             label:
               "2マークで対象艇が残す",
             source:
-              "raceFlow.phases.secondMark.mainHold",
+              `${phaseSourcePrefix}.secondMark.mainHold`,
             row: secondMarkHold
           }
         ];
@@ -1701,7 +1866,9 @@
             source:
               "race-flow-phase-continuation",
             qualificationSource:
-              "raceFlow.phases+raceFlow.holdBoats",
+              usesAlternateHold
+                ? "raceFlow.alternateScenarioRoles.phases+holdBoats"
+                : "raceFlow.phases+raceFlow.holdBoats",
             purchaseEligible,
             evidenceChecks: checks,
             phaseEvidence: {
@@ -1709,26 +1876,28 @@
                 "hold-continuation",
               mainHeadBoatNo,
               primaryAttackerBoatNo,
-              target:
-                evidenceSnapshot(
-                  targetHold,
-                  "raceFlow.holdBoats"
-                ),
+                target:
+                  evidenceSnapshot(
+                    targetHold,
+                    usesAlternateHold
+                      ? "raceFlow.alternateScenarioRoles.holdBoats"
+                      : "raceFlow.holdBoats"
+                  ),
               chronology: {
                 firstMark:
                   evidenceSnapshot(
                     firstMarkHold,
-                    "raceFlow.phases.firstMark.mainHold"
+                    `${phaseSourcePrefix}.firstMark.mainHold`
                   ),
                 back:
                   evidenceSnapshot(
                     backHold,
-                    "raceFlow.phases.back.hold"
+                    `${phaseSourcePrefix}.back.hold`
                   ),
                 secondMark:
                   evidenceSnapshot(
                     secondMarkHold,
-                    "raceFlow.phases.secondMark.mainHold"
+                    `${phaseSourcePrefix}.secondMark.mainHold`
                   )
               },
               partner: {
@@ -1773,6 +1942,16 @@
           attackByBoat.has(
             target.boatNo
           );
+        const preservedAlternateAttack =
+          preservedTargetBoatNos.has(
+            target.boatNo
+          ) &&
+          alternateAttackByBoat.has(
+            target.boatNo
+          );
+        const structuredAttack =
+          formalAttack ||
+          preservedAlternateAttack;
         const secondPartners =
           canonicalHoldPartners
             .filter(
@@ -1824,8 +2003,10 @@
                     source:
                       formalAttack
                         ? "raceFlow.attackBoats"
-                        : attackEvidence
-                            .qualificationSource,
+                        : preservedAlternateAttack
+                          ? "raceFlow.alternateScenarioRoles.attackBoats"
+                          : attackEvidence
+                              .qualificationSource,
                     row:
                       attackEvidence,
                     role: "alternate-head"
@@ -1884,10 +2065,22 @@
                         phases.firstMark
                           ?.secondAttack
                       ) ===
+                        target.boatNo ||
+                      boatNo(
+                        alternatePhases.firstMark
+                          ?.mainAttack
+                      ) ===
+                        target.boatNo ||
+                      boatNo(
+                        alternatePhases.firstMark
+                          ?.secondAttack
+                      ) ===
                         target.boatNo,
                     required: false,
                     source:
-                      "raceFlow.phases.firstMark",
+                      preservedAlternateAttack
+                        ? "raceFlow.alternateScenarioRoles.phases.firstMark"
+                        : "raceFlow.phases.firstMark",
                     row:
                       (
                         boatNo(
@@ -1897,8 +2090,22 @@
                         target.boatNo
                           ? phases.firstMark
                               ?.mainAttack
-                          : phases.firstMark
-                              ?.secondAttack
+                          : boatNo(
+                              phases.firstMark
+                                ?.secondAttack
+                            ) ===
+                              target.boatNo
+                            ? phases.firstMark
+                                ?.secondAttack
+                            : boatNo(
+                                alternatePhases.firstMark
+                                  ?.mainAttack
+                              ) ===
+                                target.boatNo
+                              ? alternatePhases.firstMark
+                                  ?.mainAttack
+                              : alternatePhases.firstMark
+                                  ?.secondAttack
                       ),
                     role: "attack"
                   }),
@@ -1917,7 +2124,7 @@
                   })
                 ];
                 const purchaseEligible =
-                  formalAttack &&
+                  structuredAttack &&
                   target.defaultRoleIntents
                     .some(
                       role =>
@@ -1941,7 +2148,7 @@
                     `${target.id}:` +
                     `alternate-head:${ticket}`,
                   kind:
-                    formalAttack
+                    structuredAttack
                       ? "independent-scenario"
                       : "role-evidence-candidate",
                   type:
@@ -1964,21 +2171,25 @@
                     `${secondBoatNo}号艇が2着に残り、` +
                     `${thirdBoatNo}号艇が3着を拾う筋。`,
                   requirement:
-                    formalAttack,
+                    structuredAttack,
                   requirementId:
                     `audit:${target.id}:` +
                     `alternate-head:${ticket}`,
                   source:
                     formalAttack
                       ? "race-flow-attack-scenario"
-                      : "boat-evaluation-attack-candidate",
+                      : preservedAlternateAttack
+                        ? "preserved-alternate-attack-scenario"
+                        : "boat-evaluation-attack-candidate",
                   branchAttackerBoatNo:
                     target.boatNo,
                   qualificationSource:
                     formalAttack
                       ? "raceFlow.attackBoats"
-                      : attackEvidence
-                          .qualificationSource,
+                      : preservedAlternateAttack
+                        ? "raceFlow.alternateScenarioRoles.attackBoats"
+                        : attackEvidence
+                            .qualificationSource,
                   purchaseEligible,
                   evidenceChecks: checks,
                   phaseEvidence: {
@@ -1993,8 +2204,10 @@
                         attackEvidence,
                         formalAttack
                           ? "raceFlow.attackBoats"
-                          : attackEvidence
-                              .qualificationSource
+                          : preservedAlternateAttack
+                            ? "raceFlow.alternateScenarioRoles.attackBoats"
+                            : attackEvidence
+                                .qualificationSource
                       ),
                     partners: {
                       second:
@@ -2517,7 +2730,7 @@
               ],
               requirementIds:
                 unique(
-                  independentBranches.map(
+                  purchasableIndependentBranches.map(
                     (branch) =>
                       branch
                         .requirementId ||

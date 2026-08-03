@@ -338,6 +338,39 @@ assert.ok(
   "再取得では前回値とのオッズ変動を付加する"
 );
 
+const orderBeforePartialRefresh =
+  ticketOrder(prediction.ticketRanks);
+sandbox.enrichPredictionWithOdds(
+  prediction,
+  {
+    ok: true,
+    count: 1,
+    byTicket: {
+      "1-2-3": 6.2
+    }
+  },
+  {
+    ok: true,
+    missingNumbers: []
+  },
+  params
+);
+assert.deepEqual(
+  ticketOrder(prediction.ticketRanks),
+  orderBeforePartialRefresh,
+  "一部オッズだけの再取得でも買い目・順番を変えない"
+);
+assert.equal(
+  prediction.ticketSheets.cover[0].odds,
+  null,
+  "最新公式表から消えた押さえへ古いオッズを残さない"
+);
+assert.equal(
+  prediction.ticketSheets.cover[0].oddsText,
+  "オッズ未取得",
+  "公式値がない買い目は推測せず未取得と表示する"
+);
+
 console.log(
   "初回オッズ並列取得・生成済み予想付加 回帰テスト: 合格"
 );

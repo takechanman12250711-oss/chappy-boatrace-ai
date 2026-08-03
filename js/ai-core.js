@@ -16,7 +16,7 @@
   "use strict";
 
   const CORE_VERSION =
-    "ai-core-v4.8.2-evaluated-scenario-preservation";
+    "ai-core-v4.8.3-formal-main-scenario";
 
   /* ===============================
     基本ユーティリティ
@@ -11901,8 +11901,16 @@ const baseTicketByValue =
     ])
   );
 
+const officialOddsSource =
+  data?.odds?.byTicket;
+const hasOfficialOddsMap =
+  officialOddsSource !== null &&
+  typeof officialOddsSource === "object" &&
+  !Array.isArray(officialOddsSource);
 const oddsByTicket =
-  data?.odds?.byTicket || {};
+  hasOfficialOddsMap
+    ? officialOddsSource
+    : {};
 
 const structuredTicketEvidence =
   compatibleFormation.ticketEvidence || {};
@@ -11978,9 +11986,12 @@ function hydrateCompatibleTickets(
         );
       const baseRow =
         baseTicketByValue.get(ticket) || {};
-      const rawOdds =
-        baseRow.odds ??
+      const officialOdds =
         oddsByTicket[ticket];
+      const rawOdds =
+        hasOfficialOddsMap
+          ? officialOdds
+          : baseRow.odds;
       const numericOdds =
         Number(rawOdds);
       const hasOdds =
@@ -12624,8 +12635,9 @@ return {
   }
 
   /*
-    最終予想の正本は prediction.js が展開から作った艇評価・印とする。
-    AIコアは理論値を補足するが、旧評価を別の印・買い目へ上書きしない。
+    最終予想の本線は、オッズ取得前にAIコアが比較した正式主展開を
+    正本とする。prediction.js 側の旧印は評価候補として残すが、
+    正式主展開より優先して本線頭へ戻さない。
 
     評価済み展開は専用モジュールで全物理枝へ展開し、通常買い目と
     8〜10点候補の双方へ同じ枝ID・艇・着順・理由を渡す。
@@ -12645,14 +12657,503 @@ return {
       );
     }
 
-    const aiCore =
-      buildPredictionData(data);
-    const decision =
-      candidateApi.build(basePrediction);
-    const oldMainSheet =
+    const aiCore = buildPredictionData(data);
+    const analysisRaceScenarios = aiCore.raceScenarios || {};
+    const formalMainScenario =
+      analysisRaceScenarios.mainScenario || null;
+    const markBoatNo = (mark) => {
+      const primitive = Number(mark);
+
+      if (
+        Number.isInteger(primitive) &&
+        primitive >= 1 &&
+        primitive <= 6
+      ) {
+        return primitive;
+      }
+
+      return Number(
+        mark?.boatNo ??
+        mark?.number ??
+        mark?.waku ??
+        mark?.boat ??
+        0
+      );
+    };
+    const formalMainHeadBoatNo = markBoatNo(
+      formalMainScenario?.headBoatNo ??
+      formalMainScenario?.attackerBoatNo ??
+      formalMainScenario?.attacker ??
+      formalMainScenario?.outcome
+        ?.firstCandidates?.[0] ??
+      aiCore.marks?.honmei
+    );
+    const originalMainSheet =
       basePrediction.mainSheet &&
       !Array.isArray(basePrediction.mainSheet)
         ? basePrediction.mainSheet
+        : {};
+    const originalBoatEvaluation =
+      basePrediction.boatEvaluation &&
+      !Array.isArray(basePrediction.boatEvaluation)
+        ? basePrediction.boatEvaluation
+        : originalMainSheet;
+    const originalFormation =
+      basePrediction.formation ||
+      basePrediction.formations ||
+      {};
+    const evaluations =
+      Array.isArray(originalBoatEvaluation.evaluations)
+        ? originalBoatEvaluation.evaluations
+        : Array.isArray(originalMainSheet.evaluations)
+          ? originalMainSheet.evaluations
+          : [];
+    const evaluationByBoat = new Map(
+      evaluations.map((evaluation) => [
+        markBoatNo(evaluation),
+        evaluation
+      ])
+    );
+    const evaluationFor = (mark) => {
+      const boatNo = markBoatNo(mark);
+
+      if (boatNo < 1 || boatNo > 6) {
+        return null;
+      }
+
+      return (
+        evaluationByBoat.get(boatNo) ||
+        mark ||
+        null
+      );
+    };
+    const formalMarks = aiCore.marks || {};
+    const markKeys = [
+      "honmei",
+      "taikou",
+      "ana",
+      "osae"
+    ];
+    const alignedMarks = {};
+    const usedMarkBoatNos =
+      new Set();
+
+    markKeys
+      .forEach((key) => {
+        const candidates = [
+          key === "honmei"
+            ? { boatNo: formalMainHeadBoatNo }
+            : null,
+          formalMarks[key],
+          ...evaluations
+        ].filter(Boolean);
+        const selected =
+          candidates.find((candidate) => {
+            const boatNo =
+              markBoatNo(candidate);
+
+            return (
+              boatNo >= 1 &&
+              boatNo <= 6 &&
+              !usedMarkBoatNos.has(boatNo)
+            );
+          }) || null;
+        const boatNo =
+          markBoatNo(selected);
+
+        alignedMarks[key] =
+          evaluationFor(selected);
+        if (boatNo) {
+          usedMarkBoatNos.add(boatNo);
+        }
+      });
+    const formalMarkBoatNos =
+      new Set(
+        markKeys
+          .map((key) =>
+            markBoatNo(
+              alignedMarks[key]
+            )
+          )
+          .filter(Boolean)
+      );
+    const preservedTargetBoatNos =
+      new Set();
+    const preservedEvaluationTargets =
+      markKeys
+        .map((key) => {
+          const legacyMark =
+            originalBoatEvaluation[key] ||
+            originalMainSheet[key] ||
+            null;
+          const boatNo =
+            markBoatNo(legacyMark);
+
+          if (
+            boatNo < 1 ||
+            boatNo > 6 ||
+            formalMarkBoatNos.has(boatNo) ||
+            preservedTargetBoatNos.has(boatNo)
+          ) {
+            return null;
+          }
+
+          preservedTargetBoatNos.add(boatNo);
+          return {
+            boatNo,
+            markKey: key,
+            symbol:
+              key === "honmei"
+                ? "◎"
+                : key === "taikou"
+                  ? "○"
+                  : key === "ana"
+                    ? "▲"
+                    : "△",
+            evaluation:
+              evaluationFor(legacyMark),
+            source:
+              "displaced-legacy-mark"
+          };
+        })
+        .filter(Boolean);
+    const formalFormation = aiCore.formations || {};
+    const formalMainTickets = ticketStrings(
+      formalFormation.main
+    ).filter(
+      (ticket) =>
+        Number(ticket.split("-")[0]) ===
+        formalMainHeadBoatNo
+    );
+    const originalMainTickets = ticketStrings(
+      originalMainSheet.tickets,
+      originalFormation.main
+    );
+    const retainedOldHeadTickets =
+      originalMainTickets
+        .filter(
+          (ticket) =>
+            Number(ticket.split("-")[0]) !==
+            formalMainHeadBoatNo
+        )
+        .slice(0, 2);
+    const retainedOldHeadTicketSet =
+      new Set(retainedOldHeadTickets);
+    const alignedCoverTickets = ticketStrings(
+      formalFormation.safety,
+      formalFormation.cover
+    ).filter(
+      (ticket) =>
+        !formalMainTickets.includes(ticket) &&
+        !retainedOldHeadTicketSet.has(ticket)
+    );
+    const alignedFlowTickets = ticketStrings(
+      formalFormation.flow
+    );
+    const alignedHoleTickets = ticketStrings(
+      formalFormation.longshot,
+      retainedOldHeadTickets
+    ).filter(
+      (ticket) =>
+        !formalMainTickets.includes(ticket) &&
+        !alignedCoverTickets.includes(ticket)
+    );
+    const alignedFormation = {
+      ...originalFormation,
+      main: formalMainTickets,
+      cover: alignedCoverTickets,
+      safety: alignedCoverTickets,
+      nagashi: alignedFlowTickets,
+      flow: alignedFlowTickets,
+      hole: alignedHoleTickets,
+      longshot: alignedHoleTickets,
+      mainEstablished:
+        formalFormation.mainEstablished === true &&
+        formalMainHeadBoatNo >= 1 &&
+        formalMainTickets.length >= 3 &&
+        alignedCoverTickets.length >= 2
+    };
+    const originalRaceFlow =
+      basePrediction.raceFlow || {};
+    const formalOutcome =
+      formalMainScenario?.outcome || {};
+    const formalSecondCandidates =
+      Array.isArray(
+        formalOutcome.secondCandidates
+      )
+        ? formalOutcome.secondCandidates
+        : [];
+    const formalThirdCandidates =
+      Array.isArray(
+        formalOutcome.thirdCandidates
+      )
+        ? formalOutcome.thirdCandidates
+        : [];
+    const formalRoleRows = (
+      candidates,
+      role
+    ) => {
+      const seen = new Set();
+
+      return candidates
+        .map((candidate) => {
+          const boatNo =
+            markBoatNo(candidate);
+
+          if (
+            boatNo < 1 ||
+            boatNo > 6 ||
+            seen.has(boatNo)
+          ) {
+            return null;
+          }
+
+          seen.add(boatNo);
+          const evaluation =
+            evaluationFor(candidate) || {};
+
+          return {
+            ...evaluation,
+            ...(
+              candidate &&
+              typeof candidate === "object"
+                ? candidate
+                : {}
+            ),
+            boatNo,
+            course: Number(
+              candidate?.course ??
+              evaluation?.course ??
+              boatNo
+            ),
+            score: toNumber(
+              candidate?.score ??
+              evaluation?.[role] ??
+              evaluation?.score,
+              1
+            ),
+            reason:
+              String(
+                candidate?.reason ||
+                evaluation?.comment ||
+                `${boatNo}号艇を正式${role === "hold" ? "残し" : "拾い"}候補として採用`
+              ),
+            qualified: true,
+            isAdopted: true,
+            status:
+              candidate?.status ||
+              "正式採用",
+            scenarioRole: role
+          };
+        })
+        .filter(Boolean);
+    };
+    const formalHoldBoats =
+      formalRoleRows(
+        formalSecondCandidates,
+        "hold"
+      );
+    const formalPickupBoats =
+      formalRoleRows(
+        formalThirdCandidates,
+        "pickup"
+      );
+    const formalScenarioLabel =
+      String(
+        formalMainScenario?.label ||
+        `${formalMainHeadBoatNo}号艇1着`
+      );
+    const secondBoatText =
+      formalHoldBoats
+        .map((row) => row.boatNo)
+        .join("・");
+    const thirdBoatText =
+      formalPickupBoats
+        .map((row) => row.boatNo)
+        .join("・");
+    const formalScenarioSummary =
+      `最有力展開は${formalScenarioLabel}。` +
+      `${formalMainHeadBoatNo}号艇を1着軸に、` +
+      (
+        secondBoatText
+          ? `2着残しは${secondBoatText}号艇、`
+          : ""
+      ) +
+      (
+        thirdBoatText
+          ? `3着拾いは${thirdBoatText}号艇を評価する。`
+          : "着順候補は展開成立後に評価する。"
+      );
+    const formalAttack =
+      formalMainHeadBoatNo >= 1
+        ? {
+            ...(alignedMarks.honmei || {}),
+            boatNo: formalMainHeadBoatNo,
+            course: Number(
+              alignedMarks.honmei?.course ||
+              formalMainHeadBoatNo
+            ),
+            score: toNumber(
+              formalMainScenario?.score,
+              1
+            ),
+            reason:
+              `${formalMainScenario?.label ||
+                `${formalMainHeadBoatNo}号艇1着`}を正式主展開として採用`,
+            qualified: true,
+            isAdopted: true,
+            status: "正式採用"
+          }
+        : null;
+    const alternateRoleRow = (
+      row,
+      role
+    ) => ({
+      ...row,
+      boatNo: markBoatNo(row),
+      qualified: true,
+      isAdopted: true,
+      isFormal: false,
+      isAlternateScenario: true,
+      status: "対抗展開として採用",
+      adoptionScope:
+        "alternate-scenario-only",
+      scenarioRole: role,
+      qualificationSource:
+        `alternateScenarioRoles.${role}Boats`
+    });
+    const alternateAttackBoats =
+      (originalRaceFlow.attackBoats || [])
+        .filter(
+          (row) =>
+            preservedTargetBoatNos.has(
+              markBoatNo(row)
+            )
+        )
+        .map((row) =>
+          alternateRoleRow(row, "attack")
+        );
+    const alternateHoldBoats =
+      (originalRaceFlow.holdBoats || [])
+        .filter(
+          (row) =>
+            preservedTargetBoatNos.has(
+              markBoatNo(row)
+            )
+        )
+        .map((row) =>
+          alternateRoleRow(row, "hold")
+        );
+    const alternatePickupBoats =
+      (originalRaceFlow.pickupBoats || [])
+        .filter(
+          (row) =>
+            preservedTargetBoatNos.has(
+              markBoatNo(row)
+            )
+        )
+        .map((row) =>
+          alternateRoleRow(row, "pickup")
+        );
+    const formalGoalOrder = [
+      formalAttack,
+      formalHoldBoats[0],
+      formalPickupBoats[0]
+    ].filter(Boolean);
+    const alignedRaceFlow = {
+      ...originalRaceFlow,
+      title:
+        formalScenarioLabel,
+      summary:
+        formalScenarioSummary,
+      comment:
+        formalScenarioSummary,
+      attackBoats: formalAttack
+        ? [formalAttack]
+        : [],
+      holdBoats:
+        formalHoldBoats,
+      pickupBoats:
+        formalPickupBoats,
+      alternateScenarioRoles: {
+        source:
+          "displaced-legacy-evaluation",
+        attackBoats:
+          alternateAttackBoats,
+        holdBoats:
+          alternateHoldBoats,
+        pickupBoats:
+          alternatePickupBoats,
+        phases:
+          originalRaceFlow.phases || {}
+      },
+      phases: {
+        ...(originalRaceFlow.phases || {}),
+        firstMark: {
+          ...(originalRaceFlow.phases?.firstMark || {}),
+          mainAttack: formalAttack,
+          secondAttack: null,
+          mainHold:
+            formalHoldBoats[0] || null,
+          comment:
+            formalScenarioSummary
+        },
+        back: {
+          ...(originalRaceFlow.phases?.back || {}),
+          leader: formalAttack,
+          hold:
+            formalHoldBoats[0] || null,
+          pickup:
+            formalPickupBoats[0] || null,
+          comment:
+            formalScenarioSummary
+        },
+        secondMark: {
+          ...(originalRaceFlow.phases?.secondMark || {}),
+          mainPickup:
+            formalPickupBoats[0] || null,
+          secondPickup:
+            formalPickupBoats[1] || null,
+          mainHold:
+            formalHoldBoats[0] || null
+        },
+        goal: {
+          ...(originalRaceFlow.phases?.goal || {}),
+          expectedOrder:
+            formalGoalOrder,
+          comment:
+            formalScenarioSummary
+        }
+      }
+    };
+    const alignedPrediction = {
+      ...basePrediction,
+      raceFlow: alignedRaceFlow,
+      preservedEvaluationTargets,
+      boatEvaluation: {
+        ...originalBoatEvaluation,
+        ...alignedMarks,
+        evaluations
+      },
+      mainSheet: {
+        ...originalMainSheet,
+        ...alignedMarks,
+        evaluations,
+        tickets: formalMainTickets,
+        coverTickets: alignedCoverTickets,
+        flowTickets: alignedFlowTickets
+      },
+      formation: alignedFormation,
+      formations: alignedFormation
+    };
+    const decision =
+      candidateApi.build(alignedPrediction);
+    const oldMainSheet =
+      alignedPrediction.mainSheet &&
+      !Array.isArray(
+        alignedPrediction.mainSheet
+      )
+        ? alignedPrediction.mainSheet
         : {};
     const oldManshuSheet =
       basePrediction.manshuSheet &&
@@ -12660,9 +13161,17 @@ return {
         ? basePrediction.manshuSheet
         : {};
     const baseFormation =
-      basePrediction.formation || {};
+      alignedPrediction.formation || {};
+    const officialOddsSource =
+      data?.odds?.byTicket;
+    const hasOfficialOddsMap =
+      officialOddsSource !== null &&
+      typeof officialOddsSource === "object" &&
+      !Array.isArray(officialOddsSource);
     const oddsByTicket =
-      data?.odds?.byTicket || {};
+      hasOfficialOddsMap
+        ? officialOddsSource
+        : {};
     const baseTicketByValue =
       new Map(
         (
@@ -12818,9 +13327,12 @@ return {
         isPossibility
           ? candidate
           : groupPresentation;
-      const rawOdds =
-        baseRow.odds ??
+      const officialOdds =
         oddsByTicket[ticket];
+      const rawOdds =
+        hasOfficialOddsMap
+          ? officialOdds
+          : baseRow.odds;
       const numericOdds =
         Number(rawOdds);
       const hasOdds =
@@ -13042,7 +13554,8 @@ return {
         baseFormation.longshot
       ).filter(
         (ticket) =>
-          !mainTickets.includes(ticket)
+          !mainTickets.includes(ticket) &&
+          !coverTickets.includes(ticket)
       );
     const ticketSheets = {
       main:
@@ -13156,7 +13669,7 @@ return {
     const holdByBoat =
       new Map(
         (
-          basePrediction.raceFlow
+          alignedPrediction.raceFlow
             ?.holdBoats || []
         ).map((row) => [
           Number(row?.boatNo || 0),
@@ -13166,7 +13679,7 @@ return {
     const pickupByBoat =
       new Map(
         (
-          basePrediction.raceFlow
+          alignedPrediction.raceFlow
             ?.pickupBoats || []
         ).map((row) => [
           Number(row?.boatNo || 0),
@@ -13179,7 +13692,7 @@ return {
       isFormal: true,
       isProvisional: false,
       attackerBoatNo:
-        decision.primaryAttackerBoatNo,
+        formalMainHeadBoatNo,
       roles:
         decision.evaluations.map(
           (evaluation) => {
@@ -13252,7 +13765,7 @@ return {
       }
     };
     const canonicalBoatEvaluation = {
-      ...(basePrediction.boatEvaluation || {}),
+      ...(alignedPrediction.boatEvaluation || {}),
       ...decision.marks,
       evaluations:
         decision.evaluations
@@ -13272,7 +13785,10 @@ return {
     const rawFormationEvidence =
       aiCore.formations?.evidence || {};
     const mainEstablished =
-      decision.mainHeadBoatNo >= 1 &&
+      alignedFormation
+        .mainEstablished === true &&
+      decision.mainHeadBoatNo ===
+        formalMainHeadBoatNo &&
       mainTickets.length >= 3 &&
       coverTickets.length >= 2;
     const formationEvidence = {
@@ -13310,44 +13826,50 @@ return {
         formationEvidence
     };
     const canonicalMainScenario = {
+      ...(formalMainScenario || {}),
       type:
-        "canonical-evaluated-scenario",
+        formalMainScenario?.type ||
+        "formal-race-scenario",
       label:
+        formalMainScenario?.label ||
         decision.scenarioTitle,
       score:
         toNumber(
-          decision.marks.honmei?.score ??
-          decision.marks.honmei?.total,
+          formalMainScenario?.score,
           0
         ),
       attacker:
-        decision.primaryAttackerBoatNo,
+        formalMainHeadBoatNo,
       attackerBoatNo:
-        decision.primaryAttackerBoatNo,
+        formalMainHeadBoatNo,
       headBoatNo:
-        decision.mainHeadBoatNo,
+        formalMainHeadBoatNo,
+      summary:
+        formalScenarioSummary,
+      reason:
+        formalScenarioSummary,
       qualified:
         mainEstablished,
       branches:
         decision.branches,
-      outcome: {
-        boats:
-          decision.evaluations,
-        firstCandidates: [
-          decision.marks.honmei
-        ].filter(Boolean),
-        secondCandidates: [
-          decision.marks.taikou,
-          decision.marks.osae
-        ].filter(Boolean),
-        thirdCandidates: [
-          decision.marks.ana,
-          decision.marks.osae
-        ].filter(Boolean)
-      }
+      outcome:
+        formalMainScenario?.outcome ||
+        {
+          boats:
+            decision.evaluations,
+          firstCandidates: [
+            decision.marks.honmei
+          ].filter(Boolean),
+          secondCandidates: [
+            decision.marks.taikou,
+            decision.marks.osae
+          ].filter(Boolean),
+          thirdCandidates: [
+            decision.marks.ana,
+            decision.marks.osae
+          ].filter(Boolean)
+        }
     };
-    const analysisRaceScenarios =
-      aiCore.raceScenarios || {};
     const analysisScenarioList =
       Array.isArray(
         analysisRaceScenarios
@@ -13356,19 +13878,53 @@ return {
         ? analysisRaceScenarios
             .scenarios
         : [];
+    const formalScenarioKey = [
+      formalMainScenario?.type,
+      formalMainScenario?.label,
+      formalMainHeadBoatNo
+    ].join(":");
+    const supportingScenarioList =
+      analysisScenarioList.filter(
+        (scenario) => {
+          const scenarioKey = [
+            scenario?.type,
+            scenario?.label,
+            markBoatNo(
+              scenario?.headBoatNo ??
+              scenario?.attackerBoatNo ??
+              scenario?.attacker
+            )
+          ].join(":");
+
+          return scenarioKey !==
+            formalScenarioKey;
+        }
+      );
     const canonicalRaceScenarios = {
       mainScenario:
         canonicalMainScenario,
       scenarios: [
         canonicalMainScenario,
-        ...analysisScenarioList
+        ...supportingScenarioList
       ],
       subScenario:
         analysisRaceScenarios
-          .mainScenario || null,
+          .subScenario ||
+        supportingScenarioList
+          .find(
+            (scenario) =>
+              scenario !==
+              formalMainScenario
+          ) ||
+        null,
       attacker:
-        decision.primaryAttackerBoatNo,
-      blockedBoats: [],
+        formalMainHeadBoatNo,
+      blockedBoats: [
+        ...(
+          analysisRaceScenarios
+            .blockedBoats || []
+        )
+      ],
       analysisBlockedBoats: [
         ...(
           analysisRaceScenarios
@@ -13382,8 +13938,12 @@ return {
             "independent-scenario"
         ),
       evidence: {
+        ...(
+          analysisRaceScenarios
+            .evidence || {}
+        ),
         source:
-          "canonical-evaluated-scenario",
+          "formal-race-scenario",
         branches:
           decision.branches,
         candidateCount:
@@ -13398,6 +13958,8 @@ return {
         analysisRaceScenarios,
       analysisRanking:
         aiCore.ranking,
+      analysisMarks:
+        aiCore.marks,
       raceScenarios:
         canonicalRaceScenarios,
       ranking:
@@ -13415,14 +13977,21 @@ return {
         marks:
           canonicalMarks,
         comment:
-          basePrediction.finalAi?.summary ||
-          basePrediction.finalComment ||
-          decision.scenarioSummary
+          formalScenarioSummary
       }
     };
 
     return {
       ...basePrediction,
+      finalComment:
+        formalScenarioSummary,
+      finalAi: {
+        ...(basePrediction.finalAi || {}),
+        summary:
+          formalScenarioSummary,
+        final:
+          formalScenarioSummary
+      },
       aiCore:
         canonicalAiCore,
       ai: {
@@ -13431,7 +14000,8 @@ return {
           canonicalMarks
       },
       raceFlow:
-        basePrediction.raceFlow,
+        alignedPrediction.raceFlow,
+      preservedEvaluationTargets,
       boatEvaluation:
         canonicalBoatEvaluation,
       mainSheet:

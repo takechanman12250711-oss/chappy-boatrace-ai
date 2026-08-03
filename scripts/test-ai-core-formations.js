@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 
 global.window = global;
+require("../js/evaluated-scenario-candidates");
 require("../js/ai-core");
 const aiCore = global.ChappyAICore;
 
@@ -118,6 +119,337 @@ assertScenarioHead([
   boat(5, 68, 73, 70, 60, 76),
   boat(6, 63, 67, 64, 56, 73)
 ], 4, "fourAttack");
+
+function entry(
+  boatNo,
+  overrides = {}
+) {
+  const avgSt =
+    overrides.avgSt ?? 0.18;
+
+  return {
+    boat: boatNo,
+    racerName: `${boatNo}号艇`,
+    className: overrides.className || "A2",
+    avgSt,
+    nationalWinRate:
+      overrides.nationalWinRate ?? 5,
+    localWinRate:
+      overrides.localWinRate ?? 5,
+    motor2Rate:
+      overrides.motor2Rate ?? 33,
+    exhibition: {
+      displayTime:
+        overrides.displayTime ?? 6.95
+    },
+    currentRace: {
+      stList: [avgSt]
+    }
+  };
+}
+
+function raceData(type, odds = {}) {
+  const isThreeAttack =
+    type === "threeAttack";
+  const entries = Array.from(
+    { length: 6 },
+    (_, index) =>
+      entry(index + 1)
+  );
+
+  if (isThreeAttack) {
+    entries[2] = entry(3, {
+      avgSt: 0.10,
+      nationalWinRate: 7.5,
+      localWinRate: 7,
+      motor2Rate: 48,
+      displayTime: 6.68,
+      className: "A1"
+    });
+  } else {
+    entries[0] = entry(1, {
+      avgSt: 0.12,
+      nationalWinRate: 7.5,
+      localWinRate: 7,
+      motor2Rate: 45,
+      displayTime: 6.72,
+      className: "A1"
+    });
+  }
+
+  return {
+    stadiumCode: "23",
+    raceNo:
+      isThreeAttack ? 8 : 10,
+    date: "20260803",
+    entries,
+    startExhibition:
+      (
+        isThreeAttack
+          ? [0.13, 0.15, 0.03, 0.14, 0.18, 0.24]
+          : [0.05, 0.12, 0.15, 0.10, 0.18, 0.24]
+      ).map((st, index) => ({
+        boat: index + 1,
+        course: index + 1,
+        st,
+        isOfficialCourse: true
+      })),
+    weather: {
+      windSpeed: 2,
+      waveHeight: 2,
+      windDirection: "向かい風"
+    },
+    odds: { byTicket: odds }
+  };
+}
+
+function legacyPrediction(
+  oldHead,
+  staleTicket = ""
+) {
+  const evaluations = Array.from(
+    { length: 6 },
+    (_, index) => ({
+      boatNo: index + 1,
+      course: index + 1,
+      score: 79 - index,
+      total: 79 - index,
+      attack:
+        index + 1 === oldHead
+          ? 90
+          : 60,
+      tenkai:
+        index + 1 === oldHead
+          ? 88
+          : 65,
+      michu: 65,
+      expected: 65,
+      hold: 70,
+      pickup: 70,
+      comment: `${index + 1}号艇評価`
+    })
+  );
+  const mark = (boatNo) =>
+    evaluations[boatNo - 1];
+  const main =
+    oldHead === 4
+      ? ["4-2-3", "4-2-1", "4-3-2"]
+      : ["1-2-3", "1-2-4", "1-3-2"];
+  const cover =
+    oldHead === 4
+      ? ["2-1-3", "2-1-4"]
+      : ["2-1-3", "2-1-4"];
+
+  return {
+    raceFlow: {
+      title:
+        `${oldHead}号艇攻め警戒`,
+      summary: "旧印の警戒展開",
+      attackBoats: [{
+        boatNo: oldHead,
+        course: oldHead,
+        score: 90,
+        reason: "旧印の攻め評価"
+      }],
+      phases: {
+        firstMark: {
+          mainAttack: {
+            boatNo: oldHead,
+            score: 90,
+            reason: "旧印の攻め評価"
+          }
+        }
+      }
+    },
+    boatEvaluation: {
+      honmei: mark(oldHead),
+      taikou: mark(2),
+      ana: mark(3),
+      osae: mark(1),
+      evaluations
+    },
+    mainSheet: {
+      honmei: mark(oldHead),
+      taikou: mark(2),
+      ana: mark(3),
+      osae: mark(1),
+      evaluations,
+      tickets: main,
+      coverTickets: cover,
+      flowTickets: []
+    },
+    formation: {
+      main,
+      cover,
+      nagashi: [],
+      hole: []
+    },
+    aiTicketList:
+      staleTicket
+        ? [{
+            ticket: staleTicket,
+            odds: 9.9
+          }]
+        : []
+  };
+}
+
+const escapeData =
+  raceData("escape");
+const escapeFormal =
+  aiCore.buildPredictionData(
+    escapeData
+  );
+const escapeTicket =
+  escapeFormal.formations.main[0];
+escapeData.odds.byTicket[
+  escapeTicket
+] = 7;
+escapeData.odds.byTicket[
+  "4-2-3"
+] = 226.6;
+const escapeMerged =
+  aiCore.mergeWithPrediction(
+    legacyPrediction(4),
+    escapeData
+  );
+
+assert.equal(
+  escapeFormal.raceScenarios
+    .mainScenario.attacker,
+  1,
+  "唐津10R型では正式主展開を1逃げと判定する"
+);
+assert.equal(
+  escapeMerged.mainSheet.honmei.boatNo,
+  1,
+  "旧4号艇警戒より正式1逃げを最終本命にする"
+);
+assert.equal(
+  escapeMerged.aiCore.raceScenarios
+    .mainScenario.headBoatNo,
+  1,
+  "表示用主展開の頭も正式1逃げと一致させる"
+);
+assert.ok(
+  escapeMerged.formation.main.every(
+    ticket => ticket.startsWith("1-")
+  ),
+  "本線全点の1着を正式主展開頭へそろえる"
+);
+assert.equal(
+  escapeMerged.formation.mainEstablished,
+  true,
+  "正式本線3点・押さえ2点がある時だけ成立する"
+);
+assert.ok(
+  escapeMerged.formation.hole.includes(
+    "4-2-3"
+  ),
+  "正式主展開でない旧本命候補は穴側に保持する"
+);
+assert.equal(
+  escapeMerged.formation.cover.includes(
+    "4-2-3"
+  ),
+  false,
+  "旧本命候補を押さえへ混ぜて役割を逆転させない"
+);
+
+const attackData =
+  raceData("threeAttack");
+const attackFormal =
+  aiCore.buildPredictionData(
+    attackData
+  );
+const attackTicket =
+  attackFormal.formations.main[0];
+const attackCoverTicket =
+  attackFormal.formations.safety[0];
+attackData.odds.byTicket[
+  attackTicket
+] = 420;
+attackData.odds.byTicket[
+  attackCoverTicket
+] = 3.1;
+const attackMerged =
+  aiCore.mergeWithPrediction(
+    legacyPrediction(
+      1,
+      attackTicket
+    ),
+    attackData
+  );
+
+assert.equal(
+  attackMerged.mainSheet.honmei.boatNo,
+  3,
+  "高オッズでも正式rank1の3攻めを本線に維持する"
+);
+assert.ok(
+  attackMerged.formation.main.every(
+    ticket => ticket.startsWith("3-")
+  ),
+  "オッズで正式3攻めの券・分類を動かさない"
+);
+assert.equal(
+  attackMerged.mainSheet.tickets.find(
+    row => row.ticket === attackTicket
+  ).odds,
+  420,
+  "stale行オッズより現在の公式オッズを優先する"
+);
+assert.equal(
+  attackMerged.mainSheet.coverTickets.find(
+    row => row.ticket === attackCoverTicket
+  ).odds,
+  3.1,
+  "押さえが低オッズでも公式値をそのまま表示する"
+);
+assert.ok(
+  attackMerged.formation.main.includes(
+    attackTicket
+  ) &&
+    attackMerged.formation.cover.includes(
+      attackCoverTicket
+    ),
+  "本線420倍・押さえ3.1倍でも展開分類をオッズで逆転させない"
+);
+
+const missingOfficialTicket =
+  attackFormal.formations.main[1];
+const missingOfficialMerged =
+  aiCore.mergeWithPrediction(
+    legacyPrediction(
+      1,
+      missingOfficialTicket
+    ),
+    raceData(
+      "threeAttack",
+      { [attackTicket]: 420 }
+    )
+  );
+assert.equal(
+  missingOfficialMerged.mainSheet.tickets.find(
+    row => row.ticket === missingOfficialTicket
+  ).odds,
+  null,
+  "最新の公式表にない買い目へ古いオッズを残さない"
+);
+
+const changedOddsMerged =
+  aiCore.mergeWithPrediction(
+    legacyPrediction(1),
+    raceData(
+      "threeAttack",
+      { [attackTicket]: 3.1 }
+    )
+  );
+assert.deepEqual(
+  changedOddsMerged.formation.main,
+  attackMerged.formation.main,
+  "オッズが変わっても本線の券・順番は変えない"
+);
 
 console.log("AIコア買い目接続テスト: 合格");
 console.log("- 本線不成立: 本線買い目0点");

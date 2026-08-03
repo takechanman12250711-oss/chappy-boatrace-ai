@@ -22,6 +22,20 @@ const parsed = parseOfficialRaceHtml(
   beforeHtml
 );
 
+const entryWithSpacedName =
+  parseOfficialRaceHtml([
+    "枠 ボートレーサー 全国 当地 モーター ボート",
+    "1 4287 / A1 今井 貴士 福岡/福岡 41歳/55.0kg",
+    "F0 L0 0.15 6.57 45.0 63.0 6.81 47.0 65.0",
+    "12 35.0 55.0 24 38.0 58.0",
+    "モーター・ボート変更時"
+  ].join(" "));
+assert.equal(
+  entryWithSpacedName.entries[0].racerName,
+  "今井 貴士",
+  "出走表カード用の姓・名の区切りを消さない"
+);
+
 assert.equal(
   parsed.beforeInfo.length,
   6

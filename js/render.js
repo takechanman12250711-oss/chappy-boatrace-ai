@@ -612,6 +612,67 @@ if (raceInfoArea) {
     ) || null;
   }
 
+  function firstEntryValue(...values) {
+    return values.find(
+      value =>
+        value !== null &&
+        value !== undefined &&
+        value !== ""
+    );
+  }
+
+  function formatEntryNumber(value, digits = 2) {
+    const source = firstEntryValue(value);
+    if (source === undefined) return "-";
+    const numeric = Number(source);
+    return Number.isFinite(numeric)
+      ? numeric.toFixed(digits)
+      : safeText(source, "-");
+  }
+
+  function formatEntryPercent(value) {
+    const source = firstEntryValue(value);
+    if (source === undefined) return "-";
+
+    const numeric = Number(
+      String(source)
+        .replace(/[％%]/g, "")
+        .trim()
+    );
+
+    return Number.isFinite(numeric)
+      ? `${numeric.toFixed(2)}%`
+      : "-";
+  }
+
+  function entryPenaltyCount(entry, key) {
+    const source = entry && typeof entry === "object" ? entry : {};
+    const raw = source.raw && typeof source.raw === "object" ? source.raw : {};
+    const direct = key === "F"
+      ? firstEntryValue(
+          source.fCount,
+          source.falseStartCount,
+          raw.fCount,
+          raw.falseStartCount
+        )
+      : firstEntryValue(
+          source.lCount,
+          source.lateStartCount,
+          raw.lCount,
+          raw.lateStartCount
+        );
+
+    if (direct !== undefined && Number.isFinite(Number(direct))) {
+      return `${key}${Number(direct)}`;
+    }
+
+    const flText = String(
+      firstEntryValue(source.fl, source.flyingLate, raw.fl) || ""
+    );
+    const match = flText.match(new RegExp(`${key}\\s*(\\d+)`, "i"));
+    return match ? `${key}${Number(match[1])}` : `${key}-`;
+  }
+
   function renderEntryTable(prediction) {
   const race = prediction.race || {};
   const entries =
@@ -630,67 +691,116 @@ if (raceInfoArea) {
     );
   }
 
-  const rows = entries.map((e, index) => {
+  const cards = entries.map((e, index) => {
     const no = entryLaneNumber(e, index);
-    const name = e.name || e.racerName || e.player || "-";
-    const grade = e.className || e.grade || e.class || e.rank || "";
-    const st =
-  e.st ||
-  e.avgST ||
-  e.avgSt ||
-  e.averageST ||
-  e.averageSt ||
-  "-";
-
-    const motorObj = e.motor || e.motorInfo || {};
-    const motor =
-      e.motorNo ||
-      e.motorNumber ||
-      motorObj.no ||
-      motorObj.number ||
-      "-";
-
-    const local =
-  e.localWinRate ??
-  e.localRate ??
-  e.venueRate ??
-  e.courseRate ??
-  e.local?.winRate ??
-  e.local?.rate ??
-  (
-    typeof e.local !== "object"
-      ? e.local
-      : null
-  ) ??
-  "-";
+    const raw = e.raw && typeof e.raw === "object" ? e.raw : {};
+    const name = firstEntryValue(
+      e.name,
+      e.racerName,
+      e.player,
+      raw.name,
+      raw.racerName
+    ) || "-";
+    const registerNo = firstEntryValue(
+      e.registerNo,
+      e.registrationNo,
+      e.racerNo,
+      raw.registerNo
+    ) || "-";
+    const grade = firstEntryValue(
+      e.className,
+      e.grade,
+      e.class,
+      e.rank,
+      raw.className,
+      raw.grade
+    ) || "-";
+    const branch = firstEntryValue(
+      e.branch,
+      e.prefecture,
+      raw.branch
+    ) || "-";
+    const birthplace = firstEntryValue(
+      e.birthplace,
+      e.birthPlace,
+      e.hometown,
+      raw.birthplace,
+      raw.birthPlace
+    ) || "-";
+    const age = firstEntryValue(e.age, raw.age);
+    const weight = firstEntryValue(
+      e.weight,
+      e.exhibition?.weight,
+      raw.weight,
+      raw.exhibition?.weight
+    );
+    const st = firstEntryValue(
+      e.avgST,
+      e.avgSt,
+      e.averageST,
+      e.averageSt,
+      e.st,
+      raw.avgST,
+      raw.avgSt
+    );
+    const national = firstEntryValue(
+      e.nationalWinRate,
+      e.nationalRate,
+      e.national?.winRate,
+      e.national?.rate,
+      raw.nationalWinRate
+    );
+    const local = firstEntryValue(
+      e.localWinRate,
+      e.localRate,
+      e.venueRate,
+      e.courseRate,
+      e.local?.winRate,
+      e.local?.rate,
+      typeof e.local !== "object" ? e.local : undefined,
+      raw.localWinRate
+    );
+    const motorSecondRate = firstEntryValue(
+      e.motor2Rate,
+      e.motorSecondRate,
+      e.motor?.secondRate,
+      e.motor?.quinellaRate,
+      e.motorInfo?.secondRate,
+      raw.motor2Rate
+    );
+    const ageWeight = [
+      age === undefined ? "-歳" : `${safeText(age)}歳`,
+      weight === undefined ? "-kg" : `${formatEntryNumber(weight, 1)}kg`
+    ].join("/");
+    const cardLabel =
+      `${no}号艇 ${safeText(name)}`;
 
     return `
-      <div class="v3-entry-row">
-        <div class="v3-entry-boat">${boatBadge(no, "small")}</div>
+      <article class="v3-entry-card" data-boat="${escapeHtml(no)}" role="listitem" aria-label="${escapeHtml(cardLabel)}">
+        <div class="v3-entry-card-boat" aria-hidden="true">${boatBadge(no, "small")}</div>
 
-        <div class="v3-entry-player">
-          <strong style="color:${boatColor(no).border};">${escapeHtml(name)}</strong>
-          ${grade ? `<span>${escapeHtml(grade)}</span>` : ""}
+        <div class="v3-entry-card-player">
+          <h3>${escapeHtml(name)}</h3>
+          <span class="v3-entry-card-meta">
+            ${escapeHtml(registerNo)}<i aria-hidden="true">|</i>${escapeHtml(grade)}<i aria-hidden="true">|</i>${escapeHtml(branch)}/${escapeHtml(birthplace)}<i aria-hidden="true">|</i>${escapeHtml(ageWeight)}
+          </span>
+          <span class="v3-entry-card-start">
+            平均ST ${escapeHtml(formatEntryNumber(st, 2))}<i aria-hidden="true">|</i>${escapeHtml(entryPenaltyCount(e, "F"))}<i aria-hidden="true">|</i>${escapeHtml(entryPenaltyCount(e, "L"))}
+          </span>
         </div>
 
-        <div class="v3-entry-num">${escapeHtml(st)}</div>
-        <div class="v3-entry-num">${escapeHtml(motor)}</div>
-        <div class="v3-entry-num">${escapeHtml(local)}</div>
-      </div>
+        <div class="v3-entry-card-stats">
+          <span>全国 <strong>${escapeHtml(formatEntryNumber(national, 2))}</strong></span>
+          <span>当地 <strong>${escapeHtml(formatEntryNumber(local, 2))}</strong></span>
+          <span aria-label="モーター2連率 ${escapeHtml(formatEntryPercent(motorSecondRate))}">M <strong aria-hidden="true">${escapeHtml(formatEntryPercent(motorSecondRate))}</strong></span>
+        </div>
+      </article>
     `;
   }).join("");
 
   const body = `
-    <div class="v3-entry-grid-table">
-      <div class="v3-entry-row v3-entry-head">
-        <div>艇番</div>
-        <div>選手名</div>
-        <div>平均ST</div>
-        <div>モーター</div>
-        <div>当地勝率</div>
-      </div>
-
-      ${rows}
+    <div class="v3-entry-card-list" role="list" aria-label="出走表 6艇">
+      ${cards}
     </div>
   `;
 

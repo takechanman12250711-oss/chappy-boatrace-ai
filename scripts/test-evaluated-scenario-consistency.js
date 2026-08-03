@@ -59,6 +59,22 @@ function boatNo(mark) {
   );
 }
 
+function scenarioKey(scenario) {
+  const rawHead =
+    scenario?.headBoatNo ??
+    scenario?.attackerBoatNo ??
+    scenario?.attacker ??
+    0;
+  const head =
+    Number(rawHead) ||
+    boatNo(rawHead);
+
+  return [
+    String(scenario?.label || ""),
+    head
+  ].join(":");
+}
+
 function createRaceData(record) {
   const snapshot =
     record?.prediction?.preRaceConditions;
@@ -331,7 +347,7 @@ DATES.forEach((date) => {
     );
     assert.ok(
       auditBytes <= 35000,
-      `${raceKey}: 保存用の透明性監査データを35KB以内にする`
+      `${raceKey}: 保存用の透明性監査データを35KB以内にする（${auditBytes} bytes）`
     );
     const evidence =
       prediction?.aiCore?.formations
@@ -343,6 +359,34 @@ DATES.forEach((date) => {
     const candidates =
       prediction?.ticketSheets
         ?.possibility || [];
+    const mainTickets =
+      prediction?.formation?.main || [];
+    const coverTickets =
+      prediction?.formation?.cover || [];
+    const holeTickets =
+      prediction?.formation?.hole || [];
+    const publicMainHead =
+      boatNo(
+        prediction.mainSheet?.honmei
+      );
+
+    assert.ok(
+      mainTickets.every(
+        (ticket) =>
+          Number(
+            String(ticket).split("-")[0]
+          ) === publicMainHead
+      ),
+      `${raceKey}: 本線全点の1着を正式本命と一致させる`
+    );
+    assert.deepEqual(
+      coverTickets.filter(
+        (ticket) =>
+          holeTickets.includes(ticket)
+      ),
+      [],
+      `${raceKey}: 押さえと穴へ同じ買い目を重複分類しない`
+    );
 
     MARK_KEYS.forEach((key) => {
       const evaluationMark =
@@ -351,6 +395,9 @@ DATES.forEach((date) => {
         prediction.mainSheet?.[key];
       const coreMark =
         prediction.aiCore?.marks?.[key];
+      const formalMark =
+        prediction.aiCore
+          ?.analysisMarks?.[key];
 
       assert.equal(
         boatNo(evaluationMark),
@@ -361,6 +408,11 @@ DATES.forEach((date) => {
         boatNo(evaluationMark),
         boatNo(coreMark),
         `${raceKey}: 艇評価とAIコアの${key}を同じ正本にする`
+      );
+      assert.equal(
+        boatNo(evaluationMark),
+        boatNo(formalMark),
+        `${raceKey}: ${key}を正式シナリオの分析印と一致させる`
       );
       NUMERIC_FIELDS.forEach((field) => {
         assert.equal(
@@ -411,6 +463,69 @@ DATES.forEach((date) => {
       boatNo(prediction.mainSheet.honmei),
       `${raceKey}: 1着中心艇を本命印と一致させる`
     );
+    const formalMainScenario =
+      prediction.aiCore
+        .raceScenarios.mainScenario;
+    const formalSummary =
+      prediction.raceFlow?.summary;
+    assert.equal(
+      prediction.raceFlow?.title,
+      formalMainScenario.label,
+      `${raceKey}: 表示タイトルを正式主展開と一致させる`
+    );
+    assert.ok(
+      String(formalSummary || "")
+        .includes(
+          `${publicMainHead}号艇を1着軸`
+        ),
+      `${raceKey}: 表示要約へ正式本命の1着軸を明記する`
+    );
+    assert.equal(
+      formalMainScenario.summary,
+      formalSummary,
+      `${raceKey}: 正式主展開と展開表示の要約を一致させる`
+    );
+    assert.equal(
+      prediction.finalComment,
+      formalSummary,
+      `${raceKey}: 最終コメントへ古い別展開を残さない`
+    );
+    assert.equal(
+      prediction.finalAi?.summary,
+      formalSummary,
+      `${raceKey}: AI要約へ古い別展開を残さない`
+    );
+    assert.equal(
+      prediction.aiCore?.ai?.comment,
+      formalSummary,
+      `${raceKey}: AIコアコメントも正式主展開へ統一する`
+    );
+    const scenarioRoleBoatNos =
+      candidates => [
+        ...new Set(
+          arrayify(candidates)
+            .map(boatNo)
+            .filter(Boolean)
+        )
+      ];
+    assert.deepEqual(
+      prediction.raceFlow.holdBoats
+        .map(boatNo),
+      scenarioRoleBoatNos(
+        formalMainScenario.outcome
+          ?.secondCandidates
+      ),
+      `${raceKey}: 2着残しを正式主展開から作る`
+    );
+    assert.deepEqual(
+      prediction.raceFlow.pickupBoats
+        .map(boatNo),
+      scenarioRoleBoatNos(
+        formalMainScenario.outcome
+          ?.thirdCandidates
+      ),
+      `${raceKey}: 3着拾いを正式主展開から作る`
+    );
     assert.equal(
       boatNo(
         prediction.aiCore
@@ -419,21 +534,46 @@ DATES.forEach((date) => {
       boatNo(prediction.mainSheet.honmei),
       `${raceKey}: 公開順位の先頭を本命印と一致させる`
     );
+    const canonicalScenarios =
+      prediction.aiCore
+        .raceScenarios
+        .scenarios;
+    const canonicalScenarioKeys =
+      canonicalScenarios.map(
+        scenarioKey
+      );
     assert.equal(
-      prediction.aiCore.raceScenarios
-        .scenarios.length,
-      1 +
-        (
-          prediction.aiCore
-            .analysisRaceScenarios
-            ?.scenarios?.length || 0
-        ),
-      `${raceKey}: 元の複数シナリオを消さず正本と併存させる`
+      new Set(canonicalScenarioKeys).size,
+      canonicalScenarioKeys.length,
+      `${raceKey}: 正式主展開を一覧へ二重登録しない`
     );
+    (
+      prediction.aiCore
+        .analysisRaceScenarios
+        ?.scenarios || []
+    ).forEach((scenario) => {
+      assert.ok(
+        canonicalScenarioKeys.includes(
+          scenarioKey(scenario)
+        ),
+        `${raceKey}: 元の複数シナリオを消さず正本と併存させる`
+      );
+    });
     assert.ok(
       Array.isArray(integrity?.targets) &&
-        integrity.targets.length === 4,
-      `${raceKey}: 4印を評価対象として保持する`
+        integrity.targets.length >= 4 &&
+        integrity.targets.length <= 6 &&
+        MARK_KEYS.every((key) =>
+          integrity.targets.some(
+            (target) =>
+              target.markKey === key &&
+              boatNo(target) ===
+                boatNo(
+                  prediction.mainSheet[key]
+                )
+          )
+        ),
+      `${raceKey}: 正式4印と置換前の有力評価艇を重複なく保持する`
     );
     assert.deepEqual(
       integrity.missingPhysicalCandidateTargetIds,
@@ -588,6 +728,8 @@ DATES.forEach((date) => {
         branch.source ===
           "race-flow-attack-scenario" ||
         branch.source ===
+          "preserved-alternate-attack-scenario" ||
+        branch.source ===
           "boat-evaluation-attack-candidate"
       ) {
         assert.equal(
@@ -649,8 +791,10 @@ DATES.forEach((date) => {
               ?.length >= 4
           ) ||
           (
-            branch.source ===
-              "race-flow-attack-scenario" &&
+            [
+              "race-flow-attack-scenario",
+              "preserved-alternate-attack-scenario"
+            ].includes(branch.source) &&
             branch.phaseEvidence?.kind ===
               "alternate-head"
           ) ||
@@ -1099,8 +1243,8 @@ DATES.forEach((date) => {
     );
     assert.equal(
       practical.targetDecisions.length,
-      4,
-      `${raceKey}: 各評価印の採否理由を残す`
+      integrity.targets.length,
+      `${raceKey}: 正式4印と保持評価艇の採否理由を残す`
     );
     practical.targetDecisions
       .filter(
@@ -1291,8 +1435,8 @@ const selectionHash =
     .digest("hex");
 assert.equal(
   selectionHash,
-  "4f4d21bcacc365d9342a3389b2fdf5a45aed0f4fb0aa3ac22f1d20f83174bc34",
-  "透明性・検証表示の変更で281レースの買い目を変えない"
+  "42bc0c90c51e45e9ede7bece7d1144287e1f182c1a45e89329cf1199586eaaa2",
+  "正式主展開を本線正本にした281レースの買い目を固定する"
 );
 
 console.log("評価済み展開の全件整合テスト: 合格");
