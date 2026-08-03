@@ -39,9 +39,23 @@
   };
 
   let lastRaceData = null;
+  let lastPrediction = null;
   let raceSelectionGeneration = 0;
   let explicitSelectionGeneration = 0;
   let predictionGeneration = 0;
+  const ODDS_REQUEST_TIMEOUT_MS = 30000;
+  const SCHEDULE_REQUEST_TIMEOUT_MS = 30000;
+  const SCHEDULE_CACHE_TTL_MS = 30000;
+  const scheduleRequestCache = new Map();
+
+  if (!window.__CHAPPY_PREDICTION_VIEW_GUARD__) {
+    window.__CHAPPY_PREDICTION_VIEW_GUARD__ = true;
+    window.addEventListener("chappy:view-changed", event => {
+      if (event?.detail?.view !== "prediction") {
+        predictionGeneration += 1;
+      }
+    });
+  }
 
   function beginRaceSelection() {
     raceSelectionGeneration += 1;
@@ -111,7 +125,9 @@
       );
     }
 
-    applyRaceMode();
+    if (!document.getElementById("homeDashboardV2")) {
+      void applyRaceMode();
+    }
   });
 
   function setDefaultDate(
@@ -152,7 +168,7 @@
       `${yyyy}-${mm}-${dd}`;
   }
 
-    async function applyRaceMode() {
+    async function applyRaceMode(options = {}) {
     const selectionGeneration =
       beginRaceSelection();
     const modeSelect =
@@ -234,6 +250,7 @@
       raceSelect.onchange = () => {
         predictionGeneration += 1;
         lastRaceData = null;
+        lastPrediction = null;
 
         clearReviewResult();
 
@@ -243,7 +260,12 @@
           );
 
         if (resultArea) {
-          resultArea.innerHTML = "";
+          if (
+            resultArea.dataset
+              .raceLoading !== "true"
+          ) {
+            resultArea.innerHTML = "";
+          }
         }
 
         updateStatus(
@@ -286,6 +308,10 @@
       "開催情報を確認中..."
     );
 
+    if (options?.skipSchedule === true) {
+      return selectionGeneration;
+    }
+
     try {
       const loaded =
         await loadVenueChoices(
@@ -324,6 +350,27 @@
     date,
     jcd = ""
   ) {
+    const cacheKey =
+      `${String(date || "")}:` +
+      `${String(jcd || "*")}`;
+    const cached =
+      scheduleRequestCache.get(
+        cacheKey
+      );
+    const now = Date.now();
+
+    if (
+      cached?.data &&
+      now - cached.savedAt <=
+        SCHEDULE_CACHE_TTL_MS
+    ) {
+      return cached.data;
+    }
+
+    if (cached?.promise) {
+      return cached.promise;
+    }
+
     let url =
       `https://chappy-boatrace-api.vercel.app/api/schedule` +
       `?date=${encodeURIComponent(
@@ -337,24 +384,112 @@
         )}`;
     }
 
-    const response =
-      await fetch(url);
+    const controller =
+      typeof AbortController === "function"
+        ? new AbortController()
+        : null;
+    const timeoutId = controller
+      ? window.setTimeout(
+          () => controller.abort(),
+          SCHEDULE_REQUEST_TIMEOUT_MS
+        )
+      : 0;
 
-    const data =
-      await response.json();
+    const promise = (async () => {
+      try {
+        const response =
+          await fetch(
+            url,
+            controller
+              ? { signal: controller.signal }
+              : undefined
+          );
+        const data =
+          await response.json();
 
-    if (
-      !response.ok ||
-      !data?.ok
-    ) {
-      throw new Error(
-        data?.error ||
-        `開催情報APIエラー：` +
-        `${response.status}`
+        if (
+          !response.ok ||
+          !data?.ok
+        ) {
+          throw new Error(
+            data?.error ||
+            `開催情報APIエラー：` +
+            `${response.status}`
+          );
+        }
+
+        return data;
+      } finally {
+        if (timeoutId) {
+          window.clearTimeout(
+            timeoutId
+          );
+        }
+      }
+    })();
+
+    scheduleRequestCache.set(
+      cacheKey,
+      {
+        data: null,
+        savedAt: 0,
+        promise
+      }
+    );
+
+    try {
+      const data = await promise;
+      scheduleRequestCache.set(
+        cacheKey,
+        {
+          data,
+          savedAt: Date.now(),
+          promise: null
+        }
       );
+      return data;
+    } catch (error) {
+      if (
+        scheduleRequestCache
+          .get(cacheKey)
+          ?.promise === promise
+      ) {
+        scheduleRequestCache.delete(
+          cacheKey
+        );
+      }
+      throw error;
     }
+  }
 
-    return data;
+  function primeScheduleCache(
+    date,
+    jcd,
+    data
+  ) {
+    const payload = data?.ok
+      ? data
+      : Array.isArray(data?.races)
+        ? {
+            ok: true,
+            date: String(date || ""),
+            selectedVenue: data
+          }
+        : null;
+
+    if (!payload) return false;
+    const cacheKey =
+      `${String(date || "")}:` +
+      `${String(jcd || "*")}`;
+    scheduleRequestCache.set(
+      cacheKey,
+      {
+        data: payload,
+        savedAt: Date.now(),
+        promise: null
+      }
+    );
+    return true;
   }
 
   function replaceSelectOptions(
@@ -2288,7 +2423,9 @@
       `${date.slice(6, 8)}`;
 
     const modeGeneration =
-      await applyRaceMode();
+      await applyRaceMode({
+        skipSchedule: true
+      });
 
     if (!modeGeneration) {
       throw new Error(
@@ -2296,15 +2433,46 @@
       );
     }
 
+    const homeVenues =
+      window.ChappyHomeDashboardV2
+        ?.getSchedule?.() || [];
+    const venueItems =
+      homeVenues
+        .filter(venue =>
+          venue?.place &&
+          venue?.jcd
+        )
+        .map(venue => ({
+          value: String(venue.place),
+          label: String(venue.place),
+          jcd: String(venue.jcd)
+            .padStart(2, "0")
+        }));
+
+    if (
+      !venueItems.some(item =>
+        item.value === place &&
+        item.jcd === jcd
+      )
+    ) {
+      venueItems.push({
+        value: place,
+        label: place,
+        jcd
+      });
+    }
+
+    replaceSelectOptions(
+      placeSelect,
+      venueItems
+    );
+
     const venueOption =
       [...placeSelect.options]
         .find(option =>
           option.value === place &&
           String(
             option.dataset.jcd ||
-            PLACE_CODE_MAP[
-              option.value
-            ] ||
             ""
           ).padStart(2, "0") ===
             jcd
@@ -2316,13 +2484,22 @@
       );
     }
 
+    const suppliedSchedule =
+      input.scheduleData ||
+      await Promise.resolve(
+        input.schedulePromise || null
+      ).catch(() => null);
+    primeScheduleCache(
+      date,
+      jcd,
+      suppliedSchedule
+    );
+
     placeSelect.value = place;
-    const placeGeneration =
-      beginRaceSelection();
     const racesLoaded =
       await loadRaceChoices(
-        0,
-        placeGeneration
+        raceNo,
+        modeGeneration
       );
 
     const raceValue =
@@ -2341,12 +2518,6 @@
     }
 
     raceSelect.value = raceValue;
-    if (
-      typeof raceSelect.onchange ===
-      "function"
-    ) {
-      raceSelect.onchange();
-    }
 
     return {
       mode,
@@ -2570,19 +2741,29 @@
       );
     }
 
-    try {
-      if (
-        raceData?.historyContext?.ready !==
-        true
-      ) {
+    const hasApiHistoryContext = Boolean(
+      raceData &&
+      Object.prototype.hasOwnProperty.call(
+        raceData,
+        "historyContext"
+      )
+    );
+    const allowLegacyHistoryFallback =
+      window.CHAPPY_LEGACY_HISTORY_FALLBACK === true;
+
+    if (
+      !hasApiHistoryContext &&
+      allowLegacyHistoryFallback
+    ) {
+      try {
         await window.ChappyRaceHistory
           ?.load();
+      } catch (error) {
+        console.warn(
+          "⚠️ 開発用の旧履歴読込を完了できませんでした",
+          error?.message || error
+        );
       }
-    } catch (error) {
-      console.warn(
-        "⚠️ 公式履歴を共通入力へ接続できませんでした",
-        error?.message || error
-      );
     }
 
     const jcd =
@@ -2599,11 +2780,10 @@
         raceData?.raceNo ??
         0
       );
-    const historyContext =
-      raceData?.historyContext?.ready ===
-      true
-        ? raceData.historyContext
-        : (
+    const historyContext = hasApiHistoryContext
+      ? raceData.historyContext
+      : allowLegacyHistoryFallback
+        ? (
             window.ChappyRaceHistory
               ?.getContext({
                 jcd,
@@ -2617,7 +2797,15 @@
                         .filter(Boolean)
                     : []
               }) || null
-          );
+          )
+        : {
+            ready: false,
+            source: "",
+            delivery: "api-history-missing",
+            warnings: [
+              "履歴統計を取得できないため、基礎データで予想します"
+            ]
+          };
     const input = {
       ...raceData,
       historyContext
@@ -2642,6 +2830,10 @@
       updateStatus(
         "取得中..."
       );
+      updatePredictionOddsStatus(
+        "オッズ取得中…",
+        "loading"
+      );
 
       const params =
         getRaceParams();
@@ -2651,6 +2843,12 @@
 
       const isReview =
         mode === "review";
+      updatePredictionOddsStatus(
+        isReview
+          ? "振り返り表示"
+          : "オッズ取得中…",
+        isReview ? "pending" : "loading"
+      );
 
       if (!isReview) {
         await verifyLiveDeadline(
@@ -2669,6 +2867,35 @@
         params
       );
 
+      const raceDataPromise =
+        fetchRaceData(params);
+      let oddsSupplementState = null;
+      let oddsSupplementPromise = null;
+      if (!isReview) {
+        oddsSupplementState = {
+          settled: false,
+          value: null,
+          error: null
+        };
+        oddsSupplementPromise =
+          fetchOddsSupplement(params)
+            .then(value => {
+              oddsSupplementState.settled = true;
+              oddsSupplementState.value = value;
+              return value;
+            })
+            .catch(error => {
+              oddsSupplementState.settled = true;
+              oddsSupplementState.error = error;
+              const fallback = {
+                oddsData: null,
+                oddsError: error,
+                missingData: null
+              };
+              oddsSupplementState.value = fallback;
+              return fallback;
+            });
+      }
       const predictionRuntime =
         window.ChappyPredictionRuntime
           ?.ensureReady?.();
@@ -2683,10 +2910,14 @@
           });
       const [fetchedData] =
         await Promise.all([
-          fetchRaceData(params),
+          raceDataPromise,
           predictionRuntime,
           hiyoriRuntime
         ]);
+
+      if (!isCurrentRequest()) {
+        return false;
+      }
 
       const data =
         await prepareRaceDataForTheories(
@@ -2778,6 +3009,42 @@
       prediction
         .officialResultUsedForPrediction =
         false;
+
+      let oddsAppliedBeforeRender = false;
+      const settledOddsSupplement =
+        oddsSupplementState?.settled
+          ? oddsSupplementState.value
+          : null;
+      if (
+        settledOddsSupplement &&
+        hasUsableOddsData(
+          settledOddsSupplement.oddsData
+        )
+      ) {
+        try {
+          lastRaceData = {
+            ...lastRaceData,
+            odds:
+              settledOddsSupplement
+                .oddsData
+          };
+          enrichPredictionWithOdds(
+            prediction,
+            settledOddsSupplement.oddsData,
+            settledOddsSupplement.missingData,
+            params
+          );
+          oddsAppliedBeforeRender = true;
+        } catch (oddsError) {
+          oddsSupplementState.error = oddsError;
+          console.warn(
+            "オッズ情報の付加に失敗",
+            oddsError?.message || oddsError
+          );
+        }
+      }
+
+      lastPrediction = prediction;
         
       if (!isReview) {
         savePredictionSnapshot(
@@ -2793,6 +3060,14 @@
         window.renderAll(
           prediction
         );
+        const resultArea =
+          document.getElementById(
+            "resultArea"
+          );
+        if (resultArea) {
+          delete resultArea.dataset
+            .raceLoading;
+        }
         window.dispatchEvent(
           new CustomEvent(
             "chappy:prediction-rendered",
@@ -2859,9 +3134,75 @@
           );
         }
       } else {
-        updateStatus(
-          "取得完了"
-        );
+        if (oddsAppliedBeforeRender) {
+            const count = Number(
+              settledOddsSupplement
+                ?.oddsData?.count || 0
+            );
+            if (
+              !settledOddsSupplement?.missingData &&
+              settledOddsSupplement?.missingPromise
+            ) {
+              void settledOddsSupplement.missingPromise
+                .then(missingData =>
+                  applyMissingSupplement({
+                    missingData,
+                    oddsData: settledOddsSupplement.oddsData,
+                    prediction,
+                    params,
+                    isCurrentRequest
+                  })
+                )
+                .catch(error => {
+                  console.warn(
+                    "出てない目の後追い反映に失敗",
+                    error?.message || error
+                  );
+                });
+            }
+            updateStatus(
+              `取得完了（オッズ${count}通り反映）`
+            );
+            updatePredictionOddsStatus(
+              "オッズ反映済み",
+              "ready"
+            );
+        } else if (oddsSupplementState?.settled) {
+          applyOddsSupplement({
+            oddsSupplement:
+              oddsSupplementState.value,
+            prediction,
+            params,
+            isCurrentRequest
+          });
+        } else if (oddsSupplementPromise) {
+          updateStatus("予想を表示しました（オッズ取得中…）");
+          updatePredictionOddsStatus(
+            "オッズ取得中…",
+            "loading"
+          );
+          void oddsSupplementPromise
+            .then(oddsSupplement => applyOddsSupplement({
+              oddsSupplement,
+              prediction,
+              params,
+              isCurrentRequest
+            }))
+            .catch(oddsError => {
+              if (!isCurrentRequest()) return;
+              console.warn(
+                "オッズ情報の付加に失敗",
+                oddsError?.message || oddsError
+              );
+              updateStatus(
+                "予想を表示しました（オッズは取得できませんでした）"
+              );
+              updatePredictionOddsStatus(
+                "オッズ取得失敗",
+                "error"
+              );
+            });
+        }
       }
       return true;
     } catch (error) {
@@ -2876,6 +3217,14 @@
       updateStatus(
         "エラー"
       );
+      updatePredictionOddsStatus(
+        "取得失敗",
+        "error"
+      );
+      window.ChappyHomeDashboardV2
+        ?.showPredictionError?.(
+          error?.message
+        );
 
       showError(
         `${
@@ -2925,8 +3274,18 @@
           )
       );
 
+    const deadlineMs = Date.parse(
+      selectedRace?.deadlineAt ||
+      selectedRace?.closeAt ||
+      ""
+    );
+
     if (
-      !selectedRace?.selectable
+      !selectedRace?.selectable ||
+      (
+        Number.isFinite(deadlineMs) &&
+        deadlineMs <= Date.now()
+      )
     ) {
       await loadVenueChoices();
 
@@ -3882,6 +4241,13 @@
         jcd: params.jcd,
         raceNo: params.rno,
         date: params.date,
+        deadlineAt: String(
+          prediction?.race?.deadlineAt ||
+          prediction?.race?.deadline ||
+          lastRaceData?.deadlineAt ||
+          lastRaceData?.race?.deadlineAt ||
+          ""
+        ),
 
         predictionMode:
           prediction
@@ -4020,6 +4386,109 @@
     }
   }
 
+  async function fetchWithTimeout(
+    url,
+    timeoutMs = ODDS_REQUEST_TIMEOUT_MS
+  ) {
+    const controller =
+      typeof AbortController === "function"
+        ? new AbortController()
+        : null;
+    const timer = controller
+      ? setTimeout(
+          () => controller.abort(),
+          timeoutMs
+        )
+      : 0;
+
+    try {
+      return await fetch(
+        url,
+        controller
+          ? { signal: controller.signal }
+          : undefined
+      );
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new Error(
+          `API応答が${Math.round(timeoutMs / 1000)}秒を超えました`
+        );
+      }
+      throw error;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  async function fetchOddsData(
+    params
+  ) {
+    const url =
+      `https://chappy-boatrace-api.vercel.app/api/odds` +
+      `?jcd=${encodeURIComponent(params.jcd)}` +
+      `&rno=${encodeURIComponent(params.rno)}` +
+      `&date=${encodeURIComponent(params.date)}`;
+
+    const response = await fetchWithTimeout(url);
+    const oddsData = await response.json();
+
+    if (
+      !response.ok ||
+      !oddsData ||
+      oddsData.ok === false
+    ) {
+      throw new Error(
+        oddsData?.error ||
+        `オッズAPIエラー：${response.status}`
+      );
+    }
+
+    return oddsData;
+  }
+
+  async function fetchOddsSupplement(
+    params
+  ) {
+    let missingSettled = false;
+    let missingData = null;
+    const missingPromise =
+      fetchMissingNumbers(params)
+        .then(value => {
+          missingSettled = true;
+          missingData = value;
+          return value;
+        });
+    const oddsPromise =
+      fetchOddsData(params)
+        .then(oddsData => ({
+          oddsData,
+          oddsError: null
+        }))
+        .catch(oddsError => {
+          console.warn(
+            "オッズの取得に失敗",
+            oddsError?.message ||
+              oddsError
+          );
+
+          return {
+            oddsData: null,
+            oddsError
+          };
+        });
+    const oddsResult =
+      await oddsPromise;
+
+    return {
+      ...oddsResult,
+      missingData:
+        missingSettled
+          ? missingData
+          : null,
+      missingPromise
+    };
+  }
+
   async function fetchMissingNumbers(
     params
   ) {
@@ -4029,7 +4498,7 @@
         `?jcd=${encodeURIComponent(params.jcd)}` +
         `&rno=${encodeURIComponent(params.rno)}`;
 
-      const response = await fetch(url);
+      const response = await fetchWithTimeout(url);
       const data = await response.json();
 
       if (
@@ -4170,92 +4639,32 @@
     };
   }
 
-    async function refreshOddsOnly() {
-    if (
-      getRaceMode() ===
-      "review"
-    ) {
-      updateStatus(
-        "振り返り予想は参考表示のため、オッズ更新・予想保存を行いません"
-      );
-
-      return;
-    }
-  if (!lastRaceData) {
-    updateStatus(
-      "先に出走表を取得してください"
-    );
-    return;
-  }
-
-  const requestGeneration =
-    ++predictionGeneration;
-  const isCurrentRequest = () =>
-    requestGeneration ===
-    predictionGeneration;
-
-  try {
-    clearErrorArea();
-    updateStatus("オッズ取得中...");
-
-    const params = getRaceParams();
-
-    const url =
-      `https://chappy-boatrace-api.vercel.app/api/odds` +
-      `?jcd=${encodeURIComponent(params.jcd)}` +
-      `&rno=${encodeURIComponent(params.rno)}` +
-      `&date=${encodeURIComponent(params.date)}`;
-
-    const missingPromise =
-      fetchMissingNumbers(params);
-
-    const response = await fetch(url);
-    const oddsData = await response.json();
-
-    const missingData =
-      await missingPromise;
-
-    if (!isCurrentRequest()) {
-      return false;
-    }
-
-    if (
-      !response.ok ||
-      !oddsData ||
-      oddsData.ok === false
-    ) {
-      throw new Error(
-        oddsData?.error ||
-        `オッズAPIエラー：${response.status}`
-      );
-    }
-
-    lastRaceData = {
-      ...lastRaceData,
-      odds: oddsData
-    };
-
-    const prediction =
-      createPredictionSafe(lastRaceData);
-
+  function enrichPredictionWithOdds(
+    prediction,
+    oddsData,
+    missingData,
+    params
+  ) {
     if (
       !prediction ||
-      typeof prediction !== "object"
+      typeof prediction !== "object" ||
+      !oddsData ||
+      typeof oddsData !== "object"
     ) {
-      throw new Error(
-        "予想データを再作成できませんでした"
-      );
+      return prediction;
     }
 
-        const byTicket =
-      oddsData.byTicket || {};
-
+    const byTicket =
+      oddsData.byTicket &&
+      typeof oddsData.byTicket ===
+        "object"
+        ? oddsData.byTicket
+        : {};
     const oddsHistoryKey =
       `chappy_odds_history_` +
       `${params.date}_` +
       `${params.jcd}_` +
       `${params.rno}`;
-
     let previousByTicket = {};
 
     try {
@@ -4280,7 +4689,7 @@
       );
     }
 
-    const oddsMovements =
+    prediction.oddsMovements =
       Object.entries(byTicket)
         .map(
           ([
@@ -4289,7 +4698,6 @@
           ]) => {
             const currentOdds =
               Number(currentRaw);
-
             const previousOdds =
               Number(
                 previousByTicket[
@@ -4350,9 +4758,6 @@
         )
         .slice(0, 10);
 
-    prediction.oddsMovements =
-      oddsMovements;
-
     try {
       localStorage.setItem(
         oddsHistoryKey,
@@ -4370,353 +4775,525 @@
       );
     }
 
-    const attachOdds = list =>
-  Array.isArray(list)
-    ? list.map(item => {
-        const odds =
-          byTicket[item?.ticket];
+    const attachOdds =
+      list =>
+        Array.isArray(list)
+          ? list.map(item => {
+              const ticket =
+                String(
+                  item?.ticket ||
+                  ""
+                );
+              const numericOdds =
+                Number(
+                  byTicket[ticket]
+                );
 
-        if (
-          odds === undefined ||
-          odds === null
-        ) {
-          return item;
-        }
+              if (
+                !ticket ||
+                !Number.isFinite(
+                  numericOdds
+                ) ||
+                numericOdds <= 0
+              ) {
+                return item;
+              }
 
-        const numericOdds =
-          Number(odds);
+              const aiScore =
+                Number(
+                  item?.score || 0
+                );
+              let oddsValue =
+                "標準";
 
-        const aiScore =
-          Number(item?.score || 0);
+              if (
+                aiScore < 65 &&
+                numericOdds >= 10
+              ) {
+                oddsValue =
+                  "高配当注意";
+              } else if (
+                aiScore >= 65 &&
+                numericOdds >= 100
+              ) {
+                oddsValue =
+                  "大穴妙味";
+              } else if (
+                aiScore >= 65 &&
+                numericOdds >= 30
+              ) {
+                oddsValue =
+                  "穴妙味";
+              } else if (
+                aiScore >= 75 &&
+                numericOdds >= 10
+              ) {
+                oddsValue =
+                  "妙味あり";
+              } else if (
+                numericOdds < 5
+              ) {
+                oddsValue =
+                  "低配当";
+              }
 
-        let oddsValue = "標準";
+              return {
+                ...item,
+                odds: numericOdds,
+                oddsValue
+              };
+            })
+          : [];
 
-        if (
-          aiScore < 65 &&
-          numericOdds >= 10
-        ) {
-          oddsValue = "高配当注意";
-        } else if (
-          aiScore >= 65 &&
-          numericOdds >= 100
-        ) {
-          oddsValue = "大穴妙味";
-        } else if (
-          aiScore >= 65 &&
-          numericOdds >= 30
-        ) {
-          oddsValue = "穴妙味";
-        } else if (
-          aiScore >= 75 &&
-          numericOdds >= 10
-        ) {
-          oddsValue = "妙味あり";
-        } else if (
-          numericOdds < 5
-        ) {
-          oddsValue = "低配当";
-        }
+    prediction.ticketRanks =
+      attachOdds(
+        prediction.ticketRanks
+      );
+    prediction.aiTicketList =
+      attachOdds(
+        prediction.aiTicketList
+      );
 
-        return {
-          ...item,
-          odds: numericOdds,
-          oddsValue
-        };
-      })
-    : [];
-const applyOdds = list =>
-  attachOdds(list);
+    if (prediction.ticketSheets) {
+      prediction.ticketSheets = {
+        ...prediction.ticketSheets,
+        main:
+          attachOdds(
+            prediction
+              .ticketSheets.main
+          ),
+        cover:
+          attachOdds(
+            prediction
+              .ticketSheets.cover
+          ),
+        flow:
+          attachOdds(
+            prediction
+              .ticketSheets.flow
+          ),
+        hole:
+          attachOdds(
+            prediction
+              .ticketSheets.hole
+          ),
+        all:
+          attachOdds(
+            prediction
+              .ticketSheets.all
+          )
+      };
+    }
 
-prediction.ticketRanks =
-  applyOdds(
-    prediction.ticketRanks
-  );
+    if (prediction.mainSheet) {
+      prediction.mainSheet = {
+        ...prediction.mainSheet,
+        tickets:
+          attachOdds(
+            prediction
+              .mainSheet.tickets
+          ),
+        coverTickets:
+          attachOdds(
+            prediction
+              .mainSheet
+              .coverTickets
+          ),
+        flowTickets:
+          attachOdds(
+            prediction
+              .mainSheet
+              .flowTickets
+          )
+      };
+    }
 
-prediction.aiTicketList =
-  applyOdds(
-    prediction.aiTicketList
-  );
+    if (prediction.manshuSheet) {
+      prediction.manshuSheet = {
+        ...prediction.manshuSheet,
+        tickets:
+          attachOdds(
+            prediction
+              .manshuSheet.tickets
+          )
+      };
+    }
 
-if (prediction.ticketSheets) {
-  prediction.ticketSheets = {
-    ...prediction.ticketSheets,
+    if (
+      prediction.aiCore &&
+      typeof prediction.aiCore ===
+        "object"
+    ) {
+      prediction.aiCore = {
+        ...prediction.aiCore,
+        ...(prediction.mainSheet
+          ? {
+              mainSheet:
+                prediction.mainSheet
+            }
+          : {}),
+        ...(prediction.manshuSheet
+          ? {
+              manshuSheet:
+                prediction.manshuSheet
+            }
+          : {})
+      };
+    }
 
-    main: applyOdds(
-      prediction.ticketSheets.main
-    ),
+    if (prediction.finalAi) {
+      prediction.finalAi = {
+        ...prediction.finalAi,
+        ticketRanks:
+          attachOdds(
+            prediction
+              .finalAi.ticketRanks
+          ),
+        topTickets:
+          attachOdds(
+            prediction
+              .finalAi.topTickets
+          ),
+        manshuTickets:
+          attachOdds(
+            prediction
+              .finalAi
+              .manshuTickets
+          )
+      };
+    }
 
-    cover: applyOdds(
-      prediction.ticketSheets.cover
-    ),
+    if (
+      prediction.practicalSelection &&
+      typeof prediction
+        .practicalSelection ===
+        "object"
+    ) {
+      prediction.practicalSelection = {
+        ...prediction
+          .practicalSelection,
+        tickets:
+          attachOdds(
+            prediction
+              .practicalSelection
+              .tickets
+          )
+      };
+    }
 
-    flow: applyOdds(
-      prediction.ticketSheets.flow
-    ),
+    prediction.missingNumbersData =
+      buildMissingTop30(
+        missingData,
+        byTicket
+      );
 
-    hole: applyOdds(
-      prediction.ticketSheets.hole
-    ),
+    attachCombinedOdds(
+      prediction
+    );
 
-    all: applyOdds(
-      prediction.ticketSheets.all
-    )
-  };
-}
+    return prediction;
+  }
 
-if (prediction.mainSheet) {
-  prediction.mainSheet = {
-    ...prediction.mainSheet,
-
-    tickets: applyOdds(
-      prediction.mainSheet.tickets
-    ),
-
-    coverTickets: applyOdds(
-      prediction.mainSheet.coverTickets
-    ),
-
-    flowTickets: applyOdds(
-      prediction.mainSheet.flowTickets
-    )
-  };
-}
-
-if (prediction.manshuSheet) {
-  prediction.manshuSheet = {
-    ...prediction.manshuSheet,
-
-    tickets: applyOdds(
-      prediction.manshuSheet.tickets
-    )
-  };
-}
-
-if (prediction.finalAi) {
-  prediction.finalAi = {
-    ...prediction.finalAi,
-
-    ticketRanks: applyOdds(
-      prediction.finalAi.ticketRanks
-    ),
-
-    topTickets: applyOdds(
-      prediction.finalAi.topTickets
-    ),
-
-    manshuTickets: applyOdds(
-      prediction.finalAi.manshuTickets
-    )
-  };
-}
-
-prediction.missingNumbersData =
-  buildMissingTop30(
-    missingData,
-    byTicket
-  );
-
-attachCombinedOdds(prediction);
-
-
-        if (!isCurrentRequest()) {
+  function hasUsableOddsData(
+    oddsData
+  ) {
+    if (
+      !oddsData ||
+      oddsData.available === false ||
+      !oddsData.byTicket ||
+      typeof oddsData.byTicket !== "object"
+    ) {
       return false;
     }
 
-        try {
-      const predictionSnapshot = {
-        raceKey:
-          `${params.date}-` +
-          `${params.jcd}-` +
-          `${params.rno}`,
-        place: params.place,
-        jcd: params.jcd,
-        raceNo: params.rno,
-                date: params.date,
+    return Object.values(
+      oddsData.byTicket
+    ).some(value => {
+      const odds = Number(value);
+      return Number.isFinite(odds) && odds > 0;
+    });
+  }
 
-        predictionMode:
-          "pre_deadline",
+  function applyOddsSupplement({
+    oddsSupplement,
+    prediction,
+    params,
+    isCurrentRequest
+  }) {
+    if (
+      !isCurrentRequest() ||
+      lastPrediction !== prediction
+    ) {
+      return false;
+    }
 
-        isRetrospective:
-          false,
+    const oddsData =
+      oddsSupplement?.oddsData;
 
-        officialResultUsedForPrediction:
-          false,
-        savedAt:
-          new Date().toISOString(),
-        ticketRanks:
-          Array.isArray(
-            prediction.ticketRanks
-          )
-                        ? prediction.ticketRanks.map(
-                item => {
-                  const ticket =
-                    String(
-                      item?.ticket || ""
-                    );
+    if (!hasUsableOddsData(oddsData)) {
+      const failed = Boolean(
+        oddsSupplement?.oddsError
+      );
+      updateStatus(
+        failed
+          ? "予想を表示しました（オッズは取得できませんでした）"
+          : "予想を表示しました（オッズは発売前・未更新です）"
+      );
+      updatePredictionOddsStatus(
+        failed
+          ? "オッズ取得失敗"
+          : "オッズ発売前",
+        failed ? "error" : "pending"
+      );
+      return false;
+    }
 
-                  const aiTicket =
-                    Array.isArray(
-                      prediction.aiTicketList
-                    )
-                      ? prediction.aiTicketList.find(
-                          row =>
-                            String(
-                              row?.ticket || ""
-                            ) === ticket
-                        )
-                      : null;
-
-                  const rawCategories =
-                    aiTicket?.categories ||
-                    aiTicket?.category ||
-                    item?.type ||
-                    [];
-
-                  const categories = [
-                    ...new Set(
-                      (
-                        Array.isArray(
-                          rawCategories
-                        )
-                          ? rawCategories
-                          : [rawCategories]
-                      )
-                        .map(value => {
-                          const category =
-                            String(
-                              value || ""
-                            );
-
-                          if (
-                            category === "本線"
-                          ) {
-                            return "本命";
-                          }
-
-                          if (
-                            category === "万舟" ||
-                            category === "穴候補"
-                          ) {
-                            return "穴・万舟候補";
-                          }
-
-                          return category;
-                        })
-                        .filter(Boolean)
-                    )
-                  ];
-
-                  const role =
-                    [
-                      "本命",
-                      "押さえ",
-                      "流し",
-                      "穴・万舟候補"
-                    ].find(value =>
-                      categories.includes(
-                        value
-                      )
-                    ) || "分類未保存";
-
-                  const rawScenarios =
-                    aiTicket?.scenarioTypes ||
-                    aiTicket?.scenarioType ||
-                    [];
-
-                  const scenarioTypes = [
-                    ...new Set(
-                      (
-                        Array.isArray(
-                          rawScenarios
-                        )
-                          ? rawScenarios
-                          : [rawScenarios]
-                      )
-                        .map(value =>
-                          String(
-                            value || ""
-                          )
-                        )
-                        .filter(Boolean)
-                    )
-                  ];
-
-                  return {
-                    ticket,
-                    role,
-                    categories,
-                    scenarioTypes,
-
-                    rank:
-                      String(
-                        item?.rank || ""
-                      ),
-
-                    score:
-                      Number(
-                        item?.score || 0
-                      ),
-
-                    odds:
-                      item?.odds ?? null,
-
-                    oddsValue:
-                      String(
-                        item?.oddsValue || ""
-                      ),
-                  };
-                }
-              )
-            : []
+    try {
+      lastRaceData = {
+        ...lastRaceData,
+        odds: oddsData
       };
+      enrichPredictionWithOdds(
+        prediction,
+        oddsData,
+        oddsSupplement?.missingData,
+        params
+      );
+    } catch (oddsError) {
+      console.warn(
+        "オッズ情報の付加に失敗",
+        oddsError?.message || oddsError
+      );
+      updateStatus(
+        "予想を表示しました（オッズ反映に失敗しました）"
+      );
+      updatePredictionOddsStatus(
+        "オッズ反映失敗",
+        "error"
+      );
+      return false;
+    }
 
-      savePredictionSnapshot(
+    if (
+      !isCurrentRequest() ||
+      lastPrediction !== prediction
+    ) {
+      return false;
+    }
+
+    savePredictionSnapshot(
       params,
       prediction
-　　　);
-    } catch (storageError) {
-      console.warn(
-        "予想履歴の一時保存に失敗",
-        storageError
-      );
-    }
+    );
 
     if (
       typeof window.renderAll ===
       "function"
     ) {
-      if (!isCurrentRequest()) {
-        return false;
-      }
       window.renderAll(prediction);
     }
 
+    if (
+      !oddsSupplement?.missingData &&
+      oddsSupplement?.missingPromise
+    ) {
+      void oddsSupplement.missingPromise
+        .then(missingData =>
+          applyMissingSupplement({
+            missingData,
+            oddsData,
+            prediction,
+            params,
+            isCurrentRequest
+          })
+        )
+        .catch(error => {
+          console.warn(
+            "出てない目の後追い反映に失敗",
+            error?.message || error
+          );
+        });
+    }
+
     updateStatus(
-      `オッズ更新完了（` +
-      `${oddsData.count || 0}通り）`
+      `取得完了（オッズ${Number(oddsData.count || 0)}通り反映）`
+    );
+    updatePredictionOddsStatus(
+      "オッズ反映済み",
+      "ready"
     );
     return true;
-  } catch (error) {
-    if (!isCurrentRequest()) {
+  }
+
+  function applyMissingSupplement({
+    missingData,
+    oddsData,
+    prediction,
+    params,
+    isCurrentRequest
+  }) {
+    if (
+      !isCurrentRequest() ||
+      lastPrediction !== prediction
+    ) {
       return false;
     }
-    console.error(error);
 
-    updateStatus(
-      "オッズ更新エラー"
+    prediction.missingNumbersData =
+      buildMissingTop30(
+        missingData,
+        oddsData?.byTicket || {}
+      );
+
+    savePredictionSnapshot(
+      params,
+      prediction
     );
 
-    showError(
-      error?.message ||
-      "オッズ更新に失敗しました"
-    );
-    return false;
+    if (
+      typeof window
+        .updateMissingNumbersSection ===
+        "function"
+    ) {
+      window.updateMissingNumbersSection(
+        prediction
+      );
+    }
+
+    return true;
   }
-}
+
+  async function refreshOddsOnly() {
+    if (
+      getRaceMode() ===
+      "review"
+    ) {
+      updateStatus(
+        "振り返り予想は参考表示のため、オッズ更新・予想保存を行いません"
+      );
+
+      return false;
+    }
+
+    if (
+      !lastRaceData ||
+      !lastPrediction
+    ) {
+      updateStatus(
+        "先に出走表を取得してください"
+      );
+
+      return false;
+    }
+
+    const requestGeneration =
+      ++predictionGeneration;
+    const isCurrentRequest = () =>
+      requestGeneration ===
+      predictionGeneration;
+
+    try {
+      clearErrorArea();
+      updateStatus(
+        "オッズ取得中..."
+      );
+      updatePredictionOddsStatus(
+        "オッズ取得中…",
+        "loading"
+      );
+
+      const params =
+        getRaceParams();
+      const [
+        oddsData,
+        missingData
+      ] = await Promise.all([
+        fetchOddsData(params),
+        fetchMissingNumbers(params)
+      ]);
+
+      if (!isCurrentRequest()) {
+        return false;
+      }
+
+      lastRaceData = {
+        ...lastRaceData,
+        odds: oddsData
+      };
+
+      const prediction =
+        enrichPredictionWithOdds(
+          lastPrediction,
+          oddsData,
+          missingData,
+          params
+        );
+
+      if (!isCurrentRequest()) {
+        return false;
+      }
+
+      savePredictionSnapshot(
+        params,
+        prediction
+      );
+
+      if (
+        typeof window.renderAll ===
+        "function"
+      ) {
+        window.renderAll(
+          prediction
+        );
+      }
+
+      updateStatus(
+        `オッズ更新完了（` +
+        `${oddsData.count || 0}通り）`
+      );
+      updatePredictionOddsStatus(
+        "オッズ反映済み",
+        "ready"
+      );
+
+      return true;
+    } catch (error) {
+      if (!isCurrentRequest()) {
+        return false;
+      }
+
+      console.warn(
+        "オッズ更新エラー",
+        error?.message || error
+      );
+      updateStatus(
+        "予想はそのまま表示しています（オッズ更新に失敗しました）"
+      );
+      updatePredictionOddsStatus(
+        "オッズ取得失敗",
+        "error"
+      );
+
+      return false;
+    }
+  }
 
   function updateStatus(message) {
     const el = document.getElementById("statusArea");
     if (el) el.textContent = message;
+  }
+
+  function updatePredictionOddsStatus(
+    message,
+    state = ""
+  ) {
+    const el = document.getElementById(
+      "predictionOddsStatus"
+    );
+    if (!el) return;
+    el.textContent = String(message || "");
+    if (state) el.dataset.state = state;
+    else delete el.dataset.state;
   }
 
   function showError(message) {

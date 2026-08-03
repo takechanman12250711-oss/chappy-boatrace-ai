@@ -14,6 +14,8 @@
   const R = window.ChappyVerificationReadiness;
   const C = window.ChappyCollectionHealth;
   const OFFICIAL_SYNC_CONCURRENCY = 3;
+  const OFFICIAL_SYNC_MAX_TARGETS = 5;
+  const STATS_REQUEST_TIMEOUT_MS = 30000;
   const NEW_METHOD_MINIMUM_COUNT = 30;
   const CURRENT_CALIBRATION_GENERATION = {
     logicFingerprint:
@@ -69,6 +71,7 @@
   }
 
   let officialSyncPromise = null;
+  let officialSyncAbortController = null;
   let statsInitPromise = null;
   let automaticStats = {
     predictions: [],
@@ -87,11 +90,51 @@
   let improvementReviewError =
     "";
 
+  async function fetchJsonWithTimeout(url, options = {}) {
+    const externalSignal = options.signal || null;
+    const { signal: _ignoredSignal, ...requestOptions } = options;
+    const controller = typeof window.AbortController === "function"
+      ? new window.AbortController()
+      : null;
+    const abortFromExternal = () => controller?.abort();
+    if (externalSignal && controller) {
+      if (externalSignal.aborted) controller.abort();
+      else externalSignal.addEventListener("abort", abortFromExternal, { once: true });
+    }
+    const timer = controller
+      ? window.setTimeout(() => controller.abort(), STATS_REQUEST_TIMEOUT_MS)
+      : 0;
+
+    try {
+      const response = await fetch(url, {
+        ...requestOptions,
+        ...((controller?.signal || externalSignal)
+          ? { signal: controller?.signal || externalSignal }
+          : {})
+      });
+      const payload = await response.json();
+      return { response, payload };
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        if (externalSignal?.aborted) {
+          const stopped = new Error("公式結果の照合を中止しました");
+          stopped.name = "AbortError";
+          throw stopped;
+        }
+        throw new Error("成績データの応答が30秒を超えました");
+      }
+      throw error;
+    } finally {
+      if (timer) window.clearTimeout(timer);
+      externalSignal?.removeEventListener?.("abort", abortFromExternal);
+    }
+  }
+
   async function loadAutomaticStats() {
     if (!A?.normalizeIndex) return automaticStats;
 
     try {
-      const response = await fetch(
+      const { response, payload } = await fetchJsonWithTimeout(
         "data/predictions/index.json?v=20260729-review2",
         { cache: "no-cache" }
       );
@@ -100,7 +143,7 @@
         throw new Error(`HTTP ${response.status}`);
       }
 
-      automaticStats = A.normalizeIndex(await response.json());
+      automaticStats = A.normalizeIndex(payload);
       automaticStatsLoaded = true;
       automaticStatsError = "";
     } catch (error) {
@@ -113,7 +156,7 @@
 
   async function loadImprovementReview() {
     try {
-      const response = await fetch(
+      const { response, payload } = await fetchJsonWithTimeout(
         "data/predictions/improvement-review.json?v=20260729-review2",
         { cache: "no-cache" }
       );
@@ -125,7 +168,7 @@
       }
 
       improvementReview =
-        await response.json();
+        payload;
       improvementReviewLoaded =
         true;
       improvementReviewError =
@@ -241,6 +284,20 @@
           return null;
         }
 
+        const deadlineAt = String(
+          prediction.deadlineAt ||
+          prediction.race?.deadlineAt ||
+          prediction.race?.deadline ||
+          ""
+        );
+        const deadlineMs = Date.parse(deadlineAt);
+        if (
+          date === today &&
+          (!Number.isFinite(deadlineMs) || deadlineMs > Date.now())
+        ) {
+          return null;
+        }
+
         usedKeys.add(raceKey);
 
         return {
@@ -248,6 +305,7 @@
           date,
           jcd,
           raceNo,
+          deadlineAt,
 
           place:
             String(
@@ -258,7 +316,9 @@
             )
         };
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .sort((a, b) => b.raceKey.localeCompare(a.raceKey))
+      .slice(0, OFFICIAL_SYNC_MAX_TARGETS);
   }
   function getTodayKey() {
     const now = new Date();
@@ -303,8 +363,9 @@
       delete area.dataset.state;
     }
   }
-    async function syncOneOfficialResult(
-    target
+  async function syncOneOfficialResult(
+    target,
+    signal = null
   ) {
     const url =
       `https://chappy-boatrace-api.vercel.app/api/result` +
@@ -318,11 +379,8 @@
         target.raceNo
       )}`;
 
-    const response =
-      await fetch(url);
-
-    const result =
-      await response.json();
+    const { response, payload: result } =
+      await fetchJsonWithTimeout(url, { cache: "no-store", signal });
 
     if (
       !response.ok ||
@@ -467,6 +525,11 @@
 
     officialSyncPromise =
       (async () => {
+        const controller = typeof window.AbortController === "function"
+          ? new window.AbortController()
+          : null;
+        officialSyncAbortController = controller;
+        const signal = controller?.signal || null;
         const targets =
           getPendingPredictions();
 
@@ -499,8 +562,8 @@
         const worker =
           async () => {
             while (
-              nextIndex <
-              targets.length
+              nextIndex < targets.length &&
+              !signal?.aborted
             ) {
               const target =
                 targets[
@@ -510,7 +573,8 @@
               try {
                 const result =
                   await syncOneOfficialResult(
-                    target
+                    target,
+                    signal
                   );
 
                 if (
@@ -522,6 +586,7 @@
                   pending += 1;
                 }
               } catch (error) {
+                if (signal?.aborted || error?.name === "AbortError") break;
                 errors += 1;
 
                 console.warn(
@@ -556,10 +621,12 @@
         );
 
         const message = [
-          `公式結果を${checked}レース確認`,
+          signal?.aborted
+            ? `公式結果の照合を中止（${checked}/${targets.length}レース）`
+            : `公式結果を${checked}レース確認`,
           `新たに${saved}レース確定`,
           `結果待ち${pending}レース`,
-          errors
+          !signal?.aborted && errors
             ? `取得失敗${errors}レース`
             : ""
         ]
@@ -568,7 +635,9 @@
 
         setOfficialSyncStatus(
           message,
-          errors
+          signal?.aborted
+            ? ""
+            : errors
             ? "warning"
             : "ready"
         );
@@ -583,6 +652,7 @@
         .finally(() => {
           officialSyncPromise =
             null;
+          officialSyncAbortController = null;
         });
 
     return officialSyncPromise;
@@ -2821,6 +2891,24 @@
   `);
 }
 
+  function startOfficialSyncInBackground() {
+    const section = document.getElementById("resultSection");
+    if (!section || section.hidden) return Promise.resolve(false);
+    return syncPendingOfficialResults()
+      .then(() => {
+        if (section && !section.hidden) renderStats();
+        window.dispatchEvent(new CustomEvent("chappy:stats-updated"));
+      })
+      .catch(error => {
+        if (error?.name === "AbortError") return;
+        console.error("公式結果の自動照合エラー", error);
+        setOfficialSyncStatus(
+          "公式結果を自動照合できませんでした",
+          "warning"
+        );
+      });
+  }
+
   function initStatsEvents() {
     if (statsInitPromise) {
       return statsInitPromise;
@@ -2834,27 +2922,10 @@
       );
       renderStats();
 
-      const [, , officialResult] =
-        await Promise.allSettled([
-          loadAutomaticStats(),
-          loadImprovementReview(),
-          syncPendingOfficialResults()
-        ]);
-
-      if (
-        officialResult.status ===
-        "rejected"
-      ) {
-        console.error(
-          "公式結果の自動照合エラー",
-          officialResult.reason
-        );
-
-        setOfficialSyncStatus(
-          "公式結果を自動照合できませんでした",
-          "warning"
-        );
-      }
+      await Promise.allSettled([
+        loadAutomaticStats(),
+        loadImprovementReview()
+      ]);
 
       renderStats();
       window.dispatchEvent(
@@ -2862,6 +2933,8 @@
           "chappy:stats-updated"
         )
       );
+
+      void startOfficialSyncInBackground();
     })();
 
     return statsInitPromise;
@@ -2926,6 +2999,15 @@
       start,
       { once: true }
     );
+    window.addEventListener("chappy:view-changed", event => {
+      if (event?.detail?.view !== "result") {
+        officialSyncAbortController?.abort();
+        return;
+      }
+      if (statsInitPromise) {
+        void statsInitPromise.then(() => startOfficialSyncInBackground());
+      }
+    });
 
     if (
       section &&

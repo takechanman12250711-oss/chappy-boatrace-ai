@@ -11,6 +11,7 @@ const read = file =>
 
 const html = read("index.html");
 const script = read("js/script.js");
+const appRuntime = read("js/app-runtime-loader.js");
 const stats = read("js/stats.js");
 const statsRuntime = read(
   "js/stats-runtime-loader.js"
@@ -18,6 +19,7 @@ const statsRuntime = read(
 const autoSelection = read("js/auto-selection.js");
 const api = read("js/api.js");
 const hiyoriLoader = read("js/hiyori-runtime-loader.js");
+const todayResultsHome = read("js/today-results-home.js");
 const render = read("js/render.js");
 const predictionRuntime = read(
   "js/prediction-runtime-loader.js"
@@ -122,6 +124,12 @@ assert.equal(
   "レースAPI取得と予想エンジン読込を並行する"
 );
 assert.equal(
+  script.includes("__CHAPPY_PREDICTION_VIEW_GUARD__") &&
+    script.includes('event?.detail?.view !== "prediction"'),
+  true,
+  "別タブへ移動した古い予想を裏で計算・描画しない"
+);
+assert.equal(
   script.includes("prefetchRace?.({"),
   true,
   "選択中の1レースだけを裏で先読みする"
@@ -130,6 +138,11 @@ assert.equal(
   api.includes("RACE_CACHE_MS = 15000"),
   true,
   "先読み結果を短時間だけ再利用する"
+);
+assert.equal(
+  api.includes("RACE_REQUEST_TIMEOUT_MS = 30000"),
+  true,
+  "レースAPIが固まっても予想画面を無期限待機させない"
 );
 assert.equal(
   autoSelection.includes("SUMMARY_ROOT"),
@@ -184,16 +197,42 @@ assert.equal(
   );
 });
 assert.equal(
-  html.includes(
+  appRuntime.includes(
     "js/stats-runtime-loader.js"
   ),
   true,
   "結果画面の軽量ローダーだけを初期読込する"
 );
+assert.equal(
+  /DOMContentLoaded[^\n]*load/.test(todayResultsHome),
+  false,
+  "結果照合モジュールはホーム表示だけで自動起動しない"
+);
+assert.equal(
+  todayResultsHome.includes("function load()"),
+  true,
+  "会場展開・レース選択時の結果照合遅延読込は維持する"
+);
+assert.equal(
+  todayResultsHome.includes("script.remove()"),
+  true,
+  "結果照合の遅延読込に失敗したscriptを除去して再試行可能にする"
+);
+assert.equal(
+  todayResultsHome.includes("return loadPromise"),
+  true,
+  "結果照合の遅延読込完了を会場展開・予想選択から待てるようにする"
+);
+assert.equal(
+  todayResultsHome.includes("LOAD_TIMEOUT_MS=15000"),
+  true,
+  "結果照合モジュールの遅延読込を15秒で打ち切る"
+);
 [
-  "style.css?v=20260731-ticket-wrap1",
-  "js/stats-runtime-loader.js?v=20260801-boat-identity1",
-  "js/prediction-runtime-loader.js?v=20260801-boat-identity1"
+  "style.css?v=20260803-ui-fix1",
+  "css/home-dashboard-v2.css?v=20260803-ui-fix1",
+  "js/app-runtime-loader.js?v=20260803-ui-fix1",
+  "js/home-dashboard-v2.js?v=20260803-ui-fix1"
 ].forEach(asset => {
   assert.equal(
     html.includes(asset),
@@ -203,14 +242,22 @@ assert.equal(
 });
 assert.equal(
   predictionRuntime.includes(
-    'const VERSION = "20260801-boat-identity1"'
+    'const VERSION = "20260803-ui-fix1"'
   ),
   true,
   "全文表示を含む予想モジュールのキャッシュ世代を更新する"
 );
 assert.equal(
+  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+    predictionRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+    statsRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+    hiyoriLoader.includes("SCRIPT_LOAD_TIMEOUT_MS=15000"),
+  true,
+  "モジュール読込が止まってもタブと予想を無期限待機させない"
+);
+assert.equal(
   statsRuntime.includes(
-    '"20260801-boat-identity1"'
+    '"20260803-ui-fix1"'
   ),
   true,
   "結果分析モジュールのキャッシュ世代を更新する"
@@ -230,6 +277,34 @@ assert.equal(
   "初期画面内に結果欄があっても統計を先読みしない"
 );
 assert.equal(
+  statsRuntime.includes("js/theory-improvement-dashboard.js"),
+  false,
+  "成績分析の通常表示から運用診断7通信を外す"
+);
+assert.equal(
+  stats.includes("OFFICIAL_SYNC_MAX_TARGETS = 5") &&
+    stats.includes("if (!section || section.hidden) return Promise.resolve(false)"),
+  true,
+  "成績分析を閉じた後は公式結果照合を止め、1回最大5レースに制限する"
+);
+assert.equal(
+  stats.includes("STATS_REQUEST_TIMEOUT_MS = 30000") &&
+    stats.includes("officialSyncAbortController?.abort()"),
+  true,
+  "成績通信に上限を設け、タブを離れたら進行中通信を中止する"
+);
+assert.equal(
+  stats.includes("date === today") &&
+    stats.includes("deadlineMs > Date.now()"),
+  true,
+  "当日の終了前・終了時刻不明レースを結果照合しない"
+);
+assert.equal(
+  script.includes("deadlineAt: String("),
+  true,
+  "保存予想へ締切時刻を残して終了後だけ照合できるようにする"
+);
+assert.equal(
   stats.includes("成績の要点"),
   true
 );
@@ -243,7 +318,7 @@ assert.equal(
   "予想開始時は必須モジュールだけ待つ"
 );
 assert.equal(
-  html.includes(
+  appRuntime.includes(
     "js/prediction-runtime-loader.js"
   ),
   true,
@@ -272,6 +347,18 @@ assert.equal(
   ),
   false,
   "裏側の学習診断を初期表示直後に起動しない"
+);
+assert.equal(
+  hiyoriLoader.includes(
+    'window.addEventListener("chappy:prediction-rendered",scheduleInstall'
+  ),
+  false,
+  "予想表示後も学習診断を自動起動しない"
+);
+assert.equal(
+  predictionRuntime.includes("void ensureOptionalReady()"),
+  false,
+  "予想表示後に任意校正を自動起動しない"
 );
 assert.equal(
   predictionRuntime.includes(

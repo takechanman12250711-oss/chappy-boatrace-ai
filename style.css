@@ -2279,6 +2279,74 @@ body {
   color: var(--app-blue-dark);
   font-size: 11px;
   font-weight: 800;
+  white-space: nowrap;
+}
+
+.section-status-badge[data-state="loading"] {
+  color: #075985;
+  background: #e0f2fe;
+}
+
+.section-status-badge[data-state="ready"] {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.section-status-badge[data-state="pending"] {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.section-status-badge[data-state="error"] {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.prediction-empty-state,
+.prediction-loading-state {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  margin: 8px 0;
+  padding: 28px 18px;
+  border: 1px solid #dbe7f3;
+  border-radius: 16px;
+  color: #52677d;
+  text-align: center;
+  background: #f8fbff;
+}
+
+.prediction-loading-state strong {
+  color: #16324f;
+  font-size: 15px;
+}
+
+.prediction-loading-state small {
+  max-width: 34em;
+  line-height: 1.65;
+}
+
+.prediction-loading-state.is-error {
+  border-color: #fecaca;
+  color: #991b1b;
+  background: #fff7f7;
+}
+
+.prediction-loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #cfe2f7;
+  border-top-color: #0878f9;
+  border-radius: 50%;
+  animation: prediction-loading-spin .8s linear infinite;
+}
+
+@keyframes prediction-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prediction-loading-spinner { animation: none; }
 }
 
 /* 今日のおすすめ */
@@ -2649,8 +2717,8 @@ body {
   }
 
   .section-status-badge {
-    max-width: 112px;
-    white-space: normal;
+    max-width: none;
+    white-space: nowrap;
     text-align: center;
   }
 }

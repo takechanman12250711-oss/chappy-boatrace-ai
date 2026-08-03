@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260801-boat-identity1";
+  const VERSION = "20260803-ui-fix1";
+  const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const scripts = [
     "js/boat-identity.js",
     "js/theory.js",
@@ -22,8 +23,7 @@
     "js/skip-ai-shadow.js",
     "js/render.js",
     "js/skip-ai-display.js",
-    "js/scenario-ai-v6-display.js",
-    "js/prediction-ui-phase4.js"
+    "js/scenario-ai-v6-display.js"
   ];
   const optionalScripts = [
     "js/prediction-calibration.js"
@@ -34,9 +34,14 @@
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const clean = src.split("?")[0];
-      const existing = [...document.scripts].find(
+      let existing = [...document.scripts].find(
         script => script.src && script.src.includes(clean)
       );
+
+      if (existing?.dataset.chappyLoadFailed === "true") {
+        existing.remove?.();
+        existing = null;
+      }
 
       if (existing?.dataset.chappyLoaded === "true") {
         resolve();
@@ -44,15 +49,31 @@
       }
 
       const script = existing || document.createElement("script");
+      let settled = false;
+      const timer = root.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        script.dataset.chappyLoadFailed = "true";
+        script.remove?.();
+        reject(new Error(`予想モジュールの読込が15秒を超えました: ${clean}`));
+      }, SCRIPT_LOAD_TIMEOUT_MS);
+      const finish = callback => () => {
+        if (settled) return;
+        settled = true;
+        root.clearTimeout(timer);
+        callback();
+      };
       script.async = false;
       script.dataset.chappyPredictionModule = clean;
-      script.addEventListener("load", () => {
+      script.addEventListener("load", finish(() => {
         script.dataset.chappyLoaded = "true";
         resolve();
-      }, { once: true });
-      script.addEventListener("error", () => reject(
-        new Error(`予想モジュールを読み込めません: ${clean}`)
-      ), { once: true });
+      }), { once: true });
+      script.addEventListener("error", finish(() => {
+        script.dataset.chappyLoadFailed = "true";
+        script.remove?.();
+        reject(new Error(`予想モジュールを読み込めません: ${clean}`));
+      }), { once: true });
 
       if (!existing) {
         script.src = `${clean}?v=${VERSION}`;
@@ -61,8 +82,23 @@
     });
   }
 
+  function preloadScripts(list) {
+    if (typeof document.querySelectorAll !== "function") return;
+    list.forEach(src => {
+      const clean = src.split("?")[0];
+      if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
+      if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "script";
+      link.href = `${clean}?v=${VERSION}`;
+      document.head.appendChild(link);
+    });
+  }
+
   function ensureReady() {
     if (readyPromise) return readyPromise;
+    preloadScripts(scripts);
 
     readyPromise = (async () => {
       for (const src of scripts) await loadScript(src);
@@ -70,7 +106,6 @@
         "chappy:prediction-runtime-ready",
         { detail: { version: VERSION } }
       ));
-      void ensureOptionalReady();
       return true;
     })().catch(error => {
       readyPromise = null;
@@ -82,6 +117,7 @@
 
   function ensureOptionalReady() {
     if (optionalReadyPromise) return optionalReadyPromise;
+    preloadScripts(optionalScripts);
 
     optionalReadyPromise = (async () => {
       for (const src of optionalScripts) await loadScript(src);

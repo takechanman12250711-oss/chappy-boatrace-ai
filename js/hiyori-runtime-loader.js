@@ -10,6 +10,7 @@
   let corePromise=null;
   let backgroundPromise=null;
   let installPromise=null;
+  const SCRIPT_LOAD_TIMEOUT_MS=15000;
 
   const coreScripts=[
     "js/prediction-flow-priority.js",
@@ -50,12 +51,22 @@
     if([...document.scripts].some(script=>script.src&&script.src.includes(clean))){resolve();return}
     const script=document.createElement("script");
     script.src=src;script.async=false;script.dataset.chappyHiyoriModule=clean;
-    script.onload=resolve;
-    script.onerror=()=>{console.warn("[hiyori-runtime-loader] load failed:",src);resolve()};
+    let settled=false;
+    const finish=()=>{if(settled)return;settled=true;window.clearTimeout(timer);resolve()};
+    const timer=window.setTimeout(()=>{console.warn("[hiyori-runtime-loader] load timeout:",src);script.remove();finish()},SCRIPT_LOAD_TIMEOUT_MS);
+    script.onload=finish;
+    script.onerror=()=>{console.warn("[hiyori-runtime-loader] load failed:",src);finish()};
     document.head.appendChild(script);
+  })}
+  function preloadScripts(list){if(typeof document.querySelectorAll!=="function")return;list.forEach(src=>{
+    const clean=src.split("?")[0];
+    if([...document.scripts].some(script=>script.src&&script.src.includes(clean)))return;
+    if([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link=>link.href&&link.href.includes(clean)))return;
+    const link=document.createElement("link");link.rel="preload";link.as="script";link.href=clean;document.head.appendChild(link);
   })}
   function installCore(){
     if(corePromise)return corePromise;
+    preloadScripts(coreScripts);
     corePromise=(async()=>{
       await window.ChappyPredictionRuntime
         ?.ensureReady?.();
@@ -67,6 +78,7 @@
   }
   function installBackground(){
     if(backgroundPromise)return backgroundPromise;
+    preloadScripts(backgroundScripts);
     backgroundPromise=(async()=>{
       await installCore();
       for(const src of backgroundScripts){await loadScript(src)}
@@ -92,6 +104,5 @@
   }
   ["chappy:hiyori-snapshot-created","chappy:hiyori-learning-adoption-updated","chappy:hiyori-adoption-proposals-updated","chappy:hiyori-production-checklist-updated"].forEach(name=>window.addEventListener(name,syncCompatibilityKeys));
   window.addEventListener("storage",event=>{if(event.key&&event.key.startsWith("chappy_hiyori_"))syncCompatibilityKeys()});
-  window.addEventListener("chappy:prediction-rendered",scheduleInstall,{once:true});
   window.ChappyHiyoriRuntimeLoader={id:SCRIPT_ID,install,ensureReady:installCore,syncCompatibilityKeys,scripts:scripts.slice(),coreScripts:coreScripts.slice(),backgroundScripts:backgroundScripts.slice(),compactMode:true};
 })();

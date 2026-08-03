@@ -17,17 +17,19 @@ const source = fs.readFileSync(
 );
 
 function createRuntime({
-  failCalibration = false
+  failCalibration = false,
+  failFirstCore = false
 } = {}) {
   const dispatched = [];
   const appended = [];
+  let coreFailuresRemaining = failFirstCore ? 1 : 0;
   const document = {
     scripts: [],
     createElement() {
       const listeners =
         new Map();
 
-      return {
+      const script = {
         dataset: {},
         src: "",
         async: true,
@@ -43,8 +45,13 @@ function createRuntime({
         dispatch(name) {
           listeners
             .get(name)?.();
+        },
+        remove() {
+          const index = document.scripts.indexOf(script);
+          if (index >= 0) document.scripts.splice(index, 1);
         }
       };
+      return script;
     },
     head: {
       appendChild(script) {
@@ -56,6 +63,14 @@ function createRuntime({
         );
 
         setImmediate(() => {
+          if (
+            coreFailuresRemaining > 0 &&
+            script.src.includes("boat-identity.js")
+          ) {
+            coreFailuresRemaining -= 1;
+            script.dispatch("error");
+            return;
+          }
           if (
             failCalibration &&
             script.src.includes(
@@ -73,6 +88,8 @@ function createRuntime({
     }
   };
   const window = {
+    setTimeout,
+    clearTimeout,
     dispatchEvent(event) {
       dispatched.push(
         event.type
@@ -94,6 +111,8 @@ function createRuntime({
     Object,
     Promise,
     String,
+    setTimeout,
+    clearTimeout,
     setImmediate
   };
 
@@ -198,6 +217,27 @@ function createRuntime({
       .includes(
         "chappy:prediction-runtime-optional-ready"
       )
+  );
+
+  const retryableCore = createRuntime({
+    failFirstCore: true
+  });
+  await assert.rejects(
+    retryableCore.runtime.ensureReady(),
+    /予想モジュールを読み込めません/,
+    "一時的な必須モジュール失敗を呼び出し元へ返す"
+  );
+  assert.equal(
+    await retryableCore.runtime.ensureReady(),
+    true,
+    "失敗したscriptを除去し、次の操作で予想モジュールを再読込する"
+  );
+  assert.equal(
+    retryableCore.appended.filter(src =>
+      src.includes("boat-identity.js")
+    ).length,
+    2,
+    "失敗した先頭モジュールを実際に再要求する"
   );
 
   console.log(

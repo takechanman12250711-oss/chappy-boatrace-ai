@@ -1838,6 +1838,7 @@ function saveRun(
       jcd: item.jcd,
       place: item.place,
       raceNo: item.raceNo,
+      deadlineAt: item.deadlineAt,
       type: item.type,
       score: item.score,
       scoreSource:

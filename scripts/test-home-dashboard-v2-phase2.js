@@ -11,7 +11,9 @@ const required = [
   'PAGE_SIZE = 5',
   'slice(0, state.visibleCount)',
   'sessionStorage',
-  'requestIdleCallback',
+  'requestAnimationFrame',
+  'buildSelectionSchedule',
+  'scheduleData',
   'requestMap',
   'renderRecommendations',
   'renderSchedule'
