@@ -15,6 +15,7 @@ assert(js.includes("モーニング"), "開催区分フィルターを持つ");
 assert(js.includes("syncAndOpen"), "既存レース選択へ同期する");
 assert(js.includes("fetchButton.click()"), "レース選択後に既存取得処理を自動実行する");
 assert(css.includes("repeat(3"), "下部ナビをホーム・AI予想・成績分析の3項目にする");
+assert(css.includes("[hidden]{display:none!important}"), "追加レイアウトCSSがタブの非表示状態を上書きしない");
 assert(!html.includes('data-view="menu"') && !js.includes('data-view="menu"'), "未実装メニューを表示しない");
 assert(!js.includes("homeFavoriteBtn"), "保存されない見せかけのお気に入り操作を表示しない");
 assert(!html.includes('data-view="race"') && !js.includes('data-view="race"'), "ホームと重複するレース検索タブを表示しない");
@@ -23,6 +24,7 @@ assert(!js.includes("root.scrollTo({ top: 0"), "タブ操作でホーム先頭�
 assert(js.includes("sessionStorage"), "ホームデータを短期キャッシュする");
 assert(js.includes("requestAnimationFrame") && js.includes("scheduleRefresh"), "最新データ取得を初期描画直後の次フレームへ回す");
 assert(js.includes("HOME_REQUEST_TIMEOUT_MS"), "ホーム通信を無期限待機させない");
+assert(js.includes("deadlineMs > Date.now()"), "CDNキャッシュ中でも締切済みレースを選択対象から外す");
 assert(js.includes("scheduleError"), "開催情報の取得失敗を開催なしと区別する");
 assert(js.includes("data-home-retry"), "開催情報の取得失敗を画面から再試行できる");
 assert(js.includes("selectionReady"), "判定可能なレースだけをおすすめ候補にする");

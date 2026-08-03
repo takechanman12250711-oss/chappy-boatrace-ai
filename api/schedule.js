@@ -492,9 +492,11 @@ module.exports =
         res.setHeader(
           "Cache-Control",
 
-          date === today
-            ? "s-maxage=30, stale-while-revalidate=30"
-            : "s-maxage=3600, stale-while-revalidate=86400"
+          selectedVenue.scheduleAvailable && !selectedVenue.error
+            ? date === today
+              ? "public, max-age=0, s-maxage=300, stale-while-revalidate=3600"
+              : "s-maxage=3600, stale-while-revalidate=86400"
+            : "private, no-store, max-age=0"
         );
 
         return res
@@ -608,7 +610,7 @@ module.exports =
         "Cache-Control",
 
         date === today
-          ? "s-maxage=30, stale-while-revalidate=30"
+          ? "public, max-age=0, s-maxage=60, stale-while-revalidate=300"
           : "s-maxage=3600, stale-while-revalidate=86400"
       );
 
