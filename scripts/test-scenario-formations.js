@@ -170,6 +170,77 @@ assert.notDeepEqual(
   legacy.main,
   "Phase2 STEP3では展開に合わせて買い目を更新する"
 );
+assert.equal(
+  connected.flowFormations.length,
+  1,
+  "正式3攻めから流しformationを1件生成する"
+);
+const connectedFlow = connected.flowFormations[0];
+assert.equal(connectedFlow.headBoatNo, 3);
+const connectedSecondPriority =
+  connected.rankings.second
+    .map((row) => row.boatNo)
+    .filter((boatNo) => boatNo !== 3)
+    .slice(0, 3);
+assert.deepEqual(
+  connectedFlow.secondPriorityBoatNos,
+  connectedSecondPriority,
+  "正式hold順位の1〜3艇だけを2着候補にする"
+);
+assert.deepEqual(
+  connectedFlow.secondBoatNos,
+  [...connectedSecondPriority].sort(
+    (a, b) => a - b
+  ),
+  "表示上は2着グループを艇番順にする"
+);
+assert.equal(
+  connectedFlow.notation,
+  `3-${connectedFlow.secondBoatNos.join("")}-全`
+);
+assert.equal(
+  connectedFlow.pointCount,
+  connectedFlow.secondBoatNos.length * 4
+);
+assert.equal(
+  connectedFlow.pointCount,
+  8,
+  "3攻めの2着2艇は8点の全流しにする"
+);
+assert.deepEqual(
+  connected.flow,
+  connectedFlow.expandedTickets,
+  "3着全通りの4・8・12点をformation.flowへ展開する"
+);
+
+const singleSecondScenarios = {
+  ...scenarios,
+  mainScenario: {
+    ...scenarios.mainScenario,
+    outcome: {
+      ...scenarios.mainScenario.outcome,
+      secondCandidates:
+        scenarios.mainScenario.outcome
+          .secondCandidates.slice(0, 1)
+    }
+  },
+  holdPickupTheory: {
+    ...scenarios.holdPickupTheory,
+    secondCandidates:
+      scenarios.holdPickupTheory
+        .secondCandidates.slice(0, 1)
+  }
+};
+const singleSecondFlow =
+  aiCore.buildFormations(
+    threeAttack,
+    singleSecondScenarios
+  ).flowFormations[0];
+assert.equal(
+  singleSecondFlow.pointCount,
+  4,
+  "2着1艇は4点の全流しにする"
+);
 
 const practical = selector.select({
   aiCore: { formations: connected },
@@ -233,6 +304,17 @@ function assertScenarioHead(label, analyses, scenarioType, head) {
       ticket.startsWith(`${head}-`)
     ),
     `${label}の攻め艇を本線頭にする`
+  );
+  assert.equal(
+    formations.flowFormations[0].headBoatNo,
+    head,
+    `${label}の正式頭を流しでも固定する`
+  );
+  assert.ok(
+    [4, 8, 12].includes(
+      formations.flowFormations[0].pointCount
+    ),
+    `${label}の流しを4・8・12点で完全展開する`
   );
 }
 

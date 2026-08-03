@@ -396,7 +396,10 @@
                     ?.reasonCode || ""
                 ),
               reason:
-                row?.ticketSelected === true
+                row?.ticketSelected === true ||
+                String(
+                  row?.reasonCode || ""
+                )
                   ? ""
                   : String(
                       row?.reason || ""

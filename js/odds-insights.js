@@ -269,9 +269,32 @@
       };
     }
 
+    function compareMissingScarcity(
+      a,
+      b
+    ) {
+      return (
+        Number(
+          a?.recentOccurrences || 0
+        ) -
+          Number(
+            b?.recentOccurrences || 0
+          ) ||
+        Number(
+          b?.missingDays || 0
+        ) -
+          Number(
+            a?.missingDays || 0
+          ) ||
+        a.ticket.localeCompare(
+          b.ticket
+        )
+      );
+    }
+
     function buildMissingTop30(
       missingData,
-      byTicket,
+      _byTicket,
       limit = 30
     ) {
       const source = Array.isArray(
@@ -286,18 +309,9 @@
             item?.ticket || ""
           );
 
-          const odds = Number(
-            byTicket?.[ticket]
-          );
-
           return {
             ...item,
-            ticket,
-            odds:
-              Number.isFinite(odds) &&
-              odds > 0
-                ? odds
-                : null
+            ticket
           };
         })
         .filter(item => {
@@ -313,27 +327,13 @@
               boat >= 1 &&
               boat <= 6
             ) &&
-            new Set(boats).size === 3
+            new Set(boats).size === 3 &&
+            Number(
+              item.recentOccurrences || 0
+            ) === 0
           );
         })
-        .sort((a, b) => {
-          const oddsA =
-            Number.isFinite(a.odds)
-              ? a.odds
-              : Number.POSITIVE_INFINITY;
-
-          const oddsB =
-            Number.isFinite(b.odds)
-              ? b.odds
-              : Number.POSITIVE_INFINITY;
-
-          return (
-            oddsA - oddsB ||
-            a.ticket.localeCompare(
-              b.ticket
-            )
-          );
-        })
+        .sort(compareMissingScarcity)
         .slice(
           0,
           Math.max(0, Number(limit) || 0)
@@ -348,7 +348,7 @@
         top30: rows,
         displayedCount: rows.length,
         sort:
-          "current-odds-ascending"
+          "zero-in-recent-30-days-then-missing-days"
       };
     }
 
@@ -356,6 +356,7 @@
       calculateCombinedOdds,
       analyzeCategory,
       buildCombinedOdds,
+      compareMissingScarcity,
       buildMissingTop30
     };
   }

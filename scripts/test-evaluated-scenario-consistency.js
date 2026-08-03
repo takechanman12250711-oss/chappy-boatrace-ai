@@ -1435,8 +1435,8 @@ const selectionHash =
     .digest("hex");
 assert.equal(
   selectionHash,
-  "42bc0c90c51e45e9ede7bece7d1144287e1f182c1a45e89329cf1199586eaaa2",
-  "正式主展開を本線正本にした281レースの買い目を固定する"
+  "e3efac9e307a7353f465305b3405e0555f26c5becf3eb5b9818bb476f696e39a",
+  "正式主展開の固定頭・3着全流しを含む281レースの買い目を固定する"
 );
 
 console.log("評価済み展開の全件整合テスト: 合格");

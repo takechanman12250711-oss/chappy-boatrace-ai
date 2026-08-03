@@ -16,7 +16,7 @@
   "use strict";
 
   const CORE_VERSION =
-    "ai-core-v4.8.3-formal-main-scenario";
+    "ai-core-v4.8.4-fixed-head-flow";
 
   /* ===============================
     基本ユーティリティ
@@ -9904,6 +9904,7 @@ function buildRaceTrendEvaluation(data) {
   const main = [];
   const safety = [];
   const flowTickets = [];
+  const flowFormations = [];
   const longshot = [];
 
   function boatNo(boat) {
@@ -10355,28 +10356,6 @@ function buildRaceTrendEvaluation(data) {
           : null
       ]);
 
-  const flowHeads = mainEstablished && evidence.flow
-    ? uniqueBoats(
-        hasScenario
-          ? [
-              ...supportedSubScenarioHeads,
-              marks.taikou
-            ]
-          : [
-              evidence.twoSashi && boatNo(marks.honmei) !== 2
-                ? list.find((boat) => boatNo(boat) === 2)
-                : null,
-              evidence.threeAttack && boatNo(marks.honmei) !== 3
-                ? list.find((boat) => boatNo(boat) === 3)
-                : null,
-              evidence.fourAttack && boatNo(marks.honmei) !== 4
-                ? list.find((boat) => boatNo(boat) === 4)
-                : null,
-              marks.taikou
-            ]
-      )
-    : [];
-
   function generateTickets(
     target,
     heads,
@@ -10525,24 +10504,99 @@ function buildRaceTrendEvaluation(data) {
     8
   );
 
-  preservedScenarioBranches.forEach(
-    ({ first, second, third }) => {
-      addTicket(
-        flowTickets,
-        first,
-        second,
-        third
-      );
-    }
-  );
+  /*
+    流しは正式主展開の1着頭を固定し、正式な2着残し候補を
+    1〜3艇だけ採用する。3着は頭・各2着艇を除く全艇へ展開し、
+    4・8・12点の完全なフォーメーションを返す。
 
-  generateTickets(
-    flowTickets,
-    flowHeads,
-    secondRanking.slice(0, 4),
-    thirdRanking.slice(0, 5),
-    6
-  );
+    オッズはここでは参照しない。実戦厳選とは別の表示用データで、
+    formation.flow には展開後の全買い目を保持する。
+  */
+  const flowHead = mainHeads[0] || null;
+  const flowBoatNos = [
+    ...new Set(
+      list
+        .map(boatNo)
+        .filter(
+          no => no >= 1 && no <= 6
+        )
+    )
+  ].sort((a, b) => a - b);
+  const flowSecondBoats = uniqueBoats(
+    secondRanking.filter(
+      (candidate) =>
+        boatNo(candidate) !== boatNo(flowHead)
+    )
+  ).slice(0, 3);
+
+  if (
+    mainEstablished &&
+    flowHead &&
+    flowBoatNos.length === 6 &&
+    flowSecondBoats.length >= 1
+  ) {
+    const headBoatNo = boatNo(flowHead);
+    const secondPriorityBoatNos =
+      flowSecondBoats.map(boatNo);
+    const secondBoatNos = [
+      ...secondPriorityBoatNos
+    ].sort((a, b) => a - b);
+    const expandedTickets = [];
+
+    secondPriorityBoatNos.forEach((secondBoatNo) => {
+      for (const thirdBoatNo of flowBoatNos) {
+        if (
+          thirdBoatNo === headBoatNo ||
+          thirdBoatNo === secondBoatNo
+        ) {
+          continue;
+        }
+
+        const ticket =
+          `${headBoatNo}-${secondBoatNo}-${thirdBoatNo}`;
+
+        if (!expandedTickets.includes(ticket)) {
+          expandedTickets.push(ticket);
+        }
+      }
+    });
+
+    flowTickets.push(...expandedTickets);
+
+    const scenarioType =
+      raceScenarios?.mainScenario?.type ||
+      marks.scenario?.type ||
+      "formal-main";
+    const scenarioLabel =
+      raceScenarios?.mainScenario?.label ||
+      marks.scenario?.label ||
+      `${headBoatNo}号艇1着`;
+    const notation =
+      `${headBoatNo}-${secondBoatNos.join("")}-全`;
+    const reason =
+      `${scenarioLabel}を1着頭に固定し、` +
+      `${secondBoatNos.join("・")}号艇を正式な2着残し候補として、` +
+      "3着は残り全艇へ流す。";
+
+    flowFormations.push({
+      headBoatNo,
+      secondBoatNos: [...secondBoatNos],
+      secondPriorityBoatNos: [
+        ...secondPriorityBoatNos
+      ],
+      thirdMode: "all",
+      notation,
+      pointCount: expandedTickets.length,
+      ticketCount: expandedTickets.length,
+      expandedTickets: [...expandedTickets],
+      tickets: [...expandedTickets],
+      scenarioType,
+      label: scenarioLabel,
+      reason
+    });
+  }
+
+  evidence.flow = flowFormations.length > 0;
 
   generateTickets(
     longshot,
@@ -10569,6 +10623,7 @@ function buildRaceTrendEvaluation(data) {
     main,
     safety,
     flow: flowTickets,
+    flowFormations,
     longshot,
 
     scenario: marks.scenario,
@@ -12850,6 +12905,35 @@ return {
     const alignedFlowTickets = ticketStrings(
       formalFormation.flow
     );
+    /*
+      実戦厳選へ渡す構造化候補数は従来の最大6点を維持する。
+      流し表示と最終formationには、この後で全4・8・12点を戻す。
+    */
+    const practicalFlowTickets =
+      alignedFlowTickets.slice(0, 6);
+    const alignedFlowFormations = (
+      Array.isArray(formalFormation.flowFormations)
+        ? formalFormation.flowFormations
+        : []
+    ).map((formation) => ({
+      ...formation,
+      secondBoatNos: [
+        ...(formation?.secondBoatNos || [])
+      ],
+      secondPriorityBoatNos: [
+        ...(
+          formation?.secondPriorityBoatNos ||
+          formation?.secondBoatNos ||
+          []
+        )
+      ],
+      expandedTickets: [
+        ...(formation?.expandedTickets || [])
+      ],
+      tickets: [
+        ...(formation?.tickets || [])
+      ]
+    }));
     const alignedHoleTickets = ticketStrings(
       formalFormation.longshot,
       retainedOldHeadTickets
@@ -12863,8 +12947,10 @@ return {
       main: formalMainTickets,
       cover: alignedCoverTickets,
       safety: alignedCoverTickets,
-      nagashi: alignedFlowTickets,
-      flow: alignedFlowTickets,
+      nagashi: practicalFlowTickets,
+      flow: practicalFlowTickets,
+      flowFormations:
+        alignedFlowFormations,
       hole: alignedHoleTickets,
       longshot: alignedHoleTickets,
       mainEstablished:
@@ -13141,7 +13227,9 @@ return {
         evaluations,
         tickets: formalMainTickets,
         coverTickets: alignedCoverTickets,
-        flowTickets: alignedFlowTickets
+        flowTickets: practicalFlowTickets,
+        flowFormations:
+          alignedFlowFormations
       },
       formation: alignedFormation,
       formations: alignedFormation
@@ -13543,6 +13631,7 @@ return {
       );
     const flowTickets =
       ticketStrings(
+        alignedFlowTickets,
         oldMainSheet.flowTickets,
         baseFormation.nagashi,
         baseFormation.flow
@@ -13780,7 +13869,11 @@ return {
       coverTickets:
         ticketSheets.cover,
       flowTickets:
-        ticketSheets.flow
+        ticketSheets.flow.filter((row) =>
+          practicalFlowTickets.includes(row.ticket)
+        ),
+      flowFormations:
+        alignedFlowFormations
     };
     const rawFormationEvidence =
       aiCore.formations?.evidence || {};
@@ -13817,6 +13910,8 @@ return {
       cover: coverTickets,
       flow: flowTickets,
       nagashi: flowTickets,
+      flowFormations:
+        alignedFlowFormations,
       longshot: holeTickets,
       hole: holeTickets,
       possibilityCandidates:

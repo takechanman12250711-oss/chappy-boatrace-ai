@@ -53,6 +53,8 @@ const unclear = [
 const unclearFormation = aiCore.buildFormations(unclear);
 assert.equal(unclearFormation.mainEstablished, false);
 assert.deepEqual(unclearFormation.main, []);
+assert.deepEqual(unclearFormation.flow, []);
+assert.deepEqual(unclearFormation.flowFormations, []);
 
 const established = [
   boat(1, 82, 76, 62, 86, 68),
@@ -71,6 +73,121 @@ assert.equal(establishedFormation.evidence.flow, true);
 assert.ok(establishedFormation.main.length >= 3);
 assert.ok(establishedFormation.safety.length >= 2);
 assert.ok(establishedFormation.flow.length >= 1);
+
+function assertCompleteFlowFormation(
+  formation,
+  expectedHead
+) {
+  assert.equal(
+    formation.flowFormations.length,
+    1,
+    "正式主展開につき表示用流しを1件返す"
+  );
+
+  const flowFormation =
+    formation.flowFormations[0];
+
+  assert.equal(flowFormation.headBoatNo, expectedHead);
+  assert.ok(
+    flowFormation.secondBoatNos.length >= 1 &&
+      flowFormation.secondBoatNos.length <= 3,
+    "2着候補は1〜3艇に限定する"
+  );
+  assert.equal(
+    new Set(flowFormation.secondBoatNos).size,
+    flowFormation.secondBoatNos.length,
+    "2着候補を重複させない"
+  );
+  assert.ok(
+    !flowFormation.secondBoatNos.includes(expectedHead),
+    "1着頭を2着候補へ混ぜない"
+  );
+  assert.deepEqual(
+    flowFormation.secondBoatNos,
+    [...flowFormation.secondBoatNos].sort(
+      (a, b) => a - b
+    ),
+    "表示用の2着グループは艇番順に並べる"
+  );
+  assert.deepEqual(
+    new Set(
+      flowFormation.secondPriorityBoatNos
+    ),
+    new Set(flowFormation.secondBoatNos),
+    "予想上の2着優先順も別に保持する"
+  );
+  assert.equal(flowFormation.thirdMode, "all");
+  assert.ok(flowFormation.scenarioType);
+  assert.ok(flowFormation.label);
+  assert.match(flowFormation.reason, /3着は残り全艇/);
+  assert.equal(
+    flowFormation.notation,
+    `${expectedHead}-${flowFormation.secondBoatNos.join("")}-全`
+  );
+  assert.ok(
+    [4, 8, 12].includes(flowFormation.pointCount),
+    "流しは2着候補数に応じて4・8・12点にする"
+  );
+  assert.equal(
+    flowFormation.pointCount,
+    flowFormation.secondBoatNos.length * 4
+  );
+  assert.equal(
+    flowFormation.ticketCount,
+    flowFormation.pointCount
+  );
+  assert.deepEqual(
+    flowFormation.expandedTickets,
+    flowFormation.tickets
+  );
+  assert.deepEqual(
+    formation.flow,
+    flowFormation.expandedTickets,
+    "formation.flowへ流しの全買い目を欠落なく保持する"
+  );
+
+  for (const secondBoatNo of flowFormation.secondBoatNos) {
+    const ticketsForSecond =
+      flowFormation.expandedTickets.filter(
+        (ticket) =>
+          ticket.startsWith(
+            `${expectedHead}-${secondBoatNo}-`
+          )
+      );
+
+    assert.equal(
+      ticketsForSecond.length,
+      4,
+      "各2着候補から残り全4艇へ流す"
+    );
+    assert.deepEqual(
+      new Set(
+        ticketsForSecond.map(
+          (ticket) => Number(ticket.split("-")[2])
+        )
+      ),
+      new Set(
+        [1, 2, 3, 4, 5, 6].filter(
+          (boatNo) =>
+            boatNo !== expectedHead &&
+            boatNo !== secondBoatNo
+        )
+      )
+    );
+  }
+}
+
+assertCompleteFlowFormation(
+  establishedFormation,
+  establishedFormation.axis.honmei
+);
+assert.equal(
+  establishedFormation
+    .flowFormations[0]
+    .pointCount,
+  12,
+  "2着3艇は12点の全流しにする"
+);
 
 for (const ticket of [
   ...establishedFormation.main,
@@ -355,6 +472,20 @@ assert.equal(
   false,
   "旧本命候補を押さえへ混ぜて役割を逆転させない"
 );
+assertCompleteFlowFormation(
+  escapeMerged.formation,
+  1
+);
+assert.deepEqual(
+  escapeMerged.mainSheet.flowFormations,
+  escapeMerged.formation.flowFormations,
+  "最終本命シートにも同じ流しformationを保持する"
+);
+assert.deepEqual(
+  escapeMerged.aiCore.formations.flowFormations,
+  escapeMerged.formation.flowFormations,
+  "AIコアのcanonical formationにも同じ流しを保持する"
+);
 
 const attackData =
   raceData("threeAttack");
@@ -450,9 +581,14 @@ assert.deepEqual(
   attackMerged.formation.main,
   "オッズが変わっても本線の券・順番は変えない"
 );
+assert.deepEqual(
+  changedOddsMerged.formation.flowFormations,
+  attackMerged.formation.flowFormations,
+  "オッズが変わっても流しformationを変えない"
+);
 
 console.log("AIコア買い目接続テスト: 合格");
 console.log("- 本線不成立: 本線買い目0点");
 console.log("- 本線成立: AIコアから本線・押さえを生成");
-console.log("- 対抗展開あり: 流し候補を生成");
+console.log("- 流し: 正式主展開の頭固定・2着1〜3艇・3着全艇");
 console.log("- 2差し・3攻め・4カド: 各展開艇を本線頭に固定");

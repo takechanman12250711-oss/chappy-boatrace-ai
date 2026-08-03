@@ -56,6 +56,7 @@ function functionSource(name) {
 
 const initialFlow = functionSource("fetchAndRenderRace");
 const supplementFlow = functionSource("fetchOddsSupplement");
+const missingFetchFlow = functionSource("fetchMissingNumbers");
 const refreshFlow = functionSource("refreshOddsOnly");
 const applyFlow = functionSource("applyOddsSupplement");
 const applyMissingFlow = functionSource("applyMissingSupplement");
@@ -84,6 +85,16 @@ assert.match(
   supplementFlow,
   /fetchMissingNumbers\(params\)[\s\S]*fetchOddsData\(params\)[\s\S]*await oddsPromise/,
   "オッズと出てない目を並行開始し、オッズだけを先に反映できる"
+);
+assert.match(
+  missingFetchFlow,
+  /\?jcd=\$\{encodeURIComponent\(params\.jcd\)\}[\s\S]*&scope=venue[\s\S]*&date=\$\{encodeURIComponent\(params\.date\)\}/,
+  "出てない目は選択場の全Rと予想対象日を明示して取得する"
+);
+assert.equal(
+  missingFetchFlow.includes("params.rno"),
+  false,
+  "出てない目の順位条件へR番号を混ぜない"
 );
 assert.equal(supplementFlow.includes("await Promise.all"), false, "出てない目の遅延でオッズ表示を止めない");
 assert.match(
@@ -119,6 +130,11 @@ assert.match(
   "出てない目は予想画面全体を再描画せず、保存後に該当欄だけ後追い更新する"
 );
 assert.match(
+  applyFlow,
+  /!hasUsableOddsData\(oddsData\)[\s\S]*missingData[\s\S]*applyMissingSupplement[\s\S]*missingPromise[\s\S]*applyMissingSupplement/,
+  "オッズが未取得でも、場別の出てない目は独立して反映する"
+);
+assert.match(
   initialFlow,
   /oddsAppliedBeforeRender[\s\S]*missingPromise[\s\S]*applyMissingSupplement/,
   "オッズが初回描画より先に返っても、後着の出てない目を反映する"
@@ -152,10 +168,9 @@ const sandbox = {
       history.set(key, String(value));
     }
   },
-  buildMissingTop30(missingData, byTicket) {
+  buildMissingTop30(missingData) {
     return {
-      ...missingData,
-      testedTickets: Object.keys(byTicket)
+      ...missingData
     };
   },
   attachCombinedOdds(prediction) {

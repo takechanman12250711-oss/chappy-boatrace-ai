@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const RENDER_VERSION = "render-ui-v3.0.0";
+  const RENDER_VERSION = "render-ui-v3.2.0-flow-missing30";
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
@@ -1264,6 +1264,104 @@ if (raceInfoArea) {
     );
   }
 
+  function normalizeFlowFormationRows(
+    prediction
+  ) {
+    const source =
+      prediction?.mainSheet
+        ?.flowFormations ||
+      prediction?.formation
+        ?.flowFormations ||
+      prediction?.formations
+        ?.flowFormations ||
+      [];
+
+    return arrayify(source)
+      .map(item => {
+        const row =
+          item &&
+          typeof item === "object"
+            ? item
+            : {};
+        const headBoatNo = Number(
+          row.headBoatNo ??
+          row.head ??
+          0
+        );
+        const secondBoatNos = [
+          ...new Set(
+            arrayify(
+              row.secondBoatNos ??
+              row.seconds
+            )
+              .map(Number)
+              .filter(
+                boatNo =>
+                  boatNo >= 1 &&
+                  boatNo <= 6 &&
+                  boatNo !== headBoatNo
+              )
+          )
+        ].slice(0, 3);
+        const notation = String(
+          row.notation ||
+          row.display ||
+          (
+            headBoatNo &&
+            secondBoatNos.length
+              ? `${headBoatNo}-${secondBoatNos.join("")}-全`
+              : ""
+          )
+        ).trim();
+        const expandedCount =
+          arrayify(
+            row.expandedTickets ||
+            row.tickets
+          ).length;
+        const pointCount = Number(
+          row.pointCount ??
+          row.ticketCount ??
+          (
+            expandedCount ||
+            secondBoatNos.length * 4
+          )
+        );
+
+        if (
+          !notation ||
+          !headBoatNo ||
+          !secondBoatNos.length ||
+          ![4, 8, 12].includes(
+            pointCount
+          )
+        ) {
+          return null;
+        }
+
+        return {
+          ticket: notation,
+          category: "流し",
+          categories: ["流し"],
+          scenarioType:
+            row.scenarioType || "",
+          scenarioTypes:
+            row.scenarioType
+              ? [row.scenarioType]
+              : [],
+          oddsText: `${pointCount}点`,
+          pointCount,
+          scenarioSummary:
+            row.reason ||
+            row.scenarioSummary ||
+            `${headBoatNo}号艇を1着に固定し、` +
+              `${secondBoatNos.join("・")}号艇を2着、` +
+              "3着を残り全艇へ流す。",
+          isFlowFormation: true
+        };
+      })
+      .filter(Boolean);
+  }
+
      function renderMainNewspaper(prediction) {
     const sheet =
       prediction.mainSheet || {};
@@ -1375,11 +1473,19 @@ if (raceInfoArea) {
       []
     );
 
-    const flowTickets = arrayify(
-      sheet.flowTickets ||
-      prediction.ticketSheets?.flow ||
-      []
-    );
+    const compactFlowRows =
+      normalizeFlowFormationRows(
+        prediction
+      );
+
+    const flowTickets =
+      compactFlowRows.length
+        ? compactFlowRows
+        : arrayify(
+            sheet.flowTickets ||
+            prediction.ticketSheets?.flow ||
+            []
+          );
 
     const normalizeTicketRow = (
       item,
@@ -1512,6 +1618,11 @@ if (raceInfoArea) {
                 <div
                   class="v3-formation-row
                     v3-formation-row-${escapeHtml(type)}"
+                  ${
+                    type === "flow"
+                      ? `data-flow-notation="${escapeHtml(item.ticket)}"`
+                      : ""
+                  }
                 >
                   <div class="v3-formation-ticket">
                     ${ticketArrow(item.ticket)}
@@ -1856,7 +1967,7 @@ if (raceInfoArea) {
       return section(
         "出てない目TOP30",
         emptyBox(
-          "オッズ更新後に、公式3年履歴と現在オッズを照合して表示します。"
+          "開催場の1R〜12Rを合算し、直近30日で出ていない目を未出現日数で表示します。"
         ),
         "🔎",
         "v3-missing-numbers"
@@ -1868,7 +1979,7 @@ if (raceInfoArea) {
         "出てない目TOP30",
         emptyBox(
           data.reason ||
-          "同条件の公式履歴が不足しているため、参考判定を停止しました。"
+          "直近30日の公式結果を確認できないため、参考判定を停止しました。"
         ),
         "🔎",
         "v3-missing-numbers"
@@ -1883,7 +1994,7 @@ if (raceInfoArea) {
       return section(
         "出てない目TOP30",
         emptyBox(
-          "出現0回の組み合わせ、または現在オッズを確認できませんでした。"
+          "直近30日で未出現の組み合わせはありません。"
         ),
         "🔎",
         "v3-missing-numbers"
@@ -1891,15 +2002,17 @@ if (raceInfoArea) {
     }
 
     const renderRow = item => {
-      const odds = Number(
-        item.odds
+      const missingDays = safeNum(
+        item.missingDays,
+        null
       );
-
-      const oddsText =
-        Number.isFinite(odds) &&
-        odds > 0
-          ? `${odds}倍`
-          : "オッズ未取得";
+      const missingLabel =
+        missingDays !== null
+          ? item.missingDaysLowerBound
+            ? `${missingDays}日以上未出`
+            : `${missingDays}日未出`
+          : item.label ||
+            "未出日数を確認できません";
 
       return `
         <div class="v3-formation-row v3-formation-row-manshu">
@@ -1912,27 +2025,8 @@ if (raceInfoArea) {
 
           <div class="v3-formation-tags">
             ${tag(
-              oddsText,
-              "odds"
-            )}
-            ${tag(
-              item.label ||
-              `直近0/${safeNum(
-                item.recentSampleSize,
-                data.recentSampleSize ||
-                data.sampleSize
-              )}`,
+              missingLabel,
               "manshu"
-            )}
-            ${tag(
-              `3年${safeNum(
-                item.threeYearOccurrences,
-                0
-              )}/${safeNum(
-                item.threeYearSampleSize,
-                data.threeYearSampleSize
-              )}`,
-              "history"
             )}
           </div>
         </div>
@@ -1946,21 +2040,19 @@ if (raceInfoArea) {
       rows.slice(10);
 
     const period = [
-      data.firstDate,
-      data.lastDate
+      data.windowStartDate,
+      data.dataThroughDate
     ]
       .filter(Boolean)
       .join("〜");
 
     const body = `
       <div class="v3-note">
-        直近1年${escapeHtml(
-          data.recentSampleSize || data.sampleSize
-        )}レース・3年${escapeHtml(
-          data.threeYearSampleSize || data.sampleSize
-        )}レースを対象に、
-        同じ開催場・同じR番号で直近1年出現0回の目を
-        現在オッズの低い順に表示。
+        選択した開催場の1R〜12Rを合算し、
+        直近30日で一度も出ていない目を、
+        最後に出てからの未出現日数が長い順に表示。
+        30日を超えても実日数を表示し、
+        履歴を連続確認できない範囲は「日以上」と表示します。
         買い目の作成・削除には使用しません。
         ${
           period
@@ -2479,12 +2571,18 @@ function getPaperClassName(item) {
       prediction.safetyFormation ||
       [];
 
-    const flow =
-      prediction.mainSheet?.flowTickets ||
-      ticketSheets.flow ||
-      formation.nagashi ||
-      formation.flow ||
-      [];
+    const compactFlow =
+      normalizeFlowFormationRows(
+        prediction
+      );
+
+    const flow = compactFlow.length
+      ? compactFlow
+      : prediction.mainSheet?.flowTickets ||
+        ticketSheets.flow ||
+        formation.nagashi ||
+        formation.flow ||
+        [];
 
     const body = `
       <div class="v3-formation-group">
@@ -3304,7 +3402,7 @@ function getPaperClassName(item) {
       "v3-practical-section"
     );
   }
-    function renderTicketRanking(prediction) {
+  function renderTicketRanking(prediction) {
     const sourceList = arrayify(
       prediction.aiTicketList ||
       prediction.ticketSheets?.all ||
@@ -3312,7 +3410,15 @@ function getPaperClassName(item) {
       []
     );
 
-    if (!sourceList.length) {
+    const compactFlowRows =
+      normalizeFlowFormationRows(
+        prediction
+      );
+
+    if (
+      !sourceList.length &&
+      !compactFlowRows.length
+    ) {
       return section(
         "AI買い目一覧",
         emptyBox(
@@ -3486,6 +3592,10 @@ function getPaperClassName(item) {
       groups.hole.push(item);
     });
 
+    if (compactFlowRows.length) {
+      groups.flow = compactFlowRows;
+    }
+
     const renderGroup = (
       title,
       rows,
@@ -3503,7 +3613,14 @@ function getPaperClassName(item) {
 
           ${rows
             .map(item => `
-              <div class="v3-ticket-inline">
+              <div
+                class="v3-ticket-inline"
+                ${
+                  type === "flow"
+                    ? `data-flow-notation="${escapeHtml(item.ticket)}"`
+                    : ""
+                }
+              >
                 <span class="ticket">
                   ${ticketArrow(
                     item.ticket
