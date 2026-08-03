@@ -8,6 +8,10 @@ const {
   buildPredictionSummary,
   buildPredictionSummaries
 } = require("./build-prediction-summaries");
+const collectorSource = fs.readFileSync(
+  path.join(__dirname, "collect-predictions.js"),
+  "utf8"
+);
 
 const longReason =
   "展開・コース・ST・展示・残し拾い・当地水面を確認した長い理由".repeat(
@@ -113,6 +117,7 @@ const summary = buildPredictionSummary({
         {
           jcd: "12",
           raceNo: 11,
+          deadlineAt: "2026-07-27T08:30:00.000Z",
           score: 72.5,
           evaluation: {
             ready: true,
@@ -201,6 +206,17 @@ assert.equal(
   59.3
 );
 assert.equal(summary.runs[0].compared.length, 2);
+assert.equal(
+  summary.runs[0].compared[0].deadlineAt,
+  "2026-07-27T08:30:00.000Z",
+  "比較要約へ締切時刻を保持する"
+);
+assert.ok(
+  collectorSource.includes(
+    "raceNo: item.raceNo,\n      deadlineAt: item.deadlineAt,\n      type: item.type"
+  ),
+  "収集結果のcompared保存時に締切時刻を落とさない"
+);
 assert.deepEqual(
   summary.runs[0].best.evaluation.honmei.reasons,
   [

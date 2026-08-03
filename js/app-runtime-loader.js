@@ -3,9 +3,10 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260802-sprint4";
+  const VERSION = "20260803-ui-fix1";
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const HOME_CACHE_TTL = 300000;
+  const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const loaded = new Map();
   const groupReady = new Map();
   const groups = {
@@ -70,17 +71,31 @@
 
     const promise = new Promise((resolve, reject) => {
       const script = existing || document.createElement("script");
+      let settled = false;
+      const finish = callback => value => {
+        if (settled) return;
+        settled = true;
+        root.clearTimeout(timer);
+        callback(value);
+      };
+      const timer = root.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        loaded.delete(clean);
+        script.remove();
+        reject(new Error(`モジュールの読込が15秒を超えました: ${clean}`));
+      }, SCRIPT_LOAD_TIMEOUT_MS);
       script.async = false;
       script.dataset.chappyRuntimeModule = clean;
-      script.addEventListener("load", () => {
+      script.addEventListener("load", finish(() => {
         script.dataset.chappyLoaded = "true";
         resolve(true);
-      }, { once: true });
-      script.addEventListener("error", () => {
+      }), { once: true });
+      script.addEventListener("error", finish(() => {
         loaded.delete(clean);
         script.remove();
         reject(new Error(`モジュールを読み込めません: ${clean}`));
-      }, { once: true });
+      }), { once: true });
       if (!existing) {
         script.src = `${clean}?v=${VERSION}`;
         document.head.appendChild(script);
@@ -90,8 +105,23 @@
     return promise;
   }
 
+  function preloadGroup(group) {
+    if (typeof document.querySelectorAll !== "function") return;
+    (groups[group] || []).forEach(src => {
+      const clean = src.split("?")[0];
+      if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
+      if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "script";
+      link.href = `${clean}?v=${VERSION}`;
+      document.head.appendChild(link);
+    });
+  }
+
   function ensure(group) {
     if (groupReady.has(group)) return groupReady.get(group);
+    preloadGroup(group);
     const promise = (async () => {
       const scripts = groups[group] || [];
       for (const src of scripts) await loadScript(src);
@@ -112,11 +142,16 @@
 
   function requiredGroup(target) {
     if (!target) return "";
-    const raceCard = target.matches("[data-place][data-race]");
+    if (target.matches(".bottom-nav-item")) return "";
     const view = target.dataset.view || "";
     if (view === "result" || target.getAttribute("href") === "#resultSection") return "stats";
-    if (raceCard || view === "race" || view === "prediction" || target.id === "fetchRaceBtn" || target.id === "reloadRaceBtn" || target.id === "refreshOddsBtn") return "race";
+    if (view === "race" || target.id === "fetchRaceBtn" || target.id === "reloadRaceBtn" || target.id === "refreshOddsBtn") return "race";
     return "";
+  }
+
+  function preloadGroupForTarget(target) {
+    if (target?.matches("[data-place][data-race]")) return "race";
+    return requiredGroup(target);
   }
 
   function replay(target) {
@@ -127,8 +162,11 @@
 
   document.addEventListener("pointerdown", event => {
     const target = event.target.closest("button,a");
-    const group = requiredGroup(target);
-    if (group) void ensure(group).catch(() => {});
+    const group = preloadGroupForTarget(target);
+    if (group) {
+      preloadGroup(group);
+      void ensure(group).catch(() => {});
+    }
   }, { capture: true, passive: true });
 
   document.addEventListener("click", event => {
@@ -149,5 +187,5 @@
       });
   }, true);
 
-  root.ChappyAppRuntime = Object.freeze({ ensure, groups, persistHomeCache });
+  root.ChappyAppRuntime = Object.freeze({ ensure, preloadGroup, groups, persistHomeCache });
 })(window);

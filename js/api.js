@@ -8,6 +8,7 @@
 
   const API_BASE = "https://chappy-boatrace-api.vercel.app";
   const RACE_CACHE_MS = 15000;
+  const RACE_REQUEST_TIMEOUT_MS = 30000;
   const raceRequests = new Map();
 
   function raceKey(params) {
@@ -33,7 +34,33 @@
       `&rno=${encodeURIComponent(rno)}` +
       `&date=${encodeURIComponent(date)}`;
 
-    const res = await fetch(url);
+    const controller =
+      typeof AbortController === "function"
+        ? new AbortController()
+        : null;
+    const timer = controller
+      ? window.setTimeout(
+          () => controller.abort(),
+          RACE_REQUEST_TIMEOUT_MS
+        )
+      : 0;
+    let res;
+
+    try {
+      res = await fetch(
+        url,
+        controller
+          ? { signal: controller.signal }
+          : undefined
+      );
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new Error("レースデータAPIの応答が30秒を超えました");
+      }
+      throw error;
+    } finally {
+      if (timer) window.clearTimeout(timer);
+    }
 
     if (!res.ok) {
       throw new Error(`APIエラー：${res.status}`);

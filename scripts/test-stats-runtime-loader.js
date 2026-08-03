@@ -14,6 +14,9 @@ const documentListeners =
 const anchorListeners =
   new Map();
 let failFirstLoad = true;
+const resultSection = {
+  hidden: true
+};
 
 function createScript() {
   const listeners =
@@ -102,8 +105,10 @@ global.document = {
       listener
     );
   },
-  getElementById() {
-    return null;
+  getElementById(id) {
+    return id === "resultSection"
+      ? resultSection
+      : null;
   },
   querySelector(selector) {
     return selector ===
@@ -146,6 +151,7 @@ async function main() {
     0,
     "結果画面を開くまでは結果分析モジュールを読まない"
   );
+  resultSection.hidden = false;
   anchorListeners
     .get("click")
     ?.();
@@ -177,7 +183,6 @@ async function main() {
       "js/verification-readiness.js",
       "js/improvement-suggestions.js",
       "js/stats.js",
-      "js/theory-improvement-dashboard.js",
       "js/result-ui-phase5.js"
     ],
     "一時失敗後も依存順どおり再読込する"
@@ -189,6 +194,11 @@ async function main() {
       loaded.indexOf(
         "js/stats.js"
       )
+  );
+  assert.equal(
+    loaded.includes("js/theory-improvement-dashboard.js"),
+    false,
+    "成績分析を開いただけで運用診断7ファイルを取得しない"
   );
   assert.ok(
     loaded.indexOf(
@@ -209,8 +219,8 @@ async function main() {
   assert.deepEqual(
     dispatched,
     [
-      "chappy:stats-requested",
-      "chappy:stats-runtime-ready"
+      "chappy:stats-runtime-ready",
+      "chappy:stats-requested"
     ]
   );
 
@@ -223,6 +233,22 @@ async function main() {
     appended.length,
     count,
     "成功後は二重読込しない"
+  );
+
+  resultSection.hidden = true;
+  const eventsBeforeHiddenEnsure = dispatched.length;
+  await window.ChappyStatsRuntime.ensureReady();
+  assert.equal(
+    dispatched.length,
+    eventsBeforeHiddenEnsure,
+    "結果画面を離れた後は重い集計開始イベントを出さない"
+  );
+  resultSection.hidden = false;
+  await window.ChappyStatsRuntime.ensureReady();
+  assert.equal(
+    dispatched.at(-1),
+    "chappy:stats-requested",
+    "結果画面を開き直した時にだけ集計を開始する"
   );
 
   location.hash =

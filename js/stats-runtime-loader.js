@@ -3,7 +3,8 @@
 (function (root) {
   "use strict";
   if (root.ChappyStatsRuntime) return;
-  const VERSION = "20260801-boat-identity1";
+  const VERSION = "20260803-ui-fix1";
+  const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const scripts = [
     "js/boat-identity.js",
     "js/collection-health.js",
@@ -12,7 +13,6 @@
     "js/verification-readiness.js",
     "js/improvement-suggestions.js",
     "js/stats.js",
-    "js/theory-improvement-dashboard.js",
     "js/result-ui-phase5.js"
   ];
   let readyPromise = null;
@@ -23,11 +23,38 @@
       if (existing?.dataset.chappyLoadFailed === "true") { existing.remove(); existing = null; }
       if (existing?.dataset.chappyLoaded === "true") { resolve(); return; }
       const script = existing || document.createElement("script");
+      let settled = false;
+      const timer = root.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        script.dataset.chappyLoadFailed = "true";
+        script.remove();
+        reject(new Error(`結果分析モジュールの読込が15秒を超えました: ${clean}`));
+      }, SCRIPT_LOAD_TIMEOUT_MS);
+      const finish = callback => () => {
+        if (settled) return;
+        settled = true;
+        root.clearTimeout(timer);
+        callback();
+      };
       script.async = false;
       script.dataset.chappyStatsModule = clean;
-      script.addEventListener("load", () => { script.dataset.chappyLoaded = "true"; resolve(); }, { once: true });
-      script.addEventListener("error", () => { script.dataset.chappyLoadFailed = "true"; script.remove(); reject(new Error(`結果分析モジュールを読み込めません: ${clean}`)); }, { once: true });
+      script.addEventListener("load", finish(() => { script.dataset.chappyLoaded = "true"; resolve(); }), { once: true });
+      script.addEventListener("error", finish(() => { script.dataset.chappyLoadFailed = "true"; script.remove(); reject(new Error(`結果分析モジュールを読み込めません: ${clean}`)); }), { once: true });
       if (!existing) { script.src = `${clean}?v=${VERSION}`; document.head.appendChild(script); }
+    });
+  }
+  function preloadScripts() {
+    if (typeof document.querySelectorAll !== "function") return;
+    scripts.forEach(src => {
+      const clean = src.split("?")[0];
+      if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
+      if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "script";
+      link.href = `${clean}?v=${VERSION}`;
+      document.head.appendChild(link);
     });
   }
   function showStatus(message) {
@@ -36,16 +63,29 @@
     if (area) area.innerHTML = `<div class="result-empty-state">${String(message || "")}</div>`;
     if (status) { status.hidden = false; status.textContent = String(message || ""); }
   }
+  function isResultActive() {
+    const section = document.getElementById("resultSection");
+    return Boolean(section && section.hidden === false);
+  }
+  function requestIfActive() {
+    if (!isResultActive()) return false;
+    root.dispatchEvent(new CustomEvent("chappy:stats-requested"));
+    return true;
+  }
   function ensureReady() {
-    if (readyPromise) return readyPromise;
-    showStatus("結果分析を読み込んでいます…");
-    readyPromise = (async () => {
-      for (const src of scripts) await loadScript(src);
-      root.dispatchEvent(new CustomEvent("chappy:stats-requested"));
-      root.dispatchEvent(new CustomEvent("chappy:stats-runtime-ready", { detail: { version: VERSION } }));
-      return true;
-    })().catch(error => { readyPromise = null; showStatus("結果分析を読み込めませんでした。通信状態を確認して、もう一度開いてください。"); console.error("[stats-runtime-loader]", error); throw error; });
-    return readyPromise;
+    if (!readyPromise) {
+      preloadScripts();
+      showStatus("結果分析を読み込んでいます…");
+      readyPromise = (async () => {
+        for (const src of scripts) await loadScript(src);
+        root.dispatchEvent(new CustomEvent("chappy:stats-runtime-ready", { detail: { version: VERSION } }));
+        return true;
+      })().catch(error => { readyPromise = null; showStatus("結果分析を読み込めませんでした。通信状態を確認して、もう一度開いてください。"); console.error("[stats-runtime-loader]", error); throw error; });
+    }
+    return readyPromise.then(value => {
+      requestIfActive();
+      return value;
+    });
   }
   function requestStats() { void ensureReady().catch(() => {}); }
   function isStatsHash() { return String(root.location?.hash || "") === "#resultSection"; }
@@ -54,6 +94,6 @@
     root.addEventListener("hashchange", () => { if (isStatsHash()) requestStats(); });
     if (isStatsHash()) requestStats();
   }
-  root.ChappyStatsRuntime = Object.freeze({ version: VERSION, scripts: scripts.slice(), ensureReady });
+  root.ChappyStatsRuntime = Object.freeze({ version: VERSION, scripts: scripts.slice(), ensureReady, requestIfActive });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installTriggers, { once: true }); else installTriggers();
 })(window);

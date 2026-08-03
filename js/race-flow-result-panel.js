@@ -9,6 +9,7 @@
 
   if (!root || !root.document || root.ChappyRaceFlowResultPanel) return;
   root.ChappyRaceFlowResultPanel = core.install(root);
+  root.dispatchEvent(new CustomEvent("chappy:race-flow-ready"));
 })(typeof window !== "undefined" ? window : null, function () {
   "use strict";
 
@@ -16,6 +17,8 @@
   const ACTUAL_PURCHASE_KEY = "chappy_actual_purchases_v1";
   const MAX_DETAIL_REQUESTS = 3;
   const RESULT_RETRY_MS = 30000;
+  const RESULT_MAX_RETRIES = 10;
+  const REQUEST_TIMEOUT_MS = 30000;
   const PLACE_TO_JCD = Object.freeze({
     "桐生": "01", "戸田": "02", "江戸川": "03", "平和島": "04",
     "多摩川": "05", "浜名湖": "06", "蒲郡": "07", "常滑": "08",
@@ -162,9 +165,35 @@
       overviewVersion: 0,
       current: null,
       resultTimer: 0,
+      resultRetryCount: 0,
       pendingOpen: null,
       openPromise: null
     };
+
+    async function requestJson(url, options = {}) {
+      const Controller = root.AbortController;
+      const controller = typeof Controller === "function"
+        ? new Controller()
+        : null;
+      const timer = controller
+        ? root.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+        : 0;
+
+      try {
+        const response = await root.fetch(url, {
+          ...options,
+          ...(controller ? { signal: controller.signal } : {})
+        });
+        return { response, payload: await response.json() };
+      } catch (error) {
+        if (error?.name === "AbortError") {
+          throw new Error("公式データAPIの応答が30秒を超えました");
+        }
+        throw error;
+      } finally {
+        if (timer) root.clearTimeout(timer);
+      }
+    }
 
     function ensureStyle() {
       if (root.document.getElementById("raceFlowResultStyle")) return;
@@ -261,11 +290,10 @@
       const detailGeneration = state.detailGeneration;
       const requestDate = state.date;
       const promise = queued(async () => {
-        const response = await root.fetch(
+        const { response, payload } = await requestJson(
           `${API_ROOT}/schedule?date=${encodeURIComponent(requestDate)}&jcd=${encodeURIComponent(code)}`,
           { cache: force ? "reload" : "default" }
         );
-        const payload = await response.json();
         if (!response.ok || payload?.ok === false || !payload?.selectedVenue) {
           throw new Error(payload?.error || `開催情報APIエラー：${response.status}`);
         }
@@ -347,18 +375,55 @@
         const detail = state.details.get(jcd);
         if (detail) {
           renderVenue(card, detail);
-          return;
         }
-        if (!summary || !jcd) return;
-        renderVenueLoading(card, jcd);
-        loadVenueDetail(place, jcd)
-          .then(loaded => renderVenue(card, loaded))
-          .catch(error => {
-            if (error?.name === "AbortError") return;
-            console.error("開催場レース取得エラー", error);
-            renderVenueError(card, place, jcd);
-          });
       });
+    }
+
+    function expandVenue(venueButton) {
+      const place = String(venueButton?.dataset?.openVenue || "").trim();
+      const card = venueButton?.closest?.(".home-v2-venue[data-venue]");
+      const summary = overviewVenue(place);
+      const jcd = normalizeJcd(summary?.jcd, place);
+      if (!card || !jcd) return Promise.resolve(false);
+
+      const detail = state.details.get(jcd);
+      if (detail) {
+        renderVenue(card, detail);
+        return Promise.resolve(true);
+      }
+
+      renderVenueLoading(card, jcd);
+      return loadVenueDetail(place, jcd)
+        .then(loaded => {
+          const currentCard = card.isConnected
+            ? card
+            : [...root.document.querySelectorAll(
+                ".home-v2-venue[data-venue]"
+              )].find(item => item.dataset.venue === place);
+          if (currentCard) renderVenue(currentCard, loaded);
+          return true;
+        })
+        .catch(error => {
+          if (error?.name === "AbortError" || !card.isConnected) return false;
+          console.error("開催場レース取得エラー", error);
+          renderVenueError(card, place, jcd);
+          return false;
+        });
+    }
+
+    function getVenueDetail(value, place = "") {
+      const jcd = normalizeJcd(value, place || value);
+      return jcd ? state.details.get(jcd) || null : null;
+    }
+
+    function prefetchVenue(place, suppliedJcd = "") {
+      const summary = overviewVenue(place, suppliedJcd);
+      const jcd = normalizeJcd(suppliedJcd || summary?.jcd, place);
+      if (!jcd) return Promise.resolve(null);
+      const detail = state.details.get(jcd);
+      return detail
+        ? Promise.resolve(detail)
+        : loadVenueDetail(place, jcd);
     }
 
     function canonicalPurchases(raceKey) {
@@ -391,6 +456,14 @@
       });
     }
 
+    function isPredictionActive() {
+      const section = root.document.getElementById("predictionSection");
+      const area = root.document.getElementById("resultArea");
+      return root.document.visibilityState !== "hidden" &&
+        (!section || section.hidden === false) &&
+        !area?.dataset?.raceLoading;
+    }
+
     function ensureResultPanel() {
       const area = root.document.getElementById("resultArea");
       if (!area || !state.current) return null;
@@ -407,6 +480,10 @@
     function render() {
       const area = root.document.getElementById("resultArea");
       if (!area || !state.current) return;
+      if (area.dataset.raceLoading) {
+        area.querySelector("#raceResultStatus")?.remove();
+        return;
+      }
       const controlRaceKey = selectedRaceKey();
       if (controlRaceKey && controlRaceKey !== state.current.raceKey) {
         area.querySelector("#raceResultStatus")?.remove();
@@ -430,31 +507,37 @@
     function scheduleResultRefresh() {
       if (state.resultTimer) root.clearTimeout(state.resultTimer);
       state.resultTimer = 0;
-      if (!state.current) return;
+      if (!state.current || !isPredictionActive()) return;
       const deadlineMs = Date.parse(state.current.race?.deadlineAt || "");
       const finished = isFinished(state.current.race);
       const currentResult = state.resultByRace.get(state.current.raceKey);
       if (!finished && Number.isFinite(deadlineMs)) {
         const delay = Math.max(1000, Math.min(2147483647, deadlineMs - Date.now() + 15000));
         state.resultTimer = root.setTimeout(refreshCurrentResult, delay);
-      } else if (finished && (!currentResult || currentResult.resultAvailable === false)) {
+      } else if (
+        finished &&
+        (!currentResult || currentResult.resultAvailable === false) &&
+        state.resultRetryCount < RESULT_MAX_RETRIES &&
+        root.document.visibilityState !== "hidden"
+      ) {
+        state.resultRetryCount += 1;
         state.resultTimer = root.setTimeout(refreshCurrentResult, RESULT_RETRY_MS);
       }
     }
 
     function loadOfficialResult(current, force = false) {
       if (!current?.raceKey || !isFinished(current.race)) return Promise.resolve(null);
-      if (!force && state.resultByRace.get(current.raceKey)?.resultAvailable) {
-        return Promise.resolve(state.resultByRace.get(current.raceKey));
+      const cached = state.resultByRace.get(current.raceKey);
+      if (cached?.resultAvailable) {
+        return Promise.resolve(cached);
       }
-      if (!force && state.resultPromises.has(current.raceKey)) {
+      if (state.resultPromises.has(current.raceKey)) {
         return state.resultPromises.get(current.raceKey);
       }
-      const promise = root.fetch(
+      const promise = requestJson(
         `${API_ROOT}/result?date=${encodeURIComponent(current.date)}&jcd=${encodeURIComponent(current.jcd)}&rno=${encodeURIComponent(current.raceNo)}`,
         { cache: "no-store" }
-      ).then(async response => {
-        const payload = await response.json();
+      ).then(({ response, payload }) => {
         if (!response.ok || payload?.ok === false) {
           throw new Error(payload?.error || `公式結果APIエラー：${response.status}`);
         }
@@ -466,7 +549,7 @@
     }
 
     function refreshCurrentResult(force = false) {
-      if (!state.current) return Promise.resolve(null);
+      if (!state.current || !isPredictionActive()) return Promise.resolve(null);
       if (!isFinished(state.current.race)) {
         render();
         scheduleResultRefresh();
@@ -504,15 +587,21 @@
       }
 
       let venue = date === state.date ? state.details.get(jcd) : null;
+      if (!venue && date === state.date) {
+        const summary = overviewVenue(place, jcd);
+        const summaryRace = racesOf(summary).find(item => item.raceNo === raceNo);
+        if (summary && summaryRace) {
+          venue = { ...summary, races: [summaryRace] };
+        }
+      }
       if (!venue) {
         if (date === state.date) {
           venue = await loadVenueDetail(place, jcd);
         } else {
-          const response = await root.fetch(
+          const { response, payload } = await requestJson(
             `${API_ROOT}/schedule?date=${encodeURIComponent(date)}&jcd=${encodeURIComponent(jcd)}`,
             { cache: "default" }
           );
-          const payload = await response.json();
           if (!response.ok || payload?.ok === false || !payload?.selectedVenue) {
             throw new Error(payload?.error || `開催情報APIエラー：${response.status}`);
           }
@@ -532,6 +621,7 @@
         raceKey,
         race
       };
+      state.resultRetryCount = 0;
       decorateVisibleVenues();
       render();
       void refreshCurrentResult();
@@ -546,14 +636,15 @@
       decorateVisibleVenues();
     }
 
-    async function performOpen(place, raceNo, suppliedJcd = "") {
+    async function performOpen(place, raceNo, suppliedJcd = "", navigationGeneration = null) {
         const summary = overviewVenue(place, suppliedJcd);
         const jcd = normalizeJcd(suppliedJcd || summary?.jcd, place);
-        const detail = await loadVenueDetail(place, jcd);
+        const detailPromise = prefetchVenue(place, jcd);
+        const runtimePromise = root.ChappyAppRuntime?.ensure?.("race");
+        const [detail] = await Promise.all([detailPromise, runtimePromise]);
         const race = racesOf(detail).find(item => item.raceNo === numberOf(raceNo));
         if (!race) throw new Error("選択したレースを確認できませんでした");
 
-        await root.ChappyAppRuntime?.ensure?.("race");
         root.ChappyStartupGate?.activateRace?.();
         const placeSelect = root.document.getElementById("placeSelect");
         const raceSelect = root.document.getElementById("raceSelect");
@@ -578,7 +669,8 @@
           date: state.date,
           place,
           jcd,
-          raceNo: race.raceNo
+          raceNo: race.raceNo,
+          scheduleData: detail
         });
 
         const selectedJcd = normalizeJcd(
@@ -593,16 +685,36 @@
           throw new Error("選択したレースを確定できませんでした");
         }
 
+        if (
+          state.pendingOpen ||
+          (
+            navigationGeneration !== null &&
+            !root.ChappyHomeDashboardV2
+              ?.isViewIntentCurrent?.(
+                navigationGeneration,
+                "prediction"
+              )
+          )
+        ) {
+          return false;
+        }
+
         state.current = nextCurrent;
+        state.resultRetryCount = 0;
         decorateVisibleVenues();
         render();
         void refreshCurrentResult();
         fetchButton.click();
-        root.document.querySelector('.bottom-nav-item[data-view="prediction"]')?.click();
     }
 
     function open(place, raceNo, suppliedJcd = "") {
-      state.pendingOpen = { place, raceNo, suppliedJcd };
+      let navigationGeneration = null;
+      if (typeof root.ChappyHomeDashboardV2?.showPredictionLoading === "function") {
+        navigationGeneration = root.ChappyHomeDashboardV2.showPredictionLoading(place, raceNo);
+      } else {
+        root.document.querySelector('.bottom-nav-item[data-view="prediction"]')?.click();
+      }
+      state.pendingOpen = { place, raceNo, suppliedJcd, navigationGeneration };
       if (state.openPromise) return state.openPromise;
 
       state.openPromise = (async () => {
@@ -610,13 +722,16 @@
           const intent = state.pendingOpen;
           state.pendingOpen = null;
           try {
-            await performOpen(intent.place, intent.raceNo, intent.suppliedJcd);
+            await performOpen(intent.place, intent.raceNo, intent.suppliedJcd, intent.navigationGeneration);
           } catch (error) {
             clearCurrentIfMismatched();
             if (!state.pendingOpen) throw error;
           }
         }
-      })().finally(() => {
+      })().catch(error => {
+        root.ChappyHomeDashboardV2?.showPredictionError?.(error?.message);
+        throw error;
+      }).finally(() => {
         state.openPromise = null;
       });
 
@@ -626,6 +741,15 @@
     async function load(force = false) {
       const home = root.ChappyHomeDashboardV2;
       if (home && typeof home.refresh === "function" && typeof home.getSchedule === "function") {
+        const currentSchedule = home.getSchedule();
+        if (!force && currentSchedule.length) {
+          setOverview(
+            currentSchedule,
+            home.getDate?.() || jstDate(),
+            false
+          );
+          return;
+        }
         const overviewVersion = state.overviewVersion;
         await home.refresh(force);
         if (state.overviewVersion === overviewVersion) {
@@ -633,11 +757,10 @@
         }
         return;
       }
-      const response = await root.fetch(
+      const { response, payload } = await requestJson(
         `${API_ROOT}/schedule?date=${encodeURIComponent(state.date)}`,
         { cache: force ? "reload" : "default" }
       );
-      const payload = await response.json();
       if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `開催情報APIエラー：${response.status}`);
       setOverview(payload?.venues, payload?.date || state.date, force);
     }
@@ -667,6 +790,14 @@
       }
 
       root.document.addEventListener("click", event => {
+        const venueButton = event.target.closest("[data-open-venue]");
+        if (venueButton) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          void expandVenue(venueButton);
+          return;
+        }
+
         const retry = event.target.closest("[data-flow-retry]");
         if (retry) {
           event.preventDefault();
@@ -686,10 +817,35 @@
       }, true);
 
       root.document.addEventListener("visibilitychange", () => {
-        if (root.document.visibilityState === "visible") void refreshCurrentResult(true);
+        if (root.document.visibilityState === "visible" && isPredictionActive()) {
+          state.resultRetryCount = 0;
+          void refreshCurrentResult(true);
+        } else if (state.resultTimer) {
+          root.clearTimeout(state.resultTimer);
+          state.resultTimer = 0;
+        }
       });
 
-      load().catch(error => console.error("開催一覧取得エラー", error));
+      root.addEventListener("chappy:view-changed", event => {
+        if (event?.detail?.view === "prediction") {
+          state.resultRetryCount = 0;
+          void refreshCurrentResult(true);
+        } else if (state.resultTimer) {
+          root.clearTimeout(state.resultTimer);
+          state.resultTimer = 0;
+        }
+      });
+
+      const homeSchedule = root.ChappyHomeDashboardV2?.getSchedule?.() || [];
+      if (homeSchedule.length) {
+        setOverview(
+          homeSchedule,
+          root.ChappyHomeDashboardV2?.getDate?.() || state.date,
+          false
+        );
+      } else {
+        load().catch(error => console.error("開催一覧取得エラー", error));
+      }
     }
 
     if (root.document.readyState === "loading") {
@@ -701,6 +857,9 @@
     return Object.freeze({
       load,
       open,
+      expandVenue,
+      prefetchVenue,
+      getVenueDetail,
       render,
       refreshCurrentResult,
       getCurrent: () => state.current ? { ...state.current } : null

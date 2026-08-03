@@ -7,8 +7,8 @@
   <title>チャッピーボートレースAI</title>
   <link rel="preconnect" href="https://chappy-boatrace-api.vercel.app" crossorigin />
   <link rel="dns-prefetch" href="//chappy-boatrace-api.vercel.app" />
-  <link rel="stylesheet" href="style.css?v=20260731-ticket-wrap1" />
-  <link rel="stylesheet" href="css/home-dashboard-v2.css?v=20260802-sprint3" />
+  <link rel="stylesheet" href="style.css?v=20260803-ui-fix1" />
+  <link rel="stylesheet" href="css/home-dashboard-v2.css?v=20260803-ui-fix1" />
   <script>
     window.addEventListener("error", function (event) {
       const detail = [event.message || "不明なエラー", event.filename ? "ファイル: " + event.filename.split("/").pop() : "", event.lineno ? "行: " + event.lineno : ""].filter(Boolean).join("\n");
@@ -47,21 +47,20 @@
         </div>
 
         <div class="race-main-action"><button id="fetchRaceBtn" class="primary-btn dashboard-primary-btn" type="button"><span>AI予想を開始</span><small>出走表・展示・指数を解析</small></button></div>
-        <div class="race-sub-actions"><button id="refreshOddsBtn" class="sub-btn" type="button">💹 オッズ更新</button><button id="reloadRaceBtn" class="sub-btn" type="button">🔄 再取得</button></div>
+        <div class="race-sub-actions"><button id="reloadRaceBtn" class="sub-btn" type="button">🔄 再取得</button></div>
         <div id="statusArea" class="status dashboard-status">待機中</div>
       </div>
     </section>
 
     <section id="autoSelectionSection" class="dashboard-section auto-selection-section" hidden><div id="autoSelectionArea"></div><span id="autoSelectionBadge"></span><button id="autoSelectionRefreshBtn" type="button">更新</button></section>
-    <section id="errorArea" class="dashboard-error-area"></section>
 
     <section id="predictionSection" class="dashboard-section prediction-section" hidden>
-      <div class="dashboard-section-head"><div><p class="section-eyebrow">AI PREDICTION</p><h2>📊 AI予想</h2></div><span class="section-status-badge">本命・万舟・買い目</span></div>
-      <div id="resultArea" class="prediction-result-area"></div>
-    </section>
-
-    <section id="noteAssistantSection" class="dashboard-section note-assistant-section" hidden>
-      <span id="noteStatusBadge">予想待ち</span><button id="noteGenerateBtn" type="button" disabled>記事を自動生成</button><button id="noteCopyTitleBtn" type="button" disabled>タイトルをコピー</button><button id="noteCopyFullBtn" type="button" disabled>全文をコピー</button><a id="noteOpenBtn" href="https://note.com/notes/new" target="_blank" rel="noopener noreferrer">noteを開く</a><input id="noteTitlePreview" type="text" readonly /><textarea id="noteArticlePreview" rows="18" readonly></textarea>
+      <div class="dashboard-section-head"><div><p class="section-eyebrow">AI PREDICTION</p><h2>📊 AI予想</h2></div><span id="predictionOddsStatus" class="section-status-badge" aria-live="polite">レース未選択</span></div>
+      <section id="errorArea" class="dashboard-error-area"></section>
+      <div id="resultArea" class="prediction-result-area"><div class="prediction-empty-state">ホームで開催場とレースを選ぶと、ここにAI予想を表示します。</div></div>
+      <section id="noteAssistantSection" class="dashboard-section note-assistant-section" hidden>
+        <span id="noteStatusBadge">予想待ち</span><button id="noteGenerateBtn" type="button" disabled>記事を自動生成</button><button id="noteCopyTitleBtn" type="button" disabled>タイトルをコピー</button><button id="noteCopyFullBtn" type="button" disabled>全文をコピー</button><a id="noteOpenBtn" href="https://note.com/notes/new" target="_blank" rel="noopener noreferrer">noteを開く</a><input id="noteTitlePreview" type="text" readonly /><textarea id="noteArticlePreview" rows="18" readonly></textarea>
+      </section>
     </section>
 
     <section id="resultSection" class="dashboard-section result-management-section" hidden>
@@ -71,17 +70,15 @@
   </main>
 
   <nav class="bottom-nav">
-    <a href="#" class="bottom-nav-item is-active" data-view="home"><span>⌂</span><small>ホーム</small></a>
-    <a href="#raceSection" class="bottom-nav-item" data-view="race"><span>⚡</span><small>レース検索</small></a>
+    <a href="#" class="bottom-nav-item is-active" data-view="home" aria-current="page"><span>⌂</span><small>ホーム</small></a>
     <a href="#predictionSection" class="bottom-nav-item" data-view="prediction"><span>◎</span><small>AI予想</small></a>
     <a href="#resultSection" class="bottom-nav-item" data-view="result"><span>▥</span><small>成績分析</small></a>
-    <a href="#" class="bottom-nav-item" data-view="menu"><span>☰</span><small>メニュー</small></a>
   </nav>
 
-  <!-- Deferred assets: js/stats-runtime-loader.js?v=20260801-boat-identity1 / js/prediction-runtime-loader.js?v=20260801-boat-identity1 -->
-  <script src="js/app-runtime-loader.js?v=20260802-sprint4"></script>
-  <script src="js/home-dashboard-v2.js?v=20260802-unified2"></script>
-  <script src="js/home-venue-tap-hotfix.js?v=20260802-hotfix1"></script>
-  <script src="js/today-results-home.js?v=20260802-unified2"></script>
+  <!-- Prediction and stats modules are fetched only when their views need them. -->
+  <script src="js/app-runtime-loader.js?v=20260803-ui-fix1"></script>
+  <script src="js/home-dashboard-v2.js?v=20260803-ui-fix1"></script>
+  <script src="js/home-venue-tap-hotfix.js?v=20260803-ui-fix1"></script>
+  <script src="js/today-results-home.js?v=20260803-ui-fix1"></script>
 </body>
 </html>

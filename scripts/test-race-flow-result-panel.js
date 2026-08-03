@@ -10,6 +10,7 @@ const panelSource = fs.readFileSync(path.join(root, "js/race-flow-result-panel.j
 const homeSource = fs.readFileSync(path.join(root, "js/home-dashboard-v2.js"), "utf8");
 const scriptSource = fs.readFileSync(path.join(root, "js/script.js"), "utf8");
 const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const todayLoaderSource = fs.readFileSync(path.join(root, "js/today-results-home.js"), "utf8");
 
 assert.equal(core.normalizeJcd("1"), "01", "場コードを2桁へ正規化する");
 assert.equal(core.normalizeJcd("", "江戸川"), "03", "場名から正式な場コードを得る");
@@ -70,6 +71,18 @@ assert.match(panelSource, /\/result\?date=/, "終了レースは公式結果API�
 assert.ok(panelSource.includes("findActualPurchasesByRaceKey"), "正式な実購入保存APIを使う");
 assert.ok(panelSource.includes("flowSignature"), "同じDOMを繰り返し書き換えない");
 assert.ok(panelSource.includes("MAX_DETAIL_REQUESTS = 3"), "場別詳細取得を3並列に制限する");
+assert.ok(panelSource.includes('event.target.closest("[data-open-venue]")'), "押した開催場だけ12R詳細を取得する");
+assert.ok(panelSource.includes("expandVenue"), "開催場の矢印は予想開始と分離して12Rを展開する");
+assert.ok(panelSource.includes("currentSchedule.length"), "遅延初期化時はホーム取得済みの開催一覧を再取得しない");
+assert.ok(panelSource.includes("card.isConnected"), "初期化中に一覧が更新されても最新の会場カードへ12Rを描画する");
+const decorateStart = panelSource.indexOf("function decorateVisibleVenues");
+const decorateBody = panelSource.slice(decorateStart, panelSource.indexOf("function expandVenue", decorateStart));
+assert.equal(decorateBody.includes("loadVenueDetail("), false, "ホーム表示だけで全会場詳細を先読みしない");
+assert.ok(panelSource.includes("RESULT_MAX_RETRIES"), "未確定結果のバックグラウンド再取得を有限回にする");
+assert.ok(panelSource.includes("REQUEST_TIMEOUT_MS = 30000"), "開催詳細と公式結果を無期限待機させない");
+assert.ok(todayLoaderSource.includes("LOAD_TIMEOUT_MS=15000"), "結果照合モジュールの読込を無期限待機させない");
+assert.ok(panelSource.includes("!area?.dataset?.raceLoading"), "次レース読込中は前レース結果の再取得を止める");
+assert.ok(panelSource.includes("if (area.dataset.raceLoading)"), "次レース読込中は前レース結果カードを再表示しない");
 assert.ok(panelSource.includes("pendingOpen"), "連打時は最後に選んだレースを処理する");
 assert.ok(panelSource.includes("overviewVersion"), "ホーム強制更新を二重適用しない");
 assert.ok(panelSource.includes('root.addEventListener("chappy:prediction-rendered"'), "別導線の予想でも結果対象を同期する");
@@ -81,11 +94,16 @@ assert.ok(scriptSource.includes("predictionGeneration"), "古い予想取得結�
 assert.match(scriptSource, /async function refreshOddsOnly[\s\S]*?requestGeneration[\s\S]*?isCurrentRequest/, "古いオッズ更新結果も表示へ反映しない");
 assert.ok(scriptSource.includes("!isCurrentRaceSelection("), "古い選択リクエストの反映を止める");
 assert.ok(scriptSource.includes("window.ChappyRaceSelection"), "ホーム導線が完了を待てるレース選択APIを公開する");
+assert.ok(panelSource.includes("scheduleData: detail"), "ホームで取得した同じ場の開催詳細を選択処理へ引き継ぐ");
+assert.ok(scriptSource.includes("primeScheduleCache("), "引き継いだ開催詳細で同じAPIの再取得を防ぐ");
 assert.ok(scriptSource.includes("restoreRaceSelection"), "レース選択失敗時に元のフォーム状態へ戻す");
 assert.ok(homeSource.includes('root.ChappyHomeDashboardV2 = Object.freeze'), "ホーム状態を統合フローへ公開する");
 assert.ok(homeSource.includes('root.dispatchEvent(new CustomEvent("chappy:home-schedule"'), "ホーム取得結果を統合フローへ通知する");
 assert.ok(homeSource.includes("pendingSelection"), "ホームの連打でも最後の選択を失わない");
+assert.ok(panelSource.includes("state.resultPromises.has(current.raceKey)"), "同じ公式結果の進行中通信をタブ連打でも共有する");
+assert.ok(panelSource.includes("if (cached?.resultAvailable)"), "取得済みの公式結果をタブ再表示で再取得しない");
+assert.ok(panelSource.includes("const summaryRace = racesOf(summary).find"), "概要にある対象レースは開催詳細を再取得せず結果対象へ同期する");
 assert.ok(!homeSource.includes('racesOf(venue).some(row => row.selectable !== false) &&'), "終了した開催場を一覧から消さない");
-assert.ok(indexSource.includes("20260802-unified2"), "更新したホーム導線をキャッシュ更新する");
+assert.ok(indexSource.includes("20260803-ui-fix1"), "更新したホーム導線をキャッシュ更新する");
 
 console.log("開催場→予想→公式結果・実購入照合 回帰テスト: 合格");

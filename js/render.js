@@ -572,6 +572,46 @@ if (raceInfoArea) {
     2. 出走表
   =============================== */
 
+  function entryLaneNumber(entry, index) {
+    const source = entry && typeof entry === "object" ? entry : {};
+    const primitiveBoat =
+      source.boat !== null &&
+      typeof source.boat !== "object"
+        ? source.boat
+        : null;
+    const normalizedBoatNo =
+      source.boat &&
+      typeof source.boat === "object"
+        ? source.boatNo
+        : null;
+    const candidates = [
+      source.no,
+      source.waku,
+      normalizedBoatNo,
+      primitiveBoat,
+      source.lane,
+      source.course,
+      source.boatNo
+    ];
+
+    for (const value of candidates) {
+      const lane = Number(value);
+      if (Number.isInteger(lane) && lane >= 1 && lane <= 6) {
+        return lane;
+      }
+    }
+
+    return index + 1;
+  }
+
+  function findEntryByLane(entries, lane) {
+    const target = Number(lane);
+    if (!Array.isArray(entries) || !Number.isInteger(target)) return null;
+    return entries.find((entry, index) =>
+      entryLaneNumber(entry, index) === target
+    ) || null;
+  }
+
   function renderEntryTable(prediction) {
   const race = prediction.race || {};
   const entries =
@@ -591,14 +631,15 @@ if (raceInfoArea) {
   }
 
   const rows = entries.map((e, index) => {
-    const no = e.no || e.waku || e.course || e.boatNo || index + 1;
+    const no = entryLaneNumber(e, index);
     const name = e.name || e.racerName || e.player || "-";
-    const grade = e.grade || e.class || e.rank || "";
+    const grade = e.className || e.grade || e.class || e.rank || "";
     const st =
   e.st ||
   e.avgST ||
   e.avgSt ||
   e.averageST ||
+  e.averageSt ||
   "-";
 
     const motorObj = e.motor || e.motorInfo || {};
@@ -610,6 +651,7 @@ if (raceInfoArea) {
       "-";
 
     const local =
+  e.localWinRate ??
   e.localRate ??
   e.venueRate ??
   e.courseRate ??
@@ -1195,22 +1237,10 @@ if (raceInfoArea) {
       [];
 
     boatItems.forEach(item => {
-      const entry =
-        raceEntries.find(boat => {
-          const entryBoatNo =
-            Number(
-              boat.boatNo ||
-              boat.no ||
-              boat.waku ||
-              boat.course ||
-              0
-            );
-
-          return (
-            entryBoatNo ===
-            Number(item.no)
-          );
-        });
+      const entry = findEntryByLane(
+        raceEntries,
+        item.no
+      );
 
       if (!entry) return;
 
@@ -1859,6 +1889,27 @@ if (raceInfoArea) {
       "🔎",
       "v3-missing-numbers"
     );
+  }
+
+  function updateMissingNumbersSection(
+    prediction
+  ) {
+    const root = getRoot();
+    const current = root.querySelector(
+      ".v3-missing-numbers"
+    );
+    if (!current) return false;
+
+    const template =
+      document.createElement("template");
+    template.innerHTML =
+      renderMissingNumbers(prediction)
+        .trim();
+    const replacement =
+      template.content.firstElementChild;
+    if (!replacement) return false;
+    current.replaceWith(replacement);
+    return true;
   }
 
   function normalizeSheetItem(item, role) {
@@ -3676,6 +3727,8 @@ function renderFinalBlock(block) {
 
   window.renderAll = renderAll;
   window.renderPrediction = renderAll;
+  window.updateMissingNumbersSection =
+    updateMissingNumbersSection;
   window.CHAPPY_RENDER_VERSION = RENDER_VERSION;
   window.addEventListener(
     "chappy:prediction-calibration-loaded",
