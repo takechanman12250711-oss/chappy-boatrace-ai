@@ -81,11 +81,18 @@
 
   function racesOf(venue) {
     const detailed = (Array.isArray(venue?.races) ? venue.races : [])
-      .map(row => ({
-        raceNo: num(row?.raceNo ?? row?.rno),
-        deadlineAt: row?.deadlineAt || row?.deadline || row?.closeAt || "",
-        selectable: row?.selectable !== false && row?.closed !== true
-      }))
+      .map(row => {
+        const deadlineAt = row?.deadlineAt || row?.deadline || row?.closeAt || "";
+        const deadlineMs = Date.parse(deadlineAt);
+        return {
+          raceNo: num(row?.raceNo ?? row?.rno),
+          deadlineAt,
+          selectable:
+            row?.selectable !== false &&
+            row?.closed !== true &&
+            (!Number.isFinite(deadlineMs) || deadlineMs > Date.now())
+        };
+      })
       .filter(row => row.raceNo >= 1 && row.raceNo <= 12)
       .sort((a, b) => a.raceNo - b.raceNo);
 
@@ -93,10 +100,15 @@
 
     const currentRaceNo = num(venue?.currentRaceNo);
     if (currentRaceNo < 1 || currentRaceNo > 12) return [];
+    const deadlineAt = venue?.deadlineAt || "";
+    const deadlineMs = Date.parse(deadlineAt);
     return [{
       raceNo: currentRaceNo,
-      deadlineAt: venue?.deadlineAt || "",
-      selectable: venue?.selectable !== false && venue?.finalClosed !== true
+      deadlineAt,
+      selectable:
+        venue?.selectable !== false &&
+        venue?.finalClosed !== true &&
+        (!Number.isFinite(deadlineMs) || deadlineMs > Date.now())
     }];
   }
 

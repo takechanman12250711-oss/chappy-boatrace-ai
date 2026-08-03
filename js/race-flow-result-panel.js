@@ -589,7 +589,16 @@
       let venue = date === state.date ? state.details.get(jcd) : null;
       if (!venue && date === state.date) {
         const summary = overviewVenue(place, jcd);
-        const summaryRace = racesOf(summary).find(item => item.raceNo === raceNo);
+        const summaryRace = racesOf(summary).find(item => item.raceNo === raceNo)
+          || (numberOf(summary?.currentRaceNo) === raceNo
+            ? normalizeRace({
+                raceNo,
+                deadline: summary?.nextDeadline || "",
+                deadlineAt: summary?.deadlineAt || "",
+                status: summary?.status || "before_deadline",
+                selectable: summary?.selectable !== false
+              })
+            : null);
         if (summary && summaryRace) {
           venue = { ...summary, races: [summaryRace] };
         }

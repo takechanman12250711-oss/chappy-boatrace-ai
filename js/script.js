@@ -2221,16 +2221,26 @@
         ? data.selectedVenue.races
         : [];
 
+    const nowMs = Date.now();
     const races =
-      allRaces.filter(
-        race =>
-          mode === "live"
-            ? race.selectable
-            : (
-                race.status ===
-                "closed"
-              )
-      );
+      allRaces.filter(race => {
+        const deadlineMs = Date.parse(
+          race?.deadlineAt ||
+          race?.deadline ||
+          ""
+        );
+        const closedByTime = Number.isFinite(deadlineMs)
+          ? deadlineMs <= nowMs
+          : race?.selectable === false;
+        const closedByStatus = ["closed", "finished", "ended"]
+          .includes(String(race?.status || "").toLowerCase());
+        const closedNow = closedByTime || closedByStatus;
+        return mode === "live"
+          ? race?.selectable !== false &&
+            !closedNow &&
+            race?.cancelled !== true
+          : closedNow;
+      });
 
     if (!races.length) {
       replaceSelectOptions(

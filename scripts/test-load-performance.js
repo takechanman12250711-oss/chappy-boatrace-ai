@@ -18,6 +18,9 @@ const statsRuntime = read(
 );
 const autoSelection = read("js/auto-selection.js");
 const api = read("js/api.js");
+const raceApi = read("api/race.js");
+const oddsApi = read("api/odds.js");
+const scheduleApi = read("api/schedule.js");
 const hiyoriLoader = read("js/hiyori-runtime-loader.js");
 const todayResultsHome = read("js/today-results-home.js");
 const render = read("js/render.js");
@@ -143,6 +146,36 @@ assert.equal(
   api.includes("RACE_REQUEST_TIMEOUT_MS = 30000"),
   true,
   "レースAPIが固まっても予想画面を無期限待機させない"
+);
+assert.equal(
+  raceApi.includes("OFFICIAL_REQUEST_TIMEOUT_MS = 15000") &&
+    raceApi.includes("Promise.allSettled") &&
+    raceApi.includes('beforeResult.status === "fulfilled"') &&
+    raceApi.includes('beforeRes.text()') &&
+    raceApi.includes('"private, no-store, max-age=0"'),
+  true,
+  "API側も公式出走表を15秒で打ち切り、任意の直前情報失敗で全体を止めず劣化応答を共有しない"
+);
+assert.equal(
+  script.includes("const closedByTime = Number.isFinite(deadlineMs)") &&
+    script.includes('mode === "live"') &&
+    script.includes("closedNow"),
+  true,
+  "長期キャッシュした12R時刻も現在時刻で締切前・終了を再判定する"
+);
+assert.equal(
+  oddsApi.includes("OFFICIAL_REQUEST_TIMEOUT_MS = 15000") &&
+    oddsApi.includes("s-maxage=10, stale-while-revalidate=20"),
+  true,
+  "公式オッズを無期限待機せず短時間CDNキャッシュで共有する"
+);
+assert.equal(
+  scheduleApi.includes("s-maxage=300, stale-while-revalidate=3600") &&
+    scheduleApi.includes("s-maxage=60, stale-while-revalidate=300") &&
+    scheduleApi.includes("selectedVenue.scheduleAvailable && !selectedVenue.error") &&
+    scheduleApi.includes('"private, no-store, max-age=0"'),
+  true,
+  "変更頻度に合わせて12R時刻と開催概要のCDNキャッシュを分け、劣化した12R応答は共有しない"
 );
 assert.equal(
   autoSelection.includes("SUMMARY_ROOT"),

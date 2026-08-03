@@ -1,5 +1,7 @@
 "use strict";
 
+const OFFICIAL_REQUEST_TIMEOUT_MS = 15000;
+
 function decodeHtml(value) {
   return String(value || "")
     .replace(/<[^>]+>/g, " ")
@@ -144,7 +146,11 @@ module.exports =
             "user-agent":
               "Mozilla/5.0 " +
               "ChappyBoatRaceAI/1.0"
-          }
+          },
+          signal:
+            AbortSignal.timeout(
+              OFFICIAL_REQUEST_TIMEOUT_MS
+            )
         });
 
       if (!response.ok) {
@@ -167,6 +173,13 @@ module.exports =
             item.odds
           ])
         );
+
+      res.setHeader?.(
+        "Cache-Control",
+        trifecta.length
+          ? "public, max-age=0, s-maxage=10, stale-while-revalidate=20"
+          : "public, max-age=0, s-maxage=5, stale-while-revalidate=10"
+      );
 
       return res.status(200).json({
         ok: true,

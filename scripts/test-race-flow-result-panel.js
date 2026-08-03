@@ -103,6 +103,7 @@ assert.ok(homeSource.includes("pendingSelection"), "ホームの連打でも最�
 assert.ok(panelSource.includes("state.resultPromises.has(current.raceKey)"), "同じ公式結果の進行中通信をタブ連打でも共有する");
 assert.ok(panelSource.includes("if (cached?.resultAvailable)"), "取得済みの公式結果をタブ再表示で再取得しない");
 assert.ok(panelSource.includes("const summaryRace = racesOf(summary).find"), "概要にある対象レースは開催詳細を再取得せず結果対象へ同期する");
+assert.ok(panelSource.includes("numberOf(summary?.currentRaceNo) === raceNo"), "概要APIの現在Rだけでも裏の開催詳細通信を起こさない");
 assert.ok(!homeSource.includes('racesOf(venue).some(row => row.selectable !== false) &&'), "終了した開催場を一覧から消さない");
 assert.ok(indexSource.includes("20260803-ui-fix1"), "更新したホーム導線をキャッシュ更新する");
 
