@@ -3,6 +3,66 @@
 
   if (root.ChappyFlowOddsTabs) return;
 
+  const style = document.createElement("style");
+  style.textContent = `
+    .flow-odds-tab-trigger {
+      cursor: pointer;
+      position: relative;
+      padding-right: 7.5rem !important;
+    }
+    .flow-odds-tab-trigger:focus-visible {
+      outline: 3px solid rgba(30, 136, 229, .35);
+      outline-offset: 2px;
+    }
+    .flow-odds-tab-label {
+      position: absolute;
+      right: .7rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .78rem;
+      font-weight: 700;
+      color: #1565c0;
+      white-space: nowrap;
+    }
+    .flow-odds-tab-panel {
+      margin: -.15rem 0 .7rem;
+      padding: .65rem;
+      border: 1px solid #d9e8f7;
+      border-radius: 0 0 12px 12px;
+      background: #f7fbff;
+    }
+    .flow-odds-ticket-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem .65rem;
+      border-bottom: 1px solid #e6eef6;
+      font-size: .9rem;
+    }
+    .flow-odds-ticket-row:last-child {
+      border-bottom: 0;
+    }
+    .flow-odds-ticket-row strong {
+      letter-spacing: .03em;
+    }
+    .flow-odds-ticket-row span {
+      font-weight: 700;
+      color: #c62828;
+      white-space: nowrap;
+    }
+    @media (max-width: 480px) {
+      .flow-odds-tab-trigger {
+        padding-right: 6.8rem !important;
+      }
+      .flow-odds-tab-label {
+        right: .45rem;
+        font-size: .72rem;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
   function normalizeTicket(value) {
     return String(value || "")
       .replace(/\s+/g, "")
