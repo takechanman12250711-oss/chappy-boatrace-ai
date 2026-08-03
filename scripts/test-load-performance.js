@@ -262,10 +262,10 @@ assert.equal(
   "結果照合モジュールの遅延読込を15秒で打ち切る"
 );
 [
-  "style.css?v=20260803-ui-fix1",
-  "css/home-dashboard-v2.css?v=20260803-ui-fix1",
-  "js/app-runtime-loader.js?v=20260803-ui-fix1",
-  "js/home-dashboard-v2.js?v=20260803-ui-fix1"
+  "style.css?v=20260803-ui-fix2",
+  "css/home-dashboard-v2.css?v=20260803-ui-fix2",
+  "js/app-runtime-loader.js?v=20260803-ui-fix2",
+  "js/home-dashboard-v2.js?v=20260803-ui-fix2"
 ].forEach(asset => {
   assert.equal(
     html.includes(asset),
@@ -274,8 +274,15 @@ assert.equal(
   );
 });
 assert.equal(
+  appRuntime.includes(
+    'const VERSION = "20260803-ui-fix2"'
+  ),
+  true,
+  "変更した通常画面モジュールのキャッシュ世代を更新する"
+);
+assert.equal(
   predictionRuntime.includes(
-    'const VERSION = "20260803-ui-fix1"'
+    'const VERSION = "20260803-ui-fix2"'
   ),
   true,
   "全文表示を含む予想モジュールのキャッシュ世代を更新する"
@@ -290,7 +297,7 @@ assert.equal(
 );
 assert.equal(
   statsRuntime.includes(
-    '"20260803-ui-fix1"'
+    '"20260803-ui-fix2"'
   ),
   true,
   "結果分析モジュールのキャッシュ世代を更新する"

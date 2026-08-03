@@ -105,6 +105,13 @@ assert.ok(panelSource.includes("if (cached?.resultAvailable)"), "取得済みの
 assert.ok(panelSource.includes("const summaryRace = racesOf(summary).find"), "概要にある対象レースは開催詳細を再取得せず結果対象へ同期する");
 assert.ok(panelSource.includes("numberOf(summary?.currentRaceNo) === raceNo"), "概要APIの現在Rだけでも裏の開催詳細通信を起こさない");
 assert.ok(!homeSource.includes('racesOf(venue).some(row => row.selectable !== false) &&'), "終了した開催場を一覧から消さない");
-assert.ok(indexSource.includes("20260803-ui-fix1"), "更新したホーム導線をキャッシュ更新する");
+assert.ok(
+  indexSource.includes("js/today-results-home.js?v=20260803-ui-fix2"),
+  "結果照合ローダーのキャッシュ世代を更新する"
+);
+assert.ok(
+  todayLoaderSource.includes("js/race-flow-result-panel.js?v=20260803-ui-fix2"),
+  "結果照合本体のキャッシュ世代を更新する"
+);
 
 console.log("開催場→予想→公式結果・実購入照合 回帰テスト: 合格");
