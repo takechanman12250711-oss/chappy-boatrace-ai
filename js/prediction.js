@@ -1140,13 +1140,21 @@
         index + 1;
 
       const national = {
-        winRate: toNumber(entry.nationalWinRate ?? entry.national?.winRate ?? entry.national?.rate),
+        winRate: toNumberOrNull(
+          entry.nationalWinRate ??
+          entry.national?.winRate ??
+          entry.national?.rate
+        ),
         secondRate: toPercentNumber(entry.national2Rate ?? entry.national?.secondRate ?? entry.national?.quinellaRate),
         thirdRate: toPercentNumber(entry.national3Rate ?? entry.national?.thirdRate ?? entry.national?.trioRate)
       };
 
       const local = {
-        winRate: toNumber(entry.localWinRate ?? entry.local?.winRate ?? entry.local?.rate),
+        winRate: toNumberOrNull(
+          entry.localWinRate ??
+          entry.local?.winRate ??
+          entry.local?.rate
+        ),
         secondRate: toPercentNumber(entry.local2Rate ?? entry.local?.secondRate ?? entry.local?.quinellaRate),
         thirdRate: toPercentNumber(entry.local3Rate ?? entry.local?.thirdRate ?? entry.local?.trioRate)
       };
@@ -1191,6 +1199,16 @@
         age: safeString(entry.age),
         weight: safeString(entry.weight),
         fl: safeString(entry.fl || entry.flyingLate || ""),
+        fCount: toNumberOrNull(
+          entry.fCount ??
+          entry.falseStartCount ??
+          entry.falseStarts
+        ),
+        lCount: toNumberOrNull(
+          entry.lCount ??
+          entry.lateStartCount ??
+          entry.lateStarts
+        ),
         avgST: normalizeST(entry.avgST ?? entry.avgSt ?? entry.averageST ?? entry.st),
 
         national,

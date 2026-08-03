@@ -154,7 +154,7 @@ function parseEntryBlock(block) {
   entry.boatLabel = `${m[1]}号艇`;
   entry.registerNo = m[2];
   entry.className = m[3];
-  entry.racerName = cleanText(m[4]).replace(/\s+/g, "");
+  entry.racerName = cleanText(m[4]).replace(/\s+/g, " ").trim();
   entry.branch = m[5];
   entry.birthPlace = m[6];
   entry.age = toNumber(m[7]);

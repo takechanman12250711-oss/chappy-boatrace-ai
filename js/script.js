@@ -4851,13 +4851,26 @@
                 );
 
               if (
-                !ticket ||
+                !ticket
+              ) {
+                return item;
+              }
+
+              if (
                 !Number.isFinite(
                   numericOdds
                 ) ||
                 numericOdds <= 0
               ) {
-                return item;
+                return {
+                  ...item,
+                  odds: null,
+                  oddsText:
+                    "オッズ未取得",
+                  hasOdds: false,
+                  isManshu: false,
+                  oddsValue: "未取得"
+                };
               }
 
               const aiScore =
@@ -4901,6 +4914,11 @@
               return {
                 ...item,
                 odds: numericOdds,
+                oddsText:
+                  `${numericOdds}倍`,
+                hasOdds: true,
+                isManshu:
+                  numericOdds >= 100,
                 oddsValue
               };
             })

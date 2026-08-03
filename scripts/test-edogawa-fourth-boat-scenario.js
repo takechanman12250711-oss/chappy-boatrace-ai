@@ -104,16 +104,20 @@ function createRaceData(record) {
   };
 }
 
-function predict(record) {
-  return global.createPrediction(
-    theoryInput.prepare(
-      createRaceData(record),
-      global.ChappyAICore
-    )
+const preparedRaceData =
+  theoryInput.prepare(
+    createRaceData(savedRace),
+    global.ChappyAICore
   );
-}
-
-const prediction = predict(savedRace);
+const formalAnalysis =
+  global.ChappyAICore
+    .buildPredictionData(
+      preparedRaceData
+    );
+const prediction =
+  global.createPrediction(
+    preparedRaceData
+  );
 const practical =
   practicalSelector.select(prediction);
 const evidence =
@@ -157,8 +161,26 @@ assert.deepEqual(
     (key) =>
       boatNo(prediction.mainSheet[key])
   ),
-  [3, 2, 5, 4],
-  "正しい評価印を買い目都合で変更しない"
+  [
+    "honmei",
+    "taikou",
+    "ana",
+    "osae"
+  ].map(
+    (key) =>
+      boatNo(formalAnalysis.marks[key])
+  ),
+  "4印すべてを正式主展開へそろえる"
+);
+assert.ok(
+  prediction.preservedEvaluationTargets
+    .some(
+      (target) =>
+        boatNo(target) === 4 &&
+        target.source ===
+          "displaced-legacy-mark"
+    ),
+  "旧印の4号艇評価は正式印へ混ぜず別展開候補として保持する"
 );
 assert.ok(
   fourthEvaluation.score >= 70 &&
@@ -242,7 +264,17 @@ assert.ok(
     practical.tickets.length <= 10,
   "基本5〜7点・根拠がある場合だけ最大10点とする"
 );
-expectedTickets.forEach((ticket) => {
+const selectedFourthTickets =
+  expectedTickets.filter(
+    (ticket) =>
+      selectedByTicket.has(ticket)
+  );
+assert.equal(
+  selectedFourthTickets.length,
+  3,
+  "最大10点内で4号艇根拠の独立展開を優先順に3点採用する"
+);
+selectedFourthTickets.forEach((ticket) => {
   const row = selectedByTicket.get(ticket);
 
   assert.ok(
@@ -255,10 +287,19 @@ expectedTickets.forEach((ticket) => {
     `${ticket}の個別コメントへ4号艇の根拠を残す`
   );
 });
+const omittedFourthTicket =
+  practical.excludedCandidates.find(
+    (row) => row.ticket === "3-4-5"
+  );
+assert.equal(
+  omittedFourthTicket?.reasonCode,
+  "MAXIMUM_REACHED",
+  "3-4-5は消さず、10点上限との具体比較を残す"
+);
 assert.match(
-  selectedByTicket.get("3-4-5").comment,
+  omittedFourthTicket?.scenarioSummary || "",
   /4号艇が2着.*5号艇が3着/,
-  "3-4-5へ4の追走と5の展開拾いを記す"
+  "非採用の3-4-5にも4の追走と5の展開拾いを記す"
 );
 assert.match(
   selectedByTicket.get("3-4-1").comment,

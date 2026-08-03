@@ -19,9 +19,9 @@
   const TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT =
     1;
   const TARGET_EXCLUDED_PREVIEW_COUNT =
-    3;
+    2;
   const EXCLUDED_INDEPENDENT_PREVIEW_COUNT =
-    10;
+    4;
   const THEORY_SCHEMA_VERSION = 1;
   const THEORY_SET_FINGERPRINT =
     "structured-ticket-support-v1:flow+holdPickup";
@@ -396,9 +396,11 @@
                     ?.reasonCode || ""
                 ),
               reason:
-                String(
-                  row?.reason || ""
-                ),
+                row?.ticketSelected === true
+                  ? ""
+                  : String(
+                      row?.reason || ""
+                    ),
               priorityScore:
                 numeric(
                   row
@@ -1254,6 +1256,57 @@
 
     const kind =
       String(phaseEvidence.kind || "");
+    const usesAlternateScenario =
+      String(
+        branch.qualificationSource ||
+        ""
+      ).includes(
+        "raceFlow.alternateScenarioRoles"
+      ) ||
+      branch.source ===
+        "preserved-alternate-attack-scenario";
+    const alternateRoles =
+      context.raceFlow
+        ?.alternateScenarioRoles || {};
+    const roleContext =
+      usesAlternateScenario
+        ? {
+            ...context,
+            raceFlow: {
+              ...context.raceFlow,
+              attackBoats: [
+                ...arrayify(
+                  context.raceFlow
+                    ?.attackBoats
+                ),
+                ...arrayify(
+                  alternateRoles.attackBoats
+                )
+              ],
+              holdBoats: [
+                ...arrayify(
+                  context.raceFlow
+                    ?.holdBoats
+                ),
+                ...arrayify(
+                  alternateRoles.holdBoats
+                )
+              ],
+              pickupBoats: [
+                ...arrayify(
+                  context.raceFlow
+                    ?.pickupBoats
+                ),
+                ...arrayify(
+                  alternateRoles.pickupBoats
+                )
+              ]
+            },
+            phases:
+              alternateRoles.phases ||
+              context.phases
+          }
+        : context;
     const priorityScore =
       numeric(branch.priorityScore, 0);
     const goalOrder =
@@ -1302,8 +1355,10 @@
       ) ||
       (
         kind === "alternate-head" &&
-        branch.source !==
-          "race-flow-attack-scenario"
+        ![
+          "race-flow-attack-scenario",
+          "preserved-alternate-attack-scenario"
+        ].includes(branch.source)
       )
     ) {
       return {
@@ -1325,7 +1380,7 @@
           String(check.role || "");
         const liveBoatNo =
           livePhaseBoat(
-            context,
+            roleContext,
             check
           );
         const checkKey =
@@ -1362,14 +1417,14 @@
             .includes("courseByBoat")
         ) {
           return courseOf(
-            context,
+            roleContext,
             expectedBoatNo
           ) === 1;
         }
 
         if (role === "course") {
           return courseOf(
-            context,
+            roleContext,
             expectedBoatNo
           ) ===
             numeric(check.course, 0);
@@ -1377,7 +1432,7 @@
 
         return Boolean(
           roleEvidence(
-            context,
+            roleContext,
             role,
             expectedBoatNo
           )
@@ -1401,7 +1456,7 @@
         phaseEvidence.attack || {};
       const liveAttack =
         roleEvidence(
-          context,
+          roleContext,
           "attack",
           attackerBoatNo
         );
@@ -1421,7 +1476,7 @@
             0 &&
           numeric(attack.course, 0) !==
             courseOf(
-              context,
+              roleContext,
               attackerBoatNo
             )
         )
@@ -1450,7 +1505,7 @@
         );
       const liveHold =
         roleEvidence(
-          context,
+          roleContext,
           "hold",
           targetBoatNo
         );
@@ -1462,16 +1517,16 @@
         [
           [
             chronology.firstMark,
-            context.phases
+            roleContext.phases
               ?.firstMark?.mainHold
           ],
           [
             chronology.back,
-            context.phases?.back?.hold
+            roleContext.phases?.back?.hold
           ],
           [
             chronology.secondMark,
-            context.phases
+            roleContext.phases
               ?.secondMark?.mainHold
           ]
         ].every(
@@ -1505,7 +1560,7 @@
             0 &&
           numeric(target.course, 0) !==
             courseOf(
-              context,
+              roleContext,
               targetBoatNo
             )
         )
@@ -1541,14 +1596,14 @@
         partnerType === "inside"
           ? (
               courseOf(
-                context,
+                roleContext,
                 partnerBoatNo
               ) === 1
                 ? partnerEvidence
                 : null
             )
           : roleEvidence(
-              context,
+              roleContext,
               partnerType ===
                 "other-hold"
                 ? "hold"
@@ -1588,18 +1643,18 @@
         boatNo(third);
       const liveSecond =
         roleEvidence(
-          context,
+          roleContext,
           "hold",
           secondBoatNo
         );
       const liveThird =
         roleEvidence(
-          context,
+          roleContext,
           "pickup",
           thirdBoatNo
         ) ||
         roleEvidence(
-          context,
+          roleContext,
           "hold",
           thirdBoatNo
         );

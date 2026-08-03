@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260803-race-init1";
+  const VERSION = "20260803-entry-odds1";
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const HOME_CACHE_TTL = 300000;
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
