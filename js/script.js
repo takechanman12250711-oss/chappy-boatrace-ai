@@ -72,8 +72,8 @@
       date === getScheduleDate();
   }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        console.log("✅ script.js 読み込みOK");
+  function initializeRaceControls() {
+    console.log("✅ script.js 読み込みOK");
 
     setDefaultDate();
 
@@ -97,28 +97,60 @@
         "raceModeSelect"
       );
 
-    if (fetchBtn) {
+    if (
+      fetchBtn &&
+      fetchBtn.dataset
+        .chappyRaceControlBound !==
+        "true"
+    ) {
+      fetchBtn.dataset
+        .chappyRaceControlBound =
+        "true";
       fetchBtn.addEventListener(
         "click",
         fetchAndRenderRace
       );
     }
 
-    if (reloadBtn) {
+    if (
+      reloadBtn &&
+      reloadBtn.dataset
+        .chappyRaceControlBound !==
+        "true"
+    ) {
+      reloadBtn.dataset
+        .chappyRaceControlBound =
+        "true";
       reloadBtn.addEventListener(
         "click",
         fetchAndRenderRace
       );
     }
 
-    if (oddsBtn) {
+    if (
+      oddsBtn &&
+      oddsBtn.dataset
+        .chappyRaceControlBound !==
+        "true"
+    ) {
+      oddsBtn.dataset
+        .chappyRaceControlBound =
+        "true";
       oddsBtn.addEventListener(
         "click",
         refreshOddsOnly
       );
     }
 
-    if (modeSelect) {
+    if (
+      modeSelect &&
+      modeSelect.dataset
+        .chappyRaceControlBound !==
+        "true"
+    ) {
+      modeSelect.dataset
+        .chappyRaceControlBound =
+        "true";
       modeSelect.addEventListener(
         "change",
         applyRaceMode
@@ -128,7 +160,26 @@
     if (!document.getElementById("homeDashboardV2")) {
       void applyRaceMode();
     }
-  });
+  }
+
+  window.ChappyRaceControls =
+    Object.freeze({
+      initialize:
+        initializeRaceControls
+    });
+
+  if (
+    document.readyState ===
+      "loading"
+  ) {
+    window.addEventListener(
+      "DOMContentLoaded",
+      initializeRaceControls,
+      { once: true }
+    );
+  } else {
+    initializeRaceControls();
+  }
 
   function setDefaultDate(
     forceToday = false
@@ -5380,14 +5431,30 @@
         "noteCopyFullBtn"
       );
 
-    if (generateBtn) {
+    if (
+      generateBtn &&
+      generateBtn.dataset
+        .chappyNoteControlBound !==
+        "true"
+    ) {
+      generateBtn.dataset
+        .chappyNoteControlBound =
+        "true";
       generateBtn.addEventListener(
         "click",
         generateNoteArticle
       );
     }
 
-    if (copyTitleBtn) {
+    if (
+      copyTitleBtn &&
+      copyTitleBtn.dataset
+        .chappyNoteControlBound !==
+        "true"
+    ) {
+      copyTitleBtn.dataset
+        .chappyNoteControlBound =
+        "true";
       copyTitleBtn.addEventListener(
         "click",
         () => copyNoteText(
@@ -5397,7 +5464,15 @@
       );
     }
 
-    if (copyFullBtn) {
+    if (
+      copyFullBtn &&
+      copyFullBtn.dataset
+        .chappyNoteControlBound !==
+        "true"
+    ) {
+      copyFullBtn.dataset
+        .chappyNoteControlBound =
+        "true";
       copyFullBtn.addEventListener(
         "click",
         () => copyNoteText(
@@ -5686,10 +5761,18 @@
     }
   }
 
-  document.addEventListener(
-    "DOMContentLoaded",
-    setupNoteAssistant
-  );
+  if (
+    document.readyState ===
+      "loading"
+  ) {
+    window.addEventListener(
+      "DOMContentLoaded",
+      setupNoteAssistant,
+      { once: true }
+    );
+  } else {
+    setupNoteAssistant();
+  }
 
   const originalRenderAll =
     window.renderAll;
