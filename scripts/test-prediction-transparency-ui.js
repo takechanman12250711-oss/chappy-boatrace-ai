@@ -241,6 +241,29 @@ global.renderAll({
       category: "本線",
       scenarioSummary:
         longScenarioReason
+    }],
+    flowTickets: [
+      { ticket: "1-2-4", category: "流し" },
+      { ticket: "1-3-4", category: "流し" }
+    ],
+    flowFormations: [{
+      headBoatNo: 1,
+      secondBoatNos: [2, 3],
+      thirdMode: "all",
+      notation: "1-23-全",
+      pointCount: 8,
+      expandedTickets: [
+        "1-2-3",
+        "1-2-4",
+        "1-2-5",
+        "1-2-6",
+        "1-3-2",
+        "1-3-4",
+        "1-3-5",
+        "1-3-6"
+      ],
+      scenarioType: "escape",
+      reason: "1逃げから2・3号艇を2着にして3着全艇へ流す。"
     }]
   },
   manshuSheet: {
@@ -254,12 +277,38 @@ global.renderAll({
   aiTicketList: [{
     ticket: "5-4-3",
     category: "穴候補"
+  }, {
+    ticket: "1-2-4",
+    category: "流し"
+  }, {
+    ticket: "1-3-4",
+    category: "流し"
   }],
   ticketRanks: [{
     ticket: "5-4-3",
     comment:
       rankingSpecificReason
   }],
+  missingNumbersData: {
+    available: true,
+    windowStartDate: "20260704",
+    dataThroughDate: "20260802",
+    top30: [{
+      rank: 1,
+      ticket: "6-4-5",
+      recentOccurrences: 0,
+      missingDays: 679,
+      missingDaysLowerBound: false,
+      label: "3年未出"
+    }, {
+      rank: 2,
+      ticket: "6-5-4",
+      recentOccurrences: 0,
+      missingDays: 489,
+      missingDaysLowerBound: true,
+      label: "489日以上未出"
+    }]
+  },
   simpleEvaluation: {
     mode: "main",
     label: "本線信頼度",
@@ -398,6 +447,50 @@ assert.match(
   html,
   /【艇コメント末尾保持】/,
   "役割・buffと併存する艇コメントも末尾まで表示する"
+);
+const compactFlowRows =
+  html.match(
+    /data-flow-notation="1-23-全"/g
+  ) || [];
+assert.equal(
+  compactFlowRows.length,
+  2,
+  "本命欄とAI買い目一覧の流しを1-23-全へまとめる"
+);
+assert.match(
+  html,
+  /data-flow-notation="1-23-全"[\s\S]{0,900}8点/,
+  "流しformationへ合計点数を表示する"
+);
+assert.doesNotMatch(
+  html,
+  /data-flow-notation="1-(?:2|3)-4"/,
+  "流しの個別券を画面へ重複列挙しない"
+);
+assert.doesNotMatch(
+  html,
+  /data-flow-notation="1-23-全"[\s\S]{0,900}オッズ未取得/,
+  "流し全体を単一券のオッズ未取得として扱わない"
+);
+
+const missingSection =
+  html.match(
+    /<section class="v3-section v3-missing-numbers">[\s\S]*?<\/section>/
+  )?.[0] || "";
+assert.match(
+  missingSection,
+  /679日未出/,
+  "30日を超えた実日数を丸めず表示する"
+);
+assert.match(
+  missingSection,
+  /489日以上未出/,
+  "連続確認範囲より前は下限日数で表示する"
+);
+assert.doesNotMatch(
+  missingSection,
+  /(?:オッズ|倍|3年|直近1年)/,
+  "出てない目にはオッズ・旧期間率を表示しない"
 );
 
 assert.equal(

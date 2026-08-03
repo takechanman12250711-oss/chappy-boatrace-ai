@@ -53,6 +53,9 @@ const RACER_VENUE_STARTS_OUTPUT_FILE = path.join(
 
 const THREE_YEAR_DAYS = 1095;
 const RECENT_YEAR_DAYS = 365;
+const RECENT_MISSING_DAYS = 30;
+const JST_OFFSET_MS =
+  9 * 60 * 60 * 1000;
 
 function percent(value, total) {
   return total
@@ -263,11 +266,19 @@ function createPattern() {
   };
 }
 
-function createTrifectaPattern() {
-  return {
+function createTrifectaPattern(
+  { trackLastOccurrence = false } = {}
+) {
+  const pattern = {
     totalRaces: 0,
     counts: {}
   };
+
+  if (trackLastOccurrence) {
+    pattern.lastOccurrenceDates = {};
+  }
+
+  return pattern;
 }
 
 function normalizeTrifecta(value) {
@@ -292,10 +303,27 @@ function addTrifectaRace(pattern, race) {
 
   pattern.totalRaces += 1;
   addCount(pattern.counts, ticket);
+
+  if (pattern.lastOccurrenceDates) {
+    const raceDate = String(
+      race?.date || ""
+    );
+    const current = String(
+      pattern.lastOccurrenceDates[ticket] || ""
+    );
+
+    if (
+      /^\d{8}$/.test(raceDate) &&
+      raceDate > current
+    ) {
+      pattern.lastOccurrenceDates[ticket] =
+        raceDate;
+    }
+  }
 }
 
 function finalizeTrifectaPattern(pattern) {
-  return {
+  const finalized = {
     totalRaces: pattern.totalRaces,
     reliability: reliability(
       pattern.totalRaces
@@ -307,6 +335,19 @@ function finalizeTrifectaPattern(pattern) {
         )
     )
   };
+
+  if (pattern.lastOccurrenceDates) {
+    finalized.lastOccurrenceDates =
+      Object.fromEntries(
+        Object.entries(
+          pattern.lastOccurrenceDates
+        ).sort(([ticketA], [ticketB]) =>
+          ticketA.localeCompare(ticketB)
+        )
+      );
+  }
+
+  return finalized;
 }
 
 function createTrifectaWindows() {
@@ -333,6 +374,53 @@ function finalizeTrifectaWindows(windows) {
     previous2Years:
       finalizeTrifectaPattern(
         windows.previous2Years
+      )
+  };
+}
+
+function createVenueTrifectaSummary() {
+  return {
+    all3Years: createTrifectaPattern({
+      trackLastOccurrence: true
+    }),
+    recent30Days: createTrifectaPattern()
+  };
+}
+
+function finalizeVenueTrifectaSummary(
+  summary,
+  {
+    asOfDate,
+    dataThroughDate,
+    windowStartDate,
+    historyStartDate,
+    continuousHistoryStartDate,
+    recentWindowComplete = true,
+    unresolvedRecentRaces = 0
+  } = {}
+) {
+  return {
+    asOfDate: asOfDate || "",
+    dataThroughDate:
+      dataThroughDate || "",
+    windowDays: RECENT_MISSING_DAYS,
+    windowStartDate:
+      windowStartDate || "",
+    historyStartDate:
+      historyStartDate || "",
+    continuousHistoryStartDate:
+      continuousHistoryStartDate || "",
+    recentWindowComplete:
+      recentWindowComplete === true,
+    unresolvedRecentRaces:
+      Number(unresolvedRecentRaces || 0),
+    recent30Days:
+      finalizeTrifectaPattern(
+        summary.recent30Days
+      ),
+    all3Years:
+      finalizeTrifectaPattern(
+        summary.all3Years
       )
   };
 }
@@ -773,6 +861,291 @@ function subtractDays(date, days) {
   return new Date(
     date.getTime() -
     days * 24 * 60 * 60 * 1000
+  );
+}
+
+function addDays(date, days) {
+  return new Date(
+    date.getTime() +
+    days * 24 * 60 * 60 * 1000
+  );
+}
+
+function formatRaceDate(date) {
+  return date
+    ? date
+        .toISOString()
+        .slice(0, 10)
+        .replaceAll("-", "")
+    : "";
+}
+
+function isRaceDayClosed(file) {
+  const raceDate = parseRaceDate(
+    file?.date
+  );
+  const collectedAt = new Date(
+    file?.collectedAt || ""
+  );
+  const races = Array.isArray(
+    file?.races
+  )
+    ? file.races
+    : [];
+  const venues = Array.isArray(
+    file?.venues
+  )
+    ? file.venues
+    : [];
+
+  if (
+    !raceDate ||
+    !Number.isFinite(
+      collectedAt.getTime()
+    ) ||
+    venues.length === 0 ||
+    Number(file?.failedRaces || 0) !== 0 ||
+    Number(file?.raceCount) !==
+      races.length ||
+    Number(file?.venueCount) !==
+      venues.length ||
+    races.length !==
+      venues.length * 12 ||
+    Number(file?.completedRaces || 0) +
+      Number(file?.pendingRaces || 0) +
+      Number(file?.failedRaces || 0) !==
+      races.length
+  ) {
+    return false;
+  }
+
+  const raceNosByVenue = new Map();
+
+  for (const race of races) {
+    const jcd = String(
+      race?.jcd || ""
+    ).padStart(2, "0");
+    const raceNo = Number(
+      race?.raceNo
+    );
+
+    if (
+      !/^\d{2}$/.test(jcd) ||
+      !Number.isInteger(raceNo) ||
+      raceNo < 1 ||
+      raceNo > 12
+    ) {
+      return false;
+    }
+
+    const raceNos =
+      raceNosByVenue.get(jcd) ||
+      new Set();
+    raceNos.add(raceNo);
+    raceNosByVenue.set(jcd, raceNos);
+  }
+
+  const venueCodes = new Set(
+    venues.map(venue =>
+      String(
+        venue?.jcd || ""
+      ).padStart(2, "0")
+    )
+  );
+
+  if (
+    venueCodes.size !== venues.length ||
+    raceNosByVenue.size !==
+      venueCodes.size ||
+    [...raceNosByVenue.keys()].some(
+      jcd => !venueCodes.has(jcd)
+    ) ||
+    venues.some(venue =>
+      raceNosByVenue.get(
+        String(
+          venue?.jcd || ""
+        ).padStart(2, "0")
+      )?.size !== 12
+    )
+  ) {
+    return false;
+  }
+
+  const nextDayStartJst =
+    addDays(raceDate, 1).getTime() -
+    JST_OFFSET_MS;
+
+  const allResultsComplete =
+    Number(file?.completedRaces || 0) ===
+      races.length &&
+    Number(file?.pendingRaces || 0) === 0;
+
+  return (
+    allResultsComplete ||
+    collectedAt.getTime() >=
+      nextDayStartJst
+  );
+}
+
+function findContinuousHistoryStartDate(
+  files,
+  latestDate
+) {
+  if (!latestDate) return null;
+
+  const collectedDates = new Set(
+    (Array.isArray(files) ? files : [])
+      .filter(file =>
+        file?.source ===
+          "boatrace-official"
+      )
+      .map(file =>
+        formatRaceDate(
+          parseRaceDate(file?.date)
+        )
+      )
+      .filter(Boolean)
+  );
+
+  let cursor = latestDate;
+
+  while (
+    collectedDates.has(
+      formatRaceDate(cursor)
+    )
+  ) {
+    cursor = subtractDays(cursor, 1);
+  }
+
+  return addDays(cursor, 1);
+}
+
+function buildVenueHistoryQuality(
+  files,
+  {
+    latestDate,
+    baseStartDate,
+    recentStartDate
+  } = {}
+) {
+  const byVenue = Object.fromEntries(
+    Array.from(
+      { length: 24 },
+      (_, index) => [
+        String(index + 1).padStart(2, "0"),
+        {
+          lastUnresolvedDate: "",
+          unresolvedRecentRaces: 0
+        }
+      ]
+    )
+  );
+
+  for (const file of Array.isArray(files)
+    ? files
+    : []) {
+    if (
+      file?.source !==
+        "boatrace-official"
+    ) {
+      continue;
+    }
+
+    const fileDate = parseRaceDate(
+      file?.date
+    );
+    const raceDayClosed =
+      isRaceDayClosed(file);
+
+    if (
+      !fileDate ||
+      !latestDate ||
+      !baseStartDate ||
+      fileDate < baseStartDate ||
+      fileDate > latestDate
+    ) {
+      continue;
+    }
+
+    for (const race of file.races || []) {
+      const jcd = String(
+        race?.jcd || ""
+      ).padStart(2, "0");
+
+      if (!byVenue[jcd]) continue;
+
+      const settled = Boolean(
+        (
+          race?.resultAvailable === true &&
+          normalizeTrifecta(
+            race?.trifecta?.combination
+          )
+        ) ||
+        (
+          race?.resultAvailable !== true &&
+          !race?.error &&
+          raceDayClosed
+        )
+      );
+
+      if (settled) continue;
+
+      const dateKey = formatRaceDate(
+        fileDate
+      );
+
+      if (
+        dateKey >
+        byVenue[jcd].lastUnresolvedDate
+      ) {
+        byVenue[jcd]
+          .lastUnresolvedDate = dateKey;
+      }
+
+      if (
+        recentStartDate &&
+        fileDate >= recentStartDate
+      ) {
+        byVenue[jcd]
+          .unresolvedRecentRaces += 1;
+      }
+    }
+  }
+
+  return Object.fromEntries(
+    Object.entries(byVenue).map(
+      ([jcd, quality]) => {
+        const continuousStartDate =
+          quality.lastUnresolvedDate
+            ? addDays(
+                parseRaceDate(
+                  quality.lastUnresolvedDate
+                ),
+                1
+              )
+            : baseStartDate;
+
+        return [
+          jcd,
+          {
+            continuousHistoryStartDate:
+              formatRaceDate(
+                continuousStartDate
+              ),
+            unresolvedRecentRaces:
+              quality.unresolvedRecentRaces,
+            recentWindowComplete:
+              Boolean(
+                recentStartDate &&
+                continuousStartDate <=
+                  recentStartDate &&
+                quality
+                  .unresolvedRecentRaces === 0
+              )
+          }
+        ];
+      }
+    )
   );
 }
 
@@ -1379,14 +1752,27 @@ function readResultFiles() {
     });
 }
 
-function main() {
-  const files = readResultFiles();
+function collectOfficialRaces(
+  files,
+  latestDate = null
+) {
   const racesById = new Map();
 
-  for (const file of files) {
+  for (const file of Array.isArray(files)
+    ? files
+    : []) {
+    const fileDate = parseRaceDate(
+      file?.date
+    );
+
     if (
       file.source !==
-      "boatrace-official"
+        "boatrace-official" ||
+      !fileDate ||
+      (
+        latestDate &&
+        fileDate > latestDate
+      )
     ) {
       continue;
     }
@@ -1409,14 +1795,28 @@ function main() {
     }
   }
 
-  const allRaces = [
+  return [
     ...racesById.values()
   ];
+}
 
-  const latestRaceDate = allRaces
-    .map(race => parseRaceDate(race.date))
+function main() {
+  const files = readResultFiles();
+  const latestRaceDate = files
+    .filter(file =>
+      file?.source ===
+        "boatrace-official" &&
+      isRaceDayClosed(file)
+    )
+    .map(file => parseRaceDate(file.date))
     .filter(Boolean)
     .sort((a, b) => b - a)[0] || null;
+
+  const allRaces =
+    collectOfficialRaces(
+      files,
+      latestRaceDate
+    );
 
   const threeYearStart = latestRaceDate
     ? subtractDays(
@@ -1432,11 +1832,42 @@ function main() {
       )
     : null;
 
+  const missingAsOfDate = latestRaceDate
+    ? addDays(latestRaceDate, 1)
+    : null;
+
+  const recentMissingStart =
+    missingAsOfDate
+      ? subtractDays(
+          missingAsOfDate,
+          RECENT_MISSING_DAYS
+        )
+      : null;
+
+  const continuousHistoryStart =
+    findContinuousHistoryStartDate(
+      files,
+      latestRaceDate
+    );
+
+  const venueHistoryQuality =
+    buildVenueHistoryQuality(
+      files,
+      {
+        latestDate: latestRaceDate,
+        baseStartDate:
+          continuousHistoryStart,
+        recentStartDate:
+          recentMissingStart
+      }
+    );
+
   const races = allRaces.filter(race => {
     const date = parseRaceDate(race.date);
     return (
       date &&
-      (!threeYearStart || date >= threeYearStart)
+      (!threeYearStart || date >= threeYearStart) &&
+      (!latestRaceDate || date <= latestRaceDate)
     );
   });
 
@@ -1444,6 +1875,7 @@ function main() {
   const venuePatterns = {};
   const venueRacePatterns = {};
   const trifectaByVenueRace = {};
+  const trifectaByVenue = {};
   const racers = {};
   const racerVenueStarts = {};
   const courseStructureOverall =
@@ -1492,6 +1924,29 @@ function main() {
         addRace(windows.recent1Year, race);
       } else {
         addRace(windows.previous2Years, race);
+      }
+
+      const venueTrifecta =
+        trifectaByVenue[
+          race.jcd
+        ] ||= createVenueTrifectaSummary();
+
+      addTrifectaRace(
+        venueTrifecta.all3Years,
+        race
+      );
+
+      if (
+        raceDate &&
+        recentMissingStart &&
+        missingAsOfDate &&
+        raceDate >= recentMissingStart &&
+        raceDate < missingAsOfDate
+      ) {
+        addTrifectaRace(
+          venueTrifecta.recent30Days,
+          race
+        );
       }
     }
 
@@ -1772,7 +2227,7 @@ function main() {
   };
 
   const trifectaOutput = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     source: "boatrace-official",
     usagePolicy:
       "参考表示のみ。買い目の作成・削除には使用しない",
@@ -1782,6 +2237,73 @@ function main() {
       output.firstDate,
     lastDate:
       output.lastDate,
+    asOfDate:
+      formatRaceDate(
+        missingAsOfDate
+      ),
+    dataThroughDate:
+      formatRaceDate(
+        latestRaceDate
+      ),
+    recentWindowDays:
+      RECENT_MISSING_DAYS,
+    recentWindowStartDate:
+      formatRaceDate(
+        recentMissingStart
+      ),
+    historyStartDate:
+      formatRaceDate(
+        threeYearStart
+      ),
+    continuousHistoryStartDate:
+      formatRaceDate(
+        continuousHistoryStart
+      ),
+    trifectaByVenue:
+      Object.fromEntries(
+        Object.entries(
+          trifectaByVenue
+        )
+          .sort(([jcdA], [jcdB]) =>
+            jcdA.localeCompare(jcdB)
+          )
+          .map(([jcd, summary]) => [
+            jcd,
+            finalizeVenueTrifectaSummary(
+              summary,
+              {
+                asOfDate:
+                  formatRaceDate(
+                    missingAsOfDate
+                  ),
+                dataThroughDate:
+                  formatRaceDate(
+                    latestRaceDate
+                  ),
+                windowStartDate:
+                  formatRaceDate(
+                    recentMissingStart
+                  ),
+                historyStartDate:
+                  formatRaceDate(
+                    threeYearStart
+                  ),
+                continuousHistoryStartDate:
+                  venueHistoryQuality[jcd]
+                    ?.continuousHistoryStartDate ||
+                  formatRaceDate(
+                    continuousHistoryStart
+                  ),
+                recentWindowComplete:
+                  venueHistoryQuality[jcd]
+                    ?.recentWindowComplete === true,
+                unresolvedRecentRaces:
+                  venueHistoryQuality[jcd]
+                    ?.unresolvedRecentRaces || 0
+              }
+            )
+          ])
+      ),
     trifectaByVenueRace:
       Object.fromEntries(
         Object.entries(
@@ -1878,8 +2400,10 @@ if (require.main === module) {
 }
 
 module.exports = {
+  main,
   THREE_YEAR_DAYS,
   RECENT_YEAR_DAYS,
+  RECENT_MISSING_DAYS,
   createPattern,
   addRace,
   finalizePattern,
@@ -1887,9 +2411,16 @@ module.exports = {
   createVenueRaceWindows,
   finalizeVenueRaceWindows,
   createTrifectaWindows,
+  createVenueTrifectaSummary,
+  addTrifectaRace,
   addRacerVenueStarts,
   finalizeRacerVenueStarts,
   finalizeTrifectaWindows,
+  finalizeVenueTrifectaSummary,
+  findContinuousHistoryStartDate,
+  buildVenueHistoryQuality,
+  isRaceDayClosed,
+  collectOfficialRaces,
   createCourseStructurePattern,
   addCourseStructureRace,
   finalizeCourseStructurePattern,

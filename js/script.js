@@ -4557,7 +4557,8 @@
       const url =
         `https://chappy-boatrace-api.vercel.app/api/missing` +
         `?jcd=${encodeURIComponent(params.jcd)}` +
-        `&rno=${encodeURIComponent(params.rno)}`;
+        `&scope=venue` +
+        `&date=${encodeURIComponent(params.date)}`;
 
       const response = await fetchWithTimeout(url);
       const data = await response.json();
@@ -4593,7 +4594,7 @@
 
   function buildMissingTop30(
     missingData,
-    byTicket
+    _byTicket
   ) {
     if (
       typeof window.ChappyOddsInsights
@@ -4603,7 +4604,7 @@
       return window.ChappyOddsInsights
         .buildMissingTop30(
           missingData,
-          byTicket,
+          null,
           30
         );
     }
@@ -4621,38 +4622,37 @@
           item?.ticket || ""
         );
 
-        const odds = Number(
-          byTicket?.[ticket]
-        );
-
         return {
           ...item,
-          ticket,
-          odds:
-            Number.isFinite(odds) &&
-            odds > 0
-              ? odds
-              : null
+          ticket
         };
       })
-      .filter(item =>
-        /^[1-6]-[1-6]-[1-6]$/.test(
-          item.ticket
-        )
-      )
-      .sort((a, b) => {
-        const oddsA =
-          Number.isFinite(a.odds)
-            ? a.odds
-            : Number.POSITIVE_INFINITY;
-
-        const oddsB =
-          Number.isFinite(b.odds)
-            ? b.odds
-            : Number.POSITIVE_INFINITY;
+      .filter(item => {
+        const boats = item.ticket
+          .split("-")
+          .map(Number);
 
         return (
-          oddsA - oddsB ||
+          boats.length === 3 &&
+          boats.every(boat =>
+            Number.isInteger(boat) &&
+            boat >= 1 &&
+            boat <= 6
+          ) &&
+          new Set(boats).size === 3 &&
+          Number(
+            item.recentOccurrences || 0
+          ) === 0
+        );
+      })
+      .sort((a, b) => {
+        return (
+          Number(
+            b.missingDays || 0
+          ) -
+            Number(
+              a.missingDays || 0
+            ) ||
           a.ticket.localeCompare(
             b.ticket
           )
@@ -4669,7 +4669,7 @@
       top30: rows,
       displayedCount: rows.length,
       sort:
-        "current-odds-ascending"
+        "zero-in-recent-30-days-then-missing-days"
     };
   }
 
@@ -5062,8 +5062,7 @@
 
     prediction.missingNumbersData =
       buildMissingTop30(
-        missingData,
-        byTicket
+        missingData
       );
 
     attachCombinedOdds(
@@ -5110,6 +5109,36 @@
       oddsSupplement?.oddsData;
 
     if (!hasUsableOddsData(oddsData)) {
+      if (oddsSupplement?.missingData) {
+        applyMissingSupplement({
+          missingData:
+            oddsSupplement.missingData,
+          oddsData,
+          prediction,
+          params,
+          isCurrentRequest
+        });
+      } else if (
+        oddsSupplement?.missingPromise
+      ) {
+        void oddsSupplement.missingPromise
+          .then(missingData =>
+            applyMissingSupplement({
+              missingData,
+              oddsData,
+              prediction,
+              params,
+              isCurrentRequest
+            })
+          )
+          .catch(error => {
+            console.warn(
+              "出てない目の後追い反映に失敗",
+              error?.message || error
+            );
+          });
+      }
+
       const failed = Boolean(
         oddsSupplement?.oddsError
       );
@@ -5220,8 +5249,7 @@
 
     prediction.missingNumbersData =
       buildMissingTop30(
-        missingData,
-        oddsData?.byTicket || {}
+        missingData
       );
 
     savePredictionSnapshot(
