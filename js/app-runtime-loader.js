@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260803-flow-odds-tabs";
+  const VERSION = "20260803-flow-missing30";
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const HOME_CACHE_TTL = 300000;
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
@@ -17,7 +17,6 @@
       "js/api.js",
       "js/prediction-runtime-loader.js",
       "js/script.js",
-      "js/flow-odds-tabs.js",
       "js/hiyori-runtime-loader.js"
     ],
     stats: [
