@@ -4,6 +4,7 @@
   if (root.ChappyAppRuntime) return;
 
   const VERSION = "20260804-final-odds2";
+  // legacy test marker: const VERSION = "20260803-flow-missing30"
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const HOME_CACHE_TTL = 300000;
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
