@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260803-flow-missing30";
+  const VERSION = "20260804-final-odds2";
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const scripts = [
     "js/boat-identity.js",
