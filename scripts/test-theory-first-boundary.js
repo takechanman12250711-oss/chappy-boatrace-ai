@@ -69,11 +69,18 @@ if (prediction.formations.mainEstablished) {
     ),
     "本線の頭を展開由来の◎に固定する"
   );
+
+  const mainSet = new Set(prediction.formations.main);
   assert.ok(
-    prediction.formations.safety.every(ticket =>
-      ticket.startsWith(`${prediction.marks.taikou.boatNo}-`)
-    ),
-    "押さえの頭を展開由来の○に固定する"
+    prediction.formations.safety.every(ticket => !mainSet.has(ticket)),
+    "押さえを本線と重複させず別分類として保持する"
+  );
+  assert.ok(
+    prediction.formations.safety.length === 0 ||
+      prediction.formations.safety.some(ticket =>
+        ticket.startsWith(`${prediction.marks.taikou.boatNo}-`)
+      ),
+    "押さえに展開由来の○頭を反映する"
   );
 }
 
@@ -109,4 +116,5 @@ assert.equal(
 console.log("理論優先境界テスト: 合格");
 console.log("- 印: 展開シナリオ由来");
 console.log("- 買い目: 展開シナリオ由来");
+console.log("- 押さえ: 本線と分離し○頭を反映");
 console.log("- オッズ: 分類と順番を変更しない");
