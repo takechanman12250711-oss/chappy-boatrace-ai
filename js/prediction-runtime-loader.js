@@ -16,6 +16,7 @@
     "js/odds-insights.js",
     "js/evaluated-scenario-candidates.js",
     "js/ai-core.js",
+    "js/ai-correction-boundary.js",
     "js/prediction.js",
     "js/practical-selection.js",
     "js/note-generator.js",

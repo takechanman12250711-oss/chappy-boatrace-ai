@@ -1,0 +1,32 @@
+name: Check AI correction boundary
+
+on:
+  pull_request:
+    paths:
+      - "js/ai-core.js"
+      - "js/ai-correction-boundary.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-ai-correction-boundary.js"
+      - ".github/workflows/check-ai-correction-boundary.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/ai-core.js"
+      - "js/ai-correction-boundary.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-ai-correction-boundary.js"
+      - ".github/workflows/check-ai-correction-boundary.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/ai-correction-boundary.js
+      - run: node --check js/prediction-runtime-loader.js
+      - run: node --check scripts/test-ai-correction-boundary.js
+      - run: node scripts/test-ai-correction-boundary.js
