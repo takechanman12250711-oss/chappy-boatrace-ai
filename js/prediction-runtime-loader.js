@@ -23,6 +23,7 @@
     "js/skip-ai-shadow.js",
     "js/render.js",
     "js/main-cover-display-boundary.js",
+    "js/final-odds-display.js",
     "js/skip-ai-display.js",
     "js/scenario-ai-v6-display.js"
   ];
