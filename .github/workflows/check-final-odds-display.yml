@@ -1,0 +1,29 @@
+name: Check final odds display
+
+on:
+  pull_request:
+    paths:
+      - "js/final-odds-display.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-final-odds-display.js"
+      - ".github/workflows/check-final-odds-display.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/final-odds-display.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-final-odds-display.js"
+      - ".github/workflows/check-final-odds-display.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/final-odds-display.js
+      - run: node --check js/prediction-runtime-loader.js
+      - run: node scripts/test-final-odds-display.js
