@@ -25,6 +25,43 @@
     return Array.isArray(value) ? value : [];
   }
 
+  function ticketKey(row) {
+    if (typeof row === "string") return row.trim();
+    if (!row || typeof row !== "object") return "";
+    return String(row.ticket || row.line || row.formation || "").trim();
+  }
+
+  function enrichRows(classifiedRows, existingRows) {
+    const existingByTicket = new Map(
+      rows(existingRows)
+        .map(row => [ticketKey(row), row])
+        .filter(([key]) => key)
+    );
+
+    return rows(classifiedRows).map(row => {
+      const key = ticketKey(row);
+      const existing = existingByTicket.get(key);
+
+      if (!existing || typeof existing !== "object") return row;
+      if (typeof row === "string") {
+        return {
+          ...existing,
+          ticket: key
+        };
+      }
+
+      return {
+        ...existing,
+        ...row,
+        odds: row.odds ?? existing.odds,
+        oddsText: row.oddsText || existing.oddsText,
+        comment: row.comment || existing.comment,
+        reason: row.reason || existing.reason,
+        scenarioSummary: row.scenarioSummary || existing.scenarioSummary
+      };
+    });
+  }
+
   function prepare(prediction) {
     if (!prediction || typeof prediction !== "object") return prediction;
 
@@ -34,12 +71,18 @@
 
     if (!mainRows.length && !coverRows.length) return prediction;
 
+    const currentMainSheet = prediction.mainSheet || {};
+
     return {
       ...prediction,
       mainSheet: {
-        ...(prediction.mainSheet || {}),
-        ...(mainRows.length ? { tickets: mainRows } : {}),
-        ...(coverRows.length ? { coverTickets: coverRows } : {})
+        ...currentMainSheet,
+        ...(mainRows.length
+          ? { tickets: enrichRows(mainRows, currentMainSheet.tickets) }
+          : {}),
+        ...(coverRows.length
+          ? { coverTickets: enrichRows(coverRows, currentMainSheet.coverTickets) }
+          : {})
       }
     };
   }
