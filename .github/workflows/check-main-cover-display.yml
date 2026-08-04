@@ -1,0 +1,28 @@
+name: Check main cover display
+
+on:
+  pull_request:
+    paths:
+      - "js/main-cover-display-boundary.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-main-cover-display-boundary.js"
+      - ".github/workflows/check-main-cover-display.yml"
+  push:
+    branches: [main]
+    paths:
+      - "js/main-cover-display-boundary.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-main-cover-display-boundary.js"
+      - ".github/workflows/check-main-cover-display.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/main-cover-display-boundary.js
+      - run: node --check js/prediction-runtime-loader.js
+      - run: node scripts/test-main-cover-display-boundary.js
