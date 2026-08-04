@@ -19,7 +19,6 @@
     "js/ai-correction-boundary.js",
     "js/prediction.js",
     "js/practical-selection.js",
-    "js/practical-selection-max7.js",
     "js/note-generator.js",
     "js/scenario-ai-v6-shadow.js",
     "js/skip-ai-shadow.js",
