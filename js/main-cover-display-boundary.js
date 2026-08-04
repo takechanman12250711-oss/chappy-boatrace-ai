@@ -25,6 +25,62 @@
     return Array.isArray(value) ? value : [];
   }
 
+  function normalizeTicket(value) {
+    return String(value || "").replace(/\s+/g, "").trim();
+  }
+
+  function ticketOf(item) {
+    return normalizeTicket(
+      typeof item === "string"
+        ? item
+        : item?.ticket || item?.line || item?.formation
+    );
+  }
+
+  function mergeDisplayRows(sourceRows, existingRows) {
+    const existingByTicket = new Map(
+      rows(existingRows)
+        .map(item => [ticketOf(item), item])
+        .filter(([ticket]) => ticket)
+    );
+
+    return rows(sourceRows).map(item => {
+      const ticket = ticketOf(item);
+      const existing = existingByTicket.get(ticket);
+
+      if (!existing || typeof existing !== "object") {
+        return item;
+      }
+
+      if (typeof item === "string") {
+        return {
+          ...existing,
+          ticket: item
+        };
+      }
+
+      if (!item || typeof item !== "object") {
+        return item;
+      }
+
+      return {
+        ...existing,
+        ...item,
+        odds:
+          Number.isFinite(Number(item.odds)) && Number(item.odds) > 0
+            ? item.odds
+            : existing.odds,
+        oddsText:
+          item.oddsText && item.oddsText !== "オッズ未取得"
+            ? item.oddsText
+            : existing.oddsText,
+        oddsSource: item.oddsSource || existing.oddsSource,
+        isFinalRetrievedOdds:
+          item.isFinalRetrievedOdds || existing.isFinalRetrievedOdds || false
+      };
+    });
+  }
+
   function prepare(prediction) {
     if (!prediction || typeof prediction !== "object") return prediction;
 
@@ -34,12 +90,28 @@
 
     if (!mainRows.length && !coverRows.length) return prediction;
 
+    const mainSheet = prediction.mainSheet || {};
+
     return {
       ...prediction,
       mainSheet: {
-        ...(prediction.mainSheet || {}),
-        ...(mainRows.length ? { tickets: mainRows } : {}),
-        ...(coverRows.length ? { coverTickets: coverRows } : {})
+        ...mainSheet,
+        ...(mainRows.length
+          ? {
+              tickets: mergeDisplayRows(
+                mainRows,
+                mainSheet.tickets
+              )
+            }
+          : {}),
+        ...(coverRows.length
+          ? {
+              coverTickets: mergeDisplayRows(
+                coverRows,
+                mainSheet.coverTickets
+              )
+            }
+          : {})
       }
     };
   }
