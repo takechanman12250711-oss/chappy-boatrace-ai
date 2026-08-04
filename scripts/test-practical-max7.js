@@ -1,8 +1,20 @@
 const assert = require("node:assert/strict");
 const boundary = require("../js/practical-selection-max7.js");
 
-const tickets = Array.from({ length: 10 }, (_, index) => ({
-  ticket: `${(index % 6) + 1}-${((index + 1) % 6) + 1}-${((index + 2) % 6) + 1}`,
+const ticketLines = [
+  "1-2-3",
+  "1-2-4",
+  "1-3-2",
+  "1-3-4",
+  "2-1-3",
+  "2-1-4",
+  "3-1-2",
+  "3-1-4",
+  "4-1-2",
+  "4-1-3"
+];
+const tickets = ticketLines.map((ticket, index) => ({
+  ticket,
   selectionTier: index < 7 ? "通常" : "展開追加",
   priorityScore: 90 - index
 }));
