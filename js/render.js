@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const RENDER_VERSION = "render-ui-v3.2.0-flow-missing30";
+  const RENDER_VERSION = "render-ui-v3.3.0-direct-accordion";
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
@@ -1362,6 +1362,60 @@ if (raceInfoArea) {
       .filter(Boolean);
   }
 
+
+  function renderTicketAccordion(
+    label,
+    type,
+    body,
+    pointCount,
+    aim,
+    open = false
+  ) {
+    if (!body) return "";
+
+    return       `<details
+        name="chappy-ticket-accordion"
+        class="v3-ticket-accordion v3-ticket-accordion-${escapeHtml(type)}"
+        ${open ? "open" : ""}
+      >
+        <summary>
+          <span>${escapeHtml(label)}</span>
+          <span class="v3-ticket-accordion-count">
+            ${escapeHtml(pointCount)}点
+          </span>
+          <span class="v3-ticket-accordion-arrow" aria-hidden="true"></span>
+        </summary>
+        <div class="v3-ticket-accordion-panel">
+          <div class="v3-ticket-accordion-aim">
+            <strong>買い目の狙い</strong>
+            <p>${escapeHtml(aim || "この分類で成立度が高い買い目を表示します。")}</p>
+          </div>
+          <div class="v3-ticket-accordion-label">説明・買い目・オッズ</div>
+          ${body}
+        </div>
+      </details>`;
+  }
+
+  function resolveTicketPointCount(list, type) {
+    const rows = arrayify(list);
+    if (type === "flow") {
+      return Math.max(
+        1,
+        safeNum(
+          rows[0]?.pointCount ?? rows[0]?.ticketCount,
+          rows.length || 1
+        )
+      );
+    }
+    return Math.max(1, rows.length);
+  }
+
+  function resolveTicketAim(list, fallback) {
+    const row = arrayify(list)[0];
+    if (!row || typeof row !== "object") return fallback;
+    return row.scenarioSummary || row.comment || row.reason || fallback;
+  }
+
      function renderMainNewspaper(prediction) {
     const sheet =
       prediction.mainSheet || {};
@@ -1677,28 +1731,67 @@ if (raceInfoArea) {
           );
 
     const ticketBody = [
-      renderTicketRows(
-        "本線",
-        mainTickets,
-        "main",
+      renderTicketAccordion(
         "本命",
-        "中心展開"
+        "main",
+        renderTicketRows(
+          "本線",
+          mainTickets,
+          "main",
+          "本命",
+          "中心展開"
+        ),
+        resolveTicketPointCount(
+          mainTickets,
+          "main"
+        ),
+        resolveTicketAim(
+          mainTickets,
+          "最も成立度が高い中心展開の買い目です。"
+        ),
+        true
       ),
 
-      renderTicketRows(
+      renderTicketAccordion(
         "押さえ",
-        coverTickets,
         "safety",
-        "押さえ",
-        "安全押さえ"
+        renderTicketRows(
+          "押さえ",
+          coverTickets,
+          "safety",
+          "押さえ",
+          "安全押さえ"
+        ),
+        resolveTicketPointCount(
+          coverTickets,
+          "safety"
+        ),
+        resolveTicketAim(
+          coverTickets,
+          "本命展開が崩れた場合を補う買い目です。"
+        ),
+        false
       ),
 
-      renderTicketRows(
+      renderTicketAccordion(
         "流し",
-        flowTickets,
         "flow",
-        "流し",
-        "流し展開"
+        renderTicketRows(
+          "流し",
+          flowTickets,
+          "flow",
+          "流し",
+          "流し展開"
+        ),
+        resolveTicketPointCount(
+          flowTickets,
+          "flow"
+        ),
+        resolveTicketAim(
+          flowTickets,
+          "中心艇を固定し、相手を広く拾う買い目です。"
+        ),
+        false
       )
     ]
       .filter(Boolean)
@@ -1949,11 +2042,21 @@ if (raceInfoArea) {
       .filter(Boolean)
       .join("");
 
-    return section(
+    return renderTicketAccordion(
       "万舟",
-      body,
-      "💣",
-      "v3-manshu-newspaper"
+      "manshu",
+      section(
+        "万舟",
+        body,
+        "💣",
+        "v3-manshu-newspaper"
+      ),
+      Math.max(1, rows.length),
+      resolveTicketAim(
+        rows,
+        "内側が崩れた場合や高配当展開を狙う買い目です。"
+      ),
+      false
     );
   }
 

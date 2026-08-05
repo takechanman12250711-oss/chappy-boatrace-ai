@@ -5227,3 +5227,67 @@ body {
     flex-direction: column;
   }
 }
+
+
+/* direct-render ticket accordion v1 */
+.v3-ticket-accordion {
+  margin: 12px 0;
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.v3-ticket-accordion > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+  -webkit-tap-highlight-color: transparent;
+}
+.v3-ticket-accordion > summary::-webkit-details-marker { display: none; }
+.v3-ticket-accordion-main > summary { background: #eff6ff; color: #1d4ed8; }
+.v3-ticket-accordion-safety > summary { background: #f8fafc; color: #334155; }
+.v3-ticket-accordion-flow > summary { background: #f0fdf4; color: #15803d; }
+.v3-ticket-accordion-manshu > summary { background: #fff1f2; color: #be123c; }
+.v3-ticket-accordion-count {
+  margin-left: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.75);
+  color: inherit;
+  font-size: 12px;
+}
+.v3-ticket-accordion-arrow {
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .18s ease;
+}
+.v3-ticket-accordion[open] .v3-ticket-accordion-arrow { transform: rotate(225deg); }
+.v3-ticket-accordion-panel {
+  padding: 0 14px 14px;
+  border-top: 1px solid #edf2f7;
+}
+.v3-ticket-accordion-aim {
+  margin: 14px 0 10px;
+  padding: 12px 13px;
+  border-radius: 12px;
+  border-left: 4px solid #2563eb;
+  background: #f8fafc;
+}
+.v3-ticket-accordion-aim strong,
+.v3-ticket-accordion-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #334155;
+}
+.v3-ticket-accordion-aim p { margin: 0; line-height: 1.65; }
+.v3-ticket-accordion-label { margin: 12px 0 8px; }
+.v3-ticket-accordion-manshu .v3-section-head { display: none; }
