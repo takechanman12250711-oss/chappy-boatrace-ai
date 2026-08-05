@@ -5,7 +5,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const source = fs.readFileSync(path.join(root, "js", "ticket-accordion-ui.js"), "utf8");
+const source = fs.readFileSync(path.join(root, "js", "ticket-accordion-render.js"), "utf8");
+const bootstrap = fs.readFileSync(path.join(root, "js", "ticket-accordion-bootstrap-v2.js"), "utf8");
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
 assert.match(source, /chappy-ticket-accordion-item/);
@@ -16,10 +17,12 @@ assert.match(source, /label: "流し"/);
 assert.match(source, /wrapManshu/);
 assert.match(source, /買い目の狙い/);
 assert.match(source, /説明・買い目・オッズ/);
-assert.match(source, /container\.querySelectorAll\(`\.\$\{ITEM_CLASS\}\[open\]`\)/);
+assert.match(source, /querySelectorAll\(`\.\$\{ITEM\}\[open\]`\)/);
 assert.match(source, /open: true/);
 assert.match(source, /open: false/);
-assert.match(index, /js\/ticket-accordion-ui\.js\?v=20260805-ticket-accordion1/);
+assert.match(bootstrap, /MutationObserver/);
+assert.match(index, /js\/ticket-accordion-bootstrap-v2\.js\?v=20260805-ticket-accordion-render2/);
+assert.doesNotMatch(index, /<script src="js\/ticket-accordion-ui\.js/);
 
 for (const forbidden of [
   "createFormation(",
