@@ -1,0 +1,49 @@
+name: Apply boat evaluation tab buttons
+
+on:
+  push:
+    branches:
+      - agent/boat-evaluation-tab-buttons
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/boat-evaluation-tab-buttons' || github.ref_name == 'agent/boat-evaluation-tab-buttons'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/boat-evaluation-tab-buttons
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply tab button patch
+        run: node scripts/apply-boat-evaluation-tab-buttons.js
+      - name: Validate syntax and markers
+        run: |
+          node --check js/render.js
+          node --check js/prediction-runtime-loader.js
+          grep -q 'render-ui-v3.5.0-boat-tab-buttons' js/render.js
+          grep -q 'v3-boat-tab-buttons' js/render.js
+          grep -q 'boat evaluation tab buttons v1' style.css
+          grep -q 'grid-template-columns: repeat(6' style.css
+          grep -q '20260805-boat-tab-buttons1' js/prediction-runtime-loader.js
+      - name: Commit generated changes
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/render.js style.css js/prediction-runtime-loader.js index.html
+          git commit -m "AI総合／艇評価を1〜6号艇の横一列ボタン表示に変更"
+          git pull --rebase origin agent/boat-evaluation-tab-buttons
+          git push origin HEAD:agent/boat-evaluation-tab-buttons
