@@ -5357,3 +5357,58 @@ body {
   .v3-boat-accordion-list { grid-template-columns: 1fr; }
   .v3-boat-accordion[open] { grid-column: auto; }
 }
+
+
+/* boat evaluation tab buttons v1 */
+.v3-boat-tabs { width: 100%; }
+.v3-boat-tab-buttons {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.v3-boat-tab-radio { position: absolute; opacity: 0; pointer-events: none; }
+.v3-boat-tab-button {
+  min-width: 0;
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border: 2px solid #d8e0ea;
+  border-radius: 12px;
+  background: #fff;
+  color: #334155;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, .06);
+}
+.v3-boat-tab-button span { font-size: 20px; line-height: 1; }
+.v3-boat-tab-button small { font-size: 10px; line-height: 1.1; }
+.v3-boat-tab-button:active { transform: translateY(1px); }
+.v3-boat-tab-panel { display: none; }
+.v3-boat-tab-buttons:has(#chappy-boat-tab-1:checked) ~ .v3-boat-tab-panels .v3-boat-tab-panel-1,
+.v3-boat-tab-buttons:has(#chappy-boat-tab-2:checked) ~ .v3-boat-tab-panels .v3-boat-tab-panel-2,
+.v3-boat-tab-buttons:has(#chappy-boat-tab-3:checked) ~ .v3-boat-tab-panels .v3-boat-tab-panel-3,
+.v3-boat-tab-buttons:has(#chappy-boat-tab-4:checked) ~ .v3-boat-tab-panels .v3-boat-tab-panel-4,
+.v3-boat-tab-buttons:has(#chappy-boat-tab-5:checked) ~ .v3-boat-tab-panels .v3-boat-tab-panel-5,
+.v3-boat-tab-buttons:has(#chappy-boat-tab-6:checked) ~ .v3-boat-tab-panels .v3-boat-tab-panel-6 { display: block; }
+#chappy-boat-tab-1:checked + .v3-boat-tab-button-1,
+#chappy-boat-tab-2:checked + .v3-boat-tab-button-2,
+#chappy-boat-tab-3:checked + .v3-boat-tab-button-3,
+#chappy-boat-tab-4:checked + .v3-boat-tab-button-4,
+#chappy-boat-tab-5:checked + .v3-boat-tab-button-5,
+#chappy-boat-tab-6:checked + .v3-boat-tab-button-6 {
+  border-color: #0878f9;
+  background: #eaf4ff;
+  color: #075fbf;
+  box-shadow: 0 0 0 2px rgba(8, 120, 249, .12);
+}
+@media (max-width: 380px) {
+  .v3-boat-tab-buttons { gap: 4px; }
+  .v3-boat-tab-button { min-height: 50px; border-radius: 10px; }
+  .v3-boat-tab-button span { font-size: 18px; }
+}
