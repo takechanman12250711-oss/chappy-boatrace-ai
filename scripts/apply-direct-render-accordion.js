@@ -1,5 +1,6 @@
 "use strict";
 
+// Direct render accordion patch v1
 const fs = require("node:fs");
 const path = require("node:path");
 
