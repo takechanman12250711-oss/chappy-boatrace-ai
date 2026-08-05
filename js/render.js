@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const RENDER_VERSION = "render-ui-v3.5.0-boat-tab-buttons";
+  const RENDER_VERSION = "render-ui-v3.6.0-ai-ticket-accordion";
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
@@ -3739,13 +3739,20 @@ function getPaperClassName(item) {
       if (!rows.length) return "";
 
       return `
-        <div class="v3-ticket-group">
-          <div
-            class="v3-ticket-group-title"
-          >
-            ${escapeHtml(title)}
-          </div>
-
+        <details
+          name="chappy-ai-ticket-accordion"
+          class="v3-ai-ticket-accordion v3-ai-ticket-accordion-${escapeHtml(type)}"
+        >
+          <summary>
+            <span class="v3-ai-ticket-accordion-title">
+              ${escapeHtml(title)}
+            </span>
+            <span class="v3-ai-ticket-accordion-count">
+              ${escapeHtml(rows.length)}点
+            </span>
+            <span class="v3-ai-ticket-accordion-arrow" aria-hidden="true"></span>
+          </summary>
+          <div class="v3-ai-ticket-accordion-panel">
           ${rows
             .map(item => `
               <div
@@ -3807,7 +3814,9 @@ function getPaperClassName(item) {
               </div>
             `)
             .join("")}
-        </div>
+
+          </div>
+        </details>
       `;
     };
 
