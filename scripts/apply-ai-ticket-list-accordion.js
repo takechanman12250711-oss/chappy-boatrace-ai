@@ -44,15 +44,21 @@ render = render.replace(
 
 const cssMarker = "/* AI ticket list accordion v1 */";
 if (!style.includes(cssMarker)) {
-  style += `\n\n${cssMarker}\n.v3-ticket-section .v3-section-body { display: grid; gap: 8px; }\n.v3-ai-ticket-accordion { border: 1px solid #dbe3ee; border-radius: 14px; background: #fff; overflow: hidden; }\n.v3-ai-ticket-accordion > summary { min-height: 58px; display: grid; grid-template-columns: 1fr auto 22px; align-items: center; gap: 10px; padding: 0 16px; cursor: pointer; list-style: none; font-weight: 800; -webkit-tap-highlight-color: transparent; }\n.v3-ai-ticket-accordion > summary::-webkit-details-marker { display: none; }\n.v3-ai-ticket-accordion-title { font-size: 17px; color: #1e293b; }\n.v3-ai-ticket-accordion-count { min-width: 48px; padding: 5px 10px; border-radius: 999px; background: #eef4ff; color: #2563eb; text-align: center; font-size: 13px; }\n.v3-ai-ticket-accordion-arrow::before { content: "▶"; display: block; color: #64748b; transition: transform .18s ease; }\n.v3-ai-ticket-accordion[open] .v3-ai-ticket-accordion-arrow::before { transform: rotate(90deg); }\n.v3-ai-ticket-accordion-panel { padding: 0 12px 12px; border-top: 1px solid #edf1f6; }\n.v3-ai-ticket-accordion-panel .v3-ticket-group { margin: 0; border: 0; padding-top: 10px; }\n.v3-ai-ticket-accordion-main .v3-ai-ticket-accordion-count { background: #fff1f2; color: #e11d48; }\n.v3-ai-ticket-accordion-safety .v3-ai-ticket-accordion-count { background: #eff6ff; color: #2563eb; }\n.v3-ai-ticket-accordion-flow .v3-ai-ticket-accordion-count { background: #ecfdf5; color: #059669; }\n.v3-ai-ticket-accordion-manshu .v3-ai-ticket-accordion-count { background: #f5f3ff; color: #7c3aed; }\n@media (max-width: 420px) {\n  .v3-ai-ticket-accordion > summary { min-height: 56px; padding: 0 13px; }\n  .v3-ai-ticket-accordion-title { font-size: 16px; }\n}\n`;
+  style += `\n\n${cssMarker}\n.v3-ticket-section .v3-section-body { display: grid; gap: 8px; }\n.v3-ai-ticket-accordion { border: 1px solid #dbe3ee; border-radius: 14px; background: #fff; overflow: hidden; }\n.v3-ai-ticket-accordion > summary { min-height: 58px; display: grid; grid-template-columns: 1fr auto 22px; align-items: center; gap: 10px; padding: 0 16px; cursor: pointer; list-style: none; font-weight: 800; -webkit-tap-highlight-color: transparent; }\n.v3-ai-ticket-accordion > summary::-webkit-details-marker { display: none; }\n.v3-ai-ticket-accordion-title { font-size: 17px; color: #1e293b; }\n.v3-ai-ticket-accordion-count { min-width: 48px; padding: 5px 10px; border-radius: 999px; background: #eef4ff; color: #2563eb; text-align: center; font-size: 13px; }\n.v3-ai-ticket-accordion-arrow::before { content: "▶"; display: block; color: #64748b; transition: transform .18s ease; }\n.v3-ai-ticket-accordion[open] .v3-ai-ticket-accordion-arrow::before { transform: rotate(90deg); }\n.v3-ai-ticket-accordion-panel { padding: 0 12px 12px; border-top: 1px solid #edf1f6; }\n.v3-ai-ticket-accordion-main .v3-ai-ticket-accordion-count { background: #fff1f2; color: #e11d48; }\n.v3-ai-ticket-accordion-safety .v3-ai-ticket-accordion-count { background: #eff6ff; color: #2563eb; }\n.v3-ai-ticket-accordion-flow .v3-ai-ticket-accordion-count { background: #ecfdf5; color: #059669; }\n.v3-ai-ticket-accordion-manshu .v3-ai-ticket-accordion-count { background: #f5f3ff; color: #7c3aed; }\n@media (max-width: 420px) {\n  .v3-ai-ticket-accordion > summary { min-height: 56px; padding: 0 13px; }\n  .v3-ai-ticket-accordion-title { font-size: 16px; }\n}\n`;
 }
 
 loader = loader.replace(
   /const VERSION = "[^"]+";/,
   'const VERSION = "20260806-ai-ticket-accordion1";'
 );
-index = index.replace(/style\.css\?v=[^\"']+/g, "style.css?v=20260806-ai-ticket-accordion1");
-index = index.replace(/js\/app-runtime-loader\.js\?v=[^\"']+/g, "js/app-runtime-loader.js?v=20260806-ai-ticket-accordion1");
+index = index.replace(
+  /<link rel="stylesheet" href="style\.css\?v=[^"]+" \/>/,
+  '<link rel="stylesheet" href="style.css?v=20260806-ai-ticket-accordion1" />'
+);
+index = index.replace(
+  /<script src="js\/app-runtime-loader\.js\?v=[^"]+"><\/script>/,
+  '<script src="js/app-runtime-loader.js?v=20260806-ai-ticket-accordion1"></script>'
+);
 
 fs.writeFileSync(renderPath, render);
 fs.writeFileSync(stylePath, style);
