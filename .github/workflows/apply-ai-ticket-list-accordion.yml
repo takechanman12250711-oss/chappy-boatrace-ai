@@ -1,0 +1,45 @@
+name: Apply AI ticket list accordion
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/apply-ai-ticket-list-accordion.js"
+      - ".github/workflows/apply-ai-ticket-list-accordion.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply accordion patch
+        run: node scripts/apply-ai-ticket-list-accordion.js
+      - name: Validate syntax and markers
+        run: |
+          node --check js/render.js
+          node --check js/prediction-runtime-loader.js
+          grep -q 'render-ui-v3.6.0-ai-ticket-accordion' js/render.js
+          grep -q 'v3-ai-ticket-accordion' js/render.js
+          grep -q 'AI ticket list accordion v1' style.css
+          grep -q '20260806-ai-ticket-accordion1' js/prediction-runtime-loader.js
+      - name: Commit generated changes
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/render.js style.css js/prediction-runtime-loader.js index.html
+          git commit -m "AI買い目一覧を折りたたみ表示にする"
+          git push
