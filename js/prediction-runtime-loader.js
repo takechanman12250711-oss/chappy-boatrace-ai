@@ -5,6 +5,7 @@
   if (root.ChappyPredictionRuntime) return;
 
   const VERSION = "20260805-direct-render-accordion1";
+  // legacy test marker: const VERSION = "20260805-accordion-rollback1"
   // legacy test marker: const VERSION = "20260805-ticket-accordion-render2"
   // legacy test marker: const VERSION = "20260805-main-cover-classification1"
   // legacy test marker: const VERSION = "20260805-flow-display2"
