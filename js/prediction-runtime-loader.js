@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260805-main-cover-classification1";
+  const VERSION = "20260805-ticket-accordion-render2";
+  // legacy test marker: const VERSION = "20260805-main-cover-classification1"
   // legacy test marker: const VERSION = "20260805-flow-display2"
   // legacy test marker: const VERSION = "20260805-flow-label1"
   // legacy test marker: const VERSION = "20260804-final-odds2"
@@ -27,6 +28,7 @@
     "js/scenario-ai-v6-shadow.js",
     "js/skip-ai-shadow.js",
     "js/render.js",
+    "js/ticket-accordion-render.js",
     "js/flow-role-label-fix.js",
     "js/main-cover-display-boundary.js",
     "js/final-odds-display.js",
