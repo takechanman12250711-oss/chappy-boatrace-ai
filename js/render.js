@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const RENDER_VERSION = "render-ui-v3.3.0-direct-accordion";
+  const RENDER_VERSION = "render-ui-v3.4.0-boat-accordion";
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
@@ -1720,9 +1720,43 @@ if (raceInfoArea) {
     const boatBody =
       boatItems.length
         ? `
-          <div class="v3-newspaper-list">
+          <div class="v3-boat-accordion-list">
             ${boatItems
-              .map(renderNewspaperCard)
+              .slice()
+              .sort((a, b) =>
+                safeNum(a?.no, 99) -
+                safeNum(b?.no, 99)
+              )
+              .map(item => {
+                const boatNo = safeNum(
+                  item?.no,
+                  0
+                );
+                return `
+                  <details
+                    name="chappy-boat-evaluation-accordion"
+                    class="v3-boat-accordion v3-boat-accordion-${escapeHtml(boatNo)}"
+                  >
+                    <summary>
+                      <span class="v3-boat-accordion-title">
+                        ${boatBadge(boatNo, "mini")}
+                        <strong>${escapeHtml(boatNo)}号艇</strong>
+                      </span>
+                      <span class="v3-boat-accordion-role">
+                        ${escapeHtml(
+                          ROLE_LABELS[item?.role] ||
+                          item?.role ||
+                          "艇評価"
+                        )}
+                      </span>
+                      <span class="v3-boat-accordion-arrow" aria-hidden="true"></span>
+                    </summary>
+                    <div class="v3-boat-accordion-panel">
+                      ${renderNewspaperCard(item)}
+                    </div>
+                  </details>
+                `;
+              })
               .join("")}
           </div>
         `

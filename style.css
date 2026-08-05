@@ -5291,3 +5291,69 @@ body {
 .v3-ticket-accordion-aim p { margin: 0; line-height: 1.65; }
 .v3-ticket-accordion-label { margin: 12px 0 8px; }
 .v3-ticket-accordion-manshu .v3-section-head { display: none; }
+
+
+/* boat evaluation accordion v1 */
+.v3-boat-accordion-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.v3-boat-accordion {
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.v3-boat-accordion[open] {
+  grid-column: 1 / -1;
+}
+.v3-boat-accordion > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 46px;
+  padding: 10px 11px;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.v3-boat-accordion > summary::-webkit-details-marker { display: none; }
+.v3-boat-accordion-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.v3-boat-accordion-role {
+  margin-left: auto;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.v3-boat-accordion-arrow {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-right: 2px solid #64748b;
+  border-bottom: 2px solid #64748b;
+  transform: rotate(45deg);
+  transition: transform .18s ease;
+}
+.v3-boat-accordion[open] .v3-boat-accordion-arrow {
+  transform: rotate(225deg);
+}
+.v3-boat-accordion-panel {
+  padding: 0 10px 10px;
+  border-top: 1px solid #edf2f7;
+}
+.v3-boat-accordion-panel .v3-newspaper-card {
+  margin: 10px 0 0;
+}
+@media (max-width: 380px) {
+  .v3-boat-accordion-list { grid-template-columns: 1fr; }
+  .v3-boat-accordion[open] { grid-column: auto; }
+}
