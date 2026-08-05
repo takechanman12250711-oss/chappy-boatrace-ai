@@ -1,0 +1,45 @@
+name: Apply boat evaluation accordion
+
+on:
+  push:
+    branches:
+      - agent/boat-evaluation-accordion
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/boat-evaluation-accordion
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply boat evaluation accordion
+        run: node scripts/apply-boat-evaluation-accordion.js
+      - name: Validate generated files
+        run: |
+          node --check js/render.js
+          node --check js/prediction-runtime-loader.js
+          grep -q 'render-ui-v3.4.0-boat-accordion' js/render.js
+          grep -q 'name="chappy-boat-evaluation-accordion"' js/render.js
+          grep -q 'boat evaluation accordion v1' style.css
+          grep -q '20260805-boat-evaluation-accordion1' js/prediction-runtime-loader.js
+          grep -q 'style.css?v=20260805-boat-evaluation-accordion1' index.html
+          grep -q 'js/app-runtime-loader.js?v=20260805-boat-evaluation-accordion1' index.html
+          ! grep -q 'ticket-accordion-render.js' js/prediction-runtime-loader.js
+      - name: Commit generated files
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/render.js style.css js/prediction-runtime-loader.js index.html
+          git commit -m "AI総合／艇評価を艇別折りたたみ表示にする"
+          git push origin HEAD:agent/boat-evaluation-accordion
