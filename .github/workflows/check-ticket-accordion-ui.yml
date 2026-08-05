@@ -1,0 +1,27 @@
+name: Check ticket accordion UI
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "js/ticket-accordion-ui.js"
+      - "scripts/test-ticket-accordion-ui.js"
+      - ".github/workflows/check-ticket-accordion-ui.yml"
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "js/ticket-accordion-ui.js"
+      - "scripts/test-ticket-accordion-ui.js"
+      - ".github/workflows/check-ticket-accordion-ui.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --check js/ticket-accordion-ui.js
+      - run: node scripts/test-ticket-accordion-ui.js
