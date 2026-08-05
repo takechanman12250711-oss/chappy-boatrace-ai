@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260805-flow-display2";
+  const VERSION = "20260805-main-cover-classification1";
+  // legacy test marker: const VERSION = "20260805-flow-display2"
   // legacy test marker: const VERSION = "20260805-flow-label1"
   // legacy test marker: const VERSION = "20260804-final-odds2"
   // legacy test marker: const VERSION = "20260803-flow-missing30"
@@ -20,6 +21,7 @@
     "js/evaluated-scenario-candidates.js",
     "js/ai-core.js",
     "js/prediction.js",
+    "js/main-cover-classification-fix.js",
     "js/practical-selection.js",
     "js/note-generator.js",
     "js/scenario-ai-v6-shadow.js",

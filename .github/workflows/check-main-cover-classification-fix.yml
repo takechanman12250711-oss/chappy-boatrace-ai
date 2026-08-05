@@ -1,0 +1,22 @@
+name: Check main cover classification fix
+
+on:
+  pull_request:
+    paths:
+      - "js/main-cover-classification-fix.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/app-runtime-loader.js"
+      - "index.html"
+      - "scripts/test-main-cover-classification-fix.js"
+      - ".github/workflows/check-main-cover-classification-fix.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/main-cover-classification-fix.js
+      - run: node scripts/test-main-cover-classification-fix.js
