@@ -4,12 +4,17 @@ on:
   push:
     branches:
       - agent/direct-render-accordion
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   apply:
+    if: github.head_ref == 'agent/direct-render-accordion' || github.ref_name == 'agent/direct-render-accordion'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
