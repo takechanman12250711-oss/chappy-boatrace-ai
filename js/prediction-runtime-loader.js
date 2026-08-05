@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260805-boat-evaluation-accordion1";
+  const VERSION = "20260805-boat-tab-buttons1";
   // legacy test marker: const VERSION = "20260805-accordion-rollback1"
   // legacy test marker: const VERSION = "20260805-ticket-accordion-render2"
   // legacy test marker: const VERSION = "20260805-main-cover-classification1"

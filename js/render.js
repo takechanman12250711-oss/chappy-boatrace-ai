@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const RENDER_VERSION = "render-ui-v3.4.0-boat-accordion";
+  const RENDER_VERSION = "render-ui-v3.5.0-boat-tab-buttons";
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
@@ -1717,52 +1717,50 @@ if (raceInfoArea) {
         </div>
       `;
     };
+    const boatTabItems = boatItems
+      .slice()
+      .sort((a, b) =>
+        safeNum(a?.no, 99) -
+        safeNum(b?.no, 99)
+      );
+
     const boatBody =
-      boatItems.length
+      boatTabItems.length
         ? `
-          <div class="v3-boat-accordion-list">
-            ${boatItems
-              .slice()
-              .sort((a, b) =>
-                safeNum(a?.no, 99) -
-                safeNum(b?.no, 99)
-              )
-              .map(item => {
-                const boatNo = safeNum(
-                  item?.no,
-                  0
-                );
-                return `
-                  <details
-                    name="chappy-boat-evaluation-accordion"
-                    class="v3-boat-accordion v3-boat-accordion-${escapeHtml(boatNo)}"
-                  >
-                    <summary>
-                      <span class="v3-boat-accordion-title">
-                        ${boatBadge(boatNo, "mini")}
-                        <strong>${escapeHtml(boatNo)}号艇</strong>
-                      </span>
-                      <span class="v3-boat-accordion-role">
-                        ${escapeHtml(
-                          ROLE_LABELS[item?.role] ||
-                          item?.role ||
-                          "艇評価"
-                        )}
-                      </span>
-                      <span class="v3-boat-accordion-arrow" aria-hidden="true"></span>
-                    </summary>
-                    <div class="v3-boat-accordion-panel">
+          <div class="v3-boat-tabs">
+            <div class="v3-boat-tab-buttons" role="tablist" aria-label="艇評価を選択">
+              ${boatTabItems
+                .map((item, index) => {
+                  const boatNo = safeNum(item?.no, index + 1);
+                  return `
+                    <input class="v3-boat-tab-radio" type="radio"
+                      name="chappy-boat-evaluation-tab"
+                      id="chappy-boat-tab-${escapeHtml(boatNo)}"
+                      ${index === 0 ? "checked" : ""}>
+                    <label class="v3-boat-tab-button v3-boat-tab-button-${escapeHtml(boatNo)}"
+                      for="chappy-boat-tab-${escapeHtml(boatNo)}" role="tab">
+                      <span>${escapeHtml(boatNo)}</span><small>号艇</small>
+                    </label>
+                  `;
+                })
+                .join("")}
+            </div>
+            <div class="v3-boat-tab-panels">
+              ${boatTabItems
+                .map((item, index) => {
+                  const boatNo = safeNum(item?.no, index + 1);
+                  return `
+                    <div class="v3-boat-tab-panel v3-boat-tab-panel-${escapeHtml(boatNo)}"
+                      data-boat-tab-panel="${escapeHtml(boatNo)}">
                       ${renderNewspaperCard(item)}
                     </div>
-                  </details>
-                `;
-              })
-              .join("")}
+                  `;
+                })
+                .join("")}
+            </div>
           </div>
         `
-        : emptyBox(
-            "艇評価データがありません"
-          );
+        : emptyBox("艇評価データがありません");
 
     const ticketBody = [
       renderTicketAccordion(
