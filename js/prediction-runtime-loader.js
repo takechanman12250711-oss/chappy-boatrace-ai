@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260804-final-odds2";
+  const VERSION = "20260805-flow-label1";
+  // legacy test marker: const VERSION = "20260804-final-odds2"
   // legacy test marker: const VERSION = "20260803-flow-missing30"
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const scripts = [
@@ -23,6 +24,7 @@
     "js/scenario-ai-v6-shadow.js",
     "js/skip-ai-shadow.js",
     "js/render.js",
+    "js/flow-role-label-fix.js",
     "js/main-cover-display-boundary.js",
     "js/final-odds-display.js",
     "js/skip-ai-display.js",
