@@ -47,8 +47,8 @@ if (!style.includes(cssMarker)) {
 
 appRuntime = appRuntime.replace('const VERSION = "20260806-venue24-1";', 'const VERSION = "20260806-results-ui-phase4-1";');
 statsRuntime = statsRuntime.replace(/const VERSION = "[^"]+";/, 'const VERSION = "20260806-results-ui-phase4-1";');
-index = index.replace('style.css?v=20260806-venue24-hotfix1', 'style.css?v=20260806-results-ui-phase4-1');
-index = index.replace('js/app-runtime-loader.js?v=20260806-venue24-hotfix1', 'js/app-runtime-loader.js?v=20260806-results-ui-phase4-1');
+index = index.replace('style.css?v=20260806-venue24-hotfix2', 'style.css?v=20260806-results-ui-phase4-1');
+index = index.replace('js/app-runtime-loader.js?v=20260806-venue24-hotfix2', 'js/app-runtime-loader.js?v=20260806-results-ui-phase4-1');
 
 if (!stats.includes(marker)) throw new Error("phase4 marker missing");
 if (!stats.includes("AI改善メモ")) throw new Error("AI insight missing");
