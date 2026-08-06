@@ -1,0 +1,30 @@
+"use strict";
+
+const { execFileSync } = require("node:child_process");
+const path = require("node:path");
+
+const root = path.resolve(__dirname, "..");
+const steps = [
+  "build-result-review.js",
+  "build-theory-evaluations.js",
+  "build-miss-cause-analysis.js",
+  "build-improvement-proposal-report.js",
+  "build-theory-performance-report.js",
+  "build-theory-adoption-phase5.js",
+  "build-profit-priority-ranking.js",
+  "build-learning-pipeline-gate.js",
+  "build-phase6-data-audit.js"
+];
+
+function run() {
+  steps.forEach(file => {
+    console.log(`学習分析パイプライン: ${file}`);
+    execFileSync(process.execPath, [path.join(root, "scripts", file)], {
+      cwd: root,
+      stdio: "inherit"
+    });
+  });
+}
+
+if (require.main === module) run();
+module.exports = { steps, run };
