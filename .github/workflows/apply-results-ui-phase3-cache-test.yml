@@ -1,0 +1,49 @@
+name: Apply results UI phase3 cache test
+
+on:
+  push:
+    branches:
+      - fix/results-ui-phase3-cache-20260806
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'fix/results-ui-phase3-cache-20260806' || github.ref_name == 'fix/results-ui-phase3-cache-20260806'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/results-ui-phase3-cache-20260806
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Update cache generation test
+        run: node scripts/apply-results-ui-phase3-cache-test.js
+      - name: Validate
+        run: |
+          node --check js/app-runtime-loader.js
+          node --check js/stats-runtime-loader.js
+          node scripts/test-load-performance.js
+          node scripts/check-charter.js
+          grep -q '20260806-results-ui-phase3-cache1' index.html
+          grep -q '20260806-results-ui-phase3-cache1' js/app-runtime-loader.js
+          grep -q '20260806-results-ui-phase3-cache1' js/stats-runtime-loader.js
+      - name: Commit generated test update
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/test-load-performance.js
+          git commit -m "結果分析キャッシュ世代の回帰テストを更新"
+          git pull --rebase origin fix/results-ui-phase3-cache-20260806
+          git push origin HEAD:fix/results-ui-phase3-cache-20260806
