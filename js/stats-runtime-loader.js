@@ -3,7 +3,7 @@
 (function (root) {
   "use strict";
   if (root.ChappyStatsRuntime) return;
-  const VERSION = "20260806-results-ui-phase3-cache1";
+  const VERSION = "20260806-venue24-1";
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const scripts = [
     "js/boat-identity.js",
