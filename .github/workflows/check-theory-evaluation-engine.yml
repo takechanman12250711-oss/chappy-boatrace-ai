@@ -1,0 +1,23 @@
+name: Check theory evaluation engine
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/theory-evaluation-engine-phase1]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate theory evaluation engine
+        run: |
+          node --check js/theory-evaluation-engine.js
+          node --check scripts/build-theory-evaluations.js
+          node --check scripts/test-theory-evaluation-engine.js
+          node scripts/test-theory-evaluation-engine.js
+          node scripts/check-charter.js
