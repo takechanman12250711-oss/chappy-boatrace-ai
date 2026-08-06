@@ -1,0 +1,44 @@
+name: Build learning pipeline gate phase4
+
+on:
+  workflow_run:
+    workflows: ["Collect official race results"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-learning-pipeline-gate-phase4
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify and build gate report
+        run: |
+          node --check js/learning-pipeline-gate.js
+          node --check scripts/build-learning-pipeline-gate.js
+          node scripts/test-learning-pipeline-gate.js
+          node scripts/build-learning-pipeline-gate.js
+      - name: Save gate report
+        run: |
+          git add data/stats/learning-pipeline-gate-phase4.json
+          if git diff --cached --quiet; then
+            echo "保存する変更はありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update learning pipeline gate report"
+          git pull --rebase origin main
+          git push origin main
