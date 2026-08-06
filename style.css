@@ -5776,3 +5776,26 @@ body {
     text-align: right;
   }
 }
+
+
+/* results analysis phase3 20260806 */
+@media (max-width: 759px) {
+  .result-kpi-grid-five { gap: 8px; }
+  .result-kpi-grid-five .result-metric-card { padding: 10px; min-height: 0; }
+  .result-kpi-grid-five .result-metric-value { font-size: clamp(1.25rem, 6vw, 1.7rem); }
+  .result-kpi-grid-five .result-metric-detail { font-size: .72rem; }
+}
+.result-compact-analysis-body { display: grid; gap: 10px; }
+.result-compact-progress { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; background: rgba(239, 246, 255, .9); }
+.result-compact-progress strong { font-size: 1.05rem; color: #173b68; }
+.result-compact-progress span { font-size: .8rem; font-weight: 700; color: #52657c; }
+.result-inner-details { border: 1px solid #dfe7f0; border-radius: 14px; background: #fff; overflow: hidden; }
+.result-inner-details > summary { cursor: pointer; padding: 12px 14px; font-weight: 800; color: #2865b8; list-style: none; }
+.result-inner-details > summary::-webkit-details-marker { display: none; }
+.result-inner-details > summary::after { content: '⌄'; float: right; transition: transform .2s ease; }
+.result-inner-details[open] > summary::after { transform: rotate(180deg); }
+.result-inner-details-body { padding: 0 12px 12px; }
+.result-race-more > summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.result-race-more > summary small { color: #6d7d90; font-size: .72rem; font-weight: 600; }
+.result-race-head h4 { margin-bottom: 2px; }
+.result-race-head p { margin: 0; font-size: .75rem; color: #728096; }
