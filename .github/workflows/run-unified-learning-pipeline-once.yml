@@ -1,0 +1,44 @@
+name: Run unified learning pipeline once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/run-unified-learning-pipeline-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/unified-learning-pipeline
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run pipeline
+        run: |
+          node scripts/test-theory-performance-report.js
+          node scripts/test-profit-priority-ranking.js
+          node scripts/build-learning-analysis-pipeline.js
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const perf=JSON.parse(fs.readFileSync('data/stats/theory-performance-report.json','utf8'));
+          const ranking=JSON.parse(fs.readFileSync('data/stats/profit-priority-ranking.json','utf8'));
+          const audit=JSON.parse(fs.readFileSync('data/stats/phase6-data-audit.json','utf8'));
+          if(perf.version!=='3.0.0'||perf.theoryCount!==12) throw new Error('理論別成績再生成失敗');
+          if(ranking.automaticApplication!==false||ranking.usableForPrediction!==false) throw new Error('利益ランキング安全フラグ異常');
+          if(audit.status!=='healthy'||audit.issueCount!==0) throw new Error(`監査異常 ${audit.issueCount}`);
+          NODE
+      - name: Save generated data
+        run: |
+          git add data/predictions data/stats
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Regenerate unified learning analysis data"
+          git push origin fix/unified-learning-pipeline
