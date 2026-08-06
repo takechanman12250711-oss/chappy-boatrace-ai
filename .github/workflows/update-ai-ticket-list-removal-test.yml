@@ -1,0 +1,41 @@
+name: Update AI ticket list removal test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/update-ai-ticket-list-removal-test.js"
+      - ".github/workflows/update-ai-ticket-list-removal-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Update regression test
+        run: node scripts/update-ai-ticket-list-removal-test.js
+      - name: Validate
+        run: |
+          node --check scripts/test-prediction-transparency-ui.js
+          node scripts/test-prediction-transparency-ui.js
+      - name: Commit generated change
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/test-prediction-transparency-ui.js
+          git commit -m "AI買い目一覧削除後の表示テストへ更新する"
+          git push
