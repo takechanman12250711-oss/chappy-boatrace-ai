@@ -29,7 +29,7 @@ const records = [
 ];
 
 const result = api.build(records);
-assert.equal(result.version, "3.0.0");
+assert.equal(result.version, "3.1.0");
 assert.equal(result.theoryCount, 12);
 assert.equal(result.byTheory.length, 12);
 assert.equal(result.sampleCount, 36);
@@ -62,6 +62,8 @@ assert.equal(api.skipDecisionCorrect("skip", false), true);
 assert.equal(api.skipDecisionCorrect("skip", true), false);
 assert.equal(api.skipDecisionCorrect("bet-candidate", true), true);
 assert.equal(api.skipDecisionCorrect("caution", true), null);
+assert.equal(api.skipDecisionOf({ prediction: { selectionScore: 78, evidenceCompleteness: 90, scenarioAiV6Shadow: { scenarios: [{ likelihood: 62 }, { likelihood: 22 }, { likelihood: 16 }] } } }), "bet-candidate");
+assert.equal(api.skipDecisionOf({ prediction: { selectionScore: 58, evidenceCompleteness: 90, scenarioAiV6Shadow: { scenarios: [{ likelihood: 39 }, { likelihood: 36 }, { likelihood: 25 }] } } }), "skip");
 
 const primary = { raceKey: "same-race", source: "primary" };
 const duplicateVerification = { raceKey: "same-race", source: "verification" };
