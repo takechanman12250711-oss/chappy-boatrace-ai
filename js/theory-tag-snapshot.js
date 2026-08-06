@@ -15,6 +15,59 @@ function normalizeCategory(value) {
   return "その他";
 }
 
+function validCourse(value) {
+  const course = Number(value);
+  return Number.isInteger(course) && course >= 1 && course <= 6;
+}
+
+function branchMap(prediction) {
+  const branches =
+    prediction?.aiCore?.formations?.evidence?.branches ||
+    prediction?.formations?.evidence?.branches ||
+    [];
+  return new Map(
+    (Array.isArray(branches) ? branches : [])
+      .map(branch => [String(branch?.id || ""), branch])
+      .filter(([id]) => id)
+  );
+}
+
+function branchUsesCourseEvidence(branch) {
+  if (!branch || branch.kind !== "independent-scenario") return false;
+  const phase = branch.phaseEvidence || {};
+  const checks = Array.isArray(branch.evidenceChecks) ? branch.evidenceChecks : [];
+  const explicitCheck = checks.some(check => {
+    const key = String(check?.key || "").toLowerCase();
+    const source = String(check?.source || "").toLowerCase();
+    const role = String(check?.role || "").toLowerCase();
+    return role === "course" || key.includes("course") || source.includes("coursebyboat");
+  });
+  if (explicitCheck) return true;
+  if (phase.kind === "alternate-head" && validCourse(phase?.attack?.course)) return true;
+  if (phase.kind === "hold-continuation") {
+    if (validCourse(phase?.target?.course)) return true;
+    if (String(phase?.partner?.type || "") === "inside") return true;
+  }
+  return false;
+}
+
+function courseClaimForTicket(prediction, evidenceRow) {
+  const ids = Array.isArray(evidenceRow?.branchIds) ? evidenceRow.branchIds : [];
+  if (!ids.length) return null;
+  const branches = branchMap(prediction);
+  const matched = ids
+    .map(id => branches.get(String(id)))
+    .filter(branchUsesCourseEvidence);
+  if (!matched.length) return null;
+  return {
+    theoryKey: "course",
+    label: "コース理論",
+    theoryVersion: "structured-course-validation-v1",
+    formal: true,
+    source: "structured-course-validation"
+  };
+}
+
 function theoryClaimsFrom(prediction, practicalTickets) {
   const evidence =
     prediction?.practicalSelection?.verificationEvidence ||
@@ -30,9 +83,15 @@ function theoryClaimsFrom(prediction, practicalTickets) {
       const row = typeof item === "string" ? { ticket: item } : (item || {});
       const ticket = normalizeTicket(row.ticket || row.line || row.formation);
       const evidenceRow = evidenceByTicket.get(ticket) || {};
-      const claims = Array.isArray(evidenceRow.theoryClaims)
+      const baseClaims = Array.isArray(evidenceRow.theoryClaims)
         ? evidenceRow.theoryClaims
         : (Array.isArray(row.theoryClaims) ? row.theoryClaims : []);
+      const courseClaim = courseClaimForTicket(prediction, evidenceRow);
+      const claims = [...baseClaims, ...(courseClaim ? [courseClaim] : [])]
+        .filter((claim, index, all) => {
+          const key = String(claim?.theoryKey || claim?.key || "").trim();
+          return key && all.findIndex(other => String(other?.theoryKey || other?.key || "").trim() === key) === index;
+        });
       return {
         ticket,
         category: normalizeCategory(
@@ -105,4 +164,4 @@ function build(prediction, practicalTickets) {
   };
 }
 
-module.exports = { build, theoryClaimsFrom };
+module.exports = { build, theoryClaimsFrom, branchUsesCourseEvidence, courseClaimForTicket };
