@@ -325,9 +325,6 @@
             <!-- 6. 実戦厳選 -->
       ${renderPracticalSelection(prediction)}
 
-      <!-- 7. AI買い目一覧 -->
-      ${renderTicketRanking(prediction)}
-
       ${
         Array.isArray(
           prediction.oddsMovements
