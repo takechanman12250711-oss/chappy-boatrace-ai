@@ -17,25 +17,30 @@ function recordKey(record) {
   return String(record?.raceKey || [record?.date, record?.jcd, record?.rno].filter(Boolean).join("-") || "");
 }
 
-function collect() {
-  if (!fs.existsSync(dir)) return [];
+function mergeSources(primaryRows = [], verificationRows = []) {
   const primary = new Map();
   const verification = new Map();
+  primaryRows.forEach(record => {
+    const key = recordKey(record);
+    if (key) primary.set(key, record);
+  });
+  verificationRows.forEach(record => {
+    const key = recordKey(record);
+    if (key && !primary.has(key)) verification.set(key, record);
+  });
+  return [...primary.values(), ...verification.values()];
+}
 
+function collect() {
+  if (!fs.existsSync(dir)) return [];
+  const primaryRows = [];
+  const verificationRows = [];
   fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)).sort().forEach(name => {
     const data = load(path.join(dir, name), {});
-    (Array.isArray(data.predictions) ? data.predictions : []).forEach(record => {
-      const key = recordKey(record);
-      if (key) primary.set(key, record);
-    });
-    (Array.isArray(data.verificationPredictions) ? data.verificationPredictions : []).forEach(record => {
-      const key = recordKey(record);
-      if (key && !primary.has(key)) verification.set(key, record);
-    });
+    primaryRows.push(...(Array.isArray(data.predictions) ? data.predictions : []));
+    verificationRows.push(...(Array.isArray(data.verificationPredictions) ? data.verificationPredictions : []));
   });
-
-  for (const key of primary.keys()) verification.delete(key);
-  return [...primary.values(), ...verification.values()];
+  return mergeSources(primaryRows, verificationRows);
 }
 
 function main() {
@@ -51,4 +56,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { load, recordKey, collect };
+module.exports = { load, recordKey, mergeSources, collect };
