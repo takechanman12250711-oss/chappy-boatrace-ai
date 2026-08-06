@@ -5721,3 +5721,58 @@ body {
     grid-column: auto;
   }
 }
+
+
+/* results analysis phase2 20260806 */
+.result-group-list {
+  display: grid;
+  gap: 10px;
+}
+.result-group-item,
+.result-race-more {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.result-group-item > summary,
+.result-race-more > summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 14px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.result-group-body,
+.result-race-more-body {
+  padding: 0 14px 14px;
+}
+.result-group-meta {
+  color: #475569;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.result-race-more {
+  margin-top: 12px;
+  background: rgba(248, 250, 252, 0.9);
+}
+.result-scenario-card.is-hit {
+  border-color: rgba(22, 163, 74, 0.35);
+}
+.result-scenario-card.is-miss {
+  border-color: rgba(220, 38, 38, 0.28);
+}
+.result-scenario-card.is-neutral {
+  border-color: rgba(202, 138, 4, 0.3);
+}
+@media (max-width: 520px) {
+  .result-group-item > summary {
+    align-items: flex-start;
+  }
+  .result-group-meta {
+    white-space: normal;
+    text-align: right;
+  }
+}
