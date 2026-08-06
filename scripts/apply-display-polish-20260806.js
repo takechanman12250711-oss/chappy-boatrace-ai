@@ -7,13 +7,14 @@ const root = path.resolve(__dirname, "..");
 const renderPath = path.join(root, "js", "render.js");
 let render = fs.readFileSync(renderPath, "utf8");
 
-const oldDescription =
-  "展開とコースを優先し、基本5～7点で厳選。 独立した成立展開がある場合だけ最大10点まで追加します。 数字・オッズだけによる削除はしていません。";
 const newDescription =
   "展開を最優先に実戦向けへ厳選。通常は5～7点、独立して成立する展開がある場合のみ最大10点まで追加します。オッズだけでは削除しません。";
 
-if (render.includes(oldDescription)) {
-  render = render.replace(oldDescription, newDescription);
+if (!render.includes(newDescription)) {
+  render = render.replace(
+    /展開とコースを優先し、基本5[～〜]7点で厳選。[\s\S]{0,300}?数字・オッズだけによる削除はしていません。/,
+    newDescription
+  );
 }
 
 const sixBoatMarker = "/* ensure all six boat evaluation tabs */";
