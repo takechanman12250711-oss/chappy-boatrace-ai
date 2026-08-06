@@ -42,11 +42,14 @@ jobs:
           node --check scripts/build-theory-evaluations.js
           node --check js/miss-cause-analysis.js
           node --check scripts/build-miss-cause-analysis.js
+          node --check js/improvement-proposal-engine.js
+          node --check scripts/build-improvement-proposal-report.js
           node scripts/test-collect-results.js
           node scripts/test-repair-recent-results.js
           node scripts/test-result-review.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/test-miss-cause-analysis.js
+          node scripts/test-improvement-proposal-engine.js
 
       - name: Collect official results
         env:
@@ -56,6 +59,7 @@ jobs:
           node scripts/build-result-review.js
           node scripts/build-theory-evaluations.js
           node scripts/build-miss-cause-analysis.js
+          node scripts/build-improvement-proposal-report.js
           node scripts/build-scenario-ai-v6-verification.js
 
       - name: Build prediction calibration
@@ -67,6 +71,7 @@ jobs:
           node scripts/test-result-review.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/test-miss-cause-analysis.js
+          node scripts/test-improvement-proposal-engine.js
           node scripts/test-scenario-ai-v6-verification.js
           node scripts/test-scenario-ai-v6-learning-report.js
           node scripts/build-scenario-ai-v6-learning-report.js
