@@ -1,0 +1,42 @@
+name: Apply AI ticket visual match
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/apply-ai-ticket-visual-match.js"
+      - ".github/workflows/apply-ai-ticket-visual-match.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply visual match CSS
+        run: node scripts/apply-ai-ticket-visual-match.js
+      - name: Validate generated CSS
+        run: |
+          grep -q 'AI ticket list visual match v2' style.css
+          grep -q 'v3-ai-ticket-accordion-main\[open\]' style.css
+          grep -q '@keyframes chappyTicketPanelIn' style.css
+      - name: Commit generated CSS
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add style.css
+          git commit -m "AI買い目一覧を画像イメージへ寄せる"
+          git push
