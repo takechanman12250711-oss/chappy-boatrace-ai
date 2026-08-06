@@ -50,7 +50,8 @@ jobs:
           if(perf.version!=='3.3.0' || perf.theoryCount!==12) throw new Error('理論別成績が12理論の最新版ではありません');
           const used=perf.byTheory.filter(row=>row.evaluatedCount>0);
           if(used.some(row=>row.practicalEvaluatedCount!==row.evaluatedCount)) throw new Error('実戦厳選指標の保存漏れ');
-          if(used.every(row=>row.skipEvaluatedCount===0)) throw new Error('見送り判断指標が全件欠損');
+          if(used.some(row=>!Object.hasOwn(row,'skipEvaluatedCount')||!Object.hasOwn(row,'skipDecisionAccuracy'))) throw new Error('見送り判断指標の項目欠損');
+          if(used.some(row=>row.skipEvaluatedCount===0 && row.skipDecisionAccuracy!==null)) throw new Error('見送り判断の母数0を0%として誤保存');
           const audit=JSON.parse(fs.readFileSync('data/stats/phase6-data-audit.json','utf8'));
           if(audit.status!=='healthy' || audit.issueCount!==0) throw new Error(`Phase6監査異常: ${audit.issueCount}`);
           NODE
