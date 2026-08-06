@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("node:assert/strict");const audit=require("../js/phase6-data-audit");
+const base={raceKey:"20260806-20-01",result:{settled:true,practicalHit:false,missCauseAnalysis:{candidates:[],automaticApplication:false,usableForPrediction:false,uiVisible:false}},theoryEvaluationSnapshot:{evaluations:Array.from({length:12},(_,i)=>({theoryKey:String(i)})),automaticApplication:false,usableForPrediction:false,uiVisible:false}};
+const healthy=audit.build([base],{improvement:{proposals:[]},adoption:{humanApprovalRequired:true,automaticApplication:false,usableForPrediction:false,theories:[]},pipeline:{status:"blocked",automaticApplication:false}});
+assert.equal(healthy.status,"healthy");assert.equal(healthy.theoryEvaluationCoverage,100);assert.equal(healthy.missCauseCoverage,100);
+const bad=structuredClone(base);bad.result.practicalHit=true;bad.result.missCauseAnalysis.candidates=[{code:"x"}];
+const report=audit.build([base,structuredClone(base),bad],{improvement:{proposals:[{}]},adoption:{humanApprovalRequired:false,automaticApplication:true,usableForPrediction:true,theories:[{approved:true}]},pipeline:{status:"ready",automaticApplication:true}});
+assert.equal(report.status,"attention-required");
+["duplicate-race","hit-classified-as-miss","proposal-before-100-races","unsafe-adoption-flags","unapproved-theory-enabled","unsafe-pipeline-flags"].forEach(code=>assert(report.issueCounts[code]>0,code));
+assert.equal(report.automaticApplication,false);assert.equal(report.usableForPrediction,false);assert.equal(report.uiVisible,false);
+console.log("Phase6 data audit: 合格");

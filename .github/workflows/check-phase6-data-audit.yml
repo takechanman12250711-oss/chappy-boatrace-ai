@@ -1,0 +1,23 @@
+name: Check Phase6 data audit
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/phase6-data-audit]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate Phase6 data audit
+        run: |
+          node --check js/phase6-data-audit.js
+          node --check scripts/build-phase6-data-audit.js
+          node --check scripts/test-phase6-data-audit.js
+          node scripts/test-phase6-data-audit.js
+          node scripts/check-charter.js

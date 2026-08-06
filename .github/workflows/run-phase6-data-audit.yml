@@ -1,0 +1,43 @@
+name: Run Phase6 data audit
+
+on:
+  workflow_run:
+    workflows: ["Collect official race results"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase6-data-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Rebuild and audit learning data
+        run: |
+          node scripts/build-theory-evaluations.js
+          node scripts/build-miss-cause-analysis.js
+          node scripts/build-improvement-proposal-report.js
+          node scripts/build-theory-adoption-phase5.js
+          node scripts/build-phase6-data-audit.js
+          node scripts/test-phase6-data-audit.js
+      - name: Save audit result
+        run: |
+          git add data/predictions data/stats/phase6-data-audit.json data/stats/improvement-proposal-phase3.json data/stats/theory-adoption-phase5.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Run Phase6 learning data audit"
+          git pull --rebase origin main
+          git push origin main
