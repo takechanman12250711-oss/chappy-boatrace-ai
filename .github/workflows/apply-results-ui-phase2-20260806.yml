@@ -1,0 +1,50 @@
+name: Apply results UI phase2 20260806
+
+on:
+  push:
+    branches:
+      - agent/results-ui-phase2-20260806
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/results-ui-phase2-20260806' || github.ref_name == 'agent/results-ui-phase2-20260806'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/results-ui-phase2-20260806
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply results UI phase2
+        run: node scripts/apply-results-ui-phase2-20260806.js
+      - name: Validate
+        run: |
+          node --check js/stats.js
+          grep -q 'results UI phase2 grouped panels' js/stats.js
+          grep -q 'data-result-panel="venue-performance"' js/stats.js
+          grep -q 'data-result-panel="scenario-performance"' js/stats.js
+          grep -q 'result-race-more' js/stats.js
+          grep -q 'results analysis phase2 20260806' style.css
+          node scripts/test-load-performance.js
+          node scripts/check-charter.js
+      - name: Commit generated changes
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/stats.js style.css
+          git commit -m "結果分析UI Phase2を実装"
+          git pull --rebase origin agent/results-ui-phase2-20260806
+          git push origin HEAD:agent/results-ui-phase2-20260806
