@@ -74,7 +74,7 @@ if (!render.includes(sixBoatMarker)) {
         normalized.name ||
         entry?.name ||
         entry?.racerName ||
-        `${boatNo}号艇`;
+        \`${'${boatNo}'}号艇\`;
       normalized.comment =
         normalized.comment ||
         "艇評価の詳細データはありません。出走表情報を表示しています。";
@@ -104,4 +104,3 @@ if (!render.includes(sixBoatMarker)) {
 
 fs.writeFileSync(renderPath, render);
 console.log("display polish applied");
-// workflow trigger 2
