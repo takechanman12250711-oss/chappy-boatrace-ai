@@ -16,6 +16,7 @@
   const OFFICIAL_SYNC_CONCURRENCY = 3;
   const OFFICIAL_SYNC_MAX_TARGETS = 5;
   const STATS_REQUEST_TIMEOUT_MS = 30000;
+  const RESULTS_UI_PHASE3 = "results-ui-phase3-20260806";
   const RESULTS_UI_VERSION = "results-ui-phase1-20260806";
   const NEW_METHOD_MINIMUM_COUNT = 30;
   const CURRENT_CALIBRATION_GENERATION = {
@@ -2622,11 +2623,11 @@
             <article class="result-race-card">
               <header class="result-race-head">
                 <div>
-                  <p>${formatDate(item.date)}</p>
                   <h4>
                     ${E(item.place || item.jcd || "-")}
                     ${item.raceNo || "-"}R
                   </h4>
+                  <p>${formatDate(item.date)}</p>
                 </div>
                 <span class="result-source-chip">
                   ${E(item.predictionSource)}
@@ -2687,7 +2688,7 @@
               </div>
 
               <details class="result-race-more">
-                <summary>買い目と払戻を確認</summary>
+                <summary><span>詳細を見る</span><small>買い目・公式結果・払戻</small></summary>
                 <div class="result-race-more-body">
                   <dl class="result-data-facts">
                     ${renderFact("本命", renderRoleTickets(item, "本命"))}
@@ -2921,8 +2922,17 @@
             }
           </span>
         </summary>
-        <div class="result-accordion-body">
-          ${newMethodDetailsHtml}
+        <div class="result-accordion-body result-compact-analysis-body">
+          <div class="result-compact-progress">
+            <strong>${newMethodCount}/${NEW_METHOD_MINIMUM_COUNT}件</strong>
+            <span>${newMethodReady ? "参考確認段階" : "データ蓄積中"}</span>
+          </div>
+          <details class="result-inner-details">
+            <summary>詳しい説明を見る</summary>
+            <div class="result-inner-details-body">
+              ${newMethodDetailsHtml}
+            </div>
+          </details>
         </div>
       </details>
 
@@ -2956,8 +2966,17 @@
             }
           </span>
         </summary>
-        <div class="result-accordion-body">
-          ${improvementReviewHtml}
+        <div class="result-accordion-body result-compact-analysis-body">
+          <div class="result-compact-progress">
+            <strong>${reviewCurrentCount}/${reviewTarget}R</strong>
+            <span>データ蓄積中</span>
+          </div>
+          <details class="result-inner-details">
+            <summary>詳しい説明を見る</summary>
+            <div class="result-inner-details-body">
+              ${improvementReviewHtml}
+            </div>
+          </details>
         </div>
       </details>
 
