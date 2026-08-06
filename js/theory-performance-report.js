@@ -17,6 +17,10 @@ function evaluationRows(record) {
   return Array.isArray(rows) ? rows : [];
 }
 
+function predictionOf(record) {
+  return record?.prediction && typeof record.prediction === "object" ? record.prediction : (record || {});
+}
+
 function practicalHitOf(record) {
   const result = record?.result || {};
   if (typeof result.practicalHit === "boolean") return result.practicalHit;
@@ -59,7 +63,7 @@ function scenarioShadowOf(prediction) {
 }
 
 function skipDecisionOf(record) {
-  const prediction = record?.prediction || {};
+  const prediction = predictionOf(record);
   const stored = String(
     prediction?.skipAiDisplay?.decision ||
     prediction?.skipAiShadow?.decision ||
@@ -206,7 +210,7 @@ function summarize(rows, keyFn) {
 function build(records) {
   const rows = buildRows(records);
   return {
-    version: "3.2.0",
+    version: "3.3.0",
     status: rows.length ? "collecting-data" : "no-data",
     sampleCount: rows.length,
     theoryCount: new Set(rows.map(row => row.theoryKey)).size,
@@ -221,4 +225,4 @@ function build(records) {
   };
 }
 
-module.exports = { pct, normalizeTicket, evaluationRows, practicalHitOf, confidenceOf, completenessOf, scenarioShadowOf, skipDecisionOf, skipDecisionCorrect, buildRows, summarize, build };
+module.exports = { pct, normalizeTicket, evaluationRows, predictionOf, practicalHitOf, confidenceOf, completenessOf, scenarioShadowOf, skipDecisionOf, skipDecisionCorrect, buildRows, summarize, build };
