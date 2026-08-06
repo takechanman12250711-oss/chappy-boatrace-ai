@@ -511,8 +511,8 @@ const statsUi = stats.slice(
 });
 assert.equal(
   (statsUi.match(/renderMetricCard\(\{/g) || []).length,
-  3,
-  "結果画面の指標は3項目に絞る"
+  5,
+  "結果画面の主要指標は5項目で表示する"
 );
 assert.equal(
   stats.includes(
