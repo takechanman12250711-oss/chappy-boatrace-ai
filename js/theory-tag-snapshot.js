@@ -165,3 +165,4 @@ function build(prediction, practicalTickets) {
 }
 
 module.exports = { build, theoryClaimsFrom, branchUsesCourseEvidence, courseClaimForTicket };
+// CI verification only
