@@ -98,6 +98,31 @@ function exhibitionFootClaimForTicket(prediction, ticket) {
   return { theoryKey: "exhibitionFoot", label: "展示・足理論", theoryVersion: "flow-support-exhibition-foot-v1", formal: true, source: "flow-support-exhibition-foot" };
 }
 
+function localWaterEvidence(prediction) {
+  const support = prediction?.venueWaterSupport || {};
+  const venue = String(support?.venue || "").trim();
+  const wind = Number(support?.wind);
+  const wave = Number(support?.wave);
+  const tide = String(support?.tide || "").trim();
+  const statements = supportStatements(support);
+  const hasMeasuredCondition = Number.isFinite(wind) || Number.isFinite(wave) || Boolean(tide);
+  const hasSpecificVenueRule = statements.some(text => !/開催場の水面特性を補助評価/.test(text) && /イン|差し|潮|風|波|水面|ナイター|展示|乗り心地/.test(text));
+  return {
+    formal: Boolean(venue) && statements.length > 0 && (hasMeasuredCondition || hasSpecificVenueRule),
+    venue,
+    wind: Number.isFinite(wind) ? wind : null,
+    wave: Number.isFinite(wave) ? wave : null,
+    tide,
+    statements
+  };
+}
+
+function localWaterClaimForTicket(prediction, ticket) {
+  const evidence = localWaterEvidence(prediction);
+  if (!evidence.formal || !normalizeTicket(ticket)) return null;
+  return { theoryKey: "localWater", label: "当地・水面理論", theoryVersion: "venue-water-support-v1", formal: true, source: "venue-water-support" };
+}
+
 function theoryClaimsFrom(prediction, practicalTickets) {
   const evidence = prediction?.practicalSelection?.verificationEvidence || prediction?.verificationEvidence || {};
   const evidenceByTicket = new Map((Array.isArray(evidence?.tickets) ? evidence.tickets : []).map(row => [normalizeTicket(row?.ticket), row]));
@@ -109,7 +134,8 @@ function theoryClaimsFrom(prediction, practicalTickets) {
     const courseClaim = courseClaimForTicket(prediction, evidenceRow);
     const stSlitClaim = stSlitClaimForTicket(prediction, ticket);
     const exhibitionFootClaim = exhibitionFootClaimForTicket(prediction, ticket);
-    const claims = [...baseClaims, ...(courseClaim ? [courseClaim] : []), ...(stSlitClaim ? [stSlitClaim] : []), ...(exhibitionFootClaim ? [exhibitionFootClaim] : [])]
+    const localWaterClaim = localWaterClaimForTicket(prediction, ticket);
+    const claims = [...baseClaims, ...(courseClaim ? [courseClaim] : []), ...(stSlitClaim ? [stSlitClaim] : []), ...(exhibitionFootClaim ? [exhibitionFootClaim] : []), ...(localWaterClaim ? [localWaterClaim] : [])]
       .filter((claim, index, all) => {
         const key = String(claim?.theoryKey || claim?.key || "").trim();
         return key && all.findIndex(other => String(other?.theoryKey || other?.key || "").trim() === key) === index;
@@ -141,4 +167,4 @@ function build(prediction, practicalTickets) {
   return { schemaVersion: 1, status: theories.length ? "tracked" : "no-formal-theory-claims", theoryCount: theories.length, ticketCount: tickets.length, theories, usableForPrediction: false, automaticApplication: false };
 }
 
-module.exports = { build, theoryClaimsFrom, branchUsesCourseEvidence, courseClaimForTicket, stSlitEvidence, stSlitClaimForTicket, exhibitionFootEvidence, exhibitionFootClaimForTicket };
+module.exports = { build, theoryClaimsFrom, branchUsesCourseEvidence, courseClaimForTicket, stSlitEvidence, stSlitClaimForTicket, exhibitionFootEvidence, exhibitionFootClaimForTicket, localWaterEvidence, localWaterClaimForTicket };
