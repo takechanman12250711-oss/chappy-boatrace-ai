@@ -94,3 +94,4 @@ assert.equal(result.usableForPrediction, false);
 assert.equal(result.automaticApplication, false);
 
 console.log("theory tag snapshot tests passed");
+// CI verification only
