@@ -147,10 +147,12 @@ if (!stats.includes('data-result-panel="recent-results"')) {
   stats = stats.replace(oldRecent, newRecent);
 }
 
-stats = stats.replace(
-  /const STATS_REQUEST_TIMEOUT_MS = 30000;/,
-  'const STATS_REQUEST_TIMEOUT_MS = 30000;\n  const RESULTS_UI_VERSION = "results-ui-phase1-20260806";'
-);
+if (!stats.includes('const RESULTS_UI_VERSION = "results-ui-phase1-20260806";')) {
+  stats = stats.replace(
+    /const STATS_REQUEST_TIMEOUT_MS = 30000;/,
+    'const STATS_REQUEST_TIMEOUT_MS = 30000;\n  const RESULTS_UI_VERSION = "results-ui-phase1-20260806";'
+  );
+}
 
 const marker = "/* results analysis phase1 20260806 */";
 if (!style.includes(marker)) {
