@@ -40,16 +40,26 @@ statsRuntime = statsRuntime.replace(
 index = index
   .replace(/style\.css\?v=[^"]+/, "style.css?v=20260806-venue24-1")
   .replace(/js\/app-runtime-loader\.js\?v=[^"]+/, "js/app-runtime-loader.js?v=20260806-venue24-1");
-test = test.replace(
-  /statsRuntime\.includes\(\n\s*'"[^"]+"'\n\s*\)/,
-  `statsRuntime.includes(\n    '"20260806-venue24-1"'\n  )`
-);
+
+test = test
+  .replace('"style.css?v=20260803-flow-missing30"', '"style.css?v=20260806-venue24-1"')
+  .replace('"js/app-runtime-loader.js?v=20260803-flow-missing30"', '"js/app-runtime-loader.js?v=20260806-venue24-1"')
+  .replace(
+    /appRuntime\.includes\(\n\s*'const VERSION = "[^"]+"'\n\s*\)/,
+    `appRuntime.includes(\n    'const VERSION = "20260806-venue24-1"'\n  )`
+  )
+  .replace(
+    /statsRuntime\.includes\(\n\s*'"[^"]+"'\n\s*\)/,
+    `statsRuntime.includes(\n    '"20260806-venue24-1"'\n  )`
+  );
 
 if (!stats.includes(marker)) throw new Error("venue24 marker missing");
 if (!stats.includes('"蒲郡"')) throw new Error("蒲郡 missing");
 if (!stats.includes('"0R・データなし"')) throw new Error("zero state missing");
 if (!appRuntime.includes('"20260806-venue24-1"')) throw new Error("app runtime version missing");
 if (!statsRuntime.includes('"20260806-venue24-1"')) throw new Error("stats runtime version missing");
+if (!test.includes('"style.css?v=20260806-venue24-1"')) throw new Error("style test version missing");
+if (!test.includes('"js/app-runtime-loader.js?v=20260806-venue24-1"')) throw new Error("app asset test version missing");
 
 fs.writeFileSync(statsPath, stats);
 fs.writeFileSync(appRuntimePath, appRuntime);
