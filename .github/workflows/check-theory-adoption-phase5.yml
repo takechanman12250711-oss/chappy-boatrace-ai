@@ -1,0 +1,23 @@
+name: Check theory adoption phase5
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/theory-adoption-phase5]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate theory adoption phase5
+        run: |
+          node --check js/theory-adoption-phase5.js
+          node --check scripts/build-theory-adoption-phase5.js
+          node --check scripts/test-theory-adoption-phase5.js
+          node scripts/test-theory-adoption-phase5.js
+          node scripts/check-charter.js
