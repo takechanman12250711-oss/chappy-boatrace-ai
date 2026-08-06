@@ -438,10 +438,10 @@ assert.match(
   /【万舟固有理由末尾】/,
   "万舟行の固有理由を汎用文へ置き換えず全文表示する"
 );
-assert.match(
+assert.doesNotMatch(
   html,
-  /【ランキング固有理由末尾】/,
-  "ランキング行は順位データの固有理由を優先して全文表示する"
+  /AI買い目一覧/,
+  "本命・押さえ・流し・万舟と重複するAI買い目一覧を表示しない"
 );
 assert.match(
   html,
@@ -454,8 +454,8 @@ const compactFlowRows =
   ) || [];
 assert.equal(
   compactFlowRows.length,
-  2,
-  "本命欄とAI買い目一覧の流しを1-23-全へまとめる"
+  1,
+  "本命欄の流しだけを1-23-全へまとめて表示する"
 );
 assert.match(
   html,
