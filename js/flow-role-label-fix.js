@@ -1,24 +1,53 @@
-// 流し表示の内部識別子を画面へ出さず、同一カードの重複を防ぐ。
+// 画面へ出る内部識別子を日本語へ統一し、同一カード・説明の重複を防ぐ。
 (function (root) {
   "use strict";
 
-  if (root.ChappyFlowRoleLabelFix?.version === "2") return;
+  if (root.ChappyFlowRoleLabelFix?.version === "3") return;
 
   const SCENARIO_LABELS = Object.freeze({
-    escape: "1コース逃げ",
-    oneEscape: "1コース逃げ",
+    escape: "イン逃げ",
+    oneEscape: "イン逃げ",
+    oneNige: "イン逃げ",
+    nige: "イン逃げ",
     twoSashi: "2コース差し",
+    twoCourseSashi: "2コース差し",
+    sashi: "差し",
     threeAttack: "3コース攻め",
-    fourKado: "4カド攻め"
+    threeMakuri: "3コースまくり",
+    threeMakuriSashi: "3コースまくり差し",
+    fourKado: "4カド攻め",
+    fourAttack: "4カド攻め",
+    kadoAttack: "カド攻め",
+    makuri: "まくり",
+    makuriSashi: "まくり差し",
+    outsideAttack: "外枠攻め",
+    independentScenario: "独立展開",
+    "independent-scenario": "独立展開"
   });
+
+  const LABELS_LOWER = Object.freeze(
+    Object.fromEntries(
+      Object.entries(SCENARIO_LABELS).map(([key, value]) => [key.toLowerCase(), value])
+    )
+  );
 
   let normalizing = false;
 
+  function translateLabel(value) {
+    const source = String(value || "").trim();
+    return SCENARIO_LABELS[source] || LABELS_LOWER[source.toLowerCase()] || source;
+  }
+
   function normalizeInternalLabels(area) {
-    area.querySelectorAll(".v3-tag").forEach(element => {
-      const value = String(element.textContent || "").trim();
-      if (SCENARIO_LABELS[value]) element.textContent = SCENARIO_LABELS[value];
-    });
+    area
+      .querySelectorAll(
+        ".v3-tag, .v3-role, .ticket-rank-badge, [data-scenario-label]"
+      )
+      .forEach(element => {
+        const value = String(element.textContent || "").trim();
+        const translated = translateLabel(value);
+        if (translated !== value) element.textContent = translated;
+      });
   }
 
   function removeDuplicateFlowCards(area) {
@@ -46,6 +75,40 @@
     });
   }
 
+  function compactRepeatedSentences(text) {
+    const source = String(text || "").trim();
+    if (!source) return source;
+
+    const parts = source
+      .split(/(?<=[。！？])/)
+      .map(part => part.trim())
+      .filter(Boolean);
+
+    if (parts.length < 2) return source;
+
+    const compact = [];
+    parts.forEach(part => {
+      const normalized = part.replace(/\s+/g, "");
+      const previous = compact[compact.length - 1] || "";
+      if (normalized && normalized === previous.replace(/\s+/g, "")) return;
+      compact.push(part);
+    });
+
+    return compact.join("");
+  }
+
+  function removeRepeatedDescriptions(area) {
+    area
+      .querySelectorAll(
+        ".v3-formation-reason, .ticket-reason, .v3-practical-selection p, .v3-practical-ticket p"
+      )
+      .forEach(element => {
+        const before = String(element.textContent || "").trim();
+        const after = compactRepeatedSentences(before);
+        if (after && after !== before) element.textContent = after;
+      });
+  }
+
   function normalizeFlowDisplay() {
     if (normalizing) return;
     const area = document.getElementById("resultArea");
@@ -55,6 +118,7 @@
     try {
       normalizeInternalLabels(area);
       removeDuplicateFlowCards(area);
+      removeRepeatedDescriptions(area);
     } finally {
       normalizing = false;
     }
@@ -70,8 +134,10 @@
   }
 
   root.ChappyFlowRoleLabelFix = Object.freeze({
-    version: "2",
+    version: "3",
     normalize: normalizeFlowDisplay,
-    labels: SCENARIO_LABELS
+    labels: SCENARIO_LABELS,
+    translateLabel,
+    compactRepeatedSentences
   });
 })(window);
