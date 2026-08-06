@@ -324,7 +324,7 @@ assert.equal(
 );
 assert.equal(
   statsRuntime.includes(
-    '"20260803-ui-fix2"'
+    '"20260806-results-ui-phase3-cache1"'
   ),
   true,
   "結果分析モジュールのキャッシュ世代を更新する"
