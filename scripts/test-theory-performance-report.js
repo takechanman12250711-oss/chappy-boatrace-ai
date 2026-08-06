@@ -1,4 +1,59 @@
 "use strict";
-const assert=require("node:assert/strict");const api=require("../js/theory-performance-report");
-const records=[{raceKey:"20260802-20-8",jcd:"20",place:"若松",theoryTagSnapshot:{theories:[{theoryKey:"wall-boat",label:"壁艇理論",tickets:["1-4-3","1-2-4"],mainTicketCount:1}]},result:{settled:true,resultTicket:"1-4-3",payout:1240,verification:{scenarioHit:true}}},{raceKey:"20260802-20-9",jcd:"20",place:"若松",theoryTagSnapshot:{theories:[{theoryKey:"wall-boat",label:"壁艇理論",tickets:["1-3-4"],mainTicketCount:1},{theoryKey:"pickup",label:"拾い理論",tickets:["1-2-4"],mainTicketCount:0}]},result:{settled:true,resultTicket:"2-1-4",payout:3000,verification:{scenarioHit:false}}}];
-const r=api.build(records);assert.equal(r.sampleCount,3);const wall=r.byTheory.find(x=>x.theoryKey==="wall-boat");assert.equal(wall.raceCount,2);assert.equal(wall.hitCount,1);assert.equal(wall.hitRate,50);assert.equal(wall.stake,300);assert.equal(wall.return,1240);assert.equal(wall.recoveryRate,413.3);assert.equal(wall.scenarioMatchRate,50);assert.equal(r.byVenueTheory.length,2);assert.equal(r.usableForPrediction,false);console.log("theory performance report tests passed");
+
+const assert = require("node:assert/strict");
+const api = require("../js/theory-performance-report");
+const builder = require("./build-theory-performance-report");
+
+const catalog = [
+  ["race-flow", "展開理論"], ["course", "コース理論"], ["start", "ST・スリット理論"],
+  ["exhibition", "展示・足理論"], ["remain-pickup", "残し・拾い理論"], ["local-water", "当地・水面理論"],
+  ["skill", "技量理論"], ["motor", "モーター理論"], ["wall-boat", "壁艇理論"],
+  ["frame-rise-fall", "枠別浮沈率"], ["double-time", "ダブルタイム"], ["new-engine", "新エンジン理論"]
+];
+
+function evaluations(usedKey, matched, tickets) {
+  return catalog.map(([theoryKey, label]) => ({
+    theoryKey,
+    label,
+    status: theoryKey === usedKey ? "evaluated" : "not-used",
+    used: theoryKey === usedKey,
+    matched: theoryKey === usedKey ? matched : null,
+    tickets: theoryKey === usedKey ? tickets : []
+  }));
+}
+
+const records = [
+  { raceKey: "20260802-20-8", jcd: "20", place: "若松", theoryEvaluationSnapshot: { evaluations: evaluations("wall-boat", true, ["1-4-3", "1-2-4"]) }, result: { settled: true, resultTicket: "1-4-3", payout: 1240, verification: { scenarioHit: true } } },
+  { raceKey: "20260802-20-9", jcd: "20", place: "若松", theoryEvaluationSnapshot: { evaluations: evaluations("wall-boat", false, ["1-3-4"]) }, result: { settled: true, resultTicket: "2-1-4", payout: 3000, verification: { scenarioHit: false } } }
+];
+
+const result = api.build(records);
+assert.equal(result.theoryCount, 12);
+assert.equal(result.byTheory.length, 12);
+assert.equal(result.sampleCount, 24);
+const wall = result.byTheory.find(row => row.theoryKey === "wall-boat");
+assert.equal(wall.raceCount, 2);
+assert.equal(wall.useCount, 2);
+assert.equal(wall.evaluatedCount, 2);
+assert.equal(wall.hitCount, 1);
+assert.equal(wall.hitRate, 50);
+assert.equal(wall.stake, 300);
+assert.equal(wall.return, 1240);
+assert.equal(wall.recoveryRate, 413.3);
+assert.equal(wall.scenarioMatchRate, 50);
+const course = result.byTheory.find(row => row.theoryKey === "course");
+assert.equal(course.useCount, 0);
+assert.equal(course.evaluatedCount, 0);
+assert.equal(course.hitRate, null);
+assert.equal(course.recoveryRate, null);
+assert.equal(result.usableForPrediction, false);
+assert.equal(result.automaticApplication, false);
+
+const primary = { raceKey: "same-race", source: "primary" };
+const duplicateVerification = { raceKey: "same-race", source: "verification" };
+const verificationOnly = { raceKey: "verification-only", source: "verification" };
+const merged = builder.mergeSources([primary], [duplicateVerification, verificationOnly]);
+assert.equal(merged.length, 2);
+assert.equal(merged.find(row => row.raceKey === "same-race").source, "primary");
+
+console.log("theory performance report tests passed");
