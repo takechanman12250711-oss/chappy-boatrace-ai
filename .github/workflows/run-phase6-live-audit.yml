@@ -1,8 +1,8 @@
 name: Run Phase6 live audit once
 
 on:
-  push:
-    branches: [chore/run-phase6-live-audit]
+  pull_request:
+    branches: [main]
     paths:
       - ".github/workflows/run-phase6-live-audit.yml"
 
