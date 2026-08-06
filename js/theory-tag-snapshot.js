@@ -52,22 +52,24 @@ function courseClaimForTicket(prediction, evidenceRow) {
   return { theoryKey: "course", label: "コース理論", theoryVersion: "structured-course-validation-v1", formal: true, source: "structured-course-validation" };
 }
 
-function stSlitEvidence(prediction) {
-  const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
-  const attackBoatNo = Number(support?.attackBoatNo || prediction?.flowPriority?.attackBoatNo || prediction?.flowPriority?.attackBoat || 0);
-  const stCoverage = Number(support?.dataCoverage?.st || 0);
-  const stRank = Number(support?.attackSTRank || 0);
+function supportStatements(support) {
   const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
   const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
-  const statements = [...confirms, ...alerts].map(String);
+  return [...confirms, ...alerts].map(String);
+}
+
+function supportAttackBoatNo(prediction, support) {
+  return Number(support?.attackBoatNo || prediction?.flowPriority?.attackBoatNo || prediction?.flowPriority?.attackBoat || 0);
+}
+
+function stSlitEvidence(prediction) {
+  const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
+  const attackBoatNo = supportAttackBoatNo(prediction, support);
+  const stCoverage = Number(support?.dataCoverage?.st || 0);
+  const stRank = Number(support?.attackSTRank || 0);
+  const statements = supportStatements(support);
   const explicit = statements.some(text => /ST|スリット/.test(text));
-  return {
-    formal: attackBoatNo >= 1 && attackBoatNo <= 6 && stCoverage >= 4 && stRank >= 1 && stRank <= 6 && explicit,
-    attackBoatNo,
-    stCoverage,
-    stRank,
-    statements
-  };
+  return { formal: attackBoatNo >= 1 && attackBoatNo <= 6 && stCoverage >= 4 && stRank >= 1 && stRank <= 6 && explicit, attackBoatNo, stCoverage, stRank, statements };
 }
 
 function stSlitClaimForTicket(prediction, ticket) {
@@ -75,19 +77,30 @@ function stSlitClaimForTicket(prediction, ticket) {
   if (!evidence.formal) return null;
   const boats = normalizeTicket(ticket).split("-").map(Number);
   if (!boats.includes(evidence.attackBoatNo)) return null;
-  return {
-    theoryKey: "stSlit",
-    label: "ST・スリット理論",
-    theoryVersion: "flow-support-st-slit-v1",
-    formal: true,
-    source: "flow-support-st-slit"
-  };
+  return { theoryKey: "stSlit", label: "ST・スリット理論", theoryVersion: "flow-support-st-slit-v1", formal: true, source: "flow-support-st-slit" };
+}
+
+function exhibitionFootEvidence(prediction) {
+  const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
+  const attackBoatNo = supportAttackBoatNo(prediction, support);
+  const exhibitionCoverage = Number(support?.dataCoverage?.exhibition || 0);
+  const exhibitionRank = Number(support?.attackExhibitionRank || 0);
+  const statements = supportStatements(support);
+  const explicit = statements.some(text => /展示|足|気配/.test(text));
+  return { formal: attackBoatNo >= 1 && attackBoatNo <= 6 && exhibitionCoverage >= 4 && exhibitionRank >= 1 && exhibitionRank <= 6 && explicit, attackBoatNo, exhibitionCoverage, exhibitionRank, statements };
+}
+
+function exhibitionFootClaimForTicket(prediction, ticket) {
+  const evidence = exhibitionFootEvidence(prediction);
+  if (!evidence.formal) return null;
+  const boats = normalizeTicket(ticket).split("-").map(Number);
+  if (!boats.includes(evidence.attackBoatNo)) return null;
+  return { theoryKey: "exhibitionFoot", label: "展示・足理論", theoryVersion: "flow-support-exhibition-foot-v1", formal: true, source: "flow-support-exhibition-foot" };
 }
 
 function theoryClaimsFrom(prediction, practicalTickets) {
   const evidence = prediction?.practicalSelection?.verificationEvidence || prediction?.verificationEvidence || {};
   const evidenceByTicket = new Map((Array.isArray(evidence?.tickets) ? evidence.tickets : []).map(row => [normalizeTicket(row?.ticket), row]));
-
   return (Array.isArray(practicalTickets) ? practicalTickets : []).map(item => {
     const row = typeof item === "string" ? { ticket: item } : (item || {});
     const ticket = normalizeTicket(row.ticket || row.line || row.formation);
@@ -95,16 +108,13 @@ function theoryClaimsFrom(prediction, practicalTickets) {
     const baseClaims = Array.isArray(evidenceRow.theoryClaims) ? evidenceRow.theoryClaims : (Array.isArray(row.theoryClaims) ? row.theoryClaims : []);
     const courseClaim = courseClaimForTicket(prediction, evidenceRow);
     const stSlitClaim = stSlitClaimForTicket(prediction, ticket);
-    const claims = [...baseClaims, ...(courseClaim ? [courseClaim] : []), ...(stSlitClaim ? [stSlitClaim] : [])]
+    const exhibitionFootClaim = exhibitionFootClaimForTicket(prediction, ticket);
+    const claims = [...baseClaims, ...(courseClaim ? [courseClaim] : []), ...(stSlitClaim ? [stSlitClaim] : []), ...(exhibitionFootClaim ? [exhibitionFootClaim] : [])]
       .filter((claim, index, all) => {
         const key = String(claim?.theoryKey || claim?.key || "").trim();
         return key && all.findIndex(other => String(other?.theoryKey || other?.key || "").trim() === key) === index;
       });
-    return {
-      ticket,
-      category: normalizeCategory(row.category || row.role || evidenceRow.category || (Array.isArray(evidenceRow.categories) ? evidenceRow.categories[0] : "")),
-      claims
-    };
+    return { ticket, category: normalizeCategory(row.category || row.role || evidenceRow.category || (Array.isArray(evidenceRow.categories) ? evidenceRow.categories[0] : "")), claims };
   }).filter(row => row.ticket && row.claims.length);
 }
 
@@ -131,4 +141,4 @@ function build(prediction, practicalTickets) {
   return { schemaVersion: 1, status: theories.length ? "tracked" : "no-formal-theory-claims", theoryCount: theories.length, ticketCount: tickets.length, theories, usableForPrediction: false, automaticApplication: false };
 }
 
-module.exports = { build, theoryClaimsFrom, branchUsesCourseEvidence, courseClaimForTicket, stSlitEvidence, stSlitClaimForTicket };
+module.exports = { build, theoryClaimsFrom, branchUsesCourseEvidence, courseClaimForTicket, stSlitEvidence, stSlitClaimForTicket, exhibitionFootEvidence, exhibitionFootClaimForTicket };
