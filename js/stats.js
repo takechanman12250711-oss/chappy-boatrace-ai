@@ -2560,15 +2560,24 @@
           const practicalRate = rate(row.practicalHits, row.practicalCount);
           const state = row.practicalCount === 0
             ? "is-neutral"
-            : practicalRate >= 50
+            : practicalRate >= 30
               ? "is-hit"
-              : "is-miss";
-          const icon = row.practicalCount === 0 ? "🟡" : practicalRate >= 50 ? "🟢" : "🔴";
+              : practicalRate >= 15
+                ? "is-neutral"
+                : "is-miss";
+          const icon = state === "is-hit" ? "🟢" : state === "is-miss" ? "🔴" : "🟡";
+          const strengthLabel = row.practicalCount < 5
+            ? "蓄積中"
+            : practicalRate >= 30
+              ? "得意"
+              : practicalRate >= 15
+                ? "標準"
+                : "改善対象";
           return `
             <article class="result-data-card result-scenario-card ${state}">
               <header>
                 <h4>${icon} ${E(row.label)}</h4>
-                <span>${row.count}R</span>
+                <span class="result-strength-badge ${state}">${strengthLabel}</span>
               </header>
               <dl class="result-data-facts">
                 ${renderFact("展開一致", formatCountRate(row.scenarioHits, row.scenarioComparable))}
@@ -2579,6 +2588,23 @@
           `;
         }).join("")
       : renderEmpty("展開別に比較できる公式結果がありません");
+
+  const comparableScenarioRows = predictedScenarioGroups
+    .filter(row => row.practicalCount >= 5)
+    .map(row => ({ ...row, practicalRate: rate(row.practicalHits, row.practicalCount) }))
+    .sort((a, b) => b.practicalRate - a.practicalRate);
+  const strongestScenario = comparableScenarioRows[0] || null;
+  const weakestScenario = comparableScenarioRows[comparableScenarioRows.length - 1] || null;
+  const scenarioInsightHtml = comparableScenarioRows.length
+    ? `<div class="result-ai-insight">
+        <strong>AI改善メモ</strong>
+        <p>好調：${E(strongestScenario.label)}（厳選${strongestScenario.practicalRate}%）</p>
+        ${weakestScenario && weakestScenario !== strongestScenario
+          ? `<p>改善対象：${E(weakestScenario.label)}（厳選${weakestScenario.practicalRate}%）</p>`
+          : ""}
+      </div>`
+    : `<div class="result-ai-insight"><strong>AI改善メモ</strong><p>各展開5R以上になるまで蓄積中です。</p></div>`;
+  const RESULTS_UI_PHASE4 = "results-ui-phase4-20260806";
 
   const renderRoleTickets = (item, role) => {
     const tickets = (item.predictionTickets || [])
@@ -2711,12 +2737,21 @@
               <details class="result-race-more">
                 <summary><span>詳細を見る</span><small>買い目・公式結果・払戻</small></summary>
                 <div class="result-race-more-body">
-                  <dl class="result-data-facts">
-                    ${renderFact("本命", renderRoleTickets(item, "本命"))}
-                    ${renderFact("押さえ", renderRoleTickets(item, "押さえ"))}
-                    ${renderFact("流し", renderRoleTickets(item, "流し"))}
-                    ${renderFact("万舟", renderRoleTickets(item, "穴・万舟候補"))}
-                    ${renderFact("実戦厳選", item.practicalTickets.length ? item.practicalTickets.join("、") : "見送り")}
+                  <div class="result-ticket-details">
+                    ${[
+                      ["本命", renderRoleTickets(item, "本命")],
+                      ["押さえ", renderRoleTickets(item, "押さえ")],
+                      ["流し", renderRoleTickets(item, "流し")],
+                      ["万舟", renderRoleTickets(item, "穴・万舟候補")],
+                      ["実戦厳選", item.practicalTickets.length ? item.practicalTickets.join("、") : "見送り"]
+                    ].map(([label, value]) => `
+                      <details class="result-ticket-detail">
+                        <summary><span>${label}</span><small>開く</small></summary>
+                        <p>${E(value)}</p>
+                      </details>
+                    `).join("")}
+                  </div>
+                  <dl class="result-data-facts result-official-facts">
                     ${renderFact("公式結果", item.resultTicket || "-")}
                     ${renderFact("払戻", item.payoutPer100 > 0 ? formatMoney(item.payoutPer100) + "／100円" : "-")}
                   </dl>
@@ -3033,6 +3068,7 @@
           <span class="result-accordion-meta">${predictedScenarioGroups.length}展開</span>
         </summary>
         <div class="result-accordion-body">
+          ${scenarioInsightHtml}
           <div class="result-data-grid result-scenario-grid">
             ${scenarioPerformanceHtml}
           </div>
