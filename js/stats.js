@@ -16,6 +16,7 @@
   const OFFICIAL_SYNC_CONCURRENCY = 3;
   const OFFICIAL_SYNC_MAX_TARGETS = 5;
   const STATS_REQUEST_TIMEOUT_MS = 30000;
+  const RESULTS_UI_VERSION = "results-ui-phase1-20260806";
   const NEW_METHOD_MINIMUM_COUNT = 30;
   const CURRENT_CALIBRATION_GENERATION = {
     logicFingerprint:
@@ -2761,7 +2762,7 @@
           </span>
         </header>
 
-        <div class="result-kpi-grid">
+        <div class="result-kpi-grid result-kpi-grid-five">
           ${renderMetricCard({
             icon: "🎯",
             label: "厳選的中率",
@@ -2770,11 +2771,10 @@
             tone: "blue"
           })}
           ${renderMetricCard({
-            icon: "💴",
+            icon: "📈",
             label: "回収率",
             value: `${recoveryRate}%`,
-            detail:
-              `投資${formatMoney(resultHeadline.totalStake)}・払戻${formatMoney(resultHeadline.totalReturn)}`,
+            detail: "1点100円の検証値",
             tone:
               recoveryRate >= 100
                 ? "green"
@@ -2783,18 +2783,35 @@
                   : "red"
           })}
           ${renderMetricCard({
-            icon: "📊",
+            icon: "💹",
             label: "検証収支",
             value: formatMoney(
               resultHeadline.totalReturn -
                 resultHeadline.totalStake
             ),
-            detail: "1点100円で計算",
+            detail: "払戻－購入額",
             tone:
               resultHeadline.totalReturn >=
               resultHeadline.totalStake
                 ? "green"
                 : "red"
+          })}
+          ${renderMetricCard({
+            icon: "🧾",
+            label: "購入額",
+            value: formatMoney(resultHeadline.totalStake),
+            detail: `対象${resultHeadline.practicalCount}R`,
+            tone: "amber"
+          })}
+          ${renderMetricCard({
+            icon: "💴",
+            label: "払戻額",
+            value: formatMoney(resultHeadline.totalReturn),
+            detail: `的中${resultHeadline.practicalHits}R`,
+            tone:
+              resultHeadline.totalReturn > 0
+                ? "green"
+                : "blue"
           })}
         </div>
 
@@ -2873,20 +2890,27 @@
         </div>
       </details>
 
-      <section class="result-panel" aria-labelledby="recentResultTitle">
-        <header class="result-panel-head">
-          <div>
-            <p class="result-kicker">RECENT</p>
-            <h3 id="recentResultTitle">直近の結果</h3>
-          </div>
-          <span class="result-sample-badge">
+      <details
+        class="result-accordion"
+        data-result-panel="recent-results"
+        ${panelOpen("recent-results", true)}
+      >
+        <summary>
+          <span class="result-accordion-icon" aria-hidden="true">🗂️</span>
+          <span class="result-accordion-title">
+            <span class="result-accordion-name">直近の結果</span>
+            <small>予想・公式結果・的中／不的中を確認</small>
+          </span>
+          <span class="result-accordion-meta">
             最新${recentRows.length}R
           </span>
-        </header>
-        <div class="result-race-list">
-          ${recentHtml}
+        </summary>
+        <div class="result-accordion-body">
+          <div class="result-race-list">
+            ${recentHtml}
+          </div>
         </div>
-      </section>
+      </details>
     </div>
   `);
 }

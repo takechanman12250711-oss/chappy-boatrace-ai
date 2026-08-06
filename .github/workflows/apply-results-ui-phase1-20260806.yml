@@ -1,0 +1,51 @@
+name: Apply results UI phase1 20260806
+
+on:
+  push:
+    branches:
+      - agent/results-ui-phase1-20260806
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/results-ui-phase1-20260806' || github.ref_name == 'agent/results-ui-phase1-20260806'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/results-ui-phase1-20260806
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply results UI phase1
+        run: |
+          node scripts/apply-results-ui-phase1-20260806.js
+          node scripts/apply-results-ui-phase1-test-20260806.js
+      - name: Validate
+        run: |
+          node --check js/stats.js
+          node scripts/test-load-performance.js
+          grep -q 'results-ui-phase1-20260806' js/stats.js
+          grep -q 'result-kpi-grid-five' js/stats.js
+          grep -q 'data-result-panel="recent-results"' js/stats.js
+          grep -q 'results analysis phase1 20260806' style.css
+          grep -q '結果画面の主要指標は5項目で表示する' scripts/test-load-performance.js
+      - name: Commit generated changes
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/stats.js style.css scripts/test-load-performance.js
+          git commit -m "結果分析の上部カードと直近結果を再設計"
+          git pull --rebase origin agent/results-ui-phase1-20260806
+          git push origin HEAD:agent/results-ui-phase1-20260806
