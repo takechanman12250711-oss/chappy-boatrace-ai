@@ -1,0 +1,44 @@
+name: Remove duplicate AI ticket list
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/remove-duplicate-ai-ticket-list.js"
+      - ".github/workflows/remove-duplicate-ai-ticket-list.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Remove duplicate section
+        run: node scripts/remove-duplicate-ai-ticket-list.js
+      - name: Validate
+        run: |
+          node --check js/render.js
+          ! grep -q '\${renderTicketRanking(prediction)}' js/render.js
+          grep -q 'renderNewspaperSheet(prediction, "main")' js/render.js
+          grep -q 'renderNewspaperSheet(prediction, "manshu")' js/render.js
+          grep -q 'renderPracticalSelection(prediction)' js/render.js
+      - name: Commit generated change
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/render.js
+          git commit -m "重複するAI買い目一覧を非表示にする"
+          git push
