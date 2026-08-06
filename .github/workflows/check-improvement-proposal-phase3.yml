@@ -1,0 +1,23 @@
+name: Check improvement proposal phase3
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/improvement-proposal-phase3]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate improvement proposal phase3
+        run: |
+          node --check js/improvement-proposal-engine.js
+          node --check scripts/build-improvement-proposal-report.js
+          node --check scripts/test-improvement-proposal-engine.js
+          node scripts/test-improvement-proposal-engine.js
+          node scripts/check-charter.js
