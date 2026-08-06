@@ -2510,6 +2510,62 @@
             30件に達するまで、役割別・買い目区分別・構造化展開の率は表示しません。内部評価は的中確率ではありません。
           </p>
         `;
+  /* results UI phase2 grouped panels */
+  const venuePerformanceHtml =
+    venueGroups.length
+      ? venueGroups.map((row, index) => `
+          <details class="result-group-item" data-result-group="venue-${index}">
+            <summary>
+              <span class="result-group-title">${E(row.label)}</span>
+              <span class="result-group-meta">
+                ${row.count}R・厳選${rate(row.practicalHits, row.practicalCount)}%
+              </span>
+            </summary>
+            <div class="result-group-body">
+              <dl class="result-data-facts">
+                ${renderFact("本命1着", formatCountRate(row.honmeiHits, row.count))}
+                ${renderFact("実戦厳選", formatCountRate(row.practicalHits, row.practicalCount))}
+                ${renderFact("展開一致", formatCountRate(row.scenarioHits, row.scenarioComparable))}
+              </dl>
+            </div>
+          </details>
+        `).join("")
+      : renderEmpty("場別に比較できる公式結果がありません");
+
+  const scenarioPerformanceHtml =
+    predictedScenarioGroups.length
+      ? predictedScenarioGroups.map(row => {
+          const practicalRate = rate(row.practicalHits, row.practicalCount);
+          const state = row.practicalCount === 0
+            ? "is-neutral"
+            : practicalRate >= 50
+              ? "is-hit"
+              : "is-miss";
+          const icon = row.practicalCount === 0 ? "🟡" : practicalRate >= 50 ? "🟢" : "🔴";
+          return `
+            <article class="result-data-card result-scenario-card ${state}">
+              <header>
+                <h4>${icon} ${E(row.label)}</h4>
+                <span>${row.count}R</span>
+              </header>
+              <dl class="result-data-facts">
+                ${renderFact("展開一致", formatCountRate(row.scenarioHits, row.scenarioComparable))}
+                ${renderFact("実戦厳選", formatCountRate(row.practicalHits, row.practicalCount))}
+                ${renderFact("本命1着", formatCountRate(row.honmeiHits, row.count))}
+              </dl>
+            </article>
+          `;
+        }).join("")
+      : renderEmpty("展開別に比較できる公式結果がありません");
+
+  const renderRoleTickets = (item, role) => {
+    const tickets = (item.predictionTickets || [])
+      .filter(row => String(row?.role || row?.category || "") === role)
+      .map(row => normalizeTicket(row?.ticket))
+      .filter(Boolean);
+    return tickets.length ? tickets.join("、") : "なし";
+  };
+
   const shadowV2Progress =
     A?.buildShadowV2Progress
       ? A.buildShadowV2Progress(
@@ -2622,13 +2678,28 @@
                 }">
                   ${
                     item.practicalTickets.length === 0
-                      ? "厳選見送り"
+                      ? "🟡 厳選見送り"
                       : item.practicalHit
-                        ? `厳選的中・${E(item.hitCategory || "区分不明")}`
-                        : E(item.missType || "不的中")
+                        ? `🟢 厳選的中・${E(item.hitCategory || "区分不明")}`
+                        : `🔴 ${E(item.missType || "不的中")}`
                   }
                 </span>
               </div>
+
+              <details class="result-race-more">
+                <summary>買い目と払戻を確認</summary>
+                <div class="result-race-more-body">
+                  <dl class="result-data-facts">
+                    ${renderFact("本命", renderRoleTickets(item, "本命"))}
+                    ${renderFact("押さえ", renderRoleTickets(item, "押さえ"))}
+                    ${renderFact("流し", renderRoleTickets(item, "流し"))}
+                    ${renderFact("万舟", renderRoleTickets(item, "穴・万舟候補"))}
+                    ${renderFact("実戦厳選", item.practicalTickets.length ? item.practicalTickets.join("、") : "見送り")}
+                    ${renderFact("公式結果", item.resultTicket || "-")}
+                    ${renderFact("払戻", item.payoutPer100 > 0 ? formatMoney(item.payoutPer100) + "／100円" : "-")}
+                  </dl>
+                </div>
+              </details>
 
             </article>
           `)
@@ -2887,6 +2958,44 @@
         </summary>
         <div class="result-accordion-body">
           ${improvementReviewHtml}
+        </div>
+      </details>
+
+      <details
+        class="result-accordion"
+        data-result-panel="venue-performance"
+        ${panelOpen("venue-performance")}
+      >
+        <summary>
+          <span class="result-accordion-icon" aria-hidden="true">🏟️</span>
+          <span class="result-accordion-title">
+            <span class="result-accordion-name">場別成績</span>
+            <small>場ごとの本命・実戦厳選・展開一致</small>
+          </span>
+          <span class="result-accordion-meta">${venueGroups.length}場</span>
+        </summary>
+        <div class="result-accordion-body result-group-list">
+          ${venuePerformanceHtml}
+        </div>
+      </details>
+
+      <details
+        class="result-accordion"
+        data-result-panel="scenario-performance"
+        ${panelOpen("scenario-performance")}
+      >
+        <summary>
+          <span class="result-accordion-icon" aria-hidden="true">🧠</span>
+          <span class="result-accordion-title">
+            <span class="result-accordion-name">展開別AI分析</span>
+            <small>イン逃げ・差し・攻め・カドの強みと弱み</small>
+          </span>
+          <span class="result-accordion-meta">${predictedScenarioGroups.length}展開</span>
+        </summary>
+        <div class="result-accordion-body">
+          <div class="result-data-grid result-scenario-grid">
+            ${scenarioPerformanceHtml}
+          </div>
         </div>
       </details>
 
