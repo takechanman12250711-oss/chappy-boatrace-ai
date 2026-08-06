@@ -1,8 +1,8 @@
 /* =========================================================
   チャッピーボートレースAI
-  本命・押さえ分類修正
+  本命・押さえ分類整合
 
-  既存の買い目は変更せず、生成済みの main / cover 分類だけを
+  生成済みの main / cover 分類を入れ替えず、
   アプリ全体で同じ向きへ揃える。
 ========================================================= */
 (function (root) {
@@ -22,19 +22,6 @@
     ).replace(/\s+/g, "").trim();
   }
 
-  function swapWords(value) {
-    if (typeof value !== "string") return value;
-    return value
-      .replace(/本線/g, "__CHAPPY_COVER__")
-      .replace(/本命/g, "__CHAPPY_COVER_LABEL__")
-      .replace(/中心展開/g, "__CHAPPY_SAFE__")
-      .replace(/押さえ/g, "本線")
-      .replace(/安全押さえ/g, "中心展開")
-      .replace(/__CHAPPY_COVER__/g, "押さえ")
-      .replace(/__CHAPPY_COVER_LABEL__/g, "押さえ")
-      .replace(/__CHAPPY_SAFE__/g, "安全押さえ");
-  }
-
   function relabelRow(item, target) {
     if (typeof item === "string") return item;
     if (!item || typeof item !== "object") return item;
@@ -43,7 +30,6 @@
     const primary = isMain ? "本命" : "押さえ";
     const secondary = isMain ? "中心展開" : "安全押さえ";
     const type = isMain ? "main" : "cover";
-
     const next = { ...item };
 
     ["role", "category", "group", "sheetRole", "label"].forEach(key => {
@@ -53,18 +39,10 @@
       if (key in next) next[key] = type;
     });
 
-    if (Array.isArray(next.roleLabels)) {
-      const filtered = next.roleLabels
-        .map(swapWords)
-        .filter(label => !["流し", "流し展開"].includes(String(label || "").trim()));
-      next.roleLabels = [...new Set([primary, secondary, ...filtered])];
-    } else {
-      next.roleLabels = [primary, secondary];
-    }
-
-    ["reason", "comment", "description", "summary"].forEach(key => {
-      if (typeof next[key] === "string") next[key] = swapWords(next[key]);
-    });
+    const existingLabels = Array.isArray(next.roleLabels)
+      ? next.roleLabels.filter(label => !["本命", "押さえ", "本線", "中心展開", "安全押さえ"].includes(String(label || "").trim()))
+      : [];
+    next.roleLabels = [...new Set([primary, secondary, ...existingLabels])];
 
     return next;
   }
@@ -87,27 +65,27 @@
     const ticketSheets = prediction.ticketSheets || {};
     const mainSheet = prediction.mainSheet || {};
 
-    const oldMainFormation = rows(formation.main);
-    const oldCoverFormation = rows(formation.cover);
-    const oldMainRows = rows(ticketSheets.main).length
+    const mainFormation = rows(formation.main);
+    const coverFormation = rows(formation.cover);
+    const sourceMainRows = rows(ticketSheets.main).length
       ? rows(ticketSheets.main)
       : rows(mainSheet.tickets);
-    const oldCoverRows = rows(ticketSheets.cover).length
+    const sourceCoverRows = rows(ticketSheets.cover).length
       ? rows(ticketSheets.cover)
       : rows(mainSheet.coverTickets);
 
-    if (!oldMainFormation.length && !oldCoverFormation.length &&
-        !oldMainRows.length && !oldCoverRows.length) {
+    if (!mainFormation.length && !coverFormation.length &&
+        !sourceMainRows.length && !sourceCoverRows.length) {
       return prediction;
     }
 
-    const newMainRows = oldCoverRows.map(item => relabelRow(item, "main"));
-    const newCoverRows = oldMainRows.map(item => relabelRow(item, "cover"));
+    const mainRows = sourceMainRows.map(item => relabelRow(item, "main"));
+    const coverRows = sourceCoverRows.map(item => relabelRow(item, "cover"));
     const flowRows = rows(ticketSheets.flow);
     const holeRows = rows(ticketSheets.hole);
 
-    const mainTickets = new Set(newMainRows.map(ticketOf).filter(Boolean));
-    const coverTickets = new Set(newCoverRows.map(ticketOf).filter(Boolean));
+    const mainTickets = new Set(mainRows.map(ticketOf).filter(Boolean));
+    const coverTickets = new Set(coverRows.map(ticketOf).filter(Boolean));
 
     function normalizeList(list) {
       return dedupe(rows(list).map(item => {
@@ -119,8 +97,8 @@
     }
 
     const correctedAll = dedupe([
-      ...newMainRows,
-      ...newCoverRows,
+      ...mainRows,
+      ...coverRows,
       ...flowRows,
       ...holeRows
     ]);
@@ -130,18 +108,18 @@
       __mainCoverClassificationNormalized: true,
       formation: {
         ...formation,
-        main: oldCoverFormation.slice(),
-        cover: oldMainFormation.slice()
+        main: mainFormation.slice(),
+        cover: coverFormation.slice()
       },
       mainSheet: {
         ...mainSheet,
-        tickets: newMainRows,
-        coverTickets: newCoverRows
+        tickets: mainRows,
+        coverTickets: coverRows
       },
       ticketSheets: {
         ...ticketSheets,
-        main: newMainRows,
-        cover: newCoverRows,
+        main: mainRows,
+        cover: coverRows,
         all: correctedAll
       },
       aiTicketList: normalizeList(
