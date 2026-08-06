@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const api = require("../js/theory-performance-report");
+const builder = require("./build-theory-performance-report");
 
 const catalog = [
   ["race-flow", "展開理論"], ["course", "コース理論"], ["start", "ST・スリット理論"],
@@ -47,5 +48,12 @@ assert.equal(course.hitRate, null);
 assert.equal(course.recoveryRate, null);
 assert.equal(result.usableForPrediction, false);
 assert.equal(result.automaticApplication, false);
+
+const primary = { raceKey: "same-race", source: "primary" };
+const duplicateVerification = { raceKey: "same-race", source: "verification" };
+const verificationOnly = { raceKey: "verification-only", source: "verification" };
+const merged = builder.mergeSources([primary], [duplicateVerification, verificationOnly]);
+assert.equal(merged.length, 2);
+assert.equal(merged.find(row => row.raceKey === "same-race").source, "primary");
 
 console.log("theory performance report tests passed");
