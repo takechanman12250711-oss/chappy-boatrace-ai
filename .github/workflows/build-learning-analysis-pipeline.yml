@@ -47,7 +47,7 @@ jobs:
             if(data.automaticApplication!==false || data.usableForPrediction!==false) throw new Error(`${p} の安全フラグ異常`);
           }
           const perf=JSON.parse(fs.readFileSync('data/stats/theory-performance-report.json','utf8'));
-          if(perf.version!=='3.2.0' || perf.theoryCount!==12) throw new Error('理論別成績が12理論の最新版ではありません');
+          if(perf.version!=='3.3.0' || perf.theoryCount!==12) throw new Error('理論別成績が12理論の最新版ではありません');
           const used=perf.byTheory.filter(row=>row.evaluatedCount>0);
           if(used.some(row=>row.practicalEvaluatedCount!==row.evaluatedCount)) throw new Error('実戦厳選指標の保存漏れ');
           if(used.every(row=>row.skipEvaluatedCount===0)) throw new Error('見送り判断指標が全件欠損');
