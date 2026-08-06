@@ -1,0 +1,17 @@
+name: Check index hotfix script 20260806
+
+on:
+  push:
+    branches: [hotfix/restore-index-20260806]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/check-index-hotfix-20260806.js
