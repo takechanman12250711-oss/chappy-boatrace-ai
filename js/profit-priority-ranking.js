@@ -9,6 +9,7 @@ const CRITERIA = Object.freeze([
 ]);
 
 function numberOrNull(value) {
+  if (value === null || value === undefined || value === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
@@ -19,6 +20,8 @@ function weakness(value, target) {
 
 function buildRow(row) {
   const raceCount = Number(row?.raceCount || 0);
+  const useCount = Number(row?.useCount || 0);
+  const evidenceCount = Number(row?.evaluatedCount ?? useCount ?? 0);
   const metrics = {
     recoveryRate: numberOrNull(row?.recoveryRate),
     practicalHitRate: numberOrNull(row?.practicalHitRate),
@@ -32,13 +35,14 @@ function buildRow(row) {
     hitRate: weakness(metrics.hitRate, 15)
   };
   const missingMetrics = CRITERIA.filter(key => metrics[key] === null);
-  const eligible = raceCount >= MIN_RACES && metrics.recoveryRate !== null;
+  const eligible = evidenceCount >= MIN_RACES && metrics.recoveryRate !== null;
 
   return {
     theoryKey: String(row?.theoryKey || row?.key || ""),
     label: String(row?.label || row?.theoryKey || row?.key || ""),
     raceCount,
-    useCount: Number(row?.useCount || 0),
+    useCount,
+    evidenceCount,
     metrics,
     deficits,
     missingMetrics,
@@ -60,7 +64,7 @@ function compareRows(a, b) {
     if (av !== null && bv === null) return -1;
     if (av !== null && bv !== null && av !== bv) return bv - av;
   }
-  return b.raceCount - a.raceCount || a.theoryKey.localeCompare(b.theoryKey);
+  return b.evidenceCount - a.evidenceCount || a.theoryKey.localeCompare(b.theoryKey);
 }
 
 function build(performanceReport = {}) {
@@ -74,10 +78,11 @@ function build(performanceReport = {}) {
   if (selected) selected.selectedForImprovement = true;
 
   return {
-    schemaVersion: 1,
-    engineVersion: "profit-priority-ranking-20260806",
+    schemaVersion: 2,
+    engineVersion: "profit-priority-ranking-20260806-integrity-fixed",
     status: selected ? "candidate-selected" : "collecting-data",
     minimumRaceCount: MIN_RACES,
+    evidenceField: "evaluatedCount",
     priorityOrder: [...CRITERIA],
     ranking,
     selectedTheory: selected ? {
