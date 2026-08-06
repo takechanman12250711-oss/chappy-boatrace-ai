@@ -30,7 +30,7 @@ jobs:
           const perf=JSON.parse(fs.readFileSync('data/stats/theory-performance-report.json','utf8'));
           const ranking=JSON.parse(fs.readFileSync('data/stats/profit-priority-ranking.json','utf8'));
           const audit=JSON.parse(fs.readFileSync('data/stats/phase6-data-audit.json','utf8'));
-          if(perf.version!=='3.2.0'||perf.theoryCount!==12) throw new Error('理論別成績再生成失敗');
+          if(perf.version!=='3.3.0'||perf.theoryCount!==12) throw new Error('理論別成績再生成失敗');
           const used=perf.byTheory.filter(row=>row.evaluatedCount>0);
           if(used.some(row=>row.practicalEvaluatedCount!==row.evaluatedCount)) throw new Error('実戦厳選指標の保存漏れ');
           if(used.every(row=>row.skipEvaluatedCount===0)) throw new Error('見送り判断指標が全件欠損');
