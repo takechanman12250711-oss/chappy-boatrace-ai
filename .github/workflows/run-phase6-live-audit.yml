@@ -1,0 +1,41 @@
+name: Run Phase6 live audit once
+
+on:
+  push:
+    branches: [chore/run-phase6-live-audit]
+    paths:
+      - ".github/workflows/run-phase6-live-audit.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chore/run-phase6-live-audit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Rebuild Phase1 to Phase6 data
+        run: |
+          node scripts/build-result-review.js
+          node scripts/build-theory-evaluations.js
+          node scripts/build-miss-cause-analysis.js
+          node scripts/build-improvement-proposal-report.js
+          node scripts/build-theory-performance-report.js
+          node scripts/build-theory-adoption-phase5.js
+          node scripts/build-phase6-data-audit.js
+      - name: Save audit output
+        run: |
+          git add data/predictions data/stats
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Run Phase6 live data audit"
+          git push origin chore/run-phase6-live-audit
