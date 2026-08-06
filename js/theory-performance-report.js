@@ -1,6 +1,7 @@
 "use strict";
 
 const skipAi = require("./skip-ai-shadow");
+const scenarioAi = require("./scenario-ai-v6-shadow");
 
 function pct(n, d) {
   return d ? Math.round(n / d * 1000) / 10 : null;
@@ -46,6 +47,17 @@ function completenessOf(prediction) {
   return Math.min(100, points);
 }
 
+function scenarioShadowOf(prediction) {
+  if (prediction?.scenarioAiV6Shadow?.scenarios?.length) return prediction.scenarioAiV6Shadow;
+  if (typeof scenarioAi?.build !== "function") return null;
+  try {
+    const built = scenarioAi.build(prediction || {});
+    return built?.scenarios?.length ? built : null;
+  } catch {
+    return null;
+  }
+}
+
 function skipDecisionOf(record) {
   const prediction = record?.prediction || {};
   const stored = String(
@@ -58,7 +70,7 @@ function skipDecisionOf(record) {
   if (stored) return stored;
 
   const selectionScore = confidenceOf(prediction);
-  const scenarioAiV6Shadow = prediction?.scenarioAiV6Shadow;
+  const scenarioAiV6Shadow = scenarioShadowOf(prediction);
   if (selectionScore === null || !scenarioAiV6Shadow || typeof skipAi?.build !== "function") return "";
   try {
     return String(skipAi.build({
@@ -194,13 +206,13 @@ function summarize(rows, keyFn) {
 function build(records) {
   const rows = buildRows(records);
   return {
-    version: "3.1.0",
+    version: "3.2.0",
     status: rows.length ? "collecting-data" : "no-data",
     sampleCount: rows.length,
     theoryCount: new Set(rows.map(row => row.theoryKey)).size,
     metricDefinitions: {
       practicalHitRate: "当該理論が評価可能だった終了レースにおける実戦厳選的中率",
-      skipDecisionAccuracy: "保存済み予想から見送りAIシャドー判定を再現し、見送りなら不的中、勝負候補なら的中を正解とした精度。注意判定は対象外"
+      skipDecisionAccuracy: "保存済み予想から展開シャドーと見送りAIシャドーを再現し、見送りなら不的中、勝負候補なら的中を正解とした精度。注意判定は対象外"
     },
     byTheory: summarize(rows, row => row.theoryKey),
     byVenueTheory: summarize(rows, row => `${row.jcd}:${row.theoryKey}`),
@@ -209,4 +221,4 @@ function build(records) {
   };
 }
 
-module.exports = { pct, normalizeTicket, evaluationRows, practicalHitOf, confidenceOf, completenessOf, skipDecisionOf, skipDecisionCorrect, buildRows, summarize, build };
+module.exports = { pct, normalizeTicket, evaluationRows, practicalHitOf, confidenceOf, completenessOf, scenarioShadowOf, skipDecisionOf, skipDecisionCorrect, buildRows, summarize, build };
