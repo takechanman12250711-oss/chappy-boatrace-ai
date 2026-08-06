@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260806-results-ui-phase3-cache1";
+  const VERSION = "20260806-venue24-1";
   // legacy test marker: const VERSION = "20260805-flow-label1"
   // legacy test marker: const VERSION = "20260804-final-odds2"
   // legacy test marker: const VERSION = "20260803-flow-missing30"

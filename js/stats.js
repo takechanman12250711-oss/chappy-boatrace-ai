@@ -1678,13 +1678,32 @@
     );
   };
 
-  const venueGroups =
+  const VENUE_NAMES = [
+    "桐生", "戸田", "江戸川", "平和島", "多摩川", "浜名湖",
+    "蒲郡", "常滑", "津", "三国", "びわこ", "住之江",
+    "尼崎", "鳴門", "丸亀", "児島", "宮島", "徳山",
+    "下関", "若松", "芦屋", "福岡", "唐津", "大村"
+  ];
+  const venueGroupMap = new Map(
     buildGroups(
       settledRows,
       item =>
         item.place ||
         `場コード${item.jcd}`
-    );
+    ).map(row => [row.label, row])
+  );
+  const venueGroups = VENUE_NAMES.map(label =>
+    venueGroupMap.get(label) || {
+      label,
+      count: 0,
+      honmeiHits: 0,
+      practicalCount: 0,
+      practicalHits: 0,
+      scenarioComparable: 0,
+      scenarioHits: 0
+    }
+  );
+  const RESULTS_VENUE_VERSION = "venue-24-display-20260806";
 
   const predictedScenarioGroups =
     buildGroups(
@@ -2519,7 +2538,9 @@
             <summary>
               <span class="result-group-title">${E(row.label)}</span>
               <span class="result-group-meta">
-                ${row.count}R・厳選${rate(row.practicalHits, row.practicalCount)}%
+                ${row.count > 0
+                  ? `${row.count}R・厳選${rate(row.practicalHits, row.practicalCount)}%`
+                  : "0R・データなし"}
               </span>
             </summary>
             <div class="result-group-body">
