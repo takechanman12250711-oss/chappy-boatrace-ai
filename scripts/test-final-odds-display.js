@@ -99,7 +99,22 @@ const unknownRace = {
     raceNo: 11,
     status: "finished"
   },
-  raceNo: 11
+  raceNo: 11,
+  ticketSheets: {
+    main: [{ ticket: "1-2-3", odds: null }],
+    cover: [{ ticket: "2-1-3", odds: null }],
+    flow: [{ ticket: "1-2-4", odds: null }],
+    hole: [{ ticket: "4-1-6", odds: null }],
+    all: []
+  },
+  mainSheet: {
+    tickets: [{ ticket: "1-2-3", odds: null }],
+    coverTickets: [{ ticket: "2-1-3", odds: null }],
+    flowTickets: [{ ticket: "1-2-4", odds: null }]
+  },
+  manshuSheet: {
+    tickets: [{ ticket: "4-1-6", odds: null }]
+  }
 };
 assert.strictEqual(finalOdds.prepare(unknownRace, storage), unknownRace);
 
