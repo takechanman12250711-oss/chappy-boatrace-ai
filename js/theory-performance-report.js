@@ -1,5 +1,7 @@
 "use strict";
 
+const skipAi = require("./skip-ai-shadow");
+
 function pct(n, d) {
   return d ? Math.round(n / d * 1000) / 10 : null;
 }
@@ -21,15 +23,53 @@ function practicalHitOf(record) {
   return null;
 }
 
+function confidenceOf(prediction) {
+  const value = Number(
+    prediction?.selectionScore ??
+    prediction?.mainLineConfidence ??
+    prediction?.confidence ??
+    prediction?.practicalSelection?.selectionScore ??
+    prediction?.practicalSelection?.score
+  );
+  return Number.isFinite(value) ? value : null;
+}
+
+function completenessOf(prediction) {
+  const explicit = Number(prediction?.evidenceCompleteness);
+  if (Number.isFinite(explicit)) return explicit;
+  const evidence = prediction?.verificationEvidence || {};
+  let points = 45;
+  if (Array.isArray(evidence?.scenarios) && evidence.scenarios.length) points += 25;
+  if (evidence?.marks) points += 15;
+  if (prediction?.exhibition || prediction?.exhibitionData) points += 10;
+  if (prediction?.weather || prediction?.raceInfo?.weather) points += 5;
+  return Math.min(100, points);
+}
+
 function skipDecisionOf(record) {
   const prediction = record?.prediction || {};
-  return String(
+  const stored = String(
     prediction?.skipAiDisplay?.decision ||
     prediction?.skipAiShadow?.decision ||
     prediction?.skipDecision?.decision ||
     prediction?.skipDecision ||
     ""
   );
+  if (stored) return stored;
+
+  const selectionScore = confidenceOf(prediction);
+  const scenarioAiV6Shadow = prediction?.scenarioAiV6Shadow;
+  if (selectionScore === null || !scenarioAiV6Shadow || typeof skipAi?.build !== "function") return "";
+  try {
+    return String(skipAi.build({
+      ...prediction,
+      scenarioAiV6Shadow,
+      selectionScore,
+      evidenceCompleteness: completenessOf(prediction)
+    })?.decision || "");
+  } catch {
+    return "";
+  }
 }
 
 function skipDecisionCorrect(decision, practicalHit) {
@@ -154,13 +194,13 @@ function summarize(rows, keyFn) {
 function build(records) {
   const rows = buildRows(records);
   return {
-    version: "3.0.0",
+    version: "3.1.0",
     status: rows.length ? "collecting-data" : "no-data",
     sampleCount: rows.length,
     theoryCount: new Set(rows.map(row => row.theoryKey)).size,
     metricDefinitions: {
       practicalHitRate: "当該理論が評価可能だった終了レースにおける実戦厳選的中率",
-      skipDecisionAccuracy: "見送りなら不的中、勝負候補なら的中を正解とした判定精度。注意判定は対象外"
+      skipDecisionAccuracy: "保存済み予想から見送りAIシャドー判定を再現し、見送りなら不的中、勝負候補なら的中を正解とした精度。注意判定は対象外"
     },
     byTheory: summarize(rows, row => row.theoryKey),
     byVenueTheory: summarize(rows, row => `${row.jcd}:${row.theoryKey}`),
@@ -169,4 +209,4 @@ function build(records) {
   };
 }
 
-module.exports = { pct, normalizeTicket, evaluationRows, practicalHitOf, skipDecisionOf, skipDecisionCorrect, buildRows, summarize, build };
+module.exports = { pct, normalizeTicket, evaluationRows, practicalHitOf, confidenceOf, completenessOf, skipDecisionOf, skipDecisionCorrect, buildRows, summarize, build };
