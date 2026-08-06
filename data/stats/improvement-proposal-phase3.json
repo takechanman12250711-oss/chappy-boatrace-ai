@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-08-06T12:20:23.561Z",
+  "source": "data/predictions/*.json",
+  "schemaVersion": 1,
+  "engineVersion": "improvement-proposal-phase3-20260806",
+  "status": "proposal-candidates-ready",
+  "minimumRaceCount": 100,
+  "settledRaceCount": 457,
+  "remainingRaceCount": 0,
+  "proposals": [
+    {
+      "code": "flow-reading-miss",
+      "label": "展開読み違い",
+      "theory": "展開理論",
+      "sampleCount": 379,
+      "occurrenceRate": 82.9,
+      "priority": "high",
+      "improvementCandidate": "展開成立条件と崩れ条件の再検証",
+      "expectedEffect": "展開一致率の改善余地を検証",
+      "confidenceBreakdown": {
+        "high": 357,
+        "medium": 22,
+        "low": 0
+      }
+    },
+    {
+      "code": "ticket-coverage-insufficient",
+      "label": "買い目不足",
+      "theory": "買い目構成",
+      "sampleCount": 379,
+      "occurrenceRate": 82.9,
+      "priority": "high",
+      "improvementCandidate": "展開内の残し・拾い不足を再検証",
+      "expectedEffect": "実戦厳選的中率の改善余地を検証",
+      "confidenceBreakdown": {
+        "high": 22,
+        "medium": 357,
+        "low": 0
+      }
+    },
+    {
+      "code": "ticket-spread-too-wide",
+      "label": "買い目広げ過ぎ",
+      "theory": "買い目構成",
+      "sampleCount": 98,
+      "occurrenceRate": 21.4,
+      "priority": "high",
+      "improvementCandidate": "不的中時の点数拡張条件を再検証",
+      "expectedEffect": "回収率の改善余地を検証",
+      "confidenceBreakdown": {
+        "high": 0,
+        "medium": 0,
+        "low": 98
+      }
+    }
+  ],
+  "proposalCount": 3,
+  "proposalOnly": true,
+  "humanApprovalRequired": true,
+  "usableForPrediction": false,
+  "automaticApplication": false,
+  "uiVisible": false
+}
