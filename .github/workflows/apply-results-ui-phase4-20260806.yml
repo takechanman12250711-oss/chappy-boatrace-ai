@@ -1,0 +1,54 @@
+name: Apply results UI phase4 20260806
+
+on:
+  push:
+    branches:
+      - feature/results-ui-phase4-20260806
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'feature/results-ui-phase4-20260806' || github.ref_name == 'feature/results-ui-phase4-20260806'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/results-ui-phase4-20260806
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply phase4
+        run: |
+          node scripts/apply-results-ui-phase4-20260806.js
+          sed -i 's/20260806-venue24-1/20260806-results-ui-phase4-1/g' scripts/test-load-performance.js
+      - name: Validate
+        run: |
+          node --check js/stats.js
+          grep -q 'results-ui-phase4-20260806' js/stats.js
+          grep -q 'AI改善メモ' js/stats.js
+          grep -q 'result-ticket-detail' js/stats.js
+          grep -q 'results analysis phase4 20260806' style.css
+          grep -q '20260806-results-ui-phase4-1' index.html
+          grep -q '<link rel="stylesheet" href="style.css?v=20260806-results-ui-phase4-1" />' index.html
+          grep -q '<script src="js/app-runtime-loader.js?v=20260806-results-ui-phase4-1"></script>' index.html
+          node scripts/test-load-performance.js
+          node scripts/check-charter.js
+      - name: Commit generated changes
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/stats.js style.css js/app-runtime-loader.js js/stats-runtime-loader.js index.html scripts/test-load-performance.js
+          git commit -m "結果分析UI Phase4を反映"
+          git pull --rebase origin feature/results-ui-phase4-20260806
+          git push origin HEAD:feature/results-ui-phase4-20260806
