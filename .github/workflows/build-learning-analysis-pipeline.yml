@@ -1,0 +1,67 @@
+name: Build learning analysis pipeline
+
+on:
+  workflow_run:
+    workflows: ["Collect official race results"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-learning-analysis-pipeline
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify pipeline
+        run: |
+          node --check scripts/build-learning-analysis-pipeline.js
+          node scripts/test-theory-performance-report.js
+          node scripts/test-profit-priority-ranking.js
+          node scripts/test-theory-adoption-phase5.js
+          node scripts/test-learning-pipeline-gate.js
+          node scripts/test-phase6-data-audit.js
+      - name: Build in fixed order
+        run: node scripts/build-learning-analysis-pipeline.js
+      - name: Verify generated safety flags
+        run: |
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const files=['theory-performance-report.json','theory-adoption-phase5.json','profit-priority-ranking.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
+          for(const file of files){
+            const p=`data/stats/${file}`;
+            if(!fs.existsSync(p)) throw new Error(`${p} が未生成`);
+            const data=JSON.parse(fs.readFileSync(p,'utf8'));
+            if(data.automaticApplication!==false || data.usableForPrediction!==false) throw new Error(`${p} の安全フラグ異常`);
+          }
+          const perf=JSON.parse(fs.readFileSync('data/stats/theory-performance-report.json','utf8'));
+          if(perf.version!=='3.3.0' || perf.theoryCount!==12) throw new Error('理論別成績が12理論の最新版ではありません');
+          const used=perf.byTheory.filter(row=>row.evaluatedCount>0);
+          if(used.some(row=>row.practicalEvaluatedCount!==row.evaluatedCount)) throw new Error('実戦厳選指標の保存漏れ');
+          if(used.some(row=>!Object.hasOwn(row,'skipEvaluatedCount')||!Object.hasOwn(row,'skipDecisionAccuracy'))) throw new Error('見送り判断指標の項目欠損');
+          if(used.some(row=>row.skipEvaluatedCount===0 && row.skipDecisionAccuracy!==null)) throw new Error('見送り判断の母数0を0%として誤保存');
+          const audit=JSON.parse(fs.readFileSync('data/stats/phase6-data-audit.json','utf8'));
+          if(audit.status!=='healthy' || audit.issueCount!==0) throw new Error(`Phase6監査異常: ${audit.issueCount}`);
+          NODE
+          node scripts/check-charter.js
+      - name: Save pipeline outputs
+        run: |
+          git add data/predictions data/stats
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Build unified learning analysis pipeline"
+          git pull --rebase origin main
+          git push origin main
