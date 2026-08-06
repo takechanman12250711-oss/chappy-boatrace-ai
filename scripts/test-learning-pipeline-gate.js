@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const gate = require("../js/learning-pipeline-gate");
+const builder = require("./build-learning-pipeline-gate");
 
 const records = Array.from({ length: 100 }, (_, index) => ({
   raceKey: `race-${index + 1}`,
@@ -41,5 +42,16 @@ assert(unsafe.safetyViolations.includes("automatic-application-enabled"));
 
 const collecting = gate.build(records, { ...safeProposal, status: "collecting-data", proposalCount: 0 });
 assert.equal(collecting.status, "collecting-data");
+
+const primary = { raceKey: "same-race", source: "primary" };
+const duplicateVerification = { raceKey: "same-race", source: "verification" };
+const verificationOnly = { raceKey: "verification-only", source: "verification" };
+const merged = builder.mergePredictionSources({
+  predictions: [primary],
+  verificationPredictions: [duplicateVerification, verificationOnly]
+});
+assert.equal(merged.length, 2);
+assert.equal(merged.find(row => row.raceKey === "same-race").source, "primary");
+assert.equal(merged.some(row => row.raceKey === "verification-only"), true);
 
 console.log("学習パイプライン統合ゲート Phase4: 合格");
