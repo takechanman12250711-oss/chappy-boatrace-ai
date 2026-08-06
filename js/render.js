@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const RENDER_VERSION = "render-ui-v3.6.0-ai-ticket-accordion";
+  const RENDER_VERSION = "render-ui-v3.7.0-display-polish";
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
@@ -1494,6 +1494,58 @@ if (raceInfoArea) {
       prediction.race?.entries ||
       prediction.entries ||
       [];
+
+    /* ensure all six boat evaluation tabs */
+    const existingBoatNos = new Set(
+      boatItems
+        .map(item => safeNum(item?.no, 0))
+        .filter(no => no >= 1 && no <= 6)
+    );
+
+    if (Array.isArray(boatSheet.evaluations)) {
+      boatSheet.evaluations
+        .slice(0, 6)
+        .forEach((item, index) => {
+          const boatNo = safeNum(
+            item?.no ?? item?.boatNo ?? item?.waku ?? item?.course,
+            index + 1
+          );
+          if (existingBoatNos.has(boatNo)) return;
+
+          const normalized = normalizeSheetItem(
+            item,
+            item?.role || "osa"
+          );
+          if (!normalized) return;
+
+          normalized.no = boatNo;
+          boatItems.push(normalized);
+          existingBoatNos.add(boatNo);
+        });
+    }
+
+    raceEntries.slice(0, 6).forEach((entry, index) => {
+      const boatNo = entryLaneNumber(entry, index);
+      if (existingBoatNos.has(boatNo)) return;
+
+      const normalized = normalizeSheetItem(
+        { ...entry, no: boatNo },
+        entry?.role || "osa"
+      );
+      if (!normalized) return;
+
+      normalized.no = boatNo;
+      normalized.name =
+        normalized.name ||
+        entry?.name ||
+        entry?.racerName ||
+        `${boatNo}号艇`;
+      normalized.comment =
+        normalized.comment ||
+        "艇評価の詳細データはありません。出走表情報を表示しています。";
+      boatItems.push(normalized);
+      existingBoatNos.add(boatNo);
+    });
 
     boatItems.forEach(item => {
       const entry = findEntryByLane(
@@ -3429,9 +3481,7 @@ function getPaperClassName(item) {
       isSelected
         ? `
       <div class="v3-note">
-        展開とコースを優先し、基本5〜7点で厳選。
-        独立した成立展開がある場合だけ最大10点まで追加します。
-        数字・オッズだけによる削除はしていません。
+        展開を最優先に実戦向けへ厳選。通常は5～7点、独立して成立する展開がある場合のみ最大10点まで追加します。オッズだけでは削除しません。
       </div>
 
       ${expansionHtml}
