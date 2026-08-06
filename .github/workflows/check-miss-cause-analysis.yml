@@ -1,0 +1,23 @@
+name: Check miss cause analysis
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/miss-cause-analysis-phase2]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate miss cause analysis
+        run: |
+          node --check js/miss-cause-analysis.js
+          node --check scripts/build-miss-cause-analysis.js
+          node --check scripts/test-miss-cause-analysis.js
+          node scripts/test-miss-cause-analysis.js
+          node scripts/check-charter.js
