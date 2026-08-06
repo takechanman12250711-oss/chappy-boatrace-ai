@@ -21,15 +21,8 @@ function validCourse(value) {
 }
 
 function branchMap(prediction) {
-  const branches =
-    prediction?.aiCore?.formations?.evidence?.branches ||
-    prediction?.formations?.evidence?.branches ||
-    [];
-  return new Map(
-    (Array.isArray(branches) ? branches : [])
-      .map(branch => [String(branch?.id || ""), branch])
-      .filter(([id]) => id)
-  );
+  const branches = prediction?.aiCore?.formations?.evidence?.branches || prediction?.formations?.evidence?.branches || [];
+  return new Map((Array.isArray(branches) ? branches : []).map(branch => [String(branch?.id || ""), branch]).filter(([id]) => id));
 }
 
 function branchUsesCourseEvidence(branch) {
@@ -55,76 +48,76 @@ function courseClaimForTicket(prediction, evidenceRow) {
   const ids = Array.isArray(evidenceRow?.branchIds) ? evidenceRow.branchIds : [];
   if (!ids.length) return null;
   const branches = branchMap(prediction);
-  const matched = ids
-    .map(id => branches.get(String(id)))
-    .filter(branchUsesCourseEvidence);
-  if (!matched.length) return null;
+  if (!ids.map(id => branches.get(String(id))).some(branchUsesCourseEvidence)) return null;
+  return { theoryKey: "course", label: "コース理論", theoryVersion: "structured-course-validation-v1", formal: true, source: "structured-course-validation" };
+}
+
+function stSlitEvidence(prediction) {
+  const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
+  const attackBoatNo = Number(support?.attackBoatNo || prediction?.flowPriority?.attackBoatNo || prediction?.flowPriority?.attackBoat || 0);
+  const stCoverage = Number(support?.dataCoverage?.st || 0);
+  const stRank = Number(support?.attackSTRank || 0);
+  const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+  const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+  const statements = [...confirms, ...alerts].map(String);
+  const explicit = statements.some(text => /ST|スリット/.test(text));
   return {
-    theoryKey: "course",
-    label: "コース理論",
-    theoryVersion: "structured-course-validation-v1",
+    formal: attackBoatNo >= 1 && attackBoatNo <= 6 && stCoverage >= 4 && stRank >= 1 && stRank <= 6 && explicit,
+    attackBoatNo,
+    stCoverage,
+    stRank,
+    statements
+  };
+}
+
+function stSlitClaimForTicket(prediction, ticket) {
+  const evidence = stSlitEvidence(prediction);
+  if (!evidence.formal) return null;
+  const boats = normalizeTicket(ticket).split("-").map(Number);
+  if (!boats.includes(evidence.attackBoatNo)) return null;
+  return {
+    theoryKey: "stSlit",
+    label: "ST・スリット理論",
+    theoryVersion: "flow-support-st-slit-v1",
     formal: true,
-    source: "structured-course-validation"
+    source: "flow-support-st-slit"
   };
 }
 
 function theoryClaimsFrom(prediction, practicalTickets) {
-  const evidence =
-    prediction?.practicalSelection?.verificationEvidence ||
-    prediction?.verificationEvidence ||
-    {};
-  const evidenceByTicket = new Map(
-    (Array.isArray(evidence?.tickets) ? evidence.tickets : [])
-      .map(row => [normalizeTicket(row?.ticket), row])
-  );
+  const evidence = prediction?.practicalSelection?.verificationEvidence || prediction?.verificationEvidence || {};
+  const evidenceByTicket = new Map((Array.isArray(evidence?.tickets) ? evidence.tickets : []).map(row => [normalizeTicket(row?.ticket), row]));
 
-  return (Array.isArray(practicalTickets) ? practicalTickets : [])
-    .map(item => {
-      const row = typeof item === "string" ? { ticket: item } : (item || {});
-      const ticket = normalizeTicket(row.ticket || row.line || row.formation);
-      const evidenceRow = evidenceByTicket.get(ticket) || {};
-      const baseClaims = Array.isArray(evidenceRow.theoryClaims)
-        ? evidenceRow.theoryClaims
-        : (Array.isArray(row.theoryClaims) ? row.theoryClaims : []);
-      const courseClaim = courseClaimForTicket(prediction, evidenceRow);
-      const claims = [...baseClaims, ...(courseClaim ? [courseClaim] : [])]
-        .filter((claim, index, all) => {
-          const key = String(claim?.theoryKey || claim?.key || "").trim();
-          return key && all.findIndex(other => String(other?.theoryKey || other?.key || "").trim() === key) === index;
-        });
-      return {
-        ticket,
-        category: normalizeCategory(
-          row.category || row.role || evidenceRow.category ||
-          (Array.isArray(evidenceRow.categories) ? evidenceRow.categories[0] : "")
-        ),
-        claims
-      };
-    })
-    .filter(row => row.ticket && row.claims.length);
+  return (Array.isArray(practicalTickets) ? practicalTickets : []).map(item => {
+    const row = typeof item === "string" ? { ticket: item } : (item || {});
+    const ticket = normalizeTicket(row.ticket || row.line || row.formation);
+    const evidenceRow = evidenceByTicket.get(ticket) || {};
+    const baseClaims = Array.isArray(evidenceRow.theoryClaims) ? evidenceRow.theoryClaims : (Array.isArray(row.theoryClaims) ? row.theoryClaims : []);
+    const courseClaim = courseClaimForTicket(prediction, evidenceRow);
+    const stSlitClaim = stSlitClaimForTicket(prediction, ticket);
+    const claims = [...baseClaims, ...(courseClaim ? [courseClaim] : []), ...(stSlitClaim ? [stSlitClaim] : [])]
+      .filter((claim, index, all) => {
+        const key = String(claim?.theoryKey || claim?.key || "").trim();
+        return key && all.findIndex(other => String(other?.theoryKey || other?.key || "").trim() === key) === index;
+      });
+    return {
+      ticket,
+      category: normalizeCategory(row.category || row.role || evidenceRow.category || (Array.isArray(evidenceRow.categories) ? evidenceRow.categories[0] : "")),
+      claims
+    };
+  }).filter(row => row.ticket && row.claims.length);
 }
 
 function build(prediction, practicalTickets) {
   const tickets = theoryClaimsFrom(prediction, practicalTickets);
   const groups = new Map();
-
   tickets.forEach(row => {
     const seen = new Set();
     row.claims.forEach(claim => {
       const key = String(claim?.theoryKey || claim?.key || "").trim();
       if (!key || seen.has(key)) return;
       seen.add(key);
-      const group = groups.get(key) || {
-        theoryKey: key,
-        label: String(claim?.label || claim?.theoryLabel || key).trim(),
-        version: String(claim?.theoryVersion || claim?.version || "").trim(),
-        formal: claim?.formal === true,
-        sources: new Set(),
-        ticketCount: 0,
-        mainTicketCount: 0,
-        categories: new Set(),
-        tickets: []
-      };
+      const group = groups.get(key) || { theoryKey: key, label: String(claim?.label || claim?.theoryLabel || key).trim(), version: String(claim?.theoryVersion || claim?.version || "").trim(), formal: claim?.formal === true, sources: new Set(), ticketCount: 0, mainTicketCount: 0, categories: new Set(), tickets: [] };
       const source = String(claim?.source || "").trim();
       if (source) group.sources.add(source);
       group.ticketCount += 1;
@@ -134,34 +127,8 @@ function build(prediction, practicalTickets) {
       groups.set(key, group);
     });
   });
-
-  const theories = [...groups.values()]
-    .map(group => ({
-      theoryKey: group.theoryKey,
-      label: group.label,
-      version: group.version,
-      formal: group.formal,
-      sources: [...group.sources].sort(),
-      ticketCount: group.ticketCount,
-      mainTicketCount: group.mainTicketCount,
-      categories: [...group.categories],
-      tickets: [...new Set(group.tickets)]
-    }))
-    .sort((a, b) =>
-      b.mainTicketCount - a.mainTicketCount ||
-      b.ticketCount - a.ticketCount ||
-      a.theoryKey.localeCompare(b.theoryKey)
-    );
-
-  return {
-    schemaVersion: 1,
-    status: theories.length ? "tracked" : "no-formal-theory-claims",
-    theoryCount: theories.length,
-    ticketCount: tickets.length,
-    theories,
-    usableForPrediction: false,
-    automaticApplication: false
-  };
+  const theories = [...groups.values()].map(group => ({ theoryKey: group.theoryKey, label: group.label, version: group.version, formal: group.formal, sources: [...group.sources].sort(), ticketCount: group.ticketCount, mainTicketCount: group.mainTicketCount, categories: [...group.categories], tickets: [...new Set(group.tickets)] })).sort((a, b) => b.mainTicketCount - a.mainTicketCount || b.ticketCount - a.ticketCount || a.theoryKey.localeCompare(b.theoryKey));
+  return { schemaVersion: 1, status: theories.length ? "tracked" : "no-formal-theory-claims", theoryCount: theories.length, ticketCount: tickets.length, theories, usableForPrediction: false, automaticApplication: false };
 }
 
-module.exports = { build, theoryClaimsFrom, branchUsesCourseEvidence, courseClaimForTicket };
+module.exports = { build, theoryClaimsFrom, branchUsesCourseEvidence, courseClaimForTicket, stSlitEvidence, stSlitClaimForTicket };
