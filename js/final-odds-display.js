@@ -98,24 +98,6 @@
     return byTicket;
   }
 
-  function save(prediction, storage = root?.localStorage) {
-    const key = raceKey(prediction);
-    const byTicket = collectOdds(prediction);
-
-    if (!key || !Object.keys(byTicket).length || !storage) return false;
-
-    storage.setItem(
-      `${STORAGE_PREFIX}${key}`,
-      JSON.stringify({
-        raceKey: key,
-        savedAt: new Date().toISOString(),
-        source: "official-last-retrieved",
-        byTicket
-      })
-    );
-    return true;
-  }
-
   function load(prediction, storage = root?.localStorage) {
     const key = raceKey(prediction);
     if (!key || !storage) return null;
@@ -128,6 +110,30 @@
     } catch (_) {
       return null;
     }
+  }
+
+  function save(prediction, storage = root?.localStorage) {
+    const key = raceKey(prediction);
+    const currentOdds = collectOdds(prediction);
+
+    if (!key || !Object.keys(currentOdds).length || !storage) return false;
+
+    const previous = load(prediction, storage);
+    const byTicket = {
+      ...(previous?.byTicket || {}),
+      ...currentOdds
+    };
+
+    storage.setItem(
+      `${STORAGE_PREFIX}${key}`,
+      JSON.stringify({
+        raceKey: key,
+        savedAt: new Date().toISOString(),
+        source: "official-last-retrieved",
+        byTicket
+      })
+    );
+    return true;
   }
 
   function isFinished(prediction) {
