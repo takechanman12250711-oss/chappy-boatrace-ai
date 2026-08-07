@@ -26,6 +26,7 @@ on:
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-race-parser.js"
       - "scripts/test-theory-integration.js"
+      - "scripts/test-theory-tag-catalog-reachability.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "js/collection-health.js"
@@ -95,6 +96,7 @@ jobs:
           node scripts/test-schedule-parser.js
           node scripts/test-race-parser.js
           node scripts/test-theory-integration.js
+          node scripts/test-theory-tag-catalog-reachability.js
           node scripts/test-boat-identity.js
           node scripts/check-charter.js
 
