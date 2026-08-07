@@ -40,10 +40,34 @@ assert.equal(stSlit.ticketCount, 1);
 assert.deepEqual(stSlit.tickets, ["1-4-3"]);
 assert.deepEqual(stSlit.sources, ["flow-support-st-slit"]);
 
+const diagnostics = result.evidenceDiagnostics;
+assert.equal(diagnostics.schemaVersion, 1);
+assert.equal(diagnostics.usableForPrediction, false);
+assert.equal(diagnostics.automaticApplication, false);
+const startDiagnostic = diagnostics.rows.find(row => row.theoryKey === "start");
+assert.equal(startDiagnostic.supportPresent, true);
+assert.equal(startDiagnostic.formal, true);
+assert.deepEqual(startDiagnostic.missingReasons, []);
+const skillDiagnostic = diagnostics.rows.find(row => row.theoryKey === "skill");
+assert.equal(skillDiagnostic.supportPresent, false);
+assert.equal(skillDiagnostic.formal, false);
+assert.deepEqual(skillDiagnostic.missingReasons, ["support-missing"]);
+const frameDiagnostic = diagnostics.rows.find(row => row.theoryKey === "frame-rise-fall");
+assert.deepEqual(frameDiagnostic.missingReasons, ["support-missing"]);
+const doubleDiagnostic = diagnostics.rows.find(row => row.theoryKey === "double-time");
+assert.deepEqual(doubleDiagnostic.missingReasons, ["support-missing"]);
+const newEngineDiagnostic = diagnostics.rows.find(row => row.theoryKey === "new-engine");
+assert.deepEqual(newEngineDiagnostic.missingReasons, ["support-missing"]);
+
 const insufficient = snapshot.stSlitEvidence({
   flowSupport: { attackBoatNo: 4, attackSTRank: 1, dataCoverage: { st: 3 }, confirms: ["4号艇はスリット上位"] }
 });
 assert.equal(insufficient.formal, false, "ST有効艇が4艇未満なら正式証拠にしない");
+const insufficientDiagnostic = snapshot.buildEvidenceDiagnostics({
+  flowSupport: { attackBoatNo: 4, attackSTRank: 1, dataCoverage: { st: 3 }, confirms: ["4号艇はスリット上位"] }
+}).rows.find(row => row.theoryKey === "start");
+assert.equal(insufficientDiagnostic.formal, false);
+assert.ok(insufficientDiagnostic.missingReasons.includes("st-coverage-under-4"));
 assert.equal(snapshot.stSlitClaimForTicket(prediction, "1-2-3"), null, "中心攻め艇を含まない買い目へST理論を水増し帰属しない");
 assert.equal(result.usableForPrediction, false);
 assert.equal(result.automaticApplication, false);
