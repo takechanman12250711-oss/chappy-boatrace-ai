@@ -3,7 +3,7 @@ name: Audit prediction index size 20260807
 on:
   push:
     branches:
-      - chappy/audit-prediction-index-size-20260807
+      - chappy/verification-index-field-audit-20260807
     paths:
       - "scripts/audit-prediction-index-size.js"
       - ".github/workflows/audit-prediction-index-size-20260807.yml"
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: chappy/audit-prediction-index-size-20260807
+          ref: chappy/verification-index-field-audit-20260807
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -33,6 +33,6 @@ jobs:
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Record prediction index size audit"
-          git pull --rebase origin chappy/audit-prediction-index-size-20260807
-          git push origin HEAD:chappy/audit-prediction-index-size-20260807
+          git commit -m "Record verification prediction size audit"
+          git pull --rebase origin chappy/verification-index-field-audit-20260807
+          git push origin HEAD:chappy/verification-index-field-audit-20260807
