@@ -46,6 +46,8 @@ jobs:
           node --check scripts/build-improvement-proposal-report.js
           node --check js/theory-adoption-phase5.js
           node --check scripts/build-theory-adoption-phase5.js
+          node --check scripts/compact-prediction-index.js
+          node scripts/test-compact-prediction-index.js
           node scripts/test-collect-results.js
           node scripts/test-repair-recent-results.js
           node scripts/test-result-review.js
@@ -120,6 +122,7 @@ jobs:
           node scripts/build-theory-stop-decision-report.js
           node scripts/test-build-prediction-index.js
           node scripts/build-prediction-index.js
+          node scripts/compact-prediction-index.js
 
       - name: Save collected results
         run: |
