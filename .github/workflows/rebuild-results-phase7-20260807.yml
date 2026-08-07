@@ -1,0 +1,91 @@
+name: Rebuild 20260807 results and Phase7
+
+on:
+  push:
+    branches:
+      - chappy/rebuild-results-phase7-20260807
+    paths:
+      - ".github/workflows/rebuild-results-phase7-20260807.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rebuild-results-phase7-20260807
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@v4
+        with:
+          ref: chappy/rebuild-results-phase7-20260807
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify void classification
+        run: |
+          node --check scripts/collect-results.js
+          node scripts/test-collect-results.js
+
+      - name: Rebuild official results and theory evidence
+        env:
+          COLLECT_DATE: "20260807"
+        run: |
+          node scripts/repair-recent-results.js
+          node scripts/build-result-review.js
+          node scripts/build-theory-evaluations.js
+          node scripts/build-miss-cause-analysis.js
+          node scripts/build-improvement-proposal-report.js
+          node scripts/build-theory-adoption-phase5.js
+          node scripts/build-scenario-ai-v6-verification.js
+          node scripts/build-theory-performance-report.js
+          node scripts/build-theory-improvement-proposals.js
+          node scripts/build-prediction-index.js
+          node scripts/compact-prediction-index.js
+          node scripts/test-theory-performance-report.js
+          node scripts/test-load-performance.js
+
+      - name: Show rebuilt evidence
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const result = JSON.parse(fs.readFileSync('data/results/20260807.json','utf8'));
+          const report = JSON.parse(fs.readFileSync('data/stats/theory-performance-report.json','utf8'));
+          console.log('RESULT_SUMMARY', JSON.stringify({
+            completedRaces: result.completedRaces,
+            voidRaces: result.voidRaces,
+            resolvedRaces: result.resolvedRaces,
+            pendingRaces: result.pendingRaces,
+            failedRaces: result.failedRaces,
+            complete: result.complete,
+            voidRaceKeys: result.voidRaceKeys,
+            pendingRaceKeys: result.pendingRaceKeys
+          }));
+          console.log('PHASE7_SUMMARY', JSON.stringify({
+            generatedAt: report.generatedAt,
+            sampleCount: report.sampleCount,
+            theoryCount: report.theoryCount,
+            status: report.status
+          }));
+          NODE
+
+      - name: Save rebuilt data
+        run: |
+          git add data/results data/predictions data/stats
+          if git diff --cached --quiet; then
+            echo "再生成による変更はありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Rebuild 20260807 result evidence"
+          git pull --rebase origin chappy/rebuild-results-phase7-20260807
+          git push origin HEAD:chappy/rebuild-results-phase7-20260807
