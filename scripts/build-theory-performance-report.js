@@ -56,7 +56,8 @@ function main() {
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, JSON.stringify(built, null, 2) + "\n");
   console.log(`理論別成績：${built.byTheory.length}理論／${built.sampleCount}評価行`);
-  console.log(`0件理論診断：${built.zeroEvidenceDiagnostics.map(row => `${row.label}:${row.diagnosis}[support=${row.supportPresentCount},formal=${row.formalEvidenceCount},tagged=${row.taggedCount}]`).join(" / ")}`);
+  console.log("0件理論診断詳細:");
+  console.log(JSON.stringify(built.zeroEvidenceDiagnostics, null, 2));
 }
 
 if (require.main === module) main();
