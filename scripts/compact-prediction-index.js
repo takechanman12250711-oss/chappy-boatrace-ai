@@ -59,12 +59,26 @@ function mergeEvidenceIntoPracticalTickets(prediction) {
   return prediction;
 }
 
+function removeDuplicateVerificationFlags(record) {
+  if (!record || typeof record !== "object") return record;
+  const prediction = record.prediction;
+  if (!prediction || typeof prediction !== "object") return record;
+  if (
+    Object.prototype.hasOwnProperty.call(record, "isRetrospective") &&
+    prediction.isRetrospective === record.isRetrospective
+  ) {
+    delete prediction.isRetrospective;
+  }
+  return record;
+}
+
 function compactIndex(index) {
   if (!index || typeof index !== "object") return index;
   ["predictions", "verificationPredictions"].forEach(key => {
     if (!Array.isArray(index[key])) return;
     index[key].forEach(record => {
       mergeEvidenceIntoPracticalTickets(record?.prediction);
+      if (key === "verificationPredictions") removeDuplicateVerificationFlags(record);
     });
   });
   return index;
@@ -91,6 +105,7 @@ if (require.main === module) main();
 module.exports = {
   normalizeTicket,
   mergeEvidenceIntoPracticalTickets,
+  removeDuplicateVerificationFlags,
   compactIndex,
   compactPredictionIndexFile
 };
