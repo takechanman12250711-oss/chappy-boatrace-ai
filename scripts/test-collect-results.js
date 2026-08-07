@@ -298,9 +298,16 @@ assert.equal(
   true,
   "6艇すべてF/Lで着順・3連単がないレースを不成立と判定する"
 );
+const normalizedVoid =
+  normalizeResolvedRace(voidCandidate);
 assert.equal(
-  normalizeResolvedRace(voidCandidate).status,
+  normalizedVoid.status,
   "void"
+);
+assert.equal(
+  normalizedVoid.resultAvailable,
+  false,
+  "不成立は通常の的中評価対象へ昇格させない"
 );
 const voidMerged =
   mergeOfficialResults(
