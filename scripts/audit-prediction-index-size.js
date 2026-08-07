@@ -34,12 +34,14 @@ function fieldBreakdown(rows) {
     }));
 }
 
+function nestedObjects(rows, parentKey) {
+  return rows
+    .map(row => row?.[parentKey])
+    .filter(value => value && typeof value === "object" && !Array.isArray(value));
+}
+
 function nestedFieldBreakdown(rows, parentKey) {
-  return fieldBreakdown(
-    rows
-      .map(row => row?.[parentKey])
-      .filter(value => value && typeof value === "object" && !Array.isArray(value))
-  );
+  return fieldBreakdown(nestedObjects(rows, parentKey));
 }
 
 function largestRows(rows, limit = 20) {
@@ -66,18 +68,15 @@ const predictions = Array.isArray(parsed.predictions) ? parsed.predictions : [];
 const verificationPredictions = Array.isArray(parsed.verificationPredictions)
   ? parsed.verificationPredictions
   : [];
-
-const verificationPredictionFields = nestedFieldBreakdown(
-  verificationPredictions,
-  "prediction"
+const verificationPredictionObjects = nestedObjects(verificationPredictions, "prediction");
+const verificationEvidenceObjects = nestedObjects(
+  verificationPredictionObjects,
+  "verificationEvidence"
 );
-const verificationResultFields = nestedFieldBreakdown(
-  verificationPredictions,
-  "result"
-);
+const verificationResultObjects = nestedObjects(verificationPredictions, "result");
 
 const report = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   generatedAt: new Date().toISOString(),
   source: "data/predictions/index.json",
   totalBytes: Buffer.byteLength(raw, "utf8"),
@@ -89,8 +88,9 @@ const report = {
   largestPredictionFields: fieldBreakdown(predictions).slice(0, 30),
   largestRows: largestRows(predictions),
   verificationFields: fieldBreakdown(verificationPredictions),
-  verificationPredictionFields,
-  verificationResultFields,
+  verificationPredictionFields: fieldBreakdown(verificationPredictionObjects),
+  verificationEvidenceFields: fieldBreakdown(verificationEvidenceObjects),
+  verificationResultFields: fieldBreakdown(verificationResultObjects),
   largestVerificationRows: largestRows(verificationPredictions, 30),
   safeReductionRule: "正本の日次JSONに保持される項目のみをindex軽量化候補とし、結果画面・成績集計・校正・理論評価で参照される項目は削除候補にしない。",
   note: "容量の内訳監査のみ。保持件数・3MB上限・予想ロジック・買い目・UI・理論重みは変更しない。"
