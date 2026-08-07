@@ -30,7 +30,9 @@ jobs:
           node --check scripts/build-learning-analysis-pipeline.js
           node scripts/test-theory-performance-report.js
           node scripts/test-theory-evidence-coverage-phase7.js
+          node scripts/test-theory-evidence-growth-monitor.js
           node scripts/test-profit-priority-ranking.js
+          node scripts/test-theory-profit-review-phase8.js
           node scripts/test-theory-adoption-phase5.js
           node scripts/test-learning-pipeline-gate.js
           node scripts/test-phase6-data-audit.js
@@ -40,7 +42,7 @@ jobs:
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
-          const files=['theory-performance-report.json','theory-evidence-coverage-phase7.json','theory-adoption-phase5.json','profit-priority-ranking.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
+          const files=['theory-performance-report.json','theory-evidence-coverage-phase7.json','theory-evidence-growth-monitor.json','theory-adoption-phase5.json','profit-priority-ranking.json','theory-profit-review-phase8.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
           for(const file of files){
             const p=`data/stats/${file}`;
             if(!fs.existsSync(p)) throw new Error(`${p} が未生成`);
@@ -51,6 +53,8 @@ jobs:
           if(perf.version!=='3.3.0' || perf.theoryCount!==12) throw new Error('理論別成績が12理論の最新版ではありません');
           const phase7=JSON.parse(fs.readFileSync('data/stats/theory-evidence-coverage-phase7.json','utf8'));
           if(phase7.theoryCount!==12) throw new Error('Phase7の理論数異常');
+          const phase8=JSON.parse(fs.readFileSync('data/stats/theory-profit-review-phase8.json','utf8'));
+          if(phase8.minimumEvidenceCount!==30 || phase8.oneCandidateOnly!==true) throw new Error('Phase8レビュー条件異常');
           const used=perf.byTheory.filter(row=>row.evaluatedCount>0);
           if(used.some(row=>row.practicalEvaluatedCount!==row.evaluatedCount)) throw new Error('実戦厳選指標の保存漏れ');
           if(used.some(row=>!Object.hasOwn(row,'skipEvaluatedCount')||!Object.hasOwn(row,'skipDecisionAccuracy'))) throw new Error('見送り判断指標の項目欠損');
