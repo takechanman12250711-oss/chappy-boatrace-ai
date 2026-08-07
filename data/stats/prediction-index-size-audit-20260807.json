@@ -1,23 +1,24 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-08-07T10:39:45.589Z",
+  "schemaVersion": 3,
+  "generatedAt": "2026-08-07T11:33:24.530Z",
   "source": "data/predictions/index.json",
-  "totalBytes": 3161920,
+  "totalBytes": 3194153,
   "limitBytes": 3000000,
-  "overLimitBytes": 161920,
+  "overLimitBytes": 194153,
   "predictionRows": 15,
+  "verificationPredictionRows": 300,
   "topLevel": [
     {
       "key": "verificationPredictions",
-      "bytes": 2680778,
-      "prettyBytes": 5184959,
+      "bytes": 2707837,
+      "prettyBytes": 5246115,
       "rows": 300
     },
     {
       "key": "shadowV2Predictions",
-      "bytes": 172358,
-      "prettyBytes": 209725,
-      "rows": 265
+      "bytes": 175680,
+      "prettyBytes": 213752,
+      "rows": 270
     },
     {
       "key": "predictions",
@@ -27,9 +28,9 @@
     },
     {
       "key": "runs",
-      "bytes": 150415,
-      "prettyBytes": 251169,
-      "rows": 92
+      "bytes": 152267,
+      "prettyBytes": 254280,
+      "rows": 93
     },
     {
       "key": "retentionLimits",
@@ -291,5 +292,526 @@
       "bytes": 4788
     }
   ],
+  "verificationFields": [
+    {
+      "key": "prediction",
+      "bytes": 2067304,
+      "present": 300,
+      "avgBytesWhenPresent": 6891
+    },
+    {
+      "key": "result",
+      "bytes": 355562,
+      "present": 300,
+      "avgBytesWhenPresent": 1185
+    },
+    {
+      "key": "selection",
+      "bytes": 82537,
+      "present": 300,
+      "avgBytesWhenPresent": 275
+    },
+    {
+      "key": "shadowV2Reference",
+      "bytes": 77920,
+      "present": 300,
+      "avgBytesWhenPresent": 260
+    },
+    {
+      "key": "deadlineAt",
+      "bytes": 8100,
+      "present": 300,
+      "avgBytesWhenPresent": 27
+    },
+    {
+      "key": "selectedAt",
+      "bytes": 7800,
+      "present": 300,
+      "avgBytesWhenPresent": 26
+    },
+    {
+      "key": "raceKey",
+      "bytes": 4558,
+      "present": 300,
+      "avgBytesWhenPresent": 15
+    },
+    {
+      "key": "date",
+      "bytes": 3000,
+      "present": 300,
+      "avgBytesWhenPresent": 10
+    },
+    {
+      "key": "scoreBand",
+      "bytes": 2984,
+      "present": 300,
+      "avgBytesWhenPresent": 10
+    },
+    {
+      "key": "place",
+      "bytes": 2583,
+      "present": 300,
+      "avgBytesWhenPresent": 9
+    },
+    {
+      "key": "verificationMode",
+      "bytes": 2430,
+      "present": 300,
+      "avgBytesWhenPresent": 8
+    },
+    {
+      "key": "isRetrospective",
+      "bytes": 1500,
+      "present": 300,
+      "avgBytesWhenPresent": 5
+    },
+    {
+      "key": "officialResultUsedForEvaluation",
+      "bytes": 1500,
+      "present": 300,
+      "avgBytesWhenPresent": 5
+    },
+    {
+      "key": "complete",
+      "bytes": 1500,
+      "present": 300,
+      "avgBytesWhenPresent": 5
+    },
+    {
+      "key": "calibrationEligible",
+      "bytes": 1500,
+      "present": 300,
+      "avgBytesWhenPresent": 5
+    },
+    {
+      "key": "jcd",
+      "bytes": 1200,
+      "present": 300,
+      "avgBytesWhenPresent": 4
+    },
+    {
+      "key": "timing",
+      "bytes": 1200,
+      "present": 300,
+      "avgBytesWhenPresent": 4
+    },
+    {
+      "key": "capturedAt",
+      "bytes": 600,
+      "present": 300,
+      "avgBytesWhenPresent": 2
+    },
+    {
+      "key": "raceNo",
+      "bytes": 358,
+      "present": 300,
+      "avgBytesWhenPresent": 1
+    }
+  ],
+  "verificationPredictionFields": [
+    {
+      "key": "verificationEvidence",
+      "bytes": 1156646,
+      "present": 300,
+      "avgBytesWhenPresent": 3855
+    },
+    {
+      "key": "preRaceConditions",
+      "bytes": 311624,
+      "present": 300,
+      "avgBytesWhenPresent": 1039
+    },
+    {
+      "key": "practicalTickets",
+      "bytes": 308964,
+      "present": 300,
+      "avgBytesWhenPresent": 1030
+    },
+    {
+      "key": "raceFlow",
+      "bytes": 69069,
+      "present": 300,
+      "avgBytesWhenPresent": 230
+    },
+    {
+      "key": "mainSheet",
+      "bytes": 51287,
+      "present": 300,
+      "avgBytesWhenPresent": 171
+    },
+    {
+      "key": "manshuPower",
+      "bytes": 39900,
+      "present": 300,
+      "avgBytesWhenPresent": 133
+    },
+    {
+      "key": "confidence",
+      "bytes": 39573,
+      "present": 300,
+      "avgBytesWhenPresent": 132
+    },
+    {
+      "key": "internalEvaluation",
+      "bytes": 16108,
+      "present": 300,
+      "avgBytesWhenPresent": 54
+    },
+    {
+      "key": "predictionMode",
+      "bytes": 8295,
+      "present": 300,
+      "avgBytesWhenPresent": 28
+    },
+    {
+      "key": "version",
+      "bytes": 7338,
+      "present": 300,
+      "avgBytesWhenPresent": 24
+    },
+    {
+      "key": "isRetrospective",
+      "bytes": 1500,
+      "present": 300,
+      "avgBytesWhenPresent": 5
+    }
+  ],
+  "verificationEvidenceFields": [
+    {
+      "key": "tickets",
+      "bytes": 898058,
+      "present": 300,
+      "avgBytesWhenPresent": 2994
+    },
+    {
+      "key": "roleClaims",
+      "bytes": 94240,
+      "present": 300,
+      "avgBytesWhenPresent": 314
+    },
+    {
+      "key": "theoryClaims",
+      "bytes": 53868,
+      "present": 300,
+      "avgBytesWhenPresent": 180
+    },
+    {
+      "key": "generation",
+      "bytes": 30495,
+      "present": 300,
+      "avgBytesWhenPresent": 102
+    },
+    {
+      "key": "mainScenario",
+      "bytes": 28293,
+      "present": 300,
+      "avgBytesWhenPresent": 94
+    },
+    {
+      "key": "theorySetFingerprint",
+      "bytes": 9092,
+      "present": 300,
+      "avgBytesWhenPresent": 30
+    },
+    {
+      "key": "roleSchemaVersion",
+      "bytes": 300,
+      "present": 300,
+      "avgBytesWhenPresent": 1
+    },
+    {
+      "key": "theorySchemaVersion",
+      "bytes": 300,
+      "present": 300,
+      "avgBytesWhenPresent": 1
+    }
+  ],
+  "verificationResultFields": [
+    {
+      "key": "supportIdentity",
+      "bytes": 106586,
+      "present": 256,
+      "avgBytesWhenPresent": 416
+    },
+    {
+      "key": "starts",
+      "bytes": 106132,
+      "present": 256,
+      "avgBytesWhenPresent": 415
+    },
+    {
+      "key": "scenarioVerification",
+      "bytes": 41395,
+      "present": 256,
+      "avgBytesWhenPresent": 162
+    },
+    {
+      "key": "finishers",
+      "bytes": 30736,
+      "present": 256,
+      "avgBytesWhenPresent": 120
+    },
+    {
+      "key": "settledAt",
+      "bytes": 6656,
+      "present": 256,
+      "avgBytesWhenPresent": 26
+    },
+    {
+      "key": "verificationInputFingerprint",
+      "bytes": 6528,
+      "present": 256,
+      "avgBytesWhenPresent": 26
+    },
+    {
+      "key": "winningMethod",
+      "bytes": 2474,
+      "present": 256,
+      "avgBytesWhenPresent": 10
+    },
+    {
+      "key": "resultTicket",
+      "bytes": 1792,
+      "present": 256,
+      "avgBytesWhenPresent": 7
+    },
+    {
+      "key": "settled",
+      "bytes": 1024,
+      "present": 256,
+      "avgBytesWhenPresent": 4
+    },
+    {
+      "key": "payout",
+      "bytes": 998,
+      "present": 256,
+      "avgBytesWhenPresent": 4
+    },
+    {
+      "key": "popularity",
+      "bytes": 377,
+      "present": 256,
+      "avgBytesWhenPresent": 1
+    },
+    {
+      "key": "schemaVersion",
+      "bytes": 256,
+      "present": 256,
+      "avgBytesWhenPresent": 1
+    }
+  ],
+  "largestVerificationRows": [
+    {
+      "raceKey": "20260801-15-1",
+      "date": "20260801",
+      "place": "丸亀",
+      "raceNo": 1,
+      "bytes": 13209
+    },
+    {
+      "raceKey": "20260801-15-11",
+      "date": "20260801",
+      "place": "丸亀",
+      "raceNo": 11,
+      "bytes": 13071
+    },
+    {
+      "raceKey": "20260801-20-1",
+      "date": "20260801",
+      "place": "若松",
+      "raceNo": 1,
+      "bytes": 13044
+    },
+    {
+      "raceKey": "20260730-18-2",
+      "date": "20260730",
+      "place": "徳山",
+      "raceNo": 2,
+      "bytes": 12927
+    },
+    {
+      "raceKey": "20260730-22-1",
+      "date": "20260730",
+      "place": "福岡",
+      "raceNo": 1,
+      "bytes": 12908
+    },
+    {
+      "raceKey": "20260802-05-1",
+      "date": "20260802",
+      "place": "多摩川",
+      "raceNo": 1,
+      "bytes": 12903
+    },
+    {
+      "raceKey": "20260730-24-10",
+      "date": "20260730",
+      "place": "大村",
+      "raceNo": 10,
+      "bytes": 12900
+    },
+    {
+      "raceKey": "20260801-18-2",
+      "date": "20260801",
+      "place": "徳山",
+      "raceNo": 2,
+      "bytes": 12880
+    },
+    {
+      "raceKey": "20260802-16-12",
+      "date": "20260802",
+      "place": "児島",
+      "raceNo": 12,
+      "bytes": 12859
+    },
+    {
+      "raceKey": "20260731-10-3",
+      "date": "20260731",
+      "place": "三国",
+      "raceNo": 3,
+      "bytes": 12819
+    },
+    {
+      "raceKey": "20260801-06-1",
+      "date": "20260801",
+      "place": "浜名湖",
+      "raceNo": 1,
+      "bytes": 12808
+    },
+    {
+      "raceKey": "20260802-23-5",
+      "date": "20260802",
+      "place": "唐津",
+      "raceNo": 5,
+      "bytes": 12806
+    },
+    {
+      "raceKey": "20260802-01-9",
+      "date": "20260802",
+      "place": "桐生",
+      "raceNo": 9,
+      "bytes": 12802
+    },
+    {
+      "raceKey": "20260730-19-3",
+      "date": "20260730",
+      "place": "下関",
+      "raceNo": 3,
+      "bytes": 12799
+    },
+    {
+      "raceKey": "20260801-08-8",
+      "date": "20260801",
+      "place": "常滑",
+      "raceNo": 8,
+      "bytes": 12790
+    },
+    {
+      "raceKey": "20260730-24-1",
+      "date": "20260730",
+      "place": "大村",
+      "raceNo": 1,
+      "bytes": 12770
+    },
+    {
+      "raceKey": "20260731-05-12",
+      "date": "20260731",
+      "place": "多摩川",
+      "raceNo": 12,
+      "bytes": 12713
+    },
+    {
+      "raceKey": "20260730-15-10",
+      "date": "20260730",
+      "place": "丸亀",
+      "raceNo": 10,
+      "bytes": 12711
+    },
+    {
+      "raceKey": "20260802-23-2",
+      "date": "20260802",
+      "place": "唐津",
+      "raceNo": 2,
+      "bytes": 12689
+    },
+    {
+      "raceKey": "20260731-15-1",
+      "date": "20260731",
+      "place": "丸亀",
+      "raceNo": 1,
+      "bytes": 12654
+    },
+    {
+      "raceKey": "20260731-06-7",
+      "date": "20260731",
+      "place": "浜名湖",
+      "raceNo": 7,
+      "bytes": 12630
+    },
+    {
+      "raceKey": "20260801-15-4",
+      "date": "20260801",
+      "place": "丸亀",
+      "raceNo": 4,
+      "bytes": 12623
+    },
+    {
+      "raceKey": "20260730-04-1",
+      "date": "20260730",
+      "place": "平和島",
+      "raceNo": 1,
+      "bytes": 12610
+    },
+    {
+      "raceKey": "20260731-05-7",
+      "date": "20260731",
+      "place": "多摩川",
+      "raceNo": 7,
+      "bytes": 12600
+    },
+    {
+      "raceKey": "20260731-11-1",
+      "date": "20260731",
+      "place": "びわこ",
+      "raceNo": 1,
+      "bytes": 12578
+    },
+    {
+      "raceKey": "20260801-06-12",
+      "date": "20260801",
+      "place": "浜名湖",
+      "raceNo": 12,
+      "bytes": 12571
+    },
+    {
+      "raceKey": "20260801-16-2",
+      "date": "20260801",
+      "place": "児島",
+      "raceNo": 2,
+      "bytes": 12571
+    },
+    {
+      "raceKey": "20260801-05-2",
+      "date": "20260801",
+      "place": "多摩川",
+      "raceNo": 2,
+      "bytes": 12543
+    },
+    {
+      "raceKey": "20260801-18-6",
+      "date": "20260801",
+      "place": "徳山",
+      "raceNo": 6,
+      "bytes": 12499
+    },
+    {
+      "raceKey": "20260731-20-1",
+      "date": "20260731",
+      "place": "若松",
+      "raceNo": 1,
+      "bytes": 12495
+    }
+  ],
+  "safeReductionRule": "正本の日次JSONに保持される項目のみをindex軽量化候補とし、結果画面・成績集計・校正・理論評価で参照される項目は削除候補にしない。",
   "note": "容量の内訳監査のみ。保持件数・3MB上限・予想ロジック・買い目・UI・理論重みは変更しない。"
 }
