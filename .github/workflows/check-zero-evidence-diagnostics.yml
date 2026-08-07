@@ -1,0 +1,27 @@
+name: Check zero-evidence diagnostics
+
+on:
+  pull_request:
+    paths:
+      - "scripts/theory-zero-evidence-diagnostics.js"
+      - "scripts/test-theory-zero-evidence-diagnostics.js"
+      - "scripts/build-theory-performance-report.js"
+      - ".github/workflows/check-zero-evidence-diagnostics.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify zero-evidence diagnostics
+        run: |
+          node --check scripts/theory-zero-evidence-diagnostics.js
+          node scripts/test-theory-zero-evidence-diagnostics.js
+          node scripts/build-theory-performance-report.js
+          node -e 'const r=require("./data/stats/theory-performance-report.json"); console.log(JSON.stringify(r.zeroEvidenceDiagnostics,null,2)); if(!Array.isArray(r.zeroEvidenceDiagnostics)||r.zeroEvidenceDiagnostics.length!==5) process.exit(1)'
