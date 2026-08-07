@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-08-07T03:54:13.366Z",
+  "source": "theory-improvement-proposal-phase9.json",
+  "schemaVersion": 1,
+  "engineVersion": "theory-ab-phase10-20260807",
+  "status": "waiting-for-approved-phase9-proposal",
+  "sourceStatus": "waiting-for-phase8-candidate",
+  "metricOrder": [
+    "recoveryRate",
+    "practicalHitRate",
+    "skipDecisionAccuracy",
+    "hitRate"
+  ],
+  "baselineA": {
+    "label": "A: current-production",
+    "immutable": true,
+    "productionPrediction": true,
+    "productionPurchaseSelection": true
+  },
+  "candidateB": null,
+  "comparison": {
+    "minimumComparableRaces": 50,
+    "metrics": [
+      "recoveryRate",
+      "practicalHitRate",
+      "skipDecisionAccuracy",
+      "hitRate"
+    ],
+    "resultStatuses": [
+      "a-win",
+      "b-win",
+      "draw",
+      "insufficient-data"
+    ],
+    "automaticWinnerSelection": false
+  },
+  "proposalApproved": false,
+  "humanApprovalRequired": true,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "uiVisible": false
+}
