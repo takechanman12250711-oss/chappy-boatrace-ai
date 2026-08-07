@@ -7,6 +7,12 @@ on:
     paths:
       - "scripts/verify-compacted-index-20260807.js"
       - ".github/workflows/verify-compacted-index-20260807.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/verify-compacted-index-20260807.js"
+      - ".github/workflows/verify-compacted-index-20260807.yml"
   workflow_dispatch:
 
 permissions:
@@ -18,7 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: chappy/verify-compacted-index-20260807
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -28,7 +33,8 @@ jobs:
           node --check scripts/verify-compacted-index-20260807.js
           node scripts/verify-compacted-index-20260807.js > data/stats/compacted-index-verification-20260807.json
           node scripts/test-load-performance.js
-      - name: Save verification report
+      - name: Save verification report on branch push only
+        if: github.event_name == 'push'
         run: |
           git add data/stats/compacted-index-verification-20260807.json
           if git diff --cached --quiet; then exit 0; fi
