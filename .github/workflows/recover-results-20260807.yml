@@ -1,0 +1,56 @@
+name: Recover official race results 20260807
+
+on:
+  push:
+    branches:
+      - chappy/recover-results-20260807
+    paths:
+      - ".github/workflows/recover-results-20260807.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: recover-official-results-20260807
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chappy/recover-results-20260807
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Recover 20260807 results
+        env:
+          COLLECT_DATE: "20260807"
+        run: |
+          node --check scripts/collect-results.js
+          node --check scripts/repair-recent-results.js
+          node scripts/repair-recent-results.js --date=20260807
+          node scripts/build-result-review.js
+          node scripts/build-theory-evaluations.js
+          node scripts/build-miss-cause-analysis.js
+          node scripts/build-improvement-proposal-report.js
+          node scripts/build-theory-adoption-phase5.js
+          node scripts/build-scenario-ai-v6-verification.js
+          node scripts/build-prediction-index.js
+          node scripts/compact-prediction-index.js
+      - name: Save recovered results
+        run: |
+          git add data/results data/predictions data/stats
+          if git diff --cached --quiet; then
+            echo "保存する変更はありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Recover official race results 20260807"
+          git pull --rebase origin chappy/recover-results-20260807
+          git push origin HEAD:chappy/recover-results-20260807
