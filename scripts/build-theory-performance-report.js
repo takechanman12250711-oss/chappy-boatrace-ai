@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const report = require("../js/theory-performance-report");
+const zeroDiagnostics = require("./theory-zero-evidence-diagnostics");
 
 const root = path.resolve(__dirname, "..");
 const dir = path.join(root, "data", "predictions");
@@ -44,15 +45,19 @@ function collect() {
 }
 
 function main() {
+  const records = collect();
   const built = {
     generatedAt: new Date().toISOString(),
     source: "data/predictions/*.json",
     deduplication: "predictions-preferred-over-verificationPredictions",
-    ...report.build(collect())
+    ...report.build(records),
+    zeroEvidenceDiagnostics: zeroDiagnostics.build(records)
   };
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, JSON.stringify(built, null, 2) + "\n");
   console.log(`理論別成績：${built.byTheory.length}理論／${built.sampleCount}評価行`);
+  console.log("0件理論診断詳細:");
+  console.log(JSON.stringify(built.zeroEvidenceDiagnostics, null, 2));
 }
 
 if (require.main === module) main();
