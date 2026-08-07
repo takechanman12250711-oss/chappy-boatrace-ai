@@ -1,6 +1,15 @@
 name: Collect official race results
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/collect-results.yml"
+      - "scripts/collect-results.js"
+      - "scripts/repair-recent-results.js"
+      - "scripts/test-collect-results.js"
+      - "scripts/test-repair-recent-results.js"
   schedule:
     - cron: "30 14 * * *" # 23:30 JST
     - cron: "15 15 * * *" # 00:15 JST・遅延結果と後追加予想を再照合
