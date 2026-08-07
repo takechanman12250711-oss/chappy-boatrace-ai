@@ -12828,6 +12828,1070 @@
           }
         }
       ]
+    },
+    {
+      "runKey": "20260807-19-12-final-skipped",
+      "checkedAt": "2026-08-07T11:39:52.315Z",
+      "threshold": 70,
+      "selected": false,
+      "collectionHealth": {
+        "schemaVersion": 3,
+        "checkedAt": "2026-08-07T11:39:52.275Z",
+        "targetCount": 2,
+        "savedCount": 2,
+        "insufficientDataCount": 0,
+        "failedCount": 0,
+        "invalidBoatIdentityCount": 0,
+        "recoveredCount": 0,
+        "retryingCount": 0,
+        "finalUncollectedCount": 0,
+        "complete": true,
+        "v2": {
+          "evaluatedCount": 2,
+          "readyCount": 0,
+          "qualifiedCount": 0,
+          "selectedCount": 0,
+          "belowThresholdCount": 0,
+          "notReadyCount": 2,
+          "readinessRate": 0,
+          "missingReasons": [
+            {
+              "code": "data.tide",
+              "label": "潮汐場の現在潮位・潮流",
+              "count": 2
+            },
+            {
+              "code": "component.course.provisional",
+              "label": "コースが暫定",
+              "count": 1
+            },
+            {
+              "code": "component.exhibition.provisional",
+              "label": "展示・足が暫定",
+              "count": 1
+            },
+            {
+              "code": "component.stSlit.provisional",
+              "label": "ST・スリットが暫定",
+              "count": 1
+            },
+            {
+              "code": "data.exhibitionST",
+              "label": "6艇の展示ST",
+              "count": 1
+            },
+            {
+              "code": "data.exhibitionTime",
+              "label": "6艇の展示タイム",
+              "count": 1
+            },
+            {
+              "code": "data.officialCourses",
+              "label": "6艇の公式進入",
+              "count": 1
+            }
+          ]
+        },
+        "targets": [
+          {
+            "raceKey": "20260807-19-12",
+            "jcd": "19",
+            "place": "下関",
+            "raceNo": 12,
+            "deadlineAt": "2026-08-07T20:45:00+09:00",
+            "status": "saved",
+            "error": "",
+            "missingReasons": [],
+            "attemptCount": 1,
+            "firstDetectedAt": "2026-08-07T11:39:52.275Z",
+            "lastAttemptAt": "2026-08-07T11:39:52.275Z",
+            "recoveryState": "not_needed",
+            "recoveredAt": "",
+            "finalAt": ""
+          },
+          {
+            "raceKey": "20260807-20-12",
+            "jcd": "20",
+            "place": "若松",
+            "raceNo": 12,
+            "deadlineAt": "2026-08-07T20:42:00+09:00",
+            "status": "saved",
+            "error": "",
+            "missingReasons": [],
+            "attemptCount": 1,
+            "firstDetectedAt": "2026-08-07T11:39:52.275Z",
+            "lastAttemptAt": "2026-08-07T11:39:52.275Z",
+            "recoveryState": "not_needed",
+            "recoveredAt": "",
+            "finalAt": ""
+          }
+        ]
+      },
+      "best": {
+        "jcd": "19",
+        "place": "下関",
+        "raceNo": 12,
+        "deadlineAt": "2026-08-07T20:45:00+09:00",
+        "type": "8項目V2",
+        "score": null,
+        "scoreSource": "shadowSelectionV2.evaluation.totalScore",
+        "scenarioLabel": "1号艇逃げ",
+        "selectionReady": false,
+        "selectionStatus": "incomplete",
+        "legacyType": "本線",
+        "legacyScore": 50.1,
+        "historySupport": 72.7,
+        "historyTrend": {
+          "available": true,
+          "label": "本線傾向",
+          "recentSamples": 184,
+          "previousSamples": 366,
+          "allSamples": 550,
+          "escapeRate": 72.7,
+          "roughRate": 17.9,
+          "manshuRate": 13.6,
+          "outsideWinRate": 12,
+          "boatOneMissRate": 5.4,
+          "winningMethods": [
+            {
+              "key": "逃げ",
+              "count": 125,
+              "rate": 67.9
+            },
+            {
+              "key": "差し",
+              "count": 19,
+              "rate": 10.3
+            },
+            {
+              "key": "まくり差し",
+              "count": 16,
+              "rate": 8.7
+            },
+            {
+              "key": "抜き",
+              "count": 13,
+              "rate": 7.1
+            },
+            {
+              "key": "まくり",
+              "count": 10,
+              "rate": 5.4
+            },
+            {
+              "key": "恵まれ",
+              "count": 1,
+              "rate": 0.5
+            }
+          ],
+          "boatPerformance": {
+            "1": {
+              "boatNo": 1,
+              "starts": 183,
+              "reliability": "high",
+              "wins": 133,
+              "winRate": 72.7,
+              "seconds": 32,
+              "secondRate": 17.5,
+              "thirds": 8,
+              "thirdRate": 4.4,
+              "top3": 173,
+              "top3Rate": 94.5,
+              "rises": 0,
+              "riseRate": 0,
+              "stays": 133,
+              "stayRate": 72.7,
+              "sinks": 50,
+              "sinkRate": 27.3,
+              "outsideTop3": 10,
+              "outsideTop3Rate": 5.5,
+              "averageSt": 0.138
+            },
+            "2": {
+              "boatNo": 2,
+              "starts": 182,
+              "reliability": "high",
+              "wins": 13,
+              "winRate": 7.1,
+              "seconds": 48,
+              "secondRate": 26.4,
+              "thirds": 28,
+              "thirdRate": 15.4,
+              "top3": 89,
+              "top3Rate": 48.9,
+              "rises": 13,
+              "riseRate": 7.1,
+              "stays": 48,
+              "stayRate": 26.4,
+              "sinks": 121,
+              "sinkRate": 66.5,
+              "outsideTop3": 93,
+              "outsideTop3Rate": 51.1,
+              "averageSt": 0.151
+            },
+            "3": {
+              "boatNo": 3,
+              "starts": 180,
+              "reliability": "high",
+              "wins": 16,
+              "winRate": 8.9,
+              "seconds": 43,
+              "secondRate": 23.9,
+              "thirds": 49,
+              "thirdRate": 27.2,
+              "top3": 108,
+              "top3Rate": 60,
+              "rises": 59,
+              "riseRate": 32.8,
+              "stays": 49,
+              "stayRate": 27.2,
+              "sinks": 72,
+              "sinkRate": 40,
+              "outsideTop3": 72,
+              "outsideTop3Rate": 40,
+              "averageSt": 0.147
+            },
+            "4": {
+              "boatNo": 4,
+              "starts": 181,
+              "reliability": "high",
+              "wins": 13,
+              "winRate": 7.2,
+              "seconds": 26,
+              "secondRate": 14.4,
+              "thirds": 37,
+              "thirdRate": 20.4,
+              "top3": 76,
+              "top3Rate": 42,
+              "rises": 76,
+              "riseRate": 42,
+              "stays": 38,
+              "stayRate": 21,
+              "sinks": 67,
+              "sinkRate": 37,
+              "outsideTop3": 105,
+              "outsideTop3Rate": 58,
+              "averageSt": 0.147
+            },
+            "5": {
+              "boatNo": 5,
+              "starts": 183,
+              "reliability": "high",
+              "wins": 4,
+              "winRate": 2.2,
+              "seconds": 26,
+              "secondRate": 14.2,
+              "thirds": 33,
+              "thirdRate": 18,
+              "top3": 63,
+              "top3Rate": 34.4,
+              "rises": 107,
+              "riseRate": 58.5,
+              "stays": 30,
+              "stayRate": 16.4,
+              "sinks": 46,
+              "sinkRate": 25.1,
+              "outsideTop3": 120,
+              "outsideTop3Rate": 65.6,
+              "averageSt": 0.155
+            },
+            "6": {
+              "boatNo": 6,
+              "starts": 182,
+              "reliability": "high",
+              "wins": 5,
+              "winRate": 2.7,
+              "seconds": 9,
+              "secondRate": 4.9,
+              "thirds": 29,
+              "thirdRate": 15.9,
+              "top3": 43,
+              "top3Rate": 23.6,
+              "rises": 119,
+              "riseRate": 65.4,
+              "stays": 63,
+              "stayRate": 34.6,
+              "sinks": 0,
+              "sinkRate": 0,
+              "outsideTop3": 139,
+              "outsideTop3Rate": 76.4,
+              "averageSt": 0.16
+            }
+          },
+          "frameMovement": {
+            "1": {
+              "boatNo": 1,
+              "samples": 183,
+              "reliability": "high",
+              "riseRate": 0,
+              "stayRate": 72.7,
+              "sinkRate": 27.3,
+              "baselineRiseRate": 0,
+              "baselineStayRate": 55.2,
+              "baselineSinkRate": 44.8,
+              "movementDelta": 17.5,
+              "hasBaseline": true,
+              "label": "沈下",
+              "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+            },
+            "2": {
+              "boatNo": 2,
+              "samples": 182,
+              "reliability": "high",
+              "riseRate": 7.1,
+              "stayRate": 26.4,
+              "sinkRate": 66.5,
+              "baselineRiseRate": 14,
+              "baselineStayRate": 24.9,
+              "baselineSinkRate": 61.1,
+              "movementDelta": -12.3,
+              "hasBaseline": true,
+              "label": "沈下",
+              "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+            },
+            "3": {
+              "boatNo": 3,
+              "samples": 180,
+              "reliability": "high",
+              "riseRate": 32.8,
+              "stayRate": 27.2,
+              "sinkRate": 40,
+              "baselineRiseRate": 34.6,
+              "baselineStayRate": 20,
+              "baselineSinkRate": 45.3,
+              "movementDelta": 3.5,
+              "hasBaseline": true,
+              "label": "沈下",
+              "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+            },
+            "4": {
+              "boatNo": 4,
+              "samples": 181,
+              "reliability": "high",
+              "riseRate": 42,
+              "stayRate": 21,
+              "sinkRate": 37,
+              "baselineRiseRate": 46.8,
+              "baselineStayRate": 19.3,
+              "baselineSinkRate": 33.9,
+              "movementDelta": -7.9,
+              "hasBaseline": true,
+              "label": "浮上",
+              "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+            },
+            "5": {
+              "boatNo": 5,
+              "samples": 183,
+              "reliability": "high",
+              "riseRate": 58.5,
+              "stayRate": 16.4,
+              "sinkRate": 25.1,
+              "baselineRiseRate": 56.9,
+              "baselineStayRate": 22.1,
+              "baselineSinkRate": 21,
+              "movementDelta": -2.5,
+              "hasBaseline": true,
+              "label": "浮上",
+              "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+            },
+            "6": {
+              "boatNo": 6,
+              "samples": 182,
+              "reliability": "high",
+              "riseRate": 65.4,
+              "stayRate": 34.6,
+              "sinkRate": 0,
+              "baselineRiseRate": 71.2,
+              "baselineStayRate": 28.8,
+              "baselineSinkRate": 0,
+              "movementDelta": -5.8,
+              "hasBaseline": true,
+              "label": "浮上",
+              "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+            }
+          },
+          "comparison": {
+            "escapeRate": -1.6,
+            "roughRate": -0.3
+          },
+          "policy": "参考補強のみ。買い目・予想点・70点基準は変更しない"
+        },
+        "evaluation": {
+          "ready": true,
+          "honmei": {
+            "score": 50.1,
+            "level": "中",
+            "reasons": [
+              "1号艇A2・相手最上位2号艇B1",
+              "1逃げ展開83.1点",
+              "1逃げと対抗展開が拮抗",
+              "下関イン傾向73点"
+            ]
+          },
+          "manshu": {
+            "score": 32.5,
+            "level": "低",
+            "reasons": [
+              "4号艇B1の4カド攻め",
+              "攻め・拾い成立度57.3点",
+              "外側にA1・A2不在",
+              "下関外展開傾向60点"
+            ]
+          },
+          "dataStatus": {
+            "stage": "final",
+            "label": "展示反映済み",
+            "completeness": 100,
+            "entryCount": 6,
+            "stCount": 6,
+            "exhibitionCount": 6
+          }
+        }
+      },
+      "compared": [
+        {
+          "jcd": "19",
+          "place": "下関",
+          "raceNo": 12,
+          "deadlineAt": "2026-08-07T20:45:00+09:00",
+          "type": "8項目V2",
+          "score": null,
+          "scoreSource": "shadowSelectionV2.evaluation.totalScore",
+          "scenarioLabel": "1号艇逃げ",
+          "selectionReady": false,
+          "selectionStatus": "incomplete",
+          "legacyType": "本線",
+          "legacyScore": 50.1,
+          "historySupport": 72.7,
+          "historyTrend": {
+            "available": true,
+            "label": "本線傾向",
+            "recentSamples": 184,
+            "previousSamples": 366,
+            "allSamples": 550,
+            "escapeRate": 72.7,
+            "roughRate": 17.9,
+            "manshuRate": 13.6,
+            "outsideWinRate": 12,
+            "boatOneMissRate": 5.4,
+            "winningMethods": [
+              {
+                "key": "逃げ",
+                "count": 125,
+                "rate": 67.9
+              },
+              {
+                "key": "差し",
+                "count": 19,
+                "rate": 10.3
+              },
+              {
+                "key": "まくり差し",
+                "count": 16,
+                "rate": 8.7
+              },
+              {
+                "key": "抜き",
+                "count": 13,
+                "rate": 7.1
+              },
+              {
+                "key": "まくり",
+                "count": 10,
+                "rate": 5.4
+              },
+              {
+                "key": "恵まれ",
+                "count": 1,
+                "rate": 0.5
+              }
+            ],
+            "boatPerformance": {
+              "1": {
+                "boatNo": 1,
+                "starts": 183,
+                "reliability": "high",
+                "wins": 133,
+                "winRate": 72.7,
+                "seconds": 32,
+                "secondRate": 17.5,
+                "thirds": 8,
+                "thirdRate": 4.4,
+                "top3": 173,
+                "top3Rate": 94.5,
+                "rises": 0,
+                "riseRate": 0,
+                "stays": 133,
+                "stayRate": 72.7,
+                "sinks": 50,
+                "sinkRate": 27.3,
+                "outsideTop3": 10,
+                "outsideTop3Rate": 5.5,
+                "averageSt": 0.138
+              },
+              "2": {
+                "boatNo": 2,
+                "starts": 182,
+                "reliability": "high",
+                "wins": 13,
+                "winRate": 7.1,
+                "seconds": 48,
+                "secondRate": 26.4,
+                "thirds": 28,
+                "thirdRate": 15.4,
+                "top3": 89,
+                "top3Rate": 48.9,
+                "rises": 13,
+                "riseRate": 7.1,
+                "stays": 48,
+                "stayRate": 26.4,
+                "sinks": 121,
+                "sinkRate": 66.5,
+                "outsideTop3": 93,
+                "outsideTop3Rate": 51.1,
+                "averageSt": 0.151
+              },
+              "3": {
+                "boatNo": 3,
+                "starts": 180,
+                "reliability": "high",
+                "wins": 16,
+                "winRate": 8.9,
+                "seconds": 43,
+                "secondRate": 23.9,
+                "thirds": 49,
+                "thirdRate": 27.2,
+                "top3": 108,
+                "top3Rate": 60,
+                "rises": 59,
+                "riseRate": 32.8,
+                "stays": 49,
+                "stayRate": 27.2,
+                "sinks": 72,
+                "sinkRate": 40,
+                "outsideTop3": 72,
+                "outsideTop3Rate": 40,
+                "averageSt": 0.147
+              },
+              "4": {
+                "boatNo": 4,
+                "starts": 181,
+                "reliability": "high",
+                "wins": 13,
+                "winRate": 7.2,
+                "seconds": 26,
+                "secondRate": 14.4,
+                "thirds": 37,
+                "thirdRate": 20.4,
+                "top3": 76,
+                "top3Rate": 42,
+                "rises": 76,
+                "riseRate": 42,
+                "stays": 38,
+                "stayRate": 21,
+                "sinks": 67,
+                "sinkRate": 37,
+                "outsideTop3": 105,
+                "outsideTop3Rate": 58,
+                "averageSt": 0.147
+              },
+              "5": {
+                "boatNo": 5,
+                "starts": 183,
+                "reliability": "high",
+                "wins": 4,
+                "winRate": 2.2,
+                "seconds": 26,
+                "secondRate": 14.2,
+                "thirds": 33,
+                "thirdRate": 18,
+                "top3": 63,
+                "top3Rate": 34.4,
+                "rises": 107,
+                "riseRate": 58.5,
+                "stays": 30,
+                "stayRate": 16.4,
+                "sinks": 46,
+                "sinkRate": 25.1,
+                "outsideTop3": 120,
+                "outsideTop3Rate": 65.6,
+                "averageSt": 0.155
+              },
+              "6": {
+                "boatNo": 6,
+                "starts": 182,
+                "reliability": "high",
+                "wins": 5,
+                "winRate": 2.7,
+                "seconds": 9,
+                "secondRate": 4.9,
+                "thirds": 29,
+                "thirdRate": 15.9,
+                "top3": 43,
+                "top3Rate": 23.6,
+                "rises": 119,
+                "riseRate": 65.4,
+                "stays": 63,
+                "stayRate": 34.6,
+                "sinks": 0,
+                "sinkRate": 0,
+                "outsideTop3": 139,
+                "outsideTop3Rate": 76.4,
+                "averageSt": 0.16
+              }
+            },
+            "frameMovement": {
+              "1": {
+                "boatNo": 1,
+                "samples": 183,
+                "reliability": "high",
+                "riseRate": 0,
+                "stayRate": 72.7,
+                "sinkRate": 27.3,
+                "baselineRiseRate": 0,
+                "baselineStayRate": 55.2,
+                "baselineSinkRate": 44.8,
+                "movementDelta": 17.5,
+                "hasBaseline": true,
+                "label": "沈下",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "2": {
+                "boatNo": 2,
+                "samples": 182,
+                "reliability": "high",
+                "riseRate": 7.1,
+                "stayRate": 26.4,
+                "sinkRate": 66.5,
+                "baselineRiseRate": 14,
+                "baselineStayRate": 24.9,
+                "baselineSinkRate": 61.1,
+                "movementDelta": -12.3,
+                "hasBaseline": true,
+                "label": "沈下",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "3": {
+                "boatNo": 3,
+                "samples": 180,
+                "reliability": "high",
+                "riseRate": 32.8,
+                "stayRate": 27.2,
+                "sinkRate": 40,
+                "baselineRiseRate": 34.6,
+                "baselineStayRate": 20,
+                "baselineSinkRate": 45.3,
+                "movementDelta": 3.5,
+                "hasBaseline": true,
+                "label": "沈下",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "4": {
+                "boatNo": 4,
+                "samples": 181,
+                "reliability": "high",
+                "riseRate": 42,
+                "stayRate": 21,
+                "sinkRate": 37,
+                "baselineRiseRate": 46.8,
+                "baselineStayRate": 19.3,
+                "baselineSinkRate": 33.9,
+                "movementDelta": -7.9,
+                "hasBaseline": true,
+                "label": "浮上",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "5": {
+                "boatNo": 5,
+                "samples": 183,
+                "reliability": "high",
+                "riseRate": 58.5,
+                "stayRate": 16.4,
+                "sinkRate": 25.1,
+                "baselineRiseRate": 56.9,
+                "baselineStayRate": 22.1,
+                "baselineSinkRate": 21,
+                "movementDelta": -2.5,
+                "hasBaseline": true,
+                "label": "浮上",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "6": {
+                "boatNo": 6,
+                "samples": 182,
+                "reliability": "high",
+                "riseRate": 65.4,
+                "stayRate": 34.6,
+                "sinkRate": 0,
+                "baselineRiseRate": 71.2,
+                "baselineStayRate": 28.8,
+                "baselineSinkRate": 0,
+                "movementDelta": -5.8,
+                "hasBaseline": true,
+                "label": "浮上",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              }
+            },
+            "comparison": {
+              "escapeRate": -1.6,
+              "roughRate": -0.3
+            },
+            "policy": "参考補強のみ。買い目・予想点・70点基準は変更しない"
+          },
+          "evaluation": {
+            "ready": true,
+            "honmei": {
+              "score": 50.1,
+              "level": "中",
+              "reasons": [
+                "1号艇A2・相手最上位2号艇B1",
+                "1逃げ展開83.1点",
+                "1逃げと対抗展開が拮抗",
+                "下関イン傾向73点"
+              ]
+            },
+            "manshu": {
+              "score": 32.5,
+              "level": "低",
+              "reasons": [
+                "4号艇B1の4カド攻め",
+                "攻め・拾い成立度57.3点",
+                "外側にA1・A2不在",
+                "下関外展開傾向60点"
+              ]
+            },
+            "dataStatus": {
+              "stage": "final",
+              "label": "展示反映済み",
+              "completeness": 100,
+              "entryCount": 6,
+              "stCount": 6,
+              "exhibitionCount": 6
+            }
+          }
+        },
+        {
+          "jcd": "20",
+          "place": "若松",
+          "raceNo": 12,
+          "deadlineAt": "2026-08-07T20:42:00+09:00",
+          "type": "8項目V2",
+          "score": null,
+          "scoreSource": "shadowSelectionV2.evaluation.totalScore",
+          "scenarioLabel": "4カド攻め",
+          "selectionReady": false,
+          "selectionStatus": "incomplete",
+          "legacyType": "本線",
+          "legacyScore": 45.1,
+          "historySupport": 63.9,
+          "historyTrend": {
+            "available": true,
+            "label": "本線傾向",
+            "recentSamples": 186,
+            "previousSamples": 362,
+            "allSamples": 548,
+            "escapeRate": 63.9,
+            "roughRate": 25.8,
+            "manshuRate": 14,
+            "outsideWinRate": 14.5,
+            "boatOneMissRate": 9.1,
+            "winningMethods": [
+              {
+                "key": "逃げ",
+                "count": 113,
+                "rate": 60.8
+              },
+              {
+                "key": "まくり",
+                "count": 24,
+                "rate": 12.9
+              },
+              {
+                "key": "差し",
+                "count": 20,
+                "rate": 10.8
+              },
+              {
+                "key": "まくり差し",
+                "count": 15,
+                "rate": 8.1
+              },
+              {
+                "key": "抜き",
+                "count": 13,
+                "rate": 7
+              },
+              {
+                "key": "恵まれ",
+                "count": 1,
+                "rate": 0.5
+              }
+            ],
+            "boatPerformance": {
+              "1": {
+                "boatNo": 1,
+                "starts": 183,
+                "reliability": "high",
+                "wins": 117,
+                "winRate": 63.9,
+                "seconds": 36,
+                "secondRate": 19.7,
+                "thirds": 13,
+                "thirdRate": 7.1,
+                "top3": 166,
+                "top3Rate": 90.7,
+                "rises": 0,
+                "riseRate": 0,
+                "stays": 117,
+                "stayRate": 63.9,
+                "sinks": 66,
+                "sinkRate": 36.1,
+                "outsideTop3": 17,
+                "outsideTop3Rate": 9.3,
+                "averageSt": 0.155
+              },
+              "2": {
+                "boatNo": 2,
+                "starts": 185,
+                "reliability": "high",
+                "wins": 19,
+                "winRate": 10.3,
+                "seconds": 44,
+                "secondRate": 23.8,
+                "thirds": 43,
+                "thirdRate": 23.2,
+                "top3": 106,
+                "top3Rate": 57.3,
+                "rises": 19,
+                "riseRate": 10.3,
+                "stays": 44,
+                "stayRate": 23.8,
+                "sinks": 122,
+                "sinkRate": 65.9,
+                "outsideTop3": 79,
+                "outsideTop3Rate": 42.7,
+                "averageSt": 0.166
+              },
+              "3": {
+                "boatNo": 3,
+                "starts": 184,
+                "reliability": "high",
+                "wins": 23,
+                "winRate": 12.5,
+                "seconds": 41,
+                "secondRate": 22.3,
+                "thirds": 43,
+                "thirdRate": 23.4,
+                "top3": 107,
+                "top3Rate": 58.2,
+                "rises": 64,
+                "riseRate": 34.8,
+                "stays": 43,
+                "stayRate": 23.4,
+                "sinks": 77,
+                "sinkRate": 41.8,
+                "outsideTop3": 77,
+                "outsideTop3Rate": 41.8,
+                "averageSt": 0.157
+              },
+              "4": {
+                "boatNo": 4,
+                "starts": 185,
+                "reliability": "high",
+                "wins": 13,
+                "winRate": 7,
+                "seconds": 37,
+                "secondRate": 20,
+                "thirds": 29,
+                "thirdRate": 15.7,
+                "top3": 79,
+                "top3Rate": 42.7,
+                "rises": 79,
+                "riseRate": 42.7,
+                "stays": 39,
+                "stayRate": 21.1,
+                "sinks": 67,
+                "sinkRate": 36.2,
+                "outsideTop3": 106,
+                "outsideTop3Rate": 57.3,
+                "averageSt": 0.161
+              },
+              "5": {
+                "boatNo": 5,
+                "starts": 185,
+                "reliability": "high",
+                "wins": 6,
+                "winRate": 3.2,
+                "seconds": 16,
+                "secondRate": 8.6,
+                "thirds": 34,
+                "thirdRate": 18.4,
+                "top3": 56,
+                "top3Rate": 30.3,
+                "rises": 96,
+                "riseRate": 51.9,
+                "stays": 41,
+                "stayRate": 22.2,
+                "sinks": 48,
+                "sinkRate": 25.9,
+                "outsideTop3": 129,
+                "outsideTop3Rate": 69.7,
+                "averageSt": 0.166
+              },
+              "6": {
+                "boatNo": 6,
+                "starts": 184,
+                "reliability": "high",
+                "wins": 8,
+                "winRate": 4.3,
+                "seconds": 12,
+                "secondRate": 6.5,
+                "thirds": 24,
+                "thirdRate": 13,
+                "top3": 44,
+                "top3Rate": 23.9,
+                "rises": 135,
+                "riseRate": 73.4,
+                "stays": 49,
+                "stayRate": 26.6,
+                "sinks": 0,
+                "sinkRate": 0,
+                "outsideTop3": 140,
+                "outsideTop3Rate": 76.1,
+                "averageSt": 0.182
+              }
+            },
+            "frameMovement": {
+              "1": {
+                "boatNo": 1,
+                "samples": 183,
+                "reliability": "high",
+                "riseRate": 0,
+                "stayRate": 63.9,
+                "sinkRate": 36.1,
+                "baselineRiseRate": 0,
+                "baselineStayRate": 55.2,
+                "baselineSinkRate": 44.8,
+                "movementDelta": 8.7,
+                "hasBaseline": true,
+                "label": "沈下",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "2": {
+                "boatNo": 2,
+                "samples": 185,
+                "reliability": "high",
+                "riseRate": 10.3,
+                "stayRate": 23.8,
+                "sinkRate": 65.9,
+                "baselineRiseRate": 14,
+                "baselineStayRate": 24.9,
+                "baselineSinkRate": 61.1,
+                "movementDelta": -8.5,
+                "hasBaseline": true,
+                "label": "沈下",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "3": {
+                "boatNo": 3,
+                "samples": 184,
+                "reliability": "high",
+                "riseRate": 34.8,
+                "stayRate": 23.4,
+                "sinkRate": 41.8,
+                "baselineRiseRate": 34.6,
+                "baselineStayRate": 20,
+                "baselineSinkRate": 45.3,
+                "movementDelta": 3.7,
+                "hasBaseline": true,
+                "label": "沈下",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "4": {
+                "boatNo": 4,
+                "samples": 185,
+                "reliability": "high",
+                "riseRate": 42.7,
+                "stayRate": 21.1,
+                "sinkRate": 36.2,
+                "baselineRiseRate": 46.8,
+                "baselineStayRate": 19.3,
+                "baselineSinkRate": 33.9,
+                "movementDelta": -6.4,
+                "hasBaseline": true,
+                "label": "浮上",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "5": {
+                "boatNo": 5,
+                "samples": 185,
+                "reliability": "high",
+                "riseRate": 51.9,
+                "stayRate": 22.2,
+                "sinkRate": 25.9,
+                "baselineRiseRate": 56.9,
+                "baselineStayRate": 22.1,
+                "baselineSinkRate": 21,
+                "movementDelta": -9.9,
+                "hasBaseline": true,
+                "label": "浮上",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              },
+              "6": {
+                "boatNo": 6,
+                "samples": 184,
+                "reliability": "high",
+                "riseRate": 73.4,
+                "stayRate": 26.6,
+                "sinkRate": 0,
+                "baselineRiseRate": 71.2,
+                "baselineStayRate": 28.8,
+                "baselineSinkRate": 0,
+                "movementDelta": 2.2,
+                "hasBaseline": true,
+                "label": "浮上",
+                "definition": "枠番より着順が上なら浮上、同じなら維持、下なら沈下"
+              }
+            },
+            "comparison": {
+              "escapeRate": -4.9,
+              "roughRate": 1.2
+            },
+            "policy": "参考補強のみ。買い目・予想点・70点基準は変更しない"
+          },
+          "evaluation": {
+            "ready": true,
+            "honmei": {
+              "score": 45.1,
+              "level": "低",
+              "reasons": [
+                "1号艇A1・相手最上位2号艇A1",
+                "1逃げ展開86.8点",
+                "1逃げと対抗展開が拮抗",
+                "若松イン傾向64点"
+              ]
+            },
+            "manshu": {
+              "score": 5,
+              "level": "低",
+              "reasons": [
+                "4号艇A1の4カド攻め",
+                "攻め・拾い成立度79.3点",
+                "外側のA1・A2が4艇のため万舟評価を抑制",
+                "若松外展開傾向66点"
+              ]
+            },
+            "dataStatus": {
+              "stage": "final",
+              "label": "展示反映済み",
+              "completeness": 100,
+              "entryCount": 6,
+              "stCount": 6,
+              "exhibitionCount": 6
+            }
+          }
+        }
+      ]
     }
   ],
   "predictions": [
@@ -156491,7 +157555,7 @@
       "place": "下関",
       "raceNo": 12,
       "deadlineAt": "2026-08-07T20:45:00+09:00",
-      "selectedAt": "2026-08-07T11:29:48.241Z",
+      "selectedAt": "2026-08-07T11:39:51.783Z",
       "verificationMode": "shadow",
       "scoreBand": "under_70",
       "selection": {
@@ -157104,7 +158168,7 @@
           "reason": "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。"
         },
         "manshuPower": {
-          "score": 69,
+          "score": 79,
           "reason": "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。"
         },
         "mainSheet": {
@@ -157964,7 +159028,7 @@
               "evaluation:osae:4"
             ],
             "evidenceReasons": [
-              "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のalternate-head・69点・2号艇 海老澤 泰行 は🛟差し残し。総合84点。プラス材料は2コース差し・残し、当地勝率3位 5.7、ボート2連率上位 41.38%。マイナス材料は級別は控えめ。 / 既存フォーメーションに同一買い目あり",
+              "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のalternate-head・69点・2号艇 海老澤 泰行 は🛟差し残し。総合84点。プラス材料は2コース差し・残し、当地勝率3位 5.66、ボート2連率上位 41.38%。マイナス材料は級別は控えめ。 / 既存フォーメーションに同一買い目あり",
               "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 3号艇のpickup・89点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達7/15 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり",
               "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のhold・79点・最有力展開一致40/40 / 実進入・位置関係18/25 / 壁・内側残存経路8/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり"
             ],
@@ -158098,15 +159162,18 @@
             "branchIds": [
               "formation:cover:2-4-5:provenance",
               "formation:cover:2-4-5:evaluation:taikou:2:1",
-              "formation:cover:2-4-5:evaluation:osae:4:2"
+              "formation:cover:2-4-5:evaluation:osae:4:2",
+              "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3"
             ],
             "allBranchIds": [
               "formation:cover:2-4-5:provenance",
               "formation:cover:2-4-5:evaluation:taikou:2:1",
               "formation:cover:2-4-5:evaluation:osae:4:2",
+              "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3",
               "formation:hole:2-4-5:provenance",
               "formation:hole:2-4-5:evaluation:taikou:2:1",
               "formation:hole:2-4-5:evaluation:osae:4:2",
+              "formation:hole:2-4-5:evaluation:preserved:ana:5:0:3",
               "evaluation:taikou:2:alternate-head:2-4-5"
             ],
             "independentBranchIds": [],
@@ -158126,6 +159193,13 @@
                 "role": "hold",
                 "position": 2,
                 "branchId": "formation:cover:2-4-5:evaluation:osae:4:2"
+              },
+              {
+                "evaluationId": "evaluation:preserved:ana:5:0",
+                "boatNo": 5,
+                "role": "pickup",
+                "position": 3,
+                "branchId": "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3"
               }
             ],
             "physicalCoverage": [
@@ -158140,35 +159214,46 @@
                 "boatNo": 4,
                 "position": 2,
                 "role": "hold"
+              },
+              {
+                "evaluationId": "evaluation:preserved:ana:5:0",
+                "boatNo": 5,
+                "position": 3,
+                "role": "pickup"
               }
             ],
             "coveredEvaluationIds": [
               "evaluation:taikou:2",
-              "evaluation:osae:4"
+              "evaluation:osae:4",
+              "evaluation:preserved:ana:5:0"
             ],
             "coveredBoatNos": [
               2,
-              4
+              4,
+              5
             ],
             "candidateOnlyEvaluationIds": [
               "evaluation:taikou:2",
-              "evaluation:osae:4"
+              "evaluation:osae:4",
+              "evaluation:preserved:ana:5:0"
             ],
             "evidenceReasons": [
-              "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のalternate-head・69点・2号艇 海老澤 泰行 は🛟差し残し。総合84点。プラス材料は2コース差し・残し、当地勝率3位 5.7、ボート2連率上位 41.38%。マイナス材料は級別は控えめ。 / 既存フォーメーションに同一買い目あり",
-              "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のhold・79点・最有力展開一致40/40 / 実進入・位置関係18/25 / 壁・内側残存経路8/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり"
+              "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のalternate-head・69点・2号艇 海老澤 泰行 は🛟差し残し。総合84点。プラス材料は2コース差し・残し、当地勝率3位 5.66、ボート2連率上位 41.38%。マイナス材料は級別は控えめ。 / 既存フォーメーションに同一買い目あり",
+              "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のhold・79点・最有力展開一致40/40 / 実進入・位置関係18/25 / 壁・内側残存経路8/20 / 1マーク後の残し経路8/10 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり",
+              "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のpickup・82点・荒れ水面で当地・道中重視 / 5コースまくり差し拾い / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり"
             ],
             "evidenceQualified": true,
             "expansionEligible": false,
             "preservationRequired": false,
             "coverageKey": "physical:2-4-5",
-            "priorityScore": 79,
+            "priorityScore": 82,
             "structuredEvidence": {
               "source": "base-formation:cover",
               "branchIds": [
                 "formation:cover:2-4-5:provenance",
                 "formation:cover:2-4-5:evaluation:taikou:2:1",
-                "formation:cover:2-4-5:evaluation:osae:4:2"
+                "formation:cover:2-4-5:evaluation:osae:4:2",
+                "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3"
               ]
             },
             "presentationGroup": "cover",
@@ -158186,7 +159271,8 @@
                 "branchIds": [
                   "formation:cover:2-4-5:provenance",
                   "formation:cover:2-4-5:evaluation:taikou:2:1",
-                  "formation:cover:2-4-5:evaluation:osae:4:2"
+                  "formation:cover:2-4-5:evaluation:osae:4:2",
+                  "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3"
                 ],
                 "supportingIndependentBranchIds": [],
                 "title": "2-4-5の押さえ展開",
@@ -158196,7 +159282,8 @@
                   "branchIds": [
                     "formation:cover:2-4-5:provenance",
                     "formation:cover:2-4-5:evaluation:taikou:2:1",
-                    "formation:cover:2-4-5:evaluation:osae:4:2"
+                    "formation:cover:2-4-5:evaluation:osae:4:2",
+                    "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3"
                   ]
                 }
               },
@@ -158213,7 +159300,8 @@
                 "branchIds": [
                   "formation:hole:2-4-5:provenance",
                   "formation:hole:2-4-5:evaluation:taikou:2:1",
-                  "formation:hole:2-4-5:evaluation:osae:4:2"
+                  "formation:hole:2-4-5:evaluation:osae:4:2",
+                  "formation:hole:2-4-5:evaluation:preserved:ana:5:0:3"
                 ],
                 "supportingIndependentBranchIds": [],
                 "title": "2-4-5の穴展開",
@@ -158223,7 +159311,8 @@
                   "branchIds": [
                     "formation:hole:2-4-5:provenance",
                     "formation:hole:2-4-5:evaluation:taikou:2:1",
-                    "formation:hole:2-4-5:evaluation:osae:4:2"
+                    "formation:hole:2-4-5:evaluation:osae:4:2",
+                    "formation:hole:2-4-5:evaluation:preserved:ana:5:0:3"
                   ]
                 }
               }
@@ -158236,13 +159325,16 @@
             "validBranchIds": [
               "formation:cover:2-4-5:provenance",
               "formation:cover:2-4-5:evaluation:taikou:2:1",
-              "formation:cover:2-4-5:evaluation:osae:4:2"
+              "formation:cover:2-4-5:evaluation:osae:4:2",
+              "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3"
             ],
             "validPurchaseBranchIds": [
               "formation:cover:2-4-5:evaluation:taikou:2:1",
               "formation:cover:2-4-5:evaluation:osae:4:2",
+              "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3",
               "formation:hole:2-4-5:evaluation:taikou:2:1",
-              "formation:hole:2-4-5:evaluation:osae:4:2"
+              "formation:hole:2-4-5:evaluation:osae:4:2",
+              "formation:hole:2-4-5:evaluation:preserved:ana:5:0:3"
             ],
             "validIndependentBranchIds": [],
             "validRequirementIds": [],
@@ -158265,9 +159357,9 @@
               {
                 "boatNo": 5,
                 "position": 3,
-                "role": "position",
-                "label": "3着候補",
-                "structured": false
+                "role": "pickup",
+                "label": "3着拾い",
+                "structured": true
               }
             ]
           },
@@ -158296,15 +159388,18 @@
             "branchIds": [
               "formation:flow:1-2-5:provenance",
               "formation:flow:1-2-5:evaluation:honmei:1:1",
-              "formation:flow:1-2-5:evaluation:taikou:2:2"
+              "formation:flow:1-2-5:evaluation:taikou:2:2",
+              "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3"
             ],
             "allBranchIds": [
               "formation:main:1-2-5:provenance",
               "formation:main:1-2-5:evaluation:honmei:1:1",
               "formation:main:1-2-5:evaluation:taikou:2:2",
+              "formation:main:1-2-5:evaluation:preserved:ana:5:0:3",
               "formation:flow:1-2-5:provenance",
               "formation:flow:1-2-5:evaluation:honmei:1:1",
               "formation:flow:1-2-5:evaluation:taikou:2:2",
+              "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3",
               "evaluation:taikou:2:continuation-pickup:1-2-5"
             ],
             "independentBranchIds": [
@@ -158330,6 +159425,13 @@
                 "role": "hold",
                 "position": 2,
                 "branchId": "formation:flow:1-2-5:evaluation:taikou:2:2"
+              },
+              {
+                "evaluationId": "evaluation:preserved:ana:5:0",
+                "boatNo": 5,
+                "role": "pickup",
+                "position": 3,
+                "branchId": "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3"
               }
             ],
             "physicalCoverage": [
@@ -158344,36 +159446,47 @@
                 "boatNo": 2,
                 "position": 2,
                 "role": "hold"
+              },
+              {
+                "evaluationId": "evaluation:preserved:ana:5:0",
+                "boatNo": 5,
+                "position": 3,
+                "role": "pickup"
               }
             ],
             "coveredEvaluationIds": [
               "evaluation:honmei:1",
-              "evaluation:taikou:2"
+              "evaluation:taikou:2",
+              "evaluation:preserved:ana:5:0"
             ],
             "coveredBoatNos": [
               1,
-              2
+              2,
+              5
             ],
             "candidateOnlyEvaluationIds": [
               "evaluation:honmei:1",
-              "evaluation:taikou:2"
+              "evaluation:taikou:2",
+              "evaluation:preserved:ana:5:0"
             ],
             "evidenceReasons": [
               "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhead・70点・最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり",
               "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のhold・80点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路0/20 / 1マーク後の残し経路10/10 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり",
+              "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 5号艇のpickup・82点・荒れ水面で当地・道中重視 / 5コースまくり差し拾い / 水面荒れで拾い上昇 / 既存フォーメーションに同一買い目あり",
               "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のhold・80点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路0/20 / 1マーク後の残し経路10/10 / 取得信頼度5/5 / 5号艇の3着役割・87点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5 / 主頭を評価正本で確認 / 主攻めを展開正本で確認 / 1マークで対象艇が残す / バックで対象艇が残す / 2マークで対象艇が残す / pickupのpartnerを正本で確認"
             ],
             "evidenceQualified": true,
             "expansionEligible": true,
             "preservationRequired": true,
             "coverageKey": "evaluation:taikou:2:continuation-pickup:1-2-5",
-            "priorityScore": 80,
+            "priorityScore": 82,
             "structuredEvidence": {
               "source": "base-formation:flow",
               "branchIds": [
                 "formation:flow:1-2-5:provenance",
                 "formation:flow:1-2-5:evaluation:honmei:1:1",
-                "formation:flow:1-2-5:evaluation:taikou:2:2"
+                "formation:flow:1-2-5:evaluation:taikou:2:2",
+                "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3"
               ]
             },
             "presentationGroup": "flow",
@@ -158383,7 +159496,8 @@
                 "branchIds": [
                   "formation:main:1-2-5:provenance",
                   "formation:main:1-2-5:evaluation:honmei:1:1",
-                  "formation:main:1-2-5:evaluation:taikou:2:2"
+                  "formation:main:1-2-5:evaluation:taikou:2:2",
+                  "formation:main:1-2-5:evaluation:preserved:ana:5:0:3"
                 ],
                 "supportingIndependentBranchIds": [
                   "evaluation:taikou:2:continuation-pickup:1-2-5"
@@ -158395,7 +159509,8 @@
                   "branchIds": [
                     "formation:main:1-2-5:provenance",
                     "formation:main:1-2-5:evaluation:honmei:1:1",
-                    "formation:main:1-2-5:evaluation:taikou:2:2"
+                    "formation:main:1-2-5:evaluation:taikou:2:2",
+                    "formation:main:1-2-5:evaluation:preserved:ana:5:0:3"
                   ]
                 }
               },
@@ -158414,7 +159529,8 @@
                 "branchIds": [
                   "formation:flow:1-2-5:provenance",
                   "formation:flow:1-2-5:evaluation:honmei:1:1",
-                  "formation:flow:1-2-5:evaluation:taikou:2:2"
+                  "formation:flow:1-2-5:evaluation:taikou:2:2",
+                  "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3"
                 ],
                 "supportingIndependentBranchIds": [
                   "evaluation:taikou:2:continuation-pickup:1-2-5"
@@ -158426,7 +159542,8 @@
                   "branchIds": [
                     "formation:flow:1-2-5:provenance",
                     "formation:flow:1-2-5:evaluation:honmei:1:1",
-                    "formation:flow:1-2-5:evaluation:taikou:2:2"
+                    "formation:flow:1-2-5:evaluation:taikou:2:2",
+                    "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3"
                   ]
                 }
               },
@@ -158449,13 +159566,16 @@
             "validBranchIds": [
               "formation:flow:1-2-5:provenance",
               "formation:flow:1-2-5:evaluation:honmei:1:1",
-              "formation:flow:1-2-5:evaluation:taikou:2:2"
+              "formation:flow:1-2-5:evaluation:taikou:2:2",
+              "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3"
             ],
             "validPurchaseBranchIds": [
               "formation:flow:1-2-5:evaluation:honmei:1:1",
               "formation:flow:1-2-5:evaluation:taikou:2:2",
+              "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3",
               "formation:main:1-2-5:evaluation:honmei:1:1",
               "formation:main:1-2-5:evaluation:taikou:2:2",
+              "formation:main:1-2-5:evaluation:preserved:ana:5:0:3",
               "evaluation:taikou:2:continuation-pickup:1-2-5"
             ],
             "validIndependentBranchIds": [
@@ -158483,9 +159603,9 @@
               {
                 "boatNo": 5,
                 "position": 3,
-                "role": "position",
-                "label": "3着候補",
-                "structured": false
+                "role": "pickup",
+                "label": "3着拾い",
+                "structured": true
               }
             ]
           },
@@ -158932,9 +160052,9 @@
                     {
                       "boatNo": 5,
                       "position": 3,
-                      "role": "position",
-                      "label": "3着候補",
-                      "structured": false
+                      "role": "pickup",
+                      "label": "3着拾い",
+                      "structured": true
                     }
                   ]
                 },
@@ -159100,6 +160220,37 @@
                   ]
                 },
                 {
+                  "ticket": "2-4-5",
+                  "ticketSelected": true,
+                  "relation": "structured",
+                  "reasonCode": "ALREADY_SELECTED",
+                  "reason": "",
+                  "priorityScore": 82,
+                  "roleLabels": [
+                    {
+                      "boatNo": 2,
+                      "position": 1,
+                      "role": "alternate-head",
+                      "label": "別頭",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 4,
+                      "position": 2,
+                      "role": "hold",
+                      "label": "2着残し",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 5,
+                      "position": 3,
+                      "role": "pickup",
+                      "label": "3着拾い",
+                      "structured": true
+                    }
+                  ]
+                },
+                {
                   "ticket": "1-2-3",
                   "ticketSelected": true,
                   "relation": "structured",
@@ -159186,9 +160337,9 @@
                     {
                       "boatNo": 5,
                       "position": 3,
-                      "role": "position",
-                      "label": "3着候補",
-                      "structured": false
+                      "role": "pickup",
+                      "label": "3着拾い",
+                      "structured": true
                     }
                   ]
                 },
@@ -159216,37 +160367,6 @@
                     },
                     {
                       "boatNo": 6,
-                      "position": 3,
-                      "role": "position",
-                      "label": "3着候補",
-                      "structured": false
-                    }
-                  ]
-                },
-                {
-                  "ticket": "2-4-5",
-                  "ticketSelected": true,
-                  "relation": "structured",
-                  "reasonCode": "ALREADY_SELECTED",
-                  "reason": "",
-                  "priorityScore": 79,
-                  "roleLabels": [
-                    {
-                      "boatNo": 2,
-                      "position": 1,
-                      "role": "alternate-head",
-                      "label": "別頭",
-                      "structured": true
-                    },
-                    {
-                      "boatNo": 4,
-                      "position": 2,
-                      "role": "hold",
-                      "label": "2着残し",
-                      "structured": true
-                    },
-                    {
-                      "boatNo": 5,
                       "position": 3,
                       "role": "position",
                       "label": "3着候補",
@@ -159598,6 +160718,37 @@
                   ]
                 },
                 {
+                  "ticket": "2-4-5",
+                  "ticketSelected": true,
+                  "relation": "structured",
+                  "reasonCode": "ALREADY_SELECTED",
+                  "reason": "",
+                  "priorityScore": 82,
+                  "roleLabels": [
+                    {
+                      "boatNo": 2,
+                      "position": 1,
+                      "role": "alternate-head",
+                      "label": "別頭",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 4,
+                      "position": 2,
+                      "role": "hold",
+                      "label": "2着残し",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 5,
+                      "position": 3,
+                      "role": "pickup",
+                      "label": "3着拾い",
+                      "structured": true
+                    }
+                  ]
+                },
+                {
                   "ticket": "1-2-4",
                   "ticketSelected": true,
                   "relation": "structured",
@@ -159625,37 +160776,6 @@
                       "role": "pickup",
                       "label": "3着拾い",
                       "structured": true
-                    }
-                  ]
-                },
-                {
-                  "ticket": "2-4-5",
-                  "ticketSelected": true,
-                  "relation": "structured",
-                  "reasonCode": "ALREADY_SELECTED",
-                  "reason": "",
-                  "priorityScore": 79,
-                  "roleLabels": [
-                    {
-                      "boatNo": 2,
-                      "position": 1,
-                      "role": "alternate-head",
-                      "label": "別頭",
-                      "structured": true
-                    },
-                    {
-                      "boatNo": 4,
-                      "position": 2,
-                      "role": "hold",
-                      "label": "2着残し",
-                      "structured": true
-                    },
-                    {
-                      "boatNo": 5,
-                      "position": 3,
-                      "role": "position",
-                      "label": "3着候補",
-                      "structured": false
                     }
                   ]
                 },
@@ -159730,6 +160850,159 @@
               "scoreGap": null,
               "reasonCode": "ROLE_SELECTED",
               "reason": "評価された艇・着順役割を実戦買い目へ反映。"
+            },
+            {
+              "evaluationId": "evaluation:preserved:ana:5:0",
+              "boatNo": 5,
+              "symbol": "▲",
+              "selected": true,
+              "selectedTickets": [
+                "2-4-5",
+                "1-2-5"
+              ],
+              "adoptionSupported": true,
+              "supportedSelectedTickets": [
+                "2-4-5",
+                "1-2-5"
+              ],
+              "candidateCount": 60,
+              "selectedCandidateCount": 2,
+              "excludedCandidateCount": 58,
+              "hiddenCandidateCount": 56,
+              "candidateDecisions": [
+                {
+                  "ticket": "2-4-5",
+                  "ticketSelected": true,
+                  "relation": "structured",
+                  "reasonCode": "ALREADY_SELECTED",
+                  "reason": "",
+                  "priorityScore": 82,
+                  "roleLabels": [
+                    {
+                      "boatNo": 2,
+                      "position": 1,
+                      "role": "alternate-head",
+                      "label": "別頭",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 4,
+                      "position": 2,
+                      "role": "hold",
+                      "label": "2着残し",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 5,
+                      "position": 3,
+                      "role": "pickup",
+                      "label": "3着拾い",
+                      "structured": true
+                    }
+                  ]
+                },
+                {
+                  "ticket": "1-2-5",
+                  "ticketSelected": true,
+                  "relation": "structured",
+                  "reasonCode": "ALREADY_SELECTED",
+                  "reason": "",
+                  "priorityScore": 80,
+                  "roleLabels": [
+                    {
+                      "boatNo": 1,
+                      "position": 1,
+                      "role": "head",
+                      "label": "1着軸",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 2,
+                      "position": 2,
+                      "role": "hold",
+                      "label": "2着残し",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 5,
+                      "position": 3,
+                      "role": "pickup",
+                      "label": "3着拾い",
+                      "structured": true
+                    }
+                  ]
+                },
+                {
+                  "ticket": "2-5-4",
+                  "ticketSelected": false,
+                  "relation": "structured",
+                  "reasonCode": "CANDIDATE_ONLY_EVALUATION",
+                  "reason": "",
+                  "priorityScore": 88,
+                  "roleLabels": [
+                    {
+                      "boatNo": 2,
+                      "position": 1,
+                      "role": "alternate-head",
+                      "label": "別頭",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 5,
+                      "position": 2,
+                      "role": "hold",
+                      "label": "2着残し",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 4,
+                      "position": 3,
+                      "role": "pickup",
+                      "label": "3着拾い",
+                      "structured": true
+                    }
+                  ]
+                },
+                {
+                  "ticket": "5-1-4",
+                  "ticketSelected": false,
+                  "relation": "physical-only",
+                  "reasonCode": "CANDIDATE_ONLY_EVALUATION",
+                  "reason": "",
+                  "priorityScore": 88,
+                  "roleLabels": [
+                    {
+                      "boatNo": 5,
+                      "position": 1,
+                      "role": "position",
+                      "label": "1着候補",
+                      "structured": false
+                    },
+                    {
+                      "boatNo": 1,
+                      "position": 2,
+                      "role": "hold",
+                      "label": "2着残し",
+                      "structured": true
+                    },
+                    {
+                      "boatNo": 4,
+                      "position": 3,
+                      "role": "pickup",
+                      "label": "3着拾い",
+                      "structured": true
+                    }
+                  ]
+                }
+              ],
+              "bestCandidateTicket": "2-5-4",
+              "bestCandidateScore": 88,
+              "selectionBoundary": null,
+              "comparisonTicket": "",
+              "comparisonScore": null,
+              "scoreGap": null,
+              "reasonCode": "ROLE_SELECTED",
+              "reason": "評価された艇・着順役割を実戦買い目へ反映。"
             }
           ],
           "excludedIndependentCount": 0,
@@ -159759,7 +161032,7 @@
               "exhibitionST": 0.27,
               "exhibitionTime": 6.98,
               "lapTime": null,
-              "localWinRate": 6.22,
+              "localWinRate": 6.18,
               "nationalWinRate": 5.41,
               "national2Rate": 37.93,
               "national3Rate": 53.45,
@@ -159781,7 +161054,7 @@
               "exhibitionST": 0.08,
               "exhibitionTime": 6.96,
               "lapTime": null,
-              "localWinRate": 5.7,
+              "localWinRate": 5.66,
               "nationalWinRate": 4.3,
               "national2Rate": 18.99,
               "national3Rate": 35.44,
@@ -159825,7 +161098,7 @@
               "exhibitionST": 0.03,
               "exhibitionTime": 6.95,
               "lapTime": null,
-              "localWinRate": 5.86,
+              "localWinRate": 5.9,
               "nationalWinRate": 4.59,
               "national2Rate": 21.79,
               "national3Rate": 43.59,
@@ -159847,7 +161120,7 @@
               "exhibitionST": 0.02,
               "exhibitionTime": 6.95,
               "lapTime": null,
-              "localWinRate": 5.38,
+              "localWinRate": 5.46,
               "nationalWinRate": 4.26,
               "national2Rate": 21.9,
               "national3Rate": 34.29,
@@ -159869,7 +161142,7 @@
               "exhibitionST": 0.06,
               "exhibitionTime": 6.96,
               "lapTime": null,
-              "localWinRate": 5.22,
+              "localWinRate": 5.26,
               "nationalWinRate": 4.41,
               "national2Rate": 25,
               "national3Rate": 36.76,
@@ -159883,8 +161156,8 @@
             "weather": "",
             "windDirection": "横風",
             "windDirectionCode": 9,
-            "windSpeed": 2,
-            "waveHeight": 2,
+            "windSpeed": 3,
+            "waveHeight": 3,
             "temperature": 30,
             "waterTemperature": 32,
             "waterType": "海水",
@@ -159975,6 +161248,13 @@
               "boatNo": 2,
               "expectedPositions": [
                 1
+              ]
+            },
+            {
+              "role": "pickup",
+              "boatNo": 5,
+              "expectedPositions": [
+                3
               ]
             }
           ],
@@ -160238,8 +161518,10 @@
               "branchIds": [
                 "formation:cover:2-4-5:evaluation:taikou:2:1",
                 "formation:cover:2-4-5:evaluation:osae:4:2",
+                "formation:cover:2-4-5:evaluation:preserved:ana:5:0:3",
                 "formation:hole:2-4-5:evaluation:taikou:2:1",
-                "formation:hole:2-4-5:evaluation:osae:4:2"
+                "formation:hole:2-4-5:evaluation:osae:4:2",
+                "formation:hole:2-4-5:evaluation:preserved:ana:5:0:3"
               ],
               "roleClaims": [
                 {
@@ -160254,6 +161536,13 @@
                   "boatNo": 4,
                   "expectedPositions": [
                     2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 5,
+                  "expectedPositions": [
+                    3
                   ]
                 }
               ],
@@ -160283,8 +161572,10 @@
               "branchIds": [
                 "formation:flow:1-2-5:evaluation:honmei:1:1",
                 "formation:flow:1-2-5:evaluation:taikou:2:2",
+                "formation:flow:1-2-5:evaluation:preserved:ana:5:0:3",
                 "formation:main:1-2-5:evaluation:honmei:1:1",
                 "formation:main:1-2-5:evaluation:taikou:2:2",
+                "formation:main:1-2-5:evaluation:preserved:ana:5:0:3",
                 "evaluation:taikou:2:continuation-pickup:1-2-5"
               ],
               "roleClaims": [
@@ -160307,6 +161598,13 @@
                   "boatNo": 2,
                   "expectedPositions": [
                     2
+                  ]
+                },
+                {
+                  "role": "pickup",
+                  "boatNo": 5,
+                  "expectedPositions": [
+                    3
                   ]
                 }
               ],
@@ -160387,11 +161685,11 @@
       "shadowV2Reference": {
         "recordKey": "20260807-19-12:46a271121fb3769ad3b1:6245f31d96d83b341abe:56aff9d6",
         "cohortKey": "46a271121fb3769ad3b1:c0b9b68b3266f1d770c8:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.1-boat-identity:ai-core-v4.8.4-fixed-head-flow",
-        "capturedAt": "2026-08-07T11:29:48.241Z",
+        "capturedAt": "2026-08-07T11:39:51.783Z",
         "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
         "logicFingerprint": "46a271121fb3769ad3b1",
         "theoryInputVersion": "theory-input-v1.0.1-boat-identity",
-        "totalScore": 76
+        "totalScore": 75.9
       },
       "scenarioAiV6Shadow": {
         "version": "6.0.0-shadow",
@@ -164558,7 +165856,7 @@
       "place": "若松",
       "raceNo": 12,
       "deadlineAt": "2026-08-07T20:42:00+09:00",
-      "selectedAt": "2026-08-07T11:29:48.584Z",
+      "selectedAt": "2026-08-07T11:39:51.913Z",
       "verificationMode": "shadow",
       "scoreBand": "under_70",
       "selection": {
@@ -169647,7 +170945,7 @@
       "shadowV2Reference": {
         "recordKey": "20260807-20-12:46a271121fb3769ad3b1:6245f31d96d83b341abe:56aff9d6",
         "cohortKey": "46a271121fb3769ad3b1:c0b9b68b3266f1d770c8:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.1-boat-identity:ai-core-v4.8.4-fixed-head-flow",
-        "capturedAt": "2026-08-07T11:29:48.584Z",
+        "capturedAt": "2026-08-07T11:39:51.913Z",
         "evaluatorVersion": "shadow-selection-v2.0.1-boat-identity",
         "logicFingerprint": "46a271121fb3769ad3b1",
         "theoryInputVersion": "theory-input-v1.0.1-boat-identity",
@@ -188116,12 +189414,12 @@
       "place": "下関",
       "raceNo": 12,
       "verificationMode": "shadow_v2",
-      "capturedAt": "2026-08-07T11:29:48.241Z",
+      "capturedAt": "2026-08-07T11:39:51.783Z",
       "deadlineAt": "2026-08-07T20:45:00+09:00",
       "timing": {
         "policy": "at_or_before_deadline_minus_120s",
         "cutoffSeconds": 120,
-        "secondsBeforeDeadline": 911,
+        "secondsBeforeDeadline": 308,
         "beforeCutoff": true,
         "afterDeadline": false
       },
@@ -188256,7 +189554,7 @@
         }
       },
       "evaluation": {
-        "totalScore": 76,
+        "totalScore": 75.9,
         "priority": [
           "展開",
           "コース",
@@ -188372,7 +189670,7 @@
           {
             "key": "localWater",
             "label": "当地・水面",
-            "score": 68,
+            "score": 67,
             "source": "local-water-theory-v2.0.0",
             "focusBoatNo": 1,
             "focusBoatNos": null,
@@ -188385,10 +189683,10 @@
             "detail": {
               "localStarts": 28,
               "waterType": "海水",
-              "windType": "calm"
+              "windType": "cross"
             },
             "weight": 7,
-            "contribution": 4.76
+            "contribution": 4.69
           },
           {
             "key": "skill",
@@ -188432,7 +189730,7 @@
         ]
       },
       "versions": {
-        "sourceCommit": "fd136695c5e025e47c3cac86164a948e67dfcea2",
+        "sourceCommit": "34c991d447f1a2607584f2e0f5bb7eca31522d05",
         "logicFingerprint": "46a271121fb3769ad3b1",
         "referenceGenerationId": "c0b9b68b3266f1d770c8",
         "referenceDataFingerprint": "6245f31d96d83b341abe",
@@ -188647,8 +189945,8 @@
           "weather": "",
           "windDirection": "横風",
           "windDirectionCode": 9,
-          "windSpeed": 2,
-          "waveHeight": 2,
+          "windSpeed": 3,
+          "waveHeight": 3,
           "temperature": 30,
           "waterTemperature": 32,
           "waterType": "",
@@ -189262,12 +190560,12 @@
       "place": "若松",
       "raceNo": 12,
       "verificationMode": "shadow_v2",
-      "capturedAt": "2026-08-07T11:29:48.584Z",
+      "capturedAt": "2026-08-07T11:39:51.913Z",
       "deadlineAt": "2026-08-07T20:42:00+09:00",
       "timing": {
         "policy": "at_or_before_deadline_minus_120s",
         "cutoffSeconds": 120,
-        "secondsBeforeDeadline": 731,
+        "secondsBeforeDeadline": 128,
         "beforeCutoff": true,
         "afterDeadline": false
       },
@@ -189659,7 +190957,7 @@
         ]
       },
       "versions": {
-        "sourceCommit": "fd136695c5e025e47c3cac86164a948e67dfcea2",
+        "sourceCommit": "34c991d447f1a2607584f2e0f5bb7eca31522d05",
         "logicFingerprint": "46a271121fb3769ad3b1",
         "referenceGenerationId": "c0b9b68b3266f1d770c8",
         "referenceDataFingerprint": "6245f31d96d83b341abe",
@@ -190488,7 +191786,7 @@
       "usagePolicy": "校正対象の総合点は70点の自動選定へ使用。買い目構成・note内容・オッズ・公式結果は変更しない"
     }
   ],
-  "updatedAt": "2026-08-07T11:29:49.376Z",
+  "updatedAt": "2026-08-07T11:39:52.317Z",
   "scenarioAiV6": {
     "version": "6.0.0-shadow",
     "recordCount": 27,
