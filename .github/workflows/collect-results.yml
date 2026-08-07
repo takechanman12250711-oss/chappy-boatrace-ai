@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -67,6 +69,20 @@ jobs:
           node scripts/build-improvement-proposal-report.js
           node scripts/build-theory-adoption-phase5.js
           node scripts/build-scenario-ai-v6-verification.js
+
+      - name: Save official results before calibration
+        run: |
+          git add data/results data/predictions data/stats
+
+          if git diff --cached --quiet; then
+            echo "先行保存する公式結果はありません"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Collect official race results"
+            git pull --rebase origin main
+            git push origin main
+          fi
 
       - name: Build prediction calibration
         run: |
@@ -124,18 +140,18 @@ jobs:
           node scripts/build-prediction-index.js
           node scripts/compact-prediction-index.js
 
-      - name: Save collected results
+      - name: Save calibration and derived data
         run: |
           git add data/results data/predictions data/stats
 
           if git diff --cached --quiet; then
-            echo "保存する変更はありません"
+            echo "追加保存する校正・集計データはありません"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Collect official race results"
+          git commit -m "Update result calibration and reports"
           git pull --rebase origin main
           git push origin main
 
