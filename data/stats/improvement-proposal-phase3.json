@@ -1,25 +1,25 @@
 {
-  "generatedAt": "2026-08-07T03:54:12.406Z",
+  "generatedAt": "2026-08-07T15:09:51.596Z",
   "source": "data/predictions/*.json",
   "schemaVersion": 1,
   "engineVersion": "improvement-proposal-phase3-20260806",
   "status": "proposal-candidates-ready",
   "minimumRaceCount": 100,
-  "settledRaceCount": 457,
+  "settledRaceCount": 484,
   "remainingRaceCount": 0,
   "proposals": [
     {
       "code": "flow-reading-miss",
       "label": "展開読み違い",
       "theory": "展開理論",
-      "sampleCount": 379,
+      "sampleCount": 401,
       "occurrenceRate": 82.9,
       "priority": "high",
       "improvementCandidate": "展開成立条件と崩れ条件の再検証",
       "expectedEffect": "展開一致率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 357,
-        "medium": 22,
+        "medium": 44,
         "low": 0
       }
     },
@@ -27,14 +27,14 @@
       "code": "ticket-coverage-insufficient",
       "label": "買い目不足",
       "theory": "買い目構成",
-      "sampleCount": 379,
+      "sampleCount": 401,
       "occurrenceRate": 82.9,
       "priority": "high",
       "improvementCandidate": "展開内の残し・拾い不足を再検証",
       "expectedEffect": "実戦厳選的中率の改善余地を検証",
       "confidenceBreakdown": {
-        "high": 22,
-        "medium": 357,
+        "high": 23,
+        "medium": 378,
         "low": 0
       }
     },
@@ -42,19 +42,64 @@
       "code": "ticket-spread-too-wide",
       "label": "買い目広げ過ぎ",
       "theory": "買い目構成",
-      "sampleCount": 98,
-      "occurrenceRate": 21.4,
+      "sampleCount": 111,
+      "occurrenceRate": 22.9,
       "priority": "high",
       "improvementCandidate": "不的中時の点数拡張条件を再検証",
       "expectedEffect": "回収率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 0,
         "medium": 0,
-        "low": 98
+        "low": 111
+      }
+    },
+    {
+      "code": "local-water-adjustment-insufficient",
+      "label": "当地補正不足",
+      "theory": "当地・水面理論",
+      "sampleCount": 22,
+      "occurrenceRate": 4.5,
+      "priority": "low",
+      "improvementCandidate": "場・風・波・潮の補正条件を再検証",
+      "expectedEffect": "場別回収率の改善余地を検証",
+      "confidenceBreakdown": {
+        "high": 0,
+        "medium": 22,
+        "low": 0
+      }
+    },
+    {
+      "code": "wall-boat-evaluation-insufficient",
+      "label": "壁艇理論不足",
+      "theory": "壁艇理論",
+      "sampleCount": 14,
+      "occurrenceRate": 2.9,
+      "priority": "low",
+      "improvementCandidate": "壁成立・不成立条件を再検証",
+      "expectedEffect": "壁艇関与時の展開一致率の改善余地を検証",
+      "confidenceBreakdown": {
+        "high": 0,
+        "medium": 14,
+        "low": 0
+      }
+    },
+    {
+      "code": "exhibition-evaluation-insufficient",
+      "label": "展示評価不足",
+      "theory": "展示・足理論",
+      "sampleCount": 8,
+      "occurrenceRate": 1.7,
+      "priority": "low",
+      "improvementCandidate": "展示順位と足評価の採用条件を再検証",
+      "expectedEffect": "展示評価関与時の回収率の改善余地を検証",
+      "confidenceBreakdown": {
+        "high": 0,
+        "medium": 8,
+        "low": 0
       }
     }
   ],
-  "proposalCount": 3,
+  "proposalCount": 6,
   "proposalOnly": true,
   "humanApprovalRequired": true,
   "usableForPrediction": false,
