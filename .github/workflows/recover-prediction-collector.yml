@@ -25,9 +25,11 @@ jobs:
       - name: Minimal preflight
         run: |
           node --check scripts/collect-predictions.js
+          node --check scripts/audit-theory-tag-snapshot.js
           node --check api/schedule.js
           node --check api/_schedule-parser.js
           node scripts/test-schedule-parser.js
+          node scripts/test-audit-theory-tag-snapshot.js
           node scripts/check-charter.js
       - name: Collect predictions
         env:
@@ -39,17 +41,11 @@ jobs:
           node scripts/build-prediction-summaries.js
       - name: Save recovery output
         if: always()
+        env:
+          PREDICT_DATE: "20260807"
         run: |
           mkdir -p data/stats
-          node - <<'NODE'
-          const fs=require('node:fs');
-          const path='data/predictions/20260807.json';
-          fs.writeFileSync('data/stats/collector-recovery-20260807.json', JSON.stringify({
-            generatedAt:new Date().toISOString(),
-            predictionFileExists:fs.existsSync(path),
-            predictionBytes:fs.existsSync(path)?fs.statSync(path).size:0
-          }, null, 2)+'\n');
-          NODE
+          node scripts/audit-theory-tag-snapshot.js > data/stats/collector-recovery-20260807.json
           git add data/predictions data/stats data/notes 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
