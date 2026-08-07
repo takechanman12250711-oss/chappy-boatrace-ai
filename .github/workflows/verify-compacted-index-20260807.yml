@@ -1,0 +1,39 @@
+name: Verify compacted prediction index 20260807
+
+on:
+  push:
+    branches:
+      - chappy/verify-compacted-index-20260807
+    paths:
+      - "scripts/verify-compacted-index-20260807.js"
+      - ".github/workflows/verify-compacted-index-20260807.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chappy/verify-compacted-index-20260807
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify compacted prediction index
+        run: |
+          node --check scripts/verify-compacted-index-20260807.js
+          node scripts/verify-compacted-index-20260807.js > data/stats/compacted-index-verification-20260807.json
+          node scripts/test-load-performance.js
+      - name: Save verification report
+        run: |
+          git add data/stats/compacted-index-verification-20260807.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Record compacted index verification"
+          git pull --rebase origin chappy/verify-compacted-index-20260807
+          git push origin HEAD:chappy/verify-compacted-index-20260807
