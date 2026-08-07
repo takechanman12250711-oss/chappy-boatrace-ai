@@ -17,27 +17,59 @@ function tagged(record, theoryKey) {
   const patterns = { start: /stSlit|ST・スリット/i, skill: /skill|技量/i, "frame-rise-fall": /frameRiseSink|枠別浮沈/i, "double-time": /doubleTime|ダブルタイム/i, "new-engine": /newEngine|新エンジン/i };
   return rows.some(row => patterns[theoryKey]?.test([row?.theoryKey, row?.label, ...(row?.sources || [])].filter(Boolean).join(" ")));
 }
-function evaluationUsed(record, theoryKey, fresh = false) {
+function evaluationRow(record, theoryKey, fresh = false) {
   const snapshot = fresh ? evaluator.build(record) : record?.theoryEvaluationSnapshot;
   const rows = Array.isArray(snapshot?.evaluations) ? snapshot.evaluations : [];
-  return rows.some(row => row?.theoryKey === theoryKey && row?.used === true);
+  return rows.find(row => row?.theoryKey === theoryKey) || null;
 }
 function build(records) {
   const settled = (Array.isArray(records) ? records : []).filter(record => record?.result?.settled === true);
   return TARGETS.map(target => {
-    let supportPresentCount = 0, formalEvidenceCount = 0, taggedCount = 0, supportWithoutFormalCount = 0, storedEvaluationUsedCount = 0, freshEvaluationUsedCount = 0;
+    let supportPresentCount = 0, formalEvidenceCount = 0, taggedCount = 0, supportWithoutFormalCount = 0;
+    let storedEvaluationUsedCount = 0, freshEvaluationUsedCount = 0, storedEvaluatedCount = 0, freshEvaluatedCount = 0, freshInsufficientEvidenceCount = 0;
     settled.forEach(record => {
       const prediction = predictionOf(record);
       const present = target.supportPresent(prediction);
       const evidence = target.evidence(prediction) || {};
+      const stored = evaluationRow(record, target.theoryKey, false);
+      const fresh = evaluationRow(record, target.theoryKey, true);
       if (present) supportPresentCount += 1;
       if (evidence.formal === true) formalEvidenceCount += 1;
       if (tagged(record, target.theoryKey)) taggedCount += 1;
       if (present && evidence.formal !== true) supportWithoutFormalCount += 1;
-      if (evaluationUsed(record, target.theoryKey, false)) storedEvaluationUsedCount += 1;
-      if (evaluationUsed(record, target.theoryKey, true)) freshEvaluationUsedCount += 1;
+      if (stored?.used === true) storedEvaluationUsedCount += 1;
+      if (fresh?.used === true) freshEvaluationUsedCount += 1;
+      if (stored?.status === "evaluated") storedEvaluatedCount += 1;
+      if (fresh?.status === "evaluated") freshEvaluatedCount += 1;
+      if (fresh?.status === "insufficient-evidence") freshInsufficientEvidenceCount += 1;
     });
-    return { theoryKey: target.theoryKey, label: target.label, settledRaceCount: settled.length, supportPresentCount, formalEvidenceCount, taggedCount, supportWithoutFormalCount, storedEvaluationUsedCount, freshEvaluationUsedCount, staleEvaluationCount: Math.max(0, freshEvaluationUsedCount - storedEvaluationUsedCount), diagnosis: supportPresentCount === 0 && taggedCount === 0 ? "support-not-generated" : taggedCount > 0 && freshEvaluationUsedCount > storedEvaluationUsedCount ? "stored-evaluation-stale" : supportPresentCount > 0 && formalEvidenceCount === 0 ? "support-present-but-formal-conditions-not-met" : formalEvidenceCount > 0 && taggedCount === 0 ? "formal-evidence-present-but-tag-not-saved" : "tracking-active" };
+    const diagnosis = supportPresentCount === 0 && taggedCount === 0
+      ? "support-not-generated"
+      : taggedCount > 0 && freshEvaluationUsedCount > storedEvaluationUsedCount
+        ? "stored-evaluation-stale"
+        : taggedCount > 0 && freshInsufficientEvidenceCount > 0 && freshEvaluatedCount === 0
+          ? "tagged-but-no-ticket-evidence"
+          : supportPresentCount > 0 && formalEvidenceCount === 0
+            ? "support-present-but-formal-conditions-not-met"
+            : formalEvidenceCount > 0 && taggedCount === 0
+              ? "formal-evidence-present-but-tag-not-saved"
+              : "tracking-active";
+    return {
+      theoryKey: target.theoryKey,
+      label: target.label,
+      settledRaceCount: settled.length,
+      supportPresentCount,
+      formalEvidenceCount,
+      taggedCount,
+      supportWithoutFormalCount,
+      storedEvaluationUsedCount,
+      freshEvaluationUsedCount,
+      storedEvaluatedCount,
+      freshEvaluatedCount,
+      freshInsufficientEvidenceCount,
+      staleEvaluationCount: Math.max(0, freshEvaluationUsedCount - storedEvaluationUsedCount),
+      diagnosis
+    };
   });
 }
-module.exports = { TARGETS, predictionOf, tagged, evaluationUsed, build };
+module.exports = { TARGETS, predictionOf, tagged, evaluationRow, build };
