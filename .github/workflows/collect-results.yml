@@ -1,6 +1,11 @@
 name: Collect official race results
 
 on:
+  push:
+    branches:
+      - chappy/rebuild-results-phase7-20260807
+    paths:
+      - ".github/workflows/collect-results.yml"
   schedule:
     - cron: "30 14 * * *" # 23:30 JST
     - cron: "15 15 * * *" # 00:15 JST・遅延結果と後追加予想を再照合
@@ -16,7 +21,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: collect-official-results
+  group: collect-official-results-rebuild-20260807
   cancel-in-progress: false
 
 jobs:
@@ -28,6 +33,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: chappy/rebuild-results-phase7-20260807
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -60,7 +66,7 @@ jobs:
 
       - name: Collect official results
         env:
-          COLLECT_DATE: ${{ inputs.date }}
+          COLLECT_DATE: "20260807"
         run: |
           node scripts/repair-recent-results.js
           node scripts/build-result-review.js
@@ -80,8 +86,8 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "Collect official race results"
-            git pull --rebase origin main
-            git push origin main
+            git pull --rebase origin chappy/rebuild-results-phase7-20260807
+            git push origin HEAD:chappy/rebuild-results-phase7-20260807
           fi
 
       - name: Build prediction calibration
@@ -152,8 +158,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Update result calibration and reports"
-          git pull --rebase origin main
-          git push origin main
+          git pull --rebase origin chappy/rebuild-results-phase7-20260807
+          git push origin HEAD:chappy/rebuild-results-phase7-20260807
 
       - name: Run noncritical approval and performance checks
         continue-on-error: true
