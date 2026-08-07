@@ -32,6 +32,7 @@ jobs:
         run: |
           node --check scripts/verify-compacted-index-20260807.js
           node scripts/verify-compacted-index-20260807.js > data/stats/compacted-index-verification-20260807.json
+          cat data/stats/compacted-index-verification-20260807.json
           node scripts/test-load-performance.js
       - name: Save verification report on branch push only
         if: github.event_name == 'push'
