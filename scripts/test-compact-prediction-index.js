@@ -5,6 +5,7 @@ const verification = require("../js/prediction-verification");
 const { compactIndex } = require("./compact-prediction-index");
 
 const prediction = {
+  isRetrospective: false,
   practicalTickets: [{
     ticket: "2-1-3",
     category: "本線",
@@ -79,6 +80,7 @@ const index = {
   predictions: [],
   verificationPredictions: [{
     raceKey: "20260807-12-1",
+    isRetrospective: false,
     prediction: JSON.parse(JSON.stringify(prediction))
   }]
 };
@@ -87,6 +89,8 @@ const compacted = index.verificationPredictions[0].prediction;
 const after = verification.verifyPrediction(compacted, officialResult);
 
 assert.equal(compacted.verificationEvidence.tickets, undefined);
+assert.equal(compacted.isRetrospective, undefined, "外側と同値の重複フラグだけ削除する");
+assert.equal(index.verificationPredictions[0].isRetrospective, false, "外側の正式値は保持する");
 assert.equal(compacted.practicalTickets[0].selectionTier, "primary");
 assert.deepEqual(
   compacted.practicalTickets[0].theoryClaims,
@@ -107,6 +111,19 @@ assert.deepEqual(
   verification.buildSummary([after]).theoryPerformanceSummary,
   verification.buildSummary([before]).theoryPerformanceSummary,
   "理論別実績帰属を維持する"
+);
+
+const mismatch = {
+  verificationPredictions: [{
+    isRetrospective: true,
+    prediction: { isRetrospective: false }
+  }]
+};
+compactIndex(mismatch);
+assert.equal(
+  mismatch.verificationPredictions[0].prediction.isRetrospective,
+  false,
+  "値が異なる場合は削除しない"
 );
 
 console.log("prediction index compaction tests passed");
