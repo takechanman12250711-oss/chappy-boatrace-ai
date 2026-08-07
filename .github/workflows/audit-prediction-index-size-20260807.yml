@@ -6,6 +6,8 @@ on:
       - chappy/verification-index-field-audit-20260807
     paths:
       - "scripts/audit-prediction-index-size.js"
+      - "scripts/compact-prediction-index.js"
+      - "scripts/test-compact-prediction-index.js"
       - ".github/workflows/audit-prediction-index-size-20260807.yml"
   workflow_dispatch:
 
@@ -23,8 +25,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Audit prediction index size
+      - name: Compact and audit prediction index
         run: |
+          node --check scripts/compact-prediction-index.js
+          node scripts/test-compact-prediction-index.js
+          node scripts/compact-prediction-index.js
           node --check scripts/audit-prediction-index-size.js
           node scripts/audit-prediction-index-size.js > data/stats/prediction-index-size-audit-20260807.json
       - name: Save audit report
@@ -33,6 +38,6 @@ jobs:
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Record verification prediction size audit"
+          git commit -m "Record compacted prediction index size audit"
           git pull --rebase origin chappy/verification-index-field-audit-20260807
           git push origin HEAD:chappy/verification-index-field-audit-20260807
