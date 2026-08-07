@@ -1,92 +1,93 @@
 {
-  "generatedAt": "2026-08-07T01:54:44.735Z",
-  "schemaVersion": 2,
-  "engineVersion": "profit-priority-ranking-20260806-integrity-fixed",
+  "generatedAt": "2026-08-07T01:54:44.761Z",
+  "source": [
+    "theory-performance-report.json",
+    "profit-priority-ranking.json"
+  ],
+  "schemaVersion": 1,
+  "engineVersion": "theory-profit-review-phase8-20260807",
   "status": "collecting-data",
-  "minimumRaceCount": 30,
-  "evidenceField": "evaluatedCount",
+  "minimumEvidenceCount": 30,
   "priorityOrder": [
     "recoveryRate",
     "practicalHitRate",
     "skipDecisionAccuracy",
     "hitRate"
   ],
-  "ranking": [
+  "readyTheoryCount": 0,
+  "candidate": null,
+  "theories": [
     {
       "theoryKey": "race-flow",
       "label": "展開理論",
+      "evidenceCount": 26,
       "raceCount": 457,
       "useCount": 26,
-      "evidenceCount": 26,
       "metrics": {
         "recoveryRate": 20,
         "practicalHitRate": 15.4,
         "skipDecisionAccuracy": null,
         "hitRate": 15.4
       },
-      "deficits": {
-        "recoveryRate": 80,
-        "practicalHitRate": 4.6,
-        "skipDecisionAccuracy": null,
-        "hitRate": 0
+      "metricStatuses": {
+        "recoveryRate": "weak",
+        "practicalHitRate": "watch",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "strong"
       },
       "missingMetrics": [
         "skipDecisionAccuracy"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 1
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "remain-pickup",
       "label": "残し・拾い理論",
+      "evidenceCount": 26,
       "raceCount": 457,
       "useCount": 26,
-      "evidenceCount": 26,
       "metrics": {
         "recoveryRate": 21.7,
         "practicalHitRate": 15.4,
         "skipDecisionAccuracy": null,
         "hitRate": 15.4
       },
-      "deficits": {
-        "recoveryRate": 78.3,
-        "practicalHitRate": 4.6,
-        "skipDecisionAccuracy": null,
-        "hitRate": 0
+      "metricStatuses": {
+        "recoveryRate": "weak",
+        "practicalHitRate": "watch",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "strong"
       },
       "missingMetrics": [
         "skipDecisionAccuracy"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 2
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "course",
       "label": "コース理論",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -94,31 +95,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 3
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "double-time",
       "label": "ダブルタイム",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -126,31 +125,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 4
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "exhibition",
       "label": "展示・足理論",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -158,31 +155,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 5
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "frame-rise-fall",
       "label": "枠別浮沈率",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -190,31 +185,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 6
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "local-water",
       "label": "当地・水面理論",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -222,31 +215,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 7
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "motor",
       "label": "モーター理論",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -254,31 +245,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 8
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "new-engine",
       "label": "新エンジン理論",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -286,31 +275,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 9
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "skill",
       "label": "技量理論",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -318,31 +305,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 10
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "start",
       "label": "ST・スリット理論",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -350,31 +335,29 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 11
+      "automaticApplication": false,
+      "usableForPrediction": false
     },
     {
       "theoryKey": "wall-boat",
       "label": "壁艇理論",
+      "evidenceCount": 0,
       "raceCount": 457,
       "useCount": 0,
-      "evidenceCount": 0,
       "metrics": {
         "recoveryRate": null,
         "practicalHitRate": null,
         "skipDecisionAccuracy": null,
         "hitRate": null
       },
-      "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
-        "skipDecisionAccuracy": null,
-        "hitRate": null
+      "metricStatuses": {
+        "recoveryRate": "missing",
+        "practicalHitRate": "missing",
+        "skipDecisionAccuracy": "missing",
+        "hitRate": "missing"
       },
       "missingMetrics": [
         "recoveryRate",
@@ -382,16 +365,13 @@
         "skipDecisionAccuracy",
         "hitRate"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
+      "ready": false,
       "humanApprovalRequired": true,
       "approved": false,
-      "usableForPrediction": false,
-      "rank": 12
+      "automaticApplication": false,
+      "usableForPrediction": false
     }
   ],
-  "selectedTheory": null,
   "oneCandidateOnly": true,
   "humanApprovalRequired": true,
   "automaticApplication": false,
