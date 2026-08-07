@@ -21,6 +21,7 @@ function build(current = {}, previous = {}, options = {}) {
   );
   const warningAfterNewRaces = finite(options.warningAfterNewRaces) || DEFAULT_WARNING_AFTER_NEW_RACES;
   const newRaceCount = Math.max(0, currentRaceCount - baselineRaceCount);
+  const hasPreviousSnapshot = Array.isArray(previous?.theories) && previous.theories.length > 0;
 
   const previousMap = new Map(
     (Array.isArray(previous?.theories) ? previous.theories : [])
@@ -32,9 +33,13 @@ function build(current = {}, previous = {}, options = {}) {
     const theoryKey = String(row?.theoryKey || "");
     const prior = previousMap.get(theoryKey) || {};
     const evaluatedCount = finite(row?.evaluatedCount);
-    const previousEvaluatedCount = finite(prior?.evaluatedCount);
+    const previousEvaluatedCount = hasPreviousSnapshot
+      ? finite(prior?.evaluatedCount)
+      : (currentRaceCount <= baselineRaceCount ? evaluatedCount : 0);
     const growth = Math.max(0, evaluatedCount - previousEvaluatedCount);
-    const previouslyMissing = prior?.status === "formal-evidence-missing" || previousEvaluatedCount === 0;
+    const previouslyMissing = hasPreviousSnapshot
+      ? (prior?.status === "formal-evidence-missing" || previousEvaluatedCount === 0)
+      : evaluatedCount === 0;
     const shouldWarn = newRaceCount >= warningAfterNewRaces && previouslyMissing && growth === 0;
     return {
       theoryKey,
@@ -50,7 +55,7 @@ function build(current = {}, previous = {}, options = {}) {
   const warnings = theories.filter(row => row.warning);
   return {
     schemaVersion: 1,
-    engineVersion: "theory-evidence-growth-monitor-20260807",
+    engineVersion: "theory-evidence-growth-monitor-20260807-baseline-fixed",
     status: warnings.length ? "warning" : "healthy",
     baselineRaceCount,
     currentRaceCount,
