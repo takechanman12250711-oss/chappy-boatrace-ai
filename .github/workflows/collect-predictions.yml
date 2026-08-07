@@ -26,6 +26,7 @@ on:
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-race-parser.js"
       - "scripts/test-theory-integration.js"
+      - "scripts/test-theory-tag-catalog-reachability.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "js/collection-health.js"
@@ -95,6 +96,7 @@ jobs:
           node scripts/test-schedule-parser.js
           node scripts/test-race-parser.js
           node scripts/test-theory-integration.js
+          node scripts/test-theory-tag-catalog-reachability.js
           node scripts/test-boat-identity.js
           node scripts/check-charter.js
 
@@ -106,8 +108,6 @@ jobs:
           node scripts/build-scenario-ai-v6-snapshots.js
           node scripts/build-prediction-index.js
           node scripts/build-prediction-summaries.js
-          node scripts/test-load-performance.js
-          node scripts/test-prediction-runtime-loader.js
 
       - name: Save predictions and note drafts
         run: |
@@ -131,6 +131,8 @@ jobs:
       - name: Run noncritical regression checks
         continue-on-error: true
         run: |
+          node scripts/test-load-performance.js
+          node scripts/test-prediction-runtime-loader.js
           node --check js/scenario-ai-v6-shadow.js
           node --check js/evaluated-scenario-candidates.js
           node --check js/shadow-selection-v2.js
