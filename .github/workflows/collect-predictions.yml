@@ -31,6 +31,8 @@ on:
       - "js/collection-health.js"
       - "scripts/test-collection-health.js"
       - "api/schedule.js"
+      - "api/_schedule-parser.js"
+      - "scripts/test-schedule-parser.js"
       - "api/race.js"
       - "api/_history.js"
       - "api/_parser.js"
@@ -87,10 +89,13 @@ jobs:
         run: |
           node --check scripts/collect-predictions.js
           node --check scripts/build-scenario-ai-v6-snapshots.js
+          node --check api/schedule.js
+          node --check api/_schedule-parser.js
           node --check js/scenario-ai-v6-shadow.js
           node --check js/boat-identity.js
           node --check js/evaluated-scenario-candidates.js
           node --check js/shadow-selection-v2.js
+          node scripts/test-schedule-parser.js
           node scripts/test-scenario-ai-v6-shadow.js
           node scripts/test-scenario-ai-v6-storage.js
           node scripts/test-shadow-predictions.js
