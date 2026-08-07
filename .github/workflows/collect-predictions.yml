@@ -1,5 +1,4 @@
 name: Collect automatic race predictions
-# collector health restart: 2026-08-07
 
 on:
   push:
@@ -148,33 +147,3 @@ jobs:
           node scripts/test-prediction-summaries.js
           node scripts/test-build-prediction-index.js
           node scripts/test-collection-health.js
-
-      - name: Save one-time collector diagnostic
-        if: always()
-        env:
-          JOB_STATUS: ${{ job.status }}
-          EVENT_NAME: ${{ github.event_name }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_ATTEMPT: ${{ github.run_attempt }}
-          SHA: ${{ github.sha }}
-        run: |
-          node - <<'NODE'
-          const fs = require('node:fs');
-          fs.mkdirSync('data/stats', { recursive: true });
-          fs.writeFileSync('data/stats/auto-prediction-collector-debug.json', JSON.stringify({
-            generatedAt: new Date().toISOString(),
-            jobStatus: process.env.JOB_STATUS || '',
-            eventName: process.env.EVENT_NAME || '',
-            runId: process.env.RUN_ID || '',
-            runAttempt: process.env.RUN_ATTEMPT || '',
-            sourceCommit: process.env.SHA || '',
-            predictionFileExists: fs.existsSync(`data/predictions/${new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date()).replaceAll('-', '')}.json`)
-          }, null, 2) + '\n');
-          NODE
-          git add data/stats/auto-prediction-collector-debug.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "Record automatic prediction collector diagnostic"
-          git pull --rebase origin main
-          git push origin main
