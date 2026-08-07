@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("node:assert/strict");
+const monitor=require("../js/theory-evidence-growth-monitor");
+const current={theories:[{theoryKey:"course",label:"コース",raceCount:486,evaluatedCount:0},{theoryKey:"start",label:"ST",raceCount:486,evaluatedCount:2}]};
+let report=monitor.build(current,{baselineRaceCount:457,theories:[]});
+assert.equal(report.status,"healthy");
+report=monitor.build({...current,theories:current.theories.map(r=>({...r,raceCount:487}))},{baselineRaceCount:457,theories:[]});
+assert.equal(report.status,"warning");
+assert.deepEqual(report.warningTheoryKeys,["course"]);
+assert.equal(report.automaticApplication,false);
+assert.equal(report.usableForPrediction,false);
+console.log("theory evidence growth monitor tests passed");

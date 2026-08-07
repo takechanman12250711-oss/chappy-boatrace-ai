@@ -11,6 +11,7 @@ const steps = [
   "build-improvement-proposal-report.js",
   "build-theory-performance-report.js",
   "build-theory-evidence-coverage-phase7.js",
+  "build-theory-evidence-growth-monitor.js",
   "build-theory-adoption-phase5.js",
   "build-profit-priority-ranking.js",
   "build-learning-pipeline-gate.js",
