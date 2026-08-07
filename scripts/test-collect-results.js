@@ -9,6 +9,8 @@ const os =
 const path =
   require("node:path");
 const {
+  isVoidRace,
+  normalizeResolvedRace,
   mergeOfficialResults,
   hasMaterialResultChange,
   readExistingResults,
@@ -38,6 +40,10 @@ function race(
     resultAvailable:
       options.resultAvailable ??
       false,
+    status:
+      options.status,
+    starts:
+      options.starts,
     trifecta:
       options.trifecta,
     error:
@@ -143,8 +149,20 @@ assert.equal(
   2
 );
 assert.equal(
+  merged.voidRaces,
+  0
+);
+assert.equal(
+  merged.resolvedRaces,
+  2
+);
+assert.equal(
   merged.pendingRaces,
   1
+);
+assert.deepEqual(
+  merged.pendingRaceKeys,
+  ["24-12"]
 );
 assert.equal(
   merged.failedRaces,
@@ -209,6 +227,10 @@ assert.equal(
   3
 );
 assert.equal(
+  corrected.resolvedRaces,
+  3
+);
+assert.equal(
   corrected.complete,
   true
 );
@@ -250,6 +272,86 @@ assert.equal(
   "公式訂正は実質変更として保存する"
 );
 
+const allFalseStarts =
+  Array.from(
+    { length: 6 },
+    (_, index) => ({
+      course: index + 1,
+      boat: index + 1,
+      marker: "F",
+      falseStart: true,
+      lateStart: false,
+      raw: "F.01"
+    })
+  );
+const voidCandidate =
+  race("24", 1, {
+    place: "大村",
+    resultAvailable: false,
+    status: "not_finished",
+    starts: allFalseStarts,
+    trifecta: null
+  });
+
+assert.equal(
+  isVoidRace(voidCandidate),
+  true,
+  "6艇すべてF/Lで着順・3連単がないレースを不成立と判定する"
+);
+assert.equal(
+  normalizeResolvedRace(voidCandidate).status,
+  "void"
+);
+const voidMerged =
+  mergeOfficialResults(
+    null,
+    {
+      schemaVersion: 1,
+      source: "boatrace-official",
+      date: "20260807",
+      venues: [{
+        jcd: "24",
+        place: "大村"
+      }],
+      races: [voidCandidate]
+    }
+  );
+assert.equal(
+  voidMerged.completedRaces,
+  0,
+  "不成立レースを通常完走へ混ぜない"
+);
+assert.equal(
+  voidMerged.voidRaces,
+  1
+);
+assert.equal(
+  voidMerged.resolvedRaces,
+  1
+);
+assert.equal(
+  voidMerged.pendingRaces,
+  0,
+  "不成立を未確定扱いしない"
+);
+assert.equal(
+  voidMerged.failedRaces,
+  0
+);
+assert.deepEqual(
+  voidMerged.pendingRaceKeys,
+  []
+);
+assert.deepEqual(
+  voidMerged.voidRaceKeys,
+  ["24-1"]
+);
+assert.equal(
+  voidMerged.complete,
+  true,
+  "不成立を含め全レースが解決済みならcompleteにする"
+);
+
 const tempDirectory =
   fs.mkdtempSync(
     path.join(
@@ -286,5 +388,5 @@ fs.rmSync(
 );
 
 console.log(
-  "公式結果の部分取得保持テスト: 合格"
+  "公式結果の部分取得保持・不成立分類テスト: 合格"
 );
