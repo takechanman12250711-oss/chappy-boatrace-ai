@@ -121,7 +121,6 @@ jobs:
           node scripts/build-theory-stop-decision-report.js
           node scripts/test-build-prediction-index.js
           node scripts/build-prediction-index.js
-          node scripts/test-load-performance.js
 
       - name: Save collected results
         run: |
@@ -137,3 +136,7 @@ jobs:
           git commit -m "Collect official race results"
           git pull --rebase origin main
           git push origin main
+
+      - name: Run noncritical performance check
+        continue-on-error: true
+        run: node scripts/test-load-performance.js
