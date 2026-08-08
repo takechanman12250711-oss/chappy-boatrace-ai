@@ -134,18 +134,32 @@
 
 「GitHubに入った」だけで「本番修正完了」と扱わない。
 
-## 12. 現在地 2026-08-08
+## 12. 現在地 2026-08-08 17:10 JST
 
-確認時点の最新main:
+確認時点の機能反映コミット（台帳更新直前。次回開始時は必ず再取得する）:
 
-- AI: `5f30f76b9d281a8e11bf1cf65be7be96fe769abf`（自動予想保存コミット。今後必ず作業開始時に再取得して更新判断する）
-- API: `ed1bf9735fdf36592eeb29175b63b4edb42ebe7b`
+- AI: `85ef240910170eb744fc3fafaa864c94103844be`（PR #277）
+- API: `b0b9e9cb54f9148313f010937a6e854929efd021`（API PR #24）
 
-現在の重要残件:
+今回確定した本番状態:
 
-- API mainには全艇F/Lを不成立として返す修正が入っている。
-- ただしVercel ProductionがそのAPI mainへ反映されているかは別途確認が必要。
-- 本番APIが旧コードを返す場合、AI側ではなくAPI Production側の反映経路を調査する。
+- AI PR #275: 全艇F/Lの振り返りを「不成立（全艇F/L）」として表示。専用回帰を含むCI成功、squashマージ済み。
+- AI PR #276: 予想indexの重複理論証拠を安全に圧縮。3MB未満へ復旧し、検証母数・評価結果を維持。
+- API PR #20: 全艇F/Lを `status: void` / `voidReason: all-boats-f-or-l` として返す実装。
+- API PR #23: Vercel Hobbyで拒否されていた5分Cron設定を削除し、Production deploymentを復旧。
+- API PR #24: 本番scheduleの `liveVenues` 形式から最終オッズ収集対象を生成し、既存同期トークン認証へ対応。
+- AI PR #277: 既存の購入照合workflowから認証付きで最終オッズ収集APIを呼ぶ。予想ロジック・買い目・理論重み・UIは変更していない。
+- GitHub Pages: PR #277のmain SHAを対象にbuild/deploy成功。
+- Vercel Production: deployment `dpl_3hc65qX2NPeKrm6yxdgWjiym2HuC` がAPI PR #24のmain SHAでREADY。
+- 2026-08-07 大村1R: API Productionは `resultAvailable: false`, `status: void`, `void: true`。AI本番画面も「不成立（全艇F/L）」を表示。
+- 大村2Rの通常確定、通常未確定の非void、ホームからの当日予想、結果・成績画面まで回帰確認済み。
+- workflow run #119: 購入照合と最終オッズ収集が成功。収集は `targetCount: 7`, `successCount: 7`, `availableCount: 7`, `failedCount: 0`、各レース120通り取得。
+
+運用上の残件:
+
+- 最終オッズ収集は初回リクエストがVercelの30秒上限で504となり、既存の `curl --retry 2` により再試行で200へ回復した。収集結果は7/7成功だが、初回timeoutの解消は別件として継続確認する。
+- GitHub Actionsはworkflow上 `*/5 * * * *` だが、過去の実起動間隔はおおむね40〜80分であり、厳密な5分実行保証として扱わない。締切前の全レース収集を保証する必要がある場合は、スケジューラの信頼性改善を別PRで検討する。
+- AI側の全艇F/L互換層は、API Productionが正常化した後も安全フォールバックとして維持する。
 
 ## 13. 新しいチャット開始時の最初の動作
 
