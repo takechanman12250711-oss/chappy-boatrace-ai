@@ -12,11 +12,13 @@ on:
       - "js/render.js"
       - "js/script.js"
       - "js/result-ui-phase5.js"
+      - "js/result-void-compat.js"
       - "scripts/test-api-history-no-browser-fallback.js"
       - "scripts/test-initial-odds-enrichment.js"
       - "scripts/test-race-flow-result-panel.js"
       - "scripts/test-schedule-request-cache.js"
       - "scripts/test-phase6-integration.js"
+      - "scripts/test-result-void-compat.js"
       - ".github/workflows/check-phase6-integration.yml"
 
 jobs:
@@ -31,9 +33,13 @@ jobs:
         run: |
           node --check js/prediction-runtime-loader.js
           node --check js/script.js
+          node --check js/result-void-compat.js
           node --check scripts/test-phase6-integration.js
+          node --check scripts/test-result-void-compat.js
       - name: Run Phase6 integration test
         run: node scripts/test-phase6-integration.js
+      - name: Run result void compatibility test
+        run: node scripts/test-result-void-compat.js
       - name: Run load performance regression
         run: node scripts/test-load-performance.js
       - name: Run race flow and API enrichment regressions
