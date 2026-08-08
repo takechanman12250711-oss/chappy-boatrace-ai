@@ -3,6 +3,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
+const MAX_INDEX_BYTES = 3_000_000;
+
 function normalizeTicket(value) {
   const boats = String(value || "").match(/[1-6]/g) || [];
   return boats.length >= 3 ? boats.slice(0, 3).join("-") : "";
@@ -72,6 +74,25 @@ function removeDuplicateVerificationFlags(record) {
   return record;
 }
 
+function removeDuplicateTicketTheoryClaims(prediction) {
+  if (!prediction || typeof prediction !== "object") return prediction;
+  const commonClaims = prediction.verificationEvidence?.theoryClaims;
+  if (!Array.isArray(commonClaims) || !Array.isArray(prediction.practicalTickets)) {
+    return prediction;
+  }
+
+  const serializedCommonClaims = JSON.stringify(commonClaims);
+  prediction.practicalTickets.forEach(ticket => {
+    if (!ticket || typeof ticket !== "object") return;
+    if (!Object.prototype.hasOwnProperty.call(ticket, "theoryClaims")) return;
+    if (JSON.stringify(ticket.theoryClaims) === serializedCommonClaims) {
+      delete ticket.theoryClaims;
+      ticket.theoryClaimsRef = true;
+    }
+  });
+  return prediction;
+}
+
 function removeUnusedRunTargetDetails(run) {
   if (!run || typeof run !== "object") return run;
   const health = run.collectionHealth;
@@ -88,6 +109,7 @@ function compactIndex(index) {
     if (!Array.isArray(index[key])) return;
     index[key].forEach(record => {
       mergeEvidenceIntoPracticalTickets(record?.prediction);
+      removeDuplicateTicketTheoryClaims(record?.prediction);
       if (key === "verificationPredictions") removeDuplicateVerificationFlags(record);
     });
   });
@@ -104,22 +126,37 @@ function compactPredictionIndexFile(filePath) {
   return index;
 }
 
+function assertIndexSize(size, limit = MAX_INDEX_BYTES) {
+  const bytes = Number(size);
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    throw new TypeError("indexサイズが不正です");
+  }
+  if (bytes >= limit) {
+    throw new Error(`自動予想索引が3MB上限を超えています (${bytes} bytes)`);
+  }
+  return bytes;
+}
+
 function main() {
   const filePath = path.join(process.cwd(), "data", "predictions", "index.json");
   if (!fs.existsSync(filePath)) throw new Error("data/predictions/index.json がありません");
   const before = fs.statSync(filePath).size;
   compactPredictionIndexFile(filePath);
   const after = fs.statSync(filePath).size;
+  assertIndexSize(after);
   console.log(`自動予想索引を重複排除：${before} -> ${after} bytes (-${before - after})`);
 }
 
 if (require.main === module) main();
 
 module.exports = {
+  MAX_INDEX_BYTES,
   normalizeTicket,
   mergeEvidenceIntoPracticalTickets,
   removeDuplicateVerificationFlags,
+  removeDuplicateTicketTheoryClaims,
   removeUnusedRunTargetDetails,
   compactIndex,
-  compactPredictionIndexFile
+  compactPredictionIndexFile,
+  assertIndexSize
 };

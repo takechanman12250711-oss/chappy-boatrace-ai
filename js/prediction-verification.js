@@ -525,11 +525,21 @@
                 : []
             )
           );
+        const ticketTheoryClaims =
+          evidenceTicket.theoryClaims !==
+            undefined
+            ? evidenceTicket.theoryClaims
+            : row.theoryClaims !==
+                undefined
+              ? row.theoryClaims
+              : row.theoryClaimsRef ===
+                  true
+                ? verificationEvidence
+                    ?.theoryClaims
+                : undefined;
         const theoryClaims =
           normalizeTheoryClaims(
-            evidenceTicket
-              .theoryClaims ||
-            row.theoryClaims
+            ticketTheoryClaims
           );
 
         return {
