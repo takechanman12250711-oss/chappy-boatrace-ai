@@ -134,11 +134,11 @@
 
 「GitHubに入った」だけで「本番修正完了」と扱わない。
 
-## 12. 現在地 2026-08-08 17:10 JST
+## 12. 現在地 2026-08-08 20:10 JST
 
 確認時点の機能反映コミット（台帳更新直前。次回開始時は必ず再取得する）:
 
-- AI: `85ef240910170eb744fc3fafaa864c94103844be`（PR #277）
+- AI: `5039cc0b70d44af3f233f950d4192c8bc09574ee`（PR #279後の初回自動予想収集）
 - API: `b0b9e9cb54f9148313f010937a6e854929efd021`（API PR #24）
 
 今回確定した本番状態:
@@ -149,6 +149,10 @@
 - API PR #23: Vercel Hobbyで拒否されていた5分Cron設定を削除し、Production deploymentを復旧。
 - API PR #24: 本番scheduleの `liveVenues` 形式から最終オッズ収集対象を生成し、既存同期トークン認証へ対応。
 - AI PR #277: 既存の購入照合workflowから認証付きで最終オッズ収集APIを呼ぶ。予想ロジック・買い目・理論重み・UIは変更していない。
+- AI PR #279: 日次JSONを正本のまま、配信用予想indexをcontent-addressed manifest＋byte-bound shardへ恒久分割。旧 `index.json` は端末fallback用に凍結し、予想ロジック・優先順位・買い目・理論重み・UIは変更していない。
+- PR #279後の初回自動予想収集 `5039cc0`: current 6 shard＋直前1世代を保持。共有ファイル込みの実保存11件はmanifest参照集合と完全一致し、検証300件・V2シャドー381件・実行100件を再構成確認済み。
+- 凍結legacy `data/predictions/index.json` のblobはPR前後・初回自動収集後とも `84f0bd081357d4a325c78cd381a60ccf9c2b4ef6` で不変。
+- GitHub Pages本番 `https://takechanman12250711-oss.github.io/chappy-boatrace-ai/`: `20260808-index-shards1` のloader配信、成績分析の遅延読込・表示、サイト由来console errorなしを確認。
 - GitHub Pages: PR #277のmain SHAを対象にbuild/deploy成功。
 - Vercel Production: deployment `dpl_3hc65qX2NPeKrm6yxdgWjiym2HuC` がAPI PR #24のmain SHAでREADY。
 - 2026-08-07 大村1R: API Productionは `resultAvailable: false`, `status: void`, `void: true`。AI本番画面も「不成立（全艇F/L）」を表示。
@@ -157,6 +161,8 @@
 
 運用上の残件:
 
+- 最終オッズ収集の1R単位API化、認証fail-closed化、取得時刻が新しい値だけを保存する原子的更新は未実装。Cloudflare Workers・Workflows・D1への無料移行はこのAPI安全化後に行う。
+- PR #279の `Check theory improvement approval gate` 失敗は、対象3ファイルに差分がない最新main `f5908dd` 単体でも同じassertion failureを再現した既存問題。index shard移行とは分離して修正する。
 - 最終オッズ収集は初回リクエストがVercelの30秒上限で504となり、既存の `curl --retry 2` により再試行で200へ回復した。収集結果は7/7成功だが、初回timeoutの解消は別件として継続確認する。
 - GitHub Actionsはworkflow上 `*/5 * * * *` だが、過去の実起動間隔はおおむね40〜80分であり、厳密な5分実行保証として扱わない。締切前の全レース収集を保証する必要がある場合は、スケジューラの信頼性改善を別PRで検討する。
 - AI側の全艇F/L互換層は、API Productionが正常化した後も安全フォールバックとして維持する。
