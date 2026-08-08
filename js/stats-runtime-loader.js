@@ -3,12 +3,13 @@
 (function (root) {
   "use strict";
   if (root.ChappyStatsRuntime) return;
-  const VERSION = "20260806-results-ui-phase4-1";
+  const VERSION = "20260808-index-shards1";
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const scripts = [
     "js/boat-identity.js",
     "js/collection-health.js",
     "js/prediction-verification.js",
+    "js/prediction-index-loader.js",
     "js/auto-stats.js",
     "js/verification-readiness.js",
     "js/improvement-suggestions.js",

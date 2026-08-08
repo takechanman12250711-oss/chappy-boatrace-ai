@@ -8,6 +8,10 @@ on:
       - ".github/workflows/collect-results.yml"
       - "scripts/collect-results.js"
       - "scripts/repair-recent-results.js"
+      - "scripts/build-prediction-index-shards.js"
+      - "scripts/test-build-prediction-index-shards.js"
+      - "js/prediction-index-loader.js"
+      - "scripts/test-prediction-index-loader.js"
       - "scripts/test-collect-results.js"
       - "scripts/test-repair-recent-results.js"
   schedule:
@@ -57,6 +61,10 @@ jobs:
           node --check scripts/build-improvement-proposal-report.js
           node --check js/theory-adoption-phase5.js
           node --check scripts/build-theory-adoption-phase5.js
+          node --check scripts/build-prediction-index-shards.js
+          node --check js/prediction-index-loader.js
+          node scripts/test-build-prediction-index-shards.js
+          node scripts/test-prediction-index-loader.js
           node --check scripts/compact-prediction-index.js
           node scripts/test-compact-prediction-index.js
           node scripts/test-collect-results.js
@@ -78,10 +86,17 @@ jobs:
           node scripts/build-improvement-proposal-report.js
           node scripts/build-theory-adoption-phase5.js
           node scripts/build-scenario-ai-v6-verification.js
+          node scripts/build-prediction-index-shards.js
+
+      - name: Validate result prediction artifacts
+        run: |
+          node scripts/test-load-performance.js
+          git diff --exit-code -- data/predictions/index.json
 
       - name: Save official results before calibration
         run: |
-          git add data/results data/predictions data/stats
+          git add data/results data/stats
+          git add -- data/predictions ':(exclude)data/predictions/index.json'
 
           if git diff --cached --quiet; then
             echo "先行保存する公式結果はありません"
@@ -146,12 +161,19 @@ jobs:
           node scripts/test-theory-stop-decision-report.js
           node scripts/build-theory-stop-decision-report.js
           node scripts/test-build-prediction-index.js
-          node scripts/build-prediction-index.js
-          node scripts/compact-prediction-index.js
+          node scripts/test-build-prediction-index-shards.js
+          node scripts/test-prediction-index-loader.js
+          node scripts/build-prediction-index-shards.js
+
+      - name: Validate calibrated prediction artifacts
+        run: |
+          node scripts/test-load-performance.js
+          git diff --exit-code -- data/predictions/index.json
 
       - name: Save calibration and derived data
         run: |
-          git add data/results data/predictions data/stats
+          git add data/results data/stats
+          git add -- data/predictions ':(exclude)data/predictions/index.json'
 
           if git diff --cached --quiet; then
             echo "追加保存する校正・集計データはありません"

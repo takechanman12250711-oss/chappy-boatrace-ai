@@ -524,6 +524,22 @@ const compactSource = fs.readFileSync(
 
 assert.match(
   statsSource,
+  /P\.loadPredictionIndex\(\{/,
+  "成績分析が分割予想index loaderを使用していません"
+);
+assert.match(
+  statsSource,
+  /data\/predictions\/index-manifest\.json/,
+  "成績分析のmanifest参照がありません"
+);
+assert.match(
+  statsSource,
+  /loaded\.source === "legacy"/,
+  "分割index失敗時のlegacy fallback表示がありません"
+);
+
+assert.match(
+  statsSource,
   /class="results-analysis-dashboard"/,
   "結果分析ダッシュボードが描画されていません"
 );

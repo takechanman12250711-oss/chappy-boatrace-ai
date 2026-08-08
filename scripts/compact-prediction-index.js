@@ -120,6 +120,21 @@ function compactIndex(index) {
 }
 
 function compactPredictionIndexFile(filePath) {
+  const frozenLegacyPath = path.resolve(
+    __dirname,
+    "..",
+    "data",
+    "predictions",
+    "index.json"
+  );
+  if (
+    path.resolve(filePath) ===
+    frozenLegacyPath
+  ) {
+    throw new Error(
+      "legacy indexはfallback用に凍結済みです"
+    );
+  }
   const index = JSON.parse(fs.readFileSync(filePath, "utf8"));
   compactIndex(index);
   fs.writeFileSync(filePath, JSON.stringify(index) + "\n", "utf8");
@@ -138,13 +153,10 @@ function assertIndexSize(size, limit = MAX_INDEX_BYTES) {
 }
 
 function main() {
-  const filePath = path.join(process.cwd(), "data", "predictions", "index.json");
-  if (!fs.existsSync(filePath)) throw new Error("data/predictions/index.json がありません");
-  const before = fs.statSync(filePath).size;
-  compactPredictionIndexFile(filePath);
-  const after = fs.statSync(filePath).size;
-  assertIndexSize(after);
-  console.log(`自動予想索引を重複排除：${before} -> ${after} bytes (-${before - after})`);
+  throw new Error(
+    "legacy indexはfallback用に凍結済みです。" +
+    "scripts/build-prediction-index-shards.js を実行してください"
+  );
 }
 
 if (require.main === module) main();
