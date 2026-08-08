@@ -8,6 +8,8 @@
 
   const U = window.ChappyUtils;
   const S = window.ChappyStorage;
+  const P =
+    window.ChappyPredictionIndexLoader;
   const A = window.ChappyAutoStats;
   const I = window.ChappyImprovementSuggestions;
   const V = window.ChappyPredictionVerification;
@@ -136,16 +138,56 @@
     if (!A?.normalizeIndex) return automaticStats;
 
     try {
-      const { response, payload } = await fetchJsonWithTimeout(
-        "data/predictions/index.json?v=20260729-review2",
-        { cache: "no-cache" }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      let payload;
+      if (
+        typeof P?.loadPredictionIndex ===
+        "function"
+      ) {
+        const loaded =
+          await P.loadPredictionIndex({
+            requestJson: url =>
+              fetchJsonWithTimeout(
+                url,
+                {
+                  cache:
+                    String(url).includes(
+                      "/index-shards/"
+                    )
+                      ? "force-cache"
+                      : "no-cache"
+                }
+              ),
+            manifestUrl:
+              "data/predictions/index-manifest.json",
+            legacyUrl:
+              "data/predictions/index.json"
+          });
+        payload = loaded.data;
+        if (
+          loaded.source === "legacy" &&
+          loaded.fallbackReason
+        ) {
+          console.warn(
+            "分割予想indexを読めないためlegacy indexを使用",
+            loaded.fallbackReason
+          );
+        }
+      } else {
+        const legacy =
+          await fetchJsonWithTimeout(
+            "data/predictions/index.json",
+            { cache: "no-cache" }
+          );
+        if (!legacy.response.ok) {
+          throw new Error(
+            `HTTP ${legacy.response.status}`
+          );
+        }
+        payload = legacy.payload;
       }
 
-      automaticStats = A.normalizeIndex(payload);
+      automaticStats =
+        A.normalizeIndex(payload);
       automaticStatsLoaded = true;
       automaticStatsError = "";
     } catch (error) {

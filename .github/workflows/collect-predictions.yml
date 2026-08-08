@@ -13,6 +13,8 @@ on:
       - "scripts/test-scenario-ai-v6-storage.js"
       - "js/scenario-ai-v6-shadow.js"
       - "scripts/build-prediction-index.js"
+      - "scripts/build-prediction-index-shards.js"
+      - "scripts/test-build-prediction-index-shards.js"
       - "scripts/compact-prediction-index.js"
       - "scripts/test-compact-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
@@ -20,6 +22,8 @@ on:
       - "scripts/test-prediction-summaries.js"
       - "scripts/test-load-performance.js"
       - "js/stats-runtime-loader.js"
+      - "js/prediction-index-loader.js"
+      - "scripts/test-prediction-index-loader.js"
       - "scripts/test-prediction-runtime-loader.js"
       - "js/prediction-runtime-loader.js"
       - "scripts/test-shadow-predictions.js"
@@ -91,6 +95,10 @@ jobs:
         run: |
           node --check scripts/collect-predictions.js
           node --check scripts/build-scenario-ai-v6-snapshots.js
+          node --check scripts/build-prediction-index-shards.js
+          node --check js/prediction-index-loader.js
+          node scripts/test-build-prediction-index-shards.js
+          node scripts/test-prediction-index-loader.js
           node --check scripts/compact-prediction-index.js
           node scripts/test-compact-prediction-index.js
           node --check api/schedule.js
@@ -109,13 +117,17 @@ jobs:
         run: |
           node scripts/collect-predictions.js
           node scripts/build-scenario-ai-v6-snapshots.js
-          node scripts/build-prediction-index.js
-          node scripts/compact-prediction-index.js
+          node scripts/build-prediction-index-shards.js
           node scripts/build-prediction-summaries.js
+
+      - name: Validate generated prediction artifacts
+        run: |
+          node scripts/test-load-performance.js
+          git diff --exit-code -- data/predictions/index.json
 
       - name: Save predictions and note drafts
         run: |
-          git add data/predictions
+          git add -- data/predictions ':(exclude)data/predictions/index.json'
 
           if [ -d data/notes ]; then
             git add data/notes
@@ -151,5 +163,7 @@ jobs:
           node scripts/test-api-client-cache.js
           node scripts/test-prediction-summaries.js
           node scripts/test-build-prediction-index.js
+          node scripts/test-build-prediction-index-shards.js
+          node scripts/test-prediction-index-loader.js
           node scripts/test-compact-prediction-index.js
           node scripts/test-collection-health.js

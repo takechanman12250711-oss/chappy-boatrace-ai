@@ -5,6 +5,25 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const zlib = require("node:zlib");
+const {
+  MAX_SHARD_BYTES,
+  currentShardDescriptors,
+  reconstructIndex,
+  retainedShardDescriptors,
+  sha256
+} = require(
+  "./build-prediction-index-shards"
+);
+const {
+  buildPredictionIndex
+} = require(
+  "./build-prediction-index"
+);
+const {
+  compactIndex
+} = require(
+  "./compact-prediction-index"
+);
 
 const root = path.resolve(__dirname, "..");
 const read = file =>
@@ -45,6 +64,13 @@ const predictionIndexPath =
     "data",
     "predictions",
     "index.json"
+  );
+const predictionIndexManifestPath =
+  path.join(
+    root,
+    "data",
+    "predictions",
+    "index-manifest.json"
   );
 const improvementReviewPath =
   path.join(
@@ -200,6 +226,7 @@ assert.equal(
 [
   "js/collection-health.js",
   "js/prediction-verification.js",
+  "js/prediction-index-loader.js",
   "js/auto-stats.js",
   "js/verification-readiness.js",
   "js/improvement-suggestions.js",
@@ -265,7 +292,7 @@ assert.equal(
 [
   "style.css?v=20260806-results-ui-phase4-1",
   "css/home-dashboard-v2.css?v=20260803-entry-odds1",
-  "js/app-runtime-loader.js?v=20260806-results-ui-phase4-1",
+  "js/app-runtime-loader.js?v=20260808-index-shards1",
   "js/home-dashboard-v2.js?v=20260803-ui-fix2"
 ].forEach(asset => {
   assert.equal(
@@ -276,7 +303,7 @@ assert.equal(
 });
 assert.equal(
   appRuntime.includes(
-    'const VERSION = "20260806-results-ui-phase4-1"'
+    'const VERSION = "20260808-index-shards1"'
   ),
   true,
   "変更した通常画面モジュールのキャッシュ世代を更新する"
@@ -324,7 +351,7 @@ assert.equal(
 );
 assert.equal(
   statsRuntime.includes(
-    '"20260806-results-ui-phase4-1"'
+    '"20260808-index-shards1"'
   ),
   true,
   "結果分析モジュールのキャッシュ世代を更新する"
@@ -536,7 +563,7 @@ const predictionIndex =
 assert.ok(
   predictionIndex.length <
     3000000,
-  `集約indexは3MB未満 (${predictionIndex.length} bytes)`
+  `凍結legacy indexは3MB未満 (${predictionIndex.length} bytes)`
 );
 assert.ok(
   zlib.gzipSync(
@@ -545,6 +572,150 @@ assert.ok(
   ).length <
     300000,
   "集約indexのgzip配信量を300KB未満にする"
+);
+const manifestBuffer =
+  fs.readFileSync(
+    predictionIndexManifestPath
+  );
+const manifest = JSON.parse(
+  manifestBuffer.toString("utf8")
+);
+assert.equal(
+  manifest.format,
+  "chappy-prediction-index-manifest"
+);
+assert.ok(
+  manifestBuffer.length < 20_000,
+  `予想index manifestは20KB未満 (${manifestBuffer.length} bytes)`
+);
+const descriptors =
+  currentShardDescriptors(manifest);
+const retainedDescriptors =
+  retainedShardDescriptors(manifest);
+const artifactDescriptors = [
+  ...descriptors,
+  ...retainedDescriptors
+].filter(
+  (descriptor, index, all) =>
+    all.findIndex(item =>
+      item.path === descriptor.path
+    ) === index
+);
+assert.ok(
+  descriptors.length >= 4,
+  "4配列を独立shardとして配信する"
+);
+const artifactBuffers =
+  new Map();
+artifactDescriptors.forEach(
+  descriptor => {
+    const shardPath = path.join(
+      root,
+      "data",
+      "predictions",
+      descriptor.path
+    );
+    const buffer = fs.readFileSync(
+      shardPath
+    );
+    assert.equal(
+      buffer.length,
+      descriptor.bytes,
+      `${descriptor.path} のmanifest容量と実体を一致させる`
+    );
+    assert.ok(
+      buffer.length < MAX_SHARD_BYTES,
+      `${descriptor.path} は1.25MB未満 (${buffer.length} bytes)`
+    );
+    assert.equal(
+      sha256(buffer.toString("utf8")),
+      descriptor.shardId,
+      `${descriptor.path} のcontent hashを一致させる`
+    );
+    artifactBuffers.set(
+      descriptor.path,
+      buffer
+    );
+  }
+);
+const expectedShardNames =
+  artifactDescriptors
+    .map(descriptor =>
+      path.basename(descriptor.path)
+    )
+    .sort();
+const actualShardNames =
+  fs.readdirSync(
+    path.join(
+      root,
+      "data",
+      "predictions",
+      "index-shards"
+    )
+  ).filter(name =>
+    name.endsWith(".json")
+  ).sort();
+assert.deepEqual(
+  actualShardNames,
+  expectedShardNames,
+  "manifestの現世代＋直前世代以外のshardを配信しない"
+);
+const shardBuffers = descriptors.map(
+  descriptor =>
+    artifactBuffers.get(
+      descriptor.path
+    )
+);
+const aggregateGzipBytes = [
+  manifestBuffer,
+  ...shardBuffers
+].reduce(
+  (sum, buffer) =>
+    sum + zlib.gzipSync(
+      buffer,
+      { level: 9 }
+    ).length,
+  0
+);
+assert.ok(
+  aggregateGzipBytes < 300_000,
+  `manifest＋全shardのgzip配信量を300KB未満にする (${aggregateGzipBytes} bytes)`
+);
+const reconstructedIndex =
+  reconstructIndex(
+    predictionIndexManifestPath
+  );
+const expectedCurrentIndex = compactIndex(
+  buildPredictionIndex(
+    path.join(
+      root,
+      "data",
+      "predictions"
+    )
+  )
+);
+assert.deepEqual(
+  {
+    ...reconstructedIndex,
+    generatedAt: ""
+  },
+  {
+    ...expectedCurrentIndex,
+    generatedAt: ""
+  },
+  "分割indexを日次正本の現在値と同一内容で再構成する"
+);
+assert.equal(
+  reconstructedIndex
+    .verificationPredictions.length,
+  300,
+  "検証母数300件を維持する"
+);
+assert.ok(
+  reconstructedIndex
+    .shadowV2Predictions.length >=
+    300,
+  "V2の500R進捗用履歴を維持する"
 );
 assert.ok(
   fs.statSync(

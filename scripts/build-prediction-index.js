@@ -1019,6 +1019,21 @@ function buildPredictionIndex(directory) {
 }
 
 function writePredictionIndex(directory, outputPath) {
+  const frozenLegacyPath = path.resolve(
+    __dirname,
+    "..",
+    "data",
+    "predictions",
+    "index.json"
+  );
+  if (
+    path.resolve(outputPath) ===
+    frozenLegacyPath
+  ) {
+    throw new Error(
+      "legacy indexはfallback用に凍結済みです"
+    );
+  }
   const index = buildPredictionIndex(directory);
   if (fs.existsSync(outputPath)) {
     const existing = readJson(outputPath);
@@ -1035,12 +1050,9 @@ function writePredictionIndex(directory, outputPath) {
 }
 
 function main() {
-  const directory = path.join(process.cwd(), "data", "predictions");
-  const outputPath = path.join(directory, "index.json");
-  const index = writePredictionIndex(directory, outputPath);
-  console.log(
-    `自動予想索引を更新：採用${index.predictions.length}件／検証${index.verificationPredictions.length}件／` +
-    `V2シャドー${index.shadowV2Predictions.length}件／実行${index.runs.length}件`
+  throw new Error(
+    "legacy indexはfallback用に凍結済みです。" +
+    "scripts/build-prediction-index-shards.js を実行してください"
   );
 }
 

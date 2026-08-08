@@ -179,6 +179,7 @@ async function main() {
       "js/boat-identity.js",
       "js/collection-health.js",
       "js/prediction-verification.js",
+      "js/prediction-index-loader.js",
       "js/auto-stats.js",
       "js/verification-readiness.js",
       "js/improvement-suggestions.js",
@@ -186,6 +187,15 @@ async function main() {
       "js/result-ui-phase5.js"
     ],
     "一時失敗後も依存順どおり再読込する"
+  );
+  assert.ok(
+    loaded.indexOf(
+      "js/prediction-index-loader.js"
+    ) <
+      loaded.indexOf(
+        "js/stats.js"
+      ),
+    "分割index loaderをstatsより先に読み込む"
   );
   assert.ok(
     loaded.indexOf(
