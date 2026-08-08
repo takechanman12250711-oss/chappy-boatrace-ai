@@ -82,6 +82,19 @@ const index = {
     raceKey: "20260807-12-1",
     isRetrospective: false,
     prediction: JSON.parse(JSON.stringify(prediction))
+  }],
+  runs: [{
+    runKey: "20260808-1",
+    selected: false,
+    collectionHealth: {
+      targetCount: 12,
+      savedCount: 10,
+      complete: false,
+      targets: [
+        { raceKey: "20260808-10-1", status: "saved" },
+        { raceKey: "20260808-10-2", status: "pending" }
+      ]
+    }
   }]
 };
 compactIndex(index);
@@ -112,6 +125,15 @@ assert.deepEqual(
   verification.buildSummary([before]).theoryPerformanceSummary,
   "理論別実績帰属を維持する"
 );
+
+assert.equal(
+  index.runs[0].collectionHealth.targets,
+  undefined,
+  "indexでは未使用のrun対象明細を削除する"
+);
+assert.equal(index.runs[0].collectionHealth.targetCount, 12, "run集計値は保持する");
+assert.equal(index.runs[0].collectionHealth.savedCount, 10, "run保存件数は保持する");
+assert.equal(index.runs[0].selected, false, "見送り判定は保持する");
 
 const mismatch = {
   verificationPredictions: [{
