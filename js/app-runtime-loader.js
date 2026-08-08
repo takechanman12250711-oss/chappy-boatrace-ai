@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260806-results-ui-phase4-1";
+  const VERSION = "20260808-result-void-compat1";
   // legacy test marker: const VERSION = "20260805-flow-label1"
   // legacy test marker: const VERSION = "20260804-final-odds2"
   // legacy test marker: const VERSION = "20260803-flow-missing30"
@@ -18,6 +18,7 @@
       "js/storage.js",
       "js/prediction-conditions.js",
       "js/api.js",
+      "js/result-void-compat.js",
       "js/prediction-runtime-loader.js",
       "js/script.js",
       "js/hiyori-runtime-loader.js"
