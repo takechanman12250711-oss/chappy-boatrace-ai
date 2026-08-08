@@ -45,12 +45,8 @@ function mergeEvidenceIntoPracticalTickets(prediction) {
         row.selectionTier = evidenceTicket.selectionTier;
       }
 
-      if (Array.isArray(evidenceTicket.roleClaims)) {
-        row.roleClaims = evidenceTicket.roleClaims;
-      }
-      if (Array.isArray(evidenceTicket.theoryClaims)) {
-        row.theoryClaims = evidenceTicket.theoryClaims;
-      }
+      if (Array.isArray(evidenceTicket.roleClaims)) row.roleClaims = evidenceTicket.roleClaims;
+      if (Array.isArray(evidenceTicket.theoryClaims)) row.theoryClaims = evidenceTicket.theoryClaims;
       return row;
     });
   }
@@ -72,6 +68,16 @@ function removeDuplicateVerificationFlags(record) {
   return record;
 }
 
+function removeUnusedRunTargetDetails(run) {
+  if (!run || typeof run !== "object") return run;
+  const health = run.collectionHealth;
+  if (!health || typeof health !== "object") return run;
+  if (Object.prototype.hasOwnProperty.call(health, "targets")) {
+    delete health.targets;
+  }
+  return run;
+}
+
 function compactIndex(index) {
   if (!index || typeof index !== "object") return index;
   ["predictions", "verificationPredictions"].forEach(key => {
@@ -81,6 +87,9 @@ function compactIndex(index) {
       if (key === "verificationPredictions") removeDuplicateVerificationFlags(record);
     });
   });
+  if (Array.isArray(index.runs)) {
+    index.runs.forEach(removeUnusedRunTargetDetails);
+  }
   return index;
 }
 
@@ -106,6 +115,7 @@ module.exports = {
   normalizeTicket,
   mergeEvidenceIntoPracticalTickets,
   removeDuplicateVerificationFlags,
+  removeUnusedRunTargetDetails,
   compactIndex,
   compactPredictionIndexFile
 };
