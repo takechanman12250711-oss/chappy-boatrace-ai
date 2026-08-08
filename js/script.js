@@ -3168,11 +3168,18 @@
             params
           );
 
-          updateStatus(
+          const reviewStatus =
             officialResult
               .resultAvailable
               ? "振り返り予想と公式結果を表示しました"
-              : "振り返り予想を表示しました。公式結果は未確定です"
+              : isVoidOfficialResult(
+                  officialResult
+                )
+                ? "振り返り予想と不成立結果を表示しました"
+                : "振り返り予想を表示しました。公式結果は未確定です";
+
+          updateStatus(
+            reviewStatus
           );
         } catch (
           resultError
@@ -3374,7 +3381,7 @@
     const response =
       await fetch(url);
 
-    const result =
+    let result =
       await response.json();
 
     if (
@@ -3386,6 +3393,19 @@
         `公式結果APIエラー：` +
         `${response.status}`
       );
+    }
+
+    const compatibility =
+      window.ChappyResultVoidCompat;
+    if (
+      compatibility &&
+      typeof compatibility.normalize ===
+        "function"
+    ) {
+      result =
+        compatibility.normalize(
+          result
+        );
     }
 
     if (result.resultAvailable) {
@@ -3532,6 +3552,25 @@
 
     return result;
   }
+  function isVoidOfficialResult(
+    result
+  ) {
+    const compatibility =
+      window.ChappyResultVoidCompat;
+    if (
+      compatibility &&
+      typeof compatibility.isVoidResult ===
+        "function"
+    ) {
+      return compatibility
+        .isVoidResult(result);
+    }
+    return (
+      result?.resultAvailable ===
+        false &&
+      result?.status === "void"
+    );
+  }
   function ensureReviewResultArea() {
     let area =
       document.getElementById(
@@ -3615,6 +3654,11 @@
       )
         ? result.starts
         : [];
+
+    const isVoid =
+      isVoidOfficialResult(
+        result
+      );
 
     const resultBody =
       result?.resultAvailable
@@ -3711,6 +3755,22 @@
               </article>
 
             </div>
+
+          </div>
+        `
+        : isVoid
+          ? `
+          <div class="race-select-card">
+
+            <p>
+              <strong>
+                不成立（全艇F/L）
+              </strong>
+            </p>
+
+            <p>
+              3連単は成立していません。返還対象として扱います。
+            </p>
 
           </div>
         `
