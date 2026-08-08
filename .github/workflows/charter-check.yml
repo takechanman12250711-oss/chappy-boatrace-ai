@@ -58,6 +58,8 @@ on:
       - "scripts/test-prediction-verification.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
+      - "scripts/compact-prediction-index.js"
+      - "scripts/test-compact-prediction-index.js"
       - "js/auto-stats.js"
       - "js/collection-health.js"
       - "scripts/test-collection-health.js"
@@ -163,6 +165,8 @@ on:
       - "scripts/test-prediction-verification.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
+      - "scripts/compact-prediction-index.js"
+      - "scripts/test-compact-prediction-index.js"
       - "js/auto-stats.js"
       - "js/collection-health.js"
       - "scripts/test-collection-health.js"
@@ -276,6 +280,8 @@ jobs:
           node --check scripts/test-prediction-verification.js
           node --check scripts/build-prediction-index.js
           node --check scripts/test-build-prediction-index.js
+          node --check scripts/compact-prediction-index.js
+          node --check scripts/test-compact-prediction-index.js
           node --check js/auto-stats.js
           node --check js/collection-health.js
           node --check scripts/test-collection-health.js
@@ -336,6 +342,7 @@ jobs:
           node scripts/test-boat-identity.js
           node scripts/test-auto-selection.js
           node scripts/test-build-prediction-index.js
+          node scripts/test-compact-prediction-index.js
           node scripts/test-auto-stats.js
           node scripts/test-collection-health.js
           node scripts/test-verification-readiness.js
