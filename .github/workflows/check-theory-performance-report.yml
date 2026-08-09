@@ -3,9 +3,13 @@ name: Check theory performance report
 on:
   pull_request:
     paths:
+      - "js/theory-evaluation-engine.js"
       - "js/theory-performance-report.js"
+      - "js/theory-tag-snapshot.js"
       - "scripts/build-theory-performance-report.js"
+      - "scripts/theory-zero-evidence-diagnostics.js"
       - "scripts/test-theory-performance-report.js"
+      - "scripts/test-theory-zero-evidence-diagnostics.js"
       - ".github/workflows/collect-results.yml"
       - ".github/workflows/check-theory-performance-report.yml"
 
@@ -25,6 +29,7 @@ jobs:
           node --check js/theory-performance-report.js
           node --check scripts/build-theory-performance-report.js
           node scripts/test-theory-performance-report.js
+          node scripts/test-theory-zero-evidence-diagnostics.js
           node scripts/build-theory-performance-report.js
           node -e 'const r=require("./data/stats/theory-performance-report.json"); if(r.usableForPrediction!==false||r.automaticApplication!==false) process.exit(1)'
           node scripts/check-charter.js

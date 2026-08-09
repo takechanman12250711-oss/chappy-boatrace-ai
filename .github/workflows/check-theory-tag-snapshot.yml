@@ -3,14 +3,20 @@ name: Check theory tag snapshot
 on:
   pull_request:
     paths:
+      - "js/prediction-venue-water-support.js"
+      - "js/theory-evaluation-engine.js"
       - "js/theory-tag-snapshot.js"
       - "scripts/collect-predictions.js"
+      - "scripts/test-local-water-theory-tag.js"
       - "scripts/test-theory-tag-snapshot.js"
       - ".github/workflows/check-theory-tag-snapshot.yml"
   push:
     paths:
+      - "js/prediction-venue-water-support.js"
+      - "js/theory-evaluation-engine.js"
       - "js/theory-tag-snapshot.js"
       - "scripts/collect-predictions.js"
+      - "scripts/test-local-water-theory-tag.js"
       - "scripts/test-theory-tag-snapshot.js"
       - ".github/workflows/check-theory-tag-snapshot.yml"
   workflow_dispatch:
@@ -28,7 +34,9 @@ jobs:
           node-version: 20
       - name: Verify theory tag snapshots
         run: |
+          node --check js/prediction-venue-water-support.js
           node --check js/theory-tag-snapshot.js
           node --check scripts/collect-predictions.js
           node scripts/test-theory-tag-snapshot.js
+          node scripts/test-local-water-theory-tag.js
           node scripts/check-charter.js

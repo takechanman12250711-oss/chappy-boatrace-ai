@@ -28,7 +28,10 @@ jobs:
       - name: Verify pipeline
         run: |
           node --check scripts/build-learning-analysis-pipeline.js
+          node scripts/test-local-water-theory-tag.js
           node scripts/test-theory-performance-report.js
+          node scripts/test-theory-zero-evidence-diagnostics.js
+          node scripts/test-theory-improvement-approval-gate.js
           node scripts/test-theory-evidence-coverage-phase7.js
           node scripts/test-theory-evidence-growth-monitor.js
           node scripts/test-profit-priority-ranking.js

@@ -6,7 +6,7 @@ const THEORY_CATALOG = Object.freeze([
   { key: "start", label: "ST・スリット理論", aliases: [/\bST\b|スタート|スリット|start/i] },
   { key: "exhibition", label: "展示・足理論", aliases: [/展示|足|exhibition|turn.?time/i] },
   { key: "remain-pickup", label: "残し・拾い理論", aliases: [/残し|拾い|remainer|pickup/i] },
-  { key: "local-water", label: "当地・水面理論", aliases: [/当地|水面|風|波|潮|local|water/i] },
+  { key: "local-water", label: "当地・水面理論", aliases: [/当地|水面|風|波|潮|water/i] },
   { key: "skill", label: "技量理論", aliases: [/技量|選手|級別|skill|racer/i] },
   { key: "motor", label: "モーター理論", aliases: [/モーター|motor|engine(?!.*new)/i] },
   { key: "wall-boat", label: "壁艇理論", aliases: [/壁艇|壁|wall/i] },
@@ -14,6 +14,35 @@ const THEORY_CATALOG = Object.freeze([
   { key: "double-time", label: "ダブルタイム", aliases: [/ダブルタイム|double.?time/i] },
   { key: "new-engine", label: "新エンジン理論", aliases: [/新エンジン|新モーター|新燃料|new.?engine/i] }
 ]);
+
+const EXACT_THEORY_KEYS = Object.freeze({
+  flow: "race-flow",
+  "race-flow": "race-flow",
+  course: "course",
+  stSlit: "start",
+  start: "start",
+  exhibitionFoot: "exhibition",
+  exhibition: "exhibition",
+  holdPickup: "remain-pickup",
+  "remain-pickup": "remain-pickup",
+  localWater: "local-water",
+  "local-water": "local-water",
+  skill: "skill",
+  motor: "motor",
+  wallBoat: "wall-boat",
+  "wall-boat": "wall-boat",
+  frameRiseSink: "frame-rise-fall",
+  "frame-rise-fall": "frame-rise-fall",
+  doubleTime: "double-time",
+  "double-time": "double-time",
+  newEngine: "new-engine",
+  "new-engine": "new-engine"
+});
+
+const SPECIFIC_LOCAL_WATER_VENUES = new Set([
+  "江戸川", "多摩川", "住之江", "宮島", "若松", "福岡", "大村"
+]);
+const SPECIFIC_LOCAL_WATER_VENUE_CODES = new Set(["03", "05", "12", "17", "20", "22", "24"]);
 
 function normalizeTicket(value) {
   const boats = String(value || "").match(/[1-6]/g) || [];
@@ -38,13 +67,39 @@ function textOf(theory) {
 }
 
 function catalogTheoryFor(source) {
+  const sourceKey = String(source?.theoryKey || source?.key || "").trim();
+  const exactKey = EXACT_THEORY_KEYS[sourceKey];
+  if (exactKey) return THEORY_CATALOG.find(item => item.key === exactKey) || null;
   const text = textOf(source);
   return THEORY_CATALOG.find(item => item.aliases.some(pattern => pattern.test(text))) || null;
 }
 
+function hasStoredLocalWaterEvidence(record) {
+  const place = String(record?.place || "").trim();
+  const jcd = String(record?.jcd || "").padStart(2, "0");
+  if (SPECIFIC_LOCAL_WATER_VENUES.has(place) || SPECIFIC_LOCAL_WATER_VENUE_CODES.has(jcd)) return true;
+
+  const conditions = record?.prediction?.preRaceConditions;
+  if (!conditions || typeof conditions !== "object") return true;
+  const availability = conditions?.dataAvailability || {};
+  const availabilityKeys = ["wind", "wave", "tide"];
+  if (availabilityKeys.some(key => availability?.[key] === true)) return true;
+
+  const weather = conditions?.weather || {};
+  const hasMeasuredValue = [weather?.windSpeed, weather?.waveHeight, weather?.tideLevel].some(value =>
+    value !== null && value !== undefined && String(value).trim() !== "" && Number.isFinite(Number(value))
+  ) || Boolean(String(weather?.tidePhase || weather?.tideFlow || "").trim());
+  if (hasMeasuredValue) return true;
+
+  const hasExplicitAvailability = availabilityKeys.every(key => Object.hasOwn(availability, key));
+  return !hasExplicitAvailability;
+}
+
 function sourceTheories(record) {
   const rows = record?.theoryTagSnapshot?.theories;
-  return Array.isArray(rows) ? rows : [];
+  return (Array.isArray(rows) ? rows : []).filter(row =>
+    catalogTheoryFor(row)?.key !== "local-water" || hasStoredLocalWaterEvidence(record)
+  );
 }
 
 function theoryTickets(theories) {
@@ -88,4 +143,4 @@ function build(record) {
   };
 }
 
-module.exports = { THEORY_CATALOG, normalizeTicket, catalogTheoryFor, build };
+module.exports = { THEORY_CATALOG, EXACT_THEORY_KEYS, normalizeTicket, catalogTheoryFor, hasStoredLocalWaterEvidence, build };
