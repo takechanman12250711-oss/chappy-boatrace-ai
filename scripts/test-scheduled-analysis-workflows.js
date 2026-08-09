@@ -98,6 +98,22 @@ assert.ok(
 const learningPipelineWorkflow = readWorkflow(
   "build-learning-analysis-pipeline.yml"
 );
+const learningVerificationLines = stepRunLines(
+  learningPipelineWorkflow,
+  "Verify pipeline"
+);
+[
+  "scripts/test-local-water-theory-tag.js",
+  "scripts/test-theory-zero-evidence-diagnostics.js",
+  "scripts/test-theory-improvement-approval-gate.js"
+].forEach(scriptPath => {
+  const command = `node ${scriptPath}`;
+  assert.equal(
+    learningVerificationLines.filter(line => line === command).length,
+    1,
+    `${scriptPath}を定期学習検査で1回だけ実行する`
+  );
+});
 const safetyGuard = stepRunLines(
   learningPipelineWorkflow,
   "Verify generated safety flags"

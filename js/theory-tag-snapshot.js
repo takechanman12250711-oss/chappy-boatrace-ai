@@ -62,6 +62,12 @@ function supportAttackBoatNo(prediction, support) {
   return Number(support?.attackBoatNo || support?.centerBoatNo || prediction?.flowPriority?.attackBoatNo || prediction?.flowPriority?.attackBoat || 0);
 }
 
+function optionalNumber(value) {
+  if (value === null || value === undefined || String(value).trim() === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function stSlitEvidence(prediction) {
   const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
   const attackBoatNo = supportAttackBoatNo(prediction, support);
@@ -101,13 +107,13 @@ function exhibitionFootClaimForTicket(prediction, ticket) {
 function localWaterEvidence(prediction) {
   const support = prediction?.venueWaterSupport || {};
   const venue = String(support?.venue || "").trim();
-  const wind = Number(support?.wind);
-  const wave = Number(support?.wave);
+  const wind = optionalNumber(support?.wind);
+  const wave = optionalNumber(support?.wave);
   const tide = String(support?.tide || "").trim();
   const statements = supportStatements(support);
-  const hasMeasuredCondition = Number.isFinite(wind) || Number.isFinite(wave) || Boolean(tide);
-  const hasSpecificVenueRule = statements.some(text => !/開催場の水面特性を補助評価/.test(text) && /イン|差し|潮|風|波|水面|ナイター|展示|乗り心地/.test(text));
-  return { formal: Boolean(venue) && statements.length > 0 && (hasMeasuredCondition || hasSpecificVenueRule), venue, wind: Number.isFinite(wind) ? wind : null, wave: Number.isFinite(wave) ? wave : null, tide, statements };
+  const hasMeasuredCondition = wind !== null || wave !== null || Boolean(tide);
+  const hasSpecificVenueRule = statements.some(text => !/水面特性を補助評価/.test(text) && /イン|差し|潮|風|波|水面|ナイター|展示|乗り心地/.test(text));
+  return { formal: Boolean(venue) && statements.length > 0 && (hasMeasuredCondition || hasSpecificVenueRule), venue, wind, wave, tide, statements };
 }
 
 function localWaterClaimForTicket(prediction, ticket) {

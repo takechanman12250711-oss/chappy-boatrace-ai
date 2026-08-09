@@ -186,8 +186,6 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
-      - name: Run noncritical approval and performance checks
+      - name: Run noncritical performance check
         continue-on-error: true
-        run: |
-          node scripts/test-theory-improvement-approval-gate.js
-          node scripts/test-load-performance.js
+        run: node scripts/test-load-performance.js
