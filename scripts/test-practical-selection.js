@@ -953,11 +953,65 @@ const weakThirdFlow =
       raceFlow: weakThirdRaceFlow
     })
   );
+assert.deepEqual(
+  weakThirdFlow.tickets
+    .filter(
+      row => row.category === "流し"
+    )
+    .map(row => ({
+      ticket: row.ticket,
+      role:
+        row.flowRoleEvidence.find(
+          evidence =>
+            evidence.position === 3
+        )?.role,
+      score: row.flowThirdScore
+    })),
+  [
+    {
+      ticket: "1-3-5",
+      role: "pickup",
+      score: 78
+    },
+    {
+      ticket: "1-3-6",
+      role: "hold",
+      score: 75
+    }
+  ],
+  "3着拾いが65点未満でも、より強い3着残りの正式根拠を採用する"
+);
+
+const allWeakThirdRaceFlow =
+  baseRaceFlow();
+allWeakThirdRaceFlow.pickupBoats =
+  allWeakThirdRaceFlow.pickupBoats
+    .map(row =>
+      row.boatNo === 6
+        ? { ...row, score: 64 }
+        : row
+    );
+allWeakThirdRaceFlow.holdBoats =
+  allWeakThirdRaceFlow.holdBoats
+    .map(row =>
+      row.boatNo === 6
+        ? { ...row, score: 64 }
+        : row
+    );
+const allWeakThirdFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      longshot: true,
+      raceFlow:
+        allWeakThirdRaceFlow
+    })
+  );
 assert.ok(
-  !weakThirdFlow.tickets.some(
+  !allWeakThirdFlow.tickets.some(
     row => row.category === "流し"
   ),
-  "3着役割が65点未満なら相方を補わず流しを不成立にする"
+  "3着拾い・3着残りの両方が65点未満なら流しを不成立にする"
 );
 
 const rejectedThirdRaceFlow =
@@ -1186,6 +1240,108 @@ assert.deepEqual(
     )
     .map(row => row.ticket),
   "7点超過理由へ実際に追加した独立展開を列挙する"
+);
+
+const uniqueIndependentAfterFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      longshot: true,
+      independent:
+        strongFour.slice(1)
+    })
+  );
+const additionsAfterFlow =
+  uniqueIndependentAfterFlow.tickets
+    .filter(
+      row =>
+        row.selectionTier ===
+          "展開追加"
+    );
+assert.deepEqual(
+  additionsAfterFlow.map(
+    row => row.ticket
+  ),
+  [
+    "1-2-4",
+    "1-4-2",
+    "1-4-5"
+  ],
+  "流し2券の通常7点後も、重複しない独立展開3枠を維持する"
+);
+assert.deepEqual(
+  {
+    normal:
+      uniqueIndependentAfterFlow
+        .expansionSummary
+        .normalCount,
+    added:
+      uniqueIndependentAfterFlow
+        .expansionSummary
+        .addedCount,
+    final:
+      uniqueIndependentAfterFlow
+        .expansionSummary
+        .finalCount
+  },
+  {
+    normal: 7,
+    added: 3,
+    final: 10
+  }
+);
+assert.equal(
+  new Set(
+    uniqueIndependentAfterFlow
+      .tickets
+      .map(row => row.ticket)
+  ).size,
+  uniqueIndependentAfterFlow
+    .tickets.length,
+  "流しと独立展開で同じ券を重複購入しない"
+);
+
+const alternateFive =
+  alternateHeadBranch({
+    id:
+      "attack:5:normal-mode-stability",
+    ticket: "5-4-3",
+    priorityScore: 88
+  });
+const independentWithFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      longshot: true,
+      independent: [alternateFive]
+    })
+  );
+const independentWithoutFlow =
+  selector.select(
+    createFixture({
+      flow: false,
+      longshot: true,
+      independent: [alternateFive]
+    })
+  );
+assert.deepEqual(
+  [
+    independentWithFlow,
+    independentWithoutFlow
+  ].map(result =>
+    result.tickets
+      .filter(
+        row =>
+          row.selectionTier ===
+            "展開追加"
+      )
+      .map(row => row.ticket)
+  ),
+  [
+    ["5-4-3"],
+    ["5-4-3"]
+  ],
+  "通常追加が流し2券か穴1券かで独立展開の別頭順位を変えない"
 );
 assert.ok(
   preserved.targetDecisions
