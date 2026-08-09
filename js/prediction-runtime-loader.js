@@ -4,7 +4,7 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260809-current-defects3";
+  const VERSION = "20260809-grounded-flow2";
   // legacy test marker: const VERSION = "20260805-accordion-rollback1"
   // legacy test marker: const VERSION = "20260805-ticket-accordion-render2"
   // legacy test marker: const VERSION = "20260805-main-cover-classification1"

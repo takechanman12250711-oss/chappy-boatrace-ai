@@ -7,6 +7,13 @@ function tickets(list) {
   return list.map(item => item.ticket);
 }
 
+const flowCommonReason =
+  "1号艇のイン逃げを1着軸に、2号艇の2着残しを固定。";
+const flowThirdFiveReason =
+  "5号艇の3着拾いが同じイン逃げ展開で成立。";
+const flowThirdSixReason =
+  "6号艇の3着拾いが同じイン逃げ展開で成立。";
+
 const flowFormation = {
   headBoatNo: 1,
   secondBoatNos: [2, 3],
@@ -58,7 +65,15 @@ const candidateSheets = {
       oddsSavedAt: "2026-08-09T04:11:00.000Z",
       isFinalRetrievedOdds: true
     },
-    { ticket: "1-2-6", category: "流し" },
+    {
+      ticket: "1-2-6",
+      category: "流し",
+      odds: 42.7,
+      oddsText: "42.7倍（最終取得）",
+      oddsSource: "boatrace-official-snapshot",
+      oddsSavedAt: "2026-08-09T04:11:00.000Z",
+      isFinalRetrievedOdds: true
+    },
     { ticket: "1-3-5", category: "流し" }
   ],
   hole: [
@@ -82,8 +97,22 @@ const practicalTickets = [
   { ticket: "1-2-4", category: "本線" },
   { ticket: "2-1-3", category: "押さえ" },
   { ticket: "3-1-2", category: "押さえ" },
-  { ticket: "1-2-5", category: "流し", oddsText: "オッズ未取得" },
-  { ticket: "4-1-2", category: "万舟・穴" },
+  {
+    ticket: "1-2-5",
+    category: "流し",
+    oddsText: "オッズ未取得",
+    flowAnchor: "1-2",
+    flowCommonReason,
+    scenarioSummary: flowThirdFiveReason
+  },
+  {
+    ticket: "1-2-6",
+    category: "流し",
+    oddsText: "オッズ未取得",
+    flowAnchor: "1-2",
+    flowCommonReason,
+    scenarioSummary: flowThirdSixReason
+  },
   {
     ticket: "3-4-1",
     category: "独立展開",
@@ -138,29 +167,38 @@ const resolved = boundary.resolveNormalDisplayRows(prediction);
 
 assert.deepEqual(tickets(resolved.main), ["1-2-3", "1-3-2", "1-2-4"]);
 assert.deepEqual(tickets(resolved.cover), ["2-1-3", "3-1-2"]);
-assert.deepEqual(tickets(resolved.flow), ["1-2-5"]);
-assert.deepEqual(tickets(resolved.hole), ["4-1-2"]);
+assert.deepEqual(tickets(resolved.flow), ["1-2-5", "1-2-6"]);
+assert.deepEqual(resolved.flow.map(item => item.flowAnchor), ["1-2", "1-2"]);
+assert.deepEqual(
+  resolved.flow.map(item => item.flowCommonReason),
+  [flowCommonReason, flowCommonReason]
+);
+assert.deepEqual(
+  resolved.flow.map(item => item.scenarioSummary),
+  [flowThirdFiveReason, flowThirdSixReason]
+);
+assert.deepEqual(tickets(resolved.hole), []);
 
 const prepared = boundary.prepare(prediction);
 
 assert.deepEqual(tickets(prepared.mainSheet.tickets), ["1-2-3", "1-3-2", "1-2-4"]);
 assert.deepEqual(tickets(prepared.mainSheet.coverTickets), ["2-1-3", "3-1-2"]);
-assert.deepEqual(tickets(prepared.mainSheet.flowTickets), ["1-2-5"]);
-assert.deepEqual(tickets(prepared.manshuSheet.tickets), ["4-1-2"]);
+assert.deepEqual(tickets(prepared.mainSheet.flowTickets), ["1-2-5", "1-2-6"]);
+assert.deepEqual(tickets(prepared.manshuSheet.tickets), []);
 assert.equal(prepared.mainSheet.marker, "top-level-main-sheet");
 assert.equal(prepared.manshuSheet.marker, "top-level-manshu-sheet");
 
 assert.deepEqual(tickets(prepared.aiCore.mainSheet.tickets), ["1-2-3", "1-3-2", "1-2-4"]);
 assert.deepEqual(tickets(prepared.aiCore.mainSheet.coverTickets), ["2-1-3", "3-1-2"]);
-assert.deepEqual(tickets(prepared.aiCore.mainSheet.flowTickets), ["1-2-5"]);
-assert.deepEqual(tickets(prepared.aiCore.manshuSheet.tickets), ["4-1-2"]);
+assert.deepEqual(tickets(prepared.aiCore.mainSheet.flowTickets), ["1-2-5", "1-2-6"]);
+assert.deepEqual(tickets(prepared.aiCore.manshuSheet.tickets), []);
 assert.equal(prepared.aiCore.mainSheet.marker, "ai-core-main-sheet");
 assert.equal(prepared.aiCore.manshuSheet.marker, "ai-core-manshu-sheet");
 
 assert.deepEqual(
   prepared.mainSheet.flowFormations,
   [],
-  "通常欄は流しformation 8点でなくexact flow 1券へfallbackする"
+  "通常欄は流しformation 8点でなく根拠のある同一軸exact flow 2券を使う"
 );
 assert.deepEqual(prepared.aiCore.mainSheet.flowFormations, []);
 assert.equal(prepared.mainSheet.tickets[0].odds, 12.4);
@@ -174,6 +212,18 @@ assert.equal(
 assert.equal(prepared.mainSheet.tickets[0].isFinalRetrievedOdds, true);
 assert.equal(prepared.mainSheet.flowTickets[0].odds, 36.8);
 assert.equal(prepared.mainSheet.flowTickets[0].oddsText, "36.8倍（最終取得）");
+assert.equal(prepared.mainSheet.flowTickets[1].odds, 42.7);
+assert.equal(prepared.mainSheet.flowTickets[1].oddsText, "42.7倍（最終取得）");
+assert.deepEqual(
+  prepared.mainSheet.flowTickets.map(item => item.flowCommonReason),
+  [flowCommonReason, flowCommonReason],
+  "同一軸2券の共通根拠を最終オッズの統合後も保持する"
+);
+assert.deepEqual(
+  prepared.mainSheet.flowTickets.map(item => item.scenarioSummary),
+  [flowThirdFiveReason, flowThirdSixReason],
+  "3着艇ごとの異なる採用理由を保持する"
+);
 
 assert.equal(prepared.ticketSheets.main.length, 6, "候補プールは削らない");
 assert.equal(prepared.ticketSheets.cover.length, 4, "候補プールは削らない");
@@ -242,8 +292,12 @@ const overLimit = boundary.prepare({
 });
 assert.deepEqual(tickets(overLimit.mainSheet.tickets), ["1-2-1", "1-2-2", "1-2-3"]);
 assert.deepEqual(tickets(overLimit.mainSheet.coverTickets), ["2-1-1", "2-1-2"]);
-assert.deepEqual(tickets(overLimit.mainSheet.flowTickets), ["1-3-4"]);
-assert.deepEqual(tickets(overLimit.manshuSheet.tickets), ["4-2-1"]);
+assert.deepEqual(tickets(overLimit.mainSheet.flowTickets), ["1-3-4", "1-3-5"]);
+assert.deepEqual(
+  tickets(overLimit.manshuSheet.tickets),
+  [],
+  "流し2券成立時は表示境界でも通常穴を併用しない"
+);
 
 const duplicatedSelection = boundary.resolveNormalDisplayRows({
   practicalSelection: {
@@ -257,9 +311,10 @@ const duplicatedSelection = boundary.resolveNormalDisplayRows({
       { ticket: "3-1-2", category: "押さえ" },
       { ticket: "1-3-4", category: "流し" },
       { ticket: "1-3-4", category: "万舟・穴" },
+      { ticket: "1-3-5", category: "流し" },
       { ticket: "4-1-2", category: "万舟・穴" }
     ],
-    expansionSummary: { normalCount: 9 }
+    expansionSummary: { normalCount: 10 }
   }
 });
 assert.deepEqual(
@@ -268,11 +323,11 @@ assert.deepEqual(
   "formal sourceの選択順を維持する"
 );
 assert.deepEqual(tickets(duplicatedSelection.cover), ["2-1-3", "3-1-2"]);
-assert.deepEqual(tickets(duplicatedSelection.flow), ["1-3-4"]);
+assert.deepEqual(tickets(duplicatedSelection.flow), ["1-3-4", "1-3-5"]);
 assert.deepEqual(
   tickets(duplicatedSelection.hole),
-  ["4-1-2"],
-  "同一ticketを別カテゴリへ重複表示しない"
+  [],
+  "同一ticketを別カテゴリへ重複表示せず、流し2券と通常穴を併用しない"
 );
 
 const compactPrediction = {
@@ -283,6 +338,7 @@ const compactPrediction = {
     { ticket: "1-3-2", category: "押さえ" },
     { ticket: "2-3-1", category: "押さえ" },
     { ticket: "3-4-1", category: "流し" },
+    { ticket: "3-4-2", category: "流し" },
     { ticket: "6-3-1", category: "万舟・穴" },
     { ticket: "4-3-1", category: "独立展開", selectionTier: "展開追加" }
   ]
@@ -290,12 +346,39 @@ const compactPrediction = {
 const compactPrepared = boundary.prepare(compactPrediction);
 assert.equal(compactPrepared.mainSheet.tickets.length, 3);
 assert.equal(compactPrepared.mainSheet.coverTickets.length, 2);
-assert.equal(compactPrepared.mainSheet.flowTickets.length, 1);
-assert.equal(compactPrepared.manshuSheet.tickets.length, 1);
-assert.equal(
-  tickets(compactPrepared.mainSheet.flowTickets)[0],
-  "3-4-1",
-  "practicalTicketsだけの保存形式もcanonical sourceにする"
+assert.equal(compactPrepared.mainSheet.flowTickets.length, 2);
+assert.equal(compactPrepared.manshuSheet.tickets.length, 0);
+assert.deepEqual(
+  tickets(compactPrepared.mainSheet.flowTickets),
+  ["3-4-1", "3-4-2"],
+  "practicalTicketsだけの保存形式でも同一軸exact flow 2券をcanonical sourceにする"
+);
+
+const legacySingleFlow =
+  boundary.prepare({
+    practicalTickets: [
+      { ticket: "1-2-3", category: "本線" },
+      { ticket: "1-2-4", category: "本線" },
+      { ticket: "1-3-2", category: "本線" },
+      { ticket: "2-1-3", category: "押さえ" },
+      { ticket: "2-1-4", category: "押さえ" },
+      { ticket: "1-3-5", category: "流し" },
+      { ticket: "5-2-3", category: "万舟・穴" }
+    ]
+  });
+assert.deepEqual(
+  legacySingleFlow.mainSheet
+    .flowTickets,
+  [],
+  "保存済み1券だけの行も流しとして再表示しない"
+);
+assert.deepEqual(
+  tickets(
+    legacySingleFlow.manshuSheet
+      .tickets
+  ),
+  ["5-2-3"],
+  "流しが2券そろわない場合は保存済み通常穴を残す"
 );
 
 const skippedInput = {

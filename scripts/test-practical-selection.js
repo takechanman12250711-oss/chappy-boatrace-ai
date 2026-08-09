@@ -18,7 +18,10 @@ const COVER = [
   "2-1-3",
   "2-1-4"
 ];
-const FLOW = "1-3-5";
+const FLOW = [
+  "1-3-5",
+  "1-3-6"
+];
 const HOLE = "5-2-3";
 
 function target(boatNo) {
@@ -159,6 +162,8 @@ function canonicalBranch({
   priorityScore = 80,
   provenanceOnly = false,
   attackerBoatNo = 1,
+  scenarioId =
+    `canonical:${attackerBoatNo}`,
   summary
 }) {
   const targetId =
@@ -171,6 +176,7 @@ function canonicalBranch({
     type: `${group}-ticket`,
     source:
       `base-formation:${group}`,
+    scenarioId,
     qualified: true,
     purchaseEligible: false,
     qualificationSource:
@@ -506,13 +512,20 @@ function alternateHeadBranch({
 
 function presentation(
   group,
-  branch,
+  branchOrBranches,
   summary
 ) {
+  const branches =
+    Array.isArray(branchOrBranches)
+      ? branchOrBranches
+      : [branchOrBranches];
+  const branchIds =
+    branches.map(branch => branch.id);
+
   return {
     source:
       `base-formation:${group}`,
-    branchIds: [branch.id],
+    branchIds,
     supportingIndependentBranchIds:
       [],
     title:
@@ -523,7 +536,7 @@ function presentation(
     structuredEvidence: {
       source:
         `base-formation:${group}`,
-      branchIds: [branch.id]
+      branchIds
     }
   };
 }
@@ -574,6 +587,9 @@ function createFixture({
   independent = [],
   possibilityExtras = [],
   categoryMismatch = false,
+  flowTickets = FLOW,
+  flowScenarioIds = {},
+  flowSecondPriorityBoatNos = [3],
   mainSummary =
     "main category scoped summary",
   raceFlow = baseRaceFlow()
@@ -587,44 +603,73 @@ function createFixture({
     tickets.map((ticket, index) => {
       const boats =
         ticket.split("-").map(Number);
-      const roleBoatNo =
-        provenanceOnly
-          ? 0
-          : boats[0];
-      const branch =
-        canonicalBranch({
-          id:
-            `${group}:${ticket}`,
-          ticket,
-          group:
-            categoryMismatch &&
-            group === "cover"
-              ? "main"
-              : group,
-          roleBoatNo,
-          position: 1,
-          role:
-            boats[0] === 1
-              ? "head"
-              : "alternate-head",
-          priorityScore:
-            80 - index,
-          provenanceOnly,
-          summary:
-            group === "main"
-              ? mainSummary
-              : `${group}:${ticket}`
-        });
+      const roleDefinitions =
+        group === "flow"
+          ? [
+              {
+                boatNo: boats[0],
+                position: 1,
+                role: "head"
+              },
+              {
+                boatNo: boats[1],
+                position: 2,
+                role: "hold"
+              }
+            ]
+          : [{
+              boatNo: boats[0],
+              position: 1,
+              role:
+                boats[0] === 1
+                  ? "head"
+                  : "alternate-head"
+            }];
+      const ticketBranches =
+        roleDefinitions.map(
+          (definition) =>
+            canonicalBranch({
+              id:
+                `${group}:${ticket}:` +
+                `${definition.position}`,
+              ticket,
+              group:
+                categoryMismatch &&
+                group === "cover"
+                  ? "main"
+                  : group,
+              roleBoatNo:
+                provenanceOnly
+                  ? 0
+                  : definition.boatNo,
+              position:
+                definition.position,
+              role: definition.role,
+              priorityScore:
+                80 - index,
+              provenanceOnly,
+              scenarioId:
+                flowScenarioIds[ticket] ||
+                "canonical:1",
+              summary:
+                group === "main"
+                  ? mainSummary
+                  : `${group}:${ticket}`
+            })
+        );
 
-      branches.push(branch);
+      branches.push(...ticketBranches);
       return {
         ticket,
-        allBranchIds: [branch.id],
+        allBranchIds:
+          ticketBranches.map(
+            branch => branch.id
+          ),
         presentationByGroup: {
           [group]:
             presentation(
               group,
-              branch,
+              ticketBranches,
               group === "main"
                 ? mainSummary
                 : `${group} scoped ${ticket}`
@@ -638,7 +683,7 @@ function createFixture({
     makeGroupRows(COVER, "cover");
   const flowRows =
     makeGroupRows(
-      [FLOW],
+      flowTickets,
       "flow",
       flowProvenanceOnly
     );
@@ -663,6 +708,12 @@ function createFixture({
     aiCore: {
       formations: {
         mainEstablished: true,
+        flowFormations: [{
+          headBoatNo: 1,
+          secondPriorityBoatNos:
+            flowSecondPriorityBoatNos,
+          label: "1号艇の逃げ"
+        }],
         evidence: {
           flow,
           longshot,
@@ -761,13 +812,195 @@ const normal =
     })
   );
 assert.equal(normal.tickets.length, 7);
-assert.equal(
-  normal.tickets[5].category,
-  "流し"
+assert.deepEqual(
+  normal.tickets
+    .slice(5)
+    .map(row => row.ticket),
+  FLOW,
+  "同一展開・同一1/2着軸の2券を流しとして原子的に選ぶ"
 );
-assert.equal(
-  normal.tickets[6].category,
-  "万舟・穴"
+assert.ok(
+  normal.tickets
+    .slice(5)
+    .every(row =>
+      row.category === "流し" &&
+      row.flowAnchor === "1-3" &&
+      row.scenarioId ===
+        "canonical:1" &&
+      row.flowCommonReason ===
+        normal.tickets[5]
+          .flowCommonReason &&
+      row.flowThirdScore >= 65 &&
+      row.flowRoleEvidence.length === 2 &&
+      row.roleLabels.some(role =>
+        role.position === 3 &&
+        role.role === "pickup" &&
+        role.structured === true
+      ) &&
+      row.scenarioSummary.includes(
+        `${row.ticket.split("-")[2]}号艇の3着拾い`
+      )
+    ),
+  "流し2券へ共通軸・同一scenario・3着別の正式根拠を保存する"
+);
+assert.ok(
+  !normal.tickets.some(
+    row => row.category === "万舟・穴"
+  ),
+  "流し2券成立時は通常最大7点を守るため穴を併用しない"
+);
+
+const rankedGroundedFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      flowTickets: [
+        "1-3-6",
+        "1-3-5",
+        "1-3-4"
+      ]
+    })
+  );
+assert.deepEqual(
+  rankedGroundedFlow.tickets
+    .filter(
+      row => row.category === "流し"
+    )
+    .map(row => row.ticket),
+  [
+    "1-3-4",
+    "1-3-5"
+  ],
+  "候補配列や艇番の先着順でなく正式な3着役割点の上位2券を選ぶ"
+);
+
+const singleGroundedFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      longshot: true,
+      flowTickets: [FLOW[0]]
+    })
+  );
+assert.deepEqual(
+  singleGroundedFlow.tickets
+    .slice(5)
+    .map(row => row.category),
+  ["万舟・穴"],
+  "根拠あるexact券が1券だけなら流しと呼ばず、通常穴を残す"
+);
+
+const splitAnchorFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      longshot: true,
+      flowTickets: [
+        "1-3-5",
+        "1-4-6"
+      ],
+      flowSecondPriorityBoatNos: [
+        3,
+        4
+      ]
+    })
+  );
+assert.ok(
+  !splitAnchorFlow.tickets.some(
+    row => row.category === "流し"
+  ) &&
+    splitAnchorFlow.tickets.some(
+      row => row.category ===
+        "万舟・穴"
+    ),
+  "1/2着軸が違うexact券を流しへ混在させない"
+);
+
+const splitScenarioFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      longshot: true,
+      flowScenarioIds: {
+        [FLOW[1]]: "canonical:4"
+      }
+    })
+  );
+assert.ok(
+  !splitScenarioFlow.tickets.some(
+    row => row.category === "流し"
+  ),
+  "別scenarioIdのexact券を同じ流しへまとめない"
+);
+
+const weakThirdRaceFlow =
+  baseRaceFlow();
+weakThirdRaceFlow.pickupBoats =
+  weakThirdRaceFlow.pickupBoats
+    .map(row =>
+      row.boatNo === 6
+        ? {
+            ...row,
+            score: 64
+          }
+        : row
+    );
+const weakThirdFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      longshot: true,
+      raceFlow: weakThirdRaceFlow
+    })
+  );
+assert.ok(
+  !weakThirdFlow.tickets.some(
+    row => row.category === "流し"
+  ),
+  "3着役割が65点未満なら相方を補わず流しを不成立にする"
+);
+
+const rejectedThirdRaceFlow =
+  baseRaceFlow();
+rejectedThirdRaceFlow.pickupBoats =
+  rejectedThirdRaceFlow.pickupBoats
+    .map(row =>
+      row.boatNo === 6
+        ? {
+            ...row,
+            score: 95,
+            qualified: false
+          }
+        : row
+    );
+rejectedThirdRaceFlow.holdBoats =
+  rejectedThirdRaceFlow.holdBoats
+    .map(row =>
+      row.boatNo === 6
+        ? {
+            ...row,
+            score: 95,
+            qualified: false
+          }
+        : row
+    );
+rejectedThirdRaceFlow.phases
+  .secondMark.secondPickup =
+    roleRow(6, "pickup", 99);
+const rejectedThirdFlow =
+  selector.select(
+    createFixture({
+      flow: true,
+      longshot: true,
+      raceFlow:
+        rejectedThirdRaceFlow
+    })
+  );
+assert.ok(
+  !rejectedThirdFlow.tickets.some(
+    row => row.category === "流し"
+  ),
+  "正式pickup一覧で非採用の艇をphase fallbackで流しへ戻さない"
 );
 
 const provenanceOnly =
@@ -1307,7 +1540,7 @@ assert.deepEqual(
 
 console.log("実戦厳選共通テスト: 合格");
 console.log("- 基本5点: main3＋cover2を固定");
-console.log("- 通常追加: role coverageとpriorityがある流し・穴だけ");
+console.log("- 通常追加: 同一展開・同一軸の根拠付き流し2券（穴と排他）");
 console.log("- 独立追加: 現raceFlow再照合・65点以上・priority比較");
 console.log("- 最大10点: requirementは監査IDとして保持");
 console.log("- 非採用: 候補・境界・比較差を構造化保存");

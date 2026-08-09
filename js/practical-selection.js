@@ -5,7 +5,8 @@
   役割：
   - アプリ・note・自動保存で同じ買い目を返す
   - 本線3＋押さえ2を基本5点とする
-  - 展開根拠がある場合だけ流し1・万舟1を追加する
+  - 同一展開・同一1/2着軸の根拠がそろう場合だけ流し2点を追加する
+  - 流し2点が成立しない場合だけ万舟1点を追加する
   - 検証済みの独立展開だけ最大10点へ広げる
   - 評価候補の保持と、実際の購入を分離する
 ========================================================= */
@@ -16,6 +17,8 @@
   const STANDARD_COUNT = 5;
   const NORMAL_MAXIMUM_COUNT = 7;
   const MAXIMUM_COUNT = 10;
+  const FLOW_GROUP_COUNT = 2;
+  const MINIMUM_FLOW_ROLE_SCORE = 65;
   const TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT =
     1;
   const TARGET_EXCLUDED_PREVIEW_COUNT =
@@ -139,7 +142,12 @@
     const byPosition =
       new Map();
 
-    arrayify(row?.coverage)
+    [
+      ...arrayify(row?.coverage),
+      ...arrayify(
+        row?.flowRoleEvidence
+      )
+    ]
       .filter(claim => {
         const position =
           Number(
@@ -1995,6 +2003,17 @@
         independentBranches.map(
           branch => branch.id
         ),
+      validScenarioIds: [
+        ...new Set(
+          purchaseBranches
+            .map(branch =>
+              String(
+                branch?.scenarioId || ""
+              )
+            )
+            .filter(Boolean)
+        )
+      ],
       requirementIds,
       coverage,
       coveredEvaluationIds,
@@ -2056,6 +2075,7 @@
         validBranchIds: [],
         validPurchaseBranchIds: [],
         validIndependentBranchIds: [],
+        validScenarioIds: [],
         validRequirementIds: []
       };
     }
@@ -2078,6 +2098,9 @@
       validIndependentBranchIds: [
         ...validation
           .validIndependentBranchIds
+      ],
+      validScenarioIds: [
+        ...validation.validScenarioIds
       ],
       validRequirementIds: [
         ...validation.requirementIds
@@ -2486,16 +2509,480 @@
       );
     }
 
-    if (evidence.flow) {
-      take(
-        lists.flow,
-        1,
-        "流し",
-        true
-      );
+    function flowFormationSource() {
+      const sources = [
+        prediction?.mainSheet
+          ?.flowFormations,
+        prediction?.formation
+          ?.flowFormations,
+        prediction?.formations
+          ?.flowFormations,
+        prediction?.aiCore
+          ?.formations
+          ?.flowFormations
+      ];
+
+      for (const source of sources) {
+        const formation =
+          arrayify(source)[0];
+        if (
+          formation &&
+          typeof formation ===
+            "object"
+        ) {
+          return formation;
+        }
+      }
+
+      return null;
     }
 
-    if (evidence.longshot) {
+    function formalFlowRoleEvidence(
+      role,
+      targetBoatNo
+    ) {
+      const formalRows =
+        role === "pickup"
+          ? arrayify(
+              validationContext
+                .raceFlow
+                ?.pickupBoats
+            )
+          : arrayify(
+              validationContext
+                .raceFlow
+                ?.holdBoats
+            );
+      const row =
+        formalRows.find(
+          item =>
+            boatNo(item) ===
+              targetBoatNo
+        );
+
+      if (
+        !row ||
+        typeof row !== "object" ||
+        Array.isArray(row) ||
+        row.qualified === false ||
+        row.isAdopted === false ||
+        row.adopted === false ||
+        row.active === false
+      ) {
+        return null;
+      }
+
+      const status =
+        String(
+          row.evidenceStatus ||
+          row.status ||
+          ""
+        ).toLowerCase();
+      const rejectedStatus = [
+        "rejected",
+        "excluded",
+        "stale",
+        "inactive",
+        "candidate-only",
+        "alternate",
+        "非採用",
+        "除外"
+      ].some(value =>
+        status.includes(value)
+      );
+
+      if (
+        rejectedStatus ||
+        numeric(row.score, 0) <= 0 ||
+        !String(
+          row.reason ||
+          row.comment ||
+          row.summary ||
+          ""
+        ).trim()
+      ) {
+        return null;
+      }
+
+      return row;
+    }
+
+    /*
+      流しは1券ずつ先着順で取らない。
+      正式主展開・同一1/2着軸・同一scenarioIdを共有し、
+      2着残しと3着拾い（または3着残り）がともに65点以上の
+      exact券が2券そろった時だけ、2券を原子的に採用する。
+    */
+    function selectGroundedFlowPair() {
+      if (!evidence.flow) return [];
+
+      const formation =
+        flowFormationSource();
+      const selectedMainHeadBoatNo =
+        Number(
+          ticketBoats(
+            selected[0]?.ticket
+          )[0] ||
+          0
+        );
+      const formationHeadBoatNo =
+        Number(
+          formation?.headBoatNo ||
+          0
+        );
+
+      if (
+        !formation ||
+        formationHeadBoatNo < 1 ||
+        formationHeadBoatNo !==
+          selectedMainHeadBoatNo ||
+        (
+          evidence.mainHeadBoatNo > 0 &&
+          evidence.mainHeadBoatNo !==
+            selectedMainHeadBoatNo
+        )
+      ) {
+        return [];
+      }
+
+      const mainHeadBoatNo =
+        selectedMainHeadBoatNo;
+      const expectedScenarioId =
+        `canonical:` +
+        `${validationContext.primaryAttackerBoatNo}`;
+      const secondPriority =
+        arrayify(
+          formation
+            ?.secondPriorityBoatNos ||
+          formation?.secondBoatNos
+        )
+          .map(Number)
+          .filter(
+            boatNumber =>
+              boatNumber >= 1 &&
+              boatNumber <= 6 &&
+              boatNumber !==
+                mainHeadBoatNo
+          );
+      const groups = new Map();
+
+      arrayify(lists.flow)
+        .forEach((item, index) => {
+          const row =
+            normalizeAndValidate(
+              item,
+              "流し"
+            );
+          const boats =
+            ticketBoats(row.ticket);
+
+          if (
+            boats.length !== 3 ||
+            boats[0] !==
+              mainHeadBoatNo ||
+            used.has(row.ticket) ||
+            !row.purchaseEligible ||
+            !row.validPurchaseBranchIds
+              .length
+          ) {
+            return;
+          }
+
+          const scenarioIds =
+            arrayify(
+              row.validScenarioIds
+            )
+              .map(String)
+              .filter(id =>
+                id.startsWith(
+                  "canonical:"
+                )
+              );
+          const scenarioId =
+            scenarioIds.length === 1
+              ? scenarioIds[0]
+              : "";
+          const flowPurchaseBranches =
+            row
+              .validPurchaseBranchIds
+              .map(id =>
+                validationContext
+                  .branchesById.get(id)
+              )
+              .filter(branch =>
+                branch?.kind ===
+                  "canonical-formation" &&
+                branch?.source ===
+                  "base-formation:flow" &&
+                branch?.scenarioId ===
+                  expectedScenarioId
+              );
+          const secondEvidence =
+            formalFlowRoleEvidence(
+              "hold",
+              boats[1]
+            );
+          const pickupEvidence =
+            formalFlowRoleEvidence(
+              "pickup",
+              boats[2]
+            );
+          const holdEvidence =
+            pickupEvidence
+              ? null
+              : formalFlowRoleEvidence(
+                  "hold",
+                  boats[2]
+                );
+          const thirdRole =
+            pickupEvidence
+              ? "pickup"
+              : "hold";
+          const thirdEvidence =
+            pickupEvidence ||
+            holdEvidence;
+          const secondScore =
+            numeric(
+              secondEvidence?.score,
+              0
+            );
+          const thirdScore =
+            numeric(
+              thirdEvidence?.score,
+              0
+            );
+
+          if (
+            scenarioId !==
+              expectedScenarioId ||
+            !flowPurchaseBranches.length ||
+            !secondPriority.includes(
+              boats[1]
+            ) ||
+            !secondEvidence ||
+            !thirdEvidence ||
+            secondScore <
+              MINIMUM_FLOW_ROLE_SCORE ||
+            thirdScore <
+              MINIMUM_FLOW_ROLE_SCORE
+          ) {
+            return;
+          }
+
+          const anchor =
+            `${boats[0]}-${boats[1]}`;
+          const groupKey =
+            `${scenarioId}|${anchor}`;
+          const thirdRoleLabel =
+            thirdRole === "pickup"
+              ? "3着拾い"
+              : "3着残り";
+          const secondEvidenceReason =
+            String(
+              secondEvidence?.reason ||
+              ""
+            ).trim();
+          const thirdEvidenceReason =
+            String(
+              thirdEvidence?.reason ||
+              ""
+            ).trim();
+          const scenarioTitle =
+            String(
+              formation?.label ||
+              evidence.raceFlow
+                ?.title ||
+              row.scenarioTitle ||
+              "正式主展開"
+            );
+          const commonReason =
+            `${boats[0]}号艇を1着軸` +
+            `（${scenarioTitle}）に、` +
+            `${boats[1]}号艇の2着残し` +
+            `（${secondScore}点` +
+            `${secondEvidenceReason
+              ? `：${secondEvidenceReason}`
+              : ""}）を固定。`;
+          const detailReason =
+            commonReason +
+            `${boats[2]}号艇の${thirdRoleLabel}` +
+            `（${thirdScore}点` +
+            `${thirdEvidenceReason
+              ? `：${thirdEvidenceReason}`
+              : ""}）が同じ展開で成立。`;
+          const enriched = {
+            ...row,
+            category: "流し",
+            scenarioId,
+            flowAnchor: anchor,
+            flowCommonReason:
+              commonReason,
+            flowSecondScore:
+              secondScore,
+            flowThirdScore:
+              thirdScore,
+            flowRoleEvidence: [
+              {
+                position: 2,
+                boatNo: boats[1],
+                role: "hold",
+                score: secondScore,
+                reason:
+                  secondEvidenceReason,
+                source:
+                  secondEvidence
+                    .qualificationSource ||
+                  "raceFlow.holdBoats"
+              },
+              {
+                position: 3,
+                boatNo: boats[2],
+                role: thirdRole,
+                score: thirdScore,
+                reason:
+                  thirdEvidenceReason,
+                source:
+                  thirdEvidence
+                    .qualificationSource ||
+                  `raceFlow.${thirdRole}Boats`
+              }
+            ],
+            coveredBoatNos: [
+              ...new Set([
+                ...arrayify(
+                  row.coveredBoatNos
+                ),
+                boats[1],
+                boats[2]
+              ])
+            ],
+            evidenceReasons: [
+              ...new Set([
+                ...arrayify(
+                  row.evidenceReasons
+                ),
+                secondEvidenceReason,
+                thirdEvidenceReason
+              ].filter(Boolean))
+            ],
+            scenarioTitle:
+              `${scenarioTitle}の流し`,
+            scenarioSummary:
+              detailReason,
+            comment: detailReason
+          };
+
+          if (!groups.has(groupKey)) {
+            groups.set(groupKey, {
+              scenarioId,
+              anchor,
+              firstIndex: index,
+              secondPriorityIndex:
+                secondPriority.indexOf(
+                  boats[1]
+                ),
+              rows: []
+            });
+          }
+
+          const group =
+            groups.get(groupKey);
+          const alreadyRegistered =
+            group.rows.some(
+              ({ row: registered }) =>
+                registered.ticket ===
+                  enriched.ticket
+            );
+
+          if (!alreadyRegistered) {
+            group.rows.push({
+              row: enriched,
+              index,
+              thirdScore
+            });
+          }
+        });
+
+      const selectedGroup = [
+        ...groups.values()
+      ]
+        .filter(group =>
+          new Set(
+            group.rows.map(({ row }) =>
+              ticketBoats(
+                row.ticket
+              )[2]
+            )
+          ).size >= FLOW_GROUP_COUNT
+        )
+        .sort((a, b) => {
+          const priorityA =
+            a.secondPriorityIndex < 0
+              ? Number.MAX_SAFE_INTEGER
+              : a.secondPriorityIndex;
+          const priorityB =
+            b.secondPriorityIndex < 0
+              ? Number.MAX_SAFE_INTEGER
+              : b.secondPriorityIndex;
+
+          return (
+            priorityA - priorityB ||
+            a.firstIndex - b.firstIndex ||
+            a.anchor.localeCompare(
+              b.anchor
+            )
+          );
+        })[0];
+
+      if (!selectedGroup) return [];
+
+      const pair =
+        selectedGroup.rows
+          .sort((a, b) =>
+            b.thirdScore -
+              a.thirdScore ||
+            numeric(
+              b.row.priorityScore,
+              0
+            ) -
+              numeric(
+                a.row.priorityScore,
+                0
+              ) ||
+            a.index - b.index ||
+            a.row.ticket.localeCompare(
+              b.row.ticket
+            )
+          )
+          .slice(
+            0,
+            FLOW_GROUP_COUNT
+          )
+          .map(({ row }) => row);
+
+      if (
+        pair.length !==
+          FLOW_GROUP_COUNT
+      ) {
+        return [];
+      }
+
+      pair.forEach(row => {
+        used.add(row.ticket);
+        selected.push(row);
+      });
+
+      return pair;
+    }
+
+    const groundedFlowPair =
+      selectGroundedFlowPair();
+
+    if (
+      groundedFlowPair.length !==
+        FLOW_GROUP_COUNT &&
+      evidence.longshot
+    ) {
       take(
         lists.longshot,
         1,
@@ -3914,7 +4401,7 @@
         confidenceDefinitionVersion:
           "internal-score-v1",
         ticketPolicyVersion:
-          "practical-5-7-10-v1"
+          "practical-5-7-10-grounded-flow2-v2"
       },
       mainScenario: {
         type:
@@ -3992,6 +4479,8 @@
     STANDARD_COUNT,
     NORMAL_MAXIMUM_COUNT,
     MAXIMUM_COUNT,
+    FLOW_GROUP_COUNT,
+    MINIMUM_FLOW_ROLE_SCORE,
     THEORY_SCHEMA_VERSION,
     THEORY_SET_FINGERPRINT,
     TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT,
