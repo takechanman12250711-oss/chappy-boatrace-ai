@@ -4,15 +4,23 @@ on:
   pull_request:
     paths:
       - "js/main-cover-display-boundary.js"
+      - "js/render.js"
       - "js/prediction-runtime-loader.js"
       - "scripts/test-main-cover-display-boundary.js"
+      - "scripts/test-main-cover-render-order.js"
+      - "scripts/test-prediction-runtime-loader.js"
+      - "scripts/test-prediction-transparency-ui.js"
       - ".github/workflows/check-main-cover-display.yml"
   push:
     branches: [main]
     paths:
       - "js/main-cover-display-boundary.js"
+      - "js/render.js"
       - "js/prediction-runtime-loader.js"
       - "scripts/test-main-cover-display-boundary.js"
+      - "scripts/test-main-cover-render-order.js"
+      - "scripts/test-prediction-runtime-loader.js"
+      - "scripts/test-prediction-transparency-ui.js"
       - ".github/workflows/check-main-cover-display.yml"
 
 jobs:
@@ -24,5 +32,11 @@ jobs:
         with:
           node-version: 20
       - run: node --check js/main-cover-display-boundary.js
+      - run: node --check js/render.js
       - run: node --check js/prediction-runtime-loader.js
+      - run: node --check scripts/test-main-cover-render-order.js
+      - run: node --check scripts/test-prediction-transparency-ui.js
       - run: node scripts/test-main-cover-display-boundary.js
+      - run: node scripts/test-main-cover-render-order.js
+      - run: node scripts/test-prediction-runtime-loader.js
+      - run: node scripts/test-prediction-transparency-ui.js

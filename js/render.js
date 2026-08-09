@@ -100,6 +100,19 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
+  function displayOddsText(item, numericOdds, hasOdds) {
+    if (
+      item?.isFinalRetrievedOdds === true &&
+      item.oddsText
+    ) {
+      return item.oddsText;
+    }
+
+    return hasOdds
+      ? `${numericOdds}倍`
+      : item?.oddsText || "オッズ未取得";
+  }
+
   function escapeHtml(value) {
     return safeText(value, "")
       .replace(/&/g, "&amp;")
@@ -1628,10 +1641,11 @@ if (raceInfoArea) {
           fallbackScenario,
 
         oddsText:
-          hasOdds
-            ? `${numericOdds}倍`
-            : row.oddsText ||
-              "オッズ未取得",
+          displayOddsText(
+            row,
+            numericOdds,
+            hasOdds
+          ),
 
         scenarioTitle:
           row.scenarioTitle ||
@@ -1954,10 +1968,11 @@ if (raceInfoArea) {
           category,
 
           oddsText:
-            hasOdds
-              ? `${numericOdds}倍`
-              : row.oddsText ||
-                "オッズ未取得",
+            displayOddsText(
+              row,
+              numericOdds,
+              hasOdds
+            ),
 
           scenarioType:
             row.scenarioType ||
@@ -2869,9 +2884,11 @@ function getPaperClassName(item) {
                 ? item.score
                 : "",
 
-            oddsText: hasActualOdds
-              ? `${numericOdds}倍`
-              : item.oddsText || "オッズ未取得",
+            oddsText: displayOddsText(
+              item,
+              numericOdds,
+              hasActualOdds
+            ),
 
             reason:
               item.scenarioSummary ||
@@ -2927,9 +2944,11 @@ function getPaperClassName(item) {
                 ? value.score
                 : "",
 
-            oddsText: hasActualOdds
-              ? `${numericOdds}倍`
-              : value.oddsText || "オッズ未取得",
+            oddsText: displayOddsText(
+              value,
+              numericOdds,
+              hasActualOdds
+            ),
 
             reason:
               value.scenarioSummary ||
@@ -3225,10 +3244,11 @@ function getPaperClassName(item) {
               arrayify(
                 item.roleLabels
               ),
-            oddsText: item.odds > 0
-              ? `${item.odds}倍`
-              : item.oddsText ||
-                "オッズ未取得",
+            oddsText: displayOddsText(
+              item,
+              Number(item.odds),
+              Number(item.odds) > 0
+            ),
             comment:
               item.comment ||
               createTicketSpecificComment(
@@ -3708,10 +3728,11 @@ function getPaperClassName(item) {
             scenarioTypes,
 
             oddsText:
-              hasOdds
-                ? `${numericOdds}倍`
-                : row.oddsText ||
-                  "オッズ未取得",
+              displayOddsText(
+                row,
+                numericOdds,
+                hasOdds
+              ),
 
             oddsValue:
               rankRow.oddsValue ||
@@ -4213,9 +4234,14 @@ function renderFinalBlock(block) {
 
   window.renderAll = function renderAllWithAiCore(prediction) {
     const adaptedPrediction = applyAiCoreAdapter(prediction);
+    const displayPrediction =
+      adaptedPrediction &&
+      typeof adaptedPrediction === "object"
+        ? { ...adaptedPrediction }
+        : adaptedPrediction;
 
     if (typeof oldRenderAll === "function") {
-      oldRenderAll(adaptedPrediction);
+      oldRenderAll(displayPrediction);
     }
   };
 

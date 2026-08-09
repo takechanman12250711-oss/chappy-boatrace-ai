@@ -153,6 +153,13 @@ function createRuntime({
         .indexOf("js/prediction.js"),
     "艇番整合性を予想本体より先に読み込む"
   );
+  assert.ok(
+    failedOptional.runtime.scripts
+      .indexOf("js/render.js") <
+      failedOptional.runtime.scripts
+        .indexOf("js/main-cover-display-boundary.js"),
+    "描画本体を公開してから通常最大7点の表示境界を外側へ接続する"
+  );
   const ready =
     await failedOptional
       .runtime

@@ -13,22 +13,39 @@
     const boats = [Number(first), Number(second), Number(third)];
     return new Set(boats).size === 3 && boats.every(v => v >= 1 && v <= 6) ? boats.join("-") : "";
   }
+  function scenarioHeadBoatNo(scenario, marks = {}) {
+    const explicit = [
+      scenario?.headBoatNo,
+      scenario?.attackerBoatNo,
+      scenario?.attacker,
+      marks?.attacker?.boatNo
+    ]
+      .map(Number)
+      .find(value => value >= 1 && value <= 6);
+    return explicit || 0;
+  }
+  function scenarioText(scenario) {
+    return `${String(scenario?.type || "")} ${String(scenario?.label || "")}`.trim();
+  }
   function inferFinishOrder(scenario, marks = {}) {
-    const type = String(scenario?.type || "");
-    const attacker = Number(scenario?.attacker || marks?.attacker?.boatNo || 0);
+    const type = scenarioText(scenario);
+    const attacker = scenarioHeadBoatNo(scenario, marks);
     const wall = Number(marks?.wall?.boatNo || marks?.wallBoat?.boatNo || 0);
     const main = Number(marks?.main?.boatNo || marks?.honmei?.boatNo || 1);
     const rival = Number(marks?.rival?.boatNo || marks?.taikou?.boatNo || 2);
     const third = Number(marks?.third?.boatNo || marks?.tanana?.boatNo || 4);
-    if (/escape|nige|逃げ/i.test(type)) return uniqueBoats([1, rival, third, wall]).slice(0, 3);
+    if (/escape|nige|逃げ/i.test(type)) return uniqueBoats([attacker || 1, rival, third, wall]).slice(0, 3);
     if (/sashi|差し/i.test(type)) return uniqueBoats([attacker || 2, 1, third, rival]).slice(0, 3);
     if (/makuri-sashi|まくり差し/i.test(type)) return uniqueBoats([attacker || 3, 1, third, rival]).slice(0, 3);
     if (/makuri|まくり/i.test(type)) return uniqueBoats([attacker || 3, attacker === 3 ? 4 : third, 1, rival]).slice(0, 3);
+    if (/threeAttack|3(?:コース)?攻め|3攻め/i.test(type)) return uniqueBoats([attacker || 3, 1, third, rival]).slice(0, 3);
+    if (/fourAttack|4(?:カド)?攻め|4攻め/i.test(type)) return uniqueBoats([attacker || 4, 1, third, rival]).slice(0, 3);
+    if (attacker) return uniqueBoats([attacker, main, rival, third, 1]).slice(0, 3);
     return uniqueBoats([main, rival, third, 1]).slice(0, 3);
   }
   function breakConditions(scenario, order) {
-    const type = String(scenario?.type || "");
-    const attacker = Number(scenario?.attacker || order?.[0] || 0);
+    const type = scenarioText(scenario);
+    const attacker = scenarioHeadBoatNo(scenario) || Number(order?.[0] || 0);
     const conditions = [];
     if (/escape|nige|逃げ/i.test(type)) conditions.push("1号艇がスリットで後手を踏む");
     if (/sashi|差し/i.test(type)) conditions.push(`${attacker || 2}号艇の差し場が閉じる`);
@@ -36,6 +53,60 @@
     if (Array.isArray(scenario?.blockedBoats) && scenario.blockedBoats.length) conditions.push(`壁・ブロック関係が崩れる（対象${scenario.blockedBoats.map(Number).join("・")}号艇）`);
     if (!conditions.length) conditions.push("展示・進入・直前気象で前提が変化する");
     return conditions;
+  }
+  function normalizedTicket(row) {
+    const value = String(
+      typeof row === "string"
+        ? row
+        : row?.ticket ?? row?.combo ?? row?.bet ?? row?.combination ?? ""
+    ).trim();
+    const match = value.match(/^([1-6])-([1-6])-([1-6])$/);
+    return match ? ticketOf(match[1], match[2], match[3]) : "";
+  }
+  function selectedTicketsOf(input, evidence) {
+    const rows = [
+      ...(Array.isArray(evidence?.tickets) ? evidence.tickets : []),
+      ...(Array.isArray(input?.practicalSelection?.tickets) ? input.practicalSelection.tickets : []),
+      ...(Array.isArray(input?.practicalTickets) ? input.practicalTickets : [])
+    ];
+    const seen = new Set();
+    return rows.map(normalizedTicket).filter(ticket => {
+      if (!ticket || seen.has(ticket)) return false;
+      seen.add(ticket);
+      return true;
+    });
+  }
+  function representativeTicketOf(scenario, order, selectedTickets, marks) {
+    const headBoatNo = scenarioHeadBoatNo(scenario, marks) || Number(order?.[0] || 0);
+    const selected = selectedTickets.find(ticket => Number(ticket.split("-")[0]) === headBoatNo);
+    if (selected) return selected;
+
+    // 正式買い目があるときは、そこに存在しない推測券を代表目として表示しない。
+    if (headBoatNo && selectedTickets.length) return "";
+
+    const own = normalizedTicket(scenario?.representativeTicket);
+    if (own && (!headBoatNo || Number(own.split("-")[0]) === headBoatNo)) return own;
+    return ticketOf(order?.[0], order?.[1], order?.[2]);
+  }
+  function scenarioSourceOf(input, evidence) {
+    const evidenceScenarios = Array.isArray(evidence?.scenarios)
+      ? evidence.scenarios.filter(Boolean)
+      : [];
+    const raceScenarios = input?.aiCore?.raceScenarios || input?.raceScenarios || {};
+    const scenarioRows = Array.isArray(raceScenarios?.scenarios)
+      ? raceScenarios.scenarios.filter(Boolean)
+      : [];
+    const richScenarios = scenarioRows.length
+      ? scenarioRows
+      : [raceScenarios?.mainScenario, raceScenarios?.subScenario].filter(Boolean);
+
+    if (evidenceScenarios.length >= 2) return { rows: evidenceScenarios, source: "verification-evidence-scenarios" };
+    if (richScenarios.length >= 2) return { rows: richScenarios, source: "race-scenarios" };
+    if (evidenceScenarios.length) return { rows: evidenceScenarios, source: "verification-evidence-scenarios" };
+
+    const compactRows = [evidence?.mainScenario, evidence?.subScenario].filter(Boolean);
+    if (compactRows.length) return { rows: compactRows, source: "verification-evidence" };
+    return { rows: richScenarios, source: "race-scenarios" };
   }
   function normalize(rows) {
     const total = rows.reduce((sum, row) => sum + Math.max(0, n(row.rawScore)), 0);
@@ -49,19 +120,22 @@
   }
   function build(input = {}) {
     const evidence = input?.verificationEvidence || input?.evidence || {};
-    const source = Array.isArray(evidence?.scenarios) && evidence.scenarios.length ? evidence.scenarios : [evidence?.mainScenario, evidence?.subScenario].filter(Boolean);
-    const marks = evidence?.marks || input?.marks || {};
+    const resolvedSource = scenarioSourceOf(input, evidence);
+    const source = resolvedSource.rows;
+    const marks = evidence?.marks || input?.aiCore?.marks || input?.marks || {};
+    const selectedTickets = selectedTicketsOf(input, evidence);
     const scenarios = normalize(source.slice(0, 4).map((scenario, index) => {
       const order = inferFinishOrder(scenario, marks);
       const rawScore = clamp(n(scenario?.score) + n(scenario?.frameMovementAdjustment) + (index === 0 ? 3 : 0), 0, 100);
+      const headBoatNo = scenarioHeadBoatNo(scenario, marks) || Number(order[0] || 0);
       return {
         rank: index + 1,
         scenarioType: String(scenario?.type || "unknown"),
         label: String(scenario?.label || `展開候補${index + 1}`),
         rawScore,
-        keyBoat: Number(scenario?.attacker || order[0] || 0) || null,
+        keyBoat: headBoatNo || null,
         finishOrder: order,
-        representativeTicket: ticketOf(order[0], order[1], order[2]),
+        representativeTicket: representativeTicketOf(scenario, order, selectedTickets, marks),
         blockedBoats: uniqueBoats(scenario?.blockedBoats),
         breakConditions: breakConditions(scenario, order)
       };
@@ -73,10 +147,10 @@
       mainScenario: scenarios[0] || null,
       alternativeScenarioCount: Math.max(0, scenarios.length - 1),
       totalLikelihood: Math.round(scenarios.reduce((sum, row) => sum + n(row.likelihood), 0) * 10) / 10,
-      source: "existing-verification-evidence",
+      source: resolvedSource.source,
       usableForPrediction: false,
       automaticApplication: false
     };
   }
-  return { build, inferFinishOrder, normalize, ticketOf };
+  return { build, inferFinishOrder, normalize, ticketOf, scenarioHeadBoatNo, scenarioSourceOf };
 });

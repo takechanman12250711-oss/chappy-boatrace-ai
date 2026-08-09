@@ -33,6 +33,13 @@
     ["mainSheet", "coverTickets"],
     ["mainSheet", "flowTickets"],
     ["manshuSheet", "tickets"],
+    ["aiCore", "mainSheet", "tickets"],
+    ["aiCore", "mainSheet", "coverTickets"],
+    ["aiCore", "mainSheet", "flowTickets"],
+    ["aiCore", "manshuSheet", "tickets"],
+    ["finalAi", "ticketRanks"],
+    ["finalAi", "topTickets"],
+    ["finalAi", "manshuTickets"],
     ["practicalSelection", "tickets"],
     ["ticketRanks"],
     ["aiTicketList"]
@@ -47,16 +54,30 @@
     const date = String(
       race.date || prediction?.date || prediction?.params?.date || ""
     ).replaceAll("-", "");
-    const jcd = String(
+    const rawJcd = String(
       race.jcd || race.stadiumCode || prediction?.stadiumCode ||
       prediction?.venue?.code || prediction?.params?.jcd || ""
-    ).padStart(2, "0");
-    const rno = String(
+    );
+    const jcdNumber = Number(rawJcd);
+    const rawRno = String(
       race.raceNo || race.rno || prediction?.raceNo ||
       prediction?.params?.rno || ""
     );
+    const rnoNumber = Number(rawRno);
 
-    if (!date || !jcd || !rno) return "";
+    if (
+      !/^\d{8}$/.test(date) ||
+      !Number.isInteger(jcdNumber) ||
+      jcdNumber < 1 ||
+      jcdNumber > 24 ||
+      !Number.isInteger(rnoNumber) ||
+      rnoNumber < 1 ||
+      rnoNumber > 12
+    ) {
+      return "";
+    }
+    const jcd = String(jcdNumber).padStart(2, "0");
+    const rno = String(rnoNumber);
     return `${date}:${jcd}:${rno}`;
   }
 
@@ -98,6 +119,11 @@
     return byTicket;
   }
 
+  function timestampOf(value) {
+    const parsed = Date.parse(String(value || ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
   function load(prediction, storage = root?.localStorage) {
     const key = raceKey(prediction);
     if (!key || !storage) return null;
@@ -123,17 +149,43 @@
       ...(previous?.byTicket || {}),
       ...currentOdds
     };
-
-    storage.setItem(
-      `${STORAGE_PREFIX}${key}`,
-      JSON.stringify({
-        raceKey: key,
-        savedAt: new Date().toISOString(),
-        source: "official-last-retrieved",
-        byTicket
-      })
+    const finalOddsMeta =
+      prediction?.finalOddsDisplay &&
+      prediction.finalOddsDisplay
+        .isFinalRetrievedOdds === true
+        ? prediction.finalOddsDisplay
+        : null;
+    const savedAt = String(
+      finalOddsMeta?.savedAt ||
+      new Date().toISOString()
     );
-    return true;
+    const source = String(
+      finalOddsMeta?.source ||
+      "official-last-retrieved"
+    );
+
+    if (
+      previous &&
+      timestampOf(previous.savedAt) > timestampOf(savedAt)
+    ) {
+      return false;
+    }
+
+    try {
+      storage.setItem(
+        `${STORAGE_PREFIX}${key}`,
+        JSON.stringify({
+          raceKey: key,
+          savedAt,
+          source,
+          isFinalRetrievedOdds: true,
+          byTicket
+        })
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   function isFinished(prediction) {
@@ -153,10 +205,22 @@
       );
   }
 
-  function restoreList(list, byTicket) {
+  function restoreList(list, snapshot) {
     if (!Array.isArray(list)) return list;
 
-    return list.map(item => {
+    const byTicket =
+      snapshot?.byTicket || {};
+    const source = String(
+      snapshot?.source ||
+      "official-last-retrieved"
+    );
+    const savedAt = String(
+      snapshot?.savedAt ||
+      ""
+    );
+    let changed = false;
+
+    const restored = list.map(item => {
       if (!item || typeof item !== "object") return item;
 
       const ticket = normalizeTicket(
@@ -164,24 +228,40 @@
       );
       const currentOdds = Number(item.odds);
       const savedOdds = Number(byTicket?.[ticket]);
+      const snapshotIsNewer =
+        timestampOf(savedAt) >
+        timestampOf(item.oddsSavedAt);
+      const shouldUseSnapshot =
+        Number.isFinite(savedOdds) &&
+        savedOdds > 0 &&
+        (
+          !Number.isFinite(currentOdds) ||
+          currentOdds <= 0 ||
+          item.isFinalRetrievedOdds !== true ||
+          snapshotIsNewer
+        );
 
       if (
         !ticket ||
-        (Number.isFinite(currentOdds) && currentOdds > 0) ||
-        !Number.isFinite(savedOdds) ||
-        savedOdds <= 0
+        !shouldUseSnapshot
       ) {
         return item;
       }
 
+      changed = true;
       return {
         ...item,
         odds: savedOdds,
         oddsText: `${savedOdds}倍（最終取得）`,
-        oddsSource: "official-last-retrieved",
+        oddsSource: source,
+        oddsSavedAt: savedAt,
         isFinalRetrievedOdds: true
       };
     });
+
+    return changed
+      ? restored
+      : list;
   }
 
   function prepare(prediction, storage = root?.localStorage) {
@@ -199,7 +279,7 @@
 
     LIST_PATHS.forEach(path => {
       const original = getAtPath(prediction, path);
-      const restored = restoreList(original, snapshot.byTicket);
+      const restored = restoreList(original, snapshot);
 
       if (restored !== original) {
         setAtPath(display, path, restored);
@@ -213,7 +293,8 @@
       available: true,
       label: "最終取得オッズ",
       savedAt: snapshot.savedAt,
-      source: snapshot.source
+      source: snapshot.source,
+      isFinalRetrievedOdds: true
     };
 
     return display;
