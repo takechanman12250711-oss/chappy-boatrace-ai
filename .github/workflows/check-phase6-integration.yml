@@ -17,6 +17,7 @@ on:
       - "js/script.js"
       - "js/result-ui-phase5.js"
       - "js/result-void-compat.js"
+      - "js/theory-performance-report.js"
       - "scripts/test-api-history-no-browser-fallback.js"
       - "scripts/test-initial-odds-enrichment.js"
       - "scripts/test-race-flow-result-panel.js"
@@ -24,10 +25,13 @@ on:
       - "scripts/test-phase6-integration.js"
       - "scripts/test-result-void-compat.js"
       - "scripts/test-final-odds-schedule.js"
+      - "scripts/test-scheduled-analysis-workflows.js"
       - "scripts/build-prediction-index-shards.js"
       - "scripts/test-build-prediction-index-shards.js"
       - "scripts/test-prediction-index-loader.js"
       - ".github/workflows/settle-purchases.yml"
+      - ".github/workflows/prediction-gap-report.yml"
+      - ".github/workflows/build-learning-analysis-pipeline.yml"
       - ".github/workflows/check-phase6-integration.yml"
 
 jobs:
@@ -48,6 +52,7 @@ jobs:
           node --check scripts/test-phase6-integration.js
           node --check scripts/test-result-void-compat.js
           node --check scripts/test-final-odds-schedule.js
+          node --check scripts/test-scheduled-analysis-workflows.js
           node --check scripts/test-build-prediction-index-shards.js
           node --check scripts/test-prediction-index-loader.js
       - name: Run Phase6 integration test
@@ -56,6 +61,8 @@ jobs:
         run: node scripts/test-result-void-compat.js
       - name: Run final odds schedule regression
         run: node scripts/test-final-odds-schedule.js
+      - name: Run scheduled analysis workflow regressions
+        run: node scripts/test-scheduled-analysis-workflows.js
       - name: Run load performance regression
         run: |
           node scripts/test-build-prediction-index-shards.js

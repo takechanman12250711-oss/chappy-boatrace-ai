@@ -102,6 +102,27 @@ global.ChappyPracticalSelection = {
         }]
       },
       tickets: [{
+        ticket: "1-2-3",
+        category: "本線"
+      }, {
+        ticket: "1-3-2",
+        category: "本線"
+      }, {
+        ticket: "1-2-4",
+        category: "本線"
+      }, {
+        ticket: "2-1-3",
+        category: "押さえ"
+      }, {
+        ticket: "3-1-2",
+        category: "押さえ"
+      }, {
+        ticket: "1-3-4",
+        category: "流し"
+      }, {
+        ticket: "4-5-6",
+        category: "万舟・穴"
+      }, {
         ticket: "3-4-1",
         category: "独立展開",
         selectionTier: "展開追加",
@@ -220,6 +241,7 @@ global.ChappyPracticalSelection = {
 };
 
 require("../js/render");
+require("../js/main-cover-display-boundary");
 
 global.renderAll({
   boatEvaluation: {
@@ -239,6 +261,12 @@ global.renderAll({
     tickets: [{
       ticket: "1-2-3",
       category: "本線",
+      odds: 12.4,
+      oddsText:
+        "12.4倍（最終取得）",
+      oddsSource:
+        "boatrace-official-snapshot",
+      isFinalRetrievedOdds: true,
       scenarioSummary:
         longScenarioReason
     }],
@@ -420,6 +448,26 @@ assert.match(
 );
 assert.match(
   html,
+  /12\.4倍（最終取得）/,
+  "最終取得オッズの表示ラベルを数値だけへ戻さない"
+);
+assert.match(
+  html,
+  /v3-ticket-accordion-main[\s\S]{0,400}3点/,
+  "通常欄の本線summaryをformal selectionの3点にする"
+);
+assert.match(
+  html,
+  /v3-ticket-accordion-safety[\s\S]{0,400}2点/,
+  "通常欄の押さえsummaryをformal selectionの2点にする"
+);
+assert.match(
+  html,
+  /v3-ticket-accordion-manshu[\s\S]{0,400}1点/,
+  "通常欄の万舟summaryをformal selectionの1点にする"
+);
+assert.match(
+  html,
   /🛟絵文字の後ろも全文で確認する。【絵文字末尾保持】/,
   "UTF-16境界の絵文字と後続文を分断しない"
 );
@@ -448,29 +496,24 @@ assert.match(
   /【艇コメント末尾保持】/,
   "役割・buffと併存する艇コメントも末尾まで表示する"
 );
-const compactFlowRows =
+const exactFlowRows =
   html.match(
-    /data-flow-notation="1-23-全"/g
+    /data-flow-notation="1-3-4"/g
   ) || [];
 assert.equal(
-  compactFlowRows.length,
+  exactFlowRows.length,
   1,
-  "本命欄の流しだけを1-23-全へまとめて表示する"
+  "通常欄の流しはformal selectionのexact 1券だけを表示する"
 );
 assert.match(
   html,
-  /data-flow-notation="1-23-全"[\s\S]{0,900}8点/,
-  "流しformationへ合計点数を表示する"
+  /v3-ticket-accordion-flow[\s\S]{0,400}1点/,
+  "formationの物理8点でなくformal selectionの1点をsummaryへ表示する"
 );
 assert.doesNotMatch(
   html,
-  /data-flow-notation="1-(?:2|3)-4"/,
-  "流しの個別券を画面へ重複列挙しない"
-);
-assert.doesNotMatch(
-  html,
-  /data-flow-notation="1-23-全"[\s\S]{0,900}オッズ未取得/,
-  "流し全体を単一券のオッズ未取得として扱わない"
+  /data-flow-notation="1-23-全"/,
+  "通常欄へ候補formation 8点を戻さない"
 );
 
 const missingSection =

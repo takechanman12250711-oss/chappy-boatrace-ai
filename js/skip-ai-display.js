@@ -40,8 +40,25 @@
   }
 
   function completenessOf(prediction) {
-    if (Number.isFinite(Number(prediction?.evidenceCompleteness))) {
-      return Number(prediction.evidenceCompleteness);
+    const dataQualityScore =
+      prediction?.dataQuality?.score;
+    if (
+      dataQualityScore !== null &&
+      dataQualityScore !== undefined &&
+      String(dataQualityScore).trim() !== "" &&
+      Number.isFinite(Number(dataQualityScore))
+    ) {
+      return Math.max(0, Math.min(100, Number(dataQualityScore)));
+    }
+    const explicitCompleteness =
+      prediction?.evidenceCompleteness;
+    if (
+      explicitCompleteness !== null &&
+      explicitCompleteness !== undefined &&
+      String(explicitCompleteness).trim() !== "" &&
+      Number.isFinite(Number(explicitCompleteness))
+    ) {
+      return Math.max(0, Math.min(100, Number(explicitCompleteness)));
     }
     const evidence = prediction?.verificationEvidence || {};
     let points = 45;
@@ -118,5 +135,5 @@
 
   wrap("renderAll");
   wrap("renderPrediction");
-  root.ChappySkipAiDisplay = Object.freeze({ render: renderPanel, buildDecision });
+  root.ChappySkipAiDisplay = Object.freeze({ render: renderPanel, buildDecision, completenessOf });
 })(window);

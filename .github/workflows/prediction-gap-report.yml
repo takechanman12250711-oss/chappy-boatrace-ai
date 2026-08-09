@@ -32,7 +32,7 @@ jobs:
       - name: Build report
         if: github.event_name != 'pull_request'
         run: |
-          node scripts/build-improvement-review.js
+          node scripts/build-improvement-review.js --output=data/stats/improvement-review.json
           node scripts/build-prediction-gap-report.js
       - name: Save report
         if: github.event_name != 'pull_request'

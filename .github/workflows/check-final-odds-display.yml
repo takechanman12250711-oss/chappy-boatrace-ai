@@ -3,17 +3,25 @@ name: Check final odds display
 on:
   pull_request:
     paths:
+      - "index.html"
+      - "js/app-runtime-loader.js"
       - "js/final-odds-display.js"
       - "js/prediction-runtime-loader.js"
+      - "js/script.js"
       - "scripts/test-final-odds-display.js"
+      - "scripts/test-initial-odds-enrichment.js"
       - ".github/workflows/check-final-odds-display.yml"
   push:
     branches:
       - main
     paths:
+      - "index.html"
+      - "js/app-runtime-loader.js"
       - "js/final-odds-display.js"
       - "js/prediction-runtime-loader.js"
+      - "js/script.js"
       - "scripts/test-final-odds-display.js"
+      - "scripts/test-initial-odds-enrichment.js"
       - ".github/workflows/check-final-odds-display.yml"
 
 jobs:
@@ -24,6 +32,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: node --check js/app-runtime-loader.js
       - run: node --check js/final-odds-display.js
       - run: node --check js/prediction-runtime-loader.js
+      - run: node --check js/script.js
       - run: node scripts/test-final-odds-display.js
+      - run: node scripts/test-initial-odds-enrichment.js

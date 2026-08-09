@@ -2930,33 +2930,37 @@
 
       const raceDataPromise =
         fetchRaceData(params);
-      let oddsSupplementState = null;
-      let oddsSupplementPromise = null;
-      if (!isReview) {
-        oddsSupplementState = {
-          settled: false,
-          value: null,
-          error: null
-        };
-        oddsSupplementPromise =
-          fetchOddsSupplement(params)
-            .then(value => {
-              oddsSupplementState.settled = true;
-              oddsSupplementState.value = value;
-              return value;
-            })
-            .catch(error => {
-              oddsSupplementState.settled = true;
-              oddsSupplementState.error = error;
-              const fallback = {
-                oddsData: null,
-                oddsError: error,
-                missingData: null
-              };
-              oddsSupplementState.value = fallback;
-              return fallback;
-            });
-      }
+      const oddsSupplementState = {
+        settled: false,
+        value: null,
+        error: null
+      };
+      const oddsSupplementPromise =
+        (
+          isReview
+            ? fetchReviewOddsSupplement(
+                params
+              )
+            : fetchOddsSupplement(
+                params
+              )
+        )
+          .then(value => {
+            oddsSupplementState.settled = true;
+            oddsSupplementState.value = value;
+            return value;
+          })
+          .catch(error => {
+            oddsSupplementState.settled = true;
+            oddsSupplementState.error = error;
+            const fallback = {
+              oddsData: null,
+              oddsError: error,
+              missingData: null
+            };
+            oddsSupplementState.value = fallback;
+            return fallback;
+          });
       const predictionRuntime =
         window.ChappyPredictionRuntime
           ?.ensureReady?.();
@@ -3149,6 +3153,36 @@
       }
 
       if (isReview) {
+        if (oddsAppliedBeforeRender) {
+          updatePredictionOddsStatus(
+            "最終オッズ反映済み",
+            "ready"
+          );
+        } else {
+          void oddsSupplementPromise
+            .then(oddsSupplement =>
+              applyReviewOddsSupplement({
+                oddsSupplement,
+                prediction,
+                params,
+                isCurrentRequest
+              })
+            )
+            .catch(oddsError => {
+              if (
+                !isCurrentRequest() ||
+                lastPrediction !== prediction
+              ) {
+                return;
+              }
+              console.warn(
+                "最終オッズ情報の付加に失敗",
+                oddsError?.message ||
+                  oddsError
+              );
+            });
+        }
+
         updateStatus(
           "予想完了・公式結果を取得中..."
         );
@@ -4610,6 +4644,62 @@
     };
   }
 
+  async function fetchReviewOddsSupplement(
+    params
+  ) {
+    try {
+      const oddsData =
+        await fetchOddsData(
+          params
+        );
+      const normalizedOddsData =
+        normalizeReviewOddsData(
+          oddsData
+        );
+
+      return {
+        oddsData:
+          normalizedOddsData,
+        oddsError: null,
+        missingData: null
+      };
+    } catch (oddsError) {
+      console.warn(
+        "最終オッズの取得に失敗",
+        oddsError?.message ||
+          oddsError
+      );
+
+      return {
+        oddsData: null,
+        oddsError,
+        missingData: null
+      };
+    }
+  }
+
+  function normalizeReviewOddsData(
+    oddsData,
+    retrievedAt =
+      new Date().toISOString()
+  ) {
+    if (
+      !oddsData ||
+      typeof oddsData !== "object"
+    ) {
+      return oddsData;
+    }
+
+    return {
+      ...oddsData,
+      savedAt: String(
+        oddsData.savedAt ||
+        retrievedAt
+      ),
+      isFinalRetrievedOdds: true
+    };
+  }
+
   async function fetchMissingNumbers(
     params
   ) {
@@ -4781,6 +4871,20 @@
         "object"
         ? oddsData.byTicket
         : {};
+    const isFinalRetrievedOdds =
+      oddsData
+        .isFinalRetrievedOdds ===
+      true;
+    const oddsSource =
+      String(
+        oddsData.source ||
+        ""
+      );
+    const oddsSavedAt =
+      String(
+        oddsData.savedAt ||
+        ""
+      );
     const oddsHistoryKey =
       `chappy_odds_history_` +
       `${params.date}_` +
@@ -4929,7 +5033,11 @@
                     "オッズ未取得",
                   hasOdds: false,
                   isManshu: false,
-                  oddsValue: "未取得"
+                  oddsValue: "未取得",
+                  oddsSource: "",
+                  oddsSavedAt: "",
+                  isFinalRetrievedOdds:
+                    false
                 };
               }
 
@@ -4975,11 +5083,19 @@
                 ...item,
                 odds: numericOdds,
                 oddsText:
-                  `${numericOdds}倍`,
+                  `${numericOdds}倍` +
+                  (
+                    isFinalRetrievedOdds
+                      ? "（最終取得）"
+                      : ""
+                  ),
                 hasOdds: true,
                 isManshu:
                   numericOdds >= 100,
-                oddsValue
+                oddsValue,
+                oddsSource,
+                oddsSavedAt,
+                isFinalRetrievedOdds
               };
             })
           : [];
@@ -5117,6 +5233,16 @@
               .practicalSelection
               .tickets
           )
+      };
+    }
+
+    if (isFinalRetrievedOdds) {
+      prediction.finalOddsDisplay = {
+        available: true,
+        label: "最終取得オッズ",
+        source: oddsSource,
+        savedAt: oddsSavedAt,
+        isFinalRetrievedOdds: true
       };
     }
 
@@ -5288,6 +5414,100 @@
     );
     updatePredictionOddsStatus(
       "オッズ反映済み",
+      "ready"
+    );
+    return true;
+  }
+
+  function applyReviewOddsSupplement({
+    oddsSupplement,
+    prediction,
+    params,
+    isCurrentRequest
+  }) {
+    if (
+      !isCurrentRequest() ||
+      lastPrediction !== prediction
+    ) {
+      return false;
+    }
+
+    const oddsData =
+      oddsSupplement?.oddsData;
+
+    if (!hasUsableOddsData(oddsData)) {
+      const finalOddsDisplay =
+        window.ChappyFinalOddsDisplay;
+      const fallbackPrediction =
+        finalOddsDisplay &&
+        typeof finalOddsDisplay
+          .prepare === "function"
+          ? finalOddsDisplay
+              .prepare(prediction)
+          : prediction;
+      const hasStoredSnapshot =
+        fallbackPrediction !==
+          prediction &&
+        fallbackPrediction
+          ?.finalOddsDisplay
+          ?.available === true;
+      updatePredictionOddsStatus(
+        hasStoredSnapshot
+          ? "端末保存の最終オッズを表示"
+          : oddsSupplement?.oddsError
+            ? "最終オッズ取得失敗"
+            : "最終オッズ未取得",
+        hasStoredSnapshot
+          ? "ready"
+          : oddsSupplement?.oddsError
+            ? "error"
+            : "pending"
+      );
+      return false;
+    }
+
+    try {
+      lastRaceData = {
+        ...lastRaceData,
+        odds: oddsData
+      };
+      enrichPredictionWithOdds(
+        prediction,
+        oddsData,
+        null,
+        params
+      );
+    } catch (oddsError) {
+      console.warn(
+        "最終オッズ情報の付加に失敗",
+        oddsError?.message ||
+          oddsError
+      );
+      updatePredictionOddsStatus(
+        "最終オッズ反映失敗",
+        "error"
+      );
+      return false;
+    }
+
+    if (
+      !isCurrentRequest() ||
+      lastPrediction !== prediction
+    ) {
+      return false;
+    }
+
+    if (
+      typeof window.renderAll ===
+        "function"
+    ) {
+      window.renderAll(
+        prediction
+      );
+    }
+
+    updatePredictionOddsStatus(
+      "最終オッズ反映済み",
       "ready"
     );
     return true;

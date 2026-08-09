@@ -52,7 +52,7 @@ jobs:
             if(data.automaticApplication!==false || data.usableForPrediction!==false) throw new Error(`${p} の安全フラグ異常`);
           }
           const perf=JSON.parse(fs.readFileSync('data/stats/theory-performance-report.json','utf8'));
-          if(perf.version!=='3.3.0' || perf.theoryCount!==12) throw new Error('理論別成績が12理論の最新版ではありません');
+          if(perf.version!=='3.4.0' || perf.theoryCount!==12) throw new Error('理論別成績が12理論の最新版ではありません');
           const phase7=JSON.parse(fs.readFileSync('data/stats/theory-evidence-coverage-phase7.json','utf8'));
           if(phase7.theoryCount!==12) throw new Error('Phase7の理論数異常');
           const phase8=JSON.parse(fs.readFileSync('data/stats/theory-profit-review-phase8.json','utf8'));
