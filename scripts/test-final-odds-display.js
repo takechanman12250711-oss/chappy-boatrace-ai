@@ -52,7 +52,16 @@ const livePrediction = {
     ticketRanks: [{ ticket: "1-2-3", odds: 8.4 }],
     topTickets: [{ ticket: "2-1-3", odds: 31.2 }],
     manshuTickets: [{ ticket: "4-1-6", odds: 126.5 }]
-  }
+  },
+  practicalTickets: [
+    { ticket: "1-2-3", odds: 8.4, category: "本命" },
+    {
+      ticket: "6-1-2",
+      odds: 96.1,
+      category: "独立展開",
+      selectionTier: "展開追加"
+    }
+  ]
 };
 
 assert.equal(finalOdds.save(livePrediction, storage), true);
@@ -93,7 +102,17 @@ const endedPrediction = {
     ticketRanks: [{ ticket: "1-2-3", odds: null, oddsText: "オッズ未取得" }],
     topTickets: [{ ticket: "2-1-3", odds: null, oddsText: "オッズ未取得" }],
     manshuTickets: [{ ticket: "4-1-6", odds: null, oddsText: "オッズ未取得" }]
-  }
+  },
+  practicalTickets: [
+    { ticket: "1-2-3", odds: null, oddsText: "オッズ未取得" },
+    {
+      ticket: "6-1-2",
+      odds: null,
+      oddsText: "オッズ未取得",
+      category: "独立展開",
+      selectionTier: "展開追加"
+    }
+  ]
 };
 
 const prepared = finalOdds.prepare(endedPrediction, storage);
@@ -110,6 +129,11 @@ assert.equal(prepared.aiCore.manshuSheet.tickets[0].odds, 126.5);
 assert.equal(prepared.finalAi.ticketRanks[0].odds, 8.4);
 assert.equal(prepared.finalAi.topTickets[0].odds, 31.2);
 assert.equal(prepared.finalAi.manshuTickets[0].odds, 126.5);
+assert.equal(prepared.practicalTickets[1].odds, 96.1);
+assert.equal(
+  prepared.practicalTickets[1].oddsText,
+  "96.1倍（最終取得）"
+);
 assert.equal(
   prepared.mainSheet.coverTickets[0].oddsText,
   "31.2倍（最終取得）"
@@ -127,6 +151,7 @@ assert.equal(savedAfterPartialEnd.byTicket["1-2-3"], 8.4);
 assert.equal(savedAfterPartialEnd.byTicket["2-1-3"], 31.2);
 assert.equal(savedAfterPartialEnd.byTicket["1-2-4"], 18.6);
 assert.equal(savedAfterPartialEnd.byTicket["4-1-6"], 126.5);
+assert.equal(savedAfterPartialEnd.byTicket["6-1-2"], 96.1);
 
 const unknownRace = {
   ...endedPrediction,
