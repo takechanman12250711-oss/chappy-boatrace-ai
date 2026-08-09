@@ -12906,11 +12906,12 @@ return {
       formalFormation.flow
     );
     /*
-      実戦厳選へ渡す構造化候補数は従来の最大6点を維持する。
-      流し表示と最終formationには、この後で全4・8・12点を戻す。
+      流しは同一1/2着軸で正式な3着根拠が2艇そろうかを
+      実戦厳選側で比較するため、全4・8・12候補を構造化する。
+      実際の購入は実戦厳選が根拠上位2点へ絞る。
     */
     const practicalFlowTickets =
-      alignedFlowTickets.slice(0, 6);
+      [...alignedFlowTickets];
     const alignedFlowFormations = (
       Array.isArray(formalFormation.flowFormations)
         ? formalFormation.flowFormations

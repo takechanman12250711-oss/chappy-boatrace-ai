@@ -27,6 +27,12 @@ const candidateReason =
 const manshuSpecificReason =
   `${"万舟固有の成立経路を確認する。".repeat(9)}` +
   "【万舟固有理由末尾】";
+const flowCommonReason =
+  "1号艇のイン逃げを1着軸に、3号艇の2着残しを固定。";
+const flowThirdFourReason =
+  "4号艇はまくり差し後の3着残りを評価して採用。";
+const flowThirdFiveReason =
+  "5号艇は外から伸びて3着へ届く経路を評価して採用。";
 const rankingSpecificReason =
   `${"順位固有の比較根拠を確認する。".repeat(9)}` +
   "【ランキング固有理由末尾】";
@@ -118,10 +124,18 @@ global.ChappyPracticalSelection = {
         category: "押さえ"
       }, {
         ticket: "1-3-4",
-        category: "流し"
+        category: "流し",
+        flowAnchor: "1-3",
+        flowCommonReason,
+        scenarioSummary:
+          flowThirdFourReason
       }, {
-        ticket: "4-5-6",
-        category: "万舟・穴"
+        ticket: "1-3-5",
+        category: "流し",
+        flowAnchor: "1-3",
+        flowCommonReason,
+        scenarioSummary:
+          flowThirdFiveReason
       }, {
         ticket: "3-4-1",
         category: "独立展開",
@@ -271,27 +285,41 @@ global.renderAll({
         longScenarioReason
     }],
     flowTickets: [
-      { ticket: "1-2-4", category: "流し" },
-      { ticket: "1-3-4", category: "流し" }
+      {
+        ticket: "1-3-4",
+        category: "流し",
+        odds: 31.6,
+        oddsText:
+          "31.6倍（最終取得）",
+        oddsSource:
+          "boatrace-official-snapshot",
+        isFinalRetrievedOdds: true
+      },
+      {
+        ticket: "1-3-5",
+        category: "流し",
+        odds: 44.2,
+        oddsText:
+          "44.2倍（最終取得）",
+        oddsSource:
+          "boatrace-official-snapshot",
+        isFinalRetrievedOdds: true
+      }
     ],
     flowFormations: [{
       headBoatNo: 1,
-      secondBoatNos: [2, 3],
+      secondBoatNos: [3],
       thirdMode: "all",
-      notation: "1-23-全",
-      pointCount: 8,
+      notation: "1-3-全",
+      pointCount: 4,
       expandedTickets: [
-        "1-2-3",
-        "1-2-4",
-        "1-2-5",
-        "1-2-6",
         "1-3-2",
         "1-3-4",
         "1-3-5",
         "1-3-6"
       ],
       scenarioType: "escape",
-      reason: "1逃げから2・3号艇を2着にして3着全艇へ流す。"
+      reason: "1逃げから3号艇を2着にして3着全艇へ流す。"
     }]
   },
   manshuSheet: {
@@ -302,14 +330,24 @@ global.renderAll({
         manshuSpecificReason
     }]
   },
+  combinedOdds: {
+    categories: {
+      flow: {
+        totalCount: 6,
+        availableCount: 6,
+        isFormal: true,
+        combinedOdds: 9.9
+      }
+    }
+  },
   aiTicketList: [{
     ticket: "5-4-3",
     category: "穴候補"
   }, {
-    ticket: "1-2-4",
+    ticket: "1-3-4",
     category: "流し"
   }, {
-    ticket: "1-3-4",
+    ticket: "1-3-5",
     category: "流し"
   }],
   ticketRanks: [{
@@ -348,6 +386,12 @@ global.renderAll({
 });
 
 const html = resultArea.innerHTML;
+const accordionTag = type =>
+  html.match(
+    new RegExp(
+      `<details[^>]*class="[^"]*v3-ticket-accordion-${type}[^"]*"[^>]*>`
+    )
+  )?.[0] || "";
 const meterCount =
   (
     html.match(
@@ -462,9 +506,19 @@ assert.match(
   "通常欄の押さえsummaryをformal selectionの2点にする"
 );
 assert.match(
-  html,
-  /v3-ticket-accordion-manshu[\s\S]{0,400}1点/,
-  "通常欄の万舟summaryをformal selectionの1点にする"
+  accordionTag("main"),
+  /\bopen\b/,
+  "従来どおり本命accordionだけを初期表示で開く"
+);
+assert.doesNotMatch(
+  accordionTag("safety"),
+  /\bopen\b/,
+  "押さえaccordionの初期折りたたみを保つ"
+);
+assert.doesNotMatch(
+  accordionTag("flow"),
+  /\bopen\b/,
+  "流し2券でもaccordionの初期折りたたみを保つ"
 );
 assert.match(
   html,
@@ -481,10 +535,10 @@ assert.match(
   /【候補理由末尾保持】/,
   "候補比較理由を120文字で切らない"
 );
-assert.match(
+assert.doesNotMatch(
   html,
   /【万舟固有理由末尾】/,
-  "万舟行の固有理由を汎用文へ置き換えず全文表示する"
+  "formal selectionで非採用の万舟候補を通常欄へ戻さない"
 );
 assert.doesNotMatch(
   html,
@@ -498,22 +552,60 @@ assert.match(
 );
 const exactFlowRows =
   html.match(
-    /data-flow-notation="1-3-4"/g
+    /data-flow-notation="[^"]+"/g
   ) || [];
 assert.equal(
   exactFlowRows.length,
-  1,
-  "通常欄の流しはformal selectionのexact 1券だけを表示する"
+  2,
+  "通常欄の流しはformal selectionのexact 2券だけを表示する"
+);
+assert.deepEqual(
+  exactFlowRows,
+  [
+    'data-flow-notation="1-3-4"',
+    'data-flow-notation="1-3-5"'
+  ],
+  "同じ1-3軸の流し2券を選定順で表示する"
 );
 assert.match(
   html,
-  /v3-ticket-accordion-flow[\s\S]{0,400}1点/,
-  "formationの物理8点でなくformal selectionの1点をsummaryへ表示する"
+  /v3-ticket-accordion-flow[\s\S]{0,400}2点/,
+  "formationの物理4点でなくformal selectionの2点をsummaryへ表示する"
 );
 assert.doesNotMatch(
   html,
-  /data-flow-notation="1-23-全"/,
-  "通常欄へ候補formation 8点を戻さない"
+  /data-flow-notation="[^"]*-全"|\d+\s*→\s*\d+\s*→\s*全/,
+  "通常欄へ候補formationの全流しを戻さない"
+);
+assert.equal(
+  html.split(flowCommonReason).length - 1,
+  1,
+  "同一軸2券の共通根拠は流しaccordionの狙いに1回だけ表示する"
+);
+assert.match(
+  html,
+  new RegExp(flowThirdFourReason),
+  "4号艇を3着に採用した券別根拠を表示する"
+);
+assert.match(
+  html,
+  new RegExp(flowThirdFiveReason),
+  "5号艇を3着に採用した券別根拠を表示する"
+);
+assert.match(
+  html,
+  /31\.6倍（最終取得）/,
+  "1-3-4の最終取得オッズを保持する"
+);
+assert.match(
+  html,
+  /44\.2倍（最終取得）/,
+  "1-3-5の異なる最終取得オッズを保持する"
+);
+assert.doesNotMatch(
+  html,
+  /合成 9\.9倍|取得 6\/6/,
+  "候補プール由来の流し合成オッズをexact 2券へ表示しない"
 );
 
 const missingSection =

@@ -4393,6 +4393,52 @@
             String(
               item?.comment || ""
             ),
+          scenarioId:
+            String(
+              item?.scenarioId || ""
+            ),
+          scenarioTitle:
+            String(
+              item?.scenarioTitle || ""
+            ),
+          scenarioSummary:
+            String(
+              item?.scenarioSummary ||
+              ""
+            ),
+          flowAnchor:
+            String(
+              item?.flowAnchor || ""
+            ),
+          flowCommonReason:
+            String(
+              item?.flowCommonReason ||
+              ""
+            ),
+          flowSecondScore:
+            Number.isFinite(
+              Number(
+                item?.flowSecondScore
+              )
+            )
+              ? Number(
+                  item.flowSecondScore
+                )
+              : null,
+          flowThirdScore:
+            Number.isFinite(
+              Number(
+                item?.flowThirdScore
+              )
+            )
+              ? Number(
+                  item.flowThirdScore
+                )
+              : null,
+          flowRoleEvidence: [
+            ...(item
+              ?.flowRoleEvidence || [])
+          ],
           selectionTier:
             String(
               item?.selectionTier || ""

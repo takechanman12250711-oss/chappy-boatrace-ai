@@ -24,7 +24,7 @@
   const DISPLAY_LIMITS = Object.freeze({
     main: 3,
     cover: 2,
-    flow: 1,
+    flow: 2,
     hole: 1
   });
 
@@ -41,6 +41,53 @@
       typeof item === "string"
         ? item
         : item?.ticket || item?.line || item?.formation
+    );
+  }
+
+  function flowAnchorOf(item) {
+    const explicit =
+      String(
+        item?.flowAnchor || ""
+      ).trim();
+    if (explicit) return explicit;
+
+    const parts =
+      ticketOf(item)
+        .split("-")
+        .map(Number);
+
+    return (
+      parts.length === 3 &&
+      parts.every(
+        value =>
+          value >= 1 && value <= 6
+      ) &&
+      new Set(parts).size === 3
+    )
+      ? `${parts[0]}-${parts[1]}`
+      : "";
+  }
+
+  function isAtomicFlowPair(list) {
+    if (rows(list).length !== 2) {
+      return false;
+    }
+
+    const anchors =
+      list.map(flowAnchorOf);
+    const scenarioIds =
+      list
+        .map(item =>
+          String(
+            item?.scenarioId || ""
+          ).trim()
+        )
+        .filter(Boolean);
+
+    return (
+      Boolean(anchors[0]) &&
+      anchors[0] === anchors[1] &&
+      new Set(scenarioIds).size <= 1
     );
   }
 
@@ -329,6 +376,16 @@
       grouped[category].push(item);
     });
 
+    if (
+      !isAtomicFlowPair(
+        grouped.flow
+      )
+    ) {
+      grouped.flow = [];
+    } else {
+      grouped.hole = [];
+    }
+
     return {
       ...resolved,
       ...grouped
@@ -413,6 +470,7 @@
 
   return {
     DISPLAY_LIMITS,
+    isAtomicFlowPair,
     mergeDisplayRows,
     resolveNormalDisplayRows,
     prepare,

@@ -1423,7 +1423,7 @@ if (raceInfoArea) {
   function resolveTicketAim(list, fallback) {
     const row = arrayify(list)[0];
     if (!row || typeof row !== "object") return fallback;
-    return row.scenarioSummary || row.comment || row.reason || fallback;
+    return row.flowCommonReason || row.scenarioSummary || row.comment || row.reason || fallback;
   }
 
      function renderMainNewspaper(prediction) {
@@ -1722,7 +1722,7 @@ if (raceInfoArea) {
                 ? "main"
                 : type === "safety"
                   ? "cover"
-                  : "flow"
+                  : ""
             )}
           </h3>
 

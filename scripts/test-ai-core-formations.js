@@ -5,6 +5,8 @@ const assert = require("node:assert/strict");
 global.window = global;
 require("../js/evaluated-scenario-candidates");
 require("../js/ai-core");
+const practicalSelection =
+  require("../js/practical-selection");
 const aiCore = global.ChappyAICore;
 
 const officialEntriesWithEquipmentNumbers = Array.from(
@@ -486,6 +488,44 @@ assert.deepEqual(
   escapeMerged.formation.flowFormations,
   "AIコアのcanonical formationにも同じ流しを保持する"
 );
+const escapePractical =
+  practicalSelection.select(
+    escapeMerged
+  );
+const escapeGroundedFlow =
+  escapePractical.tickets.filter(
+    row => row.category === "流し"
+  );
+assert.equal(
+  escapeGroundedFlow.length,
+  2,
+  "AIコアの正式枝から根拠付きexact流し2券を選べる"
+);
+assert.equal(
+  new Set(
+    escapeGroundedFlow.map(
+      row => row.flowAnchor
+    )
+  ).size,
+  1,
+  "AIコア接続後も流し2券は同一1着・2着軸を共有する"
+);
+assert.ok(
+  escapeGroundedFlow.every(
+    row =>
+      row.flowThirdScore >= 65 &&
+      row.scenarioSummary.includes(
+        "3着"
+      )
+  ),
+  "AIコア接続後の各exact券へ正式な3着根拠を残す"
+);
+assert.ok(
+  !escapePractical.tickets.some(
+    row => row.category === "万舟・穴"
+  ),
+  "根拠付き流し2券成立時は通常穴を併用しない"
+);
 
 const attackData =
   raceData("threeAttack");
@@ -590,5 +630,5 @@ assert.deepEqual(
 console.log("AIコア買い目接続テスト: 合格");
 console.log("- 本線不成立: 本線買い目0点");
 console.log("- 本線成立: AIコアから本線・押さえを生成");
-console.log("- 流し: 正式主展開の頭固定・2着1〜3艇・3着全艇");
+console.log("- 流し候補: 正式主展開の全候補から根拠付き同一軸2券を厳選");
 console.log("- 2差し・3攻め・4カド: 各展開艇を本線頭に固定");

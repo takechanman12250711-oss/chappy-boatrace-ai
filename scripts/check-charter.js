@@ -67,6 +67,7 @@ assert(
 
 const practical = charter.practicalTickets || {};
 const allocation = practical.allocationMaximum || {};
+const groundedFlow = practical.groundedFlow || {};
 assert(
   practical.standard === 5 &&
     practical.normalMaximum === 7 &&
@@ -76,10 +77,18 @@ assert(
 assert(
   allocation.main === 3 &&
     allocation.cover === 2 &&
-    allocation.flow === 1 &&
-    allocation.longshot === 1 &&
-    Object.values(allocation).reduce((sum, value) => sum + value, 0) === 7,
-  "実戦厳選の配分上限が3・2・1・1ではありません"
+    allocation.flow === 2 &&
+    allocation.longshot === 1,
+  "実戦厳選の配分上限が本線3・押さえ2・流し2・穴1ではありません"
+);
+assert(
+  groundedFlow.ticketCount === 2 &&
+    groundedFlow.atomicSelection === true &&
+    groundedFlow.requiresSameScenario === true &&
+    groundedFlow.requiresSameFirstSecondAnchor === true &&
+    groundedFlow.minimumRoleScore === 65 &&
+    groundedFlow.mutuallyExclusiveWithNormalLongshot === true,
+  "根拠付き流し2券の同一展開・同一1着2着軸・65点・穴排他契約が固定されていません"
 );
 assert(
   practical.scenarioExpansion?.enabled === true &&
@@ -303,7 +312,20 @@ assert(
 assert(
   practicalSelection.includes("take(lists.main, 3, \"本線\")") &&
     practicalSelection.includes("take(lists.cover, 2, \"押さえ\")") &&
-    practicalSelection.includes("lists.flow,\n        1,\n        \"流し\",\n        true") &&
+    practicalSelection.includes("const FLOW_GROUP_COUNT = 2;") &&
+    practicalSelection.includes("const MINIMUM_FLOW_ROLE_SCORE = 65;") &&
+    practicalSelection.includes("function selectGroundedFlowPair()") &&
+    practicalSelection.includes("scenarioIds.length === 1") &&
+    practicalSelection.includes("`${boats[0]}-${boats[1]}`") &&
+    /secondScore\s*<\s*MINIMUM_FLOW_ROLE_SCORE\s*\|\|\s*thirdScore\s*<\s*MINIMUM_FLOW_ROLE_SCORE/.test(
+      practicalSelection
+    ) &&
+    /pair\.length\s*!==\s*FLOW_GROUP_COUNT/.test(
+      practicalSelection
+    ) &&
+    /groundedFlowPair\.length\s*!==\s*FLOW_GROUP_COUNT\s*&&\s*evidence\.longshot/.test(
+      practicalSelection
+    ) &&
     practicalSelection.includes("lists.longshot,") &&
     practicalSelection.includes("const NORMAL_MAXIMUM_COUNT = 7;") &&
     practicalSelection.includes("const MAXIMUM_COUNT = 10;") &&
@@ -340,6 +362,10 @@ assert(
 assert(
   script.includes("practicalSelectionAudit") &&
     script.includes(".compactAudit?.(") &&
+    script.includes("flowAnchor:") &&
+    script.includes("scenarioId:") &&
+    script.includes("flowCommonReason:") &&
+    script.includes("flowRoleEvidence:") &&
     practicalSelection.includes(
       "function compactAudit"
     ) &&
@@ -443,4 +469,5 @@ if (failures.length) {
 console.log("チャッピーAI憲章チェック: 合格");
 console.log(`- 優先順位: ${expectedPriority.join(" → ")}`);
 console.log("- 実戦厳選: 基本5点・通常5〜7点・成立展開時最大10点");
+console.log("- 流し: 同一展開・同一1着2着軸の根拠付き2券を一組で採用（通常穴と排他）");
 console.log("- 同意なしの予想ロジック変更: 禁止");

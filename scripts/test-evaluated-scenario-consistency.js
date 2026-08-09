@@ -1085,6 +1085,57 @@ DATES.forEach((date) => {
         practical.tickets.length <= 10,
       `${raceKey}: 実戦厳選を5〜10点に収める`
     );
+    const groundedFlowTickets =
+      practical.tickets.filter(
+        item => item.category === "流し"
+      );
+    assert.ok(
+      [0, 2].includes(
+        groundedFlowTickets.length
+      ),
+      `${raceKey}: 流しは0券または根拠付き2券を一組で採用する`
+    );
+    if (
+      groundedFlowTickets.length === 2
+    ) {
+      assert.equal(
+        new Set(
+          groundedFlowTickets.map(
+            item => item.flowAnchor
+          )
+        ).size,
+        1,
+        `${raceKey}: 流し2券の1着・2着軸を一致させる`
+      );
+      assert.equal(
+        new Set(
+          groundedFlowTickets.map(
+            item => item.scenarioId
+          )
+        ).size,
+        1,
+        `${raceKey}: 流し2券の正式展開IDを一致させる`
+      );
+      assert.ok(
+        groundedFlowTickets.every(
+          item =>
+            item.flowSecondScore >= 65 &&
+            item.flowThirdScore >= 65 &&
+            arrayify(
+              item.flowRoleEvidence
+            ).length === 2
+        ),
+        `${raceKey}: 流し2券へ2着残し・3着拾いの正式根拠を保存する`
+      );
+      assert.ok(
+        !practical.tickets.some(
+          item =>
+            item.category ===
+              "万舟・穴"
+        ),
+        `${raceKey}: 流し2券と通常穴を併用しない`
+      );
+    }
     assert.equal(
       new Set(
         practical.tickets.map((item) => item.ticket)
@@ -1435,8 +1486,8 @@ const selectionHash =
     .digest("hex");
 assert.equal(
   selectionHash,
-  "e3efac9e307a7353f465305b3405e0555f26c5becf3eb5b9818bb476f696e39a",
-  "正式主展開の固定頭・3着全流しを含む281レースの買い目を固定する"
+  "e58c300a9bcdd949f64764c7e130f52dc090baa81508f3164d1fbfe0f354fa3e",
+  "正式主展開と根拠付き同一軸流し2券を含む281レースの買い目を固定する"
 );
 
 console.log("評価済み展開の全件整合テスト: 合格");
