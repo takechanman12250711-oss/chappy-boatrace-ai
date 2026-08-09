@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T20:36:06.236Z",
+  "generatedAt": "2026-08-09T11:33:00.867Z",
   "schemaVersion": 2,
   "engineVersion": "profit-priority-ranking-20260806-integrity-fixed",
   "status": "candidate-selected",
@@ -13,22 +13,22 @@
   ],
   "ranking": [
     {
-      "theoryKey": "race-flow",
-      "label": "展開理論",
-      "raceCount": 484,
-      "useCount": 53,
-      "evidenceCount": 53,
+      "theoryKey": "exhibition",
+      "label": "展示・足理論",
+      "raceCount": 696,
+      "useCount": 107,
+      "evidenceCount": 107,
       "metrics": {
-        "recoveryRate": 31.8,
-        "practicalHitRate": 17,
+        "recoveryRate": 70.1,
+        "practicalHitRate": 17.8,
         "skipDecisionAccuracy": null,
-        "hitRate": 17
+        "hitRate": 13.1
       },
       "deficits": {
-        "recoveryRate": 68.2,
-        "practicalHitRate": 3,
+        "recoveryRate": 29.9,
+        "practicalHitRate": 2.2,
         "skipDecisionAccuracy": null,
-        "hitRate": 0
+        "hitRate": 1.9
       },
       "missingMetrics": [
         "skipDecisionAccuracy"
@@ -42,20 +42,20 @@
       "rank": 1
     },
     {
-      "theoryKey": "remain-pickup",
-      "label": "残し・拾い理論",
-      "raceCount": 484,
-      "useCount": 53,
-      "evidenceCount": 53,
+      "theoryKey": "race-flow",
+      "label": "展開理論",
+      "raceCount": 696,
+      "useCount": 265,
+      "evidenceCount": 265,
       "metrics": {
-        "recoveryRate": 33.4,
-        "practicalHitRate": 17,
+        "recoveryRate": 84.2,
+        "practicalHitRate": 20.4,
         "skipDecisionAccuracy": null,
-        "hitRate": 17
+        "hitRate": 20.4
       },
       "deficits": {
-        "recoveryRate": 66.6,
-        "practicalHitRate": 3,
+        "recoveryRate": 15.8,
+        "practicalHitRate": 0,
         "skipDecisionAccuracy": null,
         "hitRate": 0
       },
@@ -71,28 +71,28 @@
       "rank": 2
     },
     {
-      "theoryKey": "wall-boat",
-      "label": "壁艇理論",
-      "raceCount": 484,
-      "useCount": 16,
-      "evidenceCount": 16,
+      "theoryKey": "remain-pickup",
+      "label": "残し・拾い理論",
+      "raceCount": 696,
+      "useCount": 265,
+      "evidenceCount": 265,
       "metrics": {
-        "recoveryRate": 42.9,
-        "practicalHitRate": 12.5,
+        "recoveryRate": 84.2,
+        "practicalHitRate": 20.4,
         "skipDecisionAccuracy": null,
-        "hitRate": 6.3
+        "hitRate": 19.6
       },
       "deficits": {
-        "recoveryRate": 57.1,
-        "practicalHitRate": 7.5,
+        "recoveryRate": 15.8,
+        "practicalHitRate": 0,
         "skipDecisionAccuracy": null,
-        "hitRate": 8.7
+        "hitRate": 0
       },
       "missingMetrics": [
         "skipDecisionAccuracy"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
+      "evidenceStatus": "partial",
+      "eligible": true,
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
@@ -102,26 +102,26 @@
     {
       "theoryKey": "local-water",
       "label": "当地・水面理論",
-      "raceCount": 484,
-      "useCount": 27,
-      "evidenceCount": 27,
+      "raceCount": 696,
+      "useCount": 236,
+      "evidenceCount": 236,
       "metrics": {
-        "recoveryRate": 43.1,
-        "practicalHitRate": 18.5,
+        "recoveryRate": 91.8,
+        "practicalHitRate": 20.8,
         "skipDecisionAccuracy": null,
-        "hitRate": 18.5
+        "hitRate": 20.8
       },
       "deficits": {
-        "recoveryRate": 56.9,
-        "practicalHitRate": 1.5,
+        "recoveryRate": 8.2,
+        "practicalHitRate": 0,
         "skipDecisionAccuracy": null,
         "hitRate": 0
       },
       "missingMetrics": [
         "skipDecisionAccuracy"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
+      "evidenceStatus": "partial",
+      "eligible": true,
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
@@ -129,28 +129,28 @@
       "rank": 4
     },
     {
-      "theoryKey": "motor",
-      "label": "モーター理論",
-      "raceCount": 484,
-      "useCount": 18,
-      "evidenceCount": 18,
+      "theoryKey": "wall-boat",
+      "label": "壁艇理論",
+      "raceCount": 696,
+      "useCount": 153,
+      "evidenceCount": 153,
       "metrics": {
-        "recoveryRate": 52.2,
-        "practicalHitRate": 22.2,
+        "recoveryRate": 98.2,
+        "practicalHitRate": 14.4,
         "skipDecisionAccuracy": null,
-        "hitRate": 11.1
+        "hitRate": 8.5
       },
       "deficits": {
-        "recoveryRate": 47.8,
-        "practicalHitRate": 0,
+        "recoveryRate": 1.8,
+        "practicalHitRate": 5.6,
         "skipDecisionAccuracy": null,
-        "hitRate": 3.9
+        "hitRate": 6.5
       },
       "missingMetrics": [
         "skipDecisionAccuracy"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
+      "evidenceStatus": "partial",
+      "eligible": true,
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
@@ -160,46 +160,17 @@
     {
       "theoryKey": "course",
       "label": "コース理論",
-      "raceCount": 484,
-      "useCount": 26,
-      "evidenceCount": 26,
+      "raceCount": 696,
+      "useCount": 217,
+      "evidenceCount": 217,
       "metrics": {
-        "recoveryRate": 55.3,
-        "practicalHitRate": 19.2,
+        "recoveryRate": 122.2,
+        "practicalHitRate": 23,
         "skipDecisionAccuracy": null,
-        "hitRate": 11.5
+        "hitRate": 17.1
       },
       "deficits": {
-        "recoveryRate": 44.7,
-        "practicalHitRate": 0.8,
-        "skipDecisionAccuracy": null,
-        "hitRate": 3.5
-      },
-      "missingMetrics": [
-        "skipDecisionAccuracy"
-      ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
-      "selectedForImprovement": false,
-      "humanApprovalRequired": true,
-      "approved": false,
-      "usableForPrediction": false,
-      "rank": 6
-    },
-    {
-      "theoryKey": "exhibition",
-      "label": "展示・足理論",
-      "raceCount": 484,
-      "useCount": 11,
-      "evidenceCount": 11,
-      "metrics": {
-        "recoveryRate": 72.2,
-        "practicalHitRate": 27.3,
-        "skipDecisionAccuracy": null,
-        "hitRate": 18.2
-      },
-      "deficits": {
-        "recoveryRate": 27.8,
+        "recoveryRate": 0,
         "practicalHitRate": 0,
         "skipDecisionAccuracy": null,
         "hitRate": 0
@@ -207,8 +178,37 @@
       "missingMetrics": [
         "skipDecisionAccuracy"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
+      "evidenceStatus": "partial",
+      "eligible": true,
+      "selectedForImprovement": false,
+      "humanApprovalRequired": true,
+      "approved": false,
+      "usableForPrediction": false,
+      "rank": 6
+    },
+    {
+      "theoryKey": "skill",
+      "label": "技量理論",
+      "raceCount": 696,
+      "useCount": 193,
+      "evidenceCount": 193,
+      "metrics": {
+        "recoveryRate": 117.4,
+        "practicalHitRate": 21.8,
+        "skipDecisionAccuracy": null,
+        "hitRate": 18.1
+      },
+      "deficits": {
+        "recoveryRate": 0,
+        "practicalHitRate": 0,
+        "skipDecisionAccuracy": null,
+        "hitRate": 0
+      },
+      "missingMetrics": [
+        "skipDecisionAccuracy"
+      ],
+      "evidenceStatus": "partial",
+      "eligible": true,
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
@@ -216,31 +216,28 @@
       "rank": 7
     },
     {
-      "theoryKey": "double-time",
-      "label": "ダブルタイム",
-      "raceCount": 484,
-      "useCount": 0,
-      "evidenceCount": 0,
+      "theoryKey": "motor",
+      "label": "モーター理論",
+      "raceCount": 696,
+      "useCount": 165,
+      "evidenceCount": 165,
       "metrics": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
+        "recoveryRate": 110.8,
+        "practicalHitRate": 23.6,
         "skipDecisionAccuracy": null,
-        "hitRate": null
+        "hitRate": 17.6
       },
       "deficits": {
-        "recoveryRate": null,
-        "practicalHitRate": null,
+        "recoveryRate": 0,
+        "practicalHitRate": 0,
         "skipDecisionAccuracy": null,
-        "hitRate": null
+        "hitRate": 0
       },
       "missingMetrics": [
-        "recoveryRate",
-        "practicalHitRate",
-        "skipDecisionAccuracy",
-        "hitRate"
+        "skipDecisionAccuracy"
       ],
-      "evidenceStatus": "insufficient",
-      "eligible": false,
+      "evidenceStatus": "partial",
+      "eligible": true,
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
@@ -248,9 +245,9 @@
       "rank": 8
     },
     {
-      "theoryKey": "frame-rise-fall",
-      "label": "枠別浮沈率",
-      "raceCount": 484,
+      "theoryKey": "double-time",
+      "label": "ダブルタイム",
+      "raceCount": 696,
       "useCount": 0,
       "evidenceCount": 0,
       "metrics": {
@@ -280,9 +277,9 @@
       "rank": 9
     },
     {
-      "theoryKey": "new-engine",
-      "label": "新エンジン理論",
-      "raceCount": 484,
+      "theoryKey": "frame-rise-fall",
+      "label": "枠別浮沈率",
+      "raceCount": 696,
       "useCount": 0,
       "evidenceCount": 0,
       "metrics": {
@@ -312,9 +309,9 @@
       "rank": 10
     },
     {
-      "theoryKey": "skill",
-      "label": "技量理論",
-      "raceCount": 484,
+      "theoryKey": "new-engine",
+      "label": "新エンジン理論",
+      "raceCount": 696,
       "useCount": 0,
       "evidenceCount": 0,
       "metrics": {
@@ -346,7 +343,7 @@
     {
       "theoryKey": "start",
       "label": "ST・スリット理論",
-      "raceCount": 484,
+      "raceCount": 696,
       "useCount": 0,
       "evidenceCount": 0,
       "metrics": {
@@ -377,8 +374,8 @@
     }
   ],
   "selectedTheory": {
-    "theoryKey": "race-flow",
-    "label": "展開理論",
+    "theoryKey": "exhibition",
+    "label": "展示・足理論",
     "rank": 1,
     "reason": "利益基準の固定優先順位で最も改善余地が大きい候補",
     "evidenceStatus": "partial",
