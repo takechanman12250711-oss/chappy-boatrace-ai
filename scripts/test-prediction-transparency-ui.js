@@ -125,15 +125,53 @@ global.ChappyPracticalSelection = {
       }, {
         ticket: "1-3-4",
         category: "流し",
+        scenarioId:
+          "canonical:1",
         flowAnchor: "1-3",
         flowCommonReason,
+        flowSecondScore: 78,
+        flowThirdScore: 76,
+        flowRoleEvidence: [{
+          position: 2,
+          boatNo: 3,
+          role: "hold",
+          score: 78,
+          reason:
+            "3号艇の2着残し根拠"
+        }, {
+          position: 3,
+          boatNo: 4,
+          role: "hold",
+          score: 76,
+          reason:
+            "4号艇の3着残り根拠"
+        }],
         scenarioSummary:
           flowThirdFourReason
       }, {
         ticket: "1-3-5",
         category: "流し",
+        scenarioId:
+          "canonical:1",
         flowAnchor: "1-3",
         flowCommonReason,
+        flowSecondScore: 78,
+        flowThirdScore: 75,
+        flowRoleEvidence: [{
+          position: 2,
+          boatNo: 3,
+          role: "hold",
+          score: 78,
+          reason:
+            "3号艇の2着残し根拠"
+        }, {
+          position: 3,
+          boatNo: 5,
+          role: "pickup",
+          score: 75,
+          reason:
+            "5号艇の3着拾い根拠"
+        }],
         scenarioSummary:
           flowThirdFiveReason
       }, {

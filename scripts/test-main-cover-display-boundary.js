@@ -14,6 +14,63 @@ const flowThirdFiveReason =
 const flowThirdSixReason =
   "6号艇の3着拾いが同じイン逃げ展開で成立。";
 
+function groundedFlow(
+  ticket,
+  overrides = {}
+) {
+  const boats =
+    ticket.split("-").map(Number);
+  const {
+    thirdRole = "pickup",
+    ...fields
+  } = overrides;
+  const secondScore =
+    Number(
+      fields.flowSecondScore ?? 75
+    );
+  const thirdScore =
+    Number(
+      fields.flowThirdScore ?? 75
+    );
+  const anchor =
+    `${boats[0]}-${boats[1]}`;
+
+  return {
+    ticket,
+    category: "流し",
+    scenarioId: "canonical:1",
+    flowAnchor: anchor,
+    flowCommonReason:
+      `${boats[0]}号艇を1着軸に、` +
+      `${boats[1]}号艇の2着残しを固定。`,
+    scenarioSummary:
+      `${boats[2]}号艇の3着` +
+      `${thirdRole === "pickup" ? "拾い" : "残り"}` +
+      "が同じ展開で成立。",
+    flowSecondScore: secondScore,
+    flowThirdScore: thirdScore,
+    flowRoleEvidence: [
+      {
+        position: 2,
+        boatNo: boats[1],
+        role: "hold",
+        score: secondScore,
+        reason:
+          `${boats[1]}号艇の2着残し根拠`
+      },
+      {
+        position: 3,
+        boatNo: boats[2],
+        role: thirdRole,
+        score: thirdScore,
+        reason:
+          `${boats[2]}号艇の3着役割根拠`
+      }
+    ],
+    ...fields
+  };
+}
+
 const flowFormation = {
   headBoatNo: 1,
   secondBoatNos: [2, 3],
@@ -97,22 +154,16 @@ const practicalTickets = [
   { ticket: "1-2-4", category: "本線" },
   { ticket: "2-1-3", category: "押さえ" },
   { ticket: "3-1-2", category: "押さえ" },
-  {
-    ticket: "1-2-5",
-    category: "流し",
+  groundedFlow("1-2-5", {
     oddsText: "オッズ未取得",
-    flowAnchor: "1-2",
     flowCommonReason,
     scenarioSummary: flowThirdFiveReason
-  },
-  {
-    ticket: "1-2-6",
-    category: "流し",
+  }),
+  groundedFlow("1-2-6", {
     oddsText: "オッズ未取得",
-    flowAnchor: "1-2",
     flowCommonReason,
     scenarioSummary: flowThirdSixReason
-  },
+  }),
   {
     ticket: "3-4-1",
     category: "独立展開",
@@ -278,8 +329,8 @@ assert.equal(
 const overLimitTickets = [
   ...[1, 2, 3, 4, 5].map(no => ({ ticket: `1-2-${no}`, category: "本線" })),
   ...[1, 2, 3, 4].map(no => ({ ticket: `2-1-${no}`, category: "押さえ" })),
-  { ticket: "1-3-4", category: "流し" },
-  { ticket: "1-3-5", category: "流し" },
+  groundedFlow("1-3-4"),
+  groundedFlow("1-3-5"),
   { ticket: "4-2-1", category: "万舟・穴" },
   { ticket: "5-2-1", category: "万舟・穴" }
 ];
@@ -309,9 +360,9 @@ const duplicatedSelection = boundary.resolveNormalDisplayRows({
       { ticket: "1-2-4", category: "本線" },
       { ticket: "2-1-3", category: "押さえ" },
       { ticket: "3-1-2", category: "押さえ" },
-      { ticket: "1-3-4", category: "流し" },
+      groundedFlow("1-3-4"),
       { ticket: "1-3-4", category: "万舟・穴" },
-      { ticket: "1-3-5", category: "流し" },
+      groundedFlow("1-3-5"),
       { ticket: "4-1-2", category: "万舟・穴" }
     ],
     expansionSummary: { normalCount: 10 }
@@ -337,8 +388,8 @@ const compactPrediction = {
     { ticket: "3-1-4", category: "本線" },
     { ticket: "1-3-2", category: "押さえ" },
     { ticket: "2-3-1", category: "押さえ" },
-    { ticket: "3-4-1", category: "流し" },
-    { ticket: "3-4-2", category: "流し" },
+    groundedFlow("3-4-1"),
+    groundedFlow("3-4-2"),
     { ticket: "6-3-1", category: "万舟・穴" },
     { ticket: "4-3-1", category: "独立展開", selectionTier: "展開追加" }
   ]
@@ -379,6 +430,68 @@ assert.deepEqual(
   ),
   ["5-2-3"],
   "流しが2券そろわない場合は保存済み通常穴を残す"
+);
+
+const ungroundedPair =
+  boundary.prepare({
+    practicalTickets: [
+      { ticket: "1-2-3", category: "本線" },
+      { ticket: "1-2-4", category: "本線" },
+      { ticket: "1-3-2", category: "本線" },
+      { ticket: "2-1-3", category: "押さえ" },
+      { ticket: "2-1-4", category: "押さえ" },
+      { ticket: "1-3-5", category: "流し" },
+      { ticket: "1-3-6", category: "流し" },
+      { ticket: "5-2-3", category: "万舟・穴" }
+    ]
+  });
+assert.deepEqual(
+  ungroundedPair.mainSheet.flowTickets,
+  [],
+  "同軸2券でも正式scenario・役割点・券別根拠がなければ流し表示しない"
+);
+assert.deepEqual(
+  tickets(ungroundedPair.manshuSheet.tickets),
+  ["5-2-3"]
+);
+
+const mixedScenarioPair =
+  boundary.resolveNormalDisplayRows({
+    practicalTickets: [
+      groundedFlow("1-3-5"),
+      groundedFlow("1-3-6", {
+        scenarioId: "canonical:4"
+      }),
+      { ticket: "5-2-3", category: "万舟・穴" }
+    ]
+  });
+assert.deepEqual(
+  mixedScenarioPair.flow,
+  [],
+  "同じ1/2着軸でも正式scenarioが違えば流し表示しない"
+);
+assert.deepEqual(
+  tickets(mixedScenarioPair.hole),
+  ["5-2-3"]
+);
+
+const forgedAnchorPair =
+  boundary.resolveNormalDisplayRows({
+    practicalTickets: [
+      groundedFlow("1-3-5"),
+      groundedFlow("1-4-6", {
+        flowAnchor: "1-3",
+        flowCommonReason:
+          groundedFlow("1-3-5")
+            .flowCommonReason
+      }),
+      { ticket: "5-2-3", category: "万舟・穴" }
+    ]
+  });
+assert.deepEqual(
+  forgedAnchorPair.flow,
+  [],
+  "明示flowAnchorが券面の1/2着軸と違う行は流し表示しない"
 );
 
 const skippedInput = {

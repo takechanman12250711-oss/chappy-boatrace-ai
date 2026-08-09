@@ -27,6 +27,7 @@
     flow: 2,
     hole: 1
   });
+  const MINIMUM_FLOW_ROLE_SCORE = 65;
 
   function rows(value) {
     return Array.isArray(value) ? value : [];
@@ -45,18 +46,12 @@
   }
 
   function flowAnchorOf(item) {
-    const explicit =
-      String(
-        item?.flowAnchor || ""
-      ).trim();
-    if (explicit) return explicit;
-
     const parts =
       ticketOf(item)
         .split("-")
         .map(Number);
 
-    return (
+    const ticketAnchor = (
       parts.length === 3 &&
       parts.every(
         value =>
@@ -66,28 +61,113 @@
     )
       ? `${parts[0]}-${parts[1]}`
       : "";
+    const explicit =
+      String(
+        item?.flowAnchor || ""
+      ).trim();
+
+    if (
+      !ticketAnchor ||
+      !explicit ||
+      explicit !== ticketAnchor
+    ) {
+      return "";
+    }
+
+    return ticketAnchor;
+  }
+
+  function isGroundedFlowRow(item) {
+    const parts =
+      ticketOf(item)
+        .split("-")
+        .map(Number);
+    const secondScore =
+      Number(item?.flowSecondScore);
+    const thirdScore =
+      Number(item?.flowThirdScore);
+    const roleEvidence =
+      rows(item?.flowRoleEvidence);
+    const secondEvidence =
+      roleEvidence.find(row =>
+        Number(row?.position) === 2 &&
+        Number(row?.boatNo) === parts[1] &&
+        String(row?.role || "") === "hold" &&
+        Number(row?.score) >=
+          MINIMUM_FLOW_ROLE_SCORE &&
+        Boolean(
+          String(row?.reason || "")
+            .trim()
+        )
+      );
+    const thirdEvidence =
+      roleEvidence.find(row =>
+        Number(row?.position) === 3 &&
+        Number(row?.boatNo) === parts[2] &&
+        ["pickup", "hold"].includes(
+          String(row?.role || "")
+        ) &&
+        Number(row?.score) >=
+          MINIMUM_FLOW_ROLE_SCORE &&
+        Boolean(
+          String(row?.reason || "")
+            .trim()
+        )
+      );
+
+    return (
+      Boolean(flowAnchorOf(item)) &&
+      Boolean(
+        String(item?.scenarioId || "")
+          .trim()
+      ) &&
+      Boolean(
+        String(
+          item?.flowCommonReason || ""
+        ).trim()
+      ) &&
+      Boolean(
+        String(
+          item?.scenarioSummary || ""
+        ).trim()
+      ) &&
+      secondScore >=
+        MINIMUM_FLOW_ROLE_SCORE &&
+      thirdScore >=
+        MINIMUM_FLOW_ROLE_SCORE &&
+      Boolean(secondEvidence) &&
+      Boolean(thirdEvidence)
+    );
   }
 
   function isAtomicFlowPair(list) {
-    if (rows(list).length !== 2) {
+    if (
+      rows(list).length !== 2 ||
+      !list.every(isGroundedFlowRow)
+    ) {
       return false;
     }
 
     const anchors =
       list.map(flowAnchorOf);
     const scenarioIds =
-      list
-        .map(item =>
-          String(
-            item?.scenarioId || ""
-          ).trim()
-        )
-        .filter(Boolean);
+      list.map(item =>
+        String(
+          item?.scenarioId || ""
+        ).trim()
+      );
+    const commonReasons =
+      list.map(item =>
+        String(
+          item?.flowCommonReason || ""
+        ).trim()
+      );
 
     return (
       Boolean(anchors[0]) &&
       anchors[0] === anchors[1] &&
-      new Set(scenarioIds).size <= 1
+      new Set(scenarioIds).size === 1 &&
+      new Set(commonReasons).size === 1
     );
   }
 

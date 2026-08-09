@@ -2509,6 +2509,14 @@
       );
     }
 
+    /*
+      独立展開の順位計画は基本5点だけを基準にする。
+      通常追加が「流し2券」か「穴1券」かで、別頭候補の
+      採否や順位が変わらないようにする。
+    */
+    const expansionSelectionContext =
+      selected.slice();
+
     function flowFormationSource() {
       const sources = [
         prediction?.mainSheet
@@ -2728,19 +2736,45 @@
               boats[2]
             );
           const holdEvidence =
-            pickupEvidence
-              ? null
-              : formalFlowRoleEvidence(
-                  "hold",
-                  boats[2]
-                );
+            formalFlowRoleEvidence(
+              "hold",
+              boats[2]
+            );
+          const thirdRoleCandidate = [
+            {
+              role: "pickup",
+              evidence: pickupEvidence
+            },
+            {
+              role: "hold",
+              evidence: holdEvidence
+            }
+          ]
+            .filter(
+              candidate =>
+                candidate.evidence
+            )
+            .sort((a, b) =>
+              numeric(
+                b.evidence?.score,
+                0
+              ) -
+                numeric(
+                  a.evidence?.score,
+                  0
+                ) ||
+              (
+                a.role === "pickup"
+                  ? -1
+                  : 1
+              )
+            )[0] || null;
           const thirdRole =
-            pickupEvidence
-              ? "pickup"
-              : "hold";
+            thirdRoleCandidate?.role ||
+            "";
           const thirdEvidence =
-            pickupEvidence ||
-            holdEvidence;
+            thirdRoleCandidate
+              ?.evidence || null;
           const secondScore =
             numeric(
               secondEvidence?.score,
@@ -3489,7 +3523,7 @@
         }
 
         const representedHead =
-          selected.find(
+          expansionSelectionContext.find(
             item =>
               ticketBoats(
                 item.ticket
