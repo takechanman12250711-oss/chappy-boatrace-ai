@@ -267,9 +267,20 @@
   function prepare(prediction, storage = root?.localStorage) {
     if (!prediction || typeof prediction !== "object") return prediction;
 
-    save(prediction, storage);
+    const finished = isFinished(prediction);
+    const isMarkedFinalSnapshot =
+      prediction?.finalOddsDisplay
+        ?.isFinalRetrievedOdds === true;
 
-    if (!isFinished(prediction)) return prediction;
+    // Live odds remain the local fallback source. Once a race is finished,
+    // only an explicitly marked final snapshot may replace the saved value.
+    // This prevents stale or provisional odds carried by an ended prediction
+    // from receiving a fresh render-time timestamp and rolling final odds back.
+    if (!finished || isMarkedFinalSnapshot) {
+      save(prediction, storage);
+    }
+
+    if (!finished) return prediction;
 
     const snapshot = load(prediction, storage);
     if (!snapshot) return prediction;

@@ -88,6 +88,32 @@ const emptyRichList = v6.build({ aiCore: { raceScenarios: {
 assert.equal(emptyRichList.scenarios.length, 2);
 assert.equal(emptyRichList.source, "race-scenarios");
 
+const perScenarioFallback = v6.build({
+  verificationEvidence: {
+    scenarios: [
+      { type: "escape", label: "1号艇逃げ", score: 60 },
+      { type: "sashi", label: "2コース差し", score: 40 }
+    ],
+    tickets: [
+      { ticket: "1-2-4" },
+      { ticket: "2-1-4" },
+      { ticket: "3-1-2" }
+    ]
+  },
+  marks: {
+    attacker: { boatNo: 3 },
+    main: { boatNo: 1 },
+    rival: { boatNo: 2 },
+    third: { boatNo: 4 }
+  }
+});
+assert.equal(perScenarioFallback.scenarios[0].keyBoat, 1);
+assert.deepEqual(perScenarioFallback.scenarios[0].finishOrder, [1, 2, 4]);
+assert.equal(perScenarioFallback.scenarios[0].representativeTicket, "1-2-4");
+assert.equal(perScenarioFallback.scenarios[1].keyBoat, 2);
+assert.deepEqual(perScenarioFallback.scenarios[1].finishOrder, [2, 1, 4]);
+assert.equal(perScenarioFallback.scenarios[1].representativeTicket, "2-1-4");
+
 const empty = v6.build({});
 assert.equal(empty.status, "insufficient-evidence");
 assert.deepEqual(empty.scenarios, []);
