@@ -40,6 +40,7 @@
     ["finalAi", "ticketRanks"],
     ["finalAi", "topTickets"],
     ["finalAi", "manshuTickets"],
+    ["practicalTickets"],
     ["practicalSelection", "tickets"],
     ["ticketRanks"],
     ["aiTicketList"]

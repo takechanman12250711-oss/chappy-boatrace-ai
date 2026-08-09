@@ -3075,6 +3075,10 @@
         .officialResultUsedForPrediction =
         false;
 
+      ensurePracticalSelection(
+        prediction
+      );
+
       let oddsAppliedBeforeRender = false;
       const settledOddsSupplement =
         oddsSupplementState?.settled
@@ -4055,6 +4059,79 @@
     return null;
   }
 
+  function ensurePracticalSelection(
+    prediction
+  ) {
+    if (
+      !prediction ||
+      typeof prediction !== "object"
+    ) {
+      return null;
+    }
+
+    if (
+      prediction.practicalSelection &&
+      typeof prediction
+        .practicalSelection ===
+        "object"
+    ) {
+      return prediction
+        .practicalSelection;
+    }
+
+    const practicalSelector =
+      typeof window !== "undefined"
+        ? window
+            .ChappyPracticalSelection
+        : null;
+
+    if (
+      typeof practicalSelector
+        ?.select !== "function"
+    ) {
+      return null;
+    }
+
+    try {
+      const practicalSelection =
+        practicalSelector.select(
+          prediction
+        );
+
+      if (
+        !practicalSelection ||
+        typeof practicalSelection !==
+          "object"
+      ) {
+        return null;
+      }
+
+      prediction.practicalSelection =
+        practicalSelection;
+
+      if (
+        !prediction
+          .verificationEvidence &&
+        practicalSelection
+          .verificationEvidence
+      ) {
+        prediction
+          .verificationEvidence =
+          practicalSelection
+            .verificationEvidence;
+      }
+
+      return practicalSelection;
+    } catch (selectionError) {
+      console.warn(
+        "実戦厳選の確定に失敗",
+        selectionError?.message ||
+          selectionError
+      );
+      return null;
+    }
+  }
+
       function savePredictionSnapshot(
     params,
     prediction
@@ -4275,44 +4352,9 @@
           ? summarySource
           : "";
       const practicalSelection =
-        prediction
-          ?.practicalSelection &&
-        typeof prediction
-          .practicalSelection ===
-          "object"
-          ? prediction
-              .practicalSelection
-          : typeof window
-              .ChappyPracticalSelection
-              ?.select ===
-              "function"
-            ? window
-                .ChappyPracticalSelection
-                .select(prediction)
-            : null;
-
-      if (
-        practicalSelection &&
-        prediction &&
-        typeof prediction ===
-          "object"
-      ) {
-        prediction
-          .practicalSelection =
-          practicalSelection;
-
-        if (
-          !prediction
-            .verificationEvidence &&
-          practicalSelection
-            .verificationEvidence
-        ) {
+        ensurePracticalSelection(
           prediction
-            .verificationEvidence =
-            practicalSelection
-              .verificationEvidence;
-        }
-      }
+        );
       const compactMark =
         mark => ({
           boatNo:
@@ -4865,6 +4907,10 @@
       return prediction;
     }
 
+    ensurePracticalSelection(
+      prediction
+    );
+
     const byTicket =
       oddsData.byTicket &&
       typeof oddsData.byTicket ===
@@ -5216,6 +5262,17 @@
               .manshuTickets
           )
       };
+    }
+
+    if (
+      Array.isArray(
+        prediction.practicalTickets
+      )
+    ) {
+      prediction.practicalTickets =
+        attachOdds(
+          prediction.practicalTickets
+        );
     }
 
     if (

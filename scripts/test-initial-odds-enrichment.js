@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const finalOdds = require("../js/final-odds-display.js");
 
 const root = path.resolve(__dirname, "..");
 const source = fs.readFileSync(
@@ -74,6 +75,10 @@ const timeoutFlow = functionSource("fetchWithTimeout");
 const enrichSource = functionSource(
   "enrichPredictionWithOdds"
 );
+const ensurePracticalSelectionSource =
+  functionSource(
+    "ensurePracticalSelection"
+  );
 
 const raceStart = initialFlow.indexOf(
   "fetchRaceData(params)"
@@ -95,6 +100,18 @@ const firstWaitSource = initialFlow.slice(
   firstWait,
   firstWaitEnd
 );
+const practicalSelectionStart =
+  initialFlow.indexOf(
+    "ensurePracticalSelection("
+  );
+const firstOddsEnrichment =
+  initialFlow.indexOf(
+    "enrichPredictionWithOdds("
+  );
+const firstPredictionRender =
+  initialFlow.indexOf(
+    "window.renderAll("
+  );
 
 assert.ok(raceStart >= 0, "初回にレース取得を開始する");
 assert.ok(oddsStart >= 0, "初回にオッズ補足取得を開始する");
@@ -114,6 +131,14 @@ assert.equal(
   ),
   false,
   "30秒のオッズ通信で初期表示を止めない"
+);
+assert.ok(
+  practicalSelectionStart >= 0 &&
+    practicalSelectionStart <
+      firstOddsEnrichment &&
+    practicalSelectionStart <
+      firstPredictionRender,
+  "オッズ成否にかかわらず描画前に同じ実戦厳選を元予想へ固定する"
 );
 assert.match(
   supplementFlow,
@@ -517,6 +542,7 @@ assert.deepEqual(
 const history = new Map();
 const sandbox = {
   console,
+  window: {},
   localStorage: {
     getItem(key) {
       return history.get(key) || null;
@@ -539,7 +565,7 @@ const sandbox = {
 };
 
 vm.runInNewContext(
-  `${enrichSource}; this.enrichPredictionWithOdds = enrichPredictionWithOdds;`,
+  `${ensurePracticalSelectionSource}; ${enrichSource}; this.ensurePracticalSelection = ensurePracticalSelection; this.enrichPredictionWithOdds = enrichPredictionWithOdds;`,
   sandbox
 );
 
@@ -585,6 +611,15 @@ const prediction = {
     topTickets: [{ ticket: "1-2-3", score: 82 }],
     manshuTickets: [{ ticket: "1-3-2", score: 74 }]
   },
+  practicalTickets: [
+    { ticket: "1-2-3", score: 82, category: "本命" },
+    {
+      ticket: "6-1-2",
+      score: 70,
+      category: "独立展開",
+      selectionTier: "展開追加"
+    }
+  ],
   practicalSelection: {
     tickets: [
       { ticket: "1-2-3", score: 82, category: "本命" },
@@ -621,11 +656,20 @@ const ticketContract = value => ({
     value.practicalSelection.tickets.map(item => ({
       ticket: item.ticket,
       category: item.category
+    })),
+  practicalPool:
+    value.practicalTickets.map(item => ({
+      ticket: item.ticket,
+      category: item.category,
+      selectionTier: item.selectionTier
     }))
 });
 const before = {
   ranks: ticketOrder(prediction.ticketRanks),
   ai: ticketOrder(prediction.aiTicketList),
+  practicalPool: ticketOrder(
+    prediction.practicalTickets
+  ),
   practical: ticketOrder(
     prediction.practicalSelection.tickets
   )
@@ -643,7 +687,8 @@ const enriched = sandbox.enrichPredictionWithOdds(
     count: 120,
     byTicket: {
       "1-2-3": 8.4,
-      "1-3-2": 31.2
+      "1-3-2": 31.2,
+      "6-1-2": 96.1
     }
   },
   {
@@ -669,6 +714,11 @@ assert.deepEqual(
   before.practical,
   "実戦厳選の内容・順番を変えない"
 );
+assert.deepEqual(
+  ticketOrder(prediction.practicalTickets),
+  before.practicalPool,
+  "独立展開を含む実戦候補の内容・順番を変えない"
+);
 assert.equal(
   prediction.ticketRanks[0].odds,
   8.4,
@@ -683,6 +733,11 @@ assert.equal(
   prediction.practicalSelection.tickets[1].odds,
   31.2,
   "実戦厳選にもオッズを付加する"
+);
+assert.equal(
+  prediction.practicalTickets[1].odds,
+  96.1,
+  "独立展開として追加された8〜10点目にもオッズを付加する"
 );
 assert.equal(
   prediction.aiCore.mainSheet.tickets[0].odds,
@@ -768,7 +823,8 @@ sandbox.enrichPredictionWithOdds(
     isFinalRetrievedOdds: true,
     byTicket: {
       "1-2-3": 8.4,
-      "1-3-2": 31.2
+      "1-3-2": 31.2,
+      "6-1-2": 96.1
     }
   },
   null,
@@ -808,6 +864,227 @@ assert.equal(
     .isFinalRetrievedOdds,
   true,
   "最終取得オッズの識別子を買い目へ保持する"
+);
+assert.equal(
+  snapshotPrediction
+    .practicalTickets[1]
+    .oddsText,
+  "96.1倍（最終取得）",
+  "保存済み最終オッズを独立展開の追加券にも反映する"
+);
+
+const unresolvedPrediction =
+  JSON.parse(
+    JSON.stringify(
+      snapshotPrediction
+    )
+  );
+delete unresolvedPrediction
+  .practicalSelection;
+const selectedAtOddsBoundary = [
+  { ticket: "1-2-3", category: "本命" },
+  { ticket: "1-3-2", category: "本命" },
+  { ticket: "1-2-4", category: "本命" },
+  { ticket: "2-1-3", category: "押さえ" },
+  { ticket: "2-1-4", category: "押さえ" },
+  { ticket: "1-2-5", category: "流し" },
+  { ticket: "4-1-6", category: "万舟・穴" },
+  {
+    ticket: "6-1-2",
+    category: "独立展開",
+    selectionTier: "展開追加"
+  },
+  {
+    ticket: "3-6-1",
+    category: "独立展開",
+    selectionTier: "展開追加"
+  },
+  {
+    ticket: "3-6-2",
+    category: "独立展開",
+    selectionTier: "展開追加"
+  }
+];
+let oddsBoundarySelectionCalls = 0;
+sandbox.window
+  .ChappyPracticalSelection = {
+    select() {
+      oddsBoundarySelectionCalls += 1;
+      return {
+        status: "selected",
+        tickets:
+          JSON.parse(
+            JSON.stringify(
+              selectedAtOddsBoundary
+            )
+          ),
+        expansionSummary: {
+          normalCount: 7,
+          addedCount: 3,
+          finalCount: 10
+        }
+      };
+    }
+  };
+sandbox.enrichPredictionWithOdds(
+  unresolvedPrediction,
+  directOfficialOdds,
+  null,
+  params
+);
+assert.equal(
+  oddsBoundarySelectionCalls,
+  1,
+  "描画前の終了オッズ付加時に実戦厳選を一度だけ確定する"
+);
+assert.deepEqual(
+  unresolvedPrediction
+    .practicalSelection
+    .tickets
+    .map(item => ({
+      ticket: item.ticket,
+      category: item.category,
+      selectionTier:
+        item.selectionTier || ""
+    })),
+  selectedAtOddsBoundary.map(item => ({
+    ticket: item.ticket,
+    category: item.category,
+    selectionTier:
+      item.selectionTier || ""
+  })),
+  "通常7点＋独立3点の内容・順番・分類を変えない"
+);
+assert.deepEqual(
+  unresolvedPrediction
+    .practicalSelection
+    .tickets
+    .slice(7)
+    .map(item => item.odds),
+  [
+    directOfficialOdds
+      .byTicket["6-1-2"],
+    directOfficialOdds
+      .byTicket["3-6-1"],
+    directOfficialOdds
+      .byTicket["3-6-2"]
+  ],
+  "描画時に初めて現れる独立3券にも最終オッズを付加する"
+);
+unresolvedPrediction
+  .practicalSelection
+  .tickets
+  .slice(7)
+  .forEach(item => {
+    assert.equal(
+      item.oddsText,
+      `${item.odds}倍（最終取得）`
+    );
+    assert.equal(
+      item.oddsSource,
+      "boatrace-official"
+    );
+    assert.equal(
+      item.oddsSavedAt,
+      "2026-08-09T05:30:00.000Z"
+    );
+    assert.equal(
+      item.isFinalRetrievedOdds,
+      true
+    );
+  });
+sandbox.enrichPredictionWithOdds(
+  unresolvedPrediction,
+  directOfficialOdds,
+  null,
+  params
+);
+assert.equal(
+  oddsBoundarySelectionCalls,
+  1,
+  "再描画用の再付加でも実戦厳選を作り直さない"
+);
+
+const fallbackMemory = new Map();
+const fallbackStorage = {
+  getItem(key) {
+    return fallbackMemory.get(key) || null;
+  },
+  setItem(key, value) {
+    fallbackMemory.set(
+      key,
+      String(value)
+    );
+  }
+};
+const fallbackRace = {
+  date: "20260803",
+  stadiumCode: "23",
+  raceNo: 12
+};
+const liveFallbackPrediction = {
+  date: fallbackRace.date,
+  stadiumCode:
+    fallbackRace.stadiumCode,
+  raceNo: fallbackRace.raceNo,
+  race: {
+    ...fallbackRace,
+    status: "open"
+  },
+  practicalSelection: {
+    status: "selected",
+    tickets:
+      selectedAtOddsBoundary.map(
+        item => ({
+          ...item,
+          odds:
+            directOfficialOdds
+              .byTicket[item.ticket]
+        })
+      )
+  }
+};
+assert.equal(
+  finalOdds.save(
+    liveFallbackPrediction,
+    fallbackStorage
+  ),
+  true,
+  "独立展開を含む直前最終オッズを端末fallbackへ保存する"
+);
+const endedFallbackPrediction = {
+  date: fallbackRace.date,
+  stadiumCode:
+    fallbackRace.stadiumCode,
+  raceNo: fallbackRace.raceNo,
+  race: {
+    ...fallbackRace,
+    status: "finished"
+  }
+};
+sandbox.ensurePracticalSelection(
+  endedFallbackPrediction
+);
+const restoredFallbackPrediction =
+  finalOdds.prepare(
+    endedFallbackPrediction,
+    fallbackStorage
+  );
+assert.deepEqual(
+  restoredFallbackPrediction
+    .practicalSelection
+    .tickets
+    .slice(7)
+    .map(item => item.odds),
+  [
+    directOfficialOdds
+      .byTicket["6-1-2"],
+    directOfficialOdds
+      .byTicket["3-6-1"],
+    directOfficialOdds
+      .byTicket["3-6-2"]
+  ],
+  "API失敗時も描画前確定済みの独立3券へ端末最終オッズを復元する"
 );
 assert.deepEqual(
   JSON.parse(
@@ -1100,6 +1377,7 @@ function createReviewFlowHarness({
       ${normalizeReviewOddsSource}
       ${reviewSupplementFlow}
       ${reviewApplyFlow}
+      ${ensurePracticalSelectionSource}
       ${initialFlow}
       this.start = fetchAndRenderRace;
       this.switchRace = () => {
