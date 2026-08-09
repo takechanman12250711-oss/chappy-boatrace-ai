@@ -79,4 +79,63 @@ assert.equal(miss.scenarioMatch, false);
 assert.ok(miss.weaknesses.some(text => text.includes("◎1号艇")));
 assert.ok(miss.summary.includes("不的中"));
 
+assert.equal(
+  review.scenarioMatchOf({ verification: { scenarioMatched: true } }),
+  true,
+  "公式照合が保存するscenarioMatchedを読む"
+);
+assert.equal(
+  review.scenarioMatchOf({ scenarioMatched: false }),
+  false,
+  "結果直下のscenarioMatchedを読む"
+);
+assert.equal(
+  review.scenarioMatchOf({
+    scenarioMatched: true,
+    scenarioVerification: { status: "missed" }
+  }),
+  false,
+  "1着艇と決まり手の正式判定を汎用scenarioMatchedより優先する"
+);
+assert.equal(
+  review.scenarioMatchOf({
+    verification: { scenarioVerification: { status: "matched" } }
+  }),
+  true,
+  "verification配下の正式判定も読む"
+);
+assert.equal(
+  review.scenarioMatchOf({
+    scenarioMatched: true,
+    scenarioVerification: { status: "not_comparable" }
+  }),
+  null,
+  "比較不能を汎用一致値で上書きしない"
+);
+assert.equal(
+  review.scenarioMatchOf({ scenarioVerification: { status: "matched" } }),
+  true,
+  "旧保存データは照合statusから補完する"
+);
+assert.equal(
+  review.scenarioMatchOf({ scenarioVerification: { status: "not_comparable" } }),
+  null,
+  "比較不能を展開不一致へ変換しない"
+);
+
+const unknownScenario = review.buildReview({
+  prediction: {
+    mainSheet: { honmei: { boatNo: 1 } },
+    practicalTickets: [{ ticket: "1-2-3" }]
+  },
+  result: {
+    settled: true,
+    resultTicket: "2-1-3",
+    practicalHit: false,
+    scenarioVerification: { status: "not_comparable" }
+  }
+});
+assert.equal(unknownScenario.scenarioMatch, null);
+assert.ok(!unknownScenario.causeCodes.includes("scenario.miss"));
+
 console.log("result review tests passed");

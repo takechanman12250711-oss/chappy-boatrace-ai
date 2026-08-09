@@ -32,6 +32,31 @@ function markBoat(prediction, key) {
   return no >= 1 && no <= 6 ? String(no) : "";
 }
 
+function scenarioMatchOf(result) {
+  const structured = [
+    result?.verification?.structuredScenarioMatch,
+    result?.verification?.scenarioMatch,
+    result?.structuredScenarioMatch,
+    result?.scenarioMatch
+  ].find(value => typeof value === "boolean");
+  if (typeof structured === "boolean") return structured;
+
+  const status = [
+    result?.scenarioVerification?.status,
+    result?.verification?.scenarioVerification?.status
+  ].map(value => String(value || "").trim()).find(Boolean);
+  if (status === "matched") return true;
+  if (status === "missed") return false;
+  if (status === "not_comparable") return null;
+
+  const legacy = [
+    result?.scenarioMatched,
+    result?.verification?.scenarioMatched
+  ].find(value => typeof value === "boolean");
+  if (typeof legacy === "boolean") return legacy;
+  return null;
+}
+
 function buildReview(record) {
   const prediction = record?.prediction || {};
   const result = record?.result || {};
@@ -49,12 +74,7 @@ function buildReview(record) {
     ana: markBoat(prediction, "ana"),
     osae: markBoat(prediction, "osae")
   };
-  const scenarioMatch = Boolean(
-    result?.verification?.structuredScenarioMatch ??
-    result?.verification?.scenarioMatch ??
-    result?.structuredScenarioMatch ??
-    result?.scenarioMatch
-  );
+  const scenarioMatch = scenarioMatchOf(result);
   const practicalHit = Boolean(result.practicalHit);
   const strengths = [];
   const weaknesses = [];
@@ -76,10 +96,10 @@ function buildReview(record) {
     causeCodes.push("mark.honmei.miss");
   }
 
-  if (scenarioMatch) {
+  if (scenarioMatch === true) {
     strengths.push("中心展開の読みが結果と一致");
     causeCodes.push("scenario.hit");
-  } else {
+  } else if (scenarioMatch === false) {
     weaknesses.push("中心展開と実際の決まり手・着順が不一致");
     causeCodes.push("scenario.miss");
   }
@@ -147,4 +167,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { normalizeTicket, classifyMiss, buildReview, updateFile };
+module.exports = { normalizeTicket, classifyMiss, scenarioMatchOf, buildReview, updateFile };
