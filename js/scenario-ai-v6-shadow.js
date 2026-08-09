@@ -13,12 +13,11 @@
     const boats = [Number(first), Number(second), Number(third)];
     return new Set(boats).size === 3 && boats.every(v => v >= 1 && v <= 6) ? boats.join("-") : "";
   }
-  function scenarioHeadBoatNo(scenario, marks = {}) {
+  function scenarioHeadBoatNo(scenario) {
     const explicit = [
       scenario?.headBoatNo,
       scenario?.attackerBoatNo,
-      scenario?.attacker,
-      marks?.attacker?.boatNo
+      scenario?.attacker
     ]
       .map(Number)
       .find(value => value >= 1 && value <= 6);
@@ -29,17 +28,26 @@
   }
   function inferFinishOrder(scenario, marks = {}) {
     const type = scenarioText(scenario);
-    const attacker = scenarioHeadBoatNo(scenario, marks);
+    const scenarioHead = scenarioHeadBoatNo(scenario);
+    const markedAttacker = Number(marks?.attacker?.boatNo || 0);
+    const attackFallback =
+      markedAttacker >= 1 && markedAttacker <= 6
+        ? markedAttacker
+        : 0;
     const wall = Number(marks?.wall?.boatNo || marks?.wallBoat?.boatNo || 0);
     const main = Number(marks?.main?.boatNo || marks?.honmei?.boatNo || 1);
     const rival = Number(marks?.rival?.boatNo || marks?.taikou?.boatNo || 2);
     const third = Number(marks?.third?.boatNo || marks?.tanana?.boatNo || 4);
-    if (/escape|nige|逃げ/i.test(type)) return uniqueBoats([attacker || 1, rival, third, wall]).slice(0, 3);
-    if (/sashi|差し/i.test(type)) return uniqueBoats([attacker || 2, 1, third, rival]).slice(0, 3);
-    if (/makuri-sashi|まくり差し/i.test(type)) return uniqueBoats([attacker || 3, 1, third, rival]).slice(0, 3);
-    if (/makuri|まくり/i.test(type)) return uniqueBoats([attacker || 3, attacker === 3 ? 4 : third, 1, rival]).slice(0, 3);
-    if (/threeAttack|3(?:コース)?攻め|3攻め/i.test(type)) return uniqueBoats([attacker || 3, 1, third, rival]).slice(0, 3);
-    if (/fourAttack|4(?:カド)?攻め|4攻め/i.test(type)) return uniqueBoats([attacker || 4, 1, third, rival]).slice(0, 3);
+    if (/escape|nige|逃げ/i.test(type)) return uniqueBoats([scenarioHead || 1, rival, third, wall]).slice(0, 3);
+    if (/makuri-sashi|まくり差し/i.test(type)) return uniqueBoats([scenarioHead || attackFallback || 3, 1, third, rival]).slice(0, 3);
+    if (/sashi|差し/i.test(type)) return uniqueBoats([scenarioHead || 2, 1, third, rival]).slice(0, 3);
+    if (/makuri|まくり/i.test(type)) {
+      const attacker = scenarioHead || attackFallback || 3;
+      return uniqueBoats([attacker, attacker === 3 ? 4 : third, 1, rival]).slice(0, 3);
+    }
+    if (/threeAttack|3(?:コース)?攻め|3攻め/i.test(type)) return uniqueBoats([scenarioHead || 3, 1, third, rival]).slice(0, 3);
+    if (/fourAttack|4(?:カド)?攻め|4攻め/i.test(type)) return uniqueBoats([scenarioHead || 4, 1, third, rival]).slice(0, 3);
+    const attacker = scenarioHead || attackFallback;
     if (attacker) return uniqueBoats([attacker, main, rival, third, 1]).slice(0, 3);
     return uniqueBoats([main, rival, third, 1]).slice(0, 3);
   }

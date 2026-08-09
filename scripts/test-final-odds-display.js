@@ -100,12 +100,12 @@ const prepared = finalOdds.prepare(endedPrediction, storage);
 
 assert.equal(prepared.ticketSheets.main[0].odds, 8.4);
 assert.equal(prepared.ticketSheets.cover[0].odds, 31.2);
-assert.equal(prepared.ticketSheets.flow[0].odds, 19.1);
+assert.equal(prepared.ticketSheets.flow[0].odds, 18.6);
 assert.equal(prepared.ticketSheets.hole[0].odds, 126.5);
 assert.equal(prepared.manshuSheet.tickets[0].odds, 126.5);
 assert.equal(prepared.aiCore.mainSheet.tickets[0].odds, 8.4);
 assert.equal(prepared.aiCore.mainSheet.coverTickets[0].odds, 31.2);
-assert.equal(prepared.aiCore.mainSheet.flowTickets[0].odds, 19.1);
+assert.equal(prepared.aiCore.mainSheet.flowTickets[0].odds, 18.6);
 assert.equal(prepared.aiCore.manshuSheet.tickets[0].odds, 126.5);
 assert.equal(prepared.finalAi.ticketRanks[0].odds, 8.4);
 assert.equal(prepared.finalAi.topTickets[0].odds, 31.2);
@@ -125,7 +125,7 @@ assert.equal(endedPrediction.ticketSheets.main[0].odds, null);
 const savedAfterPartialEnd = finalOdds.load(endedPrediction, storage);
 assert.equal(savedAfterPartialEnd.byTicket["1-2-3"], 8.4);
 assert.equal(savedAfterPartialEnd.byTicket["2-1-3"], 31.2);
-assert.equal(savedAfterPartialEnd.byTicket["1-2-4"], 19.1);
+assert.equal(savedAfterPartialEnd.byTicket["1-2-4"], 18.6);
 assert.equal(savedAfterPartialEnd.byTicket["4-1-6"], 126.5);
 
 const unknownRace = {
@@ -311,6 +311,75 @@ assert.equal(
   monotonicPrepared.finalOddsDisplay.savedAt,
   "2026-08-09T05:13:00.000Z",
   "終了画面の保存時刻も巻き戻さない"
+);
+
+const endedFallbackMemory = new Map();
+const endedFallbackStorage = {
+  getItem(key) {
+    return endedFallbackMemory.get(key) || null;
+  },
+  setItem(key, value) {
+    endedFallbackMemory.set(key, String(value));
+  }
+};
+const markedFinalPrediction = {
+  ...serverPrediction,
+  race: {
+    ...serverPrediction.race,
+    status: "finished"
+  },
+  ticketSheets: {
+    ...serverPrediction.ticketSheets,
+    main: [{
+      ticket: "1-2-3",
+      odds: 20,
+      oddsText: "20倍（最終取得）",
+      oddsSource: "boatrace-official-snapshot",
+      oddsSavedAt: "2026-08-09T05:13:00.000Z",
+      isFinalRetrievedOdds: true
+    }]
+  },
+  finalOddsDisplay: {
+    available: true,
+    label: "最終取得オッズ",
+    source: "boatrace-official-snapshot",
+    savedAt: "2026-08-09T05:13:00.000Z",
+    isFinalRetrievedOdds: true
+  }
+};
+assert.equal(
+  finalOdds.save(markedFinalPrediction, endedFallbackStorage),
+  true
+);
+const unmarkedEndedPrediction = {
+  ...markedFinalPrediction,
+  ticketSheets: {
+    ...markedFinalPrediction.ticketSheets,
+    main: [{ ticket: "1-2-3", odds: 8 }]
+  },
+  finalOddsDisplay: undefined
+};
+const preservedEndedFallback = finalOdds.prepare(
+  unmarkedEndedPrediction,
+  endedFallbackStorage
+);
+const preservedEndedSnapshot = finalOdds.load(
+  unmarkedEndedPrediction,
+  endedFallbackStorage
+);
+assert.equal(
+  preservedEndedFallback.ticketSheets.main[0].odds,
+  20,
+  "終了予想の未確定oddsで保存済み最終オッズを巻き戻さない"
+);
+assert.equal(preservedEndedSnapshot.byTicket["1-2-3"], 20);
+assert.equal(
+  preservedEndedSnapshot.source,
+  "boatrace-official-snapshot"
+);
+assert.equal(
+  preservedEndedSnapshot.savedAt,
+  "2026-08-09T05:13:00.000Z"
 );
 
 const quotaStorage = {
