@@ -36,6 +36,9 @@ const stats = read("js/stats.js");
 const statsRuntime = read(
   "js/stats-runtime-loader.js"
 );
+const referenceTagReport = read(
+  "js/reference-tag-report.js"
+);
 const autoSelection = read("js/auto-selection.js");
 const api = read("js/api.js");
 const raceApi = read("api/race.js");
@@ -131,6 +134,17 @@ assert.equal(
     `${file} を初期表示で読み込まない`
   );
 });
+
+assert.equal(
+  statsRuntime.includes('"js/reference-tag-report.js"'),
+  true,
+  "公式参考分析は結果画面を開いた時だけ遅延読込する"
+);
+assert.equal(
+  referenceTagReport.includes("hiyori-official-comparison.json"),
+  false,
+  "削除した日和直接比較レポートを画面から取得しない"
+);
 
 const loadVenueChoicesBody = script.slice(
   script.indexOf("async function loadVenueChoices"),
@@ -292,7 +306,7 @@ assert.equal(
 [
   "style.css?v=20260806-results-ui-phase4-1",
   "css/home-dashboard-v2.css?v=20260803-entry-odds1",
-  "js/app-runtime-loader.js?v=20260809-grounded-flow2",
+  "js/app-runtime-loader.js?v=20260810-official-reference1",
   "js/home-dashboard-v2.js?v=20260803-ui-fix2"
 ].forEach(asset => {
   assert.equal(
@@ -303,7 +317,7 @@ assert.equal(
 });
 assert.equal(
   appRuntime.includes(
-    'const VERSION = "20260809-grounded-flow2"'
+    'const VERSION = "20260810-official-reference1"'
   ),
   true,
   "変更した通常画面モジュールのキャッシュ世代を更新する"
@@ -351,7 +365,7 @@ assert.equal(
 );
 assert.equal(
   statsRuntime.includes(
-    '"20260808-index-shards1"'
+    '"20260810-official-reference1"'
   ),
   true,
   "結果分析モジュールのキャッシュ世代を更新する"
