@@ -10414,32 +10414,36 @@ function buildRaceTrendEvaluation(data) {
     }
 
     for (const head of heads) {
-      const seconds = secondCandidates.filter(
-        (boat) => boatNo(boat) !== boatNo(head)
-      );
+      const seconds = secondCandidates
+        .filter(
+          (boat) => boatNo(boat) !== boatNo(head)
+        )
+        .slice(0, 3);
+      const usedThirdsBySecond = new Map();
 
-      const preferredPairs = [];
+      for (let round = 0; round < 2; round += 1) {
+        for (const second of seconds) {
+          const secondNo = boatNo(second);
+          const usedThirds =
+            usedThirdsBySecond.get(secondNo) || new Set();
+          const third = thirdCandidates.find(
+            (candidate) => {
+              const thirdNo = boatNo(candidate);
+              return (
+                thirdNo !== boatNo(head) &&
+                thirdNo !== secondNo &&
+                !usedThirds.has(thirdNo)
+              );
+            }
+          );
 
-      for (const second of seconds.slice(0, 2)) {
-        const validThirds = thirdCandidates.filter(
-          (third) =>
-            boatNo(third) !== boatNo(head) &&
-            boatNo(third) !== boatNo(second)
-        );
+          if (!third) continue;
 
-        const thirdLimit =
-          second === seconds[0] ? 2 : 1;
+          addTicket(target, head, second, third);
+          usedThirds.add(boatNo(third));
+          usedThirdsBySecond.set(secondNo, usedThirds);
 
-        for (const third of validThirds.slice(0, thirdLimit)) {
-          preferredPairs.push([second, third]);
-        }
-      }
-
-      for (const [second, third] of preferredPairs) {
-        addTicket(target, head, second, third);
-
-        if (target.length >= limit) {
-          return;
+          if (target.length >= limit) return;
         }
       }
     }
