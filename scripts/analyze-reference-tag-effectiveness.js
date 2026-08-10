@@ -309,6 +309,16 @@ function semanticReportJson(report) {
   });
 }
 
+function settledCohortDiagnostics(diagnostics) {
+  if (!diagnostics || typeof diagnostics !== "object") return null;
+  return {
+    officialResultCount: Number(diagnostics.officialResultCount || 0),
+    settledJoinCount: Number(diagnostics.settledJoinCount || 0),
+    deduplication: String(diagnostics.deduplication || ""),
+    sourceFiles: String(diagnostics.sourceFiles || "")
+  };
+}
+
 function writeReport(output, report) {
   let existing = null;
   let existingText = "";
@@ -362,7 +372,7 @@ function main() {
   } else {
     const cohort = inputContract.buildDefaultCohort();
     report = analyze(cohort.records, {
-      inputDiagnostics: cohort.diagnostics,
+      inputDiagnostics: settledCohortDiagnostics(cohort.diagnostics),
       strictFrozenInputs: true,
       allowLegacyUnlabeled: true
     });
@@ -384,6 +394,7 @@ module.exports = {
   predictedTickets,
   raceKey,
   semanticReportJson,
+  settledCohortDiagnostics,
   sourceKind,
   writeReport
 };
