@@ -571,7 +571,7 @@ const integratedShadow =
     selection: {
       type: "本線",
       score: 45,
-      threshold: 70,
+      threshold: 60,
       qualified: false
     },
     preRaceConditions:
@@ -599,8 +599,8 @@ assert.ok(
 );
 assert.equal(
   integratedShadow.selectionReference.threshold,
-  70,
-  "V2自動選定と同じ70点基準を監査参照として保持する"
+  60,
+  "V2自動選定と同じ60点基準を監査参照として保持する"
 );
 assert.equal(
   integratedShadow.snapshot.boats[0].localWinRate,
