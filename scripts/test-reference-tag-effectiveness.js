@@ -2,7 +2,14 @@
 "use strict";
 
 const assert = require("assert");
-const { analyze, actualTicket, extractTags, predictedTickets } = require("./analyze-reference-tag-effectiveness");
+const inputContract = require("./analysis-input-contract");
+const {
+  analyze,
+  actualTicket,
+  extractTags,
+  flattenRecords,
+  predictedTickets
+} = require("./analyze-reference-tag-effectiveness");
 
 const records = [
   {
@@ -36,6 +43,7 @@ assert.deepStrictEqual(predictedTickets(records[1]), ["4-1-2"]);
 
 const report = analyze(records);
 assert.strictEqual(report.matchedRaceCount, 2);
+assert.strictEqual(report.settledRaceCount, 2);
 assert.strictEqual(report.tagCount, 3);
 
 const exhibition = report.tags.find(tag => tag.key === "exhibition");
@@ -52,5 +60,106 @@ const lap = report.tags.find(tag => tag.key === "lap");
 assert(lap);
 assert.strictEqual(lap.winnerHits, 1);
 assert.strictEqual(lap.top3Hits, 1);
+
+const productionBoats = Array.from({ length: 6 }, (_, index) => ({
+  boatNo: index + 1,
+  exhibitionTime: 6.9 - index * 0.04,
+  currentST: 0.18 - index * 0.03,
+  localWinRate: 5.1 + index * 0.5
+}));
+const productionRecord = {
+  raceKey: "20260809-23-1",
+  prediction: {
+    preRaceConditions: {
+      sourceTiming: "pre_deadline",
+      officialResultUsed: false,
+      boats: productionBoats,
+      weather: { windSpeed: 5, waveHeight: 5 },
+      newEngineMode: false
+    },
+    practicalTickets: [
+      { ticket: "3-2-1", category: "本線" },
+      { ticket: "1-2-3", category: "押さえ" }
+    ]
+  },
+  __officialResult: {
+    trifecta: { combination: "3-2-1", boats: [3, 2, 1] }
+  }
+};
+assert.strictEqual(flattenRecords({
+  predictions: [],
+  verificationPredictions: [productionRecord]
+}, "daily.json").length, 1);
+
+assert.strictEqual(actualTicket(productionRecord), "3-2-1");
+assert.deepStrictEqual(predictedTickets(productionRecord), ["3-2-1", "1-2-3"]);
+assert.ok(extractTags(productionRecord).length >= 5);
+
+const productionReport = analyze([productionRecord], {
+  inputDiagnostics: { settledJoinCount: 1 },
+  strictFrozenInputs: true
+});
+assert.strictEqual(productionReport.settledRaceCount, 1);
+assert.strictEqual(productionReport.matchedRaceCount, 1);
+assert.strictEqual(productionReport.sourceStatus, "ready");
+assert.strictEqual(productionReport.inputDiagnostics.settledJoinCount, 1);
+assert.strictEqual(productionReport.causalClaim, false);
+const productionStart = productionReport.tags.find(tag => tag.key === "start");
+assert.strictEqual(productionStart.label, "ST上位艇");
+assert.strictEqual(productionStart.ticketHits, 1);
+const productionWind = productionReport.tags.find(tag => tag.key === "wind");
+assert.strictEqual(productionWind.targetSamples, 0);
+assert.strictEqual(Object.hasOwn(productionWind, "winnerRate"), false);
+assert.strictEqual(productionWind.status, "データ不足");
+
+const taintedReport = analyze([{
+  ...productionRecord,
+  referenceTags: [
+    { key: "result-derived", label: "3号艇 結果後タグ", strength: 3 }
+  ],
+  prediction: {
+    ...productionRecord.prediction,
+    weather: { windSpeed: 99, waveHeight: 99 }
+  }
+}], { strictFrozenInputs: true });
+assert.strictEqual(
+  taintedReport.tags.some(tag => tag.key === "result-derived"),
+  false,
+  "strict analysis must ignore tags attached after the frozen snapshot"
+);
+assert.strictEqual(
+  taintedReport.tags.find(tag => tag.key === "wind").averageStrength,
+  2,
+  "strict analysis must use frozen weather instead of top-level weather"
+);
+
+const lateCohort = inputContract.buildCohortFromRecords([{
+  ...productionRecord,
+  date: "20260809",
+  jcd: "23",
+  raceNo: 1,
+  selectedAt: "2026-08-09T01:00:00Z",
+  deadlineAt: "2026-08-09T10:00:00+09:00"
+}]);
+assert.strictEqual(lateCohort.records.length, 0);
+assert.strictEqual(
+  lateCohort.diagnostics.excludedReasons["captured-at-or-after-deadline"],
+  1
+);
+
+assert.strictEqual(
+  actualTicket({ trifecta: { boats: [4, 1, 2] } }),
+  "4-1-2"
+);
+assert.strictEqual(
+  actualTicket({
+    finishers: [
+      { rank: 2, boat: 1 },
+      { rank: 3, boat: 2 },
+      { rank: 1, boat: 4 }
+    ]
+  }),
+  "4-1-2"
+);
 
 console.log("reference tag effectiveness tests passed");

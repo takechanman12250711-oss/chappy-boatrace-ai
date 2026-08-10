@@ -3,8 +3,7 @@
 
 const fs = require("fs");
 const path = require("path");
-
-const DEFAULT_INPUTS = ["data/predictions", "data/results", "data/history", "public/data"];
+const inputContract = require("./analysis-input-contract");
 
 function readJsonFiles(targetPath) {
   if (!fs.existsSync(targetPath)) return [];
@@ -23,12 +22,7 @@ function readJsonFiles(targetPath) {
 }
 
 function flattenRecords(value, file) {
-  if (Array.isArray(value)) return value.flatMap(item => flattenRecords(item, file));
-  if (!value || typeof value !== "object") return [];
-  for (const key of ["records", "predictions", "results", "races", "items", "data"]) {
-    if (Array.isArray(value[key])) return value[key].flatMap(item => flattenRecords(item, file));
-  }
-  return [{ ...value, __file: file }];
+  return inputContract.flattenInputRecords(value, file);
 }
 
 function num(value) {
@@ -41,35 +35,17 @@ function boatNo(entry, index) {
   return Number(entry?.boatNo || entry?.no || entry?.waku || entry?.course || index + 1);
 }
 
-function entriesOf(record) {
-  const prediction = record.prediction || record;
-  const race = prediction.race || {};
-  const entries = prediction.entries || prediction.entry || race.entries || race.entry || [];
+function entriesOf(record, options = {}) {
+  const entries = inputContract.referenceTagInput(record, options).entries;
   return Array.isArray(entries) ? entries : [];
 }
 
 function finishOrder(record) {
-  const result = record.result || record.officialResult || record.raceResult || {};
-  const order = result.order || result.finishOrder || record.finishOrder;
-  if (Array.isArray(order) && order.length >= 3) return order.slice(0, 3).map(Number);
-  const ticket = result.trifecta || result.ticket || record.actualTicket || record.winningTicket || record.trifecta;
-  const digits = String(ticket || "").match(/[1-6]/g) || [];
-  return digits.length >= 3 ? digits.slice(0, 3).map(Number) : [];
+  return inputContract.finishOrder(record);
 }
 
-function sourceText(record) {
-  const prediction = record.prediction || record;
-  return JSON.stringify({
-    source: prediction.externalData?.source,
-    hiyori: prediction.hiyori,
-    dataSource: prediction.dataSource,
-    combinedOdds: prediction.combinedOdds,
-    entries: prediction.entries || prediction.race?.entries
-  });
-}
-
-function hasHiyori(record) {
-  return /日和|hiyori/i.test(sourceText(record));
+function hasHiyori(record, options = {}) {
+  return inputContract.hasExplicitHiyoriSource(record, options);
 }
 
 function bestBoat(entries, keys, lowerIsBetter) {
@@ -95,8 +71,11 @@ const METRICS = [
   { key: "local", label: "当地実績", keys: ["localWinRate", "localRate", "venueRate", "local.winRate", "local.rate"], lower: false }
 ];
 
-function analyze(records) {
-  const rows = records.filter(record => hasHiyori(record) && finishOrder(record).length >= 3);
+function analyze(records, options = {}) {
+  const strictFrozenInputs = options.strictFrozenInputs === true;
+  const rows = records.filter(record =>
+    hasHiyori(record, { strictFrozenInputs }) && finishOrder(record).length >= 3
+  );
   const stats = Object.fromEntries(METRICS.map(metric => [metric.key, {
     key: metric.key,
     label: metric.label,
@@ -107,7 +86,7 @@ function analyze(records) {
 
   for (const record of rows) {
     const order = finishOrder(record);
-    const entries = entriesOf(record);
+    const entries = entriesOf(record, { strictFrozenInputs });
     for (const metric of METRICS) {
       const best = bestBoat(entries, metric.keys, metric.lower);
       if (!best) continue;
@@ -126,9 +105,25 @@ function analyze(records) {
   }));
 
   return {
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     matchedRaceCount: rows.length,
-    note: "ボートレース日和由来データと公式結果の比較集計。予想ロジックには自動反映しない。",
+    sourceStatus: rows.length ? "ready" : "source_data_unavailable",
+    analysisMode: strictFrozenInputs
+      ? "frozen-pre-deadline-inputs-only"
+      : "provided-records",
+    explicitHiyoriRaceCount: records.filter(record =>
+      hasHiyori(record, { strictFrozenInputs })
+    ).length,
+    inputDiagnostics: options.inputDiagnostics || null,
+    causalClaim: false,
+    usableForPrediction: false,
+    automaticApplication: false,
+    note: rows.length
+      ? strictFrozenInputs
+        ? "明示的にボートレース日和由来と保存された締切前データを公式結果と比較。相関確認専用で、予想ロジックには自動反映しない。"
+        : "入力レコード内で日和由来と明示されたデータを公式結果と比較。予想ロジックには自動反映しない。"
+      : "公式結果と結合可能な予想はあるが、日和由来と確認できる保存データがないため未集計。公式データを日和データとして代用しない。",
     metrics
   };
 }
@@ -138,13 +133,34 @@ function main() {
   const outputIndex = args.indexOf("--output");
   const output = outputIndex >= 0 ? args[outputIndex + 1] : "data/analysis/hiyori-official-comparison.json";
   const inputs = args.filter((arg, index) => arg !== "--output" && index !== outputIndex + 1);
-  const targets = inputs.length ? inputs : DEFAULT_INPUTS;
-  const records = targets.flatMap(input => readJsonFiles(input).flatMap(item => flattenRecords(item.value, item.file)));
-  const report = analyze(records);
+  let report;
+  if (inputs.length) {
+    const records = inputs.flatMap(input =>
+      readJsonFiles(input).flatMap(item => flattenRecords(item.value, item.file))
+    );
+    const cohort = inputContract.buildCohortFromRecords(records);
+    report = analyze(cohort.records, {
+      inputDiagnostics: cohort.diagnostics,
+      strictFrozenInputs: true
+    });
+  } else {
+    const cohort = inputContract.buildDefaultCohort();
+    report = analyze(cohort.records, {
+      inputDiagnostics: cohort.diagnostics,
+      strictFrozenInputs: true
+    });
+  }
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   console.log(`hiyori comparison: ${report.matchedRaceCount} races -> ${output}`);
 }
 
 if (require.main === module) main();
-module.exports = { analyze, bestBoat, finishOrder, hasHiyori };
+module.exports = {
+  analyze,
+  bestBoat,
+  entriesOf,
+  finishOrder,
+  flattenRecords,
+  hasHiyori
+};
