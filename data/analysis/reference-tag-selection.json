@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": "data/analysis/reference-tag-effectiveness.json",
+  "matchedRaceCount": 650,
+  "dataSource": "boatrace-official",
+  "compatibilityProfile": "hiyori-compatible",
+  "causalClaim": false,
+  "productionApplication": false,
+  "thresholds": {
+    "shadowAbCandidate": {
+      "minTargetSamples": 100,
+      "minWinnerRate": 30,
+      "minTop3Rate": 65
+    },
+    "secondaryHold": {
+      "minTargetSamples": 100,
+      "minTop3Rate": 55
+    },
+    "conditionAdjustmentCandidate": {
+      "minSamples": 100,
+      "targetSamplesRequired": 0
+    }
+  },
+  "selections": [
+    {
+      "key": "start",
+      "label": "ST上位艇",
+      "samples": 638,
+      "targetSamples": 638,
+      "winnerRate": 21.9,
+      "top3Rate": 57.7,
+      "ticketHitRate": 18.3,
+      "selection": "secondary-hold",
+      "reason": "3着内55%以上だが採用基準には届かないため、補助候補として継続観測する"
+    },
+    {
+      "key": "local",
+      "label": "当地実績上位艇",
+      "samples": 565,
+      "targetSamples": 565,
+      "winnerRate": 44.2,
+      "top3Rate": 77.5,
+      "ticketHitRate": 17.2,
+      "selection": "shadow-ab-candidate",
+      "reason": "標本100以上・1着30%以上・3着内65%以上を満たすため、予想へ自動反映せず影A/Bで検証する"
+    },
+    {
+      "key": "exhibition",
+      "label": "展示タイム上位艇",
+      "samples": 378,
+      "targetSamples": 378,
+      "winnerRate": 34.7,
+      "top3Rate": 65.1,
+      "ticketHitRate": 19.3,
+      "selection": "shadow-ab-candidate",
+      "reason": "標本100以上・1着30%以上・3着内65%以上を満たすため、予想へ自動反映せず影A/Bで検証する"
+    },
+    {
+      "key": "wind",
+      "label": "強風注意",
+      "samples": 149,
+      "targetSamples": 0,
+      "winnerRate": null,
+      "top3Rate": null,
+      "ticketHitRate": 18.1,
+      "selection": "condition-adjustment-candidate",
+      "reason": "艇を直接選ぶ指標ではないため、展開・水面条件の補正候補としてのみ検証する"
+    },
+    {
+      "key": "wave",
+      "label": "波高注意",
+      "samples": 117,
+      "targetSamples": 0,
+      "winnerRate": null,
+      "top3Rate": null,
+      "ticketHitRate": 13.7,
+      "selection": "condition-adjustment-candidate",
+      "reason": "艇を直接選ぶ指標ではないため、展開・水面条件の補正候補としてのみ検証する"
+    }
+  ],
+  "shadowAbCandidates": ["local", "exhibition"],
+  "conditionAdjustmentCandidates": ["wind", "wave"],
+  "holdCandidates": ["start"],
+  "note": "相関集計から次の検証対象を選ぶためのゲート。因果効果や回収率改善を証明するものではなく、production予想には自動反映しない。"
+}
