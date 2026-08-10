@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-08-10T09:38:24.393Z",
+  "generatedAt": "2026-08-10T10:01:23.209Z",
   "matchedRaceCount": 650,
   "settledRaceCount": 696,
   "taggedRaceCount": 650,
@@ -10,10 +10,15 @@
   "dataSource": "boatrace-official",
   "compatibilityProfile": "hiyori-compatible",
   "directHiyoriDataUsed": false,
+  "legacyUnlabeledPolicy": "canonical-official-collector-before-source-schema-v4",
   "sourceBreakdown": {
     "officialLabeledRaceCount": 0,
     "officialCompatibleRaceCount": 0,
+    "acceptedOfficialCompatibleRaceCount": 0,
+    "rejectedOfficialCompatibleRaceCount": 0,
     "legacyUnlabeledRaceCount": 696,
+    "acceptedLegacyUnlabeledRaceCount": 696,
+    "rejectedLegacyUnlabeledRaceCount": 0,
     "rejectedDirectHiyoriRaceCount": 0,
     "rejectedOtherSourceRaceCount": 0
   },
@@ -34,7 +39,7 @@
   "causalClaim": false,
   "usableForPrediction": false,
   "automaticApplication": false,
-  "note": "BOAT RACE公式から締切前に固定保存した入力だけで日和準拠の参考指標を再構築し、公式結果と照合した相関集計。日和サイトの直接取得は使わず、予想ロジック・印・買い目には自動反映しない。",
+  "note": "BOAT RACE公式から締切前に固定保存した入力だけで日和準拠の参考指標を再構築し、公式結果と照合した相関集計。旧schemaの無ラベル履歴は、このリポジトリの公式API収集正本だけを経路根拠に含む。日和サイトの直接取得は使わず、予想ロジック・印・買い目には自動反映しない。",
   "tags": [
     {
       "key": "start",
