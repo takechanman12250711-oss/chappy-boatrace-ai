@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 3,
+  "generatedAt": "2026-08-10T09:38:24.393Z",
+  "matchedRaceCount": 650,
+  "settledRaceCount": 696,
+  "taggedRaceCount": 650,
+  "untaggedRaceCount": 46,
+  "tagCount": 5,
+  "sourceStatus": "ready",
+  "dataSource": "boatrace-official",
+  "compatibilityProfile": "hiyori-compatible",
+  "directHiyoriDataUsed": false,
+  "sourceBreakdown": {
+    "officialLabeledRaceCount": 0,
+    "officialCompatibleRaceCount": 0,
+    "legacyUnlabeledRaceCount": 696,
+    "rejectedDirectHiyoriRaceCount": 0,
+    "rejectedOtherSourceRaceCount": 0
+  },
+  "cohort": "predictions-preferred-over-verificationPredictions",
+  "analysisMode": "official-compatible-tags-from-frozen-pre-deadline-inputs",
+  "inputDiagnostics": {
+    "canonicalPredictionCount": 780,
+    "preDeadlinePredictionCount": 774,
+    "excludedPredictionCount": 6,
+    "excludedReasons": {
+      "captured-at-or-after-deadline": 6
+    },
+    "officialResultCount": 696,
+    "settledJoinCount": 696,
+    "deduplication": "predictions-preferred-over-verificationPredictions",
+    "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
+  },
+  "causalClaim": false,
+  "usableForPrediction": false,
+  "automaticApplication": false,
+  "note": "BOAT RACE公式から締切前に固定保存した入力だけで日和準拠の参考指標を再構築し、公式結果と照合した相関集計。日和サイトの直接取得は使わず、予想ロジック・印・買い目には自動反映しない。",
+  "tags": [
+    {
+      "key": "start",
+      "label": "ST上位艇",
+      "samples": 638,
+      "targetSamples": 638,
+      "winnerHits": 140,
+      "top3Hits": 368,
+      "ticketHits": 117,
+      "strengthTotal": 902,
+      "winnerRate": 21.9,
+      "top3Rate": 57.7,
+      "ticketHitRate": 18.3,
+      "averageStrength": 1.41,
+      "status": "参考度高"
+    },
+    {
+      "key": "local",
+      "label": "当地実績上位艇",
+      "samples": 565,
+      "targetSamples": 565,
+      "winnerHits": 250,
+      "top3Hits": 438,
+      "ticketHits": 97,
+      "strengthTotal": 718,
+      "winnerRate": 44.2,
+      "top3Rate": 77.5,
+      "ticketHitRate": 17.2,
+      "averageStrength": 1.27,
+      "status": "参考度高"
+    },
+    {
+      "key": "exhibition",
+      "label": "展示タイム上位艇",
+      "samples": 378,
+      "targetSamples": 378,
+      "winnerHits": 131,
+      "top3Hits": 246,
+      "ticketHits": 73,
+      "strengthTotal": 559,
+      "winnerRate": 34.7,
+      "top3Rate": 65.1,
+      "ticketHitRate": 19.3,
+      "averageStrength": 1.48,
+      "status": "参考度高"
+    },
+    {
+      "key": "wind",
+      "label": "強風注意",
+      "samples": 149,
+      "targetSamples": 0,
+      "winnerHits": 0,
+      "top3Hits": 0,
+      "ticketHits": 27,
+      "strengthTotal": 250,
+      "ticketHitRate": 18.1,
+      "averageStrength": 1.68,
+      "status": "参考条件"
+    },
+    {
+      "key": "wave",
+      "label": "波高注意",
+      "samples": 117,
+      "targetSamples": 0,
+      "winnerHits": 0,
+      "top3Hits": 0,
+      "ticketHits": 16,
+      "strengthTotal": 141,
+      "ticketHitRate": 13.7,
+      "averageStrength": 1.21,
+      "status": "参考条件"
+    }
+  ]
+}

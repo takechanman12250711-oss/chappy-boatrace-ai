@@ -33,6 +33,18 @@
     return String(value ?? "").trim();
   }
 
+  function normalizeDataSource(raceData) {
+    const source = text(
+      raceData?.source ||
+      raceData?.dataSource ||
+      raceData?.provider
+    );
+    if (/^(?:boatrace[-_ ]?official|BOAT\s*RACE公式)$/i.test(source)) {
+      return "boatrace-official";
+    }
+    return source;
+  }
+
   function boatNoOf(value, fallback = 0) {
     const number = Number(
       value?.boat ?? value?.waku ?? value?.no ?? value?.boatNo ?? value ?? fallback
@@ -222,15 +234,22 @@
       captureBoat(raceData, index + 1)
     );
     const weather = captureWeather(raceData, prediction);
+    const source = normalizeDataSource(raceData);
     const sourceText = JSON.stringify({
       raceInfo: raceData?.raceInfo || {},
       engine: prediction?.engine || prediction?.motorMode || ""
     });
 
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       sourceTiming: "pre_deadline",
       officialResultUsed: false,
+      source,
+      sourceFetchedAt: text(raceData?.fetchedAt),
+      analysisProfile:
+        source === "boatrace-official"
+          ? "hiyori-compatible"
+          : "",
       boats,
       weather,
       dataAvailability: {

@@ -8,7 +8,8 @@ const {
   actualTicket,
   extractTags,
   flattenRecords,
-  predictedTickets
+  predictedTickets,
+  sourceKind
 } = require("./analyze-reference-tag-effectiveness");
 
 const records = [
@@ -102,6 +103,11 @@ const productionReport = analyze([productionRecord], {
 assert.strictEqual(productionReport.settledRaceCount, 1);
 assert.strictEqual(productionReport.matchedRaceCount, 1);
 assert.strictEqual(productionReport.sourceStatus, "ready");
+assert.strictEqual(productionReport.dataSource, "boatrace-official");
+assert.strictEqual(productionReport.compatibilityProfile, "hiyori-compatible");
+assert.strictEqual(productionReport.directHiyoriDataUsed, false);
+assert.strictEqual(productionReport.sourceBreakdown.legacyUnlabeledRaceCount, 1);
+assert.match(productionReport.note, /日和サイトの直接取得は使わず/);
 assert.strictEqual(productionReport.inputDiagnostics.settledJoinCount, 1);
 assert.strictEqual(productionReport.causalClaim, false);
 const productionStart = productionReport.tags.find(tag => tag.key === "start");
@@ -114,6 +120,7 @@ assert.strictEqual(productionWind.status, "データ不足");
 
 const taintedReport = analyze([{
   ...productionRecord,
+  source: "ボートレース日和",
   referenceTags: [
     { key: "result-derived", label: "3号艇 結果後タグ", strength: 3 }
   ],
@@ -131,6 +138,76 @@ assert.strictEqual(
   taintedReport.tags.find(tag => tag.key === "wind").averageStrength,
   2,
   "strict analysis must use frozen weather instead of top-level weather"
+);
+assert.strictEqual(
+  taintedReport.sourceBreakdown.legacyUnlabeledRaceCount,
+  1,
+  "strict analysis must ignore a source label attached after the frozen snapshot"
+);
+
+assert.strictEqual(sourceKind({
+  prediction: {
+    preRaceConditions: {
+      source: "boatrace-official",
+      analysisProfile: "hiyori-compatible"
+    }
+  }
+}, { strictFrozenInputs: true }), "official-labeled");
+assert.strictEqual(sourceKind({
+  prediction: {
+    preRaceConditions: {
+      schemaVersion: 4,
+      source: "",
+      analysisProfile: ""
+    }
+  }
+}, { strictFrozenInputs: true }), "other-source");
+for (const source of [
+  "fake-boatrace-official-proxy",
+  "untrusted BOAT RACE公式 mirror"
+]) {
+  assert.strictEqual(sourceKind({
+    prediction: {
+      preRaceConditions: {
+        schemaVersion: 4,
+        source,
+        analysisProfile: "hiyori-compatible"
+      }
+    }
+  }, { strictFrozenInputs: true }), "other-source");
+}
+assert.strictEqual(sourceKind({
+  prediction: {
+    preRaceConditions: {
+      schemaVersion: 4,
+      source: "some-third-party",
+      analysisProfile: "hiyori-compatible"
+    }
+  }
+}, { strictFrozenInputs: true }), "other-source");
+assert.strictEqual(sourceKind({
+  prediction: {
+    preRaceConditions: {
+      schemaVersion: 3,
+      source: "hiyori-compatible"
+    }
+  }
+}, { strictFrozenInputs: true }), "official-compatible");
+const directHiyoriReport = analyze([{
+  ...productionRecord,
+  prediction: {
+    ...productionRecord.prediction,
+    preRaceConditions: {
+      ...productionRecord.prediction.preRaceConditions,
+      source: "ボートレース日和"
+    }
+  }
+}], { strictFrozenInputs: true });
+assert.strictEqual(directHiyoriReport.settledRaceCount, 0);
+assert.strictEqual(directHiyoriReport.matchedRaceCount, 0);
+assert.strictEqual(
+  directHiyoriReport.sourceBreakdown.rejectedDirectHiyoriRaceCount,
+  1
 );
 
 const lateCohort = inputContract.buildCohortFromRecords([{

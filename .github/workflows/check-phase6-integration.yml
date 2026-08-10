@@ -19,7 +19,9 @@ on:
       - "js/result-void-compat.js"
       - "js/theory-performance-report.js"
       - "js/reference-tags.js"
+      - "scripts/test-reference-tags.js"
       - "js/prediction-conditions.js"
+      - "scripts/test-prediction-conditions.js"
       - "scripts/test-api-history-no-browser-fallback.js"
       - "scripts/test-initial-odds-enrichment.js"
       - "scripts/test-race-flow-result-panel.js"
@@ -29,9 +31,7 @@ on:
       - "scripts/test-final-odds-schedule.js"
       - "scripts/test-scheduled-analysis-workflows.js"
       - "scripts/analysis-input-contract.js"
-      - "scripts/analyze-hiyori-official-comparison.js"
       - "scripts/analyze-reference-tag-effectiveness.js"
-      - "scripts/test-hiyori-official-comparison.js"
       - "scripts/test-reference-tag-effectiveness.js"
       - "scripts/test-analysis-input-contract.js"
       - "scripts/collect-predictions.js"
@@ -39,7 +39,6 @@ on:
       - "scripts/build-prediction-index-shards.js"
       - "scripts/test-build-prediction-index-shards.js"
       - "scripts/test-prediction-index-loader.js"
-      - ".github/workflows/analyze-hiyori-official.yml"
       - ".github/workflows/analyze-reference-tags.yml"
       - ".github/workflows/settle-purchases.yml"
       - ".github/workflows/prediction-gap-report.yml"
@@ -66,11 +65,11 @@ jobs:
           node --check scripts/test-final-odds-schedule.js
           node --check scripts/test-scheduled-analysis-workflows.js
           node --check scripts/analysis-input-contract.js
-          node --check scripts/analyze-hiyori-official-comparison.js
           node --check scripts/analyze-reference-tag-effectiveness.js
-          node --check scripts/test-hiyori-official-comparison.js
           node --check scripts/test-reference-tag-effectiveness.js
           node --check scripts/test-analysis-input-contract.js
+          node --check scripts/test-reference-tags.js
+          node --check scripts/test-prediction-conditions.js
           node --check scripts/test-build-prediction-index-shards.js
           node --check scripts/test-prediction-index-loader.js
       - name: Run Phase6 integration test
@@ -82,9 +81,10 @@ jobs:
       - name: Run scheduled analysis workflow regressions
         run: |
           node scripts/test-scheduled-analysis-workflows.js
-          node scripts/test-hiyori-official-comparison.js
           node scripts/test-reference-tag-effectiveness.js
           node scripts/test-analysis-input-contract.js
+          node scripts/test-reference-tags.js
+          node scripts/test-prediction-conditions.js
       - name: Run load performance regression
         run: |
           node scripts/test-build-prediction-index-shards.js
