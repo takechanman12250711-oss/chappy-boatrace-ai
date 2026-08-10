@@ -14,6 +14,7 @@ const documentListeners =
 const anchorListeners =
   new Map();
 let failFirstLoad = true;
+let failOptionalOnce = true;
 const resultSection = {
   hidden: true
 };
@@ -82,6 +83,12 @@ global.document = {
       queueMicrotask(() => {
         if (failFirstLoad) {
           failFirstLoad = false;
+          script.emit("error");
+        } else if (
+          failOptionalOnce &&
+          script.src.includes("js/reference-tag-report.js")
+        ) {
+          failOptionalOnce = false;
           script.emit("error");
         } else {
           script.emit("load");
@@ -218,13 +225,10 @@ async function main() {
         "js/stats.js"
       )
   );
-  assert.ok(
-    loaded.indexOf(
-      "js/stats.js"
-    ) <
-      loaded.indexOf(
-        "js/result-ui-phase5.js"
-      )
+  assert.deepEqual(
+    window.ChappyStatsRuntime.optionalScripts,
+    ["js/reference-tag-report.js"],
+    "公式参考分析は結果本体を止めない任意モジュールとして扱う"
   );
   assert.deepEqual(
     dispatched,
@@ -232,6 +236,24 @@ async function main() {
       "chappy:stats-runtime-ready",
       "chappy:stats-requested"
     ]
+  );
+
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(
+    appended.some(script =>
+      script.dataset.chappyStatsModule === "js/reference-tag-report.js"
+    ),
+    false,
+    "任意パネルの一時失敗でも結果分析本体は初期化を完了する"
+  );
+  await window.ChappyStatsRuntime.ensureReady();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(
+    appended.some(script =>
+      script.dataset.chappyStatsModule === "js/reference-tag-report.js"
+    ),
+    true,
+    "任意パネルだけを次回要求時に再試行する"
   );
 
   const count =
