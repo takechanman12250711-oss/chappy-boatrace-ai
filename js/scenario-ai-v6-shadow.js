@@ -6,6 +6,9 @@
 })(typeof window !== "undefined" ? window : globalThis, function () {
   "use strict";
 
+  const VERSION = "6.1.0-shadow";
+  const LOGIC_FINGERPRINT = "scenario-ai-v6-multi-candidate-v1";
+
   function n(value) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : 0; }
   function clamp(value, min, max) { return Math.max(min, Math.min(max, n(value))); }
   function uniqueBoats(values) { return [...new Set((Array.isArray(values) ? values : []).map(Number).filter(v => v >= 1 && v <= 6))]; }
@@ -96,16 +99,17 @@
     if (own && (!headBoatNo || Number(own.split("-")[0]) === headBoatNo)) return own;
     return ticketOf(order?.[0], order?.[1], order?.[2]);
   }
+  function scenarioRows(values) {
+    return (Array.isArray(values) ? values : [])
+      .filter(Boolean)
+      .filter(row => String(row?.type || row?.key || "") !== "canonical-evaluated-scenario");
+  }
   function scenarioSourceOf(input, evidence) {
-    const evidenceScenarios = Array.isArray(evidence?.scenarios)
-      ? evidence.scenarios.filter(Boolean)
-      : [];
+    const evidenceScenarios = scenarioRows(evidence?.scenarios);
     const raceScenarios = input?.aiCore?.raceScenarios || input?.raceScenarios || {};
-    const scenarioRows = Array.isArray(raceScenarios?.scenarios)
-      ? raceScenarios.scenarios.filter(Boolean)
-      : [];
-    const richScenarios = scenarioRows.length
-      ? scenarioRows
+    const richScenarioRows = scenarioRows(raceScenarios?.scenarios);
+    const richScenarios = richScenarioRows.length
+      ? richScenarioRows
       : [raceScenarios?.mainScenario, raceScenarios?.subScenario].filter(Boolean);
 
     if (evidenceScenarios.length >= 2) return { rows: evidenceScenarios, source: "verification-evidence-scenarios" };
@@ -149,7 +153,9 @@
       };
     })).sort((a, b) => b.likelihood - a.likelihood || b.rawScore - a.rawScore).map((row, index) => ({ ...row, rank: index + 1 }));
     return {
-      version: "6.0.0-shadow",
+      version: VERSION,
+      logicFingerprint: LOGIC_FINGERPRINT,
+      inputSourceKind: String(input?.inputSourceKind || resolvedSource.source),
       status: scenarios.length ? "shadow-ready" : "insufficient-evidence",
       scenarios,
       mainScenario: scenarios[0] || null,
@@ -160,5 +166,15 @@
       automaticApplication: false
     };
   }
-  return { build, inferFinishOrder, normalize, ticketOf, scenarioHeadBoatNo, scenarioSourceOf };
+  return {
+    VERSION,
+    LOGIC_FINGERPRINT,
+    build,
+    inferFinishOrder,
+    normalize,
+    ticketOf,
+    scenarioHeadBoatNo,
+    scenarioSourceOf,
+    scenarioRows
+  };
 });

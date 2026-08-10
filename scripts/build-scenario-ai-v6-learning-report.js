@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const scenarioAiV6 = require("../js/scenario-ai-v6-shadow");
 
 const ROOT = path.resolve(__dirname, "..");
 const PREDICTIONS_DIR = path.join(ROOT, "data", "predictions");
@@ -35,12 +36,23 @@ function predictionFiles(directory = PREDICTIONS_DIR) {
 
 function scenarioRows(doc = {}) {
   return (Array.isArray(doc?.verificationPredictions) ? doc.verificationPredictions : [])
-    .filter(record => record?.scenarioAiV6Verification?.status === "verified")
+    .filter(record =>
+      record?.scenarioAiV6Verification?.status === "verified" &&
+      record?.scenarioAiV6Verification?.logicFingerprint ===
+        scenarioAiV6.LOGIC_FINGERPRINT &&
+      record?.scenarioAiV6ShadowAb?.candidateSetFingerprint === "none"
+    )
     .flatMap(record => {
       const verification = record.scenarioAiV6Verification;
       return (Array.isArray(verification?.scenarios) ? verification.scenarios : []).map(scenario => ({
         raceKey: String(record?.raceKey || ""),
         date: String(record?.date || doc?.date || ""),
+        selectedAt: String(record?.selectedAt || ""),
+        inputSourceKind: String(
+          verification?.inputSourceKind ||
+          record?.scenarioAiV6Shadow?.inputSourceKind ||
+          ""
+        ),
         jcd: String(record?.jcd || "").padStart(2, "0"),
         place: String(record?.place || ""),
         rank: number(scenario?.rank),
@@ -53,6 +65,25 @@ function scenarioRows(doc = {}) {
         breakReasons: Array.isArray(scenario?.breakReasons) ? scenario.breakReasons.map(String) : []
       }));
     });
+}
+
+function activeTrainingRows(rows = []) {
+  const eligible = rows.filter(row =>
+    row?.selectedAt &&
+    Number.isFinite(Date.parse(row.selectedAt)) &&
+    row?.inputSourceKind
+  );
+  const latest = [...eligible].sort((left, right) =>
+    Date.parse(left.selectedAt) - Date.parse(right.selectedAt) ||
+    String(left.raceKey).localeCompare(String(right.raceKey))
+  ).at(-1) || null;
+  const activeInputSourceKind = String(latest?.inputSourceKind || "");
+  return {
+    activeInputSourceKind,
+    rows: activeInputSourceKind
+      ? eligible.filter(row => row.inputSourceKind === activeInputSourceKind)
+      : []
+  };
 }
 
 function createBucket(key, label = key) {
@@ -131,7 +162,9 @@ function proposalFor(row, minimumSample) {
 }
 
 function buildReport(documents = []) {
-  const rows = documents.flatMap(scenarioRows);
+  const allRows = documents.flatMap(scenarioRows);
+  const training = activeTrainingRows(allRows);
+  const rows = training.rows;
   const raceKeys = new Set(rows.map(row => row.raceKey).filter(Boolean));
   const byScenarioType = aggregate(rows, row => row.scenarioType);
   const byCandidateRank = aggregate(rows, row => `rank-${row.rank}`, row => `候補${row.rank}位`);
@@ -150,6 +183,10 @@ function buildReport(documents = []) {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     source: "scenarioAiV6Verification",
+    logicFingerprint: scenarioAiV6.LOGIC_FINGERPRINT,
+    candidateTrainingMode: "pre-candidate-only",
+    activeInputSourceKind: training.activeInputSourceKind,
+    excludedOtherInputSourceCount: allRows.length - rows.length,
     verifiedRaceCount: raceKeys.size,
     evaluatedScenarioCount: rows.length,
     byScenarioType,
@@ -188,5 +225,6 @@ module.exports = {
   scenarioRows,
   aggregate,
   proposalFor,
-  buildBreakReasonSummary
+  buildBreakReasonSummary,
+  activeTrainingRows
 };

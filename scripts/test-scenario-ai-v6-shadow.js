@@ -11,7 +11,8 @@ const report = v6.build({ verificationEvidence: {
   marks: { rival: { boatNo: 2 }, third: { boatNo: 4 } }
 }});
 
-assert.equal(report.version, "6.0.0-shadow");
+assert.equal(report.version, "6.1.0-shadow");
+assert.equal(report.logicFingerprint, v6.LOGIC_FINGERPRINT);
 assert.equal(report.status, "shadow-ready");
 assert.equal(report.scenarios.length, 3);
 assert.equal(report.totalLikelihood, 100);
@@ -113,6 +114,21 @@ assert.equal(perScenarioFallback.scenarios[0].representativeTicket, "1-2-4");
 assert.equal(perScenarioFallback.scenarios[1].keyBoat, 2);
 assert.deepEqual(perScenarioFallback.scenarios[1].finishOrder, [2, 1, 4]);
 assert.equal(perScenarioFallback.scenarios[1].representativeTicket, "2-1-4");
+
+const standardFour = v6.build({ verificationEvidence: {
+  scenarios: [
+    { type: "canonical-evaluated-scenario", label: "正式評価", score: 100 },
+    { type: "escape", label: "1号艇逃げ", score: 70 },
+    { type: "threeAttack", label: "3攻め", score: 50 },
+    { type: "fourAttack", label: "4攻め", score: 40 },
+    { type: "sashi", label: "2差し", score: 30 }
+  ]
+}});
+assert.equal(standardFour.scenarios.length, 4);
+assert.deepEqual(
+  new Set(standardFour.scenarios.map(row => row.scenarioType)),
+  new Set(["escape", "sashi", "threeAttack", "fourAttack"])
+);
 
 const empty = v6.build({});
 assert.equal(empty.status, "insufficient-evidence");
