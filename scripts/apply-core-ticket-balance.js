@@ -77,7 +77,7 @@ fs.writeFileSync(corePath, core);
 const testPath = "scripts/test-scenario-formations.js";
 let test = fs.readFileSync(testPath, "utf8");
 const testStart = "assert.equal(\n  practicalMain[0][1],";
-const testEnd = "\nassert.equal(\n  connected.main.includes(\"3-1-5\"),";
+const testEnd = "\nassert.ok(\n  connected.safety.every((ticket) => ticket.startsWith(\"1-\")),";
 const testReplacement = `assert.notEqual(
   practicalMain[0][1],
   practicalMain[1][1],
