@@ -203,13 +203,31 @@ assertGeneratedReportPersistence({
   }
 ].forEach(({ workflowFile, analyzerTest }) => {
   const testLines = stepRunLines(readWorkflow(workflowFile), "Test analyzer");
-  [analyzerTest, "node scripts/test-analysis-input-contract.js"].forEach(command => {
-    assert.equal(
-      testLines.filter(line => line === command).length,
-      1,
-      `${workflowFile}で${command}を1回だけ実行する`
-    );
-  });
+  assert.equal(
+    testLines.filter(line => line === analyzerTest).length,
+    1,
+    `${workflowFile}で${analyzerTest}を1回だけ実行する`
+  );
+  assert.equal(
+    testLines.includes("node scripts/test-analysis-input-contract.js"),
+    false,
+    `${workflowFile}で保存済み成果物の整合検査を生成前に実行しない`
+  );
+
+  const workflow = readWorkflow(workflowFile);
+  const buildIndex = workflow.indexOf("- name: Build effectiveness report");
+  const verifyIndex = workflow.indexOf("- name: Verify built report");
+  const commitIndex = workflow.indexOf("- name: Commit report when changed");
+  const verifyLines = stepRunLines(workflow, "Verify built report");
+  assert.ok(
+    buildIndex < verifyIndex && verifyIndex < commitIndex,
+    `${workflowFile}で生成後・保存前に成果物整合を確認する`
+  );
+  assert.deepStrictEqual(
+    verifyLines,
+    ["node scripts/test-analysis-input-contract.js"],
+    `${workflowFile}で生成済み成果物を1回だけ検証する`
+  );
 });
 
 const predictionGapWorkflow = readWorkflow("prediction-gap-report.yml");
