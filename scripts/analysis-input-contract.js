@@ -169,6 +169,23 @@ function preDeadlineReason(record) {
   if (!Number.isFinite(capturedAt) || !Number.isFinite(deadlineAt)) {
     return "timestamp-missing";
   }
+  const source = String(conditions?.source || conditions?.dataSource || "").trim();
+  const sourceFetchedAtRaw = String(conditions?.sourceFetchedAt || "").trim();
+  const schemaVersion = Number(conditions?.schemaVersion || 0);
+  const requiresSourceFetchedAt = schemaVersion >= 4;
+  if (schemaVersion >= 4 && !source) return "source-label-missing";
+  if (
+    schemaVersion >= 4 &&
+    !/^(?:boatrace[-_ ]?official|BOAT\s*RACE公式)$/i.test(source)
+  ) {
+    return "unsupported-source";
+  }
+  if (sourceFetchedAtRaw || requiresSourceFetchedAt) {
+    const sourceFetchedAt = parseTimestamp(sourceFetchedAtRaw);
+    if (!Number.isFinite(sourceFetchedAt)) return "source-fetch-timestamp-missing";
+    if (sourceFetchedAt >= deadlineAt) return "source-fetched-at-or-after-deadline";
+    if (sourceFetchedAt > capturedAt) return "source-fetched-after-capture";
+  }
   if (capturedAt >= deadlineAt) return "captured-at-or-after-deadline";
   return "";
 }
@@ -467,41 +484,6 @@ function referenceTagInput(record, options = {}) {
   };
 }
 
-function sourceValues(record, options = {}) {
-  const prediction = record?.prediction || record || {};
-  const conditions = prediction?.preRaceConditions || record?.preRaceConditions || {};
-  if (options.strictFrozenInputs === true) {
-    return [
-      conditions?.source,
-      conditions?.dataSource,
-      conditions?.externalData?.source,
-      conditions?.hiyori?.source
-    ].filter(value =>
-      value !== null && value !== undefined && String(value).trim()
-    );
-  }
-  return [
-    record?.source,
-    record?.dataSource,
-    record?.externalData?.source,
-    record?.hiyori?.source,
-    prediction?.source,
-    prediction?.dataSource,
-    prediction?.externalData?.source,
-    prediction?.hiyori?.source,
-    conditions?.source,
-    conditions?.dataSource
-  ].filter(value => value !== null && value !== undefined && String(value).trim());
-}
-
-function hasExplicitHiyoriSource(record, options = {}) {
-  return sourceValues(record, options).some(value => {
-    const text = String(value).trim();
-    if (/compatible/i.test(text)) return false;
-    return /ボートレース日和/i.test(text) || /^hiyori(?:[-_ ]?(?:api|source|data))?$/i.test(text);
-  });
-}
-
 module.exports = {
   actualTicket,
   buildCohortFromRecords,
@@ -510,7 +492,6 @@ module.exports = {
   collectOfficialResults,
   flattenInputRecords,
   finishOrder,
-  hasExplicitHiyoriSource,
   mergePredictionSources,
   normalizeTicket,
   orderFromFinishers,

@@ -15,8 +15,7 @@ const AGGREGATE_LABELS = {
   wave: "波高注意",
   "new-engine": "新エンジン期",
   "new-fuel": "新燃料使用期",
-  "combined-odds": "合成オッズ取得済み",
-  "hiyori-source": "日和データあり"
+  "combined-odds": "合成オッズ取得済み"
 };
 
 function readJsonFiles(targetPath) {
@@ -50,6 +49,52 @@ function normalizeTicket(value) {
 
 function actualTicket(record) {
   return inputContract.actualTicket(record);
+}
+
+function sourceKind(record, options = {}) {
+  const prediction = record?.prediction || record || {};
+  const conditions = prediction?.preRaceConditions || record?.preRaceConditions || {};
+  const strictFrozenInputs = options.strictFrozenInputs === true;
+  const source = String(
+    conditions?.source ||
+    conditions?.dataSource ||
+    (strictFrozenInputs ? "" : prediction?.source || prediction?.dataSource) ||
+    ""
+  ).trim();
+  const profile = String(
+    conditions?.analysisProfile ||
+    (strictFrozenInputs ? "" : prediction?.analysisProfile) ||
+    ""
+  ).trim();
+  const schemaVersion = Number(conditions?.schemaVersion || 0);
+
+  if (/ボートレース日和|^hiyori(?:[-_ ]?(?:api|source|data))?$/i.test(source)) {
+    return "direct-hiyori";
+  }
+  if (/ボートレース日和|^hiyori(?:[-_ ]?(?:api|source|data))?$/i.test(profile)) {
+    return "direct-hiyori";
+  }
+  if (/^(?:boatrace[-_ ]?official|BOAT\s*RACE公式)$/i.test(source)) {
+    return profile && !/hiyori[-_ ]?compatible/i.test(profile)
+      ? "other-source"
+      : "official-labeled";
+  }
+  if (source) {
+    return schemaVersion < 4 && /hiyori[-_ ]?compatible/i.test(source)
+      ? "official-compatible"
+      : "other-source";
+  }
+  if (profile) {
+    return schemaVersion < 4 && /hiyori[-_ ]?compatible/i.test(profile)
+      ? "official-compatible"
+      : "other-source";
+  }
+  if (!source && !profile) {
+    return schemaVersion >= 4
+      ? "other-source"
+      : "legacy-unlabeled";
+  }
+  return "other-source";
 }
 
 function extractTags(record, options = {}) {
@@ -109,7 +154,16 @@ function topBoatFromTag(tag) {
 
 function analyze(records, options = {}) {
   const strictFrozenInputs = options.strictFrozenInputs === true;
-  const settled = records.filter(record => actualTicket(record));
+  const allSettled = records.filter(record => actualTicket(record));
+  const sourceCounts = allSettled.reduce((counts, record) => {
+    const kind = sourceKind(record, { strictFrozenInputs });
+    counts[kind] = (counts[kind] || 0) + 1;
+    return counts;
+  }, {});
+  const settled = allSettled.filter(record => {
+    const kind = sourceKind(record, { strictFrozenInputs });
+    return kind !== "direct-hiyori" && kind !== "other-source";
+  });
   const matched = settled
     .map(record => ({
       record,
@@ -186,7 +240,7 @@ function analyze(records, options = {}) {
   );
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedAt: new Date().toISOString(),
     matchedRaceCount: matched.length,
     settledRaceCount: settled.length,
@@ -194,16 +248,26 @@ function analyze(records, options = {}) {
     untaggedRaceCount: settled.length - matched.length,
     tagCount: tags.length,
     sourceStatus: matched.length ? "ready" : "no_tagged_races",
+    dataSource: "boatrace-official",
+    compatibilityProfile: "hiyori-compatible",
+    directHiyoriDataUsed: false,
+    sourceBreakdown: {
+      officialLabeledRaceCount: sourceCounts["official-labeled"] || 0,
+      officialCompatibleRaceCount: sourceCounts["official-compatible"] || 0,
+      legacyUnlabeledRaceCount: sourceCounts["legacy-unlabeled"] || 0,
+      rejectedDirectHiyoriRaceCount: sourceCounts["direct-hiyori"] || 0,
+      rejectedOtherSourceRaceCount: sourceCounts["other-source"] || 0
+    },
     cohort: "predictions-preferred-over-verificationPredictions",
     analysisMode: strictFrozenInputs
-      ? "reconstructed-from-frozen-pre-deadline-inputs"
+      ? "official-compatible-tags-from-frozen-pre-deadline-inputs"
       : "provided-or-reconstructed-records",
     inputDiagnostics: options.inputDiagnostics || null,
     causalClaim: false,
     usableForPrediction: false,
     automaticApplication: false,
     note: strictFrozenInputs
-      ? "締切前に固定保存された入力だけから現在の参考タグ定義を再構築し、公式結果と照合した相関集計。因果関係の証明ではなく、予想ロジック・印・買い目には自動反映しない。"
+      ? "BOAT RACE公式から締切前に固定保存した入力だけで日和準拠の参考指標を再構築し、公式結果と照合した相関集計。日和サイトの直接取得は使わず、予想ロジック・印・買い目には自動反映しない。"
       : "入力レコードの参考タグを公式結果と照合した相関集計。因果関係の証明ではなく、予想ロジック・印・買い目には自動反映しない。",
     tags
   };
@@ -243,5 +307,6 @@ module.exports = {
   extractTags,
   flattenRecords,
   predictedTickets,
-  raceKey
+  raceKey,
+  sourceKind
 };

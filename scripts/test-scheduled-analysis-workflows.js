@@ -191,22 +191,12 @@ function assertGeneratedReportPersistence({
 }
 
 assertGeneratedReportPersistence({
-  workflowFile: "analyze-hiyori-official.yml",
-  buildCommand: "node scripts/analyze-hiyori-official-comparison.js",
-  reportPath: "data/analysis/hiyori-official-comparison.json"
-});
-
-assertGeneratedReportPersistence({
   workflowFile: "analyze-reference-tags.yml",
   buildCommand: "node scripts/analyze-reference-tag-effectiveness.js",
   reportPath: "data/analysis/reference-tag-effectiveness.json"
 });
 
 [
-  {
-    workflowFile: "analyze-hiyori-official.yml",
-    analyzerTest: "node scripts/test-hiyori-official-comparison.js"
-  },
   {
     workflowFile: "analyze-reference-tags.yml",
     analyzerTest: "node scripts/test-reference-tag-effectiveness.js"
@@ -292,7 +282,6 @@ assert.deepEqual(
 
 const phase6Workflow = readWorkflow("check-phase6-integration.yml");
 [
-  '.github/workflows/analyze-hiyori-official.yml',
   '.github/workflows/analyze-reference-tags.yml',
   'scripts/analysis-input-contract.js',
   'scripts/test-analysis-input-contract.js'
@@ -302,6 +291,11 @@ const phase6Workflow = readWorkflow("check-phase6-integration.yml");
     `${workflowPath}の変更でもworkflow契約テストを起動する`
   );
 });
+assert.equal(
+  phase6Workflow.includes("analyze-hiyori-official"),
+  false,
+  "削除した日和直接比較WorkflowをCIから参照しない"
+);
 assert.ok(
   phase6Workflow.includes('- "js/theory-performance-report.js"'),
   "理論別成績のversion更新でもworkflow契約テストを起動する"

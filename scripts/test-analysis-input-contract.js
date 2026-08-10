@@ -7,7 +7,6 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const inputContract = require("./analysis-input-contract");
-const hiyoriAnalyzer = require("./analyze-hiyori-official-comparison");
 const referenceAnalyzer = require("./analyze-reference-tag-effectiveness");
 
 const root = path.resolve(__dirname, "..");
@@ -30,7 +29,6 @@ function storedPrediction({
   raceNo,
   marker,
   bestBoat,
-  source,
   selectedAt = "2026-08-09T00:30:00Z",
   deadlineAt = "2026-08-09T10:00:00+09:00",
   ticket
@@ -43,12 +41,12 @@ function storedPrediction({
     selectedAt,
     deadlineAt,
     marker,
-    source: marker === "primary-official" ? "hiyori" : source,
     prediction: {
       preRaceConditions: {
         sourceTiming: "pre_deadline",
         officialResultUsed: false,
-        source,
+        source: "boatrace-official",
+        analysisProfile: "hiyori-compatible",
         boats: boatsWithBest(bestBoat),
         weather: { windSpeed: 5, waveHeight: 5 },
         newEngineMode: false
@@ -62,10 +60,79 @@ const validTimingRecord = storedPrediction({
   raceNo: 1,
   marker: "timing",
   bestBoat: 1,
-  source: "BOAT RACE公式",
   ticket: "1-2-3"
 });
 assert.strictEqual(inputContract.preDeadlineReason(validTimingRecord), "");
+const labeledTimingRecord = {
+  ...validTimingRecord,
+  prediction: {
+    ...validTimingRecord.prediction,
+    preRaceConditions: {
+      ...validTimingRecord.prediction.preRaceConditions,
+      schemaVersion: 4,
+      sourceFetchedAt: "2026-08-09T00:30:00Z"
+    }
+  }
+};
+assert.strictEqual(inputContract.preDeadlineReason(labeledTimingRecord), "");
+assert.strictEqual(
+  inputContract.preDeadlineReason({
+    ...labeledTimingRecord,
+    prediction: {
+      ...labeledTimingRecord.prediction,
+      preRaceConditions: {
+        ...labeledTimingRecord.prediction.preRaceConditions,
+        sourceFetchedAt: ""
+      }
+    }
+  }),
+  "source-fetch-timestamp-missing"
+);
+assert.strictEqual(
+  inputContract.preDeadlineReason({
+    ...labeledTimingRecord,
+    prediction: {
+      ...labeledTimingRecord.prediction,
+      preRaceConditions: {
+        ...labeledTimingRecord.prediction.preRaceConditions,
+        source: "hiyori-compatible",
+        sourceFetchedAt: "2026-08-09T00:30:00Z"
+      }
+    }
+  }),
+  "unsupported-source"
+);
+for (const source of [
+  "fake-boatrace-official-proxy",
+  "untrusted BOAT RACE公式 mirror"
+]) {
+  assert.strictEqual(
+    inputContract.preDeadlineReason({
+      ...labeledTimingRecord,
+      prediction: {
+        ...labeledTimingRecord.prediction,
+        preRaceConditions: {
+          ...labeledTimingRecord.prediction.preRaceConditions,
+          source
+        }
+      }
+    }),
+    "unsupported-source"
+  );
+}
+assert.strictEqual(
+  inputContract.preDeadlineReason({
+    ...labeledTimingRecord,
+    prediction: {
+      ...labeledTimingRecord.prediction,
+      preRaceConditions: {
+        ...labeledTimingRecord.prediction.preRaceConditions,
+        sourceFetchedAt: "2026-08-09T01:00:00Z"
+      }
+    }
+  }),
+  "source-fetched-at-or-after-deadline"
+);
 assert.strictEqual(
   inputContract.raceKey({
     ...validTimingRecord,
@@ -127,13 +194,11 @@ try {
   const predictionsFile = path.join(temporaryRoot, "predictions.json");
   const resultsFile = path.join(temporaryRoot, "results.json");
   const referenceOutput = path.join(temporaryRoot, "reference.json");
-  const hiyoriOutput = path.join(temporaryRoot, "hiyori.json");
 
   const verification = storedPrediction({
     raceNo: 1,
     marker: "verification",
     bestBoat: 1,
-    source: "hiyori",
     ticket: "1-2-3"
   });
   const primary = {
@@ -141,7 +206,6 @@ try {
       raceNo: 1,
       marker: "primary",
       bestBoat: 4,
-      source: "hiyori",
       ticket: "4-5-6"
     }),
     result: { trifecta: "1-2-3" },
@@ -153,7 +217,6 @@ try {
     raceNo: 2,
     marker: "primary-official",
     bestBoat: 2,
-    source: "BOAT RACE公式",
     ticket: "2-1-3"
   });
   const predictionsFixture = {
@@ -274,21 +337,6 @@ try {
     false
   );
 
-  childProcess.execFileSync(process.execPath, [
-    path.join(root, "scripts", "analyze-hiyori-official-comparison.js"),
-    resultsFile,
-    predictionsFile,
-    "--output",
-    hiyoriOutput
-  ], { cwd: root, stdio: "pipe" });
-  const hiyoriFixtureReport = JSON.parse(fs.readFileSync(hiyoriOutput, "utf8"));
-  assert.strictEqual(hiyoriFixtureReport.explicitHiyoriRaceCount, 1);
-  assert.strictEqual(hiyoriFixtureReport.matchedRaceCount, 1);
-  assert.strictEqual(
-    hiyoriFixtureReport.metrics.find(metric => metric.key === "exhibition").winnerHits,
-    1,
-    "strict Hiyori analysis must use the primary frozen entry snapshot"
-  );
 } finally {
   fs.rmSync(temporaryRoot, { recursive: true, force: true });
 }
@@ -317,27 +365,46 @@ assert.ok(referenceReport.tagCount > 0);
 assert.strictEqual(referenceReport.sourceStatus, "ready");
 assert.strictEqual(referenceReport.causalClaim, false);
 
-const hiyoriReport = hiyoriAnalyzer.analyze(cohort.records, {
-  inputDiagnostics: cohort.diagnostics,
-  strictFrozenInputs: true
-});
-assert.strictEqual(
-  hiyoriReport.explicitHiyoriRaceCount,
-  cohort.records.filter(record =>
-    hiyoriAnalyzer.hasHiyori(record, { strictFrozenInputs: true })
-  ).length
-);
-assert.strictEqual(
-  hiyoriReport.sourceStatus,
-  hiyoriReport.explicitHiyoriRaceCount ? "ready" : "source_data_unavailable"
-);
-if (!hiyoriReport.explicitHiyoriRaceCount) {
-  assert.strictEqual(hiyoriReport.matchedRaceCount, 0);
-  assert.match(hiyoriReport.note, /代用しない/);
+const independentlyTaggedRaceCount = cohort.records.filter(record =>
+  referenceAnalyzer.extractTags(record, { strictFrozenInputs: true }).length
+).length;
+const independentTagSamples = new Map();
+for (const record of cohort.records) {
+  for (const tag of referenceAnalyzer.extractTags(record, { strictFrozenInputs: true })) {
+    independentTagSamples.set(tag.key, (independentTagSamples.get(tag.key) || 0) + 1);
+  }
 }
+assert.strictEqual(
+  referenceReport.matchedRaceCount,
+  independentlyTaggedRaceCount,
+  "公式由来の凍結入力から再構築できるレースを漏れなく集計する"
+);
+assert.strictEqual(
+  referenceReport.untaggedRaceCount,
+  cohort.records.length - independentlyTaggedRaceCount
+);
+assert.strictEqual(referenceReport.settledRaceCount, cohort.records.length);
+assert.strictEqual(referenceReport.directHiyoriDataUsed, false);
+for (const tag of referenceReport.tags) {
+  assert.strictEqual(
+    tag.samples,
+    independentTagSamples.get(tag.key),
+    `${tag.key}の集計件数を凍結入力から独立再計数できる`
+  );
+}
+const sourceBreakdown = referenceReport.sourceBreakdown;
+assert.strictEqual(
+  sourceBreakdown.officialLabeledRaceCount +
+    sourceBreakdown.officialCompatibleRaceCount +
+    sourceBreakdown.legacyUnlabeledRaceCount +
+    sourceBreakdown.rejectedDirectHiyoriRaceCount +
+    sourceBreakdown.rejectedOtherSourceRaceCount,
+  cohort.records.length
+);
+assert.strictEqual(sourceBreakdown.rejectedDirectHiyoriRaceCount, 0);
+assert.strictEqual(sourceBreakdown.rejectedOtherSourceRaceCount, 0);
 
 console.log(
   `analysis input contract: ${cohort.records.length} settled / ` +
-  `${referenceReport.matchedRaceCount} tagged / ` +
-  `${hiyoriReport.explicitHiyoriRaceCount} explicit Hiyori`
+  `${referenceReport.matchedRaceCount} official-compatible tagged`
 );
