@@ -202,6 +202,26 @@ assertGeneratedReportPersistence({
   reportPath: "data/analysis/reference-tag-effectiveness.json"
 });
 
+[
+  {
+    workflowFile: "analyze-hiyori-official.yml",
+    analyzerTest: "node scripts/test-hiyori-official-comparison.js"
+  },
+  {
+    workflowFile: "analyze-reference-tags.yml",
+    analyzerTest: "node scripts/test-reference-tag-effectiveness.js"
+  }
+].forEach(({ workflowFile, analyzerTest }) => {
+  const testLines = stepRunLines(readWorkflow(workflowFile), "Test analyzer");
+  [analyzerTest, "node scripts/test-analysis-input-contract.js"].forEach(command => {
+    assert.equal(
+      testLines.filter(line => line === command).length,
+      1,
+      `${workflowFile}で${command}を1回だけ実行する`
+    );
+  });
+});
+
 const predictionGapWorkflow = readWorkflow("prediction-gap-report.yml");
 const buildReportLines = stepRunLines(predictionGapWorkflow, "Build report");
 const improvementReviewCommand = commandArguments(
@@ -273,7 +293,9 @@ assert.deepEqual(
 const phase6Workflow = readWorkflow("check-phase6-integration.yml");
 [
   '.github/workflows/analyze-hiyori-official.yml',
-  '.github/workflows/analyze-reference-tags.yml'
+  '.github/workflows/analyze-reference-tags.yml',
+  'scripts/analysis-input-contract.js',
+  'scripts/test-analysis-input-contract.js'
 ].forEach(workflowPath => {
   assert.ok(
     phase6Workflow.includes(`- "${workflowPath}"`),

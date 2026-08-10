@@ -21,7 +21,9 @@ jobs:
           node-version: "20"
 
       - name: Test analyzer
-        run: node scripts/test-hiyori-official-comparison.js
+        run: |
+          node scripts/test-hiyori-official-comparison.js
+          node scripts/test-analysis-input-contract.js
 
       - name: Build comparison report
         run: node scripts/analyze-hiyori-official-comparison.js --output data/analysis/hiyori-official-comparison.json
