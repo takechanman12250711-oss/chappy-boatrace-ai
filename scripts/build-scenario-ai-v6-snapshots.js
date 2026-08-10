@@ -6,6 +6,13 @@ const path = require("node:path");
 const scenarioAiV6 = require("../js/scenario-ai-v6-shadow");
 const scenarioAiV6ShadowAb = require("../js/scenario-ai-v6-shadow-ab");
 
+const STANDARD_SCENARIO_TYPES = new Set([
+  "escape",
+  "sashi",
+  "threeAttack",
+  "fourAttack"
+]);
+
 function getJstDate() {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" })
     .format(new Date())
@@ -27,6 +34,73 @@ function loadApprovalReport(filePath = path.join(process.cwd(), "data", "stats",
   }
 }
 
+function storedScenarioRows(record = {}) {
+  return (Array.isArray(record?.scenarioLikelihoodV5?.scenarios)
+    ? record.scenarioLikelihoodV5.scenarios
+    : [])
+    .map(row => ({
+      type: String(row?.key || row?.scenarioType || ""),
+      label: String(row?.label || ""),
+      score: Number(row?.score || 0)
+    }))
+    .filter(row =>
+      STANDARD_SCENARIO_TYPES.has(row.type) &&
+      Number.isFinite(row.score) &&
+      row.score > 0
+    );
+}
+
+function storedMarks(record = {}) {
+  const sheet = record?.prediction?.mainSheet || {};
+  return {
+    honmei: sheet.honmei || null,
+    main: sheet.honmei || null,
+    taikou: sheet.taikou || null,
+    rival: sheet.taikou || null,
+    third: sheet.ana || sheet.osae || null,
+    ana: sheet.ana || null,
+    osae: sheet.osae || null
+  };
+}
+
+function snapshotInputFor(record = {}) {
+  const verificationEvidence = record?.prediction?.verificationEvidence || null;
+  const evidenceScenarios = Array.isArray(verificationEvidence?.scenarios)
+    ? verificationEvidence.scenarios.filter(Boolean)
+    : [];
+  const fallbackScenarios = storedScenarioRows(record);
+  const raceScenarios = evidenceScenarios.length >= 2
+    ? evidenceScenarios
+    : fallbackScenarios;
+  const inputSourceKind = evidenceScenarios.length >= 2
+    ? "live-verification-evidence"
+    : fallbackScenarios.length >= 2
+      ? "stored-v5-pre-race"
+      : "single-scenario-evidence";
+
+  return {
+    verificationEvidence,
+    inputSourceKind,
+    marks: storedMarks(record),
+    aiCore: {
+      marks: storedMarks(record),
+      raceScenarios: {
+        scenarios: raceScenarios
+      }
+    }
+  };
+}
+
+function snapshotLocked(record = {}) {
+  const verified = record?.scenarioAiV6Verification?.status === "verified";
+  const currentSnapshot =
+    record?.scenarioAiV6Shadow?.logicFingerprint ===
+      scenarioAiV6.LOGIC_FINGERPRINT &&
+    record?.scenarioAiV6ShadowAb?.logicFingerprint ===
+      scenarioAiV6ShadowAb.LOGIC_FINGERPRINT;
+  return verified || currentSnapshot;
+}
+
 function attachSnapshots(
   data = {},
   builder = scenarioAiV6.build,
@@ -38,12 +112,33 @@ function attachSnapshots(
     : [];
   let readyCount = 0;
   let changedCount = 0;
+  let decisionChangedCount = 0;
+  let distributionChangedCount = 0;
+  let lockedCount = 0;
   const verificationPredictions = rows.map(record => {
-    const verificationEvidence = record?.prediction?.verificationEvidence || null;
-    const snapshot = builder({ verificationEvidence });
-    const shadowAb = shadowAbBuilder(snapshot, approvalReport, { jcd: record?.jcd });
+    if (snapshotLocked(record)) {
+      lockedCount += 1;
+      if (record?.scenarioAiV6Shadow?.status === "shadow-ready") readyCount += 1;
+      if (record?.scenarioAiV6ShadowAb?.decisionChanged === true) {
+        decisionChangedCount += 1;
+      }
+      if (record?.scenarioAiV6ShadowAb?.distributionChanged === true) {
+        changedCount += 1;
+        distributionChangedCount += 1;
+      }
+      return record;
+    }
+    const snapshot = builder(snapshotInputFor(record));
+    const shadowAb = shadowAbBuilder(snapshot, approvalReport, {
+      jcd: record?.jcd,
+      selectedAt: record?.selectedAt
+    });
     if (snapshot?.status === "shadow-ready") readyCount += 1;
-    if (shadowAb?.changed === true) changedCount += 1;
+    if (shadowAb?.decisionChanged === true) decisionChangedCount += 1;
+    if (shadowAb?.distributionChanged === true) {
+      changedCount += 1;
+      distributionChangedCount += 1;
+    }
     return {
       ...record,
       scenarioAiV6Shadow: snapshot,
@@ -54,16 +149,25 @@ function attachSnapshots(
   return {
     ...data,
     scenarioAiV6: {
-      version: "6.0.0-shadow",
+      version: scenarioAiV6.VERSION,
+      logicFingerprint: scenarioAiV6.LOGIC_FINGERPRINT,
       recordCount: verificationPredictions.length,
       readyCount,
+      lockedCount,
+      mutableRecordCount: verificationPredictions.length - lockedCount,
       usableForPrediction: false,
       automaticApplication: false
     },
     scenarioAiV6ShadowAb: {
-      version: "6.0.0-shadow-ab",
+      version: scenarioAiV6ShadowAb.VERSION,
+      logicFingerprint: scenarioAiV6ShadowAb.LOGIC_FINGERPRINT,
+      sourceLogicFingerprint: scenarioAiV6.LOGIC_FINGERPRINT,
+      candidateSetFingerprint:
+        scenarioAiV6ShadowAb.candidateSetFingerprint(approvalReport),
       recordCount: verificationPredictions.length,
       changedCount,
+      decisionChangedCount,
+      distributionChangedCount,
       applicationMode: "shadow-only",
       usableForPrediction: false,
       automaticApplication: false
@@ -96,4 +200,12 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { attachSnapshots, normalizeDate, loadApprovalReport };
+module.exports = {
+  attachSnapshots,
+  normalizeDate,
+  loadApprovalReport,
+  storedScenarioRows,
+  storedMarks,
+  snapshotInputFor,
+  snapshotLocked
+};

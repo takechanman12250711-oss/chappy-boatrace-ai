@@ -460,11 +460,10 @@ function compactPrediction(prediction, practicalTickets, raceData) {
         practicalSelection
       ),
     verificationEvidence:
-      practicalSelection
-        ?.verificationEvidence ||
-      prediction
-        ?.verificationEvidence ||
-      null,
+      compactVerificationEvidence({
+        ...prediction,
+        practicalSelection
+      }),
     internalEvaluation: {
       mode:
         String(
@@ -524,24 +523,18 @@ function compactScenario(value) {
 }
 
 function compactVerificationEvidence(prediction) {
-  if (
+  const providedEvidence =
     prediction?.practicalSelection
       ?.verificationEvidence &&
     typeof prediction
       .practicalSelection
       .verificationEvidence ===
       "object"
-  ) {
-    return prediction
-      .practicalSelection
-      .verificationEvidence;
-  }
-  if (
-    prediction?.verificationEvidence &&
-    typeof prediction.verificationEvidence === "object"
-  ) {
-    return prediction.verificationEvidence;
-  }
+      ? prediction.practicalSelection.verificationEvidence
+      : prediction?.verificationEvidence &&
+          typeof prediction.verificationEvidence === "object"
+        ? prediction.verificationEvidence
+        : null;
 
   const aiCore = prediction?.aiCore || {};
   const raceScenarios = aiCore.raceScenarios || {};
@@ -549,9 +542,9 @@ function compactVerificationEvidence(prediction) {
   const formations = aiCore.formations || {};
   const evidence = raceScenarios.evidence || {};
 
-  if (!raceScenarios.mainScenario) return null;
+  if (!raceScenarios.mainScenario) return providedEvidence;
 
-  return {
+  const aiCoreEvidence = {
     sourceCommit: String(process.env.GITHUB_SHA || ""),
     aiCoreVersion: String(
       aiCore.version ||
@@ -589,6 +582,54 @@ function compactVerificationEvidence(prediction) {
     frameMovement: Array.isArray(evidence.frameMovement)
       ? evidence.frameMovement
       : []
+  };
+
+  if (!providedEvidence) return aiCoreEvidence;
+
+  const providedScenarios = Array.isArray(providedEvidence.scenarios)
+    ? providedEvidence.scenarios.filter(Boolean)
+    : [];
+  const aiCoreScenarios = aiCoreEvidence.scenarios;
+
+  return {
+    ...aiCoreEvidence,
+    ...providedEvidence,
+    sourceCommit:
+      String(providedEvidence.sourceCommit || "") ||
+      aiCoreEvidence.sourceCommit,
+    aiCoreVersion:
+      String(providedEvidence.aiCoreVersion || "") ||
+      aiCoreEvidence.aiCoreVersion,
+    mainScenario:
+      providedEvidence.mainScenario ||
+      aiCoreEvidence.mainScenario,
+    subScenario:
+      providedEvidence.subScenario ||
+      aiCoreEvidence.subScenario,
+    scenarios:
+      providedScenarios.length >= 2
+        ? providedScenarios
+        : aiCoreScenarios,
+    roles: {
+      ...(aiCoreEvidence.roles || {}),
+      ...(providedEvidence.roles || {})
+    },
+    marks: {
+      ...(aiCoreEvidence.marks || {}),
+      ...(providedEvidence.marks || {})
+    },
+    formation: {
+      ...(aiCoreEvidence.formation || {}),
+      ...(providedEvidence.formation || {})
+    },
+    relations:
+      providedEvidence.relations ||
+      aiCoreEvidence.relations,
+    frameMovement:
+      Array.isArray(providedEvidence.frameMovement) &&
+      providedEvidence.frameMovement.length
+        ? providedEvidence.frameMovement
+        : aiCoreEvidence.frameMovement
   };
 }
 
@@ -2114,6 +2155,7 @@ module.exports = {
   buildActiveV2Comparison,
   applySelectedRaceKey,
   upsertByRaceKey,
+  compactVerificationEvidence,
   compactStoredVerification,
   buildCollectionHealth,
   buildRecoveryPlan,
