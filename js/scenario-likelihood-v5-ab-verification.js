@@ -6,19 +6,45 @@ function round1(value) {
   return Math.round(Number(value || 0) * 10) / 10;
 }
 
-function verifyVariant(variant, actual) {
+function buildVariantState(variant, actual) {
   const scenarios = Array.isArray(variant?.scenarios) ? variant.scenarios : [];
-  const leaderKey = String(variant?.leader?.key || "");
-  const runnerUpKey = String(variant?.runnerUp?.key || "");
-  const actualRow = scenarios.find(row => String(row?.key || "") === actual.key);
+  const canonicalKey = baseVerification.canonicalScenarioKey;
+  const actualKey = canonicalKey(actual?.key);
+  const leaderKey = canonicalKey(variant?.leader?.key);
+  const runnerUpKey = canonicalKey(variant?.runnerUp?.key);
+  const completeScenarioSet = baseVerification.isCompleteScenarioSet(
+    scenarios
+  );
+  const actualRow = scenarios.find(
+    row => canonicalKey(row?.key) === actualKey
+  );
+  const comparable = Boolean(
+    actualKey &&
+    leaderKey &&
+    runnerUpKey &&
+    baseVerification.SCENARIO_KEYS.includes(leaderKey) &&
+    baseVerification.SCENARIO_KEYS.includes(runnerUpKey) &&
+    completeScenarioSet &&
+    actualRow
+  );
   return {
-    leaderScenario: String(variant?.leader?.label || leaderKey),
-    runnerUpScenario: String(variant?.runnerUp?.label || runnerUpKey),
-    leaderHit: Boolean(actual.key && leaderKey === actual.key),
-    topTwoHit: Boolean(actual.key && (leaderKey === actual.key || runnerUpKey === actual.key)),
-    actualLikelihood: Number(actualRow?.relativeLikelihood || 0),
-    ambiguity: String(variant?.ambiguity || "unknown")
+    comparable,
+    result: {
+      leaderScenario: String(variant?.leader?.label || leaderKey),
+      runnerUpScenario: String(variant?.runnerUp?.label || runnerUpKey),
+      leaderHit: Boolean(comparable && leaderKey === actualKey),
+      topTwoHit: Boolean(
+        comparable &&
+        (leaderKey === actualKey || runnerUpKey === actualKey)
+      ),
+      actualLikelihood: Number(actualRow?.relativeLikelihood || 0),
+      ambiguity: String(variant?.ambiguity || "unknown")
+    }
   };
+}
+
+function verifyVariant(variant, actual) {
+  return buildVariantState(variant, actual).result;
 }
 
 function verify(snapshot, result) {
@@ -26,8 +52,24 @@ function verify(snapshot, result) {
   if (!actual) {
     return { comparable: false, reason: "actual-scenario-unavailable", status: "not-comparable" };
   }
-  const a = verifyVariant(snapshot?.a, actual);
-  const b = verifyVariant(snapshot?.b, actual);
+  const aState = buildVariantState(snapshot?.a, actual);
+  const bState = buildVariantState(snapshot?.b, actual);
+  const a = aState.result;
+  const b = bState.result;
+  if (!aState.comparable || !bState.comparable) {
+    return {
+      comparable: false,
+      reason: "ab-snapshot-incomplete",
+      status: "not-comparable",
+      actualScenario: actual.label,
+      actualScenarioKey: actual.key,
+      changed: snapshot?.changed === true,
+      a,
+      b,
+      usableForPrediction: false,
+      automaticApplication: false
+    };
+  }
   let winner = "tie";
   if (a.leaderHit !== b.leaderHit) winner = b.leaderHit ? "b" : "a";
   else if (a.topTwoHit !== b.topTwoHit) winner = b.topTwoHit ? "b" : "a";

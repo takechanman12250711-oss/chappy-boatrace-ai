@@ -23,7 +23,11 @@ function loadJson(filePath, fallback) {
 }
 
 function rowFromRecord(record) {
-  const row = record?.result?.scenarioLikelihoodV5AbVerification;
+  const snapshot = record?.scenarioLikelihoodV5Ab;
+  const officialResult = record?.result;
+  const row = snapshot && officialResult
+    ? verification.verify(snapshot, officialResult)
+    : null;
   if (!row || row.comparable !== true) return null;
   return {
     ...row,
@@ -37,7 +41,7 @@ function rowFromRecord(record) {
 
 function collectRows() {
   if (!fs.existsSync(predictionDir)) return [];
-  const rows = [];
+  const rowsByRaceKey = new Map();
   fs.readdirSync(predictionDir)
     .filter(name => /^\d{8}\.json$/.test(name))
     .sort()
@@ -51,10 +55,12 @@ function collectRows() {
       ];
       records.forEach(record => {
         const row = rowFromRecord(record);
-        if (row) rows.push(row);
+        if (row?.raceKey) {
+          rowsByRaceKey.set(row.raceKey, row);
+        }
       });
     });
-  return rows;
+  return [...rowsByRaceKey.values()];
 }
 
 function main() {
