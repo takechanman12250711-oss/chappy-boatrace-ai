@@ -43,9 +43,11 @@ function storedPrediction({
     marker,
     prediction: {
       preRaceConditions: {
+        schemaVersion: 4,
         sourceTiming: "pre_deadline",
         officialResultUsed: false,
         source: "boatrace-official",
+        sourceFetchedAt: "2026-08-09T00:30:00Z",
         analysisProfile: "hiyori-compatible",
         boats: boatsWithBest(bestBoat),
         weather: { windSpeed: 5, waveHeight: 5 },
@@ -75,6 +77,20 @@ const labeledTimingRecord = {
   }
 };
 assert.strictEqual(inputContract.preDeadlineReason(labeledTimingRecord), "");
+assert.strictEqual(
+  inputContract.preDeadlineReason({
+    ...labeledTimingRecord,
+    prediction: {
+      ...labeledTimingRecord.prediction,
+      preRaceConditions: {
+        ...labeledTimingRecord.prediction.preRaceConditions,
+        schemaVersion: "bogus",
+        sourceFetchedAt: ""
+      }
+    }
+  }),
+  "schema-version-invalid"
+);
 assert.strictEqual(
   inputContract.preDeadlineReason({
     ...labeledTimingRecord,
@@ -132,6 +148,19 @@ assert.strictEqual(
     }
   }),
   "source-fetched-at-or-after-deadline"
+);
+assert.strictEqual(
+  inputContract.preDeadlineReason({
+    ...labeledTimingRecord,
+    prediction: {
+      ...labeledTimingRecord.prediction,
+      preRaceConditions: {
+        ...labeledTimingRecord.prediction.preRaceConditions,
+        sourceFetchedAt: "2026-08-09T00:45:00Z"
+      }
+    }
+  }),
+  "source-fetched-after-capture"
 );
 assert.strictEqual(
   inputContract.raceKey({
@@ -193,6 +222,7 @@ const temporaryRoot = fs.mkdtempSync(
 try {
   const predictionsFile = path.join(temporaryRoot, "predictions.json");
   const resultsFile = path.join(temporaryRoot, "results.json");
+  const combinedFile = path.join(temporaryRoot, "combined.json");
   const referenceOutput = path.join(temporaryRoot, "reference.json");
 
   const verification = storedPrediction({
@@ -227,6 +257,7 @@ try {
     races: [
       {
         resultAvailable: true,
+        source: "boatrace-official",
         date: "20260809",
         jcd: "23",
         raceNo: 1,
@@ -234,6 +265,7 @@ try {
       },
       {
         resultAvailable: true,
+        source: "boatrace-official",
         date: "20260809",
         jcd: "23",
         raceNo: 2,
@@ -241,6 +273,7 @@ try {
       },
       {
         resultAvailable: true,
+        source: "boatrace-official",
         date: "20260809",
         jcd: "23",
         raceNo: 3,
@@ -250,6 +283,11 @@ try {
   };
   fs.writeFileSync(predictionsFile, JSON.stringify(predictionsFixture), "utf8");
   fs.writeFileSync(resultsFile, JSON.stringify(resultsFixture), "utf8");
+  fs.writeFileSync(
+    combinedFile,
+    JSON.stringify({ ...predictionsFixture, ...resultsFixture }),
+    "utf8"
+  );
 
   const predictionRows = inputContract.flattenInputRecords(
     predictionsFixture,
@@ -259,7 +297,7 @@ try {
   const explicitCohort = inputContract.buildCohortFromRecords([
     ...resultRows,
     ...predictionRows.slice().reverse()
-  ]);
+  ], { requireOfficialResultSource: true });
   assert.strictEqual(explicitCohort.diagnostics.canonicalPredictionCount, 2);
   assert.strictEqual(explicitCohort.diagnostics.officialResultCount, 2);
   assert.strictEqual(explicitCohort.records.length, 2);
@@ -314,6 +352,27 @@ try {
     0,
     "unavailable result rows must not settle an explicit-input cohort"
   );
+  const unsupportedResult = inputContract.flattenInputRecords({
+    races: [{
+      resultAvailable: true,
+      source: "third-party-results",
+      date: "20260809",
+      jcd: "23",
+      raceNo: 1,
+      trifecta: { combination: "4-5-6" }
+    }]
+  }, "unsupported-result.json");
+  const rejectedResultCohort = inputContract.buildCohortFromRecords([
+    ...inputContract.flattenInputRecords({ predictions: [primary] }, "primary.json"),
+    ...unsupportedResult
+  ], { requireOfficialResultSource: true });
+  assert.strictEqual(rejectedResultCohort.records.length, 0);
+  assert.strictEqual(rejectedResultCohort.diagnostics.rejectedResultCount, 1);
+  assert.strictEqual(
+    rejectedResultCohort.diagnostics.rejectedResultReasons["unsupported-result-source"],
+    1,
+    "explicit results without an exact official source label must be rejected"
+  );
 
   childProcess.execFileSync(process.execPath, [
     path.join(root, "scripts", "analyze-reference-tag-effectiveness.js"),
@@ -337,6 +396,24 @@ try {
     false
   );
 
+  childProcess.execFileSync(process.execPath, [
+    path.join(root, "scripts", "analyze-reference-tag-effectiveness.js"),
+    combinedFile
+  ], { cwd: temporaryRoot, stdio: "pipe" });
+  const positionalOutput = path.join(
+    temporaryRoot,
+    "data",
+    "analysis",
+    "reference-tag-effectiveness.json"
+  );
+  const positionalReport = JSON.parse(fs.readFileSync(positionalOutput, "utf8"));
+  assert.strictEqual(positionalReport.settledRaceCount, 2);
+  assert.strictEqual(
+    positionalReport.inputDiagnostics.sourceFiles,
+    "explicit input records",
+    "a positional input without --output must not fall back to the canonical cohort"
+  );
+
 } finally {
   fs.rmSync(temporaryRoot, { recursive: true, force: true });
 }
@@ -354,10 +431,17 @@ assert.strictEqual(
 );
 assert.ok(cohort.records.every(record => !inputContract.preDeadlineReason(record)));
 assert.ok(cohort.records.every(record => inputContract.actualTicket(record)));
+assert.ok(
+  cohort.records.every(record =>
+    inputContract.isOfficialResultSource(record.__officialResult)
+  ),
+  "the canonical cohort must join only result rows labeled as official"
+);
 
 const referenceReport = referenceAnalyzer.analyze(cohort.records, {
   inputDiagnostics: cohort.diagnostics,
-  strictFrozenInputs: true
+  strictFrozenInputs: true,
+  allowLegacyUnlabeled: true
 });
 assert.ok(referenceReport.settledRaceCount > 0);
 assert.ok(referenceReport.matchedRaceCount > 0);
@@ -403,6 +487,18 @@ assert.strictEqual(
 );
 assert.strictEqual(sourceBreakdown.rejectedDirectHiyoriRaceCount, 0);
 assert.strictEqual(sourceBreakdown.rejectedOtherSourceRaceCount, 0);
+
+const checkedInReport = JSON.parse(
+  fs.readFileSync(
+    path.join(root, "data", "analysis", "reference-tag-effectiveness.json"),
+    "utf8"
+  )
+);
+assert.deepStrictEqual(
+  { ...checkedInReport, generatedAt: "" },
+  { ...referenceReport, generatedAt: "" },
+  "保存済み公式参考分析JSONを現在の実データ・分析ロジックと一致させる"
+);
 
 console.log(
   `analysis input contract: ${cohort.records.length} settled / ` +
