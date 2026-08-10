@@ -148,6 +148,8 @@ const provenanceConditions =
   captureStoredConditions(
     {
       rawRaceData: {
+        source: "boatrace-official",
+        fetchedAt: "2026-08-10T00:30:00.000Z",
         entries: [{
           boat: 1,
           racerName: "公式値",
@@ -160,6 +162,8 @@ const provenanceConditions =
         }
       },
       raceData: {
+        source: "boatrace-official",
+        fetchedAt: "2026-08-10T00:30:00.000Z",
         entries: [{
           boat: 1,
           racerName: "補正値",
@@ -196,6 +200,14 @@ assert.equal(
   provenanceConditions.legacy.weather.windSpeed,
   9
 );
+for (const snapshot of [
+  provenanceConditions.shadow,
+  provenanceConditions.legacy
+]) {
+  assert.equal(snapshot.source, "boatrace-official");
+  assert.equal(snapshot.sourceFetchedAt, "2026-08-10T00:30:00.000Z");
+  assert.equal(snapshot.analysisProfile, "hiyori-compatible");
+}
 
 const rawWeatherMissing =
   captureStoredConditions(

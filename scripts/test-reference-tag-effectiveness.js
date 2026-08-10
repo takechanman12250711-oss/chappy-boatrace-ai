@@ -2,6 +2,9 @@
 "use strict";
 
 const assert = require("assert");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const inputContract = require("./analysis-input-contract");
 const {
   analyze,
@@ -9,7 +12,8 @@ const {
   extractTags,
   flattenRecords,
   predictedTickets,
-  sourceKind
+  sourceKind,
+  writeReport
 } = require("./analyze-reference-tag-effectiveness");
 
 const records = [
@@ -98,7 +102,8 @@ assert.ok(extractTags(productionRecord).length >= 5);
 
 const productionReport = analyze([productionRecord], {
   inputDiagnostics: { settledJoinCount: 1 },
-  strictFrozenInputs: true
+  strictFrozenInputs: true,
+  allowLegacyUnlabeled: true
 });
 assert.strictEqual(productionReport.settledRaceCount, 1);
 assert.strictEqual(productionReport.matchedRaceCount, 1);
@@ -106,6 +111,10 @@ assert.strictEqual(productionReport.sourceStatus, "ready");
 assert.strictEqual(productionReport.dataSource, "boatrace-official");
 assert.strictEqual(productionReport.compatibilityProfile, "hiyori-compatible");
 assert.strictEqual(productionReport.directHiyoriDataUsed, false);
+assert.strictEqual(
+  productionReport.legacyUnlabeledPolicy,
+  "canonical-official-collector-before-source-schema-v4"
+);
 assert.strictEqual(productionReport.sourceBreakdown.legacyUnlabeledRaceCount, 1);
 assert.match(productionReport.note, /日和サイトの直接取得は使わず/);
 assert.strictEqual(productionReport.inputDiagnostics.settledJoinCount, 1);
@@ -128,7 +137,7 @@ const taintedReport = analyze([{
     ...productionRecord.prediction,
     weather: { windSpeed: 99, waveHeight: 99 }
   }
-}], { strictFrozenInputs: true });
+}], { strictFrozenInputs: true, allowLegacyUnlabeled: true });
 assert.strictEqual(
   taintedReport.tags.some(tag => tag.key === "result-derived"),
   false,
@@ -145,9 +154,24 @@ assert.strictEqual(
   "strict analysis must ignore a source label attached after the frozen snapshot"
 );
 
+const rejectedLegacyReport = analyze([productionRecord], {
+  strictFrozenInputs: true,
+  allowLegacyUnlabeled: false
+});
+assert.strictEqual(rejectedLegacyReport.settledRaceCount, 0);
+assert.strictEqual(
+  rejectedLegacyReport.legacyUnlabeledPolicy,
+  "rejected-without-schema-v4-official-source"
+);
+assert.strictEqual(
+  rejectedLegacyReport.sourceBreakdown.rejectedLegacyUnlabeledRaceCount,
+  1
+);
+
 assert.strictEqual(sourceKind({
   prediction: {
     preRaceConditions: {
+      schemaVersion: 4,
       source: "boatrace-official",
       analysisProfile: "hiyori-compatible"
     }
@@ -193,6 +217,40 @@ assert.strictEqual(sourceKind({
     }
   }
 }, { strictFrozenInputs: true }), "official-compatible");
+const rejectedLegacyCompatibleReport = analyze([{
+  ...productionRecord,
+  prediction: {
+    ...productionRecord.prediction,
+    preRaceConditions: {
+      ...productionRecord.prediction.preRaceConditions,
+      schemaVersion: 3,
+      source: "hiyori-compatible"
+    }
+  }
+}], { strictFrozenInputs: true, allowLegacyUnlabeled: false });
+assert.strictEqual(rejectedLegacyCompatibleReport.settledRaceCount, 0);
+assert.strictEqual(
+  rejectedLegacyCompatibleReport.sourceBreakdown.rejectedOfficialCompatibleRaceCount,
+  1,
+  "legacy-compatible labels are trusted only for the canonical collector cohort"
+);
+const rejectedLegacyOfficialLabelReport = analyze([{
+  ...productionRecord,
+  prediction: {
+    ...productionRecord.prediction,
+    preRaceConditions: {
+      ...productionRecord.prediction.preRaceConditions,
+      schemaVersion: 3,
+      source: "boatrace-official"
+    }
+  }
+}], { strictFrozenInputs: true, allowLegacyUnlabeled: false });
+assert.strictEqual(rejectedLegacyOfficialLabelReport.settledRaceCount, 0);
+assert.strictEqual(
+  rejectedLegacyOfficialLabelReport.sourceBreakdown.rejectedOfficialCompatibleRaceCount,
+  1,
+  "explicit inputs require the schema-v4 frozen-source contract"
+);
 const directHiyoriReport = analyze([{
   ...productionRecord,
   prediction: {
@@ -209,6 +267,67 @@ assert.strictEqual(
   directHiyoriReport.sourceBreakdown.rejectedDirectHiyoriRaceCount,
   1
 );
+const otherSourceReport = analyze([{
+  ...productionRecord,
+  prediction: {
+    ...productionRecord.prediction,
+    preRaceConditions: {
+      ...productionRecord.prediction.preRaceConditions,
+      schemaVersion: 4,
+      source: "some-third-party",
+      analysisProfile: "hiyori-compatible"
+    }
+  }
+}], { strictFrozenInputs: true });
+assert.strictEqual(otherSourceReport.settledRaceCount, 0);
+assert.strictEqual(otherSourceReport.sourceBreakdown.rejectedOtherSourceRaceCount, 1);
+
+const officialLabeledReport = analyze([{
+  ...productionRecord,
+  prediction: {
+    ...productionRecord.prediction,
+    preRaceConditions: {
+      ...productionRecord.prediction.preRaceConditions,
+      schemaVersion: 4,
+      source: "boatrace-official",
+      sourceFetchedAt: "2026-08-09T00:30:00Z",
+      analysisProfile: "hiyori-compatible"
+    }
+  }
+}], { strictFrozenInputs: true });
+assert.strictEqual(officialLabeledReport.settledRaceCount, 1);
+assert.strictEqual(officialLabeledReport.sourceBreakdown.officialLabeledRaceCount, 1);
+
+const malformedSchemaReport = analyze([{
+  ...productionRecord,
+  prediction: {
+    ...productionRecord.prediction,
+    preRaceConditions: {
+      ...productionRecord.prediction.preRaceConditions,
+      schemaVersion: "bogus",
+      source: "boatrace-official",
+      analysisProfile: "hiyori-compatible"
+    }
+  }
+}], { strictFrozenInputs: true, allowLegacyUnlabeled: false });
+assert.strictEqual(malformedSchemaReport.settledRaceCount, 0);
+assert.strictEqual(malformedSchemaReport.sourceBreakdown.rejectedOtherSourceRaceCount, 1);
+
+const reportDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "reference-report-stability-"));
+try {
+  const output = path.join(reportDirectory, "report.json");
+  const firstWrite = writeReport(output, productionReport);
+  assert.strictEqual(firstWrite.changed, true);
+  const firstText = fs.readFileSync(output, "utf8");
+  const secondWrite = writeReport(output, {
+    ...productionReport,
+    generatedAt: "2099-01-01T00:00:00.000Z"
+  });
+  assert.strictEqual(secondWrite.changed, false);
+  assert.strictEqual(fs.readFileSync(output, "utf8"), firstText);
+} finally {
+  fs.rmSync(reportDirectory, { recursive: true, force: true });
+}
 
 const lateCohort = inputContract.buildCohortFromRecords([{
   ...productionRecord,

@@ -9,9 +9,11 @@ on:
       - "js/prediction-runtime-loader.js"
       - "js/race-flow-result-panel.js"
       - "js/stats-runtime-loader.js"
+      - "js/reference-tag-report.js"
       - "js/prediction-index-loader.js"
       - "data/predictions/index-manifest.json"
       - "data/predictions/index-shards/**"
+      - "data/analysis/reference-tag-effectiveness.json"
       - "js/stats.js"
       - "js/render.js"
       - "js/script.js"
@@ -33,6 +35,7 @@ on:
       - "scripts/analysis-input-contract.js"
       - "scripts/analyze-reference-tag-effectiveness.js"
       - "scripts/test-reference-tag-effectiveness.js"
+      - "scripts/test-reference-tag-report.js"
       - "scripts/test-analysis-input-contract.js"
       - "scripts/collect-predictions.js"
       - "scripts/collect-results.js"
@@ -67,6 +70,7 @@ jobs:
           node --check scripts/analysis-input-contract.js
           node --check scripts/analyze-reference-tag-effectiveness.js
           node --check scripts/test-reference-tag-effectiveness.js
+          node --check scripts/test-reference-tag-report.js
           node --check scripts/test-analysis-input-contract.js
           node --check scripts/test-reference-tags.js
           node --check scripts/test-prediction-conditions.js
@@ -82,6 +86,7 @@ jobs:
         run: |
           node scripts/test-scheduled-analysis-workflows.js
           node scripts/test-reference-tag-effectiveness.js
+          node scripts/test-reference-tag-report.js
           node scripts/test-analysis-input-contract.js
           node scripts/test-reference-tags.js
           node scripts/test-prediction-conditions.js

@@ -12,6 +12,7 @@ const INPUT_KINDS = {
   results: "official-result",
   races: "official-result"
 };
+const OFFICIAL_SOURCE = /^(?:boatrace[-_ ]?official|BOAT\s*RACE公式)$/i;
 
 function loadJson(filePath, fallback = null) {
   try {
@@ -40,6 +41,14 @@ function normalizeRaceNo(value) {
   return Number.isInteger(raceNo) && raceNo >= 1 && raceNo <= 12
     ? raceNo
     : 0;
+}
+
+function parseSchemaVersion(value) {
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return 0;
+  }
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 1 ? parsed : NaN;
 }
 
 function raceKey(record, fallbackDate = "") {
@@ -171,7 +180,8 @@ function preDeadlineReason(record) {
   }
   const source = String(conditions?.source || conditions?.dataSource || "").trim();
   const sourceFetchedAtRaw = String(conditions?.sourceFetchedAt || "").trim();
-  const schemaVersion = Number(conditions?.schemaVersion || 0);
+  const schemaVersion = parseSchemaVersion(conditions?.schemaVersion);
+  if (!Number.isFinite(schemaVersion)) return "schema-version-invalid";
   const requiresSourceFetchedAt = schemaVersion >= 4;
   if (schemaVersion >= 4 && !source) return "source-label-missing";
   if (
@@ -292,6 +302,13 @@ function actualTicket(result) {
   return order.length === 3 ? order.join("-") : "";
 }
 
+function isOfficialResultSource(result) {
+  const source = String(
+    result?.resultSource || result?.source || result?.dataSource || ""
+  ).trim();
+  return OFFICIAL_SOURCE.test(source);
+}
+
 function collectOfficialResults(resultsDir, targetKeys = null) {
   const byKey = new Map();
   if (!fs.existsSync(resultsDir)) return byKey;
@@ -307,6 +324,7 @@ function collectOfficialResults(resultsDir, targetKeys = null) {
     const fallbackDate = normalizeDate(data?.date || name.slice(0, 8));
     for (const result of Array.isArray(data?.races) ? data.races : []) {
       if (result?.resultAvailable !== true) continue;
+      if (!isOfficialResultSource(result)) continue;
       const key = raceKey(result, fallbackDate);
       if (key && (!wantedKeys || wantedKeys.has(key)) && actualTicket(result)) {
         byKey.set(key, result);
@@ -363,9 +381,11 @@ function buildDefaultCohort(options = {}) {
   };
 }
 
-function buildCohortFromRecords(inputRecords = []) {
+function buildCohortFromRecords(inputRecords = [], options = {}) {
   const predictions = new Map();
   const resultCandidates = new Map();
+  const rejectedResultReasons = {};
+  const requireOfficialResultSource = options.requireOfficialResultSource !== false;
 
   function predictionPriority(record) {
     if (record?.__analysisInputKind === "primary-prediction") return 3;
@@ -391,6 +411,11 @@ function buildCohortFromRecords(inputRecords = []) {
 
   function addResult(key, result, priority) {
     if (!actualTicket(result)) return;
+    if (requireOfficialResultSource && !isOfficialResultSource(result)) {
+      const reason = "unsupported-result-source";
+      rejectedResultReasons[reason] = (rejectedResultReasons[reason] || 0) + 1;
+      return;
+    }
     const current = resultCandidates.get(key);
     if (!current || priority > current.priority) {
       resultCandidates.set(key, { result, priority });
@@ -455,6 +480,9 @@ function buildCohortFromRecords(inputRecords = []) {
       excludedPredictionCount,
       excludedReasons,
       officialResultCount: officialResults.size,
+      rejectedResultCount: Object.values(rejectedResultReasons)
+        .reduce((sum, count) => sum + count, 0),
+      rejectedResultReasons,
       settledJoinCount: records.length,
       deduplication: "predictions-preferred-over-verificationPredictions",
       sourceFiles: "explicit input records"
@@ -492,9 +520,11 @@ module.exports = {
   collectOfficialResults,
   flattenInputRecords,
   finishOrder,
+  isOfficialResultSource,
   mergePredictionSources,
   normalizeTicket,
   orderFromFinishers,
+  parseSchemaVersion,
   preDeadlineReason,
   raceKey,
   referenceTagInput
