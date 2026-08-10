@@ -6,11 +6,16 @@ on:
   push:
     branches: [feature/theory-evaluation-engine-phase1]
 
+permissions:
+  contents: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -21,3 +26,14 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
+      - name: Apply and validate PR 300 core fix
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 300 && github.actor != 'github-actions[bot]'
+        run: |
+          node scripts/apply-core-ticket-balance.js
+          node --check js/ai-core.js
+          node scripts/test-scenario-formations.js
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add js/ai-core.js scripts/test-scenario-formations.js
+          git commit -m "Balance main ticket second-place coverage"
+          git push origin HEAD:agent/core-miss-audit

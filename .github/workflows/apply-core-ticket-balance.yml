@@ -1,0 +1,206 @@
+name: Apply core ticket balance patch
+
+on:
+  push:
+    branches:
+      - agent/core-miss-audit
+    paths:
+      - .github/workflows/apply-core-ticket-balance.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/core-miss-audit
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Patch diversified main allocation and regression test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          core = Path('js/ai-core.js')
+          text = core.read_text()
+          old = '''  /*
+    実戦本線3点は、2着1位へ3点を固定しない。
+    2着1位を2点、2着2位を1点に分散して、
+    展開上の残し艇が2着へ入る組み合わせを拾う。
+  */
+  function generateDiversifiedMainTickets(
+    target,
+    heads,
+    secondCandidates,
+    thirdCandidates,
+    limit
+  ) {
+    if (target.length >= limit) {
+      return;
+    }
+
+    for (const head of heads) {
+      const seconds = secondCandidates.filter(
+        (boat) => boatNo(boat) !== boatNo(head)
+      );
+
+      const preferredPairs = [];
+
+      for (const second of seconds.slice(0, 2)) {
+        const validThirds = thirdCandidates.filter(
+          (third) =>
+            boatNo(third) !== boatNo(head) &&
+            boatNo(third) !== boatNo(second)
+        );
+
+        const thirdLimit =
+          second === seconds[0] ? 2 : 1;
+
+        for (const third of validThirds.slice(0, thirdLimit)) {
+          preferredPairs.push([second, third]);
+        }
+      }
+
+      for (const [second, third] of preferredPairs) {
+        addTicket(target, head, second, third);
+
+        if (target.length >= limit) {
+          return;
+        }
+      }
+    }
+
+    generateTickets(
+      target,
+      heads,
+      secondCandidates,
+      thirdCandidates,
+      limit
+    );
+  }
+'''
+          new = '''  /*
+    本線候補は同じ2着艇へ偏らせない。
+    正式な2着上位候補へまず1点ずつ配り、残り枠で
+    各2着候補の別3着を追加する。候補総数は従来どおり6点。
+  */
+  function generateDiversifiedMainTickets(
+    target,
+    heads,
+    secondCandidates,
+    thirdCandidates,
+    limit
+  ) {
+    if (target.length >= limit) {
+      return;
+    }
+
+    for (const head of heads) {
+      const seconds = secondCandidates
+        .filter(
+          (boat) => boatNo(boat) !== boatNo(head)
+        )
+        .slice(0, 3);
+      const usedThirdsBySecond = new Map();
+
+      for (let round = 0; round < 2; round += 1) {
+        for (const second of seconds) {
+          const secondNo = boatNo(second);
+          const usedThirds =
+            usedThirdsBySecond.get(secondNo) || new Set();
+          const third = thirdCandidates.find(
+            (candidate) => {
+              const thirdNo = boatNo(candidate);
+              return (
+                thirdNo !== boatNo(head) &&
+                thirdNo !== secondNo &&
+                !usedThirds.has(thirdNo)
+              );
+            }
+          );
+
+          if (!third) {
+            continue;
+          }
+
+          addTicket(target, head, second, third);
+          usedThirds.add(boatNo(third));
+          usedThirdsBySecond.set(secondNo, usedThirds);
+
+          if (target.length >= limit) {
+            return;
+          }
+        }
+      }
+    }
+
+    generateTickets(
+      target,
+      heads,
+      secondCandidates,
+      thirdCandidates,
+      limit
+    );
+  }
+'''
+          if old not in text:
+              raise SystemExit('target generateDiversifiedMainTickets block not found')
+          core.write_text(text.replace(old, new, 1))
+
+          test = Path('scripts/test-scenario-formations.js')
+          text = test.read_text()
+          old_test = '''assert.equal(
+  practicalMain[0][1],
+  practicalMain[1][1],
+  "本線1・2点目は2着1位を使う"
+);
+assert.notEqual(
+  practicalMain[0][2],
+  practicalMain[1][2],
+  "本線1・2点目は3着候補を分ける"
+);
+assert.notEqual(
+  practicalMain[2][1],
+  practicalMain[0][1],
+  "本線3点目は2着2位へ分散する"
+);
+'''
+          new_test = '''assert.notEqual(
+  practicalMain[0][1],
+  practicalMain[1][1],
+  "本線の先頭枠は2着候補を1艇ずつ分散する"
+);
+assert.deepEqual(
+  new Set(practicalMain.slice(0, 2).map((parts) => parts[1])),
+  new Set(connected.rankings.second.slice(0, 2).map((row) => row.boatNo)),
+  "正式2着候補の上位艇を先に1点ずつ確保する"
+);
+assert.equal(
+  practicalMain[2][1],
+  practicalMain[0][1],
+  "2着候補を一巡した後に上位艇の別3着を追加する"
+);
+assert.notEqual(
+  practicalMain[2][2],
+  practicalMain[0][2],
+  "同じ2着艇では3着候補を重複させない"
+);
+'''
+          if old_test not in text:
+              raise SystemExit('target scenario formation assertions not found')
+          test.write_text(text.replace(old_test, new_test, 1))
+          PY
+          node --check js/ai-core.js
+          node scripts/test-scenario-formations.js
+      - name: Commit core fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add js/ai-core.js scripts/test-scenario-formations.js
+          git commit -m "Balance main ticket second-place coverage [core-fix]"
+          git push origin HEAD:agent/core-miss-audit
