@@ -37,9 +37,10 @@ assert.match(
   /\.\.\.row\.encodedMotor/,
   "正式評価時だけencodedMotorを既存motor入力へ反映する"
 );
-assert.match(
-  motor,
-  /maintenance \?\s*strongEvidence \? 10 : moderateEvidence \? 6 : 0\s*: 5/,
+assert.ok(
+  motor.includes("const maintenanceEffect = maintenance") &&
+  motor.includes("? strongEvidence ? 10 : moderateEvidence ? 6 : 0") &&
+  motor.includes(": 5;"),
   "部品交換の事実だけでは加点しない"
 );
 assert.match(
