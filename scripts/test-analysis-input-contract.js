@@ -439,7 +439,7 @@ assert.ok(
 );
 
 const referenceReport = referenceAnalyzer.analyze(cohort.records, {
-  inputDiagnostics: cohort.diagnostics,
+  inputDiagnostics: referenceAnalyzer.settledCohortDiagnostics(cohort.diagnostics),
   strictFrozenInputs: true,
   allowLegacyUnlabeled: true
 });
@@ -448,6 +448,15 @@ assert.ok(referenceReport.matchedRaceCount > 0);
 assert.ok(referenceReport.tagCount > 0);
 assert.strictEqual(referenceReport.sourceStatus, "ready");
 assert.strictEqual(referenceReport.causalClaim, false);
+assert.deepStrictEqual(
+  referenceAnalyzer.settledCohortDiagnostics({
+    ...cohort.diagnostics,
+    canonicalPredictionCount: cohort.diagnostics.canonicalPredictionCount + 3,
+    preDeadlinePredictionCount: cohort.diagnostics.preDeadlinePredictionCount + 3
+  }),
+  referenceReport.inputDiagnostics,
+  "未確定予想だけが増えても保存レポートの診断値を変えない"
+);
 
 const independentlyTaggedRaceCount = cohort.records.filter(record =>
   referenceAnalyzer.extractTags(record, { strictFrozenInputs: true }).length
