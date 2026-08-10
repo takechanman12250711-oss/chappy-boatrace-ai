@@ -66,7 +66,7 @@ function sourceKind(record, options = {}) {
     (strictFrozenInputs ? "" : prediction?.analysisProfile) ||
     ""
   ).trim();
-  const schemaVersion = Number(conditions?.schemaVersion || 0);
+  const schemaVersion = inputContract.parseSchemaVersion(conditions?.schemaVersion);
 
   if (/ボートレース日和|^hiyori(?:[-_ ]?(?:api|source|data))?$/i.test(source)) {
     return "direct-hiyori";
@@ -74,7 +74,9 @@ function sourceKind(record, options = {}) {
   if (/ボートレース日和|^hiyori(?:[-_ ]?(?:api|source|data))?$/i.test(profile)) {
     return "direct-hiyori";
   }
+  if (!Number.isFinite(schemaVersion)) return "other-source";
   if (/^(?:boatrace[-_ ]?official|BOAT\s*RACE公式)$/i.test(source)) {
+    if (schemaVersion < 4) return "official-compatible";
     return profile && !/hiyori[-_ ]?compatible/i.test(profile)
       ? "other-source"
       : "official-labeled";
@@ -154,6 +156,9 @@ function topBoatFromTag(tag) {
 
 function analyze(records, options = {}) {
   const strictFrozenInputs = options.strictFrozenInputs === true;
+  const allowLegacyUnlabeled =
+    options.allowLegacyUnlabeled === true ||
+    strictFrozenInputs !== true;
   const allSettled = records.filter(record => actualTicket(record));
   const sourceCounts = allSettled.reduce((counts, record) => {
     const kind = sourceKind(record, { strictFrozenInputs });
@@ -162,7 +167,14 @@ function analyze(records, options = {}) {
   }, {});
   const settled = allSettled.filter(record => {
     const kind = sourceKind(record, { strictFrozenInputs });
-    return kind !== "direct-hiyori" && kind !== "other-source";
+    return (
+      kind !== "direct-hiyori" &&
+      kind !== "other-source" &&
+      (
+        !["legacy-unlabeled", "official-compatible"].includes(kind) ||
+        allowLegacyUnlabeled
+      )
+    );
   });
   const matched = settled
     .map(record => ({
@@ -251,10 +263,25 @@ function analyze(records, options = {}) {
     dataSource: "boatrace-official",
     compatibilityProfile: "hiyori-compatible",
     directHiyoriDataUsed: false,
+    legacyUnlabeledPolicy: allowLegacyUnlabeled
+      ? "canonical-official-collector-before-source-schema-v4"
+      : "rejected-without-schema-v4-official-source",
     sourceBreakdown: {
       officialLabeledRaceCount: sourceCounts["official-labeled"] || 0,
       officialCompatibleRaceCount: sourceCounts["official-compatible"] || 0,
+      acceptedOfficialCompatibleRaceCount: allowLegacyUnlabeled
+        ? sourceCounts["official-compatible"] || 0
+        : 0,
+      rejectedOfficialCompatibleRaceCount: allowLegacyUnlabeled
+        ? 0
+        : sourceCounts["official-compatible"] || 0,
       legacyUnlabeledRaceCount: sourceCounts["legacy-unlabeled"] || 0,
+      acceptedLegacyUnlabeledRaceCount: allowLegacyUnlabeled
+        ? sourceCounts["legacy-unlabeled"] || 0
+        : 0,
+      rejectedLegacyUnlabeledRaceCount: allowLegacyUnlabeled
+        ? 0
+        : sourceCounts["legacy-unlabeled"] || 0,
       rejectedDirectHiyoriRaceCount: sourceCounts["direct-hiyori"] || 0,
       rejectedOtherSourceRaceCount: sourceCounts["other-source"] || 0
     },
@@ -267,37 +294,85 @@ function analyze(records, options = {}) {
     usableForPrediction: false,
     automaticApplication: false,
     note: strictFrozenInputs
-      ? "BOAT RACE公式から締切前に固定保存した入力だけで日和準拠の参考指標を再構築し、公式結果と照合した相関集計。日和サイトの直接取得は使わず、予想ロジック・印・買い目には自動反映しない。"
+      ? allowLegacyUnlabeled
+        ? "BOAT RACE公式から締切前に固定保存した入力だけで日和準拠の参考指標を再構築し、公式結果と照合した相関集計。旧schemaの無ラベル履歴は、このリポジトリの公式API収集正本だけを経路根拠に含む。日和サイトの直接取得は使わず、予想ロジック・印・買い目には自動反映しない。"
+        : "明示入力では、締切前スナップショットにschema v4のBOAT RACE公式取得元・取得時刻が保存されたレースだけを日和準拠形式で集計する。旧schemaは採用せず、予想ロジック・印・買い目には自動反映しない。"
       : "入力レコードの参考タグを公式結果と照合した相関集計。因果関係の証明ではなく、予想ロジック・印・買い目には自動反映しない。",
     tags
   };
 }
 
+function semanticReportJson(report) {
+  return JSON.stringify({
+    ...(report || {}),
+    generatedAt: ""
+  });
+}
+
+function writeReport(output, report) {
+  let existing = null;
+  let existingText = "";
+  try {
+    existingText = fs.readFileSync(output, "utf8");
+    existing = JSON.parse(existingText);
+  } catch (error) {
+    if (error?.code !== "ENOENT" && !(error instanceof SyntaxError)) throw error;
+  }
+
+  const stableReport =
+    existing &&
+    semanticReportJson(existing) === semanticReportJson(report) &&
+    String(existing.generatedAt || "").trim()
+      ? { ...report, generatedAt: existing.generatedAt }
+      : report;
+  const nextText = `${JSON.stringify(stableReport, null, 2)}\n`;
+  const changed = nextText !== existingText;
+
+  if (changed) {
+    fs.mkdirSync(path.dirname(output), { recursive: true });
+    fs.writeFileSync(output, nextText, "utf8");
+  }
+
+  return { report: stableReport, changed };
+}
+
 function main() {
   const args = process.argv.slice(2);
   const outputIndex = args.indexOf("--output");
+  if (outputIndex >= 0 && !args[outputIndex + 1]) {
+    throw new Error("--output requires a file path");
+  }
   const output = outputIndex >= 0 ? args[outputIndex + 1] : "data/analysis/reference-tag-effectiveness.json";
-  const inputArgs = args.filter((arg, index) => arg !== "--output" && index !== outputIndex + 1);
+  const inputArgs = args.filter((arg, index) =>
+    outputIndex < 0 || (index !== outputIndex && index !== outputIndex + 1)
+  );
   let report;
   if (inputArgs.length) {
     const records = inputArgs.flatMap(input =>
       readJsonFiles(input).flatMap(item => flattenRecords(item.value, item.file))
     );
-    const cohort = inputContract.buildCohortFromRecords(records);
+    const cohort = inputContract.buildCohortFromRecords(records, {
+      requireOfficialResultSource: true
+    });
     report = analyze(cohort.records, {
       inputDiagnostics: cohort.diagnostics,
-      strictFrozenInputs: true
+      strictFrozenInputs: true,
+      allowLegacyUnlabeled: false
     });
   } else {
     const cohort = inputContract.buildDefaultCohort();
     report = analyze(cohort.records, {
       inputDiagnostics: cohort.diagnostics,
-      strictFrozenInputs: true
+      strictFrozenInputs: true,
+      allowLegacyUnlabeled: true
     });
   }
-  fs.mkdirSync(path.dirname(output), { recursive: true });
-  fs.writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`, "utf8");
-  console.log(`reference-tag analysis: ${report.matchedRaceCount} races / ${report.tagCount} tags -> ${output}`);
+  const written = writeReport(output, report);
+  console.log(
+    `reference-tag analysis: ${written.report.matchedRaceCount} races / ` +
+    `${written.report.tagCount} tags -> ${output}` +
+    (written.changed ? "" : " (unchanged)")
+  );
 }
 
 if (require.main === module) main();
@@ -308,5 +383,7 @@ module.exports = {
   flattenRecords,
   predictedTickets,
   raceKey,
-  sourceKind
+  semanticReportJson,
+  sourceKind,
+  writeReport
 };
