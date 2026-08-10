@@ -1,41 +1,41 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-09T15:45:16.289Z",
+  "generatedAt": "2026-08-10T15:32:31.761Z",
   "source": "scenario-ai-v6-ab-report + scenario-ai-v6-reproducibility-gate",
   "status": "collecting-evidence",
   "summary": {
-    "comparableCount": 239,
+    "comparableCount": 0,
     "aWins": 0,
     "bWins": 0,
-    "ties": 239,
+    "ties": 0,
     "bWinLead": 0,
     "bExactLift": 0,
     "bFirstHitLift": 0
   },
   "firstHalf": {
-    "comparableCount": 120,
+    "comparableCount": 0,
     "changedComparableCount": 0,
     "aWins": 0,
     "bWins": 0,
-    "ties": 120,
-    "aExactCount": 6,
-    "bExactCount": 6,
-    "aFirstHitCount": 65,
-    "bFirstHitCount": 65,
+    "ties": 0,
+    "aExactCount": 0,
+    "bExactCount": 0,
+    "aFirstHitCount": 0,
+    "bFirstHitCount": 0,
     "bWinRate": 0,
     "bExactLift": 0,
     "bFirstHitLift": 0
   },
   "secondHalf": {
-    "comparableCount": 119,
+    "comparableCount": 0,
     "changedComparableCount": 0,
     "aWins": 0,
     "bWins": 0,
-    "ties": 119,
-    "aExactCount": 5,
-    "bExactCount": 5,
-    "aFirstHitCount": 40,
-    "bFirstHitCount": 40,
+    "ties": 0,
+    "aExactCount": 0,
+    "bExactCount": 0,
+    "aFirstHitCount": 0,
+    "bFirstHitCount": 0,
     "bWinRate": 0,
     "bExactLift": 0,
     "bFirstHitLift": 0
@@ -46,8 +46,8 @@
     {
       "key": "minimum-comparisons",
       "label": "比較可能100R以上",
-      "passed": true,
-      "actual": 239
+      "passed": false,
+      "actual": 0
     },
     {
       "key": "minimum-b-wins",
@@ -84,14 +84,27 @@
       "label": "承認候補の補正内容あり",
       "passed": false,
       "actual": 0
+    },
+    {
+      "key": "candidate-cohort-match",
+      "label": "A/B候補セット・学習世代が再現性ゲートと一致",
+      "passed": false,
+      "actual": {
+        "activeCandidateSetFingerprint": "none",
+        "approvedCandidateSetFingerprint": "none",
+        "activeCandidateTrainingFingerprint": "none",
+        "reproTrainingFingerprint": "none"
+      }
     }
   ],
   "missingConditions": [
+    "比較可能100R以上",
     "B勝ち30R以上",
     "B勝ちがA勝ちを5勝以上上回る",
     "前半でB優勢",
     "後半でB優勢",
-    "承認候補の補正内容あり"
+    "承認候補の補正内容あり",
+    "A/B候補セット・学習世代が再現性ゲートと一致"
   ],
   "humanApprovalRequired": true,
   "humanApproved": false,

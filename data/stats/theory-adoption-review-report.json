@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-09T15:45:24.270Z",
+  "generatedAt": "2026-08-10T15:32:41.284Z",
   "sources": [
     "data/stats/theory-shadow-production-gate.json",
     "data/stats/theory-improvement-proposals.json"
@@ -12,7 +12,7 @@
   "adoptionAllowed": false,
   "decision": "pending",
   "summary": {
-    "approvedTheoryCandidateCount": 0,
+    "approvedTheoryCandidateCount": 3,
     "comparableCount": 39,
     "bWins": 0,
     "aWins": 33,
@@ -204,7 +204,77 @@
       "advantagePoints": -50
     }
   ],
-  "approvedTheoryCandidates": [],
+  "approvedTheoryCandidates": [
+    {
+      "scope": "venue-theory",
+      "key": "20:race-flow",
+      "theoryKey": "race-flow",
+      "label": "若松 × 展開理論",
+      "jcd": "20",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 17,
+        "hitRate": 17.6,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 45.2,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 18,
+        "hitRate": 11.1,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 27.7,
+        "direction": "lower"
+      },
+      "approved": true
+    },
+    {
+      "scope": "venue-theory",
+      "key": "20:remain-pickup",
+      "theoryKey": "remain-pickup",
+      "label": "若松 × 残し・拾い理論",
+      "jcd": "20",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 17,
+        "hitRate": 17.6,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 46.8,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 18,
+        "hitRate": 11.1,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 28.6,
+        "direction": "lower"
+      },
+      "approved": true
+    },
+    {
+      "scope": "venue-theory",
+      "key": "20:local-water",
+      "theoryKey": "local-water",
+      "label": "若松 × 当地・水面理論",
+      "jcd": "20",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 15,
+        "hitRate": 13.3,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 37.1,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 16,
+        "hitRate": 12.5,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 30.6,
+        "direction": "lower"
+      },
+      "approved": true
+    }
+  ],
   "reviewItems": [
     "A/B比較数が安全基準を満たしているか",
     "前半・後半の両方でBが優勢か",
