@@ -23,10 +23,13 @@ jobs:
       - name: Test analyzer
         run: |
           node scripts/test-reference-tag-effectiveness.js
-          node scripts/test-analysis-input-contract.js
 
       - name: Build effectiveness report
         run: node scripts/analyze-reference-tag-effectiveness.js --output data/analysis/reference-tag-effectiveness.json
+
+      - name: Verify built report
+        run: |
+          node scripts/test-analysis-input-contract.js
 
       - name: Commit report when changed
         run: |
