@@ -1,0 +1,43 @@
+name: Check racer skill core integration
+
+on:
+  pull_request:
+    paths:
+      - "js/racer-skill-core-integration.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-racer-skill-core-integration.js"
+      - ".github/workflows/racer-skill-core-integration.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/racer-skill-core-integration.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/test-racer-skill-core-integration.js"
+      - ".github/workflows/racer-skill-core-integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  racer-skill-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check syntax
+        run: |
+          node --check js/racer-skill-core-integration.js
+          node --check scripts/test-racer-skill-core-integration.js
+          node --check js/prediction-runtime-loader.js
+
+      - name: Verify racer skill reaches final ticket priority
+        run: node scripts/test-racer-skill-core-integration.js
