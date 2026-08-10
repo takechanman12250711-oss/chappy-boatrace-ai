@@ -4,6 +4,9 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const charter = require(
+  "../config/chappy-charter.json"
+);
 
 function loadOptionalV2Dependency(
   loader,
@@ -121,7 +124,18 @@ const theoryImprovementReport =
     "理論改善承認候補"
   );
 
-const MIN_SCORE = 70;
+const MIN_SCORE = Number(
+  charter?.shadowSelectionV2?.selectionThreshold
+);
+if (
+  !Number.isFinite(MIN_SCORE) ||
+  MIN_SCORE < 0 ||
+  MIN_SCORE > 100
+) {
+  throw new Error(
+    "自動選定基準は0〜100点で設定してください"
+  );
+}
 const MAX_RUNS_PER_DAY = 100;
 const REPOSITORY_ROOT = path.resolve(__dirname, "..");
 
@@ -1104,6 +1118,21 @@ function selectedRaceKeyFor(
   );
 }
 
+function scoreBandForSelection(selection) {
+  const score = Number(selection?.score);
+
+  if (
+    selection?.ready !== true ||
+    !Number.isFinite(score)
+  ) {
+    return "not_ready";
+  }
+
+  if (score >= 70) return "70_plus";
+  if (score >= 60) return "60_69";
+  return "under_60";
+}
+
 function buildActiveV2Selection(
   shadowV2,
   legacySelection,
@@ -1297,9 +1326,7 @@ function buildStoredPrediction(
         ? "selected"
         : "shadow",
     scoreBand:
-      selection.qualified
-        ? "70_plus"
-        : "under_70",
+      scoreBandForSelection(selection),
     selection,
     shadowV2,
     scenarioLikelihoodV5:
@@ -2029,7 +2056,7 @@ async function main() {
   }
 
   console.log(
-    `検証保存：${verificationPredictions.length}R（70点以上${verificationPredictions.filter(item => item.scoreBand === "70_plus").length}R／70点未満${verificationPredictions.filter(item => item.scoreBand === "under_70").length}R）`
+    `検証保存：${verificationPredictions.length}R（${MIN_SCORE}点以上${verificationPredictions.filter(item => item?.selection?.qualified === true).length}R／${MIN_SCORE}点未満${verificationPredictions.filter(item => item?.selection?.ready === true && item?.selection?.qualified !== true).length}R）`
   );
   console.log(
     `V2自動選定対象：${shadowV2Predictions.filter(item => item.calibrationEligible).length}/${shadowV2Predictions.length}R` +
@@ -2082,6 +2109,7 @@ module.exports = {
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
+  scoreBandForSelection,
   buildActiveV2Selection,
   buildActiveV2Comparison,
   applySelectedRaceKey,

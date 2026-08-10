@@ -131,6 +131,34 @@ assert.deepEqual(
 assert.equal(selected[0].deadlineAt, future(40), "表示締切は古い要約でなく公式scheduleを使う");
 assert.ok(selected.every(item => item.decision?.key !== "skip"), "見送り判定をおすすめへ含めない");
 
+const sixtyPointCandidates = [
+  candidate("11", "びわこ", 1, 59.9),
+  candidate("12", "住之江", 1, 60),
+  candidate("13", "尼崎", 1, 69.9)
+];
+const sixtyPointSchedule = [
+  venue("11", "びわこ", 1, future(45)),
+  venue("12", "住之江", 1, future(45)),
+  venue("13", "尼崎", 1, future(45))
+];
+const selectedAtSixty = home.selectRecommendations({
+  threshold: 60,
+  compared: sixtyPointCandidates
+}, sixtyPointSchedule, now);
+assert.deepEqual(
+  Array.from(selectedAtSixty, item => item.score),
+  [69.9, 60],
+  "60点世代では60.0〜69.9点もホーム候補にし、59.9点は除外する"
+);
+assert.equal(
+  home.selectRecommendations({
+    threshold: 70,
+    compared: sixtyPointCandidates
+  }, sixtyPointSchedule, now).length,
+  0,
+  "旧70点世代は遡及して60点判定へ変更しない"
+);
+
 const skipOnly = home.selectRecommendations({
   threshold: 50,
   compared: [

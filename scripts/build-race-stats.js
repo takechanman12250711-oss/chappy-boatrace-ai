@@ -2196,7 +2196,7 @@ function main() {
     schemaVersion: 1,
     source: "boatrace-official",
     usagePolicy:
-      "場＋R別の参考補強のみ。買い目・予想点・70点基準は変更しない",
+      "場＋R別の参考補強のみ。買い目・予想点・60点基準は変更しない",
     generatedAt: output.generatedAt,
     firstDate: output.firstDate,
     lastDate: output.lastDate,

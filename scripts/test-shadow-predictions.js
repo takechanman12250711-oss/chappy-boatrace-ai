@@ -21,6 +21,8 @@ const {
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
+  scoreBandForSelection,
+  buildActiveV2Selection,
   buildActiveV2Comparison,
   applySelectedRaceKey,
   buildStoredPrediction,
@@ -29,7 +31,118 @@ const {
   saveRun
 } = require("./collect-predictions");
 
-assert.equal(MIN_SCORE, 70);
+const charter = require(
+  "../config/chappy-charter.json"
+);
+
+assert.equal(
+  MIN_SCORE,
+  charter.shadowSelectionV2.selectionThreshold,
+  "自動選定基準は憲章設定を正本にする"
+);
+assert.equal(MIN_SCORE, 60);
+
+const belowThresholdSelection =
+  buildActiveV2Selection({
+    status: "ready",
+    calibrationEligible: true,
+    evaluation: { totalScore: 59.9 }
+  }, {});
+const exactThresholdSelection =
+  buildActiveV2Selection({
+    status: "ready",
+    calibrationEligible: true,
+    evaluation: { totalScore: 60 }
+  }, {});
+const upperSixtiesSelection =
+  buildActiveV2Selection({
+    status: "ready",
+    calibrationEligible: true,
+    evaluation: { totalScore: 69.9 }
+  }, {});
+
+assert.equal(
+  belowThresholdSelection.qualified,
+  false,
+  "59.9点は自動選定しない"
+);
+assert.equal(
+  exactThresholdSelection.qualified,
+  true,
+  "60.0点は自動選定する"
+);
+assert.equal(
+  upperSixtiesSelection.qualified,
+  true,
+  "69.9点も自動選定する"
+);
+assert.equal(
+  exactThresholdSelection.threshold,
+  60,
+  "保存する判定基準も60点に統一する"
+);
+assert.equal(
+  scoreBandForSelection(
+    belowThresholdSelection
+  ),
+  "under_60"
+);
+assert.equal(
+  scoreBandForSelection(
+    exactThresholdSelection
+  ),
+  "60_69"
+);
+assert.equal(
+  scoreBandForSelection(
+    upperSixtiesSelection
+  ),
+  "60_69"
+);
+assert.equal(
+  scoreBandForSelection({
+    ready: true,
+    score: 70
+  }),
+  "70_plus"
+);
+assert.equal(
+  scoreBandForSelection({
+    ready: false,
+    score: 99
+  }),
+  "not_ready"
+);
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    {
+      raceKey: "20260726-12-6",
+      selection: belowThresholdSelection
+    }
+  ),
+  ""
+);
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    {
+      raceKey: "20260726-12-7",
+      selection: exactThresholdSelection
+    }
+  ),
+  "20260726-12-7"
+);
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    {
+      raceKey: "20260726-12-8",
+      selection: upperSixtiesSelection
+    }
+  ),
+  "20260726-12-8"
+);
 
 const provenanceConditions =
   captureStoredConditions(
@@ -477,7 +590,7 @@ assert.equal(
 );
 assert.equal(
   lowShadowRecord.scoreBand,
-  "under_70"
+  "under_60"
 );
 assert.equal(
   lowShadowRecord.selection.selected,
@@ -1299,7 +1412,7 @@ try {
       raceKey: "20260726-12-8",
       selection: {
         score: 45,
-        threshold: 70
+        threshold: 60
       },
       prediction: {}
     }],
@@ -1327,6 +1440,11 @@ try {
     )
   );
   assert.equal(saved.schemaVersion, 3);
+  assert.equal(
+    saved.runs[0].threshold,
+    60,
+    "保存runにも現行60点基準を残す"
+  );
   assert.equal(
     saved.verificationPredictions.length,
     1

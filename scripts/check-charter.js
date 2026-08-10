@@ -168,12 +168,12 @@ assert(
   shadowV2.drivesAutomaticSelection === true &&
     shadowV2.selectionScoreSource ===
       "shadowSelectionV2.evaluation.totalScore" &&
-    shadowV2.selectionThreshold === 70 &&
+    shadowV2.selectionThreshold === 60 &&
     shadowV2.requiresCalibrationEligible === true &&
     shadowV2.legacyEvaluationUsage === "audit_only" &&
     shadowV2.onV2Unavailable ===
       "skip_without_legacy_fallback",
-  "自動選定V2と70点判定の接続条件が固定されていません"
+  "自動選定V2と60点判定の接続条件が固定されていません"
 );
 assert(
   shadowV2.doesNotAffectTicketComposition === true &&
@@ -432,14 +432,16 @@ assert(
   "全表示が最新AIコアの共通買い目を使用していません"
 );
 assert(
-  collectPredictions.includes("const MIN_SCORE = 70;") &&
+  collectPredictions.includes(
+    "charter?.shadowSelectionV2?.selectionThreshold"
+  ) &&
     collectPredictions.includes("shadowV2Predictions") &&
     collectPredictions.includes("buildActiveV2Comparison") &&
     collectPredictions.includes("calibrationEligible === true") &&
     shadowSelectionV2.includes(
-      "校正対象として成立した総合点だけを70点の自動選定へ使う"
+      "校正対象として成立した総合点だけを60点の自動選定へ使う"
     ),
-  "自動選定V2の有効スコアと70点判定の接続が固定されていません"
+  "自動選定V2の有効スコアと60点判定の接続が固定されていません"
 );
 assert(
   improvementReview.includes(
