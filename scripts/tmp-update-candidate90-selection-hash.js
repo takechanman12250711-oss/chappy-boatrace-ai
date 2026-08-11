@@ -1,0 +1,10 @@
+"use strict";
+const fs=require("node:fs");
+const file="scripts/test-evaluated-scenario-consistency.js";
+let s=fs.readFileSync(file,"utf8");
+const from='"43f7477a9791ad7e50b23530cedb84cfc94aa7f139de55c9514b57d614ab5166"';
+const to='"88855158a9eed5ee63f9381425a818c24fe5ad1e607b2f7852c9d9b7444c0373"';
+if(!s.includes(from))throw new Error("selection hash anchor not found");
+s=s.replace(from,to);
+fs.writeFileSync(file,s);
+console.log("candidate90 selection hash updated");
