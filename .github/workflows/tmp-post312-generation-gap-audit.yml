@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/tmp-audit-both-missing-roles.js'
+      - 'scripts/tmp-audit-pickup-remainer-swap.js'
       - '.github/workflows/tmp-post312-generation-gap-audit.yml'
 jobs:
   audit:
@@ -13,11 +13,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Audit both-missing role sources
-        run: node scripts/tmp-audit-both-missing-roles.js
+      - name: Audit pickup-second remainer-third role swap
+        run: node scripts/tmp-audit-pickup-remainer-swap.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
-          name: post312-both-missing-audit
-          path: tmp-analysis-output/both-missing-roles.json
+          name: post312-role-swap-audit
+          path: tmp-analysis-output/pickup-remainer-swap.json
           if-no-files-found: error
