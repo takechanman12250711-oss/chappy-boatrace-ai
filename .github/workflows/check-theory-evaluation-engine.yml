@@ -21,5 +21,5 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
-      - name: Temporary split-sample four-attack validation
-        run: node scripts/tmp-validate-four-attack-rules.js
+      - name: Temporary head confusion audit
+        run: node scripts/tmp-audit-head-confusion.js
