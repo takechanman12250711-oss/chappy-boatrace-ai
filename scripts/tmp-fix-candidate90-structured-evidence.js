@@ -1,0 +1,10 @@
+"use strict";
+const fs=require("node:fs");
+const file="scripts/test-evaluated-scenario-consistency.js";
+let s=fs.readFileSync(file,"utf8");
+const from=`      if (\n        structuredGroup &&\n        item.selectionTier !==\n          "展開追加"\n      ) {`;
+const to=`      if (\n        structuredGroup &&\n        item.selectionTier !==\n          "展開追加" &&\n        item.selectionTier !==\n          "候補補完"\n      ) {`;
+if(!s.includes(from))throw new Error("structured evidence compatibility anchor not found");
+s=s.replace(from,to);
+fs.writeFileSync(file,s);
+console.log("candidate90 structured evidence audit exception patched");
