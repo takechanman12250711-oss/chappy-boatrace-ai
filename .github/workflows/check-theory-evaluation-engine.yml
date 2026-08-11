@@ -6,37 +6,14 @@ on:
   push:
     branches: [feature/theory-evaluation-engine-phase1]
 
-permissions:
-  contents: write
-
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Update approved snapshot hash
-        if: github.head_ref == 'agent/sashi-skill-tiebreak'
-        run: node scripts/apply-sashi-snapshot-hash.js
-      - name: Verify full snapshot regression
-        if: github.head_ref == 'agent/sashi-skill-tiebreak'
-        run: node scripts/test-evaluated-scenario-consistency.js
-      - name: Commit snapshot update
-        if: github.head_ref == 'agent/sashi-skill-tiebreak'
-        run: |
-          git add scripts/test-evaluated-scenario-consistency.js
-          if git diff --cached --quiet; then
-            echo "No snapshot update to commit"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "test: update tiebreak selection snapshot"
-            git push origin HEAD:${GITHUB_HEAD_REF}
-          fi
       - name: Validate theory evaluation engine
         run: |
           node --check js/theory-evaluation-engine.js
