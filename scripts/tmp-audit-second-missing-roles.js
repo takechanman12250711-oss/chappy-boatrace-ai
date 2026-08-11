@@ -1,0 +1,26 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path");
+global.window=global;require("../js/boat-identity");require("../js/ai-core");require("../js/prediction");
+const selector=require("../js/practical-selection"),core=global.ChappyAICore,dir=path.join(process.cwd(),"data","predictions");
+const rows=d=>[...(d.predictions||[]),...(d.verificationPredictions||[])];
+function tk(v){const m=String(v?.ticket||v||"").match(/[1-6]/g)||[];return m.length>=3?m.slice(0,3).join("-"):"";}
+function dataOf(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<5)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}
+function list(v){return(Array.isArray(v)?v:[]).map(x=>tk(x?.ticket||x)).filter(Boolean);}function ids(v){return new Set((Array.isArray(v)?v:[]).map(x=>Number(x?.boatNo??x)).filter(n=>n>=1&&n<=6));}function bump(o,k){o[k]=(o[k]||0)+1;}
+const out={cases:0,train:0,test:0,membership:{mainAttacker:0,wallBoat:0,remainers:0,followers:0,pickupCandidates:0,roadRaceBoats:0,localExperts:0,anyTopLevelRole:0,noneTopLevelRole:0},overlaps:{},winnerScenarioType:{},actualSecondBoat:{},scores:{hold:[],flow:[],pickup:[],road:[],attack:[],total:[]},rank:{holdTop1:0,flowTop1:0,pickupTop1:0,roadTop1:0,totalTop2:0},examples:[]};
+for(const f of fs.readdirSync(dir).filter(x=>/^202608(0[7-9]|10)\.json$/.test(x)).sort()){
+ const date=Number(f.slice(0,8)),d=JSON.parse(fs.readFileSync(path.join(dir,f),"utf8"));for(const r of rows(d)){
+  if(r?.result?.settled!==true)continue;const data=dataOf(r),actual=tk(r?.result?.resultTicket||r?.result?.review?.resultTicket);if(!data||!actual)continue;
+  const p=global.createPrediction(data),sel=selector.select(p);if(list(sel?.tickets).includes(actual))continue;const ai=core.buildPredictionData(data),fm=ai?.formations||{},formal=new Set([...list(fm.main),...list(fm.safety),...list(fm.flow),...list(fm.longshot)]);if(formal.has(actual))continue;
+  const [winner,second,third]=actual.split("-").map(Number),rs=ai?.raceScenarios||{},scenarios=Array.isArray(rs.scenarios)?rs.scenarios:[],ws=scenarios.find(s=>Number(s?.attacker||s?.headBoatNo||0)===winner);if(!ws)continue;const sec=ids(ws?.outcome?.secondCandidates),thi=ids(ws?.outcome?.thirdCandidates);if(sec.has(second)||!thi.has(third))continue;
+  out.cases++;if(date<=20260808)out.train++;else out.test++;bump(out.winnerScenarioType,String(ws?.type||"unknown"));bump(out.actualSecondBoat,String(second));
+  const sets={remainers:ids(rs.remainers),followers:ids(rs.followers),pickupCandidates:ids(rs.pickupCandidates),roadRaceBoats:ids(rs.roadRaceBoats),localExperts:ids(rs.localExperts)};const memberships=[];
+  if(Number(rs.attacker||0)===second){out.membership.mainAttacker++;memberships.push("mainAttacker");}if(Number(rs.wallBoat||0)===second){out.membership.wallBoat++;memberships.push("wallBoat");}
+  for(const [k,set] of Object.entries(sets))if(set.has(second)){out.membership[k]++;memberships.push(k);}if(memberships.length){out.membership.anyTopLevelRole++;bump(out.overlaps,memberships.sort().join("+"));}else out.membership.noneTopLevelRole++;
+  const analyses=Array.isArray(ai?.analyses)?ai.analyses:(Array.isArray(ai?.boatAnalyses)?ai.boatAnalyses:[]),a=analyses.find(x=>Number(x?.boatNo||0)===second),all=analyses.filter(x=>Number(x?.boatNo||0)>=1);
+  const vals={hold:Number(a?.roleScores?.hold||0),flow:Number(a?.roleScores?.flow||0),pickup:Number(a?.roleScores?.pickup||0),road:Number(a?.roleScores?.road||0),attack:Number(a?.roleScores?.attack||0),total:Number(a?.indexes?.total||0)};for(const[k,v]of Object.entries(vals))out.scores[k].push(v);
+  function rank(field,path){const sorted=[...all].sort((x,y)=>Number(path(y)||0)-Number(path(x)||0));return sorted.findIndex(x=>Number(x?.boatNo||0)===second)+1;}
+  if(rank("hold",x=>x?.roleScores?.hold)===1)out.rank.holdTop1++;if(rank("flow",x=>x?.roleScores?.flow)===1)out.rank.flowTop1++;if(rank("pickup",x=>x?.roleScores?.pickup)===1)out.rank.pickupTop1++;if(rank("road",x=>x?.roleScores?.road)===1)out.rank.roadTop1++;if(rank("total",x=>x?.indexes?.total)<=2)out.rank.totalTop2++;
+  if(out.examples.length<30)out.examples.push({raceKey:r?.raceKey||`${date}-${r.jcd}-${r.raceNo}`,actual,winnerScenario:String(ws?.type||""),scenarioScore:Number(ws?.score||0),second,memberships,values:vals,existingSecond:[...sec],existingThird:[...thi]});
+ }}
+for(const[k,arr]of Object.entries(out.scores)){const a=arr.filter(Number.isFinite).sort((x,y)=>x-y);out.scores[k]={avg:a.length?Number((a.reduce((s,v)=>s+v,0)/a.length).toFixed(2)):0,median:a.length?a[Math.floor(a.length/2)]:0,min:a[0]??0,max:a[a.length-1]??0,ge65:a.filter(v=>v>=65).length,ge70:a.filter(v=>v>=70).length,ge75:a.filter(v=>v>=75).length,ge80:a.filter(v=>v>=80).length};}
+fs.mkdirSync("tmp-analysis-output",{recursive:true});fs.writeFileSync("tmp-analysis-output/second-missing-roles.json",JSON.stringify(out,null,2));console.log(JSON.stringify(out,null,2));
