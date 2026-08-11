@@ -6,6 +6,7 @@ on:
       - 'scripts/tmp-audit-post312-generation-gaps.js'
       - 'scripts/tmp-audit-scenario-complete-candidates.js'
       - 'scripts/tmp-audit-main-attacker-retention.js'
+      - 'scripts/tmp-audit-second-missing-roles.js'
       - '.github/workflows/tmp-post312-generation-gap-audit.yml'
 jobs:
   audit:
@@ -21,6 +22,8 @@ jobs:
         run: node scripts/tmp-audit-scenario-complete-candidates.js
       - name: Audit main-attacker retention
         run: node scripts/tmp-audit-main-attacker-retention.js
+      - name: Audit missing second-place role sources
+        run: node scripts/tmp-audit-second-missing-roles.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
