@@ -6,6 +6,7 @@ on:
       - 'scripts/tmp-audit-formal-present-selection.js'
       - 'scripts/tmp-audit-formal-selection-grid.js'
       - 'scripts/tmp-audit-formal-candidate-discrimination.js'
+      - 'scripts/tmp-audit-formal-structured-rules.js'
       - '.github/workflows/tmp-post312-formal-present-selection-audit.yml'
 jobs:
   audit:
@@ -21,6 +22,8 @@ jobs:
         run: node scripts/tmp-audit-formal-selection-grid.js
       - name: Compare winning versus losing formal candidates
         run: node scripts/tmp-audit-formal-candidate-discrimination.js
+      - name: Test structured formal candidate rules
+        run: node scripts/tmp-audit-formal-structured-rules.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
