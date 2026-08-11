@@ -1,0 +1,10 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path"),assert=require("node:assert");
+global.window=global;require("../js/ai-core");const core=global.ChappyAICore;
+const dir=path.join(process.cwd(),"data","predictions"),rows=d=>[...(d.predictions||[]),...(d.verificationPredictions||[])];
+function dataOf(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<5)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}
+function key(v){const m=String(v?.ticket||v||"").match(/[1-6]/g)||[];return m.length>=3?m.slice(0,3).join("-"):"";}function list(v){return(Array.isArray(v)?v:[]).map(key).filter(Boolean);}
+let n=0,oldFirst2=0,newFirst2=0,oldFive=0,newFive=0,mainMismatch=0;
+for(const f of fs.readdirSync(dir).filter(x=>/^202608(0[7-9]|10)\.json$/.test(x)).sort()){const d=JSON.parse(fs.readFileSync(path.join(dir,f),"utf8"));for(const r of rows(d)){if(r?.result?.settled!==true)continue;const data=dataOf(r),actual=key(r?.result?.resultTicket||r?.result?.review?.resultTicket);if(!data||!actual)continue;const ai=core.buildPredictionData(data);const old=core.buildFormations(ai.analyses,ai.raceScenarios);const now=ai.formations;n++;const oldMain=list(old.main),newMain=list(now.main),oldSafety=list(old.safety),newSafety=list(now.safety);if(JSON.stringify(oldMain)!==JSON.stringify(newMain))mainMismatch++;if(oldSafety.slice(0,2).includes(actual))oldFirst2++;if(newSafety.slice(0,2).includes(actual))newFirst2++;if([...oldMain.slice(0,3),...oldSafety.slice(0,2)].includes(actual))oldFive++;if([...newMain.slice(0,3),...newSafety.slice(0,2)].includes(actual))newFive++;}}
+assert.equal(n,341,"8/7〜8/10の341Rを再生する");assert.equal(mainMismatch,0,"主展開・本線買い目は変更しない");assert.equal(oldFirst2,1,"従来押さえ先頭2点の基準値");assert.equal(newFirst2,11,"サブ展開専用の残し・拾いで押さえ先頭2点を改善する");assert.equal(oldFive,51,"従来の基本5点相当基準値");assert.equal(newFive,61,"基本5点相当を51→61へ改善する");
+console.log("サブ展開別押さえ・残し拾い回帰: 合格");console.log({n,oldFirst2,newFirst2,oldFive,newFive,mainMismatch});

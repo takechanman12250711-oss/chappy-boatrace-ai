@@ -9891,7 +9891,7 @@ function buildRaceTrendEvaluation(data) {
     フォーメーション生成
   =============================== */
 
-  function buildFormations(analyses, raceScenarios) {
+  function buildFormations(analyses, raceScenarios, sourceEntries = [], sourceData = {}) {
   const list = Array.isArray(analyses)
     ? [...analyses]
     : [];
@@ -10549,13 +10549,84 @@ function buildRaceTrendEvaluation(data) {
       addTicket(safety, first, second, third);
     });
 
-  generateTickets(
-    safety,
-    safetyHeads,
-    secondRanking.slice(0, 4),
-    thirdRanking.slice(0, 5),
-    8
-  );
+  function scenarioSpecificSafetyRankings(head) {
+    const fallback = {
+      second: secondRanking.slice(0, 4),
+      third: thirdRanking.slice(0, 5)
+    };
+
+    if (
+      !hasScenario ||
+      !Array.isArray(sourceEntries) ||
+      sourceEntries.length < 5
+    ) {
+      return fallback;
+    }
+
+    const headNo = boatNo(head);
+    const scenario = (raceScenarios.scenarios || []).find(
+      (candidate) => Number(candidate?.attacker || 0) === headNo
+    );
+
+    if (!scenario) return fallback;
+
+    const scenarioContext = {
+      ...raceScenarios,
+      mainScenario: scenario,
+      attacker: headNo,
+      blockedBoats: [
+        ...(scenario.blockedBoats || [])
+      ]
+    };
+    const scenarioWall = buildWallTheory(
+      sourceEntries,
+      list,
+      sourceData,
+      scenarioContext
+    );
+    const scenarioHoldPickup = buildHoldPickupTheory(
+      sourceEntries,
+      list,
+      scenario,
+      scenarioWall,
+      {
+        attackerBoatNo: headNo,
+        attackerCourse: Number(scenario?.attacker || headNo),
+        blockedBoats: [
+          ...(scenario.blockedBoats || [])
+        ],
+        preservations: []
+      }
+    );
+    const byNo = new Map(
+      list.map((boat) => [boatNo(boat), boat])
+    );
+    const second = uniqueBoats(
+      (scenarioHoldPickup.secondCandidates || [])
+        .map((candidate) => byNo.get(Number(candidate?.boatNo || 0)))
+    ).slice(0, 4);
+    const third = uniqueBoats(
+      (scenarioHoldPickup.thirdCandidates || [])
+        .map((candidate) => byNo.get(Number(candidate?.boatNo || 0)))
+    ).slice(0, 5);
+
+    return {
+      second: second.length ? second : fallback.second,
+      third: third.length ? third : fallback.third
+    };
+  }
+
+  for (const head of safetyHeads) {
+    if (safety.length >= 8) break;
+    const rankings = scenarioSpecificSafetyRankings(head);
+    generateTickets(
+      safety,
+      [head],
+      rankings.second,
+      rankings.third,
+      8
+    );
+  }
 
   /*
     流しは正式主展開の1着頭を固定し、正式な2着残し候補を
@@ -11579,7 +11650,9 @@ const slit =
     const formations =
       buildFormations(
         analyses,
-        raceScenarios
+        raceScenarios,
+        entries,
+        data
       );
 
     const marks =
