@@ -1,0 +1,20 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path");global.window=global;require("../js/boat-identity");require("../js/ai-core");require("../js/prediction");const selector=require("../js/practical-selection"),core=global.ChappyAICore,dir=path.join(process.cwd(),"data","predictions");const rows=d=>[...(d.predictions||[]),...(d.verificationPredictions||[])];
+function tk(v){const m=String(v?.ticket||v||"").match(/[1-6]/g)||[];return m.length>=3?m.slice(0,3).join("-"):"";}function list(v){return(Array.isArray(v)?v:[]).map(x=>tk(x?.ticket||x)).filter(Boolean);}function dataOf(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<5)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}function pay(r){return Number(r?.result?.payout||r?.result?.officialPayoutPer100||r?.result?.review?.payout||0);}
+const rules={
+ oneTenkai66:f=>f.oneTenkai>=66,
+ oneTotal68:f=>f.oneTotal>=68,
+ oneBuffs4:f=>f.oneBuffs>=4,
+ confidence80:f=>f.conf>=80,
+ tenkai66_conf80:f=>f.oneTenkai>=66&&f.conf>=80,
+ total68_buffs4:f=>f.oneTotal>=68&&f.oneBuffs>=4,
+ tenkai66_total68_altPickup1:f=>f.oneTenkai>=66&&f.oneTotal>=68&&f.altPickup<=1,
+ tenkai66_total68_buffs4:f=>f.oneTenkai>=66&&f.oneTotal>=68&&f.oneBuffs>=4
+};
+function make(){return{races:0,hits:0,tickets:0,cost:0,ret:0};}function finish(x){return{...x,hitRate:x.races?+(x.hits/x.races*100).toFixed(2):0,roi:x.cost?+(x.ret/x.cost*100).toFixed(2):0};}
+const stats=Object.fromEntries(Object.keys(rules).map(k=>[k,{preEarly:make(),preLate:make(),targetTrain:make(),targetTest:make(),preAll:make(),targetAll:make()}]));
+const files=fs.readdirSync(dir).filter(x=>/^\d{8}\.json$/.test(x)).sort(),preDates=files.map(x=>Number(x.slice(0,8))).filter(x=>x<20260807),mid=preDates.length?preDates[Math.floor(preDates.length/2)]:0,seen=new Set();
+function evalRace(r,date){const data=dataOf(r),actual=tk(r?.result?.resultTicket||r?.result?.review?.resultTicket);if(!data||!actual)return null;const p=global.createPrediction(data),sel=selector.select(p),tickets=list(sel?.tickets),ai=core.buildPredictionData(data),ev=sel?.evidence||{},by=ev?.raceFlow?.byBoat||{},b1=by?.[1]||by?.["1"]||{},feat={oneTenkai:Number(b1?.tenkai??-999),oneTotal:Number(b1?.total??-999),oneBuffs:Array.isArray(b1?.buffs)?b1.buffs.length:0,conf:Number(ev?.confidence??ai?.raceScenarios?.confidence??0),altPickup:Array.isArray(ev?.raceFlow?.alternateScenarioRoles?.pickupBoats)?ev.raceFlow.alternateScenarioRoles.pickupBoats.length:0};return{actual,tickets,hit:tickets.includes(actual),payout:pay(r),feat,raceKey:r?.raceKey||`${date}-${r.jcd}-${r.raceNo}`};}
+function add(s,e,pred){if(!pred(e.feat))return;s.races++;s.tickets+=e.tickets.length;s.cost+=e.tickets.length*100;if(e.hit){s.hits++;s.ret+=e.payout;}}
+for(const f of files){const date=f.slice(0,8),n=Number(date);if(n>20260810)continue;const d=JSON.parse(fs.readFileSync(path.join(dir,f),"utf8"));for(const r of rows(d)){if(r?.result?.settled!==true)continue;const e=evalRace(r,date);if(!e||seen.has(e.raceKey))continue;seen.add(e.raceKey);for(const [k,pred] of Object.entries(rules)){const s=stats[k];if(n<20260807){add(s.preAll,e,pred);add(n<=mid?s.preEarly:s.preLate,e,pred);}else{add(s.targetAll,e,pred);add(n<=20260808?s.targetTrain:s.targetTest,e,pred);}}}}
+const ranking=[];for(const [k,s] of Object.entries(stats)){for(const z of Object.keys(s))s[z]=finish(s[z]);const blocks=[s.preEarly,s.preLate,s.targetTrain,s.targetTest];ranking.push({key:k,...s,minHitRate:Math.min(...blocks.map(x=>x.hitRate)),minRoi:Math.min(...blocks.map(x=>x.roi)),minRaces:Math.min(...blocks.map(x=>x.races))});}ranking.sort((a,b)=>b.minRoi-a.minRoi||b.minHitRate-a.minHitRate);const out={preMidDate:mid,ranking};fs.mkdirSync("tmp-analysis-output",{recursive:true});fs.writeFileSync("tmp-analysis-output/race-selection-stable-rules.json",JSON.stringify(out,null,2));console.log(JSON.stringify(out,null,2));
