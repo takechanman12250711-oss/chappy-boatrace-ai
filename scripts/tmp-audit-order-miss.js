@@ -19,19 +19,24 @@ function ticketParts(value) {
 }
 
 function practicalTickets(record) {
-  return (Array.isArray(record?.prediction?.practicalTickets) ? record.prediction.practicalTickets : [])
-    .map(ticketParts)
-    .filter(Boolean);
+  const rows = Array.isArray(record?.result?.practicalTickets)
+    ? record.result.practicalTickets
+    : Array.isArray(record?.prediction?.practicalTickets)
+      ? record.prediction.practicalTickets
+      : [];
+  return rows.map(ticketParts).filter(Boolean);
 }
 
 function resultOrder(record) {
   const result = record?.result || {};
   const values = [
+    result?.resultTicket,
     result?.order,
     result?.finishOrder,
     result?.resultOrder,
     result?.trifecta,
     result?.combination,
+    result?.review?.resultTicket,
     result?.review?.resultOrder,
     result?.review?.order,
     result?.review?.trifecta
@@ -109,17 +114,7 @@ for (const name of fs.readdirSync(dir).filter(n => /^\d{8}\.json$/.test(n))) {
     c.orderMiss += 1;
 
     const actual = resultOrder(record);
-    if (!actual) {
-      if (c.examples.length < 5) {
-        c.examples.push({
-          raceKey: record?.raceKey || "",
-          reason: "no-result-order",
-          resultKeys: Object.keys(record?.result || {}),
-          reviewKeys: Object.keys(record?.result?.review || {})
-        });
-      }
-      continue;
-    }
+    if (!actual) continue;
     c.resultOrderFound += 1;
 
     const tickets = practicalTickets(record);
@@ -154,6 +149,7 @@ for (const name of fs.readdirSync(dir).filter(n => /^\d{8}\.json$/.test(n))) {
         actual,
         tickets,
         candidates,
+        resultTicket: record?.result?.resultTicket || "",
         summary: raceFlow(record)?.summary || ""
       });
     }
