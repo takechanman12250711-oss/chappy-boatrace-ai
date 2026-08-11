@@ -1,0 +1,25 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path");
+global.window=global;require("../js/boat-identity");require("../js/ai-core");require("../js/prediction");
+const selector=require("../js/practical-selection"),core=global.ChappyAICore,dir=path.join(process.cwd(),"data","predictions");
+const rows=d=>[...(d.predictions||[]),...(d.verificationPredictions||[])];
+function tk(v){const m=String(v?.ticket||v||"").match(/[1-6]/g)||[];return m.length>=3?m.slice(0,3).join("-"):"";}
+function dataOf(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<5)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}
+function list(v){return(Array.isArray(v)?v:[]).map(x=>tk(x?.ticket||x)).filter(Boolean);}function nums(v){return new Set((Array.isArray(v)?v:[]).map(x=>Number(x?.boatNo??x)).filter(n=>n>=1&&n<=6));}
+function structured3(c){const p=new Set((Array.isArray(c?.physicalCoverage)?c.physicalCoverage:[]).map(x=>Number(x?.position||0)).filter(x=>x>=1&&x<=3));return p.size===3;}
+function payout(r){return Number(r?.result?.payout||r?.result?.officialPayoutPer100||r?.result?.review?.payout||0);}
+const thresholds=[65,70,75,80,85,90,95];const make=()=>({n:0,baseHits:0,newHits:0,addedTickets:0,racesExpanded:0,gains:0,incrementalReturn:0});
+const result=Object.fromEntries(thresholds.map(t=>[t,{all:make(),train:make(),test:make()}]));
+const diagnostics={candidateOnly:0,formalAbsentCandidateOnly:0,scenarioComplete:0,scenarioCompleteStructured3:0,actualMatchScenarioComplete:0,priorityActual:[],byScenarioType:{},examples:[]};
+for(const f of fs.readdirSync(dir).filter(x=>/^202608(0[7-9]|10)\.json$/.test(x)).sort()){
+ const date=Number(f.slice(0,8)),d=JSON.parse(fs.readFileSync(path.join(dir,f),"utf8"));
+ for(const r of rows(d)){
+  if(r?.result?.settled!==true)continue;const data=dataOf(r),actual=tk(r?.result?.resultTicket||r?.result?.review?.resultTicket);if(!data||!actual)continue;
+  const p=global.createPrediction(data),sel=selector.select(p),base=list(sel?.tickets),baseHit=base.includes(actual),ai=core.buildPredictionData(data),fm=ai?.formations||{},formal=new Set([...list(fm.main),...list(fm.safety),...list(fm.flow),...list(fm.longshot)]),scenarios=Array.isArray(ai?.raceScenarios?.scenarios)?ai.raceScenarios.scenarios:[];
+  const raw=[...(sel?.candidateDecisions||[]),...(sel?.excludedCandidates||[])],seen=new Set(),cand=[];
+  for(const c of raw){if(String(c?.reasonCode||"")!=="CANDIDATE_ONLY_EVALUATION")continue;const ticket=tk(c?.ticket||c);if(!ticket||base.includes(ticket)||seen.has(ticket))continue;seen.add(ticket);diagnostics.candidateOnly++;if(formal.has(ticket))continue;diagnostics.formalAbsentCandidateOnly++;const [h,s,t]=ticket.split("-").map(Number),scenario=scenarios.find(x=>Number(x?.attacker||0)===h);if(!scenario)continue;const second=nums(scenario?.outcome?.secondCandidates),third=nums(scenario?.outcome?.thirdCandidates);if(!second.has(s)||!third.has(t))continue;diagnostics.scenarioComplete++;if(!structured3(c))continue;diagnostics.scenarioCompleteStructured3++;const row={c,ticket,scenarioType:String(scenario?.type||""),scenarioScore:Number(scenario?.score||0)};cand.push(row);diagnostics.byScenarioType[row.scenarioType]=(diagnostics.byScenarioType[row.scenarioType]||0)+1;if(ticket===actual){diagnostics.actualMatchScenarioComplete++;diagnostics.priorityActual.push(Number(c?.priorityScore||0));if(diagnostics.examples.length<30)diagnostics.examples.push({raceKey:r?.raceKey||`${date}-${r.jcd}-${r.raceNo}`,actual,priorityScore:Number(c?.priorityScore||0),scenarioType:row.scenarioType,scenarioScore:row.scenarioScore,baseCount:base.length});}}
+  for(const threshold of thresholds){const groups=[result[threshold].all,date<=20260808?result[threshold].train:result[threshold].test];for(const x of groups){x.n++;if(baseHit)x.baseHits++;}const capacity=Math.max(0,10-base.length);const eligible=cand.filter(x=>Number(x.c?.priorityScore||0)>=threshold).sort((a,b)=>Number(b.c?.priorityScore||0)-Number(a.c?.priorityScore||0)||b.scenarioScore-a.scenarioScore||a.ticket.localeCompare(b.ticket)).slice(0,capacity);const hit=baseHit||eligible.some(x=>x.ticket===actual);for(const x of groups){if(eligible.length){x.racesExpanded++;x.addedTickets+=eligible.length;}if(hit)x.newHits++;if(!baseHit&&hit){x.gains++;x.incrementalReturn+=payout(r);}}}
+ }
+}
+for(const threshold of thresholds){for(const k of["all","train","test"]){const x=result[threshold][k];x.baseRate=Number((x.baseHits/x.n*100).toFixed(2));x.hitRate=Number((x.newHits/x.n*100).toFixed(2));x.incrementalRecovery=x.addedTickets?Number((x.incrementalReturn/(x.addedTickets*100)*100).toFixed(2)):0;x.avgAdded=Number((x.addedTickets/x.n).toFixed(3));}}
+diagnostics.priorityActual.sort((a,b)=>a-b);fs.mkdirSync("tmp-analysis-output",{recursive:true});fs.writeFileSync("tmp-analysis-output/scenario-complete-candidates.json",JSON.stringify({diagnostics,result},null,2));console.log(JSON.stringify({diagnostics,result},null,2));
