@@ -8,6 +8,7 @@ on:
       - 'scripts/tmp-audit-main-attacker-retention.js'
       - 'scripts/tmp-audit-second-missing-roles.js'
       - 'scripts/tmp-audit-pickup-to-second.js'
+      - 'scripts/tmp-audit-pickup-second-grid.js'
       - '.github/workflows/tmp-post312-generation-gap-audit.yml'
 jobs:
   audit:
@@ -27,6 +28,8 @@ jobs:
         run: node scripts/tmp-audit-second-missing-roles.js
       - name: Audit pickup candidates promoted to second
         run: node scripts/tmp-audit-pickup-to-second.js
+      - name: Audit pickup-to-second threshold robustness
+        run: node scripts/tmp-audit-pickup-second-grid.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
