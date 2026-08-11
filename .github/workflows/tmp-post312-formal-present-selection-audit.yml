@@ -1,0 +1,23 @@
+name: Audit post-312 formal-present selection
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-audit-formal-present-selection.js'
+      - '.github/workflows/tmp-post312-formal-present-selection-audit.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Audit formal winner tickets omitted by practical selection
+        run: node scripts/tmp-audit-formal-present-selection.js
+      - name: Upload audit result
+        uses: actions/upload-artifact@v4
+        with:
+          name: post312-formal-present-selection-audit
+          path: tmp-analysis-output/formal-present-selection.json
+          if-no-files-found: error
