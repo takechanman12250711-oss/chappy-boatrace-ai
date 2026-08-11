@@ -1,23 +1,8 @@
 name: Audit post-312 generation gaps
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'scripts/tmp-audit-pickup-remainer-swap.js'
-      - '.github/workflows/tmp-post312-generation-gap-audit.yml'
+  workflow_dispatch:
 jobs:
-  audit:
+  audit-summary:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Audit pickup-second remainer-third role swap
-        run: node scripts/tmp-audit-pickup-remainer-swap.js
-      - name: Upload audit result
-        uses: actions/upload-artifact@v4
-        with:
-          name: post312-role-swap-audit
-          path: tmp-analysis-output/pickup-remainer-swap.json
-          if-no-files-found: error
+      - run: echo "PR #313 analysis complete; temporary audit only; do not merge."
