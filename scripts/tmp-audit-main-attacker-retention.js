@@ -1,0 +1,23 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path");
+global.window=global;require("../js/boat-identity");require("../js/ai-core");require("../js/prediction");
+const selector=require("../js/practical-selection"),core=global.ChappyAICore,dir=path.join(process.cwd(),"data","predictions");
+const rows=d=>[...(d.predictions||[]),...(d.verificationPredictions||[])];
+function tk(v){const m=String(v?.ticket||v||"").match(/[1-6]/g)||[];return m.length>=3?m.slice(0,3).join("-"):"";}
+function dataOf(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<5)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}
+function list(v){return(Array.isArray(v)?v:[]).map(x=>tk(x?.ticket||x)).filter(Boolean);}function nums(v){return[...new Set((Array.isArray(v)?v:[]).map(x=>Number(x?.boatNo??x)).filter(n=>n>=1&&n<=6))];}function pay(r){return Number(r?.result?.payout||r?.result?.officialPayoutPer100||r?.result?.review?.payout||0);}
+const thresholds=[60,65,70,75,80];const modes=["second","third","both"];const make=()=>({n:0,baseHits:0,newHits:0,added:0,racesExpanded:0,gains:0,return:0});const result={};for(const m of modes)result[m]=Object.fromEntries(thresholds.map(t=>[t,{all:make(),train:make(),test:make()}]));
+const diag={generated:{second:0,third:0,both:0},actualGainCandidates:{second:0,third:0},examples:[]};
+for(const f of fs.readdirSync(dir).filter(x=>/^202608(0[7-9]|10)\.json$/.test(x)).sort()){
+ const date=Number(f.slice(0,8)),d=JSON.parse(fs.readFileSync(path.join(dir,f),"utf8"));for(const r of rows(d)){
+  if(r?.result?.settled!==true)continue;const data=dataOf(r),actual=tk(r?.result?.resultTicket||r?.result?.review?.resultTicket);if(!data||!actual)continue;const p=global.createPrediction(data),sel=selector.select(p),base=list(sel?.tickets),baseHit=base.includes(actual),ai=core.buildPredictionData(data),rs=ai?.raceScenarios||{},main=rs.mainScenario||{},mainAttacker=Number(main?.attacker||main?.headBoatNo||0),scenarios=Array.isArray(rs.scenarios)?rs.scenarios:[];
+  const pools={second:[],third:[],both:[]};for(const sc of scenarios){const head=Number(sc?.attacker||0),score=Number(sc?.score||0);if(!head||!mainAttacker||head===mainAttacker)continue;const seconds=nums(sc?.outcome?.secondCandidates),thirds=nums(sc?.outcome?.thirdCandidates);
+    if(!seconds.includes(mainAttacker)){for(const third of thirds){if(third===head||third===mainAttacker)continue;const ticket=`${head}-${mainAttacker}-${third}`;pools.second.push({ticket,score,type:String(sc?.type||"")});}}
+    if(!thirds.includes(mainAttacker)){for(const second of seconds){if(second===head||second===mainAttacker)continue;const ticket=`${head}-${second}-${mainAttacker}`;pools.third.push({ticket,score,type:String(sc?.type||"")});}}
+  }
+  pools.both=[...pools.second,...pools.third];for(const m of modes){const seen=new Set();pools[m]=pools[m].filter(x=>!base.includes(x.ticket)&&!seen.has(x.ticket)&&(seen.add(x.ticket),true));diag.generated[m]+=pools[m].length;}
+  if(!baseHit){if(pools.second.some(x=>x.ticket===actual))diag.actualGainCandidates.second++;if(pools.third.some(x=>x.ticket===actual))diag.actualGainCandidates.third++;if(diag.examples.length<30&&(pools.both.some(x=>x.ticket===actual)))diag.examples.push({raceKey:r?.raceKey||`${date}-${r.jcd}-${r.raceNo}`,actual,mainScenario:String(main?.type||""),mainAttacker,match:pools.second.some(x=>x.ticket===actual)?"second":"third",scenario:pools.both.find(x=>x.ticket===actual)});}
+  for(const m of modes)for(const threshold of thresholds){const groups=[result[m][threshold].all,date<=20260808?result[m][threshold].train:result[m][threshold].test];for(const x of groups){x.n++;if(baseHit)x.baseHits++;}const capacity=Math.max(0,10-base.length),eligible=pools[m].filter(x=>x.score>=threshold).sort((a,b)=>b.score-a.score||a.ticket.localeCompare(b.ticket)).slice(0,capacity),hit=baseHit||eligible.some(x=>x.ticket===actual);for(const x of groups){if(eligible.length){x.racesExpanded++;x.added+=eligible.length;}if(hit)x.newHits++;if(!baseHit&&hit){x.gains++;x.return+=pay(r);}}}
+ }}
+for(const m of modes)for(const threshold of thresholds)for(const k of["all","train","test"]){const x=result[m][threshold][k];x.hitRate=Number((x.newHits/x.n*100).toFixed(2));x.incrementalRecovery=x.added?Number((x.return/(x.added*100)*100).toFixed(2)):0;x.avgAdded=Number((x.added/x.n).toFixed(3));}
+fs.mkdirSync("tmp-analysis-output",{recursive:true});fs.writeFileSync("tmp-analysis-output/main-attacker-retention.json",JSON.stringify({diag,result},null,2));console.log(JSON.stringify({diag,result},null,2));
