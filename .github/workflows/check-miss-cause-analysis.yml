@@ -22,5 +22,5 @@ jobs:
           node scripts/test-miss-cause-analysis.js
           node scripts/check-charter.js
       - name: Temporary order-miss audit
-        if: github.ref == 'refs/heads/agent/order-miss-audit'
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 303
         run: node scripts/tmp-audit-order-miss.js
