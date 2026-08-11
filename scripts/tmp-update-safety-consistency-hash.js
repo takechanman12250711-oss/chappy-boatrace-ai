@@ -1,2 +1,0 @@
-"use strict";
-const fs=require("node:fs"),path=require("node:path");const p=path.join(process.cwd(),"scripts","test-evaluated-scenario-consistency.js");let s=fs.readFileSync(p,"utf8");const old="a15156c36a26640e30a0b9d479ad4ee5e44fe3e71c9d708d10a5556bb313db73",neu="43f7477a9791ad7e50b23530cedb84cfc94aa7f139de55c9514b57d614ab5166";if(s.includes(neu)){console.log("hash already updated");process.exit(0);}if(!s.includes(old))throw new Error("old hash not found");s=s.replace(old,neu);fs.writeFileSync(p,s);console.log("consistency hash updated");
