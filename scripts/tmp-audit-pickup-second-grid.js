@@ -2,7 +2,7 @@
 const fs=require("node:fs"),path=require("node:path");
 global.window=global;require("../js/boat-identity");require("../js/ai-core");require("../js/prediction");
 const selector=require("../js/practical-selection"),core=global.ChappyAICore,dir=path.join(process.cwd(),"data","predictions");
-const rows=d=>[...(d.predictions||[]),...(d.verificationPredictions||[])];
+const rows=d=>{const out=[],seen=new Set();for(const r of [...(d.predictions||[]),...(d.verificationPredictions||[])]){const key=String(r?.raceKey||`${r?.jcd||""}-${r?.raceNo||r?.rno||""}`);if(seen.has(key))continue;seen.add(key);out.push(r);}return out;};
 function tk(v){const m=String(v?.ticket||v||"").match(/[1-6]/g)||[];return m.length>=3?m.slice(0,3).join("-"):"";}
 function dataOf(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<5)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}
 function list(v){return(Array.isArray(v)?v:[]).map(x=>tk(x?.ticket||x)).filter(Boolean);}function boats(v){return[...new Set((Array.isArray(v)?v:[]).map(x=>Number(x?.boatNo??x)).filter(n=>n>=1&&n<=6))];}function pay(r){return Number(r?.result?.payout||r?.result?.officialPayoutPer100||r?.result?.review?.payout||0);}
