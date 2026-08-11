@@ -6,40 +6,14 @@ on:
   push:
     branches: [feature/theory-evaluation-engine-phase1]
 
-permissions:
-  contents: write
-
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Apply approved 2-sashi tiebreak patch
-        if: github.head_ref == 'agent/sashi-skill-tiebreak'
-        run: node scripts/apply-sashi-skill-tiebreak-patch.js
-      - name: Validate 2-sashi tiebreak
-        if: github.head_ref == 'agent/sashi-skill-tiebreak'
-        run: |
-          node --check js/ai-core.js
-          node scripts/test-sashi-skill-tiebreak.js
-          node scripts/test-scenario-formations.js
-      - name: Commit approved core patch
-        if: github.head_ref == 'agent/sashi-skill-tiebreak'
-        run: |
-          git add js/ai-core.js
-          if git diff --cached --quiet; then
-            echo "No core patch to commit"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "feat: apply 2-sashi skill tiebreak"
-            git push origin HEAD:${GITHUB_HEAD_REF}
-          fi
       - name: Validate theory evaluation engine
         run: |
           node --check js/theory-evaluation-engine.js
