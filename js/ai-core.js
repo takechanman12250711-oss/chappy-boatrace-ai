@@ -8182,6 +8182,13 @@ function buildRaceScenarios(
 } else if (twoVsOne <= -8) {
   sashiScore -= 6;
 }
+  } else {
+    /*
+      1号艇との平均ST比較がない時は、
+      2号艇を差し頭として強く断定しない。
+      2・3着の差し残り評価は buildOutcome 側で維持する。
+    */
+    sashiScore -= 15;
   }
 
   sashiScore += frameMovementAdjustment(2);

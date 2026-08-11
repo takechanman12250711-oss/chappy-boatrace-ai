@@ -209,6 +209,43 @@ assert.equal(result.evidence.frameMovement.length, 4);
 assert.equal(result.dataStatus.hasSt, true);
 assert.equal(result.dataStatus.hasExhibition, true);
 
+const noSashiComparisonData = {
+  ...data,
+  entries: data.entries.map((entry) => {
+    if (![1, 2].includes(Number(entry.boat))) return { ...entry };
+    const cloned = { ...entry };
+    delete cloned.avgSt;
+    delete cloned.avgST;
+    delete cloned.averageSt;
+    delete cloned.averageST;
+    return cloned;
+  })
+};
+const withSashiComparison = aiCore.buildRaceScenarios(analyses, data);
+const withoutSashiComparison = aiCore.buildRaceScenarios(
+  analyses,
+  noSashiComparisonData
+);
+const withSashiScore = withSashiComparison.scenarios.find(
+  scenario => scenario.type === "sashi"
+).score;
+const withoutSashiScore = withoutSashiComparison.scenarios.find(
+  scenario => scenario.type === "sashi"
+).score;
+assert.ok(
+  Math.abs(
+    (withSashiScore - withoutSashiScore) - 15
+  ) < 1e-9,
+  "1・2号艇の平均ST比較が無い場合だけ2差し頭の成立度を15点抑える"
+);
+assert.ok(
+  withoutSashiComparison.scenarios
+    .find(scenario => scenario.type === "sashi")
+    .outcome.secondCandidates
+    .some(row => row.boatNo === 2),
+  "比較根拠不足でも2号艇の2着差し残り候補は維持する"
+);
+
 console.log("展開シナリオエンジン専用テスト: 合格");
 console.log("- 4展開: 1逃げ・2差し・3攻め・4カド");
 console.log("- 役割: 攻め・壁・残し・展開・拾い・道中・当地");
