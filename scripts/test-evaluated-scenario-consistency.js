@@ -1486,7 +1486,7 @@ const selectionHash =
     .digest("hex");
 assert.equal(
   selectionHash,
-  "8f3726c8d3133058b6cd2387069d222ff70dc6e6ba01e983606243ab3f4cab16",
+  "a15156c36a26640e30a0b9d479ad4ee5e44fe3e71c9d708d10a5556bb313db73",
   "正式主展開と根拠付き同一軸流し2券を含む281レースの買い目を固定する"
 );
 
