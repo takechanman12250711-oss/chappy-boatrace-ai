@@ -23,4 +23,6 @@ jobs:
           node scripts/check-charter.js
       - name: Temporary order-miss audit
         if: github.event_name == 'pull_request' && github.event.pull_request.number == 303
-        run: node scripts/tmp-audit-order-miss.js
+        run: |
+          node scripts/tmp-audit-order-miss.js
+          node scripts/tmp-simulate-order-miss-after-300.js
