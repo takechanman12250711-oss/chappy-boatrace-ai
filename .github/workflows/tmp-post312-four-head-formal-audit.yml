@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/tmp-audit-four-head-qualification.js'
+      - 'scripts/tmp-simulate-four-head-main-promotion.js'
       - '.github/workflows/tmp-post312-four-head-formal-audit.yml'
 jobs:
   audit:
@@ -14,8 +15,9 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/tmp-audit-four-head-qualification.js
+      - run: node scripts/tmp-simulate-four-head-main-promotion.js
       - uses: actions/upload-artifact@v4
         with:
           name: post312-four-head-formal-audit
-          path: tmp-analysis-output/four-head-qualification.json
+          path: tmp-analysis-output/*.json
           if-no-files-found: error
