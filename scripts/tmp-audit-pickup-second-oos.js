@@ -1,0 +1,23 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path");
+global.window=global;require("../js/boat-identity");require("../js/ai-core");require("../js/prediction");
+const selector=require("../js/practical-selection"),core=global.ChappyAICore,dir=path.join(process.cwd(),"data","predictions");
+const rows=d=>[...(d.predictions||[]),...(d.verificationPredictions||[])];
+function tk(v){const m=String(v?.ticket||v||"").match(/[1-6]/g)||[];return m.length>=3?m.slice(0,3).join("-"):"";}
+function dataOf(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<5)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}
+function list(v){return(Array.isArray(v)?v:[]).map(x=>tk(x?.ticket||x)).filter(Boolean);}
+function boats(v){return[...new Set((Array.isArray(v)?v:[]).map(x=>Number(x?.boatNo??x)).filter(n=>n>=1&&n<=6))];}
+function pay(r){return Number(r?.result?.payout||r?.result?.officialPayoutPer100||r?.result?.review?.payout||0);}
+function make(){return{n:0,baseHits:0,newHits:0,gains:0,added:0,ret:0,dates:new Set(),gainRaces:[]};}
+function finish(x){const out={...x,dates:[...x.dates].sort()};out.hitRate=x.n?Number((x.newHits/x.n*100).toFixed(2)):0;out.baseHitRate=x.n?Number((x.baseHits/x.n*100).toFixed(2)):0;out.roi=x.added?Number((x.ret/(x.added*100)*100).toFixed(2)):0;return out;}
+const perDate={},periods={preTarget:make(),target:make(),postTarget:make(),all:make()},seenRace=new Set(),fileStats=[];
+const files=fs.readdirSync(dir).filter(x=>/^\d{8}\.json$/.test(x)).sort();
+for(const f of files){const date=f.slice(0,8),d=JSON.parse(fs.readFileSync(path.join(dir,f),"utf8"));let rawRows=0,settled=0,reconstructible=0,dedupSkipped=0;for(const r of rows(d)){rawRows++;if(r?.result?.settled!==true)continue;settled++;const key=String(r?.raceKey||`${date}-${r?.jcd||""}-${r?.raceNo||""}`);if(seenRace.has(key)){dedupSkipped++;continue;}const data=dataOf(r),actual=tk(r?.result?.resultTicket||r?.result?.review?.resultTicket);if(!data||!actual)continue;seenRace.add(key);reconstructible++;
+ const pred=global.createPrediction(data),sel=selector.select(pred),base=list(sel?.tickets),baseHit=base.includes(actual),ai=core.buildPredictionData(data),rs=ai?.raceScenarios||{},scenarios=Array.isArray(rs.scenarios)?rs.scenarios:[],analyses=Array.isArray(ai?.analyses)?ai.analyses:(Array.isArray(ai?.boatAnalyses)?ai.boatAnalyses:[]),pickupOrder=boats(rs.pickupCandidates),score=new Map(analyses.map(a=>[Number(a?.boatNo||0),Number(a?.roleScores?.pickup||0)]));
+ const raw=[];for(const sc of scenarios){const head=Number(sc?.attacker||sc?.headBoatNo||0),scenarioScore=Number(sc?.score||0),existingSecond=new Set(boats(sc?.outcome?.secondCandidates)),thirds=boats(sc?.outcome?.thirdCandidates);if(!head||!thirds.length||scenarioScore<84)continue;for(const second of pickupOrder){const pickupScore=score.get(second)||0;if(second===head||existingSecond.has(second)||pickupScore<78)continue;for(const third of thirds){if(third===head||third===second)continue;raw.push({ticket:`${head}-${second}-${third}`,scenarioScore,pickupScore,second});}}}
+ const seen=new Set(),capacity=Math.max(0,10-base.length),eligible=raw.filter(x=>!base.includes(x.ticket)&&!seen.has(x.ticket)&&(seen.add(x.ticket),true)).sort((a,b)=>b.scenarioScore-a.scenarioScore||b.pickupScore-a.pickupScore||a.ticket.localeCompare(b.ticket)).slice(0,capacity),hit=baseHit||eligible.some(x=>x.ticket===actual);
+ if(!perDate[date])perDate[date]=make();const period=Number(date)<20260807?periods.preTarget:Number(date)<=20260810?periods.target:periods.postTarget;for(const x of [perDate[date],period,periods.all]){x.n++;x.dates.add(date);if(baseHit)x.baseHits++;if(hit)x.newHits++;x.added+=eligible.length;if(!baseHit&&hit){x.gains++;x.ret+=pay(r);if(x.gainRaces.length<30)x.gainRaces.push({raceKey:key,actual,payout:pay(r),added:eligible.length,date});}}
+ }
+ fileStats.push({date,rawRows,settled,reconstructible,dedupSkipped});}
+const usableDates=fileStats.filter(x=>x.reconstructible>0).map(x=>x.date);const out={fixed:{scenarioScoreMin:84,pickupScoreMin:78,maxTickets:10},files:fileStats,usable:{count:usableDates.length,earliest:usableDates[0]||null,latest:usableDates.at(-1)||null,dates:usableDates},periods:Object.fromEntries(Object.entries(periods).map(([k,v])=>[k,finish(v)])),perDate:Object.fromEntries(Object.entries(perDate).map(([k,v])=>[k,finish(v)]))};
+fs.mkdirSync("tmp-analysis-output",{recursive:true});fs.writeFileSync("tmp-analysis-output/pickup-second-oos.json",JSON.stringify(out,null,2));console.log(JSON.stringify(out,null,2));
