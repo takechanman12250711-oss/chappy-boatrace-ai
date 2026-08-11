@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [feature/miss-cause-analysis-phase2]
+    branches: [feature/miss-cause-analysis-phase2, agent/order-miss-audit]
 
 jobs:
   check:
@@ -21,3 +21,6 @@ jobs:
           node --check scripts/test-miss-cause-analysis.js
           node scripts/test-miss-cause-analysis.js
           node scripts/check-charter.js
+      - name: Temporary order-miss audit
+        if: github.ref == 'refs/heads/agent/order-miss-audit'
+        run: node scripts/tmp-audit-order-miss.js
