@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/tmp-audit-race-selection-features.js'
+      - 'scripts/tmp-audit-race-selection-oos.js'
       - '.github/workflows/tmp-post312-race-selection-audit.yml'
 jobs:
   audit:
@@ -15,6 +16,8 @@ jobs:
           node-version: '20'
       - name: Scan race-level hit miss features
         run: node scripts/tmp-audit-race-selection-features.js
+      - name: Test fixed race-selection rules out of time
+        run: node scripts/tmp-audit-race-selection-oos.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
