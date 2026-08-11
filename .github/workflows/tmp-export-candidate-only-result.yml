@@ -1,0 +1,27 @@
+name: Export candidate-only audit result
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-export-candidate-only-result.js'
+      - '.github/workflows/tmp-export-candidate-only-result.yml'
+      - 'data/predictions/20260807.json'
+      - 'data/predictions/20260808.json'
+      - 'data/predictions/20260809.json'
+      - 'data/predictions/20260810.json'
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Recompute candidate-only counterfactual
+        run: node scripts/tmp-export-candidate-only-result.js
+      - name: Upload exact JSON result
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-only-promotion-result
+          path: tmp-analysis-output/candidate-only-promotion.json
+          if-no-files-found: error
