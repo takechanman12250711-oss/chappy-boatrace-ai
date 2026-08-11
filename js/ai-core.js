@@ -8309,6 +8309,32 @@ if (hasComparison(3, 1)) {
   );
 
   /*
+    1逃げと2差しが僅差の時だけ、最終的な技量差をタイブレークに使う。
+    展開スコア自体には加点せず、展開→コース→ST等で作った差が
+    2.5点以内の場合に限り、全国技量指数で最終順位を解決する。
+  */
+  const sashiSkillTiebreak = {
+    applied: false,
+    scoreGap: round(
+      Math.max(0, escapeScore - sashiScore)
+    ),
+    nationalSkillGap: round(
+      toNumber(getAnalysis(2)?.indexes?.national, 0) -
+      toNumber(getAnalysis(1)?.indexes?.national, 0)
+    )
+  };
+
+  const rawEscapeIsMain =
+    escapeScore >= sashiScore &&
+    escapeScore >= threeAttackScore &&
+    escapeScore >= fourAttackScore;
+
+  sashiSkillTiebreak.applied =
+    rawEscapeIsMain &&
+    sashiSkillTiebreak.scoreGap <= 2.5 &&
+    sashiSkillTiebreak.nationalSkillGap >= 10;
+
+  /*
     追走・残しの保持は、該当する攻めが実際の主筋で、
     元の除外が発生する強度の時だけ成立させる。
 
@@ -8722,7 +8748,14 @@ if (hasComparison(3, 1)) {
       blockedBoats: [],
       outcome: buildOutcome("fourAttack")
     }
-  ].sort((a, b) => b.score - a.score);
+  ].sort((a, b) => {
+    if (sashiSkillTiebreak.applied) {
+      if (a.type === "sashi") return -1;
+      if (b.type === "sashi") return 1;
+    }
+
+    return b.score - a.score;
+  });
 
   scenarios.forEach((scenario, index) => {
     scenario.rank = index + 1;
@@ -8894,6 +8927,15 @@ if (hasComparison(3, 1)) {
     scenario: mainScenario?.label || "",
     score: confidence,
     mainGap: round(mainGap),
+    sashiSkillTiebreak: {
+      applied: sashiSkillTiebreak.applied,
+      scoreGap: sashiSkillTiebreak.scoreGap,
+      nationalSkillGap:
+        sashiSkillTiebreak.nationalSkillGap,
+      reason: sashiSkillTiebreak.applied
+        ? "1逃げと2差しが2.5点以内で、2号艇の全国技量指数が1号艇を10点以上上回るため2差しを最終採用"
+        : ""
+    },
     relations: {
       twoVsOne: round(twoVsOne),
       threeVsTwo: round(threeVsTwo),
