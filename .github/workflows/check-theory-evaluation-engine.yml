@@ -23,3 +23,5 @@ jobs:
           node scripts/check-charter.js
       - name: Temporary post-305 head miss audit
         run: node scripts/tmp-audit-post305-head-misses.js
+      - name: Temporary outside-head rule search
+        run: node scripts/tmp-search-outside-head-rules.js
