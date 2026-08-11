@@ -29,5 +29,4 @@ for(const f of fs.readdirSync(dir).filter(x=>/^202608(0[7-9]|10)\.json$/.test(x)
   }
 }
 for(const t of thresholds){for(const k of["all","train","test"]){const x=out.thresholds[t][k];x.baseHitRate=x.races?Number((x.baseHits/x.races*100).toFixed(2)):0;x.newHitRate=x.races?Number((x.newHits/x.races*100).toFixed(2)):0;x.incrementalRecoveryRate=x.addedStake?Number((x.incrementalReturn/x.addedStake*100).toFixed(2)):0;x.incrementalProfit=x.incrementalReturn-x.addedStake;x.returnPerGain=x.gains?Number((x.incrementalReturn/x.gains).toFixed(2)):0;}}
-}
 fs.mkdirSync("tmp-analysis-output",{recursive:true});fs.writeFileSync("tmp-analysis-output/candidate-only-roi.json",JSON.stringify(out,null,2));console.log(JSON.stringify(out,null,2));
