@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/tmp-audit-attack-head-loss.js'
       - 'scripts/tmp-audit-three-head-exclusion.js'
+      - 'scripts/tmp-simulate-three-head-promotion.js'
       - '.github/workflows/tmp-post312-attack-head-loss.yml'
 jobs:
   audit:
@@ -16,6 +17,7 @@ jobs:
           node-version: '20'
       - run: node scripts/tmp-audit-attack-head-loss.js
       - run: node scripts/tmp-audit-three-head-exclusion.js
+      - run: node scripts/tmp-simulate-three-head-promotion.js
       - uses: actions/upload-artifact@v4
         with:
           name: post312-attack-head-loss
