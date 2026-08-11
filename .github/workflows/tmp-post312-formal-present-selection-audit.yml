@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/tmp-audit-formal-present-selection.js'
+      - 'scripts/tmp-audit-formal-selection-grid.js'
       - '.github/workflows/tmp-post312-formal-present-selection-audit.yml'
 jobs:
   audit:
@@ -15,9 +16,11 @@ jobs:
           node-version: '20'
       - name: Audit formal winner tickets omitted by practical selection
         run: node scripts/tmp-audit-formal-present-selection.js
+      - name: Audit formal category rank and priority grid
+        run: node scripts/tmp-audit-formal-selection-grid.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
           name: post312-formal-present-selection-audit
-          path: tmp-analysis-output/formal-present-selection.json
+          path: tmp-analysis-output/*.json
           if-no-files-found: error
