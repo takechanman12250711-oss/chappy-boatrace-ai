@@ -21,5 +21,5 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
-      - name: Temporary four-attack bonus simulation
-        run: node scripts/tmp-simulate-four-attack-bonus.js
+      - name: Temporary split-sample four-attack validation
+        run: node scripts/tmp-validate-four-attack-rules.js
