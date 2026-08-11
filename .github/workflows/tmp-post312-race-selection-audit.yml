@@ -1,0 +1,23 @@
+name: Audit post-312 race selection
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-audit-race-selection-features.js'
+      - '.github/workflows/tmp-post312-race-selection-audit.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Scan race-level hit miss features
+        run: node scripts/tmp-audit-race-selection-features.js
+      - name: Upload audit result
+        uses: actions/upload-artifact@v4
+        with:
+          name: post312-race-selection-audit
+          path: tmp-analysis-output/*.json
+          if-no-files-found: error
