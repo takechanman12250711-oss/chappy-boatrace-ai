@@ -4344,11 +4344,17 @@
         addedTickets.length,
       finalCount:
         finalizedTickets.length,
-      candidatePromotionCount:
-        candidatePromotionTickets.length,
-      candidatePromotionThreshold:
-        MINIMUM_CANDIDATE_PROMOTION_SCORE,
-      candidatePromotionTickets,
+      ...(
+        candidatePromotionTickets.length
+          ? {
+              candidatePromotionCount:
+                candidatePromotionTickets.length,
+              candidatePromotionThreshold:
+                MINIMUM_CANDIDATE_PROMOTION_SCORE,
+              candidatePromotionTickets
+            }
+          : {}
+      ),
       hasIndependentAdditions:
         addedTickets.length > 0,
       exceededNormalMaximum:
