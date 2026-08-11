@@ -3,35 +3,21 @@ name: Check theory evaluation engine
 on:
   pull_request:
     branches: [main]
-
-permissions:
-  contents: write
+  push:
+    branches: [feature/theory-evaluation-engine-phase1]
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Update approved consistency hash
-        run: node scripts/tmp-update-safety-consistency-hash.js
-      - name: Validate approved safety change
+      - name: Validate theory evaluation engine
         run: |
-          node --check js/ai-core.js
-          node scripts/test-scenario-specific-safety-hold.js
-          node scripts/test-ai-core-formations.js
-          node scripts/test-evaluated-scenario-consistency.js
-          node scripts/test-scenario-formations.js
+          node --check js/theory-evaluation-engine.js
+          node --check scripts/build-theory-evaluations.js
+          node --check scripts/test-theory-evaluation-engine.js
+          node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
-      - name: Commit consistency hash when needed
-        run: |
-          if git diff --quiet -- scripts/test-evaluated-scenario-consistency.js; then exit 0; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add scripts/test-evaluated-scenario-consistency.js
-          git commit -m "Update scenario consistency snapshot for safety change"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
