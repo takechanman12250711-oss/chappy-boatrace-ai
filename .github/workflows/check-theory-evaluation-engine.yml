@@ -21,3 +21,5 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
+      - name: Temporary scenario-specific wall/hold audit
+        run: node scripts/tmp-compare-scenario-specific-wall-hold.js
