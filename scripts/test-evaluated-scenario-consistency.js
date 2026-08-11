@@ -47,7 +47,8 @@ const CATEGORY_GROUPS = {
   "万舟・穴": "hole",
   "穴": "hole",
   "穴候補": "hole",
-  "独立展開": "independent"
+  "独立展開": "independent",
+  "候補補完": "candidate-promotion"
 };
 
 function boatNo(mark) {
@@ -1193,6 +1194,39 @@ DATES.forEach((date) => {
         );
 
       if (
+        item.selectionTier ===
+          "候補補完"
+      ) {
+        assert.equal(
+          group,
+          "candidate-promotion",
+          `${raceKey}: 候補補完を専用カテゴリとして監査する`
+        );
+        assert.equal(
+          item.candidatePromotion,
+          true,
+          `${raceKey}: 候補補完フラグを明示する`
+        );
+        assert.equal(
+          Number(item.candidatePromotionThreshold),
+          90,
+          `${raceKey}: 候補補完閾値を90に固定する`
+        );
+        assert.ok(
+          Number(item.priorityScore || 0) >= 90,
+          `${raceKey}: 候補補完をpriority 90以上に限定する`
+        );
+        const physicalPositions = new Set(
+          arrayify(item.physicalCoverage)
+            .map(claim => Number(claim?.position || 0))
+            .filter(position => position >= 1 && position <= 3)
+        );
+        assert.equal(
+          physicalPositions.size,
+          3,
+          `${raceKey}: 候補補完は1〜3着すべての物理根拠を必須にする`
+        );
+      } else if (
         item.selectionTier !==
         "展開追加"
       ) {
@@ -1227,7 +1261,9 @@ DATES.forEach((date) => {
       if (
         structuredGroup &&
         item.selectionTier !==
-          "展開追加"
+          "展開追加" &&
+        item.selectionTier !==
+          "候補補完"
       ) {
         assert.equal(
           structuredGroup,
@@ -1262,13 +1298,25 @@ DATES.forEach((date) => {
     assert.ok(
       practical.tickets.every(
         (item) =>
-          item.evidenceQualified === true &&
           (
-            item.validBranchIds ||
-            []
-          ).length > 0
+            item.evidenceQualified === true &&
+            (
+              item.validBranchIds ||
+              []
+            ).length > 0
+          ) ||
+          (
+            item.selectionTier === "候補補完" &&
+            item.candidatePromotion === true &&
+            Number(item.priorityScore || 0) >= 90 &&
+            new Set(
+              arrayify(item.physicalCoverage)
+                .map(claim => Number(claim?.position || 0))
+                .filter(position => position >= 1 && position <= 3)
+            ).size === 3
+          )
       ),
-      `${raceKey}: 全購入買い目を実在する構造化枝へ接続する ` +
+      `${raceKey}: 全購入買い目を構造化枝または承認済み候補補完条件へ接続する ` +
       practical.tickets
         .filter(
           (item) =>
@@ -1486,7 +1534,7 @@ const selectionHash =
     .digest("hex");
 assert.equal(
   selectionHash,
-  "43f7477a9791ad7e50b23530cedb84cfc94aa7f139de55c9514b57d614ab5166",
+  "88855158a9eed5ee63f9381425a818c24fe5ad1e607b2f7852c9d9b7444c0373",
   "正式主展開と根拠付き同一軸流し2券を含む281レースの買い目を固定する"
 );
 

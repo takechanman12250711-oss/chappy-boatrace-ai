@@ -19,6 +19,8 @@
   const MAXIMUM_COUNT = 10;
   const FLOW_GROUP_COUNT = 2;
   const MINIMUM_FLOW_ROLE_SCORE = 65;
+  const MINIMUM_CANDIDATE_PROMOTION_SCORE =
+    90;
   const TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT =
     1;
   const TARGET_EXCLUDED_PREVIEW_COUNT =
@@ -3582,6 +3584,92 @@
       }
     );
 
+    /*
+      candidate-only は安全ゲートを外さない。
+      既存の通常枠・独立展開を確定した後、最大10点までの空き枠だけを使う。
+      1〜3着すべてに物理根拠があり、priority 90以上の候補だけを補完する。
+    */
+    function hasThreePositionPhysicalEvidence(row) {
+      const positions = new Set(
+        arrayify(row?.physicalCoverage)
+          .map(claim =>
+            Number(claim?.position || 0)
+          )
+          .filter(position =>
+            position >= 1 &&
+            position <= 3
+          )
+      );
+      return positions.size === 3;
+    }
+
+    const candidateOnlyPromotionPool =
+      candidates
+        .filter(({ row, validation }) => {
+          const candidateOnly =
+            (
+              validation.valid === false &&
+              validation.reasonCode ===
+                "CANDIDATE_ONLY_EVALUATION"
+            ) ||
+            (
+              validation.valid === true &&
+              validation.purchaseEligible === true &&
+              validation.expansionEligible === false
+            );
+
+          return (
+            candidateOnly &&
+            !used.has(row.ticket) &&
+            row.priorityScore >=
+              MINIMUM_CANDIDATE_PROMOTION_SCORE &&
+            hasThreePositionPhysicalEvidence(row)
+          );
+        })
+        .sort(
+          (a, b) =>
+            b.row.priorityScore -
+              a.row.priorityScore ||
+            a.row.ticket.localeCompare(
+              b.row.ticket
+            )
+        );
+
+    candidateOnlyPromotionPool.forEach(
+      ({ row }) => {
+        if (
+          selected.length >=
+          MAXIMUM_COUNT
+        ) {
+          return;
+        }
+
+        const promoted = {
+          ...row,
+          category: "候補補完",
+          selectionTier: "候補補完",
+          candidatePromotion: true,
+          candidatePromotionThreshold:
+            MINIMUM_CANDIDATE_PROMOTION_SCORE,
+          candidatePromotionReason:
+            "1〜3着すべてに物理根拠があり、priority 90以上のため空き枠へ補完",
+          comment:
+            row.comment ||
+            row.scenarioSummary ||
+            "3着まで物理根拠がそろう高優先度候補を最大10点の空き枠へ補完。"
+        };
+
+        used.add(promoted.ticket);
+        selected.push(promoted);
+        recordDecision(
+          promoted,
+          true,
+          "CANDIDATE_ONLY_PROMOTED",
+          promoted.candidatePromotionReason
+        );
+      }
+    );
+
     candidates.forEach(
       ({ row, validation }) => {
         const wasSelected =
@@ -4227,6 +4315,23 @@
             )
           ]
         }));
+    const candidatePromotionTickets =
+      finalizedTickets
+        .filter(
+          row =>
+            row.selectionTier ===
+            "候補補完"
+        )
+        .map(row => ({
+          ticket: row.ticket,
+          priorityScore:
+            row.priorityScore,
+          roleLabels: [
+            ...arrayify(
+              row.roleLabels
+            )
+          ]
+        }));
     const expansionSummary = {
       normalCount:
         normalTicketCount,
@@ -4234,6 +4339,17 @@
         addedTickets.length,
       finalCount:
         finalizedTickets.length,
+      ...(
+        candidatePromotionTickets.length
+          ? {
+              candidatePromotionCount:
+                candidatePromotionTickets.length,
+              candidatePromotionThreshold:
+                MINIMUM_CANDIDATE_PROMOTION_SCORE,
+              candidatePromotionTickets
+            }
+          : {}
+      ),
       hasIndependentAdditions:
         addedTickets.length > 0,
       exceededNormalMaximum:
@@ -4241,9 +4357,11 @@
           NORMAL_MAXIMUM_COUNT,
       addedTickets,
       reason:
-        addedTickets.length
-          ? "通常枠とは別に、時系列と艇・着順・役割が一致した独立展開だけを追加。"
-          : "購入可能な独立展開がないため、通常枠の点数を維持。"
+        candidatePromotionTickets.length
+          ? "通常枠と検証済み独立展開を維持し、3着まで物理根拠がそろうpriority 90以上の候補だけを空き枠へ補完。"
+          : addedTickets.length
+            ? "通常枠とは別に、時系列と艇・着順・役割が一致した独立展開だけを追加。"
+            : "購入可能な独立展開がないため、通常枠の点数を維持。"
     };
     const verificationTickets =
       finalizedTickets.map(row => {
@@ -4435,7 +4553,7 @@
         confidenceDefinitionVersion:
           "internal-score-v1",
         ticketPolicyVersion:
-          "practical-5-7-10-grounded-flow2-v2"
+          "practical-5-7-10-grounded-flow2-candidate90-v3"
       },
       mainScenario: {
         type:
@@ -4487,10 +4605,12 @@
     return {
       status: "selected",
       reason:
-        selected.length >
-          NORMAL_MAXIMUM_COUNT
-          ? "基本5〜7点に、検証済みの独立展開だけを追加。"
-          : "展開とコースから基本5〜7点を構成。",
+        candidatePromotionTickets.length
+          ? "基本5〜7点と検証済み独立展開を維持し、priority 90以上かつ3着まで物理根拠がそろう候補だけを空き枠へ補完。"
+          : selected.length >
+              NORMAL_MAXIMUM_COUNT
+            ? "基本5〜7点に、検証済みの独立展開だけを追加。"
+            : "展開とコースから基本5〜7点を構成。",
       standardCount:
         STANDARD_COUNT,
       normalMaximumCount:
@@ -4515,6 +4635,7 @@
     MAXIMUM_COUNT,
     FLOW_GROUP_COUNT,
     MINIMUM_FLOW_ROLE_SCORE,
+    MINIMUM_CANDIDATE_PROMOTION_SCORE,
     THEORY_SCHEMA_VERSION,
     THEORY_SET_FINGERPRINT,
     TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT,
