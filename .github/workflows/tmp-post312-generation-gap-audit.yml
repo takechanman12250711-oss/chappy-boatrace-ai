@@ -9,6 +9,7 @@ on:
       - 'scripts/tmp-audit-second-missing-roles.js'
       - 'scripts/tmp-audit-pickup-to-second.js'
       - 'scripts/tmp-audit-pickup-second-grid.js'
+      - 'scripts/tmp-audit-pickup-second-oos.js'
       - '.github/workflows/tmp-post312-generation-gap-audit.yml'
 jobs:
   audit:
@@ -30,6 +31,8 @@ jobs:
         run: node scripts/tmp-audit-pickup-to-second.js
       - name: Audit pickup-to-second threshold robustness
         run: node scripts/tmp-audit-pickup-second-grid.js
+      - name: Audit fixed pickup-to-second 84/78 out-of-time
+        run: node scripts/tmp-audit-pickup-second-oos.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
