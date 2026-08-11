@@ -68,9 +68,10 @@ const withSashiScore = withSashiComparison.scenarios.find(
 const withoutSashiScore = withoutSashiComparison.scenarios.find(
   scenario => scenario.type === "sashi"
 ).score;
-assert.equal(
-  withSashiScore - withoutSashiScore,
-  15,
+assert.ok(
+  Math.abs(
+    (withSashiScore - withoutSashiScore) - 15
+  ) < 1e-9,
   "1・2号艇の平均ST比較が無い場合だけ2差し頭の成立度を15点抑える"
 );
 assert.ok(
