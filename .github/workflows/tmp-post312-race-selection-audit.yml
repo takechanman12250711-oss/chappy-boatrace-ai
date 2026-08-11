@@ -6,6 +6,7 @@ on:
       - 'scripts/tmp-audit-race-selection-features.js'
       - 'scripts/tmp-audit-race-selection-oos.js'
       - 'scripts/tmp-audit-race-selection-stable-features.js'
+      - 'scripts/tmp-audit-race-selection-stable-rules.js'
       - '.github/workflows/tmp-post312-race-selection-audit.yml'
 jobs:
   audit:
@@ -21,6 +22,8 @@ jobs:
         run: node scripts/tmp-audit-race-selection-oos.js
       - name: Scan cross-period stable race-selection features
         run: node scripts/tmp-audit-race-selection-stable-features.js
+      - name: Test stable race-selection rules across four blocks
+        run: node scripts/tmp-audit-race-selection-stable-rules.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
