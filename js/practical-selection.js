@@ -3646,11 +3646,6 @@
 
         const promoted = {
           ...row,
-          coverage: [
-            ...arrayify(
-              row.physicalCoverage
-            )
-          ],
           category: "候補補完",
           selectionTier: "候補補完",
           candidatePromotion: true,
