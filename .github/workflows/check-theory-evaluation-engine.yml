@@ -6,17 +6,11 @@ on:
   push:
     branches: [feature/theory-evaluation-engine-phase1]
 
-permissions:
-  contents: write
-
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/sashi-evidence-guard
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -27,17 +21,3 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
-      - name: Temporary sashi evidence audit
-        run: node scripts/tmp-audit-sashi-evidence.js
-      - name: Apply and validate sashi evidence guard
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.actor != 'github-actions[bot]'
-        run: |
-          node scripts/apply-sashi-evidence-guard.js
-          node --check js/ai-core.js
-          node scripts/test-race-scenarios.js
-          node scripts/check-charter.js
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add js/ai-core.js scripts/test-race-scenarios.js
-          git commit -m "Guard sashi head when comparison evidence is missing"
-          git push origin HEAD:agent/sashi-evidence-guard
