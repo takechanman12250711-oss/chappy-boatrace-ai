@@ -1,0 +1,23 @@
+name: Audit post-312 scenario profit decomposition
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-audit-scenario-profit-decomposition.js'
+      - '.github/workflows/tmp-post312-scenario-profit-decomposition.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Decompose scenario profit and misses
+        run: node scripts/tmp-audit-scenario-profit-decomposition.js
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: post312-scenario-profit-decomposition
+          path: tmp-analysis-output/scenario-profit-decomposition.json
+          if-no-files-found: error
