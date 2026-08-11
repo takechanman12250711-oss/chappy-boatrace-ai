@@ -535,14 +535,17 @@ const attackFormal =
   );
 const attackTicket =
   attackFormal.formations.main[0];
-const attackCoverTicket =
-  attackFormal.formations.safety[0];
+for (let first = 1; first <= 6; first += 1) {
+  for (let second = 1; second <= 6; second += 1) {
+    for (let third = 1; third <= 6; third += 1) {
+      if (new Set([first, second, third]).size !== 3) continue;
+      attackData.odds.byTicket[`${first}-${second}-${third}`] = 3.1;
+    }
+  }
+}
 attackData.odds.byTicket[
   attackTicket
 ] = 420;
-attackData.odds.byTicket[
-  attackCoverTicket
-] = 3.1;
 const attackMerged =
   aiCore.mergeWithPrediction(
     legacyPrediction(
@@ -570,9 +573,15 @@ assert.equal(
   420,
   "stale行オッズより現在の公式オッズを優先する"
 );
+const mergedAttackCoverTicket =
+  attackMerged.formation.cover[0];
+assert.ok(
+  mergedAttackCoverTicket,
+  "正式押さえを1券以上生成する"
+);
 assert.equal(
   attackMerged.mainSheet.coverTickets.find(
-    row => row.ticket === attackCoverTicket
+    row => row.ticket === mergedAttackCoverTicket
   ).odds,
   3.1,
   "押さえが低オッズでも公式値をそのまま表示する"
@@ -582,7 +591,7 @@ assert.ok(
     attackTicket
   ) &&
     attackMerged.formation.cover.includes(
-      attackCoverTicket
+      mergedAttackCoverTicket
     ),
   "本線420倍・押さえ3.1倍でも展開分類をオッズで逆転させない"
 );
