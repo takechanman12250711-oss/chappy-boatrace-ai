@@ -21,5 +21,5 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
-      - name: Temporary scenario score audit
-        run: node scripts/tmp-audit-scenario-scores.js
+      - name: Temporary scenario threshold simulation
+        run: node scripts/tmp-simulate-scenario-thresholds.js
