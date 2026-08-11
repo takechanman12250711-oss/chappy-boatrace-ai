@@ -1,0 +1,16 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path");
+global.window=global;require("../js/boat-identity");require("../js/ai-core");require("../js/prediction");
+const selector=require("../js/practical-selection"),dir=path.join(process.cwd(),"data","predictions");
+const rows=d=>[...(d.predictions||[]),...(d.verificationPredictions||[])];
+function tk(v){const m=String(v?.ticket||v||"").match(/[1-6]/g)||[];return m.length>=3?m.slice(0,3).join("-"):"";}
+function list(v){return(Array.isArray(v)?v:[]).map(x=>tk(x?.ticket||x)).filter(Boolean);}
+function dataOf(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<5)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}
+function pay(r){return Number(r?.result?.payout||r?.result?.officialPayoutPer100||r?.result?.review?.payout||0);}
+function bucket(){return{races:0,hits:0,tickets:0,stake:0,ret:0,actualHeads:{},predHeads:{}};}
+function add(b,e){b.races++;b.tickets+=e.tickets.length;b.stake+=e.tickets.length*100;if(e.hit){b.hits++;b.ret+=e.payout;}b.actualHeads[e.actualHead]=(b.actualHeads[e.actualHead]||0)+1;b.predHeads[e.predHead]=(b.predHeads[e.predHead]||0)+1;}
+function done(b){return{...b,hitRate:b.races?+(b.hits/b.races*100).toFixed(2):0,roi:b.stake?+(b.ret/b.stake*100).toFixed(2):0,profit:b.ret-b.stake};}
+const periods={pre:[],target:[]};const seen=new Set();
+for(const f of fs.readdirSync(dir).filter(x=>/^\d{8}\.json$/.test(x)).sort()){const date=f.slice(0,8),n=Number(date),d=JSON.parse(fs.readFileSync(path.join(dir,f),"utf8"));for(const r of rows(d)){if(r?.result?.settled!==true)continue;const key=r?.raceKey||`${date}-${r.jcd}-${r.raceNo}`;if(seen.has(key))continue;seen.add(key);const data=dataOf(r),actual=tk(r?.result?.resultTicket||r?.result?.review?.resultTicket);if(!data||!actual)continue;const p=global.createPrediction(data),sel=selector.select(p),tickets=list(sel?.tickets),hit=tickets.includes(actual),payout=pay(r);const flow=p?.aiCore?.raceFlow||p?.raceFlow||p?.mainSheet?.raceFlow||{};const scenario=String(flow?.mainScenario||flow?.scenario||p?.aiCore?.mainScenario||p?.mainScenario||"UNKNOWN");const predHead=Number(tk(tickets[0]||"").split("-")[0]||flow?.headBoatNo||0);const e={date,key,scenario,predHead,actualHead:Number(actual[0]),actual,tickets,hit,payout};if(n<20260807)periods.pre.push(e);else if(n<=20260810)periods.target.push(e);}}
+function summarize(arr){const byScenario={},byActualHead={},matrix={};for(const e of arr){byScenario[e.scenario]??=bucket();add(byScenario[e.scenario],e);byActualHead[e.actualHead]??=bucket();add(byActualHead[e.actualHead],e);const k=`${e.scenario}|actual${e.actualHead}`;matrix[k]??=bucket();add(matrix[k],e);}for(const o of [byScenario,byActualHead,matrix])for(const k of Object.keys(o))o[k]=done(o[k]);return{all:done(arr.reduce((b,e)=>(add(b,e),b),bucket())),byScenario,byActualHead,matrix};}
+const out={pre:summarize(periods.pre),target:summarize(periods.target)};fs.mkdirSync("tmp-analysis-output",{recursive:true});fs.writeFileSync("tmp-analysis-output/scenario-profit-decomposition.json",JSON.stringify(out,null,2));console.log(JSON.stringify(out,null,2));
