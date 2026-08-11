@@ -6,17 +6,11 @@ on:
   push:
     branches: [feature/theory-evaluation-engine-phase1]
 
-permissions:
-  contents: write
-
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/core-miss-audit
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -27,25 +21,3 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
-      - name: Repair evaluated scenario snapshot from main
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 300 && github.actor != 'github-actions[bot]'
-        run: |
-          git fetch origin main
-          git checkout origin/main -- scripts/test-evaluated-scenario-consistency.js
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('scripts/test-evaluated-scenario-consistency.js')
-          text = path.read_text()
-          old = 'e58c300a9bcdd949f64764c7e130f52dc090baa81508f3164d1fbfe0f354fa3e'
-          new = '4f3e24813c9fd710042ce9c187da80b668d2b72571ba1bbbfdd0b78d4b6c9b3e'
-          if text.count(old) != 1:
-              raise SystemExit(f'expected old hash exactly once, found {text.count(old)}')
-          path.write_text(text.replace(old, new, 1))
-          PY
-          node --check scripts/test-evaluated-scenario-consistency.js
-          node scripts/test-evaluated-scenario-consistency.js
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add scripts/test-evaluated-scenario-consistency.js
-          git commit -m "Update evaluated scenario snapshot for balanced tickets"
-          git push origin HEAD:agent/core-miss-audit
