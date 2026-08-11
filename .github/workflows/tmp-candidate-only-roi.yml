@@ -1,0 +1,27 @@
+name: Export candidate-only ROI audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-candidate-only-roi.js'
+      - '.github/workflows/tmp-candidate-only-roi.yml'
+      - 'data/predictions/20260807.json'
+      - 'data/predictions/20260808.json'
+      - 'data/predictions/20260809.json'
+      - 'data/predictions/20260810.json'
+jobs:
+  roi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Compute incremental ROI for thresholds 85 and 90
+        run: node scripts/tmp-candidate-only-roi.js
+      - name: Upload exact ROI JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-only-roi-result
+          path: tmp-analysis-output/candidate-only-roi.json
+          if-no-files-found: error
