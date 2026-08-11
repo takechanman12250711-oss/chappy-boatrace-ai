@@ -6,17 +6,11 @@ on:
   push:
     branches: [feature/theory-evaluation-engine-phase1]
 
-permissions:
-  contents: write
-
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/sashi-evidence-guard
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -27,23 +21,3 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
-      - name: Update evaluated scenario snapshot for PR 301
-        if: github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.actor != 'github-actions[bot]'
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('scripts/test-evaluated-scenario-consistency.js')
-          text = path.read_text()
-          old = '4f3e24813c9fd710042ce9c187da80b668d2b72571ba1bbbfdd0b78d4b6c9b3e'
-          new = '8f3726c8d3133058b6cd2387069d222ff70dc6e6ba01e983606243ab3f4cab16'
-          if text.count(old) != 1:
-              raise SystemExit(f'expected old hash once, found {text.count(old)}')
-          path.write_text(text.replace(old, new, 1))
-          PY
-          node --check scripts/test-evaluated-scenario-consistency.js
-          node scripts/test-evaluated-scenario-consistency.js
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add scripts/test-evaluated-scenario-consistency.js
-          git commit -m "Update evaluated scenario snapshot for sashi guard"
-          git push origin HEAD:agent/sashi-evidence-guard
