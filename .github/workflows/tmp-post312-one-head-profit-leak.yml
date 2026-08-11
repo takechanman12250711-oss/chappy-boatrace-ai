@@ -1,0 +1,21 @@
+name: Audit post-312 one-head profit leak
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-audit-one-head-profit-leak.js'
+      - '.github/workflows/tmp-post312-one-head-profit-leak.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/tmp-audit-one-head-profit-leak.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: post312-one-head-profit-leak
+          path: tmp-analysis-output/one-head-profit-leak.json
+          if-no-files-found: error
