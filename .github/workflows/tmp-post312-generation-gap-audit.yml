@@ -3,15 +3,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/tmp-audit-post312-generation-gaps.js'
-      - 'scripts/tmp-audit-scenario-complete-candidates.js'
-      - 'scripts/tmp-audit-main-attacker-retention.js'
-      - 'scripts/tmp-audit-second-missing-roles.js'
-      - 'scripts/tmp-audit-third-missing-roles.js'
-      - 'scripts/tmp-audit-triple-role-third.js'
-      - 'scripts/tmp-audit-pickup-to-second.js'
-      - 'scripts/tmp-audit-pickup-second-grid.js'
-      - 'scripts/tmp-audit-pickup-second-oos.js'
+      - 'scripts/tmp-audit-both-missing-roles.js'
       - '.github/workflows/tmp-post312-generation-gap-audit.yml'
 jobs:
   audit:
@@ -21,27 +13,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Audit remaining misses after candidate90
-        run: node scripts/tmp-audit-post312-generation-gaps.js
-      - name: Audit scenario-complete candidate recovery
-        run: node scripts/tmp-audit-scenario-complete-candidates.js
-      - name: Audit main-attacker retention
-        run: node scripts/tmp-audit-main-attacker-retention.js
-      - name: Audit missing second-place role sources
-        run: node scripts/tmp-audit-second-missing-roles.js
-      - name: Audit missing third-place role sources
-        run: node scripts/tmp-audit-third-missing-roles.js
-      - name: Audit triple-role third restoration
-        run: node scripts/tmp-audit-triple-role-third.js
-      - name: Audit pickup candidates promoted to second
-        run: node scripts/tmp-audit-pickup-to-second.js
-      - name: Audit pickup-to-second threshold robustness
-        run: node scripts/tmp-audit-pickup-second-grid.js
-      - name: Audit fixed pickup-to-second 84/78 out-of-time
-        run: node scripts/tmp-audit-pickup-second-oos.js
+      - name: Audit both-missing role sources
+        run: node scripts/tmp-audit-both-missing-roles.js
       - name: Upload audit result
         uses: actions/upload-artifact@v4
         with:
-          name: post312-generation-gap-audit
-          path: tmp-analysis-output/*.json
+          name: post312-both-missing-audit
+          path: tmp-analysis-output/both-missing-roles.json
           if-no-files-found: error
