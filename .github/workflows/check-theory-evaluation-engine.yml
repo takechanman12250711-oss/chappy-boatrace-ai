@@ -21,3 +21,5 @@ jobs:
           node --check scripts/test-theory-evaluation-engine.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/check-charter.js
+      - name: Temporary order miss audit
+        run: node scripts/tmp-audit-order-miss.js
