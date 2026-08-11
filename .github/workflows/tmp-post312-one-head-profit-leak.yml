@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/tmp-audit-one-head-profit-leak.js'
       - 'scripts/tmp-simulate-one-head-trim.js'
+      - 'scripts/tmp-simulate-one-head-pre-race-trim.js'
       - '.github/workflows/tmp-post312-one-head-profit-leak.yml'
 jobs:
   audit:
@@ -16,6 +17,7 @@ jobs:
           node-version: '20'
       - run: node scripts/tmp-audit-one-head-profit-leak.js
       - run: node scripts/tmp-simulate-one-head-trim.js
+      - run: node scripts/tmp-simulate-one-head-pre-race-trim.js
       - uses: actions/upload-artifact@v4
         with:
           name: post312-one-head-profit-leak
