@@ -13,43 +13,29 @@ function rowsOf(data) {
   ];
 }
 
-function stringPaths(value, target, base = "", rows = []) {
-  if (rows.length >= 8 || value === null || value === undefined) return rows;
-  if (typeof value === "string") {
-    if (value.includes(target)) rows.push({ path: base, value });
-    return rows;
-  }
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => stringPaths(item, target, `${base}[${index}]`, rows));
-    return rows;
-  }
-  if (typeof value === "object") {
-    Object.entries(value).forEach(([key, item]) => stringPaths(item, target, base ? `${base}.${key}` : key, rows));
-  }
-  return rows;
-}
-
 function mainScenarioOf(record) {
   const prediction = record?.prediction || {};
-  const raw = [
+  const direct = [
     prediction?.aiCore?.raceScenarios?.mainScenario?.type,
     prediction?.raceScenarios?.mainScenario?.type,
     prediction?.mainScenario?.type,
     prediction?.scenarioType,
     prediction?.scenarioLabel,
     prediction?.raceFlow?.scenarioType,
-    prediction?.raceFlow?.scenario,
     prediction?.mainSheet?.scenarioType,
-    prediction?.mainSheet?.scenario,
     record?.scenarioType,
     record?.scenarioLabel,
     record?.best?.scenarioLabel
   ].find(value => String(value || "").trim());
-  const text = String(raw || "");
-  if (text === "sashi" || text.includes("2コース差し") || text.includes("2差し")) return "sashi";
-  if (text === "escape" || text.includes("1号艇逃げ") || text.includes("1逃げ")) return "escape";
-  if (text === "threeAttack" || text.includes("3コース攻め") || text.includes("3攻め")) return "threeAttack";
-  if (text === "fourAttack" || text.includes("4カド") || text.includes("4コース攻め")) return "fourAttack";
+
+  const title = String(prediction?.raceFlow?.scenario?.title || "");
+  const summary = String(prediction?.raceFlow?.summary || "");
+  const text = [String(direct || ""), title, summary].join(" ");
+
+  if (text === "sashi" || /最有力展開は2コース差し|2コース差し本線|\b2差し\b/.test(text)) return "sashi";
+  if (text === "escape" || /最有力展開は1号艇逃げ|1号艇逃げ本線|\b1逃げ\b/.test(text)) return "escape";
+  if (text === "threeAttack" || /最有力展開は3コース攻め|3コース攻め本線|\b3攻め\b/.test(text)) return "threeAttack";
+  if (text === "fourAttack" || /最有力展開は4カド|4カド本線|4コース攻め本線/.test(text)) return "fourAttack";
   return "";
 }
 
@@ -80,7 +66,7 @@ const counters = {
   withoutComparisonScenarioMiss: 0,
   withoutComparisonScenarioHit: 0,
   missTypes: {},
-  sashiStringExamples: []
+  missingBoatSnapshotExamples: []
 };
 
 for (const name of fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name))) {
@@ -90,12 +76,6 @@ for (const name of fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)
     counters.settled += 1;
     const scenario = mainScenarioOf(record);
     counters.scenarioTypes[scenario || "unknown"] = (counters.scenarioTypes[scenario || "unknown"] || 0) + 1;
-
-    if (!scenario && counters.sashiStringExamples.length < 4) {
-      const hits = stringPaths(record?.prediction || record, "2コース差し");
-      if (hits.length) counters.sashiStringExamples.push({ raceKey: record?.raceKey || record?.key || "", hits });
-    }
-
     if (scenario !== "sashi") continue;
     counters.sashiMain += 1;
 
@@ -110,6 +90,16 @@ for (const name of fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)
     }
 
     counters.withoutComparison += 1;
+    if (counters.missingBoatSnapshotExamples.length < 5) {
+      counters.missingBoatSnapshotExamples.push({
+        raceKey: record?.raceKey || record?.key || "",
+        boatCount: boats.length,
+        boat1AvgSt: avgStOf(boat1),
+        boat2AvgSt: avgStOf(boat2),
+        summary: record?.prediction?.raceFlow?.summary || ""
+      });
+    }
+
     const review = record?.result?.review || {};
     const hit = record?.result?.practicalHit === true || review?.practicalHit === true;
     if (hit) counters.withoutComparisonHit += 1;
