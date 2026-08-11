@@ -1,0 +1,21 @@
+name: Audit post-312 attack-head loss
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-audit-attack-head-loss.js'
+      - '.github/workflows/tmp-post312-attack-head-loss.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/tmp-audit-attack-head-loss.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: post312-attack-head-loss
+          path: tmp-analysis-output/attack-head-loss.json
+          if-no-files-found: error
