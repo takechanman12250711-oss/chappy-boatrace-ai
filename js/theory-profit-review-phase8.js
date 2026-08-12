@@ -64,6 +64,7 @@ function build(performance = {}, ranking = {}) {
       theoryKey: selected.theoryKey,
       label: selected.label,
       evidenceCount: selected.evidenceCount,
+      ready: selected.ready,
       metrics: selected.metrics,
       metricStatuses: selected.metricStatuses,
       missingMetrics: selected.missingMetrics,
