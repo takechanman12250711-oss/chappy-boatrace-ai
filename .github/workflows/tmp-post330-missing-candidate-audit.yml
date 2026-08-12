@@ -1,9 +1,9 @@
-name: Audit post-330 three-attack discrimination
+name: Audit post-330 one-to-three scenario shape
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/tmp-audit-three-attack-discrimination.js'
+      - 'scripts/tmp-audit-one-to-three-head-miss.js'
       - '.github/workflows/tmp-post330-missing-candidate-audit.yml'
 jobs:
   audit:
@@ -13,8 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node scripts/tmp-audit-three-attack-discrimination.js
+      - run: node scripts/tmp-audit-one-to-three-head-miss.js
       - uses: actions/upload-artifact@v4
         with:
-          name: post330-three-attack-discrimination
-          path: tmp-analysis-output/post330-three-attack-discrimination.json
+          name: post330-one-to-three-head-miss
+          path: tmp-analysis-output/post330-one-to-three-head-miss.json
