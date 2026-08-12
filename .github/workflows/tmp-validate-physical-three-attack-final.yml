@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/tmp-validate-physical-three-attack-promotion.js'
+      - 'scripts/tmp-cjs-vm-shim.js'
       - '.github/workflows/tmp-validate-physical-three-attack-final.yml'
 jobs:
   validate:
@@ -14,6 +15,8 @@ jobs:
         with:
           node-version: '20'
       - name: Final 867-race counterfactual
+        env:
+          NODE_OPTIONS: --require=./scripts/tmp-cjs-vm-shim.js
         run: node scripts/tmp-validate-physical-three-attack-promotion.js
       - name: Candidate-90 regression
         id: candidate90
