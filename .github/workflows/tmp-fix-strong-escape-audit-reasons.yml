@@ -22,12 +22,13 @@ jobs:
       - run: node scripts/tmp-fix-strong-escape-audit-reasons.js
       - run: |
           node --check js/practical-selection.js
+          node --check scripts/test-evaluated-scenario-consistency.js
           node scripts/test-practical-selection.js
           node scripts/test-strong-escape-trim-regression.js
           node scripts/test-evaluated-scenario-consistency.js
       - run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add js/practical-selection.js
-          git commit -m 'Keep post-trim exclusion reasons truthful' || exit 0
+          git add js/practical-selection.js scripts/test-evaluated-scenario-consistency.js
+          git commit -m 'Keep strong escape audit state consistent' || exit 0
           git push origin HEAD:agent/strong-escape-alternate-trim
