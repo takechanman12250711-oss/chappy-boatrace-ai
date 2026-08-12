@@ -1,0 +1,17 @@
+name: Check weak outer independent-head pruning
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'js/practical-selection.js'
+      - 'scripts/test-outer-independent-prune-regression.js'
+      - '.github/workflows/test-weak-outer-independent-head-pruning.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-outer-independent-prune-regression.js
