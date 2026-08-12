@@ -1,0 +1,6 @@
+"use strict";
+const fs=require('node:fs');
+const p='js/practical-selection.js';let s=fs.readFileSync(p,'utf8');
+const anchor='    const expansionCandidates = [\n      ...holdExpansionCandidates,\n      ...alternateHeadByAttacker.values()\n    ].sort(expansionSort);';
+const replacement='    const expansionCandidates = [\n      ...holdExpansionCandidates,\n      ...alternateHeadByAttacker.values()\n    ]\n      .filter(row => {\n        const headBoatNo =\n          ticketBoats(row.ticket)[0];\n        const weakOuterHead =\n          (headBoatNo === 5 || headBoatNo === 6) &&\n          numeric(row.priorityScore, 0) < 80;\n\n        if (weakOuterHead) {\n          rememberExpansionExclusion(\n            row,\n            "WEAK_OUTER_HEAD_INDEPENDENT",\n            "5・6号艇頭の独立展開はpriority 80未満のため購入対象外。"\n          );\n        }\n        return !weakOuterHead;\n      })\n      .sort(expansionSort);';
+if(!s.includes(anchor))throw new Error('anchor not found');s=s.replace(anchor,replacement);fs.writeFileSync(p,s);
