@@ -1,15 +1,8 @@
-name: Audit post-330 missing candidate structure
+name: Audit post-330 three-attack discrimination
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/tmp-audit-missing-candidate-structure.js'
-      - 'scripts/tmp-audit-correct-candidate-gates.js'
-      - 'scripts/tmp-audit-high-priority-correct-exclusion.js'
-      - 'scripts/tmp-sim-open-slot-candidate-promotion.js'
-      - 'scripts/tmp-sim-full-slot-replacement.js'
-      - 'scripts/tmp-audit-miss-head-vs-order.js'
-      - 'scripts/tmp-audit-one-to-three-head-miss.js'
       - 'scripts/tmp-audit-three-attack-discrimination.js'
       - '.github/workflows/tmp-post330-missing-candidate-audit.yml'
 jobs:
@@ -20,15 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node scripts/tmp-audit-missing-candidate-structure.js
-      - run: node scripts/tmp-audit-correct-candidate-gates.js
-      - run: node scripts/tmp-audit-high-priority-correct-exclusion.js
-      - run: node scripts/tmp-sim-open-slot-candidate-promotion.js
-      - run: node scripts/tmp-sim-full-slot-replacement.js
-      - run: node scripts/tmp-audit-miss-head-vs-order.js
-      - run: node scripts/tmp-audit-one-to-three-head-miss.js
       - run: node scripts/tmp-audit-three-attack-discrimination.js
       - uses: actions/upload-artifact@v4
         with:
-          name: post330-candidate-audit
-          path: tmp-analysis-output/*.json
+          name: post330-three-attack-discrimination
+          path: tmp-analysis-output/post330-three-attack-discrimination.json
