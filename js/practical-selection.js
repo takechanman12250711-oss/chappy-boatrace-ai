@@ -27,6 +27,10 @@
     5;
   const STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT =
     1;
+  const VERY_STRONG_ESCAPE_MINIMUM_SCORE =
+    85;
+  const VERY_STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT =
+    0;
   const TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT =
     1;
   const TARGET_EXCLUDED_PREVIEW_COUNT =
@@ -2230,17 +2234,22 @@
       arrayify(rows).filter(row =>
         ticketBoats(row?.ticket)[0] !== 1
       );
+    const maximumAlternateHeadCount =
+      mainScore >=
+        VERY_STRONG_ESCAPE_MINIMUM_SCORE
+        ? VERY_STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT
+        : STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT;
     const keptAlternateTickets =
       alternateRows
         .slice(
           0,
-          STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT
+          maximumAlternateHeadCount
         )
         .map(row => row.ticket);
     const removedTickets =
       alternateRows
         .slice(
-          STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT
+          maximumAlternateHeadCount
         )
         .map(row => row.ticket);
 
@@ -2251,6 +2260,7 @@
       mainScore,
       secondScore,
       scoreGap,
+      maximumAlternateHeadCount,
       keptAlternateTickets,
       removedTickets
     };
@@ -4543,7 +4553,9 @@
                 minimumGap:
                   STRONG_ESCAPE_MINIMUM_GAP,
                 maximumAlternateHeadCount:
-                  STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT,
+                  strongEscapeTrim.maximumAlternateHeadCount,
+                veryStrongMinimumScore:
+                  VERY_STRONG_ESCAPE_MINIMUM_SCORE,
                 mainScore:
                   strongEscapeTrim.mainScore,
                 secondScore:
@@ -4832,7 +4844,9 @@
       status: "selected",
       reason:
         strongEscapeTrim.applied
-          ? "強い1逃げでは1号艇頭を維持し、別頭は展開選抜順の最上位1点だけに整理。"
+          ? strongEscapeTrim.maximumAlternateHeadCount === 0
+            ? "非常に強い1逃げでは1号艇頭だけを維持し、別頭は購入しない。"
+            : "強い1逃げでは1号艇頭を維持し、別頭は展開選抜順の最上位1点だけに整理。"
           : candidatePromotionTickets.length
           ? "基本5〜7点と検証済み独立展開を維持し、priority 90以上かつ3着まで物理根拠がそろう候補だけを空き枠へ補完。"
           : selected.length >
@@ -4867,6 +4881,8 @@
     STRONG_ESCAPE_MINIMUM_SCORE,
     STRONG_ESCAPE_MINIMUM_GAP,
     STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT,
+    VERY_STRONG_ESCAPE_MINIMUM_SCORE,
+    VERY_STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT,
     THEORY_SCHEMA_VERSION,
     THEORY_SET_FINGERPRINT,
     TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT,
