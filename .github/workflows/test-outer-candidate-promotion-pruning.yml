@@ -1,0 +1,17 @@
+name: Check outer candidate promotion pruning
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'js/practical-selection.js'
+      - 'scripts/test-outer-candidate-promotion-prune-regression.js'
+      - '.github/workflows/test-outer-candidate-promotion-pruning.yml'
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-outer-candidate-promotion-prune-regression.js
