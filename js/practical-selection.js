@@ -3856,6 +3856,51 @@
       );
     }
 
+    const weakTwoHeadTrimmedTickets =
+      new Set(
+        selected
+          .filter(row => {
+            const headBoatNo =
+              ticketBoats(row.ticket)[0];
+            return (
+              row.selectionTier === "展開追加" &&
+              headBoatNo === 2 &&
+              numeric(row.priorityScore, 0) < 80
+            );
+          })
+          .map(row => row.ticket)
+      );
+
+    if (weakTwoHeadTrimmedTickets.size) {
+      const retained =
+        selected.filter(row =>
+          !weakTwoHeadTrimmedTickets.has(row.ticket)
+        );
+      selected.splice(
+        0,
+        selected.length,
+        ...retained
+      );
+      weakTwoHeadTrimmedTickets
+        .forEach(ticket =>
+          used.delete(ticket)
+        );
+      candidateDecisions.forEach(
+        decision => {
+          if (
+            weakTwoHeadTrimmedTickets
+              .has(decision.ticket)
+          ) {
+            decision.selected = false;
+            decision.reasonCode =
+              "WEAK_TWO_HEAD_INDEPENDENT";
+            decision.reason =
+              "2号艇頭の独立展開はpriority 80未満のため購入対象外。";
+          }
+        }
+      );
+    }
+
     candidates.forEach(
       ({ row, validation }) => {
         const wasSelected =
@@ -3864,6 +3909,19 @@
               item.ticket ===
               row.ticket
           );
+
+        if (
+          weakTwoHeadTrimmedTickets
+            .has(row.ticket)
+        ) {
+          recordDecision(
+            row,
+            false,
+            "WEAK_TWO_HEAD_INDEPENDENT",
+            "2号艇頭の独立展開はpriority 80未満のため購入対象外。"
+          );
+          return;
+        }
 
         if (
           strongEscapeTrimmedTickets
