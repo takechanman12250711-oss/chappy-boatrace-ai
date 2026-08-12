@@ -1,0 +1,18 @@
+name: Practical ranking root cause audit
+on:
+  push:
+    branches: [agent/practical-ranking-root-cause]
+    paths: ['scripts/tmp-audit-practical-ranking-root-cause.js','.github/workflows/tmp-practical-ranking-root-cause.yml']
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - run: node scripts/tmp-audit-practical-ranking-root-cause.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: practical-ranking-root-cause
+          path: tmp-analysis-output/practical-ranking-root-cause.json
