@@ -1,0 +1,1 @@
+Approved production change: selectionTier=候補補完 with ticket head boat 4, 5, or 6 is purchase-ineligible. Validation on post-#327 main: 867 settled races, 38 tickets removed, 0 historical winning tickets removed; hits remain 133/457, 107/313, 23/97. Preserve candidate promotions headed by boats 1-3 and all other prediction logic.
