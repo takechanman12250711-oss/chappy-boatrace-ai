@@ -1,0 +1,22 @@
+name: Final rich physical three-attack audit
+on:
+  push:
+    branches: [agent/final-three-attack-rich-physical-audit]
+    paths:
+      - 'scripts/tmp-audit-three-attack-rich-coverage.js'
+      - '.github/workflows/tmp-final-three-attack-rich-audit.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run final rich physical audit
+        run: node scripts/tmp-audit-three-attack-rich-coverage.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final-three-attack-rich-audit
+          path: tmp-analysis-output/final-three-attack-rich-coverage.json
