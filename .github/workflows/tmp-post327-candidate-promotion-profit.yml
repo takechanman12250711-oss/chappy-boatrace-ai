@@ -1,0 +1,20 @@
+name: Audit post-327 candidate-promotion profit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-audit-candidate-promotion-profit.js'
+      - '.github/workflows/tmp-post327-candidate-promotion-profit.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/tmp-audit-candidate-promotion-profit.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: post327-candidate-promotion-profit
+          path: tmp-analysis-output/candidate-promotion-profit.json
