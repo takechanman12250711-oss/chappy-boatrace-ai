@@ -179,25 +179,97 @@ function wallClaimForTicket(prediction, ticket) {
   return { theoryKey: "wallBoat", label: "壁艇理論", theoryVersion: "ai-core-wall-theory-v1", formal: true, source: "ai-core-wall-theory-v1" };
 }
 
+function appliedFrameRiseSinkSupport(prediction) {
+  const analysisRuntime = prediction?.aiCore?.analysisRaceScenarios || {};
+  const canonicalRuntime = prediction?.aiCore?.raceScenarios || prediction?.raceScenarios || {};
+  const stored = prediction?.practicalSelection?.verificationEvidence || prediction?.verificationEvidence || {};
+  const runtime = Array.isArray(analysisRuntime?.scenarios) && analysisRuntime.scenarios.length
+    ? analysisRuntime
+    : canonicalRuntime;
+  const scenarios = Array.isArray(runtime?.scenarios) && runtime.scenarios.length
+    ? runtime.scenarios
+    : (Array.isArray(stored?.scenarios) ? stored.scenarios : []);
+  const mainScenario = runtime?.mainScenario || stored?.mainScenario || null;
+  const frameMovement = Array.isArray(runtime?.frameMovement) && runtime.frameMovement.length
+    ? runtime.frameMovement
+    : Array.isArray(runtime?.evidence?.frameMovement) && runtime.evidence.frameMovement.length
+      ? runtime.evidence.frameMovement
+      : (Array.isArray(stored?.frameMovement) ? stored.frameMovement : []);
+
+  const mainType = String(mainScenario?.type || "").trim();
+  /*
+    枠補正は既にAIコアの展開点へ反映済みである。ここでは予想を
+    再計算せず、最終主展開へ実際に加えた値だけを保存証拠へ写す。
+    代替展開は買い目枝との対応を証明できないため流用しない。
+  */
+  const main = scenarios.find(scenario => String(scenario?.type || "").trim() === mainType) || mainScenario;
+  const frameNo = Number(main?.attacker || main?.attackerBoatNo || main?.headBoatNo);
+  const frame = frameMovement.find(row => Number(row?.boatNo) === frameNo) || null;
+  if (!main || !frame) return null;
+
+  const scenarioAdjustment = Number(main?.frameMovementAdjustment);
+  const scoreAdjustment = Number(frame?.scoreAdjustment);
+  const label = String(frame?.label || "").trim();
+  const type = label === "浮上" ? "rise" : label === "沈下" ? "sink" : "";
+  const rate = type === "rise" ? optionalNumber(frame?.riseRate) : type === "sink" ? optionalNumber(frame?.sinkRate) : null;
+  const samples = optionalNumber(frame?.samples);
+  const consistentAdjustment = Number.isFinite(scoreAdjustment) && scoreAdjustment !== 0 && scenarioAdjustment === scoreAdjustment;
+  const applied = frameNo >= 1 && frameNo <= 4 && frame?.appliedToScore === true && consistentAdjustment;
+
+  return {
+    // productionで適用中のAIコア規則だけを読むため、新しい予想承認ではない。
+    approved: true,
+    applied,
+    frameNo,
+    type,
+    samples,
+    rate,
+    source: "ai-core-frame-movement-v1",
+    scenarioType: String(main?.type || ""),
+    scoreAdjustment: Number.isFinite(scoreAdjustment) ? scoreAdjustment : null,
+    movementDelta: optionalNumber(frame?.movementDelta)
+  };
+}
+
 function frameRiseSinkEvidence(prediction) {
-  const support = prediction?.frameRiseSinkSupport || {};
+  const directSupport = prediction?.frameRiseSinkSupport && typeof prediction.frameRiseSinkSupport === "object"
+    ? prediction.frameRiseSinkSupport
+    : null;
+  const runtimeSupport = appliedFrameRiseSinkSupport(prediction);
+  const support = directSupport || runtimeSupport || {};
+  const rawFrameMovement = prediction?.aiCore?.analysisRaceScenarios?.frameMovement || prediction?.aiCore?.raceScenarios?.frameMovement || prediction?.aiCore?.raceScenarios?.evidence?.frameMovement || prediction?.raceScenarios?.frameMovement || prediction?.raceScenarios?.evidence?.frameMovement || prediction?.practicalSelection?.verificationEvidence?.frameMovement || prediction?.verificationEvidence?.frameMovement;
+  const supportPresent = Boolean(directSupport || runtimeSupport || (Array.isArray(rawFrameMovement) && rawFrameMovement.length));
   const applied = support?.applied === true;
   const approved = support?.approved === true;
   const frameNo = Number(support?.frameNo);
   const type = String(support?.type || "").trim();
-  const samples = Number(support?.samples);
-  const rate = Number(support?.rate);
+  const samples = optionalNumber(support?.samples);
+  const rate = optionalNumber(support?.rate);
   const source = String(support?.source || "").trim();
+  const scenarioType = String(support?.scenarioType || "").trim();
+  const scoreAdjustment = optionalNumber(support?.scoreAdjustment);
+  const movementDelta = optionalNumber(support?.movementDelta);
   const validType = /^(rise|sink)$/.test(type);
   const enoughSamples = Number.isFinite(samples) && samples >= 10;
   const validRate = Number.isFinite(rate) && rate >= 0 && rate <= 100;
-  return { formal: applied && approved && frameNo >= 1 && frameNo <= 6 && validType && enoughSamples && validRate && Boolean(source), applied, approved, frameNo, type, samples: Number.isFinite(samples) ? samples : null, rate: Number.isFinite(rate) ? rate : null, source };
+  return { formal: applied && approved && frameNo >= 1 && frameNo <= 6 && validType && enoughSamples && validRate && Boolean(source), supportPresent, applied, approved, frameNo, type, samples: Number.isFinite(samples) ? samples : null, rate: Number.isFinite(rate) ? rate : null, source, scenarioType, scoreAdjustment, movementDelta };
 }
 
-function frameRiseSinkClaimForTicket(prediction, ticket) {
+function frameRiseSinkClaimForTicket(prediction, ticket, evidenceRow = {}) {
   const evidence = frameRiseSinkEvidence(prediction);
   if (!evidence.formal) return null;
   const boats = normalizeTicket(ticket).split("-").map(Number);
+  if (evidence.source === "ai-core-frame-movement-v1") {
+    const roleClaims = Array.isArray(evidenceRow?.roleClaims) ? evidenceRow.roleClaims : [];
+    const hasAttackHead = roleClaims.some(claim =>
+      String(claim?.role || "") === "attack" &&
+      Number(claim?.boatNo) === evidence.frameNo &&
+      Array.isArray(claim?.expectedPositions) &&
+      claim.expectedPositions.map(Number).includes(1)
+    );
+    if (boats[0] !== evidence.frameNo || !hasAttackHead) return null;
+    return { theoryKey: "frameRiseSink", label: "枠別浮沈率", theoryVersion: "ai-core-frame-movement-v1", formal: true, source: evidence.source };
+  }
   if (!boats.includes(evidence.frameNo)) return null;
   return { theoryKey: "frameRiseSink", label: "枠別浮沈率", theoryVersion: "approved-frame-rise-sink-v1", formal: true, source: evidence.source };
 }
@@ -262,7 +334,7 @@ function theoryClaimsFrom(prediction, practicalTickets) {
       skillClaimForTicket(prediction, ticket),
       motorClaimForTicket(prediction, ticket),
       wallClaimForTicket(prediction, ticket),
-      frameRiseSinkClaimForTicket(prediction, ticket),
+      frameRiseSinkClaimForTicket(prediction, ticket, evidenceRow),
       doubleTimeClaimForTicket(prediction, ticket),
       newEngineClaimForTicket(prediction, ticket)
     ].filter(Boolean);
@@ -298,14 +370,14 @@ function missingReasonsForSkill(prediction, evidence) {
 }
 
 function missingReasonsForFrame(prediction, evidence) {
-  if (!prediction?.frameRiseSinkSupport) return ["support-missing"];
+  if (!evidence.supportPresent) return ["support-missing"];
   const reasons = [];
   if (!evidence.applied) reasons.push("not-applied");
   if (!evidence.approved) reasons.push("not-approved");
   if (!(evidence.frameNo >= 1 && evidence.frameNo <= 6)) reasons.push("frame-missing");
   if (!/^(rise|sink)$/.test(evidence.type)) reasons.push("type-missing");
   if (!(Number(evidence.samples) >= 10)) reasons.push("samples-under-10");
-  if (!(Number.isFinite(Number(evidence.rate)) && Number(evidence.rate) >= 0 && Number(evidence.rate) <= 100)) reasons.push("rate-invalid");
+  if (!(evidence.rate !== null && Number.isFinite(evidence.rate) && evidence.rate >= 0 && evidence.rate <= 100)) reasons.push("rate-invalid");
   if (!evidence.source) reasons.push("source-missing");
   return reasons;
 }
@@ -346,7 +418,7 @@ function buildEvidenceDiagnostics(prediction) {
   const rows = [
     { theoryKey: "start", label: "ST・スリット理論", supportPresent: Boolean(prediction?.flowSupport || prediction?.stExhibitionSupport), formal: start.formal === true, missingReasons: start.formal ? [] : missingReasonsForStart(prediction, start), metrics: { attackBoatNo: start.attackBoatNo || null, coverage: start.stCoverage || 0, rank: start.stRank || null } },
     { theoryKey: "skill", label: "技量理論", supportPresent: Boolean(prediction?.skillLocalSupport), formal: skill.formal === true, missingReasons: skill.formal ? [] : missingReasonsForSkill(prediction, skill), metrics: { attackBoatNo: skill.attackBoatNo || null, targetPresent: Boolean(skill.target) } },
-    { theoryKey: "frame-rise-fall", label: "枠別浮沈率", supportPresent: Boolean(prediction?.frameRiseSinkSupport), formal: frame.formal === true, missingReasons: frame.formal ? [] : missingReasonsForFrame(prediction, frame), metrics: { frameNo: frame.frameNo || null, type: frame.type || "", samples: frame.samples, rate: frame.rate, approved: frame.approved, applied: frame.applied } },
+    { theoryKey: "frame-rise-fall", label: "枠別浮沈率", supportPresent: frame.supportPresent === true, formal: frame.formal === true, missingReasons: frame.formal ? [] : missingReasonsForFrame(prediction, frame), metrics: { frameNo: frame.frameNo || null, type: frame.type || "", samples: frame.samples, rate: frame.rate, scenarioType: frame.scenarioType || "", scoreAdjustment: frame.scoreAdjustment, movementDelta: frame.movementDelta, approved: frame.approved, applied: frame.applied } },
     { theoryKey: "double-time", label: "ダブルタイム", supportPresent: Boolean(prediction?.doubleTimeSupport || prediction?.theorySupport?.doubleTime), formal: doubleTime.formal === true, missingReasons: doubleTime.formal ? [] : missingReasonsForDouble(prediction, doubleTime), metrics: { topBoat: doubleTime.topBoat, confidence: doubleTime.confidence, exhibitionGap: doubleTime.exhibitionGap, lapGap: doubleTime.lapGap, approved: doubleTime.approved, applied: doubleTime.applied, isDouble: doubleTime.isDouble } },
     { theoryKey: "new-engine", label: "新エンジン理論", supportPresent: Boolean(prediction?.motorEngineSupport), formal: newEngine.formal === true, missingReasons: newEngine.formal ? [] : missingReasonsForNewEngine(prediction, newEngine), metrics: { centerBoatNo: newEngine.centerBoatNo || null, mode: newEngine.mode || "", newEngineMode: newEngine.newEngineMode } }
   ];
@@ -403,6 +475,7 @@ module.exports = {
   motorClaimForTicket,
   wallEvidence,
   wallClaimForTicket,
+  appliedFrameRiseSinkSupport,
   frameRiseSinkEvidence,
   frameRiseSinkClaimForTicket,
   doubleTimeEvidence,

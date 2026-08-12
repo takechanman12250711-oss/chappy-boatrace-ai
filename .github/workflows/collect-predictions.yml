@@ -34,6 +34,7 @@ on:
       - "scripts/test-theory-integration.js"
       - "scripts/test-theory-tag-catalog-reachability.js"
       - "scripts/test-collector-theory-support-wiring.js"
+      - "scripts/test-frame-rise-sink-formal-evidence.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "js/collection-health.js"
@@ -47,6 +48,7 @@ on:
       - "scripts/test-api-history.js"
       - "scripts/test-api-client-cache.js"
       - "js/ai-core.js"
+      - "js/theory-tag-snapshot.js"
       - "js/evaluated-scenario-candidates.js"
       - "js/history-insights.js"
       - "js/history-insights-base.js"
@@ -112,6 +114,8 @@ jobs:
           node scripts/test-theory-integration.js
           node scripts/test-theory-tag-catalog-reachability.js
           node scripts/test-collector-theory-support-wiring.js
+          node scripts/test-frame-rise-sink-formal-evidence.js
+          node scripts/test-shadow-predictions.js
           node scripts/test-boat-identity.js
           node scripts/check-charter.js
 
@@ -158,7 +162,6 @@ jobs:
           node --check js/shadow-selection-v2.js
           node scripts/test-scenario-ai-v6-shadow.js
           node scripts/test-scenario-ai-v6-storage.js
-          node scripts/test-shadow-predictions.js
           node scripts/test-shadow-selection-v2.js
           node scripts/test-prediction-conditions.js
           node scripts/test-auto-selection.js
