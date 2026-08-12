@@ -18,6 +18,23 @@
     return Number.isFinite(n) && n >= 1 && n <= 6 ? n : fallback;
   }
 
+  function averageNumber(values) {
+    const numbers = (Array.isArray(values) ? values : [values])
+      .map(numberOrNull)
+      .filter(value => value !== null);
+    if (!numbers.length) return null;
+    return numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
+  }
+
+  function currentSeriesST(row) {
+    return averageNumber(
+      row?.currentSeries?.st ??
+      row?.currentRace?.stList ??
+      row?.currentRace?.st ??
+      row?.series?.st
+    );
+  }
+
   function normalizeRows(data, prediction) {
     const candidates = [
       data?.boats,
@@ -37,8 +54,10 @@
       raw: row || {},
       boatNo: boatNoOf(row, index + 1),
       st: numberOrNull(
-        row?.currentST ?? row?.exhibitionST ?? row?.tenjiST ?? row?.st ?? row?.startTiming ??
-        row?.averageST ?? row?.avgST
+        row?.currentST ?? row?.currentSt ?? currentSeriesST(row) ??
+        row?.exhibitionST ?? row?.exhibitionSt ?? row?.tenjiST ?? row?.tenjiSt ??
+        row?.st ?? row?.startTiming ?? row?.averageST ?? row?.averageSt ??
+        row?.avgST ?? row?.avgSt
       ),
       exhibition: numberOrNull(
         row?.exhibitionTime ?? row?.tenjiTime ?? row?.displayTime ?? row?.exTime ?? row?.time

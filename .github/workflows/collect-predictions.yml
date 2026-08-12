@@ -33,6 +33,7 @@ on:
       - "scripts/test-race-parser.js"
       - "scripts/test-theory-integration.js"
       - "scripts/test-theory-tag-catalog-reachability.js"
+      - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "js/collection-health.js"
@@ -51,6 +52,7 @@ on:
       - "js/history-insights-base.js"
       - "js/motor-maintenance-insights.js"
       - "js/prediction.js"
+      - "js/prediction-st-exhibition-support.js"
       - "js/boat-identity.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
@@ -109,6 +111,7 @@ jobs:
           node scripts/test-race-parser.js
           node scripts/test-theory-integration.js
           node scripts/test-theory-tag-catalog-reachability.js
+          node scripts/test-collector-theory-support-wiring.js
           node scripts/test-boat-identity.js
           node scripts/check-charter.js
 
