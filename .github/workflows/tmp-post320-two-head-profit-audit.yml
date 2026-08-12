@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/tmp-audit-two-head-profit.js'
+      - 'scripts/tmp-audit-zero-alt-strong-escape.js'
       - '.github/workflows/tmp-post320-two-head-profit-audit.yml'
 permissions:
   contents: read
@@ -15,5 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node --check scripts/tmp-audit-two-head-profit.js
+      - run: |
+          node --check scripts/tmp-audit-two-head-profit.js
+          node --check scripts/tmp-audit-zero-alt-strong-escape.js
       - run: node scripts/tmp-audit-two-head-profit.js
+      - run: node scripts/tmp-audit-zero-alt-strong-escape.js
