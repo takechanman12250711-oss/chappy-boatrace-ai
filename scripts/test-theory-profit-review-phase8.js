@@ -14,6 +14,7 @@ assert.equal(result.status, "review-candidate-ready");
 assert.equal(result.readyTheoryCount, 1);
 assert.equal(result.candidate.theoryKey, "course");
 assert.equal(result.candidate.evidenceCount, 30);
+assert.equal(result.candidate.ready, true, "Phase9へレビュー準備完了状態を引き渡す");
 assert.deepEqual(result.candidate.missingMetrics, ["skipDecisionAccuracy"]);
 assert.equal(result.candidate.metricStatuses.recoveryRate, "watch");
 assert.equal(result.candidate.metricStatuses.practicalHitRate, "watch");

@@ -1,0 +1,60 @@
+name: Check learning analysis handoff
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-profit-review-phase8.js"
+      - "js/theory-improvement-proposal-phase9.js"
+      - "js/theory-ab-phase10.js"
+      - "scripts/build-theory-profit-review-phase8.js"
+      - "scripts/build-theory-improvement-proposal-phase9.js"
+      - "scripts/build-theory-ab-phase10.js"
+      - "scripts/test-theory-profit-review-phase8.js"
+      - "scripts/test-theory-improvement-proposal-phase9.js"
+      - "scripts/test-theory-ab-phase10.js"
+      - ".github/workflows/check-learning-analysis-handoff.yml"
+      - ".github/workflows/build-learning-analysis-pipeline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify Phase8 to Phase10 handoff
+        run: |
+          node --check js/theory-profit-review-phase8.js
+          node --check js/theory-improvement-proposal-phase9.js
+          node --check scripts/build-theory-profit-review-phase8.js
+          node --check scripts/build-theory-improvement-proposal-phase9.js
+          node --check scripts/build-theory-ab-phase10.js
+          node scripts/test-theory-profit-review-phase8.js
+          node scripts/test-theory-improvement-proposal-phase9.js
+          node scripts/test-theory-ab-phase10.js
+          node scripts/build-theory-profit-review-phase8.js
+          node scripts/build-theory-improvement-proposal-phase9.js
+          node scripts/build-theory-ab-phase10.js
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const phase8=JSON.parse(fs.readFileSync('data/stats/theory-profit-review-phase8.json','utf8'));
+          const phase9=JSON.parse(fs.readFileSync('data/stats/theory-improvement-proposal-phase9.json','utf8'));
+          const phase10=JSON.parse(fs.readFileSync('data/stats/theory-ab-phase10.json','utf8'));
+          if(phase8.status==='review-candidate-ready'){
+            if(phase8.candidate?.ready!==true) throw new Error('Phase8候補の準備完了状態が欠落しています');
+            if(phase9.status!=='proposal-ready' || phase9.proposalCount!==1 || phase9.proposal?.theoryKey!==phase8.candidate.theoryKey) throw new Error('Phase8候補がPhase9提案へ接続されていません');
+          }
+          if(phase9.proposalCount===1 && phase9.proposal?.approved!==false) throw new Error('Phase9提案が承認済みとして誤生成されています');
+          if(phase9.proposalCount===0 && phase9.proposal!==null) throw new Error('Phase9待機状態に提案が残っています');
+          if(phase9.automaticApplication!==false || phase9.usableForPrediction!==false) throw new Error('Phase9の承認前安全条件異常');
+          if(phase10.proposalApproved!==true && phase10.candidateB!==null) throw new Error('未承認Phase9提案からBが生成されています');
+          if(phase10.automaticApplication!==false || phase10.usableForPrediction!==false) throw new Error('Phase10の安全条件異常');
+          NODE
+          node scripts/check-charter.js

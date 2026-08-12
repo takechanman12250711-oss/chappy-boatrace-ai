@@ -62,6 +62,10 @@ jobs:
           if(phase8.minimumEvidenceCount!==30 || phase8.oneCandidateOnly!==true) throw new Error('Phase8レビュー条件異常');
           const phase9=JSON.parse(fs.readFileSync('data/stats/theory-improvement-proposal-phase9.json','utf8'));
           if(phase9.proposalCount>1 || phase9.automaticApplication!==false || phase9.usableForPrediction!==false) throw new Error('Phase9安全条件異常');
+          if(phase8.status==='review-candidate-ready'){
+            if(phase8.candidate?.ready!==true) throw new Error('Phase8候補の準備完了状態が欠落しています');
+            if(phase9.status!=='proposal-ready' || phase9.proposalCount!==1 || phase9.proposal?.theoryKey!==phase8.candidate.theoryKey) throw new Error('Phase8候補がPhase9提案へ接続されていません');
+          }
           const phase10=JSON.parse(fs.readFileSync('data/stats/theory-ab-phase10.json','utf8'));
           if(phase10.automaticApplication!==false || phase10.usableForPrediction!==false || phase10.comparison?.automaticWinnerSelection!==false) throw new Error('Phase10安全条件異常');
           if(phase10.proposalApproved!==true && phase10.candidateB!==null) throw new Error('未承認Phase9提案からBが生成されています');
