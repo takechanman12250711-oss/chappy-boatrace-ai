@@ -1,1 +1,0 @@
-Temporary implementation marker. User approved implementation after validation on 867 settled races: selectionTier=展開追加, head=5/6, priorityScore<80; 43 tickets removed and 0 historical winning tickets removed. Remove before merge.
