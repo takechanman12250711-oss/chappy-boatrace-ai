@@ -3787,6 +3787,18 @@
           return;
         }
 
+        const promotedHeadBoatNo =
+          ticketBoats(row.ticket)[0];
+        if (promotedHeadBoatNo >= 4) {
+          recordDecision(
+            row,
+            false,
+            "OUTER_HEAD_CANDIDATE_PROMOTION_PRUNED",
+            "4〜6号艇頭の候補補完は購入対象外。"
+          );
+          return;
+        }
+
         const promoted = {
           ...row,
           category: "候補補完",
