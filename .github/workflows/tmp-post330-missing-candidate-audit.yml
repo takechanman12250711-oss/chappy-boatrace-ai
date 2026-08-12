@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/tmp-audit-missing-candidate-structure.js'
       - 'scripts/tmp-audit-correct-candidate-gates.js'
+      - 'scripts/tmp-audit-high-priority-correct-exclusion.js'
       - '.github/workflows/tmp-post330-missing-candidate-audit.yml'
 jobs:
   audit:
@@ -16,6 +17,7 @@ jobs:
           node-version: '20'
       - run: node scripts/tmp-audit-missing-candidate-structure.js
       - run: node scripts/tmp-audit-correct-candidate-gates.js
+      - run: node scripts/tmp-audit-high-priority-correct-exclusion.js
       - uses: actions/upload-artifact@v4
         with:
           name: post330-candidate-audit
