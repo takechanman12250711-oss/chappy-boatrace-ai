@@ -1,0 +1,29 @@
+name: Validate physical three-attack promotion final
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-validate-physical-three-attack-promotion.js'
+      - '.github/workflows/tmp-validate-physical-three-attack-final.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Final 867-race counterfactual
+        run: node scripts/tmp-validate-physical-three-attack-promotion.js
+      - name: Candidate-90 regression
+        run: node scripts/test-candidate90-regression.js
+      - name: Strong-escape trimming regression
+        run: node scripts/test-strong-escape-trim-regression.js
+      - name: Evaluated scenario consistency
+        run: node scripts/test-evaluated-scenario-consistency.js
+      - name: Theory integration
+        run: node scripts/test-theory-integration.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: physical-three-attack-final-validation
+          path: tmp-analysis-output/physical-three-final-validation.json
