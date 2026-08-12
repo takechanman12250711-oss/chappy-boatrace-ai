@@ -1,0 +1,20 @@
+name: Audit post-330 missing candidate structure
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-audit-missing-candidate-structure.js'
+      - '.github/workflows/tmp-post330-missing-candidate-audit.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/tmp-audit-missing-candidate-structure.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: post330-missing-candidate-structure
+          path: tmp-analysis-output/post330-missing-candidate-structure.json
