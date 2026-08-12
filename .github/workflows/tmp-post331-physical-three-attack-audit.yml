@@ -1,0 +1,20 @@
+name: Audit post-331 physical three-attack discrimination
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/tmp-audit-three-attack-physical-discrimination.js'
+      - '.github/workflows/tmp-post331-physical-three-attack-audit.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/tmp-audit-three-attack-physical-discrimination.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: post331-three-attack-physical-discrimination
+          path: tmp-analysis-output/post331-three-attack-physical-discrimination.json
