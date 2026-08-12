@@ -2,7 +2,7 @@ name: Practical ranking root cause audit
 on:
   push:
     branches: [agent/practical-ranking-root-cause]
-    paths: ['scripts/tmp-audit-practical-ranking-root-cause.js','scripts/tmp-audit-top10-exclusion-counterfactual.js','.github/workflows/tmp-practical-ranking-root-cause.yml']
+    paths: ['scripts/tmp-audit-practical-ranking-root-cause.js','scripts/tmp-audit-top10-exclusion-counterfactual.js','scripts/tmp-validate-priority-over-gate-replacement.js','.github/workflows/tmp-practical-ranking-root-cause.yml']
   workflow_dispatch:
 jobs:
   audit:
@@ -13,6 +13,7 @@ jobs:
         with: {node-version: '20'}
       - run: node scripts/tmp-audit-practical-ranking-root-cause.js
       - run: node scripts/tmp-audit-top10-exclusion-counterfactual.js
+      - run: node scripts/tmp-validate-priority-over-gate-replacement.js
       - uses: actions/upload-artifact@v4
         with:
           name: practical-ranking-root-cause
