@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/tmp-audit-post325-inner-independent-profit.js'
+      - 'scripts/tmp-audit-post325-weak-two-head-prune.js'
       - '.github/workflows/tmp-post325-inner-independent-profit.yml'
 jobs:
   audit:
@@ -14,7 +15,8 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/tmp-audit-post325-inner-independent-profit.js
+      - run: node scripts/tmp-audit-post325-weak-two-head-prune.js
       - uses: actions/upload-artifact@v4
         with:
           name: post325-inner-independent-profit
-          path: tmp-analysis-output/post325-inner-independent-profit.json
+          path: tmp-analysis-output/*.json
