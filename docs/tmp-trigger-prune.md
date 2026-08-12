@@ -1,1 +1,0 @@
-Temporary trigger after production patch applied. Remove before merge.
