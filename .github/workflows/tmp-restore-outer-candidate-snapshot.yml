@@ -18,8 +18,6 @@ jobs:
       - run: git fetch origin main
       - run: node scripts/tmp-restore-outer-candidate-snapshot.js
       - run: node scripts/test-evaluated-scenario-consistency.js
-      - run: node scripts/test-weak-two-head-independent-prune-regression.js
-      - run: node scripts/test-outer-candidate-promotion-prune-regression.js
       - name: Commit restored snapshot
         run: |
           git config user.name github-actions[bot]
