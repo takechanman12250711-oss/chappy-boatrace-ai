@@ -3985,6 +3985,26 @@
         );
       }
     );
+    if (
+      strongEscapeTrim.applied &&
+      selected.length < MAXIMUM_COUNT
+    ) {
+      candidateDecisions.forEach(
+        decision => {
+          if (
+            decision.selected !== true &&
+            decision.reasonCode ===
+              "MAXIMUM_REACHED"
+          ) {
+            decision.reasonCode =
+              "STRONG_ESCAPE_POST_TRIM_NOT_REFILLED";
+            decision.reason =
+              "強い1逃げの別頭整理後は空き枠を再充填せず、整理前の選抜順位を維持して候補に保持。";
+          }
+        }
+      );
+    }
+
     const candidateOutcomesByTicket =
       new Map();
 
