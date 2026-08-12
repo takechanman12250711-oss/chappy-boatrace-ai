@@ -21,6 +21,12 @@
   const MINIMUM_FLOW_ROLE_SCORE = 65;
   const MINIMUM_CANDIDATE_PROMOTION_SCORE =
     90;
+  const STRONG_ESCAPE_MINIMUM_SCORE =
+    80;
+  const STRONG_ESCAPE_MINIMUM_GAP =
+    5;
+  const STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT =
+    1;
   const TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT =
     1;
   const TARGET_EXCLUDED_PREVIEW_COUNT =
@@ -2140,6 +2146,116 @@
     };
   }
 
+  function findRaceScenarios(
+    source,
+    seen = new Set()
+  ) {
+    if (
+      !source ||
+      typeof source !== "object" ||
+      seen.has(source)
+    ) {
+      return null;
+    }
+
+    seen.add(source);
+
+    if (
+      source.mainScenario &&
+      Array.isArray(source.scenarios)
+    ) {
+      return source;
+    }
+
+    for (const value of Object.values(source)) {
+      const found =
+        findRaceScenarios(
+          value,
+          seen
+        );
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  function strongEscapeTrimPlan(
+    prediction,
+    rows
+  ) {
+    const raceScenarios =
+      findRaceScenarios(prediction);
+    const mainScenario =
+      raceScenarios?.mainScenario || null;
+    const scenarios =
+      arrayify(
+        raceScenarios?.scenarios
+      );
+    const mainScore =
+      numeric(mainScenario?.score, 0);
+    const secondScore =
+      scenarios
+        .filter(
+          scenario =>
+            scenario !== mainScenario
+        )
+        .map(scenario =>
+          numeric(scenario?.score, 0)
+        )
+        .sort((a, b) => b - a)[0] ||
+      0;
+    const scoreGap =
+      mainScore - secondScore;
+    const eligible =
+      String(mainScenario?.type || "") ===
+        "escape" &&
+      mainScore >=
+        STRONG_ESCAPE_MINIMUM_SCORE &&
+      scoreGap >=
+        STRONG_ESCAPE_MINIMUM_GAP;
+
+    if (!eligible) {
+      return {
+        eligible: false,
+        applied: false,
+        mainScore,
+        secondScore,
+        scoreGap,
+        keptAlternateTickets: [],
+        removedTickets: []
+      };
+    }
+
+    const alternateRows =
+      arrayify(rows).filter(row =>
+        ticketBoats(row?.ticket)[0] !== 1
+      );
+    const keptAlternateTickets =
+      alternateRows
+        .slice(
+          0,
+          STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT
+        )
+        .map(row => row.ticket);
+    const removedTickets =
+      alternateRows
+        .slice(
+          STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT
+        )
+        .map(row => row.ticket);
+
+    return {
+      eligible: true,
+      applied:
+        removedTickets.length > 0,
+      mainScore,
+      secondScore,
+      scoreGap,
+      keptAlternateTickets,
+      removedTickets
+    };
+  }
+
   function select(prediction) {
     const lists =
       ticketLists(prediction);
@@ -3670,6 +3786,49 @@
       }
     );
 
+    const strongEscapeTrim =
+      strongEscapeTrimPlan(
+        prediction,
+        selected
+      );
+    const strongEscapeTrimmedTickets =
+      new Set(
+        strongEscapeTrim
+          .removedTickets
+      );
+
+    if (strongEscapeTrim.applied) {
+      const retained =
+        selected.filter(row =>
+          !strongEscapeTrimmedTickets
+            .has(row.ticket)
+        );
+
+      selected.splice(
+        0,
+        selected.length,
+        ...retained
+      );
+      strongEscapeTrimmedTickets
+        .forEach(ticket =>
+          used.delete(ticket)
+        );
+      candidateDecisions.forEach(
+        decision => {
+          if (
+            strongEscapeTrimmedTickets
+              .has(decision.ticket)
+          ) {
+            decision.selected = false;
+            decision.reasonCode =
+              "STRONG_ESCAPE_ALTERNATE_TRIMMED";
+            decision.reason =
+              "1逃げ成立度80以上かつ次点展開との差5点以上のため、別頭は選抜順の最上位1点だけを維持。";
+          }
+        }
+      );
+    }
+
     candidates.forEach(
       ({ row, validation }) => {
         const wasSelected =
@@ -3678,6 +3837,19 @@
               item.ticket ===
               row.ticket
           );
+
+        if (
+          strongEscapeTrimmedTickets
+            .has(row.ticket)
+        ) {
+          recordDecision(
+            row,
+            false,
+            "STRONG_ESCAPE_ALTERNATE_TRIMMED",
+            "1逃げ成立度80以上かつ次点展開との差5点以上のため、別頭は選抜順の最上位1点だけを維持。"
+          );
+          return;
+        }
 
         if (wasSelected) {
           mergeIntoSelected(row);
@@ -4340,6 +4512,40 @@
       finalCount:
         finalizedTickets.length,
       ...(
+        strongEscapeTrim.eligible
+          ? {
+              strongEscapeTrim: {
+                eligible: true,
+                applied:
+                  strongEscapeTrim.applied,
+                minimumScore:
+                  STRONG_ESCAPE_MINIMUM_SCORE,
+                minimumGap:
+                  STRONG_ESCAPE_MINIMUM_GAP,
+                maximumAlternateHeadCount:
+                  STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT,
+                mainScore:
+                  strongEscapeTrim.mainScore,
+                secondScore:
+                  strongEscapeTrim.secondScore,
+                scoreGap:
+                  strongEscapeTrim.scoreGap,
+                keptAlternateTickets: [
+                  ...strongEscapeTrim
+                    .keptAlternateTickets
+                ],
+                removedTickets: [
+                  ...strongEscapeTrim
+                    .removedTickets
+                ],
+                removedCount:
+                  strongEscapeTrim
+                    .removedTickets.length
+              }
+            }
+          : {}
+      ),
+      ...(
         candidatePromotionTickets.length
           ? {
               candidatePromotionCount:
@@ -4553,7 +4759,7 @@
         confidenceDefinitionVersion:
           "internal-score-v1",
         ticketPolicyVersion:
-          "practical-5-7-10-grounded-flow2-candidate90-v3"
+          "practical-5-7-10-grounded-flow2-candidate90-strongescape-v4"
       },
       mainScenario: {
         type:
@@ -4605,7 +4811,9 @@
     return {
       status: "selected",
       reason:
-        candidatePromotionTickets.length
+        strongEscapeTrim.applied
+          ? "強い1逃げでは1号艇頭を維持し、別頭は展開選抜順の最上位1点だけに整理。"
+          : candidatePromotionTickets.length
           ? "基本5〜7点と検証済み独立展開を維持し、priority 90以上かつ3着まで物理根拠がそろう候補だけを空き枠へ補完。"
           : selected.length >
               NORMAL_MAXIMUM_COUNT
@@ -4636,6 +4844,9 @@
     FLOW_GROUP_COUNT,
     MINIMUM_FLOW_ROLE_SCORE,
     MINIMUM_CANDIDATE_PROMOTION_SCORE,
+    STRONG_ESCAPE_MINIMUM_SCORE,
+    STRONG_ESCAPE_MINIMUM_GAP,
+    STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT,
     THEORY_SCHEMA_VERSION,
     THEORY_SET_FINGERPRINT,
     TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT,
