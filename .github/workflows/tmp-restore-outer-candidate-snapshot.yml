@@ -1,0 +1,29 @@
+name: Restore outer candidate snapshot
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/prune-outer-candidate-promotions
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: git fetch origin main
+      - run: node scripts/tmp-restore-outer-candidate-snapshot.js
+      - run: node scripts/test-evaluated-scenario-consistency.js
+      - run: node scripts/test-weak-two-head-independent-prune-regression.js
+      - run: node scripts/test-outer-candidate-promotion-prune-regression.js
+      - name: Commit restored snapshot
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scripts/test-evaluated-scenario-consistency.js
+          git diff --cached --quiet || git commit -m 'Restore and update selection snapshot'
+          git push origin HEAD:agent/prune-outer-candidate-promotions
