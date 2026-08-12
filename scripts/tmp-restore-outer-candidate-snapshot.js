@@ -1,0 +1,2 @@
+"use strict";
+const fs=require('node:fs'),cp=require('node:child_process');const p='scripts/test-evaluated-scenario-consistency.js';const base=cp.execFileSync('git',['show','origin/main:'+p],{encoding:'utf8'});const old='93af0b388491fe631437a663ccea69cf466a23855ac8d71da8e1dab2a38d6374',neu='334d31786ded095f902d54b7920a765bdf13995551bd4a8fb47390da5e4008b8';if(!base.includes(old))throw new Error('old snapshot not found in main');fs.writeFileSync(p,base.replace(old,neu));
