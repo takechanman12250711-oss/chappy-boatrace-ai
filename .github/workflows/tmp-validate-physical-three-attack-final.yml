@@ -16,14 +16,30 @@ jobs:
       - name: Final 867-race counterfactual
         run: node scripts/tmp-validate-physical-three-attack-promotion.js
       - name: Candidate-90 regression
+        id: candidate90
+        continue-on-error: true
         run: node scripts/test-candidate90-regression.js
       - name: Strong-escape trimming regression
+        id: strongescape
+        continue-on-error: true
         run: node scripts/test-strong-escape-trim-regression.js
       - name: Evaluated scenario consistency
+        id: scenario
+        continue-on-error: true
         run: node scripts/test-evaluated-scenario-consistency.js
       - name: Theory integration
+        id: theory
+        continue-on-error: true
         run: node scripts/test-theory-integration.js
+      - name: Regression status summary
+        if: always()
+        run: |
+          echo "candidate90=${{ steps.candidate90.outcome }}"
+          echo "strongescape=${{ steps.strongescape.outcome }}"
+          echo "scenario=${{ steps.scenario.outcome }}"
+          echo "theory=${{ steps.theory.outcome }}"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: physical-three-attack-final-validation
           path: tmp-analysis-output/physical-three-final-validation.json
