@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/tmp-audit-missing-candidate-structure.js'
+      - 'scripts/tmp-audit-correct-candidate-gates.js'
       - '.github/workflows/tmp-post330-missing-candidate-audit.yml'
 jobs:
   audit:
@@ -14,7 +15,8 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/tmp-audit-missing-candidate-structure.js
+      - run: node scripts/tmp-audit-correct-candidate-gates.js
       - uses: actions/upload-artifact@v4
         with:
-          name: post330-missing-candidate-structure
-          path: tmp-analysis-output/post330-missing-candidate-structure.json
+          name: post330-candidate-audit
+          path: tmp-analysis-output/*.json
