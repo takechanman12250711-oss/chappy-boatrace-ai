@@ -1,1 +1,1 @@
-Temporary trigger for approved implementation workflow. Remove before merge.
+Temporary trigger after production patch applied. Remove before merge.
