@@ -950,6 +950,59 @@ const completeStored =
   );
 const completeV2 =
   completeStored.shadowV2;
+const completeStartDiagnostic =
+  completeStored.theoryTagSnapshot
+    .evidenceDiagnostics.rows.find(
+      row => row.theoryKey === "start"
+    );
+const completeStartTheory =
+  completeStored.theoryTagSnapshot
+    .theories.find(
+      row => row.theoryKey === "stSlit"
+    );
+
+assert.equal(
+  completeStartDiagnostic.formal,
+  true,
+  "公式入力のavgSt・今節ST・展示STからST正式証拠を生成する"
+);
+assert.equal(
+  completeStartDiagnostic.metrics.coverage,
+  6
+);
+assert.ok(
+  completeStartTheory?.ticketCount > 0,
+  "正式ST証拠を実戦買い目へ帰属して日次記録へ保存する"
+);
+assert.deepEqual(
+  compactStoredVerification(
+    completeStored
+  ).theoryTagSnapshot,
+  completeStored.theoryTagSnapshot,
+  "検証予想の軽量化後もST正式証拠を保持する"
+);
+const completeStartEvaluation =
+  require("../js/theory-evaluation-engine")
+    .build({
+      ...completeStored,
+      result: {
+        settled: true,
+        resultTicket:
+          completeStartTheory.tickets[0]
+      }
+    })
+    .evaluations.find(
+      row => row.theoryKey === "start"
+    );
+assert.equal(
+  completeStartEvaluation.status,
+  "evaluated",
+  "保存したstSlit証拠をPhase7のstart評価へ接続する"
+);
+assert.equal(
+  completeStartEvaluation.matched,
+  true
+);
 
 assert.equal(
   completeEvaluation.ready,

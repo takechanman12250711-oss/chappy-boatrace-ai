@@ -53,6 +53,7 @@ on:
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-race-parser.js"
       - "scripts/test-theory-integration.js"
+      - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "scripts/test-prediction-verification.js"
@@ -166,6 +167,7 @@ on:
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-race-parser.js"
       - "scripts/test-theory-integration.js"
+      - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "scripts/test-prediction-verification.js"
@@ -287,6 +289,7 @@ jobs:
           node --check scripts/test-shadow-selection-v2.js
           node --check scripts/test-race-parser.js
           node --check scripts/test-theory-integration.js
+          node --check scripts/test-collector-theory-support-wiring.js
           node --check scripts/test-boat-identity.js
           node --check scripts/test-auto-selection.js
           node --check scripts/test-prediction-verification.js
@@ -355,6 +358,7 @@ jobs:
           node scripts/test-shadow-selection-v2.js
           node scripts/test-race-parser.js
           node scripts/test-theory-integration.js
+          node scripts/test-collector-theory-support-wiring.js
           node scripts/test-boat-identity.js
           node scripts/test-auto-selection.js
           node scripts/test-build-prediction-index.js
