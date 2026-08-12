@@ -884,6 +884,19 @@ const completeHistory =
     "12",
     8
   );
+completeHistory.raceData.historyContext.venueRace.trend.frameMovement["1"] = {
+  samples: 200,
+  reliability: "high",
+  riseRate: 0,
+  stayRate: 74,
+  sinkRate: 26,
+  label: "沈下",
+  hasBaseline: true,
+  baselineRiseRate: 0,
+  baselineStayRate: 55.2,
+  baselineSinkRate: 44.8,
+  movementDelta: 18.8
+};
 const completeLegacyInput =
   theoryInput.prepare(
     JSON.parse(
@@ -960,6 +973,16 @@ const completeStartTheory =
     .theories.find(
       row => row.theoryKey === "stSlit"
     );
+const completeFrameDiagnostic =
+  completeStored.theoryTagSnapshot
+    .evidenceDiagnostics.rows.find(
+      row => row.theoryKey === "frame-rise-fall"
+    );
+const completeFrameTheory =
+  completeStored.theoryTagSnapshot
+    .theories.find(
+      row => row.theoryKey === "frameRiseSink"
+    );
 
 assert.equal(
   completeStartDiagnostic.formal,
@@ -973,6 +996,15 @@ assert.equal(
 assert.ok(
   completeStartTheory?.ticketCount > 0,
   "正式ST証拠を実戦買い目へ帰属して日次記録へ保存する"
+);
+assert.equal(
+  completeFrameDiagnostic.formal,
+  true,
+  "AI計算へ適用済みの枠別浮沈率を正式証拠として保存する"
+);
+assert.ok(
+  completeFrameTheory?.ticketCount > 0,
+  "枠別浮沈率を実際に補正した枠を含む実戦買い目へ帰属する"
 );
 assert.deepEqual(
   compactStoredVerification(
@@ -1001,6 +1033,28 @@ assert.equal(
 );
 assert.equal(
   completeStartEvaluation.matched,
+  true
+);
+const completeFrameEvaluation =
+  require("../js/theory-evaluation-engine")
+    .build({
+      ...completeStored,
+      result: {
+        settled: true,
+        resultTicket:
+          completeFrameTheory.tickets[0]
+      }
+    })
+    .evaluations.find(
+      row => row.theoryKey === "frame-rise-fall"
+    );
+assert.equal(
+  completeFrameEvaluation.status,
+  "evaluated",
+  "保存した枠別浮沈率証拠をPhase7評価へ接続する"
+);
+assert.equal(
+  completeFrameEvaluation.matched,
   true
 );
 
