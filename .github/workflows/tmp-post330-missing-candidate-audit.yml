@@ -9,6 +9,7 @@ on:
       - 'scripts/tmp-sim-open-slot-candidate-promotion.js'
       - 'scripts/tmp-sim-full-slot-replacement.js'
       - 'scripts/tmp-audit-miss-head-vs-order.js'
+      - 'scripts/tmp-audit-one-to-three-head-miss.js'
       - '.github/workflows/tmp-post330-missing-candidate-audit.yml'
 jobs:
   audit:
@@ -24,6 +25,7 @@ jobs:
       - run: node scripts/tmp-sim-open-slot-candidate-promotion.js
       - run: node scripts/tmp-sim-full-slot-replacement.js
       - run: node scripts/tmp-audit-miss-head-vs-order.js
+      - run: node scripts/tmp-audit-one-to-three-head-miss.js
       - uses: actions/upload-artifact@v4
         with:
           name: post330-candidate-audit
