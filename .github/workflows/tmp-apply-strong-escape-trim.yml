@@ -1,9 +1,14 @@
 name: Apply strong escape trim patch
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/strong-escape-alternate-trim
+      - main
+    paths:
+      - 'scripts/tmp-apply-strong-escape-trim.js'
+      - 'scripts/test-strong-escape-trim-regression.js'
+      - '.github/workflows/tmp-apply-strong-escape-trim.yml'
+      - 'js/practical-selection.js'
 
 permissions:
   contents: write
