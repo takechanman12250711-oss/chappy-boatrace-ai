@@ -3702,7 +3702,24 @@
     const expansionCandidates = [
       ...holdExpansionCandidates,
       ...alternateHeadByAttacker.values()
-    ].sort(expansionSort);
+    ]
+      .filter(row => {
+        const headBoatNo =
+          ticketBoats(row.ticket)[0];
+        const weakOuterHead =
+          (headBoatNo === 5 || headBoatNo === 6) &&
+          numeric(row.priorityScore, 0) < 80;
+
+        if (weakOuterHead) {
+          rememberExpansionExclusion(
+            row,
+            "WEAK_OUTER_HEAD_INDEPENDENT",
+            "5・6号艇頭の独立展開はpriority 80未満のため購入対象外。"
+          );
+        }
+        return !weakOuterHead;
+      })
+      .sort(expansionSort);
 
     expansionCandidates.forEach(
       row => {
