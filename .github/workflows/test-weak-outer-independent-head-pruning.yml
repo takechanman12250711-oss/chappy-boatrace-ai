@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths:
       - 'js/practical-selection.js'
-      - 'scripts/test-weak-outer-independent-head-pruning.js'
+      - 'scripts/test-outer-independent-prune-regression.js'
       - '.github/workflows/test-weak-outer-independent-head-pruning.yml'
 jobs:
   test:
@@ -14,4 +14,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node scripts/test-weak-outer-independent-head-pruning.js
+      - run: node scripts/test-outer-independent-prune-regression.js
