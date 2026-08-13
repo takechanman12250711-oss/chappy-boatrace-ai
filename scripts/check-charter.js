@@ -13,6 +13,9 @@ const collectPredictionWorkflow = read(
 const collectResultWorkflow = read(
   ".github/workflows/collect-results.yml"
 );
+const learningAnalysisWorkflow = read(
+  ".github/workflows/build-learning-analysis-pipeline.yml"
+);
 const practicalPriorityShadowReportApi =
   require("../js/practical-priority-shadow-report");
 
@@ -44,15 +47,17 @@ const sharedWriterConcurrency =
   /concurrency:\s*\n\s+group: chappy-main-data-writers\s*\n\s+queue: max\s*\n\s+cancel-in-progress: false/;
 assert(
   sharedWriterConcurrency.test(collectPredictionWorkflow) &&
-    sharedWriterConcurrency.test(collectResultWorkflow),
-  "予想収集と結果収集は同じ排他グループで直列実行してください"
+    sharedWriterConcurrency.test(collectResultWorkflow) &&
+    sharedWriterConcurrency.test(learningAnalysisWorkflow),
+  "予想・結果・学習分析のmain書込は同じ排他グループで直列実行してください"
 );
 const checksOutCurrentMain =
   /uses:\s*actions\/checkout@v4[\s\S]{0,160}?\n\s+ref:\s*main/;
 assert(
   checksOutCurrentMain.test(collectPredictionWorkflow) &&
-    checksOutCurrentMain.test(collectResultWorkflow),
-  "直列化した収集処理は実行開始時点の最新mainを取得してください"
+    checksOutCurrentMain.test(collectResultWorkflow) &&
+    checksOutCurrentMain.test(learningAnalysisWorkflow),
+  "直列化したmain書込処理は実行開始時点の最新mainを取得してください"
 );
 
 assert(
