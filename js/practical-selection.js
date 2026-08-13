@@ -116,6 +116,63 @@
       .join(":");
   }
 
+  function userFacingFormationText(
+    value
+  ) {
+    return String(value || "")
+      .replace(
+        /流し候補/g,
+        "フォーメーション候補"
+      )
+      .replace(
+        /流し展開/g,
+        "フォーメーション"
+      )
+      .replace(
+        /流し/g,
+        "フォーメーション"
+      );
+  }
+
+  function finalDisplayCategory(row) {
+    if (
+      row?.selectionTier ===
+        "順位ゲート置換"
+    ) {
+      return "順位ゲート補完";
+    }
+    if (
+      row?.selectionTier ===
+        "候補補完"
+    ) {
+      return "候補補完";
+    }
+    if (
+      row?.selectionTier ===
+        "展開追加"
+    ) {
+      return "独立展開";
+    }
+    if (
+      [
+        "順位ゲート補完",
+        "候補補完",
+        "独立展開"
+      ].includes(row?.category)
+    ) {
+      return row.category;
+    }
+    if (row?.category === "流し") {
+      return FORMATION_DISPLAY_CATEGORY;
+    }
+
+    return String(
+      row?.displayCategory ||
+      row?.category ||
+      "買い目"
+    );
+  }
+
   function boatNo(value) {
     return Number(
       value?.boatNo ??
@@ -4915,6 +4972,41 @@
     const finalizedTickets =
       selected.map(row => ({
         ...row,
+        displayCategory:
+          finalDisplayCategory(row),
+        scenarioType:
+          userFacingFormationText(
+            row.scenarioType
+          ),
+        scenarioTypes:
+          arrayify(row.scenarioTypes)
+            .map(
+              userFacingFormationText
+            ),
+        scenarioTitle:
+          userFacingFormationText(
+            row.scenarioTitle
+          ),
+        scenarioSummary:
+          userFacingFormationText(
+            row.scenarioSummary
+          ),
+        title:
+          userFacingFormationText(
+            row.title
+          ),
+        summary:
+          userFacingFormationText(
+            row.summary
+          ),
+        reason:
+          userFacingFormationText(
+            row.reason
+          ),
+        comment:
+          userFacingFormationText(
+            row.comment
+          ),
         roleLabels:
           roleLabelsFor(row)
       }));

@@ -33,6 +33,48 @@
     return Number.isFinite(number) ? number : fallback;
   }
 
+  function userFacingFormationText(value) {
+    return safeText(value, "")
+      .replace(/流し候補/g, "フォーメーション候補")
+      .replace(/流し展開/g, "フォーメーション")
+      .replace(/流し/g, "フォーメーション");
+  }
+
+  function practicalDisplayCategory(
+    row,
+    fallback = "買い目"
+  ) {
+    if (row?.selectionTier === "順位ゲート置換") {
+      return "順位ゲート補完";
+    }
+    if (row?.selectionTier === "候補補完") {
+      return "候補補完";
+    }
+    if (row?.selectionTier === "展開追加") {
+      return "独立展開";
+    }
+    if (
+      [
+        "順位ゲート補完",
+        "候補補完",
+        "独立展開"
+      ].includes(row?.category)
+    ) {
+      return row.category;
+    }
+    if (row?.category === "流し") {
+      return "フォーメーション";
+    }
+
+    return userFacingFormationText(
+      row?.displayCategory ||
+      row?.category ||
+      arrayify(row?.categories)[0] ||
+      row?.type ||
+      fallback
+    );
+  }
+
   function firstValue(values, fallback = "") {
     for (const value of values) {
       if (value !== null && value !== undefined && value !== "") return value;
@@ -52,7 +94,8 @@
   }
 
   function compactTicketComment(value) {
-    const text = safeText(value, "");
+    const text =
+      userFacingFormationText(value);
     if (!text) return "";
 
     const sentences =
@@ -131,24 +174,23 @@
 
     return {
       ticket,
-      category: safeText(
-        firstValue([
-          row.displayCategory,
-          row.category,
-          arrayify(row.categories)[0],
-          row.type
-        ]),
+      category: practicalDisplayCategory(
+        row,
         fallbackCategory
       ),
       scenarioType: safeText(
-        firstValue([row.scenarioType, arrayify(row.scenarioTypes)[0]]),
+        userFacingFormationText(
+          firstValue([
+            row.scenarioType,
+            arrayify(row.scenarioTypes)[0]
+          ])
+        ),
         ""
       ),
       odds,
       amount,
-      comment: safeText(
-        firstValue([row.scenarioSummary, row.comment, row.reason]),
-        ""
+      comment: userFacingFormationText(
+        firstValue([row.scenarioSummary, row.comment, row.reason])
       ),
       selectionTier: safeText(row.selectionTier, ""),
       expansionReason: safeText(row.expansionReason, ""),
@@ -230,11 +272,8 @@
                 ""
               );
             const displayCategory =
-              safeText(
-                firstValue([
-                  item?.displayCategory,
-                  item?.category
-                ]),
+              practicalDisplayCategory(
+                item,
                 ""
               );
 
@@ -281,9 +320,13 @@
             return;
           }
 
-          row.category =
+          const practicalCategory =
             practicalDisplayByTicket
-              .get(row.ticket) ||
+              .get(row.ticket);
+          row.category =
+            userFacingFormationText(
+              practicalCategory
+            ) ||
             source.displayCategory ||
             row.category;
 
@@ -336,13 +379,11 @@
       item.selectionTier === "展開追加"
         ? "［展開追加］"
         : "";
-    const displayCategory = safeText(
-      firstValue([
-        item.displayCategory,
-        item.category
-      ]),
-      ""
-    );
+    const displayCategory =
+      practicalDisplayCategory(
+        item,
+        ""
+      );
     const category =
       displayCategory
         ? `［${displayCategory}］`

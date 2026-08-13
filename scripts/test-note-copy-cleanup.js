@@ -41,6 +41,12 @@ global.ChappyPracticalSelection = {
         "フォーメーション",
       scenarioSummary:
         "同一1着軸の正式根拠から選んだ券。"
+    }, {
+      ticket: "2-3-1",
+      category: "候補補完",
+      displayCategory: "流し",
+      scenarioSummary:
+        "旧保存の流し候補。"
     }];
   }
 };
@@ -75,6 +81,16 @@ assert.match(
   paidSection,
   /1-3-5[^\n]*［フォーメーション候補］/,
   "非選択の内部flow候補もユーザー向け名称で表示する"
+);
+assert.match(
+  paidSection,
+  /2-3-1[^\n]*［候補補完］/,
+  "Tierを持たない旧保存行も最終分類で表示する"
+);
+assert.doesNotMatch(
+  paidSection,
+  /流し|2連単/,
+  "note全文へ禁則語を残さない"
 );
 
 console.log("note copy cleanup tests passed");

@@ -276,16 +276,56 @@ assert.deepEqual(
   {
     ticket: "1-2-3",
     category: "本線",
+    displayCategory: "本線",
     scenarioType: "中心展開",
     amount: 100
   },
-  "買い目は初期画面に必要な識別情報だけを保持する"
+  "買い目は表示名を含む初期画面に必要な識別情報だけを保持する"
 );
 assert.equal(summary.predictions[0].prediction.oversized, undefined);
 assert.equal(
   summary.predictions[0].prediction.practicalTickets[0].comment,
   undefined,
   "買い目の詳細理由は原本とnoteへ残し、軽量要約へ重複させない"
+);
+
+const staleFormationSummary = buildPredictionSummary({
+  date: "20260813",
+  predictions: [{
+    raceKey: "20260813-21-8",
+    prediction: {
+      practicalTickets: [{
+        ticket: "2-1-4",
+        category: "流し",
+        displayCategory: "流し",
+        scenarioType: "流し展開",
+        amount: 100
+      }, {
+        ticket: "2-3-1",
+        category: "候補補完",
+        displayCategory: "流し",
+        scenarioType: "流し候補",
+        amount: 100
+      }]
+    }
+  }]
+});
+assert.deepEqual(
+  staleFormationSummary.predictions[0].prediction.practicalTickets,
+  [{
+    ticket: "2-1-4",
+    category: "流し",
+    displayCategory: "フォーメーション",
+    scenarioType: "フォーメーション",
+    amount: 100
+  }, {
+    ticket: "2-3-1",
+    category: "候補補完",
+    displayCategory: "候補補完",
+    scenarioType: "フォーメーション候補",
+    amount: 100
+  }],
+  "旧保存形式からも表示用分類と展開名を正規化する"
 );
 assert.ok(
   Buffer.byteLength(JSON.stringify(summary)) < 20_000,

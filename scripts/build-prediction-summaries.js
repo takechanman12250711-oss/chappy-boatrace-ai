@@ -263,6 +263,32 @@ function compactPracticalTicket(value) {
     typeof value === "string"
       ? { ticket: value }
       : value || {};
+  const category =
+    String(row.category || "");
+  const displayCategory =
+    [
+      "順位ゲート補完",
+      "候補補完",
+      "独立展開"
+    ].includes(category)
+      ? category
+      : category === "流し"
+        ? "フォーメーション"
+        : String(
+            row.displayCategory ||
+            category ||
+            ""
+          ).replace(
+            /^流し$/,
+            "フォーメーション"
+          );
+  const scenarioType = String(
+    row.scenarioType || ""
+  )
+    .replace(/流し候補/g, "フォーメーション候補")
+    .replace(/流し展開/g, "フォーメーション")
+    .replace(/流し/g, "フォーメーション");
+
   return {
     ticket: String(
       row.ticket ||
@@ -273,8 +299,9 @@ function compactPracticalTicket(value) {
       row.formation ||
       ""
     ),
-    category: String(row.category || ""),
-    scenarioType: String(row.scenarioType || ""),
+    category,
+    displayCategory,
+    scenarioType,
     amount: Number(row.amount || 0)
   };
 }

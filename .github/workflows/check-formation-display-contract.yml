@@ -1,0 +1,57 @@
+name: Check formation display contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "js/boat-identity.js"
+      - "js/ai-core.js"
+      - "js/prediction.js"
+      - "js/practical-selection.js"
+      - "js/note-generator.js"
+      - "js/render.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/app-runtime-loader.js"
+      - "index.html"
+      - "scripts/build-prediction-index.js"
+      - "scripts/build-prediction-summaries.js"
+      - "scripts/test-formation-display-contract.js"
+      - "scripts/test-note-copy-cleanup.js"
+      - "scripts/test-prediction-transparency-ui.js"
+      - "scripts/test-prediction-summaries.js"
+      - "scripts/test-build-prediction-index.js"
+      - "data/predictions/20260813.json"
+      - "data/notes/20260813-21-08R.md"
+      - ".github/workflows/check-formation-display-contract.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check production display contract syntax
+        run: |
+          node --check js/practical-selection.js
+          node --check js/note-generator.js
+          node --check js/render.js
+          node --check js/prediction-runtime-loader.js
+          node --check js/app-runtime-loader.js
+          node --check scripts/build-prediction-index.js
+          node --check scripts/build-prediction-summaries.js
+          node --check scripts/test-formation-display-contract.js
+      - name: Replay frozen formation display contract
+        run: |
+          node scripts/test-formation-display-contract.js
+          node scripts/test-note-copy-cleanup.js
+          node scripts/test-prediction-transparency-ui.js
+          node scripts/test-prediction-summaries.js
+          node scripts/test-build-prediction-index.js
