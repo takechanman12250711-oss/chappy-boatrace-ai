@@ -18,7 +18,7 @@
     基本定数
   =============================== */
 
-  const VERSION = "prediction-v1.0.1-boat-identity";
+  const VERSION = "prediction-v1.0.2-course-fail-closed";
   const boatIdentity =
     window.ChappyBoatIdentity ||
     (
@@ -1745,6 +1745,10 @@ if (venue?.tideInfluence >= 65) {
     const entries = race.entries || [];
     const beforeInfo = race.beforeInfo || [];
     const startExhibition = race.startExhibition || [];
+    const hasOfficialCourseMapping =
+      hasCompleteOfficialCourseMapping(
+        startExhibition
+      );
 
     const list = entries.map((entry, index) => {
       const boatNo = entry.boatNo || index + 1;
@@ -1770,7 +1774,9 @@ if (venue?.tideInfluence >= 65) {
       const partsExchange = safeString(before?.partsExchange);
 
 const courseCandidate = toBoatNo(
-  start?.course ?? boatNo
+  hasOfficialCourseMapping
+    ? start?.course
+    : boatNo
 );
 
 const course =
@@ -2024,7 +2030,9 @@ return {
   const boatNo = params.boatNo;
 
   const courseCandidate = toBoatNo(
-    params.exhibition?.course ?? boatNo
+    params.hasOfficialCourseMapping
+      ? params.exhibition?.course
+      : boatNo
   );
 
   const course =
@@ -4707,12 +4715,19 @@ const candidates = [...evaluations]
   const debuffs = [];
 
   const boatNo = Number(entry?.boatNo || 0);
+  const courseCandidate = toBoatNo(
+    index?.course ?? boatNo
+  );
+  const course =
+    courseCandidate >= 1 && courseCandidate <= 6
+      ? courseCandidate
+      : boatNo;
 
   /* ===============================
     外枠補正
   =============================== */
 
-  if (boatNo >= 4) {
+  if (course >= 4) {
     manshu += 18;
     pickup += 10;
 
@@ -4723,7 +4738,7 @@ const candidates = [...evaluations]
     2コース差し・残し
   =============================== */
 
-  if (boatNo === 2) {
+  if (course === 2) {
     hold += 18;
     pickup += 8;
 
@@ -4734,7 +4749,7 @@ const candidates = [...evaluations]
     イン残し
   =============================== */
 
-  if (boatNo === 1) {
+  if (course === 1) {
     hold += 20;
     manshu -= 8;
 
@@ -4795,7 +4810,7 @@ const candidates = [...evaluations]
 
   if (
     Number(context.weather.insideRisk) >= 65 &&
-    boatNo === 1
+    course === 1
   ) {
     hold -= 6;
 
@@ -4820,6 +4835,7 @@ const candidates = [...evaluations]
 
   return {
     boatNo,
+    course,
 
     name:
       entry?.racerName ||

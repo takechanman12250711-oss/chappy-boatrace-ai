@@ -880,6 +880,16 @@ function normalizedRunDigest(run, left = 0, right = 0) {
           role: evaluation.role
         }))
         .sort((a, b) => a.boatNo - b.boatNo),
+    manshuEvaluations:
+      (prediction.manshuSheet?.evaluations || [])
+        .map(evaluation => ({
+          boatNo: normalizeBoat(evaluation.boatNo),
+          course: Number(evaluation.course || 0) || null,
+          manshuScore: Number(evaluation.manshuScore || 0),
+          holdScore: Number(evaluation.holdScore || 0),
+          pickupScore: Number(evaluation.pickupScore || 0)
+        }))
+        .sort((a, b) => a.boatNo - b.boatNo),
     scenarios: (scenarios.scenarios || []).map(
       scenario => ({
         type: scenario.type,
@@ -1216,14 +1226,31 @@ const incompleteOneFourSwapRun = runProductionPrediction(
 assert.deepEqual(
   legacyExpectedByBoat(incompleteOneFourSwapRun),
   [
-    [1, 4, 63],
+    [1, 1, 44],
     [2, 2, 56],
     [3, 3, 80],
-    [4, 1, 51],
+    [4, 4, 70],
     [5, 5, 69],
     [6, 6, 73]
   ],
-  "不完全な進入写像ではexpectedOuterの既存艇番基準を維持する"
+  "不完全な進入写像ではcourse基礎点とexpectedOuterを艇番基準へ戻す"
+);
+
+const incompleteIdentityCourseRace = cloneJson(
+  incompleteOneFourSwapRace
+);
+incompleteIdentityCourseRace.startExhibition =
+  incompleteIdentityCourseRace.startExhibition.map(row => ({
+    ...row,
+    course: Number(row.boat)
+  }));
+
+assert.deepEqual(
+  normalizedRunDigest(incompleteOneFourSwapRun),
+  normalizedRunDigest(
+    runProductionPrediction(incompleteIdentityCourseRace)
+  ),
+  "5艇だけのcourse値は旧評価・印・編成・実戦買い目へ混ぜない"
 );
 
 const nonOfficialOneFourSwapRace = cloneJson(
@@ -1244,6 +1271,41 @@ assert.deepEqual(
   ),
   legacyExpectedByBoat(incompleteOneFourSwapRun),
   "非公式の6艇写像でもexpectedOuterを実コース基準へ切り替えない"
+);
+
+const nonOfficialIdentityCourseRace = cloneJson(
+  nonOfficialOneFourSwapRace
+);
+nonOfficialIdentityCourseRace.startExhibition =
+  nonOfficialIdentityCourseRace.startExhibition.map(row => ({
+    ...row,
+    course: Number(row.boat)
+  }));
+
+assert.deepEqual(
+  normalizedRunDigest(
+    runProductionPrediction(nonOfficialOneFourSwapRace)
+  ),
+  normalizedRunDigest(
+    runProductionPrediction(nonOfficialIdentityCourseRace)
+  ),
+  "非公式6艇のcourse値は旧評価・印・編成・実戦買い目へ混ぜない"
+);
+
+const duplicateOfficialCourseRace = cloneJson(
+  officialOneFourSwapRace
+);
+duplicateOfficialCourseRace.startExhibition[0].course =
+  duplicateOfficialCourseRace.startExhibition[1].course;
+
+assert.deepEqual(
+  normalizedRunDigest(
+    runProductionPrediction(duplicateOfficialCourseRace)
+  ),
+  normalizedRunDigest(
+    runProductionPrediction(nonOfficialIdentityCourseRace)
+  ),
+  "重複courseを含む公式6艇写像も全艇まとめて艇番基準へ戻す"
 );
 
 /*

@@ -919,7 +919,7 @@ assert.equal(
     .verificationEvidence
     .generation
     .ticketPolicyVersion,
-  "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5",
+  "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1",
   "置換導入後の収集世代をpolicy versionで識別する"
 );
 const priorityGateWithFlow =

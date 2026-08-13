@@ -10,7 +10,7 @@
   let corePromise=null;
   let backgroundPromise=null;
   let installPromise=null;
-  const VERSION="20260813-actual-course1";
+  const VERSION="20260813-course-failclosed1";
   const SCRIPT_LOAD_TIMEOUT_MS=15000;
 
   const coreScripts=[

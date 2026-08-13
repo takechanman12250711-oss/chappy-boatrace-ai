@@ -180,7 +180,7 @@ for (
         ?.verificationEvidence
         ?.generation
         ?.ticketPolicyVersion,
-      "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5",
+      "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1",
       `${raceKey}: policy version`
     );
 

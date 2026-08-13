@@ -267,6 +267,18 @@ assert.equal(
   "実戦厳選の世代が異なる行を同じコホートへ混ぜない"
 );
 
+const previousCourseGeneration = row(102, "gain");
+previousCourseGeneration.practicalPriorityShadow = {
+  ...previousCourseGeneration.practicalPriorityShadow,
+  sourceSelectionFingerprint:
+    "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5"
+};
+assert.equal(
+  reportApi.build([previousCourseGeneration]).cohortCount,
+  0,
+  "進入fail-closed修正前の行を新しい固定100件コホートへ混ぜない"
+);
+
 const mixedGenerationRows = Array.from(
   { length: 100 },
   (_, index) => {
