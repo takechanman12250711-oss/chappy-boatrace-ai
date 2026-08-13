@@ -34,6 +34,7 @@ on:
       - "js/motor-maintenance-insights.js"
       - "scripts/test-exhibition-performance.js"
       - "scripts/test-double-time.js"
+      - "scripts/test-double-time-formal-evidence.js"
       - "scripts/test-new-sam.js"
       - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
@@ -52,6 +53,7 @@ on:
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-race-parser.js"
+      - "scripts/test-original-exhibition.js"
       - "scripts/test-theory-integration.js"
       - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
@@ -102,6 +104,7 @@ on:
       - "js/history-insights-base.js"
       - "js/theory-input.js"
       - "api/_parser.js"
+      - "api/_original-exhibition.js"
       - "api/race.js"
       - "api/_history.js"
       - "scripts/test-api-history.js"
@@ -148,6 +151,7 @@ on:
       - "js/motor-maintenance-insights.js"
       - "scripts/test-exhibition-performance.js"
       - "scripts/test-double-time.js"
+      - "scripts/test-double-time-formal-evidence.js"
       - "scripts/test-new-sam.js"
       - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
@@ -166,6 +170,7 @@ on:
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-race-parser.js"
+      - "scripts/test-original-exhibition.js"
       - "scripts/test-theory-integration.js"
       - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
@@ -216,6 +221,7 @@ on:
       - "js/history-insights-base.js"
       - "js/theory-input.js"
       - "api/_parser.js"
+      - "api/_original-exhibition.js"
       - "api/race.js"
       - "api/_history.js"
       - "scripts/test-api-history.js"
@@ -268,6 +274,7 @@ jobs:
           node --check js/motor-maintenance-insights.js
           node --check scripts/test-exhibition-performance.js
           node --check scripts/test-double-time.js
+          node --check scripts/test-double-time-formal-evidence.js
           node --check scripts/test-new-sam.js
           node --check tools/test-motor-maintenance-theory-v2.js
           node --check js/note-generator.js
@@ -288,6 +295,7 @@ jobs:
           node --check scripts/test-prediction-conditions.js
           node --check scripts/test-shadow-selection-v2.js
           node --check scripts/test-race-parser.js
+          node --check scripts/test-original-exhibition.js
           node --check scripts/test-theory-integration.js
           node --check scripts/test-collector-theory-support-wiring.js
           node --check scripts/test-boat-identity.js
@@ -333,6 +341,7 @@ jobs:
           node --check js/history-insights-base.js
           node --check js/theory-input.js
           node --check api/_parser.js
+          node --check api/_original-exhibition.js
           node --check api/race.js
           node --check api/_history.js
           node --check scripts/build-prediction-summaries.js
@@ -357,6 +366,7 @@ jobs:
           node scripts/test-prediction-conditions.js
           node scripts/test-shadow-selection-v2.js
           node scripts/test-race-parser.js
+          node scripts/test-original-exhibition.js
           node scripts/test-theory-integration.js
           node scripts/test-collector-theory-support-wiring.js
           node scripts/test-boat-identity.js
@@ -377,6 +387,7 @@ jobs:
           node scripts/test-ai-core-formations.js
           node scripts/test-exhibition-performance.js
           node scripts/test-double-time.js
+          node scripts/test-double-time-formal-evidence.js
           node scripts/test-new-sam.js
           node tools/test-motor-maintenance-theory-v2.js
           node scripts/test-race-scenarios.js

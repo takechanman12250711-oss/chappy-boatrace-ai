@@ -7,11 +7,16 @@ on:
       - "js/prediction-st-exhibition-support.js"
       - "js/theory-input.js"
       - "js/ai-core.js"
+      - "js/prediction.js"
       - "js/theory-evaluation-engine.js"
       - "js/theory-tag-snapshot.js"
+      - "api/race.js"
+      - "api/_original-exhibition.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-local-water-theory-tag.js"
       - "scripts/test-frame-rise-sink-formal-evidence.js"
+      - "scripts/test-double-time-formal-evidence.js"
+      - "scripts/test-original-exhibition.js"
       - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-shadow-predictions.js"
       - "scripts/test-theory-tag-snapshot.js"
@@ -22,11 +27,16 @@ on:
       - "js/prediction-st-exhibition-support.js"
       - "js/theory-input.js"
       - "js/ai-core.js"
+      - "js/prediction.js"
       - "js/theory-evaluation-engine.js"
       - "js/theory-tag-snapshot.js"
+      - "api/race.js"
+      - "api/_original-exhibition.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-local-water-theory-tag.js"
       - "scripts/test-frame-rise-sink-formal-evidence.js"
+      - "scripts/test-double-time-formal-evidence.js"
+      - "scripts/test-original-exhibition.js"
       - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-shadow-predictions.js"
       - "scripts/test-theory-tag-snapshot.js"
@@ -49,6 +59,7 @@ jobs:
           node --check js/prediction-venue-water-support.js
           node --check js/prediction-st-exhibition-support.js
           node --check js/theory-tag-snapshot.js
+          node --check api/_original-exhibition.js
           node --check scripts/collect-predictions.js
           node --check scripts/test-collector-theory-support-wiring.js
           node scripts/test-collector-theory-support-wiring.js
@@ -56,4 +67,6 @@ jobs:
           node scripts/test-theory-tag-snapshot.js
           node scripts/test-local-water-theory-tag.js
           node scripts/test-frame-rise-sink-formal-evidence.js
+          node scripts/test-double-time-formal-evidence.js
+          node scripts/test-original-exhibition.js
           node scripts/check-charter.js

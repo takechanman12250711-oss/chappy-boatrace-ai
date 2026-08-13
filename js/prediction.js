@@ -1219,6 +1219,16 @@
 
         exhibitionTime: toNumberOrNull(entry.exhibitionTime ?? entry.exhibition?.displayTime),
         exhibitionST: normalizeST(entry.exhibitionST ?? entry.exhibition?.st),
+        lapTime: toNumberOrNull(
+          entry.lapTime ??
+          entry.oneLapTime ??
+          entry.exhibition?.lapTime ??
+          entry.exhibition?.oneLapTime
+        ),
+        lapTimeSource: safeString(
+          entry.lapTimeSource ??
+          entry.exhibition?.lapTimeSource
+        ),
         tilt: safeString(entry.tilt ?? entry.exhibition?.tilt),
 
         raw: entry
@@ -1253,6 +1263,14 @@
           item.oneLapTime ??
           item.exhibition?.lapTime ??
           item.exhibition?.oneLapTime
+        ),
+        lapTimeSource: safeString(
+          item.lapTimeSource ??
+          item.exhibition?.lapTimeSource
+        ),
+        lapTimeSourceUrl: safeString(
+          item.lapTimeSourceUrl ??
+          item.exhibition?.lapTimeSourceUrl
         ),
         partsExchange: safeString(item.partsExchange ?? item.parts ?? item.exhibition?.partsExchange),
         raw: item

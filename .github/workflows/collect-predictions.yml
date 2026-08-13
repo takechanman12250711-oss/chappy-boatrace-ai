@@ -31,10 +31,12 @@ on:
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-race-parser.js"
+      - "scripts/test-original-exhibition.js"
       - "scripts/test-theory-integration.js"
       - "scripts/test-theory-tag-catalog-reachability.js"
       - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-frame-rise-sink-formal-evidence.js"
+      - "scripts/test-double-time-formal-evidence.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "js/collection-health.js"
@@ -45,6 +47,7 @@ on:
       - "api/race.js"
       - "api/_history.js"
       - "api/_parser.js"
+      - "api/_original-exhibition.js"
       - "scripts/test-api-history.js"
       - "scripts/test-api-client-cache.js"
       - "js/ai-core.js"
@@ -109,12 +112,15 @@ jobs:
           node --check api/schedule.js
           node --check api/_schedule-parser.js
           node --check api/race.js
+          node --check api/_original-exhibition.js
           node scripts/test-schedule-parser.js
           node scripts/test-race-parser.js
+          node scripts/test-original-exhibition.js
           node scripts/test-theory-integration.js
           node scripts/test-theory-tag-catalog-reachability.js
           node scripts/test-collector-theory-support-wiring.js
           node scripts/test-frame-rise-sink-formal-evidence.js
+          node scripts/test-double-time-formal-evidence.js
           node scripts/test-shadow-predictions.js
           node scripts/test-boat-identity.js
           node scripts/check-charter.js

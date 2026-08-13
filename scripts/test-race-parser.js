@@ -122,7 +122,7 @@ async function testFetchedAt() {
     await raceApi(
       {
         query: {
-          jcd: "06",
+          jcd: "07",
           rno: "9",
           date: "20260726"
         }

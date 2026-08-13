@@ -127,7 +127,9 @@ assert(
 );
 assert(
   exhibitionPerformance.officialModeRequiresExhibitionBoats === 6 &&
-    exhibitionPerformance.fullModeRequiresLapBoats === 6,
+    exhibitionPerformance.fullModeRequiresLapBoats === 6 &&
+    exhibitionPerformance.lapTimeSourcePolicy ===
+      "venue-official-original-exhibition-only",
   "展示モードの6艇成立条件が固定されていません"
 );
 assert(
