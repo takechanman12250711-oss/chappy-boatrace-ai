@@ -4389,6 +4389,12 @@
             String(
               item?.category || ""
             ),
+          displayCategory:
+            String(
+              item?.displayCategory ||
+              item?.category ||
+              ""
+            ),
           comment:
             String(
               item?.comment || ""

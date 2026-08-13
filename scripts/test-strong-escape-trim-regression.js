@@ -105,10 +105,10 @@ const actual = Object.fromEntries(
   Object.entries(groups).map(([name, list]) => [name, summarize(list)])
 );
 const expected = {
-  preEarly: { races: 269, hits: 74, stake: 224800, ret: 147770, trimmed: 61, removed: 71 },
-  preLate: { races: 188, hits: 59, stake: 161200, ret: 76850, trimmed: 66, removed: 75 },
-  d0807_08: { races: 140, hits: 45, stake: 123300, ret: 91350, trimmed: 46, removed: 54 },
-  d0809_10: { races: 173, hits: 62, stake: 148400, ret: 120260, trimmed: 68, removed: 94 }
+  preEarly: { races: 269, hits: 75, stake: 222200, ret: 148710, trimmed: 61, removed: 79 },
+  preLate: { races: 188, hits: 60, stake: 157200, ret: 77440, trimmed: 66, removed: 86 },
+  d0807_08: { races: 140, hits: 46, stake: 120000, ret: 92080, trimmed: 46, removed: 72 },
+  d0809_10: { races: 173, hits: 63, stake: 144900, ret: 121420, trimmed: 68, removed: 105 }
 };
 
 for (const [name, want] of Object.entries(expected)) {
@@ -121,8 +121,8 @@ for (const [name, want] of Object.entries(expected)) {
 }
 
 const removedTotal = Object.values(actual).reduce((sum, row) => sum + row.removed, 0);
-if (removedTotal !== 294) {
-  throw new Error(`expected 294 removed tickets, got ${removedTotal}`);
+if (removedTotal !== 342) {
+  throw new Error(`expected 342 removed tickets, got ${removedTotal}`);
 }
 
 console.log("strong escape trim regression: PASS");

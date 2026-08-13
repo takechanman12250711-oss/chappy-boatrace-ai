@@ -1633,6 +1633,7 @@ if (raceInfoArea) {
           "",
 
         category:
+          row.displayCategory ||
           row.category ||
           fallbackCategory,
 
@@ -1825,6 +1826,8 @@ if (raceInfoArea) {
         `
         : emptyBox("艇評価データがありません");
 
+    const formationLabel =
+      "フォーメーション";
     const ticketBody = [
       renderTicketAccordion(
         "本命",
@@ -1869,14 +1872,14 @@ if (raceInfoArea) {
       ),
 
       renderTicketAccordion(
-        "流し",
+        formationLabel,
         "flow",
         renderTicketRows(
-          "流し",
+          formationLabel,
           flowTickets,
           "flow",
-          "流し",
-          "流し展開"
+          formationLabel,
+          formationLabel
         ),
         resolveTicketPointCount(
           flowTickets,
@@ -1884,7 +1887,7 @@ if (raceInfoArea) {
         ),
         resolveTicketAim(
           flowTickets,
-          "中心艇を固定し、相手を広く拾う買い目です。"
+          "同じ1着・2着軸を共有する根拠付き3連単2券です。"
         ),
         false
       )
@@ -2245,6 +2248,8 @@ if (raceInfoArea) {
       .filter(Boolean)
       .join("〜");
 
+    const formationLabel =
+      "フォーメーション";
     const body = `
       <div class="v3-note">
         選択した開催場の1R〜12Rを合算し、
@@ -2798,7 +2803,7 @@ function getPaperClassName(item) {
         arrayify(flow).length
           ? `
             <div class="v3-formation-group">
-              <h3>流し</h3>
+              <h3>${formationLabel}</h3>
               ${renderFormationBody(flow, "flow")}
             </div>
           `
@@ -3254,7 +3259,10 @@ function getPaperClassName(item) {
               createTicketSpecificComment(
                 prediction,
                 item.ticket,
-                [item.category]
+                [
+                  item.displayCategory ||
+                  item.category
+                ]
               )
           }))
         : [];
@@ -3511,6 +3519,10 @@ function getPaperClassName(item) {
           .map(item => {
             const type =
               typeOf(item.category);
+            const displayCategory =
+              item.displayCategory ||
+              item.category ||
+              "買い目";
 
             return `
               <div
@@ -3523,8 +3535,7 @@ function getPaperClassName(item) {
 
                 <div class="v3-formation-tags">
                   ${tag(
-                    item.category ||
-                    "買い目",
+                    displayCategory,
                     type
                   )}
 

@@ -249,7 +249,7 @@ assert.equal(prepared.aiCore.manshuSheet.marker, "ai-core-manshu-sheet");
 assert.deepEqual(
   prepared.mainSheet.flowFormations,
   [],
-  "通常欄は流しformation 8点でなく根拠のある同一軸exact flow 2券を使う"
+  "通常欄は全候補8点でなく根拠のある同一軸exact 2券を使う"
 );
 assert.deepEqual(prepared.aiCore.mainSheet.flowFormations, []);
 assert.equal(prepared.mainSheet.tickets[0].odds, 12.4);
@@ -347,7 +347,7 @@ assert.deepEqual(tickets(overLimit.mainSheet.flowTickets), ["1-3-4", "1-3-5"]);
 assert.deepEqual(
   tickets(overLimit.manshuSheet.tickets),
   [],
-  "流し2券成立時は表示境界でも通常穴を併用しない"
+  "フォーメーション2券成立時は表示境界でも通常穴を併用しない"
 );
 
 const duplicatedSelection = boundary.resolveNormalDisplayRows({
@@ -378,7 +378,7 @@ assert.deepEqual(tickets(duplicatedSelection.flow), ["1-3-4", "1-3-5"]);
 assert.deepEqual(
   tickets(duplicatedSelection.hole),
   [],
-  "同一ticketを別カテゴリへ重複表示せず、流し2券と通常穴を併用しない"
+  "同一ticketを別カテゴリへ重複表示せず、フォーメーション2券と通常穴を併用しない"
 );
 
 const compactPrediction = {
@@ -429,7 +429,7 @@ assert.deepEqual(
       .tickets
   ),
   ["5-2-3"],
-  "流しが2券そろわない場合は保存済み通常穴を残す"
+  "フォーメーション由来券が2券そろわない場合は保存済み通常穴を残す"
 );
 
 const ungroundedPair =
@@ -448,7 +448,7 @@ const ungroundedPair =
 assert.deepEqual(
   ungroundedPair.mainSheet.flowTickets,
   [],
-  "同軸2券でも正式scenario・役割点・券別根拠がなければ流し表示しない"
+  "同軸2券でも正式scenario・役割点・券別根拠がなければフォーメーション表示しない"
 );
 assert.deepEqual(
   tickets(ungroundedPair.manshuSheet.tickets),

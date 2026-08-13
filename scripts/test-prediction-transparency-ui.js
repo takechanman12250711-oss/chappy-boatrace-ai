@@ -125,6 +125,8 @@ global.ChappyPracticalSelection = {
       }, {
         ticket: "1-3-4",
         category: "流し",
+        displayCategory:
+          "フォーメーション",
         scenarioId:
           "canonical:1",
         flowAnchor: "1-3",
@@ -151,6 +153,8 @@ global.ChappyPracticalSelection = {
       }, {
         ticket: "1-3-5",
         category: "流し",
+        displayCategory:
+          "フォーメーション",
         scenarioId:
           "canonical:1",
         flowAnchor: "1-3",
@@ -424,6 +428,10 @@ global.renderAll({
 });
 
 const html = resultArea.innerHTML;
+const practicalSection =
+  html.match(
+    /v3-practical-section[\s\S]*?<h3>買い目採用判定<\/h3>/
+  )?.[0] || "";
 const accordionTag = type =>
   html.match(
     new RegExp(
@@ -556,7 +564,27 @@ assert.doesNotMatch(
 assert.doesNotMatch(
   accordionTag("flow"),
   /\bopen\b/,
-  "流し2券でもaccordionの初期折りたたみを保つ"
+  "フォーメーション2券でもaccordionの初期折りたたみを保つ"
+);
+assert.match(
+  html,
+  /v3-ticket-accordion-flow[\s\S]{0,300}<span>フォーメーション<\/span>/,
+  "同一1着軸の2券を正式な流しと呼ばず、約束した表示名を使う"
+);
+assert.doesNotMatch(
+  html,
+  /v3-ticket-accordion-flow[\s\S]{0,300}<span>流し<\/span>|<h3>\s*流し\s*<\/h3>/,
+  "同一1着軸の2券を通常表示で流しと呼ばない"
+);
+assert.match(
+  practicalSection,
+  />フォーメーション<\/span>/,
+  "実戦厳選カードもフォーメーション表示を使う"
+);
+assert.doesNotMatch(
+  practicalSection,
+  />流し<\/span>/,
+  "実戦厳選カードへ内部互換名の流しを出さない"
 );
 assert.match(
   html,
@@ -581,7 +609,7 @@ assert.doesNotMatch(
 assert.doesNotMatch(
   html,
   /AI買い目一覧/,
-  "本命・押さえ・流し・万舟と重複するAI買い目一覧を表示しない"
+  "本命・押さえ・フォーメーション・万舟と重複するAI買い目一覧を表示しない"
 );
 assert.match(
   html,
@@ -595,7 +623,7 @@ const exactFlowRows =
 assert.equal(
   exactFlowRows.length,
   2,
-  "通常欄の流しはformal selectionのexact 2券だけを表示する"
+  "通常欄のフォーメーションはformal selectionのexact 2券だけを表示する"
 );
 assert.deepEqual(
   exactFlowRows,
@@ -603,7 +631,7 @@ assert.deepEqual(
     'data-flow-notation="1-3-4"',
     'data-flow-notation="1-3-5"'
   ],
-  "同じ1-3軸の流し2券を選定順で表示する"
+  "同じ1-3軸のフォーメーション2券を選定順で表示する"
 );
 assert.match(
   html,
@@ -618,7 +646,7 @@ assert.doesNotMatch(
 assert.equal(
   html.split(flowCommonReason).length - 1,
   1,
-  "同一軸2券の共通根拠は流しaccordionの狙いに1回だけ表示する"
+  "同一軸2券の共通根拠はフォーメーションaccordionの狙いに1回だけ表示する"
 );
 assert.match(
   html,
@@ -643,7 +671,7 @@ assert.match(
 assert.doesNotMatch(
   html,
   /合成 9\.9倍|取得 6\/6/,
-  "候補プール由来の流し合成オッズをexact 2券へ表示しない"
+  "候補プール由来の合成オッズをexact 2券へ表示しない"
 );
 
 const missingSection =

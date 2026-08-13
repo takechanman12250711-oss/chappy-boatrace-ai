@@ -5,8 +5,8 @@
   役割：
   - アプリ・note・自動保存で同じ買い目を返す
   - 本線3＋押さえ2を基本5点とする
-  - 同一展開・同一1/2着軸の根拠がそろう場合だけ流し2点を追加する
-  - 流し2点が成立しない場合だけ万舟1点を追加する
+  - 同一展開・同一1/2着軸の根拠がそろう場合だけフォーメーション由来の3連単2点を追加する
+  - この2点が成立しない場合だけ万舟1点を追加する
   - 検証済みの独立展開だけ最大10点へ広げる
   - 評価候補の保持と、実際の購入を分離する
 ========================================================= */
@@ -18,9 +18,15 @@
   const NORMAL_MAXIMUM_COUNT = 7;
   const MAXIMUM_COUNT = 10;
   const FLOW_GROUP_COUNT = 2;
+  const FORMATION_DISPLAY_CATEGORY =
+    "フォーメーション";
   const MINIMUM_FLOW_ROLE_SCORE = 65;
   const MINIMUM_CANDIDATE_PROMOTION_SCORE =
     90;
+  const PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK =
+    10;
+  const PRIORITY_GATE_REPLACEMENT_BRANCH =
+    "formation:hole";
   const STRONG_ESCAPE_MINIMUM_SCORE =
     80;
   const STRONG_ESCAPE_MINIMUM_GAP =
@@ -92,6 +98,22 @@
     return validTicket(ticket)
       ? ticket.split("-").map(Number)
       : [];
+  }
+
+  function firstFormationBranch(row) {
+    const branchId =
+      arrayify(row?.branchIds)
+        .map(String)
+        .find(id =>
+          /^formation:[^:]+:/.test(id)
+        );
+
+    if (!branchId) return "";
+
+    return branchId
+      .split(":")
+      .slice(0, 2)
+      .join(":");
   }
 
   function boatNo(value) {
@@ -2639,7 +2661,7 @@
 
     /*
       独立展開の順位計画は基本5点だけを基準にする。
-      通常追加が「流し2券」か「穴1券」かで、別頭候補の
+      通常追加が「フォーメーション由来2券」か「穴1券」かで、別頭候補の
       採否や順位が変わらないようにする。
     */
     const expansionSelectionContext =
@@ -2975,6 +2997,10 @@
           const enriched = {
             ...row,
             category: "流し",
+            displayCategory:
+              FORMATION_DISPLAY_CATEGORY,
+            displayFormationType:
+              "same-first-second-axis",
             scenarioId,
             flowAnchor: anchor,
             flowCommonReason:
@@ -3028,7 +3054,7 @@
               ].filter(Boolean))
             ],
             scenarioTitle:
-              `${scenarioTitle}の流し`,
+              `${scenarioTitle}のフォーメーション`,
             scenarioSummary:
               detailReason,
             comment: detailReason
@@ -4102,10 +4128,12 @@
       );
     }
 
-    const candidateOutcomesByTicket =
-      new Map();
+    const aggregateCandidateOutcomes =
+      decisions => {
+        const candidateOutcomesByTicket =
+          new Map();
 
-    candidateDecisions.forEach(
+        decisions.forEach(
       decision => {
         const structuredEvaluationIds =
           unique(
@@ -4213,26 +4241,335 @@
           }
         );
       }
-    );
-    const candidateOutcomes =
-      [
-        ...candidateOutcomesByTicket
-          .values()
-      ].sort(
-        (a, b) =>
-          Number(b.selected) -
-            Number(a.selected) ||
-          numeric(
-            b.priorityScore,
-            0
-          ) -
+        );
+
+        return [
+          ...candidateOutcomesByTicket
+            .values()
+        ].sort(
+          (a, b) =>
+            Number(b.selected) -
+              Number(a.selected) ||
             numeric(
-              a.priorityScore,
+              b.priorityScore,
+              0
+            ) -
+              numeric(
+                a.priorityScore,
+                0
+              ) ||
+            a.ticket.localeCompare(
+              b.ticket
+            )
+        );
+      };
+    let candidateOutcomes =
+      aggregateCandidateOutcomes(
+        candidateDecisions
+      );
+
+    /*
+      #335の除外的中監査を、結果を使わない固定条件へ絞り込んだ置換。
+      priority上位10位内に残った1号艇頭のformation:hole候補のうち、
+      canonical評価は購入可能だが独立展開ではない候補だけを対象にする。
+      本線3点とフォーメーション由来の2券は固定し、点数と賭金を増やさず、
+      残る最弱1券よりpriorityが高い場合だけ同じ位置へ1対1で置換する。
+    */
+    const priorityGateReplacement =
+      (() => {
+        const rankedByTicket =
+          new Map();
+
+        [
+          ...selected,
+          ...candidateDecisions
+            .filter(
+              decision =>
+                decision.selected !==
+                  true
+            )
+        ].forEach(row => {
+          if (
+            validTicket(row?.ticket) &&
+            !rankedByTicket.has(
+              row.ticket
+            )
+          ) {
+            rankedByTicket.set(
+              row.ticket,
+              row
+            );
+          }
+        });
+
+        const rankByTicket =
+          new Map(
+            [
+              ...rankedByTicket
+                .values()
+            ]
+              .sort(
+                (a, b) =>
+                  numeric(
+                    b.priorityScore,
+                    0
+                  ) -
+                  numeric(
+                    a.priorityScore,
+                    0
+                  )
+              )
+              .map((row, index) => [
+                row.ticket,
+                index + 1
+              ])
+          );
+        const eligible =
+          candidateOutcomes
+            .filter(outcome => {
+              const rank =
+                rankByTicket.get(
+                  outcome.ticket
+                ) || 0;
+              const headBoatNo =
+                ticketBoats(
+                  outcome.ticket
+                )[0] || 0;
+
+              return (
+                outcome.selected !==
+                  true &&
+                rank >= 1 &&
+                rank <=
+                  PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK &&
+                numeric(
+                  outcome.priorityScore,
+                  0
+                ) > 0 &&
+                outcome.reasonCode ===
+                  "CANDIDATE_ONLY_EVALUATION" &&
+                headBoatNo === 1 &&
+                firstFormationBranch(
+                  outcome
+                ) ===
+                  PRIORITY_GATE_REPLACEMENT_BRANCH
+              );
+            })
+            .sort(
+              (a, b) =>
+                numeric(
+                  b.priorityScore,
+                  0
+                ) -
+                  numeric(
+                    a.priorityScore,
+                    0
+                  ) ||
+                a.ticket.localeCompare(
+                  b.ticket
+                )
+            );
+        const best =
+          eligible[0] || null;
+        const weakest =
+          [...selected]
+            .filter(row =>
+              row.category !== "本線" &&
+              row.category !== "流し"
+            )
+            .sort(
+              (a, b) =>
+                numeric(
+                  a.priorityScore,
+                  0
+                ) -
+                  numeric(
+                    b.priorityScore,
+                    0
+                  ) ||
+                a.ticket.localeCompare(
+                  b.ticket
+                )
+            )[0] || null;
+        const sourceRow =
+          best
+            ? candidates
+                .map(
+                  candidate =>
+                    candidate.row
+                )
+                .find(row =>
+                  row.ticket ===
+                    best.ticket &&
+                  firstFormationBranch(
+                    row
+                  ) ===
+                    PRIORITY_GATE_REPLACEMENT_BRANCH
+                )
+            : null;
+
+        if (
+          !best ||
+          !weakest ||
+          !sourceRow ||
+          numeric(
+            best.priorityScore,
+            0
+          ) <=
+            numeric(
+              weakest.priorityScore,
               0
             ) ||
-          a.ticket.localeCompare(
-            b.ticket
-          )
+          used.has(best.ticket)
+        ) {
+          return null;
+        }
+
+        const selectedIndex =
+          selected.findIndex(
+            row =>
+              row.ticket ===
+                weakest.ticket
+          );
+
+        if (selectedIndex < 0) {
+          return null;
+        }
+
+        const rank =
+          rankByTicket.get(
+            best.ticket
+          );
+        const reason =
+          `priority上位${PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK}位内の` +
+          `1号艇頭formation:hole候補` +
+          `（${best.ticket}・${best.priorityScore}点）が、` +
+          `本線・フォーメーション由来2券を除く選択済み最弱券${weakest.ticket}` +
+          `（${weakest.priorityScore}点）を上回るため1対1で置換。`;
+        const promoted = {
+          ...sourceRow,
+          category:
+            "順位ゲート補完",
+          selectionTier:
+            "順位ゲート置換",
+          priorityGateReplacement:
+            true,
+          priorityGateRank: rank,
+          priorityGateMaximumRank:
+            PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK,
+          priorityGateSourceReasonCode:
+            "CANDIDATE_ONLY_EVALUATION",
+          priorityGateSourceBranch:
+            PRIORITY_GATE_REPLACEMENT_BRANCH,
+          priorityGateReplacedTicket:
+            weakest.ticket,
+          priorityGateReplacementReason:
+            reason,
+          comment:
+            sourceRow.comment ||
+            sourceRow.scenarioSummary ||
+            reason
+        };
+
+        selected.splice(
+          selectedIndex,
+          1,
+          promoted
+        );
+        used.delete(weakest.ticket);
+        used.add(promoted.ticket);
+
+        let removedDecisionUpdated =
+          false;
+        let promotedDecisionUpdated =
+          false;
+        candidateDecisions.forEach(
+          decision => {
+            if (
+              decision.ticket ===
+                weakest.ticket &&
+              decision.selected === true
+            ) {
+              decision.selected = false;
+              decision.reasonCode =
+                "PRIORITY_GATE_REPLACED";
+              decision.reason = reason;
+              decision.replacedByTicket =
+                promoted.ticket;
+              removedDecisionUpdated =
+                true;
+            }
+
+            if (
+              decision.ticket ===
+                promoted.ticket &&
+              decision.reasonCode ===
+                "CANDIDATE_ONLY_EVALUATION"
+            ) {
+              decision.selected = true;
+              decision.reasonCode =
+                "PRIORITY_GATE_HOLE_PROMOTED";
+              decision.reason = reason;
+              decision.replacedTicket =
+                weakest.ticket;
+              decision.priorityGateRank =
+                rank;
+              promotedDecisionUpdated =
+                true;
+            }
+          }
+        );
+
+        if (!removedDecisionUpdated) {
+          recordDecision(
+            weakest,
+            false,
+            "PRIORITY_GATE_REPLACED",
+            reason
+          );
+        }
+        if (!promotedDecisionUpdated) {
+          recordDecision(
+            promoted,
+            true,
+            "PRIORITY_GATE_HOLE_PROMOTED",
+            reason
+          );
+        }
+
+        return {
+          applied: true,
+          maximumRank:
+            PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK,
+          candidateRank: rank,
+          sourceReasonCode:
+            "CANDIDATE_ONLY_EVALUATION",
+          sourceBranch:
+            PRIORITY_GATE_REPLACEMENT_BRANCH,
+          addedTicket:
+            promoted.ticket,
+          addedPriorityScore:
+            promoted.priorityScore,
+          removedTicket:
+            weakest.ticket,
+          removedPriorityScore:
+            weakest.priorityScore,
+          removedCategory:
+            String(
+              weakest.category || ""
+            ),
+          removedSelectionTier:
+            String(
+              weakest.selectionTier || ""
+            ),
+          selectedIndex,
+          reason
+        };
+      })();
+
+    candidateOutcomes =
+      aggregateCandidateOutcomes(
+        candidateDecisions
       );
 
     const selectedExpansionBoundary =
@@ -4675,6 +5012,15 @@
             }
           : {}
       ),
+      ...(
+        priorityGateReplacement
+          ? {
+              priorityGateReplacement: {
+                ...priorityGateReplacement
+              }
+            }
+          : {}
+      ),
       hasIndependentAdditions:
         addedTickets.length > 0,
       exceededNormalMaximum:
@@ -4682,7 +5028,9 @@
           NORMAL_MAXIMUM_COUNT,
       addedTickets,
       reason:
-        candidatePromotionTickets.length
+        priorityGateReplacement
+          ? priorityGateReplacement.reason
+          : candidatePromotionTickets.length
           ? "通常枠と検証済み独立展開を維持し、3着まで物理根拠がそろうpriority 90以上の候補だけを空き枠へ補完。"
           : addedTickets.length
             ? "通常枠とは別に、時系列と艇・着順・役割が一致した独立展開だけを追加。"
@@ -4878,7 +5226,7 @@
         confidenceDefinitionVersion:
           "internal-score-v1",
         ticketPolicyVersion:
-          "practical-5-7-10-grounded-flow2-candidate90-strongescape-v4"
+          "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5"
       },
       mainScenario: {
         type:
@@ -4934,6 +5282,8 @@
           ? strongEscapeTrim.maximumAlternateHeadCount === 0
             ? "非常に強い1逃げでは1号艇頭だけを維持し、別頭は購入しない。"
             : "強い1逃げでは1号艇頭を維持し、別頭は展開選抜順の最上位1点だけに整理。"
+          : priorityGateReplacement
+          ? priorityGateReplacement.reason
           : candidatePromotionTickets.length
           ? "基本5〜7点と検証済み独立展開を維持し、priority 90以上かつ3着まで物理根拠がそろう候補だけを空き枠へ補完。"
           : selected.length >
@@ -4963,8 +5313,11 @@
     NORMAL_MAXIMUM_COUNT,
     MAXIMUM_COUNT,
     FLOW_GROUP_COUNT,
+    FORMATION_DISPLAY_CATEGORY,
     MINIMUM_FLOW_ROLE_SCORE,
     MINIMUM_CANDIDATE_PROMOTION_SCORE,
+    PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK,
+    PRIORITY_GATE_REPLACEMENT_BRANCH,
     STRONG_ESCAPE_MINIMUM_SCORE,
     STRONG_ESCAPE_MINIMUM_GAP,
     STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT,
