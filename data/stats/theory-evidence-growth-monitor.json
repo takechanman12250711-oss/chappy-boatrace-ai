@@ -1,104 +1,107 @@
 {
-  "generatedAt": "2026-08-12T16:11:59.531Z",
+  "generatedAt": "2026-08-13T04:56:44.719Z",
   "source": "theory-evidence-coverage-phase7.json",
   "schemaVersion": 1,
   "engineVersion": "theory-evidence-growth-monitor-20260807-baseline-fixed",
-  "status": "healthy",
+  "status": "warning",
   "baselineRaceCount": 979,
-  "currentRaceCount": 979,
-  "newRaceCount": 0,
+  "currentRaceCount": 1014,
+  "newRaceCount": 35,
   "warningAfterNewRaces": 30,
-  "warningCount": 0,
-  "warningTheoryKeys": [],
+  "warningCount": 2,
+  "warningTheoryKeys": [
+    "double-time",
+    "new-engine"
+  ],
   "theories": [
     {
       "theoryKey": "race-flow",
       "label": "展開理論",
-      "evaluatedCount": 548,
+      "evaluatedCount": 583,
       "previousEvaluatedCount": 548,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 35,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "course",
       "label": "コース理論",
-      "evaluatedCount": 475,
+      "evaluatedCount": 505,
       "previousEvaluatedCount": 475,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 30,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "start",
       "label": "ST・スリット理論",
-      "evaluatedCount": 0,
+      "evaluatedCount": 24,
       "previousEvaluatedCount": 0,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 24,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "exhibition",
       "label": "展示・足理論",
-      "evaluatedCount": 215,
+      "evaluatedCount": 230,
       "previousEvaluatedCount": 215,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 15,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "remain-pickup",
       "label": "残し・拾い理論",
-      "evaluatedCount": 548,
+      "evaluatedCount": 583,
       "previousEvaluatedCount": 548,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 35,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "local-water",
       "label": "当地・水面理論",
-      "evaluatedCount": 516,
+      "evaluatedCount": 551,
       "previousEvaluatedCount": 516,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 35,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "skill",
       "label": "技量理論",
-      "evaluatedCount": 424,
+      "evaluatedCount": 451,
       "previousEvaluatedCount": 424,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 27,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "motor",
       "label": "モーター理論",
-      "evaluatedCount": 362,
+      "evaluatedCount": 389,
       "previousEvaluatedCount": 362,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 27,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "wall-boat",
       "label": "壁艇理論",
-      "evaluatedCount": 334,
+      "evaluatedCount": 360,
       "previousEvaluatedCount": 334,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 26,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "frame-rise-fall",
       "label": "枠別浮沈率",
-      "evaluatedCount": 0,
+      "evaluatedCount": 24,
       "previousEvaluatedCount": 0,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 24,
+      "status": "growing",
       "warning": false
     },
     {
@@ -107,8 +110,8 @@
       "evaluatedCount": 0,
       "previousEvaluatedCount": 0,
       "growth": 0,
-      "status": "waiting",
-      "warning": false
+      "status": "stagnant-warning",
+      "warning": true
     },
     {
       "theoryKey": "new-engine",
@@ -116,8 +119,8 @@
       "evaluatedCount": 0,
       "previousEvaluatedCount": 0,
       "growth": 0,
-      "status": "waiting",
-      "warning": false
+      "status": "stagnant-warning",
+      "warning": true
     }
   ],
   "humanApprovalRequired": true,
