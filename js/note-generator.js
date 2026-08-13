@@ -132,7 +132,12 @@
     return {
       ticket,
       category: safeText(
-        firstValue([row.category, arrayify(row.categories)[0], row.type]),
+        firstValue([
+          row.displayCategory,
+          row.category,
+          arrayify(row.categories)[0],
+          row.type
+        ]),
         fallbackCategory
       ),
       scenarioType: safeText(
@@ -194,7 +199,8 @@
   }
 
   function createDisplayCandidates(
-    prediction
+    prediction,
+    practical = []
   ) {
     const lists =
       ticketLists(prediction);
@@ -214,20 +220,53 @@
     const isWave =
       waveScore > mainScore;
 
+    const practicalDisplayByTicket =
+      new Map(
+        arrayify(practical)
+          .map(item => {
+            const row =
+              normalizeTicket(
+                item,
+                ""
+              );
+            const displayCategory =
+              safeText(
+                firstValue([
+                  item?.displayCategory,
+                  item?.category
+                ]),
+                ""
+              );
+
+            return [
+              row.ticket,
+              displayCategory
+            ];
+          })
+          .filter(
+            ([ticket, category]) =>
+              ticket && category
+          )
+      );
+
     const sources =
       isWave
-        ? [lists.hole]
+        ? [{ list: lists.hole }]
         : [
-            lists.main,
-            lists.cover,
-            lists.flow
+            { list: lists.main },
+            { list: lists.cover },
+            {
+              list: lists.flow,
+              displayCategory:
+                "フォーメーション候補"
+            }
           ];
 
     const candidates = [];
     const used = new Set();
 
-    sources.forEach(list => {
-      arrayify(list).forEach(
+    sources.forEach(source => {
+      arrayify(source.list).forEach(
         item => {
           const row =
             normalizeTicket(
@@ -241,6 +280,12 @@
           ) {
             return;
           }
+
+          row.category =
+            practicalDisplayByTicket
+              .get(row.ticket) ||
+            source.displayCategory ||
+            row.category;
 
           used.add(row.ticket);
           candidates.push(row);
@@ -291,9 +336,16 @@
       item.selectionTier === "展開追加"
         ? "［展開追加］"
         : "";
+    const displayCategory = safeText(
+      firstValue([
+        item.displayCategory,
+        item.category
+      ]),
+      ""
+    );
     const category =
-      item.category
-        ? `［${item.category}］`
+      displayCategory
+        ? `［${displayCategory}］`
         : "";
     const roles =
       arrayify(item.roleLabels)
@@ -307,7 +359,7 @@
         item.comment ||
         ticketComment(
           item.ticket,
-          item.category || "買い目"
+          displayCategory || "買い目"
         )
       );
 
@@ -754,7 +806,8 @@
 
     const candidates =
       createDisplayCandidates(
-        prediction
+        prediction,
+        practical
       );
 
     const mainScore =

@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "js/note-generator.js"
+      - "scripts/test-note-copy-cleanup.js"
       - "scripts/test-note-karatsu-regression.js"
       - ".github/workflows/note-regression.yml"
   push:
@@ -11,6 +12,7 @@ on:
       - main
     paths:
       - "js/note-generator.js"
+      - "scripts/test-note-copy-cleanup.js"
       - "scripts/test-note-karatsu-regression.js"
       - ".github/workflows/note-regression.yml"
 
@@ -32,7 +34,9 @@ jobs:
       - name: Check note generator and regression
         run: |
           node --check js/note-generator.js
+          node --check scripts/test-note-copy-cleanup.js
           node --check scripts/test-note-karatsu-regression.js
+          node scripts/test-note-copy-cleanup.js
           node scripts/test-note-karatsu-regression.js
           node scripts/test-theory-integration.js
           node scripts/check-charter.js

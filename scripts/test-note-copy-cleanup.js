@@ -32,4 +32,49 @@ assert.equal(
   different
 );
 
+global.ChappyPracticalSelection = {
+  createPracticalSelection() {
+    return [{
+      ticket: "1-3-4",
+      category: "流し",
+      displayCategory:
+        "フォーメーション",
+      scenarioSummary:
+        "同一1着軸の正式根拠から選んだ券。"
+    }];
+  }
+};
+
+const paidSection =
+  noteGenerator.buildPaidSection({
+    confidence: 80,
+    manshuPower: 20,
+    mainSheet: {
+      flowTickets: [{
+        ticket: "1-3-4",
+        category: "流し"
+      }, {
+        ticket: "1-3-5",
+        category: "流し"
+      }]
+    },
+    ticketSheets: {}
+  });
+
+assert.match(
+  paidSection,
+  /［フォーメーション］/,
+  "noteの実戦厳選も約束した表示名を使う"
+);
+assert.doesNotMatch(
+  paidSection,
+  /［流し］/,
+  "noteの候補欄と実戦厳選で同一軸の券を流しと呼ばない"
+);
+assert.match(
+  paidSection,
+  /1-3-5[^\n]*［フォーメーション候補］/,
+  "非選択の内部flow候補もユーザー向け名称で表示する"
+);
+
 console.log("note copy cleanup tests passed");

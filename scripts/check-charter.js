@@ -79,16 +79,20 @@ assert(
     allocation.cover === 2 &&
     allocation.flow === 2 &&
     allocation.longshot === 1,
-  "実戦厳選の配分上限が本線3・押さえ2・流し2・穴1ではありません"
+  "実戦厳選の配分上限が本線3・押さえ2・フォーメーション由来2・穴1ではありません"
 );
 assert(
   groundedFlow.ticketCount === 2 &&
+    groundedFlow.internalSourceCategory === "flow" &&
+    groundedFlow.displayLabel ===
+      "フォーメーション" &&
+    groundedFlow.mustNotDisplayAsFlow === true &&
     groundedFlow.atomicSelection === true &&
     groundedFlow.requiresSameScenario === true &&
     groundedFlow.requiresSameFirstSecondAnchor === true &&
     groundedFlow.minimumRoleScore === 65 &&
     groundedFlow.mutuallyExclusiveWithNormalLongshot === true,
-  "根拠付き流し2券の同一展開・同一1着2着軸・65点・穴排他契約が固定されていません"
+  "フォーメーション表示と同一展開・同一1着2着軸・65点・穴排他契約が固定されていません"
 );
 assert(
   practical.scenarioExpansion?.enabled === true &&
@@ -315,6 +319,15 @@ assert(
   practicalSelection.includes("take(lists.main, 3, \"本線\")") &&
     practicalSelection.includes("take(lists.cover, 2, \"押さえ\")") &&
     practicalSelection.includes("const FLOW_GROUP_COUNT = 2;") &&
+    practicalSelection.includes(
+      "フォーメーション"
+    ) &&
+    practicalSelection.includes(
+      "displayCategory:"
+    ) &&
+    render.includes(
+      "フォーメーション"
+    ) &&
     practicalSelection.includes("const MINIMUM_FLOW_ROLE_SCORE = 65;") &&
     practicalSelection.includes("function selectGroundedFlowPair()") &&
     practicalSelection.includes("scenarioIds.length === 1") &&
@@ -473,5 +486,5 @@ if (failures.length) {
 console.log("チャッピーAI憲章チェック: 合格");
 console.log(`- 優先順位: ${expectedPriority.join(" → ")}`);
 console.log("- 実戦厳選: 基本5点・通常5〜7点・成立展開時最大10点");
-console.log("- 流し: 同一展開・同一1着2着軸の根拠付き2券を一組で採用（通常穴と排他）");
+console.log("- フォーメーション: 同一1着・2着軸の根拠付き3連単2券を一組で採用（通常穴と排他）");
 console.log("- 同意なしの予想ロジック変更: 禁止");

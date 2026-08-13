@@ -271,8 +271,8 @@
       {
         selector: ".v3-main-newspaper .v3-formation-group:nth-of-type(3)",
         kind: "flow",
-        label: "流し",
-        fallbackAim: "中心艇を固定し、相手を広く拾う買い目です。",
+        label: "フォーメーション",
+        fallbackAim: "同じ1着・2着軸を共有する根拠付き3連単2券です。",
         open: false
       }
     ];

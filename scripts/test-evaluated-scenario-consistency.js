@@ -48,7 +48,9 @@ const CATEGORY_GROUPS = {
   "穴": "hole",
   "穴候補": "hole",
   "独立展開": "independent",
-  "候補補完": "candidate-promotion"
+  "候補補完": "candidate-promotion",
+  "順位ゲート補完":
+    "priority-gate-replacement"
 };
 
 function boatNo(mark) {
@@ -1094,11 +1096,19 @@ DATES.forEach((date) => {
       [0, 2].includes(
         groundedFlowTickets.length
       ),
-      `${raceKey}: 流しは0券または根拠付き2券を一組で採用する`
+      `${raceKey}: フォーメーション由来券は0券または根拠付き2券を一組で採用する`
     );
     if (
       groundedFlowTickets.length === 2
     ) {
+      assert.ok(
+        groundedFlowTickets.every(
+          item =>
+            item.displayCategory ===
+              "フォーメーション"
+        ),
+        `${raceKey}: 通常表示で流しと呼ばずフォーメーションを明示する`
+      );
       assert.equal(
         new Set(
           groundedFlowTickets.map(
@@ -1106,7 +1116,7 @@ DATES.forEach((date) => {
           )
         ).size,
         1,
-        `${raceKey}: 流し2券の1着・2着軸を一致させる`
+        `${raceKey}: フォーメーション2券の1着・2着軸を一致させる`
       );
       assert.equal(
         new Set(
@@ -1115,7 +1125,7 @@ DATES.forEach((date) => {
           )
         ).size,
         1,
-        `${raceKey}: 流し2券の正式展開IDを一致させる`
+        `${raceKey}: フォーメーション2券の正式展開IDを一致させる`
       );
       assert.ok(
         groundedFlowTickets.every(
@@ -1126,7 +1136,7 @@ DATES.forEach((date) => {
               item.flowRoleEvidence
             ).length === 2
         ),
-        `${raceKey}: 流し2券へ2着残し・3着拾いの正式根拠を保存する`
+        `${raceKey}: フォーメーション2券へ2着残し・3着拾いの正式根拠を保存する`
       );
       assert.ok(
         !practical.tickets.some(
@@ -1134,7 +1144,7 @@ DATES.forEach((date) => {
             item.category ===
               "万舟・穴"
         ),
-        `${raceKey}: 流し2券と通常穴を併用しない`
+        `${raceKey}: フォーメーション2券と通常穴を併用しない`
       );
     }
     assert.equal(
@@ -1227,6 +1237,51 @@ DATES.forEach((date) => {
           `${raceKey}: 候補補完は1〜3着すべての物理根拠を必須にする`
         );
       } else if (
+        item.selectionTier ===
+          "順位ゲート置換"
+      ) {
+        assert.equal(
+          group,
+          "priority-gate-replacement",
+          `${raceKey}: 順位ゲート置換を専用カテゴリとして監査する`
+        );
+        assert.equal(
+          item.priorityGateReplacement,
+          true,
+          `${raceKey}: 順位ゲート置換フラグを明示する`
+        );
+        assert.ok(
+          Number(item.priorityGateRank) >= 1 &&
+          Number(item.priorityGateRank) <= 10,
+          `${raceKey}: 順位ゲートを上位10位内に限定する`
+        );
+        assert.equal(
+          item.priorityGateSourceReasonCode,
+          "CANDIDATE_ONLY_EVALUATION",
+          `${raceKey}: CandidateOnlyだけを置換候補にする`
+        );
+        assert.equal(
+          item.priorityGateSourceBranch,
+          "formation:hole",
+          `${raceKey}: 最初のformation:hole枝だけを採用する`
+        );
+        assert.equal(
+          Number(
+            item.ticket.split("-")[0]
+          ),
+          1,
+          `${raceKey}: 順位ゲート置換を1号艇頭に限定する`
+        );
+        assert.ok(
+          practical.expansionSummary
+            .priorityGateReplacement
+            ?.applied === true &&
+          practical.expansionSummary
+            .priorityGateReplacement
+            ?.addedTicket === item.ticket,
+          `${raceKey}: 置換元・置換先をexpansionSummaryへ保存する`
+        );
+      } else if (
         item.selectionTier !==
         "展開追加"
       ) {
@@ -1263,7 +1318,9 @@ DATES.forEach((date) => {
         item.selectionTier !==
           "展開追加" &&
         item.selectionTier !==
-          "候補補完"
+          "候補補完" &&
+        item.selectionTier !==
+          "順位ゲート置換"
       ) {
         assert.equal(
           structuredGroup,
@@ -1276,7 +1333,9 @@ DATES.forEach((date) => {
         group === "flow" ||
         group === "hole" ||
         item.selectionTier ===
-          "展開追加"
+          "展開追加" ||
+        item.selectionTier ===
+          "順位ゲート置換"
       ) {
         assert.ok(
           selectedBranches.some(
@@ -1534,8 +1593,8 @@ const selectionHash =
     .digest("hex");
 assert.equal(
   selectionHash,
-  "334d31786ded095f902d54b7920a765bdf13995551bd4a8fb47390da5e4008b8",
-  "正式主展開と根拠付き同一軸流し2券を含む281レースの買い目を固定する"
+  "b4b99eaabefb783fd71643ba27d88264cb8692f1a24512cec6ff45bc806b455c",
+  "正式主展開と根拠付き同一軸フォーメーション2券を含む281レースの買い目を固定する"
 );
 
 console.log("評価済み展開の全件整合テスト: 合格");

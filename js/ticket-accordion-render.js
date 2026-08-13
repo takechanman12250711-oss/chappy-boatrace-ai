@@ -133,7 +133,18 @@
     const items = [
       wrapGroup(findFormationGroup(container, "本線"), { kind: "main", label: "本命", fallback: "最も成立度が高い中心展開の買い目です。", open: true }),
       wrapGroup(findFormationGroup(container, "押さえ"), { kind: "cover", label: "押さえ", fallback: "本命展開が崩れた場合を補う買い目です。", open: false }),
-      wrapGroup(findFormationGroup(container, "流し"), { kind: "flow", label: "流し", fallback: "中心艇を固定し、相手を広く拾う買い目です。", open: false }),
+      wrapGroup(
+        findFormationGroup(
+          container,
+          "フォーメーション"
+        ) || findFormationGroup(container, "流し"),
+        {
+          kind: "flow",
+          label: "フォーメーション",
+          fallback: "同じ1着・2着軸を共有する根拠付き3連単2券です。",
+          open: false
+        }
+      ),
       wrapManshu(container)
     ].filter(Boolean);
 
