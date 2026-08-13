@@ -1,6 +1,9 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const review = require("./build-result-review");
 
 assert.equal(
@@ -137,5 +140,98 @@ const unknownScenario = review.buildReview({
 });
 assert.equal(unknownScenario.scenarioMatch, null);
 assert.ok(!unknownScenario.causeCodes.includes("scenario.miss"));
+
+const temporaryRoot = fs.mkdtempSync(
+  path.join(os.tmpdir(), "result-review-idempotency-")
+);
+const fixturePath = path.join(temporaryRoot, "20260813.json");
+const fixture = {
+  predictions: [{
+    raceKey: "20260813-01-1",
+    prediction: {
+      mainSheet: {
+        honmei: { boatNo: 1 },
+        taikou: { boatNo: 2 },
+        ana: { boatNo: 3 },
+        osae: { boatNo: 4 }
+      },
+      practicalTickets: [{ ticket: "1-2-3" }]
+    },
+    result: {
+      settled: true,
+      resultTicket: "1-2-3",
+      practicalHit: true,
+      verification: {
+        structuredScenarioMatch: true
+      }
+    }
+  }],
+  verificationPredictions: []
+};
+fixture.predictions[0].result.review = {
+  ...review.buildReview(fixture.predictions[0]),
+  generatedAt: "2026-08-13T00:00:00.000Z"
+};
+
+try {
+  fs.writeFileSync(
+    fixturePath,
+    `${JSON.stringify(fixture, null, 2)}\n`,
+    "utf8"
+  );
+  const originalBytes = fs.readFileSync(fixturePath, "utf8");
+
+  assert.equal(
+    review.updateFile(fixturePath),
+    false,
+    "意味内容が同じレビューはgeneratedAtだけで更新しない"
+  );
+  assert.equal(
+    fs.readFileSync(fixturePath, "utf8"),
+    originalBytes,
+    "意味内容が同じ日次予想JSONをbyte単位で維持する"
+  );
+
+  const changed = JSON.parse(originalBytes);
+  changed.predictions[0].result.resultTicket = "2-1-3";
+  changed.predictions[0].result.practicalHit = false;
+  fs.writeFileSync(
+    fixturePath,
+    `${JSON.stringify(changed, null, 2)}\n`,
+    "utf8"
+  );
+
+  assert.equal(
+    review.updateFile(fixturePath),
+    true,
+    "公式結果の意味内容が変わった時だけレビューを更新する"
+  );
+  const updatedBytes = fs.readFileSync(fixturePath, "utf8");
+  const updated = JSON.parse(updatedBytes);
+  assert.equal(
+    updated.predictions[0].result.review.resultTicket,
+    "2-1-3"
+  );
+  assert.notEqual(
+    updated.predictions[0].result.review.generatedAt,
+    "2026-08-13T00:00:00.000Z"
+  );
+
+  assert.equal(
+    review.updateFile(fixturePath),
+    false,
+    "更新後の同一レビューも再保存しない"
+  );
+  assert.equal(
+    fs.readFileSync(fixturePath, "utf8"),
+    updatedBytes,
+    "2回目実行で更新済みJSONをbyte単位で維持する"
+  );
+} finally {
+  fs.rmSync(temporaryRoot, {
+    recursive: true,
+    force: true
+  });
+}
 
 console.log("result review tests passed");

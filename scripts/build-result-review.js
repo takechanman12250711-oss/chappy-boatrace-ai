@@ -131,6 +131,19 @@ function buildReview(record) {
   };
 }
 
+function semanticReview(review) {
+  if (!review || typeof review !== "object" || Array.isArray(review)) {
+    return review || null;
+  }
+  const { generatedAt: _generatedAt, ...semantic } = review;
+  return semantic;
+}
+
+function reviewsEquivalent(left, right) {
+  return JSON.stringify(semanticReview(left)) ===
+    JSON.stringify(semanticReview(right));
+}
+
 function updateFile(filePath) {
   const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
   let changed = false;
@@ -139,9 +152,7 @@ function updateFile(filePath) {
     rows.forEach(record => {
       const review = buildReview(record);
       if (!review) return;
-      const before = JSON.stringify(record?.result?.review || null);
-      const after = JSON.stringify(review);
-      if (before !== after) {
+      if (!reviewsEquivalent(record?.result?.review, review)) {
         record.result.review = review;
         changed = true;
       }
@@ -167,4 +178,12 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { normalizeTicket, classifyMiss, scenarioMatchOf, buildReview, updateFile };
+module.exports = {
+  normalizeTicket,
+  classifyMiss,
+  scenarioMatchOf,
+  buildReview,
+  semanticReview,
+  reviewsEquivalent,
+  updateFile
+};
