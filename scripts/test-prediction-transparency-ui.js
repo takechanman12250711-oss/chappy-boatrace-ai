@@ -41,6 +41,7 @@ const boatSpecificComment =
   "【艇コメント末尾保持】";
 
 global.window = global;
+global.CHAPPY_RENDER_TEST_HOOKS = true;
 global.window.addEventListener = (
   name,
   listener
@@ -181,9 +182,11 @@ global.ChappyPracticalSelection = {
       }, {
         ticket: "3-4-1",
         category: "独立展開",
+        displayCategory: "流し",
         selectionTier: "展開追加",
         priorityScore: 72,
         comment:
+          "流し候補として保存された旧表示。" +
           longScenarioReason,
         roleLabels: [{
           boatNo: 3,
@@ -298,6 +301,42 @@ global.ChappyPracticalSelection = {
 
 require("../js/render");
 require("../js/main-cover-display-boundary");
+
+const legacyRankingHtml =
+  global.ChappyRenderTestHooks
+    .renderTicketRanking({
+      mainSheet: {
+        flowFormations: [{
+          headBoatNo: 1,
+          secondBoatNos: [3],
+          notation: "1-3-全",
+          pointCount: 4,
+          scenarioType: "流し展開",
+          reason:
+            "旧保存の流し候補を表示する。"
+        }]
+      },
+      aiTicketList: []
+    });
+assert.match(
+  legacyRankingHtml,
+  /フォーメーション/,
+  "旧形式の候補一覧もフォーメーション表示へ正規化する"
+);
+assert.doesNotMatch(
+  legacyRankingHtml,
+  /流し|2連単/,
+  "通常描画外の旧候補一覧にも禁則語を残さない"
+);
+assert.equal(
+  global.ChappyRenderTestHooks
+    .practicalDisplayCategory({
+      category: "候補補完",
+      displayCategory: "流し"
+    }),
+  "候補補完",
+  "Tierを省略した旧summaryも最終分類を優先する"
+);
 
 global.renderAll({
   boatEvaluation: {
@@ -583,8 +622,13 @@ assert.match(
 );
 assert.doesNotMatch(
   practicalSection,
-  />流し<\/span>/,
-  "実戦厳選カードへ内部互換名の流しを出さない"
+  /流し|2連単/,
+  "旧保存行を含む実戦厳選カードへ禁則語を出さない"
+);
+assert.match(
+  practicalSection,
+  /<span class="v3-tag v3-tag-flow">独立展開<\/span>/,
+  "旧保存の表示名より選択後の独立展開ラベルを優先する"
 );
 assert.match(
   html,
