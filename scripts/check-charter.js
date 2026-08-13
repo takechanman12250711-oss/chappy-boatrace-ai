@@ -7,6 +7,12 @@ const root = path.resolve(__dirname, "..");
 const read = relativePath =>
   fs.readFileSync(path.join(root, relativePath), "utf8");
 const charter = JSON.parse(read("config/chappy-charter.json"));
+const collectPredictionWorkflow = read(
+  ".github/workflows/collect-predictions.yml"
+);
+const collectResultWorkflow = read(
+  ".github/workflows/collect-results.yml"
+);
 const practicalPriorityShadowReportApi =
   require("../js/practical-priority-shadow-report");
 
@@ -32,6 +38,14 @@ assert(
   JSON.stringify(charter.predictionPriority) ===
     JSON.stringify(expectedPriority),
   "予想の優先順位が憲章と一致しません"
+);
+
+const sharedWriterConcurrency =
+  /concurrency:\s*\n\s+group: chappy-main-data-writers\s*\n\s+cancel-in-progress: false/;
+assert(
+  sharedWriterConcurrency.test(collectPredictionWorkflow) &&
+    sharedWriterConcurrency.test(collectResultWorkflow),
+  "予想収集と結果収集は同じ排他グループで直列実行してください"
 );
 
 assert(
