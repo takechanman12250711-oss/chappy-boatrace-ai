@@ -41,11 +41,18 @@ assert(
 );
 
 const sharedWriterConcurrency =
-  /concurrency:\s*\n\s+group: chappy-main-data-writers\s*\n\s+cancel-in-progress: false/;
+  /concurrency:\s*\n\s+group: chappy-main-data-writers\s*\n\s+queue: max\s*\n\s+cancel-in-progress: false/;
 assert(
   sharedWriterConcurrency.test(collectPredictionWorkflow) &&
     sharedWriterConcurrency.test(collectResultWorkflow),
   "予想収集と結果収集は同じ排他グループで直列実行してください"
+);
+const checksOutCurrentMain =
+  /uses:\s*actions\/checkout@v4[\s\S]{0,160}?\n\s+ref:\s*main/;
+assert(
+  checksOutCurrentMain.test(collectPredictionWorkflow) &&
+    checksOutCurrentMain.test(collectResultWorkflow),
+  "直列化した収集処理は実行開始時点の最新mainを取得してください"
 );
 
 assert(
