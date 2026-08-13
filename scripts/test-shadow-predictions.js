@@ -34,6 +34,20 @@ const {
 const charter = require(
   "../config/chappy-charter.json"
 );
+const collectorSource = fs.readFileSync(
+  path.join(__dirname, "collect-predictions.js"),
+  "utf8"
+);
+assert.match(
+  collectorSource,
+  /const practicalPriorityShadow\s*=\s*\n?\s*loadOptionalV2Dependency\(/,
+  "順位候補シャドー評価器の読込失敗で本番収集を止めない"
+);
+assert.match(
+  collectorSource,
+  /const practicalPriorityShadowReport\s*=\s*\n?\s*loadOptionalV2Dependency\(/,
+  "順位候補固定契約の読込失敗で本番収集を止めない"
+);
 
 assert.equal(
   MIN_SCORE,
@@ -481,6 +495,83 @@ assert.deepEqual(
   highShadowRecord.prediction.practicalTickets,
   practicalTickets,
   "V2追加後も現行の実戦買い目をそのまま保存する"
+);
+assert.equal(
+  highShadowRecord
+    .practicalPriorityShadow
+    .applicationMode,
+  "shadow-only",
+  "順位候補は締切前にシャドー専用で保存する"
+);
+assert.equal(
+  highShadowRecord
+    .practicalPriorityShadow
+    .automaticApplication,
+  false,
+  "順位候補を自動採用しない"
+);
+assert.equal(
+  highShadowRecord
+    .practicalPriorityShadow
+    .usableForPrediction,
+  false,
+  "順位候補を現行予想へ接続しない"
+);
+assert.deepEqual(
+  highShadowRecord
+    .practicalPriorityShadow
+    .baseTickets,
+  highShadowRecord
+    .practicalPriorityShadow
+    .shadowTickets,
+  "候補不成立時も現行買い目を変更しない"
+);
+const failedPriorityShadowRecord =
+  buildStoredPrediction(
+    "20260726",
+    legacyItem,
+    false,
+    legacyItem.capturedAt,
+    {
+      createPrediction: fakePrediction,
+      createPracticalSelection() {
+        return practicalTickets;
+      },
+      practicalPriorityShadowBuilder() {
+        throw new Error("shadow failure");
+      },
+      shadowBuilder() {
+        return {
+          status: "ready",
+          complete: true,
+          calibrationEligible: true,
+          evaluation: { totalScore: 100 }
+        };
+      },
+      coreApi: {}
+    }
+  );
+assert.equal(
+  failedPriorityShadowRecord.raceKey,
+  highShadowRecord.raceKey,
+  "シャドー専用処理が失敗しても締切前予想を保存する"
+);
+assert.equal(
+  failedPriorityShadowRecord
+    .practicalPriorityShadow
+    .status,
+  "shadow-builder-unavailable"
+);
+assert.equal(
+  failedPriorityShadowRecord
+    .practicalPriorityShadow
+    .eligible,
+  false
+);
+assert.deepEqual(
+  failedPriorityShadowRecord.prediction.practicalTickets,
+  practicalTickets,
+  "シャドー失敗時も現行買い目を変更しない"
 );
 const detachedShadowRecord =
   detachShadowV2({

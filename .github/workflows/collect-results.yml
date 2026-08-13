@@ -6,8 +6,15 @@ on:
       - main
     paths:
       - ".github/workflows/collect-results.yml"
+      - "config/chappy-charter.json"
       - "scripts/collect-results.js"
       - "scripts/repair-recent-results.js"
+      - "js/practical-priority-shadow.js"
+      - "js/practical-priority-shadow-report.js"
+      - "scripts/build-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow.js"
+      - "scripts/test-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow-artifact.js"
       - "scripts/build-prediction-index-shards.js"
       - "scripts/test-build-prediction-index-shards.js"
       - "js/prediction-index-loader.js"
@@ -52,6 +59,11 @@ jobs:
         run: |
           node --check scripts/collect-results.js
           node --check scripts/repair-recent-results.js
+          node --check js/practical-priority-shadow.js
+          node --check js/practical-priority-shadow-report.js
+          node --check scripts/build-practical-priority-shadow-report.js
+          node scripts/test-practical-priority-shadow.js
+          node scripts/test-practical-priority-shadow-report.js
           node --check scripts/build-result-review.js
           node --check js/theory-evaluation-engine.js
           node --check scripts/build-theory-evaluations.js
@@ -86,6 +98,8 @@ jobs:
           node scripts/build-improvement-proposal-report.js
           node scripts/build-theory-adoption-phase5.js
           node scripts/build-scenario-ai-v6-verification.js
+          node scripts/build-practical-priority-shadow-report.js
+          node scripts/test-practical-priority-shadow-artifact.js
           node scripts/build-prediction-index-shards.js
 
       - name: Validate result prediction artifacts
