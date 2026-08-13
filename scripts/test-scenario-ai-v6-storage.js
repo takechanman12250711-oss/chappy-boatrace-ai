@@ -2,7 +2,11 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const { attachSnapshots } = require("./build-scenario-ai-v6-snapshots");
+const {
+  attachSnapshots,
+  snapshotInputFor,
+  snapshotLocked
+} = require("./build-scenario-ai-v6-snapshots");
 const { compactVerificationEvidence } = require("./collect-predictions");
 const scenarioAiV6 = require("../js/scenario-ai-v6-shadow");
 const scenarioAiV6ShadowAb = require("../js/scenario-ai-v6-shadow-ab");
@@ -34,7 +38,7 @@ const input = {
 
 const output = attachSnapshots(input);
 const record = output.verificationPredictions[0];
-assert.equal(output.scenarioAiV6.version, "6.1.0-shadow");
+assert.equal(output.scenarioAiV6.version, "6.1.1-shadow");
 assert.equal(output.scenarioAiV6.logicFingerprint, scenarioAiV6.LOGIC_FINGERPRINT);
 assert.equal(output.scenarioAiV6.recordCount, 1);
 assert.equal(output.scenarioAiV6.readyCount, 1);
@@ -44,6 +48,23 @@ assert.equal(record.scenarioAiV6Shadow.scenarios.length, 2);
 assert.equal(record.scenarioAiV6Shadow.totalLikelihood, 100);
 assert.equal(record.scenarioAiV6Shadow.usableForPrediction, false);
 assert.equal(record.selection, undefined);
+
+const frozenCourseConditions = {
+  boats: [1, 2, 3, 4, 5, 6].map(boatNo => ({
+    boatNo,
+    course: boatNo,
+    courseOfficial: true
+  }))
+};
+assert.equal(
+  snapshotInputFor({
+    prediction: {
+      preRaceConditions: frozenCourseConditions
+    }
+  }).preRaceConditions,
+  frozenCourseConditions,
+  "展開shadowへ締切前の公式進入写像を渡す"
+);
 
 const compacted = compactVerificationEvidence({
   practicalSelection: {
@@ -163,6 +184,111 @@ const rerun = attachSnapshots({
 assert.equal(rerun.scenarioAiV6.lockedCount, 1);
 assert.equal(JSON.stringify(rerun.verificationPredictions[0].scenarioAiV6Shadow), frozenShadow);
 assert.equal(JSON.stringify(rerun.verificationPredictions[0].scenarioAiV6ShadowAb), frozenAb);
+
+const oldV1Shadow = {
+  version: "6.1.0-shadow",
+  logicFingerprint:
+    "scenario-ai-v6-multi-candidate-v1",
+  status: "shadow-ready",
+  scenarios: [{
+    rank: 1,
+    scenarioType: "escape",
+    likelihood: 100
+  }],
+  totalLikelihood: 100,
+  usableForPrediction: false,
+  automaticApplication: false
+};
+const oldV1ShadowAb = {
+  version: "6.0.0-shadow-ab",
+  logicFingerprint:
+    "scenario-ai-v6-ab-decision-v0",
+  comparisonReady: true,
+  decisionChanged: false,
+  distributionChanged: false,
+  usableForPrediction: false,
+  automaticApplication: false
+};
+const oldUnverifiedRecord = {
+  ...input.verificationPredictions[0],
+  raceKey: "20260802-01-3",
+  scenarioAiV6Shadow: oldV1Shadow,
+  scenarioAiV6ShadowAb: oldV1ShadowAb,
+  scenarioAiV6Verification: {
+    status: "pending",
+    logicFingerprint:
+      "scenario-ai-v6-multi-candidate-v1"
+  }
+};
+const oldUnverifiedBytes = JSON.stringify(
+  oldUnverifiedRecord
+);
+let prospectiveBuilderCalls = 0;
+let prospectiveAbBuilderCalls = 0;
+const prospective = attachSnapshots({
+  verificationPredictions: [
+    oldUnverifiedRecord,
+    {
+      ...input.verificationPredictions[0],
+      raceKey: "20260802-01-4"
+    }
+  ]
+}, snapshotInput => {
+  prospectiveBuilderCalls += 1;
+  return scenarioAiV6.build(snapshotInput);
+}, (snapshot, report, context) => {
+  prospectiveAbBuilderCalls += 1;
+  return scenarioAiV6ShadowAb.build(
+    snapshot,
+    report,
+    context
+  );
+}, trainingReport);
+
+assert.equal(
+  snapshotLocked(oldUnverifiedRecord),
+  true,
+  "旧fingerprintの未照合行も両snapshot取得済みなら固定する"
+);
+assert.equal(prospectiveBuilderCalls, 1);
+assert.equal(prospectiveAbBuilderCalls, 1);
+assert.equal(prospective.scenarioAiV6.lockedCount, 1);
+assert.equal(prospective.scenarioAiV6.mutableRecordCount, 1);
+assert.strictEqual(
+  prospective.verificationPredictions[0],
+  oldUnverifiedRecord,
+  "取得済み行のrecord objectを置換しない"
+);
+assert.strictEqual(
+  prospective.verificationPredictions[0]
+    .scenarioAiV6Shadow,
+  oldV1Shadow,
+  "旧shadow objectを置換しない"
+);
+assert.strictEqual(
+  prospective.verificationPredictions[0]
+    .scenarioAiV6ShadowAb,
+  oldV1ShadowAb,
+  "旧A/B objectを置換しない"
+);
+assert.equal(
+  JSON.stringify(
+    prospective.verificationPredictions[0]
+  ),
+  oldUnverifiedBytes,
+  "旧v1未照合行の保存byte列を変えない"
+);
+assert.equal(
+  prospective.verificationPredictions[1]
+    .scenarioAiV6Shadow.logicFingerprint,
+  scenarioAiV6.LOGIC_FINGERPRINT,
+  "新v2 snapshotは未取得行だけへ保存する"
+);
+assert.equal(
+  prospective.verificationPredictions[1]
+    .scenarioAiV6ShadowAb.logicFingerprint,
+  scenarioAiV6ShadowAb.LOGIC_FINGERPRINT
+);
 
 const empty = attachSnapshots({ verificationPredictions: [] });
 assert.equal(empty.scenarioAiV6.recordCount, 0);

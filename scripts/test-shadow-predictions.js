@@ -1591,6 +1591,9 @@ const generatedEvidence = compactStoredVerification({
           score: 91,
           frameMovementAdjustment: 3,
           attacker: 4,
+          attackerCourse: 4,
+          attackerBoatNo: 4,
+          headBoatNo: 4,
           blockedBoats: []
         },
         subScenario: {
@@ -1603,6 +1606,9 @@ const generatedEvidence = compactStoredVerification({
         },
         scenarios: [],
         attacker: 4,
+        attackerCourse: 4,
+        attackerBoatNo: 4,
+        headBoatNo: 4,
         wallBoat: 3,
         remainers: [1, 2],
         followers: [5],
@@ -1642,6 +1648,79 @@ assert.equal(
   generatedEvidence.prediction.verificationEvidence.mainScenario
     .frameMovementAdjustment,
   3
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.mainScenario
+    .attackerCourse,
+  4
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.mainScenario
+    .attackerBoatNo,
+  4
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.roles
+    .attackerCourse,
+  4
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.roles
+    .attackerBoatNo,
+  4
+);
+
+const generatedMappedEvidence = compactStoredVerification({
+  raceKey: "20260723-24-2",
+  prediction: {
+    practicalSelection: {
+      verificationEvidence: {
+        mainScenario: {
+          type: "threeAttack",
+          headBoatNo: 6,
+          attackerBoatNo: 6
+        }
+      }
+    },
+    aiCore: {
+      raceScenarios: {
+        mainScenario: {
+          type: "threeAttack",
+          attacker: 3,
+          attackerCourse: 3,
+          attackerBoatNo: 6,
+          headBoatNo: 6
+        },
+        subScenario: {
+          type: "escape",
+          attacker: 1,
+          attackerCourse: 1,
+          attackerBoatNo: 1,
+          headBoatNo: 1
+        },
+        attacker: 6,
+        attackerCourse: 3,
+        attackerBoatNo: 6,
+        headBoatNo: 6
+      }
+    }
+  }
+});
+assert.equal(
+  generatedMappedEvidence.prediction.verificationEvidence
+    .mainScenario.attackerCourse,
+  3,
+  "実戦選択の簡略証拠を優先してもAIコアの実コースを保持する"
+);
+assert.equal(
+  generatedMappedEvidence.prediction.verificationEvidence
+    .mainScenario.attackerBoatNo,
+  6
+);
+assert.equal(
+  generatedMappedEvidence.prediction.verificationEvidence
+    .subScenario.attackerCourse,
+  1
 );
 assert.equal(
   generatedEvidence.prediction.verificationEvidence.marks.honmei.boatNo,

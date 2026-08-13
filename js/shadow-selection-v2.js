@@ -247,13 +247,19 @@
     function axisBoatNoOf(core, scenario, preparedRaceData) {
       const direct =
         boatNoOf(core?.raceScenarios?.attacker) ||
+        boatNoOf(scenario?.attackerBoatNo) ||
+        boatNoOf(scenario?.headBoatNo) ||
         boatNoOf(core?.marks?.honmei) ||
         boatNoOf(scenario?.outcome?.firstCandidates?.[0]) ||
         boatNoOf(core?.mainSheet?.honmei);
 
       if (direct) return direct;
 
-      const attackerCourse = Number(scenario?.attacker || 0);
+      const attackerCourse = Number(
+        scenario?.attackerCourse ??
+        scenario?.attacker ??
+        0
+      );
       if (attackerCourse < 1 || attackerCourse > 6) {
         return null;
       }
@@ -345,7 +351,11 @@
       const motorTheory =
         preparedRaceData?.motorMaintenanceTheoryV2 || {};
       const preparedEntries =
-        entriesOf(preparedRaceData);
+        typeof coreApi?.getRaceEntries === "function"
+          ? coreApi.getRaceEntries(
+              preparedRaceData
+            )
+          : entriesOf(preparedRaceData);
       const axisEntry =
         preparedEntries.find(
           row => boatNoOf(row) === axisBoatNo

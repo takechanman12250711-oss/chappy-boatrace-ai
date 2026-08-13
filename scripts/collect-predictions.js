@@ -576,9 +576,47 @@ function compactScenario(value) {
       value.frameMovementAdjustment || 0
     ),
     attacker: Number(value.attacker || 0) || null,
+    attackerCourse: Number(
+      value.attackerCourse ?? value.attacker ?? 0
+    ) || null,
+    attackerBoatNo: Number(
+      value.attackerBoatNo ?? value.headBoatNo ?? 0
+    ) || null,
+    headBoatNo: Number(
+      value.headBoatNo ?? value.attackerBoatNo ?? 0
+    ) || null,
     blockedBoats: Array.isArray(value.blockedBoats)
       ? value.blockedBoats.map(Number).filter(Boolean)
       : []
+  };
+}
+
+function mergeCompactScenario(provided, fallback) {
+  if (!provided && !fallback) return null;
+
+  return {
+    ...(fallback || {}),
+    ...(provided || {}),
+    attackerCourse: Number(
+      provided?.attackerCourse ??
+      fallback?.attackerCourse ??
+      fallback?.attacker ??
+      0
+    ) || null,
+    attackerBoatNo: Number(
+      provided?.attackerBoatNo ??
+      provided?.headBoatNo ??
+      fallback?.attackerBoatNo ??
+      fallback?.headBoatNo ??
+      0
+    ) || null,
+    headBoatNo: Number(
+      provided?.headBoatNo ??
+      provided?.attackerBoatNo ??
+      fallback?.headBoatNo ??
+      fallback?.attackerBoatNo ??
+      0
+    ) || null
   };
 }
 
@@ -619,6 +657,18 @@ function compactVerificationEvidence(prediction) {
       : [],
     roles: {
       attacker: Number(raceScenarios.attacker || 0) || null,
+      attackerCourse: Number(
+        raceScenarios.attackerCourse ??
+        raceScenarios.mainScenario?.attackerCourse ??
+        raceScenarios.mainScenario?.attacker ??
+        0
+      ) || null,
+      attackerBoatNo: Number(
+        raceScenarios.attackerBoatNo ??
+        raceScenarios.headBoatNo ??
+        raceScenarios.attacker ??
+        0
+      ) || null,
       wallBoat: Number(raceScenarios.wallBoat || 0) || null,
       remainers: [...(raceScenarios.remainers || [])],
       followers: [...(raceScenarios.followers || [])],
@@ -660,12 +710,14 @@ function compactVerificationEvidence(prediction) {
     aiCoreVersion:
       String(providedEvidence.aiCoreVersion || "") ||
       aiCoreEvidence.aiCoreVersion,
-    mainScenario:
-      providedEvidence.mainScenario ||
-      aiCoreEvidence.mainScenario,
-    subScenario:
-      providedEvidence.subScenario ||
-      aiCoreEvidence.subScenario,
+    mainScenario: mergeCompactScenario(
+      providedEvidence.mainScenario,
+      aiCoreEvidence.mainScenario
+    ),
+    subScenario: mergeCompactScenario(
+      providedEvidence.subScenario,
+      aiCoreEvidence.subScenario
+    ),
     scenarios:
       providedScenarios.length >= 2
         ? providedScenarios

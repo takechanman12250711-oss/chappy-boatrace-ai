@@ -121,6 +121,19 @@
       course: numberOrNull(start?.course ?? entry?.course ?? boatNo) || boatNo,
       courseOfficial: start?.isOfficialCourse === true,
       courseMappingSource: text(start?.mappingSource),
+      startExhibition: {
+        boatNo,
+        course:
+          numberOrNull(start?.course ?? entry?.course ?? boatNo) || boatNo,
+        st: numberOrNull(
+          start?.st ?? before?.exhibitionST ?? before?.displayST ??
+          exhibition?.st ?? entry?.exhibitionST
+        ),
+        isOfficialCourse:
+          start?.isOfficialCourse === true,
+        mappingSource:
+          text(start?.mappingSource)
+      },
       registerNo,
       racerName: text(entry?.racerName || entry?.name || entry?.playerName),
       className: text(entry?.className || entry?.class || entry?.grade),

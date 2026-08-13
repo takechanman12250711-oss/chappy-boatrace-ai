@@ -1298,6 +1298,45 @@
     });
   }
 
+  function hasCompleteOfficialCourseMapping(startExhibition) {
+    const rows = Array.isArray(startExhibition)
+      ? startExhibition
+      : [];
+    const mappings = rows.map((row) => {
+      const raw =
+        row?.raw && typeof row.raw === "object"
+          ? row.raw
+          : row;
+
+      return {
+        boatNo: toBoatNo(row?.boatNo),
+        course: toBoatNo(raw?.course),
+        official:
+          row?.isOfficialCourse === true ||
+          row?.mappingSource ===
+            "official-start-image"
+      };
+    });
+
+    return (
+      mappings.length === 6 &&
+      mappings.every(
+        row =>
+          row.official &&
+          row.boatNo >= 1 &&
+          row.boatNo <= 6 &&
+          row.course >= 1 &&
+          row.course <= 6
+      ) &&
+      new Set(
+        mappings.map(row => row.boatNo)
+      ).size === 6 &&
+      new Set(
+        mappings.map(row => row.course)
+      ).size === 6
+    );
+  }
+
   function normalizeWeather(weather) {
     const w = weather || {};
 
@@ -1944,6 +1983,10 @@ return {
 
   function calculateIndexes(race, context) {
     const entries = race.entries || [];
+    const hasOfficialCourseMapping =
+      hasCompleteOfficialCourseMapping(
+        race.startExhibition
+      );
 
     const scores = entries.map((entry, index) => {
       const boatNo = entry.boatNo || index + 1;
@@ -1956,7 +1999,8 @@ return {
         venue: context.venue,
         newEngine: context.newEngine,
         weather: context.weather,
-        exhibition: exhibitionItem
+        exhibition: exhibitionItem,
+        hasOfficialCourseMapping
       });
 
       return item;
@@ -2029,7 +2073,13 @@ local +=
   weights.skill *
   skillSupportWeight;
 
-if (boatNo >= 4) {
+if (
+  (
+    params.hasOfficialCourseMapping
+      ? course
+      : boatNo
+  ) >= 4
+) {
   expected +=
     classBonus.expectedOuter *
     skillSupportWeight;

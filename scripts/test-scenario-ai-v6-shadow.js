@@ -11,7 +11,7 @@ const report = v6.build({ verificationEvidence: {
   marks: { rival: { boatNo: 2 }, third: { boatNo: 4 } }
 }});
 
-assert.equal(report.version, "6.1.0-shadow");
+assert.equal(report.version, "6.1.1-shadow");
 assert.equal(report.logicFingerprint, v6.LOGIC_FINGERPRINT);
 assert.equal(report.status, "shadow-ready");
 assert.equal(report.scenarios.length, 3);
@@ -129,6 +129,53 @@ assert.deepEqual(
   new Set(standardFour.scenarios.map(row => row.scenarioType)),
   new Set(["escape", "sashi", "threeAttack", "fourAttack"])
 );
+
+const nonIdentityConditions = {
+  boats: [1, 2, 3, 4, 5, 6].map(boatNo => ({
+    boatNo,
+    course: {
+      1: 6,
+      2: 2,
+      3: 1,
+      4: 4,
+      5: 5,
+      6: 3
+    }[boatNo],
+    courseOfficial: true,
+    courseMappingSource: "official-start-image"
+  }))
+};
+const nonIdentity = v6.build({
+  preRaceConditions: nonIdentityConditions,
+  verificationEvidence: {
+    scenarios: [
+      { type: "escape", label: "イン逃げ", score: 70, attacker: 1 },
+      { type: "sashi", label: "2コース差し", score: 50, attacker: 2 },
+      { type: "threeAttack", label: "3コース攻め", score: 40, attacker: 3 }
+    ]
+  },
+  marks: {
+    rival: { boatNo: 2 },
+    third: { boatNo: 4 }
+  }
+});
+assert.equal(nonIdentity.courseMappingFormal, true);
+const mappedEscape = nonIdentity.scenarios.find(
+  row => row.scenarioType === "escape"
+);
+const mappedSashi = nonIdentity.scenarios.find(
+  row => row.scenarioType === "sashi"
+);
+const mappedThreeAttack = nonIdentity.scenarios.find(
+  row => row.scenarioType === "threeAttack"
+);
+assert.equal(mappedEscape.keyBoat, 3);
+assert.deepEqual(mappedEscape.finishOrder, [3, 2, 4]);
+assert.match(mappedEscape.breakConditions.join(" "), /3号艇がスリット/);
+assert.equal(mappedSashi.keyBoat, 2);
+assert.deepEqual(mappedSashi.finishOrder, [2, 3, 4]);
+assert.equal(mappedThreeAttack.keyBoat, 6);
+assert.deepEqual(mappedThreeAttack.finishOrder, [6, 3, 4]);
 
 const empty = v6.build({});
 assert.equal(empty.status, "insufficient-evidence");

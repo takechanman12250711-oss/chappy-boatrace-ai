@@ -81,6 +81,10 @@ function snapshotInputFor(record = {}) {
   return {
     verificationEvidence,
     inputSourceKind,
+    preRaceConditions:
+      record?.prediction?.preRaceConditions ||
+      record?.preRaceConditions ||
+      null,
     marks: storedMarks(record),
     aiCore: {
       marks: storedMarks(record),
@@ -93,12 +97,16 @@ function snapshotInputFor(record = {}) {
 
 function snapshotLocked(record = {}) {
   const verified = record?.scenarioAiV6Verification?.status === "verified";
-  const currentSnapshot =
-    record?.scenarioAiV6Shadow?.logicFingerprint ===
-      scenarioAiV6.LOGIC_FINGERPRINT &&
-    record?.scenarioAiV6ShadowAb?.logicFingerprint ===
-      scenarioAiV6ShadowAb.LOGIC_FINGERPRINT;
-  return verified || currentSnapshot;
+  const hasStoredShadow =
+    record?.scenarioAiV6Shadow !== null &&
+    typeof record?.scenarioAiV6Shadow === "object" &&
+    !Array.isArray(record.scenarioAiV6Shadow);
+  const hasStoredShadowAb =
+    record?.scenarioAiV6ShadowAb !== null &&
+    typeof record?.scenarioAiV6ShadowAb === "object" &&
+    !Array.isArray(record.scenarioAiV6ShadowAb);
+
+  return verified || (hasStoredShadow && hasStoredShadowAb);
 }
 
 function attachSnapshots(

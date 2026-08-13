@@ -323,6 +323,22 @@ assert.equal(
   "変更した通常画面モジュールのキャッシュ世代を更新する"
 );
 assert.equal(
+  html.includes(
+    "js/app-runtime-loader.js?v=20260813-actual-course1"
+  ) &&
+    appRuntime.includes(
+      'const VERSION = "20260813-actual-course1"'
+    ) &&
+    predictionRuntime.includes(
+      'const VERSION = "20260813-actual-course1"'
+    ) &&
+    hiyoriLoader.includes(
+      'const VERSION="20260813-actual-course1"'
+    ),
+  true,
+  "実コース対応を親ローダーから予想・日和補助層まで同じキャッシュ世代で配信する"
+);
+assert.equal(
   script.includes("function initializeRaceControls()") &&
     script.includes("document.readyState") &&
     script.includes('window.addEventListener(\n      "DOMContentLoaded",') &&

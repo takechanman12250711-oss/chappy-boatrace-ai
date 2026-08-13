@@ -99,7 +99,7 @@ const runtimeLoaderSource =
   );
 assert.match(
   runtimeLoaderSource,
-  /const VERSION = "20260813-formation-display1"/,
+  /const VERSION = "20260813-actual-course1"/,
   "表示修正版をブラウザへ確実に再読込させる"
 );
 const appRuntimeLoaderSource =
@@ -123,12 +123,12 @@ const indexHtmlSource =
   );
 assert.match(
   appRuntimeLoaderSource,
-  /const VERSION = "20260813-formation-display1"/,
+  /const VERSION = "20260813-actual-course1"/,
   "親ローダーも表示修正版を再読込させる"
 );
 assert.match(
   indexHtmlSource,
-  /js\/app-runtime-loader\.js\?v=20260813-formation-display1/,
+  /js\/app-runtime-loader\.js\?v=20260813-actual-course1/,
   "HTMLから親ローダーの新世代へ到達する"
 );
 
