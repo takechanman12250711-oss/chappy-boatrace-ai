@@ -138,6 +138,14 @@
         before?.lapTime ?? before?.oneLapTime ??
         exhibition?.lapTime ?? exhibition?.oneLapTime ?? entry?.lapTime
       ),
+      lapTimeSource: text(
+        before?.lapTimeSource ?? exhibition?.lapTimeSource ??
+        entry?.lapTimeSource ?? entry?.exhibition?.lapTimeSource
+      ),
+      lapTimeSourceUrl: text(
+        before?.lapTimeSourceUrl ?? exhibition?.lapTimeSourceUrl ??
+        entry?.lapTimeSourceUrl ?? entry?.exhibition?.lapTimeSourceUrl
+      ),
       localWinRate: numberOrNull(
         entry?.localWinRate ?? entry?.local?.winRate ?? entry?.local?.rate
       ),

@@ -172,6 +172,7 @@ function safeFingerprintFiles(
 const SHADOW_LOGIC_FINGERPRINT = safeFingerprintFiles([
   "config/chappy-charter.json",
   "api/_parser.js",
+  "api/_original-exhibition.js",
   "js/ai-core.js",
   "js/history-insights-base.js",
   "js/motor-maintenance-insights.js",

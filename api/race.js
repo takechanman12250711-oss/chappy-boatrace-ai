@@ -3,6 +3,10 @@
 
 const { parseOfficialRaceHtml } = require("./_parser");
 const { buildHistoryContext } = require("./_history");
+const {
+  fetchOriginalExhibition,
+  attachOriginalLapTimes
+} = require("./_original-exhibition");
 const OFFICIAL_REQUEST_TIMEOUT_MS = 15000;
 
 function fetchOfficial(url) {
@@ -45,9 +49,10 @@ module.exports = async function handler(req, res) {
       `https://www.boatrace.jp/owpc/pc/race/beforeinfo` +
       `?rno=${rno}&jcd=${jcd}&hd=${date}`;
 
-    const [entryResult, beforeResult] = await Promise.allSettled([
+    const [entryResult, beforeResult, originalExhibitionResult] = await Promise.allSettled([
       fetchOfficial(entryUrl),
-      fetchOfficial(beforeInfoUrl)
+      fetchOfficial(beforeInfoUrl),
+      fetchOriginalExhibition({ jcd, rno, date })
     ]);
 
     if (entryResult.status === "rejected") {
@@ -81,13 +86,29 @@ module.exports = async function handler(req, res) {
       beforeInfoWarning = `直前情報を省略: ${reason?.message || reason}`;
     }
     const beforeInfoAvailable = Boolean(beforeHtml);
+    const centralParsed = parseOfficialRaceHtml(
+      entryHtml,
+      beforeHtml
+    );
+    const originalExhibition =
+      originalExhibitionResult.status === "fulfilled"
+        ? originalExhibitionResult.value
+        : {
+            status: "fetch-failed",
+            source: "",
+            sourceUrl: "",
+            rows: [],
+            error: String(
+              originalExhibitionResult.reason?.message ||
+              originalExhibitionResult.reason ||
+              ""
+            )
+          };
+    const parsed = attachOriginalLapTimes(
+      centralParsed,
+      originalExhibition
+    );
     const fetchedAt = new Date().toISOString();
-
-    const parsed =
-  parseOfficialRaceHtml(
-    entryHtml,
-    beforeHtml
-  );
 
     const historyContext = buildHistoryContext({
       jcd,
@@ -115,7 +136,17 @@ module.exports = async function handler(req, res) {
       beforeInfoUrl,
       ...parsed,
       beforeInfoAvailable,
-      warnings: beforeInfoWarning ? [beforeInfoWarning] : [],
+      warnings: [
+        beforeInfoWarning,
+        ["fetch-failed", "identity-mismatch", "exhibition-mismatch"].includes(
+          parsed?.originalExhibition?.status
+        )
+          ? `独自展示一周タイムを省略: ${
+              originalExhibition?.error ||
+              parsed.originalExhibition.status
+            }`
+          : ""
+      ].filter(Boolean),
       historyContext
     });
 

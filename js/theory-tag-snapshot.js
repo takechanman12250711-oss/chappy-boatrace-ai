@@ -274,20 +274,86 @@ function frameRiseSinkClaimForTicket(prediction, ticket, evidenceRow = {}) {
   return { theoryKey: "frameRiseSink", label: "枠別浮沈率", theoryVersion: "approved-frame-rise-sink-v1", formal: true, source: evidence.source };
 }
 
+function appliedDoubleTimeSupport(prediction) {
+  const performance =
+    prediction?.aiCore?.exhibitionPerformanceTheory ||
+    prediction?.exhibitionPerformanceTheory ||
+    null;
+  const calculated =
+    prediction?.aiCore?.doubleTime ||
+    prediction?.doubleTime ||
+    null;
+  if (!performance && !calculated) return null;
+
+  const topBoat = Number(calculated?.topBoat);
+  const role = (Array.isArray(performance?.roles) ? performance.roles : [])
+    .find((item) => Number(item?.boatNo) === topBoat) || null;
+  const lapSource = String(performance?.source?.lap || "").trim();
+  const approvedLapSources = new Set([
+    "BOATRACE浜名湖公式・独自計測一周"
+  ]);
+  const explicitLapSource = approvedLapSources.has(lapSource);
+  const coherentApplication = Boolean(
+    performance?.version === "exhibition-performance-v2" &&
+    performance?.isFullMode === true &&
+    performance?.isFormal === true &&
+    performance?.appliedToScore === true &&
+    Number(performance?.exhibitionCount) === 6 &&
+    Number(performance?.lapCount) === 6 &&
+    Number(performance?.doubleTimeBoat) === topBoat &&
+    calculated?.isDouble === true &&
+    role?.isDoubleTime === true &&
+    role?.isFormal === true &&
+    role?.appliedToScore === true &&
+    Number(role?.components?.doubleTime) === 5 &&
+    explicitLapSource
+  );
+
+  return {
+    // 展示・足Ver2で既に配点済みの5点を記録する。予想へ再加点しない。
+    approved: true,
+    applied: coherentApplication,
+    isDouble: calculated?.isDouble === true,
+    topBoat,
+    confidence: optionalNumber(calculated?.confidence),
+    exhibitionGap: optionalNumber(calculated?.exhibitionGap),
+    lapGap: optionalNumber(calculated?.lapGap),
+    source: explicitLapSource
+      ? `ai-core-exhibition-performance-v2:${lapSource}`
+      : "",
+    lapSource,
+    exhibitionCount: optionalNumber(performance?.exhibitionCount),
+    lapCount: optionalNumber(performance?.lapCount)
+  };
+}
+
 function doubleTimeEvidence(prediction) {
-  const support = prediction?.doubleTimeSupport || prediction?.theorySupport?.doubleTime || {};
+  const directSupport =
+    prediction?.doubleTimeSupport &&
+    typeof prediction.doubleTimeSupport === "object"
+      ? prediction.doubleTimeSupport
+      : prediction?.theorySupport?.doubleTime &&
+          typeof prediction.theorySupport.doubleTime === "object"
+        ? prediction.theorySupport.doubleTime
+        : null;
+  const runtimeSupport = appliedDoubleTimeSupport(prediction);
+  const support = directSupport || runtimeSupport || {};
+  const supportPresent = Boolean(directSupport || runtimeSupport);
   const approved = support?.approved === true;
   const applied = support?.applied === true;
   const isDouble = support?.isDouble === true;
-  const topBoat = Number(support?.topBoat || support?.topBoatNo);
-  const confidence = Number(support?.confidence);
-  const exhibitionGap = Number(support?.exhibitionGap);
-  const lapGap = Number(support?.lapGap);
+  const topBoat = optionalNumber(support?.topBoat ?? support?.topBoatNo);
+  const confidence = optionalNumber(support?.confidence);
+  const exhibitionGap = optionalNumber(support?.exhibitionGap);
+  const lapGap = optionalNumber(support?.lapGap);
   const source = String(support?.source || "").trim();
+  const lapSource = String(support?.lapSource || "").trim();
+  const exhibitionCount = optionalNumber(support?.exhibitionCount);
+  const lapCount = optionalNumber(support?.lapCount);
   const validBoat = topBoat >= 1 && topBoat <= 6;
   const validConfidence = Number.isFinite(confidence) && confidence >= 70 && confidence <= 100;
   const validGaps = Number.isFinite(exhibitionGap) && exhibitionGap >= 0 && Number.isFinite(lapGap) && lapGap >= 0;
-  return { formal: approved && applied && isDouble && validBoat && validConfidence && validGaps && Boolean(source), approved, applied, isDouble, topBoat: validBoat ? topBoat : null, confidence: validConfidence ? confidence : null, exhibitionGap: Number.isFinite(exhibitionGap) ? exhibitionGap : null, lapGap: Number.isFinite(lapGap) ? lapGap : null, source };
+  return { formal: approved && applied && isDouble && validBoat && validConfidence && validGaps && Boolean(source), supportPresent, approved, applied, isDouble, topBoat: validBoat ? topBoat : null, confidence: validConfidence ? confidence : null, exhibitionGap: Number.isFinite(exhibitionGap) ? exhibitionGap : null, lapGap: Number.isFinite(lapGap) ? lapGap : null, source, lapSource, exhibitionCount, lapCount };
 }
 
 function doubleTimeClaimForTicket(prediction, ticket) {
@@ -295,7 +361,7 @@ function doubleTimeClaimForTicket(prediction, ticket) {
   if (!evidence.formal) return null;
   const boats = normalizeTicket(ticket).split("-").map(Number);
   if (!boats.includes(evidence.topBoat)) return null;
-  return { theoryKey: "doubleTime", label: "ダブルタイム", theoryVersion: "approved-double-time-v1", formal: true, source: evidence.source };
+  return { theoryKey: "doubleTime", label: "ダブルタイム", theoryVersion: evidence.source.startsWith("ai-core-exhibition-performance-v2:") ? "ai-core-exhibition-performance-v2" : "approved-double-time-v1", formal: true, source: evidence.source };
 }
 
 function newEngineEvidence(prediction) {
@@ -383,15 +449,15 @@ function missingReasonsForFrame(prediction, evidence) {
 }
 
 function missingReasonsForDouble(prediction, evidence) {
-  if (!(prediction?.doubleTimeSupport || prediction?.theorySupport?.doubleTime)) return ["support-missing"];
+  if (!evidence.supportPresent) return ["support-missing"];
   const reasons = [];
   if (!evidence.approved) reasons.push("not-approved");
   if (!evidence.applied) reasons.push("not-applied");
   if (!evidence.isDouble) reasons.push("double-condition-not-met");
   if (!evidence.topBoat) reasons.push("top-boat-missing");
   if (evidence.confidence === null) reasons.push("confidence-under-70-or-invalid");
-  if (!(Number.isFinite(Number(evidence.exhibitionGap)) && Number(evidence.exhibitionGap) >= 0)) reasons.push("exhibition-gap-missing");
-  if (!(Number.isFinite(Number(evidence.lapGap)) && Number(evidence.lapGap) >= 0)) reasons.push("lap-gap-missing");
+  if (!(evidence.exhibitionGap !== null && Number.isFinite(evidence.exhibitionGap) && evidence.exhibitionGap >= 0)) reasons.push("exhibition-gap-missing");
+  if (!(evidence.lapGap !== null && Number.isFinite(evidence.lapGap) && evidence.lapGap >= 0)) reasons.push("lap-gap-missing");
   if (!evidence.source) reasons.push("source-missing");
   return reasons;
 }
@@ -419,7 +485,7 @@ function buildEvidenceDiagnostics(prediction) {
     { theoryKey: "start", label: "ST・スリット理論", supportPresent: Boolean(prediction?.flowSupport || prediction?.stExhibitionSupport), formal: start.formal === true, missingReasons: start.formal ? [] : missingReasonsForStart(prediction, start), metrics: { attackBoatNo: start.attackBoatNo || null, coverage: start.stCoverage || 0, rank: start.stRank || null } },
     { theoryKey: "skill", label: "技量理論", supportPresent: Boolean(prediction?.skillLocalSupport), formal: skill.formal === true, missingReasons: skill.formal ? [] : missingReasonsForSkill(prediction, skill), metrics: { attackBoatNo: skill.attackBoatNo || null, targetPresent: Boolean(skill.target) } },
     { theoryKey: "frame-rise-fall", label: "枠別浮沈率", supportPresent: frame.supportPresent === true, formal: frame.formal === true, missingReasons: frame.formal ? [] : missingReasonsForFrame(prediction, frame), metrics: { frameNo: frame.frameNo || null, type: frame.type || "", samples: frame.samples, rate: frame.rate, scenarioType: frame.scenarioType || "", scoreAdjustment: frame.scoreAdjustment, movementDelta: frame.movementDelta, approved: frame.approved, applied: frame.applied } },
-    { theoryKey: "double-time", label: "ダブルタイム", supportPresent: Boolean(prediction?.doubleTimeSupport || prediction?.theorySupport?.doubleTime), formal: doubleTime.formal === true, missingReasons: doubleTime.formal ? [] : missingReasonsForDouble(prediction, doubleTime), metrics: { topBoat: doubleTime.topBoat, confidence: doubleTime.confidence, exhibitionGap: doubleTime.exhibitionGap, lapGap: doubleTime.lapGap, approved: doubleTime.approved, applied: doubleTime.applied, isDouble: doubleTime.isDouble } },
+    { theoryKey: "double-time", label: "ダブルタイム", supportPresent: doubleTime.supportPresent === true, formal: doubleTime.formal === true, missingReasons: doubleTime.formal ? [] : missingReasonsForDouble(prediction, doubleTime), metrics: { topBoat: doubleTime.topBoat, confidence: doubleTime.confidence, exhibitionGap: doubleTime.exhibitionGap, lapGap: doubleTime.lapGap, exhibitionCount: doubleTime.exhibitionCount, lapCount: doubleTime.lapCount, lapSource: doubleTime.lapSource, approved: doubleTime.approved, applied: doubleTime.applied, isDouble: doubleTime.isDouble } },
     { theoryKey: "new-engine", label: "新エンジン理論", supportPresent: Boolean(prediction?.motorEngineSupport), formal: newEngine.formal === true, missingReasons: newEngine.formal ? [] : missingReasonsForNewEngine(prediction, newEngine), metrics: { centerBoatNo: newEngine.centerBoatNo || null, mode: newEngine.mode || "", newEngineMode: newEngine.newEngineMode } }
   ];
   return { schemaVersion: 1, rows, usableForPrediction: false, automaticApplication: false };
@@ -478,6 +544,7 @@ module.exports = {
   appliedFrameRiseSinkSupport,
   frameRiseSinkEvidence,
   frameRiseSinkClaimForTicket,
+  appliedDoubleTimeSupport,
   doubleTimeEvidence,
   doubleTimeClaimForTicket,
   newEngineEvidence,

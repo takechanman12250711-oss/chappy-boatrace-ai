@@ -870,6 +870,8 @@ const completeRawRaceData = {
         boat: index + 1,
         racerName:
           completeRacerNames[index],
+        lapTimeSource:
+          "BOATRACE浜名湖公式・独自計測一周",
         exhibition: {
           displayTime:
             6.72 + index * 0.02,
@@ -983,6 +985,16 @@ const completeFrameTheory =
     .theories.find(
       row => row.theoryKey === "frameRiseSink"
     );
+const completeDoubleDiagnostic =
+  completeStored.theoryTagSnapshot
+    .evidenceDiagnostics.rows.find(
+      row => row.theoryKey === "double-time"
+    );
+const completeDoubleTheory =
+  completeStored.theoryTagSnapshot
+    .theories.find(
+      row => row.theoryKey === "doubleTime"
+    );
 
 assert.equal(
   completeStartDiagnostic.formal,
@@ -1005,6 +1017,19 @@ assert.equal(
 assert.ok(
   completeFrameTheory?.ticketCount > 0,
   "枠別浮沈率を実際に補正した枠を含む実戦買い目へ帰属する"
+);
+assert.equal(
+  completeDoubleDiagnostic.formal,
+  true,
+  "開催場公式の一周6艇と展示・足Ver2の実配点からダブルタイム正式証拠を保存する"
+);
+assert.equal(
+  completeDoubleDiagnostic.metrics.lapCount,
+  6
+);
+assert.ok(
+  completeDoubleTheory?.ticketCount > 0,
+  "実際に5点を統合したダブルタイム艇を含む実戦買い目へ帰属する"
 );
 assert.deepEqual(
   compactStoredVerification(
@@ -1055,6 +1080,28 @@ assert.equal(
 );
 assert.equal(
   completeFrameEvaluation.matched,
+  true
+);
+const completeDoubleEvaluation =
+  require("../js/theory-evaluation-engine")
+    .build({
+      ...completeStored,
+      result: {
+        settled: true,
+        resultTicket:
+          completeDoubleTheory.tickets[0]
+      }
+    })
+    .evaluations.find(
+      row => row.theoryKey === "double-time"
+    );
+assert.equal(
+  completeDoubleEvaluation.status,
+  "evaluated",
+  "保存したダブルタイム証拠をPhase7評価へ接続する"
+);
+assert.equal(
+  completeDoubleEvaluation.matched,
   true
 );
 
