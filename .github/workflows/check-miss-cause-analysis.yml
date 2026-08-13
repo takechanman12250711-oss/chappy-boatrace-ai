@@ -16,8 +16,11 @@ jobs:
           node-version: "20"
       - name: Validate miss cause analysis
         run: |
+          node --check scripts/build-result-review.js
+          node --check scripts/test-result-review.js
           node --check js/miss-cause-analysis.js
           node --check scripts/build-miss-cause-analysis.js
           node --check scripts/test-miss-cause-analysis.js
+          node scripts/test-result-review.js
           node scripts/test-miss-cause-analysis.js
           node scripts/check-charter.js
