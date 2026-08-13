@@ -97,6 +97,7 @@ on:
       - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
       - "scripts/test-race-scenarios.js"
+      - "scripts/test-course-structure-theory.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
       - "scripts/test-edogawa-fourth-boat-scenario.js"
@@ -222,6 +223,7 @@ on:
       - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
       - "scripts/test-race-scenarios.js"
+      - "scripts/test-course-structure-theory.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
       - "scripts/test-edogawa-fourth-boat-scenario.js"
@@ -349,6 +351,7 @@ jobs:
           node --check scripts/test-stats-methodology.js
           node --check scripts/test-ai-core-formations.js
           node --check scripts/test-race-scenarios.js
+          node --check scripts/test-course-structure-theory.js
           node --check scripts/test-scenario-marks.js
           node --check scripts/test-scenario-formations.js
           node --check scripts/test-edogawa-fourth-boat-scenario.js
@@ -418,6 +421,7 @@ jobs:
           node scripts/test-new-sam.js
           node tools/test-motor-maintenance-theory-v2.js
           node scripts/test-race-scenarios.js
+          node scripts/test-course-structure-theory.js
           node scripts/test-scenario-marks.js
           node scripts/test-scenario-formations.js
           node scripts/test-edogawa-fourth-boat-scenario.js

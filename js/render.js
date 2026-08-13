@@ -3135,14 +3135,26 @@ function getPaperClassName(item) {
     const mainSheet =
       prediction?.mainSheet || {};
 
-    const boatNoOf = item =>
-      Number(
-        item?.boatNo ??
-        item?.no ??
-        item?.waku ??
-        item?.number ??
-        0
-      );
+    const boatNoOf = item => {
+      for (const value of [
+        item?.boat,
+        item?.waku,
+        item?.frame,
+        item?.boatNo,
+        item?.no,
+        item?.number
+      ]) {
+        const candidate = Number(value);
+        if (
+          Number.isInteger(candidate) &&
+          candidate >= 1 &&
+          candidate <= 6
+        ) {
+          return candidate;
+        }
+      }
+      return 0;
+    };
 
     const honmeiNo =
       boatNoOf(mainSheet.honmei);
@@ -3176,30 +3188,60 @@ function getPaperClassName(item) {
     const pickupBoats =
       boatSet(raceFlow.pickupBoats);
 
+    const core = window.ChappyAICore;
+    const mappingSource =
+      prediction?.preRaceConditions ||
+      prediction?.race?.raw ||
+      prediction?.race ||
+      prediction;
+    const officialCourseMapping =
+      typeof core?.getRaceEntries === "function" &&
+      typeof core?.buildOfficialCourseMapping === "function"
+        ? core.buildOfficialCourseMapping(
+            core
+              .getRaceEntries(mappingSource)
+              .map((entry, index) => ({
+                ...entry,
+                boat: boatNoOf(entry) || index + 1
+              }))
+          )
+        : null;
+    const courseOfBoat = boatNo => {
+      if (officialCourseMapping?.formal === true) {
+        return Number(
+          officialCourseMapping.courseOfBoat(boatNo) ||
+          boatNo
+        );
+      }
+      return Number(boatNo);
+    };
+
     const roleOf = (
       boatNo,
       position
     ) => {
-      if (boatNo === 1) {
+      const course = courseOfBoat(boatNo);
+
+      if (course === 1) {
         return position === "first"
           ? "イン逃げ"
           : "イン残し";
       }
 
       if (attackBoats.has(boatNo)) {
-        if (boatNo === 2) {
+        if (course === 2) {
           return "2コース差し";
         }
 
-        if (boatNo === 3) {
+        if (course === 3) {
           return "3コース攻め";
         }
 
-        if (boatNo === 4) {
+        if (course === 4) {
           return "4カド攻め";
         }
 
-        if (boatNo === 5) {
+        if (course === 5) {
           return "まくり差し";
         }
 
@@ -3207,11 +3249,11 @@ function getPaperClassName(item) {
       }
 
       if (holdBoats.has(boatNo)) {
-        if (boatNo === 2) {
+        if (course === 2) {
           return "2差し・残り";
         }
 
-        if (boatNo === 4) {
+        if (course === 4) {
           return "4残し";
         }
 
@@ -3238,15 +3280,15 @@ function getPaperClassName(item) {
         return "押さえ評価";
       }
 
-      if (boatNo === 2) {
+      if (course === 2) {
         return "2差し・残り";
       }
 
-      if (boatNo === 4) {
+      if (course === 4) {
         return "4残し";
       }
 
-      if (boatNo >= 5) {
+      if (course >= 5) {
         return "外の展開拾い";
       }
 
@@ -4315,7 +4357,8 @@ function renderFinalBlock(block) {
       Object.freeze({
         normalizeFlowFormationRows,
         practicalDisplayCategory,
-        renderTicketRanking
+        renderTicketRanking,
+        createTicketSpecificComment
       });
   }
   window.addEventListener(

@@ -9,21 +9,71 @@
   const U = window.ChappyUtils;
 
   function getEntries(data) {
+    const core = window.ChappyAICore;
+    if (typeof core?.getRaceEntries === "function") {
+      const entries = core.getRaceEntries(data);
+      if (entries.length) return entries;
+    }
     return data?.entries || data?.racers || data?.entry || [];
   }
 
-  function calcSlitAlerts(entries) {
+  function courseMappingOf(source) {
+    const core = window.ChappyAICore;
+    if (typeof core?.buildOfficialCourseMapping === "function") {
+      const entries = Array.isArray(source)
+        ? source
+        : getEntries(source);
+      return core.buildOfficialCourseMapping(
+        entries.map((entry, index) => ({
+          ...entry,
+          boat: boatNoOf(entry, index + 1)
+        }))
+      );
+    }
+
+    return {
+      formal: false,
+      boatAtCourse(course) {
+        return Number(course) || null;
+      },
+      courseOfBoat(boatNo) {
+        return Number(boatNo) || null;
+      }
+    };
+  }
+
+  function boatNoOf(boat, fallback) {
+    for (const value of [
+      boat?.boat,
+      boat?.waku,
+      boat?.frame,
+      boat?.boatNo,
+      boat?.number
+    ]) {
+      const candidate = Number(value);
+      if (
+        Number.isInteger(candidate) &&
+        candidate >= 1 &&
+        candidate <= 6
+      ) {
+        return candidate;
+      }
+    }
+    return fallback;
+  }
+
+  function calcSlitAlerts(entries, mapping = courseMappingOf(entries)) {
     const list = [];
     const ordered = entries
       .map((boat, index) => ({
         boat,
-        boatNo: boat.boatNo ?? boat.number ?? index + 1,
+        boatNo: boatNoOf(boat, index + 1)
+      }))
+      .map(item => ({
+        ...item,
         course: Number(
-          boat.course ??
-          boat.entryCourse ??
-          boat.boatNo ??
-          boat.number ??
-          index + 1
+          mapping.courseOfBoat(item.boatNo) ??
+          item.boatNo
         )
       }))
       .sort((a, b) => a.course - b.course);
@@ -87,14 +137,14 @@
     return list;
   }
 
-  function calcDoubleTime(entries) {
+  function calcDoubleTime(entries, mapping = courseMappingOf(entries)) {
     const ranked = entries
       .map((boat, index) => {
         const exhibition = U.safeNumber(boat.exhibitionTime ?? boat.tenjiTime, 99);
         const lap = U.safeNumber(boat.lapTime ?? boat.roundTime ?? boat.oneLapTime, 99);
 
         return {
-          boatNo: boat.boatNo ?? boat.number ?? index + 1,
+          boatNo: boatNoOf(boat, index + 1),
           name: boat.name ?? boat.racerName ?? "-",
           exhibition,
           lap,
@@ -138,16 +188,25 @@
     const topBoatNo = isDouble
       ? Number(exhibitionTop.boatNo)
       : null;
+    const topCourse = topBoatNo
+      ? Number(mapping.courseOfBoat(topBoatNo) || topBoatNo)
+      : null;
+    const hasNonIdentityCourse = Boolean(
+      mapping.formal === true &&
+      topBoatNo &&
+      topCourse !== topBoatNo
+    );
 
     return {
       exhibitionTop,
       lapTop,
       isDouble,
       topBoat: topBoatNo,
+      ...(hasNonIdentityCourse ? { topCourse } : {}),
       confidence,
       exhibitionGap: U.round(exhibitionGap, 3),
       lapGap: U.round(lapGap, 3),
-      isOuterTarget: Boolean(topBoatNo >= 4 && topBoatNo <= 6)
+      isOuterTarget: Boolean(topCourse >= 4 && topCourse <= 6)
     };
   }
 
@@ -218,10 +277,11 @@
 
   function analyzeTheory(data) {
     const entries = getEntries(data);
+    const mapping = courseMappingOf(entries);
 
     return {
-      slitAlerts: calcSlitAlerts(entries),
-      doubleTime: calcDoubleTime(entries),
+      slitAlerts: calcSlitAlerts(entries, mapping),
+      doubleTime: calcDoubleTime(entries, mapping),
       newSam: calcNewSam(entries)
     };
   }
@@ -272,8 +332,12 @@
         <p>${
           d.isDouble
             ? d.isOuterTarget
-              ? "4・5・6号艇の実戦対象。連絡み条件は展開側で確認。"
-              : "1〜3号艇は気配情報として使用。"
+              ? d.topCourse
+                ? `${d.topBoat}号艇は${d.topCourse}コースの実戦対象。連絡み条件は展開側で確認。`
+                : "4・5・6号艇の実戦対象。連絡み条件は展開側で確認。"
+              : d.topCourse
+                ? `${d.topBoat}号艇は${d.topCourse}コースのため気配情報として使用。`
+                : "1〜3号艇は気配情報として使用。"
             : "展示1位と一周1位が一致していません。"
         }</p>
       </div>

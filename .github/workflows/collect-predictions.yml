@@ -30,14 +30,24 @@ on:
       - "scripts/test-prediction-index-loader.js"
       - "scripts/test-prediction-runtime-loader.js"
       - "js/prediction-runtime-loader.js"
+      - "js/hiyori-runtime-loader.js"
+      - "js/prediction-flow-priority.js"
+      - "js/theory.js"
+      - "js/render.js"
+      - "scripts/test-collector-theory-support-wiring.js"
+      - "scripts/test-st-slit.js"
+      - "scripts/test-double-time.js"
+      - "scripts/test-new-sam.js"
+      - "scripts/test-prediction-transparency-ui.js"
       - "scripts/test-shadow-predictions.js"
       - "scripts/test-shadow-selection-v2.js"
+      - "scripts/test-race-scenarios.js"
+      - "scripts/test-ai-core-formations.js"
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-race-parser.js"
       - "scripts/test-original-exhibition.js"
       - "scripts/test-theory-integration.js"
       - "scripts/test-theory-tag-catalog-reachability.js"
-      - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-frame-rise-sink-formal-evidence.js"
       - "scripts/test-double-time-formal-evidence.js"
       - "scripts/test-boat-identity.js"
@@ -130,6 +140,15 @@ jobs:
           node scripts/test-frame-rise-sink-formal-evidence.js
           node scripts/test-double-time-formal-evidence.js
           node scripts/test-shadow-predictions.js
+          node scripts/test-st-slit.js
+          node scripts/test-double-time.js
+          node scripts/test-new-sam.js
+          node scripts/test-prediction-transparency-ui.js
+          node scripts/test-scenario-ai-v6-shadow.js
+          node scripts/test-scenario-ai-v6-storage.js
+          node scripts/test-race-scenarios.js
+          node scripts/test-ai-core-formations.js
+          node scripts/test-shadow-selection-v2.js
           node scripts/test-boat-identity.js
           node scripts/check-charter.js
 

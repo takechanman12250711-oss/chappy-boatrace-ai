@@ -79,6 +79,36 @@ assert.equal(runtimeEvidence.scoreAdjustment, 2);
 assert.equal(runtimeEvidence.movementDelta, 8);
 assert.equal(JSON.stringify(runtimePrediction), runtimeBefore, "正式証拠の保存は予想計算済みオブジェクトを変更しない");
 
+const swappedRuntime = snapshot.appliedFrameRiseSinkSupport({
+  aiCore: {
+    raceScenarios: {
+      mainScenario: { type: "threeAttack" },
+      scenarios: [{
+        type: "threeAttack",
+        attacker: 3,
+        attackerCourse: 3,
+        attackerBoatNo: 6,
+        headBoatNo: 6,
+        frameMovementAdjustment: 3
+      }],
+      frameMovement: [{
+        boatNo: 6,
+        label: "浮上",
+        samples: 180,
+        riseRate: 52,
+        movementDelta: 12,
+        scoreAdjustment: 3,
+        appliedToScore: true
+      }]
+    }
+  }
+});
+assert.equal(
+  swappedRuntime.frameNo,
+  6,
+  "legacy attackerの3コースではなく実際に補正した6号艇を正式証拠へ使う"
+);
+
 const runtimeBuilt = snapshot.build(runtimePrediction, [
   { ticket: "4-1-3", category: "本線" },
   { ticket: "1-4-3", category: "押さえ" }

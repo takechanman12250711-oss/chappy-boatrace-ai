@@ -10,6 +10,7 @@
   let corePromise=null;
   let backgroundPromise=null;
   let installPromise=null;
+  const VERSION="20260813-actual-course1";
   const SCRIPT_LOAD_TIMEOUT_MS=15000;
 
   const coreScripts=[
@@ -50,7 +51,7 @@
     const clean=src.split("?")[0];
     if([...document.scripts].some(script=>script.src&&script.src.includes(clean))){resolve();return}
     const script=document.createElement("script");
-    script.src=src;script.async=false;script.dataset.chappyHiyoriModule=clean;
+    script.src=`${clean}?v=${VERSION}`;script.async=false;script.dataset.chappyHiyoriModule=clean;
     let settled=false;
     const finish=()=>{if(settled)return;settled=true;window.clearTimeout(timer);resolve()};
     const timer=window.setTimeout(()=>{console.warn("[hiyori-runtime-loader] load timeout:",src);script.remove();finish()},SCRIPT_LOAD_TIMEOUT_MS);
@@ -62,7 +63,7 @@
     const clean=src.split("?")[0];
     if([...document.scripts].some(script=>script.src&&script.src.includes(clean)))return;
     if([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link=>link.href&&link.href.includes(clean)))return;
-    const link=document.createElement("link");link.rel="preload";link.as="script";link.href=clean;document.head.appendChild(link);
+    const link=document.createElement("link");link.rel="preload";link.as="script";link.href=`${clean}?v=${VERSION}`;document.head.appendChild(link);
   })}
   function installCore(){
     if(corePromise)return corePromise;

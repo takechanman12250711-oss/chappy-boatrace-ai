@@ -28,7 +28,10 @@ if (!source.includes('typeof module !== "undefined"') || !source.includes('typeo
 global.window = global;
 global.addEventListener = () => {};
 global.document = { addEventListener() {} };
+require("../js/boat-identity");
+require("../js/ai-core");
 global.createPrediction = () => ({ flowPriority: { attackBoatNo: 3 } });
+require("../js/prediction-flow-priority");
 require("../js/prediction-st-exhibition-support");
 
 const officialPreparedEntries = [
@@ -58,6 +61,142 @@ assert.deepEqual(startTheory.tickets, ["3-1-2"]);
 assert.equal(
   theorySnapshot.evidenceDiagnostics.rows.find(row => row.theoryKey === "start")?.formal,
   true
+);
+
+const courseByBoat = {
+  1: 6,
+  2: 2,
+  3: 1,
+  4: 4,
+  5: 5,
+  6: 3
+};
+const nonIdentityData = {
+  entries: [1, 2, 3, 4, 5, 6].map(boat => ({
+    boat,
+    racerName: `${boat}号艇`,
+    currentST: {
+      1: 0.17,
+      2: 0.05,
+      3: 0.16,
+      4: 0.21,
+      5: 0.01,
+      6: 0.20
+    }[boat],
+    exhibitionTime: 6.8 + boat * 0.01
+  })),
+  startExhibition: [1, 2, 3, 4, 5, 6].map(boat => ({
+    boat,
+    course: courseByBoat[boat],
+    st: 0.10 + boat * 0.01,
+    isOfficialCourse: true,
+    mappingSource: "official-start-image"
+  }))
+};
+const mappedFlow = global.ChappyPredictionFlowPriority.build({
+  raceFlow: {
+    attacker: 3,
+    attackBoats: [{ boatNo: 6, course: 6 }]
+  },
+  mainSheet: { honmei: { boatNo: 6 } },
+  race: { raw: nonIdentityData }
+}, nonIdentityData);
+
+assert.equal(mappedFlow.attackBoatNo, 6);
+assert.equal(mappedFlow.attackCourse, 3);
+assert.equal(mappedFlow.title, "3コース攻め中心");
+assert.match(mappedFlow.mainComment, /6号艇の3コース攻め/);
+assert.match(mappedFlow.mainComment, /3・2号艇の残し/);
+assert.deepEqual(
+  mappedFlow.remains,
+  ["3号艇のイン残り", "2号艇の差し残り"]
+);
+
+const storedMappedFlow =
+  global.ChappyPredictionFlowPriority.build({
+    preRaceConditions: nonIdentityData,
+    entries: nonIdentityData.entries,
+    raceFlow: {
+      attacker: 3,
+      attackBoats: [{ boatNo: 6, course: 6 }]
+    },
+    mainSheet: { honmei: { boatNo: 6 } }
+  });
+assert.deepEqual(
+  storedMappedFlow,
+  mappedFlow,
+  "保存済みpreRaceConditionsからも展開の公式進入写像を復元する"
+);
+
+const identityFlow = global.ChappyPredictionFlowPriority.build({
+  raceFlow: {
+    attackBoats: [{ boatNo: 3, course: 3 }]
+  },
+  mainSheet: { honmei: { boatNo: 3 } }
+});
+assert.equal(
+  identityFlow.mainComment,
+  "3号艇の攻めを中心に、1・2号艇の残しと外の展開拾いを評価する。",
+  "枠なり表示の既存文言を変更しない"
+);
+
+const mappedSupport = global.ChappyPredictionSTExhibitionSupport.build(
+  {
+    flowPriority: {
+      ...mappedFlow,
+      attackCourse: 6
+    }
+  },
+  nonIdentityData
+);
+assert.equal(mappedSupport.attackBoatNo, 6);
+assert.equal(mappedSupport.attackCourse, 3);
+assert.match(
+  mappedSupport.alerts.join(" "),
+  /2号艇が6号艇よりSTで0\.10以上先行/,
+  "実2コース艇を3コース攻め艇の隣接艇として比較する"
+);
+assert.doesNotMatch(
+  mappedSupport.alerts.join(" "),
+  /5号艇が6号艇よりSTで0\.10以上先行/,
+  "物理艇番だけが隣の5号艇を比較しない"
+);
+
+const storedMappedSupport =
+  global.ChappyPredictionSTExhibitionSupport.build({
+    preRaceConditions: nonIdentityData,
+    entries: nonIdentityData.entries,
+    flowPriority: {
+      ...mappedFlow,
+      attackCourse: 6
+    }
+  });
+assert.equal(storedMappedSupport.attackCourse, 3);
+assert.match(
+  storedMappedSupport.alerts.join(" "),
+  /2号艇が6号艇よりSTで0\.10以上先行/,
+  "保存済みpreRaceConditionsでも実コース隣接のSTを使う"
+);
+
+const partialCourseData = {
+  ...nonIdentityData,
+  startExhibition:
+    nonIdentityData.startExhibition.slice(0, 5)
+};
+const partialSupport =
+  global.ChappyPredictionSTExhibitionSupport.build(
+    {
+      flowPriority: {
+        attackBoatNo: 4,
+        attackCourse: 1
+      }
+    },
+    partialCourseData
+  );
+assert.equal(
+  partialSupport.attackCourse,
+  4,
+  "公式6艇写像が欠ける時は部分コースを使わず物理艇番へ戻す"
 );
 
 console.log("collector theory support wiring tests passed");

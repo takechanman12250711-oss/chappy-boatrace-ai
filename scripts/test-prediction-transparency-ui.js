@@ -299,8 +299,121 @@ global.ChappyPracticalSelection = {
   }
 };
 
+require("../js/boat-identity");
+require("../js/ai-core");
 require("../js/render");
 require("../js/main-cover-display-boundary");
+
+const actualCourseData = {
+  entries: [1, 2, 3, 4, 5, 6].map(boat => ({
+    boat,
+    racerName: `${boat}号艇`
+  })),
+  startExhibition: [1, 2, 3, 4, 5, 6].map(boat => ({
+    boat,
+    course: {
+      1: 6,
+      2: 2,
+      3: 1,
+      4: 4,
+      5: 5,
+      6: 3
+    }[boat],
+    isOfficialCourse: true,
+    mappingSource: "official-start-image"
+  }))
+};
+const mappedTicketComment =
+  global.ChappyRenderTestHooks
+    .createTicketSpecificComment(
+      {
+        race: { raw: actualCourseData },
+        raceFlow: {
+          attackBoats: [{ boatNo: 6, course: 3 }],
+          holdBoats: [
+            { boatNo: 3, course: 1 },
+            { boatNo: 4, course: 4 }
+          ]
+        },
+        mainSheet: { honmei: { boatNo: 6 } }
+      },
+      "6-3-4",
+      ["本線"]
+    );
+assert.match(mappedTicketComment, /6号艇の3コース攻めを頭/);
+assert.match(mappedTicketComment, /3号艇のイン残しを2着/);
+assert.match(mappedTicketComment, /4号艇の4残しを3着/);
+
+const storedMappedTicketComment =
+  global.ChappyRenderTestHooks
+    .createTicketSpecificComment(
+      {
+        preRaceConditions: actualCourseData,
+        raceFlow: {
+          attackBoats: [{ boatNo: 6, course: 6 }],
+          holdBoats: [
+            { boatNo: 3, course: 3 },
+            { boatNo: 4, course: 4 }
+          ]
+        },
+        mainSheet: { honmei: { boatNo: 6 } }
+      },
+      "6-3-4",
+      ["本線"]
+    );
+assert.equal(
+  storedMappedTicketComment,
+  mappedTicketComment,
+  "保存済みpreRaceConditionsからも公式進入の買い目説明を復元する"
+);
+
+const identityTicketComment =
+  global.ChappyRenderTestHooks
+    .createTicketSpecificComment(
+      {
+        raceFlow: {
+          attackBoats: [{ boatNo: 3, course: 3 }],
+          holdBoats: [{ boatNo: 1, course: 1 }]
+        },
+        mainSheet: { honmei: { boatNo: 3 } }
+      },
+      "3-1-4",
+      ["本線"]
+    );
+assert.equal(
+  identityTicketComment,
+  "3号艇の3コース攻めを頭に、1号艇のイン残しを2着、4号艇の4残しを3着に置く本線。",
+  "枠なり時の既存買い目説明を維持する"
+);
+
+const partialCourseComment =
+  global.ChappyRenderTestHooks
+    .createTicketSpecificComment(
+      {
+        race: {
+          raw: {
+            ...actualCourseData,
+            startExhibition:
+              actualCourseData
+                .startExhibition
+                .slice(0, 5)
+          }
+        },
+        raceFlow: {
+          holdBoats: [{
+            boatNo: 4,
+            course: 1
+          }]
+        }
+      },
+      "4-1-2",
+      ["押さえ"]
+    );
+assert.match(
+  partialCourseComment,
+  /4号艇の4残しを頭/,
+  "公式6艇写像が欠ける時は部分コース表示を使わない"
+);
 
 const legacyRankingHtml =
   global.ChappyRenderTestHooks

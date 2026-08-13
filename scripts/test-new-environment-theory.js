@@ -61,6 +61,24 @@ function analysis(boatNo) {
   };
 }
 
+function withOfficialCourseMapping(
+  sourceEntries,
+  courseByBoat = {}
+) {
+  return sourceEntries.map((boat) => ({
+    ...boat,
+    startExhibition: {
+      boat: boat.boatNo,
+      course:
+        courseByBoat[boat.boatNo] ??
+        boat.boatNo,
+      st: boat.exhibitionSt,
+      isOfficialCourse: true,
+      mappingSource: "official-start-image"
+    }
+  }));
+}
+
 const entries = [1, 2, 3, 4, 5, 6].map((boatNo) => entry(boatNo));
 const analyses = [1, 2, 3, 4, 5, 6].map(analysis);
 const raceScenarios = {
@@ -185,11 +203,10 @@ assert.equal(
   "6項目の配点合計と適応点を一致させる"
 );
 
-const swappedEntries = entries.map((boat) => {
-  if (boat.boatNo === 3) return { ...boat, exhibitionCourse: 4 };
-  if (boat.boatNo === 4) return { ...boat, exhibitionCourse: 3 };
-  return boat;
-});
+const swappedEntries = withOfficialCourseMapping(
+  entries,
+  { 3: 4, 4: 3 }
+);
 const swapped = aiCore.buildNewEnvironmentTheory(
   swappedEntries,
   analyses,

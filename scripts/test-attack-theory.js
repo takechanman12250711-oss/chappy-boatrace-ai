@@ -50,7 +50,25 @@ function analysis(boatNo, raceFlow = 70) {
   };
 }
 
-const entries = [
+function withOfficialCourseMapping(
+  sourceEntries,
+  courseByBoat = {}
+) {
+  return sourceEntries.map((boat) => ({
+    ...boat,
+    startExhibition: {
+      boat: boat.boatNo,
+      course:
+        courseByBoat[boat.boatNo] ??
+        boat.boatNo,
+      st: boat.exhibitionSt,
+      isOfficialCourse: true,
+      mappingSource: "official-start-image"
+    }
+  }));
+}
+
+const entries = withOfficialCourseMapping([
   entry(1),
   entry(2, { exhibitionSt: 0.18 }),
   entry(3, {
@@ -69,7 +87,7 @@ const entries = [
   }),
   entry(5),
   entry(6)
-];
+], { 3: 4, 4: 3 });
 
 const analyses = [
   analysis(1, 78),
@@ -128,6 +146,47 @@ assert.equal(
   "4コース攻めは枠番ではなく展示進入4コース艇と接続"
 );
 assert.equal(fourAttack.attackTheoryAligned, true);
+
+const incompleteMapping = aiCore.buildAttackTheory(
+  entries.map((boat) =>
+    boat.boatNo === 6
+      ? { ...boat, startExhibition: null }
+      : boat
+  ),
+  analyses,
+  { stadiumCode: "12" }
+);
+const incompleteByBoat = new Map(
+  incompleteMapping.roles.map((boat) => [boat.boatNo, boat])
+);
+assert.equal(
+  incompleteByBoat.get(3).course,
+  3,
+  "公式進入が6艇そろわない場合は部分適用せず枠なりへ戻す"
+);
+assert.equal(incompleteByBoat.get(4).course, 4);
+
+const nonOfficialMapping = aiCore.buildAttackTheory(
+  entries.map((boat) => ({
+    ...boat,
+    startExhibition: {
+      ...boat.startExhibition,
+      isOfficialCourse: false,
+      mappingSource: "unverified"
+    }
+  })),
+  analyses,
+  { stadiumCode: "12" }
+);
+const nonOfficialByBoat = new Map(
+  nonOfficialMapping.roles.map((boat) => [boat.boatNo, boat])
+);
+assert.equal(
+  nonOfficialByBoat.get(3).course,
+  3,
+  "非公式進入は部分適用せず枠なりへ戻す"
+);
+assert.equal(nonOfficialByBoat.get(4).course, 4);
 
 const provisionalEntries = entries.map((boat) => ({
   ...boat,

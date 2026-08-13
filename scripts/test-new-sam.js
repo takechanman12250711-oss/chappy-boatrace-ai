@@ -70,6 +70,45 @@ assert.equal(result.ranking.find((boat) => boat.boatNo === 4).scoreAdjustment, 0
 assert.equal(result.ranking.find((boat) => boat.boatNo === 5).grade, "D");
 assert.equal(result.ranking.find((boat) => boat.boatNo === 5).scoreAdjustment, 0);
 
+const mappedEntries = entries.map(boat => ({
+  ...boat,
+  startExhibition: {
+    boat: boat.boatNo,
+    course:
+      boat.boatNo === 1
+        ? 5
+        : boat.boatNo === 5
+          ? 1
+          : boat.boatNo,
+    isOfficialCourse: true,
+    mappingSource: "official-start-image"
+  }
+}));
+const mappedResult = aiCore.buildNewSam(
+  mappedEntries,
+  analyses
+);
+assert.equal(
+  mappedResult.ranking.find(
+    boat => boat.boatNo === 1
+  ).course,
+  5
+);
+assert.equal(
+  mappedResult.ranking.find(
+    boat => boat.boatNo === 1
+  ).role,
+  "拾い",
+  "新サムの役割を物理艇番ではなく実コースへ接続する"
+);
+assert.equal(
+  mappedResult.ranking.find(
+    boat => boat.boatNo === 5
+  ).role,
+  "逃げ・残し",
+  "実1コースへ入った物理5号艇をイン役割として評価する"
+);
+
 const scenarios = aiCore.buildRaceScenarios(analyses, {
   stadiumCode: "12",
   entries

@@ -1,10 +1,15 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const { isDeepStrictEqual } = require("node:util");
 
 global.window = global;
 require("../js/evaluated-scenario-candidates");
 require("../js/ai-core");
+const theoryInput = require("../js/theory-input");
+require("../js/prediction");
+const predictionConditions =
+  require("../js/prediction-conditions");
 const practicalSelection =
   require("../js/practical-selection");
 const aiCore = global.ChappyAICore;
@@ -636,8 +641,736 @@ assert.deepEqual(
   "オッズが変わっても流しformationを変えない"
 );
 
+/*
+  公式展示進入で6号艇が3コースへ入り、3号艇が6コースへ
+  回ったケース。強い3コース艇の能力はそのまま物理艇6へ移し、
+  シナリオ・印・本線の頭が一貫して6号艇になることを確認する。
+*/
+const swappedAttackData = raceData("threeAttack");
+const strongCourseThree = {
+  ...swappedAttackData.entries[2],
+  boat: 6,
+  racerName: "6号艇",
+  // 古いfieldが枠なりを示しても、公式startExhibitionを正本にする。
+  exhibitionCourse: 6
+};
+const weakCourseSix = {
+  ...swappedAttackData.entries[5],
+  boat: 3,
+  racerName: "3号艇",
+  exhibitionCourse: 3
+};
+swappedAttackData.entries[2] = weakCourseSix;
+swappedAttackData.entries[5] = strongCourseThree;
+swappedAttackData.startExhibition =
+  swappedAttackData.startExhibition.map((row) => {
+    const boatNo = Number(row.boat);
+    if (boatNo === 3) {
+      return { ...row, course: 6, st: 0.24 };
+    }
+    if (boatNo === 6) {
+      return { ...row, course: 3, st: 0.03 };
+    }
+    return row;
+  });
+
+const swappedAttackFormal =
+  aiCore.buildPredictionData(swappedAttackData);
+assert.equal(
+  swappedAttackFormal.raceScenarios.mainScenario.type,
+  "threeAttack"
+);
+assert.equal(swappedAttackFormal.raceScenarios.attackerCourse, 3);
+assert.equal(swappedAttackFormal.raceScenarios.attacker, 6);
+assert.equal(
+  swappedAttackFormal.raceScenarios.mainScenario.attacker,
+  3,
+  "analysisのlegacy attackerはコース番号を維持する"
+);
+assert.equal(
+  swappedAttackFormal.raceScenarios.mainScenario.attackerBoatNo,
+  6
+);
+assert.equal(
+  swappedAttackFormal.raceScenarios.mainScenario.headBoatNo,
+  6
+);
+assert.equal(swappedAttackFormal.formations.mainEstablished, true);
+assert.ok(
+  swappedAttackFormal.formations.main.length >= 3 &&
+  swappedAttackFormal.formations.main.every(
+    ticket => ticket.startsWith("6-")
+  ),
+  "旧mark gateを含めて3コースの6号艇を本線頭へ接続する"
+);
+assert.ok(
+  !swappedAttackFormal.raceScenarios.blockedBoats.includes(6),
+  "物理艇のblockedBoatsを再度コース変換して攻め艇を除外しない"
+);
+
+const swappedAttackMerged =
+  aiCore.mergeWithPrediction(
+    legacyPrediction(1),
+    swappedAttackData
+  );
+assert.equal(swappedAttackMerged.mainSheet.honmei.boatNo, 6);
+assert.equal(
+  swappedAttackMerged.aiCore.analysisRaceScenarios
+    .mainScenario.attackerCourse,
+  3
+);
+assert.equal(
+  swappedAttackMerged.aiCore.analysisRaceScenarios
+    .mainScenario.attackerBoatNo,
+  6
+);
+assert.equal(
+  swappedAttackMerged.aiCore.raceScenarios
+    .mainScenario.headBoatNo,
+  6
+);
+assert.ok(
+  swappedAttackMerged.formation.main.every(
+    ticket => ticket.startsWith("6-")
+  ),
+  "最終統合でlegacy course aliasを艇番として読み戻さない"
+);
+
+/*
+  公式展示進入の物理艇IDだけを入れ替えても、コース上の能力配置が
+  同じなら予想から実戦選択まで同型でなければならない。6艇から2艇を
+  選ぶ全15通りを通し、艇番をコース規則として誤用する回帰を止める。
+*/
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function transposeBoatNo(value, left, right) {
+  const boatNo = Number(value || 0);
+  if (boatNo === left) return right;
+  if (boatNo === right) return left;
+  return boatNo;
+}
+
+function transposeTicket(ticket, left, right) {
+  return String(ticket || "")
+    .split("-")
+    .map(Number)
+    .map(boatNo =>
+      transposeBoatNo(boatNo, left, right)
+    )
+    .join("-");
+}
+
+function permutedLiveRace(base, left, right) {
+  const race = cloneJson(base);
+  race.source = "boatrace-official";
+  race.fetchedAt = "2026-08-13T00:00:00.000Z";
+  race.entries = race.entries
+    .map(entry => {
+      const physicalBoatNo = transposeBoatNo(
+        entry.boat,
+        left,
+        right
+      );
+
+      return {
+        ...entry,
+        boat: physicalBoatNo,
+        racerName: `${physicalBoatNo}号艇`
+      };
+    })
+    .sort((a, b) => Number(a.boat) - Number(b.boat));
+  race.startExhibition = race.startExhibition
+    .map(row => ({
+      ...row,
+      boat: transposeBoatNo(
+        row.boat,
+        left,
+        right
+      ),
+      isOfficialCourse: true,
+      mappingSource: "official-start-image"
+    }))
+    .sort((a, b) => Number(a.boat) - Number(b.boat));
+
+  return race;
+}
+
+function runProductionPrediction(race) {
+  const prepared = theoryInput.prepare(
+    cloneJson(race),
+    aiCore
+  );
+  const prediction = global.createPrediction(prepared);
+
+  return {
+    prediction,
+    selection:
+      practicalSelection.select(prediction)
+  };
+}
+
+function normalizedTicketList(
+  values,
+  left,
+  right,
+  sort = false
+) {
+  const tickets = (Array.isArray(values) ? values : [])
+    .map(value =>
+      transposeTicket(
+        typeof value === "string"
+          ? value
+          : value?.ticket,
+        left,
+        right
+      )
+    )
+    .filter(Boolean);
+
+  return sort ? tickets.sort() : tickets;
+}
+
+function normalizedRunDigest(run, left = 0, right = 0) {
+  const prediction = run.prediction;
+  const core = prediction.aiCore || {};
+  const scenarios =
+    core.analysisRaceScenarios ||
+    core.raceScenarios ||
+    {};
+  const normalizeBoat = value =>
+    transposeBoatNo(value, left, right);
+  const formationGroups = [
+    "main",
+    "cover",
+    "safety",
+    "flow",
+    "nagashi",
+    "hole",
+    "longshot"
+  ];
+
+  return {
+    analyses: (core.analyses || [])
+      .map(analysis => ({
+        boatNo: normalizeBoat(analysis.boatNo),
+        course:
+          Number(
+            analysis?.courseStructureTheory?.course ??
+            analysis?.attackTheory?.course ??
+            0
+          ) || null,
+        indexes: analysis.indexes,
+        roleScores: analysis.roleScores
+      }))
+      .sort((a, b) => a.boatNo - b.boatNo),
+    legacyEvaluations:
+      (prediction.boatEvaluation?.evaluations || [])
+        .map(evaluation => ({
+          boatNo: normalizeBoat(evaluation.boatNo),
+          course: Number(evaluation.course || 0) || null,
+          score: evaluation.score,
+          total: evaluation.total,
+          attack: evaluation.attack,
+          tenkai: evaluation.tenkai,
+          michu: evaluation.michu,
+          local: evaluation.local,
+          expected: evaluation.expected,
+          role: evaluation.role
+        }))
+        .sort((a, b) => a.boatNo - b.boatNo),
+    scenarios: (scenarios.scenarios || []).map(
+      scenario => ({
+        type: scenario.type,
+        score: scenario.score,
+        attackerCourse:
+          Number(
+            scenario.attackerCourse ??
+            scenario.attacker ??
+            0
+          ) || null,
+        attackerBoatNo: normalizeBoat(
+          scenario.attackerBoatNo ??
+          scenario.headBoatNo ??
+          scenario.attacker
+        ),
+        outcome: (scenario.outcome?.boats || [])
+          .map(row => ({
+            boatNo: normalizeBoat(row.boatNo),
+            firstScore: row.firstScore,
+            secondScore: row.secondScore,
+            thirdScore: row.thirdScore
+          }))
+          .sort((a, b) => a.boatNo - b.boatNo)
+      })
+    ),
+    marks: Object.fromEntries(
+      ["honmei", "taikou", "ana", "osae"]
+        .map(key => [
+          key,
+          normalizeBoat(
+            prediction.boatEvaluation?.[key]?.boatNo
+          )
+        ])
+    ),
+    formations: Object.fromEntries(
+      formationGroups.map(key => [
+        key,
+        normalizedTicketList(
+          prediction.formation?.[key],
+          left,
+          right,
+          true
+        )
+      ])
+    ),
+    mainEstablished:
+      prediction.formation?.mainEstablished === true,
+    selection: {
+      status: run.selection.status,
+      tickets: (run.selection.tickets || []).map(row => ({
+        ticket: transposeTicket(
+          row.ticket,
+          left,
+          right
+        ),
+        category: row.category,
+        displayCategory: row.displayCategory,
+        selectionTier: row.selectionTier || "",
+        priorityScore: Number(row.priorityScore || 0),
+        amount: Number(row.amount || 0),
+        source: row.source || ""
+      })),
+      ticketCount: (run.selection.tickets || []).length,
+      totalAmount: (run.selection.tickets || [])
+        .reduce(
+          (sum, row) => sum + Number(row.amount || 0),
+          0
+        )
+    },
+    buyTickets: normalizedTicketList(
+      prediction.buyTickets,
+      left,
+      right,
+      true
+    )
+  };
+}
+
+function replayRaceFromSnapshot(snapshot, template) {
+  const boats = snapshot.boats || [];
+  const formalCourseMapping =
+    boats.length === 6 &&
+    boats.every(boat =>
+      boat.courseOfficial === true &&
+      Number(boat.boatNo) >= 1 &&
+      Number(boat.boatNo) <= 6 &&
+      Number(boat.course) >= 1 &&
+      Number(boat.course) <= 6
+    ) &&
+    new Set(boats.map(boat => Number(boat.boatNo))).size === 6 &&
+    new Set(boats.map(boat => Number(boat.course))).size === 6;
+  const entries = boats.map(boat => ({
+    boat: boat.boatNo,
+    registerNo: boat.registerNo,
+    racerName: boat.racerName,
+    className: boat.className,
+    avgSt: boat.avgST,
+    nationalWinRate: boat.nationalWinRate,
+    national2Rate: boat.national2Rate,
+    national3Rate: boat.national3Rate,
+    localWinRate: boat.localWinRate,
+    localStarts: boat.localStarts,
+    motor2Rate: boat.motor2Rate,
+    motor3Rate: boat.motor3Rate,
+    boat2Rate: boat.boat2Rate,
+    exhibitionSt: boat.exhibitionST,
+    exhibitionTime: boat.exhibitionTime,
+    lapTime: boat.lapTime,
+    currentRace: {
+      stList:
+        boat.currentST === null ||
+        boat.currentST === undefined
+          ? []
+          : [boat.currentST]
+    }
+  }));
+
+  return {
+    source: snapshot.source,
+    fetchedAt: snapshot.sourceFetchedAt,
+    stadiumCode: template.stadiumCode,
+    stadiumName: template.stadiumName,
+    raceNo: template.raceNo,
+    date: template.date,
+    entries,
+    startExhibition:
+      formalCourseMapping
+        ? boats.map(boat => ({
+            boat: boat.boatNo,
+            course: boat.course,
+            st: boat.exhibitionST,
+            isOfficialCourse: true,
+            mappingSource:
+              boat.courseMappingSource ||
+              "official-start-image"
+          }))
+        : [],
+    weather: snapshot.weather,
+    odds: { byTicket: {} }
+  };
+}
+
+const identitySourceRace = raceData("threeAttack");
+const uniqueLocalRateByCourse = {
+  1: 5.6,
+  2: 5.4,
+  3: 7,
+  4: 5.2,
+  5: 5,
+  6: 4.8
+};
+identitySourceRace.entries =
+  identitySourceRace.entries.map(entry => ({
+    ...entry,
+    // 同率時の既存艇番tie-breakではなく、進入写像だけを比較する。
+    localWinRate:
+      uniqueLocalRateByCourse[Number(entry.boat)]
+  }));
+const identityLiveRace = permutedLiveRace(
+  identitySourceRace,
+  0,
+  0
+);
+const identityRun = runProductionPrediction(identityLiveRace);
+const identityDigest = normalizedRunDigest(identityRun);
+const twoBoatTranspositions = [];
+const permutationMismatches = [];
+
+for (let left = 1; left <= 6; left += 1) {
+  for (let right = left + 1; right <= 6; right += 1) {
+    twoBoatTranspositions.push([left, right]);
+  }
+}
+
+assert.equal(
+  twoBoatTranspositions.length,
+  15,
+  "6艇から2艇を選ぶ全15通りを検証する"
+);
+
+twoBoatTranspositions.forEach(([left, right]) => {
+  const label = `${left}↔${right}`;
+  const liveRace = permutedLiveRace(
+    identityLiveRace,
+    left,
+    right
+  );
+  const liveRun = runProductionPrediction(liveRace);
+  const normalizedLiveDigest =
+    normalizedRunDigest(liveRun, left, right);
+
+  if (!isDeepStrictEqual(normalizedLiveDigest, identityDigest)) {
+    permutationMismatches.push({
+      label,
+      actual: normalizedLiveDigest
+    });
+  }
+
+  const snapshot = predictionConditions.capture(
+    liveRace,
+    liveRun.prediction
+  );
+  assert.equal(snapshot.sourceTiming, "pre_deadline");
+  assert.equal(snapshot.officialResultUsed, false);
+  assert.equal(snapshot.dataAvailability.officialCourses, 6);
+  assert.equal(
+    Object.hasOwn(snapshot, "officialResult"),
+    false,
+    `${label}: 保存条件へ結果を混ぜない`
+  );
+  assert.deepEqual(
+    snapshot.boats.map(boat => [
+      boat.boatNo,
+      boat.course,
+      boat.courseOfficial,
+      boat.courseMappingSource
+    ]),
+    liveRace.startExhibition.map(row => [
+      row.boat,
+      row.course,
+      true,
+      "official-start-image"
+    ]),
+    `${label}: liveの正式boat→course写像を保存する`
+  );
+
+  const snapshotEntries = aiCore.getRaceEntries(snapshot);
+  const snapshotCourseMapping =
+    aiCore.buildOfficialCourseMapping(snapshotEntries);
+  const liveBoatAtCourse = course =>
+    Number(
+      liveRace.startExhibition.find(
+        row => Number(row.course) === course
+      )?.boat || 0
+    );
+  const liveCourseOfBoat = boatNo =>
+    Number(
+      liveRace.startExhibition.find(
+        row => Number(row.boat) === boatNo
+      )?.course || 0
+    );
+
+  assert.equal(
+    snapshotCourseMapping.formal,
+    true,
+    `${label}: schema4 snapshotを正式6艇写像として直接復元する`
+  );
+  assert.deepEqual(
+    [1, 2, 3, 4, 5, 6].map(course =>
+      snapshotCourseMapping.boatAtCourse(course)
+    ),
+    [1, 2, 3, 4, 5, 6].map(liveBoatAtCourse),
+    `${label}: snapshotのcourse→boatをliveと一致させる`
+  );
+  assert.deepEqual(
+    [1, 2, 3, 4, 5, 6].map(boatNo =>
+      snapshotCourseMapping.courseOfBoat(boatNo)
+    ),
+    [1, 2, 3, 4, 5, 6].map(liveCourseOfBoat),
+    `${label}: snapshotのboat→courseをliveと一致させる`
+  );
+
+  const replayRun = runProductionPrediction(
+    replayRaceFromSnapshot(snapshot, liveRace)
+  );
+  assert.deepEqual(
+    normalizedRunDigest(replayRun),
+    normalizedRunDigest(liveRun),
+    `${label}: live→preRaceConditions.capture→core replayで予想・買い目・金額を変えない`
+  );
+});
+
+function legacyEvaluationAtCourse(run, course) {
+  return run.prediction.boatEvaluation.evaluations.find(
+    row => Number(row.course) === Number(course)
+  );
+}
+
+function legacyExpectedByBoat(run) {
+  return run.prediction.boatEvaluation.evaluations
+    .map(row => [
+      Number(row.boatNo),
+      Number(row.course),
+      Number(row.expected)
+    ])
+    .sort((a, b) => a[0] - b[0]);
+}
+
+assert.deepEqual(
+  legacyExpectedByBoat(identityRun),
+  [
+    [1, 1, 48],
+    [2, 2, 56],
+    [3, 3, 80],
+    [4, 4, 66],
+    [5, 5, 69],
+    [6, 6, 73]
+  ],
+  "枠なり時のlegacy期待値指数を変えない"
+);
+
+const officialOneFourSwapRace = permutedLiveRace(
+  identityLiveRace,
+  1,
+  4
+);
+const officialOneFourSwapRun = runProductionPrediction(
+  officialOneFourSwapRace
+);
+
+[1, 4].forEach(course => {
+  assert.equal(
+    legacyEvaluationAtCourse(
+      officialOneFourSwapRun,
+      course
+    )?.expected,
+    legacyEvaluationAtCourse(
+      identityRun,
+      course
+    )?.expected,
+    `完全な公式1↔4入替では${course}コース能力のexpectedOuterを物理艇番で変えない`
+  );
+});
+
+const incompleteOneFourSwapRace = cloneJson(
+  officialOneFourSwapRace
+);
+incompleteOneFourSwapRace.startExhibition =
+  incompleteOneFourSwapRace.startExhibition.slice(0, 5);
+const incompleteOneFourSwapRun = runProductionPrediction(
+  incompleteOneFourSwapRace
+);
+
+assert.deepEqual(
+  legacyExpectedByBoat(incompleteOneFourSwapRun),
+  [
+    [1, 4, 63],
+    [2, 2, 56],
+    [3, 3, 80],
+    [4, 1, 51],
+    [5, 5, 69],
+    [6, 6, 73]
+  ],
+  "不完全な進入写像ではexpectedOuterの既存艇番基準を維持する"
+);
+
+const nonOfficialOneFourSwapRace = cloneJson(
+  officialOneFourSwapRace
+);
+nonOfficialOneFourSwapRace.startExhibition =
+  nonOfficialOneFourSwapRace.startExhibition.map(row => ({
+    ...row,
+    isOfficialCourse: false,
+    mappingSource: ""
+  }));
+
+assert.deepEqual(
+  legacyExpectedByBoat(
+    runProductionPrediction(
+      nonOfficialOneFourSwapRace
+    )
+  ),
+  legacyExpectedByBoat(incompleteOneFourSwapRun),
+  "非公式の6艇写像でもexpectedOuterを実コース基準へ切り替えない"
+);
+
+/*
+  保存済み・不完全な入力に course らしき値が残っていても、正式な
+  6艇写像でなければ実戦選択の頭コース判定へ使わない。物理1・4号艇の
+  course 表示だけを入れ替え、選抜・除外理由を含む結果が不変と確認する。
+*/
+const failClosedPracticalBaseline = cloneJson(
+  identityRun.prediction
+);
+failClosedPracticalBaseline.aiCore.courseMapping = {
+  formal: false,
+  byBoat: {
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 6
+  }
+};
+const failClosedPracticalMisleading = cloneJson(
+  failClosedPracticalBaseline
+);
+failClosedPracticalMisleading.aiCore.courseMapping.byBoat = {
+  1: 4,
+  2: 2,
+  3: 3,
+  4: 1,
+  5: 5,
+  6: 6
+};
+failClosedPracticalMisleading.boatEvaluation.evaluations =
+  failClosedPracticalMisleading.boatEvaluation.evaluations.map(
+    row => ({
+      ...row,
+      course:
+        Number(row.boatNo) === 1
+          ? 4
+          : Number(row.boatNo) === 4
+            ? 1
+            : Number(row.boatNo)
+    })
+  );
+
+function practicalGateDigest(selection) {
+  return {
+    status: selection.status,
+    reason: selection.reason,
+    tickets: (selection.tickets || []).map(row => ({
+      ticket: row.ticket,
+      category: row.category,
+      selectionTier: row.selectionTier || "",
+      priorityScore: Number(row.priorityScore || 0),
+      amount: Number(row.amount || 0)
+    })),
+    candidateDecisions: (selection.candidateDecisions || [])
+      .map(row => ({
+        ticket: row.ticket,
+        selected: row.selected === true,
+        reasonCode: row.reasonCode,
+        reason: row.reason
+      }))
+      .sort((a, b) => a.ticket.localeCompare(b.ticket)),
+    strongEscapeTrim:
+      selection.strongEscapeTrim || null,
+    priorityGateReplacement:
+      selection.priorityGateReplacement || null,
+    expansionSummary:
+      selection.expansionSummary || null
+  };
+}
+
+assert.deepEqual(
+  practicalGateDigest(
+    practicalSelection.select(
+      failClosedPracticalMisleading
+    )
+  ),
+  practicalGateDigest(
+    practicalSelection.select(
+      failClosedPracticalBaseline
+    )
+  ),
+  "正式でない部分写像は実戦選択のtrim・候補補完・順位ゲートへ影響させない"
+);
+
+const resultNoiseRace = {
+  ...cloneJson(identityLiveRace),
+  officialResult: {
+    finishOrder: [6, 5, 4],
+    winningTicket: "6-5-4",
+    payout: 999999
+  },
+  result: {
+    settled: true,
+    ticket: "6-5-4"
+  },
+  payout: 999999,
+  settled: true
+};
+const resultNoiseRun = runProductionPrediction(resultNoiseRace);
+assert.deepEqual(
+  normalizedRunDigest(resultNoiseRun),
+  identityDigest,
+  "結果・払戻をlive入力へ混ぜても予想・買い目・金額は参照しない"
+);
+assert.equal(
+  predictionConditions.capture(
+    resultNoiseRace,
+    resultNoiseRun.prediction
+  ).officialResultUsed,
+  false,
+  "保存条件は結果利用なしを明示する"
+);
+if (permutationMismatches.length) {
+  const firstMismatch = permutationMismatches[0];
+  assert.deepEqual(
+    firstMismatch.actual,
+    identityDigest,
+    `${permutationMismatches.map(row => row.label).join(", ")}: 公式進入の物理艇IDだけを入れ替えても予想・買い目・金額を変えない`
+  );
+}
+
 console.log("AIコア買い目接続テスト: 合格");
 console.log("- 本線不成立: 本線買い目0点");
 console.log("- 本線成立: AIコアから本線・押さえを生成");
 console.log("- フォーメーション候補: 正式主展開の全候補から根拠付き同一軸2券を厳選");
 console.log("- 2差し・3攻め・4カド: 各展開艇を本線頭に固定");
+console.log("- 公式進入の全15通りの2艇入替: AIコア→実戦選択→保存再生が同型");

@@ -246,6 +246,204 @@ assert.ok(
   "比較根拠不足でも2号艇の2着差し残り候補は維持する"
 );
 
+function officialCourseEntries() {
+  return Array.from({ length: 6 }, (_, index) => {
+    const boatNo = index + 1;
+    return {
+      boat: boatNo,
+      racerName: `${boatNo}号艇`,
+      avgSt: 0.15,
+      exhibitionTime: 6.8,
+      // 旧値が枠なりでも、完全な公式start写像を正本にする。
+      exhibitionCourse: boatNo
+    };
+  });
+}
+
+function officialStartRows(courseByBoat, isOfficial = true) {
+  return Array.from({ length: 6 }, (_, index) => {
+    const boatNo = index + 1;
+    return {
+      boat: boatNo,
+      course: courseByBoat[boatNo] ?? boatNo,
+      st: 0.12 + boatNo * 0.01,
+      isOfficialCourse: isOfficial,
+      mappingSource:
+        isOfficial ? "official-start-image" : "unverified"
+    };
+  });
+}
+
+function moveProfiles(source, mapping) {
+  return source.map((analysis) => {
+    const nextBoatNo = mapping[analysis.boatNo] ?? analysis.boatNo;
+    return {
+      ...JSON.parse(JSON.stringify(analysis)),
+      boatNo: nextBoatNo,
+      playerName: `${nextBoatNo}号艇`
+    };
+  });
+}
+
+function scoreVector(result) {
+  return Object.fromEntries(
+    result.scenarios
+      .map((scenario) => [scenario.type, scenario.score])
+      .sort(([left], [right]) => left.localeCompare(right))
+  );
+}
+
+const identityCourseData = {
+  stadiumCode: "12",
+  raceNo: 9,
+  entries: officialCourseEntries(),
+  startExhibition: officialStartRows({})
+};
+const identityCourseResult =
+  aiCore.buildRaceScenarios(analyses, identityCourseData);
+const swappedCourseAnalyses = moveProfiles(
+  analyses,
+  { 3: 6, 6: 3 }
+);
+const swappedCourseData = {
+  ...identityCourseData,
+  entries: officialCourseEntries(),
+  startExhibition: officialStartRows({ 3: 6, 6: 3 })
+};
+const swappedCourseResult =
+  aiCore.buildRaceScenarios(
+    swappedCourseAnalyses,
+    swappedCourseData
+  );
+
+assert.deepEqual(
+  scoreVector(swappedCourseResult),
+  scoreVector(identityCourseResult),
+  "同じコース能力配置なら艇番が入れ替わっても展開点を変えない"
+);
+assert.deepEqual(
+  swappedCourseResult.relations,
+  identityCourseResult.relations,
+  "隣接艇比較もコース占有艇同士で維持する"
+);
+assert.equal(swappedCourseResult.mainScenario.type, "threeAttack");
+assert.equal(swappedCourseResult.mainScenario.attacker, 3);
+assert.equal(swappedCourseResult.mainScenario.attackerCourse, 3);
+assert.equal(swappedCourseResult.mainScenario.attackerBoatNo, 6);
+assert.equal(swappedCourseResult.mainScenario.headBoatNo, 6);
+assert.equal(swappedCourseResult.attackerCourse, 3);
+assert.equal(swappedCourseResult.attacker, 6);
+
+const identityThreeOutcome = identityCourseResult.scenarios
+  .find((scenario) => scenario.type === "threeAttack")
+  .outcome.boats;
+const swappedThreeOutcome = swappedCourseResult.scenarios
+  .find((scenario) => scenario.type === "threeAttack")
+  .outcome.boats;
+const outcomeScores = (rows, boatNo) => {
+  const row = rows.find((item) => item.boatNo === boatNo);
+  return {
+    firstScore: row.firstScore,
+    secondScore: row.secondScore,
+    thirdScore: row.thirdScore,
+    reasons: row.reasons
+  };
+};
+assert.deepEqual(
+  outcomeScores(swappedThreeOutcome, 6),
+  outcomeScores(identityThreeOutcome, 3),
+  "3コース役割点を実際の6号艇へ移す"
+);
+assert.deepEqual(
+  outcomeScores(swappedThreeOutcome, 3),
+  outcomeScores(identityThreeOutcome, 6),
+  "6コースへ回った3号艇へ外の拾い役割を移す"
+);
+
+const nonOfficialSwapResult = aiCore.buildRaceScenarios(
+  analyses,
+  {
+    ...identityCourseData,
+    entries: officialCourseEntries(),
+    startExhibition: officialStartRows(
+      { 3: 6, 6: 3 },
+      false
+    )
+  }
+);
+assert.deepEqual(
+  scoreVector(nonOfficialSwapResult),
+  scoreVector(identityCourseResult),
+  "非公式の進入値は部分適用せず枠なりへ戻す"
+);
+assert.equal(nonOfficialSwapResult.attacker, 3);
+
+const duplicateOfficialResult = aiCore.buildRaceScenarios(
+  analyses,
+  {
+    ...identityCourseData,
+    entries: officialCourseEntries(),
+    startExhibition: officialStartRows({ 6: 5 })
+  }
+);
+assert.deepEqual(
+  scoreVector(duplicateOfficialResult),
+  scoreVector(identityCourseResult),
+  "公式でもコース重複なら6艇すべて枠なりへ戻す"
+);
+assert.equal(duplicateOfficialResult.attacker, 3);
+
+const swapThreeFourResult = aiCore.buildRaceScenarios(
+  moveProfiles(analyses, { 3: 4, 4: 3 }),
+  {
+    ...identityCourseData,
+    entries: officialCourseEntries(),
+    startExhibition: officialStartRows({ 3: 4, 4: 3 })
+  }
+);
+assert.equal(swapThreeFourResult.mainScenario.type, "threeAttack");
+assert.equal(swapThreeFourResult.attacker, 4);
+assert.deepEqual(
+  swapThreeFourResult.blockedBoats,
+  [3],
+  "3攻めで狭くなる4コース占有艇を物理艇番のまま保持する"
+);
+assert.ok(!swapThreeFourResult.blockedBoats.includes(4));
+
+const frameMappedResult = aiCore.buildRaceScenarios(
+  swappedCourseAnalyses,
+  {
+    ...swappedCourseData,
+    historyContext: {
+      venueRace: {
+        trend: {
+          frameMovement: {
+            "3": {
+              samples: 180,
+              hasBaseline: true,
+              movementDelta: -20,
+              label: "沈下"
+            },
+            "6": {
+              samples: 180,
+              hasBaseline: true,
+              movementDelta: 20,
+              label: "浮上"
+            }
+          }
+        }
+      }
+    }
+  }
+);
+assert.equal(
+  frameMappedResult.scenarios.find(
+    (scenario) => scenario.type === "threeAttack"
+  ).frameMovementAdjustment,
+  5,
+  "3コースの物理艇6に実際に適用した枠別補正を参照する"
+);
+
 console.log("展開シナリオエンジン専用テスト: 合格");
 console.log("- 4展開: 1逃げ・2差し・3攻め・4カド");
 console.log("- 役割: 攻め・壁・残し・展開・拾い・道中・当地");

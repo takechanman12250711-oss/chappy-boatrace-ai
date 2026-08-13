@@ -208,6 +208,24 @@ function analysis(boatNo) {
   };
 }
 
+function withOfficialCourseMapping(
+  sourceEntries,
+  courseByBoat = {}
+) {
+  return sourceEntries.map((boat) => ({
+    ...boat,
+    startExhibition: {
+      boat: boat.boatNo,
+      course:
+        courseByBoat[boat.boatNo] ??
+        boat.boatNo,
+      st: 0.12,
+      isOfficialCourse: true,
+      mappingSource: "official-start-image"
+    }
+  }));
+}
+
 const entries = [1, 2, 3, 4, 5, 6].map(entry);
 const analyses = [1, 2, 3, 4, 5, 6].map(analysis);
 const racers = entries.map((boat) =>
@@ -285,21 +303,10 @@ assert.equal(
   "7項目の配点合計と技量適性点を一致させる"
 );
 
-const swappedEntries = entries.map((boat) => {
-  if (boat.boatNo === 3) {
-    return {
-      ...boat,
-      exhibitionCourse: 4
-    };
-  }
-  if (boat.boatNo === 4) {
-    return {
-      ...boat,
-      exhibitionCourse: 3
-    };
-  }
-  return boat;
-});
+const swappedEntries = withOfficialCourseMapping(
+  entries,
+  { 3: 4, 4: 3 }
+);
 const swappedRacers = racers.map((racer) => {
   if (racer.registerNo !== "4003") return racer;
   return racerHistory("4003", 4);

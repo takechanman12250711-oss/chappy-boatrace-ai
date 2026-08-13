@@ -945,6 +945,11 @@
         ),
       raceFlow:
         prediction?.raceFlow || {},
+      courseMapping:
+        prediction?.aiCore
+          ?.courseMapping ||
+        prediction?.courseMapping ||
+        null,
       mainHeadBoatNo:
         boatNo(
           prediction?.mainSheet?.honmei ||
@@ -1005,6 +1010,27 @@
       targetsById,
       branchesById,
       evaluationsByBoat,
+      courseMappingFormal:
+        evidence.courseMapping
+          ?.formal === true,
+      courseByBoat:
+        new Map(
+          Object.entries(
+            evidence.courseMapping
+              ?.byBoat || {}
+          )
+            .map(([boat, course]) => [
+              Number(boat),
+              Number(course)
+            ])
+            .filter(
+              ([boat, course]) =>
+                boat >= 1 &&
+                boat <= 6 &&
+                course >= 1 &&
+                course <= 6
+            )
+        ),
       raceFlow,
       phases,
       mainHeadBoatNo:
@@ -1083,6 +1109,26 @@
   }
 
   function courseOf(context, targetBoatNo) {
+    if (
+      context.courseMappingFormal !== true
+    ) {
+      return targetBoatNo >= 1 &&
+        targetBoatNo <= 6
+        ? targetBoatNo
+        : 0;
+    }
+
+    const mapped =
+      Number(
+        context.courseByBoat?.get(
+          targetBoatNo
+        ) || 0
+      );
+
+    if (mapped >= 1 && mapped <= 6) {
+      return mapped;
+    }
+
     const evaluation =
       context.evaluationsByBoat.get(
         targetBoatNo
@@ -2264,7 +2310,8 @@
 
   function strongEscapeTrimPlan(
     prediction,
-    rows
+    rows,
+    context
   ) {
     const raceScenarios =
       findRaceScenarios(prediction);
@@ -2310,9 +2357,14 @@
     }
 
     const alternateRows =
-      arrayify(rows).filter(row =>
-        ticketBoats(row?.ticket)[0] !== 1
-      );
+      arrayify(rows).filter(row => {
+        const headBoatNo =
+          ticketBoats(row?.ticket)[0];
+        const headCourse =
+          courseOf(context, headBoatNo) ||
+          headBoatNo;
+        return headCourse !== 1;
+      });
     const maximumAlternateHeadCount =
       mainScore >=
         VERY_STRONG_ESCAPE_MINIMUM_SCORE
@@ -3789,15 +3841,24 @@
       .filter(row => {
         const headBoatNo =
           ticketBoats(row.ticket)[0];
+        const headCourse =
+          courseOf(
+            validationContext,
+            headBoatNo
+          ) || headBoatNo;
         const weakOuterHead =
-          (headBoatNo === 5 || headBoatNo === 6) &&
+          (headCourse === 5 || headCourse === 6) &&
           numeric(row.priorityScore, 0) < 80;
 
         if (weakOuterHead) {
+          const reason =
+            headCourse === headBoatNo
+              ? "5・6号艇頭の独立展開はpriority 80未満のため購入対象外。"
+              : `${headBoatNo}号艇は実${headCourse}コースの外頭となる独立展開で、priority 80未満のため購入対象外。`;
           rememberExpansionExclusion(
             row,
             "WEAK_OUTER_HEAD_INDEPENDENT",
-            "5・6号艇頭の独立展開はpriority 80未満のため購入対象外。"
+            reason
           );
         }
         return !weakOuterHead;
@@ -3872,12 +3933,22 @@
 
         const promotedHeadBoatNo =
           ticketBoats(row.ticket)[0];
-        if (promotedHeadBoatNo >= 4) {
+        const promotedHeadCourse =
+          courseOf(
+            validationContext,
+            promotedHeadBoatNo
+          ) || promotedHeadBoatNo;
+        if (promotedHeadCourse >= 4) {
+          const reason =
+            promotedHeadCourse ===
+              promotedHeadBoatNo
+              ? "4〜6号艇頭の候補補完は購入対象外。"
+              : `${promotedHeadBoatNo}号艇は実${promotedHeadCourse}コースの外頭となるため候補補完の購入対象外。`;
           recordDecision(
             row,
             false,
             "OUTER_HEAD_CANDIDATE_PROMOTION_PRUNED",
-            "4〜6号艇頭の候補補完は購入対象外。"
+            reason
           );
           return;
         }
@@ -3911,7 +3982,8 @@
     const strongEscapeTrim =
       strongEscapeTrimPlan(
         prediction,
-        selected
+        selected,
+        validationContext
       );
     const strongEscapeTrimmedTickets =
       new Set(
@@ -3957,14 +4029,31 @@
           .filter(row => {
             const headBoatNo =
               ticketBoats(row.ticket)[0];
+            const headCourse =
+              courseOf(
+                validationContext,
+                headBoatNo
+              ) || headBoatNo;
             return (
               row.selectionTier === "展開追加" &&
-              headBoatNo === 2 &&
+              headCourse === 2 &&
               numeric(row.priorityScore, 0) < 80
             );
           })
           .map(row => row.ticket)
       );
+    const weakTwoHeadReason = ticket => {
+      const headBoatNo =
+        ticketBoats(ticket)[0];
+      const headCourse =
+        courseOf(
+          validationContext,
+          headBoatNo
+        ) || headBoatNo;
+      return headCourse === headBoatNo
+        ? "2号艇頭の独立展開はpriority 80未満のため購入対象外。"
+        : `${headBoatNo}号艇は実2コース頭の独立展開で、priority 80未満のため購入対象外。`;
+    };
 
     if (weakTwoHeadTrimmedTickets.size) {
       const retained =
@@ -3990,7 +4079,9 @@
             decision.reasonCode =
               "WEAK_TWO_HEAD_INDEPENDENT";
             decision.reason =
-              "2号艇頭の独立展開はpriority 80未満のため購入対象外。";
+              weakTwoHeadReason(
+                decision.ticket
+              );
           }
         }
       );
@@ -4013,7 +4104,9 @@
             row,
             false,
             "WEAK_TWO_HEAD_INDEPENDENT",
-            "2号艇頭の独立展開はpriority 80未満のため購入対象外。"
+            weakTwoHeadReason(
+              row.ticket
+            )
           );
           return;
         }
@@ -4392,6 +4485,11 @@
                 ticketBoats(
                   outcome.ticket
                 )[0] || 0;
+              const headCourse =
+                courseOf(
+                  validationContext,
+                  headBoatNo
+                ) || headBoatNo;
 
               return (
                 outcome.selected !==
@@ -4405,7 +4503,7 @@
                 ) > 0 &&
                 outcome.reasonCode ===
                   "CANDIDATE_ONLY_EVALUATION" &&
-                headBoatNo === 1 &&
+                headCourse === 1 &&
                 firstFormationBranch(
                   outcome
                 ) ===
@@ -4499,7 +4597,11 @@
           );
         const reason =
           `priority上位${PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK}位内の` +
-          `1号艇頭formation:hole候補` +
+          (
+            ticketBoats(best.ticket)[0] === 1
+              ? `1号艇頭formation:hole候補`
+              : `${ticketBoats(best.ticket)[0]}号艇（実1コース）頭formation:hole候補`
+          ) +
           `（${best.ticket}・${best.priorityScore}点）が、` +
           `本線・フォーメーション由来2券を除く選択済み最弱券${weakest.ticket}` +
           `（${weakest.priorityScore}点）を上回るため1対1で置換。`;

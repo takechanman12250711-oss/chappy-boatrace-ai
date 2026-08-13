@@ -16,7 +16,7 @@
   "use strict";
 
   const CORE_VERSION =
-    "ai-core-v4.8.4-fixed-head-flow";
+    "ai-core-v4.8.5-actual-course-identity";
 
   /* ===============================
     基本ユーティリティ
@@ -193,6 +193,9 @@ function getBoatNo(boat) {
     data.startExhibition ??
     data.startInfo ??
     [];
+  const isPredictionConditionSnapshot =
+    Number(data?.schemaVersion || 0) === 4 &&
+    entries === data?.boats;
 
   function getItemBoatNo(item, fallback = 0) {
     if (!item || typeof item !== "object") {
@@ -224,7 +227,15 @@ function getBoatNo(boat) {
   }
 
   return entries.map((entry, index) => {
+    const snapshotBoatNo =
+      isPredictionConditionSnapshot
+        ? getItemBoatNo(
+            { boatNo: entry?.boatNo },
+            0
+          )
+        : 0;
     const boatNo =
+      snapshotBoatNo ||
       getBoatNo(entry) ||
       getItemBoatNo(entry, index + 1);
 
@@ -235,12 +246,16 @@ function getBoatNo(boat) {
         )
       : null;
 
-    const start = Array.isArray(startExhibition)
+    const externalStart = Array.isArray(startExhibition)
       ? startExhibition.find(
           (item, itemIndex) =>
             getItemBoatNo(item, itemIndex + 1) === boatNo
         )
       : null;
+    const start =
+      externalStart ||
+      entry?.startExhibition ||
+      null;
 
     const exhibitionTime =
       before?.exhibitionTime ??
@@ -282,6 +297,12 @@ function getBoatNo(boat) {
 
     return {
       ...entry,
+
+      ...(
+        isPredictionConditionSnapshot
+          ? { boat: boatNo }
+          : {}
+      ),
 
       boatNo,
 
@@ -2162,6 +2183,8 @@ function getBoatNo(boat) {
     data
   ) {
     const boatNo = getBoatNo(boat);
+    const courseMapping = buildOfficialCourseMapping(entries);
+    const scoringCourse = courseMapping.courseOfBoat(boatNo);
     const stIndex = calcStIndex(
       boat,
       entries,
@@ -2180,34 +2203,33 @@ function getBoatNo(boat) {
     score += 10;
     score += clsPower * 10;
 
-    if (boatNo === 1) score += venueFeature.inPower * 0.12;
-    if (boatNo === 2) score += venueFeature.sashi * 0.12;
-    if (boatNo === 3) score += venueFeature.makuri * 0.13;
-    if (boatNo === 4) score += venueFeature.kado * 0.15;
-    if (boatNo === 5) score += venueFeature.makuriSashi * 0.12;
-    if (boatNo === 6) score += venueFeature.outside * 0.12;
+    if (scoringCourse === 1) score += venueFeature.inPower * 0.12;
+    if (scoringCourse === 2) score += venueFeature.sashi * 0.12;
+    if (scoringCourse === 3) score += venueFeature.makuri * 0.13;
+    if (scoringCourse === 4) score += venueFeature.kado * 0.15;
+    if (scoringCourse === 5) score += venueFeature.makuriSashi * 0.12;
+    if (scoringCourse === 6) score += venueFeature.outside * 0.12;
 
-    if (boatNo >= 4 && stIndex >= 70) score += 7;
+    if (scoringCourse >= 4 && stIndex >= 70) score += 7;
 
     return clamp(round(score), INDEX_LIMIT.min, INDEX_LIMIT.max);
   }
 
   function getAttackTheoryCourse(boat, fallback) {
-    const candidates = [
-      boat?.exhibitionCourse,
-      boat?.beforeInfo?.exhibitionCourse,
-      boat?.beforeInfo?.course,
-      boat?.startExhibition?.course,
-      boat?.entryCourse,
-      boat?.course,
-      fallback
-    ];
-
-    for (const value of candidates) {
-      const course = toNumber(value, 0);
-      if (course >= 1 && course <= 6) return course;
+    const officialStart = boat?.startExhibition || {};
+    const officialCourse = toNumber(officialStart.course, 0);
+    if (
+      officialCourse >= 1 &&
+      officialCourse <= 6 &&
+      (
+        officialStart.isOfficialCourse === true ||
+        officialStart.mappingSource === "official-start-image"
+      )
+    ) {
+      return officialCourse;
     }
 
+    // 公式6艇写像が成立しない進入値は予想へ部分適用しない。
     return toNumber(fallback, 0);
   }
 
@@ -2267,6 +2289,56 @@ function getBoatNo(boat) {
       boats.size === 6 &&
       courses.size === 6
     );
+  }
+
+  /*
+    公式展示進入が6艇分そろい、艇番・コースがともに一意な時だけ
+    コースと物理艇を対応付ける。不完全・非公式・重複データでは
+    部分変換せず、レース全体を従来どおりの枠なりへ戻す。
+
+    正式性を検証した startExhibition.course を正本にすることで、
+    古い exhibitionCourse 等と食い違っても別の写像を使わない。
+  */
+  function buildOfficialCourseMapping(entries) {
+    const source = Array.isArray(entries) ? entries : [];
+    const formal = hasFormalStartCourseMapping(source);
+    const rows = source
+      .map((entry, index) => {
+        const boatNo = getBoatNo(entry) || index + 1;
+        const course = formal
+          ? toNumber(entry?.startExhibition?.course, 0)
+          : boatNo;
+
+        return { entry, boatNo, course };
+      })
+      .filter(
+        (row) =>
+          row.boatNo >= 1 &&
+          row.boatNo <= 6 &&
+          row.course >= 1 &&
+          row.course <= 6
+      );
+    const byCourse = new Map(
+      rows.map((row) => [row.course, row])
+    );
+    const byBoat = new Map(
+      rows.map((row) => [row.boatNo, row])
+    );
+
+    return {
+      formal,
+      boatAtCourse(course) {
+        const value = Number(course);
+        return Number(byCourse.get(value)?.boatNo || value) || null;
+      },
+      courseOfBoat(boatNo) {
+        const value = Number(boatNo);
+        return Number(byBoat.get(value)?.course || value) || null;
+      },
+      entryAtCourse(course) {
+        return byCourse.get(Number(course))?.entry || null;
+      }
+    };
   }
 
   function courseStructureGrade(score) {
@@ -2537,6 +2609,7 @@ function getBoatNo(boat) {
   function buildAttackTheory(entries, analyses, data) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const venueFeature = getVenueFeature(data);
     const slit = buildSlitAnalysis(
       sourceEntries,
@@ -2576,7 +2649,7 @@ function getBoatNo(boat) {
     const roles = sourceAnalyses.map((analysis) => {
       const boatNo = Number(analysis?.boatNo || 0);
       const entry = entryByBoat.get(boatNo) || {};
-      const course = getAttackTheoryCourse(entry, boatNo);
+      const course = courseMapping.courseOfBoat(boatNo);
       const role = attackTheoryRole(course);
       const isAttackCourse = course === 3 || course === 4;
       const slitBoat = slitByBoat.get(boatNo) || {};
@@ -2738,6 +2811,7 @@ function getBoatNo(boat) {
   ) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const mainScenario = raceScenarios?.mainScenario || null;
     const venueFeature = getVenueFeature(data);
     const slit = buildSlitAnalysis(
@@ -2791,9 +2865,18 @@ function getBoatNo(boat) {
     }
 
     const scenarioAttackerCourse =
-      Number(mainScenario?.attacker || 0) || null;
+      Number(
+        mainScenario?.attackerCourse ??
+        mainScenario?.attacker ??
+        0
+      ) || null;
     const scenarioAttackerBoatNo =
-      Number(mainScenario?.attackTheory?.boatNo || 0) ||
+      Number(
+        mainScenario?.attackerBoatNo ??
+        mainScenario?.headBoatNo ??
+        mainScenario?.attackTheory?.boatNo ??
+        0
+      ) ||
       (attackTheory?.roles || []).find(
         (boat) => Number(boat.course) === scenarioAttackerCourse
       )?.boatNo ||
@@ -2802,7 +2885,7 @@ function getBoatNo(boat) {
     const rows = sourceAnalyses.map((analysis) => {
       const boatNo = Number(analysis?.boatNo || 0);
       const entry = entryByBoat.get(boatNo) || {};
-      const course = getAttackTheoryCourse(entry, boatNo);
+      const course = courseMapping.courseOfBoat(boatNo);
       const isAttackSource =
         boatNo === Number(scenarioAttackerBoatNo || 0);
       const isSecondCandidate = secondCandidates.has(boatNo);
@@ -3004,6 +3087,7 @@ function getBoatNo(boat) {
   ) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const mainScenario = raceScenarios?.mainScenario || null;
     const venueFeature = getVenueFeature(data);
     const entryByBoat = new Map(
@@ -3044,7 +3128,11 @@ function getBoatNo(boat) {
       .filter((item) => item.time > 0)
       .sort((a, b) => a.time - b.time);
     const scenarioAttackerCourse =
-      Number(mainScenario?.attacker || 0) || null;
+      Number(
+        mainScenario?.attackerCourse ??
+        mainScenario?.attacker ??
+        0
+      ) || null;
 
     function rankScore(list, boatNo, points) {
       const rank = list.findIndex((item) => item.boatNo === boatNo);
@@ -3055,7 +3143,7 @@ function getBoatNo(boat) {
     const rows = sourceAnalyses.map((analysis) => {
       const boatNo = Number(analysis?.boatNo || 0);
       const entry = entryByBoat.get(boatNo) || {};
-      const course = getAttackTheoryCourse(entry, boatNo);
+      const course = courseMapping.courseOfBoat(boatNo);
       const results = getThisTermResults(entry)
         .map((value) => toNumber(value, NaN))
         .filter((value) => Number.isFinite(value) && value >= 1 && value <= 6);
@@ -3243,6 +3331,7 @@ function getBoatNo(boat) {
   ) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const mainScenario = raceScenarios?.mainScenario || null;
     const venueFeature = getVenueFeature(data);
     const entryByBoat = new Map(
@@ -3297,7 +3386,7 @@ function getBoatNo(boat) {
     const rows = sourceAnalyses.map((analysis) => {
       const boatNo = Number(analysis?.boatNo || 0);
       const entry = entryByBoat.get(boatNo) || {};
-      const course = getAttackTheoryCourse(entry, boatNo);
+      const course = courseMapping.courseOfBoat(boatNo);
       const localWinRate = optionalNumber(
         entry.localWinRate,
         entry.localRate,
@@ -3510,6 +3599,7 @@ function getBoatNo(boat) {
   ) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const mainScenario = raceScenarios?.mainScenario || null;
     const period = getNewEnvironmentPeriod(data);
     const venueFeature = getVenueFeature(data);
@@ -3576,7 +3666,7 @@ function getBoatNo(boat) {
     const rows = sourceAnalyses.map((analysis) => {
       const boatNo = Number(analysis?.boatNo || 0);
       const entry = entryByBoat.get(boatNo) || {};
-      const course = getAttackTheoryCourse(entry, boatNo);
+      const course = courseMapping.courseOfBoat(boatNo);
       const currentSt = getCurrentSeriesSt(entry);
       const results = getThisTermResults(entry);
       const exhibitionTime = getExhibitionTime(entry);
@@ -3888,6 +3978,7 @@ function getBoatNo(boat) {
   ) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const mainScenario = raceScenarios?.mainScenario || null;
     const venueFeature = getVenueFeature(data);
     const wind = normalizeWindDirection(data);
@@ -3961,7 +4052,7 @@ function getBoatNo(boat) {
     const roles = sourceAnalyses.map((analysis) => {
       const boatNo = Number(analysis?.boatNo || 0);
       const entry = entryByBoat.get(boatNo) || {};
-      const course = getAttackTheoryCourse(entry, boatNo);
+      const course = courseMapping.courseOfBoat(boatNo);
       const hasExhibitionEvidence =
         getExhibitionTime(entry) > 0 || getLapTime(entry) > 0;
       const isFirstCandidate = firstCandidates.has(boatNo);
@@ -4268,6 +4359,7 @@ function getBoatNo(boat) {
       Array.isArray(entries) ? entries : [];
     const sourceAnalyses =
       Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const mainScenario =
       raceScenarios?.mainScenario || null;
     const entryByBoat = new Map(
@@ -4385,11 +4477,7 @@ function getBoatNo(boat) {
         Number(analysis?.boatNo || 0);
       const entry =
         entryByBoat.get(boatNo) || {};
-      const course =
-        getAttackTheoryCourse(
-          entry,
-          boatNo
-        );
+      const course = courseMapping.courseOfBoat(boatNo);
       const registerNo =
         getRacerRegisterNo(entry);
       const history =
@@ -4857,6 +4945,7 @@ function getBoatNo(boat) {
   ) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const mainScenario = raceScenarios?.mainScenario || null;
     const entryByBoat = new Map(
       sourceEntries.map((boat) => [getBoatNo(boat), boat])
@@ -4937,7 +5026,7 @@ function getBoatNo(boat) {
     const roles = sourceAnalyses.map((analysis) => {
       const boatNo = Number(analysis?.boatNo || 0);
       const entry = entryByBoat.get(boatNo) || {};
-      const course = getAttackTheoryCourse(entry, boatNo);
+      const course = courseMapping.courseOfBoat(boatNo);
       const results = getThisTermResults(entry);
       const currentSt = getCurrentSeriesSt(entry);
       const maintenance = getMaintenanceComparison(entry);
@@ -5163,11 +5252,17 @@ function getBoatNo(boat) {
   ) {
     const sourceEntries = Array.isArray(entries) ? entries : [];
     const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+    const courseMapping = buildOfficialCourseMapping(sourceEntries);
     const mainScenario = raceScenarios?.mainScenario || null;
     const attackerNo =
       Number(
         raceScenarios?.attacker ??
-        mainScenario?.attacker ??
+        mainScenario?.attackerBoatNo ??
+        mainScenario?.headBoatNo ??
+        courseMapping.boatAtCourse(
+          mainScenario?.attackerCourse ??
+          mainScenario?.attacker
+        ) ??
         0
       ) || null;
     const entryByBoat = new Map(
@@ -5176,8 +5271,7 @@ function getBoatNo(boat) {
     const courseRows = sourceEntries
       .map((boat) => ({
         boatNo: getBoatNo(boat),
-        course: getAttackTheoryCourse(
-          boat,
+        course: courseMapping.courseOfBoat(
           getBoatNo(boat)
         )
       }))
@@ -5191,7 +5285,7 @@ function getBoatNo(boat) {
     const attackerEntry =
       entryByBoat.get(attackerNo) || null;
     const attackerCourse = attackerEntry
-      ? getAttackTheoryCourse(attackerEntry, attackerNo)
+      ? courseMapping.courseOfBoat(attackerNo)
       : 0;
     const wallCourse =
       attackerCourse >= 2 ? attackerCourse - 1 : null;
@@ -5201,19 +5295,13 @@ function getBoatNo(boat) {
         : courseRows.find(
             (item) => item.course === wallCourse
           )?.boatNo || null;
-    const boatByCourse = new Map(
-      courseRows.map((item) => [item.course, item.boatNo])
-    );
     const blockedBoats = new Set(
       (
         mainScenario?.blockedBoats ||
         raceScenarios?.blockedBoats ||
         []
       )
-        .map((courseOrBoat) => {
-          const value = Number(courseOrBoat);
-          return boatByCourse.get(value) || value;
-        })
+        .map(Number)
         .filter(Boolean)
     );
     const exhibitionTimes = sourceEntries
@@ -5269,7 +5357,7 @@ function getBoatNo(boat) {
     const roles = sourceAnalyses.map((analysis) => {
       const boatNo = Number(analysis?.boatNo || 0);
       const entry = entryByBoat.get(boatNo) || {};
-      const course = getAttackTheoryCourse(entry, boatNo);
+      const course = courseMapping.courseOfBoat(boatNo);
       const isAdjacent =
         Boolean(wallCandidateNo) &&
         boatNo === wallCandidateNo &&
@@ -5419,7 +5507,7 @@ function getBoatNo(boat) {
       const isBlocked = blockedBoats.has(boatNo);
       const isFormal =
         Boolean(mainScenario) &&
-        Boolean(attackerNo && attackerNo >= 2) &&
+        Boolean(attackerCourse && attackerCourse >= 2) &&
         isAdjacent &&
         (hasStartEvidence || hasExhibitionEvidence);
       const isAdopted =
@@ -5533,6 +5621,8 @@ function getBoatNo(boat) {
 
   function calcRaceFlowIndex(boat, entries, venueFeature, data) {
   const boatNo = getBoatNo(boat);
+  const courseMapping = buildOfficialCourseMapping(entries);
+  const scoringCourse = courseMapping.courseOfBoat(boatNo);
 
   /* ===============================
     自艇の基本指数
@@ -5594,29 +5684,33 @@ function getBoatNo(boat) {
     各コース艇を取得
   =============================== */
 
-  const boat1 = entries.find(
-    (entry) => getBoatNo(entry) === 1
-  );
+  const boat1 = courseMapping.entryAtCourse(1);
+  const boat2 = courseMapping.entryAtCourse(2);
+  const boat3 = courseMapping.entryAtCourse(3);
+  const boat4 = courseMapping.entryAtCourse(4);
+  const boat5 = courseMapping.entryAtCourse(5);
+  const boat6 = courseMapping.entryAtCourse(6);
 
-  const boat2 = entries.find(
-    (entry) => getBoatNo(entry) === 2
-  );
-
-  const boat3 = entries.find(
-    (entry) => getBoatNo(entry) === 3
-  );
-
-  const boat4 = entries.find(
-    (entry) => getBoatNo(entry) === 4
-  );
-
-  const boat5 = entries.find(
-    (entry) => getBoatNo(entry) === 5
-  );
-
-  const boat6 = entries.find(
-    (entry) => getBoatNo(entry) === 6
-  );
+  /*
+    3攻め・4カド成立はレース全体で共通の条件なので、
+    現在評価中の自艇ではなく各コース占有艇の攻め指数を使う。
+  */
+  const courseThreeAttackIndex = boat3
+    ? calcAttackIndex(
+        boat3,
+        entries,
+        venueFeature,
+        data
+      )
+    : 50;
+  const courseFourAttackIndex = boat4
+    ? calcAttackIndex(
+        boat4,
+        entries,
+        venueFeature,
+        data
+      )
+    : 50;
 
   /* ===============================
     各艇のST指数
@@ -5719,7 +5813,7 @@ function getBoatNo(boat) {
   const threeCanAttack =
     hasInnerComparison &&
     threeHasStAttack &&
-    attackIndex >= 66;
+    courseThreeAttackIndex >= 66;
 
   /*
     4カドも3号艇との実データ比較を必須にする。
@@ -5732,7 +5826,7 @@ function getBoatNo(boat) {
 
   const fourCanAttack =
     fourHasStAttack &&
-    attackIndex >= 67;
+    courseFourAttackIndex >= 67;
 
   /*
     5号艇は3・4の攻めに乗れる時だけ展開を上げる。
@@ -5762,18 +5856,18 @@ function getBoatNo(boat) {
   =============================== */
 
   if (oneCanEscape) {
-    if (boatNo === 1) score += 16;
-    if (boatNo === 2) score += 7;
-    if (boatNo === 3) score += 4;
-    if (boatNo === 4) score += 2;
+    if (scoringCourse === 1) score += 16;
+    if (scoringCourse === 2) score += 7;
+    if (scoringCourse === 3) score += 4;
+    if (scoringCourse === 4) score += 2;
     } else {
-    if (boatNo === 1) {
+    if (scoringCourse === 1) {
       score -= oneHasClearCollapse ? 5 : 0;
     }
 
-    if (boatNo === 2) score += 5;
-    if (boatNo === 3) score += 5;
-    if (boatNo === 4) score += 3;
+    if (scoringCourse === 2) score += 5;
+    if (scoringCourse === 3) score += 5;
+    if (scoringCourse === 4) score += 3;
   }
 
   /* ===============================
@@ -5783,11 +5877,11 @@ function getBoatNo(boat) {
   =============================== */
 
   if (twoCanSashi) {
-    if (boatNo === 2) score += 12;
-    if (boatNo === 1) score += 5;
-    if (boatNo === 3) score += 3;
+    if (scoringCourse === 2) score += 12;
+    if (scoringCourse === 1) score += 5;
+    if (scoringCourse === 3) score += 3;
   } else {
-    if (boatNo === 2) score += 3;
+    if (scoringCourse === 2) score += 3;
   }
 
   /* ===============================
@@ -5800,12 +5894,12 @@ function getBoatNo(boat) {
   =============================== */
 
   if (threeCanAttack) {
-    if (boatNo === 3) score += 13;
-    if (boatNo === 1) score += 6;
-    if (boatNo === 2) score += 5;
-    if (boatNo === 4) score -= 5;
-    if (boatNo === 5) score += 9;
-    if (boatNo === 6) score += 3;
+    if (scoringCourse === 3) score += 13;
+    if (scoringCourse === 1) score += 6;
+    if (scoringCourse === 2) score += 5;
+    if (scoringCourse === 4) score -= 5;
+    if (scoringCourse === 5) score += 9;
+    if (scoringCourse === 6) score += 3;
   }
 
   /* ===============================
@@ -5816,15 +5910,15 @@ function getBoatNo(boat) {
   =============================== */
 
   if (fourCanAttack && !threeCanAttack) {
-    if (boatNo === 4) score += 13;
-    if (boatNo === 1) score += 5;
-    if (boatNo === 2) score += 3;
-    if (boatNo === 5) score += 8;
-    if (boatNo === 6) score += 4;
+    if (scoringCourse === 4) score += 13;
+    if (scoringCourse === 1) score += 5;
+    if (scoringCourse === 2) score += 3;
+    if (scoringCourse === 5) score += 8;
+    if (scoringCourse === 6) score += 4;
   }
 
   if (fourCanAttack && threeCanAttack) {
-    if (boatNo === 4) score += 2;
+    if (scoringCourse === 4) score += 2;
   }
 
   /* ===============================
@@ -5832,11 +5926,11 @@ function getBoatNo(boat) {
   =============================== */
 
   if (fiveCanMakuriSashi) {
-    if (boatNo === 5) score += 12;
-    if (boatNo === 1) score += 4;
-    if (boatNo === 3) score += 3;
-    if (boatNo === 4) score += 2;
-  } else if (boatNo === 5) {
+    if (scoringCourse === 5) score += 12;
+    if (scoringCourse === 1) score += 4;
+    if (scoringCourse === 3) score += 3;
+    if (scoringCourse === 4) score += 2;
+  } else if (scoringCourse === 5) {
     score -= 5;
   }
 
@@ -5847,8 +5941,8 @@ function getBoatNo(boat) {
   =============================== */
 
   if (sixCanPickup) {
-    if (boatNo === 6) score += 9;
-  } else if (boatNo === 6) {
+    if (scoringCourse === 6) score += 9;
+  } else if (scoringCourse === 6) {
     score -= 7;
   }
 
@@ -5856,30 +5950,30 @@ function getBoatNo(boat) {
     コース別の基本
   =============================== */
 
-  if (boatNo === 1) {
+  if (scoringCourse === 1) {
     score += venueFeature.inPower * 0.16;
   }
 
-  if (boatNo === 2) {
+  if (scoringCourse === 2) {
     score += venueFeature.sashi * 0.16;
     score += 5;
   }
 
-  if (boatNo === 3) {
+  if (scoringCourse === 3) {
     score += venueFeature.makuri * 0.14;
   }
 
-  if (boatNo === 4) {
+  if (scoringCourse === 4) {
     score += venueFeature.kado * 0.14;
     score += venueFeature.makuriSashi * 0.08;
   }
 
-  if (boatNo === 5) {
+  if (scoringCourse === 5) {
     score += venueFeature.outside * 0.10;
     score += venueFeature.makuriSashi * 0.12;
   }
 
-  if (boatNo === 6) {
+  if (scoringCourse === 6) {
     score += venueFeature.outside * 0.08;
   }
 
@@ -5890,11 +5984,11 @@ function getBoatNo(boat) {
   if (wind >= 5 || wave >= 5) {
     score += venueFeature.roughWater * 0.08;
 
-    if (boatNo === 1) score -= 4;
-    if (boatNo === 2) score += 2;
-    if (boatNo === 4) score += 4;
-    if (boatNo === 5) score += 5;
-    if (boatNo === 6) score += 4;
+    if (scoringCourse === 1) score -= 4;
+    if (scoringCourse === 2) score += 2;
+    if (scoringCourse === 4) score += 4;
+    if (scoringCourse === 5) score += 5;
+    if (scoringCourse === 6) score += 4;
 
     if (localIndex >= 70) score += 4;
     if (turnIndex >= 70) score += 4;
@@ -5970,21 +6064,14 @@ function getBoatNo(boat) {
     venueFeature,
     data
   ) {
+    const courseMapping = buildOfficialCourseMapping(entries);
     const list = entries.map((boat, index) => {
 
       const boatNo = getBoatNo(boat);
       const avgSt = getOptionalAverageSt(boat);
       const exSt = getOptionalExhibitionSt(boat);
       const currentSt = getCurrentSeriesSt(boat);
-      const course = toNumber(
-        boat.exhibitionCourse ??
-        boat.beforeInfo?.exhibitionCourse ??
-        boat.beforeInfo?.course ??
-        boat.startExhibition?.course ??
-        boat.entryCourse ??
-        boat.course ??
-        boatNo ??
-        index + 1,
+      const course = courseMapping.courseOfBoat(
         boatNo || index + 1
       );
 
@@ -6206,6 +6293,9 @@ function getBoatNo(boat) {
 
   function buildDoubleTime(entries, analyses = []) {
 
+    const courseMapping =
+      buildOfficialCourseMapping(entries);
+
     const analysisByBoat = new Map(
       (Array.isArray(analyses) ? analyses : [])
         .map((boat) => [Number(boat?.boatNo || 0), boat])
@@ -6298,24 +6388,27 @@ function getBoatNo(boat) {
     const topBoatNo = sameTop
       ? exhibitionTop.boatNo
       : null;
+    const topCourse = topBoatNo
+      ? courseMapping.courseOfBoat(topBoatNo)
+      : null;
     const topAnalysis = topBoatNo
       ? analysisByBoat.get(topBoatNo) || null
       : null;
     const isOuterTarget = Boolean(
-      topBoatNo >= 4 && topBoatNo <= 6
+      topCourse >= 4 && topCourse <= 6
     );
 
     let linkRole = "";
     let linkScore = 0;
 
-    if (topBoatNo === 4) {
+    if (topCourse === 4) {
       linkRole = "攻め";
       linkScore = round(
         toNumber(topAnalysis?.roleScores?.attack, 0) * 0.45 +
         toNumber(topAnalysis?.roleScores?.flow, 0) * 0.35 +
         toNumber(topAnalysis?.indexes?.total, 0) * 0.20
       );
-    } else if (topBoatNo === 5 || topBoatNo === 6) {
+    } else if (topCourse === 5 || topCourse === 6) {
       linkRole = "拾い";
       linkScore = round(
         toNumber(topAnalysis?.roleScores?.pickup, 0) * 0.45 +
@@ -6400,6 +6493,9 @@ function getBoatNo(boat) {
 
   function buildNewSam(entries, analyses = []) {
 
+    const courseMapping =
+      buildOfficialCourseMapping(entries);
+
     const analysisByBoat = new Map(
       (Array.isArray(analyses) ? analyses : []).map((boat) => [
         Number(boat?.boatNo),
@@ -6424,7 +6520,8 @@ function getBoatNo(boat) {
 
         return {
           boatNo,
-          course: Number(boat?.course || boatNo),
+          course:
+            courseMapping.courseOfBoat(boatNo),
           name: getPlayerName(boat),
           exhibitionTime,
           lapTime,
@@ -6449,20 +6546,20 @@ function getBoatNo(boat) {
       return "D";
     }
 
-    function roleOf(boatNo, analysis) {
+    function roleOf(course, analysis) {
       const roleScores = analysis?.roleScores || {};
       const indexes = analysis?.indexes || {};
       let role = "";
       let roleScore = 0;
 
-      if (boatNo === 1) {
+      if (course === 1) {
         role = "逃げ・残し";
         roleScore = round(
           toNumber(roleScores.flow, 0) * 0.45 +
           toNumber(roleScores.hold, 0) * 0.35 +
           toNumber(indexes.total, 0) * 0.20
         );
-      } else if (boatNo === 2) {
+      } else if (course === 2) {
         role = "差し・残し";
         roleScore = round(
           toNumber(roleScores.attack, 0) * 0.35 +
@@ -6470,7 +6567,7 @@ function getBoatNo(boat) {
           toNumber(roleScores.flow, 0) * 0.20 +
           toNumber(indexes.total, 0) * 0.10
         );
-      } else if (boatNo === 3 || boatNo === 4) {
+      } else if (course === 3 || course === 4) {
         role = "攻め";
         roleScore = round(
           toNumber(roleScores.attack, 0) * 0.45 +
@@ -6493,7 +6590,7 @@ function getBoatNo(boat) {
       const analysis = analysisByBoat.get(boat.boatNo) || null;
       const diff = round(avg - boat.sum, 3);
       const grade = gradeOf(diff);
-      const { role, roleScore } = roleOf(boat.boatNo, analysis);
+      const { role, roleScore } = roleOf(boat.course, analysis);
       const isRoleAligned = Boolean(analysis && roleScore >= 60);
       /*
         新サムは展示・足100点の20点枠へ統合済み。
@@ -6619,6 +6716,9 @@ function getBoatNo(boat) {
 =============================== */
 
 const boatNo = getBoatNo(boat);
+const scoringCourse =
+  buildOfficialCourseMapping(entries)
+    .courseOfBoat(boatNo);
 
 const roleScores = {
   attack: clamp(
@@ -6663,9 +6763,9 @@ const roleScores = {
       indexes.local * 0.18 +
       indexes.national * 0.15 +
       indexes.st * 0.12 +
-      (boatNo === 1 ? 10 : 0) +
-      (boatNo === 2 ? 7 : 0) +
-      (boatNo === 4 ? 3 : 0)
+      (scoringCourse === 1 ? 10 : 0) +
+      (scoringCourse === 2 ? 7 : 0) +
+      (scoringCourse === 4 ? 3 : 0)
     ),
     INDEX_LIMIT.min,
     INDEX_LIMIT.max
@@ -6678,7 +6778,7 @@ const roleScores = {
       indexes.local * 0.20 +
       indexes.national * 0.12 +
       6 +
-      (boatNo >= 5 ? 7 : 0)
+      (scoringCourse >= 5 ? 7 : 0)
     ),
     INDEX_LIMIT.min,
     INDEX_LIMIT.max
@@ -6697,14 +6797,6 @@ const roleScores = {
   7. 選手実力
   8. モーター
 =============================== */
-
-const scoringCourse =
-  hasFormalStartCourseMapping(entries)
-    ? getAttackTheoryCourse(
-        boat,
-        boatNo
-      )
-    : boatNo;
 
 /*
   外枠が頭候補になるには、
@@ -7115,6 +7207,7 @@ function buildHoldPickupTheory(
 ) {
   const sourceEntries = Array.isArray(entries) ? entries : [];
   const sourceAnalyses = Array.isArray(analyses) ? analyses : [];
+  const courseMapping = buildOfficialCourseMapping(sourceEntries);
   const scenarioType = scenario?.type || "";
   const scenarioLabel = scenario?.label || "";
   const courseRows = sourceEntries
@@ -7123,7 +7216,7 @@ function buildHoldPickupTheory(
 
       return {
         boatNo,
-        course: getAttackTheoryCourse(entry, boatNo),
+        course: courseMapping.courseOfBoat(boatNo),
         entry
       };
     })
@@ -7141,10 +7234,17 @@ function buildHoldPickupTheory(
     courseRows.map((row) => [row.course, row.boatNo])
   );
   const scenarioAttackerCourse =
-    Number(options.attackerCourse ?? scenario?.attacker ?? 0) || null;
+    Number(
+      options.attackerCourse ??
+      scenario?.attackerCourse ??
+      scenario?.attacker ??
+      0
+    ) || null;
   const attackerBoatNo =
     Number(
       options.attackerBoatNo ??
+      scenario?.attackerBoatNo ??
+      scenario?.headBoatNo ??
       boatByCourse.get(scenarioAttackerCourse) ??
       scenario?.attacker ??
       0
@@ -7172,7 +7272,7 @@ function buildHoldPickupTheory(
     new Set(courseRows.map((row) => row.boatNo)).size === 6 &&
     new Set(courseRows.map((row) => row.course)).size === 6;
   const mappingFormal =
-    hasFormalStartCourseMapping(sourceEntries);
+    courseMapping.formal;
   const wallBoat = Number(wallTheory?.wallBoat || 0) || null;
   const wallCandidateNo =
     Number(wallTheory?.wallCandidateNo || 0) || null;
@@ -7563,6 +7663,11 @@ function buildRaceScenarios(
     : [];
 
   const entries = getRaceEntries(data);
+  const courseMapping = buildOfficialCourseMapping(entries);
+  const oneNo = courseMapping.boatAtCourse(1);
+  const twoNo = courseMapping.boatAtCourse(2);
+  const threeNo = courseMapping.boatAtCourse(3);
+  const fourNo = courseMapping.boatAtCourse(4);
   const venue = getVenueFeature(data);
   const slit = buildSlitAnalysis(
     entries,
@@ -7943,11 +8048,12 @@ function buildRaceScenarios(
 
     if (!boat?.isActionable) return 0;
 
+    const course = courseMapping.courseOfBoat(no);
     const roleMatches =
-      (no === 1 && scenarioType === "escape") ||
-      (no === 2 && scenarioType === "sashi") ||
-      (no === 3 && scenarioType === "threeAttack") ||
-      (no === 4 && scenarioType === "fourAttack");
+      (course === 1 && scenarioType === "escape") ||
+      (course === 2 && scenarioType === "sashi") ||
+      (course === 3 && scenarioType === "threeAttack") ||
+      (course === 4 && scenarioType === "fourAttack");
 
     return roleMatches
       ? boat.scoreAdjustment
@@ -7960,21 +8066,21 @@ function buildRaceScenarios(
 
   let escapeScore =
     venue.inPower * 0.30 +
-    flow(1) * 0.28 +
-    hold(1) * 0.22 +
-    st(1) * 0.12 +
+    flow(oneNo) * 0.28 +
+    hold(oneNo) * 0.22 +
+    st(oneNo) * 0.12 +
     4;
 
-  const escapeSlit = slitScenarioAdjustment(1, 2);
-  const sashiSlit = slitScenarioAdjustment(2, 1);
-  const threeAttackSlit = slitScenarioAdjustment(3, 2);
-  const fourAttackSlit = slitScenarioAdjustment(4, 3);
-  const escapeNewSam = newSamScenarioAdjustment(1, "escape");
-  const sashiNewSam = newSamScenarioAdjustment(2, "sashi");
+  const escapeSlit = slitScenarioAdjustment(oneNo, twoNo);
+  const sashiSlit = slitScenarioAdjustment(twoNo, oneNo);
+  const threeAttackSlit = slitScenarioAdjustment(threeNo, twoNo);
+  const fourAttackSlit = slitScenarioAdjustment(fourNo, threeNo);
+  const escapeNewSam = newSamScenarioAdjustment(oneNo, "escape");
+  const sashiNewSam = newSamScenarioAdjustment(twoNo, "sashi");
   const threeAttackNewSam =
-    newSamScenarioAdjustment(3, "threeAttack");
+    newSamScenarioAdjustment(threeNo, "threeAttack");
   const fourAttackNewSam =
-    newSamScenarioAdjustment(4, "fourAttack");
+    newSamScenarioAdjustment(fourNo, "fourAttack");
 
   function frameMovementAdjustment(no) {
     return toNumber(
@@ -7986,13 +8092,13 @@ function buildRaceScenarios(
   }
 
   const twoVsOne =
-    relationEdge(2, 1);
+    relationEdge(twoNo, oneNo);
 
   const threeVsTwo =
-    relationEdge(3, 2);
+    relationEdge(threeNo, twoNo);
 
   const fourVsThree =
-    relationEdge(4, 3);
+    relationEdge(fourNo, threeNo);
 
   /*
     評価済みの艇が主攻め艇の外から追走・残しできる場合は、
@@ -8008,12 +8114,7 @@ function buildRaceScenarios(
   */
   const preservationRequests = [];
   const entryAtCourse = (course) =>
-    entries.find((entry) =>
-      getAttackTheoryCourse(
-        entry,
-        getBoatNo(entry)
-      ) === Number(course)
-    ) || null;
+    courseMapping.entryAtCourse(course);
   const threeAttackEntry = entryAtCourse(3);
   const continuationEntry = entryAtCourse(4);
   const threeAttackBoatNo = getBoatNo(threeAttackEntry);
@@ -8030,19 +8131,12 @@ function buildRaceScenarios(
         )
     ) || null;
   const continuationCourse = continuationEntry
-    ? getAttackTheoryCourse(
-        continuationEntry,
-        continuationBoatNo
-      )
+    ? courseMapping.courseOfBoat(continuationBoatNo)
     : null;
   const threeAttackCourse = threeAttackEntry
-    ? getAttackTheoryCourse(
-        threeAttackEntry,
-        threeAttackBoatNo
-      )
+    ? courseMapping.courseOfBoat(threeAttackBoatNo)
     : null;
   const mappingMatched =
-    threeAttackBoatNo === 3 &&
     threeAttackCourse === 3 &&
     continuationBoatNo >= 1 &&
     continuationBoatNo <= 6 &&
@@ -8145,13 +8239,13 @@ function buildRaceScenarios(
 
   const innerThreat =
     Math.max(
-      relationEdge(2, 1),
-      relationEdge(3, 1)
+      relationEdge(twoNo, oneNo),
+      relationEdge(threeNo, oneNo)
     );
 
   if (
-    hasComparison(1, 2) ||
-    hasComparison(1, 3)
+    hasComparison(oneNo, twoNo) ||
+    hasComparison(oneNo, threeNo)
   ) {
     if (innerThreat >= 10) {
   escapeScore -= 8;
@@ -8162,19 +8256,19 @@ function buildRaceScenarios(
 }
   }
 
-  escapeScore += frameMovementAdjustment(1);
+  escapeScore += frameMovementAdjustment(oneNo);
   escapeScore += escapeSlit.score;
   escapeScore += escapeNewSam;
 
   let sashiScore =
     venue.sashi * 0.25 +
-    flow(2) * 0.25 +
-    hold(2) * 0.20 +
-    attack(2) * 0.15 +
-    road(2) * 0.10 +
-    total(2) * 0.05;
+    flow(twoNo) * 0.25 +
+    hold(twoNo) * 0.20 +
+    attack(twoNo) * 0.15 +
+    road(twoNo) * 0.10 +
+    total(twoNo) * 0.05;
 
-  if (hasComparison(2, 1)) {
+  if (hasComparison(twoNo, oneNo)) {
     if (twoVsOne >= 8) {
   sashiScore += 8;
 } else if (twoVsOne >= 4) {
@@ -8191,25 +8285,25 @@ function buildRaceScenarios(
     sashiScore -= 15;
   }
 
-  sashiScore += frameMovementAdjustment(2);
+  sashiScore += frameMovementAdjustment(twoNo);
   sashiScore += sashiSlit.score;
   sashiScore += sashiNewSam;
 
   let threeAttackScore =
   venue.makuri * 0.20 +
-  flow(3) * 0.30 +
-  attack(3) * 0.25 +
-  st(3) * 0.12 +
-  total(3) * 0.05 +
+  flow(threeNo) * 0.30 +
+  attack(threeNo) * 0.25 +
+  st(threeNo) * 0.12 +
+  total(threeNo) * 0.05 +
   4;
 
 const threeVsOne =
-  relationEdge(3, 1);
+  relationEdge(threeNo, oneNo);
 
 /*
   3攻めの入口は、まず2号艇との比較で判定する。
 */
-if (hasComparison(3, 2)) {
+if (hasComparison(threeNo, twoNo)) {
   if (threeVsTwo >= 10) {
     threeAttackScore += 18;
   } else if (threeVsTwo >= 6) {
@@ -8231,7 +8325,7 @@ if (hasComparison(3, 2)) {
 
   3対2だけで3攻めを最有力にしない。
 */
-if (hasComparison(3, 1)) {
+if (hasComparison(threeNo, oneNo)) {
   if (threeVsOne <= -10) {
     threeAttackScore -= 14;
   } else if (threeVsOne <= -6) {
@@ -8241,19 +8335,19 @@ if (hasComparison(3, 1)) {
   }
 }
 
-  threeAttackScore += frameMovementAdjustment(3);
+  threeAttackScore += frameMovementAdjustment(threeNo);
   threeAttackScore += threeAttackSlit.score;
   threeAttackScore += threeAttackNewSam;
 
   let fourAttackScore =
     venue.kado * 0.22 +
-    flow(4) * 0.28 +
-    attack(4) * 0.25 +
-    st(4) * 0.12 +
-    total(4) * 0.05 +
+    flow(fourNo) * 0.28 +
+    attack(fourNo) * 0.25 +
+    st(fourNo) * 0.12 +
+    total(fourNo) * 0.05 +
     4;
 
-  if (hasComparison(4, 3)) {
+  if (hasComparison(fourNo, threeNo)) {
     if (fourVsThree >= 10) {
       fourAttackScore += 18;
     } else if (fourVsThree >= 6) {
@@ -8269,11 +8363,11 @@ if (hasComparison(3, 1)) {
   }
 
 
-  fourAttackScore += frameMovementAdjustment(4);
+  fourAttackScore += frameMovementAdjustment(fourNo);
   fourAttackScore += fourAttackSlit.score;
   fourAttackScore += fourAttackNewSam;
 
-  if (doubleTime.activeBoat === 4) {
+  if (doubleTime.activeBoat === fourNo) {
     fourAttackScore += doubleTime.scoreAdjustment;
   }
 
@@ -8319,8 +8413,8 @@ if (hasComparison(3, 1)) {
       Math.max(0, escapeScore - sashiScore)
     ),
     nationalSkillGap: round(
-      toNumber(getAnalysis(2)?.indexes?.national, 0) -
-      toNumber(getAnalysis(1)?.indexes?.national, 0)
+      toNumber(getAnalysis(twoNo)?.indexes?.national, 0) -
+      toNumber(getAnalysis(oneNo)?.indexes?.national, 0)
     )
   };
 
@@ -8387,6 +8481,7 @@ if (hasComparison(3, 1)) {
   function buildOutcome(type) {
     const outcome = list.map((boat) => {
       const no = Number(boat.boatNo);
+      const course = courseMapping.courseOfBoat(no);
 
       let firstScore =
         total(no) * 0.30 +
@@ -8412,44 +8507,44 @@ if (hasComparison(3, 1)) {
       const reasons = [];
 
       if (type === "escape") {
-        if (no === 1) {
+        if (course === 1) {
           firstScore += 20;
           secondScore += 10;
           reasons.push("イン逃げ・残し");
         }
 
-        if (no === 2) {
+        if (course === 2) {
   secondScore += 10;
   thirdScore += 7;
   reasons.push("2コース差し残り");
 }
 
-        if (no === 3) {
+        if (course === 3) {
           secondScore += 6;
           thirdScore += 6;
           reasons.push("センター追走");
         }
 
-        if (no === 4) {
+        if (course === 4) {
           thirdScore += 4;
           reasons.push("4コース残し");
         }
       }
 
       if (type === "sashi") {
-        if (no === 2) {
+        if (course === 2) {
   firstScore += 12;
   secondScore += 10;
   reasons.push("2コース差し");
 }
 
-        if (no === 1) {
+        if (course === 1) {
           secondScore += 14;
           thirdScore += 8;
           reasons.push("イン残し");
         }
 
-        if (no === 3) {
+        if (course === 3) {
           secondScore += 6;
           thirdScore += 7;
           reasons.push("差し展開の外側追走");
@@ -8457,19 +8552,19 @@ if (hasComparison(3, 1)) {
       }
 
       if (type === "threeAttack") {
-        if (no === 3) {
+        if (course === 3) {
           firstScore += 18;
           secondScore += 8;
           reasons.push("3コース攻め");
         }
 
-        if (no === 1) {
+        if (course === 1) {
           secondScore += 12;
           thirdScore += 8;
           reasons.push("3攻め時のイン残し");
         }
 
-        if (no === 2) {
+        if (course === 2) {
           secondScore += 9;
           thirdScore += 9;
           reasons.push("差し・内残し");
@@ -8492,43 +8587,43 @@ if (hasComparison(3, 1)) {
           }
         }
 
-        if (no === 5) {
+        if (course === 5) {
           secondScore += 9;
           thirdScore += 13;
           reasons.push("3攻めに乗るまくり差し");
         }
 
-        if (no === 6) {
+        if (course === 6) {
           thirdScore += 6;
           reasons.push("最内差し・道中拾い");
         }
       }
 
       if (type === "fourAttack") {
-        if (no === 4) {
+        if (course === 4) {
           firstScore += 18;
           secondScore += 8;
           reasons.push("4カド攻め");
         }
 
-        if (no === 1) {
+        if (course === 1) {
           secondScore += 10;
           thirdScore += 8;
           reasons.push("カド攻め時のイン残し");
         }
 
-        if (no === 2) {
+        if (course === 2) {
           thirdScore += 7;
           reasons.push("差し残り");
         }
 
-        if (no === 5) {
+        if (course === 5) {
           secondScore += 12;
           thirdScore += 13;
           reasons.push("カド攻めに乗るまくり差し");
         }
 
-        if (no === 6) {
+        if (course === 6) {
           secondScore += 5;
           thirdScore += 10;
           reasons.push("最内差し・展開拾い");
@@ -8541,7 +8636,7 @@ if (hasComparison(3, 1)) {
       ) {
         const adjustment = doubleTime.scoreAdjustment;
 
-        if (no === 4 && type === "fourAttack") {
+        if (course === 4 && type === "fourAttack") {
           firstScore += adjustment;
           secondScore += adjustment;
           reasons.push(
@@ -8550,7 +8645,7 @@ if (hasComparison(3, 1)) {
         }
 
         if (
-          no === 5 &&
+          course === 5 &&
           (type === "threeAttack" || type === "fourAttack")
         ) {
           secondScore += adjustment;
@@ -8561,7 +8656,7 @@ if (hasComparison(3, 1)) {
         }
 
         if (
-          no === 6 &&
+          course === 6 &&
           (type === "threeAttack" || type === "fourAttack")
         ) {
           secondScore += type === "fourAttack"
@@ -8582,12 +8677,12 @@ if (hasComparison(3, 1)) {
           `新サム${newSamEvidence.grade}・` +
           `${newSamEvidence.role}`;
 
-        if (no === 1 && type === "escape") {
+        if (course === 1 && type === "escape") {
           firstScore += adjustment;
           secondScore += Math.ceil(adjustment / 2);
           reasons.push(`${label} +${adjustment}`);
         } else if (
-          no === 1 &&
+          course === 1 &&
           (type === "threeAttack" || type === "fourAttack")
         ) {
           secondScore += adjustment;
@@ -8595,12 +8690,12 @@ if (hasComparison(3, 1)) {
           reasons.push(`${label} +${adjustment}`);
         }
 
-        if (no === 2 && type === "sashi") {
+        if (course === 2 && type === "sashi") {
           firstScore += adjustment;
           secondScore += adjustment;
           reasons.push(`${label} +${adjustment}`);
         } else if (
-          no === 2 &&
+          course === 2 &&
           (type === "threeAttack" || type === "fourAttack")
         ) {
           secondScore += adjustment;
@@ -8608,20 +8703,20 @@ if (hasComparison(3, 1)) {
           reasons.push(`${label} +${adjustment}`);
         }
 
-        if (no === 3 && type === "threeAttack") {
+        if (course === 3 && type === "threeAttack") {
           firstScore += adjustment;
           secondScore += adjustment;
           reasons.push(`${label} +${adjustment}`);
         }
 
-        if (no === 4 && type === "fourAttack") {
+        if (course === 4 && type === "fourAttack") {
           firstScore += adjustment;
           secondScore += adjustment;
           reasons.push(`${label} +${adjustment}`);
         }
 
         if (
-          (no === 5 || no === 6) &&
+          (course === 5 || course === 6) &&
           (type === "threeAttack" || type === "fourAttack")
         ) {
           secondScore += Math.ceil(adjustment / 2);
@@ -8682,14 +8777,20 @@ if (hasComparison(3, 1)) {
   const scenarios = [
     {
       type: "escape",
-      label: "1号艇逃げ",
+      label:
+        oneNo === 1
+          ? "1号艇逃げ"
+          : `${oneNo}号艇の1コース逃げ`,
       score: escapeScore,
       slitAdjustment: escapeSlit.score,
       slitReasons: escapeSlit.reasons,
       newSamAdjustment: escapeNewSam,
       frameMovementAdjustment:
-        frameMovementAdjustment(1),
+        frameMovementAdjustment(oneNo),
       attacker: 1,
+      attackerCourse: 1,
+      attackerBoatNo: oneNo,
+      headBoatNo: oneNo,
       blockedBoats: [],
       outcome: buildOutcome("escape")
     },
@@ -8701,8 +8802,11 @@ if (hasComparison(3, 1)) {
       slitReasons: sashiSlit.reasons,
       newSamAdjustment: sashiNewSam,
       frameMovementAdjustment:
-        frameMovementAdjustment(2),
+        frameMovementAdjustment(twoNo),
       attacker: 2,
+      attackerCourse: 2,
+      attackerBoatNo: twoNo,
+      headBoatNo: twoNo,
       blockedBoats: [],
       outcome: buildOutcome("sashi")
     },
@@ -8717,8 +8821,11 @@ if (hasComparison(3, 1)) {
       slitReasons: threeAttackSlit.reasons,
       newSamAdjustment: threeAttackNewSam,
       frameMovementAdjustment:
-        frameMovementAdjustment(3),
+        frameMovementAdjustment(threeNo),
       attacker: 3,
+      attackerCourse: 3,
+      attackerBoatNo: threeNo,
+      headBoatNo: threeNo,
       blockedBoats:
         threeAttackScore >= 72 &&
         !continuationPreservation.qualified &&
@@ -8738,13 +8845,16 @@ if (hasComparison(3, 1)) {
       slitAdjustment: fourAttackSlit.score,
       slitReasons: fourAttackSlit.reasons,
       doubleTimeAdjustment:
-        doubleTime.activeBoat === 4
+        doubleTime.activeBoat === fourNo
           ? doubleTime.scoreAdjustment
           : 0,
       newSamAdjustment: fourAttackNewSam,
       frameMovementAdjustment:
-        frameMovementAdjustment(4),
+        frameMovementAdjustment(fourNo),
       attacker: 4,
+      attackerCourse: 4,
+      attackerBoatNo: fourNo,
+      headBoatNo: fourNo,
       blockedBoats: [],
       outcome: buildOutcome("fourAttack")
     }
@@ -8800,27 +8910,21 @@ if (hasComparison(3, 1)) {
   }
 
   const attackerCourse =
-    Number(mainScenario?.attacker || 0) || null;
+    Number(
+      mainScenario?.attackerCourse ??
+      mainScenario?.attacker ??
+      0
+    ) || null;
   const boatByCourse = new Map(
-    entries
-      .map((entry) => ({
-        boatNo: getBoatNo(entry),
-        course: getAttackTheoryCourse(
-          entry,
-          getBoatNo(entry)
-        )
-      }))
-      .filter(
-        (row) =>
-          row.boatNo >= 1 &&
-          row.boatNo <= 6 &&
-          row.course >= 1 &&
-          row.course <= 6
-      )
-      .map((row) => [row.course, row.boatNo])
+    [1, 2, 3, 4, 5, 6].map((course) => [
+      course,
+      courseMapping.boatAtCourse(course)
+    ])
   );
   const attacker =
     Number(
+      mainScenario?.attackerBoatNo ??
+      mainScenario?.headBoatNo ??
       boatByCourse.get(attackerCourse) ??
       attackerCourse ??
       0
@@ -8864,10 +8968,7 @@ if (hasComparison(3, 1)) {
 
   const blockedBoats = Array.isArray(mainScenario?.blockedBoats)
     ? mainScenario.blockedBoats
-        .map((courseOrBoat) =>
-          boatByCourse.get(Number(courseOrBoat)) ||
-          Number(courseOrBoat)
-        )
+        .map(Number)
         .filter(Boolean)
     : [];
 
@@ -9107,6 +9208,12 @@ if (hasComparison(3, 1)) {
 
     attacker,
 
+    attackerCourse,
+
+    attackerBoatNo: attacker,
+
+    headBoatNo: attacker,
+
     wallBoat,
 
     wallTheory,
@@ -9153,6 +9260,15 @@ if (hasComparison(3, 1)) {
 
 function buildRaceTrendEvaluation(data) {
   const entries = getRaceEntries(data);
+  const courseMapping = buildOfficialCourseMapping(entries);
+  const oneNo = courseMapping.boatAtCourse(1);
+  const twoNo = courseMapping.boatAtCourse(2);
+  const threeNo = courseMapping.boatAtCourse(3);
+  const fourNo = courseMapping.boatAtCourse(4);
+  const fiveNo = courseMapping.boatAtCourse(5);
+  const sixNo = courseMapping.boatAtCourse(6);
+  const innerBoatNos = [oneNo, twoNo];
+  const outerBoatNos = [threeNo, fourNo, fiveNo, sixNo];
 
   const hasAverageSt = (entry) => {
     const value =
@@ -9333,14 +9449,14 @@ function buildRaceTrendEvaluation(data) {
     );
   };
 
-  const holdCandidates = [1, 2, 4]
+  const holdCandidates = [oneNo, twoNo, fourNo]
     .map((boatNo) => ({
       boatNo,
       score: roleScore(boatNo, "hold")
     }))
     .sort((a, b) => b.score - a.score);
 
-  const pickupCandidates = [5, 6]
+  const pickupCandidates = [fiveNo, sixNo]
     .map((boatNo) => ({
       boatNo,
       score: roleScore(boatNo, "pickup")
@@ -9349,7 +9465,7 @@ function buildRaceTrendEvaluation(data) {
 
   const innerHead = outcomeScore(
     innerScenario,
-    [1, 2],
+    innerBoatNos,
     "firstScore"
   );
   const innerHold =
@@ -9357,7 +9473,7 @@ function buildRaceTrendEvaluation(data) {
     holdCandidates[1].score * 0.35;
   const outerHead = outcomeScore(
     attackScenario,
-    [3, 4, 5, 6],
+    outerBoatNos,
     "firstScore"
   );
   const outerPickup = pickupCandidates[0].score;
@@ -9384,8 +9500,8 @@ function buildRaceTrendEvaluation(data) {
   );
   const innerResistance =
     scoreOf(escape) * 0.70 +
-    roleScore(1, "hold") * 0.20 +
-    roleScore(2, "hold") * 0.10;
+    roleScore(oneNo, "hold") * 0.20 +
+    roleScore(twoNo, "hold") * 0.10;
   const innerCollapse = clamp(
     100 - innerResistance + attackRelation,
     5,
@@ -9480,14 +9596,18 @@ function buildRaceTrendEvaluation(data) {
   };
 
   const challengerCandidates = [2, 3, 4, 5, 6]
-    .map((boatNo) => ({
+    .map((course) => {
+      const boatNo = courseMapping.boatAtCourse(course);
+      return {
       boatNo,
+      course,
       className: classNameOf(boatNo),
       classAbility: classAbilityOf(boatNo),
       effectiveAbility:
         classAbilityOf(boatNo) *
-        courseThreatRate[boatNo]
-    }))
+        courseThreatRate[course]
+      };
+    })
     .sort(
       (a, b) =>
         b.effectiveAbility -
@@ -9498,7 +9618,7 @@ function buildRaceTrendEvaluation(data) {
     challengerCandidates[0];
 
   const boat1ClassAbility =
-    classAbilityOf(1);
+    classAbilityOf(oneNo);
 
   const escapeSkillControl = clamp(
     boat1ClassAbility * 0.65 +
@@ -9532,11 +9652,11 @@ function buildRaceTrendEvaluation(data) {
   );
 
   const boat1Hold =
-    roleScore(1, "hold");
+    roleScore(oneNo, "hold");
 
   const boat1Flow = Math.max(
-    roleScore(1, "flow"),
-    indexScore(1, "raceFlow")
+    roleScore(oneNo, "flow"),
+    indexScore(oneNo, "raceFlow")
   );
 
   const oneEscapeFlow = clamp(
@@ -9575,14 +9695,16 @@ function buildRaceTrendEvaluation(data) {
   );
 
   const venueScoreForBoat = (boatNo) => {
-    if (boatNo === 3) {
+    const course = courseMapping.courseOfBoat(boatNo);
+
+    if (course === 3) {
       return average([
         venueFeature.makuri,
         venueFeature.makuriSashi
       ], 55);
     }
 
-    if (boatNo === 4) {
+    if (course === 4) {
       return toNumber(
         venueFeature.kado,
         55
@@ -9595,8 +9717,9 @@ function buildRaceTrendEvaluation(data) {
     );
   };
 
-  const outerCandidates = [3, 4, 5, 6]
+  const outerCandidates = outerBoatNos
     .map((boatNo) => {
+      const course = courseMapping.courseOfBoat(boatNo);
       const attack = roleScore(
         boatNo,
         "attack"
@@ -9615,14 +9738,14 @@ function buildRaceTrendEvaluation(data) {
       let courseFlow = 0;
       let roleLabel = "展開拾い";
 
-      if (boatNo === 3) {
+      if (course === 3) {
         courseFlow =
           attack * 0.55 +
           flow * 0.35 +
           pickup * 0.10;
 
         roleLabel = "3コース攻め";
-      } else if (boatNo === 4) {
+      } else if (course === 4) {
         courseFlow =
           attack * 0.50 +
           flow * 0.30 +
@@ -9676,7 +9799,7 @@ function buildRaceTrendEvaluation(data) {
   const bestOuter =
     outerCandidates[0];
 
-  const strongOuterCount = [3, 4, 5, 6]
+  const strongOuterCount = outerBoatNos
     .filter(isStrongClass)
     .length;
 
@@ -9708,7 +9831,7 @@ function buildRaceTrendEvaluation(data) {
         : "1逃げと対抗展開が拮抗";
 
   const honmeiReasons = [
-    `1号艇${classNameOf(1)}・相手最上位${strongestChallenger.boatNo}号艇${strongestChallenger.className}`,
+    `${oneNo}号艇${classNameOf(oneNo)}・相手最上位${strongestChallenger.boatNo}号艇${strongestChallenger.className}`,
     `1逃げ展開${round(escapeScenarioScore)}点`,
     escapeDifferenceText,
     `${venueFeature.name}イン傾向${round(venueFeature.inPower)}点`
@@ -9744,8 +9867,16 @@ function buildRaceTrendEvaluation(data) {
 
     evidence: {
       purpose: {
-        honmei: "1号艇のイン逃げ",
-        manshu: "3〜6号艇からの万舟波乱"
+        honmei:
+          oneNo === 1
+            ? "1号艇のイン逃げ"
+            : `${oneNo}号艇の1コース逃げ`,
+        manshu:
+          outerBoatNos.every(
+            (boatNo, index) => boatNo === index + 3
+          )
+            ? "3〜6号艇からの万舟波乱"
+            : `${outerBoatNos.join("・")}号艇からの万舟波乱`
       },
 
       priority: [
@@ -9782,7 +9913,7 @@ function buildRaceTrendEvaluation(data) {
 
       components: {
         honmei: {
-          boat1Class: classNameOf(1),
+          boat1Class: classNameOf(oneNo),
           boat1ClassAbility:
             round(boat1ClassAbility),
           strongestChallenger:
@@ -9902,7 +10033,8 @@ function buildRaceTrendEvaluation(data) {
     印と着順候補だけを展開シナリオへ接続する。
     raceScenarios 未指定時は従来結果を返す。
   */
-  const legacyMarks = buildLegacyMarks(list);
+  const legacyMarks = buildLegacyMarks(list, sourceEntries);
+  const courseMapping = buildOfficialCourseMapping(sourceEntries);
   const hasScenario = Boolean(raceScenarios?.mainScenario);
   const marks = hasScenario
     ? buildMarks(list, raceScenarios)
@@ -10038,7 +10170,7 @@ function buildRaceTrendEvaluation(data) {
       attack(boat) * 0.12 +
       road(boat) * 0.08;
 
-    const no = boatNo(boat);
+    const no = courseMapping.courseOfBoat(boatNo(boat));
 
     if (no === 1) {
       score += hold(boat) >= 70 ? 6 : 0;
@@ -10071,7 +10203,7 @@ function buildRaceTrendEvaluation(data) {
       flow(boat) * 0.15 +
       total(boat) * 0.10;
 
-    const no = boatNo(boat);
+    const no = courseMapping.courseOfBoat(boatNo(boat));
 
     if (no === 2 || no === 4) {
       score += 3;
@@ -10365,7 +10497,11 @@ function buildRaceTrendEvaluation(data) {
         )
         .map((scenario) =>
           list.find((boat) =>
-            boatNo(boat) === Number(scenario?.attacker)
+            boatNo(boat) === Number(
+              scenario?.attackerBoatNo ??
+              scenario?.headBoatNo ??
+              scenario?.attacker
+            )
           )
         )
     : [
@@ -10565,7 +10701,12 @@ function buildRaceTrendEvaluation(data) {
 
     const headNo = boatNo(head);
     const scenario = (raceScenarios.scenarios || []).find(
-      (candidate) => Number(candidate?.attacker || 0) === headNo
+      (candidate) => Number(
+        candidate?.attackerBoatNo ??
+        candidate?.headBoatNo ??
+        candidate?.attacker ??
+        0
+      ) === headNo
     );
 
     if (!scenario) return fallback;
@@ -10591,7 +10732,11 @@ function buildRaceTrendEvaluation(data) {
       scenarioWall,
       {
         attackerBoatNo: headNo,
-        attackerCourse: Number(scenario?.attacker || headNo),
+        attackerCourse: Number(
+          scenario?.attackerCourse ??
+          scenario?.attacker ??
+          headNo
+        ),
         blockedBoats: [
           ...(scenario.blockedBoats || [])
         ],
@@ -10905,7 +11050,7 @@ function buildRaceTrendEvaluation(data) {
     本命・対抗・穴
   =============================== */
 
-  function buildLegacyMarks(analyses) {
+  function buildLegacyMarks(analyses, sourceEntries = []) {
   const list = Array.isArray(analyses)
     ? [...analyses]
     : [];
@@ -10928,12 +11073,15 @@ function buildRaceTrendEvaluation(data) {
     byBoat[Number(boat.boatNo)] = boat;
   });
 
-  const boat1 = byBoat[1] || null;
-  const boat2 = byBoat[2] || null;
-  const boat3 = byBoat[3] || null;
-  const boat4 = byBoat[4] || null;
-  const boat5 = byBoat[5] || null;
-  const boat6 = byBoat[6] || null;
+  const courseMapping = buildOfficialCourseMapping(sourceEntries);
+  const analysisAtCourse = (course) =>
+    byBoat[courseMapping.boatAtCourse(course)] || null;
+  const boat1 = analysisAtCourse(1);
+  const boat2 = analysisAtCourse(2);
+  const boat3 = analysisAtCourse(3);
+  const boat4 = analysisAtCourse(4);
+  const boat5 = analysisAtCourse(5);
+  const boat6 = analysisAtCourse(6);
 
   const total = (boat) =>
     toNumber(boat?.indexes?.total, 0);
@@ -11347,6 +11495,8 @@ function buildRaceTrendEvaluation(data) {
   ) {
 
     const entries = getRaceEntries(data);
+    const officialCourseMapping =
+      buildOfficialCourseMapping(entries);
 
     const venueFeature = getVenueFeature(data);
 
@@ -11688,6 +11838,20 @@ const slit =
       venue: getVenueName(data),
 
       venueFeature,
+
+      courseMapping: {
+        formal:
+          officialCourseMapping.formal === true,
+        byBoat: Object.fromEntries(
+          [1, 2, 3, 4, 5, 6].map(
+            boatNo => [
+              boatNo,
+              officialCourseMapping
+                .courseOfBoat(boatNo)
+            ]
+          )
+        )
+      },
 
       analyses,
 
@@ -13203,6 +13367,7 @@ return {
             ...(alignedMarks.honmei || {}),
             boatNo: formalMainHeadBoatNo,
             course: Number(
+              formalMainScenario?.attackerCourse ||
               alignedMarks.honmei?.course ||
               formalMainHeadBoatNo
             ),
@@ -14141,6 +14306,16 @@ return {
         null,
       attacker:
         formalMainHeadBoatNo,
+      attackerCourse:
+        Number(
+          formalMainScenario?.attackerCourse ??
+          formalMainScenario?.attacker ??
+          0
+        ) || null,
+      attackerBoatNo:
+        formalMainHeadBoatNo,
+      headBoatNo:
+        formalMainHeadBoatNo,
       blockedBoats: [
         ...(
           analysisRaceScenarios
@@ -14565,6 +14740,8 @@ return {
     getVenueCode,
 
     getRaceEntries,
+
+    buildOfficialCourseMapping,
 
     getWeights,
 

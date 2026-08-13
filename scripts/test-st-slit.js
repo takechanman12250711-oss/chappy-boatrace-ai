@@ -210,6 +210,47 @@ assert.deepEqual(
 assert.equal(theoryAlerts[0].comparedBoatNo, 4);
 assert.equal(theoryAlerts[0].diff, 0.14);
 
+const nonIdentityTheoryEntries = [
+  { boatNo: 1, exhibitionST: 0.17 },
+  { boatNo: 2, exhibitionST: 0.16 },
+  { boatNo: 3, exhibitionST: 0.15 },
+  { boatNo: 4, exhibitionST: 0.18 },
+  { boatNo: 5, exhibitionST: 0.30 },
+  { boatNo: 6, exhibitionST: 0.04 }
+].map(boat => ({
+  ...boat,
+  startExhibition: {
+    boat: boat.boatNo,
+    course: {
+      1: 6,
+      2: 2,
+      3: 1,
+      4: 4,
+      5: 5,
+      6: 3
+    }[boat.boatNo],
+    isOfficialCourse: true,
+    mappingSource: "official-start-image"
+  }
+}));
+const nonIdentityTheoryAlerts = theory.calcSlitAlerts(
+  nonIdentityTheoryEntries
+);
+const boat6TheoryAlert = nonIdentityTheoryAlerts.find(
+  alert => alert.boatNo === 6
+);
+assert.ok(boat6TheoryAlert);
+assert.equal(
+  boat6TheoryAlert.comparedBoatNo,
+  4,
+  "3コースの6号艇を実4コース艇と隣接比較する"
+);
+assert.notEqual(
+  boat6TheoryAlert.comparedBoatNo,
+  5,
+  "物理艇番だけが隣の5号艇を比較しない"
+);
+
 const unsupportedEntries = entries.map((boat) => ({
   ...boat,
   avgSt: null,

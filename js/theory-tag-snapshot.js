@@ -203,7 +203,11 @@ function appliedFrameRiseSinkSupport(prediction) {
     代替展開は買い目枝との対応を証明できないため流用しない。
   */
   const main = scenarios.find(scenario => String(scenario?.type || "").trim() === mainType) || mainScenario;
-  const frameNo = Number(main?.attacker || main?.attackerBoatNo || main?.headBoatNo);
+  const frameNo = Number(
+    main?.attackerBoatNo ??
+    main?.headBoatNo ??
+    main?.attacker
+  );
   const frame = frameMovement.find(row => Number(row?.boatNo) === frameNo) || null;
   if (!main || !frame) return null;
 
@@ -214,7 +218,7 @@ function appliedFrameRiseSinkSupport(prediction) {
   const rate = type === "rise" ? optionalNumber(frame?.riseRate) : type === "sink" ? optionalNumber(frame?.sinkRate) : null;
   const samples = optionalNumber(frame?.samples);
   const consistentAdjustment = Number.isFinite(scoreAdjustment) && scoreAdjustment !== 0 && scenarioAdjustment === scoreAdjustment;
-  const applied = frameNo >= 1 && frameNo <= 4 && frame?.appliedToScore === true && consistentAdjustment;
+  const applied = frameNo >= 1 && frameNo <= 6 && frame?.appliedToScore === true && consistentAdjustment;
 
   return {
     // productionで適用中のAIコア規則だけを読むため、新しい予想承認ではない。

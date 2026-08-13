@@ -14,8 +14,53 @@
   }
 
   function boatNoOf(row, fallback) {
-    const n = Number(row?.boatNo ?? row?.boat ?? row?.waku ?? row?.course ?? fallback);
-    return Number.isFinite(n) && n >= 1 && n <= 6 ? n : fallback;
+    for (const value of [
+      row?.boat,
+      row?.waku,
+      row?.frame,
+      row?.boatNo,
+      row?.number,
+      row?.course
+    ]) {
+      const candidate = Number(value);
+      if (
+        Number.isInteger(candidate) &&
+        candidate >= 1 &&
+        candidate <= 6
+      ) {
+        return candidate;
+      }
+    }
+    return fallback;
+  }
+
+  function courseMappingOf(prediction, data) {
+    const core = window.ChappyAICore;
+    const source =
+      data ||
+      prediction?.preRaceConditions ||
+      prediction?.race?.raw ||
+      prediction?.race ||
+      prediction;
+
+    if (
+      typeof core?.getRaceEntries === "function" &&
+      typeof core?.buildOfficialCourseMapping === "function"
+    ) {
+      return core.buildOfficialCourseMapping(
+        core.getRaceEntries(source).map((entry, index) => ({
+          ...entry,
+          boat: boatNoOf(entry, index + 1)
+        }))
+      );
+    }
+
+    return {
+      formal: false,
+      courseOfBoat(boatNo) {
+        return Number(boatNo) || null;
+      }
+    };
   }
 
   function averageNumber(values) {
@@ -82,8 +127,31 @@
 
   function build(prediction, data) {
     const flow = prediction?.flowPriority || {};
-    const attackBoat = Number(flow.attackBoatNo ?? flow.attackBoat ?? flow.boatNo ?? 0);
-    const rows = normalizeRows(data, prediction);
+    const attackBoat = Number(
+      flow.attackBoatNo ??
+      flow.attackBoat ??
+      flow.boatNo ??
+      prediction?.raceFlow?.attackBoats?.[0]?.boatNo ??
+      0
+    );
+    const courseMapping = courseMappingOf(prediction, data);
+    const mappedAttackCourse = Number(
+      courseMapping.courseOfBoat(attackBoat) || 0
+    );
+    const attackCourse =
+      courseMapping.formal === true
+        ? mappedAttackCourse || attackBoat
+        : attackBoat;
+    const rows = normalizeRows(data, prediction).map(row => ({
+      ...row,
+      course: Number(
+        courseMapping.formal === true
+          ? courseMapping.courseOfBoat(
+              row.boatNo
+            ) ?? row.boatNo
+          : row.boatNo
+      )
+    }));
     const stRanked = rankAscending(rows, "st");
     const exhibitionRanked = rankAscending(rows, "exhibition");
 
@@ -107,7 +175,11 @@
 
     // 隣接艇とのST差0.10以上だけを明確なスリット注意として扱う。
     if (attackBoat && attackST !== null) {
-      const neighbors = rows.filter(row => Math.abs(row.boatNo - attackBoat) === 1 && row.st !== null);
+      const neighbors = rows.filter(
+        row =>
+          Math.abs(row.course - attackCourse) === 1 &&
+          row.st !== null
+      );
       neighbors.forEach(row => {
         const diff = attackST - row.st;
         if (diff >= 0.10) alerts.push(`${row.boatNo}号艇が${attackBoat}号艇よりSTで0.10以上先行`);
@@ -129,6 +201,10 @@
     return {
       status,
       attackBoatNo: attackBoat || null,
+      attackCourse:
+        attackCourse >= 1 && attackCourse <= 6
+          ? attackCourse
+          : null,
       attackSTRank,
       attackExhibitionRank,
       confirms: [...new Set(confirms)].slice(0, 3),
