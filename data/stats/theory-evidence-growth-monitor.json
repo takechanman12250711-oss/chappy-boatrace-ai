@@ -1,107 +1,110 @@
 {
-  "generatedAt": "2026-08-13T06:04:06.402Z",
+  "generatedAt": "2026-08-13T09:57:42.404Z",
   "source": "theory-evidence-coverage-phase7.json",
   "schemaVersion": 1,
   "engineVersion": "theory-evidence-growth-monitor-20260807-baseline-fixed",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "cohortReset": false,
   "cohortResetReason": "",
-  "status": "healthy",
+  "status": "warning",
   "baselineRaceCount": 1009,
-  "currentRaceCount": 1009,
-  "newRaceCount": 0,
+  "currentRaceCount": 1056,
+  "newRaceCount": 47,
   "warningAfterNewRaces": 30,
-  "warningCount": 0,
-  "warningTheoryKeys": [],
+  "warningCount": 2,
+  "warningTheoryKeys": [
+    "double-time",
+    "new-engine"
+  ],
   "theories": [
     {
       "theoryKey": "race-flow",
       "label": "展開理論",
-      "evaluatedCount": 582,
+      "evaluatedCount": 629,
       "previousEvaluatedCount": 582,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 47,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "course",
       "label": "コース理論",
-      "evaluatedCount": 504,
+      "evaluatedCount": 546,
       "previousEvaluatedCount": 504,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 42,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "start",
       "label": "ST・スリット理論",
-      "evaluatedCount": 24,
+      "evaluatedCount": 54,
       "previousEvaluatedCount": 24,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 30,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "exhibition",
       "label": "展示・足理論",
-      "evaluatedCount": 230,
+      "evaluatedCount": 252,
       "previousEvaluatedCount": 230,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 22,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "remain-pickup",
       "label": "残し・拾い理論",
-      "evaluatedCount": 582,
+      "evaluatedCount": 629,
       "previousEvaluatedCount": 582,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 47,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "local-water",
       "label": "当地・水面理論",
-      "evaluatedCount": 550,
+      "evaluatedCount": 597,
       "previousEvaluatedCount": 550,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 47,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "skill",
       "label": "技量理論",
-      "evaluatedCount": 450,
+      "evaluatedCount": 487,
       "previousEvaluatedCount": 450,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 37,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "motor",
       "label": "モーター理論",
-      "evaluatedCount": 389,
+      "evaluatedCount": 419,
       "previousEvaluatedCount": 389,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 30,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "wall-boat",
       "label": "壁艇理論",
-      "evaluatedCount": 360,
+      "evaluatedCount": 396,
       "previousEvaluatedCount": 360,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 36,
+      "status": "growing",
       "warning": false
     },
     {
       "theoryKey": "frame-rise-fall",
       "label": "枠別浮沈率",
-      "evaluatedCount": 24,
+      "evaluatedCount": 53,
       "previousEvaluatedCount": 24,
-      "growth": 0,
-      "status": "waiting",
+      "growth": 29,
+      "status": "growing",
       "warning": false
     },
     {
@@ -110,8 +113,8 @@
       "evaluatedCount": 0,
       "previousEvaluatedCount": 0,
       "growth": 0,
-      "status": "waiting",
-      "warning": false
+      "status": "stagnant-warning",
+      "warning": true
     },
     {
       "theoryKey": "new-engine",
@@ -119,8 +122,8 @@
       "evaluatedCount": 0,
       "previousEvaluatedCount": 0,
       "growth": 0,
-      "status": "waiting",
-      "warning": false
+      "status": "stagnant-warning",
+      "warning": true
     }
   ],
   "humanApprovalRequired": true,
