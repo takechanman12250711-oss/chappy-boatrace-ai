@@ -83,7 +83,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: collect-automatic-predictions
+  group: chappy-main-data-writers
+  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -95,6 +96,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Setup Node.js
