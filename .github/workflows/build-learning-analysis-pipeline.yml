@@ -57,8 +57,14 @@ jobs:
           }
           const perf=JSON.parse(fs.readFileSync('data/stats/theory-performance-report.json','utf8'));
           if(perf.version!=='3.4.0' || perf.theoryCount!==12) throw new Error('理論別成績が12理論の最新版ではありません');
+          const perfInput=perf.analysisInputDiagnostics||{};
+          if(!(perfInput.settledJoinCount>0) || perfInput.officialResultCount!==perfInput.settledJoinCount) throw new Error('理論別成績の公式結果結合数異常');
+          if(perf.sampleCount!==perfInput.settledJoinCount*perf.theoryCount || perf.byTheory.some(row=>row.raceCount!==perfInput.settledJoinCount)) throw new Error('理論別成績の母集団数異常');
           const phase7=JSON.parse(fs.readFileSync('data/stats/theory-evidence-coverage-phase7.json','utf8'));
           if(phase7.theoryCount!==12) throw new Error('Phase7の理論数異常');
+          const growth=JSON.parse(fs.readFileSync('data/stats/theory-evidence-growth-monitor.json','utf8'));
+          if(!perf.analysisInputContract || phase7.analysisInputContract!==perf.analysisInputContract || growth.analysisInputContract!==perf.analysisInputContract) throw new Error('理論証拠成長監視の母集団契約異常');
+          if(growth.baselineRaceCount>growth.currentRaceCount) throw new Error('理論証拠成長監視の基準件数異常');
           const phase8=JSON.parse(fs.readFileSync('data/stats/theory-profit-review-phase8.json','utf8'));
           if(phase8.minimumEvidenceCount!==30 || phase8.oneCandidateOnly!==true) throw new Error('Phase8レビュー条件異常');
           const phase9=JSON.parse(fs.readFileSync('data/stats/theory-improvement-proposal-phase9.json','utf8'));

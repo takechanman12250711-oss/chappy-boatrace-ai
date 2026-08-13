@@ -12,6 +12,26 @@ assert.equal(report.theories.find(r=>r.theoryKey==="race-flow").previousEvaluate
 assert.equal(report.theories.find(r=>r.theoryKey==="race-flow").growth,0);
 assert.equal(report.status,"healthy");
 
+report=monitor.build({
+  analysisInputContract:"official-pre-deadline-cohort-v1",
+  theories:[
+    {theoryKey:"course",label:"コース",raceCount:1009,evaluatedCount:504}
+  ]
+},{
+  currentRaceCount:1014,
+  theories:[
+    {theoryKey:"course",label:"コース",raceCount:1014,evaluatedCount:505}
+  ]
+});
+assert.equal(report.cohortReset,true);
+assert.equal(report.cohortResetReason,"analysis-input-contract-changed");
+assert.equal(report.baselineRaceCount,1009);
+assert.equal(report.currentRaceCount,1009);
+assert.equal(report.newRaceCount,0);
+assert.equal(report.theories[0].previousEvaluatedCount,504);
+assert.equal(report.theories[0].growth,0);
+assert.equal(report.status,"healthy");
+
 const current={theories:[
   {theoryKey:"course",label:"コース",raceCount:486,evaluatedCount:0},
   {theoryKey:"start",label:"ST",raceCount:486,evaluatedCount:2}

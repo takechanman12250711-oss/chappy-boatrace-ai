@@ -3,53 +3,88 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const report = require("../js/theory-performance-report");
+const evaluator = require("../js/theory-evaluation-engine");
+const verification = require("../js/prediction-verification");
+const inputContract = require("./analysis-input-contract");
 const zeroDiagnostics = require("./theory-zero-evidence-diagnostics");
 
 const root = path.resolve(__dirname, "..");
-const dir = path.join(root, "data", "predictions");
 const out = path.join(root, "data", "stats", "theory-performance-report.json");
+const ANALYSIS_INPUT_CONTRACT =
+  "official-pre-deadline-cohort-v1";
 
-function load(file, fallback = {}) {
-  try { return JSON.parse(fs.readFileSync(file, "utf8")); }
-  catch (error) { if (error?.code === "ENOENT") return fallback; throw error; }
+function officialPayout(result = {}) {
+  const value = Number(
+    result?.trifecta?.payout ??
+    result?.payout ??
+    result?.payoutPer100 ??
+    result?.officialPayoutPer100
+  );
+  return Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
-function recordKey(record) {
-  return String(record?.raceKey || [record?.date, record?.jcd, record?.rno].filter(Boolean).join("-") || "");
+function normalizeCohortRecord(record = {}) {
+  const officialResult = record?.__officialResult || {};
+  const prediction = record?.prediction || {};
+  const resultTicket = inputContract.actualTicket(officialResult);
+  if (!resultTicket) return null;
+
+  const verified = verification.verifyPrediction(
+    prediction,
+    officialResult
+  );
+  const normalized = {
+    ...record,
+    result: {
+      schemaVersion: 5,
+      settled: true,
+      resultAvailable: true,
+      resultTicket,
+      winningMethod: String(
+        officialResult?.winningMethod || ""
+      ),
+      payout: officialPayout(officialResult),
+      payoutPer100: officialPayout(officialResult),
+      practicalHit: verified.practicalHit === true,
+      verification: {
+        ...verified
+      },
+      officialSource: String(
+        officialResult?.source || ""
+      )
+    }
+  };
+  normalized.theoryEvaluationSnapshot =
+    evaluator.build(normalized);
+  return normalized;
 }
 
-function mergeSources(primaryRows = [], verificationRows = []) {
-  const primary = new Map();
-  const verification = new Map();
-  primaryRows.forEach(record => {
-    const key = recordKey(record);
-    if (key) primary.set(key, record);
+function collect(options = {}) {
+  const cohort = inputContract.buildDefaultCohort({
+    root: options.root || root,
+    predictionsDir: options.predictionsDir,
+    resultsDir: options.resultsDir
   });
-  verificationRows.forEach(record => {
-    const key = recordKey(record);
-    if (key && !primary.has(key)) verification.set(key, record);
-  });
-  return [...primary.values(), ...verification.values()];
-}
-
-function collect() {
-  if (!fs.existsSync(dir)) return [];
-  const primaryRows = [];
-  const verificationRows = [];
-  fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)).sort().forEach(name => {
-    const data = load(path.join(dir, name), {});
-    primaryRows.push(...(Array.isArray(data.predictions) ? data.predictions : []));
-    verificationRows.push(...(Array.isArray(data.verificationPredictions) ? data.verificationPredictions : []));
-  });
-  return mergeSources(primaryRows, verificationRows);
+  return {
+    records: cohort.records
+      .map(normalizeCohortRecord)
+      .filter(Boolean),
+    diagnostics: cohort.diagnostics
+  };
 }
 
 function main() {
-  const records = collect();
+  const collected = collect();
+  const records = collected.records;
   const built = {
     generatedAt: new Date().toISOString(),
-    source: "data/predictions/*.json",
-    deduplication: "predictions-preferred-over-verificationPredictions",
+    source: "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
+    analysisInputContract:
+      ANALYSIS_INPUT_CONTRACT,
+    deduplication:
+      "predictions-preferred-over-verificationPredictions",
+    analysisInputDiagnostics:
+      collected.diagnostics,
     ...report.build(records),
     zeroEvidenceDiagnostics: zeroDiagnostics.build(records)
   };
@@ -61,4 +96,9 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { load, recordKey, mergeSources, collect };
+module.exports = {
+  ANALYSIS_INPUT_CONTRACT,
+  officialPayout,
+  normalizeCohortRecord,
+  collect
+};

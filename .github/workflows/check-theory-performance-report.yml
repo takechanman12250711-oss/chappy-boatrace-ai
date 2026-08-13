@@ -4,12 +4,20 @@ on:
   pull_request:
     paths:
       - "js/theory-evaluation-engine.js"
+      - "js/prediction-verification.js"
       - "js/theory-performance-report.js"
       - "js/theory-tag-snapshot.js"
+      - "js/theory-evidence-coverage-phase7.js"
+      - "js/theory-evidence-growth-monitor.js"
+      - "scripts/analysis-input-contract.js"
       - "scripts/build-theory-performance-report.js"
+      - "scripts/build-theory-evidence-coverage-phase7.js"
+      - "scripts/build-theory-evidence-growth-monitor.js"
       - "scripts/theory-zero-evidence-diagnostics.js"
       - "scripts/test-theory-performance-report.js"
       - "scripts/test-theory-zero-evidence-diagnostics.js"
+      - "scripts/test-theory-evidence-coverage-phase7.js"
+      - "scripts/test-theory-evidence-growth-monitor.js"
       - ".github/workflows/collect-results.yml"
       - ".github/workflows/check-theory-performance-report.yml"
 
@@ -19,17 +27,36 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Verify theory performance report
         run: |
           node --check js/theory-performance-report.js
+          node --check scripts/analysis-input-contract.js
           node --check scripts/build-theory-performance-report.js
           node scripts/test-theory-performance-report.js
           node scripts/test-theory-zero-evidence-diagnostics.js
+          node scripts/test-theory-evidence-coverage-phase7.js
+          node scripts/test-theory-evidence-growth-monitor.js
           node scripts/build-theory-performance-report.js
-          node -e 'const r=require("./data/stats/theory-performance-report.json"); if(r.usableForPrediction!==false||r.automaticApplication!==false) process.exit(1)'
+          node scripts/build-theory-evidence-coverage-phase7.js
+          node scripts/build-theory-evidence-growth-monitor.js
+          node - <<'NODE'
+          const r=require("./data/stats/theory-performance-report.json");
+          const d=r.analysisInputDiagnostics||{};
+          if(r.usableForPrediction!==false||r.automaticApplication!==false) throw new Error("安全フラグ異常");
+          if(!(d.settledJoinCount>0)||d.officialResultCount!==d.settledJoinCount) throw new Error("公式結果結合数異常");
+          if(r.sampleCount!==d.settledJoinCount*r.theoryCount) throw new Error("理論成績の母集団数異常");
+          if(r.byTheory.some(row=>row.raceCount!==d.settledJoinCount)) throw new Error("理論別の母集団数が不一致");
+          const p7=require("./data/stats/theory-evidence-coverage-phase7.json");
+          const growth=require("./data/stats/theory-evidence-growth-monitor.json");
+          if(!r.analysisInputContract||p7.analysisInputContract!==r.analysisInputContract||growth.analysisInputContract!==r.analysisInputContract) throw new Error("成長監視の母集団契約が不一致");
+          if(growth.baselineRaceCount>growth.currentRaceCount) throw new Error("成長監視の基準件数が現母集団を超過");
+          NODE
           node scripts/check-charter.js
