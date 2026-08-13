@@ -324,16 +324,16 @@ assert.equal(
 );
 assert.equal(
   html.includes(
-    "js/app-runtime-loader.js?v=20260813-actual-course1"
+    "js/app-runtime-loader.js?v=20260813-course-failclosed1"
   ) &&
     appRuntime.includes(
-      'const VERSION = "20260813-actual-course1"'
+      'const VERSION = "20260813-course-failclosed1"'
     ) &&
     predictionRuntime.includes(
-      'const VERSION = "20260813-actual-course1"'
+      'const VERSION = "20260813-course-failclosed1"'
     ) &&
     hiyoriLoader.includes(
-      'const VERSION="20260813-actual-course1"'
+      'const VERSION="20260813-course-failclosed1"'
     ),
   true,
   "実コース対応を親ローダーから予想・日和補助層まで同じキャッシュ世代で配信する"

@@ -11,7 +11,9 @@ on:
       - "scripts/collect-predictions.js"
       - "js/practical-priority-shadow.js"
       - "js/practical-priority-shadow-report.js"
+      - "scripts/build-practical-priority-shadow-report.js"
       - "scripts/test-practical-priority-shadow.js"
+      - "scripts/test-practical-priority-shadow-artifact.js"
       - "scripts/build-scenario-ai-v6-snapshots.js"
       - "scripts/test-scenario-ai-v6-storage.js"
       - "js/scenario-ai-v6-shadow.js"
@@ -119,6 +121,7 @@ jobs:
           node --check scripts/collect-predictions.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
+          node --check scripts/build-practical-priority-shadow-report.js
           node scripts/test-practical-priority-shadow.js
           node --check scripts/build-scenario-ai-v6-snapshots.js
           node --check scripts/build-prediction-index-shards.js
@@ -160,10 +163,12 @@ jobs:
           node scripts/build-scenario-ai-v6-snapshots.js
           node scripts/build-prediction-index-shards.js
           node scripts/build-prediction-summaries.js
+          node scripts/build-practical-priority-shadow-report.js
 
       - name: Validate generated prediction artifacts
         run: |
           node scripts/test-load-performance.js
+          node scripts/test-practical-priority-shadow-artifact.js
           git diff --exit-code -- data/predictions/index.json
 
       - name: Save predictions and note drafts
@@ -173,6 +178,8 @@ jobs:
           if [ -d data/notes ]; then
             git add data/notes
           fi
+
+          git add data/stats/practical-priority-shadow-report.json
 
           if git diff --cached --quiet; then
             echo "保存する新しい予想はありません"

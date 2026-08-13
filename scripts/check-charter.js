@@ -59,6 +59,18 @@ assert(
     checksOutCurrentMain.test(learningAnalysisWorkflow),
   "直列化したmain書込処理は実行開始時点の最新mainを取得してください"
 );
+assert(
+  collectPredictionWorkflow.includes(
+    "node scripts/build-practical-priority-shadow-report.js"
+  ) &&
+    collectPredictionWorkflow.includes(
+      "node scripts/test-practical-priority-shadow-artifact.js"
+    ) &&
+    collectPredictionWorkflow.includes(
+      "git add data/stats/practical-priority-shadow-report.json"
+    ),
+  "予想収集直後に順位候補シャドーレポートを再構築・検証・保存してください"
+);
 
 assert(
   charter.principles?.insideAdvantageIsDefault === true,
@@ -405,7 +417,7 @@ assert(
       JSON.stringify(["head", "hold", "pickup"]) &&
     priorityShadowCharter.priorityScoreExclusiveMinimum === 90 &&
     priorityShadowCharter.sourceSelectionFingerprint ===
-      "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5" &&
+      "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1" &&
     priorityShadowCharter.replacementMode ===
       "same-index-one-for-one" &&
     priorityShadowCharter.voidHandling ===

@@ -78,7 +78,7 @@ function fixture(options = {}) {
           confidenceDefinitionVersion:
             "internal-score-v1",
           ticketPolicyVersion:
-            "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5"
+            "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1"
         }
       },
     tickets:
@@ -212,7 +212,7 @@ assert.equal(
 );
 assert.equal(
   eligible.sourceSelectionFingerprint,
-  "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5"
+  "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1"
 );
 assert.equal(
   eligible.applicationMode,
@@ -313,6 +313,27 @@ assert.equal(
   differentGeneration.reasonCode,
   "SOURCE_SELECTION_GENERATION_MISMATCH",
   "異なる実戦厳選世代をシャドー対象にしない"
+);
+
+const previousCourseGeneration = shadow.build(
+  fixture({
+    verificationEvidence: {
+      generation: {
+        logicFingerprint:
+          "evaluated-scenarios-v1",
+        confidenceDefinitionVersion:
+          "internal-score-v1",
+        ticketPolicyVersion:
+          "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5"
+      }
+    }
+  })
+);
+assert.equal(previousCourseGeneration.eligible, false);
+assert.equal(
+  previousCourseGeneration.reasonCode,
+  "SOURCE_SELECTION_GENERATION_MISMATCH",
+  "進入fail-closed修正前の3件を新しい固定100件コホートへ混ぜない"
 );
 
 assertCandidateRejected(

@@ -27,7 +27,7 @@
     const PRIORITY_SCORE_EXCLUSIVE_MINIMUM =
       90;
     const REQUIRED_SOURCE_SELECTION_FINGERPRINT =
-      "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5";
+      "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1";
     const REQUIRED_STRUCTURED_ROLES =
       Object.freeze([
         Object.freeze({
