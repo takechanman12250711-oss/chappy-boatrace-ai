@@ -9,19 +9,38 @@ function finite(value) {
 }
 
 function build(current = {}, previous = {}, options = {}) {
-  const baselineRaceCount = finite(
-    previous?.currentRaceCount ||
-    previous?.baselineRaceCount ||
-    options.baselineRaceCount ||
-    DEFAULT_BASELINE_RACES
+  const analysisInputContract = String(
+    current?.analysisInputContract || ""
+  );
+  const previousAnalysisInputContract = String(
+    previous?.analysisInputContract || ""
   );
   const currentRaceCount = Math.max(
     0,
     ...((Array.isArray(current?.theories) ? current.theories : []).map(row => finite(row?.raceCount)))
   );
+  const hadPreviousSnapshot =
+    Array.isArray(previous?.theories) &&
+    previous.theories.length > 0;
+  const cohortReset = Boolean(
+    analysisInputContract &&
+    hadPreviousSnapshot &&
+    analysisInputContract !==
+      previousAnalysisInputContract
+  );
+  const baselineRaceCount = cohortReset
+    ? currentRaceCount
+    : finite(
+        previous?.currentRaceCount ||
+        previous?.baselineRaceCount ||
+        options.baselineRaceCount ||
+        DEFAULT_BASELINE_RACES
+      );
   const warningAfterNewRaces = finite(options.warningAfterNewRaces) || DEFAULT_WARNING_AFTER_NEW_RACES;
   const newRaceCount = Math.max(0, currentRaceCount - baselineRaceCount);
-  const hasPreviousSnapshot = Array.isArray(previous?.theories) && previous.theories.length > 0;
+  const hasPreviousSnapshot =
+    hadPreviousSnapshot &&
+    !cohortReset;
 
   const previousMap = new Map(
     (Array.isArray(previous?.theories) ? previous.theories : [])
@@ -56,6 +75,11 @@ function build(current = {}, previous = {}, options = {}) {
   return {
     schemaVersion: 1,
     engineVersion: "theory-evidence-growth-monitor-20260807-baseline-fixed",
+    analysisInputContract,
+    cohortReset,
+    cohortResetReason: cohortReset
+      ? "analysis-input-contract-changed"
+      : "",
     status: warnings.length ? "warning" : "healthy",
     baselineRaceCount,
     currentRaceCount,

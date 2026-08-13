@@ -41,6 +41,9 @@ function build(performance = {}) {
   return {
     schemaVersion: 1,
     engineVersion: "theory-evidence-coverage-phase7-20260807",
+    analysisInputContract: String(
+      performance?.analysisInputContract || ""
+    ),
     status: missing.length ? "evidence-expansion-required" : collecting.length ? "collecting-data" : "ready",
     theoryCount: theories.length,
     readyCount: ready.length,
