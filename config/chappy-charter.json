@@ -145,6 +145,38 @@
       "liveTideWhenTidal": true
     }
   },
+  "practicalPriorityProspectiveShadow": {
+    "enabled": true,
+    "startDate": "20260813",
+    "targetReplacementCount": 100,
+    "fixedEndpoint": true,
+    "earlyStoppingAllowed": false,
+    "candidateReasonCode": "CANDIDATE_ONLY_EVALUATION",
+    "firstFormationBranch": "formation:flow",
+    "headBoatNo": 1,
+    "structuredRoles": [
+      "head",
+      "hold",
+      "pickup"
+    ],
+    "priorityScoreExclusiveMinimum": 90,
+    "sourceSelectionFingerprint": "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5",
+    "protectedSelectedCategories": [
+      "本線",
+      "流し"
+    ],
+    "replacementMode": "same-index-one-for-one",
+    "voidHandling": "resolved-neutral-kept-in-fixed-cohort",
+    "settledPayoutPolicy": "positive-official-payout-required",
+    "minimumDiscordantCount": 6,
+    "maximumLossCount": 1,
+    "maximumOneSidedPValue": 0.05,
+    "firstAndSecondHalfMustBeNonHarmful": true,
+    "conditionsMayChangeDuringCohort": false,
+    "requiresHumanApproval": true,
+    "automaticApplication": false,
+    "usableForPrediction": false
+  },
   "automation": {
     "mayProposeImprovements": true,
     "mayChangePredictionLogicWithoutApproval": false,

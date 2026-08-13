@@ -40,6 +40,32 @@ require("../js/prediction");
 require("../js/prediction-simple-evaluation");
 const practicalSelectionApi =
   require("../js/practical-selection");
+const practicalPriorityShadow =
+  loadOptionalV2Dependency(
+    () => require(
+      "../js/practical-priority-shadow"
+    ),
+    {
+      VERSION: "unavailable",
+      LOGIC_FINGERPRINT: "unavailable",
+      build() {
+        throw new Error(
+          "順位候補シャドー評価器を利用できません"
+        );
+      }
+    },
+    "順位候補評価器"
+  );
+const practicalPriorityShadowReport =
+  loadOptionalV2Dependency(
+    () => require(
+      "../js/practical-priority-shadow-report"
+    ),
+    {
+      CONTRACT_FINGERPRINT: "unavailable"
+    },
+    "順位候補固定契約"
+  );
 require("../js/note-generator");
 
 const historyStats = require(
@@ -429,6 +455,39 @@ function compactPracticalSelection(
 ) {
   return practicalSelectionApi
     .compactAudit(selection);
+}
+
+function safelyBuildPracticalPriorityShadow(
+  selection,
+  builder = practicalPriorityShadow.build
+) {
+  try {
+    return builder(selection || {});
+  } catch (error) {
+    console.warn(
+      `順位候補シャドー生成失敗：${error?.message || error}`
+    );
+    return {
+      version: practicalPriorityShadow.VERSION,
+      logicFingerprint:
+        practicalPriorityShadow.LOGIC_FINGERPRINT,
+      status: "shadow-builder-unavailable",
+      reasonCode: "SHADOW_BUILDER_ERROR",
+      sourceSelectionFingerprint: "",
+      eligible: false,
+      applicationMode: "shadow-only",
+      automaticApplication: false,
+      usableForPrediction: false,
+      affectsPrediction: false,
+      affectsTickets: false,
+      baseTickets: [],
+      shadowTickets: [],
+      replacement: null,
+      diagnostics: {
+        error: String(error?.message || error).slice(0, 240)
+      }
+    };
+  }
 }
 
 function compactPrediction(prediction, practicalTickets, raceData) {
@@ -1269,6 +1328,17 @@ function buildStoredPrediction(
     createPracticalSelection(prediction);
   prediction.practicalSelection =
     practicalSelection;
+  const practicalPriorityShadowSnapshot = {
+    ...safelyBuildPracticalPriorityShadow(
+      practicalSelection,
+      dependencies.practicalPriorityShadowBuilder
+    ),
+    cohortContractFingerprint:
+      practicalPriorityShadowReport.CONTRACT_FINGERPRINT,
+    capturedAt,
+    sourceCommit:
+      String(process.env.GITHUB_SHA || "")
+  };
   const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
   const capturedConditions =
     captureStoredConditions(
@@ -1379,6 +1449,8 @@ function buildStoredPrediction(
       theorySnapshot,
     theoryShadowAb:
       theoryShadowComparison,
+    practicalPriorityShadow:
+      practicalPriorityShadowSnapshot,
     prediction: compactVerificationPayload(
       prediction,
       practicalTickets,
@@ -2157,6 +2229,7 @@ module.exports = {
   applySelectedRaceKey,
   upsertByRaceKey,
   compactVerificationEvidence,
+  safelyBuildPracticalPriorityShadow,
   compactStoredVerification,
   buildCollectionHealth,
   buildRecoveryPlan,

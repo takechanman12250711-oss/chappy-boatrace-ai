@@ -14,6 +14,8 @@ on:
       - "js/race-history.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
+      - "js/practical-priority-shadow.js"
+      - "js/practical-priority-shadow-report.js"
       - "js/prediction.js"
       - "js/boat-identity.js"
       - "js/render.js"
@@ -85,6 +87,11 @@ on:
       - "scripts/test-stats-runtime-loader.js"
       - "data/predictions/improvement-review.json"
       - "scripts/test-practical-selection.js"
+      - "scripts/test-practical-priority-shadow.js"
+      - "scripts/test-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow-artifact.js"
+      - "scripts/test-practical-priority-shadow-regression.js"
+      - "data/stats/practical-priority-shadow-report.json"
       - "scripts/test-prediction-transparency-ui.js"
       - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
@@ -131,6 +138,8 @@ on:
       - "js/race-history.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
+      - "js/practical-priority-shadow.js"
+      - "js/practical-priority-shadow-report.js"
       - "js/prediction.js"
       - "js/boat-identity.js"
       - "js/render.js"
@@ -202,6 +211,11 @@ on:
       - "scripts/test-stats-runtime-loader.js"
       - "data/predictions/improvement-review.json"
       - "scripts/test-practical-selection.js"
+      - "scripts/test-practical-priority-shadow.js"
+      - "scripts/test-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow-artifact.js"
+      - "scripts/test-practical-priority-shadow-regression.js"
+      - "data/stats/practical-priority-shadow-report.json"
       - "scripts/test-prediction-transparency-ui.js"
       - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
@@ -279,6 +293,13 @@ jobs:
           node --check tools/test-motor-maintenance-theory-v2.js
           node --check js/note-generator.js
           node --check js/practical-selection.js
+          node --check js/practical-priority-shadow.js
+          node --check js/practical-priority-shadow-report.js
+          node --check scripts/build-practical-priority-shadow-report.js
+          node --check scripts/test-practical-priority-shadow.js
+          node --check scripts/test-practical-priority-shadow-report.js
+          node --check scripts/test-practical-priority-shadow-artifact.js
+          node --check scripts/test-practical-priority-shadow-regression.js
           node --check scripts/check-charter.js
           node --check scripts/collect-predictions.js
           node --check scripts/collect-results.js
@@ -382,6 +403,10 @@ jobs:
           node scripts/test-improvement-review.js
           node scripts/test-stats-runtime-loader.js
           node scripts/test-practical-selection.js
+          node scripts/test-practical-priority-shadow.js
+          node scripts/test-practical-priority-shadow-report.js
+          node scripts/test-practical-priority-shadow-artifact.js
+          node scripts/test-practical-priority-shadow-regression.js
           node scripts/test-prediction-transparency-ui.js
           node scripts/test-stats-methodology.js
           node scripts/test-ai-core-formations.js

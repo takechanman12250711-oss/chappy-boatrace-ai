@@ -9,6 +9,9 @@ on:
       - "config/chappy-charter.json"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "js/practical-priority-shadow.js"
+      - "js/practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow.js"
       - "scripts/build-scenario-ai-v6-snapshots.js"
       - "scripts/test-scenario-ai-v6-storage.js"
       - "js/scenario-ai-v6-shadow.js"
@@ -102,6 +105,9 @@ jobs:
       - name: Check collector-critical source
         run: |
           node --check scripts/collect-predictions.js
+          node --check js/practical-priority-shadow.js
+          node --check js/practical-priority-shadow-report.js
+          node scripts/test-practical-priority-shadow.js
           node --check scripts/build-scenario-ai-v6-snapshots.js
           node --check scripts/build-prediction-index-shards.js
           node --check js/prediction-index-loader.js

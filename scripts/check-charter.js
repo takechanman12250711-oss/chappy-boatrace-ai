@@ -7,6 +7,8 @@ const root = path.resolve(__dirname, "..");
 const read = relativePath =>
   fs.readFileSync(path.join(root, relativePath), "utf8");
 const charter = JSON.parse(read("config/chappy-charter.json"));
+const practicalPriorityShadowReportApi =
+  require("../js/practical-priority-shadow-report");
 
 const expectedPriority = [
   "展開",
@@ -281,6 +283,8 @@ const index = read("index.html");
 const style = read("style.css");
 const noteGenerator = read("js/note-generator.js");
 const practicalSelection = read("js/practical-selection.js");
+const practicalPriorityShadow =
+  read("js/practical-priority-shadow.js");
 const evaluatedScenarioCandidates =
   read("js/evaluated-scenario-candidates.js");
 const predictionRuntimeLoader =
@@ -357,6 +361,72 @@ assert(
 assert(
   practicalSelection.includes("主軸となる展開が定まらないため見送り。"),
   "note原稿に本線不成立時の見送りがありません"
+);
+const priorityShadowCharter =
+  charter.practicalPriorityProspectiveShadow || {};
+assert(
+  priorityShadowCharter.enabled === true &&
+    priorityShadowCharter.startDate === "20260813" &&
+    priorityShadowCharter.targetReplacementCount === 100 &&
+    priorityShadowCharter.fixedEndpoint === true &&
+    priorityShadowCharter.earlyStoppingAllowed === false &&
+    priorityShadowCharter.candidateReasonCode ===
+      "CANDIDATE_ONLY_EVALUATION" &&
+    priorityShadowCharter.firstFormationBranch ===
+      "formation:flow" &&
+    priorityShadowCharter.headBoatNo === 1 &&
+    JSON.stringify(priorityShadowCharter.structuredRoles) ===
+      JSON.stringify(["head", "hold", "pickup"]) &&
+    priorityShadowCharter.priorityScoreExclusiveMinimum === 90 &&
+    priorityShadowCharter.sourceSelectionFingerprint ===
+      "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5" &&
+    priorityShadowCharter.replacementMode ===
+      "same-index-one-for-one" &&
+    priorityShadowCharter.voidHandling ===
+      "resolved-neutral-kept-in-fixed-cohort" &&
+    priorityShadowCharter.settledPayoutPolicy ===
+      "positive-official-payout-required" &&
+    priorityShadowCharter.minimumDiscordantCount === 6 &&
+    priorityShadowCharter.maximumLossCount === 1 &&
+    priorityShadowCharter.maximumOneSidedPValue === 0.05 &&
+    priorityShadowCharter.conditionsMayChangeDuringCohort === false &&
+    priorityShadowCharter.requiresHumanApproval === true &&
+    priorityShadowCharter.automaticApplication === false &&
+    priorityShadowCharter.usableForPrediction === false,
+  "順位候補の事前登録シャドー条件が憲章と一致しません"
+);
+assert(
+  (() => {
+    const report = practicalPriorityShadowReportApi.build([]);
+    return (
+      report.contract.fixedEndpoint === true &&
+      report.contract.earlyStoppingAllowed === false &&
+      report.contract.conditionsMayChangeDuringCohort === false &&
+      report.contract.voidHandling ===
+        "resolved-neutral-kept-in-fixed-cohort" &&
+      report.contract.settledPayoutPolicy ===
+        "positive-official-payout-required" &&
+      report.requiresHumanApproval === true &&
+      report.automaticApplication === false &&
+      report.usableForPrediction === false
+    );
+  })() &&
+  practicalPriorityShadow.includes(
+    "prospective-shadow-only"
+  ) &&
+    practicalPriorityShadow.includes(
+      "candidate-priority-strictly-greater"
+    ) &&
+    practicalPriorityShadow.includes(
+      "automaticApplication: false"
+    ) &&
+    practicalPriorityShadow.includes(
+      "usableForPrediction: false"
+    ) &&
+    collectPredictions.includes(
+      "practicalPriorityShadowSnapshot"
+    ),
+  "順位候補のシャドー保存・固定終了点・承認ゲートが不足しています"
 );
 assert(
   evaluatedScenarioCandidates.includes("MARK_DEFINITIONS") &&

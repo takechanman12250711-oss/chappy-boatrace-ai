@@ -1,0 +1,50 @@
+name: Check practical priority prospective shadow
+
+on:
+  pull_request:
+    paths:
+      - "config/chappy-charter.json"
+      - "docs/CHAPPY_CHARTER.md"
+      - "js/practical-selection.js"
+      - "js/practical-priority-shadow.js"
+      - "js/practical-priority-shadow-report.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/build-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow.js"
+      - "scripts/test-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow-artifact.js"
+      - "scripts/test-practical-priority-shadow-regression.js"
+      - "scripts/test-shadow-predictions.js"
+      - "scripts/check-charter.js"
+      - ".github/workflows/collect-predictions.yml"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/check-practical-priority-shadow.yml"
+      - "data/stats/practical-priority-shadow-report.json"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify frozen prospective contract
+        run: |
+          node --check js/practical-priority-shadow.js
+          node --check js/practical-priority-shadow-report.js
+          node --check scripts/build-practical-priority-shadow-report.js
+          node --check scripts/collect-predictions.js
+          node scripts/test-practical-priority-shadow.js
+          node scripts/test-practical-priority-shadow-report.js
+          node scripts/test-practical-priority-shadow-artifact.js
+          node scripts/test-practical-priority-shadow-regression.js
+          node scripts/test-priority-gate-hole-replacement-regression.js
+          node scripts/test-shadow-predictions.js
+          node scripts/check-charter.js
