@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -40,6 +41,9 @@ jobs:
           node scripts/test-profit-priority-ranking.js
           node scripts/test-theory-profit-review-phase8.js
           node scripts/test-theory-improvement-proposal-phase9.js
+          node --check js/theory-candidate-branch-analysis-phase9.js
+          node --check scripts/build-theory-candidate-branch-analysis-phase9.js
+          node scripts/test-theory-candidate-branch-analysis-phase9.js
           node scripts/test-theory-ab-phase10.js
           node scripts/test-theory-adoption-phase5.js
           node scripts/test-learning-pipeline-gate.js
@@ -50,11 +54,12 @@ jobs:
         run: |
           node scripts/test-improvement-proposal-input-contract.js
           node scripts/test-analysis-input-contract.js
+          node scripts/test-theory-candidate-branch-analysis-phase9-artifact.js
       - name: Verify generated safety flags
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
-          const files=['improvement-proposal-phase3.json','theory-performance-report.json','theory-evidence-coverage-phase7.json','theory-evidence-growth-monitor.json','theory-adoption-phase5.json','profit-priority-ranking.json','theory-profit-review-phase8.json','theory-improvement-proposal-phase9.json','theory-ab-phase10.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
+          const files=['improvement-proposal-phase3.json','theory-performance-report.json','theory-evidence-coverage-phase7.json','theory-evidence-growth-monitor.json','theory-adoption-phase5.json','profit-priority-ranking.json','theory-profit-review-phase8.json','theory-improvement-proposal-phase9.json','theory-candidate-branch-analysis-phase9.json','theory-ab-phase10.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
           for(const file of files){
             const p=`data/stats/${file}`;
             if(!fs.existsSync(p)) throw new Error(`${p} が未生成`);
@@ -86,9 +91,20 @@ jobs:
             if(phase8.candidate?.ready!==true) throw new Error('Phase8候補の準備完了状態が欠落しています');
             if(phase9.status!=='proposal-ready' || phase9.proposalCount!==1 || phase9.proposal?.theoryKey!==phase8.candidate.theoryKey) throw new Error('Phase8候補がPhase9提案へ接続されていません');
           }
+          const branch=JSON.parse(fs.readFileSync('data/stats/theory-candidate-branch-analysis-phase9.json','utf8'));
+          if(branch.candidateCount>1 || branch.automaticApplication!==false || branch.usableForPrediction!==false) throw new Error('Phase9候補枝分析の安全条件異常');
+          if(phase9.proposal?.theoryKey==='frame-rise-fall'){
+            if(branch.status!=='candidate-ready-for-human-review' || branch.candidateCount!==1) throw new Error('枠別浮沈率の候補枝分析が未準備です');
+            if(branch.candidate?.approved!==false || branch.candidate?.shadowImplementationPresent!==false) throw new Error('未承認候補が実装済みとして扱われています');
+            if(branch.candidate?.productionPredictionChanged!==false || branch.candidate?.productionTicketSelectionChanged!==false) throw new Error('候補枝分析が本番予想を変更しています');
+            if(branch.retrospectiveLimits?.independentHoldout!==false || branch.retrospectiveLimits?.historicalBPerformanceClaimAllowed!==false) throw new Error('84Rを独立holdoutまたはB成績として誤使用しています');
+          }
           const phase10=JSON.parse(fs.readFileSync('data/stats/theory-ab-phase10.json','utf8'));
           if(phase10.automaticApplication!==false || phase10.usableForPrediction!==false || phase10.comparison?.automaticWinnerSelection!==false) throw new Error('Phase10安全条件異常');
-          if(phase10.proposalApproved!==true && phase10.candidateB!==null) throw new Error('未承認Phase9提案からBが生成されています');
+          if(phase10.readinessChecks?.allPassed!==true && phase10.candidateB!==null) throw new Error('全承認・実装確認前にBが生成されています');
+          if(branch.candidateCount===1 && phase10.comparison?.minimumComparableRaces!==branch.candidate?.prospectiveProtocol?.fixedComparableRaces) throw new Error('候補仕様とPhase10の固定比較件数が不一致です');
+          if(branch.candidateCount===1 && phase10.readinessChecks?.validCandidateSpecFingerprint!==true) throw new Error('Phase10の候補仕様fingerprint再計算が不一致です');
+          if(branch.candidate?.shadowImplementationPresent===false && (phase10.readinessChecks?.shadowImplementationVerifierPresent!==false || phase10.shadowImplementationPresent!==false)) throw new Error('未実装シャドーを実装済みとして扱っています');
           const used=perf.byTheory.filter(row=>row.evaluatedCount>0);
           if(used.some(row=>row.practicalEvaluatedCount!==row.evaluatedCount)) throw new Error('実戦厳選指標の保存漏れ');
           if(used.some(row=>!Object.hasOwn(row,'skipEvaluatedCount')||!Object.hasOwn(row,'skipDecisionAccuracy'))) throw new Error('見送り判断指標の項目欠損');

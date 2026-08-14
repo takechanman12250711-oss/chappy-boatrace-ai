@@ -1,10 +1,12 @@
 {
-  "generatedAt": "2026-08-14T05:18:46.604Z",
-  "source": "theory-improvement-proposal-phase9.json",
+  "generatedAt": "2026-08-14T10:52:37.278Z",
+  "source": "theory-improvement-proposal-phase9.json + theory-candidate-branch-analysis-phase9.json",
   "schemaVersion": 1,
-  "engineVersion": "theory-ab-phase10-20260807",
+  "engineVersion": "theory-ab-phase10-20260814-candidate-gate",
   "status": "waiting-for-approved-phase9-proposal",
   "sourceStatus": "proposal-ready",
+  "candidateSourceStatus": "candidate-ready-for-human-review",
+  "implementationSourceStatus": "not-implemented",
   "metricOrder": [
     "recoveryRate",
     "practicalHitRate",
@@ -19,7 +21,7 @@
   },
   "candidateB": null,
   "comparison": {
-    "minimumComparableRaces": 50,
+    "minimumComparableRaces": 100,
     "metrics": [
       "recoveryRate",
       "practicalHitRate",
@@ -34,7 +36,24 @@
     ],
     "automaticWinnerSelection": false
   },
+  "readinessChecks": {
+    "proposalReady": true,
+    "proposalApproved": false,
+    "proposalFingerprintMatches": true,
+    "validCandidateSpecFingerprint": true,
+    "recalculatedCandidateSpecFingerprint": "sha256:61de78026c5441e4b56eb9ece5c7269f2e8298b573ec2ed5deb430cd853ca512",
+    "candidateMatches": true,
+    "candidateApproved": false,
+    "cutoffFrozen": false,
+    "shadowImplementationVerifierPresent": false,
+    "shadowImplementationVerified": false,
+    "shadowImplementationPresent": false,
+    "allPassed": false
+  },
   "proposalApproved": false,
+  "currentProposalFingerprint": "sha256:f80abfcf498dbe2d180f271ea43545b4df93c113b62e78382fcebaae6a853f23",
+  "candidateSpecificationApproved": false,
+  "shadowImplementationPresent": false,
   "humanApprovalRequired": true,
   "automaticApplication": false,
   "usableForPrediction": false,
