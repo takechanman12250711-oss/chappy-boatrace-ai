@@ -1,0 +1,708 @@
+{
+  "generatedAt": "2026-08-14T10:48:03.514Z",
+  "source": "official pre-deadline cohort + theory-improvement-proposal-phase9.json",
+  "sourceFiles": [
+    "data/predictions/YYYYMMDD.json",
+    "data/results/YYYYMMDD.json",
+    "data/stats/theory-improvement-proposal-phase9.json"
+  ],
+  "analysisInputContract": "official-pre-deadline-cohort-v1",
+  "analysisInputDiagnostics": {
+    "canonicalPredictionCount": 1171,
+    "preDeadlinePredictionCount": 1164,
+    "excludedPredictionCount": 7,
+    "excludedReasons": {
+      "captured-at-or-after-deadline": 6,
+      "source-fetched-at-or-after-deadline": 1
+    },
+    "officialResultCount": 1102,
+    "settledJoinCount": 1102,
+    "deduplication": "predictions-preferred-over-verificationPredictions",
+    "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
+  },
+  "schemaVersion": 1,
+  "engineVersion": "theory-candidate-branch-analysis-phase9-20260814",
+  "status": "candidate-ready-for-human-review",
+  "sourceStatus": "proposal-ready",
+  "targetTheoryKey": "frame-rise-fall",
+  "phase9ProposalFingerprint": "sha256:f80abfcf498dbe2d180f271ea43545b4df93c113b62e78382fcebaae6a853f23",
+  "formalRaceCount": 84,
+  "minimumFormalRaces": 30,
+  "evidenceConsistency": {
+    "phase9EvidenceCount": 84,
+    "extractedFormalRaceCount": 84,
+    "exactMatch": true
+  },
+  "cohortFingerprint": "sha256:4c38c18f58806fa59d1008d81be42bb055a17b56fc8834af250eb626569603a6",
+  "inputWindow": {
+    "dateCount": 2,
+    "startDate": "20260813",
+    "endDate": "20260814",
+    "startSelectedAt": "2026-08-12T23:53:49.990Z",
+    "endSelectedAt": "2026-08-14T03:29:16.609Z"
+  },
+  "accountingDefinition": {
+    "stake": "正式証拠が帰属した重複なし3連単を各100円として合算",
+    "return": "帰属買い目に公式3連単結果が含まれる場合だけ払戻金を計上",
+    "practicalHit": "実戦選択全体の的中であり、枠別浮沈率帰属買い目のhitとは別指標"
+  },
+  "overall": {
+    "raceCount": 84,
+    "ticketCount": 507,
+    "hitCount": 15,
+    "missCount": 69,
+    "hitRate": 17.9,
+    "practicalHitCount": 22,
+    "practicalHitRate": 26.2,
+    "stake": 50700,
+    "return": 23580,
+    "profit": -27120,
+    "recoveryRate": 46.5
+  },
+  "branchDefinitions": {
+    "type": "保存された浮上・沈下ラベル。調整符号とは一致しないためB条件に使用しない",
+    "scenarioType": "主展開種別。現母集団ではframeNoと強く結び付く",
+    "scoreAdjustment": "本番Aで主展開スコアへ適用された枠別浮沈補正",
+    "movementDeltaBand": "保存済みmovementDeltaの固定帯域"
+  },
+  "branches": {
+    "frameNo": [
+      {
+        "value": 1,
+        "raceCount": 28,
+        "ticketCount": 175,
+        "hitCount": 8,
+        "missCount": 20,
+        "hitRate": 28.6,
+        "practicalHitCount": 10,
+        "practicalHitRate": 35.7,
+        "stake": 17500,
+        "return": 5770,
+        "profit": -11730,
+        "recoveryRate": 33
+      },
+      {
+        "value": 2,
+        "raceCount": 21,
+        "ticketCount": 124,
+        "hitCount": 5,
+        "missCount": 16,
+        "hitRate": 23.8,
+        "practicalHitCount": 9,
+        "practicalHitRate": 42.9,
+        "stake": 12400,
+        "return": 6970,
+        "profit": -5430,
+        "recoveryRate": 56.2
+      },
+      {
+        "value": 3,
+        "raceCount": 16,
+        "ticketCount": 91,
+        "hitCount": 1,
+        "missCount": 15,
+        "hitRate": 6.3,
+        "practicalHitCount": 2,
+        "practicalHitRate": 12.5,
+        "stake": 9100,
+        "return": 5160,
+        "profit": -3940,
+        "recoveryRate": 56.7
+      },
+      {
+        "value": 4,
+        "raceCount": 19,
+        "ticketCount": 117,
+        "hitCount": 1,
+        "missCount": 18,
+        "hitRate": 5.3,
+        "practicalHitCount": 1,
+        "practicalHitRate": 5.3,
+        "stake": 11700,
+        "return": 5680,
+        "profit": -6020,
+        "recoveryRate": 48.5
+      }
+    ],
+    "type": [
+      {
+        "value": "rise",
+        "raceCount": 22,
+        "ticketCount": 130,
+        "hitCount": 2,
+        "missCount": 20,
+        "hitRate": 9.1,
+        "practicalHitCount": 2,
+        "practicalHitRate": 9.1,
+        "stake": 13000,
+        "return": 10840,
+        "profit": -2160,
+        "recoveryRate": 83.4
+      },
+      {
+        "value": "sink",
+        "raceCount": 62,
+        "ticketCount": 377,
+        "hitCount": 13,
+        "missCount": 49,
+        "hitRate": 21,
+        "practicalHitCount": 20,
+        "practicalHitRate": 32.3,
+        "stake": 37700,
+        "return": 12740,
+        "profit": -24960,
+        "recoveryRate": 33.8
+      }
+    ],
+    "scenarioType": [
+      {
+        "value": "escape",
+        "raceCount": 28,
+        "ticketCount": 175,
+        "hitCount": 8,
+        "missCount": 20,
+        "hitRate": 28.6,
+        "practicalHitCount": 10,
+        "practicalHitRate": 35.7,
+        "stake": 17500,
+        "return": 5770,
+        "profit": -11730,
+        "recoveryRate": 33
+      },
+      {
+        "value": "fourAttack",
+        "raceCount": 19,
+        "ticketCount": 117,
+        "hitCount": 1,
+        "missCount": 18,
+        "hitRate": 5.3,
+        "practicalHitCount": 1,
+        "practicalHitRate": 5.3,
+        "stake": 11700,
+        "return": 5680,
+        "profit": -6020,
+        "recoveryRate": 48.5
+      },
+      {
+        "value": "sashi",
+        "raceCount": 21,
+        "ticketCount": 124,
+        "hitCount": 5,
+        "missCount": 16,
+        "hitRate": 23.8,
+        "practicalHitCount": 9,
+        "practicalHitRate": 42.9,
+        "stake": 12400,
+        "return": 6970,
+        "profit": -5430,
+        "recoveryRate": 56.2
+      },
+      {
+        "value": "threeAttack",
+        "raceCount": 16,
+        "ticketCount": 91,
+        "hitCount": 1,
+        "missCount": 15,
+        "hitRate": 6.3,
+        "practicalHitCount": 2,
+        "practicalHitRate": 12.5,
+        "stake": 9100,
+        "return": 5160,
+        "profit": -3940,
+        "recoveryRate": 56.7
+      }
+    ],
+    "scoreAdjustment": [
+      {
+        "value": -5,
+        "raceCount": 2,
+        "ticketCount": 13,
+        "hitCount": 0,
+        "missCount": 2,
+        "hitRate": 0,
+        "practicalHitCount": 1,
+        "practicalHitRate": 50,
+        "stake": 1300,
+        "return": 0,
+        "profit": -1300,
+        "recoveryRate": 0
+      },
+      {
+        "value": -4,
+        "raceCount": 4,
+        "ticketCount": 22,
+        "hitCount": 0,
+        "missCount": 4,
+        "hitRate": 0,
+        "practicalHitCount": 0,
+        "practicalHitRate": 0,
+        "stake": 2200,
+        "return": 0,
+        "profit": -2200,
+        "recoveryRate": 0
+      },
+      {
+        "value": -3,
+        "raceCount": 6,
+        "ticketCount": 37,
+        "hitCount": 1,
+        "missCount": 5,
+        "hitRate": 16.7,
+        "practicalHitCount": 1,
+        "practicalHitRate": 16.7,
+        "stake": 3700,
+        "return": 5680,
+        "profit": 1980,
+        "recoveryRate": 153.5
+      },
+      {
+        "value": -2,
+        "raceCount": 8,
+        "ticketCount": 49,
+        "hitCount": 0,
+        "missCount": 8,
+        "hitRate": 0,
+        "practicalHitCount": 3,
+        "practicalHitRate": 37.5,
+        "stake": 4900,
+        "return": 0,
+        "profit": -4900,
+        "recoveryRate": 0
+      },
+      {
+        "value": -1,
+        "raceCount": 8,
+        "ticketCount": 50,
+        "hitCount": 0,
+        "missCount": 8,
+        "hitRate": 0,
+        "practicalHitCount": 1,
+        "practicalHitRate": 12.5,
+        "stake": 5000,
+        "return": 0,
+        "profit": -5000,
+        "recoveryRate": 0
+      },
+      {
+        "value": 1,
+        "raceCount": 4,
+        "ticketCount": 25,
+        "hitCount": 0,
+        "missCount": 4,
+        "hitRate": 0,
+        "practicalHitCount": 0,
+        "practicalHitRate": 0,
+        "stake": 2500,
+        "return": 0,
+        "profit": -2500,
+        "recoveryRate": 0
+      },
+      {
+        "value": 2,
+        "raceCount": 15,
+        "ticketCount": 83,
+        "hitCount": 4,
+        "missCount": 11,
+        "hitRate": 26.7,
+        "practicalHitCount": 5,
+        "practicalHitRate": 33.3,
+        "stake": 8300,
+        "return": 5260,
+        "profit": -3040,
+        "recoveryRate": 63.4
+      },
+      {
+        "value": 3,
+        "raceCount": 12,
+        "ticketCount": 69,
+        "hitCount": 4,
+        "missCount": 8,
+        "hitRate": 33.3,
+        "practicalHitCount": 4,
+        "practicalHitRate": 33.3,
+        "stake": 6900,
+        "return": 7420,
+        "profit": 520,
+        "recoveryRate": 107.5
+      },
+      {
+        "value": 4,
+        "raceCount": 11,
+        "ticketCount": 70,
+        "hitCount": 4,
+        "missCount": 7,
+        "hitRate": 36.4,
+        "practicalHitCount": 5,
+        "practicalHitRate": 45.5,
+        "stake": 7000,
+        "return": 2190,
+        "profit": -4810,
+        "recoveryRate": 31.3
+      },
+      {
+        "value": 5,
+        "raceCount": 14,
+        "ticketCount": 89,
+        "hitCount": 2,
+        "missCount": 12,
+        "hitRate": 14.3,
+        "practicalHitCount": 2,
+        "practicalHitRate": 14.3,
+        "stake": 8900,
+        "return": 3030,
+        "profit": -5870,
+        "recoveryRate": 34
+      }
+    ],
+    "adjustmentSign": [
+      {
+        "value": "negative",
+        "raceCount": 28,
+        "ticketCount": 171,
+        "hitCount": 1,
+        "missCount": 27,
+        "hitRate": 3.6,
+        "practicalHitCount": 6,
+        "practicalHitRate": 21.4,
+        "stake": 17100,
+        "return": 5680,
+        "profit": -11420,
+        "recoveryRate": 33.2
+      },
+      {
+        "value": "positive",
+        "raceCount": 56,
+        "ticketCount": 336,
+        "hitCount": 14,
+        "missCount": 42,
+        "hitRate": 25,
+        "practicalHitCount": 16,
+        "practicalHitRate": 28.6,
+        "stake": 33600,
+        "return": 17900,
+        "profit": -15700,
+        "recoveryRate": 53.3
+      }
+    ],
+    "movementDeltaBand": [
+      {
+        "value": "< -20",
+        "raceCount": 2,
+        "ticketCount": 13,
+        "hitCount": 0,
+        "missCount": 2,
+        "hitRate": 0,
+        "practicalHitCount": 1,
+        "practicalHitRate": 50,
+        "stake": 1300,
+        "return": 0,
+        "profit": -1300,
+        "recoveryRate": 0
+      },
+      {
+        "value": "[-20,-15)",
+        "raceCount": 4,
+        "ticketCount": 22,
+        "hitCount": 0,
+        "missCount": 4,
+        "hitRate": 0,
+        "practicalHitCount": 0,
+        "practicalHitRate": 0,
+        "stake": 2200,
+        "return": 0,
+        "profit": -2200,
+        "recoveryRate": 0
+      },
+      {
+        "value": "[-15,-10)",
+        "raceCount": 6,
+        "ticketCount": 37,
+        "hitCount": 1,
+        "missCount": 5,
+        "hitRate": 16.7,
+        "practicalHitCount": 1,
+        "practicalHitRate": 16.7,
+        "stake": 3700,
+        "return": 5680,
+        "profit": 1980,
+        "recoveryRate": 153.5
+      },
+      {
+        "value": "[-10,0)",
+        "raceCount": 16,
+        "ticketCount": 99,
+        "hitCount": 0,
+        "missCount": 16,
+        "hitRate": 0,
+        "practicalHitCount": 4,
+        "practicalHitRate": 25,
+        "stake": 9900,
+        "return": 0,
+        "profit": -9900,
+        "recoveryRate": 0
+      },
+      {
+        "value": "[5,10)",
+        "raceCount": 15,
+        "ticketCount": 84,
+        "hitCount": 3,
+        "missCount": 12,
+        "hitRate": 20,
+        "practicalHitCount": 3,
+        "practicalHitRate": 20,
+        "stake": 8400,
+        "return": 4400,
+        "profit": -4000,
+        "recoveryRate": 52.4
+      },
+      {
+        "value": "[10,15)",
+        "raceCount": 16,
+        "ticketCount": 93,
+        "hitCount": 5,
+        "missCount": 11,
+        "hitRate": 31.3,
+        "practicalHitCount": 6,
+        "practicalHitRate": 37.5,
+        "stake": 9300,
+        "return": 8280,
+        "profit": -1020,
+        "recoveryRate": 89
+      },
+      {
+        "value": "[15,20)",
+        "raceCount": 15,
+        "ticketCount": 97,
+        "hitCount": 4,
+        "missCount": 11,
+        "hitRate": 26.7,
+        "practicalHitCount": 5,
+        "practicalHitRate": 33.3,
+        "stake": 9700,
+        "return": 2190,
+        "profit": -7510,
+        "recoveryRate": 22.6
+      },
+      {
+        "value": "[20,30)",
+        "raceCount": 7,
+        "ticketCount": 45,
+        "hitCount": 2,
+        "missCount": 5,
+        "hitRate": 28.6,
+        "practicalHitCount": 2,
+        "practicalHitRate": 28.6,
+        "stake": 4500,
+        "return": 3030,
+        "profit": -1470,
+        "recoveryRate": 67.3
+      },
+      {
+        "value": ">=30",
+        "raceCount": 3,
+        "ticketCount": 17,
+        "hitCount": 0,
+        "missCount": 3,
+        "hitRate": 0,
+        "practicalHitCount": 0,
+        "practicalHitRate": 0,
+        "stake": 1700,
+        "return": 0,
+        "profit": -1700,
+        "recoveryRate": 0
+      }
+    ]
+  },
+  "directionCaution": {
+    "definition": "type=riseかつ負補正、またはtype=sinkかつ正補正",
+    "mismatchCount": 58,
+    "mismatchRate": 69,
+    "typeMustNotDriveCandidate": true
+  },
+  "chronologicalThirds": [
+    {
+      "period": "first-third",
+      "startRaceKey": "20260813-21-2",
+      "endRaceKey": "20260813-21-12",
+      "startSelectedAt": "2026-08-12T23:53:49.990Z",
+      "endSelectedAt": "2026-08-13T04:37:27.904Z",
+      "raceCount": 28,
+      "ticketCount": 162,
+      "hitCount": 6,
+      "missCount": 22,
+      "hitRate": 21.4,
+      "practicalHitCount": 10,
+      "practicalHitRate": 35.7,
+      "stake": 16200,
+      "return": 10350,
+      "profit": -5850,
+      "recoveryRate": 63.9
+    },
+    {
+      "period": "middle-third",
+      "startRaceKey": "20260813-22-4",
+      "endRaceKey": "20260813-07-9",
+      "startSelectedAt": "2026-08-13T04:37:28.010Z",
+      "endSelectedAt": "2026-08-13T09:56:38.687Z",
+      "raceCount": 28,
+      "ticketCount": 172,
+      "hitCount": 3,
+      "missCount": 25,
+      "hitRate": 10.7,
+      "practicalHitCount": 5,
+      "practicalHitRate": 17.9,
+      "stake": 17200,
+      "return": 2270,
+      "profit": -14930,
+      "recoveryRate": 13.2
+    },
+    {
+      "period": "final-third",
+      "startRaceKey": "20260813-24-9",
+      "endRaceKey": "20260814-13-6",
+      "startSelectedAt": "2026-08-13T09:56:39.171Z",
+      "endSelectedAt": "2026-08-14T03:29:16.609Z",
+      "raceCount": 28,
+      "ticketCount": 173,
+      "hitCount": 6,
+      "missCount": 22,
+      "hitRate": 21.4,
+      "practicalHitCount": 7,
+      "practicalHitRate": 25,
+      "stake": 17300,
+      "return": 10960,
+      "profit": -6340,
+      "recoveryRate": 63.4
+    }
+  ],
+  "retrospectiveLimits": {
+    "independentHoldout": false,
+    "reason": "正式証拠は2日分だけで、全件を問題発見と候補定義に使用するため独立holdoutではない",
+    "exactCounterfactualTicketsAvailable": false,
+    "historicalBPerformanceClaimAllowed": false,
+    "multipleBranchWinnerSelectionAllowed": false
+  },
+  "candidateCount": 1,
+  "candidate": {
+    "candidateId": "frame-rise-fall-shadow-off-v1",
+    "applicability": {
+      "all": [
+        {
+          "field": "theoryKey",
+          "operator": "equals",
+          "value": "frame-rise-fall"
+        },
+        {
+          "field": "formal",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "approved",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "applied",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "scoreAdjustment",
+          "operator": "not-equals",
+          "value": 0
+        }
+      ]
+    },
+    "proposedChange": {
+      "scope": "shadow-B-only",
+      "action": "set-effective-frame-movement-adjustment",
+      "effectiveValue": 0,
+      "preserveRawAdjustmentEvidence": true,
+      "preserveAllOtherScenarioInputs": true,
+      "productionAUnchanged": true,
+      "ticketContractUnchanged": true
+    },
+    "prospectiveProtocol": {
+      "cutoff": {
+        "selectedAtExclusiveLowerBound": null,
+        "sourceCommit": null,
+        "logicFingerprint": null,
+        "status": "freeze-when-shadow-implementation-is-approved"
+      },
+      "eligibleRace": "cutoff後の同一締切前入力でA/B判断fingerprintが異なる正式証拠レース",
+      "decisionFingerprint": [
+        "skipDecision",
+        "mainScenario",
+        "practicalTickets"
+      ],
+      "fixedComparableRaces": 100,
+      "validationHalf": {
+        "start": 1,
+        "end": 50
+      },
+      "sealedConfirmationHalf": {
+        "start": 51,
+        "end": 100
+      },
+      "ordering": [
+        "selectedAt",
+        "raceKey"
+      ],
+      "deduplicationKey": "raceKey",
+      "officialResultRequired": true,
+      "voidRaceTreatment": "母数へ入れず、次のeligible raceで固定100Rを満たす",
+      "earlyStoppingAllowed": false,
+      "conditionChangesAllowed": false,
+      "reportScopes": [
+        "decision-changed-races",
+        "all-formal-races"
+      ],
+      "adoptionGate": {
+        "bothHalvesBOnlyHitsAtLeastAOnlyHits": true,
+        "overallMinimumNetBOnlyHits": 5,
+        "pairedOutcomeExactTest": {
+          "alternative": "B-better",
+          "maximumPValue": 0.05
+        },
+        "bRecoveryRateMustExceedA": true,
+        "pairedProfitDeltaMustBePositive": true,
+        "pairedProfitBootstrap": {
+          "confidenceLevel": 0.95,
+          "lowerBoundMustExceed": 0
+        },
+        "bothHalvesProfitDeltaMustBeNonNegative": true,
+        "bStakeMustNotExceedA": true,
+        "ticketContractViolationsMustEqual": 0,
+        "automaticWinnerSelection": false,
+        "finalHumanApprovalRequired": true
+      }
+    },
+    "candidateSpecFingerprint": "sha256:61de78026c5441e4b56eb9ece5c7269f2e8298b573ec2ed5deb430cd853ca512",
+    "sourceProposalFingerprint": "sha256:f80abfcf498dbe2d180f271ea43545b4df93c113b62e78382fcebaae6a853f23",
+    "label": "枠別浮沈補正の全面OFFシャドー",
+    "status": "proposed-awaiting-human-approval-and-shadow-implementation",
+    "selectionBasis": "過去枝の勝者ではなく、枠別浮沈補正1要素の因果寄与を分離できる単一ablation",
+    "scopeResolution": {
+      "changesPhase9BranchScope": true,
+      "reason": "既存84Rに独立holdoutがなく弱い枝の後付け選定を避けるため、理論寄与全体のablationへ変更",
+      "specificHumanApprovalRequired": true
+    },
+    "approved": false,
+    "approvedSpecFingerprint": null,
+    "shadowImplementationPresent": false,
+    "shadowImplementationSpecFingerprint": null,
+    "historicalPerformanceClaim": false,
+    "shadowOnly": true,
+    "productionPredictionChanged": false,
+    "productionTicketSelectionChanged": false,
+    "humanApprovalRequired": true
+  },
+  "oneCandidateOnly": true,
+  "retrospectiveOnly": true,
+  "causalClaim": false,
+  "humanApprovalRequired": true,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "uiVisible": false
+}

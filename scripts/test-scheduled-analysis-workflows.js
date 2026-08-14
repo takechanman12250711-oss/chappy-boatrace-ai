@@ -275,7 +275,8 @@ const learningVerificationLines = stepRunLines(
 [
   "scripts/test-local-water-theory-tag.js",
   "scripts/test-theory-zero-evidence-diagnostics.js",
-  "scripts/test-theory-improvement-approval-gate.js"
+  "scripts/test-theory-improvement-approval-gate.js",
+  "scripts/test-theory-candidate-branch-analysis-phase9.js"
 ].forEach(scriptPath => {
   const command = `node ${scriptPath}`;
   assert.equal(
@@ -305,6 +306,20 @@ assert.ok(
     learningPipeline.steps.indexOf("build-theory-evidence-coverage-phase7.js"),
   "公式母集団の理論成績生成直後に参照タグ成果物を生成する"
 );
+assert.equal(
+  learningPipeline.steps.filter(
+    file => file === "build-theory-candidate-branch-analysis-phase9.js"
+  ).length,
+  1,
+  "Phase9候補枝分析を固定順パイプラインで1回だけ生成する"
+);
+assert.ok(
+  learningPipeline.steps.indexOf("build-theory-improvement-proposal-phase9.js") <
+    learningPipeline.steps.indexOf("build-theory-candidate-branch-analysis-phase9.js") &&
+    learningPipeline.steps.indexOf("build-theory-candidate-branch-analysis-phase9.js") <
+    learningPipeline.steps.indexOf("build-theory-ab-phase10.js"),
+  "Phase9提案後・Phase10承認ゲート前に候補枝分析を生成する"
+);
 const learningCohortVerificationLines = stepRunLines(
   learningPipelineWorkflow,
   "Verify official analysis cohorts"
@@ -313,7 +328,8 @@ assert.deepEqual(
   learningCohortVerificationLines,
   [
     "node scripts/test-improvement-proposal-input-contract.js",
-    "node scripts/test-analysis-input-contract.js"
+    "node scripts/test-analysis-input-contract.js",
+    "node scripts/test-theory-candidate-branch-analysis-phase9-artifact.js"
   ],
   "固定順生成後に改善提案と参照タグの公式母集団を検証する"
 );
@@ -378,7 +394,11 @@ const collectResultsWorkflow = readWorkflow("collect-results.yml");
   "scripts/analyze-reference-tag-effectiveness.js",
   "scripts/test-reference-tag-effectiveness.js",
   "scripts/test-analysis-input-contract.js",
-  "scripts/build-learning-analysis-pipeline.js"
+  "scripts/build-learning-analysis-pipeline.js",
+  "js/theory-candidate-branch-analysis-phase9.js",
+  "scripts/build-theory-candidate-branch-analysis-phase9.js",
+  "scripts/test-theory-candidate-branch-analysis-phase9.js",
+  "scripts/test-theory-candidate-branch-analysis-phase9-artifact.js"
 ].forEach(workflowPath => {
   assert.ok(
     collectResultsWorkflow.includes(`- "${workflowPath}"`),

@@ -7,6 +7,7 @@ const engine = require("../js/theory-ab-phase10");
 const root = path.resolve(__dirname, "..");
 const stats = path.join(root, "data", "stats");
 const source = path.join(stats, "theory-improvement-proposal-phase9.json");
+const candidateSource = path.join(stats, "theory-candidate-branch-analysis-phase9.json");
 const output = path.join(stats, "theory-ab-phase10.json");
 
 function load(file, fallback = {}) {
@@ -16,10 +17,11 @@ function load(file, fallback = {}) {
 
 function main() {
   const phase9 = load(source, {});
+  const candidateAnalysis = load(candidateSource, {});
   const report = {
     generatedAt: new Date().toISOString(),
-    source: "theory-improvement-proposal-phase9.json",
-    ...engine.build(phase9)
+    source: "theory-improvement-proposal-phase9.json + theory-candidate-branch-analysis-phase9.json",
+    ...engine.build(phase9, candidateAnalysis)
   };
   fs.mkdirSync(stats, { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
