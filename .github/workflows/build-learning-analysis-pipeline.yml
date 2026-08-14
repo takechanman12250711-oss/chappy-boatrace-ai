@@ -29,6 +29,8 @@ jobs:
       - name: Verify pipeline
         run: |
           node --check scripts/build-learning-analysis-pipeline.js
+          node --check scripts/analyze-reference-tag-effectiveness.js
+          node scripts/test-reference-tag-effectiveness.js
           node scripts/test-local-water-theory-tag.js
           node scripts/test-theory-performance-report.js
           node scripts/test-theory-zero-evidence-diagnostics.js
@@ -44,8 +46,10 @@ jobs:
           node scripts/test-phase6-data-audit.js
       - name: Build in fixed order
         run: node scripts/build-learning-analysis-pipeline.js
-      - name: Verify official improvement cohort
-        run: node scripts/test-improvement-proposal-input-contract.js
+      - name: Verify official analysis cohorts
+        run: |
+          node scripts/test-improvement-proposal-input-contract.js
+          node scripts/test-analysis-input-contract.js
       - name: Verify generated safety flags
         run: |
           node - <<'NODE'
@@ -94,7 +98,7 @@ jobs:
           node scripts/check-charter.js
       - name: Save pipeline outputs
         run: |
-          git add data/predictions data/stats
+          git add data/predictions data/stats data/analysis/reference-tag-effectiveness.json
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

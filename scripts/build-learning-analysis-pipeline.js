@@ -10,6 +10,7 @@ const steps = [
   "build-miss-cause-analysis.js",
   "build-improvement-proposal-report.js",
   "build-theory-performance-report.js",
+  "analyze-reference-tag-effectiveness.js",
   "build-theory-evidence-coverage-phase7.js",
   "build-theory-evidence-growth-monitor.js",
   "build-theory-adoption-phase5.js",

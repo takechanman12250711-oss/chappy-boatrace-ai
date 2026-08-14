@@ -6,12 +6,18 @@ on:
       - main
     paths:
       - ".github/workflows/collect-results.yml"
+      - ".github/workflows/analyze-reference-tags.yml"
+      - ".github/workflows/build-learning-analysis-pipeline.yml"
       - "config/chappy-charter.json"
       - "scripts/collect-results.js"
       - "scripts/repair-recent-results.js"
       - "scripts/build-result-review.js"
       - "scripts/test-result-review.js"
       - "scripts/analysis-input-contract.js"
+      - "scripts/analyze-reference-tag-effectiveness.js"
+      - "scripts/test-reference-tag-effectiveness.js"
+      - "scripts/test-analysis-input-contract.js"
+      - "scripts/build-learning-analysis-pipeline.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"

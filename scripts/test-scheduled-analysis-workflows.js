@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const theoryPerformance = require("../js/theory-performance-report");
+const learningPipeline = require("./build-learning-analysis-pipeline");
 
 const root = path.resolve(__dirname, "..");
 
@@ -283,6 +284,107 @@ const learningVerificationLines = stepRunLines(
     `${scriptPath}を定期学習検査で1回だけ実行する`
   );
 });
+assert.equal(
+  learningVerificationLines.filter(
+    line => line === "node scripts/test-reference-tag-effectiveness.js"
+  ).length,
+  1,
+  "参照タグ分析の単体回帰を学習パイプライン生成前に1回実行する"
+);
+assert.equal(
+  learningPipeline.steps.filter(
+    file => file === "analyze-reference-tag-effectiveness.js"
+  ).length,
+  1,
+  "参照タグ成果物を固定順パイプラインで1回だけ生成する"
+);
+assert.ok(
+  learningPipeline.steps.indexOf("build-theory-performance-report.js") <
+    learningPipeline.steps.indexOf("analyze-reference-tag-effectiveness.js") &&
+    learningPipeline.steps.indexOf("analyze-reference-tag-effectiveness.js") <
+    learningPipeline.steps.indexOf("build-theory-evidence-coverage-phase7.js"),
+  "公式母集団の理論成績生成直後に参照タグ成果物を生成する"
+);
+const learningCohortVerificationLines = stepRunLines(
+  learningPipelineWorkflow,
+  "Verify official analysis cohorts"
+);
+assert.deepEqual(
+  learningCohortVerificationLines,
+  [
+    "node scripts/test-improvement-proposal-input-contract.js",
+    "node scripts/test-analysis-input-contract.js"
+  ],
+  "固定順生成後に改善提案と参照タグの公式母集団を検証する"
+);
+const learningBuildIndex = learningPipelineWorkflow.indexOf(
+  "- name: Build in fixed order"
+);
+const learningCohortVerifyIndex = learningPipelineWorkflow.indexOf(
+  "- name: Verify official analysis cohorts"
+);
+const learningSaveIndex = learningPipelineWorkflow.indexOf(
+  "- name: Save pipeline outputs"
+);
+assert.ok(
+  learningBuildIndex < learningCohortVerifyIndex &&
+    learningCohortVerifyIndex < learningSaveIndex,
+  "参照タグを含む全成果物を生成後・保存前に検証する"
+);
+const learningSaveLines = stepRunLines(
+  learningPipelineWorkflow,
+  "Save pipeline outputs"
+);
+assert.ok(
+  learningSaveLines.some(line =>
+    line.startsWith("git add ") &&
+    line.split(/\s+/).includes("data/analysis/reference-tag-effectiveness.json")
+  ),
+  "学習パイプラインで参照タグ成果物を同じcommitへstageする"
+);
+
+const referenceWorkflow = readWorkflow("analyze-reference-tags.yml");
+assert.ok(
+  referenceWorkflow.includes("group: chappy-main-data-writers") &&
+    referenceWorkflow.includes("queue: max") &&
+    referenceWorkflow.includes("cancel-in-progress: false"),
+  "参照タグの定期writerをmain writer共有レーンで直列化する"
+);
+assert.match(
+  referenceWorkflow,
+  /uses: actions\/checkout@v4\s+with:\s+ref: main\s+fetch-depth: 0/,
+  "参照タグの定期writerは最新mainを完全履歴でcheckoutする"
+);
+const referenceCommitLines = stepRunLines(
+  referenceWorkflow,
+  "Commit report when changed"
+);
+const referenceCommitIndex = referenceCommitLines.findIndex(line =>
+  line.startsWith("git commit ")
+);
+const referencePullIndex = referenceCommitLines.indexOf(
+  "git pull --rebase origin main"
+);
+const referencePushIndex = referenceCommitLines.indexOf("git push origin main");
+assert.ok(
+  referenceCommitIndex < referencePullIndex &&
+    referencePullIndex < referencePushIndex,
+  "参照タグの定期writerはcommit後に最新mainへrebaseして明示pushする"
+);
+const collectResultsWorkflow = readWorkflow("collect-results.yml");
+[
+  ".github/workflows/analyze-reference-tags.yml",
+  ".github/workflows/build-learning-analysis-pipeline.yml",
+  "scripts/analyze-reference-tag-effectiveness.js",
+  "scripts/test-reference-tag-effectiveness.js",
+  "scripts/test-analysis-input-contract.js",
+  "scripts/build-learning-analysis-pipeline.js"
+].forEach(workflowPath => {
+  assert.ok(
+    collectResultsWorkflow.includes(`- "${workflowPath}"`),
+    `${workflowPath}の変更後に結果収集から学習パイプラインを起動する`
+  );
+});
 const safetyGuard = stepRunLines(
   learningPipelineWorkflow,
   "Verify generated safety flags"
@@ -301,6 +403,8 @@ assert.deepEqual(
 const phase6Workflow = readWorkflow("check-phase6-integration.yml");
 [
   '.github/workflows/analyze-reference-tags.yml',
+  '.github/workflows/collect-results.yml',
+  'scripts/build-learning-analysis-pipeline.js',
   'scripts/analysis-input-contract.js',
   'scripts/test-analysis-input-contract.js'
 ].forEach(workflowPath => {
