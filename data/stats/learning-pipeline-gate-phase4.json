@@ -1,13 +1,27 @@
 {
-  "generatedAt": "2026-08-13T16:10:23.744Z",
-  "source": "data/predictions/*.json + improvement-proposal-phase3.json",
+  "generatedAt": "2026-08-14T04:01:32.157Z",
+  "source": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json + improvement-proposal-phase3.json",
+  "analysisInputContract": "official-pre-deadline-cohort-v1",
   "deduplication": "predictions-preferred-over-verificationPredictions",
+  "analysisInputDiagnostics": {
+    "canonicalPredictionCount": 1132,
+    "preDeadlinePredictionCount": 1125,
+    "excludedPredictionCount": 7,
+    "excludedReasons": {
+      "captured-at-or-after-deadline": 6,
+      "source-fetched-at-or-after-deadline": 1
+    },
+    "officialResultCount": 1074,
+    "settledJoinCount": 1074,
+    "deduplication": "predictions-preferred-over-verificationPredictions",
+    "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
+  },
   "schemaVersion": 1,
   "engineVersion": "learning-pipeline-gate-phase4-20260806",
   "status": "awaiting-human-approval",
-  "settledRaceCount": 1079,
-  "theoryEvaluationCount": 1079,
-  "missCauseAnalysisCount": 1079,
+  "settledRaceCount": 1074,
+  "theoryEvaluationCount": 1074,
+  "missCauseAnalysisCount": 1074,
   "pipelineCoverage": {
     "theoryEvaluation": 100,
     "missCauseAnalysis": 100

@@ -44,11 +44,13 @@ jobs:
           node scripts/test-phase6-data-audit.js
       - name: Build in fixed order
         run: node scripts/build-learning-analysis-pipeline.js
+      - name: Verify official improvement cohort
+        run: node scripts/test-improvement-proposal-input-contract.js
       - name: Verify generated safety flags
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
-          const files=['theory-performance-report.json','theory-evidence-coverage-phase7.json','theory-evidence-growth-monitor.json','theory-adoption-phase5.json','profit-priority-ranking.json','theory-profit-review-phase8.json','theory-improvement-proposal-phase9.json','theory-ab-phase10.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
+          const files=['improvement-proposal-phase3.json','theory-performance-report.json','theory-evidence-coverage-phase7.json','theory-evidence-growth-monitor.json','theory-adoption-phase5.json','profit-priority-ranking.json','theory-profit-review-phase8.json','theory-improvement-proposal-phase9.json','theory-ab-phase10.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
           for(const file of files){
             const p=`data/stats/${file}`;
             if(!fs.existsSync(p)) throw new Error(`${p} が未生成`);
@@ -60,6 +62,13 @@ jobs:
           const perfInput=perf.analysisInputDiagnostics||{};
           if(!(perfInput.settledJoinCount>0) || perfInput.officialResultCount!==perfInput.settledJoinCount) throw new Error('理論別成績の公式結果結合数異常');
           if(perf.sampleCount!==perfInput.settledJoinCount*perf.theoryCount || perf.byTheory.some(row=>row.raceCount!==perfInput.settledJoinCount)) throw new Error('理論別成績の母集団数異常');
+          const improvement=JSON.parse(fs.readFileSync('data/stats/improvement-proposal-phase3.json','utf8'));
+          const pipeline=JSON.parse(fs.readFileSync('data/stats/learning-pipeline-gate-phase4.json','utf8'));
+          const audit=JSON.parse(fs.readFileSync('data/stats/phase6-data-audit.json','utf8'));
+          for(const [name,data] of [['改善提案',improvement],['学習ゲート',pipeline],['Phase6監査',audit]]){
+            if(data.analysisInputContract!==perf.analysisInputContract) throw new Error(`${name}の母集団契約異常`);
+            if(data.analysisInputDiagnostics?.settledJoinCount!==perfInput.settledJoinCount || data.settledRaceCount!==perfInput.settledJoinCount) throw new Error(`${name}の母集団数異常`);
+          }
           const phase7=JSON.parse(fs.readFileSync('data/stats/theory-evidence-coverage-phase7.json','utf8'));
           if(phase7.theoryCount!==12) throw new Error('Phase7の理論数異常');
           const growth=JSON.parse(fs.readFileSync('data/stats/theory-evidence-growth-monitor.json','utf8'));
@@ -80,7 +89,6 @@ jobs:
           if(used.some(row=>row.practicalEvaluatedCount!==row.evaluatedCount)) throw new Error('実戦厳選指標の保存漏れ');
           if(used.some(row=>!Object.hasOwn(row,'skipEvaluatedCount')||!Object.hasOwn(row,'skipDecisionAccuracy'))) throw new Error('見送り判断指標の項目欠損');
           if(used.some(row=>row.skipEvaluatedCount===0 && row.skipDecisionAccuracy!==null)) throw new Error('見送り判断の母数0を0%として誤保存');
-          const audit=JSON.parse(fs.readFileSync('data/stats/phase6-data-audit.json','utf8'));
           if(audit.status!=='healthy' || audit.issueCount!==0) throw new Error(`Phase6監査異常: ${audit.issueCount}`);
           NODE
           node scripts/check-charter.js

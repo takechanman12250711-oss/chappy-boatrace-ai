@@ -4,9 +4,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const gate = require("../js/learning-pipeline-gate");
 const audit = require("../js/phase6-data-audit");
+const improvementInput = require("./build-improvement-proposal-report");
 
 const root = path.resolve(__dirname, "..");
-const predictionsDir = path.join(root, "data", "predictions");
 const proposalPath = path.join(root, "data", "stats", "improvement-proposal-phase3.json");
 const outputPath = path.join(root, "data", "stats", "learning-pipeline-gate-phase4.json");
 
@@ -28,25 +28,24 @@ function mergePredictionSources(data) {
   ];
 }
 
-function collectRecords() {
-  if (!fs.existsSync(predictionsDir)) return [];
-  const records = [];
-  fs.readdirSync(predictionsDir)
-    .filter(name => /^\d{8}\.json$/.test(name))
-    .sort()
-    .forEach(name => {
-      const data = readJson(path.join(predictionsDir, name), {});
-      records.push(...mergePredictionSources(data));
-    });
-  return records;
+function collectAnalysis(options = {}) {
+  return improvementInput.collectAnalysis(options);
+}
+
+function collectRecords(options = {}) {
+  return collectAnalysis(options).records;
 }
 
 function main() {
+  const collected = collectAnalysis();
   const report = {
     generatedAt: new Date().toISOString(),
-    source: "data/predictions/*.json + improvement-proposal-phase3.json",
+    source: "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json + improvement-proposal-phase3.json",
+    analysisInputContract:
+      improvementInput.ANALYSIS_INPUT_CONTRACT,
     deduplication: "predictions-preferred-over-verificationPredictions",
-    ...gate.build(collectRecords(), readJson(proposalPath, {}))
+    analysisInputDiagnostics: collected.diagnostics,
+    ...gate.build(collected.records, readJson(proposalPath, {}))
   };
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(report, null, 2) + "\n");
@@ -55,4 +54,8 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { mergePredictionSources, collectRecords };
+module.exports = {
+  mergePredictionSources,
+  collectAnalysis,
+  collectRecords
+};
