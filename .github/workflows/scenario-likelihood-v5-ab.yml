@@ -14,11 +14,13 @@ on:
       - "scripts/test-v5-decision-doc.js"
       - "scripts/test-v5-collection-not-closed.js"
       - "scripts/test-upgrade-collection-systems.js"
+      - "scripts/test-decision-lifecycle-contract.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-systems.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
       - "docs/upgrade-collection-policy.md"
+      - "docs/decisions/README.md"
       - "docs/decisions/scenario-likelihood-v5-20260815.md"
       - ".github/workflows/scenario-likelihood-v5-ab.yml"
   workflow_dispatch:
@@ -45,4 +47,5 @@ jobs:
           node scripts/test-v5-decision-doc.js
           node scripts/test-v5-collection-not-closed.js
           node scripts/test-upgrade-collection-systems.js
+          node scripts/test-decision-lifecycle-contract.js
           node scripts/check-charter.js
