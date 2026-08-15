@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-15T09:10:10.451Z",
+  "generatedAt": "2026-08-15T09:24:39.377Z",
   "source": "data/predictions/*.json",
   "version": "1.0.0",
   "status": "proposal-only",
   "usableForPrediction": false,
   "automaticApplication": false,
   "minimumSamples": 30,
-  "comparableCount": 640,
+  "comparableCount": 641,
   "byVenue": [
     {
       "key": "24",
@@ -280,14 +280,14 @@
     },
     {
       "key": "01",
-      "samples": 21,
+      "samples": 22,
       "leaderHits": 6,
       "topTwoHits": 11,
-      "expectedLeaderTotal": 1275.5,
-      "leaderHitRate": 28.6,
-      "topTwoHitRate": 52.4,
-      "averageLeaderLikelihood": 60.7,
-      "calibrationGap": -32.2,
+      "expectedLeaderTotal": 1309.6,
+      "leaderHitRate": 27.3,
+      "topTwoHitRate": 50,
+      "averageLeaderLikelihood": 59.5,
+      "calibrationGap": -32.3,
       "status": "insufficient-samples",
       "proposal": null
     },
@@ -411,14 +411,14 @@
     },
     {
       "key": "4カド",
-      "samples": 72,
+      "samples": 73,
       "leaderHits": 28,
       "topTwoHits": 43,
-      "expectedLeaderTotal": 4188.199999999999,
-      "leaderHitRate": 38.9,
-      "topTwoHitRate": 59.7,
-      "averageLeaderLikelihood": 58.2,
-      "calibrationGap": -19.3,
+      "expectedLeaderTotal": 4222.299999999999,
+      "leaderHitRate": 38.4,
+      "topTwoHitRate": 58.9,
+      "averageLeaderLikelihood": 57.8,
+      "calibrationGap": -19.5,
       "status": "review-ready",
       "proposal": {
         "action": "lower",
@@ -464,18 +464,18 @@
     },
     {
       "key": "mixed",
-      "samples": 118,
+      "samples": 119,
       "leaderHits": 42,
       "topTwoHits": 81,
-      "expectedLeaderTotal": 5245.9,
-      "leaderHitRate": 35.6,
-      "topTwoHitRate": 68.6,
-      "averageLeaderLikelihood": 44.5,
-      "calibrationGap": -8.9,
+      "expectedLeaderTotal": 5280,
+      "leaderHitRate": 35.3,
+      "topTwoHitRate": 68.1,
+      "averageLeaderLikelihood": 44.4,
+      "calibrationGap": -9.1,
       "status": "review-ready",
       "proposal": {
         "action": "lower",
-        "suggestedPoints": 8.9,
+        "suggestedPoints": 9.1,
         "automaticApplication": false
       }
     }
@@ -1236,6 +1236,19 @@
       "proposal": null
     },
     {
+      "key": "01:4カド",
+      "samples": 3,
+      "leaderHits": 0,
+      "topTwoHits": 0,
+      "expectedLeaderTotal": 148.2,
+      "leaderHitRate": 0,
+      "topTwoHitRate": 0,
+      "averageLeaderLikelihood": 49.4,
+      "calibrationGap": -49.4,
+      "status": "insufficient-samples",
+      "proposal": null
+    },
+    {
       "key": "03:2差し",
       "samples": 3,
       "leaderHits": 0,
@@ -1349,19 +1362,6 @@
       "topTwoHitRate": 33.3,
       "averageLeaderLikelihood": 58.9,
       "calibrationGap": -25.5,
-      "status": "insufficient-samples",
-      "proposal": null
-    },
-    {
-      "key": "01:4カド",
-      "samples": 2,
-      "leaderHits": 0,
-      "topTwoHits": 0,
-      "expectedLeaderTotal": 114.1,
-      "leaderHitRate": 0,
-      "topTwoHitRate": 0,
-      "averageLeaderLikelihood": 57.1,
-      "calibrationGap": -57,
       "status": "insufficient-samples",
       "proposal": null
     },
@@ -1655,7 +1655,7 @@
   "approvalGate": {
     "version": "1.0.0",
     "status": "shadow-application-candidates-ready",
-    "comparableCount": 640,
+    "comparableCount": 641,
     "approvedCandidateCount": 3,
     "approvedCandidates": [
       {
@@ -2417,31 +2417,30 @@
         "status": "not-approved",
         "action": "none",
         "adjustmentPoints": 0,
-        "samples": 21,
+        "samples": 22,
         "total": {
-          "samples": 21,
-          "leaderHitRate": 28.6,
-          "averageLeaderLikelihood": 60.7,
-          "calibrationGap": -32.2
+          "samples": 22,
+          "leaderHitRate": 27.3,
+          "averageLeaderLikelihood": 59.5,
+          "calibrationGap": -32.3
         },
         "firstHalf": {
-          "samples": 10,
-          "leaderHitRate": 30,
-          "averageLeaderLikelihood": 55.7,
-          "calibrationGap": -25.7
+          "samples": 11,
+          "leaderHitRate": 27.3,
+          "averageLeaderLikelihood": 56.7,
+          "calibrationGap": -29.4
         },
         "secondHalf": {
           "samples": 11,
           "leaderHitRate": 27.3,
-          "averageLeaderLikelihood": 65.3,
-          "calibrationGap": -38.1
+          "averageLeaderLikelihood": 62.4,
+          "calibrationGap": -35.1
         },
-        "halfGapDifference": 12.4,
+        "halfGapDifference": 5.7,
         "stableDirection": true,
         "reasonCodes": [
           "insufficient_samples",
-          "insufficient_half_samples",
-          "half_gap_unstable"
+          "insufficient_half_samples"
         ],
         "applicationMode": "none",
         "usableForPrediction": false,
@@ -2736,12 +2735,12 @@
         "status": "not-approved",
         "action": "none",
         "adjustmentPoints": 0,
-        "samples": 72,
+        "samples": 73,
         "total": {
-          "samples": 72,
-          "leaderHitRate": 38.9,
-          "averageLeaderLikelihood": 58.2,
-          "calibrationGap": -19.3
+          "samples": 73,
+          "leaderHitRate": 38.4,
+          "averageLeaderLikelihood": 57.8,
+          "calibrationGap": -19.5
         },
         "firstHalf": {
           "samples": 36,
@@ -2750,12 +2749,12 @@
           "calibrationGap": -10.5
         },
         "secondHalf": {
-          "samples": 36,
-          "leaderHitRate": 30.6,
-          "averageLeaderLikelihood": 58.6,
-          "calibrationGap": -28.1
+          "samples": 37,
+          "leaderHitRate": 29.7,
+          "averageLeaderLikelihood": 58,
+          "calibrationGap": -28.2
         },
-        "halfGapDifference": 17.6,
+        "halfGapDifference": 17.7,
         "stableDirection": true,
         "reasonCodes": [
           "half_gap_unstable"
@@ -2836,12 +2835,12 @@
         "status": "not-approved",
         "action": "none",
         "adjustmentPoints": 0,
-        "samples": 118,
+        "samples": 119,
         "total": {
-          "samples": 118,
-          "leaderHitRate": 35.6,
-          "averageLeaderLikelihood": 44.5,
-          "calibrationGap": -8.9
+          "samples": 119,
+          "leaderHitRate": 35.3,
+          "averageLeaderLikelihood": 44.4,
+          "calibrationGap": -9.1
         },
         "firstHalf": {
           "samples": 59,
@@ -2850,12 +2849,12 @@
           "calibrationGap": -4.8
         },
         "secondHalf": {
-          "samples": 59,
-          "leaderHitRate": 32.2,
-          "averageLeaderLikelihood": 45.1,
-          "calibrationGap": -12.9
+          "samples": 60,
+          "leaderHitRate": 31.7,
+          "averageLeaderLikelihood": 44.9,
+          "calibrationGap": -13.2
         },
-        "halfGapDifference": 8.1,
+        "halfGapDifference": 8.4,
         "stableDirection": true,
         "reasonCodes": [
           "half_gap_unstable"
@@ -4979,6 +4978,42 @@
         "automaticApplication": false
       },
       {
+        "key": "01:4カド",
+        "approved": false,
+        "status": "not-approved",
+        "action": "none",
+        "adjustmentPoints": 0,
+        "samples": 3,
+        "total": {
+          "samples": 3,
+          "leaderHitRate": 0,
+          "averageLeaderLikelihood": 49.4,
+          "calibrationGap": -49.4
+        },
+        "firstHalf": {
+          "samples": 1,
+          "leaderHitRate": 0,
+          "averageLeaderLikelihood": 38.4,
+          "calibrationGap": -38.4
+        },
+        "secondHalf": {
+          "samples": 2,
+          "leaderHitRate": 0,
+          "averageLeaderLikelihood": 54.9,
+          "calibrationGap": -54.9
+        },
+        "halfGapDifference": 16.5,
+        "stableDirection": true,
+        "reasonCodes": [
+          "insufficient_samples",
+          "insufficient_half_samples",
+          "half_gap_unstable"
+        ],
+        "applicationMode": "none",
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      {
         "key": "03:2差し",
         "approved": false,
         "status": "not-approved",
@@ -5294,42 +5329,6 @@
           "calibrationGap": -19.1
         },
         "halfGapDifference": 19.3,
-        "stableDirection": true,
-        "reasonCodes": [
-          "insufficient_samples",
-          "insufficient_half_samples",
-          "half_gap_unstable"
-        ],
-        "applicationMode": "none",
-        "usableForPrediction": false,
-        "automaticApplication": false
-      },
-      {
-        "key": "01:4カド",
-        "approved": false,
-        "status": "not-approved",
-        "action": "none",
-        "adjustmentPoints": 0,
-        "samples": 2,
-        "total": {
-          "samples": 2,
-          "leaderHitRate": 0,
-          "averageLeaderLikelihood": 57.1,
-          "calibrationGap": -57
-        },
-        "firstHalf": {
-          "samples": 1,
-          "leaderHitRate": 0,
-          "averageLeaderLikelihood": 38.4,
-          "calibrationGap": -38.4
-        },
-        "secondHalf": {
-          "samples": 1,
-          "leaderHitRate": 0,
-          "averageLeaderLikelihood": 75.7,
-          "calibrationGap": -75.7
-        },
-        "halfGapDifference": 37.3,
         "stableDirection": true,
         "reasonCodes": [
           "insufficient_samples",
