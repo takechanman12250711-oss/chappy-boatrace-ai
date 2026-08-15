@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260815-odds-light1";
+  const VERSION = "20260815-odds-fast1";
+  // legacy test marker: const VERSION = "20260815-odds-light1"
   // legacy test marker: const VERSION = "20260815-startup-light1"
   // legacy test marker: const VERSION = "20260813-course-failclosed1"
   // legacy test marker: const VERSION = "20260810-racer-skill-core1"
@@ -17,6 +18,7 @@
   // legacy test marker: const VERSION = "20260804-final-odds2"
   // legacy test marker: const VERSION = "20260803-flow-missing30"
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
+  const PRELOAD_LOOKAHEAD = 3;
   const scripts = [
     "js/boat-identity.js",
     "js/theory.js",
@@ -101,26 +103,30 @@
     });
   }
 
-  function preloadScripts(list) {
+  function preloadScripts(list, startIndex = 0, count = PRELOAD_LOOKAHEAD) {
     if (typeof document.querySelectorAll !== "function") return;
-    list.forEach(src => {
-      const clean = src.split("?")[0];
-      if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
-      if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
-      const link = document.createElement("link");
-      link.rel = "preload";
-      link.as = "script";
-      link.href = `${clean}?v=${VERSION}`;
-      document.head.appendChild(link);
-    });
+    list
+      .slice(startIndex, startIndex + Math.max(1, count))
+      .forEach(src => {
+        const clean = src.split("?")[0];
+        if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
+        if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "script";
+        link.href = `${clean}?v=${VERSION}`;
+        document.head.appendChild(link);
+      });
   }
 
   function ensureReady() {
     if (readyPromise) return readyPromise;
-    preloadScripts(scripts);
 
     readyPromise = (async () => {
-      for (const src of scripts) await loadScript(src);
+      for (let index = 0; index < scripts.length; index += 1) {
+        preloadScripts(scripts, index, PRELOAD_LOOKAHEAD);
+        await loadScript(scripts[index]);
+      }
       root.dispatchEvent(new CustomEvent(
         "chappy:prediction-runtime-ready",
         { detail: { version: VERSION } }
@@ -136,10 +142,12 @@
 
   function ensureOptionalReady() {
     if (optionalReadyPromise) return optionalReadyPromise;
-    preloadScripts(optionalScripts);
 
     optionalReadyPromise = (async () => {
-      for (const src of optionalScripts) await loadScript(src);
+      for (let index = 0; index < optionalScripts.length; index += 1) {
+        preloadScripts(optionalScripts, index, 1);
+        await loadScript(optionalScripts[index]);
+      }
       root.dispatchEvent(new CustomEvent(
         "chappy:prediction-runtime-optional-ready",
         { detail: { version: VERSION } }
