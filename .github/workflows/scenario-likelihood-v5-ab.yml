@@ -13,12 +13,14 @@ on:
       - "scripts/test-upgrade-collection-state.js"
       - "scripts/test-upgrade-collection-main-principle.js"
       - "scripts/test-upgrade-collection-mode.js"
+      - "scripts/test-upgrade-collection-contract.js"
       - "scripts/test-upgrade-collection-final-doc.js"
       - "scripts/test-upgrade-collection-systems-doc.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
       - "config/upgrade-collection-mode.json"
+      - "config/upgrade-collection-contract.json"
       - "config/upgrade-data-retention.json"
       - "config/upgrade-collection-owner-intent.json"
       - "config/candidate-decision-scope.json"
@@ -58,6 +60,7 @@ jobs:
           node scripts/test-upgrade-collection-state.js
           node scripts/test-upgrade-collection-main-principle.js
           node scripts/test-upgrade-collection-mode.js
+          node scripts/test-upgrade-collection-contract.js
           node scripts/test-upgrade-collection-final-doc.js
           node scripts/test-upgrade-collection-systems-doc.js
           node scripts/test-upgrade-collection-policy-doc.js
