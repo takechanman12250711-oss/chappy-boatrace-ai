@@ -53,7 +53,7 @@ function cohortKey(row = {}) {
 }
 
 function comparableRows(predictionDocuments = []) {
-  const byRaceKey = new Map();
+  const byCohortRaceKey = new Map();
   predictionDocuments.forEach(doc => (Array.isArray(doc?.verificationPredictions) ? doc.verificationPredictions : []).forEach(record => {
     const snapshot = record?.frameRiseFallShadowAb || null;
     const replay = snapshot?.downstreamReplay || null;
@@ -80,10 +80,11 @@ function comparableRows(predictionDocuments = []) {
       b: replay.b || {}
     };
     row.cohortKey = cohortKey(row);
-    const existing = byRaceKey.get(key);
-    if (!existing || row.selectedEpoch >= existing.selectedEpoch) byRaceKey.set(key, row);
+    const dedupeKey = `${row.cohortKey}|${key}`;
+    const existing = byCohortRaceKey.get(dedupeKey);
+    if (!existing || row.selectedEpoch >= existing.selectedEpoch) byCohortRaceKey.set(dedupeKey, row);
   }));
-  return [...byRaceKey.values()]
+  return [...byCohortRaceKey.values()]
     .sort((a, b) => a.selectedEpoch - b.selectedEpoch || a.raceKey.localeCompare(b.raceKey));
 }
 
