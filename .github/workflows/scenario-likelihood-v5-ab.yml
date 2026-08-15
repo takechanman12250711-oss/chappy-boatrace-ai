@@ -28,6 +28,7 @@ on:
       - "scripts/test-upgrade-collection-summary.js"
       - "scripts/test-upgrade-collection-final-contract.js"
       - "scripts/test-upgrade-collection-owner-intent.js"
+      - "scripts/test-v5-current-candidate-vs-future-data.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -80,4 +81,5 @@ jobs:
           node scripts/test-upgrade-collection-summary.js
           node scripts/test-upgrade-collection-final-contract.js
           node scripts/test-upgrade-collection-owner-intent.js
+          node scripts/test-v5-current-candidate-vs-future-data.js
           node scripts/check-charter.js
