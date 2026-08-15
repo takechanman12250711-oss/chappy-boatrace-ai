@@ -1,0 +1,11 @@
+"use strict";
+require("./test-upgrade-collection-policy");
+require("./test-upgrade-collection-systems");
+require("./test-candidate-decision-scope");
+require("./test-upgrade-data-retention");
+require("./test-upgrade-collection-owner-intent");
+require("./test-upgrade-collection-lifecycle");
+require("./test-v5-production-a-stays");
+require("./test-v5-decision-not-runtime-gate");
+require("./test-v5-collector-contract-source");
+console.log("all upgrade collection policy tests passed");
