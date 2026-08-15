@@ -32,9 +32,38 @@ assert.equal(after.b.mainScenario.type, "escape");
 assert.equal(after.comparisonContract.comparableForFixed100, false);
 assert.equal(after.usableForPrediction, false);
 assert.equal(after.automaticApplication, false);
-const attached = builder.attach({ verificationPredictions: [{ raceKey: "after", selectedAt: "2026-08-15T11:06:16+09:00", prediction: { verificationEvidence: evidence } }] }, phase10);
+
+const archive = builder.emptyArchive();
+const sourceRecord = {
+  raceKey: "after",
+  selectedAt: "2026-08-15T11:06:16+09:00",
+  prediction: { verificationEvidence: evidence }
+};
+const attached = builder.attach({ verificationPredictions: [sourceRecord] }, phase10, builder.replayDependencies, archive);
 assert.equal(attached.frameRiseFallShadowAb.capturedCount, 1);
 assert.equal(attached.frameRiseFallShadowAb.decisionChangedCount, 1);
 assert.equal(attached.frameRiseFallShadowAb.comparableRaceCount, 0);
 assert.equal(attached.frameRiseFallShadowAb.fixedComparableRaceCount, 100);
+assert.equal(attached.frameRiseFallShadowAb.immutableArchiveCount, 1);
+const frozenSnapshot = attached.verificationPredictions[0].frameRiseFallShadowAb;
+
+// Simulate a later collector run replacing the race record and removing the
+// shadow field while the underlying evidence has changed. The original
+// prospective snapshot must be restored from the immutable archive rather than
+// recalculated with the later evidence.
+const changedEvidence = {
+  ...evidence,
+  mainScenario: { ...evidence.mainScenario, score: 99, frameMovementAdjustment: 12 },
+  scenarios: evidence.scenarios.map((row, index) => index === 0 ? { ...row, score: 99, frameMovementAdjustment: 12 } : row)
+};
+const recollected = builder.attach({
+  verificationPredictions: [{
+    ...sourceRecord,
+    selectedAt: "2026-08-15T11:30:00+09:00",
+    prediction: { verificationEvidence: changedEvidence }
+  }]
+}, phase10, builder.replayDependencies, archive);
+assert.deepEqual(recollected.verificationPredictions[0].frameRiseFallShadowAb, frozenSnapshot);
+assert.equal(recollected.frameRiseFallShadowAb.immutableArchiveCount, 1);
+
 console.log("frame rise fall prospective shadow storage tests passed");
