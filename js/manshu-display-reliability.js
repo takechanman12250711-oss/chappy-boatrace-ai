@@ -55,6 +55,7 @@
     const formation = prediction?.formation || {};
     return [
       prediction?.ticketSheets?.hole,
+      prediction?.manshuSheet?.tickets,
       prediction?.aiCore?.ticketSheets?.hole,
       prediction?.aiCore?.manshuSheet?.tickets,
       formation.hole,
@@ -67,10 +68,6 @@
 
   function firstFallbackTicket(prediction) {
     if (!prediction || typeof prediction !== "object" || isSkipped(prediction)) {
-      return null;
-    }
-
-    if (rows(prediction?.manshuSheet?.tickets).some(ticketOf)) {
       return null;
     }
 
@@ -162,18 +159,17 @@
     return `
       <details name="chappy-ticket-accordion" class="v3-ticket-accordion v3-ticket-accordion-manshu">
         <summary>
-          <span>万舟</span>
+          <span>候補</span>
           <span class="v3-ticket-accordion-count">1点</span>
           <span class="v3-ticket-accordion-arrow" aria-hidden="true"></span>
         </summary>
         <div class="v3-ticket-accordion-panel">
           <div class="v3-ticket-accordion-aim">
-            <strong>買い目の狙い</strong>
+            <strong>狙い</strong>
             <p>${escapeHtml(candidate.scenarioSummary)}</p>
           </div>
-          <div class="v3-ticket-accordion-label">説明・買い目・オッズ</div>
+          <div class="v3-ticket-accordion-label">買い目・オッズ</div>
           <div class="v3-formation-group">
-            <h3>万舟・高配当候補</h3>
             <div class="v3-formation-list v3-formation-${escapeHtml(type)}">
               <div class="v3-formation-row v3-formation-row-${escapeHtml(type)}" data-manshu-display-fallback="true">
                 <div class="v3-formation-ticket">${ticketHtml(candidate.ticket)}</div>
@@ -203,14 +199,24 @@
   }
 
   function apply(prediction, documentObject = typeof document !== "undefined" ? document : null) {
-    const candidate = normalizeCandidate(firstFallbackTicket(prediction));
-    if (!candidate || !documentObject) return false;
+    if (!documentObject) return false;
 
     const resultArea = documentObject.getElementById?.("resultArea");
     if (!resultArea) return false;
 
     let section = resultArea.querySelector?.(".v3-manshu-newspaper") || null;
-    if (section?.querySelector?.(".v3-formation-row")) return false;
+    const normalRow = section?.querySelector?.(
+      ".v3-formation-row:not([data-manshu-display-fallback='true'])"
+    );
+    if (normalRow) return false;
+
+    const candidate = normalizeCandidate(firstFallbackTicket(prediction));
+    if (!candidate) {
+      if (section?.dataset?.manshuDisplayFallbackSection === "true") {
+        section.remove?.();
+      }
+      return false;
+    }
 
     if (!section) {
       section = createSection(documentObject);
