@@ -10,6 +10,7 @@ on:
       - "scripts/test-v5-rejected-but-collecting.js"
       - "scripts/test-v5-collection-restored.js"
       - "scripts/test-v5-recovery-summary.js"
+      - "scripts/test-v5-collection-preserves-decision-history.js"
       - "scripts/test-upgrade-collection-runtime.js"
       - "scripts/test-upgrade-collection-recovery.js"
       - "scripts/test-upgrade-collection-one-line.js"
@@ -70,6 +71,7 @@ jobs:
           node scripts/test-v5-rejected-but-collecting.js
           node scripts/test-v5-collection-restored.js
           node scripts/test-v5-recovery-summary.js
+          node scripts/test-v5-collection-preserves-decision-history.js
           node scripts/test-upgrade-collection-runtime.js
           node scripts/test-upgrade-collection-recovery.js
           node scripts/test-upgrade-collection-one-line.js
