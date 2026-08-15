@@ -3,7 +3,8 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260815-odds-fast1";
+  const VERSION = "20260815-odds-immediate1";
+  // legacy test marker: const VERSION = "20260815-odds-fast1"
   // legacy test marker: const VERSION = "20260815-odds-light1"
   // legacy test marker: const VERSION = "20260815-startup-light1"
   // legacy test marker: const VERSION = "20260813-course-failclosed1"
@@ -15,6 +16,7 @@
   const HOME_CACHE_TTL = 300000;
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const PRELOAD_LOOKAHEAD = 2;
+  const HOME_RACE_SELECTOR = "[data-place][data-race]";
   const loaded = new Map();
   const groupReady = new Map();
   const groups = {
@@ -22,8 +24,6 @@
       "js/utils.js",
       "js/storage.js",
       "js/prediction-conditions.js",
-      "js/api.js",
-      "js/odds-fetch-cache.js",
       "js/prediction-runtime-loader.js",
       "js/script.js",
       "js/hiyori-runtime-loader.js"
@@ -164,7 +164,7 @@
   }
 
   function preloadGroupForTarget(target) {
-    if (target?.matches("[data-place][data-race]")) return "race";
+    if (target?.matches(HOME_RACE_SELECTOR)) return "";
     return requiredGroup(target);
   }
 

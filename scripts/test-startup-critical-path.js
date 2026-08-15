@@ -11,6 +11,7 @@ const html = read("index.html");
 const appRuntime = read("js/app-runtime-loader.js");
 const predictionRuntime = read("js/prediction-runtime-loader.js");
 const hiyoriRuntime = read("js/hiyori-runtime-loader.js");
+const oddsFirst = read("js/odds-first-navigation.js");
 
 const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/script>/g)]
   .map(match => match[1].split("?")[0]);
@@ -28,24 +29,35 @@ const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/sc
   );
 });
 
-assert.equal(
-  directScripts.includes("js/app-runtime-loader.js"),
-  true,
-  "必要最小限の遅延ローダーは初期表示で読み込む"
-);
-assert.equal(
-  directScripts.includes("js/home-dashboard-v2.js"),
-  true,
-  "ホーム本体は初期表示で読み込む"
-);
+[
+  "js/odds-fetch-cache.js",
+  "js/api.js",
+  "js/app-runtime-loader.js",
+  "js/home-dashboard-v2.js",
+  "js/odds-first-navigation.js"
+].forEach(file => {
+  assert.equal(
+    directScripts.includes(file),
+    true,
+    `${file} を軽量なホーム操作経路で読み込む`
+  );
+});
 
+const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
+const directApiIndex = html.indexOf('src="js/api.js');
+const appIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260815-odds-immediate1"');
+const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
+assert.ok(
+  directOddsIndex >= 0 &&
+    directOddsIndex < directApiIndex &&
+    directApiIndex < appIndex &&
+    appIndex < homeIndex,
+  "オッズとレースAPIをホームより先に準備する"
+);
 assert.equal(
-  html.includes('script.src = "js/home-recommendation-reliability.js?v=20260815-startup-light1"') &&
-    html.includes("script.async = true") &&
-    html.includes('window.addEventListener("load", scheduleHomeRecommendationReliability') &&
-    html.includes('"requestIdleCallback" in window'),
-  true,
-  "おすすめ補強は初期画面表示後のidle時間に非同期読込する"
+  html.includes("home-recommendation-reliability.js"),
+  false,
+  "ホーム要約の常時監視・定期再取得を起動しない"
 );
 
 const moduleOrder = [
@@ -65,11 +77,29 @@ assert.ok(
   "描画本体・表示境界・オッズ・万舟の順で遅延読込する"
 );
 
-const oddsCacheIndex = appRuntime.indexOf('"js/odds-fetch-cache.js"');
-const applicationScriptIndex = appRuntime.indexOf('"js/script.js"');
-assert.ok(
-  oddsCacheIndex >= 0 && oddsCacheIndex < applicationScriptIndex,
-  "通常オッズ取得より前に共有キャッシュを読み込む"
+assert.equal(
+  appRuntime.includes('"js/odds-fetch-cache.js"') ||
+    appRuntime.includes('"js/api.js"'),
+  false,
+  "直接読込済みのオッズ・レースAPIを親ランタイムで二重取得しない"
+);
+assert.equal(
+  appRuntime.includes('const HOME_RACE_SELECTOR = "[data-place][data-race]"') &&
+    appRuntime.includes('if (target?.matches(HOME_RACE_SELECTOR)) return "";'),
+  true,
+  "ホームレースのpointerdownでは重いJSを先に動かさない"
+);
+assert.equal(
+  oddsFirst.includes("ChappyAPI?.prefetchRace") &&
+    oddsFirst.includes("ChappyOddsFetchCache?.fetchData"),
+  true,
+  "ホームタップ直後にレースとオッズを先行取得する"
+);
+assert.equal(
+  oddsFirst.includes("requestIdleCallback") &&
+    oddsFirst.includes("deferredResultPanel"),
+  true,
+  "結果補助は初回予想・オッズ表示後へ遅延する"
 );
 
 assert.equal(
@@ -97,21 +127,22 @@ assert.equal(appRuntime.includes("preloadGroup(group);"), false, "レース画�
 assert.equal(predictionRuntime.includes("preloadScripts(scripts);"), false, "予想JSの全件一括preloadを禁止する");
 assert.equal(hiyoriRuntime.includes("preloadScripts(coreScripts);"), false, "補助JSの全件一括preloadを禁止する");
 
-[
-  appRuntime,
-  predictionRuntime,
-  hiyoriRuntime
-].forEach(source => {
-  assert.equal(
-    source.includes("20260815-odds-fast1"),
-    true,
-    "親・予想・補助ローダーのキャッシュ世代を揃える"
-  );
-});
 assert.equal(
-  html.includes("js/app-runtime-loader.js?v=20260815-odds-fast1"),
+  appRuntime.includes("20260815-odds-immediate1"),
   true,
-  "既存端末へオッズ通信優先の軽量ローダーを配信する"
+  "親ローダーをオッズ先行取得世代へ更新する"
+);
+assert.equal(
+  predictionRuntime.includes("20260815-odds-fast1") &&
+    hiyoriRuntime.includes("20260815-odds-fast1"),
+  true,
+  "大型予想モジュールは既存の軽量化済みキャッシュを再利用する"
+);
+assert.equal(
+  html.includes("js/app-runtime-loader.js?v=20260815-odds-immediate1") &&
+    html.includes("js/odds-first-navigation.js?v=20260815-odds-immediate1"),
+  true,
+  "既存端末へオッズ先行取得の起動経路を配信する"
 );
 
-console.log("アプリ初期表示・オッズ通信クリティカルパス軽量化テスト: 合格");
+console.log("アプリ初期表示・オッズ先行取得クリティカルパステスト: 合格");
