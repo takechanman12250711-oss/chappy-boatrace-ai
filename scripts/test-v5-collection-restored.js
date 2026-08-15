@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const source = fs.readFileSync(path.join(__dirname, "..", "js", "scenario-likelihood-v5-ab.js"), "utf8");
+const systems = require("../config/upgrade-collection-systems.json");
+assert.doesNotMatch(source, /closed-rejected/);
+assert.equal(systems.systems.scenarioLikelihoodV5Calibration, "collect");
+assert.equal(systems.systems.scenarioLikelihoodV5Ab, "collect");
+console.log("v5 upgrade collection restored");
