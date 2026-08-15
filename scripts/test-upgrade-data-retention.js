@@ -1,0 +1,11 @@
+"use strict";
+const assert = require("node:assert/strict");
+const config = require("../config/upgrade-data-retention.json");
+assert.equal(config.continueCollecting, true);
+assert.equal(config.automaticApplication, false);
+assert.ok(config.retain.includes("historical candidate decisions"));
+assert.ok(config.retain.includes("historical A/B snapshots"));
+assert.ok(config.retain.includes("calibration evidence"));
+assert.ok(config.retain.includes("theory evaluation evidence"));
+assert.ok(config.retain.includes("shadow comparison evidence"));
+console.log("upgrade data retention tests passed");
