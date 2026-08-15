@@ -1,6 +1,12 @@
 name: Collect frame rise fall shadow A/B
 
 on:
+  pull_request:
+    paths:
+      - "js/frame-rise-fall-shadow-storage.js"
+      - "scripts/build-frame-rise-fall-shadow-snapshots.js"
+      - "scripts/test-frame-rise-fall-shadow-storage.js"
+      - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
   workflow_run:
     workflows: ["Collect automatic race predictions"]
     types: [completed]
@@ -20,13 +26,13 @@ concurrency:
 
 jobs:
   collect:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -39,10 +45,12 @@ jobs:
           node scripts/test-theory-ab-phase10-approval.js
           node scripts/test-frame-rise-fall-shadow-storage.js
       - name: Capture prospective shadow snapshots
+        if: github.event_name != 'pull_request'
         env:
           PREDICT_DATE: ${{ inputs.date }}
         run: node scripts/build-frame-rise-fall-shadow-snapshots.js
       - name: Save shadow snapshots
+        if: github.event_name != 'pull_request'
         run: |
           git add data/predictions
           if git diff --cached --quiet; then
