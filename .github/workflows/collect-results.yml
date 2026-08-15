@@ -8,9 +8,15 @@ on:
       - ".github/workflows/collect-results.yml"
       - ".github/workflows/analyze-reference-tags.yml"
       - ".github/workflows/build-learning-analysis-pipeline.yml"
+      - ".github/workflows/collect-predictions.yml"
+      - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - "config/chappy-charter.json"
       - "scripts/collect-results.js"
       - "scripts/repair-recent-results.js"
+      - "scripts/daily-prediction-source-archive.js"
+      - "scripts/restore-daily-prediction-source.js"
+      - "scripts/prepare-daily-prediction-git-save.js"
+      - "scripts/test-daily-prediction-source-archive.js"
       - "scripts/build-result-review.js"
       - "scripts/test-result-review.js"
       - "scripts/analysis-input-contract.js"
@@ -82,6 +88,10 @@ jobs:
         run: |
           node --check scripts/collect-results.js
           node --check scripts/repair-recent-results.js
+          node --check scripts/daily-prediction-source-archive.js
+          node --check scripts/restore-daily-prediction-source.js
+          node --check scripts/prepare-daily-prediction-git-save.js
+          node scripts/test-daily-prediction-source-archive.js
           node --check js/frame-rise-fall-shadow-result-report.js
           node --check scripts/build-frame-rise-fall-shadow-result-report.js
           node scripts/test-frame-rise-fall-shadow-result-report.js
@@ -120,6 +130,7 @@ jobs:
         env:
           COLLECT_DATE: ${{ inputs.date }}
         run: |
+          node scripts/restore-daily-prediction-source.js --all
           node scripts/repair-recent-results.js
           node scripts/build-frame-rise-fall-shadow-result-report.js
           node scripts/build-result-review.js
@@ -142,8 +153,8 @@ jobs:
 
       - name: Save official results before calibration
         run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
           git add data/results data/stats
-          git add -- data/predictions ':(exclude)data/predictions/index.json'
 
           if git diff --cached --quiet; then
             echo "先行保存する公式結果はありません"
@@ -157,6 +168,7 @@ jobs:
 
       - name: Build prediction calibration
         run: |
+          node scripts/restore-daily-prediction-source.js --all
           node scripts/test-match-predictions.js
           node scripts/test-repair-recent-results.js
           node scripts/test-prediction-verification.js
@@ -219,8 +231,8 @@ jobs:
 
       - name: Save calibration and derived data
         run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
           git add data/results data/stats
-          git add -- data/predictions ':(exclude)data/predictions/index.json'
 
           if git diff --cached --quiet; then
             echo "追加保存する校正・集計データはありません"
