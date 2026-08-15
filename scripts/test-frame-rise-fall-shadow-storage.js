@@ -45,12 +45,22 @@ assert.equal(attached.frameRiseFallShadowAb.decisionChangedCount, 1);
 assert.equal(attached.frameRiseFallShadowAb.comparableRaceCount, 0);
 assert.equal(attached.frameRiseFallShadowAb.fixedComparableRaceCount, 100);
 assert.equal(attached.frameRiseFallShadowAb.immutableArchiveCount, 1);
-const frozenSnapshot = attached.verificationPredictions[0].frameRiseFallShadowAb;
+assert.equal(attached.frameRiseFallShadowAb.inlineStorage, "archive-reference-v1");
+const compactSnapshot = attached.verificationPredictions[0].frameRiseFallShadowAb;
+assert.equal(compactSnapshot.inlineStorage, "archive-reference-v1");
+assert.ok(compactSnapshot.immutableArchiveKey);
+assert.equal(compactSnapshot.a, undefined);
+assert.equal(compactSnapshot.b, undefined);
+assert.ok(compactSnapshot.downstreamReplay);
+const archivedSnapshot = archive.snapshots[compactSnapshot.immutableArchiveKey];
+assert.ok(archivedSnapshot);
+assert.equal(archivedSnapshot.a.mainScenario.score, 72);
+assert.equal(archivedSnapshot.b.mainScenario.type, "escape");
 
 // Simulate a later collector run replacing the race record and removing the
 // shadow field while the underlying evidence has changed. The original
 // prospective snapshot must be restored from the immutable archive rather than
-// recalculated with the later evidence.
+// recalculated with the later evidence, then compacted again inline.
 const changedEvidence = {
   ...evidence,
   mainScenario: { ...evidence.mainScenario, score: 99, frameMovementAdjustment: 12 },
@@ -63,7 +73,13 @@ const recollected = builder.attach({
     prediction: { verificationEvidence: changedEvidence }
   }]
 }, phase10, builder.replayDependencies, archive);
-assert.deepEqual(recollected.verificationPredictions[0].frameRiseFallShadowAb, frozenSnapshot);
+assert.deepEqual(recollected.verificationPredictions[0].frameRiseFallShadowAb, compactSnapshot);
 assert.equal(recollected.frameRiseFallShadowAb.immutableArchiveCount, 1);
+assert.equal(archive.snapshots[compactSnapshot.immutableArchiveKey].a.mainScenario.score, 72);
+
+// A compact inline record without its immutable archive must fail closed.
+assert.throws(() => builder.attach({
+  verificationPredictions: [{ ...sourceRecord, frameRiseFallShadowAb: compactSnapshot }]
+}, phase10, builder.replayDependencies, builder.emptyArchive()), /完全証拠archiveが見つかりません/);
 
 console.log("frame rise fall prospective shadow storage tests passed");
