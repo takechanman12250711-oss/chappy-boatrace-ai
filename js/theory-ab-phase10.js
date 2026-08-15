@@ -2,6 +2,7 @@
 
 const candidateBranchAnalysis = require("./theory-candidate-branch-analysis-phase9");
 const frameShadowVerifier = require("./frame-rise-fall-shadow-off-verifier");
+const approvalResolver = require("./theory-ab-phase10-approval");
 
 const METRIC_ORDER = Object.freeze([
   "recoveryRate",
@@ -21,7 +22,17 @@ function frozenCutoff(candidate = {}) {
     /^sha256:[0-9a-f]{64}$/.test(String(cutoff?.logicFingerprint || ""));
 }
 
-function build(phase9 = {}, candidateAnalysis = {}) {
+function build(rawPhase9 = {}, rawCandidateAnalysis = {}, approval = null) {
+  const resolved = approval
+    ? approvalResolver.apply(rawPhase9, rawCandidateAnalysis, approval)
+    : {
+        phase9: rawPhase9,
+        candidateAnalysis: rawCandidateAnalysis,
+        approvalApplied: false,
+        reason: "approval-not-supplied"
+      };
+  const phase9 = resolved.phase9;
+  const candidateAnalysis = resolved.candidateAnalysis;
   const proposal = phase9?.proposal || null;
   const candidate = candidateAnalysis?.candidate || null;
   const proposalReady = phase9?.status === "proposal-ready" && Boolean(proposal);
@@ -68,9 +79,7 @@ function build(phase9 = {}, candidateAnalysis = {}) {
     cutoffFrozen &&
     SHADOW_IMPLEMENTATION_VERIFIER_PRESENT &&
     shadowImplementationVerified;
-  const requestedComparableRaces = Number(
-    candidate?.prospectiveProtocol?.fixedComparableRaces
-  );
+  const requestedComparableRaces = Number(candidate?.prospectiveProtocol?.fixedComparableRaces);
   const minimumComparableRaces = Number.isFinite(requestedComparableRaces)
     ? Math.max(50, Math.floor(requestedComparableRaces))
     : 50;
@@ -88,11 +97,13 @@ function build(phase9 = {}, candidateAnalysis = {}) {
 
   return {
     schemaVersion: 1,
-    engineVersion: "theory-ab-phase10-20260815-shadow-verifier",
+    engineVersion: "theory-ab-phase10-20260815-approved-cutoff",
     status,
     sourceStatus: String(phase9?.status || "unknown"),
     candidateSourceStatus: String(candidateAnalysis?.status || "unknown"),
     implementationSourceStatus: String(implementationCheck?.reason || "unknown"),
+    approvalSourceStatus: String(resolved.reason || "unknown"),
+    approvalId: String(resolved.approvalId || ""),
     metricOrder: [...METRIC_ORDER],
     baselineA: {
       label: "A: current-production",
@@ -124,6 +135,7 @@ function build(phase9 = {}, candidateAnalysis = {}) {
       automaticWinnerSelection: false
     },
     readinessChecks: {
+      approvalApplied: resolved.approvalApplied === true,
       proposalReady,
       proposalApproved,
       proposalFingerprintMatches,
