@@ -23,6 +23,7 @@ on:
       - "scripts/test-candidate-decision-scope.js"
       - "scripts/test-v5-collector-contract-source.js"
       - "scripts/test-upgrade-collection-config-consistency.js"
+      - "scripts/test-v5-decision-not-runtime-gate.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -67,4 +68,5 @@ jobs:
           node scripts/test-candidate-decision-scope.js
           node scripts/test-v5-collector-contract-source.js
           node scripts/test-upgrade-collection-config-consistency.js
+          node scripts/test-v5-decision-not-runtime-gate.js
           node scripts/check-charter.js
