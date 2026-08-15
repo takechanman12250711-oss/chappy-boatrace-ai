@@ -37,21 +37,40 @@ assert.equal(
   "同じ予想を二重ラップして再描画しない"
 );
 
+assert.equal(
+  appRuntime.includes("const PRELOAD_LOOKAHEAD = 2") &&
+    !appRuntime.includes("preloadGroup(group);"),
+  true,
+  "通常オッズ通信と競合するレースJSの一括先読みを止める"
+);
+assert.equal(
+  predictionRuntime.includes("const PRELOAD_LOOKAHEAD = 3") &&
+    !predictionRuntime.includes("preloadScripts(scripts);"),
+  true,
+  "通常オッズ通信と競合する予想JSの一括先読みを止める"
+);
+assert.equal(
+  hiyoriRuntime.includes("const PRELOAD_LOOKAHEAD=2") &&
+    !hiyoriRuntime.includes("preloadScripts(coreScripts);"),
+  true,
+  "通常オッズ通信中に補助JSを全件先読みしない"
+);
+
 [
   appRuntime,
   predictionRuntime,
   hiyoriRuntime
 ].forEach(source => {
   assert.equal(
-    source.includes("20260815-odds-light1"),
+    source.includes("20260815-odds-fast1"),
     true,
     "親・予想・補助ローダーのキャッシュ世代を揃える"
   );
 });
 assert.equal(
-  html.includes('js/app-runtime-loader.js?v=20260815-odds-light1'),
+  html.includes('js/app-runtime-loader.js?v=20260815-odds-fast1'),
   true,
-  "既存端末へオッズ軽量化済みローダーを配信する"
+  "既存端末へオッズ通信優先の軽量ローダーを配信する"
 );
 
 console.log("オッズ取得軽量化パス検証: 合格");
