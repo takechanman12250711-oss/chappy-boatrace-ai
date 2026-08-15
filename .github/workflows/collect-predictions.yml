@@ -20,6 +20,7 @@ on:
       - "scripts/restore-daily-prediction-source.js"
       - "scripts/prepare-daily-prediction-git-save.js"
       - "scripts/test-daily-prediction-source-archive.js"
+      - "scripts/test-post-save-source-restore-order.js"
       - "js/frame-rise-fall-replay-preload.js"
       - "js/practical-priority-shadow.js"
       - "js/practical-priority-shadow-report.js"
@@ -141,6 +142,7 @@ jobs:
           node --check scripts/restore-daily-prediction-source.js
           node --check scripts/prepare-daily-prediction-git-save.js
           node scripts/test-daily-prediction-source-archive.js
+          node scripts/test-post-save-source-restore-order.js
           node --check scripts/build-prediction-summaries.js
           node --check scripts/build-current-prediction-summary.js
           node scripts/test-current-prediction-summary.js
@@ -226,7 +228,10 @@ jobs:
 
       - name: Run noncritical regression checks
         continue-on-error: true
+        env:
+          PREDICT_DATE: ${{ inputs.date }}
         run: |
+          node scripts/restore-daily-prediction-source.js
           node scripts/test-load-performance.js
           node scripts/test-prediction-runtime-loader.js
           node --check js/scenario-ai-v6-shadow.js
@@ -243,6 +248,7 @@ jobs:
           node scripts/test-prediction-summaries.js
           node scripts/test-current-prediction-summary.js
           node scripts/test-daily-prediction-source-archive.js
+          node scripts/test-post-save-source-restore-order.js
           node scripts/test-build-prediction-index.js
           node scripts/test-build-prediction-index-shards.js
           node scripts/test-prediction-index-loader.js

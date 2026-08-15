@@ -13,6 +13,7 @@ on:
       - "scripts/restore-daily-prediction-source.js"
       - "scripts/prepare-daily-prediction-git-save.js"
       - "scripts/test-daily-prediction-source-archive.js"
+      - "scripts/test-post-save-source-restore-order.js"
       - "scripts/build-prediction-summaries.js"
       - "scripts/build-current-prediction-summary.js"
       - "scripts/test-current-prediction-summary.js"
@@ -65,6 +66,7 @@ jobs:
           node --check scripts/restore-daily-prediction-source.js
           node --check scripts/prepare-daily-prediction-git-save.js
           node scripts/test-daily-prediction-source-archive.js
+          node scripts/test-post-save-source-restore-order.js
           node --check scripts/build-prediction-summaries.js
           node --check scripts/build-current-prediction-summary.js
           node scripts/test-current-prediction-summary.js
