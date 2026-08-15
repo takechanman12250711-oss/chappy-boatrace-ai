@@ -9,6 +9,8 @@ on:
       - "config/chappy-charter.json"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/minify-daily-prediction.js"
+      - "scripts/test-minify-daily-prediction.js"
       - "js/frame-rise-fall-replay-preload.js"
       - "js/practical-priority-shadow.js"
       - "js/practical-priority-shadow-report.js"
@@ -119,6 +121,8 @@ jobs:
       - name: Check collector-critical source
         run: |
           node --check scripts/collect-predictions.js
+          node --check scripts/minify-daily-prediction.js
+          node scripts/test-minify-daily-prediction.js
           node --check js/frame-rise-fall-replay-preload.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
@@ -166,6 +170,7 @@ jobs:
           node scripts/build-prediction-index-shards.js
           node scripts/build-prediction-summaries.js
           node scripts/build-practical-priority-shadow-report.js
+          node scripts/minify-daily-prediction.js
 
       - name: Validate generated prediction artifacts
         run: |
