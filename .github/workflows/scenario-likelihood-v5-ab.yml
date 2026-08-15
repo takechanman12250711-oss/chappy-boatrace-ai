@@ -6,6 +6,9 @@ on:
       - "js/scenario-likelihood-v5-ab.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-scenario-likelihood-v5-ab.js"
+      - "scripts/test-upgrade-collection-policy.js"
+      - "config/upgrade-collection-policy.json"
+      - "config/scenario-likelihood-v5-decision.json"
       - ".github/workflows/scenario-likelihood-v5-ab.yml"
   workflow_dispatch:
 
@@ -23,4 +26,5 @@ jobs:
           node --check scripts/collect-predictions.js
           node scripts/test-scenario-likelihood-v5-ab.js
           node scripts/test-scenario-likelihood-v5-storage.js
+          node scripts/test-upgrade-collection-policy.js
           node scripts/check-charter.js
