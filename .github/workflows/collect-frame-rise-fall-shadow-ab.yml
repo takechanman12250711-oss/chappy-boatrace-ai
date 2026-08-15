@@ -67,7 +67,7 @@ jobs:
       - name: Save shadow snapshots
         if: github.event_name != 'pull_request'
         run: |
-          git add data/predictions data/stats/theory-profit-review-phase8.json data/stats/theory-improvement-proposal-phase9.json data/stats/theory-candidate-branch-analysis-phase9.json data/stats/theory-ab-phase10.json
+          git add data/predictions data/stats/frame-rise-fall-shadow-snapshot-archive.json data/stats/theory-profit-review-phase8.json data/stats/theory-improvement-proposal-phase9.json data/stats/theory-candidate-branch-analysis-phase9.json data/stats/theory-ab-phase10.json
           if git diff --cached --quiet; then
             echo "保存する枠別浮沈Shadowはありません"
             exit 0

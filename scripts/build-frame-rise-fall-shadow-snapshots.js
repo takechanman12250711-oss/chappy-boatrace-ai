@@ -11,6 +11,7 @@ const storage = require("../js/frame-rise-fall-shadow-storage");
 
 const root = path.resolve(__dirname, "..");
 const stats = path.join(root, "data", "stats");
+const archiveFile = path.join(stats, "frame-rise-fall-shadow-snapshot-archive.json");
 const replayDependencies = {
   coreApi: global.ChappyAICore,
   selector: practicalSelection
@@ -32,21 +33,61 @@ function phase10State() {
   return phase10Engine.build(phase9, candidate, approval);
 }
 
-function attach(data = {}, state = phase10State(), dependencies = replayDependencies) {
+function emptyArchive() {
+  return {
+    schemaVersion: 1,
+    purpose: "immutable prospective frame-rise-fall shadow snapshots",
+    snapshots: {}
+  };
+}
+
+function snapshotArchiveKey(record = {}, snapshot = {}) {
+  const cutoff = snapshot?.cutoff || {};
+  const raceKey = String(record?.raceKey || "");
+  const candidateId = String(snapshot?.candidateId || "");
+  const candidateSpecFingerprint = String(snapshot?.candidateSpecFingerprint || "");
+  const implementationFingerprint = String(snapshot?.implementationFingerprint || "");
+  const cutoffSelectedAt = String(cutoff?.selectedAtExclusiveLowerBound || "");
+  const cutoffSourceCommit = String(cutoff?.sourceCommit || "");
+  const cutoffLogicFingerprint = String(cutoff?.logicFingerprint || "");
+  if (!raceKey || !candidateId || !candidateSpecFingerprint || !implementationFingerprint || !cutoffSelectedAt) return "";
+  return [
+    raceKey,
+    candidateId,
+    candidateSpecFingerprint,
+    implementationFingerprint,
+    cutoffSelectedAt,
+    cutoffSourceCommit,
+    cutoffLogicFingerprint
+  ].join("|");
+}
+
+function shouldArchive(snapshot = {}) {
+  return snapshot?.status === "shadow-ready";
+}
+
+function preserveSnapshot(record = {}, snapshot = {}, archive = emptyArchive()) {
+  if (!archive.snapshots || typeof archive.snapshots !== "object") archive.snapshots = {};
+  const key = snapshotArchiveKey(record, snapshot);
+  if (key && archive.snapshots[key]) return archive.snapshots[key];
+  if (!shouldArchive(snapshot) || !key) return snapshot;
+  archive.snapshots[key] = snapshot;
+  return snapshot;
+}
+
+function attach(data = {}, state = phase10State(), dependencies = replayDependencies, archive = emptyArchive()) {
   const rows = Array.isArray(data.verificationPredictions) ? data.verificationPredictions : [];
   let capturedCount = 0;
   let applicableCount = 0;
   let decisionChangedCount = 0;
   let comparableRaceCount = 0;
   const verificationPredictions = rows.map(record => {
+    let snapshot;
     if (record?.frameRiseFallShadowAb && typeof record.frameRiseFallShadowAb === "object") {
-      capturedCount += record.frameRiseFallShadowAb.status === "shadow-ready" ? 1 : 0;
-      applicableCount += Number(record.frameRiseFallShadowAb.applicableCount || 0) > 0 ? 1 : 0;
-      decisionChangedCount += record.frameRiseFallShadowAb.decisionChanged === true ? 1 : 0;
-      comparableRaceCount += record.frameRiseFallShadowAb?.comparisonContract?.comparableForFixed100 === true ? 1 : 0;
-      return record;
+      snapshot = preserveSnapshot(record, record.frameRiseFallShadowAb, archive);
+    } else {
+      snapshot = preserveSnapshot(record, storage.build(record, state, dependencies), archive);
     }
-    const snapshot = storage.build(record, state, dependencies);
     capturedCount += snapshot.status === "shadow-ready" ? 1 : 0;
     applicableCount += Number(snapshot.applicableCount || 0) > 0 ? 1 : 0;
     decisionChangedCount += snapshot.decisionChanged === true ? 1 : 0;
@@ -67,6 +108,7 @@ function attach(data = {}, state = phase10State(), dependencies = replayDependen
       comparisonCollectionStatus: comparableRaceCount > 0
         ? "collecting-fixed-100"
         : "awaiting-complete-decision-replay",
+      immutableArchiveCount: Object.keys(archive.snapshots || {}).length,
       applicationMode: "shadow-only",
       usableForPrediction: false,
       automaticApplication: false
@@ -81,16 +123,28 @@ function main() {
   const file = path.join(root, "data", "predictions", `${date}.json`);
   if (!fs.existsSync(file)) return console.log(`枠別浮沈Shadow保存対象なし: ${file}`);
   const state = phase10State();
-  const next = attach(load(file, {}), state, replayDependencies);
+  const archive = load(archiveFile, emptyArchive());
+  const next = attach(load(file, {}), state, replayDependencies, archive);
   const temp = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(temp, JSON.stringify(next, null, 2) + "\n");
   fs.renameSync(temp, file);
+  fs.writeFileSync(archiveFile, JSON.stringify(archive, null, 2) + "\n", "utf8");
   console.log(
     `枠別浮沈Shadow保存: ${next.frameRiseFallShadowAb.capturedCount}/${next.frameRiseFallShadowAb.recordCount}R` +
     `／比較${next.frameRiseFallShadowAb.comparableRaceCount}/${next.frameRiseFallShadowAb.fixedComparableRaceCount}R` +
+    `／不変保存${next.frameRiseFallShadowAb.immutableArchiveCount}件` +
     `／Phase10=${state.status}`
   );
 }
 
 if (require.main === module) main();
-module.exports = { load, phase10State, replayDependencies, attach, main };
+module.exports = {
+  load,
+  phase10State,
+  emptyArchive,
+  snapshotArchiveKey,
+  preserveSnapshot,
+  replayDependencies,
+  attach,
+  main
+};
