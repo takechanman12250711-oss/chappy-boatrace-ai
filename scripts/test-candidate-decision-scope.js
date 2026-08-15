@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const scope = require("../config/candidate-decision-scope.json");
+assert.equal(scope.scope, "candidate-generation-only");
+assert.equal(scope.collectionSystemLifecycle, "independent");
+assert.equal(scope.productionLifecycle, "independent");
+assert.equal(scope.rules.rejectionKeepsProductionCurrent, true);
+assert.equal(scope.rules.rejectionKeepsCollectionActive, true);
+assert.equal(scope.rules.adoptionRequiresSeparateProductionChange, true);
+console.log("candidate decision scope tests passed");
