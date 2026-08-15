@@ -16,8 +16,14 @@ function prediction(index, options = {}) {
     raceNo,
     selectedAt: new Date(Date.UTC(2026, 7, 15, 3, index)).toISOString(),
     frameRiseFallShadowAb: {
-      candidateId: "frame-rise-fall-shadow-off-v1",
-      candidateSpecFingerprint: "sha256:test",
+      candidateId: options.candidateId || "frame-rise-fall-shadow-off-v1",
+      candidateSpecFingerprint: options.candidateSpecFingerprint || "sha256:test",
+      implementationFingerprint: options.implementationFingerprint || "sha256:impl",
+      cutoff: {
+        selectedAtExclusiveLowerBound: options.cutoff || "2026-08-15T02:00:00.000Z",
+        sourceCommit: options.sourceCommit || "abc123",
+        logicFingerprint: options.logicFingerprint || "logic-v1"
+      },
       comparisonContract: {
         comparableForFixed100: true,
         ticketContractViolations: options.violations || 0
@@ -55,7 +61,9 @@ const report = engine.build(
   [{ verificationPredictions: predictions }],
   [{ races: results }]
 );
+assert.equal(report.observation.rawComparableCount, 100);
 assert.equal(report.observation.eligibleComparableCount, 100);
+assert.equal(report.observation.excludedOtherCohortCount, 0);
 assert.equal(report.observation.fixedPoolCount, 100);
 assert.equal(report.observation.settledComparableCount, 100);
 assert.equal(report.observation.pendingFixedPoolResults, 0);
@@ -82,9 +90,6 @@ assert.equal(partial.observation.pendingFixedPoolResults, 14);
 assert.equal(partial.status, "collecting-fixed-100-results");
 assert.equal(partial.adoptionCandidate, false);
 
-// The fixed 100 must be selected by selectedAt/raceKey before settlement.
-// A later result must never replace an earlier pending race and complete the
-// trial prematurely.
 const orderedPredictions = [];
 const orderedResults = [];
 for (let index = 0; index < 101; index += 1) {
@@ -102,6 +107,27 @@ assert.equal(frozenOrder.observation.settledComparableCount, 99);
 assert.equal(frozenOrder.observation.pendingFixedPoolResults, 1);
 assert.equal(frozenOrder.adoptionChecks.fixed100Complete, false);
 assert.equal(frozenOrder.rows.some(row => row.raceKey === orderedPredictions[100].raceKey), false);
+
+// A later candidate/implementation/cutoff must start a different trial cohort
+// and must never be mixed into the first fixed-100 experiment.
+const mixedPredictions = predictions.slice(0, 19);
+const changedCandidate = prediction(20, {
+  candidateSpecFingerprint: "sha256:new-spec",
+  implementationFingerprint: "sha256:new-impl",
+  cutoff: "2026-08-15T04:00:00.000Z",
+  sourceCommit: "def456",
+  logicFingerprint: "logic-v2"
+});
+mixedPredictions.push(changedCandidate);
+const mixed = engine.build(
+  [{ verificationPredictions: mixedPredictions }],
+  [{ races: [...results.slice(0, 19), resultFor(changedCandidate, "2-1-3", 2000)] }]
+);
+assert.equal(mixed.observation.rawComparableCount, 20);
+assert.equal(mixed.observation.eligibleComparableCount, 19);
+assert.equal(mixed.observation.excludedOtherCohortCount, 1);
+assert.equal(mixed.activeCohort.candidateSpecFingerprint, "sha256:test");
+assert.equal(mixed.rows.some(row => row.raceKey === changedCandidate.raceKey), false);
 
 assert.equal(engine.oneSidedExactPValue(12, 2) <= 0.05, true);
 const bootstrap = engine.pairedProfitBootstrap(report.rows, 1000);
