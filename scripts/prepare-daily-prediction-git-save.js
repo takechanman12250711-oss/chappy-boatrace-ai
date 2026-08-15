@@ -81,6 +81,76 @@ function rawSaveLimitFromEnv(
   return configured;
 }
 
+function datesFromPaths(paths) {
+  return [
+    ...new Set(
+      (Array.isArray(paths) ? paths : [])
+        .map(value =>
+          String(value || "")
+            .trim()
+            .replaceAll("\\", "/")
+        )
+        .map(value => {
+          const match = value.match(
+            /^data\/predictions\/(\d{8})\.json$/
+          );
+          return match?.[1] || "";
+        })
+        .filter(Boolean)
+    )
+  ].sort();
+}
+
+function outputLines(value) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+}
+
+function modifiedPredictionSourceDates(
+  rootDirectory = process.cwd()
+) {
+  const paths = [
+    ...outputLines(
+      git(
+        rootDirectory,
+        [
+          "diff",
+          "--name-only",
+          "--",
+          "data/predictions"
+        ]
+      )
+    ),
+    ...outputLines(
+      git(
+        rootDirectory,
+        [
+          "diff",
+          "--cached",
+          "--name-only",
+          "--",
+          "data/predictions"
+        ]
+      )
+    ),
+    ...outputLines(
+      git(
+        rootDirectory,
+        [
+          "ls-files",
+          "--others",
+          "--exclude-standard",
+          "--",
+          "data/predictions"
+        ]
+      )
+    )
+  ];
+  return datesFromPaths(paths);
+}
+
 function preparePredictionGitSave({
   rootDirectory = process.cwd(),
   all = false,
@@ -92,7 +162,7 @@ function preparePredictionGitSave({
     rawSaveLimitFromEnv(env)
 } = {}) {
   const dates = all
-    ? archiveApi.predictionSourceDates(
+    ? modifiedPredictionSourceDates(
         rootDirectory
       )
     : [
@@ -182,6 +252,13 @@ function main() {
     all
   });
 
+  if (!result.archiveResults.length) {
+    console.log(
+      "変更された日次予想原本はありません"
+    );
+    return;
+  }
+
   result.archiveResults.forEach(item => {
     if (item.status === "archived") {
       console.log(
@@ -213,6 +290,9 @@ module.exports = {
   isTracked,
   relativeGitPath,
   rawSaveLimitFromEnv,
+  datesFromPaths,
+  outputLines,
+  modifiedPredictionSourceDates,
   preparePredictionGitSave,
   main
 };
