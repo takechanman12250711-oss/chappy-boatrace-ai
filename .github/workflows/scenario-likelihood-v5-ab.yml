@@ -9,8 +9,10 @@ on:
       - "scripts/test-upgrade-collection-policy.js"
       - "scripts/test-upgrade-collection-policy-doc.js"
       - "scripts/test-v5-decision-is-history-only.js"
+      - "scripts/test-v5-decision-history.js"
       - "config/upgrade-collection-policy.json"
       - "config/scenario-likelihood-v5-decision.json"
+      - "config/scenario-likelihood-v5-decision-history.json"
       - "docs/upgrade-collection-policy.md"
       - ".github/workflows/scenario-likelihood-v5-ab.yml"
   workflow_dispatch:
@@ -32,4 +34,5 @@ jobs:
           node scripts/test-upgrade-collection-policy.js
           node scripts/test-upgrade-collection-policy-doc.js
           node scripts/test-v5-decision-is-history-only.js
+          node scripts/test-v5-decision-history.js
           node scripts/check-charter.js
