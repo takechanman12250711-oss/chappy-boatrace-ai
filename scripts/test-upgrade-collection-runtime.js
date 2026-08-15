@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const collector = fs.readFileSync(path.join(__dirname, "collect-predictions.js"), "utf8");
+const ab = fs.readFileSync(path.join(__dirname, "..", "js", "scenario-likelihood-v5-ab.js"), "utf8");
+assert.match(collector, /scenarioLikelihoodV5Ab\.build/);
+assert.match(collector, /scenarioLikelihoodV5Ab:\s*scenarioLikelihoodAb/);
+assert.doesNotMatch(ab, /closed-rejected/);
+console.log("runtime upgrade collection remains enabled");
