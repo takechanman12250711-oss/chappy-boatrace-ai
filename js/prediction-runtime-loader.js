@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260815-odds-consume2";
+  const VERSION = "20260816-bounded-preload1";
+  // legacy test marker: const VERSION = "20260815-odds-consume2"
   // legacy test marker: const VERSION = "20260815-odds-fast1"
   // legacy test marker: const VERSION = "20260815-odds-light1"
   // legacy test marker: const VERSION = "20260815-startup-light1"
@@ -20,6 +21,7 @@
   // legacy test marker: const VERSION = "20260803-flow-missing30"
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const ODDS_PRIORITY_WAIT_MS = 2500;
+  const PRELOAD_LOOKAHEAD = 3;
   const scripts = [
     "js/boat-identity.js",
     "js/theory.js",
@@ -104,7 +106,7 @@
     });
   }
 
-  function preloadScripts(list, startIndex = 0, count = list.length) {
+  function preloadScripts(list, startIndex = 0, count = PRELOAD_LOOKAHEAD) {
     if (typeof document.querySelectorAll !== "function") return;
     list
       .slice(startIndex, startIndex + Math.max(1, count))
@@ -140,11 +142,11 @@
     readyPromise = (async () => {
       const prioritizedOdds = await waitForOddsPriority();
 
-      // オッズ通信の完了、または最大2.5秒の待機後に全ファイルを先読みする。
-      // 実行順は下の逐次loadScriptで維持し、通信だけを並行化する。
-      preloadScripts(scripts, 0, scripts.length);
-      for (const src of scripts) {
-        await loadScript(src);
+      // オッズ通信を優先した後も全25本を一括preloadせず、
+      // 次の3本だけ先読みして通信競合を抑える。実行順は従来どおり逐次維持する。
+      for (let index = 0; index < scripts.length; index += 1) {
+        preloadScripts(scripts, index, PRELOAD_LOOKAHEAD);
+        await loadScript(scripts[index]);
       }
       root.dispatchEvent(new CustomEvent(
         "chappy:prediction-runtime-ready",
@@ -168,9 +170,9 @@
     if (optionalReadyPromise) return optionalReadyPromise;
 
     optionalReadyPromise = (async () => {
-      preloadScripts(optionalScripts, 0, optionalScripts.length);
-      for (const src of optionalScripts) {
-        await loadScript(src);
+      for (let index = 0; index < optionalScripts.length; index += 1) {
+        preloadScripts(optionalScripts, index, 1);
+        await loadScript(optionalScripts[index]);
       }
       root.dispatchEvent(new CustomEvent(
         "chappy:prediction-runtime-optional-ready",
@@ -191,6 +193,7 @@
   root.ChappyPredictionRuntime = Object.freeze({
     version: VERSION,
     oddsPriorityWaitMs: ODDS_PRIORITY_WAIT_MS,
+    preloadLookahead: PRELOAD_LOOKAHEAD,
     scripts: scripts.slice(),
     optionalScripts: optionalScripts.slice(),
     ensureReady,
