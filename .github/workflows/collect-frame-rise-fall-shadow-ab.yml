@@ -9,14 +9,20 @@ on:
       - "scripts/build-frame-rise-fall-shadow-snapshots.js"
       - "scripts/minify-daily-prediction.js"
       - "scripts/test-minify-daily-prediction.js"
+      - "scripts/daily-prediction-source-archive.js"
+      - "scripts/restore-daily-prediction-source.js"
+      - "scripts/prepare-daily-prediction-git-save.js"
+      - "scripts/test-daily-prediction-source-archive.js"
       - "scripts/build-prediction-summaries.js"
       - "scripts/build-current-prediction-summary.js"
       - "scripts/test-current-prediction-summary.js"
       - "scripts/test-frame-rise-fall-shadow-storage.js"
       - "scripts/test-frame-rise-fall-shadow-replay.js"
-      - "scripts/test-frame-rise-fall-replay-preload.js"
+      - "scripts/test-frame-rise-fall-shadow-replay-preload.js"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - ".github/workflows/collect-predictions.yml"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/build-learning-analysis-pipeline.yml"
   workflow_run:
     workflows: ["Collect automatic race predictions"]
     types: [completed]
@@ -55,6 +61,10 @@ jobs:
           node --check scripts/build-frame-rise-fall-shadow-snapshots.js
           node --check scripts/minify-daily-prediction.js
           node scripts/test-minify-daily-prediction.js
+          node --check scripts/daily-prediction-source-archive.js
+          node --check scripts/restore-daily-prediction-source.js
+          node --check scripts/prepare-daily-prediction-git-save.js
+          node scripts/test-daily-prediction-source-archive.js
           node --check scripts/build-prediction-summaries.js
           node --check scripts/build-current-prediction-summary.js
           node scripts/test-current-prediction-summary.js
@@ -72,13 +82,17 @@ jobs:
         env:
           PREDICT_DATE: ${{ inputs.date }}
         run: |
+          node scripts/restore-daily-prediction-source.js
           node scripts/build-frame-rise-fall-shadow-snapshots.js
           node scripts/minify-daily-prediction.js
           node scripts/build-current-prediction-summary.js
       - name: Save shadow snapshots
         if: github.event_name != 'pull_request'
+        env:
+          PREDICT_DATE: ${{ inputs.date }}
         run: |
-          git add data/predictions data/stats/frame-rise-fall-shadow-snapshot-archive.json data/stats/theory-ab-phase10.json
+          node scripts/prepare-daily-prediction-git-save.js
+          git add data/stats/frame-rise-fall-shadow-snapshot-archive.json data/stats/theory-ab-phase10.json
           if git diff --cached --quiet; then
             echo "保存する枠別浮沈Shadowはありません"
             exit 0
