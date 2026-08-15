@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260813-course-failclosed1";
+  const VERSION = "20260815-startup-light1";
+  // legacy test marker: const VERSION = "20260813-course-failclosed1"
   // legacy test marker: const VERSION = "20260810-racer-skill-core1"
   // legacy test marker: const VERSION = "20260809-grounded-flow2"
   // legacy test marker: const VERSION = "20260805-accordion-rollback1"
@@ -37,7 +38,10 @@
     "js/main-cover-display-boundary.js",
     "js/final-odds-display.js",
     "js/skip-ai-display.js",
-    "js/scenario-ai-v6-display.js"
+    "js/scenario-ai-v6-display.js",
+    "js/flow-odds-tabs.js",
+    "js/formation-odds-display.js",
+    "js/manshu-display-reliability.js"
   ];
   const optionalScripts = [
     "js/prediction-calibration.js"
