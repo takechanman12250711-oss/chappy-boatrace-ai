@@ -3,7 +3,8 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260815-startup-light1";
+  const VERSION = "20260815-odds-light1";
+  // legacy test marker: const VERSION = "20260815-startup-light1"
   // legacy test marker: const VERSION = "20260813-course-failclosed1"
   // legacy test marker: const VERSION = "20260810-official-reference1"
   // legacy test marker: const VERSION = "20260805-flow-label1"
@@ -20,6 +21,7 @@
       "js/storage.js",
       "js/prediction-conditions.js",
       "js/api.js",
+      "js/odds-fetch-cache.js",
       "js/prediction-runtime-loader.js",
       "js/script.js",
       "js/hiyori-runtime-loader.js"
