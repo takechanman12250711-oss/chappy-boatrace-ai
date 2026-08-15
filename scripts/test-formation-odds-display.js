@@ -91,6 +91,17 @@ assert.equal(
 );
 assert.equal(display.fetchedOddsText("12.3倍"), "12.3倍");
 assert.equal(display.fetchedOddsText(12.3), "12.3倍");
+assert.deepEqual(
+  display.raceParamsOf({
+    race: { stadiumCode: "19", raceNo: 8, date: "20260815" }
+  }),
+  { jcd: "19", rno: 8, date: "20260815" },
+  "表示中レースのキーで共有オッズを参照する"
+);
+assert.equal(
+  display.oddsMapFromData({ byTicket: { "1-2-3": 10.1 } }).get("1-2-3"),
+  "10.1倍"
+);
 
 const prediction = {
   aiCore: {

@@ -1,0 +1,63 @@
+name: Check odds lightweight path
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "js/app-runtime-loader.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/hiyori-runtime-loader.js"
+      - "js/odds-fetch-cache.js"
+      - "js/flow-odds-tabs.js"
+      - "js/formation-odds-display.js"
+      - "scripts/test-odds-fetch-cache.js"
+      - "scripts/test-flow-odds-tabs.js"
+      - "scripts/test-formation-odds-display.js"
+      - "scripts/test-odds-lightweight-path.js"
+      - ".github/workflows/check-odds-lightweight-path.yml"
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "js/app-runtime-loader.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/hiyori-runtime-loader.js"
+      - "js/odds-fetch-cache.js"
+      - "js/flow-odds-tabs.js"
+      - "js/formation-odds-display.js"
+      - "scripts/test-odds-fetch-cache.js"
+      - "scripts/test-flow-odds-tabs.js"
+      - "scripts/test-formation-odds-display.js"
+      - "scripts/test-odds-lightweight-path.js"
+      - ".github/workflows/check-odds-lightweight-path.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check syntax
+        run: |
+          node --check js/odds-fetch-cache.js
+          node --check js/flow-odds-tabs.js
+          node --check js/formation-odds-display.js
+          node --check js/app-runtime-loader.js
+          node --check js/prediction-runtime-loader.js
+          node --check js/hiyori-runtime-loader.js
+          node --check scripts/test-odds-fetch-cache.js
+          node --check scripts/test-odds-lightweight-path.js
+      - name: Verify one-request odds path
+        run: |
+          node scripts/test-odds-fetch-cache.js
+          node scripts/test-flow-odds-tabs.js
+          node scripts/test-formation-odds-display.js
+          node scripts/test-odds-lightweight-path.js

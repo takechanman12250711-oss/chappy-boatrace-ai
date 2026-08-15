@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260815-startup-light1";
+  const VERSION = "20260815-odds-light1";
+  // legacy test marker: const VERSION = "20260815-startup-light1"
   // legacy test marker: const VERSION = "20260813-course-failclosed1"
   // legacy test marker: const VERSION = "20260810-racer-skill-core1"
   // legacy test marker: const VERSION = "20260809-grounded-flow2"
