@@ -14,7 +14,7 @@ const formationOdds = read("js/formation-odds-display.js");
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js?v=20260815-odds-immediate1"');
 const directApiIndex = html.indexOf('src="js/api.js?v=20260815-odds-immediate1"');
-const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260815-odds-consume2"');
+const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-bounded-preload1"');
 const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260815-odds-immediate1"');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
 const todayResultsIndex = html.indexOf('src="js/today-results-home.js');
@@ -106,13 +106,19 @@ assert.equal(
   "オッズ開始前に親ランタイムを一括先読みしない"
 );
 const oddsWaitIndex = predictionRuntime.indexOf("await waitForOddsPriority()");
-const preloadAllIndex = predictionRuntime.indexOf("preloadScripts(scripts, 0, scripts.length)");
-const sequentialLoadIndex = predictionRuntime.indexOf("for (const src of scripts)");
+const progressivePreloadIndex = predictionRuntime.indexOf("preloadScripts(scripts, index, PRELOAD_LOOKAHEAD)");
+const progressiveLoadIndex = predictionRuntime.indexOf("await loadScript(scripts[index])");
 assert.ok(
   oddsWaitIndex >= 0 &&
-    oddsWaitIndex < preloadAllIndex &&
-    preloadAllIndex < sequentialLoadIndex,
-  "オッズ完了または2.5秒待機後に予想JSの通信だけを並行化し、実行順は維持する"
+    oddsWaitIndex < progressivePreloadIndex &&
+    progressivePreloadIndex < progressiveLoadIndex,
+  "オッズ完了または2.5秒待機後に予想JSを3本ずつ先読みし、実行順を維持する"
+);
+assert.equal(
+  predictionRuntime.includes("const PRELOAD_LOOKAHEAD = 3") &&
+    !predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)"),
+  true,
+  "予想JS25本の全件同時preloadを禁止する"
 );
 assert.equal(
   predictionRuntime.includes("const ODDS_PRIORITY_WAIT_MS = 2500") &&
@@ -128,15 +134,15 @@ assert.equal(
 );
 
 assert.equal(
-  predictionRuntime.includes('const VERSION = "20260815-odds-consume2"'),
+  predictionRuntime.includes('const VERSION = "20260816-bounded-preload1"'),
   true,
-  "先行取得済みオッズを使う予想ローダーへ更新する"
+  "先行取得済みオッズを維持したまま予想JS先読み制限版へ更新する"
 );
 assert.equal(
-  html.includes('js/prediction-runtime-loader.js?v=20260815-odds-consume2') &&
+  html.includes('js/prediction-runtime-loader.js?v=20260816-bounded-preload1') &&
     html.includes('js/odds-first-navigation.js?v=20260815-odds-consume2'),
   true,
-  "既存端末へオッズ引き渡し版の起動経路を配信する"
+  "既存端末へUI不変の先読み制限版を配信する"
 );
 
-console.log("オッズ取得・通常予想引き渡し・高速読込パス検証: 合格");
+console.log("オッズ取得・通常予想引き渡し・UI不変の先読み制限パス検証: 合格");
