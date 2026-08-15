@@ -6,6 +6,7 @@ on:
       - "js/scenario-likelihood-v5-ab.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-scenario-likelihood-v5-ab.js"
+      - "scripts/test-v5-shadow-remains-data-only.js"
       - "scripts/test-upgrade-collection-policy-all.js"
       - "scripts/test-upgrade-collection-state.js"
       - "scripts/test-upgrade-collection-main-principle.js"
@@ -42,6 +43,7 @@ jobs:
           node --check scripts/collect-predictions.js
           node scripts/test-scenario-likelihood-v5-ab.js
           node scripts/test-scenario-likelihood-v5-storage.js
+          node scripts/test-v5-shadow-remains-data-only.js
           node scripts/test-upgrade-collection-policy-all.js
           node scripts/test-upgrade-collection-state.js
           node scripts/test-upgrade-collection-main-principle.js
