@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-14T16:05:15.104Z",
+  "generatedAt": "2026-08-15T02:05:12.383Z",
   "source": "scenario-ai-v6-ab-report + scenario-ai-v6-reproducibility-gate",
   "status": "collecting-evidence",
   "summary": {
@@ -110,11 +110,11 @@
     {
       "key": "candidate-cohort-match",
       "label": "A/B候補セット・学習世代が再現性ゲートと一致",
-      "passed": false,
+      "passed": true,
       "actual": {
-        "activeCandidateSetFingerprint": "none",
+        "activeCandidateSetFingerprint": "scenario-type:fourAttack:-2|scenario-type:sashi:-2|scenario-type:threeAttack:-2",
         "approvedCandidateSetFingerprint": "scenario-type:fourAttack:-2|scenario-type:sashi:-2|scenario-type:threeAttack:-2",
-        "activeCandidateTrainingFingerprint": "1647f5a8dfadbc42df5e3fe636be0cd1add99ac81a8b2a57e85d93cbb0863018",
+        "activeCandidateTrainingFingerprint": "c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
         "reproTrainingFingerprint": "c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c"
       }
     }
@@ -124,8 +124,7 @@
     "B勝ち30R以上",
     "B勝ちがA勝ちを5勝以上上回る",
     "前半でB優勢",
-    "後半でB優勢",
-    "A/B候補セット・学習世代が再現性ゲートと一致"
+    "後半でB優勢"
   ],
   "humanApprovalRequired": true,
   "humanApproved": false,
