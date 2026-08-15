@@ -41,6 +41,17 @@ function resultMap(documents = []) {
   return map;
 }
 
+function cohortKey(row = {}) {
+  return [
+    String(row.candidateId || ""),
+    String(row.candidateSpecFingerprint || ""),
+    String(row.implementationFingerprint || ""),
+    String(row.cutoffSelectedAt || ""),
+    String(row.cutoffSourceCommit || ""),
+    String(row.cutoffLogicFingerprint || "")
+  ].join("|");
+}
+
 function comparableRows(predictionDocuments = []) {
   const byRaceKey = new Map();
   predictionDocuments.forEach(doc => (Array.isArray(doc?.verificationPredictions) ? doc.verificationPredictions : []).forEach(record => {
@@ -49,6 +60,7 @@ function comparableRows(predictionDocuments = []) {
     if (snapshot?.comparisonContract?.comparableForFixed100 !== true || replay?.status !== "replay-ready") return;
     const key = raceKeyOf(record);
     if (!key) return;
+    const cutoff = snapshot?.cutoff || {};
     const row = {
       raceKey: key,
       date: String(record?.date || key.slice(0, 8)),
@@ -59,10 +71,15 @@ function comparableRows(predictionDocuments = []) {
       selectedEpoch: selectedEpoch(record),
       candidateId: String(snapshot?.candidateId || ""),
       candidateSpecFingerprint: String(snapshot?.candidateSpecFingerprint || ""),
+      implementationFingerprint: String(snapshot?.implementationFingerprint || ""),
+      cutoffSelectedAt: String(cutoff?.selectedAtExclusiveLowerBound || ""),
+      cutoffSourceCommit: String(cutoff?.sourceCommit || ""),
+      cutoffLogicFingerprint: String(cutoff?.logicFingerprint || ""),
       ticketContractViolations: Number(snapshot?.comparisonContract?.ticketContractViolations || 0),
       a: replay.a || {},
       b: replay.b || {}
     };
+    row.cohortKey = cohortKey(row);
     const existing = byRaceKey.get(key);
     if (!existing || row.selectedEpoch >= existing.selectedEpoch) byRaceKey.set(key, row);
   }));
@@ -191,15 +208,20 @@ function pairedProfitBootstrap(rows = [], samples = BOOTSTRAP_SAMPLES) {
 }
 
 function build(predictionDocuments = [], resultDocuments = []) {
-  const eligible = comparableRows(predictionDocuments);
+  const allEligible = comparableRows(predictionDocuments);
+  const activeCohortKey = allEligible[0]?.cohortKey || "";
+  const eligible = activeCohortKey
+    ? allEligible.filter(row => row.cohortKey === activeCohortKey)
+    : [];
   const fixedPool = eligible.slice(0, FIXED_COMPARABLE_RACES);
   const results = resultMap(resultDocuments);
   const settled = fixedPool
     .map(row => settleRow(row, results.get(row.raceKey)))
     .filter(Boolean);
-  const firstHalfRows = settled.filter(row => fixedPool.findIndex(item => item.raceKey === row.raceKey) < 50);
+  const fixedIndex = new Map(fixedPool.map((row, index) => [row.raceKey, index]));
+  const firstHalfRows = settled.filter(row => Number(fixedIndex.get(row.raceKey)) < 50);
   const secondHalfRows = settled.filter(row => {
-    const index = fixedPool.findIndex(item => item.raceKey === row.raceKey);
+    const index = Number(fixedIndex.get(row.raceKey));
     return index >= 50 && index < 100;
   });
   const overall = summarize(settled);
@@ -232,13 +254,27 @@ function build(predictionDocuments = [], resultDocuments = []) {
       validationHalf: { start: 1, end: 50 },
       sealedConfirmationHalf: { start: 51, end: 100 },
       ordering: ["selectedAt", "raceKey"],
-      poolSelection: "first-100-comparable-before-result-settlement",
+      poolSelection: "first-100-same-cohort-comparable-before-result-settlement",
+      cohortFields: ["candidateId", "candidateSpecFingerprint", "implementationFingerprint", "cutoff"],
       stakePerTicket: STAKE_PER_TICKET,
       automaticWinnerSelection: false,
       finalHumanApprovalRequired: true
     },
+    activeCohort: fixedPool[0] ? {
+      cohortKey: activeCohortKey,
+      candidateId: fixedPool[0].candidateId,
+      candidateSpecFingerprint: fixedPool[0].candidateSpecFingerprint,
+      implementationFingerprint: fixedPool[0].implementationFingerprint,
+      cutoff: {
+        selectedAtExclusiveLowerBound: fixedPool[0].cutoffSelectedAt,
+        sourceCommit: fixedPool[0].cutoffSourceCommit,
+        logicFingerprint: fixedPool[0].cutoffLogicFingerprint
+      }
+    } : null,
     observation: {
+      rawComparableCount: allEligible.length,
       eligibleComparableCount: eligible.length,
+      excludedOtherCohortCount: Math.max(0, allEligible.length - eligible.length),
       fixedPoolCount: fixedPool.length,
       settledComparableCount: settled.length,
       pendingFixedPoolResults: Math.max(0, fixedPool.length - settled.length),
@@ -264,6 +300,6 @@ function build(predictionDocuments = [], resultDocuments = []) {
 
 module.exports = {
   VERSION, FIXED_COMPARABLE_RACES, STAKE_PER_TICKET, ticket, tickets, resultKey,
-  comparableRows, settleSide, settleRow, summarize, oneSidedExactPValue,
+  cohortKey, comparableRows, settleSide, settleRow, summarize, oneSidedExactPValue,
   pairedProfitBootstrap, build
 };
