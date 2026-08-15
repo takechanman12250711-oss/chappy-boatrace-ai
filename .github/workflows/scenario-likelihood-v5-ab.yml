@@ -10,9 +10,11 @@ on:
       - "scripts/test-upgrade-collection-policy-all.js"
       - "scripts/test-upgrade-collection-state.js"
       - "scripts/test-upgrade-collection-main-principle.js"
+      - "scripts/test-upgrade-collection-mode.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
+      - "config/upgrade-collection-mode.json"
       - "config/upgrade-data-retention.json"
       - "config/upgrade-collection-owner-intent.json"
       - "config/candidate-decision-scope.json"
@@ -47,6 +49,7 @@ jobs:
           node scripts/test-upgrade-collection-policy-all.js
           node scripts/test-upgrade-collection-state.js
           node scripts/test-upgrade-collection-main-principle.js
+          node scripts/test-upgrade-collection-mode.js
           node scripts/test-upgrade-collection-policy-doc.js
           node scripts/test-v5-decision-history.js
           node scripts/test-v5-upgrade-collection-regression.js
