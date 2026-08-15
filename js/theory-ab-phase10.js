@@ -1,6 +1,7 @@
 "use strict";
 
 const candidateBranchAnalysis = require("./theory-candidate-branch-analysis-phase9");
+const frameShadowVerifier = require("./frame-rise-fall-shadow-off-verifier");
 
 const METRIC_ORDER = Object.freeze([
   "recoveryRate",
@@ -8,7 +9,7 @@ const METRIC_ORDER = Object.freeze([
   "skipDecisionAccuracy",
   "hitRate"
 ]);
-const SHADOW_IMPLEMENTATION_VERIFIER_PRESENT = false;
+const SHADOW_IMPLEMENTATION_VERIFIER_PRESENT = frameShadowVerifier.PRESENT === true;
 
 function frozenCutoff(candidate = {}) {
   const cutoff = candidate?.prospectiveProtocol?.cutoff || {};
@@ -50,8 +51,16 @@ function build(phase9 = {}, candidateAnalysis = {}) {
     Boolean(candidate?.candidateSpecFingerprint) &&
     candidate?.approvedSpecFingerprint === candidate?.candidateSpecFingerprint;
   const cutoffFrozen = candidateApproved && frozenCutoff(candidate);
-  const shadowImplementationVerified = false;
-  const shadowImplementationPresent = false;
+  const implementationCheck = candidate
+    ? frameShadowVerifier.verify(candidate)
+    : {
+        present: SHADOW_IMPLEMENTATION_VERIFIER_PRESENT,
+        verified: false,
+        implementationPresent: false,
+        reason: "candidate-unavailable"
+      };
+  const shadowImplementationVerified = implementationCheck.verified === true;
+  const shadowImplementationPresent = implementationCheck.implementationPresent === true;
   const ready =
     proposalReady &&
     proposalApproved &&
@@ -73,17 +82,17 @@ function build(phase9 = {}, candidateAnalysis = {}) {
         ? "waiting-for-frozen-prospective-cutoff"
         : !SHADOW_IMPLEMENTATION_VERIFIER_PRESENT
           ? "waiting-for-shadow-implementation-verifier"
-          : !shadowImplementationPresent
+          : !shadowImplementationPresent || !shadowImplementationVerified
             ? "waiting-for-shadow-implementation"
-        : "ready-for-shadow-ab";
+            : "ready-for-shadow-ab";
 
   return {
     schemaVersion: 1,
-    engineVersion: "theory-ab-phase10-20260814-candidate-gate",
+    engineVersion: "theory-ab-phase10-20260815-shadow-verifier",
     status,
     sourceStatus: String(phase9?.status || "unknown"),
     candidateSourceStatus: String(candidateAnalysis?.status || "unknown"),
-    implementationSourceStatus: "not-implemented",
+    implementationSourceStatus: String(implementationCheck?.reason || "unknown"),
     metricOrder: [...METRIC_ORDER],
     baselineA: {
       label: "A: current-production",
@@ -103,6 +112,7 @@ function build(phase9 = {}, candidateAnalysis = {}) {
       applicability: candidate?.applicability || null,
       proposedChange: candidate?.proposedChange || null,
       prospectiveProtocol: candidate?.prospectiveProtocol || null,
+      implementationFingerprint: String(implementationCheck?.implementationFingerprint || ""),
       shadowOnly: true,
       productionPrediction: false,
       productionPurchaseSelection: false
@@ -125,6 +135,8 @@ function build(phase9 = {}, candidateAnalysis = {}) {
       shadowImplementationVerifierPresent: SHADOW_IMPLEMENTATION_VERIFIER_PRESENT,
       shadowImplementationVerified,
       shadowImplementationPresent,
+      implementationCandidateSpecMatches: implementationCheck?.candidateSpecMatches === true,
+      implementationFingerprint: String(implementationCheck?.implementationFingerprint || ""),
       allPassed: ready
     },
     proposalApproved,

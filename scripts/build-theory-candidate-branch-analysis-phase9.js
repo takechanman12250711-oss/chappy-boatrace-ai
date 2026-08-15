@@ -16,7 +16,21 @@ function load(file, fallback = {}) {
 
 function withoutGeneratedAt(report = {}) {
   const { generatedAt, ...semantic } = report;
-  return semantic;
+  const diagnostics = semantic?.analysisInputDiagnostics;
+  if (!diagnostics || typeof diagnostics !== "object") return semantic;
+
+  // 予想収集中は未確定の在庫件数だけが増減する。
+  // Phase9候補は公式結果とjoin済みの確定母集団から作るため、
+  // artifactの意味同一性には settledJoinCount と候補本体を使い、
+  // 未確定在庫の canonical/preDeadline 件数は比較対象から外す。
+  return {
+    ...semantic,
+    analysisInputDiagnostics: {
+      ...diagnostics,
+      canonicalPredictionCount: "volatile-unsettled-inventory",
+      preDeadlinePredictionCount: "volatile-unsettled-inventory"
+    }
+  };
 }
 
 function buildReport(options = {}) {

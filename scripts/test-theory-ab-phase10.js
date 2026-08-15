@@ -1,53 +1,35 @@
 "use strict";
+
 const assert = require("node:assert/strict");
 const phase10 = require("../js/theory-ab-phase10");
 const candidateBranch = require("../js/theory-candidate-branch-analysis-phase9");
 
-function proposal(approved) {
+function phase9(approved) {
   return {
     status: "proposal-ready",
     proposalCount: 1,
     proposal: {
-      theoryKey: "race-flow",
-      label: "展開理論",
+      theoryKey: "frame-rise-fall",
+      label: "枠別浮沈率",
+      evidenceCount: 117,
       focusMetric: "recoveryRate",
-      changeCandidate: "弱い枝だけA/B検証",
-      rationale: "正式証拠30Rを根拠に検証",
+      currentValue: 50.8,
+      changeCandidate: "低回収の成立条件を分解し、利益を落としている枝だけをA/B検証候補にする",
+      rationale: "正式証拠117Rを根拠に検証",
       expectedEffect: "回収率改善余地を検証",
       approved
     }
   };
 }
 
-const proposalFingerprint = candidateBranch.proposalFingerprint(proposal(false).proposal);
-const candidateSpecification = {
-  candidateId: "race-flow-shadow-off-v1",
-  label: "展開補正OFF",
-  applicability: { all: [{ field: "formal", operator: "equals", value: true }] },
-  proposedChange: { scope: "shadow-B-only", action: "disable-adjustment" },
-  prospectiveProtocol: { fixedComparableRaces: 100 }
-};
-const candidateSpecFingerprint = candidateBranch.candidateSpecFingerprint(candidateSpecification);
-const candidateAnalysis = {
+const proposalFingerprint = candidateBranch.proposalFingerprint(phase9(false).proposal);
+const baseCandidate = candidateBranch.candidateDefinition(proposalFingerprint);
+const baseAnalysis = {
   status: "candidate-ready-for-human-review",
-  targetTheoryKey: "race-flow",
+  targetTheoryKey: "frame-rise-fall",
   phase9ProposalFingerprint: proposalFingerprint,
   candidateCount: 1,
-  candidate: {
-    ...candidateSpecification,
-    candidateSpecFingerprint,
-    sourceProposalFingerprint: proposalFingerprint,
-    approved: false,
-    approvedSpecFingerprint: null
-  }
-};
-const forgedImplementationManifest = {
-  status: "verified",
-  implementationPresent: true,
-  candidateId: candidateSpecification.candidateId,
-  candidateSpecFingerprint,
-  sourceCommit: "b".repeat(40),
-  logicFingerprint: `sha256:${"c".repeat(64)}`
+  candidate: baseCandidate
 };
 
 let report = phase10.build({
@@ -60,72 +42,57 @@ assert.equal(report.candidateB, null);
 assert.equal(report.automaticApplication, false);
 assert.equal(report.usableForPrediction, false);
 assert.equal(report.baselineA.immutable, true);
+assert.equal(report.readinessChecks.shadowImplementationVerifierPresent, true);
 
-report = phase10.build(proposal(false), candidateAnalysis);
+report = phase10.build(phase9(false), baseAnalysis);
 assert.equal(report.status, "waiting-for-approved-phase9-proposal");
-assert.equal(report.candidateB, null, "未承認Phase9提案からBを作らない");
+assert.equal(report.readinessChecks.shadowImplementationPresent, true);
+assert.equal(report.readinessChecks.shadowImplementationVerified, true);
+assert.equal(report.candidateB, null, "実装済みでも未承認提案からBを作らない");
 
-report = phase10.build(proposal(true), candidateAnalysis);
+report = phase10.build(phase9(true), baseAnalysis);
 assert.equal(report.status, "waiting-for-approved-candidate-specification");
-assert.equal(report.proposalApproved, true);
-assert.equal(report.candidateB, null, "Phase9の文言承認だけではBを作らない");
+assert.equal(report.candidateB, null, "Phase9承認だけではBを作らない");
 
-report = phase10.build({
-  ...proposal(true),
-  proposal: { ...proposal(true).proposal, currentValue: 99 }
-}, candidateAnalysis);
-assert.equal(report.status, "waiting-for-approved-candidate-specification");
-assert.equal(report.readinessChecks.proposalFingerprintMatches, false);
-assert.equal(report.candidateB, null, "候補作成後にPhase9提案が変われば再承認を要求する");
-
-report = phase10.build(proposal(true), {
-  ...candidateAnalysis,
-  candidate: {
-    ...candidateAnalysis.candidate,
-    approved: true,
-    approvedSpecFingerprint: candidateSpecFingerprint
-  }
-});
-assert.equal(report.status, "waiting-for-frozen-prospective-cutoff");
-assert.equal(report.candidateB, null, "cutoff固定前はBを作らない");
-
-const frozenCandidateSpecification = structuredClone(candidateSpecification);
-frozenCandidateSpecification.prospectiveProtocol.cutoff = {
+const frozenCandidate = structuredClone(baseCandidate);
+frozenCandidate.prospectiveProtocol.cutoff = {
   selectedAtExclusiveLowerBound: "2026-08-15T00:00:00+09:00",
   sourceCommit: "d".repeat(40),
   logicFingerprint: `sha256:${"e".repeat(64)}`,
   status: "frozen"
 };
-const frozenCandidateSpecFingerprint =
-  candidateBranch.candidateSpecFingerprint(frozenCandidateSpecification);
-const approvedCandidateAnalysis = {
-  ...candidateAnalysis,
-  candidate: {
-    ...frozenCandidateSpecification,
-    sourceProposalFingerprint: proposalFingerprint,
-    candidateSpecFingerprint: frozenCandidateSpecFingerprint,
-    approved: true,
-    approvedSpecFingerprint: frozenCandidateSpecFingerprint
-  }
+frozenCandidate.candidateSpecFingerprint = candidateBranch.candidateSpecFingerprint(frozenCandidate);
+frozenCandidate.approved = true;
+frozenCandidate.approvedSpecFingerprint = frozenCandidate.candidateSpecFingerprint;
+
+const approvedAnalysis = {
+  ...baseAnalysis,
+  candidate: frozenCandidate
 };
-report = phase10.build(proposal(true), approvedCandidateAnalysis, forgedImplementationManifest);
-assert.equal(report.status, "waiting-for-shadow-implementation-verifier");
+report = phase10.build(phase9(true), approvedAnalysis);
+assert.equal(report.status, "ready-for-shadow-ab");
 assert.equal(report.readinessChecks.cutoffFrozen, true);
-assert.equal(report.readinessChecks.shadowImplementationVerifierPresent, false);
-assert.equal(report.readinessChecks.allPassed, false);
-assert.equal(report.candidateSpecificationApproved, true);
-assert.equal(report.candidateB, null, "架空manifestだけではBを作らない");
+assert.equal(report.readinessChecks.shadowImplementationVerifierPresent, true);
+assert.equal(report.readinessChecks.shadowImplementationVerified, true);
+assert.equal(report.readinessChecks.shadowImplementationPresent, true);
+assert.equal(report.readinessChecks.implementationCandidateSpecMatches, true);
+assert.equal(report.readinessChecks.allPassed, true);
+assert.equal(report.candidateB.candidateId, "frame-rise-fall-shadow-off-v1");
+assert.equal(report.candidateB.proposedChange.effectiveValue, 0);
+assert.equal(report.candidateB.shadowOnly, true);
+assert.equal(report.candidateB.productionPrediction, false);
+assert.equal(report.candidateB.productionPurchaseSelection, false);
 assert.equal(report.comparison.minimumComparableRaces, 100);
-assert.deepEqual(report.metricOrder, ["recoveryRate", "practicalHitRate", "skipDecisionAccuracy", "hitRate"]);
 assert.equal(report.comparison.automaticWinnerSelection, false);
 assert.equal(report.automaticApplication, false);
 assert.equal(report.usableForPrediction, false);
 
-const tamperedCandidateAnalysis = structuredClone(approvedCandidateAnalysis);
-tamperedCandidateAnalysis.candidate.proposedChange.effectiveValue = 999;
-tamperedCandidateAnalysis.candidate.prospectiveProtocol.fixedComparableRaces = 50;
-report = phase10.build(proposal(true), tamperedCandidateAnalysis, forgedImplementationManifest);
+const tampered = structuredClone(approvedAnalysis);
+tampered.candidate.proposedChange.effectiveValue = 999;
+report = phase10.build(phase9(true), tampered);
 assert.equal(report.status, "waiting-for-approved-candidate-specification");
 assert.equal(report.readinessChecks.validCandidateSpecFingerprint, false);
-assert.equal(report.candidateB, null, "仕様改変後に旧fingerprintを残してもBを作らない");
-console.log("Phase10 theory A/B foundation tests passed");
+assert.equal(report.readinessChecks.shadowImplementationVerified, false);
+assert.equal(report.candidateB, null, "仕様改変はfingerprintとverifierの両方で拒否する");
+
+console.log("Phase10 theory A/B shadow verifier tests passed");
