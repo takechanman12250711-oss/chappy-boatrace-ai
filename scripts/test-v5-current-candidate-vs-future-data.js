@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const decision = require("../config/scenario-likelihood-v5-decision.json");
+const history = require("../config/scenario-likelihood-v5-decision-history.json");
+const systems = require("../config/upgrade-collection-systems.json");
+assert.equal(decision.productionCandidate, false);
+assert.equal(history.decisions[0].status, "rejected");
+assert.equal(systems.systems.scenarioLikelihoodV5Calibration, "collect");
+assert.equal(systems.systems.scenarioLikelihoodV5Ab, "collect");
+console.log("rejected v5 candidate stays rejected while future v5 data continues");
