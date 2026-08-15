@@ -7,6 +7,7 @@ on:
       - "scripts/collect-predictions.js"
       - "scripts/test-scenario-likelihood-v5-ab.js"
       - "scripts/test-upgrade-collection-policy.js"
+      - "scripts/test-upgrade-collection-policy-doc.js"
       - "scripts/test-v5-decision-is-history-only.js"
       - "config/upgrade-collection-policy.json"
       - "config/scenario-likelihood-v5-decision.json"
@@ -29,5 +30,6 @@ jobs:
           node scripts/test-scenario-likelihood-v5-ab.js
           node scripts/test-scenario-likelihood-v5-storage.js
           node scripts/test-upgrade-collection-policy.js
+          node scripts/test-upgrade-collection-policy-doc.js
           node scripts/test-v5-decision-is-history-only.js
           node scripts/check-charter.js
