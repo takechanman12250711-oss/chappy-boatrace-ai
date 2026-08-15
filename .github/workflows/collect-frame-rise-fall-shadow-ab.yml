@@ -1,0 +1,56 @@
+name: Collect frame rise fall shadow A/B
+
+on:
+  workflow_run:
+    workflows: ["Collect automatic race predictions"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "予想日（YYYYMMDD・空欄なら本日）"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify shadow storage
+        run: |
+          node --check js/frame-rise-fall-shadow-storage.js
+          node --check scripts/build-frame-rise-fall-shadow-snapshots.js
+          node scripts/test-frame-rise-fall-shadow-off.js
+          node scripts/test-theory-ab-phase10-approval.js
+          node scripts/test-frame-rise-fall-shadow-storage.js
+      - name: Capture prospective shadow snapshots
+        env:
+          PREDICT_DATE: ${{ inputs.date }}
+        run: node scripts/build-frame-rise-fall-shadow-snapshots.js
+      - name: Save shadow snapshots
+        run: |
+          git add data/predictions
+          if git diff --cached --quiet; then
+            echo "保存する枠別浮沈Shadowはありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Collect frame rise fall shadow A/B snapshot"
+          git pull --rebase origin main
+          git push origin main
