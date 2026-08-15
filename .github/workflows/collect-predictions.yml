@@ -7,6 +7,8 @@ on:
     paths:
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/build-learning-analysis-pipeline.yml"
       - "config/chappy-charter.json"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
@@ -14,6 +16,10 @@ on:
       - "scripts/test-compact-frame-rise-fall-shadow-inline.js"
       - "scripts/minify-daily-prediction.js"
       - "scripts/test-minify-daily-prediction.js"
+      - "scripts/daily-prediction-source-archive.js"
+      - "scripts/restore-daily-prediction-source.js"
+      - "scripts/prepare-daily-prediction-git-save.js"
+      - "scripts/test-daily-prediction-source-archive.js"
       - "js/frame-rise-fall-replay-preload.js"
       - "js/practical-priority-shadow.js"
       - "js/practical-priority-shadow-report.js"
@@ -131,6 +137,10 @@ jobs:
           node scripts/test-compact-frame-rise-fall-shadow-inline.js
           node --check scripts/minify-daily-prediction.js
           node scripts/test-minify-daily-prediction.js
+          node --check scripts/daily-prediction-source-archive.js
+          node --check scripts/restore-daily-prediction-source.js
+          node --check scripts/prepare-daily-prediction-git-save.js
+          node scripts/test-daily-prediction-source-archive.js
           node --check scripts/build-prediction-summaries.js
           node --check scripts/build-current-prediction-summary.js
           node scripts/test-current-prediction-summary.js
@@ -176,6 +186,7 @@ jobs:
           PREDICT_DATE: ${{ inputs.date }}
           NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
         run: |
+          node scripts/restore-daily-prediction-source.js
           node scripts/collect-predictions.js
           node scripts/build-scenario-ai-v6-snapshots.js
           node scripts/build-prediction-index-shards.js
@@ -191,8 +202,10 @@ jobs:
           git diff --exit-code -- data/predictions/index.json
 
       - name: Save predictions and note drafts
+        env:
+          PREDICT_DATE: ${{ inputs.date }}
         run: |
-          git add -- data/predictions ':(exclude)data/predictions/index.json'
+          node scripts/prepare-daily-prediction-git-save.js
 
           if [ -d data/notes ]; then
             git add data/notes
@@ -229,6 +242,7 @@ jobs:
           node scripts/test-api-client-cache.js
           node scripts/test-prediction-summaries.js
           node scripts/test-current-prediction-summary.js
+          node scripts/test-daily-prediction-source-archive.js
           node scripts/test-build-prediction-index.js
           node scripts/test-build-prediction-index-shards.js
           node scripts/test-prediction-index-loader.js
