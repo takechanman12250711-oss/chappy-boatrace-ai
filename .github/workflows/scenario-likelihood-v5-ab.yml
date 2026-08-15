@@ -21,6 +21,7 @@ on:
       - "scripts/test-upgrade-collection-policy-version.js"
       - "scripts/test-v5-production-a-stays.js"
       - "scripts/test-candidate-decision-scope.js"
+      - "scripts/test-v5-collector-contract-source.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -63,4 +64,5 @@ jobs:
           node scripts/test-upgrade-collection-policy-version.js
           node scripts/test-v5-production-a-stays.js
           node scripts/test-candidate-decision-scope.js
+          node scripts/test-v5-collector-contract-source.js
           node scripts/check-charter.js
