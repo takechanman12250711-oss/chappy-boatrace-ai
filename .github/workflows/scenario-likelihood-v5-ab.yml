@@ -11,10 +11,12 @@ on:
       - "scripts/test-v5-decision-is-history-only.js"
       - "scripts/test-v5-decision-history.js"
       - "scripts/test-v5-upgrade-collection-regression.js"
+      - "scripts/test-v5-decision-doc.js"
       - "config/upgrade-collection-policy.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
       - "docs/upgrade-collection-policy.md"
+      - "docs/decisions/scenario-likelihood-v5-20260815.md"
       - ".github/workflows/scenario-likelihood-v5-ab.yml"
   workflow_dispatch:
 
@@ -37,4 +39,5 @@ jobs:
           node scripts/test-v5-decision-is-history-only.js
           node scripts/test-v5-decision-history.js
           node scripts/test-v5-upgrade-collection-regression.js
+          node scripts/test-v5-decision-doc.js
           node scripts/check-charter.js
