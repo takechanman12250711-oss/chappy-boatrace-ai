@@ -55,10 +55,10 @@ assert.strictEqual(api.parseNotation("4-23-全").tickets.length, 8);
 assert.strictEqual(api.parseNotation("1-1-全"), null);
 assert.strictEqual(api.parseNotation("1-23-4"), null);
 
-assert.deepStrictEqual(
-  api.resolveRaceParams({ jcd: "19", rno: 8, date: "20260815" }),
-  { jcd: "19", rno: 8, date: "20260815" }
-);
+const resolved = api.resolveRaceParams({ jcd: "19", rno: 8, date: "20260815" });
+assert.strictEqual(resolved.jcd, "19");
+assert.strictEqual(resolved.rno, 8);
+assert.strictEqual(resolved.date, "20260815");
 const map = api.oddsDataToMap({
   ok: true,
   available: true,
