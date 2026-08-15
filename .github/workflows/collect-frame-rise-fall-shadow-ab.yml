@@ -7,6 +7,8 @@ on:
       - "js/frame-rise-fall-shadow-replay.js"
       - "js/frame-rise-fall-replay-preload.js"
       - "scripts/build-frame-rise-fall-shadow-snapshots.js"
+      - "scripts/minify-daily-prediction.js"
+      - "scripts/test-minify-daily-prediction.js"
       - "scripts/test-frame-rise-fall-shadow-storage.js"
       - "scripts/test-frame-rise-fall-shadow-replay.js"
       - "scripts/test-frame-rise-fall-replay-preload.js"
@@ -47,6 +49,8 @@ jobs:
           node --check js/frame-rise-fall-shadow-replay.js
           node --check js/frame-rise-fall-replay-preload.js
           node --check scripts/build-frame-rise-fall-shadow-snapshots.js
+          node --check scripts/minify-daily-prediction.js
+          node scripts/test-minify-daily-prediction.js
           node scripts/test-frame-rise-fall-shadow-off.js
           node scripts/test-frame-rise-fall-replay-preload.js
           node scripts/test-frame-rise-fall-shadow-replay.js
@@ -60,7 +64,9 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           PREDICT_DATE: ${{ inputs.date }}
-        run: node scripts/build-frame-rise-fall-shadow-snapshots.js
+        run: |
+          node scripts/build-frame-rise-fall-shadow-snapshots.js
+          node scripts/minify-daily-prediction.js
       - name: Save shadow snapshots
         if: github.event_name != 'pull_request'
         run: |
