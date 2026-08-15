@@ -83,52 +83,19 @@
   <!-- Prediction and stats modules are fetched only when their views need them. -->
   <!-- legacy test marker: js/app-runtime-loader.js?v=20260805-direct-render-accordion1 -->
   <script src="js/result-void-compat.js?v=20260808-void2"></script>
+  <script src="js/odds-fetch-cache.js?v=20260815-odds-immediate1" data-chappy-loaded="true"></script>
+  <script src="js/api.js?v=20260815-odds-immediate1" data-chappy-loaded="true"></script>
   <!-- legacy test marker: js/app-runtime-loader.js?v=20260810-official-reference1 -->
   <!-- legacy test marker: js/app-runtime-loader.js?v=20260813-course-failclosed1 -->
   <!-- legacy test marker: js/app-runtime-loader.js?v=20260815-startup-light1 -->
   <!-- legacy test marker: js/app-runtime-loader.js?v=20260815-odds-light1 -->
-  <script src="js/app-runtime-loader.js?v=20260815-odds-fast1"></script>
+  <!-- legacy test marker: js/app-runtime-loader.js?v=20260815-odds-fast1 -->
+  <script src="js/app-runtime-loader.js?v=20260815-odds-immediate1"></script>
   <!-- legacy test marker: js/home-dashboard-v2.js?v=20260803-ui-fix2 -->
   <!-- legacy test marker: js/home-dashboard-v2.js?v=20260815-manshu-home1 -->
   <script src="js/home-dashboard-v2.js?v=20260815-startup-light1"></script>
-  <script>
-    (function () {
-      "use strict";
-      let scheduled = false;
-
-      function loadHomeRecommendationReliability() {
-        if (
-          window.ChappyHomeRecommendationReliability ||
-          document.querySelector('script[data-chappy-home-reliability="true"]')
-        ) {
-          return;
-        }
-
-        const script = document.createElement("script");
-        script.src = "js/home-recommendation-reliability.js?v=20260815-startup-light1";
-        script.async = true;
-        script.dataset.chappyHomeReliability = "true";
-        document.head.appendChild(script);
-      }
-
-      function scheduleHomeRecommendationReliability() {
-        if (scheduled) return;
-        scheduled = true;
-        if ("requestIdleCallback" in window) {
-          window.requestIdleCallback(loadHomeRecommendationReliability, { timeout: 3000 });
-        } else {
-          window.setTimeout(loadHomeRecommendationReliability, 1500);
-        }
-      }
-
-      if (document.readyState === "complete") {
-        scheduleHomeRecommendationReliability();
-      } else {
-        window.addEventListener("load", scheduleHomeRecommendationReliability, { once: true });
-      }
-    })();
-  </script>
   <script src="js/home-venue-tap-hotfix.js?v=20260803-ui-fix2"></script>
   <script src="js/today-results-home.js?v=20260803-ui-fix2"></script>
+  <script src="js/odds-first-navigation.js?v=20260815-odds-immediate1"></script>
 </body>
 </html>
