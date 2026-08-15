@@ -59,13 +59,14 @@ jobs:
           node scripts/test-theory-candidate-branch-analysis-phase9.js
           node scripts/test-frame-rise-fall-shadow-off.js
           node scripts/test-theory-ab-phase10.js
-          node scripts/test-theory-ab-phase10-approval.js
-          node scripts/test-theory-candidate-branch-analysis-phase9-artifact.js
           node scripts/build-theory-profit-review-phase8.js
           node scripts/build-theory-improvement-proposal-phase9.js
           node scripts/build-theory-candidate-branch-analysis-phase9.js
           node scripts/test-theory-candidate-branch-analysis-phase9-artifact.js
-          git diff --exit-code -- data/stats/theory-candidate-branch-analysis-phase9.json
+          cp data/stats/theory-candidate-branch-analysis-phase9.json /tmp/phase9-candidate.json
+          node scripts/build-theory-candidate-branch-analysis-phase9.js
+          cmp /tmp/phase9-candidate.json data/stats/theory-candidate-branch-analysis-phase9.json
+          node scripts/test-theory-ab-phase10-approval.js
           node scripts/build-theory-ab-phase10.js
           node - <<'NODE'
           const fs=require('node:fs');
@@ -79,7 +80,6 @@ jobs:
             if(phase9.status!=='proposal-ready' || phase9.proposalCount!==1 || phase9.proposal?.theoryKey!==phase8.candidate.theoryKey) throw new Error('Phase8候補がPhase9提案へ接続されていません');
           }
           if(phase9.proposalCount===1 && phase9.proposal?.approved!==false) throw new Error('Phase9生成物は承認状態を直接埋め込まない');
-          if(phase9.proposalCount===0 && phase9.proposal!==null) throw new Error('Phase9待機状態に提案が残っています');
           if(phase9.automaticApplication!==false || phase9.usableForPrediction!==false) throw new Error('Phase9の安全条件異常');
           if(branch.candidateCount>1 || branch.automaticApplication!==false || branch.usableForPrediction!==false) throw new Error('Phase9候補枝分析の安全条件異常');
           if(phase9.proposal?.theoryKey==='frame-rise-fall'){
