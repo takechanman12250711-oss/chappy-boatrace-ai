@@ -10,6 +10,9 @@ const scenarioVerification = require(
 const scenarioAbVerification = require(
   "../js/scenario-likelihood-v5-ab-verification"
 );
+const abDecision = require(
+  "../config/scenario-likelihood-v5-decision.json"
+);
 
 const root = path.resolve(__dirname, "..");
 const predictionDir = path.join(root, "data", "predictions");
@@ -135,13 +138,15 @@ function main() {
     generatedAt: new Date().toISOString(),
     source: "data/predictions/*.json",
     ...proposalReport,
-    approvalGate: approvalReport
+    approvalGate: approvalReport,
+    abDecision
   };
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(report, null, 2) + "\n", "utf8");
   console.log(
     `展開AI v5校正集計：比較可能${report.comparableCount}R／` +
-    `承認候補${approvalReport.approvedCandidateCount}件`
+    `承認候補${approvalReport.approvedCandidateCount}件／` +
+    `A/B判断${abDecision.status}`
   );
 }
 
