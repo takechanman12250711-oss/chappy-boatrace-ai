@@ -1,0 +1,13 @@
+"use strict";
+const assert = require("node:assert/strict");
+const systems = require("../config/upgrade-collection-systems.json");
+const policy = require("../config/upgrade-collection-policy.json");
+const scope = require("../config/candidate-decision-scope.json");
+const retention = require("../config/upgrade-data-retention.json");
+assert.equal(policy.rules.keepLearningAndAnalysisSystems, true);
+assert.equal(policy.rules.keepShadowDataCollection, true);
+assert.equal(scope.rules.rejectionKeepsCollectionActive, true);
+assert.equal(retention.continueCollecting, true);
+assert.ok(Object.values(systems.systems).every(value => value === "collect"));
+assert.equal(systems.automaticApplication, false);
+console.log("final upgrade collection contract passed");
