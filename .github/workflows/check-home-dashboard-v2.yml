@@ -5,8 +5,10 @@ on:
     paths:
       - "index.html"
       - "js/home-dashboard-v2.js"
+      - "js/home-recommendation-reliability.js"
       - "css/home-dashboard-v2.css"
       - "scripts/test-home-dashboard-v2.js"
+      - "scripts/test-home-recommendation-reliability.js"
       - ".github/workflows/check-home-dashboard-v2.yml"
 
 jobs:
@@ -20,4 +22,6 @@ jobs:
       - name: Verify home dashboard v2
         run: |
           node --check js/home-dashboard-v2.js
+          node --check js/home-recommendation-reliability.js
           node scripts/test-home-dashboard-v2.js
+          node scripts/test-home-recommendation-reliability.js
