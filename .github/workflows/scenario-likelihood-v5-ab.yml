@@ -32,6 +32,7 @@ on:
       - "scripts/test-upgrade-collection-do-not-stop.js"
       - "scripts/test-upgrade-collection-no-stop-composite.js"
       - "scripts/test-upgrade-collection-lifecycle.js"
+      - "scripts/test-upgrade-collection-checklist.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -44,6 +45,7 @@ on:
       - "docs/upgrade-system-flow.md"
       - "docs/upgrade-collection-summary.md"
       - "docs/upgrade-collection-do-not-stop.md"
+      - "docs/upgrade-collection-checklist.md"
       - "docs/decisions/README.md"
       - "docs/decisions/scenario-likelihood-v5-20260815.md"
       - ".github/workflows/scenario-likelihood-v5-ab.yml"
@@ -89,4 +91,5 @@ jobs:
           node scripts/test-upgrade-collection-do-not-stop.js
           node scripts/test-upgrade-collection-no-stop-composite.js
           node scripts/test-upgrade-collection-lifecycle.js
+          node scripts/test-upgrade-collection-checklist.js
           node scripts/check-charter.js
