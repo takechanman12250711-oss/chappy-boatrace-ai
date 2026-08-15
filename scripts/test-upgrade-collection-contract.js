@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const c = require("../config/upgrade-collection-contract.json");
+assert.equal(c.contract, "continuous-upgrade-data-collection");
+assert.equal(c.candidateDecisionScope, "candidate-generation-only");
+assert.equal(c.productionChangeScope, "separate-approved-implementation");
+assert.equal(c.collectorShutdownOnRejection, false);
+assert.equal(c.retainEvidence, true);
+assert.equal(c.automaticApplication, false);
+console.log("continuous upgrade collection contract tests passed");
