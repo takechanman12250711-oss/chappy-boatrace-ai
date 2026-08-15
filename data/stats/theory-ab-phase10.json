@@ -1,12 +1,14 @@
 {
-  "generatedAt": "2026-08-14T16:06:36.424Z",
-  "source": "theory-improvement-proposal-phase9.json + theory-candidate-branch-analysis-phase9.json",
+  "generatedAt": "2026-08-15T03:05:00.750Z",
+  "source": "theory-improvement-proposal-phase9.json + theory-candidate-branch-analysis-phase9.json + config/theory-ab-phase10-approval.json",
   "schemaVersion": 1,
-  "engineVersion": "theory-ab-phase10-20260814-candidate-gate",
-  "status": "waiting-for-approved-phase9-proposal",
+  "engineVersion": "theory-ab-phase10-20260815-approved-cutoff",
+  "status": "ready-for-shadow-ab",
   "sourceStatus": "proposal-ready",
   "candidateSourceStatus": "candidate-ready-for-human-review",
-  "implementationSourceStatus": "not-implemented",
+  "implementationSourceStatus": "verified",
+  "approvalSourceStatus": "approved-and-cutoff-frozen",
+  "approvalId": "frame-rise-fall-shadow-off-v1-20260815",
   "metricOrder": [
     "recoveryRate",
     "practicalHitRate",
@@ -19,7 +21,113 @@
     "productionPrediction": true,
     "productionPurchaseSelection": true
   },
-  "candidateB": null,
+  "candidateB": {
+    "candidateId": "frame-rise-fall-shadow-off-v1",
+    "label": "B: 枠別浮沈補正の全面OFFシャドー",
+    "theoryKey": "frame-rise-fall",
+    "theoryLabel": "枠別浮沈率",
+    "focusMetric": "recoveryRate",
+    "changeCandidate": "低回収の成立条件を分解し、利益を落としている枝だけをA/B検証候補にする",
+    "rationale": "回収率を固定優先順位で最初の改善対象として確認。正式証拠131Rを根拠に、弱い成立条件だけを切り分ける。",
+    "expectedEffect": "不要な低配当・低期待値枝を減らし、回収率改善の余地を検証する",
+    "applicability": {
+      "all": [
+        {
+          "field": "theoryKey",
+          "operator": "equals",
+          "value": "frame-rise-fall"
+        },
+        {
+          "field": "formal",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "approved",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "applied",
+          "operator": "equals",
+          "value": true
+        },
+        {
+          "field": "scoreAdjustment",
+          "operator": "not-equals",
+          "value": 0
+        }
+      ]
+    },
+    "proposedChange": {
+      "scope": "shadow-B-only",
+      "action": "set-effective-frame-movement-adjustment",
+      "effectiveValue": 0,
+      "preserveRawAdjustmentEvidence": true,
+      "preserveAllOtherScenarioInputs": true,
+      "productionAUnchanged": true,
+      "ticketContractUnchanged": true
+    },
+    "prospectiveProtocol": {
+      "cutoff": {
+        "selectedAtExclusiveLowerBound": "2026-08-15T11:06:15+09:00",
+        "sourceCommit": "33bfee3c791c4f401fc285e8a1386675d79b778d",
+        "logicFingerprint": "sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6",
+        "status": "frozen"
+      },
+      "eligibleRace": "cutoff後の同一締切前入力でA/B判断fingerprintが異なる正式証拠レース",
+      "decisionFingerprint": [
+        "skipDecision",
+        "mainScenario",
+        "practicalTickets"
+      ],
+      "fixedComparableRaces": 100,
+      "validationHalf": {
+        "start": 1,
+        "end": 50
+      },
+      "sealedConfirmationHalf": {
+        "start": 51,
+        "end": 100
+      },
+      "ordering": [
+        "selectedAt",
+        "raceKey"
+      ],
+      "deduplicationKey": "raceKey",
+      "officialResultRequired": true,
+      "voidRaceTreatment": "母数へ入れず、次のeligible raceで固定100Rを満たす",
+      "earlyStoppingAllowed": false,
+      "conditionChangesAllowed": false,
+      "reportScopes": [
+        "decision-changed-races",
+        "all-formal-races"
+      ],
+      "adoptionGate": {
+        "bothHalvesBOnlyHitsAtLeastAOnlyHits": true,
+        "overallMinimumNetBOnlyHits": 5,
+        "pairedOutcomeExactTest": {
+          "alternative": "B-better",
+          "maximumPValue": 0.05
+        },
+        "bRecoveryRateMustExceedA": true,
+        "pairedProfitDeltaMustBePositive": true,
+        "pairedProfitBootstrap": {
+          "confidenceLevel": 0.95,
+          "lowerBoundMustExceed": 0
+        },
+        "bothHalvesProfitDeltaMustBeNonNegative": true,
+        "bStakeMustNotExceedA": true,
+        "ticketContractViolationsMustEqual": 0,
+        "automaticWinnerSelection": false,
+        "finalHumanApprovalRequired": true
+      }
+    },
+    "implementationFingerprint": "frame-rise-fall-shadow-off-ablation-v1",
+    "shadowOnly": true,
+    "productionPrediction": false,
+    "productionPurchaseSelection": false
+  },
   "comparison": {
     "minimumComparableRaces": 100,
     "metrics": [
@@ -37,23 +145,26 @@
     "automaticWinnerSelection": false
   },
   "readinessChecks": {
+    "approvalApplied": true,
     "proposalReady": true,
-    "proposalApproved": false,
+    "proposalApproved": true,
     "proposalFingerprintMatches": true,
     "validCandidateSpecFingerprint": true,
-    "recalculatedCandidateSpecFingerprint": "sha256:61de78026c5441e4b56eb9ece5c7269f2e8298b573ec2ed5deb430cd853ca512",
+    "recalculatedCandidateSpecFingerprint": "sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4",
     "candidateMatches": true,
-    "candidateApproved": false,
-    "cutoffFrozen": false,
-    "shadowImplementationVerifierPresent": false,
-    "shadowImplementationVerified": false,
-    "shadowImplementationPresent": false,
-    "allPassed": false
+    "candidateApproved": true,
+    "cutoffFrozen": true,
+    "shadowImplementationVerifierPresent": true,
+    "shadowImplementationVerified": true,
+    "shadowImplementationPresent": true,
+    "implementationCandidateSpecMatches": true,
+    "implementationFingerprint": "frame-rise-fall-shadow-off-ablation-v1",
+    "allPassed": true
   },
-  "proposalApproved": false,
-  "currentProposalFingerprint": "sha256:2e0ae2641679610b1fbc8ff730a27a1e385ba5ebc2039a5f3c72923d8fa2f425",
-  "candidateSpecificationApproved": false,
-  "shadowImplementationPresent": false,
+  "proposalApproved": true,
+  "currentProposalFingerprint": "sha256:b33be3247e119fcedb0854759d166f20e59f9d54a18639da61d53fba43987ddd",
+  "candidateSpecificationApproved": true,
+  "shadowImplementationPresent": true,
   "humanApprovalRequired": true,
   "automaticApplication": false,
   "usableForPrediction": false,
