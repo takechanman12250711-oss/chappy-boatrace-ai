@@ -66,13 +66,46 @@ function shouldArchive(snapshot = {}) {
   return snapshot?.status === "shadow-ready";
 }
 
+function isCompactInlineSnapshot(snapshot = {}) {
+  return snapshot?.inlineStorage === "archive-reference-v1";
+}
+
 function preserveSnapshot(record = {}, snapshot = {}, archive = emptyArchive()) {
   if (!archive.snapshots || typeof archive.snapshots !== "object") archive.snapshots = {};
   const key = snapshotArchiveKey(record, snapshot);
   if (key && archive.snapshots[key]) return archive.snapshots[key];
+  if (isCompactInlineSnapshot(snapshot)) {
+    throw new Error(`枠別浮沈Shadowの完全証拠archiveが見つかりません: ${key || record?.raceKey || "unknown"}`);
+  }
   if (!shouldArchive(snapshot) || !key) return snapshot;
   archive.snapshots[key] = snapshot;
   return snapshot;
+}
+
+function compactInlineSnapshot(record = {}, snapshot = {}) {
+  if (!shouldArchive(snapshot)) return snapshot;
+  const immutableArchiveKey = snapshotArchiveKey(record, snapshot);
+  if (!immutableArchiveKey) return snapshot;
+  return {
+    version: snapshot.version,
+    inlineStorage: "archive-reference-v1",
+    immutableArchiveKey,
+    candidateId: snapshot.candidateId,
+    candidateSpecFingerprint: snapshot.candidateSpecFingerprint,
+    implementationFingerprint: snapshot.implementationFingerprint,
+    cutoff: snapshot.cutoff,
+    selectedAt: snapshot.selectedAt,
+    raceKey: snapshot.raceKey,
+    status: snapshot.status,
+    decisionChanged: snapshot.decisionChanged,
+    applicableCount: snapshot.applicableCount,
+    downstreamReplay: snapshot.downstreamReplay,
+    productionAUnchanged: snapshot.productionAUnchanged,
+    comparisonContract: snapshot.comparisonContract,
+    applicationMode: snapshot.applicationMode,
+    usableForPrediction: snapshot.usableForPrediction,
+    automaticApplication: snapshot.automaticApplication
+  };
 }
 
 function attach(data = {}, state = phase10State(), dependencies = replayDependencies, archive = emptyArchive()) {
@@ -92,7 +125,7 @@ function attach(data = {}, state = phase10State(), dependencies = replayDependen
     applicableCount += Number(snapshot.applicableCount || 0) > 0 ? 1 : 0;
     decisionChangedCount += snapshot.decisionChanged === true ? 1 : 0;
     comparableRaceCount += snapshot?.comparisonContract?.comparableForFixed100 === true ? 1 : 0;
-    return { ...record, frameRiseFallShadowAb: snapshot };
+    return { ...record, frameRiseFallShadowAb: compactInlineSnapshot(record, snapshot) };
   });
   return {
     ...data,
@@ -109,6 +142,7 @@ function attach(data = {}, state = phase10State(), dependencies = replayDependen
         ? "collecting-fixed-100"
         : "awaiting-complete-decision-replay",
       immutableArchiveCount: Object.keys(archive.snapshots || {}).length,
+      inlineStorage: "archive-reference-v1",
       applicationMode: "shadow-only",
       usableForPrediction: false,
       automaticApplication: false
@@ -143,7 +177,10 @@ module.exports = {
   phase10State,
   emptyArchive,
   snapshotArchiveKey,
+  shouldArchive,
+  isCompactInlineSnapshot,
   preserveSnapshot,
+  compactInlineSnapshot,
   replayDependencies,
   attach,
   main
