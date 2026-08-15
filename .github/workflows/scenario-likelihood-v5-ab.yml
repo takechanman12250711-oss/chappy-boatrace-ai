@@ -13,7 +13,9 @@ on:
       - "scripts/test-v5-upgrade-collection-regression.js"
       - "scripts/test-v5-decision-doc.js"
       - "scripts/test-v5-collection-not-closed.js"
+      - "scripts/test-upgrade-collection-systems.js"
       - "config/upgrade-collection-policy.json"
+      - "config/upgrade-collection-systems.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
       - "docs/upgrade-collection-policy.md"
@@ -42,4 +44,5 @@ jobs:
           node scripts/test-v5-upgrade-collection-regression.js
           node scripts/test-v5-decision-doc.js
           node scripts/test-v5-collection-not-closed.js
+          node scripts/test-upgrade-collection-systems.js
           node scripts/check-charter.js
