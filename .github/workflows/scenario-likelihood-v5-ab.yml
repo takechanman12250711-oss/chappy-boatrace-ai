@@ -6,33 +6,7 @@ on:
       - "js/scenario-likelihood-v5-ab.js"
       - "scripts/collect-predictions.js"
       - "scripts/test-scenario-likelihood-v5-ab.js"
-      - "scripts/test-upgrade-collection-policy.js"
-      - "scripts/test-upgrade-collection-policy-doc.js"
-      - "scripts/test-v5-decision-is-history-only.js"
-      - "scripts/test-v5-decision-history.js"
-      - "scripts/test-v5-upgrade-collection-regression.js"
-      - "scripts/test-v5-decision-doc.js"
-      - "scripts/test-v5-collection-not-closed.js"
-      - "scripts/test-upgrade-collection-systems.js"
-      - "scripts/test-decision-lifecycle-contract.js"
-      - "scripts/test-collect-upgrade-systems-contract.js"
-      - "scripts/test-upgrade-system-flow.js"
-      - "scripts/test-no-upgrade-system-auto-application.js"
-      - "scripts/test-upgrade-collection-policy-version.js"
-      - "scripts/test-v5-production-a-stays.js"
-      - "scripts/test-candidate-decision-scope.js"
-      - "scripts/test-v5-collector-contract-source.js"
-      - "scripts/test-upgrade-collection-config-consistency.js"
-      - "scripts/test-v5-decision-not-runtime-gate.js"
-      - "scripts/test-upgrade-data-retention.js"
-      - "scripts/test-upgrade-collection-summary.js"
-      - "scripts/test-upgrade-collection-final-contract.js"
-      - "scripts/test-upgrade-collection-owner-intent.js"
-      - "scripts/test-v5-current-candidate-vs-future-data.js"
-      - "scripts/test-upgrade-collection-do-not-stop.js"
-      - "scripts/test-upgrade-collection-no-stop-composite.js"
-      - "scripts/test-upgrade-collection-lifecycle.js"
-      - "scripts/test-upgrade-collection-checklist.js"
+      - "scripts/test-upgrade-collection-policy-all.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -65,31 +39,21 @@ jobs:
           node --check scripts/collect-predictions.js
           node scripts/test-scenario-likelihood-v5-ab.js
           node scripts/test-scenario-likelihood-v5-storage.js
-          node scripts/test-upgrade-collection-policy.js
+          node scripts/test-upgrade-collection-policy-all.js
           node scripts/test-upgrade-collection-policy-doc.js
-          node scripts/test-v5-decision-is-history-only.js
           node scripts/test-v5-decision-history.js
           node scripts/test-v5-upgrade-collection-regression.js
           node scripts/test-v5-decision-doc.js
           node scripts/test-v5-collection-not-closed.js
-          node scripts/test-upgrade-collection-systems.js
           node scripts/test-decision-lifecycle-contract.js
           node scripts/test-collect-upgrade-systems-contract.js
           node scripts/test-upgrade-system-flow.js
           node scripts/test-no-upgrade-system-auto-application.js
           node scripts/test-upgrade-collection-policy-version.js
-          node scripts/test-v5-production-a-stays.js
-          node scripts/test-candidate-decision-scope.js
-          node scripts/test-v5-collector-contract-source.js
           node scripts/test-upgrade-collection-config-consistency.js
-          node scripts/test-v5-decision-not-runtime-gate.js
-          node scripts/test-upgrade-data-retention.js
           node scripts/test-upgrade-collection-summary.js
           node scripts/test-upgrade-collection-final-contract.js
-          node scripts/test-upgrade-collection-owner-intent.js
-          node scripts/test-v5-current-candidate-vs-future-data.js
           node scripts/test-upgrade-collection-do-not-stop.js
           node scripts/test-upgrade-collection-no-stop-composite.js
-          node scripts/test-upgrade-collection-lifecycle.js
           node scripts/test-upgrade-collection-checklist.js
           node scripts/check-charter.js
