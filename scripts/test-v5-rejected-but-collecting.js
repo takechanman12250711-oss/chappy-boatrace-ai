@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const decision = require("../config/scenario-likelihood-v5-decision.json");
+const systems = require("../config/upgrade-collection-systems.json");
+const mode = require("../config/upgrade-collection-mode.json");
+assert.equal(decision.status, "rejected");
+assert.equal(systems.systems.scenarioLikelihoodV5Ab, "collect");
+assert.equal(mode.collectors, "keep-running");
+assert.equal(mode.production, "current-approved-only");
+console.log("v5 candidate rejected; v5 collector still running");
