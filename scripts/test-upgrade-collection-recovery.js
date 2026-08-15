@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const systems = require("../config/upgrade-collection-systems.json");
+const contract = require("../config/upgrade-collection-contract.json");
+const mode = require("../config/upgrade-collection-mode.json");
+assert.equal(contract.collectorShutdownOnRejection, false);
+assert.equal(mode.collectors, "keep-running");
+assert.equal(systems.systems.scenarioLikelihoodV5Calibration, "collect");
+assert.equal(systems.systems.scenarioLikelihoodV5Ab, "collect");
+console.log("upgrade collection recovery tests passed");
