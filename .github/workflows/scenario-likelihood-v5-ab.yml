@@ -24,9 +24,11 @@ on:
       - "scripts/test-v5-collector-contract-source.js"
       - "scripts/test-upgrade-collection-config-consistency.js"
       - "scripts/test-v5-decision-not-runtime-gate.js"
+      - "scripts/test-upgrade-data-retention.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
+      - "config/upgrade-data-retention.json"
       - "config/candidate-decision-scope.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
@@ -69,4 +71,5 @@ jobs:
           node scripts/test-v5-collector-contract-source.js
           node scripts/test-upgrade-collection-config-consistency.js
           node scripts/test-v5-decision-not-runtime-gate.js
+          node scripts/test-upgrade-data-retention.js
           node scripts/check-charter.js
