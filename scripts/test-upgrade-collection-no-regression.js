@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const active = require("../config/upgrade-collection-active.json");
+const status = require("../config/upgrade-collection-status.json");
+const systems = require("../config/upgrade-collection-systems.json");
+assert.equal(active.active, true);
+assert.equal(status.status, "running");
+assert.equal(status.futureEvidence, "collecting");
+assert.ok(Object.values(systems.systems).every(v => v === "collect"));
+console.log("upgrade collection no-regression tests passed");
