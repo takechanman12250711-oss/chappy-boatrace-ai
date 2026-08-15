@@ -18,7 +18,9 @@ on:
       - "scripts/test-collect-upgrade-systems-contract.js"
       - "scripts/test-upgrade-system-flow.js"
       - "scripts/test-no-upgrade-system-auto-application.js"
+      - "scripts/test-upgrade-collection-policy-version.js"
       - "config/upgrade-collection-policy.json"
+      - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
@@ -55,4 +57,5 @@ jobs:
           node scripts/test-collect-upgrade-systems-contract.js
           node scripts/test-upgrade-system-flow.js
           node scripts/test-no-upgrade-system-auto-application.js
+          node scripts/test-upgrade-collection-policy-version.js
           node scripts/check-charter.js
