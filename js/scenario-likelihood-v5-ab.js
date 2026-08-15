@@ -66,26 +66,6 @@ function summarize(rows) {
 }
 
 function build(base, calibrationReport, context = {}) {
-  const decision = calibrationReport?.abDecision || null;
-  if (decision?.active === false || decision?.status === "rejected") {
-    return {
-      version: "5-shadow-ab-1",
-      status: "closed-rejected",
-      applicationMode: "closed",
-      usableForPrediction: false,
-      automaticApplication: false,
-      candidateCount: 0,
-      changed: false,
-      decision: {
-        status: String(decision?.status || "rejected"),
-        decision: String(decision?.decision || "keep-production-a"),
-        reason: String(decision?.reason || "")
-      },
-      a: null,
-      b: null
-    };
-  }
-
   const source = Array.isArray(base?.scenarios) ? base.scenarios : [];
   const candidates = approvedCandidates(calibrationReport);
   const bRows = normalize(source.map(row => {
