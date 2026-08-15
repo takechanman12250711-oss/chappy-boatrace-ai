@@ -25,6 +25,7 @@ on:
       - "scripts/test-upgrade-collection-config-consistency.js"
       - "scripts/test-v5-decision-not-runtime-gate.js"
       - "scripts/test-upgrade-data-retention.js"
+      - "scripts/test-upgrade-collection-summary.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -34,6 +35,7 @@ on:
       - "config/scenario-likelihood-v5-decision-history.json"
       - "docs/upgrade-collection-policy.md"
       - "docs/upgrade-system-flow.md"
+      - "docs/upgrade-collection-summary.md"
       - "docs/decisions/README.md"
       - "docs/decisions/scenario-likelihood-v5-20260815.md"
       - ".github/workflows/scenario-likelihood-v5-ab.yml"
@@ -72,4 +74,5 @@ jobs:
           node scripts/test-upgrade-collection-config-consistency.js
           node scripts/test-v5-decision-not-runtime-gate.js
           node scripts/test-upgrade-data-retention.js
+          node scripts/test-upgrade-collection-summary.js
           node scripts/check-charter.js
