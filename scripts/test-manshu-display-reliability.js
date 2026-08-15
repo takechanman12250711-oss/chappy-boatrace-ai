@@ -25,16 +25,55 @@ assert.equal(moduleApi.ticketOf(fallback), "4-1-2");
 const normalized = moduleApi.normalizeCandidate(fallback);
 assert.equal(normalized.category, "万舟");
 assert.equal(normalized.oddsText, "118.4倍");
-assert.match(moduleApi.candidateBody(normalized), /4号艇のカド攻め/);
-assert.match(moduleApi.candidateBody(normalized), /data-manshu-display-fallback="true"/);
+const fallbackHtml = moduleApi.candidateBody(normalized);
+assert.match(fallbackHtml, /4号艇のカド攻め/);
+assert.match(fallbackHtml, /data-manshu-display-fallback="true"/);
+assert.match(fallbackHtml, /<span>候補<\/span>/);
+assert.equal(
+  fallbackHtml.includes("<h3>万舟"),
+  false,
+  "万舟見出しを内側で重複表示しない"
+);
 
 assert.equal(
-  moduleApi.firstFallbackTicket({
-    ...prediction,
-    manshuSheet: { tickets: [{ ticket: "6-1-2" }] }
-  }),
-  null,
-  "通常の万舟表示がある場合は上書きしない"
+  moduleApi.ticketOf(
+    moduleApi.firstFallbackTicket({
+      manshuSheet: {
+        tickets: [{
+          ticket: "6-1-2",
+          category: "穴候補",
+          scenarioSummary: "6号艇の展開突き。"
+        }]
+      },
+      practicalSelection: { status: "selected" }
+    })
+  ),
+  "6-1-2",
+  "表示境界で万舟欄だけ空になっても、予想本体に保持した候補を復元する"
+);
+
+const normalManshuSection = {
+  querySelector(selector) {
+    if (selector.includes(":not(")) return { dataset: {} };
+    return null;
+  }
+};
+const normalManshuDocument = {
+  getElementById(id) {
+    if (id !== "resultArea") return null;
+    return {
+      querySelector(selector) {
+        return selector === ".v3-manshu-newspaper"
+          ? normalManshuSection
+          : null;
+      }
+    };
+  }
+};
+assert.equal(
+  moduleApi.apply(prediction, normalManshuDocument),
+  false,
+  "通常描画済みの万舟行は上書きしない"
 );
 
 assert.equal(
