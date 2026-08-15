@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const contract = require("../config/upgrade-collection-contract.json");
+const systems = require("../config/upgrade-collection-systems.json");
+const mode = require("../config/upgrade-collection-mode.json");
+assert.equal(contract.collectorShutdownOnRejection, false);
+assert.equal(contract.retainEvidence, true);
+assert.equal(mode.collectors, "keep-running");
+assert.ok(Object.values(systems.systems).every(value => value === "collect"));
+console.log("upgrade collection contract integration tests passed");
