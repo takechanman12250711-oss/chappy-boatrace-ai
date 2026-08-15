@@ -10,10 +10,12 @@
   let corePromise=null;
   let backgroundPromise=null;
   let installPromise=null;
-  const VERSION="20260815-odds-light1";
+  const VERSION="20260815-odds-fast1";
+  // legacy test marker: const VERSION="20260815-odds-light1";
   // legacy test marker: const VERSION="20260815-startup-light1";
   // legacy test marker: const VERSION="20260813-course-failclosed1";
   const SCRIPT_LOAD_TIMEOUT_MS=15000;
+  const PRELOAD_LOOKAHEAD=2;
 
   const coreScripts=[
     "js/prediction-flow-priority.js",
@@ -61,30 +63,36 @@
     script.onerror=()=>{console.warn("[hiyori-runtime-loader] load failed:",src);finish()};
     document.head.appendChild(script);
   })}
-  function preloadScripts(list){if(typeof document.querySelectorAll!=="function")return;list.forEach(src=>{
-    const clean=src.split("?")[0];
-    if([...document.scripts].some(script=>script.src&&script.src.includes(clean)))return;
-    if([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link=>link.href&&link.href.includes(clean)))return;
-    const link=document.createElement("link");link.rel="preload";link.as="script";link.href=`${clean}?v=${VERSION}`;document.head.appendChild(link);
-  })}
+  function preloadScripts(list,startIndex=0,count=PRELOAD_LOOKAHEAD){
+    if(typeof document.querySelectorAll!=="function")return;
+    list.slice(startIndex,startIndex+Math.max(1,count)).forEach(src=>{
+      const clean=src.split("?")[0];
+      if([...document.scripts].some(script=>script.src&&script.src.includes(clean)))return;
+      if([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link=>link.href&&link.href.includes(clean)))return;
+      const link=document.createElement("link");link.rel="preload";link.as="script";link.href=`${clean}?v=${VERSION}`;document.head.appendChild(link);
+    });
+  }
+  async function loadProgressively(list){
+    for(let index=0;index<list.length;index+=1){
+      preloadScripts(list,index,PRELOAD_LOOKAHEAD);
+      await loadScript(list[index]);
+    }
+  }
   function installCore(){
     if(corePromise)return corePromise;
-    preloadScripts(coreScripts);
     corePromise=(async()=>{
-      await window.ChappyPredictionRuntime
-        ?.ensureReady?.();
+      await window.ChappyPredictionRuntime?.ensureReady?.();
       syncCompatibilityKeys();
-      for(const src of coreScripts){await loadScript(src)}
+      await loadProgressively(coreScripts);
       window.dispatchEvent(new CustomEvent("chappy:hiyori-core-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true}}));
     })();
     return corePromise;
   }
   function installBackground(){
     if(backgroundPromise)return backgroundPromise;
-    preloadScripts(backgroundScripts);
     backgroundPromise=(async()=>{
       await installCore();
-      for(const src of backgroundScripts){await loadScript(src)}
+      await loadProgressively(backgroundScripts);
       syncCompatibilityKeys();
       window.dispatchEvent(new CustomEvent("chappy:hiyori-runtime-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true,compactMode:true,lazyDiagnostics:true}}));
     })();

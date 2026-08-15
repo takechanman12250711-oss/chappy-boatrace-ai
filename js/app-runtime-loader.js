@@ -3,7 +3,8 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260815-odds-light1";
+  const VERSION = "20260815-odds-fast1";
+  // legacy test marker: const VERSION = "20260815-odds-light1"
   // legacy test marker: const VERSION = "20260815-startup-light1"
   // legacy test marker: const VERSION = "20260813-course-failclosed1"
   // legacy test marker: const VERSION = "20260810-official-reference1"
@@ -13,6 +14,7 @@
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const HOME_CACHE_TTL = 300000;
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
+  const PRELOAD_LOOKAHEAD = 2;
   const loaded = new Map();
   const groupReady = new Map();
   const groups = {
@@ -112,26 +114,30 @@
     return promise;
   }
 
-  function preloadGroup(group) {
+  function preloadGroup(group, startIndex = 0, count = PRELOAD_LOOKAHEAD) {
     if (typeof document.querySelectorAll !== "function") return;
-    (groups[group] || []).forEach(src => {
-      const clean = src.split("?")[0];
-      if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
-      if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
-      const link = document.createElement("link");
-      link.rel = "preload";
-      link.as = "script";
-      link.href = `${clean}?v=${VERSION}`;
-      document.head.appendChild(link);
-    });
+    (groups[group] || [])
+      .slice(startIndex, startIndex + Math.max(1, count))
+      .forEach(src => {
+        const clean = src.split("?")[0];
+        if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
+        if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
+        const link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "script";
+        link.href = `${clean}?v=${VERSION}`;
+        document.head.appendChild(link);
+      });
   }
 
   function ensure(group) {
     if (groupReady.has(group)) return groupReady.get(group);
-    preloadGroup(group);
     const promise = (async () => {
       const scripts = groups[group] || [];
-      for (const src of scripts) await loadScript(src);
+      for (let index = 0; index < scripts.length; index += 1) {
+        preloadGroup(group, index, PRELOAD_LOOKAHEAD);
+        await loadScript(scripts[index]);
+      }
       if (group === "race") {
         root.ChappyRaceControls
           ?.initialize?.();
@@ -172,7 +178,7 @@
     const target = event.target.closest("button,a");
     const group = preloadGroupForTarget(target);
     if (group) {
-      preloadGroup(group);
+      preloadGroup(group, 0, PRELOAD_LOOKAHEAD);
       void ensure(group).catch(() => {});
     }
   }, { capture: true, passive: true });
@@ -195,5 +201,11 @@
       });
   }, true);
 
-  root.ChappyAppRuntime = Object.freeze({ ensure, preloadGroup, groups, persistHomeCache });
+  root.ChappyAppRuntime = Object.freeze({
+    version: VERSION,
+    ensure,
+    preloadGroup,
+    groups,
+    persistHomeCache
+  });
 })(window);
