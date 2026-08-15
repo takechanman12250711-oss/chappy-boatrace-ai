@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-08-15T03:14:49.406Z",
+  "generatedAt": "2026-08-15T03:23:15.299Z",
   "source": "data/predictions/*.json",
   "version": "1.0.0",
   "status": "proposal-only",
   "usableForPrediction": false,
   "automaticApplication": false,
   "minimumSamples": 30,
-  "comparableCount": 587,
+  "comparableCount": 588,
   "byVenue": [
     {
       "key": "24",
@@ -190,14 +190,14 @@
     },
     {
       "key": "05",
-      "samples": 24,
+      "samples": 25,
       "leaderHits": 10,
       "topTwoHits": 17,
-      "expectedLeaderTotal": 1427.8000000000002,
-      "leaderHitRate": 41.7,
-      "topTwoHitRate": 70.8,
-      "averageLeaderLikelihood": 59.5,
-      "calibrationGap": -17.8,
+      "expectedLeaderTotal": 1468.3000000000002,
+      "leaderHitRate": 40,
+      "topTwoHitRate": 68,
+      "averageLeaderLikelihood": 58.7,
+      "calibrationGap": -18.7,
       "status": "insufficient-samples",
       "proposal": null
     },
@@ -399,14 +399,14 @@
     },
     {
       "key": "4カド",
-      "samples": 62,
+      "samples": 63,
       "leaderHits": 26,
       "topTwoHits": 39,
-      "expectedLeaderTotal": 3555.5,
-      "leaderHitRate": 41.9,
-      "topTwoHitRate": 62.9,
-      "averageLeaderLikelihood": 57.3,
-      "calibrationGap": -15.4,
+      "expectedLeaderTotal": 3596,
+      "leaderHitRate": 41.3,
+      "topTwoHitRate": 61.9,
+      "averageLeaderLikelihood": 57.1,
+      "calibrationGap": -15.8,
       "status": "review-ready",
       "proposal": {
         "action": "lower",
@@ -435,14 +435,14 @@
     },
     {
       "key": "lean",
-      "samples": 126,
+      "samples": 127,
       "leaderHits": 51,
       "topTwoHits": 91,
-      "expectedLeaderTotal": 6366.299999999998,
-      "leaderHitRate": 40.5,
-      "topTwoHitRate": 72.2,
-      "averageLeaderLikelihood": 50.5,
-      "calibrationGap": -10,
+      "expectedLeaderTotal": 6406.799999999998,
+      "leaderHitRate": 40.2,
+      "topTwoHitRate": 71.7,
+      "averageLeaderLikelihood": 50.4,
+      "calibrationGap": -10.3,
       "status": "review-ready",
       "proposal": {
         "action": "lower",
@@ -925,6 +925,19 @@
       "proposal": null
     },
     {
+      "key": "05:4カド",
+      "samples": 5,
+      "leaderHits": 2,
+      "topTwoHits": 2,
+      "expectedLeaderTotal": 263,
+      "leaderHitRate": 40,
+      "topTwoHitRate": 40,
+      "averageLeaderLikelihood": 52.6,
+      "calibrationGap": -12.6,
+      "status": "insufficient-samples",
+      "proposal": null
+    },
+    {
       "key": "13:2差し",
       "samples": 5,
       "leaderHits": 1,
@@ -1038,19 +1051,6 @@
       "topTwoHitRate": 25,
       "averageLeaderLikelihood": 63.1,
       "calibrationGap": -38.1,
-      "status": "insufficient-samples",
-      "proposal": null
-    },
-    {
-      "key": "05:4カド",
-      "samples": 4,
-      "leaderHits": 2,
-      "topTwoHits": 2,
-      "expectedLeaderTotal": 222.5,
-      "leaderHitRate": 50,
-      "topTwoHitRate": 50,
-      "averageLeaderLikelihood": 55.6,
-      "calibrationGap": -5.6,
       "status": "insufficient-samples",
       "proposal": null
     },
@@ -1617,7 +1617,7 @@
   "approvalGate": {
     "version": "1.0.0",
     "status": "shadow-application-candidates-ready",
-    "comparableCount": 587,
+    "comparableCount": 588,
     "approvedCandidateCount": 5,
     "approvedCandidates": [
       {
@@ -1725,12 +1725,12 @@
         "status": "approved-for-shadow-application",
         "action": "lower",
         "adjustmentPoints": 5,
-        "samples": 126,
+        "samples": 127,
         "total": {
-          "samples": 126,
-          "leaderHitRate": 40.5,
-          "averageLeaderLikelihood": 50.5,
-          "calibrationGap": -10
+          "samples": 127,
+          "leaderHitRate": 40.2,
+          "averageLeaderLikelihood": 50.4,
+          "calibrationGap": -10.3
         },
         "firstHalf": {
           "samples": 63,
@@ -1739,12 +1739,12 @@
           "calibrationGap": -10.3
         },
         "secondHalf": {
-          "samples": 63,
-          "leaderHitRate": 41.3,
-          "averageLeaderLikelihood": 51,
-          "calibrationGap": -9.8
+          "samples": 64,
+          "leaderHitRate": 40.6,
+          "averageLeaderLikelihood": 50.9,
+          "calibrationGap": -10.3
         },
-        "halfGapDifference": 0.5,
+        "halfGapDifference": 0,
         "stableDirection": true,
         "reasonCodes": [],
         "applicationMode": "shadow-only",
@@ -2231,12 +2231,12 @@
         "status": "not-approved",
         "action": "none",
         "adjustmentPoints": 0,
-        "samples": 24,
+        "samples": 25,
         "total": {
-          "samples": 24,
-          "leaderHitRate": 41.7,
-          "averageLeaderLikelihood": 59.5,
-          "calibrationGap": -17.8
+          "samples": 25,
+          "leaderHitRate": 40,
+          "averageLeaderLikelihood": 58.7,
+          "calibrationGap": -18.7
         },
         "firstHalf": {
           "samples": 12,
@@ -2245,12 +2245,12 @@
           "calibrationGap": -13.7
         },
         "secondHalf": {
-          "samples": 12,
-          "leaderHitRate": 41.7,
-          "averageLeaderLikelihood": 63.6,
-          "calibrationGap": -21.9
+          "samples": 13,
+          "leaderHitRate": 38.5,
+          "averageLeaderLikelihood": 61.8,
+          "calibrationGap": -23.4
         },
-        "halfGapDifference": 8.2,
+        "halfGapDifference": 9.7,
         "stableDirection": true,
         "reasonCodes": [
           "insufficient_samples",
@@ -2765,12 +2765,12 @@
         "status": "not-approved",
         "action": "none",
         "adjustmentPoints": 0,
-        "samples": 62,
+        "samples": 63,
         "total": {
-          "samples": 62,
-          "leaderHitRate": 41.9,
-          "averageLeaderLikelihood": 57.3,
-          "calibrationGap": -15.4
+          "samples": 63,
+          "leaderHitRate": 41.3,
+          "averageLeaderLikelihood": 57.1,
+          "calibrationGap": -15.8
         },
         "firstHalf": {
           "samples": 31,
@@ -2779,12 +2779,12 @@
           "calibrationGap": -9.2
         },
         "secondHalf": {
-          "samples": 31,
-          "leaderHitRate": 35.5,
-          "averageLeaderLikelihood": 57.1,
-          "calibrationGap": -21.6
+          "samples": 32,
+          "leaderHitRate": 34.4,
+          "averageLeaderLikelihood": 56.6,
+          "calibrationGap": -22.2
         },
-        "halfGapDifference": 12.4,
+        "halfGapDifference": 13,
         "stableDirection": true,
         "reasonCodes": [
           "half_gap_unstable"
@@ -2833,12 +2833,12 @@
         "status": "approved-for-shadow-application",
         "action": "lower",
         "adjustmentPoints": 5,
-        "samples": 126,
+        "samples": 127,
         "total": {
-          "samples": 126,
-          "leaderHitRate": 40.5,
-          "averageLeaderLikelihood": 50.5,
-          "calibrationGap": -10
+          "samples": 127,
+          "leaderHitRate": 40.2,
+          "averageLeaderLikelihood": 50.4,
+          "calibrationGap": -10.3
         },
         "firstHalf": {
           "samples": 63,
@@ -2847,12 +2847,12 @@
           "calibrationGap": -10.3
         },
         "secondHalf": {
-          "samples": 63,
-          "leaderHitRate": 41.3,
-          "averageLeaderLikelihood": 51,
-          "calibrationGap": -9.8
+          "samples": 64,
+          "leaderHitRate": 40.6,
+          "averageLeaderLikelihood": 50.9,
+          "calibrationGap": -10.3
         },
-        "halfGapDifference": 0.5,
+        "halfGapDifference": 0,
         "stableDirection": true,
         "reasonCodes": [],
         "applicationMode": "shadow-only",
@@ -4175,6 +4175,43 @@
         "automaticApplication": false
       },
       {
+        "key": "05:4カド",
+        "approved": false,
+        "status": "not-approved",
+        "action": "none",
+        "adjustmentPoints": 0,
+        "samples": 5,
+        "total": {
+          "samples": 5,
+          "leaderHitRate": 40,
+          "averageLeaderLikelihood": 52.6,
+          "calibrationGap": -12.6
+        },
+        "firstHalf": {
+          "samples": 2,
+          "leaderHitRate": 50,
+          "averageLeaderLikelihood": 46,
+          "calibrationGap": 4
+        },
+        "secondHalf": {
+          "samples": 3,
+          "leaderHitRate": 33.3,
+          "averageLeaderLikelihood": 57,
+          "calibrationGap": -23.7
+        },
+        "halfGapDifference": 27.7,
+        "stableDirection": false,
+        "reasonCodes": [
+          "insufficient_samples",
+          "insufficient_half_samples",
+          "direction_not_stable",
+          "half_gap_unstable"
+        ],
+        "applicationMode": "none",
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      {
         "key": "13:2差し",
         "approved": false,
         "status": "not-approved",
@@ -4498,44 +4535,6 @@
         "reasonCodes": [
           "insufficient_samples",
           "insufficient_half_samples",
-          "direction_not_stable",
-          "half_gap_unstable"
-        ],
-        "applicationMode": "none",
-        "usableForPrediction": false,
-        "automaticApplication": false
-      },
-      {
-        "key": "05:4カド",
-        "approved": false,
-        "status": "not-approved",
-        "action": "none",
-        "adjustmentPoints": 0,
-        "samples": 4,
-        "total": {
-          "samples": 4,
-          "leaderHitRate": 50,
-          "averageLeaderLikelihood": 55.6,
-          "calibrationGap": -5.6
-        },
-        "firstHalf": {
-          "samples": 2,
-          "leaderHitRate": 50,
-          "averageLeaderLikelihood": 46,
-          "calibrationGap": 4
-        },
-        "secondHalf": {
-          "samples": 2,
-          "leaderHitRate": 50,
-          "averageLeaderLikelihood": 65.3,
-          "calibrationGap": -15.3
-        },
-        "halfGapDifference": 19.3,
-        "stableDirection": false,
-        "reasonCodes": [
-          "insufficient_samples",
-          "insufficient_half_samples",
-          "gap_below_threshold",
           "direction_not_stable",
           "half_gap_unstable"
         ],
