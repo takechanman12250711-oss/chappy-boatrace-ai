@@ -31,6 +31,7 @@ on:
       - "scripts/test-v5-current-candidate-vs-future-data.js"
       - "scripts/test-upgrade-collection-do-not-stop.js"
       - "scripts/test-upgrade-collection-no-stop-composite.js"
+      - "scripts/test-upgrade-collection-lifecycle.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -87,4 +88,5 @@ jobs:
           node scripts/test-v5-current-candidate-vs-future-data.js
           node scripts/test-upgrade-collection-do-not-stop.js
           node scripts/test-upgrade-collection-no-stop-composite.js
+          node scripts/test-upgrade-collection-lifecycle.js
           node scripts/check-charter.js
