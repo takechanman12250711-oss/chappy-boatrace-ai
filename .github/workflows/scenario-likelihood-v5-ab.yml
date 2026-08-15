@@ -15,6 +15,7 @@ on:
       - "scripts/test-upgrade-collection-recovery.js"
       - "scripts/test-upgrade-collection-one-line.js"
       - "scripts/test-upgrade-collection-active.js"
+      - "scripts/test-upgrade-collection-status.js"
       - "scripts/test-upgrade-collection-result.js"
       - "scripts/test-restored-upgrade-collectors.js"
       - "scripts/test-upgrade-collection-policy-all.js"
@@ -27,6 +28,7 @@ on:
       - "scripts/test-upgrade-collection-systems-doc.js"
       - "scripts/test-upgrade-collection-recovery-doc.js"
       - "config/upgrade-collection-active.json"
+      - "config/upgrade-collection-status.json"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -76,6 +78,7 @@ jobs:
           node scripts/test-upgrade-collection-recovery.js
           node scripts/test-upgrade-collection-one-line.js
           node scripts/test-upgrade-collection-active.js
+          node scripts/test-upgrade-collection-status.js
           node scripts/test-upgrade-collection-result.js
           node scripts/test-restored-upgrade-collectors.js
           node scripts/test-upgrade-collection-policy-all.js
