@@ -16,11 +16,13 @@ on:
       - "scripts/test-upgrade-collection-systems.js"
       - "scripts/test-decision-lifecycle-contract.js"
       - "scripts/test-collect-upgrade-systems-contract.js"
+      - "scripts/test-upgrade-system-flow.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-systems.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
       - "docs/upgrade-collection-policy.md"
+      - "docs/upgrade-system-flow.md"
       - "docs/decisions/README.md"
       - "docs/decisions/scenario-likelihood-v5-20260815.md"
       - ".github/workflows/scenario-likelihood-v5-ab.yml"
@@ -50,4 +52,5 @@ jobs:
           node scripts/test-upgrade-collection-systems.js
           node scripts/test-decision-lifecycle-contract.js
           node scripts/test-collect-upgrade-systems-contract.js
+          node scripts/test-upgrade-system-flow.js
           node scripts/check-charter.js
