@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const decision = require("../config/scenario-likelihood-v5-decision.json");
+const systems = require("../config/upgrade-collection-systems.json");
+const contract = require("../config/upgrade-collection-contract.json");
+assert.equal(decision.decision, "keep-production-a");
+assert.equal(decision.productionCandidate, false);
+assert.equal(systems.systems.scenarioLikelihoodV5Ab, "collect");
+assert.equal(contract.collectorShutdownOnRejection, false);
+console.log("v5 recovery summary: production A kept, upgrade collection restored");
