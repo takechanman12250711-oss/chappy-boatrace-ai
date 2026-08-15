@@ -1,0 +1,12 @@
+"use strict";
+const assert = require("node:assert/strict");
+const systems = require("../config/upgrade-collection-systems.json");
+const owner = require("../config/upgrade-collection-owner-intent.json");
+const scope = require("../config/candidate-decision-scope.json");
+assert.equal(owner.keepCollecting, true);
+assert.equal(scope.rules.rejectionKeepsCollectionActive, true);
+assert.equal(systems.systems.scenarioLikelihoodV5Ab, "collect");
+assert.equal(systems.systems.theoryShadowAb, "collect");
+assert.equal(systems.systems.practicalPriorityShadow, "collect");
+assert.equal(systems.systems.frameRiseFallShadow, "collect");
+console.log("upgrade collectors remain active across candidate decisions");
