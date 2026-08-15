@@ -40,22 +40,21 @@ assert.deepEqual(
   unchanged.b.scenarios.map(row => row.relativeLikelihood)
 );
 
-const rejected = ab.build(base, {
+const historicalDecisionDoesNotDisableUpgradeCollection = ab.build(base, {
   abDecision: {
     status: "rejected",
     active: false,
     decision: "keep-production-a",
-    reason: "no meaningful lift"
+    reason: "previous candidate generation rejected"
   },
   approvalGate: report.approvalGate
 }, { jcd: "20" });
-assert.equal(rejected.status, "closed-rejected");
-assert.equal(rejected.applicationMode, "closed");
-assert.equal(rejected.changed, false);
-assert.equal(rejected.candidateCount, 0);
-assert.equal(rejected.a, null);
-assert.equal(rejected.b, null);
-assert.equal(rejected.usableForPrediction, false);
-assert.equal(rejected.automaticApplication, false);
+assert.equal(historicalDecisionDoesNotDisableUpgradeCollection.status, "shadow-only");
+assert.equal(historicalDecisionDoesNotDisableUpgradeCollection.changed, true);
+assert.equal(historicalDecisionDoesNotDisableUpgradeCollection.candidateCount, 2);
+assert.ok(historicalDecisionDoesNotDisableUpgradeCollection.a);
+assert.ok(historicalDecisionDoesNotDisableUpgradeCollection.b);
+assert.equal(historicalDecisionDoesNotDisableUpgradeCollection.usableForPrediction, false);
+assert.equal(historicalDecisionDoesNotDisableUpgradeCollection.automaticApplication, false);
 
 console.log("scenario likelihood v5 shadow A/B tests passed");
