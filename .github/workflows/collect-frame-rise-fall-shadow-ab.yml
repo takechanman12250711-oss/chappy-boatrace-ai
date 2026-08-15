@@ -4,8 +4,12 @@ on:
   pull_request:
     paths:
       - "js/frame-rise-fall-shadow-storage.js"
+      - "js/frame-rise-fall-shadow-replay.js"
+      - "js/frame-rise-fall-replay-preload.js"
       - "scripts/build-frame-rise-fall-shadow-snapshots.js"
       - "scripts/test-frame-rise-fall-shadow-storage.js"
+      - "scripts/test-frame-rise-fall-shadow-replay.js"
+      - "scripts/test-frame-rise-fall-replay-preload.js"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
   workflow_run:
     workflows: ["Collect automatic race predictions"]
@@ -40,8 +44,12 @@ jobs:
       - name: Verify shadow storage
         run: |
           node --check js/frame-rise-fall-shadow-storage.js
+          node --check js/frame-rise-fall-shadow-replay.js
+          node --check js/frame-rise-fall-replay-preload.js
           node --check scripts/build-frame-rise-fall-shadow-snapshots.js
           node scripts/test-frame-rise-fall-shadow-off.js
+          node scripts/test-frame-rise-fall-replay-preload.js
+          node scripts/test-frame-rise-fall-shadow-replay.js
           node scripts/test-frame-rise-fall-shadow-storage.js
       - name: Rebuild approval inputs
         if: github.event_name != 'pull_request'
