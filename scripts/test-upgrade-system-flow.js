@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const text = fs.readFileSync(path.join(__dirname, "..", "docs", "upgrade-system-flow.md"), "utf8");
+assert.match(text, /本番予想と改善用データ収集を分離/);
+assert.match(text, /並行してデータを収集/);
+assert.match(text, /不採用でも収集システムは止めず/);
+assert.match(text, /本番反映後も.*データ収集は継続/);
+console.log("upgrade system flow tests passed");
