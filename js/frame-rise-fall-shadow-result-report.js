@@ -192,19 +192,23 @@ function pairedProfitBootstrap(rows = [], samples = BOOTSTRAP_SAMPLES) {
 
 function build(predictionDocuments = [], resultDocuments = []) {
   const eligible = comparableRows(predictionDocuments);
+  const fixedPool = eligible.slice(0, FIXED_COMPARABLE_RACES);
   const results = resultMap(resultDocuments);
-  const settled = eligible
+  const settled = fixedPool
     .map(row => settleRow(row, results.get(row.raceKey)))
-    .filter(Boolean)
-    .slice(0, FIXED_COMPARABLE_RACES);
-  const firstHalfRows = settled.slice(0, 50);
-  const secondHalfRows = settled.slice(50, 100);
+    .filter(Boolean);
+  const firstHalfRows = settled.filter(row => fixedPool.findIndex(item => item.raceKey === row.raceKey) < 50);
+  const secondHalfRows = settled.filter(row => {
+    const index = fixedPool.findIndex(item => item.raceKey === row.raceKey);
+    return index >= 50 && index < 100;
+  });
   const overall = summarize(settled);
   const firstHalf = summarize(firstHalfRows);
   const secondHalf = summarize(secondHalfRows);
   const exactPValue = oneSidedExactPValue(overall.bOnlyHits, overall.aOnlyHits);
   const bootstrap = pairedProfitBootstrap(settled);
-  const complete = settled.length >= FIXED_COMPARABLE_RACES;
+  const fixedPoolComplete = fixedPool.length >= FIXED_COMPARABLE_RACES;
+  const complete = fixedPoolComplete && settled.length >= FIXED_COMPARABLE_RACES;
   const checks = {
     fixed100Complete: complete,
     bothHalvesBOnlyHitsAtLeastAOnlyHits: complete && firstHalf.bOnlyHits >= firstHalf.aOnlyHits && secondHalf.bOnlyHits >= secondHalf.aOnlyHits,
@@ -227,13 +231,17 @@ function build(predictionDocuments = [], resultDocuments = []) {
       fixedComparableRaces: FIXED_COMPARABLE_RACES,
       validationHalf: { start: 1, end: 50 },
       sealedConfirmationHalf: { start: 51, end: 100 },
+      ordering: ["selectedAt", "raceKey"],
+      poolSelection: "first-100-comparable-before-result-settlement",
       stakePerTicket: STAKE_PER_TICKET,
       automaticWinnerSelection: false,
       finalHumanApprovalRequired: true
     },
     observation: {
       eligibleComparableCount: eligible.length,
+      fixedPoolCount: fixedPool.length,
       settledComparableCount: settled.length,
+      pendingFixedPoolResults: Math.max(0, fixedPool.length - settled.length),
       remainingComparableResults: Math.max(0, FIXED_COMPARABLE_RACES - settled.length)
     },
     overall,

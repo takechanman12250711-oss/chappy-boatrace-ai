@@ -47,8 +47,6 @@ const results = [];
 for (let index = 0; index < 100; index += 1) {
   const row = prediction(index);
   predictions.push(row);
-  // B-only 12R, A-only 2R, both/neither are impossible with disjoint single tickets.
-  // Remaining 86R are neither. B has a clear positive paired advantage without extra stake.
   const combination = index < 12 ? "2-1-3" : index < 14 ? "1-2-3" : "3-1-2";
   results.push(resultFor(row, combination, index < 12 ? 2000 : 1000));
 }
@@ -58,7 +56,9 @@ const report = engine.build(
   [{ races: results }]
 );
 assert.equal(report.observation.eligibleComparableCount, 100);
+assert.equal(report.observation.fixedPoolCount, 100);
 assert.equal(report.observation.settledComparableCount, 100);
+assert.equal(report.observation.pendingFixedPoolResults, 0);
 assert.equal(report.overall.bOnlyHits, 12);
 assert.equal(report.overall.aOnlyHits, 2);
 assert.equal(report.overall.netBOnlyHits, 10);
@@ -76,9 +76,32 @@ const partial = engine.build(
   [{ races: results.slice(0, 5) }]
 );
 assert.equal(partial.observation.eligibleComparableCount, 19);
+assert.equal(partial.observation.fixedPoolCount, 19);
 assert.equal(partial.observation.settledComparableCount, 5);
+assert.equal(partial.observation.pendingFixedPoolResults, 14);
 assert.equal(partial.status, "collecting-fixed-100-results");
 assert.equal(partial.adoptionCandidate, false);
+
+// The fixed 100 must be selected by selectedAt/raceKey before settlement.
+// A later result must never replace an earlier pending race and complete the
+// trial prematurely.
+const orderedPredictions = [];
+const orderedResults = [];
+for (let index = 0; index < 101; index += 1) {
+  const row = prediction(index);
+  orderedPredictions.push(row);
+  if (index > 0) orderedResults.push(resultFor(row, "3-1-2", 1000));
+}
+const frozenOrder = engine.build(
+  [{ verificationPredictions: orderedPredictions }],
+  [{ races: orderedResults }]
+);
+assert.equal(frozenOrder.observation.eligibleComparableCount, 101);
+assert.equal(frozenOrder.observation.fixedPoolCount, 100);
+assert.equal(frozenOrder.observation.settledComparableCount, 99);
+assert.equal(frozenOrder.observation.pendingFixedPoolResults, 1);
+assert.equal(frozenOrder.adoptionChecks.fixed100Complete, false);
+assert.equal(frozenOrder.rows.some(row => row.raceKey === orderedPredictions[100].raceKey), false);
 
 assert.equal(engine.oneSidedExactPValue(12, 2) <= 0.05, true);
 const bootstrap = engine.pairedProfitBootstrap(report.rows, 1000);
