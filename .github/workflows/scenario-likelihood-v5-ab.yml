@@ -20,9 +20,11 @@ on:
       - "scripts/test-no-upgrade-system-auto-application.js"
       - "scripts/test-upgrade-collection-policy-version.js"
       - "scripts/test-v5-production-a-stays.js"
+      - "scripts/test-candidate-decision-scope.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
+      - "config/candidate-decision-scope.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
       - "docs/upgrade-collection-policy.md"
@@ -60,4 +62,5 @@ jobs:
           node scripts/test-no-upgrade-system-auto-application.js
           node scripts/test-upgrade-collection-policy-version.js
           node scripts/test-v5-production-a-stays.js
+          node scripts/test-candidate-decision-scope.js
           node scripts/check-charter.js
