@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "frame-rise-fall-shadow-result-report-v1",
-  "generatedAt": "2026-08-15T03:14:03.045Z",
+  "generatedAt": "2026-08-15T03:22:29.656Z",
   "status": "collecting-fixed-100-results",
   "protocol": {
     "fixedComparableRaces": 100,
@@ -13,56 +13,63 @@
       "start": 51,
       "end": 100
     },
+    "ordering": [
+      "selectedAt",
+      "raceKey"
+    ],
+    "poolSelection": "first-100-comparable-before-result-settlement",
     "stakePerTicket": 100,
     "automaticWinnerSelection": false,
     "finalHumanApprovalRequired": true
   },
   "observation": {
     "eligibleComparableCount": 19,
-    "settledComparableCount": 0,
-    "remainingComparableResults": 100
+    "fixedPoolCount": 19,
+    "settledComparableCount": 1,
+    "pendingFixedPoolResults": 18,
+    "remainingComparableResults": 99
   },
   "overall": {
-    "raceCount": 0,
+    "raceCount": 1,
     "aHits": 0,
     "bHits": 0,
     "aOnlyHits": 0,
     "bOnlyHits": 0,
     "bothHits": 0,
-    "neitherHits": 0,
-    "aStake": 0,
+    "neitherHits": 1,
+    "aStake": 1000,
     "bStake": 0,
     "aReturn": 0,
     "bReturn": 0,
-    "profitDelta": 0,
+    "profitDelta": 1000,
     "ticketContractViolations": 0,
-    "aHitRate": null,
-    "bHitRate": null,
-    "aRecoveryRate": null,
+    "aHitRate": 0,
+    "bHitRate": 0,
+    "aRecoveryRate": 0,
     "bRecoveryRate": null,
-    "aProfit": 0,
+    "aProfit": -1000,
     "bProfit": 0,
     "netBOnlyHits": 0
   },
   "firstHalf": {
-    "raceCount": 0,
+    "raceCount": 1,
     "aHits": 0,
     "bHits": 0,
     "aOnlyHits": 0,
     "bOnlyHits": 0,
     "bothHits": 0,
-    "neitherHits": 0,
-    "aStake": 0,
+    "neitherHits": 1,
+    "aStake": 1000,
     "bStake": 0,
     "aReturn": 0,
     "bReturn": 0,
-    "profitDelta": 0,
+    "profitDelta": 1000,
     "ticketContractViolations": 0,
-    "aHitRate": null,
-    "bHitRate": null,
-    "aRecoveryRate": null,
+    "aHitRate": 0,
+    "bHitRate": 0,
+    "aRecoveryRate": 0,
     "bRecoveryRate": null,
-    "aProfit": 0,
+    "aProfit": -1000,
     "bProfit": 0,
     "netBOnlyHits": 0
   },
@@ -97,9 +104,9 @@
   "pairedProfitBootstrap": {
     "samples": 10000,
     "confidenceLevel": 0.95,
-    "mean": null,
-    "lowerBound": null,
-    "upperBound": null
+    "mean": 1000,
+    "lowerBound": 1000,
+    "upperBound": 1000
   },
   "adoptionChecks": {
     "fixed100Complete": false,
@@ -116,5 +123,55 @@
   "adoptionCandidate": false,
   "automaticApplication": false,
   "usableForPrediction": false,
-  "rows": []
+  "rows": [
+    {
+      "raceKey": "20260815-05-2",
+      "date": "20260815",
+      "jcd": "05",
+      "raceNo": 2,
+      "place": "多摩川",
+      "selectedAt": "2026-08-15T03:03:46.912Z",
+      "selectedEpoch": 1786763026912,
+      "candidateId": "frame-rise-fall-shadow-off-v1",
+      "candidateSpecFingerprint": "sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4",
+      "ticketContractViolations": 0,
+      "a": {
+        "skipped": false,
+        "ticketCount": 10,
+        "practicalTickets": [
+          "3-1-5",
+          "3-2-5",
+          "3-1-6",
+          "1-2-3",
+          "1-2-4",
+          "3-2-1",
+          "3-2-6",
+          "4-1-2",
+          "1-2-5",
+          "1-2-6"
+        ],
+        "hit": false,
+        "stake": 1000,
+        "return": 0,
+        "profit": -1000
+      },
+      "b": {
+        "skipped": true,
+        "ticketCount": 0,
+        "practicalTickets": [],
+        "hit": false,
+        "stake": 0,
+        "return": 0,
+        "profit": 0
+      },
+      "actualTicket": "4-2-5",
+      "payout": 8610,
+      "aOnlyHit": false,
+      "bOnlyHit": false,
+      "bothHit": false,
+      "neitherHit": true,
+      "profitDelta": 1000,
+      "stakeDelta": -1000
+    }
+  ]
 }
