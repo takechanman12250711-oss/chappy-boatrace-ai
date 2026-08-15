@@ -22,6 +22,9 @@ on:
       - "scripts/build-theory-candidate-branch-analysis-phase9.js"
       - "scripts/test-theory-candidate-branch-analysis-phase9.js"
       - "scripts/test-theory-candidate-branch-analysis-phase9-artifact.js"
+      - "js/frame-rise-fall-shadow-result-report.js"
+      - "scripts/build-frame-rise-fall-shadow-result-report.js"
+      - "scripts/test-frame-rise-fall-shadow-result-report.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -79,6 +82,9 @@ jobs:
         run: |
           node --check scripts/collect-results.js
           node --check scripts/repair-recent-results.js
+          node --check js/frame-rise-fall-shadow-result-report.js
+          node --check scripts/build-frame-rise-fall-shadow-result-report.js
+          node scripts/test-frame-rise-fall-shadow-result-report.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -115,6 +121,7 @@ jobs:
           COLLECT_DATE: ${{ inputs.date }}
         run: |
           node scripts/repair-recent-results.js
+          node scripts/build-frame-rise-fall-shadow-result-report.js
           node scripts/build-result-review.js
           node scripts/build-theory-evaluations.js
           node scripts/build-miss-cause-analysis.js
