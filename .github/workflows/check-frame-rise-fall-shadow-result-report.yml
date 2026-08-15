@@ -1,0 +1,31 @@
+name: Check frame rise fall shadow result report
+
+on:
+  pull_request:
+    paths:
+      - "js/frame-rise-fall-shadow-result-report.js"
+      - "scripts/build-frame-rise-fall-shadow-result-report.js"
+      - "scripts/test-frame-rise-fall-shadow-result-report.js"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/check-frame-rise-fall-shadow-result-report.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify fixed-100 result report
+        run: |
+          node --check js/frame-rise-fall-shadow-result-report.js
+          node --check scripts/build-frame-rise-fall-shadow-result-report.js
+          node scripts/test-frame-rise-fall-shadow-result-report.js
+          node scripts/check-charter.js
