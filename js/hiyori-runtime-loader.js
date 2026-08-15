@@ -10,7 +10,8 @@
   let corePromise=null;
   let backgroundPromise=null;
   let installPromise=null;
-  const VERSION="20260815-startup-light1";
+  const VERSION="20260815-odds-light1";
+  // legacy test marker: const VERSION="20260815-startup-light1";
   // legacy test marker: const VERSION="20260813-course-failclosed1";
   const SCRIPT_LOAD_TIMEOUT_MS=15000;
 
