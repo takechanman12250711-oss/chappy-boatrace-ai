@@ -27,10 +27,12 @@ on:
       - "scripts/test-upgrade-data-retention.js"
       - "scripts/test-upgrade-collection-summary.js"
       - "scripts/test-upgrade-collection-final-contract.js"
+      - "scripts/test-upgrade-collection-owner-intent.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
       - "config/upgrade-data-retention.json"
+      - "config/upgrade-collection-owner-intent.json"
       - "config/candidate-decision-scope.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
@@ -77,4 +79,5 @@ jobs:
           node scripts/test-upgrade-data-retention.js
           node scripts/test-upgrade-collection-summary.js
           node scripts/test-upgrade-collection-final-contract.js
+          node scripts/test-upgrade-collection-owner-intent.js
           node scripts/check-charter.js
