@@ -7,6 +7,8 @@ on:
       - "js/theory-improvement-proposal-phase9.js"
       - "js/theory-candidate-branch-analysis-phase9.js"
       - "js/theory-ab-phase10.js"
+      - "js/frame-rise-fall-shadow-off.js"
+      - "js/frame-rise-fall-shadow-off-verifier.js"
       - "scripts/build-theory-profit-review-phase8.js"
       - "scripts/build-theory-improvement-proposal-phase9.js"
       - "scripts/build-theory-candidate-branch-analysis-phase9.js"
@@ -16,6 +18,7 @@ on:
       - "scripts/test-theory-candidate-branch-analysis-phase9.js"
       - "scripts/test-theory-candidate-branch-analysis-phase9-artifact.js"
       - "scripts/test-theory-ab-phase10.js"
+      - "scripts/test-frame-rise-fall-shadow-off.js"
       - "scripts/build-learning-analysis-pipeline.js"
       - "data/stats/theory-candidate-branch-analysis-phase9.json"
       - ".github/workflows/check-learning-analysis-handoff.yml"
@@ -40,6 +43,9 @@ jobs:
           node --check js/theory-profit-review-phase8.js
           node --check js/theory-improvement-proposal-phase9.js
           node --check js/theory-candidate-branch-analysis-phase9.js
+          node --check js/theory-ab-phase10.js
+          node --check js/frame-rise-fall-shadow-off.js
+          node --check js/frame-rise-fall-shadow-off-verifier.js
           node --check scripts/build-theory-profit-review-phase8.js
           node --check scripts/build-theory-improvement-proposal-phase9.js
           node --check scripts/build-theory-candidate-branch-analysis-phase9.js
@@ -47,6 +53,7 @@ jobs:
           node scripts/test-theory-profit-review-phase8.js
           node scripts/test-theory-improvement-proposal-phase9.js
           node scripts/test-theory-candidate-branch-analysis-phase9.js
+          node scripts/test-frame-rise-fall-shadow-off.js
           node scripts/test-theory-ab-phase10.js
           node scripts/test-theory-candidate-branch-analysis-phase9-artifact.js
           node scripts/build-theory-profit-review-phase8.js
@@ -71,13 +78,15 @@ jobs:
           if(branch.candidateCount>1 || branch.automaticApplication!==false || branch.usableForPrediction!==false) throw new Error('Phase9候補枝分析の安全条件異常');
           if(phase9.proposal?.theoryKey==='frame-rise-fall'){
             if(branch.status!=='candidate-ready-for-human-review' || branch.candidateCount!==1) throw new Error('枠別浮沈率の候補枝分析が未準備です');
-            if(branch.candidate?.approved!==false || branch.candidate?.shadowImplementationPresent!==false) throw new Error('未承認候補を実装済みとして扱っています');
-            if(branch.retrospectiveLimits?.independentHoldout!==false || branch.retrospectiveLimits?.historicalBPerformanceClaimAllowed!==false) throw new Error('過去84Rを独立holdoutまたはB成績として誤使用しています');
+            if(branch.candidate?.approved!==false) throw new Error('未承認候補が承認済みとして誤生成されています');
+            if(branch.retrospectiveLimits?.independentHoldout!==false || branch.retrospectiveLimits?.historicalBPerformanceClaimAllowed!==false) throw new Error('過去データを独立holdoutまたはB成績として誤使用しています');
+            if(phase10.readinessChecks?.shadowImplementationVerifierPresent!==true) throw new Error('枠別浮沈OFFシャドーverifierがPhase10へ接続されていません');
+            if(phase10.readinessChecks?.shadowImplementationVerified!==true || phase10.shadowImplementationPresent!==true) throw new Error('候補仕様とshadow実装の照合に失敗しています');
+            if(phase10.readinessChecks?.implementationCandidateSpecMatches!==true) throw new Error('shadow実装がPhase9候補仕様と一致しません');
           }
-          if(phase10.readinessChecks?.allPassed!==true && phase10.candidateB!==null) throw new Error('全承認・実装確認前にBが生成されています');
+          if(phase10.readinessChecks?.allPassed!==true && phase10.candidateB!==null) throw new Error('全承認・cutoff固定前にBが生成されています');
           if(branch.candidateCount===1 && phase10.comparison?.minimumComparableRaces!==branch.candidate?.prospectiveProtocol?.fixedComparableRaces) throw new Error('候補仕様とPhase10の固定比較件数が不一致です');
           if(branch.candidateCount===1 && phase10.readinessChecks?.validCandidateSpecFingerprint!==true) throw new Error('Phase10の候補仕様fingerprint再計算が不一致です');
-          if(branch.candidate?.shadowImplementationPresent===false && (phase10.readinessChecks?.shadowImplementationVerifierPresent!==false || phase10.shadowImplementationPresent!==false)) throw new Error('未実装シャドーを実装済みとして扱っています');
           if(phase10.automaticApplication!==false || phase10.usableForPrediction!==false) throw new Error('Phase10の安全条件異常');
           NODE
           node scripts/check-charter.js
