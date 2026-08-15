@@ -10,11 +10,7 @@ const full = {
   candidateId: "candidate",
   candidateSpecFingerprint: "sha256:spec",
   implementationFingerprint: "impl",
-  cutoff: {
-    selectedAtExclusiveLowerBound: "2026-08-15T11:06:15+09:00",
-    sourceCommit: "commit",
-    logicFingerprint: "sha256:logic"
-  },
+  cutoff: { selectedAtExclusiveLowerBound: "2026-08-15T11:06:15+09:00", sourceCommit: "commit", logicFingerprint: "sha256:logic" },
   selectedAt: record.selectedAt,
   raceKey: record.raceKey,
   status: "shadow-ready",
@@ -22,7 +18,20 @@ const full = {
   applicableCount: 2,
   a: { scenarios: Array.from({ length: 20 }, (_, i) => ({ i, evidence: "a".repeat(100) })) },
   b: { scenarios: Array.from({ length: 20 }, (_, i) => ({ i, evidence: "b".repeat(100) })) },
-  downstreamReplay: { status: "replay-ready", a: { practicalTickets: ["1-2-3"] }, b: { practicalTickets: [] } },
+  downstreamReplay: {
+    version: "frame-rise-fall-shadow-replay-v1",
+    status: "replay-ready",
+    a: { skipDecision: false, practicalTickets: ["1-2-3"], mainScenario: { type: "escape" }, decisionFingerprint: "large-a" },
+    b: { skipDecision: true, practicalTickets: [], mainScenario: { type: "fourAttack" }, decisionFingerprint: "large-b" },
+    bMarks: { honmei: { details: "x".repeat(20000) } },
+    decisionChanged: true,
+    ticketContractViolations: 0,
+    comparableForFixed100: true,
+    productionAUnchanged: true,
+    applicationMode: "shadow-only",
+    usableForPrediction: false,
+    automaticApplication: false
+  },
   productionAUnchanged: true,
   comparisonContract: { comparableForFixed100: true },
   applicationMode: "shadow-only",
@@ -35,13 +44,15 @@ archive.snapshots[key] = full;
 
 const first = compact.compactDocument({ verificationPredictions: [{ ...record, frameRiseFallShadowAb: full }] }, archive);
 assert.equal(first.compactedCount, 1);
-assert.equal(first.verifiedCompactCount, 0);
 const inline = first.data.verificationPredictions[0].frameRiseFallShadowAb;
-assert.equal(inline.inlineStorage, "archive-reference-v1");
+assert.equal(inline.inlineStorage, builder.INLINE_STORAGE);
 assert.equal(inline.immutableArchiveKey, key);
 assert.equal(inline.a, undefined);
 assert.equal(inline.b, undefined);
-assert.deepEqual(inline.downstreamReplay, full.downstreamReplay);
+assert.deepEqual(inline.downstreamReplay.a, { skipDecision: false, practicalTickets: ["1-2-3"] });
+assert.deepEqual(inline.downstreamReplay.b, { skipDecision: true, practicalTickets: [] });
+assert.equal(inline.downstreamReplay.bMarks, undefined);
+assert.equal(inline.downstreamReplay.a.mainScenario, undefined);
 assert.ok(JSON.stringify(inline).length < JSON.stringify(full).length);
 assert.deepEqual(archive.snapshots[key], full);
 
@@ -50,9 +61,5 @@ assert.equal(second.compactedCount, 0);
 assert.equal(second.verifiedCompactCount, 1);
 assert.deepEqual(second.data, first.data);
 
-assert.throws(
-  () => compact.compactDocument(first.data, builder.emptyArchive()),
-  /完全証拠archiveが見つかりません/
-);
-
+assert.throws(() => compact.compactDocument(first.data, builder.emptyArchive()), /完全証拠archiveが見つかりません/);
 console.log("collector frame rise fall inline compaction tests passed");

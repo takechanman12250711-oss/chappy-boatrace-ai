@@ -12,6 +12,7 @@ const storage = require("../js/frame-rise-fall-shadow-storage");
 const root = path.resolve(__dirname, "..");
 const stats = path.join(root, "data", "stats");
 const archiveFile = path.join(stats, "frame-rise-fall-shadow-snapshot-archive.json");
+const INLINE_STORAGE = "archive-reference-v2";
 const replayDependencies = {
   coreApi: global.ChappyAICore,
   selector: practicalSelection
@@ -51,15 +52,7 @@ function snapshotArchiveKey(record = {}, snapshot = {}) {
   const cutoffSourceCommit = String(cutoff?.sourceCommit || "");
   const cutoffLogicFingerprint = String(cutoff?.logicFingerprint || "");
   if (!raceKey || !candidateId || !candidateSpecFingerprint || !implementationFingerprint || !cutoffSelectedAt) return "";
-  return [
-    raceKey,
-    candidateId,
-    candidateSpecFingerprint,
-    implementationFingerprint,
-    cutoffSelectedAt,
-    cutoffSourceCommit,
-    cutoffLogicFingerprint
-  ].join("|");
+  return [raceKey, candidateId, candidateSpecFingerprint, implementationFingerprint, cutoffSelectedAt, cutoffSourceCommit, cutoffLogicFingerprint].join("|");
 }
 
 function shouldArchive(snapshot = {}) {
@@ -67,19 +60,51 @@ function shouldArchive(snapshot = {}) {
 }
 
 function isCompactInlineSnapshot(snapshot = {}) {
-  return snapshot?.inlineStorage === "archive-reference-v1";
+  return snapshot?.inlineStorage === INLINE_STORAGE;
 }
 
 function preserveSnapshot(record = {}, snapshot = {}, archive = emptyArchive()) {
   if (!archive.snapshots || typeof archive.snapshots !== "object") archive.snapshots = {};
   const key = snapshotArchiveKey(record, snapshot);
   if (key && archive.snapshots[key]) return archive.snapshots[key];
-  if (isCompactInlineSnapshot(snapshot)) {
+  if (String(snapshot?.inlineStorage || "").startsWith("archive-reference-")) {
     throw new Error(`枠別浮沈Shadowの完全証拠archiveが見つかりません: ${key || record?.raceKey || "unknown"}`);
   }
   if (!shouldArchive(snapshot) || !key) return snapshot;
   archive.snapshots[key] = snapshot;
   return snapshot;
+}
+
+function compactReplaySide(side = {}) {
+  return {
+    skipDecision: side?.skipDecision === true,
+    practicalTickets: Array.isArray(side?.practicalTickets) ? side.practicalTickets : []
+  };
+}
+
+function compactDownstreamReplay(replay = {}) {
+  if (!replay || typeof replay !== "object") return replay;
+  if (replay.status !== "replay-ready") {
+    return {
+      version: replay.version,
+      status: replay.status,
+      comparableForFixed100: replay.comparableForFixed100 === true,
+      error: replay.error
+    };
+  }
+  return {
+    version: replay.version,
+    status: replay.status,
+    a: compactReplaySide(replay.a),
+    b: compactReplaySide(replay.b),
+    decisionChanged: replay.decisionChanged === true,
+    ticketContractViolations: Number(replay.ticketContractViolations || 0),
+    comparableForFixed100: replay.comparableForFixed100 === true,
+    productionAUnchanged: replay.productionAUnchanged === true,
+    applicationMode: replay.applicationMode,
+    usableForPrediction: replay.usableForPrediction === true,
+    automaticApplication: replay.automaticApplication === true
+  };
 }
 
 function compactInlineSnapshot(record = {}, snapshot = {}) {
@@ -88,7 +113,7 @@ function compactInlineSnapshot(record = {}, snapshot = {}) {
   if (!immutableArchiveKey) return snapshot;
   return {
     version: snapshot.version,
-    inlineStorage: "archive-reference-v1",
+    inlineStorage: INLINE_STORAGE,
     immutableArchiveKey,
     candidateId: snapshot.candidateId,
     candidateSpecFingerprint: snapshot.candidateSpecFingerprint,
@@ -99,7 +124,7 @@ function compactInlineSnapshot(record = {}, snapshot = {}) {
     status: snapshot.status,
     decisionChanged: snapshot.decisionChanged,
     applicableCount: snapshot.applicableCount,
-    downstreamReplay: snapshot.downstreamReplay,
+    downstreamReplay: compactDownstreamReplay(snapshot.downstreamReplay),
     productionAUnchanged: snapshot.productionAUnchanged,
     comparisonContract: snapshot.comparisonContract,
     applicationMode: snapshot.applicationMode,
@@ -116,11 +141,8 @@ function attach(data = {}, state = phase10State(), dependencies = replayDependen
   let comparableRaceCount = 0;
   const verificationPredictions = rows.map(record => {
     let snapshot;
-    if (record?.frameRiseFallShadowAb && typeof record.frameRiseFallShadowAb === "object") {
-      snapshot = preserveSnapshot(record, record.frameRiseFallShadowAb, archive);
-    } else {
-      snapshot = preserveSnapshot(record, storage.build(record, state, dependencies), archive);
-    }
+    if (record?.frameRiseFallShadowAb && typeof record.frameRiseFallShadowAb === "object") snapshot = preserveSnapshot(record, record.frameRiseFallShadowAb, archive);
+    else snapshot = preserveSnapshot(record, storage.build(record, state, dependencies), archive);
     capturedCount += snapshot.status === "shadow-ready" ? 1 : 0;
     applicableCount += Number(snapshot.applicableCount || 0) > 0 ? 1 : 0;
     decisionChangedCount += snapshot.decisionChanged === true ? 1 : 0;
@@ -138,11 +160,9 @@ function attach(data = {}, state = phase10State(), dependencies = replayDependen
       decisionChangedCount,
       fixedComparableRaceCount: Number(state?.comparison?.minimumComparableRaces || 100),
       comparableRaceCount,
-      comparisonCollectionStatus: comparableRaceCount > 0
-        ? "collecting-fixed-100"
-        : "awaiting-complete-decision-replay",
+      comparisonCollectionStatus: comparableRaceCount > 0 ? "collecting-fixed-100" : "awaiting-complete-decision-replay",
       immutableArchiveCount: Object.keys(archive.snapshots || {}).length,
-      inlineStorage: "archive-reference-v1",
+      inlineStorage: INLINE_STORAGE,
       applicationMode: "shadow-only",
       usableForPrediction: false,
       automaticApplication: false
@@ -163,16 +183,12 @@ function main() {
   fs.writeFileSync(temp, JSON.stringify(next, null, 2) + "\n");
   fs.renameSync(temp, file);
   fs.writeFileSync(archiveFile, JSON.stringify(archive, null, 2) + "\n", "utf8");
-  console.log(
-    `枠別浮沈Shadow保存: ${next.frameRiseFallShadowAb.capturedCount}/${next.frameRiseFallShadowAb.recordCount}R` +
-    `／比較${next.frameRiseFallShadowAb.comparableRaceCount}/${next.frameRiseFallShadowAb.fixedComparableRaceCount}R` +
-    `／不変保存${next.frameRiseFallShadowAb.immutableArchiveCount}件` +
-    `／Phase10=${state.status}`
-  );
+  console.log(`枠別浮沈Shadow保存: ${next.frameRiseFallShadowAb.capturedCount}/${next.frameRiseFallShadowAb.recordCount}R／比較${next.frameRiseFallShadowAb.comparableRaceCount}/${next.frameRiseFallShadowAb.fixedComparableRaceCount}R／不変保存${next.frameRiseFallShadowAb.immutableArchiveCount}件／Phase10=${state.status}`);
 }
 
 if (require.main === module) main();
 module.exports = {
+  INLINE_STORAGE,
   load,
   phase10State,
   emptyArchive,
@@ -180,6 +196,8 @@ module.exports = {
   shouldArchive,
   isCompactInlineSnapshot,
   preserveSnapshot,
+  compactReplaySide,
+  compactDownstreamReplay,
   compactInlineSnapshot,
   replayDependencies,
   attach,
