@@ -14,7 +14,7 @@ function prediction(index, options = {}) {
     date: "20260815",
     jcd,
     raceNo,
-    selectedAt: new Date(Date.UTC(2026, 7, 15, 3, index)).toISOString(),
+    selectedAt: options.selectedAt || new Date(Date.UTC(2026, 7, 15, 3, index)).toISOString(),
     frameRiseFallShadowAb: {
       candidateId: options.candidateId || "frame-rise-fall-shadow-off-v1",
       candidateSpecFingerprint: options.candidateSpecFingerprint || "sha256:test",
@@ -108,8 +108,6 @@ assert.equal(frozenOrder.observation.pendingFixedPoolResults, 1);
 assert.equal(frozenOrder.adoptionChecks.fixed100Complete, false);
 assert.equal(frozenOrder.rows.some(row => row.raceKey === orderedPredictions[100].raceKey), false);
 
-// A later candidate/implementation/cutoff must start a different trial cohort
-// and must never be mixed into the first fixed-100 experiment.
 const mixedPredictions = predictions.slice(0, 19);
 const changedCandidate = prediction(20, {
   candidateSpecFingerprint: "sha256:new-spec",
@@ -128,6 +126,28 @@ assert.equal(mixed.observation.eligibleComparableCount, 19);
 assert.equal(mixed.observation.excludedOtherCohortCount, 1);
 assert.equal(mixed.activeCohort.candidateSpecFingerprint, "sha256:test");
 assert.equal(mixed.rows.some(row => row.raceKey === changedCandidate.raceKey), false);
+
+// Re-saving the same race under a later cohort must not overwrite the original
+// trial row. Deduplication is allowed only inside the same cohort.
+const sameRaceOld = prediction(0);
+const sameRaceNew = prediction(0, {
+  selectedAt: "2026-08-15T05:00:00.000Z",
+  candidateSpecFingerprint: "sha256:new-spec",
+  implementationFingerprint: "sha256:new-impl",
+  cutoff: "2026-08-15T04:00:00.000Z",
+  sourceCommit: "def456",
+  logicFingerprint: "logic-v2"
+});
+const sameRaceAcrossCohorts = engine.build(
+  [{ verificationPredictions: [...predictions.slice(0, 19), sameRaceNew] }],
+  [{ races: results.slice(0, 19) }]
+);
+assert.equal(sameRaceAcrossCohorts.observation.rawComparableCount, 20);
+assert.equal(sameRaceAcrossCohorts.observation.eligibleComparableCount, 19);
+assert.equal(sameRaceAcrossCohorts.observation.excludedOtherCohortCount, 1);
+assert.equal(sameRaceAcrossCohorts.activeCohort.candidateSpecFingerprint, "sha256:test");
+assert.equal(sameRaceAcrossCohorts.observation.settledComparableCount, 19);
+assert.equal(sameRaceAcrossCohorts.rows.some(row => row.raceKey === sameRaceOld.raceKey), true);
 
 assert.equal(engine.oneSidedExactPValue(12, 2) <= 0.05, true);
 const bootstrap = engine.pairedProfitBootstrap(report.rows, 1000);
