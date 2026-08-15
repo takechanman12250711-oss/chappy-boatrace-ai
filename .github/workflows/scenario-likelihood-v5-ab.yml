@@ -18,6 +18,7 @@ on:
       - "scripts/test-upgrade-collection-contract-integration.js"
       - "scripts/test-upgrade-collection-final-doc.js"
       - "scripts/test-upgrade-collection-systems-doc.js"
+      - "scripts/test-upgrade-collection-recovery-doc.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-policy-version.json"
       - "config/upgrade-collection-systems.json"
@@ -36,6 +37,7 @@ on:
       - "docs/upgrade-collection-state.md"
       - "docs/upgrade-collection-final.md"
       - "docs/upgrade-collection-systems.md"
+      - "docs/upgrade-collection-recovery.md"
       - "docs/decisions/README.md"
       - "docs/decisions/scenario-likelihood-v5-20260815.md"
       - ".github/workflows/scenario-likelihood-v5-ab.yml"
@@ -67,6 +69,7 @@ jobs:
           node scripts/test-upgrade-collection-contract-integration.js
           node scripts/test-upgrade-collection-final-doc.js
           node scripts/test-upgrade-collection-systems-doc.js
+          node scripts/test-upgrade-collection-recovery-doc.js
           node scripts/test-upgrade-collection-policy-doc.js
           node scripts/test-v5-decision-history.js
           node scripts/test-v5-upgrade-collection-regression.js
