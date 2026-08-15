@@ -16,7 +16,7 @@
 })(typeof window !== "undefined" ? window : globalThis, function (root) {
   "use strict";
 
-  const VERSION = "formation-odds-display-v1";
+  const VERSION = "formation-odds-display-v2";
   const STYLE_ID = "chappy-formation-odds-display-style";
   const BOATS = Object.freeze([1, 2, 3, 4, 5, 6]);
   const FORMATION_PATHS = Object.freeze([
@@ -183,12 +183,44 @@
     return mergeCompatibleRows(augmentInnerHeadRows(prediction, source));
   }
 
+  function raceParamsOf(prediction) {
+    try {
+      const selected = root?.ChappyRaceSelection?.getRaceParams?.();
+      const jcd = String(selected?.jcd || "").replace(/\D/g, "").padStart(2, "0").slice(-2);
+      const rno = Number(selected?.rno ?? selected?.raceNo ?? 0);
+      const date = String(selected?.date || "").replace(/\D/g, "").slice(0, 8);
+      if (/^\d{2}$/.test(jcd) && rno >= 1 && rno <= 12 && /^\d{8}$/.test(date)) return { jcd, rno, date };
+    } catch (_) {}
+
+    const sources = [prediction?.race, prediction?.rawRaceData, prediction?.raceData, prediction];
+    for (const source of sources) {
+      if (!source || typeof source !== "object") continue;
+      const jcd = String(source.jcd ?? source.stadiumCode ?? source.placeCode ?? "")
+        .replace(/\D/g, "").padStart(2, "0").slice(-2);
+      const rno = Number(source.rno ?? source.raceNo ?? source.race ?? 0);
+      const date = String(source.date ?? source.hd ?? source.raceDate ?? "")
+        .replace(/\D/g, "").slice(0, 8);
+      if (/^\d{2}$/.test(jcd) && rno >= 1 && rno <= 12 && /^\d{8}$/.test(date)) return { jcd, rno, date };
+    }
+    return null;
+  }
+
   const oddsValue = value => Number(value && typeof value === "object" ? value.odds ?? value.value ?? value.currentOdds : value);
   function formatOdds(value, fallback = "") {
     const odds = oddsValue(value);
     if (Number.isFinite(odds) && odds > 0) return `${odds.toFixed(1)}倍`;
     const text = String(fallback || "").trim();
     return text && text !== "オッズ未取得" ? text : "オッズ未取得";
+  }
+
+  function oddsMapFromData(data) {
+    if (data instanceof Map) return new Map(data);
+    if (!data || typeof data !== "object") return new Map();
+    const source = data.byTicket && typeof data.byTicket === "object"
+      ? data.byTicket
+      : Object.fromEntries((Array.isArray(data.trifecta) ? data.trifecta : [])
+          .map(item => [item?.ticket, item?.odds]));
+    return new Map(Object.entries(source).map(([ticket, odds]) => [normalizeTicket(ticket), formatOdds(odds)]));
   }
 
   function collectOddsRows(prediction) {
@@ -205,6 +237,10 @@
       prediction?.raceData?.odds?.byTicket, prediction?.aiCore?.odds?.byTicket].forEach(source => {
       if (source && typeof source === "object") Object.entries(source).forEach(([ticket, value]) => set(ticket, value));
     });
+    try {
+      const cached = root?.ChappyOddsFetchCache?.getCachedData?.(raceParamsOf(prediction));
+      Object.entries(cached?.byTicket || {}).forEach(([ticket, value]) => set(ticket, value));
+    } catch (_) {}
     ODDS_LIST_PATHS.forEach(path => arrayify(getAtPath(prediction, path)).forEach(item => {
       if (item && typeof item === "object") set(ticketOf(item), item.odds, item);
     }));
@@ -269,27 +305,43 @@
     return Number.isFinite(odds) && odds > 0 ? `${odds.toFixed(1)}倍` : "";
   }
 
-  async function hydrateFetchedOdds(display) {
-    const fetchAllOdds = root?.ChappyFlowOddsTabs?.fetchAllOdds;
-    if (!display || display.isConnected === false || typeof fetchAllOdds !== "function") return false;
-    let fetched;
-    try { fetched = await fetchAllOdds(); } catch (_) { return false; }
-    if (!(fetched instanceof Map) || display.isConnected === false) return false;
-    let changed = false;
-    display.querySelectorAll("[data-formation-ticket]").forEach(row => {
-      if (row.dataset.finalOdds === "true") return;
-      const text = fetchedOddsText(fetched.get(row.dataset.formationTicket));
-      const value = row.querySelector(".chappy-formation-odds-value");
-      if (text && value && value.textContent !== text) { value.textContent = text; changed = true; }
-    });
-    if (!changed) return false;
-    display.querySelectorAll(".chappy-formation-odds-card").forEach(card => {
-      const values = [...card.querySelectorAll(".chappy-formation-odds-value")];
-      const available = values.filter(value => value.textContent !== "オッズ未取得").length;
-      const counter = card.querySelector(".chappy-formation-odds-availability");
-      if (counter) counter.textContent = `オッズ取得 ${available}/${values.length}`;
-    });
-    return true;
+  async function hydrateFetchedOdds(display, prediction) {
+    if (!display || display.isConnected === false || display.dataset.oddsHydrating === "true") return false;
+    const missingRows = [...display.querySelectorAll("[data-formation-ticket]")]
+      .filter(row => row.dataset.finalOdds !== "true" && row.querySelector(".chappy-formation-odds-value")?.textContent === "オッズ未取得");
+    if (!missingRows.length) return false;
+
+    display.dataset.oddsHydrating = "true";
+    try {
+      const params = raceParamsOf(prediction);
+      let fetched = new Map();
+      if (params && typeof root?.ChappyOddsFetchCache?.fetchData === "function") {
+        fetched = oddsMapFromData(await root.ChappyOddsFetchCache.fetchData(params));
+      } else if (typeof root?.ChappyFlowOddsTabs?.fetchAllOdds === "function") {
+        fetched = await root.ChappyFlowOddsTabs.fetchAllOdds(params || {});
+      }
+      if (!(fetched instanceof Map) || !fetched.size || display.isConnected === false) return false;
+
+      let changed = false;
+      missingRows.forEach(row => {
+        const text = fetchedOddsText(fetched.get(row.dataset.formationTicket));
+        const value = row.querySelector(".chappy-formation-odds-value");
+        if (text && value && value.textContent !== text) { value.textContent = text; changed = true; }
+      });
+      if (!changed) return false;
+      display.querySelectorAll(".chappy-formation-odds-card").forEach(card => {
+        const values = [...card.querySelectorAll(".chappy-formation-odds-value")];
+        const available = values.filter(value => value.textContent !== "オッズ未取得").length;
+        const counter = card.querySelector(".chappy-formation-odds-availability");
+        if (counter) counter.textContent = `オッズ取得 ${available}/${values.length}`;
+      });
+      return true;
+    } catch (error) {
+      console.warn("フォーメーション全点オッズの反映に失敗", error?.message || error);
+      return false;
+    } finally {
+      delete display.dataset.oddsHydrating;
+    }
   }
 
   function removeRepeatedTags(scope) {
@@ -336,7 +388,7 @@
     if (count) count.textContent = `${models.reduce((sum, model) => sum + model.pointCount, 0)}点`;
     const aim = accordion.querySelector(".v3-ticket-accordion-aim p");
     if (aim) aim.textContent = "フォーメーション全点のオッズを表示します。★は実戦厳選の購入対象です。";
-    void hydrateFetchedOdds(display);
+    void hydrateFetchedOdds(display, prediction);
     return true;
   }
 
@@ -351,26 +403,28 @@
 
   function install(target) {
     if (!target || target.__formationOddsDisplayInstalled) return false;
-    let wrapped = false;
-    ["renderAll", "renderPrediction"].forEach(name => {
-      const original = target[name];
-      if (typeof original !== "function") return;
-      target[name] = function (prediction, ...args) {
-        const result = original.call(this, prediction, ...args);
-        apply(prediction, target.document);
-        return result;
-      };
-      wrapped = true;
-    });
-    if (wrapped) target.__formationOddsDisplayInstalled = true;
-    return wrapped;
+    const name = typeof target.renderAll === "function"
+      ? "renderAll"
+      : typeof target.renderPrediction === "function"
+        ? "renderPrediction"
+        : "";
+    if (!name) return false;
+    const original = target[name];
+    target[name] = function (prediction, ...args) {
+      const result = original.call(this, prediction, ...args);
+      apply(prediction, target.document);
+      return result;
+    };
+    target.__formationOddsDisplayInstalled = true;
+    return true;
   }
 
   return {
     VERSION, normalizeTicket, parseTicket, normalizeBoatNos, parseFormationNotation,
     expandFormation, notationFor, cleanDisplayText, inferCompleteFormationRows,
     normalizeFormationRow, mergeCompatibleRows, collectCoverHeadCandidates,
-    augmentInnerHeadRows, collectFormationRows, collectOddsRows, selectedTicketSet,
-    buildDisplayModels, renderModels, fetchedOddsText, hydrateFetchedOdds, apply, install
+    augmentInnerHeadRows, collectFormationRows, raceParamsOf, oddsMapFromData,
+    collectOddsRows, selectedTicketSet, buildDisplayModels, renderModels,
+    fetchedOddsText, hydrateFetchedOdds, apply, install
   };
 });
