@@ -1,0 +1,12 @@
+"use strict";
+const assert = require("node:assert/strict");
+const policy = require("../config/upgrade-collection-policy.json");
+const systems = require("../config/upgrade-collection-systems.json");
+const scope = require("../config/candidate-decision-scope.json");
+assert.equal(policy.status, "active");
+assert.equal(systems.status, "active");
+assert.equal(scope.collectionSystemLifecycle, "independent");
+assert.equal(policy.rules.keepShadowDataCollection, true);
+Object.values(systems.systems).forEach(state => assert.equal(state, "collect"));
+assert.equal(scope.rules.rejectionKeepsCollectionActive, true);
+console.log("upgrade collection configuration is consistent");
