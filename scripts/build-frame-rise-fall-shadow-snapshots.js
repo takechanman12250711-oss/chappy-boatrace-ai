@@ -68,10 +68,9 @@ function shouldArchive(snapshot = {}) {
 
 function preserveSnapshot(record = {}, snapshot = {}, archive = emptyArchive()) {
   if (!archive.snapshots || typeof archive.snapshots !== "object") archive.snapshots = {};
-  if (!shouldArchive(snapshot)) return snapshot;
   const key = snapshotArchiveKey(record, snapshot);
-  if (!key) return snapshot;
-  if (archive.snapshots[key]) return archive.snapshots[key];
+  if (key && archive.snapshots[key]) return archive.snapshots[key];
+  if (!shouldArchive(snapshot) || !key) return snapshot;
   archive.snapshots[key] = snapshot;
   return snapshot;
 }
