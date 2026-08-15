@@ -46,7 +46,7 @@ const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/sc
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
-const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260815-odds-consume2"');
+const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-bounded-preload1"');
 const appIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260815-odds-immediate1"');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
 const oddsFirstIndex = html.indexOf('src="js/odds-first-navigation.js?v=20260815-odds-consume2"');
@@ -123,11 +123,20 @@ assert.equal(
   "親ランタイムの先読みを同時2本までに制限する"
 );
 const waitIndex = predictionRuntime.indexOf("await waitForOddsPriority()");
-const preloadIndex = predictionRuntime.indexOf("preloadScripts(scripts, 0, scripts.length)");
-const executeIndex = predictionRuntime.indexOf("for (const src of scripts)");
+const progressivePreloadIndex = predictionRuntime.indexOf("preloadScripts(scripts, index, PRELOAD_LOOKAHEAD)");
+const progressiveExecuteIndex = predictionRuntime.indexOf("await loadScript(scripts[index])");
 assert.ok(
-  waitIndex >= 0 && waitIndex < preloadIndex && preloadIndex < executeIndex,
-  "オッズ完了または2.5秒後に予想JSを並行先読みし、実行順は維持する"
+  waitIndex >= 0 &&
+    waitIndex < progressivePreloadIndex &&
+    progressivePreloadIndex < progressiveExecuteIndex,
+  "オッズ完了または2.5秒後に予想JSを3本ずつ先読みし、実行順を維持する"
+);
+assert.equal(
+  predictionRuntime.includes("const PRELOAD_LOOKAHEAD = 3") &&
+    predictionRuntime.includes(".slice(startIndex, startIndex + Math.max(1, count))") &&
+    !predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)"),
+  true,
+  "予想ランタイム25本の全件同時preloadを禁止する"
 );
 assert.equal(
   predictionRuntime.includes("const ODDS_PRIORITY_WAIT_MS = 2500") &&
@@ -146,15 +155,28 @@ assert.equal(appRuntime.includes("preloadGroup(group);"), false, "親ランタ�
 assert.equal(hiyoriRuntime.includes("preloadScripts(coreScripts);"), false, "補助JSの全件一括preloadを禁止する");
 
 assert.equal(
-  predictionRuntime.includes('const VERSION = "20260815-odds-consume2"'),
+  predictionRuntime.includes('const VERSION = "20260816-bounded-preload1"'),
   true,
-  "予想ローダーをオッズ引き渡し世代へ更新する"
+  "予想ローダーをUI不変の先読み制限世代へ更新する"
 );
 assert.equal(
-  html.includes("js/prediction-runtime-loader.js?v=20260815-odds-consume2") &&
+  html.includes("js/prediction-runtime-loader.js?v=20260816-bounded-preload1") &&
     html.includes("js/odds-first-navigation.js?v=20260815-odds-consume2"),
   true,
-  "既存端末へオッズ引き渡し版を配信する"
+  "既存端末へ先読み制限版を配信し、オッズ引き渡し世代は維持する"
 );
 
-console.log("アプリ初期表示・オッズ引き渡しクリティカルパステスト: 合格");
+const structuralUiMarkers = [
+  'id="raceSection"',
+  'id="predictionSection"',
+  'id="resultSection"',
+  'class="bottom-nav"',
+  'data-view="home"',
+  'data-view="prediction"',
+  'data-view="result"'
+];
+structuralUiMarkers.forEach(marker => {
+  assert.equal(html.includes(marker), true, `UI構造を維持する: ${marker}`);
+});
+
+console.log("アプリ初期表示・UI不変・予想先読み制限クリティカルパステスト: 合格");
