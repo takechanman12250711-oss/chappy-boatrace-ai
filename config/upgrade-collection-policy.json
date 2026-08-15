@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "status": "active",
+  "policy": "keep-upgrade-systems-collecting",
+  "rules": {
+    "keepLearningAndAnalysisSystems": true,
+    "keepShadowDataCollection": true,
+    "rejectOnlyEvaluatedCandidateGeneration": true,
+    "productionChangesRequireSeparateAdoptionDecision": true,
+    "automaticApplication": false
+  },
+  "note": "A rejected candidate generation must not disable the version-up learning, calibration, A/B, theory, or Shadow collection systems. Continue collecting evidence for future candidate generations while production keeps the accepted logic."
+}
