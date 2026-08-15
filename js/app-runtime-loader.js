@@ -3,7 +3,8 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260813-course-failclosed1";
+  const VERSION = "20260815-startup-light1";
+  // legacy test marker: const VERSION = "20260813-course-failclosed1"
   // legacy test marker: const VERSION = "20260810-official-reference1"
   // legacy test marker: const VERSION = "20260805-flow-label1"
   // legacy test marker: const VERSION = "20260804-final-odds2"
