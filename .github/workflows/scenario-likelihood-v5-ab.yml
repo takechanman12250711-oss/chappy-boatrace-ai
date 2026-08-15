@@ -12,6 +12,7 @@ on:
       - "scripts/test-v5-decision-history.js"
       - "scripts/test-v5-upgrade-collection-regression.js"
       - "scripts/test-v5-decision-doc.js"
+      - "scripts/test-v5-collection-not-closed.js"
       - "config/upgrade-collection-policy.json"
       - "config/scenario-likelihood-v5-decision.json"
       - "config/scenario-likelihood-v5-decision-history.json"
@@ -40,4 +41,5 @@ jobs:
           node scripts/test-v5-decision-history.js
           node scripts/test-v5-upgrade-collection-regression.js
           node scripts/test-v5-decision-doc.js
+          node scripts/test-v5-collection-not-closed.js
           node scripts/check-charter.js
