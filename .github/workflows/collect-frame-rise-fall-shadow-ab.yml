@@ -51,12 +51,9 @@ jobs:
           node scripts/test-frame-rise-fall-replay-preload.js
           node scripts/test-frame-rise-fall-shadow-replay.js
           node scripts/test-frame-rise-fall-shadow-storage.js
-      - name: Rebuild approval inputs
+      - name: Verify frozen Phase10 state
         if: github.event_name != 'pull_request'
         run: |
-          node scripts/build-theory-profit-review-phase8.js
-          node scripts/build-theory-improvement-proposal-phase9.js
-          node scripts/build-theory-candidate-branch-analysis-phase9.js
           node scripts/test-theory-ab-phase10-approval.js
           node scripts/build-theory-ab-phase10.js
       - name: Capture prospective shadow snapshots
@@ -67,7 +64,7 @@ jobs:
       - name: Save shadow snapshots
         if: github.event_name != 'pull_request'
         run: |
-          git add data/predictions data/stats/frame-rise-fall-shadow-snapshot-archive.json data/stats/theory-profit-review-phase8.json data/stats/theory-improvement-proposal-phase9.json data/stats/theory-candidate-branch-analysis-phase9.json data/stats/theory-ab-phase10.json
+          git add data/predictions data/stats/frame-rise-fall-shadow-snapshot-archive.json data/stats/theory-ab-phase10.json
           if git diff --cached --quiet; then
             echo "保存する枠別浮沈Shadowはありません"
             exit 0
