@@ -9,6 +9,7 @@ on:
       - "config/chappy-charter.json"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "js/frame-rise-fall-replay-preload.js"
       - "js/practical-priority-shadow.js"
       - "js/practical-priority-shadow-report.js"
       - "scripts/build-practical-priority-shadow-report.js"
@@ -58,7 +59,6 @@ on:
       - "scripts/test-collection-health.js"
       - "api/schedule.js"
       - "api/_schedule-parser.js"
-      - "scripts/test-schedule-parser.js"
       - "api/race.js"
       - "api/_history.js"
       - "api/_parser.js"
@@ -119,6 +119,7 @@ jobs:
       - name: Check collector-critical source
         run: |
           node --check scripts/collect-predictions.js
+          node --check js/frame-rise-fall-replay-preload.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -158,6 +159,7 @@ jobs:
       - name: Compare and predict live races
         env:
           PREDICT_DATE: ${{ inputs.date }}
+          NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
         run: |
           node scripts/collect-predictions.js
           node scripts/build-scenario-ai-v6-snapshots.js
