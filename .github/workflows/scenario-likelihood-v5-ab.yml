@@ -17,6 +17,7 @@ on:
       - "scripts/test-decision-lifecycle-contract.js"
       - "scripts/test-collect-upgrade-systems-contract.js"
       - "scripts/test-upgrade-system-flow.js"
+      - "scripts/test-no-upgrade-system-auto-application.js"
       - "config/upgrade-collection-policy.json"
       - "config/upgrade-collection-systems.json"
       - "config/scenario-likelihood-v5-decision.json"
@@ -53,4 +54,5 @@ jobs:
           node scripts/test-decision-lifecycle-contract.js
           node scripts/test-collect-upgrade-systems-contract.js
           node scripts/test-upgrade-system-flow.js
+          node scripts/test-no-upgrade-system-auto-application.js
           node scripts/check-charter.js
