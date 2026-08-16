@@ -20,10 +20,11 @@ assert.match(watchdog, /chappy:prediction-rendered/);
 assert.match(watchdog, /自動再開始はせず/);
 assert.match(appRuntime, /const VERSION = "20260816-stuck-recovery1"/);
 assert.match(appRuntime, /レース選択モジュールを初期化できませんでした/);
+assert.match(html, /hiyori-runtime-loader\.js\?v=20260816-prediction-nonblocking1/);
 assert.match(html, /app-runtime-loader\.js\?v=20260816-stuck-recovery1/);
 assert.match(html, /home-dashboard-v2\.js\?v=20260816-stuck-recovery1/);
 assert.match(html, /home-venue-tap-hotfix\.js\?v=20260816-stuck-recovery1/);
-assert.match(html, /prediction-loading-watchdog\.js\?v=20260816-stuck-recovery1/);
+assert.match(html, /prediction-loading-watchdog\.js\?v=20260816-no-retry1/);
 assert.doesNotMatch(homeHotfix, /MutationObserver/);
 
 console.log("prediction loading no-retry fail-closed contract passed");

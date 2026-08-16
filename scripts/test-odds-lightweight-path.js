@@ -16,18 +16,19 @@ const watchdog = read("js/prediction-loading-watchdog.js");
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js?v=20260815-odds-immediate1"');
 const directApiIndex = html.indexOf('src="js/api.js?v=20260815-odds-immediate1"');
 const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-ios-sequential1"');
+const hiyoriIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260816-prediction-nonblocking1"');
 const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260816-stuck-recovery1"');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js?v=20260816-stuck-recovery1"');
 const todayResultsIndex = html.indexOf('src="js/today-results-home.js');
 const oddsFirstIndex = html.indexOf('src="js/odds-first-navigation.js?v=20260815-odds-consume2"');
-const watchdogIndex = html.indexOf('src="js/prediction-loading-watchdog.js?v=20260816-stuck-recovery1"');
+const watchdogIndex = html.indexOf('src="js/prediction-loading-watchdog.js?v=20260816-no-retry1"');
 
 assert.ok(
   directOddsIndex >= 0 && directOddsIndex < directApiIndex &&
-  directApiIndex < directPredictionLoaderIndex && directPredictionLoaderIndex < appRuntimeIndex &&
-  appRuntimeIndex < homeIndex && homeIndex < todayResultsIndex &&
+  directApiIndex < directPredictionLoaderIndex && directPredictionLoaderIndex < hiyoriIndex &&
+  hiyoriIndex < appRuntimeIndex && appRuntimeIndex < homeIndex && homeIndex < todayResultsIndex &&
   todayResultsIndex < oddsFirstIndex && oddsFirstIndex < watchdogIndex,
-  "オッズ共有・レースAPI・逐次予想ローダー・固着監視を順番どおり接続する"
+  "オッズ共有・レースAPI・逐次予想ローダー・非同期日和補助・no-retry監視を順番どおり接続する"
 );
 assert.equal(html.includes("home-recommendation-reliability.js"), false, "重複ホーム補強を初期画面から外す");
 assert.equal(
@@ -85,16 +86,19 @@ assert.equal(
   "オッズ優先経路を維持する"
 );
 assert.equal(
-  hiyoriRuntime.includes("const PRELOAD_LOOKAHEAD=2") && !hiyoriRuntime.includes("preloadScripts(coreScripts);"),
+  hiyoriRuntime.includes("const PRELOAD_LOOKAHEAD=2") &&
+    !hiyoriRuntime.includes("preloadScripts(coreScripts);") &&
+    hiyoriRuntime.includes("nonBlockingPrediction:true"),
   true,
-  "補助JSの既存軽量化を維持する"
+  "補助JSの軽量化を維持し、初回予想表示を待たせない"
 );
 assert.equal(
   appRuntime.includes('const VERSION = "20260816-stuck-recovery1"') &&
     appRuntime.includes("レース選択モジュールを初期化できませんでした") &&
-    watchdog.includes("showPredictionError"),
+    watchdog.includes("showPredictionError") &&
+    !watchdog.includes("button.click()"),
   true,
-  "Safariの新旧JS混在を避け、永久ローディングをfail-closedする"
+  "Safariの新旧JS混在を避け、永久ローディングを自動再開始せずfail-closedする"
 );
 
 console.log("オッズ取得・逐次予想ロード・Safari固着復旧パス検証: 合格");

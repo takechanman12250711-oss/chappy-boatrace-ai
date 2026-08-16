@@ -37,15 +37,17 @@ const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/sc
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
 const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-ios-sequential1"');
+const hiyoriLoaderIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260816-prediction-nonblocking1"');
 const appIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260816-stuck-recovery1"');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js?v=20260816-stuck-recovery1"');
 const oddsFirstIndex = html.indexOf('src="js/odds-first-navigation.js?v=20260815-odds-consume2"');
-const watchdogIndex = html.indexOf('src="js/prediction-loading-watchdog.js?v=20260816-stuck-recovery1"');
+const watchdogIndex = html.indexOf('src="js/prediction-loading-watchdog.js?v=20260816-no-retry1"');
 assert.ok(
   directOddsIndex >= 0 && directOddsIndex < directApiIndex &&
-  directApiIndex < predictionLoaderIndex && predictionLoaderIndex < appIndex &&
-  appIndex < homeIndex && homeIndex < oddsFirstIndex && oddsFirstIndex < watchdogIndex,
-  "オッズ先行取得と逐次予想ローダーの後に固着監視を接続する"
+  directApiIndex < predictionLoaderIndex && predictionLoaderIndex < hiyoriLoaderIndex &&
+  hiyoriLoaderIndex < appIndex && appIndex < homeIndex &&
+  homeIndex < oddsFirstIndex && oddsFirstIndex < watchdogIndex,
+  "オッズ先行取得・逐次予想ローダー・非同期日和補助・no-retry監視を固定順で接続する"
 );
 
 assert.equal(
