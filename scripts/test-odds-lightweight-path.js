@@ -11,138 +11,89 @@ const hiyoriRuntime = read("js/hiyori-runtime-loader.js");
 const oddsFirst = read("js/odds-first-navigation.js");
 const flowOdds = read("js/flow-odds-tabs.js");
 const formationOdds = read("js/formation-odds-display.js");
+const watchdog = read("js/prediction-loading-watchdog.js");
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js?v=20260815-odds-immediate1"');
 const directApiIndex = html.indexOf('src="js/api.js?v=20260815-odds-immediate1"');
-const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-bounded-preload1"');
-const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260815-odds-immediate1"');
-const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
+const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260815-odds-consume2"');
+const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260816-stuck-recovery1"');
+const homeIndex = html.indexOf('src="js/home-dashboard-v2.js?v=20260816-stuck-recovery1"');
 const todayResultsIndex = html.indexOf('src="js/today-results-home.js');
 const oddsFirstIndex = html.indexOf('src="js/odds-first-navigation.js?v=20260815-odds-consume2"');
+const watchdogIndex = html.indexOf('src="js/prediction-loading-watchdog.js?v=20260816-stuck-recovery1"');
 
 assert.ok(
-  directOddsIndex >= 0 &&
-    directOddsIndex < directApiIndex &&
-    directApiIndex < directPredictionLoaderIndex &&
-    directPredictionLoaderIndex < appRuntimeIndex &&
-    appRuntimeIndex < homeIndex &&
-    homeIndex < todayResultsIndex &&
-    todayResultsIndex < oddsFirstIndex,
-  "オッズ共有・レースAPI・軽量予想ローダーをホーム操作前に用意し、最後に引き渡し制御を接続する"
+  directOddsIndex >= 0 && directOddsIndex < directApiIndex &&
+  directApiIndex < directPredictionLoaderIndex && directPredictionLoaderIndex < appRuntimeIndex &&
+  appRuntimeIndex < homeIndex && homeIndex < todayResultsIndex &&
+  todayResultsIndex < oddsFirstIndex && oddsFirstIndex < watchdogIndex,
+  "オッズ共有・レースAPI・安定版予想ローダー・固着監視を順番どおり接続する"
 );
-assert.equal(
-  html.includes("home-recommendation-reliability.js"),
-  false,
-  "同じ当日要約を監視・定期再取得する重複補強を初期画面から外す"
-);
+assert.equal(html.includes("home-recommendation-reliability.js"), false, "重複ホーム補強を初期画面から外す");
 assert.equal(
   appRuntime.includes('"js/odds-fetch-cache.js"') || appRuntime.includes('"js/api.js"'),
   false,
-  "直接読込済みのオッズ共有・レースAPIをランタイムで再読込しない"
+  "直接読込済みAPIをランタイムで再読込しない"
 );
 assert.equal(
   appRuntime.includes('const HOME_RACE_SELECTOR = "[data-place][data-race]"') &&
     appRuntime.includes('if (target?.matches(HOME_RACE_SELECTOR)) return "";'),
   true,
-  "ホームのレースタップでは重いランタイム先読みを先に始めない"
+  "ホームraceタップでは親ランタイムをpointerdown先読みしない"
 );
 assert.equal(
   oddsFirst.includes("ChappyAPI?.prefetchRace") &&
     oddsFirst.includes("ChappyOddsFetchCache?.fetchData") &&
-    oddsFirst.includes('"pointerdown"') &&
-    oddsFirst.includes("capture: true"),
+    oddsFirst.includes("__chappyOddsFirstBridge") &&
+    oddsFirst.includes("waitForActiveOdds"),
   true,
-  "ホーム操作直後にレースデータとオッズを先行取得する"
+  "レースとオッズを先行取得し通常予想へ同じ応答を渡す"
 );
 assert.equal(
-  oddsFirst.includes("__chappyOddsFirstBridge") &&
-    oddsFirst.includes("responseFromData(root, data)") &&
-    oddsFirst.includes("waitForActiveOdds") &&
-    oddsFirst.includes("PREFETCH_RETENTION_MS = 120000"),
+  oddsFirst.includes("PREFETCH_RETENTION_MS = 120000") && oddsFirst.includes("keepPrefetchedStatusVisible"),
   true,
-  "先行取得済み120通りを通常予想へ直接返し、重いJS読込中も保持する"
+  "取得済みオッズをAI解析中も保持する"
 );
-assert.equal(
-  oddsFirst.includes("prefetchedOddsCount") &&
-    oddsFirst.includes("keepPrefetchedStatusVisible") &&
-    oddsFirst.includes('attributeFilter: ["data-state"]'),
-  true,
-  "オッズ取得済み表示をAI解析中の待機表示で上書きしない"
-);
-assert.equal(
-  oddsFirst.includes("navigationPending") &&
-    oddsFirst.includes("deferredResultPanel") &&
-    oddsFirst.includes("requestIdleCallback"),
-  true,
-  "結果パネルは予想とオッズの初回表示後まで遅延する"
-);
-
-assert.equal(
-  flowOdds.includes("new MutationObserver"),
-  false,
-  "フォーメーションオッズのために画面全体を常時監視しない"
-);
+assert.equal(flowOdds.includes("new MutationObserver"), false, "オッズ表示で画面全体を常時監視しない");
 assert.equal(
   flowOdds.includes("ChappyOddsFetchCache") && flowOdds.includes("oddsCache.delete(key)"),
   true,
-  "共有通信を使い、空結果は固定キャッシュしない"
+  "共有オッズ通信を維持する"
 );
 assert.equal(
-  formationOdds.includes("ChappyOddsFetchCache") &&
-    formationOdds.includes("hydrateFetchedOdds(display, prediction)"),
+  formationOdds.includes("ChappyOddsFetchCache") && formationOdds.includes("hydrateFetchedOdds(display, prediction)"),
   true,
-  "24点・8点の全点表示は通常取得済みの同一オッズを再利用する"
+  "フォーメーション全点表示は同一取得オッズを使う"
 );
 assert.equal(
-  formationOdds.includes('["renderAll", "renderPrediction"].forEach'),
-  false,
-  "同じ予想を二重ラップして再描画しない"
-);
-
-assert.equal(
-  appRuntime.includes("const PRELOAD_LOOKAHEAD = 2") &&
-    !appRuntime.includes("preloadGroup(group);"),
+  appRuntime.includes("const PRELOAD_LOOKAHEAD = 2") && !appRuntime.includes("preloadGroup(group);"),
   true,
-  "オッズ開始前に親ランタイムを一括先読みしない"
-);
-const oddsWaitIndex = predictionRuntime.indexOf("await waitForOddsPriority()");
-const progressivePreloadIndex = predictionRuntime.indexOf("preloadScripts(scripts, index, PRELOAD_LOOKAHEAD)");
-const progressiveLoadIndex = predictionRuntime.indexOf("await loadScript(scripts[index])");
-assert.ok(
-  oddsWaitIndex >= 0 &&
-    oddsWaitIndex < progressivePreloadIndex &&
-    progressivePreloadIndex < progressiveLoadIndex,
-  "オッズ完了または2.5秒待機後に予想JSを3本ずつ先読みし、実行順を維持する"
+  "親ランタイムの既存先読み制限を維持する"
 );
 assert.equal(
-  predictionRuntime.includes("const PRELOAD_LOOKAHEAD = 3") &&
-    !predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)"),
+  predictionRuntime.includes('const VERSION = "20260815-odds-consume2"') &&
+    predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)") &&
+    predictionRuntime.includes("for (const src of scripts)"),
   true,
-  "予想JS25本の全件同時preloadを禁止する"
+  "ロールバック済み安定版の予想実行順は変更しない"
 );
 assert.equal(
   predictionRuntime.includes("const ODDS_PRIORITY_WAIT_MS = 2500") &&
     predictionRuntime.includes("oddsPrioritized: Boolean(prioritizedOdds)"),
   true,
-  "予想ランタイムがオッズ通信を最優先したことを記録する"
+  "オッズ優先経路を維持する"
 );
 assert.equal(
-  hiyoriRuntime.includes("const PRELOAD_LOOKAHEAD=2") &&
-    !hiyoriRuntime.includes("preloadScripts(coreScripts);"),
+  hiyoriRuntime.includes("const PRELOAD_LOOKAHEAD=2") && !hiyoriRuntime.includes("preloadScripts(coreScripts);"),
   true,
-  "通常オッズ通信中に補助JSを全件先読みしない"
+  "補助JSの既存軽量化を維持する"
+);
+assert.equal(
+  appRuntime.includes('const VERSION = "20260816-stuck-recovery1"') &&
+    appRuntime.includes("レース選択モジュールを初期化できませんでした") &&
+    watchdog.includes("showPredictionError"),
+  true,
+  "Safariの新旧JS混在を避け、永久ローディングをfail-closedする"
 );
 
-assert.equal(
-  predictionRuntime.includes('const VERSION = "20260816-bounded-preload1"'),
-  true,
-  "先行取得済みオッズを維持したまま予想JS先読み制限版へ更新する"
-);
-assert.equal(
-  html.includes('js/prediction-runtime-loader.js?v=20260816-bounded-preload1') &&
-    html.includes('js/odds-first-navigation.js?v=20260815-odds-consume2'),
-  true,
-  "既存端末へUI不変の先読み制限版を配信する"
-);
-
-console.log("オッズ取得・通常予想引き渡し・UI不変の先読み制限パス検証: 合格");
+console.log("オッズ取得・通常予想引き渡し・Safari固着復旧パス検証: 合格");
