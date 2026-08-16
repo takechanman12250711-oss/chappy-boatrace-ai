@@ -12,6 +12,61 @@ function patchLoad(text){
   out=replaceOne(out,'"js/app-runtime-loader.js?v=20260810-official-reference1"','"js/app-runtime-loader.js?v=20260816-static-race1"','app runtime asset');
   out=replaceOne(out,'"js/home-dashboard-v2.js?v=20260803-ui-fix2"','"js/home-dashboard-v2.js?v=20260816-static-race1"','home asset');
   out=replaceOne(out,'\'const VERSION = "20260810-official-reference1"\'','\'const VERSION = "20260815-odds-immediate1"\'','app runtime internal version');
+  out=replaceOne(
+    out,
+`assert.equal(
+  html.includes(
+    "js/app-runtime-loader.js?v=20260813-course-failclosed1"
+  ) &&
+    appRuntime.includes(
+      'const VERSION = "20260813-course-failclosed1"'
+    ) &&
+    predictionRuntime.includes(
+      'const VERSION = "20260813-course-failclosed1"'
+    ) &&
+    hiyoriLoader.includes(
+      'const VERSION="20260813-course-failclosed1"'
+    ),
+  true,
+  "実コース対応を親ローダーから予想・日和補助層まで同じキャッシュ世代で配信する"
+);`,
+`assert.equal(
+  html.includes(
+    "js/app-runtime-loader.js?v=20260816-static-race1"
+  ) &&
+    html.includes(
+      "js/prediction-runtime-loader.js?v=20260816-runtime-deadline1"
+    ) &&
+    html.includes(
+      "js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"
+    ) &&
+    appRuntime.includes(
+      'const VERSION = "20260815-odds-immediate1"'
+    ) &&
+    predictionRuntime.includes(
+      'const VERSION = "20260816-runtime-deadline1"'
+    ) &&
+    hiyoriLoader.includes(
+      'const VERSION="20260816-nonblocking-core2"'
+    ),
+  true,
+  "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
+);`,
+    'runtime generation block'
+  );
+  out=replaceOne(out,'\'const VERSION = "20260809-grounded-flow2"\'','\'const VERSION = "20260816-runtime-deadline1"\'','prediction runtime version');
+  out=replaceOne(
+    out,
+`  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+    predictionRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+    statsRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+    hiyoriLoader.includes("SCRIPT_LOAD_TIMEOUT_MS=15000"),`,
+`  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS=15000") &&
+    predictionRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 12000") &&
+    statsRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+    hiyoriLoader.includes("SCRIPT_LOAD_TIMEOUT_MS=12000"),`,
+    'runtime timeout block'
+  );
   return out;
 }
 function patchStats(text){
