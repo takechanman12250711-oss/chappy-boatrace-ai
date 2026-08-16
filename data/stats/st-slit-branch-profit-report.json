@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 4,
-  "version": "st-slit-branch-profit-v4",
-  "generatedAt": "2026-08-16T13:57:58.019Z",
-  "source": "selected production predictions + official results; verification predictions are diagnostics only",
+  "schemaVersion": 5,
+  "version": "st-slit-branch-profit-v5",
+  "generatedAt": "2026-08-16T15:47:18.279Z",
+  "source": "selected production predictions + official results; ST evidence-bearing verification predictions are a separate prospective shadow cohort",
   "stakePerTicket": 100,
   "productionChanged": false,
   "evidenceDiagnostics": {
@@ -10,7 +10,7 @@
     "verificationEvidenceRaceCountAll": 62,
     "adjustmentEvidenceRaceCountAll": 0,
     "stSlitRoleEvidenceRaceCountAll": 0,
-    "verificationEvidenceRaceCount": 56,
+    "verificationEvidenceRaceCount": 62,
     "adjustmentEvidenceRaceCount": 0,
     "verificationPredictions": {
       "raceCount": 1360,
@@ -22,6 +22,7 @@
   "summaries": {
     "all": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -31,6 +32,7 @@
     },
     "alert": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -40,6 +42,7 @@
     },
     "advantage": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -49,6 +52,7 @@
     },
     "risk": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -58,6 +62,7 @@
     },
     "positiveAdjustment": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -67,6 +72,7 @@
     },
     "negativeAdjustment": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -76,6 +82,7 @@
     },
     "fHolder": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -85,6 +92,7 @@
     },
     "formal": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -94,6 +102,7 @@
     },
     "unsupported": {
       "raceCount": 0,
+      "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
       "stake": 0,
@@ -102,5 +111,114 @@
       "recoveryRate": null
     }
   },
-  "weakBranchRanking": []
+  "weakBranchRanking": [],
+  "verificationProspective": {
+    "label": "ST/slit evidence prospective shadow cohort",
+    "actualPurchase": false,
+    "oldRecordsBackfilled": false,
+    "evidenceRaceCount": 1,
+    "firstEvidence": {
+      "raceKey": "20260816-19-12",
+      "selectedAt": "2026-08-16T13:19:26.600Z",
+      "settled": true,
+      "adjustments": [
+        2,
+        2,
+        -3,
+        6
+      ]
+    },
+    "summaries": {
+      "all": {
+        "raceCount": 1,
+        "settledCount": 1,
+        "hitCount": 1,
+        "hitRate": 100,
+        "stake": 600,
+        "return": 560,
+        "profit": -40,
+        "recoveryRate": 93.3
+      },
+      "alert": {
+        "raceCount": 1,
+        "settledCount": 1,
+        "hitCount": 1,
+        "hitRate": 100,
+        "stake": 600,
+        "return": 560,
+        "profit": -40,
+        "recoveryRate": 93.3
+      },
+      "advantage": {
+        "raceCount": 0,
+        "settledCount": 0,
+        "hitCount": 0,
+        "hitRate": null,
+        "stake": 0,
+        "return": 0,
+        "profit": 0,
+        "recoveryRate": null
+      },
+      "risk": {
+        "raceCount": 1,
+        "settledCount": 1,
+        "hitCount": 1,
+        "hitRate": 100,
+        "stake": 600,
+        "return": 560,
+        "profit": -40,
+        "recoveryRate": 93.3
+      },
+      "positiveAdjustment": {
+        "raceCount": 1,
+        "settledCount": 1,
+        "hitCount": 1,
+        "hitRate": 100,
+        "stake": 600,
+        "return": 560,
+        "profit": -40,
+        "recoveryRate": 93.3
+      },
+      "negativeAdjustment": {
+        "raceCount": 1,
+        "settledCount": 1,
+        "hitCount": 1,
+        "hitRate": 100,
+        "stake": 600,
+        "return": 560,
+        "profit": -40,
+        "recoveryRate": 93.3
+      },
+      "fHolder": {
+        "raceCount": 1,
+        "settledCount": 1,
+        "hitCount": 1,
+        "hitRate": 100,
+        "stake": 600,
+        "return": 560,
+        "profit": -40,
+        "recoveryRate": 93.3
+      },
+      "formal": {
+        "raceCount": 0,
+        "settledCount": 0,
+        "hitCount": 0,
+        "hitRate": null,
+        "stake": 0,
+        "return": 0,
+        "profit": 0,
+        "recoveryRate": null
+      },
+      "unsupported": {
+        "raceCount": 1,
+        "settledCount": 1,
+        "hitCount": 1,
+        "hitRate": 100,
+        "stake": 600,
+        "return": 560,
+        "profit": -40,
+        "recoveryRate": 93.3
+      }
+    }
+  }
 }
