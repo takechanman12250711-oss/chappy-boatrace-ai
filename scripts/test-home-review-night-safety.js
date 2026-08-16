@@ -12,7 +12,9 @@ const source = fs.readFileSync(
 assert.doesNotMatch(source, /prediction\.js/);
 assert.doesNotMatch(source, /ai-core\.js/);
 assert.doesNotMatch(source, /style\.css/);
-assert.match(source, /MutationObserver\(queueClassificationPatch\)/);
-assert.match(source, /venueObserver\.observe\(host, \{ childList: true, subtree: true \}\)/);
+assert.doesNotMatch(source, /MutationObserver/);
+assert.doesNotMatch(source, /venueObserver/);
+assert.match(source, /chappy:home-schedule/);
+assert.match(source, /queueClassificationPatch/);
 
-console.log("home review/night hotfix keeps prediction and global UI untouched");
+console.log("home review/night hotfix keeps UI untouched without continuous DOM observation");
