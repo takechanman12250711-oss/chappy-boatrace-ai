@@ -20,7 +20,7 @@ assert.equal(report.schemaVersion,4);
 assert.equal(report.evidenceDiagnostics.totalPredictionRaceCount,26);
 assert.equal(report.evidenceDiagnostics.verificationEvidenceRaceCountAll,2);
 assert.equal(report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll,26);
-assert.equal(report.evidenceDiagnostics.stSlitRoleEvidenceRaceCountAll,2);
+assert.equal(report.evidenceDiagnostics.stSlitRoleEvidenceRaceCountAll,26);
 assert.equal(report.evidenceDiagnostics.verificationEvidenceRaceCount,1);
 assert.equal(report.evidenceDiagnostics.adjustmentEvidenceRaceCount,25);
 assert.deepEqual(report.evidenceDiagnostics.verificationPredictions,{raceCount:3,scenarioEvidenceRaceCount:3,adjustmentEvidenceRaceCount:3,stSlitRoleEvidenceRaceCount:3});
