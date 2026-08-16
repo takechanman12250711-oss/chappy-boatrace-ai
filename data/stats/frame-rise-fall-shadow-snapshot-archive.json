@@ -126950,6 +126950,4262 @@
       "automaticApplication": false,
       "productionPredictionChanged": false,
       "productionTicketSelectionChanged": false
+    },
+    "20260816-02-6|frame-rise-fall-shadow-off-v1|sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4|frame-rise-fall-shadow-off-ablation-v1|2026-08-15T11:06:15+09:00|33bfee3c791c4f401fc285e8a1386675d79b778d|sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6": {
+      "version": "frame-rise-fall-shadow-storage-v2",
+      "candidateId": "frame-rise-fall-shadow-off-v1",
+      "candidateSpecFingerprint": "sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4",
+      "implementationFingerprint": "frame-rise-fall-shadow-off-ablation-v1",
+      "cutoff": {
+        "selectedAtExclusiveLowerBound": "2026-08-15T11:06:15+09:00",
+        "sourceCommit": "33bfee3c791c4f401fc285e8a1386675d79b778d",
+        "logicFingerprint": "sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6",
+        "status": "frozen"
+      },
+      "selectedAt": "2026-08-16T03:58:11.876Z",
+      "raceKey": "20260816-02-6",
+      "status": "shadow-ready",
+      "decisionChanged": true,
+      "applicableCount": 4,
+      "a": {
+        "label": "current-production",
+        "mainScenario": {
+          "type": "fourAttack",
+          "label": "4カド攻め",
+          "score": 93.5,
+          "frameMovementAdjustment": 1,
+          "attacker": 4,
+          "attackerCourse": 4,
+          "attackerBoatNo": 4,
+          "headBoatNo": 4,
+          "blockedBoats": []
+        },
+        "scenarios": [
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 93.5,
+            "frameMovementAdjustment": 1,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": []
+          },
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 78.4,
+            "frameMovementAdjustment": 5,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 73.6,
+            "frameMovementAdjustment": -5,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": []
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 42.9,
+            "frameMovementAdjustment": 2,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": []
+          }
+        ]
+      },
+      "b": {
+        "label": "frame-movement-adjustment-off",
+        "mainScenario": {
+          "type": "fourAttack",
+          "label": "4カド攻め",
+          "score": 92.5,
+          "frameMovementAdjustment": 0,
+          "attacker": 4,
+          "attackerCourse": 4,
+          "attackerBoatNo": 4,
+          "headBoatNo": 4,
+          "blockedBoats": [],
+          "rawFrameMovementAdjustment": 1,
+          "shadowFrameMovementDisabled": true,
+          "shadowFrameMovementEvidence": {
+            "boatNo": 4,
+            "scoreAdjustment": 1,
+            "movementDelta": 5.5,
+            "label": "浮上"
+          }
+        },
+        "scenarios": [
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 92.5,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 1,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 4,
+              "scoreAdjustment": 1,
+              "movementDelta": 5.5,
+              "label": "浮上"
+            }
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 78.6,
+            "frameMovementAdjustment": 0,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": -5,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 1,
+              "scoreAdjustment": -5,
+              "movementDelta": -23.5,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 73.4,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 5,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 2,
+              "scoreAdjustment": 5,
+              "movementDelta": 26.8,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 40.9,
+            "frameMovementAdjustment": 0,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 2,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 3,
+              "scoreAdjustment": 2,
+              "movementDelta": 7.3,
+              "label": "沈下"
+            }
+          }
+        ]
+      },
+      "downstreamReplay": {
+        "version": "frame-rise-fall-shadow-replay-v1",
+        "status": "replay-ready",
+        "a": {
+          "skipDecision": false,
+          "mainScenario": {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 93.5,
+            "frameMovementAdjustment": 1,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": []
+          },
+          "practicalTickets": [
+            "4-3-5",
+            "4-1-5",
+            "4-5-6",
+            "3-1-5",
+            "1-2-5",
+            "4-3-1",
+            "4-3-6",
+            "4-1-3",
+            "4-3-2",
+            "1-5-4"
+          ],
+          "decisionFingerprint": "{\"skipDecision\":false,\"mainScenario\":{\"type\":\"fourAttack\",\"headBoatNo\":4},\"practicalTickets\":[\"4-3-5\",\"4-1-5\",\"4-5-6\",\"3-1-5\",\"1-2-5\",\"4-3-1\",\"4-3-6\",\"4-1-3\",\"4-3-2\",\"1-5-4\"]}"
+        },
+        "b": {
+          "skipDecision": true,
+          "mainScenario": {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 92.5,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 1,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 4,
+              "scoreAdjustment": 1,
+              "movementDelta": 5.5,
+              "label": "浮上"
+            }
+          },
+          "practicalTickets": [],
+          "decisionFingerprint": "{\"skipDecision\":true,\"mainScenario\":{\"type\":\"fourAttack\",\"headBoatNo\":4},\"practicalTickets\":[]}"
+        },
+        "bSelectionStatus": "skipped",
+        "bSelectionReason": "主軸となる展開が定まらないため見送り。",
+        "bMarks": {
+          "honmei": {
+            "boatNo": 4,
+            "playerName": "宮崎 安奈",
+            "className": "B1",
+            "indexes": {
+              "st": 76.5,
+              "exhibition": 68.3,
+              "motor": 46.5,
+              "local": 85.5,
+              "national": 72.4,
+              "attack": 96,
+              "raceFlow": 97.8,
+              "turn": 55.3,
+              "total": 79.7
+            },
+            "roleScores": {
+              "attack": 82.1,
+              "flow": 83.1,
+              "road": 64.2,
+              "hold": 81.6,
+              "pickup": 73.8
+            },
+            "primaryRole": {
+              "key": "flow",
+              "label": "展開艇🌊",
+              "score": 83.1
+            },
+            "roleRanking": [
+              {
+                "key": "flow",
+                "label": "展開艇🌊",
+                "score": 83.1
+              },
+              {
+                "key": "attack",
+                "label": "攻め艇🔥",
+                "score": 82.1
+              },
+              {
+                "key": "hold",
+                "label": "残し艇🛟",
+                "score": 81.6
+              },
+              {
+                "key": "pickup",
+                "label": "拾い艇🎯",
+                "score": 73.8
+              },
+              {
+                "key": "road",
+                "label": "道中艇⚡",
+                "score": 64.2
+              }
+            ],
+            "roleTags": [
+              "展開艇🌊",
+              "攻め艇🔥",
+              "残し艇🛟",
+              "当地巧者🏠",
+              "スタート巧者🚀"
+            ],
+            "courseStructureTheory": {
+              "boatNo": 4,
+              "course": 4,
+              "frame": 4,
+              "score": 38,
+              "grade": "D",
+              "status": "暫定・現行枠番評価",
+              "isFormal": false,
+              "mappingFormal": true,
+              "statsFormal": false,
+              "venueSamples": 0,
+              "minimumSamples": 100,
+              "appliedIndex": 68.16666666666667,
+              "appliedToScore": false,
+              "components": {
+                "basicStructure": 18,
+                "venueWin": 0,
+                "venueTop3": 0,
+                "periodTrend": 0,
+                "courseChange": 10,
+                "mappingReliability": 10
+              },
+              "reason": "展示進入4コース / 基本構造18/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動10/10 / 取得信頼度10/10 / 公式艇番画像で6艇進入確定 / 場×コース0走で正式数未達"
+            },
+            "stTheory": {
+              "boatNo": 4,
+              "course": 4,
+              "registerNo": "5182",
+              "score": 33,
+              "appliedIndex": 76.5,
+              "grade": "D",
+              "status": "暫定・現行ST評価",
+              "isFormal": false,
+              "appliedToScore": false,
+              "mappingFormal": true,
+              "samples": 0,
+              "reliability": "low",
+              "currentStCount": 7,
+              "currentStAverage": 0.13714285714285715,
+              "currentStSpread": 0.29,
+              "fCount": 0,
+              "components": {
+                "currentSeries": 20.5,
+                "recentCourse": 0,
+                "periodTrend": 0,
+                "threeYear": 0,
+                "nationalAverage": 7.5,
+                "flyingRisk": 5,
+                "reliability": 0
+              },
+              "history": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "reason": "今節ST20.5/25 / 直近1年コース別ST0/20 / 期間推移0/15 / 3年コース別ST0/15 / 全国平均ST7.5/10 / Fリスク5/5 / 取得信頼度0/10 / 公式展示進入6艇確定 / 実進入4コース0走で判定数未達"
+            },
+            "exhibitionPerformanceTheory": {
+              "boatNo": 4,
+              "name": "宮崎 安奈",
+              "exhibitionTime": 6.63,
+              "lapTime": null,
+              "exhibitionTimeRank": 2,
+              "exhibitionRank": 2,
+              "lapRank": null,
+              "sumTime": null,
+              "sumDiff": null,
+              "isDoubleTime": false,
+              "score": 68.3,
+              "appliedIndex": 68.3,
+              "grade": "B",
+              "mode": "official",
+              "modeLabel": "公式展示モード",
+              "status": "正式反映",
+              "isFormal": true,
+              "appliedToScore": true,
+              "source": "BOAT RACE公式",
+              "components": {
+                "exhibitionRank": 28.7,
+                "exhibitionAverageDiff": 23.6,
+                "exhibitionNeighborGap": 6,
+                "reliability": 10
+              },
+              "reason": "展示順位28.7/35 / 6艇平均との差23.6/35 / 1位・隣接差6/20 / 取得信頼度10/10"
+            },
+            "buffs": [
+              "平均ST優秀",
+              "当地実績",
+              "攻撃力あり"
+            ],
+            "debuffs": [],
+            "aiComment": "連対期待大。軸候補。",
+            "attackTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "role": "攻め",
+              "score": 79.1,
+              "grade": "A",
+              "status": "参考",
+              "isFormal": false,
+              "isAttackCourse": true,
+              "isAdopted": false,
+              "hasStartEvidence": false,
+              "hasAverageOrCurrentSupport": false,
+              "hasSlitAdvantage": false,
+              "comparedBoatNo": 5,
+              "slitDiff": 0,
+              "components": {
+                "development": 39.1,
+                "course": 18,
+                "startAndSlit": 10,
+                "exhibitionFoot": 5,
+                "venueCourse": 7
+              },
+              "reason": "展開39.1/40 / コース18/20 / ST・スリット10/20 / 展示・足は9％枠へ分離 / 場傾向7/10 / ST・隣艇比較の裏付け不足"
+            },
+            "totalRank": 3,
+            "attackRank": 1,
+            "flowRank": 1,
+            "roadRank": 4,
+            "holdRank": 2,
+            "pickupRank": 3,
+            "aiRank": 3,
+            "roleRanks": {
+              "attack": 1,
+              "flow": 1,
+              "road": 4,
+              "hold": 2,
+              "pickup": 3
+            },
+            "isTopAttack": true,
+            "isTopFlow": true,
+            "isTopRoad": false,
+            "isTopHold": false,
+            "isTopPickup": false,
+            "wallTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "attackerNo": 4,
+              "attackerCourse": 4,
+              "wallCourse": 3,
+              "isAdjacent": false,
+              "score": 79,
+              "grade": "A",
+              "status": "参考",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "clearStartLag": false,
+              "hasStartEvidence": true,
+              "hasExhibitionEvidence": true,
+              "components": {
+                "startComparison": 25,
+                "startStability": 15,
+                "courseAdjacency": 0,
+                "exhibitionFoot": 13,
+                "holdRoad": 14,
+                "skillCourse": 8,
+                "surfaceAdaptation": 4
+              },
+              "reason": "攻め艇とのST比較25/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中14/15 / 技量・コース適性8/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない"
+            },
+            "holdPickupTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "hold": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioMatch": 0,
+                  "positionRelation": 0,
+                  "wallRoute": 0,
+                  "firstMarkRoute": 0,
+                  "dataReliability": 5
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "pickup": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioLink": 0,
+                  "openWater": 0,
+                  "positionRelation": 0,
+                  "backstretchRoute": 0,
+                  "dataReliability": 5
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "hasIndependentDualEvidence": false
+            },
+            "flowTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "role": "展開外",
+              "score": 25.7,
+              "grade": "D",
+              "status": "攻め起点",
+              "isFormal": true,
+              "isAdopted": false,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "attackerBoatNo": 4,
+              "attackerCourse": 4,
+              "components": {
+                "scenarioMatch": 0,
+                "positionRelation": 0,
+                "holdPickup": 12.2,
+                "startAndSlit": 5,
+                "exhibitionFoot": 5,
+                "venueWater": 3.5
+              },
+              "reason": "展開一致0/40 / 位置・コース0/20 / 残し・拾い12.2/15 / ST・スリット5/10 / 展示・足は9％枠へ分離 / 場・水面3.5/5 / 攻め艇自身は展開艇から分離 / 最有力展開の2・3着候補と不一致"
+            },
+            "roadTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "role": "攻め後の粘り",
+              "score": 64.1,
+              "grade": "C",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isAttackSource": true,
+              "isGoalCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasRoadEvidence": false,
+              "lapTime": null,
+              "seriesResultCount": 0,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "scenarioMatch": 30,
+                "lapAndFoot": 12.5,
+                "seriesStability": 0,
+                "coursePosition": 12,
+                "localWater": 6,
+                "playerSkill": 3.6
+              },
+              "reason": "ゴール想定30/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置12/15 / 当地・水面6/10 / 技量3.6/5 / 今節成績不足のため暫定"
+            },
+            "localTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "role": "攻め",
+              "score": 83.5,
+              "grade": "A",
+              "status": "正式採用",
+              "isFormal": true,
+              "isAdopted": true,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasLocalEvidence": true,
+              "localWinRate": 5.86,
+              "nationalWinRate": 4.58,
+              "local2Rate": 40.7,
+              "local3Rate": 52.7,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "localVsNational": 25,
+                "localResults": 12.399999999999999,
+                "scenarioRole": 20,
+                "venueCourse": 10.5,
+                "venueWater": 12,
+                "playerSkill": 3.6
+              },
+              "reason": "当地・全国比較25/25 / 当地成績12.399999999999999/20 / 展開役割20/20 / 進入適合10.5/15 / 場・水面12/15 / 技量3.6/5"
+            },
+            "newEnvironmentTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "role": "攻め",
+              "score": 48.2,
+              "grade": "D",
+              "status": "対象外",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": true,
+              "hasCurrentEvidence": true,
+              "hasAdaptationEvidence": true,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "exhibitionFoot": 15,
+                "startAndSlit": 5,
+                "currentAndRoad": 2,
+                "scenarioRole": 15,
+                "playerSkill": 7.2,
+                "localWater": 4
+              },
+              "reason": "展示・足は9％枠へ分離 / 今節ST・スリット5/20 / 今節・道中2/20 / 展開役割15/15 / 技量7.2/10 / 当地・水面4/5"
+            },
+            "waterWeatherTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "role": "攻め",
+              "score": 75.4,
+              "grade": "A",
+              "status": "正式採用",
+              "isFormal": true,
+              "isAdopted": true,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": true,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "windCourse": 14,
+                "waveExhibition": 10,
+                "surfaceTide": 13.2,
+                "scenarioRole": 20,
+                "localRoad": 10.7,
+                "stSkill": 7.5
+              },
+              "reason": "風向・風速とコース14/20 / 波・展示・回り足10/20 / 水面・潮汐13.2/15 / 展開役割20/20 / 当地・道中10.7/15 / ST・技量7.5/10"
+            },
+            "racerSkillTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "registerNo": "5182",
+              "course": 4,
+              "role": "攻め",
+              "methodLabel": "戦法根拠不足",
+              "samples": 0,
+              "reliability": "low",
+              "score": 10.5,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "appliedToScore": false,
+              "courseHistory": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "components": {
+                "coursePerformance": 0,
+                "courseStart": 0,
+                "methodFit": 0,
+                "recentTrend": 0,
+                "classNational": 5.5,
+                "seriesRoad": 0,
+                "scenarioRole": 5
+              },
+              "reason": "現在コース1着・3連率0/25 / コース別ST・安定性0/15 / 得意戦法一致0/20 / 直近1年・過去2年推移0/15 / 級別・全国勝率5.5/15 / 今節着順・道中0/5 / 最有力展開役割5/5 / 公式の実進入コース別履歴なし / 期間別推移の必要使用数未達 / 決まり手の件数・割合不足"
+            },
+            "roleEvidence": {
+              "racerSkill": null
+            },
+            "motorMaintenanceTheory": {
+              "boatNo": 4,
+              "playerName": "宮崎 安奈",
+              "course": 4,
+              "role": "攻め",
+              "score": 34.8,
+              "grade": "D",
+              "status": "不成立",
+              "isFormal": true,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": true,
+              "hasCurrentEvidence": true,
+              "hasPracticalEvidence": true,
+              "maintenance": {
+                "partsExchange": "",
+                "score": 0,
+                "comparableCount": 0,
+                "improvedCount": 0,
+                "worsenedCount": 0,
+                "trend": "交換なし",
+                "hasComparison": false
+              },
+              "motorRates": {
+                "motor2": 27.01,
+                "motor3": 42.01
+              },
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "exhibitionFoot": 12.5,
+                "currentRoad": 4.4,
+                "startAndSlit": 4,
+                "maintenanceChange": 0,
+                "relativeMotor": 0,
+                "scenarioRole": 10,
+                "playerAdjustment": 3.9
+              },
+              "reason": "展示・一周は確認条件のみ / 今節・道中4.4/20 / 今節ST・スリット4/15 / 整備後変化0/15 / 場内相対モーター0/10 / 展開役割10/10 / 調整力・当地3.9/5 / 更新時期・使用節数不明のためモーター数字は暫定"
+            }
+          },
+          "taikou": null,
+          "ana": null,
+          "osae": null,
+          "scenario": "4カド攻め",
+          "established": true,
+          "confidence": 92.5,
+          "evidence": {
+            "source": "raceScenarios",
+            "scenarioType": "fourAttack",
+            "scenarioScore": 92.5,
+            "mainGap": 15.1,
+            "attacker": 4,
+            "wallBoat": null,
+            "remainers": [],
+            "followers": [],
+            "pickupCandidates": [],
+            "roadRaceBoats": [],
+            "localExperts": [],
+            "blockedBoats": []
+          }
+        },
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "comparableForFixed100": true,
+        "productionAUnchanged": true,
+        "applicationMode": "shadow-only",
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      "frameMovementRawEvidence": [
+        {
+          "boatNo": 1,
+          "riseRate": 0,
+          "stayRate": 31.7,
+          "sinkRate": 68.3,
+          "label": "沈下",
+          "samples": 183,
+          "baselineRiseRate": 0,
+          "baselineStayRate": 55.2,
+          "baselineSinkRate": 44.8,
+          "movementDelta": -23.5,
+          "scoreAdjustment": -5,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 2,
+          "riseRate": 27.5,
+          "stayRate": 24.7,
+          "sinkRate": 47.8,
+          "label": "沈下",
+          "samples": 182,
+          "baselineRiseRate": 14,
+          "baselineStayRate": 24.9,
+          "baselineSinkRate": 61.1,
+          "movementDelta": 26.8,
+          "scoreAdjustment": 5,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 3,
+          "riseRate": 39.3,
+          "stayRate": 18,
+          "sinkRate": 42.6,
+          "label": "沈下",
+          "samples": 183,
+          "baselineRiseRate": 34.7,
+          "baselineStayRate": 20,
+          "baselineSinkRate": 45.3,
+          "movementDelta": 7.3,
+          "scoreAdjustment": 2,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 4,
+          "riseRate": 48.7,
+          "stayRate": 20.9,
+          "sinkRate": 30.5,
+          "label": "浮上",
+          "samples": 187,
+          "baselineRiseRate": 46.7,
+          "baselineStayRate": 19.3,
+          "baselineSinkRate": 34,
+          "movementDelta": 5.5,
+          "scoreAdjustment": 1,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 5,
+          "riseRate": 61.6,
+          "stayRate": 15.7,
+          "sinkRate": 22.7,
+          "label": "浮上",
+          "samples": 185,
+          "baselineRiseRate": 56.9,
+          "baselineStayRate": 22.1,
+          "baselineSinkRate": 21,
+          "movementDelta": 3,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 6,
+          "riseRate": 71.3,
+          "stayRate": 28.7,
+          "sinkRate": 0,
+          "label": "浮上",
+          "samples": 181,
+          "baselineRiseRate": 71.2,
+          "baselineStayRate": 28.8,
+          "baselineSinkRate": 0,
+          "movementDelta": 0.1,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        }
+      ],
+      "productionAUnchanged": true,
+      "comparisonContract": {
+        "scenarioCaptured": true,
+        "practicalTicketsCaptured": true,
+        "skipDecisionCaptured": true,
+        "comparableForFixed100": true,
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "reason": "decision-fingerprint-changed-with-complete-replay"
+      },
+      "applicationMode": "shadow-only",
+      "usableForPrediction": false,
+      "automaticApplication": false,
+      "productionPredictionChanged": false,
+      "productionTicketSelectionChanged": false
+    },
+    "20260816-04-4|frame-rise-fall-shadow-off-v1|sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4|frame-rise-fall-shadow-off-ablation-v1|2026-08-15T11:06:15+09:00|33bfee3c791c4f401fc285e8a1386675d79b778d|sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6": {
+      "version": "frame-rise-fall-shadow-storage-v2",
+      "candidateId": "frame-rise-fall-shadow-off-v1",
+      "candidateSpecFingerprint": "sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4",
+      "implementationFingerprint": "frame-rise-fall-shadow-off-ablation-v1",
+      "cutoff": {
+        "selectedAtExclusiveLowerBound": "2026-08-15T11:06:15+09:00",
+        "sourceCommit": "33bfee3c791c4f401fc285e8a1386675d79b778d",
+        "logicFingerprint": "sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6",
+        "status": "frozen"
+      },
+      "selectedAt": "2026-08-16T03:58:11.910Z",
+      "raceKey": "20260816-04-4",
+      "status": "shadow-ready",
+      "decisionChanged": true,
+      "applicableCount": 4,
+      "a": {
+        "label": "current-production",
+        "mainScenario": {
+          "type": "fourAttack",
+          "label": "4カド攻め",
+          "score": 100,
+          "frameMovementAdjustment": 4,
+          "attacker": 4,
+          "attackerCourse": 4,
+          "attackerBoatNo": 4,
+          "headBoatNo": 4,
+          "blockedBoats": []
+        },
+        "scenarios": [
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 100,
+            "frameMovementAdjustment": 4,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": []
+          },
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 87.1,
+            "frameMovementAdjustment": 2,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 75.4,
+            "frameMovementAdjustment": -4,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": []
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 71.2,
+            "frameMovementAdjustment": 1,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": []
+          }
+        ]
+      },
+      "b": {
+        "label": "frame-movement-adjustment-off",
+        "mainScenario": {
+          "type": "fourAttack",
+          "label": "4カド攻め",
+          "score": 96,
+          "frameMovementAdjustment": 0,
+          "attacker": 4,
+          "attackerCourse": 4,
+          "attackerBoatNo": 4,
+          "headBoatNo": 4,
+          "blockedBoats": [],
+          "rawFrameMovementAdjustment": 4,
+          "shadowFrameMovementDisabled": true,
+          "shadowFrameMovementEvidence": {
+            "boatNo": 4,
+            "scoreAdjustment": 4,
+            "movementDelta": 16.3,
+            "label": "浮上"
+          }
+        },
+        "scenarios": [
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 96,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 4,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 4,
+              "scoreAdjustment": 4,
+              "movementDelta": 16.3,
+              "label": "浮上"
+            }
+          },
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 85.1,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 2,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 2,
+              "scoreAdjustment": 2,
+              "movementDelta": 7.7,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 79.4,
+            "frameMovementAdjustment": 0,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": -4,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 1,
+              "scoreAdjustment": -4,
+              "movementDelta": -17.2,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 70.2,
+            "frameMovementAdjustment": 0,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 1,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 3,
+              "scoreAdjustment": 1,
+              "movementDelta": 5.5,
+              "label": "沈下"
+            }
+          }
+        ]
+      },
+      "downstreamReplay": {
+        "version": "frame-rise-fall-shadow-replay-v1",
+        "status": "replay-ready",
+        "a": {
+          "skipDecision": false,
+          "mainScenario": {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 100,
+            "frameMovementAdjustment": 4,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": []
+          },
+          "practicalTickets": [
+            "4-1-5",
+            "4-5-6",
+            "4-3-5",
+            "1-2-3",
+            "1-2-4",
+            "4-1-6",
+            "4-1-2",
+            "4-2-1",
+            "4-2-3",
+            "4-2-5"
+          ],
+          "decisionFingerprint": "{\"skipDecision\":false,\"mainScenario\":{\"type\":\"fourAttack\",\"headBoatNo\":4},\"practicalTickets\":[\"4-1-5\",\"4-5-6\",\"4-3-5\",\"1-2-3\",\"1-2-4\",\"4-1-6\",\"4-1-2\",\"4-2-1\",\"4-2-3\",\"4-2-5\"]}"
+        },
+        "b": {
+          "skipDecision": true,
+          "mainScenario": {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 96,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 4,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 4,
+              "scoreAdjustment": 4,
+              "movementDelta": 16.3,
+              "label": "浮上"
+            }
+          },
+          "practicalTickets": [],
+          "decisionFingerprint": "{\"skipDecision\":true,\"mainScenario\":{\"type\":\"fourAttack\",\"headBoatNo\":4},\"practicalTickets\":[]}"
+        },
+        "bSelectionStatus": "skipped",
+        "bSelectionReason": "主軸となる展開が定まらないため見送り。",
+        "bMarks": {
+          "honmei": {
+            "boatNo": 4,
+            "playerName": "村田 修次",
+            "className": "A2",
+            "indexes": {
+              "st": 72.5,
+              "exhibition": 50,
+              "motor": 53.7,
+              "local": 91.9,
+              "national": 92.4,
+              "attack": 97.7,
+              "raceFlow": 100,
+              "turn": 60.5,
+              "total": 79.7
+            },
+            "roleScores": {
+              "attack": 81.8,
+              "flow": 85.8,
+              "road": 71.9,
+              "hold": 87.2,
+              "pickup": 79.6
+            },
+            "primaryRole": {
+              "key": "hold",
+              "label": "残し艇🛟",
+              "score": 87.2
+            },
+            "roleRanking": [
+              {
+                "key": "hold",
+                "label": "残し艇🛟",
+                "score": 87.2
+              },
+              {
+                "key": "flow",
+                "label": "展開艇🌊",
+                "score": 85.8
+              },
+              {
+                "key": "attack",
+                "label": "攻め艇🔥",
+                "score": 81.8
+              },
+              {
+                "key": "pickup",
+                "label": "拾い艇🎯",
+                "score": 79.6
+              },
+              {
+                "key": "road",
+                "label": "道中艇⚡",
+                "score": 71.9
+              }
+            ],
+            "roleTags": [
+              "残し艇🛟",
+              "展開艇🌊",
+              "攻め艇🔥",
+              "当地巧者🏠"
+            ],
+            "courseStructureTheory": {
+              "boatNo": 4,
+              "course": 4,
+              "frame": 4,
+              "score": 18,
+              "grade": "D",
+              "status": "暫定・現行枠番評価",
+              "isFormal": false,
+              "mappingFormal": false,
+              "statsFormal": false,
+              "venueSamples": 0,
+              "minimumSamples": 100,
+              "appliedIndex": 68.16666666666667,
+              "appliedToScore": false,
+              "components": {
+                "basicStructure": 18,
+                "venueWin": 0,
+                "venueTop3": 0,
+                "periodTrend": 0,
+                "courseChange": 0,
+                "mappingReliability": 0
+              },
+              "reason": "展示進入4コース / 基本構造18/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達"
+            },
+            "stTheory": {
+              "boatNo": 4,
+              "course": 4,
+              "registerNo": "3826",
+              "score": 33.9,
+              "appliedIndex": 72.5,
+              "grade": "D",
+              "status": "暫定・現行ST評価",
+              "isFormal": false,
+              "appliedToScore": false,
+              "mappingFormal": false,
+              "samples": 0,
+              "reliability": "low",
+              "currentStCount": 9,
+              "currentStAverage": 0.12666666666666668,
+              "currentStSpread": 0.18,
+              "fCount": 0,
+              "components": {
+                "currentSeries": 22.2,
+                "recentCourse": 0,
+                "periodTrend": 0,
+                "threeYear": 0,
+                "nationalAverage": 6.7,
+                "flyingRisk": 5,
+                "reliability": 0
+              },
+              "history": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "reason": "今節ST22.2/25 / 直近1年コース別ST0/20 / 期間推移0/15 / 3年コース別ST0/15 / 全国平均ST6.7/10 / Fリスク5/5 / 取得信頼度0/10 / 実進入未確定 / 実進入4コース0走で判定数未達"
+            },
+            "exhibitionPerformanceTheory": {
+              "boatNo": 4,
+              "name": "村田 修次",
+              "exhibitionTime": null,
+              "lapTime": null,
+              "exhibitionRank": null,
+              "lapRank": null,
+              "sumTime": null,
+              "sumDiff": null,
+              "isDoubleTime": false,
+              "score": 50,
+              "appliedIndex": 50,
+              "grade": "D",
+              "mode": "provisional",
+              "modeLabel": "暫定・中立評価",
+              "status": "暫定・中立50点",
+              "isFormal": false,
+              "appliedToScore": false,
+              "source": "BOAT RACE公式",
+              "components": {
+                "neutral": 50
+              },
+              "reason": "展示0/6艇・一周0/6艇のため中立50点"
+            },
+            "buffs": [
+              "当地実績",
+              "全国実績",
+              "攻撃力あり"
+            ],
+            "debuffs": [],
+            "aiComment": "連対期待大。軸候補。",
+            "attackTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "role": "攻め",
+              "score": 79.6,
+              "grade": "A",
+              "status": "暫定",
+              "isFormal": false,
+              "isAttackCourse": true,
+              "isAdopted": false,
+              "hasStartEvidence": false,
+              "hasAverageOrCurrentSupport": false,
+              "hasSlitAdvantage": false,
+              "comparedBoatNo": null,
+              "slitDiff": 0,
+              "components": {
+                "development": 40,
+                "course": 18,
+                "startAndSlit": 10,
+                "exhibitionFoot": 5,
+                "venueCourse": 6.6
+              },
+              "reason": "展開40/40 / コース18/20 / ST・スリット10/20 / 展示・足は9％枠へ分離 / 場傾向6.6/10 / 展示6艇未取得のため役割判定は暫定 / ST・隣艇比較の裏付け不足"
+            },
+            "totalRank": 3,
+            "attackRank": 1,
+            "flowRank": 1,
+            "roadRank": 2,
+            "holdRank": 3,
+            "pickupRank": 3,
+            "aiRank": 3,
+            "roleRanks": {
+              "attack": 1,
+              "flow": 1,
+              "road": 2,
+              "hold": 3,
+              "pickup": 3
+            },
+            "isTopAttack": true,
+            "isTopFlow": true,
+            "isTopRoad": false,
+            "isTopHold": false,
+            "isTopPickup": false,
+            "wallTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "attackerNo": 4,
+              "attackerCourse": 4,
+              "wallCourse": 3,
+              "isAdjacent": false,
+              "score": 73,
+              "grade": "B",
+              "status": "参考",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "clearStartLag": false,
+              "hasStartEvidence": true,
+              "hasExhibitionEvidence": false,
+              "components": {
+                "startComparison": 17,
+                "startStability": 15,
+                "courseAdjacency": 0,
+                "exhibitionFoot": 13,
+                "holdRoad": 15,
+                "skillCourse": 9,
+                "surfaceAdaptation": 4
+              },
+              "reason": "攻め艇とのST比較17/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中15/15 / 技量・コース適性9/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない"
+            },
+            "holdPickupTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "hold": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioMatch": 0,
+                  "positionRelation": 0,
+                  "wallRoute": 0,
+                  "firstMarkRoute": 0,
+                  "dataReliability": 0
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "pickup": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioLink": 0,
+                  "openWater": 0,
+                  "positionRelation": 0,
+                  "backstretchRoute": 0,
+                  "dataReliability": 0
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "hasIndependentDualEvidence": false
+            },
+            "flowTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "role": "展開外",
+              "score": 28.4,
+              "grade": "D",
+              "status": "攻め起点",
+              "isFormal": false,
+              "isAdopted": false,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "attackerBoatNo": 4,
+              "attackerCourse": 4,
+              "components": {
+                "scenarioMatch": 0,
+                "positionRelation": 0,
+                "holdPickup": 13.1,
+                "startAndSlit": 7,
+                "exhibitionFoot": 5,
+                "venueWater": 3.3
+              },
+              "reason": "展開一致0/40 / 位置・コース0/20 / 残し・拾い13.1/15 / ST・スリット7/10 / 展示・足は9％枠へ分離 / 場・水面3.3/5 / 展示6艇未取得のため役割判定は暫定 / 攻め艇自身は展開艇から分離 / 最有力展開の2・3着候補と不一致"
+            },
+            "roadTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "role": "攻め後の粘り",
+              "score": 65.5,
+              "grade": "B",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isAttackSource": true,
+              "isGoalCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasRoadEvidence": false,
+              "lapTime": null,
+              "seriesResultCount": 0,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "scenarioMatch": 30,
+                "lapAndFoot": 12.5,
+                "seriesStability": 0,
+                "coursePosition": 12,
+                "localWater": 6.4,
+                "playerSkill": 4.6
+              },
+              "reason": "ゴール想定30/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置12/15 / 当地・水面6.4/10 / 技量4.6/5 / 今節成績不足のため暫定"
+            },
+            "localTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "role": "攻め",
+              "score": 69.4,
+              "grade": "B",
+              "status": "正式採用",
+              "isFormal": true,
+              "isAdopted": true,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasLocalEvidence": true,
+              "localWinRate": 6.02,
+              "nationalWinRate": 6.3,
+              "local2Rate": 42.1,
+              "local3Rate": 53.9,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "localVsNational": 10,
+                "localResults": 13.3,
+                "scenarioRole": 20,
+                "venueCourse": 9.9,
+                "venueWater": 11.6,
+                "playerSkill": 4.6
+              },
+              "reason": "当地・全国比較10/25 / 当地成績13.3/20 / 展開役割20/20 / 進入適合9.9/15 / 場・水面11.6/15 / 技量4.6/5"
+            },
+            "newEnvironmentTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "role": "攻め",
+              "score": 55.3,
+              "grade": "C",
+              "status": "対象外",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "hasCurrentEvidence": true,
+              "hasAdaptationEvidence": true,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "exhibitionFoot": 15,
+                "startAndSlit": 10,
+                "currentAndRoad": 2,
+                "scenarioRole": 15,
+                "playerSkill": 9.2,
+                "localWater": 4.1
+              },
+              "reason": "展示・足は9％枠へ分離 / 今節ST・スリット10/20 / 今節・道中2/20 / 展開役割15/15 / 技量9.2/10 / 当地・水面4.1/5"
+            },
+            "waterWeatherTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "role": "攻め",
+              "score": 56.9,
+              "grade": "C",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "windCourse": 14,
+                "waveExhibition": 0,
+                "surfaceTide": 3.3,
+                "scenarioRole": 20,
+                "localRoad": 11.6,
+                "stSkill": 8
+              },
+              "reason": "風向・風速とコース14/20 / 波・展示・回り足0/20 / 水面・潮汐3.3/15 / 展開役割20/20 / 当地・道中11.6/15 / ST・技量8/10 / 潮汐場の現在潮位・潮流が不足 / 展示・一周・回り足の裏付け不足"
+            },
+            "racerSkillTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "registerNo": "3826",
+              "course": 4,
+              "role": "攻め",
+              "methodLabel": "戦法根拠不足",
+              "samples": 0,
+              "reliability": "low",
+              "score": 15.3,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "appliedToScore": false,
+              "courseHistory": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "components": {
+                "coursePerformance": 0,
+                "courseStart": 0,
+                "methodFit": 0,
+                "recentTrend": 0,
+                "classNational": 10.3,
+                "seriesRoad": 0,
+                "scenarioRole": 5
+              },
+              "reason": "現在コース1着・3連率0/25 / コース別ST・安定性0/15 / 得意戦法一致0/20 / 直近1年・過去2年推移0/15 / 級別・全国勝率10.3/15 / 今節着順・道中0/5 / 最有力展開役割5/5 / 公式の実進入コース別履歴なし / 期間別推移の必要使用数未達 / 決まり手の件数・割合不足"
+            },
+            "roleEvidence": {
+              "racerSkill": null
+            },
+            "motorMaintenanceTheory": {
+              "boatNo": 4,
+              "playerName": "村田 修次",
+              "course": 4,
+              "role": "攻め",
+              "score": 39.9,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "hasCurrentEvidence": true,
+              "hasPracticalEvidence": false,
+              "maintenance": {
+                "partsExchange": "",
+                "score": 0,
+                "comparableCount": 0,
+                "improvedCount": 0,
+                "worsenedCount": 0,
+                "trend": "交換なし",
+                "hasComparison": false
+              },
+              "motorRates": {
+                "motor2": 33.16,
+                "motor3": 48.16
+              },
+              "scenarioType": "fourAttack",
+              "scenarioLabel": "4カド攻め",
+              "components": {
+                "exhibitionFoot": 12.5,
+                "currentRoad": 4.8,
+                "startAndSlit": 8,
+                "maintenanceChange": 0,
+                "relativeMotor": 0,
+                "scenarioRole": 10,
+                "playerAdjustment": 4.6
+              },
+              "reason": "展示・一周は確認条件のみ / 今節・道中4.8/20 / 今節ST・スリット8/15 / 整備後変化0/15 / 場内相対モーター0/10 / 展開役割10/10 / 調整力・当地4.6/5 / 更新時期・使用節数不明のためモーター数字は暫定 / 展示または今節実績の裏付け不足"
+            }
+          },
+          "taikou": null,
+          "ana": null,
+          "osae": null,
+          "scenario": "4カド攻め",
+          "established": true,
+          "confidence": 96,
+          "evidence": {
+            "source": "raceScenarios",
+            "scenarioType": "fourAttack",
+            "scenarioScore": 96,
+            "mainGap": 12.9,
+            "attacker": 4,
+            "wallBoat": null,
+            "remainers": [],
+            "followers": [],
+            "pickupCandidates": [],
+            "roadRaceBoats": [],
+            "localExperts": [],
+            "blockedBoats": []
+          }
+        },
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "comparableForFixed100": true,
+        "productionAUnchanged": true,
+        "applicationMode": "shadow-only",
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      "frameMovementRawEvidence": [
+        {
+          "boatNo": 1,
+          "riseRate": 0,
+          "stayRate": 38,
+          "sinkRate": 62,
+          "label": "沈下",
+          "samples": 158,
+          "baselineRiseRate": 0,
+          "baselineStayRate": 55.2,
+          "baselineSinkRate": 44.8,
+          "movementDelta": -17.2,
+          "scoreAdjustment": -4,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 2,
+          "riseRate": 18.1,
+          "stayRate": 24.4,
+          "sinkRate": 57.5,
+          "label": "沈下",
+          "samples": 160,
+          "baselineRiseRate": 14,
+          "baselineStayRate": 24.9,
+          "baselineSinkRate": 61.1,
+          "movementDelta": 7.7,
+          "scoreAdjustment": 2,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 3,
+          "riseRate": 39.6,
+          "stayRate": 15.7,
+          "sinkRate": 44.7,
+          "label": "沈下",
+          "samples": 159,
+          "baselineRiseRate": 34.7,
+          "baselineStayRate": 20,
+          "baselineSinkRate": 45.3,
+          "movementDelta": 5.5,
+          "scoreAdjustment": 1,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 4,
+          "riseRate": 54.3,
+          "stayRate": 20.4,
+          "sinkRate": 25.3,
+          "label": "浮上",
+          "samples": 162,
+          "baselineRiseRate": 46.7,
+          "baselineStayRate": 19.3,
+          "baselineSinkRate": 34,
+          "movementDelta": 16.3,
+          "scoreAdjustment": 4,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 5,
+          "riseRate": 63,
+          "stayRate": 22.8,
+          "sinkRate": 14.2,
+          "label": "浮上",
+          "samples": 162,
+          "baselineRiseRate": 56.9,
+          "baselineStayRate": 22.1,
+          "baselineSinkRate": 21,
+          "movementDelta": 12.9,
+          "scoreAdjustment": 3,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 6,
+          "riseRate": 68.3,
+          "stayRate": 31.7,
+          "sinkRate": 0,
+          "label": "浮上",
+          "samples": 161,
+          "baselineRiseRate": 71.2,
+          "baselineStayRate": 28.8,
+          "baselineSinkRate": 0,
+          "movementDelta": -2.9,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        }
+      ],
+      "productionAUnchanged": true,
+      "comparisonContract": {
+        "scenarioCaptured": true,
+        "practicalTicketsCaptured": true,
+        "skipDecisionCaptured": true,
+        "comparableForFixed100": true,
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "reason": "decision-fingerprint-changed-with-complete-replay"
+      },
+      "applicationMode": "shadow-only",
+      "usableForPrediction": false,
+      "automaticApplication": false,
+      "productionPredictionChanged": false,
+      "productionTicketSelectionChanged": false
+    },
+    "20260816-22-3|frame-rise-fall-shadow-off-v1|sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4|frame-rise-fall-shadow-off-ablation-v1|2026-08-15T11:06:15+09:00|33bfee3c791c4f401fc285e8a1386675d79b778d|sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6": {
+      "version": "frame-rise-fall-shadow-storage-v2",
+      "candidateId": "frame-rise-fall-shadow-off-v1",
+      "candidateSpecFingerprint": "sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4",
+      "implementationFingerprint": "frame-rise-fall-shadow-off-ablation-v1",
+      "cutoff": {
+        "selectedAtExclusiveLowerBound": "2026-08-15T11:06:15+09:00",
+        "sourceCommit": "33bfee3c791c4f401fc285e8a1386675d79b778d",
+        "logicFingerprint": "sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6",
+        "status": "frozen"
+      },
+      "selectedAt": "2026-08-16T03:58:14.459Z",
+      "raceKey": "20260816-22-3",
+      "status": "shadow-ready",
+      "decisionChanged": true,
+      "applicableCount": 2,
+      "a": {
+        "label": "current-production",
+        "mainScenario": {
+          "type": "sashi",
+          "label": "2コース差し",
+          "score": 85,
+          "frameMovementAdjustment": 0,
+          "attacker": 2,
+          "attackerCourse": 2,
+          "attackerBoatNo": 2,
+          "headBoatNo": 2,
+          "blockedBoats": []
+        },
+        "scenarios": [
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 85,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 83.3,
+            "frameMovementAdjustment": 5,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": [
+              4
+            ]
+          },
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 59.2,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": []
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 54.2,
+            "frameMovementAdjustment": -3,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": []
+          }
+        ]
+      },
+      "b": {
+        "label": "frame-movement-adjustment-off",
+        "mainScenario": {
+          "type": "sashi",
+          "label": "2コース差し",
+          "score": 85,
+          "frameMovementAdjustment": 0,
+          "attacker": 2,
+          "attackerCourse": 2,
+          "attackerBoatNo": 2,
+          "headBoatNo": 2,
+          "blockedBoats": [],
+          "shadowFrameMovementDisabled": false
+        },
+        "scenarios": [
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 85,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": [],
+            "shadowFrameMovementDisabled": false
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 78.3,
+            "frameMovementAdjustment": 0,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": [
+              4
+            ],
+            "rawFrameMovementAdjustment": 5,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 3,
+              "scoreAdjustment": 5,
+              "movementDelta": 57,
+              "label": "浮上"
+            }
+          },
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 59.2,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": [],
+            "shadowFrameMovementDisabled": false
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 57.2,
+            "frameMovementAdjustment": 0,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": -3,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 1,
+              "scoreAdjustment": -3,
+              "movementDelta": -11.7,
+              "label": "沈下"
+            }
+          }
+        ]
+      },
+      "downstreamReplay": {
+        "version": "frame-rise-fall-shadow-replay-v1",
+        "status": "replay-ready",
+        "a": {
+          "skipDecision": false,
+          "mainScenario": {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 85,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          "practicalTickets": [
+            "2-1-3",
+            "2-4-3",
+            "2-3-4",
+            "1-2-3",
+            "1-2-4",
+            "2-1-4",
+            "2-1-5",
+            "3-1-4",
+            "3-1-5",
+            "3-1-6"
+          ],
+          "decisionFingerprint": "{\"skipDecision\":false,\"mainScenario\":{\"type\":\"sashi\",\"headBoatNo\":2},\"practicalTickets\":[\"2-1-3\",\"2-4-3\",\"2-3-4\",\"1-2-3\",\"1-2-4\",\"2-1-4\",\"2-1-5\",\"3-1-4\",\"3-1-5\",\"3-1-6\"]}"
+        },
+        "b": {
+          "skipDecision": true,
+          "mainScenario": {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 85,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": [],
+            "shadowFrameMovementDisabled": false
+          },
+          "practicalTickets": [],
+          "decisionFingerprint": "{\"skipDecision\":true,\"mainScenario\":{\"type\":\"sashi\",\"headBoatNo\":2},\"practicalTickets\":[]}"
+        },
+        "bSelectionStatus": "skipped",
+        "bSelectionReason": "主軸となる展開が定まらないため見送り。",
+        "bMarks": {
+          "honmei": {
+            "boatNo": 2,
+            "playerName": "羽野 諒",
+            "className": "B1",
+            "indexes": {
+              "st": 72.9,
+              "exhibition": 50,
+              "motor": 50,
+              "local": 86.2,
+              "national": 71.6,
+              "attack": 84,
+              "raceFlow": 96.8,
+              "turn": 55.3,
+              "total": 84.2
+            },
+            "roleScores": {
+              "attack": 75.8,
+              "flow": 80.3,
+              "road": 64.4,
+              "hold": 84.9,
+              "pickup": 73.6
+            },
+            "primaryRole": {
+              "key": "hold",
+              "label": "残し艇🛟",
+              "score": 84.9
+            },
+            "roleRanking": [
+              {
+                "key": "hold",
+                "label": "残し艇🛟",
+                "score": 84.9
+              },
+              {
+                "key": "flow",
+                "label": "展開艇🌊",
+                "score": 80.3
+              },
+              {
+                "key": "attack",
+                "label": "攻め艇🔥",
+                "score": 75.8
+              },
+              {
+                "key": "pickup",
+                "label": "拾い艇🎯",
+                "score": 73.6
+              },
+              {
+                "key": "road",
+                "label": "道中艇⚡",
+                "score": 64.4
+              }
+            ],
+            "roleTags": [
+              "残し艇🛟",
+              "展開艇🌊",
+              "攻め艇🔥",
+              "当地巧者🏠"
+            ],
+            "courseStructureTheory": {
+              "boatNo": 2,
+              "course": 2,
+              "frame": 2,
+              "score": 27,
+              "grade": "D",
+              "status": "暫定・現行枠番評価",
+              "isFormal": false,
+              "mappingFormal": false,
+              "statsFormal": false,
+              "venueSamples": 0,
+              "minimumSamples": 100,
+              "appliedIndex": 97.83333333333334,
+              "appliedToScore": false,
+              "components": {
+                "basicStructure": 27,
+                "venueWin": 0,
+                "venueTop3": 0,
+                "periodTrend": 0,
+                "courseChange": 0,
+                "mappingReliability": 0
+              },
+              "reason": "展示進入2コース / 基本構造27/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達"
+            },
+            "stTheory": {
+              "boatNo": 2,
+              "course": 2,
+              "registerNo": "5008",
+              "score": 33.4,
+              "appliedIndex": 72.9,
+              "grade": "D",
+              "status": "暫定・現行ST評価",
+              "isFormal": false,
+              "appliedToScore": false,
+              "mappingFormal": false,
+              "samples": 0,
+              "reliability": "low",
+              "currentStCount": 7,
+              "currentStAverage": 0.13,
+              "currentStSpread": 0.09999999999999999,
+              "fCount": 0,
+              "components": {
+                "currentSeries": 21.7,
+                "recentCourse": 0,
+                "periodTrend": 0,
+                "threeYear": 0,
+                "nationalAverage": 6.7,
+                "flyingRisk": 5,
+                "reliability": 0
+              },
+              "history": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "reason": "今節ST21.7/25 / 直近1年コース別ST0/20 / 期間推移0/15 / 3年コース別ST0/15 / 全国平均ST6.7/10 / Fリスク5/5 / 取得信頼度0/10 / 実進入未確定 / 実進入2コース0走で判定数未達"
+            },
+            "exhibitionPerformanceTheory": {
+              "boatNo": 2,
+              "name": "羽野 諒",
+              "exhibitionTime": null,
+              "lapTime": null,
+              "exhibitionRank": null,
+              "lapRank": null,
+              "sumTime": null,
+              "sumDiff": null,
+              "isDoubleTime": false,
+              "score": 50,
+              "appliedIndex": 50,
+              "grade": "D",
+              "mode": "provisional",
+              "modeLabel": "暫定・中立評価",
+              "status": "暫定・中立50点",
+              "isFormal": false,
+              "appliedToScore": false,
+              "source": "BOAT RACE公式",
+              "components": {
+                "neutral": 50
+              },
+              "reason": "展示0/6艇・一周0/6艇のため中立50点"
+            },
+            "buffs": [
+              "当地実績",
+              "攻撃力あり"
+            ],
+            "debuffs": [],
+            "aiComment": "連対期待大。軸候補。",
+            "attackTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "role": "差し",
+              "score": 0,
+              "grade": "-",
+              "status": "役割分離",
+              "isFormal": false,
+              "isAttackCourse": false,
+              "isAdopted": false,
+              "hasStartEvidence": false,
+              "hasAverageOrCurrentSupport": false,
+              "hasSlitAdvantage": false,
+              "comparedBoatNo": null,
+              "slitDiff": 0,
+              "components": {
+                "development": 38.7,
+                "course": 0,
+                "startAndSlit": 10,
+                "exhibitionFoot": 5,
+                "venueCourse": 0
+              },
+              "reason": "2コースは差しとして評価"
+            },
+            "totalRank": 1,
+            "attackRank": 4,
+            "flowRank": 1,
+            "roadRank": 6,
+            "holdRank": 1,
+            "pickupRank": 3,
+            "aiRank": 1,
+            "roleRanks": {
+              "attack": 4,
+              "flow": 1,
+              "road": 6,
+              "hold": 1,
+              "pickup": 3
+            },
+            "isTopAttack": false,
+            "isTopFlow": true,
+            "isTopRoad": false,
+            "isTopHold": true,
+            "isTopPickup": false,
+            "wallTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "attackerNo": 2,
+              "attackerCourse": 2,
+              "wallCourse": 1,
+              "isAdjacent": false,
+              "score": 71,
+              "grade": "B",
+              "status": "参考",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "clearStartLag": false,
+              "hasStartEvidence": true,
+              "hasExhibitionEvidence": false,
+              "components": {
+                "startComparison": 17,
+                "startStability": 15,
+                "courseAdjacency": 0,
+                "exhibitionFoot": 13,
+                "holdRoad": 14,
+                "skillCourse": 8,
+                "surfaceAdaptation": 4
+              },
+              "reason": "攻め艇とのST比較17/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中14/15 / 技量・コース適性8/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない"
+            },
+            "holdPickupTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "hold": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioMatch": 0,
+                  "positionRelation": 0,
+                  "wallRoute": 0,
+                  "firstMarkRoute": 0,
+                  "dataReliability": 0
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "pickup": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioLink": 0,
+                  "openWater": 0,
+                  "positionRelation": 0,
+                  "backstretchRoute": 0,
+                  "dataReliability": 0
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "hasIndependentDualEvidence": false
+            },
+            "flowTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "role": "展開外",
+              "score": 27.5,
+              "grade": "D",
+              "status": "攻め起点",
+              "isFormal": false,
+              "isAdopted": false,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "attackerBoatNo": 2,
+              "attackerCourse": 2,
+              "components": {
+                "scenarioMatch": 0,
+                "positionRelation": 0,
+                "holdPickup": 12.7,
+                "startAndSlit": 7,
+                "exhibitionFoot": 5,
+                "venueWater": 2.8
+              },
+              "reason": "展開一致0/40 / 位置・コース0/20 / 残し・拾い12.7/15 / ST・スリット7/10 / 展示・足は9％枠へ分離 / 場・水面2.8/5 / 展示6艇未取得のため役割判定は暫定 / 攻め艇自身は展開艇から分離 / 最有力展開の2・3着候補と不一致"
+            },
+            "roadTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "role": "残し",
+              "score": 66.1,
+              "grade": "B",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isAttackSource": false,
+              "isGoalCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasRoadEvidence": false,
+              "lapTime": null,
+              "seriesResultCount": 0,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "scenarioMatch": 30,
+                "lapAndFoot": 12.5,
+                "seriesStability": 0,
+                "coursePosition": 14,
+                "localWater": 6,
+                "playerSkill": 3.6
+              },
+              "reason": "ゴール想定30/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置14/15 / 当地・水面6/10 / 技量3.6/5 / 今節成績不足のため暫定"
+            },
+            "localTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "role": "差し",
+              "score": 80.2,
+              "grade": "A",
+              "status": "正式採用",
+              "isFormal": true,
+              "isAdopted": true,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasLocalEvidence": true,
+              "localWinRate": 5.94,
+              "nationalWinRate": 4.68,
+              "local2Rate": 41.3,
+              "local3Rate": 53.3,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "localVsNational": 25,
+                "localResults": 12.8,
+                "scenarioRole": 20,
+                "venueCourse": 8.3,
+                "venueWater": 10.5,
+                "playerSkill": 3.6
+              },
+              "reason": "当地・全国比較25/25 / 当地成績12.8/20 / 展開役割20/20 / 進入適合8.3/15 / 場・水面10.5/15 / 技量3.6/5"
+            },
+            "newEnvironmentTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "role": "差し",
+              "score": 56.9,
+              "grade": "C",
+              "status": "対象外",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "hasCurrentEvidence": true,
+              "hasAdaptationEvidence": true,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "exhibitionFoot": 15,
+                "startAndSlit": 12,
+                "currentAndRoad": 4,
+                "scenarioRole": 15,
+                "playerSkill": 7.2,
+                "localWater": 3.7
+              },
+              "reason": "展示・足は9％枠へ分離 / 今節ST・スリット12/20 / 今節・道中4/20 / 展開役割15/15 / 技量7.2/10 / 当地・水面3.7/5"
+            },
+            "waterWeatherTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "role": "差し",
+              "score": 57.1,
+              "grade": "C",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "windCourse": 15,
+                "waveExhibition": 0,
+                "surfaceTide": 4.1,
+                "scenarioRole": 20,
+                "localRoad": 10.8,
+                "stSkill": 7.2
+              },
+              "reason": "風向・風速とコース15/20 / 波・展示・回り足0/20 / 水面・潮汐4.1/15 / 展開役割20/20 / 当地・道中10.8/15 / ST・技量7.2/10 / 潮汐場の現在潮位・潮流が不足 / 展示・一周・回り足の裏付け不足"
+            },
+            "racerSkillTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "registerNo": "5008",
+              "course": 2,
+              "role": "差し",
+              "methodLabel": "戦法根拠不足",
+              "samples": 0,
+              "reliability": "low",
+              "score": 10.7,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "appliedToScore": false,
+              "courseHistory": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "components": {
+                "coursePerformance": 0,
+                "courseStart": 0,
+                "methodFit": 0,
+                "recentTrend": 0,
+                "classNational": 5.7,
+                "seriesRoad": 0,
+                "scenarioRole": 5
+              },
+              "reason": "現在コース1着・3連率0/25 / コース別ST・安定性0/15 / 得意戦法一致0/20 / 直近1年・過去2年推移0/15 / 級別・全国勝率5.7/15 / 今節着順・道中0/5 / 最有力展開役割5/5 / 公式の実進入コース別履歴なし / 期間別推移の必要使用数未達 / 決まり手の件数・割合不足"
+            },
+            "roleEvidence": {
+              "racerSkill": null
+            },
+            "motorMaintenanceTheory": {
+              "boatNo": 2,
+              "playerName": "羽野 諒",
+              "course": 2,
+              "role": "差し",
+              "score": 39.8,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "hasCurrentEvidence": true,
+              "hasPracticalEvidence": false,
+              "maintenance": {
+                "partsExchange": "",
+                "score": 0,
+                "comparableCount": 0,
+                "improvedCount": 0,
+                "worsenedCount": 0,
+                "trend": "交換なし",
+                "hasComparison": false
+              },
+              "motorRates": {
+                "motor2": 30,
+                "motor3": 45
+              },
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "exhibitionFoot": 12.5,
+                "currentRoad": 4.4,
+                "startAndSlit": 9,
+                "maintenanceChange": 0,
+                "relativeMotor": 0,
+                "scenarioRole": 10,
+                "playerAdjustment": 3.9
+              },
+              "reason": "展示・一周は確認条件のみ / 今節・道中4.4/20 / 今節ST・スリット9/15 / 整備後変化0/15 / 場内相対モーター0/10 / 展開役割10/10 / 調整力・当地3.9/5 / 更新時期・使用節数不明のためモーター数字は暫定 / 展示または今節実績の裏付け不足"
+            }
+          },
+          "taikou": null,
+          "ana": null,
+          "osae": null,
+          "scenario": "2コース差し",
+          "established": true,
+          "confidence": 85,
+          "evidence": {
+            "source": "raceScenarios",
+            "scenarioType": "sashi",
+            "scenarioScore": 85,
+            "mainGap": 1.7,
+            "attacker": 2,
+            "wallBoat": null,
+            "remainers": [],
+            "followers": [],
+            "pickupCandidates": [],
+            "roadRaceBoats": [],
+            "localExperts": [],
+            "blockedBoats": []
+          }
+        },
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "comparableForFixed100": true,
+        "productionAUnchanged": true,
+        "applicationMode": "shadow-only",
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      "frameMovementRawEvidence": [
+        {
+          "boatNo": 1,
+          "riseRate": 0,
+          "stayRate": 43.5,
+          "sinkRate": 56.5,
+          "label": "沈下",
+          "samples": 193,
+          "baselineRiseRate": 0,
+          "baselineStayRate": 55.2,
+          "baselineSinkRate": 44.8,
+          "movementDelta": -11.7,
+          "scoreAdjustment": -3,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 2,
+          "riseRate": 11.9,
+          "stayRate": 24.2,
+          "sinkRate": 63.9,
+          "label": "沈下",
+          "samples": 194,
+          "baselineRiseRate": 14,
+          "baselineStayRate": 24.9,
+          "baselineSinkRate": 61.1,
+          "movementDelta": -4.9,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 3,
+          "riseRate": 65.3,
+          "stayRate": 15.8,
+          "sinkRate": 18.9,
+          "label": "浮上",
+          "samples": 196,
+          "baselineRiseRate": 34.7,
+          "baselineStayRate": 20,
+          "baselineSinkRate": 45.3,
+          "movementDelta": 57,
+          "scoreAdjustment": 5,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 4,
+          "riseRate": 43.5,
+          "stayRate": 24.6,
+          "sinkRate": 31.9,
+          "label": "浮上",
+          "samples": 191,
+          "baselineRiseRate": 46.7,
+          "baselineStayRate": 19.3,
+          "baselineSinkRate": 34,
+          "movementDelta": -1.1,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 5,
+          "riseRate": 54.6,
+          "stayRate": 24.2,
+          "sinkRate": 21.1,
+          "label": "浮上",
+          "samples": 194,
+          "baselineRiseRate": 56.9,
+          "baselineStayRate": 22.1,
+          "baselineSinkRate": 21,
+          "movementDelta": -2.4,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 6,
+          "riseRate": 54.6,
+          "stayRate": 45.4,
+          "sinkRate": 0,
+          "label": "浮上",
+          "samples": 194,
+          "baselineRiseRate": 71.2,
+          "baselineStayRate": 28.8,
+          "baselineSinkRate": 0,
+          "movementDelta": -16.6,
+          "scoreAdjustment": -4,
+          "appliedToScore": true
+        }
+      ],
+      "productionAUnchanged": true,
+      "comparisonContract": {
+        "scenarioCaptured": true,
+        "practicalTicketsCaptured": true,
+        "skipDecisionCaptured": true,
+        "comparableForFixed100": true,
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "reason": "decision-fingerprint-changed-with-complete-replay"
+      },
+      "applicationMode": "shadow-only",
+      "usableForPrediction": false,
+      "automaticApplication": false,
+      "productionPredictionChanged": false,
+      "productionTicketSelectionChanged": false
+    },
+    "20260816-09-7|frame-rise-fall-shadow-off-v1|sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4|frame-rise-fall-shadow-off-ablation-v1|2026-08-15T11:06:15+09:00|33bfee3c791c4f401fc285e8a1386675d79b778d|sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6": {
+      "version": "frame-rise-fall-shadow-storage-v2",
+      "candidateId": "frame-rise-fall-shadow-off-v1",
+      "candidateSpecFingerprint": "sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4",
+      "implementationFingerprint": "frame-rise-fall-shadow-off-ablation-v1",
+      "cutoff": {
+        "selectedAtExclusiveLowerBound": "2026-08-15T11:06:15+09:00",
+        "sourceCommit": "33bfee3c791c4f401fc285e8a1386675d79b778d",
+        "logicFingerprint": "sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6",
+        "status": "frozen"
+      },
+      "selectedAt": "2026-08-16T03:58:13.026Z",
+      "raceKey": "20260816-09-7",
+      "status": "shadow-ready",
+      "decisionChanged": true,
+      "applicableCount": 4,
+      "a": {
+        "label": "current-production",
+        "mainScenario": {
+          "type": "sashi",
+          "label": "2コース差し",
+          "score": 83.1,
+          "frameMovementAdjustment": 1,
+          "attacker": 2,
+          "attackerCourse": 2,
+          "attackerBoatNo": 2,
+          "headBoatNo": 2,
+          "blockedBoats": []
+        },
+        "scenarios": [
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 83.1,
+            "frameMovementAdjustment": 1,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 81,
+            "frameMovementAdjustment": -3,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": []
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 71.2,
+            "frameMovementAdjustment": -3,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": []
+          },
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 60.4,
+            "frameMovementAdjustment": 3,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": []
+          }
+        ]
+      },
+      "b": {
+        "label": "frame-movement-adjustment-off",
+        "mainScenario": {
+          "type": "escape",
+          "label": "1号艇逃げ",
+          "score": 84,
+          "frameMovementAdjustment": 0,
+          "attacker": 1,
+          "attackerCourse": 1,
+          "attackerBoatNo": 1,
+          "headBoatNo": 1,
+          "blockedBoats": [],
+          "rawFrameMovementAdjustment": -3,
+          "shadowFrameMovementDisabled": true,
+          "shadowFrameMovementEvidence": {
+            "boatNo": 1,
+            "scoreAdjustment": -3,
+            "movementDelta": -13,
+            "label": "沈下"
+          }
+        },
+        "scenarios": [
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 84,
+            "frameMovementAdjustment": 0,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": -3,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 1,
+              "scoreAdjustment": -3,
+              "movementDelta": -13,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 82.1,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 1,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 2,
+              "scoreAdjustment": 1,
+              "movementDelta": 5.5,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 74.2,
+            "frameMovementAdjustment": 0,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": -3,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 3,
+              "scoreAdjustment": -3,
+              "movementDelta": -11.1,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 57.4,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 3,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 4,
+              "scoreAdjustment": 3,
+              "movementDelta": 14.7,
+              "label": "浮上"
+            }
+          }
+        ]
+      },
+      "downstreamReplay": {
+        "version": "frame-rise-fall-shadow-replay-v1",
+        "status": "replay-ready",
+        "a": {
+          "skipDecision": false,
+          "mainScenario": {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 83.1,
+            "frameMovementAdjustment": 1,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          "practicalTickets": [
+            "2-1-3",
+            "2-4-3",
+            "2-3-4",
+            "1-2-3",
+            "1-2-4",
+            "2-1-4",
+            "2-1-5",
+            "3-1-4",
+            "3-1-5",
+            "3-1-6"
+          ],
+          "decisionFingerprint": "{\"skipDecision\":false,\"mainScenario\":{\"type\":\"sashi\",\"headBoatNo\":2},\"practicalTickets\":[\"2-1-3\",\"2-4-3\",\"2-3-4\",\"1-2-3\",\"1-2-4\",\"2-1-4\",\"2-1-5\",\"3-1-4\",\"3-1-5\",\"3-1-6\"]}"
+        },
+        "b": {
+          "skipDecision": true,
+          "mainScenario": {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 84,
+            "frameMovementAdjustment": 0,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": -3,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 1,
+              "scoreAdjustment": -3,
+              "movementDelta": -13,
+              "label": "沈下"
+            }
+          },
+          "practicalTickets": [],
+          "decisionFingerprint": "{\"skipDecision\":true,\"mainScenario\":{\"type\":\"escape\",\"headBoatNo\":1},\"practicalTickets\":[]}"
+        },
+        "bSelectionStatus": "skipped",
+        "bSelectionReason": "主軸となる展開が定まらないため見送り。",
+        "bMarks": {
+          "honmei": {
+            "boatNo": 1,
+            "playerName": "豊田 結",
+            "className": "B1",
+            "indexes": {
+              "st": 69.6,
+              "exhibition": 50,
+              "motor": 44.4,
+              "local": 92.6,
+              "national": 78.8,
+              "attack": 84.7,
+              "raceFlow": 100,
+              "turn": 55.3,
+              "total": 93.2
+            },
+            "roleScores": {
+              "attack": 75.5,
+              "flow": 82.3,
+              "road": 66.8,
+              "hold": 90.7,
+              "pickup": 76.6
+            },
+            "primaryRole": {
+              "key": "hold",
+              "label": "残し艇🛟",
+              "score": 90.7
+            },
+            "roleRanking": [
+              {
+                "key": "hold",
+                "label": "残し艇🛟",
+                "score": 90.7
+              },
+              {
+                "key": "flow",
+                "label": "展開艇🌊",
+                "score": 82.3
+              },
+              {
+                "key": "pickup",
+                "label": "拾い艇🎯",
+                "score": 76.6
+              },
+              {
+                "key": "attack",
+                "label": "攻め艇🔥",
+                "score": 75.5
+              },
+              {
+                "key": "road",
+                "label": "道中艇⚡",
+                "score": 66.8
+              }
+            ],
+            "roleTags": [
+              "残し艇🛟",
+              "展開艇🌊",
+              "拾い艇🎯",
+              "当地巧者🏠"
+            ],
+            "courseStructureTheory": {
+              "boatNo": 1,
+              "course": 1,
+              "frame": 1,
+              "score": 35,
+              "grade": "D",
+              "status": "暫定・現行枠番評価",
+              "isFormal": false,
+              "mappingFormal": false,
+              "statsFormal": false,
+              "venueSamples": 0,
+              "minimumSamples": 100,
+              "appliedIndex": 129.5,
+              "appliedToScore": false,
+              "components": {
+                "basicStructure": 35,
+                "venueWin": 0,
+                "venueTop3": 0,
+                "periodTrend": 0,
+                "courseChange": 0,
+                "mappingReliability": 0
+              },
+              "reason": "展示進入1コース / 基本構造35/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達"
+            },
+            "stTheory": {
+              "boatNo": 1,
+              "course": 1,
+              "registerNo": "4689",
+              "score": 27.5,
+              "appliedIndex": 69.6,
+              "grade": "D",
+              "status": "暫定・現行ST評価",
+              "isFormal": false,
+              "appliedToScore": false,
+              "mappingFormal": false,
+              "samples": 0,
+              "reliability": "low",
+              "currentStCount": 2,
+              "currentStAverage": 0.16,
+              "currentStSpread": 0.18,
+              "fCount": 0,
+              "components": {
+                "currentSeries": 16.7,
+                "recentCourse": 0,
+                "periodTrend": 0,
+                "threeYear": 0,
+                "nationalAverage": 5.8,
+                "flyingRisk": 5,
+                "reliability": 0
+              },
+              "history": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "reason": "今節ST16.7/25 / 直近1年コース別ST0/20 / 期間推移0/15 / 3年コース別ST0/15 / 全国平均ST5.8/10 / Fリスク5/5 / 取得信頼度0/10 / 実進入未確定 / 実進入1コース0走で判定数未達"
+            },
+            "exhibitionPerformanceTheory": {
+              "boatNo": 1,
+              "name": "豊田 結",
+              "exhibitionTime": null,
+              "lapTime": null,
+              "exhibitionRank": null,
+              "lapRank": null,
+              "sumTime": null,
+              "sumDiff": null,
+              "isDoubleTime": false,
+              "score": 50,
+              "appliedIndex": 50,
+              "grade": "D",
+              "mode": "provisional",
+              "modeLabel": "暫定・中立評価",
+              "status": "暫定・中立50点",
+              "isFormal": false,
+              "appliedToScore": false,
+              "source": "BOAT RACE公式",
+              "components": {
+                "neutral": 50
+              },
+              "reason": "展示0/6艇・一周0/6艇のため中立50点"
+            },
+            "buffs": [
+              "当地実績",
+              "全国実績",
+              "攻撃力あり"
+            ],
+            "debuffs": [
+              "機力不足"
+            ],
+            "aiComment": "総合評価トップ級。本命候補。",
+            "attackTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "role": "逃げ",
+              "score": 0,
+              "grade": "-",
+              "status": "役割分離",
+              "isFormal": false,
+              "isAttackCourse": false,
+              "isAdopted": false,
+              "hasStartEvidence": false,
+              "hasAverageOrCurrentSupport": false,
+              "hasSlitAdvantage": false,
+              "comparedBoatNo": null,
+              "slitDiff": 0,
+              "components": {
+                "development": 40,
+                "course": 0,
+                "startAndSlit": 8,
+                "exhibitionFoot": 5,
+                "venueCourse": 0
+              },
+              "reason": "1コースは逃げとして評価"
+            },
+            "totalRank": 1,
+            "attackRank": 3,
+            "flowRank": 3,
+            "roadRank": 3,
+            "holdRank": 2,
+            "pickupRank": 3,
+            "aiRank": 1,
+            "roleRanks": {
+              "attack": 3,
+              "flow": 3,
+              "road": 3,
+              "hold": 2,
+              "pickup": 3
+            },
+            "isTopAttack": false,
+            "isTopFlow": false,
+            "isTopRoad": false,
+            "isTopHold": false,
+            "isTopPickup": false,
+            "wallTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "attackerNo": 2,
+              "attackerCourse": 2,
+              "wallCourse": 1,
+              "isAdjacent": true,
+              "score": 85,
+              "grade": "S",
+              "status": "壁成立",
+              "isFormal": true,
+              "isAdopted": true,
+              "isBlocked": false,
+              "clearStartLag": false,
+              "hasStartEvidence": true,
+              "hasExhibitionEvidence": false,
+              "components": {
+                "startComparison": 15,
+                "startStability": 14,
+                "courseAdjacency": 15,
+                "exhibitionFoot": 13,
+                "holdRoad": 15,
+                "skillCourse": 9,
+                "surfaceAdaptation": 4
+              },
+              "reason": "攻め艇とのST比較15/25 / ST安定性14/15 / 展示進入・隣接15/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中15/15 / 技量・コース適性9/10 / 場・水面・風適応4/5"
+            },
+            "holdPickupTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "isAttackSource": false,
+              "isBlocked": false,
+              "hold": {
+                "score": 95,
+                "grade": "S",
+                "status": "正式採用",
+                "isFormal": true,
+                "isAdopted": true,
+                "isReference": false,
+                "components": {
+                  "scenarioMatch": 40,
+                  "positionRelation": 25,
+                  "wallRoute": 20,
+                  "firstMarkRoute": 10,
+                  "dataReliability": 0
+                },
+                "reason": "最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路20/20 / 1マーク後の残し経路10/10 / 取得信頼度0/5"
+              },
+              "pickup": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioLink": 0,
+                  "openWater": 0,
+                  "positionRelation": 0,
+                  "backstretchRoute": 0,
+                  "dataReliability": 0
+                },
+                "reason": "最有力展開の拾い経路なし"
+              },
+              "hasIndependentDualEvidence": false
+            },
+            "flowTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "role": "残し",
+              "score": 87.9,
+              "grade": "S",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isAttackSource": false,
+              "isBlocked": false,
+              "isSecondCandidate": true,
+              "isThirdCandidate": false,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "attackerBoatNo": 2,
+              "attackerCourse": 2,
+              "components": {
+                "scenarioMatch": 40,
+                "positionRelation": 20,
+                "holdPickup": 13.6,
+                "startAndSlit": 6,
+                "exhibitionFoot": 5,
+                "venueWater": 3.3
+              },
+              "reason": "展開一致40/40 / 位置・コース20/20 / 残し・拾い13.6/15 / ST・スリット6/10 / 展示・足は9％枠へ分離 / 場・水面3.3/5 / 展示6艇未取得のため役割判定は暫定"
+            },
+            "roadTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "role": "残し",
+              "score": 69.6,
+              "grade": "B",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isAttackSource": false,
+              "isGoalCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": true,
+              "isThirdCandidate": false,
+              "hasRoadEvidence": false,
+              "lapTime": null,
+              "seriesResultCount": 0,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "scenarioMatch": 30,
+                "lapAndFoot": 12.5,
+                "seriesStability": 0,
+                "coursePosition": 15,
+                "localWater": 8.2,
+                "playerSkill": 3.9
+              },
+              "reason": "ゴール想定30/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置15/15 / 当地・水面8.2/10 / 技量3.9/5 / 今節成績不足のため暫定"
+            },
+            "localTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "role": "逃げ",
+              "score": 79.9,
+              "grade": "A",
+              "status": "正式採用",
+              "isFormal": true,
+              "isAdopted": true,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": true,
+              "isThirdCandidate": false,
+              "hasLocalEvidence": true,
+              "localWinRate": 6.1,
+              "nationalWinRate": 5.26,
+              "local2Rate": 42.8,
+              "local3Rate": 54.5,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "localVsNational": 22,
+                "localResults": 13.799999999999999,
+                "scenarioRole": 20,
+                "venueCourse": 10.4,
+                "venueWater": 9.8,
+                "playerSkill": 3.9
+              },
+              "reason": "当地・全国比較22/25 / 当地成績13.799999999999999/20 / 展開役割20/20 / 進入適合10.4/15 / 場・水面9.8/15 / 技量3.9/5"
+            },
+            "newEnvironmentTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "role": "逃げ",
+              "score": 48.6,
+              "grade": "D",
+              "status": "対象外",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": true,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "hasCurrentEvidence": true,
+              "hasAdaptationEvidence": true,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "exhibitionFoot": 15,
+                "startAndSlit": 4,
+                "currentAndRoad": 2,
+                "scenarioRole": 15,
+                "playerSkill": 7.9,
+                "localWater": 4.7
+              },
+              "reason": "展示・足は9％枠へ分離 / 今節ST・スリット4/20 / 今節・道中2/20 / 展開役割15/15 / 技量7.9/10 / 当地・水面4.7/5"
+            },
+            "waterWeatherTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "role": "逃げ",
+              "score": 56.5,
+              "grade": "C",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": true,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "windCourse": 15,
+                "waveExhibition": 0,
+                "surfaceTide": 2.9,
+                "scenarioRole": 20,
+                "localRoad": 11.3,
+                "stSkill": 7.3
+              },
+              "reason": "風向・風速とコース15/20 / 波・展示・回り足0/20 / 水面・潮汐2.9/15 / 展開役割20/20 / 当地・道中11.3/15 / ST・技量7.3/10 / 潮汐場の現在潮位・潮流が不足 / 展示・一周・回り足の裏付け不足"
+            },
+            "racerSkillTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "registerNo": "4689",
+              "course": 1,
+              "role": "差し",
+              "methodLabel": "戦法根拠不足",
+              "samples": 0,
+              "reliability": "low",
+              "score": 11.6,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "appliedToScore": false,
+              "courseHistory": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "components": {
+                "coursePerformance": 0,
+                "courseStart": 0,
+                "methodFit": 0,
+                "recentTrend": 0,
+                "classNational": 6.6,
+                "seriesRoad": 0,
+                "scenarioRole": 5
+              },
+              "reason": "現在コース1着・3連率0/25 / コース別ST・安定性0/15 / 得意戦法一致0/20 / 直近1年・過去2年推移0/15 / 級別・全国勝率6.6/15 / 今節着順・道中0/5 / 最有力展開役割5/5 / 公式の実進入コース別履歴なし / 期間別推移の必要使用数未達 / 決まり手の件数・割合不足"
+            },
+            "roleEvidence": {
+              "racerSkill": null
+            },
+            "motorMaintenanceTheory": {
+              "boatNo": 1,
+              "playerName": "豊田 結",
+              "course": 1,
+              "role": "逃げ",
+              "score": 34.1,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": true,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "hasCurrentEvidence": true,
+              "hasPracticalEvidence": false,
+              "maintenance": {
+                "partsExchange": "リング×2",
+                "score": 0,
+                "comparableCount": 0,
+                "improvedCount": 0,
+                "worsenedCount": 0,
+                "trend": "交換情報のみ",
+                "hasComparison": false
+              },
+              "motorRates": {
+                "motor2": 25.21,
+                "motor3": 40.21
+              },
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "exhibitionFoot": 12.5,
+                "currentRoad": 4.4,
+                "startAndSlit": 3,
+                "maintenanceChange": 0,
+                "relativeMotor": 0,
+                "scenarioRole": 10,
+                "playerAdjustment": 4.2
+              },
+              "reason": "展示・一周は確認条件のみ / 今節・道中4.4/20 / 今節ST・スリット3/15 / 整備後変化0/15 / 場内相対モーター0/10 / 展開役割10/10 / 調整力・当地4.2/5 / 部品交換後の比較不足のため非加点 / 更新時期・使用節数不明のためモーター数字は暫定 / 展示または今節実績の裏付け不足"
+            }
+          },
+          "taikou": null,
+          "ana": null,
+          "osae": null,
+          "scenario": "1号艇逃げ",
+          "established": true,
+          "confidence": 84,
+          "evidence": {
+            "source": "raceScenarios",
+            "scenarioType": "escape",
+            "scenarioScore": 84,
+            "mainGap": 2.1,
+            "attacker": 1,
+            "wallBoat": null,
+            "remainers": [],
+            "followers": [],
+            "pickupCandidates": [],
+            "roadRaceBoats": [],
+            "localExperts": [],
+            "blockedBoats": []
+          }
+        },
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "comparableForFixed100": true,
+        "productionAUnchanged": true,
+        "applicationMode": "shadow-only",
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      "frameMovementRawEvidence": [
+        {
+          "boatNo": 1,
+          "riseRate": 0,
+          "stayRate": 42.2,
+          "sinkRate": 57.8,
+          "label": "沈下",
+          "samples": 185,
+          "baselineRiseRate": 0,
+          "baselineStayRate": 55.2,
+          "baselineSinkRate": 44.8,
+          "movementDelta": -13,
+          "scoreAdjustment": -3,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 2,
+          "riseRate": 18.9,
+          "stayRate": 20.5,
+          "sinkRate": 60.5,
+          "label": "沈下",
+          "samples": 185,
+          "baselineRiseRate": 14,
+          "baselineStayRate": 24.9,
+          "baselineSinkRate": 61.1,
+          "movementDelta": 5.5,
+          "scoreAdjustment": 1,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 3,
+          "riseRate": 28.8,
+          "stayRate": 20.7,
+          "sinkRate": 50.5,
+          "label": "沈下",
+          "samples": 184,
+          "baselineRiseRate": 34.7,
+          "baselineStayRate": 20,
+          "baselineSinkRate": 45.3,
+          "movementDelta": -11.1,
+          "scoreAdjustment": -3,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 4,
+          "riseRate": 53.2,
+          "stayRate": 21,
+          "sinkRate": 25.8,
+          "label": "浮上",
+          "samples": 186,
+          "baselineRiseRate": 46.7,
+          "baselineStayRate": 19.3,
+          "baselineSinkRate": 34,
+          "movementDelta": 14.7,
+          "scoreAdjustment": 3,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 5,
+          "riseRate": 63.6,
+          "stayRate": 16.8,
+          "sinkRate": 19.6,
+          "label": "浮上",
+          "samples": 184,
+          "baselineRiseRate": 56.9,
+          "baselineStayRate": 22.1,
+          "baselineSinkRate": 21,
+          "movementDelta": 8.1,
+          "scoreAdjustment": 2,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 6,
+          "riseRate": 70.9,
+          "stayRate": 29.1,
+          "sinkRate": 0,
+          "label": "浮上",
+          "samples": 182,
+          "baselineRiseRate": 71.2,
+          "baselineStayRate": 28.8,
+          "baselineSinkRate": 0,
+          "movementDelta": -0.3,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        }
+      ],
+      "productionAUnchanged": true,
+      "comparisonContract": {
+        "scenarioCaptured": true,
+        "practicalTicketsCaptured": true,
+        "skipDecisionCaptured": true,
+        "comparableForFixed100": true,
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "reason": "decision-fingerprint-changed-with-complete-replay"
+      },
+      "applicationMode": "shadow-only",
+      "usableForPrediction": false,
+      "automaticApplication": false,
+      "productionPredictionChanged": false,
+      "productionTicketSelectionChanged": false
+    },
+    "20260816-10-11|frame-rise-fall-shadow-off-v1|sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4|frame-rise-fall-shadow-off-ablation-v1|2026-08-15T11:06:15+09:00|33bfee3c791c4f401fc285e8a1386675d79b778d|sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6": {
+      "version": "frame-rise-fall-shadow-storage-v2",
+      "candidateId": "frame-rise-fall-shadow-off-v1",
+      "candidateSpecFingerprint": "sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4",
+      "implementationFingerprint": "frame-rise-fall-shadow-off-ablation-v1",
+      "cutoff": {
+        "selectedAtExclusiveLowerBound": "2026-08-15T11:06:15+09:00",
+        "sourceCommit": "33bfee3c791c4f401fc285e8a1386675d79b778d",
+        "logicFingerprint": "sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6",
+        "status": "frozen"
+      },
+      "selectedAt": "2026-08-16T03:58:13.160Z",
+      "raceKey": "20260816-10-11",
+      "status": "shadow-ready",
+      "decisionChanged": true,
+      "applicableCount": 2,
+      "a": {
+        "label": "current-production",
+        "mainScenario": {
+          "type": "sashi",
+          "label": "2コース差し",
+          "score": 91.9,
+          "frameMovementAdjustment": 2,
+          "attacker": 2,
+          "attackerCourse": 2,
+          "attackerBoatNo": 2,
+          "headBoatNo": 2,
+          "blockedBoats": []
+        },
+        "scenarios": [
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 91.9,
+            "frameMovementAdjustment": 2,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 73,
+            "frameMovementAdjustment": 0,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": []
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 72.4,
+            "frameMovementAdjustment": 1,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": [
+              4
+            ]
+          },
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 55.7,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": []
+          }
+        ]
+      },
+      "b": {
+        "label": "frame-movement-adjustment-off",
+        "mainScenario": {
+          "type": "sashi",
+          "label": "2コース差し",
+          "score": 89.9,
+          "frameMovementAdjustment": 0,
+          "attacker": 2,
+          "attackerCourse": 2,
+          "attackerBoatNo": 2,
+          "headBoatNo": 2,
+          "blockedBoats": [],
+          "rawFrameMovementAdjustment": 2,
+          "shadowFrameMovementDisabled": true,
+          "shadowFrameMovementEvidence": {
+            "boatNo": 2,
+            "scoreAdjustment": 2,
+            "movementDelta": 7,
+            "label": "沈下"
+          }
+        },
+        "scenarios": [
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 89.9,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 2,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 2,
+              "scoreAdjustment": 2,
+              "movementDelta": 7,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 73,
+            "frameMovementAdjustment": 0,
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": [],
+            "shadowFrameMovementDisabled": false
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 71.4,
+            "frameMovementAdjustment": 0,
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": [
+              4
+            ],
+            "rawFrameMovementAdjustment": 1,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 3,
+              "scoreAdjustment": 1,
+              "movementDelta": 5.1,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 55.7,
+            "frameMovementAdjustment": 0,
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": [],
+            "shadowFrameMovementDisabled": false
+          }
+        ]
+      },
+      "downstreamReplay": {
+        "version": "frame-rise-fall-shadow-replay-v1",
+        "status": "replay-ready",
+        "a": {
+          "skipDecision": false,
+          "mainScenario": {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 91.9,
+            "frameMovementAdjustment": 2,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          "practicalTickets": [
+            "2-1-3",
+            "2-4-3",
+            "2-3-4",
+            "1-2-5",
+            "1-2-6",
+            "2-1-4",
+            "2-1-5",
+            "6-1-3",
+            "1-4-5"
+          ],
+          "decisionFingerprint": "{\"skipDecision\":false,\"mainScenario\":{\"type\":\"sashi\",\"headBoatNo\":2},\"practicalTickets\":[\"2-1-3\",\"2-4-3\",\"2-3-4\",\"1-2-5\",\"1-2-6\",\"2-1-4\",\"2-1-5\",\"6-1-3\",\"1-4-5\"]}"
+        },
+        "b": {
+          "skipDecision": true,
+          "mainScenario": {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 89.9,
+            "frameMovementAdjustment": 0,
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 2,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 2,
+              "scoreAdjustment": 2,
+              "movementDelta": 7,
+              "label": "沈下"
+            }
+          },
+          "practicalTickets": [],
+          "decisionFingerprint": "{\"skipDecision\":true,\"mainScenario\":{\"type\":\"sashi\",\"headBoatNo\":2},\"practicalTickets\":[]}"
+        },
+        "bSelectionStatus": "skipped",
+        "bSelectionReason": "主軸となる展開が定まらないため見送り。",
+        "bMarks": {
+          "honmei": {
+            "boatNo": 2,
+            "playerName": "鶴本 崇文",
+            "className": "A1",
+            "indexes": {
+              "st": 71.1,
+              "exhibition": 50,
+              "motor": 54.9,
+              "local": 91.9,
+              "national": 91.1,
+              "attack": 90.5,
+              "raceFlow": 100,
+              "turn": 65,
+              "total": 86.8
+            },
+            "roleScores": {
+              "attack": 78.3,
+              "flow": 85.2,
+              "road": 73.7,
+              "hold": 92,
+              "pickup": 80.8
+            },
+            "primaryRole": {
+              "key": "hold",
+              "label": "残し艇🛟",
+              "score": 92
+            },
+            "roleRanking": [
+              {
+                "key": "hold",
+                "label": "残し艇🛟",
+                "score": 92
+              },
+              {
+                "key": "flow",
+                "label": "展開艇🌊",
+                "score": 85.2
+              },
+              {
+                "key": "pickup",
+                "label": "拾い艇🎯",
+                "score": 80.8
+              },
+              {
+                "key": "attack",
+                "label": "攻め艇🔥",
+                "score": 78.3
+              },
+              {
+                "key": "road",
+                "label": "道中艇⚡",
+                "score": 73.7
+              }
+            ],
+            "roleTags": [
+              "残し艇🛟",
+              "展開艇🌊",
+              "拾い艇🎯",
+              "当地巧者🏠"
+            ],
+            "courseStructureTheory": {
+              "boatNo": 2,
+              "course": 2,
+              "frame": 2,
+              "score": 27,
+              "grade": "D",
+              "status": "暫定・現行枠番評価",
+              "isFormal": false,
+              "mappingFormal": false,
+              "statsFormal": false,
+              "venueSamples": 0,
+              "minimumSamples": 100,
+              "appliedIndex": 97.83333333333334,
+              "appliedToScore": false,
+              "components": {
+                "basicStructure": 27,
+                "venueWin": 0,
+                "venueTop3": 0,
+                "periodTrend": 0,
+                "courseChange": 0,
+                "mappingReliability": 0
+              },
+              "reason": "展示進入2コース / 基本構造27/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達"
+            },
+            "stTheory": {
+              "boatNo": 2,
+              "course": 2,
+              "registerNo": "4384",
+              "score": 33.3,
+              "appliedIndex": 71.1,
+              "grade": "D",
+              "status": "暫定・現行ST評価",
+              "isFormal": false,
+              "appliedToScore": false,
+              "mappingFormal": false,
+              "samples": 0,
+              "reliability": "low",
+              "currentStCount": 4,
+              "currentStAverage": 0.125,
+              "currentStSpread": 0.06,
+              "fCount": 0,
+              "components": {
+                "currentSeries": 22.5,
+                "recentCourse": 0,
+                "periodTrend": 0,
+                "threeYear": 0,
+                "nationalAverage": 5.8,
+                "flyingRisk": 5,
+                "reliability": 0
+              },
+              "history": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "reason": "今節ST22.5/25 / 直近1年コース別ST0/20 / 期間推移0/15 / 3年コース別ST0/15 / 全国平均ST5.8/10 / Fリスク5/5 / 取得信頼度0/10 / 実進入未確定 / 実進入2コース0走で判定数未達"
+            },
+            "exhibitionPerformanceTheory": {
+              "boatNo": 2,
+              "name": "鶴本 崇文",
+              "exhibitionTime": null,
+              "lapTime": null,
+              "exhibitionRank": null,
+              "lapRank": null,
+              "sumTime": null,
+              "sumDiff": null,
+              "isDoubleTime": false,
+              "score": 50,
+              "appliedIndex": 50,
+              "grade": "D",
+              "mode": "provisional",
+              "modeLabel": "暫定・中立評価",
+              "status": "暫定・中立50点",
+              "isFormal": false,
+              "appliedToScore": false,
+              "source": "BOAT RACE公式",
+              "components": {
+                "neutral": 50
+              },
+              "reason": "展示0/6艇・一周0/6艇のため中立50点"
+            },
+            "buffs": [
+              "当地実績",
+              "全国実績",
+              "攻撃力あり"
+            ],
+            "debuffs": [],
+            "aiComment": "総合評価トップ級。本命候補。",
+            "attackTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "role": "差し",
+              "score": 0,
+              "grade": "-",
+              "status": "役割分離",
+              "isFormal": false,
+              "isAttackCourse": false,
+              "isAdopted": false,
+              "hasStartEvidence": false,
+              "hasAverageOrCurrentSupport": false,
+              "hasSlitAdvantage": false,
+              "comparedBoatNo": null,
+              "slitDiff": 0,
+              "components": {
+                "development": 40,
+                "course": 0,
+                "startAndSlit": 10,
+                "exhibitionFoot": 5,
+                "venueCourse": 0
+              },
+              "reason": "2コースは差しとして評価"
+            },
+            "totalRank": 2,
+            "attackRank": 4,
+            "flowRank": 1,
+            "roadRank": 2,
+            "holdRank": 1,
+            "pickupRank": 2,
+            "aiRank": 2,
+            "roleRanks": {
+              "attack": 4,
+              "flow": 1,
+              "road": 2,
+              "hold": 1,
+              "pickup": 2
+            },
+            "isTopAttack": false,
+            "isTopFlow": true,
+            "isTopRoad": false,
+            "isTopHold": true,
+            "isTopPickup": false,
+            "wallTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "attackerNo": 2,
+              "attackerCourse": 2,
+              "wallCourse": 1,
+              "isAdjacent": false,
+              "score": 73,
+              "grade": "B",
+              "status": "参考",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "clearStartLag": false,
+              "hasStartEvidence": true,
+              "hasExhibitionEvidence": false,
+              "components": {
+                "startComparison": 17,
+                "startStability": 15,
+                "courseAdjacency": 0,
+                "exhibitionFoot": 13,
+                "holdRoad": 15,
+                "skillCourse": 9,
+                "surfaceAdaptation": 4
+              },
+              "reason": "攻め艇とのST比較17/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中15/15 / 技量・コース適性9/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない"
+            },
+            "holdPickupTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "hold": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioMatch": 0,
+                  "positionRelation": 0,
+                  "wallRoute": 0,
+                  "firstMarkRoute": 0,
+                  "dataReliability": 0
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "pickup": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioLink": 0,
+                  "openWater": 0,
+                  "positionRelation": 0,
+                  "backstretchRoute": 0,
+                  "dataReliability": 0
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "hasIndependentDualEvidence": false
+            },
+            "flowTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "role": "展開外",
+              "score": 28.8,
+              "grade": "D",
+              "status": "攻め起点",
+              "isFormal": false,
+              "isAdopted": false,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "attackerBoatNo": 2,
+              "attackerCourse": 2,
+              "components": {
+                "scenarioMatch": 0,
+                "positionRelation": 0,
+                "holdPickup": 13.8,
+                "startAndSlit": 7,
+                "exhibitionFoot": 5,
+                "venueWater": 3
+              },
+              "reason": "展開一致0/40 / 位置・コース0/20 / 残し・拾い13.8/15 / ST・スリット7/10 / 展示・足は9％枠へ分離 / 場・水面3/5 / 展示6艇未取得のため役割判定は暫定 / 攻め艇自身は展開艇から分離 / 最有力展開の2・3着候補と不一致"
+            },
+            "roadTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "role": "残し",
+              "score": 69.2,
+              "grade": "B",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isAttackSource": false,
+              "isGoalCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasRoadEvidence": false,
+              "lapTime": null,
+              "seriesResultCount": 0,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "scenarioMatch": 30,
+                "lapAndFoot": 12.5,
+                "seriesStability": 0,
+                "coursePosition": 14,
+                "localWater": 8.1,
+                "playerSkill": 4.6
+              },
+              "reason": "ゴール想定30/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置14/15 / 当地・水面8.1/10 / 技量4.6/5 / 今節成績不足のため暫定"
+            },
+            "localTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "role": "差し",
+              "score": 70.8,
+              "grade": "B",
+              "status": "正式採用",
+              "isFormal": true,
+              "isAdopted": true,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasLocalEvidence": true,
+              "localWinRate": 6.02,
+              "nationalWinRate": 5.89,
+              "local2Rate": 42.1,
+              "local3Rate": 53.9,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "localVsNational": 15,
+                "localResults": 13.3,
+                "scenarioRole": 20,
+                "venueCourse": 9,
+                "venueWater": 8.9,
+                "playerSkill": 4.6
+              },
+              "reason": "当地・全国比較15/25 / 当地成績13.3/20 / 展開役割20/20 / 進入適合9/15 / 場・水面8.9/15 / 技量4.6/5"
+            },
+            "newEnvironmentTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "role": "差し",
+              "score": 59.6,
+              "grade": "C",
+              "status": "対象外",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "hasCurrentEvidence": true,
+              "hasAdaptationEvidence": true,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "exhibitionFoot": 15,
+                "startAndSlit": 10,
+                "currentAndRoad": 6,
+                "scenarioRole": 15,
+                "playerSkill": 9.1,
+                "localWater": 4.5
+              },
+              "reason": "展示・足は9％枠へ分離 / 今節ST・スリット10/20 / 今節・道中6/20 / 展開役割15/15 / 技量9.1/10 / 当地・水面4.5/5"
+            },
+            "waterWeatherTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "role": "差し",
+              "score": 64.7,
+              "grade": "C",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "windCourse": 12,
+                "waveExhibition": 0,
+                "surfaceTide": 12.9,
+                "scenarioRole": 20,
+                "localRoad": 11.9,
+                "stSkill": 7.9
+              },
+              "reason": "風向・風速とコース12/20 / 波・展示・回り足0/20 / 水面・潮汐12.9/15 / 展開役割20/20 / 当地・道中11.9/15 / ST・技量7.9/10 / 展示・一周・回り足の裏付け不足"
+            },
+            "racerSkillTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "registerNo": "4384",
+              "course": 2,
+              "role": "差し",
+              "methodLabel": "戦法根拠不足",
+              "samples": 0,
+              "reliability": "low",
+              "score": 16.6,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "appliedToScore": false,
+              "courseHistory": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "components": {
+                "coursePerformance": 0,
+                "courseStart": 0,
+                "methodFit": 0,
+                "recentTrend": 0,
+                "classNational": 11.6,
+                "seriesRoad": 0,
+                "scenarioRole": 5
+              },
+              "reason": "現在コース1着・3連率0/25 / コース別ST・安定性0/15 / 得意戦法一致0/20 / 直近1年・過去2年推移0/15 / 級別・全国勝率11.6/15 / 今節着順・道中0/5 / 最有力展開役割5/5 / 公式の実進入コース別履歴なし / 期間別推移の必要使用数未達 / 決まり手の件数・割合不足"
+            },
+            "roleEvidence": {
+              "racerSkill": null
+            },
+            "motorMaintenanceTheory": {
+              "boatNo": 2,
+              "playerName": "鶴本 崇文",
+              "course": 2,
+              "role": "差し",
+              "score": 40.3,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": false,
+              "hasCurrentEvidence": true,
+              "hasPracticalEvidence": false,
+              "maintenance": {
+                "partsExchange": "",
+                "score": 0,
+                "comparableCount": 0,
+                "improvedCount": 0,
+                "worsenedCount": 0,
+                "trend": "交換なし",
+                "hasComparison": false
+              },
+              "motorRates": {
+                "motor2": 34.19,
+                "motor3": 49.19
+              },
+              "scenarioType": "sashi",
+              "scenarioLabel": "2コース差し",
+              "components": {
+                "exhibitionFoot": 12.5,
+                "currentRoad": 5.2,
+                "startAndSlit": 8,
+                "maintenanceChange": 0,
+                "relativeMotor": 0,
+                "scenarioRole": 10,
+                "playerAdjustment": 4.6
+              },
+              "reason": "展示・一周は確認条件のみ / 今節・道中5.2/20 / 今節ST・スリット8/15 / 整備後変化0/15 / 場内相対モーター0/10 / 展開役割10/10 / 調整力・当地4.6/5 / 更新時期・使用節数不明のためモーター数字は暫定 / 展示または今節実績の裏付け不足"
+            }
+          },
+          "taikou": null,
+          "ana": null,
+          "osae": null,
+          "scenario": "2コース差し",
+          "established": true,
+          "confidence": 89.9,
+          "evidence": {
+            "source": "raceScenarios",
+            "scenarioType": "sashi",
+            "scenarioScore": 89.9,
+            "mainGap": 18.9,
+            "attacker": 2,
+            "wallBoat": null,
+            "remainers": [],
+            "followers": [],
+            "pickupCandidates": [],
+            "roadRaceBoats": [],
+            "localExperts": [],
+            "blockedBoats": []
+          }
+        },
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "comparableForFixed100": true,
+        "productionAUnchanged": true,
+        "applicationMode": "shadow-only",
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      "frameMovementRawEvidence": [
+        {
+          "boatNo": 1,
+          "riseRate": 0,
+          "stayRate": 53.8,
+          "sinkRate": 46.2,
+          "label": "沈下",
+          "samples": 182,
+          "baselineRiseRate": 0,
+          "baselineStayRate": 55.2,
+          "baselineSinkRate": 44.8,
+          "movementDelta": -1.4,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 2,
+          "riseRate": 18.7,
+          "stayRate": 22.5,
+          "sinkRate": 58.8,
+          "label": "沈下",
+          "samples": 182,
+          "baselineRiseRate": 14,
+          "baselineStayRate": 24.9,
+          "baselineSinkRate": 61.1,
+          "movementDelta": 7,
+          "scoreAdjustment": 2,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 3,
+          "riseRate": 37.9,
+          "stayRate": 18.7,
+          "sinkRate": 43.4,
+          "label": "沈下",
+          "samples": 182,
+          "baselineRiseRate": 34.7,
+          "baselineStayRate": 20,
+          "baselineSinkRate": 45.3,
+          "movementDelta": 5.1,
+          "scoreAdjustment": 1,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 4,
+          "riseRate": 46.7,
+          "stayRate": 21.1,
+          "sinkRate": 32.2,
+          "label": "浮上",
+          "samples": 180,
+          "baselineRiseRate": 46.7,
+          "baselineStayRate": 19.3,
+          "baselineSinkRate": 34,
+          "movementDelta": 1.8,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 5,
+          "riseRate": 56.6,
+          "stayRate": 24.7,
+          "sinkRate": 18.7,
+          "label": "浮上",
+          "samples": 182,
+          "baselineRiseRate": 56.9,
+          "baselineStayRate": 22.1,
+          "baselineSinkRate": 21,
+          "movementDelta": 2,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 6,
+          "riseRate": 72.9,
+          "stayRate": 27.1,
+          "sinkRate": 0,
+          "label": "浮上",
+          "samples": 181,
+          "baselineRiseRate": 71.2,
+          "baselineStayRate": 28.8,
+          "baselineSinkRate": 0,
+          "movementDelta": 1.7,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        }
+      ],
+      "productionAUnchanged": true,
+      "comparisonContract": {
+        "scenarioCaptured": true,
+        "practicalTicketsCaptured": true,
+        "skipDecisionCaptured": true,
+        "comparableForFixed100": true,
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "reason": "decision-fingerprint-changed-with-complete-replay"
+      },
+      "applicationMode": "shadow-only",
+      "usableForPrediction": false,
+      "automaticApplication": false,
+      "productionPredictionChanged": false,
+      "productionTicketSelectionChanged": false
     }
   }
 }
