@@ -1,0 +1,49 @@
+name: Prepare current cache test alignment
+on:
+  pull_request:
+    paths:
+      - "scripts/apply-current-cache-test-alignment.js"
+      - "scripts/test-current-cache-test-alignment.js"
+      - ".github/workflows/prepare-current-cache-test-alignment.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/apply-current-cache-test-alignment.js"
+      - "scripts/test-current-cache-test-alignment.js"
+      - ".github/workflows/prepare-current-cache-test-alignment.yml"
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: |
+          node --check scripts/apply-current-cache-test-alignment.js
+          node scripts/test-current-cache-test-alignment.js
+  generate:
+    if: github.event_name == 'push'
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: |
+          node scripts/apply-current-cache-test-alignment.js
+          node scripts/test-load-performance.js
+          node scripts/test-auto-stats.js
+      - run: |
+          git switch -C generated/current-cache-tests
+          git add scripts/test-load-performance.js scripts/test-auto-stats.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Align cache regression tests with current main"
+          git push --force origin generated/current-cache-tests
