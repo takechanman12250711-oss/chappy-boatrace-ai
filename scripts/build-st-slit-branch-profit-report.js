@@ -58,13 +58,28 @@ function stEvidence(record={}) {
     source:storedScenarios.length?"verificationEvidence":"aiCore",
     scenarioCount:list.length,
     adjustmentFieldCount:adjustments.length,
-    roleCount:roleRows.length
+    roleCount:roleRows.length,
+    adjustments
   };
 }
+function normalizeVerificationResult(record={}, results=new Map()) {
+  const embedded=record.result||{};
+  if(embedded.settled && ticket(embedded.resultTicket)) {
+    return {trifecta:{combination:ticket(embedded.resultTicket),payout:Math.max(0,Number(embedded.payout||0))}};
+  }
+  return results.get(raceKey(record))||null;
+}
 function summarize(rows) {
-  let stake=0,returned=0,hits=0;
-  for(const row of rows){const ts=practicalTickets(row.record);if(!ts.length)continue;const actual=ticket(row.result?.trifecta?.combination);const payout=Math.max(0,Number(row.result?.trifecta?.payout||0));stake+=ts.length*STAKE_PER_TICKET;if(actual&&ts.includes(actual)){hits++;returned+=payout;}}
-  return {raceCount:rows.length,hitCount:hits,hitRate:rows.length?Math.round(hits/rows.length*1000)/10:null,stake,return:returned,profit:returned-stake,recoveryRate:stake?Math.round(returned/stake*1000)/10:null};
+  let stake=0,returned=0,hits=0,settledCount=0;
+  for(const row of rows){
+    if(!row.result)continue;
+    settledCount++;
+    const ts=practicalTickets(row.record);if(!ts.length)continue;
+    const actual=ticket(row.result?.trifecta?.combination);const payout=Math.max(0,Number(row.result?.trifecta?.payout||0));
+    stake+=ts.length*STAKE_PER_TICKET;
+    if(actual&&ts.includes(actual)){hits++;returned+=payout;}
+  }
+  return {raceCount:rows.length,settledCount,hitCount:hits,hitRate:settledCount?Math.round(hits/settledCount*1000)/10:null,stake,return:returned,profit:returned-stake,recoveryRate:stake?Math.round(returned/stake*1000)/10:null};
 }
 function diagnose(records) {
   let raceCount=0, scenarioEvidenceRaceCount=0, adjustmentEvidenceRaceCount=0, stSlitRoleEvidenceRaceCount=0;
@@ -76,6 +91,10 @@ function diagnose(records) {
     if(ev.roleCount>0)stSlitRoleEvidenceRaceCount++;
   }
   return {raceCount,scenarioEvidenceRaceCount,adjustmentEvidenceRaceCount,stSlitRoleEvidenceRaceCount};
+}
+function branchSummaries(rows) {
+  const branches={all:rows,alert:rows.filter(r=>r.evidence.alert),advantage:rows.filter(r=>r.evidence.advantage),risk:rows.filter(r=>r.evidence.risk),positiveAdjustment:rows.filter(r=>r.evidence.positiveAdjustment),negativeAdjustment:rows.filter(r=>r.evidence.negativeAdjustment),fHolder:rows.filter(r=>r.evidence.fHolder),formal:rows.filter(r=>r.evidence.formal),unsupported:rows.filter(r=>!r.evidence.supported)};
+  return Object.fromEntries(Object.entries(branches).map(([k,v])=>[k,summarize(v)]));
 }
 function build(predDocs,resultDocs){
   const results=resultMap(resultDocs);const byKey=new Map();
@@ -93,14 +112,25 @@ function build(predDocs,resultDocs){
   const selectedDiagnostics=diagnose(selectedRecords);
   const verificationDiagnostics=diagnose(verificationRecords);
   const rows=[...byKey.values()];
-  const branches={all:rows,alert:rows.filter(r=>r.evidence.alert),advantage:rows.filter(r=>r.evidence.advantage),risk:rows.filter(r=>r.evidence.risk),positiveAdjustment:rows.filter(r=>r.evidence.positiveAdjustment),negativeAdjustment:rows.filter(r=>r.evidence.negativeAdjustment),fHolder:rows.filter(r=>r.evidence.fHolder),formal:rows.filter(r=>r.evidence.formal),unsupported:rows.filter(r=>!r.evidence.supported)};
-  const summaries=Object.fromEntries(Object.entries(branches).map(([k,v])=>[k,summarize(v)]));
-  const ranked=Object.entries(summaries).filter(([k,v])=>k!=="all"&&v.raceCount>=10&&v.recoveryRate!=null).sort((a,b)=>a[1].recoveryRate-b[1].recoveryRate).map(([branch,metrics],i)=>({rank:i+1,branch,...metrics}));
+  const summaries=branchSummaries(rows);
+  const ranked=Object.entries(summaries).filter(([k,v])=>k!=="all"&&v.settledCount>=10&&v.recoveryRate!=null).sort((a,b)=>a[1].recoveryRate-b[1].recoveryRate).map(([branch,metrics],i)=>({rank:i+1,branch,...metrics}));
+
+  const prospectiveRows=verificationRecords
+    .map(record=>({record,evidence:stEvidence(record),result:normalizeVerificationResult(record,results)}))
+    .filter(row=>row.evidence.adjustmentFieldCount>0);
+  const prospectiveSummaries=branchSummaries(prospectiveRows);
+  const firstEvidence=prospectiveRows.length?{
+    raceKey:raceKey(prospectiveRows[0].record),
+    selectedAt:prospectiveRows[0].record.selectedAt||null,
+    settled:Boolean(prospectiveRows[0].result),
+    adjustments:prospectiveRows[0].evidence.adjustments
+  }:null;
+
   return {
-    schemaVersion:4,
-    version:"st-slit-branch-profit-v4",
+    schemaVersion:5,
+    version:"st-slit-branch-profit-v5",
     generatedAt:new Date().toISOString(),
-    source:"selected production predictions + official results; verification predictions are diagnostics only",
+    source:"selected production predictions + official results; ST evidence-bearing verification predictions are a separate prospective shadow cohort",
     stakePerTicket:STAKE_PER_TICKET,
     productionChanged:false,
     evidenceDiagnostics:{
@@ -113,9 +143,17 @@ function build(predDocs,resultDocs){
       verificationPredictions:verificationDiagnostics
     },
     summaries,
-    weakBranchRanking:ranked
+    weakBranchRanking:ranked,
+    verificationProspective:{
+      label:"ST/slit evidence prospective shadow cohort",
+      actualPurchase:false,
+      oldRecordsBackfilled:false,
+      evidenceRaceCount:prospectiveRows.length,
+      firstEvidence,
+      summaries:prospectiveSummaries
+    }
   };
 }
-function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit selected adjustment evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll}R / verification ${report.evidenceDiagnostics.verificationPredictions.adjustmentEvidenceRaceCount}R`);}
+function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit selected evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll}R / prospective verification ${report.verificationProspective.evidenceRaceCount}R`);}
 if(require.main===module)main();
-module.exports={ticket,tickets,raceKey,stEvidence,summarize,diagnose,build};
+module.exports={ticket,tickets,raceKey,stEvidence,normalizeVerificationResult,summarize,diagnose,branchSummaries,build};
