@@ -575,6 +575,12 @@ function compactScenario(value) {
     frameMovementAdjustment: Number(
       value.frameMovementAdjustment || 0
     ),
+    ...(Object.prototype.hasOwnProperty.call(value, "slitAdjustment")
+      ? { slitAdjustment: Number(value.slitAdjustment || 0) }
+      : {}),
+    slitReasons: Array.isArray(value.slitReasons)
+      ? value.slitReasons.map(String).filter(Boolean)
+      : [],
     attacker: Number(value.attacker || 0) || null,
     attackerCourse: Number(
       value.attackerCourse ?? value.attacker ?? 0
@@ -691,7 +697,27 @@ function compactVerificationEvidence(prediction) {
     relations: evidence.relations || raceScenarios.relations || null,
     frameMovement: Array.isArray(evidence.frameMovement)
       ? evidence.frameMovement
-      : []
+      : [],
+    stSlit: {
+      source: String(aiCore?.stSlitTheory?.source || ""),
+      roles: (Array.isArray(aiCore?.stSlitTheory?.roles)
+        ? aiCore.stSlitTheory.roles
+        : []).map(role => ({
+          boatNo: Number(role?.boatNo || role?.boat || 0) || null,
+          course: Number(role?.course || 0) || null,
+          score: Number.isFinite(Number(role?.score))
+            ? Number(role.score)
+            : null,
+          status: String(role?.status || ""),
+          samples: Number.isFinite(Number(role?.samples))
+            ? Number(role.samples)
+            : null,
+          isFormal: role?.isFormal === true,
+          appliedToScore: role?.appliedToScore === true,
+          fCount: Number(role?.fCount || 0),
+          reason: String(role?.reason || "")
+        }))
+    }
   };
 
   if (!providedEvidence) return aiCoreEvidence;
@@ -720,7 +746,15 @@ function compactVerificationEvidence(prediction) {
     ),
     scenarios:
       providedScenarios.length >= 2
-        ? providedScenarios
+        ? providedScenarios.map((provided, index) =>
+            mergeCompactScenario(
+              provided,
+              aiCoreScenarios.find(row =>
+                String(row?.type || "") ===
+                  String(provided?.type || "")
+              ) || aiCoreScenarios[index] || null
+            )
+          )
         : aiCoreScenarios,
     roles: {
       ...(aiCoreEvidence.roles || {}),
@@ -741,7 +775,16 @@ function compactVerificationEvidence(prediction) {
       Array.isArray(providedEvidence.frameMovement) &&
       providedEvidence.frameMovement.length
         ? providedEvidence.frameMovement
-        : aiCoreEvidence.frameMovement
+        : aiCoreEvidence.frameMovement,
+    stSlit: {
+      ...(aiCoreEvidence.stSlit || {}),
+      ...(providedEvidence.stSlit || {}),
+      roles:
+        Array.isArray(providedEvidence?.stSlit?.roles) &&
+        providedEvidence.stSlit.roles.length
+          ? providedEvidence.stSlit.roles
+          : aiCoreEvidence?.stSlit?.roles || []
+    }
   };
 }
 
