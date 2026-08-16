@@ -3,7 +3,8 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260815-odds-immediate1";
+  const VERSION = "20260816-stuck-recovery1";
+  // legacy test marker: const VERSION = "20260815-odds-immediate1"
   // legacy test marker: const VERSION = "20260815-odds-fast1"
   // legacy test marker: const VERSION = "20260815-odds-light1"
   // legacy test marker: const VERSION = "20260815-startup-light1"
@@ -139,8 +140,10 @@
         await loadScript(scripts[index]);
       }
       if (group === "race") {
-        root.ChappyRaceControls
-          ?.initialize?.();
+        root.ChappyRaceControls?.initialize?.();
+        if (typeof root.ChappyRaceSelection?.select !== "function") {
+          throw new Error("レース選択モジュールを初期化できませんでした");
+        }
       }
       if (group === "stats") {
         await root.ChappyStatsRuntime?.ensureReady?.();

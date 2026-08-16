@@ -7,7 +7,6 @@
   const NIGHT_LABEL = "ナイター";
   let activeFilter = "all";
   let patchQueued = false;
-  let venueObserver = null;
 
   function firstRaceButton(venue) {
     return venue?.querySelector(
@@ -116,13 +115,15 @@
   function queueClassificationPatch() {
     if (patchQueued) return;
     patchQueued = true;
-    root.requestAnimationFrame?.(() => {
+    const run = () => {
       patchQueued = false;
       patchOhmuraClassification();
-    }) || root.setTimeout(() => {
-      patchQueued = false;
-      patchOhmuraClassification();
-    }, 0);
+    };
+    if (typeof root.requestAnimationFrame === "function") {
+      root.requestAnimationFrame(run);
+    } else {
+      root.setTimeout(run, 0);
+    }
   }
 
   async function ensureResultPanel() {
@@ -186,27 +187,13 @@
     queueClassificationPatch();
   }
 
-  function bindVenueObserver() {
-    const host = venueHost();
-    if (!host || venueObserver) return;
-    venueObserver = new MutationObserver(queueClassificationPatch);
-    venueObserver.observe(host, { childList: true, subtree: true });
-  }
-
   document.addEventListener("click", openVenue, true);
   document.addEventListener("click", trackFilter, false);
-  root.addEventListener("chappy:home-schedule", () => {
-    bindVenueObserver();
-    queueClassificationPatch();
-  });
+  root.addEventListener("chappy:home-schedule", queueClassificationPatch);
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      bindVenueObserver();
-      queueClassificationPatch();
-    }, { once: true });
+    document.addEventListener("DOMContentLoaded", queueClassificationPatch, { once: true });
   } else {
-    bindVenueObserver();
     queueClassificationPatch();
   }
 
