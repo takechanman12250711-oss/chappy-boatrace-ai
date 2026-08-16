@@ -48,7 +48,7 @@ assert.ok(
 );
 
 assert.equal(
-  appRuntime.includes("const PRELOAD_LOOKAHEAD=2") &&
+  appRuntime.includes("PRELOAD_LOOKAHEAD=2") &&
     appRuntime.includes('HOME_RACE_SELECTOR="[data-place][data-race]"') &&
     appRuntime.includes('if(target?.matches(HOME_RACE_SELECTOR))return"";'),
   true,
