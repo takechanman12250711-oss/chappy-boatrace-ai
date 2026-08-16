@@ -57,7 +57,8 @@ function stEvidence(record={}) {
     supported:roleRows.some(x=>x?.appliedToScore===true||x?.isFormal===true),
     source:storedScenarios.length?"verificationEvidence":"aiCore",
     scenarioCount:list.length,
-    adjustmentFieldCount:adjustments.length
+    adjustmentFieldCount:adjustments.length,
+    roleCount:roleRows.length
   };
 }
 function summarize(rows) {
@@ -65,27 +66,56 @@ function summarize(rows) {
   for(const row of rows){const ts=practicalTickets(row.record);if(!ts.length)continue;const actual=ticket(row.result?.trifecta?.combination);const payout=Math.max(0,Number(row.result?.trifecta?.payout||0));stake+=ts.length*STAKE_PER_TICKET;if(actual&&ts.includes(actual)){hits++;returned+=payout;}}
   return {raceCount:rows.length,hitCount:hits,hitRate:rows.length?Math.round(hits/rows.length*1000)/10:null,stake,return:returned,profit:returned-stake,recoveryRate:stake?Math.round(returned/stake*1000)/10:null};
 }
+function diagnose(records) {
+  let raceCount=0, scenarioEvidenceRaceCount=0, adjustmentEvidenceRaceCount=0, stSlitRoleEvidenceRaceCount=0;
+  for (const record of records) {
+    raceCount++;
+    const ev=stEvidence(record);
+    if(ev.source==="verificationEvidence"&&ev.scenarioCount>0)scenarioEvidenceRaceCount++;
+    if(ev.adjustmentFieldCount>0)adjustmentEvidenceRaceCount++;
+    if(ev.roleCount>0)stSlitRoleEvidenceRaceCount++;
+  }
+  return {raceCount,scenarioEvidenceRaceCount,adjustmentEvidenceRaceCount,stSlitRoleEvidenceRaceCount};
+}
 function build(predDocs,resultDocs){
   const results=resultMap(resultDocs);const byKey=new Map();
-  let totalPredictionRaceCount=0,verificationEvidenceRaceCountAll=0,adjustmentEvidenceRaceCountAll=0;
+  const selectedRecords=predDocs.flatMap(d=>Array.isArray(d.predictions)?d.predictions:[]);
+  const verificationRecords=predDocs.flatMap(d=>Array.isArray(d.verificationPredictions)?d.verificationPredictions:[]);
   let verificationEvidenceRaceCount=0,adjustmentEvidenceRaceCount=0;
-  for(const d of predDocs) for(const r of (Array.isArray(d.predictions)?d.predictions:[])){
-    totalPredictionRaceCount++;
+  for(const r of selectedRecords){
     const ev=stEvidence(r);
-    if(ev.source==="verificationEvidence"&&ev.scenarioCount>0)verificationEvidenceRaceCountAll++;
-    if(ev.adjustmentFieldCount>0)adjustmentEvidenceRaceCountAll++;
     const key=raceKey(r);if(!key||!results.has(key))continue;
     if(ev.source==="verificationEvidence"&&ev.scenarioCount>0)verificationEvidenceRaceCount++;
     if(ev.adjustmentFieldCount>0)adjustmentEvidenceRaceCount++;
     if(!ev.alert&&!ev.risk&&!ev.advantage&&!ev.positiveAdjustment&&!ev.negativeAdjustment&&!ev.supported)continue;
     byKey.set(key,{record:r,result:results.get(key),evidence:ev});
   }
+  const selectedDiagnostics=diagnose(selectedRecords);
+  const verificationDiagnostics=diagnose(verificationRecords);
   const rows=[...byKey.values()];
   const branches={all:rows,alert:rows.filter(r=>r.evidence.alert),advantage:rows.filter(r=>r.evidence.advantage),risk:rows.filter(r=>r.evidence.risk),positiveAdjustment:rows.filter(r=>r.evidence.positiveAdjustment),negativeAdjustment:rows.filter(r=>r.evidence.negativeAdjustment),fHolder:rows.filter(r=>r.evidence.fHolder),formal:rows.filter(r=>r.evidence.formal),unsupported:rows.filter(r=>!r.evidence.supported)};
   const summaries=Object.fromEntries(Object.entries(branches).map(([k,v])=>[k,summarize(v)]));
   const ranked=Object.entries(summaries).filter(([k,v])=>k!=="all"&&v.raceCount>=10&&v.recoveryRate!=null).sort((a,b)=>a[1].recoveryRate-b[1].recoveryRate).map(([branch,metrics],i)=>({rank:i+1,branch,...metrics}));
-  return {schemaVersion:3,version:"st-slit-branch-profit-v3",generatedAt:new Date().toISOString(),source:"saved production predictions + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,evidenceDiagnostics:{totalPredictionRaceCount,verificationEvidenceRaceCountAll,adjustmentEvidenceRaceCountAll,verificationEvidenceRaceCount,adjustmentEvidenceRaceCount},summaries,weakBranchRanking:ranked};
+  return {
+    schemaVersion:4,
+    version:"st-slit-branch-profit-v4",
+    generatedAt:new Date().toISOString(),
+    source:"selected production predictions + official results; verification predictions are diagnostics only",
+    stakePerTicket:STAKE_PER_TICKET,
+    productionChanged:false,
+    evidenceDiagnostics:{
+      totalPredictionRaceCount:selectedDiagnostics.raceCount,
+      verificationEvidenceRaceCountAll:selectedDiagnostics.scenarioEvidenceRaceCount,
+      adjustmentEvidenceRaceCountAll:selectedDiagnostics.adjustmentEvidenceRaceCount,
+      stSlitRoleEvidenceRaceCountAll:selectedDiagnostics.stSlitRoleEvidenceRaceCount,
+      verificationEvidenceRaceCount,
+      adjustmentEvidenceRaceCount,
+      verificationPredictions:verificationDiagnostics
+    },
+    summaries,
+    weakBranchRanking:ranked
+  };
 }
-function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit storage evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll}R / settled ${report.evidenceDiagnostics.adjustmentEvidenceRaceCount}R`);}
+function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit selected adjustment evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll}R / verification ${report.evidenceDiagnostics.verificationPredictions.adjustmentEvidenceRaceCount}R`);}
 if(require.main===module)main();
-module.exports={ticket,tickets,raceKey,stEvidence,summarize,build};
+module.exports={ticket,tickets,raceKey,stEvidence,summarize,diagnose,build};

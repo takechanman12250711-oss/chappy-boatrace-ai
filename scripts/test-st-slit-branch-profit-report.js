@@ -9,18 +9,21 @@ for(let i=1;i<=12;i++){const r=rec(i,-8,{risk:true});preds.push(r);results.push(
 for(let i=13;i<=24;i++){const r=rec(i,8,{alert:true});preds.push(r);results.push(result(r,true,900));}
 const stored=storedRec(25,-4);preds.push(stored);results.push(result(stored,false));
 const pendingStored=storedRec(26,4);preds.push(pendingStored);
+const verification=[storedRec(101,8),storedRec(102,-8),storedRec(103,0)];
 const storedEvidence=engine.stEvidence(stored);
 assert.equal(storedEvidence.source,"verificationEvidence");
 assert.equal(storedEvidence.negativeAdjustment,true);
 assert.equal(storedEvidence.formal,true);
-const report=engine.build([{predictions:preds}],[{races:results}]);
+const report=engine.build([{predictions:preds,verificationPredictions:verification}],[{races:results}]);
 assert.equal(report.productionChanged,false);
-assert.equal(report.schemaVersion,3);
+assert.equal(report.schemaVersion,4);
 assert.equal(report.evidenceDiagnostics.totalPredictionRaceCount,26);
 assert.equal(report.evidenceDiagnostics.verificationEvidenceRaceCountAll,2);
 assert.equal(report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll,26);
+assert.equal(report.evidenceDiagnostics.stSlitRoleEvidenceRaceCountAll,26);
 assert.equal(report.evidenceDiagnostics.verificationEvidenceRaceCount,1);
 assert.equal(report.evidenceDiagnostics.adjustmentEvidenceRaceCount,25);
+assert.deepEqual(report.evidenceDiagnostics.verificationPredictions,{raceCount:3,scenarioEvidenceRaceCount:3,adjustmentEvidenceRaceCount:3,stSlitRoleEvidenceRaceCount:3});
 assert.equal(report.summaries.negativeAdjustment.raceCount,13);
 assert.equal(report.summaries.positiveAdjustment.raceCount,12);
 assert.ok(report.summaries.negativeAdjustment.recoveryRate < report.summaries.positiveAdjustment.recoveryRate);
