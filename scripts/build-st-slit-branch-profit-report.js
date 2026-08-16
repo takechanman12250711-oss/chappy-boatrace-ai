@@ -30,21 +30,37 @@ function practicalTickets(record={}) {
 function stEvidence(record={}) {
   const prediction=record.prediction||{};
   const core=prediction.aiCore||{};
-  const scenarios=core.raceScenarios||{};
-  const slit=scenarios?.evidence?.slit || core?.stSlitTheory || prediction?.stSlitTheory || {};
-  const list=Array.isArray(scenarios.scenarios)?scenarios.scenarios:[];
-  const adjustments=list.map(s=>Number(s?.slitAdjustment||0)).filter(Number.isFinite);
+  const coreScenarios=core.raceScenarios||{};
+  const verification=prediction.verificationEvidence||{};
+  const storedScenarios=Array.isArray(verification.scenarios)?verification.scenarios:[];
+  const coreScenarioList=Array.isArray(coreScenarios.scenarios)?coreScenarios.scenarios:[];
+  const list=storedScenarios.length?storedScenarios:coreScenarioList;
+  const slit=verification?.slit || coreScenarios?.evidence?.slit || core?.stSlitTheory || prediction?.stSlitTheory || {};
+  const adjustments=list
+    .filter(s=>s && Object.prototype.hasOwnProperty.call(s,"slitAdjustment"))
+    .map(s=>Number(s.slitAdjustment))
+    .filter(Number.isFinite);
+  const reasons=list.flatMap(s=>Array.isArray(s?.slitReasons)?s.slitReasons:[]).map(String);
   const analyses=Array.isArray(core.analyses)?core.analyses:[];
   const stRows=analyses.map(a=>a?.stTheory).filter(Boolean);
+  const storedRoles=Array.isArray(verification?.stSlit?.roles)?verification.stSlit.roles:[];
+  const roleRows=storedRoles.length?storedRoles:stRows;
+  const positive=adjustments.some(v=>v>0);
+  const negative=adjustments.some(v=>v<0);
+  const reasonAlert=reasons.some(v=>/優勢|先行|早い|速い|攻め/i.test(v));
+  const reasonRisk=reasons.some(v=>/劣勢|遅れ|遅い|凹|F持ち|フライング/i.test(v));
   return {
-    alert: (Array.isArray(slit.alerts)&&slit.alerts.length>0) || adjustments.some(v=>v>0),
-    risk: (Array.isArray(slit.risks)&&slit.risks.length>0) || adjustments.some(v=>v<0),
-    advantage: (Array.isArray(slit.advantages)&&slit.advantages.length>0),
-    positiveAdjustment: adjustments.some(v=>v>0),
-    negativeAdjustment: adjustments.some(v=>v<0),
-    fHolder: analyses.some(a=>Number(a?.fCount||a?.entry?.fCount||0)>0),
-    formal: stRows.length>0 && stRows.some(x=>x?.isFormal===true),
-    supported: stRows.some(x=>x?.appliedToScore===true || x?.isFormal===true)
+    alert: (Array.isArray(slit.alerts)&&slit.alerts.length>0) || positive || reasonAlert,
+    risk: (Array.isArray(slit.risks)&&slit.risks.length>0) || negative || reasonRisk,
+    advantage: (Array.isArray(slit.advantages)&&slit.advantages.length>0) || roleRows.some(x=>/advantage|優勢/i.test(String(x?.status||""))),
+    positiveAdjustment: positive,
+    negativeAdjustment: negative,
+    fHolder: analyses.some(a=>Number(a?.fCount||a?.entry?.fCount||0)>0) || roleRows.some(x=>Number(x?.fCount||0)>0),
+    formal: roleRows.length>0 && roleRows.some(x=>x?.isFormal===true),
+    supported: roleRows.some(x=>x?.appliedToScore===true || x?.isFormal===true),
+    source: storedScenarios.length?"verificationEvidence":"aiCore",
+    scenarioCount: list.length,
+    adjustmentFieldCount: adjustments.length
   };
 }
 function summarize(rows) {
@@ -59,9 +75,13 @@ function summarize(rows) {
 }
 function build(predDocs,resultDocs) {
   const results=resultMap(resultDocs); const byKey=new Map();
+  let verificationEvidenceRaceCount=0, adjustmentEvidenceRaceCount=0;
   for (const d of predDocs) for (const r of (Array.isArray(d.predictions)?d.predictions:[])) {
     const key=raceKey(r); if (!key || !results.has(key)) continue;
-    const ev=stEvidence(r); if (!ev.alert&&!ev.risk&&!ev.advantage&&!ev.positiveAdjustment&&!ev.negativeAdjustment&&!ev.supported) continue;
+    const ev=stEvidence(r);
+    if (ev.source==="verificationEvidence" && ev.scenarioCount>0) verificationEvidenceRaceCount++;
+    if (ev.adjustmentFieldCount>0) adjustmentEvidenceRaceCount++;
+    if (!ev.alert&&!ev.risk&&!ev.advantage&&!ev.positiveAdjustment&&!ev.negativeAdjustment&&!ev.supported) continue;
     byKey.set(key,{record:r,result:results.get(key),evidence:ev});
   }
   const rows=[...byKey.values()];
@@ -78,8 +98,8 @@ function build(predDocs,resultDocs) {
   };
   const summaries=Object.fromEntries(Object.entries(branches).map(([k,v])=>[k,summarize(v)]));
   const ranked=Object.entries(summaries).filter(([k,v])=>k!=="all"&&v.raceCount>=10&&v.recoveryRate!=null).sort((a,b)=>a[1].recoveryRate-b[1].recoveryRate).map(([branch,metrics],i)=>({rank:i+1,branch,...metrics}));
-  return {schemaVersion:1,version:"st-slit-branch-profit-v1",generatedAt:new Date().toISOString(),source:"saved production predictions + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,summaries,weakBranchRanking:ranked};
+  return {schemaVersion:2,version:"st-slit-branch-profit-v2",generatedAt:new Date().toISOString(),source:"saved production predictions + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,evidenceDiagnostics:{verificationEvidenceRaceCount,adjustmentEvidenceRaceCount},summaries,weakBranchRanking:ranked};
 }
-function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit branches: ${report.summaries.all.raceCount}R`);}
+function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit branches: ${report.summaries.all.raceCount}R / adjustment evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCount}R`);}
 if(require.main===module)main();
 module.exports={ticket,tickets,raceKey,stEvidence,summarize,build};
