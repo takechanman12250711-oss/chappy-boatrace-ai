@@ -36,7 +36,7 @@ const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/sc
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
-const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260815-odds-consume2"');
+const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-ios-sequential1"');
 const appIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260816-stuck-recovery1"');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js?v=20260816-stuck-recovery1"');
 const oddsFirstIndex = html.indexOf('src="js/odds-first-navigation.js?v=20260815-odds-consume2"');
@@ -45,7 +45,7 @@ assert.ok(
   directOddsIndex >= 0 && directOddsIndex < directApiIndex &&
   directApiIndex < predictionLoaderIndex && predictionLoaderIndex < appIndex &&
   appIndex < homeIndex && homeIndex < oddsFirstIndex && oddsFirstIndex < watchdogIndex,
-  "オッズ先行取得と安定版予想経路の後に固着監視を接続する"
+  "オッズ先行取得と逐次予想ローダーの後に固着監視を接続する"
 );
 
 assert.equal(
@@ -60,11 +60,12 @@ assert.equal(
   "親ランタイムの既存先読み制限は維持する"
 );
 assert.equal(
-  predictionRuntime.includes('const VERSION = "20260815-odds-consume2"') &&
-    predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)") &&
-    predictionRuntime.includes("for (const src of scripts)"),
+  predictionRuntime.includes('const VERSION = "20260816-ios-sequential1"') &&
+    !predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)") &&
+    predictionRuntime.includes("for (const src of scripts)") &&
+    predictionRuntime.includes('loadMode: "sequential"'),
   true,
-  "ユーザー環境でロールバック済みの予想ランタイム実行順を変更しない"
+  "iPhone Safariで25本を一斉先読みせず、同じ実行順のまま逐次ロードする"
 );
 assert.equal(
   predictionRuntime.includes("const ODDS_PRIORITY_WAIT_MS = 2500") &&
@@ -96,4 +97,4 @@ assert.equal(
   'class="bottom-nav"', 'data-view="home"', 'data-view="prediction"', 'data-view="result"'
 ].forEach(marker => assert.equal(html.includes(marker), true, `UI構造を維持する: ${marker}`));
 
-console.log("アプリ初期表示・UI不変・Safari固着復旧クリティカルパステスト: 合格");
+console.log("アプリ初期表示・UI不変・iOS逐次予想ローダー検証: 合格");
