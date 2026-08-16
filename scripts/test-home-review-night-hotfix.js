@@ -9,15 +9,15 @@ const source = fs.readFileSync(
   "utf8"
 );
 
-assert.match(source, /const OHMURA = "大村"/);
-assert.match(source, /const NIGHT_LABEL = "ナイター"/);
-assert.match(source, /activeFilter === "morning"/);
-assert.match(source, /activeFilter === "night"/);
-assert.match(source, /buildOhmuraCard/);
-assert.match(source, /ChappyTodayResultsHome\?\.load/);
-assert.match(source, /expandVenueForReview/);
-assert.match(source, /panel\?\.expandVenue/);
-assert.match(source, /firstRaceButton/);
-assert.match(source, /if \(raceButton\)/);
+assert.match(source, /function firstRaceButton\(venue\)/);
+assert.match(source, /\.home-v2-race\[data-place\]\[data-race\]:not\(:disabled\)/);
+assert.match(source, /function openVenue\(event\)/);
+assert.match(source, /target\.closest\("\.home-v2-race\[data-place\]\[data-race\]"\)/);
+assert.match(source, /target\.closest\("\[data-open-venue\]"\)/);
+assert.match(source, /target\.closest\("\.home-v2-venue\[data-venue\]"\)/);
+assert.match(source, /if \(!raceButton\) return/);
+assert.match(source, /raceButton\.click\(\)/);
+assert.match(source, /document\.addEventListener\("click", openVenue, true\)/);
+assert.match(source, /ChappyHomeVenueTapHotfix = Object\.freeze\(\{ openVenue \}\)/);
 
-console.log("home review/night hotfix contract passed");
+console.log("home venue tap hotfix contract passed");
