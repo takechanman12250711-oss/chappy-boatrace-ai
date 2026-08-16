@@ -2,10 +2,10 @@
 const fs=require("node:fs");
 
 function replaceOne(text,before,after,label){
-  if(text.includes(after)) return text;
   const count=text.split(before).length-1;
-  if(count!==1) throw new Error(`${label}: expected 1 marker, got ${count}`);
-  return text.replace(before,after);
+  if(count===1) return text.replace(before,after);
+  if(count===0 && text.includes(after)) return text;
+  throw new Error(`${label}: expected old marker once or already-patched marker, got old=${count}`);
 }
 function patchLoad(text){
   let out=String(text);
