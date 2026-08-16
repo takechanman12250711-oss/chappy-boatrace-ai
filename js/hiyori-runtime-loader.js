@@ -10,7 +10,8 @@
   let corePromise=null;
   let backgroundPromise=null;
   let installPromise=null;
-  const VERSION="20260815-odds-fast1";
+  const VERSION="20260816-critical-path1";
+  // legacy test marker: const VERSION="20260815-odds-fast1";
   // legacy test marker: const VERSION="20260815-odds-light1";
   // legacy test marker: const VERSION="20260815-startup-light1";
   // legacy test marker: const VERSION="20260813-course-failclosed1";
@@ -51,6 +52,16 @@
       write("chappy_hiyori_change_proposals_v1",{createdAt:adoptionProposals.createdAt||new Date().toISOString(),source:"chappy_hiyori_adoption_proposals_v1",proposals});
     }
   }
+  function scheduleCompatibilitySync(){
+    const run=()=>{
+      try{syncCompatibilityKeys()}catch(error){console.warn("[hiyori-runtime-loader] compatibility sync failed:",error)}
+    };
+    if("requestIdleCallback" in window){
+      window.requestIdleCallback(run,{timeout:5000});
+    }else{
+      window.setTimeout(run,0);
+    }
+  }
   function loadScript(src){return new Promise(resolve=>{
     const clean=src.split("?")[0];
     if([...document.scripts].some(script=>script.src&&script.src.includes(clean))){resolve();return}
@@ -82,9 +93,11 @@
     if(corePromise)return corePromise;
     corePromise=(async()=>{
       await window.ChappyPredictionRuntime?.ensureReady?.();
-      syncCompatibilityKeys();
       await loadProgressively(coreScripts);
       window.dispatchEvent(new CustomEvent("chappy:hiyori-core-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true}}));
+      // 互換キー同期は予想計算そのものではない。過去データが大きい端末で
+      // synchronous localStorage/JSON処理がAI表示を止めないよう、コア準備後のidleへ回す。
+      scheduleCompatibilitySync();
     })();
     return corePromise;
   }
