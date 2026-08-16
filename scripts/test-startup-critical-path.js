@@ -12,7 +12,6 @@ const appRuntime = read("js/app-runtime-loader.js");
 const predictionRuntime = read("js/prediction-runtime-loader.js");
 const hiyoriRuntime = read("js/hiyori-runtime-loader.js");
 const oddsFirst = read("js/odds-first-navigation.js");
-const watchdog = read("js/prediction-loading-watchdog.js");
 
 const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/script>/g)]
   .map(match => match[1].split("?")[0]);
@@ -21,7 +20,8 @@ const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/sc
   "js/flow-odds-tabs.js",
   "js/formation-odds-display.js",
   "js/manshu-display-reliability.js",
-  "js/home-recommendation-reliability.js"
+  "js/home-recommendation-reliability.js",
+  "js/prediction-loading-watchdog.js"
 ].forEach(file => assert.equal(directScripts.includes(file), false, `${file} を初期同期読込から外す`));
 
 [
@@ -30,44 +30,39 @@ const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/sc
   "js/prediction-runtime-loader.js",
   "js/app-runtime-loader.js",
   "js/home-dashboard-v2.js",
-  "js/odds-first-navigation.js",
-  "js/prediction-loading-watchdog.js"
+  "js/odds-first-navigation.js"
 ].forEach(file => assert.equal(directScripts.includes(file), true, `${file} をホーム操作経路で読み込む`));
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
-const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-ios-sequential1"');
-const hiyoriLoaderIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260816-prediction-nonblocking1"');
-const appIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260816-stuck-recovery1"');
-const homeIndex = html.indexOf('src="js/home-dashboard-v2.js?v=20260816-stuck-recovery1"');
+const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-runtime-deadline1"');
+const hiyoriLoaderIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"');
+const appIndex = html.indexOf('src="js/app-runtime-loader.js');
+const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
 const oddsFirstIndex = html.indexOf('src="js/odds-first-navigation.js?v=20260815-odds-consume2"');
-const watchdogIndex = html.indexOf('src="js/prediction-loading-watchdog.js?v=20260816-no-retry1"');
 assert.ok(
   directOddsIndex >= 0 && directOddsIndex < directApiIndex &&
   directApiIndex < predictionLoaderIndex && predictionLoaderIndex < hiyoriLoaderIndex &&
-  hiyoriLoaderIndex < appIndex && appIndex < homeIndex &&
-  homeIndex < oddsFirstIndex && oddsFirstIndex < watchdogIndex,
-  "オッズ先行取得・逐次予想ローダー・非同期日和補助・no-retry監視を固定順で接続する"
+  hiyoriLoaderIndex < appIndex && appIndex < homeIndex && homeIndex < oddsFirstIndex,
+  "オッズ先行取得・予想ランタイム・非同期日和補助を固定順で接続する"
 );
 
 assert.equal(
-  appRuntime.includes('const VERSION = "20260816-stuck-recovery1"') &&
-    appRuntime.includes("レース選択モジュールを初期化できませんでした"),
+  appRuntime.includes("PRELOAD_LOOKAHEAD=2") &&
+    appRuntime.includes('HOME_RACE_SELECTOR="[data-place][data-race]"') &&
+    appRuntime.includes('if(target?.matches(HOME_RACE_SELECTOR))return"";'),
   true,
-  "Safariへ現在のレースランタイムを再配信し、初期化欠損を黙って通さない"
+  "ホームraceタップ時に親ランタイムの重複先読みをしない"
 );
+
 assert.equal(
-  appRuntime.includes("const PRELOAD_LOOKAHEAD = 2") && !appRuntime.includes("preloadGroup(group);"),
+  predictionRuntime.includes('const VERSION = "20260816-runtime-deadline1"') &&
+    predictionRuntime.includes("const RUNTIME_TOTAL_TIMEOUT_MS = 45000") &&
+    predictionRuntime.includes("const PRELOAD_LOOKAHEAD = 2") &&
+    predictionRuntime.includes("await withTimeout(") &&
+    !predictionRuntime.includes("preloadScripts(scripts,0,scripts.length)"),
   true,
-  "親ランタイムの既存先読み制限は維持する"
-);
-assert.equal(
-  predictionRuntime.includes('const VERSION = "20260816-ios-sequential1"') &&
-    !predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)") &&
-    predictionRuntime.includes("for (const src of scripts)") &&
-    predictionRuntime.includes('loadMode: "sequential"'),
-  true,
-  "iPhone Safariで25本を一斉先読みせず、同じ実行順のまま逐次ロードする"
+  "予想ランタイムは一斉先読みせず、全体45秒でfail-closedする"
 );
 assert.equal(
   predictionRuntime.includes("const ODDS_PRIORITY_WAIT_MS = 2500") &&
@@ -81,21 +76,13 @@ assert.equal(
   "取得済み120通りを通常予想へ引き渡す"
 );
 assert.equal(
-  hiyoriRuntime.includes("const PRELOAD_LOOKAHEAD=2") &&
-    hiyoriRuntime.includes("await loadProgressively(coreScripts)") &&
+  hiyoriRuntime.includes('const VERSION="20260816-nonblocking-core2"') &&
     hiyoriRuntime.includes("function ensureReady()") &&
     hiyoriRuntime.includes("return Promise.resolve(true)") &&
-    hiyoriRuntime.includes("nonBlockingPrediction:true"),
+    hiyoriRuntime.includes("predictionBlocking:false") &&
+    hiyoriRuntime.includes("scheduleCompatibilitySync"),
   true,
-  "日和補助は保持したまま初回予想表示の必須待機から外す"
-);
-assert.equal(
-  watchdog.includes("FIRST_TIMEOUT_MS = 20000") &&
-    !watchdog.includes('ensure?.("race")') &&
-    !watchdog.includes("button.click()") &&
-    watchdog.includes("showPredictionError"),
-  true,
-  "永久ローディングを自動再開始せず20秒でfail-closedする"
+  "日和補助と互換同期は保持したまま初回予想表示を待たせない"
 );
 
 [
@@ -103,4 +90,4 @@ assert.equal(
   'class="bottom-nav"', 'data-view="home"', 'data-view="prediction"', 'data-view="result"'
 ].forEach(marker => assert.equal(html.includes(marker), true, `UI構造を維持する: ${marker}`));
 
-console.log("アプリ初期表示・UI不変・iOS逐次予想ローダー検証: 合格");
+console.log("アプリ初期表示・UI不変・予想ランタイム上限検証: 合格");
