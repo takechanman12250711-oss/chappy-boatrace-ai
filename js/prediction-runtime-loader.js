@@ -4,7 +4,8 @@
 
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260815-odds-consume2";
+  const VERSION = "20260816-ios-sequential1";
+  // legacy test marker: const VERSION = "20260815-odds-consume2"
   // legacy test marker: const VERSION = "20260815-odds-fast1"
   // legacy test marker: const VERSION = "20260815-odds-light1"
   // legacy test marker: const VERSION = "20260815-startup-light1"
@@ -140,9 +141,9 @@
     readyPromise = (async () => {
       const prioritizedOdds = await waitForOddsPriority();
 
-      // オッズ通信の完了、または最大2.5秒の待機後に全ファイルを先読みする。
-      // 実行順は下の逐次loadScriptで維持し、通信だけを並行化する。
-      preloadScripts(scripts, 0, scripts.length);
+      // iPhone Safariで25本を一斉preloadすると通信・メモリ・JS評価が集中して
+      // イベントループごと固着することがある。実行対象と順序は変えず、
+      // 必須モジュールは1本ずつ取得・評価して次へ進む。
       for (const src of scripts) {
         await loadScript(src);
       }
@@ -151,7 +152,8 @@
         {
           detail: {
             version: VERSION,
-            oddsPrioritized: Boolean(prioritizedOdds)
+            oddsPrioritized: Boolean(prioritizedOdds),
+            loadMode: "sequential"
           }
         }
       ));
