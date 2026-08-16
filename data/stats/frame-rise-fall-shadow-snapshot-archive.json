@@ -131206,6 +131206,910 @@
       "automaticApplication": false,
       "productionPredictionChanged": false,
       "productionTicketSelectionChanged": false
+    },
+    "20260816-19-12|frame-rise-fall-shadow-off-v1|sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4|frame-rise-fall-shadow-off-ablation-v1|2026-08-15T11:06:15+09:00|33bfee3c791c4f401fc285e8a1386675d79b778d|sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6": {
+      "version": "frame-rise-fall-shadow-storage-v2",
+      "candidateId": "frame-rise-fall-shadow-off-v1",
+      "candidateSpecFingerprint": "sha256:79e1255e66986140eadd1b354f99244882c4953f1e703de03f54ab7dfbe783d4",
+      "implementationFingerprint": "frame-rise-fall-shadow-off-ablation-v1",
+      "cutoff": {
+        "selectedAtExclusiveLowerBound": "2026-08-15T11:06:15+09:00",
+        "sourceCommit": "33bfee3c791c4f401fc285e8a1386675d79b778d",
+        "logicFingerprint": "sha256:a1ea5c14e712b3f94e54b2ba5f35e88cde08aeb35f06a1b683755b7f527a4ee6",
+        "status": "frozen"
+      },
+      "selectedAt": "2026-08-16T13:19:26.600Z",
+      "raceKey": "20260816-19-12",
+      "status": "shadow-ready",
+      "decisionChanged": true,
+      "applicableCount": 3,
+      "a": {
+        "label": "current-production",
+        "mainScenario": {
+          "type": "escape",
+          "label": "1号艇逃げ",
+          "score": 93.9,
+          "frameMovementAdjustment": 4,
+          "slitAdjustment": 2,
+          "slitReasons": [
+            "2号艇の壁・残し不安（+2）"
+          ],
+          "attacker": 1,
+          "attackerCourse": 1,
+          "attackerBoatNo": 1,
+          "headBoatNo": 1,
+          "blockedBoats": []
+        },
+        "scenarios": [
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 93.9,
+            "frameMovementAdjustment": 4,
+            "slitAdjustment": 2,
+            "slitReasons": [
+              "2号艇の壁・残し不安（+2）"
+            ],
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": []
+          },
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 76.7,
+            "frameMovementAdjustment": -1,
+            "slitAdjustment": 2,
+            "slitReasons": [
+              "4号艇が隣艇より展示STで0.05速い攻め優勢候補（+4）",
+              "3号艇のスリット優勢（-2）"
+            ],
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": []
+          },
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 70.7,
+            "frameMovementAdjustment": -3,
+            "slitAdjustment": -3,
+            "slitReasons": [
+              "2号艇が隣艇より展示STで0.08遅く、壁・残し不安（-3）"
+            ],
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": []
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 62.3,
+            "frameMovementAdjustment": 0,
+            "slitAdjustment": 6,
+            "slitReasons": [
+              "3号艇が隣艇より展示STで0.08速い攻め優勢候補（+4）",
+              "2号艇の壁・残し不安（+2）"
+            ],
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": []
+          }
+        ]
+      },
+      "b": {
+        "label": "frame-movement-adjustment-off",
+        "mainScenario": {
+          "type": "escape",
+          "label": "1号艇逃げ",
+          "score": 89.9,
+          "frameMovementAdjustment": 0,
+          "slitAdjustment": 2,
+          "slitReasons": [
+            "2号艇の壁・残し不安（+2）"
+          ],
+          "attacker": 1,
+          "attackerCourse": 1,
+          "attackerBoatNo": 1,
+          "headBoatNo": 1,
+          "blockedBoats": [],
+          "rawFrameMovementAdjustment": 4,
+          "shadowFrameMovementDisabled": true,
+          "shadowFrameMovementEvidence": {
+            "boatNo": 1,
+            "scoreAdjustment": 4,
+            "movementDelta": 17.8,
+            "label": "沈下"
+          }
+        },
+        "scenarios": [
+          {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 89.9,
+            "frameMovementAdjustment": 0,
+            "slitAdjustment": 2,
+            "slitReasons": [
+              "2号艇の壁・残し不安（+2）"
+            ],
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 4,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 1,
+              "scoreAdjustment": 4,
+              "movementDelta": 17.8,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "fourAttack",
+            "label": "4カド攻め",
+            "score": 77.7,
+            "frameMovementAdjustment": 0,
+            "slitAdjustment": 2,
+            "slitReasons": [
+              "4号艇が隣艇より展示STで0.05速い攻め優勢候補（+4）",
+              "3号艇のスリット優勢（-2）"
+            ],
+            "attacker": 4,
+            "attackerCourse": 4,
+            "attackerBoatNo": 4,
+            "headBoatNo": 4,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": -1,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 4,
+              "scoreAdjustment": -1,
+              "movementDelta": -6.7,
+              "label": "浮上"
+            }
+          },
+          {
+            "type": "sashi",
+            "label": "2コース差し",
+            "score": 73.7,
+            "frameMovementAdjustment": 0,
+            "slitAdjustment": -3,
+            "slitReasons": [
+              "2号艇が隣艇より展示STで0.08遅く、壁・残し不安（-3）"
+            ],
+            "attacker": 2,
+            "attackerCourse": 2,
+            "attackerBoatNo": 2,
+            "headBoatNo": 2,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": -3,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 2,
+              "scoreAdjustment": -3,
+              "movementDelta": -12.2,
+              "label": "沈下"
+            }
+          },
+          {
+            "type": "threeAttack",
+            "label": "3コース攻め",
+            "score": 62.3,
+            "frameMovementAdjustment": 0,
+            "slitAdjustment": 6,
+            "slitReasons": [
+              "3号艇が隣艇より展示STで0.08速い攻め優勢候補（+4）",
+              "2号艇の壁・残し不安（+2）"
+            ],
+            "attacker": 3,
+            "attackerCourse": 3,
+            "attackerBoatNo": 3,
+            "headBoatNo": 3,
+            "blockedBoats": [],
+            "shadowFrameMovementDisabled": false
+          }
+        ]
+      },
+      "downstreamReplay": {
+        "version": "frame-rise-fall-shadow-replay-v1",
+        "status": "replay-ready",
+        "a": {
+          "skipDecision": false,
+          "mainScenario": {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 93.9,
+            "frameMovementAdjustment": 4,
+            "slitAdjustment": 2,
+            "slitReasons": [
+              "2号艇の壁・残し不安（+2）"
+            ],
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": []
+          },
+          "practicalTickets": [
+            "1-2-3",
+            "1-4-3",
+            "1-3-4",
+            "1-2-4",
+            "1-2-5",
+            "1-2-6"
+          ],
+          "decisionFingerprint": "{\"skipDecision\":false,\"mainScenario\":{\"type\":\"escape\",\"headBoatNo\":1},\"practicalTickets\":[\"1-2-3\",\"1-4-3\",\"1-3-4\",\"1-2-4\",\"1-2-5\",\"1-2-6\"]}"
+        },
+        "b": {
+          "skipDecision": true,
+          "mainScenario": {
+            "type": "escape",
+            "label": "1号艇逃げ",
+            "score": 89.9,
+            "frameMovementAdjustment": 0,
+            "slitAdjustment": 2,
+            "slitReasons": [
+              "2号艇の壁・残し不安（+2）"
+            ],
+            "attacker": 1,
+            "attackerCourse": 1,
+            "attackerBoatNo": 1,
+            "headBoatNo": 1,
+            "blockedBoats": [],
+            "rawFrameMovementAdjustment": 4,
+            "shadowFrameMovementDisabled": true,
+            "shadowFrameMovementEvidence": {
+              "boatNo": 1,
+              "scoreAdjustment": 4,
+              "movementDelta": 17.8,
+              "label": "沈下"
+            }
+          },
+          "practicalTickets": [],
+          "decisionFingerprint": "{\"skipDecision\":true,\"mainScenario\":{\"type\":\"escape\",\"headBoatNo\":1},\"practicalTickets\":[]}"
+        },
+        "bSelectionStatus": "skipped",
+        "bSelectionReason": "主軸となる展開が定まらないため見送り。",
+        "bMarks": {
+          "honmei": {
+            "boatNo": 1,
+            "playerName": "柳生 泰二",
+            "className": "A1",
+            "indexes": {
+              "st": 77.7,
+              "exhibition": 66.7,
+              "motor": 50,
+              "local": 100,
+              "national": 100,
+              "attack": 94.1,
+              "raceFlow": 100,
+              "turn": 65,
+              "total": 98.1
+            },
+            "roleScores": {
+              "attack": 81.8,
+              "flow": 86.5,
+              "road": 76.8,
+              "hold": 98.6,
+              "pickup": 83.5
+            },
+            "primaryRole": {
+              "key": "hold",
+              "label": "残し艇🛟",
+              "score": 98.6
+            },
+            "roleRanking": [
+              {
+                "key": "hold",
+                "label": "残し艇🛟",
+                "score": 98.6
+              },
+              {
+                "key": "flow",
+                "label": "展開艇🌊",
+                "score": 86.5
+              },
+              {
+                "key": "pickup",
+                "label": "拾い艇🎯",
+                "score": 83.5
+              },
+              {
+                "key": "attack",
+                "label": "攻め艇🔥",
+                "score": 81.8
+              },
+              {
+                "key": "road",
+                "label": "道中艇⚡",
+                "score": 76.8
+              }
+            ],
+            "roleTags": [
+              "残し艇🛟",
+              "展開艇🌊",
+              "拾い艇🎯",
+              "当地巧者🏠",
+              "スタート巧者🚀"
+            ],
+            "courseStructureTheory": {
+              "boatNo": 1,
+              "course": 1,
+              "frame": 1,
+              "score": 55,
+              "grade": "C",
+              "status": "暫定・現行枠番評価",
+              "isFormal": false,
+              "mappingFormal": true,
+              "statsFormal": false,
+              "venueSamples": 0,
+              "minimumSamples": 100,
+              "appliedIndex": 129.5,
+              "appliedToScore": false,
+              "components": {
+                "basicStructure": 35,
+                "venueWin": 0,
+                "venueTop3": 0,
+                "periodTrend": 0,
+                "courseChange": 10,
+                "mappingReliability": 10
+              },
+              "reason": "展示進入1コース / 基本構造35/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動10/10 / 取得信頼度10/10 / 公式艇番画像で6艇進入確定 / 場×コース0走で正式数未達"
+            },
+            "stTheory": {
+              "boatNo": 1,
+              "course": 1,
+              "registerNo": "4361",
+              "score": 32.3,
+              "appliedIndex": 77.7,
+              "grade": "D",
+              "status": "暫定・現行ST評価",
+              "isFormal": false,
+              "appliedToScore": false,
+              "mappingFormal": true,
+              "samples": 0,
+              "reliability": "low",
+              "currentStCount": 9,
+              "currentStAverage": 0.14111111111111108,
+              "currentStSpread": 0.15,
+              "fCount": 0,
+              "components": {
+                "currentSeries": 19.8,
+                "recentCourse": 0,
+                "periodTrend": 0,
+                "threeYear": 0,
+                "nationalAverage": 7.5,
+                "flyingRisk": 5,
+                "reliability": 0
+              },
+              "history": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "reason": "今節ST19.8/25 / 直近1年コース別ST0/20 / 期間推移0/15 / 3年コース別ST0/15 / 全国平均ST7.5/10 / Fリスク5/5 / 取得信頼度0/10 / 公式展示進入6艇確定 / 実進入1コース0走で判定数未達"
+            },
+            "exhibitionPerformanceTheory": {
+              "boatNo": 1,
+              "name": "柳生 泰二",
+              "exhibitionTime": 6.88,
+              "lapTime": null,
+              "exhibitionTimeRank": 2,
+              "exhibitionRank": 2,
+              "lapRank": null,
+              "sumTime": null,
+              "sumDiff": null,
+              "isDoubleTime": false,
+              "score": 66.7,
+              "appliedIndex": 66.7,
+              "grade": "B",
+              "mode": "official",
+              "modeLabel": "公式展示モード",
+              "status": "正式反映",
+              "isFormal": true,
+              "appliedToScore": true,
+              "source": "BOAT RACE公式",
+              "components": {
+                "exhibitionRank": 28.7,
+                "exhibitionAverageDiff": 20,
+                "exhibitionNeighborGap": 8,
+                "reliability": 10
+              },
+              "reason": "展示順位28.7/35 / 6艇平均との差20/35 / 1位・隣接差8/20 / 取得信頼度10/10"
+            },
+            "buffs": [
+              "平均ST優秀",
+              "当地実績",
+              "全国実績",
+              "攻撃力あり"
+            ],
+            "debuffs": [],
+            "aiComment": "総合評価トップ級。本命候補。",
+            "attackTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "role": "逃げ",
+              "score": 0,
+              "grade": "-",
+              "status": "役割分離",
+              "isFormal": true,
+              "isAttackCourse": false,
+              "isAdopted": false,
+              "hasStartEvidence": true,
+              "hasAverageOrCurrentSupport": false,
+              "hasSlitAdvantage": true,
+              "comparedBoatNo": 2,
+              "slitDiff": 0.04,
+              "components": {
+                "development": 40,
+                "course": 0,
+                "startAndSlit": 12,
+                "exhibitionFoot": 5,
+                "venueCourse": 0
+              },
+              "reason": "1コースは逃げとして評価"
+            },
+            "totalRank": 1,
+            "attackRank": 3,
+            "flowRank": 1,
+            "roadRank": 1,
+            "holdRank": 1,
+            "pickupRank": 3,
+            "aiRank": 1,
+            "roleRanks": {
+              "attack": 3,
+              "flow": 1,
+              "road": 1,
+              "hold": 1,
+              "pickup": 3
+            },
+            "isTopAttack": false,
+            "isTopFlow": true,
+            "isTopRoad": true,
+            "isTopHold": true,
+            "isTopPickup": false,
+            "wallTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "attackerNo": 1,
+              "attackerCourse": 1,
+              "wallCourse": null,
+              "isAdjacent": false,
+              "score": 82,
+              "grade": "A",
+              "status": "参考",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "clearStartLag": false,
+              "hasStartEvidence": true,
+              "hasExhibitionEvidence": true,
+              "components": {
+                "startComparison": 25,
+                "startStability": 15,
+                "courseAdjacency": 0,
+                "exhibitionFoot": 13,
+                "holdRoad": 15,
+                "skillCourse": 10,
+                "surfaceAdaptation": 4
+              },
+              "reason": "攻め艇とのST比較25/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中15/15 / 技量・コース適性10/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない"
+            },
+            "holdPickupTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "hold": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioMatch": 0,
+                  "positionRelation": 0,
+                  "wallRoute": 0,
+                  "firstMarkRoute": 0,
+                  "dataReliability": 5
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "pickup": {
+                "score": 1,
+                "grade": "D",
+                "status": "不成立",
+                "isFormal": true,
+                "isAdopted": false,
+                "isReference": false,
+                "components": {
+                  "scenarioLink": 0,
+                  "openWater": 0,
+                  "positionRelation": 0,
+                  "backstretchRoute": 0,
+                  "dataReliability": 5
+                },
+                "reason": "1着中心艇のため2・3着候補から除外"
+              },
+              "hasIndependentDualEvidence": false
+            },
+            "flowTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "role": "展開外",
+              "score": 29.5,
+              "grade": "D",
+              "status": "攻め起点",
+              "isFormal": true,
+              "isAdopted": false,
+              "isAttackSource": true,
+              "isBlocked": false,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "scenarioType": "escape",
+              "scenarioLabel": "1号艇逃げ",
+              "attackerBoatNo": 1,
+              "attackerCourse": 1,
+              "components": {
+                "scenarioMatch": 0,
+                "positionRelation": 0,
+                "holdPickup": 14.8,
+                "startAndSlit": 6,
+                "exhibitionFoot": 5,
+                "venueWater": 3.7
+              },
+              "reason": "展開一致0/40 / 位置・コース0/20 / 残し・拾い14.8/15 / ST・スリット6/10 / 展示・足は9％枠へ分離 / 場・水面3.7/5 / 攻め艇自身は展開艇から分離 / 最有力展開の2・3着候補と不一致"
+            },
+            "roadTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "role": "残し",
+              "score": 69.5,
+              "grade": "B",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isAttackSource": false,
+              "isGoalCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasRoadEvidence": false,
+              "lapTime": null,
+              "seriesResultCount": 0,
+              "scenarioType": "escape",
+              "scenarioLabel": "1号艇逃げ",
+              "components": {
+                "scenarioMatch": 30,
+                "lapAndFoot": 12.5,
+                "seriesStability": 0,
+                "coursePosition": 15,
+                "localWater": 7,
+                "playerSkill": 5
+              },
+              "reason": "ゴール想定30/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置15/15 / 当地・水面7/10 / 技量5/5 / 今節成績不足のため暫定"
+            },
+            "localTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "role": "逃げ",
+              "score": 70.4,
+              "grade": "B",
+              "status": "正式採用",
+              "isFormal": true,
+              "isAdopted": true,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasLocalEvidence": true,
+              "localWinRate": 6.66,
+              "nationalWinRate": 7.37,
+              "local2Rate": 47.7,
+              "local3Rate": 58.7,
+              "scenarioType": "escape",
+              "scenarioLabel": "1号艇逃げ",
+              "components": {
+                "localVsNational": 5,
+                "localResults": 17.1,
+                "scenarioRole": 20,
+                "venueCourse": 11,
+                "venueWater": 12.3,
+                "playerSkill": 5
+              },
+              "reason": "当地・全国比較5/25 / 当地成績17.1/20 / 展開役割20/20 / 進入適合11/15 / 場・水面12.3/15 / 技量5/5"
+            },
+            "newEnvironmentTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "role": "逃げ",
+              "score": 58.5,
+              "grade": "C",
+              "status": "対象外",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": true,
+              "hasCurrentEvidence": true,
+              "hasAdaptationEvidence": true,
+              "scenarioType": "escape",
+              "scenarioLabel": "1号艇逃げ",
+              "components": {
+                "exhibitionFoot": 15,
+                "startAndSlit": 12,
+                "currentAndRoad": 2,
+                "scenarioRole": 15,
+                "playerSkill": 10,
+                "localWater": 4.5
+              },
+              "reason": "展示・足は9％枠へ分離 / 今節ST・スリット12/20 / 今節・道中2/20 / 展開役割15/15 / 技量10/10 / 当地・水面4.5/5"
+            },
+            "waterWeatherTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "role": "逃げ",
+              "score": 69.9,
+              "grade": "B",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": true,
+              "scenarioType": "escape",
+              "scenarioLabel": "1号艇逃げ",
+              "components": {
+                "windCourse": 16,
+                "waveExhibition": 10,
+                "surfaceTide": 2.6,
+                "scenarioRole": 20,
+                "localRoad": 12.6,
+                "stSkill": 8.7
+              },
+              "reason": "風向・風速とコース16/20 / 波・展示・回り足10/20 / 水面・潮汐2.6/15 / 展開役割20/20 / 当地・道中12.6/15 / ST・技量8.7/10 / 潮汐場の現在潮位・潮流が不足"
+            },
+            "racerSkillTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "registerNo": "4361",
+              "course": 1,
+              "role": "逃げ",
+              "methodLabel": "戦法根拠不足",
+              "samples": 0,
+              "reliability": "low",
+              "score": 19,
+              "grade": "D",
+              "status": "暫定",
+              "isFormal": false,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "appliedToScore": false,
+              "courseHistory": {
+                "all3Years": null,
+                "recent1Year": null,
+                "previous2Years": null
+              },
+              "components": {
+                "coursePerformance": 0,
+                "courseStart": 0,
+                "methodFit": 0,
+                "recentTrend": 0,
+                "classNational": 14,
+                "seriesRoad": 0,
+                "scenarioRole": 5
+              },
+              "reason": "現在コース1着・3連率0/25 / コース別ST・安定性0/15 / 得意戦法一致0/20 / 直近1年・過去2年推移0/15 / 級別・全国勝率14/15 / 今節着順・道中0/5 / 最有力展開役割5/5 / 公式の実進入コース別履歴なし / 期間別推移の必要使用数未達 / 決まり手の件数・割合不足"
+            },
+            "roleEvidence": {
+              "racerSkill": null
+            },
+            "motorMaintenanceTheory": {
+              "boatNo": 1,
+              "playerName": "柳生 泰二",
+              "course": 1,
+              "role": "逃げ",
+              "score": 41.7,
+              "grade": "D",
+              "status": "不成立",
+              "isFormal": true,
+              "isAdopted": false,
+              "isBlocked": false,
+              "isScenarioCandidate": true,
+              "isFirstCandidate": true,
+              "isSecondCandidate": false,
+              "isThirdCandidate": false,
+              "hasExhibitionEvidence": true,
+              "hasCurrentEvidence": true,
+              "hasPracticalEvidence": true,
+              "maintenance": {
+                "partsExchange": "",
+                "score": 0,
+                "comparableCount": 0,
+                "improvedCount": 0,
+                "worsenedCount": 0,
+                "trend": "交換なし",
+                "hasComparison": false
+              },
+              "motorRates": {
+                "motor2": 30,
+                "motor3": 45
+              },
+              "scenarioType": "escape",
+              "scenarioLabel": "1号艇逃げ",
+              "components": {
+                "exhibitionFoot": 12.5,
+                "currentRoad": 5.2,
+                "startAndSlit": 9,
+                "maintenanceChange": 0,
+                "relativeMotor": 0,
+                "scenarioRole": 10,
+                "playerAdjustment": 5
+              },
+              "reason": "展示・一周は確認条件のみ / 今節・道中5.2/20 / 今節ST・スリット9/15 / 整備後変化0/15 / 場内相対モーター0/10 / 展開役割10/10 / 調整力・当地5/5 / 更新時期・使用節数不明のためモーター数字は暫定"
+            }
+          },
+          "taikou": null,
+          "ana": null,
+          "osae": null,
+          "scenario": "1号艇逃げ",
+          "established": true,
+          "confidence": 89.9,
+          "evidence": {
+            "source": "raceScenarios",
+            "scenarioType": "escape",
+            "scenarioScore": 89.9,
+            "mainGap": 17.2,
+            "attacker": 1,
+            "wallBoat": null,
+            "remainers": [],
+            "followers": [],
+            "pickupCandidates": [],
+            "roadRaceBoats": [],
+            "localExperts": [],
+            "blockedBoats": []
+          }
+        },
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "comparableForFixed100": true,
+        "productionAUnchanged": true,
+        "applicationMode": "shadow-only",
+        "usableForPrediction": false,
+        "automaticApplication": false
+      },
+      "frameMovementRawEvidence": [
+        {
+          "boatNo": 1,
+          "riseRate": 0,
+          "stayRate": 73,
+          "sinkRate": 27,
+          "label": "沈下",
+          "samples": 185,
+          "baselineRiseRate": 0,
+          "baselineStayRate": 55.2,
+          "baselineSinkRate": 44.8,
+          "movementDelta": 17.8,
+          "scoreAdjustment": 4,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 2,
+          "riseRate": 6.5,
+          "stayRate": 27.7,
+          "sinkRate": 65.8,
+          "label": "沈下",
+          "samples": 184,
+          "baselineRiseRate": 14,
+          "baselineStayRate": 24.9,
+          "baselineSinkRate": 61.1,
+          "movementDelta": -12.2,
+          "scoreAdjustment": -3,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 3,
+          "riseRate": 31.9,
+          "stayRate": 26.4,
+          "sinkRate": 41.8,
+          "label": "沈下",
+          "samples": 182,
+          "baselineRiseRate": 34.7,
+          "baselineStayRate": 20,
+          "baselineSinkRate": 45.3,
+          "movementDelta": 0.7,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 4,
+          "riseRate": 43.2,
+          "stayRate": 19.7,
+          "sinkRate": 37.2,
+          "label": "浮上",
+          "samples": 183,
+          "baselineRiseRate": 46.7,
+          "baselineStayRate": 19.3,
+          "baselineSinkRate": 34,
+          "movementDelta": -6.7,
+          "scoreAdjustment": -1,
+          "appliedToScore": true
+        },
+        {
+          "boatNo": 5,
+          "riseRate": 59.5,
+          "stayRate": 16.8,
+          "sinkRate": 23.8,
+          "label": "浮上",
+          "samples": 185,
+          "baselineRiseRate": 56.9,
+          "baselineStayRate": 22.1,
+          "baselineSinkRate": 21,
+          "movementDelta": -0.2,
+          "scoreAdjustment": 0,
+          "appliedToScore": false
+        },
+        {
+          "boatNo": 6,
+          "riseRate": 63.6,
+          "stayRate": 36.4,
+          "sinkRate": 0,
+          "label": "浮上",
+          "samples": 184,
+          "baselineRiseRate": 71.2,
+          "baselineStayRate": 28.8,
+          "baselineSinkRate": 0,
+          "movementDelta": -7.6,
+          "scoreAdjustment": -2,
+          "appliedToScore": true
+        }
+      ],
+      "productionAUnchanged": true,
+      "comparisonContract": {
+        "scenarioCaptured": true,
+        "practicalTicketsCaptured": true,
+        "skipDecisionCaptured": true,
+        "comparableForFixed100": true,
+        "decisionChanged": true,
+        "ticketContractViolations": 0,
+        "reason": "decision-fingerprint-changed-with-complete-replay"
+      },
+      "applicationMode": "shadow-only",
+      "usableForPrediction": false,
+      "automaticApplication": false,
+      "productionPredictionChanged": false,
+      "productionTicketSelectionChanged": false
     }
   }
 }
