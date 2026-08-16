@@ -1,0 +1,78 @@
+name: Collect frame rise fall negative clip A/B
+
+on:
+  pull_request:
+    paths:
+      - "config/frame-rise-fall-negative-clip-trial.json"
+      - "js/frame-rise-fall-negative-clip-shadow.js"
+      - "scripts/build-frame-rise-fall-negative-clip-snapshots.js"
+      - "scripts/build-frame-rise-fall-negative-clip-result-report.js"
+      - "scripts/test-frame-rise-fall-negative-clip-shadow.js"
+      - "scripts/test-frame-rise-fall-negative-clip-snapshots.js"
+      - "scripts/test-frame-rise-fall-negative-clip-result-report.js"
+      - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
+  workflow_run:
+    workflows:
+      - "Collect automatic race predictions"
+      - "Collect official race results"
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "対象日（YYYYMMDD・空欄なら本日）"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+
+jobs:
+  verify-and-collect:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify negative clip prospective A/B
+        run: |
+          node --check js/frame-rise-fall-negative-clip-shadow.js
+          node --check scripts/build-frame-rise-fall-negative-clip-snapshots.js
+          node --check scripts/build-frame-rise-fall-negative-clip-result-report.js
+          node scripts/test-frame-rise-fall-negative-clip-shadow.js
+          node scripts/test-frame-rise-fall-negative-clip-snapshots.js
+          node scripts/test-frame-rise-fall-negative-clip-result-report.js
+
+      - name: Capture prospective comparison
+        if: github.event_name != 'pull_request'
+        env:
+          PREDICT_DATE: ${{ inputs.date }}
+        run: |
+          node scripts/restore-daily-prediction-source.js
+          node scripts/build-frame-rise-fall-negative-clip-snapshots.js
+          node scripts/build-frame-rise-fall-negative-clip-result-report.js
+          node scripts/prepare-daily-prediction-git-save.js
+
+      - name: Save prospective comparison
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/predictions data/stats/frame-rise-fall-negative-clip-result-report.json
+          if git diff --cached --quiet; then
+            echo "保存するnegative clip比較データはありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Collect frame rise fall negative clip A/B"
+          git pull --rebase origin main
+          git push origin main
