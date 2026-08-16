@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const engine = require("../js/frame-rise-fall-shadow-result-report");
+const futility = require("../js/frame-rise-fall-shadow-futility");
 
 const root = path.resolve(__dirname, "..");
 const predictionDir = path.join(root, "data", "predictions");
@@ -17,8 +18,14 @@ function loadDocuments(directory) {
     .map(name => JSON.parse(fs.readFileSync(path.join(directory, name), "utf8")));
 }
 
+function buildReport(predictionDocuments, resultDocuments) {
+  return futility.evaluate(
+    engine.build(predictionDocuments, resultDocuments)
+  );
+}
+
 function main() {
-  const report = engine.build(loadDocuments(predictionDir), loadDocuments(resultDir));
+  const report = buildReport(loadDocuments(predictionDir), loadDocuments(resultDir));
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n", "utf8");
   console.log(
     `枠別浮沈Shadow結果: 比較候補${report.observation.eligibleComparableCount}R` +
@@ -28,4 +35,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { loadDocuments, main };
+module.exports = { loadDocuments, buildReport, main };
