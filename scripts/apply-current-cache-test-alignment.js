@@ -67,6 +67,22 @@ function patchLoad(text){
     hiyoriLoader.includes("SCRIPT_LOAD_TIMEOUT_MS=12000"),`,
     'runtime timeout block'
   );
+  out=replaceOne(
+    out,
+`assert.equal(
+  hiyoriLoader.includes("ensureReady:installCore"),
+  true,
+  "予想開始時は必須モジュールだけ待つ"
+);`,
+`assert.equal(
+  hiyoriLoader.includes("function ensureReady()") &&
+    hiyoriLoader.includes("scheduleInstall();") &&
+    hiyoriLoader.includes("return Promise.resolve(true)"),
+  true,
+  "日和補助は初回予想を待たせずアイドル準備へ回す"
+);`,
+    'hiyori nonblocking readiness'
+  );
   return out;
 }
 function patchStats(text){
