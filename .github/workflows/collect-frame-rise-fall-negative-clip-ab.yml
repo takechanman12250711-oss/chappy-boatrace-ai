@@ -1,6 +1,12 @@
 name: Collect frame rise fall negative clip A/B
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "config/frame-rise-fall-negative-clip-trial.json"
+      - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
   pull_request:
     paths:
       - "config/frame-rise-fall-negative-clip-trial.json"
@@ -32,7 +38,7 @@ concurrency:
 
 jobs:
   verify-and-collect:
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
