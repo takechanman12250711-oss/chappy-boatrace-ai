@@ -15,7 +15,7 @@ const watchdog = read("js/prediction-loading-watchdog.js");
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js?v=20260815-odds-immediate1"');
 const directApiIndex = html.indexOf('src="js/api.js?v=20260815-odds-immediate1"');
-const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260815-odds-consume2"');
+const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260816-ios-sequential1"');
 const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js?v=20260816-stuck-recovery1"');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js?v=20260816-stuck-recovery1"');
 const todayResultsIndex = html.indexOf('src="js/today-results-home.js');
@@ -27,7 +27,7 @@ assert.ok(
   directApiIndex < directPredictionLoaderIndex && directPredictionLoaderIndex < appRuntimeIndex &&
   appRuntimeIndex < homeIndex && homeIndex < todayResultsIndex &&
   todayResultsIndex < oddsFirstIndex && oddsFirstIndex < watchdogIndex,
-  "オッズ共有・レースAPI・安定版予想ローダー・固着監視を順番どおり接続する"
+  "オッズ共有・レースAPI・逐次予想ローダー・固着監視を順番どおり接続する"
 );
 assert.equal(html.includes("home-recommendation-reliability.js"), false, "重複ホーム補強を初期画面から外す");
 assert.equal(
@@ -71,11 +71,12 @@ assert.equal(
   "親ランタイムの既存先読み制限を維持する"
 );
 assert.equal(
-  predictionRuntime.includes('const VERSION = "20260815-odds-consume2"') &&
-    predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)") &&
-    predictionRuntime.includes("for (const src of scripts)"),
+  predictionRuntime.includes('const VERSION = "20260816-ios-sequential1"') &&
+    !predictionRuntime.includes("preloadScripts(scripts, 0, scripts.length)") &&
+    predictionRuntime.includes("for (const src of scripts)") &&
+    predictionRuntime.includes('loadMode: "sequential"'),
   true,
-  "ロールバック済み安定版の予想実行順は変更しない"
+  "iPhone Safari向けに予想JSを一斉先読みせず、同じ順序で1本ずつ読む"
 );
 assert.equal(
   predictionRuntime.includes("const ODDS_PRIORITY_WAIT_MS = 2500") &&
@@ -96,4 +97,4 @@ assert.equal(
   "Safariの新旧JS混在を避け、永久ローディングをfail-closedする"
 );
 
-console.log("オッズ取得・通常予想引き渡し・Safari固着復旧パス検証: 合格");
+console.log("オッズ取得・逐次予想ロード・Safari固着復旧パス検証: 合格");
