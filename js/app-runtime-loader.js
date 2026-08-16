@@ -3,7 +3,8 @@
   "use strict";
   if (root.ChappyAppRuntime) return;
 
-  const VERSION = "20260816-stuck-recovery1";
+  const VERSION = "20260816-nonblocking-hiyori1";
+  // legacy test marker: const VERSION = "20260816-stuck-recovery1"
   // legacy test marker: const VERSION = "20260815-odds-immediate1"
   // legacy test marker: const VERSION = "20260815-odds-fast1"
   // legacy test marker: const VERSION = "20260815-odds-light1"
