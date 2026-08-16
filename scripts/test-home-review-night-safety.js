@@ -14,7 +14,11 @@ assert.doesNotMatch(source, /ai-core\.js/);
 assert.doesNotMatch(source, /style\.css/);
 assert.doesNotMatch(source, /MutationObserver/);
 assert.doesNotMatch(source, /venueObserver/);
-assert.match(source, /chappy:home-schedule/);
-assert.match(source, /queueClassificationPatch/);
+assert.doesNotMatch(source, /ChappyTodayResultsHome/);
+assert.doesNotMatch(source, /activeFilter/);
+assert.doesNotMatch(source, /OHMURA/);
+assert.match(source, /function firstRaceButton\(venue\)/);
+assert.match(source, /document\.addEventListener\("click", openVenue, true\)/);
+assert.match(source, /raceButton\.click\(\)/);
 
-console.log("home review/night hotfix keeps UI untouched without continuous DOM observation");
+console.log("home venue tap hotfix keeps the restored entry path minimal and UI-neutral");
