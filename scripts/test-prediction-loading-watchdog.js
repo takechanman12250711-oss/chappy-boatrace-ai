@@ -10,13 +10,14 @@ const homeHotfix = fs.readFileSync(path.join(__dirname, "..", "js", "home-venue-
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
 assert.match(watchdog, /FIRST_TIMEOUT_MS = 20000/);
-assert.match(watchdog, /FINAL_TIMEOUT_MS = 15000/);
-assert.match(watchdog, /ChappyAppRuntime\?\.ensure\?\.\("race"\)/);
-assert.match(watchdog, /ChappyRaceSelection\?\.select/);
+assert.doesNotMatch(watchdog, /FINAL_TIMEOUT_MS = 15000/);
+assert.doesNotMatch(watchdog, /ChappyAppRuntime\?\.ensure\?\.\("race"\)/);
+assert.doesNotMatch(watchdog, /fetchRaceBtn/);
+assert.doesNotMatch(watchdog, /button\.click\(\)/);
 assert.match(watchdog, /selectedMatches/);
-assert.match(watchdog, /fetchRaceBtn/);
 assert.match(watchdog, /showPredictionError/);
 assert.match(watchdog, /chappy:prediction-rendered/);
+assert.match(watchdog, /自動再開始はせず/);
 assert.match(appRuntime, /const VERSION = "20260816-stuck-recovery1"/);
 assert.match(appRuntime, /レース選択モジュールを初期化できませんでした/);
 assert.match(html, /app-runtime-loader\.js\?v=20260816-stuck-recovery1/);
@@ -25,4 +26,4 @@ assert.match(html, /home-venue-tap-hotfix\.js\?v=20260816-stuck-recovery1/);
 assert.match(html, /prediction-loading-watchdog\.js\?v=20260816-stuck-recovery1/);
 assert.doesNotMatch(homeHotfix, /MutationObserver/);
 
-console.log("prediction loading freeze recovery contract passed");
+console.log("prediction loading no-retry fail-closed contract passed");

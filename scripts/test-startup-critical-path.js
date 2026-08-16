@@ -80,16 +80,20 @@ assert.equal(
 );
 assert.equal(
   hiyoriRuntime.includes("const PRELOAD_LOOKAHEAD=2") &&
-    hiyoriRuntime.includes("await loadProgressively(coreScripts)"),
+    hiyoriRuntime.includes("await loadProgressively(coreScripts)") &&
+    hiyoriRuntime.includes("function ensureReady()") &&
+    hiyoriRuntime.includes("return Promise.resolve(true)") &&
+    hiyoriRuntime.includes("nonBlockingPrediction:true"),
   true,
-  "補助モジュールの既存軽量化は維持する"
+  "日和補助は保持したまま初回予想表示の必須待機から外す"
 );
 assert.equal(
   watchdog.includes("FIRST_TIMEOUT_MS = 20000") &&
-    watchdog.includes('ensure?.("race")') &&
+    !watchdog.includes('ensure?.("race")') &&
+    !watchdog.includes("button.click()") &&
     watchdog.includes("showPredictionError"),
   true,
-  "永久ローディングを1回の復旧後にfail-closedする"
+  "永久ローディングを自動再開始せず20秒でfail-closedする"
 );
 
 [
