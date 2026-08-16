@@ -1,0 +1,83 @@
+name: Prepare ST slit storage source patch
+
+on:
+  pull_request:
+    paths:
+      - "scripts/apply-st-slit-storage-source-patch.js"
+      - "scripts/test-apply-st-slit-storage-source-patch.js"
+      - ".github/workflows/prepare-st-slit-storage-source-patch.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/apply-st-slit-storage-source-patch.js"
+      - "scripts/test-apply-st-slit-storage-source-patch.js"
+      - ".github/workflows/prepare-st-slit-storage-source-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: |
+          node --check scripts/apply-st-slit-storage-source-patch.js
+          node scripts/test-apply-st-slit-storage-source-patch.js
+
+  generate:
+    if: github.event_name == 'push'
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Patch collector and verify saved evidence
+        run: |
+          node scripts/apply-st-slit-storage-source-patch.js scripts/collect-predictions.js
+          node --check scripts/collect-predictions.js
+          node - <<'NODE'
+          const assert=require('node:assert/strict');
+          const {compactVerificationEvidence}=require('./scripts/collect-predictions');
+          const out=compactVerificationEvidence({
+            practicalSelection:{verificationEvidence:{scenarios:[
+              {type:'escape',label:'1逃げ'},
+              {type:'threeAttack',label:'3攻め'}
+            ]}},
+            aiCore:{
+              raceScenarios:{
+                mainScenario:{type:'escape',label:'1逃げ',slitAdjustment:-4,slitReasons:['1号艇ST劣勢']},
+                scenarios:[
+                  {type:'escape',label:'1逃げ',slitAdjustment:-4,slitReasons:['1号艇ST劣勢']},
+                  {type:'threeAttack',label:'3攻め',slitAdjustment:8,slitReasons:['3号艇ST優勢']}
+                ]
+              },
+              stSlitTheory:{source:'ai-core-st-slit-theory-v2',roles:[
+                {boatNo:1,course:1,score:52,status:'risk',samples:12,isFormal:true,appliedToScore:true,reason:'裏付けあり'},
+                {boatNo:3,course:3,score:78,status:'advantage',samples:15,isFormal:true,appliedToScore:true,reason:'裏付けあり'}
+              ]}
+            }
+          });
+          assert.equal(out.scenarios[0].slitAdjustment,-4);
+          assert.equal(out.scenarios[1].slitAdjustment,8);
+          assert.deepEqual(out.scenarios[1].slitReasons,['3号艇ST優勢']);
+          assert.equal(out.stSlit.roles.length,2);
+          assert.equal(out.stSlit.roles[0].isFormal,true);
+          console.log('ST/slit saved evidence verification: ok');
+          NODE
+      - name: Publish generated source branch
+        run: |
+          git switch -C generated/st-slit-storage-source
+          git add scripts/collect-predictions.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Preserve ST slit branch evidence in prediction storage"
+          git push --force origin generated/st-slit-storage-source
