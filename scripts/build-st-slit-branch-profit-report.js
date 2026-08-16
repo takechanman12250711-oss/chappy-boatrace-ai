@@ -36,10 +36,7 @@ function stEvidence(record={}) {
   const coreScenarioList=Array.isArray(coreScenarios.scenarios)?coreScenarios.scenarios:[];
   const list=storedScenarios.length?storedScenarios:coreScenarioList;
   const slit=verification?.slit || coreScenarios?.evidence?.slit || core?.stSlitTheory || prediction?.stSlitTheory || {};
-  const adjustments=list
-    .filter(s=>s && Object.prototype.hasOwnProperty.call(s,"slitAdjustment"))
-    .map(s=>Number(s.slitAdjustment))
-    .filter(Number.isFinite);
+  const adjustments=list.filter(s=>s && Object.prototype.hasOwnProperty.call(s,"slitAdjustment")).map(s=>Number(s.slitAdjustment)).filter(Number.isFinite);
   const reasons=list.flatMap(s=>Array.isArray(s?.slitReasons)?s.slitReasons:[]).map(String);
   const analyses=Array.isArray(core.analyses)?core.analyses:[];
   const stRows=analyses.map(a=>a?.stTheory).filter(Boolean);
@@ -50,56 +47,45 @@ function stEvidence(record={}) {
   const reasonAlert=reasons.some(v=>/優勢|先行|早い|速い|攻め/i.test(v));
   const reasonRisk=reasons.some(v=>/劣勢|遅れ|遅い|凹|F持ち|フライング/i.test(v));
   return {
-    alert: (Array.isArray(slit.alerts)&&slit.alerts.length>0) || positive || reasonAlert,
-    risk: (Array.isArray(slit.risks)&&slit.risks.length>0) || negative || reasonRisk,
-    advantage: (Array.isArray(slit.advantages)&&slit.advantages.length>0) || roleRows.some(x=>/advantage|優勢/i.test(String(x?.status||""))),
-    positiveAdjustment: positive,
-    negativeAdjustment: negative,
-    fHolder: analyses.some(a=>Number(a?.fCount||a?.entry?.fCount||0)>0) || roleRows.some(x=>Number(x?.fCount||0)>0),
-    formal: roleRows.length>0 && roleRows.some(x=>x?.isFormal===true),
-    supported: roleRows.some(x=>x?.appliedToScore===true || x?.isFormal===true),
-    source: storedScenarios.length?"verificationEvidence":"aiCore",
-    scenarioCount: list.length,
-    adjustmentFieldCount: adjustments.length
+    alert:(Array.isArray(slit.alerts)&&slit.alerts.length>0)||positive||reasonAlert,
+    risk:(Array.isArray(slit.risks)&&slit.risks.length>0)||negative||reasonRisk,
+    advantage:(Array.isArray(slit.advantages)&&slit.advantages.length>0)||roleRows.some(x=>/advantage|優勢/i.test(String(x?.status||""))),
+    positiveAdjustment:positive,
+    negativeAdjustment:negative,
+    fHolder:analyses.some(a=>Number(a?.fCount||a?.entry?.fCount||0)>0)||roleRows.some(x=>Number(x?.fCount||0)>0),
+    formal:roleRows.length>0&&roleRows.some(x=>x?.isFormal===true),
+    supported:roleRows.some(x=>x?.appliedToScore===true||x?.isFormal===true),
+    source:storedScenarios.length?"verificationEvidence":"aiCore",
+    scenarioCount:list.length,
+    adjustmentFieldCount:adjustments.length
   };
 }
 function summarize(rows) {
-  let stake=0, returned=0, hits=0;
-  for (const row of rows) {
-    const ts=practicalTickets(row.record); if (!ts.length) continue;
-    const actual=ticket(row.result?.trifecta?.combination); const payout=Math.max(0,Number(row.result?.trifecta?.payout||0));
-    stake += ts.length*STAKE_PER_TICKET;
-    if (actual && ts.includes(actual)) { hits++; returned += payout; }
-  }
-  return { raceCount:rows.length, hitCount:hits, hitRate:rows.length?Math.round(hits/rows.length*1000)/10:null, stake, return:returned, profit:returned-stake, recoveryRate:stake?Math.round(returned/stake*1000)/10:null };
+  let stake=0,returned=0,hits=0;
+  for(const row of rows){const ts=practicalTickets(row.record);if(!ts.length)continue;const actual=ticket(row.result?.trifecta?.combination);const payout=Math.max(0,Number(row.result?.trifecta?.payout||0));stake+=ts.length*STAKE_PER_TICKET;if(actual&&ts.includes(actual)){hits++;returned+=payout;}}
+  return {raceCount:rows.length,hitCount:hits,hitRate:rows.length?Math.round(hits/rows.length*1000)/10:null,stake,return:returned,profit:returned-stake,recoveryRate:stake?Math.round(returned/stake*1000)/10:null};
 }
-function build(predDocs,resultDocs) {
-  const results=resultMap(resultDocs); const byKey=new Map();
-  let verificationEvidenceRaceCount=0, adjustmentEvidenceRaceCount=0;
-  for (const d of predDocs) for (const r of (Array.isArray(d.predictions)?d.predictions:[])) {
-    const key=raceKey(r); if (!key || !results.has(key)) continue;
+function build(predDocs,resultDocs){
+  const results=resultMap(resultDocs);const byKey=new Map();
+  let totalPredictionRaceCount=0,verificationEvidenceRaceCountAll=0,adjustmentEvidenceRaceCountAll=0;
+  let verificationEvidenceRaceCount=0,adjustmentEvidenceRaceCount=0;
+  for(const d of predDocs) for(const r of (Array.isArray(d.predictions)?d.predictions:[])){
+    totalPredictionRaceCount++;
     const ev=stEvidence(r);
-    if (ev.source==="verificationEvidence" && ev.scenarioCount>0) verificationEvidenceRaceCount++;
-    if (ev.adjustmentFieldCount>0) adjustmentEvidenceRaceCount++;
-    if (!ev.alert&&!ev.risk&&!ev.advantage&&!ev.positiveAdjustment&&!ev.negativeAdjustment&&!ev.supported) continue;
+    if(ev.source==="verificationEvidence"&&ev.scenarioCount>0)verificationEvidenceRaceCountAll++;
+    if(ev.adjustmentFieldCount>0)adjustmentEvidenceRaceCountAll++;
+    const key=raceKey(r);if(!key||!results.has(key))continue;
+    if(ev.source==="verificationEvidence"&&ev.scenarioCount>0)verificationEvidenceRaceCount++;
+    if(ev.adjustmentFieldCount>0)adjustmentEvidenceRaceCount++;
+    if(!ev.alert&&!ev.risk&&!ev.advantage&&!ev.positiveAdjustment&&!ev.negativeAdjustment&&!ev.supported)continue;
     byKey.set(key,{record:r,result:results.get(key),evidence:ev});
   }
   const rows=[...byKey.values()];
-  const branches={
-    all: rows,
-    alert: rows.filter(r=>r.evidence.alert),
-    advantage: rows.filter(r=>r.evidence.advantage),
-    risk: rows.filter(r=>r.evidence.risk),
-    positiveAdjustment: rows.filter(r=>r.evidence.positiveAdjustment),
-    negativeAdjustment: rows.filter(r=>r.evidence.negativeAdjustment),
-    fHolder: rows.filter(r=>r.evidence.fHolder),
-    formal: rows.filter(r=>r.evidence.formal),
-    unsupported: rows.filter(r=>!r.evidence.supported)
-  };
+  const branches={all:rows,alert:rows.filter(r=>r.evidence.alert),advantage:rows.filter(r=>r.evidence.advantage),risk:rows.filter(r=>r.evidence.risk),positiveAdjustment:rows.filter(r=>r.evidence.positiveAdjustment),negativeAdjustment:rows.filter(r=>r.evidence.negativeAdjustment),fHolder:rows.filter(r=>r.evidence.fHolder),formal:rows.filter(r=>r.evidence.formal),unsupported:rows.filter(r=>!r.evidence.supported)};
   const summaries=Object.fromEntries(Object.entries(branches).map(([k,v])=>[k,summarize(v)]));
   const ranked=Object.entries(summaries).filter(([k,v])=>k!=="all"&&v.raceCount>=10&&v.recoveryRate!=null).sort((a,b)=>a[1].recoveryRate-b[1].recoveryRate).map(([branch,metrics],i)=>({rank:i+1,branch,...metrics}));
-  return {schemaVersion:2,version:"st-slit-branch-profit-v2",generatedAt:new Date().toISOString(),source:"saved production predictions + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,evidenceDiagnostics:{verificationEvidenceRaceCount,adjustmentEvidenceRaceCount},summaries,weakBranchRanking:ranked};
+  return {schemaVersion:3,version:"st-slit-branch-profit-v3",generatedAt:new Date().toISOString(),source:"saved production predictions + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,evidenceDiagnostics:{totalPredictionRaceCount,verificationEvidenceRaceCountAll,adjustmentEvidenceRaceCountAll,verificationEvidenceRaceCount,adjustmentEvidenceRaceCount},summaries,weakBranchRanking:ranked};
 }
-function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit branches: ${report.summaries.all.raceCount}R / adjustment evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCount}R`);}
+function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit storage evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll}R / settled ${report.evidenceDiagnostics.adjustmentEvidenceRaceCount}R`);}
 if(require.main===module)main();
 module.exports={ticket,tickets,raceKey,stEvidence,summarize,build};
