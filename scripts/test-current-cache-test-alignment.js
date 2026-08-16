@@ -1,0 +1,15 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const {patchLoad,patchStats}=require("./apply-current-cache-test-alignment");
+const load=fs.readFileSync('scripts/test-load-performance.js','utf8');
+const stats=fs.readFileSync('scripts/test-auto-stats.js','utf8');
+const patchedLoad=patchLoad(load);
+const patchedStats=patchStats(stats);
+assert.match(patchedLoad,/js\/app-runtime-loader\.js\?v=20260816-static-race1/);
+assert.match(patchedLoad,/js\/home-dashboard-v2\.js\?v=20260816-static-race1/);
+assert.match(patchedLoad,/const VERSION = \\"20260815-odds-immediate1\\"/);
+assert.match(patchedStats,/style\\\\\.css\\\\\?v=20260806-results-ui-phase4-1/);
+assert.equal(patchLoad(patchedLoad),patchedLoad);
+assert.equal(patchStats(patchedStats),patchedStats);
+console.log('current cache test alignment: ok');
