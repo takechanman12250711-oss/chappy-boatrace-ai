@@ -4,13 +4,16 @@ on:
   pull_request:
     paths:
       - "index.html"
+      - "js/app-runtime-loader.js"
       - "js/home-dashboard-v2.js"
       - "js/home-venue-tap-hotfix.js"
+      - "js/prediction-loading-watchdog.js"
       - "js/home-recommendation-reliability.js"
       - "css/home-dashboard-v2.css"
       - "scripts/test-home-dashboard-v2.js"
       - "scripts/test-home-review-night-hotfix.js"
       - "scripts/test-home-review-night-safety.js"
+      - "scripts/test-prediction-loading-watchdog.js"
       - "scripts/test-home-recommendation-reliability.js"
       - ".github/workflows/check-home-dashboard-v2.yml"
 
@@ -24,10 +27,13 @@ jobs:
           node-version: "20"
       - name: Verify home dashboard v2
         run: |
+          node --check js/app-runtime-loader.js
           node --check js/home-dashboard-v2.js
           node --check js/home-venue-tap-hotfix.js
+          node --check js/prediction-loading-watchdog.js
           node --check js/home-recommendation-reliability.js
           node scripts/test-home-dashboard-v2.js
           node scripts/test-home-review-night-hotfix.js
           node scripts/test-home-review-night-safety.js
+          node scripts/test-prediction-loading-watchdog.js
           node scripts/test-home-recommendation-reliability.js
