@@ -1,0 +1,17 @@
+name: Diagnose ST slit production prediction path
+on:
+  pull_request:
+    paths:
+      - "scripts/diagnose-st-slit-production-prediction-path.js"
+      - ".github/workflows/diagnose-st-slit-production-prediction-path.yml"
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: |
+          node --check scripts/diagnose-st-slit-production-prediction-path.js
+          node scripts/diagnose-st-slit-production-prediction-path.js
