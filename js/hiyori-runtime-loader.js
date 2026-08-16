@@ -10,11 +10,7 @@
   let corePromise=null;
   let backgroundPromise=null;
   let installPromise=null;
-  const VERSION="20260816-critical-path1";
-  // legacy test marker: const VERSION="20260815-odds-fast1";
-  // legacy test marker: const VERSION="20260815-odds-light1";
-  // legacy test marker: const VERSION="20260815-startup-light1";
-  // legacy test marker: const VERSION="20260813-course-failclosed1";
+  const VERSION="20260816-prediction-nonblocking1";
   const SCRIPT_LOAD_TIMEOUT_MS=15000;
   const PRELOAD_LOOKAHEAD=2;
 
@@ -53,14 +49,9 @@
     }
   }
   function scheduleCompatibilitySync(){
-    const run=()=>{
-      try{syncCompatibilityKeys()}catch(error){console.warn("[hiyori-runtime-loader] compatibility sync failed:",error)}
-    };
-    if("requestIdleCallback" in window){
-      window.requestIdleCallback(run,{timeout:5000});
-    }else{
-      window.setTimeout(run,0);
-    }
+    const run=()=>{try{syncCompatibilityKeys()}catch(error){console.warn("[hiyori-runtime-loader] compatibility sync failed:",error)}};
+    if("requestIdleCallback" in window)window.requestIdleCallback(run,{timeout:5000});
+    else window.setTimeout(run,0);
   }
   function loadScript(src){return new Promise(resolve=>{
     const clean=src.split("?")[0];
@@ -95,11 +86,17 @@
       await window.ChappyPredictionRuntime?.ensureReady?.();
       await loadProgressively(coreScripts);
       window.dispatchEvent(new CustomEvent("chappy:hiyori-core-ready",{detail:{connected:true,productionApplied:false,appliedToPrediction:false,globalProductionLock:true}}));
-      // 互換キー同期は予想計算そのものではない。過去データが大きい端末で
-      // synchronous localStorage/JSON処理がAI表示を止めないよう、コア準備後のidleへ回す。
       scheduleCompatibilitySync();
     })();
     return corePromise;
+  }
+  function ensureReady(){
+    // 日和補助は予想ロジック・印・買い目へ直接書き込まないため、初回予想表示を待たせない。
+    // core準備は背後で継続し、既存の学習・互換処理は失わない。
+    const run=()=>installCore().catch(error=>console.warn("[hiyori-runtime-loader] core background install failed:",error));
+    if("requestIdleCallback" in window)window.requestIdleCallback(run,{timeout:2000});
+    else window.setTimeout(run,0);
+    return Promise.resolve(true);
   }
   function installBackground(){
     if(backgroundPromise)return backgroundPromise;
@@ -116,17 +113,7 @@
     installPromise=installBackground();
     return installPromise;
   }
-  function scheduleInstall(){
-    const run=()=>install().catch(error=>{
-      console.warn("[hiyori-runtime-loader] install failed:",error);
-    });
-    if("requestIdleCallback" in window){
-      window.requestIdleCallback(run,{timeout:5000});
-    }else{
-      window.setTimeout(run,1500);
-    }
-  }
   ["chappy:hiyori-snapshot-created","chappy:hiyori-learning-adoption-updated","chappy:hiyori-adoption-proposals-updated","chappy:hiyori-production-checklist-updated"].forEach(name=>window.addEventListener(name,syncCompatibilityKeys));
   window.addEventListener("storage",event=>{if(event.key&&event.key.startsWith("chappy_hiyori_"))syncCompatibilityKeys()});
-  window.ChappyHiyoriRuntimeLoader={id:SCRIPT_ID,install,ensureReady:installCore,syncCompatibilityKeys,scripts:scripts.slice(),coreScripts:coreScripts.slice(),backgroundScripts:backgroundScripts.slice(),compactMode:true};
+  window.ChappyHiyoriRuntimeLoader={id:SCRIPT_ID,install,ensureReady,syncCompatibilityKeys,scripts:scripts.slice(),coreScripts:coreScripts.slice(),backgroundScripts:backgroundScripts.slice(),compactMode:true,nonBlockingPrediction:true};
 })();
