@@ -18,13 +18,19 @@ assert.match(watchdog, /selectedMatches/);
 assert.match(watchdog, /showPredictionError/);
 assert.match(watchdog, /chappy:prediction-rendered/);
 assert.match(watchdog, /自動再開始はせず/);
-assert.match(appRuntime, /const VERSION = "20260816-stuck-recovery1"/);
-assert.match(appRuntime, /レース選択モジュールを初期化できませんでした/);
-assert.match(html, /hiyori-runtime-loader\.js\?v=20260816-prediction-nonblocking1/);
-assert.match(html, /app-runtime-loader\.js\?v=20260816-stuck-recovery1/);
-assert.match(html, /home-dashboard-v2\.js\?v=20260816-stuck-recovery1/);
-assert.match(html, /home-venue-tap-hotfix\.js\?v=20260816-stuck-recovery1/);
-assert.match(html, /prediction-loading-watchdog\.js\?v=20260816-no-retry1/);
+
+assert.match(appRuntime, /const VERSION = "20260815-odds-immediate1"/);
+assert.match(appRuntime, /SCRIPT_LOAD_TIMEOUT_MS=15000/);
+assert.match(appRuntime, /PRELOAD_LOOKAHEAD=2/);
+assert.match(appRuntime, /prediction-runtime-loader\.js/);
+assert.match(appRuntime, /hiyori-runtime-loader\.js/);
+
+assert.match(html, /prediction-runtime-loader\.js\?v=20260816-runtime-deadline1/);
+assert.match(html, /hiyori-runtime-loader\.js\?v=20260816-nonblocking-core2/);
+assert.match(html, /app-runtime-loader\.js\?v=20260816-static-race1/);
+assert.match(html, /home-dashboard-v2\.js\?v=20260816-static-race1/);
+assert.match(html, /home-venue-tap-hotfix\.js\?v=20260816-full-entry-restore1/);
+assert.doesNotMatch(html, /prediction-loading-watchdog\.js/);
 assert.doesNotMatch(homeHotfix, /MutationObserver/);
 
-console.log("prediction loading no-retry fail-closed contract passed");
+console.log("restored prediction loading contract passed");
