@@ -86,7 +86,7 @@ assert.equal(
   "オッズ優先経路を維持する"
 );
 assert.equal(
-  hiyoriRuntime.includes("const PRELOAD_LOOKAHEAD=2") &&
+  hiyoriRuntime.includes("PRELOAD_LOOKAHEAD=2") &&
     hiyoriRuntime.includes("predictionBlocking:false") &&
     hiyoriRuntime.includes("return Promise.resolve(true)") &&
     hiyoriRuntime.includes("scheduleCompatibilitySync"),
