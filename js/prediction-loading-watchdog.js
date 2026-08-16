@@ -4,7 +4,6 @@
   if (root.ChappyPredictionLoadingWatchdog) return;
 
   const FIRST_TIMEOUT_MS = 20000;
-  const FINAL_TIMEOUT_MS = 15000;
   let token = 0;
   let timer = 0;
   let expected = null;
@@ -45,36 +44,6 @@
     }
   }
 
-  async function recover(currentToken) {
-    if (currentToken !== token || !stillLoading()) return;
-
-    try {
-      await root.ChappyAppRuntime?.ensure?.("race");
-      root.ChappyRaceControls?.initialize?.();
-
-      if (currentToken !== token || !stillLoading()) return;
-      if (typeof root.ChappyRaceSelection?.select !== "function") {
-        throw new Error("レース選択モジュールを初期化できませんでした");
-      }
-
-      if (!selectedMatches()) {
-        throw new Error("選択したレース情報を同期できませんでした");
-      }
-
-      const button = root.document?.getElementById?.("fetchRaceBtn");
-      if (!button) throw new Error("予想開始ボタンを初期化できませんでした");
-
-      button.click();
-      timer = root.setTimeout(() => {
-        if (currentToken === token && stillLoading()) {
-          fail("AI予想の読み込みが完了しませんでした。通信状態を確認して、もう一度レースを選んでください。");
-        }
-      }, FINAL_TIMEOUT_MS);
-    } catch (error) {
-      fail(error?.message || "AI予想を初期化できませんでした");
-    }
-  }
-
   function start(place, raceNo) {
     token += 1;
     clearTimer();
@@ -84,7 +53,8 @@
     };
     const currentToken = token;
     timer = root.setTimeout(() => {
-      void recover(currentToken);
+      if (currentToken !== token || !stillLoading() || !selectedMatches()) return;
+      fail("AI予想の準備が20秒を超えました。自動再開始はせず、この画面で停止しました。もう一度レースを選んでください。");
     }, FIRST_TIMEOUT_MS);
   }
 
@@ -111,7 +81,6 @@
   root.ChappyPredictionLoadingWatchdog = Object.freeze({
     start,
     isLoading: stillLoading,
-    firstTimeoutMs: FIRST_TIMEOUT_MS,
-    finalTimeoutMs: FINAL_TIMEOUT_MS
+    firstTimeoutMs: FIRST_TIMEOUT_MS
   });
 })(window);
