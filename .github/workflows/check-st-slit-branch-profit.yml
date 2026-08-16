@@ -1,0 +1,19 @@
+name: Check ST slit branch profit
+on:
+  pull_request:
+    paths:
+      - "scripts/build-st-slit-branch-profit-report.js"
+      - "scripts/test-st-slit-branch-profit-report.js"
+      - ".github/workflows/check-st-slit-branch-profit.yml"
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: |
+          node --check scripts/build-st-slit-branch-profit-report.js
+          node scripts/test-st-slit-branch-profit-report.js
+          node scripts/build-st-slit-branch-profit-report.js
