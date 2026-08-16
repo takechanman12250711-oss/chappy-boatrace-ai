@@ -570,7 +570,7 @@ assert.match(
 );
 assert.match(
   indexSource,
-  /style\.css\?v=20260803-flow-missing30/,
+  /style\.css\?v=20260806-results-ui-phase4-1/,
   "結果分析CSSのキャッシュ更新が不足しています"
 );
 assert.match(

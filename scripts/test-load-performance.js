@@ -306,8 +306,8 @@ assert.equal(
 [
   "style.css?v=20260806-results-ui-phase4-1",
   "css/home-dashboard-v2.css?v=20260803-entry-odds1",
-  "js/app-runtime-loader.js?v=20260810-official-reference1",
-  "js/home-dashboard-v2.js?v=20260803-ui-fix2"
+  "js/app-runtime-loader.js?v=20260816-static-race1",
+  "js/home-dashboard-v2.js?v=20260816-static-race1"
 ].forEach(asset => {
   assert.equal(
     html.includes(asset),
@@ -317,26 +317,32 @@ assert.equal(
 });
 assert.equal(
   appRuntime.includes(
-    'const VERSION = "20260810-official-reference1"'
+    'const VERSION = "20260815-odds-immediate1"'
   ),
   true,
   "変更した通常画面モジュールのキャッシュ世代を更新する"
 );
 assert.equal(
   html.includes(
-    "js/app-runtime-loader.js?v=20260813-course-failclosed1"
+    "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
+    html.includes(
+      "js/prediction-runtime-loader.js?v=20260816-runtime-deadline1"
+    ) &&
+    html.includes(
+      "js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"
+    ) &&
     appRuntime.includes(
-      'const VERSION = "20260813-course-failclosed1"'
+      'const VERSION = "20260815-odds-immediate1"'
     ) &&
     predictionRuntime.includes(
-      'const VERSION = "20260813-course-failclosed1"'
+      'const VERSION = "20260816-runtime-deadline1"'
     ) &&
     hiyoriLoader.includes(
-      'const VERSION="20260813-course-failclosed1"'
+      'const VERSION="20260816-nonblocking-core2"'
     ),
   true,
-  "実コース対応を親ローダーから予想・日和補助層まで同じキャッシュ世代で配信する"
+  "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
 );
 assert.equal(
   script.includes("function initializeRaceControls()") &&
@@ -366,16 +372,16 @@ assert.equal(
 );
 assert.equal(
   predictionRuntime.includes(
-    'const VERSION = "20260809-grounded-flow2"'
+    'const VERSION = "20260816-runtime-deadline1"'
   ),
   true,
   "全文表示を含む予想モジュールのキャッシュ世代を更新する"
 );
 assert.equal(
-  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
-    predictionRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS=15000") &&
+    predictionRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 12000") &&
     statsRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
-    hiyoriLoader.includes("SCRIPT_LOAD_TIMEOUT_MS=15000"),
+    hiyoriLoader.includes("SCRIPT_LOAD_TIMEOUT_MS=12000"),
   true,
   "モジュール読込が止まってもタブと予想を無期限待機させない"
 );
@@ -437,9 +443,11 @@ assert.equal(
   true
 );
 assert.equal(
-  hiyoriLoader.includes("ensureReady:installCore"),
+  hiyoriLoader.includes("function ensureReady()") &&
+    hiyoriLoader.includes("scheduleInstall();") &&
+    hiyoriLoader.includes("return Promise.resolve(true)"),
   true,
-  "予想開始時は必須モジュールだけ待つ"
+  "日和補助は初回予想を待たせずアイドル準備へ回す"
 );
 assert.equal(
   appRuntime.includes(
