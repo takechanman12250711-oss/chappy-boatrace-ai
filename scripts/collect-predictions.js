@@ -718,6 +718,33 @@ function compactVerificationEvidence(prediction) {
           reason: String(role?.reason || "")
         }))
     },
+    skill: (() => {
+      const support = prediction?.skillLocalSupport || {};
+      const attackBoatNo = Number(support?.attackBoatNo || support?.centerBoatNo || prediction?.flowPriority?.attackBoatNo || 0);
+      const target = (Array.isArray(support?.boats) ? support.boats : []).find(row => Number(row?.boatNo) === attackBoatNo) || null;
+      const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+      const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+      const statements = [...confirms, ...alerts].map(String).filter(text => !/当地/.test(text));
+      const grade = String(target?.grade || "").trim();
+      const nationalWinRate = target?.nationalWinRate == null ? null : Number(target.nationalWinRate);
+      const avgST = target?.avgST == null ? null : Number(target.avgST);
+      const firstRate = target?.firstRate == null ? null : Number(target.firstRate);
+      const explicit = statements.some(text => /A1級|A2級|B1級|B2級|技量|全国勝率|平均ST|1着率/.test(text));
+      const hasData = Boolean(target && (grade || Number.isFinite(nationalWinRate) || Number.isFinite(avgST) || Number.isFinite(firstRate)));
+      return { attackBoatNo: attackBoatNo >= 1 && attackBoatNo <= 6 ? attackBoatNo : null, target: target ? { boatNo: attackBoatNo, grade, nationalWinRate: Number.isFinite(nationalWinRate) ? nationalWinRate : null, avgST: Number.isFinite(avgST) ? avgST : null, firstRate: Number.isFinite(firstRate) ? firstRate : null } : null, statements, formal: attackBoatNo >= 1 && attackBoatNo <= 6 && hasData && explicit };
+    })(),
+    motor: (() => {
+      const support = prediction?.motorEngineSupport || {};
+      const centerBoatNo = Number(support?.attackBoatNo || support?.centerBoatNo || prediction?.flowPriority?.attackBoatNo || 0);
+      const rate = Number(support?.centerMotorRate);
+      const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+      const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+      const statements = [...confirms, ...alerts].map(String).filter(Boolean);
+      const mode = String(support?.mode || "");
+      const normalMode = support?.newEngineMode === false || mode === "normal";
+      const explicit = statements.some(text => /モーター実績(上位|下位)/.test(text));
+      return { centerBoatNo: centerBoatNo >= 1 && centerBoatNo <= 6 ? centerBoatNo : null, centerMotorRate: Number.isFinite(rate) ? rate : null, mode, newEngineMode: support?.newEngineMode === true, statements, formal: centerBoatNo >= 1 && centerBoatNo <= 6 && normalMode && Number.isFinite(rate) && explicit };
+    })(),
     localWater: (() => {
       const support = prediction?.venueWaterSupport || {};
       const venue = String(support?.venue || "").trim();
@@ -843,6 +870,14 @@ function compactVerificationEvidence(prediction) {
         providedEvidence.stSlit.roles.length
           ? providedEvidence.stSlit.roles
           : aiCoreEvidence?.stSlit?.roles || []
+    },
+    skill: {
+      ...(aiCoreEvidence.skill || {}),
+      ...(providedEvidence.skill || {})
+    },
+    motor: {
+      ...(aiCoreEvidence.motor || {}),
+      ...(providedEvidence.motor || {})
     },
     localWater: {
       ...(aiCoreEvidence.localWater || {}),
