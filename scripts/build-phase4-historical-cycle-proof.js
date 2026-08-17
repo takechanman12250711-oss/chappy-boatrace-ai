@@ -1,0 +1,10 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path");
+const ROOT=path.resolve(__dirname,".."),PRED=path.join(ROOT,"data","predictions"),OUT=path.join(ROOT,"data","stats","phase4-historical-cycle-proof.json");
+function read(p){return JSON.parse(fs.readFileSync(p,"utf8"));}
+function dateFiles(){return fs.readdirSync(PRED).filter(n=>/^\d{8}\.json$/.test(n)).sort().reverse();}
+function selectedRows(day){const rows=[...(day.predictions||[]),...(day.verificationPredictions||[])];const seen=new Set();return rows.filter(r=>r&&r.raceKey&&!seen.has(r.raceKey)&&(seen.add(r.raceKey),r.selection?.selected===true||r.verificationMode==="selected"||r.prediction?.predictionMode==="server_pre_deadline"));}
+function inspectDate(name){const date=name.slice(0,8),day=read(path.join(PRED,name)),selected=selectedRows(day);const rows=selected.map(r=>({raceKey:r.raceKey,notePath:String(r.note?.path||""),notePublishable:r.note?.publishable===true,settled:r.result?.settled===true,resultTicket:String(r.result?.resultTicket||""),practicalHit:typeof r.result?.practicalHit==="boolean"?r.result.practicalHit:null,review:Boolean(r.result?.review&&r.result.review.summary)}));const completed=rows.filter(r=>r.settled&&r.resultTicket&&r.review);return{date,selectedCount:rows.length,completedCount:completed.length,rows,completeCycle:completed.length>0};}
+function build(){const inspected=dateFiles().map(inspectDate);const proof=inspected.find(x=>x.completeCycle)||null;return{schemaVersion:1,generatedAt:new Date().toISOString(),phase:"phase4",historicalCycleProven:Boolean(proof),proof,latestDates:inspected.slice(0,7),requirement:"自動選定された予想が公式結果確定後にresultTicket・practicalHit・結果レビューまで到達した実データが1件以上あること"};}
+function main(){const r=build();fs.mkdirSync(path.dirname(OUT),{recursive:true});fs.writeFileSync(OUT,JSON.stringify(r,null,2)+"\n");console.log(JSON.stringify(r,null,2));if(!r.historicalCycleProven)process.exitCode=2;}
+if(require.main===module)main();module.exports={build,inspectDate,selectedRows};
