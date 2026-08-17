@@ -1,0 +1,59 @@
+name: Check race flow 4kado alert skip A/B
+on:
+  pull_request:
+    paths:
+      - "scripts/build-race-flow-4kado-alert-skip-ab-report.js"
+      - "scripts/test-race-flow-4kado-alert-skip-ab-report.js"
+      - ".github/workflows/check-race-flow-4kado-alert-skip-ab.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build-race-flow-4kado-alert-skip-ab-report.js"
+      - "scripts/test-race-flow-4kado-alert-skip-ab-report.js"
+      - ".github/workflows/check-race-flow-4kado-alert-skip-ab.yml"
+  workflow_run:
+    workflows:
+      - "Collect automatic race predictions"
+      - "Collect official race results"
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify 4kado alert skip A/B analyzer
+        run: |
+          node --check scripts/build-race-flow-4kado-alert-skip-ab-report.js
+          node scripts/test-race-flow-4kado-alert-skip-ab-report.js
+      - name: Restore canonical sources and build report
+        if: github.event_name != 'pull_request'
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-race-flow-4kado-alert-skip-ab-report.js
+          node scripts/prepare-daily-prediction-git-save.js --all
+      - name: Save 4kado alert skip A/B report
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/race-flow-4kado-alert-skip-ab-report.json
+          if git diff --cached --quiet; then
+            echo "4kado alert skip A/B report unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update 4kado alert skip prospective A/B report"
+          git pull --rebase origin main
+          git push origin main
