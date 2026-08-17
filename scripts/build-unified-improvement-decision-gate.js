@@ -1,0 +1,16 @@
+"use strict";
+const fs=require("node:fs"),path=require("node:path");const root=path.resolve(__dirname,"..");const stats=path.join(root,"data","stats"),OUT=path.join(stats,"unified-improvement-decision-gate.json");
+const SOURCES=[
+ ["frame-negative-clip","frame-rise-fall-negative-clip-result-report.json"],
+ ["four-attack-warning","four-attack-warning-skip-prospective-ab-report.json"],
+ ["three-attack-warning","three-attack-warning-skip-prospective-ab-report.json"],
+ ["two-course-sashi","two-course-sashi-skip-prospective-ab-report.json"],
+ ["outside-push","outside-push-skip-prospective-ab-report.json"],
+ ["inside-first-outside-warning","inside-first-outside-warning-skip-prospective-ab-report.json"],
+ ["hold-third","remain-pickup-hold-third-prospective-ab-report.json"]
+];
+function read(n){const p=path.join(stats,n);if(!fs.existsSync(p))return null;try{return JSON.parse(fs.readFileSync(p,"utf8"));}catch{return null;}}
+function num(...v){for(const x of v){const n=Number(x);if(Number.isFinite(n))return n;}return null;}
+function normalize(id,file,r){if(!r)return{id,file,status:"missing",decision:"continue",reason:"レポート未生成"};const s=r.summary||r.comparison||r.result||r.metrics||{};const affected=num(r.affectedSettledCount,r.targetSettledCount,s.affectedSettledCount,s.targetSettledCount,r?.cohort?.affectedSettledCount,r?.cohort?.targetSettledCount,0)||0;const min=num(r.minimumAffectedSettledCount,r?.interpretation?.minimumAffectedSettledCount,r?.decisionRule?.minimumAffectedSettledCount,id==="frame-negative-clip"?100:30)||30;const aRec=num(s?.A?.recoveryRate,s?.a?.recoveryRate,r?.A?.recoveryRate,r?.a?.recoveryRate);const bRec=num(s?.B?.recoveryRate,s?.b?.recoveryRate,r?.B?.recoveryRate,r?.b?.recoveryRate);const aProfit=num(s?.A?.profit,s?.a?.profit,r?.A?.profit,r?.a?.profit);const bProfit=num(s?.B?.profit,s?.b?.profit,r?.B?.profit,r?.b?.profit);const productionChanged=r.productionChanged===true||r.productionAUnchanged===false;let decision="continue",reason=`${affected}/${min}R`;if(productionChanged){decision="blocked";reason="production A変更を検出";}else if(affected>=min){if(bRec!=null&&aRec!=null&&bRec>aRec&&((bProfit==null||aProfit==null)||bProfit>aProfit)){decision="candidate";reason=`B回収率 ${bRec}% > A ${aRec}%`;}else if(bRec!=null&&aRec!=null&&bRec<=aRec){decision="reject";reason=`B回収率 ${bRec}% <= A ${aRec}%`;}else{decision="review";reason="必要件数到達・指標確認待ち";}}return{id,file,status:"available",affectedSettledCount:affected,minimumAffectedSettledCount:min,aRecoveryRate:aRec,bRecoveryRate:bRec,aProfit,bProfit,decision,reason,automaticApplication:false,requiresUserApproval:true};}
+function build(){const items=SOURCES.map(([id,f])=>normalize(id,f,read(f)));const counts=items.reduce((a,x)=>(a[x.decision]=(a[x.decision]||0)+1,a),{});return{schemaVersion:1,generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,requiresUserApproval:true,policy:"必要件数到達後も自動本番反映しない。BがAの回収率と収支を改善した候補だけユーザー承認へ送る。",counts,items};}
+function main(){const r=build();fs.writeFileSync(OUT,JSON.stringify(r,null,2)+"\n");console.log(JSON.stringify(r,null,2));}if(require.main===module)main();module.exports={normalize,build};
