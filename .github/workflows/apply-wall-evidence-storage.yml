@@ -1,0 +1,49 @@
+name: Apply wall evidence storage
+on:
+  pull_request:
+    paths:
+      - "scripts/apply-wall-evidence-storage-patch.js"
+      - "scripts/test-wall-evidence-storage.js"
+      - ".github/workflows/apply-wall-evidence-storage.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/apply-wall-evidence-storage-patch.js"
+      - ".github/workflows/apply-wall-evidence-storage.yml"
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Apply wall evidence storage patch
+        run: node scripts/apply-wall-evidence-storage-patch.js
+      - name: Verify patched storage path
+        run: |
+          node --check scripts/collect-predictions.js
+          node --check js/theory-tag-snapshot.js
+          node scripts/test-wall-formal-evidence.js
+          node scripts/test-wall-evidence-storage.js
+      - name: Persist patched source on main
+        if: github.event_name == 'push'
+        run: |
+          git add scripts/collect-predictions.js js/theory-tag-snapshot.js
+          if git diff --cached --quiet; then
+            echo "wall evidence storage already applied"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Persist wall theory evidence in prediction storage"
+          git pull --rebase origin main
+          git push origin main
