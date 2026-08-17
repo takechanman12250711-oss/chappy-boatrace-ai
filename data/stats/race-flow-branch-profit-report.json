@@ -1,41 +1,299 @@
 {
-  "schemaVersion": 1,
-  "version": "race-flow-branch-profit-v1",
-  "generatedAt": "2026-08-17T06:36:05.190Z",
-  "source": "saved scenario labels + official results",
+  "schemaVersion": 2,
+  "version": "race-flow-branch-profit-v2-saved-title",
+  "generatedAt": "2026-08-17T06:42:35.103Z",
+  "source": "persisted raceFlow.scenario.title / selection scenarioLabel + official results",
   "stakePerTicket": 100,
   "productionChanged": false,
   "diagnostics": {
     "selected": {
       "raceCount": 111,
-      "labeledRaceCount": 0,
-      "unlabeledRaceCount": 111,
-      "labels": {},
-      "sources": {}
+      "labeledRaceCount": 111,
+      "unlabeledRaceCount": 0,
+      "labels": {
+        "1号艇逃げ": 30,
+        "2コース差し本線": 5,
+        "外コース展開突き": 1,
+        "3コース攻め警戒": 2,
+        "イン逃げ本線": 2,
+        "4カド攻め警戒": 3,
+        "2コース差し": 23,
+        "3コース攻め": 20,
+        "4カド攻め": 25
+      },
+      "sources": {
+        "record.selection.scenarioLabel": 111
+      }
     },
     "verification": {
       "raceCount": 1432,
-      "labeledRaceCount": 0,
-      "unlabeledRaceCount": 1432,
-      "labels": {},
-      "sources": {}
+      "labeledRaceCount": 1432,
+      "unlabeledRaceCount": 0,
+      "labels": {
+        "外コース展開突き": 64,
+        "イン逃げ本線": 58,
+        "2コース差し本線": 77,
+        "4カド攻め警戒": 108,
+        "3コース攻め警戒": 128,
+        "イン先マイ・外攻め警戒": 29,
+        "3コース攻め": 233,
+        "1号艇逃げ": 289,
+        "4カド攻め": 209,
+        "2コース差し": 237
+      },
+      "sources": {
+        "prediction.raceFlow.scenario.title": 269,
+        "record.selection.scenarioLabel": 1163
+      }
     },
-    "deduplicatedLabeledRaceCount": 0,
-    "distinctLabels": []
+    "deduplicatedLabeledRaceCount": 1432,
+    "distinctLabels": [
+      "1号艇逃げ",
+      "2コース差し",
+      "2コース差し本線",
+      "3コース攻め",
+      "3コース攻め警戒",
+      "4カド攻め",
+      "4カド攻め警戒",
+      "イン先マイ・外攻め警戒",
+      "イン逃げ本線",
+      "外コース展開突き"
+    ]
   },
   "summaries": {
     "all": {
-      "raceCount": 0,
-      "settledCount": 0,
-      "hitCount": 0,
-      "hitRate": null,
-      "stake": 0,
-      "return": 0,
-      "profit": 0,
-      "recoveryRate": null
+      "raceCount": 1432,
+      "settledCount": 1342,
+      "hitCount": 286,
+      "hitRate": 21.3,
+      "stake": 1104000,
+      "return": 719200,
+      "profit": -384800,
+      "recoveryRate": 65.1
+    },
+    "1号艇逃げ": {
+      "raceCount": 289,
+      "settledCount": 269,
+      "hitCount": 100,
+      "hitRate": 37.2,
+      "stake": 213800,
+      "return": 185630,
+      "profit": -28170,
+      "recoveryRate": 86.8
+    },
+    "2コース差し": {
+      "raceCount": 237,
+      "settledCount": 219,
+      "hitCount": 48,
+      "hitRate": 21.9,
+      "stake": 191000,
+      "return": 86300,
+      "profit": -104700,
+      "recoveryRate": 45.2
+    },
+    "2コース差し本線": {
+      "raceCount": 77,
+      "settledCount": 77,
+      "hitCount": 14,
+      "hitRate": 18.2,
+      "stake": 55100,
+      "return": 35600,
+      "profit": -19500,
+      "recoveryRate": 64.6
+    },
+    "3コース攻め": {
+      "raceCount": 233,
+      "settledCount": 219,
+      "hitCount": 33,
+      "hitRate": 15.1,
+      "stake": 193700,
+      "return": 122810,
+      "profit": -70890,
+      "recoveryRate": 63.4
+    },
+    "3コース攻め警戒": {
+      "raceCount": 128,
+      "settledCount": 124,
+      "hitCount": 21,
+      "hitRate": 16.9,
+      "stake": 94600,
+      "return": 42250,
+      "profit": -52350,
+      "recoveryRate": 44.7
+    },
+    "4カド攻め": {
+      "raceCount": 209,
+      "settledCount": 188,
+      "hitCount": 28,
+      "hitRate": 14.9,
+      "stake": 175700,
+      "return": 155650,
+      "profit": -20050,
+      "recoveryRate": 88.6
+    },
+    "4カド攻め警戒": {
+      "raceCount": 108,
+      "settledCount": 101,
+      "hitCount": 10,
+      "hitRate": 9.9,
+      "stake": 75600,
+      "return": 18540,
+      "profit": -57060,
+      "recoveryRate": 24.5
+    },
+    "イン先マイ・外攻め警戒": {
+      "raceCount": 29,
+      "settledCount": 28,
+      "hitCount": 6,
+      "hitRate": 21.4,
+      "stake": 20100,
+      "return": 12440,
+      "profit": -7660,
+      "recoveryRate": 61.9
+    },
+    "イン逃げ本線": {
+      "raceCount": 58,
+      "settledCount": 55,
+      "hitCount": 19,
+      "hitRate": 34.5,
+      "stake": 38400,
+      "return": 35500,
+      "profit": -2900,
+      "recoveryRate": 92.4
+    },
+    "外コース展開突き": {
+      "raceCount": 64,
+      "settledCount": 62,
+      "hitCount": 7,
+      "hitRate": 11.3,
+      "stake": 46000,
+      "return": 24480,
+      "profit": -21520,
+      "recoveryRate": 53.2
     }
   },
-  "weakBranchRanking": [],
+  "weakBranchRanking": [
+    {
+      "rank": 1,
+      "label": "4カド攻め警戒",
+      "raceCount": 108,
+      "settledCount": 101,
+      "hitCount": 10,
+      "hitRate": 9.9,
+      "stake": 75600,
+      "return": 18540,
+      "profit": -57060,
+      "recoveryRate": 24.5
+    },
+    {
+      "rank": 2,
+      "label": "3コース攻め警戒",
+      "raceCount": 128,
+      "settledCount": 124,
+      "hitCount": 21,
+      "hitRate": 16.9,
+      "stake": 94600,
+      "return": 42250,
+      "profit": -52350,
+      "recoveryRate": 44.7
+    },
+    {
+      "rank": 3,
+      "label": "2コース差し",
+      "raceCount": 237,
+      "settledCount": 219,
+      "hitCount": 48,
+      "hitRate": 21.9,
+      "stake": 191000,
+      "return": 86300,
+      "profit": -104700,
+      "recoveryRate": 45.2
+    },
+    {
+      "rank": 4,
+      "label": "外コース展開突き",
+      "raceCount": 64,
+      "settledCount": 62,
+      "hitCount": 7,
+      "hitRate": 11.3,
+      "stake": 46000,
+      "return": 24480,
+      "profit": -21520,
+      "recoveryRate": 53.2
+    },
+    {
+      "rank": 5,
+      "label": "イン先マイ・外攻め警戒",
+      "raceCount": 29,
+      "settledCount": 28,
+      "hitCount": 6,
+      "hitRate": 21.4,
+      "stake": 20100,
+      "return": 12440,
+      "profit": -7660,
+      "recoveryRate": 61.9
+    },
+    {
+      "rank": 6,
+      "label": "3コース攻め",
+      "raceCount": 233,
+      "settledCount": 219,
+      "hitCount": 33,
+      "hitRate": 15.1,
+      "stake": 193700,
+      "return": 122810,
+      "profit": -70890,
+      "recoveryRate": 63.4
+    },
+    {
+      "rank": 7,
+      "label": "2コース差し本線",
+      "raceCount": 77,
+      "settledCount": 77,
+      "hitCount": 14,
+      "hitRate": 18.2,
+      "stake": 55100,
+      "return": 35600,
+      "profit": -19500,
+      "recoveryRate": 64.6
+    },
+    {
+      "rank": 8,
+      "label": "1号艇逃げ",
+      "raceCount": 289,
+      "settledCount": 269,
+      "hitCount": 100,
+      "hitRate": 37.2,
+      "stake": 213800,
+      "return": 185630,
+      "profit": -28170,
+      "recoveryRate": 86.8
+    },
+    {
+      "rank": 9,
+      "label": "4カド攻め",
+      "raceCount": 209,
+      "settledCount": 188,
+      "hitCount": 28,
+      "hitRate": 14.9,
+      "stake": 175700,
+      "return": 155650,
+      "profit": -20050,
+      "recoveryRate": 88.6
+    },
+    {
+      "rank": 10,
+      "label": "イン逃げ本線",
+      "raceCount": 58,
+      "settledCount": 55,
+      "hitCount": 19,
+      "hitRate": 34.5,
+      "stake": 38400,
+      "return": 35500,
+      "profit": -2900,
+      "recoveryRate": 92.4
+    }
+  ],
   "interpretation": {
     "minimumBranchSettledCount": 10,
     "labelsAreStoredValuesOnly": true,
