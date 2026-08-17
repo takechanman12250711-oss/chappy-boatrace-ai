@@ -1,0 +1,5 @@
+"use strict";
+const assert=require("node:assert/strict");const e=require("./build-exhibition-foot-branch-profit-report");
+function rec(i,rank,text){return {date:"20260817",jcd:"05",raceNo:i,prediction:{practicalTickets:["1-2-3"],flowSupport:{attackBoatNo:3,attackExhibitionRank:rank,dataCoverage:{exhibition:6},confirms:[text],alerts:[]}}};}function result(r,hit,payout=900){return {date:r.date,jcd:r.jcd,raceNo:r.raceNo,resultAvailable:true,status:"finished",trifecta:{combination:hit?"1-2-3":"2-1-3",payout}};}
+const rows=[],results=[];for(let i=1;i<=12;i++){const r=rec(i,1,"3号艇は展示上位で足を確認");rows.push(r);results.push(result(r,true));}for(let i=13;i<=24;i++){const r=rec(i,3,"3号艇は展示気配を確認");rows.push(r);results.push(result(r,i===13,500));}
+const report=e.build([{verificationPredictions:rows}],[{races:results}]);assert.equal(report.productionChanged,false);assert.equal(report.summaries.rank1.raceCount,12);assert.equal(report.summaries.rank3plus.raceCount,12);assert.ok(report.summaries.rank3plus.recoveryRate<report.summaries.rank1.recoveryRate);assert.equal(report.weakBranchRanking[0].branch,"rank3plus");console.log("exhibition foot branch profit report test: ok");
