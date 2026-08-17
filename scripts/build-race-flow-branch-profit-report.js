@@ -19,10 +19,12 @@ function scenarioEvidence(record={}){
   const p=record.prediction||{};
   const candidates=[
     [record.scenarioLabel,"record.scenarioLabel"],
+    [record?.selection?.scenarioLabel,"record.selection.scenarioLabel"],
     [record?.shadowSelectionV2?.scenarioLabel,"record.shadowSelectionV2.scenarioLabel"],
     [record?.shadowSelectionV2?.evaluation?.scenarioLabel,"record.shadowSelectionV2.evaluation.scenarioLabel"],
     [p.scenarioLabel,"prediction.scenarioLabel"],
     [p?.raceFlow?.scenarioLabel,"prediction.raceFlow.scenarioLabel"],
+    [p?.raceFlow?.scenario?.title,"prediction.raceFlow.scenario.title"],
     [p?.raceFlow?.label,"prediction.raceFlow.label"],
     [p?.raceFlow?.name,"prediction.raceFlow.name"],
     [p?.raceFlow?.type,"prediction.raceFlow.type"]
@@ -39,12 +41,12 @@ function build(predDocs,resultDocs){
   const verification=predDocs.flatMap(d=>Array.isArray(d.verificationPredictions)?d.verificationPredictions:[]);
   const selectedKeys=new Set(selected.map(r=>raceKey(r)));
   const rows=[...selected,...verification].map(record=>({record,evidence:scenarioEvidence(record),result:embeddedResult(record)||results.get(raceKey(record))||null})).filter(r=>r.evidence.label);
-  const dedup=new Map();for(const row of rows){const k=raceKey(row.record);const current=dedup.get(k);if(!current||selectedKeys.has(k))dedup.set(k,row);}
+  const dedup=new Map();for(const row of rows){const k=raceKey(row.record);if(!dedup.has(k)||selectedKeys.has(k))dedup.set(k,row);}
   const labeled=[...dedup.values()];
   const labels=[...new Set(labeled.map(r=>r.evidence.label))].sort((a,b)=>a.localeCompare(b,"ja"));
   const summaries={all:summarize(labeled)};for(const label of labels)summaries[label]=summarize(labeled.filter(r=>r.evidence.label===label));
   const ranking=labels.map(label=>({label,...summaries[label]})).filter(r=>r.settledCount>=10&&r.recoveryRate!==null).sort((a,b)=>a.recoveryRate-b.recoveryRate).map((r,i)=>({rank:i+1,...r}));
-  return{schemaVersion:1,version:"race-flow-branch-profit-v1",generatedAt:new Date().toISOString(),source:"saved scenario labels + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,diagnostics:{selected:diagnose(selected),verification:diagnose(verification),deduplicatedLabeledRaceCount:labeled.length,distinctLabels:labels},summaries,weakBranchRanking:ranking,interpretation:{minimumBranchSettledCount:10,labelsAreStoredValuesOnly:true,retrospectiveInferenceAllowed:false,automaticApplication:false,usableForPrediction:false,actualPurchase:false}};
+  return{schemaVersion:2,version:"race-flow-branch-profit-v2-saved-title",generatedAt:new Date().toISOString(),source:"persisted raceFlow.scenario.title / selection scenarioLabel + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,diagnostics:{selected:diagnose(selected),verification:diagnose(verification),deduplicatedLabeledRaceCount:labeled.length,distinctLabels:labels},summaries,weakBranchRanking:ranking,interpretation:{minimumBranchSettledCount:10,labelsAreStoredValuesOnly:true,retrospectiveInferenceAllowed:false,automaticApplication:false,usableForPrediction:false,actualPurchase:false}};
 }
 function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`race-flow labels ${report.diagnostics.deduplicatedLabeledRaceCount}R / ${report.diagnostics.distinctLabels.length} labels`);}
 if(require.main===module)main();
