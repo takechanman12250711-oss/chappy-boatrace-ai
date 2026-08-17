@@ -718,6 +718,28 @@ function compactVerificationEvidence(prediction) {
           reason: String(role?.reason || "")
         }))
     },
+    localWater: (() => {
+      const support = prediction?.venueWaterSupport || {};
+      const venue = String(support?.venue || "").trim();
+      const windValue = Number(support?.wind);
+      const waveValue = Number(support?.wave);
+      const tide = String(support?.tide || "").trim();
+      const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+      const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+      const statements = [...confirms, ...alerts].map(String).filter(Boolean);
+      const wind = Number.isFinite(windValue) ? windValue : null;
+      const wave = Number.isFinite(waveValue) ? waveValue : null;
+      const hasMeasuredCondition = wind !== null || wave !== null || Boolean(tide);
+      const hasSpecificVenueRule = statements.some(text => !/開催場の水面特性を補助評価/.test(text) && /イン|差し|潮|風|波|水面|ナイター|展示|乗り心地/.test(text));
+      return {
+        venue,
+        wind,
+        wave,
+        tide,
+        statements,
+        formal: Boolean(venue) && statements.length > 0 && (hasMeasuredCondition || hasSpecificVenueRule)
+      };
+    })(),
     exhibitionFoot: (() => {
       const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
       const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
@@ -821,6 +843,10 @@ function compactVerificationEvidence(prediction) {
         providedEvidence.stSlit.roles.length
           ? providedEvidence.stSlit.roles
           : aiCoreEvidence?.stSlit?.roles || []
+    },
+    localWater: {
+      ...(aiCoreEvidence.localWater || {}),
+      ...(providedEvidence.localWater || {})
     },
     wallTheory: {
       ...(aiCoreEvidence.wallTheory || {}),
