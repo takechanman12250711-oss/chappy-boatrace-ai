@@ -1,0 +1,46 @@
+name: Refresh exhibition foot branch report
+on:
+  workflow_run:
+    workflows:
+      - "Collect automatic race predictions"
+      - "Collect official race results"
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  refresh:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify analyzer
+        run: |
+          node --check scripts/build-exhibition-foot-branch-report.js
+          node scripts/test-exhibition-foot-branch-report.js
+      - name: Restore canonical sources and rebuild report
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-exhibition-foot-branch-report.js
+      - name: Save refreshed report
+        run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
+          git add data/stats/exhibition-foot-branch-report.json
+          if git diff --cached --quiet; then
+            echo "exhibition foot branch report unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh exhibition foot branch report"
+          git pull --rebase origin main
+          git push origin main
