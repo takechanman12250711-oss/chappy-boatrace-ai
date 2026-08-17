@@ -1,0 +1,42 @@
+name: Check Phase3 learning handoff
+on:
+  pull_request:
+    paths:
+      - "scripts/build-phase3-learning-handoff.js"
+      - "scripts/test-phase3-learning-handoff.js"
+      - ".github/workflows/check-phase3-learning-handoff.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build-phase3-learning-handoff.js"
+      - ".github/workflows/check-phase3-learning-handoff.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          node --check scripts/build-phase3-learning-handoff.js
+          node scripts/test-phase3-learning-handoff.js
+          node scripts/build-phase3-learning-handoff.js
+      - name: Save Phase3 handoff
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/phase3-learning-handoff.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update Phase3 learning handoff"
+          git pull --rebase origin main
+          git push origin main
