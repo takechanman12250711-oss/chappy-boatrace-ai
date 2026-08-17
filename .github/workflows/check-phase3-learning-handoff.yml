@@ -4,12 +4,16 @@ on:
     paths:
       - "scripts/build-phase3-learning-handoff.js"
       - "scripts/test-phase3-learning-handoff.js"
+      - "scripts/test-phase3-refresh-contract.js"
       - ".github/workflows/check-phase3-learning-handoff.yml"
+      - ".github/workflows/refresh-unified-improvement-decision-gate.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-phase3-learning-handoff.js"
+      - "scripts/test-phase3-refresh-contract.js"
       - ".github/workflows/check-phase3-learning-handoff.yml"
+      - ".github/workflows/refresh-unified-improvement-decision-gate.yml"
   workflow_dispatch:
 permissions:
   contents: write
@@ -29,6 +33,7 @@ jobs:
       - run: |
           node --check scripts/build-phase3-learning-handoff.js
           node scripts/test-phase3-learning-handoff.js
+          node scripts/test-phase3-refresh-contract.js
           node scripts/build-phase3-learning-handoff.js
       - name: Save Phase3 handoff
         if: github.event_name != 'pull_request'
