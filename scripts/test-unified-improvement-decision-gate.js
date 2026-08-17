@@ -1,1 +1,14 @@
-"use strict";const assert=require("node:assert/strict"),g=require("./build-unified-improvement-decision-gate");let x=g.normalize("x","x",{affectedSettledCount:30,minimumAffectedSettledCount:30,A:{recoveryRate:70,profit:-3000},B:{recoveryRate:85,profit:-1000},productionAUnchanged:true});assert.equal(x.decision,"candidate");assert.equal(x.automaticApplication,false);x=g.normalize("x","x",{affectedSettledCount:29,minimumAffectedSettledCount:30,A:{recoveryRate:70},B:{recoveryRate:100}});assert.equal(x.decision,"continue");x=g.normalize("x","x",{affectedSettledCount:30,minimumAffectedSettledCount:30,A:{recoveryRate:80},B:{recoveryRate:70}});assert.equal(x.decision,"reject");x=g.normalize("x","x",{affectedSettledCount:30,productionChanged:true,A:{recoveryRate:70},B:{recoveryRate:90}});assert.equal(x.decision,"blocked");console.log("unified improvement decision gate test: ok");
+"use strict";
+const assert=require("node:assert/strict"),g=require("./build-unified-improvement-decision-gate");
+let x=g.normalize("x","x",{affectedSettledCount:30,minimumAffectedSettledCount:30,A:{recoveryRate:70,profit:-3000},B:{recoveryRate:85,profit:-1000},productionAUnchanged:true});
+assert.equal(x.decision,"candidate");assert.equal(x.automaticApplication,false);
+x=g.normalize("x","x",{cohort:{targetSettledCount:29},interpretation:{minimumTargetSettledCount:30},a:{recoveryRate:70},b:{recoveryRate:100},productionChanged:false});
+assert.equal(x.affectedSettledCount,29);assert.equal(x.minimumAffectedSettledCount,30);assert.equal(x.decision,"continue");
+x=g.normalize("x","x",{A:{affectedRaceCount:30,recoveryRate:80,profit:-100},B:{affectedRaceCount:30,recoveryRate:70,profit:-200},minimumAffectedSettledCount:30,productionAUnchanged:true});
+assert.equal(x.affectedSettledCount,30);assert.equal(x.decision,"reject");
+x=g.normalize("x","x",{affectedSettledCount:30,productionChanged:true,A:{recoveryRate:70},B:{recoveryRate:90}});assert.equal(x.decision,"blocked");
+x=g.normalize("x","missing.json",null);assert.equal(x.status,"missing");assert.equal(x.decision,"blocked");
+assert.equal(g.SOURCES.length,7);
+assert.equal(new Set(g.SOURCES.map(v=>v[1])).size,7);
+const report=g.build();assert.equal(report.sourceCount,7);assert.equal(report.availableSourceCount,7);assert.equal(report.allSourcesConnected,true);assert.ok(report.items.every(v=>v.status==="available"));
+console.log("unified improvement decision gate test: 7/7 sources connected");
