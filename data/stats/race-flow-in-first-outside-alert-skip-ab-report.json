@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "version": "race-flow-in-first-outside-alert-skip-ab-v1-prospective",
+  "generatedAt": "2026-08-17T07:21:57.087Z",
+  "productionChanged": false,
+  "targetLabel": "イン先マイ・外攻め警戒",
+  "prospectiveProtocol": {
+    "cutoffSelectedAtInclusive": "2026-08-17T07:18:00Z",
+    "oldRecordsBackfilled": false,
+    "retrospectiveClassificationAllowed": false,
+    "actualPurchase": false
+  },
+  "cohort": {
+    "raceCount": 0,
+    "settledCount": 0,
+    "targetRaceCount": 0,
+    "targetSettledCount": 0
+  },
+  "a": {
+    "label": "current-A",
+    "rule": "現行どおり全対象を購入候補として評価",
+    "settledCount": 0,
+    "betRaceCount": 0,
+    "skippedRaceCount": 0,
+    "hitCount": 0,
+    "hitRate": null,
+    "stake": 0,
+    "return": 0,
+    "profit": 0,
+    "recoveryRate": null
+  },
+  "b": {
+    "label": "skip-in-first-outside-alert-B",
+    "rule": "展開ラベルが「イン先マイ・外攻め警戒」の時だけ購入見送り",
+    "settledCount": 0,
+    "betRaceCount": 0,
+    "skippedRaceCount": 0,
+    "hitCount": 0,
+    "hitRate": null,
+    "stake": 0,
+    "return": 0,
+    "profit": 0,
+    "recoveryRate": null
+  },
+  "delta": {
+    "stake": 0,
+    "return": 0,
+    "profit": 0,
+    "recoveryRate": null,
+    "hitRate": null
+  },
+  "interpretation": {
+    "minimumTargetSettledCount": 30,
+    "automaticApplication": false,
+    "usableForPrediction": false,
+    "affectsCurrentTickets": false,
+    "adoptionDecisionReady": false
+  }
+}
