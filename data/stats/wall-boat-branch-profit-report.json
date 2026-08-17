@@ -1,34 +1,81 @@
 {
-  "schemaVersion": 1,
-  "version": "wall-boat-branch-profit-v1",
-  "generatedAt": "2026-08-17T03:52:08.737Z",
-  "source": "restored saved predictions + official results",
+  "schemaVersion": 2,
+  "version": "wall-boat-branch-profit-v2-prospective",
+  "generatedAt": "2026-08-17T04:05:03.630Z",
+  "source": "post-storage-cutoff saved predictions + official results",
   "stakePerTicket": 100,
   "productionChanged": false,
+  "prospectiveProtocol": {
+    "cutoffSelectedAtInclusive": "2026-08-17T03:57:48Z",
+    "storageSourceCommit": "def6199bbadaf4b006bc0b4409cf49c528ed61f0",
+    "oldRecordsBackfilled": false,
+    "actualPurchase": false
+  },
   "diagnostics": {
     "selected": {
-      "raceCount": 107,
-      "formalWallEvidenceRaceCount": 0,
-      "states": {},
-      "grades": {},
-      "scoreBands": {},
-      "attackerCounts": {},
-      "wallCandidateCounts": {}
+      "raceCount": 108,
+      "formalWallEvidenceRaceCount": 1,
+      "prospectiveFormalWallEvidenceRaceCount": 1,
+      "states": {
+        "壁成立": 1
+      },
+      "grades": {
+        "A": 1
+      },
+      "scoreBands": {
+        "75-84": 1
+      },
+      "attackerCounts": {
+        "2": 1
+      },
+      "wallCandidateCounts": {
+        "1": 1
+      }
     },
     "verification": {
-      "raceCount": 1397,
-      "formalWallEvidenceRaceCount": 0,
-      "states": {},
-      "grades": {},
-      "scoreBands": {},
-      "attackerCounts": {},
-      "wallCandidateCounts": {}
+      "raceCount": 1407,
+      "formalWallEvidenceRaceCount": 10,
+      "prospectiveFormalWallEvidenceRaceCount": 10,
+      "states": {
+        "壁成立": 6,
+        "壁崩れ": 4
+      },
+      "grades": {
+        "B": 3,
+        "S": 3,
+        "A": 3,
+        "D": 1
+      },
+      "scoreBands": {
+        "65-74": 3,
+        "85+": 3,
+        "75-84": 3,
+        "<65": 1
+      },
+      "attackerCounts": {
+        "2": 2,
+        "3": 4,
+        "4": 4
+      },
+      "wallCandidateCounts": {
+        "1": 2,
+        "2": 4,
+        "3": 4
+      }
     },
-    "deduplicatedFormalRaceCount": 0
+    "prospectiveDeduplicatedFormalRaceCount": 10,
+    "firstEvidence": {
+      "raceKey": "20260817-05-4",
+      "selectedAt": "2026-08-17T04:00:32.843Z",
+      "state": "壁成立",
+      "score": 75,
+      "grade": "A",
+      "settled": false
+    }
   },
   "summaries": {
     "all": {
-      "raceCount": 0,
+      "raceCount": 10,
       "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
@@ -38,7 +85,7 @@
       "recoveryRate": null
     },
     "wallEstablished": {
-      "raceCount": 0,
+      "raceCount": 6,
       "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
@@ -58,7 +105,7 @@
       "recoveryRate": null
     },
     "wallBroken": {
-      "raceCount": 0,
+      "raceCount": 4,
       "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
@@ -68,7 +115,7 @@
       "recoveryRate": null
     },
     "score65to74": {
-      "raceCount": 0,
+      "raceCount": 3,
       "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
@@ -78,7 +125,7 @@
       "recoveryRate": null
     },
     "score75to84": {
-      "raceCount": 0,
+      "raceCount": 3,
       "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
@@ -88,7 +135,7 @@
       "recoveryRate": null
     },
     "score85plus": {
-      "raceCount": 0,
+      "raceCount": 3,
       "settledCount": 0,
       "hitCount": 0,
       "hitRate": null,
