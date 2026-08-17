@@ -1,0 +1,46 @@
+name: Check Phase4 daily cycle gate
+on:
+  pull_request:
+    paths:
+      - "scripts/build-phase4-daily-cycle-gate.js"
+      - "scripts/test-phase4-daily-cycle-gate.js"
+      - ".github/workflows/check-phase4-daily-cycle-gate.yml"
+      - ".github/workflows/collect-predictions.yml"
+      - ".github/workflows/collect-results.yml"
+      - "scripts/collect-predictions.js"
+  workflow_run:
+    workflows:
+      - "Collect automatic race predictions"
+      - "Collect official race results"
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          node --check scripts/build-phase4-daily-cycle-gate.js
+          node scripts/test-phase4-daily-cycle-gate.js
+          node scripts/build-phase4-daily-cycle-gate.js
+      - name: Save Phase4 daily cycle gate
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/phase4-daily-cycle-gate.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh Phase4 daily cycle gate"
+          git pull --rebase origin main
+          git push origin main
