@@ -717,7 +717,25 @@ function compactVerificationEvidence(prediction) {
           fCount: Number(role?.fCount || 0),
           reason: String(role?.reason || "")
         }))
-    }
+    },
+    wallTheory: (() => {
+      const wall = aiCore?.wallTheory || {};
+      const attackerNo = Number(wall?.attackerNo || raceScenarios?.attacker || 0);
+      const wallCandidateNo = Number(wall?.wallCandidateNo || 0);
+      const wallBoat = Number(wall?.wallBoat || 0);
+      const state = String(wall?.state || "").trim();
+      const score = Number(wall?.score);
+      const grade = String(wall?.grade || "").trim();
+      return {
+        attackerNo: attackerNo >= 1 && attackerNo <= 6 ? attackerNo : null,
+        wallCandidateNo: wallCandidateNo >= 1 && wallCandidateNo <= 6 ? wallCandidateNo : null,
+        wallBoat: wallBoat >= 1 && wallBoat <= 6 ? wallBoat : null,
+        state,
+        score: Number.isFinite(score) ? score : null,
+        grade,
+        formal: /^(壁成立|互角|壁崩れ)$/.test(state) && attackerNo >= 1 && attackerNo <= 6 && wallCandidateNo >= 1 && wallCandidateNo <= 6 && Number.isFinite(score) && Boolean(grade)
+      };
+    })()
   };
 
   if (!providedEvidence) return aiCoreEvidence;
@@ -784,6 +802,10 @@ function compactVerificationEvidence(prediction) {
         providedEvidence.stSlit.roles.length
           ? providedEvidence.stSlit.roles
           : aiCoreEvidence?.stSlit?.roles || []
+    },
+    wallTheory: {
+      ...(aiCoreEvidence.wallTheory || {}),
+      ...(providedEvidence.wallTheory || {})
     }
   };
 }

@@ -159,7 +159,8 @@ function motorClaimForTicket(prediction, ticket) {
 }
 
 function wallEvidence(prediction) {
-  const wall = prediction?.aiCore?.wallTheory || prediction?.wallTheory || prediction?.raceScenarios?.wallTheory || {};
+  const storedEvidence = prediction?.practicalSelection?.verificationEvidence || prediction?.verificationEvidence || {};
+  const wall = prediction?.aiCore?.wallTheory || prediction?.wallTheory || prediction?.raceScenarios?.wallTheory || storedEvidence?.wallTheory || {};
   const attackerNo = Number(wall?.attackerNo || prediction?.aiCore?.raceScenarios?.attacker || 0);
   const wallCandidateNo = Number(wall?.wallCandidateNo || 0);
   const wallBoat = Number(wall?.wallBoat || 0);
