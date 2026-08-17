@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - "scripts/build-phase4-daily-cycle-gate.js"
+      - "scripts/build-phase4-historical-cycle-proof.js"
       - "scripts/test-phase4-daily-cycle-gate.js"
       - ".github/workflows/check-phase4-daily-cycle-gate.yml"
       - ".github/workflows/collect-predictions.yml"
@@ -32,6 +33,8 @@ jobs:
         with: { node-version: 20 }
       - run: |
           node --check scripts/build-phase4-daily-cycle-gate.js
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-result-review.js
           node scripts/test-phase4-daily-cycle-gate.js
           node scripts/build-phase4-daily-cycle-gate.js
       - name: Save Phase4 daily cycle gate
