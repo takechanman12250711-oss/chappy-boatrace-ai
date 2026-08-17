@@ -1,0 +1,37 @@
+name: Build remain pickup branch report
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build-remain-pickup-branch-report.js"
+      - ".github/workflows/build-remain-pickup-branch-report.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Restore and build remain pickup report
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-remain-pickup-branch-report.js
+      - name: Save report
+        run: |
+          git add data/stats/remain-pickup-branch-report.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update remain pickup branch report"
+          git pull --rebase origin main
+          git push origin main
