@@ -2,6 +2,7 @@
 const fs=require("node:fs"),path=require("node:path");
 const root=path.resolve(__dirname,"..");
 const OUT=path.join(root,"data","stats","phase4-daily-cycle-gate.json");
+const historical=require("./build-phase4-historical-cycle-proof");
 function readText(p){return fs.readFileSync(path.join(root,p),"utf8");}
 function exists(p){return fs.existsSync(path.join(root,p));}
 function check(){
@@ -20,7 +21,12 @@ function check(){
     phase3Handoff:exists("scripts/build-phase3-learning-handoff.js")&&exists("data/stats/phase3-learning-handoff.json")
   };
   const missing=Object.entries(stages).filter(([,ok])=>!ok).map(([k])=>k);
-  return{schemaVersion:1,generatedAt:new Date().toISOString(),phase:"phase4",implementationComplete:missing.length===0,productionChanged:false,stages,missing,nextStep:missing.length?"fix-missing-stage":"run-live-daily-cycle",policy:"既存の自動選定→予想→実戦厳選→note→公式結果→成績/分析→Phase3学習戻しを1日の実戦サイクルとして扱う。予想ロジック・買い目・UIは変更しない。"};
+  const implementationComplete=missing.length===0;
+  let historicalProof={historicalCycleProven:false,proof:null};
+  try{historicalProof=historical.build();}catch(error){historicalProof={historicalCycleProven:false,proof:null,error:String(error&&error.message||error)};}
+  const historicalCycleProven=historicalProof.historicalCycleProven===true;
+  const phase4Complete=implementationComplete&&historicalCycleProven;
+  return{schemaVersion:2,generatedAt:new Date().toISOString(),phase:"phase4",implementationComplete,historicalCycleProven,phase4Complete,productionChanged:false,stages,missing,proof:historicalProof.proof||null,nextStep:phase4Complete?"phase4-complete":implementationComplete?"run-live-daily-cycle":"fix-missing-stage",policy:"既存の自動選定→予想→実戦厳選→note→公式結果→成績/分析→Phase3学習戻しを1日の実戦サイクルとして扱う。配線完成かつ実データ完走証拠がある時だけPhase4完了とする。予想ロジック・買い目・UIは変更しない。"};
 }
-function main(){const r=check();fs.mkdirSync(path.dirname(OUT),{recursive:true});fs.writeFileSync(OUT,JSON.stringify(r,null,2)+"\n");if(!r.implementationComplete){console.error("Phase4 daily cycle wiring incomplete: "+r.missing.join(","));process.exitCode=1;}console.log(JSON.stringify(r,null,2));}
+function main(){const r=check();fs.mkdirSync(path.dirname(OUT),{recursive:true});fs.writeFileSync(OUT,JSON.stringify(r,null,2)+"\n");if(!r.phase4Complete){console.error("Phase4 incomplete: "+(r.missing.join(",")||"historical cycle not proven"));process.exitCode=1;}console.log(JSON.stringify(r,null,2));}
 if(require.main===module)main();module.exports={check};
