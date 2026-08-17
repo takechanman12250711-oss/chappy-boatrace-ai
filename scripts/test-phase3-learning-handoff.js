@@ -1,0 +1,5 @@
+"use strict";const assert=require("node:assert/strict"),x=require("./build-phase3-learning-handoff");
+const base={allSourcesConnected:true,items:[{id:"a",file:"a.json",status:"available",decision:"candidate",affectedSettledCount:30,minimumAffectedSettledCount:30,aRecoveryRate:70,bRecoveryRate:90,aProfit:-100,bProfit:200},{id:"b",file:"b.json",status:"available",decision:"reject"},{id:"c",file:"c.json",status:"available",decision:"continue"}]};
+let r=x.build(base);assert.equal(r.implementationComplete,true);assert.equal(r.candidateCount,1);assert.equal(r.candidates[0].status,"awaiting-user-approval");assert.equal(r.candidates[0].approved,false);assert.equal(r.candidates[0].productionApplied,false);assert.equal(r.automaticApplication,false);assert.equal(r.productionChanged,false);assert.equal(r.nextStep,"user-approval");
+r=x.build({allSourcesConnected:true,items:[{id:"c",status:"available",decision:"continue"}]});assert.equal(r.candidateCount,0);assert.equal(r.nextStep,"collect-more-settled-races");
+assert.throws(()=>x.build({allSourcesConnected:false,items:[]}));console.log("phase3 learning handoff test: ok");

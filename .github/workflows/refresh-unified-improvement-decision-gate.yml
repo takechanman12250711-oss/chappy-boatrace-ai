@@ -19,12 +19,14 @@ jobs:
         with: { ref: main, fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - run: node scripts/build-unified-improvement-decision-gate.js
       - run: |
-          git add data/stats/unified-improvement-decision-gate.json
+          node scripts/build-unified-improvement-decision-gate.js
+          node scripts/build-phase3-learning-handoff.js
+      - run: |
+          git add data/stats/unified-improvement-decision-gate.json data/stats/phase3-learning-handoff.json
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Refresh unified improvement decision gate"
+          git commit -m "Refresh unified improvement decision gate and Phase3 handoff"
           git pull --rebase origin main
           git push origin main
