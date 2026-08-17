@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "version": "wall-boat-branch-profit-v2-prospective",
-  "generatedAt": "2026-08-17T11:20:26.329Z",
+  "generatedAt": "2026-08-17T23:18:49.083Z",
   "source": "post-storage-cutoff saved predictions + official results",
   "stakePerTicket": 100,
   "productionChanged": false,
@@ -42,67 +42,67 @@
       }
     },
     "verification": {
-      "raceCount": 1475,
-      "formalWallEvidenceRaceCount": 55,
-      "prospectiveFormalWallEvidenceRaceCount": 55,
+      "raceCount": 1487,
+      "formalWallEvidenceRaceCount": 60,
+      "prospectiveFormalWallEvidenceRaceCount": 60,
       "states": {
-        "壁成立": 27,
-        "壁崩れ": 28
+        "壁成立": 28,
+        "壁崩れ": 32
       },
       "grades": {
         "A": 17,
-        "B": 18,
+        "B": 19,
         "S": 12,
-        "D": 4,
-        "C": 4
+        "D": 6,
+        "C": 6
       },
       "scoreBands": {
         "75-84": 17,
-        "65-74": 18,
+        "65-74": 19,
         "85+": 12,
-        "<65": 8
+        "<65": 12
       },
       "attackerCounts": {
-        "2": 18,
-        "3": 18,
-        "4": 19
+        "2": 19,
+        "3": 21,
+        "4": 20
       },
       "wallCandidateCounts": {
-        "1": 18,
-        "2": 18,
-        "3": 19
+        "1": 19,
+        "2": 21,
+        "3": 20
       }
     },
-    "prospectiveDeduplicatedFormalRaceCount": 55,
+    "prospectiveDeduplicatedFormalRaceCount": 60,
     "firstEvidence": {
       "raceKey": "20260817-05-4",
       "selectedAt": "2026-08-17T04:00:32.843Z",
       "state": "壁成立",
       "score": 75,
       "grade": "A",
-      "settled": false
+      "settled": true
     }
   },
   "summaries": {
     "all": {
-      "raceCount": 55,
-      "settledCount": 0,
-      "hitCount": 0,
-      "hitRate": null,
-      "stake": 0,
-      "return": 0,
-      "profit": 0,
-      "recoveryRate": null
+      "raceCount": 60,
+      "settledCount": 55,
+      "hitCount": 16,
+      "hitRate": 29.1,
+      "stake": 52900,
+      "return": 46930,
+      "profit": -5970,
+      "recoveryRate": 88.7
     },
     "wallEstablished": {
-      "raceCount": 27,
-      "settledCount": 0,
-      "hitCount": 0,
-      "hitRate": null,
-      "stake": 0,
-      "return": 0,
-      "profit": 0,
-      "recoveryRate": null
+      "raceCount": 28,
+      "settledCount": 27,
+      "hitCount": 10,
+      "hitRate": 37,
+      "stake": 26300,
+      "return": 27900,
+      "profit": 1600,
+      "recoveryRate": 106.1
     },
     "even": {
       "raceCount": 0,
@@ -115,47 +115,72 @@
       "recoveryRate": null
     },
     "wallBroken": {
-      "raceCount": 28,
-      "settledCount": 0,
-      "hitCount": 0,
-      "hitRate": null,
-      "stake": 0,
-      "return": 0,
-      "profit": 0,
-      "recoveryRate": null
+      "raceCount": 32,
+      "settledCount": 28,
+      "hitCount": 6,
+      "hitRate": 21.4,
+      "stake": 26600,
+      "return": 19030,
+      "profit": -7570,
+      "recoveryRate": 71.5
     },
     "score65to74": {
-      "raceCount": 18,
-      "settledCount": 0,
-      "hitCount": 0,
-      "hitRate": null,
-      "stake": 0,
-      "return": 0,
-      "profit": 0,
-      "recoveryRate": null
+      "raceCount": 19,
+      "settledCount": 18,
+      "hitCount": 6,
+      "hitRate": 33.3,
+      "stake": 17400,
+      "return": 16640,
+      "profit": -760,
+      "recoveryRate": 95.6
     },
     "score75to84": {
       "raceCount": 17,
-      "settledCount": 0,
-      "hitCount": 0,
-      "hitRate": null,
-      "stake": 0,
-      "return": 0,
-      "profit": 0,
-      "recoveryRate": null
+      "settledCount": 17,
+      "hitCount": 6,
+      "hitRate": 35.3,
+      "stake": 16500,
+      "return": 20240,
+      "profit": 3740,
+      "recoveryRate": 122.7
     },
     "score85plus": {
       "raceCount": 12,
-      "settledCount": 0,
-      "hitCount": 0,
-      "hitRate": null,
-      "stake": 0,
-      "return": 0,
-      "profit": 0,
-      "recoveryRate": null
+      "settledCount": 12,
+      "hitCount": 3,
+      "hitRate": 25,
+      "stake": 11500,
+      "return": 9180,
+      "profit": -2320,
+      "recoveryRate": 79.8
     }
   },
-  "weakStateRanking": [],
+  "weakStateRanking": [
+    {
+      "rank": 1,
+      "branch": "wallBroken",
+      "raceCount": 32,
+      "settledCount": 28,
+      "hitCount": 6,
+      "hitRate": 21.4,
+      "stake": 26600,
+      "return": 19030,
+      "profit": -7570,
+      "recoveryRate": 71.5
+    },
+    {
+      "rank": 2,
+      "branch": "wallEstablished",
+      "raceCount": 28,
+      "settledCount": 27,
+      "hitCount": 10,
+      "hitRate": 37,
+      "stake": 26300,
+      "return": 27900,
+      "profit": 1600,
+      "recoveryRate": 106.1
+    }
+  ],
   "interpretation": {
     "minimumBranchSettledCount": 10,
     "retrospectiveClassificationAllowed": false,
