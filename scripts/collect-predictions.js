@@ -718,6 +718,25 @@ function compactVerificationEvidence(prediction) {
           reason: String(role?.reason || "")
         }))
     },
+    exhibitionFoot: (() => {
+      const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
+      const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+      const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+      const statements = [...confirms, ...alerts].map(String).filter(Boolean);
+      const attackBoatNo = Number(support?.attackBoatNo || support?.centerBoatNo || prediction?.flowPriority?.attackBoatNo || prediction?.flowPriority?.attackBoat || 0);
+      const exhibitionCoverage = Number(support?.dataCoverage?.exhibition || 0);
+      const exhibitionRank = Number(support?.attackExhibitionRank || 0);
+      const explicit = statements.some(text => /展示|足|気配/.test(text));
+      return {
+        attackBoatNo: attackBoatNo >= 1 && attackBoatNo <= 6 ? attackBoatNo : null,
+        exhibitionCoverage: Number.isFinite(exhibitionCoverage) ? exhibitionCoverage : 0,
+        exhibitionRank: exhibitionRank >= 1 && exhibitionRank <= 6 ? exhibitionRank : null,
+        statements,
+        confirm: statements.some(text => /上位|良|伸び|出足|気配.*良|補強/.test(text)),
+        alert: statements.some(text => /下位|遅|弱|劣|不安|警戒/.test(text)),
+        formal: attackBoatNo >= 1 && attackBoatNo <= 6 && exhibitionCoverage >= 4 && exhibitionRank >= 1 && exhibitionRank <= 6 && explicit
+      };
+    })(),
     wallTheory: (() => {
       const wall = aiCore?.wallTheory || {};
       const attackerNo = Number(wall?.attackerNo || raceScenarios?.attacker || 0);
