@@ -12,7 +12,7 @@ function check(){
     autoSelection:/selectedRaceKeyFor\(/.test(collector)&&/selection\.selected/.test(collector),
     prediction:/createPrediction\(/.test(collector),
     practicalTickets:/practicalTickets/.test(collector)&&/実戦厳選/.test(collector),
-    noteDraft:/saveNote\(/.test(collector)&&/data\/notes/.test(collector),
+    noteDraft:/saveNote\(/.test(collector)&&/"data"\s*,\s*"notes"/.test(collector),
     scheduledPrediction:/schedule:/.test(predict)&&/collect-predictions\.js/.test(predict),
     officialResults:/collect-results\.js/.test(results)||/repair-recent-results\.js/.test(results),
     hitAndReview:/build-result-review\.js/.test(results),
