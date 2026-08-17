@@ -9,7 +9,14 @@ on:
     branches: [main]
     paths:
       - "scripts/build-wall-boat-branch-profit-report.js"
+      - "scripts/collect-predictions.js"
+      - "js/theory-tag-snapshot.js"
       - ".github/workflows/check-wall-boat-branch-profit.yml"
+  workflow_run:
+    workflows:
+      - "Collect automatic race predictions"
+      - "Collect official race results"
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,6 +25,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +55,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update wall boat branch profit report"
+          git commit -m "Update wall boat prospective branch report"
           git pull --rebase origin main
           git push origin main
