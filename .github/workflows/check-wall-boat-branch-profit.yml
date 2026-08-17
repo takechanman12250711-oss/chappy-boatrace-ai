@@ -1,0 +1,52 @@
+name: Check wall boat branch profit
+on:
+  pull_request:
+    paths:
+      - "scripts/build-wall-boat-branch-profit-report.js"
+      - "scripts/test-wall-boat-branch-profit-report.js"
+      - ".github/workflows/check-wall-boat-branch-profit.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build-wall-boat-branch-profit-report.js"
+      - ".github/workflows/check-wall-boat-branch-profit.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify wall boat analyzer
+        run: |
+          node --check scripts/build-wall-boat-branch-profit-report.js
+          node scripts/test-wall-boat-branch-profit-report.js
+      - name: Restore canonical sources and build report
+        if: github.event_name != 'pull_request'
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-wall-boat-branch-profit-report.js
+          node scripts/prepare-daily-prediction-git-save.js --all
+      - name: Save wall boat branch report
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/wall-boat-branch-profit-report.json
+          if git diff --cached --quiet; then
+            echo "wall-boat report unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update wall boat branch profit report"
+          git pull --rebase origin main
+          git push origin main
