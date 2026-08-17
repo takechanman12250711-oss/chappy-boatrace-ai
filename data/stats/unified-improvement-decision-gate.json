@@ -1,9 +1,12 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-08-17T13:13:50.519Z",
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-17T14:33:03.597Z",
   "productionChanged": false,
   "automaticApplication": false,
   "requiresUserApproval": true,
+  "sourceCount": 7,
+  "availableSourceCount": 7,
+  "allSourcesConnected": true,
   "policy": "必要件数到達後も自動本番反映しない。BがAの回収率と収支を改善した候補だけユーザー承認へ送る。",
   "counts": {
     "continue": 7
@@ -26,45 +29,93 @@
     },
     {
       "id": "four-attack-warning",
-      "file": "four-attack-warning-skip-prospective-ab-report.json",
-      "status": "missing",
+      "file": "race-flow-4kado-alert-skip-ab-report.json",
+      "status": "available",
+      "affectedSettledCount": 0,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 0,
+      "bRecoveryRate": 0,
+      "aProfit": 0,
+      "bProfit": 0,
       "decision": "continue",
-      "reason": "レポート未生成"
+      "reason": "0/30R",
+      "automaticApplication": false,
+      "requiresUserApproval": true
     },
     {
       "id": "three-attack-warning",
-      "file": "three-attack-warning-skip-prospective-ab-report.json",
-      "status": "missing",
+      "file": "race-flow-3course-alert-skip-ab-report.json",
+      "status": "available",
+      "affectedSettledCount": 0,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 0,
+      "bRecoveryRate": 0,
+      "aProfit": 0,
+      "bProfit": 0,
       "decision": "continue",
-      "reason": "レポート未生成"
+      "reason": "0/30R",
+      "automaticApplication": false,
+      "requiresUserApproval": true
     },
     {
       "id": "two-course-sashi",
-      "file": "two-course-sashi-skip-prospective-ab-report.json",
-      "status": "missing",
+      "file": "race-flow-2course-sashi-skip-ab-report.json",
+      "status": "available",
+      "affectedSettledCount": 0,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 0,
+      "bRecoveryRate": 0,
+      "aProfit": 0,
+      "bProfit": 0,
       "decision": "continue",
-      "reason": "レポート未生成"
+      "reason": "0/30R",
+      "automaticApplication": false,
+      "requiresUserApproval": true
     },
     {
       "id": "outside-push",
-      "file": "outside-push-skip-prospective-ab-report.json",
-      "status": "missing",
+      "file": "race-flow-outside-push-skip-ab-report.json",
+      "status": "available",
+      "affectedSettledCount": 0,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 0,
+      "bRecoveryRate": 0,
+      "aProfit": 0,
+      "bProfit": 0,
       "decision": "continue",
-      "reason": "レポート未生成"
+      "reason": "0/30R",
+      "automaticApplication": false,
+      "requiresUserApproval": true
     },
     {
       "id": "inside-first-outside-warning",
-      "file": "inside-first-outside-warning-skip-prospective-ab-report.json",
-      "status": "missing",
+      "file": "race-flow-in-first-outside-alert-skip-ab-report.json",
+      "status": "available",
+      "affectedSettledCount": 0,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 0,
+      "bRecoveryRate": 0,
+      "aProfit": 0,
+      "bProfit": 0,
       "decision": "continue",
-      "reason": "レポート未生成"
+      "reason": "0/30R",
+      "automaticApplication": false,
+      "requiresUserApproval": true
     },
     {
       "id": "hold-third",
-      "file": "remain-pickup-hold-third-prospective-ab-report.json",
-      "status": "missing",
+      "file": "remain-pickup-hold3-shadow-ab-report.json",
+      "status": "available",
+      "affectedSettledCount": 0,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 0,
+      "bRecoveryRate": 0,
+      "aProfit": 0,
+      "bProfit": 0,
       "decision": "continue",
-      "reason": "レポート未生成"
+      "reason": "0/30R",
+      "automaticApplication": false,
+      "requiresUserApproval": true
     }
   ]
 }
