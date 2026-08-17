@@ -21,7 +21,8 @@ const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/sc
   "js/formation-odds-display.js",
   "js/manshu-display-reliability.js",
   "js/home-recommendation-reliability.js",
-  "js/prediction-loading-watchdog.js"
+  "js/prediction-loading-watchdog.js",
+  "js/script.js"
 ].forEach(file => assert.equal(directScripts.includes(file), false, `${file} を初期同期読込から外す`));
 
 [
@@ -32,6 +33,17 @@ const directScripts = [...html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/sc
   "js/home-dashboard-v2.js",
   "js/odds-first-navigation.js"
 ].forEach(file => assert.equal(directScripts.includes(file), true, `${file} をホーム操作経路で読み込む`));
+
+assert.equal(
+  appRuntime.includes('groups={race:["js/utils.js","js/storage.js","js/prediction-conditions.js","js/prediction-runtime-loader.js","js/script.js","js/hiyori-runtime-loader.js"]'),
+  true,
+  "script.js はraceグループ経由でのみ読み込む"
+);
+assert.equal(
+  appRuntime.includes('if(group==="race")root.ChappyRaceControls?.initialize?.();'),
+  true,
+  "raceランタイム読込後にレース操作を初期化する"
+);
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
@@ -90,4 +102,4 @@ assert.equal(
   'class="bottom-nav"', 'data-view="home"', 'data-view="prediction"', 'data-view="result"'
 ].forEach(marker => assert.equal(html.includes(marker), true, `UI構造を維持する: ${marker}`));
 
-console.log("アプリ初期表示・UI不変・予想ランタイム上限検証: 合格");
+console.log("アプリ初期表示・単一起動経路・UI不変・予想ランタイム上限検証: 合格");
