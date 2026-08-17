@@ -1,0 +1,48 @@
+name: Apply exhibition foot evidence storage
+on:
+  pull_request:
+    paths:
+      - "scripts/apply-exhibition-foot-evidence-storage.js"
+      - "scripts/build-exhibition-foot-branch-report.js"
+      - ".github/workflows/apply-exhibition-foot-evidence-storage.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/apply-exhibition-foot-evidence-storage.js"
+      - ".github/workflows/apply-exhibition-foot-evidence-storage.yml"
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  verify-and-apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Apply storage patch in checkout
+        run: |
+          node scripts/apply-exhibition-foot-evidence-storage.js
+          node --check scripts/collect-predictions.js
+          grep -q 'exhibitionFoot: (() => {' scripts/collect-predictions.js
+          grep -q 'exhibitionCoverage' scripts/collect-predictions.js
+          grep -q 'exhibitionRank' scripts/collect-predictions.js
+          node scripts/test-exhibition-foot-branch-report.js
+      - name: Commit collector storage patch
+        if: github.event_name == 'push'
+        run: |
+          git add scripts/collect-predictions.js
+          if git diff --cached --quiet; then
+            echo "collector storage already applied"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Store exhibition foot evidence in predictions"
+          git pull --rebase origin main
+          git push origin main
