@@ -12,22 +12,12 @@ const SOURCES=[
   ["hold-third","remain-pickup-hold3-shadow-ab-report.json"]
 ];
 function read(n){const p=path.join(stats,n);if(!fs.existsSync(p))return null;try{return JSON.parse(fs.readFileSync(p,"utf8"));}catch{return null;}}
-function num(...v){for(const x of v){const n=Number(x);if(Number.isFinite(n))return n;}return null;}
+function num(...v){for(const x of v){if(x===null||x===undefined||x==="")continue;const n=Number(x);if(Number.isFinite(n))return n;}return null;}
 function normalize(id,file,r){
   if(!r)return{id,file,status:"missing",decision:"blocked",reason:"実A/Bレポート参照失敗",automaticApplication:false,requiresUserApproval:true};
   const s=r.summary||r.comparison||r.result||r.metrics||{};
-  const affected=num(
-    r.affectedSettledCount,r.targetSettledCount,s.affectedSettledCount,s.targetSettledCount,
-    r?.cohort?.affectedSettledCount,r?.cohort?.targetSettledCount,
-    r?.A?.affectedRaceCount,r?.a?.affectedRaceCount,0
-  )||0;
-  const min=num(
-    r.minimumAffectedSettledCount,
-    r?.interpretation?.minimumAffectedSettledCount,
-    r?.interpretation?.minimumTargetSettledCount,
-    r?.decisionRule?.minimumAffectedSettledCount,
-    id==="frame-negative-clip"?100:30
-  )||30;
+  const affected=num(r.affectedSettledCount,r.targetSettledCount,s.affectedSettledCount,s.targetSettledCount,r?.cohort?.affectedSettledCount,r?.cohort?.targetSettledCount,r?.A?.affectedRaceCount,r?.a?.affectedRaceCount,0)||0;
+  const min=num(r.minimumAffectedSettledCount,r?.interpretation?.minimumAffectedSettledCount,r?.interpretation?.minimumTargetSettledCount,r?.decisionRule?.minimumAffectedSettledCount,id==="frame-negative-clip"?100:30)||30;
   const aRec=num(s?.A?.recoveryRate,s?.a?.recoveryRate,r?.A?.recoveryRate,r?.a?.recoveryRate);
   const bRec=num(s?.B?.recoveryRate,s?.b?.recoveryRate,r?.B?.recoveryRate,r?.b?.recoveryRate);
   const aProfit=num(s?.A?.profit,s?.a?.profit,r?.A?.profit,r?.a?.profit);
@@ -42,11 +32,7 @@ function normalize(id,file,r){
   }
   return{id,file,status:"available",affectedSettledCount:affected,minimumAffectedSettledCount:min,aRecoveryRate:aRec,bRecoveryRate:bRec,aProfit,bProfit,decision,reason,automaticApplication:false,requiresUserApproval:true};
 }
-function build(){
-  const items=SOURCES.map(([id,f])=>normalize(id,f,read(f)));
-  const counts=items.reduce((a,x)=>(a[x.decision]=(a[x.decision]||0)+1,a),{});
-  return{schemaVersion:2,generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,requiresUserApproval:true,sourceCount:SOURCES.length,availableSourceCount:items.filter(x=>x.status==="available").length,allSourcesConnected:items.every(x=>x.status==="available"),policy:"必要件数到達後も自動本番反映しない。BがAの回収率と収支を改善した候補だけユーザー承認へ送る。",counts,items};
-}
+function build(){const items=SOURCES.map(([id,f])=>normalize(id,f,read(f)));const counts=items.reduce((a,x)=>(a[x.decision]=(a[x.decision]||0)+1,a),{});return{schemaVersion:2,generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,requiresUserApproval:true,sourceCount:SOURCES.length,availableSourceCount:items.filter(x=>x.status==="available").length,allSourcesConnected:items.every(x=>x.status==="available"),policy:"必要件数到達後も自動本番反映しない。BがAの回収率と収支を改善した候補だけユーザー承認へ送る。",counts,items};}
 function main(){const r=build();fs.writeFileSync(OUT,JSON.stringify(r,null,2)+"\n");if(!r.allSourcesConnected){console.error("unified gate source connection incomplete");process.exitCode=1;}console.log(JSON.stringify(r,null,2));}
 if(require.main===module)main();
-module.exports={SOURCES,normalize,build};
+module.exports={SOURCES,num,normalize,build};
