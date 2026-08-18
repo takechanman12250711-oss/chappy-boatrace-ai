@@ -150,15 +150,19 @@ function build() {
       const changed = removed.length > 0 || added.length > 0;
 
       if (changed) {
-        const removedRows = (current.tickets || []).filter(item => removed.includes(ticketOf(item)));
-        const allRemovedAreHead2Candidate90 = removedRows.every(item => {
-          const head = Number(ticketOf(item).split("-")[0]);
-          return head === 2 && item?.candidatePromotion === true;
+        const removedHead2Candidate90 = (current.tickets || [])
+          .filter(item => removed.includes(ticketOf(item)))
+          .filter(item => Number(ticketOf(item).split("-")[0]) === 2 && item?.candidatePromotion === true)
+          .map(item => ticketOf(item));
+        changedRows.push({
+          raceKey,
+          date,
+          actual,
+          removed,
+          added,
+          removedHead2Candidate90,
+          downstreamCascade: removed.some(ticket => !removedHead2Candidate90.includes(ticket)) || added.length > 0
         });
-        if (!allRemovedAreHead2Candidate90) {
-          throw new Error(`${raceKey}: unexpected removal outside head2 candidate90`);
-        }
-        changedRows.push({ raceKey, date, actual, removed, added });
       }
 
       const payout = Number(row?.result?.payoutPer100 || row?.result?.review?.payoutPer100 || 0);
@@ -184,12 +188,13 @@ function build() {
     startDate: START_DATE,
     latestDate,
     candidateRule: "candidate90 promotion only: reject actual course 2 head; keep head1/head3 and existing actual-course>=4 prune unchanged",
-    method: "paired current-main replay from frozen pre-race inputs; candidate is an in-memory practical-selection copy with only the candidate90 promotedHeadCourse gate changed; every downstream trim and priority-gate step reruns normally",
+    method: "paired current-main replay from frozen pre-race inputs; candidate is an in-memory practical-selection copy with only the candidate90 promotedHeadCourse gate changed; every downstream trim and priority-gate step reruns normally; all resulting downstream ticket cascades are scored rather than suppressed",
     productionChanged: false,
     automaticApplication: false,
     total: finalize(total),
     byDate: Object.fromEntries(Object.entries(byDate).map(([date, stats]) => [date, finalize(stats)])),
     changedRaceCount: changedRows.length,
+    cascadeChangedRaceCount: changedRows.filter(row => row.downstreamCascade).length,
     changedRows
   };
 
