@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T15:39:39.088Z",
+  "generatedAt": "2026-08-18T13:45:00.000Z",
   "source": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "deduplication": "predictions-preferred-over-verificationPredictions",
@@ -16,28 +16,13 @@
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
-  "schemaVersion": 1,
-  "engineVersion": "improvement-proposal-phase3-20260806",
+  "schemaVersion": 2,
+  "engineVersion": "improvement-proposal-phase3-20260818-root-cause-priority",
   "status": "proposal-candidates-ready",
   "minimumRaceCount": 100,
   "settledRaceCount": 1450,
   "remainingRaceCount": 0,
   "proposals": [
-    {
-      "code": "ticket-coverage-insufficient",
-      "label": "買い目不足",
-      "theory": "買い目構成",
-      "sampleCount": 1127,
-      "occurrenceRate": 77.7,
-      "priority": "high",
-      "improvementCandidate": "展開内の残し・拾い不足を再検証",
-      "expectedEffect": "実戦厳選的中率の改善余地を検証",
-      "confidenceBreakdown": {
-        "high": 51,
-        "medium": 1076,
-        "low": 0
-      }
-    },
     {
       "code": "flow-reading-miss",
       "label": "展開読み違い",
@@ -47,11 +32,7 @@
       "priority": "high",
       "improvementCandidate": "展開成立条件と崩れ条件の再検証",
       "expectedEffect": "展開一致率の改善余地を検証",
-      "confidenceBreakdown": {
-        "high": 87,
-        "medium": 773,
-        "low": 0
-      }
+      "confidenceBreakdown": { "high": 87, "medium": 773, "low": 0 }
     },
     {
       "code": "local-water-adjustment-insufficient",
@@ -62,26 +43,7 @@
       "priority": "high",
       "improvementCandidate": "場・風・波・潮の補正条件を再検証",
       "expectedEffect": "場別回収率の改善余地を検証",
-      "confidenceBreakdown": {
-        "high": 0,
-        "medium": 740,
-        "low": 0
-      }
-    },
-    {
-      "code": "ticket-spread-too-wide",
-      "label": "買い目広げ過ぎ",
-      "theory": "買い目構成",
-      "sampleCount": 714,
-      "occurrenceRate": 49.2,
-      "priority": "high",
-      "improvementCandidate": "不的中時の点数拡張条件を再検証",
-      "expectedEffect": "回収率の改善余地を検証",
-      "confidenceBreakdown": {
-        "high": 0,
-        "medium": 0,
-        "low": 714
-      }
+      "confidenceBreakdown": { "high": 0, "medium": 740, "low": 0 }
     },
     {
       "code": "wall-boat-evaluation-insufficient",
@@ -92,11 +54,7 @@
       "priority": "high",
       "improvementCandidate": "壁成立・不成立条件を再検証",
       "expectedEffect": "壁艇関与時の展開一致率の改善余地を検証",
-      "confidenceBreakdown": {
-        "high": 0,
-        "medium": 536,
-        "low": 0
-      }
+      "confidenceBreakdown": { "high": 0, "medium": 536, "low": 0 }
     },
     {
       "code": "exhibition-evaluation-insufficient",
@@ -107,11 +65,7 @@
       "priority": "high",
       "improvementCandidate": "展示順位と足評価の採用条件を再検証",
       "expectedEffect": "展示評価関与時の回収率の改善余地を検証",
-      "confidenceBreakdown": {
-        "high": 0,
-        "medium": 298,
-        "low": 0
-      }
+      "confidenceBreakdown": { "high": 0, "medium": 298, "low": 0 }
     },
     {
       "code": "start-adjustment-insufficient",
@@ -122,14 +76,41 @@
       "priority": "medium",
       "improvementCandidate": "ST差とスリット隊形の補正条件を再検証",
       "expectedEffect": "1着・攻め艇一致率の改善余地を検証",
-      "confidenceBreakdown": {
-        "high": 0,
-        "medium": 234,
-        "low": 0
-      }
+      "confidenceBreakdown": { "high": 0, "medium": 234, "low": 0 }
     }
   ],
-  "proposalCount": 7,
+  "proposalCount": 5,
+  "outcomeDiagnostics": [
+    {
+      "code": "ticket-coverage-insufficient",
+      "label": "買い目不足",
+      "theory": "買い目構成",
+      "sampleCount": 1127,
+      "occurrenceRate": 77.7,
+      "priority": "high",
+      "improvementCandidate": "展開内の残し・拾い不足を再検証",
+      "expectedEffect": "実戦厳選的中率の改善余地を検証",
+      "confidenceBreakdown": { "high": 51, "medium": 1076, "low": 0 },
+      "diagnosticOnly": true,
+      "rootCauseCandidate": false,
+      "reason": "不的中結果から付く結果記述のため、件数だけで改善優先順位にしない"
+    },
+    {
+      "code": "ticket-spread-too-wide",
+      "label": "買い目広げ過ぎ",
+      "theory": "買い目構成",
+      "sampleCount": 714,
+      "occurrenceRate": 49.2,
+      "priority": "high",
+      "improvementCandidate": "不的中時の点数拡張条件を再検証",
+      "expectedEffect": "回収率の改善余地を検証",
+      "confidenceBreakdown": { "high": 0, "medium": 0, "low": 714 },
+      "diagnosticOnly": true,
+      "rootCauseCandidate": false,
+      "reason": "8点以上で不的中という結果条件から付くため、回収率・比較検証なしに根本原因と断定しない"
+    }
+  ],
+  "outcomeDiagnosticCount": 2,
   "proposalOnly": true,
   "humanApprovalRequired": true,
   "usableForPrediction": false,

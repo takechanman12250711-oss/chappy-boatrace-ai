@@ -12,6 +12,13 @@ const EFFECT_MAP = Object.freeze({
   "ticket-spread-too-wide": { theory: "買い目構成", action: "不的中時の点数拡張条件を再検証", metric: "回収率" }
 });
 
+// これらは不的中後の状態から付く結果記述であり、単独では根本原因を証明しない。
+// 件数は診断値として保持するが、根本原因の改善優先順位には混ぜない。
+const OUTCOME_DIAGNOSTIC_CODES = Object.freeze(new Set([
+  "ticket-coverage-insufficient",
+  "ticket-spread-too-wide"
+]));
+
 function collect(records) {
   const settled = (Array.isArray(records) ? records : []).filter(record => record?.result?.settled === true);
   const counts = new Map();
@@ -30,38 +37,59 @@ function collect(records) {
   return { settledCount: settled.length, counts: [...counts.values()] };
 }
 
+function toReportRow(row, settledCount) {
+  const definition = EFFECT_MAP[row.code];
+  const rate = settledCount ? Math.round(row.count / settledCount * 1000) / 10 : 0;
+  return {
+    code: row.code,
+    label: row.label,
+    theory: definition.theory,
+    sampleCount: row.count,
+    occurrenceRate: rate,
+    priority: row.high > 0 || rate >= 20 ? "high" : rate >= 10 ? "medium" : "low",
+    improvementCandidate: definition.action,
+    expectedEffect: `${definition.metric}の改善余地を検証`,
+    confidenceBreakdown: { high: row.high, medium: row.medium, low: row.low }
+  };
+}
+
+function diagnosticReason(code) {
+  if (code === "ticket-spread-too-wide") {
+    return "8点以上で不的中という結果条件から付くため、回収率・比較検証なしに根本原因と断定しない";
+  }
+  return "不的中結果から付く結果記述のため、件数だけで改善優先順位にしない";
+}
+
 function build(records) {
   const aggregated = collect(records);
   const ready = aggregated.settledCount >= MIN_RACES;
-  const proposals = ready
-    ? aggregated.counts
-      .map(row => {
-        const definition = EFFECT_MAP[row.code];
-        const rate = aggregated.settledCount ? Math.round(row.count / aggregated.settledCount * 1000) / 10 : 0;
-        return {
-          code: row.code,
-          label: row.label,
-          theory: definition.theory,
-          sampleCount: row.count,
-          occurrenceRate: rate,
-          priority: row.high > 0 || rate >= 20 ? "high" : rate >= 10 ? "medium" : "low",
-          improvementCandidate: definition.action,
-          expectedEffect: `${definition.metric}の改善余地を検証`,
-          confidenceBreakdown: { high: row.high, medium: row.medium, low: row.low }
-        };
-      })
-      .sort((a, b) => b.sampleCount - a.sampleCount || a.code.localeCompare(b.code))
+  const rows = ready
+    ? aggregated.counts.map(row => toReportRow(row, aggregated.settledCount))
     : [];
+  const outcomeDiagnostics = rows
+    .filter(row => OUTCOME_DIAGNOSTIC_CODES.has(row.code))
+    .map(row => ({
+      ...row,
+      diagnosticOnly: true,
+      rootCauseCandidate: false,
+      reason: diagnosticReason(row.code)
+    }))
+    .sort((a, b) => b.sampleCount - a.sampleCount || a.code.localeCompare(b.code));
+  const proposals = rows
+    .filter(row => !OUTCOME_DIAGNOSTIC_CODES.has(row.code))
+    .sort((a, b) => b.sampleCount - a.sampleCount || a.code.localeCompare(b.code));
 
   return {
-    schemaVersion: 1,
-    engineVersion: "improvement-proposal-phase3-20260806",
+    schemaVersion: 2,
+    engineVersion: "improvement-proposal-phase3-20260818-root-cause-priority",
     status: ready ? "proposal-candidates-ready" : "collecting-data",
     minimumRaceCount: MIN_RACES,
     settledRaceCount: aggregated.settledCount,
     remainingRaceCount: Math.max(0, MIN_RACES - aggregated.settledCount),
     proposals,
     proposalCount: proposals.length,
+    outcomeDiagnostics,
+    outcomeDiagnosticCount: outcomeDiagnostics.length,
     proposalOnly: true,
     humanApprovalRequired: true,
     usableForPrediction: false,
@@ -70,4 +98,4 @@ function build(records) {
   };
 }
 
-module.exports = { MIN_RACES, EFFECT_MAP, collect, build };
+module.exports = { MIN_RACES, EFFECT_MAP, OUTCOME_DIAGNOSTIC_CODES, collect, toReportRow, diagnosticReason, build };
