@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/analyze-weak-two-lost-hit.js'
+      - 'scripts/analyze-weak-two-pruned-cohort.js'
       - '.github/workflows/analyze-weak-two-lost-hit.yml'
 jobs:
   analyze:
@@ -16,5 +17,8 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/restore-daily-prediction-source.js --all
-      - run: node --check scripts/analyze-weak-two-lost-hit.js
+      - run: |
+          node --check scripts/analyze-weak-two-lost-hit.js
+          node --check scripts/analyze-weak-two-pruned-cohort.js
       - run: node scripts/analyze-weak-two-lost-hit.js
+      - run: node scripts/analyze-weak-two-pruned-cohort.js
