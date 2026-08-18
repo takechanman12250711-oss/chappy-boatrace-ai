@@ -25,9 +25,10 @@ for(const f of fs.readdirSync(dir).filter(x=>/^202608(0[7-9]|10)\.json$/.test(x)
   if(!baseHit&&newHit){stats.incrementalReturn+=Number(r?.result?.payout||r?.result?.officialPayoutPer100||r?.result?.review?.payout||0);}
  }
 }
+const recovery=Number((stats.incrementalReturn/(stats.added*100)*100).toFixed(2));
+console.log(JSON.stringify({...stats,incrementalRecoveryRate:recovery},null,2));
 const expected={n:341,baseHits:108,newHits:117,added:235,trainBase:46,trainNew:50,testBase:62,testNew:67,incrementalReturn:26520};
 for(const [k,v] of Object.entries(expected)){if(stats[k]!==v)throw new Error(`${k}: expected ${v}, got ${stats[k]}`);}
-const recovery=Number((stats.incrementalReturn/(stats.added*100)*100).toFixed(2));if(recovery!==112.85)throw new Error(`incremental recovery expected 112.85, got ${recovery}`);
+if(recovery!==112.85)throw new Error(`incremental recovery expected 112.85, got ${recovery}`);
 if(selector.MINIMUM_CANDIDATE_PROMOTION_SCORE!==90)throw new Error("promotion threshold export mismatch");
-console.log(JSON.stringify({...stats,incrementalRecoveryRate:recovery},null,2));
 console.log("candidate90 regression passed");
