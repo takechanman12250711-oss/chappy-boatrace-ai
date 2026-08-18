@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/analyze-weak-two-lost-hit.js'
       - 'scripts/analyze-weak-two-pruned-cohort.js'
+      - 'scripts/validate-weak-two-inside-hold-exception.js'
       - '.github/workflows/analyze-weak-two-lost-hit.yml'
 jobs:
   analyze:
@@ -20,5 +21,7 @@ jobs:
       - run: |
           node --check scripts/analyze-weak-two-lost-hit.js
           node --check scripts/analyze-weak-two-pruned-cohort.js
+          node --check scripts/validate-weak-two-inside-hold-exception.js
       - run: node scripts/analyze-weak-two-lost-hit.js
       - run: node scripts/analyze-weak-two-pruned-cohort.js
+      - run: node scripts/validate-weak-two-inside-hold-exception.js
