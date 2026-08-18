@@ -1,0 +1,23 @@
+name: Check local water full counterfactual
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-local-water-full-counterfactual.js'
+      - '.github/workflows/check-local-water-full-counterfactual.yml'
+      - 'js/ai-core.js'
+      - 'js/theory-input.js'
+      - 'scripts/collect-predictions.js'
+      - 'scripts/build-local-water-branch-report.js'
+      - 'api/race.js'
+      - 'data/predictions/**'
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-local-water-full-counterfactual.js
+      - run: node scripts/analyze-local-water-full-counterfactual.js
