@@ -1,0 +1,22 @@
+name: Check sashi safety post-adoption monitor
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-sashi-safety-post-adoption-monitor.js'
+      - '.github/workflows/check-sashi-safety-post-adoption-monitor.yml'
+      - 'js/ai-core.js'
+      - 'data/predictions/**'
+  workflow_dispatch:
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/build-sashi-safety-post-adoption-monitor.js
+      - run: node scripts/build-sashi-safety-post-adoption-monitor.js
