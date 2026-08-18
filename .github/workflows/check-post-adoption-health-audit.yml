@@ -1,0 +1,31 @@
+name: Check post-adoption health audit
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/check-post-adoption-health-audit.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Restore canonical prediction sources
+        run: node scripts/restore-daily-prediction-source.js --all
+      - name: Strong escape
+        run: node scripts/build-strong-escape-post-adoption-monitor.js
+      - name: Weak independent
+        run: node scripts/build-weak-independent-post-adoption-monitor.js
+      - name: Weak independent components
+        run: node scripts/build-weak-independent-component-monitor.js
+      - name: Sashi safety
+        run: node scripts/build-sashi-safety-post-adoption-monitor.js
+      - name: Wall theory
+        run: node scripts/build-wall-theory-post-adoption-monitor.js
+      - name: Candidate90 course2 prune
+        run: node scripts/build-candidate90-course2-prune-post-adoption-monitor.js
+      - name: Local water tiebreak shadow
+        run: node scripts/build-local-water-tiebreak-shadow-monitor.js
