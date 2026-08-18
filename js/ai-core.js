@@ -8423,10 +8423,11 @@ if (hasComparison(threeNo, oneNo)) {
     escapeScore >= threeAttackScore &&
     escapeScore >= fourAttackScore;
 
-  sashiSkillTiebreak.applied =
-    rawEscapeIsMain &&
-    sashiSkillTiebreak.scoreGap <= 2.5 &&
-    sashiSkillTiebreak.nationalSkillGap >= 10;
+  /*
+    #305の技量タイブレークは採用後monitorで基本5点・払戻を悪化させたため停止。
+    2差し生スコア、#301のST比較ガード、#308の残し・拾いは維持する。
+  */
+  sashiSkillTiebreak.applied = false;
 
   /*
     追走・残しの保持は、該当する攻めが実際の主筋で、
