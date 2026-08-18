@@ -1,0 +1,18 @@
+name: Check escape to sashi miss structure
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-escape-to-sashi-miss-structure.js'
+      - '.github/workflows/check-escape-to-sashi-miss-structure.yml'
+jobs:
+  analysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-escape-to-sashi-miss-structure.js
+      - run: node scripts/analyze-escape-to-sashi-miss-structure.js
