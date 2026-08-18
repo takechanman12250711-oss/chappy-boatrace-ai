@@ -21,12 +21,12 @@ function loadSelectorBeforeWeakIndependentPrunes() {
   const original = fs.readFileSync(filename, "utf8");
   const outerMarker = [
     "const weakOuterHead =",
-    "          (headBoatNo === 5 || headBoatNo === 6) &&",
+    "          (headCourse === 5 || headCourse === 6) &&",
     "          numeric(row.priorityScore, 0) < 80;"
   ].join("\n");
   const twoMarker = [
     "row.selectionTier === \"展開追加\" &&",
-    "              headBoatNo === 2 &&",
+    "              headCourse === 2 &&",
     "              numeric(row.priorityScore, 0) < 80"
   ].join("\n");
   if (!original.includes(outerMarker)) throw new Error("weak outer independent prune marker not found");
@@ -35,7 +35,7 @@ function loadSelectorBeforeWeakIndependentPrunes() {
   patched = patched.replace(twoMarker, [
     "false &&",
     "              row.selectionTier === \"展開追加\" &&",
-    "              headBoatNo === 2 &&",
+    "              headCourse === 2 &&",
     "              numeric(row.priorityScore, 0) < 80"
   ].join("\n"));
   if (patched === original) throw new Error("weak independent counterfactual patch was not applied");
@@ -79,6 +79,11 @@ function predictionInput(row) {
   };
 }
 
+function actualCourseOf(input, boatNo) {
+  const boat = (input?.boats || []).find(item => Number(item?.boatNo ?? item?.number ?? item?.waku ?? 0) === Number(boatNo));
+  return Number(boat?.actualCourse ?? boat?.course ?? boat?.entryCourse ?? boat?.waku ?? boatNo) || Number(boatNo);
+}
+
 function emptyStats() {
   return {
     observedRows: 0,
@@ -96,9 +101,9 @@ function emptyStats() {
     productionTicketCount: 0,
     counterfactualTicketCount: 0,
     restoredWeakTicketCount: 0,
-    restoredHead2Count: 0,
-    restoredHead5Count: 0,
-    restoredHead6Count: 0,
+    restoredCourse2Count: 0,
+    restoredCourse5Count: 0,
+    restoredCourse6Count: 0,
     restoredWinningTicketCount: 0
   };
 }
@@ -114,9 +119,9 @@ function add(stats, sample) {
   stats.productionTicketCount += sample.productionTicketCount;
   stats.counterfactualTicketCount += sample.counterfactualTicketCount;
   stats.restoredWeakTicketCount += sample.restoredWeakTicketCount;
-  stats.restoredHead2Count += sample.restoredHead2Count;
-  stats.restoredHead5Count += sample.restoredHead5Count;
-  stats.restoredHead6Count += sample.restoredHead6Count;
+  stats.restoredCourse2Count += sample.restoredCourse2Count;
+  stats.restoredCourse5Count += sample.restoredCourse5Count;
+  stats.restoredCourse6Count += sample.restoredCourse6Count;
   stats.restoredWinningTicketCount += sample.restoredWinningTicketCount;
   if (sample.productionHit) {
     stats.productionHits += 1;
@@ -197,7 +202,7 @@ function build() {
       const removedByCounterfactual = [...productionSet].filter(ticket => !counterfactualSet.has(ticket));
       const changed = restored.length > 0 || removedByCounterfactual.length > 0;
 
-      const restoredHeads = restored.map(ticket => Number(ticket[0] || 0));
+      const restoredCourses = restored.map(ticket => actualCourseOf(input, Number(ticket[0] || 0)));
       const payout = Number(row?.result?.payoutPer100 || row?.result?.review?.payoutPer100 || 0);
       const sample = {
         settledPostAdoptionRaces: 1,
@@ -211,9 +216,9 @@ function build() {
         counterfactualTicketCount: counterfactualTickets.length,
         payout,
         restoredWeakTicketCount: restored.length,
-        restoredHead2Count: restoredHeads.filter(head => head === 2).length,
-        restoredHead5Count: restoredHeads.filter(head => head === 5).length,
-        restoredHead6Count: restoredHeads.filter(head => head === 6).length,
+        restoredCourse2Count: restoredCourses.filter(course => course === 2).length,
+        restoredCourse5Count: restoredCourses.filter(course => course === 5).length,
+        restoredCourse6Count: restoredCourses.filter(course => course === 6).length,
         restoredWinningTicketCount: restored.includes(actual) ? 1 : 0
       };
       add(total, sample);
@@ -222,14 +227,14 @@ function build() {
   }
 
   const report = {
-    schemaVersion: 1,
-    version: "weak-independent-post-adoption-monitor-v1",
+    schemaVersion: 2,
+    version: "weak-independent-post-adoption-monitor-v2",
     generatedAt: new Date().toISOString(),
     adoptionPrs: ADOPTION_PRS,
     lastAdoptionMergedAt: LAST_ADOPTION_MERGED_AT,
     startDate: START_DATE,
     latestDate,
-    method: "use the first complete JST day after PR #327 merge (2026-08-13) onward; A=current production selector with #325/#327 weak independent-expansion prunes, B=in-memory counterfactual disabling only the 5/6-head priority<80 expansion filter and the 2-head priority<80 expansion trim while all other current-main selection logic reruns normally",
+    method: "use the first complete JST day after PR #327 merge (2026-08-13) onward; A=current production selector with #325/#327 actual-course weak independent-expansion prunes, B=in-memory counterfactual disabling only the actual-course 5/6 priority<80 expansion filter and actual-course 2 priority<80 expansion trim while all other current-main selection logic reruns normally",
     productionChanged: false,
     automaticApplication: false,
     interpretation: "Positive hit/profit delta means the adopted weak-independent prune family outperformed the same current-main replay with only #325/#327 reverted.",
