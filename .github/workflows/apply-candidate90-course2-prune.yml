@@ -16,10 +16,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: chappy-main-data-writers
-  cancel-in-progress: false
-
 jobs:
   patch-and-verify:
     runs-on: ubuntu-latest
