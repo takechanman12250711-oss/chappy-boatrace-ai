@@ -1,16 +1,107 @@
 {
-  "schemaVersion": 1,
-  "generatedAt": "2026-08-18T11:18:57.738Z",
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-18T13:16:27.314Z",
   "phase": "phase3",
   "implementationComplete": true,
   "productionChanged": false,
   "automaticApplication": false,
   "requiresUserApproval": true,
   "allSourcesConnected": true,
-  "policy": "A/Bでcandidateになった改善だけ承認候補へ渡す。承認前は本番予想へ一切反映しない。reject/continue/review/blockedは本番適用不可。",
+  "policy": "過去の公式締切前コホートから得た改善根拠を保持しつつ、実A/Bでcandidateになった改善だけ承認候補へ渡す。過去根拠を捨てて0Rから再分析しない。承認前は本番予想へ一切反映しない。",
+  "historicalEvidence": {
+    "source": "improvement-proposal-phase3.json",
+    "settledRaceCount": 1450,
+    "proposalCount": 7,
+    "proposals": [
+      {
+        "id": "ticket-coverage-insufficient",
+        "label": "買い目不足",
+        "theory": "買い目構成",
+        "sampleCount": 1127,
+        "occurrenceRate": 77.7,
+        "priority": "high",
+        "improvementCandidate": "展開内の残し・拾い不足を再検証",
+        "expectedEffect": "実戦厳選的中率の改善余地を検証",
+        "status": "historical-evidence",
+        "usableForPrediction": false
+      },
+      {
+        "id": "flow-reading-miss",
+        "label": "展開読み違い",
+        "theory": "展開理論",
+        "sampleCount": 860,
+        "occurrenceRate": 59.3,
+        "priority": "high",
+        "improvementCandidate": "展開成立条件と崩れ条件の再検証",
+        "expectedEffect": "展開一致率の改善余地を検証",
+        "status": "historical-evidence",
+        "usableForPrediction": false
+      },
+      {
+        "id": "local-water-adjustment-insufficient",
+        "label": "当地補正不足",
+        "theory": "当地・水面理論",
+        "sampleCount": 740,
+        "occurrenceRate": 51,
+        "priority": "high",
+        "improvementCandidate": "場・風・波・潮の補正条件を再検証",
+        "expectedEffect": "場別回収率の改善余地を検証",
+        "status": "historical-evidence",
+        "usableForPrediction": false
+      },
+      {
+        "id": "ticket-spread-too-wide",
+        "label": "買い目広げ過ぎ",
+        "theory": "買い目構成",
+        "sampleCount": 714,
+        "occurrenceRate": 49.2,
+        "priority": "high",
+        "improvementCandidate": "不的中時の点数拡張条件を再検証",
+        "expectedEffect": "回収率の改善余地を検証",
+        "status": "historical-evidence",
+        "usableForPrediction": false
+      },
+      {
+        "id": "wall-boat-evaluation-insufficient",
+        "label": "壁艇理論不足",
+        "theory": "壁艇理論",
+        "sampleCount": 536,
+        "occurrenceRate": 37,
+        "priority": "high",
+        "improvementCandidate": "壁成立・不成立条件を再検証",
+        "expectedEffect": "壁艇関与時の展開一致率の改善余地を検証",
+        "status": "historical-evidence",
+        "usableForPrediction": false
+      },
+      {
+        "id": "exhibition-evaluation-insufficient",
+        "label": "展示評価不足",
+        "theory": "展示・足理論",
+        "sampleCount": 298,
+        "occurrenceRate": 20.6,
+        "priority": "high",
+        "improvementCandidate": "展示順位と足評価の採用条件を再検証",
+        "expectedEffect": "展示評価関与時の回収率の改善余地を検証",
+        "status": "historical-evidence",
+        "usableForPrediction": false
+      },
+      {
+        "id": "start-adjustment-insufficient",
+        "label": "ST補正不足",
+        "theory": "ST・スリット理論",
+        "sampleCount": 234,
+        "occurrenceRate": 16.1,
+        "priority": "medium",
+        "improvementCandidate": "ST差とスリット隊形の補正条件を再検証",
+        "expectedEffect": "1着・攻め艇一致率の改善余地を検証",
+        "status": "historical-evidence",
+        "usableForPrediction": false
+      }
+    ]
+  },
   "candidateCount": 0,
   "candidates": [],
   "blockedCount": 0,
   "blocked": [],
-  "nextStep": "collect-more-settled-races"
+  "nextStep": "continue-validation-from-historical-evidence"
 }
