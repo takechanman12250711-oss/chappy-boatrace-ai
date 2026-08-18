@@ -12,6 +12,13 @@ const EFFECT_MAP = Object.freeze({
   "ticket-spread-too-wide": { theory: "買い目構成", action: "不的中時の点数拡張条件を再検証", metric: "回収率" }
 });
 
+// 「買い目不足」は、頭外れ/相手抜け/完全抜け/着順違いという不的中結果から
+// 付与される結果記述であり、独立した根本原因とは限らない。
+// 件数は捨てず診断として保持するが、改善優先順位には混ぜない。
+const OUTCOME_DIAGNOSTIC_CODES = Object.freeze(new Set([
+  "ticket-coverage-insufficient"
+]));
+
 function collect(records) {
   const settled = (Array.isArray(records) ? records : []).filter(record => record?.result?.settled === true);
   const counts = new Map();
@@ -30,38 +37,52 @@ function collect(records) {
   return { settledCount: settled.length, counts: [...counts.values()] };
 }
 
+function toReportRow(row, settledCount) {
+  const definition = EFFECT_MAP[row.code];
+  const rate = settledCount ? Math.round(row.count / settledCount * 1000) / 10 : 0;
+  return {
+    code: row.code,
+    label: row.label,
+    theory: definition.theory,
+    sampleCount: row.count,
+    occurrenceRate: rate,
+    priority: row.high > 0 || rate >= 20 ? "high" : rate >= 10 ? "medium" : "low",
+    improvementCandidate: definition.action,
+    expectedEffect: `${definition.metric}の改善余地を検証`,
+    confidenceBreakdown: { high: row.high, medium: row.medium, low: row.low }
+  };
+}
+
 function build(records) {
   const aggregated = collect(records);
   const ready = aggregated.settledCount >= MIN_RACES;
-  const proposals = ready
-    ? aggregated.counts
-      .map(row => {
-        const definition = EFFECT_MAP[row.code];
-        const rate = aggregated.settledCount ? Math.round(row.count / aggregated.settledCount * 1000) / 10 : 0;
-        return {
-          code: row.code,
-          label: row.label,
-          theory: definition.theory,
-          sampleCount: row.count,
-          occurrenceRate: rate,
-          priority: row.high > 0 || rate >= 20 ? "high" : rate >= 10 ? "medium" : "low",
-          improvementCandidate: definition.action,
-          expectedEffect: `${definition.metric}の改善余地を検証`,
-          confidenceBreakdown: { high: row.high, medium: row.medium, low: row.low }
-        };
-      })
-      .sort((a, b) => b.sampleCount - a.sampleCount || a.code.localeCompare(b.code))
+  const rows = ready
+    ? aggregated.counts.map(row => toReportRow(row, aggregated.settledCount))
     : [];
+  const outcomeDiagnostics = rows
+    .filter(row => OUTCOME_DIAGNOSTIC_CODES.has(row.code))
+    .map(row => ({
+      ...row,
+      diagnosticOnly: true,
+      rootCauseCandidate: false,
+      reason: "不的中結果から付く結果記述のため、件数だけで改善優先順位にしない"
+    }))
+    .sort((a, b) => b.sampleCount - a.sampleCount || a.code.localeCompare(b.code));
+  const proposals = rows
+    .filter(row => !OUTCOME_DIAGNOSTIC_CODES.has(row.code))
+    .sort((a, b) => b.sampleCount - a.sampleCount || a.code.localeCompare(b.code));
 
   return {
-    schemaVersion: 1,
-    engineVersion: "improvement-proposal-phase3-20260806",
+    schemaVersion: 2,
+    engineVersion: "improvement-proposal-phase3-20260818-root-cause-priority",
     status: ready ? "proposal-candidates-ready" : "collecting-data",
     minimumRaceCount: MIN_RACES,
     settledRaceCount: aggregated.settledCount,
     remainingRaceCount: Math.max(0, MIN_RACES - aggregated.settledCount),
     proposals,
     proposalCount: proposals.length,
+    outcomeDiagnostics,
+    outcomeDiagnosticCount: outcomeDiagnostics.length,
     proposalOnly: true,
     humanApprovalRequired: true,
     usableForPrediction: false,
@@ -70,4 +91,4 @@ function build(records) {
   };
 }
 
-module.exports = { MIN_RACES, EFFECT_MAP, collect, build };
+module.exports = { MIN_RACES, EFFECT_MAP, OUTCOME_DIAGNOSTIC_CODES, collect, toReportRow, build };
