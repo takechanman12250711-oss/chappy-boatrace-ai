@@ -1,35 +1,50 @@
 name: Apply candidate90 course2 prune
 
 on:
-  push:
-    branches:
-      - fix/candidate90-prune-actual-course2
+  pull_request:
     paths:
-      - .github/workflows/apply-candidate90-course2-prune.yml
+      - "scripts/apply-candidate90-course2-prune.js"
+      - ".github/workflows/apply-candidate90-course2-prune.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/apply-candidate90-course2-prune.js"
+      - ".github/workflows/apply-candidate90-course2-prune.yml"
 
 permissions:
   contents: write
 
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+
 jobs:
-  apply:
-    runs-on: ubuntu-24.04
+  patch-and-verify:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fix/candidate90-prune-actual-course2
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - name: Apply approved production change
+          node-version: "20"
+      - name: Apply approved candidate90 course2 prune
         run: node scripts/apply-candidate90-course2-prune.js
-      - name: Verify syntax
-        run: node --check js/practical-selection.js
-      - name: Commit approved production change
+      - name: Verify patched selector
         run: |
+          node --check js/practical-selection.js
+          node scripts/validate-candidate90-head2-prune.js
+      - name: Persist approved source on main
+        if: github.event_name == 'push'
+        run: |
+          git add js/practical-selection.js
+          if git diff --cached --quiet; then
+            echo "candidate90 course2 prune already applied"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/practical-selection.js
-          git diff --cached --quiet && exit 0
           git commit -m "fix: prune actual-course2 candidate90 promotion"
-          git push origin HEAD:fix/candidate90-prune-actual-course2
+          git pull --rebase origin main
+          git push origin main
