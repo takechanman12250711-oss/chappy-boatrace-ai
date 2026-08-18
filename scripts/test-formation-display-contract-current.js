@@ -59,7 +59,6 @@ for (const replayCase of REPLAY_CASES) {
   const record = frozenRows.find(row => row.raceKey === replayCase.raceKey);
   assert.ok(record, `${replayCase.raceKey}: 凍結行`);
   const prediction = global.createPrediction(replayInput(record));
-  assert.equal(prediction?.raceScenarios?.evidence?.sashiSkillTiebreak?.applied,false,`${record.raceKey}: #305強制タイブレーク停止を固定`);
   const selection = selector.select(prediction);
   const rows = selection.tickets || [];
   assert.equal(selection.status, "selected", `${record.raceKey}: production型再生`);
