@@ -80,11 +80,11 @@ const eligible = calibrated.analyses.map((a) => JSON.parse(JSON.stringify(a)));
 eligible[1].indexes.national = eligible[0].indexes.national + 10;
 const eligibleRs = core.buildRaceScenarios(eligible, dataFor(eligible));
 const eligibleBy = scenarioMap(eligibleRs);
-assert.equal(eligibleRs.mainScenario.type, "sashi", "接戦かつ技量差10以上なら2差しを最終採用する");
+assert.equal(eligibleRs.mainScenario.type, "escape", "技量差10以上でも#305強制昇格は停止し、生スコア順位を維持する");
 assert.equal(eligibleBy.escape.score, calibrated.escape, "1逃げの生スコアは変更しない");
-assert.equal(eligibleBy.sashi.score, calibrated.sashi, "2差しの生スコアは加点しない");
-assert.equal(eligibleRs.evidence?.sashiSkillTiebreak?.applied, true, "タイブレーク適用根拠を evidence に残す");
-assert.ok(eligibleRs.evidence.sashiSkillTiebreak.scoreGap <= 2.5);
-assert.ok(eligibleRs.evidence.sashiSkillTiebreak.nationalSkillGap >= 10);
+assert.equal(eligibleBy.sashi.score, calibrated.sashi, "2差しの生スコアは変更しない");
+assert.equal(eligibleRs.evidence?.sashiSkillTiebreak?.applied, false, "#305強制タイブレークは本番適用しない");
+assert.ok(eligibleRs.evidence.sashiSkillTiebreak.scoreGap <= 2.5, "監査用scoreGapは残す");
+assert.ok(eligibleRs.evidence.sashiSkillTiebreak.nationalSkillGap >= 10, "監査用技量差は残す");
 
-console.log("2差し技量タイブレーク回帰テスト: 合格");
+console.log("2差し技量タイブレーク停止回帰テスト: 合格");
