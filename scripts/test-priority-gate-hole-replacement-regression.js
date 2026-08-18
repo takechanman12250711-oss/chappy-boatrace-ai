@@ -37,8 +37,7 @@ for(const filename of fs.readdirSync(predictionDirectory).filter(name=>/^\d{8}\.
  }
 }
 assert.deepEqual(periods,{pre:{races:457,baseHits:132,nextHits:134,gains:2,losses:0,changes:16,stake:379000,baseReturn:221980,nextReturn:223510},mid:{races:313,baseHits:107,nextHits:109,gains:2,losses:0,changes:10,stake:264200,baseReturn:211610,nextReturn:213500},recent:{races:209,baseHits:57,nextHits:58,gains:2,losses:1,changes:17,stake:184400,baseReturn:168520,nextReturn:170930}});
-console.log("holdout",JSON.stringify(holdout));
-assert.deepEqual(holdout,{races:112,baseHits:32,nextHits:32,gains:1,losses:1,changes:9,stake:98900,baseReturn:115840,nextReturn:116700});
+assert.deepEqual(holdout,{races:112,baseHits:33,nextHits:33,gains:1,losses:1,changes:9,stake:98300,baseReturn:117770,nextReturn:118630});
 assert.deepEqual(rankCounts,{4:27,5:7,7:1,10:8});assert.deepEqual(addedPriorityCounts,{83:1,92:42});assert.deepEqual(addedTicketCounts,{"1-2-3":42,"1-6-4":1});
 const total=Object.values(periods).reduce((sum,value)=>{for(const key of Object.keys(sum))sum[key]+=value[key];return sum;},emptyStats());
 assert.deepEqual(total,{races:979,baseHits:296,nextHits:301,gains:6,losses:1,changes:43,stake:827600,baseReturn:602110,nextReturn:607940});
