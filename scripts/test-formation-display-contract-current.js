@@ -75,9 +75,12 @@ const REPLAY_CASES = [
       "1-2-6",
       "2-1-4",
       "2-1-5",
-      "1-4-3",
-      "2-3-1"
-    ]
+      "1-4-3"
+    ],
+    expectedPrunedCandidate: {
+      ticket: "2-3-1",
+      reasonCode: "SECOND_COURSE_HEAD_CANDIDATE_PROMOTION_PRUNED"
+    }
   },
   {
     raceKey: "20260813-23-2",
@@ -143,6 +146,22 @@ for (const replayCase of REPLAY_CASES) {
     replayCase.expectedTickets,
     `${record.raceKey}: 買い目配列・順番・点数を固定`
   );
+
+  if (replayCase.expectedPrunedCandidate) {
+    const decision = (selection.candidateDecisions || []).find(row =>
+      row.ticket === replayCase.expectedPrunedCandidate.ticket &&
+      row.reasonCode === replayCase.expectedPrunedCandidate.reasonCode
+    );
+    assert.ok(
+      decision,
+      `${record.raceKey}: ${replayCase.expectedPrunedCandidate.ticket}を承認済み実2コースcandidate90除外として監査保存`
+    );
+    assert.equal(
+      decision.selected,
+      false,
+      `${record.raceKey}: 実2コースcandidate90は購入しない`
+    );
+  }
 
   rows.forEach(row => {
     DISPLAY_FIELDS.forEach(field => {
