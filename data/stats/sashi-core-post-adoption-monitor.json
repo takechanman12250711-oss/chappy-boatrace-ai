@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "version": "sashi-core-post-adoption-monitor-v1",
+  "generatedAt": "2026-08-18T16:54:34.140Z",
+  "startDate": "20260812",
+  "races": 697,
+  "sashiMain": 184,
+  "tiebreakApplied": 46,
+  "productionChanged": false,
+  "automaticApplication": false,
+  "method": {
+    "guard": "A=current #301 guard, B=same current ai-core with only missing-comparison sashiScore -15 disabled",
+    "tiebreak": "A=current #305 tiebreak, B=same current ai-core with only sashi skill tiebreak disabled"
+  },
+  "guard": {
+    "affectedRaces": 0,
+    "productionHeadCorrect": 0,
+    "counterfactualHeadCorrect": 0,
+    "productionBasic5Hits": 0,
+    "counterfactualBasic5Hits": 0,
+    "gains": 0,
+    "losses": 0,
+    "productionReturn": 0,
+    "counterfactualReturn": 0,
+    "headCorrectDelta": 0,
+    "basic5HitDelta": 0,
+    "returnDelta": 0
+  },
+  "tiebreak": {
+    "affectedRaces": 46,
+    "productionHeadCorrect": 16,
+    "counterfactualHeadCorrect": 13,
+    "productionBasic5Hits": 7,
+    "counterfactualBasic5Hits": 14,
+    "gains": 2,
+    "losses": 9,
+    "productionReturn": 11800,
+    "counterfactualReturn": 34810,
+    "headCorrectDelta": 3,
+    "basic5HitDelta": -7,
+    "returnDelta": -23010
+  },
+  "interpretation": {
+    "guard": "No post-adoption final scenario/basic5 difference observed in 697 settled races; keep monitoring, no conclusion.",
+    "tiebreak": "#305 improved winning-head correctness by 3 across 46 affected races but reduced basic5 hits by 7 and return by 23,010 yen; do not auto-change production, require explicit owner decision."
+  }
+}
