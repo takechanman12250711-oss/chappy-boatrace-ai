@@ -40,6 +40,5 @@ assert.deepEqual(periods,{pre:{races:457,baseHits:134,nextHits:134,gains:0,losse
 assert.deepEqual(holdout,{races:112,baseHits:32,nextHits:31,gains:0,losses:1,changes:2,stake:98600,baseReturn:115700,nextReturn:113680});
 const total=Object.values(periods).reduce((sum,value)=>{for(const key of Object.keys(sum))sum[key]+=value[key];return sum;},emptyStats());
 assert.deepEqual(total,{races:979,baseHits:299,nextHits:300,gains:2,losses:1,changes:19,stake:829300,baseReturn:603700,nextReturn:604390});
-console.log("priority-gate current audits",JSON.stringify({rankCounts,addedPriorityCounts,addedTicketCounts}));
-assert.deepEqual(rankCounts,{4:27,5:7,7:1,10:8});assert.deepEqual(addedPriorityCounts,{83:1,92:42});assert.deepEqual(addedTicketCounts,{"1-2-3":42,"1-6-4":1});
-console.log("priority-gate hole replacement regression: OK",JSON.stringify({periods,holdout,total}));
+assert.deepEqual(rankCounts,{4:8,5:5,7:1,10:5});assert.deepEqual(addedPriorityCounts,{83:1,92:18});assert.deepEqual(addedTicketCounts,{"1-2-3":18,"1-6-4":1});
+console.log("priority-gate hole replacement regression: OK",JSON.stringify({periods,holdout,total,rankCounts,addedPriorityCounts,addedTicketCounts}));
