@@ -10,7 +10,7 @@ require("../js/ai-core");
 require("../js/prediction");
 const productionSelector = require("../js/practical-selection");
 
-const START_DATE = "20260812";
+const START_DATE = "20260813";
 const ADOPTION_PRS = [320, 322];
 const ADOPTION_MERGED_AT = "2026-08-12T04:43:06Z";
 const predictionDirectory = path.join(process.cwd(), "data", "predictions");
@@ -49,21 +49,6 @@ function rowsOf(data) {
 function ticketOf(value) {
   const numbers = String(value?.ticket || value || "").match(/[1-6]/g) || [];
   return numbers.length >= 3 ? numbers.slice(0, 3).join("-") : "";
-}
-
-function capturedAtOf(row) {
-  return String(
-    row?.capturedAt ||
-    row?.prediction?.preRaceConditions?.capturedAt ||
-    row?.preRaceConditions?.capturedAt ||
-    ""
-  );
-}
-
-function isPostAdoption(row) {
-  const captured = Date.parse(capturedAtOf(row));
-  const adopted = Date.parse(ADOPTION_MERGED_AT);
-  return Number.isFinite(captured) && Number.isFinite(adopted) && captured >= adopted;
 }
 
 function predictionInput(row) {
@@ -176,7 +161,7 @@ function build() {
     for (const row of rowsOf(data)) {
       add(total, { observedRows: 1, comparable: false });
       add(byDate[date], { observedRows: 1, comparable: false });
-      if (!isPostAdoption(row) || row?.result?.settled !== true) continue;
+      if (row?.result?.settled !== true) continue;
 
       const raceKey = row.raceKey || `${date}-${row.jcd}-${row.raceNo}`;
       if (seen.has(raceKey)) continue;
@@ -229,13 +214,13 @@ function build() {
 
   const report = {
     schemaVersion: 1,
-    version: "strong-escape-post-adoption-monitor-v1",
+    version: "strong-escape-post-adoption-monitor-v2",
     generatedAt: new Date().toISOString(),
     adoptionPrs: ADOPTION_PRS,
     adoptionMergedAt: ADOPTION_MERGED_AT,
     startDate: START_DATE,
     latestDate,
-    method: "replay only rows captured at/after PR #322 merge; A=current production selector with #320/#322 strong-escape trims, B=in-memory counterfactual disabling only STRONG_ESCAPE_MINIMUM_SCORE so both trims are removed while all other current-main selection logic reruns normally",
+    method: "use the first complete JST day after PR #322 merge (2026-08-13) onward; A=current production selector with #320/#322 strong-escape trims, B=in-memory counterfactual disabling only STRONG_ESCAPE_MINIMUM_SCORE so both trims are removed while all other current-main selection logic reruns normally. The partial adoption day 2026-08-12 is intentionally excluded because historical rows do not retain a trustworthy capture timestamp for post-merge discrimination.",
     productionChanged: false,
     automaticApplication: false,
     interpretation: "Positive hit/profit delta means the adopted strong-escape trim policy outperformed the same current-main replay without the #320/#322 trim family.",
@@ -257,6 +242,5 @@ module.exports = {
   ADOPTION_MERGED_AT,
   build,
   finalize,
-  isPostAdoption,
   loadSelectorBeforeStrongEscapeTrim
 };
