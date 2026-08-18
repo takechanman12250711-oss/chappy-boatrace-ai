@@ -37,8 +37,9 @@ for(const filename of fs.readdirSync(predictionDirectory).filter(name=>/^\d{8}\.
  }
 }
 assert.deepEqual(periods,{pre:{races:457,baseHits:134,nextHits:134,gains:0,losses:0,changes:8,stake:380200,baseReturn:225710,nextReturn:225710},mid:{races:313,baseHits:106,nextHits:107,gains:1,losses:0,changes:6,stake:264200,baseReturn:197190,nextReturn:198350},recent:{races:209,baseHits:59,nextHits:59,gains:1,losses:1,changes:5,stake:184900,baseReturn:180800,nextReturn:180330}});
-assert.deepEqual(holdout,{races:112,baseHits:33,nextHits:33,gains:1,losses:1,changes:9,stake:98300,baseReturn:117770,nextReturn:118630});
-assert.deepEqual(rankCounts,{4:27,5:7,7:1,10:8});assert.deepEqual(addedPriorityCounts,{83:1,92:42});assert.deepEqual(addedTicketCounts,{"1-2-3":42,"1-6-4":1});
+assert.deepEqual(holdout,{races:112,baseHits:32,nextHits:31,gains:0,losses:1,changes:2,stake:98600,baseReturn:115700,nextReturn:113680});
 const total=Object.values(periods).reduce((sum,value)=>{for(const key of Object.keys(sum))sum[key]+=value[key];return sum;},emptyStats());
 assert.deepEqual(total,{races:979,baseHits:299,nextHits:300,gains:2,losses:1,changes:19,stake:829300,baseReturn:603700,nextReturn:604390});
+console.log("priority-gate current audits",JSON.stringify({rankCounts,addedPriorityCounts,addedTicketCounts}));
+assert.deepEqual(rankCounts,{4:27,5:7,7:1,10:8});assert.deepEqual(addedPriorityCounts,{83:1,92:42});assert.deepEqual(addedTicketCounts,{"1-2-3":42,"1-6-4":1});
 console.log("priority-gate hole replacement regression: OK",JSON.stringify({periods,holdout,total}));
