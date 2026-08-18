@@ -3938,16 +3938,30 @@
             validationContext,
             promotedHeadBoatNo
           ) || promotedHeadBoatNo;
-        if (promotedHeadCourse >= 4) {
+        if (
+          promotedHeadCourse === 2 ||
+          promotedHeadCourse >= 4
+        ) {
+          const isSecondCourseHead =
+            promotedHeadCourse === 2;
           const reason =
-            promotedHeadCourse ===
-              promotedHeadBoatNo
-              ? "4〜6号艇頭の候補補完は購入対象外。"
-              : `${promotedHeadBoatNo}号艇は実${promotedHeadCourse}コースの外頭となるため候補補完の購入対象外。`;
+            isSecondCourseHead
+              ? (
+                  promotedHeadCourse ===
+                    promotedHeadBoatNo
+                    ? "2号艇頭のcandidate90候補補完は購入対象外。"
+                    : `${promotedHeadBoatNo}号艇は実2コース頭となるためcandidate90候補補完の購入対象外。`
+                )
+              : promotedHeadCourse ===
+                  promotedHeadBoatNo
+                ? "4〜6号艇頭の候補補完は購入対象外。"
+                : `${promotedHeadBoatNo}号艇は実${promotedHeadCourse}コースの外頭となるため候補補完の購入対象外。`;
           recordDecision(
             row,
             false,
-            "OUTER_HEAD_CANDIDATE_PROMOTION_PRUNED",
+            isSecondCourseHead
+              ? "SECOND_COURSE_HEAD_CANDIDATE_PROMOTION_PRUNED"
+              : "OUTER_HEAD_CANDIDATE_PROMOTION_PRUNED",
             reason
           );
           return;
