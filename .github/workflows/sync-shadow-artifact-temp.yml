@@ -1,0 +1,26 @@
+name: Sync shadow artifact temp
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/sync-shadow-artifact-temp.yml'
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node scripts/build-practical-priority-shadow-report.js
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add data/stats/practical-priority-shadow-report.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'chore: sync practical priority shadow artifact'
+          git push
