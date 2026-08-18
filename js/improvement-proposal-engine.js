@@ -12,11 +12,11 @@ const EFFECT_MAP = Object.freeze({
   "ticket-spread-too-wide": { theory: "買い目構成", action: "不的中時の点数拡張条件を再検証", metric: "回収率" }
 });
 
-// 「買い目不足」は、頭外れ/相手抜け/完全抜け/着順違いという不的中結果から
-// 付与される結果記述であり、独立した根本原因とは限らない。
-// 件数は捨てず診断として保持するが、改善優先順位には混ぜない。
+// これらは不的中後の状態から付く結果記述であり、単独では根本原因を証明しない。
+// 件数は診断値として保持するが、根本原因の改善優先順位には混ぜない。
 const OUTCOME_DIAGNOSTIC_CODES = Object.freeze(new Set([
-  "ticket-coverage-insufficient"
+  "ticket-coverage-insufficient",
+  "ticket-spread-too-wide"
 ]));
 
 function collect(records) {
@@ -53,6 +53,13 @@ function toReportRow(row, settledCount) {
   };
 }
 
+function diagnosticReason(code) {
+  if (code === "ticket-spread-too-wide") {
+    return "8点以上で不的中という結果条件から付くため、回収率・比較検証なしに根本原因と断定しない";
+  }
+  return "不的中結果から付く結果記述のため、件数だけで改善優先順位にしない";
+}
+
 function build(records) {
   const aggregated = collect(records);
   const ready = aggregated.settledCount >= MIN_RACES;
@@ -65,7 +72,7 @@ function build(records) {
       ...row,
       diagnosticOnly: true,
       rootCauseCandidate: false,
-      reason: "不的中結果から付く結果記述のため、件数だけで改善優先順位にしない"
+      reason: diagnosticReason(row.code)
     }))
     .sort((a, b) => b.sampleCount - a.sampleCount || a.code.localeCompare(b.code));
   const proposals = rows
@@ -91,4 +98,4 @@ function build(records) {
   };
 }
 
-module.exports = { MIN_RACES, EFFECT_MAP, OUTCOME_DIAGNOSTIC_CODES, collect, toReportRow, build };
+module.exports = { MIN_RACES, EFFECT_MAP, OUTCOME_DIAGNOSTIC_CODES, collect, toReportRow, diagnosticReason, build };
