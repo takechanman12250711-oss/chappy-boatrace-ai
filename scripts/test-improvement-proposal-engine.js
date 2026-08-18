@@ -25,15 +25,21 @@ const ready = engine.build(Array.from({ length: 100 }, (_, i) => record(i + 1,
   i < 30 ? ["flow-reading-miss", "ticket-coverage-insufficient"] : ["ticket-coverage-insufficient"]
 )));
 assert.equal(ready.status, "proposal-candidates-ready");
+assert.equal(ready.schemaVersion, 2);
 assert.equal(ready.settledRaceCount, 100);
 assert.equal(ready.proposalOnly, true);
 assert.equal(ready.humanApprovalRequired, true);
 assert.equal(ready.usableForPrediction, false);
 assert.equal(ready.automaticApplication, false);
 assert.equal(ready.uiVisible, false);
-assert.equal(ready.proposals[0].code, "ticket-coverage-insufficient");
-assert.equal(ready.proposals[0].sampleCount, 100);
-assert.equal(ready.proposals.find(row => row.code === "flow-reading-miss").sampleCount, 30);
+assert.equal(ready.proposalCount, 1);
+assert.equal(ready.proposals[0].code, "flow-reading-miss");
+assert.equal(ready.proposals[0].sampleCount, 30);
+assert.equal(ready.outcomeDiagnosticCount, 1);
+assert.equal(ready.outcomeDiagnostics[0].code, "ticket-coverage-insufficient");
+assert.equal(ready.outcomeDiagnostics[0].sampleCount, 100);
+assert.equal(ready.outcomeDiagnostics[0].diagnosticOnly, true);
+assert.equal(ready.outcomeDiagnostics[0].rootCauseCandidate, false);
 assert(ready.proposals.every(row => row.improvementCandidate && row.expectedEffect));
 
 console.log("改善提案生成 Phase3: 合格");
