@@ -1,0 +1,18 @@
+name: Check local water weight candidates
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-local-water-weight-candidates.js'
+      - '.github/workflows/check-local-water-weight-candidates.yml'
+  workflow_dispatch:
+jobs:
+  analysis:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-local-water-weight-candidates.js
+      - run: node scripts/analyze-local-water-weight-candidates.js
