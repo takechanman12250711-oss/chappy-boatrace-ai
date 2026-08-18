@@ -23,6 +23,7 @@ const DISPLAY_FIELDS = [
   "reason",
   "comment"
 ];
+const COURSE2_PRUNE_REASON = "SECOND_COURSE_HEAD_CANDIDATE_PROMOTION_PRUNED";
 
 function source(file) {
   return fs.readFileSync(path.join(ROOT, file), "utf8");
@@ -37,10 +38,7 @@ function runtimeVersion(text, label) {
 const predictionRuntimeSource = source("js/prediction-runtime-loader.js");
 const appRuntimeSource = source("js/app-runtime-loader.js");
 const indexSource = source("index.html");
-const predictionRuntimeVersion = runtimeVersion(
-  predictionRuntimeSource,
-  "prediction runtime"
-);
+const predictionRuntimeVersion = runtimeVersion(predictionRuntimeSource, "prediction runtime");
 runtimeVersion(appRuntimeSource, "app runtime");
 
 assert.match(
@@ -56,9 +54,7 @@ assert.match(
   "HTMLからapp runtimeへversion付きで到達する"
 );
 
-const frozenDay = JSON.parse(
-  source(`data/predictions/${FROZEN_DATE}.json`)
-);
+const frozenDay = JSON.parse(source(`data/predictions/${FROZEN_DATE}.json`));
 const frozenRows = [
   ...(frozenDay.predictions || []),
   ...(frozenDay.verificationPredictions || [])
@@ -77,10 +73,7 @@ const REPLAY_CASES = [
       "2-1-5",
       "1-4-3"
     ],
-    expectedPrunedCandidate: {
-      ticket: "2-3-1",
-      reasonCode: "SECOND_COURSE_HEAD_CANDIDATE_PROMOTION_PRUNED"
-    }
+    expectedPrunedCandidates: ["2-3-1"]
   },
   {
     raceKey: "20260813-23-2",
@@ -92,10 +85,9 @@ const REPLAY_CASES = [
       "2-1-6",
       "1-2-4",
       "1-2-5",
-      "1-2-6",
-      "2-1-3",
-      "2-1-4"
-    ]
+      "1-2-6"
+    ],
+    expectedPrunedCandidates: ["2-1-3", "2-1-4"]
   }
 ];
 
@@ -105,11 +97,7 @@ function replayInput(record) {
     frozen && Array.isArray(frozen.boats) && frozen.boats.length === 6,
     `${record?.raceKey}: 6艇の締切前凍結入力`
   );
-  assert.equal(
-    frozen.officialResultUsed,
-    false,
-    `${record.raceKey}: 結果を再生入力へ混ぜない`
-  );
+  assert.equal(frozen.officialResultUsed, false, `${record.raceKey}: 結果を再生入力へ混ぜない`);
   return {
     ...frozen,
     entries: frozen.boats.map(boat => ({ ...boat, waku: boat.boatNo })),
@@ -147,20 +135,15 @@ for (const replayCase of REPLAY_CASES) {
     `${record.raceKey}: 買い目配列・順番・点数を固定`
   );
 
-  if (replayCase.expectedPrunedCandidate) {
+  for (const ticket of replayCase.expectedPrunedCandidates || []) {
     const decision = (selection.candidateDecisions || []).find(row =>
-      row.ticket === replayCase.expectedPrunedCandidate.ticket &&
-      row.reasonCode === replayCase.expectedPrunedCandidate.reasonCode
+      row.ticket === ticket && row.reasonCode === COURSE2_PRUNE_REASON
     );
     assert.ok(
       decision,
-      `${record.raceKey}: ${replayCase.expectedPrunedCandidate.ticket}を承認済み実2コースcandidate90除外として監査保存`
+      `${record.raceKey}: ${ticket}を承認済み実2コースcandidate90除外として監査保存`
     );
-    assert.equal(
-      decision.selected,
-      false,
-      `${record.raceKey}: 実2コースcandidate90は購入しない`
-    );
+    assert.equal(decision.selected, false, `${record.raceKey}: ${ticket}は購入しない`);
   }
 
   rows.forEach(row => {
@@ -188,6 +171,7 @@ console.log(
     predictionRuntimeVersion,
     date: FROZEN_DATE,
     races: REPLAY_CASES.map(item => item.raceKey),
-    pointCounts: REPLAY_CASES.map(item => item.expectedTickets.length)
+    pointCounts: REPLAY_CASES.map(item => item.expectedTickets.length),
+    prunedCandidateCount: REPLAY_CASES.reduce((sum, item) => sum + (item.expectedPrunedCandidates || []).length, 0)
   })
 );
