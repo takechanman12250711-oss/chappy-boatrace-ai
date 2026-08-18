@@ -16,13 +16,13 @@ const predictionDirectory = path.join(process.cwd(), "data", "predictions");
 function loadHead2PrunedSelector() {
   const filename = path.join(process.cwd(), "js", "practical-selection.js");
   const original = fs.readFileSync(filename, "utf8");
-  const marker = `if (\n          promotedHeadCourse >= 4\n        ) {`;
+  const marker = "if (promotedHeadCourse >= 4) {";
   if (!original.includes(marker)) {
     throw new Error("candidate90 promotedHeadCourse marker not found");
   }
   const patched = original.replace(
     marker,
-    `if (\n          promotedHeadCourse === 2 ||\n          promotedHeadCourse >= 4\n        ) {`
+    "if (promotedHeadCourse === 2 || promotedHeadCourse >= 4) {"
   );
   if (patched === original) throw new Error("head2 patch not applied");
   const isolated = new Module(filename, module);
