@@ -1,0 +1,18 @@
+name: Check local water v2 post-adoption monitor
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-local-water-v2-post-adoption-monitor.js'
+      - '.github/workflows/check-local-water-v2-post-adoption.yml'
+  workflow_dispatch:
+jobs:
+  monitor:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/build-local-water-v2-post-adoption-monitor.js
+      - run: node scripts/build-local-water-v2-post-adoption-monitor.js
