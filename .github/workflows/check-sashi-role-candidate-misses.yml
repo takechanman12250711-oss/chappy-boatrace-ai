@@ -1,0 +1,18 @@
+name: Check sashi role candidate misses
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-sashi-role-candidate-misses.js'
+      - '.github/workflows/check-sashi-role-candidate-misses.yml'
+jobs:
+  analysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-sashi-role-candidate-misses.js
+      - run: node scripts/analyze-sashi-role-candidate-misses.js
