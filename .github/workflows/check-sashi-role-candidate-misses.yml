@@ -4,6 +4,7 @@ on:
     paths:
       - 'scripts/analyze-sashi-role-candidate-misses.js'
       - 'scripts/analyze-sashi-outer-role-ab.js'
+      - 'scripts/audit-sashi-outer-role-robustness.js'
       - '.github/workflows/check-sashi-role-candidate-misses.yml'
 jobs:
   analysis:
@@ -19,3 +20,5 @@ jobs:
       - run: node scripts/analyze-sashi-role-candidate-misses.js
       - run: node --check scripts/analyze-sashi-outer-role-ab.js
       - run: node scripts/analyze-sashi-outer-role-ab.js
+      - run: node --check scripts/audit-sashi-outer-role-robustness.js
+      - run: node scripts/audit-sashi-outer-role-robustness.js
