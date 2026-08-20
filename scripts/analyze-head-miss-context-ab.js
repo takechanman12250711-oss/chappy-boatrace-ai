@@ -19,6 +19,7 @@ function windBucket(v){v=Number(v);if(!Number.isFinite(v))return"unknown";if(v<2
 function waveBucket(v){v=Number(v);if(!Number.isFinite(v))return"unknown";if(v<3)return"lt3";if(v<6)return"3to6";return"ge6";}
 function contexts(r,input){const w=input.weather||{};return [`venueWind:${r.jcd}|${windBucket(w.windSpeed??w.wind??w.wind_speed)}`,`venueWave:${r.jcd}|${waveBucket(w.waveHeight??w.wave??w.wave_height)}`];}
 function stat(rows){return {races:rows.length,hits:rows.filter(x=>x.hit).length,payout:rows.reduce((a,x)=>a+(x.hit?x.payout:0),0)};}
+function rate(s){return s.races?s.hits/s.races:0;}
 
 const all=[];const seen=new Set();
 for(const fn of fs.readdirSync(DIR).filter(n=>/^\d{8}\.json$/.test(n)).sort()){
@@ -36,5 +37,10 @@ const eligible=[...counts].filter(([c,n])=>n>=8&&(hc.get(c)||0)>=5).map(([c])=>c
 const selected=r=>r.contexts.some(c=>eligible.includes(c));
 const dSel=discovery.filter(selected),hSel=holdout.filter(selected);
 const dBase=stat(discovery),hBase=stat(holdout),dB=stat(dSel),hB=stat(hSel);
-function rate(s){return s.races?s.hits/s.races:0;}
-console.log(JSON.stringify({schemaVersion:1,holdoutStart:HOLDOUT,eligibleContexts:eligible,discovery:{A:dBase,B:dB,hitRateA:rate(dBase),hitRateB:rate(dB)},holdout:{A:hBase,B:hB,hitRateA:rate(hBase),hitRateB:rate(hB)},selectionRule:"B is an analysis-only context filter over current fixed-five predictions; no production prediction mutation",notes:{productionChanged:false,oddsUsed:false,actualResultUsedOnlyForPostraceEvaluation:true}},null,2));
+const perContext=eligible.map(context=>{
+  const ds=stat(discovery.filter(r=>r.contexts.includes(context)));
+  const hs=stat(holdout.filter(r=>r.contexts.includes(context)));
+  return {context,discovery:{...ds,hitRate:rate(ds),liftVsAll:rate(ds)-rate(dBase)},holdout:{...hs,hitRate:rate(hs),liftVsAll:rate(hs)-rate(hBase)},stablePositive:rate(ds)>rate(dBase)&&rate(hs)>rate(hBase)};
+}).sort((a,b)=>Number(b.stablePositive)-Number(a.stablePositive)||b.holdout.liftVsAll-a.holdout.liftVsAll||b.discovery.liftVsAll-a.discovery.liftVsAll);
+const stablePositiveContexts=perContext.filter(x=>x.stablePositive).map(x=>x.context);
+console.log(JSON.stringify({schemaVersion:2,holdoutStart:HOLDOUT,eligibleContexts:eligible,discovery:{A:dBase,B:dB,hitRateA:rate(dBase),hitRateB:rate(dB)},holdout:{A:hBase,B:hB,hitRateA:rate(hBase),hitRateB:rate(hB)},perContext,stablePositiveContexts,selectionRule:"No production mutation. Aggregate B is rejected if it does not beat A in both periods. Individual context may survive only if its fixed-five hit rate exceeds all-head-miss baseline in both discovery and holdout.",notes:{productionChanged:false,oddsUsed:false,actualResultUsedOnlyForPostraceEvaluation:true}},null,2));
