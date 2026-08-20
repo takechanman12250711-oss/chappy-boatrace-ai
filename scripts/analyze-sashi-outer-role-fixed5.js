@@ -8,22 +8,21 @@ require("../js/ai-core");
 require("../js/third-six-rescue-fixed5");
 const core = global.ChappyAICore;
 
-const PREDICTION_DIR = path.join(process.cwd(), "data", "predictions");
+const DIR = path.join(process.cwd(), "data", "predictions");
 const HOLDOUT_START = "20260812";
 const RULE = Object.freeze({ holdMin: 72, pickupMin: 65, gapMax: 8 });
 
-function rowsOf(document) {
-  return [...(document.predictions || []), ...(document.verificationPredictions || [])];
-}
+const rowsOf = doc => [
+  ...(doc.predictions || []),
+  ...(doc.verificationPredictions || [])
+];
 
 function ticketOf(value) {
   const parts = String(value?.ticket || value || "").match(/[1-6]/g) || [];
   return parts.length >= 3 ? parts.slice(0, 3).join("-") : "";
 }
 
-function partsOf(value) {
-  return ticketOf(value).split("-").map(Number);
-}
+const partsOf = value => ticketOf(value).split("-").map(Number);
 
 function scenarioHead(scenario) {
   return Number(
@@ -36,7 +35,7 @@ function scenarioHead(scenario) {
   );
 }
 
-function toNumber(value) {
+function finite(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
@@ -58,8 +57,9 @@ function boatNoOf(value, index = 0) {
 
 function inputOf(row) {
   const snapshot = row?.prediction?.preRaceConditions || row?.preRaceConditions;
-  if (!snapshot || !Array.isArray(snapshot.boats) || snapshot.boats.length < 6) return null;
-
+  if (!snapshot || !Array.isArray(snapshot.boats) || snapshot.boats.length < 6) {
+    return null;
+  }
   return {
     ...snapshot,
     entries: snapshot.boats,
@@ -95,14 +95,14 @@ function analysesOf(prediction) {
 }
 
 function findBoat(analyses, boatNo) {
-  return (analyses || []).find((item, index) => boatNoOf(item, index) === boatNo) || null;
+  return analyses.find((item, index) => boatNoOf(item, index) === boatNo) || null;
 }
 
 function metric(object, paths) {
   for (const itemPath of paths) {
     let value = object;
     for (const key of itemPath.split(".")) value = value?.[key];
-    const number = toNumber(value);
+    const number = finite(value);
     if (number !== null) return number;
   }
   return null;
@@ -110,36 +110,35 @@ function metric(object, paths) {
 
 function counterScenarios(raceScenarios, nextScenario) {
   const outcome = nextScenario?.outcome || {};
-  const holdPickupTheory = raceScenarios?.holdPickupTheory || {};
-
+  const holdPickup = raceScenarios?.holdPickupTheory || {};
   return {
     ...raceScenarios,
     mainScenario: nextScenario,
     scenarios: [
       nextScenario,
-      ...(raceScenarios?.scenarios || []).filter(scenario => scenario !== nextScenario)
+      ...(raceScenarios?.scenarios || []).filter(item => item !== nextScenario)
     ],
     attacker: scenarioHead(nextScenario),
     blockedBoats: [...(nextScenario?.blockedBoats || [])],
     holdPickupTheory: {
-      ...holdPickupTheory,
+      ...holdPickup,
       secondCandidates: Array.isArray(outcome.secondCandidates)
         ? outcome.secondCandidates
-        : holdPickupTheory.secondCandidates,
+        : holdPickup.secondCandidates,
       thirdCandidates: Array.isArray(outcome.thirdCandidates)
         ? outcome.thirdCandidates
-        : holdPickupTheory.thirdCandidates,
+        : holdPickup.thirdCandidates,
       remainers: Array.isArray(outcome.remainers)
         ? outcome.remainers
-        : holdPickupTheory.remainers,
+        : holdPickup.remainers,
       pickupCandidates: Array.isArray(outcome.pickupCandidates)
         ? outcome.pickupCandidates
-        : holdPickupTheory.pickupCandidates
+        : holdPickup.pickupCandidates
     }
   };
 }
 
-function buildFrozenCandidate(prediction) {
+function frozenCandidate(prediction, currentFive) {
   const raceScenarios = prediction?.raceScenarios || {};
   const mainScenario = raceScenarios.mainScenario || raceScenarios.scenarios?.[0] || {};
   if (String(mainScenario?.type) !== "escape" || scenarioHead(mainScenario) !== 1) {
@@ -147,20 +146,16 @@ function buildFrozenCandidate(prediction) {
   }
 
   const sashiScenario = (raceScenarios.scenarios || []).find(
-    scenario => String(scenario?.type) === "sashi" || scenarioHead(scenario) === 2
+    item => String(item?.type) === "sashi" || scenarioHead(item) === 2
   );
   const analyses = analysesOf(prediction);
   if (!sashiScenario || !Array.isArray(analyses)) {
     return { qualified: false, reason: "no-sashi-scenario-or-analyses" };
   }
 
-  const currentFive = basicFive(prediction.formations);
   const existingSecond = new Set(
-    (sashiScenario?.outcome?.secondCandidates || []).map((item, index) =>
-      boatNoOf(item, index)
-    )
+    (sashiScenario?.outcome?.secondCandidates || []).map(boatNoOf)
   );
-
   const outerCandidates = [5, 6]
     .filter(boatNo => !existingSecond.has(boatNo))
     .map(boatNo => {
@@ -181,14 +176,14 @@ function buildFrozenCandidate(prediction) {
     );
 
   const bestOuter = outerCandidates[0] || null;
-  const escapeScore = toNumber(mainScenario?.score);
-  const sashiScore = toNumber(sashiScenario?.score);
+  const escapeScore = finite(mainScenario?.score);
+  const sashiScore = finite(sashiScenario?.score);
   const sashiGap =
     escapeScore !== null && sashiScore !== null ? escapeScore - sashiScore : null;
 
   let extraTicket = null;
   if (bestOuter) {
-    const expandedSashi = {
+    const expanded = {
       ...sashiScenario,
       outcome: {
         ...(sashiScenario.outcome || {}),
@@ -198,23 +193,22 @@ function buildFrozenCandidate(prediction) {
         ]
       }
     };
-    const counterFormations = core.buildFormations(
+    const counter = core.buildFormations(
       analyses,
-      counterScenarios(raceScenarios, expandedSashi)
+      counterScenarios(raceScenarios, expanded)
     );
     extraTicket =
-      basicFive(counterFormations).find(
+      basicFive(counter).find(
         ticket => ticket.startsWith("2-") && !currentFive.includes(ticket)
       ) || null;
   }
 
   const qualified = Boolean(
     extraTicket &&
-      bestOuter &&
-      bestOuter.hold !== null &&
-      bestOuter.hold >= RULE.holdMin &&
-      bestOuter.pickup !== null &&
-      bestOuter.pickup >= RULE.pickupMin &&
+      bestOuter?.hold !== null &&
+      bestOuter?.hold >= RULE.holdMin &&
+      bestOuter?.pickup !== null &&
+      bestOuter?.pickup >= RULE.pickupMin &&
       sashiGap !== null &&
       sashiGap <= RULE.gapMax
   );
@@ -222,7 +216,6 @@ function buildFrozenCandidate(prediction) {
   return {
     qualified,
     reason: qualified ? "qualified" : "frozen-rule-not-met",
-    currentFive,
     bestOuter,
     extraTicket,
     sashiGap
@@ -231,38 +224,36 @@ function buildFrozenCandidate(prediction) {
 
 function headProfile(tickets) {
   const counts = new Map();
-  for (const ticket of tickets) {
+  tickets.forEach(ticket => {
     const head = partsOf(ticket)[0];
     counts.set(head, (counts.get(head) || 0) + 1);
-  }
+  });
   return [...counts.entries()]
     .sort((a, b) => a[0] - b[0])
     .map(([head, count]) => `${head}:${count}`)
     .join(",");
 }
 
-function buildFixedFive(prediction, candidate) {
-  const currentFive = candidate.currentFive;
+function fixedFive(prediction, currentFive, candidate) {
   if (!candidate.qualified) {
     return { applied: false, reason: candidate.reason, nextFive: currentFive };
   }
 
-  const rescueMeta = prediction?.formations?.thirdSixRescueFixed5 || {};
-  const rescueApplied = rescueMeta.applied === true;
-  const rescueTicket = ticketOf(rescueMeta.ticket);
-  let replacementIndex = -1;
+  const rescue = prediction?.formations?.thirdSixRescueFixed5 || {};
+  const rescueApplied = rescue.applied === true;
+  const rescueTicket = ticketOf(rescue.ticket);
+  let index = -1;
 
-  // 本線3点は変更しない。押さえのうち、追加券と同じ2号艇頭だけを交換する。
-  for (const index of [4, 3]) {
-    const currentTicket = currentFive[index];
+  for (const candidateIndex of [4, 3]) {
+    const currentTicket = currentFive[candidateIndex];
     if (!currentTicket) continue;
     if (rescueApplied && currentTicket === rescueTicket) continue;
     if (partsOf(currentTicket)[0] !== 2) continue;
-    replacementIndex = index;
+    index = candidateIndex;
     break;
   }
 
-  if (replacementIndex < 0) {
+  if (index < 0) {
     return {
       applied: false,
       reason: "no-unprotected-2-head-safety",
@@ -273,11 +264,17 @@ function buildFixedFive(prediction, candidate) {
   }
 
   const nextFive = currentFive.slice();
-  const removedTicket = nextFive[replacementIndex];
-  nextFive[replacementIndex] = candidate.extraTicket;
+  const removedTicket = nextFive[index];
+  nextFive[index] = candidate.extraTicket;
 
   if (new Set(nextFive).size !== 5) {
-    return { applied: false, reason: "duplicate-after-replacement", nextFive: currentFive };
+    return {
+      applied: false,
+      reason: "duplicate-after-replacement",
+      nextFive: currentFive,
+      rescueApplied,
+      rescueTicket
+    };
   }
 
   const beforeHeadProfile = headProfile(currentFive);
@@ -296,7 +293,6 @@ function buildFixedFive(prediction, candidate) {
     applied: true,
     reason: "applied",
     nextFive,
-    replacementIndex,
     removedTicket,
     addedTicket: candidate.extraTicket,
     beforeHeadProfile,
@@ -306,9 +302,8 @@ function buildFixedFive(prediction, candidate) {
   };
 }
 
-function payoutOf(row) {
-  return Number(row?.result?.payoutPer100 || row?.result?.review?.payoutPer100 || 0);
-}
+const payoutOf = row =>
+  Number(row?.result?.payoutPer100 || row?.result?.review?.payoutPer100 || 0);
 
 function increment(object, key) {
   object[key] = (object[key] || 0) + 1;
@@ -347,7 +342,6 @@ function summarize(rows) {
       increment(candidateBoats, String(row.bestOuter?.boatNo || 0));
       if (row.rescueApplied) rescueProtectedSelections += 1;
     }
-
     if (currentHit) {
       currentHits += 1;
       currentReturn += row.payout;
@@ -356,7 +350,6 @@ function summarize(rows) {
       nextHits += 1;
       nextReturn += row.payout;
     }
-
     if (nextHit && !currentHit) {
       gains += 1;
       gainDates.add(row.date);
@@ -377,7 +370,6 @@ function summarize(rows) {
         });
       }
     }
-
     if (currentHit && !nextHit) {
       losses += 1;
       lossDates.add(row.date);
@@ -443,19 +435,14 @@ function main() {
   const failures = [];
   const reasons = {};
   let totalSettledEvaluated = 0;
-  let productionThirdSixRescueActivation = 0;
+  let productionRescueActivation = 0;
   let headProfileViolations = 0;
   let mainThreeViolations = 0;
   let rescueProtectionViolations = 0;
 
-  for (const filename of fs
-    .readdirSync(PREDICTION_DIR)
-    .filter(name => /^\d{8}\.json$/.test(name))
-    .sort()) {
+  for (const filename of fs.readdirSync(DIR).filter(name => /^\d{8}\.json$/.test(name)).sort()) {
     const date = filename.slice(0, 8);
-    const document = JSON.parse(
-      fs.readFileSync(path.join(PREDICTION_DIR, filename), "utf8")
-    );
+    const document = JSON.parse(fs.readFileSync(path.join(DIR, filename), "utf8"));
 
     for (const row of rowsOf(document)) {
       if (row?.result?.settled !== true) continue;
@@ -475,22 +462,22 @@ function main() {
         if (currentFive.length < 5) continue;
         totalSettledEvaluated += 1;
 
-        const rescueApplied =
+        const productionRescueApplied =
           prediction?.formations?.thirdSixRescueFixed5?.applied === true;
-        if (rescueApplied) productionThirdSixRescueActivation += 1;
+        if (productionRescueApplied) productionRescueActivation += 1;
 
-        const candidate = buildFrozenCandidate(prediction);
-        const fixed = buildFixedFive(prediction, candidate);
-        increment(reasons, fixed.reason);
+        const candidate = frozenCandidate(prediction, currentFive);
+        const result = fixedFive(prediction, currentFive, candidate);
+        increment(reasons, result.reason);
 
-        if (fixed.applied) {
-          if (fixed.beforeHeadProfile !== fixed.afterHeadProfile) {
+        if (result.applied) {
+          if (result.beforeHeadProfile !== result.afterHeadProfile) {
             headProfileViolations += 1;
           }
-          if (currentFive.slice(0, 3).join("|") !== fixed.nextFive.slice(0, 3).join("|")) {
+          if (currentFive.slice(0, 3).join("|") !== result.nextFive.slice(0, 3).join("|")) {
             mainThreeViolations += 1;
           }
-          if (fixed.rescueApplied && fixed.rescueTicket && !fixed.nextFive.includes(fixed.rescueTicket)) {
+          if (result.rescueApplied && result.rescueTicket && !result.nextFive.includes(result.rescueTicket)) {
             rescueProtectionViolations += 1;
           }
         }
@@ -502,13 +489,13 @@ function main() {
           actual,
           payout: payoutOf(row),
           currentFive,
-          nextFive: fixed.nextFive,
-          applied: fixed.applied,
-          removedTicket: fixed.removedTicket || null,
-          addedTicket: fixed.addedTicket || null,
+          nextFive: result.nextFive,
+          applied: result.applied,
+          removedTicket: result.removedTicket || null,
+          addedTicket: result.addedTicket || null,
           bestOuter: candidate.bestOuter || null,
           sashiGap: candidate.sashiGap ?? null,
-          rescueApplied: fixed.rescueApplied === true
+          rescueApplied: result.rescueApplied === true
         });
       } catch (error) {
         failures.push(`${date}-${row.jcd}-${row.raceNo}:${error?.message || error}`);
@@ -530,9 +517,9 @@ function main() {
   console.log(
     JSON.stringify(
       {
-        schemaVersion: 1,
+        schemaVersion: 2,
         source:
-          "latest main replay with production third-six fixed5 module enabled; frozen PR #508 candidate rule",
+          "latest main replay with production third-six fixed5 enabled; frozen PR #508 signal",
         holdoutStart: HOLDOUT_START,
         rule: RULE,
         replacementRule: {
@@ -545,21 +532,21 @@ function main() {
           tickets: 5
         },
         totalSettledEvaluated,
-        productionThirdSixRescueActivation,
+        productionRescueActivation,
         reasons,
         discovery,
         holdout,
         full,
         gatePassed,
         gate:
-          "discovery and holdout each require selected>=20, hitDelta>0, gains>=losses, returnDelta>=0, gains on >=3 dates and >=3 venues; stakeDelta=0; all protection violations=0; failures=0",
+          "each period: selected>=20, hitDelta>0, gains>=losses, returnDelta>=0, gains on >=3 dates and >=3 venues; stakeDelta=0; violations=0; failures=0",
         headProfileViolations,
         mainThreeViolations,
         rescueProtectionViolations,
         failures,
         decision: gatePassed
-          ? "fixed5 replacement passed both periods; present production-change proposal for explicit approval"
-          : "do not adopt; fixed5 replacement did not preserve hit and return performance across independent holdout",
+          ? "present production-change proposal for explicit approval"
+          : "do not adopt; fixed5 replacement failed independent validation",
         notes: {
           productionChanged: false,
           automaticApplication: false,
