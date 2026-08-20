@@ -43,6 +43,7 @@ on:
       - "scripts/build-prediction-index-shards.js"
       - "scripts/test-build-prediction-index-shards.js"
       - "scripts/test-prediction-index-loader.js"
+      - "scripts/apply-current-cache-test-alignment.js"
       - ".github/workflows/analyze-reference-tags.yml"
       - ".github/workflows/collect-results.yml"
       - ".github/workflows/settle-purchases.yml"
@@ -78,6 +79,7 @@ jobs:
           node --check scripts/test-prediction-conditions.js
           node --check scripts/test-build-prediction-index-shards.js
           node --check scripts/test-prediction-index-loader.js
+          node --check scripts/apply-current-cache-test-alignment.js
       - name: Run Phase6 integration test
         run: node scripts/test-phase6-integration.js
       - name: Run result void compatibility test
@@ -94,6 +96,7 @@ jobs:
           node scripts/test-prediction-conditions.js
       - name: Run load performance regression
         run: |
+          node scripts/apply-current-cache-test-alignment.js
           node scripts/test-build-prediction-index-shards.js
           node scripts/test-prediction-index-loader.js
           node scripts/test-load-performance.js
