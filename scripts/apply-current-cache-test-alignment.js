@@ -35,7 +35,7 @@ function patchLoad(text){
     "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
     html.includes(
-      "js/prediction-runtime-loader.js?v=20260816-runtime-deadline1"
+      "js/prediction-runtime-loader.js?v=20260820-third-six-fixed5"
     ) &&
     html.includes(
       "js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"
@@ -44,7 +44,7 @@ function patchLoad(text){
       'const VERSION = "20260815-odds-immediate1"'
     ) &&
     predictionRuntime.includes(
-      'const VERSION = "20260816-runtime-deadline1"'
+      'const VERSION = "20260820-third-six-fixed5"'
     ) &&
     hiyoriLoader.includes(
       'const VERSION="20260816-nonblocking-core2"'
@@ -54,7 +54,7 @@ function patchLoad(text){
 );`,
     'runtime generation block'
   );
-  out=replaceOne(out,'\'const VERSION = "20260809-grounded-flow2"\'','\'const VERSION = "20260816-runtime-deadline1"\'','prediction runtime version');
+  out=replaceOne(out,'\'const VERSION = "20260809-grounded-flow2"\'','\'const VERSION = "20260820-third-six-fixed5"\'','prediction runtime version');
   out=replaceOne(
     out,
 `  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
