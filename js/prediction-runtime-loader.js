@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260816-runtime-deadline1";
+  const VERSION = "20260820-third-six-fixed5";
   const SCRIPT_LOAD_TIMEOUT_MS = 12000;
   const RUNTIME_TOTAL_TIMEOUT_MS = 45000;
   const ODDS_PRIORITY_WAIT_MS = 2500;
@@ -18,6 +18,7 @@
     "js/odds-insights.js",
     "js/evaluated-scenario-candidates.js",
     "js/ai-core.js",
+    "js/third-six-rescue-fixed5.js",
     "js/prediction.js",
     "js/racer-skill-core-integration.js",
     "js/main-cover-classification-fix.js",

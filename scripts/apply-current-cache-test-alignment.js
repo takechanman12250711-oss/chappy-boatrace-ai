@@ -7,30 +7,40 @@ function replaceOne(text,before,after,label){
   if(count===0 && text.includes(after)) return text;
   throw new Error(`${label}: expected old marker once or already-patched marker, got old=${count}`);
 }
+function replaceOneOf(text,befores,after,label){
+  const matches=befores.filter(before=>text.includes(before));
+  if(matches.length===1) return text.replace(matches[0],after);
+  if(matches.length===0 && text.includes(after)) return text;
+  throw new Error(`${label}: expected exactly one supported old marker or current marker, got matches=${matches.length}`);
+}
 function patchLoad(text){
   let out=String(text);
   out=replaceOne(out,'"js/app-runtime-loader.js?v=20260810-official-reference1"','"js/app-runtime-loader.js?v=20260816-static-race1"','app runtime asset');
   out=replaceOne(out,'"js/home-dashboard-v2.js?v=20260803-ui-fix2"','"js/home-dashboard-v2.js?v=20260816-static-race1"','home asset');
   out=replaceOne(out,'\'const VERSION = "20260810-official-reference1"\'','\'const VERSION = "20260815-odds-immediate1"\'','app runtime internal version');
-  out=replaceOne(
-    out,
-`assert.equal(
+  const desiredGeneration=`assert.equal(
   html.includes(
-    "js/app-runtime-loader.js?v=20260813-course-failclosed1"
+    "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
+    html.includes(
+      "js/prediction-runtime-loader.js?v=20260820-third-six-fixed5"
+    ) &&
+    html.includes(
+      "js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"
+    ) &&
     appRuntime.includes(
-      'const VERSION = "20260813-course-failclosed1"'
+      'const VERSION = "20260815-odds-immediate1"'
     ) &&
     predictionRuntime.includes(
-      'const VERSION = "20260813-course-failclosed1"'
+      'const VERSION = "20260820-third-six-fixed5"'
     ) &&
     hiyoriLoader.includes(
-      'const VERSION="20260813-course-failclosed1"'
+      'const VERSION="20260816-nonblocking-core2"'
     ),
   true,
-  "実コース対応を親ローダーから予想・日和補助層まで同じキャッシュ世代で配信する"
-);`,
-`assert.equal(
+  "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
+);`;
+  const priorGeneration=`assert.equal(
   html.includes(
     "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
@@ -51,10 +61,28 @@ function patchLoad(text){
     ),
   true,
   "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
-);`,
-    'runtime generation block'
-  );
-  out=replaceOne(out,'\'const VERSION = "20260809-grounded-flow2"\'','\'const VERSION = "20260816-runtime-deadline1"\'','prediction runtime version');
+);`;
+  const legacyGeneration=`assert.equal(
+  html.includes(
+    "js/app-runtime-loader.js?v=20260813-course-failclosed1"
+  ) &&
+    appRuntime.includes(
+      'const VERSION = "20260813-course-failclosed1"'
+    ) &&
+    predictionRuntime.includes(
+      'const VERSION = "20260813-course-failclosed1"'
+    ) &&
+    hiyoriLoader.includes(
+      'const VERSION="20260813-course-failclosed1"'
+    ),
+  true,
+  "実コース対応を親ローダーから予想・日和補助層まで同じキャッシュ世代で配信する"
+);`;
+  out=replaceOneOf(out,[legacyGeneration,priorGeneration],desiredGeneration,'runtime generation block');
+  out=replaceOneOf(out,[
+    '\'const VERSION = "20260809-grounded-flow2"\'',
+    '\'const VERSION = "20260816-runtime-deadline1"\''
+  ],'\'const VERSION = "20260820-third-six-fixed5"\'','prediction runtime version');
   out=replaceOne(
     out,
 `  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
