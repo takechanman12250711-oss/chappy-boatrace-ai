@@ -1,0 +1,21 @@
+name: Check sashi outer role fixed5
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-sashi-outer-role-fixed5.js'
+      - '.github/workflows/check-sashi-outer-role-fixed5.yml'
+  workflow_dispatch:
+jobs:
+  analysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-sashi-outer-role-fixed5.js
+      - run: node scripts/analyze-sashi-outer-role-fixed5.js
