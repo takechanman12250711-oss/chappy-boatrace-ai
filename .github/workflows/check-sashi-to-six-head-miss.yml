@@ -1,0 +1,17 @@
+name: Check sashi to six head miss
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-sashi-to-six-head-miss.js'
+      - '.github/workflows/check-sashi-to-six-head-miss.yml'
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-sashi-to-six-head-miss.js
+      - run: node scripts/analyze-sashi-to-six-head-miss.js
