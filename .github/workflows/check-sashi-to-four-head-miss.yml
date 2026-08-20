@@ -1,0 +1,20 @@
+name: Check sashi to four head miss
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-sashi-to-four-head-miss.js'
+      - '.github/workflows/check-sashi-to-four-head-miss.yml'
+  workflow_dispatch:
+jobs:
+  analysis:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-sashi-to-four-head-miss.js
+      - run: node scripts/analyze-sashi-to-four-head-miss.js
