@@ -1,0 +1,18 @@
+name: Check unresolved head transition ranking
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-unresolved-head-transitions.js'
+      - '.github/workflows/check-unresolved-head-transition-ranking.yml'
+  workflow_dispatch:
+jobs:
+  analysis:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-unresolved-head-transitions.js
+      - run: node scripts/analyze-unresolved-head-transitions.js
