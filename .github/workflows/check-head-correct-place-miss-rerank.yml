@@ -1,0 +1,17 @@
+name: Check head-correct place miss rerank
+on:
+  pull_request:
+    paths:
+      - 'scripts/rank-head-correct-place-misses.js'
+      - '.github/workflows/check-head-correct-place-miss-rerank.yml'
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/rank-head-correct-place-misses.js
+      - run: node scripts/rank-head-correct-place-misses.js
