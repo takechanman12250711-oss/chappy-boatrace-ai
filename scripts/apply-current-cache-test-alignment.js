@@ -8,10 +8,10 @@ function replaceOne(text,before,after,label){
   throw new Error(`${label}: expected old marker once or already-patched marker, got old=${count}`);
 }
 function replaceOneOf(text,befores,after,label){
-  if(text.includes(after)) return text;
   const matches=befores.filter(before=>text.includes(before));
-  if(matches.length!==1) throw new Error(`${label}: expected exactly one supported old marker or current marker, got matches=${matches.length}`);
-  return text.replace(matches[0],after);
+  if(matches.length===1) return text.replace(matches[0],after);
+  if(matches.length===0 && text.includes(after)) return text;
+  throw new Error(`${label}: expected exactly one supported old marker or current marker, got matches=${matches.length}`);
 }
 function patchLoad(text){
   let out=String(text);
