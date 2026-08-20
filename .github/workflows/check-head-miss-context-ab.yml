@@ -1,0 +1,21 @@
+name: Check head miss context A-B
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-head-miss-context-ab.js'
+      - '.github/workflows/check-head-miss-context-ab.yml'
+      - 'js/ai-core.js'
+      - 'data/predictions/**'
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run A-B validation
+        run: node scripts/analyze-head-miss-context-ab.js
