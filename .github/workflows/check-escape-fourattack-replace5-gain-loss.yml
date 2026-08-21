@@ -1,0 +1,17 @@
+name: Check escape four-attack replace5 gain-loss
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-escape-fourattack-replace5-gain-loss.js'
+      - '.github/workflows/check-escape-fourattack-replace5-gain-loss.yml'
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-escape-fourattack-replace5-gain-loss.js
+      - run: node scripts/analyze-escape-fourattack-replace5-gain-loss.js
