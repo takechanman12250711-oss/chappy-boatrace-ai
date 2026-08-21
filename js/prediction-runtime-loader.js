@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260821-outer-second-fixed5";
+  const VERSION = "20260820-third-six-fixed5";
   const SCRIPT_LOAD_TIMEOUT_MS = 12000;
   const RUNTIME_TOTAL_TIMEOUT_MS = 45000;
   const ODDS_PRIORITY_WAIT_MS = 2500;
