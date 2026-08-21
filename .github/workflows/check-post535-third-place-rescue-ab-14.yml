@@ -1,0 +1,19 @@
+name: Check post535 third-place rescue 1-4
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-post535-third-place-rescue-ab-14.js'
+      - '.github/workflows/check-post535-third-place-rescue-ab-14.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-post535-third-place-rescue-ab-14.js
+      - run: node scripts/analyze-post535-third-place-rescue-ab-14.js
