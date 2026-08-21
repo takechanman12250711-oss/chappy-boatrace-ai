@@ -1,0 +1,24 @@
+name: Check third 1-3-4 to 1-3-6 ST rescue
+on:
+  pull_request:
+    paths:
+      - 'js/third-13-4to6-st-rescue.js'
+      - 'js/prediction-runtime-loader.js'
+      - 'scripts/test-third-13-4to6-st-rescue.js'
+      - 'scripts/regress-third-13-4to6-st-rescue.js'
+      - '.github/workflows/check-third-13-4to6-st-rescue.yml'
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --check js/third-13-4to6-st-rescue.js
+      - run: node --check js/prediction-runtime-loader.js
+      - run: node scripts/test-third-13-4to6-st-rescue.js
+      - run: node scripts/test-third-six-rescue-fixed5.js
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node scripts/regress-third-13-4to6-st-rescue.js
