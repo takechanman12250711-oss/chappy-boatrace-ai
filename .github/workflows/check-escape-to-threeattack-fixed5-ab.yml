@@ -1,0 +1,19 @@
+name: Check escape to three-attack fixed5 A-B
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-escape-to-threeattack-fixed5-ab.js'
+      - '.github/workflows/check-escape-to-threeattack-fixed5-ab.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-escape-to-threeattack-fixed5-ab.js
+      - run: node scripts/analyze-escape-to-threeattack-fixed5-ab.js
