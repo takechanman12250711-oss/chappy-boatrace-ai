@@ -20,6 +20,7 @@
     "js/ai-core.js",
     "js/third-six-rescue-fixed5.js",
     "js/escape-outer-second-rescue-fixed5.js",
+    "js/third-place-rescue-14-fixed5.js",
     "js/prediction.js",
     "js/racer-skill-core-integration.js",
     "js/main-cover-classification-fix.js",
