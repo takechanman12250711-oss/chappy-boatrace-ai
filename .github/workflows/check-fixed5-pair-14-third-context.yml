@@ -1,0 +1,22 @@
+name: Check fixed5 pair 1-4 third context
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-pair-14-third-context.js'
+      - '.github/workflows/check-fixed5-pair-14-third-context.yml'
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/audit-fixed5-pair-14-third-context.js
+      - run: node scripts/audit-fixed5-pair-14-third-context.js | tee fixed5-pair-14-third-context.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixed5-pair-14-third-context
+          path: fixed5-pair-14-third-context.json
