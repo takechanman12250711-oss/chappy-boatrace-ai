@@ -1,0 +1,22 @@
+name: Check fixed5 pair 4-1 vs 1-2 signals
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-pair-41-vs-12-signal-all.js'
+      - '.github/workflows/check-fixed5-pair-41-vs-12-signal-all.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check scripts/audit-fixed5-pair-41-vs-12-signal-all.js
+      - run: node scripts/audit-fixed5-pair-41-vs-12-signal-all.js | tee pair-41-vs-12-signals.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pair-41-vs-12-signals
+          path: pair-41-vs-12-signals.json
