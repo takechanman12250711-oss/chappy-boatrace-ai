@@ -1,0 +1,24 @@
+name: Validate pair31 alignment overall
+on:
+  pull_request:
+    paths:
+      - 'js/pair-31-rescue-fixed5.js'
+      - 'scripts/test-pair-31-rescue-fixed5.js'
+      - 'scripts/validate-pair31-alignment-overall.js'
+      - '.github/workflows/validate-pair31-alignment-overall.yml'
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/validate-pair31-alignment-overall.js
+      - run: node scripts/validate-pair31-alignment-overall.js | tee pair31-alignment-overall.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pair31-alignment-overall
+          path: pair31-alignment-overall.json
