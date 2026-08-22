@@ -1,0 +1,22 @@
+name: Check fixed5 pair 3-2 conditional all
+on:
+  pull_request:
+    paths:
+      - 'scripts/ab-fixed5-pair-32-conditional-all.js'
+      - '.github/workflows/check-fixed5-pair-32-conditional-all.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check scripts/ab-fixed5-pair-32-conditional-all.js
+      - run: node scripts/ab-fixed5-pair-32-conditional-all.js | tee pair-32-conditional-all.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pair-32-conditional-all
+          path: pair-32-conditional-all.json
