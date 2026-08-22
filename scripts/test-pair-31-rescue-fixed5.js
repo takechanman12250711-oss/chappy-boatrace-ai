@@ -16,6 +16,6 @@ assert.equal(out.formations.pair31RescueFixed5.rule,"fourOf6_replace_one_2-1");
 assert.equal(out.formations.safety[0],"3-1-2");
 assert.equal(out.formations.main.length,3);
 assert.equal(out.formations.safety.length,2);
-const weak=prediction();weak.analyses.find(x=>x.boatNo===3).roleScores.hold=49;weak.analyses.find(x=>x.boatNo===3).roleScores.pickup=49;weak.analyses.find(x=>x.boatNo===3).roleScores.attack=-2;assert.equal(global.ChappyPair31RescueFixed5.apply(weak),weak);
+const weak=prediction();const b3=weak.analyses.find(x=>x.boatNo===3);b3.indexes.st=-1;b3.indexes.exhibition=-1;b3.indexes.raceFlow=39;b3.roleScores.attack=-2;b3.roleScores.hold=20;b3.roleScores.pickup=20;assert.equal(global.ChappyPair31RescueFixed5.apply(weak),weak);
 const duplicate=prediction();duplicate.formations.main[1]="3-1-4";assert.equal(global.ChappyPair31RescueFixed5.apply(duplicate),duplicate);
 console.log("pair 3-1 rescue fixed5 tests passed");
