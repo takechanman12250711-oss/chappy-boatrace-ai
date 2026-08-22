@@ -6,10 +6,56 @@ const CFG={
   5:{signals:["st","ex","flow","attack","hold","pickup"],thresholds:{st:0.23216666666666664,ex:0.6167083333333337,flow:-8.14425,attack:-1.3255416666666658,hold:-5.103166666666668,pickup:5.193249999999998},dirs:{st:1,ex:-1,flow:1,attack:1,hold:1,pickup:1},variants:[4,5,6]},
   6:{signals:["st","flow","attack","hold","pickup"],thresholds:{st:0.05773809523809539,flow:-18.803124999999998,attack:-3.1565476190476194,hold:-8.445982142857143,pickup:2.258184523809523},dirs:{st:1,flow:1,attack:1,hold:1,pickup:1},variants:[3,4,5]}
 };
-function rows(d){return[...(d.predictions||[]),...(d.verificationPredictions||[])];}function ticket(v){const p=String(v?.ticket||v||"").match(/[1-6]/g)||[];return p.length>=3?p.slice(0,3).join("-"):"";}function input(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<6)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,place:r.place,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}function fixed(p){const f=p.formations||{};return[...(f.main||[]).slice(0,3),...(f.safety||[]).slice(0,2)].map(ticket).filter(Boolean);}function analyses(p){return p?.analyses||p?.evaluations||p?.boatEvaluation?.evaluations||[];}function boatNo(x,i){return Number(x?.boatNo??x?.boat??x?.no??i+1);}function find(a,n){return(a||[]).find((x,i)=>boatNo(x,i)===n)||null;}function metric(b,k){const m={st:["indexes.st","stIndex","st"],ex:["indexes.exhibition","indexes.ex","exhibition","ex"],flow:["indexes.raceFlow","raceFlow"],attack:["roleScores.attack","attack"],hold:["roleScores.hold","hold"],pickup:["roleScores.pickup","pickup"]}[k];for(const p of m){let v=b;for(const q of p.split("."))v=v?.[q];if(Number.isFinite(Number(v)))return Number(v);}return 0;}function payout(r){for(const x of [r?.result?.payout,r?.result?.payoutYen,r?.result?.trifectaPayout,r?.result?.review?.payout,r?.result?.review?.payoutYen,r?.result?.review?.trifectaPayout,r?.result?.odds?.payout]){const n=Number(String(x??"").replace(/[^0-9.-]/g,""));if(Number.isFinite(n)&&n>=0)return n;}return 0;}
-const P={discovery:{},holdout:{}},seen=new Set();for(const per of Object.values(P))for(const t of [2,5,6])for(const n of CFG[t].variants)per[`${t}_${n}`]={eligible:0,changed:0,baseHits:0,newHits:0,basePayout:0,newPayout:0};
-for(const fn of fs.readdirSync(DIR).filter(x=>/^\d{8}\.json$/.test(x)).sort()){const date=fn.slice(0,8),d=JSON.parse(fs.readFileSync(path.join(DIR,fn),"utf8"));for(const r of rows(d)){if(r?.result?.settled!==true)continue;const rk=r.raceKey||`${date}-${r.jcd}-${r.raceNo}`;if(seen.has(rk))continue;seen.add(rk);try{const i=input(r),actual=ticket(r?.result?.resultTicket||r?.result?.review?.resultTicket);if(!i||!actual)continue;const p=core.buildPredictionData(i),base=fixed(p);if(base.length!==5||!base.includes("1-3-4"))continue;const an=analyses(p),b4=find(an,4);if(!b4)continue;const pay=payout(r),per=P[date<H?"discovery":"holdout"];
-for(const t of [2,5,6]){const bt=find(an,t),cfg=CFG[t];if(!bt)continue;const candidate=`1-3-${t}`,vals={};for(const k of cfg.signals)vals[k]=metric(bt,k)-metric(b4,k);let score=0;for(const k of cfg.signals){const dir=cfg.dirs[k],th=cfg.thresholds[k];if(dir>0?vals[k]>=th:vals[k]<=th)score++;}
-for(const n of cfg.variants){const q=per[`${t}_${n}`];q.eligible++;const baseHit=base.includes(actual);if(baseHit){q.baseHits++;q.basePayout+=pay;}let next=base;if(score>=n&&!base.includes(candidate)){next=base.slice();const idx=next.indexOf("1-3-4");if(idx>=0){next[idx]=candidate;q.changed++;}}const nh=next.includes(actual);if(nh){q.newHits++;q.newPayout+=pay;}}}}
-}catch{}}}
-const out={schemaVersion:1,holdoutStart:H,variants:{},notes:{productionChanged:false,oddsUsed:false,currentMainRescues:true,thresholdSource:"discovery keep/shift mean midpoint from PR581",replacement:"replace exact 1-3-4 slot with candidate 1-3-X when gate passes"}};for(const per of ["discovery","holdout"]){out.variants[per]={};for(const [k,v] of Object.entries(P[per]))out.variants[per][k]={...v,deltaHits:v.newHits-v.baseHits,deltaPayout:v.newPayout-v.basePayout};}console.log(JSON.stringify(out,null,2));
+function rows(d){return[...(d.predictions||[]),...(d.verificationPredictions||[])];}
+function ticket(v){const p=String(v?.ticket||v||"").match(/[1-6]/g)||[];return p.length>=3?p.slice(0,3).join("-"):"";}
+function input(r){const s=r?.prediction?.preRaceConditions||r?.preRaceConditions;if(!s||!Array.isArray(s.boats)||s.boats.length<6)return null;return{...s,entries:s.boats,boats:s.boats,jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,place:r.place,placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:s.weather||{}};}
+function fixed(p){const f=p.formations||{};return[...(f.main||[]).slice(0,3),...(f.safety||[]).slice(0,2)].map(ticket).filter(Boolean);}
+function analyses(p){return p?.analyses||p?.evaluations||p?.boatEvaluation?.evaluations||[];}
+function boatNo(x,i){return Number(x?.boatNo??x?.boat??x?.no??i+1);}
+function find(a,n){return(a||[]).find((x,i)=>boatNo(x,i)===n)||null;}
+function metric(b,k){const m={st:["indexes.st","stIndex","st"],ex:["indexes.exhibition","indexes.ex","exhibition","ex"],flow:["indexes.raceFlow","raceFlow"],attack:["roleScores.attack","attack"],hold:["roleScores.hold","hold"],pickup:["roleScores.pickup","pickup"]}[k];for(const p of m){let v=b;for(const q of p.split("."))v=v?.[q];if(Number.isFinite(Number(v)))return Number(v);}return 0;}
+function payout(r){for(const x of [r?.result?.payout,r?.result?.payoutYen,r?.result?.trifectaPayout,r?.result?.review?.payout,r?.result?.review?.payoutYen,r?.result?.review?.trifectaPayout,r?.result?.odds?.payout]){const n=Number(String(x??"").replace(/[^0-9.-]/g,""));if(Number.isFinite(n)&&n>=0)return n;}return 0;}
+const P={discovery:{},holdout:{}},seen=new Set();
+for(const per of Object.values(P))for(const t of [2,5,6])for(const n of CFG[t].variants)per[`${t}_${n}`]={eligible:0,changed:0,baseHits:0,newHits:0,basePayout:0,newPayout:0};
+for(const fn of fs.readdirSync(DIR).filter(x=>/^\d{8}\.json$/.test(x)).sort()){
+  const date=fn.slice(0,8),d=JSON.parse(fs.readFileSync(path.join(DIR,fn),"utf8"));
+  for(const r of rows(d)){
+    if(r?.result?.settled!==true)continue;
+    const rk=r.raceKey||`${date}-${r.jcd}-${r.raceNo}`;
+    if(seen.has(rk))continue;
+    seen.add(rk);
+    try{
+      const i=input(r),actual=ticket(r?.result?.resultTicket||r?.result?.review?.resultTicket);
+      if(!i||!actual)continue;
+      const p=core.buildPredictionData(i),base=fixed(p);
+      if(base.length!==5||!base.includes("1-3-4"))continue;
+      const an=analyses(p),b4=find(an,4);
+      if(!b4)continue;
+      const pay=payout(r),per=P[date<H?"discovery":"holdout"];
+      for(const t of [2,5,6]){
+        const bt=find(an,t),cfg=CFG[t];
+        if(!bt)continue;
+        const candidate=`1-3-${t}`,vals={};
+        for(const k of cfg.signals)vals[k]=metric(bt,k)-metric(b4,k);
+        let score=0;
+        for(const k of cfg.signals){const dir=cfg.dirs[k],th=cfg.thresholds[k];if(dir>0?vals[k]>=th:vals[k]<=th)score++;}
+        for(const n of cfg.variants){
+          const q=per[`${t}_${n}`];q.eligible++;
+          const baseHit=base.includes(actual);
+          if(baseHit){q.baseHits++;q.basePayout+=pay;}
+          let next=base;
+          if(score>=n&&!base.includes(candidate)){
+            next=base.slice();
+            const idx=next.indexOf("1-3-4");
+            if(idx>=0){next[idx]=candidate;q.changed++;}
+          }
+          const nh=next.includes(actual);
+          if(nh){q.newHits++;q.newPayout+=pay;}
+        }
+      }
+    }catch{}
+  }
+}
+const out={schemaVersion:1,holdoutStart:H,variants:{},notes:{productionChanged:false,oddsUsed:false,currentMainRescues:true,thresholdSource:"discovery keep/shift mean midpoint from PR581",replacement:"replace exact 1-3-4 slot with candidate 1-3-X when gate passes"}};
+for(const per of ["discovery","holdout"]){out.variants[per]={};for(const [k,v] of Object.entries(P[per]))out.variants[per][k]={...v,deltaHits:v.newHits-v.baseHits,deltaPayout:v.newPayout-v.basePayout};}
+console.log(JSON.stringify(out,null,2));
