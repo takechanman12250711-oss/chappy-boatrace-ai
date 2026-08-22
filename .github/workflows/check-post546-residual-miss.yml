@@ -1,0 +1,19 @@
+name: Check post546 residual miss
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-post546-residual-miss.js'
+      - '.github/workflows/check-post546-residual-miss.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-post546-residual-miss.js
+      - run: node scripts/analyze-post546-residual-miss.js
