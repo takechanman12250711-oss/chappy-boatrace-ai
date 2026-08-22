@@ -1,0 +1,17 @@
+name: Check fixed5 uncovered 3-1 context
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-uncovered-31-context.js'
+      - '.github/workflows/check-fixed5-uncovered-31-context.yml'
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/audit-fixed5-uncovered-31-context.js
+      - run: node scripts/audit-fixed5-uncovered-31-context.js
