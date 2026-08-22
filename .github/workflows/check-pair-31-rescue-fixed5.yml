@@ -1,0 +1,21 @@
+name: Check pair 3-1 rescue fixed5
+on:
+  pull_request:
+    paths:
+      - 'js/pair-31-rescue-fixed5.js'
+      - 'scripts/test-pair-31-rescue-fixed5.js'
+      - 'js/prediction-runtime-loader.js'
+      - '.github/workflows/check-pair-31-rescue-fixed5.yml'
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/pair-31-rescue-fixed5.js
+      - run: node --check js/prediction-runtime-loader.js
+      - run: node scripts/test-pair-31-rescue-fixed5.js
