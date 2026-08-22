@@ -1,0 +1,22 @@
+name: Check fixed5 post rescue overall
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-post-rescue-overall.js'
+      - '.github/workflows/check-fixed5-post-rescue-overall.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check scripts/audit-fixed5-post-rescue-overall.js
+      - run: node scripts/audit-fixed5-post-rescue-overall.js | tee fixed5-post-rescue-overall.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixed5-post-rescue-overall
+          path: fixed5-post-rescue-overall.json
