@@ -23,6 +23,7 @@
     "js/third-place-rescue-14-fixed5.js",
     "js/third-place-rescue-12-4-fixed5.js",
     "js/pair-31-rescue-fixed5.js",
+    "js/pair-32-rescue-fixed5.js",
     "js/prediction.js",
     "js/racer-skill-core-integration.js",
     "js/main-cover-classification-fix.js",
