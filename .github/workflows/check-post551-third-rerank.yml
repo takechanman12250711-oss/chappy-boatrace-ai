@@ -1,0 +1,19 @@
+name: Check post551 third-place rerank
+on:
+  pull_request:
+    paths:
+      - 'scripts/rerank-third-place-after-551.js'
+      - '.github/workflows/check-post551-third-rerank.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/rerank-third-place-after-551.js
+      - run: node scripts/rerank-third-place-after-551.js
