@@ -1,0 +1,20 @@
+name: Check third-place 1-2-5 fixed5 A/B
+on:
+  pull_request:
+    paths:
+      - 'scripts/ab-third-place-12-5-fixed5.js'
+      - '.github/workflows/check-third-place-12-5-fixed5-ab.yml'
+permissions:
+  contents: write
+  actions: write
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/ab-third-place-12-5-fixed5.js
+      - run: node scripts/ab-third-place-12-5-fixed5.js
