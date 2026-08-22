@@ -5,6 +5,7 @@ on:
       - 'js/pair-31-rescue-fixed5.js'
       - 'scripts/test-pair-31-rescue-fixed5.js'
       - 'scripts/validate-pair31-alignment-overall.js'
+      - 'scripts/validate-pair31-old-vs-new.js'
       - '.github/workflows/validate-pair31-alignment-overall.yml'
 jobs:
   validate:
@@ -17,8 +18,12 @@ jobs:
           node-version: 20
       - run: node scripts/restore-daily-prediction-source.js --all
       - run: node --check scripts/validate-pair31-alignment-overall.js
+      - run: node --check scripts/validate-pair31-old-vs-new.js
       - run: node scripts/validate-pair31-alignment-overall.js | tee pair31-alignment-overall.json
+      - run: node scripts/validate-pair31-old-vs-new.js | tee pair31-old-vs-new.json
       - uses: actions/upload-artifact@v4
         with:
-          name: pair31-alignment-overall
-          path: pair31-alignment-overall.json
+          name: pair31-alignment-validation
+          path: |
+            pair31-alignment-overall.json
+            pair31-old-vs-new.json
