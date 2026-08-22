@@ -1,0 +1,17 @@
+name: Check fixed5 pair 3-1 vs 2-1 signal all
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-pair-31-vs-21-signal-all.js'
+      - '.github/workflows/check-fixed5-pair-31-vs-21-signal-all.yml'
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/audit-fixed5-pair-31-vs-21-signal-all.js
+      - run: node scripts/audit-fixed5-pair-31-vs-21-signal-all.js
