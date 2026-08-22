@@ -1,0 +1,19 @@
+name: Check third-place 1-2-5 signal
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-third-place-12-5-signal.js'
+      - '.github/workflows/check-third-place-12-5-signal.yml'
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/analyze-third-place-12-5-signal.js
+      - run: node scripts/analyze-third-place-12-5-signal.js
