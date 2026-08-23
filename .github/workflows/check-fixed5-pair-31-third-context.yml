@@ -6,6 +6,9 @@ on:
       - 'scripts/audit-fixed5-pair-31-third-context.js'
       - '.github/workflows/check-fixed5-pair-31-third-context.yml'
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     runs-on: ubuntu-24.04
@@ -19,8 +22,24 @@ jobs:
       - run: node --check scripts/audit-fixed5-pair-31-third-context.js
       - run: node scripts/audit-fixed5-pair-31-third-context.js
       - name: Validate audit artifact JSON
-        run: node -e 'JSON.parse(require("node:fs").readFileSync("fixed5-pair-31-third-context.json", "utf8"))'
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const report = JSON.parse(
+              fs.readFileSync(
+                "fixed5-pair-31-third-context.json",
+                "utf8"
+              )
+            );
+            for (const period of Object.values(report.periods)) {
+              if (!Object.values(period.checks).every(Boolean)) {
+                throw new Error("audit invariant failed");
+              }
+            }
+          '
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: fixed5-pair-31-third-context
           path: fixed5-pair-31-third-context.json
+          if-no-files-found: error
