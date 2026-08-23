@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - "scripts/diagnose-st-slit-formal-flags.js"
+      - "scripts/diagnose-st-slit-production-prediction-path.js"
       - ".github/workflows/check-st-slit-formal-flags.yml"
 jobs:
   diagnose:
@@ -15,5 +16,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - run: node scripts/diagnose-st-slit-production-prediction-path.js
       - run: node scripts/restore-daily-prediction-source.js --all
       - run: node scripts/diagnose-st-slit-formal-flags.js
