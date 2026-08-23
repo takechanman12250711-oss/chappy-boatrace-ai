@@ -1,0 +1,22 @@
+name: Check fixed5 pair 1-4 third 2 vs 5 signals
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-pair-14-third-2-vs-5-signals.js'
+      - '.github/workflows/check-fixed5-pair-14-third-2-vs-5-signals.yml'
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/audit-fixed5-pair-14-third-2-vs-5-signals.js
+      - run: node scripts/audit-fixed5-pair-14-third-2-vs-5-signals.js | tee fixed5-pair-14-third-2-vs-5-signals.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixed5-pair-14-third-2-vs-5-signals
+          path: fixed5-pair-14-third-2-vs-5-signals.json
