@@ -32,10 +32,20 @@ function replaceExactly(source, before, after, label) {
 
 function patchText(source) {
   let output = String(source);
-  output = replaceExactly(output, COMPACT_SCENARIO_OLD, COMPACT_SCENARIO_NEW, "compactScenario");
-  output = replaceExactly(output, AICORE_EVIDENCE_OLD, AICORE_EVIDENCE_NEW, "aiCoreEvidence.stSlit");
-  output = replaceExactly(output, SCENARIO_MERGE_OLD, SCENARIO_MERGE_NEW, "scenario merge");
-  output = replaceExactly(output, ST_SLIT_MERGE_OLD, ST_SLIT_MERGE_NEW, "stSlit merge");
+
+  if (!output.includes('slitAdjustment: Number(value.slitAdjustment || 0)')) {
+    output = replaceExactly(output, COMPACT_SCENARIO_OLD, COMPACT_SCENARIO_NEW, "compactScenario");
+  }
+  if (!output.includes('source: String(aiCore?.stSlitTheory?.source || "")')) {
+    output = replaceExactly(output, AICORE_EVIDENCE_OLD, AICORE_EVIDENCE_NEW, "aiCoreEvidence.stSlit");
+  }
+  if (!output.includes('providedScenarios.map((provided, index) =>')) {
+    output = replaceExactly(output, SCENARIO_MERGE_OLD, SCENARIO_MERGE_NEW, "scenario merge");
+  }
+  if (!output.includes('aiCoreEvidence?.stSlit?.roles || []')) {
+    output = replaceExactly(output, ST_SLIT_MERGE_OLD, ST_SLIT_MERGE_NEW, "stSlit merge");
+  }
+
   output = replaceExactly(output, HISTORY_LOOKUP_OLD, HISTORY_LOOKUP_NEW, "live racer skill history lookup");
   output = replaceExactly(output, HISTORY_RETURN_OLD, HISTORY_RETURN_NEW, "live racer skill history return");
   return output;
