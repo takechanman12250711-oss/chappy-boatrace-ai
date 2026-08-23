@@ -1,0 +1,40 @@
+name: Wire Local Water V2 tiebreak once
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/wire-local-water-v2-tiebreak-once.yml'
+permissions:
+  contents: write
+jobs:
+  wire:
+    runs-on: ubuntu-24.04
+    env:
+      TARGET_BRANCH: feat/local-water-v2-tiebreak-production-20260823
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+      - name: Wire collector and remove helper
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/collect-predictions.js')
+          s=p.read_text()
+          needle='const theoryInput = require(\n  "../js/theory-input"\n);\n'
+          insert=needle+'require("../js/local-water-v2-tiebreak");\n'
+          if 'require("../js/local-water-v2-tiebreak")' not in s:
+              if needle not in s: raise SystemExit('collector insertion point not found')
+              s=s.replace(needle,insert,1)
+              p.write_text(s)
+          PY
+          git rm .github/workflows/wire-local-water-v2-tiebreak-once.yml
+          node --check scripts/collect-predictions.js
+          node scripts/test-local-water-v2-tiebreak.js
+          git diff --check
+          git config user.name "Chappy BoatRace AI"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add scripts/collect-predictions.js
+          git commit -m "Wire Local Water V2 tiebreak into collector"
+          git push origin "HEAD:${TARGET_BRANCH}"
