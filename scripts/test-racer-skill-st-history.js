@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 
+// 公式履歴の空ファイル再発をmainへ入れる前に止める。
 const file = path.join(
   process.cwd(),
   "data",
