@@ -1,0 +1,57 @@
+name: Check three-course escape rescue post-adoption monitor
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "js/practical-selection.js"
+      - "js/three-course-escape-rescue-fixed5.js"
+      - "scripts/build-three-course-escape-rescue-post-adoption-monitor.js"
+      - "scripts/restore-daily-prediction-source.js"
+      - "data/predictions/*.json"
+      - "data/predictions/*.json.gz"
+      - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
+  push:
+    branches: [main]
+    paths:
+      - "js/practical-selection.js"
+      - "js/three-course-escape-rescue-fixed5.js"
+      - "scripts/build-three-course-escape-rescue-post-adoption-monitor.js"
+      - "data/predictions/*.json"
+      - "data/predictions/*.json.gz"
+      - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: ${{ github.event_name != 'pull_request' }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Restore canonical prediction sources
+        run: node scripts/restore-daily-prediction-source.js --all
+      - name: Validate monitor
+        run: |
+          node --check scripts/build-three-course-escape-rescue-post-adoption-monitor.js
+          node scripts/build-three-course-escape-rescue-post-adoption-monitor.js
+          git diff --check
+      - name: Persist refreshed monitor report
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "Chappy BoatRace AI"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/stats/three-course-escape-rescue-post-adoption-monitor.json
+          if git diff --cached --quiet; then
+            echo "monitor report unchanged"
+            exit 0
+          fi
+          git commit -m "Refresh 1-3-4 rescue post-adoption monitor"
+          git push origin HEAD:main
