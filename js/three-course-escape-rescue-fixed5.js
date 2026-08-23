@@ -4,6 +4,8 @@
   const VERSION = "20260823-three-course-134-v1";
   const TARGET_LABEL = "3コース攻め";
   const RESCUE_TICKET = "1-3-4";
+  const RESCUE_CATEGORY = "検証済み救済";
+  const RESCUE_TIER = "検証済み1点置換";
 
   function ticketOf(row){
     return String(row?.ticket || row || "");
@@ -21,20 +23,29 @@
     ).trim();
   }
 
+  function rescueMetadata(replacedTicket,index){
+    return {
+      applied: true,
+      version: VERSION,
+      targetLabel: TARGET_LABEL,
+      ticket: RESCUE_TICKET,
+      replacedTicket,
+      index
+    };
+  }
+
   function replaceVerificationTicket(verificationEvidence,index,replacedTicket){
     if(!verificationEvidence || !Array.isArray(verificationEvidence.tickets)) return verificationEvidence;
     const tickets = verificationEvidence.tickets.map((row,i)=>
       i===index
         ? {
-            ...row,
             ticket: RESCUE_TICKET,
-            threeCourseEscapeRescueFixed5: {
-              applied: true,
-              version: VERSION,
-              targetLabel: TARGET_LABEL,
-              ticket: RESCUE_TICKET,
-              replacedTicket
-            }
+            categories: [RESCUE_CATEGORY],
+            selectionTier: RESCUE_TIER,
+            branchIds: [],
+            roleClaims: [],
+            theoryClaims: [],
+            threeCourseEscapeRescueFixed5: rescueMetadata(replacedTicket,index)
           }
         : row
     );
@@ -53,18 +64,29 @@
 
     const reason = `${TARGET_LABEL}時の検証済みイン逃げ救済として、点数を増やさず${replacedTicket}を${RESCUE_TICKET}へ1点置換。`;
     const rescuedRow = {
-      ...current,
       ticket: RESCUE_TICKET,
+      category: RESCUE_CATEGORY,
+      displayCategory: RESCUE_CATEGORY,
+      selectionTier: RESCUE_TIER,
       comment: reason,
+      scenarioTitle: `${TARGET_LABEL}のイン逃げ救済`,
       scenarioSummary: reason,
-      threeCourseEscapeRescueFixed5: {
-        applied: true,
-        version: VERSION,
-        targetLabel: TARGET_LABEL,
-        ticket: RESCUE_TICKET,
-        replacedTicket,
-        index
-      }
+      branchIds: [],
+      requirementIds: [],
+      validBranchIds: [],
+      validPurchaseBranchIds: [],
+      validIndependentBranchIds: [],
+      validScenarioIds: [],
+      validRequirementIds: [],
+      coverage: [],
+      coveredEvaluationIds: [],
+      coveredBoatNos: [],
+      evidenceReasons: ["discovery/holdout A/Bで1-3-4救済を検証済み"],
+      evidenceQualified: true,
+      purchaseEligible: true,
+      expansionEligible: false,
+      priorityScore: 0,
+      threeCourseEscapeRescueFixed5: rescueMetadata(replacedTicket,index)
     };
     const tickets = result.tickets.slice();
     tickets[index] = rescuedRow;
@@ -78,12 +100,7 @@
         ...(result.expansionSummary || {}),
         finalCount: tickets.length,
         threeCourseEscapeRescueFixed5: {
-          applied: true,
-          version: VERSION,
-          targetLabel: TARGET_LABEL,
-          ticket: RESCUE_TICKET,
-          replacedTicket,
-          index,
+          ...rescueMetadata(replacedTicket,index),
           reason
         }
       }
@@ -112,6 +129,8 @@
     VERSION,
     TARGET_LABEL,
     RESCUE_TICKET,
+    RESCUE_CATEGORY,
+    RESCUE_TIER,
     scenarioLabel,
     apply,
     install
