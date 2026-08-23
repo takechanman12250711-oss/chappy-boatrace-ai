@@ -1,0 +1,20 @@
+name: Check Local Water V2 tiebreak
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'js/local-water-v2-tiebreak.js'
+      - 'js/prediction-runtime-loader.js'
+      - 'scripts/collect-predictions.js'
+      - 'scripts/test-local-water-v2-tiebreak.js'
+      - '.github/workflows/check-local-water-v2-tiebreak.yml'
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: node --check js/local-water-v2-tiebreak.js
+      - run: node --check scripts/test-local-water-v2-tiebreak.js
+      - run: node scripts/test-local-water-v2-tiebreak.js
