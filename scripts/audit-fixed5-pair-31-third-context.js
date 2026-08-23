@@ -81,6 +81,7 @@ function payout(row) {
 
 function period() {
   return {
+    allSettledFixed5: 0,
     actualRaces: 0,
     hits: 0,
     misses: 0,
@@ -97,7 +98,12 @@ function period() {
     actualThirdPairUncoveredPayout: {},
     heldThird: {},
     transitions: {},
+    pairCoveredSource: {
+      pair31Rescue: 0,
+      existingPair: 0,
+    },
     processingErrors: 0,
+    checks: {},
   };
 }
 
@@ -136,10 +142,14 @@ for (const fileName of fs
       const actual = ticket(
         row?.result?.resultTicket || row?.result?.review?.resultTicket
       );
-      if (!raceInput || !actual.startsWith("3-1-")) continue;
+      if (!raceInput || !actual) continue;
 
-      const fixed = fixedFive(core.buildPredictionData(raceInput));
+      const prediction = core.buildPredictionData(raceInput);
+      const fixed = fixedFive(prediction);
       if (fixed.length !== 5) continue;
+
+      current.allSettledFixed5 += 1;
+      if (!actual.startsWith("3-1-")) continue;
 
       current.actualRaces += 1;
       if (fixed.includes(actual)) {
@@ -174,6 +184,13 @@ for (const fileName of fs
       current.pairCoveredPayoutSum += payoutYen;
       add(current.actualThirdPairCovered, actualThird);
       add(current.actualThirdPairCoveredPayout, actualThird, payoutYen);
+      add(
+        current.pairCoveredSource,
+        prediction?.formations?.pair31RescueFixed5?.applied === true
+          ? "pair31Rescue"
+          : "existingPair"
+      );
+
       for (const held of heldPair) {
         const heldThird = held.split("-")[2];
         add(current.heldThird, heldThird);
@@ -185,29 +202,27 @@ for (const fileName of fs
   }
 }
 
-for (const [name, current] of Object.entries(periods)) {
-  if (current.actualRaces !== current.hits + current.misses) {
-    throw new Error(
-      `${name}: actualRaces must equal hits + misses`
-    );
-  }
-  if (
-    current.misses !==
-    current.pairCoveredMisses + current.pairUncoveredMisses
-  ) {
-    throw new Error(
-      `${name}: misses must equal pairCoveredMisses + pairUncoveredMisses`
-    );
-  }
-  if (current.processingErrors !== 0) {
-    throw new Error(
-      `${name}: processingErrors must remain zero`
-    );
+for (const current of Object.values(periods)) {
+  current.checks = {
+    actualRaceSplit:
+      current.actualRaces === current.hits + current.misses,
+    missCoverageSplit:
+      current.misses ===
+      current.pairCoveredMisses + current.pairUncoveredMisses,
+    coveredSourceSplit:
+      current.pairCoveredMisses ===
+      current.pairCoveredSource.pair31Rescue +
+        current.pairCoveredSource.existingPair,
+    noProcessingErrors: current.processingErrors === 0,
+  };
+
+  if (!Object.values(current.checks).every(Boolean)) {
+    throw new Error("3-1 third-context audit invariant failed");
   }
 }
 
 const output = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   holdoutStart,
   periods,
   notes: {
