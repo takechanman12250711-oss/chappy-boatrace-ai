@@ -1,0 +1,75 @@
+name: Apply three-course escape rescue production once
+
+on:
+  push:
+    branches:
+      - feature/three-course-134-rescue-production-20260823
+    paths:
+      - ".github/workflows/apply-three-course-escape-rescue-production-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/three-course-134-rescue-production-20260823
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Wire approved rescue into browser and collector
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          old='20260820-third-six-fixed5'
+          new='20260823-three-course-134-v1'
+
+          runtime=Path('js/prediction-runtime-loader.js')
+          text=runtime.read_text()
+          if old not in text and new not in text:
+              raise SystemExit('prediction runtime version marker missing')
+          text=text.replace(old,new)
+          marker='    "js/practical-selection.js",\n'
+          addition=marker+'    "js/three-course-escape-rescue-fixed5.js",\n'
+          if 'js/three-course-escape-rescue-fixed5.js' not in text:
+              if marker not in text: raise SystemExit('practical selection runtime marker missing')
+              text=text.replace(marker,addition,1)
+          runtime.write_text(text)
+
+          collect=Path('scripts/collect-predictions.js')
+          text=collect.read_text()
+          before='const practicalSelectionApi =\n  require("../js/practical-selection");'
+          after='const practicalSelectionApi =\n  require("../js/three-course-escape-rescue-fixed5").install(\n    require("../js/practical-selection")\n  );'
+          if after not in text:
+              if before not in text: raise SystemExit('collector practical selection marker missing')
+              text=text.replace(before,after,1)
+          collect.write_text(text)
+
+          paths=[Path('index.html'),Path('scripts/test-load-performance.js'),Path('scripts/test-startup-critical-path.js'),Path('scripts/test-odds-lightweight-path.js'),Path('scripts/test-prediction-loading-watchdog.js'),Path('scripts/test-ticket-accordion-render-path.js'),Path('scripts/test-phase6-integration.js')]
+          for p in paths:
+              if not p.exists(): continue
+              s=p.read_text()
+              if old in s:
+                  p.write_text(s.replace(old,new))
+          PY
+      - name: Validate rescue and runtime contracts
+        run: |
+          node --check js/three-course-escape-rescue-fixed5.js
+          node --check scripts/collect-predictions.js
+          node scripts/test-three-course-escape-rescue-fixed5.js
+          node scripts/test-load-performance.js
+          node scripts/check-charter.js
+          git diff --check
+      - name: Commit wiring and remove bootstrap
+        run: |
+          git config user.name "Chappy BoatRace AI"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html js/prediction-runtime-loader.js scripts/collect-predictions.js scripts/test-load-performance.js scripts/test-startup-critical-path.js scripts/test-odds-lightweight-path.js scripts/test-prediction-loading-watchdog.js scripts/test-ticket-accordion-render-path.js scripts/test-phase6-integration.js js/three-course-escape-rescue-fixed5.js scripts/test-three-course-escape-rescue-fixed5.js
+          git rm .github/workflows/apply-three-course-escape-rescue-production-once.yml
+          git commit -m "Wire approved three-course escape rescue"
+          git push origin HEAD:feature/three-course-134-rescue-production-20260823
