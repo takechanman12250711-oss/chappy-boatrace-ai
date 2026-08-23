@@ -1,27 +1,27 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-23T12:45:01.823Z",
+  "generatedAt": "2026-08-23T14:31:59.183Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "sourceContract": "official-pre-deadline-cohort-v1",
-  "flowReadingMissCount": 1031,
+  "flowReadingMissCount": 837,
   "byScenarioLabel": [
     {
-      "key": "1号艇逃げ",
-      "count": 239
+      "key": "2コース差し",
+      "count": 206
     },
     {
       "key": "3コース攻め",
-      "count": 239
-    },
-    {
-      "key": "2コース差し",
-      "count": 224
+      "count": 205
     },
     {
       "key": "4カド攻め",
-      "count": 220
+      "count": 202
+    },
+    {
+      "key": "1号艇逃げ",
+      "count": 120
     },
     {
       "key": "3コース攻め警戒",
@@ -29,15 +29,15 @@
     },
     {
       "key": "4カド攻め警戒",
-      "count": 40
+      "count": 37
     },
     {
       "key": "2コース差し本線",
-      "count": 21
+      "count": 20
     },
     {
       "key": "イン逃げ本線",
-      "count": 5
+      "count": 4
     },
     {
       "key": "外コース展開突き",
@@ -54,23 +54,19 @@
       "count": 674
     },
     {
-      "key": "legacy-or-theory-miss",
-      "count": 197
-    },
-    {
       "key": "winner-miss",
       "count": 117
     },
     {
       "key": "method-miss",
       "count": 43
+    },
+    {
+      "key": "legacy-or-theory-miss",
+      "count": 3
     }
   ],
   "byWinnerPair": [
-    {
-      "key": "1->1",
-      "count": 135
-    },
     {
       "key": "3->1",
       "count": 131
@@ -86,10 +82,6 @@
     {
       "key": "4->2",
       "count": 48
-    },
-    {
-      "key": "3->3",
-      "count": 45
     },
     {
       "key": "2->3",
@@ -108,20 +100,12 @@
       "count": 32
     },
     {
-      "key": "2->2",
-      "count": 31
-    },
-    {
       "key": "2->4",
       "count": 27
     },
     {
       "key": "4->3",
       "count": 27
-    },
-    {
-      "key": "4->4",
-      "count": 26
     },
     {
       "key": "3->4",
@@ -148,6 +132,10 @@
       "count": 16
     },
     {
+      "key": "1->1",
+      "count": 15
+    },
+    {
       "key": "1->6",
       "count": 14
     },
@@ -156,12 +144,24 @@
       "count": 14
     },
     {
+      "key": "2->2",
+      "count": 12
+    },
+    {
       "key": "3->6",
       "count": 12
     },
     {
+      "key": "3->3",
+      "count": 11
+    },
+    {
       "key": "4->6",
       "count": 6
+    },
+    {
+      "key": "4->4",
+      "count": 5
     },
     {
       "key": "5->1",
@@ -194,16 +194,8 @@
       "count": 259
     },
     {
-      "key": "逃げ->逃げ",
-      "count": 122
-    },
-    {
       "key": "差し->逃げ",
       "count": 106
-    },
-    {
-      "key": "まくり/まくり差し->まくり",
-      "count": 83
     },
     {
       "key": "まくり/まくり差し->差し",
@@ -211,7 +203,11 @@
     },
     {
       "key": "まくり/まくり差し->まくり差し",
-      "count": 69
+      "count": 50
+    },
+    {
+      "key": "まくり/まくり差し->まくり",
+      "count": 47
     },
     {
       "key": "差し->まくり",
@@ -224,10 +220,6 @@
     {
       "key": "差し->まくり差し",
       "count": 39
-    },
-    {
-      "key": "差し->差し",
-      "count": 37
     },
     {
       "key": "逃げ->まくり差し",
@@ -246,6 +238,10 @@
       "count": 21
     },
     {
+      "key": "差し->差し",
+      "count": 18
+    },
+    {
       "key": "差し->抜き",
       "count": 15
     },
@@ -256,6 +252,10 @@
     {
       "key": "逃げ->恵まれ",
       "count": 4
+    },
+    {
+      "key": "逃げ->逃げ",
+      "count": 2
     },
     {
       "key": "?->まくり差し",
@@ -276,10 +276,6 @@
   ],
   "topCombinedPatterns": [
     {
-      "key": "1号艇逃げ|legacy-or-theory-miss|1->1|逃げ->逃げ",
-      "count": 119
-    },
-    {
       "key": "3コース攻め|winner-and-method-miss|3->1|まくり/まくり差し->逃げ",
       "count": 107
     },
@@ -298,14 +294,6 @@
     {
       "key": "3コース攻め|winner-and-method-miss|3->2|まくり/まくり差し->差し",
       "count": 22
-    },
-    {
-      "key": "3コース攻め|legacy-or-theory-miss|3->3|まくり/まくり差し->まくり",
-      "count": 20
-    },
-    {
-      "key": "2コース差し|legacy-or-theory-miss|2->2|差し->差し",
-      "count": 18
     },
     {
       "key": "3コース攻め警戒|winner-and-method-miss|3->1|まくり/まくり差し->逃げ",
@@ -328,15 +316,7 @@
       "count": 14
     },
     {
-      "key": "3コース攻め|legacy-or-theory-miss|3->3|まくり/まくり差し->まくり差し",
-      "count": 14
-    },
-    {
       "key": "1号艇逃げ|winner-and-method-miss|1->4|逃げ->まくり",
-      "count": 13
-    },
-    {
-      "key": "4カド攻め|legacy-or-theory-miss|4->4|まくり/まくり差し->まくり",
       "count": 13
     },
     {
@@ -444,10 +424,6 @@
       "count": 5
     },
     {
-      "key": "4カド攻め|legacy-or-theory-miss|4->4|まくり/まくり差し->まくり差し",
-      "count": 5
-    },
-    {
       "key": "1号艇逃げ|winner-and-method-miss|1->2|逃げ->まくり",
       "count": 4
     },
@@ -473,6 +449,30 @@
     },
     {
       "key": "2コース差し|winner-and-method-miss|2->6|差し->まくり",
+      "count": 4
+    },
+    {
+      "key": "3コース攻め|winner-and-method-miss|3->1|まくり/まくり差し->抜き",
+      "count": 4
+    },
+    {
+      "key": "3コース攻め|winner-and-method-miss|3->4|まくり/まくり差し->抜き",
+      "count": 4
+    },
+    {
+      "key": "3コース攻め|winner-miss|3->6|まくり/まくり差し->まくり差し",
+      "count": 4
+    },
+    {
+      "key": "3コース攻め警戒|method-miss|1->1|まくり/まくり差し->逃げ",
+      "count": 4
+    },
+    {
+      "key": "4カド攻め|method-miss|4->4|まくり/まくり差し->差し",
+      "count": 4
+    },
+    {
+      "key": "4カド攻め|winner-and-method-miss|4->2|まくり/まくり差し->抜き",
       "count": 4
     }
   ],
