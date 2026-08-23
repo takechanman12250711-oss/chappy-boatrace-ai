@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-08-23T08:44:28.825Z",
+  "generatedAt": "2026-08-23T14:31:45.920Z",
   "source": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "deduplication": "predictions-preferred-over-verificationPredictions",
   "analysisInputDiagnostics": {
-    "canonicalPredictionCount": 1818,
-    "preDeadlinePredictionCount": 1811,
+    "canonicalPredictionCount": 1839,
+    "preDeadlinePredictionCount": 1832,
     "excludedPredictionCount": 7,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
@@ -24,21 +24,6 @@
   "remainingRaceCount": 0,
   "proposals": [
     {
-      "code": "flow-reading-miss",
-      "label": "展開読み違い",
-      "theory": "展開理論",
-      "sampleCount": 1031,
-      "occurrenceRate": 61.3,
-      "priority": "high",
-      "improvementCandidate": "展開成立条件と崩れ条件の再検証",
-      "expectedEffect": "展開一致率の改善余地を検証",
-      "confidenceBreakdown": {
-        "high": 87,
-        "medium": 944,
-        "low": 0
-      }
-    },
-    {
       "code": "local-water-adjustment-insufficient",
       "label": "当地補正不足",
       "theory": "当地・水面理論",
@@ -50,6 +35,21 @@
       "confidenceBreakdown": {
         "high": 0,
         "medium": 908,
+        "low": 0
+      }
+    },
+    {
+      "code": "flow-reading-miss",
+      "label": "展開読み違い",
+      "theory": "展開理論",
+      "sampleCount": 837,
+      "occurrenceRate": 49.7,
+      "priority": "high",
+      "improvementCandidate": "展開成立条件と崩れ条件の再検証",
+      "expectedEffect": "展開一致率の改善余地を検証",
+      "confidenceBreakdown": {
+        "high": 87,
+        "medium": 750,
         "low": 0
       }
     },

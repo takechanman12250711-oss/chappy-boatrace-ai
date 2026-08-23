@@ -1,5 +1,7 @@
 "use strict";
 
+const ENGINE_VERSION = "miss-cause-analysis-phase2-20260823-flow-match-guard";
+
 const THEORY_CAUSES = Object.freeze({
   "race-flow": { code: "flow-reading-miss", label: "展開読み違い" },
   start: { code: "start-adjustment-insufficient", label: "ST補正不足" },
@@ -20,6 +22,15 @@ function addCandidate(rows, candidate) {
   rows.push(candidate);
 }
 
+function structuredScenarioMatch(result = {}, review = {}) {
+  if (review?.scenarioMatch === true) return true;
+  if (review?.scenarioMatch === false) return false;
+  const verification = result?.verification?.scenarioVerification || result?.scenarioVerification || {};
+  if (verification?.status === "matched") return true;
+  if (verification?.status === "missed") return false;
+  return null;
+}
+
 function build(record) {
   const result = record?.result || {};
   const review = result?.review || {};
@@ -29,11 +40,12 @@ function build(record) {
   const settled = result?.settled === true;
   const hit = result?.practicalHit === true || review?.practicalHit === true;
   const candidates = [];
+  const scenarioMatched = structuredScenarioMatch(result, review);
 
   if (!settled) {
     return {
       schemaVersion: 1,
-      engineVersion: "miss-cause-analysis-phase2-20260806",
+      engineVersion: ENGINE_VERSION,
       status: "result-unavailable",
       candidates: [],
       usableForPrediction: false,
@@ -64,6 +76,7 @@ function build(record) {
     evaluations.forEach(row => {
       const definition = THEORY_CAUSES[row?.theoryKey];
       if (!definition || row?.status !== "evaluated" || row?.matched !== false) return;
+      if (definition.code === "flow-reading-miss" && scenarioMatched === true) return;
       addCandidate(candidates, {
         ...definition,
         confidence: "medium",
@@ -74,7 +87,7 @@ function build(record) {
       });
     });
 
-    if (review?.scenarioMatch === false) {
+    if (scenarioMatched === false) {
       addCandidate(candidates, {
         code: "flow-reading-miss",
         label: "展開読み違い",
@@ -86,7 +99,7 @@ function build(record) {
 
   return {
     schemaVersion: 1,
-    engineVersion: "miss-cause-analysis-phase2-20260806",
+    engineVersion: ENGINE_VERSION,
     status: hit ? "hit-no-miss-analysis" : candidates.length ? "candidates-recorded" : "insufficient-evidence",
     practicalHit: hit,
     practicalTicketCount: practicalTickets.length,
@@ -99,4 +112,4 @@ function build(record) {
   };
 }
 
-module.exports = { THEORY_CAUSES, normalizeTickets, build };
+module.exports = { ENGINE_VERSION, THEORY_CAUSES, normalizeTickets, structuredScenarioMatch, build };
