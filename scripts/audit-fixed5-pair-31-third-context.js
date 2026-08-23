@@ -64,20 +64,45 @@ function fixedFive(prediction) {
     .filter(Boolean);
 }
 
+function payout(row) {
+  for (const value of [
+    row?.result?.payout,
+    row?.result?.payoutYen,
+    row?.result?.trifectaPayout,
+    row?.result?.review?.payout,
+    row?.result?.review?.payoutYen,
+    row?.result?.review?.trifectaPayout,
+  ]) {
+    const amount = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+    if (Number.isFinite(amount) && amount >= 0) return amount;
+  }
+  return 0;
+}
+
 function period() {
   return {
+    actualRaces: 0,
+    hits: 0,
     misses: 0,
     pairCoveredMisses: 0,
     pairUncoveredMisses: 0,
+    payoutSum: 0,
+    pairCoveredPayoutSum: 0,
+    pairUncoveredPayoutSum: 0,
     actualThird: {},
+    actualThirdPayout: {},
     actualThirdPairCovered: {},
+    actualThirdPairCoveredPayout: {},
     actualThirdPairUncovered: {},
+    actualThirdPairUncoveredPayout: {},
     heldThird: {},
+    transitions: {},
+    processingErrors: 0,
   };
 }
 
-function increment(target, key) {
-  target[key] = (target[key] || 0) + 1;
+function add(target, key, amount = 1) {
+  target[key] = (target[key] || 0) + amount;
 }
 
 const periods = {
@@ -103,6 +128,9 @@ for (const fileName of fs
     if (seen.has(raceKey)) continue;
     seen.add(raceKey);
 
+    const current =
+      periods[date < holdoutStart ? "discovery" : "holdout"];
+
     try {
       const raceInput = input(row);
       const actual = ticket(
@@ -111,36 +139,75 @@ for (const fileName of fs
       if (!raceInput || !actual.startsWith("3-1-")) continue;
 
       const fixed = fixedFive(core.buildPredictionData(raceInput));
-      if (fixed.length !== 5 || fixed.includes(actual)) continue;
+      if (fixed.length !== 5) continue;
 
-      const current =
-        periods[date < holdoutStart ? "discovery" : "holdout"];
+      current.actualRaces += 1;
+      if (fixed.includes(actual)) {
+        current.hits += 1;
+        continue;
+      }
+
       const actualThird = actual.split("-")[2];
-      const heldPair = fixed.filter((value) => value.startsWith("3-1-"));
+      const payoutYen = payout(row);
+      const heldPair = [
+        ...new Set(fixed.filter((value) => value.startsWith("3-1-"))),
+      ];
 
       current.misses += 1;
-      increment(current.actualThird, actualThird);
+      current.payoutSum += payoutYen;
+      add(current.actualThird, actualThird);
+      add(current.actualThirdPayout, actualThird, payoutYen);
 
       if (heldPair.length === 0) {
         current.pairUncoveredMisses += 1;
-        increment(current.actualThirdPairUncovered, actualThird);
+        current.pairUncoveredPayoutSum += payoutYen;
+        add(current.actualThirdPairUncovered, actualThird);
+        add(
+          current.actualThirdPairUncoveredPayout,
+          actualThird,
+          payoutYen
+        );
         continue;
       }
 
       current.pairCoveredMisses += 1;
-      increment(current.actualThirdPairCovered, actualThird);
+      current.pairCoveredPayoutSum += payoutYen;
+      add(current.actualThirdPairCovered, actualThird);
+      add(current.actualThirdPairCoveredPayout, actualThird, payoutYen);
       for (const held of heldPair) {
-        increment(current.heldThird, held.split("-")[2]);
+        const heldThird = held.split("-")[2];
+        add(current.heldThird, heldThird);
+        add(current.transitions, `${heldThird}->${actualThird}`);
       }
     } catch {
-      // Keep the historical audit behavior: one malformed race cannot stop
-      // the complete settled-race scan.
+      current.processingErrors += 1;
     }
   }
 }
 
+for (const [name, current] of Object.entries(periods)) {
+  if (current.actualRaces !== current.hits + current.misses) {
+    throw new Error(
+      `${name}: actualRaces must equal hits + misses`
+    );
+  }
+  if (
+    current.misses !==
+    current.pairCoveredMisses + current.pairUncoveredMisses
+  ) {
+    throw new Error(
+      `${name}: misses must equal pairCoveredMisses + pairUncoveredMisses`
+    );
+  }
+  if (current.processingErrors !== 0) {
+    throw new Error(
+      `${name}: processingErrors must remain zero`
+    );
+  }
+}
+
 const output = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   holdoutStart,
   periods,
   notes: {
@@ -148,7 +215,8 @@ const output = {
     oddsUsed: false,
     currentMainRescues: true,
     selectionPeriod: "discovery",
-    heldThirdUnit: "tickets",
+    heldThirdUnit: "unique tickets per race",
+    transitionFormat: "heldThird->actualThird",
     goal:
       "separate pair-uncovered 3-1 misses from pair-covered third-place mismatches in current fixed5",
   },
