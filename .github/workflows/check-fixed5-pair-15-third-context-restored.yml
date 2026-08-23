@@ -1,0 +1,317 @@
+name: Check restored fixed5 pair 1-5 third context
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-pair-15-third-context-restored.js'
+      - '.github/workflows/check-fixed5-pair-15-third-context-restored.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/audit-fixed5-pair-15-third-context-restored.js
+      - run: node scripts/audit-fixed5-pair-15-third-context-restored.js
+      - name: Validate restored third-context artifact
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const assert = require("node:assert/strict");
+          const report = JSON.parse(
+            fs.readFileSync(
+              "fixed5-pair-15-third-context-restored.json",
+              "utf8"
+            )
+          );
+          const sumValues = (target) =>
+            Object.values(target).reduce((sum, value) => sum + value, 0);
+          const ranking = (counts, payouts = {}) =>
+            Object.entries(counts)
+              .map(([key, count]) => ({
+                key,
+                count,
+                payoutSum: payouts[key] || 0,
+              }))
+              .sort(
+                (left, right) =>
+                  right.count - left.count ||
+                  right.payoutSum - left.payoutSum ||
+                  left.key.localeCompare(right.key)
+              );
+          assert.equal(report.holdoutStart, "20260812");
+          assert.deepEqual(report.expectedSourceParity, {
+            discovery: {
+              allSettledFixed5: 867,
+              basePortfolioHits: 212,
+              basePortfolioPayout: 360860,
+              misses: 37,
+              missPayoutSum: 251310,
+            },
+            holdout: {
+              allSettledFixed5: 799,
+              basePortfolioHits: 196,
+              basePortfolioPayout: 487230,
+              misses: 32,
+              missPayoutSum: 108320,
+            },
+          });
+          assert.equal(report.allChecksPassed, true);
+          for (const [periodName, period] of Object.entries(
+            report.periods
+          )) {
+            const expected = report.expectedSourceParity[periodName];
+            assert.ok(Object.values(period.checks).every(Boolean));
+            assert.equal(
+              period.allSettledFixed5,
+              expected.allSettledFixed5
+            );
+            assert.equal(
+              period.basePortfolioHits,
+              expected.basePortfolioHits
+            );
+            assert.equal(
+              period.basePortfolioPayout,
+              expected.basePortfolioPayout
+            );
+            assert.equal(period.misses, expected.misses);
+            assert.equal(period.missPayoutSum, expected.missPayoutSum);
+            for (const errorKey of [
+              "missingInputRows",
+              "missingActualRows",
+              "invalidFixed5Rows",
+              "invalidFixed5TicketRows",
+              "duplicateFixed5Rows",
+              "missingPayoutRows",
+              "classificationInvariantErrors",
+              "sourceAmbiguityErrors",
+              "processingErrors",
+            ]) {
+              assert.equal(period[errorKey], 0, errorKey);
+            }
+            const heldTicketTotal = Object.entries(
+              period.heldPairTicketCountPerRace
+            ).reduce(
+              (sum, [ticketCount, raceCount]) =>
+                sum + Number(ticketCount) * raceCount,
+              0
+            );
+            const uncoveredSlotTotal = period.pairUncoveredMisses * 5;
+            assert.equal(
+              period.actualPairRaces,
+              period.hits + period.misses
+            );
+            assert.equal(
+              period.misses,
+              period.pairCoveredMisses + period.pairUncoveredMisses
+            );
+            assert.equal(
+              period.missPayoutSum,
+              period.pairCoveredPayoutSum + period.pairUncoveredPayoutSum
+            );
+            assert.equal(sumValues(period.hitThird), period.hits);
+            assert.equal(sumValues(period.actualThird), period.misses);
+            assert.equal(
+              sumValues(period.actualThirdPayout),
+              period.missPayoutSum
+            );
+            assert.equal(
+              sumValues(period.actualThirdPairCovered),
+              period.pairCoveredMisses
+            );
+            assert.equal(
+              sumValues(period.actualThirdPairCoveredPayout),
+              period.pairCoveredPayoutSum
+            );
+            assert.equal(
+              sumValues(period.actualThirdPairUncovered),
+              period.pairUncoveredMisses
+            );
+            assert.equal(
+              sumValues(period.actualThirdPairUncoveredPayout),
+              period.pairUncoveredPayoutSum
+            );
+            assert.equal(
+              sumValues(period.heldPairTicketCountPerRace),
+              period.pairCoveredMisses
+            );
+            for (const target of [
+              period.heldThirdPairCovered,
+              period.transitionPairCovered,
+              period.heldPairLocations,
+              period.heldPairSources,
+            ]) {
+              assert.equal(sumValues(target), heldTicketTotal);
+            }
+            assert.equal(
+              sumValues(period.heldPairSourceSignatures),
+              period.pairCoveredMisses
+            );
+            for (const transition of Object.keys(
+              period.transitionPairCovered
+            )) {
+              const [heldThird, actualThird] = transition.split("->");
+              assert.notEqual(heldThird, actualThird);
+            }
+            for (const target of [
+              period.pairUncoveredHeldPairsByTicket,
+              period.pairUncoveredHeldTickets,
+              period.pairUncoveredHeldLocations,
+              period.pairUncoveredHeldSources,
+              period.pairUncoveredHeldPairByLocation,
+              period.pairUncoveredHeldPairBySource,
+            ]) {
+              assert.equal(sumValues(target), uncoveredSlotTotal);
+            }
+            assert.equal(
+              sumValues(period.pairUncoveredHeldPairSignatures),
+              period.pairUncoveredMisses
+            );
+            assert.equal(
+              sumValues(period.pairUncoveredHeldSourceSignatures),
+              period.pairUncoveredMisses
+            );
+            assert.equal(
+              Object.hasOwn(
+                period.pairUncoveredHeldPairPresence,
+                "1-5"
+              ),
+              false
+            );
+            for (const [key, count] of Object.entries(
+              period.pairUncoveredHeldPairPresence
+            )) {
+              assert.ok(count <= period.pairUncoveredMisses);
+              assert.ok(
+                count <= (period.pairUncoveredHeldPairsByTicket[key] || 0)
+              );
+            }
+            assert.deepEqual(
+              period.transitionPairCoveredRanking,
+              ranking(
+                period.transitionPairCovered,
+                period.transitionPairCoveredPayout
+              )
+            );
+            assert.deepEqual(
+              period.pairUncoveredHeldPairPresenceRanking,
+              ranking(
+                period.pairUncoveredHeldPairPresence,
+                period.pairUncoveredHeldPairPresencePayout
+              )
+            );
+          }
+          const expectedEligible = [];
+          assert.equal(report.sampleGate.minimumDiscovery, 30);
+          assert.equal(report.sampleGate.minimumHoldout, 20);
+          const branchRawFields = {
+            pairCoveredThirdMismatch: "pairCoveredMisses",
+            pairUncovered: "pairUncoveredMisses",
+          };
+          for (const [name, branch] of Object.entries(
+            report.sampleGate.branches
+          )) {
+            assert.equal(
+              branch.discovery,
+              report.periods.discovery[branchRawFields[name]]
+            );
+            assert.equal(
+              branch.holdout,
+              report.periods.holdout[branchRawFields[name]]
+            );
+            const expected = branch.discovery >= 30 && branch.holdout >= 20;
+            assert.equal(branch.passed, expected);
+            if (expected) expectedEligible.push(name);
+          }
+          assert.deepEqual(report.eligibleBranches, expectedEligible);
+          assert.ok(report.eligibleBranches.length <= 1);
+          assert.deepEqual(report.excludedPriorRejectedDonors, ["1-4"]);
+          const candidateToBranch = {
+            pairCoveredTransition: "pairCoveredThirdMismatch",
+            pairUncoveredDonor: "pairUncovered",
+          };
+          const expectedCoveredKey =
+            ranking(
+              report.periods.discovery.transitionPairCovered,
+              report.periods.discovery.transitionPairCoveredPayout
+            )[0]?.key || null;
+          const expectedDonorKey =
+            ranking(
+              report.periods.discovery.pairUncoveredHeldPairPresence,
+              report.periods.discovery.pairUncoveredHeldPairPresencePayout
+            ).find(
+              (entry) =>
+                !report.excludedPriorRejectedDonors.includes(entry.key)
+            )?.key || null;
+          const expectedCandidateKeys = {
+            pairCoveredTransition: expectedCoveredKey,
+            pairUncoveredDonor: expectedDonorKey,
+          };
+          const rawCandidateCounts = {
+            pairCoveredTransition: {
+              discovery: report.periods.discovery.transitionPairCovered,
+              holdout: report.periods.holdout.transitionPairCovered,
+            },
+            pairUncoveredDonor: {
+              discovery:
+                report.periods.discovery.pairUncoveredHeldPairPresence,
+              holdout: report.periods.holdout.pairUncoveredHeldPairPresence,
+            },
+          };
+          const expectedNextAudits = [];
+          for (const [name, candidate] of Object.entries(
+            report.candidateGates
+          )) {
+            assert.equal(candidate.selectedFrom, "discovery");
+            assert.equal(candidate.key, expectedCandidateKeys[name]);
+            assert.equal(
+              candidate.discovery,
+              candidate.key
+                ? rawCandidateCounts[name].discovery[candidate.key] || 0
+                : 0
+            );
+            assert.equal(
+              candidate.holdout,
+              candidate.key
+                ? rawCandidateCounts[name].holdout[candidate.key] || 0
+                : 0
+            );
+            const expectedCandidate =
+              candidate.discovery >= 30 && candidate.holdout >= 20;
+            assert.equal(candidate.passed, expectedCandidate);
+            assert.equal(
+              candidate.branchPassed,
+              report.sampleGate.branches[candidateToBranch[name]].passed
+            );
+            assert.equal(
+              candidate.eligible,
+              candidate.branchPassed && expectedCandidate
+            );
+            if (candidate.eligible) expectedNextAudits.push(name);
+          }
+          assert.deepEqual(report.eligibleNextAudits, expectedNextAudits);
+          assert.equal(report.notes.productionChanged, false);
+          assert.equal(report.notes.oddsUsed, false);
+          assert.equal(
+            report.notes.transitionPayoutAdditiveAcrossTransitions,
+            false
+          );
+          assert.equal(
+            report.notes.donorPresencePayoutAdditiveAcrossPairs,
+            false
+          );
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fixed5-pair-15-third-context-restored
+          path: fixed5-pair-15-third-context-restored.json
+          if-no-files-found: error
