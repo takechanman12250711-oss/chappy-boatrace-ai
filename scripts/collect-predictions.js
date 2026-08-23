@@ -36,6 +36,7 @@ require("../js/motor-maintenance-insights");
 const theoryInput = require(
   "../js/theory-input"
 );
+require("../js/local-water-v2-tiebreak");
 require("../js/prediction");
 require("../js/prediction-simple-evaluation");
 const practicalSelectionApi =
