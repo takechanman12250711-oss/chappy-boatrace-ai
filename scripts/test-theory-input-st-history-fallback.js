@@ -38,11 +38,20 @@ const data = {
 
 const normalized = theoryInput.normalize(data);
 const boat1 = normalized.entries.find(row => Number(row.boatNo) === 1);
+const historyBoat1 = normalized.historyContext.racers.find(
+  row => String(row.registerNo) === registerNo
+);
 assert.ok(boat1);
+assert.ok(historyBoat1);
 assert.deepEqual(
   boat1.skillHistory,
   skillHistory,
-  "Node自動予想ではhistoryContextにskillHistoryが無くてもローカル正本で補完する"
+  "Node自動予想ではentryへローカルST正本を補完する"
+);
+assert.deepEqual(
+  historyBoat1.skillHistory,
+  skillHistory,
+  "ST本体が参照するhistoryContext.racersにも同じ履歴を補完する"
 );
 assert.equal(boat1.localStarts, 12);
 assert.equal(
