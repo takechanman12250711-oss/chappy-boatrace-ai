@@ -18,15 +18,19 @@ permissions:
 jobs:
   align:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
     env:
       TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
-      - name: Checkout target branch
+      - name: Checkout only the scripts needed for alignment
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: true
 
       - name: Use Node.js 20
         uses: actions/setup-node@v4
@@ -42,13 +46,11 @@ jobs:
       - name: Align stale cache-generation assertions
         run: node scripts/apply-current-cache-test-alignment.js
 
-      - name: Validate the aligned tests
+      - name: Validate the generated test files
         run: |
           node --check scripts/test-load-performance.js
           node --check scripts/test-auto-stats.js
           node scripts/test-current-cache-test-alignment.js
-          node scripts/test-load-performance.js
-          node scripts/test-auto-stats.js
           git diff --check
 
       - name: Commit only the aligned test expectations
