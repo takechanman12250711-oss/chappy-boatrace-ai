@@ -6,6 +6,11 @@ on:
       - fix/cache-test-alignment-20260823
     paths:
       - ".github/workflows/apply-cache-test-alignment-once.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/apply-cache-test-alignment-once.yml"
 
 permissions:
   contents: write
@@ -14,11 +19,13 @@ jobs:
   align:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
     steps:
       - name: Checkout target branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Use Node.js 20
@@ -54,4 +61,4 @@ jobs:
             exit 1
           fi
           git commit -m "Align cache generation tests with current runtime"
-          git push origin "HEAD:${{ github.ref_name }}"
+          git push origin "HEAD:${TARGET_BRANCH}"
