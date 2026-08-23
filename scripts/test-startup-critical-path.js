@@ -47,7 +47,7 @@ assert.equal(
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
-const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260823-three-course-134-v1"');
+const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260823-three-course-134-v1');
 const hiyoriLoaderIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"');
 const appIndex = html.indexOf('src="js/app-runtime-loader.js');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
