@@ -15,6 +15,12 @@ const SCENARIO_MERGE_NEW = `    scenarios:\n      providedScenarios.length >= 2\
 const ST_SLIT_MERGE_OLD = `    frameMovement:\n      Array.isArray(providedEvidence.frameMovement) &&\n      providedEvidence.frameMovement.length\n        ? providedEvidence.frameMovement\n        : aiCoreEvidence.frameMovement\n  };`;
 const ST_SLIT_MERGE_NEW = `    frameMovement:\n      Array.isArray(providedEvidence.frameMovement) &&\n      providedEvidence.frameMovement.length\n        ? providedEvidence.frameMovement\n        : aiCoreEvidence.frameMovement,\n    stSlit: {\n      ...(aiCoreEvidence.stSlit || {}),\n      ...(providedEvidence.stSlit || {}),\n      roles:\n        Array.isArray(providedEvidence?.stSlit?.roles) &&\n        providedEvidence.stSlit.roles.length\n          ? providedEvidence.stSlit.roles\n          : aiCoreEvidence?.stSlit?.roles || []\n    }\n  };`;
 
+const HISTORY_LOOKUP_OLD = `    const stats =\n      (\n        officialHistoryStats.racers ||\n        {}\n      )[registerNo] || null;\n    const venueStats =\n      (\n        racerVenueStarts.racers ||\n        {}\n      )[registerNo] || null;\n    if (!stats && !venueStats) {\n      return null;\n    }`;
+const HISTORY_LOOKUP_NEW = `    const stats =\n      (\n        officialHistoryStats.racers ||\n        {}\n      )[registerNo] || null;\n    const venueStats =\n      (\n        racerVenueStarts.racers ||\n        {}\n      )[registerNo] || null;\n    const skillHistory =\n      racerSkillStats?.racers?.[registerNo] ||\n      null;\n    if (!stats && !venueStats && !skillHistory) {\n      return null;\n    }`;
+
+const HISTORY_RETURN_OLD = `      samples:\n        Number(stats?.starts || 0),\n      localStarts,`;
+const HISTORY_RETURN_NEW = `      skillHistory,\n      samples:\n        Number(\n          stats?.starts ??\n          skillHistory?.windows?.all3Years?.starts ??\n          0\n        ),\n      localStarts,`;
+
 function replaceExactly(source, before, after, label) {
   if (source.includes(after)) return source;
   const count = source.split(before).length - 1;
@@ -26,10 +32,22 @@ function replaceExactly(source, before, after, label) {
 
 function patchText(source) {
   let output = String(source);
-  output = replaceExactly(output, COMPACT_SCENARIO_OLD, COMPACT_SCENARIO_NEW, "compactScenario");
-  output = replaceExactly(output, AICORE_EVIDENCE_OLD, AICORE_EVIDENCE_NEW, "aiCoreEvidence.stSlit");
-  output = replaceExactly(output, SCENARIO_MERGE_OLD, SCENARIO_MERGE_NEW, "scenario merge");
-  output = replaceExactly(output, ST_SLIT_MERGE_OLD, ST_SLIT_MERGE_NEW, "stSlit merge");
+
+  if (!output.includes('slitAdjustment: Number(value.slitAdjustment || 0)')) {
+    output = replaceExactly(output, COMPACT_SCENARIO_OLD, COMPACT_SCENARIO_NEW, "compactScenario");
+  }
+  if (!output.includes('source: String(aiCore?.stSlitTheory?.source || "")')) {
+    output = replaceExactly(output, AICORE_EVIDENCE_OLD, AICORE_EVIDENCE_NEW, "aiCoreEvidence.stSlit");
+  }
+  if (!output.includes('providedScenarios.map((provided, index) =>')) {
+    output = replaceExactly(output, SCENARIO_MERGE_OLD, SCENARIO_MERGE_NEW, "scenario merge");
+  }
+  if (!output.includes('aiCoreEvidence?.stSlit?.roles || []')) {
+    output = replaceExactly(output, ST_SLIT_MERGE_OLD, ST_SLIT_MERGE_NEW, "stSlit merge");
+  }
+
+  output = replaceExactly(output, HISTORY_LOOKUP_OLD, HISTORY_LOOKUP_NEW, "live racer skill history lookup");
+  output = replaceExactly(output, HISTORY_RETURN_OLD, HISTORY_RETURN_NEW, "live racer skill history return");
   return output;
 }
 
