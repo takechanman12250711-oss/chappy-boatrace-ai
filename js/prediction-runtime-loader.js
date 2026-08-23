@@ -29,6 +29,7 @@
     "js/main-cover-classification-fix.js",
     "js/practical-selection.js",
     "js/three-course-escape-rescue-fixed5.js",
+    "js/four-kado-escape-rescue-fixed5.js",
     "js/note-generator.js",
     "js/scenario-ai-v6-shadow.js",
     "js/skip-ai-shadow.js",

@@ -1,9 +1,9 @@
 (function(root){
   "use strict";
 
-  const VERSION = "20260823-three-course-134-v1";
-  const TARGET_LABEL = "3コース攻め";
-  const RESCUE_TICKET = "1-3-4";
+  const VERSION = "20260823-four-kado-124-v1";
+  const TARGET_LABEL = "4カド攻め";
+  const RESCUE_TICKET = "1-2-4";
   const RESCUE_CATEGORY = "検証済み救済";
   const RESCUE_TIER = "検証済み1点置換";
 
@@ -45,7 +45,7 @@
             branchIds: [],
             roleClaims: [],
             theoryClaims: [],
-            threeCourseEscapeRescueFixed5: rescueMetadata(replacedTicket,index)
+            fourKadoEscapeRescueFixed5: rescueMetadata(replacedTicket,index)
           }
         : row
     );
@@ -81,12 +81,12 @@
       coverage: [],
       coveredEvaluationIds: [],
       coveredBoatNos: [],
-      evidenceReasons: ["discovery/holdout A/Bで1-3-4救済を検証済み"],
+      evidenceReasons: ["discovery/holdout A/Bで1-2-4救済を検証済み"],
       evidenceQualified: true,
       purchaseEligible: true,
       expansionEligible: false,
       priorityScore: 0,
-      threeCourseEscapeRescueFixed5: rescueMetadata(replacedTicket,index)
+      fourKadoEscapeRescueFixed5: rescueMetadata(replacedTicket,index)
     };
     const tickets = result.tickets.slice();
     tickets[index] = rescuedRow;
@@ -99,7 +99,7 @@
       expansionSummary: {
         ...(result.expansionSummary || {}),
         finalCount: tickets.length,
-        threeCourseEscapeRescueFixed5: {
+        fourKadoEscapeRescueFixed5: {
           ...rescueMetadata(replacedTicket,index),
           reason
         }
@@ -109,11 +109,11 @@
 
   function install(api){
     if(!api || typeof api.select !== "function") return api;
-    if(api.__threeCourseEscapeRescueFixed5Installed) return api;
+    if(api.__fourKadoEscapeRescueFixed5Installed) return api;
     const originalSelect = api.select.bind(api);
     const wrapped = {
       ...api,
-      __threeCourseEscapeRescueFixed5Installed: true,
+      __fourKadoEscapeRescueFixed5Installed: true,
       select(prediction){
         return apply(prediction,originalSelect(prediction));
       }
@@ -122,9 +122,6 @@
       return wrapped.select(prediction).tickets;
     };
     if(root?.ChappyPracticalSelection === api) root.ChappyPracticalSelection = wrapped;
-    if(typeof module !== "undefined" && module.exports){
-      return require("./four-kado-escape-rescue-fixed5").install(wrapped);
-    }
     return wrapped;
   }
 
@@ -142,7 +139,7 @@
   if(root?.ChappyPracticalSelection){
     root.ChappyPracticalSelection = install(root.ChappyPracticalSelection);
   }
-  root.ChappyThreeCourseEscapeRescueFixed5 = helper;
+  root.ChappyFourKadoEscapeRescueFixed5 = helper;
 
   if(typeof module !== "undefined" && module.exports){
     module.exports = helper;
