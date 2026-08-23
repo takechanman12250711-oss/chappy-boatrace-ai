@@ -1,0 +1,22 @@
+name: Check fixed5 next miss ranking
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-next-miss-ranking.js'
+      - '.github/workflows/check-fixed5-next-miss-ranking.yml'
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/audit-fixed5-next-miss-ranking.js
+      - run: node scripts/audit-fixed5-next-miss-ranking.js | tee fixed5-next-miss-ranking.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixed5-next-miss-ranking
+          path: fixed5-next-miss-ranking.json
