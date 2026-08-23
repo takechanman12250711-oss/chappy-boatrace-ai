@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260820-third-six-fixed5";
+  const VERSION = "20260823-three-course-134-v1";
   const SCRIPT_LOAD_TIMEOUT_MS = 12000;
   const RUNTIME_TOTAL_TIMEOUT_MS = 45000;
   const ODDS_PRIORITY_WAIT_MS = 2500;
@@ -28,6 +28,7 @@
     "js/racer-skill-core-integration.js",
     "js/main-cover-classification-fix.js",
     "js/practical-selection.js",
+    "js/three-course-escape-rescue-fixed5.js",
     "js/note-generator.js",
     "js/scenario-ai-v6-shadow.js",
     "js/skip-ai-shadow.js",

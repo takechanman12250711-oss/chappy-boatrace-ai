@@ -25,7 +25,7 @@ assert.match(appRuntime, /PRELOAD_LOOKAHEAD=2/);
 assert.match(appRuntime, /prediction-runtime-loader\.js/);
 assert.match(appRuntime, /hiyori-runtime-loader\.js/);
 
-assert.match(html, /prediction-runtime-loader\.js\?v=20260820-third-six-fixed5/);
+assert.match(html, /prediction-runtime-loader\.js\?v=20260823-three-course-134-v1/);
 assert.match(html, /hiyori-runtime-loader\.js\?v=20260816-nonblocking-core2/);
 assert.match(html, /app-runtime-loader\.js\?v=20260816-static-race1/);
 assert.match(html, /home-dashboard-v2\.js\?v=20260816-static-race1/);

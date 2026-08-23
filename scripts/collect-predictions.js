@@ -39,7 +39,9 @@ const theoryInput = require(
 require("../js/prediction");
 require("../js/prediction-simple-evaluation");
 const practicalSelectionApi =
-  require("../js/practical-selection");
+  require("../js/three-course-escape-rescue-fixed5").install(
+    require("../js/practical-selection")
+  );
 const practicalPriorityShadow =
   loadOptionalV2Dependency(
     () => require(
