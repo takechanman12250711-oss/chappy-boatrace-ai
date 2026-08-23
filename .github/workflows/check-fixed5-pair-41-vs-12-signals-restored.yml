@@ -1,0 +1,48 @@
+name: Check restored fixed5 pair 4-1 vs 1-2 signals
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-fixed5-pair-41-vs-12-signals-restored.js'
+      - '.github/workflows/check-fixed5-pair-41-vs-12-signals-restored.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --check scripts/audit-fixed5-pair-41-vs-12-signals-restored.js
+      - run: node scripts/audit-fixed5-pair-41-vs-12-signals-restored.js
+      - name: Validate restored signal artifact
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const report = JSON.parse(
+              fs.readFileSync(
+                "fixed5-pair-41-vs-12-signals-restored.json",
+                "utf8"
+              )
+            );
+            for (const period of Object.values(report.periods)) {
+              if (!Object.values(period.checks).every(Boolean)) {
+                throw new Error("audit invariant failed");
+              }
+            }
+            if (typeof report.eligibleForAB !== "boolean") {
+              throw new Error("eligibleForAB must be boolean");
+            }
+          '
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fixed5-pair-41-vs-12-signals-restored
+          path: fixed5-pair-41-vs-12-signals-restored.json
+          if-no-files-found: error
