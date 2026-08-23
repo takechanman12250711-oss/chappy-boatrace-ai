@@ -1,0 +1,57 @@
+name: Apply cache test alignment once
+
+on:
+  push:
+    branches:
+      - fix/cache-test-alignment-20260823
+    paths:
+      - ".github/workflows/apply-cache-test-alignment-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify the existing alignment helper
+        run: |
+          node --check scripts/apply-current-cache-test-alignment.js
+          node --check scripts/test-current-cache-test-alignment.js
+          node scripts/test-current-cache-test-alignment.js
+
+      - name: Align stale cache-generation assertions
+        run: node scripts/apply-current-cache-test-alignment.js
+
+      - name: Validate the aligned tests
+        run: |
+          node --check scripts/test-load-performance.js
+          node --check scripts/test-auto-stats.js
+          node scripts/test-current-cache-test-alignment.js
+          node scripts/test-load-performance.js
+          node scripts/test-auto-stats.js
+          git diff --check
+
+      - name: Commit only the aligned test expectations
+        run: |
+          git config user.name "Chappy BoatRace AI"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add scripts/test-load-performance.js scripts/test-auto-stats.js
+          if git diff --cached --quiet; then
+            echo "Expected cache-alignment changes were not produced."
+            exit 1
+          fi
+          git commit -m "Align cache generation tests with current runtime"
+          git push origin "HEAD:${{ github.ref_name }}"
