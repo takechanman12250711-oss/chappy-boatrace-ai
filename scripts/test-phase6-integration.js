@@ -43,6 +43,6 @@ assert.equal(resultUi.includes("MutationObserver"), true, "結果再描画後も
 assert.equal(html.includes('href="#predictionSection"'), true, "AI予想アンカーを維持する");
 assert.equal(html.includes('href="#resultSection"'), true, "結果分析アンカーを維持する");
 assert.match(html, /id="predictionSection"[\s\S]*id="noteAssistantSection"[\s\S]*<\/section>\s*<section id="resultSection"/, "note投稿アシストをAI予想画面の内側に収める");
-assert.equal(predictionRuntime.includes('const VERSION = "20260820-third-six-fixed5"'), true, "予想ローダーを現在の3着6号艇救済キャッシュ世代へ更新する");
+assert.equal(predictionRuntime.includes('const VERSION = "20260823-three-course-134-v1"'), true, "予想ローダーを現在の3着6号艇救済キャッシュ世代へ更新する");
 
 console.log("Phase6 全体統合・ホーム高速化テスト: 合格");
