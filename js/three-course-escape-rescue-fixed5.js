@@ -122,6 +122,9 @@
       return wrapped.select(prediction).tickets;
     };
     if(root?.ChappyPracticalSelection === api) root.ChappyPracticalSelection = wrapped;
+    if(typeof module !== "undefined" && module.exports){
+      return require("./four-kado-escape-rescue-fixed5").install(wrapped);
+    }
     return wrapped;
   }
 
