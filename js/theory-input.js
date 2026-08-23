@@ -121,6 +121,28 @@
       );
     }
 
+    function normalizedHistoryContext(data, racerMap) {
+      const context = data?.historyContext;
+      if (!context || typeof context !== "object") return context;
+      const source = context.racers;
+      const racers = Array.isArray(source)
+        ? source.map(racer =>
+            racerMap.get(text(racer?.registerNo)) || racer
+          )
+        : source && typeof source === "object"
+          ? Object.fromEntries(
+              Object.entries(source).map(([key, racer]) => [
+                key,
+                racerMap.get(text(racer?.registerNo || key)) || racer
+              ])
+            )
+          : source;
+      return {
+        ...context,
+        racers
+      };
+    }
+
     function startByBoat(data) {
       return new Map(
         (Array.isArray(data?.startExhibition)
@@ -320,6 +342,7 @@
         ...data,
         stadiumCode: jcd || data?.stadiumCode,
         [source.key]: entries,
+        historyContext: normalizedHistoryContext(data, racerMap),
         weather,
         theoryInput: {
           version: VERSION,
