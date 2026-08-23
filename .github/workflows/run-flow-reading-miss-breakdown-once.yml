@@ -1,0 +1,46 @@
+name: Run flow reading miss breakdown once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/run-flow-reading-miss-breakdown-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      TARGET_BRANCH: analysis/flow-reading-miss-breakdown-20260823
+    steps:
+      - name: Checkout analysis branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore canonical prediction sources
+        run: node scripts/restore-daily-prediction-source.js --all
+
+      - name: Build breakdown
+        run: |
+          node --check scripts/build-flow-reading-miss-breakdown.js
+          node scripts/build-flow-reading-miss-breakdown.js
+          git diff --check
+
+      - name: Commit report and remove one-time workflow
+        run: |
+          git config user.name "Chappy BoatRace AI"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/stats/flow-reading-miss-breakdown.json
+          git rm .github/workflows/run-flow-reading-miss-breakdown-once.yml
+          git commit -m "Build flow reading miss breakdown report"
+          git push origin "HEAD:${TARGET_BRANCH}"
