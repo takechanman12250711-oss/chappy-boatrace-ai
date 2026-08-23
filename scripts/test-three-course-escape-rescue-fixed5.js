@@ -6,11 +6,22 @@ function selected(label,tickets){
   return {
     status:"selected",
     evidence:{raceFlow:{title:label}},
-    tickets:tickets.map(ticket=>({ticket,category:"本線"})),
+    tickets:tickets.map(ticket=>({
+      ticket,
+      category:"本線",
+      branchIds:[`branch:${ticket}`],
+      roleClaims:[{role:"attack",boatNo:Number(ticket[0])}]
+    })),
     expansionSummary:{finalCount:tickets.length},
     verificationEvidence:{
       mainScenario:{label},
-      tickets:tickets.map(ticket=>({ticket}))
+      tickets:tickets.map(ticket=>({
+        ticket,
+        categories:["本線"],
+        branchIds:[`branch:${ticket}`],
+        roleClaims:[{role:"attack",boatNo:Number(ticket[0])}],
+        theoryClaims:[{theoryKey:"flow"}]
+      }))
     }
   };
 }
@@ -21,7 +32,13 @@ function selected(label,tickets){
   assert.equal(out.tickets.length,5,"点数は維持する");
   assert.deepEqual(out.tickets.map(x=>x.ticket),["3-1-2","3-2-1","1-3-2","1-2-3","1-3-4"]);
   assert.equal(out.expansionSummary.threeCourseEscapeRescueFixed5.replacedTicket,"3-1-4");
+  assert.equal(out.tickets[4].category,"検証済み救済");
+  assert.deepEqual(out.tickets[4].branchIds,[],"元券の枝根拠を救済券へ流用しない");
+  assert.deepEqual(out.tickets[4].coverage,[],"元券の役割根拠を救済券へ流用しない");
   assert.equal(out.verificationEvidence.tickets[4].ticket,"1-3-4");
+  assert.deepEqual(out.verificationEvidence.tickets[4].branchIds,[]);
+  assert.deepEqual(out.verificationEvidence.tickets[4].roleClaims,[]);
+  assert.deepEqual(out.verificationEvidence.tickets[4].theoryClaims,[]);
 }
 
 {
