@@ -21,7 +21,7 @@
   function (root) {
     "use strict";
 
-    const VERSION = "theory-input-v1.0.1-boat-identity";
+    const VERSION = "theory-input-v1.0.2-st-history-fallback";
     const boatIdentity =
       root?.ChappyBoatIdentity ||
       (
@@ -29,6 +29,14 @@
           ? require("./boat-identity")
           : null
       );
+    const localRacerSkillStats = (() => {
+      if (typeof require !== "function") return null;
+      try {
+        return require("../data/stats/racer-skill-patterns.json");
+      } catch (_) {
+        return null;
+      }
+    })();
     const ENTRY_KEYS = [
       "entries",
       "boats",
@@ -94,10 +102,21 @@
 
       return new Map(
         rows
-          .map((racer) => [
-            text(racer?.registerNo),
-            racer
-          ])
+          .map((racer) => {
+            const registerNo = text(racer?.registerNo);
+            const fallbackSkillHistory =
+              registerNo
+                ? localRacerSkillStats?.racers?.[registerNo] || null
+                : null;
+            return [
+              registerNo,
+              {
+                ...racer,
+                skillHistory:
+                  racer?.skillHistory || fallbackSkillHistory
+              }
+            ];
+          })
           .filter(([registerNo]) => registerNo)
       );
     }
@@ -188,7 +207,8 @@
               ? entry.currentRace.stList
               : []
         },
-        localStarts
+        localStarts,
+        skillHistory: racer?.skillHistory || null
       };
     }
 
