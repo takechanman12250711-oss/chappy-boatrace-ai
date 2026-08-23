@@ -316,7 +316,10 @@ function attachVenueRaceHistory(raceData, jcd, raceNo) {
         racerVenueStarts.racers ||
         {}
       )[registerNo] || null;
-    if (!stats && !venueStats) {
+    const skillHistory =
+      racerSkillStats?.racers?.[registerNo] ||
+      null;
+    if (!stats && !venueStats && !skillHistory) {
       return null;
     }
     const localStarts = Number(
@@ -331,8 +334,13 @@ function attachVenueRaceHistory(raceData, jcd, raceNo) {
         stats?.racerName ||
         entry?.racerName ||
         "",
+      skillHistory,
       samples:
-        Number(stats?.starts || 0),
+        Number(
+          stats?.starts ??
+          skillHistory?.windows?.all3Years?.starts ??
+          0
+        ),
       localStarts,
       currentVenueStarts:
         localStarts,
