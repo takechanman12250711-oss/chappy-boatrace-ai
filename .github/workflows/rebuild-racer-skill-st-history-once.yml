@@ -1,0 +1,37 @@
+name: Rebuild racer skill ST history once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/rebuild-racer-skill-st-history-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Rebuild official racer skill history
+        run: |
+          node scripts/build-race-stats.js
+          node scripts/test-racer-skill-st-history.js
+      - name: Commit generated ST history and remove one-time workflow
+        run: |
+          git config user.name "Chappy BoatRace AI"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/stats/racer-skill-patterns.json
+          git rm .github/workflows/rebuild-racer-skill-st-history-once.yml
+          git diff --cached --check
+          git commit -m "Restore official racer skill ST history"
+          git push origin "HEAD:${{ github.head_ref }}"
