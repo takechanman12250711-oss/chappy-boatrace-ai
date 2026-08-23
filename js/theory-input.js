@@ -21,7 +21,7 @@
   function (root) {
     "use strict";
 
-    const VERSION = "theory-input-v1.0.1-boat-identity";
+    const VERSION = "theory-input-v1.0.2-st-history-fallback";
     const boatIdentity =
       root?.ChappyBoatIdentity ||
       (
@@ -29,6 +29,14 @@
           ? require("./boat-identity")
           : null
       );
+    const localRacerSkillStats = (() => {
+      if (typeof require !== "function") return null;
+      try {
+        return require("../data/stats/racer-skill-patterns.json");
+      } catch (_) {
+        return null;
+      }
+    })();
     const ENTRY_KEYS = [
       "entries",
       "boats",
@@ -94,12 +102,45 @@
 
       return new Map(
         rows
-          .map((racer) => [
-            text(racer?.registerNo),
-            racer
-          ])
+          .map((racer) => {
+            const registerNo = text(racer?.registerNo);
+            const fallbackSkillHistory =
+              registerNo
+                ? localRacerSkillStats?.racers?.[registerNo] || null
+                : null;
+            return [
+              registerNo,
+              {
+                ...racer,
+                skillHistory:
+                  racer?.skillHistory || fallbackSkillHistory
+              }
+            ];
+          })
           .filter(([registerNo]) => registerNo)
       );
+    }
+
+    function normalizedHistoryContext(data, racerMap) {
+      const context = data?.historyContext;
+      if (!context || typeof context !== "object") return context;
+      const source = context.racers;
+      const racers = Array.isArray(source)
+        ? source.map(racer =>
+            racerMap.get(text(racer?.registerNo)) || racer
+          )
+        : source && typeof source === "object"
+          ? Object.fromEntries(
+              Object.entries(source).map(([key, racer]) => [
+                key,
+                racerMap.get(text(racer?.registerNo || key)) || racer
+              ])
+            )
+          : source;
+      return {
+        ...context,
+        racers
+      };
     }
 
     function startByBoat(data) {
@@ -188,7 +229,8 @@
               ? entry.currentRace.stList
               : []
         },
-        localStarts
+        localStarts,
+        skillHistory: racer?.skillHistory || null
       };
     }
 
@@ -300,6 +342,7 @@
         ...data,
         stadiumCode: jcd || data?.stadiumCode,
         [source.key]: entries,
+        historyContext: normalizedHistoryContext(data, racerMap),
         weather,
         theoryInput: {
           version: VERSION,

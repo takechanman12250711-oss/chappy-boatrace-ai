@@ -1,0 +1,27 @@
+name: Check theory input ST history fallback
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "js/theory-input.js"
+      - "scripts/test-theory-input-st-history-fallback.js"
+      - ".github/workflows/check-theory-input-st-history-fallback.yml"
+      - "data/stats/racer-skill-patterns.json"
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/theory-input.js
+      - run: node --check scripts/test-theory-input-st-history-fallback.js
+      - run: node scripts/test-theory-input-st-history-fallback.js
+      - run: git diff --check
+
+# ST formal input regression guard
