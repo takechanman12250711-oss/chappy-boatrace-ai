@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/rebuild-flow-miss-reports-once.yml"
+      - "scripts/rebuild-flow-miss-reports-after-classification-fix.js"
 
 permissions:
   contents: write
@@ -30,11 +31,11 @@ jobs:
           node scripts/test-miss-cause-analysis.js
           node scripts/rebuild-flow-miss-reports-after-classification-fix.js
           git diff --check
-      - name: Persist reports and remove one-time helpers
+      - name: Persist derived reports and remove one-time helpers
         run: |
           git config user.name "Chappy BoatRace AI"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/predictions data/stats/improvement-proposal-phase3.json data/stats/flow-reading-miss-breakdown.json
-          git rm .github/workflows/rebuild-flow-miss-reports-once.yml scripts/rebuild-flow-miss-reports-after-classification-fix.js
+          git add data/stats/improvement-proposal-phase3.json data/stats/flow-reading-miss-breakdown.json
+          git rm .github/workflows/rebuild-flow-miss-reports-once.yml scripts/rebuild-flow-miss-reports-after-classification-fix.js data/stats/flow-miss-classification-fix-note.txt
           git commit -m "Rebuild flow miss analysis after classification guard"
           git push origin "HEAD:${TARGET_BRANCH}"
