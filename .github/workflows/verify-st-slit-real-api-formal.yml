@@ -1,0 +1,21 @@
+name: Verify ST slit real API formal
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "scripts/verify-st-slit-real-api-formal.js"
+      - ".github/workflows/verify-st-slit-real-api-formal.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check scripts/verify-st-slit-real-api-formal.js
+      - run: node scripts/verify-st-slit-real-api-formal.js
