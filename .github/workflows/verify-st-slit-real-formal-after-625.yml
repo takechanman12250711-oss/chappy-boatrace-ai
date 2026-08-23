@@ -1,0 +1,19 @@
+name: Verify ST slit real formal after 625
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/verify-st-slit-real-formal-after-625.js"
+      - ".github/workflows/verify-st-slit-real-formal-after-625.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/verify-st-slit-real-formal-after-625.js
