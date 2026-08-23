@@ -278,6 +278,52 @@ function archivePredictionSource({
     };
   }
 
+  const sourceFingerprint = sha256(raw);
+  if (
+    fs.existsSync(archivePath) &&
+    fs.existsSync(metadataPath)
+  ) {
+    try {
+      const existingMetadata =
+        validateMetadata(
+          JSON.parse(
+            fs.readFileSync(
+              metadataPath,
+              "utf8"
+            )
+          ),
+          targetDate
+        );
+      const existingArchive =
+        fs.readFileSync(archivePath);
+      if (
+        Number(existingMetadata.sourceBytes) ===
+          raw.length &&
+        existingMetadata.sourceSha256 ===
+          sourceFingerprint &&
+        Number(existingMetadata.archiveBytes) ===
+          existingArchive.length &&
+        existingMetadata.archiveSha256 ===
+          sha256(existingArchive)
+      ) {
+        return {
+          date: targetDate,
+          status: "archived",
+          reused: true,
+          sourcePath,
+          archivePath,
+          metadataPath,
+          sourceBytes: raw.length,
+          archiveBytes:
+            existingArchive.length,
+          metadata: existingMetadata
+        };
+      }
+    } catch {
+      // The valid raw source can rebuild stale or broken archive files.
+    }
+  }
+
   const archive = zlib.gzipSync(
     raw,
     {
@@ -314,6 +360,7 @@ function archivePredictionSource({
   return {
     date: targetDate,
     status: "archived",
+    reused: false,
     sourcePath,
     archivePath,
     metadataPath,
