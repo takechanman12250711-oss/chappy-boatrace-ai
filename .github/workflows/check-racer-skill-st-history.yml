@@ -1,0 +1,32 @@
+name: Check racer skill ST history
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "data/stats/racer-skill-patterns.json"
+      - "scripts/build-race-stats.js"
+      - "scripts/test-racer-skill-st-history.js"
+      - "scripts/collect-predictions.js"
+      - ".github/workflows/check-racer-skill-st-history.yml"
+  push:
+    branches: [main]
+    paths:
+      - "data/stats/racer-skill-patterns.json"
+      - "scripts/build-race-stats.js"
+      - "scripts/test-racer-skill-st-history.js"
+      - "scripts/collect-predictions.js"
+      - ".github/workflows/check-racer-skill-st-history.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/test-racer-skill-st-history.js
+      - run: node --check scripts/collect-predictions.js
+      - run: git diff --check
