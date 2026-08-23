@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260823-three-course-134-v1";
+  const VERSION = "20260823-local-water-v2-gap3-v1";
   const SCRIPT_LOAD_TIMEOUT_MS = 12000;
   const RUNTIME_TOTAL_TIMEOUT_MS = 45000;
   const ODDS_PRIORITY_WAIT_MS = 2500;
@@ -18,6 +18,7 @@
     "js/odds-insights.js",
     "js/evaluated-scenario-candidates.js",
     "js/ai-core.js",
+    "js/local-water-v2-tiebreak.js",
     "js/third-six-rescue-fixed5.js",
     "js/escape-outer-second-rescue-fixed5.js",
     "js/third-place-rescue-14-fixed5.js",
