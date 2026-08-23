@@ -4,6 +4,7 @@ on:
     paths:
       - "scripts/diagnose-st-slit-formal-flags.js"
       - "scripts/diagnose-st-slit-production-prediction-path.js"
+      - "scripts/diagnose-shadow-v2-st-component.js"
       - ".github/workflows/check-st-slit-formal-flags.yml"
 jobs:
   diagnose:
@@ -18,4 +19,5 @@ jobs:
           node-version: "20"
       - run: node scripts/diagnose-st-slit-production-prediction-path.js
       - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node scripts/diagnose-shadow-v2-st-component.js
       - run: node scripts/diagnose-st-slit-formal-flags.js
