@@ -1,0 +1,40 @@
+name: Build 4-kado escape rescue AB once
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/build-four-kado-escape-rescue-ab.js"
+      - ".github/workflows/build-four-kado-escape-rescue-ab-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TARGET_BRANCH: analysis/four-kado-escape-rescue-ab-20260823
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Restore canonical sources and build A/B
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node --check scripts/build-four-kado-escape-rescue-ab.js
+          node scripts/build-four-kado-escape-rescue-ab.js
+          git diff --check
+      - name: Persist report and remove one-time workflow
+        run: |
+          git config user.name "Chappy BoatRace AI"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/stats/four-kado-escape-rescue-ab-report.json
+          git rm .github/workflows/build-four-kado-escape-rescue-ab-once.yml
+          git commit -m "Build 4-kado escape rescue A/B report"
+          git push origin "HEAD:${TARGET_BRANCH}"
