@@ -6,7 +6,7 @@ on:
     paths:
       - "js/practical-selection.js"
       - "js/three-course-escape-rescue-fixed5.js"
-      - "scripts/build-three-course-escape-rescue-post-adoption-monitor.js"
+      - "scripts/monitor-three-course-escape-rescue.js"
       - "scripts/restore-daily-prediction-source.js"
       - "data/predictions/*.json"
       - "data/predictions/*.json.gz"
@@ -16,7 +16,7 @@ on:
     paths:
       - "js/practical-selection.js"
       - "js/three-course-escape-rescue-fixed5.js"
-      - "scripts/build-three-course-escape-rescue-post-adoption-monitor.js"
+      - "scripts/monitor-three-course-escape-rescue.js"
       - "data/predictions/*.json"
       - "data/predictions/*.json.gz"
       - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
@@ -40,8 +40,8 @@ jobs:
         run: node scripts/restore-daily-prediction-source.js --all
       - name: Validate monitor
         run: |
-          node --check scripts/build-three-course-escape-rescue-post-adoption-monitor.js
-          node scripts/build-three-course-escape-rescue-post-adoption-monitor.js
+          node --check scripts/monitor-three-course-escape-rescue.js
+          node scripts/monitor-three-course-escape-rescue.js
           git diff --check
       - name: Persist refreshed monitor report
         if: github.event_name != 'pull_request'
