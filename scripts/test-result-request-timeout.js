@@ -133,6 +133,21 @@ async function main() {
   );
   assert.match(appRuntime, /20260824-result-timeout1/);
 
+  const indexHtml = fs.readFileSync(
+    path.join(__dirname, "..", "index.html"),
+    "utf8"
+  );
+  assert.match(
+    indexHtml,
+    /js\/app-runtime-loader\.js\?v=20260824-result-timeout1/,
+    "index.html must cache-bust the fixed app runtime"
+  );
+  assert.doesNotMatch(
+    indexHtml,
+    /js\/app-runtime-loader\.js\?v=20260816-static-race1/,
+    "index.html still points to the stale app runtime"
+  );
+
   console.log("official result request timeout contract passed");
 }
 
