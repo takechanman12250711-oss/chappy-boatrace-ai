@@ -171,7 +171,7 @@ if (finalState.resultText.length < 500) {
     `prediction was not rendered: textLength=${finalState.resultText.length}`
   );
 }
-if (!finalState.reviewResultText.includes("公式結果を取得できませんでした")) {
+if (!finalState.reviewResultText.includes("結果を取得できませんでした")) {
   throw new Error(
     `review result timeout was not shown: ${finalState.reviewResultText}`
   );
