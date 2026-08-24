@@ -73,7 +73,7 @@ const runtimeState = await page.evaluate(() => ({
     window.fetch?.__chappyResultRequestTimeoutPatched === true
 }));
 
-if (runtimeState.appRuntime !== "20260824-result-timeout1") {
+if (runtimeState.appRuntime !== "20260815-odds-immediate1") {
   throw new Error(
     `app runtime mismatch: ${JSON.stringify(runtimeState)}`
   );
