@@ -1,0 +1,108 @@
+name: Diagnose live function stages in WebKit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-live-function-stages-webkit.yml"
+      - "scripts/diagnose-live-function-stages-webkit.mjs"
+      - "index.html"
+      - "js/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start branch static server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-live-stage.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chappy-live-stage.log
+          exit 1
+
+      - name: Trace live prediction stages
+        env:
+          APP_URL: http://127.0.0.1:4173/
+          RACE_PLACE: 桐生
+          RACE_NO: "1"
+          TRACE_MS: "100000"
+        shell: bash
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=5s 130s \
+            node scripts/diagnose-live-function-stages-webkit.mjs \
+            > /tmp/live-function-stages.log 2>&1
+          status=$?
+          echo "trace_exit_status=$status" >> /tmp/live-function-stages.log
+          exit 0
+
+      - name: Post compact live stage trace to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        shell: bash
+        run: |
+          grep -aE \
+            '^LIVE_STAGE .* (event|ready|start|end|fail|missing|wrap-fail|state|pageerror|request-failed|node-trace-end)|trace_exit_status' \
+            /tmp/live-function-stages.log \
+            | tail -n 500 \
+            > /tmp/live-function-stages-filtered.txt || true
+
+          node <<'NODE'
+          "use strict";
+          const fs = require("node:fs");
+          let text = fs.readFileSync(
+            "/tmp/live-function-stages-filtered.txt",
+            "utf8"
+          );
+          if (!text.trim()) text = "No live stage trace lines.";
+          if (text.length > 55000) {
+            text = `${text.slice(-55000)}\n...tail only`;
+          }
+          fs.writeFileSync(
+            "/tmp/live-function-stages-comment.md",
+            [
+              "## Live prediction function stage trace",
+              "",
+              "```text",
+              text,
+              "```"
+            ].join("\n"),
+            "utf8"
+          );
+          NODE
+
+          gh pr comment "$PR_URL" \
+            --body-file /tmp/live-function-stages-comment.md
+
+      - name: Upload full stage trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-function-stages-webkit
+          path: /tmp/live-function-stages.log
+          if-no-files-found: error
+          retention-days: 7
