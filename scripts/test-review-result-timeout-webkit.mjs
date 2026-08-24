@@ -5,7 +5,11 @@ const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
 const REVIEW_DATE = process.env.REVIEW_DATE || "2026-08-24";
 const REVIEW_PLACE = process.env.REVIEW_PLACE || "蒲郡";
 const REVIEW_RACE_NO = Number(process.env.REVIEW_RACE_NO || 12);
-const RESULT_ROUTE_PATTERN = "**/api/result**";
+const TEST_RESULT_TIMEOUT_MS = Number(
+  process.env.TEST_RESULT_TIMEOUT_MS || 1500
+);
+const TERMINAL_STATUS =
+  "振り返り予想を表示しました。公式結果の取得に失敗しました";
 
 const marks = [];
 function mark(name, detail = {}) {
@@ -17,8 +21,6 @@ function mark(name, detail = {}) {
 let browser = null;
 let context = null;
 let page = null;
-let releaseResultRoute = null;
-let resultRequestSeen = false;
 let failure = null;
 
 const pageErrors = [];
@@ -46,23 +48,6 @@ try {
     }
   });
 
-  // 公式結果APIだけを意図的に応答待ちへする。
-  // テスト終了時にゲートを解放して route.abort() まで完了させ、
-  // Playwright 自体が未解決リクエストで残り続けないようにする。
-  const resultRouteGate = new Promise(resolve => {
-    releaseResultRoute = resolve;
-  });
-
-  await page.route(RESULT_ROUTE_PATTERN, async route => {
-    resultRequestSeen = true;
-    mark("official-result-request-held", {
-      url: route.request().url()
-    });
-    await resultRouteGate;
-    await route.abort("timedout").catch(() => {});
-    mark("official-result-request-released");
-  });
-
   const targetUrl =
     `${APP_URL}${APP_URL.includes("?") ? "&" : "?"}` +
     `reviewResultTimeout=${Date.now()}`;
@@ -78,7 +63,8 @@ try {
     () => Boolean(
       window.ChappyPredictionRuntime &&
       window.ChappyAppRuntime &&
-      window.ChappyHomeDashboardV2
+      window.ChappyHomeDashboardV2 &&
+      window.ChappyResultRequestTimeout
     ),
     null,
     { timeout: 30_000 }
@@ -96,6 +82,8 @@ try {
     appRuntime: window.ChappyAppRuntime?.version || "",
     predictionRuntime: window.ChappyPredictionRuntime?.version || "",
     resultGuard: window.ChappyResultRequestTimeout?.version || "",
+    productionTimeoutMs:
+      Number(window.ChappyResultRequestTimeout?.timeoutMs || 0),
     resultGuardInstalled:
       window.ChappyResultRequestTimeout?.installed === true,
     fetchPatched:
@@ -110,11 +98,149 @@ try {
   }
   if (
     runtimeState.resultGuard !== "20260824-result-timeout1" ||
+    runtimeState.productionTimeoutMs !== 12_000 ||
     runtimeState.resultGuardInstalled !== true ||
     runtimeState.fetchPatched !== true
   ) {
     throw new Error(
       `result timeout guard is not active: ${JSON.stringify(runtimeState)}`
+    );
+  }
+
+  // Playwright の page.route() を未解決のまま待たせると、WebKit と
+  // Playwright 間のプロトコル処理まで止まり、ページ内のタイマーを
+  // 正しく観測できない。そこでページ内の最終 fetch 層だけを差し替え、
+  // /api/result のみ「接続済み・応答なし」を再現する。
+  const testBridgeState = await page.evaluate(
+    ({ timeoutMs, terminalStatus }) => {
+      const api = window.ChappyResultRequestTimeout;
+      const guardedFetch = window.fetch.bind(window);
+      const state = {
+        resultRequests: 0,
+        resultRequestAt: 0,
+        predictionRenderedAt: 0,
+        terminalAt: 0,
+        downstreamAbortSeen: false,
+        statusHistory: [],
+        installState: null
+      };
+
+      window.__chappyResultTimeoutWebKitTest = state;
+
+      window.addEventListener(
+        "chappy:prediction-rendered",
+        () => {
+          if (!state.predictionRenderedAt) {
+            state.predictionRenderedAt = performance.now();
+          }
+        },
+        { once: true }
+      );
+
+      const statusArea = document.getElementById("statusArea");
+      const recordStatus = () => {
+        const text = statusArea?.textContent?.trim() || "";
+        if (
+          text &&
+          state.statusHistory[state.statusHistory.length - 1] !== text
+        ) {
+          state.statusHistory.push(text);
+          if (state.statusHistory.length > 30) {
+            state.statusHistory.shift();
+          }
+        }
+        if (text === terminalStatus && !state.terminalAt) {
+          state.terminalAt = performance.now();
+        }
+      };
+
+      recordStatus();
+      if (statusArea && typeof MutationObserver === "function") {
+        const observer = new MutationObserver(recordStatus);
+        observer.observe(statusArea, {
+          childList: true,
+          characterData: true,
+          subtree: true
+        });
+        state.disconnectStatusObserver = () => observer.disconnect();
+      }
+
+      const hangingResultFetch = function (input, init = {}) {
+        const method = String(
+          init?.method || input?.method || "GET"
+        ).toUpperCase();
+        const params = api.resultRequestParams(window, input);
+
+        if (params && method === "GET") {
+          state.resultRequests += 1;
+          if (!state.resultRequestAt) {
+            state.resultRequestAt = performance.now();
+          }
+
+          return new Promise((_resolve, reject) => {
+            const signal = init?.signal || input?.signal || null;
+            if (signal?.aborted) {
+              state.downstreamAbortSeen = true;
+              const error = new Error("Aborted");
+              error.name = "AbortError";
+              reject(error);
+              return;
+            }
+            signal?.addEventListener?.(
+              "abort",
+              () => {
+                state.downstreamAbortSeen = true;
+                const error = new Error("Aborted");
+                error.name = "AbortError";
+                reject(error);
+              },
+              { once: true }
+            );
+          });
+        }
+
+        return guardedFetch(input, init);
+      };
+
+      [
+        "__chappyOddsFirstBridge",
+        "__chappyOddsFetchCachePatched"
+      ].forEach(key => {
+        if (window.fetch?.[key] !== true) return;
+        Object.defineProperty(hangingResultFetch, key, {
+          configurable: true,
+          value: true
+        });
+      });
+
+      window.fetch = hangingResultFetch;
+      state.installState = api.install(window, { timeoutMs });
+
+      return {
+        installState: state.installState,
+        fetchPatched:
+          window.fetch?.__chappyResultRequestTimeoutPatched === true,
+        oddsBridge:
+          window.fetch?.__chappyOddsFirstBridge === true,
+        oddsCache:
+          window.fetch?.__chappyOddsFetchCachePatched === true
+      };
+    },
+    {
+      timeoutMs: TEST_RESULT_TIMEOUT_MS,
+      terminalStatus: TERMINAL_STATUS
+    }
+  );
+  mark("test-fetch-bridge-installed", testBridgeState);
+
+  if (
+    testBridgeState.installState?.installed !== true ||
+    Number(testBridgeState.installState?.timeoutMs) !==
+      TEST_RESULT_TIMEOUT_MS ||
+    testBridgeState.fetchPatched !== true
+  ) {
+    throw new Error(
+      `test result bridge is not active: ${JSON.stringify(testBridgeState)}`
     );
   }
 
@@ -135,15 +261,6 @@ try {
       dateInput.value = date;
       placeSelect.value = place;
       raceSelect.value = `${raceNo}R`;
-
-      window.__chappyRenderedForResultTimeoutTest = false;
-      window.addEventListener(
-        "chappy:prediction-rendered",
-        () => {
-          window.__chappyRenderedForResultTimeoutTest = true;
-        },
-        { once: true }
-      );
 
       return {
         mode: modeSelect.value,
@@ -174,49 +291,90 @@ try {
 
   const startedAt = Date.now();
   mark("prediction-click-start");
-  await page.click("#fetchRaceBtn");
+
+  // Playwright の click 完了条件に非同期処理を結び付けず、ページ内で
+  // 通常の click イベントだけを発火させる。
+  await page.evaluate(() => {
+    const button = document.getElementById("fetchRaceBtn");
+    if (!button) throw new Error("prediction button is missing");
+    button.click();
+  });
 
   await page.waitForFunction(
-    () => window.__chappyRenderedForResultTimeoutTest === true,
-    null,
+    terminalStatus => {
+      const status =
+        document.getElementById("statusArea")?.textContent?.trim() || "";
+      const resultArea = document.getElementById("resultArea");
+      const resultText =
+        (resultArea?.textContent || "").replace(/\s+/g, " ").trim();
+      const reviewResultText =
+        (document.getElementById("reviewResultArea")?.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      return (
+        status === terminalStatus &&
+        resultText.length >= 500 &&
+        !resultArea?.dataset?.raceLoading &&
+        reviewResultText.includes("結果を取得できませんでした")
+      );
+    },
+    TERMINAL_STATUS,
     { timeout: 90_000 }
   );
-  const renderedAt = Date.now();
-  mark("prediction-rendered", {
-    renderElapsedMs: renderedAt - startedAt
-  });
-
-  await page.waitForFunction(
-    () =>
-      document.getElementById("statusArea")?.textContent?.trim() ===
-      "振り返り予想を表示しました。公式結果の取得に失敗しました",
-    null,
-    { timeout: 30_000 }
-  );
-  const terminalAt = Date.now();
+  const terminalReachedAt = Date.now();
   mark("review-terminal-state", {
-    terminalWaitMs: terminalAt - renderedAt
+    elapsedMs: terminalReachedAt - startedAt
   });
 
-  const finalState = await page.evaluate(() => ({
-    status:
-      document.getElementById("statusArea")?.textContent?.trim() || "",
-    errorArea:
-      document.getElementById("errorArea")?.textContent?.trim() || "",
-    resultLoading:
-      document.getElementById("resultArea")?.dataset?.raceLoading || "",
-    resultText:
-      (document.getElementById("resultArea")?.textContent || "")
-        .replace(/\s+/g, " ")
-        .trim(),
-    reviewResultText:
-      (document.getElementById("reviewResultArea")?.textContent || "")
-        .replace(/\s+/g, " ")
-        .trim()
-  }));
+  const finalState = await page.evaluate(() => {
+    const testState = window.__chappyResultTimeoutWebKitTest || {};
+    testState.disconnectStatusObserver?.();
 
-  if (!resultRequestSeen) {
-    throw new Error("official result request was not issued");
+    return {
+      status:
+        document.getElementById("statusArea")?.textContent?.trim() || "",
+      errorArea:
+        document.getElementById("errorArea")?.textContent?.trim() || "",
+      resultLoading:
+        document.getElementById("resultArea")?.dataset?.raceLoading || "",
+      resultText:
+        (document.getElementById("resultArea")?.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim(),
+      reviewResultText:
+        (document.getElementById("reviewResultArea")?.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim(),
+      resultRequests: Number(testState.resultRequests || 0),
+      resultRequestAt: Number(testState.resultRequestAt || 0),
+      predictionRenderedAt: Number(testState.predictionRenderedAt || 0),
+      terminalAt: Number(testState.terminalAt || performance.now()),
+      downstreamAbortSeen: testState.downstreamAbortSeen === true,
+      statusHistory: Array.isArray(testState.statusHistory)
+        ? [...testState.statusHistory]
+        : []
+    };
+  });
+
+  if (finalState.resultRequests !== 1) {
+    throw new Error(
+      `unexpected official result request count: ${finalState.resultRequests}`
+    );
+  }
+  if (!finalState.downstreamAbortSeen) {
+    throw new Error("official result request was not aborted at timeout");
+  }
+  if (!finalState.predictionRenderedAt) {
+    throw new Error("prediction-rendered event was not observed");
+  }
+  if (!finalState.resultRequestAt) {
+    throw new Error("official result request start was not observed");
+  }
+  if (finalState.predictionRenderedAt > finalState.resultRequestAt + 250) {
+    throw new Error(
+      "official result request started before the prediction was rendered"
+    );
   }
   if (finalState.errorArea) {
     throw new Error(`unexpected prediction error: ${finalState.errorArea}`);
@@ -240,8 +398,12 @@ try {
     throw new Error(`readonly page error: ${pageErrors.join(" | ")}`);
   }
 
-  const terminalWaitMs = terminalAt - renderedAt;
-  if (terminalWaitMs < 9_000 || terminalWaitMs > 25_000) {
+  const terminalWaitMs =
+    finalState.terminalAt - finalState.resultRequestAt;
+  if (
+    terminalWaitMs < Math.max(500, TEST_RESULT_TIMEOUT_MS - 600) ||
+    terminalWaitMs > TEST_RESULT_TIMEOUT_MS + 8_000
+  ) {
     throw new Error(
       `unexpected result timeout duration: ${terminalWaitMs}ms`
     );
@@ -250,11 +412,14 @@ try {
   console.log(JSON.stringify({
     ok: true,
     runtimeState,
-    elapsedMs: terminalAt - startedAt,
-    renderElapsedMs: renderedAt - startedAt,
+    testBridgeState,
+    elapsedMs: terminalReachedAt - startedAt,
+    renderBeforeResultMs:
+      finalState.resultRequestAt - finalState.predictionRenderedAt,
     terminalWaitMs,
     resultTextLength: finalState.resultText.length,
     status: finalState.status,
+    statusHistory: finalState.statusHistory,
     pageErrors,
     consoleErrors,
     marks
@@ -263,23 +428,17 @@ try {
   failure = error;
   console.error("[FATAL]", error?.stack || error);
 } finally {
-  releaseResultRoute?.();
-
-  if (page) {
-    await page.unroute(RESULT_ROUTE_PATTERN).catch(() => {});
-  }
-
   if (context) {
     await Promise.race([
       context.close().catch(() => {}),
-      new Promise(resolve => setTimeout(resolve, 5_000))
+      new Promise(resolve => setTimeout(resolve, 10_000))
     ]);
   }
 
   if (browser) {
     await Promise.race([
       browser.close().catch(() => {}),
-      new Promise(resolve => setTimeout(resolve, 5_000))
+      new Promise(resolve => setTimeout(resolve, 10_000))
     ]);
   }
 
