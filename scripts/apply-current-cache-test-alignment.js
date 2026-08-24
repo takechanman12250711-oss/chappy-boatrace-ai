@@ -95,7 +95,7 @@ function patchLoad(text) {
   );
 
   const desiredGeneration = generationBlock(
-    "20260823-local-water-v2-gap3-v1"
+    "20260824-readonly-core-fix1"
   );
   const supportedGenerations = [
     generationBlock(
@@ -106,6 +106,9 @@ function patchLoad(text) {
     ),
     generationBlock(
       "20260823-three-course-134-v1"
+    ),
+    generationBlock(
+      "20260823-local-water-v2-gap3-v1"
     ),
     `assert.equal(
   html.includes(
@@ -138,9 +141,10 @@ function patchLoad(text) {
       '\'const VERSION = "20260809-grounded-flow2"\'',
       '\'const VERSION = "20260816-runtime-deadline1"\'',
       '\'const VERSION = "20260820-third-six-fixed5"\'',
-      '\'const VERSION = "20260823-three-course-134-v1"\''
+      '\'const VERSION = "20260823-three-course-134-v1"\'',
+      '\'const VERSION = "20260823-local-water-v2-gap3-v1"\''
     ],
-    '\'const VERSION = "20260823-local-water-v2-gap3-v1"\'',
+    '\'const VERSION = "20260824-readonly-core-fix1"\'',
     "prediction runtime version"
   );
 

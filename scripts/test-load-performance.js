@@ -414,7 +414,7 @@ assert.equal(
     "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
     html.includes(
-      "js/prediction-runtime-loader.js?v=20260823-local-water-v2-gap3-v1"
+      "js/prediction-runtime-loader.js?v=20260824-readonly-core-fix1"
     ) &&
     html.includes(
       "js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"
@@ -423,7 +423,7 @@ assert.equal(
       'const VERSION = "20260815-odds-immediate1"'
     ) &&
     predictionRuntime.includes(
-      'const VERSION = "20260823-local-water-v2-gap3-v1"'
+      'const VERSION = "20260824-readonly-core-fix1"'
     ) &&
     hiyoriLoader.includes(
       'const VERSION="20260816-nonblocking-core2"'
@@ -459,7 +459,7 @@ assert.equal(
 );
 assert.equal(
   predictionRuntime.includes(
-    'const VERSION = "20260823-local-water-v2-gap3-v1"'
+    'const VERSION = "20260824-readonly-core-fix1"'
   ),
   true,
   "全文表示を含む予想モジュールのキャッシュ世代を更新する"
