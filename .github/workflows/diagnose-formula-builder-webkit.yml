@@ -1,0 +1,51 @@
+name: Diagnose formula builder in WebKit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-formula-builder-webkit.yml"
+      - "scripts/diagnose-formula-builder-webkit.mjs"
+      - "index.html"
+      - "js/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start branch static server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-formula-builder.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chappy-formula-builder.log
+          exit 1
+
+      - name: Trace formula-builder source
+        env:
+          APP_URL: http://127.0.0.1:4173/
+          RACE_PLACE: 桐生
+          RACE_NO: "1"
+        run: |
+          timeout --signal=TERM --kill-after=5s 180s \
+            node scripts/diagnose-formula-builder-webkit.mjs
