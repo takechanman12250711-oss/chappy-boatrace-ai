@@ -1,0 +1,52 @@
+name: Diagnose review before odds in WebKit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-review-without-early-odds-webkit.yml"
+      - "scripts/diagnose-review-without-early-odds-webkit.mjs"
+      - "index.html"
+      - "js/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  delayed-odds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-no-early-odds.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://127.0.0.1:4173/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/chappy-no-early-odds.log
+          exit 1
+
+      - name: Local review with delayed odds
+        env:
+          APP_URL: http://127.0.0.1:4173/
+          ODDS_DELAY_MS: "45000"
+        run: node scripts/diagnose-review-without-early-odds-webkit.mjs
+
+      - name: Production review with delayed odds
+        env:
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          ODDS_DELAY_MS: "45000"
+        run: node scripts/diagnose-review-without-early-odds-webkit.mjs
