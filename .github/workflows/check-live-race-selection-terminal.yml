@@ -5,7 +5,9 @@ on:
     paths:
       - "index.html"
       - "js/live-race-selection-terminal-guard.js"
+      - "js/prediction-conditions.js"
       - "scripts/test-live-race-selection-terminal-guard.js"
+      - "scripts/test-prediction-conditions-missing-series.js"
       - ".github/workflows/check-live-race-selection-terminal.yml"
 
 permissions:
@@ -26,8 +28,11 @@ jobs:
       - name: Check guard syntax and contracts
         run: |
           node --check js/live-race-selection-terminal-guard.js
+          node --check js/prediction-conditions.js
           node --check scripts/test-live-race-selection-terminal-guard.js
+          node --check scripts/test-prediction-conditions-missing-series.js
           node scripts/test-live-race-selection-terminal-guard.js
+          node scripts/test-prediction-conditions-missing-series.js
 
       - name: Check script order
         run: |
