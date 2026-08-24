@@ -92,6 +92,9 @@ try {
         window.ChappyLiveRaceSelectionTerminalGuard?.version || "",
       installed:
         window.ChappyLiveRaceSelectionTerminalGuard?.installed === true,
+      dateInputProtected:
+        window.ChappyLiveRaceSelectionTerminalGuard
+          ?.dateInputProtected === true,
       inputDate: document.getElementById("dateInput")?.value || "",
       cacheDates
     };
@@ -99,11 +102,11 @@ try {
 
   console.log("[STARTUP]", JSON.stringify(startup));
 
-  if (startup.version !== "20260825-live-selection-terminal1") {
+  if (startup.version !== "20260825-live-selection-terminal2") {
     throw new Error(`guard version mismatch: ${JSON.stringify(startup)}`);
   }
-  if (!startup.installed) {
-    throw new Error(`guard is not installed: ${JSON.stringify(startup)}`);
+  if (!startup.installed || !startup.dateInputProtected) {
+    throw new Error(`guard is not active: ${JSON.stringify(startup)}`);
   }
   if (startup.inputDate !== "2026-08-25") {
     throw new Error(`JST date was not primed: ${JSON.stringify(startup)}`);
