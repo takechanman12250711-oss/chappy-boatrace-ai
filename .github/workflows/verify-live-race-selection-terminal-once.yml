@@ -8,13 +8,17 @@ on:
       - ".github/workflows/verify-live-race-selection-terminal-once.yml"
       - "index.html"
       - "js/live-race-selection-terminal-guard.js"
+      - "js/prediction-conditions.js"
       - "scripts/test-live-race-selection-terminal-webkit.mjs"
+      - "scripts/test-prediction-conditions-missing-series.js"
   pull_request:
     paths:
       - ".github/workflows/verify-live-race-selection-terminal-once.yml"
       - "index.html"
       - "js/live-race-selection-terminal-guard.js"
+      - "js/prediction-conditions.js"
       - "scripts/test-live-race-selection-terminal-webkit.mjs"
+      - "scripts/test-prediction-conditions-missing-series.js"
   workflow_dispatch:
 
 permissions:
@@ -32,10 +36,12 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Run Node contract first
+      - name: Run Node contracts first
         run: |
           node --check js/live-race-selection-terminal-guard.js
+          node --check js/prediction-conditions.js
           node scripts/test-live-race-selection-terminal-guard.js
+          node scripts/test-prediction-conditions-missing-series.js
 
       - name: Install Playwright WebKit
         run: |
