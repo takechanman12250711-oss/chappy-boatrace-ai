@@ -1,0 +1,110 @@
+name: Diagnose prediction stage in WebKit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-prediction-stage-webkit.yml"
+      - "scripts/diagnose-prediction-stage-webkit.mjs"
+      - "index.html"
+      - "js/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-stage-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chappy-stage-http.log
+          exit 1
+
+      - name: Isolate core build
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts-stage/local-core
+          timeout --signal=TERM --kill-after=5s 90s \
+            env \
+              APP_URL=http://127.0.0.1:4173/ \
+              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              DIAG_OUTPUT=artifacts-stage/local-core \
+            node scripts/diagnose-prediction-stage-webkit.mjs core \
+            > artifacts-stage/local-core/process.log 2>&1
+          status=$?
+          echo "exit_status=$status" | tee -a artifacts-stage/local-core/process.log
+          cat artifacts-stage/local-core/process.log
+          pkill -9 MiniBrowser || true
+          pkill -9 WebKitNetworkProcess || true
+          exit 0
+
+      - name: Isolate createPrediction
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts-stage/local-create
+          timeout --signal=TERM --kill-after=5s 90s \
+            env \
+              APP_URL=http://127.0.0.1:4173/ \
+              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              DIAG_OUTPUT=artifacts-stage/local-create \
+            node scripts/diagnose-prediction-stage-webkit.mjs create \
+            > artifacts-stage/local-create/process.log 2>&1
+          status=$?
+          echo "exit_status=$status" | tee -a artifacts-stage/local-create/process.log
+          cat artifacts-stage/local-create/process.log
+          pkill -9 MiniBrowser || true
+          pkill -9 WebKitNetworkProcess || true
+          exit 0
+
+      - name: Isolate production createPrediction
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts-stage/production-create
+          timeout --signal=TERM --kill-after=5s 90s \
+            env \
+              APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
+              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              DIAG_OUTPUT=artifacts-stage/production-create \
+            node scripts/diagnose-prediction-stage-webkit.mjs create \
+            > artifacts-stage/production-create/process.log 2>&1
+          status=$?
+          echo "exit_status=$status" | tee -a artifacts-stage/production-create/process.log
+          cat artifacts-stage/production-create/process.log
+          pkill -9 MiniBrowser || true
+          pkill -9 WebKitNetworkProcess || true
+          exit 0
+
+      - name: Upload stage diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prediction-stage-webkit-diagnostics
+          path: artifacts-stage
+          if-no-files-found: error
+          retention-days: 7
