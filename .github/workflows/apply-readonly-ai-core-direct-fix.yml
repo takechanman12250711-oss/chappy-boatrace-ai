@@ -1,0 +1,54 @@
+name: Apply direct readonly AI core fix
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/apply-readonly-ai-core-direct-fix.yml"
+      - "scripts/apply-readonly-ai-core-direct-fix.js"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Apply direct production fix
+        run: |
+          node --check scripts/apply-readonly-ai-core-direct-fix.js
+          node scripts/apply-readonly-ai-core-direct-fix.js
+          git diff --check
+
+          node --check js/history-insights-base.js
+          node --check js/motor-maintenance-insights.js
+          node --check js/ai-core-assignment-compat.js
+          node --check js/prediction-runtime-loader.js
+          node --check scripts/test-readonly-ai-core-direct.js
+          node scripts/test-readonly-ai-core-direct.js
+          node scripts/test-readonly-ai-core-assignment.js
+          node scripts/test-current-cache-test-alignment.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-odds-lightweight-path.js
+          node scripts/test-phase6-integration.js
+          node scripts/check-charter.js
+
+      - name: Commit direct fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Make AI core installers readonly-safe"
+          git push origin HEAD:${GITHUB_HEAD_REF}
