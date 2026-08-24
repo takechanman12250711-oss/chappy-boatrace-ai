@@ -1,0 +1,176 @@
+name: Finish live selection terminal fix
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/finish-live-selection-terminal-fix.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: finish-live-selection-terminal-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  verify-clean-merge:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout latest PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Synchronize latest branch
+        run: |
+          git fetch origin "${GITHUB_HEAD_REF}" main
+          git reset --hard "origin/${GITHUB_HEAD_REF}"
+
+      - name: Verify permanent contracts
+        run: |
+          node --check js/live-race-selection-terminal-guard.js
+          node --check js/prediction-conditions.js
+          node --check scripts/test-live-race-selection-terminal-guard.js
+          node --check scripts/test-prediction-conditions-missing-series.js
+          node scripts/test-live-race-selection-terminal-guard.js
+          node scripts/test-prediction-conditions-missing-series.js
+          node scripts/test-home-dashboard-v2-phase2.js
+          node scripts/test-race-flow-result-panel.js
+          node scripts/test-prediction-loading-terminal-state.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/test-odds-lightweight-path.js
+          node scripts/test-ticket-accordion-render-path.js
+          node scripts/test-phase6-integration.js
+          node scripts/test-formation-display-contract-current.js
+          node scripts/check-charter.js
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start branch static server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-live-selection-final.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chappy-live-selection-final.log
+          exit 1
+
+      - name: Verify stale-date flow in iPhone WebKit
+        env:
+          APP_URL: http://127.0.0.1:4173/
+          RACE_PLACE: 桐生
+          RACE_NO: "1"
+          EXPECTED_DATE: "20260825"
+          MAX_WAIT_MS: "120000"
+        run: |
+          timeout --signal=TERM --kill-after=5s 180s \
+            node scripts/test-live-race-selection-terminal-webkit.mjs
+
+      - name: Remove one-time diagnostics
+        run: |
+          rm -f \
+            scripts/test-live-race-selection-terminal-webkit.mjs \
+            .github/workflows/verify-live-race-selection-terminal-once.yml \
+            scripts/diagnose-formula-builder-webkit.mjs \
+            .github/workflows/diagnose-formula-builder-webkit.yml \
+            scripts/scan-formula-builder-static.js \
+            .github/workflows/scan-formula-builder-static.yml \
+            .github/workflows/report-formula-builder-diagnostics.yml \
+            scripts/diagnose-live-function-stages-webkit.mjs \
+            .github/workflows/diagnose-live-function-stages-webkit.yml \
+            .github/workflows/finish-live-selection-terminal-fix.yml
+          git diff --check
+
+      - name: Verify final production diff
+        shell: bash
+        run: |
+          mapfile -t actual < <(git diff --name-only origin/main...HEAD | sort)
+          mapfile -t deleted_worktree < <(git diff --name-only | sort)
+
+          allowed=(
+            ".github/workflows/check-live-race-selection-terminal.yml"
+            "index.html"
+            "js/live-race-selection-terminal-guard.js"
+            "js/prediction-conditions.js"
+            "scripts/test-live-race-selection-terminal-guard.js"
+            "scripts/test-prediction-conditions-missing-series.js"
+          )
+
+          printf '%s\n' "${allowed[@]}" | sort > /tmp/allowed.txt
+          {
+            printf '%s\n' "${actual[@]}"
+            printf '%s\n' "${deleted_worktree[@]}"
+          } | sort -u | while read -r path; do
+            [ -z "$path" ] && continue
+            if ! grep -Fxq "$path" /tmp/allowed.txt; then
+              case "$path" in
+                scripts/test-live-race-selection-terminal-webkit.mjs|\
+                .github/workflows/verify-live-race-selection-terminal-once.yml|\
+                scripts/diagnose-formula-builder-webkit.mjs|\
+                .github/workflows/diagnose-formula-builder-webkit.yml|\
+                scripts/scan-formula-builder-static.js|\
+                .github/workflows/scan-formula-builder-static.yml|\
+                .github/workflows/report-formula-builder-diagnostics.yml|\
+                scripts/diagnose-live-function-stages-webkit.mjs|\
+                .github/workflows/diagnose-live-function-stages-webkit.yml|\
+                .github/workflows/finish-live-selection-terminal-fix.yml)
+                  ;;
+                *)
+                  echo "Unexpected final path: $path"
+                  exit 1
+                  ;;
+              esac
+            fi
+          done
+
+      - name: Commit final production files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalize live race selection terminal fix"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+
+      - name: Confirm final six-file diff
+        run: |
+          git fetch origin main "${GITHUB_HEAD_REF}"
+          expected=$(cat <<'EOF'
+          .github/workflows/check-live-race-selection-terminal.yml
+          index.html
+          js/live-race-selection-terminal-guard.js
+          js/prediction-conditions.js
+          scripts/test-live-race-selection-terminal-guard.js
+          scripts/test-prediction-conditions-missing-series.js
+          EOF
+          )
+          actual=$(git diff --name-only origin/main...origin/${GITHUB_HEAD_REF} | sort)
+          test "$actual" = "$(printf '%s\n' "$expected" | sed 's/^          //' | sort)"
+
+      - name: Squash merge verified fix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge "$PR_URL" \
+            --squash \
+            --delete-branch \
+            --admin \
+            --subject "Fix stale live-race dates and terminal loading (#${{ github.event.pull_request.number }})" \
+            --body "Clear previous-day home cache, pin live selections to the JST date before lazy runtime setup, make missing ST snapshot series safe, and guarantee a terminal loading state. Prediction logic, scoring, tickets, odds calculation, UI structure and saved results are unchanged."
