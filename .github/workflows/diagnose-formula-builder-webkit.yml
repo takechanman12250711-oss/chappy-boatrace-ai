@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   diagnose:
@@ -46,6 +47,52 @@ jobs:
           APP_URL: http://127.0.0.1:4173/
           RACE_PLACE: 桐生
           RACE_NO: "1"
+        shell: bash
         run: |
+          set +e
           timeout --signal=TERM --kill-after=5s 180s \
-            node scripts/diagnose-formula-builder-webkit.mjs
+            node scripts/diagnose-formula-builder-webkit.mjs \
+            2>&1 | tee /tmp/formula-builder-trace.log
+          status=${PIPESTATUS[0]}
+          echo "diagnostic_exit_status=$status" | tee -a /tmp/formula-builder-trace.log
+          exit 0
+
+      - name: Post compact WebKit trace to this PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        shell: bash
+        run: |
+          grep -aE \
+            'FORMULA_DIAG_(ERROR|REJECTION|SCRIPT|FUNCTION)|\[PAGEERROR\]|\[FATAL\]|diagnostic_exit_status' \
+            /tmp/formula-builder-trace.log \
+            | tail -n 250 \
+            > /tmp/formula-builder-filtered.txt || true
+
+          node <<'NODE'
+          "use strict";
+          const fs = require("node:fs");
+          let trace = fs.readFileSync(
+            "/tmp/formula-builder-filtered.txt",
+            "utf8"
+          );
+          if (!trace.trim()) trace = "No matching trace lines.";
+          if (trace.length > 45000) {
+            trace = `${trace.slice(0, 45000)}\n...truncated`;
+          }
+          fs.writeFileSync(
+            "/tmp/formula-builder-comment.md",
+            [
+              "## Formula builder WebKit source trace",
+              "",
+              "```text",
+              trace,
+              "```"
+            ].join("\n"),
+            "utf8"
+          );
+          NODE
+
+          gh pr comment "$PR_URL" \
+            --body-file /tmp/formula-builder-comment.md
