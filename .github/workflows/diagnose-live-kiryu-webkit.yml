@@ -39,6 +39,11 @@ jobs:
             -o /tmp/schedule.json
           node -e 'const d=require("/tmp/schedule.json"); console.log(JSON.stringify({ok:d.ok,date:d.date,venues:(d.venues||[]).length,kiryu:(d.venues||[]).find(v=>v.jcd==="01"||v.place==="桐生")},null,2))'
 
+          curl --silent --show-error --fail --max-time 35 \
+            "https://chappy-boatrace-api.vercel.app/api/schedule?date=20260825&jcd=01" \
+            -o /tmp/kiryu-schedule.json
+          node -e 'const d=require("/tmp/kiryu-schedule.json"); const v=d.selectedVenue||{}; console.log(JSON.stringify({ok:d.ok,date:d.date,scheduleAvailable:v.scheduleAvailable,remainingRaces:v.remainingRaces,error:v.error,race1:(v.races||[]).find(r=>r.raceNo===1),races:(v.races||[]).length},null,2))'
+
           set +e
           curl --silent --show-error --max-time 35 \
             -w "\nHTTP=%{http_code} TOTAL=%{time_total}\n" \
