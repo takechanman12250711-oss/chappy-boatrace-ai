@@ -1,0 +1,53 @@
+name: Diagnose expanded live Kiryu flow in WebKit
+
+on:
+  push:
+    branches:
+      - diagnose/live-kiryu-loading-20260825
+    paths:
+      - ".github/workflows/diagnose-live-kiryu-flow-webkit.yml"
+      - "scripts/diagnose-live-kiryu-flow-webkit.mjs"
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-live-kiryu-flow-webkit.yml"
+      - "scripts/diagnose-live-kiryu-flow-webkit.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Reproduce expanded Kiryu 1R flow in production
+        env:
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          RACE_PLACE: 桐生
+          RACE_NO: "1"
+          TOTAL_WAIT_MS: "120000"
+          DIAG_OUTPUT: artifacts/live-kiryu-flow-webkit
+        run: |
+          timeout --signal=TERM --kill-after=5s 180s \
+            node scripts/diagnose-live-kiryu-flow-webkit.mjs
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-kiryu-flow-webkit-diagnostic
+          path: artifacts/live-kiryu-flow-webkit
+          if-no-files-found: warn
+          retention-days: 7
