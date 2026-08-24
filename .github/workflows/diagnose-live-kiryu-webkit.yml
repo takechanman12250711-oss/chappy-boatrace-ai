@@ -1,0 +1,82 @@
+name: Diagnose live Kiryu loading in WebKit
+
+on:
+  push:
+    branches:
+      - diagnose/live-kiryu-loading-20260825
+    paths:
+      - ".github/workflows/diagnose-live-kiryu-webkit.yml"
+      - "scripts/diagnose-live-kiryu-webkit.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Probe current APIs
+        shell: bash
+        run: |
+          set -x
+          curl --silent --show-error --fail --max-time 35 \
+            "https://chappy-boatrace-api.vercel.app/api/schedule?date=20260825" \
+            -o /tmp/schedule.json
+          node -e 'const d=require("/tmp/schedule.json"); console.log(JSON.stringify({ok:d.ok,date:d.date,venues:(d.venues||[]).length,kiryu:(d.venues||[]).find(v=>v.jcd==="01"||v.place==="桐生")},null,2))'
+
+          set +e
+          curl --silent --show-error --max-time 35 \
+            -w "\nHTTP=%{http_code} TOTAL=%{time_total}\n" \
+            "https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=1&date=20260825" \
+            -o /tmp/race.json
+          race_status=$?
+          echo "race curl status=$race_status"
+          head -c 4000 /tmp/race.json || true
+          echo
+
+          curl --silent --show-error --max-time 35 \
+            -w "\nHTTP=%{http_code} TOTAL=%{time_total}\n" \
+            "https://chappy-boatrace-api.vercel.app/api/odds?jcd=01&rno=1&date=20260825" \
+            -o /tmp/odds.json
+          odds_status=$?
+          echo "odds curl status=$odds_status"
+          head -c 4000 /tmp/odds.json || true
+          echo
+          exit 0
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Reproduce current production flow
+        env:
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          RACE_DATE: "2026-08-25"
+          RACE_PLACE: 桐生
+          RACE_NO: "1"
+          TOTAL_WAIT_MS: "90000"
+          DIAG_OUTPUT: artifacts/live-kiryu-webkit
+        run: |
+          timeout --signal=TERM --kill-after=5s 150s \
+            node scripts/diagnose-live-kiryu-webkit.mjs
+
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-kiryu-webkit-diagnostic
+          path: artifacts/live-kiryu-webkit
+          if-no-files-found: warn
+          retention-days: 7
