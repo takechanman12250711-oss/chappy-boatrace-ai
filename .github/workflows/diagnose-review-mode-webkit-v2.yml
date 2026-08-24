@@ -1,0 +1,74 @@
+name: Diagnose hidden review view in WebKit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-review-mode-webkit-v2.yml"
+      - "scripts/diagnose-review-mode-webkit-v2.mjs"
+      - "index.html"
+      - "js/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  webkit-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start local static server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-http-v2.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chappy-http-v2.log
+          exit 1
+
+      - name: Run local review flow
+        env:
+          APP_URL: http://127.0.0.1:4173/
+          EXPECTED_RUNTIME: 20260824-readonly-core-fix1
+          REVIEW_DATE: "2026-08-24"
+          REVIEW_PLACE: 蒲郡
+          REVIEW_RACE: 12R
+          DIAG_OUTPUT: artifacts-v2/local
+        run: node scripts/diagnose-review-mode-webkit-v2.mjs
+
+      - name: Run production review flow
+        if: always()
+        env:
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          EXPECTED_RUNTIME: 20260824-readonly-core-fix1
+          REVIEW_DATE: "2026-08-24"
+          REVIEW_PLACE: 蒲郡
+          REVIEW_RACE: 12R
+          DIAG_OUTPUT: artifacts-v2/production
+        run: node scripts/diagnose-review-mode-webkit-v2.mjs
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-mode-webkit-v2-diagnostics
+          path: artifacts-v2
+          if-no-files-found: warn
+          retention-days: 7
