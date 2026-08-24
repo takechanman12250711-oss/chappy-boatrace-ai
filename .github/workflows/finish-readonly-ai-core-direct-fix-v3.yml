@@ -1,0 +1,149 @@
+name: Finish direct readonly AI core fix v3
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/finish-readonly-ai-core-direct-fix-v3.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: finish-readonly-ai-core-direct-v3-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-merge:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout latest PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Synchronize latest branch
+        run: |
+          git fetch origin "${GITHUB_HEAD_REF}"
+          git reset --hard "origin/${GITHUB_HEAD_REF}"
+
+      - name: Apply corrected production patch
+        run: |
+          node --check scripts/apply-readonly-ai-core-direct-fix-v2.js
+          node scripts/apply-readonly-ai-core-direct-fix-v2.js
+
+          node <<'NODE'
+          "use strict";
+          const fs = require("node:fs");
+          const target = "scripts/test-readonly-ai-core-assignment.js";
+          let source = fs.readFileSync(target, "utf8");
+          const before = `const broken = createContext();
+installCore(broken);
+run(broken, "js/local-water-v2-tiebreak.js");
+assert.throws(
+  () => run(
+    broken,
+    "js/third-six-rescue-fixed5.js"
+  ),
+  /read only|readonly|Cannot assign/i,
+  "旧接続方式ではfreeze済みAIコアの再代入を再現する"
+);`;
+          const after = `const direct = createContext();
+installCore(direct);
+run(direct, "js/local-water-v2-tiebreak.js");
+assert.doesNotThrow(
+  () => run(
+    direct,
+    "js/third-six-rescue-fixed5.js"
+  ),
+  "本体installerだけでfreeze済みAIコアを安全に再公開する"
+);
+assert.equal(
+  Object.isFrozen(direct.ChappyAICore),
+  true,
+  "本体直接修正でも固定5点freeze契約を維持する"
+);`;
+          if (!source.includes(after)) {
+            const count = source.split(before).length - 1;
+            if (count !== 1) {
+              throw new Error(
+                `readonly regression old block count=${count}`
+              );
+            }
+            source = source.replace(before, after);
+          }
+          fs.writeFileSync(target, source, "utf8");
+          NODE
+
+          git diff --check
+
+      - name: Verify readonly-safe source installers
+        run: |
+          node --check js/history-insights-base.js
+          node --check js/motor-maintenance-insights.js
+          node --check js/ai-core-assignment-compat.js
+          node --check js/prediction-runtime-loader.js
+          node --check scripts/test-readonly-ai-core-direct.js
+          node --check scripts/test-readonly-ai-core-assignment.js
+          node scripts/test-readonly-ai-core-direct.js
+          node scripts/test-readonly-ai-core-assignment.js
+
+      - name: Verify production runtime and theory paths
+        run: |
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-loading-watchdog.js
+          node scripts/test-odds-lightweight-path.js
+          node scripts/test-ticket-accordion-render-path.js
+          node scripts/test-phase6-integration.js
+          node scripts/test-current-cache-test-alignment.js
+          node scripts/test-load-performance.js
+          node tools/test-local-water-theory-v2.js
+          node tools/test-motor-maintenance-theory-v2.js
+          node scripts/test-third-six-rescue-fixed5.js
+          node scripts/test-three-course-escape-rescue-fixed5.js
+          node scripts/test-four-kado-escape-rescue-fixed5.js
+          node scripts/test-pair-31-rescue-fixed5.js
+          node scripts/test-pair-32-rescue-fixed5.js
+          node scripts/test-third-place-rescue-14-fixed5.js
+          node scripts/test-third-place-rescue-12-4-fixed5.js
+          node scripts/test-escape-outer-second-rescue-fixed5.js
+          node scripts/test-formation-display-contract-current.js
+          node scripts/check-charter.js
+
+      - name: Commit only final production files
+        run: |
+          rm -f \
+            .github/workflows/finish-readonly-ai-core-direct-fix-v3.yml \
+            .github/workflows/finish-readonly-ai-core-direct-fix-v2.yml \
+            .github/workflows/finish-readonly-ai-core-direct-fix.yml \
+            .github/workflows/apply-readonly-ai-core-direct-fix.yml \
+            scripts/apply-readonly-ai-core-direct-fix.js \
+            scripts/apply-readonly-ai-core-direct-fix-v2.js
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Make AI core installers readonly-safe"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+
+      - name: Squash merge verified direct fix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge "$PR_URL" \
+            --squash \
+            --delete-branch \
+            --admin \
+            --subject "Fix readonly AI core at the source installers (#${{ github.event.pull_request.number }})" \
+            --body "Clone readonly or frozen AI core objects before Local/Water V2 and Motor V2 wrap them. Preserve fixed-ticket freeze state and bump the production runtime cache generation. Prediction logic, scoring, tickets, UI and odds calculation are unchanged."
