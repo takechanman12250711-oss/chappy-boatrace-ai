@@ -28,6 +28,24 @@ function memoryStorage(initial = {}) {
   };
 }
 
+function createDateInput() {
+  const prototype = {};
+  Object.defineProperty(prototype, "value", {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return this.__value || "";
+    },
+    set(value) {
+      this.__value = String(value ?? "");
+    }
+  });
+  const input = Object.create(prototype);
+  input.__value = "";
+  input.max = "";
+  return input;
+}
+
 function createRoot() {
   const listeners = new Map();
   const windowListeners = new Map();
@@ -35,10 +53,7 @@ function createRoot() {
     raceModeSelect: {
       value: "live"
     },
-    dateInput: {
-      value: "",
-      max: ""
-    },
+    dateInput: createDateInput(),
     resultArea: {
       dataset: {},
       innerHTML: "",
@@ -117,6 +132,10 @@ function createRoot() {
 
 async function main() {
   assert.equal(
+    guard.version,
+    "20260825-live-selection-terminal2"
+  );
+  assert.equal(
     guard.jstDate(new Date("2026-08-24T17:30:00.000Z")),
     "20260825",
     "UTCでは前日でもJST当日を返す"
@@ -134,6 +153,7 @@ async function main() {
   });
 
   assert.equal(installed.installed, true);
+  assert.equal(installed.dateInputProtected, true);
   assert.equal(installed.staleCacheRemoved, 2);
   assert.equal(
     root.sessionStorage.has("chappy-home-v2-cache"),
@@ -152,6 +172,14 @@ async function main() {
   );
   assert.equal(root.__elements.dateInput.max, "2026-08-25");
 
+  // lazy runtimeのsetDefaultDate(true)がUTC前日を書いても、その場でJST当日へ戻す。
+  root.__elements.dateInput.value = "2026-08-24";
+  assert.equal(
+    root.__elements.dateInput.value,
+    "2026-08-25",
+    "liveモードでは端末ローカル前日を保持しない"
+  );
+
   const click = root.__listeners.get("click:true");
   assert.equal(typeof click, "function", "capture click guardを登録する");
 
@@ -167,8 +195,6 @@ async function main() {
     }
   };
 
-  // 古い日付が途中で残っていても、クリック直前にJST当日へ戻す。
-  root.__elements.dateInput.value = "2026-08-24";
   root.__elements.resultArea.dataset.raceLoading = "true";
   click({ target: flowButton });
 
@@ -213,9 +239,10 @@ async function main() {
   const reviewRoot = createRoot();
   reviewRoot.__elements.raceModeSelect.value = "review";
   reviewRoot.__elements.dateInput.value = "2026-08-20";
-  guard.install(reviewRoot, {
+  const reviewInstalled = guard.install(reviewRoot, {
     nowProvider: () => new Date("2026-08-24T17:30:00.000Z")
   });
+  assert.equal(reviewInstalled.dateInputProtected, true);
   assert.equal(
     reviewRoot.__elements.dateInput.value,
     "2026-08-20",
