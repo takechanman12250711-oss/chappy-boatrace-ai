@@ -1,0 +1,110 @@
+name: Diagnose post-prediction stage in WebKit
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/diagnose-post-prediction-stage-webkit.yml"
+      - "scripts/diagnose-post-prediction-stage-webkit.mjs"
+      - "index.html"
+      - "js/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  post-prediction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-post-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chappy-post-http.log
+          exit 1
+
+      - name: Isolate practical selection
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts-post/local-select
+          timeout --signal=TERM --kill-after=5s 90s \
+            env \
+              APP_URL=http://127.0.0.1:4173/ \
+              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              DIAG_OUTPUT=artifacts-post/local-select \
+            node scripts/diagnose-post-prediction-stage-webkit.mjs select \
+            > artifacts-post/local-select/process.log 2>&1
+          status=$?
+          echo "exit_status=$status" | tee -a artifacts-post/local-select/process.log
+          cat artifacts-post/local-select/process.log
+          pkill -9 MiniBrowser || true
+          pkill -9 WebKitNetworkProcess || true
+          exit 0
+
+      - name: Isolate renderAll locally
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts-post/local-render
+          timeout --signal=TERM --kill-after=5s 90s \
+            env \
+              APP_URL=http://127.0.0.1:4173/ \
+              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              DIAG_OUTPUT=artifacts-post/local-render \
+            node scripts/diagnose-post-prediction-stage-webkit.mjs render \
+            > artifacts-post/local-render/process.log 2>&1
+          status=$?
+          echo "exit_status=$status" | tee -a artifacts-post/local-render/process.log
+          cat artifacts-post/local-render/process.log
+          pkill -9 MiniBrowser || true
+          pkill -9 WebKitNetworkProcess || true
+          exit 0
+
+      - name: Isolate renderAll in production
+        shell: bash
+        run: |
+          set +e
+          mkdir -p artifacts-post/production-render
+          timeout --signal=TERM --kill-after=5s 90s \
+            env \
+              APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
+              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              DIAG_OUTPUT=artifacts-post/production-render \
+            node scripts/diagnose-post-prediction-stage-webkit.mjs render \
+            > artifacts-post/production-render/process.log 2>&1
+          status=$?
+          echo "exit_status=$status" | tee -a artifacts-post/production-render/process.log
+          cat artifacts-post/production-render/process.log
+          pkill -9 MiniBrowser || true
+          pkill -9 WebKitNetworkProcess || true
+          exit 0
+
+      - name: Upload post-prediction diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-prediction-webkit-diagnostics
+          path: artifacts-post
+          if-no-files-found: error
+          retention-days: 7
