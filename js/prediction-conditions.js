@@ -53,7 +53,12 @@
   }
 
   function average(values) {
-    const numbers = values.map(numberOrNull).filter(value => value !== null);
+    const source = Array.isArray(values)
+      ? values
+      : values === null || values === undefined
+        ? []
+        : [values];
+    const numbers = source.map(numberOrNull).filter(value => value !== null);
     if (!numbers.length) return null;
     return Math.round(numbers.reduce((sum, value) => sum + value, 0) /
       numbers.length * 1000) / 1000;
