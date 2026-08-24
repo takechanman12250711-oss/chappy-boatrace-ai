@@ -20,6 +20,7 @@ on:
       - "scripts/restore-daily-prediction-source.js"
       - "scripts/prepare-daily-prediction-git-save.js"
       - "scripts/test-daily-prediction-source-archive.js"
+      - "scripts/test-daily-prediction-source-archive-idempotency.js"
       - "scripts/test-post-save-source-restore-order.js"
       - "js/frame-rise-fall-replay-preload.js"
       - "js/practical-priority-shadow.js"
@@ -139,8 +140,10 @@ jobs:
           node --check scripts/minify-daily-prediction.js
           node scripts/test-minify-daily-prediction.js
           node --check scripts/daily-prediction-source-archive.js
+          node --check scripts/test-daily-prediction-source-archive-idempotency.js
           node --check scripts/restore-daily-prediction-source.js
           node --check scripts/prepare-daily-prediction-git-save.js
+          node scripts/test-daily-prediction-source-archive-idempotency.js
           node scripts/test-daily-prediction-source-archive.js
           node scripts/test-post-save-source-restore-order.js
           node --check scripts/build-prediction-summaries.js
@@ -247,6 +250,7 @@ jobs:
           node scripts/test-api-client-cache.js
           node scripts/test-prediction-summaries.js
           node scripts/test-current-prediction-summary.js
+          node scripts/test-daily-prediction-source-archive-idempotency.js
           node scripts/test-daily-prediction-source-archive.js
           node scripts/test-post-save-source-restore-order.js
           node scripts/test-build-prediction-index.js

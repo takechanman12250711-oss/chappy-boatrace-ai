@@ -184,61 +184,62 @@ for (const filename of fs.readdirSync(DIRECTORY)
   }
 }
 
+// Frozen after the official racer skill ST history restore on main.
 assert.deepEqual(cohorts, {
   pre: {
     races: 457,
-    baseHits: 135,
-    shadowHits: 136,
+    baseHits: 134,
+    shadowHits: 135,
     gains: 1,
     losses: 0,
-    changes: 36,
-    stake: 379400,
-    baseReturn: 226150,
-    shadowReturn: 232910
+    changes: 39,
+    stake: 380200,
+    baseReturn: 225710,
+    shadowReturn: 232470
   },
   mid: {
     races: 313,
-    baseHits: 109,
-    shadowHits: 111,
+    baseHits: 107,
+    shadowHits: 109,
     gains: 2,
     losses: 0,
-    changes: 27,
-    stake: 264900,
-    baseReturn: 213500,
-    shadowReturn: 216520
+    changes: 29,
+    stake: 264200,
+    baseReturn: 198350,
+    shadowReturn: 201370
   },
   d0811: {
     races: 97,
-    baseHits: 24,
-    shadowHits: 25,
+    baseHits: 28,
+    shadowHits: 29,
     gains: 1,
     losses: 0,
-    changes: 7,
-    stake: 87000,
-    baseReturn: 50130,
-    shadowReturn: 51980
+    changes: 8,
+    stake: 86300,
+    baseReturn: 66650,
+    shadowReturn: 68500
   },
   d0812: {
     races: 112,
-    baseHits: 32,
-    shadowHits: 34,
+    baseHits: 31,
+    shadowHits: 33,
     gains: 2,
     losses: 0,
     changes: 14,
-    stake: 98900,
-    baseReturn: 116700,
-    shadowReturn: 119200
+    stake: 98600,
+    baseReturn: 113680,
+    shadowReturn: 116180
   }
 });
 assert.deepEqual(addedTickets, {
-  "1-3-6": 54,
+  "1-3-6": 60,
   "1-4-2": 25,
-  "1-4-6": 3,
-  "1-3-2": 2
+  "1-4-6": 4,
+  "1-3-2": 1
 });
 assert.deepEqual(removedCategories, {
-  独立展開: 60,
-  押さえ: 24
+  独立展開: 64,
+  押さえ: 26
 });
 
 const total = Object.values(cohorts).reduce(
@@ -256,10 +257,10 @@ assert.deepEqual(total, {
   shadowHits: 306,
   gains: 6,
   losses: 0,
-  changes: 84,
-  stake: 830200,
-  baseReturn: 606480,
-  shadowReturn: 620610
+  changes: 90,
+  stake: 829300,
+  baseReturn: 604390,
+  shadowReturn: 618520
 });
 
 console.log(

@@ -977,19 +977,25 @@ const completeHistory =
     "12",
     8
   );
-completeHistory.raceData.historyContext.venueRace.trend.frameMovement["1"] = {
-  samples: 200,
-  reliability: "high",
-  riseRate: 0,
-  stayRate: 74,
-  sinkRate: 26,
-  label: "沈下",
-  hasBaseline: true,
-  baselineRiseRate: 0,
-  baselineStayRate: 55.2,
-  baselineSinkRate: 44.8,
-  movementDelta: 18.8
-};
+[1, 2, 3, 4].forEach(boatNo => {
+  completeHistory.raceData.historyContext
+    .venueRace.trend.frameMovement[
+      String(boatNo)
+    ] = {
+      boatNo,
+      samples: 200,
+      reliability: "high",
+      riseRate: 60,
+      stayRate: 30,
+      sinkRate: 10,
+      label: "浮上",
+      hasBaseline: true,
+      baselineRiseRate: 30,
+      baselineStayRate: 40,
+      baselineSinkRate: 30,
+      movementDelta: 50
+    };
+});
 const completeLegacyInput =
   theoryInput.prepare(
     JSON.parse(
