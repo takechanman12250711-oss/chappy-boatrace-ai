@@ -5,61 +5,106 @@ const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
 const PLACE = process.env.RACE_PLACE || "桐生";
 const RACE_NO = Number(process.env.RACE_NO || 1);
 const EXPECTED_DATE = process.env.EXPECTED_DATE || "20260825";
+const MAX_WAIT_MS = Number(process.env.MAX_WAIT_MS || 110000);
 
 const requests = [];
 const pageErrors = [];
 const consoleErrors = [];
+const snapshots = [];
 
-const browser = await webkit.launch({ headless: true });
-const context = await browser.newContext({
-  viewport: { width: 390, height: 844 },
-  timezoneId: "UTC",
-  userAgent:
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) " +
-    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 " +
-    "Mobile/15E148 Safari/604.1"
-});
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-await context.addInitScript(() => {
-  const stale = JSON.stringify({
-    savedAt: Date.now(),
-    scheduleDate: "20260824",
-    schedule: [
-      {
+function terminal(snapshot) {
+  return (
+    snapshot.loading === "error" ||
+    Boolean(snapshot.error) ||
+    (
+      snapshot.loading !== "true" &&
+      snapshot.resultLength > 500 &&
+      !snapshot.resultStart.includes("読み込み中")
+    )
+  );
+}
+
+async function stateOf(page) {
+  return page.evaluate(() => {
+    const resultArea = document.getElementById("resultArea");
+    const text = id =>
+      (document.getElementById(id)?.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim();
+    return {
+      inputDate: document.getElementById("dateInput")?.value || "",
+      mode: document.getElementById("raceModeSelect")?.value || "",
+      place: document.getElementById("placeSelect")?.value || "",
+      race: document.getElementById("raceSelect")?.value || "",
+      loading: resultArea?.dataset?.raceLoading || "",
+      resultLength: text("resultArea").length,
+      resultStart: text("resultArea").slice(0, 900),
+      error: text("errorArea").slice(0, 1500),
+      oddsStatus: text("predictionOddsStatus"),
+      status: text("statusArea"),
+      intent: window.__CHAPPY_LIVE_RACE_SELECTION_INTENT__ || null,
+      runtime: window.ChappyPredictionRuntime?.version || "",
+      renderedEvent:
+        window.__CHAPPY_LIVE_SELECTION_E2E_RENDERED__ === true,
+      guardState:
+        window.ChappyLiveRaceSelectionTerminalGuard?.getState?.() || null
+    };
+  });
+}
+
+let browser = null;
+let context = null;
+let page = null;
+let failure = null;
+
+try {
+  browser = await webkit.launch({ headless: true });
+  context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    timezoneId: "UTC",
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) " +
+      "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 " +
+      "Mobile/15E148 Safari/604.1"
+  });
+
+  await context.addInitScript(() => {
+    const stale = JSON.stringify({
+      savedAt: Date.now(),
+      scheduleDate: "20260824",
+      schedule: [{
         jcd: "01",
         place: "桐生",
         currentRaceNo: 1,
         deadlineAt: "2026-08-24T14:57:00+09:00",
         selectable: true
-      }
-    ]
+      }]
+    });
+    sessionStorage.setItem("chappy-home-v2-cache", stale);
+    localStorage.setItem("chappy-home-v2-cache", stale);
   });
-  sessionStorage.setItem("chappy-home-v2-cache", stale);
-  localStorage.setItem("chappy-home-v2-cache", stale);
-});
 
-const page = await context.newPage();
-page.on("request", request => {
-  const url = request.url();
-  if (/chappy-boatrace-api/.test(url)) {
-    requests.push(url);
-    console.log("[REQUEST]", url);
-  }
-});
-page.on("pageerror", error => {
-  pageErrors.push(String(error?.message || error));
-  console.error("[PAGEERROR]", error?.message || error);
-});
-page.on("console", message => {
-  if (message.type() === "error") {
-    consoleErrors.push(message.text());
-    console.error("[CONSOLE ERROR]", message.text());
-  }
-});
+  page = await context.newPage();
+  page.on("request", request => {
+    const url = request.url();
+    if (/chappy-boatrace-api/.test(url)) {
+      requests.push(url);
+      console.log("[REQUEST]", url);
+    }
+  });
+  page.on("pageerror", error => {
+    pageErrors.push(String(error?.message || error));
+    console.error("[PAGEERROR]", error?.message || error);
+  });
+  page.on("console", message => {
+    if (message.type() === "error") {
+      consoleErrors.push(message.text());
+      console.error("[CONSOLE ERROR]", message.text());
+    }
+  });
 
-let failure = null;
-
-try {
   const target = `${APP_URL}${APP_URL.includes("?") ? "&" : "?"}` +
     `liveSelectionGuard=${Date.now()}`;
   await page.goto(target, {
@@ -78,6 +123,15 @@ try {
   );
 
   const startup = await page.evaluate(() => {
+    window.__CHAPPY_LIVE_SELECTION_E2E_RENDERED__ = false;
+    window.addEventListener(
+      "chappy:prediction-rendered",
+      () => {
+        window.__CHAPPY_LIVE_SELECTION_E2E_RENDERED__ = true;
+      },
+      { once: true }
+    );
+
     const cacheDates = [sessionStorage, localStorage].map(storage => {
       const raw = storage.getItem("chappy-home-v2-cache");
       if (!raw) return "";
@@ -87,6 +141,7 @@ try {
         return "invalid";
       }
     });
+
     return {
       version:
         window.ChappyLiveRaceSelectionTerminalGuard?.version || "",
@@ -102,10 +157,11 @@ try {
 
   console.log("[STARTUP]", JSON.stringify(startup));
 
-  if (startup.version !== "20260825-live-selection-terminal2") {
-    throw new Error(`guard version mismatch: ${JSON.stringify(startup)}`);
-  }
-  if (!startup.installed || !startup.dateInputProtected) {
+  if (
+    startup.version !== "20260825-live-selection-terminal2" ||
+    !startup.installed ||
+    !startup.dateInputProtected
+  ) {
     throw new Error(`guard is not active: ${JSON.stringify(startup)}`);
   }
   if (startup.inputDate !== "2026-08-25") {
@@ -121,7 +177,6 @@ try {
     PLACE,
     { timeout: 60_000 }
   );
-
   await page.locator(`[data-open-venue="${PLACE}"]`).first().click();
 
   const raceSelector =
@@ -130,55 +185,44 @@ try {
     state: "visible",
     timeout: 60_000
   });
-
   await page.locator(raceSelector).first().click();
 
-  await page.waitForFunction(
-    () => {
-      const resultArea = document.getElementById("resultArea");
-      const resultText =
-        (resultArea?.textContent || "").replace(/\s+/g, " ").trim();
-      const errorText =
-        (document.getElementById("errorArea")?.textContent || "")
-          .replace(/\s+/g, " ")
-          .trim();
-      return (
-        resultArea?.dataset?.raceLoading === "error" ||
-        Boolean(errorText) ||
-        (
-          resultArea?.dataset?.raceLoading !== "true" &&
-          resultText.length > 500 &&
-          !resultText.includes("読み込み中")
-        )
-      );
-    },
-    null,
-    { timeout: 120_000 }
-  );
+  const startedAt = Date.now();
+  let final = await stateOf(page);
+  let previousKey = "";
 
-  const final = await page.evaluate(() => {
-    const resultArea = document.getElementById("resultArea");
-    const text = id =>
-      (document.getElementById(id)?.textContent || "")
-        .replace(/\s+/g, " ")
-        .trim();
-    return {
-      inputDate: document.getElementById("dateInput")?.value || "",
-      mode: document.getElementById("raceModeSelect")?.value || "",
-      place: document.getElementById("placeSelect")?.value || "",
-      race: document.getElementById("raceSelect")?.value || "",
-      loading: resultArea?.dataset?.raceLoading || "",
-      resultLength: text("resultArea").length,
-      resultStart: text("resultArea").slice(0, 600),
-      error: text("errorArea").slice(0, 1000),
-      oddsStatus: text("predictionOddsStatus"),
-      status: text("statusArea"),
-      intent: window.__CHAPPY_LIVE_RACE_SELECTION_INTENT__ || null,
-      runtime: window.ChappyPredictionRuntime?.version || ""
-    };
-  });
+  while (Date.now() - startedAt < MAX_WAIT_MS) {
+    final = await Promise.race([
+      stateOf(page),
+      delay(8_000).then(() => {
+        throw new Error("page state response exceeded 8 seconds");
+      })
+    ]);
 
-  console.log("[FINAL]", JSON.stringify(final, null, 2));
+    const key = JSON.stringify({
+      loading: final.loading,
+      resultLength: final.resultLength,
+      error: final.error,
+      oddsStatus: final.oddsStatus,
+      status: final.status,
+      renderedEvent: final.renderedEvent,
+      inputDate: final.inputDate
+    });
+    if (key !== previousKey) {
+      previousKey = key;
+      const row = {
+        elapsedMs: Date.now() - startedAt,
+        ...final
+      };
+      snapshots.push(row);
+      console.log("[SNAPSHOT]", JSON.stringify(row));
+    }
+
+    if (terminal(final)) break;
+    await delay(1000);
+  }
+
+  console.log("[FINAL]", JSON.stringify(final));
 
   const staleRequests = requests.filter(url =>
     /[?&]date=20260824(?:&|$)/.test(url)
@@ -207,13 +251,19 @@ try {
   ) {
     throw new Error(`selection intent mismatch: ${JSON.stringify(final.intent)}`);
   }
-  if (final.loading === "true") {
-    throw new Error("prediction remained in loading state");
+  if (!terminal(final)) {
+    throw new Error(
+      `prediction did not reach a terminal state in ${MAX_WAIT_MS}ms: ` +
+      JSON.stringify(final)
+    );
+  }
+  if (final.loading === "true" || final.loading === "error") {
+    throw new Error(`prediction loading failed: ${JSON.stringify(final)}`);
   }
   if (final.error) {
     throw new Error(`prediction error: ${final.error}`);
   }
-  if (final.resultLength <= 500) {
+  if (!final.renderedEvent || final.resultLength <= 500) {
     throw new Error(
       `prediction was not rendered: ${JSON.stringify(final)}`
     );
@@ -225,20 +275,36 @@ try {
   console.log(JSON.stringify({
     ok: true,
     final,
+    snapshots,
     apiRequests: requests,
     pageErrors,
     consoleErrors
-  }, null, 2));
+  }));
 } catch (error) {
   failure = error;
   console.error("[FATAL]", error?.stack || error);
 } finally {
-  await page.screenshot({
-    path: "live-race-selection-terminal-webkit.png",
-    fullPage: true
-  }).catch(() => {});
-  await context.close().catch(() => {});
-  await browser.close().catch(() => {});
+  if (page) {
+    await Promise.race([
+      page.screenshot({
+        path: "live-race-selection-terminal-webkit.png",
+        fullPage: true
+      }).catch(() => {}),
+      delay(5_000)
+    ]);
+  }
+  if (context) {
+    await Promise.race([
+      context.close().catch(() => {}),
+      delay(5_000)
+    ]);
+  }
+  if (browser) {
+    await Promise.race([
+      browser.close().catch(() => {}),
+      delay(5_000)
+    ]);
+  }
 }
 
-if (failure) process.exitCode = 1;
+process.exit(failure ? 1 : 0);
