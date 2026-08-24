@@ -2,10 +2,10 @@
 (function (root) {
   "use strict";
   if (root.ChappyAppRuntime) return;
-  const VERSION = "20260815-odds-immediate1";
+  const VERSION = "20260824-result-timeout1";
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";
   const loaded=new Map(),groupReady=new Map();
-  const groups={race:["js/utils.js","js/storage.js","js/prediction-conditions.js","js/prediction-runtime-loader.js","js/script.js","js/hiyori-runtime-loader.js"],stats:["js/utils.js","js/storage.js","js/stats-runtime-loader.js"],autoSelection:["js/utils.js","js/storage.js","js/auto-selection.js"]};
+  const groups={race:["js/utils.js","js/storage.js","js/prediction-conditions.js","js/prediction-runtime-loader.js","js/result-request-timeout.js","js/script.js","js/hiyori-runtime-loader.js"],stats:["js/utils.js","js/storage.js","js/stats-runtime-loader.js"],autoSelection:["js/utils.js","js/storage.js","js/auto-selection.js"]};
   function hydrateHomeCache(){try{const sessionValue=sessionStorage.getItem(HOME_CACHE_KEY);if(sessionValue)return;const localValue=localStorage.getItem(HOME_CACHE_KEY);if(!localValue)return;const parsed=JSON.parse(localValue);const savedAt=Number(parsed?.savedAt||0);if(!savedAt||Date.now()-savedAt>HOME_CACHE_TTL){localStorage.removeItem(HOME_CACHE_KEY);return;}sessionStorage.setItem(HOME_CACHE_KEY,localValue);}catch(_){}}
   function persistHomeCache(){try{const value=sessionStorage.getItem(HOME_CACHE_KEY);if(!value)return;const parsed=JSON.parse(value);if(!Number(parsed?.savedAt||0))return;localStorage.setItem(HOME_CACHE_KEY,value);}catch(_){}}
   hydrateHomeCache();root.addEventListener("pagehide",persistHomeCache,{passive:true});document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persistHomeCache();},{passive:true});
