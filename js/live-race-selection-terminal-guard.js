@@ -4,6 +4,7 @@
 
   - JST当日と違うホームキャッシュを使用しない
   - ホーム／開催場一覧からレースを押す前に選択日をJST当日へ固定
+  - lazy runtimeが端末ローカル日付を再設定してもJST当日を維持
   - 予想表示にもエラー表示にも到達しない永久ローディングを終端
 
   予想ロジック・配点・買い目・オッズ計算・画面構成は変更しない。
@@ -32,7 +33,7 @@
 })(typeof window !== "undefined" ? window : null, function () {
   "use strict";
 
-  const VERSION = "20260825-live-selection-terminal1";
+  const VERSION = "20260825-live-selection-terminal2";
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const DEFAULT_WATCHDOG_MS = 75_000;
   const RACE_INTENT_SELECTOR = [
@@ -122,6 +123,69 @@
     if (inputValue === today) return inputValue;
 
     return today;
+  }
+
+  function findValueDescriptor(target) {
+    let prototype = Object.getPrototypeOf(target);
+    while (prototype) {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        prototype,
+        "value"
+      );
+      if (descriptor?.get && descriptor?.set) {
+        return descriptor;
+      }
+      prototype = Object.getPrototypeOf(prototype);
+    }
+    return null;
+  }
+
+  function protectLiveDateInput(
+    root,
+    todayProvider = () => jstDate()
+  ) {
+    const dateInput = root?.document?.getElementById?.("dateInput");
+    if (!dateInput) return false;
+    if (dateInput.__chappyLiveDateProtected === true) return true;
+
+    const descriptor = findValueDescriptor(dateInput);
+    if (!descriptor) return false;
+
+    try {
+      Object.defineProperty(dateInput, "value", {
+        configurable: true,
+        enumerable: descriptor.enumerable === true,
+        get() {
+          return descriptor.get.call(dateInput);
+        },
+        set(nextValue) {
+          let value = String(nextValue ?? "");
+          const mode =
+            root.document.getElementById("raceModeSelect")?.value ||
+            "live";
+
+          if (mode !== "review") {
+            const today = normalizeDate(todayProvider());
+            if (today && normalizeDate(value) !== today) {
+              value = inputDate(today);
+            }
+          }
+
+          descriptor.set.call(dateInput, value);
+        }
+      });
+      Object.defineProperty(
+        dateInput,
+        "__chappyLiveDateProtected",
+        {
+          configurable: true,
+          value: true
+        }
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   function setLiveDateInput(root, date) {
@@ -239,7 +303,8 @@
       timer: 0,
       generation: 0,
       lastIntent: null,
-      staleCacheRemoved: 0
+      staleCacheRemoved: 0,
+      dateInputProtected: false
     };
 
     const today = () => jstDate(nowProvider());
@@ -285,6 +350,7 @@
       }, Math.max(1, Number(watchdogMs) || DEFAULT_WATCHDOG_MS));
     }
 
+    state.dateInputProtected = protectLiveDateInput(root, today);
     state.staleCacheRemoved = purgeStaleHomeCache(root, today());
     setLiveDateInput(root, today());
 
@@ -362,13 +428,15 @@
       version: VERSION,
       watchdogMs,
       staleCacheRemoved: state.staleCacheRemoved,
+      dateInputProtected: state.dateInputProtected,
       getState: () => ({
         timerActive: Boolean(state.timer),
         generation: state.generation,
         lastIntent: state.lastIntent
           ? { ...state.lastIntent }
           : null,
-        staleCacheRemoved: state.staleCacheRemoved
+        staleCacheRemoved: state.staleCacheRemoved,
+        dateInputProtected: state.dateInputProtected
       })
     };
   }
@@ -382,6 +450,7 @@
     inputDate,
     purgeStaleHomeCache,
     currentHomeDate,
+    protectLiveDateInput,
     setLiveDateInput,
     raceIntent,
     renderTerminalError,
