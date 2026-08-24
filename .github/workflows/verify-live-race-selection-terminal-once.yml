@@ -1,0 +1,68 @@
+name: Verify live race selection terminal once
+
+on:
+  push:
+    branches:
+      - fix/live-selection-terminal-20260825
+    paths:
+      - ".github/workflows/verify-live-race-selection-terminal-once.yml"
+      - "index.html"
+      - "js/live-race-selection-terminal-guard.js"
+      - "scripts/test-live-race-selection-terminal-webkit.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run Node contract first
+        run: |
+          node --check js/live-race-selection-terminal-guard.js
+          node scripts/test-live-race-selection-terminal-guard.js
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start branch static server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-live-selection.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chappy-live-selection.log
+          exit 1
+
+      - name: Verify stale-date flow in iPhone WebKit
+        env:
+          APP_URL: http://127.0.0.1:4173/
+          RACE_PLACE: 桐生
+          RACE_NO: "1"
+          EXPECTED_DATE: "20260825"
+        run: |
+          timeout --signal=TERM --kill-after=5s 180s \
+            node scripts/test-live-race-selection-terminal-webkit.mjs
+
+      - name: Upload WebKit screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-race-selection-terminal-webkit
+          path: live-race-selection-terminal-webkit.png
+          if-no-files-found: warn
+          retention-days: 7
