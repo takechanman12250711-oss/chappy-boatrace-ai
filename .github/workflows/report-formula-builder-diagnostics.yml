@@ -1,0 +1,92 @@
+name: Report formula builder diagnostics
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/report-formula-builder-diagnostics.yml"
+      - "scripts/scan-formula-builder-static.js"
+      - "scripts/diagnose-formula-builder-webkit.mjs"
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
+jobs:
+  report:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build compact static scan
+        run: |
+          node scripts/scan-formula-builder-static.js > /tmp/formula-static.txt
+
+      - name: Download and filter completed WebKit diagnostic log
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set +e
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/actions/jobs/97555931516/logs" \
+            > /tmp/formula-webkit-full.txt
+          status=$?
+          echo "download_status=$status" > /tmp/formula-webkit.txt
+          grep -aE \
+            'FORMULA_DIAG_(ERROR|REJECTION|SCRIPT|FUNCTION|FINAL_START|FINAL_END)|\[PAGEERROR\]|\[FATAL\]|fetchAndRenderRace' \
+            /tmp/formula-webkit-full.txt \
+            | tail -n 300 \
+            >> /tmp/formula-webkit.txt
+          exit 0
+
+      - name: Post filtered evidence to this PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        shell: bash
+        run: |
+          node <<'NODE'
+          "use strict";
+          const fs = require("node:fs");
+
+          const read = file => {
+            try {
+              return fs.readFileSync(file, "utf8");
+            } catch (_) {
+              return "missing";
+            }
+          };
+
+          const staticScan = read("/tmp/formula-static.txt");
+          const webkit = read("/tmp/formula-webkit.txt");
+          const limit = value => value.length > 28000
+            ? `${value.slice(0, 28000)}\n...truncated`
+            : value;
+
+          const body = [
+            "## Formula builder filtered diagnostics",
+            "",
+            "### WebKit error/source trace",
+            "```text",
+            limit(webkit),
+            "```",
+            "",
+            "### Static repository scan",
+            "```json",
+            limit(staticScan),
+            "```"
+          ].join("\n");
+
+          fs.writeFileSync("/tmp/formula-comment.md", body, "utf8");
+          NODE
+
+          gh pr comment "$PR_URL" --body-file /tmp/formula-comment.md
