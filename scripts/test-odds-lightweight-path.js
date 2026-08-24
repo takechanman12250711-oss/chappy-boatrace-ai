@@ -14,7 +14,7 @@ const formationOdds = read("js/formation-odds-display.js");
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js?v=20260815-odds-immediate1"');
 const directApiIndex = html.indexOf('src="js/api.js?v=20260815-odds-immediate1"');
-const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260823-three-course-134-v1"');
+const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260823-local-water-v2-gap3-v1&feature=four-kado-124-v1"');
 const hiyoriIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"');
 const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
@@ -71,7 +71,7 @@ assert.equal(
   "親ランタイムの先読み制限を維持する"
 );
 assert.equal(
-  predictionRuntime.includes('const VERSION = "20260823-three-course-134-v1"') &&
+  predictionRuntime.includes('const VERSION = "20260823-local-water-v2-gap3-v1"') &&
     predictionRuntime.includes("const PRELOAD_LOOKAHEAD = 2") &&
     predictionRuntime.includes("const RUNTIME_TOTAL_TIMEOUT_MS = 45000") &&
     predictionRuntime.includes("await withTimeout(") &&

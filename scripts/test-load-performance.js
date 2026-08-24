@@ -24,10 +24,97 @@ const {
 } = require(
   "./compact-prediction-index"
 );
+const archiveApi = require(
+  "./daily-prediction-source-archive"
+);
+const restoreApi = require(
+  "./restore-daily-prediction-source"
+);
 
 const root = path.resolve(__dirname, "..");
 const read = file =>
   fs.readFileSync(path.join(root, file), "utf8");
+
+function buildArchiveBackedCurrentIndex() {
+  const predictionDirectory =
+    archiveApi.predictionDirectory(root);
+  const backupDirectory = fs.mkdtempSync(
+    path.join(
+      predictionDirectory,
+      ".load-performance-source-"
+    )
+  );
+  const snapshots =
+    archiveApi
+      .archivedSourceDates(root)
+      .map(date => {
+        const sourcePath =
+          archiveApi.sourcePathFor(root, date);
+        const backupPath = path.join(
+          backupDirectory,
+          date + ".json"
+        );
+        const existed = fs.existsSync(sourcePath);
+
+        if (existed) {
+          try {
+            fs.linkSync(sourcePath, backupPath);
+          } catch {
+            fs.copyFileSync(sourcePath, backupPath);
+          }
+        }
+
+        return {
+          sourcePath,
+          backupPath,
+          existed
+        };
+      });
+
+  try {
+    const restored =
+      restoreApi.restorePredictionSources({
+        rootDirectory: root,
+        all: true
+      });
+
+    assert.ok(
+      restored.length > 0,
+      "分割index照合にはarchive原本が必要"
+    );
+    assert.ok(
+      restored.every(
+        result => result.status === "restored"
+      ),
+      "archive済み日次予想原本をすべて復元する"
+    );
+
+    return compactIndex(
+      buildPredictionIndex(predictionDirectory)
+    );
+  } finally {
+    snapshots.forEach(snapshot => {
+      fs.rmSync(
+        snapshot.sourcePath,
+        { force: true }
+      );
+
+      if (snapshot.existed) {
+        fs.renameSync(
+          snapshot.backupPath,
+          snapshot.sourcePath
+        );
+      }
+    });
+    fs.rmSync(
+      backupDirectory,
+      {
+        recursive: true,
+        force: true
+      }
+    );
+  }
+}
 
 const html = read("index.html");
 const script = read("js/script.js");
@@ -327,7 +414,7 @@ assert.equal(
     "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
     html.includes(
-      "js/prediction-runtime-loader.js?v=20260823-three-course-134-v1"
+      "js/prediction-runtime-loader.js?v=20260823-local-water-v2-gap3-v1"
     ) &&
     html.includes(
       "js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"
@@ -336,7 +423,7 @@ assert.equal(
       'const VERSION = "20260815-odds-immediate1"'
     ) &&
     predictionRuntime.includes(
-      'const VERSION = "20260823-three-course-134-v1"'
+      'const VERSION = "20260823-local-water-v2-gap3-v1"'
     ) &&
     hiyoriLoader.includes(
       'const VERSION="20260816-nonblocking-core2"'
@@ -372,7 +459,7 @@ assert.equal(
 );
 assert.equal(
   predictionRuntime.includes(
-    'const VERSION = "20260823-three-course-134-v1"'
+    'const VERSION = "20260823-local-water-v2-gap3-v1"'
   ),
   true,
   "全文表示を含む予想モジュールのキャッシュ世代を更新する"
@@ -723,15 +810,8 @@ const reconstructedIndex =
   reconstructIndex(
     predictionIndexManifestPath
   );
-const expectedCurrentIndex = compactIndex(
-  buildPredictionIndex(
-    path.join(
-      root,
-      "data",
-      "predictions"
-    )
-  )
-);
+const expectedCurrentIndex =
+  buildArchiveBackedCurrentIndex();
 assert.deepEqual(
   {
     ...reconstructedIndex,
