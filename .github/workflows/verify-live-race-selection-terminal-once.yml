@@ -23,6 +23,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   webkit:
@@ -61,20 +62,76 @@ jobs:
           exit 1
 
       - name: Verify stale-date flow in iPhone WebKit
+        id: webkit
         env:
           APP_URL: http://127.0.0.1:4173/
           RACE_PLACE: 桐生
           RACE_NO: "1"
           EXPECTED_DATE: "20260825"
+        shell: bash
         run: |
+          set +e
           timeout --signal=TERM --kill-after=5s 180s \
-            node scripts/test-live-race-selection-terminal-webkit.mjs
+            node scripts/test-live-race-selection-terminal-webkit.mjs \
+            > /tmp/live-selection-webkit.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "webkit_exit_status=$status" >> /tmp/live-selection-webkit.log
+          exit 0
 
-      - name: Upload WebKit screenshot
+      - name: Post compact WebKit result to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        shell: bash
+        run: |
+          grep -aE \
+            '^\[STARTUP\]|^\[FINAL\]|^\[FATAL\]|^\[PAGEERROR\]|^\[CONSOLE ERROR\]|previous-day|date changed back|selection intent mismatch|prediction remained|prediction error|prediction was not rendered|webkit_exit_status' \
+            /tmp/live-selection-webkit.log \
+            | tail -n 240 \
+            > /tmp/live-selection-filtered.txt || true
+
+          node <<'NODE'
+          "use strict";
+          const fs = require("node:fs");
+          let text = fs.readFileSync(
+            "/tmp/live-selection-filtered.txt",
+            "utf8"
+          );
+          if (!text.trim()) text = "No matching WebKit result lines.";
+          if (text.length > 45000) {
+            text = `${text.slice(0, 45000)}\n...truncated`;
+          }
+          fs.writeFileSync(
+            "/tmp/live-selection-comment.md",
+            [
+              "## Live selection WebKit compact result",
+              "",
+              "```text",
+              text,
+              "```"
+            ].join("\n"),
+            "utf8"
+          );
+          NODE
+
+          gh pr comment "$PR_URL" \
+            --body-file /tmp/live-selection-comment.md
+
+      - name: Enforce WebKit result
+        if: steps.webkit.outputs.status != '0'
+        run: |
+          cat /tmp/live-selection-webkit.log
+          exit "${{ steps.webkit.outputs.status }}"
+
+      - name: Upload WebKit evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: live-race-selection-terminal-webkit
-          path: live-race-selection-terminal-webkit.png
+          path: |
+            live-race-selection-terminal-webkit.png
+            /tmp/live-selection-webkit.log
           if-no-files-found: warn
           retention-days: 7
