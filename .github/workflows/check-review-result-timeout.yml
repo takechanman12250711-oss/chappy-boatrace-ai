@@ -1,0 +1,67 @@
+name: Check review result timeout
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/check-review-result-timeout.yml"
+      - "js/app-runtime-loader.js"
+      - "js/result-request-timeout.js"
+      - "js/script.js"
+      - "scripts/test-result-request-timeout.js"
+      - "scripts/test-review-result-timeout-webkit.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  result-timeout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run result timeout contract
+        run: node scripts/test-result-request-timeout.js
+
+      - name: Run related regression contracts
+        run: |
+          node scripts/test-readonly-ai-core-assignment.js
+          node scripts/test-prediction-loading-terminal-state.js
+          node scripts/test-initial-odds-enrichment.js
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Start local static server
+        run: |
+          python3 -m http.server 4173 > /tmp/chappy-result-timeout.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/chappy-result-timeout.log
+          exit 1
+
+      - name: Verify terminal review state in WebKit
+        env:
+          APP_URL: http://127.0.0.1:4173/
+          REVIEW_DATE: "2026-08-24"
+          REVIEW_PLACE: 蒲郡
+          REVIEW_RACE_NO: "12"
+        run: node scripts/test-review-result-timeout-webkit.mjs
+
+      - name: Show static server log
+        if: always()
+        run: cat /tmp/chappy-result-timeout.log || true
