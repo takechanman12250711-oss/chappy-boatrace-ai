@@ -47,7 +47,7 @@ assert.equal(
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
-const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260823-local-water-v2-gap3-v1');
+const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260824-readonly-core-fix1');
 const hiyoriLoaderIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"');
 const appIndex = html.indexOf('src="js/app-runtime-loader.js');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
@@ -68,7 +68,7 @@ assert.equal(
 );
 
 assert.equal(
-  predictionRuntime.includes('const VERSION = "20260823-local-water-v2-gap3-v1"') &&
+  predictionRuntime.includes('const VERSION = "20260824-readonly-core-fix1"') &&
     predictionRuntime.includes("const RUNTIME_TOTAL_TIMEOUT_MS = 45000") &&
     predictionRuntime.includes("const PRELOAD_LOOKAHEAD = 2") &&
     predictionRuntime.includes("await withTimeout(") &&

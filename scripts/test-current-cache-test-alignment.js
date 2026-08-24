@@ -40,7 +40,7 @@ assert.equal(
 );
 assert.equal(
   patchedLoad.includes(
-    "'const VERSION = \"20260823-local-water-v2-gap3-v1\"'"
+    "'const VERSION = \"20260824-readonly-core-fix1\"'"
   ),
   true
 );

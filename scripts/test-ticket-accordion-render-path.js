@@ -10,7 +10,7 @@ const loader = fs.readFileSync(path.join(root, "js/prediction-runtime-loader.js"
 const accordionRender = fs.readFileSync(path.join(root, "js/ticket-accordion-render.js"), "utf8");
 
 assert.doesNotMatch(loader, /"js\/ticket-accordion-render\.js"/);
-assert.match(loader, /20260823-local-water-v2-gap3-v1/);
+assert.match(loader, /20260824-readonly-core-fix1/);
 assert.match(bootstrap, /disabled:\s*true/);
 assert.doesNotMatch(bootstrap, /MutationObserver/);
 assert.doesNotMatch(bootstrap, /ticket-accordion-render\.js\?v=/);
