@@ -143,12 +143,16 @@ async function main() {
   const appIndex = indexHtml.indexOf(
     'src="js/app-runtime-loader.js?v=20260816-static-race1"'
   );
+  const oddsFirstIndex = indexHtml.indexOf(
+    'src="js/odds-first-navigation.js?v=20260815-odds-consume2"'
+  );
 
   assert.ok(guardIndex >= 0, "result timeout guard is missing from index.html");
   assert.ok(appIndex >= 0, "approved app runtime cache version is missing");
+  assert.ok(oddsFirstIndex >= 0, "approved odds bridge is missing");
   assert.ok(
-    guardIndex < appIndex,
-    "result timeout guard must install before the race runtime can load script.js"
+    appIndex < oddsFirstIndex && oddsFirstIndex < guardIndex,
+    "result timeout guard must wrap the final fetch bridge before user interaction"
   );
   assert.doesNotMatch(
     indexHtml,
