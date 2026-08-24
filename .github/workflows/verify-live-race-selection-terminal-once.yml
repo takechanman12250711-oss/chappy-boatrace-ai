@@ -9,6 +9,12 @@ on:
       - "index.html"
       - "js/live-race-selection-terminal-guard.js"
       - "scripts/test-live-race-selection-terminal-webkit.mjs"
+  pull_request:
+    paths:
+      - ".github/workflows/verify-live-race-selection-terminal-once.yml"
+      - "index.html"
+      - "js/live-race-selection-terminal-guard.js"
+      - "scripts/test-live-race-selection-terminal-webkit.mjs"
   workflow_dispatch:
 
 permissions:
