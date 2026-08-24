@@ -1,0 +1,61 @@
+name: Check live race selection terminal
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "js/live-race-selection-terminal-guard.js"
+      - "scripts/test-live-race-selection-terminal-guard.js"
+      - ".github/workflows/check-live-race-selection-terminal.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check guard syntax and contracts
+        run: |
+          node --check js/live-race-selection-terminal-guard.js
+          node --check scripts/test-live-race-selection-terminal-guard.js
+          node scripts/test-live-race-selection-terminal-guard.js
+
+      - name: Check script order
+        run: |
+          node <<'NODE'
+          "use strict";
+          const fs = require("node:fs");
+          const html = fs.readFileSync("index.html", "utf8");
+          const guard = html.indexOf(
+            'js/live-race-selection-terminal-guard.js?v=20260825-live-selection-terminal1'
+          );
+          const app = html.indexOf(
+            'js/app-runtime-loader.js?v=20260816-static-race1'
+          );
+          const home = html.indexOf(
+            'js/home-dashboard-v2.js?v=20260816-static-race1'
+          );
+          if (guard < 0 || app < 0 || home < 0) {
+            throw new Error("live selection guard load order target is missing");
+          }
+          if (!(guard < app && app < home)) {
+            throw new Error("live selection guard must load before app/home cache hydration");
+          }
+          NODE
+
+      - name: Run related regressions
+        run: |
+          node scripts/test-home-dashboard-v2-phase2.js
+          node scripts/test-race-flow-result-panel.js
+          node scripts/test-prediction-loading-terminal-state.js
+          node scripts/test-startup-critical-path.js
+          node scripts/check-charter.js
