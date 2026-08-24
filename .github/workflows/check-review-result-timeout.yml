@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/check-review-result-timeout.yml"
+      - "index.html"
       - "js/app-runtime-loader.js"
       - "js/result-request-timeout.js"
       - "js/script.js"
@@ -60,7 +61,9 @@ jobs:
           REVIEW_DATE: "2026-08-24"
           REVIEW_PLACE: 蒲郡
           REVIEW_RACE_NO: "12"
-        run: node scripts/test-review-result-timeout-webkit.mjs
+        run: |
+          timeout --signal=TERM --kill-after=5s 180s \
+            node scripts/test-review-result-timeout-webkit.mjs
 
       - name: Show static server log
         if: always()
