@@ -122,30 +122,38 @@ async function main() {
     path.join(__dirname, "..", "js", "app-runtime-loader.js"),
     "utf8"
   );
-  const guardIndex = appRuntime.indexOf("js/result-request-timeout.js");
-  const scriptIndex = appRuntime.indexOf("js/script.js");
-
-  assert.ok(guardIndex >= 0, "result timeout guard is missing from race runtime");
-  assert.ok(scriptIndex >= 0, "script.js is missing from race runtime");
-  assert.ok(
-    guardIndex < scriptIndex,
-    "result timeout guard must load before script.js"
+  assert.match(
+    appRuntime,
+    /const VERSION = "20260815-odds-immediate1"/,
+    "race runtime contract must remain unchanged"
   );
-  assert.match(appRuntime, /20260824-result-timeout1/);
+  assert.doesNotMatch(
+    appRuntime,
+    /js\/result-request-timeout\.js/,
+    "result timeout guard must not change the lazy race group"
+  );
 
   const indexHtml = fs.readFileSync(
     path.join(__dirname, "..", "index.html"),
     "utf8"
   );
-  assert.match(
-    indexHtml,
-    /js\/app-runtime-loader\.js\?v=20260824-result-timeout1/,
-    "index.html must cache-bust the fixed app runtime"
+  const guardIndex = indexHtml.indexOf(
+    'src="js/result-request-timeout.js?v=20260824-result-timeout1"'
+  );
+  const appIndex = indexHtml.indexOf(
+    'src="js/app-runtime-loader.js?v=20260816-static-race1"'
+  );
+
+  assert.ok(guardIndex >= 0, "result timeout guard is missing from index.html");
+  assert.ok(appIndex >= 0, "approved app runtime cache version is missing");
+  assert.ok(
+    guardIndex < appIndex,
+    "result timeout guard must install before the race runtime can load script.js"
   );
   assert.doesNotMatch(
     indexHtml,
-    /js\/app-runtime-loader\.js\?v=20260816-static-race1/,
-    "index.html still points to the stale app runtime"
+    /src="js\/script\.js/,
+    "script.js must remain lazy-loaded"
   );
 
   console.log("official result request timeout contract passed");
