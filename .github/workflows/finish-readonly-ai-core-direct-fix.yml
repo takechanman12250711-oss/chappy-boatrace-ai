@@ -1,0 +1,117 @@
+name: Finish direct readonly AI core fix
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/finish-readonly-ai-core-direct-fix.yml"
+      - ".github/workflows/apply-readonly-ai-core-direct-fix.yml"
+      - "scripts/apply-readonly-ai-core-direct-fix.js"
+      - "js/history-insights-base.js"
+      - "js/motor-maintenance-insights.js"
+      - "js/prediction-runtime-loader.js"
+      - "index.html"
+      - "scripts/test-readonly-ai-core-direct.js"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: finish-readonly-ai-core-direct-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-merge:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout latest PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Synchronize latest branch
+        run: |
+          git fetch origin "${GITHUB_HEAD_REF}"
+          git reset --hard "origin/${GITHUB_HEAD_REF}"
+
+      - name: Apply direct fix when still pending
+        run: |
+          if [ -f scripts/apply-readonly-ai-core-direct-fix.js ]; then
+            node --check scripts/apply-readonly-ai-core-direct-fix.js
+            node scripts/apply-readonly-ai-core-direct-fix.js
+          fi
+          git diff --check
+
+      - name: Verify direct readonly-safe installers
+        run: |
+          node --check js/history-insights-base.js
+          node --check js/motor-maintenance-insights.js
+          node --check js/ai-core-assignment-compat.js
+          node --check js/prediction-runtime-loader.js
+          node --check scripts/test-readonly-ai-core-direct.js
+          node --check scripts/test-readonly-ai-core-assignment.js
+          node scripts/test-readonly-ai-core-direct.js
+          node scripts/test-readonly-ai-core-assignment.js
+
+      - name: Verify app runtime and display
+        run: |
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-loading-watchdog.js
+          node scripts/test-odds-lightweight-path.js
+          node scripts/test-ticket-accordion-render-path.js
+          node scripts/test-phase6-integration.js
+          node scripts/test-current-cache-test-alignment.js
+          node scripts/test-load-performance.js
+
+      - name: Verify theory and fixed-ticket paths
+        run: |
+          node tools/test-local-water-theory-v2.js
+          node tools/test-motor-maintenance-theory-v2.js
+          node scripts/test-third-six-rescue-fixed5.js
+          node scripts/test-three-course-escape-rescue-fixed5.js
+          node scripts/test-four-kado-escape-rescue-fixed5.js
+          node scripts/test-pair-31-rescue-fixed5.js
+          node scripts/test-pair-32-rescue-fixed5.js
+          node scripts/test-third-place-rescue-14-fixed5.js
+          node scripts/test-third-place-rescue-12-4-fixed5.js
+          node scripts/test-escape-outer-second-rescue-fixed5.js
+          node scripts/test-formation-display-contract-current.js
+          node scripts/check-charter.js
+
+      - name: Remove one-time automation and commit final files
+        run: |
+          rm -f \
+            .github/workflows/finish-readonly-ai-core-direct-fix.yml \
+            .github/workflows/apply-readonly-ai-core-direct-fix.yml \
+            scripts/apply-readonly-ai-core-direct-fix.js
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          if ! git diff --cached --quiet; then
+            git commit -m "Finalize direct readonly AI core fix"
+            git push origin HEAD:${GITHUB_HEAD_REF}
+          fi
+
+      - name: Squash merge verified fix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge "$PR_URL" \
+            --squash \
+            --delete-branch \
+            --admin \
+            --subject "Fix readonly AI core at the installer source (#${{ github.event.pull_request.number }})" \
+            --body "Make Local/Water V2 and Motor V2 installers clone readonly or frozen AI cores before wrapping them. Preserve fixed-ticket freeze state and bump the production runtime cache generation. Prediction logic, scoring, tickets, UI and odds calculation are unchanged."
