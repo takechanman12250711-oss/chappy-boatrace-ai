@@ -47,9 +47,7 @@ async function stateOf(page) {
       intent: window.__CHAPPY_LIVE_RACE_SELECTION_INTENT__ || null,
       runtime: window.ChappyPredictionRuntime?.version || "",
       renderedEvent:
-        window.__CHAPPY_LIVE_SELECTION_E2E_RENDERED__ === true,
-      guardState:
-        window.ChappyLiveRaceSelectionTerminalGuard?.getState?.() || null
+        window.__CHAPPY_LIVE_SELECTION_E2E_RENDERED__ === true
     };
   });
 }
