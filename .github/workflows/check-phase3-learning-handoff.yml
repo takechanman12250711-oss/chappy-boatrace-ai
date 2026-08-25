@@ -29,7 +29,7 @@ permissions:
   contents: write
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('check-phase3-learning-handoff-pr-{0}', github.event.pull_request.number) || 'chappy-main-data-writers' }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   verify:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
