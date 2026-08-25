@@ -3,7 +3,9 @@
   "use strict";
   if (root.ChappyPredictionRuntime) return;
 
+  // 既存テストとの互換用。実配信ではindex.htmlのCHAPPY_APP_BUILDを使用する。
   const VERSION = "20260824-readonly-core-fix1";
+  const ACTIVE_VERSION = root.CHAPPY_APP_BUILD || VERSION;
   const SCRIPT_LOAD_TIMEOUT_MS = 12000;
   const RUNTIME_TOTAL_TIMEOUT_MS = 45000;
   const ODDS_PRIORITY_WAIT_MS = 2500;
@@ -102,7 +104,7 @@
       }), { once: true });
 
       if (!existing) {
-        script.src = `${clean}?v=${VERSION}`;
+        script.src = `${clean}?v=${ACTIVE_VERSION}`;
         document.head.appendChild(script);
       }
     });
@@ -117,7 +119,7 @@
       const link = document.createElement("link");
       link.rel = "preload";
       link.as = "script";
-      link.href = `${clean}?v=${VERSION}`;
+      link.href = `${clean}?v=${ACTIVE_VERSION}`;
       document.head.appendChild(link);
     });
   }
@@ -151,7 +153,7 @@
         `予想ランタイム全体の準備が${Math.round(RUNTIME_TOTAL_TIMEOUT_MS / 1000)}秒を超えました`
       );
       root.dispatchEvent(new CustomEvent("chappy:prediction-runtime-ready", {
-        detail: { version: VERSION, oddsPrioritized: Boolean(prioritizedOdds) }
+        detail: { version: ACTIVE_VERSION, oddsPrioritized: Boolean(prioritizedOdds) }
       }));
       return true;
     })().catch(error => {
@@ -165,11 +167,11 @@
     if (optionalReadyPromise) return optionalReadyPromise;
     optionalReadyPromise = (async () => {
       for (const src of optionalScripts) await loadScript(src);
-      root.dispatchEvent(new CustomEvent("chappy:prediction-runtime-optional-ready", { detail: { version: VERSION } }));
+      root.dispatchEvent(new CustomEvent("chappy:prediction-runtime-optional-ready", { detail: { version: ACTIVE_VERSION } }));
       return true;
     })().catch(error => {
       root.dispatchEvent(new CustomEvent("chappy:prediction-runtime-optional-unavailable", {
-        detail: { version: VERSION, message: String(error?.message || error || "") }
+        detail: { version: ACTIVE_VERSION, message: String(error?.message || error || "") }
       }));
       return false;
     });
@@ -177,7 +179,8 @@
   }
 
   root.ChappyPredictionRuntime = Object.freeze({
-    version: VERSION,
+    version: ACTIVE_VERSION,
+    legacyVersion: VERSION,
     oddsPriorityWaitMs: ODDS_PRIORITY_WAIT_MS,
     runtimeTotalTimeoutMs: RUNTIME_TOTAL_TIMEOUT_MS,
     scripts: scripts.slice(),
