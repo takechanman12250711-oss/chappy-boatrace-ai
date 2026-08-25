@@ -1,0 +1,139 @@
+name: Finalize progressive prediction screen fix
+
+on:
+  push:
+    branches:
+      - fix/progressive-prediction-screen-20260825
+    paths:
+      - ".github/workflows/finalize-progressive-prediction-screen.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  verify-and-merge:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/progressive-prediction-screen-20260825
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Apply focused patch when pending
+        run: |
+          if [ -f scripts/apply-progressive-prediction-screen.js ]; then
+            node --check scripts/apply-progressive-prediction-screen.js
+            node scripts/apply-progressive-prediction-screen.js
+          else
+            echo "Focused patch is already applied"
+          fi
+          git diff --check
+
+      - name: Verify final implementation
+        run: |
+          test -f scripts/test-progressive-prediction-screen.js
+          test -f .github/workflows/check-progressive-prediction-screen.yml
+          test -f js/live-race-selection-terminal-guard.js
+
+          node --check js/app-runtime-loader.js
+          node --check js/home-dashboard-v2.js
+          node --check js/script.js
+          node --check scripts/test-progressive-prediction-screen.js
+
+          node scripts/test-progressive-prediction-screen.js
+          node scripts/test-home-dashboard-v2-phase2.js
+          node scripts/test-prediction-loading-terminal-state.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/test-live-race-selection-terminal-guard.js
+          node scripts/check-charter.js
+
+      - name: Commit clean final branch
+        run: |
+          rm -f \
+            .github/workflows/apply-progressive-prediction-screen.yml \
+            .github/workflows/apply-progressive-prediction-screen-retry.yml \
+            .github/workflows/finalize-progressive-prediction-screen.yml \
+            scripts/apply-progressive-prediction-screen.js
+
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Show race entries before full AI prediction"
+            git push origin HEAD:fix/progressive-prediction-screen-20260825
+          fi
+
+      - name: Locate open pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          response="$(curl --fail --silent --show-error \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?state=open&base=main&head=${GITHUB_REPOSITORY_OWNER}:fix/progressive-prediction-screen-20260825&per_page=10")"
+
+          pr_number="$(printf '%s' "$response" | node -e '
+            let input="";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const rows = JSON.parse(input || "[]");
+              if (!rows.length) process.exit(2);
+              process.stdout.write(String(rows[0].number));
+            });
+          ')"
+
+          echo "number=${pr_number}" >> "$GITHUB_OUTPUT"
+          echo "Found PR #${pr_number}"
+
+      - name: Squash merge verified pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          head_sha="$(git rev-parse HEAD)"
+          payload="$(node -e '
+            const pr = process.env.PR_NUMBER;
+            const sha = process.env.HEAD_SHA;
+            process.stdout.write(JSON.stringify({
+              merge_method: "squash",
+              sha,
+              commit_title: `Show race entries before full AI prediction (#${pr})`,
+              commit_message: "Render the six-entry race card before heavy AI startup, replace silent runtime exits with explicit errors, guarantee loading termination, and keep prediction logic, scoring, tickets, odds, and final UI unchanged."
+            }));
+          ' HEAD_SHA="$head_sha")"
+
+          response="$(curl --fail-with-body --silent --show-error \
+            -X PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/merge" \
+            -d "$payload")"
+
+          printf '%s\n' "$response"
+          printf '%s' "$response" | node -e '
+            let input="";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const result = JSON.parse(input || "{}");
+              if (result.merged !== true) {
+                console.error(result.message || "Pull request was not merged");
+                process.exit(1);
+              }
+              console.log(`Merged SHA: ${result.sha}`);
+            });
+          '
