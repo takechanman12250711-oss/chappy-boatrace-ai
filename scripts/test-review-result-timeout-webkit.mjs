@@ -5,7 +5,6 @@ const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
 const REVIEW_DATE = process.env.REVIEW_DATE || "2026-08-24";
 const REVIEW_PLACE = process.env.REVIEW_PLACE || "蒲郡";
 const REVIEW_RACE_NO = Number(process.env.REVIEW_RACE_NO || 12);
-const RESULT_ROUTE_PATTERN = "**/api/result**";
 
 const marks = [];
 function mark(name, detail = {}) {
@@ -17,8 +16,6 @@ function mark(name, detail = {}) {
 let browser = null;
 let context = null;
 let page = null;
-let releaseResultRoute = null;
-let resultRequestSeen = false;
 let failure = null;
 
 const pageErrors = [];
@@ -37,6 +34,19 @@ try {
   page = await context.newPage();
   mark("browser-launch-finished");
 
+  await page.addInitScript(() => {
+    const downstreamFetch = window.fetch.bind(window);
+    window.__chappyResultTimeoutRequestSeen = false;
+    window.fetch = function (input, init) {
+      const url = String(input?.url || input || "");
+      if (url.includes("/api/result")) {
+        window.__chappyResultTimeoutRequestSeen = true;
+        return new Promise(() => {});
+      }
+      return downstreamFetch(input, init);
+    };
+  });
+
   page.on("pageerror", error => {
     pageErrors.push(String(error?.message || error));
   });
@@ -44,23 +54,6 @@ try {
     if (message.type() === "error") {
       consoleErrors.push(message.text());
     }
-  });
-
-  // 公式結果APIだけを意図的に応答待ちへする。
-  // テスト終了時にゲートを解放して route.abort() まで完了させ、
-  // Playwright 自体が未解決リクエストで残り続けないようにする。
-  const resultRouteGate = new Promise(resolve => {
-    releaseResultRoute = resolve;
-  });
-
-  await page.route(RESULT_ROUTE_PATTERN, async route => {
-    resultRequestSeen = true;
-    mark("official-result-request-held", {
-      url: route.request().url()
-    });
-    await resultRouteGate;
-    await route.abort("timedout").catch(() => {});
-    mark("official-result-request-released");
   });
 
   const targetUrl =
@@ -204,10 +197,12 @@ try {
     reviewResultText:
       (document.getElementById("reviewResultArea")?.textContent || "")
         .replace(/\s+/g, " ")
-        .trim()
+        .trim(),
+    resultRequestSeen:
+      window.__chappyResultTimeoutRequestSeen === true
   }));
 
-  if (!resultRequestSeen) {
+  if (!finalState.resultRequestSeen) {
     throw new Error("official result request was not issued");
   }
   if (finalState.errorArea) {
@@ -254,12 +249,6 @@ try {
   failure = error;
   console.error("[FATAL]", error?.stack || error);
 } finally {
-  releaseResultRoute?.();
-
-  if (page) {
-    await page.unroute(RESULT_ROUTE_PATTERN).catch(() => {});
-  }
-
   if (context) {
     await Promise.race([
       context.close().catch(() => {}),
