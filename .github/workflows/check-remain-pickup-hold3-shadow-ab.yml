@@ -4,12 +4,14 @@ on:
     paths:
       - "scripts/build-remain-pickup-hold3-shadow-ab.js"
       - "scripts/test-remain-pickup-hold3-shadow-ab.js"
+      - "scripts/test-race-flow-ab-workflow-concurrency.js"
       - ".github/workflows/check-remain-pickup-hold3-shadow-ab.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-remain-pickup-hold3-shadow-ab.js"
       - "scripts/test-remain-pickup-hold3-shadow-ab.js"
+      - "scripts/test-race-flow-ab-workflow-concurrency.js"
       - ".github/workflows/check-remain-pickup-hold3-shadow-ab.yml"
   workflow_run:
     workflows:
@@ -20,7 +22,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || 'chappy-main-data-writers' }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -37,6 +39,7 @@ jobs:
       - run: |
           node --check scripts/build-remain-pickup-hold3-shadow-ab.js
           node scripts/test-remain-pickup-hold3-shadow-ab.js
+          node scripts/test-race-flow-ab-workflow-concurrency.js
       - name: Build prospective report
         if: github.event_name != 'pull_request'
         run: |
