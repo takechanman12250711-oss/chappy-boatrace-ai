@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "race-flow-4kado-alert-skip-ab-v1-prospective",
-  "generatedAt": "2026-08-23T08:05:36.744Z",
+  "generatedAt": "2026-08-25T14:38:57.959Z",
   "productionChanged": false,
   "targetLabel": "4カド攻め警戒",
   "prospectiveProtocol": {
@@ -11,49 +11,49 @@
     "actualPurchase": false
   },
   "cohort": {
-    "raceCount": 370,
-    "settledCount": 243,
-    "targetRaceCount": 0,
-    "targetSettledCount": 0
+    "raceCount": 238,
+    "settledCount": 179,
+    "targetRaceCount": 53,
+    "targetSettledCount": 37
   },
   "a": {
     "label": "current-A",
     "rule": "現行どおり全対象を購入候補として評価",
-    "settledCount": 243,
-    "betRaceCount": 243,
+    "settledCount": 179,
+    "betRaceCount": 179,
     "skippedRaceCount": 0,
-    "hitCount": 73,
-    "hitRate": 30,
-    "stake": 217800,
-    "return": 165860,
-    "profit": -51940,
-    "recoveryRate": 76.2
+    "hitCount": 47,
+    "hitRate": 26.3,
+    "stake": 160200,
+    "return": 170830,
+    "profit": 10630,
+    "recoveryRate": 106.6
   },
   "b": {
     "label": "skip-4kado-alert-B",
     "rule": "展開ラベルが「4カド攻め警戒」の時だけ購入見送り",
-    "settledCount": 243,
-    "betRaceCount": 243,
-    "skippedRaceCount": 0,
-    "hitCount": 73,
-    "hitRate": 30,
-    "stake": 217800,
-    "return": 165860,
-    "profit": -51940,
-    "recoveryRate": 76.2
+    "settledCount": 179,
+    "betRaceCount": 142,
+    "skippedRaceCount": 37,
+    "hitCount": 41,
+    "hitRate": 28.9,
+    "stake": 126500,
+    "return": 143690,
+    "profit": 17190,
+    "recoveryRate": 113.6
   },
   "delta": {
-    "stake": 0,
-    "return": 0,
-    "profit": 0,
-    "recoveryRate": 0,
-    "hitRate": 0
+    "stake": -33700,
+    "return": -27140,
+    "profit": 6560,
+    "recoveryRate": 7,
+    "hitRate": 2.6
   },
   "interpretation": {
     "minimumTargetSettledCount": 30,
     "automaticApplication": false,
     "usableForPrediction": false,
     "affectsCurrentTickets": false,
-    "adoptionDecisionReady": false
+    "adoptionDecisionReady": true
   }
 }

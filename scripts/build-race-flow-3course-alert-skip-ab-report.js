@@ -21,7 +21,7 @@ function load(dir) { if (!fs.existsSync(dir)) return []; return fs.readdirSync(d
 function resultMap(docs) { const map = new Map(); for (const doc of docs) for (const race of (Array.isArray(doc.races) ? doc.races : [])) if (race.resultAvailable && race.status === "finished") map.set(raceKey(race), race); return map; }
 function scenarioLabel(record = {}) {
   const p = record.prediction || {};
-  const values = [record?.selection?.scenarioLabel, record.scenarioLabel, p.scenarioLabel, p?.raceFlow?.scenario?.title, p?.raceFlow?.scenarioLabel, p?.raceFlow?.label];
+  const values = [p?.raceFlow?.scenario?.title, p?.raceFlow?.scenarioLabel, p?.raceFlow?.label, p.scenarioLabel, record.scenarioLabel, record?.selection?.scenarioLabel];
   for (const value of values) { const label = String(value || "").trim(); if (label) return label; }
   return "";
 }
@@ -48,10 +48,9 @@ function build(predDocs, resultDocs) {
   const results = resultMap(resultDocs);
   const selected = predDocs.flatMap(doc => Array.isArray(doc.predictions) ? doc.predictions : []);
   const verification = predDocs.flatMap(doc => Array.isArray(doc.verificationPredictions) ? doc.verificationPredictions : []);
-  const selectedKeys = new Set(selected.map(raceKey));
-  const rows = [...selected, ...verification].filter(isProspective).map(record => ({ record, result: embeddedResult(record) || results.get(raceKey(record)) || null }));
+  const rows = [...verification.map(record => ({ record, sourcePriority: 0 })), ...selected.map(record => ({ record, sourcePriority: 1 }))].filter(row => isProspective(row.record)).map(row => ({ ...row, result: embeddedResult(row.record) || results.get(raceKey(row.record)) || null }));
   const dedup = new Map();
-  for (const row of rows) { const key = raceKey(row.record); if (!dedup.has(key) || selectedKeys.has(key)) dedup.set(key, row); }
+  for (const row of rows) { const key = raceKey(row.record); if (!dedup.has(key) || row.sourcePriority > dedup.get(key).sourcePriority) dedup.set(key, row); }
   const cohort = [...dedup.values()];
   const targetRows = cohort.filter(row => scenarioLabel(row.record) === TARGET_LABEL);
   const a = settle(cohort, "A");

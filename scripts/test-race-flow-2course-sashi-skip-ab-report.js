@@ -44,4 +44,7 @@ assert.equal(report.b.skippedRaceCount, 1);
 assert.equal(report.delta.profit, 200);
 assert.equal(report.interpretation.automaticApplication, false);
 assert.equal(report.interpretation.affectsCurrentTickets, false);
+const selectedPreferred = engine.build([{ predictions: [record(10, "1号艇逃げ", after)], verificationPredictions: [record(10, "2コース差し", after)] }], [{ races: [result(record(10, "1号艇逃げ", after), "1-2-3", 900)] }]);
+assert.equal(selectedPreferred.cohort.raceCount, 1);
+assert.equal(selectedPreferred.cohort.targetRaceCount, 0);
 console.log("race-flow 2course sashi skip A/B report test: ok");

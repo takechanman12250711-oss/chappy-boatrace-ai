@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-08-25T14:04:57.176Z",
+  "generatedAt": "2026-08-25T14:40:24.063Z",
   "phase": "phase3",
   "implementationComplete": true,
   "productionChanged": false,
@@ -116,9 +116,62 @@
       }
     ]
   },
-  "candidateCount": 0,
-  "candidates": [],
+  "candidateCount": 4,
+  "candidates": [
+    {
+      "id": "four-attack-warning",
+      "sourceFile": "race-flow-4kado-alert-skip-ab-report.json",
+      "affectedSettledCount": 37,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 106.6,
+      "bRecoveryRate": 113.6,
+      "aProfit": 10630,
+      "bProfit": 17190,
+      "status": "awaiting-user-approval",
+      "approved": false,
+      "productionApplied": false
+    },
+    {
+      "id": "two-course-sashi",
+      "sourceFile": "race-flow-2course-sashi-skip-ab-report.json",
+      "affectedSettledCount": 43,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 106.6,
+      "bRecoveryRate": 109.1,
+      "aProfit": 10630,
+      "bProfit": 11000,
+      "status": "awaiting-user-approval",
+      "approved": false,
+      "productionApplied": false
+    },
+    {
+      "id": "outside-push",
+      "sourceFile": "race-flow-outside-push-skip-ab-report.json",
+      "affectedSettledCount": 32,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 106.6,
+      "bRecoveryRate": 119.4,
+      "aProfit": 10630,
+      "bProfit": 25350,
+      "status": "awaiting-user-approval",
+      "approved": false,
+      "productionApplied": false
+    },
+    {
+      "id": "hold-third",
+      "sourceFile": "remain-pickup-hold3-shadow-ab-report.json",
+      "affectedSettledCount": 93,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 106.6,
+      "bRecoveryRate": 110.5,
+      "aProfit": 10630,
+      "bProfit": 15240,
+      "status": "awaiting-user-approval",
+      "approved": false,
+      "productionApplied": false
+    }
+  ],
   "blockedCount": 0,
   "blocked": [],
-  "nextStep": "continue-validation-from-historical-evidence"
+  "nextStep": "user-approval"
 }

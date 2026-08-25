@@ -34,6 +34,7 @@ const rows = [
   record(2, "1号艇逃げ", after),
   record(3, "外コース展開突き", before)
 ];
+rows[0].selection = { scenarioLabel: "3コース攻め" };
 const results = [
   result(rows[0], "2-1-3", 1000),
   result(rows[1], "1-2-3", 900),
@@ -57,4 +58,10 @@ assert.equal(report.b.skippedRaceCount, 1);
 assert.equal(report.delta.profit, 200);
 assert.equal(report.interpretation.automaticApplication, false);
 assert.equal(report.interpretation.affectsCurrentTickets, false);
+const selectedPreferred = engine.build(
+  [{ predictions: [record(10, "1号艇逃げ", after)], verificationPredictions: [record(10, "外コース展開突き", after)] }],
+  [{ races: [result(record(10, "1号艇逃げ", after), "1-2-3", 900)] }]
+);
+assert.equal(selectedPreferred.cohort.raceCount, 1);
+assert.equal(selectedPreferred.cohort.targetRaceCount, 0);
 console.log("race-flow outside push skip A/B report test: ok");
