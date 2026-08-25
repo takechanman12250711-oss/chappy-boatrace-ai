@@ -35,6 +35,8 @@
 
   const BUILD = "20260825-mobile-startup-terminal1";
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
+  const SCRIPT_LOAD_TIMEOUT_MS = 12000;
+  const RUNTIME_TOTAL_TIMEOUT_MS = 45000;
   const RACE_INTENT_SELECTOR = [
     "button[data-flow-place][data-flow-race]",
     "button[data-place][data-race]"
@@ -197,6 +199,87 @@
     return true;
   }
 
+  function withTimeout(root, promise, timeoutMs, error) {
+    let timer = 0;
+    const timeout = new Promise((_, reject) => {
+      timer = root.setTimeout(
+        () => reject(error),
+        Math.max(1, Number(timeoutMs) || 1)
+      );
+    });
+    return Promise.race([promise, timeout]).finally(() => {
+      if (timer) root.clearTimeout(timer);
+    });
+  }
+
+  function loadScriptWithBuild(root, src) {
+    const clean = String(src || "").split("?")[0];
+    if (!clean) {
+      return Promise.reject(startupError(
+        "PREDICTION_SCRIPT_INVALID",
+        "予想モジュールのパスが不正です"
+      ));
+    }
+
+    let existing = [...(root.document.scripts || [])].find(script =>
+      script.src && script.src.includes(clean)
+    );
+
+    if (existing?.dataset?.chappyLoadFailed === "true") {
+      existing.remove?.();
+      existing = null;
+    }
+
+    if (
+      existing?.dataset?.chappyLoaded === "true" ||
+      existing?.dataset?.chappyMobileBuild === BUILD
+    ) {
+      return Promise.resolve(true);
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = existing || root.document.createElement("script");
+      let settled = false;
+      const finish = callback => value => {
+        if (settled) return;
+        settled = true;
+        root.clearTimeout(timer);
+        callback(value);
+      };
+      const timer = root.setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        script.dataset.chappyLoadFailed = "true";
+        script.remove?.();
+        reject(startupError(
+          "PREDICTION_SCRIPT_TIMEOUT",
+          `予想モジュールの読込が12秒を超えました：${clean}`
+        ));
+      }, SCRIPT_LOAD_TIMEOUT_MS);
+
+      script.async = false;
+      script.dataset.chappyPredictionModule = clean;
+      script.dataset.chappyMobileBuild = BUILD;
+      script.addEventListener("load", finish(() => {
+        script.dataset.chappyLoaded = "true";
+        resolve(true);
+      }), { once: true });
+      script.addEventListener("error", finish(() => {
+        script.dataset.chappyLoadFailed = "true";
+        script.remove?.();
+        reject(startupError(
+          "PREDICTION_SCRIPT_LOAD_FAILED",
+          `予想モジュールを読み込めません：${clean}`
+        ));
+      }), { once: true });
+
+      if (!existing) {
+        script.src = `${clean}?v=${BUILD}`;
+        root.document.head.appendChild(script);
+      }
+    });
+  }
+
   function wrapAppRuntime(root) {
     const runtime = root?.ChappyAppRuntime;
 
@@ -241,22 +324,82 @@
       return runtime?.__mobileStartupTerminalWrapped === true;
     }
 
-    const originalEnsureReady = runtime.ensureReady.bind(runtime);
+    const requiredScripts = Array.isArray(runtime.scripts)
+      ? runtime.scripts.slice()
+      : [];
+    const optionalScripts = Array.isArray(runtime.optionalScripts)
+      ? runtime.optionalScripts.slice()
+      : [];
+    let readyPromise = null;
+    let optionalReadyPromise = null;
+
+    const loadRequired = async () => {
+      const odds = root.ChappyOddsFirstNavigation;
+      if (typeof odds?.waitForActiveOdds === "function") {
+        try {
+          await odds.waitForActiveOdds(
+            Number(runtime.oddsPriorityWaitMs || 2500)
+          );
+        } catch (_) {}
+      }
+
+      for (const src of requiredScripts) {
+        await loadScriptWithBuild(root, src);
+      }
+      validatePredictionRuntime(root);
+      root.dispatchEvent?.(new root.CustomEvent(
+        "chappy:prediction-runtime-ready",
+        { detail: { version: BUILD, mobileTerminal: true } }
+      ));
+      return true;
+    };
+
     const wrapped = Object.freeze({
       ...runtime,
       version: BUILD,
       legacyVersion: runtime.version || "",
       __mobileStartupTerminalWrapped: true,
       ensureReady() {
-        return Promise.resolve(originalEnsureReady())
-          .then(result => {
-            validatePredictionRuntime(root);
-            return result;
-          })
-          .catch(error => {
-            renderStartupError(root, error);
-            throw error;
-          });
+        if (readyPromise) return readyPromise;
+        readyPromise = withTimeout(
+          root,
+          loadRequired(),
+          Number(runtime.runtimeTotalTimeoutMs || RUNTIME_TOTAL_TIMEOUT_MS),
+          startupError(
+            "PREDICTION_RUNTIME_TIMEOUT",
+            "予想ランタイム全体の準備が45秒を超えました"
+          )
+        ).catch(error => {
+          readyPromise = null;
+          renderStartupError(root, error);
+          throw error;
+        });
+        return readyPromise;
+      },
+      ensureOptionalReady() {
+        if (optionalReadyPromise) return optionalReadyPromise;
+        optionalReadyPromise = (async () => {
+          for (const src of optionalScripts) {
+            await loadScriptWithBuild(root, src);
+          }
+          root.dispatchEvent?.(new root.CustomEvent(
+            "chappy:prediction-runtime-optional-ready",
+            { detail: { version: BUILD } }
+          ));
+          return true;
+        })().catch(error => {
+          root.dispatchEvent?.(new root.CustomEvent(
+            "chappy:prediction-runtime-optional-unavailable",
+            {
+              detail: {
+                version: BUILD,
+                message: errorText(error)
+              }
+            }
+          ));
+          return false;
+        });
+        return optionalReadyPromise;
       }
     });
 
@@ -371,7 +514,6 @@
     root.addEventListener?.(
       "chappy:prediction-runtime-ready",
       () => {
-        wrapPredictionRuntime(root);
         try {
           validatePredictionRuntime(root);
         } catch (error) {
@@ -430,6 +572,7 @@
     renderStartupError,
     validateRaceRuntime,
     validatePredictionRuntime,
+    loadScriptWithBuild,
     wrapAppRuntime,
     wrapPredictionRuntime,
     clearHomeCache,
