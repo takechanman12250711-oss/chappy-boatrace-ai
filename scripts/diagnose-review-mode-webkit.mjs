@@ -177,34 +177,23 @@ try {
   await page.dispatchEvent("#dateInput", "change");
   recordStep("review-date-selected", { date: REVIEW_DATE });
 
-  await page.waitForFunction(
-    () => document.querySelectorAll("#placeSelect option").length > 0,
-    null,
-    { timeout: 45_000 }
-  );
-
-  const places = await page.locator("#placeSelect option").allTextContents();
-  if (!places.includes(REVIEW_PLACE)) {
-    throw new Error(
-      `review venue is unavailable: ${REVIEW_PLACE}; options=${places.join(",")}`
-    );
-  }
-
-  await page.selectOption("#placeSelect", { label: REVIEW_PLACE });
-  await page.dispatchEvent("#placeSelect", "change");
+  const venueSelector =
+    `#officialVenueGrid button[data-place="${REVIEW_PLACE}"]:not([disabled])`;
+  await page.waitForSelector(venueSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(venueSelector);
   recordStep("review-place-selected", { place: REVIEW_PLACE });
 
-  await page.waitForFunction(
-    race =>
-      [...document.querySelectorAll("#raceSelect option")].some(
-        option => option.textContent?.trim() === race
-      ),
-    REVIEW_RACE,
-    { timeout: 45_000 }
-  );
-
-  await page.selectOption("#raceSelect", { label: REVIEW_RACE });
-  await page.dispatchEvent("#raceSelect", "change");
+  const reviewRaceNo = Number(REVIEW_RACE.replace(/R$/i, ""));
+  const raceSelector =
+    `#officialRaceGrid button[data-race-no="${reviewRaceNo}"]:not([disabled])`;
+  await page.waitForSelector(raceSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(raceSelector);
   recordStep("review-race-selected", { race: REVIEW_RACE });
 
   await page.evaluate(() => {

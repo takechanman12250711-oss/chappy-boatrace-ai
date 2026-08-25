@@ -177,7 +177,9 @@ try {
 
   const startedAt = Date.now();
   mark("prediction-click-start");
-  await page.click("#fetchRaceBtn");
+  await page.evaluate(() => {
+    document.getElementById("fetchRaceBtn")?.click();
+  });
 
   await page.waitForFunction(
     () => window.__chappyRenderedForResultTimeoutTest === true,
