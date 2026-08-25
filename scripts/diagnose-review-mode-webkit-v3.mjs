@@ -236,11 +236,13 @@ try {
       const status = compactPage(
         document.getElementById("statusArea")?.textContent || ""
       );
-      const loading = /読み込み中|解析中|取得中/.test(`${result} ${status}`);
+      const raceLoading =
+        document.getElementById("resultArea")?.dataset?.raceLoading ===
+        "true";
       const rendered =
         result.length > 160 &&
         !result.includes("ホームで開催場とレースを選ぶ");
-      return Boolean(error) || (rendered && !loading);
+      return Boolean(error) || (rendered && !raceLoading);
     },
     null,
     { timeout: 120_000 }
@@ -257,6 +259,8 @@ try {
       selectedRace: text("officialSelectedRace"),
       hiddenPlaceValue: document.getElementById("placeSelect")?.value || "",
       hiddenRaceValue: document.getElementById("raceSelect")?.value || "",
+      raceLoading:
+        document.getElementById("resultArea")?.dataset?.raceLoading || "",
       runtimeVersion: window.ChappyPredictionRuntime?.version || "",
       coreFrozen: Boolean(
         window.ChappyAICore && Object.isFrozen(window.ChappyAICore)
@@ -282,9 +286,7 @@ try {
       /RACE_DATA_TIMEOUT|レースデータAPIの応答が30秒を超えました/.test(
         report.final.errorArea
       );
-    const stillLoading = /読み込み中|解析中|取得中/.test(
-      `${report.final.resultArea} ${report.final.statusArea}`
-    );
+    const stillLoading = report.final.raceLoading === "true";
 
     if (!terminalRaceTimeout || stillLoading) {
       throw new Error(`review flow error: ${report.final.errorArea}`);
