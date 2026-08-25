@@ -3007,6 +3007,7 @@
         }
       );
 
+      console.log("[prediction-stage] create:start");
       const prediction =
         createPredictionSafe(
           data
@@ -3014,6 +3015,7 @@
         createEmergencyPrediction(
           data
         );
+      console.log("[prediction-stage] create:finished");
 
       function createEmergencyPrediction(
         raceData
@@ -3054,8 +3056,10 @@
         };
       }
 
+      console.log("[prediction-stage] legacy-analysis:start");
       createTheorySafe(data);
       createAISafe(data);
+      console.log("[prediction-stage] legacy-analysis:finished");
 
       if (
         !prediction ||
@@ -3079,9 +3083,11 @@
         .officialResultUsedForPrediction =
         false;
 
+      console.log("[prediction-stage] practical-selection:start");
       ensurePracticalSelection(
         prediction
       );
+      console.log("[prediction-stage] practical-selection:finished");
 
       let oddsAppliedBeforeRender = false;
       const settledOddsSupplement =
@@ -3094,6 +3100,7 @@
           settledOddsSupplement.oddsData
         )
       ) {
+        console.log("[prediction-stage] settled-odds:start");
         try {
           lastRaceData = {
             ...lastRaceData,
@@ -3115,6 +3122,7 @@
             oddsError?.message || oddsError
           );
         }
+        console.log("[prediction-stage] settled-odds:finished");
       }
 
       lastPrediction = prediction;
@@ -3130,9 +3138,11 @@
         typeof window.renderAll ===
         "function"
       ) {
+        console.log("[prediction-stage] render:start");
         window.renderAll(
           prediction
         );
+        console.log("[prediction-stage] render:finished");
         const resultArea =
           document.getElementById(
             "resultArea"
@@ -5632,13 +5642,13 @@
       return false;
     }
 
-    if (
-      typeof window.renderAll ===
-        "function"
-    ) {
-      window.renderAll(
-        prediction
-      );
+      if (
+        typeof window.renderAll ===
+          "function"
+      ) {
+        window.renderAll(
+          prediction
+        );
     }
 
     updatePredictionOddsStatus(
