@@ -5,6 +5,7 @@ on:
       - "scripts/build-phase3-learning-handoff.js"
       - "scripts/test-phase3-learning-handoff.js"
       - "scripts/test-phase3-refresh-contract.js"
+      - "config/phase3-candidate-policy-review.json"
       - ".github/workflows/check-phase3-learning-handoff.yml"
       - ".github/workflows/refresh-unified-improvement-decision-gate.yml"
   push:
@@ -12,6 +13,7 @@ on:
     paths:
       - "scripts/build-phase3-learning-handoff.js"
       - "scripts/test-phase3-refresh-contract.js"
+      - "config/phase3-candidate-policy-review.json"
       - ".github/workflows/check-phase3-learning-handoff.yml"
       - ".github/workflows/refresh-unified-improvement-decision-gate.yml"
   workflow_dispatch:

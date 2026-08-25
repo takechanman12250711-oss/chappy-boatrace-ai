@@ -4,10 +4,26 @@ const assert = require("node:assert/strict");
 const handoff = require("./build-phase3-learning-handoff");
 
 const policyCompatibility = {
+  reviewed: true,
+  preserveRealisticSecondCourseSashi: true,
+  preserveRealisticFourthBoatHold: true,
   preserveEvaluatedScenarioCandidatesForEveryBoat: true,
   candidateGenerationPrecedesTicketLimit: true,
   excludedCandidatesRequireStructuredReason: true,
   numbersAloneMayDeleteTickets: false,
+};
+const policyReviewReport = {
+  items: {
+    a: { facts: policyCompatibility, reviewed: true, reasons: [] },
+    b: {
+      reviewed: true,
+      facts: {
+        ...policyCompatibility,
+        preserveEvaluatedScenarioCandidatesForEveryBoat: false,
+      },
+      reasons: ["候補群を保持しない"],
+    },
+  },
 };
 const candidate = {
   id: "a",
@@ -52,9 +68,9 @@ let report = handoff.build({
     { id: "b", file: "b.json", status: "available", decision: "candidate" },
     { id: "c", status: "available", decision: "continue" },
   ],
-}, historical);
+}, historical, policyReviewReport);
 assert.equal(report.implementationComplete, true);
-assert.equal(report.schemaVersion, 4);
+assert.equal(report.schemaVersion, 5);
 assert.equal(report.historicalEvidence.settledRaceCount, 1450);
 assert.equal(report.historicalEvidence.proposalCount, 1);
 assert.equal(report.historicalEvidence.proposals[0].sampleCount, 860);
@@ -67,9 +83,13 @@ assert.equal(report.candidateCount, 1);
 assert.equal(report.candidates[0].status, "awaiting-user-approval");
 assert.equal(report.candidates[0].approved, false);
 assert.equal(report.candidates[0].productionApplied, false);
-assert.equal(report.policyReviewCount, 1);
-assert.equal(report.policyReview[0].status, "requires-policy-compatibility-review");
-assert.deepEqual(report.policyReview[0].missingOrMismatched, Object.keys(policyCompatibility));
+assert.equal(report.policyReviewCount, 0);
+assert.equal(report.policyRejectedCount, 1);
+assert.equal(report.policyRejected[0].status, "rejected-policy-incompatible");
+assert.deepEqual(report.policyRejected[0].failedRequirements, [
+  "preserveEvaluatedScenarioCandidatesForEveryBoat",
+]);
+assert.equal(report.policyRejected[0].reason, "候補群を保持しない");
 assert.equal(report.automaticApplication, false);
 assert.equal(report.productionChanged, false);
 assert.equal(report.nextStep, "user-approval");
@@ -77,6 +97,7 @@ assert.equal(report.nextStep, "user-approval");
 report = handoff.build({ allSourcesConnected: true, items: [candidate] }, historical);
 assert.equal(report.candidateCount, 0);
 assert.equal(report.policyReviewCount, 1);
+assert.equal(report.policyRejectedCount, 0);
 assert.equal(report.nextStep, "policy-compatibility-review");
 
 report = handoff.build({

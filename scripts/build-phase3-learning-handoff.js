@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, "..");
 const stats = path.join(root, "data", "stats");
 const GATE = path.join(stats, "unified-improvement-decision-gate.json");
 const PROPOSALS = path.join(stats, "improvement-proposal-phase3.json");
+const POLICY_REVIEW = path.join(root, "config", "phase3-candidate-policy-review.json");
 const OUT = path.join(stats, "phase3-learning-handoff.json");
 
 function read(filePath, fallback = {}) {
@@ -43,9 +44,12 @@ function historicalDiagnostics(proposalReport = {}) {
   return mapHistorical(proposalReport.outcomeDiagnostics, "historical-diagnostic");
 }
 
-function policyCompatibility(item) {
-  const evidence = item?.policyCompatibility || {};
+function policyCompatibility(item, policyReviewReport = {}) {
+  const review = policyReviewReport?.items?.[item?.id] || item?.policyCompatibility || {};
+  const evidence = review.facts || review;
   const requirements = {
+    preserveRealisticSecondCourseSashi: true,
+    preserveRealisticFourthBoatHold: true,
     preserveEvaluatedScenarioCandidatesForEveryBoat: true,
     candidateGenerationPrecedesTicketLimit: true,
     excludedCandidatesRequireStructuredReason: true,
@@ -54,9 +58,12 @@ function policyCompatibility(item) {
   const missingOrMismatched = Object.entries(requirements)
     .filter(([key, expected]) => evidence[key] !== expected)
     .map(([key]) => key);
+  const reviewed = review.reviewed === true;
   return {
-    verified: missingOrMismatched.length === 0,
+    reviewed,
+    verified: reviewed && missingOrMismatched.length === 0,
     missingOrMismatched,
+    reasons: Array.isArray(review.reasons) ? review.reasons : [],
   };
 }
 
@@ -76,7 +83,7 @@ function handoffItem(item, status) {
   };
 }
 
-function build(gate, proposalReport = {}) {
+function build(gate, proposalReport = {}, policyReviewReport = {}) {
   if (!gate || gate.allSourcesConnected !== true) {
     throw new Error("unified gate is not fully connected");
   }
@@ -87,11 +94,18 @@ function build(gate, proposalReport = {}) {
   );
   const candidates = [];
   const policyReview = [];
+  const policyRejected = [];
 
   for (const item of statisticalCandidates) {
-    const compatibility = policyCompatibility(item);
+    const compatibility = policyCompatibility(item, policyReviewReport);
     if (compatibility.verified) {
       candidates.push(handoffItem(item, "awaiting-user-approval"));
+    } else if (compatibility.reviewed) {
+      policyRejected.push({
+        ...handoffItem(item, "rejected-policy-incompatible"),
+        reason: compatibility.reasons.join(" / ") || "憲章適合条件を満たさない",
+        failedRequirements: compatibility.missingOrMismatched,
+      });
     } else {
       policyReview.push({
         ...handoffItem(item, "requires-policy-compatibility-review"),
@@ -109,7 +123,7 @@ function build(gate, proposalReport = {}) {
   const historicalSettledRaceCount = Number(proposalReport.settledRaceCount || 0);
 
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     generatedAt: new Date().toISOString(),
     phase: "phase3",
     implementationComplete: true,
@@ -117,7 +131,8 @@ function build(gate, proposalReport = {}) {
     automaticApplication: false,
     requiresUserApproval: true,
     allSourcesConnected: true,
-    policy: "過去の公式締切前コホートから得た改善根拠を保持し、結果記述だけの診断は別枠で保存する。実A/Bの数値判定に加え、候補群保持・点数制限前の候補生成・構造化除外理由・数値単独削除禁止の憲章適合証跡が揃った改善だけ承認候補へ渡す。過去根拠を捨てて0Rから再分析しない。承認前は本番予想へ一切反映しない。",
+    policy: "過去の公式締切前コホートから得た改善根拠を保持し、結果記述だけの診断は別枠で保存する。実A/Bの数値判定に加え、現実的な2コース差し・4号艇残し、候補群保持、点数制限前の候補生成、構造化除外理由、数値単独削除禁止の憲章適合証跡が揃った改善だけ承認候補へ渡す。過去根拠を捨てて0Rから再分析しない。承認前は本番予想へ一切反映しない。",
+    policyReviewSource: "config/phase3-candidate-policy-review.json",
     historicalEvidence: {
       source: "improvement-proposal-phase3.json",
       settledRaceCount: historicalSettledRaceCount,
@@ -131,6 +146,8 @@ function build(gate, proposalReport = {}) {
     candidates,
     policyReviewCount: policyReview.length,
     policyReview,
+    policyRejectedCount: policyRejected.length,
+    policyRejected,
     blockedCount: blocked.length,
     blocked,
     nextStep: candidates.length
@@ -146,7 +163,8 @@ function build(gate, proposalReport = {}) {
 function main() {
   const gate = read(GATE);
   const proposalReport = read(PROPOSALS);
-  const report = build(gate, proposalReport);
+  const policyReviewReport = read(POLICY_REVIEW);
+  const report = build(gate, proposalReport, policyReviewReport);
   fs.writeFileSync(OUT, `${JSON.stringify(report, null, 2)}\n`);
   console.log(JSON.stringify(report, null, 2));
 }

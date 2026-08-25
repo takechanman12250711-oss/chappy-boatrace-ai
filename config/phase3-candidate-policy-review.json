@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-08-26",
+  "requirements": [
+    "preserveRealisticSecondCourseSashi",
+    "preserveRealisticFourthBoatHold",
+    "preserveEvaluatedScenarioCandidatesForEveryBoat",
+    "candidateGenerationPrecedesTicketLimit",
+    "excludedCandidatesRequireStructuredReason",
+    "numbersAloneMayDeleteTickets"
+  ],
+  "items": {
+    "four-attack-warning": {
+      "reviewed": true,
+      "facts": {
+        "preserveRealisticSecondCourseSashi": true,
+        "preserveRealisticFourthBoatHold": false,
+        "preserveEvaluatedScenarioCandidatesForEveryBoat": false,
+        "candidateGenerationPrecedesTicketLimit": true,
+        "excludedCandidatesRequireStructuredReason": false,
+        "numbersAloneMayDeleteTickets": false
+      },
+      "reasons": [
+        "4カド攻め警戒の展開ラベルだけでレース全体を見送るため、艇別に評価済みの残し・拾い候補を保持しない",
+        "除外対象となる各買い目に構造化された除外理由がない"
+      ]
+    },
+    "two-course-sashi": {
+      "reviewed": true,
+      "facts": {
+        "preserveRealisticSecondCourseSashi": false,
+        "preserveRealisticFourthBoatHold": false,
+        "preserveEvaluatedScenarioCandidatesForEveryBoat": false,
+        "candidateGenerationPrecedesTicketLimit": true,
+        "excludedCandidatesRequireStructuredReason": false,
+        "numbersAloneMayDeleteTickets": false
+      },
+      "reasons": [
+        "2コース差しの展開ラベルだけでレース全体を見送るため、現実的な2コース差しを保持しない",
+        "艇別に評価済みの残し・拾い候補と各買い目の構造化除外理由を保持しない"
+      ]
+    },
+    "outside-push": {
+      "reviewed": true,
+      "facts": {
+        "preserveRealisticSecondCourseSashi": true,
+        "preserveRealisticFourthBoatHold": false,
+        "preserveEvaluatedScenarioCandidatesForEveryBoat": false,
+        "candidateGenerationPrecedesTicketLimit": true,
+        "excludedCandidatesRequireStructuredReason": false,
+        "numbersAloneMayDeleteTickets": false
+      },
+      "reasons": [
+        "外コース展開突きの展開ラベルだけでレース全体を見送るため、艇別に評価済みの残し・拾い候補を保持しない",
+        "除外対象となる各買い目に構造化された除外理由がない"
+      ]
+    },
+    "hold-third": {
+      "reviewed": true,
+      "facts": {
+        "preserveRealisticSecondCourseSashi": true,
+        "preserveRealisticFourthBoatHold": false,
+        "preserveEvaluatedScenarioCandidatesForEveryBoat": true,
+        "candidateGenerationPrecedesTicketLimit": true,
+        "excludedCandidatesRequireStructuredReason": true,
+        "numbersAloneMayDeleteTickets": false
+      },
+      "reasons": [
+        "構造化されたhold役割が3着の買い目を一律除外し、現実的な4号艇残しを保護する例外条件がない"
+      ]
+    }
+  }
+}
