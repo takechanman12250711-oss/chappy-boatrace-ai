@@ -95,9 +95,12 @@ function patchLoad(text) {
   );
 
   const desiredGeneration = generationBlock(
-    "20260824-readonly-core-fix1"
+    "20260825-display-layout1"
   );
   const supportedGenerations = [
+    generationBlock(
+      "20260824-readonly-core-fix1"
+    ),
     generationBlock(
       "20260816-runtime-deadline1"
     ),
@@ -142,9 +145,10 @@ function patchLoad(text) {
       '\'const VERSION = "20260816-runtime-deadline1"\'',
       '\'const VERSION = "20260820-third-six-fixed5"\'',
       '\'const VERSION = "20260823-three-course-134-v1"\'',
-      '\'const VERSION = "20260823-local-water-v2-gap3-v1"\''
+      '\'const VERSION = "20260823-local-water-v2-gap3-v1"\'',
+      '\'const VERSION = "20260824-readonly-core-fix1"\''
     ],
-    '\'const VERSION = "20260824-readonly-core-fix1"\'',
+    '\'const VERSION = "20260825-display-layout1"\'',
     "prediction runtime version"
   );
 
@@ -182,10 +186,13 @@ function patchLoad(text) {
 }
 
 function patchStats(text) {
-  return replaceOne(
+  return replaceOneOf(
     String(text),
-    "/style\\.css\\?v=20260803-flow-missing30/",
-    "/style\\.css\\?v=20260806-results-ui-phase4-1/",
+    [
+      "/style\\.css\\?v=20260803-flow-missing30/",
+      "/style\\.css\\?v=20260806-results-ui-phase4-1/"
+    ],
+    "/style\\.css\\?v=20260825-display-layout1/",
     "result css asset"
   );
 }

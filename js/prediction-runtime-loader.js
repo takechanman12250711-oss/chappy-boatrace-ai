@@ -3,7 +3,7 @@
   "use strict";
   if (root.ChappyPredictionRuntime) return;
 
-  const VERSION = "20260824-readonly-core-fix1";
+  const VERSION = "20260825-display-layout1";
   const SCRIPT_LOAD_TIMEOUT_MS = 12000;
   const RUNTIME_TOTAL_TIMEOUT_MS = 45000;
   const ODDS_PRIORITY_WAIT_MS = 2500;
