@@ -21,9 +21,8 @@
     let timer = 0;
     const timeout = new Promise((_, reject) => {
       timer = window.setTimeout(() => {
-        try {
-          controller?.abort();
-        } catch (_) {}
+        // WebKitでは通信中のabort()自体が戻らない場合があるため、
+        // 終端保証は中断通知に依存させない。
         reject(createRaceTimeoutError());
       }, RACE_REQUEST_TIMEOUT_MS);
     });
