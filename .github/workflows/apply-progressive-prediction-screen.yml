@@ -1,0 +1,61 @@
+name: Apply progressive prediction screen fix
+
+on:
+  push:
+    branches:
+      - fix/progressive-prediction-screen-20260825
+    paths:
+      - "scripts/apply-progressive-prediction-screen.js"
+      - ".github/workflows/apply-progressive-prediction-screen.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/progressive-prediction-screen-20260825
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Apply focused production patch
+        run: |
+          node --check scripts/apply-progressive-prediction-screen.js
+          node scripts/apply-progressive-prediction-screen.js
+          git diff --check
+
+      - name: Verify progressive prediction screen
+        run: |
+          node --check js/app-runtime-loader.js
+          node --check js/home-dashboard-v2.js
+          node --check js/script.js
+          node --check scripts/test-progressive-prediction-screen.js
+          node scripts/test-progressive-prediction-screen.js
+          node scripts/test-home-dashboard-v2-phase2.js
+          node scripts/test-prediction-loading-terminal-state.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/check-charter.js
+
+      - name: Commit final files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Progressive prediction screen patch is already applied"
+            exit 0
+          fi
+          git commit -m "Show race entries before full AI prediction"
+          git push origin HEAD:fix/progressive-prediction-screen-20260825
