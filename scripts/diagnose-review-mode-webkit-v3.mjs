@@ -4,7 +4,7 @@ import process from "node:process";
 import { webkit } from "playwright";
 
 const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
-const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal4";
+const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260825-display-layout1";
 const OUTPUT_DIR = process.env.DIAG_OUTPUT || "artifacts/review-mode-webkit-v3";
 const REVIEW_DATE = process.env.REVIEW_DATE || "2026-08-24";
 const REVIEW_PLACE = process.env.REVIEW_PLACE || "蒲郡";

@@ -110,7 +110,9 @@ global.ChappyPracticalSelection = {
       },
       tickets: [{
         ticket: "1-2-3",
-        category: "本線"
+        category: "本線",
+        scenarioType:
+          "canonical-formation"
       }, {
         ticket: "1-3-2",
         category: "本線"
@@ -732,6 +734,16 @@ assert.match(
   practicalSection,
   />フォーメーション<\/span>/,
   "実戦厳選カードもフォーメーション表示を使う"
+);
+assert.match(
+  practicalSection,
+  /v3-formation-row-main[\s\S]{0,800}<span class="v3-tag v3-tag-flow">フォーメーション<\/span>/,
+  "内部scenario種別を利用者向け表示へ変換する"
+);
+assert.doesNotMatch(
+  practicalSection,
+  /canonical-formation/,
+  "内部scenario種別を画面へ露出しない"
 );
 assert.doesNotMatch(
   practicalSection,

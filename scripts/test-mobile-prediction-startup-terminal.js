@@ -17,7 +17,7 @@ const read = relativePath => fs.readFileSync(
   "utf8"
 );
 
-const BUILD = "20260825-mobile-startup-terminal4";
+const BUILD = "20260825-display-layout1";
 const html = read("index.html");
 const appRuntimeSource = read("js/app-runtime-loader.js");
 const apiSource = read("js/api.js");

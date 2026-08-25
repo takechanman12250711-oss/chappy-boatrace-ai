@@ -40,7 +40,7 @@ assert.equal(
 );
 assert.equal(
   patchedLoad.includes(
-    "'const VERSION = \"20260824-readonly-core-fix1\"'"
+    "'const VERSION = \"20260825-display-layout1\"'"
   ),
   true
 );
@@ -64,7 +64,7 @@ assert.equal(
 );
 assert.equal(
   patchedStats.includes(
-    "/style\\.css\\?v=20260806-results-ui-phase4-1/"
+    "/style\\.css\\?v=20260825-display-layout1/"
   ),
   true
 );

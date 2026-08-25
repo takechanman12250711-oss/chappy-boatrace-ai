@@ -391,7 +391,7 @@ assert.equal(
   "結果照合モジュールの遅延読込を15秒で打ち切る"
 );
 [
-  "style.css?v=20260806-results-ui-phase4-1",
+  "style.css?v=20260825-display-layout1",
   "css/home-dashboard-v2.css?v=20260803-entry-odds1",
   "js/app-runtime-loader.js?v=20260816-static-race1",
   "js/home-dashboard-v2.js?v=20260816-static-race1"
@@ -414,7 +414,7 @@ assert.equal(
     "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
     html.includes(
-      "js/prediction-runtime-loader.js?v=20260824-readonly-core-fix1"
+      "js/prediction-runtime-loader.js?v=20260825-display-layout1"
     ) &&
     html.includes(
       "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal4"
@@ -423,7 +423,7 @@ assert.equal(
       'const VERSION = "20260815-odds-immediate1"'
     ) &&
     predictionRuntime.includes(
-      'const VERSION = "20260824-readonly-core-fix1"'
+      'const VERSION = "20260825-display-layout1"'
     ) &&
     hiyoriLoader.includes(
       'const VERSION="20260825-mobile-startup-terminal4"'
@@ -459,7 +459,7 @@ assert.equal(
 );
 assert.equal(
   predictionRuntime.includes(
-    'const VERSION = "20260824-readonly-core-fix1"'
+    'const VERSION = "20260825-display-layout1"'
   ),
   true,
   "全文表示を含む予想モジュールのキャッシュ世代を更新する"

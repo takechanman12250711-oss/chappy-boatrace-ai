@@ -665,6 +665,12 @@ input {
   padding: 6px;
 }
 
+/* 1件だけ復元した万舟候補は、2列グリッドの全幅を使う。 */
+.v3-formation-list >
+.v3-formation-row[data-manshu-display-fallback="true"] {
+  grid-column: 1 / -1;
+}
+
 .v3-formation-flow {
   grid-template-columns: 1fr;
 }
@@ -864,7 +870,7 @@ input {
   .v3-formation-list {
     grid-template-columns: 1fr;
   }
-}、
+}
 /* =========================================================
   表示ズレ修正・余白統一
 ========================================================= */
@@ -3014,6 +3020,7 @@ body {
 .v3-paper-player-line strong {
   white-space: nowrap !important;
   word-break: keep-all !important;
+  color: #111827 !important;
 }
 
 /* タグ・バフ・デバフ */
@@ -3036,6 +3043,26 @@ body {
   white-space: normal !important;
   word-break: normal !important;
   overflow-wrap: break-word !important;
+}
+
+/* 要因ラベルとタグを同じ行から開始し、タグだけを折り返す。 */
+#resultArea .v3-paper-card .v3-factor-line {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+}
+
+#resultArea .v3-paper-card .v3-factor-line > span {
+  flex: 0 0 auto;
+}
+
+#resultArea .v3-paper-card .v3-factor-line > div {
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
 }
 
 /* 狙い・解説 */

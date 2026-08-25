@@ -6,7 +6,7 @@ import { webkit } from "playwright";
 const stage = process.argv[2] || "select";
 const appUrl = process.env.APP_URL || "http://127.0.0.1:4173/";
 const outputDir = process.env.DIAG_OUTPUT || `artifacts-post/${stage}`;
-const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal4";
+const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260825-display-layout1";
 const requireManshuFallback =
   process.env.REQUIRE_MANSHU_FALLBACK !== "false";
 const raceUrl =
@@ -208,17 +208,82 @@ try {
       await new Promise(resolve => {
         requestAnimationFrame(() => requestAnimationFrame(resolve));
       });
+      const predictionSection = document.getElementById(
+        "predictionSection"
+      );
+      if (predictionSection) predictionSection.hidden = false;
       const root = document.getElementById("resultArea");
       const fallback = root?.querySelector?.(
-        "[data-manshu-display-fallback='true']"
+        ".v3-formation-row[data-manshu-display-fallback='true']"
       );
+      const details = fallback?.closest?.("details");
+      if (details) {
+        details.removeAttribute("name");
+        details.open = true;
+      }
+      await new Promise(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+      const fallbackList = fallback?.closest?.(".v3-formation-list");
+      const fallbackRect = fallback?.getBoundingClientRect?.();
+      const fallbackListRect = fallbackList?.getBoundingClientRect?.();
+      const fallbackWidth = fallbackRect?.width || 0;
+      const fallbackListWidth = fallbackListRect?.width || 0;
+      const boatName = root?.querySelector?.(
+        ".v3-paper-player-line .v3-boat-title strong"
+      );
+      const factorLine = [
+        ...(root?.querySelectorAll?.(".v3-factor-line") || [])
+      ].find(line => line.querySelector?.(".v3-tag"));
+      const factorLabel = factorLine?.querySelector?.(":scope > span");
+      const factorTag = factorLine?.querySelector?.(".v3-tag");
+      const factorLabelRect = factorLabel?.getBoundingClientRect?.();
+      const factorTagRect = factorTag?.getBoundingClientRect?.();
       return {
         elapsedMs: Math.round(performance.now() - startedAt),
         raceLoading: root?.dataset?.raceLoading || "",
         fallbackVisible: Boolean(fallback),
         fallbackSignature:
           root?.querySelector?.(".v3-manshu-newspaper")
-            ?.dataset?.manshuDisplaySignature || ""
+            ?.dataset?.manshuDisplaySignature || "",
+        viewportWidth: window.innerWidth,
+        fallbackRowCount: fallbackList
+          ? [...fallbackList.children].filter(child =>
+              child.matches?.(".v3-formation-row")
+            ).length
+          : 0,
+        fallbackWidth,
+        fallbackListWidth,
+        fallbackWidthRatio:
+          fallbackListWidth > 0
+            ? fallbackWidth / fallbackListWidth
+            : 0,
+        fallbackLeftGap:
+          fallbackRect && fallbackListRect
+            ? Math.abs(fallbackRect.left - fallbackListRect.left)
+            : null,
+        fallbackRightGap:
+          fallbackRect && fallbackListRect
+            ? Math.abs(fallbackListRect.right - fallbackRect.right)
+            : null,
+        fallbackGridColumnStart: fallback
+          ? getComputedStyle(fallback).gridColumnStart
+          : "",
+        fallbackGridColumnEnd: fallback
+          ? getComputedStyle(fallback).gridColumnEnd
+          : "",
+        boatNameText: String(boatName?.textContent || "").trim(),
+        boatNameColor: boatName
+          ? getComputedStyle(boatName).color
+          : "",
+        factorLineVisible: Boolean(factorLine),
+        factorTopDelta:
+          factorLabelRect && factorTagRect
+            ? Math.abs(factorLabelRect.top - factorTagRect.top)
+            : null,
+        internalFormationLabelVisible: String(
+          root?.textContent || ""
+        ).includes("canonical-formation")
       };
     });
     mark("post-render-responsive-finished", responsiveSummary);
@@ -231,6 +296,34 @@ try {
     ) {
       throw new Error(
         "Kiryu 10R manshu fallback regression path was not exercised"
+      );
+    }
+    if (
+      !responsiveSummary.boatNameText ||
+      responsiveSummary.boatNameColor !== "rgb(17, 24, 39)" ||
+      responsiveSummary.factorLineVisible !== true ||
+      responsiveSummary.factorTopDelta === null ||
+      responsiveSummary.factorTopDelta > 2 ||
+      responsiveSummary.internalFormationLabelVisible !== false
+    ) {
+      throw new Error(
+        `PDF display regressions remain: ${JSON.stringify(responsiveSummary)}`
+      );
+    }
+    if (
+      requireManshuFallback &&
+      (
+        responsiveSummary.viewportWidth !== 390 ||
+        responsiveSummary.fallbackRowCount !== 1 ||
+        responsiveSummary.fallbackWidth <= 0 ||
+        responsiveSummary.fallbackListWidth <= 0 ||
+        responsiveSummary.fallbackWidthRatio < 0.99 ||
+        responsiveSummary.fallbackLeftGap > 1 ||
+        responsiveSummary.fallbackRightGap > 1
+      )
+    ) {
+      throw new Error(
+        `Kiryu 10R manshu fallback must span the mobile list: ${JSON.stringify(responsiveSummary)}`
       );
     }
     report.result = {
