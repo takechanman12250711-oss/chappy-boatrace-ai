@@ -213,7 +213,10 @@ try {
         ".v3-formation-row[data-manshu-display-fallback='true']"
       );
       const details = fallback?.closest?.("details");
-      if (details) details.open = true;
+      if (details) {
+        details.removeAttribute("name");
+        details.open = true;
+      }
       await new Promise(resolve => {
         requestAnimationFrame(() => requestAnimationFrame(resolve));
       });
