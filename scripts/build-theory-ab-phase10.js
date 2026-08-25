@@ -9,6 +9,7 @@ const stats = path.join(root, "data", "stats");
 const source = path.join(stats, "theory-improvement-proposal-phase9.json");
 const candidateSource = path.join(stats, "theory-candidate-branch-analysis-phase9.json");
 const approvalSource = path.join(root, "config", "theory-ab-phase10-approval.json");
+const approvedSource = path.join(root, "config", "theory-ab-phase10-approved-source.json");
 const output = path.join(stats, "theory-ab-phase10.json");
 
 function load(file, fallback = {}) {
@@ -17,12 +18,33 @@ function load(file, fallback = {}) {
 }
 
 function buildReport(options = {}) {
-  const phase9 = options.phase9 || load(source, {});
-  const candidateAnalysis = options.candidateAnalysis || load(candidateSource, {});
   const approval = options.approval || load(approvalSource, {});
+  const currentPhase9 = options.phase9 || load(source, {});
+  const currentCandidateAnalysis = options.candidateAnalysis || load(candidateSource, {});
+  const frozen = options.approvedSource || load(approvedSource, {});
+  const frozenMetadataMatches = Boolean(
+    approval?.approved === true &&
+    frozen?.status === "frozen-approved-source" &&
+    String(frozen?.approvalId || "") === String(approval?.approvalId || "") &&
+    String(frozen?.frozenAt || "") === String(approval?.humanApprovedAt || "") &&
+    String(frozen?.sourceCommit || "") === String(approval?.cutoff?.sourceCommit || "") &&
+    frozen?.automaticApplication === false &&
+    frozen?.usableForPrediction === false
+  );
+  const useFrozen = approval?.approved === true;
+  const phase9 = useFrozen
+    ? (frozenMetadataMatches ? frozen.phase9 : {})
+    : currentPhase9;
+  const candidateAnalysis = useFrozen
+    ? (frozenMetadataMatches ? frozen.candidateAnalysis : {})
+    : currentCandidateAnalysis;
   return {
     generatedAt: options.generatedAt || new Date().toISOString(),
-    source: "theory-improvement-proposal-phase9.json + theory-candidate-branch-analysis-phase9.json + config/theory-ab-phase10-approval.json",
+    source: useFrozen
+      ? "config/theory-ab-phase10-approved-source.json + config/theory-ab-phase10-approval.json"
+      : "theory-improvement-proposal-phase9.json + theory-candidate-branch-analysis-phase9.json + config/theory-ab-phase10-approval.json",
+    approvedSourceFrozen: useFrozen,
+    approvedSourceMetadataMatches: useFrozen ? frozenMetadataMatches : null,
     ...engine.build(phase9, candidateAnalysis, approval)
   };
 }
@@ -36,4 +58,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { load, buildReport, main, source, candidateSource, approvalSource, output };
+module.exports = { load, buildReport, main, source, candidateSource, approvalSource, approvedSource, output };
