@@ -172,10 +172,10 @@ async function main() {
     "utf8"
   );
   const guardIndex = indexHtml.indexOf(
-    'src="js/result-request-timeout.js?v=20260825-mobile-startup-terminal2&app=20260825-mobile-startup-terminal2"'
+    'src="js/result-request-timeout.js?v=20260825-mobile-startup-terminal3&app=20260825-mobile-startup-terminal3"'
   );
   const appIndex = indexHtml.indexOf(
-    'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260825-mobile-startup-terminal2"'
+    'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260825-mobile-startup-terminal3"'
   );
   const oddsFirstIndex = indexHtml.indexOf(
     'src="js/odds-first-navigation.js?v=20260815-odds-consume2"'

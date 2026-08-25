@@ -417,7 +417,7 @@ assert.equal(
       "js/prediction-runtime-loader.js?v=20260824-readonly-core-fix1"
     ) &&
     html.includes(
-      "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal2"
+      "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal3"
     ) &&
     appRuntime.includes(
       'const VERSION = "20260815-odds-immediate1"'
@@ -426,7 +426,7 @@ assert.equal(
       'const VERSION = "20260824-readonly-core-fix1"'
     ) &&
     hiyoriLoader.includes(
-      'const VERSION="20260825-mobile-startup-terminal2"'
+      'const VERSION="20260825-mobile-startup-terminal3"'
     ),
   true,
   "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
