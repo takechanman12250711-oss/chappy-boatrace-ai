@@ -9,7 +9,13 @@ on:
     branches: [main]
     paths:
       - "scripts/build-remain-pickup-hold3-shadow-ab.js"
+      - "scripts/test-remain-pickup-hold3-shadow-ab.js"
       - ".github/workflows/check-remain-pickup-hold3-shadow-ab.yml"
+  workflow_run:
+    workflows:
+      - "Collect automatic race predictions"
+      - "Collect official race results"
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,6 +24,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
