@@ -3164,6 +3164,7 @@
             }
           )
         );
+        console.log("[prediction-stage] rendered-event:finished");
       } else {
         throw new Error(
           "renderAll() が見つかりません。render.jsを確認してください。"
@@ -3206,10 +3207,12 @@
         );
 
         try {
+          console.log("[prediction-stage] official-result:start");
           const officialResult =
             await fetchOfficialResult(
               params
             );
+          console.log("[prediction-stage] official-result:finished");
 
           if (!isCurrentRequest()) {
             return false;
@@ -3236,6 +3239,7 @@
         } catch (
           resultError
         ) {
+          console.log("[prediction-stage] official-result:terminal-error");
           if (!isCurrentRequest()) {
             return false;
           }
