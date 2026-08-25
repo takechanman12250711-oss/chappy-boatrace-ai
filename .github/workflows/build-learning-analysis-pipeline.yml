@@ -40,6 +40,8 @@ jobs:
           node scripts/test-theory-performance-report.js
           node scripts/test-theory-zero-evidence-diagnostics.js
           node scripts/test-theory-improvement-approval-gate.js
+          node scripts/test-phase3-learning-handoff.js
+          node scripts/test-phase3-refresh-contract.js
           node scripts/test-theory-evidence-coverage-phase7.js
           node scripts/test-theory-evidence-growth-monitor.js
           node scripts/test-profit-priority-ranking.js
@@ -65,7 +67,7 @@ jobs:
         run: |
           node - <<'NODE'
           const fs=require('node:fs');
-          const files=['improvement-proposal-phase3.json','theory-performance-report.json','theory-evidence-coverage-phase7.json','theory-evidence-growth-monitor.json','theory-adoption-phase5.json','profit-priority-ranking.json','theory-profit-review-phase8.json','theory-improvement-proposal-phase9.json','theory-candidate-branch-analysis-phase9.json','theory-ab-phase10.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
+          const files=['improvement-proposal-phase3.json','phase3-learning-handoff.json','theory-performance-report.json','theory-evidence-coverage-phase7.json','theory-evidence-growth-monitor.json','theory-adoption-phase5.json','profit-priority-ranking.json','theory-profit-review-phase8.json','theory-improvement-proposal-phase9.json','theory-candidate-branch-analysis-phase9.json','theory-ab-phase10.json','learning-pipeline-gate-phase4.json','phase6-data-audit.json'];
           for(const file of files){
             const p=`data/stats/${file}`;
             if(!fs.existsSync(p)) throw new Error(`${p} が未生成`);
@@ -78,8 +80,11 @@ jobs:
           if(!(perfInput.settledJoinCount>0) || perfInput.officialResultCount!==perfInput.settledJoinCount) throw new Error('理論別成績の公式結果結合数異常');
           if(perf.sampleCount!==perfInput.settledJoinCount*perf.theoryCount || perf.byTheory.some(row=>row.raceCount!==perfInput.settledJoinCount)) throw new Error('理論別成績の母集団数異常');
           const improvement=JSON.parse(fs.readFileSync('data/stats/improvement-proposal-phase3.json','utf8'));
+          const phase3=JSON.parse(fs.readFileSync('data/stats/phase3-learning-handoff.json','utf8'));
           const pipeline=JSON.parse(fs.readFileSync('data/stats/learning-pipeline-gate-phase4.json','utf8'));
           const audit=JSON.parse(fs.readFileSync('data/stats/phase6-data-audit.json','utf8'));
+          if(phase3.historicalEvidence?.settledRaceCount!==improvement.settledRaceCount) throw new Error('Phase3引き渡しの過去根拠が最新改善提案へ接続されていません');
+          if(phase3.historicalEvidence?.proposalCount!==improvement.proposalCount) throw new Error('Phase3引き渡しの改善候補件数が最新提案と不一致です');
           for(const [name,data] of [['改善提案',improvement],['学習ゲート',pipeline],['Phase6監査',audit]]){
             if(data.analysisInputContract!==perf.analysisInputContract) throw new Error(`${name}の母集団契約異常`);
             if(data.analysisInputDiagnostics?.settledJoinCount!==perfInput.settledJoinCount || data.settledRaceCount!==perfInput.settledJoinCount) throw new Error(`${name}の母集団数異常`);
