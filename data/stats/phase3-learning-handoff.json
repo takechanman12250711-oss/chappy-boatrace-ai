@@ -1,13 +1,13 @@
 {
-  "schemaVersion": 3,
-  "generatedAt": "2026-08-25T14:56:08.063Z",
+  "schemaVersion": 4,
+  "generatedAt": "2026-08-25T15:17:59.870Z",
   "phase": "phase3",
   "implementationComplete": true,
   "productionChanged": false,
   "automaticApplication": false,
   "requiresUserApproval": true,
   "allSourcesConnected": true,
-  "policy": "過去の公式締切前コホートから得た改善根拠を保持し、結果記述だけの診断は別枠で保存する。実A/Bでcandidateになった改善だけ承認候補へ渡す。過去根拠を捨てて0Rから再分析しない。承認前は本番予想へ一切反映しない。",
+  "policy": "過去の公式締切前コホートから得た改善根拠を保持し、結果記述だけの診断は別枠で保存する。実A/Bの数値判定に加え、候補群保持・点数制限前の候補生成・構造化除外理由・数値単独削除禁止の憲章適合証跡が揃った改善だけ承認候補へ渡す。過去根拠を捨てて0Rから再分析しない。承認前は本番予想へ一切反映しない。",
   "historicalEvidence": {
     "source": "improvement-proposal-phase3.json",
     "settledRaceCount": 1710,
@@ -116,8 +116,11 @@
       }
     ]
   },
-  "candidateCount": 4,
-  "candidates": [
+  "statisticalCandidateCount": 4,
+  "candidateCount": 0,
+  "candidates": [],
+  "policyReviewCount": 4,
+  "policyReview": [
     {
       "id": "four-attack-warning",
       "sourceFile": "race-flow-4kado-alert-skip-ab-report.json",
@@ -127,9 +130,16 @@
       "bRecoveryRate": 113.6,
       "aProfit": 10630,
       "bProfit": 17190,
-      "status": "awaiting-user-approval",
+      "status": "requires-policy-compatibility-review",
       "approved": false,
-      "productionApplied": false
+      "productionApplied": false,
+      "reason": "憲章適合証跡が不足しているため、数値判定だけでは承認候補へ送らない",
+      "missingOrMismatched": [
+        "preserveEvaluatedScenarioCandidatesForEveryBoat",
+        "candidateGenerationPrecedesTicketLimit",
+        "excludedCandidatesRequireStructuredReason",
+        "numbersAloneMayDeleteTickets"
+      ]
     },
     {
       "id": "two-course-sashi",
@@ -140,9 +150,16 @@
       "bRecoveryRate": 109.1,
       "aProfit": 10630,
       "bProfit": 11000,
-      "status": "awaiting-user-approval",
+      "status": "requires-policy-compatibility-review",
       "approved": false,
-      "productionApplied": false
+      "productionApplied": false,
+      "reason": "憲章適合証跡が不足しているため、数値判定だけでは承認候補へ送らない",
+      "missingOrMismatched": [
+        "preserveEvaluatedScenarioCandidatesForEveryBoat",
+        "candidateGenerationPrecedesTicketLimit",
+        "excludedCandidatesRequireStructuredReason",
+        "numbersAloneMayDeleteTickets"
+      ]
     },
     {
       "id": "outside-push",
@@ -153,9 +170,16 @@
       "bRecoveryRate": 119.4,
       "aProfit": 10630,
       "bProfit": 25350,
-      "status": "awaiting-user-approval",
+      "status": "requires-policy-compatibility-review",
       "approved": false,
-      "productionApplied": false
+      "productionApplied": false,
+      "reason": "憲章適合証跡が不足しているため、数値判定だけでは承認候補へ送らない",
+      "missingOrMismatched": [
+        "preserveEvaluatedScenarioCandidatesForEveryBoat",
+        "candidateGenerationPrecedesTicketLimit",
+        "excludedCandidatesRequireStructuredReason",
+        "numbersAloneMayDeleteTickets"
+      ]
     },
     {
       "id": "hold-third",
@@ -166,12 +190,19 @@
       "bRecoveryRate": 110.5,
       "aProfit": 10630,
       "bProfit": 15240,
-      "status": "awaiting-user-approval",
+      "status": "requires-policy-compatibility-review",
       "approved": false,
-      "productionApplied": false
+      "productionApplied": false,
+      "reason": "憲章適合証跡が不足しているため、数値判定だけでは承認候補へ送らない",
+      "missingOrMismatched": [
+        "preserveEvaluatedScenarioCandidatesForEveryBoat",
+        "candidateGenerationPrecedesTicketLimit",
+        "excludedCandidatesRequireStructuredReason",
+        "numbersAloneMayDeleteTickets"
+      ]
     }
   ],
   "blockedCount": 0,
   "blocked": [],
-  "nextStep": "user-approval"
+  "nextStep": "policy-compatibility-review"
 }

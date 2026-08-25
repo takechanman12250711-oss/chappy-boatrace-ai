@@ -18,7 +18,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.event_name == 'pull_request' && format('check-phase3-learning-handoff-pr-{0}', github.event.pull_request.number) || 'chappy-main-data-writers' }}
   cancel-in-progress: false
 jobs:
   verify:
