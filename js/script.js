@@ -3001,7 +3001,10 @@
       console.log(
         "✅ API成功 entries=",
         data?.entries?.length || 0,
-        data
+        {
+          source: data?.source || "",
+          historyReady: Boolean(data?.historyContext)
+        }
       );
 
       const prediction =

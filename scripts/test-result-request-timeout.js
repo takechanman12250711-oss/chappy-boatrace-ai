@@ -152,6 +152,11 @@ async function main() {
     /await fetchOfficialResultResponse\(url\)/,
     "review result fetch must use the local terminal timeout"
   );
+  assert.doesNotMatch(
+    appSource,
+    /"✅ API成功 entries=",\s*data\?\.entries\?\.length \|\| 0,\s*data\s*\)/,
+    "the mobile startup path must not send the full race payload to Safari console"
+  );
 
   const indexHtml = fs.readFileSync(
     path.join(__dirname, "..", "index.html"),
