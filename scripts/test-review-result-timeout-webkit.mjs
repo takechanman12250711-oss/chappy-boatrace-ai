@@ -247,6 +247,25 @@ try {
   }, null, 2));
 } catch (error) {
   failure = error;
+  if (page) {
+    const failureState = await page.evaluate(() => ({
+      status: document.getElementById("statusArea")?.textContent?.trim() || "",
+      errorArea: document.getElementById("errorArea")?.textContent?.trim() || "",
+      resultLoading:
+        document.getElementById("resultArea")?.dataset?.raceLoading || "",
+      resultTextLength:
+        (document.getElementById("resultArea")?.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim().length,
+      reviewResultText:
+        (document.getElementById("reviewResultArea")?.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim(),
+      resultRequestSeen:
+        window.__chappyResultTimeoutRequestSeen === true
+    })).catch(() => null);
+    mark("failure-state", failureState || {});
+  }
   console.error("[FATAL]", error?.stack || error);
 } finally {
   if (context) {
