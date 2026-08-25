@@ -276,6 +276,8 @@ const learningVerificationLines = stepRunLines(
   "scripts/test-local-water-theory-tag.js",
   "scripts/test-theory-zero-evidence-diagnostics.js",
   "scripts/test-theory-improvement-approval-gate.js",
+  "scripts/test-phase3-learning-handoff.js",
+  "scripts/test-phase3-refresh-contract.js",
   "scripts/test-theory-candidate-branch-analysis-phase9.js"
 ].forEach(scriptPath => {
   const command = `node ${scriptPath}`;
@@ -291,6 +293,18 @@ assert.equal(
   ).length,
   1,
   "参照タグ分析の単体回帰を学習パイプライン生成前に1回実行する"
+);
+assert.equal(
+  learningPipeline.steps.filter(
+    file => file === "build-phase3-learning-handoff.js"
+  ).length,
+  1,
+  "Phase3引き渡しを固定順パイプラインで1回だけ生成する"
+);
+assert.ok(
+  learningPipeline.steps.indexOf("build-improvement-proposal-report.js") <
+    learningPipeline.steps.indexOf("build-phase3-learning-handoff.js"),
+  "最新の改善提案を生成してからPhase3引き渡しを更新する"
 );
 assert.equal(
   learningPipeline.steps.filter(
@@ -409,6 +423,12 @@ const safetyGuard = stepRunLines(
   learningPipelineWorkflow,
   "Verify generated safety flags"
 ).join("\n");
+assert.ok(
+  safetyGuard.includes("'phase3-learning-handoff.json'") &&
+    safetyGuard.includes("phase3.historicalEvidence?.settledRaceCount!==improvement.settledRaceCount") &&
+    safetyGuard.includes("phase3.historicalEvidence?.proposalCount!==improvement.proposalCount"),
+  "固定順生成後にPhase3引き渡しと最新改善提案の接続を検証する"
+);
 const guardedVersions = [
   ...safetyGuard.matchAll(/perf\.version\s*!==\s*(['"])([^'"]+)\1/g)
 ].map(match => match[2]);
