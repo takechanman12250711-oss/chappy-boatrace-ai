@@ -8,6 +8,10 @@ x=g.normalize("x","x",{cohort:{targetSettledCount:29},interpretation:{minimumTar
 assert.equal(x.affectedSettledCount,29);assert.equal(x.minimumAffectedSettledCount,30);assert.equal(x.aRecoveryRate,null);assert.equal(x.bRecoveryRate,null);assert.equal(x.aProfit,null);assert.equal(x.bProfit,null);assert.equal(x.decision,"continue");
 x=g.normalize("x","x",{A:{affectedRaceCount:30,recoveryRate:80,profit:-100},B:{affectedRaceCount:30,recoveryRate:70,profit:-200},minimumAffectedSettledCount:30,productionAUnchanged:true});assert.equal(x.affectedSettledCount,30);assert.equal(x.decision,"reject");
 x=g.normalize("x","x",{affectedSettledCount:30,productionChanged:true,A:{recoveryRate:70},B:{recoveryRate:90}});assert.equal(x.decision,"blocked");
+x=g.normalize("frame-negative-clip","x",{status:"candidate-fails-futility",fixedComparableRaces:100,observation:{settledComparableCount:96},overall:{aRecoveryRate:103.3,bRecoveryRate:null,aProfit:2780,bProfit:0},futility:{evaluated:true,irreversible:true,reason:"remaining-races-cannot-reach-minimum-net-b-only-hits"},productionAUnchanged:true});
+assert.equal(x.affectedSettledCount,96);assert.equal(x.minimumAffectedSettledCount,100);assert.equal(x.aRecoveryRate,103.3);assert.equal(x.bRecoveryRate,null);assert.equal(x.aProfit,2780);assert.equal(x.bProfit,0);assert.equal(x.decision,"reject");assert.equal(x.reason,"remaining-races-cannot-reach-minimum-net-b-only-hits");
+x=g.normalize("frame-shadow-off","x",{status:"candidate-fails-fixed-100",protocol:{fixedComparableRaces:100},observation:{settledComparableCount:100},overall:{aRecoveryRate:42.4,bRecoveryRate:null,aProfit:-50650,bProfit:0},productionAUnchanged:true});
+assert.equal(x.decision,"reject");assert.equal(x.reason,"固定件数評価で不採用");
 x=g.normalize("x","missing.json",null);assert.equal(x.status,"missing");assert.equal(x.decision,"blocked");
 assert.equal(g.SOURCES.length,7);assert.equal(new Set(g.SOURCES.map(v=>v[1])).size,7);
 const report=g.build();assert.equal(report.sourceCount,7);assert.equal(report.availableSourceCount,7);assert.equal(report.allSourcesConnected,true);assert.ok(report.items.every(v=>v.status==="available"));
