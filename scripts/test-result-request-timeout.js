@@ -153,6 +153,11 @@ async function main() {
   );
   assert.match(
     appSource,
+    /window\.fetch\(url, \{\s*chappySkipResultTimeout: true\s*\}\)/,
+    "local full-body timeout must bypass the nested result fetch wrapper"
+  );
+  assert.match(
+    appSource,
     /await fetchOfficialResultPayload\(url\)/,
     "review result fetch must use the local terminal timeout"
   );

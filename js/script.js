@@ -3434,7 +3434,9 @@
     });
 
     const request = (async () => {
-      const response = await window.fetch(url);
+      const response = await window.fetch(url, {
+        chappySkipResultTimeout: true
+      });
       const result = await response.json();
       return { response, result };
     })();
