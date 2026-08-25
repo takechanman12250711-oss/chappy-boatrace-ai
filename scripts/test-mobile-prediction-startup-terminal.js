@@ -17,7 +17,7 @@ const read = relativePath => fs.readFileSync(
   "utf8"
 );
 
-const BUILD = "20260825-mobile-startup-terminal3";
+const BUILD = "20260825-mobile-startup-terminal4";
 const html = read("index.html");
 const appRuntimeSource = read("js/app-runtime-loader.js");
 const apiSource = read("js/api.js");
@@ -56,7 +56,7 @@ assert.match(html, /label\.textContent="再起動中"/);
 });
 assert.match(
   html,
-  /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal3"/,
+  /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal4"/,
   "非同期の日和補助は既存の非blocking契約を維持する"
 );
 assert.match(

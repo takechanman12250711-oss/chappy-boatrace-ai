@@ -6,10 +6,11 @@ import { webkit } from "playwright";
 const stage = process.argv[2] || "core";
 const appUrl = process.env.APP_URL || "http://127.0.0.1:4173/";
 const outputDir = process.env.DIAG_OUTPUT || `artifacts-stage/${stage}`;
-const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal3";
+const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal4";
 const raceUrl =
+  process.env.RACE_URL ||
   "https://chappy-boatrace-api.vercel.app/api/race" +
-  "?jcd=07&rno=12&date=20260824";
+    "?jcd=07&rno=12&date=20260824";
 
 fs.mkdirSync(outputDir, { recursive: true });
 const progressPath = path.join(outputDir, `${stage}-progress.json`);

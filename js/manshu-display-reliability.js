@@ -187,6 +187,21 @@
     `;
   }
 
+  function candidateSignature(candidate) {
+    if (!candidate || typeof candidate !== "object") return "";
+
+    return JSON.stringify([
+      String(candidate.ticket || ""),
+      String(candidate.category || ""),
+      Number.isFinite(Number(candidate.odds))
+        ? Number(candidate.odds)
+        : null,
+      String(candidate.oddsText || ""),
+      String(candidate.scenarioType || ""),
+      String(candidate.scenarioSummary || "")
+    ]);
+  }
+
   function createSection(documentObject) {
     const section = documentObject.createElement("section");
     section.className = "v3-section v3-manshu-newspaper";
@@ -233,8 +248,21 @@
 
     const body = section.querySelector?.(".v3-section-body");
     if (!body) return false;
+
+    const signature = candidateSignature(candidate);
+    const existingFallbackRow = section.querySelector?.(
+      "[data-manshu-display-fallback='true']"
+    );
+    if (
+      existingFallbackRow &&
+      section.dataset?.manshuDisplaySignature === signature
+    ) {
+      return false;
+    }
+
     body.innerHTML = candidateBody(candidate);
     section.dataset.manshuDisplayFallback = "true";
+    section.dataset.manshuDisplaySignature = signature;
     return true;
   }
 
@@ -271,9 +299,14 @@
     const documentObject = root.document || (typeof document !== "undefined" ? document : null);
     const resultArea = documentObject?.getElementById?.("resultArea");
     if (resultArea && typeof root.MutationObserver === "function") {
+      let applyScheduled = false;
       const observer = new root.MutationObserver(() => {
-        if (!lastPrediction) return;
-        const run = () => apply(lastPrediction, documentObject);
+        if (!lastPrediction || applyScheduled) return;
+        applyScheduled = true;
+        const run = () => {
+          applyScheduled = false;
+          apply(lastPrediction, documentObject);
+        };
         if (typeof root.queueMicrotask === "function") root.queueMicrotask(run);
         else Promise.resolve().then(run);
       });
@@ -292,6 +325,7 @@
     normalizeCandidate,
     categoryType,
     candidateBody,
+    candidateSignature,
     apply,
     install
   };

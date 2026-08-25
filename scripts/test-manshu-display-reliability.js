@@ -34,6 +34,24 @@ assert.equal(
   false,
   "万舟見出しを内側で重複表示しない"
 );
+assert.equal(
+  moduleApi.candidateSignature(normalized),
+  moduleApi.candidateSignature({ ...normalized }),
+  "同じ表示候補は安定した署名になる"
+);
+assert.notEqual(
+  moduleApi.candidateSignature({
+    ...normalized,
+    odds: 99,
+    oddsText: "取得済み"
+  }),
+  moduleApi.candidateSignature({
+    ...normalized,
+    odds: 100,
+    oddsText: "取得済み"
+  }),
+  "万舟判定の境界を跨ぐオッズ更新は表示署名を変える"
+);
 
 assert.equal(
   moduleApi.ticketOf(
@@ -97,4 +115,127 @@ assert.equal(
   "候補シートがない保存形式でもformationから復元する"
 );
 
-console.log("万舟表示フォールバック回帰テスト: 合格");
+let fallbackWrites = 0;
+let fallbackVisible = false;
+const fallbackBody = {
+  set innerHTML(value) {
+    this.value = value;
+    fallbackWrites += 1;
+    fallbackVisible = true;
+  }
+};
+const fallbackSection = {
+  dataset: {},
+  querySelector(selector) {
+    if (selector.includes(":not(")) return null;
+    if (selector === ".v3-section-body") return fallbackBody;
+    if (selector === "[data-manshu-display-fallback='true']") {
+      return fallbackVisible ? { dataset: { manshuDisplayFallback: "true" } } : null;
+    }
+    return null;
+  }
+};
+const fallbackDocument = {
+  getElementById(id) {
+    if (id !== "resultArea") return null;
+    return {
+      querySelector(selector) {
+        return selector === ".v3-manshu-newspaper"
+          ? fallbackSection
+          : null;
+      }
+    };
+  }
+};
+
+assert.equal(moduleApi.apply(prediction, fallbackDocument), true);
+assert.equal(fallbackWrites, 1);
+assert.equal(
+  moduleApi.apply(prediction, fallbackDocument),
+  false,
+  "同じフォールバック表示をMutationObserver経由で再適用してもDOMを書き換えない"
+);
+assert.equal(
+  fallbackWrites,
+  1,
+  "同一候補の再適用でinnerHTML書換えを連鎖させない"
+);
+assert.equal(
+  moduleApi.apply({
+    ...prediction,
+    ticketSheets: {
+      hole: [{
+        ...prediction.ticketSheets.hole[0],
+        oddsText: "120.1倍"
+      }]
+    }
+  }, fallbackDocument),
+  true,
+  "表示内容が変わった場合だけフォールバック行を更新する"
+);
+assert.equal(fallbackWrites, 2);
+
+(async () => {
+  let observerCallback = null;
+  let observerWrites = 0;
+  let observerFallbackVisible = false;
+  const observerBody = {
+    set innerHTML(value) {
+      this.value = value;
+      observerWrites += 1;
+      observerFallbackVisible = true;
+      if (observerCallback) queueMicrotask(() => observerCallback([]));
+    }
+  };
+  const observerSection = {
+    dataset: {},
+    querySelector(selector) {
+      if (selector.includes(":not(")) return null;
+      if (selector === ".v3-section-body") return observerBody;
+      if (selector === "[data-manshu-display-fallback='true']") {
+        return observerFallbackVisible ? {} : null;
+      }
+      return null;
+    }
+  };
+  const observerResultArea = {
+    querySelector(selector) {
+      return selector === ".v3-manshu-newspaper"
+        ? observerSection
+        : null;
+    }
+  };
+  const observerRoot = {
+    document: {
+      getElementById(id) {
+        return id === "resultArea" ? observerResultArea : null;
+      }
+    },
+    renderAll() {
+      return true;
+    },
+    addEventListener() {},
+    queueMicrotask,
+    MutationObserver: class {
+      constructor(callback) {
+        observerCallback = callback;
+      }
+
+      observe() {}
+    }
+  };
+
+  assert.equal(moduleApi.install(observerRoot), true);
+  assert.equal(observerRoot.renderAll(prediction), true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(
+    observerWrites,
+    1,
+    "MutationObserverが自分の書換えを検知してもmicrotask連鎖を終了する"
+  );
+
+  console.log("万舟表示フォールバック回帰テスト: 合格");
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
