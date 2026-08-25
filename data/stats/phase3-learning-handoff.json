@@ -1,13 +1,14 @@
 {
-  "schemaVersion": 4,
-  "generatedAt": "2026-08-25T15:26:22.141Z",
+  "schemaVersion": 5,
+  "generatedAt": "2026-08-25T21:01:58.243Z",
   "phase": "phase3",
   "implementationComplete": true,
   "productionChanged": false,
   "automaticApplication": false,
   "requiresUserApproval": true,
   "allSourcesConnected": true,
-  "policy": "過去の公式締切前コホートから得た改善根拠を保持し、結果記述だけの診断は別枠で保存する。実A/Bの数値判定に加え、候補群保持・点数制限前の候補生成・構造化除外理由・数値単独削除禁止の憲章適合証跡が揃った改善だけ承認候補へ渡す。過去根拠を捨てて0Rから再分析しない。承認前は本番予想へ一切反映しない。",
+  "policy": "過去の公式締切前コホートから得た改善根拠を保持し、結果記述だけの診断は別枠で保存する。実A/Bの数値判定に加え、現実的な2コース差し・4号艇残し、候補群保持、点数制限前の候補生成、構造化除外理由、数値単独削除禁止の憲章適合証跡が揃った改善だけ承認候補へ渡す。過去根拠を捨てて0Rから再分析しない。承認前は本番予想へ一切反映しない。",
+  "policyReviewSource": "config/phase3-candidate-policy-review.json",
   "historicalEvidence": {
     "source": "improvement-proposal-phase3.json",
     "settledRaceCount": 1710,
@@ -119,8 +120,10 @@
   "statisticalCandidateCount": 4,
   "candidateCount": 0,
   "candidates": [],
-  "policyReviewCount": 4,
-  "policyReview": [
+  "policyReviewCount": 0,
+  "policyReview": [],
+  "policyRejectedCount": 4,
+  "policyRejected": [
     {
       "id": "four-attack-warning",
       "sourceFile": "race-flow-4kado-alert-skip-ab-report.json",
@@ -130,15 +133,14 @@
       "bRecoveryRate": 113.6,
       "aProfit": 10630,
       "bProfit": 17190,
-      "status": "requires-policy-compatibility-review",
+      "status": "rejected-policy-incompatible",
       "approved": false,
       "productionApplied": false,
-      "reason": "憲章適合証跡が不足しているため、数値判定だけでは承認候補へ送らない",
-      "missingOrMismatched": [
+      "reason": "4カド攻め警戒の展開ラベルだけでレース全体を見送るため、艇別に評価済みの残し・拾い候補を保持しない / 除外対象となる各買い目に構造化された除外理由がない",
+      "failedRequirements": [
+        "preserveRealisticFourthBoatHold",
         "preserveEvaluatedScenarioCandidatesForEveryBoat",
-        "candidateGenerationPrecedesTicketLimit",
-        "excludedCandidatesRequireStructuredReason",
-        "numbersAloneMayDeleteTickets"
+        "excludedCandidatesRequireStructuredReason"
       ]
     },
     {
@@ -150,15 +152,15 @@
       "bRecoveryRate": 109.1,
       "aProfit": 10630,
       "bProfit": 11000,
-      "status": "requires-policy-compatibility-review",
+      "status": "rejected-policy-incompatible",
       "approved": false,
       "productionApplied": false,
-      "reason": "憲章適合証跡が不足しているため、数値判定だけでは承認候補へ送らない",
-      "missingOrMismatched": [
+      "reason": "2コース差しの展開ラベルだけでレース全体を見送るため、現実的な2コース差しを保持しない / 艇別に評価済みの残し・拾い候補と各買い目の構造化除外理由を保持しない",
+      "failedRequirements": [
+        "preserveRealisticSecondCourseSashi",
+        "preserveRealisticFourthBoatHold",
         "preserveEvaluatedScenarioCandidatesForEveryBoat",
-        "candidateGenerationPrecedesTicketLimit",
-        "excludedCandidatesRequireStructuredReason",
-        "numbersAloneMayDeleteTickets"
+        "excludedCandidatesRequireStructuredReason"
       ]
     },
     {
@@ -170,15 +172,14 @@
       "bRecoveryRate": 119.4,
       "aProfit": 10630,
       "bProfit": 25350,
-      "status": "requires-policy-compatibility-review",
+      "status": "rejected-policy-incompatible",
       "approved": false,
       "productionApplied": false,
-      "reason": "憲章適合証跡が不足しているため、数値判定だけでは承認候補へ送らない",
-      "missingOrMismatched": [
+      "reason": "外コース展開突きの展開ラベルだけでレース全体を見送るため、艇別に評価済みの残し・拾い候補を保持しない / 除外対象となる各買い目に構造化された除外理由がない",
+      "failedRequirements": [
+        "preserveRealisticFourthBoatHold",
         "preserveEvaluatedScenarioCandidatesForEveryBoat",
-        "candidateGenerationPrecedesTicketLimit",
-        "excludedCandidatesRequireStructuredReason",
-        "numbersAloneMayDeleteTickets"
+        "excludedCandidatesRequireStructuredReason"
       ]
     },
     {
@@ -190,19 +191,16 @@
       "bRecoveryRate": 110.5,
       "aProfit": 10630,
       "bProfit": 15240,
-      "status": "requires-policy-compatibility-review",
+      "status": "rejected-policy-incompatible",
       "approved": false,
       "productionApplied": false,
-      "reason": "憲章適合証跡が不足しているため、数値判定だけでは承認候補へ送らない",
-      "missingOrMismatched": [
-        "preserveEvaluatedScenarioCandidatesForEveryBoat",
-        "candidateGenerationPrecedesTicketLimit",
-        "excludedCandidatesRequireStructuredReason",
-        "numbersAloneMayDeleteTickets"
+      "reason": "構造化されたhold役割が3着の買い目を一律除外し、現実的な4号艇残しを保護する例外条件がない",
+      "failedRequirements": [
+        "preserveRealisticFourthBoatHold"
       ]
     }
   ],
   "blockedCount": 0,
   "blocked": [],
-  "nextStep": "policy-compatibility-review"
+  "nextStep": "continue-validation-from-historical-evidence"
 }
