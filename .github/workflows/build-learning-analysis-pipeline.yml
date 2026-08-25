@@ -48,6 +48,7 @@ jobs:
           node --check js/theory-candidate-branch-analysis-phase9.js
           node --check scripts/build-theory-candidate-branch-analysis-phase9.js
           node scripts/test-theory-candidate-branch-analysis-phase9.js
+          node scripts/test-theory-ab-phase10-approval.js
           node scripts/test-theory-ab-phase10.js
           node scripts/test-theory-adoption-phase5.js
           node scripts/test-learning-pipeline-gate.js
@@ -106,7 +107,9 @@ jobs:
             if(branch.retrospectiveLimits?.independentHoldout!==false || branch.retrospectiveLimits?.historicalBPerformanceClaimAllowed!==false) throw new Error('84Rを独立holdoutまたはB成績として誤使用しています');
           }
           const phase10=JSON.parse(fs.readFileSync('data/stats/theory-ab-phase10.json','utf8'));
+          const approval=JSON.parse(fs.readFileSync('config/theory-ab-phase10-approval.json','utf8'));
           if(phase10.automaticApplication!==false || phase10.usableForPrediction!==false || phase10.comparison?.automaticWinnerSelection!==false) throw new Error('Phase10安全条件異常');
+          if(approval.approved===true && (phase10.approvedSourceFrozen!==true || phase10.approvedSourceMetadataMatches!==true || phase10.status!=='ready-for-shadow-ab')) throw new Error('承認済みPhase10の固定承認source接続異常');
           if(phase10.readinessChecks?.allPassed!==true && phase10.candidateB!==null) throw new Error('全承認・実装確認前にBが生成されています');
           if(branch.candidateCount===1 && phase10.comparison?.minimumComparableRaces!==branch.candidate?.prospectiveProtocol?.fixedComparableRaces) throw new Error('候補仕様とPhase10の固定比較件数が不一致です');
           if(branch.candidateCount===1 && phase10.readinessChecks?.validCandidateSpecFingerprint!==true) throw new Error('Phase10の候補仕様fingerprint再計算が不一致です');

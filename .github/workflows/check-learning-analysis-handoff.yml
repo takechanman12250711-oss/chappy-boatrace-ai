@@ -11,10 +11,12 @@ on:
       - "js/frame-rise-fall-shadow-off.js"
       - "js/frame-rise-fall-shadow-off-verifier.js"
       - "config/theory-ab-phase10-approval.json"
+      - "config/theory-ab-phase10-approved-source.json"
       - "scripts/build-theory-profit-review-phase8.js"
       - "scripts/build-theory-improvement-proposal-phase9.js"
       - "scripts/build-theory-candidate-branch-analysis-phase9.js"
       - "scripts/build-theory-ab-phase10.js"
+      - "scripts/restore-daily-prediction-source.js"
       - "scripts/test-theory-profit-review-phase8.js"
       - "scripts/test-theory-improvement-proposal-phase9.js"
       - "scripts/test-theory-candidate-branch-analysis-phase9.js"
@@ -54,11 +56,13 @@ jobs:
           node --check scripts/build-theory-improvement-proposal-phase9.js
           node --check scripts/build-theory-candidate-branch-analysis-phase9.js
           node --check scripts/build-theory-ab-phase10.js
+          node --check scripts/restore-daily-prediction-source.js
           node scripts/test-theory-profit-review-phase8.js
           node scripts/test-theory-improvement-proposal-phase9.js
           node scripts/test-theory-candidate-branch-analysis-phase9.js
           node scripts/test-frame-rise-fall-shadow-off.js
           node scripts/test-theory-ab-phase10.js
+          node scripts/restore-daily-prediction-source.js --all
           node scripts/build-theory-profit-review-phase8.js
           node scripts/build-theory-improvement-proposal-phase9.js
           node scripts/build-theory-candidate-branch-analysis-phase9.js
@@ -91,6 +95,7 @@ jobs:
             if(phase10.readinessChecks?.implementationCandidateSpecMatches!==true) throw new Error('shadow実装がPhase9候補仕様と一致しません');
           }
           if(approval.approved===true){
+            if(phase10.approvedSourceFrozen!==true || phase10.approvedSourceMetadataMatches!==true) throw new Error('承認済みPhase10が固定承認sourceを参照していません');
             if(phase10.status!=='ready-for-shadow-ab') throw new Error('承認済みPhase10がshadow A/B開始可能になっていません');
             if(phase10.readinessChecks?.approvalApplied!==true || phase10.readinessChecks?.allPassed!==true) throw new Error('承認fingerprintまたはcutoff固定が不成立です');
             if(!phase10.candidateB) throw new Error('承認済みcandidateBが生成されていません');
