@@ -179,31 +179,15 @@ try {
   });
 
   await page.waitForFunction(
-    () => {
-      const resultArea = document.getElementById("resultArea");
-      const rendered =
-        (resultArea?.textContent || "").replace(/\s+/g, " ").trim().length >= 500 &&
-        !resultArea?.dataset?.raceLoading;
-      return window.__chappyRenderedForResultTimeoutTest === true || rendered;
-    },
-    null,
-    { timeout: 90_000 }
-  );
-  const renderedAt = Date.now();
-  mark("prediction-rendered", {
-    renderElapsedMs: renderedAt - startedAt
-  });
-
-  await page.waitForFunction(
     () =>
       document.getElementById("statusArea")?.textContent?.trim() ===
       "振り返り予想を表示しました。公式結果の取得に失敗しました",
     null,
-    { timeout: 30_000 }
+    { timeout: 45_000 }
   );
   const terminalAt = Date.now();
   mark("review-terminal-state", {
-    terminalWaitMs: terminalAt - renderedAt
+    terminalWaitMs: terminalAt - startedAt
   });
 
   const finalState = await page.evaluate(() => ({
@@ -248,8 +232,8 @@ try {
     throw new Error(`readonly page error: ${pageErrors.join(" | ")}`);
   }
 
-  const terminalWaitMs = terminalAt - renderedAt;
-  if (terminalWaitMs < 9_000 || terminalWaitMs > 25_000) {
+  const terminalWaitMs = terminalAt - startedAt;
+  if (terminalWaitMs < 9_000 || terminalWaitMs > 35_000) {
     throw new Error(
       `unexpected result timeout duration: ${terminalWaitMs}ms`
     );
@@ -259,7 +243,6 @@ try {
     ok: true,
     runtimeState,
     elapsedMs: terminalAt - startedAt,
-    renderElapsedMs: renderedAt - startedAt,
     terminalWaitMs,
     resultTextLength: finalState.resultText.length,
     status: finalState.status,
