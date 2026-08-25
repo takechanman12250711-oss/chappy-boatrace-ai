@@ -25,7 +25,7 @@
 })(typeof window !== "undefined" ? window : null, function () {
   "use strict";
 
-  const VERSION = "20260824-result-timeout1";
+  const VERSION = "20260825-mobile-startup-terminal1";
   const API_ORIGIN = "https://chappy-boatrace-api.vercel.app";
   const RESULT_API_PATH = "/api/result";
   const RESULT_REQUEST_TIMEOUT_MS = 12000;
@@ -170,9 +170,8 @@
       const timeout = new Promise((_, reject) => {
         timer = root.setTimeout(() => {
           timedOut = true;
-          try {
-            controller?.abort();
-          } catch (_) {}
+          // WebKitではabort()自体が戻らない場合があるため、
+          // 終端保証は中断通知に依存させない。
           reject(createTimeoutError(timeoutMs));
         }, Math.max(1, Number(timeoutMs) || RESULT_REQUEST_TIMEOUT_MS));
       });

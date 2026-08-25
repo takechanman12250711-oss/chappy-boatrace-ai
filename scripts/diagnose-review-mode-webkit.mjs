@@ -4,7 +4,7 @@ import process from "node:process";
 import { webkit } from "playwright";
 
 const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
-const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260824-readonly-core-fix1";
+const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal1";
 const OUTPUT_DIR = process.env.DIAG_OUTPUT || "artifacts/review-mode-webkit";
 const REVIEW_DATE = process.env.REVIEW_DATE || "2026-08-24";
 const REVIEW_PLACE = process.env.REVIEW_PLACE || "蒲郡";
@@ -155,6 +155,7 @@ try {
 
   await page.evaluate(async () => {
     await window.ChappyAppRuntime.ensure("race");
+    window.ChappyHomeDashboardV2?.setView("race");
   });
   recordStep("race-runtime-ready");
 
@@ -176,37 +177,28 @@ try {
   await page.dispatchEvent("#dateInput", "change");
   recordStep("review-date-selected", { date: REVIEW_DATE });
 
-  await page.waitForFunction(
-    () => document.querySelectorAll("#placeSelect option").length > 0,
-    null,
-    { timeout: 45_000 }
-  );
-
-  const places = await page.locator("#placeSelect option").allTextContents();
-  if (!places.includes(REVIEW_PLACE)) {
-    throw new Error(
-      `review venue is unavailable: ${REVIEW_PLACE}; options=${places.join(",")}`
-    );
-  }
-
-  await page.selectOption("#placeSelect", { label: REVIEW_PLACE });
-  await page.dispatchEvent("#placeSelect", "change");
+  const venueSelector =
+    `#officialVenueGrid button[data-place="${REVIEW_PLACE}"]:not([disabled])`;
+  await page.waitForSelector(venueSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(venueSelector);
   recordStep("review-place-selected", { place: REVIEW_PLACE });
 
-  await page.waitForFunction(
-    race =>
-      [...document.querySelectorAll("#raceSelect option")].some(
-        option => option.textContent?.trim() === race
-      ),
-    REVIEW_RACE,
-    { timeout: 45_000 }
-  );
-
-  await page.selectOption("#raceSelect", { label: REVIEW_RACE });
-  await page.dispatchEvent("#raceSelect", "change");
+  const reviewRaceNo = Number(REVIEW_RACE.replace(/R$/i, ""));
+  const raceSelector =
+    `#officialRaceGrid button[data-race-no="${reviewRaceNo}"]:not([disabled])`;
+  await page.waitForSelector(raceSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(raceSelector);
   recordStep("review-race-selected", { race: REVIEW_RACE });
 
-  await page.click("#fetchRaceBtn");
+  await page.evaluate(() => {
+    document.getElementById("fetchRaceBtn")?.click();
+  });
   recordStep("review-prediction-clicked");
 
   await page.waitForFunction(

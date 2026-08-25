@@ -6,7 +6,7 @@
   window.__CHAPPY_HIYORI_RUNTIME_LOADED__=true;
 
   let corePromise=null,backgroundPromise=null,installPromise=null,compatibilityScheduled=false;
-  const VERSION="20260816-nonblocking-core2";
+  const VERSION="20260825-mobile-startup-terminal1";
   const SCRIPT_LOAD_TIMEOUT_MS=12000,PRELOAD_LOOKAHEAD=2;
   const coreScripts=[
     "js/prediction-flow-priority.js",
@@ -127,8 +127,8 @@
 
   function ensureReady(){
     // 日和系は productionApplied:false / appliedToPrediction:false の補助系。
-    // 初回AI予想の表示を待たせず、アイドル時に準備する。
-    scheduleInstall();
+    // 初回AI予想と並行してcreatePredictionを差し替えない。
+    // 補助一式は明示的なinstall()呼び出し時だけ準備する。
     scheduleCompatibilitySync();
     return Promise.resolve(true);
   }

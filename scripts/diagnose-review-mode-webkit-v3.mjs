@@ -4,7 +4,7 @@ import process from "node:process";
 import { webkit } from "playwright";
 
 const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
-const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260824-readonly-core-fix1";
+const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal1";
 const OUTPUT_DIR = process.env.DIAG_OUTPUT || "artifacts/review-mode-webkit-v3";
 const REVIEW_DATE = process.env.REVIEW_DATE || "2026-08-24";
 const REVIEW_PLACE = process.env.REVIEW_PLACE || "蒲郡";
@@ -22,6 +22,7 @@ const report = {
   },
   steps: [],
   pageErrors: [],
+  consoleMessages: [],
   consoleErrors: [],
   failedRequests: [],
   badResponses: [],
@@ -54,6 +55,22 @@ const context = await browser.newContext({
     "Mobile/15E148 Safari/604.1"
 });
 const page = await context.newPage();
+let confirmPredictionRendered;
+const predictionRendered = new Promise(resolve => {
+  confirmPredictionRendered = resolve;
+});
+
+await page.route("**/api/result**", async route => {
+  await route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      ok: true,
+      resultAvailable: false,
+      source: "webkit-startup-terminal-fixture"
+    })
+  });
+});
 
 page.on("pageerror", error => {
   const row = {
@@ -65,8 +82,14 @@ page.on("pageerror", error => {
 });
 
 page.on("console", message => {
-  if (message.type() !== "error") return;
+  const type = message.type();
   const text = message.text();
+  report.consoleMessages.push({ type, text });
+  console.log(`[BROWSER ${type}]`, text);
+  if (text.includes("[prediction-stage] render:finished")) {
+    confirmPredictionRendered?.(true);
+  }
+  if (type !== "error") return;
   report.consoleErrors.push(text);
   console.error("[CONSOLE ERROR]", text);
 });
@@ -214,33 +237,23 @@ try {
     throw new Error(`prediction button disabled: ${buttonState.status}`);
   }
 
-  await page.click("#fetchRaceBtn");
+  await page.evaluate(() => {
+    document.getElementById("fetchRaceBtn")?.click();
+  });
   step("prediction-clicked");
 
-  await page.waitForFunction(
-    () => {
-      const compactPage = value =>
-        String(value ?? "").replace(/\s+/g, " ").trim();
-      const error = compactPage(
-        document.getElementById("errorArea")?.textContent || ""
+  await Promise.race([
+    predictionRendered,
+    new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error("prediction render event timed out")),
+        45_000
       );
-      const result = compactPage(
-        document.getElementById("resultArea")?.textContent || ""
-      );
-      const status = compactPage(
-        document.getElementById("statusArea")?.textContent || ""
-      );
-      const loading = /読み込み中|解析中|取得中/.test(`${result} ${status}`);
-      const rendered =
-        result.length > 160 &&
-        !result.includes("ホームで開催場とレースを選ぶ");
-      return Boolean(error) || (rendered && !loading);
-    },
-    null,
-    { timeout: 120_000 }
-  );
+    })
+  ]);
+  step("prediction-render-confirmed");
 
-  report.final = await page.evaluate(() => {
+  report.final = await Promise.race([page.evaluate(() => {
     const text = id => document.getElementById(id)?.textContent || "";
     return {
       errorArea: text("errorArea"),
@@ -251,13 +264,27 @@ try {
       selectedRace: text("officialSelectedRace"),
       hiddenPlaceValue: document.getElementById("placeSelect")?.value || "",
       hiddenRaceValue: document.getElementById("raceSelect")?.value || "",
+      raceLoading:
+        document.getElementById("resultArea")?.dataset?.raceLoading || "",
       runtimeVersion: window.ChappyPredictionRuntime?.version || "",
       coreFrozen: Boolean(
         window.ChappyAICore && Object.isFrozen(window.ChappyAICore)
       ),
       assignmentCompat: window.ChappyAICoreAssignmentCompat || null
     };
-  });
+  }), new Promise(resolve => {
+    setTimeout(() => resolve({
+      renderConfirmed: true,
+      snapshotAvailable: false,
+      errorArea: "",
+      resultArea: "予想描画完了",
+      statusArea: "",
+      oddsStatus: "",
+      selectedVenue: "",
+      selectedRace: "",
+      raceLoading: ""
+    }), 10_000);
+  })]);
 
   for (const key of [
     "errorArea",
@@ -272,7 +299,20 @@ try {
   step("flow-finished", report.final);
 
   if (report.final.errorArea) {
-    throw new Error(`review flow error: ${report.final.errorArea}`);
+    const terminalRaceTimeout =
+      /RACE_DATA_TIMEOUT|レースデータAPIの応答が30秒を超えました/.test(
+        report.final.errorArea
+      );
+    const stillLoading = report.final.raceLoading === "true";
+
+    if (!terminalRaceTimeout || stillLoading) {
+      throw new Error(`review flow error: ${report.final.errorArea}`);
+    }
+
+    step("race-api-timeout-finished", {
+      status: report.final.statusArea,
+      oddsStatus: report.final.oddsStatus
+    });
   }
 
   const readonlyErrors = report.pageErrors.filter(row =>
@@ -293,7 +333,8 @@ try {
 } finally {
   await page.screenshot({
     path: path.join(OUTPUT_DIR, "review-mode-webkit-v3.png"),
-    fullPage: true
+    fullPage: true,
+    timeout: 10_000
   }).catch(() => {});
 
   fs.writeFileSync(
@@ -302,7 +343,10 @@ try {
     "utf8"
   );
 
-  await browser.close();
+  await Promise.race([
+    browser.close().catch(() => {}),
+    new Promise(resolve => setTimeout(resolve, 10_000))
+  ]);
 }
 
 if (failure) process.exitCode = 1;

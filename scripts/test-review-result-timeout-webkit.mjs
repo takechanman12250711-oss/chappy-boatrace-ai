@@ -5,7 +5,6 @@ const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
 const REVIEW_DATE = process.env.REVIEW_DATE || "2026-08-24";
 const REVIEW_PLACE = process.env.REVIEW_PLACE || "蒲郡";
 const REVIEW_RACE_NO = Number(process.env.REVIEW_RACE_NO || 12);
-const RESULT_ROUTE_PATTERN = "**/api/result**";
 
 const marks = [];
 function mark(name, detail = {}) {
@@ -17,8 +16,6 @@ function mark(name, detail = {}) {
 let browser = null;
 let context = null;
 let page = null;
-let releaseResultRoute = null;
-let resultRequestSeen = false;
 let failure = null;
 
 const pageErrors = [];
@@ -37,6 +34,19 @@ try {
   page = await context.newPage();
   mark("browser-launch-finished");
 
+  await page.addInitScript(() => {
+    const downstreamFetch = window.fetch.bind(window);
+    window.__chappyResultTimeoutRequestSeen = false;
+    window.fetch = function (input, init) {
+      const url = String(input?.url || input || "");
+      if (url.includes("/api/result")) {
+        window.__chappyResultTimeoutRequestSeen = true;
+        return new Promise(() => {});
+      }
+      return downstreamFetch(input, init);
+    };
+  });
+
   page.on("pageerror", error => {
     pageErrors.push(String(error?.message || error));
   });
@@ -44,23 +54,6 @@ try {
     if (message.type() === "error") {
       consoleErrors.push(message.text());
     }
-  });
-
-  // 公式結果APIだけを意図的に応答待ちへする。
-  // テスト終了時にゲートを解放して route.abort() まで完了させ、
-  // Playwright 自体が未解決リクエストで残り続けないようにする。
-  const resultRouteGate = new Promise(resolve => {
-    releaseResultRoute = resolve;
-  });
-
-  await page.route(RESULT_ROUTE_PATTERN, async route => {
-    resultRequestSeen = true;
-    mark("official-result-request-held", {
-      url: route.request().url()
-    });
-    await resultRouteGate;
-    await route.abort("timedout").catch(() => {});
-    mark("official-result-request-released");
   });
 
   const targetUrl =
@@ -103,7 +96,10 @@ try {
   }));
   mark("runtime-state", runtimeState);
 
-  if (runtimeState.appRuntime !== "20260815-odds-immediate1") {
+  if (
+    runtimeState.appRuntime !== "20260825-mobile-startup-terminal1" ||
+    runtimeState.predictionRuntime !== "20260825-mobile-startup-terminal1"
+  ) {
     throw new Error(
       `app runtime mismatch: ${JSON.stringify(runtimeState)}`
     );
@@ -118,48 +114,45 @@ try {
     );
   }
 
-  // 開催一覧APIの応答時間をテスト条件に含めない。
-  // 本番と同じ hidden select を直接設定し、予想ボタン以降の実処理を検証する。
-  const selected = await page.evaluate(
-    ({ date, place, raceNo }) => {
-      const modeSelect = document.getElementById("raceModeSelect");
-      const dateInput = document.getElementById("dateInput");
-      const placeSelect = document.getElementById("placeSelect");
-      const raceSelect = document.getElementById("raceSelect");
+  await page.selectOption("#raceModeSelect", "review");
+  await page.fill("#dateInput", REVIEW_DATE);
+  await page.dispatchEvent("#dateInput", "change");
 
-      if (!modeSelect || !dateInput || !placeSelect || !raceSelect) {
-        throw new Error("race selection controls are missing");
-      }
+  const venueSelector =
+    `#officialVenueGrid button[data-place="${REVIEW_PLACE}"]:not([disabled])`;
+  await page.waitForSelector(venueSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(venueSelector);
 
-      modeSelect.value = "review";
-      dateInput.value = date;
-      placeSelect.value = place;
-      raceSelect.value = `${raceNo}R`;
+  const raceSelector =
+    `#officialRaceGrid button[data-race-no="${REVIEW_RACE_NO}"]:not([disabled])`;
+  await page.waitForSelector(raceSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(raceSelector);
 
-      window.__chappyRenderedForResultTimeoutTest = false;
-      window.addEventListener(
-        "chappy:prediction-rendered",
-        () => {
-          window.__chappyRenderedForResultTimeoutTest = true;
-        },
-        { once: true }
-      );
+  const selected = await page.evaluate(() => {
+    window.__chappyRenderedForResultTimeoutTest = false;
+    window.addEventListener(
+      "chappy:prediction-rendered",
+      () => {
+        window.__chappyRenderedForResultTimeoutTest = true;
+      },
+      { once: true }
+    );
 
-      return {
-        mode: modeSelect.value,
-        date: dateInput.value,
-        place: placeSelect.value,
-        race: raceSelect.value,
-        buttonDisabled:
-          document.getElementById("fetchRaceBtn")?.disabled ?? null
-      };
-    },
-    {
-      date: REVIEW_DATE,
-      place: REVIEW_PLACE,
-      raceNo: REVIEW_RACE_NO
-    }
-  );
+    return {
+      mode: document.getElementById("raceModeSelect")?.value || "",
+      date: document.getElementById("dateInput")?.value || "",
+      place: document.getElementById("placeSelect")?.value || "",
+      race: document.getElementById("raceSelect")?.value || "",
+      buttonDisabled:
+        document.getElementById("fetchRaceBtn")?.disabled ?? null
+    };
+  });
   mark("review-race-selected", selected);
 
   if (
@@ -174,16 +167,8 @@ try {
 
   const startedAt = Date.now();
   mark("prediction-click-start");
-  await page.click("#fetchRaceBtn");
-
-  await page.waitForFunction(
-    () => window.__chappyRenderedForResultTimeoutTest === true,
-    null,
-    { timeout: 90_000 }
-  );
-  const renderedAt = Date.now();
-  mark("prediction-rendered", {
-    renderElapsedMs: renderedAt - startedAt
+  await page.evaluate(() => {
+    document.getElementById("fetchRaceBtn")?.click();
   });
 
   await page.waitForFunction(
@@ -191,11 +176,11 @@ try {
       document.getElementById("statusArea")?.textContent?.trim() ===
       "振り返り予想を表示しました。公式結果の取得に失敗しました",
     null,
-    { timeout: 30_000 }
+    { timeout: 45_000 }
   );
   const terminalAt = Date.now();
   mark("review-terminal-state", {
-    terminalWaitMs: terminalAt - renderedAt
+    terminalWaitMs: terminalAt - startedAt
   });
 
   const finalState = await page.evaluate(() => ({
@@ -212,10 +197,12 @@ try {
     reviewResultText:
       (document.getElementById("reviewResultArea")?.textContent || "")
         .replace(/\s+/g, " ")
-        .trim()
+        .trim(),
+    resultRequestSeen:
+      window.__chappyResultTimeoutRequestSeen === true
   }));
 
-  if (!resultRequestSeen) {
+  if (!finalState.resultRequestSeen) {
     throw new Error("official result request was not issued");
   }
   if (finalState.errorArea) {
@@ -240,8 +227,8 @@ try {
     throw new Error(`readonly page error: ${pageErrors.join(" | ")}`);
   }
 
-  const terminalWaitMs = terminalAt - renderedAt;
-  if (terminalWaitMs < 9_000 || terminalWaitMs > 25_000) {
+  const terminalWaitMs = terminalAt - startedAt;
+  if (terminalWaitMs < 9_000 || terminalWaitMs > 35_000) {
     throw new Error(
       `unexpected result timeout duration: ${terminalWaitMs}ms`
     );
@@ -251,7 +238,6 @@ try {
     ok: true,
     runtimeState,
     elapsedMs: terminalAt - startedAt,
-    renderElapsedMs: renderedAt - startedAt,
     terminalWaitMs,
     resultTextLength: finalState.resultText.length,
     status: finalState.status,
@@ -261,14 +247,27 @@ try {
   }, null, 2));
 } catch (error) {
   failure = error;
+  if (page) {
+    const failureState = await page.evaluate(() => ({
+      status: document.getElementById("statusArea")?.textContent?.trim() || "",
+      errorArea: document.getElementById("errorArea")?.textContent?.trim() || "",
+      resultLoading:
+        document.getElementById("resultArea")?.dataset?.raceLoading || "",
+      resultTextLength:
+        (document.getElementById("resultArea")?.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim().length,
+      reviewResultText:
+        (document.getElementById("reviewResultArea")?.textContent || "")
+          .replace(/\s+/g, " ")
+          .trim(),
+      resultRequestSeen:
+        window.__chappyResultTimeoutRequestSeen === true
+    })).catch(() => null);
+    mark("failure-state", failureState || {});
+  }
   console.error("[FATAL]", error?.stack || error);
 } finally {
-  releaseResultRoute?.();
-
-  if (page) {
-    await page.unroute(RESULT_ROUTE_PATTERN).catch(() => {});
-  }
-
   if (context) {
     await Promise.race([
       context.close().catch(() => {}),

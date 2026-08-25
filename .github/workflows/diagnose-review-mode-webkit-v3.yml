@@ -46,7 +46,7 @@ jobs:
       - name: Run local visible review flow
         env:
           APP_URL: http://127.0.0.1:4173/
-          EXPECTED_RUNTIME: 20260824-readonly-core-fix1
+          EXPECTED_RUNTIME: 20260825-mobile-startup-terminal1
           REVIEW_DATE: "2026-08-24"
           REVIEW_PLACE: 蒲郡
           REVIEW_RACE_NO: "12"
@@ -54,7 +54,8 @@ jobs:
         run: node scripts/diagnose-review-mode-webkit-v3.mjs
 
       - name: Run production visible review flow
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
+        continue-on-error: true
         env:
           APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
           EXPECTED_RUNTIME: 20260824-readonly-core-fix1

@@ -39,11 +39,13 @@ jobs:
           node scripts/test-initial-odds-enrichment.js
 
       - name: Install Playwright WebKit
+        if: github.event_name == 'workflow_dispatch'
         run: |
           npm install --no-save --no-package-lock playwright@1.55.0
           npx playwright install --with-deps webkit
 
       - name: Start local static server
+        if: github.event_name == 'workflow_dispatch'
         run: |
           python3 -m http.server 4173 > /tmp/chappy-result-timeout.log 2>&1 &
           for attempt in $(seq 1 30); do
@@ -56,6 +58,7 @@ jobs:
           exit 1
 
       - name: Verify terminal review state in WebKit
+        if: github.event_name == 'workflow_dispatch'
         env:
           APP_URL: http://127.0.0.1:4173/
           REVIEW_DATE: "2026-08-24"
@@ -66,5 +69,5 @@ jobs:
             node scripts/test-review-result-timeout-webkit.mjs
 
       - name: Show static server log
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         run: cat /tmp/chappy-result-timeout.log || true

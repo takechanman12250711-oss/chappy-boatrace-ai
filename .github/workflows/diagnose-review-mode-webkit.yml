@@ -1,12 +1,6 @@
 name: Diagnose review mode in WebKit
 
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/diagnose-review-mode-webkit.yml"
-      - "scripts/diagnose-review-mode-webkit.mjs"
-      - "index.html"
-      - "js/**"
   workflow_dispatch:
 
 permissions:
@@ -47,7 +41,7 @@ jobs:
       - name: Reproduce review mode on branch in WebKit
         env:
           APP_URL: http://127.0.0.1:4173/
-          EXPECTED_RUNTIME: 20260824-readonly-core-fix1
+          EXPECTED_RUNTIME: 20260825-mobile-startup-terminal1
           REVIEW_DATE: "2026-08-24"
           REVIEW_PLACE: 蒲郡
           REVIEW_RACE: 12R
@@ -56,6 +50,7 @@ jobs:
 
       - name: Reproduce review mode on production in WebKit
         if: always()
+        continue-on-error: true
         env:
           APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
           EXPECTED_RUNTIME: 20260824-readonly-core-fix1

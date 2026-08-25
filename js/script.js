@@ -44,6 +44,7 @@
   let explicitSelectionGeneration = 0;
   let predictionGeneration = 0;
   const ODDS_REQUEST_TIMEOUT_MS = 30000;
+  const OFFICIAL_RESULT_TIMEOUT_MS = 12000;
   const SCHEDULE_REQUEST_TIMEOUT_MS = 30000;
   const SCHEDULE_CACHE_TTL_MS = 30000;
   const scheduleRequestCache = new Map();
@@ -3000,9 +3001,13 @@
       console.log(
         "✅ API成功 entries=",
         data?.entries?.length || 0,
-        data
+        {
+          source: data?.source || "",
+          historyReady: Boolean(data?.historyContext)
+        }
       );
 
+      console.log("[prediction-stage] create:start");
       const prediction =
         createPredictionSafe(
           data
@@ -3010,6 +3015,7 @@
         createEmergencyPrediction(
           data
         );
+      console.log("[prediction-stage] create:finished");
 
       function createEmergencyPrediction(
         raceData
@@ -3050,8 +3056,10 @@
         };
       }
 
+      console.log("[prediction-stage] legacy-analysis:start");
       createTheorySafe(data);
       createAISafe(data);
+      console.log("[prediction-stage] legacy-analysis:finished");
 
       if (
         !prediction ||
@@ -3075,9 +3083,11 @@
         .officialResultUsedForPrediction =
         false;
 
+      console.log("[prediction-stage] practical-selection:start");
       ensurePracticalSelection(
         prediction
       );
+      console.log("[prediction-stage] practical-selection:finished");
 
       let oddsAppliedBeforeRender = false;
       const settledOddsSupplement =
@@ -3090,6 +3100,7 @@
           settledOddsSupplement.oddsData
         )
       ) {
+        console.log("[prediction-stage] settled-odds:start");
         try {
           lastRaceData = {
             ...lastRaceData,
@@ -3111,6 +3122,7 @@
             oddsError?.message || oddsError
           );
         }
+        console.log("[prediction-stage] settled-odds:finished");
       }
 
       lastPrediction = prediction;
@@ -3126,9 +3138,11 @@
         typeof window.renderAll ===
         "function"
       ) {
+        console.log("[prediction-stage] render:start");
         window.renderAll(
           prediction
         );
+        console.log("[prediction-stage] render:finished");
         const resultArea =
           document.getElementById(
             "resultArea"
@@ -3150,6 +3164,7 @@
             }
           )
         );
+        console.log("[prediction-stage] rendered-event:finished");
       } else {
         throw new Error(
           "renderAll() が見つかりません。render.jsを確認してください。"
@@ -3192,10 +3207,12 @@
         );
 
         try {
+          console.log("[prediction-stage] official-result:start");
           const officialResult =
             await fetchOfficialResult(
               params
             );
+          console.log("[prediction-stage] official-result:finished");
 
           if (!isCurrentRequest()) {
             return false;
@@ -3222,6 +3239,7 @@
         } catch (
           resultError
         ) {
+          console.log("[prediction-stage] official-result:terminal-error");
           if (!isCurrentRequest()) {
             return false;
           }
@@ -3401,7 +3419,36 @@
     }
   }
 
-    async function fetchOfficialResult(
+  function fetchOfficialResultPayload(url) {
+    let timer = 0;
+    const timeout = new Promise((_, reject) => {
+      timer = window.setTimeout(() => {
+        const createTimeoutError =
+          window.ChappyResultRequestTimeout?.createTimeoutError;
+        reject(
+          typeof createTimeoutError === "function"
+            ? createTimeoutError(OFFICIAL_RESULT_TIMEOUT_MS)
+            : new Error("公式結果APIの応答が12秒を超えました")
+        );
+      }, OFFICIAL_RESULT_TIMEOUT_MS);
+    });
+
+    const directFetch =
+      typeof window.ChappyDirectFetch === "function"
+        ? window.ChappyDirectFetch
+        : window.fetch.bind(window);
+    const request = (async () => {
+      const response = await directFetch(url);
+      const result = await response.json();
+      return { response, result };
+    })();
+
+    return Promise.race([request, timeout]).finally(() => {
+      if (timer) window.clearTimeout(timer);
+    });
+  }
+
+  async function fetchOfficialResult(
     params
   ) {
     const url =
@@ -3416,11 +3463,10 @@
         params.rno
       )}`;
 
-    const response =
-      await fetch(url);
-
-    let result =
-      await response.json();
+    const payload =
+      await fetchOfficialResultPayload(url);
+    const response = payload.response;
+    let result = payload.result;
 
     if (
       !response.ok ||
@@ -5606,13 +5652,13 @@
       return false;
     }
 
-    if (
-      typeof window.renderAll ===
-        "function"
-    ) {
-      window.renderAll(
-        prediction
-      );
+      if (
+        typeof window.renderAll ===
+          "function"
+      ) {
+        window.renderAll(
+          prediction
+        );
     }
 
     updatePredictionOddsStatus(

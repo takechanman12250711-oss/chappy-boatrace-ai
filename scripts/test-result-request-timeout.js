@@ -102,7 +102,11 @@ async function main() {
     }
   );
   const elapsed = Date.now() - startedAt;
-  assert.equal(aborted, true);
+  assert.equal(
+    aborted,
+    false,
+    "WebKitの終端保証をabort完了へ依存させない"
+  );
   assert.ok(elapsed >= 15, `timeout was too early: ${elapsed}ms`);
   assert.ok(elapsed < 500, `timeout did not terminate promptly: ${elapsed}ms`);
 
@@ -133,15 +137,45 @@ async function main() {
     "result timeout guard must not change the lazy race group"
   );
 
+  const appSource = fs.readFileSync(
+    path.join(__dirname, "..", "js", "script.js"),
+    "utf8"
+  );
+  assert.match(
+    appSource,
+    /const OFFICIAL_RESULT_TIMEOUT_MS = 12000/,
+    "official result requests must have a local terminal timeout"
+  );
+  assert.match(
+    appSource,
+    /const result = await response\.json\(\);[\s\S]*Promise\.race\(\[request, timeout\]\)/,
+    "official result body parsing must share the terminal timeout"
+  );
+  assert.match(
+    appSource,
+    /window\.ChappyDirectFetch[\s\S]*directFetch\(url\)/,
+    "local full-body timeout must use the pre-wrapper fetch transport"
+  );
+  assert.match(
+    appSource,
+    /await fetchOfficialResultPayload\(url\)/,
+    "review result fetch must use the local terminal timeout"
+  );
+  assert.doesNotMatch(
+    appSource,
+    /"✅ API成功 entries=",\s*data\?\.entries\?\.length \|\| 0,\s*data\s*\)/,
+    "the mobile startup path must not send the full race payload to Safari console"
+  );
+
   const indexHtml = fs.readFileSync(
     path.join(__dirname, "..", "index.html"),
     "utf8"
   );
   const guardIndex = indexHtml.indexOf(
-    'src="js/result-request-timeout.js?v=20260824-result-timeout1"'
+    'src="js/result-request-timeout.js?v=20260825-mobile-startup-terminal1&app=20260825-mobile-startup-terminal1"'
   );
   const appIndex = indexHtml.indexOf(
-    'src="js/app-runtime-loader.js?v=20260816-static-race1"'
+    'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260825-mobile-startup-terminal1"'
   );
   const oddsFirstIndex = indexHtml.indexOf(
     'src="js/odds-first-navigation.js?v=20260815-odds-consume2"'

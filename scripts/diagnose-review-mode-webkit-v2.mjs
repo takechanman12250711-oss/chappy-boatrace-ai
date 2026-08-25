@@ -4,7 +4,7 @@ import process from "node:process";
 import { webkit } from "playwright";
 
 const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
-const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260824-readonly-core-fix1";
+const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal1";
 const OUTPUT_DIR = process.env.DIAG_OUTPUT || "artifacts/review-mode-webkit-v2";
 const REVIEW_DATE = process.env.REVIEW_DATE || "2026-08-24";
 const REVIEW_PLACE = process.env.REVIEW_PLACE || "蒲郡";
@@ -157,22 +157,28 @@ try {
     throw new Error(`venue unavailable: ${REVIEW_PLACE}`);
   }
 
-  await page.selectOption("#placeSelect", { label: REVIEW_PLACE });
+  const venueSelector =
+    `#officialVenueGrid button[data-place="${REVIEW_PLACE}"]:not([disabled])`;
+  await page.waitForSelector(venueSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(venueSelector);
   step("place-selected", { place: REVIEW_PLACE });
 
-  await page.waitForFunction(
-    race => [...document.querySelectorAll("#raceSelect option")]
-      .some(option => option.textContent?.trim() === race),
-    REVIEW_RACE,
-    { timeout: 60_000 }
-  );
-
-  const races = await page.locator("#raceSelect option").allTextContents();
-  step("races-loaded", { count: races.length, races });
-  await page.selectOption("#raceSelect", { label: REVIEW_RACE });
+  const reviewRaceNo = Number(REVIEW_RACE.replace(/R$/i, ""));
+  const raceSelector =
+    `#officialRaceGrid button[data-race-no="${reviewRaceNo}"]:not([disabled])`;
+  await page.waitForSelector(raceSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(raceSelector);
   step("race-selected", { race: REVIEW_RACE });
 
-  await page.click("#fetchRaceBtn");
+  await page.evaluate(() => {
+    document.getElementById("fetchRaceBtn")?.click();
+  });
   step("prediction-clicked");
 
   await page.waitForFunction(

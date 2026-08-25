@@ -11,6 +11,46 @@
   const RACE_REQUEST_TIMEOUT_MS = 30000;
   const raceRequests = new Map();
 
+  if (
+    typeof window.fetch === "function" &&
+    typeof window.ChappyDirectFetch !== "function"
+  ) {
+    Object.defineProperty(window, "ChappyDirectFetch", {
+      configurable: false,
+      writable: false,
+      value: window.fetch.bind(window)
+    });
+  }
+
+  function createRaceTimeoutError() {
+    const error = new Error("レースデータAPIの応答が30秒を超えました");
+    error.code = "RACE_DATA_TIMEOUT";
+    return error;
+  }
+
+  function fetchRaceResponse(url, controller) {
+    let timer = 0;
+    const timeout = new Promise((_, reject) => {
+      timer = window.setTimeout(() => {
+        // WebKitでは通信中のabort()自体が戻らない場合があるため、
+        // 終端保証は中断通知に依存させない。
+        reject(createRaceTimeoutError());
+      }, RACE_REQUEST_TIMEOUT_MS);
+    });
+
+    return Promise.race([
+      fetch(
+        url,
+        controller
+          ? { signal: controller.signal }
+          : undefined
+      ),
+      timeout
+    ]).finally(() => {
+      if (timer) window.clearTimeout(timer);
+    });
+  }
+
   function raceKey(params) {
     return [
       params?.date,
@@ -38,28 +78,18 @@
       typeof AbortController === "function"
         ? new AbortController()
         : null;
-    const timer = controller
-      ? window.setTimeout(
-          () => controller.abort(),
-          RACE_REQUEST_TIMEOUT_MS
-        )
-      : 0;
     let res;
 
     try {
-      res = await fetch(
+      res = await fetchRaceResponse(
         url,
         controller
-          ? { signal: controller.signal }
-          : undefined
       );
     } catch (error) {
       if (error?.name === "AbortError") {
-        throw new Error("レースデータAPIの応答が30秒を超えました");
+        throw createRaceTimeoutError();
       }
       throw error;
-    } finally {
-      if (timer) window.clearTimeout(timer);
     }
 
     if (!res.ok) {
