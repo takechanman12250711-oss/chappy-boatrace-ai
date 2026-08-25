@@ -6,7 +6,7 @@
   window.__CHAPPY_HIYORI_RUNTIME_LOADED__=true;
 
   let corePromise=null,backgroundPromise=null,installPromise=null,compatibilityScheduled=false;
-  const VERSION="20260825-mobile-startup-terminal1";
+  const VERSION="20260825-mobile-startup-terminal2";
   const SCRIPT_LOAD_TIMEOUT_MS=12000,PRELOAD_LOOKAHEAD=2;
   const coreScripts=[
     "js/prediction-flow-priority.js",
