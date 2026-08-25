@@ -46,7 +46,7 @@ assert.equal(
 );
 assert.equal(
   patchedLoad.includes(
-    "'const VERSION=\"20260816-nonblocking-core2\"'"
+    "'const VERSION=\"20260825-mobile-startup-terminal1\"'"
   ),
   true
 );

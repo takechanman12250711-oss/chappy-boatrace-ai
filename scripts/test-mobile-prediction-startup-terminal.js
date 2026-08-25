@@ -40,7 +40,7 @@ assert.match(html, new RegExp(`CHAPPY_APP_BUILD="${BUILD}"`));
 });
 assert.match(
   html,
-  /hiyori-runtime-loader\.js\?v=20260816-nonblocking-core2"/,
+  /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal1"/,
   "非同期の日和補助は既存の非blocking契約を維持する"
 );
 assert.match(

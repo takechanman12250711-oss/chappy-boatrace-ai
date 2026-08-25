@@ -417,7 +417,7 @@ assert.equal(
       "js/prediction-runtime-loader.js?v=20260824-readonly-core-fix1"
     ) &&
     html.includes(
-      "js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"
+      "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal1"
     ) &&
     appRuntime.includes(
       'const VERSION = "20260815-odds-immediate1"'
@@ -426,7 +426,7 @@ assert.equal(
       'const VERSION = "20260824-readonly-core-fix1"'
     ) &&
     hiyoriLoader.includes(
-      'const VERSION="20260816-nonblocking-core2"'
+      'const VERSION="20260825-mobile-startup-terminal1"'
     ),
   true,
   "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
@@ -531,10 +531,10 @@ assert.equal(
 );
 assert.equal(
   hiyoriLoader.includes("function ensureReady()") &&
-    hiyoriLoader.includes("scheduleInstall();") &&
+    !hiyoriLoader.match(/function ensureReady\(\)\{[\s\S]*?scheduleInstall\(\);[\s\S]*?return Promise\.resolve\(true\)/) &&
     hiyoriLoader.includes("return Promise.resolve(true)"),
   true,
-  "日和補助は初回予想を待たせずアイドル準備へ回す"
+  "日和補助は初回予想と並行して予想関数を差し替えない"
 );
 assert.equal(
   appRuntime.includes(
