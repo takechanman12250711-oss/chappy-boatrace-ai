@@ -1,0 +1,113 @@
+name: Verify production progressive prediction screen
+
+on:
+  push:
+    branches:
+      - fix/progressive-prediction-screen-20260825
+    paths:
+      - ".github/workflows/verify-production-progressive-screen.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  production-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/progressive-prediction-screen-20260825
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Wait for merged build on GitHub Pages
+        env:
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          EXPECTED_BUILD: 20260825-progressive-screen1
+        run: |
+          for attempt in $(seq 1 40); do
+            html="$(curl --fail --silent --show-error \
+              "${APP_URL}?waitProgressive=${GITHUB_RUN_ID}-${attempt}" || true)"
+            if printf '%s' "$html" | grep -q \
+              "window.__CHAPPY_APP_BUILD__=\"${EXPECTED_BUILD}\""; then
+              echo "GitHub Pages is serving ${EXPECTED_BUILD}"
+              exit 0
+            fi
+            echo "Waiting for production build ${EXPECTED_BUILD}: ${attempt}/40"
+            sleep 15
+          done
+          echo "Production did not expose ${EXPECTED_BUILD} within 10 minutes"
+          exit 1
+
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Verify preview then full prediction in iPhone WebKit
+        env:
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          EXPECTED_BUILD: 20260825-progressive-screen1
+          REVIEW_DATE: "2026-08-25"
+          REVIEW_PLACE: 桐生
+          REVIEW_JCD: "01"
+          REVIEW_RACE: "1"
+          OUTPUT: production-progressive-screen.json
+          SCREENSHOT: production-progressive-screen.png
+        run: |
+          node --check scripts/verify-production-progressive-screen.mjs
+          node scripts/verify-production-progressive-screen.mjs
+
+      - name: Post verified production result to implementation PR
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          summary="$(node -e '
+            const fs = require("node:fs");
+            const data = JSON.parse(fs.readFileSync("production-progressive-screen.json", "utf8"));
+            process.stdout.write([
+              "## 本番WebKit確認成功",
+              "",
+              `- build: \`${data.build}\``,
+              `- preview entries: ${data.preview?.entryCards || 0}艇`,
+              `- preview loading: \`${data.preview?.loading || ""}\``,
+              `- full result length: ${data.full?.resultLength || 0}文字`,
+              `- preview → full order: ${data.full?.orderValid === true ? "OK" : "NG"}`,
+              `- final loading: \`${data.full?.loading || ""}\``,
+              `- page errors: ${data.pageErrors?.length || 0}件`,
+              "- production URL: GitHub Pages正式版",
+              "",
+              "iPhone Safari相当WebKitで、6艇の出走表先行表示後にAI予想全文へ置き換わり、loadingが解除されることを確認しました。"
+            ].join("\n"));
+          ')"
+
+          payload="$(SUMMARY="$summary" node -e '
+            process.stdout.write(JSON.stringify({ body: process.env.SUMMARY }));
+          ')"
+
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/637/comments" \
+            -d "$payload"
+
+      - name: Upload production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-progressive-screen
+          path: |
+            production-progressive-screen.json
+            production-progressive-screen.png
+          if-no-files-found: warn
+          retention-days: 7
