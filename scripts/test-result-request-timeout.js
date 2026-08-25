@@ -133,6 +133,16 @@ async function main() {
     "result timeout guard must not change the lazy race group"
   );
 
+  const appSource = fs.readFileSync(
+    path.join(__dirname, "..", "js", "script.js"),
+    "utf8"
+  );
+  assert.match(
+    appSource,
+    /await window\.fetch\(url\)/,
+    "official result requests must use the guarded window.fetch"
+  );
+
   const indexHtml = fs.readFileSync(
     path.join(__dirname, "..", "index.html"),
     "utf8"

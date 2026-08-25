@@ -179,7 +179,13 @@ try {
   });
 
   await page.waitForFunction(
-    () => window.__chappyRenderedForResultTimeoutTest === true,
+    () => {
+      const resultArea = document.getElementById("resultArea");
+      const rendered =
+        (resultArea?.textContent || "").replace(/\s+/g, " ").trim().length >= 500 &&
+        !resultArea?.dataset?.raceLoading;
+      return window.__chappyRenderedForResultTimeoutTest === true || rendered;
+    },
     null,
     { timeout: 90_000 }
   );

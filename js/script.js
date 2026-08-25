@@ -3417,7 +3417,7 @@
       )}`;
 
     const response =
-      await fetch(url);
+      await window.fetch(url);
 
     let result =
       await response.json();
