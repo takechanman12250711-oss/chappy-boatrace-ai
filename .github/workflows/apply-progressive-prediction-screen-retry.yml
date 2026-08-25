@@ -1,0 +1,71 @@
+name: Retry progressive prediction screen patch
+
+on:
+  push:
+    branches:
+      - fix/progressive-prediction-screen-20260825
+    paths:
+      - ".github/workflows/apply-progressive-prediction-screen-retry.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/progressive-prediction-screen-20260825
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Apply patch when still pending
+        run: |
+          if [ -f scripts/apply-progressive-prediction-screen.js ]; then
+            node --check scripts/apply-progressive-prediction-screen.js
+            node scripts/apply-progressive-prediction-screen.js
+          else
+            echo "Focused patch was already applied"
+          fi
+          git diff --check
+
+      - name: Verify progressive prediction screen
+        run: |
+          test -f scripts/test-progressive-prediction-screen.js
+          test -f .github/workflows/check-progressive-prediction-screen.yml
+          node --check js/app-runtime-loader.js
+          node --check js/home-dashboard-v2.js
+          node --check js/script.js
+          node --check scripts/test-progressive-prediction-screen.js
+          node scripts/test-progressive-prediction-screen.js
+          node scripts/test-home-dashboard-v2-phase2.js
+          node scripts/test-prediction-loading-terminal-state.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/check-charter.js
+
+      - name: Remove one-time workflows and commit final branch
+        run: |
+          rm -f \
+            .github/workflows/apply-progressive-prediction-screen.yml \
+            .github/workflows/apply-progressive-prediction-screen-retry.yml \
+            scripts/apply-progressive-prediction-screen.js
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Final progressive prediction screen branch is already clean"
+            exit 0
+          fi
+          git commit -m "Show race entries before full AI prediction"
+          git push origin HEAD:fix/progressive-prediction-screen-20260825
