@@ -1,0 +1,257 @@
+name: Cleanly finalize progressive prediction screen
+
+on:
+  push:
+    branches:
+      - fix/progressive-prediction-screen-20260825
+    paths:
+      - ".github/workflows/finalize-progressive-screen-clean.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  final:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout latest branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/progressive-prediction-screen-20260825
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Preserve production verifier outside repository
+        run: |
+          test -f scripts/verify-production-progressive-screen.mjs
+          cp scripts/verify-production-progressive-screen.mjs \
+            /tmp/verify-production-progressive-screen.mjs
+
+      - name: Apply implementation if still pending
+        run: |
+          if [ -f scripts/apply-progressive-prediction-screen.js ]; then
+            node --check scripts/apply-progressive-prediction-screen.js
+            node scripts/apply-progressive-prediction-screen.js
+          fi
+          git diff --check
+
+      - name: Verify implementation and regressions
+        run: |
+          test -f scripts/test-progressive-prediction-screen.js
+          test -f .github/workflows/check-progressive-prediction-screen.yml
+
+          node --check js/app-runtime-loader.js
+          node --check js/home-dashboard-v2.js
+          node --check js/script.js
+          node --check scripts/test-progressive-prediction-screen.js
+
+          node scripts/test-progressive-prediction-screen.js
+          node scripts/test-home-dashboard-v2-phase2.js
+          node scripts/test-prediction-loading-terminal-state.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/test-live-race-selection-terminal-guard.js
+          node scripts/check-charter.js
+
+      - name: Remove all temporary implementation and diagnostic files
+        run: |
+          rm -f \
+            scripts/apply-progressive-prediction-screen.js \
+            scripts/verify-production-progressive-screen.mjs \
+            .github/workflows/apply-progressive-prediction-screen.yml \
+            .github/workflows/apply-progressive-prediction-screen-retry.yml \
+            .github/workflows/finalize-progressive-prediction-screen.yml \
+            .github/workflows/verify-production-progressive-screen.yml \
+            .github/workflows/finalize-progressive-screen-clean.yml
+          git diff --check
+
+      - name: Commit clean implementation branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Finalize progressive prediction screen"
+            git push origin HEAD:fix/progressive-prediction-screen-20260825
+          fi
+
+      - name: Resolve implementation pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          response="$(curl --fail --silent --show-error \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/637")"
+
+          state="$(printf '%s' "$response" | node -e '
+            let input="";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const pr = JSON.parse(input || "{}");
+              if (pr.merged === true) process.stdout.write("merged");
+              else process.stdout.write(String(pr.state || "unknown"));
+            });
+          ')"
+
+          echo "number=637" >> "$GITHUB_OUTPUT"
+          echo "state=${state}" >> "$GITHUB_OUTPUT"
+          echo "PR #637 state=${state}"
+
+      - name: Squash merge when PR is still open
+        if: steps.pr.outputs.state == 'open'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head_sha="$(git rev-parse HEAD)"
+          payload="$(HEAD_SHA="$head_sha" node -e '
+            process.stdout.write(JSON.stringify({
+              merge_method: "squash",
+              sha: process.env.HEAD_SHA,
+              commit_title: "Show race entries before full AI prediction (#637)",
+              commit_message: "Render the six-entry race card before heavy AI startup, replace silent exits with explicit errors, guarantee loading termination, and preserve prediction logic, scoring, tickets, odds, and the completed UI."
+            }));
+          ')"
+
+          response="$(curl --fail-with-body --silent --show-error \
+            -X PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/637/merge" \
+            -d "$payload")"
+          printf '%s\n' "$response"
+          printf '%s' "$response" | node -e '
+            let input="";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const row = JSON.parse(input || "{}");
+              if (row.merged !== true) {
+                console.error(row.message || "merge failed");
+                process.exit(1);
+              }
+              console.log(`Merged SHA: ${row.sha}`);
+            });
+          '
+
+      - name: Confirm PR is merged
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 20); do
+            response="$(curl --fail --silent --show-error \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/637")"
+            merged="$(printf '%s' "$response" | node -e '
+              let input="";
+              process.stdin.on("data", chunk => input += chunk);
+              process.stdin.on("end", () => {
+                const pr = JSON.parse(input || "{}");
+                process.stdout.write(String(pr.merged === true));
+              });
+            ')"
+            if [ "$merged" = "true" ]; then
+              echo "PR #637 is merged"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "PR #637 did not reach merged state"
+          exit 1
+
+      - name: Wait for progressive build on GitHub Pages
+        env:
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          EXPECTED_BUILD: 20260825-progressive-screen1
+        run: |
+          for attempt in $(seq 1 48); do
+            html="$(curl --fail --silent --show-error \
+              "${APP_URL}?waitProgressiveFinal=${GITHUB_RUN_ID}-${attempt}" || true)"
+            if printf '%s' "$html" | grep -q \
+              "window.__CHAPPY_APP_BUILD__=\"${EXPECTED_BUILD}\""; then
+              echo "GitHub Pages is serving ${EXPECTED_BUILD}"
+              exit 0
+            fi
+            echo "Waiting for ${EXPECTED_BUILD}: ${attempt}/48"
+            sleep 15
+          done
+          echo "GitHub Pages did not expose the merged build"
+          exit 1
+
+      - name: Install Playwright WebKit
+        run: |
+          cd /tmp
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps webkit
+
+      - name: Verify production preview then full prediction
+        env:
+          NODE_PATH: /tmp/node_modules
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          EXPECTED_BUILD: 20260825-progressive-screen1
+          REVIEW_DATE: "2026-08-25"
+          REVIEW_PLACE: 桐生
+          REVIEW_JCD: "01"
+          REVIEW_RACE: "1"
+          OUTPUT: /tmp/production-progressive-screen.json
+          SCREENSHOT: /tmp/production-progressive-screen.png
+        run: |
+          node --check /tmp/verify-production-progressive-screen.mjs
+          node /tmp/verify-production-progressive-screen.mjs
+
+      - name: Post final production evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          summary="$(node -e '
+            const fs = require("node:fs");
+            const data = JSON.parse(fs.readFileSync("/tmp/production-progressive-screen.json", "utf8"));
+            process.stdout.write([
+              "## 本番WebKit最終確認成功",
+              "",
+              `- build: \`${data.build}\``,
+              `- 出走表先行表示: ${data.preview?.entryCards || 0}艇`,
+              `- 先行表示中の状態: \`${data.preview?.loading || ""}\``,
+              `- 完成予想: ${data.full?.resultLength || 0}文字`,
+              `- 表示順: ${data.full?.orderValid === true ? "出走表 → AI予想 OK" : "NG"}`,
+              `- 完成後loading: \`${data.full?.loading || ""}\``,
+              `- page errors: ${data.pageErrors?.length || 0}件`,
+              `- failed requests: ${data.failedRequests?.length || 0}件`,
+              "",
+              "iPhone Safari相当WebKitの正式本番URLで、6艇の出走表を先に描画し、その後AI予想全文へ置き換わり、loadingが解除されることを確認しました。"
+            ].join("\n"));
+          ')"
+          payload="$(SUMMARY="$summary" node -e '
+            process.stdout.write(JSON.stringify({ body: process.env.SUMMARY }));
+          ')"
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/637/comments" \
+            -d "$payload"
+
+      - name: Upload final production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-progressive-screen-final
+          path: |
+            /tmp/production-progressive-screen.json
+            /tmp/production-progressive-screen.png
+          if-no-files-found: warn
+          retention-days: 7
