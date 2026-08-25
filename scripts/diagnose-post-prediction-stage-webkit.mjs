@@ -210,7 +210,7 @@ try {
       });
       const root = document.getElementById("resultArea");
       const fallback = root?.querySelector?.(
-        "[data-manshu-display-fallback='true']"
+        ".v3-formation-row[data-manshu-display-fallback='true']"
       );
       const details = fallback?.closest?.("details");
       if (details) details.open = true;
