@@ -21,4 +21,5 @@ const check = fs.readFileSync(
 );
 assert.ok(check.includes("check-phase3-learning-handoff-pr-{0}"));
 assert.ok(check.includes("|| 'chappy-main-data-writers'"));
+assert.ok(check.includes("config/phase3-candidate-policy-review.json"));
 console.log("phase3 refresh contract: ok");
