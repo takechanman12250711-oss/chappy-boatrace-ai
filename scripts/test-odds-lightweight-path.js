@@ -13,7 +13,7 @@ const flowOdds = read("js/flow-odds-tabs.js");
 const formationOdds = read("js/formation-odds-display.js");
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js?v=20260815-odds-immediate1"');
-const directApiIndex = html.indexOf('src="js/api.js?v=20260815-odds-immediate1"');
+const directApiIndex = html.indexOf('src="js/api.js?v=20260825-mobile-startup-terminal1&app=20260825-mobile-startup-terminal1"');
 const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260824-readonly-core-fix1&feature=four-kado-124-v1&app=20260825-mobile-startup-terminal1"');
 const hiyoriIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260816-nonblocking-core2"');
 const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js');

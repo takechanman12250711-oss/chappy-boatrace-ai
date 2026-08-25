@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 const terminal = require(path.join(
   __dirname,
   "..",
@@ -19,12 +20,14 @@ const read = relativePath => fs.readFileSync(
 const BUILD = "20260825-mobile-startup-terminal1";
 const html = read("index.html");
 const appRuntimeSource = read("js/app-runtime-loader.js");
+const apiSource = read("js/api.js");
 const terminalSource = read("js/mobile-prediction-startup-terminal.js");
 const homeSource = read("js/home-dashboard-v2.js");
 
 assert.equal(terminal.build, BUILD);
 assert.match(html, new RegExp(`CHAPPY_APP_BUILD="${BUILD}"`));
 [
+  "api.js",
   "prediction-runtime-loader.js",
   "live-race-selection-terminal-guard.js",
   "app-runtime-loader.js",
@@ -53,6 +56,9 @@ assert.ok(
 );
 
 assert.match(appRuntimeSource, /const ACTIVE_VERSION = root\.CHAPPY_APP_BUILD \|\| VERSION/);
+assert.match(apiSource, /function fetchRaceResponse\(url, controller\)/);
+assert.match(apiSource, /return Promise\.race\(\[/);
+assert.match(apiSource, /error\.code = "RACE_DATA_TIMEOUT"/);
 assert.match(appRuntimeSource, /RACE_CONTROLS_MISSING/);
 assert.match(appRuntimeSource, /RACE_SELECTION_MISSING/);
 assert.match(appRuntimeSource, /renderRuntimeError\(error\)/);
@@ -299,6 +305,37 @@ function createRoot({
   assert.equal(ready.__replaced.length, 1);
   assert.match(ready.__replaced[0], new RegExp(`appBuild=${BUILD}`));
   assert.match(ready.__replaced[0], /reload=\d+/);
+
+  const apiWindow = {
+    setTimeout(callback) {
+      callback();
+      return 1;
+    },
+    clearTimeout() {}
+  };
+  class TestAbortController {
+    constructor() {
+      this.signal = {};
+    }
+    abort() {}
+  }
+  vm.runInNewContext(apiSource, {
+    window: apiWindow,
+    fetch: () => new Promise(() => {}),
+    AbortController: TestAbortController,
+    Promise,
+    Map,
+    Error
+  });
+  await assert.rejects(
+    apiWindow.ChappyAPI.fetchRace({
+      date: "20260824",
+      jcd: "07",
+      rno: 12
+    }),
+    error => error?.code === "RACE_DATA_TIMEOUT",
+    "WebKitでAbortが完了しなくてもレース取得を必ず終端する"
+  );
 
   console.log("mobile prediction startup terminal: passed");
 })().catch(error => {
