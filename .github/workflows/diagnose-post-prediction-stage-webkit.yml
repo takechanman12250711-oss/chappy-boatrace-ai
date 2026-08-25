@@ -44,6 +44,8 @@ jobs:
           exit 1
 
       - name: Isolate practical selection
+        id: local_select
+        continue-on-error: true
         shell: bash
         run: |
           set +e
@@ -51,7 +53,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
               DIAG_OUTPUT=artifacts-post/local-select \
             node scripts/diagnose-post-prediction-stage-webkit.mjs select \
             > artifacts-post/local-select/process.log 2>&1
@@ -60,9 +62,11 @@ jobs:
           cat artifacts-post/local-select/process.log
           pkill -9 MiniBrowser || true
           pkill -9 WebKitNetworkProcess || true
-          exit 0
+          exit "$status"
 
       - name: Isolate renderAll locally
+        id: local_render
+        continue-on-error: true
         shell: bash
         run: |
           set +e
@@ -70,7 +74,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
               DIAG_OUTPUT=artifacts-post/local-render \
             node scripts/diagnose-post-prediction-stage-webkit.mjs render \
             > artifacts-post/local-render/process.log 2>&1
@@ -79,9 +83,11 @@ jobs:
           cat artifacts-post/local-render/process.log
           pkill -9 MiniBrowser || true
           pkill -9 WebKitNetworkProcess || true
-          exit 0
+          exit "$status"
 
       - name: Isolate renderAll in production
+        id: production_render
+        continue-on-error: true
         shell: bash
         run: |
           set +e
@@ -89,7 +95,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal2 \
               DIAG_OUTPUT=artifacts-post/production-render \
             node scripts/diagnose-post-prediction-stage-webkit.mjs render \
             > artifacts-post/production-render/process.log 2>&1
@@ -98,7 +104,36 @@ jobs:
           cat artifacts-post/production-render/process.log
           pkill -9 MiniBrowser || true
           pkill -9 WebKitNetworkProcess || true
-          exit 0
+          exit "$status"
+
+      - name: Enforce post-prediction diagnostics
+        if: always()
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require("fs");
+          const required = [
+            ["artifacts-post/local-select/select-progress.json", "practical-select-finished"],
+            ["artifacts-post/local-render/render-progress.json", "render-all-finished"],
+            ["artifacts-post/production-render/render-progress.json", "render-all-finished"]
+          ];
+          const failures = [];
+          for (const [file, mark] of required) {
+            if (!fs.existsSync(file)) {
+              failures.push(`${file}: missing report`);
+              continue;
+            }
+            const report = JSON.parse(fs.readFileSync(file, "utf8"));
+            if (!report.marks?.some(row => row.name === mark)) {
+              failures.push(`${file}: missing ${mark}; error=${report.error?.message || "none"}`);
+            }
+          }
+          if (failures.length) {
+            console.error(failures.join("\n"));
+            process.exit(1);
+          }
+          console.log("All post-prediction WebKit stages completed.");
+          NODE
 
       - name: Upload post-prediction diagnostics
         if: always()

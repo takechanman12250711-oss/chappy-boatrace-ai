@@ -26,7 +26,7 @@ assert.match(appRuntime, /prediction-runtime-loader\.js/);
 assert.match(appRuntime, /hiyori-runtime-loader\.js/);
 
 assert.match(html, /prediction-runtime-loader\.js\?v=20260824-readonly-core-fix1/);
-assert.match(html, /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal2/);
+assert.match(html, /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal3/);
 assert.match(html, /app-runtime-loader\.js\?v=20260816-static-race1/);
 assert.match(html, /home-dashboard-v2\.js\?v=20260816-static-race1/);
 assert.match(html, /home-venue-tap-hotfix\.js\?v=20260816-full-entry-restore1/);

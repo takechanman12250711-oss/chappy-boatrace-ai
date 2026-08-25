@@ -33,10 +33,11 @@
 })(typeof window !== "undefined" ? window : null, function () {
   "use strict";
 
-  const BUILD = "20260825-mobile-startup-terminal2";
+  const BUILD = "20260825-mobile-startup-terminal3";
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const SCRIPT_LOAD_TIMEOUT_MS = 12000;
   const RUNTIME_TOTAL_TIMEOUT_MS = 45000;
+  const PRELOAD_LOOKAHEAD = 2;
   const RACE_INTENT_SELECTOR = [
     "button[data-flow-place][data-flow-race]",
     "button[data-place][data-race]"
@@ -280,6 +281,38 @@
     });
   }
 
+  function preloadScriptsWithBuild(
+    root,
+    list,
+    startIndex,
+    count = PRELOAD_LOOKAHEAD
+  ) {
+    if (typeof root?.document?.querySelectorAll !== "function") return;
+
+    list
+      .slice(startIndex, startIndex + Math.max(1, count))
+      .forEach(src => {
+        const clean = String(src || "").split("?")[0];
+        if (!clean) return;
+        const versioned = `${clean}?v=${BUILD}`;
+        if ([...(root.document.scripts || [])].some(script =>
+          script.src && script.src.includes(clean)
+        )) return;
+        if ([...root.document.querySelectorAll(
+          'link[rel="preload"][as="script"]'
+        )].some(link => {
+          const href = link.getAttribute?.("href") || link.href || "";
+          return href === versioned || href.endsWith(`/${versioned}`);
+        })) return;
+
+        const link = root.document.createElement("link");
+        link.rel = "preload";
+        link.as = "script";
+        link.href = versioned;
+        root.document.head.appendChild(link);
+      });
+  }
+
   function wrapAppRuntime(root) {
     const runtime = root?.ChappyAppRuntime;
 
@@ -343,8 +376,14 @@
         } catch (_) {}
       }
 
-      for (const src of requiredScripts) {
-        await loadScriptWithBuild(root, src);
+      for (let index = 0; index < requiredScripts.length; index += 1) {
+        preloadScriptsWithBuild(
+          root,
+          requiredScripts,
+          index,
+          PRELOAD_LOOKAHEAD
+        );
+        await loadScriptWithBuild(root, requiredScripts[index]);
       }
       validatePredictionRuntime(root);
       root.dispatchEvent?.(new root.CustomEvent(
@@ -573,6 +612,7 @@
     validateRaceRuntime,
     validatePredictionRuntime,
     loadScriptWithBuild,
+    preloadScriptsWithBuild,
     wrapAppRuntime,
     wrapPredictionRuntime,
     clearHomeCache,

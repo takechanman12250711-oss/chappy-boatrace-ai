@@ -48,7 +48,7 @@ assert.equal(
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
 const predictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260824-readonly-core-fix1');
-const hiyoriLoaderIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal2"');
+const hiyoriLoaderIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal3"');
 const appIndex = html.indexOf('src="js/app-runtime-loader.js');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
 const oddsFirstIndex = html.indexOf('src="js/odds-first-navigation.js?v=20260815-odds-consume2"');
@@ -88,7 +88,7 @@ assert.equal(
   "取得済み120通りを通常予想へ引き渡す"
 );
 assert.equal(
-  hiyoriRuntime.includes('const VERSION="20260825-mobile-startup-terminal2"') &&
+  hiyoriRuntime.includes('const VERSION="20260825-mobile-startup-terminal3"') &&
     hiyoriRuntime.includes("function ensureReady()") &&
     hiyoriRuntime.includes("return Promise.resolve(true)") &&
     hiyoriRuntime.includes("predictionBlocking:false") &&

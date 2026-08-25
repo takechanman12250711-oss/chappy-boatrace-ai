@@ -17,7 +17,7 @@ const read = relativePath => fs.readFileSync(
   "utf8"
 );
 
-const BUILD = "20260825-mobile-startup-terminal2";
+const BUILD = "20260825-mobile-startup-terminal3";
 const html = read("index.html");
 const appRuntimeSource = read("js/app-runtime-loader.js");
 const apiSource = read("js/api.js");
@@ -56,7 +56,7 @@ assert.match(html, /label\.textContent="再起動中"/);
 });
 assert.match(
   html,
-  /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal2"/,
+  /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal3"/,
   "非同期の日和補助は既存の非blocking契約を維持する"
 );
 assert.match(
@@ -187,6 +187,7 @@ function createRoot({
   const documentListeners = new Map();
   const windowListeners = new Map();
   const scripts = [];
+  const preloads = [];
   const elements = {
     resultArea: {
       dataset: { raceLoading: "true" },
@@ -222,13 +223,24 @@ function createRoot({
       documentElement: { dataset: {} },
       scripts,
       head: {
-        appendChild(script) {
-          scripts.push(script);
-          setImmediate(() => script.__listeners.get("load")?.());
-          return script;
+        appendChild(element) {
+          if (element.rel === "preload") {
+            preloads.push(element);
+            return element;
+          }
+          scripts.push(element);
+          setImmediate(() => element.__listeners.get("load")?.());
+          return element;
         }
       },
       createElement(tagName) {
+        if (tagName === "link") {
+          return {
+            rel: "",
+            as: "",
+            href: ""
+          };
+        }
         assert.equal(tagName, "script");
         const listeners = new Map();
         return {
@@ -244,6 +256,10 @@ function createRoot({
             if (index >= 0) scripts.splice(index, 1);
           }
         };
+      },
+      querySelectorAll(selector) {
+        assert.equal(selector, 'link[rel="preload"][as="script"]');
+        return preloads;
       },
       getElementById(id) {
         return elements[id] || null;
@@ -295,6 +311,7 @@ function createRoot({
     __windowListeners: windowListeners,
     __elements: elements,
     __scripts: scripts,
+    __preloads: preloads,
     __replaced: replaced
   };
 
@@ -370,6 +387,10 @@ function createRoot({
   terminal.install(built);
   assert.equal(await built.ChappyPredictionRuntime.ensureReady(), true);
   assert.equal(built.__scripts.length, 1);
+  assert.equal(built.__preloads.length, 1);
+  assert.equal(built.__preloads[0].href, `js/ai-core.js?v=${BUILD}`);
+  terminal.preloadScriptsWithBuild(built, ["js/ai-core.js"], 0);
+  assert.equal(built.__preloads.length, 1, "同じ先読みを重複追加しない");
   assert.equal(built.__scripts[0].src, `js/ai-core.js?v=${BUILD}`);
   assert.equal(built.__scripts[0].dataset.chappyMobileBuild, BUILD);
 

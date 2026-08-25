@@ -97,8 +97,8 @@ try {
   mark("runtime-state", runtimeState);
 
   if (
-    runtimeState.appRuntime !== "20260825-mobile-startup-terminal2" ||
-    runtimeState.predictionRuntime !== "20260825-mobile-startup-terminal2"
+    runtimeState.appRuntime !== "20260825-mobile-startup-terminal3" ||
+    runtimeState.predictionRuntime !== "20260825-mobile-startup-terminal3"
   ) {
     throw new Error(
       `app runtime mismatch: ${JSON.stringify(runtimeState)}`

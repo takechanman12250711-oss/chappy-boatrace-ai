@@ -25,7 +25,7 @@
 })(typeof window !== "undefined" ? window : null, function () {
   "use strict";
 
-  const VERSION = "20260825-mobile-startup-terminal2";
+  const VERSION = "20260825-mobile-startup-terminal3";
   const API_ORIGIN = "https://chappy-boatrace-api.vercel.app";
   const RESULT_API_PATH = "/api/result";
   const RESULT_REQUEST_TIMEOUT_MS = 12000;

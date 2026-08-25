@@ -44,6 +44,7 @@ jobs:
           exit 1
 
       - name: Isolate core build
+        continue-on-error: true
         shell: bash
         run: |
           set +e
@@ -51,7 +52,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
               DIAG_OUTPUT=artifacts-stage/local-core \
             node scripts/diagnose-prediction-stage-webkit.mjs core \
             > artifacts-stage/local-core/process.log 2>&1
@@ -60,9 +61,10 @@ jobs:
           cat artifacts-stage/local-core/process.log
           pkill -9 MiniBrowser || true
           pkill -9 WebKitNetworkProcess || true
-          exit 0
+          exit "$status"
 
       - name: Isolate createPrediction
+        continue-on-error: true
         shell: bash
         run: |
           set +e
@@ -70,7 +72,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
               DIAG_OUTPUT=artifacts-stage/local-create \
             node scripts/diagnose-prediction-stage-webkit.mjs create \
             > artifacts-stage/local-create/process.log 2>&1
@@ -79,9 +81,10 @@ jobs:
           cat artifacts-stage/local-create/process.log
           pkill -9 MiniBrowser || true
           pkill -9 WebKitNetworkProcess || true
-          exit 0
+          exit "$status"
 
       - name: Isolate production createPrediction
+        continue-on-error: true
         shell: bash
         run: |
           set +e
@@ -89,7 +92,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260824-readonly-core-fix1 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal2 \
               DIAG_OUTPUT=artifacts-stage/production-create \
             node scripts/diagnose-prediction-stage-webkit.mjs create \
             > artifacts-stage/production-create/process.log 2>&1
@@ -98,7 +101,26 @@ jobs:
           cat artifacts-stage/production-create/process.log
           pkill -9 MiniBrowser || true
           pkill -9 WebKitNetworkProcess || true
-          exit 0
+          exit "$status"
+
+      - name: Enforce stage diagnostics
+        if: always()
+        run: |
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const checks = [
+            ["artifacts-stage/local-core/core-progress.json", "core-build-finished"],
+            ["artifacts-stage/local-create/create-progress.json", "create-prediction-finished"],
+            ["artifacts-stage/production-create/create-progress.json", "create-prediction-finished"]
+          ];
+          for (const [file, terminalMark] of checks) {
+            const report = JSON.parse(fs.readFileSync(file, "utf8"));
+            const marks = new Set(report.marks.map(row => row.name));
+            if (report.error || !marks.has(terminalMark)) {
+              throw new Error(`${file}: ${report.error?.message || `${terminalMark} missing`}`);
+            }
+          }
+          NODE
 
       - name: Upload stage diagnostics
         if: always()
