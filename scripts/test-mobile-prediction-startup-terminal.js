@@ -59,6 +59,7 @@ assert.match(appRuntimeSource, /const ACTIVE_VERSION = root\.CHAPPY_APP_BUILD \|
 assert.match(apiSource, /function fetchRaceResponse\(url, controller\)/);
 assert.match(apiSource, /return Promise\.race\(\[/);
 assert.match(apiSource, /error\.code = "RACE_DATA_TIMEOUT"/);
+assert.match(apiSource, /Object\.defineProperty\(window, "ChappyDirectFetch"/);
 assert.match(appRuntimeSource, /RACE_CONTROLS_MISSING/);
 assert.match(appRuntimeSource, /RACE_SELECTION_MISSING/);
 assert.match(appRuntimeSource, /renderRuntimeError\(error\)/);

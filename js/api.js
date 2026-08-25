@@ -11,6 +11,17 @@
   const RACE_REQUEST_TIMEOUT_MS = 30000;
   const raceRequests = new Map();
 
+  if (
+    typeof window.fetch === "function" &&
+    typeof window.ChappyDirectFetch !== "function"
+  ) {
+    Object.defineProperty(window, "ChappyDirectFetch", {
+      configurable: false,
+      writable: false,
+      value: window.fetch.bind(window)
+    });
+  }
+
   function createRaceTimeoutError() {
     const error = new Error("レースデータAPIの応答が30秒を超えました");
     error.code = "RACE_DATA_TIMEOUT";

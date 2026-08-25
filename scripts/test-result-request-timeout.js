@@ -153,13 +153,8 @@ async function main() {
   );
   assert.match(
     appSource,
-    /window\.fetch\(url, \{\s*chappySkipResultTimeout: true\s*\}\)/,
-    "local full-body timeout must bypass the nested result fetch wrapper"
-  );
-  assert.match(
-    appSource,
-    /requestOfficialResultWithXhr\(url\)[\s\S]*xhr\.timeout = OFFICIAL_RESULT_TIMEOUT_MS/,
-    "WebKit review results must use an independent XHR terminal path"
+    /window\.ChappyDirectFetch[\s\S]*directFetch\(url\)/,
+    "local full-body timeout must use the pre-wrapper fetch transport"
   );
   assert.match(
     appSource,
