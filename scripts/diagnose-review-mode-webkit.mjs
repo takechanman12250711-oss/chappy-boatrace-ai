@@ -155,6 +155,7 @@ try {
 
   await page.evaluate(async () => {
     await window.ChappyAppRuntime.ensure("race");
+    window.ChappyHomeDashboardV2?.setView("race");
   });
   recordStep("race-runtime-ready");
 

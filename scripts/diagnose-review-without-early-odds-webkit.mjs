@@ -93,7 +93,9 @@ const renderedPromise = page.waitForEvent("console", {
   timeout: 90000
 });
 
-await page.click("#fetchRaceBtn");
+await page.evaluate(() => {
+  document.getElementById("fetchRaceBtn")?.click();
+});
 mark("prediction-clicked");
 
 await renderedPromise;
