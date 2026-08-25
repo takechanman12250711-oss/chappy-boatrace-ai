@@ -6,10 +6,13 @@ import { webkit } from "playwright";
 const stage = process.argv[2] || "select";
 const appUrl = process.env.APP_URL || "http://127.0.0.1:4173/";
 const outputDir = process.env.DIAG_OUTPUT || `artifacts-post/${stage}`;
-const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal3";
+const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal4";
+const requireManshuFallback =
+  process.env.REQUIRE_MANSHU_FALLBACK !== "false";
 const raceUrl =
+  process.env.RACE_URL ||
   "https://chappy-boatrace-api.vercel.app/api/race" +
-  "?jcd=07&rno=12&date=20260824";
+    "?jcd=01&rno=10&date=20260825";
 
 fs.mkdirSync(outputDir, { recursive: true });
 const progressPath = path.join(outputDir, `${stage}-progress.json`);
@@ -17,6 +20,7 @@ const report = {
   stage,
   appUrl,
   expectedRuntime,
+  requireManshuFallback,
   raceUrl,
   marks: [],
   pageErrors: [],
@@ -196,12 +200,49 @@ try {
       };
     });
     mark("render-all-finished", renderSummary);
-    report.result = renderSummary;
+
+    mark("post-render-responsive-start");
+    const responsiveSummary = await page.evaluate(async () => {
+      const startedAt = performance.now();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+      const root = document.getElementById("resultArea");
+      const fallback = root?.querySelector?.(
+        "[data-manshu-display-fallback='true']"
+      );
+      return {
+        elapsedMs: Math.round(performance.now() - startedAt),
+        raceLoading: root?.dataset?.raceLoading || "",
+        fallbackVisible: Boolean(fallback),
+        fallbackSignature:
+          root?.querySelector?.(".v3-manshu-newspaper")
+            ?.dataset?.manshuDisplaySignature || ""
+      };
+    });
+    mark("post-render-responsive-finished", responsiveSummary);
+    if (
+      requireManshuFallback &&
+      (
+        responsiveSummary.fallbackVisible !== true ||
+        !responsiveSummary.fallbackSignature
+      )
+    ) {
+      throw new Error(
+        "Kiryu 10R manshu fallback regression path was not exercised"
+      );
+    }
+    report.result = {
+      ...renderSummary,
+      responsive: responsiveSummary
+    };
 
     await page.screenshot({
       path: path.join(outputDir, "render-result.png"),
       fullPage: true
     });
+    mark("render-screenshot-finished");
   }
 } catch (error) {
   report.error = {

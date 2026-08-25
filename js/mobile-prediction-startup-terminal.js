@@ -33,7 +33,7 @@
 })(typeof window !== "undefined" ? window : null, function () {
   "use strict";
 
-  const BUILD = "20260825-mobile-startup-terminal3";
+  const BUILD = "20260825-mobile-startup-terminal4";
   const HOME_CACHE_KEY = "chappy-home-v2-cache";
   const SCRIPT_LOAD_TIMEOUT_MS = 12000;
   const RUNTIME_TOTAL_TIMEOUT_MS = 45000;

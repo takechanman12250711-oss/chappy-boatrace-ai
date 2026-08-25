@@ -52,11 +52,12 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal4 \
               DIAG_OUTPUT=artifacts-stage/local-core \
             node scripts/diagnose-prediction-stage-webkit.mjs core \
             > artifacts-stage/local-core/process.log 2>&1
           status=$?
+          echo "$status" > artifacts-stage/local-core/exit-status.txt
           echo "exit_status=$status" | tee -a artifacts-stage/local-core/process.log
           cat artifacts-stage/local-core/process.log
           pkill -9 MiniBrowser || true
@@ -72,11 +73,12 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal4 \
               DIAG_OUTPUT=artifacts-stage/local-create \
             node scripts/diagnose-prediction-stage-webkit.mjs create \
             > artifacts-stage/local-create/process.log 2>&1
           status=$?
+          echo "$status" > artifacts-stage/local-create/exit-status.txt
           echo "exit_status=$status" | tee -a artifacts-stage/local-create/process.log
           cat artifacts-stage/local-create/process.log
           pkill -9 MiniBrowser || true
@@ -84,6 +86,7 @@ jobs:
           exit "$status"
 
       - name: Isolate production createPrediction
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         shell: bash
         run: |
@@ -92,11 +95,12 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal4 \
               DIAG_OUTPUT=artifacts-stage/production-create \
             node scripts/diagnose-prediction-stage-webkit.mjs create \
             > artifacts-stage/production-create/process.log 2>&1
           status=$?
+          echo "$status" > artifacts-stage/production-create/exit-status.txt
           echo "exit_status=$status" | tee -a artifacts-stage/production-create/process.log
           cat artifacts-stage/production-create/process.log
           pkill -9 MiniBrowser || true
@@ -105,19 +109,33 @@ jobs:
 
       - name: Enforce stage diagnostics
         if: always()
+        env:
+          CHECK_PRODUCTION: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           node - <<'NODE'
           const fs = require("node:fs");
           const checks = [
             ["artifacts-stage/local-core/core-progress.json", "core-build-finished"],
-            ["artifacts-stage/local-create/create-progress.json", "create-prediction-finished"],
-            ["artifacts-stage/production-create/create-progress.json", "create-prediction-finished"]
+            ["artifacts-stage/local-create/create-progress.json", "create-prediction-finished"]
           ];
+          if (process.env.CHECK_PRODUCTION === "true") {
+            checks.push([
+              "artifacts-stage/production-create/create-progress.json",
+              "create-prediction-finished"
+            ]);
+          }
           for (const [file, terminalMark] of checks) {
             const report = JSON.parse(fs.readFileSync(file, "utf8"));
             const marks = new Set(report.marks.map(row => row.name));
             if (report.error || !marks.has(terminalMark)) {
               throw new Error(`${file}: ${report.error?.message || `${terminalMark} missing`}`);
+            }
+            const exitFile = file.replace(/[^/]+$/, "exit-status.txt");
+            const exitStatus = fs.existsSync(exitFile)
+              ? fs.readFileSync(exitFile, "utf8").trim()
+              : "missing";
+            if (exitStatus !== "0") {
+              throw new Error(`${exitFile}: expected 0, got ${exitStatus}`);
             }
           }
           NODE

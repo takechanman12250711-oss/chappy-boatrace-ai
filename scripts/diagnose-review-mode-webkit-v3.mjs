@@ -4,7 +4,7 @@ import process from "node:process";
 import { webkit } from "playwright";
 
 const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
-const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal3";
+const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260825-mobile-startup-terminal4";
 const OUTPUT_DIR = process.env.DIAG_OUTPUT || "artifacts/review-mode-webkit-v3";
 const REVIEW_DATE = process.env.REVIEW_DATE || "2026-08-24";
 const REVIEW_PLACE = process.env.REVIEW_PLACE || "蒲郡";
@@ -253,7 +253,31 @@ try {
   ]);
   step("prediction-render-confirmed");
 
-  report.final = await Promise.race([page.evaluate(() => {
+  step("post-render-responsive-start");
+  const responsiveness = await Promise.race([
+    page.evaluate(async () => {
+      const startedAt = performance.now();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+      return {
+        elapsedMs: Math.round(performance.now() - startedAt),
+        fallbackVisible: Boolean(
+          document.querySelector("[data-manshu-display-fallback='true']")
+        )
+      };
+    }),
+    new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error("post-render responsiveness timed out")),
+        10_000
+      );
+    })
+  ]);
+  step("post-render-responsive-finished", responsiveness);
+
+  report.final = await page.evaluate(() => {
     const text = id => document.getElementById(id)?.textContent || "";
     return {
       errorArea: text("errorArea"),
@@ -272,19 +296,7 @@ try {
       ),
       assignmentCompat: window.ChappyAICoreAssignmentCompat || null
     };
-  }), new Promise(resolve => {
-    setTimeout(() => resolve({
-      renderConfirmed: true,
-      snapshotAvailable: false,
-      errorArea: "",
-      resultArea: "予想描画完了",
-      statusArea: "",
-      oddsStatus: "",
-      selectedVenue: "",
-      selectedRace: "",
-      raceLoading: ""
-    }), 10_000);
-  })]);
+  });
 
   for (const key of [
     "errorArea",
@@ -331,11 +343,23 @@ try {
   };
   console.error("[FATAL]", report.fatalError.message);
 } finally {
-  await page.screenshot({
-    path: path.join(OUTPUT_DIR, "review-mode-webkit-v3.png"),
-    fullPage: true,
-    timeout: 10_000
-  }).catch(() => {});
+  try {
+    await page.screenshot({
+      path: path.join(OUTPUT_DIR, "review-mode-webkit-v3.png"),
+      fullPage: true,
+      timeout: 10_000
+    });
+    step("screenshot-finished");
+  } catch (error) {
+    if (!failure) failure = error;
+    report.fatalError = report.fatalError || {
+      message: String(error?.message || error),
+      stack: String(error?.stack || "")
+    };
+    step("screenshot-failed", {
+      message: String(error?.message || error)
+    });
+  }
 
   fs.writeFileSync(
     path.join(OUTPUT_DIR, "review-mode-webkit-v3.json"),

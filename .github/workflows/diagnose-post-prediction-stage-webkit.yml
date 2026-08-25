@@ -53,11 +53,13 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal4 \
+              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
               DIAG_OUTPUT=artifacts-post/local-select \
             node scripts/diagnose-post-prediction-stage-webkit.mjs select \
             > artifacts-post/local-select/process.log 2>&1
           status=$?
+          echo "$status" > artifacts-post/local-select/exit-status.txt
           echo "exit_status=$status" | tee -a artifacts-post/local-select/process.log
           cat artifacts-post/local-select/process.log
           pkill -9 MiniBrowser || true
@@ -74,11 +76,13 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal4 \
+              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
               DIAG_OUTPUT=artifacts-post/local-render \
             node scripts/diagnose-post-prediction-stage-webkit.mjs render \
             > artifacts-post/local-render/process.log 2>&1
           status=$?
+          echo "$status" > artifacts-post/local-render/exit-status.txt
           echo "exit_status=$status" | tee -a artifacts-post/local-render/process.log
           cat artifacts-post/local-render/process.log
           pkill -9 MiniBrowser || true
@@ -87,6 +91,7 @@ jobs:
 
       - name: Isolate renderAll in production
         id: production_render
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         shell: bash
         run: |
@@ -95,11 +100,13 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal4 \
+              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
               DIAG_OUTPUT=artifacts-post/production-render \
             node scripts/diagnose-post-prediction-stage-webkit.mjs render \
             > artifacts-post/production-render/process.log 2>&1
           status=$?
+          echo "$status" > artifacts-post/production-render/exit-status.txt
           echo "exit_status=$status" | tee -a artifacts-post/production-render/process.log
           cat artifacts-post/production-render/process.log
           pkill -9 MiniBrowser || true
@@ -109,23 +116,69 @@ jobs:
       - name: Enforce post-prediction diagnostics
         if: always()
         shell: bash
+        env:
+          CHECK_PRODUCTION: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           node - <<'NODE'
           const fs = require("fs");
           const required = [
-            ["artifacts-post/local-select/select-progress.json", "practical-select-finished"],
-            ["artifacts-post/local-render/render-progress.json", "render-all-finished"],
-            ["artifacts-post/production-render/render-progress.json", "render-all-finished"]
+            {
+              dir: "artifacts-post/local-select",
+              report: "select-progress.json",
+              marks: ["practical-select-finished"]
+            },
+            {
+              dir: "artifacts-post/local-render",
+              report: "render-progress.json",
+              marks: [
+                "render-all-finished",
+                "post-render-responsive-finished",
+                "render-screenshot-finished"
+              ],
+              screenshot: "render-result.png"
+            }
           ];
+          if (process.env.CHECK_PRODUCTION === "true") {
+            required.push({
+              dir: "artifacts-post/production-render",
+              report: "render-progress.json",
+              marks: [
+                "render-all-finished",
+                "post-render-responsive-finished",
+                "render-screenshot-finished"
+              ],
+              screenshot: "render-result.png"
+            });
+          }
           const failures = [];
-          for (const [file, mark] of required) {
+          for (const check of required) {
+            const file = `${check.dir}/${check.report}`;
             if (!fs.existsSync(file)) {
               failures.push(`${file}: missing report`);
               continue;
             }
             const report = JSON.parse(fs.readFileSync(file, "utf8"));
-            if (!report.marks?.some(row => row.name === mark)) {
-              failures.push(`${file}: missing ${mark}; error=${report.error?.message || "none"}`);
+            const marks = new Set((report.marks || []).map(row => row.name));
+            for (const mark of check.marks) {
+              if (!marks.has(mark)) {
+                failures.push(`${file}: missing ${mark}; error=${report.error?.message || "none"}`);
+              }
+            }
+            if (report.error) {
+              failures.push(`${file}: ${report.error.message || "diagnostic error"}`);
+            }
+            const exitFile = `${check.dir}/exit-status.txt`;
+            const exitStatus = fs.existsSync(exitFile)
+              ? fs.readFileSync(exitFile, "utf8").trim()
+              : "missing";
+            if (exitStatus !== "0") {
+              failures.push(`${exitFile}: expected 0, got ${exitStatus}`);
+            }
+            if (
+              check.screenshot &&
+              !fs.existsSync(`${check.dir}/${check.screenshot}`)
+            ) {
+              failures.push(`${check.dir}/${check.screenshot}: missing screenshot`);
             }
           }
           if (failures.length) {
