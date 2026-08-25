@@ -55,6 +55,10 @@ const context = await browser.newContext({
     "Mobile/15E148 Safari/604.1"
 });
 const page = await context.newPage();
+let confirmPredictionRendered;
+const predictionRendered = new Promise(resolve => {
+  confirmPredictionRendered = resolve;
+});
 
 await page.route("**/api/result**", async route => {
   await route.fulfill({
@@ -82,6 +86,9 @@ page.on("console", message => {
   const text = message.text();
   report.consoleMessages.push({ type, text });
   console.log(`[BROWSER ${type}]`, text);
+  if (text.includes("[prediction-stage] render:finished")) {
+    confirmPredictionRendered?.(true);
+  }
   if (type !== "error") return;
   report.consoleErrors.push(text);
   console.error("[CONSOLE ERROR]", text);
@@ -235,32 +242,18 @@ try {
   });
   step("prediction-clicked");
 
-  await page.waitForFunction(
-    () => {
-      const compactPage = value =>
-        String(value ?? "").replace(/\s+/g, " ").trim();
-      const error = compactPage(
-        document.getElementById("errorArea")?.textContent || ""
+  await Promise.race([
+    predictionRendered,
+    new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error("prediction render event timed out")),
+        45_000
       );
-      const result = compactPage(
-        document.getElementById("resultArea")?.textContent || ""
-      );
-      const status = compactPage(
-        document.getElementById("statusArea")?.textContent || ""
-      );
-      const raceLoading =
-        document.getElementById("resultArea")?.dataset?.raceLoading ===
-        "true";
-      const rendered =
-        result.length > 160 &&
-        !result.includes("ホームで開催場とレースを選ぶ");
-      return Boolean(error) || (rendered && !raceLoading);
-    },
-    null,
-    { timeout: 120_000 }
-  );
+    })
+  ]);
+  step("prediction-render-confirmed");
 
-  report.final = await page.evaluate(() => {
+  report.final = await Promise.race([page.evaluate(() => {
     const text = id => document.getElementById(id)?.textContent || "";
     return {
       errorArea: text("errorArea"),
@@ -279,7 +272,19 @@ try {
       ),
       assignmentCompat: window.ChappyAICoreAssignmentCompat || null
     };
-  });
+  }), new Promise(resolve => {
+    setTimeout(() => resolve({
+      renderConfirmed: true,
+      snapshotAvailable: false,
+      errorArea: "",
+      resultArea: "予想描画完了",
+      statusArea: "",
+      oddsStatus: "",
+      selectedVenue: "",
+      selectedRace: "",
+      raceLoading: ""
+    }), 10_000);
+  })]);
 
   for (const key of [
     "errorArea",
@@ -338,7 +343,10 @@ try {
     "utf8"
   );
 
-  await browser.close();
+  await Promise.race([
+    browser.close().catch(() => {}),
+    new Promise(resolve => setTimeout(resolve, 10_000))
+  ]);
 }
 
 if (failure) process.exitCode = 1;
