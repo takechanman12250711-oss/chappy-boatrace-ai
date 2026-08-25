@@ -138,10 +138,10 @@ async function main() {
     "utf8"
   );
   const guardIndex = indexHtml.indexOf(
-    'src="js/result-request-timeout.js?v=20260824-result-timeout1"'
+    'src="js/result-request-timeout.js?v=20260824-result-timeout1&app=20260825-mobile-startup-terminal1"'
   );
   const appIndex = indexHtml.indexOf(
-    'src="js/app-runtime-loader.js?v=20260816-static-race1"'
+    'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260825-mobile-startup-terminal1"'
   );
   const oddsFirstIndex = indexHtml.indexOf(
     'src="js/odds-first-navigation.js?v=20260815-odds-consume2"'

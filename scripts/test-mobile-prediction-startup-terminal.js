@@ -19,7 +19,7 @@ const read = relativePath => fs.readFileSync(
 const BUILD = "20260825-mobile-startup-terminal1";
 const html = read("index.html");
 const appRuntimeSource = read("js/app-runtime-loader.js");
-const predictionRuntimeSource = read("js/prediction-runtime-loader.js");
+const terminalSource = read("js/mobile-prediction-startup-terminal.js");
 const homeSource = read("js/home-dashboard-v2.js");
 
 assert.equal(terminal.build, BUILD);
@@ -56,9 +56,8 @@ assert.match(appRuntimeSource, /const ACTIVE_VERSION = root\.CHAPPY_APP_BUILD \|
 assert.match(appRuntimeSource, /RACE_CONTROLS_MISSING/);
 assert.match(appRuntimeSource, /RACE_SELECTION_MISSING/);
 assert.match(appRuntimeSource, /renderRuntimeError\(error\)/);
-assert.match(predictionRuntimeSource, /const ACTIVE_VERSION = root\.CHAPPY_APP_BUILD \|\| VERSION/);
-assert.match(predictionRuntimeSource, /script\.src = `\$\{clean\}\?v=\$\{ACTIVE_VERSION\}`/);
-assert.match(predictionRuntimeSource, /version: ACTIVE_VERSION/);
+assert.match(terminalSource, /script\.src = `\$\{clean\}\?v=\$\{BUILD\}`/);
+assert.match(terminalSource, /await loadScriptWithBuild\(root, src\)/);
 assert.match(homeSource, /showPredictionLoading\(place, raceNo\)/);
 assert.match(homeSource, /showPredictionError\(message\)/);
 
@@ -82,10 +81,12 @@ function storage(initial = {}) {
 
 function createRoot({
   raceReady = false,
-  predictionReady = false
+  predictionReady = false,
+  predictionScripts = []
 } = {}) {
   const documentListeners = new Map();
   const windowListeners = new Map();
+  const scripts = [];
   const elements = {
     resultArea: {
       dataset: { raceLoading: "true" },
@@ -119,6 +120,31 @@ function createRoot({
     },
     document: {
       documentElement: { dataset: {} },
+      scripts,
+      head: {
+        appendChild(script) {
+          scripts.push(script);
+          setImmediate(() => script.__listeners.get("load")?.());
+          return script;
+        }
+      },
+      createElement(tagName) {
+        assert.equal(tagName, "script");
+        const listeners = new Map();
+        return {
+          async: true,
+          dataset: {},
+          src: "",
+          __listeners: listeners,
+          addEventListener(name, listener) {
+            listeners.set(name, listener);
+          },
+          remove() {
+            const index = scripts.indexOf(this);
+            if (index >= 0) scripts.splice(index, 1);
+          }
+        };
+      },
       getElementById(id) {
         return elements[id] || null;
       },
@@ -162,11 +188,13 @@ function createRoot({
       version: "legacy-prediction",
       ensureReady: async () => true,
       ensureOptionalReady: async () => true,
-      scripts: []
+      scripts: predictionScripts.slice(),
+      optionalScripts: []
     }),
     __documentListeners: documentListeners,
     __windowListeners: windowListeners,
     __elements: elements,
+    __scripts: scripts,
     __replaced: replaced
   };
 
@@ -233,6 +261,17 @@ function createRoot({
   assert.equal(ready.ChappyAppRuntime.version, BUILD);
   assert.equal(ready.ChappyPredictionRuntime.version, BUILD);
   assert.equal(ready.document.documentElement.dataset.chappyBuild, BUILD);
+
+  const built = createRoot({
+    raceReady: true,
+    predictionReady: true,
+    predictionScripts: ["js/ai-core.js"]
+  });
+  terminal.install(built);
+  assert.equal(await built.ChappyPredictionRuntime.ensureReady(), true);
+  assert.equal(built.__scripts.length, 1);
+  assert.equal(built.__scripts[0].src, `js/ai-core.js?v=${BUILD}`);
+  assert.equal(built.__scripts[0].dataset.chappyMobileBuild, BUILD);
 
   const click = ready.__documentListeners.get("click:true");
   assert.equal(typeof click, "function");
