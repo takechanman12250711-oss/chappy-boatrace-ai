@@ -22,6 +22,7 @@ const report = {
   },
   steps: [],
   pageErrors: [],
+  consoleMessages: [],
   consoleErrors: [],
   failedRequests: [],
   badResponses: [],
@@ -65,8 +66,11 @@ page.on("pageerror", error => {
 });
 
 page.on("console", message => {
-  if (message.type() !== "error") return;
+  const type = message.type();
   const text = message.text();
+  report.consoleMessages.push({ type, text });
+  console.log(`[BROWSER ${type}]`, text);
+  if (type !== "error") return;
   report.consoleErrors.push(text);
   console.error("[CONSOLE ERROR]", text);
 });
@@ -310,7 +314,8 @@ try {
 } finally {
   await page.screenshot({
     path: path.join(OUTPUT_DIR, "review-mode-webkit-v3.png"),
-    fullPage: true
+    fullPage: true,
+    timeout: 10_000
   }).catch(() => {});
 
   fs.writeFileSync(
