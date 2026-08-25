@@ -208,6 +208,10 @@ try {
       await new Promise(resolve => {
         requestAnimationFrame(() => requestAnimationFrame(resolve));
       });
+      const predictionSection = document.getElementById(
+        "predictionSection"
+      );
+      if (predictionSection) predictionSection.hidden = false;
       const root = document.getElementById("resultArea");
       const fallback = root?.querySelector?.(
         ".v3-formation-row[data-manshu-display-fallback='true']"
