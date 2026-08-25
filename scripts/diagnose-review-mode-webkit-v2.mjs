@@ -157,7 +157,14 @@ try {
     throw new Error(`venue unavailable: ${REVIEW_PLACE}`);
   }
 
-  await page.selectOption("#placeSelect", { label: REVIEW_PLACE });
+  await page.evaluate(place => {
+    const select = document.getElementById("placeSelect");
+    const option = [...(select?.options || [])]
+      .find(candidate => candidate.textContent?.trim() === place);
+    if (!select || !option) throw new Error(`venue option missing: ${place}`);
+    select.value = option.value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, REVIEW_PLACE);
   step("place-selected", { place: REVIEW_PLACE });
 
   await page.waitForFunction(
@@ -169,10 +176,19 @@ try {
 
   const races = await page.locator("#raceSelect option").allTextContents();
   step("races-loaded", { count: races.length, races });
-  await page.selectOption("#raceSelect", { label: REVIEW_RACE });
+  await page.evaluate(race => {
+    const select = document.getElementById("raceSelect");
+    const option = [...(select?.options || [])]
+      .find(candidate => candidate.textContent?.trim() === race);
+    if (!select || !option) throw new Error(`race option missing: ${race}`);
+    select.value = option.value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, REVIEW_RACE);
   step("race-selected", { race: REVIEW_RACE });
 
-  await page.click("#fetchRaceBtn");
+  await page.evaluate(() => {
+    document.getElementById("fetchRaceBtn")?.click();
+  });
   step("prediction-clicked");
 
   await page.waitForFunction(

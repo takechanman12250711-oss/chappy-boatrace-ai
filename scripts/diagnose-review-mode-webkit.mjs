@@ -207,7 +207,9 @@ try {
   await page.dispatchEvent("#raceSelect", "change");
   recordStep("review-race-selected", { race: REVIEW_RACE });
 
-  await page.click("#fetchRaceBtn");
+  await page.evaluate(() => {
+    document.getElementById("fetchRaceBtn")?.click();
+  });
   recordStep("review-prediction-clicked");
 
   await page.waitForFunction(

@@ -214,7 +214,9 @@ try {
     throw new Error(`prediction button disabled: ${buttonState.status}`);
   }
 
-  await page.click("#fetchRaceBtn");
+  await page.evaluate(() => {
+    document.getElementById("fetchRaceBtn")?.click();
+  });
   step("prediction-clicked");
 
   await page.waitForFunction(

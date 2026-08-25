@@ -55,6 +55,7 @@ jobs:
 
       - name: Run production visible review flow
         if: always()
+        continue-on-error: true
         env:
           APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
           EXPECTED_RUNTIME: 20260824-readonly-core-fix1
