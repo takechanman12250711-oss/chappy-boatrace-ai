@@ -1,0 +1,53 @@
+name: Check mobile prediction startup terminal
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/check-mobile-prediction-startup-terminal.yml"
+      - "index.html"
+      - "js/app-runtime-loader.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/mobile-prediction-startup-terminal.js"
+      - "scripts/test-mobile-prediction-startup-terminal.js"
+  push:
+    branches:
+      - main
+    paths:
+      - "index.html"
+      - "js/app-runtime-loader.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/mobile-prediction-startup-terminal.js"
+      - "scripts/test-mobile-prediction-startup-terminal.js"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check startup files
+        run: |
+          node --check js/app-runtime-loader.js
+          node --check js/prediction-runtime-loader.js
+          node --check js/mobile-prediction-startup-terminal.js
+          node --check scripts/test-mobile-prediction-startup-terminal.js
+
+      - name: Verify mobile startup terminal
+        run: |
+          node scripts/test-mobile-prediction-startup-terminal.js
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-loading-watchdog.js
+          node scripts/test-live-race-selection-terminal-guard.js
+          node scripts/test-home-dashboard-v2-phase2.js
+          node scripts/test-odds-lightweight-path.js
+          node scripts/check-charter.js
