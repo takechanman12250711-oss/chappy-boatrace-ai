@@ -56,6 +56,18 @@ const context = await browser.newContext({
 });
 const page = await context.newPage();
 
+await page.route("**/api/result**", async route => {
+  await route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      ok: true,
+      resultAvailable: false,
+      source: "webkit-startup-terminal-fixture"
+    })
+  });
+});
+
 page.on("pageerror", error => {
   const row = {
     message: String(error?.message || error),
