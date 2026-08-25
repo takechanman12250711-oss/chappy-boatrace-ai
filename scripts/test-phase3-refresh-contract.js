@@ -21,5 +21,14 @@ const check = fs.readFileSync(
 );
 assert.ok(check.includes("check-phase3-learning-handoff-pr-{0}"));
 assert.ok(check.includes("|| 'chappy-main-data-writers'"));
+assert.ok(check.includes("cancel-in-progress: ${{ github.event_name == 'pull_request' }}"));
 assert.ok(check.includes("config/phase3-candidate-policy-review.json"));
+assert.ok(check.includes('workflows: ["Collect official race results"]'));
+assert.ok(check.includes("github.event.workflow_run.conclusion == 'success'"));
+assert.ok(check.includes("data/stats/improvement-proposal-phase3.json"));
+assert.ok(check.includes("test-phase3-historical-connection.js"));
+assert.ok(
+  check.indexOf("build-phase3-learning-handoff.js") <
+    check.lastIndexOf("test-phase3-historical-connection.js"),
+);
 console.log("phase3 refresh contract: ok");

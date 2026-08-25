@@ -129,6 +129,7 @@ function build(gate, proposalReport = {}, policyReviewReport = {}) {
     implementationComplete: true,
     productionChanged: false,
     automaticApplication: false,
+    usableForPrediction: false,
     requiresUserApproval: true,
     allSourcesConnected: true,
     policy: "過去の公式締切前コホートから得た改善根拠を保持し、結果記述だけの診断は別枠で保存する。実A/Bの数値判定に加え、現実的な2コース差し・4号艇残し、候補群保持、点数制限前の候補生成、構造化除外理由、数値単独削除禁止の憲章適合証跡が揃った改善だけ承認候補へ渡す。過去根拠を捨てて0Rから再分析しない。承認前は本番予想へ一切反映しない。",

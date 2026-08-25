@@ -5,25 +5,34 @@ on:
       - "scripts/build-phase3-learning-handoff.js"
       - "scripts/test-phase3-learning-handoff.js"
       - "scripts/test-phase3-refresh-contract.js"
+      - "scripts/test-phase3-historical-connection.js"
       - "config/phase3-candidate-policy-review.json"
+      - "data/stats/improvement-proposal-phase3.json"
       - ".github/workflows/check-phase3-learning-handoff.yml"
       - ".github/workflows/refresh-unified-improvement-decision-gate.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-phase3-learning-handoff.js"
+      - "scripts/test-phase3-learning-handoff.js"
       - "scripts/test-phase3-refresh-contract.js"
+      - "scripts/test-phase3-historical-connection.js"
       - "config/phase3-candidate-policy-review.json"
+      - "data/stats/improvement-proposal-phase3.json"
       - ".github/workflows/check-phase3-learning-handoff.yml"
       - ".github/workflows/refresh-unified-improvement-decision-gate.yml"
+  workflow_run:
+    workflows: ["Collect official race results"]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('check-phase3-learning-handoff-pr-{0}', github.event.pull_request.number) || 'chappy-main-data-writers' }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   verify:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +46,7 @@ jobs:
           node scripts/test-phase3-learning-handoff.js
           node scripts/test-phase3-refresh-contract.js
           node scripts/build-phase3-learning-handoff.js
+          node scripts/test-phase3-historical-connection.js
       - name: Save Phase3 handoff
         if: github.event_name != 'pull_request'
         run: |
