@@ -91,6 +91,7 @@ assert.deepEqual(report.policyRejected[0].failedRequirements, [
 ]);
 assert.equal(report.policyRejected[0].reason, "候補群を保持しない");
 assert.equal(report.automaticApplication, false);
+assert.equal(report.usableForPrediction, false);
 assert.equal(report.productionChanged, false);
 assert.equal(report.nextStep, "user-approval");
 
