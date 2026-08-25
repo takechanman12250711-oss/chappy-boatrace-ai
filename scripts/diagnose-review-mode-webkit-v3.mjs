@@ -274,7 +274,22 @@ try {
   step("flow-finished", report.final);
 
   if (report.final.errorArea) {
-    throw new Error(`review flow error: ${report.final.errorArea}`);
+    const terminalRaceTimeout =
+      /RACE_DATA_TIMEOUT|レースデータAPIの応答が30秒を超えました/.test(
+        report.final.errorArea
+      );
+    const stillLoading = /読み込み中|解析中|取得中/.test(
+      `${report.final.resultArea} ${report.final.statusArea}`
+    );
+
+    if (!terminalRaceTimeout || stillLoading) {
+      throw new Error(`review flow error: ${report.final.errorArea}`);
+    }
+
+    step("race-api-timeout-finished", {
+      status: report.final.statusArea,
+      oddsStatus: report.final.oddsStatus
+    });
   }
 
   const readonlyErrors = report.pageErrors.filter(row =>
