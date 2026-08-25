@@ -139,8 +139,18 @@ async function main() {
   );
   assert.match(
     appSource,
-    /await window\.fetch\(url\)/,
-    "official result requests must use the guarded window.fetch"
+    /const OFFICIAL_RESULT_TIMEOUT_MS = 12000/,
+    "official result requests must have a local terminal timeout"
+  );
+  assert.match(
+    appSource,
+    /Promise\.race\(\[\s*window\.fetch\(url\),\s*timeout\s*\]\)/,
+    "official result requests must not depend only on fetch abort behavior"
+  );
+  assert.match(
+    appSource,
+    /await fetchOfficialResultResponse\(url\)/,
+    "review result fetch must use the local terminal timeout"
   );
 
   const indexHtml = fs.readFileSync(

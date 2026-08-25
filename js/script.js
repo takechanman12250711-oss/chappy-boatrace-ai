@@ -44,6 +44,7 @@
   let explicitSelectionGeneration = 0;
   let predictionGeneration = 0;
   const ODDS_REQUEST_TIMEOUT_MS = 30000;
+  const OFFICIAL_RESULT_TIMEOUT_MS = 12000;
   const SCHEDULE_REQUEST_TIMEOUT_MS = 30000;
   const SCHEDULE_CACHE_TTL_MS = 30000;
   const scheduleRequestCache = new Map();
@@ -3401,7 +3402,29 @@
     }
   }
 
-    async function fetchOfficialResult(
+  function fetchOfficialResultResponse(url) {
+    let timer = 0;
+    const timeout = new Promise((_, reject) => {
+      timer = window.setTimeout(() => {
+        const createTimeoutError =
+          window.ChappyResultRequestTimeout?.createTimeoutError;
+        reject(
+          typeof createTimeoutError === "function"
+            ? createTimeoutError(OFFICIAL_RESULT_TIMEOUT_MS)
+            : new Error("公式結果APIの応答が12秒を超えました")
+        );
+      }, OFFICIAL_RESULT_TIMEOUT_MS);
+    });
+
+    return Promise.race([
+      window.fetch(url),
+      timeout
+    ]).finally(() => {
+      if (timer) window.clearTimeout(timer);
+    });
+  }
+
+  async function fetchOfficialResult(
     params
   ) {
     const url =
@@ -3417,7 +3440,7 @@
       )}`;
 
     const response =
-      await window.fetch(url);
+      await fetchOfficialResultResponse(url);
 
     let result =
       await response.json();
