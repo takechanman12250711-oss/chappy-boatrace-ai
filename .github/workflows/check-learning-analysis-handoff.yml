@@ -16,6 +16,7 @@ on:
       - "scripts/build-theory-improvement-proposal-phase9.js"
       - "scripts/build-theory-candidate-branch-analysis-phase9.js"
       - "scripts/build-theory-ab-phase10.js"
+      - "scripts/restore-daily-prediction-source.js"
       - "scripts/test-theory-profit-review-phase8.js"
       - "scripts/test-theory-improvement-proposal-phase9.js"
       - "scripts/test-theory-candidate-branch-analysis-phase9.js"
@@ -55,11 +56,13 @@ jobs:
           node --check scripts/build-theory-improvement-proposal-phase9.js
           node --check scripts/build-theory-candidate-branch-analysis-phase9.js
           node --check scripts/build-theory-ab-phase10.js
+          node --check scripts/restore-daily-prediction-source.js
           node scripts/test-theory-profit-review-phase8.js
           node scripts/test-theory-improvement-proposal-phase9.js
           node scripts/test-theory-candidate-branch-analysis-phase9.js
           node scripts/test-frame-rise-fall-shadow-off.js
           node scripts/test-theory-ab-phase10.js
+          node scripts/restore-daily-prediction-source.js --all
           node scripts/build-theory-profit-review-phase8.js
           node scripts/build-theory-improvement-proposal-phase9.js
           node scripts/build-theory-candidate-branch-analysis-phase9.js
