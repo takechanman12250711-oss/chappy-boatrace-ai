@@ -17,7 +17,7 @@ const read = relativePath => fs.readFileSync(
   "utf8"
 );
 
-const BUILD = "20260825-mobile-startup-terminal1";
+const BUILD = "20260825-mobile-startup-terminal2";
 const html = read("index.html");
 const appRuntimeSource = read("js/app-runtime-loader.js");
 const apiSource = read("js/api.js");
@@ -26,6 +26,22 @@ const homeSource = read("js/home-dashboard-v2.js");
 
 assert.equal(terminal.build, BUILD);
 assert.match(html, new RegExp(`CHAPPY_APP_BUILD="${BUILD}"`));
+assert.ok(
+  html.indexOf("ChappyHardRefresh=Object.freeze") <
+    html.indexOf('src="js/result-void-compat.js'),
+  "外部JSより前に更新処理を接続する"
+);
+assert.match(
+  html,
+  /document\.addEventListener\("click",[\s\S]*?#homeRefreshBtn[\s\S]*?,true\)/,
+  "外部JSが停止しても更新ボタンを捕捉する"
+);
+assert.match(
+  html,
+  /location\.assign\(url\.toString\(\)\)/,
+  "iPhoneで別URLへのアプリ再起動を行う"
+);
+assert.match(html, /label\.textContent="再起動中"/);
 [
   "api.js",
   "prediction-runtime-loader.js",
@@ -40,7 +56,7 @@ assert.match(html, new RegExp(`CHAPPY_APP_BUILD="${BUILD}"`));
 });
 assert.match(
   html,
-  /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal1"/,
+  /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal2"/,
   "非同期の日和補助は既存の非blocking契約を維持する"
 );
 assert.match(
@@ -85,6 +101,83 @@ function storage(initial = {}) {
     }
   };
 }
+
+function verifyInlineHardRefresh() {
+  const documentListeners = new Map();
+  const windowListeners = new Map();
+  const label = { textContent: "更新" };
+  const button = {
+    disabled: false,
+    querySelector(selector) {
+      return selector === "small" ? label : null;
+    }
+  };
+  const status = { textContent: "待機中" };
+  const assigned = [];
+  const root = {
+    location: {
+      href: "https://example.test/chappy/?old=1",
+      assign(url) {
+        assigned.push(url);
+        this.href = url;
+      }
+    },
+    document: {
+      getElementById(id) {
+        if (id === "homeRefreshBtn") return button;
+        if (id === "statusArea") return status;
+        return null;
+      },
+      addEventListener(name, listener, capture) {
+        documentListeners.set(`${name}:${capture === true}`, listener);
+      }
+    },
+    sessionStorage: storage({ "chappy-home-v2-cache": "session" }),
+    localStorage: storage({ "chappy-home-v2-cache": "local" }),
+    setTimeout(callback) {
+      callback();
+      return 1;
+    },
+    addEventListener(name, listener) {
+      windowListeners.set(name, listener);
+    }
+  };
+  const bootstrap = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(bootstrap, "先頭の更新bootstrapを取得できる");
+  vm.runInNewContext(bootstrap, { window: root, URL, Date, console });
+
+  assert.equal(root.ChappyHardRefresh.build, BUILD);
+  const click = documentListeners.get("click:true");
+  assert.equal(typeof click, "function");
+  let prevented = false;
+  let stopped = false;
+  click({
+    target: {
+      closest(selector) {
+        return selector === "#homeRefreshBtn" ? button : null;
+      }
+    },
+    preventDefault() {
+      prevented = true;
+    },
+    stopImmediatePropagation() {
+      stopped = true;
+    }
+  });
+
+  assert.equal(prevented, true);
+  assert.equal(stopped, true);
+  assert.equal(button.disabled, true);
+  assert.equal(label.textContent, "再起動中");
+  assert.equal(status.textContent, "アプリを再起動しています…");
+  assert.equal(root.sessionStorage.has(terminal.cacheKey), false);
+  assert.equal(root.localStorage.has(terminal.cacheKey), false);
+  assert.equal(assigned.length, 1);
+  assert.match(assigned[0], new RegExp(`appBuild=${BUILD}`));
+  assert.match(assigned[0], /reload=\d+/);
+}
+
+verifyInlineHardRefresh();
 
 function createRoot({
   raceReady = false,

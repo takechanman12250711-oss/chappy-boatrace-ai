@@ -56,7 +56,7 @@ function generationBlock(version) {
       "js/prediction-runtime-loader.js?v=${version}"
     ) &&
     html.includes(
-      "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal1"
+      "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal2"
     ) &&
     appRuntime.includes(
       'const VERSION = "20260815-odds-immediate1"'
@@ -65,7 +65,7 @@ function generationBlock(version) {
       'const VERSION = "${version}"'
     ) &&
     hiyoriLoader.includes(
-      'const VERSION="20260825-mobile-startup-terminal1"'
+      'const VERSION="20260825-mobile-startup-terminal2"'
     ),
   true,
   "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
