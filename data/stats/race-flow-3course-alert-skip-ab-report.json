@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "race-flow-3course-alert-skip-ab-v1-prospective",
-  "generatedAt": "2026-08-24T15:25:04.558Z",
+  "generatedAt": "2026-08-25T14:39:12.274Z",
   "productionChanged": false,
   "targetLabel": "3コース攻め警戒",
   "prospectiveProtocol": {
@@ -11,49 +11,49 @@
     "actualPurchase": false
   },
   "cohort": {
-    "raceCount": 396,
-    "settledCount": 292,
-    "targetRaceCount": 0,
-    "targetSettledCount": 0
+    "raceCount": 238,
+    "settledCount": 179,
+    "targetRaceCount": 67,
+    "targetSettledCount": 54
   },
   "a": {
     "label": "current-A",
     "rule": "現行どおり全対象を購入候補として評価",
-    "settledCount": 292,
-    "betRaceCount": 292,
+    "settledCount": 179,
+    "betRaceCount": 179,
     "skippedRaceCount": 0,
-    "hitCount": 85,
-    "hitRate": 29.1,
-    "stake": 260600,
-    "return": 242380,
-    "profit": -18220,
-    "recoveryRate": 93
+    "hitCount": 47,
+    "hitRate": 26.3,
+    "stake": 160200,
+    "return": 170830,
+    "profit": 10630,
+    "recoveryRate": 106.6
   },
   "b": {
     "label": "skip-3course-alert-B",
     "rule": "展開ラベルが「3コース攻め警戒」の時だけ購入見送り",
-    "settledCount": 292,
-    "betRaceCount": 292,
-    "skippedRaceCount": 0,
-    "hitCount": 85,
-    "hitRate": 29.1,
-    "stake": 260600,
-    "return": 242380,
-    "profit": -18220,
-    "recoveryRate": 93
+    "settledCount": 179,
+    "betRaceCount": 125,
+    "skippedRaceCount": 54,
+    "hitCount": 32,
+    "hitRate": 25.6,
+    "stake": 111900,
+    "return": 106020,
+    "profit": -5880,
+    "recoveryRate": 94.7
   },
   "delta": {
-    "stake": 0,
-    "return": 0,
-    "profit": 0,
-    "recoveryRate": 0,
-    "hitRate": 0
+    "stake": -48300,
+    "return": -64810,
+    "profit": -16510,
+    "recoveryRate": -11.9,
+    "hitRate": -0.7
   },
   "interpretation": {
     "minimumTargetSettledCount": 30,
     "automaticApplication": false,
     "usableForPrediction": false,
     "affectsCurrentTickets": false,
-    "adoptionDecisionReady": false
+    "adoptionDecisionReady": true
   }
 }
