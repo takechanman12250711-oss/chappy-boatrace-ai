@@ -45,10 +45,9 @@ function build(predDocs, resultDocs) {
   const results = resultMap(resultDocs);
   const selected = predDocs.flatMap(doc => Array.isArray(doc.predictions) ? doc.predictions : []);
   const verification = predDocs.flatMap(doc => Array.isArray(doc.verificationPredictions) ? doc.verificationPredictions : []);
-  const selectedKeys = new Set(selected.map(raceKey));
-  const rows = [...selected, ...verification].filter(isProspective).map(record => ({ record, result: embeddedResult(record) || results.get(raceKey(record)) || null }));
+  const rows = [...verification.map(record => ({ record, sourcePriority: 0 })), ...selected.map(record => ({ record, sourcePriority: 1 }))].filter(row => isProspective(row.record)).map(row => ({ ...row, result: embeddedResult(row.record) || results.get(raceKey(row.record)) || null }));
   const dedup = new Map();
-  for (const row of rows) { const key = raceKey(row.record); if (!dedup.has(key) || selectedKeys.has(key)) dedup.set(key, row); }
+  for (const row of rows) { const key = raceKey(row.record); if (!dedup.has(key) || row.sourcePriority > dedup.get(key).sourcePriority) dedup.set(key, row); }
   const cohort = [...dedup.values()];
   const targetRows = cohort.filter(row => scenarioLabel(row.record) === TARGET_LABEL);
   const a = settle(cohort, "A");
