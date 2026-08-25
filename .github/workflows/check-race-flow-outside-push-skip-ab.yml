@@ -4,12 +4,14 @@ on:
     paths:
       - "scripts/build-race-flow-outside-push-skip-ab-report.js"
       - "scripts/test-race-flow-outside-push-skip-ab-report.js"
+      - "scripts/test-race-flow-ab-workflow-concurrency.js"
       - ".github/workflows/check-race-flow-outside-push-skip-ab.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-race-flow-outside-push-skip-ab-report.js"
       - "scripts/test-race-flow-outside-push-skip-ab-report.js"
+      - "scripts/test-race-flow-ab-workflow-concurrency.js"
       - ".github/workflows/check-race-flow-outside-push-skip-ab.yml"
   workflow_run:
     workflows:
@@ -20,7 +22,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || 'chappy-main-data-writers' }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -38,6 +40,7 @@ jobs:
         run: |
           node --check scripts/build-race-flow-outside-push-skip-ab-report.js
           node scripts/test-race-flow-outside-push-skip-ab-report.js
+          node scripts/test-race-flow-ab-workflow-concurrency.js
       - name: Restore canonical sources and build report
         if: github.event_name != 'pull_request'
         run: |
