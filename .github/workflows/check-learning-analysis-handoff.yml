@@ -23,6 +23,11 @@ on:
       - "scripts/test-theory-ab-phase10-approval.js"
       - "scripts/test-frame-rise-fall-shadow-off.js"
       - "scripts/build-learning-analysis-pipeline.js"
+      - "scripts/build-phase3-learning-handoff.js"
+      - "scripts/test-phase3-learning-handoff.js"
+      - "scripts/test-phase3-refresh-contract.js"
+      - "config/phase3-candidate-policy-review.json"
+      - "data/stats/phase3-learning-handoff.json"
       - "data/stats/theory-candidate-branch-analysis-phase9.json"
       - ".github/workflows/check-learning-analysis-handoff.yml"
       - ".github/workflows/build-learning-analysis-pipeline.yml"
@@ -54,11 +59,14 @@ jobs:
           node --check scripts/build-theory-improvement-proposal-phase9.js
           node --check scripts/build-theory-candidate-branch-analysis-phase9.js
           node --check scripts/build-theory-ab-phase10.js
+          node --check scripts/build-phase3-learning-handoff.js
           node scripts/test-theory-profit-review-phase8.js
           node scripts/test-theory-improvement-proposal-phase9.js
           node scripts/test-theory-candidate-branch-analysis-phase9.js
           node scripts/test-frame-rise-fall-shadow-off.js
           node scripts/test-theory-ab-phase10.js
+          node scripts/test-phase3-learning-handoff.js
+          node scripts/test-phase3-refresh-contract.js
           node scripts/build-theory-profit-review-phase8.js
           node scripts/build-theory-improvement-proposal-phase9.js
           node scripts/build-theory-candidate-branch-analysis-phase9.js
