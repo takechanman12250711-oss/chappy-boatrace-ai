@@ -3419,6 +3419,38 @@
     }
   }
 
+  function requestOfficialResultWithXhr(url) {
+    return new Promise((resolve, reject) => {
+      const xhr = new window.XMLHttpRequest();
+      let settled = false;
+      const finish = callback => value => {
+        if (settled) return;
+        settled = true;
+        callback(value);
+      };
+      const fail = finish(reject);
+
+      xhr.open("GET", url, true);
+      xhr.timeout = OFFICIAL_RESULT_TIMEOUT_MS;
+      xhr.onload = finish(() => {
+        try {
+          resolve({
+            response: {
+              ok: xhr.status >= 200 && xhr.status < 300,
+              status: xhr.status
+            },
+            result: JSON.parse(xhr.responseText || "null")
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+      xhr.onerror = () => fail(new Error("公式結果APIへ接続できませんでした"));
+      xhr.ontimeout = () => fail(new Error("公式結果APIの応答が12秒を超えました"));
+      xhr.send();
+    });
+  }
+
   function fetchOfficialResultPayload(url) {
     let timer = 0;
     const timeout = new Promise((_, reject) => {
@@ -3433,13 +3465,16 @@
       }, OFFICIAL_RESULT_TIMEOUT_MS);
     });
 
-    const request = (async () => {
-      const response = await window.fetch(url, {
-        chappySkipResultTimeout: true
-      });
-      const result = await response.json();
-      return { response, result };
-    })();
+    const request =
+      typeof window.XMLHttpRequest === "function"
+        ? requestOfficialResultWithXhr(url)
+        : (async () => {
+            const response = await window.fetch(url, {
+              chappySkipResultTimeout: true
+            });
+            const result = await response.json();
+            return { response, result };
+          })();
 
     return Promise.race([request, timeout]).finally(() => {
       if (timer) window.clearTimeout(timer);

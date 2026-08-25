@@ -158,6 +158,11 @@ async function main() {
   );
   assert.match(
     appSource,
+    /requestOfficialResultWithXhr\(url\)[\s\S]*xhr\.timeout = OFFICIAL_RESULT_TIMEOUT_MS/,
+    "WebKit review results must use an independent XHR terminal path"
+  );
+  assert.match(
+    appSource,
     /await fetchOfficialResultPayload\(url\)/,
     "review result fetch must use the local terminal timeout"
   );
