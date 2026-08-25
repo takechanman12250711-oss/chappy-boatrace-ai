@@ -429,6 +429,15 @@ assert.ok(
     safetyGuard.includes("phase3.historicalEvidence?.proposalCount!==improvement.proposalCount"),
   "固定順生成後にPhase3引き渡しと最新改善提案の接続を検証する"
 );
+const learningHandoffWorkflow = readWorkflow(
+  "check-learning-analysis-handoff.yml"
+);
+assert.ok(
+  learningHandoffWorkflow.includes(
+    "node scripts/restore-daily-prediction-source.js --all"
+  ),
+  "学習引き渡し検査は圧縮正本を復元してから公式母集団を再生成する"
+);
 const guardedVersions = [
   ...safetyGuard.matchAll(/perf\.version\s*!==\s*(['"])([^'"]+)\1/g)
 ].map(match => match[2]);
