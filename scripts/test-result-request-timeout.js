@@ -102,7 +102,11 @@ async function main() {
     }
   );
   const elapsed = Date.now() - startedAt;
-  assert.equal(aborted, true);
+  assert.equal(
+    aborted,
+    false,
+    "WebKitの終端保証をabort完了へ依存させない"
+  );
   assert.ok(elapsed >= 15, `timeout was too early: ${elapsed}ms`);
   assert.ok(elapsed < 500, `timeout did not terminate promptly: ${elapsed}ms`);
 
@@ -144,12 +148,12 @@ async function main() {
   );
   assert.match(
     appSource,
-    /Promise\.race\(\[\s*window\.fetch\(url\),\s*timeout\s*\]\)/,
-    "official result requests must not depend only on fetch abort behavior"
+    /const result = await response\.json\(\);[\s\S]*Promise\.race\(\[request, timeout\]\)/,
+    "official result body parsing must share the terminal timeout"
   );
   assert.match(
     appSource,
-    /await fetchOfficialResultResponse\(url\)/,
+    /await fetchOfficialResultPayload\(url\)/,
     "review result fetch must use the local terminal timeout"
   );
   assert.doesNotMatch(
@@ -163,7 +167,7 @@ async function main() {
     "utf8"
   );
   const guardIndex = indexHtml.indexOf(
-    'src="js/result-request-timeout.js?v=20260824-result-timeout1&app=20260825-mobile-startup-terminal1"'
+    'src="js/result-request-timeout.js?v=20260825-mobile-startup-terminal1&app=20260825-mobile-startup-terminal1"'
   );
   const appIndex = indexHtml.indexOf(
     'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260825-mobile-startup-terminal1"'

@@ -3415,7 +3415,7 @@
     }
   }
 
-  function fetchOfficialResultResponse(url) {
+  function fetchOfficialResultPayload(url) {
     let timer = 0;
     const timeout = new Promise((_, reject) => {
       timer = window.setTimeout(() => {
@@ -3429,10 +3429,13 @@
       }, OFFICIAL_RESULT_TIMEOUT_MS);
     });
 
-    return Promise.race([
-      window.fetch(url),
-      timeout
-    ]).finally(() => {
+    const request = (async () => {
+      const response = await window.fetch(url);
+      const result = await response.json();
+      return { response, result };
+    })();
+
+    return Promise.race([request, timeout]).finally(() => {
       if (timer) window.clearTimeout(timer);
     });
   }
@@ -3452,11 +3455,10 @@
         params.rno
       )}`;
 
-    const response =
-      await fetchOfficialResultResponse(url);
-
-    let result =
-      await response.json();
+    const payload =
+      await fetchOfficialResultPayload(url);
+    const response = payload.response;
+    let result = payload.result;
 
     if (
       !response.ok ||
