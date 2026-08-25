@@ -92,7 +92,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260825-mobile-startup-terminal2 \
+              EXPECTED_RUNTIME=20260825-mobile-startup-terminal3 \
               DIAG_OUTPUT=artifacts-stage/production-create \
             node scripts/diagnose-prediction-stage-webkit.mjs create \
             > artifacts-stage/production-create/process.log 2>&1
