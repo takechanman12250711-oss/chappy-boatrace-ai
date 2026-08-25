@@ -103,7 +103,10 @@ try {
   }));
   mark("runtime-state", runtimeState);
 
-  if (runtimeState.appRuntime !== "20260815-odds-immediate1") {
+  if (
+    runtimeState.appRuntime !== "20260825-mobile-startup-terminal1" ||
+    runtimeState.predictionRuntime !== "20260825-mobile-startup-terminal1"
+  ) {
     throw new Error(
       `app runtime mismatch: ${JSON.stringify(runtimeState)}`
     );
