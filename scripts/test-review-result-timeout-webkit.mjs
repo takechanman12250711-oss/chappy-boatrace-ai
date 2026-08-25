@@ -121,48 +121,45 @@ try {
     );
   }
 
-  // 開催一覧APIの応答時間をテスト条件に含めない。
-  // 本番と同じ hidden select を直接設定し、予想ボタン以降の実処理を検証する。
-  const selected = await page.evaluate(
-    ({ date, place, raceNo }) => {
-      const modeSelect = document.getElementById("raceModeSelect");
-      const dateInput = document.getElementById("dateInput");
-      const placeSelect = document.getElementById("placeSelect");
-      const raceSelect = document.getElementById("raceSelect");
+  await page.selectOption("#raceModeSelect", "review");
+  await page.fill("#dateInput", REVIEW_DATE);
+  await page.dispatchEvent("#dateInput", "change");
 
-      if (!modeSelect || !dateInput || !placeSelect || !raceSelect) {
-        throw new Error("race selection controls are missing");
-      }
+  const venueSelector =
+    `#officialVenueGrid button[data-place="${REVIEW_PLACE}"]:not([disabled])`;
+  await page.waitForSelector(venueSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(venueSelector);
 
-      modeSelect.value = "review";
-      dateInput.value = date;
-      placeSelect.value = place;
-      raceSelect.value = `${raceNo}R`;
+  const raceSelector =
+    `#officialRaceGrid button[data-race-no="${REVIEW_RACE_NO}"]:not([disabled])`;
+  await page.waitForSelector(raceSelector, {
+    state: "visible",
+    timeout: 60_000
+  });
+  await page.click(raceSelector);
 
-      window.__chappyRenderedForResultTimeoutTest = false;
-      window.addEventListener(
-        "chappy:prediction-rendered",
-        () => {
-          window.__chappyRenderedForResultTimeoutTest = true;
-        },
-        { once: true }
-      );
+  const selected = await page.evaluate(() => {
+    window.__chappyRenderedForResultTimeoutTest = false;
+    window.addEventListener(
+      "chappy:prediction-rendered",
+      () => {
+        window.__chappyRenderedForResultTimeoutTest = true;
+      },
+      { once: true }
+    );
 
-      return {
-        mode: modeSelect.value,
-        date: dateInput.value,
-        place: placeSelect.value,
-        race: raceSelect.value,
-        buttonDisabled:
-          document.getElementById("fetchRaceBtn")?.disabled ?? null
-      };
-    },
-    {
-      date: REVIEW_DATE,
-      place: REVIEW_PLACE,
-      raceNo: REVIEW_RACE_NO
-    }
-  );
+    return {
+      mode: document.getElementById("raceModeSelect")?.value || "",
+      date: document.getElementById("dateInput")?.value || "",
+      place: document.getElementById("placeSelect")?.value || "",
+      race: document.getElementById("raceSelect")?.value || "",
+      buttonDisabled:
+        document.getElementById("fetchRaceBtn")?.disabled ?? null
+    };
+  });
   mark("review-race-selected", selected);
 
   if (
