@@ -10,6 +10,7 @@ on:
       - "js/theory-evidence-coverage-phase7.js"
       - "js/theory-evidence-growth-monitor.js"
       - "scripts/analysis-input-contract.js"
+      - "scripts/restore-daily-prediction-source.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-theory-evidence-coverage-phase7.js"
       - "scripts/build-theory-evidence-growth-monitor.js"
@@ -39,11 +40,13 @@ jobs:
         run: |
           node --check js/theory-performance-report.js
           node --check scripts/analysis-input-contract.js
+          node --check scripts/restore-daily-prediction-source.js
           node --check scripts/build-theory-performance-report.js
           node scripts/test-theory-performance-report.js
           node scripts/test-theory-zero-evidence-diagnostics.js
           node scripts/test-theory-evidence-coverage-phase7.js
           node scripts/test-theory-evidence-growth-monitor.js
+          node scripts/restore-daily-prediction-source.js --all
           node scripts/build-theory-performance-report.js
           node scripts/build-theory-evidence-coverage-phase7.js
           node scripts/build-theory-evidence-growth-monitor.js
