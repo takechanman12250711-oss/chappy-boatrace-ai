@@ -1,6 +1,6 @@
 {
   "schemaVersion": 6,
-  "generatedAt": "2026-08-26T03:17:41.348Z",
+  "generatedAt": "2026-08-26T03:18:41.991Z",
   "phase": "phase3",
   "implementationComplete": true,
   "productionChanged": false,
@@ -167,12 +167,12 @@
     {
       "id": "outside-push",
       "sourceFile": "race-flow-outside-push-skip-ab-report.json",
-      "affectedSettledCount": 32,
+      "affectedSettledCount": 44,
       "minimumAffectedSettledCount": 30,
-      "aRecoveryRate": 106.6,
-      "bRecoveryRate": 119.4,
-      "aProfit": 10630,
-      "bProfit": 25350,
+      "aRecoveryRate": 93,
+      "bRecoveryRate": 102.7,
+      "aProfit": -18220,
+      "bProfit": 5880,
       "status": "rejected-policy-incompatible",
       "approved": false,
       "productionApplied": false,
@@ -201,8 +201,22 @@
       ]
     }
   ],
-  "rejectedCount": 2,
+  "rejectedCount": 3,
   "rejected": [
+    {
+      "id": "frame-shadow-off",
+      "sourceFile": "frame-rise-fall-shadow-result-report.json",
+      "affectedSettledCount": 100,
+      "minimumAffectedSettledCount": 100,
+      "aRecoveryRate": 42.4,
+      "bRecoveryRate": null,
+      "aProfit": -50650,
+      "bProfit": 0,
+      "status": "rejected-by-ab-evidence",
+      "approved": false,
+      "productionApplied": false,
+      "reason": "固定件数評価で不採用"
+    },
     {
       "id": "frame-negative-clip",
       "sourceFile": "frame-rise-fall-negative-clip-result-report.json",
