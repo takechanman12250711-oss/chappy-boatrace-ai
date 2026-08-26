@@ -4,6 +4,9 @@ on:
     paths:
       - "scripts/build-exhibition-foot-branch-report.js"
       - "scripts/test-exhibition-foot-branch-report.js"
+      - "scripts/test-exhibition-foot-writer-contract.js"
+      - ".github/workflows/collect-results.yml"
+      - ".github/workflows/refresh-exhibition-foot-branch-report.yml"
       - ".github/workflows/check-exhibition-foot-branch.yml"
   push:
     branches: [main]
@@ -12,9 +15,9 @@ on:
       - ".github/workflows/check-exhibition-foot-branch.yml"
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -31,19 +34,9 @@ jobs:
         run: |
           node --check scripts/build-exhibition-foot-branch-report.js
           node scripts/test-exhibition-foot-branch-report.js
-      - name: Restore canonical sources and build report
+          node scripts/test-exhibition-foot-writer-contract.js
+      - name: Build read-only real diagnostics
         if: github.event_name != 'pull_request'
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-exhibition-foot-branch-report.js
-      - name: Save exhibition foot branch report
-        if: github.event_name != 'pull_request'
-        run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
-          git add data/stats/exhibition-foot-branch-report.json
-          if git diff --cached --quiet; then exit 0; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update exhibition foot branch report"
-          git pull --rebase origin main
-          git push origin main

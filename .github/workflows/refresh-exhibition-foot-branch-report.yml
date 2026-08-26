@@ -7,9 +7,9 @@ on:
     types: [completed]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 jobs:
   refresh:
@@ -27,20 +27,8 @@ jobs:
         run: |
           node --check scripts/build-exhibition-foot-branch-report.js
           node scripts/test-exhibition-foot-branch-report.js
-      - name: Restore canonical sources and rebuild report
+          node scripts/test-exhibition-foot-writer-contract.js
+      - name: Build read-only real diagnostics
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-exhibition-foot-branch-report.js
-      - name: Save refreshed report
-        run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
-          git add data/stats/exhibition-foot-branch-report.json
-          if git diff --cached --quiet; then
-            echo "exhibition foot branch report unchanged"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Refresh exhibition foot branch report"
-          git pull --rebase origin main
-          git push origin main
