@@ -18,7 +18,7 @@ const workflow = fs.readFileSync(
 const prepareCommand =
   "node scripts/prepare-daily-prediction-git-save.js";
 const restoreCommand =
-  "node scripts/restore-daily-prediction-source.js";
+  "node scripts/restore-daily-prediction-source.js --all";
 const performanceCommand =
   "node scripts/test-load-performance.js";
 const saveIndex = workflow.indexOf(
@@ -35,7 +35,7 @@ assert.ok(
 );
 assert.ok(
   postSaveRestoreIndex > saveIndex,
-  "圧縮保存後の回帰テスト前に最新原本を再復元する"
+  "圧縮保存後の回帰テスト前に全期間の正本を再復元する"
 );
 assert.ok(
   finalPerformanceIndex >
@@ -50,6 +50,22 @@ assert.ok(
   noncriticalStart >= 0 &&
   postSaveRestoreIndex > noncriticalStart,
   "再復元は保存後の回帰チェック内で実行する"
+);
+
+const liveCollectionStart = workflow.indexOf(
+  "- name: Compare and predict live races"
+);
+const firstFullRestoreIndex = workflow.indexOf(
+  restoreCommand
+);
+const firstIndexBuild = workflow.indexOf(
+  "node scripts/build-prediction-index-shards.js"
+);
+assert.ok(
+  liveCollectionStart >= 0 &&
+    firstFullRestoreIndex > liveCollectionStart &&
+    firstIndexBuild > firstFullRestoreIndex,
+  "全期間indexは全圧縮正本の復元後に再構築する"
 );
 assert.ok(
   workflow.slice(
