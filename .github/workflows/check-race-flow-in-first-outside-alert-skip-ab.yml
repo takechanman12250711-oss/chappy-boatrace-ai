@@ -5,6 +5,7 @@ on:
       - "scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js"
       - "scripts/test-race-flow-in-first-outside-alert-skip-ab-report.js"
       - "scripts/test-race-flow-ab-workflow-concurrency.js"
+      - ".github/workflows/collect-results.yml"
       - ".github/workflows/check-race-flow-in-first-outside-alert-skip-ab.yml"
   push:
     branches: [main]
@@ -12,6 +13,7 @@ on:
       - "scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js"
       - "scripts/test-race-flow-in-first-outside-alert-skip-ab-report.js"
       - "scripts/test-race-flow-ab-workflow-concurrency.js"
+      - ".github/workflows/collect-results.yml"
       - ".github/workflows/check-race-flow-in-first-outside-alert-skip-ab.yml"
   workflow_run:
     workflows:

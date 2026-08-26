@@ -31,6 +31,12 @@ on:
       - "js/frame-rise-fall-shadow-result-report.js"
       - "scripts/build-frame-rise-fall-shadow-result-report.js"
       - "scripts/test-frame-rise-fall-shadow-result-report.js"
+      - "scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js"
+      - "scripts/test-race-flow-in-first-outside-alert-skip-ab-report.js"
+      - "scripts/build-unified-improvement-decision-gate.js"
+      - "scripts/test-unified-improvement-decision-gate.js"
+      - "scripts/build-phase3-learning-handoff.js"
+      - "scripts/test-phase3-learning-handoff.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -95,6 +101,12 @@ jobs:
           node --check js/frame-rise-fall-shadow-result-report.js
           node --check scripts/build-frame-rise-fall-shadow-result-report.js
           node scripts/test-frame-rise-fall-shadow-result-report.js
+          node --check scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js
+          node scripts/test-race-flow-in-first-outside-alert-skip-ab-report.js
+          node --check scripts/build-unified-improvement-decision-gate.js
+          node scripts/test-unified-improvement-decision-gate.js
+          node --check scripts/build-phase3-learning-handoff.js
+          node scripts/test-phase3-learning-handoff.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -133,6 +145,9 @@ jobs:
           node scripts/restore-daily-prediction-source.js --all
           node scripts/repair-recent-results.js
           node scripts/build-frame-rise-fall-shadow-result-report.js
+          node scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js
+          node scripts/build-unified-improvement-decision-gate.js
+          node scripts/build-phase3-learning-handoff.js
           node scripts/build-result-review.js
           node scripts/build-theory-evaluations.js
           node scripts/build-miss-cause-analysis.js
