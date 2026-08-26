@@ -14,6 +14,7 @@ assert.ok(
     < refresh.indexOf("build-phase3-learning-handoff.js"),
 );
 assert.ok(refresh.includes("phase3-learning-handoff.json"));
+assert.ok(refresh.includes("data/stats/frame-rise-fall-shadow-result-report.json"));
 
 const check = fs.readFileSync(
   ".github/workflows/check-phase3-learning-handoff.yml",

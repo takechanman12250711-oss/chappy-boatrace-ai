@@ -70,7 +70,7 @@ let report = handoff.build({
   ],
 }, historical, policyReviewReport);
 assert.equal(report.implementationComplete, true);
-assert.equal(report.schemaVersion, 5);
+assert.equal(report.schemaVersion, 6);
 assert.equal(report.historicalEvidence.settledRaceCount, 1450);
 assert.equal(report.historicalEvidence.proposalCount, 1);
 assert.equal(report.historicalEvidence.proposals[0].sampleCount, 860);
@@ -90,6 +90,7 @@ assert.deepEqual(report.policyRejected[0].failedRequirements, [
   "preserveEvaluatedScenarioCandidatesForEveryBoat",
 ]);
 assert.equal(report.policyRejected[0].reason, "候補群を保持しない");
+assert.equal(report.rejectedCount, 0);
 assert.equal(report.automaticApplication, false);
 assert.equal(report.usableForPrediction, false);
 assert.equal(report.productionChanged, false);
@@ -103,10 +104,25 @@ assert.equal(report.nextStep, "policy-compatibility-review");
 
 report = handoff.build({
   allSourcesConnected: true,
-  items: [{ id: "c", status: "available", decision: "continue" }],
+  items: [
+    { id: "c", status: "available", decision: "continue" },
+    {
+      ...candidate,
+      id: "frame-shadow-off",
+      file: "frame-rise-fall-shadow-result-report.json",
+      decision: "reject",
+      reason: "固定件数評価で不採用",
+    },
+  ],
 }, historical);
 assert.equal(report.candidateCount, 0);
 assert.equal(report.policyReviewCount, 0);
+assert.equal(report.rejectedCount, 1);
+assert.equal(report.rejected[0].id, "frame-shadow-off");
+assert.equal(report.rejected[0].status, "rejected-by-ab-evidence");
+assert.equal(report.rejected[0].reason, "固定件数評価で不採用");
+assert.equal(report.rejected[0].approved, false);
+assert.equal(report.rejected[0].productionApplied, false);
 assert.equal(report.nextStep, "continue-validation-from-historical-evidence");
 assert.equal(report.historicalEvidence.proposals[0].usableForPrediction, false);
 assert.equal(report.historicalEvidence.diagnostics[0].usableForPrediction, false);

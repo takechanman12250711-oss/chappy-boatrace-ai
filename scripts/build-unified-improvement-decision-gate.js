@@ -3,6 +3,7 @@ const fs=require("node:fs"),path=require("node:path");
 const root=path.resolve(__dirname,"..");
 const stats=path.join(root,"data","stats"),OUT=path.join(stats,"unified-improvement-decision-gate.json");
 const SOURCES=[
+  ["frame-shadow-off","frame-rise-fall-shadow-result-report.json"],
   ["frame-negative-clip","frame-rise-fall-negative-clip-result-report.json"],
   ["four-attack-warning","race-flow-4kado-alert-skip-ab-report.json"],
   ["three-attack-warning","race-flow-3course-alert-skip-ab-report.json"],

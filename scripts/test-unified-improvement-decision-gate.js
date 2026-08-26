@@ -13,6 +13,12 @@ assert.equal(x.affectedSettledCount,96);assert.equal(x.minimumAffectedSettledCou
 x=g.normalize("frame-shadow-off","x",{status:"candidate-fails-fixed-100",protocol:{fixedComparableRaces:100},observation:{settledComparableCount:100},overall:{aRecoveryRate:42.4,bRecoveryRate:null,aProfit:-50650,bProfit:0},productionAUnchanged:true});
 assert.equal(x.decision,"reject");assert.equal(x.reason,"固定件数評価で不採用");
 x=g.normalize("x","missing.json",null);assert.equal(x.status,"missing");assert.equal(x.decision,"blocked");
-assert.equal(g.SOURCES.length,7);assert.equal(new Set(g.SOURCES.map(v=>v[1])).size,7);
-const report=g.build();assert.equal(report.sourceCount,7);assert.equal(report.availableSourceCount,7);assert.equal(report.allSourcesConnected,true);assert.ok(report.items.every(v=>v.status==="available"));
-console.log("unified improvement decision gate test: 7/7 sources connected; null metrics preserved");
+assert.equal(g.SOURCES.length,8);assert.equal(new Set(g.SOURCES.map(v=>v[1])).size,8);
+const report=g.build();assert.equal(report.sourceCount,8);assert.equal(report.availableSourceCount,8);assert.equal(report.allSourcesConnected,true);assert.ok(report.items.every(v=>v.status==="available"));
+const frameShadow=report.items.find(v=>v.id==="frame-shadow-off");
+assert.equal(frameShadow.file,"frame-rise-fall-shadow-result-report.json");
+assert.equal(frameShadow.affectedSettledCount,100);
+assert.equal(frameShadow.decision,"reject");
+assert.equal(frameShadow.reason,"固定件数評価で不採用");
+assert.equal(frameShadow.automaticApplication,false);
+console.log("unified improvement decision gate test: 8/8 sources connected; terminal Phase10 rejection preserved");
