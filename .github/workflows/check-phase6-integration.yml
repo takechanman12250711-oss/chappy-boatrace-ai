@@ -33,6 +33,7 @@ on:
       - "scripts/test-final-odds-schedule.js"
       - "scripts/test-scheduled-analysis-workflows.js"
       - "scripts/analysis-input-contract.js"
+      - "scripts/restore-daily-prediction-source.js"
       - "scripts/analyze-reference-tag-effectiveness.js"
       - "scripts/test-reference-tag-effectiveness.js"
       - "scripts/test-reference-tag-report.js"
@@ -71,6 +72,7 @@ jobs:
           node --check scripts/test-final-odds-schedule.js
           node --check scripts/test-scheduled-analysis-workflows.js
           node --check scripts/analysis-input-contract.js
+          node --check scripts/restore-daily-prediction-source.js
           node --check scripts/analyze-reference-tag-effectiveness.js
           node --check scripts/test-reference-tag-effectiveness.js
           node --check scripts/test-reference-tag-report.js
@@ -88,6 +90,7 @@ jobs:
         run: node scripts/test-final-odds-schedule.js
       - name: Run scheduled analysis workflow regressions
         run: |
+          node scripts/restore-daily-prediction-source.js --all
           node scripts/test-scheduled-analysis-workflows.js
           node scripts/test-reference-tag-effectiveness.js
           node scripts/test-reference-tag-report.js
