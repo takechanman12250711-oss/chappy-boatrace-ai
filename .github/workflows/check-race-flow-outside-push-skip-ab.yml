@@ -5,19 +5,8 @@ on:
       - "scripts/build-race-flow-outside-push-skip-ab-report.js"
       - "scripts/test-race-flow-outside-push-skip-ab-report.js"
       - "scripts/test-race-flow-ab-workflow-concurrency.js"
+      - ".github/workflows/collect-results.yml"
       - ".github/workflows/check-race-flow-outside-push-skip-ab.yml"
-  push:
-    branches: [main]
-    paths:
-      - "scripts/build-race-flow-outside-push-skip-ab-report.js"
-      - "scripts/test-race-flow-outside-push-skip-ab-report.js"
-      - "scripts/test-race-flow-ab-workflow-concurrency.js"
-      - ".github/workflows/check-race-flow-outside-push-skip-ab.yml"
-  workflow_run:
-    workflows:
-      - "Collect automatic race predictions"
-      - "Collect official race results"
-    types: [completed]
   workflow_dispatch:
 permissions:
   contents: write
