@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-26T09:48:39.175Z",
+  "phase": "phase4",
+  "implementationComplete": true,
+  "historicalCycleProven": true,
+  "phase4Complete": true,
+  "productionChanged": false,
+  "stages": {
+    "autoSelection": true,
+    "prediction": true,
+    "practicalTickets": true,
+    "noteDraft": true,
+    "scheduledPrediction": true,
+    "officialResults": true,
+    "hitAndReview": true,
+    "learning": true,
+    "phase3Handoff": true
+  },
+  "missing": [],
+  "proof": {
+    "date": "20260819",
+    "selectedCount": 8,
+    "completedCount": 8,
+    "rows": [
+      {
+        "raceKey": "20260819-10-4",
+        "notePath": "data/notes/20260819-10-04R.md",
+        "notePublishable": true,
+        "settled": true,
+        "resultTicket": "4-5-2",
+        "practicalHit": false,
+        "review": true
+      },
+      {
+        "raceKey": "20260819-10-9",
+        "notePath": "",
+        "notePublishable": false,
+        "settled": true,
+        "resultTicket": "1-2-4",
+        "practicalHit": false,
+        "review": true
+      },
+      {
+        "raceKey": "20260819-05-4",
+        "notePath": "data/notes/20260819-05-04R.md",
+        "notePublishable": true,
+        "settled": true,
+        "resultTicket": "2-1-5",
+        "practicalHit": false,
+        "review": true
+      },
+      {
+        "raceKey": "20260819-10-11",
+        "notePath": "data/notes/20260819-10-11R.md",
+        "notePublishable": true,
+        "settled": true,
+        "resultTicket": "1-3-4",
+        "practicalHit": true,
+        "review": true
+      },
+      {
+        "raceKey": "20260819-10-12",
+        "notePath": "data/notes/20260819-10-12R.md",
+        "notePublishable": true,
+        "settled": true,
+        "resultTicket": "1-2-3",
+        "practicalHit": true,
+        "review": true
+      },
+      {
+        "raceKey": "20260819-13-10",
+        "notePath": "data/notes/20260819-13-10R.md",
+        "notePublishable": true,
+        "settled": true,
+        "resultTicket": "1-5-3",
+        "practicalHit": false,
+        "review": true
+      },
+      {
+        "raceKey": "20260819-11-10",
+        "notePath": "data/notes/20260819-11-10R.md",
+        "notePublishable": true,
+        "settled": true,
+        "resultTicket": "3-1-4",
+        "practicalHit": false,
+        "review": true
+      },
+      {
+        "raceKey": "20260819-11-12",
+        "notePath": "data/notes/20260819-11-12R.md",
+        "notePublishable": true,
+        "settled": true,
+        "resultTicket": "4-1-2",
+        "practicalHit": true,
+        "review": true
+      }
+    ],
+    "completeCycle": true
+  },
+  "nextStep": "phase4-complete",
+  "policy": "既存の自動選定→予想→実戦厳選→note→公式結果→成績/分析→Phase3学習戻しを1日の実戦サイクルとして扱う。配線完成かつ実データ完走証拠がある時だけPhase4完了とする。予想ロジック・買い目・UIは変更しない。"
+}
