@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 5,
-  "generatedAt": "2026-08-25T21:30:56.329Z",
+  "schemaVersion": 6,
+  "generatedAt": "2026-08-26T03:17:41.348Z",
   "phase": "phase3",
   "implementationComplete": true,
   "productionChanged": false,
@@ -199,6 +199,37 @@
       "failedRequirements": [
         "preserveRealisticFourthBoatHold"
       ]
+    }
+  ],
+  "rejectedCount": 2,
+  "rejected": [
+    {
+      "id": "frame-negative-clip",
+      "sourceFile": "frame-rise-fall-negative-clip-result-report.json",
+      "affectedSettledCount": 96,
+      "minimumAffectedSettledCount": 100,
+      "aRecoveryRate": 103.3,
+      "bRecoveryRate": null,
+      "aProfit": 2780,
+      "bProfit": 0,
+      "status": "rejected-by-ab-evidence",
+      "approved": false,
+      "productionApplied": false,
+      "reason": "remaining-races-cannot-reach-minimum-net-b-only-hits"
+    },
+    {
+      "id": "three-attack-warning",
+      "sourceFile": "race-flow-3course-alert-skip-ab-report.json",
+      "affectedSettledCount": 54,
+      "minimumAffectedSettledCount": 30,
+      "aRecoveryRate": 106.6,
+      "bRecoveryRate": 94.7,
+      "aProfit": 10630,
+      "bProfit": -5880,
+      "status": "rejected-by-ab-evidence",
+      "approved": false,
+      "productionApplied": false,
+      "reason": "B回収率 94.7% <= A 106.6%"
     }
   ],
   "blockedCount": 0,
