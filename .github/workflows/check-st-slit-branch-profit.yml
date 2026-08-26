@@ -4,6 +4,8 @@ on:
     paths:
       - "scripts/build-st-slit-branch-profit-report.js"
       - "scripts/test-st-slit-branch-profit-report.js"
+      - "scripts/test-st-slit-writer-contract.js"
+      - ".github/workflows/collect-results.yml"
       - ".github/workflows/check-st-slit-branch-profit.yml"
   push:
     branches: [main]
@@ -19,9 +21,9 @@ on:
     types: [completed]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -39,22 +41,9 @@ jobs:
         run: |
           node --check scripts/build-st-slit-branch-profit-report.js
           node scripts/test-st-slit-branch-profit-report.js
-      - name: Restore canonical prediction sources and build report
+          node scripts/test-st-slit-writer-contract.js
+      - name: Build read-only real diagnostics
         if: github.event_name != 'pull_request'
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-st-slit-branch-profit-report.js
-      - name: Save ST slit branch profit report
-        if: github.event_name != 'pull_request'
-        run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
-          git add data/stats/st-slit-branch-profit-report.json
-          if git diff --cached --quiet; then
-            echo "ST/slit branch report unchanged"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update ST slit branch profit report"
-          git pull --rebase origin main
-          git push origin main
