@@ -188,7 +188,8 @@ function preparePredictionGitSave({
       "add",
       "--",
       "data/predictions",
-      ":(exclude)data/predictions/index.json"
+      ":(exclude)data/predictions/index.json",
+      ":(exclude)data/predictions/.*"
     ]
   );
 

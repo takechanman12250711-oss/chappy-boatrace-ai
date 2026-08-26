@@ -16,7 +16,7 @@ const workflow = fs.readFileSync(
   "utf8"
 );
 const prepareCommand =
-  "node scripts/prepare-daily-prediction-git-save.js";
+  "node scripts/prepare-daily-prediction-git-save.js --all";
 const restoreCommand =
   "node scripts/restore-daily-prediction-source.js --all";
 const performanceCommand =
@@ -31,7 +31,7 @@ const finalPerformanceIndex =
 
 assert.ok(
   saveIndex >= 0,
-  "日次予想原本のGit保存準備が必要"
+  "復元した全日次予想原本のGit保存準備が必要"
 );
 assert.ok(
   postSaveRestoreIndex > saveIndex,

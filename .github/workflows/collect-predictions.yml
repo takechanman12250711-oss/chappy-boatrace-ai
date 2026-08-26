@@ -210,7 +210,7 @@ jobs:
         env:
           PREDICT_DATE: ${{ inputs.date }}
         run: |
-          node scripts/prepare-daily-prediction-git-save.js
+          node scripts/prepare-daily-prediction-git-save.js --all
 
           if [ -d data/notes ]; then
             git add data/notes
