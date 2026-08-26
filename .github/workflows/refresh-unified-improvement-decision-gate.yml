@@ -1,10 +1,16 @@
 name: Refresh unified improvement decision gate
 on:
-  push:
-    branches:
-      - main
+  pull_request:
     paths:
       - ".github/workflows/refresh-unified-improvement-decision-gate.yml"
+      - ".github/workflows/collect-results.yml"
+      - "scripts/build-unified-improvement-decision-gate.js"
+      - "scripts/test-unified-improvement-decision-gate.js"
+      - "scripts/build-phase3-learning-handoff.js"
+      - "scripts/test-phase3-learning-handoff.js"
+      - "scripts/test-phase3-refresh-contract.js"
+      - "config/phase3-candidate-policy-review.json"
+      - "data/stats/improvement-proposal-phase3.json"
       - "data/stats/frame-rise-fall-shadow-result-report.json"
       - "data/stats/frame-rise-fall-negative-clip-result-report.json"
       - "data/stats/race-flow-4kado-alert-skip-ab-report.json"
@@ -13,29 +19,29 @@ on:
       - "data/stats/race-flow-outside-push-skip-ab-report.json"
       - "data/stats/race-flow-in-first-outside-alert-skip-ab-report.json"
       - "data/stats/remain-pickup-hold3-shadow-ab-report.json"
-  workflow_run:
-    workflows:
-      - "Collect automatic race predictions"
-      - "Collect official race results"
-    types: [completed]
+  workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: chappy-main-data-writers
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('refresh-unified-gate-pr-{0}', github.event.pull_request.number) || 'chappy-main-data-writers' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   refresh:
-    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 0 }
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: |
+          node scripts/test-unified-improvement-decision-gate.js
           node scripts/build-unified-improvement-decision-gate.js
+          node scripts/test-phase3-learning-handoff.js
           node scripts/build-phase3-learning-handoff.js
       - run: |
+          if [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then exit 0; fi
           git add data/stats/unified-improvement-decision-gate.json data/stats/phase3-learning-handoff.json
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"

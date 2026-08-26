@@ -1,12 +1,6 @@
 name: Collect frame rise fall negative clip A/B
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "config/frame-rise-fall-negative-clip-trial.json"
-      - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
   pull_request:
     paths:
       - "config/frame-rise-fall-negative-clip-trial.json"
@@ -20,7 +14,6 @@ on:
   workflow_run:
     workflows:
       - "Collect automatic race predictions"
-      - "Collect official race results"
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -38,7 +31,7 @@ concurrency:
 
 jobs:
   verify-and-collect:
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -66,13 +59,18 @@ jobs:
         run: |
           node scripts/restore-daily-prediction-source.js
           node scripts/build-frame-rise-fall-negative-clip-snapshots.js
-          node scripts/build-frame-rise-fall-negative-clip-result-report.js
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            node scripts/build-frame-rise-fall-negative-clip-result-report.js
+          fi
           node scripts/prepare-daily-prediction-git-save.js
 
       - name: Save prospective comparison
         if: github.event_name != 'pull_request'
         run: |
-          git add data/predictions data/stats/frame-rise-fall-negative-clip-result-report.json
+          git add data/predictions
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            git add data/stats/frame-rise-fall-negative-clip-result-report.json
+          fi
           if git diff --cached --quiet; then
             echo "保存するnegative clip比較データはありません"
             exit 0
