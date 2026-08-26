@@ -10,6 +10,9 @@ on:
       - ".github/workflows/build-learning-analysis-pipeline.yml"
       - ".github/workflows/check-unified-improvement-decision-gate.yml"
       - ".github/workflows/check-phase4-daily-cycle-gate.yml"
+      - ".github/workflows/refresh-skill-motor-course-branch-reports.yml"
+      - ".github/workflows/check-skill-branch.yml"
+      - ".github/workflows/check-finish-skill-motor-course-observability.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
@@ -59,6 +62,11 @@ on:
       - "scripts/build-phase4-daily-cycle-gate.js"
       - "scripts/build-phase4-historical-cycle-proof.js"
       - "scripts/test-phase4-daily-cycle-gate.js"
+      - "scripts/build-skill-branch-report.js"
+      - "scripts/test-skill-branch-report.js"
+      - "scripts/build-motor-course-branch-report.js"
+      - "scripts/test-finish-skill-motor-course-observability.js"
+      - "scripts/test-skill-motor-course-writer-contract.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -146,6 +154,11 @@ jobs:
           node --check scripts/build-phase4-daily-cycle-gate.js
           node --check scripts/build-phase4-historical-cycle-proof.js
           node scripts/test-phase4-daily-cycle-gate.js
+          node --check scripts/build-skill-branch-report.js
+          node scripts/test-skill-branch-report.js
+          node --check scripts/build-motor-course-branch-report.js
+          node scripts/test-finish-skill-motor-course-observability.js
+          node scripts/test-skill-motor-course-writer-contract.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -183,6 +196,8 @@ jobs:
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/repair-recent-results.js
+          node scripts/build-skill-branch-report.js
+          node scripts/build-motor-course-branch-report.js
           node scripts/build-frame-rise-fall-shadow-result-report.js
           node scripts/build-frame-rise-fall-negative-clip-result-report.js
           node scripts/build-race-flow-4kado-alert-skip-ab-report.js
