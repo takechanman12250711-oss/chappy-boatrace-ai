@@ -54,13 +54,42 @@ const negativeReport = central.lastIndexOf(
 const unifiedGate = central.lastIndexOf(
   "node scripts/build-unified-improvement-decision-gate.js",
 );
-const improvementProposal = central.lastIndexOf(
-  "node scripts/build-improvement-proposal-report.js",
+const learningPipeline = central.lastIndexOf(
+  "node scripts/build-learning-analysis-pipeline.js",
 );
 const phase3Handoff = central.lastIndexOf(
   "node scripts/build-phase3-learning-handoff.js",
 );
+const phase4Gate = central.lastIndexOf(
+  "node scripts/build-phase4-daily-cycle-gate.js",
+);
 assert.ok(negativeReport < unifiedGate);
 assert.ok(unifiedGate < phase3Handoff);
-assert.ok(improvementProposal < phase3Handoff);
+assert.ok(learningPipeline < phase3Handoff);
+assert.ok(phase3Handoff < phase4Gate);
+assert.ok(
+  fs.readFileSync("scripts/build-learning-analysis-pipeline.js", "utf8")
+    .includes('"build-improvement-proposal-report.js"'),
+);
+
+for (const workflowPath of [
+  ".github/workflows/check-unified-improvement-decision-gate.yml",
+  ".github/workflows/check-phase4-daily-cycle-gate.yml",
+  ".github/workflows/build-learning-analysis-pipeline.yml",
+]) {
+  const workflow = fs.readFileSync(workflowPath, "utf8");
+  assert.ok(
+    !workflow.includes("git push origin main"),
+    `${workflowPath}は自動・手動とも診断専用にする`,
+  );
+  assert.ok(
+    workflow.includes("group: ${{ github.workflow }}"),
+    `${workflowPath}のread-only検証はmain writerを占有しない`,
+  );
+  assert.ok(workflow.includes("contents: read"));
+}
+assert.ok(
+  central.includes("git add data/results data/stats data/analysis/reference-tag-effectiveness.json"),
+  "中央writerが学習パイプラインの分析出力も保存する",
+);
 console.log("phase3 refresh contract: ok");

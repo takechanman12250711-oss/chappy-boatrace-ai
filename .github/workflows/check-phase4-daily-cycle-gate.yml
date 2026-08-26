@@ -16,9 +16,9 @@ on:
     types: [completed]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -37,13 +37,3 @@ jobs:
           node scripts/build-result-review.js
           node scripts/test-phase4-daily-cycle-gate.js
           node scripts/build-phase4-daily-cycle-gate.js
-      - name: Save Phase4 daily cycle gate
-        if: github.event_name != 'pull_request'
-        run: |
-          git add data/stats/phase4-daily-cycle-gate.json
-          if git diff --cached --quiet; then exit 0; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Refresh Phase4 daily cycle gate"
-          git pull --rebase origin main
-          git push origin main

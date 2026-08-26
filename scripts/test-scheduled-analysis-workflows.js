@@ -339,24 +339,19 @@ const learningBuildIndex = learningPipelineWorkflow.indexOf(
 const learningCohortVerifyIndex = learningPipelineWorkflow.indexOf(
   "- name: Verify official analysis cohorts"
 );
-const learningSaveIndex = learningPipelineWorkflow.indexOf(
-  "- name: Save pipeline outputs"
+assert.ok(
+  learningBuildIndex < learningCohortVerifyIndex,
+  "read-only学習検証でも固定順生成後に公式母集団を検証する"
 );
 assert.ok(
-  learningBuildIndex < learningCohortVerifyIndex &&
-    learningCohortVerifyIndex < learningSaveIndex,
-  "参照タグを含む全成果物を生成後・保存前に検証する"
-);
-const learningSaveLines = stepRunLines(
-  learningPipelineWorkflow,
-  "Save pipeline outputs"
+  !learningPipelineWorkflow.includes("git push origin main"),
+  "結果後の学習パイプライン検証はmainへ重複書き込みしない"
 );
 assert.ok(
-  learningSaveLines.some(line =>
-    line.startsWith("git add ") &&
-    line.split(/\s+/).includes("data/analysis/reference-tag-effectiveness.json")
+  readWorkflow("collect-results.yml").includes(
+    "git add data/results data/stats data/analysis/reference-tag-effectiveness.json"
   ),
-  "学習パイプラインで参照タグ成果物を同じcommitへstageする"
+  "中央結果writerが参照タグ成果物を同じcommitへstageする"
 );
 
 const referenceWorkflow = readWorkflow("analyze-reference-tags.yml");

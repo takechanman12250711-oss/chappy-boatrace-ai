@@ -421,12 +421,14 @@ workflowFiles.forEach(({ name, source }) => {
     ),
     `${name}は処理前に圧縮正本を復元する`
   );
-  assert.ok(
-    source.includes(
-      "node scripts/prepare-daily-prediction-git-save.js"
-    ),
-    `${name}は保存前にGit上限対応を行う`
-  );
+  if (name !== "build-learning-analysis-pipeline.yml") {
+    assert.ok(
+      source.includes(
+        "node scripts/prepare-daily-prediction-git-save.js"
+      ),
+      `${name}は保存前にGit上限対応を行う`
+    );
+  }
 });
 assert.ok(
   workflowFiles.find(item =>
@@ -439,10 +441,8 @@ assert.ok(
 assert.ok(
   workflowFiles.find(item =>
     item.name === "build-learning-analysis-pipeline.yml"
-  ).source.includes(
-    "node scripts/prepare-daily-prediction-git-save.js --all"
-  ),
-  "学習集計は全日次原本の上限を確認して保存する"
+  ).source.includes("git push origin main") === false,
+  "結果後の学習集計はread-only検証として重複保存しない"
 );
 
 console.log(

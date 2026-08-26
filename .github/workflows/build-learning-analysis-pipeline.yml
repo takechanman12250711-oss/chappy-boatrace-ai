@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.workflow }}
   queue: max
   cancel-in-progress: false
 
@@ -121,13 +121,3 @@ jobs:
           if(audit.status!=='healthy' || audit.issueCount!==0) throw new Error(`Phase6監査異常: ${audit.issueCount}`);
           NODE
           node scripts/check-charter.js
-      - name: Save pipeline outputs
-        run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
-          git add data/stats data/analysis/reference-tag-effectiveness.json
-          if git diff --cached --quiet; then exit 0; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Build unified learning analysis pipeline"
-          git pull --rebase origin main
-          git push origin main

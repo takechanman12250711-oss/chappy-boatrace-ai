@@ -48,7 +48,16 @@ const sharedWriterConcurrency =
 assert(
   sharedWriterConcurrency.test(collectPredictionWorkflow) &&
     sharedWriterConcurrency.test(collectResultWorkflow) &&
-    sharedWriterConcurrency.test(learningAnalysisWorkflow),
+    (
+      sharedWriterConcurrency.test(learningAnalysisWorkflow) ||
+      (
+        learningAnalysisWorkflow.includes("contents: read") &&
+        !learningAnalysisWorkflow.includes("git push origin main") &&
+        collectResultWorkflow.includes(
+          "node scripts/build-learning-analysis-pipeline.js"
+        )
+      )
+    ),
   "予想・結果・学習分析のmain書込は同じ排他グループで直列実行してください"
 );
 const checksOutCurrentMain =
