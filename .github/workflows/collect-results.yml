@@ -33,6 +33,16 @@ on:
       - "scripts/test-frame-rise-fall-shadow-result-report.js"
       - "scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js"
       - "scripts/test-race-flow-in-first-outside-alert-skip-ab-report.js"
+      - "scripts/build-race-flow-4kado-alert-skip-ab-report.js"
+      - "scripts/test-race-flow-4kado-alert-skip-ab-report.js"
+      - "scripts/build-race-flow-3course-alert-skip-ab-report.js"
+      - "scripts/test-race-flow-3course-alert-skip-ab-report.js"
+      - "scripts/build-race-flow-2course-sashi-skip-ab-report.js"
+      - "scripts/test-race-flow-2course-sashi-skip-ab-report.js"
+      - "scripts/build-race-flow-outside-push-skip-ab-report.js"
+      - "scripts/test-race-flow-outside-push-skip-ab-report.js"
+      - "scripts/build-remain-pickup-hold3-shadow-ab.js"
+      - "scripts/test-remain-pickup-hold3-shadow-ab.js"
       - "scripts/build-unified-improvement-decision-gate.js"
       - "scripts/test-unified-improvement-decision-gate.js"
       - "scripts/build-phase3-learning-handoff.js"
@@ -103,6 +113,16 @@ jobs:
           node scripts/test-frame-rise-fall-shadow-result-report.js
           node --check scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js
           node scripts/test-race-flow-in-first-outside-alert-skip-ab-report.js
+          node --check scripts/build-race-flow-4kado-alert-skip-ab-report.js
+          node scripts/test-race-flow-4kado-alert-skip-ab-report.js
+          node --check scripts/build-race-flow-3course-alert-skip-ab-report.js
+          node scripts/test-race-flow-3course-alert-skip-ab-report.js
+          node --check scripts/build-race-flow-2course-sashi-skip-ab-report.js
+          node scripts/test-race-flow-2course-sashi-skip-ab-report.js
+          node --check scripts/build-race-flow-outside-push-skip-ab-report.js
+          node scripts/test-race-flow-outside-push-skip-ab-report.js
+          node --check scripts/build-remain-pickup-hold3-shadow-ab.js
+          node scripts/test-remain-pickup-hold3-shadow-ab.js
           node --check scripts/build-unified-improvement-decision-gate.js
           node scripts/test-unified-improvement-decision-gate.js
           node --check scripts/build-phase3-learning-handoff.js
@@ -145,7 +165,12 @@ jobs:
           node scripts/restore-daily-prediction-source.js --all
           node scripts/repair-recent-results.js
           node scripts/build-frame-rise-fall-shadow-result-report.js
+          node scripts/build-race-flow-4kado-alert-skip-ab-report.js
+          node scripts/build-race-flow-3course-alert-skip-ab-report.js
+          node scripts/build-race-flow-2course-sashi-skip-ab-report.js
+          node scripts/build-race-flow-outside-push-skip-ab-report.js
           node scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js
+          node scripts/build-remain-pickup-hold3-shadow-ab.js
           node scripts/build-unified-improvement-decision-gate.js
           node scripts/build-phase3-learning-handoff.js
           node scripts/build-result-review.js
