@@ -67,6 +67,10 @@ assert.equal(selectedPreferred.cohort.raceCount, 1);
 assert.equal(selectedPreferred.cohort.targetRaceCount, 0);
 
 const resultWorkflow = fs.readFileSync(".github/workflows/collect-results.yml", "utf8");
+const dedicatedWorkflow = fs.readFileSync(
+  ".github/workflows/check-race-flow-in-first-outside-alert-skip-ab.yml",
+  "utf8"
+);
 const restoreIndex = resultWorkflow.indexOf("node scripts/restore-daily-prediction-source.js --all");
 const reportIndex = resultWorkflow.indexOf("node scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js", restoreIndex);
 const gateIndex = resultWorkflow.indexOf("node scripts/build-unified-improvement-decision-gate.js", reportIndex);
@@ -75,4 +79,7 @@ assert.ok(restoreIndex >= 0, "公式結果収集でcanonical予想原本を復�
 assert.ok(reportIndex > restoreIndex, "原本復元後にinside-first outside-alert A/Bを再集計する");
 assert.ok(gateIndex > reportIndex, "A/B再集計後に統一採否ゲートを更新する");
 assert.ok(handoffIndex > gateIndex, "統一採否ゲート更新後にPhase3 handoffを更新する");
+assert.ok(!dedicatedWorkflow.includes("\n  push:"), "個別workflowはmainへ自動重複書込みしない");
+assert.ok(!dedicatedWorkflow.includes("\n  workflow_run:"), "公式結果後の自動更新は主系統だけが担当する");
+assert.ok(dedicatedWorkflow.includes("\n  workflow_dispatch:"), "個別workflowの手動診断は保持する");
 console.log("race-flow in-first outside-alert skip A/B report test: ok");
