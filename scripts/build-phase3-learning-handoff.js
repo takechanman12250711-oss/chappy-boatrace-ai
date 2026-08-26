@@ -118,12 +118,18 @@ function build(gate, proposalReport = {}, policyReviewReport = {}) {
   const blocked = items
     .filter((item) => item.decision === "blocked")
     .map((item) => ({ id: item.id, reason: item.reason }));
+  const rejected = items
+    .filter((item) => item.status === "available" && item.decision === "reject")
+    .map((item) => ({
+      ...handoffItem(item, "rejected-by-ab-evidence"),
+      reason: item.reason || "実A/Bの採用条件を満たさない",
+    }));
   const historical = historicalEvidence(proposalReport);
   const diagnostics = historicalDiagnostics(proposalReport);
   const historicalSettledRaceCount = Number(proposalReport.settledRaceCount || 0);
 
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     generatedAt: new Date().toISOString(),
     phase: "phase3",
     implementationComplete: true,
@@ -149,6 +155,8 @@ function build(gate, proposalReport = {}, policyReviewReport = {}) {
     policyReview,
     policyRejectedCount: policyRejected.length,
     policyRejected,
+    rejectedCount: rejected.length,
+    rejected,
     blockedCount: blocked.length,
     blocked,
     nextStep: candidates.length
