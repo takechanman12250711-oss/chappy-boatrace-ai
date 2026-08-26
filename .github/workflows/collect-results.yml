@@ -8,6 +8,8 @@ on:
       - ".github/workflows/collect-results.yml"
       - ".github/workflows/analyze-reference-tags.yml"
       - ".github/workflows/build-learning-analysis-pipeline.yml"
+      - ".github/workflows/check-unified-improvement-decision-gate.yml"
+      - ".github/workflows/check-phase4-daily-cycle-gate.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
@@ -54,6 +56,9 @@ on:
       - "scripts/build-phase3-learning-handoff.js"
       - "scripts/test-phase3-learning-handoff.js"
       - "scripts/test-phase3-refresh-contract.js"
+      - "scripts/build-phase4-daily-cycle-gate.js"
+      - "scripts/build-phase4-historical-cycle-proof.js"
+      - "scripts/test-phase4-daily-cycle-gate.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -137,6 +142,10 @@ jobs:
           node --check scripts/build-phase3-learning-handoff.js
           node scripts/test-phase3-learning-handoff.js
           node scripts/test-phase3-refresh-contract.js
+          node --check scripts/build-learning-analysis-pipeline.js
+          node --check scripts/build-phase4-daily-cycle-gate.js
+          node --check scripts/build-phase4-historical-cycle-proof.js
+          node scripts/test-phase4-daily-cycle-gate.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -183,15 +192,12 @@ jobs:
           node scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js
           node scripts/build-remain-pickup-hold3-shadow-ab.js
           node scripts/build-unified-improvement-decision-gate.js
-          node scripts/build-result-review.js
-          node scripts/build-theory-evaluations.js
-          node scripts/build-miss-cause-analysis.js
-          node scripts/build-improvement-proposal-report.js
-          node scripts/build-phase3-learning-handoff.js
-          node scripts/build-theory-adoption-phase5.js
-          node scripts/build-learning-pipeline-gate.js
-          node scripts/build-phase6-data-audit.js
+          node scripts/build-learning-analysis-pipeline.js
           node scripts/test-improvement-proposal-input-contract.js
+          node scripts/test-analysis-input-contract.js
+          node scripts/test-theory-candidate-branch-analysis-phase9-artifact.js
+          node scripts/build-phase3-learning-handoff.js
+          node scripts/build-phase4-daily-cycle-gate.js
           node scripts/build-scenario-ai-v6-verification.js
           node scripts/build-practical-priority-shadow-report.js
           node scripts/test-practical-priority-shadow-artifact.js
@@ -205,7 +211,7 @@ jobs:
       - name: Save official results before calibration
         run: |
           node scripts/prepare-daily-prediction-git-save.js --all
-          git add data/results data/stats
+          git add data/results data/stats data/analysis/reference-tag-effectiveness.json
 
           if git diff --cached --quiet; then
             echo "先行保存する公式結果はありません"
@@ -283,7 +289,7 @@ jobs:
       - name: Save calibration and derived data
         run: |
           node scripts/prepare-daily-prediction-git-save.js --all
-          git add data/results data/stats
+          git add data/results data/stats data/analysis/reference-tag-effectiveness.json
 
           if git diff --cached --quiet; then
             echo "追加保存する校正・集計データはありません"
