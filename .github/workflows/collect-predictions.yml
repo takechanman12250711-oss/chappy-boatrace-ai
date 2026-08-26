@@ -191,7 +191,7 @@ jobs:
           PREDICT_DATE: ${{ inputs.date }}
           NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
         run: |
-          node scripts/restore-daily-prediction-source.js
+          node scripts/restore-daily-prediction-source.js --all
           node scripts/collect-predictions.js
           node scripts/build-scenario-ai-v6-snapshots.js
           node scripts/build-prediction-index-shards.js
@@ -234,7 +234,7 @@ jobs:
         env:
           PREDICT_DATE: ${{ inputs.date }}
         run: |
-          node scripts/restore-daily-prediction-source.js
+          node scripts/restore-daily-prediction-source.js --all
           node scripts/test-load-performance.js
           node scripts/test-prediction-runtime-loader.js
           node --check js/scenario-ai-v6-shadow.js
