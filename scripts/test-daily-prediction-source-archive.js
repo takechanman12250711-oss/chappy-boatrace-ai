@@ -186,6 +186,16 @@ try {
     })}\n`,
     "utf8"
   );
+  const restoreTemporaryName =
+    `.${date}.json.restore-test`;
+  fs.writeFileSync(
+    path.join(
+      predictionDirectory,
+      restoreTemporaryName
+    ),
+    latestRaw,
+    "utf8"
+  );
 
   const prepared =
     preparePredictionGitSave({
@@ -270,6 +280,12 @@ try {
       `data/predictions/${date}.json`
     ),
     "GitHub上限を超える生JSONはcommit対象から外す"
+  );
+  assert.ok(
+    !staged.includes(
+      `data/predictions/${restoreTemporaryName}`
+    ),
+    "原本復元の一時ファイルはcommit対象から外す"
   );
   assert.equal(
     fs.readFileSync(
