@@ -16,6 +16,9 @@ on:
       - ".github/workflows/check-st-slit-branch-profit.yml"
       - ".github/workflows/check-exhibition-foot-branch.yml"
       - ".github/workflows/refresh-exhibition-foot-branch-report.yml"
+      - ".github/workflows/check-exhibition-rank3plus-breakdown.yml"
+      - ".github/workflows/check-wall-boat-branch-profit.yml"
+      - ".github/workflows/check-wall-established-breakdown.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
@@ -76,6 +79,11 @@ on:
       - "scripts/build-exhibition-foot-branch-report.js"
       - "scripts/test-exhibition-foot-branch-report.js"
       - "scripts/test-exhibition-foot-writer-contract.js"
+      - "scripts/build-exhibition-rank3plus-breakdown.js"
+      - "scripts/build-wall-boat-branch-profit-report.js"
+      - "scripts/test-wall-boat-branch-profit-report.js"
+      - "scripts/build-wall-established-breakdown.js"
+      - "scripts/test-breakdown-writer-contract.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -174,6 +182,11 @@ jobs:
           node --check scripts/build-exhibition-foot-branch-report.js
           node scripts/test-exhibition-foot-branch-report.js
           node scripts/test-exhibition-foot-writer-contract.js
+          node --check scripts/build-exhibition-rank3plus-breakdown.js
+          node --check scripts/build-wall-boat-branch-profit-report.js
+          node scripts/test-wall-boat-branch-profit-report.js
+          node --check scripts/build-wall-established-breakdown.js
+          node scripts/test-breakdown-writer-contract.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -212,6 +225,9 @@ jobs:
           node scripts/restore-daily-prediction-source.js --all
           node scripts/repair-recent-results.js
           node scripts/build-exhibition-foot-branch-report.js
+          node scripts/build-exhibition-rank3plus-breakdown.js
+          node scripts/build-wall-boat-branch-profit-report.js
+          node scripts/build-wall-established-breakdown.js
           node scripts/build-skill-branch-report.js
           node scripts/build-motor-course-branch-report.js
           node scripts/build-st-slit-branch-profit-report.js

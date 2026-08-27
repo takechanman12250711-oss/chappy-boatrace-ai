@@ -4,6 +4,8 @@ on:
     paths:
       - "scripts/build-wall-boat-branch-profit-report.js"
       - "scripts/test-wall-boat-branch-profit-report.js"
+      - "scripts/test-breakdown-writer-contract.js"
+      - ".github/workflows/collect-results.yml"
       - ".github/workflows/check-wall-boat-branch-profit.yml"
   push:
     branches: [main]
@@ -19,9 +21,9 @@ on:
     types: [completed]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -39,22 +41,10 @@ jobs:
         run: |
           node --check scripts/build-wall-boat-branch-profit-report.js
           node scripts/test-wall-boat-branch-profit-report.js
+          node scripts/test-breakdown-writer-contract.js
       - name: Restore canonical sources and build report
         if: github.event_name != 'pull_request'
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-wall-boat-branch-profit-report.js
-          node scripts/prepare-daily-prediction-git-save.js --all
-      - name: Save wall boat branch report
-        if: github.event_name != 'pull_request'
-        run: |
-          git add data/stats/wall-boat-branch-profit-report.json
-          if git diff --cached --quiet; then
-            echo "wall-boat report unchanged"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update wall boat prospective branch report"
-          git pull --rebase origin main
-          git push origin main
+          git diff --check
