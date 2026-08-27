@@ -202,6 +202,7 @@ jobs:
 
       - name: Validate generated prediction artifacts
         run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
           node scripts/test-load-performance.js
           node scripts/test-practical-priority-shadow-artifact.js
           git diff --exit-code -- data/predictions/index.json

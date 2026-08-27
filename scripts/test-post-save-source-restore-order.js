@@ -21,8 +21,23 @@ const restoreCommand =
   "node scripts/restore-daily-prediction-source.js --all";
 const performanceCommand =
   "node scripts/test-load-performance.js";
+const validationStart = workflow.indexOf(
+  "- name: Validate generated prediction artifacts"
+);
+const saveStepStart = workflow.indexOf(
+  "- name: Save predictions and note drafts"
+);
+const validationPrepareIndex = workflow.indexOf(
+  prepareCommand,
+  validationStart
+);
+const validationPerformanceIndex = workflow.indexOf(
+  performanceCommand,
+  validationStart
+);
 const saveIndex = workflow.indexOf(
-  prepareCommand
+  prepareCommand,
+  saveStepStart
 );
 const postSaveRestoreIndex =
   workflow.lastIndexOf(restoreCommand);
@@ -30,7 +45,16 @@ const finalPerformanceIndex =
   workflow.lastIndexOf(performanceCommand);
 
 assert.ok(
-  saveIndex >= 0,
+  validationStart >= 0 &&
+    validationPrepareIndex > validationStart &&
+    validationPrepareIndex < saveStepStart &&
+    validationPerformanceIndex >
+      validationPrepareIndex &&
+    validationPerformanceIndex < saveStepStart,
+  "生成した最新原本をarchiveへ固定してから分割indexを検証する"
+);
+assert.ok(
+  saveStepStart >= 0 && saveIndex > saveStepStart,
   "復元した全日次予想原本のGit保存準備が必要"
 );
 assert.ok(
