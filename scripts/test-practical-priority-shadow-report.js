@@ -390,6 +390,38 @@ const attachedVoid = reportBuilder.rowsFromPredictionData(
 assert.equal(attachedVoid[0].result?.resolvedVoid, true);
 assert.equal(attachedVoid[0].result?.void, true);
 
+const officialSource = row(6, "neutral");
+officialSource.raceKey = "20260813-01-7";
+officialSource.result = {
+  settled: false,
+  resultTicket: "",
+  payoutPer100: 0
+};
+const attachedOfficial = reportBuilder.rowsFromPredictionData(
+  { predictions: [officialSource] },
+  {
+    date: "20260813",
+    races: [{
+      date: "20260813",
+      jcd: "01",
+      raceNo: 7,
+      status: "finished",
+      resultAvailable: true,
+      trifecta: {
+        combination: "1-3-6",
+        payout: 1230,
+        popularity: 8
+      },
+      finishers: [1, 3, 6],
+      starts: [1, 2, 3, 4, 5, 6]
+    }]
+  }
+);
+assert.equal(attachedOfficial[0].result?.settled, true);
+assert.equal(attachedOfficial[0].result?.resultTicket, "1-3-6");
+assert.equal(attachedOfficial[0].result?.payoutPer100, 1230);
+assert.equal(attachedOfficial[0].result?.popularity, 8);
+
 console.log(
   "practical priority prospective shadow report: OK"
 );

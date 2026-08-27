@@ -84,6 +84,81 @@ function officialVoidKeys(resultData = {}) {
   );
 }
 
+function officialResultMap(resultData = {}) {
+  const map = new Map();
+  for (const row of Array.isArray(resultData?.races)
+    ? resultData.races
+    : []) {
+    const date = String(row?.date || resultData?.date || "");
+    const jcd = String(row?.jcd || "")
+      .replace(/\D/g, "")
+      .padStart(2, "0")
+      .slice(-2);
+    const raceNo = Number(row?.raceNo || 0);
+    if (date && /^\d{2}$/.test(jcd) && raceNo >= 1 && raceNo <= 12) {
+      map.set(`${date}-${jcd}-${raceNo}`, row);
+    }
+  }
+  return map;
+}
+
+function attachOfficialResults(rows, resultData = {}) {
+  const results = officialResultMap(resultData);
+  return rows.map(row => {
+    const official = results.get(String(row?.raceKey || ""));
+    if (!official) return row;
+    if (official?.void === true || official?.status === "void") {
+      return {
+        ...row,
+        result: {
+          ...(row?.result || {}),
+          settled: false,
+          status: "void",
+          void: true,
+          resolvedVoid: true
+        }
+      };
+    }
+    const resultTicket = String(
+      official?.trifecta?.combination || ""
+    ).trim();
+    const payout = Math.max(
+      0,
+      Number(official?.trifecta?.payout || 0)
+    );
+    if (
+      official?.resultAvailable !== true ||
+      official?.status !== "finished" ||
+      !resultTicket ||
+      payout <= 0
+    ) {
+      return row;
+    }
+    return {
+      ...row,
+      result: {
+        ...(row?.result || {}),
+        settled: true,
+        status: "finished",
+        void: false,
+        resolvedVoid: false,
+        resultTicket,
+        payout,
+        payoutPer100: payout,
+        popularity: Number(
+          official?.trifecta?.popularity || 0
+        ),
+        finishers: Array.isArray(official?.finishers)
+          ? official.finishers
+          : [],
+        starts: Array.isArray(official?.starts)
+          ? official.starts
+          : []
+      }
+    };
+  });
+}
+
 function attachOfficialVoid(rows, resultData = {}) {
   const voidKeys = officialVoidKeys(resultData);
   return rows.map(row => {
@@ -120,7 +195,7 @@ function rowsFromPredictionData(
   )
     ? data.verificationPredictions
     : [];
-  return attachOfficialVoid([
+  return attachOfficialResults([
     ...selected,
     ...verification.filter(row =>
       !selectedKeys.has(String(row?.raceKey || ""))
@@ -181,6 +256,8 @@ module.exports = {
   RESULT_DIRECTORY,
   OUTPUT,
   officialVoidKeys,
+  officialResultMap,
+  attachOfficialResults,
   attachOfficialVoid,
   rowsFromPredictionData,
   predictionRows,
