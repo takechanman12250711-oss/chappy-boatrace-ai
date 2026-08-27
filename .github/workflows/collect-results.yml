@@ -31,6 +31,7 @@ on:
       - "scripts/restore-daily-prediction-source.js"
       - "scripts/prepare-daily-prediction-git-save.js"
       - "scripts/test-daily-prediction-source-archive.js"
+      - "scripts/test-result-source-archive-order.js"
       - "scripts/build-result-review.js"
       - "scripts/test-result-review.js"
       - "scripts/analysis-input-contract.js"
@@ -145,6 +146,7 @@ jobs:
           node --check scripts/restore-daily-prediction-source.js
           node --check scripts/prepare-daily-prediction-git-save.js
           node scripts/test-daily-prediction-source-archive.js
+          node scripts/test-result-source-archive-order.js
           node --check js/frame-rise-fall-shadow-result-report.js
           node --check scripts/build-frame-rise-fall-shadow-result-report.js
           node scripts/test-frame-rise-fall-shadow-result-report.js
@@ -253,6 +255,7 @@ jobs:
 
       - name: Validate result prediction artifacts
         run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
           node scripts/test-load-performance.js
           git diff --exit-code -- data/predictions/index.json
 
@@ -331,6 +334,7 @@ jobs:
 
       - name: Validate calibrated prediction artifacts
         run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
           node scripts/test-load-performance.js
           git diff --exit-code -- data/predictions/index.json
 
