@@ -22,6 +22,7 @@ on:
       - ".github/workflows/check-race-flow-branch-profit.yml"
       - ".github/workflows/check-local-water-branch.yml"
       - ".github/workflows/refresh-local-water-branch-report.yml"
+      - ".github/workflows/check-race-flow-3course-internal.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
@@ -94,6 +95,9 @@ on:
       - "scripts/build-local-water-branch-report.js"
       - "scripts/test-local-water-branch-report.js"
       - "scripts/test-local-water-branch-writer-contract.js"
+      - "scripts/build-race-flow-3course-internal-report.js"
+      - "scripts/test-race-flow-3course-internal-report.js"
+      - "scripts/test-race-flow-3course-internal-writer-contract.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -204,6 +208,9 @@ jobs:
           node --check scripts/build-local-water-branch-report.js
           node scripts/test-local-water-branch-report.js
           node scripts/test-local-water-branch-writer-contract.js
+          node --check scripts/build-race-flow-3course-internal-report.js
+          node scripts/test-race-flow-3course-internal-report.js
+          node scripts/test-race-flow-3course-internal-writer-contract.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -244,6 +251,7 @@ jobs:
           node scripts/build-exhibition-foot-branch-report.js
           node scripts/build-race-flow-branch-profit-report.js
           node scripts/build-local-water-branch-report.js
+          node scripts/build-race-flow-3course-internal-report.js
           node scripts/build-exhibition-rank3plus-breakdown.js
           node scripts/build-wall-boat-branch-profit-report.js
           node scripts/build-wall-established-breakdown.js
