@@ -6,7 +6,9 @@ on:
     paths:
       - "scripts/build-wall-established-breakdown.js"
       - "scripts/build-wall-boat-branch-profit-report.js"
+      - "scripts/test-breakdown-writer-contract.js"
       - "scripts/restore-daily-prediction-source.js"
+      - ".github/workflows/collect-results.yml"
       - ".github/workflows/check-wall-established-breakdown.yml"
   push:
     branches: [main]
@@ -25,10 +27,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:
@@ -46,22 +48,14 @@ jobs:
         with:
           node-version: 20
       - name: Restore canonical prediction sources
+        if: github.event_name != 'pull_request'
         run: node scripts/restore-daily-prediction-source.js --all
-      - name: Build wall-established breakdown
+      - name: Verify wall-established breakdown
         run: |
           node --check scripts/build-wall-established-breakdown.js
-          node scripts/build-wall-established-breakdown.js
-          git diff --check
-      - name: Persist wall-established breakdown
+          node scripts/test-breakdown-writer-contract.js
+      - name: Build read-only real diagnostics
         if: github.event_name != 'pull_request'
         run: |
-          git config user.name "Chappy BoatRace AI"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stats/wall-established-breakdown.json
-          if git diff --cached --quiet; then
-            echo "wall-established breakdown unchanged"
-            exit 0
-          fi
-          git commit -m "Refresh wall-established weakness breakdown"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          node scripts/build-wall-established-breakdown.js
+          git diff --check
