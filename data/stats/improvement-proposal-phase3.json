@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-27T11:40:57.861Z",
+  "generatedAt": "2026-08-27T14:22:00.086Z",
   "source": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "deduplication": "predictions-preferred-over-verificationPredictions",
@@ -11,8 +11,8 @@
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 1
     },
-    "officialResultCount": 1740,
-    "settledJoinCount": 1740,
+    "officialResultCount": 1741,
+    "settledJoinCount": 1741,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
@@ -20,21 +20,21 @@
   "engineVersion": "improvement-proposal-phase3-20260818-root-cause-priority",
   "status": "proposal-candidates-ready",
   "minimumRaceCount": 100,
-  "settledRaceCount": 1740,
+  "settledRaceCount": 1741,
   "remainingRaceCount": 0,
   "proposals": [
     {
       "code": "local-water-adjustment-insufficient",
       "label": "当地補正不足",
       "theory": "当地・水面理論",
-      "sampleCount": 952,
+      "sampleCount": 953,
       "occurrenceRate": 54.7,
       "priority": "high",
       "improvementCandidate": "場・風・波・潮の補正条件を再検証",
       "expectedEffect": "場別回収率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 0,
-        "medium": 952,
+        "medium": 953,
         "low": 0
       }
     },
@@ -42,14 +42,14 @@
       "code": "flow-reading-miss",
       "label": "展開読み違い",
       "theory": "展開理論",
-      "sampleCount": 866,
+      "sampleCount": 867,
       "occurrenceRate": 49.8,
       "priority": "high",
       "improvementCandidate": "展開成立条件と崩れ条件の再検証",
       "expectedEffect": "展開一致率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 87,
-        "medium": 779,
+        "medium": 780,
         "low": 0
       }
     },
@@ -57,14 +57,14 @@
       "code": "wall-boat-evaluation-insufficient",
       "label": "壁艇理論不足",
       "theory": "壁艇理論",
-      "sampleCount": 677,
+      "sampleCount": 678,
       "occurrenceRate": 38.9,
       "priority": "high",
       "improvementCandidate": "壁成立・不成立条件を再検証",
       "expectedEffect": "壁艇関与時の展開一致率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 0,
-        "medium": 677,
+        "medium": 678,
         "low": 0
       }
     },
@@ -87,14 +87,14 @@
       "code": "start-adjustment-insufficient",
       "label": "ST補正不足",
       "theory": "ST・スリット理論",
-      "sampleCount": 366,
-      "occurrenceRate": 21,
+      "sampleCount": 367,
+      "occurrenceRate": 21.1,
       "priority": "high",
       "improvementCandidate": "ST差とスリット隊形の補正条件を再検証",
       "expectedEffect": "1着・攻め艇一致率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 0,
-        "medium": 366,
+        "medium": 367,
         "low": 0
       }
     }
@@ -105,14 +105,14 @@
       "code": "ticket-coverage-insufficient",
       "label": "買い目不足",
       "theory": "買い目構成",
-      "sampleCount": 1342,
+      "sampleCount": 1343,
       "occurrenceRate": 77.1,
       "priority": "high",
       "improvementCandidate": "展開内の残し・拾い不足を再検証",
       "expectedEffect": "実戦厳選的中率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 55,
-        "medium": 1287,
+        "medium": 1288,
         "low": 0
       },
       "diagnosticOnly": true,
@@ -123,15 +123,15 @@
       "code": "ticket-spread-too-wide",
       "label": "買い目広げ過ぎ",
       "theory": "買い目構成",
-      "sampleCount": 895,
-      "occurrenceRate": 51.4,
+      "sampleCount": 896,
+      "occurrenceRate": 51.5,
       "priority": "high",
       "improvementCandidate": "不的中時の点数拡張条件を再検証",
       "expectedEffect": "回収率の改善余地を検証",
       "confidenceBreakdown": {
         "high": 0,
         "medium": 0,
-        "low": 895
+        "low": 896
       },
       "diagnosticOnly": true,
       "rootCauseCandidate": false,
