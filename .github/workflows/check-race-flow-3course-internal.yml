@@ -4,13 +4,17 @@ on:
     paths:
       - "scripts/build-race-flow-3course-internal-report.js"
       - "scripts/test-race-flow-3course-internal-report.js"
+      - "scripts/test-race-flow-3course-internal-writer-contract.js"
       - ".github/workflows/check-race-flow-3course-internal.yml"
+      - ".github/workflows/collect-results.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-race-flow-3course-internal-report.js"
       - "scripts/test-race-flow-3course-internal-report.js"
+      - "scripts/test-race-flow-3course-internal-writer-contract.js"
       - ".github/workflows/check-race-flow-3course-internal.yml"
+      - ".github/workflows/collect-results.yml"
   workflow_run:
     workflows:
       - "Collect automatic race predictions"
@@ -18,9 +22,9 @@ on:
     types: [completed]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -38,22 +42,9 @@ jobs:
         run: |
           node --check scripts/build-race-flow-3course-internal-report.js
           node scripts/test-race-flow-3course-internal-report.js
-      - name: Restore canonical sources and build report
+          node scripts/test-race-flow-3course-internal-writer-contract.js
+      - name: Build read-only real diagnostics
         if: github.event_name != 'pull_request'
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-race-flow-3course-internal-report.js
-          node scripts/prepare-daily-prediction-git-save.js --all
-      - name: Save 3course internal report
-        if: github.event_name != 'pull_request'
-        run: |
-          git add data/stats/race-flow-3course-internal-report.json
-          if git diff --cached --quiet; then
-            echo "3course internal report unchanged"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update 3course attack internal report"
-          git pull --rebase origin main
-          git push origin main
