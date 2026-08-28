@@ -42,6 +42,7 @@ on:
       - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/venue-race-history.js"
       - "scripts/collect-results.js"
       - "scripts/test-collect-results.js"
       - "scripts/test-shadow-predictions.js"
@@ -168,6 +169,7 @@ on:
       - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/venue-race-history.js"
       - "scripts/collect-results.js"
       - "scripts/test-collect-results.js"
       - "scripts/test-shadow-predictions.js"
@@ -306,6 +308,7 @@ jobs:
           node --check scripts/test-practical-priority-shadow-regression.js
           node --check scripts/check-charter.js
           node --check scripts/collect-predictions.js
+          node --check scripts/venue-race-history.js
           node --check scripts/collect-results.js
           node --check scripts/test-collect-results.js
           node --check scripts/test-shadow-predictions.js

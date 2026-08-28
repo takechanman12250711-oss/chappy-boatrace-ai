@@ -4,52 +4,89 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "api/race.js"
+      - "api/_history.js"
+      - "api/_original-exhibition.js"
+      - "api/_parser.js"
+      - "js/ai-core.js"
+      - "js/boat-identity.js"
+      - "js/evaluated-scenario-candidates.js"
+      - "js/history-insights.js"
+      - "js/history-insights-base.js"
       - "js/local-water-v2-tiebreak.js"
+      - "js/motor-maintenance-insights.js"
+      - "js/theory-input.js"
+      - "scripts/build-local-water-branch-report.js"
+      - "scripts/check-charter.js"
       - "scripts/monitor-local-water-v2-post-adoption.js"
+      - "scripts/venue-race-history.js"
       - "scripts/restore-daily-prediction-source.js"
+      - "scripts/test-local-water-v2-post-adoption-monitor.js"
+      - "scripts/test-local-water-v2-post-adoption-monitor-writer-contract.js"
       - "data/predictions/*.json"
-      - "data/predictions/*.json.gz"
+      - "data/predictions/source-archives/**"
+      - "data/stats/venue-race-patterns.json"
+      - "data/stats/race-patterns.json"
+      - "data/stats/racer-venue-starts.json"
+      - "data/stats/racer-skill-patterns.json"
+      - "data/stats/course-structure-patterns.json"
+      - "data/stats/local-water-v2-post-adoption-input-cache.json"
+      - "config/chappy-charter.json"
       - ".github/workflows/check-local-water-v2-post-adoption-monitor.yml"
-  push:
-    branches: [main]
-    paths:
-      - "js/local-water-v2-tiebreak.js"
-      - "scripts/monitor-local-water-v2-post-adoption.js"
-      - "data/predictions/*.json"
-      - "data/predictions/*.json.gz"
-      - ".github/workflows/check-local-water-v2-post-adoption-monitor.yml"
+      - ".github/workflows/collect-results.yml"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}', github.workflow, github.ref) }}
+  cancel-in-progress: false
 
 jobs:
   monitor:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: ${{ github.event_name != 'pull_request' }}
+          persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - name: Restore canonical prediction sources
         run: node scripts/restore-daily-prediction-source.js --all
-      - name: Validate Local Water V2 post-adoption monitor
+      - name: Restore resumable official-input checkpoint
+        uses: actions/cache/restore@v4
+        with:
+          path: data/stats/local-water-v2-post-adoption-input-cache.json
+          key: local-water-v2-input-${{ runner.os }}-${{ hashFiles('api/race.js', 'api/_parser.js', 'api/_original-exhibition.js') }}-${{ github.event.pull_request.number || github.run_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            local-water-v2-input-${{ runner.os }}-${{ hashFiles('api/race.js', 'api/_parser.js', 'api/_original-exhibition.js') }}-${{ github.event.pull_request.number || github.run_id }}-
+      - name: Verify deterministic monitor contracts
         run: |
           node --check scripts/monitor-local-water-v2-post-adoption.js
-          node scripts/monitor-local-water-v2-post-adoption.js
-          git diff --check
-      - name: Persist refreshed monitor report
-        if: github.event_name != 'pull_request'
+          node scripts/test-local-water-v2-post-adoption-monitor.js
+          node scripts/test-local-water-v2-post-adoption-monitor-writer-contract.js
+      - name: Build read-only real diagnostics
+        id: real-diagnostic
+        continue-on-error: true
         run: |
-          git config user.name "Chappy BoatRace AI"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stats/local-water-v2-post-adoption-monitor.json
-          if git diff --cached --quiet; then
-            echo "monitor report unchanged"
-            exit 0
-          fi
-          git commit -m "Refresh Local Water V2 post-adoption monitor"
-          git push origin HEAD:main
+          timeout 300s node scripts/monitor-local-water-v2-post-adoption.js
+      - name: Verify charter and generated diff
+        if: always()
+        run: |
+          node scripts/check-charter.js
+          git diff --check
+      - name: Save resumable official-input checkpoint
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/stats/local-water-v2-post-adoption-input-cache.json
+          key: local-water-v2-input-${{ runner.os }}-${{ hashFiles('api/race.js', 'api/_parser.js', 'api/_original-exhibition.js') }}-${{ github.event.pull_request.number || github.run_id }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Require complete real diagnostic
+        if: always() && steps.real-diagnostic.outcome != 'success'
+        run: |
+          echo "Local Water V2 real diagnostic is incomplete; rerun to resume from the saved checkpoint."
+          exit 1
