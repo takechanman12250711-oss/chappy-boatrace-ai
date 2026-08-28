@@ -1,17 +1,25 @@
 {
-  "schemaVersion": 1,
-  "version": "local-water-v2-post-adoption-monitor-v1",
-  "generatedAt": "2026-08-23T15:22:11.924Z",
+  "schemaVersion": 2,
+  "version": "local-water-v2-post-adoption-monitor-v2",
+  "generatedAt": "2026-08-28T05:23:38.146Z",
   "adoptionPr": 614,
   "adoptionCommit": "b230d52969b3aa612498e4c994d840c9b7120abc",
   "startDate": "20260824",
-  "method": "2026-08-24以降の確定レースだけを対象に、A=本番Local/Water V2 gap<=3タイブレーク、B=同じcurrent-mainの旧展開のまま、固定5点で比較。",
+  "latestDate": "20260828",
+  "method": "2026-08-24以降の確定レースだけを対象に、A=本番Local/Water V2 gap<=3タイブレーク、B=同じ未適用base coreの旧展開のまま、固定5点で比較。本番と同じrace trend ready条件を満たす公式入力だけをfingerprint世代別cacheで再利用し、評価レポートは全件揃った場合だけ保存。",
   "productionChanged": false,
   "automaticApplication": false,
+  "sourceCompleteness": {
+    "expectedRaces": 56,
+    "completedRaces": 56,
+    "cachedRaces": 0,
+    "fetchedRaces": 56,
+    "complete": true
+  },
   "total": {
-    "sourceRaces": 0,
-    "comparableRaces": 0,
-    "appliedRaces": 0,
+    "sourceRaces": 56,
+    "comparableRaces": 3,
+    "appliedRaces": 3,
     "productionHits": 0,
     "counterfactualHits": 0,
     "gains": 0,
@@ -21,8 +29,117 @@
     "hitDelta": 0,
     "returnDelta": 0
   },
-  "byDate": {},
-  "appliedSamples": [],
+  "byDate": {
+    "20260827": {
+      "sourceRaces": 31,
+      "comparableRaces": 1,
+      "appliedRaces": 1,
+      "productionHits": 0,
+      "counterfactualHits": 0,
+      "gains": 0,
+      "losses": 0,
+      "productionReturn": 0,
+      "counterfactualReturn": 0,
+      "hitDelta": 0,
+      "returnDelta": 0
+    },
+    "20260828": {
+      "sourceRaces": 25,
+      "comparableRaces": 2,
+      "appliedRaces": 2,
+      "productionHits": 0,
+      "counterfactualHits": 0,
+      "gains": 0,
+      "losses": 0,
+      "productionReturn": 0,
+      "counterfactualReturn": 0,
+      "hitDelta": 0,
+      "returnDelta": 0
+    }
+  },
+  "appliedSamples": [
+    {
+      "raceKey": "20260827-09-4",
+      "date": "20260827",
+      "jcd": "09",
+      "raceNo": 4,
+      "gap": 2,
+      "previousHead": 2,
+      "selectedHead": 3,
+      "actual": "2-5-1",
+      "productionTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-5-2",
+        "1-2-5",
+        "1-2-3"
+      ],
+      "counterfactualTickets": [
+        "2-1-3",
+        "2-4-3",
+        "2-3-4",
+        "1-2-3",
+        "1-2-4"
+      ],
+      "productionHit": false,
+      "counterfactualHit": false,
+      "payoutPer100": 20480
+    },
+    {
+      "raceKey": "20260828-13-1",
+      "date": "20260828",
+      "jcd": "13",
+      "raceNo": 1,
+      "gap": 2.1999999999999886,
+      "previousHead": 1,
+      "selectedHead": 3,
+      "actual": "3-4-1",
+      "productionTickets": [
+        "3-1-2",
+        "3-2-1",
+        "3-5-1",
+        "1-2-3",
+        "1-2-5"
+      ],
+      "counterfactualTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "2-1-3",
+        "2-1-4"
+      ],
+      "productionHit": false,
+      "counterfactualHit": false,
+      "payoutPer100": 2250
+    },
+    {
+      "raceKey": "20260828-13-3",
+      "date": "20260828",
+      "jcd": "13",
+      "raceNo": 3,
+      "gap": 1.5,
+      "previousHead": 3,
+      "selectedHead": 1,
+      "actual": "1-3-4",
+      "productionTickets": [
+        "1-2-4",
+        "1-4-2",
+        "1-3-2",
+        "2-1-4",
+        "2-1-3"
+      ],
+      "counterfactualTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4"
+      ],
+      "productionHit": false,
+      "counterfactualHit": false,
+      "payoutPer100": 880
+    }
+  ],
   "apiFailures": 0,
   "failures": []
 }
