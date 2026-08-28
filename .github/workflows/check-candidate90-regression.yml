@@ -1,0 +1,26 @@
+name: Check candidate90 regression
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'js/ai-core.js'
+      - 'js/boat-identity.js'
+      - 'js/evaluated-scenario-candidates.js'
+      - 'js/prediction.js'
+      - 'js/practical-selection.js'
+      - 'data/predictions/2026080*.json'
+      - 'data/predictions/20260810.json'
+      - 'scripts/test-candidate90-regression.js'
+      - '.github/workflows/check-candidate90-regression.yml'
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --check scripts/test-candidate90-regression.js
+      - run: node scripts/test-candidate90-regression.js
