@@ -1,4 +1,5 @@
-name: Check weak 2-head independent pruning
+name: Check escape trim regressions
+
 on:
   pull_request:
     branches: [main]
@@ -11,14 +12,17 @@ on:
       - 'data/predictions/202607*.json'
       - 'data/predictions/2026080*.json'
       - 'data/predictions/2026081?.json'
-      - 'scripts/test-weak-two-head-independent-prune-regression.js'
-      - '.github/workflows/test-weak-two-head-independent-pruning.yml'
+      - 'scripts/test-strong-escape-trim-regression.js'
+      - 'scripts/test-very-strong-escape-trim-regression.js'
+      - '.github/workflows/check-escape-trim-regressions.yml'
+
 jobs:
-  test:
+  regression:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node scripts/test-weak-two-head-independent-prune-regression.js
+      - run: node scripts/test-strong-escape-trim-regression.js
+      - run: node scripts/test-very-strong-escape-trim-regression.js

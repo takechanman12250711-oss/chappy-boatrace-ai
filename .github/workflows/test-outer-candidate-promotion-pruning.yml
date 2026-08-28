@@ -3,7 +3,14 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'js/ai-core.js'
+      - 'js/boat-identity.js'
+      - 'js/evaluated-scenario-candidates.js'
+      - 'js/prediction.js'
       - 'js/practical-selection.js'
+      - 'data/predictions/202607*.json'
+      - 'data/predictions/2026080*.json'
+      - 'data/predictions/2026081?.json'
       - 'scripts/test-outer-candidate-promotion-prune-regression.js'
       - '.github/workflows/test-outer-candidate-promotion-pruning.yml'
 jobs:
