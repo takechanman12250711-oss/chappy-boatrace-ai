@@ -403,6 +403,7 @@ jobs:
           node scripts/build-prediction-calibration.js
           node scripts/test-improvement-review.js
           node scripts/build-improvement-review.js
+          node scripts/build-improvement-review.js --output=data/stats/improvement-review.json
           node scripts/build-prediction-gap-report.js
           node scripts/test-scenario-likelihood-v5-verification.js
           node scripts/test-scenario-likelihood-v5-calibration.js
