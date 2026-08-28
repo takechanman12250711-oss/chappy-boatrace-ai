@@ -52,7 +52,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260825-display-layout1 \
+              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
               DIAG_OUTPUT=artifacts-stage/local-core \
             node scripts/diagnose-prediction-stage-webkit.mjs core \
             > artifacts-stage/local-core/process.log 2>&1
@@ -73,7 +73,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260825-display-layout1 \
+              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
               DIAG_OUTPUT=artifacts-stage/local-create \
             node scripts/diagnose-prediction-stage-webkit.mjs create \
             > artifacts-stage/local-create/process.log 2>&1
@@ -95,7 +95,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260825-display-layout1 \
+              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
               DIAG_OUTPUT=artifacts-stage/production-create \
             node scripts/diagnose-prediction-stage-webkit.mjs create \
             > artifacts-stage/production-create/process.log 2>&1

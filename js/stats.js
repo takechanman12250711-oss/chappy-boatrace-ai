@@ -2647,13 +2647,25 @@
       </div>`
     : `<div class="result-ai-insight"><strong>AI改善メモ</strong><p>各展開5R以上になるまで蓄積中です。</p></div>`;
   const RESULTS_UI_PHASE4 = "results-ui-phase4-20260806";
+  const ROLE_TICKETS_NOT_STORED = "分類別データ未保存";
 
   const renderRoleTickets = (item, role) => {
-    const tickets = (item.predictionTickets || [])
+    const predictionTickets = Array.isArray(item?.predictionTickets)
+      ? item.predictionTickets
+      : [];
+    const tickets = predictionTickets
       .filter(row => String(row?.role || row?.category || "") === role)
       .map(row => normalizeTicket(row?.ticket))
       .filter(Boolean);
-    return tickets.length ? tickets.join("、") : "なし";
+    if (tickets.length) return tickets.join("、");
+    if (
+      predictionTickets.length === 0 &&
+      Array.isArray(item?.practicalTickets) &&
+      item.practicalTickets.length > 0
+    ) {
+      return ROLE_TICKETS_NOT_STORED;
+    }
+    return "なし";
   };
 
   const shadowV2Progress =

@@ -31,6 +31,8 @@ assert(js.includes("selectionReady"), "判定可能なレースだけをおす�
 assert(js.includes("recommendationThreshold"), "要約の選定基準点をおすすめへ引き継ぐ");
 assert(js.includes("現在、締切前の勝負対象レースはありません"), "対象0件を見送りで埋めず明示する");
 assert(js.includes("› を押して1R〜12Rを表示"), "未取得の開催詳細を『情報なし』と誤表示しない");
+assert(js.includes('`終了 ${time}`'), "終了レースは時刻だけでなく終了状態も表示する");
+assert(js.includes('aria-label="${esc(place)} ${num(race.raceNo)}R ${esc(deadlineLabel)}"'), "終了状態を読み上げ名にも含める");
 assert(!js.includes("開催情報なし"), "詳細未取得を開催なしと誤認させない");
 assert(js.includes('document.visibilityState === "hidden"'), "非表示中はおすすめ締切タイマーを止める");
 assert(js.includes("scheduleRecommendationExpiry"), "表示中は最寄り締切でおすすめを再判定する");

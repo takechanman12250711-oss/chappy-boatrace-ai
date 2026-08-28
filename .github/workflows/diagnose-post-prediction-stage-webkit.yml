@@ -54,7 +54,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260825-display-layout1 \
+              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
               RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
               DIAG_OUTPUT=artifacts-post/local-select \
             node scripts/diagnose-post-prediction-stage-webkit.mjs select \
@@ -77,7 +77,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260825-display-layout1 \
+              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
               RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
               DIAG_OUTPUT=artifacts-post/local-render \
             node scripts/diagnose-post-prediction-stage-webkit.mjs render \
@@ -101,7 +101,7 @@ jobs:
           timeout --signal=TERM --kill-after=5s 90s \
             env \
               APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260825-display-layout1 \
+              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
               RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
               DIAG_OUTPUT=artifacts-post/production-render \
             node scripts/diagnose-post-prediction-stage-webkit.mjs render \

@@ -327,6 +327,11 @@
       return minutes <= 2 ? "is-skip" : minutes <= 5 ? "is-upset-hot" : minutes <= 10 ? "is-upset" : "is-main";
     }
 
+    function raceDeadlineLabel(race) {
+      const time = timeOf(race?.deadlineAt);
+      return isFinished(race) ? `終了 ${time}` : time;
+    }
+
     function renderVenue(card, detail) {
       const host = card.querySelector(".home-v2-races");
       if (!host) return;
@@ -345,7 +350,8 @@
       host.innerHTML = races.map(race => {
         const raceKey = buildRaceKey({ date: state.date, jcd, raceNo: race.raceNo });
         const selected = raceKey && raceKey === state.current?.raceKey;
-        return `<button class="home-v2-race ${deadlineClass(race)} ${selected ? "is-selected" : ""}" type="button" data-place="${escapeHtml(place)}" data-race="${race.raceNo}" data-flow-place="${escapeHtml(place)}" data-flow-jcd="${jcd}" data-flow-race="${race.raceNo}" aria-label="${escapeHtml(place)} ${race.raceNo}R"><strong>${race.raceNo}R</strong><span><i></i>${escapeHtml(timeOf(race.deadlineAt))}</span></button>`;
+        const deadlineLabel = raceDeadlineLabel(race);
+        return `<button class="home-v2-race ${deadlineClass(race)} ${selected ? "is-selected" : ""}" type="button" data-place="${escapeHtml(place)}" data-race="${race.raceNo}" data-flow-place="${escapeHtml(place)}" data-flow-jcd="${jcd}" data-flow-race="${race.raceNo}" aria-label="${escapeHtml(place)} ${race.raceNo}R ${escapeHtml(deadlineLabel)}"><strong>${race.raceNo}R</strong><span><i></i>${escapeHtml(deadlineLabel)}</span></button>`;
       }).join("");
     }
 

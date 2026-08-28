@@ -4,7 +4,7 @@
   if (root.ChappyAppRuntime) return;
 
   // 既存テストとの互換用。実配信ではindex.htmlのCHAPPY_APP_BUILDを使用する。
-  const VERSION = "20260815-odds-immediate1";
+  const VERSION = "20260828-ui-audit-display1";
   const ACTIVE_VERSION = root.CHAPPY_APP_BUILD || VERSION;
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";
   const loaded=new Map(),groupReady=new Map();

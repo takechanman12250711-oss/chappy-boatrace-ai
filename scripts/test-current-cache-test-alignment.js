@@ -34,13 +34,13 @@ assert.equal(
 );
 assert.equal(
   patchedLoad.includes(
-    "'const VERSION = \"20260815-odds-immediate1\"'"
+    "'const VERSION = \"20260828-ui-audit-display1\"'"
   ),
   true
 );
 assert.equal(
   patchedLoad.includes(
-    "'const VERSION = \"20260825-display-layout1\"'"
+    "'const VERSION = \"20260828-ui-audit-display1\"'"
   ),
   true
 );
@@ -64,7 +64,7 @@ assert.equal(
 );
 assert.equal(
   patchedStats.includes(
-    "/style\\.css\\?v=20260825-display-layout1/"
+    "/style\\.css\\?v=20260828-ui-audit-display1/"
   ),
   true
 );

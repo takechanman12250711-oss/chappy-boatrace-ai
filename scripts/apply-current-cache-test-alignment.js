@@ -59,7 +59,7 @@ function generationBlock(version) {
       "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal4"
     ) &&
     appRuntime.includes(
-      'const VERSION = "20260815-odds-immediate1"'
+      'const VERSION = "20260828-ui-audit-display1"'
     ) &&
     predictionRuntime.includes(
       'const VERSION = "${version}"'
@@ -89,13 +89,13 @@ function patchLoad(text) {
   );
   out = replaceOne(
     out,
-    '\'const VERSION = "20260810-official-reference1"\'',
     '\'const VERSION = "20260815-odds-immediate1"\'',
+    '\'const VERSION = "20260828-ui-audit-display1"\'',
     "app runtime internal version"
   );
 
   const desiredGeneration = generationBlock(
-    "20260825-display-layout1"
+    "20260828-ui-audit-display1"
   );
   const supportedGenerations = [
     generationBlock(
@@ -148,7 +148,7 @@ function patchLoad(text) {
       '\'const VERSION = "20260823-local-water-v2-gap3-v1"\'',
       '\'const VERSION = "20260824-readonly-core-fix1"\''
     ],
-    '\'const VERSION = "20260825-display-layout1"\'',
+    '\'const VERSION = "20260828-ui-audit-display1"\'',
     "prediction runtime version"
   );
 
@@ -192,7 +192,7 @@ function patchStats(text) {
       "/style\\.css\\?v=20260803-flow-missing30/",
       "/style\\.css\\?v=20260806-results-ui-phase4-1/"
     ],
-    "/style\\.css\\?v=20260825-display-layout1/",
+    "/style\\.css\\?v=20260828-ui-audit-display1/",
     "result css asset"
   );
 }
