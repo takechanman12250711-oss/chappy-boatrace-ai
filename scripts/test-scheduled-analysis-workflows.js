@@ -437,6 +437,10 @@ const safetyGuard = stepRunLines(
   learningPipelineWorkflow,
   "Verify generated safety flags"
 ).join("\n");
+assert.doesNotThrow(
+  () => run("bash", ["-e", "-c", safetyGuard], root),
+  "現在のPhase9提案成果物と承認済みPhase10成果物で生成安全検査を通す"
+);
 const guardedVersions = [
   ...safetyGuard.matchAll(/perf\.version\s*!==\s*(['"])([^'"]+)\1/g)
 ].map(match => match[2]);

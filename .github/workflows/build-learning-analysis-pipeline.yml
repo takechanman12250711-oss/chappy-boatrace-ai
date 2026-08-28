@@ -110,10 +110,24 @@ jobs:
           const approval=JSON.parse(fs.readFileSync('config/theory-ab-phase10-approval.json','utf8'));
           if(phase10.automaticApplication!==false || phase10.usableForPrediction!==false || phase10.comparison?.automaticWinnerSelection!==false) throw new Error('Phase10安全条件異常');
           if(approval.approved===true && (phase10.approvedSourceFrozen!==true || phase10.approvedSourceMetadataMatches!==true || phase10.status!=='ready-for-shadow-ab')) throw new Error('承認済みPhase10の固定承認source接続異常');
-          if(phase10.readinessChecks?.allPassed!==true && phase10.candidateB!==null) throw new Error('全承認・実装確認前にBが生成されています');
           if(branch.candidateCount===1 && phase10.comparison?.minimumComparableRaces!==branch.candidate?.prospectiveProtocol?.fixedComparableRaces) throw new Error('候補仕様とPhase10の固定比較件数が不一致です');
           if(branch.candidateCount===1 && phase10.readinessChecks?.validCandidateSpecFingerprint!==true) throw new Error('Phase10の候補仕様fingerprint再計算が不一致です');
-          if(branch.candidate?.shadowImplementationPresent===false && (phase10.readinessChecks?.shadowImplementationVerifierPresent!==false || phase10.shadowImplementationPresent!==false)) throw new Error('未実装シャドーを実装済みとして扱っています');
+          const authorizedShadowB=
+            approval.approved===true &&
+            phase10.approvedSourceFrozen===true &&
+            phase10.approvedSourceMetadataMatches===true &&
+            phase10.status==='ready-for-shadow-ab' &&
+            phase10.readinessChecks?.approvalApplied===true &&
+            phase10.readinessChecks?.allPassed===true &&
+            phase10.readinessChecks?.validCandidateSpecFingerprint===true &&
+            phase10.readinessChecks?.implementationCandidateSpecMatches===true &&
+            phase10.readinessChecks?.shadowImplementationVerifierPresent===true &&
+            phase10.readinessChecks?.shadowImplementationVerified===true &&
+            phase10.shadowImplementationPresent===true;
+          const candidateBPresent=Boolean(phase10.candidateB && typeof phase10.candidateB==='object');
+          if(approval.approved===true && authorizedShadowB!==true) throw new Error('承認済み候補のshadow実装検証異常');
+          if(candidateBPresent!==authorizedShadowB) throw new Error('全承認・shadow実装照合とB生成状態が一致しません');
+          if(candidateBPresent && (phase10.candidateB.shadowOnly!==true || phase10.candidateB.productionPrediction!==false || phase10.candidateB.productionPurchaseSelection!==false)) throw new Error('Phase10 B候補のshadow限定条件異常');
           const used=perf.byTheory.filter(row=>row.evaluatedCount>0);
           if(used.some(row=>row.practicalEvaluatedCount!==row.evaluatedCount)) throw new Error('実戦厳選指標の保存漏れ');
           if(used.some(row=>!Object.hasOwn(row,'skipEvaluatedCount')||!Object.hasOwn(row,'skipDecisionAccuracy'))) throw new Error('見送り判断指標の項目欠損');
