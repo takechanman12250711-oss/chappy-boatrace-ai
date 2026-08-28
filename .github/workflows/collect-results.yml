@@ -24,6 +24,8 @@ on:
       - ".github/workflows/refresh-local-water-branch-report.yml"
       - ".github/workflows/check-race-flow-3course-internal.yml"
       - ".github/workflows/build-frame-rise-sink-stats.yml"
+      - ".github/workflows/build-scenario-ai-v6-monitor.yml"
+      - ".github/workflows/check-scenario-ai-v6-monitor.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
@@ -102,6 +104,10 @@ on:
       - "scripts/build-frame-rise-sink-stats.js"
       - "scripts/test-frame-rise-sink-stats.js"
       - "scripts/test-frame-rise-sink-writer-contract.js"
+      - "js/scenario-ai-v6-monitor.js"
+      - "scripts/build-scenario-ai-v6-monitor.js"
+      - "scripts/test-scenario-ai-v6-monitor.js"
+      - "scripts/test-scenario-ai-v6-monitor-writer-contract.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -218,6 +224,10 @@ jobs:
           node --check scripts/build-frame-rise-sink-stats.js
           node scripts/test-frame-rise-sink-stats.js
           node scripts/test-frame-rise-sink-writer-contract.js
+          node --check js/scenario-ai-v6-monitor.js
+          node --check scripts/build-scenario-ai-v6-monitor.js
+          node scripts/test-scenario-ai-v6-monitor.js
+          node scripts/test-scenario-ai-v6-monitor-writer-contract.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -332,6 +342,8 @@ jobs:
           node scripts/build-scenario-ai-v6-approval-status.js
           node scripts/test-scenario-ai-v6-rollout-status.js
           node scripts/build-scenario-ai-v6-rollout-status.js
+          node scripts/test-scenario-ai-v6-monitor.js
+          node scripts/build-scenario-ai-v6-monitor.js
           node scripts/test-scenario-ai-v6-stop-decision.js
           node scripts/build-scenario-ai-v6-stop-decision.js
           node scripts/build-prediction-calibration.js
