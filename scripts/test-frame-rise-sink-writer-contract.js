@@ -28,6 +28,8 @@ const calibrationStart = central.indexOf(
   saveStart,
 );
 
+assert.match(central, /permissions:\s*\n\s*contents: write/);
+assert.match(central, /group: chappy-main-data-writers/);
 assert.ok(
   collectStart >= 0 &&
     restoreIndex > collectStart &&
