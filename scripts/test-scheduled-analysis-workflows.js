@@ -232,6 +232,21 @@ assertGeneratedReportPersistence({
 });
 
 const predictionGapWorkflow = readWorkflow("prediction-gap-report.yml");
+assert.match(
+  predictionGapWorkflow,
+  /permissions:\s+contents: read/,
+  "prediction gap専用workflowをread-only診断にする"
+);
+assert.ok(
+  !predictionGapWorkflow.includes("git commit") &&
+    !predictionGapWorkflow.includes("git push"),
+  "prediction gap専用workflowからmainへの重複writerを除去する"
+);
+assert.deepEqual(
+  stepRunLines(predictionGapWorkflow, "Restore canonical prediction sources"),
+  ["node scripts/restore-daily-prediction-source.js --all"],
+  "prediction gap診断は全圧縮正本を復元してから生成する"
+);
 const buildReportLines = stepRunLines(predictionGapWorkflow, "Build report");
 const improvementReviewCommand = commandArguments(
   buildReportLines,
@@ -257,12 +272,43 @@ assert.ok(
   "improvement review生成後にprediction gapを生成する"
 );
 
-const saveReportLines = stepRunLines(predictionGapWorkflow, "Save report");
-const gitAdd = saveReportLines.find(line => line.startsWith("git add "));
-assert.ok(gitAdd, "Save reportにgit addがありません");
+const collectResultsPredictionGapWorkflow = readWorkflow("collect-results.yml");
+const calibrationLines = stepRunLines(
+  collectResultsPredictionGapWorkflow,
+  "Build prediction calibration"
+);
+const centralImprovementReviewIndex = calibrationLines.indexOf(
+  "node scripts/build-improvement-review.js"
+);
+const centralPredictionGapIndex = calibrationLines.indexOf(
+  "node scripts/build-prediction-gap-report.js"
+);
 assert.ok(
-  gitAdd.split(/\s+/).slice(2).includes("data/stats/improvement-review.json"),
-  "生成したimprovement reviewを保存対象に含める"
+  centralImprovementReviewIndex >= 0 &&
+    centralImprovementReviewIndex < centralPredictionGapIndex,
+  "中央結果writerでimprovement review直後にprediction gapを生成する"
+);
+[
+  ".github/workflows/prediction-gap-report.yml",
+  "js/improvement-review.js",
+  "scripts/build-improvement-review.js",
+  "scripts/test-improvement-review.js",
+  "scripts/build-prediction-gap-report.js",
+  "scripts/test-prediction-gap-report.js"
+].forEach(workflowPath => {
+  assert.ok(
+    collectResultsPredictionGapWorkflow.includes(`- "${workflowPath}"`),
+    `${workflowPath}の変更後に中央結果writerを起動する`
+  );
+});
+assert.ok(
+  stepRunLines(
+    collectResultsPredictionGapWorkflow,
+    "Save calibration and derived data"
+  ).includes(
+    "git add data/results data/stats data/analysis/reference-tag-effectiveness.json"
+  ),
+  "中央結果writerがprediction gapを同じ校正commitへstageする"
 );
 
 const learningPipelineWorkflow = readWorkflow(
