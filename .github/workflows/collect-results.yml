@@ -28,14 +28,20 @@ on:
       - ".github/workflows/check-scenario-ai-v6-monitor.yml"
       - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
       - ".github/workflows/check-four-kado-escape-rescue-post-adoption-monitor.yml"
+      - ".github/workflows/check-local-water-v2-post-adoption-monitor.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
       - ".github/workflows/refresh-unified-improvement-decision-gate.yml"
       - ".github/workflows/check-phase3-learning-handoff.yml"
       - "config/chappy-charter.json"
+      - "scripts/check-charter.js"
       - "scripts/collect-results.js"
       - "scripts/repair-recent-results.js"
+      - "api/race.js"
+      - "api/_parser.js"
+      - "api/_history.js"
+      - "api/_original-exhibition.js"
       - "scripts/daily-prediction-source-archive.js"
       - "scripts/restore-daily-prediction-source.js"
       - "scripts/prepare-daily-prediction-git-save.js"
@@ -113,13 +119,28 @@ on:
       - "js/practical-selection.js"
       - "js/boat-identity.js"
       - "js/ai-core.js"
+      - "js/history-insights.js"
+      - "js/history-insights-base.js"
+      - "js/motor-maintenance-insights.js"
       - "js/prediction.js"
+      - "js/theory-input.js"
       - "js/evaluated-scenario-candidates.js"
+      - "js/local-water-v2-tiebreak.js"
       - "js/three-course-escape-rescue-fixed5.js"
       - "js/four-kado-escape-rescue-fixed5.js"
       - "scripts/monitor-three-course-escape-rescue.js"
       - "scripts/monitor-four-kado-escape-rescue.js"
       - "scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js"
+      - "scripts/monitor-local-water-v2-post-adoption.js"
+      - "scripts/venue-race-history.js"
+      - "scripts/test-local-water-v2-post-adoption-monitor.js"
+      - "scripts/test-local-water-v2-post-adoption-monitor-writer-contract.js"
+      - "data/stats/venue-race-patterns.json"
+      - "data/stats/race-patterns.json"
+      - "data/stats/racer-venue-starts.json"
+      - "data/stats/racer-skill-patterns.json"
+      - "data/stats/course-structure-patterns.json"
+      - "data/stats/local-water-v2-post-adoption-input-cache.json"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -243,6 +264,9 @@ jobs:
           node --check scripts/monitor-three-course-escape-rescue.js
           node --check scripts/monitor-four-kado-escape-rescue.js
           node scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js
+          node --check scripts/monitor-local-water-v2-post-adoption.js
+          node scripts/test-local-water-v2-post-adoption-monitor.js
+          node scripts/test-local-water-v2-post-adoption-monitor-writer-contract.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -312,6 +336,10 @@ jobs:
           node scripts/build-practical-priority-shadow-report.js
           node scripts/test-practical-priority-shadow-artifact.js
           node scripts/build-prediction-index-shards.js
+
+      - name: Build Local Water V2 post-adoption monitor
+        continue-on-error: true
+        run: timeout 300s node scripts/monitor-local-water-v2-post-adoption.js
 
       - name: Validate result prediction artifacts
         run: |

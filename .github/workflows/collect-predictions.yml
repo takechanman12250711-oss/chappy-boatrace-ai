@@ -12,6 +12,7 @@ on:
       - "config/chappy-charter.json"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/venue-race-history.js"
       - "scripts/compact-frame-rise-fall-shadow-inline.js"
       - "scripts/test-compact-frame-rise-fall-shadow-inline.js"
       - "scripts/minify-daily-prediction.js"
@@ -135,6 +136,7 @@ jobs:
       - name: Check collector-critical source
         run: |
           node --check scripts/collect-predictions.js
+          node --check scripts/venue-race-history.js
           node --check scripts/compact-frame-rise-fall-shadow-inline.js
           node scripts/test-compact-frame-rise-fall-shadow-inline.js
           node --check scripts/minify-daily-prediction.js

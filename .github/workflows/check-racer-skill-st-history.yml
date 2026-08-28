@@ -8,6 +8,7 @@ on:
       - "scripts/build-race-stats.js"
       - "scripts/test-racer-skill-st-history.js"
       - "scripts/collect-predictions.js"
+      - "scripts/venue-race-history.js"
       - ".github/workflows/check-racer-skill-st-history.yml"
   push:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - "scripts/build-race-stats.js"
       - "scripts/test-racer-skill-st-history.js"
       - "scripts/collect-predictions.js"
+      - "scripts/venue-race-history.js"
       - ".github/workflows/check-racer-skill-st-history.yml"
 
 jobs:
@@ -29,4 +31,5 @@ jobs:
           node-version: 20
       - run: node scripts/test-racer-skill-st-history.js
       - run: node --check scripts/collect-predictions.js
+      - run: node --check scripts/venue-race-history.js
       - run: git diff --check
