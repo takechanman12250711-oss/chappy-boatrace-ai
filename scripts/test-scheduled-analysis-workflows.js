@@ -280,13 +280,17 @@ const calibrationLines = stepRunLines(
 const centralImprovementReviewIndex = calibrationLines.indexOf(
   "node scripts/build-improvement-review.js"
 );
+const centralStatsImprovementReviewIndex = calibrationLines.indexOf(
+  "node scripts/build-improvement-review.js --output=data/stats/improvement-review.json"
+);
 const centralPredictionGapIndex = calibrationLines.indexOf(
   "node scripts/build-prediction-gap-report.js"
 );
 assert.ok(
   centralImprovementReviewIndex >= 0 &&
-    centralImprovementReviewIndex < centralPredictionGapIndex,
-  "中央結果writerでimprovement review直後にprediction gapを生成する"
+    centralImprovementReviewIndex < centralStatsImprovementReviewIndex &&
+    centralStatsImprovementReviewIndex < centralPredictionGapIndex,
+  "中央結果writerで既存reviewを維持し、stats版review直後にprediction gapを生成する"
 );
 [
   ".github/workflows/prediction-gap-report.yml",
