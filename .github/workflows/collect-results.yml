@@ -26,6 +26,8 @@ on:
       - ".github/workflows/build-frame-rise-sink-stats.yml"
       - ".github/workflows/build-scenario-ai-v6-monitor.yml"
       - ".github/workflows/check-scenario-ai-v6-monitor.yml"
+      - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
+      - ".github/workflows/check-four-kado-escape-rescue-post-adoption-monitor.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-frame-rise-fall-shadow-ab.yml"
       - ".github/workflows/collect-frame-rise-fall-negative-clip-ab.yml"
@@ -108,6 +110,16 @@ on:
       - "scripts/build-scenario-ai-v6-monitor.js"
       - "scripts/test-scenario-ai-v6-monitor.js"
       - "scripts/test-scenario-ai-v6-monitor-writer-contract.js"
+      - "js/practical-selection.js"
+      - "js/boat-identity.js"
+      - "js/ai-core.js"
+      - "js/prediction.js"
+      - "js/evaluated-scenario-candidates.js"
+      - "js/three-course-escape-rescue-fixed5.js"
+      - "js/four-kado-escape-rescue-fixed5.js"
+      - "scripts/monitor-three-course-escape-rescue.js"
+      - "scripts/monitor-four-kado-escape-rescue.js"
+      - "scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
@@ -228,6 +240,9 @@ jobs:
           node --check scripts/build-scenario-ai-v6-monitor.js
           node scripts/test-scenario-ai-v6-monitor.js
           node scripts/test-scenario-ai-v6-monitor-writer-contract.js
+          node --check scripts/monitor-three-course-escape-rescue.js
+          node --check scripts/monitor-four-kado-escape-rescue.js
+          node scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js
           node --check js/practical-priority-shadow.js
           node --check js/practical-priority-shadow-report.js
           node --check scripts/build-practical-priority-shadow-report.js
@@ -265,6 +280,8 @@ jobs:
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/repair-recent-results.js
+          node scripts/monitor-three-course-escape-rescue.js
+          node scripts/monitor-four-kado-escape-rescue.js
           node scripts/build-frame-rise-sink-stats.js
           node scripts/build-exhibition-foot-branch-report.js
           node scripts/build-race-flow-branch-profit-report.js
