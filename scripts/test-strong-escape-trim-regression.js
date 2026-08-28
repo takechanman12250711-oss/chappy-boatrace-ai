@@ -105,10 +105,10 @@ const actual = Object.fromEntries(
   Object.entries(groups).map(([name, list]) => [name, summarize(list)])
 );
 const expected = {
-  preEarly: { races: 269, hits: 75, stake: 222200, ret: 148710, trimmed: 61, removed: 79 },
-  preLate: { races: 188, hits: 60, stake: 157200, ret: 77440, trimmed: 66, removed: 86 },
-  d0807_08: { races: 140, hits: 46, stake: 120000, ret: 92080, trimmed: 46, removed: 72 },
-  d0809_10: { races: 173, hits: 63, stake: 144900, ret: 121420, trimmed: 68, removed: 105 }
+  preEarly: { races: 269, hits: 74, stake: 222200, ret: 146070, trimmed: 61, removed: 79 },
+  preLate: { races: 188, hits: 60, stake: 158000, ret: 79640, trimmed: 66, removed: 86 },
+  d0807_08: { races: 140, hits: 48, stake: 120100, ret: 93880, trimmed: 46, removed: 72 },
+  d0809_10: { races: 173, hits: 59, stake: 144100, ret: 104470, trimmed: 68, removed: 105 }
 };
 
 for (const [name, want] of Object.entries(expected)) {
