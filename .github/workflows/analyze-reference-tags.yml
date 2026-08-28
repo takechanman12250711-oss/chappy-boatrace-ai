@@ -33,12 +33,20 @@ jobs:
         run: |
           node scripts/test-reference-tag-effectiveness.js
 
+      - name: Restore canonical prediction sources
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+
       - name: Build effectiveness report
         run: node scripts/analyze-reference-tag-effectiveness.js --output data/analysis/reference-tag-effectiveness.json
 
       - name: Verify built report
         run: |
           node scripts/test-analysis-input-contract.js
+
+      - name: Restore Git-safe prediction sources
+        run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
 
       - name: Commit report when changed
         run: |
