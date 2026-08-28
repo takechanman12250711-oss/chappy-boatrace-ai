@@ -6,15 +6,19 @@ on:
     - cron: "45 15 * * *" # 00:45 JST・結果照合後
   pull_request:
     paths:
+      - "js/improvement-review.js"
+      - "scripts/build-improvement-review.js"
+      - "scripts/test-improvement-review.js"
       - "scripts/build-prediction-gap-report.js"
       - "scripts/test-prediction-gap-report.js"
+      - "scripts/restore-daily-prediction-source.js"
       - ".github/workflows/prediction-gap-report.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: prediction-gap-report
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -25,25 +29,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Restore canonical prediction sources
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
       - name: Verify extractor
         run: |
+          node --check scripts/build-improvement-review.js
           node --check scripts/build-prediction-gap-report.js
+          node scripts/test-improvement-review.js
           node scripts/test-prediction-gap-report.js
       - name: Build report
-        if: github.event_name != 'pull_request'
         run: |
           node scripts/build-improvement-review.js --output=data/stats/improvement-review.json
           node scripts/build-prediction-gap-report.js
-      - name: Save report
-        if: github.event_name != 'pull_request'
-        run: |
-          git add data/stats/improvement-review.json data/stats/prediction-gap-report.json
-          if git diff --cached --quiet; then
-            echo "保存する変更はありません"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Build prediction gap report"
-          git pull --rebase origin main
-          git push origin main
