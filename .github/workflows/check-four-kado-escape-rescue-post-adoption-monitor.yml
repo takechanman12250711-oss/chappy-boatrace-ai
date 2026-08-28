@@ -5,25 +5,44 @@ on:
     branches: [main]
     paths:
       - "js/practical-selection.js"
+      - "js/boat-identity.js"
+      - "js/ai-core.js"
+      - "js/prediction.js"
+      - "js/evaluated-scenario-candidates.js"
       - "js/four-kado-escape-rescue-fixed5.js"
       - "scripts/monitor-four-kado-escape-rescue.js"
+      - "scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js"
       - "scripts/restore-daily-prediction-source.js"
       - "data/predictions/*.json"
       - "data/predictions/*.json.gz"
       - ".github/workflows/check-four-kado-escape-rescue-post-adoption-monitor.yml"
+      - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
+      - ".github/workflows/collect-results.yml"
   push:
     branches: [main]
     paths:
       - "js/practical-selection.js"
+      - "js/boat-identity.js"
+      - "js/ai-core.js"
+      - "js/prediction.js"
+      - "js/evaluated-scenario-candidates.js"
       - "js/four-kado-escape-rescue-fixed5.js"
       - "scripts/monitor-four-kado-escape-rescue.js"
+      - "scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js"
+      - "scripts/restore-daily-prediction-source.js"
       - "data/predictions/*.json"
       - "data/predictions/*.json.gz"
       - ".github/workflows/check-four-kado-escape-rescue-post-adoption-monitor.yml"
+      - ".github/workflows/check-three-course-escape-rescue-post-adoption-monitor.yml"
+      - ".github/workflows/collect-results.yml"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}', github.workflow, github.ref) }}
+  cancel-in-progress: false
 
 jobs:
   monitor:
@@ -32,26 +51,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: ${{ github.event_name != 'pull_request' }}
+          persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
       - name: Restore canonical prediction sources
         run: node scripts/restore-daily-prediction-source.js --all
-      - name: Validate monitor
+      - name: Build read-only real diagnostics
         run: |
           node --check scripts/monitor-four-kado-escape-rescue.js
           node scripts/monitor-four-kado-escape-rescue.js
+          node scripts/test-escape-rescue-post-adoption-monitor-writer-contract.js
+          node scripts/check-charter.js
           git diff --check
-      - name: Persist refreshed monitor report
-        if: github.event_name != 'pull_request'
-        run: |
-          git config user.name "Chappy BoatRace AI"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stats/four-kado-escape-rescue-post-adoption-monitor.json
-          if git diff --cached --quiet; then
-            echo "monitor report unchanged"
-            exit 0
-          fi
-          git commit -m "Refresh 1-2-4 rescue post-adoption monitor"
-          git push origin HEAD:main

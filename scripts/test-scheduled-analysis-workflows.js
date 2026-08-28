@@ -355,6 +355,39 @@ assert.ok(
 );
 
 const referenceWorkflow = readWorkflow("analyze-reference-tags.yml");
+const referenceRestoreIndex = referenceWorkflow.indexOf(
+  "- name: Restore canonical prediction sources"
+);
+const referenceBuildIndex = referenceWorkflow.indexOf(
+  "- name: Build effectiveness report"
+);
+const referenceVerifyIndex = referenceWorkflow.indexOf(
+  "- name: Verify built report"
+);
+const referencePrepareIndex = referenceWorkflow.indexOf(
+  "- name: Restore Git-safe prediction sources"
+);
+const referenceCommitStepIndex = referenceWorkflow.indexOf(
+  "- name: Commit report when changed"
+);
+assert.ok(
+  referenceRestoreIndex >= 0 &&
+    referenceRestoreIndex < referenceBuildIndex &&
+    referenceBuildIndex < referenceVerifyIndex &&
+    referenceVerifyIndex < referencePrepareIndex &&
+    referencePrepareIndex < referenceCommitStepIndex,
+  "参照タグ定期writerは正本復元後に生成・検証し、Git-safeへ戻してから保存する"
+);
+assert.deepEqual(
+  stepRunLines(referenceWorkflow, "Restore canonical prediction sources"),
+  ["node scripts/restore-daily-prediction-source.js --all"],
+  "参照タグ定期writerが全圧縮正本を復元する"
+);
+assert.deepEqual(
+  stepRunLines(referenceWorkflow, "Restore Git-safe prediction sources"),
+  ["node scripts/prepare-daily-prediction-git-save.js --all"],
+  "参照タグ定期writerが復元した大容量正本をcommit対象から戻す"
+);
 assert.ok(
   referenceWorkflow.includes("group: chappy-main-data-writers") &&
     referenceWorkflow.includes("queue: max") &&
