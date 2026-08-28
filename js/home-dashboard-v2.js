@@ -68,7 +68,12 @@
 
   function deadlineClass(value) {
     const minutes = minutesUntil(value);
-    return minutes === null ? "is-before" : minutes <= 2 ? "is-skip" : minutes <= 5 ? "is-upset-hot" : minutes <= 10 ? "is-upset" : "is-main";
+    return minutes === null ? "is-before" : minutes <= 0 ? "is-finished" : minutes <= 2 ? "is-skip" : minutes <= 5 ? "is-upset-hot" : minutes <= 10 ? "is-upset" : "is-main";
+  }
+
+  function raceDeadlineLabel(value) {
+    const time = timeOf(value);
+    return deadlineClass(value) === "is-finished" ? `終了 ${time}` : time;
   }
 
   function venueType(place) {
@@ -543,7 +548,8 @@
 
   function raceHtml(place, race) {
     const selected = state.selectedPlace === place && state.selectedRace === num(race.raceNo);
-    return `<button class="home-v2-race ${deadlineClass(race.deadlineAt)} ${selected ? "is-selected" : ""}" type="button" data-place="${esc(place)}" data-race="${num(race.raceNo)}" ${race.selectable === false ? "disabled" : ""}><strong>${num(race.raceNo)}R</strong><span><i></i>${esc(timeOf(race.deadlineAt))}</span></button>`;
+    const deadlineLabel = raceDeadlineLabel(race.deadlineAt);
+    return `<button class="home-v2-race ${deadlineClass(race.deadlineAt)} ${selected ? "is-selected" : ""}" type="button" data-place="${esc(place)}" data-race="${num(race.raceNo)}" aria-label="${esc(place)} ${num(race.raceNo)}R ${esc(deadlineLabel)}" ${race.selectable === false ? "disabled" : ""}><strong>${num(race.raceNo)}R</strong><span><i></i>${esc(deadlineLabel)}</span></button>`;
   }
 
   function venueHtml(venue) {

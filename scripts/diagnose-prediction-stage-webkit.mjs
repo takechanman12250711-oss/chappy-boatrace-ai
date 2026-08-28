@@ -6,7 +6,7 @@ import { webkit } from "playwright";
 const stage = process.argv[2] || "core";
 const appUrl = process.env.APP_URL || "http://127.0.0.1:4173/";
 const outputDir = process.env.DIAG_OUTPUT || `artifacts-stage/${stage}`;
-const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260825-display-layout1";
+const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260828-ui-audit-display1";
 const raceUrl =
   process.env.RACE_URL ||
   "https://chappy-boatrace-api.vercel.app/api/race" +

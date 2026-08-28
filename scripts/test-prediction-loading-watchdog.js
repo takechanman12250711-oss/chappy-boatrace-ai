@@ -19,13 +19,13 @@ assert.match(watchdog, /showPredictionError/);
 assert.match(watchdog, /chappy:prediction-rendered/);
 assert.match(watchdog, /自動再開始はせず/);
 
-assert.match(appRuntime, /const VERSION = "20260815-odds-immediate1"/);
+assert.match(appRuntime, /const VERSION = "20260828-ui-audit-display1"/);
 assert.match(appRuntime, /SCRIPT_LOAD_TIMEOUT_MS=15000/);
 assert.match(appRuntime, /PRELOAD_LOOKAHEAD=2/);
 assert.match(appRuntime, /prediction-runtime-loader\.js/);
 assert.match(appRuntime, /hiyori-runtime-loader\.js/);
 
-assert.match(html, /prediction-runtime-loader\.js\?v=20260825-display-layout1/);
+assert.match(html, /prediction-runtime-loader\.js\?v=20260828-ui-audit-display1/);
 assert.match(html, /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal4/);
 assert.match(html, /app-runtime-loader\.js\?v=20260816-static-race1/);
 assert.match(html, /home-dashboard-v2\.js\?v=20260816-static-race1/);

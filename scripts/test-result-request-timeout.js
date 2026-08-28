@@ -128,7 +128,7 @@ async function main() {
   );
   assert.match(
     appRuntime,
-    /const VERSION = "20260815-odds-immediate1"/,
+    /const VERSION = "20260828-ui-audit-display1"/,
     "race runtime contract must remain unchanged"
   );
   assert.doesNotMatch(
@@ -172,10 +172,10 @@ async function main() {
     "utf8"
   );
   const guardIndex = indexHtml.indexOf(
-    'src="js/result-request-timeout.js?v=20260825-mobile-startup-terminal4&app=20260825-display-layout1"'
+    'src="js/result-request-timeout.js?v=20260825-mobile-startup-terminal4&app=20260828-ui-audit-display1"'
   );
   const appIndex = indexHtml.indexOf(
-    'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260825-display-layout1"'
+    'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260828-ui-audit-display1"'
   );
   const oddsFirstIndex = indexHtml.indexOf(
     'src="js/odds-first-navigation.js?v=20260815-odds-consume2"'

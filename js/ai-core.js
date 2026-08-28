@@ -7524,7 +7524,7 @@ function buildHoldPickupTheory(
       : [
           `最有力展開連動${components.scenarioLink}/40`,
           `差し場・空き水面${components.openWater}/25`,
-          `実進入・位置関係${components.positionRelation}/15`,
+          `実進入・位置関係${components.positionRelation}/25`,
           `バック・2マーク到達${components.backstretchRoute}/15`,
           `取得信頼度${components.dataReliability}/5`
         ].join(" / ");

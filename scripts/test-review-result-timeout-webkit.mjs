@@ -97,8 +97,8 @@ try {
   mark("runtime-state", runtimeState);
 
   if (
-    runtimeState.appRuntime !== "20260825-display-layout1" ||
-    runtimeState.predictionRuntime !== "20260825-display-layout1"
+    runtimeState.appRuntime !== "20260828-ui-audit-display1" ||
+    runtimeState.predictionRuntime !== "20260828-ui-audit-display1"
   ) {
     throw new Error(
       `app runtime mismatch: ${JSON.stringify(runtimeState)}`
