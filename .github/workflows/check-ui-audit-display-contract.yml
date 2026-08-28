@@ -5,6 +5,7 @@ on:
     paths:
       - "index.html"
       - "js/ai-core.js"
+      - "js/render.js"
       - "js/stats.js"
       - "js/home-dashboard-v2.js"
       - "js/race-flow-result-panel.js"
@@ -28,6 +29,7 @@ jobs:
       - name: Verify audited UI display contracts
         run: |
           node --check js/ai-core.js
+          node --check js/render.js
           node --check js/stats.js
           node --check js/home-dashboard-v2.js
           node --check js/race-flow-result-panel.js

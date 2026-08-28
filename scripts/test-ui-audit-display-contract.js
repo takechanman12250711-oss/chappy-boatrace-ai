@@ -5,6 +5,7 @@ const fs = require("node:fs");
 
 const read = file => fs.readFileSync(file, "utf8");
 const aiCore = read("js/ai-core.js");
+const render = read("js/render.js");
 const stats = read("js/stats.js");
 const home = read("js/home-dashboard-v2.js");
 const raceFlow = read("js/race-flow-result-panel.js");
@@ -17,13 +18,13 @@ const html = read("index.html");
 
 assert.match(
   aiCore,
-  /`実進入・位置関係\$\{components\.positionRelation\}\/25`/,
-  "拾い候補の位置関係は実配点上限25点で説明する"
-);
-assert.doesNotMatch(
-  aiCore,
   /`実進入・位置関係\$\{components\.positionRelation\}\/15`/,
-  "実配点と異なる15点上限を表示しない"
+  "予想ロジック側の監査文字列は変更しない"
+);
+assert.match(
+  render,
+  /\.replace\(\/実進入・位置関係\(\\d\+\)\\\/15\/g, "実進入・位置関係\$1\/25"\)/,
+  "描画直前だけ実配点上限25点へ補正する"
 );
 
 assert.match(
@@ -55,5 +56,9 @@ assert.match(raceFlow, /aria-label="\$\{escapeHtml\(place\)\} \$\{race\.raceNo\}
     "修正版キャッシュ世代を配信する"
   );
 });
+assert.ok(
+  predictionLoader.includes('"js/render.js"'),
+  "表示補正を含むrender.jsを修正版キャッシュ世代で読み込む"
+);
 
 console.log("UI audit display contract: passed");

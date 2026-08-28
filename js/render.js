@@ -130,6 +130,7 @@
 
   function userFacingFormationText(value) {
     return safeText(value, "")
+      .replace(/実進入・位置関係(\d+)\/15/g, "実進入・位置関係$1/25")
       .replace(/canonical[-_ ]formation/gi, "フォーメーション")
       .replace(/残り全艇へ流す/g, "残り全艇に組む")
       .replace(/全艇へ流す/g, "全艇に組む")
