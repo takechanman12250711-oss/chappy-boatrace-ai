@@ -8,6 +8,7 @@ on:
       - ".github/workflows/collect-results.yml"
       - ".github/workflows/analyze-reference-tags.yml"
       - ".github/workflows/build-learning-analysis-pipeline.yml"
+      - ".github/workflows/prediction-gap-report.yml"
       - ".github/workflows/check-unified-improvement-decision-gate.yml"
       - ".github/workflows/check-phase4-daily-cycle-gate.yml"
       - ".github/workflows/refresh-skill-motor-course-branch-reports.yml"
@@ -146,6 +147,11 @@ on:
       - "scripts/build-learning-pipeline-gate.js"
       - "scripts/build-phase6-data-audit.js"
       - "scripts/test-improvement-proposal-input-contract.js"
+      - "js/improvement-review.js"
+      - "scripts/build-improvement-review.js"
+      - "scripts/test-improvement-review.js"
+      - "scripts/build-prediction-gap-report.js"
+      - "scripts/test-prediction-gap-report.js"
       - "js/practical-priority-shadow.js"
       - "js/practical-priority-shadow-report.js"
       - "scripts/build-practical-priority-shadow-report.js"
@@ -282,6 +288,9 @@ jobs:
           node --check scripts/build-learning-pipeline-gate.js
           node --check scripts/build-phase6-data-audit.js
           node --check scripts/test-improvement-proposal-input-contract.js
+          node --check scripts/build-improvement-review.js
+          node --check scripts/build-prediction-gap-report.js
+          node scripts/test-prediction-gap-report.js
           node --check js/theory-adoption-phase5.js
           node --check scripts/build-theory-adoption-phase5.js
           node --check scripts/build-prediction-index-shards.js
@@ -394,6 +403,7 @@ jobs:
           node scripts/build-prediction-calibration.js
           node scripts/test-improvement-review.js
           node scripts/build-improvement-review.js
+          node scripts/build-prediction-gap-report.js
           node scripts/test-scenario-likelihood-v5-verification.js
           node scripts/test-scenario-likelihood-v5-calibration.js
           node scripts/build-scenario-likelihood-v5-calibration.js
