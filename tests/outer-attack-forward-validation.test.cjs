@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('assert');
+const mod=require('../scripts/analyze-outer-attack-forward-validation.cjs');
+const r=mod.build();
+assert.strictEqual(r.scope.holdoutUsed,false);
+assert.strictEqual(r.scope.productionChanged,false);
+assert.strictEqual(r.scope.dataset,'discovery-only-forward-split');
+assert(r.dateCounts.train>0&&r.dateCounts.test>0);
+assert(r.candidateCount>0);
+assert(r.chosen);
+assert(r.chosen.train.pairs>=8);
+assert(r.neutralization);
+assert.strictEqual(r.neutralization.changedTopBoatCount,0);
+console.log('outer attack forward validation tests passed');
