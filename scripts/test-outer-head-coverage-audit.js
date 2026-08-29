@@ -1,0 +1,3 @@
+"use strict"; const assert=require("node:assert/strict"); const x=require("./build-outer-head-coverage-audit");
+const r=x.build({summaries:{calm:{settledCount:100,actualHeadCounts:{5:8,6:2},predictedHeadCounts:{5:0,6:0}},medium:{settledCount:50,actualHeadCounts:{5:4,6:1},predictedHeadCounts:{5:0,6:0}}}});
+assert.equal(r.settledCount,150); assert.equal(r.actualHead56Count,15); assert.equal(r.actualHead56Rate,10); assert.equal(r.predictedHead56Count,0); assert.equal(r.nextStep,"audit-where-5-6-head-candidates-drop"); assert.equal(r.productionChanged,false); console.log("outer head coverage audit test: ok");
