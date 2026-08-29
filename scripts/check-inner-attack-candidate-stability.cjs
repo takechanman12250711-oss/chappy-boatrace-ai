@@ -3,14 +3,15 @@ const path = require('node:path');
 const scoreAb = require('../js/effective-score-weight-ab');
 const missReport = require('./build-effective-score-miss-attribution-report');
 const inputContract = require('./analysis-input-contract');
+const thresholdGrid = require('./search-inner-attack-threshold-grid.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const RESULTS_DIR = path.join(ROOT, 'data', 'results');
-const CANDIDATE = { st:0.75, roleAttack:0.5, exhibition:0, penalty:4 };
+const CANDIDATE = { st:0.75, roleAttack:0.5, exhibition:0, maxCourseGap:null, penalty:4 };
 
-function rankedWithPenalty(ranked, challengerNo) {
-  return ranked.map(item => ({...item, effectiveScore: item.effectiveScore - (item.boatNo === 1 ? CANDIDATE.penalty : 0)}))
-    .sort((a,b)=>b.effectiveScore-a.effectiveScore || a.boatNo-b.boatNo);
+function adjust(ranked, applies) {
+  return ranked.map(item => ({...item, adjustedTotal:item.total-(applies && item.boatNo===1 ? CANDIDATE.penalty : 0)}))
+    .sort((a,b)=>b.adjustedTotal-a.adjustedTotal || b.roleAttack-a.roleAttack || a.boatNo-b.boatNo);
 }
 function evaluateRows(rows, baseline, weightConfig) {
   let baselineHits=0, candidateHits=0, added=0, lost=0, triggered=0, changed=0;
@@ -23,20 +24,20 @@ function evaluateRows(rows, baseline, weightConfig) {
     const baseHit=base.boatNo===row.winnerBoatNo; if(baseHit) baselineHits++;
     let challengerNo=null;
     if(base.boatNo===1){
-      for(const no of [3,4]){ const c=ranked.find(x=>x.boatNo===no); if(!c)continue;
-        const gaps={}; for(const key of ['st','roleAttack','exhibition']) gaps[key]=(c.components[key]-base.components[key])*baseline.weights[key];
-        const contributions=scoreAb.COMPONENT_ORDER.map(key=>({key,gap:(c.components[key]-base.components[key])*baseline.weights[key]}));
-        const strongest=[...contributions].sort((a,b)=>a.gap-b.gap)[0];
-        if(strongest.key==='courseIndex'&&gaps.st>=CANDIDATE.st&&gaps.roleAttack>=CANDIDATE.roleAttack&&gaps.exhibition>=CANDIDATE.exhibition){challengerNo=no;break;}
+      for(const no of [3,4]){
+        const c=ranked.find(x=>x.boatNo===no); if(!c)continue;
+        const features=thresholdGrid.pairFeatures(base,c,baseline);
+        if(features&&thresholdGrid.matches(features,CANDIDATE)){challengerNo=no;break;}
       }
     }
-    const adjusted=challengerNo?rankedWithPenalty(ranked,challengerNo):ranked; if(challengerNo)triggered++;
+    const applies=challengerNo!==null;
+    const adjusted=adjust(ranked,applies); if(applies)triggered++;
     const candHit=adjusted[0].boatNo===row.winnerBoatNo; if(candHit)candidateHits++;
     if(adjusted[0].boatNo!==base.boatNo)changed++;
-    if(!baseHit&&candHit){added++; if(challengerNo)byChallenger[challengerNo].added++;}
-    if(baseHit&&!candHit){lost++; if(challengerNo)byChallenger[challengerNo].lost++;}
-    if(challengerNo)byChallenger[challengerNo].triggered++;
-    if(challengerNo){const method=inputContract.winningMethod(official.get(row.raceKey))||'unknown'; byMethod[method] ||= {triggered:0,added:0,lost:0,net:0}; byMethod[method].triggered++; if(!baseHit&&candHit)byMethod[method].added++; if(baseHit&&!candHit)byMethod[method].lost++;}
+    if(!baseHit&&candHit){added++; if(applies)byChallenger[challengerNo].added++;}
+    if(baseHit&&!candHit){lost++; if(applies)byChallenger[challengerNo].lost++;}
+    if(applies)byChallenger[challengerNo].triggered++;
+    if(applies){const method=inputContract.winningMethod(official.get(row.raceKey))||'unknown'; byMethod[method] ||= {triggered:0,added:0,lost:0,net:0}; byMethod[method].triggered++; if(!baseHit&&candHit)byMethod[method].added++; if(baseHit&&!candHit)byMethod[method].lost++;}
   }
   for(const x of Object.values(byChallenger))x.net=x.added-x.lost; for(const x of Object.values(byMethod))x.net=x.added-x.lost;
   return {raceCount:rows.length,baselineHits,candidateHits,net:candidateHits-baselineHits,triggered,changed,added,lost,byChallenger,byMethod};
