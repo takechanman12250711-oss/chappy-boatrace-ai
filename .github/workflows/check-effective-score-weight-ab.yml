@@ -1,0 +1,114 @@
+name: Check effective score weight A/B
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "config/effective-score-weight-ab-v1.json"
+      - "config/effective-score-weight-ab-input-freeze-v1.json"
+      - "config/chappy-charter.json"
+      - "docs/CHAPPY_CHARTER.md"
+      - "js/**/*.js"
+      - "**/*.html"
+      - "scripts/analysis-input-contract.js"
+      - "scripts/build-effective-score-weight-ab-report.js"
+      - "scripts/check-charter.js"
+      - "scripts/test-analysis-input-contract.js"
+      - "scripts/test-candidate90-regression.js"
+      - "scripts/test-effective-score-weight-ab.js"
+      - "scripts/test-frame-rise-fall-replay-preload.js"
+      - "scripts/test-new-engine-formal-evidence.js"
+      - "scripts/test-shadow-selection-v2.js"
+      - "scripts/test-theory-weight-evidence-contract.js"
+      - "data/predictions/202608*.json"
+      - "data/results/202608*.json"
+      - "data/stats/effective-score-weight-ab-report.json"
+      - ".github/workflows/check-effective-score-weight-ab.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "config/effective-score-weight-ab-v1.json"
+      - "config/effective-score-weight-ab-input-freeze-v1.json"
+      - "config/chappy-charter.json"
+      - "docs/CHAPPY_CHARTER.md"
+      - "js/**/*.js"
+      - "**/*.html"
+      - "scripts/analysis-input-contract.js"
+      - "scripts/build-effective-score-weight-ab-report.js"
+      - "scripts/check-charter.js"
+      - "scripts/test-analysis-input-contract.js"
+      - "scripts/test-candidate90-regression.js"
+      - "scripts/test-effective-score-weight-ab.js"
+      - "scripts/test-frame-rise-fall-replay-preload.js"
+      - "scripts/test-new-engine-formal-evidence.js"
+      - "scripts/test-shadow-selection-v2.js"
+      - "scripts/test-theory-weight-evidence-contract.js"
+      - "data/predictions/202608*.json"
+      - "data/results/202608*.json"
+      - "data/stats/effective-score-weight-ab-report.json"
+      - ".github/workflows/check-effective-score-weight-ab.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: effective-score-weight-ab-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-fixed-shadow-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify immutable preregistration anchor
+        if: github.event_name == 'pull_request'
+        run: |
+          preregistration_commit=0f27c5467e7e838c64213c6f3d5eff274c4de86a
+          source_commit=$(node -p "require('./config/effective-score-weight-ab-v1.json').sourceCommit")
+          git cat-file -e "${preregistration_commit}^{commit}"
+          git merge-base --is-ancestor "${preregistration_commit}" HEAD
+          test "$(git rev-parse "${preregistration_commit}^")" = "${source_commit}"
+          test "$(git diff --name-only "${source_commit}" "${preregistration_commit}")" = \
+            "config/effective-score-weight-ab-v1.json"
+          git diff --exit-code \
+            "${preregistration_commit}:config/effective-score-weight-ab-v1.json" \
+            config/effective-score-weight-ab-v1.json
+      - name: Verify immutable input freeze anchor
+        if: github.event_name == 'pull_request'
+        run: |
+          preregistration_commit=0f27c5467e7e838c64213c6f3d5eff274c4de86a
+          input_freeze_commit=37dfdc3a390d27bd6067ef2c2ad06fe1da028b74
+          git cat-file -e "${input_freeze_commit}^{commit}"
+          git merge-base --is-ancestor "${input_freeze_commit}" HEAD
+          test "$(git rev-parse "${input_freeze_commit}^")" = \
+            "${preregistration_commit}"
+          test "$(git diff --name-only "${preregistration_commit}" "${input_freeze_commit}")" = \
+            "config/effective-score-weight-ab-input-freeze-v1.json"
+          git diff --exit-code \
+            "${input_freeze_commit}:config/effective-score-weight-ab-input-freeze-v1.json" \
+            config/effective-score-weight-ab-input-freeze-v1.json
+      - name: Test pure score A/B contract
+        run: node scripts/test-effective-score-weight-ab.js
+      - name: Run replay preload safety contract
+        run: |
+          node scripts/test-frame-rise-fall-replay-preload.js
+      - name: Run existing score and selection safety regressions
+        run: |
+          node scripts/test-theory-weight-evidence-contract.js
+          node scripts/test-new-engine-formal-evidence.js
+          node scripts/test-shadow-selection-v2.js
+          node scripts/test-candidate90-regression.js
+          node scripts/check-charter.js
+      - name: Verify fixed report is reproducible
+        run: node scripts/build-effective-score-weight-ab-report.js --check
+      - name: Confirm the check did not mutate tracked files
+        run: git diff --exit-code

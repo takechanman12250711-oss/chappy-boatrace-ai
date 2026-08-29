@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "effective-score-weight-ab-v1",
+  "status": "preregistered-shadow-only",
+  "frozenAt": "2026-08-29T04:02:32Z",
+  "sourceCommit": "a8a924d3b7d1371bb0ba0065824df58e730978ea",
+  "target": {
+    "file": "js/ai-core.js",
+    "scope": "effective-final-eleven-coefficient-score",
+    "componentOrder": [
+      "raceFlow",
+      "courseIndex",
+      "roleAttack",
+      "st",
+      "exhibition",
+      "roleHold",
+      "rolePickup",
+      "local",
+      "turn",
+      "national",
+      "motor"
+    ],
+    "roundDigits": 1,
+    "minimumScore": 1,
+    "maximumScore": 100,
+    "rankingTieBreak": [
+      "total-desc",
+      "roleAttack-desc",
+      "boatNo-asc"
+    ]
+  },
+  "constraints": {
+    "allWeightsFinite": true,
+    "allWeightsNonNegative": true,
+    "weightSum": 1,
+    "exhibitionWeight": 0.09,
+    "motorWeightMaximum": 0.05,
+    "maximumAbsoluteChangeFromBaseline": 0.01,
+    "preserveDirectCoefficientOrder": true
+  },
+  "profiles": [
+    {
+      "id": "p0-current",
+      "kind": "baseline",
+      "hypothesis": "Current production effective-score coefficients.",
+      "weights": {
+        "raceFlow": 0.25,
+        "courseIndex": 0.24,
+        "roleAttack": 0.11,
+        "st": 0.1,
+        "exhibition": 0.09,
+        "roleHold": 0.08,
+        "rolePickup": 0.03,
+        "local": 0.05,
+        "turn": 0.025,
+        "national": 0.02,
+        "motor": 0.005
+      }
+    },
+    {
+      "id": "p1-flow-shift-100bp",
+      "kind": "candidate",
+      "hypothesis": "Increase race-flow by 1 point, funded equally from course and national skill while keeping race-flow ahead of course.",
+      "weights": {
+        "raceFlow": 0.26,
+        "courseIndex": 0.235,
+        "roleAttack": 0.11,
+        "st": 0.1,
+        "exhibition": 0.09,
+        "roleHold": 0.08,
+        "rolePickup": 0.03,
+        "local": 0.05,
+        "turn": 0.025,
+        "national": 0.015,
+        "motor": 0.005
+      }
+    },
+    {
+      "id": "p2-course-shift-50bp",
+      "kind": "candidate",
+      "hypothesis": "Increase course by 0.5 points, funded from national skill while keeping race-flow ahead of course.",
+      "weights": {
+        "raceFlow": 0.25,
+        "courseIndex": 0.245,
+        "roleAttack": 0.11,
+        "st": 0.1,
+        "exhibition": 0.09,
+        "roleHold": 0.08,
+        "rolePickup": 0.03,
+        "local": 0.05,
+        "turn": 0.025,
+        "national": 0.015,
+        "motor": 0.005
+      }
+    },
+    {
+      "id": "p3-coupled-start-attack-shift-100bp",
+      "kind": "candidate",
+      "hypothesis": "Increase role-attack and ST by 0.5 points each, funded from role-hold and national skill; this intentionally strengthens ST both directly and through the composite role-attack score.",
+      "weights": {
+        "raceFlow": 0.25,
+        "courseIndex": 0.24,
+        "roleAttack": 0.115,
+        "st": 0.105,
+        "exhibition": 0.09,
+        "roleHold": 0.075,
+        "rolePickup": 0.03,
+        "local": 0.05,
+        "turn": 0.025,
+        "national": 0.015,
+        "motor": 0.005
+      }
+    }
+  ],
+  "cohort": {
+    "predictionSource": "data/predictions/YYYYMMDD.json",
+    "resultSource": "data/results/YYYYMMDD.json",
+    "replayBasisPath": "prediction.practicalSelection.frameRiseFallReplayBasis",
+    "replayBasisSource": "pre-deadline-production-prediction",
+    "canonicalDeduplication": "predictions-preferred-over-verificationPredictions",
+    "inputContract": "scripts/analysis-input-contract.js",
+    "discoveryDates": [
+      "20260815",
+      "20260816",
+      "20260817",
+      "20260818"
+    ],
+    "holdoutDates": [
+      "20260819",
+      "20260823",
+      "20260827",
+      "20260828"
+    ],
+    "expectedReplayBasisRaceCount": 525,
+    "expectedSettledRaceCount": 451,
+    "expectedReplayBasisBoatCount": 3150,
+    "resultMissingRowsRemainExcluded": true,
+    "retrospectiveBackfillAllowed": false
+  },
+  "discoverySelection": {
+    "candidateMustHavePositiveNetTop1Wins": true,
+    "winnerTop3CoverageMustNotDecrease": true,
+    "meanWinnerRankMustNotIncrease": true,
+    "eachChronologicalHalfNetTop1WinsMinimum": 0,
+    "tieBreakOrder": [
+      "netTop1Wins-desc",
+      "pairwiseFinishOrderConcordanceDelta-desc",
+      "winnerTop3Delta-desc",
+      "l1DistanceFromBaseline-asc",
+      "candidateId-asc"
+    ],
+    "selectAtMostOneCandidate": true
+  },
+  "sealedHoldoutGate": {
+    "evaluateSelectedCandidateOnly": true,
+    "top1BOnlyMustExceedAOnly": true,
+    "maximumOneSidedExactPValue": 0.05,
+    "eachChronologicalHalfNetTop1WinsMinimum": 0,
+    "winnerTop3CoverageMustNotDecreaseOverallOrByHalf": true,
+    "meanWinnerRankMustNotIncrease": true,
+    "maximumDecision": "review-candidate-score-only"
+  },
+  "newEnvironmentGate": {
+    "minimumProspectiveActiveRaceCount": 100,
+    "firstAndSecondHalfMustBeNonHarmful": true,
+    "whenNoActiveRaceEvidence": "blocked-no-active-new-environment-evidence"
+  },
+  "safety": {
+    "productionChanged": false,
+    "automaticApplication": false,
+    "usableForPrediction": false,
+    "runtimeImportAllowed": false,
+    "downstreamScenarioMarksTicketsClaimAllowed": false,
+    "finalHumanApprovalRequired": true,
+    "productionApplicationRequiresSeparatePullRequest": true
+  }
+}
