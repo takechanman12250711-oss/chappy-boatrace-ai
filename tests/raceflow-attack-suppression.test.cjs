@@ -1,0 +1,10 @@
+'use strict';
+const assert=require('assert');
+const {build}=require('../scripts/analyze-raceflow-attack-suppression.cjs');
+const r=build();
+assert.strictEqual(r.scope.holdoutUsed,false);assert.strictEqual(r.scope.productionChanged,false);
+assert.strictEqual(r.neutralizationSimulation.baselineHits,124);
+assert.ok(r.pairSummary.allAttack.pairs>=r.pairSummary.suppressed.pairs);
+assert.ok(r.pairSummary.allAttack.pairs>=r.pairSummary.unsuppressed.pairs);
+assert.strictEqual(r.chronologicalQuartiles.length,4);
+console.log('raceFlow attack suppression tests passed');
