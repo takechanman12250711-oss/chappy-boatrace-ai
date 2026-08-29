@@ -1,0 +1,16 @@
+name: Check flow suppression
+on:
+  pull_request:
+    paths: ['scripts/analyze-flow-suppression.cjs','tests/flow-suppression.test.cjs','.github/workflows/check-flow-suppression.yml']
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/flow-suppression.test.cjs
+      - run: node scripts/analyze-flow-suppression.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code
