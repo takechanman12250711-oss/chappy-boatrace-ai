@@ -12,11 +12,13 @@ on:
       - "js/**/*.js"
       - "**/*.html"
       - "scripts/analysis-input-contract.js"
+      - "scripts/analyze-course-miss-conditions.cjs"
       - "scripts/build-effective-score-miss-attribution-report.js"
       - "scripts/build-effective-score-weight-ab-report.js"
       - "scripts/check-charter.js"
       - "scripts/test-effective-score-miss-attribution.js"
       - "scripts/test-effective-score-weight-ab.js"
+      - "tests/course-miss-condition-breakdown.test.cjs"
       - "data/predictions/202608*.json"
       - "data/results/202608*.json"
       - "data/stats/effective-score-miss-attribution-report.json"
@@ -34,11 +36,13 @@ on:
       - "js/**/*.js"
       - "**/*.html"
       - "scripts/analysis-input-contract.js"
+      - "scripts/analyze-course-miss-conditions.cjs"
       - "scripts/build-effective-score-miss-attribution-report.js"
       - "scripts/build-effective-score-weight-ab-report.js"
       - "scripts/check-charter.js"
       - "scripts/test-effective-score-miss-attribution.js"
       - "scripts/test-effective-score-weight-ab.js"
+      - "tests/course-miss-condition-breakdown.test.cjs"
       - "data/predictions/202608*.json"
       - "data/results/202608*.json"
       - "data/stats/effective-score-miss-attribution-report.json"
@@ -76,6 +80,8 @@ jobs:
             '*.html'
       - name: Test discovery-only miss attribution
         run: node scripts/test-effective-score-miss-attribution.js
+      - name: Test course miss condition breakdown
+        run: node tests/course-miss-condition-breakdown.test.cjs
       - name: Test existing score A/B contract
         run: node scripts/test-effective-score-weight-ab.js
       - name: Check charter
