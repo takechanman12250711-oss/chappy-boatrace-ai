@@ -187,12 +187,16 @@ function configuredWindow(config) {
   return { firstDate, lastDate: frozenDate };
 }
 
-function predictionFilesInWindow(predictionsDir, config) {
+function predictionFilesInWindow(predictionsDir, config, options = {}) {
   const { firstDate, lastDate } = configuredWindow(config);
+  const allowedDates = Array.isArray(options.allowedDates)
+    ? new Set(options.allowedDates.map(normalizedDate).filter(Boolean))
+    : null;
   return fs.readdirSync(predictionsDir)
     .filter(name => /^\d{8}\.json$/.test(name))
     .map(name => ({ name, date: name.slice(0, 8) }))
     .filter(item => item.date >= firstDate && item.date <= lastDate)
+    .filter(item => !allowedDates || allowedDates.has(item.date))
     .sort((left, right) => left.date.localeCompare(right.date));
 }
 
@@ -213,7 +217,11 @@ function collectReplayBasisCohort(options = {}) {
     throw new Error("config frozenAt timestamp is invalid");
   }
 
-  for (const { name, date } of predictionFilesInWindow(predictionsDir, config)) {
+  for (const { name, date } of predictionFilesInWindow(
+    predictionsDir,
+    config,
+    { allowedDates: options.allowedDates }
+  )) {
     const payload = readJson(path.join(predictionsDir, name));
     const rawPrimaryRows = Array.isArray(payload?.predictions)
       ? payload.predictions

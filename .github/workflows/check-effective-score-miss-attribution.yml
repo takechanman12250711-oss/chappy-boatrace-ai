@@ -1,0 +1,86 @@
+name: Check effective score miss attribution
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "config/effective-score-miss-attribution-v1.json"
+      - "config/effective-score-weight-ab-v1.json"
+      - "config/effective-score-weight-ab-input-freeze-v1.json"
+      - "config/chappy-charter.json"
+      - "docs/CHAPPY_CHARTER.md"
+      - "js/**/*.js"
+      - "**/*.html"
+      - "scripts/analysis-input-contract.js"
+      - "scripts/build-effective-score-miss-attribution-report.js"
+      - "scripts/build-effective-score-weight-ab-report.js"
+      - "scripts/check-charter.js"
+      - "scripts/test-effective-score-miss-attribution.js"
+      - "scripts/test-effective-score-weight-ab.js"
+      - "data/predictions/202608*.json"
+      - "data/results/202608*.json"
+      - "data/stats/effective-score-miss-attribution-report.json"
+      - "data/stats/effective-score-weight-ab-report.json"
+      - ".github/workflows/check-effective-score-miss-attribution.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "config/effective-score-miss-attribution-v1.json"
+      - "config/effective-score-weight-ab-v1.json"
+      - "config/effective-score-weight-ab-input-freeze-v1.json"
+      - "config/chappy-charter.json"
+      - "docs/CHAPPY_CHARTER.md"
+      - "js/**/*.js"
+      - "**/*.html"
+      - "scripts/analysis-input-contract.js"
+      - "scripts/build-effective-score-miss-attribution-report.js"
+      - "scripts/build-effective-score-weight-ab-report.js"
+      - "scripts/check-charter.js"
+      - "scripts/test-effective-score-miss-attribution.js"
+      - "scripts/test-effective-score-weight-ab.js"
+      - "data/predictions/202608*.json"
+      - "data/results/202608*.json"
+      - "data/stats/effective-score-miss-attribution-report.json"
+      - "data/stats/effective-score-weight-ab-report.json"
+      - ".github/workflows/check-effective-score-miss-attribution.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: effective-score-miss-attribution-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-discovery-only-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify analysis-only source boundary
+        if: github.event_name == 'pull_request'
+        run: |
+          source_commit=$(node -p "require('./config/effective-score-miss-attribution-v1.json').sourceCommit")
+          git cat-file -e "${source_commit}^{commit}"
+          git merge-base --is-ancestor "${source_commit}" HEAD
+          git diff --exit-code "${source_commit}" HEAD -- \
+            js \
+            '*.html'
+      - name: Test discovery-only miss attribution
+        run: node scripts/test-effective-score-miss-attribution.js
+      - name: Test existing score A/B contract
+        run: node scripts/test-effective-score-weight-ab.js
+      - name: Check charter
+        run: node scripts/check-charter.js
+      - name: Verify fixed report is reproducible
+        run: node scripts/build-effective-score-miss-attribution-report.js --check
+      - name: Confirm checks did not mutate tracked files
+        run: git diff --exit-code

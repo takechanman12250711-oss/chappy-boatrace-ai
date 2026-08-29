@@ -109,6 +109,24 @@ jobs:
           node scripts/test-candidate90-regression.js
           node scripts/check-charter.js
       - name: Verify fixed report is reproducible
-        run: node scripts/build-effective-score-weight-ab-report.js --check
+        run: |
+          source_commit=$(node -p \
+            "require('./config/effective-score-weight-ab-input-freeze-v1.json').sourceCommit")
+          snapshot_dir=$(mktemp -d)
+          git archive "${source_commit}" -- data/predictions data/results | \
+            tar -x -C "${snapshot_dir}"
+          SNAPSHOT_DIR="${snapshot_dir}" node <<'NODE'
+          const path = require("node:path");
+          const reportBuilder = require(
+            "./scripts/build-effective-score-weight-ab-report"
+          );
+          const snapshotDir = process.env.SNAPSHOT_DIR;
+          const report = reportBuilder.buildReport({
+            predictionsDir: path.join(snapshotDir, "data", "predictions"),
+            resultsDir: path.join(snapshotDir, "data", "results")
+          });
+          reportBuilder.checkReport(report);
+          console.log("effective score weight A/B report is reproducible");
+          NODE
       - name: Confirm the check did not mutate tracked files
         run: git diff --exit-code
