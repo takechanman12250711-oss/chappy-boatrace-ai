@@ -4,6 +4,8 @@ const {build}=require('../scripts/analyze-raceflow-attack-suppression.cjs');
 const r=build();
 assert.strictEqual(r.scope.holdoutUsed,false);assert.strictEqual(r.scope.productionChanged,false);
 assert.strictEqual(r.neutralizationSimulation.baselineHits,124);
+assert.ok(r.neutralizationSimulation.candidateHits>=100,'neutralization ranking must retain valid boat identities and a sane top1 scale');
+assert.ok(r.neutralizationSimulation.changedTopBoatCount<=100,'neutralization must not rewrite most Discovery winners because of invalid ranking identities');
 assert.ok(r.pairSummary.allAttack.pairs>=r.pairSummary.suppressed.pairs);
 assert.ok(r.pairSummary.allAttack.pairs>=r.pairSummary.unsuppressed.pairs);
 assert.strictEqual(r.chronologicalQuartiles.length,4);
