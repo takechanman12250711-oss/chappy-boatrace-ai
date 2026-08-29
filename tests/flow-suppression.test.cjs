@@ -1,0 +1,1 @@
+'use strict';const assert=require('assert');const {build}=require('../scripts/analyze-flow-suppression.cjs');const r=build();assert.strictEqual(r.scope.holdoutUsed,false);assert.strictEqual(r.scope.productionChanged,false);assert.ok(r.attackWin.count>=0);assert.ok(r.innerWin.count>=0);assert.ok(r.attackWin.count+r.innerWin.count>0);console.log('flow suppression tests passed');
