@@ -4,8 +4,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const scoreAb = require('../js/effective-score-weight-ab');
 const missReport = require('./build-effective-score-miss-attribution-report');
+const inputContract = require('./analysis-input-contract');
 
 const ROOT = path.resolve(__dirname, '..');
+const RESULTS_DIR = path.join(ROOT, 'data', 'results');
 const OUTPUT_JSON = path.join(ROOT, 'data', 'stats', 'effective-score-course-miss-condition-breakdown.json');
 const OUTPUT_MD = path.join(ROOT, 'data', 'stats', 'effective-score-course-miss-condition-breakdown.md');
 
@@ -31,9 +33,21 @@ function countBy(rows, selector) {
     .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key, 'ja'));
 }
 
+function actualStartByBoat(result, boatNo) {
+  const starts = Array.isArray(result?.starts) ? result.starts : [];
+  const found = starts.find(start => Number(start?.boat) === Number(boatNo));
+  const st = Number(found?.st);
+  return Number.isFinite(st) ? st : null;
+}
+
 function buildCourseMissConditionBreakdown(options = {}) {
   const { analysisConfig, weightConfig, settled } = missReport.loadDiscovery(options);
   const baseline = scoreAb.baselineProfile(weightConfig);
+  const targetKeys = new Set(settled.rows.map(row => row.raceKey));
+  const officialResults = inputContract.collectOfficialResults(
+    options.resultsDir || RESULTS_DIR,
+    targetKeys
+  );
   const misses = [];
 
   for (const row of settled.rows) {
@@ -55,6 +69,13 @@ function buildCourseMissConditionBreakdown(options = {}) {
       .filter(item => item.weightedDifference > 1e-12)
       .sort((left, right) => right.weightedDifference - left.weightedDifference)[0] || null;
     const race = parseRaceKey(row.raceKey);
+    const officialResult = officialResults.get(row.raceKey) || null;
+    const winningMethod = inputContract.winningMethod(officialResult) || 'unknown';
+    const predictedActualSt = actualStartByBoat(officialResult, top.boatNo);
+    const winnerActualSt = actualStartByBoat(officialResult, winner.boatNo);
+    const actualStDelta = predictedActualSt !== null && winnerActualSt !== null
+      ? Number((winnerActualSt - predictedActualSt).toFixed(3))
+      : null;
 
     misses.push({
       raceKey: row.raceKey,
@@ -65,6 +86,10 @@ function buildCourseMissConditionBreakdown(options = {}) {
       winnerBoat: winner.boatNo,
       winnerRank: winner.rank,
       path: `${top.boatNo}->${winner.boatNo}`,
+      winningMethod,
+      predictedActualSt,
+      winnerActualSt,
+      actualStDelta,
       rawScoreGap: Number((top.rawTotal - winner.rawTotal).toFixed(6)),
       courseWeightedGap: Number((
         (top.components.courseIndex - winner.components.courseIndex) *
@@ -79,6 +104,19 @@ function buildCourseMissConditionBreakdown(options = {}) {
 
   const byVenue = countBy(misses, row => row.venueCode || 'unknown');
   const byPath = countBy(misses, row => row.path);
+  const byWinningMethod = countBy(misses, row => row.winningMethod);
+  const byPathWinningMethod = countBy(
+    misses,
+    row => `${row.path}|${row.winningMethod}`
+  );
+  const byMethodStrongestWinnerAdvantage = countBy(
+    misses,
+    row => `${row.winningMethod}|${row.strongestWinnerAdvantage}`
+  );
+  const byVenuePathWinningMethod = countBy(
+    misses,
+    row => `${row.venueCode || 'unknown'}|${row.path}|${row.winningMethod}`
+  );
   const byPredictedBoat = countBy(misses, row => row.predictedBoat);
   const byWinnerBoat = countBy(misses, row => row.winnerBoat);
   const byWinnerRank = countBy(misses, row => row.winnerRank);
@@ -86,26 +124,43 @@ function buildCourseMissConditionBreakdown(options = {}) {
     misses,
     row => row.strongestWinnerAdvantage
   );
+  const officialWinningMethodKnownCount = misses.filter(
+    row => row.winningMethod !== 'unknown'
+  ).length;
+  const actualStPairKnownCount = misses.filter(
+    row => row.predictedActualSt !== null && row.winnerActualSt !== null
+  ).length;
 
   return {
-    schemaVersion: 1,
-    analysisId: 'effective-score-course-miss-condition-breakdown-v1',
+    schemaVersion: 2,
+    analysisId: 'effective-score-course-miss-condition-breakdown-v2',
     generatedAt: analysisConfig.createdAt,
     source: {
       upstreamAnalysisId: analysisConfig.analysisId,
       sourceCommit: analysisConfig.sourceCommit,
       discoveryDates: analysisConfig.cohort.discoveryDates,
+      officialResultSource: 'boatrace-official',
     },
     scope: {
       dataset: 'discovery-only',
       holdoutUsed: false,
       target: 'baseline top-1 misses whose strongest baseline-top weighted advantage is courseIndex',
-      decisiveMethodStatus: 'not-collected-in-current-discovery-contract',
+      decisiveMethodStatus: 'official-result-joined',
       productionChanged: false,
+    },
+    diagnostics: {
+      officialWinningMethodKnownCount,
+      officialWinningMethodMissingCount: misses.length - officialWinningMethodKnownCount,
+      actualStPairKnownCount,
+      actualStPairMissingCount: misses.length - actualStPairKnownCount,
     },
     total: misses.length,
     byVenue,
     byPath,
+    byWinningMethod,
+    byPathWinningMethod,
+    byMethodStrongestWinnerAdvantage,
+    byVenuePathWinningMethod,
     byPredictedBoat,
     byWinnerBoat,
     byWinnerRank,
@@ -117,7 +172,7 @@ function buildCourseMissConditionBreakdown(options = {}) {
 function toMarkdown(report) {
   const table = (title, rows, label) => {
     const lines = [`## ${title}`, '', `| ${label} | 件数 | 構成比 |`, '|---|---:|---:|'];
-    for (const row of rows.slice(0, 24)) {
+    for (const row of rows.slice(0, 30)) {
       const share = report.total ? ((row.count / report.total) * 100).toFixed(1) : '0.0';
       lines.push(`| ${row.key} | ${row.count} | ${share}% |`);
     }
@@ -125,31 +180,35 @@ function toMarkdown(report) {
   };
 
   return [
-    '# courseIndex 主因ミスの条件分解',
+    '# courseIndex 主因ミスの条件分解 v2',
     '',
     '- 対象: Discovery only / courseIndex が baseline 側最大優位だった1着予測ミス',
     `- 件数: **${report.total}**`,
     '- holdout: **未使用**',
     '- 本番予想ロジック: **変更なし**',
-    '- 決まり手: 現行Discovery契約に収集項目がないため、このレポートでは断定しない',
+    `- 公式決まり手取得: **${report.diagnostics.officialWinningMethodKnownCount}/${report.total}**`,
+    `- 実STペア取得: **${report.diagnostics.actualStPairKnownCount}/${report.total}**`,
+    '',
+    table('決まり手別', report.byWinningMethod, '決まり手'),
+    '',
+    table('予測艇→実勝者 × 決まり手', report.byPathWinningMethod, '経路|決まり手'),
+    '',
+    table('決まり手 × 実勝者が最も上回った評価要素', report.byMethodStrongestWinnerAdvantage, '決まり手|要素'),
+    '',
+    table('場 × 予測艇→実勝者 × 決まり手', report.byVenuePathWinningMethod, '場|経路|決まり手'),
     '',
     table('場別', report.byVenue, '場コード'),
     '',
     table('予測艇→実勝者', report.byPath, '経路'),
     '',
-    table('予測1着艇別', report.byPredictedBoat, '艇番'),
-    '',
-    table('実勝者艇別', report.byWinnerBoat, '艇番'),
-    '',
-    table('実勝者のbaseline順位', report.byWinnerRank, '順位'),
-    '',
     table('実勝者が最も上回っていた要素', report.byStrongestWinnerAdvantage, '要素'),
     '',
     '## 次の判断',
     '',
-    '- 偏りが大きい「場 × 予測艇→勝者」を条件付き仮説の候補にする。',
+    '- まず 1→3 / 1→4 を決まり手別に分け、まくり・まくり差し・差しのどこに偏るか確認する。',
+    '- その塊ごとに実ST差と、保存済みのST・展示・展開評価差を照合する。',
+    '- 場別件数は母数差があるため、件数だけで場補正を採用しない。',
     '- 全場一律の courseIndex 重み変更は行わない。',
-    '- 決まり手は公式結果から分析契約へ追加した後に、場・コースと交差検証する。',
     '- この分析だけで本番採用を決めない。',
     '',
   ].join('\n');
@@ -174,6 +233,7 @@ if (require.main === module) main();
 module.exports = {
   OUTPUT_JSON,
   OUTPUT_MD,
+  actualStartByBoat,
   buildCourseMissConditionBreakdown,
   parseRaceKey,
   toMarkdown,
