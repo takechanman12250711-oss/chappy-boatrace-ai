@@ -1,0 +1,22 @@
+name: Check inner attack control comparison
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test Discovery control comparison
+        run: node tests/inner-attack-control-comparison.test.cjs
+      - name: Print control comparison
+        run: node scripts/compare-inner-attack-controls.cjs
+      - name: Check charter
+        run: node scripts/check-charter.js
+      - name: Confirm no tracked files were mutated
+        run: git diff --exit-code
