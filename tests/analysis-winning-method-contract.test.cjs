@@ -1,0 +1,10 @@
+'use strict';
+const assert = require('assert');
+const { winningMethod, WINNING_METHODS } = require('../scripts/analysis-input-contract');
+assert.strictEqual(winningMethod({ source: 'boatrace-official', winningMethod: '差し' }), '差し');
+assert.strictEqual(winningMethod({ __officialResult: { winningMethod: 'まくり差し' } }), 'まくり差し');
+assert.strictEqual(winningMethod({ winningMethod: ' 逃げ ' }), '逃げ');
+assert.strictEqual(winningMethod({ winningMethod: '不明' }), '');
+assert.strictEqual(winningMethod({}), '');
+assert.deepStrictEqual([...WINNING_METHODS], ['逃げ','差し','まくり','まくり差し','抜き','恵まれ']);
+console.log('analysis winning method contract tests passed');
