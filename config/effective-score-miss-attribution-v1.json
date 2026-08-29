@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "analysisId": "effective-score-miss-attribution-v1",
+  "status": "retrospective-proposal-only",
+  "createdAt": "2026-08-29T06:51:30Z",
+  "sourceCommit": "89a2e49ef7bc0a31fcf73a55d44e9a03825bd3a1",
+  "upstream": {
+    "weightAbPreregistrationCommit": "0f27c5467e7e838c64213c6f3d5eff274c4de86a",
+    "inputFreezeCommit": "37dfdc3a390d27bd6067ef2c2ad06fe1da028b74"
+  },
+  "cohort": {
+    "scope": "discovery-only",
+    "discoveryDates": [
+      "20260815",
+      "20260816",
+      "20260817",
+      "20260818"
+    ],
+    "forbiddenHoldoutDates": [
+      "20260819",
+      "20260823",
+      "20260827",
+      "20260828"
+    ],
+    "expectedReplayRaceCount": 258,
+    "expectedReplayBoatCount": 1548,
+    "expectedSettledRaceCount": 258,
+    "expectedBaselineTop1HitCount": 124,
+    "expectedBaselineTop1MissCount": 134,
+    "expectedMissHalfCounts": [63, 71],
+    "expectedFingerprints": {
+      "replay": "sha256:4e03373df68a08e785af3e290903cd8805fc8e644bc23b6f0de0331c4ef9e986",
+      "settled": "sha256:5ebd791376e068b69aa1314aa8b3beea8096caf183b03404861f6f66846ee444",
+      "missSubset": "sha256:25ec72f68700c1ba8c9a0a765db024389bb528d2ab5e3da343efc8187ba6c422"
+    }
+  },
+  "missDefinition": {
+    "unit": "race",
+    "definition": "official winner differs from the production effective-score top-ranked boat",
+    "baselineProfileId": "p0-current",
+    "rankingTieBreak": [
+      "total-desc",
+      "roleAttack-desc",
+      "boatNo-asc"
+    ],
+    "ticketMiss": false,
+    "causalClaim": false
+  },
+  "attribution": {
+    "componentOrder": [
+      "raceFlow",
+      "courseIndex",
+      "roleAttack",
+      "st",
+      "exhibition",
+      "roleHold",
+      "rolePickup",
+      "local",
+      "turn",
+      "national",
+      "motor"
+    ],
+    "comparison": "official-winner minus baseline-top",
+    "contribution": "component difference multiplied by the current production coefficient",
+    "strongestWinnerAdvantage": "largest strictly-positive weighted contribution, else none",
+    "strongestTopAdvantage": "most-negative weighted contribution",
+    "tieBreak": "componentOrder-first",
+    "rawGap": "baseline-top raw effective score minus official-winner raw effective score",
+    "medianPolicy": "lower median after ascending sort"
+  },
+  "courseSensitivity": {
+    "naturalClamp": {
+      "minimum": 1,
+      "maximum": 100,
+      "status": "retrospective-rejected"
+    },
+    "spreadFormula": "raceMean + factor * (courseIndex - raceMean)",
+    "factors": [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.6, 0.5],
+    "retrospectiveSelectionRule": {
+      "order": "largest factor below 1 first",
+      "positiveOverallNetTop1": true,
+      "eachEqualCountChronologicalHalfNetTop1Minimum": 0,
+      "winnerTop3MustNotDecrease": true,
+      "meanWinnerRankMustNotIncrease": true,
+      "selectAtMostOne": true
+    },
+    "exploratoryHypothesis": {
+      "factor": 0.9,
+      "approved": false,
+      "usableForPrediction": false,
+      "rollbackFactor": 1,
+      "requiredNextStep": "separate preregistered future shadow cohort after explicit owner approval"
+    }
+  },
+  "priorWeightNeighborhoodSanity": {
+    "status": "retrospective-unpreregistered",
+    "orderedReceiverDonorPairs": true,
+    "deltas": [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01],
+    "retainExistingWeightConstraints": true,
+    "expectedValidProfileCount": 618,
+    "expectedRecoveredBaselineMissUnionCount": 0,
+    "expectedMaximumNetTop1": 0
+  },
+  "safety": {
+    "productionChanged": false,
+    "runtimeImportAllowed": false,
+    "automaticApplication": false,
+    "proposalApproved": false,
+    "usableForPrediction": false,
+    "holdoutResultsRead": false,
+    "holdoutEvaluated": false,
+    "downstreamScenarioMarksTicketsSupported": false,
+    "newEnvironmentSupported": false,
+    "explicitOwnerApprovalRequiredBeforeFutureShadow": true,
+    "productionApplicationRequiresSeparatePreregisteredEvaluationAndPullRequest": true
+  }
+}

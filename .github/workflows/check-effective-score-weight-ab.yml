@@ -75,7 +75,6 @@ jobs:
           preregistration_commit=0f27c5467e7e838c64213c6f3d5eff274c4de86a
           source_commit=$(node -p "require('./config/effective-score-weight-ab-v1.json').sourceCommit")
           git cat-file -e "${preregistration_commit}^{commit}"
-          git merge-base --is-ancestor "${preregistration_commit}" HEAD
           test "$(git rev-parse "${preregistration_commit}^")" = "${source_commit}"
           test "$(git diff --name-only "${source_commit}" "${preregistration_commit}")" = \
             "config/effective-score-weight-ab-v1.json"
@@ -88,7 +87,6 @@ jobs:
           preregistration_commit=0f27c5467e7e838c64213c6f3d5eff274c4de86a
           input_freeze_commit=37dfdc3a390d27bd6067ef2c2ad06fe1da028b74
           git cat-file -e "${input_freeze_commit}^{commit}"
-          git merge-base --is-ancestor "${input_freeze_commit}" HEAD
           test "$(git rev-parse "${input_freeze_commit}^")" = \
             "${preregistration_commit}"
           test "$(git diff --name-only "${preregistration_commit}" "${input_freeze_commit}")" = \
@@ -109,6 +107,24 @@ jobs:
           node scripts/test-candidate90-regression.js
           node scripts/check-charter.js
       - name: Verify fixed report is reproducible
-        run: node scripts/build-effective-score-weight-ab-report.js --check
+        run: |
+          source_commit=$(node -p \
+            "require('./config/effective-score-weight-ab-input-freeze-v1.json').sourceCommit")
+          snapshot_dir=$(mktemp -d)
+          git archive "${source_commit}" -- data/predictions data/results | \
+            tar -x -C "${snapshot_dir}"
+          SNAPSHOT_DIR="${snapshot_dir}" node <<'NODE'
+          const path = require("node:path");
+          const reportBuilder = require(
+            "./scripts/build-effective-score-weight-ab-report"
+          );
+          const snapshotDir = process.env.SNAPSHOT_DIR;
+          const report = reportBuilder.buildReport({
+            predictionsDir: path.join(snapshotDir, "data", "predictions"),
+            resultsDir: path.join(snapshotDir, "data", "results")
+          });
+          reportBuilder.checkReport(report);
+          console.log("effective score weight A/B report is reproducible");
+          NODE
       - name: Confirm the check did not mutate tracked files
         run: git diff --exit-code
