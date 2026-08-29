@@ -369,16 +369,113 @@ function doubleTimeClaimForTicket(prediction, ticket) {
   return { theoryKey: "doubleTime", label: "ダブルタイム", theoryVersion: evidence.source.startsWith("ai-core-exhibition-performance-v2:") ? "ai-core-exhibition-performance-v2" : "approved-double-time-v1", formal: true, source: evidence.source };
 }
 
+const EFFECTIVE_SCORE_CONTRACT_VERSION = "ai-core-effective-score-contract-v1";
+const EFFECTIVE_SCORE_SCOPE = "aiCore.analyses[].indexes.total";
+const NEW_ENVIRONMENT_THEORY_SOURCE = "ai-core-new-environment-theory-v1";
+const EXPECTED_FINAL_TOTAL_COEFFICIENTS = {
+  raceFlow: 0.25,
+  courseIndex: 0.24,
+  roleAttack: 0.11,
+  st: 0.10,
+  exhibition: 0.09,
+  roleHold: 0.08,
+  rolePickup: 0.03,
+  local: 0.05,
+  turn: 0.025,
+  national: 0.02,
+  motor: 0.005
+};
+const EXPECTED_NEW_ENGINE_ADJUSTMENTS = {
+  motorIndexDeviationFrom50Multiplier: 0.45,
+  raceFlowStThresholdInclusive: 72,
+  raceFlowStBonus: 3,
+  raceFlowTurnThresholdInclusive: 72,
+  raceFlowTurnBonus: 3
+};
+
+function exactNumericFields(actual, expected) {
+  return Object.entries(expected).every(
+    ([key, value]) => Number(actual?.[key]) === value
+  );
+}
+
+function scoredAiCoreEvidence(prediction) {
+  const analyses = prediction?.aiCore?.analyses;
+  if (!Array.isArray(analyses)) {
+    return { verified: false, boatCount: 0 };
+  }
+  const boatNumbers = analyses.map(
+    row => Number(row?.boatNo ?? row?.number ?? row?.lane ?? row?.waku)
+  );
+  const verified =
+    analyses.length === 6 &&
+    new Set(boatNumbers).size === 6 &&
+    boatNumbers.every(boatNo => boatNo >= 1 && boatNo <= 6) &&
+    analyses.every(row => Number.isFinite(row?.indexes?.total));
+  return { verified, boatCount: analyses.length };
+}
+
 function newEngineEvidence(prediction) {
   const support = prediction?.motorEngineSupport || {};
   const centerBoatNo = supportAttackBoatNo(prediction, support);
   const statements = supportStatements(support);
   const mode = String(support?.mode || "").trim();
-  const weights = support?.weights || {};
-  const newEngineMode = support?.newEngineMode === true && mode === "new-engine";
-  const explicit = statements.some(text => /新エンジン期/.test(text)) && statements.some(text => /モーター実績の比重を下げ|展示・今節ST・技量を優先/.test(text));
-  const weightShift = Number(weights?.st) === 0.22 && Number(weights?.exhibition) === 0.23 && Number(weights?.motor) === 0.05 && Number(weights?.local) === 0.14 && Number(weights?.skill) === 0.10 && Number(weights?.attack) === 0.14 && Number(weights?.raceFlow) === 0.08 && Number(weights?.turn) === 0.04;
-  return { formal: newEngineMode && centerBoatNo >= 1 && centerBoatNo <= 6 && explicit && weightShift, newEngineMode, mode, centerBoatNo, weights, statements };
+  const scoreContract = support?.effectiveScoreContract || {};
+  const finalTotalCoefficients = scoreContract?.finalTotalCoefficients || {};
+  const newEngineAdjustments = scoreContract?.newEngineAdjustments || {};
+  const canonicalTheory = prediction?.aiCore?.newEnvironmentTheory || {};
+  const scoredAiCore = scoredAiCoreEvidence(prediction);
+  const newEngineMode =
+    support?.newEngineMode === true &&
+    mode === "new-engine";
+  const actualModeApplied =
+    canonicalTheory?.isActive === true &&
+    canonicalTheory?.source === NEW_ENVIRONMENT_THEORY_SOURCE;
+  const explicit =
+    statements.some(text => /新エンジン期/.test(text)) &&
+    statements.some(
+      text => /モーター実績の比重を下げ|展示・今節ST・技量を優先/.test(text)
+    );
+  const scoreContractMatches =
+    scoreContract?.version === EFFECTIVE_SCORE_CONTRACT_VERSION &&
+    scoreContract?.scope === EFFECTIVE_SCORE_SCOPE &&
+    exactNumericFields(
+      finalTotalCoefficients,
+      EXPECTED_FINAL_TOTAL_COEFFICIENTS
+    ) &&
+    newEngineAdjustments?.applied === true &&
+    newEngineAdjustments?.modeSource === NEW_ENVIRONMENT_THEORY_SOURCE &&
+    exactNumericFields(
+      newEngineAdjustments,
+      EXPECTED_NEW_ENGINE_ADJUSTMENTS
+    );
+  const legacyWeightProfilePresent = Boolean(
+    support?.weights &&
+    typeof support.weights === "object"
+  );
+  return {
+    formal:
+      newEngineMode &&
+      actualModeApplied &&
+      scoredAiCore.verified &&
+      centerBoatNo >= 1 &&
+      centerBoatNo <= 6 &&
+      explicit &&
+      scoreContractMatches,
+    newEngineMode,
+    actualModeApplied,
+    actualModeSource: String(canonicalTheory?.source || ""),
+    scoredAiCoreVerified: scoredAiCore.verified,
+    scoredBoatCount: scoredAiCore.boatCount,
+    mode,
+    centerBoatNo,
+    scoreContract,
+    scoreContractMatches,
+    finalTotalCoefficients,
+    newEngineAdjustments,
+    legacyWeightProfilePresent,
+    statements
+  };
 }
 
 function newEngineClaimForTicket(prediction, ticket) {
@@ -386,7 +483,14 @@ function newEngineClaimForTicket(prediction, ticket) {
   if (!evidence.formal) return null;
   const boats = normalizeTicket(ticket).split("-").map(Number);
   if (!boats.includes(evidence.centerBoatNo)) return null;
-  return { theoryKey: "newEngine", label: "新エンジン理論", theoryVersion: "motor-engine-new-engine-mode-v1", formal: true, source: "motor-engine-support" };
+  return {
+    theoryKey: "newEngine",
+    label: "新エンジン理論",
+    theoryVersion:
+      "motor-engine-new-engine-mode-v2-effective-score-contract",
+    formal: true,
+    source: "motor-engine-support:effective-score-contract"
+  };
 }
 
 function theoryClaimsFrom(prediction, practicalTickets) {
@@ -471,12 +575,29 @@ function missingReasonsForNewEngine(prediction, evidence) {
   if (!prediction?.motorEngineSupport) return ["support-missing"];
   const reasons = [];
   if (!evidence.newEngineMode) reasons.push("new-engine-mode-off");
-  if (!(evidence.centerBoatNo >= 1 && evidence.centerBoatNo <= 6)) reasons.push("center-boat-missing");
-  const explicit = evidence.statements.some(text => /新エンジン期/.test(text)) && evidence.statements.some(text => /モーター実績の比重を下げ|展示・今節ST・技量を優先/.test(text));
-  if (!explicit) reasons.push("explicit-new-engine-statement-missing");
-  const weights = evidence.weights || {};
-  const weightShift = Number(weights?.st) === 0.22 && Number(weights?.exhibition) === 0.23 && Number(weights?.motor) === 0.05 && Number(weights?.local) === 0.14 && Number(weights?.skill) === 0.10 && Number(weights?.attack) === 0.14 && Number(weights?.raceFlow) === 0.08 && Number(weights?.turn) === 0.04;
-  if (!weightShift) reasons.push("new-engine-weight-profile-mismatch");
+  if (!evidence.actualModeApplied) {
+    reasons.push("ai-core-new-engine-mode-not-applied");
+  }
+  if (!evidence.scoredAiCoreVerified) {
+    reasons.push("ai-core-effective-score-result-missing");
+  }
+  if (!(evidence.centerBoatNo >= 1 && evidence.centerBoatNo <= 6)) {
+    reasons.push("center-boat-missing");
+  }
+  const explicit =
+    evidence.statements.some(text => /新エンジン期/.test(text)) &&
+    evidence.statements.some(
+      text => /モーター実績の比重を下げ|展示・今節ST・技量を優先/.test(text)
+    );
+  if (!explicit) {
+    reasons.push("explicit-new-engine-statement-missing");
+  }
+  if (!evidence.scoreContractMatches) {
+    reasons.push("effective-score-contract-missing");
+  }
+  if (evidence.legacyWeightProfilePresent) {
+    reasons.push("legacy-weight-profile-not-formal");
+  }
   return reasons;
 }
 
@@ -491,7 +612,34 @@ function buildEvidenceDiagnostics(prediction) {
     { theoryKey: "skill", label: "技量理論", supportPresent: Boolean(prediction?.skillLocalSupport), formal: skill.formal === true, missingReasons: skill.formal ? [] : missingReasonsForSkill(prediction, skill), metrics: { attackBoatNo: skill.attackBoatNo || null, targetPresent: Boolean(skill.target) } },
     { theoryKey: "frame-rise-fall", label: "枠別浮沈率", supportPresent: frame.supportPresent === true, formal: frame.formal === true, missingReasons: frame.formal ? [] : missingReasonsForFrame(prediction, frame), metrics: { frameNo: frame.frameNo || null, type: frame.type || "", samples: frame.samples, rate: frame.rate, scenarioType: frame.scenarioType || "", scoreAdjustment: frame.scoreAdjustment, movementDelta: frame.movementDelta, approved: frame.approved, applied: frame.applied } },
     { theoryKey: "double-time", label: "ダブルタイム", supportPresent: doubleTime.supportPresent === true, formal: doubleTime.formal === true, missingReasons: doubleTime.formal ? [] : missingReasonsForDouble(prediction, doubleTime), metrics: { topBoat: doubleTime.topBoat, confidence: doubleTime.confidence, exhibitionGap: doubleTime.exhibitionGap, lapGap: doubleTime.lapGap, exhibitionCount: doubleTime.exhibitionCount, lapCount: doubleTime.lapCount, lapSource: doubleTime.lapSource, approved: doubleTime.approved, applied: doubleTime.applied, isDouble: doubleTime.isDouble } },
-    { theoryKey: "new-engine", label: "新エンジン理論", supportPresent: Boolean(prediction?.motorEngineSupport), formal: newEngine.formal === true, missingReasons: newEngine.formal ? [] : missingReasonsForNewEngine(prediction, newEngine), metrics: { centerBoatNo: newEngine.centerBoatNo || null, mode: newEngine.mode || "", newEngineMode: newEngine.newEngineMode } }
+    {
+      theoryKey: "new-engine",
+      label: "新エンジン理論",
+      supportPresent: Boolean(prediction?.motorEngineSupport),
+      formal: newEngine.formal === true,
+      missingReasons:
+        newEngine.formal
+          ? []
+          : missingReasonsForNewEngine(prediction, newEngine),
+      metrics: {
+        centerBoatNo: newEngine.centerBoatNo || null,
+        mode: newEngine.mode || "",
+        newEngineMode: newEngine.newEngineMode,
+        actualModeApplied: newEngine.actualModeApplied,
+        actualModeSource: newEngine.actualModeSource,
+        scoredAiCoreVerified: newEngine.scoredAiCoreVerified,
+        scoredBoatCount: newEngine.scoredBoatCount,
+        scoreContractVersion:
+          String(newEngine.scoreContract?.version || ""),
+        scoreScope:
+          String(newEngine.scoreContract?.scope || ""),
+        scoreContractMatches: newEngine.scoreContractMatches,
+        finalTotalCoefficients:
+          newEngine.finalTotalCoefficients,
+        newEngineAdjustments:
+          newEngine.newEngineAdjustments
+      }
+    }
   ];
   return { schemaVersion: 1, rows, usableForPrediction: false, automaticApplication: false };
 }

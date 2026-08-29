@@ -417,7 +417,7 @@ assert.equal(
       "js/prediction-runtime-loader.js?v=20260828-ui-audit-display1"
     ) &&
     html.includes(
-      "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal4"
+      "js/hiyori-runtime-loader.js?v=20260829-effective-score-contract1"
     ) &&
     appRuntime.includes(
       'const VERSION = "20260828-ui-audit-display1"'
@@ -426,7 +426,7 @@ assert.equal(
       'const VERSION = "20260828-ui-audit-display1"'
     ) &&
     hiyoriLoader.includes(
-      'const VERSION="20260825-mobile-startup-terminal4"'
+      'const VERSION="20260829-effective-score-contract1"'
     ),
   true,
   "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"

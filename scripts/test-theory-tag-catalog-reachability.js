@@ -134,19 +134,51 @@ const normalKeys = new Set(normalSnapshot.theories.map(row => row.theoryKey));
 });
 
 const newEngine = basePrediction();
+newEngine.newEnvironmentTheory = {
+  isActive: true,
+  source: "ai-core-new-environment-theory-v1"
+};
+newEngine.aiCore = {
+  newEnvironmentTheory:
+    newEngine.newEnvironmentTheory,
+  analyses: Array.from(
+    { length: 6 },
+    (_, index) => ({
+      boatNo: index + 1,
+      indexes: { total: 80 - index }
+    })
+  )
+};
 newEngine.motorEngineSupport = {
   centerBoatNo: 4,
   newEngineMode: true,
   mode: "new-engine",
-  weights: {
-    st: 0.22,
-    exhibition: 0.23,
-    motor: 0.05,
-    local: 0.14,
-    skill: 0.10,
-    attack: 0.14,
-    raceFlow: 0.08,
-    turn: 0.04
+  effectiveScoreContract: {
+    version: "ai-core-effective-score-contract-v1",
+    scope: "aiCore.analyses[].indexes.total",
+    finalTotalCoefficients: {
+      raceFlow: 0.25,
+      courseIndex: 0.24,
+      roleAttack: 0.11,
+      st: 0.10,
+      exhibition: 0.09,
+      roleHold: 0.08,
+      rolePickup: 0.03,
+      local: 0.05,
+      turn: 0.025,
+      national: 0.02,
+      motor: 0.005
+    },
+    newEngineAdjustments: {
+      applied: true,
+      modeSource:
+        "ai-core-new-environment-theory-v1",
+      motorIndexDeviationFrom50Multiplier: 0.45,
+      raceFlowStThresholdInclusive: 72,
+      raceFlowStBonus: 3,
+      raceFlowTurnThresholdInclusive: 72,
+      raceFlowTurnBonus: 3
+    }
   },
   confirms: [
     "新エンジン期",

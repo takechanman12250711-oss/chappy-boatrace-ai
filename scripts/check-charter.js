@@ -345,18 +345,28 @@ const improvementReviewBuilder =
     "scripts/build-improvement-review.js"
   );
 
-const newEngineWeightMatch = aiCore.match(
-  /const NEW_ENGINE_WEIGHTS\s*=\s*\{([\s\S]*?)\};/
+const finalTotalFormulaMatch = aiCore.match(
+  /indexes\.total\s*=\s*clamp\(\s*round\(([\s\S]*?)\)\s*,\s*INDEX_LIMIT\.min\s*,\s*INDEX_LIMIT\.max\s*\);/
 );
-const newEngineMotorMatch = newEngineWeightMatch?.[1]?.match(
-  /motor:\s*([0-9.]+)/
+const actualMotorCoefficient = Number(
+  finalTotalFormulaMatch?.[1]?.match(
+    /indexes\.motor\s*\*\s*([0-9.]+)/
+  )?.[1]
 );
-const actualNewEngineMotorWeight = Number(newEngineMotorMatch?.[1]);
+const newEngineMotorMultiplier = Number(
+  aiCore.match(
+    /score\s*=\s*50\s*\+\s*\(score\s*-\s*50\)\s*\*\s*([0-9.]+)/
+  )?.[1]
+);
 
 assert(
-  Number.isFinite(actualNewEngineMotorWeight) &&
-    actualNewEngineMotorWeight <= charter.newEngine.motorWeightMaximum,
-  "実装の新エンジン期モーター比重が憲章上限を超えています"
+  Number.isFinite(actualMotorCoefficient) &&
+    actualMotorCoefficient <= charter.newEngine.motorWeightMaximum,
+  "返却用総合指数の実効モーター係数が憲章上限を超えています"
+);
+assert(
+  newEngineMotorMultiplier === 0.45,
+  "新エンジン期のモーター偏差圧縮が実装契約と一致しません"
 );
 assert(
   /新エンジン\|新型エンジン\|新モーター\|新燃料/.test(aiCore),

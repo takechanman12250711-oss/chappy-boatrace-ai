@@ -47,7 +47,15 @@ function replaceOneOf(
   );
 }
 
-function generationBlock(version) {
+const CURRENT_HIYORI_VERSION =
+  "20260829-effective-score-contract1";
+const PREVIOUS_HIYORI_VERSION =
+  "20260825-mobile-startup-terminal4";
+
+function generationBlock(
+  version,
+  hiyoriVersion = CURRENT_HIYORI_VERSION
+) {
   return `assert.equal(
   html.includes(
     "js/app-runtime-loader.js?v=20260816-static-race1"
@@ -56,7 +64,7 @@ function generationBlock(version) {
       "js/prediction-runtime-loader.js?v=${version}"
     ) &&
     html.includes(
-      "js/hiyori-runtime-loader.js?v=20260825-mobile-startup-terminal4"
+      "js/hiyori-runtime-loader.js?v=${hiyoriVersion}"
     ) &&
     appRuntime.includes(
       'const VERSION = "20260828-ui-audit-display1"'
@@ -65,11 +73,18 @@ function generationBlock(version) {
       'const VERSION = "${version}"'
     ) &&
     hiyoriLoader.includes(
-      'const VERSION="20260825-mobile-startup-terminal4"'
+      'const VERSION="${hiyoriVersion}"'
     ),
   true,
   "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
 );`;
+}
+
+function previousGenerationBlock(version) {
+  return generationBlock(
+    version,
+    PREVIOUS_HIYORI_VERSION
+  );
 }
 
 function patchLoad(text) {
@@ -98,19 +113,22 @@ function patchLoad(text) {
     "20260828-ui-audit-display1"
   );
   const supportedGenerations = [
-    generationBlock(
+    previousGenerationBlock(
+      "20260828-ui-audit-display1"
+    ),
+    previousGenerationBlock(
       "20260824-readonly-core-fix1"
     ),
-    generationBlock(
+    previousGenerationBlock(
       "20260816-runtime-deadline1"
     ),
-    generationBlock(
+    previousGenerationBlock(
       "20260820-third-six-fixed5"
     ),
-    generationBlock(
+    previousGenerationBlock(
       "20260823-three-course-134-v1"
     ),
-    generationBlock(
+    previousGenerationBlock(
       "20260823-local-water-v2-gap3-v1"
     ),
     `assert.equal(

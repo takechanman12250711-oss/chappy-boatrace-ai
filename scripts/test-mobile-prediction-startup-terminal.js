@@ -56,7 +56,7 @@ assert.match(html, /label\.textContent="再起動中"/);
 });
 assert.match(
   html,
-  /hiyori-runtime-loader\.js\?v=20260825-mobile-startup-terminal4"/,
+  /hiyori-runtime-loader\.js\?v=20260829-effective-score-contract1"/,
   "非同期の日和補助は既存の非blocking契約を維持する"
 );
 assert.match(

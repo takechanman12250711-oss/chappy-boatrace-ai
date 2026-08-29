@@ -19,6 +19,10 @@ const stats = fs.readFileSync(
 );
 const patchedLoad = patchLoad(load);
 const patchedStats = patchStats(stats);
+const previousLoad = load.replaceAll(
+  "20260829-effective-score-contract1",
+  "20260825-mobile-startup-terminal4"
+);
 
 assert.equal(
   patchedLoad.includes(
@@ -46,7 +50,7 @@ assert.equal(
 );
 assert.equal(
   patchedLoad.includes(
-    "'const VERSION=\"20260825-mobile-startup-terminal4\"'"
+    "'const VERSION=\"20260829-effective-score-contract1\"'"
   ),
   true
 );
@@ -72,6 +76,16 @@ assert.equal(
   patchLoad(patchedLoad),
   patchedLoad,
   "現行キャッシュ世代へ再適用しても変更しない"
+);
+assert.notEqual(
+  previousLoad,
+  load,
+  "変更前の日和キャッシュ世代を再現できる"
+);
+assert.equal(
+  patchLoad(previousLoad),
+  patchedLoad,
+  "変更前の日和キャッシュ世代から現行世代へ移行できる"
 );
 assert.equal(
   patchStats(patchedStats),

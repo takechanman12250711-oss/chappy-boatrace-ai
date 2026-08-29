@@ -1,0 +1,78 @@
+name: Check theory weight evidence contract
+
+on:
+  pull_request:
+    paths:
+      - "js/ai-core.js"
+      - "js/prediction-motor-engine-support.js"
+      - "js/theory-tag-snapshot.js"
+      - "js/hiyori-runtime-loader.js"
+      - "index.html"
+      - "scripts/check-charter.js"
+      - "scripts/test-new-engine-formal-evidence.js"
+      - "scripts/test-theory-tag-catalog-reachability.js"
+      - "scripts/test-theory-weight-evidence-contract.js"
+      - "scripts/test-theory-integration.js"
+      - "scripts/test-candidate90-regression.js"
+      - "scripts/test-load-performance.js"
+      - "scripts/test-current-cache-test-alignment.js"
+      - "scripts/apply-current-cache-test-alignment.js"
+      - "scripts/test-startup-critical-path.js"
+      - "scripts/test-odds-lightweight-path.js"
+      - "scripts/test-mobile-prediction-startup-terminal.js"
+      - "scripts/test-prediction-loading-watchdog.js"
+      - ".github/workflows/check-theory-weight-evidence-contract.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/ai-core.js"
+      - "js/prediction-motor-engine-support.js"
+      - "js/theory-tag-snapshot.js"
+      - "js/hiyori-runtime-loader.js"
+      - "index.html"
+      - "scripts/check-charter.js"
+      - "scripts/test-new-engine-formal-evidence.js"
+      - "scripts/test-theory-tag-catalog-reachability.js"
+      - "scripts/test-theory-weight-evidence-contract.js"
+      - "scripts/test-theory-integration.js"
+      - "scripts/test-candidate90-regression.js"
+      - "scripts/test-load-performance.js"
+      - "scripts/test-current-cache-test-alignment.js"
+      - "scripts/apply-current-cache-test-alignment.js"
+      - "scripts/test-startup-critical-path.js"
+      - "scripts/test-odds-lightweight-path.js"
+      - "scripts/test-mobile-prediction-startup-terminal.js"
+      - "scripts/test-prediction-loading-watchdog.js"
+      - ".github/workflows/check-theory-weight-evidence-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify effective scoring evidence
+        run: |
+          node --check js/prediction-motor-engine-support.js
+          node --check js/theory-tag-snapshot.js
+          node --check scripts/test-theory-weight-evidence-contract.js
+          node scripts/test-theory-weight-evidence-contract.js
+          node scripts/test-new-engine-formal-evidence.js
+          node scripts/test-theory-tag-catalog-reachability.js
+          node scripts/check-charter.js
+          node scripts/test-theory-integration.js
+          node scripts/test-candidate90-regression.js
+      - name: Verify cache delivery contract
+        run: |
+          node scripts/test-current-cache-test-alignment.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-odds-lightweight-path.js
+          node scripts/test-mobile-prediction-startup-terminal.js
+          node scripts/test-prediction-loading-watchdog.js
