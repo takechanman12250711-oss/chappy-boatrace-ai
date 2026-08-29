@@ -68,6 +68,30 @@ function summarize(rows){
     outsideHeadMissByWrongOutsideRate:pct(out.actualOutsideHeadPredictedOutsideWrongCount,out.actualOutsideHeadCount)
   };
 }
+function decision(summaries){
+  const calm = summaries.calm, strong = summaries.strong;
+  if(!strong || strong.settledCount < 30) return {
+    status:"continue-collecting-evidence",
+    reason:"strong-condition sample is below 30 races"
+  };
+  const insideGap = Math.round(((strong.outsideHeadMissByInsideRate ?? 0) - (calm.outsideHeadMissByInsideRate ?? 0))*10)/10;
+  const wrongOutsideGap = Math.round(((strong.outsideHeadMissByWrongOutsideRate ?? 0) - (calm.outsideHeadMissByWrongOutsideRate ?? 0))*10)/10;
+  if(insideGap >= 10 && insideGap > wrongOutsideGap) return {
+    status:"eligible-for-inside-resilience-shadow-ab-design",
+    insideMissGapVsCalm:insideGap,
+    wrongOutsideMissGapVsCalm:wrongOutsideGap
+  };
+  if(wrongOutsideGap >= 10 && wrongOutsideGap > insideGap) return {
+    status:"eligible-for-outside-attacker-selection-shadow-ab-design",
+    insideMissGapVsCalm:insideGap,
+    wrongOutsideMissGapVsCalm:wrongOutsideGap
+  };
+  return {
+    status:"no-shadow-ab-signal",
+    insideMissGapVsCalm:insideGap,
+    wrongOutsideMissGapVsCalm:wrongOutsideGap
+  };
+}
 function build(predDocs,resultDocs){
   const results = resultMap(resultDocs);
   const rows = predictionRows(predDocs)
@@ -77,15 +101,16 @@ function build(predDocs,resultDocs){
   for(const row of rows) groups[cohort.classify(row.evidence)].push(row);
   const summaries = Object.fromEntries(Object.entries(groups).map(([k,v])=>[k,summarize(v)]));
   return {
-    schemaVersion:1,
-    version:"local-water-outside-head-miss-structure-v1",
+    schemaVersion:2,
+    version:"local-water-outside-head-miss-structure-v2",
     generatedAt:new Date().toISOString(),
     productionChanged:false,
     automaticApplication:false,
     usableForPrediction:false,
-    methodology:"締切前保存済み正式証拠だけを使い、平穏/中条件/強条件ごとに、外頭発生時の外し方を『1号艇予測』『別の外艇予測』『外頭正解』へ分解する。",
+    methodology:"締切前保存済み正式証拠だけを使い、平穏/中条件/強条件ごとに、外頭発生時の外し方を『1号艇予測』『別の外艇予測』『外頭正解』へ分解する。強条件30R以上かつ平穏比+10pt以上の主要ミスだけを次のshadow A/B候補にする。",
     settledFormalEvidenceRaceCount:rows.length,
-    summaries
+    summaries,
+    nextStep:decision(summaries)
   };
 }
 function main(){
@@ -95,4 +120,4 @@ function main(){
   console.log(JSON.stringify(report,null,2));
 }
 if(require.main===module) main();
-module.exports={summarize,build};
+module.exports={summarize,decision,build};
