@@ -1,0 +1,19 @@
+name: Check outer attack composite signal
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-outer-attack-composite-signal.cjs'
+      - 'tests/outer-attack-composite-signal.test.cjs'
+      - '.github/workflows/check-outer-attack-composite-signal.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/outer-attack-composite-signal.test.cjs
+      - run: node scripts/analyze-outer-attack-composite-signal.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code
