@@ -1,0 +1,14 @@
+'use strict';
+const assert = require('assert');
+const grid = require('../scripts/search-inner-attack-threshold-grid.cjs');
+const report = grid.search();
+assert.strictEqual(report.scope.dataset,'discovery-only');
+assert.strictEqual(report.scope.holdoutUsed,false);
+assert.strictEqual(report.scope.productionChanged,false);
+assert(report.candidateCount>0);
+assert(report.best);
+assert(report.topCandidates.length>0 && report.topCandidates.length<=30);
+assert(report.topCandidates.every(x=>x.triggeredRaceCount>=10));
+assert(report.topCandidates.every(x=>x.netTop1===x.added-x.lost));
+assert(report.topCandidates.every(x=>Array.isArray(x.chronologicalHalves)&&x.chronologicalHalves.length===2));
+console.log('inner attack threshold grid tests passed');
