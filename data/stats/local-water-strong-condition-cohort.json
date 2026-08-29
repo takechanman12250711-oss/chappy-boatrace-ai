@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "version": "local-water-strong-condition-cohort-v1",
+  "generatedAt": "2026-08-29T19:56:05.987Z",
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "methodology": "締切前保存済み正式証拠を、強条件=風5m以上または波5cm以上、中条件=風3-4mまたは波3-4cm、平穏=それ未満にレース単位で重複なく分類。公式結果と照合。",
+  "settledFormalEvidenceRaceCount": 370,
+  "cohorts": {
+    "calm": {
+      "settledCount": 168,
+      "predictedHeadHitCount": 62,
+      "actualHead1Count": 101,
+      "actualOutsideHeadCount": 67,
+      "predictedHeadHitRate": 36.9,
+      "actualHead1Rate": 60.1,
+      "actualOutsideHeadRate": 39.9
+    },
+    "medium": {
+      "settledCount": 174,
+      "predictedHeadHitCount": 64,
+      "actualHead1Count": 79,
+      "actualOutsideHeadCount": 95,
+      "predictedHeadHitRate": 36.8,
+      "actualHead1Rate": 45.4,
+      "actualOutsideHeadRate": 54.6
+    },
+    "strong": {
+      "settledCount": 28,
+      "predictedHeadHitCount": 10,
+      "actualHead1Count": 12,
+      "actualOutsideHeadCount": 16,
+      "predictedHeadHitRate": 35.7,
+      "actualHead1Rate": 42.9,
+      "actualOutsideHeadRate": 57.1
+    }
+  },
+  "comparison": {
+    "hitRateGapVsCalm": -1.2,
+    "outsideHeadRateGapVsCalm": 17.2
+  },
+  "nextStep": "continue-collecting-evidence"
+}
