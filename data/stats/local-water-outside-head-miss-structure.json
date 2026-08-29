@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 1,
-  "version": "local-water-outside-head-miss-structure-v1",
-  "generatedAt": "2026-08-29T21:08:39.245Z",
+  "schemaVersion": 2,
+  "version": "local-water-outside-head-miss-structure-v2",
+  "generatedAt": "2026-08-29T21:11:19.485Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
-  "methodology": "締切前保存済み正式証拠だけを使い、平穏/中条件/強条件ごとに、外頭発生時の外し方を『1号艇予測』『別の外艇予測』『外頭正解』へ分解する。",
+  "methodology": "締切前保存済み正式証拠だけを使い、平穏/中条件/強条件ごとに、外頭発生時の外し方を『1号艇予測』『別の外艇予測』『外頭正解』へ分解する。強条件30R以上かつ平穏比+10pt以上の主要ミスだけを次のshadow A/B候補にする。",
   "settledFormalEvidenceRaceCount": 370,
   "summaries": {
     "calm": {
@@ -101,5 +101,9 @@
       "outsideHeadMissByInsideRate": 18.8,
       "outsideHeadMissByWrongOutsideRate": 50
     }
+  },
+  "nextStep": {
+    "status": "continue-collecting-evidence",
+    "reason": "strong-condition sample is below 30 races"
   }
 }
