@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-08-26",
+  "reviewedAt": "2026-08-29",
   "requirements": [
     "preserveRealisticSecondCourseSashi",
     "preserveRealisticFourthBoatHold",
@@ -67,6 +67,21 @@
       },
       "reasons": [
         "構造化されたhold役割が3着の買い目を一律除外し、現実的な4号艇残しを保護する例外条件がない"
+      ]
+    },
+    "inside-first-outside-warning": {
+      "reviewed": true,
+      "facts": {
+        "preserveRealisticSecondCourseSashi": false,
+        "preserveRealisticFourthBoatHold": false,
+        "preserveEvaluatedScenarioCandidatesForEveryBoat": false,
+        "candidateGenerationPrecedesTicketLimit": true,
+        "excludedCandidatesRequireStructuredReason": false,
+        "numbersAloneMayDeleteTickets": false
+      },
+      "reasons": [
+        "「イン先マイ・外攻め警戒」という展開ラベルだけでレース全体を見送るため、現実的な2コース差し・4号艇残し・艇別に評価済みの残し／拾い候補を保持しない",
+        "除外対象となる各買い目に構造化された除外理由がなく、どの候補をなぜ外したかを艇別・買い目別に検証できない"
       ]
     }
   }
