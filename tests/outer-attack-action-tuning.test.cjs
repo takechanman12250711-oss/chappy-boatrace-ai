@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('assert');
+const {build,FIXED,BONUSES}=require('../scripts/tune-outer-attack-action.cjs');
+const r=build();
+assert.strictEqual(r.scope.holdoutUsed,false);
+assert.strictEqual(r.scope.productionChanged,false);
+assert.deepStrictEqual(r.scope.fixedSignal,FIXED);
+assert.strictEqual(r.scope.baselineTop1,124);
+assert.deepStrictEqual(r.bonuses,BONUSES);
+assert.ok(r.best);
+assert.strictEqual(r.candidates.length,BONUSES.length);
+assert.ok(r.best.all.triggeredRaceCount>=1);
+console.log('outer attack action tuning tests passed');
