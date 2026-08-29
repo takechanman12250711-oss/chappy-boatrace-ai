@@ -24,7 +24,7 @@ function countBy(rows, selector) {
   const counts = new Map();
   for (const row of rows) {
     const key = String(selector(row));
-    counts.set(key, (counts.get(key) || 0) + 1;
+    counts.set(key, (counts.get(key) || 0) + 1);
   }
   return [...counts.entries()]
     .map(([key, count]) => ({ key, count }))
@@ -127,7 +127,7 @@ function toMarkdown(report) {
   return [
     '# courseIndex 主因ミスの条件分解',
     '',
-    `- 対象: Discovery only / courseIndex が baseline 側最大優位だった1着予測ミス`,
+    '- 対象: Discovery only / courseIndex が baseline 側最大優位だった1着予測ミス',
     `- 件数: **${report.total}**`,
     '- holdout: **未使用**',
     '- 本番予想ロジック: **変更なし**',
