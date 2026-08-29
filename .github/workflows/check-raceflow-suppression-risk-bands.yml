@@ -1,0 +1,16 @@
+name: Check raceFlow suppression risk bands
+on:
+  pull_request:
+    paths: ['scripts/analyze-raceflow-suppression-risk-bands.cjs','tests/raceflow-suppression-risk-bands.test.cjs','.github/workflows/check-raceflow-suppression-risk-bands.yml']
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/raceflow-suppression-risk-bands.test.cjs
+      - run: node scripts/analyze-raceflow-suppression-risk-bands.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code
