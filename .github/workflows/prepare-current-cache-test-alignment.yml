@@ -45,9 +45,9 @@ jobs:
           git add scripts/test-load-performance.js scripts/test-auto-stats.js
           if git diff --cached --quiet; then
             echo "cache regression tests already aligned"
-            exit 0
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Align cache regression tests with current main"
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Align cache regression tests with current main"
-          git push --force origin generated/current-cache-tests
+          git push --force origin HEAD:generated/current-cache-tests
