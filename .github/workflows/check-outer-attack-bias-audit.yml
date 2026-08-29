@@ -1,0 +1,21 @@
+name: Check outer attack bias audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-outer-attack-bias-audit.cjs'
+      - 'tests/outer-attack-bias-audit.test.cjs'
+      - '.github/workflows/check-outer-attack-bias-audit.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/outer-attack-bias-audit.test.cjs
+      - run: node scripts/analyze-outer-attack-bias-audit.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code
