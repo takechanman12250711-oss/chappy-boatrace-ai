@@ -1,0 +1,23 @@
+name: Check outer attack ticket shadow
+on:
+  pull_request:
+    paths:
+      - 'js/outer-attack-ticket-shadow.js'
+      - 'js/app-runtime-loader.js'
+      - 'tests/outer-attack-ticket-shadow.test.cjs'
+      - '.github/workflows/check-outer-attack-ticket-shadow.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/outer-attack-ticket-shadow.js
+      - run: node --check js/app-runtime-loader.js
+      - run: node tests/outer-attack-ticket-shadow.test.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code
