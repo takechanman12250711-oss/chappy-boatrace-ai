@@ -1,0 +1,573 @@
+{
+  "schemaVersion": 2,
+  "analysisId": "flow-suppression-v2",
+  "generatedAt": "2026-08-30T11:31:48.545Z",
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "humanApprovalRequiredForProduction": true,
+  "scope": {
+    "dataset": "discovery-only",
+    "holdoutUsed": false,
+    "definition": "1号艇がbaseline top。3/4号艇がST・攻め役割で優位だがraceFlowで劣位",
+    "resultUsedForCandidateSelection": false
+  },
+  "fixedRoutingRules": {
+    "minimumAttackWinCount": 10,
+    "minimumInnerWinCount": 30,
+    "minimumRaceFlowSeparation": 1,
+    "minimumExhibitionSeparation": 1
+  },
+  "attackWin": {
+    "count": 13,
+    "avg": {
+      "st": 0.7015,
+      "roleAttack": 0.6718,
+      "raceFlow": -2.0654,
+      "exhibition": 0.936,
+      "courseIndex": -13.9692
+    }
+  },
+  "innerWin": {
+    "count": 38,
+    "avg": {
+      "st": 0.8116,
+      "roleAttack": 0.4999,
+      "raceFlow": -1.8651,
+      "exhibition": -0.428,
+      "courseIndex": -13.2432
+    }
+  },
+  "comparison": {
+    "attackWinMinusInnerWin": {
+      "st": -0.1101,
+      "roleAttack": 0.1719,
+      "raceFlow": -0.2003,
+      "exhibition": 1.364,
+      "courseIndex": -0.726
+    }
+  },
+  "conclusion": {
+    "status": "discovery-closed-raceflow-insufficient-exhibition-signal",
+    "raceFlowSuppressionSupported": false,
+    "productionRecommendation": "no-change",
+    "reason": "raceFlow群間差-0.2003点は固定識別幅に未達。一方、展示差は外攻め勝ち群がイン勝ち群より1.364点高く、符号も外攻め勝ちが正・イン勝ちが負に分かれたため、別仮説として未使用holdoutへ送る。"
+  },
+  "nextStep": "validate-st-role-attack-exhibition-on-untouched-holdout",
+  "records": {
+    "attackWin": [
+      {
+        "raceKey": "20260815-18-8",
+        "boatNo": 3,
+        "winner": 3,
+        "st": 0.8800000000000004,
+        "roleAttack": 0.55,
+        "raceFlow": -1.0500000000000007,
+        "exhibition": 0.7019999999999997,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260815-04-3",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 0.7399999999999992,
+        "roleAttack": 0.923999999999999,
+        "raceFlow": -0.02499999999999858,
+        "exhibition": 4.428,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260815-10-10",
+        "boatNo": 3,
+        "winner": 3,
+        "st": 1.3200000000000003,
+        "roleAttack": 0.88,
+        "raceFlow": -0.5249999999999986,
+        "exhibition": 1.08,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260815-17-6",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 0.25999999999999945,
+        "roleAttack": 0.66,
+        "raceFlow": -4.074999999999999,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260815-04-9",
+        "boatNo": 3,
+        "winner": 3,
+        "st": 0.8400000000000006,
+        "roleAttack": 0.4290000000000006,
+        "raceFlow": -0.7749999999999986,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-02-2",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 0.25999999999999945,
+        "roleAttack": 0.6270000000000003,
+        "raceFlow": -2.924999999999997,
+        "exhibition": -0.5220000000000004,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260816-17-2",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 0.47999999999999976,
+        "roleAttack": 0.7589999999999991,
+        "raceFlow": -4.199999999999999,
+        "exhibition": 1.2780000000000002,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260817-11-1",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 1.1,
+        "roleAttack": 0.9679999999999996,
+        "raceFlow": -3.5249999999999986,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260817-13-1",
+        "boatNo": 3,
+        "winner": 3,
+        "st": 0.25999999999999945,
+        "roleAttack": 0.20900000000000063,
+        "raceFlow": -3.9750000000000014,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260817-02-4",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 0.14000000000000057,
+        "roleAttack": 0.4179999999999997,
+        "raceFlow": -0.02499999999999858,
+        "exhibition": 1.2419999999999998,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260817-13-9",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 1.88,
+        "roleAttack": 1.21,
+        "raceFlow": -0.625,
+        "exhibition": -0.1710000000000005,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260818-11-6",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 0.47999999999999976,
+        "roleAttack": 0.495,
+        "raceFlow": -0.7250000000000014,
+        "exhibition": 1.9349999999999998,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260818-18-11",
+        "boatNo": 4,
+        "winner": 4,
+        "st": 0.47999999999999976,
+        "roleAttack": 0.605,
+        "raceFlow": -4.399999999999999,
+        "exhibition": 2.1959999999999997,
+        "courseIndex": -14.719999999999999
+      }
+    ],
+    "innerWin": [
+      {
+        "raceKey": "20260815-05-4",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 1.1,
+        "roleAttack": 0.825,
+        "raceFlow": -0.3000000000000007,
+        "exhibition": -0.54,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260815-07-1",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 1.38,
+        "roleAttack": 0.4620000000000003,
+        "raceFlow": -0.9499999999999993,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260815-07-1",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.8400000000000006,
+        "roleAttack": 0.17600000000000093,
+        "raceFlow": -5.650000000000002,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260815-24-1",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.2600000000000002,
+        "roleAttack": 0.12099999999999937,
+        "raceFlow": -4.025000000000002,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260815-22-3",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.8800000000000004,
+        "roleAttack": 0.66,
+        "raceFlow": -3.1750000000000007,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260815-22-3",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 1.3800000000000006,
+        "roleAttack": 1.0119999999999987,
+        "raceFlow": -0.5,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260815-08-11",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.8400000000000006,
+        "roleAttack": 0.7480000000000012,
+        "raceFlow": -0.625,
+        "exhibition": -2.7000000000000006,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260815-03-11",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.5799999999999997,
+        "roleAttack": 0.39599999999999935,
+        "raceFlow": -0.8500000000000014,
+        "exhibition": 0.9810000000000004,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260815-12-3",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.9600000000000009,
+        "roleAttack": 0.4179999999999997,
+        "raceFlow": -1.375,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260815-12-3",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.9600000000000009,
+        "roleAttack": 0.6270000000000003,
+        "raceFlow": -5.100000000000001,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260815-02-12",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.8,
+        "roleAttack": 0.11,
+        "raceFlow": -1.4749999999999979,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-18-2",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 1.2000000000000002,
+        "roleAttack": 0.08799999999999969,
+        "raceFlow": -1.2749999999999986,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-18-2",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.8400000000000006,
+        "roleAttack": 0.44,
+        "raceFlow": -4.375,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260816-11-1",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.14000000000000057,
+        "roleAttack": 0.23100000000000093,
+        "raceFlow": -2.9499999999999993,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260816-02-4",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.7600000000000009,
+        "roleAttack": 0.5939999999999991,
+        "raceFlow": -0.6000000000000014,
+        "exhibition": -2.7629999999999995,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-06-3",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.6200000000000003,
+        "roleAttack": 0.275,
+        "raceFlow": -2.1000000000000014,
+        "exhibition": 0.32400000000000073,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-06-3",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.9799999999999998,
+        "roleAttack": 1.0890000000000006,
+        "raceFlow": -0.125,
+        "exhibition": -2.9519999999999995,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260816-14-9",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.07999999999999972,
+        "roleAttack": 0.5170000000000003,
+        "raceFlow": -1.0249999999999986,
+        "exhibition": 0.8999999999999999,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260816-18-9",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 1.2599999999999996,
+        "roleAttack": 0.4509999999999994,
+        "raceFlow": -0.3249999999999993,
+        "exhibition": -1.0890000000000006,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-02-5",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.4800000000000004,
+        "roleAttack": 0.11,
+        "raceFlow": -1.3000000000000007,
+        "exhibition": -1.0440000000000007,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-02-5",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 1.7999999999999994,
+        "roleAttack": 1.1659999999999995,
+        "raceFlow": -3.5249999999999986,
+        "exhibition": -3.132,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260816-10-11",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.26000000000000084,
+        "roleAttack": 0.275,
+        "raceFlow": -3.224999999999998,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-11-6",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 1.1,
+        "roleAttack": 0.7810000000000009,
+        "raceFlow": -2.325000000000003,
+        "exhibition": -2.9790000000000005,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260816-11-6",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 1.1,
+        "roleAttack": 1.0890000000000006,
+        "raceFlow": -1.9500000000000028,
+        "exhibition": -1.4130000000000003,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260816-12-1",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.7599999999999995,
+        "roleAttack": 0.275,
+        "raceFlow": -3.3999999999999986,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260817-13-3",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.6200000000000003,
+        "roleAttack": 0.165,
+        "raceFlow": -2.1499999999999986,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260817-22-3",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.2200000000000003,
+        "roleAttack": 0.5610000000000009,
+        "raceFlow": -0.5749999999999993,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260817-14-12",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.7200000000000003,
+        "roleAttack": 0.23099999999999937,
+        "raceFlow": -0.5,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260817-17-8",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.47999999999999976,
+        "roleAttack": 0.44,
+        "raceFlow": -2.724999999999998,
+        "exhibition": 1.4760000000000004,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260817-12-1",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.8399999999999992,
+        "roleAttack": 0.6379999999999997,
+        "raceFlow": -1.0500000000000007,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260818-14-1",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 0.07999999999999972,
+        "roleAttack": 0.15400000000000064,
+        "raceFlow": -3.6750000000000007,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260818-14-4",
+        "boatNo": 4,
+        "winner": 1,
+        "st": 1.8199999999999996,
+        "roleAttack": 1.4409999999999994,
+        "raceFlow": -0.25,
+        "exhibition": 0,
+        "courseIndex": -14.719999999999999
+      },
+      {
+        "raceKey": "20260818-18-3",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.7200000000000003,
+        "roleAttack": 0.022000000000000314,
+        "raceFlow": -1.3000000000000007,
+        "exhibition": -1.5749999999999995,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260818-14-7",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.9800000000000004,
+        "roleAttack": 0.66,
+        "raceFlow": -0.10000000000000142,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260818-10-9",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 1.3000000000000007,
+        "roleAttack": 0.7479999999999997,
+        "raceFlow": -3.4499999999999993,
+        "exhibition": 1.8539999999999994,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260818-09-9",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.9600000000000009,
+        "roleAttack": 0.5390000000000006,
+        "raceFlow": -0.4250000000000007,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260818-17-8",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.6200000000000003,
+        "roleAttack": 0.275,
+        "raceFlow": -1.2250000000000014,
+        "exhibition": 0,
+        "courseIndex": -12.280000000000001
+      },
+      {
+        "raceKey": "20260818-05-7",
+        "boatNo": 3,
+        "winner": 1,
+        "st": 0.12000000000000029,
+        "roleAttack": 0.18699999999999875,
+        "raceFlow": -0.9250000000000007,
+        "exhibition": -1.6110000000000004,
+        "courseIndex": -12.280000000000001
+      }
+    ]
+  }
+}
