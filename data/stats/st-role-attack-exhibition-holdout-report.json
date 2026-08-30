@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 2,
+  "analysisId": "st-role-attack-exhibition-untouched-holdout-v1",
+  "sourceResolver": "effective-score-weight-ab-preregistered-seal-v1",
+  "generatedAt": "2026-08-30T13:32:29.585Z",
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "humanApprovalRequiredForProduction": true,
+  "holdoutConsumed": true,
+  "thresholdSearchPerformed": false,
+  "source": {
+    "report": "data/stats/flow-suppression-report.json",
+    "analysisId": "flow-suppression-v2",
+    "generatedAt": "2026-08-30T11:31:48.545Z",
+    "expectedNextStep": "validate-st-role-attack-exhibition-on-untouched-holdout",
+    "actualNextStep": "validate-st-role-attack-exhibition-on-untouched-holdout",
+    "ready": true
+  },
+  "hypothesis": {
+    "currentHeadMustBe": 1,
+    "candidateBoats": [
+      3,
+      4
+    ],
+    "requiredWeightedGaps": {
+      "st": "> 0",
+      "roleAttack": "> 0",
+      "exhibition": "> 0"
+    },
+    "candidateSelection": "現行baseline順位が最上位の適格3・4号艇",
+    "resultUsedForEligibilityOrSelection": false,
+    "oddsOrPayoutUsed": false
+  },
+  "holdout": {
+    "provider": "effective-score-weight-ab-v1.preregistered-sealed-holdout",
+    "holdoutType": "retrospective-temporal-procedural-seal",
+    "prospectiveAtOfficialOutcomeTime": false,
+    "dates": [
+      "20260819",
+      "20260823",
+      "20260827",
+      "20260828"
+    ],
+    "configFrozenAt": "2026-08-29T04:02:32Z",
+    "sourceCommit": "a8a924d3b7d1371bb0ba0065824df58e730978ea",
+    "raceCount": 193,
+    "fingerprint": "6679bf459e99a66f124d1c1aa695a5285a49a1aaca4ba7fae92beaf345472a86",
+    "discoveryRaceCount": 258,
+    "discoveryOverlapCount": 0,
+    "replayDiagnostics": {
+      "firstDate": "20260815",
+      "lastDate": "20260829",
+      "predictionFileCount": 4,
+      "primaryPredictionCountAtOrBeforeFreeze": 17,
+      "verificationPredictionCountAtOrBeforeFreeze": 193,
+      "frozenAt": "2026-08-29T04:02:32Z",
+      "captureFreezeAppliedBeforeCanonicalMerge": true,
+      "canonicalPredictionCount": 193,
+      "preDeadlinePredictionCount": 193,
+      "excludedPredictionCount": 0,
+      "excludedReasons": {},
+      "replayBasisRaceCount": 193,
+      "replayBasisBoatCount": 1158,
+      "canonicalDeduplication": "predictions-preferred-over-verificationPredictions",
+      "perDate": {
+        "20260819": {
+          "primaryPredictionCountAtOrBeforeFreeze": 5,
+          "verificationPredictionCountAtOrBeforeFreeze": 62,
+          "canonicalPredictionCount": 62,
+          "preDeadlinePredictionCount": 62,
+          "replayBasisRaceCount": 62
+        },
+        "20260823": {
+          "primaryPredictionCountAtOrBeforeFreeze": 0,
+          "verificationPredictionCountAtOrBeforeFreeze": 49,
+          "canonicalPredictionCount": 49,
+          "preDeadlinePredictionCount": 49,
+          "replayBasisRaceCount": 49
+        },
+        "20260827": {
+          "primaryPredictionCountAtOrBeforeFreeze": 4,
+          "verificationPredictionCountAtOrBeforeFreeze": 31,
+          "canonicalPredictionCount": 31,
+          "preDeadlinePredictionCount": 31,
+          "replayBasisRaceCount": 31
+        },
+        "20260828": {
+          "primaryPredictionCountAtOrBeforeFreeze": 8,
+          "verificationPredictionCountAtOrBeforeFreeze": 51,
+          "canonicalPredictionCount": 51,
+          "preDeadlinePredictionCount": 51,
+          "replayBasisRaceCount": 51
+        }
+      }
+    },
+    "settledDiagnostics": {
+      "officialResultCount": 193,
+      "settledJoinCount": 193,
+      "evaluationInputRaceCount": 193,
+      "missingOfficialResultCount": 0,
+      "inventoryOnlyRaceCount": 0,
+      "inventoryOnlyDates": [],
+      "inventoryOnlyRowsExcludedBeforeOfficialJoin": true,
+      "resultSourceRequired": "boatrace-official",
+      "resultMissingRowsExcluded": true
+    }
+  },
+  "fixedRules": {
+    "minimumHoldoutRaceCount": 100,
+    "minimumEligibleCount": 15,
+    "minimumEligiblePerHalf": 5,
+    "minimumCandidateWinnerCount": 3,
+    "minimumNetCorrectGain": 2,
+    "minimumEligibleAccuracyGainPt": 5,
+    "maximumOneSidedPValue": 0.2,
+    "maximumSwitchRate": 20,
+    "requireBothHalvesNonNegative": true,
+    "requireZeroDiscoveryOverlap": true
+  },
+  "overall": {
+    "raceCount": 193,
+    "eligibleCount": 7,
+    "switchRate": 3.6,
+    "currentCorrectCount": 94,
+    "shadowCorrectCount": 95,
+    "currentAccuracy": 48.7,
+    "shadowAccuracy": 49.2,
+    "accuracyChangePt": 0.5,
+    "eligibleCurrentAccuracy": 28.6,
+    "eligibleShadowAccuracy": 42.9,
+    "eligibleAccuracyChangePt": 14.3,
+    "wrongToCorrectCount": 3,
+    "correctToWrongCount": 2,
+    "wrongToWrongCount": 2,
+    "unchangedCorrectCount": 92,
+    "netCorrectGain": 1,
+    "candidateWinnerCount": 3,
+    "innerWinnerCount": 2,
+    "otherWinnerCount": 2,
+    "candidateDistribution": {
+      "3": 4,
+      "4": 3
+    },
+    "discordantCount": 5,
+    "oneSidedPValue": 0.5
+  },
+  "firstHalf": {
+    "raceCount": 96,
+    "eligibleCount": 1,
+    "switchRate": 1,
+    "currentCorrectCount": 41,
+    "shadowCorrectCount": 41,
+    "currentAccuracy": 42.7,
+    "shadowAccuracy": 42.7,
+    "accuracyChangePt": 0,
+    "eligibleCurrentAccuracy": 0,
+    "eligibleShadowAccuracy": 0,
+    "eligibleAccuracyChangePt": 0,
+    "wrongToCorrectCount": 0,
+    "correctToWrongCount": 0,
+    "wrongToWrongCount": 1,
+    "unchangedCorrectCount": 41,
+    "netCorrectGain": 0,
+    "candidateWinnerCount": 0,
+    "innerWinnerCount": 0,
+    "otherWinnerCount": 1,
+    "candidateDistribution": {
+      "4": 1
+    },
+    "discordantCount": 0,
+    "oneSidedPValue": null
+  },
+  "secondHalf": {
+    "raceCount": 97,
+    "eligibleCount": 6,
+    "switchRate": 6.2,
+    "currentCorrectCount": 53,
+    "shadowCorrectCount": 54,
+    "currentAccuracy": 54.6,
+    "shadowAccuracy": 55.7,
+    "accuracyChangePt": 1.1,
+    "eligibleCurrentAccuracy": 33.3,
+    "eligibleShadowAccuracy": 50,
+    "eligibleAccuracyChangePt": 16.7,
+    "wrongToCorrectCount": 3,
+    "correctToWrongCount": 2,
+    "wrongToWrongCount": 1,
+    "unchangedCorrectCount": 51,
+    "netCorrectGain": 1,
+    "candidateWinnerCount": 3,
+    "innerWinnerCount": 2,
+    "otherWinnerCount": 1,
+    "candidateDistribution": {
+      "3": 4,
+      "4": 2
+    },
+    "discordantCount": 5,
+    "oneSidedPValue": 0.5
+  },
+  "decision": {
+    "nextStep": "reject-insufficient-fixed-composite-cases",
+    "status": "rejected",
+    "reason": "固定複合条件の件数または半期別件数が不足。holdoutを再利用せず終了。"
+  },
+  "nextStep": "reject-insufficient-fixed-composite-cases",
+  "eligibleRaces": [
+    {
+      "raceKey": "20260819-16-4",
+      "currentHead": 1,
+      "shadowHead": 4,
+      "actualHead": 3,
+      "eligible": true,
+      "candidate": {
+        "boatNo": 4,
+        "baselineRank": 3,
+        "gaps": {
+          "st": 1.8800000000000006,
+          "roleAttack": 1.2979999999999996,
+          "exhibition": 1.0890000000000006,
+          "raceFlow": 0.1999999999999993,
+          "courseIndex": -14.719999999999999
+        },
+        "evidenceMargin": 4.3
+      }
+    },
+    {
+      "raceKey": "20260823-24-11",
+      "currentHead": 1,
+      "shadowHead": 3,
+      "actualHead": 3,
+      "eligible": true,
+      "candidate": {
+        "boatNo": 3,
+        "baselineRank": 3,
+        "gaps": {
+          "st": 1.4599999999999995,
+          "roleAttack": 0.6490000000000006,
+          "exhibition": 0.63,
+          "raceFlow": 1.8249999999999993,
+          "courseIndex": -12.280000000000001
+        },
+        "evidenceMargin": 2.7
+      }
+    },
+    {
+      "raceKey": "20260827-11-4",
+      "currentHead": 1,
+      "shadowHead": 3,
+      "actualHead": 3,
+      "eligible": true,
+      "candidate": {
+        "boatNo": 3,
+        "baselineRank": 2,
+        "gaps": {
+          "st": 1.19,
+          "roleAttack": 0.6159999999999993,
+          "exhibition": 4.103999999999999,
+          "raceFlow": -3.5749999999999993,
+          "courseIndex": -12.280000000000001
+        },
+        "evidenceMargin": 5.9
+      }
+    },
+    {
+      "raceKey": "20260828-01-10",
+      "currentHead": 1,
+      "shadowHead": 3,
+      "actualHead": 1,
+      "eligible": true,
+      "candidate": {
+        "boatNo": 3,
+        "baselineRank": 3,
+        "gaps": {
+          "st": 0.5900000000000006,
+          "roleAttack": 0.055,
+          "exhibition": 0.855,
+          "raceFlow": -3.4750000000000014,
+          "courseIndex": -12.280000000000001
+        },
+        "evidenceMargin": 1.5
+      }
+    },
+    {
+      "raceKey": "20260828-07-10",
+      "currentHead": 1,
+      "shadowHead": 4,
+      "actualHead": 1,
+      "eligible": true,
+      "candidate": {
+        "boatNo": 4,
+        "baselineRank": 4,
+        "gaps": {
+          "st": 0.9799999999999998,
+          "roleAttack": 0.4729999999999997,
+          "exhibition": 0.6930000000000003,
+          "raceFlow": -0.1999999999999993,
+          "courseIndex": -14.719999999999999
+        },
+        "evidenceMargin": 2.1
+      }
+    },
+    {
+      "raceKey": "20260828-11-7",
+      "currentHead": 1,
+      "shadowHead": 4,
+      "actualHead": 2,
+      "eligible": true,
+      "candidate": {
+        "boatNo": 4,
+        "baselineRank": 3,
+        "gaps": {
+          "st": 1.110000000000001,
+          "roleAttack": 1.001000000000001,
+          "exhibition": 0.9810000000000004,
+          "raceFlow": 0.8999999999999986,
+          "courseIndex": -14.719999999999999
+        },
+        "evidenceMargin": 3.1
+      }
+    },
+    {
+      "raceKey": "20260828-23-7",
+      "currentHead": 1,
+      "shadowHead": 3,
+      "actualHead": 3,
+      "eligible": true,
+      "candidate": {
+        "boatNo": 3,
+        "baselineRank": 3,
+        "gaps": {
+          "st": 0.4399999999999999,
+          "roleAttack": 0.09899999999999906,
+          "exhibition": 1.1519999999999997,
+          "raceFlow": -3.9750000000000014,
+          "courseIndex": -12.280000000000001
+        },
+        "evidenceMargin": 1.7
+      }
+    }
+  ],
+  "limitations": {
+    "retrospectiveTemporalHoldout": true,
+    "proceduralSealOnly": true,
+    "prospectiveAtOfficialOutcomeTime": false,
+    "productionClaimAllowed": false
+  }
+}
