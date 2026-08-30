@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "version": "local-water-outer-head-bottleneck-audit-v1",
-  "generatedAt": "2026-08-30T07:02:32.556Z",
+  "generatedAt": "2026-08-30T18:32:38.493Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "締切前に保存済みの当地・水面正式証拠と公式結果だけを使い、実際に5・6号艇が勝ったレースを頭候補・頭シナリオ・選択済み頭・最終頭へ追跡する。2着・3着・hold・pickupは頭候補へ数えない。",
-  "actualHead56RaceCount": 40,
+  "actualHead56RaceCount": 44,
   "upstream": {
     "version": "local-water-main-head-selection-audit-v1",
     "nextStep": "audit-local-water-outer-head-candidate-ranking",
@@ -33,58 +33,68 @@
     }
   },
   "classifications": {
-    "scenario-head-not-selected": 27,
-    "selected-head-not-final": 12,
-    "support-only-not-head-eligible": 1
+    "scenario-head-not-selected": 29,
+    "selected-head-not-final": 13,
+    "support-only-not-head-eligible": 2
   },
   "blockerSignals": {
-    "candidate-rejected-or-not-selected": 40,
-    "no-explicit-head-role-contract": 40,
-    "role-intent-without-head": 40,
-    "support-role-only": 40,
-    "position-1-not-eligible": 38,
-    "head-scenario-not-selected": 27,
-    "support-visible-but-no-head-role": 20,
-    "selected-head-not-final-handoff": 12
+    "candidate-rejected-or-not-selected": 44,
+    "no-explicit-head-role-contract": 44,
+    "role-intent-without-head": 44,
+    "support-role-only": 44,
+    "position-1-not-eligible": 42,
+    "head-scenario-not-selected": 29,
+    "support-visible-but-no-head-role": 23,
+    "selected-head-not-final-handoff": 13
   },
   "strongestScoreBands": {
-    "80plus": 40
+    "80plus": 44
   },
   "actualHeadByBoat": {
-    "5": 30,
-    "6": 10
+    "5": 32,
+    "6": 12
   },
   "actualHeadByVenue": {
     "児島": 7,
     "多摩川": 5,
     "尼崎": 5,
     "若松": 5,
-    "鳴門": 4,
+    "鳴門": 5,
     "三国": 3,
     "宮島": 3,
+    "びわこ": 2,
     "徳山": 2,
-    "びわこ": 1,
     "住之江": 1,
     "大村": 1,
+    "常滑": 1,
     "戸田": 1,
     "津": 1,
-    "福岡": 1
+    "福岡": 1,
+    "蒲郡": 1
   },
   "actualHeadByConditionBand": {
+    "calm": 19,
     "medium": 19,
-    "calm": 15,
     "strong": 6
   },
   "selectedFinalHeadDistribution": {
-    "1": 12,
-    "2": 14,
+    "1": 13,
+    "2": 17,
     "3": 8,
     "4": 6
   },
   "topHeadEvidencePaths": [
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.firstCandidates[2].boatNo",
-      "count": 12
+      "count": 13
+    },
+    {
+      "path": "practicalSelection.targetDecisions[2].candidateDecisions[5].ticket",
+      "count": 11
+    },
+    {
+      "path": "practicalSelection.targetDecisions[2].candidateDecisions[5].roleLabels[0]",
+      "count": 11
     },
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[102].headBoatNo",
@@ -103,11 +113,11 @@
       "count": 10
     },
     {
-      "path": "practicalSelection.targetDecisions[2].candidateDecisions[5].ticket",
+      "path": "practicalSelection.targetDecisions[1].candidateDecisions[6].ticket",
       "count": 10
     },
     {
-      "path": "practicalSelection.targetDecisions[2].candidateDecisions[5].roleLabels[0]",
+      "path": "practicalSelection.targetDecisions[1].candidateDecisions[6].roleLabels[0]",
       "count": 10
     },
     {
@@ -147,19 +157,39 @@
       "count": 9
     },
     {
-      "path": "practicalSelection.targetDecisions[1].candidateDecisions[6].ticket",
-      "count": 9
-    },
-    {
-      "path": "practicalSelection.targetDecisions[1].candidateDecisions[6].roleLabels[0]",
-      "count": 9
-    },
-    {
       "path": "practicalSelection.targetDecisions[2].candidateDecisions[6].ticket",
       "count": 9
     },
     {
       "path": "practicalSelection.targetDecisions[2].candidateDecisions[6].roleLabels[0]",
+      "count": 9
+    },
+    {
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].headBoatNo",
+      "count": 9
+    },
+    {
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].ticket",
+      "count": 9
+    },
+    {
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].title",
+      "count": 9
+    },
+    {
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].headBoatNo",
+      "count": 9
+    },
+    {
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].ticket",
+      "count": 9
+    },
+    {
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].title",
+      "count": 9
+    },
+    {
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].headBoatNo",
       "count": 9
     },
     {
@@ -171,42 +201,14 @@
       "count": 8
     },
     {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[99].headBoatNo",
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[98].headBoatNo",
       "count": 8
-    },
-    {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[99].ticket",
-      "count": 8
-    },
-    {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[99].title",
-      "count": 8
-    },
-    {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[100].headBoatNo",
-      "count": 8
-    },
-    {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[107].headBoatNo",
-      "count": 7
-    },
-    {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[107].ticket",
-      "count": 7
-    },
-    {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[107].title",
-      "count": 7
-    },
-    {
-      "path": "practicalSelection.targetDecisions[4].candidateDecisions[3].ticket",
-      "count": 7
     }
   ],
   "topSupportEvidencePaths": [
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
-      "count": 40
+      "count": 44
     },
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.secondCandidates[0].components.dataReliability",
@@ -226,22 +228,38 @@
     },
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2].boatNo",
-      "count": 18
+      "count": 20
     },
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2].course",
-      "count": 18
+      "count": 20
     },
     {
       "path": "practicalSelection.targetDecisions[1].candidateDecisions[5].roleLabels[2]",
-      "count": 16
+      "count": 18
     },
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[23].roles[0]",
-      "count": 14
+      "count": 16
     },
     {
       "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[23].evidenceChecks[0]",
+      "count": 16
+    },
+    {
+      "path": "practicalSelection.targetDecisions[0].candidateDecisions[6].roleLabels[2]",
+      "count": 16
+    },
+    {
+      "path": "practicalSelection.targetDecisions[4].candidateDecisions[0].roleLabels[2]",
+      "count": 15
+    },
+    {
+      "path": "practicalSelection.targetDecisions[0].candidateDecisions[5].roleLabels[2]",
+      "count": 14
+    },
+    {
+      "path": "practicalSelection.targetDecisions[2].candidateDecisions[0].roleLabels[2]",
       "count": 14
     },
     {
@@ -253,16 +271,24 @@
       "count": 14
     },
     {
-      "path": "practicalSelection.targetDecisions[2].candidateDecisions[0].roleLabels[2]",
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].roles[0]",
+      "count": 14
+    },
+    {
+      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].evidenceChecks[0]",
+      "count": 14
+    },
+    {
+      "path": "practicalSelection.targetDecisions[0].candidateDecisions[4].roleLabels[2]",
       "count": 13
     },
     {
-      "path": "practicalSelection.targetDecisions[0].candidateDecisions[6].roleLabels[2]",
+      "path": "practicalSelection.targetDecisions[4].candidateDecisions[1].roleLabels[2]",
       "count": 13
     },
     {
-      "path": "practicalSelection.targetDecisions[4].candidateDecisions[0].roleLabels[2]",
-      "count": 13
+      "path": "practicalSelection.targetDecisions[2].candidateDecisions[1].roleLabels[2]",
+      "count": 12
     },
     {
       "path": "practicalSelection.targetDecisions[2].candidateDecisions[2].roleLabels[2]",
@@ -297,31 +323,7 @@
       "count": 12
     },
     {
-      "path": "practicalSelection.targetDecisions[4].candidateDecisions[1].roleLabels[2]",
-      "count": 12
-    },
-    {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].roles[0]",
-      "count": 12
-    },
-    {
-      "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].evidenceChecks[0]",
-      "count": 12
-    },
-    {
-      "path": "practicalSelection.targetDecisions[0].candidateDecisions[5].roleLabels[2]",
-      "count": 11
-    },
-    {
-      "path": "practicalSelection.targetDecisions[2].candidateDecisions[1].roleLabels[2]",
-      "count": 11
-    },
-    {
-      "path": "practicalSelection.targetDecisions[2].candidateDecisions[4].roleLabels[2]",
-      "count": 11
-    },
-    {
-      "path": "practicalSelection.targetDecisions[0].candidateDecisions[4].roleLabels[2]",
+      "path": "practicalSelection.targetDecisions[0].candidateDecisions[0].roleLabels[2]",
       "count": 11
     }
   ],
@@ -6378,6 +6380,564 @@
         "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[37].roles[0]",
         "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[37].evidenceChecks[0]",
         "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[55].roles[0]"
+      ]
+    },
+    {
+      "date": "20260830",
+      "jcd": "07",
+      "raceNo": 1,
+      "venue": "蒲郡",
+      "wind": 0,
+      "wave": 0,
+      "conditionBand": "calm",
+      "actualHead": 5,
+      "finalHead": 2,
+      "classification": "selected-head-not-final",
+      "candidateHead": true,
+      "scenarioHead": true,
+      "selectedHead": true,
+      "supportVisible": true,
+      "strongestScore": {
+        "field": "score",
+        "value": 92
+      },
+      "blockerFlags": [
+        "support-role-only",
+        "position-1-not-eligible",
+        "role-intent-without-head",
+        "no-explicit-head-role-contract",
+        "candidate-rejected-or-not-selected",
+        "selected-head-not-final-handoff"
+      ],
+      "roles": [
+        "pickup",
+        "alternate-head",
+        "head",
+        "暫定・現行枠番評価",
+        "暫定・現行st評価",
+        "暫定・中立50点",
+        "拾い",
+        "役割分離",
+        "参考",
+        "暫定",
+        "攻め",
+        "正式採用",
+        "対象外",
+        "差し",
+        "適性不足・根拠不足",
+        "hole-ticket",
+        "attack",
+        "alternate-head-attack",
+        "🔥攻め艇",
+        "/",
+        "🌊展開艇",
+        "⚡道中艇",
+        "🏠当地巧者",
+        "💣外コース妙味",
+        "対抗展開として採用"
+      ],
+      "eligiblePositionsSeen": [
+        1,
+        3
+      ],
+      "reasons": [
+        "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+        "評価された艇・着順役割を実戦買い目へ反映。",
+        "展示進入5コース / 基本構造12/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達",
+        "今節ST18.6/25 / 直近1年コース別ST9.5/20 / 期間推移6.4/15 / 3年コース別ST7.7/15 / 全国平均ST7.5/10 / Fリスク5/5 / 取得信頼度10/10 / 実進入未確定 / 実進入5コース87走",
+        "展示0/6艇・一周0/6艇のため中立50点",
+        "5コースは拾いとして評価",
+        "攻め艇とのST比較15/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中15/15 / 技量・コース適性9/10 / 場・水面・風適応0/5 / 攻め艇の内側隣接艇ではない",
+        "展開一致34/40 / 位置・コース14/20 / 残し・拾い12.7/15 / ST・スリット6/10 / 展示・足は9％枠へ分離 / 場・水面3/5 / 展示6艇未取得のため役割判定は暫定",
+        "ゴール想定30/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置9/15 / 当地・水面7/10 / 技量4.8/5 / 今節成績不足のため暫定",
+        "当地・全国比較19/25 / 当地成績20/20 / 展開役割20/20 / 進入適合9/15 / 場・水面11/15 / 技量4.8/5",
+        "展示・足は9％枠へ分離 / 今節ST・スリット10/20 / 今節・道中2/20 / 展開役割15/15 / 技量9.7/10 / 当地・水面4.2/5",
+        "風向・風速とコース0/20 / 波・展示・回り足0/20 / 水面・潮汐2.4/15 / 展開役割20/20 / 当地・道中12.6/15 / ST・技量8.7/10 / 風速または波高の実測値不足 / 風向を正確に分類できないため暫定 / 潮汐場の現在潮位・潮流が不足 / 展示・一周・回り足の裏付け不足"
+      ],
+      "headPaths": [
+        "practicalSelection.targetDecisions[1].candidateDecisions[6].ticket",
+        "practicalSelection.targetDecisions[1].candidateDecisions[6].roleLabels[0]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[5].ticket",
+        "practicalSelection.targetDecisions[2].candidateDecisions[5].roleLabels[0]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[1].ticket",
+        "practicalSelection.targetDecisions[4].candidateDecisions[1].roleLabels[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.firstCandidates[2].boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[89].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[89].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[89].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[90].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[90].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[90].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[91].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[91].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[91].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[93].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[93].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[93].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[97].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[97].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[97].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[98].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[98].ticket"
+      ],
+      "supportPaths": [
+        "practicalSelection.targetDecisions[0].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[5].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[6].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[5].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[7].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[8].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[6].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[7].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[5].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[2].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[3].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2].boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2].course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[23].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[23].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[26].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[26].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[36].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[36].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[55].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[55].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[70].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[70].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[85].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[85].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[118].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[118].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[134].evidenceChecks[5]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[139].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[139].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[139].phaseEvidence.partners.third.course"
+      ]
+    },
+    {
+      "date": "20260830",
+      "jcd": "08",
+      "raceNo": 1,
+      "venue": "常滑",
+      "wind": 0,
+      "wave": 0,
+      "conditionBand": "calm",
+      "actualHead": 6,
+      "finalHead": 1,
+      "classification": "support-only-not-head-eligible",
+      "candidateHead": false,
+      "scenarioHead": false,
+      "selectedHead": false,
+      "supportVisible": true,
+      "strongestScore": {
+        "field": "score",
+        "value": 82
+      },
+      "blockerFlags": [
+        "position-1-not-eligible",
+        "role-intent-without-head",
+        "no-explicit-head-role-contract",
+        "support-role-only",
+        "candidate-rejected-or-not-selected",
+        "support-visible-but-no-head-role"
+      ],
+      "roles": [
+        "position",
+        "暫定・現行枠番評価",
+        "暫定・現行st評価",
+        "暫定・中立50点",
+        "拾い",
+        "役割分離",
+        "参考",
+        "暫定",
+        "対象外",
+        "正式採用",
+        "pickup",
+        "💣外コース妙味"
+      ],
+      "eligiblePositionsSeen": [
+        3
+      ],
+      "reasons": [
+        "展示進入6コース / 基本構造8/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達",
+        "今節ST0/25 / 直近1年コース別ST0/20 / 期間推移0/15 / 3年コース別ST0/15 / 全国平均ST0/10 / Fリスク0/5 / 取得信頼度0/10 / 実進入未確定 / 実進入6コース0走で判定数未達",
+        "展示0/6艇・一周0/6艇のため中立50点",
+        "6コースは拾いとして評価",
+        "攻め艇とのST比較0/25 / ST安定性0/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中12/15 / 技量・コース適性7/10 / 場・水面・風適応0/5 / 攻め艇の内側隣接艇ではない / ST比較の裏付け不足",
+        "展開一致34/40 / 位置・コース11/20 / 残し・拾い10.4/15 / ST・スリット0/10 / 展示・足は9％枠へ分離 / 場・水面2.6/5 / 展示6艇未取得のため役割判定は暫定",
+        "ゴール想定24/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置7/15 / 当地・水面5.2/10 / 技量3.8/5 / 今節成績不足のため暫定",
+        "当地・全国比較0/25 / 当地成績0/20 / 展開役割15/20 / 進入適合7.7/15 / 場・水面10.1/15 / 技量3.8/5 / 当地勝率・全国勝率・当地連率不足のため暫定",
+        "展示・足は9％枠へ分離 / 今節ST・スリット0/20 / 今節・道中0/20 / 展開役割11/15 / 技量7.6/10 / 当地・水面3.2/5 / 展示または今節実績の裏付け不足",
+        "風向・風速とコース0/20 / 波・展示・回り足0/20 / 水面・潮汐3.1/15 / 展開役割16/20 / 当地・道中9.7/15 / ST・技量6.5/10 / 風速または波高の実測値不足 / 風向を正確に分類できないため暫定 / 潮汐場の現在潮位・潮流が不足 / 展示・一周・回り足の裏付け不足",
+        "現在コース1着・3連率0/25 / コース別ST・安定性0/15 / 得意戦法一致0/20 / 直近1年・過去2年推移0/15 / 級別・全国勝率3.2/15 / 今節着順・道中0/5 / 最有力展開役割3/5 / 登録番号未取得 / 公式の実進入コース別履歴なし / 期間別推移の必要使用数未達 / 決まり手の件数・割合不足",
+        "展示・一周は確認条件のみ / 今節・道中4.4/20 / 今節ST・スリット0/15 / 整備後変化0/15 / 場内相対モーター0/10 / 展開役割8/10 / 調整力・当地3.7/5 / 更新時期・使用節数不明のためモーター数字は暫定 / 展示または今節実績の裏付け不足"
+      ],
+      "headPaths": [],
+      "supportPaths": [
+        "practicalSelection.targetDecisions[0].candidateDecisions[7].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[3].roleLabels[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[3].boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[3].course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[158].evidenceChecks[5]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[163].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[163].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[163].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[167].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[167].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[167].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[170].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[170].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[170].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[175].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[175].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[175].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[179].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[179].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[179].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[182].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[182].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[182].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[187].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[187].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[187].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[191].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[191].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[191].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[194].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[194].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[194].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[198].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[198].phaseEvidence.partners.third.boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[198].phaseEvidence.partners.third.course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates[3].boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].outcome.thirdCandidates[3].course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[158].evidenceChecks[5]"
+      ]
+    },
+    {
+      "date": "20260830",
+      "jcd": "11",
+      "raceNo": 1,
+      "venue": "びわこ",
+      "wind": 0,
+      "wave": 0,
+      "conditionBand": "calm",
+      "actualHead": 5,
+      "finalHead": 2,
+      "classification": "scenario-head-not-selected",
+      "candidateHead": false,
+      "scenarioHead": true,
+      "selectedHead": false,
+      "supportVisible": true,
+      "strongestScore": {
+        "field": "score",
+        "value": 82
+      },
+      "blockerFlags": [
+        "support-role-only",
+        "position-1-not-eligible",
+        "role-intent-without-head",
+        "no-explicit-head-role-contract",
+        "candidate-rejected-or-not-selected",
+        "support-visible-but-no-head-role",
+        "head-scenario-not-selected"
+      ],
+      "roles": [
+        "pickup",
+        "暫定・現行枠番評価",
+        "暫定・現行st評価",
+        "暫定・中立50点",
+        "拾い",
+        "役割分離",
+        "参考",
+        "暫定",
+        "正式採用",
+        "対象外",
+        "適性不足・根拠不足",
+        "hold",
+        "hole-ticket",
+        "💣外コース妙味",
+        "対抗展開として採用"
+      ],
+      "eligiblePositionsSeen": [
+        2,
+        3
+      ],
+      "reasons": [
+        "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+        "評価された艇・着順役割を実戦買い目へ反映。",
+        "展示進入5コース / 基本構造12/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達",
+        "今節ST5/25 / 直近1年コース別ST8/20 / 期間推移12/15 / 3年コース別ST4.7/15 / 全国平均ST5/10 / Fリスク5/5 / 取得信頼度10/10 / 実進入未確定 / 実進入5コース106走",
+        "展示0/6艇・一周0/6艇のため中立50点",
+        "5コースは拾いとして評価",
+        "攻め艇とのST比較10/25 / ST安定性4/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中12/15 / 技量・コース適性6/10 / 場・水面・風適応0/5 / 攻め艇の内側隣接艇ではない / 攻め艇より明確にSTが遅い",
+        "展開一致34/40 / 位置・コース14/20 / 残し・拾い10.6/15 / ST・スリット1/10 / 展示・足は9％枠へ分離 / 場・水面3.3/5 / 展示6艇未取得のため役割判定は暫定",
+        "ゴール想定24/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置9/15 / 当地・水面5.1/10 / 技量3.4/5 / 今節成績不足のため暫定",
+        "当地・全国比較22/25 / 当地成績6.3/20 / 展開役割15/20 / 進入適合9.8/15 / 場・水面11.5/15 / 技量3.4/5",
+        "展示・足は9％枠へ分離 / 今節ST・スリット2/20 / 今節・道中2/20 / 展開役割11/15 / 技量6.8/10 / 当地・水面3.5/5",
+        "風向・風速とコース0/20 / 波・展示・回り足0/20 / 水面・潮汐13.5/15 / 展開役割16/20 / 当地・道中9.6/15 / ST・技量6.6/10 / 風速または波高の実測値不足 / 風向を正確に分類できないため暫定 / 展示・一周・回り足の裏付け不足"
+      ],
+      "headPaths": [
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[118].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[118].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[118].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[119].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[119].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[119].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[120].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[120].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[120].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[121].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[121].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[121].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[122].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[122].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[122].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[123].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[124].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[124].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[124].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[125].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[125].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[125].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[127].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[127].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[127].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[128].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[128].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[128].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[129].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[129].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[129].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[118].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[118].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[118].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches[119].headBoatNo"
+      ],
+      "supportPaths": [
+        "practicalSelection.targetDecisions[0].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[5].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[6].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[2].roleLabels[2]",
+        "practicalSelection.targetDecisions[5].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[5].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[5].candidateDecisions[2].roleLabels[2]",
+        "practicalSelection.targetDecisions[5].candidateDecisions[3].roleLabels[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2].boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[2].course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[19].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[23].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[23].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[25].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[25].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[33].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[33].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[51].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[51].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[67].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[67].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[83].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[83].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[101].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[101].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[105].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[105].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[109].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[109].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[137].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[137].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[145].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[145].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[156].evidenceChecks[5]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[161].evidenceChecks[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[161].phaseEvidence.partners.third.boatNo"
+      ]
+    },
+    {
+      "date": "20260830",
+      "jcd": "14",
+      "raceNo": 2,
+      "venue": "鳴門",
+      "wind": 0,
+      "wave": 1,
+      "conditionBand": "calm",
+      "actualHead": 6,
+      "finalHead": 2,
+      "classification": "scenario-head-not-selected",
+      "candidateHead": false,
+      "scenarioHead": true,
+      "selectedHead": false,
+      "supportVisible": true,
+      "strongestScore": {
+        "field": "score",
+        "value": 96
+      },
+      "blockerFlags": [
+        "support-role-only",
+        "position-1-not-eligible",
+        "role-intent-without-head",
+        "no-explicit-head-role-contract",
+        "candidate-rejected-or-not-selected",
+        "support-visible-but-no-head-role",
+        "head-scenario-not-selected"
+      ],
+      "roles": [
+        "pickup",
+        "暫定・現行枠番評価",
+        "暫定・現行st評価",
+        "暫定・中立50点",
+        "拾い",
+        "役割分離",
+        "参考",
+        "暫定",
+        "正式採用",
+        "対象外",
+        "適性不足・根拠不足",
+        "hole-ticket",
+        "alternate-head",
+        "alternate-head-attack",
+        "⚡道中艇",
+        "/",
+        "💣外コース妙味",
+        "対抗展開として採用"
+      ],
+      "eligiblePositionsSeen": [
+        1,
+        3
+      ],
+      "reasons": [
+        "最有力展開連動40/40 / 差し場・空き水面15/25 / 実進入・位置関係17/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+        "評価された艇・着順役割を実戦買い目へ反映。",
+        "展示進入6コース / 基本構造8/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達",
+        "今節ST16.4/25 / 直近1年コース別ST6.8/20 / 期間推移10/15 / 3年コース別ST4.4/15 / 全国平均ST5/10 / Fリスク5/5 / 取得信頼度10/10 / 実進入未確定 / 実進入6コース96走",
+        "展示0/6艇・一周0/6艇のため中立50点",
+        "6コースは拾いとして評価",
+        "攻め艇とのST比較10/25 / ST安定性9/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中13/15 / 技量・コース適性7/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない",
+        "展開一致34/40 / 位置・コース11/20 / 残し・拾い11.1/15 / ST・スリット5/10 / 展示・足は9％枠へ分離 / 場・水面2.8/5 / 展示6艇未取得のため役割判定は暫定",
+        "ゴール想定24/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置7/15 / 当地・水面6/10 / 技量4/5 / 今節成績不足のため暫定",
+        "当地・全国比較22/25 / 当地成績12.8/20 / 展開役割15/20 / 進入適合8.3/15 / 場・水面10.5/15 / 技量4/5",
+        "展示・足は9％枠へ分離 / 今節ST・スリット4/20 / 今節・道中2/20 / 展開役割11/15 / 技量8/10 / 当地・水面3.7/5",
+        "風向・風速とコース10/20 / 波・展示・回り足0/20 / 水面・潮汐3.7/15 / 展開役割16/20 / 当地・道中11.1/15 / ST・技量7/10 / 潮汐場の現在潮位・潮流が不足 / 展示・一周・回り足の裏付け不足"
+      ],
+      "headPaths": [
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[85].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[85].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[85].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[86].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[86].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[86].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[87].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[87].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[87].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[88].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[88].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[88].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[88].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[88].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[89].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[89].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[89].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[90].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[90].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[90].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[91].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[91].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[91].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[92].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[93].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[93].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[93].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[94].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[95].title",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].headBoatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].ticket",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[96].roles[0]"
+      ],
+      "supportPaths": [
+        "practicalSelection.expansionSummary.candidatePromotionTickets[0].roleLabels[2]",
+        "practicalSelection.expansionSummary.candidatePromotionTickets[1].roleLabels[2]",
+        "practicalSelection.expansionSummary.candidatePromotionTickets[2].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[5].roleLabels[2]",
+        "practicalSelection.targetDecisions[0].candidateDecisions[6].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.targetDecisions[1].candidateDecisions[5].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[2].candidateDecisions[6].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[6].roleLabels[2]",
+        "practicalSelection.targetDecisions[3].candidateDecisions[7].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[0].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[1].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[2].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[3].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[4].roleLabels[2]",
+        "practicalSelection.targetDecisions[4].candidateDecisions[5].roleLabels[2]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[3].boatNo",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.outcome.thirdCandidates[3].course",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[28].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[28].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[36].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[36].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[54].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[54].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[69].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[69].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[84].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[84].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[133].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[133].evidenceChecks[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[140].roles[0]",
+        "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[140].evidenceChecks[0]"
       ]
     }
   ]
