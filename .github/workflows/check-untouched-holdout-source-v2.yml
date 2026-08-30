@@ -1,0 +1,80 @@
+name: Check untouched holdout source resolver v2
+
+on:
+  pull_request:
+    paths:
+      - "scripts/resolve-st-role-attack-exhibition-holdout-v2.cjs"
+      - "tests/untouched-holdout-source-v2.test.cjs"
+      - "docs/untouched-holdout-source-v2.md"
+      - ".github/workflows/check-untouched-holdout-source-v2.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/resolve-st-role-attack-exhibition-holdout-v2.cjs"
+      - ".github/workflows/check-untouched-holdout-source-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify resolver and one-time guard
+        run: |
+          node --check scripts/resolve-st-role-attack-exhibition-holdout-v2.cjs
+          node tests/untouched-holdout-source-v2.test.cjs
+          node scripts/resolve-st-role-attack-exhibition-holdout-v2.cjs > /tmp/holdout-v2.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('/tmp/holdout-v2.json', 'utf8'));
+          if (String(report.nextStep || '').startsWith('blocked-')) {
+            throw new Error(`${report.nextStep}: ${report.error || 'resolver remained blocked'}`);
+          }
+          if (report.holdoutConsumed !== true) throw new Error('holdout must be consumed exactly once');
+          if (report.thresholdSearchPerformed !== false) throw new Error('threshold search must remain disabled');
+          if (report.productionChanged !== false || report.automaticApplication !== false) {
+            throw new Error('resolver must not modify production');
+          }
+          if (report.holdout?.discoveryOverlapCount !== 0) {
+            throw new Error(`Discovery overlap: ${report.holdout?.discoveryOverlapCount}`);
+          }
+          console.log(JSON.stringify({
+            nextStep: report.nextStep,
+            reusedFinalReport: report.reusedFinalReport,
+            provider: report.holdout?.provider,
+            raceCount: report.overall?.raceCount,
+            eligibleCount: report.overall?.eligibleCount,
+            netCorrectGain: report.overall?.netCorrectGain
+          }, null, 2));
+          NODE
+      - name: Verify charter
+        run: node scripts/check-charter.js
+      - name: Verify pull request is side-effect free
+        if: github.event_name == 'pull_request'
+        run: git diff --exit-code
+      - name: Resolve and save report on main
+        if: github.event_name != 'pull_request'
+        run: node scripts/resolve-st-role-attack-exhibition-holdout-v2.cjs --write
+      - name: Commit resolved report
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/st-role-attack-exhibition-holdout-report.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Resolve untouched ST attack exhibition holdout"
+          git pull --rebase origin main
+          git push origin main
