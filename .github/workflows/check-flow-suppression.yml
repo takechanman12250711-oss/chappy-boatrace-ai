@@ -1,0 +1,57 @@
+name: Check flow suppression
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analyze-flow-suppression.cjs"
+      - "tests/flow-suppression.test.cjs"
+      - "docs/flow-suppression-closeout.md"
+      - ".github/workflows/check-flow-suppression.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/analyze-flow-suppression.cjs"
+      - ".github/workflows/check-flow-suppression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify diagnostic and fixed routing
+        run: |
+          node --check scripts/analyze-flow-suppression.cjs
+          node tests/flow-suppression.test.cjs
+          node scripts/analyze-flow-suppression.cjs > /tmp/flow-suppression-report.json
+      - name: Verify charter
+        run: node scripts/check-charter.js
+      - name: Verify pull request is side-effect free
+        if: github.event_name == 'pull_request'
+        run: git diff --exit-code
+      - name: Build close-out report
+        if: github.event_name != 'pull_request'
+        run: node scripts/analyze-flow-suppression.cjs --write
+      - name: Save close-out report
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/flow-suppression-report.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Save flow suppression discovery close-out"
+          git pull --rebase origin main
+          git push origin main
