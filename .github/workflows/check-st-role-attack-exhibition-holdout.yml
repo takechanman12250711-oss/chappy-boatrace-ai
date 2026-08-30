@@ -1,0 +1,95 @@
+name: Check ST role attack exhibition untouched holdout
+
+on:
+  pull_request:
+    paths:
+      - "scripts/validate-st-role-attack-exhibition-holdout.cjs"
+      - "scripts/run-st-role-attack-exhibition-sealed-holdout.cjs"
+      - "tests/st-role-attack-exhibition-holdout.test.cjs"
+      - "docs/st-role-attack-exhibition-holdout.md"
+      - ".github/workflows/check-st-role-attack-exhibition-holdout.yml"
+      - "config/effective-score-weight-ab-v1.json"
+      - "data/stats/effective-score-weight-ab-report.json"
+      - "data/stats/flow-suppression-report.json"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/validate-st-role-attack-exhibition-holdout.cjs"
+      - "scripts/run-st-role-attack-exhibition-sealed-holdout.cjs"
+      - ".github/workflows/check-st-role-attack-exhibition-holdout.yml"
+      - "config/effective-score-weight-ab-v1.json"
+      - "data/stats/effective-score-weight-ab-report.json"
+      - "data/stats/flow-suppression-report.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify fixed hypothesis and sealed holdout routing
+        run: |
+          node --check scripts/validate-st-role-attack-exhibition-holdout.cjs
+          node --check scripts/run-st-role-attack-exhibition-sealed-holdout.cjs
+          node tests/st-role-attack-exhibition-holdout.test.cjs
+          node scripts/run-st-role-attack-exhibition-sealed-holdout.cjs > /tmp/st-role-attack-exhibition-holdout.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('/tmp/st-role-attack-exhibition-holdout.json', 'utf8'));
+          if (String(report.nextStep || '').startsWith('blocked-')) {
+            throw new Error(report.error || 'sealed holdout source could not be resolved');
+          }
+          if (report.holdout?.provider !== 'effective-score-weight-ab-v1.preregistered-sealed-holdout') {
+            throw new Error(`Unexpected holdout provider: ${report.holdout?.provider}`);
+          }
+          if (report.holdout?.holdoutType !== 'retrospective-temporal-procedural-seal') {
+            throw new Error(`Unexpected holdout type: ${report.holdout?.holdoutType}`);
+          }
+          if (report.holdout?.discoveryOverlapCount !== 0) {
+            throw new Error(`Discovery overlap: ${report.holdout?.discoveryOverlapCount}`);
+          }
+          if (report.holdoutConsumed !== true) throw new Error('sealed holdout must be consumed exactly once');
+          if (report.thresholdSearchPerformed !== false) throw new Error('threshold search must remain disabled');
+          if (report.productionChanged !== false || report.automaticApplication !== false) {
+            throw new Error('diagnostic must not modify production');
+          }
+          console.log(JSON.stringify({
+            provider: report.holdout?.provider,
+            holdoutRaceCount: report.holdout?.raceCount,
+            eligibleCount: report.overall?.eligibleCount,
+            currentCorrectCount: report.overall?.currentCorrectCount,
+            shadowCorrectCount: report.overall?.shadowCorrectCount,
+            nextStep: report.nextStep
+          }, null, 2));
+          NODE
+      - name: Verify charter
+        run: node scripts/check-charter.js
+      - name: Verify pull request is side-effect free
+        if: github.event_name == 'pull_request'
+        run: git diff --exit-code
+      - name: Build holdout report
+        if: github.event_name != 'pull_request'
+        run: node scripts/run-st-role-attack-exhibition-sealed-holdout.cjs --write
+      - name: Save holdout report
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/st-role-attack-exhibition-holdout-report.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update ST attack exhibition sealed holdout report"
+          git pull --rebase origin main
+          git push origin main
