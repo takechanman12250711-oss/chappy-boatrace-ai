@@ -1,0 +1,53 @@
+name: Check local water outer head bottleneck audit
+on:
+  pull_request:
+    paths:
+      - "scripts/build-local-water-outer-head-bottleneck-audit.js"
+      - "scripts/test-local-water-outer-head-bottleneck-audit.js"
+      - ".github/workflows/check-local-water-outer-head-bottleneck-audit.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build-local-water-outer-head-bottleneck-audit.js"
+      - ".github/workflows/check-local-water-outer-head-bottleneck-audit.yml"
+  workflow_run:
+    workflows: ["Collect official race results"]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify diagnostic
+        run: |
+          node --check scripts/build-local-water-outer-head-bottleneck-audit.js
+          node scripts/test-local-water-outer-head-bottleneck-audit.js
+      - name: Build real diagnostic
+        if: github.event_name != 'pull_request'
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-local-water-outer-head-bottleneck-audit.js
+          node scripts/prepare-daily-prediction-git-save.js --all
+      - name: Save diagnostic
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/local-water-outer-head-bottleneck-audit.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update local water outer head bottleneck audit"
+          git pull --rebase origin main
+          git push origin main
