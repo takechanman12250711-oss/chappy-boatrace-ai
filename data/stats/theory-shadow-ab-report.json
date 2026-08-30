@@ -1,88 +1,98 @@
 {
-  "generatedAt": "2026-08-29T18:43:41.472Z",
+  "generatedAt": "2026-08-30T18:28:00.583Z",
   "source": "data/predictions/*.json",
   "version": "1.0.0",
   "status": "collecting-comparisons",
   "interpretation": "Bが公式的中目を押し上げたか・下げたかを評価。買い目自体は変更していないため的中率比較ではない。",
   "overall": {
-    "comparableCount": 115,
+    "comparableCount": 117,
     "bWins": 0,
-    "aWins": 92,
+    "aWins": 94,
     "draws": 23,
     "bWinRate": 0,
-    "aWinRate": 80,
-    "drawRate": 20
+    "aWinRate": 80.3,
+    "drawRate": 19.7
   },
   "byTheory": [
     {
-      "key": "localWater",
-      "comparableCount": 115,
-      "bWins": 0,
-      "aWins": 92,
-      "draws": 23,
-      "bWinRate": 0,
-      "aWinRate": 80,
-      "drawRate": 20
-    },
-    {
       "key": "flow",
-      "comparableCount": 114,
+      "comparableCount": 116,
       "bWins": 0,
-      "aWins": 92,
+      "aWins": 94,
       "draws": 22,
       "bWinRate": 0,
-      "aWinRate": 80.7,
-      "drawRate": 19.3
+      "aWinRate": 81,
+      "drawRate": 19
+    },
+    {
+      "key": "localWater",
+      "comparableCount": 116,
+      "bWins": 0,
+      "aWins": 93,
+      "draws": 23,
+      "bWinRate": 0,
+      "aWinRate": 80.2,
+      "drawRate": 19.8
     },
     {
       "key": "holdPickup",
-      "comparableCount": 111,
+      "comparableCount": 112,
       "bWins": 0,
-      "aWins": 91,
+      "aWins": 92,
       "draws": 20,
       "bWinRate": 0,
-      "aWinRate": 82,
-      "drawRate": 18
+      "aWinRate": 82.1,
+      "drawRate": 17.9
     },
     {
       "key": "skill",
-      "comparableCount": 94,
+      "comparableCount": 95,
       "bWins": 0,
-      "aWins": 85,
+      "aWins": 86,
       "draws": 9,
       "bWinRate": 0,
-      "aWinRate": 90.4,
-      "drawRate": 9.6
+      "aWinRate": 90.5,
+      "drawRate": 9.5
     },
     {
       "key": "motor",
-      "comparableCount": 70,
+      "comparableCount": 71,
       "bWins": 0,
-      "aWins": 64,
+      "aWins": 65,
       "draws": 6,
       "bWinRate": 0,
-      "aWinRate": 91.4,
-      "drawRate": 8.6
+      "aWinRate": 91.5,
+      "drawRate": 8.5
     },
     {
       "key": "course",
-      "comparableCount": 62,
+      "comparableCount": 64,
       "bWins": 0,
-      "aWins": 60,
+      "aWins": 62,
       "draws": 2,
       "bWinRate": 0,
-      "aWinRate": 96.8,
-      "drawRate": 3.2
+      "aWinRate": 96.9,
+      "drawRate": 3.1
     },
     {
       "key": "wallBoat",
-      "comparableCount": 48,
+      "comparableCount": 49,
       "bWins": 0,
-      "aWins": 37,
+      "aWins": 38,
       "draws": 11,
       "bWinRate": 0,
-      "aWinRate": 77.1,
-      "drawRate": 22.9
+      "aWinRate": 77.6,
+      "drawRate": 22.4
+    },
+    {
+      "key": "stSlit",
+      "comparableCount": 45,
+      "bWins": 0,
+      "aWins": 36,
+      "draws": 9,
+      "bWinRate": 0,
+      "aWinRate": 80,
+      "drawRate": 20
     },
     {
       "key": "exhibitionFoot",
@@ -95,24 +105,14 @@
       "drawRate": 13.6
     },
     {
-      "key": "stSlit",
-      "comparableCount": 44,
-      "bWins": 0,
-      "aWins": 35,
-      "draws": 9,
-      "bWinRate": 0,
-      "aWinRate": 79.5,
-      "drawRate": 20.5
-    },
-    {
       "key": "frameRiseSink",
-      "comparableCount": 29,
+      "comparableCount": 30,
       "bWins": 0,
-      "aWins": 28,
+      "aWins": 29,
       "draws": 1,
       "bWinRate": 0,
-      "aWinRate": 96.6,
-      "drawRate": 3.4
+      "aWinRate": 96.7,
+      "drawRate": 3.3
     }
   ],
   "byVenueTheory": [
@@ -677,6 +677,16 @@
       "drawRate": 0
     },
     {
+      "key": "01:flow",
+      "comparableCount": 4,
+      "bWins": 0,
+      "aWins": 4,
+      "draws": 0,
+      "bWinRate": 0,
+      "aWinRate": 100,
+      "drawRate": 0
+    },
+    {
       "key": "02:motor",
       "comparableCount": 4,
       "bWins": 0,
@@ -907,7 +917,7 @@
       "drawRate": 50
     },
     {
-      "key": "01:flow",
+      "key": "01:course",
       "comparableCount": 3,
       "bWins": 0,
       "aWins": 3,
@@ -1107,6 +1117,46 @@
       "drawRate": 0
     },
     {
+      "key": "21:flow",
+      "comparableCount": 3,
+      "bWins": 0,
+      "aWins": 2,
+      "draws": 1,
+      "bWinRate": 0,
+      "aWinRate": 66.7,
+      "drawRate": 33.3
+    },
+    {
+      "key": "21:holdPickup",
+      "comparableCount": 3,
+      "bWins": 0,
+      "aWins": 2,
+      "draws": 1,
+      "bWinRate": 0,
+      "aWinRate": 66.7,
+      "drawRate": 33.3
+    },
+    {
+      "key": "21:localWater",
+      "comparableCount": 3,
+      "bWins": 0,
+      "aWins": 2,
+      "draws": 1,
+      "bWinRate": 0,
+      "aWinRate": 66.7,
+      "drawRate": 33.3
+    },
+    {
+      "key": "21:stSlit",
+      "comparableCount": 3,
+      "bWins": 0,
+      "aWins": 2,
+      "draws": 1,
+      "bWinRate": 0,
+      "aWinRate": 66.7,
+      "drawRate": 33.3
+    },
+    {
       "key": "23:course",
       "comparableCount": 3,
       "bWins": 0,
@@ -1125,16 +1175,6 @@
       "bWinRate": 0,
       "aWinRate": 66.7,
       "drawRate": 33.3
-    },
-    {
-      "key": "01:course",
-      "comparableCount": 2,
-      "bWins": 0,
-      "aWins": 2,
-      "draws": 0,
-      "bWinRate": 0,
-      "aWinRate": 100,
-      "drawRate": 0
     },
     {
       "key": "01:exhibitionFoot",
@@ -1457,7 +1497,7 @@
       "drawRate": 0
     },
     {
-      "key": "21:flow",
+      "key": "21:motor",
       "comparableCount": 2,
       "bWins": 0,
       "aWins": 1,
@@ -1467,27 +1507,17 @@
       "drawRate": 50
     },
     {
-      "key": "21:holdPickup",
+      "key": "21:skill",
       "comparableCount": 2,
       "bWins": 0,
-      "aWins": 1,
-      "draws": 1,
+      "aWins": 2,
+      "draws": 0,
       "bWinRate": 0,
-      "aWinRate": 50,
-      "drawRate": 50
+      "aWinRate": 100,
+      "drawRate": 0
     },
     {
-      "key": "21:localWater",
-      "comparableCount": 2,
-      "bWins": 0,
-      "aWins": 1,
-      "draws": 1,
-      "bWinRate": 0,
-      "aWinRate": 50,
-      "drawRate": 50
-    },
-    {
-      "key": "21:stSlit",
+      "key": "21:wallBoat",
       "comparableCount": 2,
       "bWins": 0,
       "aWins": 1,
@@ -1797,17 +1827,7 @@
       "drawRate": 0
     },
     {
-      "key": "21:motor",
-      "comparableCount": 1,
-      "bWins": 0,
-      "aWins": 0,
-      "draws": 1,
-      "bWinRate": 0,
-      "aWinRate": 0,
-      "drawRate": 100
-    },
-    {
-      "key": "21:skill",
+      "key": "21:course",
       "comparableCount": 1,
       "bWins": 0,
       "aWins": 1,
@@ -1817,14 +1837,14 @@
       "drawRate": 0
     },
     {
-      "key": "21:wallBoat",
+      "key": "21:frameRiseSink",
       "comparableCount": 1,
       "bWins": 0,
-      "aWins": 0,
-      "draws": 1,
+      "aWins": 1,
+      "draws": 0,
       "bWinRate": 0,
-      "aWinRate": 0,
-      "drawRate": 100
+      "aWinRate": 100,
+      "drawRate": 0
     },
     {
       "key": "01:wallBoat",
@@ -2008,6 +2028,16 @@
     },
     {
       "key": "08:course",
+      "comparableCount": 0,
+      "bWins": 0,
+      "aWins": 0,
+      "draws": 0,
+      "bWinRate": 0,
+      "aWinRate": 0,
+      "drawRate": 0
+    },
+    {
+      "key": "08:exhibitionFoot",
       "comparableCount": 0,
       "bWins": 0,
       "aWins": 0,
@@ -2327,27 +2357,7 @@
       "drawRate": 0
     },
     {
-      "key": "21:course",
-      "comparableCount": 0,
-      "bWins": 0,
-      "aWins": 0,
-      "draws": 0,
-      "bWinRate": 0,
-      "aWinRate": 0,
-      "drawRate": 0
-    },
-    {
       "key": "21:exhibitionFoot",
-      "comparableCount": 0,
-      "bWins": 0,
-      "aWins": 0,
-      "draws": 0,
-      "bWinRate": 0,
-      "aWinRate": 0,
-      "drawRate": 0
-    },
-    {
-      "key": "21:frameRiseSink",
       "comparableCount": 0,
       "bWins": 0,
       "aWins": 0,
