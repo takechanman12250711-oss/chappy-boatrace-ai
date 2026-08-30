@@ -4,19 +4,14 @@ const fs = require("node:fs");
 const path = require("node:path");
 const localWater = require("./build-local-water-result-breakdown");
 
-const root = path.resolve(__dirname, "..");
-const OUT = path.join(root, "data", "stats", "local-water-outer-head-bottleneck-audit.json");
-const UPSTREAM = path.join(root, "data", "stats", "local-water-main-head-selection-audit.json");
+const ROOT = path.resolve(__dirname, "..");
+const OUT = path.join(ROOT, "data", "stats", "local-water-outer-head-bottleneck-audit.json");
+const UPSTREAM = path.join(ROOT, "data", "stats", "local-water-main-head-selection-audit.json");
 
-function arr(value) {
-  return Array.isArray(value) ? value : [];
-}
+const arr = (value) => Array.isArray(value) ? value : [];
+const raceKey = (row = {}) => `${row.date}-${String(row.jcd || "").padStart(2, "0")}-${Number(row.raceNo || 0)}`;
 
-function key(row = {}) {
-  return `${row.date}-${String(row.jcd || "").padStart(2, "0")}-${Number(row.raceNo || 0)}`;
-}
-
-function load(dir) {
+function loadDaily(dir) {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
     .filter((name) => /^\d{8}\.json$/.test(name))
@@ -35,10 +30,10 @@ function readJson(file, fallback = null) {
 function predictionRows(docs) {
   const map = new Map();
   for (const doc of docs) {
-    for (const name of ["predictions", "verificationPredictions"]) {
-      for (const row of arr(doc?.[name])) {
-        const rowKey = key(row);
-        if (name === "predictions" || !map.has(rowKey)) map.set(rowKey, row);
+    for (const source of ["predictions", "verificationPredictions"]) {
+      for (const row of arr(doc?.[source])) {
+        const key = raceKey(row);
+        if (source === "predictions" || !map.has(key)) map.set(key, row);
       }
     }
   }
@@ -50,14 +45,14 @@ function resultMap(docs) {
   for (const doc of docs) {
     for (const race of arr(doc?.races)) {
       if (race?.resultAvailable === true && race?.status === "finished") {
-        map.set(key(race), race);
+        map.set(raceKey(race), race);
       }
     }
   }
   return map;
 }
 
-function boatNumber(value) {
+function boatNo(value) {
   const number = Number(value);
   return Number.isInteger(number) && number >= 1 && number <= 6 ? number : null;
 }
@@ -67,7 +62,7 @@ function objectBoatNo(value = {}) {
     "boatNo", "boat", "number", "waku", "teiban",
     "targetBoatNo", "candidateBoatNo", "headBoatNo"
   ]) {
-    const number = boatNumber(value?.[field]);
+    const number = boatNo(value?.[field]);
     if (number) return number;
   }
   return null;
@@ -85,39 +80,22 @@ function exactTicketHead(value) {
   return formation ? Number(formation[1]) : null;
 }
 
-function resolveStage(pathText, inheritedStage = null) {
+function resolveStage(pathText, inherited = null) {
   const value = String(pathText || "");
   if (
     /^verificationEvidence\.mainScenario(?:\.|$)/i.test(value) ||
     /^raceFlow\.scenario(?:\.|$)/i.test(value)
   ) return "final";
-  if (/(?:^|\.)(?:practicalTickets|selectedCandidate|selectedTicket|adoptedTicket|bestCandidateTicket)(?:\.|\[|$)/i.test(value)) {
+  if (/(?:practicalTickets|selectedCandidate|selectedTicket|adoptedTicket|bestCandidateTicket)/i.test(value)) {
     return "selected";
   }
-  if (/(?:^|\.)(?:raceScenarios|mainScenario|alternateScenario|scenarioBranches|scenarioCandidates)(?:\.|\[|$)/i.test(value)) {
+  if (/(?:raceScenarios|mainScenario|alternateScenario|scenarioBranches|scenarioCandidates)/i.test(value)) {
     return "scenario";
   }
-  if (/(?:candidate|targetDecisions|preservedEvaluationTargets|evaluatedScenarioCandidates|headCandidates|attackBoats)/i.test(value)) {
+  if (/(?:candidate|targetDecisions|preservedEvaluationTargets|evaluatedScenarioCandidates|headCandidates|attackBoats|boatEvaluation|evaluations|marks)/i.test(value)) {
     return "candidate";
   }
-  return inheritedStage;
-}
-
-function emptyStage() {
-  return {
-    head: new Set(),
-    support: new Set(),
-    headPaths: [],
-    supportPaths: []
-  };
-}
-
-function addStageEvidence(stage, kind, boatNo, pathText, detail = "") {
-  const boat = boatNumber(boatNo);
-  if (!stage || !boat || !stage[kind]) return;
-  stage[kind].add(boat);
-  const target = kind === "head" ? stage.headPaths : stage.supportPaths;
-  target.push({ path: pathText, boatNo: boat, detail: String(detail || "").slice(0, 240) });
+  return inherited;
 }
 
 function roleText(value = {}) {
@@ -132,7 +110,7 @@ function roleText(value = {}) {
   ].filter((item) => typeof item === "string").join(" ").toLowerCase();
 }
 
-function positionValues(value = {}) {
+function positions(value = {}) {
   return [
     ...arr(value.eligiblePositions),
     ...arr(value.positions),
@@ -153,25 +131,19 @@ function reasonText(value = {}) {
   ].filter(Boolean).map(String).join(" / ").trim();
 }
 
-function numericScore(value = {}) {
+function strongestScore(value = {}) {
   const fields = [
     "headScore", "score", "totalScore", "attackScore", "attack",
     "tenkai", "flowScore", "likelihood", "probability", "confidence"
   ];
-  const scores = [];
-  for (const field of fields) {
-    const number = Number(value?.[field]);
-    if (Number.isFinite(number)) scores.push({ field, value: number });
-  }
-  return scores.sort((a, b) => b.value - a.value)[0] || null;
+  return fields
+    .map((field) => ({ field, value: Number(value?.[field]) }))
+    .filter((row) => Number.isFinite(row.value))
+    .sort((a, b) => b.value - a.value)[0] || null;
 }
 
-function explicitHeadFromField(field, value) {
-  if (/^(?:headBoatNo|headBoat|firstBoatNo|winnerBoatNo)$/i.test(field)) {
-    return boatNumber(value);
-  }
-  if (/ticket|combination|formation/i.test(field)) return exactTicketHead(value);
-  return null;
+function emptyStage() {
+  return { head: new Set(), support: new Set(), headPaths: [], supportPaths: [] };
 }
 
 function collectWinnerEvidence(prediction, winner) {
@@ -181,41 +153,49 @@ function collectWinnerEvidence(prediction, winner) {
     selected: emptyStage(),
     final: emptyStage()
   };
-  const winnerRows = [];
-  const blockerFlags = new Set();
-  const pathCounts = new Map();
+  const blockers = new Set();
+  const rows = [];
 
-  function recordRow(node, pathText, stage) {
-    const targetBoat = objectBoatNo(node);
-    if (targetBoat !== winner) return;
+  function add(stageName, kind, value, pathText, detail = "") {
+    const number = boatNo(value);
+    const stage = stages[stageName];
+    if (!stage || !number) return;
+    stage[kind].add(number);
+    stage[kind === "head" ? "headPaths" : "supportPaths"].push({
+      path: pathText,
+      boatNo: number,
+      detail: String(detail || "").slice(0, 240)
+    });
+  }
+
+  function inspectObject(node, pathText, stageName) {
+    const number = objectBoatNo(node);
+    if (number !== winner) return;
 
     const roles = roleText(node);
-    const positions = positionValues(node);
+    const eligible = positions(node);
     const reason = reasonText(node);
-    const score = numericScore(node);
-    const isHeadRole = /(?:^|\s|[-_])(head|alternate-head|first|winner)(?:$|\s|[-_])/i.test(roles);
-    const isSupportRole = /(hold|pickup|support|second|third|相手|残し|拾い)/i.test(roles);
-    const headEligible = positions.includes(1);
+    const score = strongestScore(node);
+    const headRole = /(?:^|\s)(?:head|alternate-head|first|winner)(?:$|\s)/i.test(` ${roles} `);
+    const supportRole = /(hold|pickup|support|second|third|相手|残し|拾い)/i.test(roles);
+    const headEligible = eligible.includes(1);
     const rejected = node?.qualified === false || node?.isAdopted === false || node?.selected === false ||
-      /(reject|excluded|skip|見送り|除外|非採用|不成立)/i.test(roles + " " + reason);
+      /(reject|excluded|skip|見送り|除外|非採用|不成立)/i.test(`${roles} ${reason}`);
 
-    if (stage && (isHeadRole || headEligible)) {
-      addStageEvidence(stages[stage], "head", winner, pathText, reason || roles);
-    } else if (stage && (isSupportRole || (positions.length > 0 && !positions.includes(1)))) {
-      addStageEvidence(stages[stage], "support", winner, pathText, reason || roles);
-    }
+    if (stageName && (headRole || headEligible)) add(stageName, "head", winner, pathText, reason || roles);
+    else if (stageName && (supportRole || (eligible.length > 0 && !headEligible))) add(stageName, "support", winner, pathText, reason || roles);
 
-    if (isSupportRole) blockerFlags.add("support-role-only");
-    if (positions.length > 0 && !positions.includes(1)) blockerFlags.add("position-1-not-eligible");
-    if (roles && !isHeadRole) blockerFlags.add("role-intent-without-head");
-    if (rejected) blockerFlags.add("candidate-rejected-or-not-selected");
-    if (!roles && positions.length === 0) blockerFlags.add("no-explicit-head-role-contract");
+    if (supportRole) blockers.add("support-role-only");
+    if (eligible.length > 0 && !headEligible) blockers.add("position-1-not-eligible");
+    if (roles && !headRole) blockers.add("role-intent-without-head");
+    if (rejected) blockers.add("candidate-rejected-or-not-selected");
+    if (!roles && eligible.length === 0) blockers.add("no-explicit-head-role-contract");
 
-    winnerRows.push({
+    rows.push({
       path: pathText,
-      stage,
+      stage: stageName,
       roles,
-      positions,
+      eligiblePositions: eligible,
       score,
       rejected,
       reason: reason.slice(0, 320)
@@ -224,41 +204,40 @@ function collectWinnerEvidence(prediction, winner) {
 
   function visit(node, pathText = "", inheritedStage = null) {
     if (node == null) return;
-    const stage = resolveStage(pathText, inheritedStage);
+    const stageName = resolveStage(pathText, inheritedStage);
 
     if (typeof node === "string") {
       const head = exactTicketHead(node);
-      if (head && stage) addStageEvidence(stages[stage], "head", head, pathText, node);
+      if (head && stageName) add(stageName, "head", head, pathText, node);
       return;
     }
     if (typeof node === "number") {
-      if (/(?:second|third|hold|pickup|support)/i.test(pathText) && stage) {
-        addStageEvidence(stages[stage], "support", node, pathText, "support-list");
-      }
-      if (/(?:headCandidates|firstCandidates)/i.test(pathText) && stage) {
-        addStageEvidence(stages[stage], "head", node, pathText, "head-list");
-      }
+      if (stageName && /(?:second|third|hold|pickup|support)/i.test(pathText)) add(stageName, "support", node, pathText, "support-list");
+      if (stageName && /(?:headCandidates|firstCandidates)/i.test(pathText)) add(stageName, "head", node, pathText, "head-list");
       return;
     }
     if (Array.isArray(node)) {
-      node.forEach((item, index) => visit(item, `${pathText}[${index}]`, stage));
+      node.forEach((item, index) => visit(item, `${pathText}[${index}]`, stageName));
       return;
     }
     if (typeof node !== "object") return;
 
-    recordRow(node, pathText, stage);
+    inspectObject(node, pathText, stageName);
 
     for (const [field, child] of Object.entries(node)) {
       const childPath = pathText ? `${pathText}.${field}` : field;
-      const childStage = resolveStage(childPath, stage);
-      const explicitHead = explicitHeadFromField(field, child);
-      if (explicitHead && childStage) {
-        addStageEvidence(stages[childStage], "head", explicitHead, childPath, String(child));
+      const childStage = resolveStage(childPath, stageName);
+      if (/^(?:headBoatNo|headBoat|firstBoatNo|winnerBoatNo)$/i.test(field)) {
+        add(childStage, "head", child, childPath, String(child));
+      }
+      if (/ticket|combination|formation/i.test(field)) {
+        const head = exactTicketHead(child);
+        if (head) add(childStage, "head", head, childPath, String(child));
       }
       if (/^(?:secondCandidates|thirdCandidates|holdBoats|pickupBoats|supportBoats)$/i.test(field)) {
         for (const item of arr(child)) {
-          const supportBoat = boatNumber(item) || objectBoatNo(item);
-          if (supportBoat && childStage) addStageEvidence(stages[childStage], "support", supportBoat, childPath, field);
+          const supportBoat = boatNo(item) || objectBoatNo(item);
+          if (supportBoat) add(childStage, "support", supportBoat, childPath, field);
         }
       }
       visit(child, childPath, childStage);
@@ -267,35 +246,27 @@ function collectWinnerEvidence(prediction, winner) {
 
   visit(prediction || {});
 
-  for (const stage of Object.values(stages)) {
-    for (const row of [...stage.headPaths, ...stage.supportPaths]) {
-      pathCounts.set(row.path, (pathCounts.get(row.path) || 0) + 1);
-    }
-  }
-
   const finalHead = localWater.predictedHead({ prediction });
   const candidateHead = stages.candidate.head.has(winner);
   const scenarioHead = stages.scenario.head.has(winner);
   const selectedHead = stages.selected.head.has(winner);
-  const supportOnly = ["candidate", "scenario", "selected"].some((name) => stages[name].support.has(winner));
+  const supportVisible = ["candidate", "scenario", "selected"].some((name) => stages[name].support.has(winner));
 
-  let classification;
+  let classification = "no-saved-outer-head-evidence";
   if (finalHead === winner) classification = "final-correct";
   else if (selectedHead) classification = "selected-head-not-final";
   else if (scenarioHead) classification = "scenario-head-not-selected";
   else if (candidateHead) classification = "candidate-head-not-promoted";
-  else if (supportOnly) classification = "support-only-not-head-eligible";
-  else classification = "no-saved-outer-head-evidence";
+  else if (supportVisible) classification = "support-only-not-head-eligible";
 
-  if (!candidateHead && supportOnly) blockerFlags.add("support-visible-but-no-head-role");
-  if (candidateHead && !scenarioHead) blockerFlags.add("head-candidate-not-promoted");
-  if (scenarioHead && !selectedHead) blockerFlags.add("head-scenario-not-selected");
-  if (selectedHead && finalHead !== winner) blockerFlags.add("selected-head-not-final-handoff");
+  if (!candidateHead && supportVisible) blockers.add("support-visible-but-no-head-role");
+  if (candidateHead && !scenarioHead) blockers.add("head-candidate-not-promoted");
+  if (scenarioHead && !selectedHead) blockers.add("head-scenario-not-selected");
+  if (selectedHead && finalHead !== winner) blockers.add("selected-head-not-final-handoff");
 
-  const strongestScore = winnerRows
-    .map((row) => row.score)
-    .filter(Boolean)
-    .sort((a, b) => b.value - a.value)[0] || null;
+  const score = rows.map((row) => row.score).filter(Boolean).sort((a, b) => b.value - a.value)[0] || null;
+  const headPaths = [...new Set(Object.values(stages).flatMap((stage) => stage.headPaths).filter((row) => row.boatNo === winner).map((row) => row.path))];
+  const supportPaths = [...new Set(["candidate", "scenario", "selected"].flatMap((name) => stages[name].supportPaths).filter((row) => row.boatNo === winner).map((row) => row.path))];
 
   return {
     classification,
@@ -303,24 +274,14 @@ function collectWinnerEvidence(prediction, winner) {
     candidateHead,
     scenarioHead,
     selectedHead,
-    supportOnly,
-    blockerFlags: [...blockerFlags],
-    strongestScore,
-    roles: [...new Set(winnerRows.flatMap((row) => row.roles ? row.roles.split(/\s+/) : []).filter(Boolean))].slice(0, 30),
-    positions: [...new Set(winnerRows.flatMap((row) => row.positions))].sort((a, b) => a - b),
-    reasons: [...new Set(winnerRows.map((row) => row.reason).filter(Boolean))].slice(0, 12),
-    headPaths: [...new Set([
-      ...stages.candidate.headPaths,
-      ...stages.scenario.headPaths,
-      ...stages.selected.headPaths,
-      ...stages.final.headPaths
-    ].filter((row) => row.boatNo === winner).map((row) => row.path))].slice(0, 40),
-    supportPaths: [...new Set([
-      ...stages.candidate.supportPaths,
-      ...stages.scenario.supportPaths,
-      ...stages.selected.supportPaths
-    ].filter((row) => row.boatNo === winner).map((row) => row.path))].slice(0, 40),
-    pathCounts
+    supportVisible,
+    blockerFlags: [...blockers],
+    strongestScore: score,
+    roles: [...new Set(rows.flatMap((row) => row.roles ? row.roles.split(/\s+/) : []).filter(Boolean))].slice(0, 30),
+    eligiblePositions: [...new Set(rows.flatMap((row) => row.eligiblePositions))].sort((a, b) => a - b),
+    reasons: [...new Set(rows.map((row) => row.reason).filter(Boolean))].slice(0, 12),
+    headPaths: headPaths.slice(0, 40),
+    supportPaths: supportPaths.slice(0, 40)
   };
 }
 
@@ -341,17 +302,17 @@ function scoreBand(score) {
   return "under50";
 }
 
-function increment(map, keyValue, amount = 1) {
-  const target = String(keyValue || "unknown");
-  map.set(target, (map.get(target) || 0) + amount);
+function increment(map, keyValue) {
+  const key = String(keyValue || "unknown");
+  map.set(key, (map.get(key) || 0) + 1);
 }
 
-function mapObject(map) {
+function sortedObject(map) {
   return Object.fromEntries([...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])));
 }
 
 function chooseFocus(upstreamNextStep, classifications = {}) {
-  const mapping = {
+  const fixed = {
     "audit-local-water-outer-head-role-generation": "inspect-head-role-qualification-blockers",
     "audit-local-water-outer-head-scenario-promotion": "inspect-head-scenario-promotion-blockers",
     "audit-local-water-outer-head-candidate-ranking": "inspect-selected-head-ranking-blockers",
@@ -360,14 +321,15 @@ function chooseFocus(upstreamNextStep, classifications = {}) {
     "continue-collecting-evidence": "continue-collecting-evidence",
     "continue-monitoring": "continue-monitoring"
   };
-  if (mapping[upstreamNextStep]) return mapping[upstreamNextStep];
-  const ordered = [
+  if (fixed[upstreamNextStep]) return fixed[upstreamNextStep];
+
+  const fallback = [
     ["support-only-not-head-eligible", "inspect-head-role-qualification-blockers"],
     ["candidate-head-not-promoted", "inspect-head-scenario-promotion-blockers"],
     ["scenario-head-not-selected", "inspect-selected-head-ranking-blockers"],
     ["selected-head-not-final", "inspect-main-head-ranking-handoff"]
   ].sort((a, b) => Number(classifications[b[0]] || 0) - Number(classifications[a[0]] || 0));
-  return Number(classifications[ordered[0][0]] || 0) > 0 ? ordered[0][1] : "continue-monitoring";
+  return Number(classifications[fallback[0][0]] || 0) > 0 ? fallback[0][1] : "continue-monitoring";
 }
 
 function build(predictionDocs, resultDocs, upstreamReport = null) {
@@ -377,33 +339,29 @@ function build(predictionDocs, resultDocs, upstreamReport = null) {
   const byBoat = new Map();
   const byVenue = new Map();
   const byCondition = new Map();
-  const finalHeadCounts = new Map();
+  const finalHeads = new Map();
   const scoreBands = new Map();
-  const headPathCounts = new Map();
-  const supportPathCounts = new Map();
+  const headPaths = new Map();
+  const supportPaths = new Map();
   const examples = [];
 
-  const rows = predictionRows(predictionDocs)
-    .map((record) => ({
-      record,
-      evidence: localWater.evidence(record),
-      result: results.get(key(record)) || null
-    }))
+  const targetRows = predictionRows(predictionDocs)
+    .map((record) => ({ record, evidence: localWater.evidence(record), result: results.get(raceKey(record)) || null }))
     .filter((row) => row.evidence.formal && row.result)
     .map((row) => ({ ...row, actualHead: localWater.actualHead(row.result) }))
     .filter((row) => row.actualHead === 5 || row.actualHead === 6);
 
-  for (const row of rows) {
+  for (const row of targetRows) {
     const audit = collectWinnerEvidence(row.record.prediction || {}, row.actualHead);
     increment(classifications, audit.classification);
     increment(byBoat, row.actualHead);
-    increment(byVenue, row.evidence.venue || String(row.record.jcd || "unknown"));
+    increment(byVenue, row.evidence.venue || row.record.jcd || "unknown");
     increment(byCondition, conditionBand(row.evidence));
-    increment(finalHeadCounts, audit.finalHead || "none");
+    increment(finalHeads, audit.finalHead || "none");
     increment(scoreBands, scoreBand(audit.strongestScore));
     audit.blockerFlags.forEach((flag) => increment(blockers, flag));
-    audit.headPaths.forEach((savedPath) => increment(headPathCounts, savedPath));
-    audit.supportPaths.forEach((savedPath) => increment(supportPathCounts, savedPath));
+    audit.headPaths.forEach((savedPath) => increment(headPaths, savedPath));
+    audit.supportPaths.forEach((savedPath) => increment(supportPaths, savedPath));
 
     examples.push({
       date: row.record.date,
@@ -419,20 +377,19 @@ function build(predictionDocs, resultDocs, upstreamReport = null) {
       candidateHead: audit.candidateHead,
       scenarioHead: audit.scenarioHead,
       selectedHead: audit.selectedHead,
-      supportOnly: audit.supportOnly,
+      supportVisible: audit.supportVisible,
       strongestScore: audit.strongestScore,
       blockerFlags: audit.blockerFlags,
       roles: audit.roles,
-      eligiblePositionsSeen: audit.positions,
+      eligiblePositionsSeen: audit.eligiblePositions,
       reasons: audit.reasons,
       headPaths: audit.headPaths,
       supportPaths: audit.supportPaths
     });
   }
 
-  const classificationObject = mapObject(classifications);
+  const classificationObject = sortedObject(classifications);
   const upstreamNextStep = String(upstreamReport?.nextStep || "");
-
   return {
     schemaVersion: 1,
     version: "local-water-outer-head-bottleneck-audit-v1",
@@ -440,8 +397,8 @@ function build(predictionDocs, resultDocs, upstreamReport = null) {
     productionChanged: false,
     automaticApplication: false,
     usableForPrediction: false,
-    methodology: "締切前に保存済みの当地・水面正式証拠と公式結果だけを使い、実際に5・6号艇が勝ったレースを頭候補・頭シナリオ・選択済み頭・最終頭へ厳密に追跡する。2着・3着・hold・pickupは頭候補へ数えない。",
-    actualHead56RaceCount: rows.length,
+    methodology: "締切前に保存済みの当地・水面正式証拠と公式結果だけを使い、実際に5・6号艇が勝ったレースを頭候補・頭シナリオ・選択済み頭・最終頭へ追跡する。2着・3着・hold・pickupは頭候補へ数えない。",
+    actualHead56RaceCount: targetRows.length,
     upstream: upstreamReport ? {
       version: upstreamReport.version || null,
       nextStep: upstreamNextStep || null,
@@ -449,14 +406,14 @@ function build(predictionDocs, resultDocs, upstreamReport = null) {
       classifications: upstreamReport.classifications || null
     } : null,
     classifications: classificationObject,
-    blockerSignals: mapObject(blockers),
-    strongestScoreBands: mapObject(scoreBands),
-    actualHeadByBoat: mapObject(byBoat),
-    actualHeadByVenue: mapObject(byVenue),
-    actualHeadByConditionBand: mapObject(byCondition),
-    selectedFinalHeadDistribution: mapObject(finalHeadCounts),
-    topHeadEvidencePaths: [...headPathCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30).map(([savedPath, count]) => ({ path: savedPath, count })),
-    topSupportEvidencePaths: [...supportPathCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30).map(([savedPath, count]) => ({ path: savedPath, count })),
+    blockerSignals: sortedObject(blockers),
+    strongestScoreBands: sortedObject(scoreBands),
+    actualHeadByBoat: sortedObject(byBoat),
+    actualHeadByVenue: sortedObject(byVenue),
+    actualHeadByConditionBand: sortedObject(byCondition),
+    selectedFinalHeadDistribution: sortedObject(finalHeads),
+    topHeadEvidencePaths: [...headPaths.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30).map(([savedPath, count]) => ({ path: savedPath, count })),
+    topSupportEvidencePaths: [...supportPaths.entries()].sort((a, b) => b[1] - a[1]).slice(0, 30).map(([savedPath, count]) => ({ path: savedPath, count })),
     diagnosisFocus: chooseFocus(upstreamNextStep, classificationObject),
     examples: examples.sort((a, b) => String(a.date).localeCompare(String(b.date)) || a.jcd.localeCompare(b.jcd) || a.raceNo - b.raceNo).slice(-60)
   };
@@ -464,8 +421,8 @@ function build(predictionDocs, resultDocs, upstreamReport = null) {
 
 function main() {
   const report = build(
-    load(path.join(root, "data", "predictions")),
-    load(path.join(root, "data", "results")),
+    loadDaily(path.join(ROOT, "data", "predictions")),
+    loadDaily(path.join(ROOT, "data", "results")),
     readJson(UPSTREAM, null)
   );
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
