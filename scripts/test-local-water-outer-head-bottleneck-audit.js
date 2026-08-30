@@ -7,6 +7,7 @@ assert.equal(audit.exactTicketHead("5-1-2"), 5);
 assert.equal(audit.exactTicketHead("6-23-全"), 6);
 assert.equal(audit.exactTicketHead("風速5m"), null);
 assert.equal(audit.resolveStage("candidatePool[0]"), "candidate");
+assert.equal(audit.resolveStage("boatEvaluation.evaluations[0]"), "candidate");
 assert.equal(audit.resolveStage("aiCore.raceScenarios.alternateScenario"), "scenario");
 assert.equal(audit.resolveStage("practicalTickets[0]"), "selected");
 assert.equal(audit.resolveStage("verificationEvidence.mainScenario"), "final");
