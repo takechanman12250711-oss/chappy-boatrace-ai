@@ -2,6 +2,12 @@ name: Run outer head forward shadow v1
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'config/outer-head-forward-shadow-v1.json'
+      - 'scripts/evaluate-outer-head-forward-shadow-v1.cjs'
+      - 'scripts/analyze-outer-head-signal-overlay.cjs'
+      - '.github/workflows/run-outer-head-forward-shadow-v1.yml'
   schedule:
     - cron: '20 13 * * *'
 
