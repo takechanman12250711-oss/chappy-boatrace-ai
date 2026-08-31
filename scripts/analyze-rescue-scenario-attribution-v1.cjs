@@ -3,6 +3,7 @@
 const path = require('node:path');
 const input = require('./analysis-input-contract');
 const expansion = require('./analyze-ticket-expansion-7-12-18-24.cjs');
+const payoutAudit = require('./analyze-ticket-expansion-payout-v2.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const BASE_LIMIT = 7;
@@ -43,6 +44,7 @@ function inc(map, key, payout) {
 
 function build() {
   const cohort = input.buildDefaultCohort({ root: ROOT });
+  const payouts = payoutAudit.payoutMap();
   const byStructuralType = {};
   const byScenarioTag = {};
   const bySource = {};
@@ -60,7 +62,8 @@ function build() {
     if (idx < BASE_LIMIT || idx < 0) continue;
 
     const item = pool[idx];
-    const payout = expansion.payoutOf(record.__officialResult);
+    const raceKey = record.__analysisRaceKey || input.raceKey(record);
+    const payout = payouts.get(raceKey) || 0;
     const rank = idx + 1;
     const structural = structuralType(actual, baseline);
     const tag = scenarioTag(item.scenario);
@@ -74,7 +77,7 @@ function build() {
     inc(byHead, head, payout);
 
     rows.push({
-      raceKey: record.__analysisRaceKey || input.raceKey(record),
+      raceKey,
       actual,
       payoutYen: payout,
       candidateRank: rank,
@@ -102,6 +105,7 @@ function build() {
       rescueWindow: 'actual winning ticket ranked 8-18 in the saved pre-race candidate pool',
       outcomeUsedForSelection: false,
       resultAndPayoutUse: 'evaluation and attribution only',
+      payoutSource: 'settled trifecta payout map used by ticket-expansion payout audit',
       structuralTypes: {
         alternateHead: 'winning head absent from baseline heads',
         secondPlaceExpansion: 'winning head present but winning second absent under that head',
