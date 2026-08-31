@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "version": "wall-established-attacker2-skip-ab-v1-prospective",
+  "generatedAt": "2026-08-31T09:37:25.899Z",
+  "source": "post-preregistration saved predictions + official results",
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "affectsCurrentTickets": false,
+  "preregistration": {
+    "experimentId": "wall-established-attacker2-skip-shadow-v1",
+    "path": "data/experiments/wall-established-attacker2-skip-preregistration.json",
+    "commit": "4d9e9a685ce6e2c202f33a36f4e88612e199ed75",
+    "registeredAtUtc": "2026-08-31T09:32:23Z",
+    "sourceCommit": "a5f7d08791fbafb15d3414272bd91ed517be7b66",
+    "cutoffSelectedAtInclusive": "2026-08-31T09:32:23Z",
+    "oldRecordsBackfilled": false,
+    "retrospectiveClassificationAllowed": false,
+    "actualPurchase": false
+  },
+  "target": {
+    "wallEvidenceFormal": true,
+    "state": "壁成立",
+    "attackerNo": 2,
+    "ruleA": "現行の実戦厳選買い目を1点100円で購入したと仮定",
+    "ruleB": "対象条件のレースだけ購入見送り"
+  },
+  "diagnostics": {
+    "selectedRecordCount": 0,
+    "verificationRecordCount": 0,
+    "prospectiveRecordCountBeforeDedup": 0,
+    "prospectiveRaceCountAfterDedup": 0,
+    "targetRaceCount": 0,
+    "targetSettledRaceCount": 0,
+    "targetUnsettledRaceCount": 0,
+    "targetSettledBetRaceCount": 0,
+    "targetSettledNoTicketRaceCount": 0,
+    "distinctSettledDates": 0
+  },
+  "a": {
+    "label": "current-production-A",
+    "settledCount": 0,
+    "betRaceCount": 0,
+    "noTicketRaceCount": 0,
+    "hitCount": 0,
+    "hitRate": null,
+    "stake": 0,
+    "return": 0,
+    "profit": 0,
+    "recoveryRate": null
+  },
+  "b": {
+    "label": "skip-wall-established-attacker2-B",
+    "settledCount": 0,
+    "betRaceCount": 0,
+    "skippedRaceCount": 0,
+    "noTicketRaceCount": 0,
+    "hitCount": 0,
+    "hitRate": null,
+    "stake": 0,
+    "return": 0,
+    "profit": 0,
+    "recoveryRate": null
+  },
+  "delta": {
+    "stake": 0,
+    "return": 0,
+    "profit": 0,
+    "avoidedLoss": 0,
+    "missedHitCount": 0,
+    "missedPayout": 0
+  },
+  "robustness": {
+    "chronologicalSplit": {
+      "firstHalf": {
+        "raceCount": 0,
+        "a": {
+          "settledCount": 0,
+          "betRaceCount": 0,
+          "noTicketRaceCount": 0,
+          "hitCount": 0,
+          "hitRate": null,
+          "stake": 0,
+          "return": 0,
+          "profit": 0,
+          "recoveryRate": null
+        },
+        "b": {
+          "settledCount": 0,
+          "betRaceCount": 0,
+          "skippedRaceCount": 0,
+          "noTicketRaceCount": 0,
+          "hitCount": 0,
+          "hitRate": null,
+          "stake": 0,
+          "return": 0,
+          "profit": 0,
+          "recoveryRate": null
+        },
+        "delta": {
+          "stake": 0,
+          "return": 0,
+          "profit": 0,
+          "avoidedLoss": 0,
+          "missedHitCount": 0,
+          "missedPayout": 0
+        }
+      },
+      "secondHalf": {
+        "raceCount": 0,
+        "a": {
+          "settledCount": 0,
+          "betRaceCount": 0,
+          "noTicketRaceCount": 0,
+          "hitCount": 0,
+          "hitRate": null,
+          "stake": 0,
+          "return": 0,
+          "profit": 0,
+          "recoveryRate": null
+        },
+        "b": {
+          "settledCount": 0,
+          "betRaceCount": 0,
+          "skippedRaceCount": 0,
+          "noTicketRaceCount": 0,
+          "hitCount": 0,
+          "hitRate": null,
+          "stake": 0,
+          "return": 0,
+          "profit": 0,
+          "recoveryRate": null
+        },
+        "delta": {
+          "stake": 0,
+          "return": 0,
+          "profit": 0,
+          "avoidedLoss": 0,
+          "missedHitCount": 0,
+          "missedPayout": 0
+        }
+      }
+    },
+    "leaveOneOut": {
+      "evaluated": false,
+      "raceCount": 0,
+      "minimumRemainingAvoidedLoss": null,
+      "maximumRemainingAvoidedLoss": null,
+      "worstRemovedRaceKey": null,
+      "bestRemovedRaceKey": null
+    }
+  },
+  "checkpoints": [
+    {
+      "targetSettledRaceCount": 50,
+      "reached": false,
+      "decision": "monitor-only",
+      "status": "not-reached",
+      "conditionsMet": null,
+      "checks": []
+    },
+    {
+      "targetSettledRaceCount": 100,
+      "reached": false,
+      "decision": "manual-review-candidate-only",
+      "status": "not-reached",
+      "conditionsMet": false,
+      "checks": [
+        {
+          "name": "aRecoveryRate",
+          "actual": null,
+          "operator": "atMost",
+          "threshold": 80,
+          "passed": false
+        },
+        {
+          "name": "avoidedLoss",
+          "actual": 0,
+          "operator": "atLeast",
+          "threshold": 10000,
+          "passed": false
+        },
+        {
+          "name": "distinctDates",
+          "actual": 0,
+          "operator": "atLeast",
+          "threshold": 10,
+          "passed": false
+        },
+        {
+          "name": "firstHalfAvoidedLoss",
+          "actual": 0,
+          "operator": "atLeast",
+          "threshold": 0,
+          "passed": true
+        },
+        {
+          "name": "secondHalfAvoidedLoss",
+          "actual": 0,
+          "operator": "atLeast",
+          "threshold": 0,
+          "passed": true
+        },
+        {
+          "name": "leaveOneOutMinimumAvoidedLoss",
+          "actual": null,
+          "operator": "atLeast",
+          "threshold": 0,
+          "passed": false
+        },
+        {
+          "name": "missedHitsAndPayoutShown",
+          "actual": true,
+          "operator": "equals",
+          "threshold": true,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "targetSettledRaceCount": 250,
+      "reached": false,
+      "decision": "manual-final-review-candidate-only",
+      "status": "not-reached",
+      "conditionsMet": false,
+      "checks": [
+        {
+          "name": "aRecoveryRate",
+          "actual": null,
+          "operator": "atMost",
+          "threshold": 80,
+          "passed": false
+        },
+        {
+          "name": "avoidedLoss",
+          "actual": 0,
+          "operator": "atLeast",
+          "threshold": 25000,
+          "passed": false
+        },
+        {
+          "name": "distinctDates",
+          "actual": 0,
+          "operator": "atLeast",
+          "threshold": 20,
+          "passed": false
+        },
+        {
+          "name": "firstHalfAvoidedLoss",
+          "actual": 0,
+          "operator": "atLeast",
+          "threshold": 0,
+          "passed": true
+        },
+        {
+          "name": "secondHalfAvoidedLoss",
+          "actual": 0,
+          "operator": "atLeast",
+          "threshold": 0,
+          "passed": true
+        },
+        {
+          "name": "leaveOneOutMinimumAvoidedLoss",
+          "actual": null,
+          "operator": "atLeast",
+          "threshold": 0,
+          "passed": false
+        },
+        {
+          "name": "missedHitsAndPayoutShown",
+          "actual": true,
+          "operator": "equals",
+          "threshold": true,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "interpretation": {
+    "minimumFormalDecisionRaceCount": 100,
+    "finalReviewRaceCount": 250,
+    "manualApprovalRequired": true,
+    "automaticApplication": false,
+    "currentPredictionPathUnchanged": true,
+    "nextAction": "50Rは監視のみ。100Rと250Rは事前登録条件を満たした場合だけ手動承認候補にする。"
+  }
+}
