@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "wall-established-attacker2-skip-shadow-v1",
+  "status": "prospective-shadow-preregistered",
+  "registeredAtUtc": "2026-08-31T09:32:23Z",
+  "sourceCommit": "a5f7d08791fbafb15d3414272bd91ed517be7b66",
+  "purpose": "壁成立と判定されたレースで主攻め艇が2号艇の時だけ、現行購入Aと見送りBを前向きに比較する。",
+  "hypothesis": {
+    "target": {
+      "wallEvidenceFormal": true,
+      "wallState": "壁成立",
+      "attackerNo": 2
+    },
+    "a": "現行の実戦厳選買い目を1点100円で購入したと仮定する。",
+    "b": "対象条件のレースだけ購入を見送り、投資・払戻とも0円とする。"
+  },
+  "prospectiveProtocol": {
+    "cutoffSelectedAtInclusive": "2026-08-31T09:32:23Z",
+    "oldRecordsBackfilled": false,
+    "retrospectiveClassificationAllowed": false,
+    "actualPurchase": false,
+    "selectedAndVerificationDeduplication": "same race key; selected prediction wins over verification prediction",
+    "wallEvidenceSource": "theory-tag-snapshot.wallEvidence",
+    "resultPriority": "embedded settled result, then official result archive"
+  },
+  "accounting": {
+    "stakePerTicketYen": 100,
+    "aProfit": "A return - A stake",
+    "bProfit": 0,
+    "avoidedLoss": "B profit - A profit = -A profit",
+    "missedHitCount": "対象レースでAが的中していた件数",
+    "missedPayoutYen": "対象レースを見送ることで失うA払戻額"
+  },
+  "robustness": {
+    "chronologicalSplit": "settled target rows ordered by selectedAt/capturedAt then race key and split into first/second half",
+    "singleRaceSensitivity": "each settled target race is removed once; minimum remaining avoided loss is reported",
+    "distinctDateCount": "unique race dates among settled target rows"
+  },
+  "checkpoints": [
+    {
+      "targetSettledRaceCount": 50,
+      "decision": "monitor-only",
+      "purpose": "異常・逆効果の早期確認。採用判定はしない。"
+    },
+    {
+      "targetSettledRaceCount": 100,
+      "decision": "manual-review-candidate-only",
+      "conditions": {
+        "aRecoveryRateAtMost": 80,
+        "avoidedLossYenAtLeast": 10000,
+        "distinctDatesAtLeast": 10,
+        "firstHalfAvoidedLossYenAtLeast": 0,
+        "secondHalfAvoidedLossYenAtLeast": 0,
+        "leaveOneOutMinimumAvoidedLossYenAtLeast": 0,
+        "missedHitsAndPayoutMustBeShown": true
+      }
+    },
+    {
+      "targetSettledRaceCount": 250,
+      "decision": "manual-final-review-candidate-only",
+      "conditions": {
+        "aRecoveryRateAtMost": 80,
+        "avoidedLossYenAtLeast": 25000,
+        "distinctDatesAtLeast": 20,
+        "firstHalfAvoidedLossYenAtLeast": 0,
+        "secondHalfAvoidedLossYenAtLeast": 0,
+        "leaveOneOutMinimumAvoidedLossYenAtLeast": 0,
+        "missedHitsAndPayoutMustBeShown": true
+      }
+    }
+  ],
+  "safety": {
+    "productionChanged": false,
+    "automaticApplication": false,
+    "usableForPrediction": false,
+    "affectsCurrentTickets": false,
+    "manualApprovalRequired": true
+  }
+}
