@@ -367,7 +367,7 @@ function settle(archive, store, options = {}) {
     unknownCentralOrderCount: 0,
     immutableConflictCount: 0,
     notComparableCount: 0,
-    rejectedResultReasons
+    rejectedResultReasons: rejectedReasons
   };
 
   for (const [key, raceEntries] of [...byRace].sort(([left], [right]) => left.localeCompare(right))) {
