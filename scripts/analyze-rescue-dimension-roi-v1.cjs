@@ -4,6 +4,7 @@ const path = require('node:path');
 const input = require('./analysis-input-contract');
 const expansion = require('./analyze-ticket-expansion-7-12-18-24.cjs');
 const attribution = require('./analyze-rescue-scenario-attribution-v1.cjs');
+const payoutAudit = require('./analyze-ticket-expansion-payout-v2.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const BASE_LIMIT = 7;
@@ -28,6 +29,7 @@ function candidateType(candidate, baseline) {
 
 function build() {
   const cohort = input.buildDefaultCohort({ root: ROOT });
+  const payouts = payoutAudit.payoutMap();
   const metrics = Object.fromEntries(TYPES.map(type => [type, empty()]));
   const rows = [];
 
@@ -37,7 +39,8 @@ function build() {
     const pool = expansion.collectTicketPool(record).slice(0, MAX_LIMIT);
     const baseline = pool.slice(0, BASE_LIMIT);
     if (!baseline.length) continue;
-    const payout = expansion.payoutOf(record.__officialResult);
+    const raceKey = record.__analysisRaceKey || input.raceKey(record);
+    const payout = payouts.get(raceKey) || 0;
 
     for (const type of TYPES) {
       const added = pool.slice(BASE_LIMIT).filter(item => candidateType(item, baseline) === type);
@@ -52,7 +55,7 @@ function build() {
         metric.returnYen += payout;
         if (payout >= 10000) metric.manboatRescueCount += 1;
       }
-      rows.push({ raceKey: record.__analysisRaceKey || input.raceKey(record), type, addedTicketCount: added.length, rescued, payoutYen: rescued ? payout : 0 });
+      rows.push({ raceKey, type, addedTicketCount: added.length, rescued, payoutYen: rescued ? payout : 0 });
     }
   }
 
@@ -77,6 +80,7 @@ function build() {
       stake: `${STAKE} yen per added ticket`,
       selectionUsesOutcome: false,
       resultAndPayoutUse: 'evaluation only',
+      payoutSource: 'settled trifecta payout map used by ticket-expansion payout audit',
       structuralClassification: attribution.build ? 'same structural definitions as rescue-scenario-attribution-v1' : 'embedded equivalent',
       warning: 'Retrospective efficiency audit only; subgroup ROI must not be directly adopted without forward validation.'
     },
