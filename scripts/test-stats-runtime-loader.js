@@ -231,12 +231,20 @@ async function main() {
     "js/outer-attack-ticket-shadow.js",
     "js/outer-attack-ticket-settlement.js",
     "js/outer-attack-ticket-decision-gate.js",
+    "js/outer-attack-ticket-central-report-loader.js",
     "js/outer-attack-ticket-progress-panel.js"
   ];
   assert.deepEqual(
     window.ChappyStatsRuntime.optionalScripts,
     expectedOptionalScripts,
-    "公式参考分析と外攻めA/Bの判定・進捗表示は結果本体を止めない任意モジュールとして扱う"
+    "公式参考分析と外攻めA/Bの中央判定・進捗表示は結果本体を止めない任意モジュールとして扱う"
+  );
+  assert.ok(
+    expectedOptionalScripts.indexOf("js/outer-attack-ticket-decision-gate.js") <
+      expectedOptionalScripts.indexOf("js/outer-attack-ticket-central-report-loader.js") &&
+    expectedOptionalScripts.indexOf("js/outer-attack-ticket-central-report-loader.js") <
+      expectedOptionalScripts.indexOf("js/outer-attack-ticket-progress-panel.js"),
+    "端末内gate→中央レポート優先化→進捗表示の順を固定する"
   );
   assert.deepEqual(
     dispatched,
