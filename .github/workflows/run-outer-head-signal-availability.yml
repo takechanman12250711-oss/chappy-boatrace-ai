@@ -1,0 +1,26 @@
+name: Run outer-head signal availability audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - analysis/outer-head-conditional-audit
+    paths:
+      - 'scripts/audit-outer-head-signal-availability.cjs'
+      - '.github/workflows/run-outer-head-signal-availability.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run signal availability audit
+        run: node scripts/audit-outer-head-signal-availability.cjs > outer-head-signal-availability.json
+      - name: Upload audit output
+        uses: actions/upload-artifact@v4
+        with:
+          name: outer-head-signal-availability
+          path: outer-head-signal-availability.json
