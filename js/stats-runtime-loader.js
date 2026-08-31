@@ -20,7 +20,8 @@
     "js/reference-tag-report.js",
     "js/outer-attack-ticket-shadow.js",
     "js/outer-attack-ticket-settlement.js",
-    "js/outer-attack-ticket-decision-gate.js"
+    "js/outer-attack-ticket-decision-gate.js",
+    "js/outer-attack-ticket-progress-panel.js"
   ];
   let readyPromise = null;
   let optionalReady = false;
