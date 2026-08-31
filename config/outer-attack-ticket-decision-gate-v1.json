@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "gateId": "outer-attack-ticket-decision-gate-v1",
+  "sourceSettlementVersion": "outer-attack-ticket-settlement-v1",
+  "sourceReportId": "outer-attack-ticket-ab-report-v1",
+  "sourceMainCommit": "ee644d55b889c0ff38f198b9747c9c4d86c83425",
+  "frozenAt": "2026-08-31T01:40:00.000Z",
+  "prospectiveStartAt": "2026-08-31T02:00:00.000Z",
+  "primaryCohort": "prediction-before-result",
+  "variantOrder": [
+    "cover",
+    "flow",
+    "hole"
+  ],
+  "milestones": [
+    100,
+    250,
+    500
+  ],
+  "minimumDistinctDates": {
+    "interim": 10,
+    "final": 20
+  },
+  "sameStakeCoverageMinimumPercent": 100,
+  "harmReview": {
+    "minimumSampleCount": 100,
+    "combination": "all",
+    "maximumHitCountDelta": -3,
+    "maximumRoiPointDelta": -10
+  },
+  "interimGate": {
+    "minimumSampleCount": 250,
+    "minimumHitCountDelta": 3,
+    "minimumHitRatePointDelta": 1,
+    "minimumProfitDeltaYen": 1,
+    "minimumRoiPointDelta": 5,
+    "maximumOneSidedPairedPValue": 0.1,
+    "requireBothHalvesNonNegativeHitDelta": true,
+    "requireBothHalvesNonNegativeProfitDelta": true,
+    "requireJackknifeProfitPositive": true
+  },
+  "finalGate": {
+    "minimumSampleCount": 500,
+    "minimumHitCountDelta": 5,
+    "minimumHitRatePointDelta": 1,
+    "minimumProfitDeltaYen": 1,
+    "minimumRoiPointDelta": 5,
+    "maximumOneSidedPairedPValue": 0.05,
+    "requireBothHalvesNonNegativeHitDelta": true,
+    "requireBothHalvesNonNegativeProfitDelta": true,
+    "requireJackknifeProfitPositive": true
+  },
+  "splitPolicy": "chronological-halves-by-shadowCaptureAt-then-raceKey",
+  "singleRaceDominancePolicy": "remove-largest-positive-race-profit-delta-and-require-remaining-positive",
+  "selectionOrder": [
+    "jackknifeProfitDeltaYen desc",
+    "oneSidedPairedPValue asc",
+    "hitCountDelta desc",
+    "roiPointDelta desc",
+    "preRegisteredVariantOrder asc"
+  ],
+  "safety": {
+    "productionChanged": false,
+    "automaticApplication": false,
+    "humanApprovalRequired": true,
+    "thresholdSearchPerformed": false,
+    "resultUsedForPredictionGeneration": false,
+    "oddsUsedForTicketGenerationOrDeletion": false,
+    "resultFirstExcludedFromPrimaryDecision": true,
+    "unknownCaptureOrderExcludedFromPrimaryDecision": true,
+    "rowsBeforeProspectiveStartExcluded": true,
+    "uiChanged": false
+  }
+}

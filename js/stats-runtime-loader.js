@@ -16,7 +16,12 @@
     "js/stats.js",
     "js/result-ui-phase5.js"
   ];
-  const optionalScripts = ["js/reference-tag-report.js"];
+  const optionalScripts = [
+    "js/reference-tag-report.js",
+    "js/outer-attack-ticket-shadow.js",
+    "js/outer-attack-ticket-settlement.js",
+    "js/outer-attack-ticket-decision-gate.js"
+  ];
   let readyPromise = null;
   let optionalReady = false;
   let optionalPromise = null;

@@ -225,10 +225,17 @@ async function main() {
         "js/stats.js"
       )
   );
+
+  const expectedOptionalScripts = [
+    "js/reference-tag-report.js",
+    "js/outer-attack-ticket-shadow.js",
+    "js/outer-attack-ticket-settlement.js",
+    "js/outer-attack-ticket-decision-gate.js"
+  ];
   assert.deepEqual(
     window.ChappyStatsRuntime.optionalScripts,
-    ["js/reference-tag-report.js"],
-    "公式参考分析は結果本体を止めない任意モジュールとして扱う"
+    expectedOptionalScripts,
+    "公式参考分析と外攻めA/B判定は結果本体を止めない任意モジュールとして扱う"
   );
   assert.deepEqual(
     dispatched,
@@ -241,19 +248,23 @@ async function main() {
   await new Promise(resolve => setTimeout(resolve, 0));
   assert.equal(
     appended.some(script =>
-      script.dataset.chappyStatsModule === "js/reference-tag-report.js"
+      expectedOptionalScripts.includes(
+        script.dataset.chappyStatsModule
+      )
     ),
     false,
-    "任意パネルの一時失敗でも結果分析本体は初期化を完了する"
+    "先頭の任意モジュールが一時失敗した時は後続を半端に読み込まない"
   );
+
   await window.ChappyStatsRuntime.ensureReady();
   await new Promise(resolve => setTimeout(resolve, 0));
-  assert.equal(
-    appended.some(script =>
-      script.dataset.chappyStatsModule === "js/reference-tag-report.js"
-    ),
-    true,
-    "任意パネルだけを次回要求時に再試行する"
+  const optionalLoaded = appended
+    .map(script => script.dataset.chappyStatsModule)
+    .filter(name => expectedOptionalScripts.includes(name));
+  assert.deepEqual(
+    optionalLoaded,
+    expectedOptionalScripts,
+    "任意モジュールだけを次回要求時に固定順で再試行する"
   );
 
   const count =
