@@ -51,7 +51,9 @@
 
   function readJson(rootObject, key, fallback) {
     try {
-      const parsed = JSON.parse(rootObject?.localStorage?.getItem(key) || "");
+      const raw = rootObject?.localStorage?.getItem(key);
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw);
       return parsed ?? fallback;
     } catch (error) {
       console.warn(`[outer-attack-ticket-settlement] ${key}を読み込めません`, error);
@@ -75,6 +77,7 @@
   }
 
   function raceKey(record = {}) {
+    if (typeof record === "string") return record.trim();
     const key = typeof shadow?.raceKey === "function" ? shadow.raceKey(record) : "";
     if (key) return key;
     const saved = String(record?.raceKey || record?.predictionRaceKey || "").trim();
