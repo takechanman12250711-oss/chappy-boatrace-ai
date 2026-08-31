@@ -230,12 +230,13 @@ async function main() {
     "js/reference-tag-report.js",
     "js/outer-attack-ticket-shadow.js",
     "js/outer-attack-ticket-settlement.js",
-    "js/outer-attack-ticket-decision-gate.js"
+    "js/outer-attack-ticket-decision-gate.js",
+    "js/outer-attack-ticket-progress-panel.js"
   ];
   assert.deepEqual(
     window.ChappyStatsRuntime.optionalScripts,
     expectedOptionalScripts,
-    "公式参考分析と外攻めA/B判定は結果本体を止めない任意モジュールとして扱う"
+    "公式参考分析と外攻めA/Bの判定・進捗表示は結果本体を止めない任意モジュールとして扱う"
   );
   assert.deepEqual(
     dispatched,
