@@ -1,6 +1,8 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const loader = require("../js/outer-attack-ticket-central-report-loader.js");
 
 function variant(status = "collecting-to-100", sampleCount = 0) {
@@ -133,6 +135,14 @@ assert.equal(loader.REPORT_ID, "outer-attack-ticket-central-report-v1");
 assert.equal(loader.MONITOR_VERSION, "outer-attack-ticket-central-monitor-v1");
 assert.equal(loader.GATE_ID, "outer-attack-ticket-decision-gate-v1");
 assert.equal(loader.REFRESH_INTERVAL_MS, 60000);
+
+const currentCentralReport = JSON.parse(
+  fs.readFileSync(
+    path.join(__dirname, "..", "data", "stats", "outer-attack-ticket-central-report-v1.json"),
+    "utf8"
+  )
+);
+assert.equal(loader.isValidReport(currentCentralReport), true, "mainへ保存された中央レポートの安全契約を読み取れる");
 
 const valid = report(12);
 const validBefore = JSON.stringify(valid);
