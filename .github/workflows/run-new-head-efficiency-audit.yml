@@ -1,0 +1,26 @@
+name: Run new-head efficiency audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - analysis/new-head-efficiency-audit
+    paths:
+      - 'scripts/analyze-new-head-efficiency.cjs'
+      - '.github/workflows/run-new-head-efficiency-audit.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run new-head efficiency audit
+        run: node scripts/analyze-new-head-efficiency.cjs > new-head-efficiency-audit-output.json
+      - name: Upload audit output
+        uses: actions/upload-artifact@v4
+        with:
+          name: new-head-efficiency-audit
+          path: new-head-efficiency-audit-output.json
