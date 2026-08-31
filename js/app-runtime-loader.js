@@ -10,6 +10,7 @@
   const loaded=new Map(),groupReady=new Map();
   const groups={race:["js/utils.js","js/storage.js","js/prediction-conditions.js","js/prediction-runtime-loader.js","js/script.js","js/hiyori-runtime-loader.js"],stats:["js/utils.js","js/storage.js","js/stats-runtime-loader.js"],autoSelection:["js/utils.js","js/storage.js","js/auto-selection.js"]};
   groups.race.splice(2,0,"js/outer-attack-ticket-shadow.js");
+  groups.race.splice(3,0,"js/outer-attack-ticket-settlement.js");
 
   function runtimeError(code,message){
     const error=new Error(`${message} [${code}]`);

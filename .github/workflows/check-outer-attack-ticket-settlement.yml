@@ -1,0 +1,28 @@
+name: Check outer attack ticket settlement
+on:
+  pull_request:
+    paths:
+      - 'js/outer-attack-ticket-shadow.js'
+      - 'js/outer-attack-ticket-settlement.js'
+      - 'js/app-runtime-loader.js'
+      - 'tests/outer-attack-ticket-shadow.test.cjs'
+      - 'tests/outer-attack-ticket-settlement.test.cjs'
+      - '.github/workflows/check-outer-attack-ticket-settlement.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/outer-attack-ticket-settlement.js
+      - run: node --check js/app-runtime-loader.js
+      - run: node --check tests/outer-attack-ticket-settlement.test.cjs
+      - run: node tests/outer-attack-ticket-shadow.test.cjs
+      - run: node tests/outer-attack-ticket-settlement.test.cjs
+      - run: node scripts/test-startup-critical-path.js
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code
