@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/run-ticket-expansion-audit.yml'
       - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
       - 'data/predictions/**'
       - 'data/results/**'
       - 'data/analysis/**'
@@ -26,7 +27,7 @@ jobs:
       - name: Run 7/12/18/24 audit
         run: |
           set -o pipefail
-          node scripts/analyze-ticket-expansion-7-12-18-24.cjs | tee ticket-expansion-audit-output.txt
+          node scripts/analyze-ticket-expansion-payout-v2.cjs | tee ticket-expansion-audit-output.txt
       - name: Upload audit output
         uses: actions/upload-artifact@v4
         with:
