@@ -6,11 +6,14 @@
   // 既存テストとの互換用。実配信ではindex.htmlのCHAPPY_APP_BUILDを使用する。
   const VERSION = "20260828-ui-audit-display1";
   const ACTIVE_VERSION = root.CHAPPY_APP_BUILD || VERSION;
+  const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";
   const loaded=new Map(),groupReady=new Map();
   const groups={race:["js/utils.js","js/storage.js","js/prediction-conditions.js","js/prediction-runtime-loader.js","js/script.js","js/hiyori-runtime-loader.js"],stats:["js/utils.js","js/storage.js","js/stats-runtime-loader.js"],autoSelection:["js/utils.js","js/storage.js","js/auto-selection.js"]};
   groups.race.splice(2,0,"js/outer-attack-ticket-shadow.js");
   groups.race.splice(3,0,"js/outer-attack-ticket-settlement.js");
+
+  function assetVersion(clean){return clean==="js/stats-runtime-loader.js"?STATS_VERSION:ACTIVE_VERSION;}
 
   function runtimeError(code,message){
     const error=new Error(`${message} [${code}]`);
@@ -77,7 +80,7 @@
         reject(runtimeError("APP_SCRIPT_LOAD_FAILED",`モジュールを読み込めません: ${clean}`));
       }),{once:true});
       if(!existing){
-        script.src=`${clean}?v=${ACTIVE_VERSION}`;
+        script.src=`${clean}?v=${assetVersion(clean)}`;
         document.head.appendChild(script);
       }
     });
@@ -94,7 +97,7 @@
       const link=document.createElement("link");
       link.rel="preload";
       link.as="script";
-      link.href=`${clean}?v=${ACTIVE_VERSION}`;
+      link.href=`${clean}?v=${assetVersion(clean)}`;
       document.head.appendChild(link);
     });
   }
@@ -162,6 +165,7 @@
   root.ChappyAppRuntime=Object.freeze({
     version:ACTIVE_VERSION,
     legacyVersion:VERSION,
+    statsVersion:STATS_VERSION,
     ensure,
     preloadGroup,
     groups,
