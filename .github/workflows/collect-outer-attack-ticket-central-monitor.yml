@@ -1,0 +1,116 @@
+name: Collect outer attack ticket central monitor
+
+on:
+  pull_request:
+    paths:
+      - "scripts/build-outer-attack-ticket-central-monitor.cjs"
+      - "tests/outer-attack-ticket-central-monitor.test.cjs"
+      - ".github/workflows/collect-outer-attack-ticket-central-monitor.yml"
+      - "docs/outer-attack-ticket-central-monitor-v1.md"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/build-outer-attack-ticket-central-monitor.cjs"
+      - "tests/outer-attack-ticket-central-monitor.test.cjs"
+      - ".github/workflows/collect-outer-attack-ticket-central-monitor.yml"
+      - "docs/outer-attack-ticket-central-monitor-v1.md"
+  workflow_run:
+    workflows:
+      - "Collect automatic race predictions"
+      - "Collect official race results"
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "capture / settle / all"
+        required: true
+        default: "all"
+        type: choice
+        options: [capture, settle, all]
+      date:
+        description: "予想日（YYYYMMDD・空欄ならJST当日）"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+
+jobs:
+  verify-and-collect:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify central monitor contracts
+        run: |
+          node --check scripts/build-outer-attack-ticket-central-monitor.cjs
+          node tests/outer-attack-ticket-central-monitor.test.cjs
+          node scripts/check-charter.js
+
+      - name: Select collection mode
+        if: github.event_name != 'pull_request'
+        id: mode
+        env:
+          REQUESTED_MODE: ${{ inputs.mode }}
+          SOURCE_WORKFLOW: ${{ github.event.workflow_run.name }}
+        run: |
+          MODE="$REQUESTED_MODE"
+          if [ -z "$MODE" ]; then
+            case "$SOURCE_WORKFLOW" in
+              "Collect automatic race predictions") MODE="capture" ;;
+              "Collect official race results") MODE="settle" ;;
+              *) MODE="all" ;;
+            esac
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+
+      - name: Restore full prediction source for immutable capture
+        if: github.event_name != 'pull_request' && (steps.mode.outputs.mode == 'capture' || steps.mode.outputs.mode == 'all')
+        run: node scripts/restore-daily-prediction-source.js --all
+
+      - name: Capture central pre-result shadows
+        if: github.event_name != 'pull_request' && (steps.mode.outputs.mode == 'capture' || steps.mode.outputs.mode == 'all')
+        env:
+          PREDICT_DATE: ${{ inputs.date }}
+          SOURCE_WORKFLOW_CREATED_AT: ${{ github.event.workflow_run.created_at }}
+        run: node scripts/build-outer-attack-ticket-central-monitor.cjs --mode=capture
+
+      - name: Restore compact prediction working tree
+        if: github.event_name != 'pull_request' && (steps.mode.outputs.mode == 'capture' || steps.mode.outputs.mode == 'all')
+        run: |
+          node scripts/minify-daily-prediction.js
+          node scripts/build-current-prediction-summary.js
+          node scripts/prepare-daily-prediction-git-save.js --all
+
+      - name: Settle against official results
+        if: github.event_name != 'pull_request' && (steps.mode.outputs.mode == 'settle' || steps.mode.outputs.mode == 'all')
+        run: node scripts/build-outer-attack-ticket-central-monitor.cjs --mode=settle
+
+      - name: Save central monitor artifacts
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/outer-attack-ticket-central-shadow-archive-v1.json \
+            data/stats/outer-attack-ticket-central-settlements-v1.json \
+            data/stats/outer-attack-ticket-central-report-v1.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "保存する外攻め中央監視データはありません"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Collect outer attack ticket central monitor"
+          git pull --rebase origin main
+          git push origin main
