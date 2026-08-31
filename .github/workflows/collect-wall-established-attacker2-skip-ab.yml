@@ -1,0 +1,65 @@
+name: Collect wall-established attacker2 skip A/B
+
+on:
+  pull_request:
+    paths:
+      - "data/experiments/wall-established-attacker2-skip-preregistration.json"
+      - "scripts/build-wall-established-attacker2-skip-ab-report.js"
+      - "scripts/test-wall-established-attacker2-skip-ab-report.js"
+      - ".github/workflows/collect-wall-established-attacker2-skip-ab.yml"
+  workflow_run:
+    workflows:
+      - "Collect official race results"
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || 'chappy-main-data-writers' }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-collect:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify prospective A/B contract
+        run: |
+          node --check scripts/build-wall-established-attacker2-skip-ab-report.js
+          node scripts/test-wall-established-attacker2-skip-ab-report.js
+
+      - name: Restore canonical prediction sources and build report
+        if: github.event_name != 'pull_request'
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-wall-established-attacker2-skip-ab-report.js
+          node scripts/prepare-daily-prediction-git-save.js --all
+
+      - name: Save prospective A/B report
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/wall-established-attacker2-skip-ab-report.json
+          if git diff --cached --quiet; then
+            echo "wall-established attacker2 skip A/B report unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update wall-established attacker2 skip prospective A/B report"
+          git pull --rebase origin main
+          git push origin main
