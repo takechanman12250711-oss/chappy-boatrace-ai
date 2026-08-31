@@ -5,12 +5,14 @@ on:
     branches: [main]
     paths:
       - "js/outer-attack-ticket-progress-panel.js"
+      - "js/outer-attack-ticket-central-report-loader.js"
       - "js/outer-attack-ticket-decision-gate.js"
       - "js/stats-runtime-loader.js"
       - "js/app-runtime-loader.js"
       - "scripts/test-stats-runtime-loader.js"
       - "scripts/test-startup-critical-path.js"
       - "tests/outer-attack-ticket-decision-gate.test.cjs"
+      - "tests/outer-attack-ticket-central-report-loader.test.cjs"
       - "tests/outer-attack-ticket-progress-panel.test.cjs"
       - ".github/workflows/check-outer-attack-ticket-progress-panel.yml"
 
@@ -25,10 +27,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: node --check js/outer-attack-ticket-central-report-loader.js
       - run: node --check js/outer-attack-ticket-progress-panel.js
       - run: node --check js/stats-runtime-loader.js
       - run: node --check scripts/test-stats-runtime-loader.js
+      - run: node --check tests/outer-attack-ticket-central-report-loader.test.cjs
       - run: node --check tests/outer-attack-ticket-progress-panel.test.cjs
+      - run: node tests/outer-attack-ticket-central-report-loader.test.cjs
       - run: node tests/outer-attack-ticket-progress-panel.test.cjs
       - run: node tests/outer-attack-ticket-decision-gate.test.cjs
       - run: node scripts/test-stats-runtime-loader.js
