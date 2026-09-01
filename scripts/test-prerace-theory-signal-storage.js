@@ -32,8 +32,8 @@ const raceData = {
     waveHeight: 1
   },
   result: {
-    trifecta: "1-2-3",
-    payout: 999999
+    trifecta: "SECRET_RESULT_ONLY",
+    payout: "SECRET_PAYOUT_ONLY"
   }
 };
 
@@ -76,8 +76,8 @@ assert.deepEqual(snapshot.theorySignalStorage, {
 });
 
 const serialized = JSON.stringify(snapshot);
-assert.equal(serialized.includes("999999"), false);
-assert.equal(serialized.includes("1-2-3"), false);
+assert.equal(serialized.includes("SECRET_RESULT_ONLY"), false);
+assert.equal(serialized.includes("SECRET_PAYOUT_ONLY"), false);
 
 const legacyCompatible = conditions.capture(raceData, {});
 assert.equal(legacyCompatible.boats[0].attackStrength, null);
