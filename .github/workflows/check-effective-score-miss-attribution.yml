@@ -9,8 +9,6 @@ on:
       - "config/effective-score-weight-ab-input-freeze-v1.json"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
-      - "js/**/*.js"
-      - "**/*.html"
       - "scripts/analysis-input-contract.js"
       - "scripts/analyze-course-miss-conditions.cjs"
       - "scripts/build-effective-score-miss-attribution-report.js"
@@ -33,8 +31,6 @@ on:
       - "config/effective-score-weight-ab-input-freeze-v1.json"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
-      - "js/**/*.js"
-      - "**/*.html"
       - "scripts/analysis-input-contract.js"
       - "scripts/analyze-course-miss-conditions.cjs"
       - "scripts/build-effective-score-miss-attribution-report.js"
@@ -69,13 +65,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Verify analysis-only source boundary
+      - name: Verify frozen source and current-PR analysis boundary
         if: github.event_name == 'pull_request'
         run: |
           source_commit=$(node -p "require('./config/effective-score-miss-attribution-v1.json').sourceCommit")
+          base_sha="${{ github.event.pull_request.base.sha }}"
           git cat-file -e "${source_commit}^{commit}"
           git merge-base --is-ancestor "${source_commit}" HEAD
-          git diff --exit-code "${source_commit}" HEAD -- \
+          git cat-file -e "${base_sha}^{commit}"
+          git diff --exit-code "${base_sha}" HEAD -- \
             js \
             '*.html'
       - name: Test discovery-only miss attribution
