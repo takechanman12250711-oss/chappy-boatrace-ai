@@ -302,7 +302,7 @@
     });
 
     return {
-      schemaVersion: 5,
+      schemaVersion: 4,
       sourceTiming: "pre_deadline",
       officialResultUsed: false,
       source,
