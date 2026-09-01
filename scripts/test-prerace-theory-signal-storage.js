@@ -52,7 +52,7 @@ const prediction = {
 
 const snapshot = conditions.capture(raceData, prediction);
 
-assert.equal(snapshot.schemaVersion, 5);
+assert.equal(snapshot.schemaVersion, 4);
 assert.equal(snapshot.sourceTiming, "pre_deadline");
 assert.equal(snapshot.officialResultUsed, false);
 assert.equal(snapshot.boats.length, 6);
