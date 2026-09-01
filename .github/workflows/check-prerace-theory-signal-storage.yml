@@ -1,0 +1,29 @@
+name: Check pre-race theory signal storage
+
+on:
+  pull_request:
+    paths:
+      - "js/prediction-conditions.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/test-prerace-theory-signal-storage.js"
+      - ".github/workflows/check-prerace-theory-signal-storage.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify pre-deadline theory telemetry
+        run: |
+          node --check js/prediction-conditions.js
+          node --check scripts/collect-predictions.js
+          node --check scripts/test-prerace-theory-signal-storage.js
+          node scripts/test-prerace-theory-signal-storage.js
+          node scripts/check-charter.js
