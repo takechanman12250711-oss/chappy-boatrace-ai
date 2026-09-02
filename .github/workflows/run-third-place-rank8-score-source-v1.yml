@@ -1,0 +1,31 @@
+name: Run third-place rank8 score source v1
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/analyze-third-place-rank8-score-source-v1.cjs'
+      - '.github/workflows/run-third-place-rank8-score-source-v1.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run score source audit
+        run: node scripts/analyze-third-place-rank8-score-source-v1.cjs > third-place-rank8-score-source-v1.json
+      - name: Validate research-only boundary
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');const r=JSON.parse(fs.readFileSync('third-place-rank8-score-source-v1.json','utf8'));
+          if(r.productionChanged!==false||r.automaticApplication!==false||r.usableForPrediction!==false) process.exit(1);
+          console.log(JSON.stringify({byScore:r.byScore,bySource:r.bySource},null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: third-place-rank8-score-source-v1
+          path: third-place-rank8-score-source-v1.json
+          retention-days: 90
