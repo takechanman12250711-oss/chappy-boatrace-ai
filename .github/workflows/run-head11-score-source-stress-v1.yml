@@ -1,0 +1,31 @@
+name: Run head11 score source stress v1
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/analyze-head11-score-source-stress-v1.cjs'
+      - '.github/workflows/run-head11-score-source-stress-v1.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run rank11 head precondition audit
+        run: node scripts/analyze-head11-score-source-stress-v1.cjs > head11-score-source-stress-v1.json
+      - name: Validate research-only boundary
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');const r=JSON.parse(fs.readFileSync('head11-score-source-stress-v1.json','utf8'));
+          if(r.productionChanged!==false||r.automaticApplication!==false||r.usableForPrediction!==false) process.exit(1);
+          console.log(JSON.stringify({eligible:r.eligibleRank11HeadCandidates,byScore:r.byScore,bySource:r.bySource,byScoreSource:r.byScoreSource},null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head11-score-source-stress-v1
+          path: head11-score-source-stress-v1.json
+          retention-days: 90
