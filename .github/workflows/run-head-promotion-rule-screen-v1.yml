@@ -1,0 +1,50 @@
+name: Screen head promotion rules v1
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/analyze-head-promotion-rule-screen-v1.cjs'
+      - 'scripts/analyze-head-promotion-feature-comparison-v1.cjs'
+      - '.github/workflows/run-head-promotion-rule-screen-v1.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run pre-registered rule screen
+        run: node scripts/analyze-head-promotion-rule-screen-v1.cjs > head-promotion-rule-screen-v1.json
+      - name: Validate research boundary and report
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('head-promotion-rule-screen-v1.json','utf8'));
+          if(r.productionChanged!==false||r.automaticApplication!==false||r.usableForPrediction!==false) process.exit(1);
+          if(r.candidateSelectionUsesOfficialResult!==false||r.ticketGenerationUsesOfficialResult!==false) process.exit(1);
+          if(r.officialResultUsedOnlyForEvaluationLabelAndSettlement!==true) process.exit(1);
+          if(r.configCount<12||r.preResultOpportunityRaceCount<=0) process.exit(1);
+          if(r.invariants.labelsAttachedAfterPreResultRowsBuilt!==true||r.invariants.leakedConfigKeys.length!==0) process.exit(1);
+          if(r.invariants.allConfigsProductionAdoptionAllowedFalse!==true||r.invariants.baselineAvailableRaceCountMatchesPreRows!==true) process.exit(1);
+          const rows=Object.values(r.configs).map(c=>({
+            id:c.id,
+            allSelected:c.all.candidates.selectedRaceCount,
+            allHeadRate:c.all.candidates.headHitRatePercent,
+            allS1T1Roi:c.all.tickets.s1t1.roiPercent,
+            evaluationSelected:c.evaluation.candidates.selectedRaceCount,
+            evaluationHeadRate:c.evaluation.candidates.headHitRatePercent,
+            evaluationLift:c.evaluation.candidates.headHitLiftPointVsBaseline,
+            evaluationS1T1Roi:c.evaluation.tickets.s1t1.roiPercent,
+            evaluationS1T1Max1Removed:c.evaluation.tickets.s1t1.max1PayoutRemoved.roiPercent,
+            gate:r.researchGates[c.id]?.status||'baseline'
+          }));
+          console.log(JSON.stringify({split:r.split,passingConfigIds:r.passingConfigIds,rows},null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head-promotion-rule-screen-v1
+          path: head-promotion-rule-screen-v1.json
+          retention-days: 90
