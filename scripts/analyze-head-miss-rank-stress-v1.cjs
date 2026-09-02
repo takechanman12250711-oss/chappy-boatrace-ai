@@ -1,0 +1,5 @@
+'use strict';
+const base=require('./analyze-head-miss-rank-efficiency-v1.cjs');
+function stressMetric(m,hitPayouts){const sorted=[...(hitPayouts||[])].sort((a,b)=>b-a);const inv=m.investmentYen||0;const calc=n=>{const ret=Math.max(0,(m.returnYen||0)-sorted.slice(0,n).reduce((a,b)=>a+b,0));return {dropTopHits:n,returnYen:ret,profitYen:ret-inv,roiPercent:inv?Number((100*ret/inv).toFixed(1)):0};};return [calc(1),calc(2)];}
+function build(){const r=base.build();return {schemaVersion:1,analysisId:'head-miss-rank-stress-v1',generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,usableForPrediction:false,note:'Stress shell prepared after rank audit; payout-level hit lists will be attached in the next revision before any adoption decision.',byRank:r.byRank};}
+if(require.main===module)process.stdout.write(JSON.stringify(build(),null,2)+'\n');module.exports={build,stressMetric};
