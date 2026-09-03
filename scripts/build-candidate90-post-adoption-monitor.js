@@ -181,7 +181,11 @@ function build() {
         const hasCandidate90Audit =
           (withSelection.tickets || []).some(ticket => ticket?.candidatePromotion === true) ||
           (withSelection.candidateDecisions || []).some(decision =>
-            decision?.reasonCode === "CANDIDATE_ONLY_PROMOTED" ||
+            [
+              "CANDIDATE_ONLY_PROMOTED",
+              "SECOND_COURSE_HEAD_CANDIDATE_PROMOTION_PRUNED",
+              "OUTER_HEAD_CANDIDATE_PROMOTION_PRUNED"
+            ].includes(decision?.reasonCode) ||
             (decision?.reasonCode === "PRIORITY_GATE_REPLACED" && decision?.selectionTier === "候補補完")
           );
         if (!hasCandidate90Audit) {
