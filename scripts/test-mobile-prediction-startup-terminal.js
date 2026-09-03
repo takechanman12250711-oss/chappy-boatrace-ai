@@ -65,12 +65,12 @@ assert.match(
 );
 assert.match(
   html,
-  /prediction-runtime-loader\.js[^"']*lightManshu=20260903-board1/,
+  /prediction-runtime-loader\.js[^"']*lightManshu=20260903-integrated1/,
   "更新済み予想ローダーへ到達する"
 );
 assert.match(
   html,
-  /mobile-prediction-startup-terminal\.js[^"']*lightManshu=20260903-board1/,
+  /mobile-prediction-startup-terminal\.js[^"']*lightManshu=20260903-integrated1/,
   "更新済みモバイル復旧ローダーへ到達する"
 );
 assert.ok(
@@ -407,7 +407,7 @@ function createRoot({
     ],
     scriptVersions: {
       "js/ai-core.js": "20260903-light-manshu-board1",
-      "js/render.js": "20260903-light-manshu-board1"
+      "js/render.js": "20260903-manshu-integrated1"
     }
   });
   terminal.install(built);
@@ -436,11 +436,11 @@ function createRoot({
   );
   assert.equal(
     built.__scripts[1].src,
-    "js/render.js?v=20260903-light-manshu-board1"
+    "js/render.js?v=20260903-manshu-integrated1"
   );
   assert.equal(
     built.__scripts[1].dataset.chappyMobileBuild,
-    "20260903-light-manshu-board1"
+    "20260903-manshu-integrated1"
   );
   assert.equal(
     built.__scripts[2].src,
