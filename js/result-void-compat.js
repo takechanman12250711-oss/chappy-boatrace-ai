@@ -123,3 +123,28 @@
     });
   }
 );
+
+(function loadFinalMobileUi(root) {
+  "use strict";
+  if (!root || !root.document) return;
+
+  const STYLE_ID = "chappy-final-mobile-ui-style";
+  const SCRIPT_ID = "chappy-final-mobile-ui-script";
+  const BUILD = "20260903-final-mobile-ui1";
+
+  if (!root.document.getElementById(STYLE_ID)) {
+    const link = root.document.createElement("link");
+    link.id = STYLE_ID;
+    link.rel = "stylesheet";
+    link.href = `css/final-mobile-ui.css?v=${BUILD}`;
+    root.document.head.appendChild(link);
+  }
+
+  if (!root.document.getElementById(SCRIPT_ID)) {
+    const script = root.document.createElement("script");
+    script.id = SCRIPT_ID;
+    script.src = `js/final-mobile-ui.js?v=${BUILD}`;
+    script.defer = true;
+    root.document.head.appendChild(script);
+  }
+})(typeof window !== "undefined" ? window : null);
