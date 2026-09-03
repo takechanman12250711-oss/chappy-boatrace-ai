@@ -1,0 +1,136 @@
+/* Final reference-layout alignment. Display-only; no prediction logic changes. */
+body.chappy-final-mobile-ui .home-v2-recommend{
+  display:none!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-schedule{
+  padding:11px!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-venue-list{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:7px!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-venue{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-areas:"info next" "races next"!important;
+  align-items:center!important;
+  gap:3px 10px!important;
+  min-height:66px!important;
+  padding:9px 10px!important;
+  border-radius:11px!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-venue-info{
+  grid-area:info!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-width:0!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-venue-info strong{
+  flex:0 0 auto!important;
+  min-width:64px!important;
+  font-size:.98rem!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-venue-info small{
+  background:transparent!important;
+  padding:0!important;
+  color:#7ddd63!important;
+  font-size:.62rem!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-races{
+  grid-area:races!important;
+  display:block!important;
+  min-width:0!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-races .home-v2-race:not(:first-child){
+  display:none!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-races .home-v2-race:first-child{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:auto!important;
+  min-height:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  text-align:left!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-races .home-v2-race:first-child strong{
+  color:#dce8f0!important;
+  font-size:.68rem!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-races .home-v2-race:first-child span{
+  color:#dce8f0!important;
+  font-size:.61rem!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-venue-next{
+  grid-area:next!important;
+  align-self:stretch!important;
+  width:34px!important;
+  height:auto!important;
+  min-height:46px!important;
+  border:0!important;
+  background:transparent!important;
+  color:#7f93a1!important;
+  font-size:1.35rem!important;
+}
+
+body.chappy-final-mobile-ui .official-race-grid,
+body.chappy-final-mobile-ui .chappy-reference-race-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+
+body.chappy-final-mobile-ui .official-race-grid button,
+body.chappy-final-mobile-ui .official-race-grid .race-grid-button{
+  min-height:62px!important;
+  font-size:1rem!important;
+}
+
+body.chappy-final-mobile-ui .bottom-nav{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  align-items:stretch!important;
+}
+
+body.chappy-final-mobile-ui .bottom-nav-item{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:2px!important;
+  padding:7px 2px!important;
+  text-align:center!important;
+}
+
+body.chappy-final-mobile-ui .bottom-nav-item span{
+  font-size:1.15rem!important;
+  line-height:1!important;
+}
+
+body.chappy-final-mobile-ui .bottom-nav-item small{
+  font-size:.62rem!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:430px){
+  body.chappy-final-mobile-ui .home-v2-venue-list{grid-template-columns:1fr!important;}
+  body.chappy-final-mobile-ui .official-race-grid,
+  body.chappy-final-mobile-ui .chappy-reference-race-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+}
