@@ -5,6 +5,7 @@ const ui = fs.readFileSync("js/final-mobile-ui.js", "utf8");
 const css = fs.readFileSync("css/final-mobile-ui.css", "utf8");
 const homeCss = fs.readFileSync("css/final-home-v2-photo.css", "utf8");
 const predictionCss = fs.readFileSync("css/final-prediction-photo.css", "utf8");
+const iphoneCss = fs.readFileSync("css/final-iphone-tuning.css", "utf8");
 const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
 const index = fs.readFileSync("index.html", "utf8");
 
@@ -41,11 +42,18 @@ assert(predictionCss.includes("v3-ticket-accordion"), "ticket accordion photo ov
 assert(predictionCss.includes("chappy-final-buy-summary"), "final buy summary photo override missing");
 assert(predictionCss.includes("v3-newspaper-grid"), "newspaper residue flattening missing");
 
+assert(iphoneCss.includes("safe-area-inset-bottom"), "iPhone safe-area spacing missing");
+assert(iphoneCss.includes("max-width:430px"), "iPhone width tuning missing");
+assert(iphoneCss.includes("max-width:390px"), "small iPhone width tuning missing");
+assert(iphoneCss.includes("v3-ticket-accordion"), "iPhone ticket density tuning missing");
+assert(iphoneCss.includes("chappy-final-buy-formation"), "iPhone formation sizing missing");
+
 assert(loader.includes("final-mobile-ui.css"), "final UI stylesheet loader missing");
 assert(loader.includes("final-home-v2-photo.css"), "photo-matched home stylesheet loader missing");
 assert(loader.includes("final-prediction-photo.css"), "photo-matched prediction stylesheet loader missing");
+assert(loader.includes("final-iphone-tuning.css"), "iPhone final tuning stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD = "20260904-final-mobile-ui5"'), "final UI asset generation was not bumped");
-assert(index.includes('result-void-compat.js?v=20260904-final-mobile-ui5'), "final UI bootstrap is not cache-busted in production entrypoint");
+assert(loader.includes('const BUILD = "20260904-final-mobile-ui6"'), "final UI asset generation was not bumped");
+assert(index.includes('result-void-compat.js?v=20260904-final-mobile-ui6'), "final UI bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
