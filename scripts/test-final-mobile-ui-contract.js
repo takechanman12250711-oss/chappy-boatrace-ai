@@ -4,6 +4,7 @@ const assert = require("assert");
 const ui = fs.readFileSync("js/final-mobile-ui.js", "utf8");
 const css = fs.readFileSync("css/final-mobile-ui.css", "utf8");
 const homeCss = fs.readFileSync("css/final-home-v2-photo.css", "utf8");
+const predictionCss = fs.readFileSync("css/final-prediction-photo.css", "utf8");
 const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
 const index = fs.readFileSync("index.html", "utf8");
 
@@ -34,10 +35,17 @@ assert(homeCss.includes("grid-template-columns:repeat(2"), "home two-column venu
 assert(homeCss.includes("home-v2-filters"), "home filter photo override missing");
 assert(homeCss.includes("bottom-nav"), "home bottom navigation override missing");
 
+assert(predictionCss.includes("v3-entry-card-list"), "prediction entry-card photo override missing");
+assert(predictionCss.includes("v3-boat-tab-buttons"), "six-boat evaluation photo override missing");
+assert(predictionCss.includes("v3-ticket-accordion"), "ticket accordion photo override missing");
+assert(predictionCss.includes("chappy-final-buy-summary"), "final buy summary photo override missing");
+assert(predictionCss.includes("v3-newspaper-grid"), "newspaper residue flattening missing");
+
 assert(loader.includes("final-mobile-ui.css"), "final UI stylesheet loader missing");
 assert(loader.includes("final-home-v2-photo.css"), "photo-matched home stylesheet loader missing");
+assert(loader.includes("final-prediction-photo.css"), "photo-matched prediction stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD = "20260903-final-mobile-ui4"'), "final UI asset generation was not bumped");
-assert(index.includes('result-void-compat.js?v=20260903-final-mobile-ui4'), "final UI bootstrap is not cache-busted in production entrypoint");
+assert(loader.includes('const BUILD = "20260904-final-mobile-ui5"'), "final UI asset generation was not bumped");
+assert(index.includes('result-void-compat.js?v=20260904-final-mobile-ui5'), "final UI bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
