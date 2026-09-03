@@ -50,7 +50,8 @@ assert(iphoneCss.includes("chappy-final-buy-formation"), "iPhone formation sizin
 assert(referenceCss.includes("home-v2-recommend"), "reference home recommendation suppression missing");
 assert(referenceCss.includes("grid-template-columns:1fr"), "reference home one-column venue list missing");
 assert(referenceCss.includes("repeat(3"), "reference three-column race grid missing");
-assert(referenceCss.includes("repeat(4"), "reference four-tab bottom navigation missing");
+assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "duplicate race nav compatibility selector missing");
+assert(referenceCss.includes("display:none!important"), "duplicate race nav tab must stay hidden");
 assert(referenceCss.includes("home-v2-races .home-v2-race:not(:first-child)"), "reference next-race-only venue row missing");
 
 assert(loader.includes("final-mobile-ui.css"), "final UI stylesheet loader missing");
@@ -60,7 +61,6 @@ assert(loader.includes("final-iphone-tuning.css"), "iPhone final tuning styleshe
 assert(loader.includes("final-reference-layout.css"), "final reference layout stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
 assert(loader.includes('const BUILD = "20260904-final-mobile-ui7"'), "final UI asset generation was not bumped");
-assert(index.includes('data-view="race"'), "four-tab navigation is missing the race tab");
 assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
 assert(index.includes('result-void-compat.js?v=20260904-final-mobile-ui7'), "final UI bootstrap is not cache-busted in production entrypoint");
 
