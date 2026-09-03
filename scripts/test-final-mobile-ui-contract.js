@@ -24,7 +24,7 @@ assert(css.includes("repeat(6"), "six-boat tab layout missing");
 
 assert(loader.includes("final-mobile-ui.css"), "final UI stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(index.includes('const BUILD="20260903-final-mobile-ui2"'), "production app build was not bumped");
+assert(loader.includes('const BUILD = "20260903-final-mobile-ui2"'), "final UI asset generation was not bumped");
 assert(index.includes('result-void-compat.js?v=20260903-final-mobile-ui2'), "final UI bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
