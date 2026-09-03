@@ -130,7 +130,7 @@
 
   const STYLE_ID = "chappy-final-mobile-ui-style";
   const SCRIPT_ID = "chappy-final-mobile-ui-script";
-  const BUILD = "20260903-final-mobile-ui1";
+  const BUILD = "20260903-final-mobile-ui2";
 
   if (!root.document.getElementById(STYLE_ID)) {
     const link = root.document.createElement("link");
