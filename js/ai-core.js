@@ -10944,6 +10944,684 @@ function buildRaceTrendEvaluation(data) {
 }
 
   /* ===============================
+    「取れたらいいな」万舟シナリオ
+
+    既に生成済みの穴候補1点だけを対象に、スタートから
+    道中までの軽い展開説明を付ける。買い目・順番・点数・
+    オッズ判定には一切接続しない。
+  =============================== */
+
+  function buildLightManshuScenario(options = {}) {
+    const formations = options?.formations || {};
+    const raceScenarios = options?.raceScenarios || {};
+    const sourceEntries = Array.isArray(options?.entries)
+      ? options.entries
+      : [];
+    const analyses = Array.isArray(options?.analyses)
+      ? options.analyses
+      : [];
+    const racerSkillTheory = options?.racerSkillTheory || {};
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const rawTicket =
+      (
+        Array.isArray(formations?.longshot)
+          ? formations.longshot[0]
+          : null
+      ) ??
+      (
+        Array.isArray(formations?.hole)
+          ? formations.hole[0]
+          : null
+      );
+    const ticket = String(
+      rawTicket?.ticket || rawTicket || ""
+    ).trim();
+    const ticketMatch = ticket.match(
+      /^([1-6])-([1-6])-([1-6])$/
+    );
+
+    if (
+      formations?.mainEstablished !== true ||
+      !mainScenario ||
+      !ticketMatch
+    ) {
+      return null;
+    }
+
+    const ticketBoats = ticketMatch
+      .slice(1)
+      .map(Number);
+
+    if (new Set(ticketBoats).size !== 3) {
+      return null;
+    }
+
+    const [headBoatNo, secondBoatNo, thirdBoatNo] =
+      ticketBoats;
+    const courseMapping =
+      buildOfficialCourseMapping(sourceEntries);
+    const courseOfBoat = (boatNo) =>
+      Number(courseMapping.courseOfBoat(boatNo) || boatNo);
+    const scenarioAttacker = (scenario) => {
+      const explicitBoatNo = Number(
+        scenario?.attackerBoatNo ??
+        scenario?.headBoatNo ??
+        0
+      );
+      const attackerCourse = Number(
+        scenario?.attackerCourse ??
+        scenario?.attacker ??
+        (
+          explicitBoatNo
+            ? courseOfBoat(explicitBoatNo)
+            : 0
+        )
+      );
+      const attackerBoatNo =
+        explicitBoatNo >= 1 && explicitBoatNo <= 6
+          ? explicitBoatNo
+          : Number(
+              courseMapping.boatAtCourse(attackerCourse) || 0
+            );
+
+      return {
+        attackerBoatNo,
+        attackerCourse:
+          attackerCourse >= 1 && attackerCourse <= 6
+            ? attackerCourse
+            : courseOfBoat(attackerBoatNo)
+      };
+    };
+    const scenarioKey = (scenario) => {
+      const attacker = scenarioAttacker(scenario);
+
+      return [
+        String(scenario?.type || ""),
+        attacker.attackerBoatNo,
+        attacker.attackerCourse
+      ].join(":");
+    };
+    const mainScenarioKey = scenarioKey(mainScenario);
+    const allowedScenarioTypes = new Set([
+      "escape",
+      "sashi",
+      "threeAttack",
+      "fourAttack"
+    ]);
+    const seenScenarioKeys = new Set();
+    const scenarios = [
+      mainScenario,
+      ...(
+        Array.isArray(raceScenarios?.scenarios)
+          ? raceScenarios.scenarios
+          : []
+      )
+    ].filter((scenario) => {
+      if (!scenario) return false;
+      if (!allowedScenarioTypes.has(scenario?.type)) {
+        return false;
+      }
+
+      const key = scenarioKey(scenario);
+
+      if (seenScenarioKeys.has(key)) return false;
+      seenScenarioKeys.add(key);
+      return true;
+    });
+    const disruptiveTypes = new Set([
+      "sashi",
+      "threeAttack",
+      "fourAttack"
+    ]);
+    const outcomeCandidateBoats = (scenario, key) =>
+      new Set(
+        (
+          Array.isArray(scenario?.outcome?.[key])
+            ? scenario.outcome[key]
+            : []
+        )
+          .map((row) => Number(row?.boatNo || row || 0))
+          .filter(Boolean)
+      );
+    const supportsTicketOrder = (scenario) =>
+      outcomeCandidateBoats(
+        scenario,
+        "secondCandidates"
+      ).has(secondBoatNo) &&
+      outcomeCandidateBoats(
+        scenario,
+        "thirdCandidates"
+      ).has(thirdBoatNo);
+    const headCourse = courseOfBoat(headBoatNo);
+    const scenarioReasonForBoat = (scenario, boatNo) => {
+      const row = (
+        Array.isArray(scenario?.outcome?.boats)
+          ? scenario.outcome.boats
+          : []
+      ).find(
+        (candidate) =>
+          Number(candidate?.boatNo || 0) === boatNo
+      );
+      const reasons = row?.reasons;
+
+      return Array.isArray(reasons)
+        ? reasons.join("・")
+        : String(reasons || "");
+    };
+    const supportsTicketHead = (scenario) => {
+      const attacker = scenarioAttacker(scenario);
+
+      if (attacker.attackerBoatNo === headBoatNo) {
+        return true;
+      }
+      if (scenario?.type === "escape") return false;
+
+      const firstCandidates = outcomeCandidateBoats(
+        scenario,
+        "firstCandidates"
+      );
+      const reason = scenarioReasonForBoat(
+        scenario,
+        headBoatNo
+      );
+
+      if (firstCandidates.has(headBoatNo)) return true;
+      if (/攻め場減少/.test(reason)) return false;
+
+      return headCourse < attacker.attackerCourse
+        ? /残し|残り/.test(reason)
+        : /追走|連動|乗る|まくり差し|拾い|最内|道中|差し/.test(
+            reason
+          );
+    };
+    const rankedTriggers = scenarios
+      .map((scenario, index) => {
+        const attacker = scenarioAttacker(scenario);
+        const courseGap =
+          headCourse - attacker.attackerCourse;
+        const isMainScenario =
+          scenario === mainScenario ||
+          scenarioKey(scenario) === mainScenarioKey;
+        let selectionScore = 0;
+
+        if (attacker.attackerBoatNo === headBoatNo) {
+          selectionScore += 100;
+        } else if (courseGap >= 1 && courseGap <= 2) {
+          selectionScore += 50;
+        }
+
+        if (disruptiveTypes.has(scenario?.type)) {
+          selectionScore += 18;
+        }
+
+        if (isMainScenario) {
+          selectionScore += 8;
+        }
+
+        selectionScore +=
+          clamp(toNumber(scenario?.score, 0), 0, 100) /
+          1000;
+
+        return {
+          scenario,
+          index,
+          isMainScenario,
+          selectionScore,
+          ...attacker
+        };
+      })
+      .filter(
+        (candidate) => {
+          const blocked = new Set(
+            (
+              Array.isArray(
+                candidate.scenario?.blockedBoats
+              )
+                ? candidate.scenario.blockedBoats
+                : []
+            )
+              .map(Number)
+              .filter(Boolean)
+          );
+          return (
+            candidate.attackerBoatNo >= 1 &&
+            candidate.attackerBoatNo <= 6 &&
+            candidate.attackerCourse >= 1 &&
+            candidate.attackerCourse <= 6 &&
+            !blocked.has(headBoatNo) &&
+            supportsTicketHead(candidate.scenario) &&
+            supportsTicketOrder(candidate.scenario)
+          );
+        }
+      )
+      .sort(
+        (a, b) =>
+          b.selectionScore - a.selectionScore ||
+          a.index - b.index
+      );
+    const trigger = rankedTriggers[0] || null;
+
+    if (!trigger) return null;
+
+    const triggerScenario = trigger.scenario;
+    const blockedBoats = new Set(
+      (
+        Array.isArray(triggerScenario?.blockedBoats)
+          ? triggerScenario.blockedBoats
+          : []
+      )
+        .map(Number)
+        .filter(Boolean)
+    );
+    const outcomeRows = new Map(
+      (
+        Array.isArray(triggerScenario?.outcome?.boats)
+          ? triggerScenario.outcome.boats
+          : []
+      ).map((row) => [Number(row?.boatNo || 0), row])
+    );
+    const secondCandidates = new Set(
+      (
+        Array.isArray(
+          triggerScenario?.outcome?.secondCandidates
+        )
+          ? triggerScenario.outcome.secondCandidates
+          : []
+      )
+        .map((row) => Number(row?.boatNo || row || 0))
+        .filter(Boolean)
+    );
+    const thirdCandidates = new Set(
+      (
+        Array.isArray(
+          triggerScenario?.outcome?.thirdCandidates
+        )
+          ? triggerScenario.outcome.thirdCandidates
+          : []
+      )
+        .map((row) => Number(row?.boatNo || row || 0))
+        .filter(Boolean)
+    );
+    const reasonForBoat = (boatNo) => {
+      const reasons = outcomeRows.get(boatNo)?.reasons;
+
+      return Array.isArray(reasons)
+        ? reasons.join("・")
+        : String(reasons || "");
+    };
+    const followerRoleLabel =
+      triggerScenario?.type === "escape"
+        ? "逃げ筋を追走する艇"
+        : triggerScenario?.type === "sashi"
+          ? "差し展開に続く艇"
+          : "攻めについて行く艇";
+    const hasReducedOpportunity = (reason) =>
+      /攻め場減少/.test(reason);
+    const hasFollowerEvidence = (reason) =>
+      /追走|連動|乗る|まくり差し/.test(reason);
+    const buildRole = (boatNo, position) => {
+      const course = courseOfBoat(boatNo);
+      const reason = reasonForBoat(boatNo);
+      let role = "FLOW_PICKUP";
+      let label = "展開に残る";
+
+      if (boatNo === trigger.attackerBoatNo) {
+        if (triggerScenario?.type === "escape") {
+          role = "ESCAPER";
+          label = "先マイして逃げる艇";
+        } else if (triggerScenario?.type === "sashi") {
+          role = "SASHI_ATTACKER";
+          label = "差し切りを狙う艇";
+        } else {
+          role = "ATTACKER";
+          label = "攻める艇";
+        }
+      } else if (blockedBoats.has(boatNo)) {
+        role = "BLOCKED_RISK";
+        label = "攻めを受けて展開待ちになる艇";
+      } else if (hasReducedOpportunity(reason)) {
+        role = "DISPLACED_RISK";
+        label = "攻め場は減るが展開待ちで残す艇";
+      } else if (boatNo === headBoatNo) {
+        if (course < trigger.attackerCourse) {
+          role = "INSIDE_SURVIVOR";
+          label = "内で残して先頭へ出る艇";
+        } else if (hasFollowerEvidence(reason)) {
+          role = "FOLLOWER_LEADER";
+          label = "攻めに乗って先頭へ出る艇";
+        } else {
+          role = "PICKUP_LEADER";
+          label = "崩れた展開を拾って先頭へ出る艇";
+        }
+      } else if (course < trigger.attackerCourse) {
+        role = "INSIDE_SURVIVOR";
+        label = "内で残る艇";
+      } else if (
+        course === trigger.attackerCourse + 1 &&
+        !blockedBoats.has(boatNo) &&
+        triggerScenario?.type === "fourAttack"
+      ) {
+        role = "FOLLOWER";
+        label = followerRoleLabel;
+      } else if (
+        course > trigger.attackerCourse &&
+        /追走|連動|乗る|まくり差し/.test(reason)
+      ) {
+        role = "FOLLOWER";
+        label = followerRoleLabel;
+      } else if (/残し|残り/.test(reason)) {
+        role = "SURVIVOR";
+        label = /差し/.test(reason)
+          ? "差し場から残る艇"
+          : "展開の中で残る艇";
+      } else if (
+        thirdCandidates.has(boatNo) ||
+        /拾い|最内|道中|差し/.test(reason)
+      ) {
+        role = "PICKUP";
+        label = "空いたところを拾う艇";
+      } else if (
+        secondCandidates.has(boatNo) &&
+        course < trigger.attackerCourse
+      ) {
+        role = "INSIDE_SURVIVOR";
+        label = "内で残る艇";
+      }
+
+      return {
+        boatNo,
+        position,
+        course,
+        role,
+        label,
+        blocked: blockedBoats.has(boatNo),
+        evidence: reason
+      };
+    };
+    const roles = ticketBoats.map(
+      (boatNo, index) => buildRole(boatNo, index + 1)
+    );
+    const roleByBoat = new Map(
+      roles.map((role) => [role.boatNo, role])
+    );
+    const tactic = {
+      escape: {
+        action: "先マイして逃げ切る",
+        line: "逃げ筋"
+      },
+      sashi: {
+        action: "差し切る",
+        line: "差し筋"
+      },
+      threeAttack: {
+        action: "攻め切る",
+        line: "攻め筋"
+      },
+      fourAttack: {
+        action: "攻め切る",
+        line: "攻め筋"
+      }
+    }[triggerScenario?.type] || {
+      action: "展開を作る",
+      line: "展開筋"
+    };
+    const triggerLabel = String(
+      triggerScenario?.label ||
+      `${trigger.attackerBoatNo}号艇の動き`
+    );
+    let headSummary;
+    const headRole = roleByBoat.get(headBoatNo);
+
+    if (headBoatNo === trigger.attackerBoatNo) {
+      headSummary =
+        `${triggerLabel}。` +
+        `${headBoatNo}号艇が${tactic.action}なら先頭`;
+    } else if (headRole?.role === "DISPLACED_RISK") {
+      headSummary =
+        `${triggerLabel}でスタートから波乱。` +
+        `${headBoatNo}号艇は攻め場が減るが、` +
+        `展開が開けば拾って先頭`;
+    } else if (headRole?.role === "FOLLOWER_LEADER") {
+      headSummary =
+        `${triggerLabel}でスタートから波乱。` +
+        `${trigger.attackerBoatNo}号艇の攻めに` +
+        `${headBoatNo}号艇が乗って先頭`;
+    } else if (headCourse < trigger.attackerCourse) {
+      headSummary =
+        `${triggerLabel}でスタートから波乱。` +
+        `${trigger.attackerBoatNo}号艇が動くが、` +
+        `${headBoatNo}号艇が内で残して先頭`;
+    } else {
+      headSummary =
+        `${triggerLabel}でスタートから波乱。` +
+        `${trigger.attackerBoatNo}号艇が動いて隊形が崩れ、` +
+        `${headBoatNo}号艇が展開を拾って先頭`;
+    }
+
+    const positionSummary = (role) => {
+      const suffix = `${role.position}着`;
+
+      if (role.role === "FOLLOWER") {
+        const followAction =
+          triggerScenario?.type === "escape"
+            ? "逃げ筋を追走して"
+            : triggerScenario?.type === "sashi"
+              ? "差し展開に続いて"
+              : "攻めについて行って";
+
+        return `${role.boatNo}号艇が${followAction}${suffix}`;
+      }
+      if (role.role === "INSIDE_SURVIVOR") {
+        return `${role.boatNo}号艇が内で残って${suffix}`;
+      }
+      if (role.role === "BLOCKED_RISK") {
+        return (
+          `${role.boatNo}号艇が攻めを受け、` +
+          `展開が開いた時だけ${suffix}に残る`
+        );
+      }
+      if (role.role === "DISPLACED_RISK") {
+        return (
+          `${role.boatNo}号艇は攻め場が減るが、` +
+          `展開が開いた時だけ${suffix}に残る`
+        );
+      }
+      if (role.role === "SURVIVOR") {
+        return /差し/.test(role.evidence)
+          ? `${role.boatNo}号艇が差し場から残って${suffix}`
+          : `${role.boatNo}号艇が展開の中で残って${suffix}`;
+      }
+      if (
+        ["ATTACKER", "ESCAPER", "SASHI_ATTACKER"]
+          .includes(role.role)
+      ) {
+        return `${role.boatNo}号艇が自分の筋から残って${suffix}`;
+      }
+      return (
+        `${role.boatNo}号艇が空いたところを拾って${suffix}`
+      );
+    };
+    const analysisByBoat = new Map(
+      analyses.map((analysis) => [
+        Number(analysis?.boatNo || 0),
+        analysis
+      ])
+    );
+    const roadRaceBoats = new Set(
+      (
+        Array.isArray(raceScenarios?.roadRaceBoats)
+          ? raceScenarios.roadRaceBoats
+          : []
+      )
+        .map(Number)
+        .filter(Boolean)
+    );
+    const roadCandidates = [secondBoatNo, thirdBoatNo]
+      .map((boatNo, index) => ({
+        boatNo,
+        position: index + 2,
+        role: roleByBoat.get(boatNo),
+        roadScore: toNumber(
+          analysisByBoat.get(boatNo)?.roleScores?.road,
+          0
+        )
+      }))
+      .filter(
+        (candidate) =>
+          roadRaceBoats.has(candidate.boatNo) &&
+          candidate.roadScore >= 65 &&
+          candidate.role?.role !== "FOLLOWER" &&
+          !blockedBoats.has(candidate.boatNo)
+      )
+      .sort(
+        (a, b) =>
+          b.roadScore - a.roadScore ||
+          a.position - b.position
+      );
+    const roadCandidate = roadCandidates[0] || null;
+    const skillByBoat = new Map(
+      (
+        Array.isArray(racerSkillTheory?.roles)
+          ? racerSkillTheory.roles
+          : []
+      ).map((row) => [Number(row?.boatNo || 0), row])
+    );
+    const skillRow = roadCandidate
+      ? skillByBoat.get(roadCandidate.boatNo) || null
+      : null;
+    const usesRacerSkill = Boolean(
+      roadCandidate &&
+      trigger.isMainScenario &&
+      skillRow?.isAdopted === true
+    );
+    const roadOtherBoatNo = roadCandidate
+      ? (
+          roadCandidate.position === 2
+            ? thirdBoatNo
+            : secondBoatNo
+        )
+      : null;
+    const roadSummary = roadCandidate
+      ? (
+          roadCandidate.position === 2
+            ? `${roadCandidate.boatNo}号艇が` +
+              `${usesRacerSkill ? "選手の実力と" : ""}道中力で` +
+              "一度位置が入れ替わっても2着を取り返す"
+            : `${roadCandidate.boatNo}号艇が` +
+              `${usesRacerSkill ? "選手の実力と" : ""}道中力で` +
+              "一度位置が入れ替わっても3着を取り返す"
+        )
+      : "";
+    const roadRaceAdjustment = roadCandidate
+      ? {
+          boatNo: roadCandidate.boatNo,
+          position: roadCandidate.position,
+          roadScore: round(roadCandidate.roadScore),
+          otherBoatNo: roadOtherBoatNo,
+          usesRacerSkill,
+          racerSkillScore:
+            usesRacerSkill
+              ? round(toNumber(skillRow?.score, 0))
+              : null,
+          methodLabel:
+            usesRacerSkill
+              ? String(skillRow?.methodLabel || "")
+              : "",
+          summary: roadSummary
+        }
+      : null;
+    const secondRole = roleByBoat.get(secondBoatNo);
+    const thirdRole = roleByBoat.get(thirdBoatNo);
+    const scenarioSummary = [
+      headSummary,
+      positionSummary(secondRole),
+      positionSummary(thirdRole),
+      roadSummary,
+      `${ticket}の${tactic.line}で決着`
+    ]
+      .filter(Boolean)
+      .join("。") + "。";
+    const roleChain = [
+      {
+        phase: "START",
+        role: "TRIGGER",
+        boatNo: trigger.attackerBoatNo,
+        text:
+          `${triggerLabel}から「取れたらいいな」の展開を考える。`
+      },
+      {
+        phase: "FIRST_MARK",
+        role: roleByBoat.get(headBoatNo)?.role || "LEADER",
+        boatNo: headBoatNo,
+        position: 1,
+        text: headSummary
+      },
+      {
+        phase: "FIRST_MARK",
+        role: secondRole.role,
+        boatNo: secondBoatNo,
+        position: 2,
+        text: positionSummary(secondRole)
+      },
+      {
+        phase: "FIRST_MARK",
+        role: thirdRole.role,
+        boatNo: thirdBoatNo,
+        position: 3,
+        text: positionSummary(thirdRole)
+      },
+      ...(
+        roadRaceAdjustment
+          ? [{
+              phase: "ROAD_RACE",
+              role: "ROAD_RACE_ADJUSTMENT",
+              boatNo: roadRaceAdjustment.boatNo,
+              position: roadRaceAdjustment.position,
+              text: roadRaceAdjustment.summary
+            }]
+          : []
+      ),
+      {
+        phase: "FINISH",
+        role: "FINISH",
+        boatNos: [...ticketBoats],
+        ticket,
+        text: `${ticket}の筋決着。`
+      }
+    ];
+
+    return {
+      ticket,
+      title: "取れたらいいな",
+      scenarioTitle: "取れたらいいな",
+      scenarioType: "取れたらいいな",
+      scenarioSummary,
+      reason: scenarioSummary,
+      comment: scenarioSummary,
+      source: "ai-core-light-manshu-scenario-v1",
+      selectionScope: "existing-hole-candidate",
+      storyType: "LIGHT_MANSHU_SCENARIO",
+      usesOdds: false,
+      changesTicket: false,
+      trigger: {
+        scenarioType: String(triggerScenario?.type || ""),
+        scenarioLabel: triggerLabel,
+        scenarioScore: round(
+          toNumber(triggerScenario?.score, 0)
+        ),
+        attackerBoatNo: trigger.attackerBoatNo,
+        attackerCourse: trigger.attackerCourse,
+        isMainScenario: trigger.isMainScenario,
+        action: tactic.action,
+        line: tactic.line
+      },
+      roles,
+      roadRaceAdjustment,
+      roleChain
+    };
+  }
+
+  /* ===============================
     本命シート
   =============================== */
 
@@ -11806,6 +12484,16 @@ const slit =
         data
       );
 
+    const lightManshuScenario =
+      buildLightManshuScenario({
+        formations,
+        raceScenarios,
+        entries,
+        analyses,
+        roadTheory,
+        racerSkillTheory
+      });
+
     const marks =
       buildMarks(
         analyses,
@@ -11889,6 +12577,8 @@ const slit =
       marks,
 
       formations,
+
+      lightManshuScenario,
 
       mainSheet,
 
@@ -13529,6 +14219,7 @@ return {
     };
     const decision =
       candidateApi.build(alignedPrediction);
+    let lightManshuScenario = null;
     const oldMainSheet =
       alignedPrediction.mainSheet &&
       !Array.isArray(
@@ -13767,6 +14458,23 @@ return {
           ) ||
           decision.scenarioTitle
         ).trim();
+      const isLightManshuTarget = Boolean(
+        category === "穴候補" &&
+        lightManshuScenario &&
+        lightManshuScenario.ticket === ticket
+      );
+      const effectiveScenarioType =
+        isLightManshuTarget
+          ? lightManshuScenario.scenarioType
+          : scenarioType;
+      const effectiveScenarioTitle =
+        isLightManshuTarget
+          ? lightManshuScenario.scenarioTitle
+          : scenarioTitle;
+      const effectiveScenarioSummary =
+        isLightManshuTarget
+          ? lightManshuScenario.scenarioSummary
+          : scenarioSummary;
       const presentationSource =
         String(
           activePresentation
@@ -13782,6 +14490,10 @@ return {
               : ""
           )
         ).trim();
+      const effectivePresentationSource =
+        isLightManshuTarget
+          ? lightManshuScenario.source
+          : presentationSource;
       const structuredEvidence =
         activePresentation
           ?.structuredEvidence ||
@@ -13805,9 +14517,10 @@ return {
         categories: [
           category
         ],
-        scenarioType,
+        scenarioType:
+          effectiveScenarioType,
         scenarioTypes: [
-          scenarioType
+          effectiveScenarioType
         ],
         odds:
           hasOdds
@@ -13821,13 +14534,18 @@ return {
         isManshu:
           hasOdds &&
           numericOdds >= 100,
-        scenarioTitle,
-        scenarioSummary,
-        reason: scenarioSummary,
-        comment: scenarioSummary,
+        scenarioTitle:
+          effectiveScenarioTitle,
+        scenarioSummary:
+          effectiveScenarioSummary,
+        reason:
+          effectiveScenarioSummary,
+        comment:
+          effectiveScenarioSummary,
         source:
-          presentationSource,
-        presentationSource,
+          effectivePresentationSource,
+        presentationSource:
+          effectivePresentationSource,
         candidateId:
           candidate?.id || "",
         candidateKind:
@@ -13890,7 +14608,71 @@ return {
         structuredEvidence:
           structuredEvidence,
         presentationGroup,
-        presentationByGroup
+        presentationByGroup:
+          isLightManshuTarget
+            ? {
+                ...presentationByGroup,
+                hole: {
+                  ...(presentationByGroup.hole || {}),
+                  scenarioTitle:
+                    lightManshuScenario.scenarioTitle,
+                  title:
+                    lightManshuScenario.scenarioTitle,
+                  scenarioType:
+                    lightManshuScenario.scenarioType,
+                  scenarioSummary:
+                    lightManshuScenario.scenarioSummary,
+                  summary:
+                    lightManshuScenario.scenarioSummary,
+                  source:
+                    lightManshuScenario.source
+                }
+              }
+            : presentationByGroup,
+        ...(
+          isLightManshuTarget
+            ? {
+                lightManshuScenario: {
+                  ...lightManshuScenario
+                },
+                lightManshuSource:
+                  lightManshuScenario.source,
+                selectionScope:
+                  lightManshuScenario.selectionScope,
+                storyType:
+                  lightManshuScenario.storyType,
+                usesOdds:
+                  lightManshuScenario.usesOdds,
+                changesTicket:
+                  lightManshuScenario.changesTicket,
+                trigger: {
+                  ...lightManshuScenario.trigger
+                },
+                roles:
+                  lightManshuScenario.roles.map(
+                    (role) => ({ ...role })
+                  ),
+                roadRaceAdjustment:
+                  lightManshuScenario.roadRaceAdjustment
+                    ? {
+                        ...lightManshuScenario
+                          .roadRaceAdjustment
+                      }
+                    : null,
+                roleChain:
+                  lightManshuScenario.roleChain.map(
+                    (step) => ({
+                      ...step,
+                      ...(
+                        Array.isArray(step.boatNos)
+                          ? { boatNos: [...step.boatNos] }
+                          : {}
+                      )
+                    })
+                  )
+              }
+            : {}
+        )
       };
     }
 
@@ -13939,6 +14721,21 @@ return {
           !mainTickets.includes(ticket) &&
           !coverTickets.includes(ticket)
       );
+    lightManshuScenario =
+      buildLightManshuScenario({
+        formations: {
+          ...alignedFormation,
+          hole: holeTickets,
+          longshot: holeTickets
+        },
+        raceScenarios:
+          analysisRaceScenarios,
+        entries: getRaceEntries(data),
+        analyses: aiCore.analyses,
+        roadTheory: aiCore.roadTheory,
+        racerSkillTheory:
+          aiCore.racerSkillTheory
+      });
     const ticketSheets = {
       main:
         mainTickets.map((ticket) =>
@@ -14352,6 +15149,7 @@ return {
     };
     const canonicalAiCore = {
       ...aiCore,
+      lightManshuScenario,
       analysisRaceScenarios:
         analysisRaceScenarios,
       analysisRanking:
@@ -14381,6 +15179,7 @@ return {
 
     return {
       ...basePrediction,
+      lightManshuScenario,
       finalComment:
         formalScenarioSummary,
       finalAi: {
@@ -14416,6 +15215,7 @@ return {
       },
       manshuSheet: {
         ...oldManshuSheet,
+        lightManshuScenario,
         tickets:
           ticketSheets.hole
       },
@@ -14699,6 +15499,8 @@ return {
     buildLongshotSheet,
 
     buildFormations,
+
+    buildLightManshuScenario,
 
     buildMarks,
 

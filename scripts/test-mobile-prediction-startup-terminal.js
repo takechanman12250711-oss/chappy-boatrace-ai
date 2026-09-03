@@ -63,6 +63,16 @@ assert.match(
   html,
   new RegExp(`mobile-prediction-startup-terminal\\.js\\?v=${BUILD}`)
 );
+assert.match(
+  html,
+  /prediction-runtime-loader\.js[^"']*lightManshu=20260903-story1/,
+  "更新済み予想ローダーへ到達する"
+);
+assert.match(
+  html,
+  /mobile-prediction-startup-terminal\.js[^"']*lightManshu=20260903-story1/,
+  "更新済みモバイル復旧ローダーへ到達する"
+);
 assert.ok(
   html.indexOf("app-runtime-loader.js") <
     html.indexOf("home-dashboard-v2.js") &&
@@ -79,8 +89,14 @@ assert.match(apiSource, /Object\.defineProperty\(window, "ChappyDirectFetch"/);
 assert.match(appRuntimeSource, /RACE_CONTROLS_MISSING/);
 assert.match(appRuntimeSource, /RACE_SELECTION_MISSING/);
 assert.match(appRuntimeSource, /renderRuntimeError\(error\)/);
-assert.match(terminalSource, /script\.src = `\$\{clean\}\?v=\$\{BUILD\}`/);
-assert.match(terminalSource, /await loadScriptWithBuild\(root, src\)/);
+assert.match(
+  terminalSource,
+  /script\.src = `\$\{clean\}\?v=\$\{requestedVersion\}`/
+);
+assert.match(
+  terminalSource,
+  /await loadScriptWithBuild\([\s\S]*?versionFor\(src\)/
+);
 assert.match(homeSource, /showPredictionLoading\(place, raceNo\)/);
 assert.match(homeSource, /showPredictionError\(message\)/);
 
@@ -182,7 +198,8 @@ verifyInlineHardRefresh();
 function createRoot({
   raceReady = false,
   predictionReady = false,
-  predictionScripts = []
+  predictionScripts = [],
+  scriptVersions = {}
 } = {}) {
   const documentListeners = new Map();
   const windowListeners = new Map();
@@ -305,6 +322,7 @@ function createRoot({
       ensureReady: async () => true,
       ensureOptionalReady: async () => true,
       scripts: predictionScripts.slice(),
+      scriptVersions: { ...scriptVersions },
       optionalScripts: []
     }),
     __documentListeners: documentListeners,
@@ -382,17 +400,47 @@ function createRoot({
   const built = createRoot({
     raceReady: true,
     predictionReady: true,
-    predictionScripts: ["js/ai-core.js"]
+    predictionScripts: [
+      "js/ai-core.js",
+      "js/boat-identity.js"
+    ],
+    scriptVersions: {
+      "js/ai-core.js": "20260903-light-manshu-story1"
+    }
   });
   terminal.install(built);
   assert.equal(await built.ChappyPredictionRuntime.ensureReady(), true);
-  assert.equal(built.__scripts.length, 1);
-  assert.equal(built.__preloads.length, 1);
-  assert.equal(built.__preloads[0].href, `js/ai-core.js?v=${BUILD}`);
-  terminal.preloadScriptsWithBuild(built, ["js/ai-core.js"], 0);
-  assert.equal(built.__preloads.length, 1, "同じ先読みを重複追加しない");
-  assert.equal(built.__scripts[0].src, `js/ai-core.js?v=${BUILD}`);
-  assert.equal(built.__scripts[0].dataset.chappyMobileBuild, BUILD);
+  assert.equal(built.__scripts.length, 2);
+  assert.equal(built.__preloads.length, 2);
+  assert.equal(
+    built.__preloads[0].href,
+    "js/ai-core.js?v=20260903-light-manshu-story1"
+  );
+  terminal.preloadScriptsWithBuild(
+    built,
+    ["js/ai-core.js"],
+    0,
+    2,
+    { "js/ai-core.js": "20260903-light-manshu-story1" }
+  );
+  assert.equal(built.__preloads.length, 2, "同じ先読みを重複追加しない");
+  assert.equal(
+    built.__scripts[0].src,
+    "js/ai-core.js?v=20260903-light-manshu-story1"
+  );
+  assert.equal(
+    built.__scripts[0].dataset.chappyMobileBuild,
+    "20260903-light-manshu-story1"
+  );
+  assert.equal(
+    built.__scripts[1].src,
+    `js/boat-identity.js?v=${BUILD}`,
+    "未変更モジュールは既存キャッシュ世代を使う"
+  );
+  assert.equal(
+    built.__scripts[1].dataset.chappyMobileBuild,
+    BUILD
+  );
 
   const click = ready.__documentListeners.get("click:true");
   assert.equal(typeof click, "function");

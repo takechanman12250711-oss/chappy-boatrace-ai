@@ -213,8 +213,9 @@
     });
   }
 
-  function loadScriptWithBuild(root, src) {
+  function loadScriptWithBuild(root, src, version = BUILD) {
     const clean = String(src || "").split("?")[0];
+    const requestedVersion = String(version || BUILD);
     if (!clean) {
       return Promise.reject(startupError(
         "PREDICTION_SCRIPT_INVALID",
@@ -233,7 +234,7 @@
 
     if (
       existing?.dataset?.chappyLoaded === "true" ||
-      existing?.dataset?.chappyMobileBuild === BUILD
+      existing?.dataset?.chappyMobileBuild === requestedVersion
     ) {
       return Promise.resolve(true);
     }
@@ -260,7 +261,7 @@
 
       script.async = false;
       script.dataset.chappyPredictionModule = clean;
-      script.dataset.chappyMobileBuild = BUILD;
+      script.dataset.chappyMobileBuild = requestedVersion;
       script.addEventListener("load", finish(() => {
         script.dataset.chappyLoaded = "true";
         resolve(true);
@@ -275,7 +276,7 @@
       }), { once: true });
 
       if (!existing) {
-        script.src = `${clean}?v=${BUILD}`;
+        script.src = `${clean}?v=${requestedVersion}`;
         root.document.head.appendChild(script);
       }
     });
@@ -285,7 +286,8 @@
     root,
     list,
     startIndex,
-    count = PRELOAD_LOOKAHEAD
+    count = PRELOAD_LOOKAHEAD,
+    scriptVersions = {}
   ) {
     if (typeof root?.document?.querySelectorAll !== "function") return;
 
@@ -294,7 +296,10 @@
       .forEach(src => {
         const clean = String(src || "").split("?")[0];
         if (!clean) return;
-        const versioned = `${clean}?v=${BUILD}`;
+        const version = String(
+          scriptVersions[clean] || BUILD
+        );
+        const versioned = `${clean}?v=${version}`;
         if ([...(root.document.scripts || [])].some(script =>
           script.src && script.src.includes(clean)
         )) return;
@@ -363,6 +368,16 @@
     const optionalScripts = Array.isArray(runtime.optionalScripts)
       ? runtime.optionalScripts.slice()
       : [];
+    const scriptVersions =
+      runtime.scriptVersions &&
+      typeof runtime.scriptVersions === "object"
+        ? { ...runtime.scriptVersions }
+        : {};
+    const versionFor = (src) => {
+      const clean = String(src || "").split("?")[0];
+
+      return scriptVersions[clean] || BUILD;
+    };
     let readyPromise = null;
     let optionalReadyPromise = null;
 
@@ -381,9 +396,14 @@
           root,
           requiredScripts,
           index,
-          PRELOAD_LOOKAHEAD
+          PRELOAD_LOOKAHEAD,
+          scriptVersions
         );
-        await loadScriptWithBuild(root, requiredScripts[index]);
+        await loadScriptWithBuild(
+          root,
+          requiredScripts[index],
+          versionFor(requiredScripts[index])
+        );
       }
       validatePredictionRuntime(root);
       root.dispatchEvent?.(new root.CustomEvent(
@@ -419,7 +439,11 @@
         if (optionalReadyPromise) return optionalReadyPromise;
         optionalReadyPromise = (async () => {
           for (const src of optionalScripts) {
-            await loadScriptWithBuild(root, src);
+            await loadScriptWithBuild(
+              root,
+              src,
+              versionFor(src)
+            );
           }
           root.dispatchEvent?.(new root.CustomEvent(
             "chappy:prediction-runtime-optional-ready",

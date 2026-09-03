@@ -45,6 +45,9 @@
     "js/formation-odds-display.js",
     "js/manshu-display-reliability.js"
   ];
+  const SCRIPT_VERSIONS = Object.freeze({
+    "js/ai-core.js": "20260903-light-manshu-story1"
+  });
   const optionalScripts = ["js/prediction-calibration.js"];
 
   let readyPromise = null;
@@ -102,7 +105,8 @@
       }), { once: true });
 
       if (!existing) {
-        script.src = `${clean}?v=${VERSION}`;
+        const version = SCRIPT_VERSIONS[clean] || VERSION;
+        script.src = `${clean}?v=${version}`;
         document.head.appendChild(script);
       }
     });
@@ -115,9 +119,10 @@
       if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
       if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
       const link = document.createElement("link");
+      const version = SCRIPT_VERSIONS[clean] || VERSION;
       link.rel = "preload";
       link.as = "script";
-      link.href = `${clean}?v=${VERSION}`;
+      link.href = `${clean}?v=${version}`;
       document.head.appendChild(link);
     });
   }
@@ -181,6 +186,7 @@
     oddsPriorityWaitMs: ODDS_PRIORITY_WAIT_MS,
     runtimeTotalTimeoutMs: RUNTIME_TOTAL_TIMEOUT_MS,
     scripts: scripts.slice(),
+    scriptVersions: { ...SCRIPT_VERSIONS },
     optionalScripts: optionalScripts.slice(),
     ensureReady,
     ensureOptionalReady
