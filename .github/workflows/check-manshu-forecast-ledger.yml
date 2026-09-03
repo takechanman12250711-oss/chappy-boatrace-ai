@@ -1,0 +1,48 @@
+name: Check manshu forecast ledger
+
+on:
+  pull_request:
+    paths:
+      - "js/manshu-forecast-ledger.js"
+      - "js/frame-rise-fall-replay-preload.js"
+      - "index.html"
+      - "scripts/test-manshu-forecast-ledger.js"
+      - "scripts/test-light-manshu-ticket-board.js"
+      - "docs/manshu-forecast-ledger-v1.md"
+      - ".github/workflows/check-manshu-forecast-ledger.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/manshu-forecast-ledger.js"
+      - "js/frame-rise-fall-replay-preload.js"
+      - "index.html"
+      - "scripts/test-manshu-forecast-ledger.js"
+      - "scripts/test-light-manshu-ticket-board.js"
+      - "docs/manshu-forecast-ledger-v1.md"
+      - ".github/workflows/check-manshu-forecast-ledger.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check separate-account forecast ledger
+        run: |
+          node --check js/manshu-forecast-ledger.js
+          node --check js/frame-rise-fall-replay-preload.js
+          node --check scripts/test-manshu-forecast-ledger.js
+          node scripts/test-manshu-forecast-ledger.js
+          node scripts/test-light-manshu-ticket-board.js
