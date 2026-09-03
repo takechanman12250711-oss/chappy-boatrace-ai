@@ -18,25 +18,12 @@
     "use strict";
 
     function boatNoOf(item) {
-      const boatNo = Number(
-        item?.boat ??
-        item?.boatNo ??
-        0
-      );
-      return Number.isInteger(boatNo)
-        ? boatNo
-        : 0;
+      const boatNo = Number(item?.boat ?? item?.boatNo ?? 0);
+      return Number.isInteger(boatNo) ? boatNo : 0;
     }
 
     function hasTrifecta(payload) {
-      return Boolean(
-        String(
-          payload?.trifecta
-            ?.combination ||
-          payload?.result ||
-          ""
-        ).trim()
-      );
+      return Boolean(String(payload?.trifecta?.combination || payload?.result || "").trim());
     }
 
     function isFalseOrLateStart(item) {
@@ -81,14 +68,23 @@
   if (!root || !root.document) return;
 
   const STYLE_ID = "chappy-final-mobile-ui-style";
+  const HOME_STYLE_ID = "chappy-final-home-v2-photo-style";
   const SCRIPT_ID = "chappy-final-mobile-ui-script";
-  const BUILD = "20260903-final-mobile-ui3";
+  const BUILD = "20260903-final-mobile-ui4";
 
   if (!root.document.getElementById(STYLE_ID)) {
     const link = root.document.createElement("link");
     link.id = STYLE_ID;
     link.rel = "stylesheet";
     link.href = `css/final-mobile-ui.css?v=${BUILD}`;
+    root.document.head.appendChild(link);
+  }
+
+  if (!root.document.getElementById(HOME_STYLE_ID)) {
+    const link = root.document.createElement("link");
+    link.id = HOME_STYLE_ID;
+    link.rel = "stylesheet";
+    link.href = `css/final-home-v2-photo.css?v=${BUILD}`;
     root.document.head.appendChild(link);
   }
 
