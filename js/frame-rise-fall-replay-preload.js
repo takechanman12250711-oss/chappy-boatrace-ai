@@ -1,5 +1,7 @@
 "use strict";
 
+require("./manshu-forecast-ledger");
+
 const Module = require("node:module");
 
 const originalLoad = Module._load;
