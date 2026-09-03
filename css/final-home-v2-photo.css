@@ -1,0 +1,206 @@
+/* Photo-matched home v2 presentation. Display-only. */
+body.chappy-final-mobile-ui .dashboard-header{
+  background:rgba(7,17,26,.96)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(18px)!important;
+}
+body.chappy-final-mobile-ui .header-logo{
+  background:linear-gradient(145deg,#1d75d8,#31b9ff)!important;
+  color:#fff!important;
+  box-shadow:0 8px 24px rgba(47,140,255,.22)!important;
+}
+body.chappy-final-mobile-ui .header-copy h1{color:#fff!important}
+body.chappy-final-mobile-ui .header-copy .header-description{color:#8299aa!important}
+body.chappy-final-mobile-ui .home-header-actions button{color:#dce8f1!important}
+body.chappy-final-mobile-ui .dashboard-app{background:transparent!important}
+
+body.chappy-final-mobile-ui .home-dashboard-v2{gap:12px!important}
+body.chappy-final-mobile-ui .home-v2-recommend,
+body.chappy-final-mobile-ui .home-v2-schedule,
+body.chappy-final-mobile-ui .home-v2-filter-shell,
+body.chappy-final-mobile-ui .home-v2-hint{
+  background:linear-gradient(180deg,#0f1f2b 0%,#0b1721 100%)!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.18)!important;
+  border-radius:18px!important;
+}
+body.chappy-final-mobile-ui .home-v2-recommend,
+body.chappy-final-mobile-ui .home-v2-schedule{padding:14px!important}
+body.chappy-final-mobile-ui .home-v2-title-row h2{color:#f7fbff!important;font-size:1rem!important}
+body.chappy-final-mobile-ui .home-v2-title-row>span{color:#71899a!important}
+body.chappy-final-mobile-ui .home-v2-empty,
+body.chappy-final-mobile-ui .home-v2-no-race{
+  color:#8ba1b0!important;
+  background:#09151f!important;
+  border:1px dashed rgba(255,255,255,.07)!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-recommend-list{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:9px!important;
+  overflow:visible!important;
+}
+body.chappy-final-mobile-ui .home-v2-recommend-card{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-areas:"top top" "race deadline" "score score" "reason reason"!important;
+  gap:7px 12px!important;
+  width:100%!important;
+  padding:12px 13px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:14px!important;
+  background:#0a1822!important;
+  color:#f7fbff!important;
+  text-align:left!important;
+  box-shadow:none!important;
+}
+body.chappy-final-mobile-ui .home-v2-recommend-card.is-main{box-shadow:inset 4px 0 0 #2bc477!important}
+body.chappy-final-mobile-ui .home-v2-recommend-card.is-upset{box-shadow:inset 4px 0 0 #ffad43!important}
+body.chappy-final-mobile-ui .home-v2-recommend-card.is-skip{box-shadow:inset 4px 0 0 #ef5965!important}
+body.chappy-final-mobile-ui .home-v2-card-top{grid-area:top!important;display:flex!important;align-items:center!important;gap:7px!important}
+body.chappy-final-mobile-ui .home-v2-medal{font-size:1rem!important}
+body.chappy-final-mobile-ui .home-v2-decision{
+  justify-self:auto!important;
+  padding:4px 8px!important;
+  border-radius:999px!important;
+  background:#1c6fd1!important;
+  color:#fff!important;
+  font-size:.62rem!important;
+}
+body.chappy-final-mobile-ui .is-main .home-v2-decision{background:#156c48!important}
+body.chappy-final-mobile-ui .is-upset .home-v2-decision{background:#8a5419!important}
+body.chappy-final-mobile-ui .is-skip .home-v2-decision{background:#8b3038!important}
+body.chappy-final-mobile-ui .home-v2-arrow{margin-left:auto!important;color:#6f8798!important;font-size:1.2rem!important}
+body.chappy-final-mobile-ui .home-v2-recommend-card>strong{grid-area:race!important;color:#fff!important;font-size:1.05rem!important}
+body.chappy-final-mobile-ui .home-v2-deadline{grid-area:deadline!important;align-self:center!important;color:#8095a5!important;font-size:.68rem!important}
+body.chappy-final-mobile-ui .home-v2-deadline b{color:#ff7380!important;font-size:.72rem!important}
+body.chappy-final-mobile-ui .home-v2-score-row{grid-area:score!important;grid-template-columns:1fr!important;margin:0!important}
+body.chappy-final-mobile-ui .home-v2-score-row>span{
+  display:flex!important;
+  align-items:baseline!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+  padding:8px 10px!important;
+  border:1px solid rgba(255,255,255,.07)!important;
+  border-radius:10px!important;
+  background:#10212d!important;
+  color:#86a0b2!important;
+  font-size:.62rem!important;
+}
+body.chappy-final-mobile-ui .home-v2-score-row b{color:#7dc1ff!important;font-size:1.25rem!important}
+body.chappy-final-mobile-ui .home-v2-score-row small{color:#71899a!important}
+body.chappy-final-mobile-ui .home-v2-reason{grid-area:reason!important;color:#8299a9!important;font-size:.68rem!important;white-space:normal!important;line-height:1.45!important}
+
+body.chappy-final-mobile-ui .home-v2-filter-shell{padding:7px!important}
+body.chappy-final-mobile-ui .home-v2-filters{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:5px!important;
+  border:0!important;
+  background:transparent!important;
+  border-radius:12px!important;
+}
+body.chappy-final-mobile-ui .home-v2-filters button{
+  min-width:0!important;
+  padding:10px 3px!important;
+  border:1px solid rgba(255,255,255,.07)!important;
+  border-radius:10px!important;
+  background:#0a1822!important;
+  color:#90a4b3!important;
+  font-size:.68rem!important;
+}
+body.chappy-final-mobile-ui .home-v2-filters button.is-active{
+  border-color:#3b96ff!important;
+  background:linear-gradient(180deg,#237fe6,#1b68c1)!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px rgba(35,127,230,.2)!important;
+}
+
+body.chappy-final-mobile-ui .home-v2-schedule-title{align-items:center!important}
+body.chappy-final-mobile-ui .home-v2-legend{display:none!important}
+body.chappy-final-mobile-ui .home-v2-venue-list{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+body.chappy-final-mobile-ui .home-v2-venue{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  grid-template-areas:"info next" "races races"!important;
+  gap:8px!important;
+  min-width:0!important;
+  padding:11px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:14px!important;
+  background:#0a1822!important;
+  box-shadow:none!important;
+}
+body.chappy-final-mobile-ui .home-v2-venue-info{grid-area:info!important;gap:3px!important}
+body.chappy-final-mobile-ui .home-v2-venue-info strong{color:#fff!important;font-size:.92rem!important}
+body.chappy-final-mobile-ui .home-v2-venue-info strong span{color:#4ba8ff!important}
+body.chappy-final-mobile-ui .home-v2-venue-info small{
+  padding:3px 7px!important;
+  border-radius:999px!important;
+  background:#132b3b!important;
+  color:#76bfff!important;
+  font-size:.56rem!important;
+}
+body.chappy-final-mobile-ui .home-v2-races{
+  grid-area:races!important;
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:6px!important;
+}
+body.chappy-final-mobile-ui .home-v2-race{
+  min-width:0!important;
+  padding:7px 3px!important;
+  border:1px solid rgba(255,255,255,.07)!important;
+  border-radius:9px!important;
+  background:#10212d!important;
+  color:#fff!important;
+}
+body.chappy-final-mobile-ui .home-v2-race strong{font-size:.82rem!important}
+body.chappy-final-mobile-ui .home-v2-race span{color:#7890a1!important;font-size:.55rem!important}
+body.chappy-final-mobile-ui .home-v2-race.is-selected{
+  border-color:#3e9cff!important;
+  background:#153653!important;
+  box-shadow:inset 0 0 0 1px #3e9cff!important;
+}
+body.chappy-final-mobile-ui .home-v2-race.is-upset-hot{border-color:#a76d2e!important;background:#2d2115!important}
+body.chappy-final-mobile-ui .home-v2-race.is-skip{border-color:#833942!important;background:#2a171a!important}
+body.chappy-final-mobile-ui .home-v2-venue-next{
+  grid-area:next!important;
+  align-self:start!important;
+  width:28px!important;
+  height:28px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:9px!important;
+  background:#112430!important;
+  color:#7cbcff!important;
+  font-size:1.15rem!important;
+}
+body.chappy-final-mobile-ui .home-v2-more{color:#59adff!important}
+body.chappy-final-mobile-ui .home-v2-load-error{background:#28191a!important;color:#ff9ca5!important}
+
+body.chappy-final-mobile-ui .bottom-nav{
+  background:rgba(7,17,26,.97)!important;
+  border-top:1px solid rgba(255,255,255,.09)!important;
+  box-shadow:0 -8px 24px rgba(0,0,0,.2)!important;
+}
+body.chappy-final-mobile-ui .bottom-nav-item{color:#6f8596!important;background:transparent!important}
+body.chappy-final-mobile-ui .bottom-nav-item.is-active{color:#58adff!important;background:#10283a!important;border-radius:12px!important}
+
+@media(max-width:480px){
+  body.chappy-final-mobile-ui .dashboard-header{padding:9px 10px!important}
+  body.chappy-final-mobile-ui .dashboard-app{padding:10px 9px 92px!important}
+  body.chappy-final-mobile-ui .home-v2-recommend,
+  body.chappy-final-mobile-ui .home-v2-schedule{padding:11px!important}
+  body.chappy-final-mobile-ui .home-v2-venue-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  body.chappy-final-mobile-ui .home-v2-venue{padding:9px!important}
+  body.chappy-final-mobile-ui .home-v2-races{grid-template-columns:1fr!important}
+}
