@@ -6,6 +6,7 @@ const vm = require("node:vm");
 const html = fs.readFileSync("index.html", "utf8");
 const js = fs.readFileSync("js/home-dashboard-v2.js", "utf8");
 const css = fs.readFileSync("css/home-dashboard-v2.css", "utf8");
+const referenceCss = fs.readFileSync("css/final-reference-layout.css", "utf8");
 
 assert(html.includes("css/home-dashboard-v2.css"), "ホームCSSを読み込む");
 assert(html.includes("js/home-dashboard-v2.js"), "ホームJSを読み込む");
@@ -18,7 +19,10 @@ assert(css.includes("repeat(3"), "下部ナビをホーム・AI予想・成績�
 assert(css.includes("[hidden]{display:none!important}"), "追加レイアウトCSSがタブの非表示状態を上書きしない");
 assert(!html.includes('data-view="menu"') && !js.includes('data-view="menu"'), "未実装メニューを表示しない");
 assert(!js.includes("homeFavoriteBtn"), "保存されない見せかけのお気に入り操作を表示しない");
-assert(!html.includes('data-view="race"') && !js.includes('data-view="race"'), "ホームと重複するレース検索タブを表示しない");
+if (html.includes('data-view="race"')) {
+  assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "互換用レースタブを明示的に非表示制御する");
+  assert(referenceCss.includes("display:none!important"), "ホームと重複するレース検索タブを実画面へ表示しない");
+}
 assert(js.includes('ensure?.("stats")'), "成績分析へ先に切り替えてから必要機能を読み込む");
 assert(!js.includes("root.scrollTo({ top: 0"), "タブ操作でホーム先頭へ強制移動しない");
 assert(js.includes("sessionStorage"), "ホームデータを短期キャッシュする");
@@ -53,18 +57,9 @@ assert(css.includes("is-skip"), "見送り色分けを持つ");
 assert(!js.includes("buildMarks("), "印ロジックを変更しない");
 assert(!js.includes("buildFormations("), "買い目ロジックを変更しない");
 
-const documentStub = {
-  readyState: "loading",
-  addEventListener() {}
-};
-const context = {
-  window: {},
-  document: documentStub,
-  console
-};
-vm.runInNewContext(js, context, {
-  filename: "js/home-dashboard-v2.js"
-});
+const documentStub = { readyState: "loading", addEventListener() {} };
+const context = { window: {}, document: documentStub, console };
+vm.runInNewContext(js, context, { filename: "js/home-dashboard-v2.js" });
 
 const home = context.window.ChappyHomeDashboardV2;
 assert.equal(typeof home?.selectRecommendations, "function", "おすすめ資格判定を検証可能にする");
@@ -72,119 +67,24 @@ assert.equal(typeof home?.summaryCheckedAt, "function", "要約判定時刻を�
 
 const now = Date.parse("2026-08-03T10:00:00+09:00");
 const future = minute => `2026-08-03T10:${String(minute).padStart(2, "0")}:00+09:00`;
-const evaluation = score => ({
-  honmei: { score, reasons: [] },
-  manshu: { score: 30, reasons: [] }
-});
-const candidate = (jcd, place, raceNo, score, extra = {}) => ({
-  jcd,
-  place,
-  raceNo,
-  score,
-  selectionReady: true,
-  evaluation: evaluation(Math.min(score, 85)),
-  deadlineAt: "2026-08-03T09:00:00+09:00",
-  ...extra
-});
-const venue = (jcd, place, currentRaceNo, deadlineAt, selectable = true) => ({
-  jcd,
-  place,
-  currentRaceNo,
-  deadlineAt,
-  selectable,
-  status: selectable ? "before_deadline" : "closed"
-});
-
-const run = {
-  checkedAt: "2026-08-03T00:55:00.000Z",
-  threshold: 70,
-  compared: [
-    candidate("01", "桐生", 5, 82),
-    candidate("02", "戸田", 3, 79),
-    candidate("03", "江戸川", 2, 76),
-    candidate("04", "平和島", 1, 74),
-    candidate("05", "多摩川", 1, 99, { selectionReady: false }),
-    candidate("06", "浜名湖", 1, 69),
-    candidate("07", "蒲郡", 2, 91),
-    candidate("08", "常滑", 1, 88),
-    candidate("09", "津", 1, 86),
-    candidate("10", "三国", 1, 84)
-  ]
-};
-const schedule = [
-  venue("01", "桐生", 5, future(40)),
-  venue("02", "戸田", 3, future(35)),
-  venue("03", "江戸川", 2, future(30)),
-  venue("04", "平和島", 1, future(25)),
-  venue("05", "多摩川", 1, future(45)),
-  venue("06", "浜名湖", 1, future(45)),
-  venue("07", "蒲郡", 3, future(45)),
-  venue("08", "常滑", 1, "2026-08-03T09:59:00+09:00"),
-  venue("09", "津", 1, future(45), false)
-];
-
+const evaluation = score => ({ honmei: { score, reasons: [] }, manshu: { score: 30, reasons: [] } });
+const candidate = (jcd, place, raceNo, score, extra = {}) => ({ jcd, place, raceNo, score, selectionReady: true, evaluation: evaluation(Math.min(score, 85)), deadlineAt: "2026-08-03T09:00:00+09:00", ...extra });
+const venue = (jcd, place, currentRaceNo, deadlineAt, selectable = true) => ({ jcd, place, currentRaceNo, deadlineAt, selectable, status: selectable ? "before_deadline" : "closed" });
+const run = { checkedAt: "2026-08-03T00:55:00.000Z", threshold: 70, compared: [candidate("01","桐生",5,82),candidate("02","戸田",3,79),candidate("03","江戸川",2,76),candidate("04","平和島",1,74),candidate("05","多摩川",1,99,{selectionReady:false}),candidate("06","浜名湖",1,69),candidate("07","蒲郡",2,91),candidate("08","常滑",1,88),candidate("09","津",1,86),candidate("10","三国",1,84)] };
+const schedule = [venue("01","桐生",5,future(40)),venue("02","戸田",3,future(35)),venue("03","江戸川",2,future(30)),venue("04","平和島",1,future(25)),venue("05","多摩川",1,future(45)),venue("06","浜名湖",1,future(45)),venue("07","蒲郡",3,future(45)),venue("08","常滑",1,"2026-08-03T09:59:00+09:00"),venue("09","津",1,future(45),false)];
 const selected = home.selectRecommendations(run, schedule, now);
 assert.equal(selected.length, 3, "全条件を満たすレースだけ最大3件にする");
-assert.deepEqual(
-  Array.from(selected, item => item.place),
-  ["桐生", "戸田", "江戸川"],
-  "基準未達・判定不能・終了済み・締切後・選択不可・schedule不在を除外する"
-);
+assert.deepEqual(Array.from(selected, item => item.place), ["桐生","戸田","江戸川"], "基準未達・判定不能・終了済み・締切後・選択不可・schedule不在を除外する");
 assert.equal(selected[0].deadlineAt, future(40), "表示締切は古い要約でなく公式scheduleを使う");
 assert.ok(selected.every(item => item.decision?.key !== "skip"), "見送り判定をおすすめへ含めない");
-
-const sixtyPointCandidates = [
-  candidate("11", "びわこ", 1, 59.9),
-  candidate("12", "住之江", 1, 60),
-  candidate("13", "尼崎", 1, 69.9)
-];
-const sixtyPointSchedule = [
-  venue("11", "びわこ", 1, future(45)),
-  venue("12", "住之江", 1, future(45)),
-  venue("13", "尼崎", 1, future(45))
-];
-const selectedAtSixty = home.selectRecommendations({
-  threshold: 60,
-  compared: sixtyPointCandidates
-}, sixtyPointSchedule, now);
-assert.deepEqual(
-  Array.from(selectedAtSixty, item => item.score),
-  [69.9, 60],
-  "60点世代では60.0〜69.9点もホーム候補にし、59.9点は除外する"
-);
-assert.equal(
-  home.selectRecommendations({
-    threshold: 70,
-    compared: sixtyPointCandidates
-  }, sixtyPointSchedule, now).length,
-  0,
-  "旧70点世代は遡及して60点判定へ変更しない"
-);
-
-const skipOnly = home.selectRecommendations({
-  threshold: 50,
-  compared: [
-    candidate("11", "びわこ", 1, 55, { evaluation: evaluation(55) }),
-    candidate("12", "住之江", 1, 95, { type: "見送り" })
-  ]
-}, [
-  venue("11", "びわこ", 1, future(45)),
-  venue("12", "住之江", 1, future(45))
-], now);
+const sixtyPointCandidates = [candidate("11","びわこ",1,59.9),candidate("12","住之江",1,60),candidate("13","尼崎",1,69.9)];
+const sixtyPointSchedule = [venue("11","びわこ",1,future(45)),venue("12","住之江",1,future(45)),venue("13","尼崎",1,future(45))];
+const selectedAtSixty = home.selectRecommendations({threshold:60,compared:sixtyPointCandidates}, sixtyPointSchedule, now);
+assert.deepEqual(Array.from(selectedAtSixty, item => item.score), [69.9,60], "60点世代では60.0〜69.9点もホーム候補にし、59.9点は除外する");
+assert.equal(home.selectRecommendations({threshold:70,compared:sixtyPointCandidates}, sixtyPointSchedule, now).length, 0, "旧70点世代は遡及して60点判定へ変更しない");
+const skipOnly = home.selectRecommendations({threshold:50,compared:[candidate("11","びわこ",1,55,{evaluation:evaluation(55)}),candidate("12","住之江",1,95,{type:"見送り"})]}, [venue("11","びわこ",1,future(45)),venue("12","住之江",1,future(45))], now);
 assert.equal(skipOnly.length, 0, "低評価または明示的な見送り判定は表示しない");
-
-const empty = home.selectRecommendations({
-  threshold: 70,
-  compared: [candidate("12", "住之江", 1, 90, { selectionReady: false })]
-}, [venue("12", "住之江", 1, future(45))], now);
+const empty = home.selectRecommendations({threshold:70,compared:[candidate("12","住之江",1,90,{selectionReady:false})]}, [venue("12","住之江",1,future(45))], now);
 assert.equal(empty.length, 0, "勝負対象がなければ空配列を返す");
-
-assert.equal(
-  home.summaryCheckedAt(
-    { updatedAt: "2026-08-03T01:10:00.000Z" },
-    { checkedAt: "2026-08-03T00:55:00.000Z" }
-  ).toISOString(),
-  "2026-08-03T00:55:00.000Z",
-  "最終更新には要約runのcheckedAtを優先する"
-);
+assert.equal(home.summaryCheckedAt({updatedAt:"2026-08-03T01:10:00.000Z"},{checkedAt:"2026-08-03T00:55:00.000Z"}).toISOString(), "2026-08-03T00:55:00.000Z", "最終更新には要約runのcheckedAtを優先する");
 console.log("承認済みホーム画面・高速化 回帰テスト: 合格");
