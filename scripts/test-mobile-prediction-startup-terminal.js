@@ -65,12 +65,12 @@ assert.match(
 );
 assert.match(
   html,
-  /prediction-runtime-loader\.js[^"']*lightManshu=20260903-story1/,
+  /prediction-runtime-loader\.js[^"']*lightManshu=20260903-board1/,
   "更新済み予想ローダーへ到達する"
 );
 assert.match(
   html,
-  /mobile-prediction-startup-terminal\.js[^"']*lightManshu=20260903-story1/,
+  /mobile-prediction-startup-terminal\.js[^"']*lightManshu=20260903-board1/,
   "更新済みモバイル復旧ローダーへ到達する"
 );
 assert.ok(
@@ -402,43 +402,53 @@ function createRoot({
     predictionReady: true,
     predictionScripts: [
       "js/ai-core.js",
+      "js/render.js",
       "js/boat-identity.js"
     ],
     scriptVersions: {
-      "js/ai-core.js": "20260903-light-manshu-story1"
+      "js/ai-core.js": "20260903-light-manshu-board1",
+      "js/render.js": "20260903-light-manshu-board1"
     }
   });
   terminal.install(built);
   assert.equal(await built.ChappyPredictionRuntime.ensureReady(), true);
-  assert.equal(built.__scripts.length, 2);
-  assert.equal(built.__preloads.length, 2);
+  assert.equal(built.__scripts.length, 3);
+  assert.equal(built.__preloads.length, 3);
   assert.equal(
     built.__preloads[0].href,
-    "js/ai-core.js?v=20260903-light-manshu-story1"
+    "js/ai-core.js?v=20260903-light-manshu-board1"
   );
   terminal.preloadScriptsWithBuild(
     built,
     ["js/ai-core.js"],
     0,
     2,
-    { "js/ai-core.js": "20260903-light-manshu-story1" }
+    { "js/ai-core.js": "20260903-light-manshu-board1" }
   );
-  assert.equal(built.__preloads.length, 2, "同じ先読みを重複追加しない");
+  assert.equal(built.__preloads.length, 3, "同じ先読みを重複追加しない");
   assert.equal(
     built.__scripts[0].src,
-    "js/ai-core.js?v=20260903-light-manshu-story1"
+    "js/ai-core.js?v=20260903-light-manshu-board1"
   );
   assert.equal(
     built.__scripts[0].dataset.chappyMobileBuild,
-    "20260903-light-manshu-story1"
+    "20260903-light-manshu-board1"
   );
   assert.equal(
     built.__scripts[1].src,
+    "js/render.js?v=20260903-light-manshu-board1"
+  );
+  assert.equal(
+    built.__scripts[1].dataset.chappyMobileBuild,
+    "20260903-light-manshu-board1"
+  );
+  assert.equal(
+    built.__scripts[2].src,
     `js/boat-identity.js?v=${BUILD}`,
     "未変更モジュールは既存キャッシュ世代を使う"
   );
   assert.equal(
-    built.__scripts[1].dataset.chappyMobileBuild,
+    built.__scripts[2].dataset.chappyMobileBuild,
     BUILD
   );
 

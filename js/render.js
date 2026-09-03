@@ -371,6 +371,9 @@
       <!-- 5. 万舟買い目 -->
       ${renderNewspaperSheet(prediction, "manshu")}
 
+      <!-- 5.25 取れたらいいな舟券（通常予想とは別枠） -->
+      ${renderLightManshuTicketBoard(prediction)}
+
       <!-- 5.5 出てない目TOP30 -->
       ${renderMissingNumbers(
         prediction
@@ -1987,7 +1990,7 @@ if (raceInfoArea) {
     `;
   }
 
-    function renderManshuNewspaper(prediction) {
+  function renderManshuNewspaper(prediction) {
     const sheet =
       prediction.manshuSheet || {};
 
@@ -2225,6 +2228,434 @@ if (raceInfoArea) {
         "内側が崩れた場合や高配当展開を狙う買い目です。"
       ),
       false
+    );
+  }
+
+  function normalizeLightManshuTicketBoard(
+    prediction
+  ) {
+    const board =
+      prediction?.lightManshuTicketBoard;
+    const selectionStatus = String(
+      prediction?.practicalSelection?.status ||
+      prediction?.selectionStatus ||
+      ""
+    ).toLowerCase();
+
+    if (
+      !board ||
+      board.displayOnly !== true ||
+      board.advisoryOnly !== true ||
+      board.purchaseEligible !== false ||
+      board.saveEligible !== false ||
+      board.noteEligible !== false ||
+      board.usesOdds !== false ||
+      board.usesOfficialResult !== false ||
+      board.changesNormalTickets !== false ||
+      board.changesPracticalSelection !== false ||
+      selectionStatus !== "selected" ||
+      !Array.isArray(board.lines) ||
+      board.lines.length < 2 ||
+      board.lines.length > 3
+    ) {
+      return null;
+    }
+
+    const unitYen = Number(board.unitYen);
+
+    if (
+      !Number.isInteger(unitYen) ||
+      unitYen <= 0
+    ) {
+      return null;
+    }
+
+    const exactTicket = value => {
+      const ticket = String(value || "")
+        .replace(/\s+/g, "")
+        .trim();
+      const parts = ticket.split("-");
+
+      if (
+        parts.length !== 3 ||
+        parts.some(part => !/^[1-6]$/.test(part)) ||
+        new Set(parts).size !== 3
+      ) {
+        return "";
+      }
+
+      return ticket;
+    };
+    const reservedTickets = new Set(
+      [
+        prediction?.ticketSheets?.main,
+        prediction?.ticketSheets?.cover,
+        prediction?.ticketSheets?.flow,
+        prediction?.ticketSheets?.hole,
+        prediction?.ticketSheets?.all,
+        prediction?.aiTicketList,
+        prediction?.practicalSelection?.tickets,
+        prediction?.practicalTickets
+      ]
+        .flatMap(source => arrayify(source))
+        .map(item => exactTicket(item?.ticket || item))
+        .filter(Boolean)
+    );
+    const expandedFromNotation = notation => {
+      const groups = String(notation || "")
+        .split("-")
+        .map(group => [...new Set(group.split(""))]);
+
+      if (
+        groups.length !== 3 ||
+        groups[0].length !== 1 ||
+        groups.some(
+          group =>
+            !group.length ||
+            group.some(value => !/^[1-6]$/.test(value))
+        )
+      ) {
+        return [];
+      }
+
+      const expanded = [];
+
+      groups[0].forEach(first => {
+        groups[1].forEach(second => {
+          groups[2].forEach(third => {
+            if (
+              new Set([first, second, third]).size === 3
+            ) {
+              expanded.push(
+                `${first}-${second}-${third}`
+              );
+            }
+          });
+        });
+      });
+
+      return [...new Set(expanded)];
+    };
+    const normalizedLines = board.lines.map(
+      (source, index) => {
+        const line =
+          source && typeof source === "object"
+            ? source
+            : null;
+        const formation = line?.formation;
+        const allocation = line?.allocation;
+        const notation = String(
+          formation?.notation || ""
+        )
+          .replace(/\s+/g, "")
+          .trim();
+        const expandedTickets = [
+          ...new Set(
+            arrayify(
+              formation?.expandedTickets
+            )
+              .map(exactTicket)
+              .filter(Boolean)
+          )
+        ];
+        const notationTickets =
+          expandedFromNotation(notation);
+        const pointCount = Number(
+          formation?.pointCount
+        );
+        const unitsPerTicket = Number(
+          allocation?.unitsPerTicket
+        );
+        const totalYen = Number(
+          allocation?.totalYen
+        );
+        const title = String(
+          line?.title || ""
+        ).trim();
+        const reason = String(
+          line?.reason || ""
+        ).trim();
+        const allocationLabel = String(
+          allocation?.label || ""
+        ).trim();
+        const detailsByTicket = new Map();
+
+        arrayify(line?.ticketDetails)
+          .forEach(detail => {
+            const ticket = exactTicket(
+              detail?.ticket
+            );
+            const scenarioSummary = String(
+              detail?.scenarioSummary || ""
+            ).trim();
+
+            if (
+              ticket &&
+              scenarioSummary &&
+              !detailsByTicket.has(ticket)
+            ) {
+              detailsByTicket.set(ticket, {
+                ticket,
+                scenarioSummary
+              });
+            }
+          });
+
+        const ticketDetails = expandedTickets
+          .map(ticket =>
+            detailsByTicket.get(ticket)
+          )
+          .filter(Boolean);
+        const expectedTotalYen =
+          pointCount *
+          unitsPerTicket *
+          unitYen;
+        const expectedTotalUnits =
+          pointCount * unitsPerTicket;
+        const notationSet = new Set(
+          notationTickets
+        );
+        const expandedSet = new Set(
+          expandedTickets
+        );
+        const notationMatches =
+          notationTickets.length ===
+            expandedTickets.length &&
+          notationTickets.every(ticket =>
+            expandedSet.has(ticket)
+          ) &&
+          expandedTickets.every(ticket =>
+            notationSet.has(ticket)
+          );
+
+        if (
+          !line ||
+          line.displayOnly !== true ||
+          line.advisoryOnly !== true ||
+          line.purchaseEligible !== false ||
+          line.saveEligible !== false ||
+          line.noteEligible !== false ||
+          line.usesOdds !== false ||
+          line.usesOfficialResult !== false ||
+          Number(line.rank) !== index + 1 ||
+          ![
+            "START_UPSET",
+            "OUTER_FOLLOW",
+            "ROAD_PICKUP"
+          ].includes(String(line.kind || "")) ||
+          !title ||
+          !reason ||
+          !allocationLabel ||
+          !notationMatches ||
+          expandedTickets.some(ticket =>
+            reservedTickets.has(ticket)
+          ) ||
+          !Number.isInteger(pointCount) ||
+          pointCount < 2 ||
+          pointCount > 4 ||
+          pointCount !== expandedTickets.length ||
+          !Number.isInteger(unitsPerTicket) ||
+          unitsPerTicket <= 0 ||
+          unitsPerTicket !== [3, 2, 1][index] ||
+          Number(allocation?.unitYen) !== unitYen ||
+          Number(allocation?.yenPerTicket) !==
+            unitsPerTicket * unitYen ||
+          Number(allocation?.totalUnits) !==
+            expectedTotalUnits ||
+          !allocationLabel.includes(
+            `${unitsPerTicket}枚`
+          ) ||
+          !Number.isInteger(totalYen) ||
+          totalYen !== expectedTotalYen ||
+          ticketDetails.length !== expandedTickets.length
+        ) {
+          return null;
+        }
+
+        return {
+          rank:
+            Number.isInteger(Number(line.rank)) &&
+            Number(line.rank) > 0
+              ? Number(line.rank)
+              : index + 1,
+          kind: String(line.kind || "").trim(),
+          title,
+          reason,
+          notation,
+          pointCount,
+          expandedTickets,
+          unitsPerTicket,
+          totalYen,
+          allocationLabel,
+          ticketDetails
+        };
+      }
+    );
+
+    if (normalizedLines.some(line => !line)) {
+      return null;
+    }
+
+    const totalPoints = normalizedLines.reduce(
+      (sum, line) => sum + line.pointCount,
+      0
+    );
+    const totalYen = normalizedLines.reduce(
+      (sum, line) => sum + line.totalYen,
+      0
+    );
+    const allTickets = normalizedLines.flatMap(
+      line => line.expandedTickets
+    );
+
+    if (
+      totalPoints > 12 ||
+      totalYen > 2400 ||
+      new Set(allTickets).size !== allTickets.length ||
+      Number(board.totalPointCount) !== totalPoints ||
+      Number(board.totalSuggestedYen) !== totalYen ||
+      Number(board.maximumLineCount) !== 3 ||
+      Number(board.maximumPointsPerLine) !== 4 ||
+      Number(board.maximumTotalPointCount) !== 12 ||
+      Number(board.maximumSuggestedYen) !== 2400
+    ) {
+      return null;
+    }
+
+    return {
+      title:
+        String(board.title || "").trim() ||
+        "取れたらいいな舟券",
+      unitYen,
+      lines: normalizedLines
+    };
+  }
+
+  function renderLightManshuTicketBoard(
+    prediction
+  ) {
+    const board =
+      normalizeLightManshuTicketBoard(
+        prediction
+      );
+
+    if (!board) return "";
+
+    const numberText = value =>
+      Number(value).toLocaleString("ja-JP");
+    const kindLabel = kind => ({
+      START_UPSET: "スタート波乱",
+      OUTER_FOLLOW: "攻め連動",
+      ROAD_PICKUP: "道中浮上"
+    })[kind] || "展開穴";
+    const totalPoints = board.lines.reduce(
+      (sum, line) => sum + line.pointCount,
+      0
+    );
+    const totalYen = board.lines.reduce(
+      (sum, line) => sum + line.totalYen,
+      0
+    );
+    const lineHtml = board.lines
+      .map(line => `
+        <div class="v3-formation-group v3-light-manshu-ticket-line">
+          <h3>
+            第${escapeHtml(line.rank)}筋
+            ${escapeHtml(line.title)}
+          </h3>
+
+          <div class="v3-formation-list v3-formation-flow">
+            <div class="v3-formation-row v3-formation-row-hole">
+              <div class="v3-formation-ticket">
+                ${ticketArrow(line.notation)}
+              </div>
+
+              <div class="v3-formation-tags">
+                ${tag(
+                  `${line.pointCount}点`,
+                  "hole"
+                )}
+                ${line.kind
+                  ? tag(
+                      kindLabel(line.kind),
+                      "flow"
+                    )
+                  : ""}
+                ${tag(
+                  line.allocationLabel,
+                  "manshu"
+                )}
+              </div>
+
+              <div class="v3-formation-reason">
+                ${escapeHtml(line.reason)}
+              </div>
+
+              <div class="v3-note v3-light-manshu-ticket-allocation">
+                1点あたり${escapeHtml(line.unitsPerTicket)}枚
+                （${escapeHtml(numberText(line.unitsPerTicket * board.unitYen))}円）
+                ・計${escapeHtml(numberText(line.totalYen))}円
+              </div>
+
+              <details class="v3-note v3-light-manshu-ticket-details">
+                <summary>
+                  個別${escapeHtml(line.pointCount)}点を見る
+                </summary>
+                <div class="v3-ticket-list">
+                  ${line.ticketDetails
+                    .map(detail => `
+                      <div class="v3-formation-row v3-light-manshu-exact-ticket">
+                        <div class="v3-formation-ticket">
+                          ${ticketArrow(detail.ticket)}
+                        </div>
+                        <div class="v3-formation-reason">
+                          ${escapeHtml(detail.scenarioSummary)}
+                        </div>
+                      </div>
+                    `)
+                    .join("")}
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      `)
+      .join("");
+    const body = `
+      <details
+        name="chappy-ticket-accordion"
+        class="v3-ticket-accordion v3-ticket-accordion-manshu v3-ticket-accordion-dream"
+      >
+        <summary>
+          <span>波乱時の参考舟券</span>
+          <span class="v3-ticket-accordion-count">
+            ${escapeHtml(board.lines.length)}筋
+          </span>
+          <span class="v3-ticket-accordion-arrow" aria-hidden="true"></span>
+        </summary>
+        <div class="v3-ticket-accordion-panel">
+          <div class="v3-ticket-accordion-aim">
+            <strong>別枠の参考表示</strong>
+            <p>
+              通常予想とは別枠です。通常枠7点（成立展開追加時は全体10点）・実戦厳選・購入保存には加算しません。
+            </p>
+          </div>
+          <div class="v3-note v3-light-manshu-ticket-total">
+            全${escapeHtml(totalPoints)}点・1枚${escapeHtml(numberText(board.unitYen))}円・配分合計${escapeHtml(numberText(totalYen))}円
+          </div>
+          <div class="v3-ticket-accordion-label">
+            展開・フォーメーション・枚数
+          </div>
+          ${lineHtml}
+        </div>
+      </details>
+    `;
+
+    return section(
+      board.title,
+      body,
+      "💰",
+      "v3-light-manshu-ticket-board"
     );
   }
 
@@ -4360,7 +4791,9 @@ function renderFinalBlock(block) {
         normalizeFlowFormationRows,
         practicalDisplayCategory,
         renderTicketRanking,
-        createTicketSpecificComment
+        createTicketSpecificComment,
+        normalizeLightManshuTicketBoard,
+        renderLightManshuTicketBoard
       });
   }
   window.addEventListener(
@@ -4415,6 +4848,14 @@ function renderFinalBlock(block) {
 
       mainSheet: core.mainSheet || prediction.mainSheet,
       manshuSheet: core.manshuSheet || prediction.manshuSheet,
+
+      lightManshuTicketBoard:
+        Object.prototype.hasOwnProperty.call(
+          prediction,
+          "lightManshuTicketBoard"
+        )
+          ? prediction.lightManshuTicketBoard
+          : core.lightManshuTicketBoard,
 
       tickets: core.tickets || prediction.tickets,
       buyTickets: core.tickets || prediction.buyTickets,
