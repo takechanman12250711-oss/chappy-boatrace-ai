@@ -8,11 +8,13 @@ const prediction = {
   ticketSheets: {
     hole: [
       {
-        ticket: "4-1-2",
+        ticket: "4-1-5",
         category: "万舟",
         odds: 118.4,
         oddsText: "118.4倍",
-        scenarioSummary: "4号艇のカド攻めから1号艇を残す。"
+        scenarioType: "取れたらいいな",
+        scenarioSummary:
+          "4カド攻めでスタートから波乱。4号艇が攻め切るなら先頭。1号艇が内で残って2着、5号艇が攻めについて行って3着。4-1-5の攻め筋で決着。"
       },
       { ticket: "5-1-3", category: "穴候補" }
     ]
@@ -21,12 +23,16 @@ const prediction = {
 };
 
 const fallback = moduleApi.firstFallbackTicket(prediction);
-assert.equal(moduleApi.ticketOf(fallback), "4-1-2");
+assert.equal(moduleApi.ticketOf(fallback), "4-1-5");
 const normalized = moduleApi.normalizeCandidate(fallback);
 assert.equal(normalized.category, "万舟");
 assert.equal(normalized.oddsText, "118.4倍");
+assert.equal(normalized.scenarioType, "取れたらいいな");
 const fallbackHtml = moduleApi.candidateBody(normalized);
-assert.match(fallbackHtml, /4号艇のカド攻め/);
+assert.match(fallbackHtml, /取れたらいいな/);
+assert.match(fallbackHtml, /スタートから波乱/);
+assert.match(fallbackHtml, /4-1-5の攻め筋/);
+assert.match(fallbackHtml, /4.*1.*5/s);
 assert.match(fallbackHtml, /data-manshu-display-fallback="true"/);
 assert.match(fallbackHtml, /<span>候補<\/span>/);
 assert.equal(
@@ -51,6 +57,15 @@ assert.notEqual(
     oddsText: "取得済み"
   }),
   "万舟判定の境界を跨ぐオッズ更新は表示署名を変える"
+);
+assert.notEqual(
+  moduleApi.candidateSignature(normalized),
+  moduleApi.candidateSignature({
+    ...normalized,
+    scenarioSummary:
+      `${normalized.scenarioSummary} 道中で入れ替わる可能性。`
+  }),
+  "同じ券でも筋説明が変われば表示を更新する"
 );
 
 assert.equal(

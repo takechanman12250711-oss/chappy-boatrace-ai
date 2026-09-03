@@ -424,6 +424,46 @@ const escapeFormal =
   aiCore.buildPredictionData(
     escapeData
   );
+assert.ok(
+  escapeFormal.lightManshuScenario,
+  "正式主展開では既存の先頭穴候補へ軽い万舟筋を付ける"
+);
+assert.equal(
+  escapeFormal.lightManshuScenario.ticket,
+  escapeFormal.formations.longshot[0]
+);
+assert.equal(
+  escapeFormal.lightManshuScenario.changesTicket,
+  false
+);
+assert.equal(
+  escapeFormal.lightManshuScenario.usesOdds,
+  false
+);
+assert.equal(
+  Object.hasOwn(
+    escapeFormal.formations,
+    "lightManshuScenario"
+  ),
+  false,
+  "A/B入力であるformations内へ表示説明を混ぜない"
+);
+const escapeFormationBeforeStoryReplay =
+  cloneJson(escapeFormal.formations);
+aiCore.buildLightManshuScenario({
+  formations: escapeFormal.formations,
+  raceScenarios: escapeFormal.raceScenarios,
+  entries: escapeData.entries,
+  analyses: escapeFormal.analyses,
+  roadTheory: escapeFormal.roadTheory,
+  racerSkillTheory:
+    escapeFormal.racerSkillTheory
+});
+assert.deepEqual(
+  escapeFormal.formations,
+  escapeFormationBeforeStoryReplay,
+  "説明生成は既存買い目・順番・候補プールを変更しない"
+);
 const escapeTicket =
   escapeFormal.formations.main[0];
 escapeData.odds.byTicket[
@@ -437,6 +477,141 @@ const escapeMerged =
     legacyPrediction(4),
     escapeData
   );
+const escapeLightManshu =
+  escapeMerged.lightManshuScenario;
+const escapeLightManshuRow =
+  escapeMerged.ticketSheets.hole.find(
+    row =>
+      row.ticket === escapeLightManshu.ticket
+  );
+
+assert.ok(escapeLightManshu);
+assert.equal(
+  escapeMerged.aiCore.lightManshuScenario.ticket,
+  escapeLightManshu.ticket,
+  "最終AIコアへ同じ説明対象を保持する"
+);
+assert.equal(
+  escapeMerged.manshuSheet.lightManshuScenario.ticket,
+  escapeLightManshu.ticket,
+  "万舟シートへ同じ説明対象を保持する"
+);
+assert.ok(escapeLightManshuRow);
+assert.equal(
+  escapeLightManshuRow,
+  escapeMerged.manshuSheet.tickets.find(
+    row => row.ticket === escapeLightManshu.ticket
+  )
+);
+assert.equal(
+  escapeLightManshuRow.scenarioType,
+  "取れたらいいな"
+);
+assert.equal(
+  escapeLightManshuRow.scenarioSummary,
+  escapeLightManshu.scenarioSummary
+);
+assert.deepEqual(
+  escapeLightManshuRow.roleChain,
+  escapeLightManshu.roleChain
+);
+assert.equal(
+  escapeLightManshuRow.presentationByGroup
+    .hole.scenarioSummary,
+  escapeLightManshu.scenarioSummary,
+  "実戦選択のpresentation経由でも説明が元へ戻らない"
+);
+assert.ok(
+  escapeMerged.formation.possibilityCandidates.every(
+    row =>
+      !Object.hasOwn(row, "lightManshuScenario") &&
+      !Object.hasOwn(row, "roleChain") &&
+      !Object.hasOwn(row, "selectionScope")
+  ),
+  "展開候補プールへ空の説明フィールドを追加しない"
+);
+const legacyFirstHolePrediction =
+  legacyPrediction(4);
+legacyFirstHolePrediction.manshuSheet = {
+  tickets: [{
+    ticket: "6-4-2",
+    category: "穴候補",
+    scenarioSummary: "旧形式の穴候補"
+  }]
+};
+const legacyFirstHoleMerged =
+  aiCore.mergeWithPrediction(
+    legacyFirstHolePrediction,
+    escapeData
+  );
+
+assert.equal(
+  legacyFirstHoleMerged.ticketSheets.hole[0].ticket,
+  "6-4-2"
+);
+assert.equal(
+  legacyFirstHoleMerged.lightManshuScenario.ticket,
+  "6-4-2",
+  "最終的に表示される先頭穴候補へ説明を再整合する"
+);
+assert.equal(
+  legacyFirstHoleMerged.ticketSheets.hole[0]
+    .scenarioType,
+  "取れたらいいな"
+);
+const escapeMergedTwice =
+  aiCore.mergeWithPrediction(
+    escapeMerged,
+    escapeData
+  );
+
+assert.ok(
+  escapeMergedTwice.formation.possibilityCandidates.every(
+    row =>
+      !Object.hasOwn(row, "lightManshuScenario") &&
+      !Object.hasOwn(row, "roleChain") &&
+      !Object.hasOwn(row, "selectionScope") &&
+      !Object.hasOwn(row, "storyType")
+  ),
+  "再統合しても展開候補プールへ説明フィールドを漏らさない"
+);
+const possibilitySelectionDigest = rows =>
+  rows.map(row => ({
+    ticket: row.ticket,
+    category: row.category,
+    priorityScore: row.priorityScore,
+    evidenceQualified: row.evidenceQualified,
+    expansionEligible: row.expansionEligible,
+    branchIds: [...(row.branchIds || [])]
+  }));
+assert.deepEqual(
+  possibilitySelectionDigest(
+    escapeMergedTwice.formation.possibilityCandidates
+  ),
+  possibilitySelectionDigest(
+    escapeMerged.formation.possibilityCandidates
+  ),
+  "再統合しても候補の順番・選定属性・枝IDを変更しない"
+);
+assert.deepEqual(
+  [
+    ...escapeMergedTwice.formation.main,
+    ...escapeMergedTwice.formation.cover,
+    ...escapeMergedTwice.formation.flow,
+    ...escapeMergedTwice.formation.longshot
+  ],
+  [
+    ...escapeMerged.formation.main,
+    ...escapeMerged.formation.cover,
+    ...escapeMerged.formation.flow,
+    ...escapeMerged.formation.longshot
+  ],
+  "再統合しても買い目・分類内順序を変更しない"
+);
+assert.equal(
+  escapeMergedTwice.lightManshuScenario.ticket,
+  escapeMerged.lightManshuScenario.ticket
+);
 
 assert.equal(
   escapeFormal.raceScenarios
@@ -639,6 +814,16 @@ assert.deepEqual(
   changedOddsMerged.formation.flowFormations,
   attackMerged.formation.flowFormations,
   "オッズが変わっても流しformationを変えない"
+);
+assert.deepEqual(
+  changedOddsMerged.formation.longshot,
+  attackMerged.formation.longshot,
+  "オッズが変わっても穴候補の券・順番を変えない"
+);
+assert.deepEqual(
+  changedOddsMerged.lightManshuScenario,
+  attackMerged.lightManshuScenario,
+  "オッズが変わっても「取れたらいいな」の筋を変えない"
 );
 
 /*
