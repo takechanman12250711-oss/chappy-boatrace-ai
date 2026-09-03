@@ -4,6 +4,7 @@ const assert = require("assert");
 const ui = fs.readFileSync("js/final-mobile-ui.js", "utf8");
 const css = fs.readFileSync("css/final-mobile-ui.css", "utf8");
 const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
+const index = fs.readFileSync("index.html", "utf8");
 
 assert(ui.includes("buildPhotoStyleLines"), "photo-style ticket builder missing");
 assert(ui.includes("flowFormations"), "formation source missing");
@@ -23,5 +24,7 @@ assert(css.includes("repeat(6"), "six-boat tab layout missing");
 
 assert(loader.includes("final-mobile-ui.css"), "final UI stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
+assert(index.includes('const BUILD="20260903-final-mobile-ui2"'), "production app build was not bumped");
+assert(index.includes('result-void-compat.js?v=20260903-final-mobile-ui2'), "final UI bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
