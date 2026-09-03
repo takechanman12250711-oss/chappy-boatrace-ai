@@ -3,6 +3,7 @@ const assert = require("assert");
 
 const ui = fs.readFileSync("js/final-mobile-ui.js", "utf8");
 const css = fs.readFileSync("css/final-mobile-ui.css", "utf8");
+const homeCss = fs.readFileSync("css/final-home-v2-photo.css", "utf8");
 const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
 const index = fs.readFileSync("index.html", "utf8");
 
@@ -27,9 +28,16 @@ assert(css.includes("repeat(6"), "six-boat tab layout missing");
 assert(css.includes("repeat(4"), "four-column mobile race grid missing");
 assert(css.includes("official-venue-grid"), "mobile venue-card layout missing");
 
+assert(homeCss.includes("home-v2-recommend-card"), "home recommendation photo override missing");
+assert(homeCss.includes("home-v2-venue-list"), "home venue photo override missing");
+assert(homeCss.includes("grid-template-columns:repeat(2"), "home two-column venue grid missing");
+assert(homeCss.includes("home-v2-filters"), "home filter photo override missing");
+assert(homeCss.includes("bottom-nav"), "home bottom navigation override missing");
+
 assert(loader.includes("final-mobile-ui.css"), "final UI stylesheet loader missing");
+assert(loader.includes("final-home-v2-photo.css"), "photo-matched home stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD = "20260903-final-mobile-ui3"'), "final UI asset generation was not bumped");
-assert(index.includes('result-void-compat.js?v=20260903-final-mobile-ui3'), "final UI bootstrap is not cache-busted in production entrypoint");
+assert(loader.includes('const BUILD = "20260903-final-mobile-ui4"'), "final UI asset generation was not bumped");
+assert(index.includes('result-void-compat.js?v=20260903-final-mobile-ui4'), "final UI bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
