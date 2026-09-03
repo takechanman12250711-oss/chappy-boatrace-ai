@@ -216,7 +216,15 @@ try {
       const fallback = root?.querySelector?.(
         ".v3-formation-row[data-manshu-display-fallback='true']"
       );
-      const details = fallback?.closest?.("details");
+      const manshuSection = root?.querySelector?.(
+        ".v3-manshu-newspaper"
+      );
+      const integratedBoard = manshuSection?.querySelector?.(
+        ".v3-light-manshu-ticket-board"
+      );
+      const details =
+        fallback?.closest?.("details") ||
+        manshuSection?.closest?.("details");
       if (details) {
         details.removeAttribute("name");
         details.open = true;
@@ -229,6 +237,11 @@ try {
       const fallbackListRect = fallbackList?.getBoundingClientRect?.();
       const fallbackWidth = fallbackRect?.width || 0;
       const fallbackListWidth = fallbackListRect?.width || 0;
+      const integratedBoardRect =
+        integratedBoard?.getBoundingClientRect?.();
+      const integratedPanelRect =
+        integratedBoard?.closest?.(".v3-ticket-accordion-panel")
+          ?.getBoundingClientRect?.();
       const boatName = root?.querySelector?.(
         ".v3-paper-player-line .v3-boat-title strong"
       );
@@ -244,8 +257,27 @@ try {
         raceLoading: root?.dataset?.raceLoading || "",
         fallbackVisible: Boolean(fallback),
         fallbackSignature:
-          root?.querySelector?.(".v3-manshu-newspaper")
-            ?.dataset?.manshuDisplaySignature || "",
+          manshuSection?.dataset?.manshuDisplaySignature || "",
+        manshuSectionCount:
+          root?.querySelectorAll?.(".v3-manshu-newspaper")?.length || 0,
+        manshuAccordionCount:
+          root?.querySelectorAll?.("details.v3-ticket-accordion-manshu")
+            ?.length || 0,
+        integratedBoardVisible: Boolean(integratedBoard),
+        integratedBoardLineCount:
+          integratedBoard?.querySelectorAll?.(
+            ".v3-light-manshu-ticket-line"
+          )?.length || 0,
+        integratedBoardPointCount: Number.parseInt(
+          String(
+            details?.querySelector?.(".v3-ticket-accordion-count")
+              ?.textContent || ""
+          ),
+          10
+        ) || 0,
+        standaloneBoardSectionCount:
+          root?.querySelectorAll?.("section.v3-light-manshu-ticket-board")
+            ?.length || 0,
         viewportWidth: window.innerWidth,
         fallbackRowCount: fallbackList
           ? [...fallbackList.children].filter(child =>
@@ -272,6 +304,8 @@ try {
         fallbackGridColumnEnd: fallback
           ? getComputedStyle(fallback).gridColumnEnd
           : "",
+        integratedBoardWidth: integratedBoardRect?.width || 0,
+        integratedPanelWidth: integratedPanelRect?.width || 0,
         boatNameText: String(boatName?.textContent || "").trim(),
         boatNameColor: boatName
           ? getComputedStyle(boatName).color
@@ -287,15 +321,24 @@ try {
       };
     });
     mark("post-render-responsive-finished", responsiveSummary);
+    const legacyManshuFallbackVisible =
+      responsiveSummary.fallbackVisible === true &&
+      Boolean(responsiveSummary.fallbackSignature);
+    const integratedManshuBoardVisible =
+      responsiveSummary.integratedBoardVisible === true &&
+      responsiveSummary.manshuSectionCount === 1 &&
+      responsiveSummary.manshuAccordionCount === 1 &&
+      responsiveSummary.integratedBoardLineCount >= 2 &&
+      responsiveSummary.integratedBoardLineCount <= 3 &&
+      responsiveSummary.integratedBoardPointCount > 1 &&
+      responsiveSummary.standaloneBoardSectionCount === 0;
     if (
       requireManshuFallback &&
-      (
-        responsiveSummary.fallbackVisible !== true ||
-        !responsiveSummary.fallbackSignature
-      )
+      !legacyManshuFallbackVisible &&
+      !integratedManshuBoardVisible
     ) {
       throw new Error(
-        "Kiryu 10R manshu fallback regression path was not exercised"
+        "Kiryu 10R manshu display regression path was not exercised"
       );
     }
     if (
@@ -312,6 +355,7 @@ try {
     }
     if (
       requireManshuFallback &&
+      legacyManshuFallbackVisible &&
       (
         responsiveSummary.viewportWidth !== 390 ||
         responsiveSummary.fallbackRowCount !== 1 ||
@@ -324,6 +368,20 @@ try {
     ) {
       throw new Error(
         `Kiryu 10R manshu fallback must span the mobile list: ${JSON.stringify(responsiveSummary)}`
+      );
+    }
+    if (
+      requireManshuFallback &&
+      integratedManshuBoardVisible &&
+      (
+        responsiveSummary.integratedBoardWidth <= 0 ||
+        responsiveSummary.integratedPanelWidth <= 0 ||
+        responsiveSummary.integratedBoardWidth >
+          responsiveSummary.integratedPanelWidth + 1
+      )
+    ) {
+      throw new Error(
+        `Kiryu 10R integrated manshu board must fit the mobile panel: ${JSON.stringify(responsiveSummary)}`
       );
     }
     report.result = {
