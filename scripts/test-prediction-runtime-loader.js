@@ -209,7 +209,7 @@ function createRuntime({
   );
   assert.ok(
     failedOptional.appended.includes(
-      "js/render.js?v=20260903-light-manshu-board1"
+      "js/render.js?v=20260903-manshu-integrated1"
     ),
     "別枠舟券更新済みrenderを専用キャッシュ世代で読み込む"
   );

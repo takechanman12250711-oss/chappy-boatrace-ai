@@ -47,7 +47,7 @@
   ];
   const SCRIPT_VERSIONS = Object.freeze({
     "js/ai-core.js": "20260903-light-manshu-board1",
-    "js/render.js": "20260903-light-manshu-board1"
+    "js/render.js": "20260903-manshu-integrated1"
   });
   const optionalScripts = ["js/prediction-calibration.js"];
 

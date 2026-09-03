@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const RENDER_VERSION = "render-ui-v3.7.1-formation-display";
+  const RENDER_VERSION = "render-ui-v3.7.2-manshu-integrated";
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
@@ -370,9 +370,6 @@
 
       <!-- 5. 万舟買い目 -->
       ${renderNewspaperSheet(prediction, "manshu")}
-
-      <!-- 5.25 取れたらいいな舟券（通常予想とは別枠） -->
-      ${renderLightManshuTicketBoard(prediction)}
 
       <!-- 5.5 出てない目TOP30 -->
       ${renderMissingNumbers(
@@ -2075,8 +2072,12 @@ if (raceInfoArea) {
         };
       })
       .filter(item => item.ticket);
+    const lightBoard =
+      normalizeLightManshuTicketBoard(
+        prediction
+      );
 
-    if (!rows.length) {
+    if (!rows.length && !lightBoard) {
       return section(
         "万舟",
         emptyBox(
@@ -2181,12 +2182,28 @@ if (raceInfoArea) {
         prediction,
         "manshu"
       );
+    const lightBoardBody = lightBoard
+      ? renderLightManshuTicketBoard(
+          prediction,
+          lightBoard
+        )
+      : "";
+    const lightBoardPointCount = lightBoard
+      ? lightBoard.lines.reduce(
+          (sum, line) => sum + line.pointCount,
+          0
+        )
+      : 0;
 
     const body = [
+      lightBoardBody,
+
       manshuCombinedOdds
         ? `
           <div class="v3-note">
-            万舟候補全体の
+            ${lightBoard
+              ? "通常枠の穴候補の"
+              : "万舟候補全体の"}
             ${manshuCombinedOdds}
           </div>
         `
@@ -2222,11 +2239,16 @@ if (raceInfoArea) {
         "💣",
         "v3-manshu-newspaper"
       ),
-      Math.max(1, rows.length),
-      resolveTicketAim(
-        rows,
-        "内側が崩れた場合や高配当展開を狙う買い目です。"
+      Math.max(
+        1,
+        rows.length + lightBoardPointCount
       ),
+      lightBoard
+        ? "スタート波乱・攻め連動・道中変化まで考えた万舟の参考筋です。"
+        : resolveTicketAim(
+            rows,
+            "内側が崩れた場合や高配当展開を狙う買い目です。"
+          ),
       false
     );
   }
@@ -2236,12 +2258,6 @@ if (raceInfoArea) {
   ) {
     const board =
       prediction?.lightManshuTicketBoard;
-    const selectionStatus = String(
-      prediction?.practicalSelection?.status ||
-      prediction?.selectionStatus ||
-      ""
-    ).toLowerCase();
-
     if (
       !board ||
       board.displayOnly !== true ||
@@ -2253,7 +2269,6 @@ if (raceInfoArea) {
       board.usesOfficialResult !== false ||
       board.changesNormalTickets !== false ||
       board.changesPracticalSelection !== false ||
-      selectionStatus !== "selected" ||
       !Array.isArray(board.lines) ||
       board.lines.length < 2 ||
       board.lines.length > 3
@@ -2293,9 +2308,7 @@ if (raceInfoArea) {
         prediction?.ticketSheets?.flow,
         prediction?.ticketSheets?.hole,
         prediction?.ticketSheets?.all,
-        prediction?.aiTicketList,
-        prediction?.practicalSelection?.tickets,
-        prediction?.practicalTickets
+        prediction?.aiTicketList
       ]
         .flatMap(source => arrayify(source))
         .map(item => exactTicket(item?.ticket || item))
@@ -2532,12 +2545,12 @@ if (raceInfoArea) {
   }
 
   function renderLightManshuTicketBoard(
-    prediction
+    prediction,
+    normalizedBoard = null
   ) {
     const board =
-      normalizeLightManshuTicketBoard(
-        prediction
-      );
+      normalizedBoard ||
+      normalizeLightManshuTicketBoard(prediction);
 
     if (!board) return "";
 
@@ -2556,6 +2569,22 @@ if (raceInfoArea) {
       (sum, line) => sum + line.totalYen,
       0
     );
+    const practicalTickets = new Set(
+      [
+        prediction?.practicalSelection?.tickets,
+        prediction?.practicalTickets
+      ]
+        .flatMap(source => arrayify(source))
+        .map(item => String(item?.ticket || item || "")
+          .replace(/\s+/g, "")
+          .trim()
+        )
+        .filter(Boolean)
+    );
+    const practicalOverlapCount = board.lines
+      .flatMap(line => line.expandedTickets)
+      .filter(ticket => practicalTickets.has(ticket))
+      .length;
     const lineHtml = board.lines
       .map(line => `
         <div class="v3-formation-group v3-light-manshu-ticket-line">
@@ -2621,42 +2650,30 @@ if (raceInfoArea) {
         </div>
       `)
       .join("");
-    const body = `
-      <details
-        name="chappy-ticket-accordion"
-        class="v3-ticket-accordion v3-ticket-accordion-manshu v3-ticket-accordion-dream"
-      >
-        <summary>
-          <span>波乱時の参考舟券</span>
-          <span class="v3-ticket-accordion-count">
-            ${escapeHtml(board.lines.length)}筋
-          </span>
-          <span class="v3-ticket-accordion-arrow" aria-hidden="true"></span>
-        </summary>
-        <div class="v3-ticket-accordion-panel">
-          <div class="v3-ticket-accordion-aim">
-            <strong>別枠の参考表示</strong>
-            <p>
-              通常予想とは別枠です。通常枠7点（成立展開追加時は全体10点）・実戦厳選・購入保存には加算しません。
-            </p>
-          </div>
-          <div class="v3-note v3-light-manshu-ticket-total">
-            全${escapeHtml(totalPoints)}点・1枚${escapeHtml(numberText(board.unitYen))}円・配分合計${escapeHtml(numberText(totalYen))}円
-          </div>
-          <div class="v3-ticket-accordion-label">
-            展開・フォーメーション・枚数
-          </div>
-          ${lineHtml}
+    return `
+      <div class="v3-light-manshu-ticket-board">
+        <div class="v3-ticket-accordion-aim v3-light-manshu-ticket-intro">
+          <strong>${escapeHtml(board.title)}・${escapeHtml(board.lines.length)}筋</strong>
+          <p>
+            万舟欄で見る表示用の参考筋です。通常枠7点（成立展開追加時は全体10点）・実戦厳選・購入保存には自動追加しません。
+          </p>
         </div>
-      </details>
+        <div class="v3-note v3-light-manshu-ticket-total">
+          参考${escapeHtml(totalPoints)}点・1枚${escapeHtml(numberText(board.unitYen))}円・配分合計${escapeHtml(numberText(totalYen))}円
+        </div>
+        ${practicalOverlapCount
+          ? `
+            <div class="v3-note v3-light-manshu-ticket-overlap">
+              このうち${escapeHtml(practicalOverlapCount)}点は実戦厳選にも表示されています。重ねて追加する必要はありません。
+            </div>
+          `
+          : ""}
+        <div class="v3-ticket-accordion-label">
+          展開・フォーメーション・枚数
+        </div>
+        ${lineHtml}
+      </div>
     `;
-
-    return section(
-      board.title,
-      body,
-      "💰",
-      "v3-light-manshu-ticket-board"
-    );
   }
 
   function renderMissingNumbers(
@@ -4793,7 +4810,8 @@ function renderFinalBlock(block) {
         renderTicketRanking,
         createTicketSpecificComment,
         normalizeLightManshuTicketBoard,
-        renderLightManshuTicketBoard
+        renderLightManshuTicketBoard,
+        renderManshuNewspaper
       });
   }
   window.addEventListener(

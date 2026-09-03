@@ -106,7 +106,7 @@ const normalManshuDocument = {
 assert.equal(
   moduleApi.apply(prediction, normalManshuDocument),
   false,
-  "通常描画済みの万舟行は上書きしない"
+  "通常候補または複数参考筋が描画済みの万舟欄は1点fallbackで上書きしない"
 );
 
 assert.equal(
