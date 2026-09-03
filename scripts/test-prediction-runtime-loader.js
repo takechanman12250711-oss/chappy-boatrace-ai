@@ -203,9 +203,15 @@ function createRuntime({
   );
   assert.ok(
     failedOptional.appended.includes(
-      "js/ai-core.js?v=20260903-light-manshu-story1"
+      "js/ai-core.js?v=20260903-light-manshu-board1"
     ),
-    "説明更新済みai-coreを専用キャッシュ世代で読み込む"
+    "別枠舟券更新済みai-coreを専用キャッシュ世代で読み込む"
+  );
+  assert.ok(
+    failedOptional.appended.includes(
+      "js/render.js?v=20260903-light-manshu-board1"
+    ),
+    "別枠舟券更新済みrenderを専用キャッシュ世代で読み込む"
   );
   assert.ok(
     failedOptional.appended.includes(

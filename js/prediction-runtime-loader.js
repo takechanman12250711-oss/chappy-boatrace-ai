@@ -46,7 +46,8 @@
     "js/manshu-display-reliability.js"
   ];
   const SCRIPT_VERSIONS = Object.freeze({
-    "js/ai-core.js": "20260903-light-manshu-story1"
+    "js/ai-core.js": "20260903-light-manshu-board1",
+    "js/render.js": "20260903-light-manshu-board1"
   });
   const optionalScripts = ["js/prediction-calibration.js"];
 

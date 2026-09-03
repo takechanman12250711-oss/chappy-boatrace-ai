@@ -10961,6 +10961,11 @@ function buildRaceTrendEvaluation(data) {
       ? options.analyses
       : [];
     const racerSkillTheory = options?.racerSkillTheory || {};
+    const pinnedScenario =
+      options?.pinnedScenario &&
+      typeof options.pinnedScenario === "object"
+        ? options.pinnedScenario
+        : null;
     const mainScenario = raceScenarios?.mainScenario || null;
     const rawTicket =
       (
@@ -11041,6 +11046,55 @@ function buildRaceTrendEvaluation(data) {
         attacker.attackerCourse
       ].join(":");
     };
+    const scenarioPinKey = (scenario) => {
+      const outcome = scenario?.outcome || {};
+      const candidateBoatNos = key => (
+        Array.isArray(outcome?.[key])
+          ? outcome[key]
+          : []
+      )
+        .map(row => Number(row?.boatNo || row || 0))
+        .filter(Boolean)
+        .sort((a, b) => a - b);
+      const outcomeBoats = (
+        Array.isArray(outcome?.boats)
+          ? outcome.boats
+          : []
+      )
+        .map(row => ({
+          boatNo: Number(row?.boatNo || 0),
+          firstScore: toNumber(row?.firstScore, 0),
+          secondScore: toNumber(row?.secondScore, 0),
+          thirdScore: toNumber(row?.thirdScore, 0),
+          reasons: (
+            Array.isArray(row?.reasons)
+              ? row.reasons
+              : [row?.reason]
+          )
+            .filter(Boolean)
+            .map(String)
+            .sort()
+        }))
+        .sort((a, b) => a.boatNo - b.boatNo);
+
+      return JSON.stringify({
+        key: scenarioKey(scenario),
+        label: String(scenario?.label || ""),
+        score: toNumber(scenario?.score, 0),
+        blockedBoats: (
+          Array.isArray(scenario?.blockedBoats)
+            ? scenario.blockedBoats
+            : []
+        )
+          .map(Number)
+          .filter(Boolean)
+          .sort((a, b) => a - b),
+        firstCandidates: candidateBoatNos("firstCandidates"),
+        secondCandidates: candidateBoatNos("secondCandidates"),
+        thirdCandidates: candidateBoatNos("thirdCandidates"),
+        outcomeBoats
+      });
+    };
     const mainScenarioKey = scenarioKey(mainScenario);
     const allowedScenarioTypes = new Set([
       "escape",
@@ -11049,16 +11103,36 @@ function buildRaceTrendEvaluation(data) {
       "fourAttack"
     ]);
     const seenScenarioKeys = new Set();
-    const scenarios = [
+    const rawScenarios = [
       mainScenario,
       ...(
         Array.isArray(raceScenarios?.scenarios)
           ? raceScenarios.scenarios
           : []
       )
-    ].filter((scenario) => {
+    ];
+    const hasPinnedIdentity = Boolean(
+      pinnedScenario &&
+      rawScenarios.includes(pinnedScenario)
+    );
+    const pinnedScenarioKey =
+      pinnedScenario && !hasPinnedIdentity
+      ? scenarioPinKey(pinnedScenario)
+      : "";
+    const scenarios = rawScenarios.filter((scenario) => {
       if (!scenario) return false;
       if (!allowedScenarioTypes.has(scenario?.type)) {
+        return false;
+      }
+
+      if (
+        pinnedScenario &&
+        (
+          hasPinnedIdentity
+            ? scenario !== pinnedScenario
+            : scenarioPinKey(scenario) !== pinnedScenarioKey
+        )
+      ) {
         return false;
       }
 
@@ -11141,7 +11215,10 @@ function buildRaceTrendEvaluation(data) {
           headCourse - attacker.attackerCourse;
         const isMainScenario =
           scenario === mainScenario ||
-          scenarioKey(scenario) === mainScenarioKey;
+          (
+            !pinnedScenario &&
+            scenarioKey(scenario) === mainScenarioKey
+          );
         let selectionScore = 0;
 
         if (attacker.attackerBoatNo === headBoatNo) {
@@ -11618,6 +11695,728 @@ function buildRaceTrendEvaluation(data) {
       roles,
       roadRaceAdjustment,
       roleChain
+    };
+  }
+
+  /* ===============================
+    別枠「取れたらいいな舟券」
+
+    正式な事前展開から、通常予想へ混ぜない参考用の
+    フォーメーションを最大3筋だけ作る。オッズ、結果、
+    実戦厳選、購入保存には接続しない。
+  =============================== */
+
+  function buildLightManshuTicketBoard(options = {}) {
+    const formations = options?.formations || {};
+    const raceScenarios = options?.raceScenarios || {};
+    const mainScenario = raceScenarios?.mainScenario || null;
+    const entries = Array.isArray(options?.entries)
+      ? options.entries
+      : [];
+    const analyses = Array.isArray(options?.analyses)
+      ? options.analyses
+      : [];
+    const racerSkillTheory = options?.racerSkillTheory || {};
+    const LINE_LIMIT = 3;
+    const POINTS_PER_LINE_LIMIT = 4;
+    const TOTAL_POINT_LIMIT = 12;
+    const UNIT_YEN = 100;
+    const MINIMUM_HEAD_SCORE = 60;
+    const MINIMUM_ROAD_SCORE = 65;
+
+    if (
+      formations?.mainEstablished !== true ||
+      !mainScenario
+    ) {
+      return null;
+    }
+
+    const ticketOf = (value) => String(
+      value?.ticket || value || ""
+    ).replace(/\s+/g, "").trim();
+    const excludedTickets = new Set(
+      [
+        formations?.main,
+        formations?.cover,
+        formations?.safety,
+        formations?.flow,
+        formations?.nagashi,
+        formations?.hole,
+        formations?.longshot,
+        options?.excludedTickets
+      ]
+        .flatMap((source) =>
+          Array.isArray(source) ? source : []
+        )
+        .map(ticketOf)
+        .filter(Boolean)
+    );
+    const courseMapping = buildOfficialCourseMapping(entries);
+    const courseOfBoat = (boatNo) =>
+      Number(courseMapping.courseOfBoat(boatNo) || boatNo);
+    const scenarioAttacker = (scenario) => {
+      const explicitBoatNo = Number(
+        scenario?.attackerBoatNo ??
+        scenario?.headBoatNo ??
+        0
+      );
+      const explicitCourse = Number(
+        scenario?.attackerCourse ??
+        scenario?.attacker ??
+        0
+      );
+      const attackerBoatNo =
+        explicitBoatNo >= 1 && explicitBoatNo <= 6
+          ? explicitBoatNo
+          : Number(
+              courseMapping.boatAtCourse(explicitCourse) || 0
+            );
+      const attackerCourse =
+        explicitCourse >= 1 && explicitCourse <= 6
+          ? explicitCourse
+          : courseOfBoat(attackerBoatNo);
+
+      return {
+        attackerBoatNo,
+        attackerCourse
+      };
+    };
+    const scenarioKey = (scenario) => {
+      const attacker = scenarioAttacker(scenario);
+      return [
+        String(scenario?.type || ""),
+        attacker.attackerBoatNo,
+        attacker.attackerCourse
+      ].join(":");
+    };
+    const mainScenarioKey = scenarioKey(mainScenario);
+    const allowedScenarioTypes = new Set([
+      "sashi",
+      "threeAttack",
+      "fourAttack"
+    ]);
+    const seenScenarioKeys = new Set();
+    const scenarios = [
+      mainScenario,
+      ...(
+        Array.isArray(raceScenarios?.scenarios)
+          ? raceScenarios.scenarios
+          : []
+      )
+    ].filter((scenario) => {
+      if (
+        !scenario ||
+        !allowedScenarioTypes.has(scenario?.type)
+      ) {
+        return false;
+      }
+
+      const key = scenarioKey(scenario);
+      if (seenScenarioKeys.has(key)) return false;
+      seenScenarioKeys.add(key);
+      return true;
+    });
+    const analysisByBoat = new Map(
+      analyses.map((analysis) => [
+        Number(analysis?.boatNo || 0),
+        analysis
+      ])
+    );
+    const roadRaceBoats = new Set(
+      (
+        Array.isArray(raceScenarios?.roadRaceBoats)
+          ? raceScenarios.roadRaceBoats
+          : []
+      )
+        .map(Number)
+        .filter(Boolean)
+    );
+    const negativeEvidence = (value) =>
+      /攻め場減少|展開不利|攻めを受け|ブロック/.test(
+        String(value || "")
+      );
+    const followerEvidence = (value) =>
+      /追走|連動|乗る|まくり差し/.test(
+        String(value || "")
+      );
+    const pickupEvidence = (value) =>
+      /拾い|最内|道中|差し場|空き水面/.test(
+        String(value || "")
+      );
+    const rowText = (row) => [
+      ...(
+        Array.isArray(row?.reasons)
+          ? row.reasons
+          : []
+      ),
+      row?.reason
+    ].filter(Boolean).join("・");
+    const boatNoOf = (row) => Number(
+      row?.boatNo || row || 0
+    );
+    const uniqueRows = (source) => {
+      const seen = new Set();
+      return (
+        Array.isArray(source) ? source : []
+      ).filter((row) => {
+        const boatNo = boatNoOf(row);
+        if (
+          boatNo < 1 || boatNo > 6 ||
+          seen.has(boatNo)
+        ) {
+          return false;
+        }
+        seen.add(boatNo);
+        return true;
+      });
+    };
+    const subsetsUpToTwo = (values) => {
+      const subsets = [];
+      values.forEach((value, index) => {
+        subsets.push([value]);
+        for (
+          let otherIndex = index + 1;
+          otherIndex < values.length;
+          otherIndex += 1
+        ) {
+          subsets.push([value, values[otherIndex]]);
+        }
+      });
+      return subsets;
+    };
+    const roleStrength = {
+      FOLLOWER: 40,
+      INSIDE_SURVIVOR: 36,
+      PICKUP: 32,
+      SURVIVOR: 28,
+      ATTACKER: 24,
+      SASHI_ATTACKER: 24,
+      ESCAPER: 24,
+      FLOW_PICKUP: 20
+    };
+    const lineKindWeight = {
+      START_UPSET: 30,
+      OUTER_FOLLOW: 20,
+      ROAD_PICKUP: 10
+    };
+    const candidateLines = [];
+
+    scenarios.forEach((scenario, scenarioIndex) => {
+      const attacker = scenarioAttacker(scenario);
+      const blockedBoats = new Set(
+        (
+          Array.isArray(scenario?.blockedBoats)
+            ? scenario.blockedBoats
+            : []
+        )
+          .map(Number)
+          .filter(Boolean)
+      );
+      const outcomeRows = new Map(
+        uniqueRows(scenario?.outcome?.boats)
+          .map((row) => [boatNoOf(row), row])
+      );
+      const secondRows = uniqueRows(
+        scenario?.outcome?.secondCandidates
+      );
+      const thirdRows = uniqueRows(
+        scenario?.outcome?.thirdCandidates
+      );
+      const rowForBoat = (boatNo) =>
+        outcomeRows.get(boatNo) || {};
+      const evidenceForBoat = (boatNo) =>
+        rowText(rowForBoat(boatNo));
+      const roadScoreForBoat = (boatNo) =>
+        toNumber(
+          analysisByBoat.get(boatNo)?.roleScores?.road,
+          0
+        );
+
+      [4, 5, 6].forEach((headBoatNo) => {
+        const headRow = rowForBoat(headBoatNo);
+        const headEvidence = evidenceForBoat(headBoatNo);
+        const headScore = toNumber(
+          headRow?.firstScore ?? headRow?.score,
+          0
+        );
+        const headCourse = courseOfBoat(headBoatNo);
+        const courseGap = headCourse - attacker.attackerCourse;
+        const roadScore = roadScoreForBoat(headBoatNo);
+        let kind = "";
+        let title = "";
+
+        if (
+          blockedBoats.has(headBoatNo) ||
+          negativeEvidence(headEvidence) ||
+          headScore < MINIMUM_HEAD_SCORE
+        ) {
+          return;
+        }
+
+        if (headBoatNo === attacker.attackerBoatNo) {
+          kind = "START_UPSET";
+          title = `${headBoatNo}号艇がスタートから攻め切る筋`;
+        } else if (
+          courseGap >= 1 && courseGap <= 2 &&
+          followerEvidence(headEvidence)
+        ) {
+          kind = "OUTER_FOLLOW";
+          title = `${headBoatNo}号艇が攻めに乗って先頭へ出る筋`;
+        } else if (
+          pickupEvidence(headEvidence) &&
+          roadRaceBoats.has(headBoatNo) &&
+          roadScore >= MINIMUM_ROAD_SCORE
+        ) {
+          kind = "ROAD_PICKUP";
+          title = `${headBoatNo}号艇が展開を拾って道中で浮上する筋`;
+        } else {
+          return;
+        }
+
+        const storyByOrder = new Map();
+
+        secondRows.forEach((secondRow, secondIndex) => {
+          const secondBoatNo = boatNoOf(secondRow);
+          const secondEvidence = [
+            evidenceForBoat(secondBoatNo),
+            rowText(secondRow)
+          ].filter(Boolean).join("・");
+          if (
+            blockedBoats.has(secondBoatNo) ||
+            negativeEvidence(secondEvidence)
+          ) {
+            return;
+          }
+
+          thirdRows.forEach((thirdRow, thirdIndex) => {
+            const thirdBoatNo = boatNoOf(thirdRow);
+            const thirdEvidence = [
+              evidenceForBoat(thirdBoatNo),
+              rowText(thirdRow)
+            ].filter(Boolean).join("・");
+            const ticket = [
+              headBoatNo,
+              secondBoatNo,
+              thirdBoatNo
+            ].join("-");
+
+            if (
+              new Set([
+                headBoatNo,
+                secondBoatNo,
+                thirdBoatNo
+              ]).size !== 3 ||
+              blockedBoats.has(thirdBoatNo) ||
+              negativeEvidence(thirdEvidence) ||
+              excludedTickets.has(ticket)
+            ) {
+              return;
+            }
+
+            const story = buildLightManshuScenario({
+              formations: {
+                mainEstablished: true,
+                longshot: [ticket]
+              },
+              raceScenarios,
+              entries,
+              analyses,
+              racerSkillTheory,
+              pinnedScenario: scenario
+            });
+
+            if (
+              !story ||
+              story.roles.some((role) =>
+                [
+                  "BLOCKED_RISK",
+                  "DISPLACED_RISK"
+                ].includes(role?.role)
+              )
+            ) {
+              return;
+            }
+
+            const secondRole = story.roles.find(
+              (role) => Number(role?.position) === 2
+            );
+            const thirdRole = story.roles.find(
+              (role) => Number(role?.position) === 3
+            );
+            const secondScore = toNumber(
+              secondRow?.secondScore ?? secondRow?.score,
+              0
+            );
+            const thirdScore = toNumber(
+              thirdRow?.thirdScore ?? thirdRow?.score,
+              0
+            );
+            const priorityScore =
+              toNumber(scenario?.score, 0) * 10 +
+              headScore * 3 +
+              secondScore * 2 +
+              thirdScore +
+              toNumber(roleStrength[secondRole?.role], 0) * 2 +
+              toNumber(roleStrength[thirdRole?.role], 0) +
+              (story.roadRaceAdjustment ? 15 : 0) -
+              secondIndex -
+              thirdIndex / 10;
+
+            storyByOrder.set(
+              `${secondBoatNo}-${thirdBoatNo}`,
+              {
+                ...story,
+                source:
+                  "ai-core-light-manshu-ticket-board-v1",
+                selectionScope: "advisory-display-only",
+                storyType:
+                  "LIGHT_MANSHU_TICKET_BOARD_DETAIL",
+                advisoryOnly: true,
+                displayOnly: true,
+                purchaseEligible: false,
+                saveEligible: false,
+                noteEligible: false,
+                usesOfficialResult: false,
+                priorityScore: round(priorityScore),
+                positionScores: {
+                  first: round(headScore),
+                  second: round(secondScore),
+                  third: round(thirdScore)
+                }
+              }
+            );
+          });
+        });
+
+        if (storyByOrder.size < 2) return;
+
+        const secondBoatNos = [
+          ...new Set(
+            [...storyByOrder.keys()].map((key) =>
+              Number(key.split("-")[0])
+            )
+          )
+        ];
+        const thirdBoatNos = [
+          ...new Set(
+            [...storyByOrder.keys()].map((key) =>
+              Number(key.split("-")[1])
+            )
+          )
+        ];
+        let bestFormation = null;
+
+        subsetsUpToTwo(secondBoatNos).forEach(
+          (selectedSeconds) => {
+            subsetsUpToTwo(thirdBoatNos).forEach(
+              (selectedThirds) => {
+                const ticketDetails = [];
+                let complete = true;
+
+                selectedSeconds.forEach((secondBoatNo) => {
+                  selectedThirds.forEach((thirdBoatNo) => {
+                    if (
+                      new Set([
+                        headBoatNo,
+                        secondBoatNo,
+                        thirdBoatNo
+                      ]).size !== 3
+                    ) {
+                      return;
+                    }
+
+                    const story = storyByOrder.get(
+                      `${secondBoatNo}-${thirdBoatNo}`
+                    );
+                    if (!story) {
+                      complete = false;
+                      return;
+                    }
+                    ticketDetails.push(story);
+                  });
+                });
+
+                if (
+                  !complete ||
+                  ticketDetails.length < 2 ||
+                  ticketDetails.length > POINTS_PER_LINE_LIMIT
+                ) {
+                  return;
+                }
+
+                const priorities = ticketDetails.map(
+                  (story) => toNumber(story.priorityScore, 0)
+                );
+                const minimumPriority = Math.min(...priorities);
+                const averagePriority =
+                  priorities.reduce((sum, value) => sum + value, 0) /
+                  priorities.length;
+                const normalizedSeconds = [
+                  ...selectedSeconds
+                ].sort((a, b) => a - b);
+                const normalizedThirds = [
+                  ...selectedThirds
+                ].sort((a, b) => a - b);
+                const normalizedTicketDetails = [
+                  ...ticketDetails
+                ].sort((a, b) =>
+                  a.ticket.localeCompare(b.ticket)
+                );
+                const notation =
+                  `${headBoatNo}-` +
+                  `${normalizedSeconds.join("")}-` +
+                  `${normalizedThirds.join("")}`;
+                const candidate = {
+                  notation,
+                  headBoatNos: [headBoatNo],
+                  secondBoatNos: normalizedSeconds,
+                  thirdBoatNos: normalizedThirds,
+                  expandedTickets: normalizedTicketDetails.map(
+                    (story) => story.ticket
+                  ),
+                  pointCount: normalizedTicketDetails.length,
+                  ticketDetails: normalizedTicketDetails,
+                  minimumPriority,
+                  averagePriority
+                };
+
+                if (
+                  !bestFormation ||
+                  candidate.minimumPriority >
+                    bestFormation.minimumPriority ||
+                  (
+                    candidate.minimumPriority ===
+                      bestFormation.minimumPriority &&
+                    candidate.averagePriority >
+                      bestFormation.averagePriority
+                  ) ||
+                  (
+                    candidate.minimumPriority ===
+                      bestFormation.minimumPriority &&
+                    candidate.averagePriority ===
+                      bestFormation.averagePriority &&
+                    candidate.pointCount >
+                      bestFormation.pointCount
+                  ) ||
+                  (
+                    candidate.minimumPriority ===
+                      bestFormation.minimumPriority &&
+                    candidate.averagePriority ===
+                      bestFormation.averagePriority &&
+                    candidate.pointCount ===
+                      bestFormation.pointCount &&
+                    candidate.notation < bestFormation.notation
+                  )
+                ) {
+                  bestFormation = candidate;
+                }
+              }
+            );
+          }
+        );
+
+        if (!bestFormation) return;
+
+        const scenarioLabel = String(
+          scenario?.label ||
+          `${attacker.attackerBoatNo}号艇の動き`
+        );
+        const secondLabel = bestFormation.secondBoatNos
+          .map((boatNo) => `${boatNo}号艇`)
+          .join("・");
+        const thirdLabel = bestFormation.thirdBoatNos
+          .map((boatNo) => `${boatNo}号艇`)
+          .join("・");
+        const headAction =
+          kind === "START_UPSET"
+            ? `${headBoatNo}号艇が攻め切って先頭へ出る`
+            : kind === "OUTER_FOLLOW"
+              ? `${headBoatNo}号艇が攻めに乗って先頭へ出る`
+              : `${headBoatNo}号艇が空いたところを拾い、` +
+                `道中力${round(roadScore)}点で浮上する`;
+        const reason =
+          `${scenarioLabel}でスタートから波乱。` +
+          `${headAction}可能性を残し、` +
+          `2着は${secondLabel}、3着は${thirdLabel}の` +
+          "内残し・追走・展開拾いまで考える。";
+        const linePriority =
+          bestFormation.minimumPriority +
+          toNumber(lineKindWeight[kind], 0) +
+          (
+            scenario === mainScenario ||
+            scenarioKey(scenario) === mainScenarioKey
+              ? 8
+              : 0
+          );
+
+        candidateLines.push({
+          id:
+            `light-manshu:${scenarioIndex}:` +
+            `${scenarioKey(scenario)}:${headBoatNo}`,
+          kind,
+          title,
+          reason,
+          priorityScore: round(linePriority),
+          trigger: {
+            scenarioType: String(scenario?.type || ""),
+            scenarioLabel,
+            scenarioScore: round(
+              toNumber(scenario?.score, 0)
+            ),
+            attackerBoatNo: attacker.attackerBoatNo,
+            attackerCourse: attacker.attackerCourse,
+            isMainScenario:
+              scenario === mainScenario ||
+              scenarioKey(scenario) === mainScenarioKey
+          },
+          headEvidence: {
+            boatNo: headBoatNo,
+            course: headCourse,
+            firstScore: round(headScore),
+            roadScore:
+              kind === "ROAD_PICKUP"
+                ? round(roadScore)
+                : null,
+            reason: headEvidence
+          },
+          formation: {
+            notation: bestFormation.notation,
+            headBoatNos: [...bestFormation.headBoatNos],
+            secondBoatNos: [...bestFormation.secondBoatNos],
+            thirdBoatNos: [...bestFormation.thirdBoatNos],
+            expandedTickets: [
+              ...bestFormation.expandedTickets
+            ],
+            pointCount: bestFormation.pointCount
+          },
+          ticketDetails: bestFormation.ticketDetails.map(
+            (story) => ({ ...story })
+          ),
+          displayOnly: true,
+          advisoryOnly: true,
+          purchaseEligible: false,
+          saveEligible: false,
+          noteEligible: false,
+          usesOdds: false,
+          usesOfficialResult: false
+        });
+      });
+    });
+
+    candidateLines.sort(
+      (a, b) =>
+        b.priorityScore - a.priorityScore ||
+        a.id.localeCompare(b.id)
+    );
+
+    const selectedLines = [];
+    const selectedTickets = new Set();
+    const selectedKinds = new Set();
+    const kindCounts = new Map();
+    const canAdd = (line) =>
+      line.formation.expandedTickets.every(
+        (ticket) => !selectedTickets.has(ticket)
+      ) &&
+      (
+        selectedLines.reduce(
+          (sum, selected) =>
+            sum + selected.formation.pointCount,
+          0
+        ) + line.formation.pointCount <= TOTAL_POINT_LIMIT
+      );
+    const addLine = (line) => {
+      if (
+        selectedLines.length >= LINE_LIMIT ||
+        !canAdd(line)
+      ) {
+        return false;
+      }
+      selectedLines.push(line);
+      line.formation.expandedTickets.forEach(
+        (ticket) => selectedTickets.add(ticket)
+      );
+      selectedKinds.add(line.kind);
+      kindCounts.set(
+        line.kind,
+        toNumber(kindCounts.get(line.kind), 0) + 1
+      );
+      return true;
+    };
+
+    candidateLines.forEach((line) => {
+      if (!selectedKinds.has(line.kind)) addLine(line);
+    });
+    candidateLines.forEach((line) => {
+      if (
+        selectedLines.includes(line) ||
+        toNumber(kindCounts.get(line.kind), 0) >= 2
+      ) {
+        return;
+      }
+      addLine(line);
+    });
+
+    if (selectedLines.length < 2) return null;
+
+    selectedLines.sort(
+      (a, b) =>
+        b.priorityScore - a.priorityScore ||
+        a.id.localeCompare(b.id)
+    );
+    const unitsByRank = [3, 2, 1];
+    const lines = selectedLines.map((line, index) => {
+      const unitsPerTicket = unitsByRank[index];
+      const pointCount = line.formation.pointCount;
+      const totalUnits = pointCount * unitsPerTicket;
+      const totalYen = totalUnits * UNIT_YEN;
+
+      return {
+        ...line,
+        rank: index + 1,
+        allocation: {
+          unitYen: UNIT_YEN,
+          unitsPerTicket,
+          yenPerTicket: unitsPerTicket * UNIT_YEN,
+          totalUnits,
+          totalYen,
+          label:
+            `1点あたり${unitsPerTicket}枚` +
+            `（${unitsPerTicket * UNIT_YEN}円）`
+        }
+      };
+    });
+    const totalPointCount = lines.reduce(
+      (sum, line) => sum + line.formation.pointCount,
+      0
+    );
+    const totalSuggestedYen = lines.reduce(
+      (sum, line) => sum + line.allocation.totalYen,
+      0
+    );
+
+    return {
+      schemaVersion: 1,
+      source: "ai-core-light-manshu-ticket-board-v1",
+      title: "取れたらいいな舟券",
+      selectionScope: "advisory-display-only",
+      generatedFrom: "formal-pre-race-scenarios",
+      displayOnly: true,
+      advisoryOnly: true,
+      purchaseEligible: false,
+      saveEligible: false,
+      noteEligible: false,
+      usesOdds: false,
+      usesOfficialResult: false,
+      changesNormalTickets: false,
+      changesPracticalSelection: false,
+      unitYen: UNIT_YEN,
+      maximumLineCount: LINE_LIMIT,
+      maximumPointsPerLine: POINTS_PER_LINE_LIMIT,
+      maximumTotalPointCount: TOTAL_POINT_LIMIT,
+      maximumSuggestedYen: 2400,
+      totalPointCount,
+      totalSuggestedYen,
+      lines
     };
   }
 
@@ -12494,6 +13293,17 @@ const slit =
         racerSkillTheory
       });
 
+    const lightManshuTicketBoard =
+      options?.includeLightManshuTicketBoard === true
+        ? buildLightManshuTicketBoard({
+            formations,
+            raceScenarios,
+            entries,
+            analyses,
+            racerSkillTheory
+          })
+        : null;
+
     const marks =
       buildMarks(
         analyses,
@@ -12579,6 +13389,8 @@ const slit =
       formations,
 
       lightManshuScenario,
+
+      lightManshuTicketBoard,
 
       mainSheet,
 
@@ -14220,6 +15032,7 @@ return {
     const decision =
       candidateApi.build(alignedPrediction);
     let lightManshuScenario = null;
+    let lightManshuTicketBoard = null;
     const oldMainSheet =
       alignedPrediction.mainSheet &&
       !Array.isArray(
@@ -14779,6 +15592,33 @@ return {
             )
         )
     };
+    lightManshuTicketBoard =
+      buildLightManshuTicketBoard({
+        formations: {
+          ...alignedFormation,
+          mainEstablished:
+            alignedFormation.mainEstablished === true,
+          main: mainTickets,
+          cover: coverTickets,
+          safety: coverTickets,
+          flow: flowTickets,
+          nagashi: flowTickets,
+          hole: holeTickets,
+          longshot: holeTickets
+        },
+        raceScenarios:
+          analysisRaceScenarios,
+        entries: getRaceEntries(data),
+        analyses: aiCore.analyses,
+        racerSkillTheory:
+          aiCore.racerSkillTheory,
+        excludedTickets: [
+          ...mainTickets,
+          ...coverTickets,
+          ...flowTickets,
+          ...holeTickets
+        ]
+      });
     const allTicketMap =
       new Map();
 
@@ -15150,6 +15990,7 @@ return {
     const canonicalAiCore = {
       ...aiCore,
       lightManshuScenario,
+      lightManshuTicketBoard,
       analysisRaceScenarios:
         analysisRaceScenarios,
       analysisRanking:
@@ -15180,6 +16021,7 @@ return {
     return {
       ...basePrediction,
       lightManshuScenario,
+      lightManshuTicketBoard,
       finalComment:
         formalScenarioSummary,
       finalAi: {
@@ -15501,6 +16343,8 @@ return {
     buildFormations,
 
     buildLightManshuScenario,
+
+    buildLightManshuTicketBoard,
 
     buildMarks,
 

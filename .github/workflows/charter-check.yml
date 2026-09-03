@@ -98,6 +98,7 @@ on:
       - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
       - "scripts/test-light-manshu-scenario.js"
+      - "scripts/test-light-manshu-ticket-board.js"
       - "scripts/test-race-scenarios.js"
       - "scripts/test-course-structure-theory.js"
       - "scripts/test-scenario-marks.js"
@@ -226,6 +227,7 @@ on:
       - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
       - "scripts/test-light-manshu-scenario.js"
+      - "scripts/test-light-manshu-ticket-board.js"
       - "scripts/test-race-scenarios.js"
       - "scripts/test-course-structure-theory.js"
       - "scripts/test-scenario-marks.js"
@@ -356,6 +358,7 @@ jobs:
           node --check scripts/test-stats-methodology.js
           node --check scripts/test-ai-core-formations.js
           node --check scripts/test-light-manshu-scenario.js
+          node --check scripts/test-light-manshu-ticket-board.js
           node --check scripts/test-race-scenarios.js
           node --check scripts/test-course-structure-theory.js
           node --check scripts/test-scenario-marks.js
@@ -422,6 +425,7 @@ jobs:
           node scripts/test-stats-methodology.js
           node scripts/test-ai-core-formations.js
           node scripts/test-light-manshu-scenario.js
+          node scripts/test-light-manshu-ticket-board.js
           node scripts/test-exhibition-performance.js
           node scripts/test-double-time.js
           node scripts/test-double-time-formal-evidence.js
