@@ -1,50 +1,50 @@
 {
   "schemaVersion": 1,
   "version": "race-flow-3course-internal-v1",
-  "generatedAt": "2026-09-03T02:30:26.592Z",
+  "generatedAt": "2026-09-03T04:14:30.204Z",
   "targetLabel": "3コース攻め",
   "source": "saved 3course attack records + verificationEvidence + official results",
   "productionChanged": false,
   "diagnostics": {
     "selectedSourceCount": 32,
-    "verificationSourceCount": 386,
-    "deduplicatedRaceCount": 386,
-    "detailedEvidenceRaceCount": 167,
-    "detailedEvidenceRate": 43.3
+    "verificationSourceCount": 388,
+    "deduplicatedRaceCount": 388,
+    "detailedEvidenceRaceCount": 169,
+    "detailedEvidenceRate": 43.6
   },
   "summaries": {
     "all": {
-      "raceCount": 386,
-      "settledCount": 357,
+      "raceCount": 388,
+      "settledCount": 361,
       "hitCount": 71,
-      "hitRate": 19.9,
-      "stake": 326700,
+      "hitRate": 19.7,
+      "stake": 330200,
       "return": 315840,
-      "profit": -10860,
-      "recoveryRate": 96.7
+      "profit": -14360,
+      "recoveryRate": 95.7
     },
     "detailedEvidence": {
-      "raceCount": 167,
-      "settledCount": 138,
+      "raceCount": 169,
+      "settledCount": 142,
       "hitCount": 38,
-      "hitRate": 27.5,
-      "stake": 133000,
+      "hitRate": 26.8,
+      "stake": 136500,
       "return": 193030,
-      "profit": 60030,
-      "recoveryRate": 145.1
+      "profit": 56530,
+      "recoveryRate": 141.4
     },
     "slit_positive": {
-      "raceCount": 49,
-      "settledCount": 40,
+      "raceCount": 50,
+      "settledCount": 42,
       "hitCount": 8,
-      "hitRate": 20,
-      "stake": 38700,
+      "hitRate": 19,
+      "stake": 40500,
       "return": 42890,
-      "profit": 4190,
-      "recoveryRate": 110.8
+      "profit": 2390,
+      "recoveryRate": 105.9
     },
     "slit_neutral": {
-      "raceCount": 92,
+      "raceCount": 93,
       "settledCount": 75,
       "hitCount": 24,
       "hitRate": 32,
@@ -55,13 +55,13 @@
     },
     "slit_negative": {
       "raceCount": 26,
-      "settledCount": 23,
+      "settledCount": 25,
       "hitCount": 6,
-      "hitRate": 26.1,
-      "stake": 22600,
+      "hitRate": 24,
+      "stake": 24300,
       "return": 50010,
-      "profit": 27410,
-      "recoveryRate": 221.3
+      "profit": 25710,
+      "recoveryRate": 205.8
     },
     "slit_missing": {
       "raceCount": 219,
@@ -74,14 +74,14 @@
       "recoveryRate": 63.4
     },
     "壁成立": {
-      "raceCount": 87,
-      "settledCount": 73,
+      "raceCount": 88,
+      "settledCount": 75,
       "hitCount": 21,
-      "hitRate": 28.8,
-      "stake": 71400,
+      "hitRate": 28,
+      "stake": 73300,
       "return": 146380,
-      "profit": 74980,
-      "recoveryRate": 205
+      "profit": 73080,
+      "recoveryRate": 199.7
     },
     "互角": {
       "raceCount": 0,
@@ -94,14 +94,14 @@
       "recoveryRate": null
     },
     "壁崩れ": {
-      "raceCount": 66,
-      "settledCount": 53,
+      "raceCount": 67,
+      "settledCount": 55,
       "hitCount": 12,
-      "hitRate": 22.6,
-      "stake": 50300,
+      "hitRate": 21.8,
+      "stake": 51900,
       "return": 32110,
-      "profit": -18190,
-      "recoveryRate": 63.8
+      "profit": -19790,
+      "recoveryRate": 61.9
     },
     "wall_missing": {
       "raceCount": 233,
@@ -114,17 +114,17 @@
       "recoveryRate": 67
     },
     "st_formal_support": {
-      "raceCount": 32,
-      "settledCount": 28,
+      "raceCount": 33,
+      "settledCount": 32,
       "hitCount": 7,
-      "hitRate": 25,
-      "stake": 27300,
+      "hitRate": 21.9,
+      "stake": 30800,
       "return": 45720,
-      "profit": 18420,
-      "recoveryRate": 167.5
+      "profit": 14920,
+      "recoveryRate": 148.4
     },
     "st_unconfirmed": {
-      "raceCount": 135,
+      "raceCount": 136,
       "settledCount": 110,
       "hitCount": 31,
       "hitRate": 28.2,
@@ -147,6 +147,18 @@
   "weakBranchRanking": [
     {
       "rank": 1,
+      "branch": "壁崩れ",
+      "raceCount": 67,
+      "settledCount": 55,
+      "hitCount": 12,
+      "hitRate": 21.8,
+      "stake": 51900,
+      "return": 32110,
+      "profit": -19790,
+      "recoveryRate": 61.9
+    },
+    {
+      "rank": 2,
       "branch": "slit_missing",
       "raceCount": 219,
       "settledCount": 219,
@@ -158,7 +170,7 @@
       "recoveryRate": 63.4
     },
     {
-      "rank": 2,
+      "rank": 3,
       "branch": "st_missing",
       "raceCount": 219,
       "settledCount": 219,
@@ -168,18 +180,6 @@
       "return": 122810,
       "profit": -70890,
       "recoveryRate": 63.4
-    },
-    {
-      "rank": 3,
-      "branch": "壁崩れ",
-      "raceCount": 66,
-      "settledCount": 53,
-      "hitCount": 12,
-      "hitRate": 22.6,
-      "stake": 50300,
-      "return": 32110,
-      "profit": -18190,
-      "recoveryRate": 63.8
     },
     {
       "rank": 4,
@@ -196,19 +196,19 @@
     {
       "rank": 5,
       "branch": "slit_positive",
-      "raceCount": 49,
-      "settledCount": 40,
+      "raceCount": 50,
+      "settledCount": 42,
       "hitCount": 8,
-      "hitRate": 20,
-      "stake": 38700,
+      "hitRate": 19,
+      "stake": 40500,
       "return": 42890,
-      "profit": 4190,
-      "recoveryRate": 110.8
+      "profit": 2390,
+      "recoveryRate": 105.9
     },
     {
       "rank": 6,
       "branch": "st_unconfirmed",
-      "raceCount": 135,
+      "raceCount": 136,
       "settledCount": 110,
       "hitCount": 31,
       "hitRate": 28.2,
@@ -220,7 +220,7 @@
     {
       "rank": 7,
       "branch": "slit_neutral",
-      "raceCount": 92,
+      "raceCount": 93,
       "settledCount": 75,
       "hitCount": 24,
       "hitRate": 32,
@@ -232,38 +232,38 @@
     {
       "rank": 8,
       "branch": "st_formal_support",
-      "raceCount": 32,
-      "settledCount": 28,
+      "raceCount": 33,
+      "settledCount": 32,
       "hitCount": 7,
-      "hitRate": 25,
-      "stake": 27300,
+      "hitRate": 21.9,
+      "stake": 30800,
       "return": 45720,
-      "profit": 18420,
-      "recoveryRate": 167.5
+      "profit": 14920,
+      "recoveryRate": 148.4
     },
     {
       "rank": 9,
       "branch": "壁成立",
-      "raceCount": 87,
-      "settledCount": 73,
+      "raceCount": 88,
+      "settledCount": 75,
       "hitCount": 21,
-      "hitRate": 28.8,
-      "stake": 71400,
+      "hitRate": 28,
+      "stake": 73300,
       "return": 146380,
-      "profit": 74980,
-      "recoveryRate": 205
+      "profit": 73080,
+      "recoveryRate": 199.7
     },
     {
       "rank": 10,
       "branch": "slit_negative",
       "raceCount": 26,
-      "settledCount": 23,
+      "settledCount": 25,
       "hitCount": 6,
-      "hitRate": 26.1,
-      "stake": 22600,
+      "hitRate": 24,
+      "stake": 24300,
       "return": 50010,
-      "profit": 27410,
-      "recoveryRate": 221.3
+      "profit": 25710,
+      "recoveryRate": 205.8
     }
   ],
   "interpretation": {
