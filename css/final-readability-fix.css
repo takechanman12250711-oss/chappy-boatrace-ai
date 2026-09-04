@@ -10,25 +10,34 @@
 .chappy-final-mobile-ui #resultArea .v3-final-comment-card,
 .chappy-final-mobile-ui #resultArea .v3-comment-card,
 .chappy-final-mobile-ui #resultArea .ticket-row{border:1px solid rgba(255,255,255,.08)!important;border-radius:12px!important;background:#0b1a24!important;color:#eaf3f8!important;box-shadow:none!important;}
-.chappy-final-mobile-ui #resultArea .v3-info-cell{min-height:58px!important;padding:9px 10px!important;}
+
+/* Race info: compact values, long exhibition note gets the full width. */
+.chappy-final-mobile-ui #resultArea .v3-race-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell{min-height:52px!important;padding:7px 8px!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell:last-child{grid-column:1/-1!important;min-height:auto!important;}
 .chappy-final-mobile-ui #resultArea .v3-info-cell span,
-.chappy-final-mobile-ui #resultArea .v3-info-cell em{color:#8299a9!important;font-size:11px!important;}
-.chappy-final-mobile-ui #resultArea .v3-info-cell strong{color:#f7fbff!important;font-size:14px!important;line-height:1.35!important;overflow-wrap:anywhere!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell em{color:#8299a9!important;font-size:10px!important;line-height:1.2!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell strong{color:#f7fbff!important;font-size:14px!important;line-height:1.3!important;overflow-wrap:anywhere!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell:last-child strong{font-size:12px!important;line-height:1.55!important;}
+
+/* Body copy stays readable but secondary to the decision lines. */
 .chappy-final-mobile-ui #resultArea p,
 .chappy-final-mobile-ui #resultArea .v3-note,
 .chappy-final-mobile-ui #resultArea .v3-comment,
 .chappy-final-mobile-ui #resultArea .v3-reason,
 .chappy-final-mobile-ui #resultArea .v3-formation-reason,
 .chappy-final-mobile-ui #resultArea .ticket-reason,
-.chappy-final-mobile-ui #resultArea .chappy-final-buy-reason{color:#a9bbc7!important;font-size:12px!important;line-height:1.68!important;letter-spacing:.005em!important;overflow-wrap:anywhere!important;}
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-reason{color:#a9bbc7!important;font-size:12px!important;line-height:1.62!important;letter-spacing:.005em!important;overflow-wrap:anywhere!important;}
 .chappy-final-mobile-ui #resultArea .v3-section-head h2,
 .chappy-final-mobile-ui #resultArea .v3-section-head h3,
 .chappy-final-mobile-ui #resultArea .v3-paper-section-head h2,
 .chappy-final-mobile-ui #resultArea .v3-paper-section-head h3{font-size:17px!important;}
+
+/* Collapsed categories must always look like tappable rows. */
 .chappy-final-mobile-ui #resultArea details.v3-ticket-accordion,
 .chappy-final-mobile-ui #resultArea details.chappy-final-buy-group{display:block!important;visibility:visible!important;opacity:1!important;margin:8px 0!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:13px!important;background:#091720!important;overflow:hidden!important;}
 .chappy-final-mobile-ui #resultArea details.v3-ticket-accordion>summary,
-.chappy-final-mobile-ui #resultArea details.chappy-final-buy-group>summary{display:flex!important;visibility:visible!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:51px!important;padding:0 13px 0 18px!important;background:#112530!important;color:#f7fbff!important;font-size:14px!important;font-weight:900!important;cursor:pointer!important;list-style:none!important;}
+.chappy-final-mobile-ui #resultArea details.chappy-final-buy-group>summary{display:flex!important;visibility:visible!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;min-height:49px!important;padding:0 12px 0 18px!important;background:#112530!important;color:#f7fbff!important;font-size:14px!important;font-weight:900!important;cursor:pointer!important;list-style:none!important;}
 .chappy-final-mobile-ui #resultArea details.v3-ticket-accordion>summary::-webkit-details-marker,
 .chappy-final-mobile-ui #resultArea details.chappy-final-buy-group>summary::-webkit-details-marker{display:none!important;}
 .chappy-final-mobile-ui #resultArea .v3-ticket-accordion-count,
@@ -46,29 +55,48 @@
 .chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-manshu>summary,
 .chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-upset>summary,
 .chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-road>summary{box-shadow:inset 4px 0 #ffad43!important;}
+
+/* Ticket rows: never split 1-2-3 vertically. */
 .chappy-final-mobile-ui #resultArea .v3-formation-row,
 .chappy-final-mobile-ui #resultArea .chappy-final-buy-line{background:#0a1822!important;color:#eef6fb!important;}
+.chappy-final-mobile-ui #resultArea .v3-formation-row{display:grid!important;grid-template-columns:minmax(92px,auto) minmax(0,1fr)!important;gap:6px 10px!important;align-items:center!important;}
 .chappy-final-mobile-ui #resultArea .v3-formation-ticket,
 .chappy-final-mobile-ui #resultArea .chappy-photo-ticket,
-.chappy-final-mobile-ui #resultArea .chappy-final-buy-formation{color:#fff!important;font-size:20px!important;line-height:1.15!important;font-weight:950!important;}
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-formation{color:#fff!important;font-size:20px!important;line-height:1.1!important;font-weight:950!important;white-space:nowrap!important;word-break:keep-all!important;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-arrow{display:inline-flex!important;align-items:center!important;flex-wrap:nowrap!important;white-space:nowrap!important;gap:1px!important;}
+.chappy-final-mobile-ui #resultArea .v3-formation-tags{min-width:0!important;display:flex!important;align-items:center!important;gap:4px!important;flex-wrap:wrap!important;}
+.chappy-final-mobile-ui #resultArea .v3-formation-reason{grid-column:1/-1!important;margin-top:1px!important;}
+
+/* The photo-style summary is a quick glance. Full reasons remain in the detailed accordion below. */
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-reason{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important;margin:4px 0 0!important;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-aim p{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;overflow:hidden!important;}
+
+/* Six boat tabs stay visible and easy to hit. */
 .chappy-final-mobile-ui #resultArea .v3-boat-tab-buttons{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;visibility:visible!important;opacity:1!important;}
 .chappy-final-mobile-ui #resultArea .v3-boat-tab-button{display:flex!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:42px!important;color:#eaf3f8!important;}
 .chappy-final-mobile-ui #resultArea .v3-boat-tab-panel{color:#eef6fb!important;}
+
+/* Final comment also follows the dark shell. */
 .chappy-final-mobile-ui #resultArea .v3-final-comment,
 .chappy-final-mobile-ui #resultArea .v3-final-comment-grid,
 .chappy-final-mobile-ui #resultArea .v3-final-comment-item{background:transparent!important;color:#eef6fb!important;}
+
 @media(max-width:430px){
   .chappy-final-mobile-ui #resultArea .v3-section-body,
-  .chappy-final-mobile-ui #resultArea .v3-paper-section-body{padding:10px!important;}
-  .chappy-final-mobile-ui #resultArea .v3-race-grid{gap:7px!important;}
-  .chappy-final-mobile-ui #resultArea .v3-info-cell{min-height:55px!important;padding:8px 9px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-paper-section-body{padding:9px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-race-grid{gap:5px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-info-cell{min-height:49px!important;padding:6px 7px!important;}
   .chappy-final-mobile-ui #resultArea p,
   .chappy-final-mobile-ui #resultArea .v3-note,
   .chappy-final-mobile-ui #resultArea .v3-formation-reason,
   .chappy-final-mobile-ui #resultArea .ticket-reason,
-  .chappy-final-mobile-ui #resultArea .chappy-final-buy-reason{font-size:12px!important;line-height:1.62!important;}
+  .chappy-final-mobile-ui #resultArea .chappy-final-buy-reason{font-size:11.5px!important;line-height:1.58!important;}
   .chappy-final-mobile-ui #resultArea .v3-entry-card-meta,
   .chappy-final-mobile-ui #resultArea .v3-entry-card-start,
-  .chappy-final-mobile-ui #resultArea .v3-entry-card-stats{font-size:10.5px!important;line-height:1.45!important;}
+  .chappy-final-mobile-ui #resultArea .v3-entry-card-stats{font-size:10.5px!important;line-height:1.42!important;}
   .chappy-final-mobile-ui #resultArea .v3-entry-card-player>h3{font-size:15.5px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-formation-row{grid-template-columns:minmax(84px,auto) minmax(0,1fr)!important;}
+  .chappy-final-mobile-ui #resultArea .v3-formation-ticket,
+  .chappy-final-mobile-ui #resultArea .chappy-photo-ticket,
+  .chappy-final-mobile-ui #resultArea .chappy-final-buy-formation{font-size:19px!important;}
 }
