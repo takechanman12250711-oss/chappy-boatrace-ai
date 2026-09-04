@@ -72,8 +72,9 @@
   const PREDICTION_STYLE_ID = "chappy-final-prediction-photo-style";
   const IPHONE_STYLE_ID = "chappy-final-iphone-tuning-style";
   const REFERENCE_STYLE_ID = "chappy-final-reference-layout-style";
+  const READABILITY_STYLE_ID = "chappy-final-readability-fix-style";
   const SCRIPT_ID = "chappy-final-mobile-ui-script";
-  const BUILD = "20260904-final-mobile-ui7";
+  const BUILD = "20260904-final-mobile-ui9";
 
   if (!root.document.getElementById(STYLE_ID)) {
     const link = root.document.createElement("link");
@@ -112,6 +113,14 @@
     link.id = REFERENCE_STYLE_ID;
     link.rel = "stylesheet";
     link.href = `css/final-reference-layout.css?v=${BUILD}`;
+    root.document.head.appendChild(link);
+  }
+
+  if (!root.document.getElementById(READABILITY_STYLE_ID)) {
+    const link = root.document.createElement("link");
+    link.id = READABILITY_STYLE_ID;
+    link.rel = "stylesheet";
+    link.href = `css/final-readability-fix.css?v=${BUILD}`;
     root.document.head.appendChild(link);
   }
 
