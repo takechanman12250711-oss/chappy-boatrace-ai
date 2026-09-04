@@ -1,4 +1,4 @@
-/* structure11: decision-first mobile layout */
+/* structure13: decision-first mobile layout */
 .chappy-mobile-structure11 #resultArea{--s11-gap:6px;}
 .chappy-mobile-structure11 #resultArea .chappy-final-buy-summary{padding:8px!important;}
 .chappy-mobile-structure11 #resultArea .chappy-structure11-formation{display:block!important;margin:5px 0!important;}
@@ -6,14 +6,21 @@
 .chappy-mobile-structure11 #resultArea .chappy-structure11-formation .chappy-final-buy-lines{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important;padding:6px!important;}
 .chappy-mobile-structure11 #resultArea .chappy-structure11-formation .chappy-final-buy-line{padding:7px!important;border-radius:8px!important;background:#0d1d27!important;}
 .chappy-mobile-structure11 #resultArea .chappy-structure11-formation .chappy-final-buy-formation{font-size:17px!important;white-space:nowrap!important;}
-.chappy-mobile-structure11 #resultArea .v3-practical-selection .v3-formation-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
-.chappy-mobile-structure11 #resultArea .v3-practical-selection .chappy-structure11-practical-row{display:block!important;padding:7px!important;margin:0!important;min-height:0!important;border-radius:9px!important;}
-.chappy-mobile-structure11 #resultArea .v3-practical-selection .v3-formation-ticket{font-size:16px!important;white-space:nowrap!important;}
-.chappy-mobile-structure11 #resultArea .v3-practical-selection .v3-formation-meta{font-size:10px!important;line-height:1.25!important;}
-.chappy-mobile-structure11 #resultArea .v3-practical-selection .chappy-structure11-reason{display:none!important;}
+.chappy-mobile-structure11 #resultArea .v3-practical-selection .chappy-practical-compact-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;padding:0!important;}
+.chappy-mobile-structure11 #resultArea .chappy-practical-compact-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:3px 7px!important;padding:8px!important;margin:0!important;min-height:0!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:9px!important;background:#0d1d27!important;}
+.chappy-mobile-structure11 #resultArea .chappy-practical-compact-row strong{font-size:16px!important;line-height:1.15!important;white-space:nowrap!important;color:#fff!important;}
+.chappy-mobile-structure11 #resultArea .chappy-practical-compact-row span{font-size:11px!important;font-weight:900!important;white-space:nowrap!important;color:#8fd3ff!important;}
+.chappy-mobile-structure11 #resultArea .chappy-practical-compact-row em{grid-column:1/-1!important;font-size:10px!important;font-style:normal!important;color:#9fb0bc!important;line-height:1.15!important;}
+.chappy-mobile-structure11 #resultArea .v3-practical-selection .v3-section-body{padding:8px!important;}
+.chappy-mobile-structure11 #resultArea .v3-practical-selection .v3-ticket-accordion-aim[hidden],.chappy-mobile-structure11 #resultArea .v3-practical-selection .v3-formation-reason[hidden],.chappy-mobile-structure11 #resultArea .v3-practical-selection .ticket-reason[hidden]{display:none!important;}
+.chappy-mobile-structure11 #resultArea .chappy-manshu-compact-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;padding-top:6px!important;}
+.chappy-mobile-structure11 #resultArea .chappy-manshu-compact-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:9px!important;border:1px solid rgba(255,173,67,.18)!important;border-radius:9px!important;background:#1c160d!important;}
+.chappy-mobile-structure11 #resultArea .chappy-manshu-compact-row strong{font-size:16px!important;white-space:nowrap!important;color:#fff!important;}
+.chappy-mobile-structure11 #resultArea .chappy-manshu-compact-row span{font-size:12px!important;font-weight:900!important;white-space:nowrap!important;color:#ffc56d!important;}
+.chappy-mobile-structure11 #resultArea .chappy-true-manshu-head{min-height:0!important;padding:4px 0 6px!important;}
+.chappy-mobile-structure11 #resultArea .chappy-true-manshu-head strong{font-size:13px!important;}
+.chappy-mobile-structure11 #resultArea .chappy-true-manshu-head span{font-size:10px!important;}
 .chappy-mobile-structure11 #resultArea .chappy-structure11-secondary>.v3-section-body{padding:5px 7px!important;}
 .chappy-mobile-structure11 #resultArea .chappy-structure11-secondary .chappy-ui10-details>summary{min-height:32px!important;font-size:11px!important;}
 .chappy-mobile-structure11 #resultArea .v3-boat-tab-panel{max-height:220px!important;overflow:auto!important;}
-.chappy-mobile-structure11 #resultArea .v3-manshu-newspaper .v3-light-manshu-ticket-board{display:grid!important;gap:6px!important;}
-.chappy-mobile-structure11 #resultArea .v3-manshu-newspaper .v3-light-manshu-ticket-line{padding:7px!important;min-height:0!important;}
-@media(max-width:360px){.chappy-mobile-structure11 #resultArea .v3-practical-selection .v3-formation-list,.chappy-mobile-structure11 #resultArea .chappy-structure11-formation .chappy-final-buy-lines{grid-template-columns:1fr!important;}}
+@media(max-width:360px){.chappy-mobile-structure11 #resultArea .chappy-practical-compact-list,.chappy-mobile-structure11 #resultArea .chappy-manshu-compact-grid,.chappy-mobile-structure11 #resultArea .chappy-structure11-formation .chappy-final-buy-lines{grid-template-columns:1fr!important;}}
