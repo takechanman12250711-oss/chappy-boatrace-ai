@@ -300,6 +300,7 @@
 
   function replaceTicketVisuals(rootNode) {
     rootNode.querySelectorAll(".v3-formation-row").forEach(row => {
+      if (row.dataset.finalTicketStyled === "1") return;
       const ticketNode = row.querySelector(".v3-formation-ticket");
       if (!ticketNode) return;
       const explicit = text(row.getAttribute("data-flow-notation"));
