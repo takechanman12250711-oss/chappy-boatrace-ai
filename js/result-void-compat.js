@@ -20,15 +20,17 @@
   const BUILD = "20260904-final-mobile-ui9";
   const COMPACT_BUILD="20260904-final-mobile-ui10";
   const STRUCTURE_BUILD="20260905-final-mobile-structure14";
+  const TICKET_REASON_BUILD="20260905-ticket-reason1";
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
   function script(id,src,onload){if(root.document.getElementById(id)){onload?.();return;}const node=root.document.createElement("script");node.id=id;node.src=src;node.async=false;if(onload)node.addEventListener("load",onload,{once:true});root.document.head.appendChild(node);}
   function loadStructure(){style("chappy-final-mobile-structure11-style",`css/final-mobile-structure11.css?v=${STRUCTURE_BUILD}`);script("chappy-final-mobile-structure11-script",`js/final-mobile-structure11.js?v=${STRUCTURE_BUILD}`);}
   function loadCompact(){style("chappy-final-compact-ui10-style",`css/final-compact-ui10.css?v=${COMPACT_BUILD}`);script("chappy-final-compact-ui10-script",`js/final-compact-ui10.js?v=${COMPACT_BUILD}`,loadStructure);}
+  function loadTicketReason(){script("chappy-final-ticket-reason-fix",`js/final-ticket-reason-fix.js?v=${TICKET_REASON_BUILD}`,loadCompact);}
   style("chappy-final-mobile-ui-style",`css/final-mobile-ui.css?v=${BUILD}`);
   style("chappy-final-home-v2-photo-style",`css/final-home-v2-photo.css?v=${BUILD}`);
   style("chappy-final-prediction-photo-style",`css/final-prediction-photo.css?v=${BUILD}`);
   style("chappy-final-iphone-tuning-style",`css/final-iphone-tuning.css?v=${BUILD}`);
   style("chappy-final-reference-layout-style",`css/final-reference-layout.css?v=${BUILD}`);
   style("chappy-final-readability-fix-style",`css/final-readability-fix.css?v=${BUILD}`);
-  if(root.ChappyFinalMobileUi)loadCompact();else script("chappy-final-mobile-ui-script",`js/final-mobile-ui.js?v=${BUILD}`,loadCompact);
+  if(root.ChappyFinalMobileUi)loadTicketReason();else script("chappy-final-mobile-ui-script",`js/final-mobile-ui.js?v=${BUILD}`,loadTicketReason);
 })(typeof window!=="undefined"?window:null);
