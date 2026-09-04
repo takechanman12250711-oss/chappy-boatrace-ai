@@ -74,7 +74,7 @@
   const REFERENCE_STYLE_ID = "chappy-final-reference-layout-style";
   const READABILITY_STYLE_ID = "chappy-final-readability-fix-style";
   const SCRIPT_ID = "chappy-final-mobile-ui-script";
-  const BUILD = "20260904-final-mobile-ui8";
+  const BUILD = "20260904-final-mobile-ui9";
 
   if (!root.document.getElementById(STYLE_ID)) {
     const link = root.document.createElement("link");
