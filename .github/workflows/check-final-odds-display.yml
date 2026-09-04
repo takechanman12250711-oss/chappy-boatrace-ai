@@ -9,6 +9,7 @@ on:
       - "js/prediction-runtime-loader.js"
       - "js/script.js"
       - "scripts/test-final-odds-display.js"
+      - "scripts/test-final-odds-field-compat.js"
       - "scripts/test-initial-odds-enrichment.js"
       - ".github/workflows/check-final-odds-display.yml"
   push:
@@ -21,6 +22,7 @@ on:
       - "js/prediction-runtime-loader.js"
       - "js/script.js"
       - "scripts/test-final-odds-display.js"
+      - "scripts/test-final-odds-field-compat.js"
       - "scripts/test-initial-odds-enrichment.js"
       - ".github/workflows/check-final-odds-display.yml"
 
@@ -37,4 +39,5 @@ jobs:
       - run: node --check js/prediction-runtime-loader.js
       - run: node --check js/script.js
       - run: node scripts/test-final-odds-display.js
+      - run: node scripts/test-final-odds-field-compat.js
       - run: node scripts/test-initial-odds-enrichment.js
