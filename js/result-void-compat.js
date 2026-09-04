@@ -76,77 +76,61 @@
   const COMPACT_STYLE_ID = "chappy-final-compact-ui10-style";
   const SCRIPT_ID = "chappy-final-mobile-ui-script";
   const COMPACT_SCRIPT_ID = "chappy-final-compact-ui10-script";
-  const BUILD = "20260904-final-mobile-ui10";
+  const BUILD = "20260904-final-mobile-ui9";
+  const COMPACT_BUILD = "20260904-final-mobile-ui10";
 
-  if (!root.document.getElementById(STYLE_ID)) {
+  function appendStyle(id, href) {
+    if (root.document.getElementById(id)) return;
     const link = root.document.createElement("link");
-    link.id = STYLE_ID;
+    link.id = id;
     link.rel = "stylesheet";
-    link.href = `css/final-mobile-ui.css?v=${BUILD}`;
+    link.href = href;
     root.document.head.appendChild(link);
   }
 
-  if (!root.document.getElementById(HOME_STYLE_ID)) {
-    const link = root.document.createElement("link");
-    link.id = HOME_STYLE_ID;
-    link.rel = "stylesheet";
-    link.href = `css/final-home-v2-photo.css?v=${BUILD}`;
-    root.document.head.appendChild(link);
+  function loadCompactUi() {
+    appendStyle(COMPACT_STYLE_ID, `css/final-compact-ui10.css?v=${COMPACT_BUILD}`);
+    if (root.document.getElementById(COMPACT_SCRIPT_ID)) return;
+    const script = root.document.createElement("script");
+    script.id = COMPACT_SCRIPT_ID;
+    script.src = `js/final-compact-ui10.js?v=${COMPACT_BUILD}`;
+    script.async = false;
+    root.document.head.appendChild(script);
   }
 
-  if (!root.document.getElementById(PREDICTION_STYLE_ID)) {
-    const link = root.document.createElement("link");
-    link.id = PREDICTION_STYLE_ID;
-    link.rel = "stylesheet";
-    link.href = `css/final-prediction-photo.css?v=${BUILD}`;
-    root.document.head.appendChild(link);
+  function waitForFinalUiThenCompact() {
+    if (root.ChappyFinalMobileUi) {
+      loadCompactUi();
+      return;
+    }
+    let attempts = 0;
+    const timer = root.setInterval(() => {
+      attempts += 1;
+      if (root.ChappyFinalMobileUi) {
+        root.clearInterval(timer);
+        loadCompactUi();
+      } else if (attempts > 80) {
+        root.clearInterval(timer);
+      }
+    }, 50);
   }
 
-  if (!root.document.getElementById(IPHONE_STYLE_ID)) {
-    const link = root.document.createElement("link");
-    link.id = IPHONE_STYLE_ID;
-    link.rel = "stylesheet";
-    link.href = `css/final-iphone-tuning.css?v=${BUILD}`;
-    root.document.head.appendChild(link);
-  }
+  appendStyle(STYLE_ID, `css/final-mobile-ui.css?v=${BUILD}`);
+  appendStyle(HOME_STYLE_ID, `css/final-home-v2-photo.css?v=${BUILD}`);
+  appendStyle(PREDICTION_STYLE_ID, `css/final-prediction-photo.css?v=${BUILD}`);
+  appendStyle(IPHONE_STYLE_ID, `css/final-iphone-tuning.css?v=${BUILD}`);
+  appendStyle(REFERENCE_STYLE_ID, `css/final-reference-layout.css?v=${BUILD}`);
+  appendStyle(READABILITY_STYLE_ID, `css/final-readability-fix.css?v=${BUILD}`);
 
-  if (!root.document.getElementById(REFERENCE_STYLE_ID)) {
-    const link = root.document.createElement("link");
-    link.id = REFERENCE_STYLE_ID;
-    link.rel = "stylesheet";
-    link.href = `css/final-reference-layout.css?v=${BUILD}`;
-    root.document.head.appendChild(link);
-  }
-
-  if (!root.document.getElementById(READABILITY_STYLE_ID)) {
-    const link = root.document.createElement("link");
-    link.id = READABILITY_STYLE_ID;
-    link.rel = "stylesheet";
-    link.href = `css/final-readability-fix.css?v=${BUILD}`;
-    root.document.head.appendChild(link);
-  }
-
-  if (!root.document.getElementById(COMPACT_STYLE_ID)) {
-    const link = root.document.createElement("link");
-    link.id = COMPACT_STYLE_ID;
-    link.rel = "stylesheet";
-    link.href = `css/final-compact-ui10.css?v=${BUILD}`;
-    root.document.head.appendChild(link);
-  }
-
-  if (!root.document.getElementById(SCRIPT_ID)) {
+  const existingFinalScript = root.document.getElementById(SCRIPT_ID);
+  if (!existingFinalScript) {
     const script = root.document.createElement("script");
     script.id = SCRIPT_ID;
     script.src = `js/final-mobile-ui.js?v=${BUILD}`;
-    script.defer = true;
+    script.async = false;
+    script.addEventListener("load", waitForFinalUiThenCompact, { once: true });
     root.document.head.appendChild(script);
-  }
-
-  if (!root.document.getElementById(COMPACT_SCRIPT_ID)) {
-    const script = root.document.createElement("script");
-    script.id = COMPACT_SCRIPT_ID;
-    script.src = `js/final-compact-ui10.js?v=${BUILD}`;
-    script.defer = true;
-    root.document.head.appendChild(script);
+  } else {
+    waitForFinalUiThenCompact();
   }
 })(typeof window !== "undefined" ? window : null);
