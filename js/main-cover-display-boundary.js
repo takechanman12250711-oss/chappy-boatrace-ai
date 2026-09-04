@@ -481,8 +481,7 @@
     const mainSheetFields = {
       tickets: displayRows.main,
       coverTickets: displayRows.cover,
-      flowTickets: displayRows.flow,
-      flowFormations: []
+      flowTickets: displayRows.flow
     };
     const manshuSheetFields = {
       tickets: displayRows.hole
