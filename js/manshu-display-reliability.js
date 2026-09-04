@@ -73,7 +73,12 @@
     }
 
     for (const pool of candidatePools(prediction)) {
-      const found = rows(pool).find(item => Boolean(ticketOf(item)));
+      const found = rows(pool).find(item => {
+        if (!ticketOf(item)) return false;
+        const row = typeof item === "string" ? null : item;
+        const odds = Number(row?.odds);
+        return Number.isFinite(odds) && odds >= 100;
+      });
       if (found) return found;
     }
 
@@ -94,12 +99,11 @@
       Number.isFinite(numericOdds) &&
       numericOdds > 0;
     const category =
-      row.category ||
-      (hasOdds && numericOdds >= 100
+      hasOdds && numericOdds >= 100
         ? "万舟"
         : hasOdds
           ? "高配当候補"
-          : "穴候補");
+          : "穴候補";
 
     return {
       ...row,
@@ -150,7 +154,7 @@
   }
 
   function categoryType(candidate) {
-    if (candidate.category === "万舟" || Number(candidate.odds) >= 100) return "manshu";
+    if (Number(candidate.odds) >= 100) return "manshu";
     if (candidate.category === "高配当候補") return "highpay";
     return "hole";
   }
