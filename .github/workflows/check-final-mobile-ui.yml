@@ -6,8 +6,11 @@ on:
       - "index.html"
       - "js/final-mobile-ui.js"
       - "css/final-mobile-ui.css"
+      - "js/final-mobile-structure11.js"
+      - "css/final-mobile-structure11.css"
       - "js/result-void-compat.js"
       - "scripts/test-final-mobile-ui-contract.js"
+      - "scripts/test-final-mobile-structure-contract.js"
       - ".github/workflows/check-final-mobile-ui.yml"
   push:
     branches:
@@ -16,8 +19,11 @@ on:
       - "index.html"
       - "js/final-mobile-ui.js"
       - "css/final-mobile-ui.css"
+      - "js/final-mobile-structure11.js"
+      - "css/final-mobile-structure11.css"
       - "js/result-void-compat.js"
       - "scripts/test-final-mobile-ui-contract.js"
+      - "scripts/test-final-mobile-structure-contract.js"
       - ".github/workflows/check-final-mobile-ui.yml"
 
 permissions:
@@ -37,7 +43,11 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check js/final-mobile-ui.js
+          node --check js/final-mobile-structure11.js
           node --check js/result-void-compat.js
           node --check scripts/test-final-mobile-ui-contract.js
+          node --check scripts/test-final-mobile-structure-contract.js
       - name: Check final mobile UI contract
         run: node scripts/test-final-mobile-ui-contract.js
+      - name: Check final mobile structure contract
+        run: node scripts/test-final-mobile-structure-contract.js
