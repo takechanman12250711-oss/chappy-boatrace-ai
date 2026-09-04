@@ -69,7 +69,7 @@
     if(!summary)return false;
     const formations=formationRows(prediction);
     const existing=summary.querySelector(".chappy-final-buy-group.is-flow");
-    if(!formations.length){if(existing)existing.remove();return false;}
+    if(!formations.length)return Boolean(existing);
     const html=`<details class="chappy-final-buy-group is-flow chappy-ui10-formation" open>
       <summary><span class="chappy-final-buy-label">フォーメーション</span><span class="chappy-final-buy-meta">${formations.length}組</span></summary>
       <div class="chappy-final-buy-lines">${formations.map(n=>`<article class="chappy-final-buy-line"><div class="chappy-final-buy-mainline"><strong class="chappy-final-buy-formation">${esc(n)}</strong><div class="chappy-final-buy-side"><span class="chappy-final-buy-count">${expand(n).length||1}点</span></div></div></article>`).join("")}</div>
@@ -79,10 +79,12 @@
   }
   function makeCompact(section){
     if(!section||section.dataset.compactUi10==="1")return;
+    if(section.matches(".v3-manshu-newspaper")||section.querySelector(".chappy-true-manshu-board"))return;
     const head=section.querySelector(":scope > .v3-section-head");
     const body=section.querySelector(":scope > .v3-section-body");
     const title=text(head?.textContent);
     if(!body||!title)return;
+    if(/万舟/.test(title))return;
     const collapse=/公式履歴|出てない目|TOP30|展開|理論|分析|最終コメント/.test(title);
     section.dataset.compactUi10="1";
     section.classList.add("chappy-ui10-section");
@@ -113,7 +115,7 @@
     if(typeof fn!=="function"||fn[WRAPPED])return false;
     function wrapped(prediction){
       const value=fn.apply(this,arguments);
-      root.setTimeout(()=>enhance(prediction),24);
+      root.setTimeout(()=>enhance(prediction),80);
       return value;
     }
     wrapped[WRAPPED]=true;
@@ -122,6 +124,6 @@
     return true;
   }
   let tries=0;
-  const timer=root.setInterval(()=>{tries++;if(wrap()||tries>240)root.clearInterval(timer);},250);
+  const timer=root.setInterval(()=>{tries++;if(wrap()||tries>240)root.clearInterval(timer);},50);
   root.ChappyCompactUi10=Object.freeze({build:BUILD,formationRows,compactFromTickets,enhance});
 })(typeof window!=="undefined"?window:null);
