@@ -222,6 +222,9 @@ try {
       const integratedBoard = manshuSection?.querySelector?.(
         ".v3-light-manshu-ticket-board"
       );
+      const trueManshuEmpty = manshuSection?.querySelector?.(
+        ".chappy-true-manshu-empty"
+      );
       const details =
         fallback?.closest?.("details") ||
         manshuSection?.closest?.("details");
@@ -242,6 +245,8 @@ try {
       const integratedPanelRect =
         integratedBoard?.closest?.(".v3-ticket-accordion-panel")
           ?.getBoundingClientRect?.();
+      const trueManshuEmptyRect =
+        trueManshuEmpty?.getBoundingClientRect?.();
       const boatName = root?.querySelector?.(
         ".v3-paper-player-line .v3-boat-title strong"
       );
@@ -275,6 +280,15 @@ try {
           ),
           10
         ) || 0,
+        trueManshuEmptyVisible: Boolean(
+          trueManshuEmpty &&
+          trueManshuEmptyRect &&
+          trueManshuEmptyRect.width > 0 &&
+          trueManshuEmptyRect.height > 0
+        ),
+        trueManshuEmptyText: String(
+          trueManshuEmpty?.textContent || ""
+        ).trim(),
         standaloneBoardSectionCount:
           root?.querySelectorAll?.("section.v3-light-manshu-ticket-board")
             ?.length || 0,
@@ -332,10 +346,17 @@ try {
       responsiveSummary.integratedBoardLineCount <= 3 &&
       responsiveSummary.integratedBoardPointCount > 1 &&
       responsiveSummary.standaloneBoardSectionCount === 0;
+    const validManshuEmptyState =
+      responsiveSummary.trueManshuEmptyVisible === true &&
+      responsiveSummary.manshuSectionCount === 1 &&
+      responsiveSummary.manshuAccordionCount === 1 &&
+      responsiveSummary.trueManshuEmptyText.includes("100倍以上") &&
+      responsiveSummary.trueManshuEmptyText.includes("ありません");
     if (
       requireManshuFallback &&
       !legacyManshuFallbackVisible &&
-      !integratedManshuBoardVisible
+      !integratedManshuBoardVisible &&
+      !validManshuEmptyState
     ) {
       throw new Error(
         "Kiryu 10R manshu display regression path was not exercised"

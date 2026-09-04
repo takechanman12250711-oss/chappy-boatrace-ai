@@ -1,0 +1,53 @@
+/* final-mobile-ui10: compact mobile prediction view without changing prediction logic */
+.chappy-compact-ui10 #resultArea .v3-root{display:grid!important;gap:8px!important;}
+.chappy-compact-ui10 #resultArea .v3-section{margin:0!important;border-radius:12px!important;overflow:hidden!important;}
+.chappy-compact-ui10 #resultArea .v3-section-head{min-height:40px!important;padding:8px 10px!important;}
+.chappy-compact-ui10 #resultArea .v3-section-head h2{font-size:15px!important;line-height:1.2!important;margin:0!important;}
+.chappy-compact-ui10 #resultArea .v3-section-body{padding:7px 8px!important;}
+
+/* Entry list: 6 boats in a compact two-column grid. */
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card{display:grid!important;grid-template-columns:26px minmax(0,1fr)!important;grid-template-areas:"boat player" "boat stats"!important;gap:2px 6px!important;align-items:start!important;padding:7px!important;min-height:0!important;border-radius:10px!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-boat{grid-area:boat!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-player{grid-area:player!important;min-width:0!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-stats{grid-area:stats!important;display:flex!important;gap:5px!important;flex-wrap:wrap!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-player h3{font-size:13px!important;line-height:1.15!important;margin:0 0 2px!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-meta,
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-start,
+.chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-stats{font-size:9px!important;line-height:1.3!important;}
+
+/* AI evaluation stays usable but loses excess whitespace. */
+.chappy-compact-ui10 #resultArea .chappy-ui10-eval-compact .v3-boat-tab-buttons{margin-bottom:5px!important;gap:4px!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-eval-compact .v3-boat-tab-button{min-height:34px!important;border-radius:8px!important;font-size:12px!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-eval-compact .v3-boat-tab-panel{padding:7px!important;}
+
+/* Buy summary is the primary decision surface. */
+.chappy-compact-ui10 #resultArea .chappy-final-buy-summary{margin:0!important;padding:9px!important;border-radius:12px!important;}
+.chappy-compact-ui10 #resultArea .chappy-final-buy-head{margin-bottom:6px!important;}
+.chappy-compact-ui10 #resultArea .chappy-final-buy-head h3{font-size:17px!important;margin:0!important;}
+.chappy-compact-ui10 #resultArea details.chappy-final-buy-group{margin:5px 0!important;border-radius:10px!important;}
+.chappy-compact-ui10 #resultArea details.chappy-final-buy-group>summary{min-height:40px!important;padding:0 9px 0 13px!important;font-size:13px!important;}
+.chappy-compact-ui10 #resultArea .chappy-final-buy-lines{padding:0 8px 5px!important;}
+.chappy-compact-ui10 #resultArea .chappy-final-buy-line{padding:7px 0!important;}
+.chappy-compact-ui10 #resultArea .chappy-final-buy-formation{font-size:18px!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-formation .chappy-final-buy-formation{font-size:20px!important;letter-spacing:.01em!important;}
+.chappy-compact-ui10 #resultArea .chappy-final-buy-reason{display:none!important;}
+
+/* Secondary analysis starts collapsed but remains one tap away. */
+.chappy-compact-ui10 #resultArea .chappy-ui10-details{margin:0!important;border:0!important;background:transparent!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-details>summary{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:36px!important;padding:0 8px!important;border-radius:8px!important;background:#10232f!important;color:#c8d9e3!important;font-size:12px!important;font-weight:800!important;list-style:none!important;cursor:pointer!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-details>summary::-webkit-details-marker{display:none!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-details>summary::after{content:"＋";font-size:16px!important;color:#7fa0b4!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-details[open]>summary::after{content:"−";}
+.chappy-compact-ui10 #resultArea .chappy-ui10-details[open]>summary{margin-bottom:6px!important;}
+
+/* Practical selection: decisions first, prose secondary. */
+.chappy-compact-ui10 #resultArea .chappy-ui10-practical-compact .v3-formation-row{padding:7px 0!important;}
+.chappy-compact-ui10 #resultArea .chappy-ui10-practical-compact .v3-formation-reason{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:1!important;overflow:hidden!important;line-height:1.4!important;margin-top:2px!important;}
+
+/* Keep missing-number rows dense when expanded. */
+.chappy-compact-ui10 #resultArea .v3-missing-numbers .v3-formation-row{padding:6px 0!important;}
+
+@media(max-width:360px){
+  .chappy-compact-ui10 #resultArea .chappy-ui10-entry-compact .v3-entry-card-list{grid-template-columns:1fr!important;}
+}
