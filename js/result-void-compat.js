@@ -73,8 +73,10 @@
   const IPHONE_STYLE_ID = "chappy-final-iphone-tuning-style";
   const REFERENCE_STYLE_ID = "chappy-final-reference-layout-style";
   const READABILITY_STYLE_ID = "chappy-final-readability-fix-style";
+  const COMPACT_STYLE_ID = "chappy-final-compact-ui10-style";
   const SCRIPT_ID = "chappy-final-mobile-ui-script";
-  const BUILD = "20260904-final-mobile-ui9";
+  const COMPACT_SCRIPT_ID = "chappy-final-compact-ui10-script";
+  const BUILD = "20260904-final-mobile-ui10";
 
   if (!root.document.getElementById(STYLE_ID)) {
     const link = root.document.createElement("link");
@@ -124,10 +126,26 @@
     root.document.head.appendChild(link);
   }
 
+  if (!root.document.getElementById(COMPACT_STYLE_ID)) {
+    const link = root.document.createElement("link");
+    link.id = COMPACT_STYLE_ID;
+    link.rel = "stylesheet";
+    link.href = `css/final-compact-ui10.css?v=${BUILD}`;
+    root.document.head.appendChild(link);
+  }
+
   if (!root.document.getElementById(SCRIPT_ID)) {
     const script = root.document.createElement("script");
     script.id = SCRIPT_ID;
     script.src = `js/final-mobile-ui.js?v=${BUILD}`;
+    script.defer = true;
+    root.document.head.appendChild(script);
+  }
+
+  if (!root.document.getElementById(COMPACT_SCRIPT_ID)) {
+    const script = root.document.createElement("script");
+    script.id = COMPACT_SCRIPT_ID;
+    script.src = `js/final-compact-ui10.js?v=${BUILD}`;
     script.defer = true;
     root.document.head.appendChild(script);
   }
