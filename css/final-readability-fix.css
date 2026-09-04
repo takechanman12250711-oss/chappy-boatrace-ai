@@ -1,0 +1,74 @@
+/* Final readability rescue for iPhone prediction view. Presentation only. */
+.chappy-final-mobile-ui #resultArea,
+.chappy-final-mobile-ui #resultArea .v3-root{color:#eef6fb!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell,
+.chappy-final-mobile-ui #resultArea .v3-ai-summary-box,
+.chappy-final-mobile-ui #resultArea .v3-ai-calibration,
+.chappy-final-mobile-ui #resultArea .v3-paper-card,
+.chappy-final-mobile-ui #resultArea .v3-note,
+.chappy-final-mobile-ui #resultArea .v3-empty,
+.chappy-final-mobile-ui #resultArea .v3-final-comment-card,
+.chappy-final-mobile-ui #resultArea .v3-comment-card,
+.chappy-final-mobile-ui #resultArea .ticket-row{border:1px solid rgba(255,255,255,.08)!important;border-radius:12px!important;background:#0b1a24!important;color:#eaf3f8!important;box-shadow:none!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell{min-height:58px!important;padding:9px 10px!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell span,
+.chappy-final-mobile-ui #resultArea .v3-info-cell em{color:#8299a9!important;font-size:11px!important;}
+.chappy-final-mobile-ui #resultArea .v3-info-cell strong{color:#f7fbff!important;font-size:14px!important;line-height:1.35!important;overflow-wrap:anywhere!important;}
+.chappy-final-mobile-ui #resultArea p,
+.chappy-final-mobile-ui #resultArea .v3-note,
+.chappy-final-mobile-ui #resultArea .v3-comment,
+.chappy-final-mobile-ui #resultArea .v3-reason,
+.chappy-final-mobile-ui #resultArea .v3-formation-reason,
+.chappy-final-mobile-ui #resultArea .ticket-reason,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-reason{color:#a9bbc7!important;font-size:12px!important;line-height:1.68!important;letter-spacing:.005em!important;overflow-wrap:anywhere!important;}
+.chappy-final-mobile-ui #resultArea .v3-section-head h2,
+.chappy-final-mobile-ui #resultArea .v3-section-head h3,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-head h2,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-head h3{font-size:17px!important;}
+.chappy-final-mobile-ui #resultArea details.v3-ticket-accordion,
+.chappy-final-mobile-ui #resultArea details.chappy-final-buy-group{display:block!important;visibility:visible!important;opacity:1!important;margin:8px 0!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:13px!important;background:#091720!important;overflow:hidden!important;}
+.chappy-final-mobile-ui #resultArea details.v3-ticket-accordion>summary,
+.chappy-final-mobile-ui #resultArea details.chappy-final-buy-group>summary{display:flex!important;visibility:visible!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:51px!important;padding:0 13px 0 18px!important;background:#112530!important;color:#f7fbff!important;font-size:14px!important;font-weight:900!important;cursor:pointer!important;list-style:none!important;}
+.chappy-final-mobile-ui #resultArea details.v3-ticket-accordion>summary::-webkit-details-marker,
+.chappy-final-mobile-ui #resultArea details.chappy-final-buy-group>summary::-webkit-details-marker{display:none!important;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-count,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-meta{flex:0 0 auto!important;min-width:42px!important;padding:4px 8px!important;border-radius:999px!important;background:#183442!important;color:#dff2ff!important;text-align:center!important;font-size:11px!important;font-weight:850!important;}
+.chappy-final-mobile-ui #resultArea details.v3-ticket-accordion:not([open])>summary::after,
+.chappy-final-mobile-ui #resultArea details.chappy-final-buy-group:not([open])>summary::after{content:"＋";color:#83a9bf!important;font-size:18px!important;line-height:1!important;}
+.chappy-final-mobile-ui #resultArea details.v3-ticket-accordion[open]>summary::after,
+.chappy-final-mobile-ui #resultArea details.chappy-final-buy-group[open]>summary::after{content:"−";color:#83a9bf!important;font-size:18px!important;line-height:1!important;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-main>summary,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-main>summary{box-shadow:inset 4px 0 #2f8cff!important;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-safety>summary,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-cover>summary{box-shadow:inset 4px 0 #4cc18b!important;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-flow>summary,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-flow>summary{box-shadow:inset 4px 0 #9c72ff!important;}
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-manshu>summary,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-upset>summary,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-group.is-road>summary{box-shadow:inset 4px 0 #ffad43!important;}
+.chappy-final-mobile-ui #resultArea .v3-formation-row,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-line{background:#0a1822!important;color:#eef6fb!important;}
+.chappy-final-mobile-ui #resultArea .v3-formation-ticket,
+.chappy-final-mobile-ui #resultArea .chappy-photo-ticket,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-formation{color:#fff!important;font-size:20px!important;line-height:1.15!important;font-weight:950!important;}
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-buttons{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;visibility:visible!important;opacity:1!important;}
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-button{display:flex!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:42px!important;color:#eaf3f8!important;}
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-panel{color:#eef6fb!important;}
+.chappy-final-mobile-ui #resultArea .v3-final-comment,
+.chappy-final-mobile-ui #resultArea .v3-final-comment-grid,
+.chappy-final-mobile-ui #resultArea .v3-final-comment-item{background:transparent!important;color:#eef6fb!important;}
+@media(max-width:430px){
+  .chappy-final-mobile-ui #resultArea .v3-section-body,
+  .chappy-final-mobile-ui #resultArea .v3-paper-section-body{padding:10px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-race-grid{gap:7px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-info-cell{min-height:55px!important;padding:8px 9px!important;}
+  .chappy-final-mobile-ui #resultArea p,
+  .chappy-final-mobile-ui #resultArea .v3-note,
+  .chappy-final-mobile-ui #resultArea .v3-formation-reason,
+  .chappy-final-mobile-ui #resultArea .ticket-reason,
+  .chappy-final-mobile-ui #resultArea .chappy-final-buy-reason{font-size:12px!important;line-height:1.62!important;}
+  .chappy-final-mobile-ui #resultArea .v3-entry-card-meta,
+  .chappy-final-mobile-ui #resultArea .v3-entry-card-start,
+  .chappy-final-mobile-ui #resultArea .v3-entry-card-stats{font-size:10.5px!important;line-height:1.45!important;}
+  .chappy-final-mobile-ui #resultArea .v3-entry-card-player>h3{font-size:15.5px!important;}
+}
