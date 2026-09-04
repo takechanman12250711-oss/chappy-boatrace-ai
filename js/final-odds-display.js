@@ -45,9 +45,52 @@
     ["ticketRanks"],
     ["aiTicketList"]
   ];
+  const MAP_PATHS = [
+    ["odds"],
+    ["oddsByTicket"],
+    ["trifectaOdds"],
+    ["combinedOdds"]
+  ];
 
   function normalizeTicket(value) {
     return String(value || "").replace(/\s+/g, "").trim();
+  }
+
+  function normalizeExactTicket(value) {
+    const ticket = normalizeTicket(value).replace(/→/g, "-");
+    const parts = ticket.split("-");
+    if (parts.length !== 3) return "";
+    if (parts.some(part => !/^[1-6]$/.test(part))) return "";
+    if (new Set(parts).size !== 3) return "";
+    return ticket;
+  }
+
+  function ticketOf(item) {
+    if (typeof item === "string") return normalizeExactTicket(item);
+    return normalizeExactTicket(
+      item?.ticket ||
+      item?.line ||
+      item?.notation ||
+      item?.formation?.notation ||
+      item?.formation
+    );
+  }
+
+  function numericOdds(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const number = Number(String(value).replace(/倍(?:（最終取得）)?/g, "").trim());
+    return Number.isFinite(number) && number > 0 ? number : null;
+  }
+
+  function oddsOf(item) {
+    if (!item || typeof item !== "object") return numericOdds(item);
+    return numericOdds(
+      item.odds ??
+      item.currentOdds ??
+      item.finalOdds ??
+      item.value ??
+      item.oddsText
+    );
   }
 
   function raceKey(prediction) {
@@ -98,22 +141,26 @@
 
   function collectOdds(prediction) {
     const byTicket = {};
+    const record = (ticketValue, oddsValue) => {
+      const ticket = normalizeExactTicket(ticketValue);
+      const odds = numericOdds(oddsValue);
+      if (ticket && odds) byTicket[ticket] = odds;
+    };
 
     LIST_PATHS.forEach(path => {
       const list = getAtPath(prediction, path);
       if (!Array.isArray(list)) return;
 
       list.forEach(item => {
-        const ticket = normalizeTicket(
-          typeof item === "string"
-            ? item
-            : item?.ticket || item?.line || item?.formation
-        );
-        const odds = Number(item?.odds);
+        record(ticketOf(item), oddsOf(item));
+      });
+    });
 
-        if (ticket && Number.isFinite(odds) && odds > 0) {
-          byTicket[ticket] = odds;
-        }
+    MAP_PATHS.forEach(path => {
+      const map = getAtPath(prediction, path);
+      if (!map || typeof map !== "object" || Array.isArray(map)) return;
+      Object.entries(map).forEach(([ticket, value]) => {
+        record(ticket, oddsOf(value));
       });
     });
 
@@ -224,20 +271,16 @@
     const restored = list.map(item => {
       if (!item || typeof item !== "object") return item;
 
-      const ticket = normalizeTicket(
-        item.ticket || item.line || item.formation
-      );
-      const currentOdds = Number(item.odds);
-      const savedOdds = Number(byTicket?.[ticket]);
+      const ticket = ticketOf(item);
+      const currentOdds = oddsOf(item);
+      const savedOdds = numericOdds(byTicket?.[ticket]);
       const snapshotIsNewer =
         timestampOf(savedAt) >
         timestampOf(item.oddsSavedAt);
       const shouldUseSnapshot =
-        Number.isFinite(savedOdds) &&
-        savedOdds > 0 &&
+        savedOdds &&
         (
-          !Number.isFinite(currentOdds) ||
-          currentOdds <= 0 ||
+          !currentOdds ||
           item.isFinalRetrievedOdds !== true ||
           snapshotIsNewer
         );
