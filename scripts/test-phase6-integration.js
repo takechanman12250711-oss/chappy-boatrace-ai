@@ -9,6 +9,7 @@ const read = file => fs.readFileSync(path.join(root, file), "utf8");
 
 const html = read("index.html");
 const home = read("js/home-dashboard-v2.js");
+const referenceCss = read("css/final-reference-layout.css");
 const appRuntime = read("js/app-runtime-loader.js");
 const predictionRuntime = read("js/prediction-runtime-loader.js");
 const statsRuntime = read("js/stats-runtime-loader.js");
@@ -25,7 +26,10 @@ assert.equal(home.includes("fetchButton.click()"), true, "レース選択後に�
 assert.equal(home.includes('setView("prediction")'), true, "取得後にAI予想画面へ移動する");
 assert.equal(html.includes('data-view="result"'), true, "下部ナビから成績分析へ移動できる");
 assert.equal(html.includes('data-view="menu"'), false, "未実装メニューを表示しない");
-assert.equal(html.includes('data-view="race"'), false, "ホームと重複するレース検索タブを表示しない");
+if (html.includes('data-view="race"')) {
+  assert.equal(referenceCss.includes('.bottom-nav-item[data-view="race"]'), true, "互換用レースタブはCSSで非表示にする");
+  assert.equal(referenceCss.includes("display:none!important"), true, "ホームと重複するレース検索タブを実画面へ表示しない");
+}
 assert.equal(home.includes("sessionStorage"), true, "ホーム再表示をキャッシュで高速化する");
 assert.equal(home.includes("requestAnimationFrame") && home.includes("scheduleRefresh"), true, "初期描画を通信より先に行う");
 

@@ -6,6 +6,7 @@ const css = fs.readFileSync("css/final-mobile-ui.css", "utf8");
 const homeCss = fs.readFileSync("css/final-home-v2-photo.css", "utf8");
 const predictionCss = fs.readFileSync("css/final-prediction-photo.css", "utf8");
 const iphoneCss = fs.readFileSync("css/final-iphone-tuning.css", "utf8");
+const referenceCss = fs.readFileSync("css/final-reference-layout.css", "utf8");
 const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
 const index = fs.readFileSync("index.html", "utf8");
 
@@ -27,12 +28,10 @@ assert(css.includes("chappy-final-mobile-ui"), "final UI scope missing");
 assert(css.includes("--ch-bg:#07111a"), "dark mobile shell missing");
 assert(css.includes("chappy-final-buy-formation"), "photo-style formation CSS missing");
 assert(css.includes("repeat(6"), "six-boat tab layout missing");
-assert(css.includes("repeat(4"), "four-column mobile race grid missing");
 assert(css.includes("official-venue-grid"), "mobile venue-card layout missing");
 
 assert(homeCss.includes("home-v2-recommend-card"), "home recommendation photo override missing");
 assert(homeCss.includes("home-v2-venue-list"), "home venue photo override missing");
-assert(homeCss.includes("grid-template-columns:repeat(2"), "home two-column venue grid missing");
 assert(homeCss.includes("home-v2-filters"), "home filter photo override missing");
 assert(homeCss.includes("bottom-nav"), "home bottom navigation override missing");
 
@@ -48,12 +47,21 @@ assert(iphoneCss.includes("max-width:390px"), "small iPhone width tuning missing
 assert(iphoneCss.includes("v3-ticket-accordion"), "iPhone ticket density tuning missing");
 assert(iphoneCss.includes("chappy-final-buy-formation"), "iPhone formation sizing missing");
 
+assert(referenceCss.includes("home-v2-recommend"), "reference home recommendation suppression missing");
+assert(referenceCss.includes("grid-template-columns:1fr"), "reference home one-column venue list missing");
+assert(referenceCss.includes("repeat(3"), "reference three-column race grid missing");
+assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "duplicate race nav compatibility selector missing");
+assert(referenceCss.includes("display:none!important"), "duplicate race nav tab must stay hidden");
+assert(referenceCss.includes("home-v2-races .home-v2-race:not(:first-child)"), "reference next-race-only venue row missing");
+
 assert(loader.includes("final-mobile-ui.css"), "final UI stylesheet loader missing");
 assert(loader.includes("final-home-v2-photo.css"), "photo-matched home stylesheet loader missing");
 assert(loader.includes("final-prediction-photo.css"), "photo-matched prediction stylesheet loader missing");
 assert(loader.includes("final-iphone-tuning.css"), "iPhone final tuning stylesheet loader missing");
+assert(loader.includes("final-reference-layout.css"), "final reference layout stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD = "20260904-final-mobile-ui6"'), "final UI asset generation was not bumped");
-assert(index.includes('result-void-compat.js?v=20260904-final-mobile-ui6'), "final UI bootstrap is not cache-busted in production entrypoint");
+assert(loader.includes('const BUILD = "20260904-final-mobile-ui7"'), "final UI asset generation was not bumped");
+assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
+assert(index.includes('result-void-compat.js?v=20260904-final-mobile-ui7'), "final UI bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
