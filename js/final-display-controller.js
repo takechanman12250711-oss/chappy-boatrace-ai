@@ -180,6 +180,23 @@
     return next;
   }
 
+  function formationRows(prediction){
+    const sources=[prediction?.mainSheet?.flowFormations,prediction?.formation?.flowFormations,prediction?.formations?.flowFormations];
+    const out=[];
+    sources.forEach(source=>rows(source).forEach(row=>{const notation=ticketText(row);if(notation)out.push(notation.replace(/\s+/g,""));}));
+    return[...new Set(out)];
+  }
+
+  function ensureFormationGroup(prediction){
+    const box=root.document.querySelector("#resultArea .chappy-final-buy-summary");
+    if(!box)return;
+    const list=formationRows(prediction);
+    const existing=box.querySelector(".chappy-final-buy-group.is-flow");
+    if(!list.length){if(existing)existing.remove();return;}
+    const html=`<details class="chappy-final-buy-group is-flow" open><summary><span class="chappy-final-buy-label">フォーメーション</span><span class="chappy-final-buy-meta">${list.length}組</span></summary><div class="chappy-final-buy-lines">${list.map(notation=>`<article class="chappy-final-buy-line"><div class="chappy-final-buy-mainline"><strong class="chappy-final-buy-formation">${esc(notation)}</strong><div class="chappy-final-buy-side"><span class="chappy-final-buy-count">${expandNotation(notation).length||1}点</span></div></div></article>`).join("")}</div></details>`;
+    if(existing)existing.outerHTML=html;else box.insertAdjacentHTML("beforeend",html);
+  }
+
   function manshuHtml(prediction){
     const groups=prediction?.manshuFormations||buildManshuFormations(prediction);
     if(!groups.length)return `<div class="chappy-true-manshu-empty">100倍以上だけで組める複数点フォーメーションはありません。単券1点は万舟欄に表示しません。</div>`;
@@ -237,6 +254,7 @@
 
   function applyFinal(prediction){
     if(!prediction)return;
+    ensureFormationGroup(prediction);
     rewriteManshu(prediction);
     rewritePractical(prediction);
     applyLayout();
@@ -267,5 +285,5 @@
   }
 
   let attempts=0;const timer=root.setInterval(()=>{attempts+=1;if(wrap()||attempts>240)root.clearInterval(timer);},50);
-  root.ChappyFinalDisplayController=Object.freeze({build:BUILD,exactTicket,reasonFor,buildFlowFormations,buildManshuFormations,practicalRows,prepare,applyFinal,decorateMissingOdds});
+  root.ChappyFinalDisplayController=Object.freeze({build:BUILD,exactTicket,reasonFor,buildFlowFormations,buildManshuFormations,practicalRows,prepare,ensureFormationGroup,applyFinal,decorateMissingOdds});
 })(typeof window!=="undefined"?window:null);
