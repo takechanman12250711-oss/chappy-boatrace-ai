@@ -67,8 +67,9 @@ assert(loader.includes("final-reference-layout.css"), "final reference layout st
 assert(loader.includes("final-readability-fix.css"), "readability rescue stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
 assert(loader.includes('BUILD="20260904-final-mobile-ui9"'), "final UI asset generation missing");
-assert(loader.includes("final-display-controller.js"), "single final display owner missing");
+assert(loader.includes("final-display-owner-v2.js"), "formal-safe single final display owner missing");
+assert(loader.includes('OWNER_BUILD="20260905-final-display-owner2"'), "formal-safe owner cache key missing");
 assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
-assert(index.includes('result-void-compat.js?v=20260905-final-display-owner1'), "single-owner bootstrap is not cache-busted in production entrypoint");
+assert(index.includes('result-void-compat.js?v=20260905-final-display-owner1'), "single-owner bootstrap entrypoint unexpectedly changed without index migration");
 
 console.log("final mobile UI contract: ok");
