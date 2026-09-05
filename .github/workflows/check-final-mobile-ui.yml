@@ -6,7 +6,7 @@ on:
       - "index.html"
       - "js/final-mobile-ui.js"
       - "css/final-mobile-ui.css"
-      - "js/final-display-controller.js"
+      - "js/final-display-owner-v2.js"
       - "css/final-display-controller.css"
       - "css/final-compact-ui10.css"
       - "css/final-mobile-structure11.css"
@@ -14,6 +14,7 @@ on:
       - "js/result-void-compat.js"
       - "scripts/test-final-mobile-ui-contract.js"
       - "scripts/test-final-display-ownership.js"
+      - "scripts/test-final-display-semantics.js"
       - ".github/workflows/check-final-mobile-ui.yml"
   push:
     branches:
@@ -22,7 +23,7 @@ on:
       - "index.html"
       - "js/final-mobile-ui.js"
       - "css/final-mobile-ui.css"
-      - "js/final-display-controller.js"
+      - "js/final-display-owner-v2.js"
       - "css/final-display-controller.css"
       - "css/final-compact-ui10.css"
       - "css/final-mobile-structure11.css"
@@ -30,6 +31,7 @@ on:
       - "js/result-void-compat.js"
       - "scripts/test-final-mobile-ui-contract.js"
       - "scripts/test-final-display-ownership.js"
+      - "scripts/test-final-display-semantics.js"
       - ".github/workflows/check-final-mobile-ui.yml"
 
 permissions:
@@ -49,11 +51,14 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check js/final-mobile-ui.js
-          node --check js/final-display-controller.js
+          node --check js/final-display-owner-v2.js
           node --check js/result-void-compat.js
           node --check scripts/test-final-mobile-ui-contract.js
           node --check scripts/test-final-display-ownership.js
+          node --check scripts/test-final-display-semantics.js
       - name: Check final mobile UI contract
         run: node scripts/test-final-mobile-ui-contract.js
       - name: Check final display ownership
         run: node scripts/test-final-display-ownership.js
+      - name: Check formal-safe final display semantics
+        run: node scripts/test-final-display-semantics.js
