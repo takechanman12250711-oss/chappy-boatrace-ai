@@ -69,6 +69,6 @@ assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
 assert(loader.includes('BUILD="20260904-final-mobile-ui9"'), "final UI asset generation missing");
 assert(loader.includes("final-display-controller.js"), "single final display owner missing");
 assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
-assert(index.includes('result-void-compat.js?v=20260904-final-mobile-ui9'), "final UI bootstrap is not cache-busted in production entrypoint");
+assert(index.includes('result-void-compat.js?v=20260905-final-display-owner1'), "single-owner bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
