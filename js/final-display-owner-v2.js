@@ -1,7 +1,7 @@
 (function(root){
 "use strict";
 if(!root||!root.document)return;
-const BUILD="20260905-final-display-owner2";
+const BUILD="20260906-final-display-owner3";
 const WRAPPED="__chappyFinalDisplayOwnerV2Wrapped";
 let latestPrediction=null,missingScheduled=false;
 const text=v=>String(v??"").trim();
@@ -17,7 +17,9 @@ function practicalResult(pred){const direct=pred?.practicalSelection||pred?.prac
 function formalFlowTickets(pred){const universe=new Set(rawFlowTickets(pred));if(!universe.size)return[];const result=practicalResult(pred);const selected=rows(Array.isArray(result)?result:result?.tickets).map(ticketText).map(exactTicket).filter(Boolean);return[...new Set(selected.filter(t=>universe.has(t)))];}
 function formalFlowFormations(pred){const selected=formalFlowTickets(pred);return selected.length>=2?buildFlowFormations(selected):[];}
 function fallbackFlowFormations(pred){const existing=rows(pred?.mainSheet?.flowFormations||pred?.formation?.flowFormations).filter(Boolean);if(existing.length)return existing;return buildFlowFormations(rawFlowTickets(pred));}
-function authoritativeFlowFormations(pred){const formal=formalFlowFormations(pred);return formal.length?formal:fallbackFlowFormations(pred);}
+/* Approved display contract: full formation display is independent from practical purchase tickets.
+   Do not shrink 12-345-全(24) / 4-23-全(8) to the formal exact purchase subset. */
+function authoritativeFlowFormations(pred){return fallbackFlowFormations(pred);}
 function fallbackOddsMap(pred){const map=new Map(),seen=new WeakSet();const record=(t,v)=>{const k=exactTicket(t),o=numericOdds(v);if(k&&o&&!map.has(k))map.set(k,o);};const walk=(v,d=0)=>{if(d>8||v==null)return;if(Array.isArray(v)){v.forEach(x=>walk(x,d+1));return;}if(typeof v!=="object"||seen.has(v))return;seen.add(v);record(ticketText(v),v.odds??v.currentOdds??v.finalOdds??v.value??v.oddsText);Object.entries(v).forEach(([k,c])=>{if(/^[1-6]-[1-6]-[1-6]$/.test(k))record(k,typeof c==="object"&&c?c.odds??c.currentOdds??c.finalOdds??c.value??c.oddsText:c);walk(c,d+1);});};walk(pred);return map;}
 function buildOddsMap(pred){try{if(typeof root.ChappyFinalMobileUi?.buildOddsMap==="function")return root.ChappyFinalMobileUi.buildOddsMap(pred);}catch(_e){}return fallbackOddsMap(pred);}
 function buildManshuFormations(pred){const oddsMap=buildOddsMap(pred),seen=new Set(),candidates=[];const push=t=>{const e=exactTicket(t),o=e?numericOdds(oddsMap.get(e)):null;if(!e||!o||o<100||seen.has(e))return;seen.add(e);candidates.push({ticket:e,odds:o});};rows(pred?.manshuSheet?.tickets||pred?.ticketSheets?.hole).forEach(r=>{const n=ticketText(r),e=exactTicket(n);if(e)push(e);else expandNotation(n).forEach(push);});rows(pred?.lightManshuTicketBoard?.lines).forEach(r=>expandNotation(ticketText(r)).forEach(push));const groups=new Map();candidates.forEach(r=>{const[a,b,c]=r.ticket.split("-"),k=`${a}-${b}`;if(!groups.has(k))groups.set(k,{a,b,thirds:new Set(),tickets:[],odds:[]});const g=groups.get(k);g.thirds.add(c);g.tickets.push(r.ticket);g.odds.push(r.odds);});return[...groups.values()].filter(g=>g.tickets.length>=2).map(g=>{const thirds=[...g.thirds].sort((a,b)=>Number(a)-Number(b));return{notation:`${g.a}-${g.b}-${thirds.join("")}`,pointCount:g.tickets.length,expandedTickets:[...g.tickets],minOdds:Math.min(...g.odds),maxOdds:Math.max(...g.odds)};}).sort((a,b)=>b.minOdds-a.minOdds).slice(0,6);}
