@@ -18,13 +18,13 @@
   "use strict";
   if(!root||!root.document)return;
   const BUILD="20260904-final-mobile-ui9";
-  const COMPACT_STYLE_BUILD="20260905-final-display-owner1";
-  const STRUCTURE_STYLE_BUILD="20260905-final-display-owner1";
+  const COMPACT_STYLE_BUILD="20260905-final-display-owner2";
+  const STRUCTURE_STYLE_BUILD="20260905-final-display-owner2";
   const MANSHU_STYLE_BUILD="20260905-manshu-formation1";
-  const OWNER_BUILD="20260905-final-display-owner1";
+  const OWNER_BUILD="20260905-final-display-owner2";
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
   function script(id,src,onload){if(root.document.getElementById(id)){onload?.();return;}const node=root.document.createElement("script");node.id=id;node.src=src;node.async=false;if(onload)node.addEventListener("load",onload,{once:true});root.document.head.appendChild(node);}
-  function loadOwner(){style("chappy-final-compact-ui10-style",`css/final-compact-ui10.css?v=${COMPACT_STYLE_BUILD}`);style("chappy-final-mobile-structure11-style",`css/final-mobile-structure11.css?v=${STRUCTURE_STYLE_BUILD}`);style("chappy-manshu-formation-style",`css/manshu-formation-fix.css?v=${MANSHU_STYLE_BUILD}`);style("chappy-final-display-controller-style",`css/final-display-controller.css?v=${OWNER_BUILD}`);script("chappy-final-display-controller",`js/final-display-controller.js?v=${OWNER_BUILD}`);}
+  function loadOwner(){style("chappy-final-compact-ui10-style",`css/final-compact-ui10.css?v=${COMPACT_STYLE_BUILD}`);style("chappy-final-mobile-structure11-style",`css/final-mobile-structure11.css?v=${STRUCTURE_STYLE_BUILD}`);style("chappy-manshu-formation-style",`css/manshu-formation-fix.css?v=${MANSHU_STYLE_BUILD}`);style("chappy-final-display-controller-style",`css/final-display-controller.css?v=${OWNER_BUILD}`);script("chappy-final-display-owner",`js/final-display-owner-v2.js?v=${OWNER_BUILD}`);}
   style("chappy-final-mobile-ui-style",`css/final-mobile-ui.css?v=${BUILD}`);
   style("chappy-final-home-v2-photo-style",`css/final-home-v2-photo.css?v=${BUILD}`);
   style("chappy-final-prediction-photo-style",`css/final-prediction-photo.css?v=${BUILD}`);
