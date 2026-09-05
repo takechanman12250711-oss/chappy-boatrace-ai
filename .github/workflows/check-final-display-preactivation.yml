@@ -6,6 +6,7 @@ on:
       - "js/final-display-owner-v2.js"
       - "css/final-display-controller.css"
       - "scripts/test-final-display-semantics.js"
+      - "scripts/test-final-display-ownership.js"
       - ".github/workflows/check-final-display-preactivation.yml"
 
 permissions:
@@ -26,5 +27,8 @@ jobs:
         run: |
           node --check js/final-display-owner-v2.js
           node --check scripts/test-final-display-semantics.js
+          node --check scripts/test-final-display-ownership.js
       - name: Verify approved formation and purchase separation
         run: node scripts/test-final-display-semantics.js
+      - name: Verify new owner remains inactive before loader switch
+        run: node scripts/test-final-display-ownership.js
