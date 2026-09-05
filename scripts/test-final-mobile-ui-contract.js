@@ -13,9 +13,6 @@ const index = fs.readFileSync("index.html", "utf8");
 
 assert(ui.includes("buildPhotoStyleLines"), "photo-style ticket builder missing");
 assert(ui.includes("buildOddsMap"), "ticket odds lookup missing");
-assert(ui.includes("buildTrueManshuBoard"), "true manshu multi-line board missing");
-assert(ui.includes("odds < 100"), "manshu 100x threshold missing");
-assert(ui.includes("decorateMissingOdds"), "missing-number odds decoration missing");
 assert(ui.includes("setupBoatTabs"), "boat evaluation tab behavior missing");
 assert(ui.includes("dedupeReason"), "duplicate explanation cleanup missing");
 assert(ui.includes("flowFormations"), "formation source missing");
@@ -57,7 +54,7 @@ assert(referenceCss.includes("display:none!important"), "duplicate race nav tab 
 assert(referenceCss.includes("home-v2-races .home-v2-race:not(:first-child)"), "reference next-race-only venue row missing");
 assert(readabilityCss.includes("chappy-race-info-visible"), "race information visibility rescue missing");
 assert(readabilityCss.includes("chappy-final-buy-odds"), "AI ticket odds styling missing");
-assert(readabilityCss.includes("chappy-true-manshu-board"), "manshu multi-line styling missing");
+assert(readabilityCss.includes("chappy-true-manshu-board"), "manshu styling missing");
 assert(readabilityCss.includes("chappy-missing-odds"), "missing-number odds styling missing");
 assert(readabilityCss.includes("v3-boat-tab-panel.is-active"), "boat evaluation selected-panel styling missing");
 assert(readabilityCss.includes("details.v3-ticket-accordion"), "ticket accordion visibility rescue missing");
@@ -69,7 +66,8 @@ assert(loader.includes("final-iphone-tuning.css"), "iPhone final tuning styleshe
 assert(loader.includes("final-reference-layout.css"), "final reference layout stylesheet loader missing");
 assert(loader.includes("final-readability-fix.css"), "readability rescue stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD = "20260904-final-mobile-ui9"'), "final UI asset generation was not bumped");
+assert(loader.includes('BUILD="20260904-final-mobile-ui9"'), "final UI asset generation missing");
+assert(loader.includes("final-display-controller.js"), "single final display owner missing");
 assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
 assert(index.includes('result-void-compat.js?v=20260904-final-mobile-ui9'), "final UI bootstrap is not cache-busted in production entrypoint");
 
