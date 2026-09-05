@@ -11,6 +11,7 @@ on:
       - "js/note-generator.js"
       - "js/render.js"
       - "js/formation-odds-display.js"
+      - "js/final-display-owner-v2.js"
       - "js/prediction-runtime-loader.js"
       - "js/app-runtime-loader.js"
       - "index.html"
@@ -18,8 +19,8 @@ on:
       - "scripts/build-prediction-summaries.js"
       - "scripts/test-formation-display-contract-current.js"
       - "scripts/test-formation-odds-display.js"
+      - "scripts/test-final-display-semantics.js"
       - "scripts/test-note-copy-cleanup.js"
-      - "scripts/test-prediction-transparency-ui.js"
       - "scripts/test-prediction-summaries.js"
       - "scripts/test-build-prediction-index.js"
       - "data/predictions/20260813.json"
@@ -46,17 +47,19 @@ jobs:
           node --check js/note-generator.js
           node --check js/render.js
           node --check js/formation-odds-display.js
+          node --check js/final-display-owner-v2.js
           node --check js/prediction-runtime-loader.js
           node --check js/app-runtime-loader.js
           node --check scripts/build-prediction-index.js
           node --check scripts/build-prediction-summaries.js
           node --check scripts/test-formation-display-contract-current.js
           node --check scripts/test-formation-odds-display.js
+          node --check scripts/test-final-display-semantics.js
       - name: Replay current formation display contract
         run: |
           node scripts/test-formation-display-contract-current.js
           node scripts/test-formation-odds-display.js
+          node scripts/test-final-display-semantics.js
           node scripts/test-note-copy-cleanup.js
-          node scripts/test-prediction-transparency-ui.js
           node scripts/test-prediction-summaries.js
           node scripts/test-build-prediction-index.js
