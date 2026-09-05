@@ -6,15 +6,14 @@ on:
       - "index.html"
       - "js/final-mobile-ui.js"
       - "css/final-mobile-ui.css"
-      - "js/final-mobile-structure11.js"
+      - "js/final-display-controller.js"
+      - "css/final-display-controller.css"
+      - "css/final-compact-ui10.css"
       - "css/final-mobile-structure11.css"
-      - "js/final-ticket-reason-fix.js"
-      - "js/final-missing-odds-refresh.js"
+      - "css/manshu-formation-fix.css"
       - "js/result-void-compat.js"
       - "scripts/test-final-mobile-ui-contract.js"
-      - "scripts/test-final-mobile-structure-contract.js"
-      - "scripts/test-ticket-specific-reasons.js"
-      - "scripts/test-final-missing-odds-refresh.js"
+      - "scripts/test-final-display-ownership.js"
       - ".github/workflows/check-final-mobile-ui.yml"
   push:
     branches:
@@ -23,15 +22,14 @@ on:
       - "index.html"
       - "js/final-mobile-ui.js"
       - "css/final-mobile-ui.css"
-      - "js/final-mobile-structure11.js"
+      - "js/final-display-controller.js"
+      - "css/final-display-controller.css"
+      - "css/final-compact-ui10.css"
       - "css/final-mobile-structure11.css"
-      - "js/final-ticket-reason-fix.js"
-      - "js/final-missing-odds-refresh.js"
+      - "css/manshu-formation-fix.css"
       - "js/result-void-compat.js"
       - "scripts/test-final-mobile-ui-contract.js"
-      - "scripts/test-final-mobile-structure-contract.js"
-      - "scripts/test-ticket-specific-reasons.js"
-      - "scripts/test-final-missing-odds-refresh.js"
+      - "scripts/test-final-display-ownership.js"
       - ".github/workflows/check-final-mobile-ui.yml"
 
 permissions:
@@ -51,19 +49,11 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check js/final-mobile-ui.js
-          node --check js/final-mobile-structure11.js
-          node --check js/final-ticket-reason-fix.js
-          node --check js/final-missing-odds-refresh.js
+          node --check js/final-display-controller.js
           node --check js/result-void-compat.js
           node --check scripts/test-final-mobile-ui-contract.js
-          node --check scripts/test-final-mobile-structure-contract.js
-          node --check scripts/test-ticket-specific-reasons.js
-          node --check scripts/test-final-missing-odds-refresh.js
+          node --check scripts/test-final-display-ownership.js
       - name: Check final mobile UI contract
         run: node scripts/test-final-mobile-ui-contract.js
-      - name: Check final mobile structure contract
-        run: node scripts/test-final-mobile-structure-contract.js
-      - name: Check ticket-specific reasons
-        run: node scripts/test-ticket-specific-reasons.js
-      - name: Check missing-number odds refresh
-        run: node scripts/test-final-missing-odds-refresh.js
+      - name: Check final display ownership
+        run: node scripts/test-final-display-ownership.js
