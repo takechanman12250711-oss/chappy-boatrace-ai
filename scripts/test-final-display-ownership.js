@@ -5,7 +5,7 @@ const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
 const owner = fs.readFileSync("js/final-display-owner-v2.js", "utf8");
 const ownerCss = fs.readFileSync("css/final-display-controller.css", "utf8");
 
-assert(loader.includes('OWNER_BUILD="20260905-final-display-owner2"'), "final display owner cache key missing");
+assert(loader.includes('OWNER_BUILD="20260906-final-display-owner3"'), "final display owner cache key missing");
 assert(loader.includes("final-display-owner-v2.js"), "single final display owner is not loaded");
 assert(loader.includes("final-display-controller.css"), "single final display owner stylesheet is not loaded");
 [
