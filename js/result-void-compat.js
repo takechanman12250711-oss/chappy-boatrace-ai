@@ -21,9 +21,10 @@
   const COMPACT_BUILD="20260904-final-mobile-ui10";
   const STRUCTURE_BUILD="20260905-final-mobile-structure15-manshu";
   const TICKET_REASON_BUILD="20260905-ticket-reason3-unified";
+  const MANSHU_STYLE_BUILD="20260905-manshu-formation1";
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
   function script(id,src,onload){if(root.document.getElementById(id)){onload?.();return;}const node=root.document.createElement("script");node.id=id;node.src=src;node.async=false;if(onload)node.addEventListener("load",onload,{once:true});root.document.head.appendChild(node);}
-  function loadStructure(){style("chappy-final-mobile-structure11-style",`css/final-mobile-structure11.css?v=${STRUCTURE_BUILD}`);script("chappy-final-mobile-structure11-script",`js/final-mobile-structure11.js?v=${STRUCTURE_BUILD}`);}
+  function loadStructure(){style("chappy-final-mobile-structure11-style",`css/final-mobile-structure11.css?v=${STRUCTURE_BUILD}`);style("chappy-manshu-formation-style",`css/manshu-formation-fix.css?v=${MANSHU_STYLE_BUILD}`);script("chappy-final-mobile-structure11-script",`js/final-mobile-structure11.js?v=${STRUCTURE_BUILD}`);}
   function loadCompact(){style("chappy-final-compact-ui10-style",`css/final-compact-ui10.css?v=${COMPACT_BUILD}`);script("chappy-final-compact-ui10-script",`js/final-compact-ui10.js?v=${COMPACT_BUILD}`,loadStructure);}
   function loadTicketReason(){script("chappy-final-ticket-reason-fix",`js/final-ticket-reason-fix.js?v=${TICKET_REASON_BUILD}`,loadCompact);}
   style("chappy-final-mobile-ui-style",`css/final-mobile-ui.css?v=${BUILD}`);
