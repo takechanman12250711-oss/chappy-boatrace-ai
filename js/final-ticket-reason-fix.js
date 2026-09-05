@@ -57,6 +57,7 @@
   }
 
   function ticketText(row){
+    if(typeof row==="string")return row;
     if(!row||typeof row!=="object")return "";
     return row.ticket||row.line||row.notation||row.formation?.notation||row.formation||"";
   }
@@ -70,14 +71,43 @@
     });
   }
 
+  function buildFlowFormations(list,prediction){
+    if(!Array.isArray(list))return [];
+    const groups=new Map();
+    list.forEach(row=>{
+      const exact=exactTicket(ticketText(row));
+      if(!exact)return;
+      const [a,b,c]=exact.split("-");
+      const key=`${a}-${b}`;
+      if(!groups.has(key))groups.set(key,{a,b,thirds:[],tickets:[]});
+      const group=groups.get(key);
+      if(!group.thirds.includes(c))group.thirds.push(c);
+      group.tickets.push(exact);
+    });
+    return [...groups.values()].map(group=>{
+      group.thirds.sort((a,b)=>Number(a)-Number(b));
+      const notation=`${group.a}-${group.b}-${group.thirds.join("")}`;
+      const reasons=group.tickets.map(ticket=>reasonFor(ticket,prediction)).filter(Boolean);
+      return {
+        notation,
+        pointCount:group.tickets.length,
+        expandedTickets:[...group.tickets],
+        reason:reasons.length===1?reasons[0]:`${group.a}号艇の${headAction(courseOf(prediction,group.a))}を軸に、${group.b}号艇を2着固定、3着${group.thirds.join("・")}号艇へ展開。`
+      };
+    });
+  }
+
   function prepare(prediction){
     if(!prediction||typeof prediction!=="object")return prediction;
     const next={...prediction};
+    const rawFlow=prediction.mainSheet?.flowTickets||prediction.ticketSheets?.flow||[];
+    const fallbackFormations=buildFlowFormations(rawFlow,prediction);
     if(prediction.mainSheet){
       next.mainSheet={...prediction.mainSheet,
         tickets:decorateList(prediction.mainSheet.tickets,prediction),
         coverTickets:decorateList(prediction.mainSheet.coverTickets,prediction),
-        flowTickets:decorateList(prediction.mainSheet.flowTickets,prediction)
+        flowTickets:decorateList(prediction.mainSheet.flowTickets,prediction),
+        flowFormations:Array.isArray(prediction.mainSheet.flowFormations)&&prediction.mainSheet.flowFormations.length?prediction.mainSheet.flowFormations:fallbackFormations
       };
     }
     if(prediction.manshuSheet){
@@ -94,6 +124,7 @@
         all:decorateList(prediction.ticketSheets.all,prediction)
       };
     }
+    next.formation={...(prediction.formation||{}),flowFormations:Array.isArray(prediction.formation?.flowFormations)&&prediction.formation.flowFormations.length?prediction.formation.flowFormations:fallbackFormations};
     next.aiTicketList=decorateList(prediction.aiTicketList,prediction);
     return next;
   }
@@ -111,7 +142,7 @@
     return true;
   }
 
-  const api=Object.freeze({exactTicket,courseOf,reasonFor,prepare,install});
+  const api=Object.freeze({exactTicket,courseOf,reasonFor,buildFlowFormations,prepare,install});
   root.ChappyTicketSpecificReason=api;
   install(root);
 })(typeof window!=="undefined"?window:globalThis);
