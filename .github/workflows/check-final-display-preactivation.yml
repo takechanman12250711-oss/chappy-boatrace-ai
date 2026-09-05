@@ -1,0 +1,34 @@
+name: Check final display preactivation
+
+on:
+  pull_request:
+    paths:
+      - "js/final-display-owner-v2.js"
+      - "css/final-display-controller.css"
+      - "scripts/test-final-display-semantics.js"
+      - "scripts/test-final-display-ownership.js"
+      - ".github/workflows/check-final-display-preactivation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  preactivation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check syntax
+        run: |
+          node --check js/final-display-owner-v2.js
+          node --check scripts/test-final-display-semantics.js
+          node --check scripts/test-final-display-ownership.js
+      - name: Verify approved formation and purchase separation
+        run: node scripts/test-final-display-semantics.js
+      - name: Verify new owner remains inactive before loader switch
+        run: node scripts/test-final-display-ownership.js
