@@ -27,7 +27,7 @@ assert.equal(nodes.has("chappy-final-display-owner"), false, "owner must wait fo
 base.listeners.load();
 const active = nodes.get("chappy-final-display-owner");
 assert.ok(active, "single display owner must load after the base renderer");
-assert.match(active.src, /^js\/final-display-owner-v2\.js\?v=20260906-practical-tags-manshu-visible1$/);
+assert.match(active.src, /^js\/final-display-owner-v2\.js\?v=20260907-practical-selected-visible1$/);
 assert.equal(active.async, false, "owner must preserve script execution order");
 assert.deepEqual(appended.filter(n => n.tagName === "script").map(n => n.src.split("?")[0]), [
   "js/final-mobile-ui.js", "js/final-display-owner-v2.js"

@@ -24,7 +24,7 @@ assert(ownerCss.includes(".v3-practical-section{display:none!important;}"), "dup
 assert(ownerCss.includes(".chappy-practical-tag"), "practical tag style missing");
 assert(ownerCss.includes("@media(max-width:360px)"), "small iPhone fallback missing");
 
-assert(loader.includes('OWNER_BUILD="20260906-practical-tags-manshu-visible1"'), "single-owner cache key missing");
+assert(loader.includes('OWNER_BUILD="20260907-practical-selected-visible1"'), "single-owner cache key missing");
 assert(loader.includes("final-display-owner-v2.js"), "new final display owner is not activated");
 assert(loader.includes("final-display-controller.css"), "single-owner stylesheet is not activated");
 [

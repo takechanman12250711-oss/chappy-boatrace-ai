@@ -67,4 +67,21 @@ assert.strictEqual(badges.length,1);
 assert.strictEqual(badges[0].textContent,"実戦厳選",
   "original exact ticket row must receive the practical-selection tag");
 
+assert.deepStrictEqual(
+  api.missingPracticalTickets(
+    {practicalSelection:{status:"selected",tickets:[{ticket:"1-2-3"},{ticket:"4-2-1"}]}},
+    new Set(["1-2-3"])
+  ),
+  ["4-2-1"],
+  "a selected ticket that is absent from all visible original sections must remain eligible for fallback display"
+);
+assert.deepStrictEqual(
+  api.missingPracticalTickets(
+    {practicalSelection:{status:"selected",tickets:[{ticket:"1-2-3"}] }},
+    new Set(["1-2-3"])
+  ),
+  [],
+  "a selected ticket already visible in its original section must not be duplicated in fallback display"
+);
+
 console.log("practical tag + visible manshu regression: ok");
