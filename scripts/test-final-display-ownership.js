@@ -5,7 +5,6 @@ const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
 const owner = fs.readFileSync("js/final-display-owner-v2.js", "utf8");
 const ownerCss = fs.readFileSync("css/final-display-controller.css", "utf8");
 
-// This file is the activation gate. It is intentionally not run until the loader switch commit.
 assert(owner.includes("formalFlowTickets"), "formal selection flow ownership missing");
 assert(owner.includes("formalFlowFormations"), "formal-safe formation ownership missing");
 assert(owner.includes("authoritativeFlowFormations"), "authoritative formation resolver missing");
@@ -21,6 +20,14 @@ assert(owner.includes("単券1点は万舟欄に表示しません"), "single-ti
 assert(ownerCss.includes(".chappy-final-purchase-list"), "final purchase compact grid missing");
 assert(ownerCss.includes("@media(max-width:360px)"), "small iPhone fallback missing");
 
-// Before activation, the production loader must still be the old chain.
-assert(!loader.includes("final-display-owner-v2.js"), "new final display owner must not activate before preactivation checks pass");
-console.log("final display preactivation ownership contract: ok");
+assert(loader.includes('OWNER_BUILD="20260906-final-display-owner3"'), "single-owner cache key missing");
+assert(loader.includes("final-display-owner-v2.js"), "new final display owner is not activated");
+assert(loader.includes("final-display-controller.css"), "single-owner stylesheet is not activated");
+[
+  "js/final-ticket-reason-fix.js",
+  "js/final-compact-ui10.js",
+  "js/final-mobile-structure11.js",
+  "js/final-missing-odds-refresh.js",
+  "js/final-display-controller.js"
+].forEach(path => assert(!loader.includes(path), `${path} must not be loaded as a competing final renderer`));
+console.log("final display activated single-owner contract: ok");
