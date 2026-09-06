@@ -10,6 +10,7 @@ const referenceCss = fs.readFileSync("css/final-reference-layout.css", "utf8");
 const readabilityCss = fs.readFileSync("css/final-readability-fix.css", "utf8");
 const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
 const index = fs.readFileSync("index.html", "utf8");
+const script = fs.readFileSync("js/script.js", "utf8");
 
 assert(ui.includes("buildPhotoStyleLines"), "photo-style ticket builder missing");
 assert(ui.includes("buildOddsMap"), "ticket odds lookup missing");
@@ -52,8 +53,9 @@ assert(iphoneCss.includes("chappy-final-buy-formation"), "iPhone formation sizin
 assert(referenceCss.includes("home-v2-recommend"), "reference home recommendation suppression missing");
 assert(referenceCss.includes("grid-template-columns:1fr"), "reference home one-column venue list missing");
 assert(referenceCss.includes("repeat(3"), "reference three-column race grid missing");
-assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "duplicate race nav compatibility selector missing");
-assert(referenceCss.includes("display:none!important"), "duplicate race nav tab must stay hidden");
+assert(referenceCss.includes('grid-template-columns:repeat(4,minmax(0,1fr))'), "four visible bottom navigation items required");
+assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "race nav selector missing");
+assert(referenceCss.includes('.bottom-nav-item[data-view="race"]{\n  display:flex!important;'), "race nav must remain visible so review mode is reachable");
 assert(referenceCss.includes("home-v2-races .home-v2-race:not(:first-child)"), "reference next-race-only venue row missing");
 assert(readabilityCss.includes("chappy-race-info-visible"), "race information visibility rescue missing");
 assert(readabilityCss.includes("chappy-final-buy-odds"), "AI ticket odds styling missing");
@@ -69,7 +71,7 @@ assert(loader.includes("final-iphone-tuning.css"), "iPhone final tuning styleshe
 assert(loader.includes("final-reference-layout.css"), "final reference layout stylesheet loader missing");
 assert(loader.includes("final-readability-fix.css"), "readability rescue stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD="20260904-final-mobile-ui9"'), "final UI asset generation changed unexpectedly");
+assert(loader.includes('const BUILD="20260906-review-entry1"'), "review-entry asset generation missing");
 assert(loader.includes('OWNER_BUILD="20260906-practical-tags-manshu-visible1"'), "single-owner generation missing");
 assert(loader.includes('USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract1"'), "restored ticket UI generation missing");
 assert(loader.includes("final-display-owner-v2.js"), "single final display owner loader missing");
@@ -81,7 +83,10 @@ assert(loader.includes("final-display-controller.css"), "single final display ow
   "final-mobile-structure11.js",
   "final-missing-odds-refresh.js"
 ].forEach(name=>assert(!loader.includes(name), `${name} must not be loaded as a competing final renderer`));
+assert(index.includes('data-view="race"'), "race navigation entry missing from production index");
+assert(index.includes('<option value="review">終了レースを振り返る</option>'), "review mode selector missing from production index");
+assert(script.includes('isReview'), "review mode handling missing from race controls");
+assert(script.includes('振り返り予想を開始'), "review-mode action missing from race controls");
 assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
-assert(index.includes('result-void-compat.js?v=20260906-restore-ticket-ui-contract1'), "restored ticket UI bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
