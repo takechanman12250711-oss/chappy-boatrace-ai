@@ -70,7 +70,7 @@ assert(loader.includes("final-reference-layout.css"), "final reference layout st
 assert(loader.includes("final-readability-fix.css"), "readability rescue stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
 assert(loader.includes('const BUILD="20260904-final-mobile-ui9"'), "final UI asset generation changed unexpectedly");
-assert(loader.includes('OWNER_BUILD="20260906-final-display-owner3"'), "single-owner generation missing");
+assert(loader.includes('OWNER_BUILD="20260906-practical-tags-manshu-visible1"'), "single-owner generation missing");
 assert(loader.includes("final-display-owner-v2.js"), "single final display owner loader missing");
 assert(loader.includes("final-display-controller.css"), "single final display owner stylesheet missing");
 [
@@ -80,6 +80,6 @@ assert(loader.includes("final-display-controller.css"), "single final display ow
   "final-missing-odds-refresh.js"
 ].forEach(name=>assert(!loader.includes(name), `${name} must not be loaded as a competing final renderer`));
 assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
-assert(index.includes('result-void-compat.js?v=20260906-final-display-owner3'), "single-owner bootstrap is not cache-busted in production entrypoint");
+assert(index.includes('result-void-compat.js?v=20260906-practical-tags-manshu-visible1'), "single-owner bootstrap is not cache-busted in production entrypoint");
 
 console.log("final mobile UI contract: ok");
