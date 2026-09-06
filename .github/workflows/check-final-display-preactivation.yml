@@ -1,19 +1,22 @@
-name: Check final display preactivation
+name: Check final display activation
 
 on:
   pull_request:
     paths:
+      - "index.html"
+      - "js/result-void-compat.js"
       - "js/final-display-owner-v2.js"
       - "css/final-display-controller.css"
       - "scripts/test-final-display-semantics.js"
       - "scripts/test-final-display-ownership.js"
+      - "scripts/test-final-mobile-ui-contract.js"
       - ".github/workflows/check-final-display-preactivation.yml"
 
 permissions:
   contents: read
 
 jobs:
-  preactivation:
+  activation:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -25,10 +28,14 @@ jobs:
           node-version: "20"
       - name: Check syntax
         run: |
+          node --check js/result-void-compat.js
           node --check js/final-display-owner-v2.js
           node --check scripts/test-final-display-semantics.js
           node --check scripts/test-final-display-ownership.js
+          node --check scripts/test-final-mobile-ui-contract.js
       - name: Verify approved formation and purchase separation
         run: node scripts/test-final-display-semantics.js
-      - name: Verify new owner remains inactive before loader switch
+      - name: Verify only one final display owner is active
         run: node scripts/test-final-display-ownership.js
+      - name: Verify mobile bootstrap contract
+        run: node scripts/test-final-mobile-ui-contract.js
