@@ -10,6 +10,7 @@ on:
       - "scripts/test-final-display-semantics.js"
       - "scripts/test-final-display-ownership.js"
       - "scripts/test-final-mobile-ui-contract.js"
+      - "scripts/test-practical-tag-manshu-visibility.js"
       - ".github/workflows/check-final-display-preactivation.yml"
 
 permissions:
@@ -33,9 +34,12 @@ jobs:
           node --check scripts/test-final-display-semantics.js
           node --check scripts/test-final-display-ownership.js
           node --check scripts/test-final-mobile-ui-contract.js
+          node --check scripts/test-practical-tag-manshu-visibility.js
       - name: Verify approved formation and purchase separation
         run: node scripts/test-final-display-semantics.js
       - name: Verify only one final display owner is active
         run: node scripts/test-final-display-ownership.js
       - name: Verify mobile bootstrap contract
         run: node scripts/test-final-mobile-ui-contract.js
+      - name: Verify practical tags and visible manshu tickets
+        run: node scripts/test-practical-tag-manshu-visibility.js
