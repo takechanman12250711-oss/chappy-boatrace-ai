@@ -77,4 +77,56 @@ assert.equal(api.expandNotation("12-345-全").length,24);
 assert.equal(api.expandNotation("4-23-全").length,8);
 assert.match(loader,/final-display-owner-v2\.js/);
 assert.doesNotMatch(loader,/js\/final-ticket-reason-fix\.js/);
+// Regression: the base renderer must receive the prepared copy, regardless
+// of the different installation timers used by the base and final owner.
+{
+  let tick,received,paintQueries=0;
+  const queued=[];
+  const original=()=>"unwrapped";
+  const paintWindow={
+    document:{documentElement:{},querySelector(){paintQueries++;return null;},getElementById(){return null;}},
+    ChappyFinalMobileUi:{},renderAll:original,
+    setInterval(callback){tick=callback;return 1;},clearInterval(){},
+    setTimeout(callback){queued.push(callback);return queued.length;}
+  };
+  vm.runInNewContext(source,{window:paintWindow});
+  tick();
+  assert.equal(paintWindow.renderAll,original,"do not install inside a not-yet-ready base renderer");
+  const base=function(input){received=input;return "rendered";};
+  base.__chappyFinalMobileUiWrapped=true;
+  paintWindow.renderAll=base;
+  tick();
+  assert.equal(paintWindow.renderAll(prediction),"rendered");
+  assert.match(received.mainSheet.tickets[0].reason,/3号艇/);
+  assert.match(received.mainSheet.tickets[1].reason,/4号艇/);
+  assert.notEqual(received,prediction);
+  assert.equal(received.practicalSelection,prediction.practicalSelection);
+  paintWindow.renderAll({...prediction,raceKey:"newer-race"});
+  queued.shift()();
+  assert.equal(paintQueries,0,"a previous race must not repaint after a newer render");
+  queued.shift()();
+  assert.ok(paintQueries>0,"the current race must still finish painting");
+
+  const paintApi=paintWindow.ChappyFinalDisplayOwner;
+  const formation={notation:"12-345-全",pointCount:24,reason:"既存の根拠を保持。"};
+  const display={mainSheet:{flowFormations:[formation]},odds:{"1-3-2":31.6,"1-4-2":44.2}};
+  let rewritten=0,inserted="";
+  const card={querySelector(selector){return {textContent:selector === ".chappy-final-buy-formation" ? "12-345-全" : "24点"};}};
+  const existing={open:false,querySelectorAll(){return [card];},set outerHTML(value){rewritten++;inserted=value;}};
+  const box={querySelector(){return existing;},insertAdjacentHTML(_where,value){inserted=value;}};
+  paintWindow.document.querySelector=()=>box;
+  paintApi.ensureFormationGroup(display);
+  assert.equal(rewritten,0,"preserve matching full formation DOM, odds, reasons and listeners");
+  assert.equal(existing.open,false,"do not force the formation accordion open");
+  box.querySelector=()=>null;
+  paintApi.ensureFormationGroup(display);
+  assert.match(inserted,/12-345-全/);
+  assert.match(inserted,/24点/);
+  assert.match(inserted,/chappy-final-buy-odds[^>]*>31\.6倍/);
+  assert.match(inserted,/既存の根拠を保持。/);
+  assert.doesNotMatch(inserted,/<details[^>]*\bopen\b/);
+  paintApi.ensureFormationGroup({mainSheet:{flowFormations:[formation]}});
+  assert.match(inserted,/オッズ未取得/);
+  assert.equal(display.mainSheet.flowFormations[0],formation);
+}
 console.log("active owner ticket-specific reasons + full formation/purchase separation: ok");
