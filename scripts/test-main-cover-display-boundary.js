@@ -248,10 +248,10 @@ assert.equal(prepared.aiCore.manshuSheet.marker, "ai-core-manshu-sheet");
 
 assert.deepEqual(
   prepared.mainSheet.flowFormations,
-  [],
-  "通常欄は全候補8点でなく根拠のある同一軸exact 2券を使う"
+  [flowFormation],
+  "全点フォーメーション表示は実購入の同一軸exact 2券と分離して保持する"
 );
-assert.deepEqual(prepared.aiCore.mainSheet.flowFormations, []);
+assert.deepEqual(prepared.aiCore.mainSheet.flowFormations, [flowFormation]);
 assert.equal(prepared.mainSheet.tickets[0].odds, 12.4);
 assert.equal(prepared.mainSheet.tickets[0].oddsText, "12.4倍（最終取得）");
 assert.equal(prepared.mainSheet.tickets[0].oddsSource, "boatrace-official-snapshot");
@@ -514,7 +514,7 @@ const skipped = boundary.prepare(skippedInput);
 assert.deepEqual(skipped.mainSheet.tickets, []);
 assert.deepEqual(skipped.mainSheet.coverTickets, []);
 assert.deepEqual(skipped.mainSheet.flowTickets, []);
-assert.deepEqual(skipped.mainSheet.flowFormations, []);
+assert.deepEqual(skipped.mainSheet.flowFormations, [flowFormation], "購入見送りでも表示用フォーメーションは購入券とは独立して保持する");
 assert.deepEqual(skipped.manshuSheet.tickets, []);
 assert.deepEqual(skippedInput, skippedSnapshot, "見送りでも入力を変更しない");
 
