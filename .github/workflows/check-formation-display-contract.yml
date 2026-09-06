@@ -67,3 +67,15 @@ jobs:
           node scripts/test-prediction-transparency-ui-approved.js
           node scripts/test-prediction-summaries.js
           node scripts/test-build-prediction-index.js
+      - name: Package tracked display sources for failure reproduction
+        if: failure()
+        run: |
+          git archive --format=tar HEAD js scripts css style.css index.html > "$RUNNER_TEMP/formation-display-sources.tar"
+      - name: Preserve failure reproduction sources
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formation-display-repro-${{ github.sha }}
+          path: ${{ runner.temp }}/formation-display-sources.tar
+          if-no-files-found: error
+          retention-days: 1
