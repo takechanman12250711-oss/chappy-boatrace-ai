@@ -1,0 +1,10 @@
+/* Single-owner final display styles. */
+.chappy-final-mobile-ui #resultArea .chappy-final-purchase-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.chappy-final-mobile-ui #resultArea .chappy-final-purchase-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;padding:9px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#0d1d27;}
+.chappy-final-mobile-ui #resultArea .chappy-final-purchase-row strong{font-size:16px;line-height:1.15;white-space:nowrap;color:#fff;}
+.chappy-final-mobile-ui #resultArea .chappy-final-purchase-row span{font-size:11px;font-weight:900;white-space:nowrap;color:#8fd3ff;}
+.chappy-final-mobile-ui #resultArea .chappy-final-purchase-empty{padding:10px;border-radius:10px;background:#0d1d27;color:#9fb0bc;font-size:12px;}
+.chappy-final-mobile-ui #resultArea .chappy-unified-note{margin:5px 0 8px;font-size:11px;line-height:1.45;color:#9fb0bc;}
+.chappy-final-mobile-ui #resultArea .v3-practical-section .v3-adoption-audit,
+.chappy-final-mobile-ui #resultArea .v3-practical-section .v3-expansion-banner{display:none!important;}
+@media(max-width:360px){.chappy-final-mobile-ui #resultArea .chappy-final-purchase-list{grid-template-columns:1fr;}}

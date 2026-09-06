@@ -74,6 +74,7 @@ assert.equal(
       manshuSheet: {
         tickets: [{
           ticket: "6-1-2",
+          odds: 120.1,
           category: "穴候補",
           scenarioSummary: "6号艇の展開突き。"
         }]
@@ -82,7 +83,7 @@ assert.equal(
     })
   ),
   "6-1-2",
-  "表示境界で万舟欄だけ空になっても、予想本体に保持した候補を復元する"
+  "表示境界で万舟欄だけ空になっても、取得済み100倍以上の候補を復元する"
 );
 
 const normalManshuSection = {
@@ -126,9 +127,20 @@ assert.equal(
       practicalSelection: { status: "selected" }
     })
   ),
-  "5-2-1",
-  "候補シートがない保存形式でもformationから復元する"
+  "",
+  "オッズ未取得の旧formation文字列を万舟として復元しない"
 );
+
+for (const odds of [undefined, null, "", 99.9, 0]) {
+  assert.equal(moduleApi.firstFallbackTicket({
+    manshuSheet:{tickets:[{ticket:"6-1-2",odds}]},
+    practicalSelection:{status:"selected"}
+  }),null,"未取得または100倍未満を万舟として復元しない");
+}
+assert.equal(moduleApi.ticketOf(moduleApi.firstFallbackTicket({
+  formation:{manshu:[{ticket:"5-2-1",odds:100}]},
+  practicalSelection:{status:"selected"}
+})),"5-2-1","オッズ取得済みの保存formationは100倍を境界として復元する");
 
 let fallbackWrites = 0;
 let fallbackVisible = false;
