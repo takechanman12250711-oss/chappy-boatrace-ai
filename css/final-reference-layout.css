@@ -104,12 +104,14 @@ body.chappy-final-mobile-ui .official-race-grid .race-grid-button{
 
 body.chappy-final-mobile-ui .bottom-nav{
   display:grid!important;
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
   align-items:stretch!important;
 }
 
+/* Keep the existing race-selection route reachable at all times.
+   This is the only route that exposes `終了レースを振り返る` after all live races close. */
 body.chappy-final-mobile-ui .bottom-nav-item[data-view="race"]{
-  display:none!important;
+  display:flex!important;
 }
 
 body.chappy-final-mobile-ui .bottom-nav-item{

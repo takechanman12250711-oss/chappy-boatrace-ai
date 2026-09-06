@@ -17,7 +17,7 @@
 (function loadFinalMobileUi(root){
   "use strict";
   if(!root||!root.document)return;
-  const BUILD="20260904-final-mobile-ui9";
+  const BUILD="20260906-review-entry1";
   const COMPACT_STYLE_BUILD="20260905-final-display-owner2";
   const STRUCTURE_STYLE_BUILD="20260905-final-display-owner2";
   const MANSHU_STYLE_BUILD="20260905-manshu-formation1";
