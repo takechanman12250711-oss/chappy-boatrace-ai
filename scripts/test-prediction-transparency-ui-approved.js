@@ -7,10 +7,10 @@ const Module = require("node:module");
 
 // Keep the entire historical transparency regression test, but replace only
 // the obsolete formation-display assertion that predates the approved
-// PR #374 contract. The old assertion is fingerprinted below so this bridge
+// PR #374 contract. The archived source is fingerprinted so this bridge
 // fails closed if that source changes unexpectedly.
-const originalPath = path.resolve(__dirname, "test-prediction-transparency-ui.js");
-const source = fs.readFileSync(originalPath, "utf8");
+const legacyPath = path.resolve(__dirname, "test-prediction-transparency-ui-legacy.js");
+const source = fs.readFileSync(legacyPath, "utf8");
 const startMarker = "const exactFlowRows =";
 const endMarker = "assert.equal(\n  html.split(flowCommonReason).length - 1,";
 const start = source.indexOf(startMarker);
@@ -45,10 +45,10 @@ assert.equal(
 );
 
 // Execute every other historical transparency assertion unchanged.
-const testModule = new Module(originalPath, module);
-testModule.filename = originalPath;
-testModule.paths = Module._nodeModulePaths(path.dirname(originalPath));
-testModule._compile(transformed, originalPath);
+const testModule = new Module(legacyPath, module);
+testModule.filename = legacyPath;
+testModule.paths = Module._nodeModulePaths(path.dirname(legacyPath));
+testModule._compile(transformed, legacyPath);
 
 // Also lock the display/purchase separation at the single-owner boundary:
 // 12-345-全=24, 4-23-全=8, while practical purchases remain exact tickets.
