@@ -6,11 +6,13 @@ on:
       - "index.html"
       - "js/result-void-compat.js"
       - "js/final-display-owner-v2.js"
+      - "js/final-display-user-contract.js"
       - "css/final-display-controller.css"
       - "scripts/test-final-display-semantics.js"
       - "scripts/test-final-display-ownership.js"
       - "scripts/test-final-mobile-ui-contract.js"
       - "scripts/test-practical-tag-manshu-visibility.js"
+      - "scripts/test-restored-ticket-ui-contract.js"
       - ".github/workflows/check-final-display-preactivation.yml"
 
 permissions:
@@ -31,10 +33,12 @@ jobs:
         run: |
           node --check js/result-void-compat.js
           node --check js/final-display-owner-v2.js
+          node --check js/final-display-user-contract.js
           node --check scripts/test-final-display-semantics.js
           node --check scripts/test-final-display-ownership.js
           node --check scripts/test-final-mobile-ui-contract.js
           node --check scripts/test-practical-tag-manshu-visibility.js
+          node --check scripts/test-restored-ticket-ui-contract.js
       - name: Verify approved formation and purchase separation
         run: node scripts/test-final-display-semantics.js
       - name: Verify only one final display owner is active
@@ -43,3 +47,5 @@ jobs:
         run: node scripts/test-final-mobile-ui-contract.js
       - name: Verify practical tags and visible manshu tickets
         run: node scripts/test-practical-tag-manshu-visibility.js
+      - name: Verify restored ticket UI contract
+        run: node scripts/test-restored-ticket-ui-contract.js
