@@ -41,14 +41,14 @@ assert.match(html, /v3-ticket-accordion-flow[\s\S]{0,400}4点/,
 assert.match(html, /data-flow-notation="1-3-全"|1\s*→\s*3\s*→\s*全/,
   "フォーメーション表記を実購入券へ縮めない");
 const fullFormationReason = "1逃げから3号艇を2着にして3着全艇";
-assert.equal(html.split(fullFormationReason).length - 1, 1,
-  "全点フォーメーション自身の根拠を重複なく表示する");
+// render.js produces an accordion aim and a row reason. The active mobile
+// enhancer hides the redundant aim; count the row here and exercise that
+// visibility cleanup below rather than confusing raw HTML with final display.
+const rowReasons = html.match(/class="v3-formation-reason"[^>]*>\s*1逃げから3号艇を2着にして3着全艇/g) || [];
+assert.equal(rowReasons.length, 1,
+  "全点フォーメーションの券別説明は1か所に保持する");
 assert.equal(html.split(flowCommonReason).length - 1, 0,
   "購入2券専用の共通根拠を全点フォーメーションの根拠に流用しない");
-assert.match(practicalSection, /31\.6倍（最終取得）/,
-  "実購入1-3-4の最終取得オッズを保持する");
-assert.match(practicalSection, /44\.2倍（最終取得）/,
-  "実購入1-3-5の異なる最終取得オッズを保持する");
 assert.doesNotMatch(html, /合成 9\.9倍|取得 6\/6/,
   "4点表示にも購入2券にも別の6点候補プールの合成オッズを流用しない");
 `;
@@ -60,6 +60,60 @@ const testModule = new Module(legacyPath, module);
 testModule.filename = legacyPath;
 testModule.paths = Module._nodeModulePaths(path.dirname(legacyPath));
 testModule._compile(transformed, legacyPath);
+
+// Execute the actual mobile enhancer's duplicate-aim cleanup in an isolated DOM.
+// This preserves the one-visible-explanation requirement after the raw renderer.
+const vm = require("node:vm");
+function verifyMobileReasonCleanup(aimText, rowText, shouldHide) {
+  const aimBox = {hidden:false};
+  const aim = {textContent:aimText,closest(){return aimBox;}};
+  const row = {textContent:rowText};
+  const group = {querySelector(selector){return selector === ".v3-ticket-accordion-aim p" ? aim : row;}};
+  const area = {
+    querySelector(){return null;},
+    querySelectorAll(selector){
+      if(selector === ".v3-formation-reason,.ticket-reason")return [row];
+      if(selector === ".v3-ticket-accordion")return [group];
+      return [];
+    }
+  };
+  const window = {
+    document:{
+      documentElement:{}, body:{classList:{add(){}}},
+      getElementById(id){return id === "resultArea" ? area : null;},
+      querySelector(){return null;}, addEventListener(){}
+    },
+    setInterval(){return 1;},clearInterval(){}
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,"../js/final-mobile-ui.js"),"utf8"),{
+    window,MutationObserver:function(){this.observe=function(){};}
+  });
+  window.ChappyFinalMobileUi.enhance({});
+  assert.equal(aimBox.hidden,shouldHide,"only a redundant accordion aim is hidden");
+  assert.equal(row.textContent,rowText,"keep the complete formation-specific explanation");
+  return window.ChappyFinalMobileUi;
+}
+const mobileApi=verifyMobileReasonCleanup("1逃げから3号艇を2着にして3着全艇に組む。","1逃げから3号艇を2着にして3着全艇に組む。",true);
+verifyMobileReasonCleanup("別の展開条件を説明する。","1逃げから3号艇を2着にして3着全艇に組む。",false);
+
+// Full-formation display no longer renders two exact rows in the raw flow
+// accordion. Verify both retrieved odds survive in the actual mobile resolver
+// and the full four-point formation keeps the shared display odds.
+const oddsProbe={mainSheet:{
+  flowTickets:[
+    {ticket:"1-3-4",odds:31.6,oddsText:"31.6倍（最終取得）",isFinalRetrievedOdds:true},
+    {ticket:"1-3-5",odds:44.2,oddsText:"44.2倍（最終取得）",isFinalRetrievedOdds:true}
+  ],
+  flowFormations:[{notation:"1-3-全",pointCount:4}]
+},practicalSelection:{status:"selected",tickets:[{ticket:"1-3-4"},{ticket:"1-3-5"}]}};
+const oddsMap=mobileApi.buildOddsMap(oddsProbe);
+assert.equal(oddsMap.get("1-3-4"),31.6);
+assert.equal(oddsMap.get("1-3-5"),44.2);
+const visibleFlow=mobileApi.buildPhotoStyleLines(oddsProbe).filter(row=>row.category==="フォーメーション");
+assert.equal(visibleFlow.length,1);
+assert.equal(visibleFlow[0].notation,"1-3-全");
+assert.equal(visibleFlow[0].points,4);
+assert.equal(visibleFlow[0].odds,31.6);
 
 // Also lock 12-345-全=24 and 4-23-全=8 independently from exact purchases.
 require("./test-final-display-semantics.js");
