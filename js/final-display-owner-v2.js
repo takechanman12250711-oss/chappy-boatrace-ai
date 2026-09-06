@@ -44,7 +44,30 @@ function prepare(pred){
   return next;
 }
 function formationRows(pred){return authoritativeFlowFormations(pred).map(r=>({notation:ticketText(r),pointCount:Number(r?.pointCount)||expandNotation(ticketText(r)).length||1,expandedTickets:rows(r?.expandedTickets)})).filter(r=>r.notation);}
-function ensureFormationGroup(pred){const box=root.document.querySelector("#resultArea .chappy-final-buy-summary");if(!box)return;const list=formationRows(pred),existing=box.querySelector(".chappy-final-buy-group.is-flow");if(!list.length){existing?.remove();return;}const html=`<details class="chappy-final-buy-group is-flow" open><summary><span class="chappy-final-buy-label">フォーメーション</span><span class="chappy-final-buy-meta">${list.length}組</span></summary><div class="chappy-final-buy-lines">${list.map(r=>`<article class="chappy-final-buy-line"><div class="chappy-final-buy-mainline"><strong class="chappy-final-buy-formation">${esc(r.notation)}</strong><div class="chappy-final-buy-side"><span class="chappy-final-buy-count">${r.pointCount}点</span></div></div></article>`).join("")}</div></details>`;if(existing)existing.outerHTML=html;else box.insertAdjacentHTML("beforeend",html);}
+function ensureFormationGroup(pred){
+  const box=root.document.querySelector("#resultArea .chappy-final-buy-summary");
+  if(!box)return;
+  const list=formationRows(pred),existing=box.querySelector(".chappy-final-buy-group.is-flow");
+  if(!list.length){existing?.remove();return;}
+  // The base renderer already includes odds, reasons and accordion state.
+  // Do not replace correct full-formation markup with a count-only fragment.
+  if(existing&&typeof existing.querySelectorAll==="function"){
+    const rendered=[...existing.querySelectorAll(".chappy-final-buy-line")];
+    if(rendered.length===list.length&&rendered.every((node,index)=>
+      text(node.querySelector(".chappy-final-buy-formation")?.textContent)===list[index].notation&&
+      text(node.querySelector(".chappy-final-buy-count")?.textContent)===`${list[index].pointCount}点`
+    ))return;
+  }
+  const oddsMap=buildOddsMap(pred);
+  const originals=authoritativeFlowFormations(pred);
+  const html=`<details class="chappy-final-buy-group is-flow"${existing?.open?" open":""}><summary><span class="chappy-final-buy-label">フォーメーション</span><span class="chappy-final-buy-meta">${list.length}組</span></summary><div class="chappy-final-buy-lines">${list.map((r,index)=>{
+    const values=expandNotation(r.notation).map(ticket=>numericOdds(oddsMap.get(ticket))).filter(Boolean);
+    const odds=values.length?Math.min(...values):null;
+    const original=originals[index],reason=text(original?.reason||original?.scenarioSummary||original?.comment);
+    return`<article class="chappy-final-buy-line"><div class="chappy-final-buy-mainline"><strong class="chappy-final-buy-formation">${esc(r.notation)}</strong><div class="chappy-final-buy-side"><span class="chappy-final-buy-odds${odds?"":" is-missing"}">${odds?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span><span class="chappy-final-buy-count">${r.pointCount}点</span></div></div>${reason?`<p class="chappy-final-buy-reason">${esc(reason)}</p>`:""}</article>`;
+  }).join("")}</div></details>`;
+  if(existing)existing.outerHTML=html;else box.insertAdjacentHTML("beforeend",html);
+}
 function manshuHtml(pred){const groups=pred?.manshuFormations||buildManshuFormations(pred);if(!groups.length)return`<div class="chappy-true-manshu-empty">100倍以上だけで組める複数点フォーメーションはありません。単券1点は万舟欄に表示しません。</div>`;return`<div class="chappy-true-manshu-board chappy-manshu-formation-board"><div class="chappy-true-manshu-head"><strong>万舟フォーメーション ${groups.length}組</strong><span>全構成点100倍以上</span></div><div class="chappy-manshu-formation-grid">${groups.map(g=>`<article class="chappy-manshu-formation-row"><div class="chappy-manshu-formation-main"><strong>${esc(g.notation)}</strong><span class="chappy-manshu-formation-meta">${g.pointCount}点<br>${g.minOdds===g.maxOdds?g.minOdds.toFixed(1):`${g.minOdds.toFixed(1)}〜${g.maxOdds.toFixed(1)}`}倍</span></div></article>`).join("")}</div></div>`;}
 function rewriteManshu(pred){const section=root.document.querySelector("#resultArea .v3-manshu-newspaper");if(!section)return;const body=section.querySelector(".v3-section-body")||section;body.innerHTML=manshuHtml(pred);}
 function rewritePractical(pred){const section=root.document.querySelector("#resultArea .v3-practical-section"),body=section?.querySelector(".v3-section-body");if(!body)return;const list=pred?.finalPurchaseRows||practicalRows(pred);body.innerHTML=list.length?`<div class="chappy-final-purchase"><div class="chappy-final-purchase-list">${list.map(r=>`<article class="chappy-final-purchase-row"><strong>${esc(r.notation)}</strong><span>${r.amount?`${Math.round(r.amount).toLocaleString("ja-JP")}円`:"最終購入"}</span></article>`).join("")}</div></div>`:`<div class="chappy-final-purchase-empty">最終購入なし（見送り）</div>`;}
@@ -54,7 +77,11 @@ function decorateMissingOdds(pred){const area=root.document.getElementById("resu
 function applyFinal(pred){if(!pred)return;ensureFormationGroup(pred);rewriteManshu(pred);rewritePractical(pred);applyLayout();decorateMissingOdds(pred);}
 function scheduleMissing(){if(missingScheduled)return;missingScheduled=true;root.requestAnimationFrame(()=>{missingScheduled=false;applyLayout();decorateMissingOdds(latestPrediction);});}
 const Observer=root.MutationObserver||function(){this.observe=function(){};};const observer=new Observer(ms=>{if(!latestPrediction)return;const changed=ms.some(m=>[...(m.addedNodes||[])].some(n=>n?.nodeType===1&&(n.matches?.(".v3-missing-numbers,.v3-missing-numbers *")||n.querySelector?.(".v3-missing-numbers"))));if(changed)scheduleMissing();});observer.observe(root.document.documentElement,{childList:true,subtree:true});
-function wrap(){const fn=root.renderAll;if(typeof fn!=="function"||fn[WRAPPED])return false;function wrapped(pred){const prepared=prepare(pred);latestPrediction=prepared;const value=fn.call(this,prepared);root.setTimeout(()=>applyFinal(prepared),20);return value;}wrapped[WRAPPED]=true;wrapped.__original=fn;root.renderAll=wrapped;return true;}
+function wrap(){const fn=root.renderAll;if(typeof fn!=="function"||fn[WRAPPED])return false;
+// The base mobile wrapper installs on its own timer. Wait for it so that it
+// receives the prepared display copy rather than repainting the raw input.
+if(root.ChappyFinalMobileUi&&!fn.__chappyFinalMobileUiWrapped)return false;
+function wrapped(pred){const prepared=prepare(pred);latestPrediction=prepared;const value=fn.call(this,prepared);root.setTimeout(()=>{if(latestPrediction===prepared)applyFinal(prepared);},20);return value;}wrapped[WRAPPED]=true;wrapped.__original=fn;root.renderAll=wrapped;return true;}
 let attempts=0;const timer=root.setInterval(()=>{attempts++;if(wrap()||attempts>240)root.clearInterval(timer);},50);
 root.ChappyFinalDisplayOwner=Object.freeze({build:BUILD,exactTicket,reasonFor,expandNotation,rawFlowTickets,formalFlowTickets,formalFlowFormations,authoritativeFlowFormations,buildFlowFormations,buildOddsMap,buildManshuFormations,practicalRows,prepare,formationRows,ensureFormationGroup,applyFinal,decorateMissingOdds});
 })(typeof window!=="undefined"?window:null);
