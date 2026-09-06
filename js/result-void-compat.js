@@ -21,7 +21,7 @@
   const COMPACT_STYLE_BUILD="20260905-final-display-owner2";
   const STRUCTURE_STYLE_BUILD="20260905-final-display-owner2";
   const MANSHU_STYLE_BUILD="20260905-manshu-formation1";
-  const OWNER_BUILD="20260906-practical-tags-manshu-visible1";
+  const OWNER_BUILD="20260907-practical-selected-visible1";
   const USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract1";
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
   function script(id,src,onload){if(root.document.getElementById(id)){onload?.();return;}const node=root.document.createElement("script");node.id=id;node.src=src;node.async=false;if(onload)node.addEventListener("load",onload,{once:true});root.document.head.appendChild(node);}
