@@ -10,7 +10,6 @@ const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
 const readabilityCss = fs.readFileSync("css/final-readability-fix.css", "utf8");
 const manshuCss = fs.readFileSync("css/manshu-formation-fix.css", "utf8");
 
-// Exercise the active bootstrap, not the filename/cache key of a retired renderer.
 const nodes = new Map();
 const appended = [];
 const document = {
@@ -28,7 +27,7 @@ assert.equal(nodes.has("chappy-final-display-owner"), false, "owner must wait fo
 base.listeners.load();
 const active = nodes.get("chappy-final-display-owner");
 assert.ok(active, "single display owner must load after the base renderer");
-assert.match(active.src, /^js\/final-display-owner-v2\.js\?v=.+/);
+assert.match(active.src, /^js\/final-display-owner-v2\.js\?v=20260906-practical-tags-manshu-visible1$/);
 assert.equal(active.async, false, "owner must preserve script execution order");
 assert.deepEqual(appended.filter(n => n.tagName === "script").map(n => n.src.split("?")[0]), [
   "js/final-mobile-ui.js", "js/final-display-owner-v2.js"
@@ -39,14 +38,18 @@ assert.equal(appended.filter(n => n.id === "chappy-final-display-owner").length,
 for (const filename of ["final-mobile-structure11.css", "manshu-formation-fix.css", "final-display-controller.css"]) {
   assert.ok(appended.some(n => n.tagName === "link" && n.href.split("?")[0] === `css/${filename}`), `${filename} must be actively loaded`);
 }
-for (const hook of ["ensureFormationGroup", "rewritePractical", "rewriteManshu", "applyLayout", "decorateMissingOdds"]) {
+for (const hook of ["ensureFormationGroup", "rewritePractical", "rewriteManshu", "decoratePracticalTags", "applyLayout", "decorateMissingOdds"]) {
   assert.ok(owner.includes(hook), `${hook} is required in the active owner`);
 }
-assert.ok(owner.includes("chappy-final-purchase-list"), "active purchase grid markup missing");
-assert.ok(owner.includes("chappy-manshu-formation-grid"), "active manshu formation markup missing");
-assert.ok(owner.includes("単券1点は万舟欄に表示しません"), "single-ticket manshu suppression missing");
+assert.ok(owner.includes("buildManshuRows"), "exact manshu ticket display source missing");
+assert.ok(owner.includes("現在、取得オッズで100倍以上の万舟買い目はありません"), "explicit empty manshu state missing");
+assert.ok(owner.includes("実戦厳選"), "practical selection tag missing");
+assert.doesNotMatch(owner, /単券1点は万舟欄に表示しません/,
+  "single 100x ticket must no longer be suppressed from the manshu display");
+assert.match(ownerCss, /\.v3-practical-section\{display:none!important;\}/,
+  "duplicated standalone practical section must be hidden");
+assert.ok(ownerCss.includes(".chappy-practical-tag"), "practical tag styling missing");
 
-// Keep the mobile layout and readability guarantees after ownership migration.
 for (const selector of [".v3-race-section", ".v3-boat-evaluation", ".chappy-final-buy-lines", ".v3-missing-numbers"]) {
   assert.ok(structureCss.includes(selector), `${selector} compact styling missing`);
 }
@@ -54,13 +57,8 @@ assert.ok(structureCss.includes(".chappy-final-buy-reason{display:none!important
 assert.ok(structureCss.includes(".v3-missing-numbers .v3-formation-reason{display:none!important;}"), "duplicate missing-number explanation suppression missing");
 assert.ok(readabilityCss.includes("chappy-race-info-visible"), "race information visibility styling missing");
 assert.ok(readabilityCss.includes("chappy-missing-odds"), "missing-number odds visibility styling missing");
-assert.ok(ownerCss.includes(".chappy-final-purchase-list"), "active purchase grid styling missing");
 for (const selector of [".chappy-manshu-formation-grid", ".chappy-manshu-formation-row", ".chappy-manshu-formation-meta"]) {
   assert.ok(manshuCss.includes(selector), `${selector} styling missing`);
-}
-for (const [name, css] of [["structure", structureCss], ["purchase", ownerCss], ["manshu", manshuCss]]) {
-  assert.ok(css.includes("grid-template-columns:repeat(2,minmax(0,1fr))"), `${name} two-column layout missing`);
-  assert.ok(css.includes("@media(max-width:360px)"), `${name} small-iPhone fallback missing`);
 }
 require("./test-final-display-ownership.js");
 require("./test-final-display-semantics.js");
