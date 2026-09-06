@@ -22,14 +22,16 @@
   const STRUCTURE_STYLE_BUILD="20260905-final-display-owner2";
   const MANSHU_STYLE_BUILD="20260905-manshu-formation1";
   const OWNER_BUILD="20260906-practical-tags-manshu-visible1";
+  const USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract1";
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
   function script(id,src,onload){if(root.document.getElementById(id)){onload?.();return;}const node=root.document.createElement("script");node.id=id;node.src=src;node.async=false;if(onload)node.addEventListener("load",onload,{once:true});root.document.head.appendChild(node);}
+  function loadUserContract(){script("chappy-final-display-user-contract",`js/final-display-user-contract.js?v=${USER_CONTRACT_BUILD}`);}
   function loadOwner(){
     style("chappy-final-compact-ui10-style",`css/final-compact-ui10.css?v=${COMPACT_STYLE_BUILD}`);
     style("chappy-final-mobile-structure11-style",`css/final-mobile-structure11.css?v=${STRUCTURE_STYLE_BUILD}`);
     style("chappy-manshu-formation-style",`css/manshu-formation-fix.css?v=${MANSHU_STYLE_BUILD}`);
     style("chappy-final-display-controller-style",`css/final-display-controller.css?v=${OWNER_BUILD}`);
-    script("chappy-final-display-owner",`js/final-display-owner-v2.js?v=${OWNER_BUILD}`);
+    script("chappy-final-display-owner",`js/final-display-owner-v2.js?v=${OWNER_BUILD}`,loadUserContract);
   }
   style("chappy-final-mobile-ui-style",`css/final-mobile-ui.css?v=${BUILD}`);
   style("chappy-final-home-v2-photo-style",`css/final-home-v2-photo.css?v=${BUILD}`);
