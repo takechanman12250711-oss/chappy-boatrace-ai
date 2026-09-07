@@ -24,7 +24,7 @@
   const OWNER_BUILD="20260907-practical-selected-visible1";
   const USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract1";
   const TICKET_ODDS_BUILD="20260907-scenario-manshu-all-odds1";
-  const PRACTICAL_PANEL_BUILD="20260907-practical-visible-panel1";
+  const PRACTICAL_PANEL_BUILD="20260908-practical-visible-panel2";
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
   function script(id,src,onload){if(root.document.getElementById(id)){onload?.();return;}const node=root.document.createElement("script");node.id=id;node.src=src;node.async=false;if(onload)node.addEventListener("load",onload,{once:true});root.document.head.appendChild(node);}
   function loadPracticalPanel(){script("chappy-practical-visible-panel",`js/final-practical-visible-panel.js?v=${PRACTICAL_PANEL_BUILD}`);}
