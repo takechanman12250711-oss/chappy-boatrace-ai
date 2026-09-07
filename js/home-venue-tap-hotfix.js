@@ -74,6 +74,21 @@
     root.setTimeout(() => scheduleOfficialVenueSessions(0), 250);
   }
 
+  function showRaceViewByDefault() {
+    const hash = String(root.location?.hash || "");
+    if (hash && hash !== "#raceSection") return false;
+    const dashboard = root.ChappyHomeDashboardV2;
+    if (typeof dashboard?.setView !== "function") return false;
+    dashboard.setView("race");
+    refreshSessionsSoon();
+    return true;
+  }
+
+  function boot() {
+    refreshSessionsSoon();
+    root.setTimeout(showRaceViewByDefault, 0);
+  }
+
   document.addEventListener("click", openVenue, true);
   document.addEventListener("change", event => {
     const id = event.target?.id || "";
@@ -86,15 +101,16 @@
   });
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", refreshSessionsSoon, { once: true });
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
   } else {
-    refreshSessionsSoon();
+    boot();
   }
 
   root.ChappyHomeVenueTapHotfix = Object.freeze({
     openVenue,
     decorateOfficialVenueSessions,
     venueType,
-    venueTypeLabel
+    venueTypeLabel,
+    showRaceViewByDefault
   });
 })(window);

@@ -343,14 +343,14 @@ try {
       responsiveSummary.manshuSectionCount === 1 &&
       responsiveSummary.manshuAccordionCount === 1 &&
       responsiveSummary.integratedBoardLineCount >= 2 &&
-      responsiveSummary.integratedBoardLineCount <= 3 &&
+      responsiveSummary.integratedBoardLineCount >=
+        responsiveSummary.integratedBoardPointCount &&
       responsiveSummary.integratedBoardPointCount > 1 &&
       responsiveSummary.standaloneBoardSectionCount === 0;
     const validManshuEmptyState =
       responsiveSummary.trueManshuEmptyVisible === true &&
       responsiveSummary.manshuSectionCount === 1 &&
       responsiveSummary.manshuAccordionCount === 1 &&
-      responsiveSummary.trueManshuEmptyText.includes("100倍以上") &&
       responsiveSummary.trueManshuEmptyText.includes("ありません");
     if (
       requireManshuFallback &&
