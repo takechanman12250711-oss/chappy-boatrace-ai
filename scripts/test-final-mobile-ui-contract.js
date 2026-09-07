@@ -9,6 +9,8 @@ const iphoneCss = fs.readFileSync("css/final-iphone-tuning.css", "utf8");
 const referenceCss = fs.readFileSync("css/final-reference-layout.css", "utf8");
 const readabilityCss = fs.readFileSync("css/final-readability-fix.css", "utf8");
 const loader = fs.readFileSync("js/result-void-compat.js", "utf8");
+const ticketOdds = fs.readFileSync("js/final-ticket-odds-visibility.js", "utf8");
+const prediction = fs.readFileSync("js/prediction.js", "utf8");
 const index = fs.readFileSync("index.html", "utf8");
 const script = fs.readFileSync("js/script.js", "utf8");
 
@@ -77,6 +79,14 @@ assert(loader.includes('USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract
 assert(loader.includes("final-display-owner-v2.js"), "single final display owner loader missing");
 assert(loader.includes("final-display-user-contract.js"), "approved ticket UI contract loader missing");
 assert(loader.includes("final-display-controller.css"), "single final display owner stylesheet missing");
+assert(loader.includes("final-ticket-odds-visibility.js"), "all-odds visibility layer missing from production loader");
+assert(ticketOdds.includes("展開から選んだ万舟候補"), "manshu display must stay flow-first");
+assert(ticketOdds.includes("構成買い目のオッズを全表示"), "manshu all-odds contract missing");
+assert(ticketOdds.includes("const tickets=expandNotation(source.notation)"), "manshu formation must expand to every exact ticket");
+assert(ticketOdds.includes("const tickets=expandNotation(notation)"), "missing-number formation must expand to every exact ticket");
+assert(ticketOdds.includes("chappy-missing-all-odds"), "missing-number all-odds board missing");
+assert(prediction.includes('type: "raceFlow"'), "formation source must remain raceFlow");
+assert(prediction.includes("hole: cleanHole"), "manshu/hole candidates must remain tied to raceFlow formation output");
 [
   "final-ticket-reason-fix.js",
   "final-compact-ui10.js",
