@@ -95,12 +95,12 @@
       return;
     }
     const oddsMap=buildOddsMap(prediction);
-    body.innerHTML=`<div class="chappy-scenario-manshu-board">
+    body.innerHTML=`<div class="chappy-scenario-manshu-board v3-light-manshu-ticket-board">
       <div class="chappy-scenario-manshu-head"><strong>展開から選んだ万舟候補</strong><span>構成買い目のオッズを全表示</span></div>
       ${sources.map(source=>{
         const tickets=expandNotation(source.notation);
         const rows=tickets.length?tickets:[exactTicket(source.notation)].filter(Boolean);
-        return `<article class="chappy-scenario-manshu-group">
+        return `<article class="chappy-scenario-manshu-group v3-light-manshu-ticket-line">
           <div class="chappy-scenario-manshu-title"><strong>${escapeHtml(source.notation)}</strong><span>${rows.length||1}点</span></div>
           <div class="chappy-scenario-manshu-odds">${rows.map(ticket=>{
             const odds=oddsMap.get(ticket);
