@@ -12,7 +12,7 @@ assert.match(source,/\.v3-main-newspaper/,"duplicate legacy ticket section must 
 assert.match(source,/section\.hidden=true/,"duplicate legacy ticket section must be hidden");
 assert.doesNotMatch(source,/実戦厳選.*amount|amount.*実戦厳選/i,"UI contract must not add money display");
 assert.match(loader,/final-display-user-contract\.js/);
-assert.match(index,/result-void-compat\.js\?v=20260907-practical-selected-visible1/);
+assert.match(index,/result-void-compat\.js\?v=20260907-race-tags-scenario-odds1/);
 
 function node(label=""){
   return {textContent:label,hidden:false,dataset:{},attrs:{},setAttribute(k,v){this.attrs[k]=v;},querySelectorAll(){return[];}};
