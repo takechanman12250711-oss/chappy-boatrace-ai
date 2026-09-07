@@ -71,7 +71,7 @@ assert(loader.includes("final-iphone-tuning.css"), "iPhone final tuning styleshe
 assert(loader.includes("final-reference-layout.css"), "final reference layout stylesheet loader missing");
 assert(loader.includes("final-readability-fix.css"), "readability rescue stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD="20260906-review-entry1"'), "review-entry asset generation missing");
+assert(loader.includes('const BUILD="20260907-home-single-race-entry1"'), "home single-entry asset generation missing");
 assert(loader.includes('OWNER_BUILD="20260907-practical-selected-visible1"'), "single-owner generation missing");
 assert(loader.includes('USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract1"'), "restored ticket UI generation missing");
 assert(loader.includes("final-display-owner-v2.js"), "single final display owner loader missing");
