@@ -5,7 +5,7 @@
 
   const MORNING = new Set(["三国", "鳴門", "徳山", "芦屋", "唐津", "大村"]);
   const NIGHT = new Set(["桐生", "蒲郡", "住之江", "丸亀", "下関", "若松"]);
-  let officialVenueObserver = null;
+  let decorateTimer = 0;
 
   function firstRaceButton(venue) {
     return venue?.querySelector(
@@ -40,9 +40,10 @@
 
   function decorateOfficialVenueSessions() {
     const grid = document.getElementById("officialVenueGrid");
-    if (!grid) return;
+    if (!grid) return 0;
 
-    grid.querySelectorAll(".official-venue-button[data-place]").forEach(button => {
+    const buttons = [...grid.querySelectorAll(".official-venue-button[data-place]")];
+    buttons.forEach(button => {
       const type = venueType(String(button.dataset.place || ""));
       button.dataset.session = type;
 
@@ -55,32 +56,39 @@
       badge.dataset.session = type;
       badge.textContent = venueTypeLabel(type);
     });
+    return buttons.length;
   }
 
-  function bootOfficialVenueSessions() {
-    const grid = document.getElementById("officialVenueGrid");
-    if (!grid) {
-      const observer = new MutationObserver(() => {
-        if (!document.getElementById("officialVenueGrid")) return;
-        observer.disconnect();
-        bootOfficialVenueSessions();
-      });
-      observer.observe(document.documentElement, { childList: true, subtree: true });
-      return;
-    }
+  function scheduleOfficialVenueSessions(attempt = 0) {
+    if (decorateTimer) root.clearTimeout(decorateTimer);
+    const found = decorateOfficialVenueSessions();
+    if (found || attempt >= 20) return;
+    decorateTimer = root.setTimeout(
+      () => scheduleOfficialVenueSessions(attempt + 1),
+      100
+    );
+  }
 
-    decorateOfficialVenueSessions();
-    officialVenueObserver?.disconnect?.();
-    officialVenueObserver = new MutationObserver(() => decorateOfficialVenueSessions());
-    officialVenueObserver.observe(grid, { childList: true });
+  function refreshSessionsSoon() {
+    root.setTimeout(() => scheduleOfficialVenueSessions(0), 0);
+    root.setTimeout(() => scheduleOfficialVenueSessions(0), 250);
   }
 
   document.addEventListener("click", openVenue, true);
+  document.addEventListener("change", event => {
+    const id = event.target?.id || "";
+    if (id === "raceModeSelect" || id === "dateInput" || id === "placeSelect") {
+      refreshSessionsSoon();
+    }
+  }, true);
+  root.addEventListener("chappy:view-changed", event => {
+    if (event?.detail?.view === "race") refreshSessionsSoon();
+  });
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", bootOfficialVenueSessions, { once: true });
+    document.addEventListener("DOMContentLoaded", refreshSessionsSoon, { once: true });
   } else {
-    bootOfficialVenueSessions();
+    refreshSessionsSoon();
   }
 
   root.ChappyHomeVenueTapHotfix = Object.freeze({
