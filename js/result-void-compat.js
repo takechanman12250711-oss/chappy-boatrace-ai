@@ -17,7 +17,7 @@
 (function loadFinalMobileUi(root){
   "use strict";
   if(!root||!root.document)return;
-  const BUILD="20260906-review-entry1";
+  const BUILD="20260907-home-single-race-entry1";
   const COMPACT_STYLE_BUILD="20260905-final-display-owner2";
   const STRUCTURE_STYLE_BUILD="20260905-final-display-owner2";
   const MANSHU_STYLE_BUILD="20260905-manshu-formation1";
@@ -37,6 +37,7 @@
   }
   style("chappy-final-mobile-ui-style",`css/final-mobile-ui.css?v=${BUILD}`);
   style("chappy-final-home-v2-photo-style",`css/final-home-v2-photo.css?v=${BUILD}`);
+  style("chappy-home-single-race-entry-style",`css/home-single-race-entry.css?v=${BUILD}`);
   style("chappy-final-prediction-photo-style",`css/final-prediction-photo.css?v=${BUILD}`);
   style("chappy-final-iphone-tuning-style",`css/final-iphone-tuning.css?v=${BUILD}`);
   style("chappy-final-reference-layout-style",`css/final-reference-layout.css?v=${BUILD}`);
