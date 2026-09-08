@@ -6,19 +6,12 @@
   const CACHE_KEY = "chappy-home-v2-cache";
   const CACHE_TTL = 300000;
   const HOME_REQUEST_TIMEOUT_MS = 30000;
-  const PAGE_SIZE = 5;
-  const TYPES = {
-    morning: new Set(["三国", "鳴門", "徳山", "芦屋", "唐津", "大村"]),
-    night: new Set(["桐生", "蒲郡", "住之江", "丸亀", "下関", "若松"])
-  };
   const state = {
-    filter: "all",
     scheduleDate: "",
     schedule: [],
     recommendationCandidates: [],
     recommendations: [],
     recommendationThreshold: 70,
-    visibleCount: PAGE_SIZE,
     selectedPlace: "",
     selectedRace: 0,
     loading: false,
@@ -32,9 +25,8 @@
     navigationGeneration: 0,
     currentView: "home",
     initialDataReady: false,
-    scheduleLoading: false,
     scheduleError: "",
-    renderKeys: { recommendations: "", schedule: "", updatedAt: "" }
+    renderKeys: { recommendations: "", updatedAt: "" }
   };
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -59,29 +51,6 @@
     }
     const match = String(value).match(/(\d{1,2}):(\d{2})/);
     return match ? `${match[1].padStart(2, "0")}:${match[2]}` : "--:--";
-  }
-
-  function minutesUntil(value) {
-    const date = new Date(value);
-    return Number.isFinite(date.getTime()) ? Math.floor((date.getTime() - Date.now()) / 60000) : null;
-  }
-
-  function deadlineClass(value) {
-    const minutes = minutesUntil(value);
-    return minutes === null ? "is-before" : minutes <= 0 ? "is-finished" : minutes <= 2 ? "is-skip" : minutes <= 5 ? "is-upset-hot" : minutes <= 10 ? "is-upset" : "is-main";
-  }
-
-  function raceDeadlineLabel(value) {
-    const time = timeOf(value);
-    return deadlineClass(value) === "is-finished" ? `終了 ${time}` : time;
-  }
-
-  function venueType(place) {
-    return TYPES.morning.has(place) ? "morning" : TYPES.night.has(place) ? "night" : "day";
-  }
-
-  function typeLabel(type) {
-    return type === "morning" ? "モーニング" : type === "night" ? "ナイター" : "デイ";
   }
 
   function racesOf(venue) {
@@ -546,30 +515,10 @@
     return `<button class="home-v2-recommend-card is-${decision.key}" type="button" data-place="${esc(item.place)}" data-race="${num(item.raceNo)}"><div class="home-v2-card-top"><span class="home-v2-medal">${medal}</span><span class="home-v2-decision">${esc(decision.label)}</span><span class="home-v2-arrow">›</span></div><strong>${esc(item.place)} ${num(item.raceNo)}R</strong><span class="home-v2-deadline">締切 <b>${esc(timeOf(deadline))}</b></span><span class="home-v2-score-row is-single"><span>勝負レース評価<b>${selectionScore}</b><small>点</small></span></span><small class="home-v2-reason">${esc(reason(item, decision))}</small></button>`;
   }
 
-  function raceHtml(place, race) {
-    const selected = state.selectedPlace === place && state.selectedRace === num(race.raceNo);
-    const deadlineLabel = raceDeadlineLabel(race.deadlineAt);
-    return `<button class="home-v2-race ${deadlineClass(race.deadlineAt)} ${selected ? "is-selected" : ""}" type="button" data-place="${esc(place)}" data-race="${num(race.raceNo)}" aria-label="${esc(place)} ${num(race.raceNo)}R ${esc(deadlineLabel)}" ${race.selectable === false ? "disabled" : ""}><strong>${num(race.raceNo)}R</strong><span><i></i>${esc(deadlineLabel)}</span></button>`;
-  }
-
-  function venueHtml(venue) {
-    const place = String(venue?.place || "");
-    const type = venueType(place);
-    const rows = racesOf(venue).filter(row => row.selectable !== false).slice(0, 4);
-    return `<article class="home-v2-venue" data-venue="${esc(place)}"><div class="home-v2-venue-info"><strong>${esc(place)} <span>≋</span></strong><small>${typeLabel(type)}</small></div><div class="home-v2-races">${rows.length ? rows.map(row => raceHtml(place, row)).join("") : '<span class="home-v2-no-race">› を押して1R〜12Rを表示</span>'}</div><button class="home-v2-venue-next" type="button" data-open-venue="${esc(place)}" aria-label="${esc(place)}の1Rから12Rを表示">›</button></article>`;
-  }
-
-  function filteredVenues() {
-    return state.schedule.filter(venue => {
-      const place = String(venue?.place || "");
-      return state.filter === "all" || venueType(place) === state.filter;
-    });
-  }
-
   function ensureShell() {
     const el = ensureHome();
     if (el.dataset.shellReady === "true") return el;
-    el.innerHTML = `<section class="home-v2-recommend"><div class="home-v2-title-row"><h2>TODAY'S PICKS　🔥 今日のおすすめレース</h2><span data-home-updated>最終更新 --:--</span></div><div class="home-v2-recommend-list" data-home-recommendations></div></section><section class="home-v2-filter-shell"><div class="home-v2-filters">${[["all","🌐 全場"],["morning","☀️ モーニング"],["day","☀️ デイ"],["night","🌙 ナイター"]].map(([key,label]) => `<button type="button" data-filter="${key}" class="${state.filter === key ? "is-active" : ""}" aria-pressed="${state.filter === key}">${label}</button>`).join("")}</div></section><section class="home-v2-schedule"><div class="home-v2-title-row home-v2-schedule-title"><h2>⚑ 開催場一覧</h2><div class="home-v2-legend"><span class="is-main">余裕あり</span><span class="is-upset">締切間近</span><span class="is-skip">2分以内</span><span class="is-before">時刻未定</span></div></div><div class="home-v2-venue-list" data-home-venues></div><button class="home-v2-more" type="button" data-show-all hidden></button></section>`;
+    el.innerHTML = `<section class="home-v2-recommend"><div class="home-v2-title-row"><h2>TODAY'S PICKS　🔥 今日のおすすめレース</h2><span data-home-updated>最終更新 --:--</span></div><div class="home-v2-recommend-list" data-home-recommendations></div></section>`;
     el.dataset.shellReady = "true";
     return el;
   }
@@ -588,35 +537,6 @@
       : '<p class="home-v2-empty">現在、締切前の勝負対象レースはありません</p>';
   }
 
-  function renderSchedule(force = false) {
-    const shell = ensureShell();
-    const list = shell.querySelector("[data-home-venues]");
-    const more = shell.querySelector("[data-show-all]");
-    const venues = filteredVenues();
-    const shown = venues.slice(0, state.visibleCount);
-    const key = `${state.filter}:${state.visibleCount}:${stable(shown)}`;
-    if (list && (force || key !== state.renderKeys.schedule)) {
-      state.renderKeys.schedule = key;
-      list.innerHTML = shown.length
-        ? shown.map(venueHtml).join("")
-        : state.scheduleLoading || !state.initialDataReady
-          ? '<p class="home-v2-empty">本日の開催情報を読み込んでいます…</p>'
-          : state.scheduleError
-            ? '<div class="home-v2-empty home-v2-load-error"><span>開催情報を取得できませんでした</span><button type="button" data-home-retry>再試行</button></div>'
-          : '<p class="home-v2-empty">該当する開催場がありません</p>';
-    }
-    shell.querySelectorAll("[data-filter]").forEach(button => {
-      const active = button.dataset.filter === state.filter;
-      button.classList.toggle("is-active", active);
-      button.setAttribute("aria-pressed", String(active));
-    });
-    if (more) {
-      const remains = venues.length - shown.length;
-      more.hidden = remains <= 0;
-      more.textContent = remains > 0 ? `他の場を見る（残り${remains}場）⌄` : "";
-    }
-  }
-
   function renderUpdatedAt() {
     const text = `最終更新 ${state.updatedAt ? timeOf(state.updatedAt) : "--:--"}`;
     if (text === state.renderKeys.updatedAt) return;
@@ -627,7 +547,6 @@
 
   function render(force = false) {
     renderRecommendations(force);
-    renderSchedule(force);
     renderUpdatedAt();
   }
 
@@ -644,37 +563,6 @@
       const target = event.target.closest("button");
       if (!target) return;
       if (target.matches("[data-place][data-race]")) return syncAndOpen(target.dataset.place, target.dataset.race);
-      if (target.matches("[data-filter]")) {
-        state.filter = target.dataset.filter || "all";
-        state.visibleCount = PAGE_SIZE;
-        renderSchedule(true);
-        return;
-      }
-      if (target.matches("[data-show-all]")) {
-        state.visibleCount += PAGE_SIZE;
-        renderSchedule(true);
-        return;
-      }
-      if (target.matches("[data-home-retry]")) {
-        void refresh(true);
-        return;
-      }
-      if (target.matches("[data-open-venue]")) {
-        const panel = root.ChappyRaceFlowResultPanel;
-        if (typeof panel?.expandVenue === "function") {
-          void panel.expandVenue(target);
-          return;
-        }
-
-        target.setAttribute("aria-busy", "true");
-        root.ChappyTodayResultsHome?.load?.().then(loadedPanel => {
-          target.removeAttribute("aria-busy");
-          return loadedPanel?.expandVenue?.(target);
-        }).catch(error => {
-          target.removeAttribute("aria-busy");
-          console.error("開催場レース一覧の読み込みエラー", error);
-        });
-      }
     });
   }
 
@@ -762,25 +650,20 @@
     const refreshButton = document.getElementById("homeRefreshBtn");
     if (refreshButton) refreshButton.disabled = true;
     if (force) el.classList.add("is-loading");
-    state.scheduleLoading = true;
-    renderSchedule(true);
     const scheduleLoad = loadSchedule(force);
-    const scheduleTask = scheduleLoad.then(changed => { if (changed) renderSchedule(); return changed; });
+    const scheduleTask = scheduleLoad;
     const recommendationTask = loadRecommendations(force, scheduleLoad).then(changed => { if (changed) renderRecommendations(); return changed; });
     state.refreshPromise = Promise.allSettled([scheduleTask, recommendationTask])
       .then(results => {
-        state.scheduleLoading = false;
         if (results[0]?.status === "rejected" && !state.scheduleError) {
           state.scheduleError = results[0].reason?.message || "開催情報を取得できませんでした";
         }
         state.initialDataReady = true;
         renderRecommendations(true);
-        renderSchedule(true);
         writeCache();
         renderUpdatedAt();
       })
       .finally(() => {
-        state.scheduleLoading = false;
         state.refreshPromise = null;
         el.classList.remove("is-loading");
         if (refreshButton) refreshButton.disabled = false;

@@ -37,6 +37,39 @@
     唐津: "23",
     大村: "24"
   };
+  const MORNING_VENUES = new Set(["三国", "鳴門", "徳山", "芦屋", "唐津"]);
+  const NIGHT_VENUES = new Set(["桐生", "蒲郡", "住之江", "丸亀", "下関", "若松", "大村"]);
+
+  function venueSession(place) {
+    if (MORNING_VENUES.has(place)) return { key: "morning", label: "モーニング" };
+    if (NIGHT_VENUES.has(place)) return { key: "night", label: "ナイター" };
+    return { key: "day", label: "デイ" };
+  }
+
+  function officialRaceRows(data) {
+    const racesByNumber = new Map(
+      (
+        Array.isArray(data?.selectedVenue?.races)
+          ? data.selectedVenue.races
+          : []
+      )
+        .filter(race => {
+          const raceNo = Number(race?.raceNo);
+          return raceNo >= 1 && raceNo <= 12;
+        })
+        .map(race => [Number(race.raceNo), race])
+    );
+    return Array.from(
+      { length: 12 },
+      (_, index) =>
+        racesByNumber.get(index + 1) || {
+          raceNo: index + 1,
+          status: "unavailable",
+          selectable: false,
+          deadline: ""
+        }
+    );
+  }
 
   let lastRaceData = null;
   let lastPrediction = null;
@@ -54,6 +87,9 @@
     window.addEventListener("chappy:view-changed", event => {
       if (event?.detail?.view !== "prediction") {
         predictionGeneration += 1;
+      }
+      if (event?.detail?.view === "race") {
+        void applyRaceMode();
       }
     });
   }
@@ -166,7 +202,9 @@
   window.ChappyRaceControls =
     Object.freeze({
       initialize:
-        initializeRaceControls
+        initializeRaceControls,
+      venueSession,
+      officialRaceRows
     });
 
   if (
@@ -739,6 +777,15 @@
           );
         }
 
+        button.setAttribute(
+          "aria-pressed",
+          String(
+            selectable &&
+            String(jcd) ===
+              preferredJcd
+          )
+        );
+
         button.disabled =
           !selectable;
 
@@ -747,6 +794,12 @@
 
         button.dataset.place =
           place;
+
+        const session =
+          venueSession(place);
+
+        button.dataset.session =
+          session.key;
 
         const name =
           document.createElement(
@@ -770,6 +823,20 @@
         venueStatus.textContent =
           statusText;
 
+        const sessionTag =
+          document.createElement(
+            "span"
+          );
+
+        sessionTag.className =
+          "official-venue-session-tag";
+
+        sessionTag.dataset.session =
+          session.key;
+
+        sessionTag.textContent =
+          session.label;
+
         if (grade) {
           venueStatus.classList.add(
             "official-event-grade"
@@ -790,6 +857,7 @@
 
         button.append(
           name,
+          sessionTag,
           venueStatus
         );
 
@@ -807,6 +875,10 @@
                 item.classList.toggle(
                   "is-selected",
                   item === button
+                );
+                item.setAttribute(
+                  "aria-pressed",
+                  String(item === button)
                 );
               });
 
@@ -1538,11 +1610,7 @@
     }
 
     const allRaces =
-      Array.isArray(
-        data?.selectedVenue?.races
-      )
-        ? data.selectedVenue.races
-        : [];
+      officialRaceRows(data);
 
     const selectedRaceNo =
       Number(
@@ -1974,6 +2042,13 @@
           );
 
     if (!venues.length) {
+      // Keep the official venue grid visible even after every live race has
+      // closed, so the user can see session tags and switch to review mode.
+      renderOfficialVenuePicker(
+        data,
+        mode
+      );
+
       replaceSelectOptions(
         placeSelect,
         [{
@@ -2007,7 +2082,7 @@
           : "この日付の終了レースはありません"
       );
 
-      return;
+      return true;
     }
 
     const currentPlace =
@@ -2295,6 +2370,11 @@
       });
 
     if (!races.length) {
+      renderOfficialRacePicker(
+        data,
+        mode
+      );
+
       replaceSelectOptions(
         raceSelect,
         [{
@@ -2363,7 +2443,7 @@
         `${preferred.raceNo}R`;
     }
 
-　　　        if (
+    if (
       typeof
         raceSelect?.onchange ===
       "function"
