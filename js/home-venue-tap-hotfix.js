@@ -38,6 +38,19 @@
     return type === "morning" ? "モーニング" : type === "night" ? "ナイター" : "デイ";
   }
 
+  function hideHomeRaceSelection() {
+    if (document.getElementById("chappy-home-recommend-only-style")) return true;
+    const style = document.createElement("style");
+    style.id = "chappy-home-recommend-only-style";
+    style.textContent = [
+      "#homeDashboardV2 .home-v2-filter-shell{display:none!important}",
+      "#homeDashboardV2 .home-v2-schedule{display:none!important}",
+      "#homeDashboardV2 .home-v2-hint{display:none!important}"
+    ].join("\n");
+    (document.head || document.documentElement).appendChild(style);
+    return true;
+  }
+
   function decorateOfficialVenueSessions() {
     const grid = document.getElementById("officialVenueGrid");
     if (!grid) return 0;
@@ -85,6 +98,7 @@
   }
 
   function boot() {
+    hideHomeRaceSelection();
     refreshSessionsSoon();
     root.setTimeout(showRaceViewByDefault, 0);
   }
@@ -111,6 +125,7 @@
     decorateOfficialVenueSessions,
     venueType,
     venueTypeLabel,
+    hideHomeRaceSelection,
     showRaceViewByDefault
   });
 })(window);
