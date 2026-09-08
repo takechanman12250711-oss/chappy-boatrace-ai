@@ -1,10 +1,12 @@
 {
-  "generatedAt": "2026-09-08T18:50:29.171Z",
-  "schemaVersion": 2,
-  "engineVersion": "profit-priority-ranking-20260806-integrity-fixed",
+  "generatedAt": "2026-09-08T21:32:58.882Z",
+  "schemaVersion": 3,
+  "engineVersion": "profit-priority-ranking-20260909-terminal-cycle-aware",
   "status": "candidate-selected",
   "minimumRaceCount": 30,
   "evidenceField": "evaluatedCount",
+  "closureSource": "config/improvement-cycle-closures.json",
+  "terminalClosedTheoryCount": 1,
   "priorityOrder": [
     "recoveryRate",
     "practicalHitRate",
@@ -12,35 +14,6 @@
     "hitRate"
   ],
   "ranking": [
-    {
-      "theoryKey": "frame-rise-fall",
-      "label": "枠別浮沈率",
-      "raceCount": 2109,
-      "useCount": 753,
-      "evidenceCount": 753,
-      "metrics": {
-        "recoveryRate": 67.1,
-        "practicalHitRate": 28.6,
-        "skipDecisionAccuracy": null,
-        "hitRate": 18.9
-      },
-      "deficits": {
-        "recoveryRate": 32.9,
-        "practicalHitRate": 0,
-        "skipDecisionAccuracy": null,
-        "hitRate": 0
-      },
-      "missingMetrics": [
-        "skipDecisionAccuracy"
-      ],
-      "evidenceStatus": "partial",
-      "eligible": true,
-      "selectedForImprovement": true,
-      "humanApprovalRequired": true,
-      "approved": false,
-      "usableForPrediction": false,
-      "rank": 1
-    },
     {
       "theoryKey": "remain-pickup",
       "label": "残し・拾い理論",
@@ -64,11 +37,15 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
-      "selectedForImprovement": false,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
+      "selectedForImprovement": true,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 2
+      "rank": 1
     },
     {
       "theoryKey": "start",
@@ -93,11 +70,15 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 3
+      "rank": 2
     },
     {
       "theoryKey": "wall-boat",
@@ -122,11 +103,15 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 4
+      "rank": 3
     },
     {
       "theoryKey": "race-flow",
@@ -151,11 +136,15 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 5
+      "rank": 4
     },
     {
       "theoryKey": "course",
@@ -180,11 +169,15 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 6
+      "rank": 5
     },
     {
       "theoryKey": "local-water",
@@ -209,11 +202,15 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 7
+      "rank": 6
     },
     {
       "theoryKey": "skill",
@@ -238,11 +235,15 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 8
+      "rank": 7
     },
     {
       "theoryKey": "motor",
@@ -267,11 +268,15 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 9
+      "rank": 8
     },
     {
       "theoryKey": "exhibition",
@@ -296,6 +301,46 @@
       ],
       "evidenceStatus": "partial",
       "eligible": true,
+      "eligibleForSelection": true,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
+      "selectedForImprovement": false,
+      "humanApprovalRequired": true,
+      "approved": false,
+      "usableForPrediction": false,
+      "rank": 9
+    },
+    {
+      "theoryKey": "frame-rise-fall",
+      "label": "枠別浮沈率",
+      "raceCount": 2109,
+      "useCount": 753,
+      "evidenceCount": 753,
+      "metrics": {
+        "recoveryRate": 67.1,
+        "practicalHitRate": 28.6,
+        "skipDecisionAccuracy": null,
+        "hitRate": 18.9
+      },
+      "deficits": {
+        "recoveryRate": 32.9,
+        "practicalHitRate": 0,
+        "skipDecisionAccuracy": null,
+        "hitRate": 0
+      },
+      "missingMetrics": [
+        "skipDecisionAccuracy"
+      ],
+      "evidenceStatus": "partial",
+      "eligible": true,
+      "eligibleForSelection": false,
+      "improvementCycleStatus": "terminal-rejected",
+      "improvementCycleReason": "枠別浮沈率の候補2案が固定100R検証でともに不採用となったため、同じ改善対象を再生成せず次候補へ進む",
+      "improvementCycleSources": [
+        "data/stats/frame-rise-fall-shadow-result-report.json",
+        "data/stats/frame-rise-fall-negative-clip-result-report.json"
+      ],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
@@ -325,6 +370,10 @@
       ],
       "evidenceStatus": "insufficient",
       "eligible": false,
+      "eligibleForSelection": false,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
@@ -357,6 +406,10 @@
       ],
       "evidenceStatus": "insufficient",
       "eligible": false,
+      "eligibleForSelection": false,
+      "improvementCycleStatus": "open",
+      "improvementCycleReason": null,
+      "improvementCycleSources": [],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
       "approved": false,
@@ -365,8 +418,8 @@
     }
   ],
   "selectedTheory": {
-    "theoryKey": "frame-rise-fall",
-    "label": "枠別浮沈率",
+    "theoryKey": "remain-pickup",
+    "label": "残し・拾い理論",
     "rank": 1,
     "reason": "利益基準の固定優先順位で最も改善余地が大きい候補",
     "evidenceStatus": "partial",
