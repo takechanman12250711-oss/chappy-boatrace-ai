@@ -12,16 +12,15 @@ assert(html.includes("css/home-dashboard-v2.css"), "ホームCSSを読み込む"
 assert(html.includes("js/home-dashboard-v2.js"), "ホームJSを読み込む");
 assert(js.includes("今日のおすすめレース"), "今日のおすすめを表示する");
 assert(/slice\(0,\s*3\)/.test(js), "おすすめを3件に絞る");
-assert(js.includes("モーニング"), "開催区分フィルターを持つ");
 assert(js.includes("syncAndOpen"), "既存レース選択へ同期する");
 assert(js.includes("fetchButton.click()"), "レース選択後に既存取得処理を自動実行する");
-assert(css.includes("repeat(3"), "下部ナビをホーム・AI予想・成績分析の3項目にする");
+assert(referenceCss.includes("repeat(4"), "下部ナビにホーム・レース・AI予想・成績分析を表示する");
 assert(css.includes("[hidden]{display:none!important}"), "追加レイアウトCSSがタブの非表示状態を上書きしない");
 assert(!html.includes('data-view="menu"') && !js.includes('data-view="menu"'), "未実装メニューを表示しない");
 assert(!js.includes("homeFavoriteBtn"), "保存されない見せかけのお気に入り操作を表示しない");
 if (html.includes('data-view="race"')) {
-  assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "互換用レースタブを明示的に非表示制御する");
-  assert(referenceCss.includes("display:none!important"), "ホームと重複するレース検索タブを実画面へ表示しない");
+  assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "レースタブを明示的に表示する");
+  assert(/\.bottom-nav-item\[data-view="race"\][^{]*\{[^}]*display:\s*flex/is.test(referenceCss), "レース選択を専用タブから開ける");
 }
 assert(js.includes('ensure?.("stats")'), "成績分析へ先に切り替えてから必要機能を読み込む");
 assert(!js.includes("root.scrollTo({ top: 0"), "タブ操作でホーム先頭へ強制移動しない");
@@ -29,15 +28,13 @@ assert(js.includes("sessionStorage"), "ホームデータを短期キャッシ�
 assert(js.includes("requestAnimationFrame") && js.includes("scheduleRefresh"), "最新データ取得を初期描画直後の次フレームへ回す");
 assert(js.includes("HOME_REQUEST_TIMEOUT_MS"), "ホーム通信を無期限待機させない");
 assert(js.includes("deadlineMs > Date.now()"), "CDNキャッシュ中でも締切済みレースを選択対象から外す");
-assert(js.includes("scheduleError"), "開催情報の取得失敗を開催なしと区別する");
-assert(js.includes("data-home-retry"), "開催情報の取得失敗を画面から再試行できる");
 assert(js.includes("selectionReady"), "判定可能なレースだけをおすすめ候補にする");
 assert(js.includes("recommendationThreshold"), "要約の選定基準点をおすすめへ引き継ぐ");
 assert(js.includes("現在、締切前の勝負対象レースはありません"), "対象0件を見送りで埋めず明示する");
-assert(js.includes("› を押して1R〜12Rを表示"), "未取得の開催詳細を『情報なし』と誤表示しない");
-assert(js.includes('`終了 ${time}`'), "終了レースは時刻だけでなく終了状態も表示する");
-assert(js.includes('aria-label="${esc(place)} ${num(race.raceNo)}R ${esc(deadlineLabel)}"'), "終了状態を読み上げ名にも含める");
 assert(!js.includes("開催情報なし"), "詳細未取得を開催なしと誤認させない");
+const shellSource = js.slice(js.indexOf("function ensureShell"), js.indexOf("function renderRecommendations"));
+assert(shellSource.includes("home-v2-recommend"), "ホームはおすすめを表示する");
+assert(!/home-v2-filter-shell|home-v2-schedule|data-home-venues/.test(shellSource), "ホームに開催場選択を生成しない");
 assert(js.includes('document.visibilityState === "hidden"'), "非表示中はおすすめ締切タイマーを止める");
 assert(js.includes("scheduleRecommendationExpiry"), "表示中は最寄り締切でおすすめを再判定する");
 assert(js.includes("recommendationCandidates"), "上位レース終了時に次の候補を繰り上げられるよう全候補を保持する");
@@ -52,8 +49,7 @@ assert(js.includes("cancelPredictionLoading"), "予想読込中に別タブへ�
 assert(js.includes('oddsStatus.textContent = "取得失敗"'), "レース取得失敗をAI予想ヘッダーにも表示する");
 assert(!/state\.updatedAt\s*=\s*new Date\(\)/.test(js), "画面更新時刻を要約判定時刻で上書きしない");
 assert(css.includes("home-v2-recommend-list"), "おすすめカード表示を持つ");
-assert(css.includes("home-v2-venue"), "開催場を横一列で表示する");
-assert(css.includes("is-skip"), "見送り色分けを持つ");
+assert(!/home-v2-recommend[^{]*\{[^}]*display\s*:\s*none/is.test(referenceCss), "おすすめを後段CSSで隠さない");
 assert(!js.includes("buildMarks("), "印ロジックを変更しない");
 assert(!js.includes("buildFormations("), "買い目ロジックを変更しない");
 

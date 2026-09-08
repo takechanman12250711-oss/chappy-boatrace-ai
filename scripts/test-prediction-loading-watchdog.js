@@ -6,7 +6,6 @@ const path = require("node:path");
 
 const watchdog = fs.readFileSync(path.join(__dirname, "..", "js", "prediction-loading-watchdog.js"), "utf8");
 const appRuntime = fs.readFileSync(path.join(__dirname, "..", "js", "app-runtime-loader.js"), "utf8");
-const homeHotfix = fs.readFileSync(path.join(__dirname, "..", "js", "home-venue-tap-hotfix.js"), "utf8");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
 assert.match(watchdog, /FIRST_TIMEOUT_MS = 20000/);
@@ -29,8 +28,7 @@ assert.match(html, /prediction-runtime-loader\.js\?v=20260828-ui-audit-display1/
 assert.match(html, /hiyori-runtime-loader\.js\?v=20260829-effective-score-contract1/);
 assert.match(html, /app-runtime-loader\.js\?v=20260816-static-race1/);
 assert.match(html, /home-dashboard-v2\.js\?v=20260816-static-race1/);
-assert.match(html, /home-venue-tap-hotfix\.js\?v=20260907-race-session-tags1/);
+assert.doesNotMatch(html, /home-venue-tap-hotfix\.js|outer-attack-ticket-shadow-guard\.js/);
 assert.doesNotMatch(html, /prediction-loading-watchdog\.js/);
-assert.doesNotMatch(homeHotfix, /MutationObserver/);
 
 console.log("restored prediction loading contract passed");

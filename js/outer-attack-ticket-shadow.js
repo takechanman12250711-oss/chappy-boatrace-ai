@@ -403,17 +403,27 @@
     const storage = rootObject?.ChappyStorage;
     if (!storage || typeof storage.upsertPrediction !== "function" || storage[HOOK_MARK]) return false;
     const original = storage.upsertPrediction;
-    Object.defineProperty(storage, HOOK_MARK, { value: { original }, configurable: false, enumerable: false, writable: false });
     const capture = prediction => {
       try { upsertShadow(rootObject, buildSnapshot(clone(prediction))); }
       catch (error) { console.warn("[outer-attack-ticket-shadow] shadow保存を続行できません", error); }
       return prediction;
     };
-    storage.upsertPrediction = function upsertPredictionWithOuterAttackShadow(prediction) {
+    const hooked = function upsertPredictionWithOuterAttackShadow(prediction) {
       const result = original.call(storage, prediction);
       return result && typeof result.then === "function" ? result.then(capture) : capture(result || prediction);
     };
-    return true;
+    try {
+      storage.upsertPrediction = hooked;
+      if (storage.upsertPrediction !== hooked) {
+        throw new TypeError("ChappyStorage.upsertPrediction is not writable");
+      }
+      Object.defineProperty(storage, HOOK_MARK, { value: { original }, configurable: false, enumerable: false, writable: false });
+      return true;
+    } catch (error) {
+      try { storage.upsertPrediction = original; } catch (_) {}
+      console.warn("[outer-attack-ticket-shadow] storage hookを装着できません", error);
+      return false;
+    }
   }
 
   return Object.freeze({

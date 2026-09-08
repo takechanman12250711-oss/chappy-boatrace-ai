@@ -6,15 +6,16 @@ on:
       - "index.html"
       - "js/app-runtime-loader.js"
       - "js/home-dashboard-v2.js"
-      - "js/home-venue-tap-hotfix.js"
       - "js/prediction-loading-watchdog.js"
       - "js/prediction-runtime-loader.js"
       - "js/script.js"
       - "js/home-recommendation-reliability.js"
       - "css/home-dashboard-v2.css"
+      - "css/final-mobile-ui.css"
+      - "css/final-reference-layout.css"
+      - "style.css"
       - "scripts/test-home-dashboard-v2.js"
-      - "scripts/test-home-review-night-hotfix.js"
-      - "scripts/test-home-review-night-safety.js"
+      - "scripts/test-home-race-root-contract.js"
       - "scripts/test-prediction-loading-watchdog.js"
       - "scripts/test-prediction-loading-terminal-state.js"
       - "scripts/test-home-recommendation-reliability.js"
@@ -32,14 +33,12 @@ jobs:
         run: |
           node --check js/app-runtime-loader.js
           node --check js/home-dashboard-v2.js
-          node --check js/home-venue-tap-hotfix.js
           node --check js/prediction-loading-watchdog.js
           node --check js/prediction-runtime-loader.js
           node --check js/script.js
           node --check js/home-recommendation-reliability.js
           node scripts/test-home-dashboard-v2.js
-          node scripts/test-home-review-night-hotfix.js
-          node scripts/test-home-review-night-safety.js
+          node scripts/test-home-race-root-contract.js
           node scripts/test-prediction-loading-watchdog.js
           node scripts/test-prediction-loading-terminal-state.js
           node scripts/test-home-recommendation-reliability.js

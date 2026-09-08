@@ -38,8 +38,9 @@ assert.match(
   "実戦厳選だけ保存された履歴は分類別データ未保存と表示する"
 );
 
-assert.match(home, /return deadlineClass\(value\) === "is-finished" \? `終了 \$\{time\}` : time/);
-assert.match(home, /aria-label="\$\{esc\(place\)\} \$\{num\(race\.raceNo\)\}R \$\{esc\(deadlineLabel\)\}"/);
+assert.match(home, /home-v2-recommend-card/);
+const homeShell = home.slice(home.indexOf("function ensureShell"), home.indexOf("function renderRecommendations"));
+assert.doesNotMatch(homeShell, /home-v2-schedule|data-home-venues/);
 assert.match(raceFlow, /return isFinished\(race\) \? `終了 \$\{time\}` : time/);
 assert.match(raceFlow, /aria-label="\$\{escapeHtml\(place\)\} \$\{race\.raceNo\}R \$\{escapeHtml\(deadlineLabel\)\}"/);
 

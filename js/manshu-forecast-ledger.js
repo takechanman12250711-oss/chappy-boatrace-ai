@@ -1394,7 +1394,10 @@
         STORAGE_WRAPPED,
         { value: true }
       );
-      return Object.freeze(wrapped);
+      // ChappyStorage is a composable runtime API. Later persistence observers
+      // attach their wrappers to these methods, so this wrapper must remain
+      // extensible just like the base storage object.
+      return wrapped;
     }
 
     function installAssignmentHook(

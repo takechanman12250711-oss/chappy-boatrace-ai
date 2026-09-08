@@ -401,8 +401,13 @@
   function settlePrediction(rootObject, prediction, options = {}) {
     const key = raceKey(prediction);
     const storage = rootObject?.ChappyStorage;
-    if (!key || typeof storage?.findResult !== "function") return { status: "awaiting-result", raceKey: key };
-    const result = storage.findResult(key);
+    const findResult = typeof storage?.findResultByRaceKey === "function"
+      ? storage.findResultByRaceKey.bind(storage)
+      : typeof storage?.findResult === "function"
+        ? storage.findResult.bind(storage)
+        : null;
+    if (!key || !findResult) return { status: "awaiting-result", raceKey: key };
+    const result = findResult(key);
     return result ? settleOfficialResult(rootObject, result, options) : { status: "awaiting-result", raceKey: key };
   }
 
@@ -413,30 +418,42 @@
     if (typeof storage.upsertPrediction !== "function" || typeof storage.upsertResult !== "function") return false;
     const originalPrediction = storage.upsertPrediction;
     const originalResult = storage.upsertResult;
-    Object.defineProperty(storage, HOOK_MARK, {
-      value: { originalPrediction, originalResult },
-      configurable: false,
-      enumerable: false,
-      writable: false
-    });
     const after = (value, callback) => value && typeof value.then === "function"
       ? value.then(result => { callback(result); return result; })
       : (callback(value), value);
-    storage.upsertPrediction = function upsertPredictionWithOuterAttackSettlement(prediction) {
+    const hookedPrediction = function upsertPredictionWithOuterAttackSettlement(prediction) {
       const returned = originalPrediction.call(storage, prediction);
       return after(returned, saved => {
         try { settlePrediction(rootObject, clone(saved || prediction)); }
         catch (error) { console.warn("[outer-attack-ticket-settlement] 予想側照合を継続できません", error); }
       });
     };
-    storage.upsertResult = function upsertResultWithOuterAttackSettlement(result) {
+    const hookedResult = function upsertResultWithOuterAttackSettlement(result) {
       const returned = originalResult.call(storage, result);
       return after(returned, saved => {
         try { settleOfficialResult(rootObject, clone(saved || result)); }
         catch (error) { console.warn("[outer-attack-ticket-settlement] 結果側照合を継続できません", error); }
       });
     };
-    return true;
+    try {
+      storage.upsertPrediction = hookedPrediction;
+      storage.upsertResult = hookedResult;
+      if (storage.upsertPrediction !== hookedPrediction || storage.upsertResult !== hookedResult) {
+        throw new TypeError("ChappyStorage methods are not writable");
+      }
+      Object.defineProperty(storage, HOOK_MARK, {
+        value: { originalPrediction, originalResult },
+        configurable: false,
+        enumerable: false,
+        writable: false
+      });
+      return true;
+    } catch (error) {
+      try { storage.upsertPrediction = originalPrediction; } catch (_) {}
+      try { storage.upsertResult = originalResult; } catch (_) {}
+      console.warn("[outer-attack-ticket-settlement] storage hooksを装着できません", error);
+      return false;
+    }
   }
 
   return Object.freeze({

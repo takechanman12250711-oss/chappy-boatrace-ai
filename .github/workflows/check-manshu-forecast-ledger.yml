@@ -4,9 +4,13 @@ on:
   pull_request:
     paths:
       - "js/manshu-forecast-ledger.js"
+      - "js/storage.js"
+      - "js/outer-attack-ticket-shadow.js"
+      - "js/outer-attack-ticket-settlement.js"
       - "js/frame-rise-fall-replay-preload.js"
       - "index.html"
       - "scripts/test-manshu-forecast-ledger.js"
+      - "tests/outer-attack-ticket-storage-integration.test.cjs"
       - "scripts/test-light-manshu-ticket-board.js"
       - "docs/manshu-forecast-ledger-v1.md"
       - ".github/workflows/check-manshu-forecast-ledger.yml"
@@ -15,9 +19,13 @@ on:
       - main
     paths:
       - "js/manshu-forecast-ledger.js"
+      - "js/storage.js"
+      - "js/outer-attack-ticket-shadow.js"
+      - "js/outer-attack-ticket-settlement.js"
       - "js/frame-rise-fall-replay-preload.js"
       - "index.html"
       - "scripts/test-manshu-forecast-ledger.js"
+      - "tests/outer-attack-ticket-storage-integration.test.cjs"
       - "scripts/test-light-manshu-ticket-board.js"
       - "docs/manshu-forecast-ledger-v1.md"
       - ".github/workflows/check-manshu-forecast-ledger.yml"
@@ -44,5 +52,7 @@ jobs:
           node --check js/manshu-forecast-ledger.js
           node --check js/frame-rise-fall-replay-preload.js
           node --check scripts/test-manshu-forecast-ledger.js
+          node --check tests/outer-attack-ticket-storage-integration.test.cjs
           node scripts/test-manshu-forecast-ledger.js
           node scripts/test-light-manshu-ticket-board.js
+          node tests/outer-attack-ticket-storage-integration.test.cjs
