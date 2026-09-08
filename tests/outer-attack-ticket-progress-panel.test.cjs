@@ -76,6 +76,11 @@ assert.deepEqual(
 );
 assert.equal(emptyView.variants[0].hitDeltaLabel, "—");
 assert.equal(emptyView.variants[0].sameStakeLabel, "—");
+assert.doesNotMatch(
+  panel.renderMarkup(emptyView),
+  /<details class="outer-attack-progress-details" open>/,
+  "0Rの検証パネルは初期状態で折りたたむ"
+);
 
 const activeReport = report({
   recommendedVariant: "hole",
@@ -176,8 +181,9 @@ const statsArea = fakeElement("div");
 statsArea.id = "statsArea";
 const shell = fakeElement("article");
 statsArea.parentElement = shell;
+statsArea.nextSibling = null;
 shell.insertBefore = (node, before) => {
-  assert.equal(before, statsArea, "進捗表示を既存statsAreaの直前に置く");
+  assert.equal(before, null, "進捗表示を既存statsAreaの後ろに置く");
   node.parentElement = shell;
   inserted.push(node);
   nodes.set(node.id, node);
@@ -216,6 +222,7 @@ const area = nodes.get(panel.AREA_ID);
 assert.ok(area, "進捗表示領域を生成する");
 assert.equal(area.hidden, false);
 assert.match(area.innerHTML, /確認候補：万舟B/);
+assert.match(area.innerHTML, /<details class="outer-attack-progress-details" open>/);
 assert.ok(nodes.get(panel.STYLE_ID), "専用styleを一度だけ生成する");
 assert.equal(typeof listeners.get("chappy:stats-requested"), "function");
 assert.equal(typeof listeners.get("storage"), "function");

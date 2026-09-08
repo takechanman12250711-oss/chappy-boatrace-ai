@@ -25,4 +25,18 @@ assert.equal(venues[0].currentRaceNo, 6);
 assert.equal(venues[0].nextDeadline, "13:14");
 assert.equal(venues[0].selectable, true);
 
+const preparingOrder = '<tbody><a href="/owpc/pc/race/racelist?hd=20260807&jcd=07&rno=1">出走表</a><span>発売準備中</span></tbody>';
+const preparingVenues = schedule.parseVenues(preparingOrder, "20260807", nowMs);
+assert.equal(preparingVenues[0].status, "schedule_pending");
+assert.equal(preparingVenues[0].selectable, true, "開始前の開催場は場別時刻を確認できる");
+
+const closedOrder = '<tbody><a href="/owpc/pc/race/racelist?hd=20260807&jcd=07&rno=12">出走表</a><span>最終Ｒ発売終了</span></tbody>';
+const closedVenues = schedule.parseVenues(closedOrder, "20260807", nowMs);
+assert.equal(closedVenues[0].status, "closed");
+assert.equal(closedVenues[0].selectable, false);
+
+const expiredVenues = schedule.parseVenues(preparingOrder, "20260807", Date.parse("2026-08-08T00:01:00+09:00"));
+assert.equal(expiredVenues[0].status, "closed");
+assert.equal(expiredVenues[0].selectable, false, "過去日の時刻未掲載を準備中へ戻さない");
+
 console.log("schedule parser tests passed");

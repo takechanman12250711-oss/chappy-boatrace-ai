@@ -71,6 +71,13 @@ function parseVenues(indexHtml, date, nowMs) {
     const deadlineMs = deadlineAt ? Date.parse(deadlineAt) : NaN;
     const finalClosed = text.includes("最終Ｒ発売終了") || text.includes("最終R発売終了");
     const isBeforeDeadline = !finalClosed && Number.isFinite(deadlineMs) && deadlineMs > nowMs;
+    const raceDayEndMs = Date.parse(createDeadlineAt(date, "23:59"));
+    const dateEnded = Number.isFinite(raceDayEndMs) && raceDayEndMs <= nowMs;
+    // The official index can list a venue before it publishes the first
+    // deadline (and briefly between races).  That is a schedule-pending
+    // venue, not a closed venue.  Keep the venue tappable so the dedicated
+    // venue endpoint can obtain all 12 deadlines.
+    const selectable = !finalClosed && !dateEnded;
 
     venues.push({
       jcd,
@@ -80,8 +87,8 @@ function parseVenues(indexHtml, date, nowMs) {
       currentRaceNo: raceLink.raceNo,
       nextDeadline,
       deadlineAt,
-      status: finalClosed ? "closed" : isBeforeDeadline ? "before_deadline" : "unknown",
-      selectable: isBeforeDeadline,
+      status: finalClosed || dateEnded ? "closed" : isBeforeDeadline ? "before_deadline" : "schedule_pending",
+      selectable,
       finalClosed
     });
   });
@@ -206,6 +213,7 @@ async function handler(req, res) {
     const venues = parseVenues(indexHtml, date, nowMs);
     const liveVenues = venues.filter(venue => venue.selectable);
     const nextRace = liveVenues
+      .filter(venue => venue.status === "before_deadline")
       .map(venue => ({
         jcd: venue.jcd,
         place: venue.place,

@@ -774,6 +774,14 @@
       mode === "live"
         ? String(
             data?.nextRace?.jcd ||
+            (
+              venueByJcd.has(
+                currentJcd
+              )
+                ? currentJcd
+                : availableVenues[0]
+                  ?.jcd
+            ) ||
             ""
           )
         : (
@@ -820,7 +828,10 @@
                 (
                   venue.finalClosed
                     ? "開催終了"
-                    : "開催"
+                    : venue.status ===
+                        "schedule_pending"
+                      ? "開始前"
+                      : "開催"
                 )
               );
 

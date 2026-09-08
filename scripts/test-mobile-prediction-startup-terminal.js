@@ -407,7 +407,7 @@ function createRoot({
     ],
     scriptVersions: {
       "js/ai-core.js": "20260903-light-manshu-board1",
-      "js/render.js": "20260903-manshu-integrated1"
+      "js/render.js": "20260908-comment-dedup1"
     }
   });
   terminal.install(built);
@@ -436,11 +436,11 @@ function createRoot({
   );
   assert.equal(
     built.__scripts[1].src,
-    "js/render.js?v=20260903-manshu-integrated1"
+    "js/render.js?v=20260908-comment-dedup1"
   );
   assert.equal(
     built.__scripts[1].dataset.chappyMobileBuild,
-    "20260903-manshu-integrated1"
+    "20260908-comment-dedup1"
   );
   assert.equal(
     built.__scripts[2].src,
