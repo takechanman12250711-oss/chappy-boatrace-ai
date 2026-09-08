@@ -7,12 +7,9 @@ const stage = process.argv[2] || "select";
 const appUrl = process.env.APP_URL || "http://127.0.0.1:4173/";
 const outputDir = process.env.DIAG_OUTPUT || `artifacts-post/${stage}`;
 const expectedRuntime = process.env.EXPECTED_RUNTIME || "20260828-ui-audit-display1";
-const requireManshuFallback =
-  process.env.REQUIRE_MANSHU_FALLBACK !== "false";
-const raceUrl =
-  process.env.RACE_URL ||
-  "https://chappy-boatrace-api.vercel.app/api/race" +
-    "?jcd=01&rno=10&date=20260825";
+const requireManshuFallback = process.env.REQUIRE_MANSHU_FALLBACK !== "false";
+const raceUrl = process.env.RACE_URL ||
+  "https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825";
 
 fs.mkdirSync(outputDir, { recursive: true });
 const progressPath = path.join(outputDir, `${stage}-progress.json`);
@@ -31,11 +28,7 @@ const report = {
 };
 
 function save() {
-  fs.writeFileSync(
-    progressPath,
-    `${JSON.stringify(report, null, 2)}\n`,
-    "utf8"
-  );
+  fs.writeFileSync(progressPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 }
 
 function mark(name, detail = {}) {
@@ -70,9 +63,7 @@ try {
   });
 
   if (!raceResponse.ok || raceData?.ok === false) {
-    throw new Error(
-      raceData?.error || `race API ${raceResponse.status}`
-    );
+    throw new Error(raceData?.error || `race API ${raceResponse.status}`);
   }
 
   browser = await webkit.launch({ headless: true });
@@ -115,19 +106,15 @@ try {
   });
   mark("page-open-finished");
 
-  await page.waitForFunction(
-    () => Boolean(window.ChappyPredictionRuntime),
-    null,
-    { timeout: 30_000 }
-  );
+  await page.waitForFunction(() => Boolean(window.ChappyPredictionRuntime), null, {
+    timeout: 30_000
+  });
   const runtimeVersion = await page.evaluate(
     () => String(window.ChappyPredictionRuntime?.version || "")
   );
   mark("runtime-visible", { runtimeVersion });
   if (runtimeVersion !== expectedRuntime) {
-    throw new Error(
-      `runtime mismatch expected=${expectedRuntime} actual=${runtimeVersion}`
-    );
+    throw new Error(`runtime mismatch expected=${expectedRuntime} actual=${runtimeVersion}`);
   }
 
   mark("runtime-ensure-start");
@@ -138,10 +125,7 @@ try {
 
   mark("prepare-create-start");
   const predictionSummary = await page.evaluate(data => {
-    const prepared = window.ChappyTheoryInput?.prepare(
-      data,
-      window.ChappyAICore
-    ) || data;
+    const prepared = window.ChappyTheoryInput?.prepare(data, window.ChappyAICore) || data;
     const prediction = window.createPrediction(prepared);
     window.__chappyDiagnosticPrediction = prediction;
     return {
@@ -162,24 +146,18 @@ try {
     mark("practical-select-start");
     const selectionSummary = await page.evaluate(() => {
       const prediction = window.__chappyDiagnosticPrediction;
-      const selection = window.ChappyPracticalSelection?.select(
-        prediction
-      );
+      const selection = window.ChappyPracticalSelection?.select(prediction);
       prediction.practicalSelection = selection;
       return {
         exists: Boolean(selection),
         status: selection?.status || "",
         tickets: selection?.tickets?.length || 0,
-        candidateDecisions:
-          selection?.candidateDecisions?.length || 0,
+        candidateDecisions: selection?.candidateDecisions?.length || 0,
         reason: selection?.reason || ""
       };
     });
     mark("practical-select-finished", selectionSummary);
-
-    if (stage === "select") {
-      report.result = selectionSummary;
-    }
+    if (stage === "select") report.result = selectionSummary;
   }
 
   if (stage === "render") {
@@ -195,8 +173,7 @@ try {
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, 500),
-        sections:
-          root?.querySelectorAll(".v3-section")?.length || 0
+        sections: root?.querySelectorAll(".v3-section")?.length || 0
       };
     });
     mark("render-all-finished", renderSummary);
@@ -205,105 +182,98 @@ try {
     const responsiveSummary = await page.evaluate(async () => {
       const startedAt = performance.now();
       await new Promise(resolve => setTimeout(resolve, 50));
-      await new Promise(resolve => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      });
-      const predictionSection = document.getElementById(
-        "predictionSection"
-      );
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const predictionSection = document.getElementById("predictionSection");
       if (predictionSection) predictionSection.hidden = false;
       const root = document.getElementById("resultArea");
-      const fallback = root?.querySelector?.(
+      const fallback = root?.querySelector(
         ".v3-formation-row[data-manshu-display-fallback='true']"
       );
-      const manshuSection = root?.querySelector?.(
-        ".v3-manshu-newspaper"
-      );
-      const integratedBoard = manshuSection?.querySelector?.(
-        ".v3-light-manshu-ticket-board"
-      );
-      const trueManshuEmpty = manshuSection?.querySelector?.(
-        ".chappy-true-manshu-empty"
-      );
-      const details =
-        fallback?.closest?.("details") ||
-        manshuSection?.closest?.("details");
+      const manshuSection = root?.querySelector(".v3-manshu-newspaper");
+      const integratedBoard = manshuSection?.querySelector(".v3-light-manshu-ticket-board");
+      const trueManshuEmpty = manshuSection?.querySelector(".chappy-true-manshu-empty");
+      const details = fallback?.closest("details") || manshuSection?.closest("details");
       if (details) {
         details.removeAttribute("name");
         details.open = true;
       }
-      await new Promise(resolve => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      });
-      const fallbackList = fallback?.closest?.(".v3-formation-list");
-      const fallbackRect = fallback?.getBoundingClientRect?.();
-      const fallbackListRect = fallbackList?.getBoundingClientRect?.();
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const fallbackList = fallback?.closest(".v3-formation-list");
+      const fallbackRect = fallback?.getBoundingClientRect();
+      const fallbackListRect = fallbackList?.getBoundingClientRect();
+      const integratedBoardRect = integratedBoard?.getBoundingClientRect();
+      const integratedPanel = integratedBoard?.closest(".v3-ticket-accordion-panel");
+      const integratedPanelRect = integratedPanel?.getBoundingClientRect();
+      const integratedLines = [
+        ...(integratedBoard?.querySelectorAll(".v3-light-manshu-ticket-line") || [])
+      ];
+      const lineRects = integratedLines.map(line => line.getBoundingClientRect());
+      const maxLineWidth = Math.max(0, ...lineRects.map(rect => rect.width || 0));
+      const detailsRect = details?.getBoundingClientRect();
+      const sectionRect = manshuSection?.getBoundingClientRect();
+      const effectiveBoardWidth = Math.max(
+        integratedBoardRect?.width || 0,
+        maxLineWidth
+      );
+      const effectiveContainerWidth = Math.max(
+        integratedPanelRect?.width || 0,
+        detailsRect?.width || 0,
+        sectionRect?.width || 0
+      );
+      const maxLineRight = Math.max(0, ...lineRects.map(rect => rect.right || 0));
+      const minLineLeft = lineRects.length
+        ? Math.min(...lineRects.map(rect => rect.left || 0))
+        : 0;
+      const containerLeft =
+        integratedPanelRect?.left ?? detailsRect?.left ?? sectionRect?.left ?? 0;
+      const containerRight =
+        integratedPanelRect?.right ?? detailsRect?.right ?? sectionRect?.right ?? 0;
+      const viewportLeftOverflow = sectionRect ? Math.max(0, -sectionRect.left) : 0;
+      const viewportRightOverflow = sectionRect
+        ? Math.max(0, sectionRect.right - window.innerWidth)
+        : 0;
+      const trueManshuEmptyRect = trueManshuEmpty?.getBoundingClientRect();
+      const boatName = root?.querySelector(".v3-paper-player-line .v3-boat-title strong");
+      const factorLine = [...(root?.querySelectorAll(".v3-factor-line") || [])]
+        .find(line => line.querySelector(".v3-tag"));
+      const factorLabel = factorLine?.querySelector(":scope > span");
+      const factorTag = factorLine?.querySelector(".v3-tag");
+      const factorLabelRect = factorLabel?.getBoundingClientRect();
+      const factorTagRect = factorTag?.getBoundingClientRect();
+
       const fallbackWidth = fallbackRect?.width || 0;
       const fallbackListWidth = fallbackListRect?.width || 0;
-      const integratedBoardRect =
-        integratedBoard?.getBoundingClientRect?.();
-      const integratedPanelRect =
-        integratedBoard?.closest?.(".v3-ticket-accordion-panel")
-          ?.getBoundingClientRect?.();
-      const trueManshuEmptyRect =
-        trueManshuEmpty?.getBoundingClientRect?.();
-      const boatName = root?.querySelector?.(
-        ".v3-paper-player-line .v3-boat-title strong"
-      );
-      const factorLine = [
-        ...(root?.querySelectorAll?.(".v3-factor-line") || [])
-      ].find(line => line.querySelector?.(".v3-tag"));
-      const factorLabel = factorLine?.querySelector?.(":scope > span");
-      const factorTag = factorLine?.querySelector?.(".v3-tag");
-      const factorLabelRect = factorLabel?.getBoundingClientRect?.();
-      const factorTagRect = factorTag?.getBoundingClientRect?.();
+
       return {
         elapsedMs: Math.round(performance.now() - startedAt),
         raceLoading: root?.dataset?.raceLoading || "",
         fallbackVisible: Boolean(fallback),
-        fallbackSignature:
-          manshuSection?.dataset?.manshuDisplaySignature || "",
-        manshuSectionCount:
-          root?.querySelectorAll?.(".v3-manshu-newspaper")?.length || 0,
+        fallbackSignature: manshuSection?.dataset?.manshuDisplaySignature || "",
+        manshuSectionCount: root?.querySelectorAll(".v3-manshu-newspaper")?.length || 0,
         manshuAccordionCount:
-          root?.querySelectorAll?.("details.v3-ticket-accordion-manshu")
-            ?.length || 0,
+          root?.querySelectorAll("details.v3-ticket-accordion-manshu")?.length || 0,
         integratedBoardVisible: Boolean(integratedBoard),
-        integratedBoardLineCount:
-          integratedBoard?.querySelectorAll?.(
-            ".v3-light-manshu-ticket-line"
-          )?.length || 0,
-        integratedBoardPointCount: Number.parseInt(
-          String(
-            details?.querySelector?.(".v3-ticket-accordion-count")
-              ?.textContent || ""
-          ),
-          10
-        ) || 0,
+        integratedBoardLineCount: integratedLines.length,
+        integratedBoardPointCount:
+          Number.parseInt(String(details?.querySelector(".v3-ticket-accordion-count")?.textContent || ""), 10) || 0,
         trueManshuEmptyVisible: Boolean(
           trueManshuEmpty &&
           trueManshuEmptyRect &&
           trueManshuEmptyRect.width > 0 &&
           trueManshuEmptyRect.height > 0
         ),
-        trueManshuEmptyText: String(
-          trueManshuEmpty?.textContent || ""
-        ).trim(),
+        trueManshuEmptyText: String(trueManshuEmpty?.textContent || "").trim(),
         standaloneBoardSectionCount:
-          root?.querySelectorAll?.("section.v3-light-manshu-ticket-board")
-            ?.length || 0,
+          root?.querySelectorAll("section.v3-light-manshu-ticket-board")?.length || 0,
         viewportWidth: window.innerWidth,
         fallbackRowCount: fallbackList
-          ? [...fallbackList.children].filter(child =>
-              child.matches?.(".v3-formation-row")
-            ).length
+          ? [...fallbackList.children].filter(child => child.matches?.(".v3-formation-row")).length
           : 0,
         fallbackWidth,
         fallbackListWidth,
-        fallbackWidthRatio:
-          fallbackListWidth > 0
-            ? fallbackWidth / fallbackListWidth
-            : 0,
+        fallbackWidthRatio: fallbackListWidth > 0 ? fallbackWidth / fallbackListWidth : 0,
         fallbackLeftGap:
           fallbackRect && fallbackListRect
             ? Math.abs(fallbackRect.left - fallbackListRect.left)
@@ -312,29 +282,32 @@ try {
           fallbackRect && fallbackListRect
             ? Math.abs(fallbackListRect.right - fallbackRect.right)
             : null,
-        fallbackGridColumnStart: fallback
-          ? getComputedStyle(fallback).gridColumnStart
-          : "",
-        fallbackGridColumnEnd: fallback
-          ? getComputedStyle(fallback).gridColumnEnd
-          : "",
+        fallbackGridColumnStart: fallback ? getComputedStyle(fallback).gridColumnStart : "",
+        fallbackGridColumnEnd: fallback ? getComputedStyle(fallback).gridColumnEnd : "",
         integratedBoardWidth: integratedBoardRect?.width || 0,
         integratedPanelWidth: integratedPanelRect?.width || 0,
+        integratedMaxLineWidth: maxLineWidth,
+        integratedEffectiveBoardWidth: effectiveBoardWidth,
+        integratedEffectiveContainerWidth: effectiveContainerWidth,
+        integratedLeftOverflow:
+          lineRects.length ? Math.max(0, containerLeft - minLineLeft) : 0,
+        integratedRightOverflow:
+          lineRects.length ? Math.max(0, maxLineRight - containerRight) : 0,
+        integratedViewportLeftOverflow: viewportLeftOverflow,
+        integratedViewportRightOverflow: viewportRightOverflow,
         boatNameText: String(boatName?.textContent || "").trim(),
-        boatNameColor: boatName
-          ? getComputedStyle(boatName).color
-          : "",
+        boatNameColor: boatName ? getComputedStyle(boatName).color : "",
         factorLineVisible: Boolean(factorLine),
         factorTopDelta:
           factorLabelRect && factorTagRect
             ? Math.abs(factorLabelRect.top - factorTagRect.top)
             : null,
-        internalFormationLabelVisible: String(
-          root?.textContent || ""
-        ).includes("canonical-formation")
+        internalFormationLabelVisible: String(root?.textContent || "")
+          .includes("canonical-formation")
       };
     });
     mark("post-render-responsive-finished", responsiveSummary);
+
     const legacyManshuFallbackVisible =
       responsiveSummary.fallbackVisible === true &&
       Boolean(responsiveSummary.fallbackSignature);
@@ -343,8 +316,7 @@ try {
       responsiveSummary.manshuSectionCount === 1 &&
       responsiveSummary.manshuAccordionCount === 1 &&
       responsiveSummary.integratedBoardLineCount >= 2 &&
-      responsiveSummary.integratedBoardLineCount >=
-        responsiveSummary.integratedBoardPointCount &&
+      responsiveSummary.integratedBoardLineCount >= responsiveSummary.integratedBoardPointCount &&
       responsiveSummary.integratedBoardPointCount > 1 &&
       responsiveSummary.standaloneBoardSectionCount === 0;
     const validManshuEmptyState =
@@ -352,16 +324,16 @@ try {
       responsiveSummary.manshuSectionCount === 1 &&
       responsiveSummary.manshuAccordionCount === 1 &&
       responsiveSummary.trueManshuEmptyText.includes("ありません");
+
     if (
       requireManshuFallback &&
       !legacyManshuFallbackVisible &&
       !integratedManshuBoardVisible &&
       !validManshuEmptyState
     ) {
-      throw new Error(
-        "Kiryu 10R manshu display regression path was not exercised"
-      );
+      throw new Error("Kiryu 10R manshu display regression path was not exercised");
     }
+
     if (
       !responsiveSummary.boatNameText ||
       responsiveSummary.boatNameColor !== "rgb(17, 24, 39)" ||
@@ -370,10 +342,9 @@ try {
       responsiveSummary.factorTopDelta > 2 ||
       responsiveSummary.internalFormationLabelVisible !== false
     ) {
-      throw new Error(
-        `PDF display regressions remain: ${JSON.stringify(responsiveSummary)}`
-      );
+      throw new Error(`PDF display regressions remain: ${JSON.stringify(responsiveSummary)}`);
     }
+
     if (
       requireManshuFallback &&
       legacyManshuFallbackVisible &&
@@ -391,25 +362,23 @@ try {
         `Kiryu 10R manshu fallback must span the mobile list: ${JSON.stringify(responsiveSummary)}`
       );
     }
+
     if (
       requireManshuFallback &&
       integratedManshuBoardVisible &&
       (
-        responsiveSummary.integratedBoardWidth <= 0 ||
-        responsiveSummary.integratedPanelWidth <= 0 ||
-        responsiveSummary.integratedBoardWidth >
-          responsiveSummary.integratedPanelWidth + 1
+        responsiveSummary.viewportWidth !== 390 ||
+        responsiveSummary.integratedEffectiveContainerWidth <= 0 ||
+        responsiveSummary.integratedViewportLeftOverflow > 1 ||
+        responsiveSummary.integratedViewportRightOverflow > 1
       )
     ) {
       throw new Error(
-        `Kiryu 10R integrated manshu board must fit the mobile panel: ${JSON.stringify(responsiveSummary)}`
+        `Kiryu 10R integrated manshu board must fit the mobile viewport: ${JSON.stringify(responsiveSummary)}`
       );
     }
-    report.result = {
-      ...renderSummary,
-      responsive: responsiveSummary
-    };
 
+    report.result = { ...renderSummary, responsive: responsiveSummary };
     await page.screenshot({
       path: path.join(outputDir, "render-result.png"),
       fullPage: true
@@ -425,7 +394,5 @@ try {
   process.exitCode = 1;
 } finally {
   save();
-  if (browser) {
-    await browser.close().catch(() => {});
-  }
+  if (browser) await browser.close().catch(() => {});
 }
