@@ -44,6 +44,11 @@ assert.match(race, /aria-pressed/);
 assert.match(race, /dateField\.hidden\s*=\s*!isReview/);
 assert.match(race, /④ AI予想を見る/);
 assert.match(race, /④ 振り返り予想を見る/);
+assert.match(
+  race,
+  /ChappyHomeDashboardV2[\s\S]*showPredictionLoading[\s\S]*params\.place[\s\S]*params\.rno/,
+  "レース画面のAI予想ボタンから予想画面へ移動する"
+);
 assert.match(runtime, /data-race-mode/);
 
 assert.match(home, /currentView: "race"/);
@@ -51,6 +56,11 @@ assert.match(home, /setView\("race"\)/);
 assert.match(home, /raceSection\.insertBefore/);
 assert.match(home, /ChappyAppRuntime[\s\S]*ensure\?\.\("race"\)/);
 assert.match(home, /shell\.hidden = hideRecommendations/);
+assert.match(
+  home,
+  /error\?\.status === 404[\s\S]*state\.recommendations = \[\]/,
+  "おすすめが存在しない日は空表示として扱う"
+);
 
 assert.match(style, /\.race-mode-actions/);
 assert.match(style, /\.race-main-action[^{]*\{[^}]*position:\s*fixed/is);

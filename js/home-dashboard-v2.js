@@ -274,7 +274,11 @@
       ...(controller ? { signal: controller.signal } : {})
     })
       .then(response => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) {
+          const error = new Error(`HTTP ${response.status}`);
+          error.status = response.status;
+          throw error;
+        }
         return response.json();
       })
       .catch(error => {
@@ -338,7 +342,13 @@
       state.updatedAt = summaryCheckedAt(data, run);
       return changed;
     } catch (error) {
-      console.warn("ホームおすすめ取得エラー", error);
+      if (error?.status === 404) {
+        state.recommendationCandidates = [];
+        state.recommendations = [];
+        state.updatedAt = null;
+        return true;
+      }
+      console.warn("おすすめレース取得エラー", error);
       const next = selectRecommendations(
         {
           threshold: state.recommendationThreshold,
