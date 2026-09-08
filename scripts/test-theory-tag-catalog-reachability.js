@@ -55,6 +55,9 @@ function basePrediction() {
       source: "approved-double-time-test"
     },
     aiCore: {
+      stSlitTheory: {
+        roles: Array.from({ length: 6 }, (_, index) => ({ boatNo: index + 1, isFormal: true, appliedToScore: true }))
+      },
       formations: {
         evidence: {
           branches: [{

@@ -89,4 +89,30 @@ const venueRuleEvaluation = engine.build(venueRuleLocalWater)
   .evaluations.find(row => row.theoryKey === "local-water");
 assert.equal(venueRuleEvaluation.status, "evaluated", "固有水面ルールの証拠は欠損気象でも保持する");
 
+const commentOnlyStart = {
+  result: { settled: true, resultTicket: "1-2-3" },
+  prediction: {
+    flowSupport: { attackBoatNo: 1, confirms: ["1号艇はST・スリット上位"] },
+    verificationEvidence: {
+      stSlit: { roles: [{ boatNo: 1, isFormal: false, appliedToScore: false }] }
+    }
+  },
+  theoryTagSnapshot: {
+    theories: [{ theoryKey: "stSlit", label: "ST・スリット理論", tickets: ["1-2-3"] }]
+  }
+};
+const commentOnlyStartEvaluation = engine.build(commentOnlyStart)
+  .evaluations.find(row => row.theoryKey === "start");
+assert.equal(commentOnlyStartEvaluation.status, "not-used", "補助コメント由来の旧STタグを理論成績へ混ぜない");
+
+const formalStart = structuredClone(commentOnlyStart);
+formalStart.prediction.verificationEvidence.stSlit.roles = Array.from(
+  { length: 6 },
+  (_, index) => ({ boatNo: index + 1, isFormal: true, appliedToScore: true })
+);
+const formalStartEvaluation = engine.build(formalStart)
+  .evaluations.find(row => row.theoryKey === "start");
+assert.equal(formalStartEvaluation.status, "evaluated", "正式にスコア反映したST証拠だけを評価する");
+assert.equal(formalStartEvaluation.matched, true);
+
 console.log("理論評価エンジン Phase1: 合格");

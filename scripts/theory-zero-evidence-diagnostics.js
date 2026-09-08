@@ -60,6 +60,8 @@ function build(records) {
       ? "awaiting-generation-diagnostics"
       : supportPresentCount === 0 && catalogTaggedCount === 0
         ? "support-not-generated"
+        : storedEvaluationUsedCount > freshEvaluationUsedCount
+          ? "stored-evaluation-over-attributed"
         : catalogTaggedCount > 0 && freshEvaluationUsedCount > storedEvaluationUsedCount
           ? "stored-evaluation-stale"
           : catalogTaggedCount > 0 && freshInsufficientEvidenceCount > 0 && freshEvaluatedCount === 0
