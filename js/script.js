@@ -134,6 +134,11 @@
         "raceModeSelect"
       );
 
+    const modeActions =
+      document.querySelector(
+        ".race-mode-actions"
+      );
+
     if (
       fetchBtn &&
       fetchBtn.dataset
@@ -194,7 +199,48 @@
       );
     }
 
-    if (!document.getElementById("homeDashboardV2")) {
+    if (
+      modeActions &&
+      modeActions.dataset
+        .chappyRaceControlBound !==
+        "true"
+    ) {
+      modeActions.dataset
+        .chappyRaceControlBound =
+        "true";
+      modeActions.addEventListener(
+        "click",
+        event => {
+          const button =
+            event.target?.closest?.(
+              "[data-race-mode]"
+            );
+
+          if (
+            !button ||
+            !modeActions.contains(button) ||
+            !modeSelect
+          ) {
+            return;
+          }
+
+          const nextMode =
+            button.dataset.raceMode ===
+              "review"
+              ? "review"
+              : "live";
+
+          modeSelect.value = nextMode;
+          void applyRaceMode();
+        }
+      );
+    }
+
+    if (
+      !document.getElementById("homeDashboardV2") ||
+      document.getElementById("raceSection")
+        ?.hidden === false
+    ) {
       void applyRaceMode();
     }
   }
@@ -204,7 +250,8 @@
       initialize:
         initializeRaceControls,
       venueSession,
-      officialRaceRows
+      officialRaceRows,
+      applyRaceMode
     });
 
   if (
@@ -258,7 +305,7 @@
       `${yyyy}-${mm}-${dd}`;
   }
 
-    async function applyRaceMode(options = {}) {
+  async function applyRaceMode(options = {}) {
     const selectionGeneration =
       beginRaceSelection();
     const modeSelect =
@@ -292,7 +339,34 @@
         "live"
       ) === "review";
 
+    document
+      .querySelectorAll(
+        ".race-mode-actions [data-race-mode]"
+      )
+      .forEach(button => {
+        const active =
+          button.dataset.raceMode ===
+          (isReview ? "review" : "live");
+
+        button.classList.toggle(
+          "is-selected",
+          active
+        );
+        button.setAttribute(
+          "aria-pressed",
+          String(active)
+        );
+      });
+
     if (dateInput) {
+      const dateField =
+        dateInput.closest("label");
+
+      if (dateField) {
+        dateField.hidden =
+          !isReview;
+      }
+
       dateInput.disabled =
         !isReview;
 
@@ -360,8 +434,8 @@
 
         updateStatus(
           getRaceMode() === "review"
-            ? "レースを変更しました。「振り返り予想を開始」を押してください"
-            : "レースを変更しました。「AI予想を開始」を押してください"
+            ? "レースを変更しました。「④ 振り返り予想を見る」を押してください"
+            : "レースを変更しました。「④ AI予想を見る」を押してください"
         );
       };
     }
@@ -380,8 +454,8 @@
       if (mainText) {
         mainText.textContent =
           isReview
-            ? "振り返り予想を開始"
-            : "AI予想を開始";
+            ? "④ 振り返り予想を見る"
+            : "④ AI予想を見る";
       }
 
       if (subText) {
@@ -1858,6 +1932,15 @@
       button.disabled =
         !selectable;
 
+      button.setAttribute(
+        "aria-pressed",
+        String(
+          selectable &&
+          Number(race.raceNo) ===
+            selectedRaceNo
+        )
+      );
+
       button.dataset.raceNo =
         String(race.raceNo);
 
@@ -1936,6 +2019,10 @@
               item.classList.toggle(
                 "is-selected",
                 item === button
+              );
+              item.setAttribute(
+                "aria-pressed",
+                String(item === button)
               );
             });
 
@@ -2078,7 +2165,7 @@
 
             updateStatus(
         mode === "live"
-          ? "本日の締切前レースはありません。振り返りモードを選べます"
+          ? "本日の締切前レースはありません。「終了したレース」をタップできます"
           : "この日付の終了レースはありません"
       );
 
@@ -2253,7 +2340,7 @@
     if (raceSelectGrid) {
       raceSelectGrid.style
         .gridTemplateColumns =
-        "1fr 1fr";
+        "1fr";
     }
 
     return true;

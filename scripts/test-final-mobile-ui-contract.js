@@ -54,7 +54,8 @@ assert(iphoneCss.includes("v3-ticket-accordion"), "iPhone ticket density tuning 
 assert(iphoneCss.includes("chappy-final-buy-formation"), "iPhone formation sizing missing");
 assert(!/home-v2-recommend[^{]*\{[^}]*display\s*:\s*none/is.test(referenceCss), "home recommendation must remain visible");
 assert(/official-race-grid\s*\{[\s\S]*?repeat\(4,minmax\(0,1fr\)\)/.test(css), "four-column race grid required");
-assert(/grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/.test(referenceCss), "four visible bottom navigation items required");
+assert(/grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/.test(referenceCss), "three visible bottom navigation items required");
+assert(!index.includes('data-view="home"'), "obsolete home navigation must be removed");
 assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "race nav selector missing");
 assert(/\.bottom-nav-item\[data-view="race"\][^{]*\{[^}]*display:\s*flex/is.test(referenceCss), "race nav must remain visible so review mode is reachable");
 assert(readabilityCss.includes("chappy-race-info-visible"), "race information visibility rescue missing");
@@ -71,7 +72,7 @@ assert(loader.includes("final-iphone-tuning.css"), "iPhone final tuning styleshe
 assert(loader.includes("final-reference-layout.css"), "final reference layout stylesheet loader missing");
 assert(loader.includes("final-readability-fix.css"), "readability rescue stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD="20260908-root-home-race-shadow1"'), "root UI asset generation missing");
+assert(loader.includes('const BUILD="20260908-tap-race-flow1"'), "tap race flow asset generation missing");
 assert(!loader.includes("home-single-race-entry.css"), "obsolete home selector overlay must not load");
 assert(loader.includes('OWNER_BUILD="20260907-practical-selected-visible1"'), "single-owner generation missing");
 assert(loader.includes('USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract1"'), "restored ticket UI generation missing");
@@ -95,7 +96,7 @@ assert(prediction.includes("hole: cleanHole"), "manshu/hole candidates must rema
 assert(index.includes('data-view="race"'), "race navigation entry missing from production index");
 assert(index.includes('<option value="review">終了レースを振り返る</option>'), "review mode selector missing from production index");
 assert(script.includes('isReview'), "review mode handling missing from race controls");
-assert(script.includes('振り返り予想を開始'), "review-mode action missing from race controls");
+assert(script.includes('振り返り予想を見る'), "review action missing from race controls");
 assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
 
 console.log("final mobile UI contract: ok");

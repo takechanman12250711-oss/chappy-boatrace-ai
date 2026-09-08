@@ -82,6 +82,15 @@ body.chappy-final-mobile-ui {
 }
 
 .chappy-final-mobile-ui .dashboard-section-head h2 { margin:0; color:#fff; font-size:19px; }
+.chappy-final-mobile-ui .race-screen-lead { color:#8fa4b4; }
+.chappy-final-mobile-ui .race-recommendations { margin-bottom:10px; }
+.chappy-final-mobile-ui .race-select-section { padding-bottom:84px; }
+.chappy-final-mobile-ui .race-step-guide li {
+  border-color:rgba(255,255,255,.08);
+  background:#0b1a24;
+  color:#8fa4b4;
+}
+.chappy-final-mobile-ui .race-step-guide b { background:#2185ee; }
 .chappy-final-mobile-ui .section-status-badge {
   border:1px solid var(--ch-line);
   background:#10212d;
@@ -104,9 +113,22 @@ body.chappy-final-mobile-ui {
 
 .chappy-final-mobile-ui .race-select-card { padding:14px; }
 
+.chappy-final-mobile-ui .race-mode-actions button {
+  border-color:rgba(255,255,255,.09);
+  background:#0a1721;
+  color:#fff;
+}
+.chappy-final-mobile-ui .race-mode-actions button small { color:#8fa4b4; }
+.chappy-final-mobile-ui .race-mode-actions button.is-selected,
+.chappy-final-mobile-ui .race-mode-actions button[aria-pressed="true"] {
+  border-color:#3a93ff;
+  background:linear-gradient(145deg,#153653,#10283c);
+  box-shadow:inset 3px 0 0 #3a93ff;
+}
+
 .chappy-final-mobile-ui .race-select-grid {
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:1fr;
   gap:10px;
 }
 
@@ -208,6 +230,12 @@ body.chappy-final-mobile-ui {
   font-weight:900;
 }
 .chappy-final-mobile-ui .dashboard-primary-btn small { display:block; opacity:.72; font-size:10px; font-weight:600; }
+.chappy-final-mobile-ui .race-main-action {
+  bottom:calc(76px + env(safe-area-inset-bottom));
+  padding:9px 0 2px;
+  background:linear-gradient(180deg,rgba(7,17,26,0),#07111a 34%);
+}
+.chappy-final-mobile-ui .race-main-action .dashboard-primary-btn { margin-top:0; }
 
 .chappy-final-mobile-ui .v3-root { background:transparent; color:#f5f8fb; }
 .chappy-final-mobile-ui .v3-section { margin-bottom:11px; }
@@ -405,7 +433,7 @@ body.chappy-final-mobile-ui {
 @media (max-width:480px) {
   .chappy-final-mobile-ui .dashboard-app { padding-left:10px; padding-right:10px; }
   .chappy-final-mobile-ui .race-select-card { padding:12px; }
-  .chappy-final-mobile-ui .race-select-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .chappy-final-mobile-ui .race-select-grid { grid-template-columns:1fr; gap:8px; }
   .chappy-final-mobile-ui .official-venue-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .chappy-final-mobile-ui .official-race-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
   .chappy-final-mobile-ui .chappy-photo-ticket { font-size:19px; }

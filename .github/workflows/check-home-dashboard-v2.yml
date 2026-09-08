@@ -16,6 +16,7 @@ on:
       - "style.css"
       - "scripts/test-home-dashboard-v2.js"
       - "scripts/test-home-race-root-contract.js"
+      - "scripts/test-tap-race-flow.js"
       - "scripts/test-prediction-loading-watchdog.js"
       - "scripts/test-prediction-loading-terminal-state.js"
       - "scripts/test-home-recommendation-reliability.js"
@@ -39,6 +40,7 @@ jobs:
           node --check js/home-recommendation-reliability.js
           node scripts/test-home-dashboard-v2.js
           node scripts/test-home-race-root-contract.js
+          node scripts/test-tap-race-flow.js
           node scripts/test-prediction-loading-watchdog.js
           node scripts/test-prediction-loading-terminal-state.js
           node scripts/test-home-recommendation-reliability.js

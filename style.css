@@ -2405,6 +2405,95 @@ body {
 
 /* レース選択 */
 
+.race-screen-lead {
+  margin: 6px 0 0;
+  color: var(--app-subtext);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.race-recommendations {
+  margin-bottom: 14px;
+}
+
+.race-select-section {
+  padding-bottom: 84px;
+}
+
+.race-step-guide {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.race-step-guide li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 9px 6px;
+  border: 1px solid #dce5f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--app-subtext);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.race-step-guide b {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--app-blue);
+  color: #ffffff;
+  font-size: 11px;
+}
+
+.race-mode-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.race-mode-actions button {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  min-height: 58px;
+  padding: 9px 8px;
+  border: 2px solid #dce5ef;
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--app-text);
+  font: inherit;
+  text-align: center;
+}
+
+.race-mode-actions button strong {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.race-mode-actions button small {
+  color: var(--app-subtext);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.race-mode-actions button.is-selected,
+.race-mode-actions button[aria-pressed="true"] {
+  border-color: var(--app-blue);
+  background: #eaf4ff;
+  box-shadow: 0 0 0 3px rgba(8, 120, 249, 0.11);
+}
+
 .race-select-card {
   padding: 16px;
   border-radius: 18px;
@@ -2413,7 +2502,7 @@ body {
 
 .race-select-grid {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr 1.1fr;
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
@@ -2444,7 +2533,17 @@ body {
 }
 
 .race-main-action {
-  margin-top: 14px;
+  position: fixed;
+  z-index: 35;
+  right: auto;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  left: 50%;
+  width: min(calc(100% - 24px), 736px);
+  margin: 0;
+  padding: 8px 0 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(247, 249, 252, 0), #f7f9fc 30%);
+  box-sizing: border-box;
 }
 
 .dashboard-primary-btn {
@@ -2657,7 +2756,7 @@ body {
   bottom: 0;
   left: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   padding:
     8px 8px
     calc(7px + env(safe-area-inset-bottom));
@@ -2704,7 +2803,7 @@ body {
   }
 
   .race-select-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .select-date-field {
@@ -3278,6 +3377,7 @@ body {
   color: #4954c6;
 }
 
+.legacy-race-mode-field,
 .legacy-race-select-field {
   display: none !important;
 }
@@ -3536,13 +3636,12 @@ body {
   grid-template-columns:
     minmax(0, 1fr) auto;
   grid-template-areas:
-    "race-number race-time"
-    "race-trend race-trend";
+    "race-number race-time";
   place-items: initial;
   align-items: center;
   align-content: start;
   gap: 6px 8px;
-  min-height: 64px;
+  min-height: 54px;
   padding: 9px;
   overflow: hidden;
   text-align: left;
@@ -3559,7 +3658,7 @@ body {
 
 .official-race-trend {
   grid-area: race-trend;
-  display: grid;
+  display: none !important;
   width: 100%;
   min-width: 0;
   gap: 6px;

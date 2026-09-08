@@ -5,7 +5,7 @@
 
   // 既存テストとの互換用。実配信ではindex.htmlのCHAPPY_APP_BUILDを使用する。
   const VERSION = "20260828-ui-audit-display1";
-  const ROOT_FIX_VERSION = "20260908-root-home-race-shadow1";
+  const ROOT_FIX_VERSION = "20260908-tap-race-flow1";
   const ACTIVE_VERSION = root.CHAPPY_APP_BUILD || VERSION;
   const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";
@@ -140,7 +140,7 @@
     return promise;
   }
 
-  function requiredGroup(target){if(!target)return"";const view=target.dataset.view||"";if(view==="result"||target.getAttribute("href")==="#resultSection")return"stats";if(view==="race"||target.id==="fetchRaceBtn"||target.id==="reloadRaceBtn"||target.id==="refreshOddsBtn")return"race";return"";}
+  function requiredGroup(target){if(!target)return"";const view=target.dataset.view||"";if(view==="result"||target.getAttribute("href")==="#resultSection")return"stats";if(view==="race"||target.matches?.("[data-race-mode]")||target.id==="fetchRaceBtn"||target.id==="reloadRaceBtn"||target.id==="refreshOddsBtn")return"race";return"";}
   function preloadGroupForTarget(target){if(target?.matches(HOME_RACE_SELECTOR))return"";return requiredGroup(target);}
   function replay(target){target.dataset.chappyRuntimeReady="true";target.click();delete target.dataset.chappyRuntimeReady;}
 
