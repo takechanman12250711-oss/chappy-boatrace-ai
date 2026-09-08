@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const theoryEvaluation = require("../js/theory-evaluation-engine");
 
 const root = path.resolve(__dirname, "..");
 const predictionDir = path.join(root, "data", "predictions");
@@ -42,6 +43,7 @@ function stEvidence(record={}) {
   const stRows=analyses.map(a=>a?.stTheory).filter(Boolean);
   const storedRoles=Array.isArray(verification?.stSlit?.roles)?verification.stSlit.roles:[];
   const roleRows=storedRoles.length?storedRoles:stRows;
+  const formalScoreEvidence=theoryEvaluation.hasFormalStScoreEvidence(record);
   const positive=adjustments.some(v=>v>0);
   const negative=adjustments.some(v=>v<0);
   const reasonAlert=reasons.some(v=>/優勢|先行|早い|速い|攻め/i.test(v));
@@ -53,7 +55,7 @@ function stEvidence(record={}) {
     positiveAdjustment:positive,
     negativeAdjustment:negative,
     fHolder:analyses.some(a=>Number(a?.fCount||a?.entry?.fCount||0)>0)||roleRows.some(x=>Number(x?.fCount||0)>0),
-    formal:roleRows.length>0&&roleRows.some(x=>x?.isFormal===true),
+    formal:formalScoreEvidence,
     supported:roleRows.some(x=>x?.appliedToScore===true||x?.isFormal===true),
     source:storedScenarios.length?"verificationEvidence":"aiCore",
     scenarioCount:list.length,
@@ -82,15 +84,16 @@ function summarize(rows) {
   return {raceCount:rows.length,settledCount,hitCount:hits,hitRate:settledCount?Math.round(hits/settledCount*1000)/10:null,stake,return:returned,profit:returned-stake,recoveryRate:stake?Math.round(returned/stake*1000)/10:null};
 }
 function diagnose(records) {
-  let raceCount=0, scenarioEvidenceRaceCount=0, adjustmentEvidenceRaceCount=0, stSlitRoleEvidenceRaceCount=0;
+  let raceCount=0, scenarioEvidenceRaceCount=0, adjustmentEvidenceRaceCount=0, stSlitRoleEvidenceRaceCount=0, formalScoreEvidenceRaceCount=0;
   for (const record of records) {
     raceCount++;
     const ev=stEvidence(record);
     if(ev.source==="verificationEvidence"&&ev.scenarioCount>0)scenarioEvidenceRaceCount++;
     if(ev.adjustmentFieldCount>0)adjustmentEvidenceRaceCount++;
     if(ev.roleCount>0)stSlitRoleEvidenceRaceCount++;
+    if(ev.formal)formalScoreEvidenceRaceCount++;
   }
-  return {raceCount,scenarioEvidenceRaceCount,adjustmentEvidenceRaceCount,stSlitRoleEvidenceRaceCount};
+  return {raceCount,scenarioEvidenceRaceCount,adjustmentEvidenceRaceCount,stSlitRoleEvidenceRaceCount,formalScoreEvidenceRaceCount};
 }
 function branchSummaries(rows) {
   const branches={all:rows,alert:rows.filter(r=>r.evidence.alert),advantage:rows.filter(r=>r.evidence.advantage),risk:rows.filter(r=>r.evidence.risk),positiveAdjustment:rows.filter(r=>r.evidence.positiveAdjustment),negativeAdjustment:rows.filter(r=>r.evidence.negativeAdjustment),fHolder:rows.filter(r=>r.evidence.fHolder),formal:rows.filter(r=>r.evidence.formal),unsupported:rows.filter(r=>!r.evidence.supported)};
@@ -127,8 +130,8 @@ function build(predDocs,resultDocs){
   }:null;
 
   return {
-    schemaVersion:5,
-    version:"st-slit-branch-profit-v5",
+    schemaVersion:6,
+    version:"st-slit-branch-profit-v6-formal-score-attribution",
     generatedAt:new Date().toISOString(),
     source:"selected production predictions + official results; ST evidence-bearing verification predictions are a separate prospective shadow cohort",
     stakePerTicket:STAKE_PER_TICKET,
@@ -138,6 +141,7 @@ function build(predDocs,resultDocs){
       verificationEvidenceRaceCountAll:selectedDiagnostics.scenarioEvidenceRaceCount,
       adjustmentEvidenceRaceCountAll:selectedDiagnostics.adjustmentEvidenceRaceCount,
       stSlitRoleEvidenceRaceCountAll:selectedDiagnostics.stSlitRoleEvidenceRaceCount,
+      formalScoreEvidenceRaceCountAll:selectedDiagnostics.formalScoreEvidenceRaceCount,
       verificationEvidenceRaceCount,
       adjustmentEvidenceRaceCount,
       verificationPredictions:verificationDiagnostics
