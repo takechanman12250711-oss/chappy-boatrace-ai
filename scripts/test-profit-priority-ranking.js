@@ -76,4 +76,29 @@ for (const sourceFile of frameClosure.sourceFiles) {
   assert.equal(productionChanged, false);
 }
 
+const remainPickupClosure = configuredClosures.closures.find(
+  row => row.theoryKey === "remain-pickup"
+);
+assert.equal(remainPickupClosure.status, "terminal-rejected");
+assert.equal(remainPickupClosure.productionChanged, false);
+assert.equal(remainPickupClosure.automaticApplication, false);
+assert.equal(remainPickupClosure.sourceFiles.length, 2);
+const holdThirdSource = JSON.parse(fs.readFileSync(
+  path.join(root, "data", "stats", "remain-pickup-hold3-shadow-ab-report.json"),
+  "utf8"
+));
+assert.equal(holdThirdSource.productionAUnchanged, true);
+assert.equal(holdThirdSource.automaticApplication, false);
+assert.equal(holdThirdSource.B.hitCount < holdThirdSource.A.hitCount, true);
+assert.equal(holdThirdSource.B.recoveryRate < holdThirdSource.A.recoveryRate, true);
+const sameStakeSource = JSON.parse(fs.readFileSync(
+  path.join(root, "data", "stats", "remain-pickup-same-stake-shadow-report.json"),
+  "utf8"
+));
+assert.equal(sameStakeSource.status, "candidate-fails-retrospective-holdout-100");
+assert.equal(sameStakeSource.adoptionCandidate, false);
+assert.equal(sameStakeSource.productionChanged, false);
+assert.equal(sameStakeSource.ticketCount, 7);
+assert.equal(sameStakeSource.methodology.sameStake, true);
+
 console.log("Profit priority ranking: 合格");

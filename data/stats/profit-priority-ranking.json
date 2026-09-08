@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-09-08T21:32:58.882Z",
+  "generatedAt": "2026-09-08T21:50:47.107Z",
   "schemaVersion": 3,
   "engineVersion": "profit-priority-ranking-20260909-terminal-cycle-aware",
   "status": "candidate-selected",
   "minimumRaceCount": 30,
   "evidenceField": "evaluatedCount",
   "closureSource": "config/improvement-cycle-closures.json",
-  "terminalClosedTheoryCount": 1,
+  "terminalClosedTheoryCount": 2,
   "priorityOrder": [
     "recoveryRate",
     "practicalHitRate",
@@ -14,39 +14,6 @@
     "hitRate"
   ],
   "ranking": [
-    {
-      "theoryKey": "remain-pickup",
-      "label": "残し・拾い理論",
-      "raceCount": 2109,
-      "useCount": 1682,
-      "evidenceCount": 1682,
-      "metrics": {
-        "recoveryRate": 78.3,
-        "practicalHitRate": 25.6,
-        "skipDecisionAccuracy": null,
-        "hitRate": 24.7
-      },
-      "deficits": {
-        "recoveryRate": 21.7,
-        "practicalHitRate": 0,
-        "skipDecisionAccuracy": null,
-        "hitRate": 0
-      },
-      "missingMetrics": [
-        "skipDecisionAccuracy"
-      ],
-      "evidenceStatus": "partial",
-      "eligible": true,
-      "eligibleForSelection": true,
-      "improvementCycleStatus": "open",
-      "improvementCycleReason": null,
-      "improvementCycleSources": [],
-      "selectedForImprovement": true,
-      "humanApprovalRequired": true,
-      "approved": false,
-      "usableForPrediction": false,
-      "rank": 1
-    },
     {
       "theoryKey": "start",
       "label": "ST・スリット理論",
@@ -74,11 +41,11 @@
       "improvementCycleStatus": "open",
       "improvementCycleReason": null,
       "improvementCycleSources": [],
-      "selectedForImprovement": false,
+      "selectedForImprovement": true,
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 2
+      "rank": 1
     },
     {
       "theoryKey": "wall-boat",
@@ -111,7 +78,7 @@
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 3
+      "rank": 2
     },
     {
       "theoryKey": "race-flow",
@@ -144,7 +111,7 @@
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 4
+      "rank": 3
     },
     {
       "theoryKey": "course",
@@ -177,7 +144,7 @@
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 5
+      "rank": 4
     },
     {
       "theoryKey": "local-water",
@@ -210,7 +177,7 @@
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 6
+      "rank": 5
     },
     {
       "theoryKey": "skill",
@@ -243,7 +210,7 @@
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 7
+      "rank": 6
     },
     {
       "theoryKey": "motor",
@@ -276,7 +243,7 @@
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 8
+      "rank": 7
     },
     {
       "theoryKey": "exhibition",
@@ -309,7 +276,7 @@
       "humanApprovalRequired": true,
       "approved": false,
       "usableForPrediction": false,
-      "rank": 9
+      "rank": 8
     },
     {
       "theoryKey": "frame-rise-fall",
@@ -340,6 +307,42 @@
       "improvementCycleSources": [
         "data/stats/frame-rise-fall-shadow-result-report.json",
         "data/stats/frame-rise-fall-negative-clip-result-report.json"
+      ],
+      "selectedForImprovement": false,
+      "humanApprovalRequired": true,
+      "approved": false,
+      "usableForPrediction": false,
+      "rank": 9
+    },
+    {
+      "theoryKey": "remain-pickup",
+      "label": "残し・拾い理論",
+      "raceCount": 2109,
+      "useCount": 1682,
+      "evidenceCount": 1682,
+      "metrics": {
+        "recoveryRate": 78.3,
+        "practicalHitRate": 25.6,
+        "skipDecisionAccuracy": null,
+        "hitRate": 24.7
+      },
+      "deficits": {
+        "recoveryRate": 21.7,
+        "practicalHitRate": 0,
+        "skipDecisionAccuracy": null,
+        "hitRate": 0
+      },
+      "missingMetrics": [
+        "skipDecisionAccuracy"
+      ],
+      "evidenceStatus": "partial",
+      "eligible": true,
+      "eligibleForSelection": false,
+      "improvementCycleStatus": "terminal-rejected",
+      "improvementCycleReason": "3着残し削除と7点固定の同額入れ替えがともに改善条件を満たさないため、本番を変えず次候補へ進む",
+      "improvementCycleSources": [
+        "data/stats/remain-pickup-hold3-shadow-ab-report.json",
+        "data/stats/remain-pickup-same-stake-shadow-report.json"
       ],
       "selectedForImprovement": false,
       "humanApprovalRequired": true,
@@ -418,8 +421,8 @@
     }
   ],
   "selectedTheory": {
-    "theoryKey": "remain-pickup",
-    "label": "残し・拾い理論",
+    "theoryKey": "start",
+    "label": "ST・スリット理論",
     "rank": 1,
     "reason": "利益基準の固定優先順位で最も改善余地が大きい候補",
     "evidenceStatus": "partial",
