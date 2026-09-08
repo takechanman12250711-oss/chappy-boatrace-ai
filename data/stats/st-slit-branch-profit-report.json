@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 5,
-  "version": "st-slit-branch-profit-v5",
-  "generatedAt": "2026-09-08T18:44:55.109Z",
+  "schemaVersion": 6,
+  "version": "st-slit-branch-profit-v6-formal-score-attribution",
+  "generatedAt": "2026-09-08T22:39:27.642Z",
   "source": "selected production predictions + official results; ST evidence-bearing verification predictions are a separate prospective shadow cohort",
   "stakePerTicket": 100,
   "productionChanged": false,
@@ -10,13 +10,15 @@
     "verificationEvidenceRaceCountAll": 149,
     "adjustmentEvidenceRaceCountAll": 87,
     "stSlitRoleEvidenceRaceCountAll": 87,
+    "formalScoreEvidenceRaceCountAll": 40,
     "verificationEvidenceRaceCount": 138,
     "adjustmentEvidenceRaceCount": 76,
     "verificationPredictions": {
-      "raceCount": 2238,
-      "scenarioEvidenceRaceCount": 1624,
-      "adjustmentEvidenceRaceCount": 879,
-      "stSlitRoleEvidenceRaceCount": 879
+      "raceCount": 2250,
+      "scenarioEvidenceRaceCount": 1636,
+      "adjustmentEvidenceRaceCount": 891,
+      "stSlitRoleEvidenceRaceCount": 891,
+      "formalScoreEvidenceRaceCount": 183
     }
   },
   "summaries": {
@@ -91,14 +93,14 @@
       "recoveryRate": 80.5
     },
     "formal": {
-      "raceCount": 42,
-      "settledCount": 42,
-      "hitCount": 12,
-      "hitRate": 28.6,
-      "stake": 36700,
-      "return": 54410,
-      "profit": 17710,
-      "recoveryRate": 148.3
+      "raceCount": 40,
+      "settledCount": 40,
+      "hitCount": 10,
+      "hitRate": 25,
+      "stake": 34900,
+      "return": 31210,
+      "profit": -3690,
+      "recoveryRate": 89.4
     },
     "unsupported": {
       "raceCount": 32,
@@ -138,6 +140,18 @@
     },
     {
       "rank": 3,
+      "branch": "formal",
+      "raceCount": 40,
+      "settledCount": 40,
+      "hitCount": 10,
+      "hitRate": 25,
+      "stake": 34900,
+      "return": 31210,
+      "profit": -3690,
+      "recoveryRate": 89.4
+    },
+    {
+      "rank": 4,
       "branch": "alert",
       "raceCount": 70,
       "settledCount": 70,
@@ -149,7 +163,7 @@
       "recoveryRate": 124.3
     },
     {
-      "rank": 4,
+      "rank": 5,
       "branch": "risk",
       "raceCount": 68,
       "settledCount": 68,
@@ -161,7 +175,7 @@
       "recoveryRate": 126.2
     },
     {
-      "rank": 5,
+      "rank": 6,
       "branch": "negativeAdjustment",
       "raceCount": 68,
       "settledCount": 68,
@@ -173,7 +187,7 @@
       "recoveryRate": 126.2
     },
     {
-      "rank": 6,
+      "rank": 7,
       "branch": "positiveAdjustment",
       "raceCount": 68,
       "settledCount": 68,
@@ -183,25 +197,13 @@
       "return": 77660,
       "profit": 17060,
       "recoveryRate": 128.2
-    },
-    {
-      "rank": 7,
-      "branch": "formal",
-      "raceCount": 42,
-      "settledCount": 42,
-      "hitCount": 12,
-      "hitRate": 28.6,
-      "stake": 36700,
-      "return": 54410,
-      "profit": 17710,
-      "recoveryRate": 148.3
     }
   ],
   "verificationProspective": {
     "label": "ST/slit evidence prospective shadow cohort",
     "actualPurchase": false,
     "oldRecordsBackfilled": false,
-    "evidenceRaceCount": 879,
+    "evidenceRaceCount": 891,
     "firstEvidence": {
       "raceKey": "20260816-19-12",
       "selectedAt": "2026-08-16T13:19:26.600Z",
@@ -215,7 +217,7 @@
     },
     "summaries": {
       "all": {
-        "raceCount": 879,
+        "raceCount": 891,
         "settledCount": 775,
         "hitCount": 220,
         "hitRate": 28.4,
@@ -275,7 +277,7 @@
         "recoveryRate": 100
       },
       "fHolder": {
-        "raceCount": 622,
+        "raceCount": 631,
         "settledCount": 552,
         "hitCount": 159,
         "hitRate": 28.8,
@@ -285,17 +287,17 @@
         "recoveryRate": 93.1
       },
       "formal": {
-        "raceCount": 218,
-        "settledCount": 218,
-        "hitCount": 66,
-        "hitRate": 30.3,
-        "stake": 193800,
-        "return": 218130,
-        "profit": 24330,
-        "recoveryRate": 112.6
+        "raceCount": 183,
+        "settledCount": 183,
+        "hitCount": 56,
+        "hitRate": 30.6,
+        "stake": 162400,
+        "return": 171930,
+        "profit": 9530,
+        "recoveryRate": 105.9
       },
       "unsupported": {
-        "raceCount": 661,
+        "raceCount": 673,
         "settledCount": 557,
         "hitCount": 154,
         "hitRate": 27.6,

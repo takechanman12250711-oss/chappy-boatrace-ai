@@ -1,6 +1,6 @@
 {
   "schemaVersion": 6,
-  "generatedAt": "2026-09-08T18:52:47.606Z",
+  "generatedAt": "2026-09-08T22:47:51.654Z",
   "phase": "phase3",
   "implementationComplete": true,
   "productionChanged": false,
@@ -58,20 +58,6 @@
         "usableForPrediction": false
       },
       {
-        "id": "start-adjustment-insufficient",
-        "label": "ST補正不足",
-        "theory": "ST・スリット理論",
-        "sampleCount": 548,
-        "occurrenceRate": 26,
-        "priority": "high",
-        "improvementCandidate": "ST差とスリット隊形の補正条件を再検証",
-        "expectedEffect": "1着・攻め艇一致率の改善余地を検証",
-        "status": "historical-evidence",
-        "diagnosticOnly": false,
-        "rootCauseCandidate": true,
-        "usableForPrediction": false
-      },
-      {
         "id": "exhibition-evaluation-insufficient",
         "label": "展示評価不足",
         "theory": "展示・足理論",
@@ -80,6 +66,20 @@
         "priority": "high",
         "improvementCandidate": "展示順位と足評価の採用条件を再検証",
         "expectedEffect": "展示評価関与時の回収率の改善余地を検証",
+        "status": "historical-evidence",
+        "diagnosticOnly": false,
+        "rootCauseCandidate": true,
+        "usableForPrediction": false
+      },
+      {
+        "id": "start-adjustment-insufficient",
+        "label": "ST補正不足",
+        "theory": "ST・スリット理論",
+        "sampleCount": 81,
+        "occurrenceRate": 3.8,
+        "priority": "low",
+        "improvementCandidate": "ST差とスリット隊形の補正条件を再検証",
+        "expectedEffect": "1着・攻め艇一致率の改善余地を検証",
         "status": "historical-evidence",
         "diagnosticOnly": false,
         "rootCauseCandidate": true,
