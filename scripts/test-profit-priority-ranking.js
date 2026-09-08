@@ -1,7 +1,11 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const engine = require("../js/profit-priority-ranking");
+
+const root = path.resolve(__dirname, "..");
 
 assert.equal(engine.numberOrNull(null), null);
 assert.equal(engine.numberOrNull(undefined), null);
@@ -29,5 +33,47 @@ assert.equal(result.automaticApplication, false);
 assert.equal(result.usableForPrediction, false);
 assert.equal(result.uiVisible, false);
 assert.equal(engine.build({}).status, "collecting-data");
+
+const closures = {
+  closures: [{
+    theoryKey: "flow",
+    status: "terminal-rejected",
+    reason: "固定A/Bで候補不採用",
+    sourceFiles: ["a.json", "b.json"]
+  }]
+};
+const advanced = engine.build(report, closures);
+assert.equal(advanced.selectedTheory.theoryKey, "start");
+const closed = advanced.ranking.find(row => row.theoryKey === "flow");
+assert.equal(closed.eligible, true);
+assert.equal(closed.eligibleForSelection, false);
+assert.equal(closed.improvementCycleStatus, "terminal-rejected");
+assert.equal(closed.improvementCycleReason, "固定A/Bで候補不採用");
+assert.deepEqual(closed.improvementCycleSources, ["a.json", "b.json"]);
+assert.equal(advanced.terminalClosedTheoryCount, 1);
+
+const ignored = engine.build(report, {
+  closures: [{ theoryKey: "flow", status: "collecting" }]
+});
+assert.equal(ignored.selectedTheory.theoryKey, "flow");
+
+const configuredClosures = JSON.parse(fs.readFileSync(
+  path.join(root, "config", "improvement-cycle-closures.json"),
+  "utf8"
+));
+const frameClosure = configuredClosures.closures.find(
+  row => row.theoryKey === "frame-rise-fall"
+);
+assert.equal(frameClosure.status, "terminal-rejected");
+assert.equal(frameClosure.productionChanged, false);
+assert.equal(frameClosure.automaticApplication, false);
+assert.equal(frameClosure.sourceFiles.length, 2);
+for (const sourceFile of frameClosure.sourceFiles) {
+  const source = JSON.parse(fs.readFileSync(path.join(root, sourceFile), "utf8"));
+  assert.equal(source.status, "candidate-fails-fixed-100");
+  assert.equal(source.adoptionCandidate, false);
+  const productionChanged = source.productionChanged === true || source.productionAUnchanged === false;
+  assert.equal(productionChanged, false);
+}
 
 console.log("Profit priority ranking: 合格");

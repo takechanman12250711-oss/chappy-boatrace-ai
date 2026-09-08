@@ -18,7 +18,20 @@ function weakness(value, target) {
   return value === null ? null : Math.max(0, Math.round((target - value) * 10) / 10);
 }
 
-function buildRow(row) {
+function normalizeClosures(closureReport = {}) {
+  const rows = Array.isArray(closureReport?.closures) ? closureReport.closures : [];
+  return new Map(rows.flatMap(row => {
+    const theoryKey = String(row?.theoryKey || "");
+    if (!theoryKey || row?.status !== "terminal-rejected") return [];
+    return [[theoryKey, {
+      status: "terminal-rejected",
+      reason: String(row?.reason || "固定検証で候補が不採用となったため次候補へ進む"),
+      sourceFiles: Array.isArray(row?.sourceFiles) ? row.sourceFiles.map(String) : []
+    }]];
+  }));
+}
+
+function buildRow(row, closures = new Map()) {
   const raceCount = Number(row?.raceCount || 0);
   const useCount = Number(row?.useCount || 0);
   const evidenceCount = Number(row?.evaluatedCount ?? useCount ?? 0);
@@ -36,6 +49,8 @@ function buildRow(row) {
   };
   const missingMetrics = CRITERIA.filter(key => metrics[key] === null);
   const eligible = evidenceCount >= MIN_RACES && metrics.recoveryRate !== null;
+  const closure = closures.get(String(row?.theoryKey || "")) || null;
+  const eligibleForSelection = eligible && !closure;
 
   return {
     theoryKey: String(row?.theoryKey || row?.key || ""),
@@ -48,6 +63,10 @@ function buildRow(row) {
     missingMetrics,
     evidenceStatus: eligible ? (missingMetrics.length ? "partial" : "complete") : "insufficient",
     eligible,
+    eligibleForSelection,
+    improvementCycleStatus: closure?.status || "open",
+    improvementCycleReason: closure?.reason || null,
+    improvementCycleSources: closure?.sourceFiles || [],
     selectedForImprovement: false,
     humanApprovalRequired: true,
     approved: false,
@@ -56,6 +75,7 @@ function buildRow(row) {
 }
 
 function compareRows(a, b) {
+  if (a.eligibleForSelection !== b.eligibleForSelection) return a.eligibleForSelection ? -1 : 1;
   if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
   for (const key of CRITERIA) {
     const av = a.deficits[key];
@@ -67,22 +87,25 @@ function compareRows(a, b) {
   return b.evidenceCount - a.evidenceCount || a.theoryKey.localeCompare(b.theoryKey);
 }
 
-function build(performanceReport = {}) {
+function build(performanceReport = {}, closureReport = {}) {
+  const closures = normalizeClosures(closureReport);
   const ranking = (Array.isArray(performanceReport?.byTheory) ? performanceReport.byTheory : [])
-    .map(buildRow)
+    .map(row => buildRow(row, closures))
     .filter(row => row.theoryKey)
     .sort(compareRows)
     .map((row, index) => ({ ...row, rank: index + 1 }));
 
-  const selected = ranking.find(row => row.eligible) || null;
+  const selected = ranking.find(row => row.eligibleForSelection) || null;
   if (selected) selected.selectedForImprovement = true;
 
   return {
-    schemaVersion: 2,
-    engineVersion: "profit-priority-ranking-20260806-integrity-fixed",
+    schemaVersion: 3,
+    engineVersion: "profit-priority-ranking-20260909-terminal-cycle-aware",
     status: selected ? "candidate-selected" : "collecting-data",
     minimumRaceCount: MIN_RACES,
     evidenceField: "evaluatedCount",
+    closureSource: "config/improvement-cycle-closures.json",
+    terminalClosedTheoryCount: closures.size,
     priorityOrder: [...CRITERIA],
     ranking,
     selectedTheory: selected ? {
@@ -101,4 +124,4 @@ function build(performanceReport = {}) {
   };
 }
 
-module.exports = { MIN_RACES, CRITERIA, numberOrNull, weakness, buildRow, compareRows, build };
+module.exports = { MIN_RACES, CRITERIA, numberOrNull, weakness, normalizeClosures, buildRow, compareRows, build };
