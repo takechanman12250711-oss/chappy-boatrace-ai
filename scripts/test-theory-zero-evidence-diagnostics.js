@@ -6,6 +6,17 @@ const diagnostics = require("./theory-zero-evidence-diagnostics");
 const record = {
   raceKey: "20260808-01-1",
   result: { settled: true, resultTicket: "1-2-3" },
+  prediction: {
+    verificationEvidence: {
+      stSlit: {
+        roles: Array.from({ length: 6 }, (_, index) => ({
+          boatNo: index + 1,
+          isFormal: true,
+          appliedToScore: true
+        }))
+      }
+    }
+  },
   theoryEvaluationSnapshot: {
     evaluations: [
       { theoryKey: "start", status: "evaluated", used: true, matched: true, tickets: ["1-2-3"] }
@@ -46,6 +57,17 @@ const staleRecord = structuredClone(record);
 delete staleRecord.theoryEvaluationSnapshot;
 const staleRows = diagnostics.build([staleRecord]);
 assert.equal(staleRows.find(row => row.theoryKey === "start").diagnosis, "stored-evaluation-stale");
+
+const overAttributedRecord = structuredClone(record);
+overAttributedRecord.prediction.verificationEvidence.stSlit.roles.forEach(role => {
+  role.isFormal = false;
+  role.appliedToScore = false;
+});
+const overAttributedRows = diagnostics.build([overAttributedRecord]);
+assert.equal(
+  overAttributedRows.find(row => row.theoryKey === "start").diagnosis,
+  "stored-evaluation-over-attributed"
+);
 
 const oldRecord = { raceKey: "old", result: { settled: true }, theoryTagSnapshot: { theories: [] } };
 const oldRows = diagnostics.build([oldRecord]);

@@ -56,11 +56,13 @@ const theorySnapshot = require("../js/theory-tag-snapshot").build(
   [{ ticket: "3-1-2", category: "本線" }]
 );
 const startTheory = theorySnapshot.theories.find(row => row.theoryKey === "stSlit");
-assert.ok(startTheory, "公式収集入力からST・スリットの正式証拠を保存する");
-assert.deepEqual(startTheory.tickets, ["3-1-2"]);
+assert.equal(startTheory, undefined, "中心展開を変えない補助コメントをST理論の買い目成績へ誤帰属しない");
 assert.equal(
   theorySnapshot.evidenceDiagnostics.rows.find(row => row.theoryKey === "start")?.formal,
-  true
+  false
+);
+assert.ok(
+  theorySnapshot.evidenceDiagnostics.rows.find(row => row.theoryKey === "start")?.missingReasons.includes("formal-st-score-evidence-missing")
 );
 
 const courseByBoat = {

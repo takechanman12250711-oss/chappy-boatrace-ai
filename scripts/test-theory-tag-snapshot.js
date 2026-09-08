@@ -11,10 +11,13 @@ const prediction = {
     confirms: ["4号艇が3号艇よりSTで0.10以上先行"],
     alerts: []
   },
-  aiCore: { formations: { evidence: { branches: [
-    { id: "independent-course-1", kind: "independent-scenario", phaseEvidence: { kind: "alternate-head", attack: { boatNo: 4, course: 4, score: 88 } }, evidenceChecks: [] },
-    { id: "canonical-no-course", kind: "canonical-formation", phaseEvidence: { kind: "base-formation" }, evidenceChecks: [] }
-  ] } } },
+  aiCore: {
+    stSlitTheory: { roles: Array.from({ length: 6 }, (_, index) => ({ boatNo: index + 1, isFormal: true, appliedToScore: true })) },
+    formations: { evidence: { branches: [
+      { id: "independent-course-1", kind: "independent-scenario", phaseEvidence: { kind: "alternate-head", attack: { boatNo: 4, course: 4, score: 88 } }, evidenceChecks: [] },
+      { id: "canonical-no-course", kind: "canonical-formation", phaseEvidence: { kind: "base-formation" }, evidenceChecks: [] }
+    ] } }
+  },
   verificationEvidence: { tickets: [
     { ticket: "1-4-3", category: "本線", branchIds: ["independent-course-1"], theoryClaims: [
       { theoryKey: "wall-boat", label: "壁艇理論", version: "1", formal: true, source: "ai-core" },
@@ -38,7 +41,7 @@ const stSlit = result.theories.find(row => row.theoryKey === "stSlit");
 assert.ok(stSlit, "ST・スリットが中心攻め艇を明示補正した場合だけ正式タグ化する");
 assert.equal(stSlit.ticketCount, 1);
 assert.deepEqual(stSlit.tickets, ["1-4-3"]);
-assert.deepEqual(stSlit.sources, ["flow-support-st-slit"]);
+assert.deepEqual(stSlit.sources, ["ai-core-formal-st-score"]);
 
 const diagnostics = result.evidenceDiagnostics;
 assert.equal(diagnostics.schemaVersion, 1);
@@ -68,6 +71,15 @@ const insufficientDiagnostic = snapshot.buildEvidenceDiagnostics({
 }).rows.find(row => row.theoryKey === "start");
 assert.equal(insufficientDiagnostic.formal, false);
 assert.ok(insufficientDiagnostic.missingReasons.includes("st-coverage-under-4"));
+const commentOnly = snapshot.stSlitEvidence({
+  flowSupport: { attackBoatNo: 4, attackSTRank: 1, dataCoverage: { st: 6 }, confirms: ["4号艇はスリット上位"] }
+});
+assert.equal(commentOnly.formal, false, "補助コメントだけでST理論を買い目へ帰属しない");
+assert.equal(commentOnly.scoreApplied, false);
+const commentOnlyDiagnostic = snapshot.buildEvidenceDiagnostics({
+  flowSupport: { attackBoatNo: 4, attackSTRank: 1, dataCoverage: { st: 6 }, confirms: ["4号艇はスリット上位"] }
+}).rows.find(row => row.theoryKey === "start");
+assert.ok(commentOnlyDiagnostic.missingReasons.includes("formal-st-score-evidence-missing"));
 assert.equal(snapshot.stSlitClaimForTicket(prediction, "1-2-3"), null, "中心攻め艇を含まない買い目へST理論を水増し帰属しない");
 assert.equal(result.usableForPrediction, false);
 assert.equal(result.automaticApplication, false);

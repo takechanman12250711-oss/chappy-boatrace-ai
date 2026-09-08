@@ -68,6 +68,29 @@ function optionalNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function stSlitRoleEvidence(prediction, attackBoatNo) {
+  const storedRoles = prediction?.verificationEvidence?.stSlit?.roles;
+  const coreRoles = prediction?.aiCore?.stSlitTheory?.roles;
+  const roles = Array.isArray(storedRoles) && storedRoles.length
+    ? storedRoles
+    : Array.isArray(coreRoles)
+      ? coreRoles
+      : [];
+  const boatNumbers = new Set(roles.map(row => Number(row?.boatNo || row?.boat || 0)).filter(boatNo => boatNo >= 1 && boatNo <= 6));
+  const fullyFormal = roles.length === 6 && boatNumbers.size === 6 && roles.every(row => row?.isFormal === true && row?.appliedToScore === true);
+  const role = fullyFormal
+    ? roles.find(row => Number(row?.boatNo || row?.boat || 0) === Number(attackBoatNo)) || null
+    : null;
+  return {
+    role,
+    source: Array.isArray(storedRoles) && storedRoles.length
+      ? "verificationEvidence.stSlit.roles"
+      : Array.isArray(coreRoles) && coreRoles.length
+        ? "aiCore.stSlitTheory.roles"
+        : ""
+  };
+}
+
 function stSlitEvidence(prediction) {
   const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
   const attackBoatNo = supportAttackBoatNo(prediction, support);
@@ -75,7 +98,17 @@ function stSlitEvidence(prediction) {
   const stRank = Number(support?.attackSTRank || 0);
   const statements = supportStatements(support);
   const explicit = statements.some(text => /ST|スリット/.test(text));
-  return { formal: attackBoatNo >= 1 && attackBoatNo <= 6 && stCoverage >= 4 && stRank >= 1 && stRank <= 6 && explicit, attackBoatNo, stCoverage, stRank, statements };
+  const scoredRole = stSlitRoleEvidence(prediction, attackBoatNo);
+  const scoreApplied = Boolean(scoredRole.role);
+  return {
+    formal: attackBoatNo >= 1 && attackBoatNo <= 6 && stCoverage >= 4 && stRank >= 1 && stRank <= 6 && explicit && scoreApplied,
+    attackBoatNo,
+    stCoverage,
+    stRank,
+    statements,
+    scoreApplied,
+    scoreEvidenceSource: scoredRole.source
+  };
 }
 
 function stSlitClaimForTicket(prediction, ticket) {
@@ -83,7 +116,7 @@ function stSlitClaimForTicket(prediction, ticket) {
   if (!evidence.formal) return null;
   const boats = normalizeTicket(ticket).split("-").map(Number);
   if (!boats.includes(evidence.attackBoatNo)) return null;
-  return { theoryKey: "stSlit", label: "ST・スリット理論", theoryVersion: "flow-support-st-slit-v1", formal: true, source: "flow-support-st-slit" };
+  return { theoryKey: "stSlit", label: "ST・スリット理論", theoryVersion: "formal-st-score-attribution-v2", formal: true, source: "ai-core-formal-st-score" };
 }
 
 function exhibitionFootEvidence(prediction) {
@@ -529,6 +562,7 @@ function missingReasonsForStart(prediction, evidence) {
   if (!(evidence.stCoverage >= 4)) reasons.push("st-coverage-under-4");
   if (!(evidence.stRank >= 1 && evidence.stRank <= 6)) reasons.push("st-rank-missing");
   if (!evidence.statements.some(text => /ST|スリット/.test(text))) reasons.push("explicit-st-statement-missing");
+  if (!evidence.scoreApplied) reasons.push("formal-st-score-evidence-missing");
   return reasons;
 }
 
@@ -608,7 +642,7 @@ function buildEvidenceDiagnostics(prediction) {
   const doubleTime = doubleTimeEvidence(prediction);
   const newEngine = newEngineEvidence(prediction);
   const rows = [
-    { theoryKey: "start", label: "ST・スリット理論", supportPresent: Boolean(prediction?.flowSupport || prediction?.stExhibitionSupport), formal: start.formal === true, missingReasons: start.formal ? [] : missingReasonsForStart(prediction, start), metrics: { attackBoatNo: start.attackBoatNo || null, coverage: start.stCoverage || 0, rank: start.stRank || null } },
+    { theoryKey: "start", label: "ST・スリット理論", supportPresent: Boolean(prediction?.flowSupport || prediction?.stExhibitionSupport), formal: start.formal === true, missingReasons: start.formal ? [] : missingReasonsForStart(prediction, start), metrics: { attackBoatNo: start.attackBoatNo || null, coverage: start.stCoverage || 0, rank: start.stRank || null, scoreApplied: start.scoreApplied === true, scoreEvidenceSource: start.scoreEvidenceSource || "" } },
     { theoryKey: "skill", label: "技量理論", supportPresent: Boolean(prediction?.skillLocalSupport), formal: skill.formal === true, missingReasons: skill.formal ? [] : missingReasonsForSkill(prediction, skill), metrics: { attackBoatNo: skill.attackBoatNo || null, targetPresent: Boolean(skill.target) } },
     { theoryKey: "frame-rise-fall", label: "枠別浮沈率", supportPresent: frame.supportPresent === true, formal: frame.formal === true, missingReasons: frame.formal ? [] : missingReasonsForFrame(prediction, frame), metrics: { frameNo: frame.frameNo || null, type: frame.type || "", samples: frame.samples, rate: frame.rate, scenarioType: frame.scenarioType || "", scoreAdjustment: frame.scoreAdjustment, movementDelta: frame.movementDelta, approved: frame.approved, applied: frame.applied } },
     { theoryKey: "double-time", label: "ダブルタイム", supportPresent: doubleTime.supportPresent === true, formal: doubleTime.formal === true, missingReasons: doubleTime.formal ? [] : missingReasonsForDouble(prediction, doubleTime), metrics: { topBoat: doubleTime.topBoat, confidence: doubleTime.confidence, exhibitionGap: doubleTime.exhibitionGap, lapGap: doubleTime.lapGap, exhibitionCount: doubleTime.exhibitionCount, lapCount: doubleTime.lapCount, lapSource: doubleTime.lapSource, approved: doubleTime.approved, applied: doubleTime.applied, isDouble: doubleTime.isDouble } },

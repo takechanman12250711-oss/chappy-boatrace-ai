@@ -95,11 +95,27 @@ function hasStoredLocalWaterEvidence(record) {
   return !hasExplicitAvailability;
 }
 
+function hasFormalStScoreEvidence(record) {
+  const prediction = record?.prediction || {};
+  const storedRoles = prediction?.verificationEvidence?.stSlit?.roles;
+  const coreRoles = prediction?.aiCore?.stSlitTheory?.roles;
+  const roles = Array.isArray(storedRoles) && storedRoles.length
+    ? storedRoles
+    : Array.isArray(coreRoles)
+      ? coreRoles
+      : [];
+  const boatNumbers = new Set(roles.map(role => Number(role?.boatNo || role?.boat || 0)).filter(boatNo => boatNo >= 1 && boatNo <= 6));
+  return roles.length === 6 && boatNumbers.size === 6 && roles.every(role => role?.isFormal === true && role?.appliedToScore === true);
+}
+
 function sourceTheories(record) {
   const rows = record?.theoryTagSnapshot?.theories;
-  return (Array.isArray(rows) ? rows : []).filter(row =>
-    catalogTheoryFor(row)?.key !== "local-water" || hasStoredLocalWaterEvidence(record)
-  );
+  return (Array.isArray(rows) ? rows : []).filter(row => {
+    const theoryKey = catalogTheoryFor(row)?.key;
+    if (theoryKey === "local-water") return hasStoredLocalWaterEvidence(record);
+    if (theoryKey === "start") return hasFormalStScoreEvidence(record);
+    return true;
+  });
 }
 
 function theoryTickets(theories) {
@@ -143,4 +159,4 @@ function build(record) {
   };
 }
 
-module.exports = { THEORY_CATALOG, EXACT_THEORY_KEYS, normalizeTicket, catalogTheoryFor, hasStoredLocalWaterEvidence, build };
+module.exports = { THEORY_CATALOG, EXACT_THEORY_KEYS, normalizeTicket, catalogTheoryFor, hasStoredLocalWaterEvidence, hasFormalStScoreEvidence, build };
