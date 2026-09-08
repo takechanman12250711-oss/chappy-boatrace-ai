@@ -16,6 +16,7 @@ const appLoader = read("js/app-runtime-loader.js");
 const mobileTerminal = read("js/mobile-prediction-startup-terminal.js");
 const todayLoader = read("js/today-results-home.js");
 const html = read("index.html");
+const raceScript = read("js/script.js");
 
 assert.match(
   aiCore,
@@ -44,6 +45,12 @@ const homeShell = home.slice(home.indexOf("function ensureShell"), home.indexOf(
 assert.doesNotMatch(homeShell, /home-v2-schedule|data-home-venues/);
 assert.match(raceFlow, /return isFinished\(race\) \? `終了 \$\{time\}` : time/);
 assert.match(raceFlow, /aria-label="\$\{escapeHtml\(place\)\} \$\{race\.raceNo\}R \$\{escapeHtml\(deadlineLabel\)\}"/);
+assert.match(raceScript, /function isLiveVenueAvailable\(venue\)/);
+assert.match(
+  raceScript,
+  /Array\.isArray\(\s*data\.venues\s*\)[\s\S]*?data\.venues\.filter\(\s*isLiveVenueAvailable\s*\)/,
+  "旧APIがliveVenuesを空で返しても未終了の開催場を選べる"
+);
 
 [
   predictionLoader,

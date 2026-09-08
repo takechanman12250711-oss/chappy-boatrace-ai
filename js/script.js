@@ -689,6 +689,23 @@
     });
   }
 
+  function isLiveVenueAvailable(venue) {
+    const status = String(
+      venue?.status ||
+      ""
+    ).toLowerCase();
+
+    return Boolean(
+      venue &&
+      venue.finalClosed !== true &&
+      ![
+        "closed",
+        "finished",
+        "ended"
+      ].includes(status)
+    );
+  }
+
   function renderOfficialVenuePicker(
     data,
     mode
@@ -809,8 +826,8 @@
 
         const selectable =
           mode === "live"
-            ? Boolean(
-                venue?.selectable
+            ? isLiveVenueAvailable(
+                venue
               )
             : Boolean(venue);
 
@@ -2126,9 +2143,11 @@
       mode === "live"
         ? (
             Array.isArray(
-              data.liveVenues
+              data.venues
             )
-              ? data.liveVenues
+              ? data.venues.filter(
+                  isLiveVenueAvailable
+                )
               : []
           )
         : (
