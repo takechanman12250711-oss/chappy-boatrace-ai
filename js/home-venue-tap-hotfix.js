@@ -38,16 +38,37 @@
     return type === "morning" ? "モーニング" : type === "night" ? "ナイター" : "デイ";
   }
 
-  function hideHomeRaceSelection() {
-    if (document.getElementById("chappy-home-recommend-only-style")) return true;
+  function installUiOverrides() {
+    if (document.getElementById("chappy-home-race-ui-overrides")) return true;
     const style = document.createElement("style");
-    style.id = "chappy-home-recommend-only-style";
+    style.id = "chappy-home-race-ui-overrides";
     style.textContent = [
       "#homeDashboardV2 .home-v2-filter-shell{display:none!important}",
       "#homeDashboardV2 .home-v2-schedule{display:none!important}",
-      "#homeDashboardV2 .home-v2-hint{display:none!important}"
+      "#homeDashboardV2 .home-v2-hint{display:none!important}",
+      "#raceSection .select-field:has(#placeSelect){display:none!important}",
+      "#raceSection .select-field:has(#raceSelect){display:none!important}",
+      "#raceSection #officialRacePicker{display:block!important}",
+      "#raceSection #officialVenueGrid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}",
+      "#raceSection .official-venue-button{position:relative!important;min-width:0!important;padding:11px 9px!important}",
+      "#raceSection .official-venue-session-tag{display:inline-flex!important;align-items:center!important;justify-content:center!important;margin-top:5px!important;padding:2px 7px!important;border-radius:999px!important;font-size:10px!important;font-weight:800!important;line-height:1.4!important;white-space:nowrap!important;background:#eef4fb!important;color:#48627d!important}",
+      "#raceSection .official-venue-session-tag[data-session='morning']{background:#fff5d8!important;color:#9a6500!important}",
+      "#raceSection .official-venue-session-tag[data-session='day']{background:#eaf4ff!important;color:#0878f9!important}",
+      "#raceSection .official-venue-session-tag[data-session='night']{background:#eef0ff!important;color:#4954c6!important}",
+      "#raceSection #officialRaceGrid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}",
+      "@media (max-width:420px){#raceSection .race-select-grid{grid-template-columns:1fr 1fr!important}#raceSection #officialVenueGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}#raceSection #officialRaceGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}"
     ].join("\n");
     (document.head || document.documentElement).appendChild(style);
+    return true;
+  }
+
+  function showOfficialRacePicker() {
+    installUiOverrides();
+    const picker = document.getElementById("officialRacePicker");
+    if (!picker) return false;
+    picker.hidden = false;
+    picker.removeAttribute("hidden");
+    refreshSessionsSoon();
     return true;
   }
 
@@ -93,13 +114,13 @@
     const dashboard = root.ChappyHomeDashboardV2;
     if (typeof dashboard?.setView !== "function") return false;
     dashboard.setView("race");
-    refreshSessionsSoon();
+    showOfficialRacePicker();
     return true;
   }
 
   function boot() {
-    hideHomeRaceSelection();
-    refreshSessionsSoon();
+    installUiOverrides();
+    showOfficialRacePicker();
     root.setTimeout(showRaceViewByDefault, 0);
   }
 
@@ -107,12 +128,13 @@
   document.addEventListener("change", event => {
     const id = event.target?.id || "";
     if (id === "raceModeSelect" || id === "dateInput" || id === "placeSelect") {
-      refreshSessionsSoon();
+      showOfficialRacePicker();
     }
   }, true);
   root.addEventListener("chappy:view-changed", event => {
-    if (event?.detail?.view === "race") refreshSessionsSoon();
+    if (event?.detail?.view === "race") showOfficialRacePicker();
   });
+  root.addEventListener("chappy:home-schedule", showOfficialRacePicker);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot, { once: true });
@@ -125,7 +147,8 @@
     decorateOfficialVenueSessions,
     venueType,
     venueTypeLabel,
-    hideHomeRaceSelection,
+    installUiOverrides,
+    showOfficialRacePicker,
     showRaceViewByDefault
   });
 })(window);
