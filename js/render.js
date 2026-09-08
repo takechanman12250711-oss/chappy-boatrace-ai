@@ -4705,6 +4705,7 @@ function renderOfficialHistory(
   function renderFinalComment(prediction) {
   const finalAi = prediction.finalAi || {};
   const raceFlow = prediction.raceFlow || {};
+  const confidence = prediction.confidence || {};
 
   const finalText = safeText(
     prediction.finalComment ||
@@ -4725,6 +4726,22 @@ function renderOfficialHistory(
     ""
   );
 
+  const normalizeComment = value =>
+    safeText(value, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  const aiSummaryText = safeText(
+    prediction.simpleEvaluation?.mainComment ||
+    finalAi.simpleEvaluation?.mainComment ||
+    confidence.reason ||
+    confidence.comment ||
+    "",
+    ""
+  );
+  const seen = new Set();
+  const summaryKey = normalizeComment(aiSummaryText);
+  if (summaryKey) seen.add(summaryKey);
+
   const blocks = [
     {
       title: "展開",
@@ -4742,15 +4759,16 @@ function renderOfficialHistory(
       title: "AI結論",
       text: finalAi.final || finalAi.summary || finalAi.comment || finalText
     }
-  ].filter((b) => b.text);
+  ].filter(block => {
+    const key = normalizeComment(block.text);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    block.text = safeText(block.text, "");
+    return true;
+  });
 
   if (blocks.length === 0) {
-    return section(
-      "最終コメント",
-      emptyBox("最終コメントデータがありません"),
-      "📝",
-      "v3-final-section"
-    );
+    return "";
   }
 
   const body = `

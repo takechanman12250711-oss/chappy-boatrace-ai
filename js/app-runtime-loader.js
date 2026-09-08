@@ -5,7 +5,7 @@
 
   // 既存テストとの互換用。実配信ではindex.htmlのCHAPPY_APP_BUILDを使用する。
   const VERSION = "20260828-ui-audit-display1";
-  const ROOT_FIX_VERSION = "20260908-tap-race-flow1";
+  const ROOT_FIX_VERSION = "20260908-clarity-fix1";
   const ACTIVE_VERSION = root.CHAPPY_APP_BUILD || VERSION;
   const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";

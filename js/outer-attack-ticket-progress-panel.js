@@ -169,6 +169,7 @@
 
   function renderMarkup(view) {
     if (!view?.available) return "";
+    const startCollapsed = view.variants.every(row => row.sampleCount === 0);
     const recommendation = view.recommendedVariantLabel
       ? `<span class="outer-attack-progress-recommendation">確認候補：${escapeHtml(view.recommendedVariantLabel)}</span>`
       : "";
@@ -196,13 +197,15 @@
     `).join("");
 
     return `
-      <div class="outer-attack-progress-head">
+      <details class="outer-attack-progress-details"${startCollapsed ? "" : " open"}>
+      <summary class="outer-attack-progress-head">
         <div>
           <p class="outer-attack-progress-eyebrow">OUTER ATTACK A/B</p>
           <h3>外攻め買い目の検証進捗</h3>
         </div>
         <span class="outer-attack-progress-status is-${escapeHtml(view.overallTone)}">${escapeHtml(view.overallStatusLabel)}</span>
-      </div>
+      </summary>
+      <div class="outer-attack-progress-body">
       <p class="outer-attack-progress-note">${escapeHtml(view.prospectiveStartLabel)}以降の、結果前に保存した予想だけを集計。同点数・同資金で比較し、自動採用はしません。</p>
       <div class="outer-attack-progress-summary">
         <span>前向き確定 <strong>${view.prospectiveForwardCount.toLocaleString("ja-JP")}R</strong></span>
@@ -211,6 +214,8 @@
       </div>
       <div class="outer-attack-progress-grid">${cards}</div>
       <p class="outer-attack-progress-foot">結果後の振り返り予想・時刻順不明・開始前データは正式判定から除外します。500Rの全条件を通過しても、買い目へは自動反映しません。</p>
+      </div>
+      </details>
     `;
   }
 
@@ -222,6 +227,11 @@
     style.textContent = `
       #${AREA_ID}{margin:14px 0 16px;padding:14px;border:1px solid #dfe8f2;border-radius:17px;background:#f8fbff;box-shadow:0 6px 18px rgba(31,62,96,.06)}
       #${AREA_ID}[hidden]{display:none!important}
+      .outer-attack-progress-details>summary{cursor:pointer;list-style:none}
+      .outer-attack-progress-details>summary::-webkit-details-marker{display:none}
+      .outer-attack-progress-details>summary::after{content:"⌄";color:#0878f9;font-size:1rem;font-weight:900;transition:transform .2s ease}
+      .outer-attack-progress-details:not([open])>summary::after{transform:rotate(-90deg)}
+      .outer-attack-progress-body{padding-top:2px}
       .outer-attack-progress-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
       .outer-attack-progress-head h3{margin:0;color:#17324d;font-size:1rem}
       .outer-attack-progress-eyebrow{margin:0 0 2px;color:#0878f9;font-size:.68rem;font-weight:900;letter-spacing:.11em}
@@ -272,7 +282,7 @@
     area.className = "outer-attack-progress-panel";
     area.hidden = true;
     area.setAttribute?.("aria-live", "polite");
-    shell.insertBefore(area, statsArea);
+    shell.insertBefore(area, statsArea.nextSibling || null);
     return area;
   }
 

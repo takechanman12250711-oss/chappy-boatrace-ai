@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const vm = require("node:vm");
 
 const read = file => fs.readFileSync(file, "utf8");
 const aiCore = read("js/ai-core.js");
@@ -61,5 +62,61 @@ assert.ok(
   predictionLoader.includes('"js/render.js"'),
   "表示補正を含むrender.jsを修正版キャッシュ世代で読み込む"
 );
+
+function functionSource(name) {
+  const start = render.indexOf(`function ${name}(`);
+  assert.ok(start >= 0, `${name} が存在する`);
+  const open = render.indexOf("{", start);
+  let depth = 0;
+  for (let index = open; index < render.length; index += 1) {
+    if (render[index] === "{") depth += 1;
+    if (render[index] === "}") depth -= 1;
+    if (depth === 0) return render.slice(start, index + 1);
+  }
+  throw new Error(`${name} の終端が見つからない`);
+}
+
+const renderSandbox = {
+  safeText(value, fallback = "-") {
+    return value === null || value === undefined || value === ""
+      ? fallback
+      : String(value);
+  },
+  escapeHtml(value) {
+    return String(value ?? "");
+  },
+  section(title, body) {
+    return `<section data-title="${title}">${body}</section>`;
+  }
+};
+vm.runInNewContext(
+  `${functionSource("renderFinalComment")}\n${functionSource("renderFinalBlock")}\nthis.renderFinalComment = renderFinalComment;`,
+  renderSandbox
+);
+
+const repeatedComment = "3コース攻めを軸に、イン残しと外の拾いを評価する。";
+const repeatedHtml = renderSandbox.renderFinalComment({
+  simpleEvaluation: { mainComment: repeatedComment },
+  raceFlow: { comment: repeatedComment },
+  finalComment: repeatedComment,
+  finalAi: {
+    target: repeatedComment,
+    summary: repeatedComment,
+    final: repeatedComment
+  }
+});
+assert.equal(repeatedHtml, "", "AI総合と同じ最終コメントを繰り返さない");
+
+const distinctHtml = renderSandbox.renderFinalComment({
+  simpleEvaluation: { mainComment: repeatedComment },
+  raceFlow: { comment: repeatedComment },
+  finalAi: {
+    target: "3号艇の1着固定を狙う。",
+    final: "3号艇の1着固定を狙う。",
+    risk: "展示気配の変化に注意する。"
+  }
+});
+assert.equal((distinctHtml.match(/3号艇の1着固定を狙う。/g) || []).length, 1);
+assert.match(distinctHtml, /展示気配の変化に注意する。/);
 
 console.log("UI audit display contract: passed");

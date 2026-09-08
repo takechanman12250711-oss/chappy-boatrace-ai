@@ -17,20 +17,20 @@ assert.equal(
   "予想・通常画面の全体ビルド契約は変更しない"
 );
 assert.equal(
-  html.includes('root.CHAPPY_STATS_BUILD="20260831-outer-attack-central-report1"'),
+  html.includes('root.CHAPPY_STATS_BUILD="20260908-result-clarity1"'),
   true,
   "成績分析だけに中央レポート用の配信世代を設定する"
 );
 assert.equal(
   html.includes(
-    "js/app-runtime-loader.js?v=20260816-static-race1&app=20260828-ui-audit-display1&stats=20260831-outer-attack-central-report1"
+    "js/app-runtime-loader.js?v=20260816-static-race1&app=20260828-ui-audit-display1&stats=20260908-result-clarity1"
   ),
   true,
   "既存端末でも個別配信世代を理解する親ローダーを再取得する"
 );
 assert.equal(
   appRuntime.includes("const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;") &&
-    appRuntime.includes('const ROOT_FIX_VERSION = "20260908-tap-race-flow1";') &&
+    appRuntime.includes('const ROOT_FIX_VERSION = "20260908-clarity-fix1";') &&
     appRuntime.includes('return clean === "js/stats-runtime-loader.js" ? STATS_VERSION : ACTIVE_VERSION;') &&
     appRuntime.includes('"js/outer-attack-ticket-shadow.js"') &&
     appRuntime.includes('"js/outer-attack-ticket-settlement.js"') &&
@@ -46,7 +46,7 @@ assert.equal(
   "予想開始の必須race groupを変更しない"
 );
 assert.equal(
-  statsRuntime.includes('const VERSION = "20260828-ui-audit-display1" + "-outer-attack-central-report1";') &&
+  statsRuntime.includes('const VERSION = "20260828-ui-audit-display1" + "-20260908-result-clarity1";') &&
     statsRuntime.includes('"js/outer-attack-ticket-central-report-loader.js"'),
   true,
   "取得した成績分析ローダーが中央レポート用モジュールを新世代で読む"

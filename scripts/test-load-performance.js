@@ -474,7 +474,7 @@ assert.equal(
 );
 assert.equal(
   statsRuntime.includes(
-    '"20260828-ui-audit-display1"'
+    "20260908-result-clarity1"
   ),
   true,
   "結果分析モジュールのキャッシュ世代を更新する"
