@@ -3091,6 +3091,12 @@
         clearReviewResult();
       }
 
+      window.ChappyHomeDashboardV2
+        ?.showPredictionLoading?.(
+          params.place,
+          params.rno
+        );
+
       console.log(
         "🚤 race params",
         params
