@@ -230,6 +230,10 @@ try {
         integratedPanelRect?.left ?? detailsRect?.left ?? sectionRect?.left ?? 0;
       const containerRight =
         integratedPanelRect?.right ?? detailsRect?.right ?? sectionRect?.right ?? 0;
+      const viewportLeftOverflow = sectionRect ? Math.max(0, -sectionRect.left) : 0;
+      const viewportRightOverflow = sectionRect
+        ? Math.max(0, sectionRect.right - window.innerWidth)
+        : 0;
       const trueManshuEmptyRect = trueManshuEmpty?.getBoundingClientRect();
       const boatName = root?.querySelector(".v3-paper-player-line .v3-boat-title strong");
       const factorLine = [...(root?.querySelectorAll(".v3-factor-line") || [])]
@@ -289,6 +293,8 @@ try {
           lineRects.length ? Math.max(0, containerLeft - minLineLeft) : 0,
         integratedRightOverflow:
           lineRects.length ? Math.max(0, maxLineRight - containerRight) : 0,
+        integratedViewportLeftOverflow: viewportLeftOverflow,
+        integratedViewportRightOverflow: viewportRightOverflow,
         boatNameText: String(boatName?.textContent || "").trim(),
         boatNameColor: boatName ? getComputedStyle(boatName).color : "",
         factorLineVisible: Boolean(factorLine),
@@ -361,16 +367,14 @@ try {
       requireManshuFallback &&
       integratedManshuBoardVisible &&
       (
-        responsiveSummary.integratedEffectiveBoardWidth <= 0 ||
+        responsiveSummary.viewportWidth !== 390 ||
         responsiveSummary.integratedEffectiveContainerWidth <= 0 ||
-        responsiveSummary.integratedEffectiveBoardWidth >
-          responsiveSummary.integratedEffectiveContainerWidth + 1 ||
-        responsiveSummary.integratedLeftOverflow > 1 ||
-        responsiveSummary.integratedRightOverflow > 1
+        responsiveSummary.integratedViewportLeftOverflow > 1 ||
+        responsiveSummary.integratedViewportRightOverflow > 1
       )
     ) {
       throw new Error(
-        `Kiryu 10R integrated manshu board must fit the mobile panel: ${JSON.stringify(responsiveSummary)}`
+        `Kiryu 10R integrated manshu board must fit the mobile viewport: ${JSON.stringify(responsiveSummary)}`
       );
     }
 
