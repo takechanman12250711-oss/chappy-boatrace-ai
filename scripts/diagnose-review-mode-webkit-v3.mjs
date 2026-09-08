@@ -150,11 +150,19 @@ try {
   step("race-view-opened");
 
   await page.waitForSelector("#raceModeSelect", {
-    state: "visible",
+    state: "attached",
     timeout: 20_000
   });
-  await page.selectOption("#raceModeSelect", "review");
-  step("review-mode-selected");
+  await page.click('[data-race-mode="review"]');
+  await page.waitForFunction(
+    () =>
+      document.getElementById("raceModeSelect")?.value === "review" &&
+      document.querySelector('[data-race-mode="review"]')
+        ?.getAttribute("aria-pressed") === "true",
+    null,
+    { timeout: 20_000 }
+  );
+  step("review-mode-tapped");
 
   await page.fill("#dateInput", REVIEW_DATE);
   await page.dispatchEvent("#dateInput", "change");

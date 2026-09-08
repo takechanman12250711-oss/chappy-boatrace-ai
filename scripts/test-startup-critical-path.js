@@ -99,7 +99,9 @@ assert.equal(
 
 [
   'id="raceSection"', 'id="predictionSection"', 'id="resultSection"',
-  'class="bottom-nav"', 'data-view="home"', 'data-view="prediction"', 'data-view="result"'
+  'class="bottom-nav"', 'data-view="race"', 'data-view="prediction"', 'data-view="result"'
 ].forEach(marker => assert.equal(html.includes(marker), true, `UI構造を維持する: ${marker}`));
+
+assert.equal(html.includes('data-view="home"'), false, "役割のないホームタブを表示しない");
 
 console.log("アプリ初期表示・単一起動経路・UI不変・予想ランタイム上限検証: 合格");

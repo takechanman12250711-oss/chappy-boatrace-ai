@@ -23,7 +23,7 @@
     requestMap: new Map(),
     recommendationTimer: 0,
     navigationGeneration: 0,
-    currentView: "home",
+    currentView: "race",
     initialDataReady: false,
     scheduleError: "",
     renderKeys: { recommendations: "", updatedAt: "" }
@@ -437,7 +437,7 @@
     const resultArea = document.getElementById("resultArea");
     if (!resultArea || resultArea.dataset.raceLoading !== "true") return;
     delete resultArea.dataset.raceLoading;
-    resultArea.innerHTML = '<div class="prediction-empty-state">レースの読み込みを中止しました。ホームからレースを選び直してください。</div>';
+    resultArea.innerHTML = '<div class="prediction-empty-state">レースの読み込みを中止しました。レース画面から選び直してください。</div>';
     const oddsStatus = document.getElementById("predictionOddsStatus");
     if (oddsStatus) {
       oddsStatus.textContent = "読込中止";
@@ -518,18 +518,30 @@
   function ensureShell() {
     const el = ensureHome();
     if (el.dataset.shellReady === "true") return el;
-    el.innerHTML = `<section class="home-v2-recommend"><div class="home-v2-title-row"><h2>TODAY'S PICKS　🔥 今日のおすすめレース</h2><span data-home-updated>最終更新 --:--</span></div><div class="home-v2-recommend-list" data-home-recommendations></div></section>`;
+    el.innerHTML = `<section class="home-v2-recommend"><div class="home-v2-title-row"><h2>🔥 おすすめレース</h2><span data-home-updated>最終更新 --:--</span></div><div class="home-v2-recommend-list" data-home-recommendations></div></section>`;
     el.dataset.shellReady = "true";
     return el;
   }
 
   function renderRecommendations(force = false) {
     scheduleRecommendationExpiry();
-    const el = ensureShell().querySelector("[data-home-recommendations]");
+    const shell = ensureShell();
+    const section = shell.querySelector(".home-v2-recommend");
+    const el = shell.querySelector("[data-home-recommendations]");
     if (!el) return;
     const key = stable(state.recommendations);
     if (!force && key === state.renderKeys.recommendations) return;
     state.renderKeys.recommendations = key;
+
+    const hideRecommendations =
+      state.initialDataReady &&
+      state.recommendations.length === 0;
+
+    shell.hidden = hideRecommendations;
+    if (section) {
+      section.hidden = hideRecommendations;
+    }
+
     el.innerHTML = !state.initialDataReady && !state.recommendations.length
       ? '<p class="home-v2-empty">おすすめレースを確認しています…</p>'
       : state.recommendations.length
@@ -579,33 +591,54 @@
     if (!el) {
       el = document.createElement("section");
       el.id = "homeDashboardV2";
-      el.className = "home-dashboard-v2";
-      document.querySelector(".dashboard-app")?.prepend(el);
+      el.className = "home-dashboard-v2 race-recommendations";
+      const raceSection =
+        document.getElementById("raceSection");
+      const raceCard =
+        raceSection?.querySelector(
+          ".race-select-card"
+        );
+
+      if (raceSection && raceCard) {
+        raceSection.insertBefore(
+          el,
+          raceCard
+        );
+      } else {
+        document.querySelector(
+          ".dashboard-app"
+        )?.prepend(el);
+      }
     }
     bindOnce(el);
     return el;
   }
 
   function setView(view) {
-    const changed = state.currentView !== view;
+    const normalizedView =
+      view === "home"
+        ? "race"
+        : view;
+    const changed =
+      state.currentView !==
+      normalizedView;
     const map = {
-      home: document.getElementById("homeDashboardV2"),
       race: document.getElementById("raceSection"),
       prediction: document.getElementById("predictionSection"),
       result: document.getElementById("resultSection")
     };
-    Object.entries(map).forEach(([key, section]) => { if (section) section.hidden = key !== view; });
+    Object.entries(map).forEach(([key, section]) => { if (section) section.hidden = key !== normalizedView; });
     const auto = document.getElementById("autoSelectionSection");
     if (auto) auto.hidden = true;
     document.querySelectorAll(".bottom-nav-item").forEach(item => {
-      const active = item.dataset.view === view;
+      const active = item.dataset.view === normalizedView;
       item.classList.toggle("is-active", active);
       if (active) item.setAttribute("aria-current", "page");
       else item.removeAttribute("aria-current");
     });
-    state.currentView = view;
+    state.currentView = normalizedView;
     if (changed) {
-      root.dispatchEvent(new CustomEvent("chappy:view-changed", { detail: { view } }));
+      root.dispatchEvent(new CustomEvent("chappy:view-changed", { detail: { view: normalizedView } }));
     }
     return changed;
   }
@@ -624,10 +657,8 @@
       }
       if (view !== "prediction") cancelPredictionLoading();
       setView(view);
-      if (view === "home") revalidateRecommendations();
-      const section = view === "home"
-        ? document.getElementById("homeDashboardV2")
-        : document.getElementById(`${view}Section`);
+      if (view === "race") revalidateRecommendations();
+      const section = document.getElementById(`${view}Section`);
       root.requestAnimationFrame?.(() => section?.scrollIntoView?.({ behavior: "auto", block: "start" }));
 
       if (view === "result") {
@@ -684,10 +715,18 @@
     ensureShell();
     installHeader();
     installNav();
-    setView("home");
+    setView("race");
     state.initialDataReady = readCache();
     render(true);
     scheduleRefresh();
+    root.ChappyAppRuntime
+      ?.ensure?.("race")
+      .catch(error => {
+        console.error(
+          "レース画面の読み込みエラー",
+          error
+        );
+      });
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         revalidateRecommendations();

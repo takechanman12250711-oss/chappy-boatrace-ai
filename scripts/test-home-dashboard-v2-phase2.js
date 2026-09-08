@@ -14,7 +14,7 @@ const required = [
   'scheduleData',
   'requestMap',
   'renderRecommendations',
-  'setView("home")',
+  'setView("race")',
   'home-v2-recommend'
 ];
 for (const token of required) {

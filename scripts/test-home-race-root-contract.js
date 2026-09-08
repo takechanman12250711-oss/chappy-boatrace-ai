@@ -16,19 +16,29 @@ const mobile = read("css/final-mobile-ui.css");
 const reference = read("css/final-reference-layout.css");
 
 assert.doesNotMatch(html, /home-venue-tap-hotfix|outer-attack-ticket-shadow-guard/);
+assert.doesNotMatch(html, /data-view="home"/);
+assert.match(html, /id="raceSection" class="dashboard-section race-select-section">/);
+assert.equal((html.match(/data-race-mode="(?:live|review)"/g) || []).length, 2);
+assert.match(html, /class="race-mode-actions" role="group"/);
+assert.match(html, /class="select-field legacy-race-mode-field" hidden/);
 assert.match(html, /id="officialRacePicker" class="official-race-picker">/);
 assert.equal((html.match(/class="select-field legacy-race-select-field" hidden/g) || []).length, 2);
 
 const shellSource = home.slice(home.indexOf("function ensureShell"), home.indexOf("function renderRecommendations"));
 assert.match(shellSource, /home-v2-recommend/);
 assert.doesNotMatch(shellSource, /home-v2-filter-shell|home-v2-schedule|data-home-venues|data-open-venue/);
-assert.match(home, /setView\("home"\)/);
+assert.match(home, /setView\("race"\)/);
+assert.match(home, /raceSection\.insertBefore/);
 assert.doesNotMatch(reference, /home-v2-recommend[^{]*\{[^}]*display\s*:\s*none/is);
+assert.match(reference, /grid-template-columns:\s*repeat\(3,/);
 
 const requiredGroup = runtime.slice(runtime.indexOf("function requiredGroup"), runtime.indexOf("function preloadGroupForTarget"));
 assert.doesNotMatch(requiredGroup, /matches\("\.bottom-nav-item"\)\)return""/);
 assert.match(requiredGroup, /view==="race"/);
+assert.match(requiredGroup, /data-race-mode/);
 assert.match(race, /view === "race"[\s\S]*applyRaceMode\(\)/);
+assert.match(race, /\.race-mode-actions \[data-race-mode\]/);
+assert.match(race, /aria-pressed/);
 assert.match(race, /official-venue-session-tag/);
 const loadVenues = race.slice(race.indexOf("async function loadVenueChoices"), race.indexOf("async function loadRaceChoices"));
 const emptyVenues = loadVenues.indexOf("if (!venues.length)");
@@ -36,6 +46,8 @@ assert.ok(emptyVenues >= 0 && loadVenues.indexOf("renderOfficialVenuePicker", em
 assert.match(style, /official-venue-session-tag\[data-session="morning"\]/);
 assert.match(style, /official-venue-session-tag\[data-session="night"\]/);
 assert.match(mobile, /official-race-grid\s*\{\s*display:grid;\s*grid-template-columns:repeat\(4/is);
+assert.match(style, /race-mode-actions/);
+assert.match(style, /official-race-trend[^{]*\{[^}]*display:\s*none\s*!important/is);
 
 const window = { addEventListener() {} };
 window.window = window;
