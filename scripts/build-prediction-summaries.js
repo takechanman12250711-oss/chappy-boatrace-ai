@@ -324,6 +324,13 @@ function compactPrediction(prediction) {
           path: String(prediction.note.path || ""),
           title: String(prediction.note.title || ""),
           publishable: prediction.note.publishable === true,
+          ...(prediction.note.draftBundle ? {
+            draftBundle: {
+              status: String(prediction.note.draftBundle.status || ""),
+              path: String(prediction.note.draftBundle.path || ""),
+              sha256: String(prediction.note.draftBundle.sha256 || "")
+            }
+          } : {}),
           rejectionReasons: Array.isArray(prediction.note.rejectionReasons)
             ? prediction.note.rejectionReasons
                 .slice(0, 8)

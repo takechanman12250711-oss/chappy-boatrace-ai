@@ -7,6 +7,7 @@
   const VERSION = "20260828-ui-audit-display1";
   const ROOT_FIX_VERSION = "20260908-clarity-fix2";
   const MISSING_ODDS_VERSION = "20260909-top30-full-odds1";
+  const NOTE_HANDOFF_VERSION = "20260909-saved-note1";
   const ACTIVE_VERSION = root.CHAPPY_APP_BUILD || VERSION;
   const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";
@@ -14,10 +15,14 @@
   const groups={race:["js/utils.js","js/storage.js","js/prediction-conditions.js","js/prediction-runtime-loader.js","js/script.js","js/hiyori-runtime-loader.js"],stats:["js/utils.js","js/storage.js","js/stats-runtime-loader.js"],autoSelection:["js/utils.js","js/storage.js","js/auto-selection.js"]};
   groups.race.splice(2,0,"js/outer-attack-ticket-shadow.js");
   groups.race.splice(3,0,"js/outer-attack-ticket-settlement.js");
+  groups.savedNote = ["js/saved-note-draft.js"];
 
   function assetVersion(clean){
     if (clean === "js/script.js") {
-      return MISSING_ODDS_VERSION;
+      return `${MISSING_ODDS_VERSION}&note=${NOTE_HANDOFF_VERSION}`;
+    }
+    if (clean === "js/saved-note-draft.js") {
+      return NOTE_HANDOFF_VERSION;
     }
     if (["js/outer-attack-ticket-shadow.js", "js/outer-attack-ticket-settlement.js"].includes(clean)) {
       return ROOT_FIX_VERSION;

@@ -55,6 +55,8 @@ node scripts/note-publication-audit.js --input data/note-drafts/YYYYMMDD/レー�
 
 ## Claude Code / Codexの共通手順
 
+開発の継続・修正には `chappy-boatrace-dev` を追加する。最新mainから既存機能と未接続部分を区別し、依頼範囲の変更を必要な検証・反映まで進めるための手順を共有する。予想基準変更やnote公開の権限を付与するものではない。note用の5つと合わせて6つの共有Skillを一致検査する。
+
 同じ5つのSKILL.mdを `.agents/skills/` と `.claude/skills/` に配置する。コピー内容は `scripts/check-note-skills.js` とCIで一致を確認する。指示の共有であり、Claude Codeのインストール・認証・実行や常時稼働を代行するものではない。
 
 | Skill | 範囲 |
@@ -69,6 +71,14 @@ node scripts/note-publication-audit.js --input data/note-drafts/YYYYMMDD/レー�
 
 ## 次段階の境界
 
+### 保存原稿をアプリで読む
+
+AI予想画面の既存noteアシストにある「この日の保存原稿を確認」から、選択した日付の日次要約に載る最新選定分を取得する。画面に表示中の予想とは別のレースの場合もあるため、保存原稿の場・Rとタイトルを明示する。振り返り表示でも保存原稿を読めるが、新しい記事生成は無効とする。
+
+要約には `note.draftBundle` の状態・パス・SHA256だけを追加し、押した時に当該JSONを読む。巨大な日次原本へフォールバックせず、同じ日付・レースと保存内容のSHA256が一致する場合のみ、保存されたタイトルと本文をコピー可能にする。取得エラーや照合データのない古い原稿は、現在の予想から作り直さない。予想の切替中に届いた古い読込結果も表示しない。
+
+画面は生成時の監査結果と現在時刻での締切注意を示す。これは監査CLIの再実行・公式情報の再取得ではなく、現在の公開許可でもない。コピー後も注意を表示し、`canPublish` と `automaticPublicationEnabled` はfalseのままとする。noteへの自動入力・公開・価格設定・通知は追加していない。
+
 note公式は公開APIを提供していないため、非公開APIやログインCookieを用いる投稿を追加しない。[note公式ヘルプ](https://www.help-note.com/hc/ja/articles/46643492548121)
 
 公開処理を追加するには、ユーザーが投稿先アカウント、手動/承認付き/無人の範囲、価格、無料/有料境界、投稿時刻、重複投稿台帳、失敗時通知を決め、利用可能で許可された接続方法を確認する必要がある。本PRはその設定を変更せず、定期実行も新設しない。
@@ -78,6 +88,7 @@ note公式は公開APIを提供していないため、非公開APIやログイ�
 ```sh
 node scripts/test-note-publication-audit.js
 node scripts/test-note-draft-bundle.js
+node scripts/test-saved-note-draft.js
 node scripts/check-note-skills.js
 node scripts/test-note-copy-cleanup.js
 node scripts/test-note-karatsu-regression.js

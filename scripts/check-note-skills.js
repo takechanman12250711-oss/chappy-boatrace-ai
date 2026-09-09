@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const root = path.resolve(__dirname, "..");
-const names = ["chappy-race-select", "chappy-note-generate", "chappy-note-audit", "chappy-note-publish", "chappy-note-settle"];
+const names = ["chappy-boatrace-dev", "chappy-race-select", "chappy-note-generate", "chappy-note-audit", "chappy-note-publish", "chappy-note-settle"];
 
 function filesIn(directory, prefix = "") {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
@@ -28,4 +28,4 @@ for (const name of names) {
   assert(text.startsWith(`---\nname: ${name}\ndescription: `));
   assert(!text.includes("[TODO"));
 }
-console.log("5 shared note skills match across Codex and Claude Code");
+console.log(`${names.length} shared Chappy skills match across Codex and Claude Code`);
