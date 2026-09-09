@@ -6103,8 +6103,15 @@
 
   let lastNotePrediction = null;
   let lastNoteArticle = null;
+  let lastSavedNoteBundle = null;
+  let noteRequestVersion = 0;
 
   function setupNoteAssistant() {
+    const savedBtn = document.getElementById("noteLoadSavedBtn");
+    if (savedBtn && savedBtn.dataset.chappyNoteControlBound !== "true") {
+      savedBtn.dataset.chappyNoteControlBound = "true";
+      savedBtn.addEventListener("click", loadSavedNoteArticle);
+    }
     const generateBtn =
       document.getElementById(
         "noteGenerateBtn"
@@ -6148,7 +6155,7 @@
         "click",
         () => copyNoteText(
           lastNoteArticle?.title || "",
-          "タイトルをコピーしました"
+          noteCopyMessage("タイトルをコピーしました")
         )
       );
     }
@@ -6166,7 +6173,7 @@
         "click",
         () => copyNoteText(
           lastNoteArticle?.fullText || "",
-          "記事全文をコピーしました"
+          noteCopyMessage("記事全文をコピーしました")
         )
       );
     }
@@ -6175,6 +6182,10 @@
   function updateNoteAssistant(
     prediction
   ) {
+    noteRequestVersion += 1;
+    lastSavedNoteBundle = null;
+    const savedBtn = document.getElementById("noteLoadSavedBtn");
+    if (savedBtn) savedBtn.disabled = false;
     const section =
       document.getElementById(
         "noteAssistantSection"
@@ -6210,7 +6221,6 @@
     if (
       !prediction ||
       typeof prediction !== "object" ||
-      prediction.isRetrospective ||
       prediction.ok === false
     ) {
       section.hidden = true;
@@ -6240,6 +6250,7 @@
     }
 
     const generatorReady =
+      !prediction.isRetrospective &&
       window.ChappyNoteGenerator &&
       typeof window
         .ChappyNoteGenerator
@@ -6252,14 +6263,29 @@
     }
 
     setNoteStatus(
-      generatorReady
+      prediction.isRetrospective
+        ? "この日の保存原稿を確認できます"
+        : generatorReady
         ? "記事生成できます"
         : "生成機能を読み込めません"
     );
   }
 
   function generateNoteArticle() {
-    if (!lastNotePrediction) {
+    noteRequestVersion += 1;
+    lastSavedNoteBundle = null;
+    lastNoteArticle = null;
+    ["noteTitlePreview", "noteArticlePreview"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.value = "";
+    });
+    ["noteCopyTitleBtn", "noteCopyFullBtn"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.disabled = true;
+    });
+    const savedBtn = document.getElementById("noteLoadSavedBtn");
+    if (savedBtn) savedBtn.disabled = false;
+    if (!lastNotePrediction || lastNotePrediction.isRetrospective) {
       setNoteStatus(
         "先にAI予想を表示してください"
       );
@@ -6370,6 +6396,52 @@
         error?.message ||
         "記事生成エラー"
       );
+    }
+  }
+
+  function noteCopyMessage(message) {
+    return lastSavedNoteBundle
+      ? `${message}。${window.ChappySavedNoteDraft.reviewStatus(lastSavedNoteBundle).message}`
+      : message;
+  }
+
+  async function loadSavedNoteArticle() {
+    const requestVersion = ++noteRequestVersion;
+    const date = String(document.getElementById("dateInput")?.value || "").replaceAll("-", "");
+    const savedBtn = document.getElementById("noteLoadSavedBtn");
+    lastNoteArticle = null;
+    lastSavedNoteBundle = null;
+    ["noteTitlePreview", "noteArticlePreview"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.value = "";
+    });
+    ["noteCopyTitleBtn", "noteCopyFullBtn"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.disabled = true;
+    });
+    if (savedBtn) savedBtn.disabled = true;
+    setNoteStatus("この日の最新の保存原稿を読み込んでいます");
+    const currentRequest = () => requestVersion === noteRequestVersion && date ===
+      String(document.getElementById("dateInput")?.value || "").replaceAll("-", "");
+    try {
+      if (!window.ChappySavedNoteDraft) await window.ChappyAppRuntime.ensure("savedNote");
+      const saved = await window.ChappySavedNoteDraft.loadLatest({ date });
+      if (!currentRequest()) return;
+      lastNoteArticle = saved.article;
+      lastSavedNoteBundle = saved.bundle;
+      const title = document.getElementById("noteTitlePreview");
+      const body = document.getElementById("noteArticlePreview");
+      if (title) title.value = saved.article.title;
+      if (body) body.value = saved.article.fullText;
+      ["noteCopyTitleBtn", "noteCopyFullBtn"].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.disabled = false;
+      });
+      setNoteStatus(`保存原稿：${saved.record.place} ${saved.record.raceNo}R。${saved.review.message}`);
+    } catch (error) {
+      if (currentRequest()) setNoteStatus(error?.message || "保存原稿を読み込めませんでした");
+    } finally {
+      if (requestVersion === noteRequestVersion && savedBtn) savedBtn.disabled = false;
     }
   }
 
