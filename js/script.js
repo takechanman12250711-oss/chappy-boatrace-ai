@@ -6111,6 +6111,9 @@
     if (savedBtn && savedBtn.dataset.chappyNoteControlBound !== "true") {
       savedBtn.dataset.chappyNoteControlBound = "true";
       savedBtn.addEventListener("click", loadSavedNoteArticle);
+      const section = document.getElementById("noteAssistantSection");
+      if (section) section.hidden = false;
+      setNoteStatus("この日の保存原稿を確認できます");
     }
     const generateBtn =
       document.getElementById(
@@ -6223,9 +6226,15 @@
       typeof prediction !== "object" ||
       prediction.ok === false
     ) {
-      section.hidden = true;
+      section.hidden = false;
       lastNotePrediction = null;
       lastNoteArticle = null;
+      if (titlePreview) titlePreview.value = "";
+      if (articlePreview) articlePreview.value = "";
+      if (copyTitleBtn) copyTitleBtn.disabled = true;
+      if (copyFullBtn) copyFullBtn.disabled = true;
+      if (generateBtn) generateBtn.disabled = true;
+      setNoteStatus("この日の保存原稿を確認できます");
       return;
     }
 

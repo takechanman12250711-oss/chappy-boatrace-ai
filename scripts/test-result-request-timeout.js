@@ -175,7 +175,7 @@ async function main() {
     'src="js/result-request-timeout.js?v=20260825-mobile-startup-terminal4&app=20260828-ui-audit-display1"'
   );
   const appIndex = indexHtml.indexOf(
-    'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260828-ui-audit-display1&stats=20260908-result-clarity1&root=20260908-clarity-fix2&missingOdds=20260909-top30-full-odds1&note=20260909-saved-note1"'
+    'src="js/app-runtime-loader.js?v=20260816-static-race1&app=20260828-ui-audit-display1&stats=20260908-result-clarity1&root=20260908-clarity-fix2&missingOdds=20260909-top30-full-odds1&note=20260909-saved-note2"'
   );
   const oddsFirstIndex = indexHtml.indexOf(
     'src="js/odds-first-navigation.js?v=20260815-odds-consume2"'
