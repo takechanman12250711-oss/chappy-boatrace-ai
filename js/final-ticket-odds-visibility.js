@@ -100,6 +100,14 @@
       ${sources.map(source=>{
         const tickets=expandNotation(source.notation);
         const rows=tickets.length?tickets:[exactTicket(source.notation)].filter(Boolean);
+        const exactOnly=rows.length===1&&exactTicket(source.notation);
+        if(exactOnly){
+          const odds=oddsMap.get(rows[0]);
+          return `<article class="chappy-scenario-manshu-group is-exact v3-light-manshu-ticket-line">
+            <div class="chappy-scenario-manshu-title"><strong>${escapeHtml(source.notation)}</strong><span class="chappy-scenario-manshu-title-side"><em>${odds?`${odds.toFixed(1)}倍`:"オッズ未取得"}</em><span>1点</span></span></div>
+            ${source.reason?`<p>${escapeHtml(source.reason)}</p>`:""}
+          </article>`;
+        }
         return `<article class="chappy-scenario-manshu-group v3-light-manshu-ticket-line">
           <div class="chappy-scenario-manshu-title"><strong>${escapeHtml(source.notation)}</strong><span>${rows.length||1}点</span></div>
           <div class="chappy-scenario-manshu-odds">${rows.map(ticket=>{
@@ -154,7 +162,7 @@
     const style=root.document.createElement("style");
     style.id="chappy-ticket-odds-visibility-style";
     style.textContent=`
-      .chappy-scenario-manshu-board{display:grid;gap:10px}.chappy-scenario-manshu-head{display:flex;justify-content:space-between;gap:10px;align-items:end}.chappy-scenario-manshu-head span{font-size:11px;opacity:.72}.chappy-scenario-manshu-group{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px}.chappy-scenario-manshu-title{display:flex;justify-content:space-between;gap:10px;align-items:center}.chappy-scenario-manshu-title>strong{font-size:17px}.chappy-scenario-manshu-title>span{font-size:11px;opacity:.7}.chappy-scenario-manshu-odds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:8px}.chappy-scenario-manshu-odds>span{display:flex;justify-content:space-between;gap:6px;padding:5px 7px;border-radius:8px;background:rgba(255,255,255,.055);font-size:11px}.chappy-scenario-manshu-odds b{font-weight:800}.chappy-scenario-manshu-odds em,.chappy-missing-all-odds em{font-style:normal;white-space:nowrap}.chappy-scenario-manshu-group p{margin:8px 0 0;font-size:12px;line-height:1.55;opacity:.86}.chappy-missing-days-compact{padding-left:6px!important;padding-right:6px!important;white-space:nowrap}.chappy-missing-all-odds{display:flex;align-items:center;width:100%;grid-column:1/-1;margin-top:4px}.chappy-missing-all-odds>span{display:inline-flex;align-items:center;min-height:25px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.055);color:#d8e8f3;font-size:11px;font-weight:800}
+      .chappy-scenario-manshu-board{display:grid;gap:8px}.chappy-scenario-manshu-head{display:flex;justify-content:space-between;gap:10px;align-items:end}.chappy-scenario-manshu-head span{font-size:11px;opacity:.72}.chappy-scenario-manshu-group{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px}.chappy-scenario-manshu-title{display:flex;justify-content:space-between;gap:10px;align-items:center}.chappy-scenario-manshu-title>strong{font-size:17px}.chappy-scenario-manshu-title>span{font-size:11px;opacity:.7}.chappy-scenario-manshu-title-side{display:flex;align-items:center;gap:7px}.chappy-scenario-manshu-title-side em{padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.055);color:#d8e8f3;font-size:11px;font-style:normal;font-weight:800;white-space:nowrap}.chappy-scenario-manshu-odds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:8px}.chappy-scenario-manshu-odds>span{display:flex;justify-content:space-between;gap:6px;padding:5px 7px;border-radius:8px;background:rgba(255,255,255,.055);font-size:11px}.chappy-scenario-manshu-odds b{font-weight:800}.chappy-scenario-manshu-odds em,.chappy-missing-all-odds em{font-style:normal;white-space:nowrap}.chappy-scenario-manshu-group p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;margin:7px 0 0;font-size:12px;line-height:1.5;opacity:.86}.chappy-scenario-manshu-group.is-exact{padding:10px 12px}.chappy-missing-days-compact{padding-left:6px!important;padding-right:6px!important;white-space:nowrap}.chappy-missing-all-odds{display:flex;align-items:center;width:100%;grid-column:1/-1;margin-top:4px}.chappy-missing-all-odds>span{display:inline-flex;align-items:center;min-height:25px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.055);color:#d8e8f3;font-size:11px;font-weight:800}@media(max-width:480px){.chappy-scenario-manshu-head{align-items:flex-start;flex-direction:column;gap:2px}.chappy-scenario-manshu-title>strong{font-size:16px}.chappy-scenario-manshu-group p{font-size:11px}}
     `;
     root.document.head.appendChild(style);
   }
