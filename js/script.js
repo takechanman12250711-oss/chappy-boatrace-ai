@@ -5218,6 +5218,11 @@
         "object"
         ? oddsData.byTicket
         : {};
+    // Keep the complete official trifecta table for display-only consumers.
+    // Selected ticket sheets do not contain most missing-number TOP30 rows.
+    prediction.oddsByTicket = {
+      ...byTicket
+    };
     const isFinalRetrievedOdds =
       oddsData
         .isFinalRetrievedOdds ===

@@ -54,6 +54,8 @@ assert.equal(currentRows[1].badges[0].textContent,"オッズ未取得");
 assert.match(currentRows[1].badges[0].className,/is-missing/);
 api.decorateMissingOdds(first);
 assert.equal(currentRows[0].badges.length,1,"repeated refresh must not duplicate odds badges");
+api.decorateMissingOdds({oddsByTicket:{"1-2-3":31.6,"1-2-4":52.7}});
+assert.equal(currentRows[1].badges[0].textContent,"52.7倍","complete official odds table must cover unselected missing-number rows");
 currentRows = [missingRow("1-2-3")];
 window.renderAll({odds:{"1-2-3":44.2}});
 observerCallback(mutation);

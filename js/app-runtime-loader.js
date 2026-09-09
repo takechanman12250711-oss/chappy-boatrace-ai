@@ -6,6 +6,7 @@
   // 既存テストとの互換用。実配信ではindex.htmlのCHAPPY_APP_BUILDを使用する。
   const VERSION = "20260828-ui-audit-display1";
   const ROOT_FIX_VERSION = "20260908-clarity-fix2";
+  const MISSING_ODDS_VERSION = "20260909-top30-full-odds1";
   const ACTIVE_VERSION = root.CHAPPY_APP_BUILD || VERSION;
   const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";
@@ -15,7 +16,10 @@
   groups.race.splice(3,0,"js/outer-attack-ticket-settlement.js");
 
   function assetVersion(clean){
-    if (["js/script.js", "js/outer-attack-ticket-shadow.js", "js/outer-attack-ticket-settlement.js"].includes(clean)) {
+    if (clean === "js/script.js") {
+      return MISSING_ODDS_VERSION;
+    }
+    if (["js/outer-attack-ticket-shadow.js", "js/outer-attack-ticket-settlement.js"].includes(clean)) {
       return ROOT_FIX_VERSION;
     }
     return clean === "js/stats-runtime-loader.js" ? STATS_VERSION : ACTIVE_VERSION;

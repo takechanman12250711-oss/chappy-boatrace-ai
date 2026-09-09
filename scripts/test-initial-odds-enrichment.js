@@ -688,7 +688,8 @@ const enriched = sandbox.enrichPredictionWithOdds(
     byTicket: {
       "1-2-3": 8.4,
       "1-3-2": 31.2,
-      "6-1-2": 96.1
+      "6-1-2": 96.1,
+      "4-5-6": 142.7
     }
   },
   {
@@ -758,6 +759,11 @@ assert.equal(
   prediction.missingNumbersData.ok,
   true,
   "出てない目を同じ初回予想へ付加する"
+);
+assert.equal(
+  prediction.oddsByTicket["4-5-6"],
+  142.7,
+  "未選択の出てない目も含む公式オッズ全表を表示用に保持する"
 );
 assert.equal(
   prediction.combinedOdds.available,
