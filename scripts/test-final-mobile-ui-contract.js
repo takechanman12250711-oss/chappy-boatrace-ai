@@ -1,5 +1,6 @@
 const fs = require("fs");
 const assert = require("assert");
+const vm = require("vm");
 
 const ui = fs.readFileSync("js/final-mobile-ui.js", "utf8");
 const css = fs.readFileSync("css/final-mobile-ui.css", "utf8");
@@ -91,7 +92,37 @@ assert(ticketOdds.includes('className="chappy-missing-odds-value"'), "missing-nu
 assert(!ticketOdds.includes('item.innerHTML=`<b>${escapeHtml(ticket)}</b>'), "missing-number card must not repeat the ticket beside its odds");
 assert(ticketOdds.includes('"オッズ未取得"'), "missing-number cards must retain a consistent missing-odds label");
 assert(ticketOdds.includes('addEventListener("chappy:prediction-runtime-ready"'), "lazy prediction runtime must rebind the TOP30 odds renderer");
-assert(loader.includes('TICKET_ODDS_BUILD="20260909-top30-runtime-ready1"'), "TOP30 runtime-ready cache generation missing");
+assert(ticketOdds.includes('querySelector(".v3-missing-rank")'), "TOP30 ticket parsing must exclude the rank label");
+assert(ticketOdds.includes('.replace(rank,"")'), "TOP30 rank text must not be mistaken for ticket digits");
+assert(loader.includes('TICKET_ODDS_BUILD="20260909-top30-rank-safe1"'), "TOP30 rank-safe cache generation missing");
+
+const ticketOddsDocument = {
+  getElementById() { return null; },
+  createElement() { return {}; },
+  head: { appendChild() {} },
+  addEventListener() {},
+  visibilityState: "visible"
+};
+const ticketOddsWindow = {
+  document: ticketOddsDocument,
+  setInterval() { return 1; },
+  clearInterval() {},
+  addEventListener() {}
+};
+vm.runInNewContext(ticketOdds, { window: ticketOddsWindow });
+const ticketFromNode = ticketOddsWindow.ChappyTicketOddsVisibility.ticketFromNode;
+for (const rank of [1, 6, 7, 10, 30]) {
+  const rankNode = { textContent: `${rank}位` };
+  const ticketNode = {
+    textContent: `${rank}位2→1→6`,
+    querySelector(selector) { return selector === ".v3-missing-rank" ? rankNode : null; }
+  };
+  const row = {
+    getAttribute() { return ""; },
+    querySelector(selector) { return selector === ".v3-formation-ticket" ? ticketNode : null; }
+  };
+  assert.strictEqual(ticketFromNode(row), "2-1-6", `rank ${rank} must not contaminate the ticket`);
+}
 assert(prediction.includes('type: "raceFlow"'), "formation source must remain raceFlow");
 assert(prediction.includes("hole: cleanHole"), "manshu/hole candidates must remain tied to raceFlow formation output");
 [
