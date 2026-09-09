@@ -7,7 +7,7 @@
   const VERSION = "20260828-ui-audit-display1";
   const ROOT_FIX_VERSION = "20260908-clarity-fix2";
   const MISSING_ODDS_VERSION = "20260909-top30-full-odds1";
-  const NOTE_HANDOFF_VERSION = "20260909-saved-note1";
+  const NOTE_HANDOFF_VERSION = "20260909-saved-note2";
   const ACTIVE_VERSION = root.CHAPPY_APP_BUILD || VERSION;
   const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";

@@ -112,8 +112,12 @@ async function main() {
     vm.createContext(context);
     vm.runInContext(source.slice(start, end) + "\nthis.noteApi = {setupNoteAssistant, updateNoteAssistant, loadSavedNoteArticle, generateNoteArticle};", context);
     const api = context.noteApi;
+    controls.noteAssistantSection.hidden = true;
     api.setupNoteAssistant(); api.setupNoteAssistant();
     assert.equal(controls.noteLoadSavedBtn.listeners.length, 1);
+    assert.equal(controls.noteAssistantSection.hidden, false, "saved drafts must be reachable before any prediction is rendered");
+    api.updateNoteAssistant(null);
+    assert.equal(controls.noteAssistantSection.hidden, false, "clearing a prediction must not hide the saved-draft entry");
     api.updateNoteAssistant({ ok: true, isRetrospective: true });
     assert.equal(controls.noteAssistantSection.hidden, false, "stored drafts remain available for retrospective viewing");
     assert.equal(controls.noteGenerateBtn.disabled, true, "retrospective view must not generate a new prediction article");
@@ -133,6 +137,10 @@ async function main() {
     assert.equal(copied[0].text, input.article.fullText);
     assert.match(copied[0].message, /公開前/);
     assert.match(messages.at(-1), /保存原稿：唐津 10R/);
+    api.updateNoteAssistant(null);
+    assert.equal(controls.noteAssistantSection.hidden, false);
+    assert.equal(controls.noteArticlePreview.value, "");
+    assert.equal(controls.noteCopyFullBtn.disabled, true);
     cases += 1;
 
     let finish;
