@@ -116,7 +116,7 @@
     if(explicit)return explicit;
     const ticketNode=row.querySelector(".v3-formation-ticket");
     const rank=text(ticketNode?.querySelector(".v3-missing-rank")?.textContent);
-    const raw=text(ticketNode?.textContent).replace(rank,"");
+    const raw=text(ticketNode?.textContent).replace(rank,"").replace(/^\d+位/,"");
     const digits=raw.match(/[1-6]/g)||[];
     if(digits.length===3&&new Set(digits).size===3)return digits.join("-");
     return raw.replace(/→/g,"-").replace(/\s+/g,"");
