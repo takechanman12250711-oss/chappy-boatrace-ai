@@ -44,6 +44,12 @@ assert.equal(
   true,
   "raceランタイム読込後にレース操作を初期化する"
 );
+assert.equal(
+  appRuntime.includes('const MISSING_ODDS_VERSION = "20260909-top30-full-odds1"') &&
+    appRuntime.includes('if (clean === "js/script.js")'),
+  true,
+  "出てない目の全オッズ保持修正を専用キャッシュ世代で読み込む"
+);
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js');
 const directApiIndex = html.indexOf('src="js/api.js');
