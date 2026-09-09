@@ -436,6 +436,29 @@ body.chappy-final-mobile-ui {
   .chappy-final-mobile-ui .race-select-grid { grid-template-columns:1fr; gap:8px; }
   .chappy-final-mobile-ui .official-venue-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .chappy-final-mobile-ui .official-race-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .chappy-final-mobile-ui .official-race-button {
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"race-number" "race-time";
+    justify-items:center;
+    align-content:center;
+    gap:2px;
+    min-height:58px;
+    padding:7px 2px;
+    text-align:center;
+  }
+  .chappy-final-mobile-ui .official-race-number {
+    justify-self:center;
+    font-size:14px;
+    line-height:1.1;
+    white-space:nowrap;
+  }
+  .chappy-final-mobile-ui .official-race-time {
+    justify-self:center;
+    max-width:100%;
+    font-size:9px;
+    line-height:1.15;
+    white-space:nowrap;
+  }
   .chappy-final-mobile-ui .chappy-photo-ticket { font-size:19px; }
   .chappy-final-buy-formation { font-size:20px; }
 }

@@ -54,6 +54,8 @@ assert(iphoneCss.includes("v3-ticket-accordion"), "iPhone ticket density tuning 
 assert(iphoneCss.includes("chappy-final-buy-formation"), "iPhone formation sizing missing");
 assert(!/home-v2-recommend[^{]*\{[^}]*display\s*:\s*none/is.test(referenceCss), "home recommendation must remain visible");
 assert(/official-race-grid\s*\{[\s\S]*?repeat\(4,minmax\(0,1fr\)\)/.test(css), "four-column race grid required");
+assert(/grid-template-areas:"race-number" "race-time"/.test(css), "mobile race number and deadline must use separate rows");
+assert(/\.official-race-time\s*\{[\s\S]*?white-space:nowrap/.test(css), "mobile race deadline must not wrap into the race number");
 assert(/grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/.test(referenceCss), "three visible bottom navigation items required");
 assert(!index.includes('data-view="home"'), "obsolete home navigation must be removed");
 assert(referenceCss.includes('.bottom-nav-item[data-view="race"]'), "race nav selector missing");
@@ -72,7 +74,7 @@ assert(loader.includes("final-iphone-tuning.css"), "iPhone final tuning styleshe
 assert(loader.includes("final-reference-layout.css"), "final reference layout stylesheet loader missing");
 assert(loader.includes("final-readability-fix.css"), "readability rescue stylesheet loader missing");
 assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
-assert(loader.includes('const BUILD="20260908-tap-race-flow1"'), "tap race flow asset generation missing");
+assert(loader.includes('const BUILD="20260909-iphone-card-clarity1"'), "iPhone card clarity asset generation missing");
 assert(!loader.includes("home-single-race-entry.css"), "obsolete home selector overlay must not load");
 assert(loader.includes('OWNER_BUILD="20260907-practical-selected-visible1"'), "single-owner generation missing");
 assert(loader.includes('USER_CONTRACT_BUILD="20260909-ticket-visibility-fallback1"'), "restored ticket UI generation missing");
@@ -85,6 +87,9 @@ assert(ticketOdds.includes("構成買い目のオッズを全表示"), "manshu a
 assert(ticketOdds.includes("const tickets=expandNotation(source.notation)"), "manshu formation must expand to every exact ticket");
 assert(ticketOdds.includes("const tickets=expandNotation(notation)"), "missing-number formation must expand to every exact ticket");
 assert(ticketOdds.includes("chappy-missing-all-odds"), "missing-number all-odds board missing");
+assert(ticketOdds.includes('className="chappy-missing-odds-value"'), "missing-number compact odds value missing");
+assert(!ticketOdds.includes('item.innerHTML=`<b>${escapeHtml(ticket)}</b>'), "missing-number card must not repeat the ticket beside its odds");
+assert(ticketOdds.includes('"オッズ未取得"'), "missing-number cards must retain a consistent missing-odds label");
 assert(prediction.includes('type: "raceFlow"'), "formation source must remain raceFlow");
 assert(prediction.includes("hole: cleanHole"), "manshu/hole candidates must remain tied to raceFlow formation output");
 [
