@@ -75,7 +75,7 @@ assert(loader.includes("final-mobile-ui.js"), "final UI script loader missing");
 assert(loader.includes('const BUILD="20260908-tap-race-flow1"'), "tap race flow asset generation missing");
 assert(!loader.includes("home-single-race-entry.css"), "obsolete home selector overlay must not load");
 assert(loader.includes('OWNER_BUILD="20260907-practical-selected-visible1"'), "single-owner generation missing");
-assert(loader.includes('USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract1"'), "restored ticket UI generation missing");
+assert(loader.includes('USER_CONTRACT_BUILD="20260909-ticket-visibility-fallback1"'), "restored ticket UI generation missing");
 assert(loader.includes("final-display-owner-v2.js"), "single final display owner loader missing");
 assert(loader.includes("final-display-user-contract.js"), "approved ticket UI contract loader missing");
 assert(loader.includes("final-display-controller.css"), "single final display owner stylesheet missing");

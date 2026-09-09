@@ -1,7 +1,7 @@
 (function(root){
   "use strict";
   if(!root||!root.document)return;
-  const BUILD="20260906-restore-ticket-ui-contract1";
+  const BUILD="20260909-ticket-visibility-fallback1";
 
   function text(node){return String(node?.textContent||"").replace(/\s+/g," ").trim();}
 
@@ -24,10 +24,18 @@
     // The compact AI ticket card above is the approved presentation. The old
     // newspaper ticket accordion below duplicates the same main/cover/flow
     // rows and was the source of the large white/empty formation panel on iPhone.
+    // Keep the source accordion visible when the compact card could not be built;
+    // otherwise all main/cover/flow tickets disappear while only manshu remains.
+    const compactTickets=area.querySelector?.(".chappy-final-buy-summary .chappy-final-buy-line");
     area.querySelectorAll?.(".v3-main-newspaper").forEach(section=>{
-      section.hidden=true;
-      section.setAttribute("aria-hidden","true");
-      section.dataset.userContractHidden="1";
+      section.hidden=Boolean(compactTickets);
+      if(compactTickets){
+        section.setAttribute("aria-hidden","true");
+        section.dataset.userContractHidden="1";
+      }else{
+        section.removeAttribute?.("aria-hidden");
+        delete section.dataset.userContractHidden;
+      }
     });
   }
 
