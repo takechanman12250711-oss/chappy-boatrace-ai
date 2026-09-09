@@ -37,6 +37,22 @@ CLIは入力JSONのnowを無視して現在時刻を使う。`--now ISO_TIMESTAM
 
 元の構造化記事や独立した予想が残っていない過去原稿は、完全監査済みとしない。資料不足を報告し、過去データを生成し直して埋めない。
 
+## 追加のAI契約を使わない再検査用保存
+
+既存の定期収集が新しい下書きを生成したとき、Markdownと併せて `data/note-drafts/YYYYMMDD/レースキー-SHA256.json` を保存する。Claude Codeや有料AI APIを呼び出さず、既存のJavaScriptだけで動作する。新しい定期ジョブは増やさない。実行基盤の利用枠・料金まで無料を保証するものではない。
+
+JSONには生成時の構造化記事、保存予想の実戦厳選・通常候補・独立した参考台帳、生成前の比較用買い目、締切、検査条件、生成時の監査結果を一緒に残す。収集時刻は元レコードの `selectedAt`、コードの参照は実行環境にある場合の `GITHUB_SHA` を記録する。買い目や本文を生成し直して比較元を作らない。
+
+内容が同じなら既存ファイルを再利用し、内容が変われば別ファイルを追加する。日次レコードや既存Markdownが後の収集で更新されても、このJSONは上書きしない。`note.draftBundle` に保存状態・パス・SHA256を記録し、保存に失敗した場合は `save_error` を記録して既存の予想・Markdown保存を継続する。下書き未生成は `not_generated` とし、`--dry-run` では保存しない。SHA256は内容の識別用であり、署名ではない。
+
+保存したJSONをそのまま読み取り検査に渡せる。
+
+```sh
+node scripts/note-publication-audit.js --input data/note-drafts/YYYYMMDD/レースキー-SHA256.json
+```
+
+通常の再検査は実時計を使うため、締切後は公開準備不可になる。JSON内の生成時監査結果を現在の合格判定として使わない。生成時点の再現が必要なオフライン検証だけ、`--now` に当時の `generationAudit.auditedAt` を明示する。原稿本文の変更、noteへのログイン・投稿、有料設定はこの保存処理では行わない。
+
 ## Claude Code / Codexの共通手順
 
 同じ5つのSKILL.mdを `.agents/skills/` と `.claude/skills/` に配置する。コピー内容は `scripts/check-note-skills.js` とCIで一致を確認する。指示の共有であり、Claude Codeのインストール・認証・実行や常時稼働を代行するものではない。
@@ -61,6 +77,7 @@ note公式は公開APIを提供していないため、非公開APIやログイ�
 
 ```sh
 node scripts/test-note-publication-audit.js
+node scripts/test-note-draft-bundle.js
 node scripts/check-note-skills.js
 node scripts/test-note-copy-cleanup.js
 node scripts/test-note-karatsu-regression.js

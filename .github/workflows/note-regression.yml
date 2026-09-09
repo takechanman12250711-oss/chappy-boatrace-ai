@@ -9,6 +9,8 @@ on:
       - "scripts/collect-predictions.js"
       - "scripts/note-publication-audit.js"
       - "scripts/test-note-publication-audit.js"
+      - "scripts/note-draft-bundle.js"
+      - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - ".agents/skills/**"
       - ".claude/skills/**"
@@ -25,6 +27,8 @@ on:
       - "scripts/collect-predictions.js"
       - "scripts/note-publication-audit.js"
       - "scripts/test-note-publication-audit.js"
+      - "scripts/note-draft-bundle.js"
+      - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - ".agents/skills/**"
       - ".claude/skills/**"
@@ -55,10 +59,13 @@ jobs:
           node --check scripts/collect-predictions.js
           node --check scripts/note-publication-audit.js
           node --check scripts/test-note-publication-audit.js
+          node --check scripts/note-draft-bundle.js
+          node --check scripts/test-note-draft-bundle.js
           node --check scripts/check-note-skills.js
           node scripts/test-note-copy-cleanup.js
           node scripts/test-note-karatsu-regression.js
           node scripts/test-note-publication-audit.js
+          node scripts/test-note-draft-bundle.js
           node scripts/check-note-skills.js
           node scripts/test-theory-integration.js
           node scripts/check-charter.js

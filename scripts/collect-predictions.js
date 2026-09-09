@@ -2301,7 +2301,28 @@ async function main() {
   }
 
   if (!dryRun) {
-    if (selectedData) selectedData.note.path = saveNote(date, best, article);
+    if (selectedData) {
+      selectedData.note.path = saveNote(date, best, article);
+      // Preserve the exact audit inputs before later runs replace daily records.
+      // Snapshot failures must not interrupt the existing prediction/draft save.
+      try {
+        const { saveNoteDraftBundle } = require("./note-draft-bundle");
+        selectedData.note.draftBundle = saveNoteDraftBundle({
+          article,
+          record: selectedData,
+          baselinePracticalTickets: selectedBase.prediction?.practicalTickets,
+          minLeadSeconds: charter.shadowSelectionV2.cutoffSeconds,
+          maxPracticalTickets: charter.practicalTickets.maximum,
+          sourceCommit: process.env.GITHUB_SHA || null
+        });
+      } catch {
+        selectedData.note.draftBundle = {
+          status: "save_error",
+          message: "原稿の再検査用スナップショットを保存できませんでした。"
+        };
+        console.warn("note再検査用保存失敗：既存の予想・下書き保存を継続します");
+      }
+    }
     saveRun(
       date,
       comparison,
