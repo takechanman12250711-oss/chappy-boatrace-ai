@@ -22,7 +22,7 @@
   const STRUCTURE_STYLE_BUILD="20260905-final-display-owner2";
   const MANSHU_STYLE_BUILD="20260905-manshu-formation1";
   const OWNER_BUILD="20260907-practical-selected-visible1";
-  const USER_CONTRACT_BUILD="20260906-restore-ticket-ui-contract1";
+  const USER_CONTRACT_BUILD="20260909-ticket-visibility-fallback1";
   const TICKET_ODDS_BUILD="20260908-root-home-race-shadow1";
   const PRACTICAL_PANEL_BUILD="20260908-practical-visible-panel2";
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
