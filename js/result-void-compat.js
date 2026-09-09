@@ -19,7 +19,7 @@
   if(!root||!root.document)return;
   const BUILD="20260909-iphone-card-clarity1";
   const COMPACT_STYLE_BUILD="20260905-final-display-owner2";
-  const STRUCTURE_STYLE_BUILD="20260909-mobile-ticket-card-clarity1";
+  const STRUCTURE_STYLE_BUILD="20260909-main-card-restore1";
   const MANSHU_STYLE_BUILD="20260905-manshu-formation1";
   const OWNER_BUILD="20260907-practical-selected-visible1";
   const USER_CONTRACT_BUILD="20260909-ticket-visibility-fallback1";

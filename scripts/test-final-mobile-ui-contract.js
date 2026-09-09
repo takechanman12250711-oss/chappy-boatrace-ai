@@ -98,8 +98,9 @@ assert(ticketOdds.includes('.replace(/^\\d+位/,"")'), "TOP30 flattened rank pre
 assert(ticketOdds.includes('class="chappy-scenario-manshu-group is-exact'), "single-ticket manshu card must use the compact exact layout");
 assert(ticketOdds.includes('chappy-scenario-manshu-title-side'), "single-ticket manshu odds must share the title row without repeating the ticket");
 assert(ticketOdds.includes("-webkit-line-clamp:2"), "manshu reasons must stay compact on mobile");
-assert(/@media\(max-width:480px\)[\s\S]*?chappy-final-buy-lines\{grid-template-columns:1fr!important/.test(fs.readFileSync("css/final-mobile-structure11.css", "utf8")), "mobile buy cards must use one readable column");
-assert(loader.includes('STRUCTURE_STYLE_BUILD="20260909-mobile-ticket-card-clarity1"'), "mobile ticket layout cache generation missing");
+assert(/@media\(max-width:480px\)[\s\S]*?chappy-final-buy-group:not\(\.is-main\) \.chappy-final-buy-lines\{grid-template-columns:1fr!important/.test(fs.readFileSync("css/final-mobile-structure11.css", "utf8")), "non-main mobile buy cards must use one readable column");
+assert(!/@media\(max-width:480px\)[\s\S]*?#resultArea \.chappy-final-buy-lines\{grid-template-columns:1fr!important/.test(fs.readFileSync("css/final-mobile-structure11.css", "utf8")), "main ticket cards must retain the previous two-column layout");
+assert(loader.includes('STRUCTURE_STYLE_BUILD="20260909-main-card-restore1"'), "restored main ticket layout cache generation missing");
 assert(loader.includes('TICKET_ODDS_BUILD="20260909-mobile-ticket-card-clarity1"'), "mobile manshu layout cache generation missing");
 
 const ticketOddsDocument = {
