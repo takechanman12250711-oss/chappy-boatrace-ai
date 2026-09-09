@@ -189,6 +189,11 @@
       tries+=1;
       if(tries>=150)root.clearInterval(timer);
     },100);
+    root.addEventListener("chappy:prediction-runtime-ready",()=>{
+      // The prediction renderer is lazy-loaded after the page has been open.
+      // Rebind here even when the startup polling window has already ended.
+      wrapCurrent();
+    });
     root.document.addEventListener("visibilitychange",()=>{
       if(root.document.visibilityState==="visible"){wrapCurrent();if(lastPrediction)enhance(lastPrediction);}
     });
