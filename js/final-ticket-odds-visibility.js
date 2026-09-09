@@ -114,7 +114,9 @@
   function ticketFromNode(row){
     const explicit=text(row.getAttribute("data-flow-notation"));
     if(explicit)return explicit;
-    const raw=text(row.querySelector(".v3-formation-ticket")?.textContent);
+    const ticketNode=row.querySelector(".v3-formation-ticket");
+    const rank=text(ticketNode?.querySelector(".v3-missing-rank")?.textContent);
+    const raw=text(ticketNode?.textContent).replace(rank,"");
     const digits=raw.match(/[1-6]/g)||[];
     if(digits.length===3&&new Set(digits).size===3)return digits.join("-");
     return raw.replace(/→/g,"-").replace(/\s+/g,"");
@@ -198,6 +200,6 @@
       if(root.document.visibilityState==="visible"){wrapCurrent();if(lastPrediction)enhance(lastPrediction);}
     });
   }
-  root.ChappyTicketOddsVisibility=Object.freeze({enhance,buildOddsMap,manshuSources,expandNotation});
+  root.ChappyTicketOddsVisibility=Object.freeze({enhance,buildOddsMap,manshuSources,expandNotation,ticketFromNode});
   install();
 })(typeof window!=="undefined"?window:null);
