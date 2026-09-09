@@ -2269,6 +2269,35 @@ async function main() {
         rejectionReasons: article?.rejectionReasons || []
       }
     };
+
+    // Audit metadata must not change selection, drafts, or collection availability.
+    // Load inside the guard so even an unavailable auditor fails closed locally.
+    try {
+      const { auditNotePublication } = require("./note-publication-audit");
+      selectedData.note.audit = auditNotePublication({
+        article,
+        record: selectedData,
+        baselinePracticalTickets: selectedBase.prediction?.practicalTickets,
+        now: new Date().toISOString(),
+        minLeadSeconds: charter.shadowSelectionV2.cutoffSeconds,
+        maxPracticalTickets: charter.practicalTickets.maximum
+      });
+    } catch {
+      selectedData.note.audit = {
+        version: "note-publication-audit-v1",
+        status: "audit_error",
+        contentReady: false,
+        canPublish: false,
+        automaticPublicationEnabled: false,
+        issues: [{
+          code: "AUDIT_EXECUTION_FAILED",
+          message: "原稿監査を実行できませんでした。公開は停止しています。"
+        }],
+        auditedAt: new Date().toISOString(),
+        raceKey: selectedData.raceKey
+      };
+      console.warn("note公開前検査失敗：公開不可として収集を継続します");
+    }
   }
 
   if (!dryRun) {
