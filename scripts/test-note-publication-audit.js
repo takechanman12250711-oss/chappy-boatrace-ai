@@ -7,6 +7,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { spawnSync } = require("node:child_process");
 const { auditNotePublication } = require("./note-publication-audit");
+const { saveNoteDraftBundle } = require("./note-draft-bundle");
 
 global.window = global;
 global.ChappyPracticalSelection = {
@@ -340,6 +341,110 @@ for (const mode of ["normal", "require_failure", "auditor_failure"]) {
   }
   if (mode !== "normal") assert.equal(audit.issues[0].code, "AUDIT_EXECUTION_FAILED");
   assertions += 1;
+}
+
+// Exercise the actual collector save block without running collection or network calls.
+const saveStart = collectorSource.indexOf("  if (!dryRun)", guardEnd);
+const saveEnd = collectorSource.indexOf("\n\n  console.log(", saveStart);
+assert.ok(saveStart > guardEnd && saveEnd > saveStart, "collector save block must be identifiable");
+const collectorSave = collectorSource.slice(saveStart, saveEnd);
+for (const mode of ["saved", "blocked", "missing_baseline", "dry_run", "no_selection", "rejected", "require_failure", "store_failure"]) {
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "chappy-note-collector-save-"));
+  try {
+    const input = fixture();
+    input.record.selectedAt = NOW;
+    if (mode === "blocked") delete input.record.deadlineAt;
+    if (mode === "missing_baseline") delete input.baselinePracticalTickets;
+    if (mode === "rejected") input.article.publishable = false;
+    const originalAudit = auditNotePublication(input);
+    const selectedData = mode === "no_selection" ? null : {
+      ...input.record,
+      note: { publishable: input.article.publishable, audit: originalAudit }
+    };
+    const selectedBase = { prediction: { practicalTickets: input.baselinePracticalTickets } };
+    const comparison = [{ fixture: "comparison" }];
+    const verificationPredictions = [selectedBase];
+    const shadowV2Predictions = [{ fixture: "shadow" }];
+    const collectionHealth = { fixture: "health" };
+    const best = { jcd: "23", raceNo: 10 };
+    const before = structuredClone({ input, selectedBase });
+    const warnings = [];
+    let noteSaves = 0;
+    let runSaves = 0;
+    let bundleCalls = 0;
+    vm.runInNewContext(collectorSave, {
+      dryRun: mode === "dry_run", selectedData, selectedBase, article: input.article,
+      date: input.record.date, best, comparison, verificationPredictions,
+      shadowV2Predictions, collectionHealth,
+      charter: { shadowSelectionV2: { cutoffSeconds: 120 }, practicalTickets: { maximum: 10 } },
+      process: { env: { GITHUB_SHA: "fixture-source-commit" } },
+      console: { warn: message => warnings.push(message) },
+      saveNote(date, selected, article) {
+        noteSaves += 1;
+        assert.equal(date, input.record.date);
+        assert.equal(selected, best);
+        assert.equal(article, input.article);
+        return mode === "rejected" ? "" : "data/notes/fixture.md";
+      },
+      saveRun(...args) {
+        runSaves += 1;
+        assert.deepEqual(args, [input.record.date, comparison, selectedData,
+          verificationPredictions, shadowV2Predictions, collectionHealth]);
+      },
+      require(moduleName) {
+        assert.equal(moduleName, "./note-draft-bundle");
+        if (mode === "require_failure") throw new Error("synthetic unavailable bundle module");
+        return { saveNoteDraftBundle(payload) {
+          bundleCalls += 1;
+          assert.equal(payload.baselinePracticalTickets, selectedBase.prediction.practicalTickets);
+          if (mode === "store_failure") throw new Error("synthetic storage failure");
+          return saveNoteDraftBundle(payload, { rootDir });
+        } };
+      }
+    }, { timeout: 1000 });
+    assert.deepEqual({ input, selectedBase }, before, `${mode}: original evidence must remain unchanged`);
+    assert.equal(runSaves, mode === "dry_run" ? 0 : 1, `${mode}: prediction save availability`);
+    const savesNote = !["dry_run", "no_selection"].includes(mode);
+    assert.equal(noteSaves, savesNote ? 1 : 0, `${mode}: original Markdown save availability`);
+    assert.equal(bundleCalls, savesNote && mode !== "require_failure" ? 1 : 0);
+    const failed = ["require_failure", "store_failure"].includes(mode);
+    assert.equal(warnings.length, failed ? 1 : 0);
+    if (selectedData) {
+      assert.equal(selectedData.note.audit, originalAudit, "snapshot save must not rewrite audit approval");
+      assert.equal(selectedData.note.audit.canPublish, false);
+      assert.equal(selectedData.note.audit.automaticPublicationEnabled, false);
+    }
+    if (["saved", "blocked", "missing_baseline"].includes(mode)) {
+      const bundlePath = path.join(rootDir, selectedData.note.draftBundle.path);
+      const payload = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+      assert.equal(selectedData.note.draftBundle.status, "saved");
+      assert.equal(payload.sourceCommit, "fixture-source-commit");
+      assert.equal(payload.capturedAt, NOW);
+      assert.deepEqual(payload.article, input.article);
+      assert.deepEqual(payload.baselinePracticalTickets, input.baselinePracticalTickets ?? null);
+      assert.deepEqual(payload.generationAudit, originalAudit);
+      assert.deepEqual(auditNotePublication({ ...payload, now: NOW }), originalAudit,
+        `${mode}: stored inputs must reproduce the original audit, including missing evidence`);
+      const replay = spawnSync(process.execPath, [
+        path.join(__dirname, "note-publication-audit.js"), "--input", bundlePath, "--now", NOW
+      ], { encoding: "utf8" });
+      assert.equal(replay.error, undefined, replay.stderr);
+      assert.equal(replay.status, mode === "saved" ? 0 : 1, replay.stderr);
+      assert.deepEqual(JSON.parse(replay.stdout), originalAudit);
+      if (mode === "saved") {
+        const afterDeadline = auditNotePublication({ ...payload, now: "2026-09-10T04:00:00.000Z" });
+        assert.equal(afterDeadline.contentReady, false, "saved approval must not survive the deadline");
+        assert.ok(afterDeadline.issues.some(issue => issue.code === "DEADLINE_TOO_CLOSE"));
+      }
+    } else {
+      assert.deepEqual(fs.readdirSync(rootDir), [], `${mode}: no bundle should be written`);
+      if (failed) assert.equal(selectedData.note.draftBundle.status, "save_error");
+      if (mode === "rejected") assert.equal(selectedData.note.draftBundle.status, "not_generated");
+    }
+    assertions += 1;
+  } finally {
+    fs.rmSync(rootDir, { recursive: true, force: true });
+  }
 }
 
 // Only synthetic fixtures in an owned, isolated temporary directory are written.
