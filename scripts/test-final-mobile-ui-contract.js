@@ -90,6 +90,8 @@ assert(ticketOdds.includes("chappy-missing-all-odds"), "missing-number all-odds 
 assert(ticketOdds.includes('className="chappy-missing-odds-value"'), "missing-number compact odds value missing");
 assert(!ticketOdds.includes('item.innerHTML=`<b>${escapeHtml(ticket)}</b>'), "missing-number card must not repeat the ticket beside its odds");
 assert(ticketOdds.includes('"オッズ未取得"'), "missing-number cards must retain a consistent missing-odds label");
+assert(ticketOdds.includes('addEventListener("chappy:prediction-runtime-ready"'), "lazy prediction runtime must rebind the TOP30 odds renderer");
+assert(loader.includes('TICKET_ODDS_BUILD="20260909-top30-runtime-ready1"'), "TOP30 runtime-ready cache generation missing");
 assert(prediction.includes('type: "raceFlow"'), "formation source must remain raceFlow");
 assert(prediction.includes("hole: cleanHole"), "manshu/hole candidates must remain tied to raceFlow formation output");
 [
