@@ -94,7 +94,8 @@ assert(ticketOdds.includes('"オッズ未取得"'), "missing-number cards must r
 assert(ticketOdds.includes('addEventListener("chappy:prediction-runtime-ready"'), "lazy prediction runtime must rebind the TOP30 odds renderer");
 assert(ticketOdds.includes('querySelector(".v3-missing-rank")'), "TOP30 ticket parsing must exclude the rank label");
 assert(ticketOdds.includes('.replace(rank,"")'), "TOP30 rank text must not be mistaken for ticket digits");
-assert(loader.includes('TICKET_ODDS_BUILD="20260909-top30-rank-safe1"'), "TOP30 rank-safe cache generation missing");
+assert(ticketOdds.includes('.replace(/^\\d+位/,"")'), "TOP30 flattened rank prefix must be removed after photo-style rendering");
+assert(loader.includes('TICKET_ODDS_BUILD="20260909-top30-rank-prefix-safe2"'), "TOP30 rank-prefix-safe cache generation missing");
 
 const ticketOddsDocument = {
   getElementById() { return null; },
@@ -122,6 +123,16 @@ for (const rank of [1, 6, 7, 10, 30]) {
     querySelector(selector) { return selector === ".v3-formation-ticket" ? ticketNode : null; }
   };
   assert.strictEqual(ticketFromNode(row), "2-1-6", `rank ${rank} must not contaminate the ticket`);
+
+  const flattenedTicketNode = {
+    textContent: `${rank}位2-1-6`,
+    querySelector() { return null; }
+  };
+  const flattenedRow = {
+    getAttribute() { return ""; },
+    querySelector(selector) { return selector === ".v3-formation-ticket" ? flattenedTicketNode : null; }
+  };
+  assert.strictEqual(ticketFromNode(flattenedRow), "2-1-6", `flattened rank ${rank} must not contaminate the ticket`);
 }
 assert(prediction.includes('type: "raceFlow"'), "formation source must remain raceFlow");
 assert(prediction.includes("hole: cleanHole"), "manshu/hole candidates must remain tied to raceFlow formation output");
