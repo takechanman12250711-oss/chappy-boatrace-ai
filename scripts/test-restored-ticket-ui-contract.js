@@ -12,7 +12,7 @@ assert.match(source,/\.v3-main-newspaper/,"duplicate legacy ticket section must 
 assert.match(source,/compactTickets/,"legacy ticket visibility must depend on a rendered compact ticket row");
 assert.doesNotMatch(source,/実戦厳選.*amount|amount.*実戦厳選/i,"UI contract must not add money display");
 assert.match(loader,/final-display-user-contract\.js/);
-assert.match(index,/result-void-compat\.js\?v=20260909-top30-rank-prefix-safe2/);
+assert.match(index,/result-void-compat\.js\?v=20260909-mobile-ticket-card-clarity1/);
 
 function node(label=""){
   return {textContent:label,hidden:false,dataset:{},attrs:{},setAttribute(k,v){this.attrs[k]=v;},removeAttribute(k){delete this.attrs[k];},querySelectorAll(){return[];}};
