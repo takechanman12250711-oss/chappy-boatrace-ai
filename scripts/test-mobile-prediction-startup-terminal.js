@@ -65,12 +65,12 @@ assert.match(
 );
 assert.match(
   html,
-  /prediction-runtime-loader\.js[^"']*lightManshu=20260903-integrated1/,
+  /prediction-runtime-loader\.js[^"']*lightManshu=20260909-formation-preserve1/,
   "更新済み予想ローダーへ到達する"
 );
 assert.match(
   html,
-  /mobile-prediction-startup-terminal\.js[^"']*lightManshu=20260903-integrated1/,
+  /mobile-prediction-startup-terminal\.js[^"']*lightManshu=20260909-formation-preserve1/,
   "更新済みモバイル復旧ローダーへ到達する"
 );
 assert.ok(

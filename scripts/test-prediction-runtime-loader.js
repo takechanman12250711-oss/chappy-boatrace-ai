@@ -215,6 +215,12 @@ function createRuntime({
   );
   assert.ok(
     failedOptional.appended.includes(
+      "js/manshu-display-reliability.js?v=20260909-formation-preserve1"
+    ),
+    "万舟フォーメーション保持修正を専用キャッシュ世代で読み込む"
+  );
+  assert.ok(
+    failedOptional.appended.includes(
       "js/boat-identity.js?v=20260828-ui-audit-display1"
     ),
     "未変更モジュールの既存キャッシュ世代を維持する"
