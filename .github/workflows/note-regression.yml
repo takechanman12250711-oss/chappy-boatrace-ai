@@ -6,6 +6,14 @@ on:
       - "js/note-generator.js"
       - "scripts/test-note-copy-cleanup.js"
       - "scripts/test-note-karatsu-regression.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/note-publication-audit.js"
+      - "scripts/test-note-publication-audit.js"
+      - "scripts/check-note-skills.js"
+      - ".agents/skills/**"
+      - ".claude/skills/**"
+      - "docs/note-automation.md"
+      - "config/chappy-charter.json"
       - ".github/workflows/note-regression.yml"
   push:
     branches:
@@ -14,6 +22,14 @@ on:
       - "js/note-generator.js"
       - "scripts/test-note-copy-cleanup.js"
       - "scripts/test-note-karatsu-regression.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/note-publication-audit.js"
+      - "scripts/test-note-publication-audit.js"
+      - "scripts/check-note-skills.js"
+      - ".agents/skills/**"
+      - ".claude/skills/**"
+      - "docs/note-automation.md"
+      - "config/chappy-charter.json"
       - ".github/workflows/note-regression.yml"
 
 permissions:
@@ -36,7 +52,13 @@ jobs:
           node --check js/note-generator.js
           node --check scripts/test-note-copy-cleanup.js
           node --check scripts/test-note-karatsu-regression.js
+          node --check scripts/collect-predictions.js
+          node --check scripts/note-publication-audit.js
+          node --check scripts/test-note-publication-audit.js
+          node --check scripts/check-note-skills.js
           node scripts/test-note-copy-cleanup.js
           node scripts/test-note-karatsu-regression.js
+          node scripts/test-note-publication-audit.js
+          node scripts/check-note-skills.js
           node scripts/test-theory-integration.js
           node scripts/check-charter.js
