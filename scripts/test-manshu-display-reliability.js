@@ -110,6 +110,36 @@ assert.equal(
   "通常候補または複数参考筋が描画済みの万舟欄は1点fallbackで上書きしない"
 );
 
+for (const renderedSelector of [
+  ".chappy-scenario-manshu-board",
+  ".chappy-true-manshu-board",
+  ".chappy-manshu-formation-board",
+  ".v3-light-manshu-ticket-board"
+]) {
+  const integratedSection = {
+    querySelector(selector) {
+      return selector.includes(renderedSelector) ? { dataset: {} } : null;
+    }
+  };
+  const integratedDocument = {
+    getElementById(id) {
+      if (id !== "resultArea") return null;
+      return {
+        querySelector(selector) {
+          return selector === ".v3-manshu-newspaper"
+            ? integratedSection
+            : null;
+        }
+      };
+    }
+  };
+  assert.equal(
+    moduleApi.apply(prediction, integratedDocument),
+    false,
+    `${renderedSelector} の正常な万舟表示を1点fallbackで上書きしない`
+  );
+}
+
 assert.equal(
   moduleApi.firstFallbackTicket({
     ...prediction,

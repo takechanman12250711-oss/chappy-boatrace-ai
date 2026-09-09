@@ -218,6 +218,17 @@
     return section;
   }
 
+  function hasRenderedManshuContent(section) {
+    if (!section) return false;
+    return Boolean(section.querySelector?.([
+      ".chappy-scenario-manshu-board",
+      ".chappy-true-manshu-board",
+      ".chappy-manshu-formation-board",
+      ".v3-light-manshu-ticket-board",
+      ".v3-formation-row:not([data-manshu-display-fallback='true'])"
+    ].join(",")));
+  }
+
   function apply(prediction, documentObject = typeof document !== "undefined" ? document : null) {
     if (!documentObject) return false;
 
@@ -225,10 +236,7 @@
     if (!resultArea) return false;
 
     let section = resultArea.querySelector?.(".v3-manshu-newspaper") || null;
-    const normalRow = section?.querySelector?.(
-      ".v3-formation-row:not([data-manshu-display-fallback='true'])"
-    );
-    if (normalRow) return false;
+    if (hasRenderedManshuContent(section)) return false;
 
     const candidate = normalizeCandidate(firstFallbackTicket(prediction));
     if (!candidate) {
@@ -331,6 +339,7 @@
     categoryType,
     candidateBody,
     candidateSignature,
+    hasRenderedManshuContent,
     apply,
     install
   };
