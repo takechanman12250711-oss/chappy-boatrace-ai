@@ -1,0 +1,24 @@
+name: TinyFish Context Profile Client
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/tinyfish-context-profile-contract.js'
+      - 'scripts/test-tinyfish-context-profile-contract.js'
+      - 'scripts/tinyfish-context-profile-session.js'
+      - 'scripts/test-tinyfish-context-profile-session.js'
+      - '.github/workflows/tinyfish-context-profile-client.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-tinyfish-context-profile-contract.js
+      - run: node scripts/test-tinyfish-context-profile-session.js
