@@ -1,0 +1,24 @@
+name: TinyFish Live Profile Check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TINYFISH_API_KEY: ${{ secrets.TINYFISH_API_KEY }}
+      TINYFISH_PROFILE_ID: ${{ secrets.TINYFISH_PROFILE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install CDP client only
+        run: npm install --no-save --ignore-scripts playwright-core@1.55.0
+      - name: Run live TinyFish profile check
+        run: node scripts/run-tinyfish-live-profile-check.js
