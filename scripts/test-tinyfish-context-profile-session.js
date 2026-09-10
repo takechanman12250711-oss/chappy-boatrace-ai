@@ -8,7 +8,13 @@ const { startProfileSetupSession, saveProfileSetupSession } = require('./tinyfis
   const fetchImpl = async (url, options) => {
     requests.push({ url, options });
     if (url.endsWith('/setup-session')) {
-      return { ok: true, status: 200, json: async () => ({ session_id: 'session-1', cdp_url: 'wss://cdp.test/session-1' }) };
+      return { ok: true, status: 200, json: async () => ({
+        session_id: 'session-1',
+        cdp_url: 'wss://cdp.test/session-1',
+        base_url: 'https://browser.test/session-1',
+        expires_at: '2026-09-10T13:00:00Z',
+        timeout_seconds: 600
+      }) };
     }
     if (url.endsWith('/save')) {
       return { ok: true, status: 200, json: async () => ({ saved: true }) };
@@ -17,7 +23,14 @@ const { startProfileSetupSession, saveProfileSetupSession } = require('./tinyfis
   };
 
   const setup = await startProfileSetupSession({ profileId: 'profile-1', apiKey: 'test-key', fetchImpl });
-  assert.deepStrictEqual(setup, { ok: true, sessionId: 'session-1', cdpUrl: 'wss://cdp.test/session-1' });
+  assert.deepStrictEqual(setup, {
+    ok: true,
+    sessionId: 'session-1',
+    cdpUrl: 'wss://cdp.test/session-1',
+    baseUrl: 'https://browser.test/session-1',
+    expiresAt: '2026-09-10T13:00:00Z',
+    timeoutSeconds: 600
+  });
   assert.strictEqual(requests[0].url, 'https://agent.tinyfish.ai/v1/profiles/profile-1/setup-session');
   assert.strictEqual(requests[0].options.method, 'POST');
   assert.strictEqual(requests[0].options.headers['X-API-Key'], 'test-key');
