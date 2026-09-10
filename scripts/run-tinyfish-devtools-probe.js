@@ -1,24 +1,27 @@
 'use strict';
 
-const { startProfileSetupSession } = require('./tinyfish-context-profile-session');
+const API_BASE = 'https://agent.tinyfish.ai/v1/profiles';
 
-function inspectUrl(raw) {
-  if (!raw || typeof raw !== 'string') return { present: false };
-  try {
-    const url = new URL(raw);
-    const sensitiveNames = /(?:key|token|secret|auth|password|credential)/i;
-    const hasSensitiveQueryName = [...url.searchParams.keys()].some((name) => sensitiveNames.test(name));
-    return {
-      present: true,
-      protocol: url.protocol.replace(':', ''),
-      hasUserInfo: Boolean(url.username || url.password),
-      hasQuery: Boolean(url.search),
-      hasSensitiveQueryName,
-      hostClass: /tinyfish\.ai$/i.test(url.hostname) || /\.tinyfish\.ai$/i.test(url.hostname) ? 'tinyfish' : 'other'
-    };
-  } catch (_) {
-    return { present: true, validUrl: false };
+function safeShape(value, depth = 0) {
+  if (depth > 2 || value === null || typeof value !== 'object') return typeof value;
+  if (Array.isArray(value)) return { type: 'array', length: value.length, item: value.length ? safeShape(value[0], depth + 1) : null };
+  const out = {};
+  for (const key of Object.keys(value).sort()) {
+    const lower = key.toLowerCase();
+    if (/(?:key|token|secret|password|credential|cookie)/i.test(lower)) {
+      out[key] = '[redacted-field]';
+      continue;
+    }
+    const child = value[key];
+    if (typeof child === 'string') {
+      let kind = 'string';
+      try { kind = `url:${new URL(child).protocol.replace(':', '')}`; } catch (_) {}
+      out[key] = kind;
+    } else {
+      out[key] = safeShape(child, depth + 1);
+    }
   }
+  return out;
 }
 
 async function main() {
@@ -27,29 +30,18 @@ async function main() {
   if (!apiKey) throw new Error('TINYFISH_API_KEY is not configured');
   if (!profileId) throw new Error('TINYFISH_PROFILE_ID is not configured');
 
-  const setup = await startProfileSetupSession({ profileId, apiKey });
-  if (!setup.ok) throw new Error(setup.reason || 'setup_failed');
-  if (!setup.baseUrl) throw new Error('setup_base_url_missing');
-
-  const response = await fetch(`${setup.baseUrl.replace(/\/$/, '')}/pages`, {
-    headers: { 'X-API-Key': apiKey }
+  const response = await fetch(`${API_BASE}/${encodeURIComponent(profileId)}/setup-session`, {
+    method: 'POST',
+    headers: { 'X-API-Key': apiKey, 'Content-Type': 'application/json' },
+    body: '{}'
   });
-  if (!response.ok) throw new Error(`pages_request_failed_${response.status}`);
-  const payload = await response.json();
-  const pages = Array.isArray(payload) ? payload : Array.isArray(payload.pages) ? payload.pages : [];
-  const page = pages.find((item) => item && item.url && item.url !== 'about:blank') || pages[0] || {};
-  const devtools = page.devtoolsFrontendUrl || page.devtools_frontend_url || null;
-  const websocket = page.webSocketDebuggerUrl || page.web_socket_debugger_url || null;
+  if (!response.ok) throw new Error(`setup_request_failed_${response.status}`);
+  const data = await response.json();
 
-  console.log(JSON.stringify({
-    ok: true,
-    pageCount: pages.length,
-    devtools: inspectUrl(devtools),
-    websocket: inspectUrl(websocket)
-  }));
+  console.log(JSON.stringify({ ok: true, setupResponseShape: safeShape(data) }));
 }
 
 main().catch((error) => {
-  console.error(error.message || 'tinyfish devtools probe failed');
+  console.error(error.message || 'tinyfish setup response probe failed');
   process.exit(1);
 });
