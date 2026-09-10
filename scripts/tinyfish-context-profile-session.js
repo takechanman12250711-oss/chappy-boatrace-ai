@@ -24,8 +24,11 @@ async function startProfileSetupSession({ profileId, apiKey, fetchImpl } = {}) {
   if (!result.ok) return result;
   const sessionId = result.data.session_id || result.data.id || null;
   const cdpUrl = result.data.cdp_url || null;
+  const baseUrl = result.data.base_url || null;
+  const expiresAt = result.data.expires_at || null;
+  const timeoutSeconds = Number.isFinite(result.data.timeout_seconds) ? result.data.timeout_seconds : null;
   if (!sessionId || !cdpUrl) return { ok: false, reason: 'setup_session_response_invalid' };
-  return { ok: true, sessionId, cdpUrl };
+  return { ok: true, sessionId, cdpUrl, baseUrl, expiresAt, timeoutSeconds };
 }
 
 async function saveProfileSetupSession({ profileId, sessionId, apiKey, fetchImpl } = {}) {
