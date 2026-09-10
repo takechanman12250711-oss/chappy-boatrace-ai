@@ -1,0 +1,21 @@
+name: Note Browser Draft Plan
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/note-browser-draft-plan.js'
+      - 'scripts/test-note-browser-draft-plan.js'
+      - '.github/workflows/note-browser-draft-plan.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-note-browser-draft-plan.js
