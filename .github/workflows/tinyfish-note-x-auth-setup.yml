@@ -1,0 +1,39 @@
+name: TinyFish Note X Auth Setup
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/tinyfish-note-x-auth-setup.js'
+      - 'scripts/test-tinyfish-note-x-auth-setup.js'
+      - 'scripts/run-tinyfish-note-x-auth-setup.js'
+      - '.github/workflows/tinyfish-note-x-auth-setup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-tinyfish-note-x-auth-setup.js
+
+  live-setup:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TINYFISH_API_KEY: ${{ secrets.TINYFISH_API_KEY }}
+      TINYFISH_PROFILE_ID: ${{ secrets.TINYFISH_PROFILE_ID }}
+      X_AUTH_WAIT_MS: '480000'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-save --ignore-scripts playwright-core@1.55.0
+      - run: node scripts/run-tinyfish-note-x-auth-setup.js
