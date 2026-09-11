@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'scripts/note-browserbase-auth-session.js'
+      - 'scripts/note-browserbase-x-login.js'
       - '.github/workflows/note-browserbase-live-view.yml'
 
 permissions:
@@ -20,6 +21,8 @@ jobs:
       BROWSERBASE_API_KEY: ${{ secrets.BROWSERBASE_API_KEY }}
       BROWSERBASE_PROJECT_ID: ${{ secrets.BROWSERBASE_PROJECT_ID }}
       BROWSERBASE_CONTEXT_ID: ${{ secrets.BROWSERBASE_CONTEXT_ID }}
+      X_LOGIN_ID: ${{ secrets.X_LOGIN_ID }}
+      X_PASSWORD: ${{ secrets.X_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,5 +30,7 @@ jobs:
           node-version: '20'
       - name: Install CDP client
         run: npm install --no-save playwright-core@1.55.0
+      - name: Verify X login helper
+        run: node scripts/note-browserbase-x-login.test.js
       - name: Create Browserbase note auth session
         run: node scripts/note-browserbase-auth-session.js
