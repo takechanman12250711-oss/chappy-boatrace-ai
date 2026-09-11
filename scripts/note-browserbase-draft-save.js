@@ -8,6 +8,7 @@ const { loginNoteViaX } = require('./note-browserbase-x-login');
 
 const NOTE_EDITOR_URL = 'https://editor.note.com/new';
 const AUTOSAVE_WAIT_MS = 10000;
+const EDITOR_WAIT_MS = 15000;
 
 function loadDraftBundle(bundlePath) {
   if (!bundlePath) throw new Error('note_draft_bundle_path_required');
@@ -21,9 +22,9 @@ function loadDraftBundle(bundlePath) {
   return { absolute, bundle, title, body };
 }
 
-async function firstVisible(page, selectors) {
+async function firstVisible(scope, selectors) {
   for (const selector of selectors) {
-    const locator = page.locator(selector);
+    const locator = scope.locator(selector);
     const count = await locator.count();
     for (let i = 0; i < count; i += 1) {
       const item = locator.nth(i);
@@ -33,6 +34,47 @@ async function firstVisible(page, selectors) {
   return null;
 }
 
+async function waitForVisibleAcrossFrames(page, selectors, timeoutMs = EDITOR_WAIT_MS) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const direct = await firstVisible(page, selectors);
+    if (direct) return direct;
+    for (const frame of page.frames()) {
+      if (frame === page.mainFrame()) continue;
+      const insideFrame = await firstVisible(frame, selectors).catch(() => null);
+      if (insideFrame) return insideFrame;
+    }
+    await page.waitForTimeout(500);
+  }
+  return null;
+}
+
+async function collectEditorDiagnostics(page) {
+  const scopes = [page, ...page.frames().filter((frame) => frame !== page.mainFrame())];
+  const rows = [];
+  for (const scope of scopes) {
+    const frameUrl = typeof scope.url === 'function' ? scope.url() : page.url();
+    const locator = scope.locator('textarea,input,[contenteditable="true"],[role="textbox"]');
+    const count = Math.min(await locator.count().catch(() => 0), 20);
+    for (let i = 0; i < count; i += 1) {
+      const item = locator.nth(i);
+      if (!(await item.isVisible().catch(() => false))) continue;
+      const meta = await item.evaluate((el) => ({
+        tag: el.tagName,
+        type: el.getAttribute('type'),
+        role: el.getAttribute('role'),
+        placeholder: el.getAttribute('placeholder'),
+        contenteditable: el.getAttribute('contenteditable'),
+        className: typeof el.className === 'string' ? el.className : '',
+        ariaLabel: el.getAttribute('aria-label'),
+        dataPlaceholder: el.getAttribute('data-placeholder')
+      })).catch(() => null);
+      if (meta) rows.push({ frameUrl, ...meta });
+    }
+  }
+  return rows.slice(0, 30);
+}
+
 async function ensureAuthenticated(page, env = process.env) {
   await page.goto(NOTE_EDITOR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (new URL(page.url()).hostname === 'editor.note.com') return { ok: true, alreadyAuthenticated: true };
@@ -40,27 +82,41 @@ async function ensureAuthenticated(page, env = process.env) {
 }
 
 async function fillDraft(page, { title, body }) {
-  const titleInput = await firstVisible(page, [
+  const titleSelectors = [
     'textarea[placeholder*="タイトル"]',
     'input[placeholder*="タイトル"]',
+    '[aria-label*="タイトル"]',
     'textarea',
     'input[type="text"]'
-  ]);
-  if (!titleInput) throw new Error('note_title_input_missing');
-
-  const bodyInput = await firstVisible(page, [
+  ];
+  const bodySelectors = [
+    'textarea[placeholder*="本文"]',
+    '[aria-label*="本文"]',
+    '[data-placeholder*="本文"][contenteditable="true"]',
     '[contenteditable="true"][role="textbox"]',
     '.ProseMirror[contenteditable="true"]',
-    '[contenteditable="true"]'
-  ]);
-  if (!bodyInput) throw new Error('note_body_input_missing');
+    '[contenteditable="true"]',
+    '[role="textbox"]'
+  ];
+
+  const titleInput = await waitForVisibleAcrossFrames(page, titleSelectors);
+  if (!titleInput) {
+    console.log(`NOTE_EDITOR_DIAGNOSTICS=${JSON.stringify(await collectEditorDiagnostics(page))}`);
+    throw new Error('note_title_input_missing');
+  }
+
+  const bodyInput = await waitForVisibleAcrossFrames(page, bodySelectors);
+  if (!bodyInput) {
+    console.log(`NOTE_EDITOR_DIAGNOSTICS=${JSON.stringify(await collectEditorDiagnostics(page))}`);
+    throw new Error('note_body_input_missing');
+  }
 
   await titleInput.fill(title);
   await bodyInput.fill(body);
   await page.waitForTimeout(AUTOSAVE_WAIT_MS);
 
   const currentTitle = String(await titleInput.inputValue().catch(() => '')).trim();
-  const currentBody = String(await bodyInput.innerText().catch(() => '')).trim();
+  const currentBody = String(await bodyInput.innerText().catch(async () => await bodyInput.inputValue().catch(() => ''))).trim();
   if (currentTitle !== title) throw new Error('note_title_verification_failed');
   if (!currentBody || !currentBody.includes(body.slice(0, Math.min(80, body.length)))) {
     throw new Error('note_body_verification_failed');
@@ -88,7 +144,7 @@ async function runDraftSaveCli({ env = process.env } = {}) {
     if (!auth?.ok) throw new Error(`note_auth_failed_${auth?.reason || 'unknown'}`);
 
     const result = await fillDraft(page, draft);
-    console.log(`NOTE_DRAFT_SAVED=true`);
+    console.log('NOTE_DRAFT_SAVED=true');
     console.log(`NOTE_DRAFT_URL=${result.url}`);
     console.log(`NOTE_DRAFT_TITLE_LENGTH=${result.titleLength}`);
     console.log(`NOTE_DRAFT_BODY_LENGTH=${result.bodyLength}`);
@@ -110,7 +166,11 @@ if (require.main === module) {
 module.exports = {
   NOTE_EDITOR_URL,
   AUTOSAVE_WAIT_MS,
+  EDITOR_WAIT_MS,
   loadDraftBundle,
+  firstVisible,
+  waitForVisibleAcrossFrames,
+  collectEditorDiagnostics,
   fillDraft,
   runDraftSaveCli
 };
