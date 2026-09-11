@@ -80,8 +80,39 @@ async function getBrowserbaseDebugLinks({ sessionId, env = process.env, fetchImp
   };
 }
 
+async function runCli() {
+  const session = await createBrowserbaseSession();
+  if (!session?.ok) {
+    console.error(`BROWSERBASE_SESSION_ERROR=${session?.reason || 'unknown'}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const debug = await getBrowserbaseDebugLinks({ sessionId: session.sessionId });
+  if (!debug?.ok) {
+    console.error(`BROWSERBASE_DEBUG_ERROR=${debug?.reason || 'unknown'}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(`BROWSERBASE_SESSION_ID=${session.sessionId}`);
+  console.log(`BROWSERBASE_CONTEXT_ID=${session.contextId}`);
+  console.log(`LIVE_VIEW_URL=${debug.debuggerFullscreenUrl}`);
+  console.log(`NOTE_EDITOR_URL=${session.editorUrl}`);
+  console.log('NOTE_PUBLICATION_ENABLED=false');
+}
+
+if (require.main === module) {
+  runCli().catch((error) => {
+    console.error(`BROWSERBASE_RUNNER_FAILED=${error.message}`);
+    if (error?.payload) console.error(`BROWSERBASE_RUNNER_PAYLOAD=${JSON.stringify(error.payload)}`);
+    process.exitCode = 1;
+  });
+}
+
 module.exports = {
   BROWSERBASE_API_ORIGIN,
   createBrowserbaseSession,
-  getBrowserbaseDebugLinks
+  getBrowserbaseDebugLinks,
+  runCli
 };
