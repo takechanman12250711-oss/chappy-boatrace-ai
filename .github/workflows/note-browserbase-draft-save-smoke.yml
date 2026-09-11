@@ -1,0 +1,34 @@
+name: Note Browserbase Draft Save Smoke
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/note-browserbase-draft-save-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  save-draft-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BROWSERBASE_API_KEY: ${{ secrets.BROWSERBASE_API_KEY }}
+      BROWSERBASE_PROJECT_ID: ${{ secrets.BROWSERBASE_PROJECT_ID }}
+      BROWSERBASE_CONTEXT_ID: ${{ secrets.BROWSERBASE_CONTEXT_ID }}
+      X_LOGIN_ID: ${{ secrets.X_LOGIN_ID }}
+      X_PASSWORD: ${{ secrets.X_PASSWORD }}
+      NOTE_DRAFT_BUNDLE_PATH: data/note-drafts/20260911/20260911-21-1-b209aea5b30a7284b1c5033ddaa63877699196c1858a55cfe23383d4d24cd8a4.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install CDP client
+        run: npm install --no-save playwright-core@1.55.0
+      - name: Verify draft saver
+        run: node scripts/note-browserbase-draft-save.test.js
+      - name: Save one note draft only
+        run: node scripts/note-browserbase-draft-save.js "$NOTE_DRAFT_BUNDLE_PATH"
