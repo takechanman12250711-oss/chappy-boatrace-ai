@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'scripts/note-browserbase-session.js'
+      - 'scripts/note-browserbase-auth-session.js'
       - '.github/workflows/note-browserbase-live-view.yml'
 
 permissions:
@@ -15,7 +15,7 @@ permissions:
 jobs:
   create-live-view:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     env:
       BROWSERBASE_API_KEY: ${{ secrets.BROWSERBASE_API_KEY }}
       BROWSERBASE_PROJECT_ID: ${{ secrets.BROWSERBASE_PROJECT_ID }}
@@ -25,5 +25,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Create Browserbase session and Live View
-        run: node scripts/note-browserbase-session.js
+      - name: Install CDP client
+        run: npm install --no-save playwright-core@1.55.0
+      - name: Create Browserbase note auth session
+        run: node scripts/note-browserbase-auth-session.js
