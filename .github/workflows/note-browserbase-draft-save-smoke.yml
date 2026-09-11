@@ -1,11 +1,7 @@
 name: Note Browserbase Draft Save Smoke
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/note-browserbase-draft-save-smoke.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
