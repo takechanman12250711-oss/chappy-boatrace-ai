@@ -13,6 +13,35 @@ async function getPages(baseUrl, apiKey) {
   return Array.isArray(payload) ? payload : Array.isArray(payload.pages) ? payload.pages : [];
 }
 
+function navigateViaCdp(webSocketUrl, targetUrl) {
+  if (typeof WebSocket !== 'function') throw new Error('websocket_unavailable');
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(webSocketUrl);
+    const timer = setTimeout(() => {
+      try { socket.close(); } catch (_) {}
+      reject(new Error('cdp_navigate_timeout'));
+    }, 10000);
+
+    socket.addEventListener('open', () => {
+      socket.send(JSON.stringify({ id: 1, method: 'Page.enable' }));
+      socket.send(JSON.stringify({ id: 2, method: 'Page.navigate', params: { url: targetUrl } }));
+    });
+    socket.addEventListener('message', (event) => {
+      let message;
+      try { message = JSON.parse(String(event.data)); } catch (_) { return; }
+      if (message.id !== 2) return;
+      clearTimeout(timer);
+      try { socket.close(); } catch (_) {}
+      if (message.error) reject(new Error(`cdp_navigate_failed_${message.error.code || 'unknown'}`));
+      else resolve(message.result || {});
+    });
+    socket.addEventListener('error', () => {
+      clearTimeout(timer);
+      reject(new Error('cdp_websocket_error'));
+    });
+  });
+}
+
 async function main() {
   const apiKey = String(process.env.TINYFISH_API_KEY || '').trim();
   const profileId = String(process.env.TINYFISH_PROFILE_ID || '').trim();
@@ -25,20 +54,12 @@ async function main() {
 
   let pages = await getPages(setup.baseUrl, apiKey);
   const initialPage = pages[0] || {};
-  const pageId = initialPage.id || initialPage.pageId || initialPage.page_id || null;
-  if (!pageId) throw new Error('page_id_missing');
+  const webSocketUrl = initialPage.webSocketDebuggerUrl || initialPage.web_socket_debugger_url || null;
+  if (!webSocketUrl || !/^wss:\/\//i.test(webSocketUrl)) throw new Error('wss_debugger_url_missing');
 
-  const navigateResponse = await fetch(`${setup.baseUrl.replace(/\/$/, '')}/pages/${encodeURIComponent(pageId)}/navigate`, {
-    method: 'POST',
-    headers: {
-      'X-API-Key': apiKey,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ url: 'https://note.com/login' })
-  });
-  if (!navigateResponse.ok) throw new Error(`navigate_request_failed_${navigateResponse.status}`);
-
+  await navigateViaCdp(webSocketUrl, 'https://note.com/login');
   await new Promise((resolve) => setTimeout(resolve, 1500));
+
   pages = await getPages(setup.baseUrl, apiKey);
   const page = pages.find((item) => item && /^https:\/\/note\.com\/login/i.test(item.url || '')) || pages[0] || {};
   const launchUrl = page.devtoolsFrontendUrl || page.devtools_frontend_url || null;
@@ -64,6 +85,7 @@ async function main() {
     ok: true,
     artifactPrepared: true,
     preopenedNoteLogin: true,
+    navigation: 'cdp',
     ttlSeconds: setup.timeoutSeconds || null,
     hasExpiry: Boolean(setup.expiresAt)
   }));
