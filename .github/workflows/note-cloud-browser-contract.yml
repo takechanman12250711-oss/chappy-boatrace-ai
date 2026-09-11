@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/note-cloud-browser-contract.js'
       - 'scripts/test-note-cloud-browser-contract.js'
+      - 'scripts/note-browserbase-session.js'
+      - 'scripts/test-note-browserbase-session.js'
       - '.github/workflows/note-cloud-browser-contract.yml'
 
 permissions:
@@ -19,3 +21,4 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/test-note-cloud-browser-contract.js
+      - run: node scripts/test-note-browserbase-session.js
