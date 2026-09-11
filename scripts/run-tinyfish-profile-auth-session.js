@@ -4,6 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const { startProfileSetupSession } = require('./tinyfish-context-profile-session');
 
+async function getPages(baseUrl, apiKey) {
+  const response = await fetch(`${baseUrl.replace(/\/$/, '')}/pages`, {
+    headers: { 'X-API-Key': apiKey }
+  });
+  if (!response.ok) throw new Error(`pages_request_failed_${response.status}`);
+  const payload = await response.json();
+  return Array.isArray(payload) ? payload : Array.isArray(payload.pages) ? payload.pages : [];
+}
+
 async function main() {
   const apiKey = String(process.env.TINYFISH_API_KEY || '').trim();
   const profileId = String(process.env.TINYFISH_PROFILE_ID || '').trim();
@@ -14,13 +23,24 @@ async function main() {
   if (!setup.ok) throw new Error(setup.reason || 'setup_failed');
   if (!setup.baseUrl) throw new Error('setup_base_url_missing');
 
-  const response = await fetch(`${setup.baseUrl.replace(/\/$/, '')}/pages`, {
-    headers: { 'X-API-Key': apiKey }
+  let pages = await getPages(setup.baseUrl, apiKey);
+  const initialPage = pages[0] || {};
+  const pageId = initialPage.id || initialPage.pageId || initialPage.page_id || null;
+  if (!pageId) throw new Error('page_id_missing');
+
+  const navigateResponse = await fetch(`${setup.baseUrl.replace(/\/$/, '')}/pages/${encodeURIComponent(pageId)}/navigate`, {
+    method: 'POST',
+    headers: {
+      'X-API-Key': apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ url: 'https://note.com/login' })
   });
-  if (!response.ok) throw new Error(`pages_request_failed_${response.status}`);
-  const payload = await response.json();
-  const pages = Array.isArray(payload) ? payload : Array.isArray(payload.pages) ? payload.pages : [];
-  const page = pages.find((item) => item && item.url && item.url !== 'about:blank') || pages[0] || {};
+  if (!navigateResponse.ok) throw new Error(`navigate_request_failed_${navigateResponse.status}`);
+
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  pages = await getPages(setup.baseUrl, apiKey);
+  const page = pages.find((item) => item && /^https:\/\/note\.com\/login/i.test(item.url || '')) || pages[0] || {};
   const launchUrl = page.devtoolsFrontendUrl || page.devtools_frontend_url || null;
   if (!launchUrl || !/^https:\/\//i.test(launchUrl)) throw new Error('https_devtools_url_missing');
 
@@ -36,12 +56,14 @@ async function main() {
     `Expires at: ${setup.expiresAt || 'unknown'}`,
     `Session ID: ${setup.sessionId}`,
     '',
+    'The remote browser is pre-opened at https://note.com/login.',
     'After completing note/X login, return to ChatGPT so the profile can be saved.'
   ].join('\n'), { mode: 0o600 });
 
   console.log(JSON.stringify({
     ok: true,
     artifactPrepared: true,
+    preopenedNoteLogin: true,
     ttlSeconds: setup.timeoutSeconds || null,
     hasExpiry: Boolean(setup.expiresAt)
   }));
