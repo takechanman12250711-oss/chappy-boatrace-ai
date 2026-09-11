@@ -1,0 +1,30 @@
+name: TinyFish Profile Auth Session
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TINYFISH_API_KEY: ${{ secrets.TINYFISH_API_KEY }}
+  TINYFISH_PROFILE_ID: ${{ secrets.TINYFISH_PROFILE_ID }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Prepare short-lived profile authentication session
+        run: node scripts/run-tinyfish-profile-auth-session.js
+      - name: Upload private authentication handoff artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tinyfish-profile-auth-${{ github.run_id }}
+          path: ${{ runner.temp }}/tinyfish-profile-auth/OPEN-ON-IPHONE.txt
+          retention-days: 1
+          if-no-files-found: error
