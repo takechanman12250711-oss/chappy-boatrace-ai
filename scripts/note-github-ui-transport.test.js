@@ -1,11 +1,30 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { validateDraftGate } = require('./note-github-ui-transport');
+const {
+  EXPECTED_PRICE_YEN,
+  firstPaidParagraph,
+  articleBody,
+  validateDraftGate
+} = require('./note-github-ui-transport');
 
-assert.deepEqual(validateDraftGate({ canPublish: true, title: 't', body: 'b' }), { ok: true });
-assert.deepEqual(validateDraftGate({ canPublish: false, blockReason: 'deadline_passed', title: 't', body: 'b' }), { ok: false, reason: 'deadline_passed' });
-assert.deepEqual(validateDraftGate({ canPublish: true, title: '', body: 'b' }), { ok: false, reason: 'title_missing' });
-assert.deepEqual(validateDraftGate({ canPublish: true, title: 't', body: '' }), { ok: false, reason: 'body_missing' });
+const valid = {
+  canPublish: true,
+  title: 't',
+  freeText: '無料本文',
+  paidText: '🔵 本命予想\n\n有料本文',
+  price: 300
+};
+
+assert.equal(EXPECTED_PRICE_YEN, 300);
+assert.deepEqual(validateDraftGate(valid), { ok: true });
+assert.deepEqual(validateDraftGate({ ...valid, canPublish: false, blockReason: 'deadline_passed' }), { ok: false, reason: 'deadline_passed' });
+assert.deepEqual(validateDraftGate({ ...valid, title: '' }), { ok: false, reason: 'title_missing' });
+assert.deepEqual(validateDraftGate({ ...valid, freeText: '' }), { ok: false, reason: 'free_text_missing' });
+assert.deepEqual(validateDraftGate({ ...valid, paidText: '' }), { ok: false, reason: 'paid_text_missing' });
+assert.deepEqual(validateDraftGate({ ...valid, price: 500 }), { ok: false, reason: 'price_not_300' });
+assert.equal(firstPaidParagraph(valid.paidText), '🔵 本命予想');
+assert.equal(articleBody(valid), '無料本文\n\n🔵 本命予想\n\n有料本文');
+assert.equal(articleBody(valid).includes('ここから先は有料部分です'), false);
 
 console.log('note-github-ui-transport tests passed');
