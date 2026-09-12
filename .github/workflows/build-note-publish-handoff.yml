@@ -1,6 +1,12 @@
 name: Build note publish handoff
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-note-publish-handoff.yml"
+      - "scripts/build-note-publish-handoff.js"
   workflow_run:
     workflows:
       - Collect automatic race predictions
@@ -17,7 +23,7 @@ concurrency:
 
 jobs:
   build-handoff:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
