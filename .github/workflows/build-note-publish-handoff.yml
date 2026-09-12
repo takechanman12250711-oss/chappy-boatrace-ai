@@ -1,0 +1,53 @@
+name: Build note publish handoff
+
+on:
+  workflow_run:
+    workflows:
+      - Collect automatic race predictions
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chappy-main-data-writers
+  cancel-in-progress: false
+
+jobs:
+  build-handoff:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build single note publish handoff
+        run: |
+          node --check scripts/build-note-publish-handoff.js
+          node scripts/build-note-publish-handoff.js
+
+      - name: Save handoff only when changed
+        run: |
+          if [ -z "$(git status --porcelain -- data/note-publish/latest.json)" ]; then
+            echo "note投稿受け渡しに変更はありません"
+            exit 0
+          fi
+
+          git add data/note-publish/latest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Build note publish handoff"
+          git pull --rebase origin main
+          git push origin main
