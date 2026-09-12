@@ -5,10 +5,26 @@ const path = require('node:path');
 const { chromium } = require('playwright-core');
 const { createAuthSession } = require('./note-browserbase-auth-session');
 const { loginNoteViaX } = require('./note-browserbase-x-login');
+const { selectReadyDraft } = require('./select-note-ready-draft');
 
 const NOTE_EDITOR_URL = 'https://editor.note.com/new';
 const AUTOSAVE_WAIT_MS = 10000;
 const EDITOR_WAIT_MS = 15000;
+
+function resolveDraftBundlePath({ argv = process.argv, env = process.env } = {}) {
+  const explicit = argv[2] || env.NOTE_DRAFT_BUNDLE_PATH;
+  if (explicit) return explicit;
+  if (env.NOTE_DRAFT_AUTO_SELECT !== 'true') throw new Error('note_draft_bundle_path_required');
+
+  const selected = selectReadyDraft(
+    env.NOTE_DRAFT_ROOT || 'data/note-drafts',
+    env.NOTE_READY_STRATEGY || 'latest'
+  );
+  console.log(`NOTE_READY_SELECTED=${selected.relativePath}`);
+  console.log(`NOTE_READY_COUNT=${selected.readyCount}`);
+  console.log(`NOTE_BLOCKED_COUNT=${selected.blockedCount}`);
+  return selected.absolutePath;
+}
 
 function loadDraftBundle(bundlePath) {
   if (!bundlePath) throw new Error('note_draft_bundle_path_required');
@@ -131,7 +147,7 @@ async function fillDraft(page, { title, body }) {
 }
 
 async function runDraftSaveCli({ env = process.env } = {}) {
-  const bundlePath = process.argv[2] || env.NOTE_DRAFT_BUNDLE_PATH;
+  const bundlePath = resolveDraftBundlePath({ env });
   const draft = loadDraftBundle(bundlePath);
   const session = await createAuthSession({ env });
   if (!session?.ok) throw new Error(`browserbase_session_unavailable_${session?.reason || 'unknown'}`);
@@ -167,6 +183,7 @@ module.exports = {
   NOTE_EDITOR_URL,
   AUTOSAVE_WAIT_MS,
   EDITOR_WAIT_MS,
+  resolveDraftBundlePath,
   loadDraftBundle,
   firstVisible,
   waitForVisibleAcrossFrames,
