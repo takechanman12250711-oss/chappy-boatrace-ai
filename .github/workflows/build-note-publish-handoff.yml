@@ -40,7 +40,7 @@ jobs:
 
       - name: Save handoff only when changed
         run: |
-          if git diff --quiet -- data/note-publish/latest.json; then
+          if [ -z "$(git status --porcelain -- data/note-publish/latest.json)" ]; then
             echo "note投稿受け渡しに変更はありません"
             exit 0
           fi
