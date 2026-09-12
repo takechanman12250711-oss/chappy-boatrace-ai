@@ -1,0 +1,39 @@
+name: Note GitHub UI Transport
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'auth = login only, draft = fill current iphone handoff without publishing'
+        required: true
+        default: auth
+        type: choice
+        options:
+          - auth
+          - draft
+
+permissions:
+  contents: read
+
+jobs:
+  note-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      X_LOGIN_ID: ${{ secrets.X_LOGIN_ID }}
+      X_PASSWORD: ${{ secrets.X_PASSWORD }}
+      NOTE_UI_MODE: ${{ inputs.mode }}
+      NOTE_IPHONE_HANDOFF: data/note-publish/iphone.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify transport gate
+        run: node scripts/note-github-ui-transport.test.js
+      - name: Run note UI transport
+        run: node scripts/note-github-ui-transport.js
