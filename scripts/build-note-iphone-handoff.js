@@ -6,6 +6,7 @@ const path = require("node:path");
 const ROOT = process.cwd();
 const INPUT = path.join(ROOT, "data", "note-publish", "latest.json");
 const OUTPUT = path.join(ROOT, "data", "note-publish", "iphone.json");
+const NOTE_PRICE_YEN = 300;
 
 function raceDateFromKey(raceKey) {
   const match = String(raceKey || "").match(/^(\d{4})(\d{2})(\d{2})-/);
@@ -27,6 +28,10 @@ function buildIphoneHandoff() {
   const candidate = Array.isArray(source.candidates) ? source.candidates[0] : null;
   if (!candidate?.title || !candidate?.fullText) return { status: "no_candidate" };
 
+  const freeText = String(candidate.freeText || "").trim();
+  const paidText = String(candidate.paidText || "").trim();
+  if (!freeText || !paidText) return { status: "paid_sections_missing" };
+
   const deadlineMs = Date.parse(candidate.deadlineAt || "");
   const hasDeadline = Number.isFinite(deadlineMs);
   const raceDate = raceDateFromKey(candidate.raceKey);
@@ -43,12 +48,15 @@ function buildIphoneHandoff() {
         : "deadline_passed";
 
   const payload = {
-    version: "note-iphone-handoff-v2",
+    version: "note-iphone-handoff-v3",
     generatedAt: new Date().toISOString(),
     raceKey: candidate.raceKey || null,
     raceDate,
     title: candidate.title,
     body: candidate.fullText,
+    freeText,
+    paidText,
+    price: NOTE_PRICE_YEN,
     tags: Array.isArray(candidate.tags) ? candidate.tags : [],
     deadlineAt: candidate.deadlineAt || null,
     canPublish,
@@ -58,6 +66,9 @@ function buildIphoneHandoff() {
       publishGateField: "canPublish",
       copyField: "body",
       titleField: "title",
+      freeTextField: "freeText",
+      paidTextField: "paidText",
+      priceField: "price",
       stopUnlessCanPublish: true
     }
   };
@@ -66,8 +77,8 @@ function buildIphoneHandoff() {
   const previous = fs.existsSync(OUTPUT) ? fs.readFileSync(OUTPUT, "utf8") : null;
   if (previous === next) return { status: "unchanged", raceKey: payload.raceKey };
   fs.writeFileSync(OUTPUT, next, "utf8");
-  return { status: "written", raceKey: payload.raceKey, canPublish, blockReason };
+  return { status: "written", raceKey: payload.raceKey, canPublish, blockReason, price: NOTE_PRICE_YEN };
 }
 
 if (require.main === module) console.log(JSON.stringify(buildIphoneHandoff()));
-module.exports = { buildIphoneHandoff, raceDateFromKey };
+module.exports = { NOTE_PRICE_YEN, buildIphoneHandoff, raceDateFromKey };
