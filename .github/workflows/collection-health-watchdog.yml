@@ -12,26 +12,35 @@ permissions:
 
 jobs:
   watchdog:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
+      - name: Detect collection workflow failure
+        if: ${{ github.event.workflow_run.conclusion != 'success' }}
+        run: |
+          echo "Collection workflow failed: ${{ github.event.workflow_run.conclusion }}"
+          exit 1
+
       - name: Checkout repository
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
         uses: actions/checkout@v4
         with:
           ref: main
 
       - name: Setup Node.js
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Check watchdog scripts
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
         run: |
           node --check scripts/collection-health-watchdog.js
           node --check scripts/run-collection-health-watchdog.js
           node scripts/test-collection-health-watchdog.js
 
       - name: Evaluate latest collection health
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
         run: node scripts/run-collection-health-watchdog.js
