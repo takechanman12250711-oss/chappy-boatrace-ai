@@ -1,0 +1,28 @@
+name: Watch result collection
+
+on:
+  workflow_run:
+    workflows:
+      - Collect official race results
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check result collection workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          conclusion="${{ github.event.workflow_run.conclusion }}"
+          echo "Result collection workflow conclusion: ${conclusion}"
+          if [ "${conclusion}" != "success" ]; then
+            echo "::error title=結果収集異常::Collect official race results failed: ${conclusion}"
+            exit 1
+          fi
+          echo "Result collection workflow completed successfully."
