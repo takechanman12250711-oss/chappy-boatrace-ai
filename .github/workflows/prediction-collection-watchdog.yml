@@ -1,0 +1,71 @@
+name: Watch automatic prediction collection
+
+on:
+  workflow_run:
+    workflows:
+      - Collect automatic race predictions
+    types:
+      - completed
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_TITLE: "[自動監視] 自動予想収集workflow異常"
+    steps:
+      - name: Check automatic prediction collection workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          conclusion="${{ github.event.workflow_run.conclusion }}"
+          run_url="${{ github.event.workflow_run.html_url }}"
+          run_id="${{ github.event.workflow_run.id }}"
+          finished_at="${{ github.event.workflow_run.updated_at }}"
+
+          echo "Automatic prediction collection workflow conclusion: ${conclusion}"
+
+          issue_number="$(gh issue list \
+            --repo "${GITHUB_REPOSITORY}" \
+            --state open \
+            --search "${ISSUE_TITLE} in:title" \
+            --json number,title \
+            --jq ".[] | select(.title == env.ISSUE_TITLE) | .number" \
+            | head -n 1)"
+
+          if [ "${conclusion}" = "success" ]; then
+            if [ -n "${issue_number}" ]; then
+              gh issue comment "${issue_number}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --body "✅ 自動予想収集workflowの正常復帰を確認しました。\n\n- Run ID: ${run_id}\n- 確認時刻: ${finished_at}\n- Run: ${run_url}"
+              gh issue close "${issue_number}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --reason completed
+            fi
+            echo "Automatic prediction collection workflow completed successfully."
+            exit 0
+          fi
+
+          alert_body="🚨 自動予想収集workflowで異常を検知しました。\n\n- 結果: ${conclusion}\n- Run ID: ${run_id}\n- 検知時刻: ${finished_at}\n- Run: ${run_url}\n\nこのIssueは同じ異常が続く間は再作成せず、ここへ追記します。正常復帰時に自動でCloseします。"
+
+          if [ -n "${issue_number}" ]; then
+            gh issue comment "${issue_number}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --body "${alert_body}"
+            echo "Updated existing prediction collection alert issue #${issue_number}."
+          else
+            gh issue create \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "${ISSUE_TITLE}" \
+              --body "${alert_body}"
+            echo "Created automatic prediction collection alert issue."
+          fi
+
+          echo "::error title=自動予想収集異常::Collect automatic race predictions failed: ${conclusion}"
+          exit 1
