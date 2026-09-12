@@ -1,0 +1,39 @@
+name: Build Note Ready Queue
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'data/note-drafts/**/*.json'
+      - 'scripts/build-note-ready-queue.js'
+      - 'scripts/build-note-ready-queue.test.js'
+      - '.github/workflows/build-note-ready-queue.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ready-queue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Test ready queue builder
+        run: node scripts/build-note-ready-queue.test.js
+      - name: Build ready queue
+        run: node scripts/build-note-ready-queue.js data/note-drafts > /tmp/note-ready-queue.json
+      - name: Show queue counts
+        shell: bash
+        run: |
+          node -e "const q=require('/tmp/note-ready-queue.json'); console.log('NOTE_READY_TOTAL='+q.total); console.log('NOTE_READY_COUNT='+q.readyCount); console.log('NOTE_BLOCKED_COUNT='+q.blockedCount)"
+      - name: Upload ready queue
+        uses: actions/upload-artifact@v4
+        with:
+          name: note-ready-queue
+          path: /tmp/note-ready-queue.json
+          retention-days: 7
