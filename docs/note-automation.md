@@ -1,87 +1,103 @@
-# note自動化：共有Skillと公開前監査（第1段階）
+# note自動化：現在地と公開前監査
 
-この段階では既存の予想・原稿生成を再利用し、公開前の機械検査を追加する。noteへの投稿処理、価格設定、決済、ブラウザ操作、Claude Code呼び出しは実装しない。
+更新基準: 2026-09-13 / latest main
 
-## 接続箇所と不変条件
+## 現在の運用状態
 
-`scripts/collect-predictions.js` は選定済みレコードの `note.audit` に監査結果を追加する。既存の `note.publishable` は下書き生成条件のままで、公開許可ではない。下書き保存条件・原稿本文・買い目・選定条件・UIを変更しない。監査モジュールが失敗しても予想と下書きの保存を継続し、監査を `audit_error` として公開を停止する。
+この文書は過去の実験経路ではなく、現在のmainから作業を再開するための基準を示す。
 
-過去JSON/Markdownを移行・再生成しない。新規収集分から日次原本に監査を保存する。軽量要約のnote項目と既存画面には今回追加しない。参考・万舟予測の独立台帳も維持する。
+完成済み:
 
-優先順は 展開 → コース → ST/スリット → 展示/足 → 残し/拾い → 当地/水面 → 技量 → モーター。オッズ未取得時に買い目を削除・差し替えて監査を通してはいけない。
+- 自動予想収集
+- 公式結果収集
+- GitHub Actionsによる予想収集・結果収集の異常監視とIssue通知/復旧Close
+- 保存予想からのnote原稿生成と公開前監査
+- `data/note-publish/latest.json` の自動生成
+- `data/note-publish/latest.md` の互換handoff生成
+- `data/note-publish/iphone.json` のiPhone向けhandoff生成
+- `iphone.json.canPublish` によるJST当日レース・締切前のfail-closed判定
 
-## 判定の意味
+未完了:
+
+- 既存handoffからnoteの最終投稿までをつなぐ、スマホ完結のtransport
+- 実サイトでの最終投稿成功確認
+- 最終transport確定後の不要な旧実験経路・smoke/debugの整理
+
+廃止/不採用:
+
+- TinyFishをnoteログイン・投稿経路として使わない。Profile/Vaultを含め再試行しない。
+- Browserbaseを現在のnote投稿経路として使わない。停止済みsmoke/live-viewを再有効化しない。
+- `latest.md` が存在することだけを理由にnote-post-mcpを正式transportとみなさない。
+
+新しいチャットや開発環境では、まず最新main、この文書、`chappy-note-publish` Skill、直近の関連マージPR、`data/note-publish/` の現物を照合する。過去の実験経路から推測で再開しない。
+
+## handoffの役割
+
+`data/note-publish/latest.json` は、保存済みnote原稿から最新の投稿候補を集約する単一handoff。
+
+`data/note-publish/latest.md` はMarkdownを受け取るtransportとの互換用出力。特定のMCPを正式採用したことを意味しない。
+
+`data/note-publish/iphone.json` はスマホ側の受け渡し用で、title/body/tags/deadlineAt/noteCreateUrlに加え、投稿可否を `canPublish` と `blockReason` で返す。`canPublish === true` のときだけ次の投稿処理へ進み、falseなら停止する。
+
+## `canPublish` を混同しない
+
+公開前監査とiPhone handoffでは同じ名前のフィールドが別の責務を持つ。
 
 | フィールド | 意味 |
 | --- | --- |
 | `article.publishable` / `note.publishable` | 既存の下書き生成条件を満たすか |
-| `note.audit.contentReady` | この原稿・保存スナップショット・検査時刻で機械検査を通過したか |
+| `note.audit.contentReady` | 保存原稿と保存予想の機械検査を通過したか |
 | `note.audit.status` | `ready_for_review`、`blocked`、`audit_error` |
-| `note.audit.canPublish` | 現段階は常にfalse |
-| `note.audit.automaticPublicationEnabled` | 現段階は常にfalse |
-| `note.audit.articleSha256` | 保存するMarkdownと同じ形式のSHA-256。署名・認証ではない |
+| `note.audit.canPublish` | 監査レイヤーでは保存時点の検査を最終公開許可へ昇格させないためfalse |
+| `note.audit.automaticPublicationEnabled` | 監査レイヤー単独では自動公開を許可しない |
+| `data/note-publish/iphone.json.canPublish` | JST当日レースかつ締切前を確認した、最終transport用の運用ゲート |
 
-機械検査はレース表示、タイムゾーン付き締切、120秒以上の余裕、境界マーカー、全文合成、具体的な3連単の無料漏れ、6艇評価の欠落、厳選の順序・点数・オッズを確認する。最大10点まで扱い、候補最大24点や参考・万舟を厳選と混ぜない。生成前の `selectedBase.prediction.practicalTickets` も比較し、記事自身だけを照合元にしない。
+`note.audit.canPublish` をtrueに変更してiPhone側へ合わせてはいけない。逆に、古い監査文書の「常にfalse」を理由に `iphone.json.canPublish` を無効化してはいけない。
 
-意味的な無料漏れ、選手名・根拠の正確性、実際のnote有料境界、最新オッズ、価格・返金設定、重複投稿、権限・利用条件は保証しない。保存された合格判定は将来の公開許可にならない。締切の再検査は公開直前に実時計と最新の公式状態で必要になる。
+## 公開前監査の不変条件
 
-## 手動の読み取り検査
+`scripts/collect-predictions.js` は選定済みレコードの `note.audit` に監査結果を追加する。既存の `note.publishable` は下書き生成条件であり、最終公開許可ではない。監査失敗時も予想と下書きの保存自体は継続し、監査を `audit_error` として最終投稿を止める。
+
+過去JSON/Markdownを移行・再生成して検査を通したことにしない。保存された予想・原稿・比較用買い目を使う。予想の優先順は 展開 → コース → ST/スリット → 展示/足 → 残し/拾い → 当地/水面 → 技量 → モーター。オッズ未取得を理由に買い目を削除・差し替えない。
+
+監査はレース表示、タイムゾーン付き締切、必要な締切余裕、無料/有料境界マーカー、全文合成、具体的な3連単の無料漏れ、6艇評価、厳選の順序・点数・オッズ、保存予想との整合を確認する。通常予想と参考/万舟台帳を混ぜない。
+
+手動の読み取り検査:
 
 ```sh
 node scripts/note-publication-audit.js --input audit-payload.json
 ```
 
-JSONには `article`、`record`、`baselinePracticalTickets` を渡す。`record` は raceKey/date/jcd/place/raceNo/deadlineAt/prediction.practicalTickets を持ち、baselineは同一収集時点の生成前スナップショットとする。記事からbaselineを複製しない。候補の出典には保存されたprediction.mainSheetのtickets/coverTickets/flowTicketsとmanshuSheet.tickets、参考の出典にはmanshuSheet.forecastLedger.forecastsのformation.notation/expandedTicketsが必要になる。厳選以外も保存根拠のない買い目を許可せず、通常と参考を分けて照合する。任意の設定値は `minLeadSeconds`（120以上）と `maxPracticalTickets`（1〜10）。通常は既存憲章の値を使う。
-
-CLIは入力JSONのnowを無視して現在時刻を使う。`--now ISO_TIMESTAMP` は再現テスト専用である。終了コード0は機械検査合格のみ、1は不備、2は入力等のエラー。ネットワークアクセスやファイル書き込みは行わない。
-
-元の構造化記事や独立した予想が残っていない過去原稿は、完全監査済みとしない。資料不足を報告し、過去データを生成し直して埋めない。
-
-## 追加のAI契約を使わない再検査用保存
-
-既存の定期収集が新しい下書きを生成したとき、Markdownと併せて `data/note-drafts/YYYYMMDD/レースキー-SHA256.json` を保存する。Claude Codeや有料AI APIを呼び出さず、既存のJavaScriptだけで動作する。新しい定期ジョブは増やさない。実行基盤の利用枠・料金まで無料を保証するものではない。
-
-JSONには生成時の構造化記事、保存予想の実戦厳選・通常候補・独立した参考台帳、生成前の比較用買い目、締切、検査条件、生成時の監査結果を一緒に残す。収集時刻は元レコードの `selectedAt`、コードの参照は実行環境にある場合の `GITHUB_SHA` を記録する。買い目や本文を生成し直して比較元を作らない。
-
-内容が同じなら既存ファイルを再利用し、内容が変われば別ファイルを追加する。日次レコードや既存Markdownが後の収集で更新されても、このJSONは上書きしない。`note.draftBundle` に保存状態・パス・SHA256を記録し、保存に失敗した場合は `save_error` を記録して既存の予想・Markdown保存を継続する。下書き未生成は `not_generated` とし、`--dry-run` では保存しない。SHA256は内容の識別用であり、署名ではない。
-
-保存したJSONをそのまま読み取り検査に渡せる。
+保存bundleをそのまま再検査する場合:
 
 ```sh
 node scripts/note-publication-audit.js --input data/note-drafts/YYYYMMDD/レースキー-SHA256.json
 ```
 
-通常の再検査は実時計を使うため、締切後は公開準備不可になる。JSON内の生成時監査結果を現在の合格判定として使わない。生成時点の再現が必要なオフライン検証だけ、`--now` に当時の `generationAudit.auditedAt` を明示する。原稿本文の変更、noteへのログイン・投稿、有料設定はこの保存処理では行わない。
+通常の再検査は実時計を使う。過去時点の再現テストだけ `--now` を明示する。保存時の合格判定を現在の公開許可として再利用しない。
 
-## Claude Code / Codexの共通手順
+## 最終投稿transportのルール
 
-開発の継続・修正には `chappy-boatrace-dev` を追加する。最新mainから既存機能と未接続部分を区別し、依頼範囲の変更を必要な検証・反映まで進めるための手順を共有する。予想基準変更やnote公開の権限を付与するものではない。note用の5つと合わせて6つの共有Skillを一致検査する。
+1. 完成済みの予想収集、結果収集、監視、原稿生成、handoffを作り直さない。
+2. `iphone.json.canPublish === true` を必要条件とし、`blockReason` がある場合は停止する。
+3. title/bodyは既存handoffを使い、最終投稿側で予想や買い目を再生成・再解釈しない。
+4. note公式の現行仕様と許可された接続手段を実装時に確認する。非公開API、Cookie抽出、認証回避は使わない。
+5. 投稿先アカウント、無料/有料境界、価格、投稿時刻、重複防止、失敗時の扱いを推測しない。
+6. 実サイトで公開状態・URL・日時を確認するまでは投稿成功と記録しない。
+7. 旧TinyFish/Browserbase等のコード整理は、最終transportが成立してから行う。
 
-同じ5つのSKILL.mdを `.agents/skills/` と `.claude/skills/` に配置する。コピー内容は `scripts/check-note-skills.js` とCIで一致を確認する。指示の共有であり、Claude Codeのインストール・認証・実行や常時稼働を代行するものではない。
+## 共有Skill
+
+同じSkillを `.agents/skills/` と `.claude/skills/` に置き、`scripts/check-note-skills.js` で一致を確認する。
 
 | Skill | 範囲 |
 | --- | --- |
-| `chappy-race-select` | 現行V2選定と保存根拠の確認。既存条件を変更しない |
-| `chappy-note-generate` | 保存予想を使った既存原稿生成・下書きの準備 |
+| `chappy-boatrace-dev` | 最新mainを基準に既存機能と未接続部分を区別して開発を継続 |
+| `chappy-race-select` | 現行V2選定と保存根拠の確認 |
+| `chappy-note-generate` | 保存予想を使った既存原稿生成 |
 | `chappy-note-audit` | 公開前の読み取り検査 |
-| `chappy-note-publish` | 公開条件の確認と手動引き継ぎ。自動投稿は停止 |
-| `chappy-note-settle` | 公式結果と保存予想の照合。予想や学習設定を変更しない |
-
-例：`$chappy-note-audit を使って、指定レースの保存予想とnote原稿を確認して`。対象ファイルと同じ収集時点の比較元を指定する。Skillが使えるかは実行環境で確認し、未実行のモデルを実行済みと言わない。
-
-## 次段階の境界
-
-### 保存原稿をアプリで読む
-
-AI予想画面の既存noteアシストにある「この日の保存原稿を確認」から、選択した日付の日次要約に載る最新選定分を取得する。予想の生成前でも入口を表示し、予想を消去しても保存原稿の入口は隠さない。画面に表示中の予想とは別のレースの場合もあるため、保存原稿の場・Rとタイトルを明示する。振り返り表示でも保存原稿を読めるが、新しい記事生成は無効とする。
-
-要約には `note.draftBundle` の状態・パス・SHA256だけを追加し、押した時に当該JSONを読む。巨大な日次原本へフォールバックせず、同じ日付・レースと保存内容のSHA256が一致する場合のみ、保存されたタイトルと本文をコピー可能にする。取得エラーや照合データのない古い原稿は、現在の予想から作り直さない。予想の切替中に届いた古い読込結果も表示しない。
-
-画面は生成時の監査結果と現在時刻での締切注意を示す。これは監査CLIの再実行・公式情報の再取得ではなく、現在の公開許可でもない。コピー後も注意を表示し、`canPublish` と `automaticPublicationEnabled` はfalseのままとする。noteへの自動入力・公開・価格設定・通知は追加していない。
-
-note公式は公開APIを提供していないため、非公開APIやログインCookieを用いる投稿を追加しない。[note公式ヘルプ](https://www.help-note.com/hc/ja/articles/46643492548121)
-
-公開処理を追加するには、ユーザーが投稿先アカウント、手動/承認付き/無人の範囲、価格、無料/有料境界、投稿時刻、重複投稿台帳、失敗時通知を決め、利用可能で許可された接続方法を確認する必要がある。本PRはその設定を変更せず、定期実行も新設しない。
+| `chappy-note-publish` | 現在地を固定し、既存handoffから最終transportだけを進める |
+| `chappy-note-settle` | 公式結果と保存予想の照合 |
 
 ## 検証
 
@@ -95,3 +111,5 @@ node scripts/test-note-karatsu-regression.js
 node scripts/test-theory-integration.js
 node scripts/check-charter.js
 ```
+
+この文書を更新しても予想ロジック、買い目、UI、収集本体、既存watchdog、handoff生成ロジックは変更しない。
