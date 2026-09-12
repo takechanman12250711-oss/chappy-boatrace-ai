@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/build-note-publish-handoff.yml"
       - "scripts/build-note-publish-handoff.js"
+      - "scripts/build-note-mcp-markdown.js"
   workflow_run:
     workflows:
       - Collect automatic race predictions
@@ -39,19 +40,21 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Build single note publish handoff
+      - name: Build note publish handoffs
         run: |
           node --check scripts/build-note-publish-handoff.js
+          node --check scripts/build-note-mcp-markdown.js
           node scripts/build-note-publish-handoff.js
+          node scripts/build-note-mcp-markdown.js
 
-      - name: Save handoff only when changed
+      - name: Save handoffs only when changed
         run: |
-          if [ -z "$(git status --porcelain -- data/note-publish/latest.json)" ]; then
+          if [ -z "$(git status --porcelain -- data/note-publish/latest.json data/note-publish/latest.md)" ]; then
             echo "note投稿受け渡しに変更はありません"
             exit 0
           fi
 
-          git add data/note-publish/latest.json
+          git add data/note-publish/latest.json data/note-publish/latest.md
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Build note publish handoff"
