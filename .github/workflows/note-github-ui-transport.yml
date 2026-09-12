@@ -11,6 +11,11 @@ on:
         options:
           - auth
           - draft
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/note-github-ui-transport.yml'
 
 permissions:
   contents: read
@@ -22,7 +27,7 @@ jobs:
     env:
       X_LOGIN_ID: ${{ secrets.X_LOGIN_ID }}
       X_PASSWORD: ${{ secrets.X_PASSWORD }}
-      NOTE_UI_MODE: ${{ inputs.mode }}
+      NOTE_UI_MODE: ${{ inputs.mode || 'auth' }}
       NOTE_IPHONE_HANDOFF: data/note-publish/iphone.json
     steps:
       - uses: actions/checkout@v4
