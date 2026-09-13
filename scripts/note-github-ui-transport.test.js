@@ -5,7 +5,8 @@ const {
   EXPECTED_PRICE_YEN,
   firstPaidParagraph,
   articleBody,
-  validateDraftGate
+  validateDraftGate,
+  isEditorUrl
 } = require('./note-github-ui-transport');
 
 const valid = {
@@ -26,5 +27,8 @@ assert.deepEqual(validateDraftGate({ ...valid, price: 500 }), { ok: false, reaso
 assert.equal(firstPaidParagraph(valid.paidText), '🔵 本命予想');
 assert.equal(articleBody(valid), '無料本文\n\n🔵 本命予想\n\n有料本文');
 assert.equal(articleBody(valid).includes('ここから先は有料部分です'), false);
+assert.equal(isEditorUrl('https://editor.note.com/new'), true);
+assert.equal(isEditorUrl('https://note.com/login?redirectPath=https%3A%2F%2Feditor.note.com%2Fnew'), false);
+assert.equal(isEditorUrl('not-a-url'), false);
 
 console.log('note-github-ui-transport tests passed');

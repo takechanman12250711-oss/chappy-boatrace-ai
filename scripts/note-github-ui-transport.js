@@ -8,6 +8,7 @@ const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-dr
 
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
 const EXPECTED_PRICE_YEN = 300;
+const NOTE_EDITOR_URL = 'https://editor.note.com/new';
 
 function loadHandoff(handoffPath = DEFAULT_HANDOFF) {
   const absolute = path.resolve(handoffPath);
@@ -35,6 +36,23 @@ function validateDraftGate(payload) {
   if (!String(payload.paidText || '').trim()) return { ok: false, reason: 'paid_text_missing' };
   if (Number(payload.price) !== EXPECTED_PRICE_YEN) return { ok: false, reason: 'price_not_300' };
   return { ok: true };
+}
+
+function isEditorUrl(value) {
+  try {
+    return new URL(String(value || '')).hostname === 'editor.note.com';
+  } catch {
+    return false;
+  }
+}
+
+async function ensureEditorReady(page) {
+  await page.goto(NOTE_EDITOR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForTimeout(1000);
+  if (!isEditorUrl(page.url())) {
+    throw new Error(`note_editor_session_not_ready_${new URL(page.url()).hostname || 'unknown'}`);
+  }
+  return page.url();
 }
 
 async function clickVisibleText(page, texts) {
@@ -123,9 +141,11 @@ async function run({ env = process.env } = {}) {
     const page = await context.newPage();
     const auth = await loginNoteViaX(page, { env });
     if (!auth?.ok) throw new Error(`note_auth_failed_${auth?.reason || 'unknown'}`);
+    await ensureEditorReady(page);
 
     console.log('NOTE_UI_AUTH_OK=true');
     console.log(`NOTE_UI_AUTH_ALREADY=${Boolean(auth.alreadyAuthenticated)}`);
+    console.log(`NOTE_UI_EDITOR_READY=${isEditorUrl(page.url())}`);
 
     if (mode === 'auth') {
       console.log('NOTE_UI_DRAFT_FILLED=false');
@@ -166,10 +186,13 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_HANDOFF,
   EXPECTED_PRICE_YEN,
+  NOTE_EDITOR_URL,
   loadHandoff,
   firstPaidParagraph,
   articleBody,
   validateDraftGate,
+  isEditorUrl,
+  ensureEditorReady,
   configurePaidPublication,
   run
 };
