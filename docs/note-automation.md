@@ -10,6 +10,16 @@
 
 次は実時計で有効な既存handoffだけを使ってdraftを検証する。期限切れなら停止し、日時やcanPublishを書き換えて検証を通さない。最終公開は未実行方針を維持する。新しい認証失敗の証拠がない限り本人操作を再要求しない。
 
+### 原稿生成後の自動下書き
+
+原稿生成workflow `Build note publish handoff` がmainで成功すると、note transportが自動でdraftを開始する。実行時は最新mainのhandoffを読み、期限切れ・停止理由付き・既存のレース予約ありの場合はブラウザ起動前に見送る。読み取り失敗は停止する。事前確認後も原子的な予約と実時計ゲートを再検査する。完了済みの収集・原稿生成は作り直さず、手動のauthを毎回要求しない。自動開始の設定と実際の下書き成功を区別し、Actions Summaryのskipを成功投稿と扱わない。最終公開は無効のまま。
+
+- 起動元は同じリポジトリのmainで成功したhandoff workflowに限定する。checkoutはmainに固定し、外部artifactや起動元ブランチのコードを読み込まない。
+- Browser UseのSecretは接続検査と実際のtransportステップだけに渡す。対象がなければPlaywrightのインストールも行わない。
+- 既存予約はGETで照合して見送り理由をSummaryへ記録する。予約の解除・削除はしない。確認後の競合は従来の原子的予約で停止する。
+- 手動のauth/draftはmainのみ利用可能。予約に記録するSHAは実際にcheckoutしたmainのものを使う。
+- workflow_runで原稿生成の完了を受ける仕組みは[GitHub公式仕様](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run)に従う。原稿生成側のコード・トリガーは変更しない。
+
 ### 下書きの二重作成防止
 
 - workflowは同時実行を直列化し、実行中の処理を取り消さない。
