@@ -5,6 +5,14 @@ description: チャッピーボートレースAIのnote公開経路を扱う。�
 
 # チャッピー note公開
 
+## 2026-09-13 Browser Use接続の確認済み現在地
+
+この節を以下の旧storageState接続記録より優先する。PR #945で認証経路をBrowser Use保存profileへ変更済み。GitHub Secretsは `BROWSER_USE_API_KEY` と `BROWSER_USE_PROFILE_ID`。旧 `NOTE_STATE_JSON_BASE64` の登録、Cookie抽出、本人ログインのやり直しを要求しない。
+
+ユーザーがiPhoneで両Secretを登録し、mainのauth実行34760871901（2026-09-13 13:50 UTC）で `NOTE_UI_PROFILE_LOADED=true`、`NOTE_UI_EDITOR_READY=true` を確認した。GitHub Actionsから保存profileを再利用してnote編集画面へ到達した証拠である。本文入力・300円・有料境界・公開は未確認/未実行。
+
+次は実時計で有効な既存handoffだけを使ってdraftを検証する。期限切れなら停止し、日時やcanPublishを書き換えて検証を通さない。最終公開は未実行方針を維持する。新しい認証失敗の証拠がない限り本人操作を再要求しない。
+
 ## 最初に読む現在地
 
 このSkillを使う時は、チャットや作業環境が変わっていても推測で再開しない。必ず最新main、`docs/note-automation.md`、直近の関連マージPR、`data/note-publish/` の現物を確認し、完成済み・未完了・廃止済みを区別してから作業する。

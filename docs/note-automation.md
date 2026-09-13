@@ -2,6 +2,23 @@
 
 更新基準: 2026-09-13 / latest main
 
+## 2026-09-13 Browser Use接続の確認済み現在地
+
+この節を以下の旧storageState接続記録より優先する。PR #945で認証経路をBrowser Use保存profileへ変更済み。GitHub Secretsは `BROWSER_USE_API_KEY` と `BROWSER_USE_PROFILE_ID`。旧 `NOTE_STATE_JSON_BASE64` の登録、Cookie抽出、本人ログインのやり直しを要求しない。
+
+ユーザーがiPhoneで両Secretを登録し、mainのauth実行34760871901（2026-09-13 13:50 UTC）で `NOTE_UI_PROFILE_LOADED=true`、`NOTE_UI_EDITOR_READY=true` を確認した。GitHub Actionsから保存profileを再利用してnote編集画面へ到達した証拠である。本文入力・300円・有料境界・公開は未確認/未実行。
+
+次は実時計で有効な既存handoffだけを使ってdraftを検証する。期限切れなら停止し、日時やcanPublishを書き換えて検証を通さない。最終公開は未実行方針を維持する。新しい認証失敗の証拠がない限り本人操作を再要求しない。
+
+### 下書きの二重作成防止
+
+- workflowは同時実行を直列化し、実行中の処理を取り消さない。
+- draft開始前に正規化したraceKeyのSHA-256をキーとして、GitHubの `refs/tags/note-draft-claim/<hash>` を原子的に作成する。本文変更や再実行でも同じレースは再取得できない。authは予約しない。
+- 予約にはActionsの短命な `github.token` とcontents:writeを使う。新しい本人Secretは不要。送信先は対象リポジトリに固定し、記録はキーと実行コードのSHAだけで認証情報や本文を含まない。
+- 予約の取得失敗・結果不明・途中失敗は停止する。予約は削除せず、再実行も止める。これは成功記録ではなく、二重作成を防ぐ試行記録。
+- 復旧時は該当runとnote上の下書きを照合し、既存下書きの再利用方針を決めてから別途対応する。自動解除・自動削除・強制再実行は提供しない。
+- 予約導入前の手動下書きや他の投稿経路には適用されない。最終公開の重複防止と公開URL確認は引き続き未完成。
+
 ## 現在の運用状態
 
 この文書は過去の実験経路ではなく、現在のmainから作業を再開するための基準を示す。
