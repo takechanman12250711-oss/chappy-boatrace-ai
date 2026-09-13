@@ -14,20 +14,32 @@
 - 保存予想からのnote原稿生成と公開前監査
 - `data/note-publish/latest.json` の自動生成
 - `data/note-publish/latest.md` の互換handoff生成
-- `data/note-publish/iphone.json` のiPhone向けhandoff生成
+- `data/note-publish/iphone.json` v3の生成
 - `iphone.json.canPublish` によるJST当日レース・締切前のfail-closed判定
+- `iphone.json` への `freeText` / `paidText` / 初期価格300円の構造化
+- note UI transportのタイトル/本文入力、有料切替、300円設定、有料境界設定（最終公開ボタンは未接続）
+- PR #939で最終transportの認証をPlaywright保存済み`storageState`方式へ一本化
 
-未完了:
+現在の唯一の認証未接続点:
 
-- 既存handoffからnoteの最終投稿までをつなぐ、スマホ完結のtransport
-- 実サイトでの最終投稿成功確認
-- 最終transport確定後の不要な旧実験経路・smoke/debugの整理
+- 有効な`note-state.json`相当のPlaywright `storageState`を安全に作成・更新し、GitHub Actions Secret `NOTE_STATE_JSON_BASE64`へ登録すること
+- 2026-09-13の実行確認ではこのSecretは未設定で、`note_state_missing`としてfail-closedした
+- Secret/state本体をリポジトリ、handoff、artifact、Actionsログへ保存しない
+
+その後の未完了:
+
+- 保存済みstateで実サイトeditor到達確認
+- 公開しない下書きで300円・有料境界の実サイト確認
+- 本番`canPublish === true`レースで公開直前まで確認
+- 重複投稿防止と最終公開接続
+- 最終transport成立後の旧実験経路・smoke/debug整理
 
 廃止/不採用:
 
 - TinyFishをnoteログイン・投稿経路として使わない。Profile/Vaultを含め再試行しない。
-- Browserbaseを現在のnote投稿経路として使わない。停止済みsmoke/live-viewを再有効化しない。
-- `latest.md` が存在することだけを理由にnote-post-mcpを正式transportとみなさない。
+- Browserbaseを現在のnote投稿経路として使わない。停止済みsmoke/live-view/Contextを再有効化しない。
+- GitHub-hosted Chromiumで毎回X OAuthする方式を使わない。2026-09-13にheadless/headed(Xvfb)の両方で`note_editor_session_not_ready_note.com`を実サイト確認済み。追加修正・再試行しない。
+- `latest.md` が存在することだけを理由にnote-post-mcpを正式transportとみなさない。PR #926は保存済み`note-state.json`を残る接続点として定義したが、state生成・Secret登録までは完成していなかった。
 
 新しいチャットや開発環境では、まず最新main、この文書、`chappy-note-publish` Skill、直近の関連マージPR、`data/note-publish/` の現物を照合する。過去の実験経路から推測で再開しない。
 
@@ -37,7 +49,13 @@
 
 `data/note-publish/latest.md` はMarkdownを受け取るtransportとの互換用出力。特定のMCPを正式採用したことを意味しない。
 
-`data/note-publish/iphone.json` はスマホ側の受け渡し用で、title/body/tags/deadlineAt/noteCreateUrlに加え、投稿可否を `canPublish` と `blockReason` で返す。`canPublish === true` のときだけ次の投稿処理へ進み、falseなら停止する。
+`data/note-publish/iphone.json` はスマホ側/最終transportの受け渡し用。v3ではtitle/body/tags/deadlineAt/noteCreateUrlに加え、`freeText`、`paidText`、`price: 300`、投稿可否 `canPublish`、停止理由 `blockReason` を持つ。`canPublish === true` のときだけ本番投稿処理へ進み、falseなら停止する。
+
+## 認証境界
+
+本番transportは `NOTE_STATE_JSON_BASE64` をbase64 decodeしてPlaywright `storageState`として読み込む。stateが未設定、不正JSON、cookie空の場合は停止する。XのID/パスワードをtransportへ渡して毎回OAuthする方式には戻さない。
+
+認証成功の条件は、保存stateを使ったbrowser contextから `https://editor.note.com/new` へ実際に到達し、最終hostが `editor.note.com` であること。単にログインhelperが成功を返したことを認証成功扱いしない。
 
 ## `canPublish` を混同しない
 
@@ -79,12 +97,13 @@ node scripts/note-publication-audit.js --input data/note-drafts/YYYYMMDD/レー�
 ## 最終投稿transportのルール
 
 1. 完成済みの予想収集、結果収集、監視、原稿生成、handoffを作り直さない。
-2. `iphone.json.canPublish === true` を必要条件とし、`blockReason` がある場合は停止する。
-3. title/bodyは既存handoffを使い、最終投稿側で予想や買い目を再生成・再解釈しない。
-4. note公式の現行仕様と許可された接続手段を実装時に確認する。非公開API、Cookie抽出、認証回避は使わない。
-5. 投稿先アカウント、無料/有料境界、価格、投稿時刻、重複防止、失敗時の扱いを推測しない。
-6. 実サイトで公開状態・URL・日時を確認するまでは投稿成功と記録しない。
-7. 旧TinyFish/Browserbase等のコード整理は、最終transportが成立してから行う。
+2. TinyFish、Browserbase、fresh X OAuthへ戻らない。
+3. `NOTE_STATE_JSON_BASE64`はSecretとしてのみ扱い、state/Cookieをリポジトリやログへ出さない。
+4. `iphone.json.canPublish === true` を必要条件とし、`blockReason` がある場合は停止する。テストでも本番gateをバイパスしない。
+5. title/freeText/paidTextは既存handoffを使い、最終投稿側で予想や買い目を再生成・再解釈しない。
+6. 初期価格は300円固定。300〜500円の変動価格は販売が軌道に乗った後の別段階とし、今は混ぜない。
+7. 実サイトで公開状態・URL・日時を確認するまでは投稿成功と記録しない。
+8. 旧TinyFish/Browserbase/X OAuth等のコード整理は、最終transport成立後に行う。
 
 ## 共有Skill
 
