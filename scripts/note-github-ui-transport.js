@@ -229,6 +229,7 @@ async function clickVisibleText(page, texts) {
 async function setPaidPrice(page, price) {
   const { waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
   const input = await waitForVisibleAcrossFrames(page, [
+    'input#price',
     'input[placeholder*="価格"]',
     'input[aria-label*="価格"]',
     'input[name*="price"]',
@@ -241,6 +242,16 @@ async function setPaidPrice(page, price) {
   if (value !== String(price)) throw new Error('note_price_verification_failed');
 }
 
+function paidBoundaryIndex(blocks, start) {
+  const matches = blocks.map((block, index) => !block.widget && block.text === start ? index : -1).filter(index => index >= 0);
+  if (matches.length !== 1) throw new Error('note_paid_boundary_target_not_unique');
+  const index = matches[0] - 1;
+  if (index < 0 || !blocks[index].widget || blocks[index].buttons !== 1) {
+    throw new Error('note_paid_boundary_marker_missing');
+  }
+  return index;
+}
+
 async function setPaidBoundary(page, paidText) {
   if (!(await clickVisibleText(page, ['有料エリア設定', '有料エリア']))) {
     throw new Error('note_paid_area_button_missing');
@@ -249,21 +260,23 @@ async function setPaidBoundary(page, paidText) {
 
   const start = firstPaidParagraph(paidText);
   if (!start) throw new Error('note_paid_start_missing');
-  const snippet = start.slice(0, 40);
-  const targets = page.getByText(snippet, { exact: false });
-  for (let i = 0; i < await targets.count(); i += 1) {
-    const target = targets.nth(i);
-    if (!(await target.isVisible().catch(() => false))) continue;
-    const container = target.locator('xpath=ancestor::*[.//button[contains(normalize-space(.), "ラインをこの場所に変更")]][1]');
-    if (await container.count()) {
-      const button = container.getByRole('button', { name: /ラインをこの場所に変更/ }).first();
-      if (await button.isVisible().catch(() => false)) {
-        await button.click();
-        return;
-      }
-    }
+  const editor = page.locator('.ProseMirror.paywall-setting[role="textbox"]');
+  const readBlocks = () => editor.evaluate(el => Array.from(el.children, child => ({
+    text: (child.textContent || '').trim(),
+    widget: child.classList.contains('ProseMirror-widget'),
+    buttons: child.querySelectorAll('button').length,
+    pressed: child.querySelector('button')?.getAttribute('aria-pressed') === 'true'
+  })));
+  const blocks = await readBlocks();
+  const index = paidBoundaryIndex(blocks, start);
+  if (!blocks[index].pressed) {
+    await editor.locator(':scope > *').nth(index).getByRole('button', { name: 'ラインをこの場所に変更', exact: true }).click();
   }
-  throw new Error('note_paid_boundary_target_missing');
+  const verified = await readBlocks();
+  const selected = paidBoundaryIndex(verified, start);
+  if (!verified[selected].pressed || verified.filter(block => block.pressed).length !== 1) {
+    throw new Error('note_paid_boundary_verification_failed');
+  }
 }
 
 async function configurePaidPublication(page, payload) {
@@ -273,9 +286,8 @@ async function configurePaidPublication(page, payload) {
   }
   await page.waitForTimeout(1000);
 
-  if (!(await clickVisibleText(page, ['有料']))) {
-    throw new Error('note_paid_toggle_missing');
-  }
+  await page.getByText('有料', { exact: true }).click();
+  if (!(await page.getByRole('radio', { name: '有料', exact: true }).isChecked())) throw new Error('note_paid_toggle_missing');
   requireDraftGate(payload);
   await setPaidPrice(page, EXPECTED_PRICE_YEN);
   requireDraftGate(payload);
@@ -362,6 +374,8 @@ module.exports = {
   createBrowserUseSession,
   stopBrowserUseSession,
   firstPaidParagraph,
+  paidBoundaryIndex,
+  setPaidBoundary,
   articleBody,
   validateDraftGate,
   requireDraftGate,
