@@ -7,6 +7,9 @@ const { raceDateFromKey } = require('./build-note-iphone-handoff');
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
 const EXPECTED_PRICE_YEN = 300;
 const NOTE_EDITOR_URL = 'https://editor.note.com/new';
+const BROWSER_USE_API_URL = 'https://api.browser-use.com/api/v4/browsers';
+const BROWSER_USE_PROXY_COUNTRY = 'jp';
+const BROWSER_USE_TIMEOUT_MINUTES = 10;
 
 function loadHandoff(handoffPath = DEFAULT_HANDOFF) {
   const absolute = path.resolve(handoffPath);
@@ -32,6 +35,46 @@ function loadStorageState(env = process.env) {
   }
   if (state.cookies.length === 0) throw new Error('note_state_empty');
   return state;
+}
+
+function loadBrowserUseConfig(env = process.env) {
+  const apiKey = String(env.BROWSER_USE_API_KEY || '').trim();
+  const profileId = String(env.BROWSER_USE_PROFILE_ID || '').trim();
+  if (!apiKey) throw new Error('browser_use_api_key_missing');
+  if (!profileId) throw new Error('browser_use_profile_id_missing');
+  return { apiKey, profileId };
+}
+
+async function createBrowserUseSession(config, request = fetch) {
+  const response = await request(BROWSER_USE_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Browser-Use-API-Key': config.apiKey
+    },
+    body: JSON.stringify({
+      profileId: config.profileId,
+      proxyCountryCode: BROWSER_USE_PROXY_COUNTRY,
+      timeout: BROWSER_USE_TIMEOUT_MINUTES
+    })
+  });
+  if (!response.ok) throw new Error(`browser_use_create_failed_${response.status}`);
+  const session = await response.json();
+  if (!session || !session.id || !session.cdpUrl) throw new Error('browser_use_session_invalid');
+  return { id: session.id, cdpUrl: session.cdpUrl };
+}
+
+async function stopBrowserUseSession(config, sessionId, request = fetch) {
+  if (!sessionId) return { ok: true };
+  const response = await request(`${BROWSER_USE_API_URL}/${encodeURIComponent(sessionId)}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Browser-Use-API-Key': config.apiKey
+    },
+    body: JSON.stringify({ action: 'stop' })
+  });
+  return { ok: response.ok, status: response.status };
 }
 
 function firstPaidParagraph(paidText) {
@@ -183,14 +226,12 @@ async function configurePaidPublication(page, payload) {
   return { ok: true, price: EXPECTED_PRICE_YEN, paidStart: firstPaidParagraph(payload.paidText) };
 }
 
-async function createAuthenticatedPage(browser, env = process.env) {
-  const storageState = loadStorageState(env);
-  const context = await browser.newContext({
-    storageState,
-    locale: 'ja-JP',
-    timezoneId: 'Asia/Tokyo'
-  });
-  const page = await context.newPage();
+async function createAuthenticatedPage(browser) {
+  // A Browser Use profile is loaded into its existing context. A new incognito
+  // context would intentionally omit the saved note cookies.
+  const context = browser.contexts()[0];
+  if (!context) throw new Error('browser_use_context_missing');
+  const page = context.pages()[0] || await context.newPage();
   await ensureEditorReady(page);
   return { context, page };
 }
@@ -200,14 +241,16 @@ async function run({ env = process.env } = {}) {
   if (!['auth', 'draft'].includes(mode)) throw new Error('unsupported_note_ui_mode');
 
   // Invalid/missing credentials and stale handoffs must stop before browser setup.
-  loadStorageState(env);
+  const browserUse = loadBrowserUseConfig(env);
   const draft = mode === 'draft' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
   if (draft) requireDraftGate(draft.payload);
   const { chromium } = require('playwright');
-  const browser = await chromium.launch({ headless: false, args: ['--disable-dev-shm-usage'] });
+  const session = await createBrowserUseSession(browserUse);
+  let browser;
   try {
-    const { page } = await createAuthenticatedPage(browser, env);
-    console.log('NOTE_UI_STATE_LOADED=true');
+    browser = await chromium.connectOverCDP(session.cdpUrl);
+    const { page } = await createAuthenticatedPage(browser);
+    console.log('NOTE_UI_PROFILE_LOADED=true');
     console.log('NOTE_UI_EDITOR_READY=true');
 
     if (mode === 'auth') {
@@ -235,7 +278,9 @@ async function run({ env = process.env } = {}) {
     console.log(`NOTE_UI_PAID_START=${paid.paidStart}`);
     console.log('NOTE_UI_PUBLISH_CLICKED=false');
   } finally {
-    await browser.close();
+    if (browser) await browser.close().catch(() => {});
+    const stopped = await stopBrowserUseSession(browserUse, session.id).catch(() => ({ ok: false }));
+    if (!stopped.ok) console.error('NOTE_UI_BROWSER_STOP_FAILED=true');
   }
 }
 
@@ -250,8 +295,14 @@ module.exports = {
   DEFAULT_HANDOFF,
   EXPECTED_PRICE_YEN,
   NOTE_EDITOR_URL,
+  BROWSER_USE_API_URL,
+  BROWSER_USE_PROXY_COUNTRY,
+  BROWSER_USE_TIMEOUT_MINUTES,
   loadHandoff,
   loadStorageState,
+  loadBrowserUseConfig,
+  createBrowserUseSession,
+  stopBrowserUseSession,
   firstPaidParagraph,
   articleBody,
   validateDraftGate,

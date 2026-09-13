@@ -10,7 +10,10 @@ const {
   run,
   ensureEditorReady,
   isEditorUrl,
-  loadStorageState
+  loadStorageState,
+  loadBrowserUseConfig,
+  createBrowserUseSession,
+  stopBrowserUseSession
 } = require('./note-github-ui-transport');
 
 const valid = {
@@ -66,7 +69,30 @@ assert.throws(() => loadStorageState({ NOTE_STATE_JSON_BASE64: Buffer.from(JSON.
 
 // Missing state stops the CLI before even loading a browser dependency.
 async function checkAsyncGuards() {
-  await assert.rejects(run({ env: {} }), /note_state_missing/);
+  await assert.rejects(run({ env: {} }), /browser_use_api_key_missing/);
+  await assert.rejects(run({ env: { BROWSER_USE_API_KEY: 'key' } }), /browser_use_profile_id_missing/);
+  assert.deepEqual(loadBrowserUseConfig({ BROWSER_USE_API_KEY: ' key ', BROWSER_USE_PROFILE_ID: ' profile ' }), {
+    apiKey: 'key',
+    profileId: 'profile'
+  });
+  const calls = [];
+  const request = async (url, options) => {
+    calls.push({ url, options });
+    return calls.length === 1
+      ? { ok: true, status: 201, json: async () => ({ id: 'session', cdpUrl: 'wss://example.invalid/cdp' }) }
+      : { ok: true, status: 200 };
+  };
+  const session = await createBrowserUseSession({ apiKey: 'secret', profileId: 'profile' }, request);
+  assert.deepEqual(session, { id: 'session', cdpUrl: 'wss://example.invalid/cdp' });
+  assert.deepEqual(JSON.parse(calls[0].options.body), {
+    profileId: 'profile',
+    proxyCountryCode: 'jp',
+    timeout: 10
+  });
+  assert.equal(calls[0].options.headers['X-Browser-Use-API-Key'], 'secret');
+  assert.deepEqual(await stopBrowserUseSession({ apiKey: 'secret' }, session.id, request), { ok: true, status: 200 });
+  assert.equal(calls[1].options.method, 'PATCH');
+  assert.deepEqual(JSON.parse(calls[1].options.body), { action: 'stop' });
   const page = { goto: async () => {}, waitForTimeout: async () => {}, url: () => 'https://editor.note.com/new' };
   // An editor URL alone is not proof of usable authentication.
   await assert.rejects(ensureEditorReady(page, async () => null), /note_editor_fields_not_ready/);
