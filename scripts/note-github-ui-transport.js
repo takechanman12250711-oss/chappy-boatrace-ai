@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 const { raceDateFromKey } = require('./build-note-iphone-handoff');
 
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
@@ -117,6 +118,41 @@ function validateDraftGate(payload, now = Date.now()) {
 function requireDraftGate(payload, now = Date.now()) {
   const gate = validateDraftGate(payload, now);
   if (!gate.ok) throw new Error(`note_publish_gate_blocked_${gate.reason}`);
+}
+
+function draftClaimRef(payload) {
+  const parts = /^(\d{8})-(\d{1,2})-(\d{1,2})$/.exec(String(payload.raceKey || ''));
+  if (!parts || Number(parts[2]) < 1 || Number(parts[2]) > 24 || Number(parts[3]) < 1 || Number(parts[3]) > 12) {
+    throw new Error('note_claim_race_key_invalid');
+  }
+  // A revised title/body or zero-padding must not create another attempt.
+  const race = `${parts[1]}-${Number(parts[2])}-${Number(parts[3])}`;
+  return `refs/tags/note-draft-claim/${createHash('sha256').update(race).digest('hex')}`;
+}
+
+async function claimDraft(payload, env = process.env, request = fetch) {
+  requireDraftGate(payload);
+  const repository = String(env.GITHUB_REPOSITORY || '');
+  const sha = String(env.GITHUB_SHA || '');
+  const token = String(env.NOTE_CLAIM_TOKEN || '');
+  if (repository !== 'takechanman12250711-oss/chappy-boatrace-ai' || !/^[a-f0-9]{40}$/.test(sha) || !token) {
+    throw new Error('note_claim_configuration_missing');
+  }
+  const ref = draftClaimRef(payload);
+  // Atomic creation persists across runners/retries. Never delete on failure:
+  // the note write may have succeeded even when its response was lost.
+  const response = await request(`https://api.github.com/repos/${repository}/git/refs`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref, sha }),
+    signal: AbortSignal.timeout(30000)
+  });
+  if (response.status !== 201) throw new Error(`note_claim_not_acquired_${response.status}_review_required`);
+  const created = await response.json();
+  if (created.ref !== ref || created.object?.sha !== sha) throw new Error('note_claim_response_invalid_review_required');
+  requireDraftGate(payload);
+  console.log(`NOTE_UI_DRAFT_CLAIM=${ref}`);
+  return ref;
 }
 
 function isEditorUrl(value) {
@@ -245,6 +281,7 @@ async function run({ env = process.env } = {}) {
   const draft = mode === 'draft' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
   if (draft) requireDraftGate(draft.payload);
   const { chromium } = require('playwright');
+  if (draft) await claimDraft(draft.payload, env);
   const session = await createBrowserUseSession(browserUse);
   let browser;
   try {
@@ -307,6 +344,8 @@ module.exports = {
   articleBody,
   validateDraftGate,
   requireDraftGate,
+  draftClaimRef,
+  claimDraft,
   isEditorUrl,
   ensureEditorReady,
   configurePaidPublication,
