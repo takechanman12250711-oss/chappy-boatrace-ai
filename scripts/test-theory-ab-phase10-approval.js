@@ -59,10 +59,12 @@ const tampered = builder.buildReport({ phase9, candidateAnalysis: candidate, app
 assert.equal(tampered.readinessChecks.approvalApplied, false);
 assert.equal(tampered.candidateB, null);
 
-const expandedPhase9 = structuredClone(phase9);
+// Evidence growth needs a populated, stable fixture. The current reports can
+// legitimately move to another theory and contain no candidate.
+const expandedPhase9 = structuredClone(frozen.phase9);
 expandedPhase9.proposal.evidenceCount += 100;
 expandedPhase9.proposal.currentValue = 99.9;
-const expandedCandidate = structuredClone(candidate);
+const expandedCandidate = structuredClone(frozen.candidateAnalysis);
 expandedCandidate.phase9ProposalFingerprint = `sha256:${"2".repeat(64)}`;
 expandedCandidate.candidate.sourceProposalFingerprint = `sha256:${"2".repeat(64)}`;
 const frozenAfterEvidenceGrowth = builder.buildReport({
@@ -76,6 +78,45 @@ assert.equal(frozenAfterEvidenceGrowth.currentProposalFingerprint, approval.prop
 assert.equal(frozenAfterEvidenceGrowth.candidateB.prospectiveProtocol.fixedComparableRaces, 100);
 assert.equal(frozenAfterEvidenceGrowth.automaticApplication, false);
 assert.equal(frozenAfterEvidenceGrowth.usableForPrediction, false);
+
+const currentReportsWithoutCandidate = [
+  {
+    phase9: {},
+    candidateAnalysis: {}
+  },
+  {
+    phase9: { status: "waiting-for-phase8-candidate", proposalCount: 0, proposal: null },
+    candidateAnalysis: { status: "waiting-for-phase9-proposal", candidateCount: 0, candidate: null }
+  },
+  {
+    phase9: {
+      status: "proposal-ready",
+      proposalCount: 1,
+      proposal: { ...frozen.phase9.proposal, theoryKey: "wall-boat" }
+    },
+    candidateAnalysis: { status: "unsupported-phase9-theory", candidateCount: 0, candidate: null }
+  }
+];
+for (const current of currentReportsWithoutCandidate) {
+  const preserved = builder.buildReport({ ...current, approval, approvedSource: frozen });
+  assert.equal(preserved.status, "ready-for-shadow-ab");
+  assert.equal(preserved.readinessChecks.approvalApplied, true);
+  assert.equal(preserved.currentProposalFingerprint, approval.proposal.proposalFingerprint);
+  assert.deepEqual(preserved.candidateB, report.candidateB);
+  assert.equal(preserved.automaticApplication, false);
+  assert.equal(preserved.usableForPrediction, false);
+
+  // The frozen source alone never grants approval to an absent/new candidate.
+  const unapproved = builder.buildReport({
+    ...current,
+    approval: { ...approval, approved: false },
+    approvedSource: frozen
+  });
+  assert.equal(unapproved.readinessChecks.approvalApplied, false);
+  assert.equal(unapproved.candidateB, null);
+  assert.equal(unapproved.automaticApplication, false);
+  assert.equal(unapproved.usableForPrediction, false);
+}
 
 const wrongMetadata = structuredClone(frozen);
 wrongMetadata.sourceCommit = "0".repeat(40);
