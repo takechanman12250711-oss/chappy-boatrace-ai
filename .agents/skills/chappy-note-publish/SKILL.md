@@ -7,6 +7,8 @@ description: チャッピーボートレースAIのnote公開経路を扱う。�
 
 ## 2026-09-13 Browser Use接続の確認済み現在地
 
+同日、本人が販売者情報を登録後、Workの非公開テスト下書き「動作確認用・公開しない」（n9bed34c034d9）で本文保存、価格300円、無料文と有料文の間の選択済み境界を実画面確認した。価格欄は input#price、有料切替は完全一致で指定する。境界は有料先頭段落の全文一致が一意であること、直前のwidget、選択後のaria-pressedを検証する。共通祖先内の最初のボタンや40文字の部分一致を使わない。これはWorkでの実サイト確認であり、Actionsのdraft無人成功や公開の証明ではない。投稿ボタンは未操作。再ログイン・本人情報再登録を新たな失敗の証拠なしに要求しない。
+
 この節を以下の旧storageState接続記録より優先する。PR #945で認証経路をBrowser Use保存profileへ変更済み。GitHub Secretsは `BROWSER_USE_API_KEY` と `BROWSER_USE_PROFILE_ID`。旧 `NOTE_STATE_JSON_BASE64` の登録、Cookie抽出、本人ログインのやり直しを要求しない。
 
 ユーザーがiPhoneで両Secretを登録し、mainのauth実行34760871901（2026-09-13 13:50 UTC）で `NOTE_UI_PROFILE_LOADED=true`、`NOTE_UI_EDITOR_READY=true` を確認した。GitHub Actionsから保存profileを再利用してnote編集画面へ到達した証拠である。本文入力・300円・有料境界・公開は未確認/未実行。
