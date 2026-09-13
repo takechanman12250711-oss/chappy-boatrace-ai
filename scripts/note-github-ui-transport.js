@@ -2,8 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { chromium } = require('playwright');
-const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
+const { raceDateFromKey } = require('./build-note-iphone-handoff');
 
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
 const EXPECTED_PRICE_YEN = 300;
@@ -46,9 +45,25 @@ function articleBody(payload) {
   return `${String(payload.freeText || '').trim()}\n\n${String(payload.paidText || '').trim()}`.trim();
 }
 
-function validateDraftGate(payload) {
+function validateDraftGate(payload, now = Date.now()) {
   if (!payload || typeof payload !== 'object') return { ok: false, reason: 'handoff_invalid' };
   if (payload.canPublish !== true) return { ok: false, reason: payload.blockReason || 'can_publish_false' };
+  if (payload.blockReason) return { ok: false, reason: payload.blockReason };
+  const nowMs = Number(now);
+  if (!Number.isFinite(nowMs) || !Number.isFinite(new Date(nowMs + 9 * 3600000).getTime())) {
+    return { ok: false, reason: 'clock_invalid' };
+  }
+  const today = new Date(nowMs + 9 * 3600000).toISOString().slice(0, 10);
+  const raceDate = raceDateFromKey(payload.raceKey);
+  if (!raceDate || raceDate !== today || (payload.raceDate && payload.raceDate !== raceDate)) {
+    return { ok: false, reason: 'race_day_mismatch' };
+  }
+  const deadline = String(payload.deadlineAt || '');
+  const deadlineMs = Date.parse(deadline);
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/i.test(deadline) || !Number.isFinite(deadlineMs)) {
+    return { ok: false, reason: 'deadline_unavailable' };
+  }
+  if (deadlineMs <= nowMs) return { ok: false, reason: 'deadline_passed' };
   if (!String(payload.title || '').trim()) return { ok: false, reason: 'title_missing' };
   if (!String(payload.freeText || '').trim()) return { ok: false, reason: 'free_text_missing' };
   if (!String(payload.paidText || '').trim()) return { ok: false, reason: 'paid_text_missing' };
@@ -56,21 +71,34 @@ function validateDraftGate(payload) {
   return { ok: true };
 }
 
+function requireDraftGate(payload, now = Date.now()) {
+  const gate = validateDraftGate(payload, now);
+  if (!gate.ok) throw new Error(`note_publish_gate_blocked_${gate.reason}`);
+}
+
 function isEditorUrl(value) {
   try {
-    return new URL(String(value || '')).hostname === 'editor.note.com';
+    const url = new URL(String(value || ''));
+    return url.protocol === 'https:' && url.hostname === 'editor.note.com';
   } catch {
     return false;
   }
 }
 
-async function ensureEditorReady(page) {
+async function ensureEditorReady(page, findVisible) {
   await page.goto(NOTE_EDITOR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForTimeout(1000);
   if (!isEditorUrl(page.url())) {
     let host = 'unknown';
     try { host = new URL(page.url()).hostname || 'unknown'; } catch {}
     throw new Error(`note_editor_session_not_ready_${host}`);
+  }
+  const locate = findVisible || require('./note-browserbase-draft-save').waitForVisibleAcrossFrames;
+  const title = await locate(page, ['textarea[placeholder*="タイトル"]', 'input[placeholder*="タイトル"]', '[aria-label*="タイトル"]']);
+  const body = await locate(page, ['textarea[placeholder*="本文"]', '[data-placeholder*="本文"][contenteditable="true"]', '.ProseMirror[contenteditable="true"]', '[contenteditable="true"][role="textbox"]']);
+  if (!isEditorUrl(page.url()) || !title || !body ||
+      !(await title.isEditable().catch(() => false)) || !(await body.isEditable().catch(() => false))) {
+    throw new Error('note_editor_fields_not_ready');
   }
   return page.url();
 }
@@ -99,6 +127,7 @@ async function clickVisibleText(page, texts) {
 }
 
 async function setPaidPrice(page, price) {
+  const { waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
   const input = await waitForVisibleAcrossFrames(page, [
     'input[placeholder*="価格"]',
     'input[aria-label*="価格"]',
@@ -138,6 +167,7 @@ async function setPaidBoundary(page, paidText) {
 }
 
 async function configurePaidPublication(page, payload) {
+  requireDraftGate(payload);
   if (!(await clickVisibleText(page, ['公開に進む', '公開設定']))) {
     throw new Error('note_publish_settings_button_missing');
   }
@@ -146,7 +176,9 @@ async function configurePaidPublication(page, payload) {
   if (!(await clickVisibleText(page, ['有料']))) {
     throw new Error('note_paid_toggle_missing');
   }
+  requireDraftGate(payload);
   await setPaidPrice(page, EXPECTED_PRICE_YEN);
+  requireDraftGate(payload);
   await setPaidBoundary(page, payload.paidText);
   return { ok: true, price: EXPECTED_PRICE_YEN, paidStart: firstPaidParagraph(payload.paidText) };
 }
@@ -167,6 +199,11 @@ async function run({ env = process.env } = {}) {
   const mode = String(env.NOTE_UI_MODE || 'auth').trim().toLowerCase();
   if (!['auth', 'draft'].includes(mode)) throw new Error('unsupported_note_ui_mode');
 
+  // Invalid/missing credentials and stale handoffs must stop before browser setup.
+  loadStorageState(env);
+  const draft = mode === 'draft' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
+  if (draft) requireDraftGate(draft.payload);
+  const { chromium } = require('playwright');
   const browser = await chromium.launch({ headless: false, args: ['--disable-dev-shm-usage'] });
   try {
     const { page } = await createAuthenticatedPage(browser, env);
@@ -180,10 +217,10 @@ async function run({ env = process.env } = {}) {
       return;
     }
 
-    const { absolute, payload } = loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF);
-    const gate = validateDraftGate(payload);
-    if (!gate.ok) throw new Error(`note_publish_gate_blocked_${gate.reason}`);
+    const { absolute, payload } = draft;
+    requireDraftGate(payload);
 
+    const { fillDraft } = require('./note-browserbase-draft-save');
     const result = await fillDraft(page, {
       title: String(payload.title).trim(),
       body: articleBody(payload)
@@ -218,6 +255,7 @@ module.exports = {
   firstPaidParagraph,
   articleBody,
   validateDraftGate,
+  requireDraftGate,
   isEditorUrl,
   ensureEditorReady,
   configurePaidPublication,

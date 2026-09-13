@@ -20,9 +20,9 @@
 - note UI transportのタイトル/本文入力、有料切替、300円設定、有料境界設定（最終公開ボタンは未接続）
 - PR #939で最終transportの認証をPlaywright保存済み`storageState`方式へ一本化
 
-現在の唯一の認証未接続点:
+現在の認証未接続点（iPhoneだけの初回設定を含め未完成）:
 
-- 有効な`note-state.json`相当のPlaywright `storageState`を安全に作成・更新し、GitHub Actions Secret `NOTE_STATE_JSON_BASE64`へ登録すること
+- 有効なPlaywright `storageState`を安全に作成・更新し、GitHub Actions Secret `NOTE_STATE_JSON_BASE64`へ登録する接続が未完成。Secretを受け取るコードがあるだけで、iPhoneから初回設定できるとは扱わない。
 - 2026-09-13の実行確認ではこのSecretは未設定で、`note_state_missing`としてfail-closedした
 - Secret/state本体をリポジトリ、handoff、artifact、Actionsログへ保存しない
 
@@ -43,6 +43,15 @@
 
 新しいチャットや開発環境では、まず最新main、この文書、`chappy-note-publish` Skill、直近の関連マージPR、`data/note-publish/` の現物を照合する。過去の実験経路から推測で再開しない。
 
+## iPhoneだけでの本人認証と再発防止
+
+- iPhoneの通常ブラウザ、Workのブラウザ、GitHub ActionsのChromiumは別の認証環境。通常ブラウザへのログインを他の環境の認証成功と扱わない。
+- ユーザーへPC、開発者ツール、Cookie抽出、`storageState`の手作成を要求しない。初回設定もiPhoneだけで完結することが要件。
+- 本人操作を依頼する前に、入力画面が操作可能であることと、そこでの認証を実際の投稿処理が再利用できることを確認する。認証ファイルが未設定というだけで同じ操作を繰り返し依頼しない。
+- Workの正規ブラウザ本人認証機能は利用候補だが、そのログイン状態をGitHub Secretへ移せることや無人実行できることは確認されていない。ログイン画面を開けただけで採用・完成としない。
+- 2026-09-13の照合で共有版と個人版のnote公開スキルに差異を確認。関連変更は両方へ反映し、個人版の保存完了まで別に確認する。作業開始時の入口はルート `AGENTS.md`。
+- 手順の文章化は補助。投稿可否・実時計でのJST当日判定・締切・停止理由は `validateDraftGate` が実行時に検査し、本文入力と有料設定の直前にも再検査する。CIで締切境界・日付境界・停止理由付きのケースを実行する。
+
 ## handoffの役割
 
 `data/note-publish/latest.json` は、保存済みnote原稿から最新の投稿候補を集約する単一handoff。
@@ -55,7 +64,7 @@
 
 本番transportは `NOTE_STATE_JSON_BASE64` をbase64 decodeしてPlaywright `storageState`として読み込む。stateが未設定、不正JSON、cookie空の場合は停止する。XのID/パスワードをtransportへ渡して毎回OAuthする方式には戻さない。
 
-認証成功の条件は、保存stateを使ったbrowser contextから `https://editor.note.com/new` へ実際に到達し、最終hostが `editor.note.com` であること。単にログインhelperが成功を返したことを認証成功扱いしない。
+認証成功の条件は、保存stateを使ったbrowser contextから `https://editor.note.com/new` へ実際に到達し、HTTPSの最終hostが `editor.note.com` で、タイトル欄・本文欄の表示と編集可能状態を確認できること。単にログインhelperが成功を返したことを認証成功扱いしない。
 
 ## `canPublish` を混同しない
 
