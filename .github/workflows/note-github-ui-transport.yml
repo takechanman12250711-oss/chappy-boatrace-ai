@@ -24,6 +24,13 @@ jobs:
       NOTE_UI_MODE: ${{ inputs.mode }}
       NOTE_IPHONE_HANDOFF: data/note-publish/iphone.json
     steps:
+      - name: Require saved note state
+        shell: bash
+        run: |
+          if [ -z "$NOTE_STATE_JSON_BASE64" ]; then
+            echo "NOTE_UI_TRANSPORT_BLOCKED=note_state_missing"
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
