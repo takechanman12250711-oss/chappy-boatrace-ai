@@ -36,4 +36,4 @@ jobs:
       - name: Verify transport gate
         run: node scripts/note-github-ui-transport.test.js
       - name: Run note UI transport
-        run: node scripts/note-github-ui-transport.js
+        run: xvfb-run -a node scripts/note-github-ui-transport.js

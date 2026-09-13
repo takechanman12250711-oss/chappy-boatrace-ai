@@ -135,7 +135,9 @@ async function run({ env = process.env } = {}) {
   const mode = String(env.NOTE_UI_MODE || 'auth').trim().toLowerCase();
   if (!['auth', 'draft'].includes(mode)) throw new Error('unsupported_note_ui_mode');
 
-  const browser = await chromium.launch({ headless: true, args: ['--disable-dev-shm-usage'] });
+  // note's editor currently rejects the headless Chromium path in CI.
+  // Use a real headed browser inside the runner's Xvfb display instead.
+  const browser = await chromium.launch({ headless: false, args: ['--disable-dev-shm-usage'] });
   try {
     const context = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
     const page = await context.newPage();
