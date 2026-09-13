@@ -4,6 +4,8 @@ const assert = require('node:assert/strict');
 const {
   EXPECTED_PRICE_YEN,
   firstPaidParagraph,
+  paidBoundaryIndex,
+  setPaidBoundary,
   articleBody,
   validateDraftGate,
   requireDraftGate,
@@ -58,6 +60,15 @@ assert.throws(() => requireDraftGate(valid, deadline + 1), /deadline_passed/);
 assert.deepEqual(validateDraftGate(valid, Date.parse('2026-09-12T15:00:00Z')), { ok: true });
 assert.deepEqual(validateDraftGate(valid, Date.parse('2026-09-12T14:59:59Z')), { ok: false, reason: 'race_day_mismatch' });
 assert.equal(firstPaidParagraph(valid.paidText), '🔵 本命予想');
+// Captured note DOM order: paragraph, boundary widget, paragraph, widget.
+const paragraph = text => ({ text, widget: false, buttons: 0 });
+const marker = { text: 'ラインをこの場所に変更', widget: true, buttons: 1 };
+const boundaryBlocks = [paragraph('無料本文'), marker, paragraph('🔵 本命予想'), marker];
+assert.equal(paidBoundaryIndex(boundaryBlocks, '🔵 本命予想'), 1); // Before paid text, never index 3.
+assert.throws(() => paidBoundaryIndex([...boundaryBlocks, paragraph('🔵 本命予想')], '🔵 本命予想'), /not_unique/);
+assert.throws(() => paidBoundaryIndex(boundaryBlocks, '🔵 本命'), /not_unique/);
+assert.throws(() => paidBoundaryIndex([paragraph('無料本文'), paragraph('🔵 本命予想'), marker], '🔵 本命予想'), /marker_missing/);
+assert.throws(() => paidBoundaryIndex([paragraph('🔵 本命予想'), marker], '🔵 本命予想'), /marker_missing/);
 assert.equal(articleBody(valid), '無料本文\n\n🔵 本命予想\n\n有料本文');
 assert.equal(articleBody(valid).includes('ここから先は有料部分です'), false);
 assert.equal(isEditorUrl('https://editor.note.com/new'), true);
@@ -72,6 +83,28 @@ assert.throws(() => loadStorageState({ NOTE_STATE_JSON_BASE64: Buffer.from(JSON.
 
 // Missing state stops the CLI before even loading a browser dependency.
 async function checkAsyncGuards() {
+  // Simulate the observed sibling layout and a UI that may ignore clicks.
+  for (const scenario of ['move', 'already', 'ignored']) {
+    let selected = scenario === 'already' ? 1 : 3;
+    let clicks = 0;
+    const editor = {
+      evaluate: async () => boundaryBlocks.map((block, index) => ({ ...block, pressed: index === selected })),
+      locator: () => ({ nth: index => ({ getByRole: () => ({ click: async () => {
+        assert.equal(index, 1);
+        clicks += 1;
+        if (scenario !== 'ignored') selected = index;
+      } }) }) })
+    };
+    const settings = { isVisible: async () => true, click: async () => {} };
+    const ui = {
+      getByRole: () => ({ count: async () => 1, nth: () => settings }),
+      getByText: () => ({ count: async () => 1, nth: () => settings }),
+      waitForTimeout: async () => {}, locator: () => editor
+    };
+    if (scenario === 'ignored') await assert.rejects(setPaidBoundary(ui, valid.paidText), /verification_failed/);
+    else await setPaidBoundary(ui, valid.paidText);
+    assert.equal(clicks, scenario === 'already' ? 0 : 1);
+  }
   const current = Date.now();
   const today = new Date(current + 9 * 3600000).toISOString().slice(0, 10);
   const eligible = { ...valid, raceDate: today, raceKey: `${today.replaceAll('-', '')}-10-7`, deadlineAt: new Date(current + 3600000).toISOString() };
