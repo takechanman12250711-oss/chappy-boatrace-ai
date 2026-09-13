@@ -1,13 +1,12 @@
 'use strict';
 
 const { chromium } = require('playwright');
-const { loginNoteViaX } = require('./note-browserbase-x-login');
 const { fillDraft } = require('./note-browserbase-draft-save');
 const {
   configurePaidPublication,
   articleBody,
   EXPECTED_PRICE_YEN,
-  ensureEditorReady
+  createAuthenticatedPage
 } = require('./note-github-ui-transport');
 
 const TEST_PAYLOAD = {
@@ -20,14 +19,10 @@ const TEST_PAYLOAD = {
 async function run({ env = process.env } = {}) {
   const browser = await chromium.launch({ headless: false, args: ['--disable-dev-shm-usage'] });
   try {
-    const context = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
-    const page = await context.newPage();
-    const auth = await loginNoteViaX(page, { env });
-    if (!auth?.ok) throw new Error(`note_auth_failed_${auth?.reason || 'unknown'}`);
-    await ensureEditorReady(page);
+    const { page } = await createAuthenticatedPage(browser, env);
+    console.log('NOTE_PAID_SMOKE_STATE_LOADED=true');
+    console.log('NOTE_PAID_SMOKE_EDITOR_READY=true');
 
-    console.log('NOTE_PAID_SMOKE_AUTH_OK=true');
-    console.log(`NOTE_PAID_SMOKE_EDITOR_URL=${page.url()}`);
     const result = await fillDraft(page, {
       title: TEST_PAYLOAD.title,
       body: articleBody(TEST_PAYLOAD)
