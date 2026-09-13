@@ -130,14 +130,35 @@ function draftClaimRef(payload) {
   return `refs/tags/note-draft-claim/${createHash('sha256').update(race).digest('hex')}`;
 }
 
-async function claimDraft(payload, env = process.env, request = fetch) {
-  requireDraftGate(payload);
+function loadClaimConfig(env = process.env) {
   const repository = String(env.GITHUB_REPOSITORY || '');
-  const sha = String(env.GITHUB_SHA || '');
+  const sha = String(env.NOTE_CLAIM_SHA || env.GITHUB_SHA || '');
   const token = String(env.NOTE_CLAIM_TOKEN || '');
   if (repository !== 'takechanman12250711-oss/chappy-boatrace-ai' || !/^[a-f0-9]{40}$/.test(sha) || !token) {
     throw new Error('note_claim_configuration_missing');
   }
+  return { repository, sha, token };
+}
+
+async function preflightDraft(payload, env = process.env, request = fetch) {
+  const gate = validateDraftGate(payload);
+  if (!gate.ok) return gate;
+  const { repository, token } = loadClaimConfig(env);
+  const ref = draftClaimRef(payload);
+  const response = await request(`https://api.github.com/repos/${repository}/git/ref/${ref.slice(5)}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+    signal: AbortSignal.timeout(30000)
+  });
+  if (response.status === 404) return validateDraftGate(payload);
+  if (response.status !== 200) throw new Error(`note_claim_lookup_failed_${response.status}`);
+  const existing = await response.json();
+  if (existing.ref !== ref) throw new Error('note_claim_lookup_invalid');
+  return { ok: false, reason: 'prior_attempt_review_required' };
+}
+
+async function claimDraft(payload, env = process.env, request = fetch) {
+  requireDraftGate(payload);
+  const { repository, sha, token } = loadClaimConfig(env);
   const ref = draftClaimRef(payload);
   // Atomic creation persists across runners/retries. Never delete on failure:
   // the note write may have succeeded even when its response was lost.
@@ -346,6 +367,7 @@ module.exports = {
   requireDraftGate,
   draftClaimRef,
   claimDraft,
+  preflightDraft,
   isEditorUrl,
   ensureEditorReady,
   configurePaidPublication,
