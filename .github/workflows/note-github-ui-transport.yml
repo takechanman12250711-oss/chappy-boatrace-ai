@@ -15,8 +15,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: note-ui-transport
+  cancel-in-progress: false
+
 jobs:
   note-ui:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -45,4 +51,6 @@ jobs:
       - name: Verify transport gate
         run: node scripts/note-github-ui-transport.test.js
       - name: Run note UI transport
+        env:
+          NOTE_CLAIM_TOKEN: ${{ github.token }}
         run: node scripts/note-github-ui-transport.js
