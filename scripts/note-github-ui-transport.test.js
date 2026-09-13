@@ -7,6 +7,8 @@ const {
   articleBody,
   validateDraftGate,
   requireDraftGate,
+  draftClaimRef,
+  claimDraft,
   run,
   ensureEditorReady,
   isEditorUrl,
@@ -69,6 +71,39 @@ assert.throws(() => loadStorageState({ NOTE_STATE_JSON_BASE64: Buffer.from(JSON.
 
 // Missing state stops the CLI before even loading a browser dependency.
 async function checkAsyncGuards() {
+  const current = Date.now();
+  const today = new Date(current + 9 * 3600000).toISOString().slice(0, 10);
+  const eligible = { ...valid, raceDate: today, raceKey: `${today.replaceAll('-', '')}-10-7`, deadlineAt: new Date(current + 3600000).toISOString() };
+  const claimEnv = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', GITHUB_SHA: 'a'.repeat(40), NOTE_CLAIM_TOKEN: 'test-only' };
+  const reservations = new Set();
+  const reserve = async (url, options) => {
+    assert.equal(url, 'https://api.github.com/repos/takechanman12250711-oss/chappy-boatrace-ai/git/refs');
+    const { ref, sha } = JSON.parse(options.body);
+    if (reservations.has(ref)) return { status: 422 };
+    reservations.add(ref);
+    return { status: 201, json: async () => ({ ref, object: { sha } }) };
+  };
+  const attempts = await Promise.allSettled([claimDraft(eligible, claimEnv, reserve), claimDraft(eligible, claimEnv, reserve)]);
+  assert.equal(attempts.filter(x => x.status === 'fulfilled').length, 1);
+  assert.match(attempts.find(x => x.status === 'rejected').reason.message, /note_claim_not_acquired_422/);
+  // A later runner and changed article cannot silently make a second draft.
+  await assert.rejects(claimDraft({ ...eligible, title: 'revised' }, claimEnv, reserve), /review_required/);
+  assert.equal(draftClaimRef(eligible), draftClaimRef({ ...eligible, raceKey: `${today.replaceAll('-', '')}-10-07` }));
+  assert.notEqual(draftClaimRef(eligible), draftClaimRef({ ...eligible, raceKey: `${today.replaceAll('-', '')}-10-8` }));
+  await assert.rejects(claimDraft(eligible, {}, reserve), /configuration_missing/);
+  await assert.rejects(claimDraft({ ...eligible, canPublish: false }, claimEnv, () => { throw new Error('must not contact GitHub'); }), /can_publish_false/);
+  for (const status of [403, 409, 422, 500]) {
+    await assert.rejects(claimDraft(eligible, claimEnv, async () => ({ status })), /review_required/);
+  }
+  await assert.rejects(claimDraft(eligible, claimEnv, async () => { throw new Error('connection lost'); }), /connection lost/);
+  await assert.rejects(claimDraft(eligible, claimEnv, async () => ({ status: 201, json: async () => ({}) })), /response_invalid/);
+  const realNow = Date.now;
+  try {
+    await assert.rejects(claimDraft(eligible, claimEnv, async () => {
+      Date.now = () => Date.parse(eligible.deadlineAt);
+      return { status: 201, json: async () => ({ ref: draftClaimRef(eligible), object: { sha: claimEnv.GITHUB_SHA } }) };
+    }), /deadline_passed/);
+  } finally { Date.now = realNow; }
   await assert.rejects(run({ env: {} }), /browser_use_api_key_missing/);
   await assert.rejects(run({ env: { BROWSER_USE_API_KEY: 'key' } }), /browser_use_profile_id_missing/);
   assert.deepEqual(loadBrowserUseConfig({ BROWSER_USE_API_KEY: ' key ', BROWSER_USE_PROFILE_ID: ' profile ' }), {
