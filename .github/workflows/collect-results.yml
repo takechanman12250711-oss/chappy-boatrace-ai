@@ -186,7 +186,9 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    outputs:
+      saved_sha: ${{ steps.save_results.outputs.sha }}
 
     steps:
       - name: Checkout repository
@@ -357,6 +359,7 @@ jobs:
           git diff --exit-code -- data/predictions/index.json
 
       - name: Save official results before calibration
+        id: save_results
         run: |
           node scripts/prepare-daily-prediction-git-save.js --all
           git add data/results data/stats data/analysis/reference-tag-effectiveness.json
@@ -370,6 +373,27 @@ jobs:
             git pull --rebase origin main
             git push origin main
           fi
+
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  calibrate:
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout saved result checkpoint
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.collect.outputs.saved_sha }}
+          fetch-depth: 0
+
+      - name: Keep the central writer on main
+        run: git checkout -B main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
       - name: Build prediction calibration
         run: |
@@ -455,6 +479,5 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
-      - name: Run noncritical performance check
-        continue-on-error: true
-        run: node scripts/test-load-performance.js
+      - name: Report saved calibration
+        run: echo "公式結果・校正・派生データの保存が完了しました" >> "$GITHUB_STEP_SUMMARY"

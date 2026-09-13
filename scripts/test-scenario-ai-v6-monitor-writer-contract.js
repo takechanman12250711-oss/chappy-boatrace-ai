@@ -26,7 +26,7 @@ const validateStart = central.indexOf(
 const calibration = central.slice(buildStart, validateStart);
 const saveStart = central.indexOf("- name: Save calibration and derived data");
 const performanceStart = central.indexOf(
-  "- name: Run noncritical performance check",
+  "- name: Report saved calibration",
   saveStart,
 );
 

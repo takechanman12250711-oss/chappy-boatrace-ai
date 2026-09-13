@@ -4,68 +4,65 @@ on:
   workflow_run:
     workflows:
       - Collect official race results
-    types:
-      - completed
+    branches: [main]
+    types: [completed]
+  schedule:
+    - cron: "45 * * * *" # GitHub-only check for missing runs; no Work polling
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/result-collection-watchdog.yml"
+      - "scripts/result-collection-watchdog.js"
+  pull_request:
+    paths:
+      - ".github/workflows/result-collection-watchdog.yml"
+      - ".github/workflows/collect-results.yml"
+      - "scripts/result-collection-watchdog.js"
+      - "scripts/test-result-collection-watchdog.js"
 
 permissions:
   contents: read
-  issues: write
+
+concurrency:
+  group: chappy-result-watchdog-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  queue: max
+  cancel-in-progress: false
 
 jobs:
-  watchdog:
+  test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      GH_TOKEN: ${{ github.token }}
-      ISSUE_TITLE: "[自動監視] 結果収集workflow異常"
     steps:
-      - name: Check result collection workflow
-        shell: bash
-        run: |
-          set -euo pipefail
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+            .github/workflows
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node scripts/test-result-collection-watchdog.js
 
-          conclusion="${{ github.event.workflow_run.conclusion }}"
-          run_url="${{ github.event.workflow_run.html_url }}"
-          run_id="${{ github.event.workflow_run.id }}"
-          finished_at="${{ github.event.workflow_run.updated_at }}"
-
-          echo "Result collection workflow conclusion: ${conclusion}"
-
-          issue_number="$(gh issue list \
-            --repo "${GITHUB_REPOSITORY}" \
-            --state open \
-            --search "${ISSUE_TITLE} in:title" \
-            --json number,title \
-            --jq ".[] | select(.title == env.ISSUE_TITLE) | .number" \
-            | head -n 1)"
-
-          if [ "${conclusion}" = "success" ]; then
-            if [ -n "${issue_number}" ]; then
-              gh issue comment "${issue_number}" \
-                --repo "${GITHUB_REPOSITORY}" \
-                --body "✅ 結果収集workflowの正常復帰を確認しました。\n\n- Run ID: ${run_id}\n- 確認時刻: ${finished_at}\n- Run: ${run_url}"
-              gh issue close "${issue_number}" \
-                --repo "${GITHUB_REPOSITORY}" \
-                --reason completed
-            fi
-            echo "Result collection workflow completed successfully."
-            exit 0
-          fi
-
-          alert_body="🚨 結果収集workflowで異常を検知しました。\n\n- 結果: ${conclusion}\n- Run ID: ${run_id}\n- 検知時刻: ${finished_at}\n- Run: ${run_url}\n\nこのIssueは同じ異常が続く間は再作成せず、ここへ追記します。正常復帰時に自動でCloseします。"
-
-          if [ -n "${issue_number}" ]; then
-            gh issue comment "${issue_number}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --body "${alert_body}"
-            echo "Updated existing alert issue #${issue_number}."
-          else
-            gh issue create \
-              --repo "${GITHUB_REPOSITORY}" \
-              --title "${ISSUE_TITLE}" \
-              --body "${alert_body}"
-            echo "Created result collection alert issue."
-          fi
-
-          echo "::error title=結果収集異常::Collect official race results failed: ${conclusion}"
-          exit 1
+  watchdog:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            scripts/result-collection-watchdog.js
+          sparse-checkout-cone-mode: false
+      - name: Check result data and workflow stages
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { runWatchdog } = require('./scripts/result-collection-watchdog.js');
+            await runWatchdog({ github, context, core });
