@@ -3,7 +3,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require('playwright');
-const { loginNoteViaX } = require('./note-browserbase-x-login');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
 
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
@@ -15,6 +14,25 @@ function loadHandoff(handoffPath = DEFAULT_HANDOFF) {
   if (!fs.existsSync(absolute)) throw new Error('note_handoff_missing');
   const payload = JSON.parse(fs.readFileSync(absolute, 'utf8'));
   return { absolute, payload };
+}
+
+function loadStorageState(env = process.env) {
+  const encoded = String(env.NOTE_STATE_JSON_BASE64 || '').trim();
+  if (!encoded) throw new Error('note_state_missing');
+
+  let state;
+  try {
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    state = JSON.parse(decoded);
+  } catch {
+    throw new Error('note_state_invalid');
+  }
+
+  if (!state || typeof state !== 'object' || !Array.isArray(state.cookies) || !Array.isArray(state.origins)) {
+    throw new Error('note_state_invalid');
+  }
+  if (state.cookies.length === 0) throw new Error('note_state_empty');
+  return state;
 }
 
 function firstPaidParagraph(paidText) {
@@ -50,7 +68,9 @@ async function ensureEditorReady(page) {
   await page.goto(NOTE_EDITOR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForTimeout(1000);
   if (!isEditorUrl(page.url())) {
-    throw new Error(`note_editor_session_not_ready_${new URL(page.url()).hostname || 'unknown'}`);
+    let host = 'unknown';
+    try { host = new URL(page.url()).hostname || 'unknown'; } catch {}
+    throw new Error(`note_editor_session_not_ready_${host}`);
   }
   return page.url();
 }
@@ -131,23 +151,27 @@ async function configurePaidPublication(page, payload) {
   return { ok: true, price: EXPECTED_PRICE_YEN, paidStart: firstPaidParagraph(payload.paidText) };
 }
 
+async function createAuthenticatedPage(browser, env = process.env) {
+  const storageState = loadStorageState(env);
+  const context = await browser.newContext({
+    storageState,
+    locale: 'ja-JP',
+    timezoneId: 'Asia/Tokyo'
+  });
+  const page = await context.newPage();
+  await ensureEditorReady(page);
+  return { context, page };
+}
+
 async function run({ env = process.env } = {}) {
   const mode = String(env.NOTE_UI_MODE || 'auth').trim().toLowerCase();
   if (!['auth', 'draft'].includes(mode)) throw new Error('unsupported_note_ui_mode');
 
-  // note's editor currently rejects the headless Chromium path in CI.
-  // Use a real headed browser inside the runner's Xvfb display instead.
   const browser = await chromium.launch({ headless: false, args: ['--disable-dev-shm-usage'] });
   try {
-    const context = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
-    const page = await context.newPage();
-    const auth = await loginNoteViaX(page, { env });
-    if (!auth?.ok) throw new Error(`note_auth_failed_${auth?.reason || 'unknown'}`);
-    await ensureEditorReady(page);
-
-    console.log('NOTE_UI_AUTH_OK=true');
-    console.log(`NOTE_UI_AUTH_ALREADY=${Boolean(auth.alreadyAuthenticated)}`);
-    console.log(`NOTE_UI_EDITOR_READY=${isEditorUrl(page.url())}`);
+    const { page } = await createAuthenticatedPage(browser, env);
+    console.log('NOTE_UI_STATE_LOADED=true');
+    console.log('NOTE_UI_EDITOR_READY=true');
 
     if (mode === 'auth') {
       console.log('NOTE_UI_DRAFT_FILLED=false');
@@ -190,11 +214,13 @@ module.exports = {
   EXPECTED_PRICE_YEN,
   NOTE_EDITOR_URL,
   loadHandoff,
+  loadStorageState,
   firstPaidParagraph,
   articleBody,
   validateDraftGate,
   isEditorUrl,
   ensureEditorReady,
   configurePaidPublication,
+  createAuthenticatedPage,
   run
 };
