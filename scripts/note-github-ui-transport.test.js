@@ -9,6 +9,7 @@ const {
   requireDraftGate,
   draftClaimRef,
   claimDraft,
+  preflightDraft,
   run,
   ensureEditorReady,
   isEditorUrl,
@@ -75,6 +76,19 @@ async function checkAsyncGuards() {
   const today = new Date(current + 9 * 3600000).toISOString().slice(0, 10);
   const eligible = { ...valid, raceDate: today, raceKey: `${today.replaceAll('-', '')}-10-7`, deadlineAt: new Date(current + 3600000).toISOString() };
   const claimEnv = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', GITHUB_SHA: 'a'.repeat(40), NOTE_CLAIM_TOKEN: 'test-only' };
+  const absent = async (url, options) => {
+    assert.equal(url, `https://api.github.com/repos/${claimEnv.GITHUB_REPOSITORY}/git/ref/${draftClaimRef(eligible).slice(5)}`);
+    assert.equal(options.method, undefined); // GET only, preflight must not reserve.
+    return { status: 404 };
+  };
+  assert.deepEqual(await preflightDraft(eligible, claimEnv, absent), { ok: true });
+  assert.deepEqual(await preflightDraft(eligible, claimEnv, async () => ({ status: 200, json: async () => ({ ref: draftClaimRef(eligible) }) })), { ok: false, reason: 'prior_attempt_review_required' });
+  const noRequest = async () => { throw new Error('unexpected external call'); };
+  assert.deepEqual(await preflightDraft({ ...eligible, canPublish: false }, {}, noRequest), { ok: false, reason: 'can_publish_false' });
+  assert.deepEqual(await preflightDraft({ ...eligible, deadlineAt: new Date(current - 1).toISOString() }, {}, noRequest), { ok: false, reason: 'deadline_passed' });
+  await assert.rejects(preflightDraft(eligible, claimEnv, async () => ({ status: 403 })), /lookup_failed_403/);
+  await assert.rejects(preflightDraft(eligible, claimEnv, async () => ({ status: 200, json: async () => ({ ref: 'wrong' }) })), /lookup_invalid/);
+  await assert.rejects(preflightDraft(eligible, claimEnv, async () => { throw new Error('unavailable'); }), /unavailable/);
   const reservations = new Set();
   const reserve = async (url, options) => {
     assert.equal(url, 'https://api.github.com/repos/takechanman12250711-oss/chappy-boatrace-ai/git/refs');
@@ -135,6 +149,10 @@ async function checkAsyncGuards() {
   assert.equal(await ensureEditorReady(page, async () => ({ isEditable: async () => true })), 'https://editor.note.com/new');
   await assert.rejects(ensureEditorReady({ ...page, url: () => 'https://note.com/login' }), /note_editor_session_not_ready/);
 }
+// Keep synthetic reservations deterministic even near JST midnight.
+const wallClock = Date.now;
+Date.now = () => now;
 checkAsyncGuards()
+  .finally(() => { Date.now = wallClock; })
   .then(() => console.log('note-github-ui-transport tests passed'))
   .catch((error) => { console.error(error); process.exitCode = 1; });
