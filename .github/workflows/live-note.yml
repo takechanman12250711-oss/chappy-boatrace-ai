@@ -66,6 +66,11 @@ jobs:
           node scripts/test-all-race-notes.js
           node scripts/test-note-publication-audit.js
           node --require ./js/frame-rise-fall-replay-preload.js -e "const c = require('./scripts/collect-predictions'); for (const k of ['SHADOW_LOGIC_FINGERPRINT', 'SHADOW_REFERENCE_DATA_FINGERPRINT', 'SHADOW_REFERENCE_GENERATION_ID']) if (!c[k] || c[k] === 'unavailable') throw new Error(k);"
+      - name: Verify current official inputs without saving or publishing
+        if: github.event_name == 'pull_request'
+        env:
+          NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
+        run: node scripts/collect-predictions.js --note-only --dry-run
       - name: Collect current note without waiting for result processing
         if: github.event_name != 'pull_request'
         env:

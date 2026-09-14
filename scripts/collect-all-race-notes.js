@@ -49,7 +49,7 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
   const existing = existingRaces(date, rootDir, now());
   const pending = targets.filter(r => !existing.has(`${date}-${r.jcd}-${r.raceNo}`));
   const summary = { date, targetCount: targets.length, existing: targets.length - pending.length,
-    evaluated: 0, saved: 0, failures };
+    evaluated: 0, generated: 0, saved: 0, failures };
   // Keep the existing prediction engine and its bounded API workers. Scores and
   // V2 research completeness do not decide whether a race is covered here.
   const result = await evaluate(pending);
@@ -79,6 +79,7 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
         continue;
       }
       record.note = { audit };
+      summary.generated++;
       if (!dryRun) {
         const saved = saveNoteDraftBundle({ article, record, baselinePracticalTickets: prepared.baseline,
           oddsSnapshot: prepared.oddsSnapshot, sourceCommit: process.env.GITHUB_SHA || null }, { rootDir });
