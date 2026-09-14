@@ -324,7 +324,7 @@ for (const mode of ["normal", "require_failure", "auditor_failure"]) {
   const warnings = [];
   const auditCalls = [];
   vm.runInNewContext(collectorGuard, {
-    selectedData, selectedBase, article,
+    selectedData, selectedBase, article, noteBaseline: input.baselinePracticalTickets,
     charter: deepFreeze({ shadowSelectionV2: { cutoffSeconds: 120 }, practicalTickets: { maximum: 10 } }),
     Date: FixedAuditDate,
     console: { warn: message => warnings.push(message) },
@@ -394,6 +394,7 @@ for (const mode of ["saved", "blocked", "missing_baseline", "dry_run", "no_selec
     let bundleCalls = 0;
     vm.runInNewContext(collectorSave, {
       dryRun: mode === "dry_run", selectedData, selectedBase, article: input.article,
+      noteBaseline: input.baselinePracticalTickets, noteOddsSnapshot: null,
       date: input.record.date, best, comparison, verificationPredictions,
       shadowV2Predictions, collectionHealth,
       charter: { shadowSelectionV2: { cutoffSeconds: 120 }, practicalTickets: { maximum: 10 } },
@@ -493,3 +494,4 @@ try {
 }
 
 console.log(`note publication audit tests passed (${assertions} cases)`);
+
