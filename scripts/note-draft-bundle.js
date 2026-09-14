@@ -58,7 +58,8 @@ function saveNoteDraftBundle(input = {}, { rootDir = process.cwd() } = {}) {
     baselinePracticalTickets: baselinePracticalTickets ?? null,
     minLeadSeconds,
     maxPracticalTickets,
-    generationAudit: record.note?.audit ?? null
+    generationAudit: record.note?.audit ?? null,
+    ...(input.oddsSnapshot ? { oddsSnapshot: input.oddsSnapshot } : {})
   };
   const bytes = `${JSON.stringify(payload, null, 2)}\n`;
   const sha256 = createHash("sha256").update(bytes, "utf8").digest("hex");
@@ -96,3 +97,4 @@ function saveNoteDraftBundle(input = {}, { rootDir = process.cwd() } = {}) {
 }
 
 module.exports = { saveNoteDraftBundle };
+

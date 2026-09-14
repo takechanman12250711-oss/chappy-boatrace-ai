@@ -16,7 +16,11 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
   if (bundle.version !== 'note-draft-bundle-v1' || bundle.record?.raceKey !== raceKey) throw new Error('publication_source_identity_mismatch');
   const article = compactArticle(bundle.article);
   const audit = auditNotePublication({ ...bundle, article, now: new Date(now).toISOString() });
-  if (!audit.contentReady) throw new Error('publication_content_audit_blocked');
+  if (!audit.contentReady) {
+    const error = new Error('publication_content_audit_blocked');
+    error.issueCodes = [...new Set(audit.issues.map(issue => issue.code))];
+    throw error;
+  }
   return { bundle, article, sha256: match[4] };
 }
 

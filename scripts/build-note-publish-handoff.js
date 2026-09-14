@@ -70,7 +70,7 @@ function normalizeCandidate(payload, sourcePath) {
   };
 }
 
-function buildLatestHandoff() {
+function buildLatestHandoff({ write = true } = {}) {
   let selectedDate = null;
   let candidates = [];
 
@@ -117,6 +117,7 @@ function buildLatestHandoff() {
     }
   };
 
+  if (!write) return { changed: false, payload };
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   const next = `${JSON.stringify(payload, null, 2)}\n`;
   const previous = fs.existsSync(OUTPUT_PATH) ? fs.readFileSync(OUTPUT_PATH, "utf8") : null;
@@ -143,3 +144,4 @@ if (require.main === module) {
 }
 
 module.exports = { buildLatestHandoff };
+

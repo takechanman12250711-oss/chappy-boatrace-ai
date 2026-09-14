@@ -25,6 +25,7 @@ permissions:
 
 concurrency:
   group: note-ui-transport
+  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -48,6 +49,12 @@ jobs:
         with:
           ref: main
           persist-credentials: false
+          sparse-checkout: |
+            scripts
+            js
+            config
+            data/note-drafts
+            data/note-publish
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -69,7 +76,7 @@ jobs:
             const mode = process.env.NOTE_UI_MODE;
             if (!['auth', 'draft', 'publish'].includes(mode)) throw new Error('unsupported_note_ui_mode');
             const gate = mode === 'auth' ? { ok: true } : mode === 'publish'
-              ? await preparePublication() : await preflightDraft(loadHandoff(process.env.NOTE_IPHONE_HANDOFF).payload);
+              ? await preparePublication({ handoff: require('./scripts/build-note-publish-handoff').buildLatestHandoff({ write: false }).payload }) : await preflightDraft(loadHandoff(process.env.NOTE_IPHONE_HANDOFF).payload);
             if (mode === 'publish' && gate.ok) {
               const file = require('node:path').join(process.env.RUNNER_TEMP, 'note-publication.json');
               fs.writeFileSync(file, JSON.stringify(gate.payload));
@@ -107,4 +114,5 @@ jobs:
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}
         run: node scripts/note-github-ui-transport.js
+
 

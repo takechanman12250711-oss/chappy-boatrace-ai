@@ -2248,11 +2248,20 @@ async function main() {
   ) || null;
   let selectedData = null;
   let article = null;
+  let noteBaseline = selectedBase?.prediction?.practicalTickets;
+  let noteOddsSnapshot = null;
 
   if (selectedBase) {
-    const selectedPrediction = global.createPrediction(best.raceData);
+    let selectedPrediction = global.createPrediction(best.raceData);
     selectedPrediction.predictionMode = "server_pre_deadline";
     selectedPrediction.officialResultUsedForPrediction = false;
+    const preparedNote = await require("./prepare-note-input").prepareNoteInput({
+      prediction: selectedPrediction, baseline: noteBaseline, record: selectedBase,
+      fetchOdds: query => callApi(require("../api/odds"), query)
+    });
+    selectedPrediction = preparedNote.prediction;
+    noteBaseline = preparedNote.baseline;
+    noteOddsSnapshot = preparedNote.oddsSnapshot;
     article = global.ChappyNoteGenerator.generateArticle(selectedPrediction);
     const practicalTickets = article?.practicalTickets ||
       global.ChappyNoteGenerator.createPracticalSelection(selectedPrediction);
@@ -2277,7 +2286,7 @@ async function main() {
       selectedData.note.audit = auditNotePublication({
         article,
         record: selectedData,
-        baselinePracticalTickets: selectedBase.prediction?.practicalTickets,
+        baselinePracticalTickets: noteBaseline,
         now: new Date().toISOString(),
         minLeadSeconds: charter.shadowSelectionV2.cutoffSeconds,
         maxPracticalTickets: charter.practicalTickets.maximum
@@ -2310,9 +2319,10 @@ async function main() {
         selectedData.note.draftBundle = saveNoteDraftBundle({
           article,
           record: selectedData,
-          baselinePracticalTickets: selectedBase.prediction?.practicalTickets,
+          baselinePracticalTickets: noteBaseline,
           minLeadSeconds: charter.shadowSelectionV2.cutoffSeconds,
           maxPracticalTickets: charter.practicalTickets.maximum,
+          oddsSnapshot: noteOddsSnapshot,
           sourceCommit: process.env.GITHUB_SHA || null
         });
       } catch {
@@ -2403,3 +2413,4 @@ module.exports = {
   detachShadowV2,
   saveRun
 };
+

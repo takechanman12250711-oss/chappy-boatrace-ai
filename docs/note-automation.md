@@ -2,6 +2,17 @@
 
 更新基準: 2026-09-14 / latest main
 
+## 2026-09-14 原稿入力と投稿開始の遅延修正
+
+- 既存のレース選定・買い目生成後に公式 `api/odds.js` を呼び、日付・場・レース番号を照合して表示用オッズを付ける。原稿生成前の独立した買い目一覧にも同じ取得値を対応付け、点数・順序・予想根拠は保持する。公式締切は保存レコードからJSTの表示へ渡す。
+- 取得失敗や欠落は買い目を削らず監査停止する。新規bundleに取得日時・出典・オッズを保存する。過去bundleは再生成しない。
+- 収集後すぐに保存bundleを実時計で監査し、合格したファイルだけを先にmainへ保存して既存note workflowを `workflow_dispatch` で起動する。予想・分析データは従来の検証・保存を続ける。原稿保存・dispatch失敗時は投稿せず、予想保存後にworkflow失敗として報告する。
+- 投稿workflowは最新bundleから読み取り専用で候補を組み立てるため、古い `latest.json` の更新待ちにならない。実行の直列化と原子的レース予約を共用する。合格候補がない場合はブラウザを起動しない。
+- handoffと投稿の待機キューを `queue: max` にし、既存のwriter排他を維持する。投稿のcheckoutは必要なコード・bundleに絞る。
+- 自動起動は投稿成功の証明ではない。初回公開URLとreceiptを引き続き確認する。原稿監査の失敗ログには具体的なissueCodesを含める。
+
+GitHub仕様: [workflowからの起動](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)、[待機キュー](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)。
+
 ## 2026-09-14 自動投稿の有効化
 
 ユーザーの「自動投稿にしたい」という明示依頼により、従来の最終公開無効方針を更新する。この節を以下の過去記録より優先する。
