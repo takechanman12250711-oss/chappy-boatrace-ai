@@ -20,6 +20,9 @@ on:
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
       - "scripts/note-github-ui-transport.test.js"
+      - "scripts/prepare-note-input.js"
+      - "scripts/dispatch-ready-note.js"
+      - "scripts/test-note-pipeline.js"
       - "scripts/note-publication-source.js"
       - "scripts/note-publication-source.test.js"
       - "scripts/build-note-iphone-handoff.js"
@@ -50,6 +53,9 @@ on:
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
       - "scripts/note-github-ui-transport.test.js"
+      - "scripts/prepare-note-input.js"
+      - "scripts/dispatch-ready-note.js"
+      - "scripts/test-note-pipeline.js"
       - "scripts/note-publication-source.js"
       - "scripts/note-publication-source.test.js"
       - "scripts/build-note-iphone-handoff.js"
@@ -95,6 +101,7 @@ jobs:
           node scripts/check-note-skills.js
           node scripts/note-github-ui-transport.test.js
           node scripts/note-publication-source.test.js
+          node scripts/test-note-pipeline.js
           node scripts/test-theory-integration.js
           node scripts/check-charter.js
 

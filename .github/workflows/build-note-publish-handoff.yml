@@ -21,6 +21,7 @@ permissions:
 
 concurrency:
   group: chappy-main-data-writers
+  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -63,3 +64,4 @@ jobs:
           git commit -m "Build note publish handoff"
           git pull --rebase origin main
           git push origin main
+

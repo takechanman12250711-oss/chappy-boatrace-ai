@@ -310,8 +310,8 @@ function requirePublicationGate(payload, rootDir = process.cwd(), now = Date.now
   return require('./note-publication-source').verifyPublicationSource(payload, rootDir, now);
 }
 
-async function preparePublication({ rootDir = process.cwd(), env = process.env, request = fetch } = {}) {
-  const latest = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-publish/latest.json'), 'utf8'));
+async function preparePublication({ rootDir = process.cwd(), env = process.env, request = fetch, handoff } = {}) {
+  const latest = handoff || JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-publish/latest.json'), 'utf8'));
   if (!Array.isArray(latest.candidates)) throw new Error('publication_candidates_invalid');
   const skipped = [];
   for (const candidate of latest.candidates) {
@@ -320,7 +320,7 @@ async function preparePublication({ rootDir = process.cwd(), env = process.env, 
       payload = require('./note-publication-source').publicationPayload(candidate.sourcePath, rootDir);
       requirePublicationGate(payload, rootDir);
     } catch (error) {
-      skipped.push({ raceKey: candidate.raceKey, reason: error.message });
+      skipped.push({ raceKey: candidate.raceKey, reason: error.message, issueCodes: error.issueCodes });
       continue;
     }
     const gate = await preflightDraft(payload, env, request);

@@ -13,6 +13,9 @@ on:
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
       - "scripts/note-draft-bundle.js"
+      - "scripts/prepare-note-input.js"
+      - "scripts/test-note-pipeline.js"
+      - "scripts/dispatch-ready-note.js"
       - "scripts/venue-race-history.js"
       - "scripts/compact-frame-rise-fall-shadow-inline.js"
       - "scripts/test-compact-frame-rise-fall-shadow-inline.js"
@@ -112,6 +115,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: chappy-main-data-writers
@@ -138,6 +142,7 @@ jobs:
       - name: Check collector-critical source
         run: |
           node --check scripts/collect-predictions.js
+          node scripts/test-note-pipeline.js
           node --check scripts/venue-race-history.js
           node --check scripts/compact-frame-rise-fall-shadow-inline.js
           node scripts/test-compact-frame-rise-fall-shadow-inline.js
@@ -198,6 +203,19 @@ jobs:
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/collect-predictions.js
+
+      - name: Persist ready note and start publication before analysis
+        id: early-note
+        continue-on-error: true
+        env:
+          NOTE_CLAIM_TOKEN: ${{ github.token }}
+        run: node scripts/dispatch-ready-note.js
+
+      - name: Build prediction analysis artifacts
+        env:
+          PREDICT_DATE: ${{ inputs.date }}
+          NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
+        run: |
           node scripts/build-scenario-ai-v6-snapshots.js
           node scripts/build-prediction-index-shards.js
           node scripts/build-practical-priority-shadow-report.js
@@ -268,3 +286,8 @@ jobs:
           node scripts/test-prediction-index-loader.js
           node scripts/test-compact-prediction-index.js
           node scripts/test-collection-health.js
+
+
+      - name: Report early note dispatch failure after saving predictions
+        if: steps.early-note.outcome == 'failure'
+        run: exit 1
