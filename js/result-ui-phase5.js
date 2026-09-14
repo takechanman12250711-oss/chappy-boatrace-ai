@@ -146,8 +146,13 @@
   let candidateReportRequest;
   function candidateReport(area) {
     if (document.getElementById("candidate24Performance")) return;
-    candidateReportRequest ||= fetch(new URL("data/stats/candidate24-report.json", document.baseURI), { cache: "no-cache" })
-      .then(r => { if (!r.ok) throw new Error("report_unavailable"); return r.json(); })
+    const localReport = new URL("data/stats/candidate24-report.json", document.baseURI);
+    // Derived-data commits must be visible without waiting for a Pages rebuild.
+    const liveReport = localReport.hostname === "takechanman12250711-oss.github.io"
+      ? "https://raw.githubusercontent.com/takechanman12250711-oss/chappy-boatrace-ai/main/data/stats/candidate24-report.json" : localReport;
+    const readReport = url => fetch(url, { cache: "no-cache" })
+      .then(r => { if (!r.ok) throw new Error("report_unavailable"); return r.json(); });
+    candidateReportRequest ||= readReport(liveReport).catch(() => readReport(localReport))
       .catch(() => { candidateReportRequest = null; return null; });
     candidateReportRequest.then(report => {
       if (!report || !area.isConnected || document.getElementById("candidate24Performance")) return;
@@ -188,4 +193,3 @@
 
   root.ChappyResultUiPhase5 = Object.freeze({ install, enhance });
 })(window);
-
