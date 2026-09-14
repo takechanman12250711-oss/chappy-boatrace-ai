@@ -6,12 +6,18 @@ on:
     paths:
       - '.github/workflows/live-note.yml'
       - 'scripts/collect-predictions.js'
+      - 'scripts/collect-all-race-notes.js'
+      - 'js/note-generator.js'
+      - 'scripts/note-publication-audit.js'
       - 'scripts/dispatch-ready-note.js'
       - 'scripts/prepare-note-input.js'
   pull_request:
     paths:
       - '.github/workflows/live-note.yml'
       - 'scripts/collect-predictions.js'
+      - 'scripts/collect-all-race-notes.js'
+      - 'js/note-generator.js'
+      - 'scripts/note-publication-audit.js'
       - 'scripts/dispatch-ready-note.js'
       - 'scripts/test-note-source-concurrency.js'
       - 'scripts/prepare-note-input.js'
@@ -57,6 +63,7 @@ jobs:
         run: |
           node scripts/test-note-source-concurrency.js
           node scripts/test-note-pipeline.js
+          node scripts/test-all-race-notes.js
           node scripts/test-note-publication-audit.js
           node --require ./js/frame-rise-fall-replay-preload.js -e "const c = require('./scripts/collect-predictions'); for (const k of ['SHADOW_LOGIC_FINGERPRINT', 'SHADOW_REFERENCE_DATA_FINGERPRINT', 'SHADOW_REFERENCE_GENERATION_ID']) if (!c[k] || c[k] === 'unavailable') throw new Error(k);"
       - name: Collect current note without waiting for result processing

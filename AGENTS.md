@@ -9,3 +9,5 @@
 - 予想・保存データの不変条件は `config/chappy-charter.json` と `docs/CHAPPY_CHARTER.md` を守る。noteの本番ゲートを検証のために緩めず、最終公開は2026-09-14のユーザー明示依頼で有効化する。実時計の原稿監査、元原稿照合、300円、有料境界、原子的予約、公開URL確認を必須とする。
 
 関連変更の確認: `node scripts/note-github-ui-transport.test.js` と `node scripts/check-note-skills.js`。反映前に対象PRのCI結果とheadを確認する。
+
+全レース方針（2026-09-14ユーザー承認）: note対象を最高1R・60点以上・V2完全データへ限定しない。all-races-v1では取得済み情報の説明とオッズ未取得表示を認める。艇番・元買い目・締切・公開確認は維持する。詳細は docs/note-automation.md の最新節。
