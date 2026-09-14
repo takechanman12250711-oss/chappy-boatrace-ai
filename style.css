@@ -3885,128 +3885,124 @@ body {
   note投稿アシスト
 ========================================================= */
 
-.note-assistant-section {
-  border-top: 4px solid #41c9b4;
+/* Scoped to the prediction footer; keep the existing note controls and result state. */
+#predictionSection #noteAssistantSection {
+  margin: 14px 0 0;
+  padding: 0;
+  min-width: 0;
+  border: 1px solid #29404f;
+  border-radius: 14px;
+  background: #10212d;
+  color: #e7f0f6;
+  overflow: hidden;
 }
-
-.note-assistant-section[hidden] {
-  display: none;
-}
-
-.note-assistant-actions {
-  display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+#noteAssistantSection[hidden] { display: none; }
+#noteAssistantSection summary {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  margin-bottom: 18px;
-}
-
-.note-assistant-actions button,
-.note-assistant-actions a {
-  min-height: 46px;
-  padding: 11px 12px;
-  border: 1px solid #ccd7df;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #222222;
-  font: inherit;
+  min-height: 52px;
+  padding: 14px;
+  color: #e7f0f6;
   font-size: 14px;
   font-weight: 700;
-  line-height: 1.3;
-  text-align: center;
-  text-decoration: none;
+  line-height: 1.5;
   cursor: pointer;
+  list-style: none;
 }
-
-.note-assistant-actions
-  #noteGenerateBtn {
-  border-color: #41c9b4;
-  background: #41c9b4;
-  color: #ffffff;
+#noteAssistantSection summary::-webkit-details-marker { display: none; }
+#noteAssistantSection summary::after { content: "＋"; margin-left: auto; color: #8dc9ef; }
+#noteAssistantSection details[open] > summary::after { content: "−"; }
+#noteAssistantSection summary small { color: #a9bac7; font-size: 12px; font-weight: 400; }
+#noteAssistantSection .note-assistant-body { padding: 0 14px 14px; }
+#noteAssistantSection #noteStatusBadge {
+  display: block;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a9bac7;
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
-
-.note-assistant-actions
-  #noteOpenBtn {
+#noteAssistantSection .note-assistant-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+#noteAssistantSection .note-assistant-actions button,
+#noteAssistantSection .note-assistant-actions a {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-color: #41c9b4;
-  color: #168b7a;
-}
-
-.note-assistant-actions
-  button:disabled {
-  border-color: #d8e0e6;
-  background: #edf1f4;
-  color: #8c99a3;
-  cursor: not-allowed;
-}
-
-.note-preview-label {
-  display: block;
-  margin-top: 14px;
-  color: #37434c;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #395568;
+  border-radius: 10px;
+  background: #193445;
+  color: #e7f0f6;
+  font: inherit;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  white-space: normal;
+  cursor: pointer;
 }
-
-.note-preview-label input,
-.note-preview-label textarea {
+#noteAssistantSection #noteLoadSavedBtn,
+#noteAssistantSection #noteGenerateBtn,
+#noteAssistantSection #noteOpenBtn { grid-column: 1 / -1; }
+#noteAssistantSection #noteLoadSavedBtn { background: #174b65; border-color: #347d9c; }
+#noteAssistantSection .note-assistant-actions button:disabled { color: #9cabb5; background: #172630; border-color: #2c414e; cursor: not-allowed; }
+#noteAssistantSection #noteGenerateBtn:disabled { display: none; }
+#noteAssistantSection .note-preview-details { border-top: 1px solid #29404f; margin-top: 14px; }
+#noteAssistantSection .note-preview-details > summary { padding-inline: 0; }
+#noteAssistantSection .note-preview-label { display: block; margin-top: 12px; color: #a9bac7; font-size: 12px; font-weight: 700; }
+#noteAssistantSection .note-preview-label input,
+#noteAssistantSection .note-preview-label textarea {
+  box-sizing: border-box;
   display: block;
   width: 100%;
-  margin-top: 7px;
-  padding: 12px;
-  border: 1px solid #ccd7df;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid #395568;
   border-radius: 10px;
-  outline: none;
-  background: #ffffff;
-  color: #222222;
+  background: #091720;
+  color: #e7f0f6;
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1.65;
 }
+#noteAssistantSection .note-preview-label textarea { min-height: 180px; resize: vertical; white-space: pre-wrap; }
+#noteAssistantSection input::placeholder,
+#noteAssistantSection textarea::placeholder { color: #93a8b8; opacity: 1; }
+#noteAssistantSection :focus-visible { outline: 2px solid #80caff; outline-offset: 3px; }
 
-.note-preview-label input {
-  min-height: 46px;
+#predictionSection #raceResultStatus {
+  padding: 14px;
+  border: 1px solid #29404f;
+  border-radius: 14px;
+  background: #10212d !important;
+  color: #e7f0f6;
+  box-shadow: none;
 }
-
-.note-preview-label textarea {
-  min-height: 420px;
-  resize: vertical;
-  line-height: 1.75;
-  white-space: pre-wrap;
-}
-
-.note-preview-label input:focus,
-.note-preview-label textarea:focus {
-  border-color: #41c9b4;
-  box-shadow:
-    0 0 0 3px
-    rgba(65, 201, 180, 0.15);
-}
-
-#noteStatusBadge {
-  border-color: #b8e9e1;
-  background: #effbf9;
-  color: #168b7a;
-}
-
-@media (max-width: 430px) {
-  .note-assistant-actions {
-    gap: 8px;
-  }
-
-  .note-assistant-actions button,
-  .note-assistant-actions a {
-    min-height: 44px;
-    padding: 10px 8px;
-    font-size: 12px;
-  }
-
-  .note-preview-label textarea {
-    min-height: 360px;
-    font-size: 13px;
-  }
-}
+#predictionSection #raceResultStatus h3 { margin: 0 0 10px; color: #e7f0f6 !important; font-size: 14px; line-height: 1.5; }
+#predictionSection #raceResultStatus .race-result-status-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+#predictionSection #raceResultStatus .race-result-status-row strong { font-size: 18px; line-height: 1.5; }
+#predictionSection #raceResultStatus .race-result-status-row small { color: #a9bac7 !important; font-size: 12px; line-height: 1.65; text-align: left; overflow-wrap: anywhere; }
+#predictionSection #raceResultStatus.is-waiting strong,
+#predictionSection #raceResultStatus.is-checking strong { color: #80caff; }
+#predictionSection #raceResultStatus.is-hit strong { color: #ffaaaa; }
+#predictionSection #raceResultStatus.is-miss strong { color: #d6e1e9; }
+#predictionSection #raceResultStatus.is-not-purchased strong { color: #c4b5fd; }
 
 /* =========================================================
   結果分析ダッシュボード
