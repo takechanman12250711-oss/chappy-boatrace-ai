@@ -64,7 +64,9 @@
         bundle.record?.raceNo !== record.raceNo || bundle.article?.publishable !== true ||
         typeof bundle.article.title !== "string" || typeof bundle.article.fullText !== "string" ||
         !bundle.article.fullText.trim()) throw new Error("保存原稿の形式が不正です");
-    return { bundle, article: bundle.article, record: bundle.record, review: reviewStatus(bundle) };
+    const formatter = root.ChappyNoteGenerator || (typeof require === "function" ? require("./note-generator") : null);
+    if (!formatter?.compactArticle) throw new Error("原稿の表示機能を読み込めません");
+    return { bundle, article: formatter.compactArticle(bundle.article), record: bundle.record, review: reviewStatus(bundle) };
   }
 
   return { loadLatest, reviewStatus };
