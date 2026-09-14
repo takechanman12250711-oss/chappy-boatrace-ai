@@ -68,7 +68,7 @@ function fixture(count = 8) {
     practicalTickets,
     dataQuality: { level: "高", boatIdentity: { valid: true } }
   };
-  const article = noteGenerator.generateArticle(prediction);
+  const article = noteGenerator.generateArticle(prediction, { format: "detailed" });
   assert.equal(article.publishable, true, "generator fixture must remain valid");
   return {
     article,
@@ -263,6 +263,26 @@ const articleClaimedSource = blocked("article-only reference provenance is not t
   delete input.record.prediction.manshuSheet.forecastLedger;
 }, structuredClone(withReferences));
 assert.ok(articleClaimedSource.issues.some(issue => issue.code === "UNSOURCED_REFERENCE_TICKET"));
+
+
+const conciseInput = fixture();
+const detailedSnapshot = structuredClone(conciseInput.article);
+conciseInput.article = noteGenerator.compactArticle(conciseInput.article);
+ready("concise article keeps publication checks", conciseInput);
+assert.equal(conciseInput.article.format, "concise-v1");
+assert.deepEqual(conciseInput.article.practicalTickets, detailedSnapshot.practicalTickets);
+assert.doesNotMatch(conciseInput.article.paidText, /【6艇評価】|役割：|保存済みの展開判断/);
+assert.deepEqual(noteGenerator.compactArticle(conciseInput.article), conciseInput.article, "formatting is idempotent");
+blocked("concise evaluation identity missing", input => { input.article.boatEvaluations.pop(); }, structuredClone(conciseInput));
+blocked("concise changed rendered ticket", input => {
+  replaceSection(input.article, "paidText", text => text.replaceAll("1-2-3", "6-5-4"));
+}, structuredClone(conciseInput));
+blocked("concise changed odds", input => {
+  replaceSection(input.article, "paidText", text => text.replaceAll("12.5倍", "99.9倍"));
+}, structuredClone(conciseInput));
+blocked("concise free ticket leak", input => {
+  replaceSection(input.article, "freeText", text => text + "\n1-2-3");
+}, structuredClone(conciseInput));
 
 const immutableInput = fixture();
 const immutableSnapshot = structuredClone(immutableInput);

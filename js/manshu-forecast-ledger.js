@@ -1219,13 +1219,15 @@
                 paidText
               );
 
-          return {
+          const enrichedArticle = {
             ...article,
             paidText,
             fullText,
             manshuForecastLedger: ledger,
             forecastPaidText: forecastText
           };
+          return options.format === "detailed" || !api.compactArticle
+            ? enrichedArticle : api.compactArticle(enrichedArticle);
         }
       };
 

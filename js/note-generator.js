@@ -123,6 +123,53 @@
       .join(" ");
   }
 
+
+  // Presentation only: preserve every ticket row, its order, odds and paid boundary.
+  function briefReason(value) {
+    return compactTicketComment(String(value || "")
+      .replace(/[（(][^（）()]*\d+点[^（）()]*[）)]/g, ""))
+      .split(/(?<=[。！？])/).map(s => s.trim()).filter(Boolean).slice(0, 2).join("");
+  }
+
+  function compactArticle(article) {
+    if (!article?.ok || !article.paidText?.includes("🔥 実戦厳選買い目")) return article;
+    const originalPaid = article.paidText;
+    const evaluations = originalPaid.match(/【6艇評価】\n([\s\S]*?)\n【AI買い目候補/);
+    const boatEvaluations = evaluations
+      ? [...evaluations[1].matchAll(/^([1-6])号艇/gm)].map(m => Number(m[1]))
+      : article.boatEvaluations;
+    const originalFree = String(article.freeText || "");
+    const conclusion = originalFree.match(/【結論】\n([^\n]+)/)?.[1];
+    const freeText = conclusion ? [
+      originalFree.split("\n")[0],
+      "",
+      briefReason(conclusion),
+      "",
+      "買い目は以下の有料部分にまとめています。"
+    ].join("\n") : originalFree;
+    let paidText = originalPaid
+      .replace(/【6艇評価】\n[\s\S]*?(?=【AI買い目候補)/, "")
+      .split("\n")
+      .filter(line => {
+        const t = line.trim();
+        return !t || /^・|^【|^🔥|^厳選買い目|^参考合計|^内訳|^展開：|^🔵|^🌸/.test(t);
+      })
+      .map(line => line.trim().startsWith("展開：") ? "展開：" + briefReason(line.trim().slice(3)) : line)
+      .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    // Keep the original source article intact; this is a separate presentation.
+    return {
+      ...article,
+      format: "concise-v1",
+      boatEvaluations,
+      freeText,
+      paidText,
+      forecastPaidText: article.forecastPaidText
+        ? paidText.slice(paidText.indexOf("【本命とは別会計の参考予想】"))
+        : article.forecastPaidText,
+      fullText: String(article.fullText).replace(originalFree, freeText).replace(originalPaid, paidText)
+    };
+  }
+
   function formatDate(value) {
     const text = safeText(value, "").replace(/[^0-9]/g, "");
     if (text.length !== 8) return safeText(value, "日付未取得");
@@ -1351,7 +1398,7 @@
       .filter(Boolean)
       .join("\n\n");
 
-    return {
+    const article = {
       ok: true,
       publishable: true,
       version: VERSION,
@@ -1368,6 +1415,7 @@
           prediction
         )
     };
+    return options.format === "detailed" ? article : compactArticle(article);
   }
 
   const api = {
@@ -1380,7 +1428,8 @@
     buildTags,
     createPracticalSelection,
     formatDeadlineLabel,
-    compactTicketComment
+    compactTicketComment,
+    compactArticle
   };
 
   root.ChappyNoteGenerator =

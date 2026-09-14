@@ -201,7 +201,9 @@ function auditNotePublication(input = {}) {
       });
     }
     const evaluationSection = normalized(paidText).match(/【6艇評価】\n([\s\S]*?)\n【AI買い目候補/);
-    const boats = evaluationSection ? [...evaluationSection[1].matchAll(/^([1-6])号艇/gm)].map(match => match[1]).sort() : [];
+    const boats = article.format === "concise-v1"
+      ? (Array.isArray(article.boatEvaluations) ? article.boatEvaluations.map(String).sort() : [])
+      : evaluationSection ? [...evaluationSection[1].matchAll(/^([1-6])号艇/gm)].map(match => match[1]).sort() : [];
     if (!sameList(boats, ["1", "2", "3", "4", "5", "6"])) {
       issue("BOAT_EVALUATIONS_INCOMPLETE", "6艇評価の艇番・重複・欠落を確認してください。");
     }
