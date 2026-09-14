@@ -6,6 +6,8 @@ const { prepareNoteInput } = require('./prepare-note-input');
 const { auditNotePublication } = require('./note-publication-audit');
 const { saveNoteDraftBundle } = require('./note-draft-bundle');
 const { publicationPayload } = require('./note-publication-source');
+const { exhibitionSnapshot } = require('./note-exhibition');
+const { createDisplayCandidates } = require('../js/note-generator');
 
 async function allRaceTargets(date, loadSchedule, now = Date.now()) {
   const index = await loadSchedule({ date });
@@ -50,7 +52,7 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
   const existing = existingRaces(date, rootDir, now());
   const pending = targets.filter(r => !existing.has(`${date}-${r.jcd}-${r.raceNo}`));
   const summary = { date, targetCount: targets.length, existing: targets.length - pending.length,
-    evaluated: 0, generated: 0, saved: 0, failures };
+    evaluated: 0, waitingExhibition: 0, generated: 0, saved: 0, failures };
   // Keep the existing prediction engine and its bounded API workers. Scores and
   // V2 research completeness do not decide whether a race is covered here.
   const result = await evaluate(pending);
@@ -62,16 +64,19 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
     summary.evaluated++;
     const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
     try {
+      const exhibition = exhibitionSnapshot(item.rawRaceData || item.raceData, new Date(now()).toISOString());
+      if (!exhibition.ready) { summary.waitingExhibition++; continue; }
       const prediction = createPrediction(item.raceData);
       prediction.race = { ...prediction.race, grade: item.eventGrade || prediction.race?.grade || '' };
       prediction.predictionMode = 'server_pre_deadline';
       prediction.officialResultUsedForPrediction = false;
       const baseline = structuredClone(createPracticalSelection(prediction));
-      const record = { publicationPolicy: 'all-races-v1', raceKey, date, jcd: item.jcd,
+      const record = { publicationPolicy: 'all-races-v1', exhibitionSnapshot: exhibition, raceKey, date, jcd: item.jcd,
         place: item.place, raceNo: item.raceNo, deadlineAt: item.deadlineAt,
         selectedAt: new Date(now()).toISOString() };
       const prepared = await prepareNoteInput({ prediction, baseline, record, fetchOdds, now });
       record.prediction = compactPrediction(prepared.prediction, prepared.baseline, item.raceData);
+      record.prediction.candidate24Tickets = createDisplayCandidates(prepared.prediction, prepared.baseline);
       const article = generateArticle(prepared.prediction);
       const audit = auditNotePublication({ article, record, baselinePracticalTickets: prepared.baseline,
         now: new Date(now()).toISOString() });
@@ -92,9 +97,10 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
   }
   console.log(`NOTE_ALL_RACES=${JSON.stringify(summary)}`);
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-    `全レース原稿: 対象${summary.targetCount}R / 保存済み${summary.existing}R / 今回保存${summary.saved}R / 取得・生成の問題${failures.length}件\n\n` +
+    `全レース原稿: 対象${summary.targetCount}R / 保存済み${summary.existing}R / 展示待ち${summary.waitingExhibition}R / 今回保存${summary.saved}R / 取得・生成の問題${failures.length}件\n\n` +
     failures.map(f => `- ${f.raceKey || [f.jcd, f.raceNo].filter(Boolean).join('-')}: ${f.reason}`).join('\n') + '\n');
   return summary;
 }
 
 module.exports = { allRaceTargets, existingRaces, collectAllRaceNotes };
+

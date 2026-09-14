@@ -24,6 +24,8 @@ function prediction(raceNo = 1) {
     officialHistory: { ready: true, venue: { usable: true, samples: 100,
       winningMethods: [{ key: '逃げ', rate: 60 }], payoutBands: { over10000: { rate: 20 } } } } };
 }
+const exhibition = () => ({ entries: [1,2,3,4,5,6].map(boat => ({ boat, exhibition: { displayTime: 6.8 } })),
+  startExhibition: [1,2,3,4,5,6].map(boat => ({ boat, course: boat, st: 0.12, mappingSource: 'official-start-image' })) });
 const generateArticle = p => generator.generateArticle(p, { publicationPolicy: 'all-races-v1' });
 async function main() {
   const loadSchedule = async q => q.jcd ? { ok: true, date, selectedVenue: { jcd: q.jcd,
@@ -51,11 +53,16 @@ async function main() {
     assert.equal(auditNotePublication(altered).contentReady, false);
   }
   const evaluate = async targets => ({ comparison: targets.map(t => ({ ...t, score: 0, selectionReady: false,
-    raceData: { ...prediction(t.raceNo), race: { ...prediction(t.raceNo).race, stadiumName: t.place } } })), attempts: [] });
+    rawRaceData: exhibition(), raceData: { ...prediction(t.raceNo), race: { ...prediction(t.raceNo).race, stadiumName: t.place } } })), attempts: [] });
   const args = { date, rootDir, now: () => clock, loadSchedule, evaluate,
     createPrediction: structuredClone, createPracticalSelection: p => p.practicalTickets,
     generateArticle, compactPrediction: (p, tickets) => ({ ...p, practicalTickets: tickets }),
     fetchOdds: async () => { throw new Error('odds_not_available'); } };
+  const waiting = await collectAllRaceNotes({ ...args,
+    evaluate: async targets => { const output = await evaluate(targets); output.comparison.forEach(r => { r.rawRaceData.startExhibition = []; }); return output; },
+    createPrediction: () => { throw new Error('must wait for exhibition'); } });
+  assert.equal(waiting.waitingExhibition, 24);
+  assert.equal(waiting.generated, 0);
   const result = await collectAllRaceNotes(args);
   assert.equal(result.saved, 24, JSON.stringify(result));
   assert.equal(existingRaces(date, rootDir, clock).size, 24);
@@ -85,3 +92,4 @@ async function main() {
   console.log('all 24 races covered without score/V2 filters; disclosure, immutable sources, gates and queue continuation passed');
 }
 main().finally(() => fs.rmSync(rootDir, { recursive: true, force: true })).catch(error => { console.error(error); process.exitCode = 1; });
+

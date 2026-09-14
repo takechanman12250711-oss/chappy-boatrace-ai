@@ -7,6 +7,7 @@ on:
       - '.github/workflows/live-note.yml'
       - 'scripts/collect-predictions.js'
       - 'scripts/collect-all-race-notes.js'
+      - 'scripts/note-exhibition.js'
       - 'js/note-generator.js'
       - 'scripts/note-publication-audit.js'
       - 'scripts/dispatch-ready-note.js'
@@ -16,6 +17,7 @@ on:
       - '.github/workflows/live-note.yml'
       - 'scripts/collect-predictions.js'
       - 'scripts/collect-all-race-notes.js'
+      - 'scripts/note-exhibition.js'
       - 'js/note-generator.js'
       - 'scripts/note-publication-audit.js'
       - 'scripts/dispatch-ready-note.js'
@@ -64,6 +66,7 @@ jobs:
           node scripts/test-note-source-concurrency.js
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
+          node scripts/test-exhibition-candidate24.js
           node scripts/test-note-publication-audit.js
           node --require ./js/frame-rise-fall-replay-preload.js -e "const c = require('./scripts/collect-predictions'); for (const k of ['SHADOW_LOGIC_FINGERPRINT', 'SHADOW_REFERENCE_DATA_FINGERPRINT', 'SHADOW_REFERENCE_GENERATION_ID']) if (!c[k] || c[k] === 'unavailable') throw new Error(k);"
       - name: Verify current official inputs without saving or publishing
@@ -82,3 +85,4 @@ jobs:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           NOTE_SOURCE_ISOLATED: 'true'
         run: node scripts/dispatch-ready-note.js
+

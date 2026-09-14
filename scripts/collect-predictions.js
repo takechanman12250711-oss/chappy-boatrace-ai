@@ -2292,6 +2292,9 @@ async function main() {
       }
     };
 
+    selectedData.exhibitionSnapshot = require("./note-exhibition").exhibitionSnapshot(
+      best.rawRaceData || best.raceData, selectedBase.selectedAt);
+    selectedData.prediction.candidate24Tickets = global.ChappyNoteGenerator.createDisplayCandidates(selectedPrediction, noteBaseline);
     // Audit metadata must not change selection, drafts, or collection availability.
     // Load inside the guard so even an unavailable auditor fails closed locally.
     try {
@@ -2426,4 +2429,5 @@ module.exports = {
   detachShadowV2,
   saveRun
 };
+
 

@@ -11,3 +11,6 @@
 関連変更の確認: `node scripts/note-github-ui-transport.test.js` と `node scripts/check-note-skills.js`。反映前に対象PRのCI結果とheadを確認する。
 
 全レース方針（2026-09-14ユーザー承認）: note対象を最高1R・60点以上・V2完全データへ限定しない。all-races-v1では取得済み情報の説明とオッズ未取得表示を認める。艇番・元買い目・締切・公開確認は維持する。詳細は docs/note-automation.md の最新節。
+
+
+最新方針: 全レース予想は公式展示が揃ってから生成・投稿する。最大24点候補の成績は1点100円の別集計とし、実戦厳選・実購入成績は維持する。詳細は docs/note-automation.md の最新節。
