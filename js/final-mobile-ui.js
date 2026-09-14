@@ -435,6 +435,7 @@
       markReferenceLayout();
       if (wrapRender() || attempts > 240) root.clearInterval(timer);
     }, 250);
+    root.addEventListener?.("chappy:prediction-runtime-ready", wrapRender);
     const observer = new MutationObserver(() => {
       markReferenceLayout();
       const area = root.document.getElementById("resultArea");

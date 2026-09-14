@@ -27,7 +27,7 @@
   const PRACTICAL_PANEL_BUILD="20260908-practical-visible-panel2";
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
   function script(id,src,onload){if(root.document.getElementById(id)){onload?.();return;}const node=root.document.createElement("script");node.id=id;node.src=src;node.async=false;if(onload)node.addEventListener("load",onload,{once:true});root.document.head.appendChild(node);}
-  function loadPracticalPanel(){script("chappy-practical-visible-panel",`js/final-practical-visible-panel.js?v=${PRACTICAL_PANEL_BUILD}`);}
+  function loadPracticalPanel(){script("chappy-practical-visible-panel",`js/final-practical-visible-panel.js?v=${PRACTICAL_PANEL_BUILD}&display=20260915-lazy1`);}
   function loadTicketOddsVisibility(){script("chappy-ticket-odds-visibility",`js/final-ticket-odds-visibility.js?v=${TICKET_ODDS_BUILD}`,loadPracticalPanel);}
   function loadUserContract(){script("chappy-final-display-user-contract",`js/final-display-user-contract.js?v=${USER_CONTRACT_BUILD}`,loadTicketOddsVisibility);}
   function loadOwner(){
@@ -35,13 +35,13 @@
     style("chappy-final-mobile-structure11-style",`css/final-mobile-structure11.css?v=${STRUCTURE_STYLE_BUILD}`);
     style("chappy-manshu-formation-style",`css/manshu-formation-fix.css?v=${MANSHU_STYLE_BUILD}`);
     style("chappy-final-display-controller-style",`css/final-display-controller.css?v=${OWNER_BUILD}`);
-    script("chappy-final-display-owner",`js/final-display-owner-v2.js?v=${OWNER_BUILD}`,loadUserContract);
+    script("chappy-final-display-owner",`js/final-display-owner-v2.js?v=${OWNER_BUILD}&display=20260915-lazy1`,loadUserContract);
   }
   style("chappy-final-mobile-ui-style",`css/final-mobile-ui.css?v=${BUILD}`);
   style("chappy-final-home-v2-photo-style",`css/final-home-v2-photo.css?v=${BUILD}`);
   style("chappy-final-prediction-photo-style",`css/final-prediction-photo.css?v=${BUILD}`);
   style("chappy-final-iphone-tuning-style",`css/final-iphone-tuning.css?v=${BUILD}`);
   style("chappy-final-reference-layout-style",`css/final-reference-layout.css?v=${BUILD}`);
-  style("chappy-final-readability-fix-style",`css/final-readability-fix.css?v=${BUILD}`);
-  if(root.ChappyFinalMobileUi)loadOwner();else script("chappy-final-mobile-ui-script",`js/final-mobile-ui.js?v=${BUILD}`,loadOwner);
+  style("chappy-final-readability-fix-style",`css/final-readability-fix.css?v=${BUILD}&display=20260915-lazy1`);
+  if(root.ChappyFinalMobileUi)loadOwner();else script("chappy-final-mobile-ui-script",`js/final-mobile-ui.js?v=${BUILD}&display=20260915-lazy1`,loadOwner);
 })(typeof window!=="undefined"?window:null);

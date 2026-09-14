@@ -63,6 +63,8 @@ jobs:
           node --check scripts/test-final-mobile-structure-contract.js
           node --check scripts/test-ticket-specific-reasons.js
           node --check scripts/test-final-missing-odds-refresh.js
+      - name: Check delayed first prediction presentation
+        run: node scripts/test-late-prediction-presentation.js
       - name: Check final mobile UI contract
         run: node scripts/test-final-mobile-ui-contract.js
       - name: Check final mobile structure contract
