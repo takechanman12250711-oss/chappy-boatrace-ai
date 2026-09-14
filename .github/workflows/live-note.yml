@@ -27,7 +27,7 @@ permissions:
 # This process writes only immutable note sources. Central prediction/result/
 # calibration data continues to use its existing shared writer queue.
 concurrency:
-  group: chappy-live-note
+  group: chappy-live-note-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
   cancel-in-progress: false
 
 jobs:

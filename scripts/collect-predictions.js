@@ -2345,7 +2345,7 @@ async function main() {
   }
 
   console.log(
-    `検証保存：${verificationPredictions.length}R（${MIN_SCORE}点以上${verificationPredictions.filter(item => item?.selection?.qualified === true).length}R／${MIN_SCORE}点未満${verificationPredictions.filter(item => item?.selection?.ready === true && item?.selection?.qualified !== true).length}R）`
+    `${noteOnly ? '検証評価（note専用・日次保存なし）' : '検証保存'}：${verificationPredictions.length}R（${MIN_SCORE}点以上${verificationPredictions.filter(item => item?.selection?.qualified === true).length}R／${MIN_SCORE}点未満${verificationPredictions.filter(item => item?.selection?.ready === true && item?.selection?.qualified !== true).length}R）`
   );
   console.log(
     `V2自動選定対象：${shadowV2Predictions.filter(item => item.calibrationEligible).length}/${shadowV2Predictions.length}R` +
@@ -2414,5 +2414,4 @@ module.exports = {
   detachShadowV2,
   saveRun
 };
-
 
