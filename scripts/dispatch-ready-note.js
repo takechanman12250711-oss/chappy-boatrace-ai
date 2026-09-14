@@ -18,7 +18,8 @@ function pushSourceWithRebase(git, guard) {
   // Ref updates stay fast-forward: a lost race retries against the new main.
   for (let attempt = 0; attempt < 3; attempt += 1) {
     guard();
-    git(['pull', '--rebase', 'origin', 'main']);
+    git(['-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
+      'pull', '--rebase', 'origin', 'main']);
     guard();
     try { git(['push', 'origin', 'HEAD:refs/heads/main']); return; }
     catch (error) { if (attempt === 2) throw error; }
@@ -61,4 +62,3 @@ if (require.main === module) dispatchReadyNote().catch(error => {
   console.error(`NOTE_EARLY_DISPATCH_FAILED=${error.message}`); process.exitCode = 1;
 });
 module.exports = { dispatchReadyNote, assertSourceOnlyChanges, pushSourceWithRebase };
-

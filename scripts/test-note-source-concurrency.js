@@ -26,6 +26,9 @@ try {
   assert.throws(() => assertSourceOnlyChanges(args => git(worker, args)), /unrelated_changes/);
   git(worker, ['restore', 'data/stats/result.json']);
   git(worker, ['add', '--', source]); git(worker, ['commit', '--only', '-m', 'note source', '--', source]);
+  // Actions sets identity on the commit command only; rebase must supply its own.
+  git(worker, ['config', '--unset', 'user.name']);
+  git(worker, ['config', '--unset', 'user.email']);
   let raced = false, pushes = 0, guards = 0;
   pushSourceWithRebase(args => {
     if (args[0] === 'push') {
