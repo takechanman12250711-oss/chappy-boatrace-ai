@@ -9,6 +9,7 @@ const { auditNotePublication } = require('./note-publication-audit');
 const { allRaceTargets, collectAllRaceNotes, existingRaces } = require('./collect-all-race-notes');
 const { publishQueue } = require('./publish-note-queue');
 const { publicationPayload } = require('./note-publication-source');
+const { dispatchReadyNote } = require('./dispatch-ready-note');
 const clock = Date.parse('2030-09-14T06:00:00Z');
 const date = '20300914';
 const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'all-race-notes-'));
@@ -28,8 +29,9 @@ async function main() {
   const loadSchedule = async q => q.jcd ? { ok: true, date, selectedVenue: { jcd: q.jcd,
     races: Array.from({ length: 12 }, (_, i) => ({ raceNo: i + 1, selectable: true,
       deadlineAt: '2030-09-14T16:00:00+09:00' })) } }
-    : { ok: true, date, venues: [{ jcd: '23', place: '唐津' }, { jcd: '24', place: '大村' }], liveVenues: [] };
+    : { ok: true, date, venues: [{ jcd: '23', place: '唐津', eventGrade: 'G1' }, { jcd: '24', place: '大村' }], liveVenues: [] };
   assert.equal((await allRaceTargets(date, loadSchedule, clock)).targets.length, 24);
+  assert.equal((await allRaceTargets(date, loadSchedule, clock)).targets[0].eventGrade, 'G1');
   assert.equal((await allRaceTargets(date, loadSchedule, clock + 3600000)).targets.length, 0);
   assert.equal(generator.generateArticle(prediction()).publishable, false, 'legacy strict mode remains unchanged');
   const article = generateArticle(prediction());
@@ -71,6 +73,15 @@ async function main() {
   assert.equal(queue.published, 8); assert.equal(queue.continued, true);
   assert.equal(new Set(sent).size, 8); assert.equal(dispatch.length, 1);
   assert.deepEqual(JSON.parse(dispatch[0][1].body), { ref: 'main', inputs: { mode: 'publish' } });
+  const sources = ['1', '2'].map((r, i) => `data/note-drafts/${date}/${date}-23-${r}-${String(i).repeat(64)}.json`);
+  const gitCalls = [];
+  await dispatchReadyNote({ env: { ...env, GITHUB_REF: 'refs/heads/main', NOTE_SOURCE_ISOLATED: 'true' },
+    build: () => ({ payload: {} }), prepare: async () => ({ ok: true, payload: { raceKey: 'test', sourcePath: sources[0] } }),
+    guard: () => {}, request: async () => ({ status: 204 }),
+    git: args => { gitCalls.push(args); return args[0] === 'ls-files' || args[0] === 'diff' ? sources.join('\n') : ''; } });
+  assert.deepEqual(gitCalls.find(args => args[0] === 'add').slice(2), sources);
+  const commit = gitCalls.find(args => args.includes('commit'));
+  assert.deepEqual(commit.slice(commit.indexOf('--') + 1), sources, 'persist every new source before dispatch');
   console.log('all 24 races covered without score/V2 filters; disclosure, immutable sources, gates and queue continuation passed');
 }
 main().finally(() => fs.rmSync(rootDir, { recursive: true, force: true })).catch(error => { console.error(error); process.exitCode = 1; });

@@ -20,7 +20,8 @@ async function allRaceTargets(date, loadSchedule, now = Date.now()) {
       }
       for (const race of response.selectedVenue.races || []) {
         if (race.selectable && Date.parse(race.deadlineAt) - now > 120000) {
-          targets.push({ jcd, place: venue.place, raceNo: race.raceNo, deadlineAt: race.deadlineAt, forced: false });
+          targets.push({ jcd, place: venue.place, eventGrade: venue.eventGrade || '', eventTitle: venue.eventTitle || '',
+            raceNo: race.raceNo, deadlineAt: race.deadlineAt, forced: false });
         }
       }
     } catch (error) { failures.push({ jcd, reason: error.message }); }
@@ -62,6 +63,7 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
     const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
     try {
       const prediction = createPrediction(item.raceData);
+      prediction.race = { ...prediction.race, grade: item.eventGrade || prediction.race?.grade || '' };
       prediction.predictionMode = 'server_pre_deadline';
       prediction.officialResultUsedForPrediction = false;
       const baseline = structuredClone(createPracticalSelection(prediction));
