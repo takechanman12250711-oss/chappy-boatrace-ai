@@ -368,7 +368,7 @@ const saveStart = collectorSource.indexOf("  if (!dryRun)", guardEnd);
 const saveEnd = collectorSource.indexOf("\n\n  console.log(", saveStart);
 assert.ok(saveStart > guardEnd && saveEnd > saveStart, "collector save block must be identifiable");
 const collectorSave = collectorSource.slice(saveStart, saveEnd);
-for (const mode of ["saved", "blocked", "missing_baseline", "dry_run", "no_selection", "rejected", "require_failure", "store_failure"]) {
+for (const mode of ["saved", "note_only", "blocked", "missing_baseline", "dry_run", "no_selection", "rejected", "require_failure", "store_failure"]) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "chappy-note-collector-save-"));
   try {
     const input = fixture();
@@ -393,7 +393,7 @@ for (const mode of ["saved", "blocked", "missing_baseline", "dry_run", "no_selec
     let runSaves = 0;
     let bundleCalls = 0;
     vm.runInNewContext(collectorSave, {
-      dryRun: mode === "dry_run", selectedData, selectedBase, article: input.article,
+      dryRun: mode === "dry_run", noteOnly: mode === "note_only", selectedData, selectedBase, article: input.article,
       noteBaseline: input.baselinePracticalTickets, noteOddsSnapshot: null,
       date: input.record.date, best, comparison, verificationPredictions,
       shadowV2Predictions, collectionHealth,
@@ -424,10 +424,11 @@ for (const mode of ["saved", "blocked", "missing_baseline", "dry_run", "no_selec
       }
     }, { timeout: 1000 });
     assert.deepEqual({ input, selectedBase }, before, `${mode}: original evidence must remain unchanged`);
-    assert.equal(runSaves, mode === "dry_run" ? 0 : 1, `${mode}: prediction save availability`);
-    const savesNote = !["dry_run", "no_selection"].includes(mode);
+    assert.equal(runSaves, ["dry_run", "note_only"].includes(mode) ? 0 : 1, `${mode}: prediction save availability`);
+    const savesBundle = !["dry_run", "no_selection"].includes(mode);
+    const savesNote = savesBundle && mode !== "note_only";
     assert.equal(noteSaves, savesNote ? 1 : 0, `${mode}: original Markdown save availability`);
-    assert.equal(bundleCalls, savesNote && mode !== "require_failure" ? 1 : 0);
+    assert.equal(bundleCalls, savesBundle && mode !== "require_failure" ? 1 : 0);
     const failed = ["require_failure", "store_failure"].includes(mode);
     assert.equal(warnings.length, failed ? 1 : 0);
     if (selectedData) {
@@ -435,7 +436,7 @@ for (const mode of ["saved", "blocked", "missing_baseline", "dry_run", "no_selec
       assert.equal(selectedData.note.audit.canPublish, false);
       assert.equal(selectedData.note.audit.automaticPublicationEnabled, false);
     }
-    if (["saved", "blocked", "missing_baseline"].includes(mode)) {
+    if (["saved", "note_only", "blocked", "missing_baseline"].includes(mode)) {
       const bundlePath = path.join(rootDir, selectedData.note.draftBundle.path);
       const payload = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
       assert.equal(selectedData.note.draftBundle.status, "saved");
@@ -450,7 +451,7 @@ for (const mode of ["saved", "blocked", "missing_baseline", "dry_run", "no_selec
         path.join(__dirname, "note-publication-audit.js"), "--input", bundlePath, "--now", NOW
       ], { encoding: "utf8" });
       assert.equal(replay.error, undefined, replay.stderr);
-      assert.equal(replay.status, mode === "saved" ? 0 : 1, replay.stderr);
+      assert.equal(replay.status, ["saved", "note_only"].includes(mode) ? 0 : 1, replay.stderr);
       assert.deepEqual(JSON.parse(replay.stdout), originalAudit);
       if (mode === "saved") {
         const afterDeadline = auditNotePublication({ ...payload, now: "2026-09-10T04:00:00.000Z" });
@@ -494,4 +495,5 @@ try {
 }
 
 console.log(`note publication audit tests passed (${assertions} cases)`);
+
 

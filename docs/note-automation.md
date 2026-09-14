@@ -2,16 +2,12 @@
 
 更新基準: 2026-09-14 / latest main
 
-## 2026-09-14 原稿入力と投稿開始の遅延修正
+## 2026-09-14 結果処理から独立した原稿収集
 
-- 既存のレース選定・買い目生成後に公式 `api/odds.js` を呼び、日付・場・レース番号を照合して表示用オッズを付ける。原稿生成前の独立した買い目一覧にも同じ取得値を対応付け、点数・順序・予想根拠は保持する。公式締切は保存レコードからJSTの表示へ渡す。
-- 取得失敗や欠落は買い目を削らず監査停止する。新規bundleに取得日時・出典・オッズを保存する。過去bundleは再生成しない。
-- 収集後すぐに保存bundleを実時計で監査し、合格したファイルだけを先にmainへ保存して既存note workflowを `workflow_dispatch` で起動する。予想・分析データは従来の検証・保存を続ける。原稿保存・dispatch失敗時は投稿せず、予想保存後にworkflow失敗として報告する。
-- 投稿workflowは最新bundleから読み取り専用で候補を組み立てるため、古い `latest.json` の更新待ちにならない。実行の直列化と原子的レース予約を共用する。合格候補がない場合はブラウザを起動しない。
-- handoffと投稿の待機キューを `queue: max` にし、既存のwriter排他を維持する。投稿のcheckoutは必要なコード・bundleに絞る。
-- 自動起動は投稿成功の証明ではない。初回公開URLとreceiptを引き続き確認する。原稿監査の失敗ログには具体的なissueCodesを含める。
-
-GitHub仕様: [workflowからの起動](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)、[待機キュー](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)。
+- `live-note.yml` がJST 07:00〜22:55の5分間隔で既存collectorの `--note-only` を実行する。GitHubの起動遅延はあり得るが、結果収集・校正の共有キューには入らない。
+- 同じ予想エンジン・V2選定・公式オッズ補完・原稿監査を使う。日次予想、結果、校正、可変のMarkdownは保存せず、immutableな `data/note-drafts` だけを保存する。通常collectorと結果・校正の共有writerは維持する。
+- 独立writerは変更パスを検査し、原稿だけのコミットを最新mainへrebaseしてfast-forward pushする。競合は停止し、push競争は最大3回。締切を再検査して既存publisherへ渡す。force pushしない。
+- 投稿は監査合格・当日・締切余裕120秒超・未予約の対象がある時だけ。原子的な予約により通常collectorとの二重投稿を防ぐ。5分間隔は収集予定であり、投稿時刻の保証ではない。対象なしのskipと実際の公開成功を区別する。
 
 ## 2026-09-14 自動投稿の有効化
 
@@ -206,3 +202,4 @@ node scripts/check-charter.js
 - Work内の同一ブラウザで認証を再利用できた証拠であり、ブラウザ再作成後の永続性やGitHub Actionsでの無人実行を証明しない。
 - 現在公開されているWorkブラウザAPI/機能にはstorageState/Cookieの安全な書き出し・GitHub Secretへの移送機能がない。GitHub接続ツールにもSecret登録機能はない。この経路は本人認証の再試行で解消しない。未公開API、ブラウザ内部ファイル、Cookieの画面出力で迂回しない。
 - 再開時は既存Workブラウザのログイン済み画面を先に確認し、認証が失われた証拠がない限り再ログインを依頼しない。GitHub向けの初回登録を進めるには、iPhoneから本人操作でき、認証を無人実行側へ安全に渡す正式機能のある実行環境が必要。採用済みと扱わず、既存の不採用経路へ戻らない。
+

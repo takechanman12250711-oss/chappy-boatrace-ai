@@ -23,6 +23,8 @@ on:
       - "scripts/prepare-note-input.js"
       - "scripts/dispatch-ready-note.js"
       - "scripts/test-note-pipeline.js"
+      - "scripts/test-note-source-concurrency.js"
+      - ".github/workflows/live-note.yml"
       - "scripts/note-publication-source.js"
       - "scripts/note-publication-source.test.js"
       - "scripts/build-note-iphone-handoff.js"
@@ -56,6 +58,8 @@ on:
       - "scripts/prepare-note-input.js"
       - "scripts/dispatch-ready-note.js"
       - "scripts/test-note-pipeline.js"
+      - "scripts/test-note-source-concurrency.js"
+      - ".github/workflows/live-note.yml"
       - "scripts/note-publication-source.js"
       - "scripts/note-publication-source.test.js"
       - "scripts/build-note-iphone-handoff.js"
@@ -102,6 +106,8 @@ jobs:
           node scripts/note-github-ui-transport.test.js
           node scripts/note-publication-source.test.js
           node scripts/test-note-pipeline.js
+          node scripts/test-note-source-concurrency.js
           node scripts/test-theory-integration.js
           node scripts/check-charter.js
+
 
