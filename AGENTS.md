@@ -6,6 +6,6 @@
 - TinyFish、Browserbase、GitHub-hosted fresh X OAuthは不採用。同じ失敗方式を名前や実行形態を変えて再試行しない。既存アカウントの認証方式変更を前提にしない。
 - 個人スキルと共有スキルの内容が違う場合は最新実装とユーザーの既決事項で解決し、関連する版だけを更新する。共有版だけ更新して個人版も更新済みと報告しない。
 - 実装済み、実サイト確認済み、iPhone本人操作確認済み、無人実行確認済み、公開済みを区別する。ログインhelperの成功、編集hostへの到達、原稿の存在だけで全体完成としない。
-- 予想・保存データの不変条件は `config/chappy-charter.json` と `docs/CHAPPY_CHARTER.md` を守る。noteの本番ゲートを検証のために緩めず、最終公開は既存の未実行方針を維持する。
+- 予想・保存データの不変条件は `config/chappy-charter.json` と `docs/CHAPPY_CHARTER.md` を守る。noteの本番ゲートを検証のために緩めず、最終公開は2026-09-14のユーザー明示依頼で有効化する。実時計の原稿監査、元原稿照合、300円、有料境界、原子的予約、公開URL確認を必須とする。
 
 関連変更の確認: `node scripts/note-github-ui-transport.test.js` と `node scripts/check-note-skills.js`。反映前に対象PRのCI結果とheadを確認する。

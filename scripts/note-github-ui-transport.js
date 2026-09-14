@@ -305,14 +305,126 @@ async function createAuthenticatedPage(browser) {
   return { context, page };
 }
 
+function requirePublicationGate(payload, rootDir = process.cwd(), now = Date.now()) {
+  requireDraftGate(payload, now);
+  return require('./note-publication-source').verifyPublicationSource(payload, rootDir, now);
+}
+
+async function preparePublication({ rootDir = process.cwd(), env = process.env, request = fetch } = {}) {
+  const latest = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-publish/latest.json'), 'utf8'));
+  if (!Array.isArray(latest.candidates)) throw new Error('publication_candidates_invalid');
+  const skipped = [];
+  for (const candidate of latest.candidates) {
+    let payload;
+    try {
+      payload = require('./note-publication-source').publicationPayload(candidate.sourcePath, rootDir);
+      requirePublicationGate(payload, rootDir);
+    } catch (error) {
+      skipped.push({ raceKey: candidate.raceKey, reason: error.message });
+      continue;
+    }
+    const gate = await preflightDraft(payload, env, request);
+    if (gate.ok) return { ok: true, payload, skipped };
+    skipped.push({ raceKey: payload.raceKey, reason: gate.reason });
+  }
+  return { ok: false, reason: 'no_eligible_unclaimed_article', skipped };
+}
+
+function publicArticleUrl(value, noteId) {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'https:' && u.hostname === 'note.com' &&
+      new RegExp(`^/[^/]+/n/${noteId}/?$`).test(u.pathname) && !u.search ? u.href : null;
+  } catch { return null; }
+}
+
+async function publishConfiguredArticle(page, payload, paid, guard = requirePublicationGate) {
+  guard(payload);
+  if (paid?.price !== EXPECTED_PRICE_YEN) throw new Error('publication_price_unverified');
+  const noteId = new URL(page.url()).pathname.match(/^\/notes\/(n[a-f0-9]+)\/publish\/?$/)?.[1];
+  if (!noteId || !isEditorUrl(page.url())) throw new Error('publication_editor_identity_missing');
+  const title = page.getByRole('heading', { name: payload.title, exact: true });
+  if (await title.count() !== 1 || !await title.isVisible()) throw new Error('publication_title_mismatch');
+  const editor = page.locator('.ProseMirror.paywall-setting[role="textbox"]');
+  const blocks = await editor.evaluate(el => Array.from(el.children, child => ({
+    text: (child.textContent || '').trim(), widget: child.classList.contains('ProseMirror-widget'),
+    buttons: child.querySelectorAll('button').length,
+    pressed: child.querySelector('button')?.getAttribute('aria-pressed') === 'true'
+  })));
+  const index = paidBoundaryIndex(blocks, firstPaidParagraph(payload.paidText));
+  const normalize = value => String(value).replace(/\s+/g, '');
+  if (!blocks[index].pressed || blocks.filter(b => b.pressed).length !== 1 ||
+      normalize(blocks.filter(b => !b.widget).map(b => b.text).join('\n')) !== normalize(articleBody(payload))) {
+    throw new Error('publication_body_or_boundary_mismatch');
+  }
+  const submit = page.getByRole('button', { name: '投稿する', exact: true });
+  if (await submit.count() !== 1 || !await submit.isVisible() || !await submit.isEnabled()) {
+    throw new Error('publication_submit_unavailable');
+  }
+  guard(payload);
+  console.log('NOTE_UI_PUBLICATION_ATTEMPT=true');
+  // Exactly one attempt. A lost response must never cause another click.
+  await submit.click();
+  let url;
+  for (let attempt = 0; attempt < 30 && !url; attempt += 1) {
+    url = publicArticleUrl(page.url(), noteId);
+    if (!url) {
+      const links = await page.locator('a[href]').evaluateAll(elements => elements
+        .filter(el => el.getClientRects().length).map(el => el.href));
+      url = links.map(value => publicArticleUrl(value, noteId)).find(Boolean);
+    }
+    if (!url) await page.waitForTimeout(1000);
+  }
+  if (!url) throw new Error('publication_result_unknown_review_required');
+  // Independently confirm the public page without the owner's login context.
+  const verification = await page.context().browser().newContext();
+  try {
+    const publicPage = await verification.newPage();
+    const response = await publicPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    if (!response?.ok() || !publicArticleUrl(publicPage.url(), noteId)) throw new Error('publication_public_page_unavailable');
+    await publicPage.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    await publicPage.getByRole('heading', { name: 'ここから先は', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    await publicPage.getByRole('button', { name: '¥300', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    const dates = await publicPage.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
+    const publishedAt = dates.find(value => Number.isFinite(Date.parse(value)) &&
+      Math.abs(Date.now() - Date.parse(value)) < 10 * 60 * 1000);
+    if (!publishedAt) throw new Error('publication_timestamp_unverified_review_required');
+    return { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
+      publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
+      sourceSha256: payload.sourceSha256 };
+  } finally { await verification.close(); }
+}
+
+async function savePublicationReceipt(payload, receipt, env = process.env, request = fetch) {
+  const { repository, sha, token } = loadClaimConfig(env);
+  const base = `https://api.github.com/repos/${repository}/git`;
+  async function post(endpoint, data) {
+    const response = await request(`${base}/${endpoint}`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(data), signal: AbortSignal.timeout(30000)
+    });
+    if (response.status !== 201) throw new Error(`publication_receipt_save_failed_${response.status}`);
+    return response.json();
+  }
+  const tree = await post('trees', { tree: [{ path: 'receipt.json', mode: '100644', type: 'blob', content: JSON.stringify(receipt, null, 2) }] });
+  if (!/^[a-f0-9]{40}$/.test(tree.sha || '')) throw new Error('publication_receipt_tree_invalid');
+  const commit = await post('commits', { message: `Verified note publication ${payload.raceKey}`, tree: tree.sha, parents: [sha] });
+  if (!/^[a-f0-9]{40}$/.test(commit.sha || '')) throw new Error('publication_receipt_commit_invalid');
+  const ref = draftClaimRef(payload).replace('note-draft-claim/', 'note-published/');
+  const result = await post('refs', { ref, sha: commit.sha });
+  if (result.ref !== ref || result.object?.sha !== commit.sha) throw new Error('publication_receipt_ref_invalid');
+  return ref;
+}
+
 async function run({ env = process.env } = {}) {
   const mode = String(env.NOTE_UI_MODE || 'auth').trim().toLowerCase();
-  if (!['auth', 'draft'].includes(mode)) throw new Error('unsupported_note_ui_mode');
+  if (!['auth', 'draft', 'publish'].includes(mode)) throw new Error('unsupported_note_ui_mode');
 
   // Invalid/missing credentials and stale handoffs must stop before browser setup.
   const browserUse = loadBrowserUseConfig(env);
-  const draft = mode === 'draft' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
+  const draft = mode !== 'auth' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
   if (draft) requireDraftGate(draft.payload);
+  if (mode === 'publish') requirePublicationGate(draft.payload);
   const { chromium } = require('playwright');
   if (draft) await claimDraft(draft.payload, env);
   const session = await createBrowserUseSession(browserUse);
@@ -339,6 +451,12 @@ async function run({ env = process.env } = {}) {
       body: articleBody(payload)
     });
     const paid = await configurePaidPublication(page, payload);
+    if (mode === 'publish') {
+      const receipt = await publishConfiguredArticle(page, payload, paid);
+      await savePublicationReceipt(payload, receipt, env);
+      console.log(`NOTE_UI_PUBLICATION=${JSON.stringify(receipt)}`);
+      return receipt;
+    }
 
     console.log('NOTE_UI_DRAFT_FILLED=true');
     console.log(`NOTE_UI_DRAFT_URL=${result.url}`);
@@ -386,5 +504,9 @@ module.exports = {
   ensureEditorReady,
   configurePaidPublication,
   createAuthenticatedPage,
+  requirePublicationGate,
+  preparePublication,
+  publishConfiguredArticle,
+  savePublicationReceipt,
   run
 };
