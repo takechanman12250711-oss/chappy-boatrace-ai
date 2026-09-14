@@ -2163,8 +2163,9 @@ function saveNote(date, selected, article) {
 async function main() {
   const date = getTargetDate();
   const dryRun = hasFlag("dry-run");
+  const noteOnly = hasFlag("note-only");
   const liveTargets = await loadTargets(date);
-  const existing = loadJson(predictionFilePath(date), { runs: [] });
+  const existing = noteOnly ? { runs: [] } : loadJson(predictionFilePath(date), { runs: [] });
   const recoveryPlan = buildRecoveryPlan(date, liveTargets, existing);
   const targets = recoveryPlan.targets;
 
@@ -2188,7 +2189,7 @@ async function main() {
       recoveryPlan.finalizedTargets
     );
     logCollectionHealth(collectionHealth);
-    if (!dryRun) {
+    if (!dryRun && !noteOnly) {
       saveRun(
         date,
         [],
@@ -2311,7 +2312,7 @@ async function main() {
 
   if (!dryRun) {
     if (selectedData) {
-      selectedData.note.path = saveNote(date, best, article);
+      if (!noteOnly) selectedData.note.path = saveNote(date, best, article);
       // Preserve the exact audit inputs before later runs replace daily records.
       // Snapshot failures must not interrupt the existing prediction/draft save.
       try {
@@ -2333,7 +2334,7 @@ async function main() {
         console.warn("note再検査用保存失敗：既存の予想・下書き保存を継続します");
       }
     }
-    saveRun(
+    if (!noteOnly) saveRun(
       date,
       comparison,
       selectedData,
@@ -2413,4 +2414,5 @@ module.exports = {
   detachShadowV2,
   saveRun
 };
+
 
