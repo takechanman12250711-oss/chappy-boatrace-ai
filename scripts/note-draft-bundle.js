@@ -42,6 +42,7 @@ function saveNoteDraftBundle(input = {}, { rootDir = process.cwd() } = {}) {
     sourceCommit: sourceCommit ?? null,
     article,
     record: {
+      ...(record.publicationPolicy ? { publicationPolicy: record.publicationPolicy } : {}),
       raceKey: record.raceKey,
       date: record.date,
       jcd: record.jcd,

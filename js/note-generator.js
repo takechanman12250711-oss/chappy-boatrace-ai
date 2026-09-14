@@ -1037,6 +1037,7 @@
       };
     }
 
+    const allRaces = options.publicationPolicy === "all-races-v1";
     const rejectionReasons = [];
     const main =
       prediction?.mainSheet || {};
@@ -1134,7 +1135,7 @@
     }
 
     if (
-      honmeiNo &&
+      !allRaces && honmeiNo &&
       honmeiScore < 72
     ) {
       rejectionReasons.push(
@@ -1156,7 +1157,7 @@
       );
 
     if (
-      honmeiNo &&
+      !allRaces && honmeiNo &&
       /相手・3着|押さえ候補|展開待ち|厚くは買わない|厳しい条件/.test(
         honmeiComment
       )
@@ -1322,7 +1323,7 @@
     }
 
     if (
-      String(
+      !allRaces && String(
         prediction
           ?.dataQuality
           ?.level || ""
@@ -1415,7 +1416,36 @@
           prediction
         )
     };
+    if (allRaces) return allRaceArticle(compactArticle(article), prediction);
     return options.format === "detailed" ? article : compactArticle(article);
+  }
+
+  function allRaceArticle(article, prediction) {
+    const meta = getRaceMeta(prediction);
+    const history = prediction?.officialHistory;
+    const venue = history?.ready && history.venue?.usable ? history.venue : null;
+    const features = [];
+    const grade = String(prediction?.race?.raceInfo?.grade || prediction?.race?.grade || "");
+    if (/^(SG|PG1|G1|G2)$/i.test(grade)) features.push(`注目開催：${grade.toUpperCase()}`);
+    if (venue && Number(venue.samples) > 0) {
+      const escape = arrayify(venue.winningMethods).find(row => row.key === "逃げ");
+      const wave = venue.payoutBands?.over10000;
+      const rates = [];
+      if (Number.isFinite(escape?.rate)) rates.push(`逃げ${escape.rate.toFixed(1)}%`);
+      if (Number.isFinite(wave?.rate)) rates.push(`万舟${wave.rate.toFixed(1)}%`);
+      if (rates.length) features.push(`場の傾向：${rates.join("・")}（公式結果${venue.samples}R）`);
+    }
+    const disclosure = "作成時点の取得済み情報による参考予想です。展示・気象・オッズ等の追加情報で評価が変わる場合があります。";
+    const freeText = [
+      `🚤 ${formatDate(meta.date)} ${meta.place}${meta.raceNo}R｜${formatDeadlineLabel(meta.deadline)}`,
+      ...features,
+      briefReason(prediction?.raceFlow?.summary || prediction?.raceFlow?.title || ""),
+      disclosure,
+      "買い目は以下の有料部分にまとめています。"
+    ].filter(Boolean).join("\n\n");
+    const fullText = [freeText, PAYWALL_MARKER, article.paidText,
+      "※舟券の購入は自己責任で、無理のない範囲でお楽しみください。", article.tags.join(" ")].join("\n\n");
+    return { ...article, title: article.title.replace("厳選予想", "レース予想"), publicationPolicy: "all-races-v1", dataDisclosure: disclosure, freeText, fullText };
   }
 
   const api = {

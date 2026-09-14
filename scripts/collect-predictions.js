@@ -1030,7 +1030,7 @@ async function loadTargets(date) {
     .filter(target => target.jcd && target.raceNo);
 }
 
-async function evaluateTargets(date, targets) {
+async function evaluateTargets(date, targets, { allRaces = false } = {}) {
   const results = [];
   const attempts = [];
   let nextIndex = 0;
@@ -1102,7 +1102,7 @@ async function evaluateTargets(date, targets) {
               preparedRaceData
             );
 
-        if (!evaluation?.ready) {
+        if (!evaluation?.ready && !allRaces) {
           const missingReasons = insufficientReasons(evaluation);
           attempts.push({
             ...target,
@@ -2164,6 +2164,18 @@ async function main() {
   const date = getTargetDate();
   const dryRun = hasFlag("dry-run");
   const noteOnly = hasFlag("note-only");
+  if (noteOnly) {
+    return require("./collect-all-race-notes").collectAllRaceNotes({
+      date, dryRun,
+      loadSchedule: query => callApi(scheduleApi, query),
+      evaluate: targets => evaluateTargets(date, targets, { allRaces: true }),
+      createPrediction: raceData => global.createPrediction(raceData),
+      createPracticalSelection: prediction => global.ChappyNoteGenerator.createPracticalSelection(prediction),
+      generateArticle: prediction => global.ChappyNoteGenerator.generateArticle(prediction, { publicationPolicy: "all-races-v1" }),
+      compactPrediction,
+      fetchOdds: query => callApi(require("../api/odds"), query)
+    });
+  }
   const liveTargets = await loadTargets(date);
   const existing = noteOnly ? { runs: [] } : loadJson(predictionFilePath(date), { runs: [] });
   const recoveryPlan = buildRecoveryPlan(date, liveTargets, existing);

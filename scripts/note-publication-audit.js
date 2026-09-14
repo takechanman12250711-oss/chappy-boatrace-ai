@@ -102,6 +102,12 @@ function auditNotePublication(input = {}) {
       issue("GENERATION_REJECTED", "既存の原稿生成条件を満たしていません。");
     }
 
+    const allRaces = record.publicationPolicy === "all-races-v1" && article.publicationPolicy === "all-races-v1";
+    if (article.publicationPolicy === "all-races-v1" && (!allRaces ||
+        article.dataDisclosure !== "作成時点の取得済み情報による参考予想です。展示・気象・オッズ等の追加情報で評価が変わる場合があります。" ||
+        !article.freeText?.includes(article.dataDisclosure))) {
+      issue("DATA_DISCLOSURE_MISSING", "全レース原稿は元予想の方針と取得済み情報の説明が必要です。");
+    }
     const date = String(record.date ?? "");
     const jcd = String(record.jcd ?? "").padStart(2, "0");
     const raceNo = Number(record.raceNo);
@@ -155,7 +161,7 @@ function auditNotePublication(input = {}) {
     if (ticketMentions(`${title}\n${freeText}`).length) {
       issue("FREE_TICKET_LEAK", "無料部分またはタイトルに具体的な3連単買い目が含まれています。");
     }
-    if (/未取得|未確認|取得失敗/.test(fullText)) {
+    if (/未取得|未確認|取得失敗/.test(allRaces ? fullText.replaceAll("オッズ未取得", "") : fullText)) {
       issue("UNRESOLVED_DATA", "本文に未取得・未確認の表示が残っています。");
     }
 
@@ -193,6 +199,8 @@ function auditNotePublication(input = {}) {
         const source = Number(record.prediction?.practicalTickets?.[index]?.odds);
         const original = Number(baselinePracticalTickets?.[index]?.odds);
         const articleOdds = Number(article.practicalTickets?.[index]?.odds);
+        if (allRaces && line.includes("オッズ未取得") &&
+            [source, original, articleOdds].every(value => value === 0) && !Number.isFinite(shown)) return;
         if (![shown, source, original, articleOdds].every(value => Number.isFinite(value) && value > 0)) {
           issue("ODDS_MISSING", `${rendered[index] || index + 1}のオッズを確認できません。買い目は変更しません。`);
         } else if (![source, original, articleOdds].every(value => value === shown)) {

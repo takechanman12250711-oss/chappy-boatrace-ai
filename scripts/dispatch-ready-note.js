@@ -11,6 +11,7 @@ function assertSourceOnlyChanges(git) {
   if (paths.some(file => !/^data\/note-drafts\/\d{8}\/\d{8}-\d{2}-\d{1,2}-[a-f0-9]{64}\.json$/.test(file))) {
     throw new Error('note_only_writer_has_unrelated_changes');
   }
+  return [...new Set(paths)];
 }
 
 function pushSourceWithRebase(git, guard) {
@@ -38,13 +39,13 @@ async function dispatchReadyNote({ env = process.env, request = fetch,
   guard(gate.payload);
   const file = gate.payload.sourcePath;
   const isolated = env.NOTE_SOURCE_ISOLATED === "true";
-  if (isolated) assertSourceOnlyChanges(git);
+  const files = isolated ? [...new Set([...assertSourceOnlyChanges(git), file])] : [file];
   // Persist the exact audited bundle before dispatch. Do not include pending
   // prediction/statistics changes, and never force-push or rewrite history.
-  git(['add', '--', file]);
-  if (git(['diff', '--cached', '--name-only', '--', file])) {
+  git(['add', '--', ...files]);
+  if (git(['diff', '--cached', '--name-only', '--', ...files])) {
     git(['-c', 'user.name=github-actions[bot]', '-c', 'user.email=41898282+github-actions[bot]@users.noreply.github.com',
-      'commit', '--only', '-m', `Save audited note source ${gate.payload.raceKey}`, '--', file]);
+      'commit', '--only', '-m', `Save audited note source ${gate.payload.raceKey}`, '--', ...files]);
   }
   if (isolated) pushSourceWithRebase(git, () => guard(gate.payload));
   else git(['push', 'origin', 'HEAD:refs/heads/main']);
