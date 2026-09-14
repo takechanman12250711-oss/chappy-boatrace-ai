@@ -143,10 +143,39 @@
     installNav(area, sections);
   }
 
+  let candidateReportRequest;
+  function candidateReport(area) {
+    if (document.getElementById("candidate24Performance")) return;
+    candidateReportRequest ||= fetch(new URL("data/stats/candidate24-report.json", document.baseURI), { cache: "no-cache" })
+      .then(r => { if (!r.ok) throw new Error("report_unavailable"); return r.json(); })
+      .catch(() => { candidateReportRequest = null; return null; });
+    candidateReportRequest.then(report => {
+      if (!report || !area.isConnected || document.getElementById("candidate24Performance")) return;
+      const card = document.createElement("section");
+      card.id = "candidate24Performance";
+      card.style.cssText = "padding:16px;margin-bottom:14px;border:1px solid #29404d;border-radius:16px;color:inherit";
+      const heading = document.createElement("h3"); heading.textContent = "最大24点候補の成績"; card.appendChild(heading);
+      const period = document.createElement("p");
+      period.textContent = report.from && report.to ? `保存予想の全期間：${report.from}〜${report.to}` : "保存予想の照合待ち";
+      card.appendChild(period);
+      const percent = v => Number.isFinite(v) ? v.toFixed(1) + "%" : "集計待ち";
+      for (const [key, label] of [["candidate24", "最大24点候補"], ["practical", "同じレースの実戦厳選"]]) {
+        const m = report[key]; if (!m) continue;
+        const line = document.createElement("p");
+        line.textContent = `${label}：的中率 ${percent(m.hitRate)} ／ 回収率 ${percent(m.recoveryRate)}（${Number(m.races) || 0}R）`;
+        card.appendChild(line);
+      }
+      const note = document.createElement("small");
+      note.textContent = "各買い目100円の均等購入で比較。24点未満は実際の点数で計算。実購入成績とは別集計。返還・不成立は除外。";
+      card.appendChild(note); area.before(card);
+    });
+  }
+
   function install() {
     ensureStyle();
     const area = document.getElementById("statsArea");
     if (!area) return;
+    candidateReport(area);
     state.observer?.disconnect();
     state.observer = new MutationObserver(() => root.requestAnimationFrame(enhance));
     state.observer.observe(area, { childList: true, subtree: true });
@@ -159,3 +188,4 @@
 
   root.ChappyResultUiPhase5 = Object.freeze({ install, enhance });
 })(window);
+

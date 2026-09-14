@@ -1452,6 +1452,7 @@
     VERSION,
     PAYWALL_MARKER,
     generateArticle,
+    createDisplayCandidates,
     buildTitle,
     buildFreeSection,
     buildPaidSection,
@@ -1476,3 +1477,4 @@
     ? window
     : globalThis
 );
+

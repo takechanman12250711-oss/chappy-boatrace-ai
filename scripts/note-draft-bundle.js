@@ -43,6 +43,7 @@ function saveNoteDraftBundle(input = {}, { rootDir = process.cwd() } = {}) {
     article,
     record: {
       ...(record.publicationPolicy ? { publicationPolicy: record.publicationPolicy } : {}),
+      ...(record.exhibitionSnapshot ? { exhibitionSnapshot: record.exhibitionSnapshot } : {}),
       raceKey: record.raceKey,
       date: record.date,
       jcd: record.jcd,
@@ -51,6 +52,7 @@ function saveNoteDraftBundle(input = {}, { rootDir = process.cwd() } = {}) {
       selectedAt: record.selectedAt ?? null,
       deadlineAt: record.deadlineAt ?? null,
       prediction: {
+        ...(record.prediction?.candidate24Tickets ? { candidate24Tickets: record.prediction.candidate24Tickets } : {}),
         practicalTickets: record.prediction?.practicalTickets ?? null,
         mainSheet: record.prediction?.mainSheet ?? null,
         manshuSheet: record.prediction?.manshuSheet ?? null
@@ -98,4 +100,5 @@ function saveNoteDraftBundle(input = {}, { rootDir = process.cwd() } = {}) {
 }
 
 module.exports = { saveNoteDraftBundle };
+
 

@@ -24,6 +24,11 @@ const bundle = { version: 'note-draft-bundle-v1', article,
   record: { date: '20300914', jcd: '23', place: '唐津', raceNo: 10, raceKey: '20300914-23-10',
     deadlineAt: '2030-09-14T16:00:00+09:00', prediction },
   baselinePracticalTickets: prediction.practicalTickets, minLeadSeconds: 120, maxPracticalTickets: 10 };
+bundle.record.selectedAt = new Date(clock).toISOString();
+bundle.record.exhibitionSnapshot = require('./note-exhibition').exhibitionSnapshot({
+  entries: [1,2,3,4,5,6].map(boat => ({ boat, exhibition: { displayTime: 6.8 } })),
+  startExhibition: [1,2,3,4,5,6].map(boat => ({ boat, course: boat, st: 0.12, mappingSource: 'official-start-image' }))
+}, bundle.record.selectedAt);
 const bytes = JSON.stringify(bundle);
 const hash = createHash('sha256').update(bytes).digest('hex');
 const sourcePath = `data/note-drafts/20300914/20300914-23-10-${hash}.json`;
@@ -111,3 +116,4 @@ async function main() {
 }
 main().finally(() => { Date.now = oldClock; fs.rmSync(root, { recursive: true, force: true }); })
   .catch(error => { console.error(error); process.exitCode = 1; });
+

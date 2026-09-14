@@ -24,6 +24,8 @@ on:
       - "scripts/dispatch-ready-note.js"
       - "scripts/test-note-pipeline.js"
       - "scripts/collect-all-race-notes.js"
+      - "scripts/note-exhibition.js"
+      - "scripts/test-exhibition-candidate24.js"
       - "scripts/publish-note-queue.js"
       - "scripts/test-all-race-notes.js"
       - "scripts/test-note-source-concurrency.js"
@@ -62,6 +64,8 @@ on:
       - "scripts/dispatch-ready-note.js"
       - "scripts/test-note-pipeline.js"
       - "scripts/collect-all-race-notes.js"
+      - "scripts/note-exhibition.js"
+      - "scripts/test-exhibition-candidate24.js"
       - "scripts/publish-note-queue.js"
       - "scripts/test-all-race-notes.js"
       - "scripts/test-note-source-concurrency.js"
@@ -113,8 +117,10 @@ jobs:
           node scripts/note-publication-source.test.js
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
+          node scripts/test-exhibition-candidate24.js
           node scripts/test-note-source-concurrency.js
           node scripts/test-theory-integration.js
           node scripts/check-charter.js
+
 
 

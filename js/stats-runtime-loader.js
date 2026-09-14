@@ -3,7 +3,7 @@
 (function (root) {
   "use strict";
   if (root.ChappyStatsRuntime) return;
-  const VERSION = "20260828-ui-audit-display1" + "-20260908-result-clarity1";
+  const VERSION = "20260828-ui-audit-display1" + "-20260908-result-clarity1-20260915-candidate24";
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const scripts = [
     "js/boat-identity.js",
@@ -132,3 +132,4 @@
   });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installTriggers, { once: true }); else installTriggers();
 })(window);
+
