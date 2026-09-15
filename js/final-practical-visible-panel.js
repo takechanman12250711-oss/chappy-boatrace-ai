@@ -44,6 +44,7 @@
     const html=`<details class="chappy-practical-visible-panel"><summary class="chappy-practical-visible-head"><strong>実戦厳選</strong><span>${selected.length}点</span></summary><div class="chappy-practical-visible-list">${root.ChappyFinalMobileUi?.compactTickets ? root.ChappyFinalMobileUi.compactTickets(selected.map(row=>row.ticket)).map(row=>root.ChappyFinalMobileUi.compactLine(row,map)).join("") : selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></details>`;
     const anchor=area.querySelector?.(".chappy-final-buy-summary")||area.querySelector?.(".v3-boat-evaluation")||area.querySelector?.(".v3-main-newspaper");
     if(anchor)anchor.insertAdjacentHTML("afterend",html);else area.insertAdjacentHTML?.("afterbegin",html);
+    if(area.querySelector?.(".chappy-practical-visible-panel"))area.querySelectorAll?.(".chappy-final-buy-group.is-practical-fallback").forEach(node=>node.remove());
   }
   function wrap(){
     const fn=root.renderAll;

@@ -67,6 +67,8 @@ jobs:
         run: node scripts/test-ticket-compact-disclosure.js
       - name: Check delayed first prediction presentation
         run: node scripts/test-late-prediction-presentation.js
+      - name: Check practical-only tickets and recommendation visibility
+        run: node scripts/test-presentation-visibility.js
       - name: Check final mobile UI contract
         run: node scripts/test-final-mobile-ui-contract.js
       - name: Check final mobile structure contract
