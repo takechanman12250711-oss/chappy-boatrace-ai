@@ -417,7 +417,7 @@
     if (!root.document.getElementById("chappy-ticket-disclosure-style")) {
       const style = root.document.createElement("style");
       style.id = "chappy-ticket-disclosure-style";
-      style.textContent = `.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure{display:block!important}.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure>summary{cursor:pointer;min-height:44px}.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure:not([open])>.chappy-ticket-children{display:none!important}.chappy-ticket-children{padding:8px 0}.chappy-ticket-child{display:flex;justify-content:space-between;gap:8px;padding:7px;color:#d8e8f3;font-size:13px}.chappy-ticket-child span{white-space:nowrap}`;
+      style.textContent = `.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure{display:block!important;grid-column:1/-1;min-width:0}.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure:not([open])>.chappy-ticket-children{display:none!important}.chappy-ticket-children{padding:8px 0}.chappy-ticket-child{display:flex;justify-content:space-between;gap:8px;padding:7px;color:#d8e8f3;font-size:13px}.chappy-ticket-child span{white-space:nowrap}`;
       root.document.head.appendChild(style);
     }
     if (!resultArea) return;
