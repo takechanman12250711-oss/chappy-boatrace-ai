@@ -311,6 +311,13 @@ function centralOfficial(record, fallbackDate, deps) {
 
 function collectOfficials(resultsDir, targetKeys, deps) {
   const source = deps.input.collectOfficialResults(resultsDir, targetKeys);
+  // Reuse independently collected official evidence; no second API collector.
+  const ledger = loadJson(path.join(resultsDir, '../stats/race-review-results.json'), {});
+  for (const [key, value] of Object.entries(ledger.races || {})) {
+    if (targetKeys.has(key) && !source.has(key) && deps.input.raceKey(value) === key) {
+      source.set(key, { ...value, checkedAt: value.checkedAt || ledger.attempts?.[key]?.checkedAt });
+    }
+  }
   const officials = new Map();
   const rejectedReasons = {};
   for (const [key, record] of source) {
@@ -503,6 +510,8 @@ function report(archive, store, options = {}) {
     thresholdSearchPerformed: false,
     primaryCohort: 'central-before-result-and-prediction-before-result',
     pipeline: {
+      noteCollection: archive?.noteCollection || null,
+      lastCapture: archive?.lastCapture || null,
       immutableSnapshotCount: Object.keys(archive?.snapshots || {}).length,
       archivedRaceCount: archivedRaceKeys.size,
       archiveConflictCount: Array.isArray(archive?.conflicts) ? archive.conflicts.length : 0,
@@ -547,16 +556,61 @@ function pathsFor(options = {}) {
   };
 }
 
+// Import only snapshots actually frozen by the live collector. Never rebuild old
+// draft shadows using today's prediction engine or assign them an earlier time.
+function importNoteSnapshots(root, archive, options = {}) {
+  const next = clone(archive), diagnostics = { checked: 0, saved: 0, inactive: 0, missing: 0, invalid: 0, missingBasis: 0 };
+  const base = path.join(root, 'data/note-drafts');
+  if (!fs.existsSync(base)) return { archive: next, diagnostics };
+  const { assess } = require('./build-race-review-progress');
+  for (const date of fs.readdirSync(base).filter(n => /^\d{8}$/.test(n))) {
+    for (const name of fs.readdirSync(path.join(base, date)).filter(n => n.endsWith('.json'))) {
+      const bundle = loadJson(path.join(base, date, name), {});
+      const r = bundle.record, snapshot = r?.outerAttackShadow;
+      diagnostics.checked++;
+      if (!snapshot) { diagnostics.missing++; continue; }
+      if (assess(bundle).reason || snapshot.experimentId !== 'outer-attack-ticket-shadow-v1' ||
+          snapshot.sourceRaceKey !== r.raceKey || snapshot.captureAt !== r.selectedAt ||
+          snapshot.resultUsedForGeneration !== false || snapshot.productionChanged !== false ||
+          snapshot.automaticApplication !== false || snapshot.retrospectiveBackfillAllowed !== false ||
+          parseTime(snapshot.captureAt) < parseTime(dependencies().gate.CONFIG.prospectiveStartAt)) {
+        diagnostics.invalid++; continue;
+      }
+      const expected = r.prediction.practicalTickets.map(t => typeof t === 'string' ? t : t.ticket).sort();
+      const actual = (snapshot.a?.entries || []).map(t => t.ticket).sort();
+      if (JSON.stringify(expected) !== JSON.stringify(actual)) { diagnostics.invalid++; continue; }
+      if (!snapshot.signal?.basisValid) { diagnostics.missingBasis++; continue; }
+      if (!snapshot.persistenceRecommended) { diagnostics.inactive++; continue; }
+      const key = snapshot.captureKey;
+      if (key !== `${r.raceKey}|${r.selectedAt}`) { diagnostics.invalid++; continue; }
+      const immutableFingerprint = fingerprint(snapshotCore(snapshot));
+      if (next.snapshots[key]) {
+        if (next.snapshots[key].immutableFingerprint !== immutableFingerprint) diagnostics.invalid++;
+        continue;
+      }
+      next.snapshots[key] = { archiveKey: key, sourceRaceKey: r.raceKey,
+        sourceKind: 'immutable-live-note-shadow', sourcePredictionCapturedAt: snapshot.captureAt,
+        centralCapturedAt: snapshot.captureAt, immutableFingerprint,
+        sourceShadowVersion: snapshot.experimentId, productionChanged: false, automaticApplication: false,
+        snapshot: { ...snapshot, centralCapturedAt: snapshot.captureAt, immutableFingerprint } };
+      diagnostics.saved++;
+    }
+  }
+  next.snapshotCount = Object.keys(next.snapshots).length;
+  next.noteCollection = { ...diagnostics, checkedAt: options.now || new Date().toISOString() };
+  return { archive: next, diagnostics };
+}
+
 function captureFiles(options = {}) {
   const deps = options.dependencies || dependencies();
   const files = pathsFor(options);
   const now = asIso(options.now, new Date().toISOString());
   const date = normalizeDate(options.date) || jstDate(options.sourceTime || now);
   const predictionFile = path.join(files.predictions, `${date}.json`);
-  if (!fs.existsSync(predictionFile)) return { status: 'no-prediction-file', date, diagnostics: { capturedCount: 0 } };
   const data = loadJson(predictionFile, {});
   const archive = loadJson(files.archive, emptyArchive(now, deps));
   const output = capture({ ...data, date: data.date || date }, archive, { ...options, date, now, dependencies: deps });
+  output.archive = importNoteSnapshots(options.root || path.resolve(__dirname, '..'), output.archive, { now }).archive;
   writeJson(files.archive, output.archive);
   return { status: 'captured', date, archiveFile: files.archive, ...output };
 }
@@ -636,6 +690,7 @@ module.exports = {
   settlementFingerprint,
   settle,
   report,
+  importNoteSnapshots,
   pathsFor,
   captureFiles,
   settleFiles,
