@@ -1,4 +1,23 @@
 'use strict';
+// Repeated reporting without new evidence must not create a Pages restart.
+{
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+  const assert = require('node:assert/strict');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'candidate24-stable-'));
+  try {
+    const main = require('./build-candidate24-report').main;
+    main(root);
+    const file = path.join(root, 'data/stats/candidate24-report.json');
+    const old = JSON.parse(fs.readFileSync(file, 'utf8'));
+    old.generatedAt = '2020-01-01T00:00:00Z';
+    fs.writeFileSync(file, JSON.stringify(old));
+    const before = fs.readFileSync(file, 'utf8');
+    assert.equal(main(root).generatedAt, old.generatedAt);
+    assert.equal(fs.readFileSync(file, 'utf8'), before);
+    fs.writeFileSync(file, JSON.stringify({ ...old, pending: 999 }));
+    assert.equal(main(root).pending, 0, 'changed report contents still update');
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+}
 const assert = require('node:assert/strict');
 const { exhibitionSnapshot, requireExhibition } = require('./note-exhibition');
 const { buildReport } = require('./build-candidate24-report');
