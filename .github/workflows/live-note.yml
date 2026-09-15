@@ -57,6 +57,7 @@ jobs:
             scripts
             data/stats
             data/note-drafts
+            data/outer-attack-sources
             data/note-publish
       - uses: actions/setup-node@v4
         with:
@@ -79,10 +80,12 @@ jobs:
         env:
           NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
         run: node scripts/collect-predictions.js --note-only
+      - name: Save immutable evidence independently of publication audit
+        if: github.event_name != 'pull_request'
+        run: node scripts/save-live-verification-sources.js
       - name: Save only audited note source and start existing publisher
         if: github.event_name != 'pull_request'
         env:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           NOTE_SOURCE_ISOLATED: 'true'
         run: node scripts/dispatch-ready-note.js
-

@@ -65,9 +65,18 @@ async function main() {
   assert.equal(waiting.generated, 0);
   const result = await collectAllRaceNotes(args);
   assert.equal(result.saved, 24, JSON.stringify(result));
+  const blockedRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'blocked-note-research-'));
+  try {
+    const blocked = await collectAllRaceNotes({ ...args, rootDir: blockedRoot,
+      generateArticle: () => ({ publishable: false, error: 'test_audit_blocked' }) });
+    assert.equal(blocked.saved, 0);
+    assert.equal(fs.readdirSync(path.join(blockedRoot, 'data/outer-attack-sources', date)).length, 24,
+      'all research snapshots survive a publication audit failure');
+    assert.equal(fs.existsSync(path.join(blockedRoot, 'data/note-drafts')), false);
+  } finally { fs.rmSync(blockedRoot, { recursive: true, force: true }); }
   assert.equal(existingRaces(date, rootDir, clock).size, 24);
   assert.equal((await collectAllRaceNotes(args)).saved, 0, 'do not recreate immutable snapshots each cycle');
-  assert.deepEqual(fs.readdirSync(path.join(rootDir, 'data')), ['note-drafts']);
+  assert.deepEqual(fs.readdirSync(path.join(rootDir, 'data')).sort(), ['note-drafts', 'outer-attack-sources']);
   const file = fs.readdirSync(path.join(rootDir, 'data/note-drafts', date))[0];
   const savedBundle = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-drafts', date, file)));
   assert.deepEqual(savedBundle.record.outerAttackShadow.a.entries.map(t => t.ticket).sort(),
@@ -95,4 +104,3 @@ async function main() {
   console.log('all 24 races covered without score/V2 filters; disclosure, immutable sources, gates and queue continuation passed');
 }
 main().finally(() => fs.rmSync(rootDir, { recursive: true, force: true })).catch(error => { console.error(error); process.exitCode = 1; });
-

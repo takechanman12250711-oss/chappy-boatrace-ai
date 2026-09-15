@@ -82,6 +82,11 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
       }, { now: record.selectedAt }); } catch (error) {
         record.outerAttackShadow = { status: 'capture-error', error: String(error.message).slice(0, 160) };
       }
+      // Research evidence must survive an article audit failure. No publishing here.
+      if (!dryRun) {
+        try { require('./outer-attack-live-source').saveSource(record, baseline, { rootDir, now: now() }); }
+        catch (error) { failures.push({ raceKey, reason: error.message }); }
+      }
       const prepared = await prepareNoteInput({ prediction, baseline, record, fetchOdds, now });
       record.prediction = compactPrediction(prepared.prediction, prepared.baseline, item.raceData);
       record.prediction.candidate24Tickets = createDisplayCandidates(prepared.prediction, prepared.baseline);
@@ -111,4 +116,3 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
 }
 
 module.exports = { allRaceTargets, existingRaces, collectAllRaceNotes };
-

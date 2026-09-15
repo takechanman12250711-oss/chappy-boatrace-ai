@@ -71,6 +71,24 @@ function loadJson(file, fallback) {
 }
 
 function writeJson(file, value) {
+  // Avoid a commit/Pages restart when only reporting clocks changed.
+  const comparable = input => {
+    const row = clone(input);
+    const clean = value => {
+      if (!value || typeof value !== 'object') return;
+      delete value.generatedAt;
+      Object.values(value).forEach(clean);
+    };
+    clean(row);
+    delete row.updatedAt;
+    if (row.lastCapture) delete row.lastCapture.capturedAt;
+    if (row.lastSettlement) delete row.lastSettlement.settledAt;
+    if (row.noteCollection) delete row.noteCollection.checkedAt;
+    if (row.pipeline?.noteCollection) delete row.pipeline.noteCollection.checkedAt;
+    if (row.pipeline?.lastCapture) delete row.pipeline.lastCapture.capturedAt;
+    return JSON.stringify(stable(row));
+  };
+  if (fs.existsSync(file) && comparable(loadJson(file)) === comparable(value)) return;
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
@@ -560,23 +578,26 @@ function pathsFor(options = {}) {
 // draft shadows using today's prediction engine or assign them an earlier time.
 function importNoteSnapshots(root, archive, options = {}) {
   const next = clone(archive), diagnostics = { checked: 0, saved: 0, inactive: 0, missing: 0, invalid: 0, missingBasis: 0 };
-  const base = path.join(root, 'data/note-drafts');
-  if (!fs.existsSync(base)) return { archive: next, diagnostics };
   const { assess } = require('./build-race-review-progress');
+  for (const directory of ['note-drafts', 'outer-attack-sources']) {
+  const base = path.join(root, 'data', directory);
+  if (!fs.existsSync(base)) continue;
   for (const date of fs.readdirSync(base).filter(n => /^\d{8}$/.test(n))) {
     for (const name of fs.readdirSync(path.join(base, date)).filter(n => n.endsWith('.json'))) {
       const bundle = loadJson(path.join(base, date, name), {});
-      const r = bundle.record, snapshot = r?.outerAttackShadow;
+      const independent = directory === 'outer-attack-sources';
+      const r = bundle.record, snapshot = independent ? bundle.snapshot : r?.outerAttackShadow;
       diagnostics.checked++;
       if (!snapshot) { diagnostics.missing++; continue; }
-      if (assess(bundle).reason || snapshot.experimentId !== 'outer-attack-ticket-shadow-v1' ||
+      const sourceValid = independent ? require('./outer-attack-live-source').validSource(bundle) : !assess(bundle).reason;
+      if (!sourceValid || snapshot.experimentId !== 'outer-attack-ticket-shadow-v1' ||
           snapshot.sourceRaceKey !== r.raceKey || snapshot.captureAt !== r.selectedAt ||
           snapshot.resultUsedForGeneration !== false || snapshot.productionChanged !== false ||
           snapshot.automaticApplication !== false || snapshot.retrospectiveBackfillAllowed !== false ||
           parseTime(snapshot.captureAt) < parseTime(dependencies().gate.CONFIG.prospectiveStartAt)) {
         diagnostics.invalid++; continue;
       }
-      const expected = r.prediction.practicalTickets.map(t => typeof t === 'string' ? t : t.ticket).sort();
+      const expected = (independent ? r.practicalTickets : r.prediction.practicalTickets).map(t => typeof t === 'string' ? t : t.ticket).sort();
       const actual = (snapshot.a?.entries || []).map(t => t.ticket).sort();
       if (JSON.stringify(expected) !== JSON.stringify(actual)) { diagnostics.invalid++; continue; }
       if (!snapshot.signal?.basisValid) { diagnostics.missingBasis++; continue; }
@@ -589,12 +610,13 @@ function importNoteSnapshots(root, archive, options = {}) {
         continue;
       }
       next.snapshots[key] = { archiveKey: key, sourceRaceKey: r.raceKey,
-        sourceKind: 'immutable-live-note-shadow', sourcePredictionCapturedAt: snapshot.captureAt,
+        sourceKind: independent ? 'immutable-live-verification-shadow' : 'immutable-live-note-shadow', sourcePredictionCapturedAt: snapshot.captureAt,
         centralCapturedAt: snapshot.captureAt, immutableFingerprint,
         sourceShadowVersion: snapshot.experimentId, productionChanged: false, automaticApplication: false,
         snapshot: { ...snapshot, centralCapturedAt: snapshot.captureAt, immutableFingerprint } };
       diagnostics.saved++;
     }
+  }
   }
   next.snapshotCount = Object.keys(next.snapshots).length;
   next.noteCollection = { ...diagnostics, checkedAt: options.now || new Date().toISOString() };

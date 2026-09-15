@@ -15,6 +15,14 @@ async function refresh(root = process.cwd(), { now = Date.now(), fetchResult, ma
       pending.set(r.raceKey, r);
     }
   }
+  const sources = path.join(root, 'data/outer-attack-sources');
+  for (const date of fs.existsSync(sources) ? fs.readdirSync(sources).filter(d => /^\d{8}$/.test(d)) : []) {
+    for (const file of fs.readdirSync(path.join(sources, date)).filter(f => f.endsWith('.json'))) {
+      const source = read(path.join(sources, date, file)), r = source.record;
+      if (!require('./outer-attack-live-source').validSource(source) || Date.parse(r.deadlineAt) + 15 * 60000 > now || ledger.races[r.raceKey]) continue;
+      pending.set(r.raceKey, r);
+    }
+  }
   const targets = [...pending.values()].sort((a, b) =>
     (Date.parse(ledger.attempts[a.raceKey]?.checkedAt) || 0) - (Date.parse(ledger.attempts[b.raceKey]?.checkedAt) || 0) || a.raceKey.localeCompare(b.raceKey)).slice(0, maxRequests);
   let cursor = 0;
