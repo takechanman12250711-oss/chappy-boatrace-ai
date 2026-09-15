@@ -119,7 +119,12 @@ try {
 
   mark("runtime-ensure-start");
   await page.evaluate(async () => {
+    // Race controls initialize asynchronously and clear resultArea on selection.
+    // Finish that normal startup before injecting the diagnostic prediction.
+    await window.ChappyAppRuntime.ensure("race");
+    await window.ChappyRaceControls.applyRaceMode();
     await window.ChappyPredictionRuntime.ensureReady();
+    window.ChappyHomeDashboardV2.setView("prediction");
   });
   mark("runtime-ensure-finished");
 
