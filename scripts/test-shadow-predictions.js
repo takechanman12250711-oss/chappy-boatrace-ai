@@ -1581,7 +1581,7 @@ assert.equal(
   "pre_race_structured_branch"
 );
 assert.equal(compacted.prediction.manshuSheet, undefined);
-assert.equal(compacted.prediction.ticketRanks, undefined);
+assert.deepEqual(compacted.prediction.ticketRanks, Array.from({ length: 30 }, () => ({ ticket: "1-2-3", role: "", category: "" })), "Keep compact ticket identities and roles for result details");
 assert.equal(compacted.prediction.mainSheet.tickets, undefined);
 
 const generatedEvidence = compactStoredVerification({
