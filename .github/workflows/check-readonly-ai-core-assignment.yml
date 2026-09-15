@@ -85,3 +85,22 @@ jobs:
           node scripts/test-current-cache-test-alignment.js
           node scripts/test-load-performance.js
           node scripts/check-charter.js
+
+      - name: Export regenerated prediction index for review
+        if: always()
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          git show "$BASE_REF:data/predictions/index-manifest.json" > data/predictions/index-manifest.json
+          node scripts/build-prediction-index-shards.js
+          node scripts/test-load-performance.js
+      - name: Upload regenerated prediction index
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regenerated-prediction-index
+          path: |
+            data/predictions/index-manifest.json
+            data/predictions/index-shards/
+          retention-days: 3
