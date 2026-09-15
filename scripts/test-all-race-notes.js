@@ -55,7 +55,7 @@ async function main() {
   const evaluate = async targets => ({ comparison: targets.map(t => ({ ...t, score: 0, selectionReady: false,
     rawRaceData: exhibition(), raceData: { ...prediction(t.raceNo), race: { ...prediction(t.raceNo).race, stadiumName: t.place } } })), attempts: [] });
   const args = { date, rootDir, now: () => clock, loadSchedule, evaluate,
-    createPrediction: structuredClone, createPracticalSelection: p => p.practicalTickets,
+    createPrediction: p => ({ ...structuredClone(p), formations: { cover: ['6-5-4'] } }), createPracticalSelection: p => p.practicalTickets,
     generateArticle, compactPrediction: (p, tickets) => ({ ...p, practicalTickets: tickets }),
     fetchOdds: async () => { throw new Error('odds_not_available'); } };
   const waiting = await collectAllRaceNotes({ ...args,
@@ -69,6 +69,9 @@ async function main() {
   assert.equal((await collectAllRaceNotes(args)).saved, 0, 'do not recreate immutable snapshots each cycle');
   assert.deepEqual(fs.readdirSync(path.join(rootDir, 'data')), ['note-drafts']);
   const file = fs.readdirSync(path.join(rootDir, 'data/note-drafts', date))[0];
+  const savedBundle = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-drafts', date, file)));
+  assert.deepEqual(savedBundle.record.outerAttackShadow.a.entries.map(t => t.ticket).sort(),
+    savedBundle.baselinePracticalTickets.map(t => t.ticket).sort(), 'A/B baseline must exclude raw formations');
   assert.equal(publicationPayload(`data/note-drafts/${date}/${file}`, rootDir, clock).price, 300);
   const env = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', NOTE_UI_MODE: 'publish', NOTE_CLAIM_TOKEN: 'test' };
   const sent = [], dispatch = [];
