@@ -95,30 +95,14 @@
       return;
     }
     const oddsMap=buildOddsMap(prediction);
-    body.innerHTML=`<div class="chappy-scenario-manshu-board v3-light-manshu-ticket-board">
-      <div class="chappy-scenario-manshu-head"><strong>展開から選んだ万舟候補</strong><span>構成買い目のオッズを全表示</span></div>
-      ${sources.map(source=>{
-        const tickets=expandNotation(source.notation);
-        const rows=tickets.length?tickets:[exactTicket(source.notation)].filter(Boolean);
-        const exactOnly=rows.length===1&&exactTicket(source.notation);
-        if(exactOnly){
-          const odds=oddsMap.get(rows[0]);
-          return `<article class="chappy-scenario-manshu-group is-exact v3-light-manshu-ticket-line">
-            <div class="chappy-scenario-manshu-title"><strong>${escapeHtml(source.notation)}</strong><span class="chappy-scenario-manshu-title-side"><em>${odds?`${odds.toFixed(1)}倍`:"オッズ未取得"}</em><span>1点</span></span></div>
-            ${source.reason?`<p>${escapeHtml(source.reason)}</p>`:""}
-          </article>`;
-        }
-        return `<article class="chappy-scenario-manshu-group v3-light-manshu-ticket-line">
-          <div class="chappy-scenario-manshu-title"><strong>${escapeHtml(source.notation)}</strong><span>${rows.length||1}点</span></div>
-          <div class="chappy-scenario-manshu-odds">${rows.map(ticket=>{
-            const odds=oddsMap.get(ticket);
-            return `<span><b>${escapeHtml(ticket)}</b><em>${odds?`${odds.toFixed(1)}倍`:"オッズ未取得"}</em></span>`;
-          }).join("")}</div>
-          ${source.reason?`<p>${escapeHtml(source.reason)}</p>`:""}
-        </article>`;
-      }).join("")}
-    </div>`;
+    const compact = root.ChappyFinalMobileUi;
+    if (compact?.compactTickets) {
+      const already = new Set(compact.buildPhotoStyleLines(prediction).flatMap(row=>row.expandedTickets));
+      const tickets = [...new Set(sources.flatMap(source=>expandNotation(source.notation)))].filter(ticket=>!already.has(ticket));
+      body.innerHTML = `<div class="chappy-scenario-manshu-board v3-light-manshu-ticket-board">${compact.compactTickets(tickets).map(row=>compact.compactLine(row,oddsMap)).join("") || '<span>買い目欄に表示済み</span>'}</div>`;
+    }
   }
+
   function ticketFromNode(row){
     const explicit=text(row.getAttribute("data-flow-notation"));
     if(explicit)return explicit;
@@ -211,3 +195,4 @@
   root.ChappyTicketOddsVisibility=Object.freeze({enhance,buildOddsMap,manshuSources,expandNotation,ticketFromNode});
   install();
 })(typeof window!=="undefined"?window:null);
+

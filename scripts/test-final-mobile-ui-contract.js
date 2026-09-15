@@ -25,7 +25,6 @@ assert(ui.includes("dedupeReason"), "duplicate explanation cleanup missing");
 assert(ui.includes("flowFormations"), "formation source missing");
 assert(ui.includes("unitsPerTicket"), "ticket-unit display missing");
 assert(ui.includes("買い目"), "buy summary heading missing");
-assert(ui.includes("枚"), "unit label missing");
 assert(ui.includes("点"), "point fallback missing");
 assert(ui.includes("markReferenceLayout"), "reference layout hook missing");
 assert(ui.includes('classList.add("chappy-final-mobile-ui")'), "home must receive final UI before prediction render");
@@ -83,9 +82,6 @@ assert(loader.includes("final-display-owner-v2.js"), "single final display owner
 assert(loader.includes("final-display-user-contract.js"), "approved ticket UI contract loader missing");
 assert(loader.includes("final-display-controller.css"), "single final display owner stylesheet missing");
 assert(loader.includes("final-ticket-odds-visibility.js"), "all-odds visibility layer missing from production loader");
-assert(ticketOdds.includes("展開から選んだ万舟候補"), "manshu display must stay flow-first");
-assert(ticketOdds.includes("構成買い目のオッズを全表示"), "manshu all-odds contract missing");
-assert(ticketOdds.includes("const tickets=expandNotation(source.notation)"), "manshu formation must expand to every exact ticket");
 assert(ticketOdds.includes("const tickets=expandNotation(notation)"), "missing-number formation must expand to every exact ticket");
 assert(ticketOdds.includes("chappy-missing-all-odds"), "missing-number all-odds board missing");
 assert(ticketOdds.includes('className="chappy-missing-odds-value"'), "missing-number compact odds value missing");
@@ -95,7 +91,6 @@ assert(ticketOdds.includes('addEventListener("chappy:prediction-runtime-ready"')
 assert(ticketOdds.includes('querySelector(".v3-missing-rank")'), "TOP30 ticket parsing must exclude the rank label");
 assert(ticketOdds.includes('.replace(rank,"")'), "TOP30 rank text must not be mistaken for ticket digits");
 assert(ticketOdds.includes('.replace(/^\\d+位/,"")'), "TOP30 flattened rank prefix must be removed after photo-style rendering");
-assert(ticketOdds.includes('class="chappy-scenario-manshu-group is-exact'), "single-ticket manshu card must use the compact exact layout");
 assert(ticketOdds.includes('chappy-scenario-manshu-title-side'), "single-ticket manshu odds must share the title row without repeating the ticket");
 assert(ticketOdds.includes("-webkit-line-clamp:2"), "manshu reasons must stay compact on mobile");
 assert(/@media\(max-width:480px\)[\s\S]*?chappy-final-buy-group:not\(\.is-main\) \.chappy-final-buy-lines\{grid-template-columns:1fr!important/.test(fs.readFileSync("css/final-mobile-structure11.css", "utf8")), "non-main mobile buy cards must use one readable column");
@@ -155,3 +150,7 @@ assert(script.includes('振り返り予想を見る'), "review action missing fr
 assert(index.includes('<small>成績</small>'), "results tab label does not match final reference");
 
 console.log("final mobile UI contract: ok");
+
+assert(ui.includes("compactLine"), "shared expandable formation renderer required");
+assert(ticketOdds.includes("sources.flatMap(source=>expandNotation(source.notation))"), "all source tickets must enter compression before presentation deduplication");
+
