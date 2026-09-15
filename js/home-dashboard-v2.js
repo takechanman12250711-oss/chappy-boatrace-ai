@@ -544,7 +544,6 @@
     state.renderKeys.recommendations = key;
 
     const hideRecommendations =
-      state.initialDataReady &&
       state.recommendations.length === 0;
 
     shell.hidden = hideRecommendations;
@@ -602,6 +601,7 @@
       el = document.createElement("section");
       el.id = "homeDashboardV2";
       el.className = "home-dashboard-v2 race-recommendations";
+      el.hidden = true;
       const raceSection =
         document.getElementById("raceSection");
       const raceCard =
