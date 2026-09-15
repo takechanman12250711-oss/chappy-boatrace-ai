@@ -31,7 +31,7 @@ assert.equal(
 assert.equal(
   appRuntime.includes("const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;") &&
     appRuntime.includes('const ROOT_FIX_VERSION = "20260908-clarity-fix2";') &&
-    appRuntime.includes('return clean === "js/stats-runtime-loader.js" ? `${STATS_VERSION}&candidate24=20260915&classification=20260915-1` : ACTIVE_VERSION;') &&
+    appRuntime.includes('return clean === "js/stats-runtime-loader.js" ? `${STATS_VERSION}&candidate24=20260915&classification=20260915-1&reviewprogress=20260915-1` : ACTIVE_VERSION;') &&
     appRuntime.includes('"js/outer-attack-ticket-shadow.js"') &&
     appRuntime.includes('"js/outer-attack-ticket-settlement.js"') &&
     appRuntime.includes('"js/script.js"') &&
@@ -46,7 +46,7 @@ assert.equal(
   "予想開始の必須race groupを変更しない"
 );
 assert.equal(
-  statsRuntime.includes('const VERSION = "20260828-ui-audit-display1" + "-20260908-result-clarity1-20260915-candidate24-classification1";') &&
+  statsRuntime.includes('const VERSION = "20260828-ui-audit-display1" + "-20260908-result-clarity1-20260915-candidate24-classification1-reviewprogress1";') &&
     statsRuntime.includes('"js/outer-attack-ticket-central-report-loader.js"'),
   true,
   "取得した成績分析ローダーが中央レポート用モジュールを新世代で読む"

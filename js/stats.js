@@ -198,6 +198,19 @@
     return automaticStats;
   }
 
+  let raceReviewProgress = null;
+  let raceReviewError = "";
+  async function loadRaceReviewProgress() {
+    try {
+      const { response, payload } = await fetchJsonWithTimeout(
+        "data/stats/race-review-progress.json", { cache: "no-cache" }
+      );
+      if (!response.ok || payload?.version !== "race-review-progress-v1") throw new Error("検証データを取得できません");
+      raceReviewProgress = payload;
+      raceReviewError = "";
+    } catch (error) { raceReviewError = String(error?.message || error); }
+  }
+
   async function loadImprovementReview() {
     try {
       const { response, payload } = await fetchJsonWithTimeout(
@@ -1862,6 +1875,25 @@
       <dd>${E(value)}</dd>
     </div>
   `;
+  const operationalReview = raceReviewProgress;
+  const reviewBadge = operationalReview
+    ? `照合済み${operationalReview.settled}R・結果待ち${operationalReview.pending}R`
+    : raceReviewError ? "取得失敗" : "読込中";
+  const reviewPercent = value => Number.isFinite(value) ? `${value.toFixed(1)}%` : "—";
+  const operationalReviewHtml = operationalReview ? `
+    <p class="result-panel-note">展示後・締切前に保存した予想。各買い目100円の検証成績です。方式別に100Rずつ積み上げ、途中成績も表示します。</p>
+    ${(operationalReview.cohorts || []).map(group => `
+      <article class="result-data-card">
+        <h4>${group.legacy ? "旧記録" : "予想方式"} ${E(group.method.split(":")[1].slice(0,8))}${group.active ? "（現行）" : ""}</h4>
+        <p>保存${group.captured}R ／ 照合済み${group.settled}R ／ 結果待ち${group.pending}R</p>
+        <p>${group.completedWindows}区間完了・次の100R区間 ${group.currentWindowCount}/100R</p>
+        <p>実戦厳選：的中率 ${reviewPercent(group.practical.hitRate)} ／ 回収率 ${reviewPercent(group.practical.recoveryRate)}</p>
+        <p>最大24点候補：的中率 ${reviewPercent(group.candidate24.hitRate)} ／ 回収率 ${reviewPercent(group.candidate24.recoveryRate)}</p>
+        ${group.excludedRefundOrVoid || group.unknownPayout ? `<p>返還・不成立 ${group.excludedRefundOrVoid}R ／ 払戻未確認 ${group.unknownPayout}R</p>` : ""}
+      </article>`).join("") || renderEmpty("展示後・締切前の保存予想を待っています")}
+    ${operationalReview.resultFetchRetries ? `<p class="result-panel-note">公式結果の取得再試行待ち：${operationalReview.resultFetchRetries}R</p>` : ""}
+    <p class="result-panel-note">旧記録は保存時のコード別に分けています。予想方式の変更で過去の成績は消えません。改善案の自動採用は行いません。</p>
+  ` : renderEmpty(raceReviewError ? "検証データの取得に失敗しました。更新で再確認できます。" : "検証データを読み込んでいます");
   const latestAccuracyReview =
     Array.isArray(
       improvementReview?.reports
@@ -3068,24 +3100,21 @@
               100R精度検証
             </span>
             <small>
-              実績・回収率・役割・承認待ち提案
+              展示後の保存予想・方式別の途中成績
             </small>
           </span>
           <span class="result-accordion-meta">
-            ${
-              latestAccuracyReview
-                ? `累計${Number(latestAccuracyReview.milestone || 0)}R・次${reviewCurrentCount}/${reviewTarget}R`
-                : `${reviewCurrentCount}/${reviewTarget}R`
-            }
+            ${reviewBadge}
           </span>
         </summary>
         <div class="result-accordion-body result-compact-analysis-body">
           <div class="result-compact-progress">
-            <strong>${reviewCurrentCount}/${reviewTarget}R</strong>
-            <span>データ蓄積中</span>
+            <strong>${reviewBadge}</strong>
+            <span>方式別に累積</span>
           </div>
+          ${operationalReviewHtml}
           <details class="result-inner-details">
-            <summary>詳しい説明を見る</summary>
+            <summary>従来のV2厳選検証を見る</summary>
             <div class="result-inner-details-body">
               ${improvementReviewHtml}
             </div>
@@ -3190,7 +3219,8 @@
 
       await Promise.allSettled([
         loadAutomaticStats(),
-        loadImprovementReview()
+        loadImprovementReview(),
+        loadRaceReviewProgress()
       ]);
 
       renderStats();
