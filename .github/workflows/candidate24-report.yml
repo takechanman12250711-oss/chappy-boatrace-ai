@@ -2,9 +2,9 @@ name: Build candidate24 performance
 on:
   push:
     branches: [main]
-    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', '.github/workflows/candidate24-report.yml']
+    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-review-report-save.js', '.github/workflows/candidate24-report.yml']
   pull_request:
-    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-exhibition-candidate24.js', '.github/workflows/candidate24-report.yml']
+    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-review-report-save.js', 'scripts/test-exhibition-candidate24.js', '.github/workflows/candidate24-report.yml']
   workflow_run:
     workflows: ['Collect official race results', 'Collect live note independently']
     types: [completed]
@@ -25,6 +25,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.sha || 'main' }}
           sparse-checkout: |
+            .github/workflows/candidate24-report.yml
             scripts
             api
             js
@@ -41,6 +42,7 @@ jobs:
           node-version: '20'
       - run: node scripts/test-exhibition-candidate24.js
       - run: node scripts/test-race-review-progress.js
+      - run: node scripts/test-review-report-save.js
       - run: node scripts/restore-daily-prediction-source.js --all
       - run: node scripts/build-candidate24-report.js
       - run: node scripts/refresh-race-review-results.js
@@ -49,6 +51,8 @@ jobs:
       - name: Save derived report only
         if: github.event_name != 'pull_request' && github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' && github.ref == 'refs/heads/main'
         run: |
+          # Archive restoration is a temporary read model, never a source-data commit.
+          git restore --worktree -- data/predictions
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- data/stats/candidate24-report.json data/stats/race-review-progress.json data/stats/race-review-results.json
