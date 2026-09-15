@@ -95,6 +95,16 @@
       return;
     }
     const oddsMap=buildOddsMap(prediction);
+    const api=root.ChappyFinalMobileUi;
+    if(api?.groupTickets&&api?.renderTicketGroup&&api?.displayTicketGroups){
+      const displayed=new Set(api.displayTicketGroups(prediction).flatMap(entry=>entry.tickets));
+      const tickets=sources.flatMap(source=>expandNotation(source.notation)).filter(ticket=>!displayed.has(ticket));
+      const groups=api.groupTickets(tickets);
+      const opened=[...(body.querySelectorAll?.("details[open][data-ticket-group]")||[])].map(node=>node.dataset.ticketGroup);
+      body.innerHTML=groups.length?`<div class="chappy-scenario-manshu-board v3-light-manshu-ticket-board">${groups.map(group=>api.renderTicketGroup(group,oddsMap)).join("")}</div>`:'<div class="chappy-scenario-manshu-board"><div class="chappy-true-manshu-empty">買い目欄に表示済み</div></div>';
+      body.querySelectorAll?.("[data-ticket-group]").forEach(node=>{node.open=opened.includes(node.dataset.ticketGroup);});
+      return;
+    }
     body.innerHTML=`<div class="chappy-scenario-manshu-board v3-light-manshu-ticket-board">
       <div class="chappy-scenario-manshu-head"><strong>展開から選んだ万舟候補</strong><span>構成買い目のオッズを全表示</span></div>
       ${sources.map(source=>{

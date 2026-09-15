@@ -37,13 +37,22 @@
     ensureStyle();
     const area=root.document.getElementById("resultArea");
     if(!area)return;
+    const previous=area.querySelector?.(".chappy-practical-visible-panel");
+    const wasOpen=previous?.open;
+    const opened=[...(previous?.querySelectorAll?.("details[open][data-ticket-group]")||[])].map(node=>node.dataset.ticketGroup);
     area.querySelectorAll?.(".chappy-practical-visible-panel").forEach(node=>node.remove());
     const selected=selectedRows(pred);
     if(!selected.length)return;
     const map=oddsMap(pred);
-    const html=`<section class="chappy-practical-visible-panel"><div class="chappy-practical-visible-head"><strong>実戦厳選</strong><span>${selected.length}点</span></div><div class="chappy-practical-visible-list">${selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></section>`;
+    const api=root.ChappyFinalMobileUi;
+    const content=api?.groupTickets&&api?.renderTicketGroup
+      ? api.groupTickets(selected.map(row=>row.ticket)).map(group=>api.renderTicketGroup(group,map)).join("")
+      : selected.map(row=>{const odds=Number(map.get(row.ticket));return `<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("");
+    const html=`<details class="chappy-practical-visible-panel"><summary class="chappy-practical-visible-head"><strong>実戦厳選</strong><span>${selected.length}点</span></summary><div class="chappy-practical-visible-list">${content}</div></details>`;
     const anchor=area.querySelector?.(".chappy-final-buy-summary")||area.querySelector?.(".v3-boat-evaluation")||area.querySelector?.(".v3-main-newspaper");
     if(anchor)anchor.insertAdjacentHTML("afterend",html);else area.insertAdjacentHTML?.("afterbegin",html);
+    const panel=area.querySelector?.(".chappy-practical-visible-panel");
+    if(panel){panel.open=Boolean(wasOpen);panel.querySelectorAll?.("[data-ticket-group]").forEach(node=>{node.open=opened.includes(node.dataset.ticketGroup);});}
   }
   function wrap(){
     const fn=root.renderAll;

@@ -25,7 +25,7 @@ assert(ui.includes("dedupeReason"), "duplicate explanation cleanup missing");
 assert(ui.includes("flowFormations"), "formation source missing");
 assert(ui.includes("unitsPerTicket"), "ticket-unit display missing");
 assert(ui.includes("買い目"), "buy summary heading missing");
-assert(ui.includes("枚"), "unit label missing");
+assert(ui.includes("chappy-final-buy-count"), "grouped ticket point count missing");
 assert(ui.includes("点"), "point fallback missing");
 assert(ui.includes("markReferenceLayout"), "reference layout hook missing");
 assert(ui.includes('classList.add("chappy-final-mobile-ui")'), "home must receive final UI before prediction render");

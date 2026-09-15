@@ -154,3 +154,19 @@
 #predictionSection #resultArea .chappy-formation-odds-card :is(strong,span) {
   color:#eef6fb!important;
 }
+
+/* Exact, non-overlapping formations: tap to inspect their individual odds. */
+#predictionSection #resultArea .chappy-ticket-fold {display:block!important;min-width:0;background:#0b1b25!important;color:#eef6fb!important;border:1px solid #29404d;border-radius:12px;overflow:hidden}
+#predictionSection #resultArea .chappy-ticket-fold > summary {display:flex!important;align-items:center;justify-content:space-between;gap:8px;min-height:44px;cursor:pointer;list-style:none}
+#predictionSection #resultArea .chappy-ticket-fold > summary::-webkit-details-marker {display:none}
+#predictionSection #resultArea .chappy-ticket-fold > summary::after {content:"⌄";color:#9bb8ca;font-size:18px;flex-shrink:0}
+#predictionSection #resultArea .chappy-ticket-fold[open] > summary::after {content:"⌃"}
+#predictionSection #resultArea .chappy-ticket-fold:not([open]) > .chappy-ticket-expanded {display:none!important}
+#predictionSection #resultArea .chappy-ticket-expanded {display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
+#predictionSection #resultArea .chappy-ticket-exact {display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:8px;background:#122934;color:#eef6fb;font-size:13px}
+#predictionSection #resultArea .chappy-ticket-exact span {color:#a5d9ff;white-space:nowrap}
+#predictionSection #resultArea .chappy-practical-visible-panel > summary {cursor:pointer;min-height:44px}
+#predictionSection #resultArea .chappy-practical-visible-panel:not([open]) > .chappy-practical-visible-list {display:none!important}
+#predictionSection #resultArea .chappy-scenario-manshu-board .chappy-final-buy-line {padding:10px 12px;background:#0b1b25;color:#eef6fb;border:1px solid #29404d;border-radius:12px}
+#predictionSection #resultArea .chappy-ticket-fold {grid-column:1/-1}
+#predictionSection #resultArea .chappy-ticket-fold .chappy-final-buy-side {min-width:0!important;flex:1 1 auto!important;justify-content:flex-end!important;flex-wrap:wrap!important}

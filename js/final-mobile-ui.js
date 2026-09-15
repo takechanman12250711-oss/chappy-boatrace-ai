@@ -200,50 +200,78 @@
     return `is-${({"本命":"main","押さえ":"cover","フォーメーション":"flow"})[category] || "other"}`;
   }
 
-  function buildBuySummary(prediction) {
-    const rows = buildPhotoStyleLines(prediction);
-    if (!rows.length) return "";
-    const grouped = new Map();
-    rows.forEach(row => {
-      if (!grouped.has(row.category)) grouped.set(row.category, []);
-      grouped.get(row.category).push(row);
+  // Merge only when the resulting Cartesian product is exactly the input union.
+  // This is presentation only: source predictions and selection are never mutated.
+  function groupTickets(values) {
+    const tickets = [...new Set(values.flatMap(expandFormationNotation))];
+    const groups = tickets.map(ticket => ({ notation: ticket, tickets: [ticket] }));
+    const notationFor = list => [0, 1, 2].map(i =>
+      [...new Set(list.map(ticket => ticket.split("-")[i]))].sort().join("")
+    ).join("-");
+    let merged = true;
+    while (merged) {
+      merged = false;
+      outer: for (let i = 0; i < groups.length; i++) {
+        for (let j = i + 1; j < groups.length; j++) {
+          const union = [...groups[i].tickets, ...groups[j].tickets];
+          const notation = notationFor(union);
+          const expanded = expandFormationNotation(notation);
+          const set = new Set(union);
+          if (expanded.length !== set.size || !expanded.every(ticket => set.has(ticket))) continue;
+          groups[i] = { notation, tickets: union };
+          groups.splice(j, 1);
+          merged = true;
+          break outer;
+        }
+      }
+    }
+    return groups.map(group => {
+      const parts = group.notation.split("-");
+      const allThirds = `${parts[0]}-${parts[1]}-全`;
+      const expanded = expandFormationNotation(allThirds);
+      if (expanded.length === group.tickets.length && expanded.every(t => group.tickets.includes(t))) {
+        group.notation = allThirds;
+      }
+      return group;
     });
-    const order = ["本命", "押さえ", "フォーメーション"];
-    const entries = [...grouped.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
+  }
 
-    return `
-      <section class="chappy-final-buy-summary" data-final-ui-build="${BUILD}">
-        <div class="chappy-final-buy-head">
-          <div>
-            <span class="chappy-final-kicker">AI TICKETS</span>
-            <h3>買い目</h3>
-          </div>
-          <span class="chappy-final-buy-total">${rows.length}筋</span>
-        </div>
-        ${entries.map(([category, list]) => `
-          <details class="chappy-final-buy-group ${groupClass(category)}" ${category === "本命" ? "open" : ""}>
-            <summary>
-              <span class="chappy-final-buy-label">${category}</span>
-              <span class="chappy-final-buy-meta">${list.length}筋</span>
-            </summary>
-            <div class="chappy-final-buy-lines">
-              ${list.map(row => `
-                <article class="chappy-final-buy-line">
-                  <div class="chappy-final-buy-mainline">
-                    <strong class="chappy-final-buy-formation">${row.notation}</strong>
-                    <div class="chappy-final-buy-side">
-                      ${row.odds ? `<span class="chappy-final-buy-odds">${row.odds.toFixed(1)}倍</span>` : `<span class="chappy-final-buy-odds is-missing">オッズ未取得</span>`}
-                      <span class="chappy-final-buy-count">${row.units ? `${row.units}枚` : `${row.points}点`}</span>
-                    </div>
-                  </div>
-                  ${row.reason ? `<p class="chappy-final-buy-reason">${row.reason}</p>` : ""}
-                </article>
-              `).join("")}
-            </div>
-          </details>
-        `).join("")}
-      </section>
-    `;
+  function displayTicketGroups(prediction) {
+    const seen = new Set(), grouped = new Map();
+    buildPhotoStyleLines(prediction).forEach(row => {
+      const unique = expandFormationNotation(row.notation).filter(ticket => {
+        if (seen.has(ticket)) return false;
+        seen.add(ticket); return true;
+      });
+      if (!unique.length) return;
+      if (!grouped.has(row.category)) grouped.set(row.category, []);
+      grouped.get(row.category).push(...unique);
+    });
+    return [...grouped].map(([category, tickets]) => ({ category, tickets, groups: groupTickets(tickets) }));
+  }
+
+  function renderTicketGroup(group, oddsMap, selected = new Set()) {
+    const oddsText = ticket => {
+      const odds = numericOdds(oddsMap.get(ticket));
+      return odds ? `${odds.toFixed(1)}倍` : "オッズ未取得";
+    };
+    const count = group.tickets.length;
+    const selectedCount = group.tickets.filter(ticket => selected.has(ticket)).length;
+    const badge = selectedCount ? `<span class="chappy-practical-tag">実戦厳選${selectedCount}点</span>` : "";
+    const summary = `<strong class="chappy-final-buy-formation">${group.notation}</strong><span class="chappy-final-buy-side">${count === 1 ? `<span class="chappy-final-buy-odds">${oddsText(group.tickets[0])}</span>` : ""}<span class="chappy-final-buy-count">${count}点</span>${badge}</span>`;
+    if (count === 1) return `<article class="chappy-final-buy-line"><div class="chappy-final-buy-mainline">${summary}</div></article>`;
+    return `<details class="chappy-final-buy-line chappy-ticket-fold" data-ticket-group="${group.notation}"><summary class="chappy-final-buy-mainline">${summary}</summary><div class="chappy-ticket-expanded">${group.tickets.map(ticket => `<div class="chappy-ticket-exact" data-ticket="${ticket}"><strong>${ticket}</strong><span>${selected.has(ticket) ? "★ " : ""}${oddsText(ticket)}</span></div>`).join("")}</div></details>`;
+  }
+
+  function buildBuySummary(prediction) {
+    const entries = displayTicketGroups(prediction);
+    if (!entries.length) return "";
+    const map = buildOddsMap(prediction);
+    const selected = new Set((root.ChappyFinalDisplayOwner?.practicalRows(prediction) || []).flatMap(row => expandFormationNotation(row.notation)));
+    return `<section class="chappy-final-buy-summary" data-ticket-layout="grouped" data-final-ui-build="${BUILD}">
+      <div class="chappy-final-buy-head"><div><span class="chappy-final-kicker">AI TICKETS</span><h3>買い目</h3></div><span class="chappy-final-buy-total">${entries.reduce((sum, entry) => sum + entry.tickets.length, 0)}点</span></div>
+      ${entries.map(entry => `<details class="chappy-final-buy-group ${groupClass(entry.category)}" ${entry.category === "本命" ? "open" : ""}><summary><span class="chappy-final-buy-label">${entry.category}</span><span class="chappy-final-buy-meta">${entry.tickets.length}点</span></summary><div class="chappy-final-buy-lines">${entry.groups.map(group => renderTicketGroup(group, map, selected)).join("")}</div></details>`).join("")}
+    </section>`;
   }
 
   function buildTrueManshuBoard(prediction) {
@@ -447,6 +475,11 @@
   root.ChappyFinalMobileUi = Object.freeze({
     build: BUILD,
     buildPhotoStyleLines,
+    expandFormationNotation,
+    groupTickets,
+    displayTicketGroups,
+    renderTicketGroup,
+    buildBuySummary,
     buildOddsMap,
     buildTrueManshuBoard,
     enhance
