@@ -207,7 +207,7 @@ try {
       const integratedPanel = integratedBoard?.closest(".v3-ticket-accordion-panel");
       const integratedPanelRect = integratedPanel?.getBoundingClientRect();
       const integratedLines = [
-        ...(integratedBoard?.querySelectorAll(".v3-light-manshu-ticket-line") || [])
+        ...(integratedBoard?.querySelectorAll(".v3-light-manshu-ticket-line,.chappy-final-buy-line") || [])
       ];
       const lineRects = integratedLines.map(line => line.getBoundingClientRect());
       const maxLineWidth = Math.max(0, ...lineRects.map(rect => rect.width || 0));
@@ -256,6 +256,7 @@ try {
           root?.querySelectorAll("details.v3-ticket-accordion-manshu")?.length || 0,
         integratedBoardVisible: Boolean(integratedBoard),
         integratedBoardLineCount: integratedLines.length,
+        integratedExactTicketCount: integratedLines.reduce((sum, line) => sum + (Number.parseInt(line.querySelector(".chappy-final-buy-count")?.textContent || "1", 10) || 1), 0),
         integratedBoardPointCount:
           Number.parseInt(String(details?.querySelector(".v3-ticket-accordion-count")?.textContent || ""), 10) || 0,
         trueManshuEmptyVisible: Boolean(
@@ -315,8 +316,8 @@ try {
       responsiveSummary.integratedBoardVisible === true &&
       responsiveSummary.manshuSectionCount === 1 &&
       responsiveSummary.manshuAccordionCount === 1 &&
-      responsiveSummary.integratedBoardLineCount >= 2 &&
-      responsiveSummary.integratedBoardLineCount >= responsiveSummary.integratedBoardPointCount &&
+      responsiveSummary.integratedBoardLineCount >= 1 &&
+      responsiveSummary.integratedExactTicketCount >= responsiveSummary.integratedBoardPointCount &&
       responsiveSummary.integratedBoardPointCount > 1 &&
       responsiveSummary.standaloneBoardSectionCount === 0;
     const validManshuEmptyState =
@@ -378,6 +379,25 @@ try {
       );
     }
 
+    const formation = page.locator(".chappy-final-buy-summary .is-main .chappy-ticket-fold").first();
+    if (await formation.count()) {
+      const exactRows = formation.locator(".chappy-ticket-exact");
+      if (await exactRows.first().isVisible()) throw new Error("Individual tickets must start collapsed");
+      await formation.locator(":scope > summary").click();
+      if (!(await exactRows.first().isVisible())) throw new Error("Tapping a formation must reveal individual ticket odds");
+      const opening = await formation.evaluate(node => ({
+        open: node.open,
+        tickets: [...node.querySelectorAll("[data-ticket]")].map(row => row.dataset.ticket),
+        odds: [...node.querySelectorAll(".chappy-ticket-exact > span")].map(row => row.textContent),
+        overflow: Math.max(0, node.getBoundingClientRect().right - window.innerWidth)
+      }));
+      if (!opening.open || !opening.tickets.length || new Set(opening.tickets).size !== opening.tickets.length ||
+          opening.odds.some(value => !/倍|オッズ未取得/.test(value)) || opening.overflow > 1)
+        throw new Error("Expanded formation must contain unique, readable individual odds");
+      await formation.locator(":scope > summary").click();
+      if (await exactRows.first().isVisible()) throw new Error("Tapping again must collapse individual tickets");
+      mark("formation-tap-finished", opening);
+    }
     report.result = { ...renderSummary, responsive: responsiveSummary };
     await page.screenshot({
       path: path.join(outputDir, "render-result.png"),
