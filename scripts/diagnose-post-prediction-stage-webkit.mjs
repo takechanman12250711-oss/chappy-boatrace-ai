@@ -181,7 +181,7 @@ try {
     mark("post-render-responsive-start");
     const responsiveSummary = await page.evaluate(async () => {
       const startedAt = performance.now();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 600));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       const predictionSection = document.getElementById("predictionSection");
@@ -209,7 +209,13 @@ try {
       const integratedLines = [
         ...(integratedBoard?.querySelectorAll(".v3-light-manshu-ticket-line") || [])
       ];
-      const lineRects = integratedLines.map(line => line.getBoundingClientRect());
+      const compactLines = [...(integratedBoard?.querySelectorAll(".chappy-final-buy-line") || [])];
+      const expand = notation => window.ChappyTicketOddsVisibility.expandNotation(notation);
+      const displayed = compactLines.flatMap(line => expand(line.querySelector(".chappy-final-buy-formation")?.textContent || ""));
+      const normal = new Set(window.ChappyFinalMobileUi?.buildPhotoStyleLines(window.__chappyDiagnosticPrediction).flatMap(row=>row.expandedTickets) || []);
+      const expected = [...new Set((window.ChappyTicketOddsVisibility?.manshuSources(window.__chappyDiagnosticPrediction) || []).flatMap(row=>expand(row.notation)))].filter(ticket=>!normal.has(ticket));
+      const compactSetMatches = displayed.length > 0 && displayed.length === new Set(displayed).size && JSON.stringify([...displayed].sort()) === JSON.stringify([...expected].sort());
+      const lineRects = (compactLines.length ? compactLines : integratedLines).map(line => line.getBoundingClientRect());
       const maxLineWidth = Math.max(0, ...lineRects.map(rect => rect.width || 0));
       const detailsRect = details?.getBoundingClientRect();
       const sectionRect = manshuSection?.getBoundingClientRect();
@@ -256,6 +262,8 @@ try {
           root?.querySelectorAll("details.v3-ticket-accordion-manshu")?.length || 0,
         integratedBoardVisible: Boolean(integratedBoard),
         integratedBoardLineCount: integratedLines.length,
+        compactSetMatches,
+        compactLineCount: compactLines.length,
         integratedBoardPointCount:
           Number.parseInt(String(details?.querySelector(".v3-ticket-accordion-count")?.textContent || ""), 10) || 0,
         trueManshuEmptyVisible: Boolean(
@@ -319,6 +327,9 @@ try {
       responsiveSummary.integratedBoardLineCount >= responsiveSummary.integratedBoardPointCount &&
       responsiveSummary.integratedBoardPointCount > 1 &&
       responsiveSummary.standaloneBoardSectionCount === 0;
+    const compactManshuBoardVisible = responsiveSummary.integratedBoardVisible &&
+      responsiveSummary.manshuSectionCount === 1 && responsiveSummary.compactLineCount > 0 &&
+      responsiveSummary.compactSetMatches;
     const validManshuEmptyState =
       responsiveSummary.trueManshuEmptyVisible === true &&
       responsiveSummary.manshuSectionCount === 1 &&
@@ -329,6 +340,7 @@ try {
       requireManshuFallback &&
       !legacyManshuFallbackVisible &&
       !integratedManshuBoardVisible &&
+      !compactManshuBoardVisible &&
       !validManshuEmptyState
     ) {
       throw new Error("Kiryu 10R manshu display regression path was not exercised");
@@ -365,7 +377,7 @@ try {
 
     if (
       requireManshuFallback &&
-      integratedManshuBoardVisible &&
+      (integratedManshuBoardVisible || compactManshuBoardVisible) &&
       (
         responsiveSummary.viewportWidth !== 390 ||
         responsiveSummary.integratedEffectiveContainerWidth <= 0 ||
@@ -378,6 +390,17 @@ try {
       );
     }
 
+    if (compactManshuBoardVisible) {
+      const disclosure = page.locator(".v3-manshu-newspaper details.chappy-ticket-disclosure").first();
+      if (await disclosure.count()) {
+        const children = disclosure.locator(".chappy-ticket-children");
+        if (await children.isVisible()) throw new Error("Formation children must start collapsed");
+        await disclosure.locator("summary").click();
+        if (!(await children.isVisible())) throw new Error("Formation tap did not reveal exact odds");
+        await disclosure.locator("summary").click();
+        if (await children.isVisible()) throw new Error("Second tap did not collapse exact odds");
+      }
+    }
     report.result = { ...renderSummary, responsive: responsiveSummary };
     await page.screenshot({
       path: path.join(outputDir, "render-result.png"),
