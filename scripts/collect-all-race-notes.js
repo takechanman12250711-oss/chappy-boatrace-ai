@@ -77,7 +77,7 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
       // Freeze the existing A/B experiment while full pre-race evidence is present.
       try { record.outerAttackShadow = require('../js/outer-attack-ticket-shadow').buildSnapshot({
         ...record, evaluatedScenarioCandidates: require('../js/evaluated-scenario-candidates').build(prediction),
-        prediction: { ...prediction, practicalTickets: baseline,
+        prediction: { practicalTickets: baseline,
           practicalSelection: global.ChappyPracticalSelection?.select?.(prediction) || prediction.practicalSelection }
       }, { now: record.selectedAt }); } catch (error) {
         record.outerAttackShadow = { status: 'capture-error', error: String(error.message).slice(0, 160) };
