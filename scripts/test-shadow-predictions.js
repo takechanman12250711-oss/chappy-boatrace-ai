@@ -1581,7 +1581,8 @@ assert.equal(
   "pre_race_structured_branch"
 );
 assert.equal(compacted.prediction.manshuSheet, undefined);
-assert.equal(compacted.prediction.ticketRanks, undefined);
+assert.ok(compacted.prediction.ticketRanks.some(row => row.ticket === "1-2-3"), "Retain stored ticket identities for result details");
+assert.equal(new Set(compacted.prediction.ticketRanks.map(row=>row.ticket)).size, compacted.prediction.ticketRanks.length);
 assert.equal(compacted.prediction.mainSheet.tickets, undefined);
 
 const generatedEvidence = compactStoredVerification({

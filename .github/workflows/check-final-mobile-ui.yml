@@ -69,6 +69,8 @@ jobs:
         run: node scripts/test-late-prediction-presentation.js
       - name: Check practical-only tickets and recommendation visibility
         run: node scripts/test-presentation-visibility.js
+      - name: Check ticket classification and stored categories
+        run: node scripts/test-ticket-classification-storage.js
       - name: Check final mobile UI contract
         run: node scripts/test-final-mobile-ui-contract.js
       - name: Check final mobile structure contract

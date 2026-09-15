@@ -1,0 +1,37 @@
+"use strict";
+const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict");
+const doc={getElementById:()=>null,querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){},body:{classList:{add(){}}},documentElement:{}};
+const root={document:doc,setInterval(){},addEventListener(){}};
+class Observer{observe(){}}
+vm.runInNewContext(fs.readFileSync("js/final-mobile-ui.js","utf8"),{window:root,MutationObserver:Observer});
+const api=root.ChappyFinalMobileUi;
+const prediction={mainSheet:{tickets:["2-1-3"]},manshuSheet:{tickets:["1-2-3","1-2-4","5-1-2","6-1-2"]},oddsByTicket:{"1-2-3":4.5,"1-2-4":15.8,"5-1-2":515.3,"6-1-2":100}};
+const before=JSON.stringify(prediction);
+let html="";
+const section={querySelector:()=>({set innerHTML(value){html=value;}})};
+doc.getElementById=id=>id.includes("style")?{}:null;
+vm.runInNewContext(fs.readFileSync("js/final-ticket-odds-visibility.js","utf8").replace("Object.freeze({enhance,","Object.freeze({renderManshu,enhance,"),{window:root,MutationObserver:Observer});
+root.ChappyTicketOddsVisibility.renderManshu(prediction,{querySelector:()=>section});
+assert.ok(!html.includes(">1-2-3<")&&!html.includes(">1-2-4<"));
+const normal=Array.from(api.buildPhotoStyleLines(prediction)).flatMap(row=>Array.from(row.expandedTickets));
+assert.deepEqual(normal.sort(),["1-2-3","1-2-4","2-1-3"]);
+assert.ok(html.includes("5-1-2")&&html.includes("6-1-2"));
+delete prediction.oddsByTicket["6-1-2"];
+assert.ok(api.buildPhotoStyleLines(prediction).some(row=>row.expandedTickets.includes("6-1-2")),"Unpriced candidates remain visible");
+prediction.oddsByTicket["6-1-2"]=100;
+assert.equal(JSON.stringify(prediction),before);
+
+const unpriced={mainSheet:{},manshuSheet:{tickets:["1-2-3"]}};
+root.ChappyTicketOddsVisibility.renderManshu(unpriced,{querySelector:()=>section});
+assert.match(html,/class="chappy-true-manshu-empty"/);
+assert.ok(api.buildPhotoStyleLines(unpriced).some(row=>row.expandedTickets.includes("1-2-3")));
+const {compactIndexVerification}=require("./build-prediction-index");
+const rankRows=[{ticket:"2-1-3",role:"本命"},{ticket:"1-2-5",role:"押さえ"},{ticket:"3-1-2",role:"流し"},{ticket:"5-1-2",role:"万舟"}];
+const saved={raceKey:"20260914-02-9",prediction:{ticketRanks:rankRows,practicalTickets:[{ticket:"2-1-3"}]}};
+const source=JSON.stringify(saved);
+const indexed=compactIndexVerification(saved);
+assert.deepEqual(indexed.prediction.ticketRanks.map(row=>row.ticket),rankRows.map(row=>row.ticket));
+assert.deepEqual(indexed.prediction.ticketRanks.map(row=>row.role),rankRows.map(row=>row.role));
+assert.equal(JSON.stringify(saved),source);
+assert.deepEqual(compactIndexVerification({prediction:{practicalTickets:[{ticket:"1-2-3"}]}}).prediction.ticketRanks,[],"Do not reconstruct unknown historical categories");
+console.log("Sub-100 candidates retained outside manshu; saved role tickets survive index compaction");

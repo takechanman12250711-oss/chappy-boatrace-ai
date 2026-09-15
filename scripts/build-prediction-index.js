@@ -797,6 +797,7 @@ function compactIndexVerification(record) {
         ana: compactMark(prediction?.mainSheet?.ana),
         osae: compactMark(prediction?.mainSheet?.osae)
       },
+      ticketRanks: require("./stored-ticket-categories").storedTicketCategories(prediction),
       practicalTickets: Array.isArray(prediction.practicalTickets)
         ? prediction
             .practicalTickets
