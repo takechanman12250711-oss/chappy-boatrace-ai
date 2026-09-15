@@ -87,6 +87,13 @@ function main(root = process.cwd()) {
   }
   const report = buildReport(records, results);
   const output = path.join(root, 'data/stats/candidate24-report.json');
+  if (fs.existsSync(output)) {
+    const previous = read(output);
+    if (JSON.stringify({ ...previous, generatedAt: null }) === JSON.stringify({ ...report, generatedAt: null })) {
+      console.log('Candidate24 report unchanged; preserving published timestamp');
+      return previous;
+    }
+  }
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify(report));
