@@ -27,7 +27,7 @@
     const style=root.document.createElement("style");
     style.id="chappy-practical-visible-panel-style";
     style.textContent=`
-      .chappy-practical-visible-panel{margin:10px 0;border:1px solid rgba(92,224,145,.38);border-radius:14px;background:#0c1c22;overflow:hidden}.chappy-practical-visible-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:rgba(72,190,122,.1)}.chappy-practical-visible-head strong{font-size:15px;color:#d8ffe5}.chappy-practical-visible-head span{font-size:11px;font-weight:900;color:#9df3bd}.chappy-practical-visible-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px}.chappy-practical-visible-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;border-radius:9px;background:#10252d;min-width:0}.chappy-practical-visible-row strong{font-size:15px;color:#fff;white-space:nowrap}.chappy-practical-visible-row span{font-size:11px;font-weight:900;color:#8fd3ff;white-space:nowrap}@media(max-width:360px){.chappy-practical-visible-list{grid-template-columns:1fr}}
+      .chappy-practical-visible-panel:not([open])>.chappy-practical-visible-list{display:none!important}.chappy-practical-visible-head{cursor:pointer;min-height:44px}.chappy-practical-visible-panel{margin:10px 0;border:1px solid rgba(92,224,145,.38);border-radius:14px;background:#0c1c22;overflow:hidden}.chappy-practical-visible-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:rgba(72,190,122,.1)}.chappy-practical-visible-head strong{font-size:15px;color:#d8ffe5}.chappy-practical-visible-head span{font-size:11px;font-weight:900;color:#9df3bd}.chappy-practical-visible-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px}.chappy-practical-visible-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;border-radius:9px;background:#10252d;min-width:0}.chappy-practical-visible-row strong{font-size:15px;color:#fff;white-space:nowrap}.chappy-practical-visible-row span{font-size:11px;font-weight:900;color:#8fd3ff;white-space:nowrap}@media(max-width:360px){.chappy-practical-visible-list{grid-template-columns:1fr}}
     `;
     root.document.head.appendChild(style);
   }
@@ -41,7 +41,7 @@
     const selected=selectedRows(pred);
     if(!selected.length)return;
     const map=oddsMap(pred);
-    const html=`<section class="chappy-practical-visible-panel"><div class="chappy-practical-visible-head"><strong>実戦厳選</strong><span>${selected.length}点</span></div><div class="chappy-practical-visible-list">${selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></section>`;
+    const html=`<details class="chappy-practical-visible-panel"><summary class="chappy-practical-visible-head"><strong>実戦厳選</strong><span>${selected.length}点</span></summary><div class="chappy-practical-visible-list">${root.ChappyFinalMobileUi?.compactTickets ? root.ChappyFinalMobileUi.compactTickets(selected.map(row=>row.ticket)).map(row=>root.ChappyFinalMobileUi.compactLine(row,map)).join("") : selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></details>`;
     const anchor=area.querySelector?.(".chappy-final-buy-summary")||area.querySelector?.(".v3-boat-evaluation")||area.querySelector?.(".v3-main-newspaper");
     if(anchor)anchor.insertAdjacentHTML("afterend",html);else area.insertAdjacentHTML?.("afterbegin",html);
   }
@@ -57,3 +57,4 @@
   root.document.addEventListener?.("visibilitychange",()=>{if(root.document.visibilityState==="visible"&&latestPrediction)render(latestPrediction);});
   root.ChappyPracticalVisiblePanel=Object.freeze({render,selectedRows});
 })(typeof window!=="undefined"?window:null);
+

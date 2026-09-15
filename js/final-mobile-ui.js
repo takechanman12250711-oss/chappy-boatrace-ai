@@ -188,12 +188,56 @@
     );
 
     const seen = new Set();
-    return rows.filter(row => {
-      const key = `${row.category}|${row.notation}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
+    const result = [];
+    for (const category of ["本命", "押さえ", "フォーメーション"]) {
+      const tickets = [];
+      rows.filter(row => row.category === category).forEach(row => {
+        expandFormationNotation(row.notation).forEach(ticket => {
+          if (!seen.has(ticket)) { seen.add(ticket); tickets.push(ticket); }
+        });
+      });
+      compactTickets(tickets).forEach(row => result.push({ ...row, category,
+        odds: oddsForNotation(row.notation, oddsMap), reason: "" }));
+    }
+    return result;
+  }
+
+  // Merge only exact Cartesian sets: compression must never add a ticket.
+  function compactTickets(source) {
+    const tickets = [...new Set(source.map(normalizeExactTicket).filter(Boolean))];
+    const groups = tickets.map(ticket => ({ notation: ticket, expandedTickets: [ticket] }));
+    let changed = true;
+    while (changed) {
+      changed = false;
+      outer: for (let i = 0; i < groups.length; i++) {
+        for (let j = i + 1; j < groups.length; j++) {
+          const union = new Set([...groups[i].expandedTickets, ...groups[j].expandedTickets]);
+          const parts = [0, 1, 2].map(pos => [...new Set([...union].map(t => t.split("-")[pos]))].sort().join(""));
+          const notation = parts.join("-");
+          const expanded = expandFormationNotation(notation);
+          if (expanded.length !== union.size || expanded.some(t => !union.has(t))) continue;
+          groups[i] = { notation, expandedTickets: tickets.filter(t => union.has(t)) };
+          groups.splice(j, 1); changed = true; break outer;
+        }
+      }
+    }
+    return groups.map(row => {
+      const parts = row.notation.split("-");
+      const allThirds = parts.slice(0, 2).concat("全").join("-");
+      if (expandFormationNotation(allThirds).length === row.expandedTickets.length)
+        row.notation = allThirds;
+      return { ...row, points: row.expandedTickets.length };
     });
+  }
+
+  function compactLine(row, oddsMap) {
+    const odds = row.expandedTickets.map(t => numericOdds(oddsMap.get(t)));
+    const known = odds.filter(Boolean);
+    const label = !known.length ? "オッズ未取得" : row.points === 1 ? `${known[0].toFixed(1)}倍` :
+      known.length === row.points ? `合成 ${(1 / known.reduce((sum, value) => sum + 1 / value, 0)).toFixed(1)}倍` : "オッズ一部未取得";
+    const head = `<strong class="chappy-final-buy-formation">${row.notation}</strong><span class="chappy-final-buy-side"><span class="chappy-final-buy-odds">${label}</span><span class="chappy-final-buy-count">${row.points}点</span></span>`;
+    if (row.points === 1) return `<article class="chappy-final-buy-line"><div class="chappy-final-buy-mainline">${head}</div></article>`;
+    return `<details class="chappy-final-buy-line chappy-ticket-disclosure"><summary class="chappy-final-buy-mainline">${head}<span aria-hidden="true">▾</span></summary><div class="chappy-ticket-children">${row.expandedTickets.map((ticket, i) => `<div class="chappy-ticket-child" data-ticket="${ticket}"><strong>${ticket}</strong><span>${odds[i] ? `${odds[i].toFixed(1)}倍` : "オッズ未取得"}</span></div>`).join("")}</div></details>`;
   }
 
   function groupClass(category) {
@@ -211,39 +255,11 @@
     const order = ["本命", "押さえ", "フォーメーション"];
     const entries = [...grouped.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
 
-    return `
-      <section class="chappy-final-buy-summary" data-final-ui-build="${BUILD}">
-        <div class="chappy-final-buy-head">
-          <div>
-            <span class="chappy-final-kicker">AI TICKETS</span>
-            <h3>買い目</h3>
-          </div>
-          <span class="chappy-final-buy-total">${rows.length}筋</span>
-        </div>
-        ${entries.map(([category, list]) => `
-          <details class="chappy-final-buy-group ${groupClass(category)}" ${category === "本命" ? "open" : ""}>
-            <summary>
-              <span class="chappy-final-buy-label">${category}</span>
-              <span class="chappy-final-buy-meta">${list.length}筋</span>
-            </summary>
-            <div class="chappy-final-buy-lines">
-              ${list.map(row => `
-                <article class="chappy-final-buy-line">
-                  <div class="chappy-final-buy-mainline">
-                    <strong class="chappy-final-buy-formation">${row.notation}</strong>
-                    <div class="chappy-final-buy-side">
-                      ${row.odds ? `<span class="chappy-final-buy-odds">${row.odds.toFixed(1)}倍</span>` : `<span class="chappy-final-buy-odds is-missing">オッズ未取得</span>`}
-                      <span class="chappy-final-buy-count">${row.units ? `${row.units}枚` : `${row.points}点`}</span>
-                    </div>
-                  </div>
-                  ${row.reason ? `<p class="chappy-final-buy-reason">${row.reason}</p>` : ""}
-                </article>
-              `).join("")}
-            </div>
-          </details>
-        `).join("")}
-      </section>
-    `;
+    const oddsMap = buildOddsMap(prediction);
+    return `<section class="chappy-final-buy-summary" data-compact-tickets="1" data-final-ui-build="${BUILD}">
+      <div class="chappy-final-buy-head"><h3>買い目</h3><span class="chappy-final-buy-total">${rows.reduce((sum,row)=>sum+row.points,0)}点</span></div>
+      ${entries.map(([category,list])=>`<details class="chappy-final-buy-group ${groupClass(category)}" ${category === "本命" ? "open" : ""}><summary><span class="chappy-final-buy-label">${category}</span><span class="chappy-final-buy-meta">${list.reduce((sum,row)=>sum+row.points,0)}点</span></summary><div class="chappy-final-buy-lines">${list.map(row=>compactLine(row,oddsMap)).join("")}</div></details>`).join("")}
+    </section>`;
   }
 
   function buildTrueManshuBoard(prediction) {
@@ -398,6 +414,12 @@
   function enhance(prediction) {
     const resultArea = root.document?.getElementById("resultArea");
     markReferenceLayout();
+    if (!root.document.getElementById("chappy-ticket-disclosure-style")) {
+      const style = root.document.createElement("style");
+      style.id = "chappy-ticket-disclosure-style";
+      style.textContent = `.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure{display:block!important}.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure>summary{cursor:pointer;min-height:44px}.chappy-final-mobile-ui #resultArea details.chappy-ticket-disclosure:not([open])>.chappy-ticket-children{display:none!important}.chappy-ticket-children{padding:8px 0}.chappy-ticket-child{display:flex;justify-content:space-between;gap:8px;padding:7px;color:#d8e8f3;font-size:13px}.chappy-ticket-child span{white-space:nowrap}`;
+      root.document.head.appendChild(style);
+    }
     if (!resultArea) return;
     resultArea.querySelectorAll(".chappy-final-buy-summary").forEach(node => node.remove());
     const summary = buildBuySummary(prediction);
@@ -447,6 +469,9 @@
   root.ChappyFinalMobileUi = Object.freeze({
     build: BUILD,
     buildPhotoStyleLines,
+    compactTickets,
+    compactLine,
+    buildBuySummary,
     buildOddsMap,
     buildTrueManshuBoard,
     enhance
