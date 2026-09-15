@@ -830,13 +830,7 @@ function compactVerificationPayload(
       ana: compactMark(prediction?.mainSheet?.ana),
       osae: compactMark(prediction?.mainSheet?.osae)
     },
-    ticketRanks: Array.isArray(prediction?.ticketRanks)
-      ? prediction.ticketRanks.map(row => ({
-          ticket: String(row.ticket || ""),
-          role: String(row.role || row.category || ""),
-          category: String(row.category || row.role || "")
-        })).filter(row => row.ticket)
-      : [],
+    ticketRanks: require("./stored-ticket-categories").storedTicketCategories(prediction),
     practicalTickets: Array.isArray(practicalTickets) ? practicalTickets : [],
     practicalSelection:
       compactPracticalSelection(
