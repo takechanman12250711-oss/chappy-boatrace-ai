@@ -2,11 +2,11 @@ name: Build candidate24 performance
 on:
   push:
     branches: [main]
-    paths: ['scripts/build-candidate24-report.js', '.github/workflows/candidate24-report.yml']
+    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', '.github/workflows/candidate24-report.yml']
   pull_request:
-    paths: ['scripts/build-candidate24-report.js', 'scripts/test-exhibition-candidate24.js', '.github/workflows/candidate24-report.yml']
+    paths: ['scripts/build-candidate24-report.js', 'scripts/build-race-review-progress.js', 'scripts/refresh-race-review-results.js', 'scripts/race-review-evidence.js', 'scripts/test-race-review-progress.js', 'scripts/test-exhibition-candidate24.js', '.github/workflows/candidate24-report.yml']
   workflow_run:
-    workflows: ['Collect official race results']
+    workflows: ['Collect official race results', 'Collect live note independently']
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -26,26 +26,34 @@ jobs:
           ref: ${{ github.event_name == 'pull_request' && github.sha || 'main' }}
           sparse-checkout: |
             scripts
+            api
             js
             config
             data/predictions
             data/results
             data/note-drafts
             data/stats/candidate24-report.json
+            data/stats/race-review-progress.json
+            data/stats/race-review-results.json
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - run: node scripts/test-exhibition-candidate24.js
+      - run: node scripts/test-race-review-progress.js
+      - run: node scripts/restore-daily-prediction-source.js --all
       - run: node scripts/build-candidate24-report.js
+      - run: node scripts/refresh-race-review-results.js
+        if: github.event_name != 'pull_request'
+      - run: node scripts/build-race-review-progress.js
       - name: Save derived report only
         if: github.event_name != 'pull_request' && github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' && github.ref == 'refs/heads/main'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- data/stats/candidate24-report.json
+          git add -- data/stats/candidate24-report.json data/stats/race-review-progress.json data/stats/race-review-results.json
           git diff --cached --quiet && exit 0
-          git commit --only -m 'Update candidate24 performance report' -- data/stats/candidate24-report.json
+          git commit --only -m 'Update candidate24 performance report' -- data/stats/candidate24-report.json data/stats/race-review-progress.json data/stats/race-review-results.json
           for attempt in 1 2 3; do
             git pull --rebase origin main
             git push origin HEAD:main && exit 0

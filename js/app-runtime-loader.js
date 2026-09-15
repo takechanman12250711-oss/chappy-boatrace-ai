@@ -27,7 +27,7 @@
     if (["js/outer-attack-ticket-shadow.js", "js/outer-attack-ticket-settlement.js"].includes(clean)) {
       return ROOT_FIX_VERSION;
     }
-    return clean === "js/stats-runtime-loader.js" ? `${STATS_VERSION}&candidate24=20260915&classification=20260915-1` : ACTIVE_VERSION;
+    return clean === "js/stats-runtime-loader.js" ? `${STATS_VERSION}&candidate24=20260915&classification=20260915-1&reviewprogress=20260915-1` : ACTIVE_VERSION;
   }
 
   function runtimeError(code,message){

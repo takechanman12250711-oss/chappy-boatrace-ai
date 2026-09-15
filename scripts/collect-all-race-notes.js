@@ -71,7 +71,7 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
       prediction.predictionMode = 'server_pre_deadline';
       prediction.officialResultUsedForPrediction = false;
       const baseline = structuredClone(createPracticalSelection(prediction));
-      const record = { publicationPolicy: 'all-races-v1', exhibitionSnapshot: exhibition, raceKey, date, jcd: item.jcd,
+      const record = { reviewEvidence: require('./race-review-evidence').reviewEvidence(prediction), publicationPolicy: 'all-races-v1', exhibitionSnapshot: exhibition, raceKey, date, jcd: item.jcd,
         place: item.place, raceNo: item.raceNo, deadlineAt: item.deadlineAt,
         selectedAt: new Date(now()).toISOString() };
       const prepared = await prepareNoteInput({ prediction, baseline, record, fetchOdds, now });
