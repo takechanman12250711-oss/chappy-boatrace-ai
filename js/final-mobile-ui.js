@@ -187,6 +187,18 @@
       "フォーメーション"
     );
 
+    // Display classification only: retain sub-100 and unpriced candidates.
+    const referenceSources = [
+      ...arrayify(prediction?.manshuSheet?.tickets || prediction?.ticketSheets?.hole),
+      ...arrayify(prediction?.lightManshuTicketBoard?.lines)
+    ];
+    referenceSources.forEach(row => {
+      expandFormationNotation(formationFromRow(row)).forEach(ticket => {
+        if (!(Number(oddsMap.get(ticket)) >= 100))
+          rows.push({category:"押さえ", notation:ticket});
+      });
+    });
+
     const seen = new Set();
     const result = [];
     for (const category of ["本命", "押さえ", "フォーメーション"]) {

@@ -2654,7 +2654,10 @@
       ? item.predictionTickets
       : [];
     const tickets = predictionTickets
-      .filter(row => String(row?.role || row?.category || "") === role)
+      .filter(row => {
+        const storedRole = String(row?.role || row?.category || "");
+        return ({"本線":"本命","フォーメーション":"流し"}[storedRole] || storedRole) === role;
+      })
       .map(row => normalizeTicket(row?.ticket))
       .filter(Boolean);
     if (tickets.length) return tickets.join("、");

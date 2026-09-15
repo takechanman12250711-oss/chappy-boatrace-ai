@@ -28,7 +28,7 @@
   function style(id,href){if(root.document.getElementById(id))return;const link=root.document.createElement("link");link.id=id;link.rel="stylesheet";link.href=href;root.document.head.appendChild(link);}
   function script(id,src,onload){if(root.document.getElementById(id)){onload?.();return;}const node=root.document.createElement("script");node.id=id;node.src=src;node.async=false;if(onload)node.addEventListener("load",onload,{once:true});root.document.head.appendChild(node);}
   function loadPracticalPanel(){script("chappy-practical-visible-panel",`js/final-practical-visible-panel.js?v=${PRACTICAL_PANEL_BUILD}&display=20260915-lazy1&compact=20260915-1&visibility=20260915-2`);}
-  function loadTicketOddsVisibility(){script("chappy-ticket-odds-visibility",`js/final-ticket-odds-visibility.js?v=${TICKET_ODDS_BUILD}&compact=20260915-1`,loadPracticalPanel);}
+  function loadTicketOddsVisibility(){script("chappy-ticket-odds-visibility",`js/final-ticket-odds-visibility.js?v=${TICKET_ODDS_BUILD}&compact=20260915-1&classification=20260915-1`,loadPracticalPanel);}
   function loadUserContract(){script("chappy-final-display-user-contract",`js/final-display-user-contract.js?v=${USER_CONTRACT_BUILD}`,loadTicketOddsVisibility);}
   function loadOwner(){
     style("chappy-final-compact-ui10-style",`css/final-compact-ui10.css?v=${COMPACT_STYLE_BUILD}`);
@@ -43,6 +43,6 @@
   style("chappy-final-iphone-tuning-style",`css/final-iphone-tuning.css?v=${BUILD}`);
   style("chappy-final-reference-layout-style",`css/final-reference-layout.css?v=${BUILD}`);
   style("chappy-final-readability-fix-style",`css/final-readability-fix.css?v=${BUILD}&display=20260915-lazy1&compact=20260915-1`);
-  if(root.ChappyFinalMobileUi)loadOwner();else script("chappy-final-mobile-ui-script",`js/final-mobile-ui.js?v=${BUILD}&display=20260915-lazy1&compact=20260915-1`,loadOwner);
+  if(root.ChappyFinalMobileUi)loadOwner();else script("chappy-final-mobile-ui-script",`js/final-mobile-ui.js?v=${BUILD}&display=20260915-lazy1&compact=20260915-1&classification=20260915-1`,loadOwner);
 })(typeof window!=="undefined"?window:null);
 
