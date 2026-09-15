@@ -21,6 +21,10 @@ assert.ok(api.buildPhotoStyleLines(prediction).some(row=>row.expandedTickets.inc
 prediction.oddsByTicket["6-1-2"]=100;
 assert.equal(JSON.stringify(prediction),before);
 
+const unpriced={mainSheet:{},manshuSheet:{tickets:["1-2-3"]}};
+root.ChappyTicketOddsVisibility.renderManshu(unpriced,{querySelector:()=>section});
+assert.match(html,/class="chappy-true-manshu-empty"/);
+assert.ok(api.buildPhotoStyleLines(unpriced).some(row=>row.expandedTickets.includes("1-2-3")));
 const {compactIndexVerification}=require("./build-prediction-index");
 const rankRows=[{ticket:"2-1-3",role:"本命"},{ticket:"1-2-5",role:"押さえ"},{ticket:"3-1-2",role:"流し"},{ticket:"5-1-2",role:"万舟"}];
 const saved={raceKey:"20260914-02-9",prediction:{ticketRanks:rankRows,practicalTickets:[{ticket:"2-1-3"}]}};
