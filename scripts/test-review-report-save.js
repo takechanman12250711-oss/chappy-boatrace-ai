@@ -16,9 +16,10 @@ try {
   fs.writeFileSync(path.join(dir,'data/predictions/20300101.json'), 'temporary archive restoration\n');
   for (const f of ['candidate24-report','race-review-progress','race-review-results']) fs.writeFileSync(path.join(dir,`data/stats/${f}.json`), '{"settled":5}\n');
   const workflow=fs.readFileSync(path.join(__dirname,'../.github/workflows/candidate24-report.yml'),'utf8');
-  const section=workflow.slice(workflow.indexOf('      - name: Save derived report only'));
+  const section=workflow.slice(workflow.indexOf('      - name: Save derived report only')).split('      - name: Publish updated review data')[0];
   const body=section.slice(section.indexOf('        run: |')+'        run: |'.length).trimEnd().split('\n').filter(Boolean).map(l=>l.replace(/^          /,'')).join('\n');
-  execFileSync('bash',['-e','-c',body],{cwd:dir,stdio:['ignore','pipe','pipe']});
+  execFileSync('bash',['-e','-c',body],{cwd:dir,env:{...process.env,GITHUB_OUTPUT:path.join(workspace,'output')},stdio:['ignore','pipe','pipe']});
+  assert.equal(fs.readFileSync(path.join(workspace,'output'),'utf8').trim(),'changed=true', 'successful save requests site publication');
   assert.equal(git(dir,'status','--porcelain'),'');
   assert.equal(git(dir,'show','origin/main:data/predictions/20300101.json'),'original source\n');
   assert.equal(git(dir,'show','origin/main:data/stats/race-review-progress.json'),'{"settled":5}\n');

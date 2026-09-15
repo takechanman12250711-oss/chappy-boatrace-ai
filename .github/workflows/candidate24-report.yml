@@ -12,6 +12,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  pages: write
 concurrency:
   group: candidate24-report-${{ github.ref }}
   cancel-in-progress: false
@@ -49,6 +50,7 @@ jobs:
         if: github.event_name != 'pull_request'
       - run: node scripts/build-race-review-progress.js
       - name: Save derived report only
+        id: save
         if: github.event_name != 'pull_request' && github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' && github.ref == 'refs/heads/main'
         run: |
           # Archive restoration is a temporary read model, never a source-data commit.
@@ -60,6 +62,14 @@ jobs:
           git commit --only -m 'Update candidate24 performance report' -- data/stats/candidate24-report.json data/stats/race-review-progress.json data/stats/race-review-results.json
           for attempt in 1 2 3; do
             git pull --rebase origin main
-            git push origin HEAD:main && exit 0
+            if git push origin HEAD:main; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
           done
           exit 1
+      - name: Publish updated review data
+        if: steps.save.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${{ github.repository }}/pages/builds"
