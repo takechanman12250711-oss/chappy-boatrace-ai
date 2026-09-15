@@ -51,6 +51,7 @@
     function wrapped(pred){const value=fn.apply(this,arguments);latestPrediction=pred;root.setTimeout(()=>render(pred),80);root.setTimeout(()=>render(pred),500);return value;}
     wrapped[HOOK]=true;wrapped.__original=fn;root.renderAll=wrapped;return true;
   }
+  root.addEventListener?.("chappy:prediction-runtime-ready",wrap);
   ensureStyle();wrap();
   let tries=0;const timer=root.setInterval(()=>{wrap();tries++;if(tries>=160)root.clearInterval(timer);},100);
   root.document.addEventListener?.("visibilitychange",()=>{if(root.document.visibilityState==="visible"&&latestPrediction)render(latestPrediction);});

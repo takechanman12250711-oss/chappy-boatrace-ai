@@ -133,3 +133,24 @@
   .chappy-final-mobile-ui #resultArea .chappy-final-buy-formation{font-size:19px!important;}
   .chappy-final-mobile-ui #resultArea .chappy-final-buy-odds{font-size:11px!important;padding:4px 7px!important;}
 }
+
+/* Keep the approved ticket layout concise, including the fallback renderer. */
+#predictionSection #resultArea .chappy-final-buy-reason,
+#predictionSection #resultArea .v3-main-newspaper .v3-ticket-accordion-aim,
+#predictionSection #resultArea .v3-main-newspaper .v3-ticket-accordion-label,
+#predictionSection #resultArea .v3-main-newspaper .v3-formation-reason,
+#predictionSection #resultArea .chappy-formation-odds-reason,
+#predictionSection #resultArea .chappy-shared-formation-reason,
+#predictionSection #resultArea .chappy-scenario-manshu-group > p,
+#predictionSection #resultArea .chappy-true-manshu-line > p {
+  display:none!important;
+}
+#predictionSection #resultArea .chappy-formation-odds-card,
+#predictionSection #resultArea .chappy-formation-odds-item {
+  background:#0b1b25!important;
+  color:#eef6fb!important;
+  border-color:#29404d!important;
+}
+#predictionSection #resultArea .chappy-formation-odds-card :is(strong,span) {
+  color:#eef6fb!important;
+}
