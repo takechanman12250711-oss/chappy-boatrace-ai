@@ -52,6 +52,21 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           fetch-depth: 1
+          sparse-checkout: |
+            scripts
+            js
+            tests
+            config
+            docs/CHAPPY_CHARTER.md
+            data/predictions
+            data/results
+            data/note-drafts
+            data/outer-attack-sources
+            data/stats/outer-attack-ticket-central-shadow-archive-v1.json
+            data/stats/outer-attack-ticket-central-settlements-v1.json
+            data/stats/outer-attack-ticket-central-report-v1.json
+            data/stats/race-review-results.json
+          sparse-checkout-cone-mode: false
 
       - uses: actions/setup-node@v4
         with:

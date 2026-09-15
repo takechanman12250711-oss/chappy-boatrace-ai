@@ -297,6 +297,26 @@ console.log('outer attack ticket central monitor tests passed');
     assert.equal(imported.diagnostics.saved, 1);
     assert.equal(Object.values(imported.archive.snapshots)[0].centralCapturedAt, record.selectedAt);
     assert.equal(monitor.importNoteSnapshots(root, imported.archive).diagnostics.saved, 0);
+    const independentRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'outer-independent-'));
+    try {
+      const { saveSource } = require('../scripts/outer-attack-live-source');
+      const independentRecord = { ...bundle.record, reviewEvidence: {
+        predictionMode: 'server_pre_deadline', officialResultUsedForPrediction: false } };
+      const saved = saveSource(independentRecord, tickets, { rootDir: independentRoot, now: Date.parse(record.selectedAt) });
+      assert.equal(fs.existsSync(saved), true);
+      assert.equal(monitor.importNoteSnapshots(independentRoot, archive).diagnostics.saved, 1);
+      assert.throws(() => saveSource(independentRecord, tickets, { rootDir: independentRoot, now: Date.parse(record.deadlineAt) }), /invalid/);
+      monitor.captureFiles({ root: independentRoot, now: '2026-09-15T12:00:00Z' });
+      monitor.settleFiles({ root: independentRoot, now: '2026-09-15T12:00:00Z' });
+      // The first duplicate capture changes saved->preserved diagnostics once.
+      monitor.captureFiles({ root: independentRoot, now: '2026-09-15T12:01:00Z' });
+      monitor.settleFiles({ root: independentRoot, now: '2026-09-15T12:01:00Z' });
+      const files = fs.readdirSync(path.join(independentRoot, 'data/stats')).map(n => path.join(independentRoot, 'data/stats', n));
+      const before = files.map(f => fs.readFileSync(f, 'utf8'));
+      monitor.captureFiles({ root: independentRoot, now: '2026-09-15T12:02:00Z' });
+      monitor.settleFiles({ root: independentRoot, now: '2026-09-15T12:02:00Z' });
+      assert.deepEqual(files.map(f => fs.readFileSync(f, 'utf8')), before, 'clock-only refresh must not restart Pages');
+    } finally { fs.rmSync(independentRoot, { recursive: true, force: true }); }
     const original = JSON.stringify(imported.archive.snapshots);
     bundle.record.outerAttackShadow.a.entries[0].ticket = '6-5-4';
     fs.writeFileSync(file, JSON.stringify(bundle));

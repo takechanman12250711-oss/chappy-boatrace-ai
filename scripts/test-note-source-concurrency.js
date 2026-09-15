@@ -52,5 +52,17 @@ try {
   let calls = 0;
   assert.throws(() => pushSourceWithRebase(() => { calls++; }, () => { throw new Error('deadline_passed'); }), /deadline_passed/);
   assert.equal(calls, 0);
+  const independent = 'data/outer-attack-sources/20300914/20300914-02-9-' + 'b'.repeat(64) + '.json';
+  fs.mkdirSync(path.dirname(path.join(worker, independent)), { recursive: true });
+  fs.writeFileSync(path.join(worker, independent), 'immutable independent evidence');
+  const saveArgs = { env: { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', GITHUB_REF: 'refs/heads/main' },
+    git: args => git(worker, args) };
+  const save = require('./save-live-verification-sources').save;
+  assert.equal(save(saveArgs).saved, 1, 'research saved without a publication token or eligible article');
+  assert.equal(git(root, ['--git-dir', bare, 'show', `main:${independent}`]), 'immutable independent evidence');
+  assert.equal(git(root, ['--git-dir', bare, 'show', 'main:data/stats/result.json']), 'new official result');
+  assert.equal(save(saveArgs).saved, 0, 'no empty source commits');
+  fs.writeFileSync(path.join(worker, 'data/stats/result.json'), 'must not be included');
+  assert.throws(() => save(saveArgs), /unrelated_changes/);
   console.log('concurrent official result and immutable note source writes preserve both histories');
 } finally { fs.rmSync(root, { recursive: true, force: true }); }
