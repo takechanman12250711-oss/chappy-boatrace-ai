@@ -73,10 +73,6 @@ function parseVenues(indexHtml, date, nowMs) {
     const isBeforeDeadline = !finalClosed && Number.isFinite(deadlineMs) && deadlineMs > nowMs;
     const raceDayEndMs = Date.parse(createDeadlineAt(date, "23:59"));
     const dateEnded = Number.isFinite(raceDayEndMs) && raceDayEndMs <= nowMs;
-    // The official index can list a venue before it publishes the first
-    // deadline (and briefly between races).  That is a schedule-pending
-    // venue, not a closed venue.  Keep the venue tappable so the dedicated
-    // venue endpoint can obtain all 12 deadlines.
     const selectable = !finalClosed && !dateEnded;
 
     venues.push({
@@ -152,6 +148,29 @@ async function loadVenueSchedule(venue, date, nowMs) {
   }
 }
 
+async function resolveMissingDeadlines(venues, date, nowMs) {
+  return Promise.all(venues.map(async venue => {
+    if (!venue.selectable || venue.deadlineAt) return venue;
+    const detailed = await loadVenueSchedule(venue, date, nowMs);
+    const nextRace = detailed.races.find(race => race.selectable) || null;
+    if (!nextRace) {
+      return {
+        ...venue,
+        selectable: false,
+        status: "schedule_pending"
+      };
+    }
+    return {
+      ...venue,
+      currentRaceNo: nextRace.raceNo,
+      nextDeadline: nextRace.deadline,
+      deadlineAt: nextRace.deadlineAt,
+      status: "before_deadline",
+      selectable: true
+    };
+  }));
+}
+
 async function handler(req, res) {
   try {
     const requestedDate = String(req.query?.date || "");
@@ -210,8 +229,9 @@ async function handler(req, res) {
 
     const indexUrl = `${OFFICIAL_BASE}/owpc/pc/race/index?hd=${date}`;
     const indexHtml = await fetchOfficial(indexUrl);
-    const venues = parseVenues(indexHtml, date, nowMs);
-    const liveVenues = venues.filter(venue => venue.selectable);
+    const parsedVenues = parseVenues(indexHtml, date, nowMs);
+    const venues = await resolveMissingDeadlines(parsedVenues, date, nowMs);
+    const liveVenues = venues.filter(venue => venue.selectable && venue.deadlineAt);
     const nextRace = liveVenues
       .filter(venue => venue.status === "before_deadline")
       .map(venue => ({
@@ -262,3 +282,4 @@ module.exports = handler;
 module.exports.parseVenues = parseVenues;
 module.exports.parseDeadlineTimes = parseDeadlineTimes;
 module.exports.createDeadlineAt = createDeadlineAt;
+module.exports.resolveMissingDeadlines = resolveMissingDeadlines;
