@@ -275,3 +275,37 @@ for (const directory of [resultsDir, correctedResultsDir, lateResultsDir]) {
 }
 
 console.log('outer attack ticket central monitor tests passed');
+
+// Live notes freeze A/B before publication and import without retrospective generation.
+{
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'outer-note-'));
+  try {
+    const record = activeRecord();
+    const frozen = shadow.buildSnapshot(record, { now: record.selectedAt });
+    const tickets = frozen.a.entries.map(e => e.ticket);
+    const raw = { entries: [1,2,3,4,5,6].map(boat => ({ boat, exhibition: { displayTime: 6.8 } })),
+      startExhibition: [1,2,3,4,5,6].map(boat => ({ boat, course: boat, st: 0.1, mappingSource: 'official-start-image' })) };
+    const bundle = { version: 'note-draft-bundle-v1', sourceCommit: 'a'.repeat(40), baselinePracticalTickets: tickets,
+      generationAudit: { contentReady: true, raceKey: record.raceKey, auditedAt: record.selectedAt },
+      record: { ...record, publicationPolicy: 'all-races-v1',
+        exhibitionSnapshot: require('../scripts/note-exhibition').exhibitionSnapshot(raw, record.selectedAt),
+        outerAttackShadow: frozen, prediction: { practicalTickets: tickets, candidate24Tickets: tickets } } };
+    const dir = path.join(root, 'data/note-drafts/20260831'); fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, 'snapshot.json'); fs.writeFileSync(file, JSON.stringify(bundle));
+    const archive = monitor.capture({ date: record.date, predictions: [] }, null, { now: record.selectedAt }).archive;
+    const imported = monitor.importNoteSnapshots(root, archive, { now: '2026-09-15T12:00:00Z' });
+    assert.equal(imported.diagnostics.saved, 1);
+    assert.equal(Object.values(imported.archive.snapshots)[0].centralCapturedAt, record.selectedAt);
+    assert.equal(monitor.importNoteSnapshots(root, imported.archive).diagnostics.saved, 0);
+    const original = JSON.stringify(imported.archive.snapshots);
+    bundle.record.outerAttackShadow.a.entries[0].ticket = '6-5-4';
+    fs.writeFileSync(file, JSON.stringify(bundle));
+    const blocked = monitor.importNoteSnapshots(root, imported.archive);
+    assert.equal(blocked.diagnostics.invalid, 1);
+    assert.equal(JSON.stringify(blocked.archive.snapshots), original);
+    delete bundle.record.outerAttackShadow;
+    fs.writeFileSync(file, JSON.stringify(bundle));
+    assert.equal(monitor.importNoteSnapshots(root, archive).diagnostics.missing, 1);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+}
+console.log('immutable note import, duplicate prevention and historical no-backfill passed');

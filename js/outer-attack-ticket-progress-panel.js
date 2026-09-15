@@ -207,6 +207,7 @@
       </summary>
       <div class="outer-attack-progress-body">
       <p class="outer-attack-progress-note">${escapeHtml(view.prospectiveStartLabel)}以降の、結果前に保存した予想だけを集計。同点数・同資金で比較し、自動採用はしません。</p>
+      <p class="outer-attack-progress-note">${escapeHtml(view.collectionLabel || "")}</p>
       <div class="outer-attack-progress-summary">
         <span>前向き確定 <strong>${view.prospectiveForwardCount.toLocaleString("ja-JP")}R</strong></span>
         <span>全確定 <strong>${view.sourceSettlementCount.toLocaleString("ja-JP")}R</strong></span>
@@ -303,6 +304,15 @@
     const area = ensureArea(rootObject);
     if (!area) return null;
     const view = buildViewModel(readReport(rootObject));
+    const central = rootObject?.ChappyOuterAttackTicketCentralReport?.readReport?.(rootObject);
+    if (central) {
+      const stale = Date.now() - Date.parse(central.generatedAt) > 24 * 60 * 60 * 1000;
+      const pipeline = central.pipeline || {}, notes = pipeline.noteCollection;
+      if (stale) view.overallStatusLabel = '集計更新が停止しています';
+      else if (!pipeline.immutableSnapshotCount) view.overallStatusLabel = notes?.missingBasis ? '比較用の評価データ不足' : '比較対象なし';
+      view.collectionLabel = `保存 ${integer(pipeline.immutableSnapshotCount)}件・結果待ち ${integer(pipeline.pendingOfficialResultCount)}件`;
+      if (notes) view.collectionLabel += `・予想確認 ${integer(notes.checked - notes.missing)}件・旧予想の比較データ未保存 ${integer(notes.missing)}件`;
+    }
     if (!view.available) {
       area.hidden = true;
       area.innerHTML = "";

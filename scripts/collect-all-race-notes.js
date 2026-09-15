@@ -74,6 +74,14 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
       const record = { reviewEvidence: require('./race-review-evidence').reviewEvidence(prediction), publicationPolicy: 'all-races-v1', exhibitionSnapshot: exhibition, raceKey, date, jcd: item.jcd,
         place: item.place, raceNo: item.raceNo, deadlineAt: item.deadlineAt,
         selectedAt: new Date(now()).toISOString() };
+      // Freeze the existing A/B experiment while full pre-race evidence is present.
+      try { record.outerAttackShadow = require('../js/outer-attack-ticket-shadow').buildSnapshot({
+        ...record, evaluatedScenarioCandidates: require('../js/evaluated-scenario-candidates').build(prediction),
+        prediction: { ...prediction, practicalTickets: baseline,
+          practicalSelection: global.ChappyPracticalSelection?.select?.(prediction) || prediction.practicalSelection }
+      }, { now: record.selectedAt }); } catch (error) {
+        record.outerAttackShadow = { status: 'capture-error', error: String(error.message).slice(0, 160) };
+      }
       const prepared = await prepareNoteInput({ prediction, baseline, record, fetchOdds, now });
       record.prediction = compactPrediction(prepared.prediction, prepared.baseline, item.raceData);
       record.prediction.candidate24Tickets = createDisplayCandidates(prepared.prediction, prepared.baseline);
