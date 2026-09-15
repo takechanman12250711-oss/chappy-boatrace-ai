@@ -5,7 +5,7 @@ const { createDisplayCandidates } = require('../js/note-generator');
 const valid = t => /^[1-6]-[1-6]-[1-6]$/.test(t) && new Set(t.split('-')).size === 3;
 const tickets = rows => [...new Set((rows || []).map(r => typeof r === 'string' ? r : r.ticket))];
 const metric = () => ({ races: 0, hits: 0, tickets: 0, stake: 0, returned: 0, hitRate: null, recoveryRate: null });
-function buildReport(records, results) {
+function buildReport(records, results, onSettled) {
   const selected = new Map();
   for (const row of records) {
     const time = Date.parse(row.selectedAt), deadline = Date.parse(row.deadlineAt);
@@ -37,6 +37,7 @@ function buildReport(records, results) {
     if (!r.resultAvailable || !valid(r.trifecta?.combination)) { report.pending++; continue; }
     const payout = r.trifecta.payout;
     if (!Number.isFinite(payout) || payout <= 0) { report.unknownPayout++; continue; }
+    if (onSettled) onSettled({ row, pool, practical, result: r });
     for (const [name, list] of [['candidate24', pool], ['practical', practical]]) {
       const m = report[name], hit = list.includes(r.trifecta.combination);
       m.races++; m.hits += Number(hit); m.tickets += list.length;
@@ -51,7 +52,7 @@ function buildReport(records, results) {
   }
   return report;
 }
-function main(root = process.cwd()) {
+function main(root = process.cwd(), { mapRecord, onSettled, write = true } = {}) {
   const records = [], results = [];
   function retain(row) {
     const p = row?.prediction;
@@ -60,6 +61,7 @@ function main(root = process.cwd()) {
       ? createDisplayCandidates(p, p.practicalTickets) : null);
     if (!source) return;
     records.push({ raceKey: row.raceKey, date: row.date, selectedAt: row.selectedAt, deadlineAt: row.deadlineAt,
+      ...(mapRecord ? { audit: mapRecord(row) } : {}),
       prediction: { candidate24Tickets: tickets(source), practicalTickets: tickets(p.practicalTickets),
         officialResultUsedForPrediction: p.officialResultUsedForPrediction } });
   }
@@ -85,7 +87,8 @@ function main(root = process.cwd()) {
           (r.finishers?.length && r.finishers.length !== 6)) });
     }
   }
-  const report = buildReport(records, results);
+  const report = buildReport(records, results, onSettled);
+  if (!write) return report;
   const output = path.join(root, 'data/stats/candidate24-report.json');
   if (fs.existsSync(output)) {
     const previous = read(output);
