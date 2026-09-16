@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "reportId": "outer-attack-ticket-central-report-v1",
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
-  "generatedAt": "2026-09-16T07:56:39.785Z",
+  "generatedAt": "2026-09-16T08:01:21.410Z",
   "productionChanged": false,
   "automaticApplication": false,
   "humanApprovalRequired": true,
@@ -10,25 +10,25 @@
   "primaryCohort": "central-before-result-and-prediction-before-result",
   "pipeline": {
     "noteCollection": {
-      "checked": 104,
+      "checked": 105,
       "saved": 0,
       "inactive": 9,
-      "missing": 92,
+      "missing": 93,
       "invalid": 1,
       "missingBasis": 0,
-      "checkedAt": "2026-09-16T07:56:34.616Z"
+      "checkedAt": "2026-09-16T08:01:16.743Z"
     },
     "lastCapture": {
       "date": "20260916",
-      "capturedAt": "2026-09-16T07:56:34.616Z",
+      "capturedAt": "2026-09-16T08:01:16.743Z",
       "diagnostics": {
-        "sourceRecordCount": 26,
-        "preDeadlineRecordCount": 26,
-        "duplicateRaceKeyCount": 2,
+        "sourceRecordCount": 31,
+        "preDeadlineRecordCount": 31,
+        "duplicateRaceKeyCount": 3,
         "excludedReasons": {},
-        "selectedRaceCount": 24,
+        "selectedRaceCount": 28,
         "beforeProspectiveStartCount": 0,
-        "notPersistenceRecommendedCount": 21,
+        "notPersistenceRecommendedCount": 25,
         "notReadyCount": 3,
         "capturedCount": 0,
         "preservedCount": 3,
@@ -38,9 +38,9 @@
     "immutableSnapshotCount": 14,
     "archivedRaceCount": 13,
     "archiveConflictCount": 0,
-    "settlementCount": 0,
-    "eligibleSettlementCount": 0,
-    "pendingOfficialResultCount": 3,
+    "settlementCount": 1,
+    "eligibleSettlementCount": 1,
+    "pendingOfficialResultCount": 2,
     "exclusionCount": 10,
     "exclusionCounts": {
       "not-comparable": 10
@@ -50,47 +50,47 @@
     "schemaVersion": 1,
     "reportId": "outer-attack-ticket-ab-report-v1",
     "settlementVersion": "outer-attack-ticket-settlement-v1",
-    "generatedAt": "2026-09-16T07:56:39.785Z",
+    "generatedAt": "2026-09-16T08:01:21.410Z",
     "productionChanged": false,
     "automaticApplication": false,
     "primaryCohort": "prediction-before-result",
-    "settlementCount": 0,
+    "settlementCount": 1,
     "captureOrderCounts": {
-      "predictionBeforeResult": 0,
+      "predictionBeforeResult": 1,
       "resultBeforePrediction": 0,
       "unknown": 0
     },
     "cohorts": {
       "forward": {
-        "sampleCount": 0,
+        "sampleCount": 1,
         "a": {
-          "sampleCount": 0,
+          "sampleCount": 1,
           "hitCount": 0,
           "hitRatePercent": 0,
-          "investmentYen": 0,
+          "investmentYen": 1000,
           "returnYen": 0,
-          "profitYen": 0,
+          "profitYen": -1000,
           "roiPercent": 0
         },
         "variants": {
           "cover": {
-            "eligibleCount": 0,
+            "eligibleCount": 1,
             "a": {
-              "sampleCount": 0,
+              "sampleCount": 1,
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "b": {
-              "sampleCount": 0,
+              "sampleCount": 1,
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "deltaVsA": {
@@ -104,29 +104,99 @@
               "bothHit": 0,
               "aOnlyHit": 0,
               "bOnlyHit": 0,
-              "neitherHit": 0
+              "neitherHit": 1
             },
-            "byTargetBoatNo": {},
-            "byTargetPosition": {}
+            "byTargetBoatNo": {
+              "4": {
+                "targetBoatNo": 4,
+                "a": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "b": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 0,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 1
+                }
+              }
+            },
+            "byTargetPosition": {
+              "3": {
+                "targetPosition": 3,
+                "a": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "b": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 0,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 1
+                }
+              }
+            }
           },
           "flow": {
-            "eligibleCount": 0,
+            "eligibleCount": 1,
             "a": {
-              "sampleCount": 0,
+              "sampleCount": 1,
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "b": {
-              "sampleCount": 0,
+              "sampleCount": 1,
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "deltaVsA": {
@@ -140,10 +210,80 @@
               "bothHit": 0,
               "aOnlyHit": 0,
               "bOnlyHit": 0,
-              "neitherHit": 0
+              "neitherHit": 1
             },
-            "byTargetBoatNo": {},
-            "byTargetPosition": {}
+            "byTargetBoatNo": {
+              "4": {
+                "targetBoatNo": 4,
+                "a": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "b": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 0,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 1
+                }
+              }
+            },
+            "byTargetPosition": {
+              "2": {
+                "targetPosition": 2,
+                "a": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "b": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 0,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 1
+                }
+              }
+            }
           },
           "hole": {
             "eligibleCount": 0,
@@ -428,35 +568,35 @@
         }
       },
       "allSettled": {
-        "sampleCount": 0,
+        "sampleCount": 1,
         "a": {
-          "sampleCount": 0,
+          "sampleCount": 1,
           "hitCount": 0,
           "hitRatePercent": 0,
-          "investmentYen": 0,
+          "investmentYen": 1000,
           "returnYen": 0,
-          "profitYen": 0,
+          "profitYen": -1000,
           "roiPercent": 0
         },
         "variants": {
           "cover": {
-            "eligibleCount": 0,
+            "eligibleCount": 1,
             "a": {
-              "sampleCount": 0,
+              "sampleCount": 1,
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "b": {
-              "sampleCount": 0,
+              "sampleCount": 1,
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "deltaVsA": {
@@ -470,29 +610,99 @@
               "bothHit": 0,
               "aOnlyHit": 0,
               "bOnlyHit": 0,
-              "neitherHit": 0
+              "neitherHit": 1
             },
-            "byTargetBoatNo": {},
-            "byTargetPosition": {}
+            "byTargetBoatNo": {
+              "4": {
+                "targetBoatNo": 4,
+                "a": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "b": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 0,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 1
+                }
+              }
+            },
+            "byTargetPosition": {
+              "3": {
+                "targetPosition": 3,
+                "a": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "b": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 0,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 1
+                }
+              }
+            }
           },
           "flow": {
-            "eligibleCount": 0,
+            "eligibleCount": 1,
             "a": {
-              "sampleCount": 0,
+              "sampleCount": 1,
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "b": {
-              "sampleCount": 0,
+              "sampleCount": 1,
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "deltaVsA": {
@@ -506,10 +716,80 @@
               "bothHit": 0,
               "aOnlyHit": 0,
               "bOnlyHit": 0,
-              "neitherHit": 0
+              "neitherHit": 1
             },
-            "byTargetBoatNo": {},
-            "byTargetPosition": {}
+            "byTargetBoatNo": {
+              "4": {
+                "targetBoatNo": 4,
+                "a": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "b": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 0,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 1
+                }
+              }
+            },
+            "byTargetPosition": {
+              "2": {
+                "targetPosition": 2,
+                "a": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "b": {
+                  "sampleCount": 1,
+                  "hitCount": 0,
+                  "hitRatePercent": 0,
+                  "investmentYen": 1000,
+                  "returnYen": 0,
+                  "profitYen": -1000,
+                  "roiPercent": 0
+                },
+                "deltaVsA": {
+                  "hitCountDelta": 0,
+                  "hitRatePointDelta": 0,
+                  "returnYenDelta": 0,
+                  "profitYenDelta": 0,
+                  "roiPointDelta": 0
+                },
+                "pairOutcomes": {
+                  "bothHit": 0,
+                  "aOnlyHit": 0,
+                  "bOnlyHit": 0,
+                  "neitherHit": 1
+                }
+              }
+            }
           },
           "hole": {
             "eligibleCount": 0,
@@ -554,7 +834,7 @@
   "decision": {
     "schemaVersion": 1,
     "gateId": "outer-attack-ticket-decision-gate-v1",
-    "generatedAt": "2026-09-16T07:56:39.785Z",
+    "generatedAt": "2026-09-16T08:01:21.410Z",
     "frozenAt": "2026-08-31T01:40:00.000Z",
     "prospectiveStartAt": "2026-08-31T02:00:00.000Z",
     "sourceMainCommit": "ee644d55b889c0ff38f198b9747c9c4d86c83425",
@@ -565,8 +845,8 @@
     "thresholdSearchPerformed": false,
     "primaryCohort": "prediction-before-result",
     "diagnostics": {
-      "sourceSettlementCount": 0,
-      "prospectiveForwardCount": 0,
+      "sourceSettlementCount": 1,
+      "prospectiveForwardCount": 1,
       "exclusionCounts": {}
     },
     "variants": {
@@ -575,41 +855,41 @@
         "status": "collecting-to-100",
         "automaticApplication": false,
         "humanApprovalRequired": true,
-        "sampleCount": 0,
-        "distinctDateCount": 0,
+        "sampleCount": 1,
+        "distinctDateCount": 1,
         "nextMilestone": 100,
-        "remainingToNextMilestone": 100,
+        "remainingToNextMilestone": 99,
         "metrics": {
-          "sampleCount": 0,
+          "sampleCount": 1,
           "a": {
             "hitCount": 0,
             "hitRatePercent": 0,
-            "investmentYen": 0,
+            "investmentYen": 1000,
             "returnYen": 0,
-            "profitYen": 0,
+            "profitYen": -1000,
             "roiPercent": 0
           },
           "b": {
             "hitCount": 0,
             "hitRatePercent": 0,
-            "investmentYen": 0,
+            "investmentYen": 1000,
             "returnYen": 0,
-            "profitYen": 0,
+            "profitYen": -1000,
             "roiPercent": 0
           },
           "pairOutcomes": {
             "bothHit": 0,
             "aOnlyHit": 0,
             "bOnlyHit": 0,
-            "neitherHit": 0
+            "neitherHit": 1
           },
           "hitCountDelta": 0,
           "hitRatePointDelta": 0,
           "returnDeltaYen": 0,
           "profitDeltaYen": 0,
           "roiPointDelta": 0,
-          "sameStakeCount": 0,
-          "sameStakeCoveragePercent": 0,
+          "sameStakeCount": 1,
+          "sameStakeCoveragePercent": 100,
           "largestPositiveRaceProfitDeltaYen": 0,
           "jackknifeProfitDeltaYen": 0,
           "oneSidedPairedPValue": null
@@ -651,36 +931,36 @@
             "oneSidedPairedPValue": null
           },
           "second": {
-            "sampleCount": 0,
+            "sampleCount": 1,
             "a": {
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "b": {
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "pairOutcomes": {
               "bothHit": 0,
               "aOnlyHit": 0,
               "bOnlyHit": 0,
-              "neitherHit": 0
+              "neitherHit": 1
             },
             "hitCountDelta": 0,
             "hitRatePointDelta": 0,
             "returnDeltaYen": 0,
             "profitDeltaYen": 0,
             "roiPointDelta": 0,
-            "sameStakeCount": 0,
-            "sameStakeCoveragePercent": 0,
+            "sameStakeCount": 1,
+            "sameStakeCoveragePercent": 100,
             "largestPositiveRaceProfitDeltaYen": 0,
             "jackknifeProfitDeltaYen": 0,
             "oneSidedPairedPValue": null
@@ -700,7 +980,7 @@
           "checks": {
             "sampleCount": false,
             "distinctDates": false,
-            "sameStakeCoverage": false,
+            "sameStakeCoverage": true,
             "hitCountDelta": false,
             "hitRatePointDelta": false,
             "profitDelta": false,
@@ -730,7 +1010,7 @@
           "checks": {
             "sampleCount": false,
             "distinctDates": false,
-            "sameStakeCoverage": false,
+            "sameStakeCoverage": true,
             "hitCountDelta": false,
             "hitRatePointDelta": false,
             "profitDelta": false,
@@ -761,41 +1041,41 @@
         "status": "collecting-to-100",
         "automaticApplication": false,
         "humanApprovalRequired": true,
-        "sampleCount": 0,
-        "distinctDateCount": 0,
+        "sampleCount": 1,
+        "distinctDateCount": 1,
         "nextMilestone": 100,
-        "remainingToNextMilestone": 100,
+        "remainingToNextMilestone": 99,
         "metrics": {
-          "sampleCount": 0,
+          "sampleCount": 1,
           "a": {
             "hitCount": 0,
             "hitRatePercent": 0,
-            "investmentYen": 0,
+            "investmentYen": 1000,
             "returnYen": 0,
-            "profitYen": 0,
+            "profitYen": -1000,
             "roiPercent": 0
           },
           "b": {
             "hitCount": 0,
             "hitRatePercent": 0,
-            "investmentYen": 0,
+            "investmentYen": 1000,
             "returnYen": 0,
-            "profitYen": 0,
+            "profitYen": -1000,
             "roiPercent": 0
           },
           "pairOutcomes": {
             "bothHit": 0,
             "aOnlyHit": 0,
             "bOnlyHit": 0,
-            "neitherHit": 0
+            "neitherHit": 1
           },
           "hitCountDelta": 0,
           "hitRatePointDelta": 0,
           "returnDeltaYen": 0,
           "profitDeltaYen": 0,
           "roiPointDelta": 0,
-          "sameStakeCount": 0,
-          "sameStakeCoveragePercent": 0,
+          "sameStakeCount": 1,
+          "sameStakeCoveragePercent": 100,
           "largestPositiveRaceProfitDeltaYen": 0,
           "jackknifeProfitDeltaYen": 0,
           "oneSidedPairedPValue": null
@@ -837,36 +1117,36 @@
             "oneSidedPairedPValue": null
           },
           "second": {
-            "sampleCount": 0,
+            "sampleCount": 1,
             "a": {
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "b": {
               "hitCount": 0,
               "hitRatePercent": 0,
-              "investmentYen": 0,
+              "investmentYen": 1000,
               "returnYen": 0,
-              "profitYen": 0,
+              "profitYen": -1000,
               "roiPercent": 0
             },
             "pairOutcomes": {
               "bothHit": 0,
               "aOnlyHit": 0,
               "bOnlyHit": 0,
-              "neitherHit": 0
+              "neitherHit": 1
             },
             "hitCountDelta": 0,
             "hitRatePointDelta": 0,
             "returnDeltaYen": 0,
             "profitDeltaYen": 0,
             "roiPointDelta": 0,
-            "sameStakeCount": 0,
-            "sameStakeCoveragePercent": 0,
+            "sameStakeCount": 1,
+            "sameStakeCoveragePercent": 100,
             "largestPositiveRaceProfitDeltaYen": 0,
             "jackknifeProfitDeltaYen": 0,
             "oneSidedPairedPValue": null
@@ -886,7 +1166,7 @@
           "checks": {
             "sampleCount": false,
             "distinctDates": false,
-            "sameStakeCoverage": false,
+            "sameStakeCoverage": true,
             "hitCountDelta": false,
             "hitRatePointDelta": false,
             "profitDelta": false,
@@ -916,7 +1196,7 @@
           "checks": {
             "sampleCount": false,
             "distinctDates": false,
-            "sameStakeCoverage": false,
+            "sameStakeCoverage": true,
             "hitCountDelta": false,
             "hitRatePointDelta": false,
             "profitDelta": false,
@@ -1221,15 +1501,15 @@
   },
   "nextMilestones": {
     "cover": {
-      "sampleCount": 0,
+      "sampleCount": 1,
       "nextMilestone": 100,
-      "remaining": 100,
+      "remaining": 99,
       "status": "collecting-to-100"
     },
     "flow": {
-      "sampleCount": 0,
+      "sampleCount": 1,
       "nextMilestone": 100,
-      "remaining": 100,
+      "remaining": 99,
       "status": "collecting-to-100"
     },
     "hole": {
