@@ -33,7 +33,7 @@ jobs:
       - name: Verify existing result handoff and no duplicate collector
         shell: bash
         run: |
-          test "$(grep -RIl 'build-wall-established-attacker2-skip-ab-report.js' .github/workflows/*.yml | xargs -r grep -l 'Collect official race results' | wc -l | tr -d ' ')" = "1"
+          node -e "const {countWallCollectors}=require('./scripts/theory-validation-phase7-lifecycle.cjs');const rows=countWallCollectors();console.log(rows);if(rows.length!==1)process.exit(1)"
           grep -q 'theory-validation-phase8-cycle.cjs' .github/workflows/collect-wall-established-attacker2-skip-ab.yml
           grep -q 'theory-validation-phase8-cycle.json' .github/workflows/collect-wall-established-attacker2-skip-ab.yml
       - name: Guard production prediction files
