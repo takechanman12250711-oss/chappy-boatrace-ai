@@ -1,0 +1,59 @@
+name: Check theory validation phase8 cycle
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/theory-validation-phase8-cycle.cjs'
+      - 'tests/theory-validation-phase8-cycle.test.cjs'
+      - 'data/stats/theory-validation-phase8-cycle.json'
+      - '.github/workflows/check-theory-validation-phase8-cycle.yml'
+      - '.github/workflows/collect-wall-established-attacker2-skip-ab.yml'
+      - 'scripts/theory-validation-phase7-lifecycle.cjs'
+      - 'data/stats/theory-validation-phase7-lifecycle.json'
+      - 'data/stats/theory-evidence-coverage-phase7.json'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify phase8 theory cycle contract
+        run: |
+          node --check scripts/theory-validation-phase8-cycle.cjs
+          node tests/theory-validation-phase8-cycle.test.cjs
+          node scripts/theory-validation-phase8-cycle.cjs
+      - name: Verify existing result handoff and no duplicate collector
+        shell: bash
+        run: |
+          node -e "const {countWallCollectors}=require('./scripts/theory-validation-phase7-lifecycle.cjs');const rows=countWallCollectors();console.log(rows);if(rows.length!==1)process.exit(1)"
+          grep -q 'theory-validation-phase8-cycle.cjs' .github/workflows/collect-wall-established-attacker2-skip-ab.yml
+          grep -q 'theory-validation-phase8-cycle.json' .github/workflows/collect-wall-established-attacker2-skip-ab.yml
+      - name: Guard production prediction files
+        shell: bash
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          echo "$changed"
+          if echo "$changed" | grep -Eq '^(prediction\.js|js/prediction\.js|js/ai-core\.js|ai-core\.js)$'; then
+            echo 'Phase8 validation PR must not modify production prediction logic.'
+            exit 1
+          fi
+      - name: Guard against new scheduled phase8 collector
+        shell: bash
+        run: |
+          if grep -nE '^  schedule:' .github/workflows/check-theory-validation-phase8-cycle.yml; then
+            echo 'Phase8 must reuse existing result handoff instead of adding a scheduled collector.'
+            exit 1
+          fi
+      - name: Verify project charter
+        run: node scripts/check-charter.js
+      - name: Ensure generated checks are clean
+        run: git diff --exit-code
