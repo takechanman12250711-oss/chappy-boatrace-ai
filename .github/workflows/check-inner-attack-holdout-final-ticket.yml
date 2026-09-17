@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'scripts/inner-attack-holdout-final-ticket.cjs'
+      - 'scripts/audit-frozen-input-replayability.cjs'
       - 'tests/inner-attack-holdout-final-ticket.test.cjs'
       - 'scripts/final-ticket-candidate-evaluator.cjs'
       - 'scripts/analysis-input-contract.js'
@@ -16,5 +17,6 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - run: node tests/inner-attack-holdout-final-ticket.test.cjs
+      - run: node scripts/audit-frozen-input-replayability.cjs
       - run: node scripts/check-charter.js
       - run: git diff --exit-code
