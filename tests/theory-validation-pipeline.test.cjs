@@ -1,0 +1,15 @@
+'use strict';
+const assert=require('node:assert');
+const {run}=require('../scripts/run-theory-validation-pipeline.cjs');
+const report=run('inner-attack-pr690');
+assert.strictEqual(report.pipelineId,'theory-validation-pipeline-v1');
+assert.strictEqual(report.productionChanged,false);
+assert.strictEqual(report.stages.audit.status,'COMPLETED');
+assert.ok(['COMPLETED','INCOMPLETE'].includes(report.stages.replay.status));
+assert.strictEqual(report.stages.holdout.status,'COMPLETED');
+assert.strictEqual(report.stages.finalTicket.status,'COMPLETED');
+assert.strictEqual(report.stages.resultMatch.status,'COMPLETED');
+assert.strictEqual(report.validation.productionChanged,false);
+assert.strictEqual(report.validation.counts.eligible,report.stages.audit.eligible);
+assert.strictEqual(report.validation.completion.decisionReady,true);
+console.log(JSON.stringify({theoryId:report.theoryId,status:report.validation.status,counts:report.validation.counts,warnings:report.validation.warnings,completion:report.validation.completion},null,2));
