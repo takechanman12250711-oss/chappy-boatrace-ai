@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert');
+const {build}=require('../scripts/theory-validation-inventory.cjs');
+const r=build();
+assert.strictEqual(r.productionChanged,false);
+assert.strictEqual(r.summary.theories,13);
+assert.strictEqual(r.summary.buildersAvailable,13);
+assert.strictEqual(r.summary.connected,1);
+assert.strictEqual(r.summary.pending,12);
+for(const row of r.rows)assert.strictEqual(row.available,true,`${row.theoryId} builder unavailable`);
+console.log('theory validation inventory tests passed');
