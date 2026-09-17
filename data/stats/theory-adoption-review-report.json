@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T19:32:15.303Z",
+  "generatedAt": "2026-09-17T19:05:06.555Z",
   "sources": [
     "data/stats/theory-shadow-production-gate.json",
     "data/stats/theory-improvement-proposals.json"
@@ -12,11 +12,11 @@
   "adoptionAllowed": false,
   "decision": "pending",
   "summary": {
-    "approvedTheoryCandidateCount": 57,
-    "comparableCount": 194,
+    "approvedTheoryCandidateCount": 60,
+    "comparableCount": 202,
     "bWins": 0,
-    "aWins": 136,
-    "advantagePoints": -70.1,
+    "aWins": 142,
+    "advantagePoints": -70.3,
     "harmfulVenueCount": 6
   },
   "checks": {
@@ -35,22 +35,22 @@
     "noMajorVenueRegression"
   ],
   "firstHalf": {
-    "comparableCount": 97,
+    "comparableCount": 101,
     "bWins": 0,
-    "aWins": 79,
-    "draws": 18,
+    "aWins": 82,
+    "draws": 19,
     "bWinRate": 0,
-    "aWinRate": 81.4,
-    "advantagePoints": -81.4
+    "aWinRate": 81.2,
+    "advantagePoints": -81.2
   },
   "secondHalf": {
-    "comparableCount": 97,
+    "comparableCount": 101,
     "bWins": 0,
-    "aWins": 57,
-    "draws": 40,
+    "aWins": 60,
+    "draws": 41,
     "bWinRate": 0,
-    "aWinRate": 58.8,
-    "advantagePoints": -58.8
+    "aWinRate": 59.4,
+    "advantagePoints": -59.4
   },
   "venueChecks": [
     {
@@ -105,9 +105,9 @@
     },
     {
       "jcd": "14",
-      "comparableCount": 2,
+      "comparableCount": 3,
       "bWins": 0,
-      "aWins": 2,
+      "aWins": 3,
       "draws": 0,
       "bWinRate": 0,
       "aWinRate": 100,
@@ -125,13 +125,13 @@
     },
     {
       "jcd": "19",
-      "comparableCount": 14,
+      "comparableCount": 15,
       "bWins": 0,
-      "aWins": 12,
+      "aWins": 13,
       "draws": 2,
       "bWinRate": 0,
-      "aWinRate": 85.7,
-      "advantagePoints": -85.7
+      "aWinRate": 86.7,
+      "advantagePoints": -86.7
     },
     {
       "jcd": "20",
@@ -165,9 +165,9 @@
     },
     {
       "jcd": "15",
-      "comparableCount": 4,
+      "comparableCount": 5,
       "bWins": 0,
-      "aWins": 4,
+      "aWins": 5,
       "draws": 0,
       "bWinRate": 0,
       "aWinRate": 100,
@@ -185,13 +185,13 @@
     },
     {
       "jcd": "18",
-      "comparableCount": 19,
+      "comparableCount": 20,
       "bWins": 0,
-      "aWins": 16,
+      "aWins": 17,
       "draws": 3,
       "bWinRate": 0,
-      "aWinRate": 84.2,
-      "advantagePoints": -84.2
+      "aWinRate": 85,
+      "advantagePoints": -85
     },
     {
       "jcd": "23",
@@ -235,13 +235,13 @@
     },
     {
       "jcd": "07",
-      "comparableCount": 3,
+      "comparableCount": 5,
       "bWins": 0,
-      "aWins": 0,
-      "draws": 3,
+      "aWins": 1,
+      "draws": 4,
       "bWinRate": 0,
-      "aWinRate": 0,
-      "advantagePoints": 0
+      "aWinRate": 20,
+      "advantagePoints": -20
     },
     {
       "jcd": "13",
@@ -255,9 +255,9 @@
     },
     {
       "jcd": "22",
-      "comparableCount": 5,
+      "comparableCount": 6,
       "bWins": 0,
-      "aWins": 5,
+      "aWins": 6,
       "draws": 0,
       "bWinRate": 0,
       "aWinRate": 100,
@@ -282,9 +282,42 @@
       "bWinRate": 0,
       "aWinRate": 0,
       "advantagePoints": 0
+    },
+    {
+      "jcd": "11",
+      "comparableCount": 1,
+      "bWins": 0,
+      "aWins": 0,
+      "draws": 1,
+      "bWinRate": 0,
+      "aWinRate": 0,
+      "advantagePoints": 0
     }
   ],
   "approvedTheoryCandidates": [
+    {
+      "scope": "theory",
+      "key": "race-flow",
+      "theoryKey": "race-flow",
+      "label": "展開理論",
+      "jcd": "",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 991,
+        "hitRate": 23.8,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 70.1,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 1005,
+        "hitRate": 25,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 79.4,
+        "direction": "lower"
+      },
+      "approved": true
+    },
     {
       "scope": "theory",
       "key": "remain-pickup",
@@ -293,17 +326,17 @@
       "jcd": "",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 974,
-        "hitRate": 23.1,
+        "samples": 991,
+        "hitRate": 23.2,
         "scenarioMatchRate": 0,
-        "recoveryRate": 70.2,
+        "recoveryRate": 70.5,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 989,
-        "hitRate": 24.3,
+        "samples": 1005,
+        "hitRate": 24.1,
         "scenarioMatchRate": 0,
-        "recoveryRate": 76.6,
+        "recoveryRate": 75,
         "direction": "lower"
       },
       "approved": true
@@ -316,17 +349,63 @@
       "jcd": "",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 847,
-        "hitRate": 13.6,
+        "samples": 861,
+        "hitRate": 13.8,
         "scenarioMatchRate": 0,
-        "recoveryRate": 70.8,
+        "recoveryRate": 72.8,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 867,
-        "hitRate": 12.1,
+        "samples": 880,
+        "hitRate": 11.9,
         "scenarioMatchRate": 0,
-        "recoveryRate": 78,
+        "recoveryRate": 75.4,
+        "direction": "lower"
+      },
+      "approved": true
+    },
+    {
+      "scope": "theory",
+      "key": "local-water",
+      "theoryKey": "local-water",
+      "label": "当地・水面理論",
+      "jcd": "",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 930,
+        "hitRate": 23.8,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 71.2,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 941,
+        "hitRate": 25.9,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 79.5,
+        "direction": "lower"
+      },
+      "approved": true
+    },
+    {
+      "scope": "theory",
+      "key": "skill",
+      "theoryKey": "skill",
+      "label": "技量理論",
+      "jcd": "",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 748,
+        "hitRate": 23.3,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 77,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 764,
+        "hitRate": 25.2,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 79.8,
         "direction": "lower"
       },
       "approved": true
@@ -385,17 +464,17 @@
       "jcd": "08",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 33,
-        "hitRate": 24.2,
+        "samples": 34,
+        "hitRate": 23.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 43.5,
+        "recoveryRate": 42.1,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 33,
-        "hitRate": 15.2,
+        "samples": 34,
+        "hitRate": 14.7,
         "scenarioMatchRate": 0,
-        "recoveryRate": 54.1,
+        "recoveryRate": 52.5,
         "direction": "lower"
       },
       "approved": true
@@ -408,17 +487,17 @@
       "jcd": "08",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 33,
-        "hitRate": 24.2,
+        "samples": 34,
+        "hitRate": 23.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 45.8,
+        "recoveryRate": 44.3,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 33,
-        "hitRate": 15.2,
+        "samples": 34,
+        "hitRate": 14.7,
         "scenarioMatchRate": 0,
-        "recoveryRate": 55.2,
+        "recoveryRate": 53.7,
         "direction": "lower"
       },
       "approved": true
@@ -431,17 +510,17 @@
       "jcd": "16",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 47,
-        "hitRate": 12.8,
+        "samples": 48,
+        "hitRate": 12.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 76.3,
+        "recoveryRate": 74.9,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 48,
-        "hitRate": 33.3,
+        "samples": 49,
+        "hitRate": 32.7,
         "scenarioMatchRate": 0,
-        "recoveryRate": 76.7,
+        "recoveryRate": 75,
         "direction": "lower"
       },
       "approved": true
@@ -454,17 +533,17 @@
       "jcd": "16",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 47,
-        "hitRate": 12.8,
+        "samples": 48,
+        "hitRate": 12.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 78.6,
+        "recoveryRate": 77.1,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 48,
-        "hitRate": 33.3,
+        "samples": 49,
+        "hitRate": 32.7,
         "scenarioMatchRate": 0,
-        "recoveryRate": 78.2,
+        "recoveryRate": 76.5,
         "direction": "lower"
       },
       "approved": true
@@ -523,17 +602,17 @@
       "jcd": "23",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 29,
-        "hitRate": 24.3,
+        "samples": 30,
+        "hitRate": 27.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 49.7,
+        "recoveryRate": 47.3,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 27,
-        "hitRate": 21.1,
+        "samples": 28,
+        "hitRate": 15,
         "scenarioMatchRate": 0,
-        "recoveryRate": 70.5,
+        "recoveryRate": 67.3,
         "direction": "lower"
       },
       "approved": true
@@ -546,17 +625,17 @@
       "jcd": "23",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 29,
-        "hitRate": 21.6,
+        "samples": 30,
+        "hitRate": 25,
         "scenarioMatchRate": 0,
-        "recoveryRate": 43.2,
+        "recoveryRate": 41.3,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 27,
-        "hitRate": 15.8,
+        "samples": 28,
+        "hitRate": 10,
         "scenarioMatchRate": 0,
-        "recoveryRate": 68.2,
+        "recoveryRate": 64.9,
         "direction": "lower"
       },
       "approved": true
@@ -592,17 +671,17 @@
       "jcd": "04",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 42,
-        "hitRate": 21.4,
+        "samples": 43,
+        "hitRate": 20.9,
         "scenarioMatchRate": 0,
-        "recoveryRate": 56.4,
+        "recoveryRate": 55.3,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 42,
-        "hitRate": 16.7,
+        "samples": 43,
+        "hitRate": 16.3,
         "scenarioMatchRate": 0,
-        "recoveryRate": 34.8,
+        "recoveryRate": 33.9,
         "direction": "lower"
       },
       "approved": true
@@ -615,17 +694,17 @@
       "jcd": "04",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 42,
-        "hitRate": 21.4,
+        "samples": 43,
+        "hitRate": 20.9,
         "scenarioMatchRate": 0,
-        "recoveryRate": 58.1,
+        "recoveryRate": 56.9,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 42,
-        "hitRate": 16.7,
+        "samples": 43,
+        "hitRate": 16.3,
         "scenarioMatchRate": 0,
-        "recoveryRate": 35.5,
+        "recoveryRate": 34.6,
         "direction": "lower"
       },
       "approved": true
@@ -638,10 +717,10 @@
       "jcd": "04",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 38,
-        "hitRate": 21.1,
+        "samples": 39,
+        "hitRate": 20.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 59.9,
+        "recoveryRate": 58.3,
         "direction": "lower"
       },
       "secondHalf": {
@@ -668,10 +747,10 @@
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 31,
-        "hitRate": 19.4,
+        "samples": 32,
+        "hitRate": 18.8,
         "scenarioMatchRate": 0,
-        "recoveryRate": 47.1,
+        "recoveryRate": 45.4,
         "direction": "lower"
       },
       "approved": true
@@ -684,40 +763,17 @@
       "jcd": "24",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 49,
-        "hitRate": 16.3,
+        "samples": 50,
+        "hitRate": 16,
         "scenarioMatchRate": 0,
-        "recoveryRate": 56,
+        "recoveryRate": 54.8,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 49,
-        "hitRate": 18.4,
+        "samples": 50,
+        "hitRate": 18,
         "scenarioMatchRate": 0,
-        "recoveryRate": 64.6,
-        "direction": "lower"
-      },
-      "approved": true
-    },
-    {
-      "scope": "venue-theory",
-      "key": "15:skill",
-      "theoryKey": "skill",
-      "label": "丸亀 × 技量理論",
-      "jcd": "15",
-      "adjustmentPoints": -2,
-      "firstHalf": {
-        "samples": 30,
-        "hitRate": 13.3,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 31.3,
-        "direction": "lower"
-      },
-      "secondHalf": {
-        "samples": 30,
-        "hitRate": 23.3,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 54.7,
+        "recoveryRate": 63.6,
         "direction": "lower"
       },
       "approved": true
@@ -730,17 +786,17 @@
       "jcd": "19",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 47,
-        "hitRate": 36.2,
+        "samples": 48,
+        "hitRate": 35.4,
         "scenarioMatchRate": 0,
-        "recoveryRate": 54.2,
+        "recoveryRate": 52.9,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 48,
-        "hitRate": 18.8,
+        "samples": 49,
+        "hitRate": 18.4,
         "scenarioMatchRate": 0,
-        "recoveryRate": 42.6,
+        "recoveryRate": 41.9,
         "direction": "lower"
       },
       "approved": true
@@ -753,17 +809,17 @@
       "jcd": "19",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 47,
-        "hitRate": 36.2,
+        "samples": 48,
+        "hitRate": 35.4,
         "scenarioMatchRate": 0,
-        "recoveryRate": 55.7,
+        "recoveryRate": 54.3,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 48,
-        "hitRate": 18.8,
+        "samples": 49,
+        "hitRate": 18.4,
         "scenarioMatchRate": 0,
-        "recoveryRate": 44.1,
+        "recoveryRate": 43.3,
         "direction": "lower"
       },
       "approved": true
@@ -783,10 +839,10 @@
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 43,
-        "hitRate": 23.3,
+        "samples": 44,
+        "hitRate": 25,
         "scenarioMatchRate": 0,
-        "recoveryRate": 56.7,
+        "recoveryRate": 56.8,
         "direction": "lower"
       },
       "approved": true
@@ -806,10 +862,10 @@
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 34,
-        "hitRate": 26.5,
+        "samples": 35,
+        "hitRate": 28.6,
         "scenarioMatchRate": 0,
-        "recoveryRate": 72.4,
+        "recoveryRate": 72.8,
         "direction": "lower"
       },
       "approved": true
@@ -829,10 +885,10 @@
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 25,
-        "hitRate": 12,
+        "samples": 26,
+        "hitRate": 15.4,
         "scenarioMatchRate": 0,
-        "recoveryRate": 22.7,
+        "recoveryRate": 25.1,
         "direction": "lower"
       },
       "approved": true
@@ -845,17 +901,17 @@
       "jcd": "19",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 26,
-        "hitRate": 30.8,
+        "samples": 27,
+        "hitRate": 29.6,
         "scenarioMatchRate": 0,
-        "recoveryRate": 46.8,
+        "recoveryRate": 44.8,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 27,
-        "hitRate": 22.2,
+        "samples": 28,
+        "hitRate": 25,
         "scenarioMatchRate": 0,
-        "recoveryRate": 47.5,
+        "recoveryRate": 48.7,
         "direction": "lower"
       },
       "approved": true
@@ -891,17 +947,17 @@
       "jcd": "05",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 40,
-        "hitRate": 7.7,
+        "samples": 41,
+        "hitRate": 7.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 40,
+        "recoveryRate": 39.2,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 41,
-        "hitRate": 7.7,
+        "samples": 43,
+        "hitRate": 7.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 46.8,
+        "recoveryRate": 45.5,
         "direction": "lower"
       },
       "approved": true
@@ -925,6 +981,29 @@
         "hitRate": 19.1,
         "scenarioMatchRate": 0,
         "recoveryRate": 29.7,
+        "direction": "lower"
+      },
+      "approved": true
+    },
+    {
+      "scope": "venue-theory",
+      "key": "14:course",
+      "theoryKey": "course",
+      "label": "鳴門 × コース理論",
+      "jcd": "14",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 36,
+        "hitRate": 13.9,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 52.5,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 37,
+        "hitRate": 10.8,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 31,
         "direction": "lower"
       },
       "approved": true
@@ -960,17 +1039,17 @@
       "jcd": "09",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 44,
-        "hitRate": 29.5,
+        "samples": 45,
+        "hitRate": 28.9,
         "scenarioMatchRate": 0,
-        "recoveryRate": 42.9,
+        "recoveryRate": 41.9,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 44,
-        "hitRate": 22.7,
+        "samples": 45,
+        "hitRate": 22.2,
         "scenarioMatchRate": 0,
-        "recoveryRate": 60.4,
+        "recoveryRate": 59.4,
         "direction": "lower"
       },
       "approved": true
@@ -983,40 +1062,17 @@
       "jcd": "09",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 28,
-        "hitRate": 32.1,
+        "samples": 29,
+        "hitRate": 31,
         "scenarioMatchRate": 0,
-        "recoveryRate": 41.8,
+        "recoveryRate": 40.3,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 28,
-        "hitRate": 17.9,
+        "samples": 29,
+        "hitRate": 17.2,
         "scenarioMatchRate": 0,
-        "recoveryRate": 26.3,
-        "direction": "lower"
-      },
-      "approved": true
-    },
-    {
-      "scope": "venue-theory",
-      "key": "18:course",
-      "theoryKey": "course",
-      "label": "徳山 × コース理論",
-      "jcd": "18",
-      "adjustmentPoints": -2,
-      "firstHalf": {
-        "samples": 45,
-        "hitRate": 8.9,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 20.5,
-        "direction": "lower"
-      },
-      "secondHalf": {
-        "samples": 45,
-        "hitRate": 11.1,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 45.3,
+        "recoveryRate": 25.7,
         "direction": "lower"
       },
       "approved": true
@@ -1029,17 +1085,17 @@
       "jcd": "18",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 42,
-        "hitRate": 19,
+        "samples": 43,
+        "hitRate": 18.6,
         "scenarioMatchRate": 0,
-        "recoveryRate": 29.9,
+        "recoveryRate": 29.1,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 43,
-        "hitRate": 25.6,
+        "samples": 44,
+        "hitRate": 27.3,
         "scenarioMatchRate": 0,
-        "recoveryRate": 50.9,
+        "recoveryRate": 52.9,
         "direction": "lower"
       },
       "approved": true
@@ -1052,17 +1108,17 @@
       "jcd": "18",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 31,
-        "hitRate": 22.6,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 34.3,
-        "direction": "lower"
-      },
-      "secondHalf": {
         "samples": 32,
         "hitRate": 21.9,
         "scenarioMatchRate": 0,
-        "recoveryRate": 40.8,
+        "recoveryRate": 33,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 33,
+        "hitRate": 24.2,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 43.7,
         "direction": "lower"
       },
       "approved": true
@@ -1098,40 +1154,17 @@
       "jcd": "16",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 41,
+        "samples": 42,
         "hitRate": 2.4,
         "scenarioMatchRate": 0,
-        "recoveryRate": 11.2,
+        "recoveryRate": 11,
         "direction": "lower"
       },
       "secondHalf": {
         "samples": 42,
         "hitRate": 7.1,
         "scenarioMatchRate": 0,
-        "recoveryRate": 13.5,
-        "direction": "lower"
-      },
-      "approved": true
-    },
-    {
-      "scope": "venue-theory",
-      "key": "18:local-water",
-      "theoryKey": "local-water",
-      "label": "徳山 × 当地・水面理論",
-      "jcd": "18",
-      "adjustmentPoints": -2,
-      "firstHalf": {
-        "samples": 43,
-        "hitRate": 16.3,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 20.9,
-        "direction": "lower"
-      },
-      "secondHalf": {
-        "samples": 44,
-        "hitRate": 29.5,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 44.2,
+        "recoveryRate": 13.3,
         "direction": "lower"
       },
       "approved": true
@@ -1151,10 +1184,10 @@
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 29,
-        "hitRate": 17.2,
+        "samples": 30,
+        "hitRate": 16.7,
         "scenarioMatchRate": 0,
-        "recoveryRate": 53.2,
+        "recoveryRate": 51.8,
         "direction": "lower"
       },
       "approved": true
@@ -1184,46 +1217,23 @@
     },
     {
       "scope": "venue-theory",
-      "key": "23:course",
-      "theoryKey": "course",
-      "label": "唐津 × コース理論",
-      "jcd": "23",
-      "adjustmentPoints": -2,
-      "firstHalf": {
-        "samples": 26,
-        "hitRate": 11.4,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 33,
-        "direction": "lower"
-      },
-      "secondHalf": {
-        "samples": 25,
-        "hitRate": 11.1,
-        "scenarioMatchRate": 0,
-        "recoveryRate": 14.5,
-        "direction": "lower"
-      },
-      "approved": true
-    },
-    {
-      "scope": "venue-theory",
       "key": "23:local-water",
       "theoryKey": "local-water",
       "label": "唐津 × 当地・水面理論",
       "jcd": "23",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 27,
-        "hitRate": 25,
+        "samples": 28,
+        "hitRate": 28.9,
         "scenarioMatchRate": 0,
-        "recoveryRate": 51.2,
+        "recoveryRate": 50.1,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 25,
-        "hitRate": 19.4,
+        "samples": 26,
+        "hitRate": 13.2,
         "scenarioMatchRate": 0,
-        "recoveryRate": 70.8,
+        "recoveryRate": 66.3,
         "direction": "lower"
       },
       "approved": true
@@ -1259,10 +1269,10 @@
       "jcd": "08",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 28,
-        "hitRate": 25,
+        "samples": 29,
+        "hitRate": 24.1,
         "scenarioMatchRate": 0,
-        "recoveryRate": 43.1,
+        "recoveryRate": 41.4,
         "direction": "lower"
       },
       "secondHalf": {
@@ -1282,17 +1292,17 @@
       "jcd": "08",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 18,
-        "hitRate": 16.7,
+        "samples": 19,
+        "hitRate": 15.8,
         "scenarioMatchRate": 0,
-        "recoveryRate": 18.2,
+        "recoveryRate": 17.3,
         "direction": "lower"
       },
       "secondHalf": {
         "samples": 19,
         "hitRate": 5.3,
         "scenarioMatchRate": 0,
-        "recoveryRate": 15.5,
+        "recoveryRate": 15.3,
         "direction": "lower"
       },
       "approved": true
@@ -1391,23 +1401,46 @@
     },
     {
       "scope": "venue-theory",
+      "key": "07:race-flow",
+      "theoryKey": "race-flow",
+      "label": "蒲郡 × 展開理論",
+      "jcd": "07",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 42,
+        "hitRate": 28.6,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 67.9,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 42,
+        "hitRate": 31,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 46.6,
+        "direction": "lower"
+      },
+      "approved": true
+    },
+    {
+      "scope": "venue-theory",
       "key": "07:remain-pickup",
       "theoryKey": "remain-pickup",
       "label": "蒲郡 × 残し・拾い理論",
       "jcd": "07",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 41,
-        "hitRate": 26.8,
+        "samples": 42,
+        "hitRate": 26.2,
         "scenarioMatchRate": 0,
-        "recoveryRate": 62.4,
+        "recoveryRate": 61.2,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 41,
-        "hitRate": 26.8,
+        "samples": 42,
+        "hitRate": 31,
         "scenarioMatchRate": 0,
-        "recoveryRate": 41.5,
+        "recoveryRate": 47.6,
         "direction": "lower"
       },
       "approved": true
@@ -1420,17 +1453,17 @@
       "jcd": "07",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 35,
-        "hitRate": 31.4,
+        "samples": 36,
+        "hitRate": 30.6,
         "scenarioMatchRate": 0,
-        "recoveryRate": 50.9,
+        "recoveryRate": 49.6,
         "direction": "lower"
       },
       "secondHalf": {
         "samples": 36,
-        "hitRate": 22.2,
+        "hitRate": 25,
         "scenarioMatchRate": 0,
-        "recoveryRate": 61,
+        "recoveryRate": 66.6,
         "direction": "lower"
       },
       "approved": true
@@ -1460,23 +1493,69 @@
     },
     {
       "scope": "venue-theory",
+      "key": "07:exhibition",
+      "theoryKey": "exhibition",
+      "label": "蒲郡 × 展示・足理論",
+      "jcd": "07",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 17,
+        "hitRate": 35.3,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 67.4,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 18,
+        "hitRate": 27.8,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 49.9,
+        "direction": "lower"
+      },
+      "approved": true
+    },
+    {
+      "scope": "venue-theory",
+      "key": "22:course",
+      "theoryKey": "course",
+      "label": "福岡 × コース理論",
+      "jcd": "22",
+      "adjustmentPoints": -2,
+      "firstHalf": {
+        "samples": 26,
+        "hitRate": 11.5,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 64.2,
+        "direction": "lower"
+      },
+      "secondHalf": {
+        "samples": 26,
+        "hitRate": 11.5,
+        "scenarioMatchRate": 0,
+        "recoveryRate": 49.4,
+        "direction": "lower"
+      },
+      "approved": true
+    },
+    {
+      "scope": "venue-theory",
       "key": "16:frame-rise-fall",
       "theoryKey": "frame-rise-fall",
       "label": "児島 × 枠別浮沈率",
       "jcd": "16",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 21,
-        "hitRate": 14.3,
+        "samples": 22,
+        "hitRate": 18.2,
         "scenarioMatchRate": 0,
-        "recoveryRate": 42.7,
+        "recoveryRate": 45.5,
         "direction": "lower"
       },
       "secondHalf": {
         "samples": 22,
-        "hitRate": 18.2,
+        "hitRate": 13.6,
         "scenarioMatchRate": 0,
-        "recoveryRate": 47.3,
+        "recoveryRate": 42.4,
         "direction": "lower"
       },
       "approved": true
@@ -1489,7 +1568,7 @@
       "jcd": "04",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 21,
+        "samples": 22,
         "hitRate": 0,
         "scenarioMatchRate": 0,
         "recoveryRate": 0,
@@ -1512,17 +1591,17 @@
       "jcd": "19",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 22,
-        "hitRate": 18.2,
+        "samples": 23,
+        "hitRate": 17.4,
         "scenarioMatchRate": 0,
-        "recoveryRate": 24.3,
+        "recoveryRate": 23.5,
         "direction": "lower"
       },
       "secondHalf": {
         "samples": 23,
         "hitRate": 8.7,
         "scenarioMatchRate": 0,
-        "recoveryRate": 8.6,
+        "recoveryRate": 8.5,
         "direction": "lower"
       },
       "approved": true
@@ -1535,17 +1614,17 @@
       "jcd": "24",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 19,
-        "hitRate": 26.3,
+        "samples": 20,
+        "hitRate": 25,
         "scenarioMatchRate": 0,
-        "recoveryRate": 21.2,
+        "recoveryRate": 19.8,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 19,
-        "hitRate": 10.5,
+        "samples": 20,
+        "hitRate": 10,
         "scenarioMatchRate": 0,
-        "recoveryRate": 24.9,
+        "recoveryRate": 24.3,
         "direction": "lower"
       },
       "approved": true
@@ -1565,10 +1644,10 @@
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 18,
-        "hitRate": 13,
+        "samples": 19,
+        "hitRate": 12.5,
         "scenarioMatchRate": 0,
-        "recoveryRate": 40,
+        "recoveryRate": 38.2,
         "direction": "lower"
       },
       "approved": true
@@ -1581,17 +1660,17 @@
       "jcd": "14",
       "adjustmentPoints": -2,
       "firstHalf": {
-        "samples": 21,
-        "hitRate": 19,
+        "samples": 23,
+        "hitRate": 21.7,
         "scenarioMatchRate": 0,
-        "recoveryRate": 47.2,
+        "recoveryRate": 46.6,
         "direction": "lower"
       },
       "secondHalf": {
-        "samples": 22,
-        "hitRate": 13.6,
+        "samples": 23,
+        "hitRate": 13,
         "scenarioMatchRate": 0,
-        "recoveryRate": 24.1,
+        "recoveryRate": 24.3,
         "direction": "lower"
       },
       "approved": true
