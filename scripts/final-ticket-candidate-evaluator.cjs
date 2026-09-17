@@ -40,7 +40,17 @@ function actualTicket(result) { return inputContract.actualTicket(result); }
 
 function payout(result) {
   const source = result?.__officialResult || result?.officialResult || result?.raceResult || result?.result || result || {};
-  return Number(source?.trifectaPayout || source?.payout3t || source?.payout || result?.trifectaPayout || result?.payout3t || result?.payout || 0) || 0;
+  return Number(
+    source?.trifecta?.payout ||
+    source?.trifectaPayout ||
+    source?.payout3t ||
+    source?.payout ||
+    result?.trifecta?.payout ||
+    result?.trifectaPayout ||
+    result?.payout3t ||
+    result?.payout ||
+    0
+  ) || 0;
 }
 
 function evaluatePair({ baseline, candidate, result, stakePerTicket = 100 }) {
@@ -87,4 +97,4 @@ function aggregate(rows) {
   };
 }
 
-module.exports = { normalizeTicket, ticketList, actualTicket, evaluatePair, aggregate };
+module.exports = { normalizeTicket, ticketList, actualTicket, payout, evaluatePair, aggregate };
