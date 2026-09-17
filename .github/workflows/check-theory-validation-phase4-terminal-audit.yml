@@ -1,0 +1,27 @@
+name: Check theory validation phase4 terminal audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/theory-validation-phase4-terminal-audit.cjs'
+      - 'tests/theory-validation-phase4-terminal-audit.test.cjs'
+      - 'scripts/theory-validation-runner.cjs'
+      - 'scripts/theory-validation-inventory.cjs'
+      - 'data/stats/flow-suppression-report.json'
+      - 'data/stats/st-role-attack-exhibition-holdout-report.json'
+      - 'data/stats/remain-pickup-same-stake-shadow-report.json'
+      - 'data/stats/local-water-v2-post-adoption-monitor.json'
+      - 'data/stats/wall-established-attacker2-skip-ab-report.json'
+      - 'data/stats/st-slit-branch-profit-report.json'
+      - '.github/workflows/check-theory-validation-phase4-terminal-audit.yml'
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/theory-validation-phase4-terminal-audit.test.cjs
+      - run: node scripts/theory-validation-phase4-terminal-audit.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code
