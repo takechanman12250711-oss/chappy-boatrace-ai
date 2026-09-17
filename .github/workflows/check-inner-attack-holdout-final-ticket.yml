@@ -4,9 +4,11 @@ on:
     paths:
       - 'scripts/inner-attack-holdout-final-ticket.cjs'
       - 'scripts/audit-frozen-input-replayability.cjs'
+      - 'scripts/inspect-ai-core-public-api.cjs'
       - 'tests/inner-attack-holdout-final-ticket.test.cjs'
       - 'scripts/final-ticket-candidate-evaluator.cjs'
       - 'scripts/analysis-input-contract.js'
+      - 'js/ai-core.js'
       - '.github/workflows/check-inner-attack-holdout-final-ticket.yml'
 permissions: {contents: read}
 jobs:
@@ -18,5 +20,6 @@ jobs:
         with: {node-version: 20}
       - run: node tests/inner-attack-holdout-final-ticket.test.cjs
       - run: node scripts/audit-frozen-input-replayability.cjs
+      - run: node scripts/inspect-ai-core-public-api.cjs
       - run: node scripts/check-charter.js
       - run: git diff --exit-code
