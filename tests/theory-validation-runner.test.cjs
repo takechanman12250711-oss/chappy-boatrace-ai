@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('node:assert');
+const runner=require('../scripts/theory-validation-runner.cjs');
+assert(runner.REGISTRY['inner-attack-pr690']);
+const r=runner.runAll(['inner-attack-pr690']);
+assert.strictEqual(r.productionChanged,false);
+assert.strictEqual(r.summary.theories,1);
+assert.strictEqual(r.reports[0].theoryId,'inner-attack-pr690');
+assert.strictEqual(r.reports[0].status,'NO_TRIGGER');
+assert.strictEqual(r.reports[0].counts.triggered,0);
+assert.strictEqual(r.reports[0].roi.baseline,84.62);
+console.log('theory validation runner tests passed');
