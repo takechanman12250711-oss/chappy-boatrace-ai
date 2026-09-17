@@ -1,5 +1,7 @@
 'use strict';
 
+const inputContract = require('./analysis-input-contract');
+
 function normalizeTicket(value) {
   return String(value || '').replace(/\s+/g, '').replace(/→/g, '-');
 }
@@ -34,16 +36,21 @@ function attacker(prediction) {
   return Number(prediction?.aiCore?.scenario?.main?.attackerBoatNo || prediction?.aiCore?.roleSummary?.attacker || prediction?.raceFlow?.attackBoats?.[0]?.boatNo || 0) || null;
 }
 
-function actualTicket(result) {
-  if (Array.isArray(result?.order) && result.order.length >= 3) return result.order.slice(0, 3).map(Number).join('-');
-  const first = Number(result?.first || result?.firstBoat || result?.rank1 || 0);
-  const second = Number(result?.second || result?.secondBoat || result?.rank2 || 0);
-  const third = Number(result?.third || result?.thirdBoat || result?.rank3 || 0);
-  return first && second && third ? `${first}-${second}-${third}` : '';
-}
+function actualTicket(result) { return inputContract.actualTicket(result); }
 
 function payout(result) {
-  return Number(result?.trifectaPayout || result?.payout3t || result?.payout || 0) || 0;
+  const source = result?.__officialResult || result?.officialResult || result?.raceResult || result?.result || result || {};
+  return Number(
+    source?.trifecta?.payout ||
+    source?.trifectaPayout ||
+    source?.payout3t ||
+    source?.payout ||
+    result?.trifecta?.payout ||
+    result?.trifectaPayout ||
+    result?.payout3t ||
+    result?.payout ||
+    0
+  ) || 0;
 }
 
 function evaluatePair({ baseline, candidate, result, stakePerTicket = 100 }) {
@@ -79,24 +86,9 @@ function aggregate(rows) {
 
   return {
     races: total,
-    propagation: {
-      rankingChanged: count('rankingChanged'),
-      scenarioChanged: count('scenarioChanged'),
-      attackerChanged: count('attackerChanged'),
-      ticketsChanged: count('ticketsChanged')
-    },
-    hits: {
-      baseline: baselineHits,
-      candidate: candidateHits,
-      added: count('addedHit'),
-      lost: count('lostHit'),
-      net: candidateHits - baselineHits
-    },
-    tickets: {
-      baseline: sum('baseline', 'tickets'),
-      candidate: sum('candidate', 'tickets'),
-      delta: sum('candidate', 'tickets') - sum('baseline', 'tickets')
-    },
+    propagation: { rankingChanged: count('rankingChanged'), scenarioChanged: count('scenarioChanged'), attackerChanged: count('attackerChanged'), ticketsChanged: count('ticketsChanged') },
+    hits: { baseline: baselineHits, candidate: candidateHits, added: count('addedHit'), lost: count('lostHit'), net: candidateHits - baselineHits },
+    tickets: { baseline: sum('baseline', 'tickets'), candidate: sum('candidate', 'tickets'), delta: sum('candidate', 'tickets') - sum('baseline', 'tickets') },
     roi: {
       baseline: baselineStake ? Math.round((baselineReturn / baselineStake) * 10000) / 100 : 0,
       candidate: candidateStake ? Math.round((candidateReturn / candidateStake) * 10000) / 100 : 0,
@@ -105,4 +97,4 @@ function aggregate(rows) {
   };
 }
 
-module.exports = { normalizeTicket, ticketList, actualTicket, evaluatePair, aggregate };
+module.exports = { normalizeTicket, ticketList, actualTicket, payout, evaluatePair, aggregate };
