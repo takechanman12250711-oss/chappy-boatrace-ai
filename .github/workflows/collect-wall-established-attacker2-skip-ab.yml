@@ -7,8 +7,10 @@ on:
       - "scripts/build-wall-established-attacker2-skip-ab-report.js"
       - "scripts/theory-validation-phase6-prospective-integration.cjs"
       - "scripts/theory-validation-phase7-lifecycle.cjs"
+      - "scripts/theory-validation-phase8-cycle.cjs"
       - "tests/theory-validation-phase6-prospective-integration.test.cjs"
       - "tests/theory-validation-phase7-lifecycle.test.cjs"
+      - "tests/theory-validation-phase8-cycle.test.cjs"
       - ".github/workflows/collect-wall-established-attacker2-skip-ab.yml"
   workflow_run:
     workflows:
@@ -41,7 +43,7 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Verify prospective A/B contract
+      - name: Verify prospective A/B and theory lifecycle contracts
         run: |
           node --check scripts/build-wall-established-attacker2-skip-ab-report.js
           node scripts/test-wall-established-attacker2-skip-ab-report.js
@@ -49,6 +51,8 @@ jobs:
           node scripts/theory-validation-phase6-prospective-integration.cjs
           node tests/theory-validation-phase7-lifecycle.test.cjs
           node scripts/theory-validation-phase7-lifecycle.cjs
+          node tests/theory-validation-phase8-cycle.test.cjs
+          node scripts/theory-validation-phase8-cycle.cjs
 
       - name: Restore canonical prediction sources and build reports
         if: github.event_name != 'pull_request'
@@ -57,12 +61,13 @@ jobs:
           node scripts/build-wall-established-attacker2-skip-ab-report.js
           node scripts/theory-validation-phase6-prospective-integration.cjs --output=data/stats/theory-validation-phase6-prospective.json
           node scripts/theory-validation-phase7-lifecycle.cjs --output=data/stats/theory-validation-phase7-lifecycle.json
+          node scripts/theory-validation-phase8-cycle.cjs --output=data/stats/theory-validation-phase8-cycle.json
           node scripts/prepare-daily-prediction-git-save.js --all
 
       - name: Save prospective A/B and lifecycle reports
         if: github.event_name != 'pull_request'
         run: |
-          git add data/stats/wall-established-attacker2-skip-ab-report.json data/stats/theory-validation-phase6-prospective.json data/stats/theory-validation-phase7-lifecycle.json
+          git add data/stats/wall-established-attacker2-skip-ab-report.json data/stats/theory-validation-phase6-prospective.json data/stats/theory-validation-phase7-lifecycle.json data/stats/theory-validation-phase8-cycle.json
           if git diff --cached --quiet; then
             echo "wall-established attacker2 skip A/B and lifecycle reports unchanged"
             exit 0
