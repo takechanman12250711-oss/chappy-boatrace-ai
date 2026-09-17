@@ -5,7 +5,8 @@ on:
     paths:
       - "data/experiments/wall-established-attacker2-skip-preregistration.json"
       - "scripts/build-wall-established-attacker2-skip-ab-report.js"
-      - "scripts/test-wall-established-attacker2-skip-ab-report.js"
+      - "scripts/theory-validation-phase6-prospective-integration.cjs"
+      - "tests/theory-validation-phase6-prospective-integration.test.cjs"
       - ".github/workflows/collect-wall-established-attacker2-skip-ab.yml"
   workflow_run:
     workflows:
@@ -42,24 +43,27 @@ jobs:
         run: |
           node --check scripts/build-wall-established-attacker2-skip-ab-report.js
           node scripts/test-wall-established-attacker2-skip-ab-report.js
+          node tests/theory-validation-phase6-prospective-integration.test.cjs
+          node scripts/theory-validation-phase6-prospective-integration.cjs
 
-      - name: Restore canonical prediction sources and build report
+      - name: Restore canonical prediction sources and build reports
         if: github.event_name != 'pull_request'
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-wall-established-attacker2-skip-ab-report.js
+          node scripts/theory-validation-phase6-prospective-integration.cjs --output=data/stats/theory-validation-phase6-prospective.json
           node scripts/prepare-daily-prediction-git-save.js --all
 
-      - name: Save prospective A/B report
+      - name: Save prospective A/B and phase 6 handoff reports
         if: github.event_name != 'pull_request'
         run: |
-          git add data/stats/wall-established-attacker2-skip-ab-report.json
+          git add data/stats/wall-established-attacker2-skip-ab-report.json data/stats/theory-validation-phase6-prospective.json
           if git diff --cached --quiet; then
-            echo "wall-established attacker2 skip A/B report unchanged"
+            echo "wall-established attacker2 skip A/B and phase 6 reports unchanged"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update wall-established attacker2 skip prospective A/B report"
+          git commit -m "Update wall prospective A/B and phase 6 decision handoff"
           git pull --rebase origin main
           git push origin main
