@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert');
+const {buildTheoryValidationReport}=require('../scripts/theory-validation-report.cjs');
+let r=buildTheoryValidationReport({theoryId:'x',diagnostics:{eligible:100,replayable:90,triggered:8,excludedMissingFrozenFeatures:10,reasons:{missing:10}},result:{propagation:{rankingChanged:3,ticketsChanged:0},hits:{baseline:10,candidate:10,added:0,lost:0,net:0},tickets:{baseline:50,candidate:50,delta:0},roi:{baseline:80,candidate:80,delta:0}}});
+assert.strictEqual(r.status,'PROPAGATION_BLOCKED');
+assert(r.warnings.some(x=>x.code==='THEORY_TRIGGERED_WITHOUT_TICKET_CHANGE'));
+assert(r.warnings.some(x=>x.code==='FROZEN_INPUT_MISSING'));
+r=buildTheoryValidationReport({theoryId:'y',diagnostics:{eligible:20,replayable:20,triggered:0},result:{}});
+assert.strictEqual(r.status,'NO_TRIGGER');
+assert.strictEqual(r.productionChanged,false);
+console.log('theory validation report tests passed');
