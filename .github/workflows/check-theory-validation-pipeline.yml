@@ -3,7 +3,14 @@ on:
   pull_request:
     paths:
       - 'scripts/theory-validation-report.cjs'
+      - 'scripts/run-theory-validation-pipeline.cjs'
+      - 'scripts/audit-frozen-input-replayability.cjs'
+      - 'scripts/inner-attack-holdout-final-ticket.cjs'
+      - 'scripts/final-ticket-candidate-evaluator.cjs'
+      - 'scripts/replay-frozen-ai-core-analyses.cjs'
+      - 'scripts/analysis-input-contract.js'
       - 'tests/theory-validation-report.test.cjs'
+      - 'tests/theory-validation-pipeline.test.cjs'
       - '.github/workflows/check-theory-validation-pipeline.yml'
 permissions: {contents: read}
 jobs:
@@ -14,5 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - run: node tests/theory-validation-report.test.cjs
+      - run: node tests/theory-validation-pipeline.test.cjs
+      - run: node scripts/run-theory-validation-pipeline.cjs inner-attack-pr690 > /tmp/theory-validation.json
+      - run: node -e "const r=require('/tmp/theory-validation.json'); if(!r.validation?.completion?.decisionReady) process.exit(1); console.log(JSON.stringify({status:r.validation.status,counts:r.validation.counts,completion:r.validation.completion}))"
       - run: node scripts/check-charter.js
       - run: git diff --exit-code
