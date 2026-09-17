@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('node:assert');
+const {build}=require('../scripts/theory-validation-phase3-completion.cjs');
+const r=build();
+assert.strictEqual(r.productionChanged,false);
+assert.strictEqual(r.complete,true);
+assert.strictEqual(r.summary.theories,13);
+assert.strictEqual(r.summary.executableHoldout,1);
+assert.strictEqual(r.summary.blockedCandidateMutator,12);
+assert.strictEqual(r.summary.missingReports,0);
+assert.strictEqual(r.summary.nonTerminal,0);
+assert.strictEqual(r.summary.unavailableBuilders,0);
+console.log('theory validation phase3 completion tests passed');
