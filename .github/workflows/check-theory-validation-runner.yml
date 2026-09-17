@@ -4,8 +4,11 @@ on:
     paths:
       - 'scripts/theory-validation-runner.cjs'
       - 'scripts/theory-validation-report.cjs'
+      - 'scripts/theory-validation-inventory.cjs'
+      - 'scripts/inner-attack-holdout-final-ticket.cjs'
       - 'tests/theory-validation-runner.test.cjs'
       - '.github/workflows/check-theory-validation-runner.yml'
+      - 'js/ai-core.js'
 permissions: {contents: read}
 jobs:
   verify:
