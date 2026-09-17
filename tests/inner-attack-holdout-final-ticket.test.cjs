@@ -1,0 +1,16 @@
+'use strict';
+const assert = require('node:assert');
+const mod = require('../scripts/inner-attack-holdout-final-ticket.cjs');
+assert.strictEqual(mod.HOLDOUT_START, '20260819');
+assert.deepStrictEqual(mod.CANDIDATE, { st:0.75, roleAttack:0.5, exhibition:0, maxCourseGap:null, penalty:4 });
+assert.strictEqual(mod.matches({st:0.75, roleAttack:0.5, exhibition:0}), true);
+assert.strictEqual(mod.matches({st:0.74, roleAttack:0.5, exhibition:0}), false);
+assert.strictEqual(mod.matches({st:0.75, roleAttack:0.49, exhibition:0}), false);
+assert.strictEqual(mod.matches({st:0.75, roleAttack:0.5, exhibition:-0.01}), false);
+const report = mod.build();
+assert.strictEqual(report.scope.holdoutUsed, true);
+assert.strictEqual(report.scope.productionChanged, false);
+assert.ok(report.diagnostics.eligible >= 0);
+assert.ok(report.diagnostics.triggered >= 0);
+assert.ok(report.result.races >= 0);
+console.log(JSON.stringify(report, null, 2));
