@@ -1,0 +1,28 @@
+name: Check phase9 live improvement cycle
+on:
+  pull_request:
+    paths:
+      - 'scripts/phase9-live-improvement-cycle.cjs'
+      - 'tests/phase9-live-improvement-cycle.test.cjs'
+      - '.github/workflows/check-phase9-live-improvement-cycle.yml'
+      - 'scripts/theory-validation-phase8-cycle.cjs'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --check scripts/phase9-live-improvement-cycle.cjs
+      - run: node tests/phase9-live-improvement-cycle.test.cjs
+      - run: node scripts/phase9-live-improvement-cycle.cjs
+      - name: Guard production prediction files
+        shell: bash
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          echo "$changed"
+          if echo "$changed" | grep -Eq '^(prediction\\.js|js/prediction\\.js|js/ai-core\\.js|ai-core\\.js)$'; then exit 1; fi
+      - run: node scripts/check-charter.js
