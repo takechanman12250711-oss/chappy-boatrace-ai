@@ -17,6 +17,8 @@ on:
       - "Collect official race results"
     types:
       - completed
+  schedule:
+    - cron: "17 15 * * *"
   workflow_dispatch:
 
 permissions:
