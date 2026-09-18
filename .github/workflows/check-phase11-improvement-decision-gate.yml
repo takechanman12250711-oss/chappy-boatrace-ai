@@ -1,0 +1,26 @@
+name: Check phase11 improvement decision gate
+on:
+  pull_request:
+    paths:
+      - 'scripts/phase11-improvement-decision-gate.cjs'
+      - 'tests/phase11-improvement-decision-gate.test.cjs'
+      - '.github/workflows/check-phase11-improvement-decision-gate.yml'
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --check scripts/phase11-improvement-decision-gate.cjs
+      - run: node tests/phase11-improvement-decision-gate.test.cjs
+      - run: node scripts/phase11-improvement-decision-gate.cjs
+      - name: Guard production files
+        shell: bash
+        run: |
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          echo "$changed"
+          if echo "$changed" | grep -Eq '^(prediction\\.js|js/prediction\\.js|js/ai-core\\.js|ai-core\\.js)$'; then exit 1; fi
+      - run: node scripts/check-charter.js
