@@ -12,6 +12,11 @@ on:
       - "tests/theory-validation-phase7-lifecycle.test.cjs"
       - "tests/theory-validation-phase8-cycle.test.cjs"
       - ".github/workflows/collect-wall-established-attacker2-skip-ab.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "data/results/**"
   workflow_run:
     workflows:
       - "Collect official race results"
