@@ -1,0 +1,20 @@
+name: Check improvement Shadow V2 diagnostics
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-improvement-shadowv2.js'
+      - 'tests/audit-improvement-shadowv2.test.js'
+      - '.github/workflows/check-improvement-shadowv2-diagnostics.yml'
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --check scripts/audit-improvement-shadowv2.js
+      - run: node tests/audit-improvement-shadowv2.test.js
+      - name: Run real-data Shadow V2 audit
+        run: node scripts/audit-improvement-shadowv2.js
+      - run: node scripts/check-charter.js
