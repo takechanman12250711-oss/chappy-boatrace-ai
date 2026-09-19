@@ -51,7 +51,7 @@ function load(){
  const records=recordsFromIndex(index,rel=>{if(!rel)return null;const sp=path.join(PREDICTION_DIR,rel);return fs.existsSync(sp)?readJson(sp):null;});
  return attachOfficialResults(records);
 }
-function build(records=[]){
+function build(records=[],options={}){
  const seen=new Set(), rows=[], duplicates=[];
  for(const r of records){
   if(!matched(r))continue;
@@ -63,7 +63,7 @@ function build(records=[]){
  }
  const groups={}; for(const r of rows){const k=[r.logicFingerprint||'UNKNOWN',r.missReason].join('::');(groups[k]??=[]).push(r.raceKey);}
  const patterns=Object.entries(groups).map(([key,races])=>({patternId:stable({key,races}),key,count:races.length,races,status:'INSUFFICIENT_EVIDENCE',candidate:null,reason:'No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one.'}));
- const p8=phase8.build();
+ const p8=options.phase8Report||phase8.build();
  return{schemaVersion:1,analysisId:'phase9-live-improvement-cycle-v1',generatedAt:new Date().toISOString(),productionChanged:false,summary:{matchedRows:rows.length,hits:rows.filter(x=>x.hit).length,misses:rows.filter(x=>!x.hit).length,duplicates:duplicates.length,patterns:patterns.length,eligibleCandidates:0},taxonomy:[...TAXONOMY],rows,patterns,handoff:{target:'scripts/theory-validation-phase8-cycle.cjs',eligibleCandidates:[],automaticProductionChange:false,approvalStop:'CANDIDATE_FOR_USER_APPROVAL'},audit:{phase8Complete:p8.phaseComplete===true,matchedOnly:true,duplicateRaceRecords:duplicates.length,ambiguousMissReasons:rows.filter(x=>!x.hit&&(!TAXONOMY.has(x.missReason)||!x.reason)).length,rejectedCandidateRetest:0,candidateFingerprintUnique:true,brokenHandoff:0,productionPredictionChanged:false},phaseComplete:p8.phaseComplete===true&&duplicates.length===0&&rows.every(x=>x.hit||TAXONOMY.has(x.missReason))};
 }
 if(require.main===module){const out=build(load());const a=process.argv.find(x=>x.startsWith('--output='));if(a){const d=path.resolve(ROOT,a.slice(9));fs.mkdirSync(path.dirname(d),{recursive:true});fs.writeFileSync(d,JSON.stringify(out,null,2)+'\n');}process.stdout.write(JSON.stringify(out,null,2)+'\n');if(!out.phaseComplete)process.exitCode=1;}
