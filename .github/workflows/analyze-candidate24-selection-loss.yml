@@ -1,0 +1,36 @@
+name: Analyze candidate24 selection losses
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-candidate24-selection-loss.js'
+      - 'scripts/test-candidate24-selection-loss.js'
+      - '.github/workflows/analyze-candidate24-selection-loss.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+            js
+            config
+            data/predictions
+            data/results
+            data/note-drafts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-candidate24-selection-loss.js
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node scripts/analyze-candidate24-selection-loss.js
+      - name: Record reproducible diagnostic evidence
+        run: node -e 'console.log("SELECTION_LOSS_REPORT=" + JSON.stringify(require("./data/stats/candidate24-selection-loss.json")))'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate24-selection-loss
+          path: data/stats/candidate24-selection-loss.json
