@@ -1,0 +1,69 @@
+name: Apply 100R generation metadata repair
+on:
+  push:
+    branches:
+      - fix/100r-active-generation-audit
+    paths:
+      - '.github/workflows/apply-100r-generation-fix.yml'
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/100r-active-generation-audit
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Align active generation metadata with production evidence
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const calibrationPath = 'js/prediction-calibration.js';
+          const diagnosticsWorkflowPath = '.github/workflows/check-improvement-shadowv2-diagnostics.yml';
+          const collectWorkflowPath = '.github/workflows/collect-results.yml';
+          const testPath = 'tests/prediction-generation-contract.test.js';
+          const oldVersion = 'practical-5-7-10-v1';
+          const currentVersion = 'practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1';
+
+          let calibration = fs.readFileSync(calibrationPath, 'utf8');
+          const needle = `ticketPolicyVersion: "${oldVersion}"`;
+          if (!calibration.includes(needle)) throw new Error('stale DEFAULT_GENERATION version not found exactly once');
+          if (calibration.split(needle).length !== 2) throw new Error('DEFAULT_GENERATION version occurrence is ambiguous');
+          calibration = calibration.replace(needle, `ticketPolicyVersion: "${currentVersion}"`);
+          fs.writeFileSync(calibrationPath, calibration);
+
+          const test = `"use strict";\nconst assert=require("node:assert/strict");\nconst fs=require("node:fs");\nconst calibration=require("../js/prediction-calibration");\nconst source=fs.readFileSync(require.resolve("../js/practical-selection"),"utf8");\nconst versions=[...source.matchAll(/ticketPolicyVersion:\\s*"([^"]+)"/g)].map(match=>match[1]);\nassert.ok(versions.length>0,"production ticket policy version must be stamped into verification evidence");\nassert.equal(new Set(versions).size,1,"production verification evidence must use one ticket policy version");\nassert.equal(calibration.DEFAULT_GENERATION.ticketPolicyVersion,versions[0],"100R/calibration active generation must match production verification evidence ticket policy");\nconsole.log("prediction generation contract passed:",versions[0]);\n`;
+          fs.writeFileSync(testPath, test);
+
+          let diagnostics = fs.readFileSync(diagnosticsWorkflowPath, 'utf8');
+          if (!diagnostics.includes("      - 'js/prediction-calibration.js'")) {
+            diagnostics = diagnostics.replace("      - 'scripts/build-improvement-review.js'\n", "      - 'scripts/build-improvement-review.js'\n      - 'js/prediction-calibration.js'\n      - 'js/practical-selection.js'\n      - 'tests/prediction-generation-contract.test.js'\n");
+          }
+          if (!diagnostics.includes('node tests/prediction-generation-contract.test.js')) {
+            diagnostics = diagnostics.replace('      - run: node tests/build-improvement-review-shadow-reference.test.js\n', '      - run: node tests/build-improvement-review-shadow-reference.test.js\n      - run: node tests/prediction-generation-contract.test.js\n');
+          }
+          fs.writeFileSync(diagnosticsWorkflowPath, diagnostics);
+
+          let collect = fs.readFileSync(collectWorkflowPath, 'utf8');
+          if (!collect.includes('      - "js/prediction-calibration.js"')) {
+            collect = collect.replace('      - "js/practical-selection.js"\n', '      - "js/practical-selection.js"\n      - "js/prediction-calibration.js"\n');
+          }
+          fs.writeFileSync(collectWorkflowPath, collect);
+          NODE
+          node tests/prediction-generation-contract.test.js
+          node --check js/prediction-calibration.js
+          node scripts/audit-improvement-shadowv2.js > /tmp/active-audit.json
+          node -e 'const a=require("/tmp/active-audit.json"); console.log(JSON.stringify({counts:a.counts,mismatchDimensions:a.mismatchDimensions,active:a.active},null,2)); if(a.counts.activeGenerationEligibleBeforeDedupe<=0) process.exit(1)'
+          node scripts/build-improvement-review.js --output=/tmp/improvement-review-after-generation-fix.json
+          node -e 'const r=require("/tmp/improvement-review-after-generation-fix.json"); console.log(JSON.stringify({source:r.source,progress:r.progress,activeGenerationKey:r.activeGenerationKey},null,2)); if(r.source.eligibleCount<=0) process.exit(1)'
+      - name: Commit repair to PR branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/prediction-calibration.js tests/prediction-generation-contract.test.js .github/workflows/check-improvement-shadowv2-diagnostics.yml .github/workflows/collect-results.yml
+          git commit -m "Align 100R active generation with production ticket policy"
+          git push origin HEAD:fix/100r-active-generation-audit
