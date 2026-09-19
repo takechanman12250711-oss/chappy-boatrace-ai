@@ -27,7 +27,7 @@
   const DEFAULT_GENERATION = Object.freeze({
     logicFingerprint: "evaluated-scenarios-v1",
     confidenceDefinitionVersion: "internal-score-v1",
-    ticketPolicyVersion: "practical-5-7-10-v1"
+    ticketPolicyVersion: "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1"
   });
   const GATES = Object.freeze({
     reference: 30,

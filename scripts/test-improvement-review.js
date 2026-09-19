@@ -1,4 +1,5 @@
 "use strict";
+require("../tests/prediction-generation-contract.test.js");
 
 const assert =
   require("node:assert/strict");

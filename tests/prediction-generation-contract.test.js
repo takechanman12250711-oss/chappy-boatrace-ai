@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const calibration=require("../js/prediction-calibration");
+const source=fs.readFileSync(require.resolve("../js/practical-selection"),"utf8");
+const versions=[...source.matchAll(/ticketPolicyVersion:\s*"([^"]+)"/g)].map(match=>match[1]);
+assert.ok(versions.length>0,"production ticket policy version must be stamped into verification evidence");
+assert.equal(new Set(versions).size,1,"production verification evidence must use one ticket policy version");
+assert.equal(calibration.DEFAULT_GENERATION.ticketPolicyVersion,versions[0],"100R/calibration active generation must match production verification evidence ticket policy");
+console.log("prediction generation contract passed:",versions[0]);
