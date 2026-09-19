@@ -1,25 +1,25 @@
 {
   "schemaVersion": 2,
   "version": "local-water-v2-post-adoption-monitor-v2",
-  "generatedAt": "2026-09-18T19:00:08.559Z",
+  "generatedAt": "2026-09-19T10:01:16.936Z",
   "adoptionPr": 614,
   "adoptionCommit": "b230d52969b3aa612498e4c994d840c9b7120abc",
   "startDate": "20260824",
-  "latestDate": "20260918",
+  "latestDate": "20260919",
   "method": "2026-08-24以降の確定レースだけを対象に、A=本番Local/Water V2 gap<=3タイブレーク、B=同じ未適用base coreの旧展開のまま、固定5点で比較。本番と同じrace trend ready条件を満たす公式入力だけをfingerprint世代別cacheで再利用し、評価レポートは全件揃った場合だけ保存。",
   "productionChanged": false,
   "automaticApplication": false,
   "sourceCompleteness": {
-    "expectedRaces": 748,
-    "completedRaces": 748,
+    "expectedRaces": 781,
+    "completedRaces": 781,
     "cachedRaces": 748,
-    "fetchedRaces": 0,
+    "fetchedRaces": 33,
     "complete": true
   },
   "total": {
-    "sourceRaces": 748,
-    "comparableRaces": 40,
-    "appliedRaces": 40,
+    "sourceRaces": 781,
+    "comparableRaces": 41,
+    "appliedRaces": 41,
     "productionHits": 4,
     "counterfactualHits": 3,
     "gains": 4,
@@ -307,6 +307,19 @@
       "sourceRaces": 36,
       "comparableRaces": 2,
       "appliedRaces": 2,
+      "productionHits": 0,
+      "counterfactualHits": 0,
+      "gains": 0,
+      "losses": 0,
+      "productionReturn": 0,
+      "counterfactualReturn": 0,
+      "hitDelta": 0,
+      "returnDelta": 0
+    },
+    "20260919": {
+      "sourceRaces": 33,
+      "comparableRaces": 1,
+      "appliedRaces": 1,
       "productionHits": 0,
       "counterfactualHits": 0,
       "gains": 0,
@@ -1397,6 +1410,33 @@
       "productionHit": false,
       "counterfactualHit": false,
       "payoutPer100": 13210
+    },
+    {
+      "raceKey": "20260919-06-11",
+      "date": "20260919",
+      "jcd": "06",
+      "raceNo": 11,
+      "gap": 2.799999999999997,
+      "previousHead": 3,
+      "selectedHead": 1,
+      "actual": "1-5-3",
+      "productionTickets": [
+        "1-2-4",
+        "1-4-2",
+        "1-5-2",
+        "2-1-4",
+        "2-1-5"
+      ],
+      "counterfactualTickets": [
+        "3-1-5",
+        "3-2-5",
+        "3-1-6",
+        "1-2-3",
+        "1-2-4"
+      ],
+      "productionHit": false,
+      "counterfactualHit": false,
+      "payoutPer100": 2040
     }
   ],
   "apiFailures": 0,
