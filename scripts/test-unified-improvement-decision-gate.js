@@ -1,5 +1,5 @@
 "use strict";
-const assert=require("node:assert/strict"),g=require("./build-unified-improvement-decision-gate");
+const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path"),g=require("./build-unified-improvement-decision-gate");
 assert.equal(g.num(null,undefined,""),null);
 assert.equal(g.num(null,"12.5"),12.5);
 let x=g.normalize("x","x",{affectedSettledCount:30,minimumAffectedSettledCount:30,A:{recoveryRate:70,profit:-3000},B:{recoveryRate:85,profit:-1000},productionAUnchanged:true});
@@ -21,4 +21,17 @@ assert.equal(frameShadow.affectedSettledCount,100);
 assert.equal(frameShadow.decision,"reject");
 assert.equal(frameShadow.reason,"固定件数評価で不採用");
 assert.equal(frameShadow.automaticApplication,false);
-console.log("unified improvement decision gate test: 8/8 sources connected; terminal Phase10 rejection preserved");
+
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),"chappy-live-improvement-"));
+try{
+ const p=path.join(tmp,"report.json");
+ let saved=g.writeStableReport(p,{generatedAt:"2026-09-19T00:00:00Z",summary:{matchedRows:22}});
+ assert.equal(saved.changed,true);
+ saved=g.writeStableReport(p,{generatedAt:"2026-09-19T01:00:00Z",summary:{matchedRows:22}});
+ assert.equal(saved.changed,false,"generatedAt-only changes must not create duplicate analysis artifacts");
+ assert.equal(JSON.parse(fs.readFileSync(p,"utf8")).generatedAt,"2026-09-19T00:00:00Z");
+ saved=g.writeStableReport(p,{generatedAt:"2026-09-19T02:00:00Z",summary:{matchedRows:23}});
+ assert.equal(saved.changed,true,"new matched evidence must update the persisted artifact");
+ assert.equal(JSON.parse(fs.readFileSync(p,"utf8")).summary.matchedRows,23);
+}finally{fs.rmSync(tmp,{recursive:true,force:true});}
+console.log("unified improvement decision gate test: 8/8 sources connected; live cycle persistence is change-only");
