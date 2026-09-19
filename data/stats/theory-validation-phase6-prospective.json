@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "theory-validation-phase6-prospective-integration-v1",
-  "generatedAt": "2026-09-18T00:55:00+09:00",
+  "generatedAt": "2026-09-19T12:23:35.448Z",
   "productionChanged": false,
   "phaseComplete": true,
   "summary": {
@@ -16,20 +16,83 @@
       "theoryId": "wall",
       "status": "PROSPECTIVE_GATE",
       "candidateId": "wall-established-attacker2-skip-b-v1",
-      "progress": {"current": 31, "required": 100, "remaining": 69, "unit": "settled qualified races", "nextGate": 100},
-      "collection": {"workflow": ".github/workflows/collect-wall-established-attacker2-skip-ab.yml", "collector": "scripts/build-wall-established-attacker2-skip-ab-report.js", "existingRoute": true, "duplicateCollection": false, "dedupe": "raceKey after prospective cutoff", "preDeadlineOnly": true, "officialResultRequired": true, "generationFrozen": true},
-      "evaluation": {"automaticAtGate": true, "checkpointStatus": "not-reached", "baseline": {"hits": 7, "tickets": 289, "stake": 28900, "return": 11670, "profit": -17230, "roi": 40.4}, "candidate": {"hits": 0, "tickets": 0, "stake": 0, "return": 0, "profit": 0, "roi": null, "noStake": true}, "hits": {"added": 0, "lost": 7, "net": -7}, "ticketDelta": -289, "profitDelta": 17230, "temporal": {"distinctDates": 7, "firstHalfProfitDelta": 5850, "secondHalfProfitDelta": 11380, "leaveOneOutMinimumProfitDelta": 16230}, "decision": "WAITING_FOR_100R", "userApprovalRequired": true},
+      "progress": {
+        "current": 82,
+        "required": 100,
+        "remaining": 18,
+        "unit": "settled qualified races",
+        "nextGate": 100
+      },
+      "collection": {
+        "workflow": ".github/workflows/collect-wall-established-attacker2-skip-ab.yml",
+        "collector": "scripts/build-wall-established-attacker2-skip-ab-report.js",
+        "existingRoute": true,
+        "duplicateCollection": false,
+        "dedupe": "raceKey after prospective cutoff",
+        "preDeadlineOnly": true,
+        "officialResultRequired": true,
+        "generationFrozen": true
+      },
+      "evaluation": {
+        "automaticAtGate": true,
+        "checkpointStatus": "not-reached",
+        "baseline": {
+          "hits": 22,
+          "tickets": 745,
+          "stake": 74500,
+          "return": 55900,
+          "profit": -18600,
+          "roi": 75
+        },
+        "candidate": {
+          "hits": 0,
+          "tickets": 0,
+          "stake": 0,
+          "return": 0,
+          "profit": 0,
+          "roi": null,
+          "noStake": true
+        },
+        "hits": {
+          "added": 0,
+          "lost": 22,
+          "net": -22
+        },
+        "ticketDelta": -745,
+        "profitDelta": 18600,
+        "temporal": {
+          "distinctDates": 18,
+          "firstHalfProfitDelta": 24650,
+          "secondHalfProfitDelta": -6050,
+          "leaveOneOutMinimumProfitDelta": 17600
+        },
+        "decision": "WAITING_FOR_100R",
+        "userApprovalRequired": true
+      },
       "blockerCode": "WAITING_PREREGISTERED_WALL_100R"
     },
     {
       "theoryId": "newEnvironment",
       "status": "PERMANENT_BLOCKER",
       "candidateId": null,
-      "evidence": {"formalRaces": 0, "source": "data/stats/theory-evidence-coverage-phase7.json", "collectionContinues": true},
-      "collection": {"existingRoute": true, "duplicateCollection": false, "route": "existing theory evidence tagging / performance evidence pipeline"},
+      "evidence": {
+        "formalRaces": 0,
+        "source": "data/stats/theory-evidence-coverage-phase7.json",
+        "collectionContinues": true
+      },
+      "collection": {
+        "existingRoute": true,
+        "duplicateCollection": false,
+        "route": "existing theory evidence tagging / performance evidence pipeline"
+      },
       "blockerCode": "NO_FIXED_CANDIDATE_FROM_DISCOVERY",
       "reason": "Formal new-engine evidence may continue to accumulate, but the fixed effective-score A/B discovery produced no accepted candidate; candidateB is null and prospective A/B is inactive. Evidence count alone cannot create a new candidate without inventing a post-hoc rule.",
-      "evaluation": {"automaticAt100": false, "decisionReady": false, "discoveryCandidateFrozen": false, "productionChangeRequired": false}
+      "evaluation": {
+        "automaticAt100": false,
+        "decisionReady": false,
+        "discoveryCandidateFrozen": false,
+        "productionChangeRequired": false
+      }
     }
   ]
 }
