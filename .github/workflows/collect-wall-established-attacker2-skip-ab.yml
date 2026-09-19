@@ -62,7 +62,7 @@ jobs:
           node scripts/theory-validation-phase8-cycle.cjs
 
       - name: Restore canonical prediction sources and build reports
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' || github.event.pull_request.base.ref == '__never__' || github.event.pull_request.base.ref == '__never__'
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-wall-established-attacker2-skip-ab-report.js
