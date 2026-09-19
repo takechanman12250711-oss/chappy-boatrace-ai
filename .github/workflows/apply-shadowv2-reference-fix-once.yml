@@ -1,0 +1,41 @@
+name: Apply Shadow V2 reference fix once
+on:
+  push:
+    branches:
+      - fix/improvement-shadowv2-diagnostics
+    paths:
+      - '.github/workflows/apply-shadowv2-reference-fix-once.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/improvement-shadowv2-diagnostics
+          fetch-depth: 0
+      - name: Patch explicit reference matching
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const p = 'scripts/build-improvement-review.js';
+          const before = fs.readFileSync(p, 'utf8');
+          const oldBlock = `    if (\n      !matched ||\n      !scoreMatches(matched)\n    ) {\n      return null;\n    }\n`;
+          const newBlock = `    if (!matched) {\n      return null;\n    }\n`;
+          if (!before.includes(oldBlock)) throw new Error('target explicit-reference score guard not found');
+          const after = before.replace(oldBlock, newBlock);
+          if (after === before) throw new Error('builder was not changed');
+          fs.writeFileSync(p, after);
+          NODE
+      - run: node tests/build-improvement-review-shadow-reference.test.js
+      - run: node scripts/build-improvement-review.js --output=/tmp/improvement-review-after.json
+      - name: Commit production builder fix and remove one-time workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/apply-shadowv2-reference-fix-once.yml
+          git add scripts/build-improvement-review.js
+          git diff --cached --check
+          git commit -m 'Trust durable Shadow V2 snapshot references'
+          git push origin HEAD:fix/improvement-shadowv2-diagnostics
