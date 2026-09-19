@@ -30,7 +30,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || 'chappy-main-data-writers' }}
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-main', github.workflow) }}
   cancel-in-progress: false
 
 jobs:
