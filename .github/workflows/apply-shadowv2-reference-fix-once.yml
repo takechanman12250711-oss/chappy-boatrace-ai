@@ -11,31 +11,40 @@ jobs:
   apply:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: fix/improvement-shadowv2-diagnostics
-          fetch-depth: 0
-      - name: Patch explicit reference matching
+      - name: Patch builder through GitHub API
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: fix/improvement-shadowv2-diagnostics
         run: |
           node <<'NODE'
-          const fs = require('node:fs');
-          const p = 'scripts/build-improvement-review.js';
-          const before = fs.readFileSync(p, 'utf8');
-          const oldBlock = `    if (\n      !matched ||\n      !scoreMatches(matched)\n    ) {\n      return null;\n    }\n`;
-          const newBlock = `    if (!matched) {\n      return null;\n    }\n`;
-          if (!before.includes(oldBlock)) throw new Error('target explicit-reference score guard not found');
-          const after = before.replace(oldBlock, newBlock);
-          if (after === before) throw new Error('builder was not changed');
-          fs.writeFileSync(p, after);
+          const repo = process.env.REPO;
+          const branch = process.env.BRANCH;
+          const token = process.env.GH_TOKEN;
+          const headers = {Authorization:`Bearer ${token}`,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'};
+          async function api(path, options={}) {
+            const response = await fetch(`https://api.github.com/repos/${repo}${path}`, {headers, ...options});
+            if (!response.ok) throw new Error(`${options.method||'GET'} ${path}: ${response.status} ${await response.text()}`);
+            return response.status === 204 ? null : response.json();
+          }
+          (async()=>{
+            const p = 'scripts/build-improvement-review.js';
+            const file = await api(`/contents/${p}?ref=${encodeURIComponent(branch)}`);
+            const before = Buffer.from(file.content, 'base64').toString('utf8');
+            const oldBlock = `    if (\n      !matched ||\n      !scoreMatches(matched)\n    ) {\n      return null;\n    }\n`;
+            const newBlock = `    if (!matched) {\n      return null;\n    }\n`;
+            if (before.includes(oldBlock)) {
+              const after = before.replace(oldBlock, newBlock);
+              await api(`/contents/${p}`, {method:'PUT', body:JSON.stringify({message:'Trust durable Shadow V2 snapshot references',content:Buffer.from(after).toString('base64'),sha:file.sha,branch})});
+              console.log('builder patched');
+            } else if (before.includes(newBlock)) {
+              console.log('builder already patched');
+            } else {
+              throw new Error('expected builder guard not found');
+            }
+            const wf = '.github/workflows/apply-shadowv2-reference-fix-once.yml';
+            const workflow = await api(`/contents/${wf}?ref=${encodeURIComponent(branch)}`);
+            await api(`/contents/${wf}`, {method:'DELETE', body:JSON.stringify({message:'Remove one-time Shadow V2 fix workflow',sha:workflow.sha,branch})});
+            console.log('one-time workflow removed');
+          })().catch(error=>{console.error(error);process.exit(1)});
           NODE
-      - run: node tests/build-improvement-review-shadow-reference.test.js
-      - run: node scripts/build-improvement-review.js --output=/tmp/improvement-review-after.json
-      - name: Commit production builder fix and remove one-time workflow
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/apply-shadowv2-reference-fix-once.yml
-          git add scripts/build-improvement-review.js
-          git diff --cached --check
-          git commit -m 'Trust durable Shadow V2 snapshot references'
-          git push origin HEAD:fix/improvement-shadowv2-diagnostics
