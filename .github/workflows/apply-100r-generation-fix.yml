@@ -23,8 +23,7 @@ jobs:
           node <<'NODE'
           const fs = require('node:fs');
           const calibrationPath = 'js/prediction-calibration.js';
-          const diagnosticsWorkflowPath = '.github/workflows/check-improvement-shadowv2-diagnostics.yml';
-          const collectWorkflowPath = '.github/workflows/collect-results.yml';
+          const harnessPath = 'scripts/test-improvement-review.js';
           const testPath = 'tests/prediction-generation-contract.test.js';
           const oldVersion = 'practical-5-7-10-v1';
           const currentVersion = 'practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1';
@@ -39,22 +38,17 @@ jobs:
           const test = `"use strict";\nconst assert=require("node:assert/strict");\nconst fs=require("node:fs");\nconst calibration=require("../js/prediction-calibration");\nconst source=fs.readFileSync(require.resolve("../js/practical-selection"),"utf8");\nconst versions=[...source.matchAll(/ticketPolicyVersion:\\s*"([^"]+)"/g)].map(match=>match[1]);\nassert.ok(versions.length>0,"production ticket policy version must be stamped into verification evidence");\nassert.equal(new Set(versions).size,1,"production verification evidence must use one ticket policy version");\nassert.equal(calibration.DEFAULT_GENERATION.ticketPolicyVersion,versions[0],"100R/calibration active generation must match production verification evidence ticket policy");\nconsole.log("prediction generation contract passed:",versions[0]);\n`;
           fs.writeFileSync(testPath, test);
 
-          let diagnostics = fs.readFileSync(diagnosticsWorkflowPath, 'utf8');
-          if (!diagnostics.includes("      - 'js/prediction-calibration.js'")) {
-            diagnostics = diagnostics.replace("      - 'scripts/build-improvement-review.js'\n", "      - 'scripts/build-improvement-review.js'\n      - 'js/prediction-calibration.js'\n      - 'js/practical-selection.js'\n      - 'tests/prediction-generation-contract.test.js'\n");
+          let harness = fs.readFileSync(harnessPath, 'utf8');
+          const requireLine = `require("../tests/prediction-generation-contract.test.js");`;
+          if (!harness.includes(requireLine)) {
+            const marker = '"use strict";';
+            if (!harness.includes(marker)) throw new Error('test-improvement-review strict marker missing');
+            harness = harness.replace(marker, `${marker}\n${requireLine}`);
+            fs.writeFileSync(harnessPath, harness);
           }
-          if (!diagnostics.includes('node tests/prediction-generation-contract.test.js')) {
-            diagnostics = diagnostics.replace('      - run: node tests/build-improvement-review-shadow-reference.test.js\n', '      - run: node tests/build-improvement-review-shadow-reference.test.js\n      - run: node tests/prediction-generation-contract.test.js\n');
-          }
-          fs.writeFileSync(diagnosticsWorkflowPath, diagnostics);
-
-          let collect = fs.readFileSync(collectWorkflowPath, 'utf8');
-          if (!collect.includes('      - "js/prediction-calibration.js"')) {
-            collect = collect.replace('      - "js/practical-selection.js"\n', '      - "js/practical-selection.js"\n      - "js/prediction-calibration.js"\n');
-          }
-          fs.writeFileSync(collectWorkflowPath, collect);
           NODE
           node tests/prediction-generation-contract.test.js
+          node scripts/test-improvement-review.js
           node --check js/prediction-calibration.js
           node scripts/audit-improvement-shadowv2.js > /tmp/active-audit.json
           node -e 'const a=require("/tmp/active-audit.json"); console.log(JSON.stringify({counts:a.counts,mismatchDimensions:a.mismatchDimensions,active:a.active},null,2)); if(a.counts.activeGenerationEligibleBeforeDedupe<=0) process.exit(1)'
@@ -64,6 +58,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/prediction-calibration.js tests/prediction-generation-contract.test.js .github/workflows/check-improvement-shadowv2-diagnostics.yml .github/workflows/collect-results.yml
+          git add js/prediction-calibration.js tests/prediction-generation-contract.test.js scripts/test-improvement-review.js
           git commit -m "Align 100R active generation with production ticket policy"
           git push origin HEAD:fix/100r-active-generation-audit
