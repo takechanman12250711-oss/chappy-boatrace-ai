@@ -1,4 +1,5 @@
 "use strict";
+// Regression coverage for durable Shadow V2 references: explicit identity must not depend on selection.score equality.
 const assert = require("node:assert/strict");
 const { selectShadowV2Snapshot } = require("../scripts/build-improvement-review.js");
 
