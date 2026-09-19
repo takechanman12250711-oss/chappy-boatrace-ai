@@ -4,6 +4,9 @@ on:
     paths:
       - 'scripts/phase9-live-improvement-cycle.cjs'
       - 'tests/phase9-live-improvement-cycle.test.cjs'
+      - 'scripts/run-live-improvement-cycle.cjs'
+      - 'tests/run-live-improvement-cycle.test.cjs'
+      - 'scripts/build-learning-analysis-pipeline.js'
       - '.github/workflows/check-phase9-live-improvement-cycle.yml'
       - 'scripts/theory-validation-phase8-cycle.cjs'
 permissions:
@@ -19,7 +22,9 @@ jobs:
         with: {node-version: 20}
       - run: node --check scripts/phase9-live-improvement-cycle.cjs
       - run: node tests/phase9-live-improvement-cycle.test.cjs
-      - run: node scripts/phase9-live-improvement-cycle.cjs
+      - run: node --check scripts/run-live-improvement-cycle.cjs
+      - run: node tests/run-live-improvement-cycle.test.cjs
+      - run: node scripts/run-live-improvement-cycle.cjs
       - name: Guard production prediction files
         shell: bash
         run: |
