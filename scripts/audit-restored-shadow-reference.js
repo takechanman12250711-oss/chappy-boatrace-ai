@@ -4,12 +4,14 @@ const path = require("node:path");
 const restore = require("./restore-daily-prediction-source");
 const builder = require("./build-improvement-review");
 const review = require("../js/improvement-review");
+const calibration = require("../js/prediction-calibration");
 
 const ROOT = path.resolve(__dirname, "..");
 const DIR = path.join(ROOT, "data", "predictions");
 const STATS = path.join(ROOT, "data", "stats", "improvement-review.json");
 const ts = value => Date.parse(value?.capturedAt || value?.selectedAt || "") || 0;
 const ready = s => s?.complete === true && s?.calibrationEligible === true && String(s?.status || "").trim().toLowerCase() === "ready";
+const evidenceOf = record => record?.prediction?.verificationEvidence || record?.prediction?.practicalSelection?.verificationEvidence || null;
 
 restore.restorePredictionSources({ rootDirectory: ROOT, all: true });
 const config = JSON.parse(fs.readFileSync(STATS, "utf8"));
@@ -44,13 +46,50 @@ const counts = {
   uniqueExactTimestampReadyScoreMismatch: 0,
   ambiguousExactTimestamp: 0,
   noExactTimestamp: 0,
-  safeRecovered: 0
+  safeRecovered: 0,
+  assessmentEligible: 0,
+  assessmentEligibleActiveGeneration: 0,
+  assessmentEligibleNonActiveGeneration: 0,
+  activeIdentityDirect: 0,
+  activeIdentityDirectSettled: 0,
+  activeIdentityDirectReasons: {}
 };
 const examples = {};
 const add = (key, value) => {
   if (!examples[key]) examples[key] = [];
   if (examples[key].length < 3) examples[key].push(value);
 };
+const addReason = reason => {
+  counts.activeIdentityDirectReasons[reason] = Number(counts.activeIdentityDirectReasons[reason] || 0) + 1;
+};
+const directGenerationKey = record => {
+  const evidence = evidenceOf(record);
+  const generation = calibration.normalizeGeneration?.(evidence?.generation) || {};
+  const predictionKey = calibration.generationKey?.(generation) || "";
+  const selectorKey = String(record?.shadowV2?.cohortKey || record?.shadowV2Reference?.cohortKey || "");
+  const theoryKey = String(evidence?.theorySetFingerprint || "");
+  const threshold = Number(record?.selection?.threshold);
+  return review.reviewGenerationKey(predictionKey, selectorKey, theoryKey, threshold);
+};
+
+for (const record of collected.records) {
+  const assessment = review.assessReviewRecord(record);
+  if (assessment.eligible) {
+    counts.assessmentEligible++;
+    if (assessment.sample.generationKey === config.activeGenerationKey) {
+      counts.assessmentEligibleActiveGeneration++;
+    } else {
+      counts.assessmentEligibleNonActiveGeneration++;
+    }
+  }
+  const directKey = directGenerationKey(record);
+  if (directKey && directKey === config.activeGenerationKey) {
+    counts.activeIdentityDirect++;
+    if (record?.result?.settled === true || record?.officialResult?.settled === true) counts.activeIdentityDirectSettled++;
+    addReason(assessment.eligible ? "eligible" : String(assessment.reason || "unknown"));
+    if (!assessment.eligible) add(`activeIdentity:${assessment.reason || "unknown"}`, String(record?.raceKey || ""));
+  }
+}
 
 const recovered = collected.records.map(record => {
   if (record?.shadowV2) return record;
