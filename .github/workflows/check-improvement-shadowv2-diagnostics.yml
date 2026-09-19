@@ -3,7 +3,9 @@ on:
   pull_request:
     paths:
       - 'scripts/audit-improvement-shadowv2.js'
+      - 'scripts/build-improvement-review.js'
       - 'tests/audit-improvement-shadowv2.test.js'
+      - 'tests/build-improvement-review-shadow-reference.test.js'
       - '.github/workflows/check-improvement-shadowv2-diagnostics.yml'
 permissions: {contents: read}
 jobs:
@@ -15,6 +17,11 @@ jobs:
         with: {node-version: 20}
       - run: node --check scripts/audit-improvement-shadowv2.js
       - run: node tests/audit-improvement-shadowv2.test.js
+      - run: node tests/build-improvement-review-shadow-reference.test.js
       - name: Run real-data Shadow V2 audit
         run: node scripts/audit-improvement-shadowv2.js
+      - name: Build post-fix 100R review from real data
+        run: |
+          node scripts/build-improvement-review.js --output=/tmp/improvement-review-after.json
+          node -e 'const r=require("/tmp/improvement-review-after.json"); console.log(JSON.stringify({source:r.source,progress:r.progress,activeGenerationKey:r.activeGenerationKey},null,2))'
       - run: node scripts/check-charter.js
