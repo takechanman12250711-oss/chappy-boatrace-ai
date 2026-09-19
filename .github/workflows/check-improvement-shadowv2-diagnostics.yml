@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'scripts/audit-improvement-shadowv2.js'
+      - 'scripts/audit-restored-shadow-reference.js'
       - 'scripts/build-improvement-review.js'
       - 'tests/audit-improvement-shadowv2.test.js'
       - 'tests/build-improvement-review-shadow-reference.test.js'
@@ -16,6 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - run: node --check scripts/audit-improvement-shadowv2.js
+      - run: node --check scripts/audit-restored-shadow-reference.js
       - run: node tests/audit-improvement-shadowv2.test.js
       - run: node tests/build-improvement-review-shadow-reference.test.js
       - name: Run real-data Shadow V2 audit
@@ -24,4 +26,6 @@ jobs:
         run: |
           node scripts/build-improvement-review.js --output=/tmp/improvement-review-after.json
           node -e 'const r=require("/tmp/improvement-review-after.json"); console.log(JSON.stringify({source:r.source,progress:r.progress,activeGenerationKey:r.activeGenerationKey},null,2))'
+      - name: Audit canonical restored sources and safe fallback
+        run: node scripts/audit-restored-shadow-reference.js
       - run: node scripts/check-charter.js
