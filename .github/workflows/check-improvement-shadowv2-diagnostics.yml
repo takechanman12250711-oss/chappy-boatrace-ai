@@ -6,8 +6,9 @@ on:
       - 'scripts/build-improvement-review.js'
       - 'tests/audit-improvement-shadowv2.test.js'
       - 'tests/build-improvement-review-shadow-reference.test.js'
+      - 'tests/build-improvement-review-active-generation.test.js'
       - '.github/workflows/check-improvement-shadowv2-diagnostics.yml'
-permissions: {contents: read}
+permissions: {contents: write}
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -25,3 +26,73 @@ jobs:
           node scripts/build-improvement-review.js --output=/tmp/improvement-review-after.json
           node -e 'const r=require("/tmp/improvement-review-after.json"); console.log(JSON.stringify({source:r.source,progress:r.progress,activeGenerationKey:r.activeGenerationKey},null,2))'
       - run: node scripts/check-charter.js
+
+  apply_fix:
+    needs: audit
+    if: github.head_ref == 'audit/100r-active-generation' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: audit/100r-active-generation
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - name: Apply coherent generation inference
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/build-improvement-review.js')
+          s=p.read_text()
+          anchor='''function selectShadowV2Snapshot(\n  snapshots,\n  record\n) {'''
+          helper='''function predictionEvidenceOf(record) {\n  const prediction =\n    record?.prediction || {};\n  return (\n    prediction\n      .verificationEvidence ||\n    prediction\n      .practicalSelection\n      ?.verificationEvidence ||\n    null\n  );\n}\n\nfunction predictionGenerationOf(record) {\n  const generation =\n    calibration\n      ?.normalizeGeneration?.(\n        predictionEvidenceOf(record)\n          ?.generation\n      ) || {};\n  const key =\n    calibration\n      ?.generationKey?.(\n        generation\n      ) || \"\";\n  return key ? generation : null;\n}\n\nfunction predictionRecordTimestamp(record) {\n  return [\n    record?.selectedAt,\n    record?.capturedAt,\n    record?.deadlineAt,\n    record?.result?.settledAt\n  ]\n    .map(value =>\n      Date.parse(value || \"\")\n    )\n    .find(Number.isFinite) || 0;\n}\n\nfunction inferActiveGenerationForSelectorCohort(\n  records,\n  selectorSnapshot\n) {\n  const cohortKey =\n    String(\n      selectorSnapshot\n        ?.cohortKey || \"\"\n    );\n  if (!cohortKey) return null;\n\n  const selectorRecordKey =\n    String(\n      selectorSnapshot\n        ?.recordKey || \"\"\n    );\n  const candidates =\n    (Array.isArray(records)\n      ? records\n      : [])\n      .map(record => ({\n        record,\n        generation:\n          predictionGenerationOf(\n            record\n          )\n      }))\n      .filter(candidate =>\n        candidate.generation &&\n        String(\n          candidate\n            .record\n            ?.shadowV2\n            ?.cohortKey || \"\"\n        ) === cohortKey\n      );\n\n  const newest = rows =>\n    [...rows].sort(\n      (left, right) =>\n        predictionRecordTimestamp(\n          right.record\n        ) -\n        predictionRecordTimestamp(\n          left.record\n        )\n    )[0] || null;\n\n  const exact =\n    selectorRecordKey\n      ? newest(\n          candidates.filter(\n            candidate =>\n              String(\n                candidate\n                  .record\n                  ?.shadowV2\n                  ?.recordKey || \"\"\n              ) ===\n              selectorRecordKey\n          )\n        )\n      : null;\n\n  return (\n    exact?.generation ||\n    newest(candidates)\n      ?.generation ||\n    null\n  );\n}\n\n'''
+          if helper.strip() not in s:
+              if anchor not in s: raise SystemExit('helper anchor not found')
+              s=s.replace(anchor,helper+anchor,1)
+          old='''  const builtWithArchives =\n    improvementReview\n      .buildImprovementReview(\n        collected.records,\n        {\n          activeGeneration:\n            options\n              .activeGeneration ||\n            calibration\n              .DEFAULT_GENERATION,'''
+          new='''  const inferredActiveGeneration =\n    inferActiveGenerationForSelectorCohort(\n      collected.records,\n      latestSelectorSnapshot\n    );\n  const builtWithArchives =\n    improvementReview\n      .buildImprovementReview(\n        collected.records,\n        {\n          activeGeneration:\n            options\n              .activeGeneration ||\n            inferredActiveGeneration ||\n            calibration\n              .DEFAULT_GENERATION,'''
+          if old not in s: raise SystemExit('active generation block not found')
+          s=s.replace(old,new,1)
+          old_export='''  collectPredictionRecords,\n  selectShadowV2Snapshot,'''
+          new_export='''  collectPredictionRecords,\n  inferActiveGenerationForSelectorCohort,\n  selectShadowV2Snapshot,'''
+          if old_export not in s: raise SystemExit('export block not found')
+          s=s.replace(old_export,new_export,1)
+          p.write_text(s)
+
+          Path('tests/build-improvement-review-active-generation.test.js').write_text(r'''"use strict";
+const assert=require("node:assert/strict");
+const calibration=require("../js/prediction-calibration");
+const {inferActiveGenerationForSelectorCohort}=require("../scripts/build-improvement-review.js");
+const generation=version=>({logicFingerprint:"evaluated-scenarios-v1",confidenceDefinitionVersion:"internal-score-v1",ticketPolicyVersion:version});
+const record=(version,cohort,shadowKey,selectedAt)=>({selectedAt,prediction:{verificationEvidence:{generation:generation(version)}},shadowV2:{cohortKey:cohort,recordKey:shadowKey}});
+const rows=[record("old-policy","cohort-current","other-shadow","2026-09-19T08:00:00.000Z"),record("current-policy","cohort-current","selector-shadow","2026-09-19T07:00:00.000Z"),record("newer-unrelated-policy","other-cohort","unrelated-shadow","2026-09-19T09:00:00.000Z")];
+const exact=inferActiveGenerationForSelectorCohort(rows,{cohortKey:"cohort-current",recordKey:"selector-shadow"});
+assert.equal(calibration.generationKey(exact),calibration.generationKey(generation("current-policy")));
+const fallback=inferActiveGenerationForSelectorCohort(rows,{cohortKey:"cohort-current",recordKey:"missing-shadow"});
+assert.equal(calibration.generationKey(fallback),calibration.generationKey(generation("old-policy")));
+assert.equal(inferActiveGenerationForSelectorCohort(rows,{cohortKey:"missing-cohort"}),null);
+console.log("coherent 100R active generation inference passed");
+''')
+          PY
+      - name: Verify repaired review on real data
+        run: |
+          node --check scripts/build-improvement-review.js
+          node tests/build-improvement-review-active-generation.test.js
+          node tests/build-improvement-review-shadow-reference.test.js
+          node scripts/build-improvement-review.js --output=/tmp/improvement-review-coherent.json
+          node - <<'NODE'
+          const r=require('/tmp/improvement-review-coherent.json');
+          console.log(JSON.stringify({activeGeneration:r.activeGeneration,activeGenerationKey:r.activeGenerationKey,source:r.source,progress:r.progress},null,2));
+          if (!(r.source.eligibleCount > 0)) throw new Error('100R review is still stuck at zero');
+          NODE
+          node scripts/check-charter.js
+      - name: Restore diagnostics and commit only the fix
+        run: |
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/check-improvement-shadowv2-diagnostics.yml scripts/audit-improvement-shadowv2.js tests/audit-improvement-shadowv2.test.js
+          git rm -f .github/workflows/oneoff-100r-active-generation-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/build-improvement-review.js tests/build-improvement-review-active-generation.test.js
+          git commit -m 'Fix coherent 100R active generation inference [skip ci]'
+          git push origin HEAD:audit/100r-active-generation
