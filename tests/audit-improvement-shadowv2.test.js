@@ -1,1 +1,11 @@
-"use strict";const assert=require("node:assert");const cp=require("node:child_process");const out=JSON.parse(cp.execFileSync(process.execPath,["scripts/audit-improvement-shadowv2.js"],{encoding:"utf8"}));assert.strictEqual(out.productionChanged,false);assert.ok(out.counts.records>=0);for(const [k,v] of Object.entries(out.examples))assert.ok(v.length<=3,k);console.log("shadowV2 diagnostics passed");
+"use strict";
+const assert=require("node:assert/strict");
+const cp=require("node:child_process");
+const out=JSON.parse(cp.execFileSync(process.execPath,["scripts/audit-improvement-shadowv2.js"],{encoding:"utf8"}));
+assert.strictEqual(out.productionChanged,false);
+assert.strictEqual(out.schemaVersion,2);
+assert.ok(out.official&&Number.isFinite(out.official.sourceCount));
+assert.ok(typeof out.official.activeGenerationKey==="string");
+assert.ok(out.activeRaw&&Number.isFinite(out.activeRaw.count));
+assert.ok(Array.isArray(out.topRawGenerationKeys));
+console.log("active 100R generation diagnostics passed");
