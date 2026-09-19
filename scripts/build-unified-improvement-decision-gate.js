@@ -1,7 +1,11 @@
 "use strict";
 const fs=require("node:fs"),path=require("node:path");
+const phase8=require("./theory-validation-phase8-cycle.cjs");
+const phase9=require("./phase9-live-improvement-cycle.cjs");
 const root=path.resolve(__dirname,"..");
 const stats=path.join(root,"data","stats"),OUT=path.join(stats,"unified-improvement-decision-gate.json");
+const PHASE8_OUT=path.join(stats,"theory-validation-phase8-cycle.json");
+const PHASE9_OUT=path.join(stats,"phase9-live-improvement-cycle.json");
 const SOURCES=[
   ["frame-shadow-off","frame-rise-fall-shadow-result-report.json"],
   ["frame-negative-clip","frame-rise-fall-negative-clip-result-report.json"],
@@ -40,7 +44,33 @@ function normalize(id,file,r){
   }
   return{id,file,status:"available",affectedSettledCount:affected,minimumAffectedSettledCount:min,aRecoveryRate:aRec,bRecoveryRate:bRec,aProfit,bProfit,decision,reason,automaticApplication:false,requiresUserApproval:true};
 }
+function comparableReport(value){
+  if(!value||typeof value!=="object")return value;
+  return{...value,generatedAt:""};
+}
+function writeStableReport(filePath,report){
+  let previous=null;
+  if(fs.existsSync(filePath)){try{previous=JSON.parse(fs.readFileSync(filePath,"utf8"));}catch{previous=null;}}
+  if(previous&&JSON.stringify(comparableReport(previous))===JSON.stringify(comparableReport(report)))return{changed:false,report:previous};
+  fs.mkdirSync(path.dirname(filePath),{recursive:true});
+  fs.writeFileSync(filePath,JSON.stringify(report,null,2)+"\n");
+  return{changed:true,report};
+}
+function refreshLiveImprovementArtifacts(){
+  const phase8Report=phase8.build();
+  const phase9Report=phase9.build(phase9.load(),{phase8Report});
+  if(phase8Report.phaseComplete!==true)throw new Error("phase8 live improvement cycle is incomplete");
+  if(phase9Report.phaseComplete!==true)throw new Error("phase9 live improvement cycle is incomplete");
+  const saved8=writeStableReport(PHASE8_OUT,phase8Report);
+  const saved9=writeStableReport(PHASE9_OUT,phase9Report);
+  return{
+    productionChanged:false,
+    phase8:{...phase8Report.summary,artifactChanged:saved8.changed,phaseComplete:true},
+    phase9:{...phase9Report.summary,artifactChanged:saved9.changed,phaseComplete:true},
+    audit:{duplicateRaceRecords:phase9Report.audit.duplicateRaceRecords,ambiguousMissReasons:phase9Report.audit.ambiguousMissReasons,rejectedCandidateRetest:phase9Report.audit.rejectedCandidateRetest,brokenHandoff:phase9Report.audit.brokenHandoff}
+  };
+}
 function build(){const items=SOURCES.map(([id,f])=>normalize(id,f,read(f)));const counts=items.reduce((a,x)=>(a[x.decision]=(a[x.decision]||0)+1,a),{});return{schemaVersion:2,generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,requiresUserApproval:true,sourceCount:SOURCES.length,availableSourceCount:items.filter(x=>x.status==="available").length,allSourcesConnected:items.every(x=>x.status==="available"),policy:"必要件数到達後も自動本番反映しない。BがAの回収率と収支を改善した候補だけユーザー承認へ送る。",counts,items};}
-function main(){const r=build();fs.writeFileSync(OUT,JSON.stringify(r,null,2)+"\n");if(!r.allSourcesConnected){console.error("unified gate source connection incomplete");process.exitCode=1;}console.log(JSON.stringify(r,null,2));}
+function main(){const liveImprovement=refreshLiveImprovementArtifacts();const r={...build(),liveImprovement};fs.writeFileSync(OUT,JSON.stringify(r,null,2)+"\n");if(!r.allSourcesConnected){console.error("unified gate source connection incomplete");process.exitCode=1;}console.log(JSON.stringify(r,null,2));}
 if(require.main===module)main();
-module.exports={SOURCES,num,terminalRejection,normalize,build};
+module.exports={SOURCES,PHASE8_OUT,PHASE9_OUT,num,terminalRejection,normalize,comparableReport,writeStableReport,refreshLiveImprovementArtifacts,build};
