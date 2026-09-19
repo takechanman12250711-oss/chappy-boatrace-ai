@@ -159,10 +159,7 @@ function selectShadowV2Snapshot(
           referenceRecordKey
       ) ||
       null;
-    if (
-      !matched ||
-      !scoreMatches(matched)
-    ) {
+    if (!matched) {
       return null;
     }
 
