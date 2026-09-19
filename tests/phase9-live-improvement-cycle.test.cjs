@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert');
-const {build}=require('../scripts/phase9-live-improvement-cycle.cjs');
+const {build,recordsFromIndex}=require('../scripts/phase9-live-improvement-cycle.cjs');
 const rows=[
  {raceKey:'A',resultMatched:true,result:{trifecta:'1-2-3'},finalTickets:['1-2-3'],logicFingerprint:'g1'},
  {raceKey:'B',resultMatched:true,result:{trifecta:'2-1-3'},finalTickets:['1-2-3'],predictedHead:'1',logicFingerprint:'g1'},
@@ -26,4 +26,18 @@ assert.ok(out.rows.some(x=>x.missReason==='THEORY_TRIGGERED_TICKETS_UNCHANGED'))
 assert.ok(out.rows.some(x=>x.missReason==='RATED_BOAT_NOT_PROPAGATED'));
 assert.ok(out.rows.some(x=>x.missReason==='TICKET_CAP_DROP'));
 assert.ok(out.patterns.every(x=>x.status==='INSUFFICIENT_EVIDENCE'&&x.candidate===null));
+
+const materialized=recordsFromIndex({format:'chappy-prediction-index-manifest',collections:{predictions:{shards:[{path:'a.json'},{path:'b.json'}]}}},p=>p==='a.json'?{records:[{raceKey:'M1'}]}:{records:[{raceKey:'M2'}]});
+assert.deepStrictEqual(materialized.map(x=>x.raceKey),['M1','M2']);
+
+const current=build([
+ {raceKey:'N1',officialResult:{confirmed:true,combination:'1-2-3'},shadowV2Reference:{logicFingerprint:'current-g1'},prediction:{practicalTickets:[{ticket:'1-2-3'}],verificationEvidence:{mainScenario:{headBoatNo:1},generation:{logicFingerprint:'current-g1'},theoryClaims:[{theoryKey:'flow'},{theoryKey:'holdPickup'}]}}},
+ {raceKey:'N2',officialResult:{confirmed:true,combination:'2-1-3'},shadowV2Reference:{logicFingerprint:'current-g1'},prediction:{practicalTickets:[{ticket:'1-2-3'}],verificationEvidence:{mainScenario:{headBoatNo:1},theoryClaims:[{theoryKey:'flow'}]}}}
+]);
+assert.strictEqual(current.summary.matchedRows,2);
+assert.strictEqual(current.summary.hits,1);
+assert.strictEqual(current.summary.misses,1);
+assert.strictEqual(current.rows[0].logicFingerprint,'current-g1');
+assert.deepStrictEqual(current.rows[0].theoryIds,['flow','holdPickup']);
+assert.strictEqual(current.rows[1].missReason,'HEAD_MISS');
 console.log('phase9 live improvement cycle tests passed');
