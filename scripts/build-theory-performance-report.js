@@ -7,9 +7,11 @@ const evaluator = require("../js/theory-evaluation-engine");
 const verification = require("../js/prediction-verification");
 const inputContract = require("./analysis-input-contract");
 const zeroDiagnostics = require("./theory-zero-evidence-diagnostics");
+const venueProfile = require("../js/venue-theory-profile");
 
 const root = path.resolve(__dirname, "..");
 const out = path.join(root, "data", "stats", "theory-performance-report.json");
+const venueProfileOut = path.join(root, "data", "stats", "venue-theory-profile.json");
 const ANALYSIS_INPUT_CONTRACT =
   "official-pre-deadline-cohort-v1";
 
@@ -90,7 +92,10 @@ function main() {
   };
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, JSON.stringify(built, null, 2) + "\n");
+  const venueBuilt = venueProfile.build(built);
+  fs.writeFileSync(venueProfileOut, JSON.stringify(venueBuilt, null, 2) + "\n");
   console.log(`理論別成績：${built.byTheory.length}理論／${built.sampleCount}評価行`);
+  console.log(`場別実戦傾向：${venueBuilt.venueCount}場／シナリオ ${venueBuilt.scenarioCoverage}`);
   console.log("0件理論診断詳細:");
   console.log(JSON.stringify(built.zeroEvidenceDiagnostics, null, 2));
 }
@@ -100,5 +105,6 @@ module.exports = {
   ANALYSIS_INPUT_CONTRACT,
   officialPayout,
   normalizeCohortRecord,
-  collect
+  collect,
+  venueProfileOut
 };
