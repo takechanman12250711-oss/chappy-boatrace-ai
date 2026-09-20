@@ -1,0 +1,1 @@
+'use strict';const assert=require('node:assert');const x=require('../scripts/build-weak-theory-cause-breakdown.cjs').build();assert.strictEqual(x.productionChanged,false);assert.strictEqual(x.automaticProductionChange,false);console.log('weak theory cause breakdown passed');
