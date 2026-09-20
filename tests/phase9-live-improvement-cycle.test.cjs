@@ -44,7 +44,7 @@ assert.strictEqual(current.summary.misses,1);
 assert.strictEqual(current.rows[0].logicFingerprint,'current-g1');
 assert.deepStrictEqual(current.rows[0].theoryIds,['flow','holdPickup']);
 assert.strictEqual(current.rows[1].missReason,'HEAD_MISS');
-assert.strictEqual(resultCombo(current.rows[2]),'321');
+assert.strictEqual(current.rows[2].result,'321');
 
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'chappy-phase9-current-'));
 try{
