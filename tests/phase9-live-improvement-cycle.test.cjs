@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert');
-const {build,recordsFromIndex}=require('../scripts/phase9-live-improvement-cycle.cjs');
+const {build,mergePrimaryRecords,primaryRecordsFromDailyDoc,recordsFromIndex}=require('../scripts/phase9-live-improvement-cycle.cjs');
 const rows=[
  {raceKey:'A',resultMatched:true,result:{trifecta:'1-2-3'},finalTickets:['1-2-3'],logicFingerprint:'g1'},
  {raceKey:'B',resultMatched:true,result:{trifecta:'2-1-3'},finalTickets:['1-2-3'],predictedHead:'1',logicFingerprint:'g1'},
@@ -29,6 +29,17 @@ assert.ok(out.patterns.every(x=>x.status==='INSUFFICIENT_EVIDENCE'&&x.candidate=
 
 const materialized=recordsFromIndex({format:'chappy-prediction-index-manifest',collections:{predictions:{shards:[{path:'a.json'},{path:'b.json'}]}}},p=>p==='a.json'?{records:[{raceKey:'M1'}]}:{records:[{raceKey:'M2'}]});
 assert.deepStrictEqual(materialized.map(x=>x.raceKey),['M1','M2']);
+
+const dailyPrimary=primaryRecordsFromDailyDoc({
+ predictions:[{raceKey:'M2',prediction:{practicalTickets:['2-1-3']}},{raceKey:'M3'}],
+ verificationPredictions:[{raceKey:'VERIFY-ONLY'}]
+},'20260920');
+assert.deepStrictEqual(dailyPrimary.map(x=>x.raceKey),['M2','M3']);
+assert.ok(dailyPrimary.every(x=>x.date==='20260920'));
+const merged=mergePrimaryRecords(materialized,dailyPrimary);
+assert.deepStrictEqual(merged.map(x=>x.raceKey),['M1','M2','M3']);
+assert.deepStrictEqual(merged.find(x=>x.raceKey==='M2').prediction.practicalTickets,['2-1-3']);
+assert.ok(!merged.some(x=>x.raceKey==='VERIFY-ONLY'));
 
 const current=build([
  {raceKey:'N1',officialResult:{confirmed:true,combination:'1-2-3'},shadowV2Reference:{logicFingerprint:'current-g1'},prediction:{practicalTickets:[{ticket:'1-2-3'}],verificationEvidence:{mainScenario:{headBoatNo:1},generation:{logicFingerprint:'current-g1'},theoryClaims:[{theoryKey:'flow'},{theoryKey:'holdPickup'}]}}},
