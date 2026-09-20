@@ -90,7 +90,7 @@ function officialResult({
 }
 
 const records = [
-  { raceKey: "20260802-20-8", jcd: "20", place: "若松", prediction: { skipAiDisplay: { decision: "bet-candidate" } }, theoryEvaluationSnapshot: { evaluations: evaluations("wall-boat", true, ["1-4-3", "1-2-4"]) }, result: { settled: true, resultTicket: "1-4-3", payout: 1240, practicalHit: true, verification: { scenarioHit: true } } },
+  { raceKey: "20260802-20-8", jcd: "20", place: "若松", prediction: { skipAiDisplay: { decision: "bet-candidate" }, scenarioAiV6Shadow: { scenarios: [{ type: "escape", label: "1逃げ", likelihood: 70 }] } }, theoryEvaluationSnapshot: { evaluations: evaluations("wall-boat", true, ["1-4-3", "1-2-4"]) }, result: { settled: true, resultTicket: "1-4-3", payout: 1240, practicalHit: true, verification: { scenarioHit: true } } },
   { raceKey: "20260802-20-9", jcd: "20", place: "若松", prediction: { skipAiDisplay: { decision: "skip" } }, theoryEvaluationSnapshot: { evaluations: evaluations("wall-boat", false, ["1-3-4"]) }, result: { settled: true, resultTicket: "2-1-4", payout: 3000, practicalHit: false, verification: { scenarioHit: false } } },
   { raceKey: "20260802-20-10", jcd: "20", place: "若松", prediction: { skipAiDisplay: { decision: "caution" } }, theoryEvaluationSnapshot: { evaluations: evaluations("wall-boat", false, ["1-3-4"]) }, result: { settled: true, resultTicket: "3-1-4", payout: 900, review: { practicalHit: false }, verification: { scenarioHit: false } } }
 ];
@@ -104,6 +104,10 @@ assert.equal(wall.raceCount, 3); assert.equal(wall.useCount, 3); assert.equal(wa
 const course = result.byTheory.find(row => row.theoryKey === "course");
 assert.equal(course.useCount, 0); assert.equal(course.evaluatedCount, 0); assert.equal(course.hitRate, null); assert.equal(course.recoveryRate, null); assert.equal(course.practicalHitRate, null); assert.equal(course.skipDecisionAccuracy, null);
 assert.equal(result.usableForPrediction, false); assert.equal(result.automaticApplication, false);
+assert.equal(result.byVenueScenarioTheory.length, 1);
+assert.equal(result.byVenueScenarioTheory[0].scenarioKey, "escape");
+assert.equal(result.byVenueScenarioTheory[0].scenarioLabel, "1逃げ");
+assert.deepEqual(api.primaryScenarioOf({ prediction: { verificationEvidence: { scenarios: [{ type: "sashi", label: "2差し" }] } } }), { scenarioKey: "sashi", scenarioLabel: "2差し" });
 assert.equal(result.theoryActionRanking.length, 12);
 assert.equal(result.theoryActionRanking.find(row => row.theoryKey === "wall-boat").action, "collect-more");
 assert.equal(api.actionOf({ evaluatedCount: 53, practicalHitRate: 25, recoveryRate: 110 }).action, "strengthen-candidate");

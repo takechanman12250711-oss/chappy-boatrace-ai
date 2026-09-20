@@ -1,0 +1,43 @@
+name: Check venue theory profile
+
+on:
+  pull_request:
+    paths:
+      - "js/theory-performance-report.js"
+      - "js/venue-theory-profile.js"
+      - "scripts/build-theory-performance-report.js"
+      - "scripts/test-theory-performance-report.js"
+      - "scripts/test-venue-theory-profile.js"
+      - "data/stats/venue-theory-profile.json"
+      - ".github/workflows/check-venue-theory-profile.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --check js/theory-performance-report.js
+      - run: node --check js/venue-theory-profile.js
+      - run: node --check scripts/build-theory-performance-report.js
+      - run: node scripts/test-theory-performance-report.js
+      - run: node scripts/test-venue-theory-profile.js
+      - name: Build real-data venue profile
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-theory-performance-report.js
+          node - <<'NODE'
+          const report = require("./data/stats/theory-performance-report.json");
+          const profile = require("./data/stats/venue-theory-profile.json");
+          if (!Array.isArray(report.byVenueScenarioTheory)) throw new Error("場別シナリオ理論集計がありません");
+          if (profile.venueCount !== 24 || profile.venues.length !== 24) throw new Error("24場が揃っていません");
+          if (profile.productionChanged !== false || profile.automaticProductionChange !== false || profile.usableForPrediction !== false) throw new Error("診断専用フラグ異常");
+          NODE
+      - run: node scripts/check-charter.js
