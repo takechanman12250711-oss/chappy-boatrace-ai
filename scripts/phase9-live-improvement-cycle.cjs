@@ -37,6 +37,34 @@ function recordsFromIndex(indexDoc,readShard){
  const shards=arr(indexDoc?.collections?.predictions?.shards);
  return shards.flatMap(s=>arr(readShard(String(s?.path||''))?.records));
 }
+function primaryRecordsFromDailyDoc(doc,date=''){
+ return arr(doc?.predictions).map(record=>{
+  if(record?.date||!/^\d{8}$/.test(String(date||'')))return record;
+  return{...record,date:String(date)};
+ });
+}
+function primaryRecordsFromDailyFiles(predictionDir=PREDICTION_DIR){
+ if(!fs.existsSync(predictionDir))return[];
+ return fs.readdirSync(predictionDir)
+  .filter(name=>/^\d{8}\.json$/.test(name))
+  .sort()
+  .flatMap(name=>{
+   const date=name.slice(0,8);
+   const file=path.join(predictionDir,name);
+   return primaryRecordsFromDailyDoc(readJson(file),date);
+  });
+}
+function recordIdentity(record){return String(record?.recordKey||record?.raceKey||record?.id||'');}
+function mergePrimaryRecords(indexRecords=[],dailyRecords=[]){
+ const keyed=new Map();
+ const unkeyed=[];
+ for(const record of [...arr(indexRecords),...arr(dailyRecords)]){
+  const key=recordIdentity(record);
+  if(!key){unkeyed.push(record);continue;}
+  keyed.set(key,record);
+ }
+ return[...keyed.values(),...unkeyed];
+}
 function resultKey(r){return `${String(r?.date||'')}-${String(r?.jcd||'').padStart(2,'0')}-${Number(r?.raceNo||0)}`;}
 function attachOfficialResults(records=[]){
  const byDate=new Map();
@@ -46,16 +74,20 @@ function attachOfficialResults(records=[]){
  return records.map(r=>{if(matched(r))return r;const rr=results.get(String(r?.raceKey||resultKey(r)));return rr?{...r,officialResult:{confirmed:true,combination:rr.trifecta.combination,payout:rr.trifecta.payout}}:r;});
 }
 function load(){
- const p=path.join(PREDICTION_DIR,'index.json');if(!fs.existsSync(p))return[];
- const index=readJson(p);
- const records=recordsFromIndex(index,rel=>{if(!rel)return null;const sp=path.join(PREDICTION_DIR,rel);return fs.existsSync(sp)?readJson(sp):null;});
- return attachOfficialResults(records);
+ const p=path.join(PREDICTION_DIR,'index.json');
+ let indexRecords=[];
+ if(fs.existsSync(p)){
+  const index=readJson(p);
+  indexRecords=recordsFromIndex(index,rel=>{if(!rel)return null;const sp=path.join(PREDICTION_DIR,rel);return fs.existsSync(sp)?readJson(sp):null;});
+ }
+ const dailyRecords=primaryRecordsFromDailyFiles(PREDICTION_DIR);
+ return attachOfficialResults(mergePrimaryRecords(indexRecords,dailyRecords));
 }
 function build(records=[],options={}){
  const seen=new Set(), rows=[], duplicates=[];
  for(const r of records){
   if(!matched(r))continue;
-  const raceKey=String(r?.recordKey||r?.raceKey||r?.id||'');
+  const raceKey=recordIdentity(r);
   if(!raceKey)continue;
   if(seen.has(raceKey)){duplicates.push(raceKey);continue;} seen.add(raceKey);
   const c=classify(r); if(!c)continue;
@@ -67,4 +99,4 @@ function build(records=[],options={}){
  return{schemaVersion:1,analysisId:'phase9-live-improvement-cycle-v1',generatedAt:new Date().toISOString(),productionChanged:false,summary:{matchedRows:rows.length,hits:rows.filter(x=>x.hit).length,misses:rows.filter(x=>!x.hit).length,duplicates:duplicates.length,patterns:patterns.length,eligibleCandidates:0},taxonomy:[...TAXONOMY],rows,patterns,handoff:{target:'scripts/theory-validation-phase8-cycle.cjs',eligibleCandidates:[],automaticProductionChange:false,approvalStop:'CANDIDATE_FOR_USER_APPROVAL'},audit:{phase8Complete:p8.phaseComplete===true,matchedOnly:true,duplicateRaceRecords:duplicates.length,ambiguousMissReasons:rows.filter(x=>!x.hit&&(!TAXONOMY.has(x.missReason)||!x.reason)).length,rejectedCandidateRetest:0,candidateFingerprintUnique:true,brokenHandoff:0,productionPredictionChanged:false},phaseComplete:p8.phaseComplete===true&&duplicates.length===0&&rows.every(x=>x.hit||TAXONOMY.has(x.missReason))};
 }
 if(require.main===module){const out=build(load());const a=process.argv.find(x=>x.startsWith('--output='));if(a){const d=path.resolve(ROOT,a.slice(9));fs.mkdirSync(path.dirname(d),{recursive:true});fs.writeFileSync(d,JSON.stringify(out,null,2)+'\n');}process.stdout.write(JSON.stringify(out,null,2)+'\n');if(!out.phaseComplete)process.exitCode=1;}
-module.exports={TAXONOMY,attachOfficialResults,build,classify,load,logicFingerprint,predictedHead,recordsFromIndex,theoryIds,tickets};
+module.exports={TAXONOMY,attachOfficialResults,build,classify,load,logicFingerprint,mergePrimaryRecords,predictedHead,primaryRecordsFromDailyDoc,primaryRecordsFromDailyFiles,recordIdentity,recordsFromIndex,theoryIds,tickets};
