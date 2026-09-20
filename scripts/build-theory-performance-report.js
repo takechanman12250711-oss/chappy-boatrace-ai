@@ -8,10 +8,13 @@ const verification = require("../js/prediction-verification");
 const inputContract = require("./analysis-input-contract");
 const zeroDiagnostics = require("./theory-zero-evidence-diagnostics");
 const venueProfile = require("../js/venue-theory-profile");
+const venueScenarioCandidates = require("../js/venue-scenario-improvement-candidates");
 
 const root = path.resolve(__dirname, "..");
 const out = path.join(root, "data", "stats", "theory-performance-report.json");
 const venueProfileOut = path.join(root, "data", "stats", "venue-theory-profile.json");
+const venueScenarioCandidateOut = path.join(root, "data", "stats", "venue-scenario-improvement-candidates.json");
+const twoCourseSashiEvidencePath = path.join(root, "data", "stats", "race-flow-2course-sashi-skip-ab-report.json");
 const ANALYSIS_INPUT_CONTRACT =
   "official-pre-deadline-cohort-v1";
 
@@ -94,8 +97,16 @@ function main() {
   fs.writeFileSync(out, JSON.stringify(built, null, 2) + "\n");
   const venueBuilt = venueProfile.build(built);
   fs.writeFileSync(venueProfileOut, JSON.stringify(venueBuilt, null, 2) + "\n");
+  const twoCourseSashiSkip = fs.existsSync(twoCourseSashiEvidencePath)
+    ? JSON.parse(fs.readFileSync(twoCourseSashiEvidencePath, "utf8"))
+    : {};
+  const candidateBuilt = venueScenarioCandidates.build(venueBuilt, {
+    twoCourseSashiSkip
+  });
+  fs.writeFileSync(venueScenarioCandidateOut, JSON.stringify(candidateBuilt, null, 2) + "\n");
   console.log(`理論別成績：${built.byTheory.length}理論／${built.sampleCount}評価行`);
   console.log(`場別実戦傾向：${venueBuilt.venueCount}場／シナリオ ${venueBuilt.scenarioCoverage}`);
+  console.log(`場×展開の改善候補：${candidateBuilt.discoveryCandidates.length}件／工程8へ直接移行 ${candidateBuilt.phase8HandoffSummary.eligibleForValidation}件`);
   console.log("0件理論診断詳細:");
   console.log(JSON.stringify(built.zeroEvidenceDiagnostics, null, 2));
 }
@@ -106,5 +117,7 @@ module.exports = {
   officialPayout,
   normalizeCohortRecord,
   collect,
-  venueProfileOut
+  venueProfileOut,
+  venueScenarioCandidateOut,
+  twoCourseSashiEvidencePath
 };
