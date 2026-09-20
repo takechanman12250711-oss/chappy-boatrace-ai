@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-09-19T17:55:29.123Z",
+  "generatedAt": "2026-09-20T02:48:44.542Z",
   "source": "scenarioAiV6ShadowAb + scenarioAiV6Verification",
   "logicFingerprint": "scenario-ai-v6-ab-decision-v1",
   "sourceLogicFingerprint": "scenario-ai-v6-multi-candidate-v2-actual-course",
@@ -9,20 +9,20 @@
   "activeMetadataReady": true,
   "activeInputSourceKind": "live-verification-evidence",
   "activeCandidateTrainingFingerprint": "c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
-  "activeCandidateTrainingCutoff": "2026-09-19T10:07:24.316Z",
+  "activeCandidateTrainingCutoff": "2026-09-19T17:55:09.465Z",
   "observation": {
-    "rawResultMatchedCount": 1001,
-    "resultMatchedCount": 1001,
+    "rawResultMatchedCount": 1012,
+    "resultMatchedCount": 1012,
     "duplicateRaceKeyExcludedCount": 0,
-    "currentGenerationCount": 689,
-    "currentSourceMatchedCount": 689,
-    "currentMetadataMatchedCount": 689,
-    "activeCohortObservedCount": 606,
-    "distributionChangedCount": 606,
-    "decisionChangedCount": 12,
-    "shadowComparisonReadyCount": 1,
-    "topFinishOrderDecisionDisagreementCount": 1,
-    "productionComparisonEligibleCount": 1,
+    "currentGenerationCount": 700,
+    "currentSourceMatchedCount": 700,
+    "currentMetadataMatchedCount": 700,
+    "activeCohortObservedCount": 617,
+    "distributionChangedCount": 617,
+    "decisionChangedCount": 13,
+    "shadowComparisonReadyCount": 2,
+    "topFinishOrderDecisionDisagreementCount": 2,
+    "productionComparisonEligibleCount": 2,
     "legacyTicketFallbackCount": 98,
     "candidateUnavailableCount": 0,
     "unchangedCount": 0,
@@ -35,18 +35,18 @@
     "excludedNonFinishOrderDecisionCount": 0
   },
   "overall": {
-    "comparableCount": 1,
-    "changedComparableCount": 1,
-    "aWins": 0,
+    "comparableCount": 2,
+    "changedComparableCount": 2,
+    "aWins": 1,
     "bWins": 1,
     "ties": 0,
     "aExactCount": 0,
     "bExactCount": 0,
-    "aFirstHitCount": 0,
+    "aFirstHitCount": 1,
     "bFirstHitCount": 1,
-    "bWinRate": 100,
+    "bWinRate": 50,
     "bExactLift": 0,
-    "bFirstHitLift": 1
+    "bFirstHitLift": 0
   },
   "firstHalf": {
     "comparableCount": 1,
@@ -63,18 +63,18 @@
     "bFirstHitLift": 1
   },
   "secondHalf": {
-    "comparableCount": 0,
-    "changedComparableCount": 0,
-    "aWins": 0,
+    "comparableCount": 1,
+    "changedComparableCount": 1,
+    "aWins": 1,
     "bWins": 0,
     "ties": 0,
     "aExactCount": 0,
     "bExactCount": 0,
-    "aFirstHitCount": 0,
+    "aFirstHitCount": 1,
     "bFirstHitCount": 0,
     "bWinRate": 0,
     "bExactLift": 0,
-    "bFirstHitLift": 0
+    "bFirstHitLift": -1
   },
   "byVenue": [
     {
@@ -92,6 +92,22 @@
       "bWinRate": 100,
       "bExactLift": 0,
       "bFirstHitLift": 1
+    },
+    {
+      "jcd": "13",
+      "place": "尼崎",
+      "comparableCount": 1,
+      "changedComparableCount": 1,
+      "aWins": 1,
+      "bWins": 0,
+      "ties": 0,
+      "aExactCount": 0,
+      "bExactCount": 0,
+      "aFirstHitCount": 1,
+      "bFirstHitCount": 0,
+      "bWinRate": 0,
+      "bExactLift": 0,
+      "bFirstHitLift": -1
     }
   ],
   "majorVenueRegression": [],
@@ -180,6 +196,75 @@
         "scenarioType": "escape"
       },
       "winner": "B"
+    },
+    {
+      "raceKey": "20260920-13-1",
+      "date": "20260920",
+      "jcd": "13",
+      "place": "尼崎",
+      "selectedAt": "2026-09-19T23:53:28.135Z",
+      "selectedTime": 1789862008135,
+      "capturedAt": "2026-09-19T23:53:28.135Z",
+      "changed": true,
+      "decisionChanged": true,
+      "distributionChanged": true,
+      "shadowComparisonReady": true,
+      "shadowInvariantReady": true,
+      "scoreableDecisionDisagreement": true,
+      "topFinishOrderDecisionDisagreement": true,
+      "productionComparisonEligible": true,
+      "currentGeneration": true,
+      "sourceLogicFingerprint": "scenario-ai-v6-multi-candidate-v2-actual-course",
+      "verificationLogicFingerprint": "scenario-ai-v6-multi-candidate-v2-actual-course",
+      "inputSourceKind": "live-verification-evidence",
+      "snapshotSourceKind": "live-verification-evidence",
+      "verificationSourceKind": "live-verification-evidence",
+      "candidateTrainingInputSourceKind": "live-verification-evidence",
+      "sourceKindMatches": true,
+      "candidateSetFingerprint": "scenario-type:fourAttack:-2|scenario-type:sashi:-2|scenario-type:threeAttack:-2",
+      "candidateTrainingFingerprint": "c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
+      "candidateTrainingCutoff": "2026-09-19T17:55:09.465Z",
+      "trainingMetadataReady": true,
+      "captureMatchesSelection": true,
+      "selectedAfterTrainingCutoff": true,
+      "temporalEligible": true,
+      "cohortKey": "scenario-ai-v6-multi-candidate-v2-actual-course|live-verification-evidence|scenario-type:fourAttack:-2|scenario-type:sashi:-2|scenario-type:threeAttack:-2|c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
+      "expectedCohortKey": "scenario-ai-v6-multi-candidate-v2-actual-course|live-verification-evidence|scenario-type:fourAttack:-2|scenario-type:sashi:-2|scenario-type:threeAttack:-2|c27bfafb4912c5ff5efc85c4bdfd955b4d6da78cc9722bb562ab1d8b0923e62c",
+      "cohortMetadataMatches": true,
+      "actualOrder": [
+        3,
+        1,
+        2
+      ],
+      "a": {
+        "ticket": "",
+        "predictedOrder": [
+          3,
+          1,
+          4
+        ],
+        "scoreSource": "finish-order",
+        "scoreable": true,
+        "exact": false,
+        "firstHit": true,
+        "top2Hit": true,
+        "scenarioType": "threeAttack"
+      },
+      "b": {
+        "ticket": "1-2-3",
+        "predictedOrder": [
+          1,
+          2,
+          4
+        ],
+        "scoreSource": "finish-order",
+        "scoreable": true,
+        "exact": false,
+        "firstHit": false,
+        "top2Hit": false,
+        "scenarioType": "escape"
+      },
+      "winner": "A"
     }
   ],
   "applicationMode": "shadow-only",
