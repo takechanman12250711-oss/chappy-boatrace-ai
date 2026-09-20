@@ -24,6 +24,8 @@ function scenarioLabel(record = {}) {
 }
 function selectedEpoch(record = {}) { const value = Date.parse(String(record.selectedAt || record.capturedAt || "")); return Number.isFinite(value) ? value : null; }
 function isProspective(record = {}) { const epoch = selectedEpoch(record); return epoch !== null && epoch >= Date.parse(PROSPECTIVE_CUTOFF); }
+function isProspectiveAt(record = {}, cutoff = PROSPECTIVE_CUTOFF) { const epoch = selectedEpoch(record); const cutoffEpoch = Date.parse(String(cutoff || "")); return epoch !== null && Number.isFinite(cutoffEpoch) && epoch >= cutoffEpoch; }
+function isStoredPreDeadline(record = {}) { const selected = selectedEpoch(record); const deadline = Date.parse(String(record.deadlineAt || "")); return selected !== null && Number.isFinite(deadline) && selected < deadline; }
 function practicalTickets(record = {}) { return tickets(record?.prediction?.practicalTickets || record?.prediction?.practicalSelection?.tickets); }
 function embeddedResult(record = {}) { const r = record.result || {}; if (r.settled && ticket(r.resultTicket)) return { trifecta: { combination: ticket(r.resultTicket), payout: Math.max(0, Number(r.payout || 0)) } }; return null; }
 function settle(rows, mode) {
@@ -41,14 +43,33 @@ function settle(rows, mode) {
   }
   return { settledCount, betRaceCount, skippedRaceCount, hitCount, hitRate: betRaceCount ? Math.round(hitCount / betRaceCount * 1000) / 10 : null, stake, return: returned, profit: returned - stake, recoveryRate: stake ? Math.round(returned / stake * 1000) / 10 : null };
 }
-function build(predDocs, resultDocs) {
+function collectCohort(predDocs, resultDocs, options = {}) {
   const results = resultMap(resultDocs);
+  const cutoff = options.cutoff || PROSPECTIVE_CUTOFF;
+  const venues = Array.isArray(options.venues)
+    ? new Set(options.venues.map(value => String(value).padStart(2, "0")))
+    : null;
   const selected = predDocs.flatMap(doc => Array.isArray(doc.predictions) ? doc.predictions : []);
   const verification = predDocs.flatMap(doc => Array.isArray(doc.verificationPredictions) ? doc.verificationPredictions : []);
-  const rows = [...verification.map(record => ({ record, sourcePriority: 0 })), ...selected.map(record => ({ record, sourcePriority: 1 }))].filter(row => isProspective(row.record)).map(row => ({ ...row, result: embeddedResult(row.record) || results.get(raceKey(row.record)) || null }));
+  const rows = [...verification.map(record => ({ record, sourcePriority: 0 })), ...selected.map(record => ({ record, sourcePriority: 1 }))]
+    .filter(row => isProspectiveAt(row.record, cutoff))
+    .filter(row => options.requirePreDeadline !== true || isStoredPreDeadline(row.record))
+    .filter(row => !venues || venues.has(String(row.record.jcd || "").padStart(2, "0")))
+    .map(row => ({
+      ...row,
+      result: options.officialResultsOnly === true
+        ? results.get(raceKey(row.record)) || null
+        : embeddedResult(row.record) || results.get(raceKey(row.record)) || null
+    }));
   const dedup = new Map();
-  for (const row of rows) { const key = raceKey(row.record); if (!dedup.has(key) || row.sourcePriority > dedup.get(key).sourcePriority) dedup.set(key, row); }
-  const cohort = [...dedup.values()];
+  for (const row of rows) {
+    const key = raceKey(row.record);
+    if (!dedup.has(key) || row.sourcePriority > dedup.get(key).sourcePriority) dedup.set(key, row);
+  }
+  return [...dedup.values()];
+}
+function build(predDocs, resultDocs) {
+  const cohort = collectCohort(predDocs, resultDocs);
   const targetRows = cohort.filter(row => scenarioLabel(row.record) === TARGET_LABEL);
   const a = settle(cohort, "A");
   const b = settle(cohort, "B");
@@ -73,4 +94,4 @@ function main() {
   console.log(`2コース差し prospective A/B: cohort ${report.cohort.raceCount}R / target settled ${report.cohort.targetSettledCount}R`);
 }
 if (require.main === module) main();
-module.exports = { build, settle, scenarioLabel, selectedEpoch, isProspective, TARGET_LABEL, PROSPECTIVE_CUTOFF };
+module.exports = { build, settle, collectCohort, scenarioLabel, selectedEpoch, isProspective, isProspectiveAt, isStoredPreDeadline, raceKey, TARGET_LABEL, PROSPECTIVE_CUTOFF };
