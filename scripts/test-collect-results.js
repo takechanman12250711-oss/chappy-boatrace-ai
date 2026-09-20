@@ -18,6 +18,11 @@ const {
 } = require(
   "./collect-results"
 );
+const {
+  parseResult
+} = require(
+  "../api/result"
+);
 
 function race(
   jcd,
@@ -42,6 +47,10 @@ function race(
       false,
     status:
       options.status,
+    void:
+      options.void,
+    finishers:
+      options.finishers,
     starts:
       options.starts,
     trifecta:
@@ -350,6 +359,41 @@ assert.equal(
   voidMerged.complete,
   true,
   "不成立を含め全レースが解決済みならcompleteにする"
+);
+
+const officialPartialVoidHtml = `
+<table>
+  <tr><th>着</th><th>枠</th><th>ボートレーサー</th><th>レースタイム</th></tr>
+  <tr><td>1</td><td>1</td><td>4365 盛本 真輔</td><td>1'50\"7</td></tr>
+  <tr><td>2</td><td>2</td><td>4730 土屋 実沙希</td><td>1'52\"7</td></tr>
+  <tr><td>F</td><td>3</td><td>3928 林 恵祐</td><td></td></tr>
+</table>
+<table>
+  <tr><th>勝式</th><th>組番</th><th>払戻金</th><th>人気</th></tr>
+  <tr><th>3連単</th><td>不成立</td><td><span class="is-payout1">¥100</span></td><td></td></tr>
+</table>
+`;
+const explicitVoid =
+  parseResult(
+    officialPartialVoidHtml
+  );
+assert.equal(
+  explicitVoid.resultAvailable,
+  false,
+  "3連単不成立を通常の3連単結果へ混ぜない"
+);
+assert.equal(
+  explicitVoid.void,
+  true,
+  "公式3連単不成立を解決済み不成立レースとして認識する"
+);
+assert.equal(
+  explicitVoid.status,
+  "void"
+);
+assert.equal(
+  explicitVoid.trifecta,
+  null
 );
 
 const tempDirectory =
