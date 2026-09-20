@@ -14,6 +14,7 @@ const WEAK_RECOVERY = 80;
 const PROFITABLE_RECOVERY = 100;
 
 function numberOrNull(value) {
+  if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
