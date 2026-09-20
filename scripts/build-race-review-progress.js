@@ -6,6 +6,45 @@ const { buildReport: performanceReport } = require('./build-candidate24-report')
 const { methodFingerprint } = require('./race-review-evidence');
 const valid = t => /^[1-6]-[1-6]-[1-6]$/.test(t) && new Set(t.split('-')).size === 3;
 const tickets = rows => Array.isArray(rows) ? [...new Set(rows.map(r => typeof r === 'string' ? r : r?.ticket))] : [];
+function classify(pool, practical, actual) {
+  if (pool.includes(actual)) return practical.includes(actual) ? 'both-hit' : 'candidate-only-hit';
+  if (practical.includes(actual)) return 'practical-only-hit';
+  if (!pool.some(t => t[0] === actual[0])) return 'candidate-head-missing';
+  if (!pool.some(t => t.slice(0, 3) === actual.slice(0, 3))) return 'candidate-first-second-pair-missing';
+  return 'candidate-third-missing';
+}
+function selectionReasons(prediction) {
+  const selection = prediction.practicalSelection || {}, reasons = {};
+  for (const d of [...(selection.candidateDecisions || []),
+    ...(selection.targetDecisions || []).flatMap(t => t.candidateDecisions || [])]) {
+    const ticket = d.ticket || d.combination;
+    if (!valid(ticket)) continue;
+    reasons[ticket] ||= [];
+    for (const reason of [d.reasonCode, ...(d.reasonCodes || [])]) {
+      if (typeof reason === 'string' && reason && !reasons[ticket].includes(reason)) reasons[ticket].push(reason);
+    }
+  }
+  return reasons;
+}
+function summarizeLosses(rows) {
+  const counts = Object.fromEntries(['both-hit', 'candidate-only-hit', 'practical-only-hit',
+    'candidate-head-missing', 'candidate-first-second-pair-missing', 'candidate-third-missing'].map(k => [k, 0]));
+  const recordedDecisionReasons = {};
+  let candidateOnlyReturn = 0, practicalOnlyReturn = 0;
+  for (const row of rows) {
+    counts[row.classification]++;
+    if (row.classification === 'candidate-only-hit') {
+      candidateOnlyReturn += row.payoutPer100;
+      for (const reason of row.recordedDecisionReasons.length ? row.recordedDecisionReasons : ['reason-not-recorded']) {
+        recordedDecisionReasons[reason] = (recordedDecisionReasons[reason] || 0) + 1;
+      }
+    }
+    if (row.classification === 'practical-only-hit') practicalOnlyReturn += row.payoutPer100;
+  }
+  return { races: rows.length, counts, nonSubsetRaces: rows.filter(r => r.practicalOutsideCandidate.length).length,
+    candidateOnlyReturn, practicalOnlyReturn,
+    netHitDifference: counts['candidate-only-hit'] - counts['practical-only-hit'], recordedDecisionReasons, rows };
+}
 function assess(bundle) {
   const r = bundle?.record, p = r?.prediction;
   if (!r || !p || r.raceKey !== `${r.date}-${r.jcd}-${r.raceNo}` || !/^\d{8}-(0[1-9]|1\d|2[0-4])-([1-9]|1[0-2])$/.test(r.raceKey)) return { reason: 'invalidIdentity' };
@@ -30,6 +69,7 @@ function assess(bundle) {
       practical.some(t => !baseline.includes(t))) return { reason: 'invalidTickets' };
   return { method: method ? `method:${method}` : `legacy:${bundle.sourceCommit}`, saved,
     row: { raceKey: r.raceKey, date: r.date, selectedAt: r.selectedAt, deadlineAt: r.deadlineAt,
+      selectionReasons: selectionReasons(p),
       prediction: { practicalTickets: practical, candidate24Tickets: pool, officialResultUsedForPrediction: false } } };
 }
 function buildProgress(bundles, results, { generatedAt = new Date().toISOString(), activeMethod = '' } = {}) {
@@ -47,17 +87,30 @@ function buildProgress(bundles, results, { generatedAt = new Date().toISOString(
     groups.get(item.method).push(item.row);
   }
   const cohorts = [...groups].map(([method, rows]) => {
-    const report = performanceReport(rows, results);
+    const diagnostics = [];
+    const report = performanceReport(rows, results, ({ row, pool, practical, result }) => {
+      const actual = result.trifecta.combination;
+      diagnostics.push({ raceKey: row.raceKey, selectedAt: row.selectedAt, actual,
+        payoutPer100: result.trifecta.payout, classification: classify(pool, practical, actual),
+        candidateTicketCount: pool.length, practicalTicketCount: practical.length,
+        practicalOutsideCandidate: practical.filter(t => !pool.includes(t)),
+        recordedDecisionReasons: row.selectionReasons[actual] || [] });
+    });
+    diagnostics.sort((a, b) => a.selectedAt.localeCompare(b.selectedAt) || a.raceKey.localeCompare(b.raceKey));
     const count = report.practical.races;
     return { method, legacy: method.startsWith('legacy:'), active: method === `method:${activeMethod}`,
       latestPredictionAt: rows.map(r => r.selectedAt).sort().at(-1), captured: rows.length,
       settled: count, pending: report.pending, excludedRefundOrVoid: report.excludedRefundOrVoid,
       unknownPayout: report.unknownPayout, completedWindows: Math.floor(count / 100),
       currentWindowCount: count % 100, nextReviewAt: (Math.floor(count / 100) + 1) * 100,
-      from: report.from, to: report.to, practical: report.practical, candidate24: report.candidate24 };
+      from: report.from, to: report.to, practical: report.practical, candidate24: report.candidate24,
+      selectionLoss: summarizeLosses(diagnostics) };
   }).sort((a, b) => b.latestPredictionAt.localeCompare(a.latestPredictionAt) || a.method.localeCompare(b.method));
   return { version: 'race-review-progress-v1', generatedAt, reviewSize: 100, unitYen: 100,
     predictionLogicChanged: false, autoApply: false, approvalRequired: true,
+    selectionLossContract: { version: 'race-review-selection-loss-v1', diagnosticOnly: true,
+      basis: 'Same settled cohort as race-review-progress; stored candidate tickets only.',
+      limitation: 'Missing tickets and saved decision reasons describe observations, not proven causes. Net hit difference is not gross selection omissions.' },
     captured: selected.size, settled: cohorts.reduce((sum, g) => sum + g.settled, 0),
     pending: cohorts.reduce((sum, g) => sum + g.pending, 0), excluded, cohorts };
 }
@@ -103,4 +156,4 @@ function main(root = process.cwd()) {
   return report;
 }
 if (require.main === module) main();
-module.exports = { assess, buildProgress, main };
+module.exports = { assess, buildProgress, classify, summarizeLosses, main };
