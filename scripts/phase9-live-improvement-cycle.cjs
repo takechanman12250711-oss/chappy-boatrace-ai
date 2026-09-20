@@ -3,6 +3,7 @@ const crypto=require('node:crypto');
 const fs=require('node:fs');
 const path=require('node:path');
 const phase8=require('./theory-validation-phase8-cycle.cjs');
+const inputContract=require('./analysis-input-contract');
 const ROOT=path.resolve(__dirname,'..');
 const PREDICTION_DIR=path.join(ROOT,'data','predictions');
 const RESULT_DIR=path.join(ROOT,'data','results');
@@ -12,7 +13,11 @@ const arr=v=>Array.isArray(v)?v:[];
 const readJson=p=>JSON.parse(fs.readFileSync(p,'utf8'));
 function ticketValues(r){return r?.finalTickets||r?.tickets||r?.prediction?.tickets||r?.prediction?.finalTickets||r?.prediction?.practicalTickets||r?.prediction?.practicalSelection?.tickets||[];}
 function tickets(r){return arr(ticketValues(r)).map(x=>typeof x==='string'?x:(x?.combination||x?.ticket||'')).filter(Boolean);}
-function resultCombo(r){return String(r?.result?.trifecta?.combination||r?.result?.trifecta||r?.result?.combination||r?.officialResult?.trifecta?.combination||r?.officialResult?.trifecta||r?.officialResult?.combination||'').replace(/[^1-6]/g,'');}
+function resultCombo(r){
+ const official=inputContract.actualTicket(r?.__officialResult||r?.officialResult||r?.result||{});
+ if(official)return official.replace(/[^1-6]/g,'');
+ return String(r?.result?.trifecta?.combination||r?.result?.trifecta||r?.result?.combination||r?.officialResult?.trifecta?.combination||r?.officialResult?.trifecta||r?.officialResult?.combination||'').replace(/[^1-6]/g,'');
+}
 function matched(r){return Boolean(r?.resultMatched===true||r?.officialResultMatched===true||r?.result?.confirmed===true||r?.officialResult?.confirmed===true||resultCombo(r).length===3);}
 function predictedHead(r){return String(r?.predictedHead||r?.prediction?.head||r?.marks?.head||r?.prediction?.verificationEvidence?.mainScenario?.headBoatNo||'');}
 function logicFingerprint(r){return r?.logicFingerprint||r?.cohortFingerprint||r?.shadowV2Reference?.logicFingerprint||r?.prediction?.verificationEvidence?.generation?.logicFingerprint||null;}
@@ -45,17 +50,18 @@ function attachOfficialResults(records=[]){
  for(const doc of byDate.values())for(const race of arr(doc?.races)){if(race?.resultAvailable===true&&race?.status==='finished'&&race?.trifecta?.combination)results.set(resultKey(race),race);}
  return records.map(r=>{if(matched(r))return r;const rr=results.get(String(r?.raceKey||resultKey(r)));return rr?{...r,officialResult:{confirmed:true,combination:rr.trifecta.combination,payout:rr.trifecta.payout}}:r;});
 }
-function load(){
- const p=path.join(PREDICTION_DIR,'index.json');if(!fs.existsSync(p))return[];
- const index=readJson(p);
- const records=recordsFromIndex(index,rel=>{if(!rel)return null;const sp=path.join(PREDICTION_DIR,rel);return fs.existsSync(sp)?readJson(sp):null;});
- return attachOfficialResults(records);
+function load(options={}){
+ const root=options.root||ROOT;
+ const predictionsDir=options.predictionsDir||path.join(root,'data','predictions');
+ const resultsDir=options.resultsDir||path.join(root,'data','results');
+ const cohort=inputContract.buildDefaultCohort({root,predictionsDir,resultsDir});
+ return cohort.records.filter(r=>tickets(r).length>0);
 }
 function build(records=[],options={}){
  const seen=new Set(), rows=[], duplicates=[];
  for(const r of records){
   if(!matched(r))continue;
-  const raceKey=String(r?.recordKey||r?.raceKey||r?.id||'');
+  const raceKey=String(r?.recordKey||r?.raceKey||r?.id||r?.__analysisRaceKey||'');
   if(!raceKey)continue;
   if(seen.has(raceKey)){duplicates.push(raceKey);continue;} seen.add(raceKey);
   const c=classify(r); if(!c)continue;
@@ -67,4 +73,4 @@ function build(records=[],options={}){
  return{schemaVersion:1,analysisId:'phase9-live-improvement-cycle-v1',generatedAt:new Date().toISOString(),productionChanged:false,summary:{matchedRows:rows.length,hits:rows.filter(x=>x.hit).length,misses:rows.filter(x=>!x.hit).length,duplicates:duplicates.length,patterns:patterns.length,eligibleCandidates:0},taxonomy:[...TAXONOMY],rows,patterns,handoff:{target:'scripts/theory-validation-phase8-cycle.cjs',eligibleCandidates:[],automaticProductionChange:false,approvalStop:'CANDIDATE_FOR_USER_APPROVAL'},audit:{phase8Complete:p8.phaseComplete===true,matchedOnly:true,duplicateRaceRecords:duplicates.length,ambiguousMissReasons:rows.filter(x=>!x.hit&&(!TAXONOMY.has(x.missReason)||!x.reason)).length,rejectedCandidateRetest:0,candidateFingerprintUnique:true,brokenHandoff:0,productionPredictionChanged:false},phaseComplete:p8.phaseComplete===true&&duplicates.length===0&&rows.every(x=>x.hit||TAXONOMY.has(x.missReason))};
 }
 if(require.main===module){const out=build(load());const a=process.argv.find(x=>x.startsWith('--output='));if(a){const d=path.resolve(ROOT,a.slice(9));fs.mkdirSync(path.dirname(d),{recursive:true});fs.writeFileSync(d,JSON.stringify(out,null,2)+'\n');}process.stdout.write(JSON.stringify(out,null,2)+'\n');if(!out.phaseComplete)process.exitCode=1;}
-module.exports={TAXONOMY,attachOfficialResults,build,classify,load,logicFingerprint,predictedHead,recordsFromIndex,theoryIds,tickets};
+module.exports={TAXONOMY,attachOfficialResults,build,classify,load,logicFingerprint,predictedHead,recordsFromIndex,resultCombo,theoryIds,tickets};
