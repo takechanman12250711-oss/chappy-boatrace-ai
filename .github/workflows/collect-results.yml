@@ -149,10 +149,12 @@ on:
       - "js/theory-performance-report.js"
       - "js/venue-theory-profile.js"
       - "js/venue-scenario-improvement-candidates.js"
+      - "js/venue-three-attack-race-diagnosis.js"
       - "scripts/build-theory-performance-report.js"
       - "scripts/test-theory-performance-report.js"
       - "scripts/test-venue-theory-profile.js"
       - "scripts/test-venue-scenario-improvement-candidates.js"
+      - "scripts/test-venue-three-attack-race-diagnosis.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
       - "scripts/build-phase6-data-audit.js"
@@ -452,11 +454,13 @@ jobs:
           node scripts/test-theory-performance-report.js
           node scripts/test-venue-theory-profile.js
           node scripts/test-venue-scenario-improvement-candidates.js
+          node scripts/test-venue-three-attack-race-diagnosis.js
           node scripts/build-theory-performance-report.js
           node - <<'NODE'
           const report = require("./data/stats/theory-performance-report.json");
           const profile = require("./data/stats/venue-theory-profile.json");
           const candidates = require("./data/stats/venue-scenario-improvement-candidates.json");
+          const diagnosis = require("./data/stats/venue-three-attack-race-diagnosis.json");
           const codes = new Set((profile.venues || []).map(row => row.jcd));
           if (profile.venueCount !== 24 || profile.venues?.length !== 24 || codes.size !== 24) throw new Error("場別実戦傾向の24場契約違反");
           if (profile.scenarioCoverage !== "AVAILABLE") throw new Error("場別シナリオ分析が未生成");
@@ -468,6 +472,11 @@ jobs:
           if (candidates.productionChanged !== false || candidates.automaticProductionChange !== false || candidates.usableForPrediction !== false) throw new Error("場×展開改善候補の安全フラグ異常");
           if (candidates.phase8HandoffSummary?.eligibleForValidation !== 0) throw new Error("発見期間の候補を工程8へ直接渡しています");
           if ((candidates.focusVenues || []).length !== 5 || candidates.focusVenues.some(row => !row.present)) throw new Error("重点比較5場が揃っていません");
+          if (diagnosis.sourceGeneratedAt !== report.generatedAt) throw new Error("3コース攻め診断の元レポート時刻不一致");
+          if (diagnosis.analysisInputContract !== "official-pre-deadline-cohort-v1") throw new Error("3コース攻め診断の入力契約不一致");
+          if (diagnosis.productionChanged !== false || diagnosis.automaticProductionChange !== false || diagnosis.usableForPrediction !== false || diagnosis.retrospectiveDiagnosisOnly !== true) throw new Error("3コース攻め診断の安全フラグ異常");
+          if (diagnosis.focusVenueCount !== 3 || (diagnosis.venues || []).length !== 3 || !(diagnosis.venues || []).find(row => row.jcd === "20" && row.role === "positive-control")) throw new Error("3コース攻め診断の重点3場・対照契約違反");
+          if ((diagnosis.venues || []).some(row => row.raceCount <= 0)) throw new Error("3コース攻め診断に0件の重点場があります");
           NODE
           node scripts/test-theory-improvement-proposals.js
           node scripts/build-theory-improvement-proposals.js
