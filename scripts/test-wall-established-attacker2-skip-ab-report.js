@@ -50,19 +50,21 @@ const embeddedWinner = record({
   result: { settled: true, resultTicket: "2-1-4", payoutPer100: 600 }
 });
 const noTickets = record({ date: "20260902", raceNo: 4, selectedAt: "2026-08-31T09:32:27Z", tickets: [] });
+const cancelled = record({ date: "20260902", raceNo: 8, selectedAt: "2026-08-31T09:32:27Z" });
 const wrongAttacker = record({ raceNo: 5, selectedAt: "2026-08-31T09:32:28Z", attackerNo: 3 });
 const wrongState = record({ raceNo: 6, selectedAt: "2026-08-31T09:32:29Z", state: "壁崩れ" });
 const informal = record({ raceNo: 7, selectedAt: "2026-08-31T09:32:30Z", formal: false });
 
 const predDocs = [{
-  predictions: [beforeCutoff, selectedWinner, miss, embeddedWinner, noTickets, wrongAttacker, wrongState, informal],
+  predictions: [beforeCutoff, selectedWinner, miss, embeddedWinner, noTickets, cancelled, wrongAttacker, wrongState, informal],
   verificationPredictions: [duplicateVerification]
 }];
 const resultDocs = [{
   races: [
     { date: "20260901", jcd: "01", raceNo: 1, resultAvailable: true, status: "finished", trifecta: { combination: "2-1-3", payout: 1000 } },
     { date: "20260901", jcd: "01", raceNo: 2, resultAvailable: true, status: "finished", trifecta: { combination: "1-3-2", payout: 500 } },
-    { date: "20260902", jcd: "01", raceNo: 4, resultAvailable: true, status: "finished", trifecta: { combination: "1-2-3", payout: 700 } }
+    { date: "20260902", jcd: "01", raceNo: 4, resultAvailable: true, status: "finished", trifecta: { combination: "1-2-3", payout: 700 } },
+    { date: "20260902", jcd: "01", raceNo: 8, resultAvailable: false, status: "void", void: true, trifecta: null }
   ]
 }];
 
@@ -80,9 +82,10 @@ assert.equal(built.usableForPrediction, false);
 assert.equal(built.affectsCurrentTickets, false);
 assert.equal(built.preregistration.commit, "4d9e9a685ce6e2c202f33a36f4e88612e199ed75");
 assert.equal(built.preregistration.oldRecordsBackfilled, false);
-assert.equal(built.diagnostics.prospectiveRecordCountBeforeDedup, 8);
-assert.equal(built.diagnostics.prospectiveRaceCountAfterDedup, 7);
+assert.equal(built.diagnostics.prospectiveRecordCountBeforeDedup, 9);
+assert.equal(built.diagnostics.prospectiveRaceCountAfterDedup, 8);
 assert.equal(built.diagnostics.targetRaceCount, 4);
+assert.equal(built.diagnostics.excludedVoidTargetRaceCount, 1);
 assert.equal(built.diagnostics.targetSettledRaceCount, 4);
 assert.equal(built.diagnostics.targetSettledBetRaceCount, 3);
 assert.equal(built.diagnostics.targetSettledNoTicketRaceCount, 1);
