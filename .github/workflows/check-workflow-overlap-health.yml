@@ -1,0 +1,18 @@
+name: Check workflow overlap health audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-workflow-overlap-health.cjs'
+      - 'tests/audit-workflow-overlap-health.test.cjs'
+      - '.github/workflows/check-workflow-overlap-health.yml'
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --check scripts/audit-workflow-overlap-health.cjs
+      - run: node tests/audit-workflow-overlap-health.test.cjs
+      - run: node scripts/audit-workflow-overlap-health.cjs
