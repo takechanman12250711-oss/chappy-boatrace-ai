@@ -142,7 +142,11 @@ on:
       - "data/stats/racer-skill-patterns.json"
       - "data/stats/course-structure-patterns.json"
       - "data/stats/local-water-v2-post-adoption-input-cache.json"
+      - "js/theory-performance-report.js"
+      - "js/venue-theory-profile.js"
       - "scripts/build-theory-performance-report.js"
+      - "scripts/test-theory-performance-report.js"
+      - "scripts/test-venue-theory-profile.js"
       - "scripts/build-improvement-proposal-report.js"
       - "scripts/build-learning-pipeline-gate.js"
       - "scripts/build-phase6-data-audit.js"
@@ -436,7 +440,18 @@ jobs:
           node scripts/test-build-scenario-likelihood-v5-ab-report.js
           node scripts/build-scenario-likelihood-v5-ab-report.js
           node scripts/test-theory-performance-report.js
+          node scripts/test-venue-theory-profile.js
           node scripts/build-theory-performance-report.js
+          node - <<'NODE'
+          const report = require("./data/stats/theory-performance-report.json");
+          const profile = require("./data/stats/venue-theory-profile.json");
+          const codes = new Set((profile.venues || []).map(row => row.jcd));
+          if (profile.venueCount !== 24 || profile.venues?.length !== 24 || codes.size !== 24) throw new Error("場別実戦傾向の24場契約違反");
+          if (profile.scenarioCoverage !== "AVAILABLE") throw new Error("場別シナリオ分析が未生成");
+          if (profile.sourceGeneratedAt !== report.generatedAt) throw new Error("場別実戦傾向の元レポート時刻不一致");
+          if (profile.analysisInputContract !== "official-pre-deadline-cohort-v1") throw new Error("場別実戦傾向の入力契約不一致");
+          if (profile.productionChanged !== false || profile.automaticProductionChange !== false || profile.usableForPrediction !== false) throw new Error("場別実戦傾向の安全フラグ異常");
+          NODE
           node scripts/test-theory-improvement-proposals.js
           node scripts/build-theory-improvement-proposals.js
           node scripts/test-theory-shadow-ab-verification.js
