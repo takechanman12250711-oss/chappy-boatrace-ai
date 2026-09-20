@@ -1,0 +1,1 @@
+'use strict';const assert=require('node:assert');const x=require('../scripts/audit-new-engine-zero-evidence.cjs').build();assert.strictEqual(x.productionChanged,false);assert.strictEqual(x.automaticProductionChange,false);assert.ok(x.classification);console.log('new engine zero evidence audit passed');
