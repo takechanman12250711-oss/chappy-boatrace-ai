@@ -423,153 +423,153 @@ function parseResult(html) {
   };
 }
 
-async function handler(
-  req,
-  res
-) {
-  try {
-    const date =
-      String(
-        req.query?.date || ""
+module.exports =
+  async function handler(
+    req,
+    res
+  ) {
+    try {
+      const date =
+        String(
+          req.query?.date || ""
+        );
+
+      const jcd =
+        String(
+          req.query?.jcd || ""
+        );
+
+      const rno =
+        String(
+          req.query?.rno || ""
+        );
+
+      if (
+        !/^\d{8}$/.test(date)
+      ) {
+        return res
+          .status(400)
+          .json({
+            ok: false,
+
+            error:
+              "dateはYYYYMMDD形式で指定してください"
+          });
+      }
+
+      if (
+        !/^(0[1-9]|1[0-9]|2[0-4])$/.test(
+          jcd
+        )
+      ) {
+        return res
+          .status(400)
+          .json({
+            ok: false,
+
+            error:
+              "jcdは01〜24で指定してください"
+          });
+      }
+
+      if (
+        !/^(?:[1-9]|1[0-2])$/.test(
+          rno
+        )
+      ) {
+        return res
+          .status(400)
+          .json({
+            ok: false,
+
+            error:
+              "rnoは1〜12で指定してください"
+          });
+      }
+
+      const resultUrl =
+        `${OFFICIAL_BASE}` +
+        `/owpc/pc/race/raceresult` +
+        `?hd=${date}` +
+        `&jcd=${jcd}` +
+        `&rno=${rno}`;
+
+      const response =
+        await fetch(
+          resultUrl,
+          {
+            headers: {
+              "user-agent":
+                "Mozilla/5.0 ChappyBoatRaceAI/1.0"
+            },
+
+            signal:
+              AbortSignal.timeout(
+                15000
+              )
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          `公式結果取得失敗: ` +
+          `${response.status}`
+        );
+      }
+
+      const html =
+        await response.text();
+
+      const parsed =
+        parseResult(html);
+
+      res.setHeader(
+        "Cache-Control",
+
+        parsed.resultAvailable ||
+        parsed.void === true
+          ? "s-maxage=86400, stale-while-revalidate=604800"
+          : "s-maxage=15, stale-while-revalidate=15"
       );
 
-    const jcd =
-      String(
-        req.query?.jcd || ""
-      );
-
-    const rno =
-      String(
-        req.query?.rno || ""
-      );
-
-    if (
-      !/^\d{8}$/.test(date)
-    ) {
       return res
-        .status(400)
+        .status(200)
+        .json({
+          ok: true,
+
+          source:
+            "boatrace-official",
+
+          date,
+          jcd,
+
+          raceNo:
+            Number(rno),
+
+          checkedAt:
+            new Date()
+              .toISOString(),
+
+          resultUrl,
+
+          ...parsed
+        });
+    } catch (error) {
+      return res
+        .status(500)
         .json({
           ok: false,
 
           error:
-            "dateはYYYYMMDD形式で指定してください"
+            error?.message ||
+            String(error),
+
+          name:
+            error?.name ||
+            "Error"
         });
     }
+  };
 
-    if (
-      !/^(0[1-9]|1[0-9]|2[0-4])$/.test(
-        jcd
-      )
-    ) {
-      return res
-        .status(400)
-        .json({
-          ok: false,
-
-          error:
-            "jcdは01〜24で指定してください"
-        });
-    }
-
-    if (
-      !/^(?:[1-9]|1[0-2])$/.test(
-        rno
-      )
-    ) {
-      return res
-        .status(400)
-        .json({
-          ok: false,
-
-          error:
-            "rnoは1〜12で指定してください"
-        });
-    }
-
-    const resultUrl =
-      `${OFFICIAL_BASE}` +
-      `/owpc/pc/race/raceresult` +
-      `?hd=${date}` +
-      `&jcd=${jcd}` +
-      `&rno=${rno}`;
-
-    const response =
-      await fetch(
-        resultUrl,
-        {
-          headers: {
-            "user-agent":
-              "Mozilla/5.0 ChappyBoatRaceAI/1.0"
-          },
-
-          signal:
-            AbortSignal.timeout(
-              15000
-            )
-        }
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        `公式結果取得失敗: ` +
-        `${response.status}`
-      );
-    }
-
-    const html =
-      await response.text();
-
-    const parsed =
-      parseResult(html);
-
-    res.setHeader(
-      "Cache-Control",
-
-      parsed.resultAvailable ||
-      parsed.void === true
-        ? "s-maxage=86400, stale-while-revalidate=604800"
-        : "s-maxage=15, stale-while-revalidate=15"
-    );
-
-    return res
-      .status(200)
-      .json({
-        ok: true,
-
-        source:
-          "boatrace-official",
-
-        date,
-        jcd,
-
-        raceNo:
-          Number(rno),
-
-        checkedAt:
-          new Date()
-            .toISOString(),
-
-        resultUrl,
-
-        ...parsed
-      });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({
-        ok: false,
-
-        error:
-          error?.message ||
-          String(error),
-
-        name:
-          error?.name ||
-          "Error"
-      });
-  }
-}
-
-module.exports = handler;
 module.exports.parseResult = parseResult;
 module.exports.isTrifectaVoid = isTrifectaVoid;
