@@ -1,0 +1,1 @@
+'use strict';const assert=require('node:assert');const {build}=require('../scripts/build-active-100r-early-monitor.cjs');const x=build();assert.strictEqual(x.productionChanged,false);assert.strictEqual(x.automaticProductionChange,false);assert.ok(Number(x.reviewProgress?.currentWindowCount)>=0);assert.ok(x.duplicates>=0);console.log('active 100R early monitor passed');
