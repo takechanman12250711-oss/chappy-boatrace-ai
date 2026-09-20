@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path');const ROOT=path.resolve(__dirname,'..'),W=path.join(ROOT,'.github','workflows');
+const files=fs.readdirSync(W).filter(x=>/\.ya?ml$/.test(x));const rows=[];
+for(const f of files){const s=fs.readFileSync(path.join(W,f),'utf8');const name=(s.match(/^name:\s*(.+)$/m)||[])[1]||f;const schedules=[...s.matchAll(/cron:\s*["']?([^"'\n]+)["']?/g)].map(x=>x[1].trim());const workflowRuns=[...s.matchAll(/workflows:\s*\[([^\]]+)\]/g)].flatMap(x=>x[1].split(',').map(v=>v.replace(/["']/g,'').trim())).filter(Boolean);rows.push({file:f,name,schedules,workflowRuns,contentsWrite:/permissions:\s*[\s\S]{0,120}contents:\s*write/.test(s)});}
+const scheduled=rows.filter(x=>x.schedules.length), chained=rows.filter(x=>x.workflowRuns.length);
+const known={centralResults:rows.find(x=>x.name==='Collect official race results')||null,predictionGap:rows.find(x=>x.name==='Build prediction gap report')||null,learningPipeline:rows.find(x=>x.name==='Build learning analysis pipeline')||null,wall:rows.find(x=>x.name==='Collect wall-established attacker2 skip A/B')||null};
+const findings=[];
+if(known.predictionGap?.schedules.length)findings.push({code:'READ_ONLY_DUPLICATE_REBUILD',file:known.predictionGap.file,severity:'LOW',reason:'central results writer already rebuilds improvement review + prediction gap; scheduled workflow is read-only verification/rebuild and does not write main'});
+if(known.learningPipeline?.workflowRuns.includes('Collect official race results'))findings.push({code:'POST_RESULT_READ_ONLY_REBUILD',file:known.learningPipeline.file,severity:'LOW',reason:'runs after central results and is read-only; useful verification but duplicates computation'});
+if(known.wall?.schedules.length&&known.wall?.workflowRuns.includes('Collect official race results'))findings.push({code:'MULTI_TRIGGER_SINGLE_BUILDER',file:known.wall.file,severity:'INFO',reason:'same builder has result-chain plus daily fallback; intentional recovery path, not duplicate collector'});
+const out={schemaVersion:1,generatedAt:new Date().toISOString(),productionChanged:false,workflowCount:rows.length,scheduledCount:scheduled.length,chainedCount:chained.length,known,findings,destructiveCleanupRecommended:false};
+process.stdout.write(JSON.stringify(out,null,2)+'\n');
