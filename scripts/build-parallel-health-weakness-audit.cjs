@@ -1,0 +1,11 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path');const ROOT=path.resolve(__dirname,'..');
+const read=p=>JSON.parse(fs.readFileSync(path.join(ROOT,p),'utf8'));
+function build(){
+ const perf=read('data/stats/theory-performance-report.json'),cycle=read('data/stats/theory-validation-phase8-cycle.json'),review=read('data/stats/improvement-review.json');
+ const theories=(perf.byTheory||[]).map(x=>({theoryKey:x.theoryKey,evaluatedCount:x.evaluatedCount,practicalHitRate:x.practicalHitRate,recoveryRate:x.recoveryRate,profit:x.profit,useCount:x.useCount,dataStatus:x.evaluatedCount>0?'MEASURED':'NO_MEASURED_SAMPLE'}));
+ const routes=(cycle.rows||[]).map(x=>({theoryId:x.theoryId,routeStatus:x.evidenceAccumulation?.routeStatus||'UNKNOWN',raceCount:x.evidenceAccumulation?.raceCount??null,evaluatedCount:x.evidenceAccumulation?.evaluatedCount??null,eligibility:x.eligibility?.state||null,decisionStatus:x.decisionStatus||null}));
+ const routeIssues=routes.filter(x=>x.routeStatus!=='ACTIVE');
+ return{schemaVersion:1,analysisId:'parallel-health-weakness-audit-v1',generatedAt:new Date().toISOString(),productionChanged:false,input:{canonicalPredictions:perf.analysisInputDiagnostics?.canonicalPredictionCount,preDeadlinePredictions:perf.analysisInputDiagnostics?.preDeadlinePredictionCount,officialResults:perf.analysisInputDiagnostics?.officialResultCount,settledJoin:perf.analysisInputDiagnostics?.settledJoinCount,active100:review.progress?.currentWindowCount,active100Remaining:review.progress?.remainingToNext},theories,routes,audit:{expectedTheoryRoutes:13,actualTheoryRoutes:routes.length,activeRoutes:routes.filter(x=>x.routeStatus==='ACTIVE').length,routeIssues,unmeasuredTheories:theories.filter(x=>x.dataStatus!=='MEASURED').map(x=>x.theoryKey),settledJoinNotAbovePreDeadline:(perf.analysisInputDiagnostics?.settledJoinCount||0)<=(perf.analysisInputDiagnostics?.preDeadlinePredictionCount||0),automaticProductionChange:false},phaseComplete:routes.length===13&&routeIssues.length===0};
+}
+if(require.main===module){const x=build();process.stdout.write(JSON.stringify(x,null,2)+'\n');if(!x.phaseComplete)process.exitCode=1;}module.exports={build};
