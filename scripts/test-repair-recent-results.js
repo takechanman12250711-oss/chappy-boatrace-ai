@@ -40,6 +40,23 @@ fs.writeFileSync(resultPath, JSON.stringify({
   complete: true
 }));
 assert.equal(isCompleteResultFile(resultPath, "20260720"), true);
+
+fs.writeFileSync(resultPath, JSON.stringify({
+  source: "boatrace-official",
+  date: "20260720",
+  raceCount: 156,
+  completedRaces: 144,
+  voidRaces: 12,
+  resolvedRaces: 156,
+  pendingRaces: 0,
+  failedRaces: 0,
+  complete: true
+}));
+assert.equal(
+  isCompleteResultFile(resultPath, "20260720"),
+  true,
+  "完走と不成立の合計が全レースなら完成済みと判定する"
+);
 const refreshCalls = [];
 const unchangedRefresh =
   refreshOfficialResultFile(

@@ -85,13 +85,18 @@ function isCompleteResultFile(filePath, date) {
     const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
     const raceCount = Number(data?.raceCount || 0);
     const completedRaces = Number(data?.completedRaces || 0);
+    const voidRaces = Number(data?.voidRaces || 0);
+    const resolvedRaces = Number.isFinite(Number(data?.resolvedRaces))
+      ? Number(data.resolvedRaces)
+      : completedRaces + voidRaces;
 
     return (
       data?.source === "boatrace-official" &&
       String(data?.date || "") === date &&
       raceCount > 0 &&
       data?.complete === true &&
-      completedRaces === raceCount &&
+      resolvedRaces === raceCount &&
+      completedRaces + voidRaces === raceCount &&
       Number(data?.pendingRaces || 0) === 0 &&
       Number(data?.failedRaces || 0) === 0
     );

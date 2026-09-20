@@ -39,6 +39,9 @@ on:
       - "scripts/check-charter.js"
       - "scripts/collect-results.js"
       - "scripts/repair-recent-results.js"
+      - "scripts/repair-queued-results.js"
+      - "scripts/test-repair-queued-results.js"
+      - "config/result-repair-queue.json"
       - "api/race.js"
       - "api/_parser.js"
       - "api/_history.js"
@@ -218,6 +221,7 @@ jobs:
         run: |
           node --check scripts/collect-results.js
           node --check scripts/repair-recent-results.js
+          node --check scripts/repair-queued-results.js
           node --check scripts/daily-prediction-source-archive.js
           node --check scripts/restore-daily-prediction-source.js
           node --check scripts/prepare-daily-prediction-git-save.js
@@ -318,6 +322,7 @@ jobs:
           node scripts/test-compact-prediction-index.js
           node scripts/test-collect-results.js
           node scripts/test-repair-recent-results.js
+          node scripts/test-repair-queued-results.js
           node scripts/test-result-review.js
           node scripts/test-theory-evaluation-engine.js
           node scripts/test-miss-cause-analysis.js
@@ -330,6 +335,7 @@ jobs:
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/repair-recent-results.js
+          node scripts/repair-queued-results.js
           node scripts/monitor-three-course-escape-rescue.js
           node scripts/monitor-four-kado-escape-rescue.js
           node scripts/build-frame-rise-sink-stats.js
