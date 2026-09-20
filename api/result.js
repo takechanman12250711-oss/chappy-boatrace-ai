@@ -268,7 +268,7 @@ function parseStarts(html) {
   return starts;
 }
 
-function parseTrifecta(html) {
+function getTrifectaRow(html) {
   const section = getSection(
     html,
     "3連単",
@@ -276,16 +276,23 @@ function parseTrifecta(html) {
   );
 
   if (!section) {
-    return null;
+    return "";
   }
 
   const rowEnd =
     section.indexOf("</tr>");
 
-  const row =
-    rowEnd >= 0
-      ? section.slice(0, rowEnd)
-      : section;
+  return rowEnd >= 0
+    ? section.slice(0, rowEnd)
+    : section;
+}
+
+function parseTrifecta(html) {
+  const row = getTrifectaRow(html);
+
+  if (!row) {
+    return null;
+  }
 
   const boats = [
     ...row.matchAll(
@@ -346,6 +353,17 @@ function parseTrifecta(html) {
   };
 }
 
+function isTrifectaVoid(html) {
+  const row = getTrifectaRow(html);
+
+  return (
+    Boolean(row) &&
+    /不成立/.test(
+      stripHtml(row)
+    )
+  );
+}
+
 function parseWinningMethod(html) {
   const section = getSection(
     html,
@@ -373,6 +391,9 @@ function parseResult(html) {
   const trifecta =
     parseTrifecta(html);
 
+  const trifectaVoid =
+    isTrifectaVoid(html);
+
   const winningMethod =
     parseWinningMethod(html);
 
@@ -380,14 +401,21 @@ function parseResult(html) {
     finishers.length >= 3 &&
     Boolean(trifecta);
 
+  const voidRace =
+    !resultAvailable &&
+    trifectaVoid;
+
   return {
     resultAvailable,
 
     status:
       resultAvailable
         ? "finished"
-        : "not_finished",
+        : voidRace
+          ? "void"
+          : "not_finished",
 
+    void: voidRace,
     finishers,
     starts,
     winningMethod,
@@ -498,7 +526,8 @@ module.exports =
       res.setHeader(
         "Cache-Control",
 
-        parsed.resultAvailable
+        parsed.resultAvailable ||
+        parsed.void === true
           ? "s-maxage=86400, stale-while-revalidate=604800"
           : "s-maxage=15, stale-while-revalidate=15"
       );
@@ -541,3 +570,6 @@ module.exports =
         });
     }
   };
+
+module.exports.parseResult = parseResult;
+module.exports.isTrifectaVoid = isTrifectaVoid;
