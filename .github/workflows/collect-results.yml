@@ -73,6 +73,10 @@ on:
       - "scripts/test-race-flow-3course-alert-skip-ab-report.js"
       - "scripts/build-race-flow-2course-sashi-skip-ab-report.js"
       - "scripts/test-race-flow-2course-sashi-skip-ab-report.js"
+      - "scripts/build-venue-2course-sashi-skip-shadow.js"
+      - "scripts/test-venue-2course-sashi-skip-shadow.js"
+      - "scripts/test-race-flow-ab-workflow-concurrency.js"
+      - ".github/workflows/check-venue-2course-sashi-skip-shadow.yml"
       - "scripts/build-race-flow-outside-push-skip-ab-report.js"
       - "scripts/test-race-flow-outside-push-skip-ab-report.js"
       - "scripts/build-remain-pickup-hold3-shadow-ab.js"
@@ -230,6 +234,9 @@ jobs:
           node scripts/test-race-flow-3course-alert-skip-ab-report.js
           node --check scripts/build-race-flow-2course-sashi-skip-ab-report.js
           node scripts/test-race-flow-2course-sashi-skip-ab-report.js
+          node --check scripts/build-venue-2course-sashi-skip-shadow.js
+          node scripts/test-venue-2course-sashi-skip-shadow.js
+          node scripts/test-race-flow-ab-workflow-concurrency.js
           node --check scripts/build-race-flow-outside-push-skip-ab-report.js
           node scripts/test-race-flow-outside-push-skip-ab-report.js
           node --check scripts/build-remain-pickup-hold3-shadow-ab.js
@@ -339,6 +346,7 @@ jobs:
           node scripts/build-race-flow-4kado-alert-skip-ab-report.js
           node scripts/build-race-flow-3course-alert-skip-ab-report.js
           node scripts/build-race-flow-2course-sashi-skip-ab-report.js
+          node scripts/build-venue-2course-sashi-skip-shadow.js
           node scripts/build-race-flow-outside-push-skip-ab-report.js
           node scripts/build-race-flow-in-first-outside-alert-skip-ab-report.js
           node scripts/build-remain-pickup-hold3-shadow-ab.js
