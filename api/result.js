@@ -364,6 +364,12 @@ function isTrifectaVoid(html) {
   );
 }
 
+function isRaceCancelled(html) {
+  return /(?:レース中止|中止レース)/.test(
+    stripHtml(html)
+  );
+}
+
 function parseWinningMethod(html) {
   const section = getSection(
     html,
@@ -394,6 +400,9 @@ function parseResult(html) {
   const trifectaVoid =
     isTrifectaVoid(html);
 
+  const raceCancelled =
+    isRaceCancelled(html);
+
   const winningMethod =
     parseWinningMethod(html);
 
@@ -403,7 +412,7 @@ function parseResult(html) {
 
   const voidRace =
     !resultAvailable &&
-    trifectaVoid;
+    (trifectaVoid || raceCancelled);
 
   return {
     resultAvailable,

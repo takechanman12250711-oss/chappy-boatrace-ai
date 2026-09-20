@@ -396,6 +396,23 @@ assert.equal(
   null
 );
 
+const cancelledRace = parseResult(`
+  <div class="title12">
+    <h3 class="title12_title is-type1">レース中止</h3>
+  </div>
+`);
+assert.equal(
+  cancelledRace.resultAvailable,
+  false,
+  "公式のレース中止を通常結果へ混ぜない"
+);
+assert.equal(
+  cancelledRace.void,
+  true,
+  "公式のレース中止を解決済み不成立として認識する"
+);
+assert.equal(cancelledRace.status, "void");
+
 const tempDirectory =
   fs.mkdtempSync(
     path.join(

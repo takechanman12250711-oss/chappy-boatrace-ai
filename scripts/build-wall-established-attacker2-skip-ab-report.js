@@ -46,7 +46,7 @@ function resultMap(docs) {
   const map = new Map();
   for (const doc of docs) {
     for (const race of Array.isArray(doc?.races) ? doc.races : []) {
-      if (race?.resultAvailable === true && race?.status === "finished") {
+      if ((race?.resultAvailable === true && race?.status === "finished") || race?.void === true || race?.status === "void") {
         map.set(raceKey(race), race);
       }
     }
@@ -297,7 +297,9 @@ function build(predDocs, resultDocs) {
     evidence: wallEvidence(row.record),
     result: normalizeResult(row.record, results)
   }));
-  const targetRows = prospectiveRows.filter(row => isTarget(row.record));
+  const allTargetRows = prospectiveRows.filter(row => isTarget(row.record));
+  const voidTargetRows = allTargetRows.filter(row => row.result?.void === true || row.result?.status === "void");
+  const targetRows = allTargetRows.filter(row => row.result?.void !== true && row.result?.status !== "void");
   const overall = comparison(targetRows);
   const halves = splitChronologically(targetRows);
   const firstHalf = comparison(halves.first);
@@ -350,6 +352,7 @@ function build(predDocs, resultDocs) {
       prospectiveRecordCountBeforeDedup: candidates.length,
       prospectiveRaceCountAfterDedup: prospectiveRows.length,
       targetRaceCount: targetRows.length,
+      excludedVoidTargetRaceCount: voidTargetRows.length,
       targetSettledRaceCount: settledTargetRows.length,
       targetUnsettledRaceCount: targetRows.length - settledTargetRows.length,
       targetSettledBetRaceCount: overall.a.betRaceCount,
