@@ -15,6 +15,8 @@ const workflows = [
 const central = fs.readFileSync(path.join(".github", "workflows", "collect-results.yml"), "utf8");
 const gateIndex = central.indexOf("node scripts/build-unified-improvement-decision-gate.js");
 const handoffIndex = central.indexOf("node scripts/build-phase3-learning-handoff.js", gateIndex);
+const venueShadowBuilder = "build-venue-2course-sashi-skip-shadow.js";
+const venueShadowWorkflowName = "check-venue-2course-sashi-skip-shadow.yml";
 
 for (const [name, builder] of workflows) {
   const workflow = fs.readFileSync(path.join(".github", "workflows", name), "utf8");
@@ -32,5 +34,13 @@ for (const [name, builder] of workflows) {
   assert.ok(builderIndex >= 0 && builderIndex < gateIndex, `${builder}は統一採否ゲート前に主系統で更新する`);
 }
 assert.ok(gateIndex >= 0 && handoffIndex > gateIndex, "統一採否ゲート後にPhase3 handoffを更新する");
+const venueShadowWorkflow = fs.readFileSync(path.join(".github", "workflows", venueShadowWorkflowName), "utf8");
+assert.ok(!venueShadowWorkflow.includes("\n  push:"), "場別2差しshadow CIはmain writerを追加しない");
+assert.ok(!venueShadowWorkflow.includes("\n  workflow_run:"), "場別2差しshadow CIは結果収集後の重複writerを追加しない");
+assert.ok(!venueShadowWorkflow.includes("git push"), "場別2差しshadow CIは保存writerにならない");
+assert.ok(!venueShadowWorkflow.includes("contents: write"), "場別2差しshadow CIは書込み権限を持たない");
+const venueShadowBuilderIndex = central.indexOf(`node scripts/${venueShadowBuilder}`);
+assert.ok(venueShadowBuilderIndex >= 0 && venueShadowBuilderIndex < gateIndex, "場別2差しshadowは統一採否ゲート前に中央writerで更新する");
+assert.equal(central.match(new RegExp(`node scripts/${venueShadowBuilder.replaceAll(".", "\\.")}`, "g"))?.length, 1, "場別2差しshadow builderは中央writer内で1回だけ実行する");
 
 console.log("race-flow A/B workflow single-writer test: ok");
