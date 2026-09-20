@@ -14,10 +14,10 @@ function formalActiveRecords(){
  return out;
 }
 function build(){
- const review=read('data/stats/improvement-review.json'),scoped=formalActiveRecords();
- const x=p9.build(scoped,{phase8Report:{phaseComplete:true}});
+ const review=read('data/stats/improvement-review.json'),scoped=formalActiveRecords(),settled=p9.attachOfficialResults(scoped);
+ const x=p9.build(settled,{phase8Report:{phaseComplete:true}});
  const counts={};for(const r of x.rows)counts[r.missReason]=(counts[r.missReason]||0)+1;
- return{schemaVersion:1,analysisId:'active-100r-early-monitor-v3',generatedAt:new Date().toISOString(),productionChanged:false,reviewProgress:review.progress,activeGenerationKey:review.activeGenerationKey,scopedRaceCount:scoped.length,matchedRows:x.summary.matchedRows,hits:x.summary.hits,misses:x.summary.misses,duplicates:x.summary.duplicates,missReasonCounts:counts,patterns:x.patterns.map(p=>({key:p.key,count:p.count,status:p.status})),eligibleCandidates:x.summary.eligibleCandidates,automaticProductionChange:false};
+ return{schemaVersion:1,analysisId:'active-100r-early-monitor-v4',generatedAt:new Date().toISOString(),productionChanged:false,reviewProgress:review.progress,activeGenerationKey:review.activeGenerationKey,scopedRaceCount:scoped.length,matchedRows:x.summary.matchedRows,hits:x.summary.hits,misses:x.summary.misses,duplicates:x.summary.duplicates,missReasonCounts:counts,patterns:x.patterns.map(p=>({key:p.key,count:p.count,status:p.status})),eligibleCandidates:x.summary.eligibleCandidates,automaticProductionChange:false};
 }
 if(require.main===module)process.stdout.write(JSON.stringify(build(),null,2)+'\n');
 module.exports={build,formalActiveRecords};
