@@ -16,6 +16,7 @@ permissions:
   contents: write
 concurrency:
   group: chappy-main-data-writers
+  queue: max
   cancel-in-progress: false
 jobs:
   verify:

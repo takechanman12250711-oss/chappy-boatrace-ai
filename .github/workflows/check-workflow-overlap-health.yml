@@ -2,8 +2,11 @@ name: Check workflow overlap health audit
 on:
   pull_request:
     paths:
+      - '.github/workflows/*.yml'
+      - 'docs/main-data-writer-concurrency.md'
       - 'scripts/audit-workflow-overlap-health.cjs'
       - 'tests/audit-workflow-overlap-health.test.cjs'
+      - 'tests/main-data-writer-concurrency.test.cjs'
       - '.github/workflows/check-workflow-overlap-health.yml'
 permissions: {contents: read}
 jobs:
@@ -14,5 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - run: node --check scripts/audit-workflow-overlap-health.cjs
+      - run: node --check tests/main-data-writer-concurrency.test.cjs
       - run: node tests/audit-workflow-overlap-health.test.cjs
+      - run: node tests/main-data-writer-concurrency.test.cjs
       - run: node scripts/audit-workflow-overlap-health.cjs
