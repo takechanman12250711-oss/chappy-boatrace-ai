@@ -63,6 +63,53 @@ later.record.prediction.practicalTickets = later.baselinePracticalTickets = ['1-
 report = buildProgress([original, later], [result(original)]);
 assert.equal(report.settled, 1);
 assert.equal(report.cohorts[0].practical.hits, 0, 'choose latest before deadline, not winning prediction');
+assert.equal(report.cohorts[0].selectionLoss.counts['candidate-only-hit'], 1);
+assert.equal(report.cohorts[0].selectionLoss.rows[0].selectedAt, later.record.selectedAt);
+const diagnosisCases = [
+  [['1-2-3'], ['1-2-3'], 'both-hit'],
+  [['1-2-3'], ['1-3-2'], 'candidate-only-hit'],
+  [['1-3-2'], ['1-2-3'], 'practical-only-hit'],
+  [['2-1-3'], ['3-1-2'], 'candidate-head-missing'],
+  [['1-3-2'], ['3-1-2'], 'candidate-first-second-pair-missing'],
+  [['1-2-4'], ['3-1-2'], 'candidate-third-missing']
+];
+const diagnosticBundles = diagnosisCases.map(([pool, practical], i) => {
+  const b = bundle(i);
+  b.record.prediction.candidate24Tickets = pool;
+  b.record.prediction.practicalTickets = b.baselinePracticalTickets = practical;
+  b.record.prediction.practicalSelection = { targetDecisions: [{ candidateDecisions: [
+    { ticket: '1-2-3', reasonCode: 'SAVED_REASON', reasonCodes: ['SAVED_REASON'] }
+  ] }] };
+  return b;
+});
+const diagnosticBefore = JSON.stringify(diagnosticBundles);
+const previousMethod = bundle(7, 'c'.repeat(64)), old = bundle(8);
+delete old.record.reviewEvidence;
+report = buildProgress([...diagnosticBundles, previousMethod, old],
+  [...diagnosticBundles, previousMethod, old].map(b => result(b)), { activeMethod: method });
+const active = report.cohorts.find(g => g.active), loss = active.selectionLoss;
+assert.equal(active.settled, 6);
+assert.deepEqual(loss.rows.map(r => r.classification), diagnosisCases.map(c => c[2]));
+assert.equal(loss.races, active.settled, 'diagnosis uses exactly the settled performance cohort');
+assert.equal(Object.values(loss.counts).reduce((a, b) => a + b, 0), active.settled);
+assert.equal(loss.counts['both-hit'] + loss.counts['candidate-only-hit'], active.candidate24.hits);
+assert.equal(loss.counts['both-hit'] + loss.counts['practical-only-hit'], active.practical.hits);
+assert.equal(loss.netHitDifference, 0, 'net zero must not hide one candidate-only omission');
+assert.equal(loss.nonSubsetRaces, 5, 'practical tickets need not be a subset of candidate tickets');
+assert.equal(loss.recordedDecisionReasons.SAVED_REASON, 1, 'deduplicate recorded reasons');
+assert.equal(loss.candidateOnlyReturn, 500);
+assert.equal(loss.practicalOnlyReturn, 500);
+assert.equal(report.cohorts.length, 3, 'active, old method and legacy remain separate');
+assert.equal(report.cohorts.find(g => g.legacy).selectionLoss.races, 1);
+assert.equal(JSON.stringify(diagnosticBundles), diagnosticBefore, 'classification never changes saved tickets');
+for (const extra of [{ refund: true }, { void: true }, { source: 'untrusted' },
+  { resultAvailable: false }, { trifecta: { combination: '1-2-3', payout: null } }]) {
+  const excluded = buildProgress([original], [result(original, extra)]).cohorts[0];
+  assert.equal(excluded.selectionLoss.races, 0, 'unsettled/invalid evidence must never be classified as a loss');
+}
+const badEvidence = structuredClone(original); delete badEvidence.record.exhibitionSnapshot;
+assert.equal(buildProgress([badEvidence], [result(original)]).cohorts.length, 0);
+console.log('selection loss: six classes, exact cohort, historical separation, exclusions and immutable evidence passed');
 console.log('race review: pre-race evidence, immutable tickets, deduplication, method retention, 100R boundaries, pending/refund/payout passed');
 (async () => {
   const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
