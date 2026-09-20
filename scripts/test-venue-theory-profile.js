@@ -41,5 +41,6 @@ assert.equal(kojima.weakestTheory.recoveryRate, 18.3);
 assert.equal(profile.classify({ evaluatedCount: 20, recoveryRate: 80 }), "WATCH");
 assert.equal(profile.classify({ evaluatedCount: 20, recoveryRate: 100 }), "STRONG");
 assert.equal(profile.classify({ evaluatedCount: 19, recoveryRate: 500 }), "INSUFFICIENT_EVIDENCE");
+assert.equal(profile.compact({ evaluatedCount: 0, recoveryRate: null }).recoveryRate, null);
 
 console.log("venue theory profile tests passed");
