@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selection-consistency-audit-v1",
-  "generatedAt": "2026-09-20T19:31:44.025Z",
+  "generatedAt": "2026-09-21T07:56:31.794Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "当地・水面の同一確定コホートで、実5・6号艇勝ちが同じ保存済み候補配列内で最終頭以上のpriorityScoreを持ちながら未選択だった例だけを対象に、締切前保存済みの選択フラグ・除外理由・配列順・役割・重複信号を監査する。",
   "sourceVersion": "local-water-outer-head-priority-score-audit-v1",
-  "sourceGeneratedAt": "2026-09-20T18:46:06.538Z",
+  "sourceGeneratedAt": "2026-09-21T07:49:42.322Z",
   "sourceNextStep": "audit-local-water-priority-selection-consistency",
   "applicable": true,
   "fixedDecisionRules": {
@@ -20,11 +20,11 @@
     "explicitRejectionCountForContractAudit": 5
   },
   "metrics": {
-    "sourceComparableCount": 69,
-    "targetCount": 20,
-    "predictionMatchedCount": 20,
-    "resolvedPairCount": 20,
-    "strictInversionCount": 3,
+    "sourceComparableCount": 76,
+    "targetCount": 21,
+    "predictionMatchedCount": 21,
+    "resolvedPairCount": 21,
+    "strictInversionCount": 4,
     "tiedCount": 17,
     "explicitWinnerRejectionCount": 0,
     "explicitWinnerSelectedCount": 0,
@@ -35,32 +35,32 @@
     "tieSameIndexCount": 0,
     "winnerRoleLowerPriorityCount": 0,
     "resolvedPairCoverageRate": 100,
-    "strictInversionRate": 15,
-    "tiedRate": 85,
-    "duplicateSignalShare": 50,
+    "strictInversionRate": 19,
+    "tiedRate": 81,
+    "duplicateSignalShare": 47.6,
     "tieFinalEarlierShare": 100,
     "winnerRoleLowerPriorityShare": 0
   },
   "classifications": {
     "tie-final-earlier-order": 17,
-    "winner-ahead-selector-inversion": 3
+    "winner-ahead-selector-inversion": 4
   },
   "signalCounts": {
-    "final-earlier": 20,
-    "same-role-class": 20,
+    "final-earlier": 21,
+    "same-role-class": 21,
     "priority-score-tied": 17,
     "duplicate-overlap": 10,
-    "winner-score-ahead": 3
+    "winner-score-ahead": 4
   },
   "comparisonPathCounts": {
     "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 10,
     "practicalSelection.targetDecisions[0].candidateDecisions": 4,
-    "practicalSelection.targetDecisions[1].candidateDecisions": 3,
+    "practicalSelection.targetDecisions[1].candidateDecisions": 4,
     "practicalSelection.targetDecisions[4].candidateDecisions": 2,
     "practicalSelection.targetDecisions[2].candidateDecisions": 1
   },
   "nextStep": "build-local-water-priority-selector-shadow-replay",
-  "decisionReason": "勝ち艇のpriorityScoreが上なのに未選択が3Rあり、固定条件2R以上を満たした。",
+  "decisionReason": "勝ち艇のpriorityScoreが上なのに未選択が4Rあり、固定条件2R以上を満たした。",
   "cases": [
     {
       "date": "20260818",
@@ -236,6 +236,48 @@
       "signals": [
         "priority-score-tied",
         "duplicate-overlap",
+        "final-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20260820",
+      "jcd": "11",
+      "raceNo": 12,
+      "actualHead": 5,
+      "finalHead": 4,
+      "comparisonPath": "practicalSelection.targetDecisions[1].candidateDecisions",
+      "upstreamWinnerScore": 100,
+      "upstreamFinalScore": 78,
+      "upstreamGap": -22,
+      "upstreamWinnerAhead": true,
+      "upstreamTied": false,
+      "upstreamDuplicateReason": false,
+      "resolved": true,
+      "rankingArrayLength": 10,
+      "resolvedWinnerScore": 100,
+      "resolvedFinalScore": 78,
+      "resolvedGap": -22,
+      "winnerIndex": 9,
+      "finalIndex": 4,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": false
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": false
+      },
+      "winnerReasons": [],
+      "finalReasons": [],
+      "classification": "winner-ahead-selector-inversion",
+      "signals": [
+        "winner-score-ahead",
         "final-earlier",
         "same-role-class"
       ]
