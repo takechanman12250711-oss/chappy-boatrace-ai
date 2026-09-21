@@ -3,7 +3,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-global.ChappyPracticalSelection = { createPracticalSelection: p => structuredClone(p.practicalTickets) };
+global.ChappyPracticalSelection = {
+  createPracticalSelection: p => structuredClone(p.practicalTickets),
+  select: p => ({ tickets: structuredClone(p.practicalTickets),
+    candidateDecisions:[{ticket:'1-3-2',selected:false,reasonCode:'TEST_RECORDED_EXCLUSION'}] })
+};
 const generator = require('../js/note-generator');
 const { auditNotePublication } = require('./note-publication-audit');
 const { allRaceTargets, collectAllRaceNotes, existingRaces } = require('./collect-all-race-notes');
@@ -73,12 +77,21 @@ async function main() {
     assert.equal(fs.readdirSync(path.join(blockedRoot, 'data/outer-attack-sources', date)).length, 24,
       'all research snapshots survive a publication audit failure');
     assert.equal(fs.existsSync(path.join(blockedRoot, 'data/note-drafts')), false);
+    const sourceDir = path.join(blockedRoot, 'data/outer-attack-sources', date);
+    const source = JSON.parse(fs.readFileSync(path.join(sourceDir,fs.readdirSync(sourceDir)[0])));
+    assert.equal(source.record.practicalSelectionEvidence.status,'captured');
+    assert.equal(source.record.practicalSelectionEvidence.candidateDecisions[0].reasonCode,'TEST_RECORDED_EXCLUSION');
   } finally { fs.rmSync(blockedRoot, { recursive: true, force: true }); }
   assert.equal(existingRaces(date, rootDir, clock).size, 24);
   assert.equal((await collectAllRaceNotes(args)).saved, 0, 'do not recreate immutable snapshots each cycle');
   assert.deepEqual(fs.readdirSync(path.join(rootDir, 'data')).sort(), ['note-drafts', 'outer-attack-sources']);
   const file = fs.readdirSync(path.join(rootDir, 'data/note-drafts', date))[0];
   const savedBundle = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-drafts', date, file)));
+  assert.equal(savedBundle.record.practicalSelectionEvidence.status,'captured');
+  assert.equal(savedBundle.record.practicalSelectionEvidence.selectedAt,savedBundle.record.selectedAt);
+  assert.deepEqual(savedBundle.record.practicalSelectionEvidence.practicalTickets,
+    savedBundle.baselinePracticalTickets.map(t=>t.ticket));
+  assert.equal(savedBundle.record.practicalSelectionEvidence.candidateDecisions[0].reasonCode,'TEST_RECORDED_EXCLUSION');
   assert.deepEqual(savedBundle.record.outerAttackShadow.a.entries.map(t => t.ticket).sort(),
     savedBundle.baselinePracticalTickets.map(t => t.ticket).sort(), 'A/B baseline must exclude raw formations');
   assert.equal(publicationPayload(`data/note-drafts/${date}/${file}`, rootDir, clock).price, 300);

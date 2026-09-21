@@ -75,10 +75,13 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
         place: item.place, raceNo: item.raceNo, deadlineAt: item.deadlineAt,
         selectedAt: new Date(now()).toISOString() };
       // Freeze the existing A/B experiment while full pre-race evidence is present.
-      try { record.outerAttackShadow = require('../js/outer-attack-ticket-shadow').buildSnapshot({
+      try {
+        const selection = global.ChappyPracticalSelection?.select?.(prediction) || prediction.practicalSelection;
+        record.practicalSelectionEvidence = require('./practical-selection-evidence').capture(record, baseline, selection);
+        record.outerAttackShadow = require('../js/outer-attack-ticket-shadow').buildSnapshot({
         ...record, evaluatedScenarioCandidates: require('../js/evaluated-scenario-candidates').build(prediction),
         prediction: { practicalTickets: baseline,
-          practicalSelection: global.ChappyPracticalSelection?.select?.(prediction) || prediction.practicalSelection }
+          practicalSelection: selection }
       }, { now: record.selectedAt }); } catch (error) {
         record.outerAttackShadow = { status: 'capture-error', error: String(error.message).slice(0, 160) };
       }

@@ -45,6 +45,7 @@ function saveNoteDraftBundle(input = {}, { rootDir = process.cwd() } = {}) {
       ...(record.publicationPolicy ? { publicationPolicy: record.publicationPolicy } : {}),
       ...(record.exhibitionSnapshot ? { exhibitionSnapshot: record.exhibitionSnapshot } : {}),
       ...(record.reviewEvidence ? { reviewEvidence: record.reviewEvidence } : {}),
+      ...(record.practicalSelectionEvidence ? { practicalSelectionEvidence: record.practicalSelectionEvidence } : {}),
       ...(record.outerAttackShadow ? { outerAttackShadow: record.outerAttackShadow } : {}),
       raceKey: record.raceKey,
       date: record.date,
