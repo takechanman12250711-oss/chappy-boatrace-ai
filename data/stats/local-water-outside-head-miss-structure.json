@@ -1,87 +1,87 @@
 {
   "schemaVersion": 2,
   "version": "local-water-outside-head-miss-structure-v2",
-  "generatedAt": "2026-09-21T07:15:13.038Z",
+  "generatedAt": "2026-09-21T21:25:42.871Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "締切前保存済み正式証拠だけを使い、平穏/中条件/強条件ごとに、外頭発生時の外し方を『1号艇予測』『別の外艇予測』『外頭正解』へ分解する。強条件30R以上かつ平穏比+10pt以上の主要ミスだけを次のshadow A/B候補にする。",
-  "settledFormalEvidenceRaceCount": 1201,
+  "settledFormalEvidenceRaceCount": 1211,
   "summaries": {
     "calm": {
-      "settledCount": 691,
-      "actualOutsideHeadCount": 311,
+      "settledCount": 695,
+      "actualOutsideHeadCount": 314,
       "actualOutsideHeadPredictedInsideCount": 71,
-      "actualOutsideHeadPredictedOutsideWrongCount": 150,
-      "actualOutsideHeadPredictedCorrectCount": 90,
-      "predictedInsideCount": 225,
-      "predictedOutsideCount": 466,
+      "actualOutsideHeadPredictedOutsideWrongCount": 152,
+      "actualOutsideHeadPredictedCorrectCount": 91,
+      "predictedInsideCount": 226,
+      "predictedOutsideCount": 469,
       "predictedHeadCounts": {
-        "1": 225,
-        "2": 170,
+        "1": 226,
+        "2": 171,
         "3": 168,
-        "4": 128,
+        "4": 130,
         "5": 0,
         "6": 0
       },
       "actualHeadCounts": {
-        "1": 380,
-        "2": 80,
+        "1": 381,
+        "2": 82,
         "3": 102,
         "4": 70,
         "5": 41,
-        "6": 18
+        "6": 19
       },
-      "actualOutsideHeadRate": 45,
-      "predictedInsideRate": 32.6,
-      "predictedOutsideRate": 67.4,
-      "outsideHeadCorrectRate": 28.9,
-      "outsideHeadMissByInsideRate": 22.8,
-      "outsideHeadMissByWrongOutsideRate": 48.2
+      "actualOutsideHeadRate": 45.2,
+      "predictedInsideRate": 32.5,
+      "predictedOutsideRate": 67.5,
+      "outsideHeadCorrectRate": 29,
+      "outsideHeadMissByInsideRate": 22.6,
+      "outsideHeadMissByWrongOutsideRate": 48.4
     },
     "medium": {
-      "settledCount": 400,
-      "actualOutsideHeadCount": 204,
+      "settledCount": 405,
+      "actualOutsideHeadCount": 206,
       "actualOutsideHeadPredictedInsideCount": 38,
-      "actualOutsideHeadPredictedOutsideWrongCount": 96,
+      "actualOutsideHeadPredictedOutsideWrongCount": 98,
       "actualOutsideHeadPredictedCorrectCount": 70,
-      "predictedInsideCount": 107,
-      "predictedOutsideCount": 293,
+      "predictedInsideCount": 108,
+      "predictedOutsideCount": 297,
       "predictedHeadCounts": {
-        "1": 107,
-        "2": 110,
+        "1": 108,
+        "2": 113,
         "3": 107,
-        "4": 76,
+        "4": 77,
         "5": 0,
         "6": 0
       },
       "actualHeadCounts": {
-        "1": 196,
+        "1": 199,
         "2": 49,
-        "3": 66,
+        "3": 68,
         "4": 50,
         "5": 27,
         "6": 12
       },
-      "actualOutsideHeadRate": 51,
-      "predictedInsideRate": 26.8,
+      "actualOutsideHeadRate": 50.9,
+      "predictedInsideRate": 26.7,
       "predictedOutsideRate": 73.3,
-      "outsideHeadCorrectRate": 34.3,
-      "outsideHeadMissByInsideRate": 18.6,
-      "outsideHeadMissByWrongOutsideRate": 47.1
+      "outsideHeadCorrectRate": 34,
+      "outsideHeadMissByInsideRate": 18.4,
+      "outsideHeadMissByWrongOutsideRate": 47.6
     },
     "strong": {
-      "settledCount": 110,
-      "actualOutsideHeadCount": 55,
+      "settledCount": 111,
+      "actualOutsideHeadCount": 56,
       "actualOutsideHeadPredictedInsideCount": 13,
-      "actualOutsideHeadPredictedOutsideWrongCount": 27,
+      "actualOutsideHeadPredictedOutsideWrongCount": 28,
       "actualOutsideHeadPredictedCorrectCount": 15,
       "predictedInsideCount": 33,
-      "predictedOutsideCount": 77,
+      "predictedOutsideCount": 78,
       "predictedHeadCounts": {
         "1": 33,
         "2": 29,
-        "3": 23,
+        "3": 24,
         "4": 25,
         "5": 0,
         "6": 0
@@ -90,21 +90,21 @@
         "1": 55,
         "2": 13,
         "3": 16,
-        "4": 13,
+        "4": 14,
         "5": 9,
         "6": 4
       },
-      "actualOutsideHeadRate": 50,
-      "predictedInsideRate": 30,
-      "predictedOutsideRate": 70,
-      "outsideHeadCorrectRate": 27.3,
-      "outsideHeadMissByInsideRate": 23.6,
-      "outsideHeadMissByWrongOutsideRate": 49.1
+      "actualOutsideHeadRate": 50.5,
+      "predictedInsideRate": 29.7,
+      "predictedOutsideRate": 70.3,
+      "outsideHeadCorrectRate": 26.8,
+      "outsideHeadMissByInsideRate": 23.2,
+      "outsideHeadMissByWrongOutsideRate": 50
     }
   },
   "nextStep": {
     "status": "no-shadow-ab-signal",
-    "insideMissGapVsCalm": 0.8,
-    "wrongOutsideMissGapVsCalm": 0.9
+    "insideMissGapVsCalm": 0.6,
+    "wrongOutsideMissGapVsCalm": 1.6
   }
 }
