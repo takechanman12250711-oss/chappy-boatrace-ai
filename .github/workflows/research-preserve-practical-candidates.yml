@@ -6,6 +6,8 @@ on:
     paths:
       - scripts/research-preserve-practical-candidates.cjs
       - scripts/test-preserve-practical-candidates.cjs
+      - scripts/audit-practical-narrowing-evidence.cjs
+      - scripts/test-practical-narrowing-evidence.cjs
       - .github/workflows/research-preserve-practical-candidates.yml
 permissions:
   contents: read
@@ -22,10 +24,11 @@ jobs:
         with:
           node-version: '20'
       - run: node scripts/test-preserve-practical-candidates.cjs
+      - run: node scripts/test-practical-narrowing-evidence.cjs
       - run: node scripts/restore-daily-prediction-source.js --all
-      - run: node --max-old-space-size=6144 scripts/research-preserve-practical-candidates.cjs
+      - run: node --max-old-space-size=4096 scripts/audit-practical-narrowing-evidence.cjs
       - uses: actions/upload-artifact@v4
         with:
-          name: preserve-practical-candidates-research
-          path: data/stats/preserve-practical-candidates-research.json
+          name: practical-narrowing-evidence-audit
+          path: data/stats/practical-narrowing-evidence-audit.json
           if-no-files-found: error
