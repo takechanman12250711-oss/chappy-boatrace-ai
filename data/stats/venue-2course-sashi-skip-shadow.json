@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "version": "venue-race-flow-2course-sashi-skip-ab-v1-prospective",
   "baseRuleVersion": "race-flow-2course-sashi-skip-ab-v1-prospective",
-  "generatedAt": "2026-09-21T06:38:43.133Z",
+  "generatedAt": "2026-09-21T20:33:44.609Z",
   "productionChanged": false,
   "automaticProductionChange": false,
   "usableForPrediction": false,
@@ -30,84 +30,84 @@
     "actualPurchase": false
   },
   "cohort": {
-    "raceCount": 2,
-    "settledCount": 1,
-    "targetRaceCount": 0,
-    "targetSettledCount": 0
+    "raceCount": 5,
+    "settledCount": 3,
+    "targetRaceCount": 2,
+    "targetSettledCount": 1
   },
   "a": {
     "label": "current-A",
     "rule": "保存済みの現行実戦厳選をそのまま評価",
-    "settledCount": 1,
-    "betRaceCount": 1,
+    "settledCount": 3,
+    "betRaceCount": 3,
     "skippedRaceCount": 0,
-    "hitCount": 0,
-    "hitRate": 0,
-    "stake": 600,
-    "return": 0,
-    "profit": -600,
-    "recoveryRate": 0
+    "hitCount": 1,
+    "hitRate": 33.3,
+    "stake": 2400,
+    "return": 2160,
+    "profit": -240,
+    "recoveryRate": 90
   },
   "b": {
     "label": "skip-exact-2course-sashi-B",
     "rule": "対象2場で保存済み締切前展開ラベルが完全一致で2コース差しの時だけshadow上で見送り",
-    "settledCount": 1,
-    "betRaceCount": 1,
-    "skippedRaceCount": 0,
+    "settledCount": 3,
+    "betRaceCount": 2,
+    "skippedRaceCount": 1,
     "hitCount": 0,
     "hitRate": 0,
-    "stake": 600,
+    "stake": 1600,
     "return": 0,
-    "profit": -600,
+    "profit": -1600,
     "recoveryRate": 0
   },
   "delta": {
-    "stake": 0,
-    "return": 0,
-    "profit": 0,
-    "recoveryRate": 0,
-    "hitRate": 0
+    "stake": -800,
+    "return": -2160,
+    "profit": -1360,
+    "recoveryRate": -90,
+    "hitRate": -33.3
   },
   "byVenue": [
     {
       "jcd": "01",
       "place": "桐生",
       "cohort": {
-        "raceCount": 1,
-        "settledCount": 0,
-        "targetRaceCount": 0,
-        "targetSettledCount": 0
+        "raceCount": 3,
+        "settledCount": 2,
+        "targetRaceCount": 2,
+        "targetSettledCount": 1
       },
       "a": {
         "label": "current-A",
-        "settledCount": 0,
-        "betRaceCount": 0,
+        "settledCount": 2,
+        "betRaceCount": 2,
         "skippedRaceCount": 0,
-        "hitCount": 0,
-        "hitRate": null,
-        "stake": 0,
-        "return": 0,
-        "profit": 0,
-        "recoveryRate": null
+        "hitCount": 1,
+        "hitRate": 50,
+        "stake": 1800,
+        "return": 2160,
+        "profit": 360,
+        "recoveryRate": 120
       },
       "b": {
         "label": "skip-exact-2course-sashi-B",
-        "settledCount": 0,
-        "betRaceCount": 0,
-        "skippedRaceCount": 0,
+        "settledCount": 2,
+        "betRaceCount": 1,
+        "skippedRaceCount": 1,
         "hitCount": 0,
-        "hitRate": null,
-        "stake": 0,
+        "hitRate": 0,
+        "stake": 1000,
         "return": 0,
-        "profit": 0,
-        "recoveryRate": null
+        "profit": -1000,
+        "recoveryRate": 0
       },
       "delta": {
-        "stake": 0,
-        "return": 0,
-        "profit": 0,
-        "recoveryRate": null,
-        "hitRate": null
+        "stake": -800,
+        "return": -2160,
+        "profit": -1360,
+        "recoveryRate": -120,
+        "hitRate": -50
       },
       "validationReady": false
     },
@@ -115,7 +115,7 @@
       "jcd": "18",
       "place": "徳山",
       "cohort": {
-        "raceCount": 1,
+        "raceCount": 2,
         "settledCount": 1,
         "targetRaceCount": 0,
         "targetSettledCount": 0
