@@ -93,7 +93,7 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
       const prepared = await prepareNoteInput({ prediction, baseline, record, fetchOdds, now });
       record.prediction = compactPrediction(prepared.prediction, prepared.baseline, item.raceData);
       record.prediction.candidate24Tickets = createDisplayCandidates(prepared.prediction, prepared.baseline);
-      const article = generateArticle(prepared.prediction);
+      const article = generateArticle(prepared.prediction, { practicalTickets: prepared.baseline });
       const audit = auditNotePublication({ article, record, baselinePracticalTickets: prepared.baseline,
         now: new Date(now()).toISOString() });
       if (!audit.contentReady) {

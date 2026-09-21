@@ -1,10 +1,14 @@
 'use strict';
 
 // Enrich an already selected forecast. Never use odds to select or remove tickets.
-function attachTicketOdds(value, byTicket) {
-  if (Array.isArray(value)) return value.map(item => attachTicketOdds(item, byTicket));
+function attachTicketOdds(value, byTicket, seen = new WeakMap()) {
   if (!value || typeof value !== 'object') return value;
-  const copy = Object.fromEntries(Object.entries(value).map(([key, item]) => [key, attachTicketOdds(item, byTicket)]));
+  // Scenario selection uses shared object identity. Preserve those aliases while
+  // enriching a separate graph; neither odds nor cloning may change selection.
+  if (seen.has(value)) return seen.get(value);
+  const copy = Array.isArray(value) ? [] : {};
+  seen.set(value, copy);
+  for (const [key, item] of Object.entries(value)) copy[key] = attachTicketOdds(item, byTicket, seen);
   if (/^[1-6]-[1-6]-[1-6]$/.test(copy.ticket || '')) {
     const odds = Number(byTicket[copy.ticket]);
     copy.odds = Number.isFinite(odds) && odds > 0 ? odds : 0;

@@ -287,6 +287,23 @@
     return selector.createPracticalSelection(prediction);
   }
 
+  function articlePracticalTickets(prediction, options = {}) {
+    if (!Object.prototype.hasOwnProperty.call(options, "practicalTickets")) {
+      return createPracticalSelection(prediction);
+    }
+    // Use the collector's pre-odds selection; invalid snapshots never reselect.
+    const rows = options.practicalTickets;
+    if (!Array.isArray(rows) || !rows.length || rows.length > 10 ||
+        rows.some(row => !row || typeof row !== "object" ||
+          !/^[1-6]-[1-6]-[1-6]$/.test(row.ticket || "") ||
+          new Set(row.ticket.split("-")).size !== 3 ||
+          typeof row.odds !== "number" || !Number.isFinite(row.odds) || row.odds < 0) ||
+        new Set(rows.map(row => row.ticket)).size !== rows.length) {
+      throw new Error("note_practical_snapshot_invalid");
+    }
+    return rows.map(row => ({ ...row }));
+  }
+
   function createDisplayCandidates(
     prediction,
     practical = []
@@ -879,7 +896,8 @@
   }
 
     function buildPaidSection(
-    prediction
+    prediction,
+    practicalTickets = createPracticalSelection(prediction)
   ) {
     const main =
       prediction?.mainSheet || {};
@@ -887,10 +905,7 @@
     const manshu =
       prediction?.manshuSheet || {};
 
-    const practical =
-      createPracticalSelection(
-        prediction
-      );
+    const practical = practicalTickets;
 
     const candidates =
       createDisplayCandidates(
@@ -1047,8 +1062,8 @@
       ticketLists(prediction);
 
     const practicalTickets =
-      createPracticalSelection(
-        prediction
+      articlePracticalTickets(
+        prediction, options
       );
 
     const honmeiNo =
@@ -1375,7 +1390,7 @@
 
     const paidText =
       buildPaidSection(
-        prediction
+        prediction, practicalTickets
       );
 
     const tags =
