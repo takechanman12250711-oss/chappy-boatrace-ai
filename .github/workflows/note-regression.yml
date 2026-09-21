@@ -28,6 +28,9 @@ on:
       - "scripts/test-exhibition-candidate24.js"
       - "scripts/publish-note-queue.js"
       - "scripts/test-all-race-notes.js"
+      - "scripts/practical-selection-evidence.js"
+      - "scripts/test-practical-selection-evidence.js"
+      - "scripts/outer-attack-live-source.js"
       - "scripts/test-note-source-concurrency.js"
       - ".github/workflows/live-note.yml"
       - "scripts/note-publication-source.js"
@@ -68,6 +71,9 @@ on:
       - "scripts/test-exhibition-candidate24.js"
       - "scripts/publish-note-queue.js"
       - "scripts/test-all-race-notes.js"
+      - "scripts/practical-selection-evidence.js"
+      - "scripts/test-practical-selection-evidence.js"
+      - "scripts/outer-attack-live-source.js"
       - "scripts/test-note-source-concurrency.js"
       - ".github/workflows/live-note.yml"
       - "scripts/note-publication-source.js"
@@ -117,6 +123,7 @@ jobs:
           node scripts/note-publication-source.test.js
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
+          node scripts/test-practical-selection-evidence.js
           node scripts/test-exhibition-candidate24.js
           node scripts/test-note-source-concurrency.js
           node scripts/test-theory-integration.js
