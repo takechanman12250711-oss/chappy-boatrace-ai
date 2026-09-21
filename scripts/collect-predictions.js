@@ -2172,7 +2172,7 @@ async function main() {
       evaluate: targets => evaluateTargets(date, targets, { allRaces: true }),
       createPrediction: raceData => global.createPrediction(raceData),
       createPracticalSelection: prediction => global.ChappyNoteGenerator.createPracticalSelection(prediction),
-      generateArticle: prediction => global.ChappyNoteGenerator.generateArticle(prediction, { publicationPolicy: "all-races-v1" }),
+      generateArticle: (prediction, options) => global.ChappyNoteGenerator.generateArticle(prediction, { ...options, publicationPolicy: "all-races-v1" }),
       compactPrediction,
       fetchOdds: query => callApi(require("../api/odds"), query)
     });
@@ -2276,7 +2276,7 @@ async function main() {
     selectedPrediction = preparedNote.prediction;
     noteBaseline = preparedNote.baseline;
     noteOddsSnapshot = preparedNote.oddsSnapshot;
-    article = global.ChappyNoteGenerator.generateArticle(selectedPrediction);
+    article = global.ChappyNoteGenerator.generateArticle(selectedPrediction, { practicalTickets: noteBaseline });
     const practicalTickets = article?.practicalTickets ||
       global.ChappyNoteGenerator.createPracticalSelection(selectedPrediction);
     selectedData = {

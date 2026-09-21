@@ -30,7 +30,7 @@ function prediction(raceNo = 1) {
 }
 const exhibition = () => ({ entries: [1,2,3,4,5,6].map(boat => ({ boat, exhibition: { displayTime: 6.8 } })),
   startExhibition: [1,2,3,4,5,6].map(boat => ({ boat, course: boat, st: 0.12, mappingSource: 'official-start-image' })) });
-const generateArticle = p => generator.generateArticle(p, { publicationPolicy: 'all-races-v1' });
+const generateArticle = (p, options) => generator.generateArticle(p, { ...options, publicationPolicy: 'all-races-v1' });
 async function main() {
   const loadSchedule = async q => q.jcd ? { ok: true, date, selectedVenue: { jcd: q.jcd,
     races: Array.from({ length: 12 }, (_, i) => ({ raceNo: i + 1, selectable: true,
@@ -60,7 +60,10 @@ async function main() {
     rawRaceData: exhibition(), raceData: { ...prediction(t.raceNo), race: { ...prediction(t.raceNo).race, stadiumName: t.place } } })), attempts: [] });
   const args = { date, rootDir, now: () => clock, loadSchedule, evaluate,
     createPrediction: p => ({ ...structuredClone(p), formations: { cover: ['6-5-4'] } }), createPracticalSelection: p => p.practicalTickets,
-    generateArticle, compactPrediction: (p, tickets) => ({ ...p, practicalTickets: tickets }),
+    generateArticle: (p, options) => {
+      assert.deepEqual(options?.practicalTickets, p.practicalTickets, 'collector must pass the independently enriched selection');
+      return generateArticle(p, options);
+    }, compactPrediction: (p, tickets) => ({ ...p, practicalTickets: tickets }),
     fetchOdds: async () => { throw new Error('odds_not_available'); } };
   const waiting = await collectAllRaceNotes({ ...args,
     evaluate: async targets => { const output = await evaluate(targets); output.comparison.forEach(r => { r.rawRaceData.startExhibition = []; }); return output; },
