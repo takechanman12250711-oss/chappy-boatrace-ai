@@ -26,6 +26,52 @@ function selectionReasons(prediction) {
   }
   return reasons;
 }
+function selectionEvidence(record, practical) {
+  const e = record.practicalSelectionEvidence;
+  if (!e) return null; // Preserve the exact legacy report shape.
+  const rejected = reason => ({ status: 'rejected', reason });
+  if (e.version !== 'practical-selection-evidence-v1' || e.status !== 'captured' ||
+      e.productionChanged !== false || e.resultUsedForGeneration !== false) return rejected('unsupported-evidence');
+  if (e.raceKey !== record.raceKey || e.selectedAt !== record.selectedAt || e.deadlineAt !== record.deadlineAt)
+    return rejected('identity-mismatch');
+  const review = e.reviewEvidence, original = record.reviewEvidence;
+  if (!review || !original || review.version !== 'race-review-evidence-v1' ||
+      review.predictionMode !== 'server_pre_deadline' || review.officialResultUsedForPrediction !== false ||
+      !/^[a-f0-9]{64}$/.test(review.method || '') ||
+      ['version', 'method', 'predictionMode', 'officialResultUsedForPrediction'].some(k => review[k] !== original[k]))
+    return rejected('method-mismatch');
+  if (!Array.isArray(e.practicalTickets) || e.practicalTickets.length !== practical.length ||
+      new Set(e.practicalTickets).size !== practical.length ||
+      !e.practicalTickets.every(t => typeof t === 'string' && valid(t) && practical.includes(t)))
+    return rejected('baseline-mismatch');
+  if (!Array.isArray(e.candidateDecisions) || !Array.isArray(e.excludedCandidates) ||
+      !Array.isArray(e.targetDecisions) || e.targetDecisions.some(t => !t || !Array.isArray(t.candidateDecisions)))
+    return rejected('invalid-history');
+  // These are stage observations, including duplicates and all-permutation rows.
+  // Never treat their selected flags as the final ticket set or exclusion causes.
+  return { status: 'validated', finalPracticalTickets: [...practical],
+    ...(typeof e.selectionReason === 'string' ? { selectionReason: e.selectionReason } : {}),
+    stageHistory: JSON.parse(JSON.stringify({ candidateDecisions: e.candidateDecisions,
+      excludedCandidates: e.excludedCandidates, targetDecisions: e.targetDecisions })) };
+}
+function actualSelectionDiagnostic(evidence, actual, pool) {
+  if (evidence.status !== 'validated') return evidence;
+  const { stageHistory, ...summary } = evidence;
+  const matches = (rows, source) => rows.flatMap((decision, index) =>
+    (decision?.ticket || decision?.combination) === actual ? [{ source: `${source}[${index}]`, decision }] : []);
+  // Full raw history stays in the immutable bundle. Keep only the result ticket's
+  // stage observations here so the frontend report does not grow by 120 rows/race.
+  const actualDecisionHistory = [
+    ...matches(stageHistory.candidateDecisions, 'candidateDecisions'),
+    ...matches(stageHistory.excludedCandidates, 'excludedCandidates'),
+    ...stageHistory.targetDecisions.flatMap((target, index) =>
+      matches(target.candidateDecisions, `targetDecisions[${index}].candidateDecisions`).map(row => ({
+        ...row, target: Object.fromEntries(['evaluationId', 'boatNo', 'reasonCode'].filter(k => target[k] !== undefined).map(k => [k, target[k]]))
+      })))
+  ];
+  return { ...summary, actualFinalDisposition: summary.finalPracticalTickets.includes(actual) ? 'selected' : 'not-selected',
+    actualInCandidatePool: pool.includes(actual), actualDecisionHistory };
+}
 function summarizeLosses(rows) {
   const counts = Object.fromEntries(['both-hit', 'candidate-only-hit', 'practical-only-hit',
     'candidate-head-missing', 'candidate-first-second-pair-missing', 'candidate-third-missing'].map(k => [k, 0]));
@@ -70,6 +116,7 @@ function assess(bundle) {
   return { method: method ? `method:${method}` : `legacy:${bundle.sourceCommit}`, saved,
     row: { raceKey: r.raceKey, date: r.date, selectedAt: r.selectedAt, deadlineAt: r.deadlineAt,
       selectionReasons: selectionReasons(p),
+      practicalSelectionEvidence: selectionEvidence(r, practical),
       prediction: { practicalTickets: practical, candidate24Tickets: pool, officialResultUsedForPrediction: false } } };
 }
 function buildProgress(bundles, results, { generatedAt = new Date().toISOString(), activeMethod = '' } = {}) {
@@ -94,7 +141,9 @@ function buildProgress(bundles, results, { generatedAt = new Date().toISOString(
         payoutPer100: result.trifecta.payout, classification: classify(pool, practical, actual),
         candidateTicketCount: pool.length, practicalTicketCount: practical.length,
         practicalOutsideCandidate: practical.filter(t => !pool.includes(t)),
-        recordedDecisionReasons: row.selectionReasons[actual] || [] });
+        recordedDecisionReasons: row.selectionReasons[actual] || [],
+        ...(row.practicalSelectionEvidence ? { practicalSelectionEvidence:
+          actualSelectionDiagnostic(row.practicalSelectionEvidence, actual, pool) } : {}) });
     });
     diagnostics.sort((a, b) => a.selectedAt.localeCompare(b.selectedAt) || a.raceKey.localeCompare(b.raceKey));
     const count = report.practical.races;

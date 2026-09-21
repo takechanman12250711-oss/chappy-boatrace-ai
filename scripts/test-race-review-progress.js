@@ -109,6 +109,66 @@ for (const extra of [{ refund: true }, { void: true }, { source: 'untrusted' },
 }
 const badEvidence = structuredClone(original); delete badEvidence.record.exhibitionSnapshot;
 assert.equal(buildProgress([badEvidence], [result(original)]).cohorts.length, 0);
+// Capture the producer's real schema; intermediate flags can contradict final selection.
+const { capture } = require('./practical-selection-evidence');
+const diagnosed = structuredClone(original);
+diagnosed.record.practicalSelectionEvidence = capture(diagnosed.record, ['1-2-3'], {
+  tickets: ['1-2-3'], candidateDecisions: [
+    { ticket: '1-2-3', selected: false, reasonCode: 'INTERMEDIATE_EXCLUSION' },
+    { ticket: '1-2-4', selected: true, reasonCode: 'INTERMEDIATE_SELECTION' },
+    { ticket: '1-2-4', selected: true, reasonCode: 'INTERMEDIATE_SELECTION' },
+    { ticket: '6-5-4', selected: false, reasonCode: 'OUTSIDE_ORDINARY_POOL' }
+  ], excludedCandidates: [{ ticket: '1-2-3', selected: false }],
+  targetDecisions: [{ candidateDecisions: [{ ticket: '1-2-4', selected: true }] }]
+});
+const diagnosedBefore = JSON.stringify(diagnosed);
+const runDiagnosis = (b, actual = '1-2-3') => buildProgress([b, b], [result(b, {
+  trifecta: { combination: actual, payout: 500 }
+})]).cohorts[0];
+const nullHistory = structuredClone(diagnosed);
+nullHistory.record.practicalSelectionEvidence.candidateDecisions.push(null);
+nullHistory.record.practicalSelectionEvidence.excludedCandidates.push(null);
+nullHistory.record.practicalSelectionEvidence.targetDecisions[0].candidateDecisions.push(null);
+assert.equal(runDiagnosis(nullHistory).selectionLoss.rows[0].practicalSelectionEvidence.status, 'validated', 'null stage rows are ignored without losing a valid forecast');
+let checked = runDiagnosis(diagnosed);
+let evidence = checked.selectionLoss.rows[0].practicalSelectionEvidence;
+assert.equal(evidence.status, 'validated');
+assert.equal(evidence.actualFinalDisposition, 'selected');
+assert.equal(evidence.actualDecisionHistory[0].decision.selected, false);
+assert.equal(evidence.actualDecisionHistory[0].source, 'candidateDecisions[0]');
+assert.equal(evidence.actualDecisionHistory.length, 2);
+assert.equal(Object.hasOwn(evidence, 'stageHistory'), false, 'raw all-permutation history stays in immutable source, not frontend report');
+assert.deepEqual(evidence.finalPracticalTickets, ['1-2-3']);
+assert.equal(checked.settled, 1, 'duplicate stage rows and snapshots never inflate races');
+assert.equal(checked.selectionLoss.rows[0].candidateTicketCount, 2, 'all-permutation history is not the candidate pool');
+checked = runDiagnosis(diagnosed, '1-2-4');
+assert.equal(checked.selectionLoss.rows[0].practicalSelectionEvidence.actualFinalDisposition, 'not-selected');
+assert.equal(checked.selectionLoss.rows[0].practicalSelectionEvidence.actualDecisionHistory.length, 3, 'keep duplicate actual-ticket stage observations without counting extra races');
+assert.ok(checked.selectionLoss.rows[0].practicalSelectionEvidence.actualDecisionHistory.every(r => r.decision.ticket === '1-2-4'), 'omit unrelated permutation history');
+assert.deepEqual(checked.selectionLoss.recordedDecisionReasons, { 'reason-not-recorded': 1 }, 'stage codes must not become final exclusion causes');
+assert.equal(JSON.stringify(diagnosed), diagnosedBefore);
+for (const [mutate, reason] of [
+  [e => e.version = 'future', 'unsupported-evidence'],
+  [e => e.status = 'baseline-mismatch', 'unsupported-evidence'],
+  [e => e.resultUsedForGeneration = true, 'unsupported-evidence'],
+  [e => e.productionChanged = true, 'unsupported-evidence'],
+  [e => e.raceKey = '20300101-02-1', 'identity-mismatch'],
+  [e => e.selectedAt = '2030-01-01T01:10:00Z', 'identity-mismatch'],
+  [e => e.deadlineAt = '2030-01-01T03:00:00Z', 'identity-mismatch'],
+  [e => e.reviewEvidence.method = 'c'.repeat(64), 'method-mismatch'],
+  [e => e.reviewEvidence.officialResultUsedForPrediction = true, 'method-mismatch'],
+  [e => delete e.reviewEvidence, 'method-mismatch'],
+  [e => e.practicalTickets = ['1-2-4'], 'baseline-mismatch'],
+  [e => e.practicalTickets = ['1-2-3', '1-2-3'], 'baseline-mismatch'],
+  [e => e.targetDecisions = [{}], 'invalid-history']
+]) {
+  const bad = structuredClone(diagnosed); mutate(bad.record.practicalSelectionEvidence);
+  const check = runDiagnosis(bad);
+  assert.deepEqual(check.selectionLoss.rows[0].practicalSelectionEvidence, { status: 'rejected', reason });
+  assert.deepEqual(check.practical, runDiagnosis(original).practical, 'bad optional diagnostics cannot exclude a valid forecast or alter metrics');
+}
+assert.equal(Object.hasOwn(runDiagnosis(original).selectionLoss.rows[0], 'practicalSelectionEvidence'), false, 'legacy report shape is unchanged');
+console.log('selection evidence: identity, final dispositions, separate stage history, fail-closed diagnostics and unchanged metrics passed');
 console.log('selection loss: six classes, exact cohort, historical separation, exclusions and immutable evidence passed');
 console.log('race review: pre-race evidence, immutable tickets, deduplication, method retention, 100R boundaries, pending/refund/payout passed');
 (async () => {
