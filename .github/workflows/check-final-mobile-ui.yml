@@ -6,6 +6,8 @@ on:
       - "index.html"
       - "js/final-mobile-ui.js"
       - "css/final-mobile-ui.css"
+      - "css/final-readability-fix.css"
+      - "scripts/test-player-readability.cjs"
       - "css/final-reference-layout.css"
       - "style.css"
       - "js/final-mobile-structure11.js"
@@ -25,6 +27,8 @@ on:
       - "index.html"
       - "js/final-mobile-ui.js"
       - "css/final-mobile-ui.css"
+      - "css/final-readability-fix.css"
+      - "scripts/test-player-readability.cjs"
       - "css/final-reference-layout.css"
       - "style.css"
       - "js/final-mobile-structure11.js"
@@ -65,6 +69,8 @@ jobs:
           node --check scripts/test-final-missing-odds-refresh.js
       - name: Check exact ticket compression and deduplication
         run: node scripts/test-ticket-compact-disclosure.js
+      - name: Check player names and brighter card contrast
+        run: node scripts/test-player-readability.cjs
       - name: Check delayed first prediction presentation
         run: node scripts/test-late-prediction-presentation.js
       - name: Check practical-only tickets and recommendation visibility

@@ -242,6 +242,8 @@ try {
         : 0;
       const trueManshuEmptyRect = trueManshuEmpty?.getBoundingClientRect();
       const boatName = root?.querySelector(".v3-paper-player-line .v3-boat-title strong");
+      const boatCard = boatName?.closest(".v3-paper-card");
+      const boatPanel = boatName?.closest(".v3-boat-tab-panel");
       const factorLine = [...(root?.querySelectorAll(".v3-factor-line") || [])]
         .find(line => line.querySelector(".v3-tag"));
       const factorLabel = factorLine?.querySelector(":scope > span");
@@ -305,6 +307,10 @@ try {
         integratedViewportRightOverflow: viewportRightOverflow,
         boatNameText: String(boatName?.textContent || "").trim(),
         boatNameColor: boatName ? getComputedStyle(boatName).color : "",
+        boatNameBackground: boatCard ? getComputedStyle(boatCard).backgroundColor : "",
+        boatNameWhiteSpace: boatName ? getComputedStyle(boatName).whiteSpace : "",
+        boatPanelMaxHeight: boatPanel ? getComputedStyle(boatPanel).maxHeight : "",
+        boatPanelClipped: !boatPanel || boatPanel.scrollHeight > boatPanel.clientHeight + 1,
         factorLineVisible: Boolean(factorLine),
         factorTopDelta:
           factorLabelRect && factorTagRect
@@ -346,9 +352,23 @@ try {
       throw new Error("Kiryu 10R manshu display regression path was not exercised");
     }
 
+    const relativeLuminance = color => {
+      const rgb = String(color).match(/[\d.]+/g)?.slice(0, 3).map(Number);
+      if (!rgb || rgb.length !== 3) return NaN;
+      const linear = rgb.map(n => n / 255).map(n => n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4);
+      return linear[0] * .2126 + linear[1] * .7152 + linear[2] * .0722;
+    };
+    const nameLuminance = relativeLuminance(responsiveSummary.boatNameColor);
+    const cardLuminance = relativeLuminance(responsiveSummary.boatNameBackground);
+    const nameContrast = (Math.max(nameLuminance, cardLuminance) + .05) /
+      (Math.min(nameLuminance, cardLuminance) + .05);
+
     if (
       !responsiveSummary.boatNameText ||
-      responsiveSummary.boatNameColor !== "rgb(17, 24, 39)" ||
+      !(nameContrast >= 4.5) ||
+      responsiveSummary.boatNameWhiteSpace !== "normal" ||
+      responsiveSummary.boatPanelMaxHeight !== "none" ||
+      responsiveSummary.boatPanelClipped ||
       responsiveSummary.factorLineVisible !== true ||
       responsiveSummary.factorTopDelta === null ||
       responsiveSummary.factorTopDelta > 2 ||

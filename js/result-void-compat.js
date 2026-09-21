@@ -42,7 +42,7 @@
   style("chappy-final-prediction-photo-style",`css/final-prediction-photo.css?v=${BUILD}`);
   style("chappy-final-iphone-tuning-style",`css/final-iphone-tuning.css?v=${BUILD}`);
   style("chappy-final-reference-layout-style",`css/final-reference-layout.css?v=${BUILD}`);
-  style("chappy-final-readability-fix-style",`css/final-readability-fix.css?v=${BUILD}&display=20260915-lazy1&compact=20260915-1`);
+  style("chappy-final-readability-fix-style",`css/final-readability-fix.css?v=${BUILD}&display=20260915-lazy1&compact=20260915-1&readability=20260921-1`);
   if(root.ChappyFinalMobileUi)loadOwner();else script("chappy-final-mobile-ui-script",`js/final-mobile-ui.js?v=${BUILD}&display=20260915-lazy1&compact=20260915-1&classification=20260915-1`,loadOwner);
 })(typeof window!=="undefined"?window:null);
 
