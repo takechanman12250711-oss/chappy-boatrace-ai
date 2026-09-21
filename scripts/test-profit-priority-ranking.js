@@ -83,14 +83,32 @@ assert.equal(remainPickupClosure.status, "terminal-rejected");
 assert.equal(remainPickupClosure.productionChanged, false);
 assert.equal(remainPickupClosure.automaticApplication, false);
 assert.equal(remainPickupClosure.sourceFiles.length, 2);
+// Audit the closure against its original immutable evidence, not a rolling report.
+const holdThirdClosure = JSON.parse(fs.readFileSync(
+  path.join(__dirname, "fixtures", "hold3-closure-20260908.json"), "utf8"
+));
+assert.equal(holdThirdClosure.sourceCommit, "24d6a065c6b1bacadac47f9240465155f92f4a7e");
+assert.equal(remainPickupClosure.sourceFiles.includes(holdThirdClosure.sourcePath), true);
+assert.equal(holdThirdClosure.report.productionAUnchanged, true);
+assert.equal(holdThirdClosure.report.automaticApplication, false);
+assert.equal(holdThirdClosure.report.B.hitCount < holdThirdClosure.report.A.hitCount, true);
+assert.equal(holdThirdClosure.report.B.recoveryRate < holdThirdClosure.report.A.recoveryRate, true);
 const holdThirdSource = JSON.parse(fs.readFileSync(
   path.join(root, "data", "stats", "remain-pickup-hold3-shadow-ab-report.json"),
   "utf8"
 ));
 assert.equal(holdThirdSource.productionAUnchanged, true);
 assert.equal(holdThirdSource.automaticApplication, false);
-assert.equal(holdThirdSource.B.hitCount < holdThirdSource.A.hitCount, true);
-assert.equal(holdThirdSource.B.recoveryRate < holdThirdSource.A.recoveryRate, true);
+// This rolling fewer-ticket diagnostic changes as official results are repaired.
+// ROI ordering is not a terminal gate; the fixed same-stake report below is.
+assert.equal(holdThirdSource.usableForPrediction, false);
+assert.equal(holdThirdSource.actualPurchase, false);
+assert.equal(holdThirdSource.A.settledCount, holdThirdSource.B.settledCount);
+for (const key of ["hitCount", "stake", "return"]) {
+  assert.equal(Number.isFinite(holdThirdSource.A[key]), true);
+  assert.equal(Number.isFinite(holdThirdSource.B[key]), true);
+  assert.equal(holdThirdSource.B[key] <= holdThirdSource.A[key], true, `subset diagnostic: ${key}`);
+}
 const sameStakeSource = JSON.parse(fs.readFileSync(
   path.join(root, "data", "stats", "remain-pickup-same-stake-shadow-report.json"),
   "utf8"
