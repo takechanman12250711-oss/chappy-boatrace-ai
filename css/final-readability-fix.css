@@ -154,3 +154,74 @@
 #predictionSection #resultArea .chappy-formation-odds-card :is(strong,span) {
   color:#eef6fb!important;
 }
+
+/* 20260921: brighter surfaces; preserve layout, tickets and disclosure state. */
+body.chappy-final-mobile-ui {
+  --ch-bg:#172c3e;
+  --ch-panel:#223e53;
+  --ch-panel-2:#2b4b62;
+  --ch-muted:#c8d9e5;
+  --ch-line:#527087;
+  background:linear-gradient(180deg,#25475f,#172c3e)!important;
+}
+body.chappy-final-mobile-ui :is(.app-header,.bottom-nav) {
+  background:#203c52!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-section,.v3-paper-section,.chappy-final-buy-summary) {
+  background:#223e53!important;
+  border-color:#527087!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-section-head,.chappy-final-buy-head,.chappy-final-buy-group>summary,.chappy-ui10-details>summary) {
+  background:#2b4b62!important;
+  color:#f7fbff!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-paper-card,.v3-boat-tab-panel,.chappy-final-buy-line,.chappy-formation-odds-card,.chappy-formation-odds-item,.chappy-final-purchase-row) {
+  background:#20394d!important;
+  border-color:#527087!important;
+  color:#f7fbff!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-note,.v3-comment,.v3-reason,.v3-paper-comment p,.v3-paper-comment strong) {
+  color:#d5e3ed!important;
+}
+/* Do not constrain a selected boat inside a second, clipped scroll area. */
+body.chappy-final-mobile-ui #predictionSection #resultArea .v3-boat-tab-panel {
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea .v3-boat-tab-buttons {
+  position:static!important;
+  background:#2b4b62!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea .v3-boat-tab-button {
+  min-height:48px!important;
+  padding:5px 0!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea .v3-paper-head {
+  flex-wrap:wrap!important;
+  gap:10px!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea .v3-paper-title {
+  flex:1 1 180px!important;
+  min-width:0!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea .v3-paper-score {
+  flex-shrink:0!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-paper-player-line,.v3-boat-title) {
+  min-width:0!important;
+  max-width:100%!important;
+  flex-wrap:wrap!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-paper-player-line strong,.v3-paper-name,.v3-entry-player strong,.v3-entry-name strong) {
+  color:#f7fbff!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:anywhere!important;
+  text-overflow:clip!important;
+  overflow:visible!important;
+  max-width:100%!important;
+}
+body.chappy-final-mobile-ui #predictionSection #resultArea .v3-role {
+  color:#a9dcff!important;
+}
