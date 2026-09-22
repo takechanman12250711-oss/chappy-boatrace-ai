@@ -364,6 +364,12 @@
   function captureEscapeEvaluation(raceData, prediction) {
     const core = prediction?.aiCore || {};
     const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
+    // Full scenarios contain repeated candidate trees exceeding 1 MB per race.
+    // Keep the actual decisions; the original history/input is stored separately.
+    const scenario = value => value ? clone(Object.fromEntries([
+      "type", "label", "score", "headBoatNo", "attackerBoatNo", "attacker", "attackerCourse",
+      "blockedBoats", "frameMovementAdjustment", "slitAdjustment", "slitReasons"
+    ].filter(key => value[key] !== undefined).map(key => [key, value[key]]))) : null;
     const history = raceData?.historyContext;
     return {
       version: "escape-evaluation-evidence-v1",
@@ -379,7 +385,11 @@
       beforeInfo: clone(raceData?.beforeInfo),
       startExhibition: clone(raceData?.startExhibition),
       raceInfo: clone(raceData?.raceInfo),
-      raceScenarios: clone(core.raceScenarios),
+      raceScenarios: core.raceScenarios ? {
+        mainScenario: scenario(core.raceScenarios.mainScenario),
+        subScenario: scenario(core.raceScenarios.subScenario),
+        scenarios: (core.raceScenarios.scenarios || []).map(scenario)
+      } : null,
       racerSkillTheory: clone(core.racerSkillTheory),
       stSlitTheory: clone(core.stSlitTheory),
       aiCoreVersion: text(core.version),

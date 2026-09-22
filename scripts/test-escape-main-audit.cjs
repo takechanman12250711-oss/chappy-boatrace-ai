@@ -45,6 +45,12 @@ assert.equal(snapshot.escapeEvaluationEvidence.historyContext.racers[0].byCourse
 assert.equal(snapshot.escapeEvaluationEvidence.racerSkillTheory.roles[0].score, 80);
 assert.equal(conditions.capture({}, {}).escapeEvaluationEvidence.historyStatus, 'unavailable');
 assert.equal(snapshot.escapeEvaluationEvidence.affectsPrediction, false);
+const large = conditions.capture({}, { aiCore: { raceScenarios: {
+  mainScenario: { type: 'escape', score: 80, outcome: { candidateTree: 'x'.repeat(1500000) } }
+} } });
+assert.equal(large.escapeEvaluationEvidence.raceScenarios.mainScenario.score, 80);
+assert.equal(large.escapeEvaluationEvidence.raceScenarios.mainScenario.outcome, undefined);
+assert(JSON.stringify(large).length < 15000, 'do not duplicate megabyte candidate trees into phone storage');
 // Exercise the actual daily loader, independent official join and primary priority.
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'escape-audit-'));
 try {
