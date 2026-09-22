@@ -2,6 +2,7 @@
 const assert = require('node:assert/strict');
 const { compact, resultOf, settle, build } = require('./audit-escape-main.cjs');
 const conditions = require('../js/prediction-conditions');
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const record = { raceKey: '20260921-15-10', date: '20260921', jcd: '15', raceNo: 10,
   selectedAt: '2026-09-21T10:00:00Z', prediction: {
     practicalTickets: [{ ticket: '4-1-2', category: '本線' }], candidate24Tickets: ['4-1-2', '1-2-6'],
@@ -14,6 +15,7 @@ assert.equal(row.historyCaptured, false);
 assert.equal(row.escapeTopButDifferentHead, false);
 assert.equal(resultOf({ ...official, source: 'unofficial' }), null);
 assert.equal(resultOf({ ...official, refund: true }).excluded, 'refund-or-void');
+assert.equal(resultOf({ source: 'boatrace-official', status: 'void' }).excluded, 'refund-or-void');
 assert.equal(resultOf({ ...official, trifecta: { combination: '1-2-6' } }).excluded, 'unknown-payout');
 const withoutPool = structuredClone(record); delete withoutPool.prediction.candidate24Tickets;
 assert.equal(settle(compact(withoutPool, 'daily-primary'), resultOf(official)).missingStage, 'candidate-pool-unavailable');
@@ -43,4 +45,28 @@ assert.equal(snapshot.escapeEvaluationEvidence.historyContext.racers[0].byCourse
 assert.equal(snapshot.escapeEvaluationEvidence.racerSkillTheory.roles[0].score, 80);
 assert.equal(conditions.capture({}, {}).escapeEvaluationEvidence.historyStatus, 'unavailable');
 assert.equal(snapshot.escapeEvaluationEvidence.affectsPrediction, false);
+// Exercise the actual daily loader, independent official join and primary priority.
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'escape-audit-'));
+try {
+  const r = structuredClone(record);
+  r.deadlineAt = '2026-09-21T10:30:00Z';
+  r.prediction.preRaceConditions = { schemaVersion: 4, sourceTiming: 'pre_deadline',
+    officialResultUsed: false, source: 'boatrace-official', sourceFetchedAt: '2026-09-21T09:59:00Z' };
+  const verification = structuredClone(r);
+  verification.selectedAt = '2026-09-21T10:01:00Z';
+  verification.prediction.practicalTickets = ['1-2-6'];
+  fs.mkdirSync(path.join(root, 'data/predictions'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'data/results'), { recursive: true });
+  const filename = path.join(root, 'data/predictions/20260921.json');
+  const bytes = JSON.stringify({ predictions: [r], verificationPredictions: [verification] });
+  fs.writeFileSync(filename, bytes);
+  fs.writeFileSync(path.join(root, 'data/results/20260921.json'), JSON.stringify({ races: [
+    { ...official, date: r.date, jcd: r.jcd, raceNo: r.raceNo }
+  ] }));
+  const loaded = require('./audit-escape-main.cjs').main(root);
+  assert.equal(loaded.total.races, 1);
+  assert.equal(loaded.total.hits, 0);
+  assert.equal(loaded.rows[0].source, 'daily-primary');
+  assert.equal(fs.readFileSync(filename, 'utf8'), bytes);
+} finally { fs.rmSync(root, { recursive: true, force: true }); }
 console.log('escape main audit and immutable evidence tests passed');

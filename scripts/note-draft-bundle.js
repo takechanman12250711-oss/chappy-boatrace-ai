@@ -55,6 +55,10 @@ function saveNoteDraftBundle(input = {}, { rootDir = process.cwd() } = {}) {
       selectedAt: record.selectedAt ?? null,
       deadlineAt: record.deadlineAt ?? null,
       prediction: {
+        // Keep captured timing, scenario and skill inputs through final serialization.
+        // Missing legacy evidence stays missing; never regenerate it during saving.
+        ...(record.prediction?.preRaceConditions ? { preRaceConditions: record.prediction.preRaceConditions } : {}),
+        ...(record.prediction?.verificationEvidence ? { verificationEvidence: record.prediction.verificationEvidence } : {}),
         ...(record.prediction?.candidate24Tickets ? { candidate24Tickets: record.prediction.candidate24Tickets } : {}),
         practicalTickets: record.prediction?.practicalTickets ?? null,
         mainSheet: record.prediction?.mainSheet ?? null,

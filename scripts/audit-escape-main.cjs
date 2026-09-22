@@ -33,10 +33,11 @@ function compact(record, source) {
   };
 }
 function resultOf(r) {
-  if (!r || r.resultAvailable !== true || !input.isOfficialResultSource(r)) return null;
+  if (!r || !input.isOfficialResultSource(r)) return null;
   if (r.void || r.status === 'void' || r.refund || r.refunded || r.refunds?.length ||
       r.starts?.some(s => s.falseStart || s.lateStart) || (r.finishers?.length && r.finishers.length !== 6))
     return { excluded: 'refund-or-void' };
+  if (r.resultAvailable !== true) return null;
   const actual = input.actualTicket(r), payout = Number(r.trifecta?.payout ?? r.payoutPer100 ?? r.payout);
   if (!actual) return null;
   if (!Number.isFinite(payout) || payout <= 0) return { excluded: 'unknown-payout' };
@@ -83,8 +84,9 @@ function build(rows, diagnostics = {}) {
   const groups = field => Object.fromEntries([...new Set(rows.map(r => r[field]))].sort().map(k => [k, summarize(rows.filter(r => r[field] === k))]));
   return { version: 'escape-main-audit-v1', generatedAt: new Date().toISOString(),
     sourceCommit: process.env.GITHUB_SHA || '', analysisInputContract: 'official-pre-deadline-cohort-v1',
+    noteInputContract: 'existing-race-review-progress-assess: immutable audited pre-deadline exhibition-complete bundle',
     productionChanged: false, automaticProductionChange: false, usableForPrediction: false,
-    unitYen: 100, diagnostics, total: summarize(rows),
+    unitYen: 100, stakeBasis: 'Hypothetical equal 100-yen stakes on saved practical tickets, not user purchases.', diagnostics, total: summarize(rows),
     byVenue: Array.from({ length: 24 }, (_, i) => { const jcd = String(i + 1).padStart(2, '0'); return { jcd, ...summarize(rows.filter(r => r.jcd === jcd)) }; }),
     bySource: groups('source'), byGeneration: groups('generation'), byScenario: groups('mainScenario'),
     decisionGate: decide({ evaluatedCount: rows.length }),
@@ -94,11 +96,14 @@ function build(rows, diagnostics = {}) {
 function main(root = process.cwd()) {
   const read = p => JSON.parse(fs.readFileSync(p, 'utf8'));
   const chosen = new Map(), diagnostics = { excluded: {}, inputFiles: [], selectionSource: 'latest eligible pre-deadline snapshot per race; daily primary preferred over daily verification' };
-  function ingest(r, source) {
-    const reason = input.preDeadlineReason(r), key = input.raceKey(r);
+  function ingest(r, source, assessedNote = false) {
+    // Old note bundles have a different, already established evidence contract.
+    // assess() validates those captures; do not invent conditions for missing fields.
+    const reason = assessedNote && !r.prediction?.preRaceConditions ? '' : input.preDeadlineReason(r);
+    const key = input.raceKey(r);
     if (reason || !key) { count(diagnostics.excluded, reason || 'invalid-identity'); return; }
     const row = compact(r, source);
-    if (!row.selectedKnown || !row.selected.length) { count(diagnostics.excluded, 'no-purchased-tickets'); return; }
+    if (!row.selectedKnown || !row.selected.length) { count(diagnostics.excluded, 'no-saved-practical-tickets'); return; }
     const old = chosen.get(key);
     if (!old || Date.parse(row.selectedAt) > Date.parse(old.selectedAt)) chosen.set(key, row);
   }
@@ -118,10 +123,20 @@ function main(root = process.cwd()) {
     for (const file of fs.readdirSync(path.join(dir, date)).filter(x => x.endsWith('.json')).sort()) {
       const b = read(path.join(dir, date, file)), a = assess(b);
       if (a.reason) { count(diagnostics.excluded, `note:${a.reason}`); continue; }
-      ingest(b.record, 'all-race-note');
+      ingest(b.record, 'all-race-note', true);
     }
   }
-  const results = input.collectOfficialResults(path.join(root, 'data/results'), new Set(chosen.keys()));
+  // Retain official void records too; the cohort helper intentionally drops records
+  // without a winning ticket, which would otherwise mislabel a void as pending.
+  const results = new Map();
+  for (const date of new Set([...chosen.keys()].map(key => key.slice(0, 8)))) {
+    const file = path.join(root, 'data/results', `${date}.json`);
+    if (!fs.existsSync(file)) continue;
+    for (const r of read(file).races || []) {
+      const key = input.raceKey(r, date);
+      if (chosen.has(key) && input.isOfficialResultSource(r)) results.set(key, r);
+    }
+  }
   const ledgerPath = path.join(root, 'data/stats/race-review-results.json');
   if (fs.existsSync(ledgerPath)) for (const r of Object.values(read(ledgerPath).races || {})) {
     const key = input.raceKey(r);
@@ -134,6 +149,7 @@ function main(root = process.cwd()) {
     rows.push(settle(row, r));
   }
   rows.sort((a, b) => a.raceKey.localeCompare(b.raceKey));
+  if (!rows.length) throw new Error('No eligible settled practical predictions; audit is not complete.');
   diagnostics.eligiblePredictions = chosen.size;
   const report = build(rows, diagnostics);
   const out = path.join(root, 'data/stats/escape-main-audit.json');

@@ -6,6 +6,7 @@ on:
       - 'scripts/audit-escape-main.cjs'
       - 'scripts/test-escape-main-audit.cjs'
       - 'js/prediction-conditions.js'
+      - 'scripts/note-draft-bundle.js'
       - '.github/workflows/escape-main-audit.yml'
   workflow_dispatch:
   schedule:
@@ -31,6 +32,7 @@ jobs:
           node scripts/test-prediction-conditions.js
           node scripts/test-prediction-conditions-missing-series.js
           node scripts/test-escape-main-audit.cjs
+          node scripts/test-note-draft-bundle.js
           node scripts/check-charter.js
       - name: Analyze immutable saved inputs and official results
         env:
