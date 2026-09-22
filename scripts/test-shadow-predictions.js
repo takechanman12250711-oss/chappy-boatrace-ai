@@ -1826,3 +1826,8 @@ try {
 }
 
 console.log("シャドー予想保存テスト: 合格");
+
+// Re-compaction must preserve existing research inputs and never backfill legacy rows.
+const frozenPool = { version: 'outer-attack-all-scenarios-v1', candidatePool: [{ticket:'5-1-2', evidenceQualified:true}] };
+assert.deepEqual(compactStoredVerification({ prediction: { evaluatedScenarioCandidates:frozenPool } }).prediction.evaluatedScenarioCandidates, frozenPool);
+assert.equal(compactStoredVerification({ prediction: {} }).prediction.evaluatedScenarioCandidates, undefined);

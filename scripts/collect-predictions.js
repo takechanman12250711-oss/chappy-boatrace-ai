@@ -432,6 +432,7 @@ function compactPrediction(prediction, practicalTickets, raceData) {
       ? prediction.ticketRanks
       : [],
     practicalTickets,
+    evaluatedScenarioCandidates: require("./outer-attack-research").compactPool(prediction),
     practicalSelection:
       compactPracticalSelection(
         practicalSelection
@@ -832,6 +833,7 @@ function compactVerificationPayload(
     },
     ticketRanks: require("./stored-ticket-categories").storedTicketCategories(prediction),
     practicalTickets: Array.isArray(practicalTickets) ? practicalTickets : [],
+    ...(prediction.evaluatedScenarioCandidates ? { evaluatedScenarioCandidates: prediction.evaluatedScenarioCandidates } : {}),
     practicalSelection:
       compactPracticalSelection(
         prediction
@@ -1567,7 +1569,7 @@ function buildStoredPrediction(
     practicalPriorityShadow:
       practicalPriorityShadowSnapshot,
     prediction: compactVerificationPayload(
-      prediction,
+      { ...prediction, evaluatedScenarioCandidates: require("./outer-attack-research").compactPool(prediction) },
       practicalTickets,
       legacyPreRaceConditions
     )

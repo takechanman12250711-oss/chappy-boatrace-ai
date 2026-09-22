@@ -70,7 +70,13 @@ async function main() {
     createPrediction: () => { throw new Error('must wait for exhibition'); } });
   assert.equal(waiting.waitingExhibition, 24);
   assert.equal(waiting.generated, 0);
-  const result = await collectAllRaceNotes(args);
+  let batches = 0;
+  const result = await collectAllRaceNotes({ ...args, evaluate: async targets => {
+    assert.ok(targets.length <= 3, 'bounded deadline batches');
+    if (batches++) assert.ok(fs.readdirSync(path.join(rootDir,'data/outer-attack-sources',date)).length >= 3,
+      'first evidence saved before fetching later batch');
+    return evaluate(targets);
+  }});
   assert.equal(result.saved, 24, JSON.stringify(result));
   const blockedRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'blocked-note-research-'));
   try {
@@ -82,12 +88,13 @@ async function main() {
     assert.equal(fs.existsSync(path.join(blockedRoot, 'data/note-drafts')), false);
     const sourceDir = path.join(blockedRoot, 'data/outer-attack-sources', date);
     const source = JSON.parse(fs.readFileSync(path.join(sourceDir,fs.readdirSync(sourceDir)[0])));
+    assert.equal(source.research.version,'outer-attack-all-scenarios-v1');
     assert.equal(source.record.practicalSelectionEvidence.status,'captured');
     assert.equal(source.record.practicalSelectionEvidence.candidateDecisions[0].reasonCode,'TEST_RECORDED_EXCLUSION');
   } finally { fs.rmSync(blockedRoot, { recursive: true, force: true }); }
   assert.equal(existingRaces(date, rootDir, clock).size, 24);
   assert.equal((await collectAllRaceNotes(args)).saved, 0, 'do not recreate immutable snapshots each cycle');
-  assert.deepEqual(fs.readdirSync(path.join(rootDir, 'data')).sort(), ['note-drafts', 'outer-attack-sources']);
+  assert.deepEqual(fs.readdirSync(path.join(rootDir, 'data')).sort(), ['note-drafts', 'outer-attack-sources', 'verification-coverage']);
   const file = fs.readdirSync(path.join(rootDir, 'data/note-drafts', date))[0];
   const savedBundle = JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-drafts', date, file)));
   assert.equal(savedBundle.record.practicalSelectionEvidence.status,'captured');

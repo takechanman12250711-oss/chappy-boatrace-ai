@@ -7,6 +7,11 @@ on:
       - '.github/workflows/live-note.yml'
       - 'scripts/collect-predictions.js'
       - 'scripts/collect-all-race-notes.js'
+      - 'scripts/outer-attack-research.js'
+      - 'scripts/verification-coverage.js'
+      - 'scripts/outer-attack-live-source.js'
+      - 'scripts/save-live-verification-sources.js'
+      - 'scripts/test-outer-attack-research.js'
       - 'scripts/note-exhibition.js'
       - 'js/note-generator.js'
       - 'scripts/note-publication-audit.js'
@@ -17,6 +22,11 @@ on:
       - '.github/workflows/live-note.yml'
       - 'scripts/collect-predictions.js'
       - 'scripts/collect-all-race-notes.js'
+      - 'scripts/outer-attack-research.js'
+      - 'scripts/verification-coverage.js'
+      - 'scripts/outer-attack-live-source.js'
+      - 'scripts/save-live-verification-sources.js'
+      - 'scripts/test-outer-attack-research.js'
       - 'scripts/note-exhibition.js'
       - 'js/note-generator.js'
       - 'scripts/note-publication-audit.js'
@@ -58,6 +68,7 @@ jobs:
             data/stats
             data/note-drafts
             data/outer-attack-sources
+            data/verification-coverage
             data/note-publish
       - uses: actions/setup-node@v4
         with:
@@ -67,6 +78,7 @@ jobs:
           node scripts/test-note-source-concurrency.js
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
+          node scripts/test-outer-attack-research.js
           node scripts/test-exhibition-candidate24.js
           node scripts/test-note-publication-audit.js
           node --require ./js/frame-rise-fall-replay-preload.js -e "const c = require('./scripts/collect-predictions'); for (const k of ['SHADOW_LOGIC_FINGERPRINT', 'SHADOW_REFERENCE_DATA_FINGERPRINT', 'SHADOW_REFERENCE_GENERATION_ID']) if (!c[k] || c[k] === 'unavailable') throw new Error(k);"
@@ -81,7 +93,7 @@ jobs:
           NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
         run: node scripts/collect-predictions.js --note-only
       - name: Save immutable evidence independently of publication audit
-        if: github.event_name != 'pull_request'
+        if: always() && github.event_name != 'pull_request'
         run: node scripts/save-live-verification-sources.js
       - name: Save only audited note source and start existing publisher
         if: github.event_name != 'pull_request'

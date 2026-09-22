@@ -645,6 +645,12 @@ function settleFiles(options = {}) {
   const store = loadJson(files.settlements, emptySettlementStore(now, deps));
   const output = settle(archive, store, { ...options, now, resultsDir: files.results, dependencies: deps });
   const centralReport = report(archive, output.store, { ...options, now, dependencies: deps });
+  const broad = require('./build-outer-attack-research-report').build(files.root);
+  centralReport.research = { version: broad.version, capturedRaces: broad.capturedRaces,
+    settledRaces: broad.settledRaces, pending: broad.pending, groups: broad.groups,
+    coverage: Object.entries(broad.coverage).sort(([a],[b])=>a.localeCompare(b)).slice(-1)
+      .map(([date,value])=>({date,...value,missing:undefined}))[0] || null };
+
   writeJson(files.settlements, output.store);
   writeJson(files.report, centralReport);
   return {
