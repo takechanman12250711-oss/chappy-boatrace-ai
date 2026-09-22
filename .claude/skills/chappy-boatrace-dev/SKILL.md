@@ -61,3 +61,9 @@ Workからの切り離しはGitHub側の稼働だけで完了とせず、既存C
 - 更新対象は、検証済みの操作手順、実装済みの接続先、再発を防ぐ具体的な注意点とする。日々のレース結果、一時的な障害、未採用の改善案を恒久的な指示にしない。スキルのために本番の予想基準、学習採用、公開権限を変えない。
 - 個人スキルの保存には利用環境の skill-creator の手順を使い、差分と形式を確認して保存完了を検証する。共有版を使う開発作業では、関連する .agents/skills と .claude/skills の差分も合意した変更範囲でそろえる。同期できていない版を更新済みと報告しない。
 - 元の依頼の完了を優先し、総点検や別機能の開発へ広げない。更新した内容だけを完了報告に一言添える。スキル自体には常時実行機能がなく、作業外の確認は別途設定した自動処理が担う。
+
+## 外攻め検証の収集範囲と候補保存
+
+- 外攻めの進捗は旧 `outer-attack-ticket-central-report-v1.json` と別枠 `outer-attack-research-report.json` を区別する。全開催・展示後証拠・未保存理由は後者の `coverage` と不変 `data/verification-coverage` で確認し、workflow成功だけで蓄積順調としない。
+- 日次新規予想は `outer-attack-research.compactPool` で候補メタデータを保持する。`compactStoredVerification` は保存済み候補を保持するだけとし、古い予想へ現行候補を再生成・後付けしない。候補0ではプール未保存と条件不成立を分ける。
+- 全体比較 `outer-attack-all-scenarios-v1` は展示後・締切前の既存qualified展開枝を用いる。攻め艇・着順・予想方式ごとの全対象と変更対象を分け、旧A/Bや外頭forward検証へ混ぜない。採用gate未登録の研究版を本番採用可能と扱わない。契約は `docs/outer-attack-all-scenarios-v1.md` を確認する。
