@@ -41,6 +41,7 @@ try{
  writeResult(result);report=build(root);assert.equal(report.settledRaces,1);assert.equal(report.groups['a'.repeat(64)+':boat5-position1'].bHits,1);assert.equal(report.groups['a'.repeat(64)+':boat5-position1'].stakeYen,400);
  assert.equal(report.groups['a'.repeat(64)+':boat6-position3'].changed.races,0);
  writeResult({...result,trifecta:{combination:'5-1-2',payout:null}});assert.equal(build(root).unknownPayout,1);
+ writeResult({...result,starts:[{falseStart:true}]});assert.equal(build(root).voidRaces,1);
  writeResult({...result,status:'void',void:true});assert.equal(build(root).voidRaces,1);assert.equal(build(root).settledRaces,0);
  console.log('outer research: grounded 5/6 heads, multiple attackers, protected tickets, predeadline identity, coverage, independent official priority and void/payout handling passed');
 }finally{fs.rmSync(root,{recursive:true,force:true});}

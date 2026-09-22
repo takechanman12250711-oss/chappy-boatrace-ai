@@ -29,6 +29,7 @@ function build(root=process.cwd()){
       lastObservedAt:runs.at(-1)?.observedAt||null,venueFailures:runs.at(-1)?.failures||[]};
   }
   for(const [key,r] of Object.entries(ledger.races||{})){
+    if (contract.raceKey(r)!==key || !contract.isOfficialResultSource(r)) continue;
     const prev=officials.get(key);
     if(!prev||!prev.resultAvailable||prev.status==='pending')officials.set(key,{...r,checkedAt:r.checkedAt||ledger.attempts?.[key]?.checkedAt});
   }
@@ -40,7 +41,7 @@ function build(root=process.cwd()){
   const groups={},rows=[];let pending=0,voidRaces=0,unknownPayout=0;
   for(const [key,s] of selected){
     const r=officials.get(key);if(!r||!contract.isOfficialResultSource(r)){pending++;continue;}
-    if(r.void||r.status==='void'||r.refund||r.hasRefund||r.refundBoats?.length){voidRaces++;continue;}
+    if(r.void||r.status==='void'||r.refund||r.refunded||r.refunds?.length||r.hasRefund||r.refundBoats?.length||r.starts?.some(s=>s.falseStart||s.lateStart)||(r.finishers?.length && r.finishers.length!==6)){voidRaces++;continue;}
     if(!r.resultAvailable){pending++;continue;}
     const ticket=contract.actualTicket(r), payout=Number(r.trifecta?.payout??r.officialPayoutPer100??r.payoutPer100Yen);
     if(!ticket||!(payout>0)){unknownPayout++;continue;}
