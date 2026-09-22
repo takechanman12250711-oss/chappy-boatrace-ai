@@ -15,6 +15,12 @@ function compact(record, source) {
   const pool = Array.isArray(p.candidate24Tickets) ? p.candidate24Tickets : null;
   const escape = (e.scenarios || []).find(s => s.type === 'escape');
   const c = p.preRaceConditions || {};
+  const savedSkills = c.escapeEvaluationEvidence?.racerSkillTheory?.roles ||
+    p.practicalSelection?.frameRiseFallReplayBasis?.analyses?.map(a => a.racerSkillTheory).filter(Boolean) || [];
+  const insideSkill = savedSkills.find(s => s.course === 1 && s.isFirstCandidate === true);
+  const methods = insideSkill?.courseHistory?.all3Years?.winningMethods || [];
+  const escapeWins = methods.filter(m => m.key === '逃げ').reduce((n, m) => n + Number(m.count || 0), 0);
+  const escapeRate = methods.filter(m => m.key === '逃げ').reduce((n, m) => n + Number(m.rate || 0), 0);
   return {
     raceKey: input.raceKey(record), date: record.date, jcd: String(record.jcd).padStart(2, '0'),
     selectedAt: record.selectedAt || record.capturedAt || record.createdAt,
@@ -28,7 +34,16 @@ function compact(record, source) {
     selected: tickets(selected), selectedKnown: Array.isArray(selected), pool: tickets(pool), poolKnown: !!pool,
     mainTickets: tickets((selected || []).filter(t => t?.category === '本線' || t?.displayCategory === '本命')),
     historyCaptured: c.escapeEvaluationEvidence?.historyStatus === 'captured',
-    skillCaptured: Array.isArray(c.escapeEvaluationEvidence?.racerSkillTheory?.roles),
+    skillCaptured: savedSkills.length > 0,
+    derivedCourseHistoryCaptured: savedSkills.some(s => s.courseHistory?.all3Years),
+    escapeSkillMisclassified: !!insideSkill && insideSkill.role !== '逃げ',
+    escapeSkillCorrection: insideSkill && insideSkill.role !== '逃げ' ? {
+      boatNo: insideSkill.boatNo, previousRole: insideSkill.role,
+      previousMethodFit: insideSkill.components?.methodFit ?? null,
+      correctedMethodFit: escapeWins >= 3 ? Math.min(20, Math.max(0, Math.round(escapeRate * 2) / 10)) : 0,
+      escapeWins, escapeRate, samples: insideSkill.samples,
+      note: 'Same existing methodFit formula, applied to escape. Not a ticket-performance replay.'
+    } : null,
     courseOne: c.boats?.filter(b => b.courseOfficial === true && Number(b.course) === 1).map(b => boat(b.boatNo)) || []
   };
 }
@@ -77,6 +92,8 @@ function summarize(rows) {
     missedBoat1WinsWithoutAnyBoat1Ticket: rows.filter(r => r.headOneWins && !r.selected.some(t => t.startsWith('1-'))).length,
     historyCaptured: rows.filter(r => r.historyCaptured).length,
     skillCaptured: rows.filter(r => r.skillCaptured).length,
+    derivedCourseHistoryCaptured: rows.filter(r => r.derivedCourseHistoryCaptured).length,
+    escapeSkillMisclassified: rows.filter(r => r.escapeSkillMisclassified).length,
     escapeScenarioKnown: rows.filter(r => r.escape).length,
     escapeTopButDifferentHead: rows.filter(r => r.escapeTopButDifferentHead).length };
 }
