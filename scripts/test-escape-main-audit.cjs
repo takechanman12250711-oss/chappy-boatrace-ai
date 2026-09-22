@@ -74,5 +74,14 @@ try {
   assert.equal(loaded.total.hits, 0);
   assert.equal(loaded.rows[0].source, 'daily-primary');
   assert.equal(fs.readFileSync(filename, 'utf8'), bytes);
+  // A stale pending daily result must not hide the independent settled ledger.
+  fs.writeFileSync(path.join(root, 'data/results/20260921.json'), JSON.stringify({ races: [
+    { source: 'boatrace-official', resultAvailable: false, date: r.date, jcd: r.jcd, raceNo: r.raceNo }
+  ] }));
+  fs.writeFileSync(path.join(root, 'data/stats/race-review-results.json'), JSON.stringify({ races: {
+    [r.raceKey]: { ...official, date: r.date, jcd: r.jcd, raceNo: r.raceNo }
+  } }));
+  assert.equal(require('./audit-escape-main.cjs').main(root).total.races, 1);
+  assert.equal(fs.readFileSync(filename, 'utf8'), bytes);
 } finally { fs.rmSync(root, { recursive: true, force: true }); }
 console.log('escape main audit and immutable evidence tests passed');

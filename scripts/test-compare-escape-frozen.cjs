@@ -22,7 +22,10 @@ assert.equal(c.checkReplay(saved,{...replay,tickets:['1-3-2']}),'baseline-ticket
 assert.equal(c.checkReplay(saved,{...replay,scenarios:[{type:'escape',score:81}]}),'baseline-scenarios-mismatch');
 const e={version:'escape-evaluation-evidence-v1',historyStatus:'captured',resultUsedForGeneration:false,sourceFetchedAt:'2026-09-22T01:00:00Z',aiCoreVersion:'ai-core-v4.8.6-escape-skill-role',entries:Array(6).fill({}),beforeInfo:Array(6).fill({}),startExhibition:Array(6).fill({}),raceScenarios:{scenarios:[]}};
 const record={raceKey:'20260922-06-12',date:'20260922',jcd:'06',raceNo:12,selectedAt:'2026-09-22T01:01:00Z',deadlineAt:'2026-09-22T01:20:00Z',prediction:{practicalTickets:['1-2-3'],mainSheet:{honmei:{boatNo:1}},preRaceConditions:{schemaVersion:4,sourceTiming:'pre_deadline',officialResultUsed:false,source:'boatrace-official',sourceFetchedAt:e.sourceFetchedAt,escapeEvaluationEvidence:e}}};
+record.prediction.preRaceConditions.dataAvailability={officialCourses:6,exhibitionST:6,exhibitionTime:6};
 const before=JSON.stringify(record),s=c.snapshot(record,'test');assert(s.row);s.row.conditions.escapeEvaluationEvidence.entries[0].test=true;assert.equal(JSON.stringify(record),before);
+const incomplete=structuredClone(record);incomplete.prediction.preRaceConditions.dataAvailability.exhibitionST=5;
+assert.equal(c.snapshot(incomplete,'test').reason,'official-exhibition-incomplete');
 assert.equal(c.snapshot({...record,selectedAt:record.deadlineAt},'test').reason,'captured-at-or-after-deadline');
 assert.equal(c.snapshot({prediction:{}},'test').reason,'frozen-history-unavailable');
 assert.throws(()=>c.transformCore('unrelated','four-inner-guard'));
@@ -33,4 +36,6 @@ for(const [edge,expected] of [[-10,66],[-6,71],[-5,80],[10,80]])assert.equal(Fun
 const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'js/ai-core.js'),'utf8');
 c.runner(root,'current');c.runner(root,'previous-role');c.runner(root,'four-inner-guard');
 assert.equal(fs.readFileSync(path.join(root,'js/ai-core.js'),'utf8'),source);
+assert.equal(c.meaningful({generatedAt:'before',sourceCommit:'a',resultAttempts:[],rows:[1]}),c.meaningful({generatedAt:'after',sourceCommit:'b',resultAttempts:[2],rows:[1]}));
+assert.notEqual(c.meaningful({rows:[1]}),c.meaningful({rows:[2]}));
 console.log('Frozen escape comparison: timing, baseline equality, immutable sources, refunds, official fallback and isolated runners passed');

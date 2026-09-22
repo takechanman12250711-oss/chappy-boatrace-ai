@@ -66,6 +66,7 @@ function snapshot(record, source) {
   if (input.preDeadlineReason(record)) return {reason:input.preDeadlineReason(record)};
   if (e.resultUsedForGeneration !== false || e.sourceFetchedAt !== c.sourceFetchedAt) return {reason:'invalid-frozen-timing'};
   if (![e.entries,e.beforeInfo,e.startExhibition].every(a=>Array.isArray(a)&&a.length===6)) return {reason:'incomplete-frozen-input'};
+  if (!['officialCourses','exhibitionST','exhibitionTime'].every(k=>c.dataAvailability?.[k]===6)) return {reason:'official-exhibition-incomplete'};
   if (e.aiCoreVersion !== 'ai-core-v4.8.6-escape-skill-role') return {reason:'different-core-generation'};
   const selected = tickets(p.practicalTickets || p.practicalSelection?.tickets);
   if (!selected.length || selected.length > 10) return {reason:'invalid-practical-tickets'};
@@ -123,7 +124,7 @@ async function build(root, since='20260922', {refreshResults=false, fetchResult,
   const ledger=path.join(root,'data/stats/race-review-results.json');
   if(fs.existsSync(ledger))for(const r of Object.values(read(ledger).races||{})){const key=input.raceKey(r);if(chosen.has(key))results.set(key,chooseResult(results.get(key),r));}
   const previousReport=path.join(root,'data/stats/escape-frozen-comparison.json');
-  if(fs.existsSync(previousReport))for(const r of read(previousReport).officialResultEvidence||[]){const key=input.raceKey(r);if(chosen.has(key))results.set(key,chooseResult(results.get(key),r));}
+  if(fs.existsSync(previousReport))for(const r of JSON.parse(fs.readFileSync(previousReport,'utf8')).officialResultEvidence||[]){const key=input.raceKey(r);if(chosen.has(key))results.set(key,chooseResult(results.get(key),r));}
   const resultAttempts=[];
   if(refreshResults){
     fetchResult ||= ({date,jcd,rno}) => require('./collect-results').callApi(require('../api/result'),{date,jcd,rno:String(rno)});
@@ -166,5 +167,10 @@ async function build(root, since='20260922', {refreshResults=false, fetchResult,
     byVenue:Array.from({length:24},(_,i)=>({jcd:String(i+1).padStart(2,'0'),...summarize(rows.filter(r=>r.key.split('-')[1]===String(i+1).padStart(2,'0')))})),rows,
     limitation:'Only exact baseline head/ticket/scenario reproductions. Official settled, positive payouts; refund/void excluded. Equal 100 yen per ticket, not user purchases. Post-definition replay is not a saved live candidate or approved holdout. No performance or adoption claim from discovery data.'};
 }
-if(require.main===module)build(process.cwd(),process.argv[2]||'20260922',{refreshResults:true}).then(report=>{archive.atomicWrite(path.join(process.cwd(),'data/stats/escape-frozen-comparison.json'),JSON.stringify(report)+'\n');console.log(JSON.stringify({summary:report.summary,eligibleFrozen:report.eligibleFrozen,exclusions:report.exclusions,gate:report.candidate.adoptionGate}));}).catch(error=>{console.error(error);process.exitCode=1;});
-module.exports={DEFINED_AT,MODULES,GUARD,transformCore,runner,snapshot,chooseResult,checkReplay,totals,build};
+function meaningful(report){const {generatedAt,sourceCommit,resultAttempts,...rest}=report;return JSON.stringify(rest);}
+function saveReport(file,report){
+  if(fs.existsSync(file)&&meaningful(JSON.parse(fs.readFileSync(file,'utf8')))===meaningful(report))return false;
+  archive.atomicWrite(file,JSON.stringify(report)+'\n');return true;
+}
+if(require.main===module)build(process.cwd(),process.argv[2]||'20260922',{refreshResults:true}).then(report=>{const changed=saveReport(path.join(process.cwd(),'data/stats/escape-frozen-comparison.json'),report);console.log(JSON.stringify({summary:report.summary,eligibleFrozen:report.eligibleFrozen,exclusions:report.exclusions,gate:report.candidate.adoptionGate,changed}));if(report.eligibleFrozen>0&&report.summary.replayed===0)throw Error('All eligible frozen baselines failed reproduction');}).catch(error=>{console.error(error);process.exitCode=1;});
+module.exports={DEFINED_AT,MODULES,GUARD,transformCore,runner,snapshot,chooseResult,checkReplay,totals,build,meaningful,saveReport};
