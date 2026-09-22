@@ -21,18 +21,18 @@ assert.equal(compareEditorContent('', '').equal, false);
 
 async function main() {
   for (const tagName of ['TEXTAREA', 'INPUT', 'DIV']) {
-    const el = { tagName, value: body, innerText: tagName === 'DIV' ? rendered : '', isContentEditable: tagName === 'DIV' };
+    const el = { tagName, value: body, innerText: tagName === 'DIV' ? rendered : '', getAttribute: () => tagName === 'DIV' ? 'true' : null };
     const locator = { evaluate: async fn => fn(el) };
     assert.equal(await readEditorContent(locator), tagName === 'DIV' ? rendered : body);
     assert.equal((await verifyEditorContent(locator, body)).equal, true);
   }
-  await assert.rejects(readEditorContent({ evaluate: async fn => fn({ tagName: 'SPAN', isContentEditable: false }) }), /not_editable/);
+  await assert.rejects(readEditorContent({ evaluate: async fn => fn({ tagName: 'SPAN', getAttribute: () => null }) }), /not_editable/);
   // Exercise the actual fillDraft caller, including post-autosave reads.
   for (const corrupted of [false, true]) {
     let titleValue = '', bodyValue = '';
     const title = { isVisible: async () => true, fill: async v => { titleValue = v; }, inputValue: async () => titleValue };
     const editor = { isVisible: async () => true, fill: async v => { bodyValue = v; }, evaluate: async fn => fn({
-      tagName: 'DIV', isContentEditable: true,
+      tagName: 'DIV', getAttribute: () => 'true',
       innerText: corrupted ? bodyValue.slice(0, 85) : bodyValue.replace(/\n\n/g, '\n\n\n\n\n')
     }) };
     const page = { locator: selector => ({ count: async () => 1, nth: () => selector.includes('タイトル') ? title : editor }),

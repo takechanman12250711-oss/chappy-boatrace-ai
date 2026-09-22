@@ -18,7 +18,7 @@ async function readEditorContent(locator) {
   return locator.evaluate(el => {
     // textarea.innerText is empty even when its value contains the full draft.
     if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') return el.value;
-    if (el.isContentEditable) return el.innerText;
+    if (el.getAttribute('contenteditable') === 'true') return el.innerText;
     throw new Error('note_body_element_not_editable');
   });
 }
