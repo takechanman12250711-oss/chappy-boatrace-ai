@@ -26,7 +26,9 @@ function saveSource(record, practicalTickets, { rootDir, now = Date.now() }) {
   const { raceKey, date, jcd, raceNo, selectedAt, deadlineAt, exhibitionSnapshot, reviewEvidence } = record;
   const source = { version: VERSION, record: { raceKey, date, jcd, raceNo, selectedAt, deadlineAt,
     exhibitionSnapshot, reviewEvidence, practicalTickets,
-    ...(record.practicalSelectionEvidence ? { practicalSelectionEvidence: record.practicalSelectionEvidence } : {}) }, snapshot: record.outerAttackShadow };
+    ...(record.practicalSelectionEvidence ? { practicalSelectionEvidence: record.practicalSelectionEvidence } : {}) }, snapshot: record.outerAttackShadow,
+    ...(record.outerAttackResearch ? { research: record.outerAttackResearch } : {}),
+    ...(record.outerAttackDiagnostics ? { diagnostics: record.outerAttackDiagnostics } : {}) };
   if (!validSource(source) || now >= Date.parse(deadlineAt) || now < Date.parse(selectedAt)) throw new Error('outer_live_source_invalid');
   const bytes = JSON.stringify(source) + '\n';
   const digest = createHash('sha256').update(bytes).digest('hex');

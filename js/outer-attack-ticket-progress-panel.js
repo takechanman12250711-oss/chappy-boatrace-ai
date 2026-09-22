@@ -312,6 +312,10 @@
       else if (!pipeline.immutableSnapshotCount) view.overallStatusLabel = notes?.missingBasis ? '比較用の評価データ不足' : '比較対象なし';
       view.collectionLabel = `保存 ${integer(pipeline.immutableSnapshotCount)}件・結果待ち ${integer(pipeline.pendingOfficialResultCount)}件`;
       if (notes) view.collectionLabel += `・予想確認 ${integer(notes.checked - notes.missing)}件・旧予想の比較データ未保存 ${integer(notes.missing)}件`;
+      const broad = central.research, coverage = broad?.coverage;
+      if (broad) view.collectionLabel += `・外攻め全体：保存${integer(broad.capturedRaces)}R／照合${integer(broad.settledRaces)}R`;
+      if (coverage) view.collectionLabel += `・${escapeHtml(coverage.date)} 開催確認${integer(coverage.scheduledRaces)}R／展示後証拠${integer(coverage.savedRaces)}R／未保存${integer(coverage.missingRaces)}R`;
+
     }
     if (!view.available) {
       area.hidden = true;

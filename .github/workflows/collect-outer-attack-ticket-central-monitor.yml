@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - "scripts/build-outer-attack-ticket-central-monitor.cjs"
+      - "scripts/build-outer-attack-research-report.js"
+      - "scripts/outer-attack-research.js"
+      - "scripts/verification-coverage.js"
+      - "scripts/test-outer-attack-research.js"
       - "tests/outer-attack-ticket-central-monitor.test.cjs"
       - ".github/workflows/collect-outer-attack-ticket-central-monitor.yml"
       - "docs/outer-attack-ticket-central-monitor-v1.md"
@@ -11,6 +15,10 @@ on:
     branches: [main]
     paths:
       - "scripts/build-outer-attack-ticket-central-monitor.cjs"
+      - "scripts/build-outer-attack-research-report.js"
+      - "scripts/outer-attack-research.js"
+      - "scripts/verification-coverage.js"
+      - "scripts/test-outer-attack-research.js"
       - "tests/outer-attack-ticket-central-monitor.test.cjs"
       - ".github/workflows/collect-outer-attack-ticket-central-monitor.yml"
       - "docs/outer-attack-ticket-central-monitor-v1.md"
@@ -65,6 +73,8 @@ jobs:
             data/results
             data/note-drafts
             data/outer-attack-sources
+            data/verification-coverage
+            data/stats/outer-attack-research-report.json
             data/stats/outer-attack-ticket-central-shadow-archive-v1.json
             data/stats/outer-attack-ticket-central-settlements-v1.json
             data/stats/outer-attack-ticket-central-report-v1.json
@@ -80,6 +90,7 @@ jobs:
           node --check scripts/build-outer-attack-ticket-central-monitor.cjs
           node tests/outer-attack-ticket-central-monitor.test.cjs
           node scripts/check-charter.js
+          node scripts/test-outer-attack-research.js
 
       - name: Select collection mode
         if: github.event_name != 'pull_request'
@@ -110,11 +121,14 @@ jobs:
         if: github.event_name != 'pull_request' && (steps.mode.outputs.mode == 'settle' || steps.mode.outputs.mode == 'all')
         run: node scripts/build-outer-attack-ticket-central-monitor.cjs --mode=settle
 
+      - name: Build prospective outer attack research and coverage
+        run: node scripts/build-outer-attack-research-report.js
+
       - name: Save central monitor artifacts
         id: save
         if: github.event_name != 'pull_request'
         run: |
-          git add data/stats/outer-attack-ticket-central-shadow-archive-v1.json \
+          git add data/stats/outer-attack-research-report.json data/stats/outer-attack-ticket-central-shadow-archive-v1.json \
             data/stats/outer-attack-ticket-central-settlements-v1.json \
             data/stats/outer-attack-ticket-central-report-v1.json 2>/dev/null || true
           if git diff --cached --quiet; then
