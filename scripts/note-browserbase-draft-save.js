@@ -2,9 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { chromium } = require('playwright-core');
-const { createAuthSession } = require('./note-browserbase-auth-session');
-const { loginNoteViaX } = require('./note-browserbase-x-login');
+const { verifyEditorContent } = require('./note-editor-content');
 
 const NOTE_EDITOR_URL = 'https://editor.note.com/new';
 const AUTOSAVE_WAIT_MS = 10000;
@@ -78,7 +76,7 @@ async function collectEditorDiagnostics(page) {
 async function ensureAuthenticated(page, env = process.env) {
   await page.goto(NOTE_EDITOR_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (new URL(page.url()).hostname === 'editor.note.com') return { ok: true, alreadyAuthenticated: true };
-  return loginNoteViaX(page, { env });
+  return require('./note-browserbase-x-login').loginNoteViaX(page, { env });
 }
 
 async function fillDraft(page, { title, body }) {
@@ -116,11 +114,8 @@ async function fillDraft(page, { title, body }) {
   await page.waitForTimeout(AUTOSAVE_WAIT_MS);
 
   const currentTitle = String(await titleInput.inputValue().catch(() => '')).trim();
-  const currentBody = String(await bodyInput.innerText().catch(async () => await bodyInput.inputValue().catch(() => ''))).trim();
   if (currentTitle !== title) throw new Error('note_title_verification_failed');
-  if (!currentBody || !currentBody.includes(body.slice(0, Math.min(80, body.length)))) {
-    throw new Error('note_body_verification_failed');
-  }
+  await verifyEditorContent(bodyInput, body);
 
   return {
     ok: true,
@@ -131,6 +126,8 @@ async function fillDraft(page, { title, body }) {
 }
 
 async function runDraftSaveCli({ env = process.env } = {}) {
+  const { chromium } = require('playwright-core');
+  const { createAuthSession } = require('./note-browserbase-auth-session');
   const bundlePath = process.argv[2] || env.NOTE_DRAFT_BUNDLE_PATH;
   const draft = loadDraftBundle(bundlePath);
   const session = await createAuthSession({ env });
