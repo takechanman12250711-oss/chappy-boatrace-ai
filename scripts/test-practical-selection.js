@@ -2074,6 +2074,18 @@ assert.deepEqual(
   "アプリとnoteで同じ選択器を使う"
 );
 
+{
+  const approved = createFixture();
+  approved.race = { deadlineAt: '2030-09-14T16:00:00+09:00' };
+  approved.aiCore = { ...approved.aiCore, wallTheory: { attackerNo: 2, wallCandidateNo: 1, state: '壁成立', score: 75, grade: 'A' } };
+  const old = structuredClone(approved); old.race.deadlineAt = '2026-09-21T16:00:00+09:00';
+  const before = selector.select(old), after = selector.select(approved);
+  assert.ok(after.tickets.length >= 5);
+  assert.deepEqual(after.tickets, before.tickets, 'approved skip never deletes or replaces the forecast A tickets');
+  assert.equal(after.purchaseDecision.status, 'skip');
+  assert.deepEqual(selector.createPurchaseSelection(approved), []);
+  assert.equal(selector.compactAudit(after).purchaseDecision.status, 'skip');
+}
 console.log("実戦厳選共通テスト: 合格");
 console.log("- 基本5点: main3＋cover2を固定");
 console.log("- 通常追加: フォーメーション由来の根拠付き3連単2券（穴と排他）");

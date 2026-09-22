@@ -50,6 +50,15 @@ function build(){
     const r=p6By.get('newEnvironment'); rows.push(lifecycleRow({theoryId:'newEnvironment',builder:invBy.get('newEnvironment')?.builder||null,candidatePresent:false,validationStatus:'NOT_VALIDATABLE_WITH_APPROVED_SPEC',decisionStatus:'PERMANENT_BLOCKER',blockerCode:r?.blockerCode||'NO_FIXED_CANDIDATE_FROM_DISCOVERY',lastEvaluation:{cohort:r?.evidence?.source||'data/stats/theory-evidence-coverage-phase7.json',fingerprint:inv.coreVersion||null},nextAllowedAction:permanentAction,source:['data/stats/theory-validation-phase6-prospective.json','PR #990']}));
   }
   const collectors=countWallCollectors();
+  const approval=require('../config/wall-purchase-approval.json');
+  const wallRow=rows.find(r=>r.theoryId==='wall');
+  if(approval.status==='OWNER_APPROVED_IMPLEMENTED' && approval.candidateId===wallRow?.candidate.id){
+    wallRow.productionAdoptionStatus='OWNER_APPROVED_PURCHASE_SKIP_ACTIVE';
+    wallRow.candidateAdoptionStatus='APPROVED_IMPLEMENTED';
+    wallRow.decisionStatus='ADOPTED_BY_USER';
+    wallRow.approval={source:'config/wall-purchase-approval.json',approvedAt:approval.approvedAt,effectiveFrom:approval.effectiveFrom};
+    wallRow.nextAllowedAction='MONITOR_APPROVED_PURCHASE_POLICY';
+  }
   const wallWorkflow=read('.github/workflows/collect-wall-established-attacker2-skip-ab.yml');
   const ids=rows.map(r=>r.theoryId); const unique=new Set(ids);
   const inventoryIds=new Set(inv.rows.map(r=>r.theoryId));

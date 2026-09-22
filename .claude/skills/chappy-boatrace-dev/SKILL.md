@@ -67,3 +67,9 @@ Workからの切り離しはGitHub側の稼働だけで完了とせず、既存C
 - 外攻めの進捗は旧 `outer-attack-ticket-central-report-v1.json` と別枠 `outer-attack-research-report.json` を区別する。全開催・展示後証拠・未保存理由は後者の `coverage` と不変 `data/verification-coverage` で確認し、workflow成功だけで蓄積順調としない。
 - 日次新規予想は `outer-attack-research.compactPool` で候補メタデータを保持する。`compactStoredVerification` は保存済み候補を保持するだけとし、古い予想へ現行候補を再生成・後付けしない。候補0ではプール未保存と条件不成立を分ける。
 - 全体比較 `outer-attack-all-scenarios-v1` は展示後・締切前の既存qualified展開枝を用いる。攻め艇・着順・予想方式ごとの全対象と変更対象を分け、旧A/Bや外頭forward検証へ混ぜない。採用gate未登録の研究版を本番採用可能と扱わない。契約は `docs/outer-attack-all-scenarios-v1.md` を確認する。
+
+
+## 壁艇の承認済み購入見送り
+
+- 採用状態は `config/wall-purchase-approval.json` とphase7/8の `productionAdoptionStatus` を確認する。100Rの検証合格とユーザー承認・本番反映を区別し、承認済みの対象を再び承認待ちへ戻さない。
+- 壁成立・主攻め艇2号艇の購入方針は `practicalSelection.purchaseDecision`。予想券は比較用Aとして維持し、購入推奨券は `createPurchaseSelection()` で読む。参考予想と購入対象を混同せず、過去行へ判断を後付けしない。画面・note・自動選定・保存を組で検査する。詳細は `docs/wall-purchase-policy.md`。

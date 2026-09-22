@@ -1466,7 +1466,16 @@
   const api = {
     VERSION,
     PAYWALL_MARKER,
-    generateArticle,
+    generateArticle(prediction, options = {}) {
+      const article = generateArticle(prediction, options);
+      const decision = root.ChappyPracticalSelection?.purchaseDecision?.(prediction);
+      if (!article?.ok || decision?.status !== "skip") return article;
+      const warning = "【購入見送り】\n" + decision.reason + "\n購入推奨0点・0円。以下の買い目は比較・振り返り用の参考予想です。";
+      const freeText = warning + "\n\n" + article.freeText;
+      const paidText = warning + "\n\n" + article.paidText;
+      return { ...article, purchaseDecision: decision, freeText, paidText,
+        fullText: article.fullText.replace(article.freeText, freeText).replace(article.paidText, paidText) };
+    },
     createDisplayCandidates,
     buildTitle,
     buildFreeSection,
@@ -1492,4 +1501,3 @@
     ? window
     : globalThis
 );
-

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "theory-validation-phase8-cycle-v1",
-  "generatedAt": "2026-09-22T19:03:29.447Z",
+  "generatedAt": "2026-09-22T23:31:51.892Z",
   "sourceCoverageGeneratedAt": "2026-09-22T18:36:09.188Z",
   "coreVersion": "ai-core-v4.8.6-escape-skill-role",
   "productionChanged": false,
@@ -44,7 +44,7 @@
     "noCandidate": 4,
     "confounded": 4,
     "insufficientEvidence": 0,
-    "userApproval": 1
+    "userApproval": 0
   },
   "audit": {
     "uniqueTheories": true,
@@ -554,8 +554,8 @@
       },
       "eligibility": {
         "state": "ELIGIBLE_FOR_VALIDATION",
-        "reason": "VALIDATION_COMPLETE_USER_APPROVAL_REQUIRED",
-        "nextAction": "REQUEST_USER_APPROVAL"
+        "reason": "OWNER_APPROVED_PURCHASE_POLICY_ACTIVE",
+        "nextAction": "MONITOR_APPROVED_PURCHASE_POLICY"
       },
       "validationHandoff": {
         "theoryId": "wall",
@@ -585,10 +585,10 @@
         "productionAdoption": "STOP_AT_CANDIDATE_FOR_USER_APPROVAL",
         "automaticProductionChange": false
       },
-      "decisionStatus": "CANDIDATE_FOR_USER_APPROVAL",
+      "decisionStatus": "ADOPTED_BY_USER",
       "blockerCode": null,
-      "productionAdoptionStatus": "CURRENT_PRODUCTION_UNCHANGED",
-      "nextAction": "REQUEST_USER_APPROVAL",
+      "productionAdoptionStatus": "OWNER_APPROVED_PURCHASE_SKIP_ACTIVE",
+      "nextAction": "MONITOR_APPROVED_PURCHASE_POLICY",
       "productionChanged": false
     },
     {
