@@ -78,6 +78,13 @@ function settle(row, result) {
     escapeTopButDifferentHead: !!row.escape && Number.isFinite(row.escape.score) &&
       Number.isFinite(row.mainScore) && row.escape.score > row.mainScore && row.head !== escapeHead };
 }
+function chooseOfficialResult(existing, incoming) {
+  if (!input.isOfficialResultSource(incoming)) return existing;
+  const current = resultOf(existing), next = resultOf(incoming);
+  if (!current && next) return incoming;
+  if (current?.excluded === 'unknown-payout' && next && !next.excluded) return incoming;
+  return existing || incoming;
+}
 function summarize(rows) {
   const mainHeads = {}, actualHeads = {}, missingStages = {};
   const n = rows.length, stake = rows.reduce((s, r) => s + 100 * r.selected.length, 0);
@@ -157,7 +164,7 @@ function main(root = process.cwd()) {
   const ledgerPath = path.join(root, 'data/stats/race-review-results.json');
   if (fs.existsSync(ledgerPath)) for (const r of Object.values(read(ledgerPath).races || {})) {
     const key = input.raceKey(r);
-    if (chosen.has(key) && !results.has(key) && input.isOfficialResultSource(r)) results.set(key, r);
+    if (chosen.has(key)) results.set(key, chooseOfficialResult(results.get(key), r));
   }
   const rows = [];
   for (const [key, row] of chosen) {
@@ -175,4 +182,4 @@ function main(root = process.cwd()) {
   return report;
 }
 if (require.main === module) main();
-module.exports = { compact, resultOf, settle, summarize, build, main };
+module.exports = { compact, resultOf, settle, summarize, build, main, chooseOfficialResult };
