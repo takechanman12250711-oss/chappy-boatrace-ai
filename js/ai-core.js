@@ -16,7 +16,7 @@
   "use strict";
 
   const CORE_VERSION =
-    "ai-core-v4.8.5-actual-course-identity";
+    "ai-core-v4.8.6-escape-skill-role";
 
   /* ===============================
     基本ユーティリティ
@@ -4275,7 +4275,8 @@ function getBoatNo(boat) {
 
   function getRacerSkillRole(
     mainScenario,
-    boatNo
+    boatNo,
+    actualCourse
   ) {
     const firstCandidates = new Set(
       (mainScenario?.outcome?.firstCandidates || [])
@@ -4295,7 +4296,9 @@ function getBoatNo(boat) {
 
     if (firstCandidates.has(boatNo)) {
       const type = String(mainScenario?.type || "");
-      if (type === "escape") {
+      // An inside alternative winner escapes even when the principal scenario
+      // is another boat's attack. Do not grade its escape history as makuri.
+      if (Number(actualCourse) === 1 || type === "escape") {
         return {
           role: "逃げ",
           expectedMethods: ["逃げ"],
@@ -4507,7 +4510,8 @@ function getBoatNo(boat) {
       const roleInfo =
         getRacerSkillRole(
           mainScenario,
-          boatNo
+          boatNo,
+          course
         );
       const isBlocked =
         blockedBoats.has(boatNo);

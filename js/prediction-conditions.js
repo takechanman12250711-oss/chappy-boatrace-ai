@@ -313,6 +313,7 @@
           : "",
       boats,
       weather,
+      escapeEvaluationEvidence: captureEscapeEvaluation(raceData, prediction),
       dataAvailability: {
         entries: boats.filter(boat => boat.racerName || boat.className).length,
         officialCourses:
@@ -355,6 +356,44 @@
         /新型エンジン|新エンジン|新モーター|新燃料/.test(sourceText)
       ),
       usagePolicy: "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
+    };
+  }
+
+  // Freeze only evidence used by the current engine, not a new scoring rule.
+  // Legacy snapshots remain legacy: never fill their history with today's data.
+  function captureEscapeEvaluation(raceData, prediction) {
+    const core = prediction?.aiCore || {};
+    const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
+    // Full scenarios contain repeated candidate trees exceeding 1 MB per race.
+    // Keep the actual decisions; the original history/input is stored separately.
+    const scenario = value => value ? clone(Object.fromEntries([
+      "type", "label", "score", "headBoatNo", "attackerBoatNo", "attacker", "attackerCourse",
+      "blockedBoats", "frameMovementAdjustment", "slitAdjustment", "slitReasons"
+    ].filter(key => value[key] !== undefined).map(key => [key, value[key]]))) : null;
+    const history = raceData?.historyContext;
+    return {
+      version: "escape-evaluation-evidence-v1",
+      sourceFetchedAt: text(raceData?.fetchedAt),
+      datasetVersion: text(raceData?.datasetVersion),
+      resultUsedForGeneration: false,
+      affectsPrediction: false,
+      historyStatus: history && Array.isArray(history.racers)
+        ? "captured" : "unavailable",
+      historyContext: clone(history),
+      // Original entries retain current-series ST lists, F risk and field names.
+      entries: clone(findEntries(raceData)),
+      beforeInfo: clone(raceData?.beforeInfo),
+      startExhibition: clone(raceData?.startExhibition),
+      raceInfo: clone(raceData?.raceInfo),
+      raceScenarios: core.raceScenarios ? {
+        mainScenario: scenario(core.raceScenarios.mainScenario),
+        subScenario: scenario(core.raceScenarios.subScenario),
+        scenarios: (core.raceScenarios.scenarios || []).map(scenario)
+      } : null,
+      racerSkillTheory: clone(core.racerSkillTheory),
+      stSlitTheory: clone(core.stSlitTheory),
+      aiCoreVersion: text(core.version),
+      limitation: "Recorded inputs and evaluations; full-engine replay equivalence must be checked separately."
     };
   }
 

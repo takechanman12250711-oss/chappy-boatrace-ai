@@ -14,7 +14,11 @@ const attack=r.reports.find(x=>x.theoryId==='attack');
 assert(attack);
 assert.strictEqual(attack.status,'NO_TRIGGER');
 assert.strictEqual(attack.counts.triggered,0);
-assert.strictEqual(attack.roi.baseline,84.62);
+// The source cohort grows daily. NO_TRIGGER must preserve its actual baseline,
+// not a recovery rate from an older day's data.
+assert(Number.isFinite(attack.roi.baseline));
+assert.strictEqual(attack.roi.candidate,attack.roi.baseline);
+assert.strictEqual(attack.roi.delta,0);
 assert.strictEqual(attack.completion.validated,true);
 assert.strictEqual(attack.completion.decisionReady,true);
 for(const report of r.reports.filter(x=>x.theoryId!=='attack')){

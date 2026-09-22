@@ -125,6 +125,24 @@ test("後から原稿・保存予想・参考台帳・基準を変更しても�
   assert.deepEqual(payload.record.prediction.practicalTickets, expected.record.prediction.practicalTickets);
 });
 
+test("逃げ検証の取得時点・選手履歴・展開評価が最終bundleまで残る", rootDir => {
+  const input = fixture();
+  input.record.prediction.preRaceConditions = {
+    schemaVersion: 4, sourceTiming: "pre_deadline", sourceFetchedAt: "2026-09-10T03:39:00Z",
+    escapeEvaluationEvidence: { historyStatus: "captured", historyContext: { racers: [{ registerNo: "1234" }] } }
+  };
+  input.record.prediction.verificationEvidence = { mainScenario: { type: "escape", headBoatNo: 1 }, scenarios: [{ type: "escape", score: 80 }] };
+  const expected = structuredClone(input.record.prediction);
+  const saved = saveNoteDraftBundle(deepFreeze(input), { rootDir });
+  const p = JSON.parse(fs.readFileSync(path.join(rootDir, saved.path), "utf8")).record.prediction;
+  assert.deepEqual(p.preRaceConditions, expected.preRaceConditions);
+  assert.deepEqual(p.verificationEvidence, expected.verificationEvidence);
+  const legacy = saveNoteDraftBundle(fixture(), { rootDir });
+  const old = JSON.parse(fs.readFileSync(path.join(rootDir, legacy.path), "utf8")).record.prediction;
+  assert.equal(old.preRaceConditions, undefined);
+  assert.equal(old.verificationEvidence, undefined);
+});
+
 test("同一入力の再保存は既存ファイルを書き換えない", rootDir => {
   const input = fixture();
   const first = saveNoteDraftBundle(input, { rootDir });
