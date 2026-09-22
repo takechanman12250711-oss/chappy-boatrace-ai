@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "analysisId": "venue-three-attack-race-diagnosis-v1",
-  "generatedAt": "2026-09-22T04:59:55.563Z",
-  "sourceGeneratedAt": "2026-09-22T04:59:54.121Z",
+  "generatedAt": "2026-09-22T16:56:36.608Z",
+  "sourceGeneratedAt": "2026-09-22T16:56:35.241Z",
   "source": "official pre-deadline predictions joined to official results",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "targetScenario": {
@@ -21,37 +21,37 @@
     "payoutDependence": "的中払戻のうち最高1件の寄与率と、その1件を除いた診断上の回収率"
   },
   "diagnostics": {
-    "canonicalPredictionCount": 2728,
-    "preDeadlinePredictionCount": 2714,
+    "canonicalPredictionCount": 2733,
+    "preDeadlinePredictionCount": 2719,
     "excludedPredictionCount": 14,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 1,
       "timestamp-missing": 7
     },
-    "officialResultCount": 2677,
-    "settledJoinCount": 2677,
+    "officialResultCount": 2695,
+    "settledJoinCount": 2695,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
   "focusVenueCount": 3,
-  "raceCount": 78,
+  "raceCount": 80,
   "venues": [
     {
       "jcd": "06",
       "place": "浜名湖",
       "role": "loss-focus",
-      "raceCount": 25,
+      "raceCount": 26,
       "hitCount": 2,
-      "hitRate": 8,
-      "stake": 21800,
+      "hitRate": 7.7,
+      "stake": 22600,
       "return": 5970,
-      "profit": -15830,
-      "recoveryRate": 27.4,
+      "profit": -16630,
+      "recoveryRate": 26.4,
       "ticketCount": {
         "minimum": 7,
         "maximum": 10,
-        "median": 10,
+        "median": 9.5,
         "average": 8.7
       },
       "payoutDependence": {
@@ -62,13 +62,13 @@
           "payout": 3800
         },
         "highestHitReturnShare": 63.7,
-        "recoveryRateWithoutHighestHit": 10,
+        "recoveryRateWithoutHighestHit": 9.6,
         "noHitReturn": false
       },
       "actualHeads": [
         {
           "key": "1",
-          "count": 14
+          "count": 15
         },
         {
           "key": "2",
@@ -96,7 +96,7 @@
       "winningMethods": [
         {
           "key": "逃げ",
-          "count": 14
+          "count": 15
         },
         {
           "key": "まくり",
@@ -119,12 +119,12 @@
         "first": 4,
         "second": 4,
         "third": 8,
-        "outsideTop3": 9
+        "outsideTop3": 10
       },
       "firstDivergence": [
         {
           "key": "SECOND_POSITION",
-          "count": 14
+          "count": 15
         },
         {
           "key": "HEAD_POSITION",
@@ -143,20 +143,20 @@
         {
           "theoryKey": "flow",
           "label": "展開",
-          "raceCount": 22,
+          "raceCount": 23,
           "hitRaceCount": 2,
-          "missRaceCount": 20,
-          "formalRaceCount": 22,
-          "hitRate": 9.1
+          "missRaceCount": 21,
+          "formalRaceCount": 23,
+          "hitRate": 8.7
         },
         {
           "theoryKey": "holdPickup",
           "label": "残し・拾い",
-          "raceCount": 22,
+          "raceCount": 23,
           "hitRaceCount": 2,
-          "missRaceCount": 20,
-          "formalRaceCount": 22,
-          "hitRate": 9.1
+          "missRaceCount": 21,
+          "formalRaceCount": 23,
+          "hitRate": 8.7
         }
       ],
       "races": [
@@ -1188,6 +1188,49 @@
             true,
             true,
             true
+          ],
+          "theoryClaims": [
+            {
+              "theoryKey": "flow",
+              "label": "展開",
+              "formal": true
+            },
+            {
+              "theoryKey": "holdPickup",
+              "label": "残し・拾い",
+              "formal": true
+            }
+          ]
+        },
+        {
+          "raceKey": "20260922-06-5",
+          "date": "20260922",
+          "jcd": "06",
+          "place": "浜名湖",
+          "raceNo": 5,
+          "scenarioKey": "threeAttack",
+          "scenarioLabel": "3コース攻め",
+          "actualTicket": "1-5-2",
+          "winningMethod": "逃げ",
+          "payout": 6310,
+          "ticketCount": 8,
+          "stake": 800,
+          "return": 0,
+          "hit": false,
+          "actualHead": "1",
+          "actualSecond": "5",
+          "actualThird": "2",
+          "boat3Finish": null,
+          "firstDivergence": "SECOND_POSITION",
+          "positionCovered": [
+            true,
+            false,
+            false
+          ],
+          "prefixCovered": [
+            true,
+            false,
+            false
           ],
           "theoryClaims": [
             {
@@ -2373,34 +2416,34 @@
       "jcd": "20",
       "place": "若松",
       "role": "positive-control",
-      "raceCount": 29,
-      "hitCount": 10,
-      "hitRate": 34.5,
-      "stake": 26200,
-      "return": 66250,
-      "profit": 40050,
-      "recoveryRate": 252.9,
+      "raceCount": 30,
+      "hitCount": 11,
+      "hitRate": 36.7,
+      "stake": 27200,
+      "return": 66840,
+      "profit": 39640,
+      "recoveryRate": 245.7,
       "ticketCount": {
         "minimum": 6,
         "maximum": 10,
         "median": 10,
-        "average": 9
+        "average": 9.1
       },
       "payoutDependence": {
-        "hitPayoutMedian": 2080,
+        "hitPayoutMedian": 1480,
         "highestHit": {
           "raceKey": "20260823-20-7",
           "ticket": "3-2-5",
           "payout": 28220
         },
-        "highestHitReturnShare": 42.6,
-        "recoveryRateWithoutHighestHit": 145.2,
+        "highestHitReturnShare": 42.2,
+        "recoveryRateWithoutHighestHit": 142,
         "noHitReturn": false
       },
       "actualHeads": [
         {
           "key": "1",
-          "count": 15
+          "count": 16
         },
         {
           "key": "3",
@@ -2422,7 +2465,7 @@
       "hitTickets": [
         {
           "key": "1-2-3",
-          "count": 3
+          "count": 4
         },
         {
           "key": "1-3-4",
@@ -2452,7 +2495,7 @@
       "winningMethods": [
         {
           "key": "逃げ",
-          "count": 15
+          "count": 16
         },
         {
           "key": "まくり差し",
@@ -2474,17 +2517,17 @@
       "boat3Finish": {
         "first": 5,
         "second": 8,
-        "third": 6,
+        "third": 7,
         "outsideTop3": 10
       },
       "firstDivergence": [
         {
-          "key": "SECOND_POSITION",
+          "key": "HIT",
           "count": 11
         },
         {
-          "key": "HIT",
-          "count": 10
+          "key": "SECOND_POSITION",
+          "count": 11
         },
         {
           "key": "HEAD_POSITION",
@@ -2499,20 +2542,20 @@
         {
           "theoryKey": "flow",
           "label": "展開",
-          "raceCount": 25,
-          "hitRaceCount": 10,
+          "raceCount": 26,
+          "hitRaceCount": 11,
           "missRaceCount": 15,
-          "formalRaceCount": 25,
-          "hitRate": 40
+          "formalRaceCount": 26,
+          "hitRate": 42.3
         },
         {
           "theoryKey": "holdPickup",
           "label": "残し・拾い",
-          "raceCount": 25,
-          "hitRaceCount": 10,
+          "raceCount": 26,
+          "hitRaceCount": 11,
           "missRaceCount": 15,
-          "formalRaceCount": 25,
-          "hitRate": 40
+          "formalRaceCount": 26,
+          "hitRate": 42.3
         }
       ],
       "races": [
@@ -3718,6 +3761,49 @@
               "formal": true
             }
           ]
+        },
+        {
+          "raceKey": "20260922-20-1",
+          "date": "20260922",
+          "jcd": "20",
+          "place": "若松",
+          "raceNo": 1,
+          "scenarioKey": "threeAttack",
+          "scenarioLabel": "3コース攻め",
+          "actualTicket": "1-2-3",
+          "winningMethod": "逃げ",
+          "payout": 590,
+          "ticketCount": 10,
+          "stake": 1000,
+          "return": 590,
+          "hit": true,
+          "actualHead": "1",
+          "actualSecond": "2",
+          "actualThird": "3",
+          "boat3Finish": 3,
+          "firstDivergence": "HIT",
+          "positionCovered": [
+            true,
+            true,
+            true
+          ],
+          "prefixCovered": [
+            true,
+            true,
+            true
+          ],
+          "theoryClaims": [
+            {
+              "theoryKey": "flow",
+              "label": "展開",
+              "formal": true
+            },
+            {
+              "theoryKey": "holdPickup",
+              "label": "残し・拾い",
+              "formal": true
+            }
+          ]
         }
       ]
     }
@@ -3725,46 +3811,46 @@
   "positiveControl": {
     "jcd": "20",
     "place": "若松",
-    "raceCount": 29,
-    "hitRate": 34.5,
-    "recoveryRate": 252.9,
+    "raceCount": 30,
+    "hitRate": 36.7,
+    "recoveryRate": 245.7,
     "medianTicketCount": 10,
-    "highestHitReturnShare": 42.6,
-    "recoveryRateWithoutHighestHit": 145.2,
-    "boat3FirstRate": 17.2,
-    "headDivergenceRate": 20.7
+    "highestHitReturnShare": 42.2,
+    "recoveryRateWithoutHighestHit": 142,
+    "boat3FirstRate": 16.7,
+    "headDivergenceRate": 20
   },
   "comparisons": [
     {
       "venue": {
         "jcd": "06",
         "place": "浜名湖",
-        "raceCount": 25,
-        "hitRate": 8,
-        "recoveryRate": 27.4,
-        "medianTicketCount": 10,
+        "raceCount": 26,
+        "hitRate": 7.7,
+        "recoveryRate": 26.4,
+        "medianTicketCount": 9.5,
         "highestHitReturnShare": 63.7,
-        "recoveryRateWithoutHighestHit": 10,
-        "boat3FirstRate": 16,
-        "headDivergenceRate": 24
+        "recoveryRateWithoutHighestHit": 9.6,
+        "boat3FirstRate": 15.4,
+        "headDivergenceRate": 23.1
       },
       "control": {
         "jcd": "20",
         "place": "若松",
-        "raceCount": 29,
-        "hitRate": 34.5,
-        "recoveryRate": 252.9,
+        "raceCount": 30,
+        "hitRate": 36.7,
+        "recoveryRate": 245.7,
         "medianTicketCount": 10,
-        "highestHitReturnShare": 42.6,
-        "recoveryRateWithoutHighestHit": 145.2,
-        "boat3FirstRate": 17.2,
-        "headDivergenceRate": 20.7
+        "highestHitReturnShare": 42.2,
+        "recoveryRateWithoutHighestHit": 142,
+        "boat3FirstRate": 16.7,
+        "headDivergenceRate": 20
       },
       "deltaVsControl": {
-        "hitRate": -26.5,
-        "recoveryRate": -225.5,
-        "medianTicketCount": 0,
-        "boat3FirstRate": -1.2
+        "hitRate": -29,
+        "recoveryRate": -219.3,
+        "medianTicketCount": -0.5,
+        "boat3FirstRate": -1.3
       }
     },
     {
@@ -3783,20 +3869,20 @@
       "control": {
         "jcd": "20",
         "place": "若松",
-        "raceCount": 29,
-        "hitRate": 34.5,
-        "recoveryRate": 252.9,
+        "raceCount": 30,
+        "hitRate": 36.7,
+        "recoveryRate": 245.7,
         "medianTicketCount": 10,
-        "highestHitReturnShare": 42.6,
-        "recoveryRateWithoutHighestHit": 145.2,
-        "boat3FirstRate": 17.2,
-        "headDivergenceRate": 20.7
+        "highestHitReturnShare": 42.2,
+        "recoveryRateWithoutHighestHit": 142,
+        "boat3FirstRate": 16.7,
+        "headDivergenceRate": 20
       },
       "deltaVsControl": {
-        "hitRate": -17.8,
-        "recoveryRate": -217.2,
+        "hitRate": -20,
+        "recoveryRate": -210,
         "medianTicketCount": 0,
-        "boat3FirstRate": 20.3
+        "boat3FirstRate": 20.8
       }
     }
   ],
