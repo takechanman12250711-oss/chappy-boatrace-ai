@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "analysisId": "theory-validation-phase6-prospective-integration-v1",
-  "generatedAt": "2026-09-22T05:08:48.832Z",
+  "generatedAt": "2026-09-22T18:57:46.391Z",
   "productionChanged": false,
   "phaseComplete": true,
   "summary": {
-    "prospective": 1,
-    "decisionReady": 0,
+    "prospective": 0,
+    "decisionReady": 1,
     "permanentBlocker": 1,
     "duplicateCollection": 0,
     "missing": 0
@@ -14,12 +14,12 @@
   "rows": [
     {
       "theoryId": "wall",
-      "status": "PROSPECTIVE_GATE",
+      "status": "DECISION_READY",
       "candidateId": "wall-established-attacker2-skip-b-v1",
       "progress": {
-        "current": 98,
+        "current": 100,
         "required": 100,
-        "remaining": 2,
+        "remaining": 0,
         "unit": "settled qualified races",
         "nextGate": 100
       },
@@ -35,14 +35,14 @@
       },
       "evaluation": {
         "automaticAtGate": true,
-        "checkpointStatus": "not-reached",
+        "checkpointStatus": "conditions-met-awaiting-manual-approval",
         "baseline": {
           "hits": 27,
-          "tickets": 890,
-          "stake": 89000,
+          "tickets": 910,
+          "stake": 91000,
           "return": 62470,
-          "profit": -26530,
-          "roi": 70.2
+          "profit": -28530,
+          "roi": 68.6
         },
         "candidate": {
           "hits": 0,
@@ -58,18 +58,18 @@
           "lost": 27,
           "net": -27
         },
-        "ticketDelta": -890,
-        "profitDelta": 26530,
+        "ticketDelta": -910,
+        "profitDelta": 28530,
         "temporal": {
           "distinctDates": 21,
-          "firstHalfProfitDelta": 22550,
-          "secondHalfProfitDelta": 3980,
-          "leaveOneOutMinimumProfitDelta": 25530
+          "firstHalfProfitDelta": 22410,
+          "secondHalfProfitDelta": 6120,
+          "leaveOneOutMinimumProfitDelta": 27530
         },
-        "decision": "WAITING_FOR_100R",
+        "decision": "CANDIDATE_FOR_USER_APPROVAL",
         "userApprovalRequired": true
       },
-      "blockerCode": "WAITING_PREREGISTERED_WALL_100R"
+      "blockerCode": null
     },
     {
       "theoryId": "newEnvironment",

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "theory-validation-phase8-cycle-v1",
-  "generatedAt": "2026-09-22T18:36:48.355Z",
+  "generatedAt": "2026-09-22T18:57:46.505Z",
   "sourceCoverageGeneratedAt": "2026-09-22T18:36:09.188Z",
   "coreVersion": "ai-core-v4.8.6-escape-skill-role",
   "productionChanged": false,
@@ -44,7 +44,7 @@
     "noCandidate": 4,
     "confounded": 4,
     "insufficientEvidence": 0,
-    "userApproval": 0
+    "userApproval": 1
   },
   "audit": {
     "uniqueTheories": true,
@@ -536,7 +536,7 @@
           },
           "dataCount": {
             "formalEvidence": 1468,
-            "validation": 98,
+            "validation": 100,
             "eligible": null
           },
           "antiPosthoc": {
@@ -554,8 +554,8 @@
       },
       "eligibility": {
         "state": "ELIGIBLE_FOR_VALIDATION",
-        "reason": "WAITING_PREREGISTERED_WALL_100R",
-        "nextAction": "CONTINUE_EXISTING_VALIDATION_HANDOFF"
+        "reason": "VALIDATION_COMPLETE_USER_APPROVAL_REQUIRED",
+        "nextAction": "REQUEST_USER_APPROVAL"
       },
       "validationHandoff": {
         "theoryId": "wall",
@@ -565,7 +565,7 @@
         "existingAdapter": "scripts/theory-validation-phase6-prospective-integration.cjs",
         "mode": "PROSPECTIVE_PREREGISTERED",
         "gate": {
-          "current": 98,
+          "current": 100,
           "required": 100,
           "automaticAtGate": true
         },
@@ -585,10 +585,10 @@
         "productionAdoption": "STOP_AT_CANDIDATE_FOR_USER_APPROVAL",
         "automaticProductionChange": false
       },
-      "decisionStatus": "PENDING_GATE",
-      "blockerCode": "WAITING_PREREGISTERED_WALL_100R",
+      "decisionStatus": "CANDIDATE_FOR_USER_APPROVAL",
+      "blockerCode": null,
       "productionAdoptionStatus": "CURRENT_PRODUCTION_UNCHANGED",
-      "nextAction": "CONTINUE_EXISTING_VALIDATION_HANDOFF",
+      "nextAction": "REQUEST_USER_APPROVAL",
       "productionChanged": false
     },
     {

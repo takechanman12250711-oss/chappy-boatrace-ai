@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "theory-validation-phase7-lifecycle-v1",
-  "sourceGeneratedAt": "2026-09-22T05:08:48.881Z",
+  "sourceGeneratedAt": "2026-09-22T18:57:46.440Z",
   "coreVersion": "ai-core-v4.8.6-escape-skill-role",
   "productionChanged": false,
   "phaseComplete": true,
@@ -9,8 +9,8 @@
     "theories": 13,
     "rejected": 4,
     "permanentBlocker": 8,
-    "prospectiveGate": 1,
-    "userApproval": 0
+    "prospectiveGate": 0,
+    "userApproval": 1
   },
   "audit": {
     "uniqueTheoryRegistry": true,
@@ -288,13 +288,13 @@
         "present": true,
         "id": "wall-established-attacker2-skip-b-v1"
       },
-      "validationStatus": "PROSPECTIVE_COLLECTING",
-      "decisionStatus": "PENDING_GATE",
-      "blockerCode": "WAITING_PREREGISTERED_WALL_100R",
+      "validationStatus": "PROSPECTIVE_GATE_VALIDATED",
+      "decisionStatus": "CANDIDATE_FOR_USER_APPROVAL",
+      "blockerCode": null,
       "prospectiveGate": {
-        "current": 98,
+        "current": 100,
         "required": 100,
-        "remaining": 2,
+        "remaining": 0,
         "collectionWorkflow": ".github/workflows/collect-wall-established-attacker2-skip-ab.yml",
         "automaticAtGate": true
       },
@@ -303,8 +303,8 @@
         "fingerprint": "wall-established-attacker2-skip-b-v1"
       },
       "productionAdoptionStatus": "CURRENT_PRODUCTION_UNCHANGED",
-      "candidateAdoptionStatus": "NOT_APPLICABLE",
-      "nextAllowedAction": "CONTINUE_EXISTING_PROSPECTIVE_COLLECTION",
+      "candidateAdoptionStatus": "PENDING_USER_APPROVAL",
+      "nextAllowedAction": "REQUEST_USER_APPROVAL",
       "source": [
         "data/stats/theory-validation-phase6-prospective.json",
         "data/stats/wall-established-attacker2-skip-ab-report.json",
