@@ -19,6 +19,10 @@ on:
       - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
+      - "scripts/note-browserbase-draft-save.js"
+      - "scripts/note-browserbase-draft-save.test.js"
+      - "scripts/note-editor-content.js"
+      - "scripts/note-editor-content.test.js"
       - "scripts/note-github-ui-transport.test.js"
       - "scripts/prepare-note-input.js"
       - "scripts/dispatch-ready-note.js"
@@ -62,6 +66,10 @@ on:
       - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
+      - "scripts/note-browserbase-draft-save.js"
+      - "scripts/note-browserbase-draft-save.test.js"
+      - "scripts/note-editor-content.js"
+      - "scripts/note-editor-content.test.js"
       - "scripts/note-github-ui-transport.test.js"
       - "scripts/prepare-note-input.js"
       - "scripts/dispatch-ready-note.js"
@@ -120,6 +128,8 @@ jobs:
           node scripts/test-prediction-summaries.js
           node scripts/check-note-skills.js
           node scripts/note-github-ui-transport.test.js
+          node scripts/note-browserbase-draft-save.test.js
+          node scripts/note-editor-content.test.js
           node scripts/note-publication-source.test.js
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
