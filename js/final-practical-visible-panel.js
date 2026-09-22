@@ -38,6 +38,12 @@
     const area=root.document.getElementById("resultArea");
     if(!area)return;
     area.querySelectorAll?.(".chappy-practical-visible-panel").forEach(node=>node.remove());
+    const decision=pred.practicalSelection?.purchaseDecision||root.ChappyPracticalSelection?.purchaseDecision?.(pred);
+    if(decision?.status==="skip"){
+      area.insertAdjacentHTML("afterbegin",`<section class="chappy-practical-visible-panel" aria-label="購入見送り"><div class="chappy-practical-visible-head"><strong>購入見送り</strong><span>購入推奨0点・0円</span></div><p>${esc(decision.reason)}</p><p>買い目候補は参考予想です。購入対象ではありません。</p></section>`);
+      area.querySelectorAll?.(".chappy-final-buy-group.is-practical-fallback").forEach(node=>node.remove());
+      return;
+    }
     const selected=selectedRows(pred);
     if(!selected.length)return;
     const map=oddsMap(pred);
@@ -58,4 +64,3 @@
   root.document.addEventListener?.("visibilitychange",()=>{if(root.document.visibilityState==="visible"&&latestPrediction)render(latestPrediction);});
   root.ChappyPracticalVisiblePanel=Object.freeze({render,selectedRows});
 })(typeof window!=="undefined"?window:null);
-

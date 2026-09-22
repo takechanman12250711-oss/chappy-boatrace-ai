@@ -81,7 +81,7 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
       const exhibition = exhibitionSnapshot(item.rawRaceData || item.raceData, new Date(now()).toISOString());
       if (!exhibition.ready) { summary.waitingExhibition++; mark(raceKey,"waiting-exhibition"); continue; }
       const prediction = createPrediction(item.raceData);
-      prediction.race = { ...prediction.race, grade: item.eventGrade || prediction.race?.grade || '' };
+      prediction.race = { ...prediction.race, deadlineAt: item.deadlineAt, grade: item.eventGrade || prediction.race?.grade || '' };
       prediction.predictionMode = 'server_pre_deadline';
       prediction.officialResultUsedForPrediction = false;
       const baseline = structuredClone(createPracticalSelection(prediction));

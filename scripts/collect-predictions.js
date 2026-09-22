@@ -1424,6 +1424,7 @@ function buildStoredPrediction(
   const prediction = createPrediction(
     item.raceData
   );
+  prediction.race = { ...prediction.race, deadlineAt: item.deadlineAt };
   prediction.predictionMode = selected
     ? "server_pre_deadline"
     : "server_pre_deadline_shadow";
@@ -1696,10 +1697,11 @@ function buildActiveV2Comparison(
         scoreSource:
           "shadowSelectionV2.evaluation.totalScore",
         selectionReady:
-          selection?.ready === true,
+          selection?.ready === true && record?.prediction?.practicalSelection?.purchaseDecision?.status !== "skip",
+        purchaseDecision: record?.prediction?.practicalSelection?.purchaseDecision || null,
         selectionStatus:
           String(
-            selection?.status ||
+            (record?.prediction?.practicalSelection?.purchaseDecision?.status === "skip" ? "purchase-policy-skip" : selection?.status) ||
             "unavailable"
           ),
         legacyType:
@@ -2432,5 +2434,3 @@ module.exports = {
   detachShadowV2,
   saveRun
 };
-
-

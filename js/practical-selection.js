@@ -393,6 +393,7 @@
         String(
           selection.status || ""
         ),
+      ...(selection.purchaseDecision ? { purchaseDecision: selection.purchaseDecision } : {}),
       reason:
         String(
           selection.reason || ""
@@ -2397,7 +2398,7 @@
     };
   }
 
-  function select(prediction) {
+  function selectForecast(prediction) {
     const lists =
       ticketLists(prediction);
     const evidence =
@@ -5516,7 +5517,51 @@
     };
   }
 
+  // Owner-approved purchase policy. Forecast tickets remain the frozen A
+  // counterfactual; purchase recommendation B is a separate, empty set.
+  const WALL_PURCHASE_POLICY = Object.freeze({
+    id: "wall-established-attacker2-skip-b-v1",
+    approvedAt: "2026-09-22T23:26:22Z",
+    effectiveFrom: "2026-09-22T23:26:22Z"
+  });
+  function purchaseDecision(prediction) {
+    const p = prediction || {};
+    const stored = p.practicalSelection?.verificationEvidence || p.verificationEvidence || {};
+    const wall = p.aiCore?.wallTheory || p.wallTheory || p.raceScenarios?.wallTheory || stored.wallTheory || {};
+    const attackerNo = Number(wall.attackerNo || p.aiCore?.raceScenarios?.attacker || 0);
+    const wallCandidateNo = Number(wall.wallCandidateNo || 0);
+    const state = String(wall.state || "").trim();
+    const score = Number(wall.score), grade = String(wall.grade || "").trim();
+    const formal = /^(壁成立|互角|壁崩れ)$/.test(state) && attackerNo >= 1 && attackerNo <= 6 &&
+      wallCandidateNo >= 1 && wallCandidateNo <= 6 && Number.isFinite(score) && Boolean(grade);
+    const date = String(p.race?.date || "").replace(/-/g, "");
+    const clock = String(p.race?.raceInfo?.deadline || "");
+    const datedClock = /^\d{8}$/.test(date) && /^\d{2}:\d{2}$/.test(clock)
+      ? `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}T${clock}:00+09:00` : "";
+    const deadline = Date.parse(p.race?.deadlineAt || p.deadlineAt || datedClock);
+    const historical = p.isRetrospective === true || p.officialResultUsedForPrediction === true ||
+      /retrospective|replay|post.?race|post.?deadline/.test(String(p.predictionMode || ""));
+    const skip = !historical && deadline > Date.parse(WALL_PURCHASE_POLICY.effectiveFrom) && formal && state === "壁成立" && attackerNo === 2;
+    return { policyId: WALL_PURCHASE_POLICY.id, approvedAt: WALL_PURCHASE_POLICY.approvedAt,
+      effectiveFrom: WALL_PURCHASE_POLICY.effectiveFrom, status: skip ? "skip" : "unchanged",
+      reasonCode: skip ? "WALL_ESTABLISHED_ATTACKER2_OWNER_APPROVED_SKIP" : "OUTSIDE_APPROVED_WALL_SCOPE",
+      reason: skip ? "正式な壁成立・主攻め艇2号艇のため購入見送り。元の予想は参考として保存。" : "",
+      forecastTicketsPreserved: true, automaticAdoption: false,
+      ...(skip ? { recommendedTickets: [], recommendedStakeYen: 0 } : {}),
+      evidence: { formal, state, attackerNo, wallCandidateNo, score: Number.isFinite(score) ? score : null, grade } };
+  }
+  function select(prediction) {
+    const result = selectForecast(prediction);
+    return { ...result, purchaseDecision: purchaseDecision(prediction) };
+  }
+
   const api = {
+    WALL_PURCHASE_POLICY,
+    purchaseDecision,
+    createPurchaseSelection(prediction) {
+      const result = this.select(prediction);
+      return result.purchaseDecision?.status === "skip" ? [] : result.tickets;
+    },
     STANDARD_COUNT,
     NORMAL_MAXIMUM_COUNT,
     MAXIMUM_COUNT,

@@ -46,7 +46,9 @@
     "js/manshu-display-reliability.js"
   ];
   const SCRIPT_VERSIONS = Object.freeze({
-    "js/note-generator.js": "20260914-concise-note1",
+    "js/note-generator.js": "20260923-wall-purchase1",
+    "js/practical-selection.js": "20260923-wall-purchase1",
+    "js/skip-ai-display.js": "20260923-wall-purchase1",
     "js/ai-core.js": "20260922-escape-skill-role1",
     "js/render.js": "20260908-comment-dedup1",
     "js/manshu-display-reliability.js": "20260909-formation-preserve1"

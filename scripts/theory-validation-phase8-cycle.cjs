@@ -41,6 +41,7 @@ function candidateContract(theoryId,lifecycleRow,evidence){
   return contract;
 }
 function classifyEligibility(lifecycleRow,candidate,evidence){
+  if(lifecycleRow.candidateAdoptionStatus==='APPROVED_IMPLEMENTED')return{state:'ELIGIBLE_FOR_VALIDATION',reason:'OWNER_APPROVED_PURCHASE_POLICY_ACTIVE',nextAction:'MONITOR_APPROVED_PURCHASE_POLICY'};
   if(lifecycleRow.decisionStatus==='REJECTED')return{state:'DUPLICATE_REJECTED',reason:lifecycleRow.blockerCode||'PREVIOUSLY_REJECTED',nextAction:'NONE_REJECTED_FINGERPRINT_LOCKED'};
   if(lifecycleRow.decisionStatus==='PERMANENT_BLOCKER')return{state:blockerEligibility(lifecycleRow),reason:lifecycleRow.blockerCode,nextAction:'WAIT_FOR_MATERIAL_EVIDENCE_BASIS_CHANGE_OR_APPROVED_FIXED_CANDIDATE'};
   if(lifecycleRow.decisionStatus==='PENDING_GATE'&&candidate?.standaloneCounterfactual)return{state:'ELIGIBLE_FOR_VALIDATION',reason:lifecycleRow.blockerCode||'PROSPECTIVE_GATE_ACTIVE',nextAction:'CONTINUE_EXISTING_VALIDATION_HANDOFF'};

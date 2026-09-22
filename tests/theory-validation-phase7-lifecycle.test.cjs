@@ -22,12 +22,13 @@ assert.ok(wall);
 assert.strictEqual(wall.candidate.present,true);
 assert.strictEqual(wall.prospectiveGate.required,100);
 assert.ok(wall.prospectiveGate.current>=0);
-assert.ok(['PENDING_GATE','REJECTED','CANDIDATE_FOR_USER_APPROVAL'].includes(wall.decisionStatus));
+assert.strictEqual(wall.decisionStatus,'ADOPTED_BY_USER');
+assert.strictEqual(wall.candidateAdoptionStatus,'APPROVED_IMPLEMENTED');
 const newEnv=out.rows.find(r=>r.theoryId==='newEnvironment');
 assert.strictEqual(newEnv.decisionStatus,'PERMANENT_BLOCKER');
 assert.strictEqual(newEnv.blockerCode,'NO_FIXED_CANDIDATE_FROM_DISCOVERY');
 for(const row of out.rows){
-  assert.strictEqual(row.productionAdoptionStatus,'CURRENT_PRODUCTION_UNCHANGED');
+  assert.strictEqual(row.productionAdoptionStatus,row.theoryId==='wall'?'OWNER_APPROVED_PURCHASE_SKIP_ACTIVE':'CURRENT_PRODUCTION_UNCHANGED');
   assert.ok(row.nextAllowedAction);
   if(row.decisionStatus==='REJECTED') assert.ok(row.nextAllowedAction.startsWith('NONE_'));
   if(row.decisionStatus==='PERMANENT_BLOCKER') assert.strictEqual(row.candidate.present,false);
