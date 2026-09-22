@@ -203,9 +203,9 @@ function createRuntime({
   );
   assert.ok(
     failedOptional.appended.includes(
-      "js/ai-core.js?v=20260903-light-manshu-board1"
+      "js/ai-core.js?v=20260922-escape-skill-role1"
     ),
-    "別枠舟券更新済みai-coreを専用キャッシュ世代で読み込む"
+    "逃げ戦法評価修正済みai-coreを専用キャッシュ世代で読み込む"
   );
   assert.ok(
     failedOptional.appended.includes(

@@ -414,7 +414,7 @@ assert.equal(
     "js/app-runtime-loader.js?v=20260816-static-race1"
   ) &&
     html.includes(
-      "js/prediction-runtime-loader.js?v=20260828-ui-audit-display1"
+      "js/prediction-runtime-loader.js?v=20260922-escape-skill-role1"
     ) &&
     html.includes(
       "js/hiyori-runtime-loader.js?v=20260829-effective-score-contract1"
