@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selector-shadow-replay-v1",
-  "generatedAt": "2026-09-22T20:31:19.124Z",
+  "generatedAt": "2026-09-23T03:07:01.506Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "締切前保存済みの当地・水面正式証拠、現行最終頭、同一候補配列のpriorityScoreだけで反実仮想を作成。候補の最高点が現行頭より厳密に高い場合だけshadow頭へ切り替え、同点は現行頭を維持して公式結果と照合する。",
   "sourceVersion": "local-water-priority-selection-consistency-audit-v1",
-  "sourceGeneratedAt": "2026-09-22T20:26:56.604Z",
+  "sourceGeneratedAt": "2026-09-23T02:44:07.180Z",
   "sourceNextStep": "build-local-water-priority-selector-shadow-replay",
   "applicable": true,
   "shadowRule": {
@@ -32,20 +32,20 @@
     "maximumConditionBandAccuracyDeclinePt": 2
   },
   "metrics": {
-    "settledFormalEvidenceRaceCount": 1251,
-    "currentHeadAvailableCount": 1251,
-    "rankingArrayAvailableCount": 1251,
-    "currentCandidateScoreAvailableCount": 1251,
-    "comparableReplayCount": 1251,
+    "settledFormalEvidenceRaceCount": 1254,
+    "currentHeadAvailableCount": 1254,
+    "rankingArrayAvailableCount": 1254,
+    "currentCandidateScoreAvailableCount": 1254,
+    "comparableReplayCount": 1254,
     "switchCount": 328,
-    "equalTopOtherBoatNoSwitchCount": 906,
-    "currentCorrectCount": 431,
-    "shadowCorrectCount": 390,
+    "equalTopOtherBoatNoSwitchCount": 909,
+    "currentCorrectCount": 433,
+    "shadowCorrectCount": 392,
     "netCorrectChange": -41,
     "wrongToCorrectCount": 75,
     "correctToWrongCount": 116,
     "wrongToWrongChangedCount": 137,
-    "actualOuterHeadCount": 116,
+    "actualOuterHeadCount": 117,
     "currentOuterWinnerCorrectCount": 0,
     "shadowOuterWinnerCorrectCount": 8,
     "rescuedOuterWinnerCount": 8,
@@ -57,29 +57,29 @@
     "comparableReplayCoverageRate": 100,
     "switchRate": 26.2,
     "currentAccuracy": 34.5,
-    "shadowAccuracy": 31.2,
-    "accuracyChangePt": -3.3,
-    "outerWinnerRescueRate": 6.9,
-    "outerPromotionRaceRate": 4.6,
+    "shadowAccuracy": 31.3,
+    "accuracyChangePt": -3.2,
+    "outerWinnerRescueRate": 6.8,
+    "outerPromotionRaceRate": 4.5,
     "falseOuterPromotionsPerRescuedOuterWinner": 6.1
   },
   "conditionBands": [
     {
       "conditionBand": "calm",
-      "raceCount": 710,
-      "comparableReplayCount": 710,
+      "raceCount": 713,
+      "comparableReplayCount": 713,
       "switchCount": 197,
-      "currentCorrectCount": 251,
-      "shadowCorrectCount": 220,
+      "currentCorrectCount": 253,
+      "shadowCorrectCount": 222,
       "wrongToCorrectCount": 43,
       "correctToWrongCount": 74,
       "rescuedOuterWinnerCount": 4,
       "falseOuterPromotionCount": 30,
-      "currentAccuracy": 35.4,
-      "shadowAccuracy": 31,
+      "currentAccuracy": 35.5,
+      "shadowAccuracy": 31.1,
       "accuracyChangePt": -4.4,
       "comparableReplayCoverageRate": 100,
-      "switchRate": 27.7
+      "switchRate": 27.6
     },
     {
       "conditionBand": "medium",
@@ -119,20 +119,20 @@
   "harmfulConditionBands": [
     {
       "conditionBand": "calm",
-      "raceCount": 710,
-      "comparableReplayCount": 710,
+      "raceCount": 713,
+      "comparableReplayCount": 713,
       "switchCount": 197,
-      "currentCorrectCount": 251,
-      "shadowCorrectCount": 220,
+      "currentCorrectCount": 253,
+      "shadowCorrectCount": 222,
       "wrongToCorrectCount": 43,
       "correctToWrongCount": 74,
       "rescuedOuterWinnerCount": 4,
       "falseOuterPromotionCount": 30,
-      "currentAccuracy": 35.4,
-      "shadowAccuracy": 31,
+      "currentAccuracy": 35.5,
+      "shadowAccuracy": 31.1,
       "accuracyChangePt": -4.4,
       "comparableReplayCoverageRate": 100,
-      "switchRate": 27.7
+      "switchRate": 27.6
     },
     {
       "conditionBand": "strong",
@@ -153,25 +153,25 @@
     }
   ],
   "currentHeadDistribution": {
-    "1": 373,
-    "2": 322,
+    "1": 375,
+    "2": 323,
     "3": 311,
     "4": 245
   },
   "shadowHeadDistribution": {
-    "1": 319,
-    "2": 289,
+    "1": 321,
+    "2": 290,
     "3": 278,
     "4": 308,
     "5": 37,
     "6": 20
   },
   "actualHeadDistribution": {
-    "1": 662,
+    "1": 664,
     "2": 148,
     "3": 188,
     "4": 137,
-    "5": 80,
+    "5": 81,
     "6": 36
   },
   "switchTransitions": {
@@ -195,8 +195,8 @@
     "3->2": 2
   },
   "outcomeCounts": {
-    "unchanged-wrong": 608,
-    "unchanged-correct": 315,
+    "unchanged-wrong": 609,
+    "unchanged-correct": 317,
     "wrong-to-wrong": 137,
     "correct-to-wrong": 116,
     "wrong-to-correct": 75
