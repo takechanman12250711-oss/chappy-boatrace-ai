@@ -179,7 +179,7 @@
       .split(/(?<=[。！？])/).map(s => s.trim()).filter(Boolean).slice(0, 2).join("");
   }
 
-  function compactArticle(article) {
+  function compactArticleV2(article) {
     if (!article?.ok || !article.paidText?.includes("🔥 実戦厳選買い目")) return article;
     if (article.format === "formation-v2") return article;
     const originalPaid = article.paidText;
@@ -219,6 +219,49 @@
         : article.forecastPaidText,
       fullText: String(article.fullText).replace(originalFree, freeText).replace(originalPaid, paidText)
     };
+  }
+
+  // Presentation only: retain every source ticket and its stored priority.
+  function compactArticle(article) {
+    if (!article?.ok) return article;
+    const compact = article.format === "formation-v3" ? article : compactArticleV2(article);
+    const originalPaid = compact.paidText || "";
+    const practical = originalPaid.match(compact.format === "formation-v3"
+      ? /^買い目\n([\s\S]*?)\n計\s+(\d+)点$/m
+      : /🔥 実戦厳選買い目\n([\s\S]*?)\n厳選買い目\s+(\d+)点[／/]最大10点/);
+    if (!practical) return compact;
+    const tidy = text => text.split("\n").map(line => withoutAsides(line)
+      .replace(/[【】]/g, ""))
+      .filter(line => !/^展開：|^内訳/.test(line))
+      .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    const warning = originalPaid.match(/^【購入見送り】\n[\s\S]*?(?=\n\n)/)?.[0];
+    const remainder = originalPaid.slice(practical.index + practical[0].length).trim();
+    const ticketRows = practical[1].split("\n").filter(line => line.startsWith("・"));
+    // Expand already compacted rows, then merge only exact consecutive sets.
+    const expandedRows = ticketRows.flatMap(line => {
+      const match = line.match(/^・([1-6]+)-([1-6]+)-([1-6]+)$/);
+      if (!match) return [line]; // Keep invalid content visible to the audit.
+      return [...match[1]].flatMap(a => [...match[2]].flatMap(b => [...match[3]]
+        .filter(c => new Set([a, b, c]).size === 3).map(c => `・${a}-${b}-${c}`)));
+    });
+    const formationText = formationLines(expandedRows).join("\n\n");
+    const paidText = [warning, "買い目", formationText, `計 ${practical[2]}点`,
+      tidy(remainder)]
+      .filter(Boolean).join("\n\n");
+    const title = presentationTitle(compact.meta);
+    const originalFree = compact.freeText;
+    const freeWarning = originalFree.match(/^【購入見送り】\n[\s\S]*?(?=\n\n)/)?.[0];
+    const freeText = [freeWarning,
+      originalFree.split("\n").find(line => /^🚤/.test(line)),
+      compact.dataDisclosure && originalFree.includes(compact.dataDisclosure) ? compact.dataDisclosure : ""]
+      .filter(Boolean).join("\n\n") || originalFree;
+    return { ...compact, title, format: "formation-v3", freeText, paidText,
+      forecastPaidText: compact.forecastPaidText ? tidy(compact.forecastPaidText) : compact.forecastPaidText,
+      fullText: compact.fullText.replace(originalFree, freeText).replace(originalPaid, paidText) };
+  }
+
+  function presentationTitle(meta = {}) {
+    return `${formatDate(meta.date)} ${meta.place}${meta.raceNo || "-"}R｜${formatDeadlineLabel(meta.deadline)}｜チャッピーボートレースAI`;
   }
 
   function formatDate(value) {
@@ -569,16 +612,7 @@
 
   function buildTitle(prediction, options = {}) {
     const meta = getRaceMeta(prediction);
-    const flowTitle = safeText(
-      prediction?.raceFlow?.title,
-      "展開注目"
-    );
-
-    const prefix = options.titlePrefix
-      ? `${safeText(options.titlePrefix, "")} `
-      : "";
-
-    return `${prefix}【${formatDate(meta.date)} ${meta.place}${meta.raceNo || "-"}R】${flowTitle}｜チャッピーボートレースAI厳選予想`;
+    return presentationTitle(meta);
   }
   function buildOfficialHistorySection(
     prediction
@@ -1488,26 +1522,10 @@
 
   function allRaceArticle(article, prediction) {
     const meta = getRaceMeta(prediction);
-    const history = prediction?.officialHistory;
-    const venue = history?.ready && history.venue?.usable ? history.venue : null;
-    const features = [];
-    const grade = String(prediction?.race?.raceInfo?.grade || prediction?.race?.grade || "");
-    if (/^(SG|PG1|G1|G2)$/i.test(grade)) features.push(`注目開催：${grade.toUpperCase()}`);
-    if (venue && Number(venue.samples) > 0) {
-      const escape = arrayify(venue.winningMethods).find(row => row.key === "逃げ");
-      const wave = venue.payoutBands?.over10000;
-      const rates = [];
-      if (Number.isFinite(escape?.rate)) rates.push(`逃げ${escape.rate.toFixed(1)}%`);
-      if (Number.isFinite(wave?.rate)) rates.push(`万舟${wave.rate.toFixed(1)}%`);
-      if (rates.length) features.push(`場の傾向：${rates.join("・")}｜公式結果${venue.samples}R`);
-    }
     const disclosure = "作成時点の取得済み情報による参考予想です。展示・気象・オッズ等の追加情報で評価が変わる場合があります。";
     const freeText = [
       `🚤 ${formatDate(meta.date)} ${meta.place}${meta.raceNo}R｜${formatDeadlineLabel(meta.deadline)}`,
-      ...features,
-      briefReason(prediction?.raceFlow?.summary || prediction?.raceFlow?.title || ""),
-      disclosure,
-      "買い目は以下の有料部分にまとめています。"
+      disclosure
     ].filter(Boolean).join("\n\n");
     const fullText = [freeText, PAYWALL_MARKER, article.paidText,
       "※舟券の購入は自己責任で、無理のない範囲でお楽しみください。", article.tags.join(" ")].join("\n\n");

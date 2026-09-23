@@ -3,7 +3,7 @@ name: Note GitHub UI Transport
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/note-github-ui-transport.yml', 'scripts/note-github-ui-transport.js', 'scripts/note-browserbase-draft-save.js', 'scripts/note-editor-content.js', 'scripts/note-publication-source.js', 'scripts/publish-note-queue.js']
+    paths: ['.github/workflows/note-github-ui-transport.yml', 'scripts/note-github-ui-transport.js', 'scripts/note-cover.js', 'assets/note/**', 'scripts/note-browserbase-draft-save.js', 'scripts/note-editor-content.js', 'scripts/note-publication-source.js', 'scripts/publish-note-queue.js']
   workflow_run:
     workflows: ['Build note publish handoff']
     types: [completed]
@@ -54,6 +54,7 @@ jobs:
             scripts
             js
             config
+            assets/note
             data/note-drafts
             data/note-publish
       - uses: actions/setup-node@v4
@@ -121,5 +122,6 @@ jobs:
           else
             node scripts/note-github-ui-transport.js
           fi
+
 
 
