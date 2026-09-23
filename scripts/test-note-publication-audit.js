@@ -269,10 +269,29 @@ const conciseInput = fixture();
 const detailedSnapshot = structuredClone(conciseInput.article);
 conciseInput.article = noteGenerator.compactArticle(conciseInput.article);
 ready("concise article keeps publication checks", conciseInput);
-assert.equal(conciseInput.article.format, "formation-v2");
+assert.equal(conciseInput.article.format, "formation-v3");
 assert.deepEqual(conciseInput.article.practicalTickets, detailedSnapshot.practicalTickets);
 assert.doesNotMatch(conciseInput.article.paidText, /【6艇評価】|役割：|保存済みの展開判断/);
 assert.deepEqual(noteGenerator.compactArticle(conciseInput.article), conciseInput.article, "formatting is idempotent");
+assert.match(conciseInput.article.title, /^9月10日 唐津10R｜締切 12:55｜/);
+assert.ok(conciseInput.article.paidText.startsWith("買い目\n\n"));
+assert.doesNotMatch(conciseInput.article.paidText, /買い目候補|順位ゲート|候補補完|【|】/);
+const compactReferences = structuredClone(withReferences);
+compactReferences.article = noteGenerator.compactArticle(compactReferences.article);
+ready("plain reference headings retain independent provenance", compactReferences);
+blocked("plain reference cannot use ordinary candidate provenance", input => {
+  delete input.record.prediction.manshuSheet.forecastLedger;
+}, structuredClone(compactReferences));
+// The ledger wrapper appends its reference section after the initial formatting.
+const appended = structuredClone(conciseInput);
+appended.record.prediction.manshuSheet.forecastLedger = structuredClone(withReferences.record.prediction.manshuSheet.forecastLedger);
+replaceSection(appended.article, "paidText", text => text + "\n\n【本命とは別会計の参考予想】\n【参考・波乱予想】\n・4-1-25（2点）\n内訳：4-1-2 / 4-1-5\n展開：参考の説明。");
+appended.article = noteGenerator.compactArticle(appended.article);
+assert.doesNotMatch(appended.article.paidText, /【|（|内訳|展開：/);
+ready("ledger appended to v3 is formatted and audited again", appended);
+blocked("v3 title deadline differs from official deadline", input => {
+  input.article.title = input.article.title.replace("12:55", "13:55");
+}, structuredClone(conciseInput));
 assert.doesNotMatch(conciseInput.article.paidText, /倍|オッズ|［|］|（|）/);
 const pair = fixture(2);
 const pairSource = structuredClone(pair);
@@ -295,9 +314,10 @@ assert.doesNotMatch(hole.article.paidText, /・1-23-234/,
   "missing 1-3-4 must not be added by grouping");
 ready("incomplete Cartesian product stays exact", hole);
 const categoryPair = fixture(2);
-categoryPair.article.paidText = categoryPair.article.paidText.replaceAll("1-2-4　［実戦候補］", "1-2-4　［押さえ］");
+replaceSection(categoryPair.article, "paidText", text => text.replaceAll("1-2-4　［実戦候補］", "1-2-4　［押さえ］"));
 categoryPair.article = noteGenerator.compactArticle(categoryPair.article);
-assert.match(categoryPair.article.paidText, /押さえ\n・1-2-4/);
+assert.match(categoryPair.article.paidText, /・1-2-34/);
+ready("category labels do not split the same ticket set", categoryPair);
 const aside = fixture(2);
 aside.article.freeText = aside.article.freeText.replace("2号艇は2着残し。", "2号艇は2着残し（補足（内部説明））。");
 assert.doesNotMatch(noteGenerator.compactArticle(aside.article).freeText, /補足|内部説明|（|）/);
@@ -523,5 +543,3 @@ try {
 }
 
 console.log(`note publication audit tests passed (${assertions} cases)`);
-
-

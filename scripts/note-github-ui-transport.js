@@ -449,6 +449,8 @@ async function run({ env = process.env } = {}) {
   const draft = mode !== 'auth' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
   if (draft) requireDraftGate(draft.payload);
   if (mode === 'publish') requirePublicationGate(draft.payload);
+  const { loadCover, attachCover } = require('./note-cover');
+  const cover = draft ? loadCover() : null;
   const { chromium } = require('playwright');
   if (draft) await claimDraft(draft.payload, env);
   const session = await createBrowserUseSession(browserUse);
@@ -474,6 +476,9 @@ async function run({ env = process.env } = {}) {
       title: String(payload.title).trim(),
       body: articleBody(payload)
     });
+    await attachCover(page, cover);
+    requireDraftGate(payload);
+    console.log('NOTE_UI_COVER_ATTACHED=true');
     const paid = await configurePaidPublication(page, payload);
     if (mode === 'publish') {
       const receipt = await publishConfiguredArticle(page, payload, paid);

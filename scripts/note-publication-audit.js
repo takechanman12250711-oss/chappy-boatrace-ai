@@ -51,9 +51,9 @@ function auditAdditionalTickets(paidText, prediction, issue) {
   let referenceSection = false;
   normalized(paidText).split("\n").forEach(line => {
     const text = line.trim();
-    if (/^【本命とは別会計の参考予想】|^【参考(?:・|】)/.test(text)) {
+    if (/^【本命とは別会計の参考予想】|^【参考(?:・|】)|^本命とは別会計の参考予想$|^参考(?:・|$)/.test(text)) {
       referenceSection = true;
-    } else if (/^【|^🔥 実戦厳選買い目/.test(text)) {
+    } else if (/^【|^🔥 実戦厳選買い目|^買い目(?:候補)?$/.test(text)) {
       referenceSection = false;
     }
     ticketMentions(line).forEach(notation => {
@@ -133,7 +133,8 @@ function auditNotePublication(input = {}) {
       const clock = jst.slice(11, 16);
       const display = normalized(meta.deadline).replace(/^締切\s*/, "").trim();
       if (jst.slice(0, 10).replaceAll("-", "") !== date || display !== clock ||
-          !normalized(article.freeText).includes(`締切 ${clock}`)) {
+          !normalized(article.freeText).includes(`締切 ${clock}`) ||
+          (article.format === "formation-v3" && !normalized(article.title).includes(`締切 ${clock}`))) {
         issue("DEADLINE_DISPLAY_MISMATCH", "原稿の締切表示が保存された公式締切と一致しません。");
       }
     }
@@ -183,14 +184,16 @@ function auditNotePublication(input = {}) {
     // Validate their separate sources without adding candidates/references to practical counts.
     auditAdditionalTickets(paidText, record.prediction, issue);
     const practicalBlocks = [...normalized(paidText).matchAll(
-      /🔥 実戦厳選買い目\n([\s\S]*?)\n厳選買い目\s+(\d+)点\/最大10点/g
+      article.format === "formation-v3"
+        ? /^買い目\n([\s\S]*?)\n計\s+(\d+)点$/gm
+        : /🔥 実戦厳選買い目\n([\s\S]*?)\n厳選買い目\s+(\d+)点\/最大10点/g
     )];
     if (practicalBlocks.length !== 1) {
       issue("PRACTICAL_SECTION_INVALID", "厳選ブロックと点数表示を一意に確認できません。");
     } else {
       const block = practicalBlocks[0];
       const lines = block[1].split("\n").filter(line => line.startsWith("・"));
-      const formations = article.format === "formation-v2";
+      const formations = ["formation-v2", "formation-v3"].includes(article.format);
       const rendered = formations
         ? lines.flatMap(line => ticketMentions(line).flatMap(expandedMention))
         : lines.map(line => line.match(/^・(\S+)/)?.[1] || "");
@@ -224,7 +227,7 @@ function auditNotePublication(input = {}) {
       });
     }
     const evaluationSection = normalized(paidText).match(/【6艇評価】\n([\s\S]*?)\n【AI買い目候補/);
-    const boats = ["concise-v1", "formation-v2"].includes(article.format)
+    const boats = ["concise-v1", "formation-v2", "formation-v3"].includes(article.format)
       ? (Array.isArray(article.boatEvaluations) ? article.boatEvaluations.map(String).sort() : [])
       : evaluationSection ? [...evaluationSection[1].matchAll(/^([1-6])号艇/gm)].map(match => match[1]).sort() : [];
     if (!sameList(boats, ["1", "2", "3", "4", "5", "6"])) {

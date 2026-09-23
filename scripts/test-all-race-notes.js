@@ -42,8 +42,8 @@ async function main() {
   assert.equal(generator.generateArticle(prediction()).publishable, false, 'legacy strict mode remains unchanged');
   const article = generateArticle(prediction());
   assert.equal(article.publishable, true, 'low score/partial input is not a race coverage filter');
-  assert.match(article.freeText, /注目開催：G1/);
-  assert.match(article.freeText, /逃げ60.0%・万舟20.0%/);
+  assert.match(article.title, /唐津1R｜締切 16:00/);
+  assert.equal(article.freeText, `🚤 9月14日 唐津1R｜締切 16:00\n\n${article.dataDisclosure}`);
   const base = { article, record: { publicationPolicy: 'all-races-v1', date, jcd: '23', place: '唐津', raceNo: 1,
     raceKey: `${date}-23-1`, deadlineAt: '2030-09-14T16:00:00+09:00', prediction: prediction() },
     baselinePracticalTickets: prediction().practicalTickets, now: new Date(clock).toISOString() };
@@ -127,3 +127,4 @@ async function main() {
   console.log('all 24 races covered without score/V2 filters; disclosure, immutable sources, gates and queue continuation passed');
 }
 main().finally(() => fs.rmSync(rootDir, { recursive: true, force: true })).catch(error => { console.error(error); process.exitCode = 1; });
+
