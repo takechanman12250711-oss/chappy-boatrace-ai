@@ -32,4 +32,24 @@ async function attachCover(page, file) {
   return { attached: true };
 }
 
-module.exports = { COVER_PATH, loadCover, attachCover };
+function loadCoverTemplate(payload, rootDir = process.cwd(), now = Date.now()) {
+  const { sourceArticle, verifyPublicationSource } = require('./note-publication-source');
+  let article;
+  if (payload?.version === 'note-publication-handoff-v1') {
+    verifyPublicationSource(payload, rootDir, now);
+    article = sourceArticle(payload.sourcePath, rootDir, now).article;
+  } else {
+    // Legacy manual drafts have no immutable source path. Only use a summary
+    // literally present in that draft; publication still requires the source.
+    article = { paidText: payload?.paidText,
+      rangeSummary: `${payload?.freeText || ''}\n${payload?.paidText || ''}`.split('\n')
+        .find(line => /^最有力展開は/.test(line)) || '' };
+  }
+  const { coverLines, coverHtml } = require('./note-cover-template');
+  const lines = coverLines(article);
+  const font = fs.readFileSync(path.join(__dirname, '..', 'assets', 'note', 'Yomogi-Cover.ttf'));
+  if (font.length < 1000 || font.readUInt32BE(0) !== 0x00010000) throw new Error('note_cover_font_invalid');
+  return { lines, html: coverHtml(lines, loadCover().buffer, font) };
+}
+
+module.exports = { COVER_PATH, loadCover, loadCoverTemplate, attachCover };

@@ -3,7 +3,7 @@ name: Note GitHub UI Transport
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/note-github-ui-transport.yml', 'scripts/note-github-ui-transport.js', 'scripts/note-cover.js', 'assets/note/**', 'scripts/note-browserbase-draft-save.js', 'scripts/note-editor-content.js', 'scripts/note-publication-source.js', 'scripts/publish-note-queue.js']
+    paths: ['.github/workflows/note-github-ui-transport.yml', 'scripts/note-github-ui-transport.js', 'scripts/note-cover.js', 'scripts/note-cover-template.js', 'assets/note/**', 'scripts/note-browserbase-draft-save.js', 'scripts/note-editor-content.js', 'scripts/note-publication-source.js', 'scripts/publish-note-queue.js']
   workflow_run:
     workflows: ['Build note publish handoff']
     types: [completed]
@@ -65,6 +65,7 @@ jobs:
       - name: Verify transport gate
         run: |
           node scripts/note-github-ui-transport.test.js
+          node scripts/note-cover-template.test.js
           node scripts/note-editor-content.test.js
           node scripts/note-publication-source.test.js
       - name: Check current handoff before opening a browser
