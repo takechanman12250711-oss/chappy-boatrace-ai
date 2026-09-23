@@ -222,7 +222,7 @@
   }
 
   // Presentation only: retain every source ticket and its stored priority.
-  function compactArticle(article) {
+  function compactArticleV3(article) {
     if (!article?.ok) return article;
     const compact = article.format === "formation-v3" ? article : compactArticleV2(article);
     const originalPaid = compact.paidText || "";
@@ -257,6 +257,58 @@
       .filter(Boolean).join("\n\n") || originalFree;
     return { ...compact, title, format: "formation-v3", freeText, paidText,
       forecastPaidText: compact.forecastPaidText ? tidy(compact.forecastPaidText) : compact.forecastPaidText,
+      fullText: compact.fullText.replace(originalFree, freeText).replace(originalPaid, paidText) };
+  }
+
+  function allRangeGroups(prediction) {
+    const lists = ticketLists(prediction);
+    return [
+      ["main", "🔵 本命", lists.main, prediction?.mainSheet?.reason],
+      ["cover", "🟠 押さえ", lists.cover, ""],
+      ["flow", "🔷 フォーメーション", lists.flow, ""],
+      ["hole", "🌸 万舟", lists.hole, prediction?.manshuSheet?.reason]
+    ].map(([key, heading, rows, reason]) => ({ key, heading,
+      tickets: [...new Set(rows.map(row => normalizeTicket(row).ticket))],
+      reason: briefReason(reason || rows[0]?.scenarioSummary || rows[0]?.comment || "")
+    }));
+  }
+
+  // The complete saved pools are presentation inputs, never reselected predictions.
+  function compactArticle(article, prediction) {
+    if (!article?.ok) return article;
+    const alreadyFull = article.format === "formation-v4";
+    const compact = alreadyFull ? article : compactArticleV3(article);
+    const groups = prediction ? allRangeGroups(prediction) : article.allRangeGroups;
+    if (!groups) return compact;
+    const originalPaid = compact.paidText;
+    const practical = originalPaid.match(alreadyFull
+      ? /^🔥 実戦厳選\n([\s\S]*?)\n計 (\d+)点$/m
+      : /^買い目\n([\s\S]*?)\n計 (\d+)点$/m);
+    if (!practical) return compact;
+    const clean = value => withoutAsides(String(value || "")).replace(/[【】]/g, "");
+    const warning = originalPaid.match(/^【購入見送り】\n[\s\S]*?(?=\n\n)/)?.[0];
+    const summary = briefReason(prediction?.raceFlow?.summary || compact.rangeSummary ||
+      article.freeText?.split("\n").find(line => /^最有力展開/.test(line)) ||
+      prediction?.mainSheet?.reason || "");
+    const sections = groups.map(group => {
+      const lines = formationLines(group.tickets.map(ticket => `・${ticket}`));
+      return [group.heading, clean(group.reason),
+        lines.length ? lines.join("\n") : "保存済みの買い目なし",
+        `${group.heading.slice(3)} ${group.tickets.length}点`].filter(Boolean).join("\n\n");
+    });
+    // Ledger wrappers can append their separate reference section after generation.
+    const reference = originalPaid.slice(practical.index + practical[0].length).trim()
+      .split("\n").map(line => clean(line).trim())
+      .filter(line => !/^内訳/.test(line)).join("\n").replace(/\n{3,}/g, "\n\n");
+    const paidText = [warning, "🚤 展開の狙い", summary || "本命・押さえ・万舟を区分別に掲載しています。",
+      ...sections, "🔥 実戦厳選", practical[1].trim(), `計 ${practical[2]}点`, reference]
+      .filter(Boolean).join("\n\n");
+    const originalFree = compact.freeText;
+    const introduction = "本命・押さえ・万舟を、展開の狙いとフォーメーションで掲載しています。";
+    const freeText = originalFree.includes(introduction) ? originalFree : originalFree + "\n\n" + introduction;
+    return { ...compact, format: "formation-v4", allRangeGroups: groups,
+      rangeSummary: summary, freeText, paidText,
+      forecastPaidText: compact.forecastPaidText ? reference : compact.forecastPaidText,
       fullText: compact.fullText.replace(originalFree, freeText).replace(originalPaid, paidText) };
   }
 
@@ -1516,8 +1568,8 @@
           prediction
         )
     };
-    if (allRaces) return allRaceArticle(compactArticle(article), prediction);
-    return options.format === "detailed" ? article : compactArticle(article);
+    if (allRaces) return allRaceArticle(compactArticle(article, prediction), prediction);
+    return options.format === "detailed" ? article : compactArticle(article, prediction);
   }
 
   function allRaceArticle(article, prediction) {
@@ -1525,6 +1577,7 @@
     const disclosure = "作成時点の取得済み情報による参考予想です。展示・気象・オッズ等の追加情報で評価が変わる場合があります。";
     const freeText = [
       `🚤 ${formatDate(meta.date)} ${meta.place}${meta.raceNo}R｜${formatDeadlineLabel(meta.deadline)}`,
+      "本命・押さえ・万舟を、展開の狙いとフォーメーションで掲載しています。",
       disclosure
     ].filter(Boolean).join("\n\n");
     const fullText = [freeText, PAYWALL_MARKER, article.paidText,

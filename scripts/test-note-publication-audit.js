@@ -332,6 +332,51 @@ blocked("concise free ticket leak", input => {
   replaceSection(input.article, "freeText", text => text + "\n1-2-3");
 }, structuredClone(conciseInput));
 
+// All-range presentation must cover every saved pool, not just the top 24 or practical list.
+const allRanges = fixture();
+const pool = [];
+for (let a=1; a<=6; a++) for (let b=1; b<=6; b++) for (let c=1; c<=6; c++) {
+  if (new Set([a,b,c]).size === 3) pool.push({ ticket: `${a}-${b}-${c}`, odds: 0 });
+}
+allRanges.record.prediction.mainSheet.tickets = pool.slice(0,30);
+allRanges.record.prediction.mainSheet.coverTickets = pool.slice(25,55);
+allRanges.record.prediction.mainSheet.flowTickets = pool.slice(50,80);
+allRanges.record.prediction.manshuSheet.tickets = pool.slice(70,110);
+const rangeSource = structuredClone(allRanges);
+allRanges.article = noteGenerator.compactArticle(allRanges.article, allRanges.record.prediction);
+assert.equal(allRanges.article.format, "formation-v4");
+assert.deepEqual(allRanges.article.allRangeGroups.map(g => g.tickets.length), [30,30,30,40]);
+assert.deepEqual(allRanges.record, rangeSource.record);
+assert.deepEqual(allRanges.article.practicalTickets, rangeSource.article.practicalTickets);
+assert.deepEqual(noteGenerator.compactArticle(allRanges.article), allRanges.article);
+ready("every full pool is shown regardless of confidence or 24-ticket limit", allRanges);
+for (const heading of ["🔵 本命", "🟠 押さえ", "🔷 フォーメーション", "🌸 万舟"]) {
+  blocked(`missing range ${heading}`, input => {
+    replaceSection(input.article, "paidText", text => text.replace(heading, "削除済み"));
+  }, structuredClone(allRanges));
+}
+blocked("all-range omitted formation", input => {
+  replaceSection(input.article, "paidText", text => text.replace(/^・[^\n]+\n/m, ""));
+}, structuredClone(allRanges));
+blocked("all-range source classification changed", input => {
+  input.record.prediction.mainSheet.coverTickets = pool.slice(10,40);
+}, structuredClone(allRanges));
+blocked("all-range metadata cannot authorize extra ticket", input => {
+  input.article.allRangeGroups[0].tickets.push("6-5-4");
+}, structuredClone(allRanges));
+const duplicateRange = fixture(2);
+duplicateRange.record.prediction.mainSheet.tickets.push(structuredClone(duplicateRange.record.prediction.mainSheet.tickets[0]));
+duplicateRange.article = noteGenerator.compactArticle(duplicateRange.article, duplicateRange.record.prediction);
+assert.equal(duplicateRange.article.allRangeGroups[0].tickets.length, 2);
+assert.match(duplicateRange.article.paidText, /🌸 万舟\n\n保存済みの買い目なし/);
+ready("duplicate within a range is removed; missing pool is explicitly empty", duplicateRange);
+const lateReference = structuredClone(allRanges);
+lateReference.record.prediction.manshuSheet.forecastLedger = structuredClone(withReferences.record.prediction.manshuSheet.forecastLedger);
+replaceSection(lateReference.article, "paidText", text => text + "\n\n【本命とは別会計の参考予想】\n【参考・万舟予想】\n・4-1-25（2点）\n内訳：4-1-2 / 4-1-5");
+lateReference.article = noteGenerator.compactArticle(lateReference.article);
+assert.doesNotMatch(lateReference.article.paidText, /【|（|内訳/);
+ready("v4 keeps late independent ledger references separate", lateReference);
+
 const immutableInput = fixture();
 const immutableSnapshot = structuredClone(immutableInput);
 deepFreeze(immutableInput);
