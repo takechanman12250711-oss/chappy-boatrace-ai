@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "version": "local-water-outer-head-candidate-ranking-audit-v1",
-  "generatedAt": "2026-09-23T02:14:35.036Z",
+  "generatedAt": "2026-09-23T20:24:49.984Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
@@ -16,56 +16,57 @@
     "selectedThenFinalDroppedMinimum": 10
   },
   "metrics": {
-    "settledFormalEvidenceRaceCount": 1254,
-    "actualHead56Count": 117,
-    "actualHead5Count": 81,
-    "actualHead6Count": 36,
-    "scenarioHeadCount": 111,
-    "selectedHeadCount": 32,
-    "unselectedScenarioHeadCount": 79,
-    "selectedThenFinalDroppedCount": 32,
+    "settledFormalEvidenceRaceCount": 1301,
+    "actualHead56Count": 122,
+    "actualHead5Count": 84,
+    "actualHead6Count": 38,
+    "scenarioHeadCount": 115,
+    "selectedHeadCount": 34,
+    "unselectedScenarioHeadCount": 81,
+    "selectedThenFinalDroppedCount": 34,
     "finalAny56Count": 0,
     "finalCorrectCount": 0,
-    "structuredRankingEvidenceCount": 79,
-    "scoreComparableCount": 79,
-    "winnerOutscoredCount": 62,
+    "structuredRankingEvidenceCount": 81,
+    "scoreComparableCount": 81,
+    "winnerOutscoredCount": 63,
     "quotaCapRejectionCount": 0,
-    "scoreRankLossCount": 79,
-    "duplicateOverlapCount": 77,
+    "scoreRankLossCount": 81,
+    "duplicateOverlapCount": 79,
     "missingStructuredReasonCount": 0,
-    "scenarioHeadCoverageRate": 94.9,
-    "selectedHeadCoverageRate": 27.4,
+    "scenarioHeadCoverageRate": 94.3,
+    "selectedHeadCoverageRate": 27.9,
     "structuredRankingCoverageRate": 100,
-    "winnerOutscoredRate": 78.5,
+    "winnerOutscoredRate": 77.8,
     "quotaCapShareOfUnselected": 0,
     "scoreRankShareOfUnselected": 100,
     "duplicateShareOfUnselected": 97.5,
-    "selectedThenFinalDroppedRate": 27.4,
+    "selectedThenFinalDroppedRate": 27.9,
     "finalCorrectRate": 0
   },
   "classifications": {
-    "duplicate-overlap-rejection": 77,
-    "selected-head-lost-at-final-handoff": 32,
+    "duplicate-overlap-rejection": 79,
+    "selected-head-lost-at-final-handoff": 34,
     "score-rank-loss": 2,
-    "support-only-not-head-eligible": 6
+    "support-only-not-head-eligible": 6,
+    "candidate-head-not-promoted": 1
   },
   "nextStep": "audit-local-water-outer-head-score-order",
   "topReasonCategories": [
     {
       "value": "other-structured",
-      "count": 79
+      "count": 81
     },
     {
       "value": "score-rank",
-      "count": 79
+      "count": 81
     },
     {
       "value": "support-role",
-      "count": 79
+      "count": 81
     },
     {
       "value": "duplicate-overlap",
-      "count": 77
+      "count": 79
     }
   ],
   "topReasonTexts": [
@@ -91,11 +92,11 @@
     },
     {
       "value": "役割分離・6コースは拾いとして評価",
-      "count": 22
+      "count": 23
     },
     {
       "value": "暫定・現行枠番評価・展示進入6コース / 基本構造8/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動10/10 / 取得信頼度10/10 / 公式艇番画像で6艇進入確定 / 場×コース0走で正式数未達",
-      "count": 13
+      "count": 14
     },
     {
       "value": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
@@ -142,24 +143,24 @@
       "count": 5
     },
     {
-      "value": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5・5号艇 柴田 朋哉 は💣外コース妙味。総合62点。プラス材料はまくり差し・展開拾い、ST安定 .16、全国勝率安定 5.76。マイナス材料は級別は控えめ、外コースで展開待ち。",
+      "value": "候補は保持し、採用境界との優先度比較で非採用。",
       "count": 4
     },
     {
-      "value": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5・5号艇 黒井 達矢 は⚡道中艇 / 💣外コース妙味。総合74点。プラス材料はまくり差し・展開拾い、A1格上、全国勝率安定 6.49。大きなマイナスは少ない。",
+      "value": "展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10・5号艇は展示・足C（60点）。展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10",
       "count": 4
     }
   ],
   "topComparisonFields": [
     {
       "value": "score:priorityScore",
-      "count": 276
+      "count": 286
     }
   ],
   "topRankingArrayPaths": [
     {
       "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
-      "count": 78
+      "count": 80
     },
     {
       "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
@@ -168,6 +169,10 @@
     {
       "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
       "count": 21
+    },
+    {
+      "value": "practicalSelection.targetDecisions[0].candidateDecisions",
+      "count": 10
     },
     {
       "value": "practicalSelection.targetDecisions[4].candidateDecisions",
@@ -190,11 +195,11 @@
       "count": 9
     },
     {
-      "value": "practicalSelection.targetDecisions[0].candidateDecisions",
-      "count": 9
+      "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[109].roles",
+      "count": 8
     },
     {
-      "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[109].roles",
+      "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[136].roles",
       "count": 8
     },
     {
@@ -214,7 +219,7 @@
       "count": 7
     },
     {
-      "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[136].roles",
+      "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[136].evidenceChecks",
       "count": 7
     },
     {
@@ -231,10 +236,6 @@
     },
     {
       "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[103].roles",
-      "count": 6
-    },
-    {
-      "value": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[109].evidenceChecks",
       "count": 6
     }
   ],
@@ -38809,6 +38810,772 @@
     },
     {
       "date": "20260923",
+      "jcd": "11",
+      "raceNo": 6,
+      "actualHead": 5,
+      "finalHead": 3,
+      "candidate": true,
+      "scenario": true,
+      "selected": false,
+      "finalAny56": false,
+      "finalCorrect": false,
+      "supportOnly": false,
+      "structuredRankingEvidence": true,
+      "winnerOutscored": false,
+      "reasonCategories": [
+        "duplicate-overlap",
+        "other-structured",
+        "score-rank",
+        "support-role"
+      ],
+      "classification": "duplicate-overlap-rejection",
+      "comparisons": [
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 95,
+          "finalValue": 95,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.targetDecisions[0].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 95,
+          "finalValue": 95,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 95,
+          "finalValue": 95,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 95,
+          "finalValue": 95,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 95,
+          "finalValue": 95,
+          "winnerLost": false,
+          "tied": true
+        }
+      ],
+      "rankingArrays": [
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "winnerRowCount": 20,
+          "finalRowCount": 20,
+          "comparison": {
+            "path": "evaluatedScenarioCandidates.candidatePool",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 95,
+            "finalValue": 95,
+            "winnerLost": false,
+            "tied": true
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[0].candidateDecisions",
+          "winnerRowCount": 1,
+          "finalRowCount": 6,
+          "comparison": {
+            "path": "practicalSelection.targetDecisions[0].candidateDecisions",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 95,
+            "finalValue": 95,
+            "winnerLost": false,
+            "tied": true
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[0].candidateDecisions[7].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "winnerRowCount": 18,
+          "finalRowCount": 77,
+          "comparison": {
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 95,
+            "finalValue": 95,
+            "winnerLost": false,
+            "tied": true
+          },
+          "reasons": [
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 1号艇のhold・64点・実1コースからの内残り / 既存フォーメーションに同一買い目あり",
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のalternate-head・94点・5号艇 今泉 友吾 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 💣外コース妙味。総合99点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 5号艇のalternate-head・94点・5号艇 今泉 友吾 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 💣外コース妙味。総合99点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 2号艇のhold・95点・最有力展開一致40/40 / 実進入・位置関係20/25 / 壁・内側残存経路20/20 / 1マーク後の残し経路10/10 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は3コース攻め。3号艇を1着軸に、2着残しは1・2号艇、3着拾いは5・6号艇を評価する。 / 3号艇のpickup・88点・3号艇 石倉 洋行 は🔥攻め艇 / 🌊展開艇。総合88点。プラス材料はセンター攻め、A1格上、ST速い .13。大きなマイナスは少ない。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[115].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[115].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[117].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[117].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[121].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[121].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[124].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[124].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        }
+      ],
+      "winnerReasons": [
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.pickupBoats[0]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5・5号艇 今泉 友吾 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 💣外コース妙味。総合99点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.pickupBoats[0].raw.exhibition",
+          "reason": "展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10・5号艇は展示・足C（60点）。展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.phases.back.pickup",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5・5号艇 今泉 友吾 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 💣外コース妙味。総合99点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.phases.back.pickup.raw.exhibition",
+          "reason": "展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10・5号艇は展示・足C（60点）。展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.phases.secondMark.mainPickup",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5・5号艇 今泉 友吾 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 💣外コース妙味。総合99点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.phases.secondMark.mainPickup.raw.exhibition",
+          "reason": "展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10・5号艇は展示・足C（60点）。展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.phases.goal.expectedOrder[2]",
+          "reason": "正式採用・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係25/15 / バック・2マーク到達10/15 / 取得信頼度5/5・5号艇 今泉 友吾 は🔥攻め艇 / 🌊展開艇 / ⚡道中艇 / 🏠当地巧者 / 💣外コース妙味。総合99点。プラス材料はまくり差し・展開拾い、A1格上、ST安定 .16。大きなマイナスは少ない。",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.phases.goal.expectedOrder[2].raw.exhibition",
+          "reason": "展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10・5号艇は展示・足C（60点）。展示順位22.4/35 / 6艇平均との差21.6/35 / 1位・隣接差6/20 / 取得信頼度10/10",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.alternateScenarioRoles.phases.firstMark.mainHold",
+          "reason": "総合指数上位",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.alternateScenarioRoles.phases.back.hold",
+          "reason": "総合指数上位",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.alternateScenarioRoles.phases.back.pickup",
+          "reason": "荒れ水面で当地・道中重視 / 5コースまくり差し拾い / 道中指数上位 / 当地指数上位 / 水面荒れで拾い上昇",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "raceFlow.alternateScenarioRoles.phases.secondMark.mainPickup",
+          "reason": "荒れ水面で当地・道中重視 / 5コースまくり差し拾い / 道中指数上位 / 当地指数上位 / 水面荒れで拾い上昇",
+          "category": "support-role"
+        }
+      ],
+      "evidencePaths": [
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[80]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[80].ticket",
+          "detail": "5-1-2"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[81]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[81].ticket",
+          "detail": "5-1-3"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[82]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[82].ticket",
+          "detail": "5-1-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[83]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[83].ticket",
+          "detail": "5-1-6"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[84]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[84].ticket",
+          "detail": "5-2-1"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[85]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[85].ticket",
+          "detail": "5-2-3"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[86]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[86].ticket",
+          "detail": "5-2-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[87]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[87].ticket",
+          "detail": "5-2-6"
+        }
+      ]
+    },
+    {
+      "date": "20260923",
+      "jcd": "06",
+      "raceNo": 1,
+      "actualHead": 5,
+      "finalHead": 2,
+      "candidate": true,
+      "scenario": true,
+      "selected": true,
+      "finalAny56": false,
+      "finalCorrect": false,
+      "supportOnly": false,
+      "structuredRankingEvidence": true,
+      "winnerOutscored": true,
+      "reasonCategories": [
+        "duplicate-overlap",
+        "other-structured",
+        "score-rank",
+        "support-role"
+      ],
+      "classification": "selected-head-lost-at-final-handoff",
+      "comparisons": [
+        {
+          "path": "practicalTickets",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 87,
+          "finalValue": 97,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 97,
+          "finalValue": 97,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.targetDecisions[2].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 97,
+          "finalValue": 97,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 97,
+          "finalValue": 84,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[5].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 87,
+          "finalValue": 88,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 97,
+          "finalValue": 97,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 97,
+          "finalValue": 97,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 97,
+          "finalValue": 97,
+          "winnerLost": false,
+          "tied": true
+        }
+      ],
+      "rankingArrays": [
+        {
+          "path": "practicalTickets",
+          "winnerRowCount": 1,
+          "finalRowCount": 7,
+          "comparison": {
+            "path": "practicalTickets",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 87,
+            "finalValue": 97,
+            "winnerLost": true,
+            "tied": false
+          },
+          "reasons": [
+            "5号艇が攻め切り、1号艇が2着に残り、3号艇が3着を拾う筋。・5号艇が攻め切り、1号艇が2着に残り、3号艇が3着を拾う筋。"
+          ],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].coverage",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].physicalCoverage",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "winnerRowCount": 20,
+          "finalRowCount": 20,
+          "comparison": {
+            "path": "evaluatedScenarioCandidates.candidatePool",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 97,
+            "finalValue": 97,
+            "winnerLost": false,
+            "tied": true
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions",
+          "winnerRowCount": 1,
+          "finalRowCount": 6,
+          "comparison": null,
+          "reasons": [
+            "評価された艇・着順役割を実戦買い目へ反映。"
+          ],
+          "selected": true,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[2].candidateDecisions",
+          "winnerRowCount": 2,
+          "finalRowCount": 3,
+          "comparison": {
+            "path": "practicalSelection.targetDecisions[2].candidateDecisions",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 97,
+            "finalValue": 97,
+            "winnerLost": false,
+            "tied": true
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[2].candidateDecisions[4].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[2].candidateDecisions[6].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+          "winnerRowCount": 2,
+          "finalRowCount": 3,
+          "comparison": {
+            "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 97,
+            "finalValue": 84,
+            "winnerLost": false,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions[0].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions[4].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        }
+      ],
+      "winnerReasons": [
+        {
+          "stage": "selected",
+          "path": "practicalTickets[6].flowRoleEvidence[1]",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度5/5",
+          "category": "other-structured"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7]",
+          "reason": "5号艇が攻め切り、1号艇が2着に残り、3号艇が3着を拾う筋。・5号艇が攻め切り、1号艇が2着に残り、3号艇が3着を拾う筋。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "practicalSelection.targetDecisions[4]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].courseStructureTheory",
+          "reason": "暫定・現行枠番評価・展示進入5コース / 基本構造12/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動10/10 / 取得信頼度10/10 / 公式艇番画像で6艇進入確定 / 場×コース0走で正式数未達",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].stTheory",
+          "reason": "正式反映・今節ST21.7/25 / 直近1年コース別ST14.4/20 / 期間推移12.6/15 / 3年コース別ST8.6/15 / 全国平均ST7.5/10 / Fリスク5/5 / 取得信頼度10/10 / 公式展示進入6艇確定 / 実進入5コース115走",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].exhibitionPerformanceTheory",
+          "reason": "正式反映・展示順位・差17.6/30 / 一周順位・差35/35 / 新サム20/20 / ダブルタイム0/5 / 取得信頼度10/10",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].attackTheory",
+          "reason": "役割分離・5コースは拾いとして評価",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].wallTheory",
+          "reason": "参考・攻め艇とのST比較21/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中14/15 / 技量・コース適性8/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].flowTheory",
+          "reason": "正式採用・展開一致34/40 / 位置・コース14/20 / 残し・拾い12.2/15 / ST・スリット7/10 / 展示・足は9％枠へ分離 / 場・水面3.3/5",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].roadTheory",
+          "reason": "暫定・ゴール想定30/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置9/15 / 当地・水面6.5/10 / 技量4.6/5 / 今節成績不足のため暫定",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].localTheory",
+          "reason": "参考・当地・全国比較5/25 / 当地成績13.6/20 / 展開役割20/20 / 進入適合9.8/15 / 場・水面11.5/15 / 技量4.6/5",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[3].newEnvironmentTheory",
+          "reason": "対象外・展示・足は9％枠へ分離 / 今節ST・スリット14/20 / 今節・道中4/20 / 展開役割15/15 / 技量9.3/10 / 当地・水面4.1/5",
+          "category": "other-structured"
+        }
+      ],
+      "evidencePaths": [
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7]",
+          "detail": "[object Object] [object Object] [object Object]"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].ticket",
+          "detail": "5-1-3"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].coverage[0]",
+          "detail": "alternate-head"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].physicalCoverage[2]",
+          "detail": "head"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].roleLabels[0]",
+          "detail": "alternate-head"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[80]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[80].ticket",
+          "detail": "5-1-2"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[81]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[81].ticket",
+          "detail": "5-1-3"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[82]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[82].ticket",
+          "detail": "5-1-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[83]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[83].ticket",
+          "detail": "5-1-6"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[84]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[84].ticket",
+          "detail": "5-2-1"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[85]",
+          "detail": ""
+        }
+      ]
+    },
+    {
+      "date": "20260923",
       "jcd": "10",
       "raceNo": 2,
       "actualHead": 5,
@@ -39174,6 +39941,985 @@
           "stage": "candidate",
           "path": "evaluatedScenarioCandidates.candidatePool[86].ticket",
           "detail": "5-2-6"
+        }
+      ]
+    },
+    {
+      "date": "20260923",
+      "jcd": "10",
+      "raceNo": 8,
+      "actualHead": 6,
+      "finalHead": 2,
+      "candidate": true,
+      "scenario": true,
+      "selected": false,
+      "finalAny56": false,
+      "finalCorrect": false,
+      "supportOnly": false,
+      "structuredRankingEvidence": true,
+      "winnerOutscored": true,
+      "reasonCategories": [
+        "duplicate-overlap",
+        "other-structured",
+        "score-rank",
+        "support-role"
+      ],
+      "classification": "duplicate-overlap-rejection",
+      "comparisons": [
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 88,
+          "finalValue": 97,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[5].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 88,
+          "finalValue": 88,
+          "winnerLost": false,
+          "tied": true
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 88,
+          "finalValue": 97,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 88,
+          "finalValue": 97,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 88,
+          "finalValue": 97,
+          "winnerLost": true,
+          "tied": false
+        }
+      ],
+      "rankingArrays": [
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "winnerRowCount": 20,
+          "finalRowCount": 20,
+          "comparison": {
+            "path": "evaluatedScenarioCandidates.candidatePool",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 88,
+            "finalValue": 97,
+            "winnerLost": true,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[5].candidateDecisions",
+          "winnerRowCount": 1,
+          "finalRowCount": 1,
+          "comparison": {
+            "path": "practicalSelection.targetDecisions[5].candidateDecisions",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 88,
+            "finalValue": 88,
+            "winnerLost": false,
+            "tied": true
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[5].candidateDecisions[1].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "winnerRowCount": 22,
+          "finalRowCount": 117,
+          "comparison": {
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 88,
+            "finalValue": 97,
+            "winnerLost": true,
+            "tied": false
+          },
+          "reasons": [
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・46点・実1コースからの内残り / 既存フォーメーションに同一買い目あり",
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 6号艇のalternate-head・73点・6号艇 北中 元樹 は⚡道中艇 / 💣外コース妙味。総合76点。プラス材料は道中拾い・高配当候補、A1格上、今節ST安定 .14。マイナス材料は当地勝率下位 5.7、展示・足D評価。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 1号艇のhold・46点・実1コースからの内残り / 既存フォーメーションに同一買い目あり",
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 4号艇のpickup・88点・最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係23/15 / バック・2マーク到達8/15 / 取得信頼度5/5 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 6号艇のalternate-head・73点・6号艇 北中 元樹 は⚡道中艇 / 💣外コース妙味。総合76点。プラス材料は道中拾い・高配当候補、A1格上、今節ST安定 .14。マイナス材料は当地勝率下位 5.7、展示・足D評価。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は2コース差し。2号艇を1着軸に、2着残しは1・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 既存フォーメーションに同一買い目あり"
+          ],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[126].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[130].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[130].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[133].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[133].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[136].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[136].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        }
+      ],
+      "winnerReasons": [
+        {
+          "stage": "candidate",
+          "path": "practicalSelection.targetDecisions[5]",
+          "reason": "候補は保持し、採用境界との優先度比較で非採用。",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].courseStructureTheory",
+          "reason": "暫定・現行枠番評価・展示進入6コース / 基本構造8/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動10/10 / 取得信頼度10/10 / 公式艇番画像で6艇進入確定 / 場×コース0走で正式数未達",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].stTheory",
+          "reason": "正式反映・今節ST20.3/25 / 直近1年コース別ST6.4/20 / 期間推移2.8/15 / 3年コース別ST6.3/15 / 全国平均ST5/10 / Fリスク2/5 / 取得信頼度10/10 / 公式展示進入6艇確定 / 実進入6コース102走",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].exhibitionPerformanceTheory",
+          "reason": "正式反映・展示順位9.8/35 / 6艇平均との差9.5/35 / 1位・隣接差5/20 / 取得信頼度10/10",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].attackTheory",
+          "reason": "役割分離・6コースは拾いとして評価",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].wallTheory",
+          "reason": "参考・攻め艇とのST比較25/25 / ST安定性12/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中13/15 / 技量・コース適性8/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].flowTheory",
+          "reason": "正式採用・展開一致34/40 / 位置・コース11/20 / 残し・拾い11.4/15 / ST・スリット7/10 / 展示・足は9％枠へ分離 / 場・水面2.5/5",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].roadTheory",
+          "reason": "暫定・ゴール想定24/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置7/15 / 当地・水面5.9/10 / 技量4.5/5 / 今節成績不足のため暫定",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].localTheory",
+          "reason": "参考・当地・全国比較10/25 / 当地成績11.5/20 / 展開役割15/20 / 進入適合7.5/15 / 場・水面10/15 / 技量4.5/5",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].newEnvironmentTheory",
+          "reason": "対象外・展示・足は9％枠へ分離 / 今節ST・スリット16/20 / 今節・道中2/20 / 展開役割11/15 / 技量9/10 / 当地・水面3.5/5",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].waterWeatherTheory",
+          "reason": "参考・風向・風速とコース10/20 / 波・展示・回り足2/20 / 水面・潮汐12.9/15 / 展開役割16/20 / 当地・道中11.3/15 / ST・技量6.8/10",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].racerSkillTheory",
+          "reason": "適性不足・根拠不足・現在コース1着・3連率4.4/25 / コース別ST・安定性7/15 / 得意戦法一致0/20 / 直近1年・過去2年推移8.9/15 / 級別・全国勝率11.6/15 / 今節着順・道中0/5 / 最有力展開役割3/5 / 決まり手の件数・割合不足",
+          "category": "score-rank"
+        }
+      ],
+      "evidencePaths": [
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[100]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[100].ticket",
+          "detail": "6-1-2"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[101]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[101].ticket",
+          "detail": "6-1-3"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[102]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[102].ticket",
+          "detail": "6-1-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[103]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[103].ticket",
+          "detail": "6-1-5"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[104]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[104].ticket",
+          "detail": "6-2-1"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[105]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[105].ticket",
+          "detail": "6-2-3"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[106]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[106].ticket",
+          "detail": "6-2-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[107]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[107].ticket",
+          "detail": "6-2-5"
+        }
+      ]
+    },
+    {
+      "date": "20260923",
+      "jcd": "03",
+      "raceNo": 3,
+      "actualHead": 6,
+      "finalHead": 4,
+      "candidate": true,
+      "scenario": true,
+      "selected": true,
+      "finalAny56": false,
+      "finalCorrect": false,
+      "supportOnly": false,
+      "structuredRankingEvidence": true,
+      "winnerOutscored": true,
+      "reasonCategories": [
+        "duplicate-overlap",
+        "other-structured",
+        "score-rank",
+        "support-role"
+      ],
+      "classification": "selected-head-lost-at-final-handoff",
+      "comparisons": [
+        {
+          "path": "practicalTickets",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 82,
+          "finalValue": 95,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 85,
+          "finalValue": 95,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 82,
+          "finalValue": 87,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[5].candidateDecisions",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 82,
+          "finalValue": 77,
+          "winnerLost": false,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 85,
+          "finalValue": 95,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.scenarios[0].branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 85,
+          "finalValue": 95,
+          "winnerLost": true,
+          "tied": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.evidence.branches",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 85,
+          "finalValue": 95,
+          "winnerLost": true,
+          "tied": false
+        }
+      ],
+      "rankingArrays": [
+        {
+          "path": "practicalTickets",
+          "winnerRowCount": 1,
+          "finalRowCount": 7,
+          "comparison": {
+            "path": "practicalTickets",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 82,
+            "finalValue": 95,
+            "winnerLost": true,
+            "tied": false
+          },
+          "reasons": [
+            "6号艇が攻め切り、1号艇が2着に残り、2号艇が3着を拾う筋。・6号艇が攻め切り、1号艇が2着に残り、2号艇が3着を拾う筋。"
+          ],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].coverage",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].physicalCoverage",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalTickets[7].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "winnerRowCount": 20,
+          "finalRowCount": 20,
+          "comparison": {
+            "path": "evaluatedScenarioCandidates.candidatePool",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 85,
+            "finalValue": 95,
+            "winnerLost": true,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+          "winnerRowCount": 1,
+          "finalRowCount": 2,
+          "comparison": {
+            "path": "practicalSelection.targetDecisions[4].candidateDecisions",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 82,
+            "finalValue": 87,
+            "winnerLost": true,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[4].candidateDecisions[2].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[5].candidateDecisions",
+          "winnerRowCount": 1,
+          "finalRowCount": 2,
+          "comparison": {
+            "path": "practicalSelection.targetDecisions[5].candidateDecisions",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 82,
+            "finalValue": 77,
+            "winnerLost": false,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.targetDecisions[5].candidateDecisions[4].roleLabels",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+          "winnerRowCount": 17,
+          "finalRowCount": 91,
+          "comparison": {
+            "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 85,
+            "finalValue": 95,
+            "winnerLost": true,
+            "tied": false
+          },
+          "reasons": [
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 3号艇のhold・85点・最有力展開一致40/40 / 実進入・位置関係25/25 / 壁・内側残存経路12/20 / 1マーク後の残し経路8/10 / 取得信頼度0/5 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 6号艇のalternate-head・82点・攻め指数上位 / 外コースから展開突き / 既存フォーメーションに同一買い目あり",
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 2号艇のhold・77点・2コース差し残り / 既存フォーメーションに同一買い目あり",
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 4号艇のpickup・69点・4号艇 豊田 祥生 は△押さえ。総合60点。プラス材料はカド攻め・展開突き、風波で外の出番、4コース残しを切らない。マイナス材料は級別は控えめ、全国勝率低め 3.61。 / 既存フォーメーションに同一買い目あり",
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 6号艇のalternate-head・82点・攻め指数上位 / 外コースから展開突き / 既存フォーメーションに同一買い目あり",
+            "最有力展開は4カド攻め。4号艇を1着軸に、2着残しは1・5・3号艇、3着拾いは5・6・2号艇を評価する。 / 2号艇のhold・77点・2コース差し残り / 既存フォーメーションに同一買い目あり"
+          ],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[139].roles",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        },
+        {
+          "path": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches[139].evidenceChecks",
+          "winnerRowCount": 1,
+          "finalRowCount": 0,
+          "comparison": null,
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        }
+      ],
+      "winnerReasons": [
+        {
+          "stage": "selected",
+          "path": "practicalTickets[5].flowRoleEvidence[1]",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面15/25 / 実進入・位置関係22/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "category": "other-structured"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7]",
+          "reason": "6号艇が攻め切り、1号艇が2着に残り、2号艇が3着を拾う筋。・6号艇が攻め切り、1号艇が2着に残り、2号艇が3着を拾う筋。",
+          "category": "support-role"
+        },
+        {
+          "stage": "candidate",
+          "path": "practicalSelection.targetDecisions[4]",
+          "reason": "評価された艇・着順役割を実戦買い目へ反映。",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].courseStructureTheory",
+          "reason": "暫定・現行枠番評価・展示進入6コース / 基本構造8/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].stTheory",
+          "reason": "暫定・現行ST評価・今節ST18.6/25 / 直近1年コース別ST9.100000000000001/20 / 期間推移8.6/15 / 3年コース別ST6/15 / 全国平均ST5.8/10 / Fリスク5/5 / 取得信頼度10/10 / 実進入未確定 / 実進入6コース90走",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].exhibitionPerformanceTheory",
+          "reason": "暫定・中立50点・展示0/6艇・一周0/6艇のため中立50点",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].attackTheory",
+          "reason": "役割分離・6コースは拾いとして評価",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].wallTheory",
+          "reason": "参考・攻め艇とのST比較17/25 / ST安定性15/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中14/15 / 技量・コース適性8/10 / 場・水面・風適応5/5 / 攻め艇の内側隣接艇ではない",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].flowTheory",
+          "reason": "暫定・展開一致34/40 / 位置・コース17/20 / 残し・拾い12.2/15 / ST・スリット6/10 / 展示・足は9％枠へ分離 / 場・水面3.4/5 / 展示6艇未取得のため役割判定は暫定",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].roadTheory",
+          "reason": "暫定・ゴール想定24/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置7/15 / 当地・水面9.1/10 / 技量4.4/5 / 今節成績不足のため暫定",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].localTheory",
+          "reason": "正式採用・当地・全国比較15/25 / 当地成績13.3/20 / 展開役割15/20 / 進入適合8.7/15 / 場・水面10.3/15 / 技量4.4/5",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[5].newEnvironmentTheory",
+          "reason": "対象外・展示・足は9％枠へ分離 / 今節ST・スリット12/20 / 今節・道中4/20 / 展開役割11/15 / 技量8.8/10 / 当地・水面4.8/5",
+          "category": "other-structured"
+        }
+      ],
+      "evidencePaths": [
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7]",
+          "detail": "[object Object] [object Object] [object Object]"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].ticket",
+          "detail": "6-1-2"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].coverage[0]",
+          "detail": "alternate-head"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].physicalCoverage[1]",
+          "detail": "head"
+        },
+        {
+          "stage": "selected",
+          "path": "practicalTickets[7].roleLabels[0]",
+          "detail": "alternate-head"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[100]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[100].ticket",
+          "detail": "6-1-2"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[101]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[101].ticket",
+          "detail": "6-1-3"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[102]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[102].ticket",
+          "detail": "6-1-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[103]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[103].ticket",
+          "detail": "6-1-5"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[104]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[104].ticket",
+          "detail": "6-2-1"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[105]",
+          "detail": ""
+        }
+      ]
+    },
+    {
+      "date": "20260923",
+      "jcd": "09",
+      "raceNo": 4,
+      "actualHead": 5,
+      "finalHead": 2,
+      "candidate": true,
+      "scenario": false,
+      "selected": false,
+      "finalAny56": false,
+      "finalCorrect": false,
+      "supportOnly": false,
+      "structuredRankingEvidence": true,
+      "winnerOutscored": true,
+      "reasonCategories": [
+        "other-structured",
+        "score-rank",
+        "support-role"
+      ],
+      "classification": "candidate-head-not-promoted",
+      "comparisons": [
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "metric": "priorityScore",
+          "metricType": "score",
+          "winnerValue": 0,
+          "finalValue": 92,
+          "winnerLost": true,
+          "tied": false
+        }
+      ],
+      "rankingArrays": [
+        {
+          "path": "evaluatedScenarioCandidates.candidatePool",
+          "winnerRowCount": 19,
+          "finalRowCount": 20,
+          "comparison": {
+            "path": "evaluatedScenarioCandidates.candidatePool",
+            "metric": "priorityScore",
+            "metricType": "score",
+            "winnerValue": 0,
+            "finalValue": 92,
+            "winnerLost": true,
+            "tied": false
+          },
+          "reasons": [],
+          "selected": false,
+          "rejected": false
+        }
+      ],
+      "winnerReasons": [
+        {
+          "stage": "selected",
+          "path": "practicalTickets[6].flowRoleEvidence[1]",
+          "reason": "最有力展開連動40/40 / 差し場・空き水面12/25 / 実進入・位置関係20/15 / バック・2マーク到達10/15 / 取得信頼度0/5",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].courseStructureTheory",
+          "reason": "暫定・現行枠番評価・展示進入5コース / 基本構造12/35 / 場別1着率0/20 / 場別3連率0/15 / 期間推移0/10 / 進入変動0/10 / 取得信頼度0/10 / 進入未確定のため枠番評価を維持 / 場×コース0走で正式数未達",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].stTheory",
+          "reason": "暫定・現行ST評価・今節ST0/25 / 直近1年コース別ST6.5/20 / 期間推移4.8/15 / 3年コース別ST5.9/15 / 全国平均ST4.2/10 / Fリスク5/5 / 取得信頼度10/10 / 実進入未確定 / 実進入5コース112走",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].exhibitionPerformanceTheory",
+          "reason": "暫定・中立50点・展示5/6艇・一周0/6艇のため中立50点",
+          "category": "other-structured"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].attackTheory",
+          "reason": "役割分離・5コースは拾いとして評価",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].wallTheory",
+          "reason": "参考・攻め艇とのST比較15/25 / ST安定性4/15 / 展示進入・隣接0/15 / 展示・一周は9％枠へ分離 / 残し・回り足・道中12/15 / 技量・コース適性7/10 / 場・水面・風適応4/5 / 攻め艇の内側隣接艇ではない",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].flowTheory",
+          "reason": "暫定・展開一致34/40 / 位置・コース14/20 / 残し・拾い10.9/15 / ST・スリット5/10 / 展示・足は9％枠へ分離 / 場・水面3/5 / 展示6艇未取得のため役割判定は暫定",
+          "category": "support-role"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].roadTheory",
+          "reason": "暫定・ゴール想定24/30 / 展示・一周は9％枠へ分離 / 今節安定0/15 / 進入・位置9/15 / 当地・水面5.8/10 / 技量3.4/5 / 今節成績不足のため暫定",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].localTheory",
+          "reason": "正式採用・当地・全国比較25/25 / 当地成績10.600000000000001/20 / 展開役割15/20 / 進入適合8.9/15 / 場・水面10.9/15 / 技量3.4/5",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].newEnvironmentTheory",
+          "reason": "対象外・展示・足は9％枠へ分離 / 今節ST・スリット8/20 / 今節・道中0/20 / 展開役割11/15 / 技量6.8/10 / 当地・水面3.7/5 / 展示または今節実績の裏付け不足",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].waterWeatherTheory",
+          "reason": "暫定・風向・風速とコース12/20 / 波・展示・回り足4/20 / 水面・潮汐2.9/15 / 展開役割16/20 / 当地・道中10.5/15 / ST・技量6.3/10 / 潮汐場の現在潮位・潮流が不足",
+          "category": "score-rank"
+        },
+        {
+          "stage": "unclassified",
+          "path": "practicalSelection.frameRiseFallReplayBasis.analyses[4].racerSkillTheory",
+          "reason": "適性不足・根拠不足・現在コース1着・3連率4/25 / コース別ST・安定性7/15 / 得意戦法一致0/20 / 直近1年・過去2年推移7.9/15 / 級別・全国勝率4.7/15 / 今節着順・道中0/5 / 最有力展開役割3/5 / 決まり手の件数・割合不足",
+          "category": "score-rank"
+        }
+      ],
+      "evidencePaths": [
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[80]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[80].ticket",
+          "detail": "5-1-2"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[81]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[81].ticket",
+          "detail": "5-1-3"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[82]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[82].ticket",
+          "detail": "5-1-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[83]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[83].ticket",
+          "detail": "5-1-6"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[84]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[84].ticket",
+          "detail": "5-2-1"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[85]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[85].ticket",
+          "detail": "5-2-3"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[86]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[86].ticket",
+          "detail": "5-2-4"
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[87]",
+          "detail": ""
+        },
+        {
+          "stage": "candidate",
+          "path": "evaluatedScenarioCandidates.candidatePool[87].ticket",
+          "detail": "5-3-1"
         }
       ]
     }
