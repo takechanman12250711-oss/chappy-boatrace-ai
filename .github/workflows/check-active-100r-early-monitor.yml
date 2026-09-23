@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: active-100r-early-monitor
@@ -35,6 +36,27 @@ jobs:
       - name: Build current active 100R monitor
         run: node scripts/build-active-100r-early-monitor.cjs > data/stats/active-100r-early-monitor.json
       - run: node scripts/check-charter.js
+      - name: Report 100R completion
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          matched="$(node -e "const r=require('./data/stats/active-100r-early-monitor.json');process.stdout.write(String(r.matchedRows||0))")"
+          if [ "$matched" -lt 100 ]; then
+            echo "100R progress: ${matched}/100"
+            exit 0
+          fi
+          title="[自動完了] 100R検証"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state all --search "$title in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
+          if [ -n "$existing" ]; then
+            echo "100R completion was already reported in issue #$existing"
+            exit 0
+          fi
+          hits="$(node -e "const r=require('./data/stats/active-100r-early-monitor.json');process.stdout.write(String(r.hits||0))")"
+          misses="$(node -e "const r=require('./data/stats/active-100r-early-monitor.json');process.stdout.write(String(r.misses||0))")"
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "✅ 100R検証が100件に到達しました。\n\n- 照合済み: ${matched}R\n- 的中: ${hits}\n- 不的中: ${misses}\n- 集計: data/stats/active-100r-early-monitor.json\n\n次の改善判断に進める状態です。"
+
       - name: Save refreshed monitor
         if: github.event_name != 'pull_request'
         run: |
