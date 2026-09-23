@@ -15,7 +15,7 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
   const raceKey = `${match[1]}-${match[2]}-${match[3]}`;
   if (bundle.version !== 'note-draft-bundle-v1' || bundle.record?.raceKey !== raceKey) throw new Error('publication_source_identity_mismatch');
   require('./note-exhibition').requireExhibition(bundle.record);
-  const article = compactArticle(bundle.article);
+  const article = compactArticle(bundle.article, bundle.record.prediction);
   const audit = auditNotePublication({ ...bundle, article, now: new Date(now).toISOString() });
   if (!audit.contentReady) {
     const error = new Error('publication_content_audit_blocked');
@@ -46,4 +46,5 @@ function verifyPublicationSource(payload, rootDir = process.cwd(), now = Date.no
 }
 
 module.exports = { sourceArticle, publicationPayload, verifyPublicationSource };
+
 
