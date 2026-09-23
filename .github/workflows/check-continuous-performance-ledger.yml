@@ -1,0 +1,24 @@
+name: Check continuous performance ledger
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-continuous-performance-ledger.cjs'
+      - 'tests/continuous-performance-ledger.test.cjs'
+      - '.github/workflows/check-continuous-performance-ledger.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate continuous performance ledger
+        run: |
+          node --check scripts/build-continuous-performance-ledger.cjs
+          node --check tests/continuous-performance-ledger.test.cjs
+          node tests/continuous-performance-ledger.test.cjs
+          node scripts/build-continuous-performance-ledger.cjs
+          node -e "const x=require('./data/stats/continuous-performance-ledger.json'); console.log(JSON.stringify({diagnostics:x.diagnostics,cumulative:x.cumulative,rolling100:x.rolling100,generationBreakdown:x.generationBreakdown},null,2))"
