@@ -207,6 +207,7 @@ function auditNotePublication(input = {}) {
         const original = Number(baselinePracticalTickets?.[index]?.odds);
         const articleOdds = Number(article.practicalTickets?.[index]?.odds);
         if (formations) {
+          if (!allRaces && source === 0) issue("ODDS_MISSING", `${stored[index]}の保存オッズを確認できません。`);
           if (![source, original, articleOdds].every(value => Number.isFinite(value) && value >= 0) ||
               source !== original || source !== articleOdds) {
             issue("ODDS_MISMATCH", `${stored[index]}の保存オッズが一致しません。`);
