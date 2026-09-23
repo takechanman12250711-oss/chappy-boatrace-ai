@@ -5,15 +5,71 @@ on:
       - 'scripts/build-active-100r-early-monitor.cjs'
       - 'tests/build-active-100r-early-monitor.test.cjs'
       - '.github/workflows/check-active-100r-early-monitor.yml'
-permissions: {contents: read}
+  workflow_run:
+    workflows:
+      - 'Collect automatic race predictions'
+      - 'Collect official race results'
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: active-100r-early-monitor
+  cancel-in-progress: false
+
 jobs:
   verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - run: node --check scripts/build-active-100r-early-monitor.cjs
       - run: node tests/build-active-100r-early-monitor.test.cjs
-      - run: node scripts/build-active-100r-early-monitor.cjs
+      - name: Build current active 100R monitor
+        run: node scripts/build-active-100r-early-monitor.cjs > data/stats/active-100r-early-monitor.json
       - run: node scripts/check-charter.js
+      - name: Report 100R completion
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          matched="$(node -e "const r=require('./data/stats/active-100r-early-monitor.json');process.stdout.write(String(r.matchedRows||0))")"
+          if [ "$matched" -lt 100 ]; then
+            echo "100R progress: ${matched}/100"
+            exit 0
+          fi
+          title="[自動完了] 100R検証"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state all --search "$title in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)"
+          if [ -n "$existing" ]; then
+            echo "100R completion was already reported in issue #$existing"
+            exit 0
+          fi
+          hits="$(node -e "const r=require('./data/stats/active-100r-early-monitor.json');process.stdout.write(String(r.hits||0))")"
+          misses="$(node -e "const r=require('./data/stats/active-100r-early-monitor.json');process.stdout.write(String(r.misses||0))")"
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "✅ 100R検証が100件に到達しました。\n\n- 照合済み: ${matched}R\n- 的中: ${hits}\n- 不的中: ${misses}\n- 集計: data/stats/active-100r-early-monitor.json\n\n次の改善判断に進める状態です。"
+
+      - name: Save refreshed monitor
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/active-100r-early-monitor.json
+          if git diff --cached --quiet; then
+            echo "100R monitor is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh active 100R early monitor"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
