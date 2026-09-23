@@ -124,16 +124,66 @@
   }
 
 
-  // Presentation only: preserve every ticket row, its order, odds and paid boundary.
+  // Presentation only: source tickets, priority and odds remain in metadata.
+  function withoutAsides(value) {
+    let text = String(value || "");
+    let previous;
+    do {
+      previous = text;
+      text = text.replace(/[（(［\[][^（）()［］\[\]]*[）)］\]]/g, "");
+    } while (text !== previous);
+    return text.trim();
+  }
+
+  // Merge only consecutive rows in the same category whose Cartesian product
+  // exactly equals the source set. Never fill gaps to make a formation.
+  function formationLines(lines) {
+    const output = [];
+    for (let index = 0; index < lines.length;) {
+      const match = lines[index].match(/^・([1-6]-[1-6]-[1-6])(?:\s|$)/);
+      if (!match) {
+        output.push(withoutAsides(lines[index++]).replace(/\s*(?:\d+(?:\.\d+)?倍|オッズ未取得)/g, ""));
+        continue;
+      }
+      const category = lines[index].match(/［([^］]+)］/)?.[1] || "";
+      const tickets = [];
+      let end = index;
+      while (end < lines.length) {
+        const next = lines[end].match(/^・([1-6]-[1-6]-[1-6])(?:\s|$)/);
+        if (!next || (lines[end].match(/［([^］]+)］/)?.[1] || "") !== category) break;
+        tickets.push(next[1]); end++;
+      }
+      if (category) output.push(category);
+      for (let start = 0; start < tickets.length;) {
+        let bestEnd = start + 1;
+        let notation = tickets[start];
+        for (let stop = start + 2; stop <= tickets.length; stop++) {
+          const subset = tickets.slice(start, stop);
+          const axes = [0, 1, 2].map(axis => [...new Set(subset.map(t => t.split("-")[axis]))].sort());
+          const expanded = axes[0].flatMap(a => axes[1].flatMap(b => axes[2]
+            .filter(c => new Set([a, b, c]).size === 3).map(c => `${a}-${b}-${c}`)));
+          if (expanded.length === subset.length && expanded.every(t => subset.includes(t))) {
+            notation = axes.map(axis => axis.join("")).join("-"); bestEnd = stop;
+          }
+        }
+        output.push(`・${notation}`);
+        start = bestEnd;
+      }
+      index = end;
+    }
+    return output;
+  }
+
   function briefReason(value) {
-    return compactTicketComment(String(value || "")
-      .replace(/[（(][^（）()]*\d+点[^（）()]*[）)]/g, ""))
+    return compactTicketComment(withoutAsides(value))
       .split(/(?<=[。！？])/).map(s => s.trim()).filter(Boolean).slice(0, 2).join("");
   }
 
   function compactArticle(article) {
     if (!article?.ok || !article.paidText?.includes("🔥 実戦厳選買い目")) return article;
+    if (article.format === "formation-v2") return article;
     const originalPaid = article.paidText;
+    const purchaseWarning = originalPaid.match(/^【購入見送り】\n[\s\S]*?(?=\n\n)/)?.[0];
     const evaluations = originalPaid.match(/【6艇評価】\n([\s\S]*?)\n【AI買い目候補/);
     const boatEvaluations = evaluations
       ? [...evaluations[1].matchAll(/^([1-6])号艇/gm)].map(m => Number(m[1]))
@@ -146,20 +196,21 @@
       briefReason(conclusion),
       "",
       "買い目は以下の有料部分にまとめています。"
-    ].join("\n") : originalFree;
-    let paidText = originalPaid
+    ].join("\n") : withoutAsides(originalFree);
+    let paidText = formationLines(originalPaid
       .replace(/【6艇評価】\n[\s\S]*?(?=【AI買い目候補)/, "")
       .split("\n")
       .filter(line => {
         const t = line.trim();
-        return !t || /^・|^【|^🔥|^厳選買い目|^参考合計|^内訳|^展開：|^🔵|^🌸/.test(t);
+        return !t || /^・|^【|^🔥|^厳選買い目|^参考合計|^展開：|^🔵|^🌸/.test(t);
       })
-      .map(line => line.trim().startsWith("展開：") ? "展開：" + briefReason(line.trim().slice(3)) : line)
+      .map(line => line.trim().startsWith("展開：") ? "展開：" + briefReason(line.trim().slice(3)) : line))
       .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    if (purchaseWarning) paidText = paidText.replace(/^【購入見送り】/, purchaseWarning);
     // Keep the original source article intact; this is a separate presentation.
     return {
       ...article,
-      format: "concise-v1",
+      format: "formation-v2",
       boatEvaluations,
       freeText,
       paidText,
@@ -1448,7 +1499,7 @@
       const rates = [];
       if (Number.isFinite(escape?.rate)) rates.push(`逃げ${escape.rate.toFixed(1)}%`);
       if (Number.isFinite(wave?.rate)) rates.push(`万舟${wave.rate.toFixed(1)}%`);
-      if (rates.length) features.push(`場の傾向：${rates.join("・")}（公式結果${venue.samples}R）`);
+      if (rates.length) features.push(`場の傾向：${rates.join("・")}｜公式結果${venue.samples}R`);
     }
     const disclosure = "作成時点の取得済み情報による参考予想です。展示・気象・オッズ等の追加情報で評価が変わる場合があります。";
     const freeText = [

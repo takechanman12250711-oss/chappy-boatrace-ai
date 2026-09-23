@@ -53,7 +53,8 @@ async function main() {
     const rescueRecord = { ...record, prediction: { ...prepared.prediction, practicalTickets: rescueBaseline } };
     const payload = { article, record: rescueRecord, baselinePracticalTickets: rescueBaseline, now: new Date(now()).toISOString() };
     assert.deepEqual(article.practicalTickets.map(t => [t.ticket, t.odds]), [['2-1-3',23.5],['1-3-4',42.6]]);
-    assert.match(article.paidText, /1-3-4.*42.6倍/);
+    assert.match(article.paidText, /・1-3-4/);
+    assert.doesNotMatch(article.paidText, /倍|オッズ/);
     assert.deepEqual(auditNotePublication(payload).issues, [], 'frozen rescue snapshot passes unchanged strict audit');
     for (const invalid of [undefined, null, [], [rescueBaseline[0], rescueBaseline[0]], [{ ticket:'1-1-3', odds:2 }], [{ ticket:'1-2-3' }]]) {
       assert.throws(() => generator.generateArticle(prepared.prediction, { practicalTickets: invalid }), /note_practical_snapshot_invalid/);
@@ -116,3 +117,4 @@ async function main() {
   console.log('note pipeline enrichment, immutable source, early persistence and dispatch tests passed');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
+

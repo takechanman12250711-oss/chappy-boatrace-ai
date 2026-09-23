@@ -190,15 +190,30 @@ function auditNotePublication(input = {}) {
     } else {
       const block = practicalBlocks[0];
       const lines = block[1].split("\n").filter(line => line.startsWith("・"));
-      const rendered = lines.map(line => line.match(/^・(\S+)/)?.[1] || "");
-      if (!sameList(rendered, stored) || Number(block[2]) !== stored.length) {
+      const formations = article.format === "formation-v2";
+      const rendered = formations
+        ? lines.flatMap(line => ticketMentions(line).flatMap(expandedMention))
+        : lines.map(line => line.match(/^・(\S+)/)?.[1] || "");
+      if (!(formations ? sameList([...rendered].sort(), [...stored].sort()) : sameList(rendered, stored)) ||
+          Number(block[2]) !== stored.length) {
         issue("RENDERED_TICKETS_MISMATCH", "有料本文の厳選買い目・順序・点数が保存予想と一致しません。");
       }
-      lines.forEach((line, index) => {
+      if (formations && lines.some(line => !/^・[1-6]+-[1-6]+-[1-6]+$/.test(line))) {
+        issue("FORMATION_LINE_INVALID", "買い目の表示形式を確認してください。");
+      }
+      (formations ? stored : lines).forEach((line, index) => {
         const shown = Number(line.match(/\s(\d+(?:\.\d+)?)倍(?:\s|$)/)?.[1]);
         const source = Number(record.prediction?.practicalTickets?.[index]?.odds);
         const original = Number(baselinePracticalTickets?.[index]?.odds);
         const articleOdds = Number(article.practicalTickets?.[index]?.odds);
+        if (formations) {
+          if (!allRaces && source === 0) issue("ODDS_MISSING", `${stored[index]}の保存オッズを確認できません。`);
+          if (![source, original, articleOdds].every(value => Number.isFinite(value) && value >= 0) ||
+              source !== original || source !== articleOdds) {
+            issue("ODDS_MISMATCH", `${stored[index]}の保存オッズが一致しません。`);
+          }
+          return;
+        }
         if (allRaces && line.includes("オッズ未取得") &&
             [source, original, articleOdds].every(value => value === 0) && !Number.isFinite(shown)) return;
         if (![shown, source, original, articleOdds].every(value => Number.isFinite(value) && value > 0)) {
@@ -209,7 +224,7 @@ function auditNotePublication(input = {}) {
       });
     }
     const evaluationSection = normalized(paidText).match(/【6艇評価】\n([\s\S]*?)\n【AI買い目候補/);
-    const boats = article.format === "concise-v1"
+    const boats = ["concise-v1", "formation-v2"].includes(article.format)
       ? (Array.isArray(article.boatEvaluations) ? article.boatEvaluations.map(String).sort() : [])
       : evaluationSection ? [...evaluationSection[1].matchAll(/^([1-6])号艇/gm)].map(match => match[1]).sort() : [];
     if (!sameList(boats, ["1", "2", "3", "4", "5", "6"])) {
