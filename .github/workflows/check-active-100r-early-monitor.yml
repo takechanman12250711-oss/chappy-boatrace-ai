@@ -34,7 +34,16 @@ jobs:
       - run: node --check scripts/build-active-100r-early-monitor.cjs
       - run: node tests/build-active-100r-early-monitor.test.cjs
       - name: Build current active 100R monitor
-        run: node scripts/build-active-100r-early-monitor.cjs > data/stats/active-100r-early-monitor.json
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const { build } = require('./scripts/build-active-100r-early-monitor.cjs');
+          fs.writeFileSync(
+            'data/stats/active-100r-early-monitor.json',
+            JSON.stringify(build(), null, 2) + '\n',
+            'utf8'
+          );
+          NODE
       - run: node scripts/check-charter.js
       - name: Report 100R completion
         if: github.event_name != 'pull_request'
