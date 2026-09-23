@@ -19,6 +19,8 @@ on:
       - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
+      - "scripts/note-cover*"
+      - "assets/note/**"
       - "scripts/note-browserbase-draft-save.js"
       - "scripts/note-browserbase-draft-save.test.js"
       - "scripts/note-editor-content.js"
@@ -66,6 +68,8 @@ on:
       - "scripts/test-note-draft-bundle.js"
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
+      - "scripts/note-cover*"
+      - "assets/note/**"
       - "scripts/note-browserbase-draft-save.js"
       - "scripts/note-browserbase-draft-save.test.js"
       - "scripts/note-editor-content.js"
@@ -129,6 +133,7 @@ jobs:
           node scripts/check-note-skills.js
           node scripts/note-github-ui-transport.test.js
           node scripts/note-cover.test.js
+          node scripts/note-cover-template.test.js
           node scripts/note-browserbase-draft-save.test.js
           node scripts/note-editor-content.test.js
           node scripts/note-publication-source.test.js
@@ -142,3 +147,23 @@ jobs:
 
 
 
+
+  cover-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+            assets/note
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --no-save playwright@1.55.0
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/note-cover-render.test.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: note-cover-preview
+          path: tmp/note-cover-preview/*.jpg
