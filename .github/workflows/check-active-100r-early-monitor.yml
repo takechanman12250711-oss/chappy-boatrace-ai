@@ -5,15 +5,49 @@ on:
       - 'scripts/build-active-100r-early-monitor.cjs'
       - 'tests/build-active-100r-early-monitor.test.cjs'
       - '.github/workflows/check-active-100r-early-monitor.yml'
-permissions: {contents: read}
+  workflow_run:
+    workflows:
+      - 'Collect automatic race predictions'
+      - 'Collect official race results'
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: active-100r-early-monitor
+  cancel-in-progress: false
+
 jobs:
   verify:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
       - uses: actions/setup-node@v4
         with: {node-version: 20}
       - run: node --check scripts/build-active-100r-early-monitor.cjs
       - run: node tests/build-active-100r-early-monitor.test.cjs
-      - run: node scripts/build-active-100r-early-monitor.cjs
+      - name: Build current active 100R monitor
+        run: node scripts/build-active-100r-early-monitor.cjs > data/stats/active-100r-early-monitor.json
       - run: node scripts/check-charter.js
+      - name: Save refreshed monitor
+        if: github.event_name != 'pull_request'
+        run: |
+          git add data/stats/active-100r-early-monitor.json
+          if git diff --cached --quiet; then
+            echo "100R monitor is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Refresh active 100R early monitor"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
