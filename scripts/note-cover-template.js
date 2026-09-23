@@ -27,7 +27,7 @@ function coverHtml(lines, background, font) {
     const x = 45, y = row ? 510 : 265;
     const rotate = [...line].map((_, i) => [0, -2, 1, -1, 2][i % 5]).join(' ');
     const attrs = `x="${x}" y="${y}" font-size="${size}" textLength="${length}" lengthAdjust="spacingAndGlyphs" rotate="${rotate}" paint-order="stroke fill" stroke-linejoin="round"`;
-    return `<g filter="url(#hand)" transform="rotate(${row ? -1 : 1} ${x} ${y})"><text ${attrs} transform="translate(7 8)" fill="#ffdc48" stroke="#ffdc48" stroke-width="24">${escapeXml(line)}</text><text ${attrs} fill="${row ? '#f33b26' : '#f64a27'}" stroke="#193b7c" stroke-width="18">${escapeXml(line)}</text><text ${attrs} fill="${row ? '#f33b26' : '#fa5529'}" stroke="${row ? '#f33b26' : '#fa5529'}" stroke-width="10">${escapeXml(line)}</text></g>`;
+    return `<g data-cover-line="${row}" filter="url(#hand)" transform="rotate(${row ? -1 : 1} ${x} ${y})"><text ${attrs} transform="translate(7 8)" fill="#ffdc48" stroke="#ffdc48" stroke-width="24">${escapeXml(line)}</text><text ${attrs} fill="${row ? '#f33b26' : '#f64a27'}" stroke="#193b7c" stroke-width="18">${escapeXml(line)}</text><text ${attrs} fill="${row ? '#f33b26' : '#fa5529'}" stroke="${row ? '#f33b26' : '#fa5529'}" stroke-width="10">${escapeXml(line)}</text></g>`;
   }).join('');
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     @font-face{font-family:ChappyHand;src:url(data:font/ttf;base64,${font.toString('base64')}) format('truetype');font-weight:400}
@@ -52,10 +52,21 @@ async function renderCover(browser, template) {
       await document.fonts.ready;
       if (!document.fonts.check('164px ChappyHand')) throw new Error('note_cover_font_not_loaded');
       await Promise.all([...document.images].map(image => image.decode()));
+      // Font ascent/descent differs by renderer. Fit actual browser bounds to
+      // the two artwork-safe slots, instead of assuming font-size is height.
+      for (const group of document.querySelectorAll('[data-cover-line]')) {
+        const row = Number(group.getAttribute('data-cover-line'));
+        const slot = row ? { x: 45, y: 340, width: 1160, height: 205 }
+          : { x: 45, y: 65, width: 1270, height: 255 };
+        const box = group.getBBox();
+        if (box.width <= 0 || box.height <= 0) throw new Error('note_cover_text_empty');
+        const scale = Math.min(1, slot.width / box.width, slot.height / box.height);
+        group.setAttribute('transform', `translate(${slot.x} ${slot.y}) scale(${scale}) translate(${-box.x} ${-box.y})`);
+      }
       for (const text of document.querySelectorAll('svg text')) {
         const box = text.getBoundingClientRect();
         if (box.width <= 0 || box.left < 10 || box.right > 1390 || box.top < 10 || box.bottom > 570) {
-          throw new Error('note_cover_text_overflow');
+          throw new Error('note_cover_text_overflow_' + JSON.stringify({left:box.left,right:box.right,top:box.top,bottom:box.bottom}));
         }
       }
     });
