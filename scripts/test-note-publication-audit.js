@@ -269,16 +269,44 @@ const conciseInput = fixture();
 const detailedSnapshot = structuredClone(conciseInput.article);
 conciseInput.article = noteGenerator.compactArticle(conciseInput.article);
 ready("concise article keeps publication checks", conciseInput);
-assert.equal(conciseInput.article.format, "concise-v1");
+assert.equal(conciseInput.article.format, "formation-v2");
 assert.deepEqual(conciseInput.article.practicalTickets, detailedSnapshot.practicalTickets);
 assert.doesNotMatch(conciseInput.article.paidText, /【6艇評価】|役割：|保存済みの展開判断/);
 assert.deepEqual(noteGenerator.compactArticle(conciseInput.article), conciseInput.article, "formatting is idempotent");
+assert.doesNotMatch(conciseInput.article.paidText, /倍|オッズ|［|］|（|）/);
+const pair = fixture(2);
+const pairSource = structuredClone(pair);
+pair.article = noteGenerator.compactArticle(pair.article);
+assert.match(pair.article.paidText, /・1-2-34/);
+ready("exact two-ticket formation", pair);
+assert.deepEqual(pair.record, pairSource.record, "source prediction stays intact");
+blocked("formation adds unsupported third place", input => {
+  replaceSection(input.article, "paidText", text => text.replaceAll("1-2-34", "1-2-345"));
+}, structuredClone(pair));
+blocked("formation drops a source ticket", input => {
+  replaceSection(input.article, "paidText", text => text.replaceAll("1-2-34", "1-2-3"));
+}, structuredClone(pair));
+blocked("formation duplicates tickets", input => {
+  replaceSection(input.article, "paidText", text => text.replaceAll("・1-2-34", "・1-2-34\n・1-2-34"));
+}, structuredClone(pair));
+const hole = fixture(3);
+hole.article = noteGenerator.compactArticle(hole.article);
+assert.doesNotMatch(hole.article.paidText, /・1-23-234/,
+  "missing 1-3-4 must not be added by grouping");
+ready("incomplete Cartesian product stays exact", hole);
+const categoryPair = fixture(2);
+categoryPair.article.paidText = categoryPair.article.paidText.replaceAll("1-2-4　［実戦候補］", "1-2-4　［押さえ］");
+categoryPair.article = noteGenerator.compactArticle(categoryPair.article);
+assert.match(categoryPair.article.paidText, /押さえ\n・1-2-4/);
+const aside = fixture(2);
+aside.article.freeText = aside.article.freeText.replace("2号艇は2着残し。", "2号艇は2着残し（補足（内部説明））。");
+assert.doesNotMatch(noteGenerator.compactArticle(aside.article).freeText, /補足|内部説明|（|）/);
 blocked("concise evaluation identity missing", input => { input.article.boatEvaluations.pop(); }, structuredClone(conciseInput));
 blocked("concise changed rendered ticket", input => {
-  replaceSection(input.article, "paidText", text => text.replaceAll("1-2-3", "6-5-4"));
+  replaceSection(input.article, "paidText", text => text.replace(/・[1-6]+-[1-6]+-[1-6]+/, "・6-5-4"));
 }, structuredClone(conciseInput));
-blocked("concise changed odds", input => {
-  replaceSection(input.article, "paidText", text => text.replaceAll("12.5倍", "99.9倍"));
+blocked("concise changed source odds", input => {
+  input.article.practicalTickets[0].odds = 99.9;
 }, structuredClone(conciseInput));
 blocked("concise free ticket leak", input => {
   replaceSection(input.article, "freeText", text => text + "\n1-2-3");
