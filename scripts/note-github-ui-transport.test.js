@@ -20,6 +20,7 @@ const {
   createBrowserUseSession,
   stopBrowserUseSession
 } = require('./note-github-ui-transport');
+const { findPublishedArticleInList } = require('./note-github-ui-transport');
 
 const valid = {
   canPublish: true,
@@ -83,6 +84,24 @@ assert.throws(() => loadStorageState({ NOTE_STATE_JSON_BASE64: Buffer.from(JSON.
 
 // Missing state stops the CLI before even loading a browser dependency.
 async function checkAsyncGuards() {
+  const publicUrl = 'https://note.com/great_robin3243/n/nc97383960b4b';
+  for (const scenario of ['published', 'other-id', 'external', 'preview', 'login', 'error']) {
+    let closed = 0;
+    const listing = {
+      goto: async url => { assert.equal(url, 'https://note.com/notes'); return { ok: () => true }; },
+      url: () => scenario === 'login' ? 'https://note.com/login' : 'https://note.com/notes',
+      locator: () => ({
+        first: () => ({ waitFor: async () => { if (scenario === 'error') throw new Error('timeout'); } }),
+        evaluateAll: async () => [scenario === 'other-id' ? publicUrl.replace('nc97383960b4b', 'n999') :
+          scenario === 'external' ? publicUrl.replace('note.com', 'evil.example') :
+          scenario === 'preview' ? `${publicUrl}?preview=true` : publicUrl]
+      }),
+      close: async () => { closed++; }
+    };
+    const source = { context: () => ({ newPage: async () => listing }) };
+    assert.equal(await findPublishedArticleInList(source, 'nc97383960b4b'), scenario === 'published' ? publicUrl : null);
+    assert.equal(closed, 1);
+  }
   // Simulate the observed sibling layout and a UI that may ignore clicks.
   for (const scenario of ['move', 'already', 'ignored']) {
     let selected = scenario === 'already' ? 1 : 3;

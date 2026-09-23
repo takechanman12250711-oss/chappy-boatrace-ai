@@ -375,6 +375,7 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
     }
     if (!url) await page.waitForTimeout(1000);
   }
+  if (!url) url = await findPublishedArticleInList(page, noteId);
   if (!url) throw new Error('publication_result_unknown_review_required');
   // Independently confirm the public page without the owner's login context.
   const verification = await page.context().browser().newContext();
@@ -393,6 +394,29 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
       publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
       sourceSha256: payload.sourceSha256 };
   } finally { await verification.close(); }
+}
+
+async function findPublishedArticleInList(page, noteId) {
+  // The completion screen can omit a visible public link even after publication.
+  // Read the owner's existing list in a separate tab; never submit again or
+  // infer success from a draft preview. The caller still verifies the public
+  // page without authentication, including title, paywall, price and timestamp.
+  const listing = await page.context().newPage();
+  try {
+    const response = await listing.goto('https://note.com/notes', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    if (!response?.ok() || listing.url() !== 'https://note.com/notes') return null;
+    const link = listing.locator(`a[href*="/n/${noteId}"]`).first();
+    await link.waitFor({ state: 'visible', timeout: 15000 });
+    const links = await listing.locator('a[href]').evaluateAll(elements => elements
+      .filter(el => el.getClientRects().length).map(el => el.href));
+    const url = links.map(value => publicArticleUrl(value, noteId)).find(Boolean) || null;
+    if (url) console.log(`NOTE_UI_PUBLICATION_URL_RECOVERED=${url}`);
+    return url;
+  } catch {
+    return null;
+  } finally {
+    await listing.close();
+  }
 }
 
 async function savePublicationReceipt(payload, receipt, env = process.env, request = fetch) {
@@ -506,6 +530,7 @@ module.exports = {
   createAuthenticatedPage,
   requirePublicationGate,
   preparePublication,
+  findPublishedArticleInList,
   publishConfiguredArticle,
   savePublicationReceipt,
   run

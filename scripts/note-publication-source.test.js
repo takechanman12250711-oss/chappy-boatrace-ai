@@ -111,6 +111,28 @@ async function main() {
   await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {}), /timestamp_unverified/);
   assert.equal(closed, 2);
   assert.equal(clicks, 3);
+  // A real 2026-09-23 publication was visible in /notes although the completion
+  // screen exposed no public link. Recovery must still pass anonymous checks.
+  let listingClosed = 0;
+  const listing = {
+    goto: async () => ({ ok: () => true }), url: () => 'https://note.com/notes',
+    locator: () => ({ first: () => ({ waitFor: async () => {} }), evaluateAll: async () => [publicUrl] }),
+    close: async () => { listingClosed++; }
+  };
+  const verification = { newPage: async () => publicPage, close: async () => { closed++; } };
+  page.context = () => ({ newPage: async () => listing, browser: () => ({ newContext: async () => verification }) });
+  page.waitForTimeout = async () => {};
+  page.locator = selector => selector === 'a[href]' ? { evaluateAll: async () => [] } : { evaluate: async () => blocks };
+  publicPage.locator = () => ({ evaluateAll: async () => [new Date(clock).toISOString()] });
+  const recovered = await publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {});
+  assert.equal(recovered.url, publicUrl);
+  assert.equal(clicks, 4, 'list recovery never clicks publish a second time');
+  assert.equal(listingClosed, 1);
+  assert.equal(closed, 3);
+  publicPage.getByRole = () => ({ waitFor: async () => { throw new Error('public_paywall_missing'); } });
+  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {}), /public_paywall_missing/);
+  assert.equal(clicks, 5);
+  assert.equal(closed, 4, 'anonymous verification failure closes its context');
   assert.equal(fs.readFileSync(path.join(root, sourcePath), 'utf8'), bytes, 'source remains immutable');
   console.log('note publication source, claim and final-click tests passed');
 }
