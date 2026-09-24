@@ -1,0 +1,34 @@
+name: Build continuous performance ledger
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Collect official race results
+    types: [completed]
+permissions:
+  contents: write
+concurrency:
+  group: continuous-performance-ledger
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/continuous-performance-ledger.test.cjs
+      - run: node scripts/build-continuous-performance-ledger.cjs
+      - name: Persist ledger
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/stats/continuous-performance-ledger.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update continuous performance ledger"
+          git push
