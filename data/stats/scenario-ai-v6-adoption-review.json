@@ -1,44 +1,44 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-23T19:13:28.627Z",
+  "generatedAt": "2026-09-24T18:14:34.231Z",
   "source": "scenario-ai-v6-ab-report + scenario-ai-v6-reproducibility-gate",
   "status": "collecting-evidence",
   "summary": {
-    "comparableCount": 2,
+    "comparableCount": 4,
     "aWins": 1,
-    "bWins": 1,
-    "ties": 0,
-    "bWinLead": 0,
-    "bExactLift": 0,
-    "bFirstHitLift": 0
-  },
-  "firstHalf": {
-    "comparableCount": 1,
-    "changedComparableCount": 1,
-    "aWins": 0,
-    "bWins": 1,
-    "ties": 0,
-    "aExactCount": 0,
-    "bExactCount": 0,
-    "aFirstHitCount": 0,
-    "bFirstHitCount": 1,
-    "bWinRate": 100,
+    "bWins": 2,
+    "ties": 1,
+    "bWinLead": 1,
     "bExactLift": 0,
     "bFirstHitLift": 1
   },
-  "secondHalf": {
-    "comparableCount": 1,
-    "changedComparableCount": 1,
+  "firstHalf": {
+    "comparableCount": 2,
+    "changedComparableCount": 2,
     "aWins": 1,
-    "bWins": 0,
+    "bWins": 1,
     "ties": 0,
     "aExactCount": 0,
     "bExactCount": 0,
     "aFirstHitCount": 1,
-    "bFirstHitCount": 0,
-    "bWinRate": 0,
+    "bFirstHitCount": 1,
+    "bWinRate": 50,
     "bExactLift": 0,
-    "bFirstHitLift": -1
+    "bFirstHitLift": 0
+  },
+  "secondHalf": {
+    "comparableCount": 2,
+    "changedComparableCount": 2,
+    "aWins": 0,
+    "bWins": 1,
+    "ties": 1,
+    "aExactCount": 0,
+    "bExactCount": 0,
+    "aFirstHitCount": 0,
+    "bFirstHitCount": 1,
+    "bWinRate": 50,
+    "bExactLift": 0,
+    "bFirstHitLift": 1
   },
   "majorVenueRegression": [],
   "approvedAdjustments": [
@@ -69,31 +69,31 @@
       "key": "minimum-comparisons",
       "label": "比較可能100R以上",
       "passed": false,
-      "actual": 2
+      "actual": 4
     },
     {
       "key": "minimum-b-wins",
       "label": "B勝ち30R以上",
       "passed": false,
-      "actual": 1
+      "actual": 2
     },
     {
       "key": "b-win-lead",
       "label": "B勝ちがA勝ちを5勝以上上回る",
       "passed": false,
-      "actual": 0
+      "actual": 1
     },
     {
       "key": "first-half",
       "label": "前半でB優勢",
-      "passed": true,
-      "actual": "0-1"
+      "passed": false,
+      "actual": "1-1"
     },
     {
       "key": "second-half",
       "label": "後半でB優勢",
-      "passed": false,
-      "actual": "1-0"
+      "passed": true,
+      "actual": "0-1"
     },
     {
       "key": "venue-regression",
@@ -123,7 +123,7 @@
     "比較可能100R以上",
     "B勝ち30R以上",
     "B勝ちがA勝ちを5勝以上上回る",
-    "後半でB優勢"
+    "前半でB優勢"
   ],
   "humanApprovalRequired": true,
   "humanApproved": false,
