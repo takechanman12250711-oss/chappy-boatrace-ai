@@ -1,0 +1,47 @@
+name: Check eight-ticket promotion shadow isolation
+on:
+  pull_request:
+    paths:
+      - 'scripts/eight-ticket-promotion-shadow.cjs'
+      - 'scripts/eight-ticket-promotion-preload.cjs'
+      - 'scripts/build-eight-ticket-promotion-shadow-report.cjs'
+      - 'tests/eight-ticket-promotion-shadow.test.cjs'
+      - 'js/frame-rise-fall-replay-preload.js'
+      - 'js/practical-selection.js'
+      - 'js/three-course-escape-rescue-fixed5.js'
+      - 'js/note-generator.js'
+      - 'scripts/collect-predictions.js'
+      - '.github/workflows/check-eight-ticket-promotion-shadow.yml'
+      - '.github/workflows/build-continuous-performance-ledger.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify isolation and integration
+        run: |
+          mkdir -p test-output
+          node --check scripts/eight-ticket-promotion-shadow.cjs
+          node --check scripts/eight-ticket-promotion-preload.cjs
+          node --check scripts/build-eight-ticket-promotion-shadow-report.cjs
+          node --require ./js/frame-rise-fall-replay-preload.js --test tests/eight-ticket-promotion-shadow.test.cjs | tee test-output/eight-shadow.log
+          node scripts/test-practical-selection.js
+          node scripts/test-three-course-escape-rescue-fixed5.js
+          node scripts/test-practical-priority-shadow.js
+          node scripts/test-shadow-predictions.js
+          node scripts/test-note-pipeline.js
+          node tests/continuous-performance-ledger.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eight-ticket-shadow-integration-tests
+          path: test-output
+          if-no-files-found: ignore
