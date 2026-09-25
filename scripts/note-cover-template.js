@@ -46,7 +46,7 @@ async function renderCover(browser, template) {
   try {
     const page = await context.newPage();
     await page.route('**/*', route => route.abort());
-    await page.setContent(template.html, { waitUntil: 'load', timeout: 15000 });
+    // The remote CDP browser can take longer than local Chromium to accept the\n    // embedded image/font HTML. DOM readiness is enough here because the next\n    // step explicitly waits for both the font and image decode.\n    await page.setContent(template.html, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.evaluate(async () => {
       await document.fonts.load('164px ChappyHand');
       await document.fonts.ready;
