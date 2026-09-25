@@ -1,5 +1,8 @@
 "use strict";
 
+// Optional research sidecar uses the existing collector preload, never the browser.
+try { require("../scripts/eight-ticket-promotion-preload.cjs"); }
+catch { console.warn("Eight-ticket promotion shadow unavailable; production unchanged"); }
 require("./manshu-forecast-ledger");
 
 const Module = require("node:module");
