@@ -231,9 +231,29 @@
   const flatEntries = groups => groups.flatMap(group => group.entries.map(entry => ({ ...entry, sourceKey: group.sourceKey, categoryKey: group.categoryKey })));
   const targetPosition = (ticket, boatNo) => ticketBoats(ticket).indexOf(Number(boatNo)) + 1;
 
+  function shadowPhysicalCandidates(record, a, category, targetBoatNo) {
+    const existing = new Set(a.entries.map(entry => entry.ticket));
+    const ranking = rankedAnalyses(record);
+    if (!ranking.length || ![3,4].includes(Number(targetBoatNo))) return [];
+    const rest = ranking.filter(row => ![1, Number(targetBoatNo)].includes(row.boatNo));
+    const tickets = [];
+    for (const position of [2,3]) {
+      for (const other of rest) {
+        const boats = position === 2 ? [1, Number(targetBoatNo), other.boatNo] : [1, other.boatNo, Number(targetBoatNo)];
+        const ticket = boats.join("-");
+        if (!existing.has(ticket)) tickets.push({
+          candidate: { id: "shadow-physical-" + ticket, candidateKind: "outer-attack-shadow-physical", purchaseEligible: true, evidenceQualified: true },
+          ticket, targetPosition: position, purchaseEligible: true, evidenceQualified: true,
+          priorityScore: round((ranking.find(x=>x.boatNo===targetBoatNo)?.total||0) + (other.total||0) / 100, 3),
+          shadowGenerated: true
+        });
+      }
+    }
+    return tickets.sort((l,r)=>r.priorityScore-l.priorityScore||l.targetPosition-r.targetPosition||l.ticket.localeCompare(r.ticket));
+  }
   function replacementCandidates(record, a, category, targetBoatNo) {
     const existing = new Set(a.entries.map(entry => entry.ticket));
-    return candidatePool(record).map(candidate => {
+    const existingCandidates = candidatePool(record).map(candidate => {
       const ticket = normalizeTicket(candidate);
       const position = targetPosition(ticket, targetBoatNo);
       if (!ticket || existing.has(ticket) || categoryOf(candidate) !== category || candidate.evidenceQualified !== true || position < 2 || position > 3) return null;
@@ -249,6 +269,8 @@
       left.targetPosition - right.targetPosition ||
       left.ticket.localeCompare(right.ticket)
     );
+    if (existingCandidates.length) return existingCandidates;
+    return shadowPhysicalCandidates(record, a, category, targetBoatNo);
   }
   function unchangedVariant(base, a, status) {
     return {
@@ -429,7 +451,7 @@
   return Object.freeze({
     VERSION, STORAGE_KEY, DEFAULT_STAKE_YEN, REPLACEMENT_POLICY,
     BASELINE_PROFILE, FIXED_SIGNAL, CATEGORY_DEFINITIONS,
-    normalizeTicket, snapshotA, replayBasis, candidatePool, rankedAnalyses,
+    normalizeTicket, snapshotA, replayBasis, candidatePool, rankedAnalyses, shadowPhysicalCandidates,
     detectSignal, buildVariant, buildSnapshot, readHistory, upsertShadow,
     compareOutcome, installStorageHook
   });
