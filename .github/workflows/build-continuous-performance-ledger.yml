@@ -15,7 +15,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: continuous-performance-ledger
+  group: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Collect automatic race predictions' && 'eight-ticket-capture-report' || 'continuous-performance-ledger' }}
   cancel-in-progress: false
 jobs:
   build:
