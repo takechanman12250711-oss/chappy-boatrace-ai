@@ -35,8 +35,9 @@ on:
       - 'scripts/prepare-note-input.js'
       - 'js/note-generator.js'
   schedule:
-    - cron: '*/5 22-23 * * *' # 07:00-08:55 JST
-    - cron: '*/5 0-13 * * *' # 09:00-22:55 JST
+    # Offset from the busiest minute boundary; cadence and JST window stay the same.
+    - cron: '2-57/5 22-23 * * *' # 07:02-08:57 JST
+    - cron: '2-57/5 0-13 * * *' # 09:02-22:57 JST
   workflow_dispatch:
 
 permissions:
