@@ -46,7 +46,10 @@ async function renderCover(browser, template) {
   try {
     const page = await context.newPage();
     await page.route('**/*', route => route.abort());
-    await page.setContent(template.html, { waitUntil: 'load', timeout: 15000 });
+    // The remote CDP browser can take longer than local Chromium to accept and
+    // paint the embedded image/font HTML. Keep the full load event so the cover
+    // cannot be captured before its race-specific copy is visible.
+    await page.setContent(template.html, { waitUntil: 'load', timeout: 60000 });
     await page.evaluate(async () => {
       await document.fonts.load('164px ChappyHand');
       await document.fonts.ready;
