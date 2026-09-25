@@ -10,6 +10,7 @@ on:
   workflow_run:
     workflows:
       - Collect official race results
+      - Collect automatic race predictions
     types: [completed]
 permissions:
   contents: write
@@ -18,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event.workflow_run.name == 'Collect official race results' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,3 +49,25 @@ jobs:
           name: eight-ticket-promotion-shadow-report
           path: data/stats/eight-ticket-promotion-shadow-report.json
           if-no-files-found: ignore
+
+  capture-report:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Collect automatic race predictions' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Refresh shadow progress after prediction collection
+        run: node scripts/build-eight-ticket-promotion-shadow-report.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eight-ticket-promotion-shadow-report
+          path: data/stats/eight-ticket-promotion-shadow-report.json
+          if-no-files-found: error
