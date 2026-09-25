@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selection-consistency-audit-v1",
-  "generatedAt": "2026-09-24T22:32:52.665Z",
+  "generatedAt": "2026-09-25T21:14:31.286Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "当地・水面の同一確定コホートで、実5・6号艇勝ちが同じ保存済み候補配列内で最終頭以上のpriorityScoreを持ちながら未選択だった例だけを対象に、締切前保存済みの選択フラグ・除外理由・配列順・役割・重複信号を監査する。",
   "sourceVersion": "local-water-outer-head-priority-score-audit-v1",
-  "sourceGeneratedAt": "2026-09-24T21:57:16.507Z",
+  "sourceGeneratedAt": "2026-09-25T20:39:21.816Z",
   "sourceNextStep": "audit-local-water-priority-selection-consistency",
   "applicable": true,
   "fixedDecisionRules": {
@@ -20,40 +20,40 @@
     "explicitRejectionCountForContractAudit": 5
   },
   "metrics": {
-    "sourceComparableCount": 82,
-    "targetCount": 23,
-    "predictionMatchedCount": 23,
-    "resolvedPairCount": 23,
+    "sourceComparableCount": 84,
+    "targetCount": 24,
+    "predictionMatchedCount": 24,
+    "resolvedPairCount": 24,
     "strictInversionCount": 4,
-    "tiedCount": 19,
+    "tiedCount": 20,
     "explicitWinnerRejectionCount": 0,
     "explicitWinnerSelectedCount": 0,
     "explicitFinalSelectedCount": 0,
-    "duplicateSignalCount": 10,
-    "tieFinalEarlierCount": 19,
+    "duplicateSignalCount": 11,
+    "tieFinalEarlierCount": 20,
     "tieWinnerEarlierCount": 0,
     "tieSameIndexCount": 0,
     "winnerRoleLowerPriorityCount": 0,
     "resolvedPairCoverageRate": 100,
-    "strictInversionRate": 17.4,
-    "tiedRate": 82.6,
-    "duplicateSignalShare": 43.5,
+    "strictInversionRate": 16.7,
+    "tiedRate": 83.3,
+    "duplicateSignalShare": 45.8,
     "tieFinalEarlierShare": 100,
     "winnerRoleLowerPriorityShare": 0
   },
   "classifications": {
-    "tie-final-earlier-order": 19,
+    "tie-final-earlier-order": 20,
     "winner-ahead-selector-inversion": 4
   },
   "signalCounts": {
-    "final-earlier": 23,
-    "same-role-class": 23,
-    "priority-score-tied": 19,
-    "duplicate-overlap": 10,
+    "final-earlier": 24,
+    "same-role-class": 24,
+    "priority-score-tied": 20,
+    "duplicate-overlap": 11,
     "winner-score-ahead": 4
   },
   "comparisonPathCounts": {
-    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 10,
+    "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches": 11,
     "practicalSelection.targetDecisions[0].candidateDecisions": 5,
     "practicalSelection.targetDecisions[1].candidateDecisions": 4,
     "practicalSelection.targetDecisions[4].candidateDecisions": 2,
@@ -1075,6 +1075,53 @@
       "classification": "tie-final-earlier-order",
       "signals": [
         "priority-score-tied",
+        "final-earlier",
+        "same-role-class"
+      ]
+    },
+    {
+      "date": "20260925",
+      "jcd": "21",
+      "raceNo": 1,
+      "actualHead": 5,
+      "finalHead": 1,
+      "comparisonPath": "practicalSelection.frameRiseFallReplayBasis.raceScenarios.mainScenario.branches",
+      "upstreamWinnerScore": 87,
+      "upstreamFinalScore": 87,
+      "upstreamGap": 0,
+      "upstreamWinnerAhead": false,
+      "upstreamTied": true,
+      "upstreamDuplicateReason": true,
+      "resolved": true,
+      "rankingArrayLength": 152,
+      "resolvedWinnerScore": 87,
+      "resolvedFinalScore": 87,
+      "resolvedGap": 0,
+      "winnerIndex": 103,
+      "finalIndex": 61,
+      "orderRelation": "final-earlier",
+      "winnerRole": "unclassified",
+      "finalRole": "unclassified",
+      "winnerSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "finalSelectionState": {
+        "selected": false,
+        "rejected": false,
+        "duplicate": true
+      },
+      "winnerReasons": [
+        "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のpickup・87点・2号艇 宮崎 安奈 は🔥攻め艇 / 🌊展開艇 / 🛟差し残し。総合82点。プラス材料は2コース差し・残し、ST安定 .14、今節ST速い .07。マイナス材料は級別は控えめ、全国勝率低め 3.99。 / 既存フォーメーションに同一買い目あり"
+      ],
+      "finalReasons": [
+        "最有力展開は1号艇逃げ。1号艇を1着軸に、2着残しは2・4・3号艇、3着拾いは3・4・5・6号艇を評価する。 / 2号艇のpickup・87点・2号艇 宮崎 安奈 は🔥攻め艇 / 🌊展開艇 / 🛟差し残し。総合82点。プラス材料は2コース差し・残し、ST安定 .14、今節ST速い .07。マイナス材料は級別は控えめ、全国勝率低め 3.99。 / 既存フォーメーションに同一買い目あり"
+      ],
+      "classification": "tie-final-earlier-order",
+      "signals": [
+        "priority-score-tied",
+        "duplicate-overlap",
         "final-earlier",
         "same-role-class"
       ]
