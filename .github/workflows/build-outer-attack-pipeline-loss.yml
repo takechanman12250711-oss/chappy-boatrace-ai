@@ -1,0 +1,38 @@
+name: Build outer attack pipeline loss
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Build outer attack gate dropoff
+      - Collect outer attack ticket central monitor
+    types: [completed]
+  pull_request:
+    paths:
+      - scripts/build-outer-attack-pipeline-loss.cjs
+      - tests/outer-attack-pipeline-loss.test.cjs
+      - .github/workflows/build-outer-attack-pipeline-loss.yml
+permissions:
+  contents: write
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/outer-attack-pipeline-loss.test.cjs
+      - if: github.event_name != 'pull_request'
+        run: node scripts/build-outer-attack-pipeline-loss.cjs
+      - if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/stats/outer-attack-pipeline-loss-v1.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update outer attack pipeline loss"
+          git pull --rebase origin main
+          git push origin HEAD:main
