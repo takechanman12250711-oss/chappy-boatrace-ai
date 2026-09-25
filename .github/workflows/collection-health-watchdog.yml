@@ -6,12 +6,21 @@ on:
       - Collect automatic race predictions
     types:
       - completed
+  schedule:
+    - cron: "17 0-13,22-23 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/collection-health-watchdog.yml"
+      - "scripts/check-prediction-collector-heartbeat.cjs"
 
 permissions:
   contents: read
 
 jobs:
   watchdog:
+    if: github.event_name == 'workflow_run'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -44,3 +53,27 @@ jobs:
       - name: Evaluate latest collection health
         if: ${{ github.event.workflow_run.conclusion == 'success' }}
         run: node scripts/run-collection-health-watchdog.js
+
+  heartbeat:
+    if: github.event_name != 'workflow_run'
+    concurrency:
+      group: chappy-prediction-collector-heartbeat
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Recover missing collector trigger without duplicate runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-prediction-collector-heartbeat.cjs

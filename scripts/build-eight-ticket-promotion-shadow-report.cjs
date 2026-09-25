@@ -65,12 +65,8 @@ function build(records = [], officialResults = new Map()) {
       base: metrics(rows.filter(r => r.sourceGeneration === g), "base"), A: metrics(rows.filter(r => r.sourceGeneration === g), "A") })), excluded, rows };
 }
 function main(root = path.resolve(__dirname, "..")) {
-  const dir = path.join(root, "data/predictions"), records = [];
-  for (const name of fs.readdirSync(dir).filter(n => /^\d{8}\.json$/.test(n) && n.slice(0, 8) >= guard.POLICY.firstCaptureDate).sort()) {
-    const text = fs.readFileSync(path.join(dir, name), "utf8"); if (!text.includes('"eightTicketPromotionShadow"')) continue;
-    const data = JSON.parse(text), canonical = input.mergePredictionSources(data.predictions || [], data.verificationPredictions || []);
-    records.push(...canonical.filter(r => r.practicalPriorityShadow?.eightTicketPromotionShadow));
-  }
+  const loaded = require("./eight-ticket-promotion-report-source.cjs").load(root, guard.POLICY.firstCaptureDate);
+  const records = loaded.records;
   const results = new Map();
   for (const date of new Set(records.map(r => input.raceKey(r).slice(0, 8)))) {
     const file = path.join(root, "data/results", date + ".json"); if (!fs.existsSync(file)) continue;
@@ -79,9 +75,10 @@ function main(root = path.resolve(__dirname, "..")) {
     }
   }
   const report = build(records, results), out = path.join(root, "data/stats/eight-ticket-promotion-shadow-report.json");
+  report.sourceDiagnostics = loaded.diagnostics;
   fs.mkdirSync(path.dirname(out), { recursive: true }); const temporary = out + "." + process.pid + ".tmp";
   fs.writeFileSync(temporary, JSON.stringify(report, null, 2) + "\n"); fs.renameSync(temporary, out);
-  console.log(JSON.stringify({ counts: report.counts, gains: report.gains, losses: report.losses, adoptionStatus: report.adoptionStatus }));
+  console.log(JSON.stringify({ sourceDiagnostics: report.sourceDiagnostics, counts: report.counts, gains: report.gains, losses: report.losses, adoptionStatus: report.adoptionStatus }));
   return report;
 }
 if (require.main === module) main();
