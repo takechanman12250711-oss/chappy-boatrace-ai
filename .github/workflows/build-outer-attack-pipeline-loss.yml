@@ -1,6 +1,12 @@
 name: Build outer attack pipeline loss
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/build-outer-attack-pipeline-loss.cjs
+      - tests/outer-attack-pipeline-loss.test.cjs
+      - .github/workflows/build-outer-attack-pipeline-loss.yml
   workflow_run:
     workflows:
       - Build outer attack gate dropoff
