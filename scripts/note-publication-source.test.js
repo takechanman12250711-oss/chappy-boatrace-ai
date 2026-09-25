@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const { publicationPayload, verifyPublicationSource } = require('./note-publication-source');
+const { MAX_PUBLICATION_TICKETS, requirePublicationTicketCount, publicationPayload, verifyPublicationSource } = require('./note-publication-source');
 const { requirePublicationGate, preparePublication, publishConfiguredArticle, savePublicationReceipt } = require('./note-github-ui-transport');
 global.ChappyPracticalSelection = { createPracticalSelection: prediction => prediction.practicalTickets };
 const generator = require('../js/note-generator');
@@ -40,12 +40,16 @@ async function main() {
   Date.now = () => clock;
   const payload = publicationPayload(sourcePath, root, clock);
   assert.equal(payload.canPublish, true);
+  assert.equal(payload.practicalTicketCount, 1);
+  assert.equal(MAX_PUBLICATION_TICKETS, 7);
+  assert.equal(requirePublicationTicketCount({ practicalTickets: Array(7).fill({ ticket: '1-2-3' }) }), 7);
+  assert.throws(() => requirePublicationTicketCount({ practicalTickets: Array(8).fill({ ticket: '1-2-3' }) }), /exceeds_7/);
   assert.deepEqual(verifyPublicationSource(payload, root, clock), payload);
   assert.deepEqual(requirePublicationGate(payload, root, clock), payload);
   const { loadCoverTemplate } = require('./note-cover');
   assert.ok(loadCoverTemplate(payload, root, clock).html.includes('ChappyHand'));
   assert.throws(() => loadCoverTemplate({ ...payload, paidText: '別原稿' }, root, clock), /mismatch/);
-  for (const field of ['paidText', 'freeText', 'title', 'body', 'sourceSha256', 'price', 'deadlineAt']) {
+  for (const field of ['paidText', 'freeText', 'title', 'body', 'sourceSha256', 'price', 'deadlineAt', 'practicalTicketCount']) {
     assert.throws(() => verifyPublicationSource({ ...payload, [field]: 'tampered' }, root, clock), /mismatch/);
   }
   assert.throws(() => requirePublicationGate(payload, root, Date.parse(bundle.record.deadlineAt) - 60000), /audit_blocked/);
