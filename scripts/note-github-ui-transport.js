@@ -112,6 +112,10 @@ function validateDraftGate(payload, now = Date.now()) {
   if (!String(payload.freeText || '').trim()) return { ok: false, reason: 'free_text_missing' };
   if (!String(payload.paidText || '').trim()) return { ok: false, reason: 'paid_text_missing' };
   if (Number(payload.price) !== EXPECTED_PRICE_YEN) return { ok: false, reason: 'price_not_300' };
+  if (payload.practicalTicketCount != null &&
+      (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 || payload.practicalTicketCount > 7)) {
+    return { ok: false, reason: 'ticket_count_exceeds_7' };
+  }
   return { ok: true };
 }
 
