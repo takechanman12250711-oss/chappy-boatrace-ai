@@ -453,12 +453,24 @@ async function run({ env = process.env } = {}) {
   const { renderCover } = require('./note-cover-template');
   const coverTemplate = draft ? loadCoverTemplate(draft.payload) : null;
   const { chromium } = require('playwright');
+  // Cover rendering does not need note authentication. Keep the large embedded
+  // image/font document off the remote CDP session, then hand only the verified
+  // JPEG to the existing authenticated note transport.
+  let cover = null;
+  if (coverTemplate) {
+    const coverBrowser = await chromium.launch({ headless: true });
+    try {
+      cover = await renderCover(coverBrowser, coverTemplate);
+    } finally {
+      await coverBrowser.close();
+    }
+  }
+  // Do not reserve a race when local cover generation itself fails.
   if (draft) await claimDraft(draft.payload, env);
   const session = await createBrowserUseSession(browserUse);
   let browser;
   try {
     browser = await chromium.connectOverCDP(session.cdpUrl);
-    const cover = coverTemplate ? await renderCover(browser, coverTemplate) : null;
     const { page } = await createAuthenticatedPage(browser);
     console.log('NOTE_UI_PROFILE_LOADED=true');
     console.log('NOTE_UI_EDITOR_READY=true');
