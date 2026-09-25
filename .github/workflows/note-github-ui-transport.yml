@@ -108,9 +108,11 @@ jobs:
             echo "NOTE_UI_TRANSPORT_BLOCKED=browser_use_profile_id_missing"
             exit 1
           fi
-      - name: Install Playwright
+      - name: Install Playwright and local cover browser
         if: steps.preflight.outputs.ready == 'true'
-        run: npm install --no-save playwright@1.55.0
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
       - name: Run note UI transport
         if: steps.preflight.outputs.ready == 'true'
         env:
