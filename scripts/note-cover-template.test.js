@@ -19,11 +19,13 @@ async function main() {
   assert.ok(!/(?:src=["']|url\()https?:/.test(html));
   assert.ok(!coverHtml(['<script>','&'],Buffer.from('image'),Buffer.from('font')).includes('<script>'));
   let closed = false;
+  let setContentOptions;
   const failedBrowser = { newContext: async () => ({
-    newPage: async () => ({ route: async () => {}, setContent: async () => { throw new Error('render_failed'); } }),
+    newPage: async () => ({ route: async () => {}, setContent: async (_content, options) => { setContentOptions = options; throw new Error('render_failed'); } }),
     close: async () => { closed = true; }
   }) };
   await assert.rejects(renderCover(failedBrowser,{html}),/render_failed/);
+  assert.deepEqual(setContentOptions, { waitUntil: 'domcontentloaded', timeout: 30000 });
   assert.equal(closed,true,'failed render must close its isolated context');
   console.log('note cover copy, source preservation, escaping and render failure tests passed');
 }
