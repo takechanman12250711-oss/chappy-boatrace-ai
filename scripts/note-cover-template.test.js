@@ -25,7 +25,7 @@ async function main() {
     close: async () => { closed = true; }
   }) };
   await assert.rejects(renderCover(failedBrowser,{html}),/render_failed/);
-  assert.deepEqual(setContentOptions, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  assert.deepEqual(setContentOptions, { waitUntil: 'load', timeout: 60000 });
   assert.equal(closed,true,'failed render must close its isolated context');
   console.log('note cover copy, source preservation, escaping and render failure tests passed');
 }
