@@ -45,16 +45,25 @@ async function renderCover(browser, template) {
   const context = await browser.newContext({ viewport: { width: 1734, height: 907 }, deviceScaleFactor: 1 });
   try {
     const page = await context.newPage();
-    await page.route('**/*', route => route.abort());
-    // The remote CDP browser can take longer than local Chromium to accept and
-    // paint the embedded image/font HTML. Keep the full load event so the cover
-    // cannot be captured before its race-specific copy is visible.
-    await page.setContent(template.html, { waitUntil: 'load', timeout: 60000 });
+    // Allow only the embedded data: image/font. The remote CDP route handler
+    // otherwise treats those resources differently from local Chromium and can
+    // prevent the load event from ever completing.
+    await page.route(/^https?:\/\//, route => route.abort());
+    await page.setContent(template.html, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.evaluate(async () => {
-      await document.fonts.load('164px ChappyHand');
+      const loadedFonts = await document.fonts.load('164px ChappyHand');
       await document.fonts.ready;
-      if (!document.fonts.check('164px ChappyHand')) throw new Error('note_cover_font_not_loaded');
-      await Promise.all([...document.images].map(image => image.decode()));
+      if (!loadedFonts.length || !document.fonts.check('164px ChappyHand')) throw new Error('note_cover_font_not_loaded');
+      await Promise.all([...document.images].map(async image => {
+        if (!image.complete) {
+          await new Promise((resolve, reject) => {
+            image.addEventListener('load', resolve, { once: true });
+            image.addEventListener('error', () => reject(new Error('note_cover_image_not_loaded')), { once: true });
+          });
+        }
+        await image.decode();
+        if (!image.naturalWidth || !image.naturalHeight) throw new Error('note_cover_image_not_loaded');
+      }));
       // Font ascent/descent differs by renderer. Fit actual browser bounds to
       // the two artwork-safe slots, instead of assuming font-size is height.
       for (const group of document.querySelectorAll('[data-cover-line]')) {
@@ -72,6 +81,8 @@ async function renderCover(browser, template) {
           throw new Error('note_cover_text_overflow_' + JSON.stringify({left:box.left,right:box.right,top:box.top,bottom:box.bottom}));
         }
       }
+      // Let the browser paint the decoded assets and fitted SVG before capture.
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     });
     const buffer = await page.screenshot({ type: 'jpeg', quality: 90, timeout: 15000 });
     if (buffer.length < 1000 || buffer[0] !== 0xff || buffer[1] !== 0xd8) throw new Error('note_cover_render_invalid');
