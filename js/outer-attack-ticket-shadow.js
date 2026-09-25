@@ -253,7 +253,7 @@
   }
   function replacementCandidates(record, a, category, targetBoatNo) {
     const existing = new Set(a.entries.map(entry => entry.ticket));
-    return candidatePool(record).map(candidate => {
+    const existingCandidates = candidatePool(record).map(candidate => {
       const ticket = normalizeTicket(candidate);
       const position = targetPosition(ticket, targetBoatNo);
       if (!ticket || existing.has(ticket) || categoryOf(candidate) !== category || candidate.evidenceQualified !== true || position < 2 || position > 3) return null;
@@ -268,9 +268,9 @@
       right.priorityScore - left.priorityScore ||
       left.targetPosition - right.targetPosition ||
       left.ticket.localeCompare(right.ticket)
-    ).concat(shadowPhysicalCandidates(record, a, category, targetBoatNo))
-      .filter((row,index,rows)=>rows.findIndex(x=>x.ticket===row.ticket)===index)
-      .sort((left,right)=>Number(right.purchaseEligible)-Number(left.purchaseEligible)||right.priorityScore-left.priorityScore||left.targetPosition-right.targetPosition||left.ticket.localeCompare(right.ticket));
+    );
+    if (existingCandidates.length) return existingCandidates;
+    return shadowPhysicalCandidates(record, a, category, targetBoatNo);
   }
   function unchangedVariant(base, a, status) {
     return {
