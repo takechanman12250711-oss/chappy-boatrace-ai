@@ -38,3 +38,13 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Update continuous performance ledger"
           git push
+      - name: Build separate eight-ticket promotion shadow report
+        continue-on-error: true
+        run: node scripts/build-eight-ticket-promotion-shadow-report.cjs
+      - name: Preserve separate eight-ticket shadow report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eight-ticket-promotion-shadow-report
+          path: data/stats/eight-ticket-promotion-shadow-report.json
+          if-no-files-found: ignore
