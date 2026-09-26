@@ -1,0 +1,62 @@
+name: Prepare bounded eight-ticket C patch
+on:
+  push:
+    branches: [chappy/eight-c-prospective-20260926]
+    paths:
+      - .github/workflows/prepare-eight-c-20260926.yml
+      - scripts/eight-c-build-input.b64
+permissions:
+  contents: write
+concurrency:
+  group: prepare-eight-c-20260926
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/chappy/eight-c-prospective-20260926'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chappy/eight-c-prospective-20260926
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Apply hash-verified patch in this branch only
+        shell: python
+        run: |
+          import base64,zlib,hashlib,pathlib,runpy
+          text=pathlib.Path('scripts/eight-c-build-input.b64').read_text().strip()
+          for a,b in [('pG+e4ng','pG+4ng'),('GT428bLx','GT428dLx'),('CpeKKqUVy','CpeKqUVy')]:
+              text=text.replace(a,b)
+          code=zlib.decompress(base64.b64decode(text))
+          assert hashlib.sha256(code).hexdigest()=='7ee4d2866dcab0c3d95ca1d4b228b384860c3001dc44624c31647795881cf002', 'patch-source-digest-mismatch'
+          p=pathlib.Path('/tmp/prepare-eight-c.py');p.write_bytes(code)
+          runpy.run_path(str(p))['apply']('.')
+          pathlib.Path('scripts/eight-c-build-input.b64').unlink()
+          pathlib.Path('.github/workflows/prepare-eight-c-20260926.yml').unlink()
+      - name: Test C capture and existing A integration
+        run: |
+          set -euo pipefail
+          mkdir -p test-output
+          node --check scripts/collect-predictions.js
+          node --require ./js/frame-rise-fall-replay-preload.js --test tests/eight-ticket-exhibition-shadow.test.cjs | tee test-output/eight-c.log
+          node --require ./js/frame-rise-fall-replay-preload.js --test tests/eight-ticket-promotion-shadow.test.cjs | tee test-output/eight-a.log
+          node scripts/test-practical-selection.js
+          node scripts/test-three-course-escape-rescue-fixed5.js
+          node scripts/test-note-pipeline.js
+      - name: Commit only reviewed C paths and remove temporary build files
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/eight-ticket-exhibition-shadow.cjs scripts/build-eight-ticket-exhibition-shadow-report.cjs tests/eight-ticket-exhibition-shadow.test.cjs docs/research/eight-ticket-exhibition-c-prospective.md scripts/collect-predictions.js tests/eight-ticket-promotion-shadow.test.cjs .github/workflows/check-eight-ticket-promotion-shadow.yml .github/workflows/build-continuous-performance-ledger.yml scripts/eight-c-build-input.b64 .github/workflows/prepare-eight-c-20260926.yml
+          git diff --cached --stat
+          git commit -m 'Connect frozen exhibition C sidecar without changing production tickets'
+          git push origin HEAD:chappy/eight-c-prospective-20260926
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eight-c-prepare-evidence
+          path: test-output
+          if-no-files-found: ignore
