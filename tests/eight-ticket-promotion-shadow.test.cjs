@@ -154,7 +154,10 @@ test("current selector -> collector -> compact JSON -> note stays unchanged", ()
       const after = collector.buildStoredPrediction(row.date, item, false, row.selectedAt);
       const { eightTicketPromotionShadow, ...old } = after.practicalPriorityShadow;
       assert.ok(eightTicketPromotionShadow); assert.deepEqual(old, before.practicalPriorityShadow);
-      assert.deepEqual({ ...after, practicalPriorityShadow: old }, before, "all production record fields unchanged");
+      const { eightTicketExhibitionShadow: beforeC, ...beforeProduction } = before;
+      const { eightTicketExhibitionShadow: afterC, ...afterProduction } = after;
+      assert.ok(beforeC && afterC, "independent C capture is present on both paths");
+      assert.deepEqual({ ...afterProduction, practicalPriorityShadow: old }, beforeProduction, "all production record fields unchanged");
       const compact = collector.compactStoredVerification(collector.detachShadowV2(after));
       const target = path.join(tmp, row.raceKey + ".json"); fs.writeFileSync(target, JSON.stringify(compact));
       const saved = JSON.parse(fs.readFileSync(target, "utf8"));
