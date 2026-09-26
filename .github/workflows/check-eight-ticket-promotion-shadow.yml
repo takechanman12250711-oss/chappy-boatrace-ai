@@ -2,6 +2,8 @@ name: Check eight-ticket promotion shadow isolation
 on:
   pull_request:
     paths:
+      - 'scripts/persist-continuous-performance-ledger.cjs'
+      - 'tests/continuous-ledger-persistence.test.cjs'
       - 'scripts/check-prediction-collector-heartbeat.cjs'
       - 'tests/prediction-collector-heartbeat.test.cjs'
       - '.github/workflows/collection-health-watchdog.yml'
@@ -36,6 +38,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p test-output
+          node --check scripts/persist-continuous-performance-ledger.cjs
+          node --test tests/continuous-ledger-persistence.test.cjs | tee test-output/ledger-persistence.log
           node --test tests/prediction-collector-heartbeat.test.cjs | tee test-output/heartbeat.log
           node --test tests/eight-ticket-promotion-report-source.test.cjs | tee test-output/eight-source.log
           node --check scripts/eight-ticket-promotion-shadow.cjs
