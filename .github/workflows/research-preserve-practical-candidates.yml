@@ -1,0 +1,34 @@
+name: Research preserve practical candidates
+on:
+  workflow_dispatch:
+  push:
+    branches: [research/preserve-practical-candidates]
+    paths:
+      - scripts/research-preserve-practical-candidates.cjs
+      - scripts/test-preserve-practical-candidates.cjs
+      - scripts/audit-practical-narrowing-evidence.cjs
+      - scripts/test-practical-narrowing-evidence.cjs
+      - .github/workflows/research-preserve-practical-candidates.yml
+permissions:
+  contents: read
+concurrency:
+  group: research-preserve-practical-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-preserve-practical-candidates.cjs
+      - run: node scripts/test-practical-narrowing-evidence.cjs
+      - run: node scripts/restore-daily-prediction-source.js --all
+      - run: node --max-old-space-size=4096 scripts/audit-practical-narrowing-evidence.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: practical-narrowing-evidence-audit
+          path: data/stats/practical-narrowing-evidence-audit.json
+          if-no-files-found: error
