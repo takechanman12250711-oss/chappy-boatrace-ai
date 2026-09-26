@@ -2,6 +2,9 @@ name: Check eight-ticket promotion shadow isolation
 on:
   pull_request:
     paths:
+      - 'scripts/eight-ticket-exhibition-shadow.cjs'
+      - 'scripts/build-eight-ticket-exhibition-shadow-report.cjs'
+      - 'tests/eight-ticket-exhibition-shadow.test.cjs'
       - 'scripts/persist-continuous-performance-ledger.cjs'
       - 'tests/continuous-ledger-persistence.test.cjs'
       - 'scripts/check-prediction-collector-heartbeat.cjs'
@@ -42,6 +45,9 @@ jobs:
           node --test tests/continuous-ledger-persistence.test.cjs | tee test-output/ledger-persistence.log
           node --test tests/prediction-collector-heartbeat.test.cjs | tee test-output/heartbeat.log
           node --test tests/eight-ticket-promotion-report-source.test.cjs | tee test-output/eight-source.log
+          node --check scripts/eight-ticket-exhibition-shadow.cjs
+          node --check scripts/build-eight-ticket-exhibition-shadow-report.cjs
+          node --require ./js/frame-rise-fall-replay-preload.js --test tests/eight-ticket-exhibition-shadow.test.cjs | tee test-output/eight-exhibition-c.log
           node --check scripts/eight-ticket-promotion-shadow.cjs
           node --check scripts/eight-ticket-promotion-preload.cjs
           node --check scripts/build-eight-ticket-promotion-shadow-report.cjs
