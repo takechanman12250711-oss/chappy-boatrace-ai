@@ -6,6 +6,7 @@ on:
       - "scripts/open-partner*.json"
       - "scripts/test-open-partner*.cjs"
       - "scripts/replay-open-partner*.cjs"
+      - "scripts/*scenario-partner-pairs*.cjs"
       - ".github/workflows/check-open-partner-shadow.yml"
 permissions:
   contents: read
@@ -28,7 +29,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: node --test scripts/test-open-partner-candidates-shadow.cjs
+      - run: node --test scripts/test-open-partner-candidates-shadow.cjs scripts/test-scenario-partner-pairs-shadow.cjs
       - name: Read pinned source data without modifying production
         uses: actions/checkout@v4
         with:
@@ -43,6 +44,10 @@ jobs:
             /data/results/2026092[4-7].json
       - name: Replay baseline gate-only and individual-score prototype
         run: node scripts/replay-open-partner-ab.cjs .partner-reference /tmp/open-partner-evidence
+      - name: Replay all-pair selection with alternative heads and budgets unchanged
+        run: |
+          node scripts/replay-scenario-partner-pairs.cjs /tmp/open-partner-evidence/pre-race-inputs.json /tmp/open-partner-evidence/scenario-pairs
+          node scripts/summarize-scenario-partner-pairs.cjs /tmp/open-partner-evidence/scenario-pairs /tmp/open-partner-evidence/comparison-results.json
       - name: Preserve exact evaluation source for independent replay
         if: always()
         run: |
