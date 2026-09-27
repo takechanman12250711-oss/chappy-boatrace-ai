@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "reportId": "outer-attack-ticket-central-report-v1",
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
-  "generatedAt": "2026-09-27T00:14:37.817Z",
+  "generatedAt": "2026-09-27T00:24:18.499Z",
   "productionChanged": false,
   "automaticApplication": false,
   "humanApprovalRequired": true,
@@ -10,17 +10,17 @@
   "primaryCohort": "central-before-result-and-prediction-before-result",
   "pipeline": {
     "noteCollection": {
-      "checked": 325,
+      "checked": 327,
       "saved": 0,
-      "inactive": 192,
+      "inactive": 194,
       "missing": 120,
       "invalid": 1,
       "missingBasis": 0,
-      "checkedAt": "2026-09-27T00:14:29.903Z"
+      "checkedAt": "2026-09-27T00:24:11.846Z"
     },
     "lastCapture": {
       "date": "20260927",
-      "capturedAt": "2026-09-27T00:14:29.903Z",
+      "capturedAt": "2026-09-27T00:24:11.846Z",
       "diagnostics": {
         "sourceRecordCount": 16,
         "preDeadlineRecordCount": 16,
@@ -50,7 +50,7 @@
     "schemaVersion": 1,
     "reportId": "outer-attack-ticket-ab-report-v1",
     "settlementVersion": "outer-attack-ticket-settlement-v1",
-    "generatedAt": "2026-09-27T00:14:37.817Z",
+    "generatedAt": "2026-09-27T00:24:18.499Z",
     "productionChanged": false,
     "automaticApplication": false,
     "primaryCohort": "prediction-before-result",
@@ -1106,7 +1106,7 @@
   "decision": {
     "schemaVersion": 1,
     "gateId": "outer-attack-ticket-decision-gate-v1",
-    "generatedAt": "2026-09-27T00:14:37.817Z",
+    "generatedAt": "2026-09-27T00:24:18.499Z",
     "frozenAt": "2026-08-31T01:40:00.000Z",
     "prospectiveStartAt": "2026-08-31T02:00:00.000Z",
     "sourceMainCommit": "ee644d55b889c0ff38f198b9747c9c4d86c83425",
@@ -1804,9 +1804,9 @@
   },
   "research": {
     "version": "outer-attack-all-scenarios-v1",
-    "capturedRaces": 50,
+    "capturedRaces": 51,
     "settledRaces": 46,
-    "pending": 0,
+    "pending": 1,
     "groups": {
       "3ab05c5223d5906322d2fe76440bc387c86733fba89c229052c61a04e977695d:boat3-position1": {
         "races": 5,
@@ -2984,12 +2984,14 @@
       "scheduledRaces": 156,
       "scheduleComplete": true,
       "observedRaces": 156,
-      "savedRaces": 0,
-      "missingRaces": 156,
+      "savedRaces": 1,
+      "missingRaces": 155,
       "reasons": {
-        "deferred-until-one-hour": 156
+        "deferred-until-one-hour": 147,
+        "closed-or-too-close": 4,
+        "waiting-exhibition": 4
       },
-      "lastObservedAt": "2026-09-26T17:37:10.023Z",
+      "lastObservedAt": "2026-09-27T00:18:22.557Z",
       "venueFailures": []
     }
   }
