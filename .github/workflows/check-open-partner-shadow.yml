@@ -1,0 +1,16 @@
+name: Check open partner shadow
+on:
+  pull_request:
+    paths:
+      - "scripts/open-partner-candidates-shadow.cjs"
+      - "scripts/test-open-partner-candidates-shadow.cjs"
+      - ".github/workflows/check-open-partner-shadow.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node --test scripts/test-open-partner-candidates-shadow.cjs
