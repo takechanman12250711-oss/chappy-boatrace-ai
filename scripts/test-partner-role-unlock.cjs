@@ -1,0 +1,36 @@
+"use strict";
+const test = require("node:test"), assert = require("node:assert/strict");
+const { revise, instrument } = require("./partner-role-unlock.cjs");
+function fixture() {
+  const role = (adopted, score) => ({isAdopted:adopted,isReference:false,isFormal:true,score,reason:adopted?"既存の展開残存経路":"表外"});
+  const roles = [1,2,3,4,5,6].map(n => ({boatNo:n,course:n,playerName:String(n),isAttackSource:n===3,isBlocked:n===4,hold:role(n<3, n<3?90-n:1),pickup:role(n>4,n>4?100-n:1),hasIndependentDualEvidence:false}));
+  const legacy = {isFormal:true,attackerBoatNo:3,attackerCourse:3,wallBoat:2,roles,secondCandidates:[{boatNo:1},{boatNo:2}],thirdCandidates:[{boatNo:5},{boatNo:6}],thresholds:{adopted:65,reference:55,secondLimit:3,thirdLimit:4,equivalentDifference:2}};
+  const scenario = {type:"threeAttack",score:80,attackerBoatNo:3,blockedBoats:[4],outcome:{boats:[1,2,3,4,5,6].map(n=>({boatNo:n,secondScore:[92,85,98,73,76,69][n-1],thirdScore:[87,94,99,90,80,70][n-1],reasons:["当該展開の追走・内残し"]}))}};
+  return {legacy,scenario};
+}
+const output = () => {const {legacy,scenario}=fixture();return revise(legacy,scenario);};
+const numbers = rows => rows.map(r=>r.boatNo);
+test("3攻めでも内艇を3着候補から固定排除しない",()=>{assert.ok(numbers(output().thirdCandidates).includes(2));});
+test("3着の最上位は上流の個別評価から選ぶ",()=>{assert.equal(output().thirdCandidates[0].boatNo,2);});
+test("外艇も根拠と上流2着評価があれば2着へ残る",()=>{assert.ok(numbers(output().secondCandidates).includes(5));});
+test("1着頭は変更しない",()=>{assert.equal(output().attackerBoatNo,3);});
+test("主展開で除外された艇は復活させない",()=>{assert.equal(output().roles[3].pickup.isAdopted,false);});
+test("同一券の1着艇は2着に重複させない",()=>{assert.ok(!numbers(output().secondCandidates).includes(3));});
+test("同一券の1着艇は3着に重複させない",()=>{assert.ok(!numbers(output().thirdCandidates).includes(3));});
+test("点数を再加算せず使用する",()=>{assert.equal(output().roles[1].pickup.score,94);assert.equal(output().roles[1].pickup.components.addedScore,0);});
+test("展開を固定しても個別評価を反転すれば相手順位は変わる",()=>{const {legacy,scenario}=fixture();scenario.outcome.boats[1].thirdScore=66;scenario.outcome.boats[5].thirdScore=96;assert.equal(revise(legacy,scenario).thirdCandidates[0].boatNo,6);});
+test("同じ材料を二回足さない",()=>{const {legacy,scenario}=fixture();const a=revise(legacy,scenario),b=revise(legacy,scenario);assert.deepEqual(a,b);assert.equal(a.roles[0].hold.score,92);});
+test("入力原本を変更しない",()=>{const f=fixture(),before=JSON.stringify(f);revise(f.legacy,f.scenario);assert.equal(JSON.stringify(f),before);});
+test("コピーの変更も原本へ戻らない",()=>{const f=fixture();const a=revise(f.legacy,f.scenario);a.roles[0].hold.score=1;assert.equal(f.legacy.roles[0].hold.score,89);});
+test("6艇未満の上流は現行へ戻す",()=>{const f=fixture();f.scenario.outcome.boats.pop();assert.equal(revise(f.legacy,f.scenario).partnerRevision.applied,false);});
+test("重複艇の上流は現行へ戻す",()=>{const f=fixture();f.scenario.outcome.boats[5].boatNo=1;assert.equal(revise(f.legacy,f.scenario).partnerRevision.applied,false);});
+test("未取得数値を0点で埋めない",()=>{const f=fixture();f.scenario.outcome.boats[0].secondScore=null;assert.equal(revise(f.legacy,f.scenario).partnerRevision.applied,false);});
+test("不正数値を採用しない",()=>{const f=fixture();f.scenario.outcome.boats[0].thirdScore=Infinity;assert.equal(revise(f.legacy,f.scenario).partnerRevision.applied,false);});
+test("暫定の既存判定は変えない",()=>{const f=fixture();f.legacy.isFormal=false;assert.equal(revise(f.legacy,f.scenario).partnerRevision.applied,false);});
+test("経路のない高得点だけで採用しない",()=>{const f=fixture();const r=f.legacy.roles[5];r.hold.isAdopted=false;r.pickup.isAdopted=false;f.scenario.outcome.boats[5].reasons=[];f.scenario.outcome.boats[5].secondScore=100;assert.equal(revise(f.legacy,f.scenario).roles[5].hold.isAdopted,false);});
+test("現行候補数上限を保持する",()=>{assert.ok(output().secondCandidates.length<=3);assert.ok(output().thirdCandidates.length<=4);});
+test("オッズや結果を付けても判断は変わらない",()=>{const f=fixture();const a=revise(f.legacy,f.scenario);f.scenario.odds={"3-1-2":999};f.scenario.result={ticket:"3-6-5"};assert.deepEqual(revise(f.legacy,f.scenario),a);});
+test("二つの役割があるだけで独立展開へ昇格しない",()=>{assert.ok(output().roles.every(r=>r.hasIndependentDualEvidence===false));});
+test("無効な採用閾値は現行へ戻す",()=>{const f=fixture();f.legacy.thresholds.adopted=NaN;assert.equal(revise(f.legacy,f.scenario).partnerRevision.applied,false);});
+test("補正コードは一箇所の関数だけに接続",()=>{const s="function buildHoldPickupTheory(a) { return a; }";const out=instrument(s);assert.match(out,/buildLegacyHoldPickupTheory/);assert.match(out,/window\.__partnerRoleRevise/);});
+test("想定外のソースを黙って改変しない",()=>{assert.throws(()=>instrument(""));assert.throws(()=>instrument("function buildHoldPickupTheory(){} function buildHoldPickupTheory(){}"));});
