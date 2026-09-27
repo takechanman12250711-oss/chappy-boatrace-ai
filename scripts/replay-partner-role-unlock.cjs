@@ -46,6 +46,8 @@ function worker(mode, sourceFile, outputFile) {
     const before=roleCalls;
     try {
       const data = clone(task.data);
+      // Preserve the schema-4 snapshot identity expected by getRaceEntries.
+      data.entries = data.boats;
       const prediction = global.createPrediction(data);
       const selected = selector.select(prediction);
       const main = prediction?.aiCore?.raceScenarios?.mainScenario;
