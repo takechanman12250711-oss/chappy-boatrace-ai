@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     paths:
+      - scripts/build-hit-first-practical-report.cjs
+      - tests/hit-first-practical-report.test.cjs
       - .github/workflows/build-continuous-performance-ledger.yml
       - scripts/build-continuous-performance-ledger.cjs
       - scripts/persist-continuous-performance-ledger.cjs
@@ -66,6 +68,18 @@ jobs:
           name: eight-ticket-exhibition-shadow-report
           path: data/stats/eight-ticket-exhibition-shadow-report.json
           if-no-files-found: error
+      - name: Build hit-first report without changing predictions
+        id: hit_first
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' && steps.node.outcome == 'success' }}
+        continue-on-error: true
+        run: node scripts/build-hit-first-practical-report.cjs
+      - name: Preserve hit-first report including incomplete diagnostics
+        if: ${{ !cancelled() && steps.hit_first.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hit-first-practical-report
+          path: data/stats/hit-first-practical-report.json
+          if-no-files-found: warn
 
   capture-report:
     if: github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Collect automatic race predictions' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository
@@ -104,3 +118,15 @@ jobs:
           name: eight-ticket-exhibition-shadow-report
           path: data/stats/eight-ticket-exhibition-shadow-report.json
           if-no-files-found: error
+      - name: Build hit-first report without changing predictions
+        id: hit_first
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' && steps.node.outcome == 'success' }}
+        continue-on-error: true
+        run: node scripts/build-hit-first-practical-report.cjs
+      - name: Preserve hit-first report including incomplete diagnostics
+        if: ${{ !cancelled() && steps.hit_first.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hit-first-practical-report
+          path: data/stats/hit-first-practical-report.json
+          if-no-files-found: warn
