@@ -1,0 +1,51 @@
+name: Check partner role unlock candidate
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/partner-role-unlock.cjs'
+      - 'scripts/partner-role-cohort.json'
+      - 'scripts/test-partner-role-unlock.cjs'
+      - 'scripts/test-partner-role-production-path.cjs'
+      - 'scripts/replay-partner-role-unlock.cjs'
+      - '.github/workflows/check-partner-role-unlock.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  partner-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Unit and actual-core integration tests
+        run: |
+          mkdir -p artifacts/partner-role-unlock
+          node --test scripts/test-partner-role-unlock.cjs scripts/test-partner-role-production-path.cjs | tee artifacts/partner-role-unlock/tests.tap
+      - name: Baseline formation regression
+        run: node scripts/test-ai-core-formations.js | tee artifacts/partner-role-unlock/baseline-regression.log
+      - name: Same-input same-budget paired replay
+        run: node scripts/replay-partner-role-unlock.cjs artifacts/partner-role-unlock | tee artifacts/partner-role-unlock/replay.log
+      - name: Ensure production and historical sources were not modified
+        if: always()
+        run: git diff --exit-code -- js config data
+      - name: Save comparison evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-role-unlock-${{ github.run_id }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            artifacts/partner-role-unlock/tests.tap
+            artifacts/partner-role-unlock/*.log
+            artifacts/partner-role-unlock/baseline.json
+            artifacts/partner-role-unlock/candidate.json
+            artifacts/partner-role-unlock/partner-role-report.json
