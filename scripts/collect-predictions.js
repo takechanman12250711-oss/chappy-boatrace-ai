@@ -374,6 +374,17 @@ function compactPracticalSelection(
     .compactAudit(selection);
 }
 
+// Research C uses the completed saved payload, never changes purchase tickets.
+function withEightTicketExhibitionShadow(record, options) {
+  try {
+    return require("./eight-ticket-exhibition-shadow.cjs").attach(record, options);
+  } catch {
+    console.warn("Eight-ticket C capture unavailable; production unchanged");
+    return { ...record, eightTicketExhibitionShadow: { status: "unavailable", eligible: false,
+      automaticApplication: false, usableForPrediction: false, affectsTickets: false, affectsPrediction: false } };
+  }
+}
+
 function safelyBuildPracticalPriorityShadow(
   selection,
   builder = practicalPriorityShadow.build
@@ -1543,7 +1554,7 @@ function buildStoredPrediction(
       ? "server_pre_deadline"
       : "server_pre_deadline_shadow";
 
-  return {
+  return withEightTicketExhibitionShadow({
     raceKey,
     date,
     jcd: item.jcd,
@@ -1574,7 +1585,7 @@ function buildStoredPrediction(
       practicalTickets,
       legacyPreRaceConditions
     )
-  };
+  });
 }
 
 function buildVerificationPredictions(date, comparison, selectedRaceKey = "") {
@@ -2300,6 +2311,7 @@ async function main() {
     selectedData.exhibitionSnapshot = require("./note-exhibition").exhibitionSnapshot(
       best.rawRaceData || best.raceData, selectedBase.selectedAt);
     selectedData.prediction.candidate24Tickets = global.ChappyNoteGenerator.createDisplayCandidates(selectedPrediction, noteBaseline);
+    selectedData = withEightTicketExhibitionShadow(selectedData);
     // Audit metadata must not change selection, drafts, or collection availability.
     // Load inside the guard so even an unavailable auditor fails closed locally.
     try {
@@ -2425,6 +2437,7 @@ module.exports = {
   upsertByRaceKey,
   compactVerificationEvidence,
   safelyBuildPracticalPriorityShadow,
+  withEightTicketExhibitionShadow,
   compactStoredVerification,
   buildCollectionHealth,
   buildRecoveryPlan,

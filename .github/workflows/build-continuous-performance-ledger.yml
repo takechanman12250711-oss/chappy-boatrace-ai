@@ -52,6 +52,21 @@ jobs:
           path: data/stats/eight-ticket-promotion-shadow-report.json
           if-no-files-found: error
 
+      - name: Build separate C exhibition comparison
+        id: c_report
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' && steps.node.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          rm -f data/stats/eight-ticket-exhibition-shadow-report.json
+          node scripts/build-eight-ticket-exhibition-shadow-report.cjs
+      - name: Preserve separate C exhibition comparison
+        if: ${{ !cancelled() && steps.c_report.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: eight-ticket-exhibition-shadow-report
+          path: data/stats/eight-ticket-exhibition-shadow-report.json
+          if-no-files-found: error
+
   capture-report:
     if: github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Collect automatic race predictions' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository
     permissions:
@@ -60,10 +75,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        id: checkout
         with:
           ref: main
           persist-credentials: false
       - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 20
       - name: Refresh shadow progress after prediction collection
@@ -72,4 +89,18 @@ jobs:
         with:
           name: eight-ticket-promotion-shadow-report
           path: data/stats/eight-ticket-promotion-shadow-report.json
+          if-no-files-found: error
+      - name: Build separate C exhibition comparison
+        id: c_report
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' && steps.node.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          rm -f data/stats/eight-ticket-exhibition-shadow-report.json
+          node scripts/build-eight-ticket-exhibition-shadow-report.cjs
+      - name: Preserve separate C exhibition comparison
+        if: ${{ !cancelled() && steps.c_report.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: eight-ticket-exhibition-shadow-report
+          path: data/stats/eight-ticket-exhibition-shadow-report.json
           if-no-files-found: error
