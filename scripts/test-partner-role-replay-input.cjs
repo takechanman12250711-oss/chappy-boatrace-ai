@@ -1,0 +1,11 @@
+"use strict";
+const test=require("node:test"),assert=require("node:assert/strict");
+const {buildReplayInput}=require("./partner-role-replay-input.cjs");
+function fixture(){return {raceKey:"20260924-21-1",date:"20260924",jcd:"21",place:"芦屋",raceNo:1,selectedAt:"2026-09-24T00:00:00Z",deadlineAt:"2026-09-24T00:10:00Z",prediction:{preRaceConditions:{source:"boatrace-official",analysisProfile:"hiyori-compatible",boats:[],weather:{windSpeed:2},escapeEvaluationEvidence:{version:"escape-evaluation-evidence-v1",sourceFetchedAt:"2026-09-23T23:59:00Z",resultUsedForGeneration:false,entries:[1,2,3,4,5,6].map(n=>({boat:n,boatNo:100+n,averageSt:0.11+n*0.01,skillHistory:{example:n},currentSeries:{st:[0.1,0.2]}})),beforeInfo:[],startExhibition:[],historyContext:{ready:true,racers:[]},raceInfo:{title:"予選"},raceScenarios:{mainScenario:{type:"threeAttack"}},result:{ticket:"3-1-2"},payout:1000,odds:{"3-1-2":10}}}}};}
+test("簡略boatsではなく当時の詳細entries・履歴・今節STを使う",()=>{const a=buildReplayInput(fixture());assert.equal(a.entries[0].averageSt,0.12);assert.equal(a.entries[0].skillHistory.example,1);assert.deepEqual(a.entries[0].currentSeries.st,[0.1,0.2]);assert.equal(a.historyContext.ready,true);});
+test("艇番とボート機番を混同するschema4分岐へ入れない",()=>{const a=buildReplayInput(fixture());assert.equal(a.entries[0].boat,1);assert.equal(a.entries[0].boatNo,101);assert.equal(a.schemaVersion,undefined);assert.equal(a.boats,undefined);});
+test("予想出力や結果・払戻・オッズを再生入力へ混ぜない",()=>{const a=buildReplayInput(fixture());for(const k of ['raceScenarios','result','payout','odds'])assert.equal(a[k],undefined);});
+test("原本へ変更を戻さない",()=>{const f=fixture(),before=JSON.stringify(f),a=buildReplayInput(f);a.entries[0].skillHistory.example=99;assert.equal(JSON.stringify(f),before);});
+test("締切後の詳細原本は利用しない",()=>{const f=fixture();f.prediction.preRaceConditions.escapeEvaluationEvidence.sourceFetchedAt="2026-09-24T00:11:00Z";assert.throws(()=>buildReplayInput(f),/timestamp/);});
+test("原本がなければ簡略データで黙って埋めない",()=>{const f=fixture();delete f.prediction.preRaceConditions.escapeEvaluationEvidence;assert.throws(()=>buildReplayInput(f),/unavailable/);});
+test("結果を使ったと記録された原本は拒否する",()=>{const f=fixture();f.prediction.preRaceConditions.escapeEvaluationEvidence.resultUsedForGeneration=true;assert.throws(()=>buildReplayInput(f),/unavailable/);});

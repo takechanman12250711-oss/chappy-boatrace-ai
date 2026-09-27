@@ -5,6 +5,7 @@ const { spawnSync } = require("node:child_process");
 const Module = require("node:module");
 const { revise, instrument, VERSION } = require("./partner-role-unlock.cjs");
 const policy = require("./partner-role-cohort.json");
+const { buildReplayInput } = require("./partner-role-replay-input.cjs");
 const ROOT = path.resolve(__dirname, "..");
 const hash = value => crypto.createHash("sha256").update(typeof value === "string" || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest("hex");
 const clone = x => JSON.parse(JSON.stringify(x));
@@ -46,8 +47,6 @@ function worker(mode, sourceFile, outputFile) {
     const before=roleCalls;
     try {
       const data = clone(task.data);
-      // Preserve the schema-4 snapshot identity expected by getRaceEntries.
-      data.entries = data.boats;
       const prediction = global.createPrediction(data);
       const selected = selector.select(prediction);
       const main = prediction?.aiCore?.raceScenarios?.mainScenario;
@@ -90,11 +89,10 @@ function main(outDir) {
     if(!Array.isArray(s?.boats)||s.boats.length!==6){rejected.push({raceKey,reason:"missing-six-boat-pre-race-input"});continue;}
     const saved=exact(ledger.practicalTickets(p));
     if(!saved.length||saved.length>10){rejected.push({raceKey,reason:"no-valid-saved-practical-tickets"});continue;}
-    // Only saved pre-deadline inputs and identity enter the predictor workers.
-    const data={...clone(s),entries:clone(s.boats),boats:clone(s.boats),
-      date:raceKey.slice(0,8),jcd:r.jcd,stadiumCode:r.jcd,venueCode:r.jcd,
-      placeName:r.place,venueName:r.place,raceNo:r.raceNo,rno:r.raceNo,weather:clone(s.weather||{})};
-    for(const field of ["result","results","officialResult","finishers","payout","payouts","odds"]) delete data[field];
+    // Read the native entry/history snapshot saved BEFORE the race. Never later data.
+    let data;
+    try { data=buildReplayInput(r); }
+    catch (error) { rejected.push({raceKey,reason:error.message}); continue; }
     tasks.push({raceKey,data});
   }
   const inputFile=path.join(outDir,"worker-inputs.json");
@@ -137,6 +135,7 @@ function main(outDir) {
     strictSavedReplay:comparisons(strict),sameInputRecalculation:comparisons(recalculated),
     strictRows:strict,recalculatedRows:recalculated,mismatches,failures,
     scopeNotes:["No Mika ticket template, no change to main-scenario/head calculation.",
+      "Saved native entries/history are restored from preRaceConditions.escapeEvaluationEvidence; compact boats alone are insufficient.",
       "Saved-input baseline must reproduce saved ticket order before strict comparison.",
       "Recalculation-only comparison is diagnostic and cannot replace saved performance.",
       "Additional 20260927 observations are not certified pristine holdout data.",

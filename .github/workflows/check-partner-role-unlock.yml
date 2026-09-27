@@ -5,8 +5,10 @@ on:
     paths:
       - 'scripts/partner-role-unlock.cjs'
       - 'scripts/partner-role-cohort.json'
+      - 'scripts/partner-role-replay-input.cjs'
       - 'scripts/test-partner-role-unlock.cjs'
       - 'scripts/test-partner-role-production-path.cjs'
+      - 'scripts/test-partner-role-replay-input.cjs'
       - 'scripts/replay-partner-role-unlock.cjs'
       - '.github/workflows/check-partner-role-unlock.yml'
 
@@ -25,50 +27,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Unit and actual-core integration tests
+      - name: Unit, native-input and actual-core integration tests
         run: |
           mkdir -p artifacts/partner-role-unlock
-          node --test scripts/test-partner-role-unlock.cjs scripts/test-partner-role-production-path.cjs | tee artifacts/partner-role-unlock/tests.tap
+          node --test scripts/test-partner-role-unlock.cjs scripts/test-partner-role-production-path.cjs scripts/test-partner-role-replay-input.cjs | tee artifacts/partner-role-unlock/tests.tap
       - name: Baseline formation regression
         run: node scripts/test-ai-core-formations.js | tee artifacts/partner-role-unlock/baseline-regression.log
-      - name: Same-input same-budget paired replay
+      - name: Native-input same-budget paired replay
         run: node scripts/replay-partner-role-unlock.cjs artifacts/partner-role-unlock | tee artifacts/partner-role-unlock/replay.log
-      - name: Inspect saved input completeness without changing the candidate
-        run: |
-          node <<'NODE'
-          const fs=require('node:fs'),path=require('node:path');
-          const src=require('./scripts/eight-ticket-promotion-report-source.cjs');
-          const input=require('./scripts/analysis-input-contract');
-          const report=JSON.parse(fs.readFileSync('artifacts/partner-role-unlock/partner-role-report.json','utf8'));
-          const wanted=new Set(report.recalculatedRows.map(r=>r.raceKey));
-          const picked=new Set(['20260925-08-3','20260924-21-1','20260927-02-11']);
-          const summary={records:0,boats:0,avgSTPresent:0,averageStPresent:0,anyLegacyAverageAlias:0,historyContextPresent:0,fullAnalysesPresent:0,frameReplayBasisPresent:0};
-          const rows=[],samples=[];
-          function present(x){return x!==null&&x!==undefined&&x!=='';}
-          function locations(obj,depth=0,prefix=''){
-            if(!obj||typeof obj!=='object'||depth>5)return [];
-            const out=[];
-            for(const [key,value] of Object.entries(obj)){
-              const here=prefix?prefix+'.'+key:key;
-              if(/^(raw|entries|analyses|historyContext|frameRiseFallReplayBasis|raceScenarios)$/.test(key))out.push({path:here,type:Array.isArray(value)?'array':typeof value,length:Array.isArray(value)?value.length:null,keys:value&&typeof value==='object'&&!Array.isArray(value)?Object.keys(value):null});
-              if(!Array.isArray(value)&&value&&typeof value==='object')out.push(...locations(value,depth+1,here));
-            }return out;
-          }
-          for(const day of report.sources){
-            const d=src.readDay(process.cwd(),day.date).data;
-            for(const r of input.mergePredictionSources(d.predictions,d.verificationPredictions)){
-              const key=input.raceKey(r);if(!wanted.has(key))continue;
-              const p=r.prediction||r,s=p.preRaceConditions||r.preRaceConditions,b=s.boats;
-              const found=locations(r);
-              const diag={raceKey:key,schemaVersion:s.schemaVersion,avgST:b.map(x=>x.avgST),averageSt:b.map(x=>x.averageSt??null),legacyAverageAlias:b.map(x=>x.averageSt??x.avgSt??x.st??x.startTiming??x.nationalSt??null),currentST:b.map(x=>x.currentST??null),nationalWinRate:b.map(x=>x.nationalWinRate??null),historyContextPaths:found.filter(x=>x.path.endsWith('historyContext')).map(x=>x.path),analysesPaths:found.filter(x=>x.path.endsWith('analyses')).map(x=>x.path),frameBasisPaths:found.filter(x=>x.path.endsWith('frameRiseFallReplayBasis')).map(x=>x.path)};
-              rows.push(diag);summary.records++;summary.boats+=b.length;summary.avgSTPresent+=diag.avgST.filter(present).length;summary.averageStPresent+=diag.averageSt.filter(present).length;summary.anyLegacyAverageAlias+=diag.legacyAverageAlias.filter(present).length;summary.historyContextPresent+=Number(diag.historyContextPaths.length>0);summary.fullAnalysesPresent+=Number(diag.analysesPaths.length>0);summary.frameReplayBasisPresent+=Number(diag.frameBasisPaths.length>0);
-              if(picked.has(key))samples.push({raceKey:key,recordKeys:Object.keys(r),predictionKeys:Object.keys(p),source:s,locations:found});
-            }
-          }
-          const out={sourcePolicy:'inspection-only-original-saved-records',candidateUnchanged:true,summary,rows,samples};
-          fs.writeFileSync('artifacts/partner-role-unlock/replay-input-diagnostics.json',JSON.stringify(out,null,2)+'\n');
-          console.log(JSON.stringify(summary));
-          NODE
       - name: Ensure production and historical sources were not modified
         if: always()
         run: git diff --exit-code -- js config data
@@ -85,4 +51,3 @@ jobs:
             artifacts/partner-role-unlock/baseline.json
             artifacts/partner-role-unlock/candidate.json
             artifacts/partner-role-unlock/partner-role-report.json
-            artifacts/partner-role-unlock/replay-input-diagnostics.json
