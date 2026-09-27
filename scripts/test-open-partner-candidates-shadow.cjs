@@ -1,39 +1,19 @@
-"use strict";
-const assert = require("node:assert/strict");
-const { buildOpenPartnerCandidates } = require("./open-partner-candidates-shadow.cjs");
-
-function row(boatNo, hold, pickup, road=50, flow=50, total=50) {
-  return { boatNo, roleScores:{hold,pickup,road,flow}, indexes:{total} };
-}
-
-const analyses = [
-  row(1,90,45), row(2,80,88), row(3,99,99),
-  row(4,78,92), row(5,70,85), row(6,68,82)
-];
-
-const threeAttack = buildOpenPartnerCandidates({
-  analyses, attackerBoatNo:3, blockedBoats:[4]
-});
-assert.equal(threeAttack.constraints.fixedCourseGate, false);
-assert.ok(threeAttack.thirdCandidates.some(x => x.boatNo === 2),
-  "3攻めでも2号艇を3着候補からコースだけで排除しない");
-assert.ok(!threeAttack.secondCandidates.some(x => x.boatNo === 3));
-assert.ok(!threeAttack.thirdCandidates.some(x => x.boatNo === 3));
-assert.ok(!threeAttack.secondCandidates.some(x => x.boatNo === 4));
-assert.ok(!threeAttack.thirdCandidates.some(x => x.boatNo === 4));
-
-const skillChanged = analyses.map(x => x.boatNo === 6
-  ? row(6,99,99,99,99,99) : x);
-const changed = buildOpenPartnerCandidates({
-  analyses:skillChanged, attackerBoatNo:3, blockedBoats:[4]
-});
-assert.equal(changed.secondCandidates[0].boatNo, 6,
-  "既存の個別評価が変われば2着順位も変わる");
-assert.equal(changed.thirdCandidates[0].boatNo, 6,
-  "既存の個別評価が変われば3着順位も変わる");
-
-const inputCopy = JSON.stringify(analyses);
-buildOpenPartnerCandidates({ analyses, attackerBoatNo:1 });
-assert.equal(JSON.stringify(analyses), inputCopy, "入力を変更しない");
-
-console.log("open partner shadow tests: PASS");
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {buildOpenPartnerCandidates:build,roleScore}=require('./open-partner-candidates-shadow.cjs');
+const row=(boatNo,hold=50,pickup=50,road=50,flow=50,total=50)=>({boatNo,roleScores:{hold,pickup,road,flow},indexes:{total}});
+const sample=()=>[row(1,90,45),row(2,80,88),row(3,99,99),row(4,78,92),row(5,70,85),row(6,68,82)];
+const run=(extra={})=>build({analyses:sample(),attackerBoatNo:3,blockedBoats:[4],...extra});
+test('2-course boat may be third in a 3-head scenario',()=>assert.ok(run().thirdCandidates.some(x=>x.boatNo===2)));
+test('head and explicit blocked boats excluded in both roles',()=>assert.ok(['secondCandidates','thirdCandidates'].every(k=>run()[k].every(x=>![3,4].includes(x.boatNo)))));
+test('higher individual support changes both rankings',()=>{const r=run({analyses:sample().map(x=>x.boatNo===6?row(6,99,99,99,99,99):x)});assert.equal(r.secondCandidates[0].boatNo,6);assert.equal(r.thirdCandidates[0].boatNo,6)});
+test('return empty unavailable result on missing inputs',()=>{const r=build();assert.equal(r.ready,false);assert.deepEqual(r.secondCandidates,[])});
+test('reject duplicate boat identities',()=>assert.equal(run({analyses:[...sample().slice(0,5),row(5)]}).ready,false));
+test('reject invalid head rather than rank all six boats',()=>assert.equal(run({attackerBoatNo:0}).ready,false));
+test('missing null scores must not turn into neutral/zero scores',()=>{const a=sample();a[1].roleScores.hold=null;assert.equal(run({analyses:a}).ready,false)});
+test('reject NaN and infinity',()=>{for(const v of [NaN,Infinity]){const a=sample();a[0].indexes.total=v;assert.equal(run({analyses:a}).ready,false)}});
+test('valid zero is a score, not missing',()=>{const a=sample();a[0].indexes.total=0;assert.equal(run({analyses:a}).ready,true)});
+test('reject invalid blocked ids and candidate limits',()=>{assert.equal(run({blockedBoats:[9]}).ready,false);assert.equal(run({thirdLimit:-1}).ready,false)});
+test('input not mutated and permutation does not alter ranking',()=>{const a=sample(),before=JSON.stringify(a);const x=run({analyses:a});const y=run({analyses:[...a].reverse()});assert.deepEqual(x,y);assert.equal(JSON.stringify(a),before)});
+test('results odds payout and date do not affect role selection',()=>{const a=sample().map(x=>({...x,result:'6-5-4',odds:9999,payout:999999,date:'20990101'}));assert.deepEqual(run({analyses:a}),run())});
+test('weights unchanged from the original prototype for complete inputs',()=>{for(const r of sample()){const s=r.roleScores,i=r.indexes;assert.equal(roleScore(r,'second'),s.hold*.34+s.flow*.24+s.road*.16+i.total*.16+s.pickup*.10);assert.equal(roleScore(r,'third'),s.pickup*.34+s.road*.24+s.hold*.16+s.flow*.16+i.total*.10)}});

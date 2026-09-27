@@ -8,12 +8,22 @@ on:
       - ".github/workflows/check-open-partner-shadow.yml"
 permissions:
   contents: read
+concurrency:
+  group: open-partner-shadow-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            js
+            scripts
+            config
+            .github
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -24,34 +34,34 @@ jobs:
           ref: 6fb160175071b3e354ac45073662362bf5b5e153
           path: .partner-reference
           persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /data/predictions/2026092[4-7].json
+            /data/predictions/source-archives/2026092[4-7].meta.json
+            /data/predictions/source-archives/2026092[4-7].json.gz
+            /data/results/2026092[4-7].json
       - name: Extract stored pre-race records and provenance
         shell: bash
         run: |
           mkdir -p /tmp/open-partner-evidence
           node <<'NODE'
-          const fs = require('node:fs'), path = require('node:path'), zlib = require('node:zlib'), crypto = require('node:crypto');
-          const root = path.resolve('.partner-reference');
-          const source = require('./scripts/eight-ticket-promotion-report-source.cjs');
-          const all = source.load(root, '20260924');
-          const records = all.records.filter(r => String(r.date || r.raceKey || '').slice(0,8) <= '20260927');
-          const results = {};
-          for (const date of ['20260924','20260925','20260926','20260927']) {
-            const p = path.join(root, 'data/results', date+'.json');
-            if (fs.existsSync(p)) results[date] = JSON.parse(fs.readFileSync(p, 'utf8'));
-          }
-          const data = { referenceCommit:'6fb160175071b3e354ac45073662362bf5b5e153', records, results, diagnostics:all.diagnostics };
-          const bytes = Buffer.from(JSON.stringify(data));
-          fs.writeFileSync('/tmp/open-partner-evidence/stored-inputs.json.gz', zlib.gzipSync(bytes));
-          const summary = { referenceCommit:data.referenceCommit, records:records.length, bytes:bytes.length, sha256:crypto.createHash('sha256').update(bytes).digest('hex'), diagnostics:all.diagnostics,
-            shapes:records.slice(0,2).map(r => ({raceKey:r.raceKey,keys:Object.keys(r),predictionKeys:Object.keys(r.prediction||{}),auditKeys:Object.keys(r.practicalSelectionAudit||r.prediction?.practicalSelectionAudit||{}),conditionKeys:Object.keys(r.prediction?.preRaceConditions||{})})) };
-          fs.writeFileSync('/tmp/open-partner-evidence/input-manifest.json', JSON.stringify(summary,null,2));
+          const fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib'),crypto=require('node:crypto');
+          const root=path.resolve('.partner-reference');
+          const source=require('./scripts/eight-ticket-promotion-report-source.cjs');
+          const all=source.load(root,'20260924');
+          const records=all.records.filter(r=>String(r.date||r.raceKey||'').slice(0,8)<='20260927');
+          const results={};
+          for(const date of ['20260924','20260925','20260926','20260927']){const p=path.join(root,'data/results',date+'.json');if(fs.existsSync(p))results[date]=JSON.parse(fs.readFileSync(p,'utf8'));}
+          const data={referenceCommit:'6fb160175071b3e354ac45073662362bf5b5e153',records,results,diagnostics:all.diagnostics};
+          const bytes=Buffer.from(JSON.stringify(data));
+          fs.writeFileSync('/tmp/open-partner-evidence/stored-inputs.json.gz',zlib.gzipSync(bytes));
+          const summary={referenceCommit:data.referenceCommit,records:records.length,bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex'),diagnostics:all.diagnostics,shapes:records.slice(0,2).map(r=>({raceKey:r.raceKey,keys:Object.keys(r),predictionKeys:Object.keys(r.prediction||{}),auditKeys:Object.keys(r.practicalSelectionAudit||r.prediction?.practicalSelectionAudit||{}),conditionKeys:Object.keys(r.prediction?.preRaceConditions||{})}))};
+          fs.writeFileSync('/tmp/open-partner-evidence/input-manifest.json',JSON.stringify(summary,null,2));
           console.log(JSON.stringify(summary,null,2));
-          if (all.diagnostics.errors.length) throw Error('Source integrity errors: see artifact');
+          if(!records.length||all.diagnostics.errors.length)throw Error('Missing records or source integrity errors: see artifact');
           NODE
       - name: Preserve exact evaluation source for local independent replay
-        shell: bash
-        run: |
-          tar -czf /tmp/open-partner-evidence/evaluation-source.tar.gz js scripts config package.json package-lock.json
+        run: tar -czf /tmp/open-partner-evidence/evaluation-source.tar.gz js scripts config
       - name: Upload read-only replay evidence
         if: always()
         uses: actions/upload-artifact@v4
