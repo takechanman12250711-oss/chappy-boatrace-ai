@@ -2,6 +2,7 @@ name: Check eight-ticket promotion shadow isolation
 on:
   pull_request:
     paths:
+      - 'scripts/export-hit-first-partner-evidence.cjs'
       - 'scripts/build-hit-first-practical-report.cjs'
       - 'tests/hit-first-practical-report.test.cjs'
       - 'scripts/eight-ticket-exhibition-shadow.cjs'
@@ -68,6 +69,8 @@ jobs:
           node scripts/build-eight-ticket-promotion-shadow-report.cjs
           node scripts/build-eight-ticket-exhibition-shadow-report.cjs
           node scripts/build-hit-first-practical-report.cjs test-output/hit-first-practical-report.json
+      - name: Extract original partner-selection evidence without changing production
+        run: node scripts/export-hit-first-partner-evidence.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
