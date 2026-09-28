@@ -5,6 +5,7 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { compactArticle } = require('../js/note-generator');
 const { auditNotePublication } = require('./note-publication-audit');
+const { VERSION: MONITOR_VERSION, independentArticle } = require('./note-independent-monitor-source');
 const MAX_PUBLICATION_TICKETS = 7;
 
 function requirePublicationTicketCount(article) {
@@ -21,9 +22,14 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
   if (createHash('sha256').update(bytes).digest('hex') !== match[4]) throw new Error('publication_source_hash_mismatch');
   const bundle = JSON.parse(bytes);
   const raceKey = `${match[1]}-${match[2]}-${match[3]}`;
-  if (bundle.version !== 'note-draft-bundle-v1' || bundle.record?.raceKey !== raceKey) throw new Error('publication_source_identity_mismatch');
+  const independent = bundle.version === MONITOR_VERSION;
+  if ((!independent && bundle.version !== 'note-draft-bundle-v1') || bundle.record?.raceKey !== raceKey) {
+    throw new Error('publication_source_identity_mismatch');
+  }
   require('./note-exhibition').requireExhibition(bundle.record);
-  const article = compactArticle(bundle.article, bundle.record.prediction);
+  // A monitoring original is already the final article. It must never pass
+  // through the normal AI article generator or its presentation compactor.
+  const article = independent ? independentArticle(bundle) : compactArticle(bundle.article, bundle.record.prediction);
   const audit = auditNotePublication({ ...bundle, article, now: new Date(now).toISOString() });
   if (!audit.contentReady) {
     const error = new Error('publication_content_audit_blocked');
@@ -56,5 +62,3 @@ function verifyPublicationSource(payload, rootDir = process.cwd(), now = Date.no
 }
 
 module.exports = { MAX_PUBLICATION_TICKETS, requirePublicationTicketCount, sourceArticle, publicationPayload, verifyPublicationSource };
-
-
