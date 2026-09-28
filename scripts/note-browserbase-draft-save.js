@@ -110,7 +110,7 @@ async function fillDraft(page, { title, body }) {
   }
 
   await titleInput.fill(title);
-  await bodyInput.fill(body);
+  await require('./note-linked-body').fillLinkedBody(page, bodyInput, body);
   await page.waitForTimeout(AUTOSAVE_WAIT_MS);
 
   const currentTitle = String(await titleInput.inputValue().catch(() => '')).trim();
