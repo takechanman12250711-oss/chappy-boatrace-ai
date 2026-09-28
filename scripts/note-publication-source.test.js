@@ -47,9 +47,9 @@ async function main() {
   assert.deepEqual(verifyPublicationSource(payload, root, clock), payload);
   assert.deepEqual(requirePublicationGate(payload, root, clock), payload);
   const { loadCoverTemplate } = require('./note-cover');
-  assert.ok(loadCoverTemplate(payload, root, clock).html.includes('ChappyHand'));
+  assert.ok(loadCoverTemplate(payload, root, clock).html.includes('ChappyRound'));
   assert.throws(() => loadCoverTemplate({ ...payload, paidText: '別原稿' }, root, clock), /mismatch/);
-  for (const field of ['paidText', 'freeText', 'title', 'body', 'sourceSha256', 'price', 'deadlineAt', 'practicalTicketCount']) {
+  for (const field of ['paidText', 'freeText', 'title', 'body', 'sourceSha256', 'price', 'deadlineAt', 'practicalTicketCount', 'articleSeries', 'publicationKey']) {
     assert.throws(() => verifyPublicationSource({ ...payload, [field]: 'tampered' }, root, clock), /mismatch/);
   }
   assert.throws(() => requirePublicationGate(payload, root, Date.parse(bundle.record.deadlineAt) - 60000), /audit_blocked/);

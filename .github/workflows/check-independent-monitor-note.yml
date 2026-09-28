@@ -2,6 +2,9 @@ name: Check independent monitor note source
 on:
   pull_request:
     paths:
+      - "scripts/note-article-series*"
+      - "scripts/save-independent-monitor-note.js"
+      - "scripts/note-independent-monitor-fixture.js"
       - 'scripts/note-independent-monitor-source*'
       - 'scripts/note-publication-source.js'
       - '.github/workflows/check-independent-monitor-note.yml'
@@ -29,6 +32,8 @@ jobs:
         run: |
           node scripts/note-independent-monitor-source.test.js
           node scripts/note-publication-source.test.js
+          node --test scripts/note-article-series.test.js
           node scripts/note-github-ui-transport.test.js
           node scripts/note-cover-template.test.js
           node scripts/note-editor-content.test.js
+

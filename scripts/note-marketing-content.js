@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { contentLines } = require('./note-editor-content');
+const { SERIES, seriesOfBundle, publicationKey } = require('./note-article-series');
 const ACCOUNT = 'great_robin3243';
 const PROFILE = `https://note.com/${ACCOUNT}`;
 const VERSION = 'note-marketing-state-v1';
@@ -51,22 +52,29 @@ function receiptRow(receipt, bytes, now = Date.now()) {
   if (receipt.raceKey.slice(0, 8) !== jstDate(now)) return null;
   if (createHash('sha256').update(bytes).digest('hex') !== receipt.sourceSha256) throw new Error('marketing_source_hash_mismatch');
   const bundle = JSON.parse(bytes), r = bundle.record;
+  const articleSeries = seriesOfBundle(bundle);
+  const key = publicationKey(receipt.raceKey, articleSeries);
+  if ((receipt.articleSeries !== undefined && receipt.articleSeries !== articleSeries) ||
+      (receipt.publicationKey !== undefined && receipt.publicationKey !== key)) throw new Error('marketing_receipt_series_mismatch');
   const deadline = Date.parse(r?.deadlineAt);
   if (r?.raceKey !== receipt.raceKey || !Number.isFinite(deadline) || Date.parse(receipt.publishedAt) >= deadline ||
       !/^[一-龠ぁ-ゖァ-ヺー]{1,10}$/u.test(r.place || '') || !Number.isInteger(Number(r.raceNo)) || Number(r.raceNo)<1 || Number(r.raceNo)>12) throw new Error('marketing_source_identity_invalid');
-  return { raceKey: receipt.raceKey, url: receipt.url, place: r.place, raceNo: Number(r.raceNo), deadlineAt: r.deadlineAt,
+  return { raceKey: receipt.raceKey, articleSeries, publicationKey: key, url: receipt.url, place: r.place, raceNo: Number(r.raceNo), deadlineAt: r.deadlineAt,
     publishedAt: receipt.publishedAt, sourceSha256: receipt.sourceSha256 };
 }
 function indexBody(rows, config, now = Date.now()) {
   const date = jstDate(now), current = rows.filter(r => r.raceKey.slice(0,8) === date).sort((a,b) => Date.parse(a.deadlineAt)-Date.parse(b.deadlineAt));
-  if (new Set(current.map(r=>r.raceKey)).size !== current.length || new Set(current.map(r=>r.url)).size !== current.length) throw new Error('marketing_duplicate_publication');
+  if (new Set(current.map(r=>publicationKey(r.raceKey,r.articleSeries))).size !== current.length || new Set(current.map(r=>r.url)).size !== current.length) throw new Error('marketing_duplicate_publication');
   const show = r => `${new Date(Date.parse(r.deadlineAt)+9*3600000).toISOString().slice(11,16)}｜${r.place}${r.raceNo}R\n${r.url}`;
   // Always show absolute deadlines. A static note cannot claim to know whether
   // a race is still open at the reader's current time between updater runs.
   return [`${date.slice(0,4)}年${Number(date.slice(4,6))}月${Number(date.slice(6,8))}日の予想一覧`,
-    '掲載を確認できた記事を、締切順にまとめています。時刻は日本時間です。各予想記事は300円です。',
+    '通常予想・イン逃げ・万舟を分け、各区分の締切順にまとめています。イン逃げと万舟は独立した狙い目監視の原稿です。時刻は日本時間、各記事300円です。',
     '日付と締切をご確認ください。締切を過ぎた記事は振り返り用の記録です。',
-    current.length ? current.map(show).join('\n\n') : '本日、掲載を確認できた予想記事はまだありません。',
+    ...Object.entries(SERIES).map(([key, series]) => {
+      const selected = current.filter(r => (r.articleSeries || 'normal') === key);
+      return `${series.label}\n${selected.length ? selected.map(show).join('\n\n') : '本日、掲載を確認できた記事はまだありません。'}`;
+    }),
     `はじめての方へ\n${config.guide.url}`, `チャッピーのプロフィール\n${PROFILE}`].join('\n\n');
 }
 function initialState(config) {

@@ -25,7 +25,7 @@ function todayJst() {
 function buildIphoneHandoff() {
   if (!fs.existsSync(INPUT)) return { status: "no_handoff" };
   const source = JSON.parse(fs.readFileSync(INPUT, "utf8"));
-  const candidate = Array.isArray(source.candidates) ? source.candidates[0] : null;
+  const candidate = Array.isArray(source.candidates) ? source.candidates.find(row => !row.articleSeries || row.articleSeries === "normal") : null;
   if (!candidate?.title || !candidate?.fullText) return { status: "no_candidate" };
 
   const freeText = String(candidate.freeText || "").trim();
@@ -82,3 +82,4 @@ function buildIphoneHandoff() {
 
 if (require.main === module) console.log(JSON.stringify(buildIphoneHandoff()));
 module.exports = { NOTE_PRICE_YEN, buildIphoneHandoff, raceDateFromKey };
+

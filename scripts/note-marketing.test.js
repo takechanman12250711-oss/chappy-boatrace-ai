@@ -6,7 +6,7 @@ const c = require('./note-marketing-content');
 const { client, REPO, BRANCH } = require('./note-marketing-store');
 const config = require('../config/note-marketing.json');
 const now = Date.parse('2026-09-28T23:00:00+09:00');
-const source = JSON.stringify({record:{raceKey:'20260928-13-4',place:'尼崎',raceNo:4,deadlineAt:'2026-09-28T11:52:00+09:00'}});
+const source = JSON.stringify({version:'note-draft-bundle-v1',record:{raceKey:'20260928-13-4',place:'尼崎',raceNo:4,deadlineAt:'2026-09-28T11:52:00+09:00'}});
 const receipt = {version:'note-publication-receipt-v1',raceKey:'20260928-13-4',url:'https://note.com/great_robin3243/n/n2fd33336e0a4',price:300,publishedAt:'2026-09-28T11:38:13+09:00',verifiedAt:'2026-09-28T11:38:30+09:00',sourceSha256:createHash('sha256').update(source).digest('hex')};
 test('only a verified publication with matching immutable original becomes an index row',()=>{
   assert.equal(c.receiptRow(receipt,source,now).place,'尼崎');
