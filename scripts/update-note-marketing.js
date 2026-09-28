@@ -1,8 +1,8 @@
 'use strict';
 const fs = require('node:fs');
-const { loadConfig, initialState, indexBody, hash, urlsIn, requireEditable } = require('./note-marketing-content');
+const { loadConfig, initialState, indexBody, hash, urlsIn, requireEditable, sameMarketingContent } = require('./note-marketing-content');
 const { client } = require('./note-marketing-store');
-const { compareEditorContent, readEditorContent } = require('./note-editor-content');
+const { readEditorContent } = require('./note-editor-content');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
 const { loadBrowserUseConfig, createBrowserUseSession, stopBrowserUseSession } = require('./note-github-ui-transport');
 const BODY = '.note-common-styles__textnote-body';
@@ -17,13 +17,13 @@ async function readPublic(page, article) {
 }
 async function verifyPublic(page, article, desired) {
   const value = await readPublic(page, article);
-  if (!compareEditorContent(value.text, desired).equal || urlsIn(desired).some(url=>!value.links.includes(url))) throw new Error('marketing_public_content_mismatch');
+  if (!sameMarketingContent(value.text, desired) || urlsIn(desired).some(url=>!value.links.includes(url))) throw new Error('marketing_public_content_mismatch');
   return value;
 }
 async function updateArticle(page, publicPage, article, desired, previousHash) {
   const current = await readPublic(publicPage, article);
   requireEditable(current.text, previousHash, desired);
-  if (compareEditorContent(current.text, desired).equal && urlsIn(desired).every(url=>current.links.includes(url))) return false;
+  if (sameMarketingContent(current.text, desired) && urlsIn(desired).every(url=>current.links.includes(url))) return false;
   const editUrl = `https://editor.note.com/notes/${article.id}/edit/`;
   await page.goto(editUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
   const title = await waitForVisibleAcrossFrames(page, ['textarea[placeholder*="タイトル"]']);

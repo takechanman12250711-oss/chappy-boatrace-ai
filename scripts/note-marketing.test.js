@@ -42,6 +42,22 @@ test('manual changes stop; a response-lost retry accepts already desired content
   assert(c.bodyHtml(config.guide.initialBody).includes('<a href="'+config.index.url+'">'));
   assert(c.bodyHtml('<script>').includes('&lt;script&gt;'));
 });
+test('terminal free-guide NBSP does not block the index; meaningful edits and paid checks remain strict', async()=>{
+  const desired=config.guide.initialBody, actual=desired+'\u00a0';
+  assert.equal(c.hash(actual),c.hash(desired));
+  assert.equal(c.sameMarketingContent(actual+'\n',desired),true);
+  c.requireEditable(actual,c.hash(desired),desired);
+  for(const changed of [desired+' ',desired+'追加',desired.replace('300円','500円'),desired.replace('今日の予想一覧',' 今日の予想一覧')]) {
+    assert.throws(()=>c.requireEditable(changed,c.hash(desired),desired),/manual_change/);
+  }
+  assert.equal(require('./note-editor-content').compareEditorContent(actual,desired).equal,false,'paid article comparison is unchanged');
+  const page={goto:async()=>({ok:()=>true}),url:()=>config.guide.url,
+    getByRole:()=>({waitFor:async()=>{},count:async()=>0}),
+    locator:()=>({count:async()=>1,innerText:async()=>actual,locator:()=>({evaluateAll:async()=>c.urlsIn(desired)})})};
+  const {updateArticle,verifyPublic}=require('./update-note-marketing');
+  assert.equal(await updateArticle({},page,config.guide,desired,c.hash(desired)),false,'no editor or write is needed');
+  await verifyPublic(page,config.guide,desired);
+});
 test('receipt store is incremental and state writes only its dedicated branch',async()=>{
   const calls=[], commit='b'.repeat(40), receiptCommit='c'.repeat(40);
   const ref={ref:'refs/tags/note-published/'+'a'.repeat(64),object:{sha:receiptCommit}};
