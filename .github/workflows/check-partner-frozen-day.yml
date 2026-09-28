@@ -1,0 +1,81 @@
+name: Check frozen partner additional day
+on:
+  pull_request:
+    paths:
+      - "scripts/partner-frozen*.cjs"
+      - "scripts/partner-frozen*.json"
+      - "scripts/test-partner-frozen*.cjs"
+      - ".github/workflows/check-partner-frozen-day.yml"
+permissions:
+  contents: read
+concurrency:
+  group: partner-frozen-day-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  frozen-day:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+            js
+            config
+            api
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test frozen weights, time separation and unchanged budgets
+        run: node --test scripts/test-partner-frozen-day.cjs
+      - name: Read only the additional day from pinned source
+        uses: actions/checkout@v4
+        with:
+          ref: c9ed6755b9de811a0bd5aa1ad00f5a7f6b42d4c2
+          path: .frozen-source
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /data/predictions/20260928.json
+            /data/predictions/source-archives/20260928.meta.json
+            /data/predictions/source-archives/20260928.json.gz
+      - name: Generate unchanged frozen model predictions before results
+        run: node scripts/partner-frozen-day.cjs capture .frozen-source /tmp/partner-frozen-day
+      - name: Reproduce stored production tickets without changing them
+        env:
+          OPEN_PARTNER_WORKDIR: /tmp/partner-frozen-day
+        run: |
+          node scripts/replay-open-partner-worker.cjs baseline
+          node -e 'const fs=require("node:fs");const r=JSON.parse(fs.readFileSync("/tmp/partner-frozen-day/replay-baseline.json"));if(!r.rows.length||r.rows.some(x=>!x.baselineExactMatch||x.error||x.scopeGuardReasons.length))throw Error("additional-day-baseline-mismatch");'
+      - name: Seal candidate predictions before any official refresh
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-frozen-candidates
+          path: |
+            /tmp/partner-frozen-day/snapshots.json
+            /tmp/partner-frozen-day/capture-manifest.json
+            /tmp/partner-frozen-day/frozen-model.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Read official results once for elapsed-deadline cohort races
+        run: node scripts/partner-frozen-results.cjs /tmp/partner-frozen-day
+      - name: Evaluate exact hits and separate returns without refitting
+        run: node scripts/partner-frozen-day.cjs settle /tmp/partner-frozen-day /tmp/partner-frozen-day/official-refreshed.json
+      - name: Preserve execution source and original inputs
+        if: always()
+        run: |
+          mkdir -p /tmp/partner-frozen-day
+          tar -czf /tmp/partner-frozen-day/evaluation-source.tar.gz scripts js config api
+          cp scripts/partner-frozen-protocol.json /tmp/partner-frozen-day/
+          for file in stored-records.json pre-race-inputs.json; do
+            if test -f /tmp/partner-frozen-day/$file; then gzip -n /tmp/partner-frozen-day/$file; fi
+          done
+      - name: Save comparison evidence without production writes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-frozen-day-evidence
+          path: /tmp/partner-frozen-day/
+          retention-days: 30
+          if-no-files-found: error
