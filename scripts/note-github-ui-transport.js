@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { raceDateFromKey } = require('./build-note-iphone-handoff');
+const { requireSeries, publicationKey, seriesOfBundle } = require('./note-article-series');
 
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
 const EXPECTED_PRICE_YEN = 300;
@@ -131,7 +132,11 @@ function draftClaimRef(payload) {
   }
   // A revised title/body or zero-padding must not create another attempt.
   const race = `${parts[1]}-${Number(parts[2])}-${Number(parts[3])}`;
-  return `refs/tags/note-draft-claim/${createHash('sha256').update(race).digest('hex')}`;
+  const series = requireSeries(payload.articleSeries);
+  // Existing normal reservations keep their exact hash. Monitoring is unique
+  // per race and kind, never per title, content hash, or retry.
+  const identity = series === 'normal' ? race : `${race}:independent-watch:${series}`;
+  return `refs/tags/note-draft-claim/${createHash('sha256').update(identity).digest('hex')}`;
 }
 
 function loadClaimConfig(env = process.env) {
@@ -144,16 +149,56 @@ function loadClaimConfig(env = process.env) {
   return { repository, sha, token };
 }
 
-async function preflightDraft(payload, env = process.env, request = fetch) {
+async function legacyClaimBlocks(payload, env, request, rootDir) {
+  const { repository, token } = loadClaimConfig(env);
+  const ref = draftClaimRef({ raceKey: payload.raceKey });
+  const options = { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(30000) };
+  const lookup = await request(`https://api.github.com/repos/${repository}/git/ref/${ref.slice(5)}`, options);
+  if (lookup.status === 404) return false;
+  if (lookup.status !== 200) throw new Error(`note_claim_lookup_failed_${lookup.status}`);
+  if ((await lookup.json()).ref !== ref) throw new Error('note_claim_lookup_invalid');
+  // An old unscoped attempt might itself be a monitoring article. A verified
+  // receipt plus its immutable source must disambiguate it before proceeding.
+  const tag = ref.slice(10).replace('note-draft-claim/', 'note-published/');
+  const response = await request(`https://api.github.com/repos/${repository}/contents/receipt.json?ref=${encodeURIComponent(tag)}`, options);
+  if (response.status === 404) return true;
+  if (response.status !== 200) throw new Error(`note_legacy_receipt_lookup_failed_${response.status}`);
+  try {
+    const data = await response.json();
+    if (data.encoding !== 'base64') return true;
+    const receipt = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+    if (receipt.version !== 'note-publication-receipt-v1' || receipt.price !== 300 ||
+        publicationKey(receipt.raceKey) !== publicationKey(payload.raceKey) ||
+        !/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+$/.test(receipt.url || '') ||
+        !Number.isFinite(Date.parse(receipt.publishedAt)) || !Number.isFinite(Date.parse(receipt.verifiedAt)) ||
+        Date.parse(receipt.verifiedAt) < Date.parse(receipt.publishedAt) || Date.parse(receipt.verifiedAt) > Date.now() ||
+        !/^[a-f0-9]{64}$/.test(receipt.sourceSha256 || '')) return true;
+    const file = path.join(rootDir, 'data/note-drafts', receipt.raceKey.slice(0, 8), `${receipt.raceKey}-${receipt.sourceSha256}.json`);
+    const bytes = fs.readFileSync(file, 'utf8');
+    if (createHash('sha256').update(bytes).digest('hex') !== receipt.sourceSha256) return true;
+    const source = JSON.parse(bytes);
+    if (source.record?.raceKey !== receipt.raceKey || !Number.isFinite(Date.parse(source.record.deadlineAt)) ||
+        Date.parse(receipt.publishedAt) >= Date.parse(source.record.deadlineAt)) return true;
+    return seriesOfBundle(source) === requireSeries(payload.articleSeries);
+  } catch { return true; }
+}
+
+async function preflightDraft(payload, env = process.env, request = fetch, rootDir = process.cwd()) {
   const gate = validateDraftGate(payload);
   if (!gate.ok) return gate;
+  if (requireSeries(payload.articleSeries) !== 'normal') requirePublicationGate(payload, rootDir);
   const { repository, token } = loadClaimConfig(env);
   const ref = draftClaimRef(payload);
   const response = await request(`https://api.github.com/repos/${repository}/git/ref/${ref.slice(5)}`, {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
     signal: AbortSignal.timeout(30000)
   });
-  if (response.status === 404) return validateDraftGate(payload);
+  if (response.status === 404) {
+    if (requireSeries(payload.articleSeries) !== 'normal' && await legacyClaimBlocks(payload, env, request, rootDir)) {
+      return { ok: false, reason: 'legacy_attempt_review_required' };
+    }
+    return validateDraftGate(payload);
+  }
   if (response.status !== 200) throw new Error(`note_claim_lookup_failed_${response.status}`);
   const existing = await response.json();
   if (existing.ref !== ref) throw new Error('note_claim_lookup_invalid');
@@ -162,6 +207,10 @@ async function preflightDraft(payload, env = process.env, request = fetch) {
 
 async function claimDraft(payload, env = process.env, request = fetch) {
   requireDraftGate(payload);
+  if (requireSeries(payload.articleSeries) !== 'normal') {
+    const gate = await preflightDraft(payload, env, request);
+    if (!gate.ok) throw new Error(`note_claim_not_acquired_${gate.reason}`);
+  }
   const { repository, sha, token } = loadClaimConfig(env);
   const ref = draftClaimRef(payload);
   // Atomic creation persists across runners/retries. Never delete on failure:
@@ -324,12 +373,12 @@ async function preparePublication({ rootDir = process.cwd(), env = process.env, 
       payload = require('./note-publication-source').publicationPayload(candidate.sourcePath, rootDir);
       requirePublicationGate(payload, rootDir);
     } catch (error) {
-      skipped.push({ raceKey: candidate.raceKey, reason: error.message, issueCodes: error.issueCodes });
+      skipped.push({ raceKey: candidate.raceKey, articleSeries: candidate.articleSeries || 'normal', reason: error.message, issueCodes: error.issueCodes });
       continue;
     }
-    const gate = await preflightDraft(payload, env, request);
+    const gate = await preflightDraft(payload, env, request, rootDir);
     if (gate.ok) return { ok: true, payload, skipped };
-    skipped.push({ raceKey: payload.raceKey, reason: gate.reason });
+    skipped.push({ raceKey: payload.raceKey, articleSeries: payload.articleSeries, reason: gate.reason });
   }
   return { ok: false, reason: 'no_eligible_unclaimed_article', skipped };
 }
@@ -395,6 +444,7 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
       Math.abs(Date.now() - Date.parse(value)) < 10 * 60 * 1000);
     if (!publishedAt) throw new Error('publication_timestamp_unverified_review_required');
     return { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
+      articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
       publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
       sourceSha256: payload.sourceSha256 };
   } finally { await verification.close(); }

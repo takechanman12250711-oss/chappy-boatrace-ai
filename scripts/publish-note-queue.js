@@ -4,6 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { preparePublication, run } = require('./note-github-ui-transport');
 const { buildLatestHandoff } = require('./build-note-publish-handoff');
+const { publicationKey } = require('./note-article-series');
 const REPOSITORY = 'takechanman12250711-oss/chappy-boatrace-ai';
 
 async function publishQueue({ env = process.env, request = fetch, prepare = preparePublication,
@@ -24,9 +25,10 @@ async function publishQueue({ env = process.env, request = fetch, prepare = prep
       // Each article still goes through the original fresh audit, atomic claim,
       // one final click and anonymous public receipt verification.
       const receipt = await publish({ env: { ...env, NOTE_IPHONE_HANDOFF: file } });
-      if (!receipt?.url || receipt.raceKey !== gate.payload.raceKey) throw new Error('publication_receipt_missing');
+      if (!receipt?.url || receipt.raceKey !== gate.payload.raceKey ||
+          publicationKey(receipt.raceKey, receipt.articleSeries) !== gate.payload.publicationKey) throw new Error('publication_receipt_missing');
       published++;
-      handoff.candidates = handoff.candidates.filter(c => c.raceKey !== gate.payload.raceKey);
+      handoff.candidates = handoff.candidates.filter(c => publicationKey(c.raceKey, c.articleSeries) !== gate.payload.publicationKey);
     }
     const pending = await prepare({ env, request, handoff });
     if (pending.ok) {

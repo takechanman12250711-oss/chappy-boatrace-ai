@@ -17,6 +17,30 @@ function escapeXml(value) {
   return String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c]);
 }
 
+function raceCoverHtml(info, background, font) {
+  const { SERIES, requireSeries } = require('./note-article-series');
+  const series = SERIES[requireSeries(info.articleSeries)];
+  if (!/^\d{8}$/.test(info.date || '') || !/^[一-龠ぁ-ゖァ-ヺー]{1,10}$/u.test(info.place || '') ||
+      !Number.isInteger(info.raceNo) || info.raceNo < 1 || info.raceNo > 12 || !/^\d{2}:\d{2}$/.test(info.deadline || '')) {
+    throw new Error('note_cover_race_identity_invalid');
+  }
+  const race = `${Number(info.date.slice(4,6))}月${Number(info.date.slice(6,8))}日 ${info.place}${info.raceNo}R`;
+  const rows = [[series.brand, 170, 156, 45, 1000],
+    [series.label, 198, 282, 68, 780], [race, 170, 410, 108, 940],
+    [`締切 ${info.deadline}`, 174, 528, 74, 750]];
+  const text = rows.map(([line,x,y,size,width]) => `<g data-series-line data-x="${x}" data-y="${y-size}" data-width="${width}" data-height="${size*1.32}"><text x="${x}" y="${y}" font-size="${size}" fill="${line === series.label ? '#ffffff' : '#123a60'}">${escapeXml(line)}</text></g>`).join('');
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+    @font-face{font-family:ChappyRound;src:url(data:font/ttf;base64,${font.toString('base64')}) format('truetype');font-weight:700}
+    *{box-sizing:border-box}html,body{margin:0;width:1734px;height:907px;overflow:hidden;background:#fbf7ed}
+    img,svg{position:absolute;inset:0;width:1734px;height:907px}text{font-family:ChappyRound;font-weight:700}
+  </style></head><body><img alt="" src="data:image/jpeg;base64,${background.toString('base64')}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1734 907">
+    <defs><linearGradient id="light"><stop stop-color="#fffaf0" stop-opacity=".8"/><stop offset="1" stop-color="#fffaf0" stop-opacity="0"/></linearGradient></defs>
+    <rect x="95" y="85" width="1040" height="500" rx="38" fill="url(#light)"/>
+    <rect x="168" y="204" width="${info.articleSeries === 'normal' ? 400 : 365}" height="103" rx="30" fill="${series.color}"/>
+    ${text}${info.sample ? '<text x="170" y="598" font-size="38" fill="#526774">デザイン見本</text>' : ''}
+  </svg></body></html>`;
+}
+
 function coverHtml(lines, background, font) {
   if (!Array.isArray(lines) || lines.length !== 2 || lines.some(line => typeof line !== 'string' || line.length > 30)) {
     throw new Error('note_cover_copy_invalid');
@@ -50,10 +74,11 @@ async function renderCover(browser, template) {
     // prevent the load event from ever completing.
     await page.route(/^https?:\/\//, route => route.abort());
     await page.setContent(template.html, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.evaluate(async () => {
-      const loadedFonts = await document.fonts.load('164px ChappyHand');
+    await page.evaluate(async ({ family, series }) => {
+      const fontSpec = `${series ? '700 ' : ''}164px ${family}`;
+      const loadedFonts = await document.fonts.load(fontSpec);
       await document.fonts.ready;
-      if (!loadedFonts.length || !document.fonts.check('164px ChappyHand')) throw new Error('note_cover_font_not_loaded');
+      if (!loadedFonts.length || !document.fonts.check(fontSpec)) throw new Error('note_cover_font_not_loaded');
       await Promise.all([...document.images].map(async image => {
         if (!image.complete) {
           await new Promise((resolve, reject) => {
@@ -66,9 +91,10 @@ async function renderCover(browser, template) {
       }));
       // Font ascent/descent differs by renderer. Fit actual browser bounds to
       // the two artwork-safe slots, instead of assuming font-size is height.
-      for (const group of document.querySelectorAll('[data-cover-line]')) {
+      for (const group of document.querySelectorAll(series ? '[data-series-line]' : '[data-cover-line]')) {
         const row = Number(group.getAttribute('data-cover-line'));
-        const slot = row ? { x: 45, y: 340, width: 1160, height: 205 }
+        const slot = series ? { x: Number(group.dataset.x), y: Number(group.dataset.y), width: Number(group.dataset.width), height: Number(group.dataset.height) }
+          : row ? { x: 45, y: 340, width: 1160, height: 205 }
           : { x: 45, y: 65, width: 1270, height: 255 };
         const box = group.getBBox();
         if (box.width <= 0 || box.height <= 0) throw new Error('note_cover_text_empty');
@@ -77,13 +103,13 @@ async function renderCover(browser, template) {
       }
       for (const text of document.querySelectorAll('svg text')) {
         const box = text.getBoundingClientRect();
-        if (box.width <= 0 || box.left < 10 || box.right > 1390 || box.top < 10 || box.bottom > 570) {
+        if (box.width <= 0 || box.left < (series ? 160 : 10) || box.right > (series ? 1120 : 1390) || box.top < 10 || box.bottom > (series ? 640 : 570)) {
           throw new Error('note_cover_text_overflow_' + JSON.stringify({left:box.left,right:box.right,top:box.top,bottom:box.bottom}));
         }
       }
       // Let the browser paint the decoded assets and fitted SVG before capture.
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    });
+    }, { family: template.layout === 'series-v1' ? 'ChappyRound' : 'ChappyHand', series: template.layout === 'series-v1' });
     const buffer = await page.screenshot({ type: 'jpeg', quality: 90, timeout: 15000 });
     if (buffer.length < 1000 || buffer[0] !== 0xff || buffer[1] !== 0xd8) throw new Error('note_cover_render_invalid');
     return { name: 'chappy-cover.jpg', mimeType: 'image/jpeg', buffer };
@@ -92,4 +118,4 @@ async function renderCover(browser, template) {
   }
 }
 
-module.exports = { coverLines, coverHtml, renderCover };
+module.exports = { coverLines, coverHtml, raceCoverHtml, renderCover };

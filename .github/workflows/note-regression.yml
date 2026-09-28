@@ -3,6 +3,9 @@ name: Check note regression
 on:
   pull_request:
     paths:
+      - "scripts/note-article-series*"
+      - "scripts/save-independent-monitor-note.js"
+      - "scripts/note-independent-monitor-fixture.js"
       - "js/note-generator.js"
       - "js/saved-note-draft.js"
       - "js/script.js"
@@ -147,6 +150,7 @@ jobs:
           node scripts/note-browserbase-draft-save.test.js
           node scripts/note-editor-content.test.js
           node scripts/note-publication-source.test.js
+          node --test scripts/note-article-series.test.js
           node --test scripts/note-marketing.test.js
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
@@ -179,4 +183,5 @@ jobs:
         with:
           name: note-cover-preview
           path: tmp/note-cover-preview/*.jpg
+
 

@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { seriesOfBundle, publicationKey } = require('./note-article-series');
 
 const ROOT = process.cwd();
 const DRAFT_ROOT = path.join(ROOT, "data", "note-drafts");
@@ -49,9 +50,12 @@ function normalizeCandidate(payload, sourcePath) {
   if (!payload?.article?.publishable || !payload?.article?.fullText || !payload?.record?.raceKey) {
     return null;
   }
+  let articleSeries, key;
+  try { articleSeries = seriesOfBundle(payload); key = publicationKey(payload.record.raceKey, articleSeries); } catch { return null; }
 
   return {
     raceKey: payload.record.raceKey,
+    articleSeries, publicationKey: key,
     date: payload.record.date ?? null,
     jcd: payload.record.jcd ?? null,
     place: payload.record.place ?? null,
@@ -83,9 +87,9 @@ function buildLatestHandoff({ write = true } = {}) {
       const candidate = normalizeCandidate(payload, relativePath);
       if (!candidate) continue;
 
-      const current = latestByRace.get(candidate.raceKey);
+      const current = latestByRace.get(candidate.publicationKey);
       if (!current || candidate._timestamp >= current._timestamp) {
-        latestByRace.set(candidate.raceKey, candidate);
+        latestByRace.set(candidate.publicationKey, candidate);
       }
     }
 
@@ -98,7 +102,7 @@ function buildLatestHandoff({ write = true } = {}) {
           if (Number.isFinite(aDeadline) && Number.isFinite(bDeadline) && aDeadline !== bDeadline) {
             return aDeadline - bDeadline;
           }
-          return a.raceKey.localeCompare(b.raceKey);
+          return a.publicationKey.localeCompare(b.publicationKey);
         })
         .map(({ _timestamp, ...candidate }) => candidate);
       break;

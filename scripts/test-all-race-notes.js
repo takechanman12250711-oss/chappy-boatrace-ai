@@ -120,7 +120,7 @@ async function main() {
   const env = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', NOTE_UI_MODE: 'publish', NOTE_CLAIM_TOKEN: 'test' };
   const sent = [], dispatch = [];
   const queue = await publishQueue({ env, now: () => clock,
-    build: () => ({ payload: { candidates: Array.from({ length: 9 }, (_, i) => ({ raceKey: String(i) })) } }),
+    build: () => ({ payload: { candidates: Array.from({ length: 9 }, (_, i) => ({ raceKey: `${date}-23-${i+1}`, articleSeries: "normal", publicationKey: `${date}-23-${i+1}:normal` })) } }),
     prepare: async ({ handoff }) => handoff.candidates.length ? { ok: true, payload: handoff.candidates[0] } : { ok: false },
     publish: async ({ env: e }) => { const p = JSON.parse(fs.readFileSync(e.NOTE_IPHONE_HANDOFF)); sent.push(p.raceKey); return { raceKey: p.raceKey, url: 'verified-test' }; },
     request: async (...args) => { dispatch.push(args); return { status: 204 }; } });

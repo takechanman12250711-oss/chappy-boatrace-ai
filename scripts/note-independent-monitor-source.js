@@ -68,6 +68,7 @@ function independentArticle(bundle) {
   if (record.prediction?.mainSheet || record.prediction?.manshuSheet ||
       record.prediction?.aiCore || article.allRangeGroups ||
       !String(article.title).includes('狙い目監視') ||
+      !String(article.title).includes(monitor.kind === 'escape' ? 'イン逃げ' : '万舟') ||
       /チャッピーボートレースAI/.test(article.title) ||
       !String(article.freeText).includes('通常AIの予想とは別の、独立した監視予想です。')) {
     throw new Error('independent_monitor_app_mix_detected');
