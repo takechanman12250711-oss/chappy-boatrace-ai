@@ -14,7 +14,8 @@ test('only a verified publication with matching immutable original becomes an in
   for (const mutation of [{price:0},{url:'https://note.com/another/n/n123'},{verifiedAt:'bad'},{verifiedAt:'2026-09-29T01:00:00+09:00'},{publishedAt:'2026-09-28T11:53:00+09:00',verifiedAt:'2026-09-28T11:54:00+09:00'}]) {
     assert.throws(()=>c.receiptRow({...receipt,...mutation},source,now));
   }
-  assert.equal(c.receiptRow(receipt,'',now+86400000),null);
+  assert.equal(c.receiptRow(receipt,source,now+86400000).raceKey,receipt.raceKey);
+  assert.equal(c.receiptRow(receipt,'',now+2*86400000),null);
 });
 test('navigation leaves paid text, picks and source object unchanged',()=>{
   const article={freeText:'無料案内',paidText:'有料本文\n1-2-3',fullText:'無料案内\n\n有料本文\n1-2-3',practicalTickets:['1-2-3']};
@@ -31,8 +32,30 @@ test('index uses absolute deadlines, rolls over at midnight JST and refuses dupl
   assert(c.indexBody([row],config,now).includes('11:52｜尼崎4R'));
   const tomorrow=c.indexBody([row],config,Date.parse('2026-09-28T15:00:00Z'));
   assert(tomorrow.startsWith('2026年9月29日'));
-  assert(!tomorrow.includes(receipt.url));
+  assert(tomorrow.includes(receipt.url));
+  assert(tomorrow.indexOf(receipt.url)>tomorrow.indexOf('前日の公開記事と公式結果'));
+  assert(!c.indexBody([row],config,now+2*86400000).includes(receipt.url));
   assert.throws(()=>c.indexBody([row,row],config,now),/duplicate_publication/);
+  assert.throws(()=>c.indexBody([row,row],config,now+86400000),/duplicate_publication/);
+});
+test('count comes from both immutable ticket sets; result links reveal no paid tickets',()=>{
+  const make=(change=()=>{})=>{
+    const b=JSON.parse(source); b.baselinePracticalTickets=['1-2-3','1-3-2'];
+    b.record.prediction={practicalTickets:[{ticket:'1-3-2'},{ticket:'1-2-3'}]};
+    change(b); const bytes=JSON.stringify(b);
+    return c.receiptRow({...receipt,sourceSha256:createHash('sha256').update(bytes).digest('hex')},bytes,now);
+  };
+  const row=make(), body=c.indexBody([row],config,now);
+  assert.equal(row.ticketCount,2);
+  assert(body.includes('公開 11:38｜実戦厳選2点'));
+  assert(!body.includes('1-2-3'));
+  assert(!JSON.stringify(row).includes('1-3-2'));
+  const url='https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20260928&jcd=13&rno=4';
+  assert.equal(row.resultUrl,url);
+  assert(c.urlsIn(body).includes(url));
+  assert(c.bodyHtml(body).includes('<a href="'+url.replaceAll('&','&amp;')+'">'));
+  assert.equal(c.receiptRow(receipt,source,now).ticketCount,null);
+  for(const change of [b=>b.record.prediction.practicalTickets.pop(),b=>b.baselinePracticalTickets.push('1-2-3'),b=>delete b.baselinePracticalTickets,b=>b.record.raceNo=5]) assert.throws(()=>make(change));
 });
 test('manual changes stop; a response-lost retry accepts already desired content',()=>{
   assert.equal(c.hash('A\n\nB'),c.hash('A\nB'));
@@ -89,7 +112,13 @@ test('receipt store is incremental and state writes only its dedicated branch',a
   assert.equal(calls.at(-1).body.force,false);
   assert(!calls.some(v=>v.method!=='GET'&&v.route.includes('heads/main')));
   const tomorrow=await store.collect(state,now+86400000);
-  assert.deepEqual(tomorrow.rows,[]);
+  assert.equal(tomorrow.rows.length,1);
+  const oldState={...state,rows:[]}; delete oldState.receiptWindowVersion;
+  const migrated=await store.collect(oldState,now+86400000);
+  assert.equal(migrated.rows.length,1,'migration recovers yesterday even when its receipt was already seen');
+  assert.equal(migrated.receiptWindowVersion,2);
+  assert(migrated.rows[0].resultUrl.includes('jcd=13&rno=4'));
+  assert.deepEqual((await store.collect(tomorrow,now+2*86400000)).rows,[]);
 });
 test('anonymous verification requires full text and clickable navigation',async()=>{
   const {verifyPublic,updateArticle}=require('./update-note-marketing');
