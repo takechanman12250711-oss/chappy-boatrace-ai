@@ -52,7 +52,8 @@ test('receipt store is incremental and state writes only its dedicated branch',a
     if(route==='/git/ref/heads/'+BRANCH){status=404;data={};}
     else if(route==='/git/matching-refs/tags/note-published/')data=[ref];
     else if(route.startsWith('/contents/receipt.json'))data={encoding:'base64',content:Buffer.from(JSON.stringify(receipt)).toString('base64')};
-    else if(route.startsWith('/contents/data/note-drafts/')){assert(route.endsWith('ref=main'));data={encoding:'base64',content:Buffer.from(source).toString('base64')};}
+    else if(route.startsWith('/contents/data/note-drafts/')){assert(route.endsWith('ref=main'));data={encoding:'none',type:'file',sha:'e'.repeat(40)};}
+    else if(route==='/git/blobs/'+'e'.repeat(40))data={encoding:'base64',content:Buffer.from(source).toString('base64')};
     else if(route==='/git/trees')data={sha:'d'.repeat(40)};
     else if(route==='/git/commits')data={sha:commit};
     else if(route==='/git/refs' || route==='/git/refs/heads/'+BRANCH)data={object:{sha:commit}};

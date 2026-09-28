@@ -15,7 +15,12 @@ function client(env = process.env, request = fetch) {
     return response.json();
   }
   async function file(filePath, ref) {
-    const data = await api(`/contents/${filePath}?ref=${encodeURIComponent(ref)}`);
+    let data = await api(`/contents/${filePath}?ref=${encodeURIComponent(ref)}`);
+    // The Contents API omits base64 for originals larger than 1 MiB.
+    // Read the exact returned Git blob, then still verify the original SHA256.
+    if (data.encoding === 'none' && data.type === 'file' && /^[a-f0-9]{40}$/.test(data.sha || '')) {
+      data = await api(`/git/blobs/${data.sha}`);
+    }
     if (data.encoding !== 'base64' || typeof data.content !== 'string') throw new Error('marketing_file_encoding_invalid');
     return Buffer.from(data.content, 'base64').toString('utf8');
   }
