@@ -62,6 +62,11 @@ try {
   assert.equal(git(root, ['--git-dir', bare, 'show', `main:${independent}`]), 'immutable independent evidence');
   assert.equal(git(root, ['--git-dir', bare, 'show', 'main:data/stats/result.json']), 'new official result');
   assert.equal(save(saveArgs).saved, 0, 'no empty source commits');
+  const reference = 'data/omura-reference/20300914/20300914-24-6-' + 'c'.repeat(64) + '.json';
+  fs.mkdirSync(path.dirname(path.join(worker, reference)), { recursive: true });
+  fs.writeFileSync(path.join(worker, reference), 'immutable reporter comparison');
+  assert.equal(save(saveArgs).saved, 1, 'reporter reference shares immutable-only persistence');
+  assert.equal(git(root, ['--git-dir', bare, 'show', `main:${reference}`]), 'immutable reporter comparison');
   fs.writeFileSync(path.join(worker, 'data/stats/result.json'), 'must not be included');
   assert.throws(() => save(saveArgs), /unrelated_changes/);
   console.log('concurrent official result and immutable note source writes preserve both histories');
