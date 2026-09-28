@@ -2,12 +2,17 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const { contentLines } = require('./note-editor-content');
+const { contentLines, compareEditorContent } = require('./note-editor-content');
 const { SERIES, seriesOfBundle, publicationKey } = require('./note-article-series');
 const ACCOUNT = 'great_robin3243';
 const PROFILE = `https://note.com/${ACCOUNT}`;
 const VERSION = 'note-marketing-state-v1';
-const hash = text => createHash('sha256').update(JSON.stringify(contentLines(text))).digest('hex');
+// A reviewed cover-only edit left a terminal NBSP after the free guide's last
+// link. Preserve the page; ignore only this invisible end-of-article sentinel.
+// Do not trim other spaces, indentation or text, or alter paid-article checks.
+const marketingText = text => String(text || '').replace(/\u00a0+(?=[\r\n]*$)/u, '');
+const sameMarketingContent = (actual, expected) => compareEditorContent(marketingText(actual), marketingText(expected)).equal;
+const hash = text => createHash('sha256').update(JSON.stringify(contentLines(marketingText(text)))).digest('hex');
 function jstDate(now = Date.now()) { return new Date(now + 9 * 3600000).toISOString().slice(0, 10).replace(/-/g, ''); }
 function validUrl(url) { return new RegExp(`^https://note\\.com/${ACCOUNT}/n/n[a-f0-9]+$`).test(String(url)); }
 function loadConfig(rootDir = process.cwd()) {
@@ -83,4 +88,4 @@ function initialState(config) {
 function requireEditable(actual, previousHash, desired) {
   if (hash(actual) !== previousHash && hash(actual) !== hash(desired)) throw new Error('marketing_manual_change_review_required');
 }
-module.exports = { ACCOUNT, PROFILE, VERSION, hash, jstDate, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, initialState, requireEditable };
+module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, initialState, requireEditable };
