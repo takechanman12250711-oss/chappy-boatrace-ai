@@ -17,6 +17,9 @@ on:
       - 'scripts/note-publication-audit.js'
       - 'scripts/dispatch-ready-note.js'
       - 'scripts/prepare-note-input.js'
+      - 'scripts/omura-reference.cjs'
+      - 'scripts/collect-omura-reference.cjs'
+      - 'scripts/test-omura-reference.cjs'
   pull_request:
     paths:
       - '.github/workflows/live-note.yml'
@@ -33,6 +36,9 @@ on:
       - 'scripts/dispatch-ready-note.js'
       - 'scripts/test-note-source-concurrency.js'
       - 'scripts/prepare-note-input.js'
+      - 'scripts/omura-reference.cjs'
+      - 'scripts/collect-omura-reference.cjs'
+      - 'scripts/test-omura-reference.cjs'
       - 'js/note-generator.js'
   schedule:
     # Offset from the busiest minute boundary; cadence and JST window stay the same.
@@ -77,6 +83,7 @@ jobs:
       - name: Verify isolated collector and source preservation
         run: |
           node scripts/test-note-source-concurrency.js
+          node --test scripts/test-omura-reference.cjs
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
           node scripts/test-outer-attack-research.js
