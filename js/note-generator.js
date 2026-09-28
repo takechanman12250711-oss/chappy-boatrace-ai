@@ -260,6 +260,25 @@
       fullText: compact.fullText.replace(originalFree, freeText).replace(originalPaid, paidText) };
   }
 
+  function rangeReason(key, rows, reason) {
+    const original = briefReason(reason || rows[0]?.scenarioSummary || rows[0]?.comment || "");
+    if (key !== "main") return original;
+    const heads = [...new Set(rows.map(row => normalizeTicket(row).ticket)
+      .filter(ticket => /^[1-6]-[1-6]-[1-6]$/.test(ticket))
+      .map(ticket => ticket[0]))];
+    const conflicts = value => [...String(value || "").matchAll(/本命は\s*([1-6])号艇/g)]
+      .some(match => !heads.includes(match[1]));
+    if (!heads.length || !conflicts(original)) return original;
+
+    // A global ranking reason can predate the saved scenario tickets.
+    // Use their stored explanation without changing any pool or priority.
+    const candidates = [rows[0]?.presentationByGroup?.main?.summary,
+      rows[0]?.scenarioSummary, rows[0]?.comment];
+    const savedReason = candidates.map(briefReason)
+      .find(value => value && !conflicts(value));
+    return savedReason || `本命の買い目は${heads.join("・")}号艇を1着にした組み合わせです。`;
+  }
+
   function allRangeGroups(prediction) {
     const lists = ticketLists(prediction);
     return [
@@ -269,7 +288,7 @@
       ["hole", "🌸 万舟", lists.hole, prediction?.manshuSheet?.reason]
     ].map(([key, heading, rows, reason]) => ({ key, heading,
       tickets: [...new Set(rows.map(row => normalizeTicket(row).ticket))],
-      reason: briefReason(reason || rows[0]?.scenarioSummary || rows[0]?.comment || "")
+      reason: rangeReason(key, rows, reason)
     }));
   }
 
