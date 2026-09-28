@@ -374,12 +374,6 @@ jobs:
         continue-on-error: true
         run: timeout 300s node scripts/monitor-local-water-v2-post-adoption.js
 
-      - name: Validate result prediction artifacts
-        run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
-          node scripts/test-load-performance.js
-          git diff --exit-code -- data/predictions/index.json
-
       - name: Save official results before calibration
         id: save_results
         run: |
@@ -397,6 +391,12 @@ jobs:
           fi
 
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Validate result prediction artifacts
+        run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
+          node scripts/test-load-performance.js
+          git diff --exit-code -- data/predictions/index.json
 
   calibrate:
     needs: collect
