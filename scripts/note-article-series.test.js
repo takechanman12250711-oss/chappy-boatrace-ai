@@ -138,6 +138,11 @@ test('index verifies source kind, lists three sections, and rejects duplicate ar
     return receiptRow(receipt, bytes, now);
   });
   const body = indexBody(rows, config, now);
-  for (const [i, label] of ['通常予想', 'イン逃げ', '万舟'].entries()) assert.ok(body.includes(label + '\n17:29｜丸亀6R\n' + rows[i].url));
+  for (const [i, label] of ['通常予想', 'イン逃げ', '万舟'].entries()) {
+    const section = body.split(label + '\n')[1].split('\n\n')[0];
+    assert.ok(section.includes('17:29｜丸亀6R\n公開 16:00｜実戦厳選' + rows[i].ticketCount + '点\n' + rows[i].url));
+    assert.ok(section.includes(rows[i].resultUrl));
+    assert.equal(rows.filter(row => section.includes(row.url)).length, 1, 'each article stays in its own series');
+  }
   assert.throws(() => indexBody([...rows, { ...rows[1], url: 'https://note.com/great_robin3243/n/nfff' }], config, now), /duplicate/);
 });
