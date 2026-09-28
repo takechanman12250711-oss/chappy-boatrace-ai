@@ -85,26 +85,26 @@ const monitorStart = central.indexOf(
   "- name: Build Local Water V2 post-adoption monitor",
   collectStart,
 );
-const validateStart = central.indexOf(
-  "- name: Validate result prediction artifacts",
-  monitorStart,
-);
 const saveStart = central.indexOf(
   "- name: Save official results before calibration",
-  validateStart,
+  monitorStart,
+);
+const validateStart = central.indexOf(
+  "- name: Validate result prediction artifacts",
+  saveStart,
 );
 const calibrationStart = central.indexOf(
   "- name: Build prediction calibration",
-  saveStart,
+  validateStart,
 );
 assert.ok(
   verifyStart >= 0 &&
     collectStart > verifyStart &&
     monitorStart > collectStart &&
-    validateStart > monitorStart &&
-    saveStart > validateStart &&
-    calibrationStart > saveStart,
-  "中央結果収集の検証・生成・保存step順を特定できる",
+    saveStart > monitorStart &&
+    validateStart > saveStart &&
+    calibrationStart > validateStart,
+  "中央結果収集の検証・生成・保存・artifact検査step順を特定できる",
 );
 
 const verification = central.slice(verifyStart, collectStart);
@@ -121,7 +121,7 @@ assert.ok(
 );
 
 const collectStep = central.slice(collectStart, monitorStart);
-const monitorStep = central.slice(monitorStart, validateStart);
+const monitorStep = central.slice(monitorStart, saveStart);
 const restoreIndex = collectStep.indexOf(restore);
 const repairIndex = collectStep.indexOf(repair);
 assert.ok(
@@ -138,8 +138,8 @@ assert.ok(
   "Local/Water V2診断は5分上限かつ公式結果保存を妨げない独立stepで実行する",
 );
 
-const validateStep = central.slice(validateStart, saveStart);
-const saveStep = central.slice(saveStart, calibrationStart);
+const saveStep = central.slice(saveStart, validateStart);
+const validateStep = central.slice(validateStart, calibrationStart);
 assert.ok(validateStep.includes("node scripts/prepare-daily-prediction-git-save.js --all"));
 assert.match(saveStep, /git add data\/results data\/stats/);
 assert.ok(
