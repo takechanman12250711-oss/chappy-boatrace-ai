@@ -1,6 +1,6 @@
 {
   "version": "outer-attack-all-scenarios-v1",
-  "generatedAt": "2026-09-27T15:29:38.537Z",
+  "generatedAt": "2026-09-28T00:25:20.848Z",
   "productionChanged": false,
   "automaticApplication": false,
   "adoptionStatus": "NOT_REGISTERED_FOR_PRODUCTION_ADOPTION",
@@ -8034,10 +8034,12 @@
       "scheduledRaces": 144,
       "scheduleComplete": true,
       "observedRaces": 144,
-      "savedRaces": 0,
-      "missingRaces": 144,
+      "savedRaces": 1,
+      "missingRaces": 143,
       "reasons": {
-        "deferred-until-one-hour": 144
+        "deferred-until-one-hour": 135,
+        "closed-or-too-close": 4,
+        "waiting-exhibition": 4
       },
       "missing": [
         {
@@ -8330,23 +8332,19 @@
         },
         {
           "raceKey": "20260928-14-1",
-          "reason": "deferred-until-one-hour"
+          "reason": "closed-or-too-close"
         },
         {
           "raceKey": "20260928-14-2",
-          "reason": "deferred-until-one-hour"
-        },
-        {
-          "raceKey": "20260928-14-3",
-          "reason": "deferred-until-one-hour"
+          "reason": "closed-or-too-close"
         },
         {
           "raceKey": "20260928-14-4",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20260928-14-5",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20260928-14-6",
@@ -8522,19 +8520,19 @@
         },
         {
           "raceKey": "20260928-21-1",
-          "reason": "deferred-until-one-hour"
+          "reason": "closed-or-too-close"
         },
         {
           "raceKey": "20260928-21-2",
-          "reason": "deferred-until-one-hour"
+          "reason": "closed-or-too-close"
         },
         {
           "raceKey": "20260928-21-3",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20260928-21-4",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20260928-21-5",
@@ -8617,17 +8615,17 @@
           "reason": "deferred-until-one-hour"
         }
       ],
-      "lastObservedAt": "2026-09-27T15:17:33.655Z",
+      "lastObservedAt": "2026-09-28T00:19:37.340Z",
       "venueFailures": []
     }
   },
   "diagnosticCounts": {
-    "inactive": 57,
+    "inactive": 58,
     "active": 5
   },
-  "capturedRaces": 62,
+  "capturedRaces": 63,
   "settledRaces": 58,
-  "pending": 0,
+  "pending": 1,
   "voidRaces": 3,
   "unknownPayout": 0,
   "rejected": {},
