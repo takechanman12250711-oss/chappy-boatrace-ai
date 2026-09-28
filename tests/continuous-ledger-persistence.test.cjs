@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const { OUTPUT, BUILDER, persist, command, buildLedger } = require('../scripts/persist-continuous-performance-ledger.cjs');
+const { OUTPUT, BUILDER, persist, command, buildLedger, writeReportCommit } = require('../scripts/persist-continuous-performance-ledger.cjs');
 const git = (cwd, ...args) => execFileSync('git', args, {cwd, encoding:'utf8', stdio:['ignore','pipe','pipe']}).trim();
 function fixture(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chappy-persist-test-'));
@@ -43,6 +43,23 @@ test('publishes only the ledger without touching caller edits or index', t=>{
 test('no-op creates no extra commit', t=>{
   const f=fixture(t);persist({root:f.root});const before=f.head();const out=persist({root:f.root});
   assert.equal(out.status,'unchanged');assert.equal(f.head(),before);cleanupVerified(f);
+});
+test('downstream reports use the published commit after a competing writer advances inputs', t=>{
+  const f=fixture(t);
+  const oldHead=git(f.root,'rev-parse','HEAD');
+  const out=persist({root:f.root,beforePush:({attempt})=>{if(attempt===1)f.advance(2);}});
+  assert.equal(git(f.root,'rev-parse','HEAD'),oldHead);
+  const outputFile=path.join(f.dir,'github-output');
+  writeReportCommit(out,outputFile);
+  const published=fs.readFileSync(outputFile,'utf8').trim().split('=')[1];
+  git(f.root,'checkout','--detach',published);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(f.root,OUTPUT))).cumulative.races,2);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(f.root,'source.json'))).value,2);
+  const unchanged=persist({root:f.root});
+  assert.equal(unchanged.status,'unchanged');
+  writeReportCommit(unchanged,outputFile);
+  assert.equal(fs.readFileSync(outputFile,'utf8').trim().split('\n')[1],`report_commit=${published}`);
+  assert.throws(()=>writeReportCommit({sourceCommit:'main\nforged=value'},outputFile),/invalid-report-commit/);
 });
 test('a real concurrent push rebuilds from newer inputs and preserves the other writer', t=>{
   const f=fixture(t);const out=persist({root:f.root,beforePush:({attempt})=>{if(attempt===1)f.advance(2);}});
@@ -93,4 +110,10 @@ test('workflow isolates report generation from ledger publication failure',()=>{
   assert.doesNotMatch(step,/steps\.persist\.outcome/);
   assert.match(text,/steps\.shadow_report\.outcome == 'success'/);
   assert.match(text,/if-no-files-found: error/);
+  const build=text.split('  build:')[1].split('  capture-report:')[0];
+  assert.match(build,/concurrency:\n      group: chappy-main-data-writers\n      queue: max\n      cancel-in-progress: false/);
+  assert.match(build,/REPORT_COMMIT: \$\{\{ steps\.persist\.outputs\.report_commit \}\}/);
+  assert.ok(build.indexOf('git checkout --detach "$REPORT_COMMIT"') < build.indexOf('Build hit-first report'));
+  const capture=text.split('  capture-report:')[1];
+  assert.doesNotMatch(capture,/chappy-main-data-writers|persist-continuous/);
 });

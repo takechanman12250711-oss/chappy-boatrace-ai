@@ -20,12 +20,17 @@ permissions:
   contents: write
 concurrency:
   group: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Collect automatic race predictions' && 'eight-ticket-capture-report' || 'continuous-performance-ledger' }}
+  queue: max
   cancel-in-progress: false
 jobs:
   build:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event.workflow_run.name == 'Collect official race results' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         id: checkout
@@ -38,7 +43,13 @@ jobs:
           node-version: 20
       - run: node tests/continuous-performance-ledger.test.cjs
       - name: Persist ledger from current main
+        id: persist
         run: node scripts/persist-continuous-performance-ledger.cjs
+      - name: Use the published ledger and matching inputs for reports
+        if: steps.persist.outcome == 'success'
+        env:
+          REPORT_COMMIT: ${{ steps.persist.outputs.report_commit }}
+        run: git checkout --detach "$REPORT_COMMIT"
       - name: Build separate eight-ticket promotion shadow report
         id: shadow_report
         if: ${{ !cancelled() && steps.checkout.outcome == 'success' && steps.node.outcome == 'success' }}

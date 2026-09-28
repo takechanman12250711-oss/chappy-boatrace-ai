@@ -94,14 +94,22 @@ function persist(options = {}) {
     try { cleanup(); } finally { fs.rmSync(parent, { recursive: true, force: true }); }
   }
 }
+function writeReportCommit(result, outputFile) {
+  if (!outputFile) return;
+  const commit = result.publishedCommit || result.sourceCommit;
+  if (!/^[a-f0-9]{40}$/.test(commit || '')) throw new Error('invalid-report-commit');
+  fs.appendFileSync(outputFile, `report_commit=${commit}\n`);
+}
 if (require.main === module) {
   try {
     if (process.env.GITHUB_ACTIONS === 'true' && process.env.GITHUB_REF !== 'refs/heads/main') {
       throw new Error('ledger-publication-main-only');
     }
-    console.log(JSON.stringify(persist()));
+    const result = persist();
+    writeReportCommit(result, process.env.GITHUB_OUTPUT);
+    console.log(JSON.stringify(result));
   } catch (error) {
     console.error(error.message); process.exitCode = 1;
   }
 }
-module.exports = { OUTPUT, BUILDER, command, buildLedger, validateOutput, persist };
+module.exports = { OUTPUT, BUILDER, command, buildLedger, validateOutput, persist, writeReportCommit };
