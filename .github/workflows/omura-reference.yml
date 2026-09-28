@@ -1,0 +1,67 @@
+name: Compare prospective Omura reporter reference
+
+on:
+  workflow_run:
+    workflows: ['Collect live note independently']
+    types: [completed]
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/omura-reference.yml'
+      - 'scripts/omura-reference.cjs'
+      - 'scripts/collect-omura-reference.cjs'
+      - 'scripts/test-omura-reference.cjs'
+  pull_request:
+    paths:
+      - '.github/workflows/omura-reference.yml'
+      - 'scripts/omura-reference.cjs'
+      - 'scripts/collect-omura-reference.cjs'
+      - 'scripts/test-omura-reference.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Separate from the live-note lock: external latency cannot delay the NEXT
+# scheduled prediction run either. Writes are content-addressed sources only.
+concurrency:
+  group: chappy-omura-reference-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    if: github.event_name == 'pull_request' || (github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' && github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event != 'pull_request')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.sha || 'main' }}
+          sparse-checkout: |
+            scripts
+            js
+            config
+            data/note-drafts
+            data/omura-reference
+            data/results
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify identity, timing, exhibition, immutability and settlement
+        run: node --test scripts/test-omura-reference.cjs
+      - name: Capture prospective reporter reference and join saved official results
+        if: github.event_name != 'pull_request'
+        run: node scripts/collect-omura-reference.cjs
+      - name: Preserve immutable reference evidence
+        if: always() && github.event_name != 'pull_request'
+        run: node scripts/save-live-verification-sources.js
+      - uses: actions/upload-artifact@v4
+        if: always() && github.event_name != 'pull_request'
+        with:
+          name: omura-reporter-reference
+          path: ${{ runner.temp }}/omura-reference/report.json
+          if-no-files-found: error
+          retention-days: 30

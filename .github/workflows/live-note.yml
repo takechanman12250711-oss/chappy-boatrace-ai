@@ -109,38 +109,3 @@ jobs:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           NOTE_SOURCE_ISOLATED: 'true'
         run: node scripts/dispatch-ready-note.js
-
-  omura-reference:
-    # Public-site latency/failure must not delay the existing publisher handoff.
-    needs: live-note
-    if: always() && github.event_name != 'pull_request' && github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 4
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          sparse-checkout: |
-            scripts
-            js
-            config
-            data/note-drafts
-            data/omura-reference
-            data/results
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Capture prospective reporter reference and join saved official results
-        run: node scripts/collect-omura-reference.cjs
-      - name: Preserve immutable reference evidence
-        if: always()
-        run: node scripts/save-live-verification-sources.js
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: omura-reporter-reference
-          path: ${{ runner.temp }}/omura-reference/report.json
-          if-no-files-found: error
-          retention-days: 30
