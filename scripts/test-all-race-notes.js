@@ -43,11 +43,23 @@ async function main() {
   const article = generateArticle(prediction());
   assert.equal(article.publishable, true, 'low score/partial input is not a race coverage filter');
   assert.match(article.title, /唐津1R｜締切 16:00/);
-  assert.equal(article.freeText, `🚤 9月14日 唐津1R｜締切 16:00\n\n本命・押さえ・万舟を、展開の狙いとフォーメーションで掲載しています。\n\n${article.dataDisclosure}`);
+  assert.equal(article.marketingPreviewVersion, 'purchase-preview-v1');
+  assert.match(article.freeText, /^🚤 9月14日 唐津1R｜締切 16:00/);
+  assert.match(article.freeText, /展開の焦点：1号艇の逃げを中心に考える。/);
+  assert.match(article.freeText, /実戦厳選は1点です。/);
+  assert.ok(article.freeText.includes(article.dataDisclosure));
   const base = { article, record: { publicationPolicy: 'all-races-v1', date, jcd: '23', place: '唐津', raceNo: 1,
     raceKey: `${date}-23-1`, deadlineAt: '2030-09-14T16:00:00+09:00', prediction: prediction() },
     baselinePracticalTickets: prediction().practicalTickets, now: new Date(clock).toISOString() };
   assert.deepEqual(auditNotePublication(base).issues, []);
+  const mismatchedPreview = structuredClone(base);
+  mismatchedPreview.article.freeText = article.freeText.replace('実戦厳選は1点', '実戦厳選は7点');
+  mismatchedPreview.article.fullText = article.fullText.replace('実戦厳選は1点', '実戦厳選は7点');
+  assert.ok(auditNotePublication(mismatchedPreview).issues.some(
+    issue => issue.code === 'PURCHASE_PREVIEW_COUNT_MISMATCH'));
+  const legacyArticle = structuredClone(base);
+  delete legacyArticle.article.marketingPreviewVersion;
+  assert.deepEqual(auditNotePublication(legacyArticle).issues, [], '旧保存原稿の監査は維持する');
   for (const change of [b => { delete b.record.publicationPolicy; },
     b => { b.article.freeText = b.article.freeText.replace(b.article.dataDisclosure, ''); },
     b => { b.baselinePracticalTickets[0].ticket = '1-3-2'; },
