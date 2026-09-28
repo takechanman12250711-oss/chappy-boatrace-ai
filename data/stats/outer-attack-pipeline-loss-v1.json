@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-pipeline-loss-v1",
-  "generatedAt": "2026-09-28T02:51:00.954Z",
+  "generatedAt": "2026-09-28T02:53:52.700Z",
   "productionChanged": false,
   "automaticApplication": false,
   "signalRaceCount": 39,
   "stageCounts": {
-    "archive-missed": 19,
+    "archive-missed": 18,
     "not-comparable": 14,
-    "settled": 6
+    "settled": 6,
+    "archived-unsettled": 1
   },
   "notComparableVariantStatus": {
     "cover:no-category-candidate": 13,
@@ -1081,10 +1082,58 @@
       "raceKey": "20260928-02-3",
       "selectedAt": "2026-09-28T02:36:39.258Z",
       "signalGate": "active",
-      "stage": "archive-missed",
-      "archiveCount": 0,
+      "stage": "archived-unsettled",
+      "archiveCount": 1,
       "exclusionStatus": "",
-      "variantDiagnostics": []
+      "variantDiagnostics": [
+        [
+          {
+            "variant": "cover",
+            "status": "ready",
+            "candidateCount": 1,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "3-1-6",
+              "toTicket": "2-1-4",
+              "carriedAmountYen": 100,
+              "targetPosition": 3,
+              "candidateId": "",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 98
+            }
+          },
+          {
+            "variant": "flow",
+            "status": "ready",
+            "candidateCount": 7,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "4-3-6",
+              "toTicket": "1-4-2",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "shadow-physical-1-4-2",
+              "candidateKind": "outer-attack-shadow-physical",
+              "purchaseEligible": true,
+              "evidenceQualified": true,
+              "priorityScore": 72.958
+            }
+          },
+          {
+            "variant": "hole",
+            "status": "no-source-ticket",
+            "candidateCount": 0,
+            "sourceTicketPresent": false,
+            "replacement": null
+          }
+        ]
+      ]
     }
   ]
 }
