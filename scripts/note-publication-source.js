@@ -29,7 +29,9 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
   require('./note-exhibition').requireExhibition(bundle.record);
   // A monitoring original is already the final article. It must never pass
   // through the normal AI article generator or its presentation compactor.
-  const article = independent ? independentArticle(bundle) : compactArticle(bundle.article, bundle.record.prediction);
+  const baseArticle = independent ? independentArticle(bundle) : compactArticle(bundle.article, bundle.record.prediction);
+  const { navigation, loadConfig } = require('./note-marketing-content');
+  const article = independent ? baseArticle : navigation(baseArticle, loadConfig(rootDir));
   const audit = auditNotePublication({ ...bundle, article, now: new Date(now).toISOString() });
   if (!audit.contentReady) {
     const error = new Error('publication_content_audit_blocked');

@@ -14,3 +14,6 @@
 
 
 最新方針: 全レース予想は公式展示が揃ってから生成・投稿する。最大24点候補の成績は1点100円の別集計とし、実戦厳選・実購入成績は維持する。詳細は docs/note-automation.md の最新節。
+
+
+2026-09-28承認: 無料の固定案内と日次一覧は config/note-marketing.json の2記事だけを別経路で更新する。Update note marketing が公開receipt・原稿SHA・無料本文・リンクを検証する。レース予想の300円・展示後・締切・予約・不変条件は従来どおり。詳細は docs/note-automation.md の最新節。

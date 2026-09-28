@@ -103,3 +103,15 @@ description: チャッピーボートレースAIのnote公開経路を扱う。�
 - 再開時は既存Workブラウザのログイン済み画面を先に確認し、認証が失われた証拠がない限り再ログインを依頼しない。GitHub向けの初回登録を進めるには、iPhoneから本人操作でき、認証を無人実行側へ安全に渡す正式機能のある実行環境が必要。採用済みと扱わず、既存の不採用経路へ戻らない。
 
 
+
+
+## 無料の固定案内・日次一覧（2026-09-28ユーザー承認）
+
+ユーザーの「自動で全部完結させたい」により、config/note-marketing.json の2記事の無料公開・固定案内・日次更新を承認済み。レース予想の無料化や無料サンプル追加は含まない。
+
+- Update note marketing は予想投稿workflow成功後と15分ごとの予定で起動し、同じ note-ui-transport concurrency と保存済み Browser Use profile を再利用する。GitHub schedule/queueの遅延はあり得る。
+- scripts/update-note-marketing.js は許可された2つの既存記事IDだけを更新する。レース予想用300円監査とは分離し、無料設定・記事同一性・匿名公開本文全行・リンク先を照合する。新規記事を毎回作らない。
+- 日次一覧は note-published の公開成功receiptと元保存原稿SHAを照合し、当日分を締切順に掲載する。下書き・失敗・未検証URLは掲載しない。日付は日本時間で切り替える。
+- 前回の確認済み本文hashと異なる手編集、非公開化、有料化、認証切れでは停止する。投稿ボタン連打や再作成で回避しない。更新済み本文なら同じIDを読み直して復旧する。
+- 検証済み状態は note-marketing-state ブランチへ保存し、日次更新でmainやPagesを更新しない。通常予想の公開用コピーには無料部分に案内・一覧へのリンクだけを追加する。保存原稿、買い目、有料本文、独立監視原稿は維持する。
+- 検証: node --test scripts/note-marketing.test.js と node scripts/note-linked-body.test.js（Playwright Chromium）。本番完了はworkflow成功と匿名公開照合のログで判断する。
