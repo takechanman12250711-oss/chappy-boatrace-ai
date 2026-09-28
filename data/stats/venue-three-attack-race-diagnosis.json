@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "analysisId": "venue-three-attack-race-diagnosis-v1",
-  "generatedAt": "2026-09-27T19:59:18.681Z",
-  "sourceGeneratedAt": "2026-09-27T19:59:17.220Z",
+  "generatedAt": "2026-09-28T13:15:34.887Z",
+  "sourceGeneratedAt": "2026-09-28T13:15:29.498Z",
   "source": "official pre-deadline predictions joined to official results",
   "analysisInputContract": "official-pre-deadline-cohort-v1",
   "targetScenario": {
@@ -21,21 +21,21 @@
     "payoutDependence": "的中払戻のうち最高1件の寄与率と、その1件を除いた診断上の回収率"
   },
   "diagnostics": {
-    "canonicalPredictionCount": 2927,
-    "preDeadlinePredictionCount": 2913,
+    "canonicalPredictionCount": 2962,
+    "preDeadlinePredictionCount": 2948,
     "excludedPredictionCount": 14,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 1,
       "timestamp-missing": 7
     },
-    "officialResultCount": 2889,
-    "settledJoinCount": 2889,
+    "officialResultCount": 2923,
+    "settledJoinCount": 2923,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json"
   },
   "focusVenueCount": 3,
-  "raceCount": 84,
+  "raceCount": 85,
   "venues": [
     {
       "jcd": "06",
@@ -1384,13 +1384,13 @@
       "jcd": "16",
       "place": "児島",
       "role": "loss-focus",
-      "raceCount": 24,
+      "raceCount": 25,
       "hitCount": 4,
-      "hitRate": 16.7,
-      "stake": 22500,
+      "hitRate": 16,
+      "stake": 23500,
       "return": 8030,
-      "profit": -14470,
-      "recoveryRate": 35.7,
+      "profit": -15470,
+      "recoveryRate": 34.2,
       "ticketCount": {
         "minimum": 7,
         "maximum": 10,
@@ -1405,13 +1405,13 @@
           "payout": 4340
         },
         "highestHitReturnShare": 54,
-        "recoveryRateWithoutHighestHit": 16.4,
+        "recoveryRateWithoutHighestHit": 15.7,
         "noHitReturn": false
       },
       "actualHeads": [
         {
           "key": "1",
-          "count": 9
+          "count": 10
         },
         {
           "key": "3",
@@ -1447,7 +1447,7 @@
       "winningMethods": [
         {
           "key": "逃げ",
-          "count": 9
+          "count": 10
         },
         {
           "key": "まくり",
@@ -1470,12 +1470,12 @@
         "first": 9,
         "second": 5,
         "third": 5,
-        "outsideTop3": 5
+        "outsideTop3": 6
       },
       "firstDivergence": [
         {
           "key": "SECOND_POSITION",
-          "count": 10
+          "count": 11
         },
         {
           "key": "HEAD_POSITION",
@@ -1494,20 +1494,20 @@
         {
           "theoryKey": "flow",
           "label": "展開",
-          "raceCount": 24,
+          "raceCount": 25,
           "hitRaceCount": 4,
-          "missRaceCount": 20,
-          "formalRaceCount": 24,
-          "hitRate": 16.7
+          "missRaceCount": 21,
+          "formalRaceCount": 25,
+          "hitRate": 16
         },
         {
           "theoryKey": "holdPickup",
           "label": "残し・拾い",
-          "raceCount": 24,
+          "raceCount": 25,
           "hitRaceCount": 4,
-          "missRaceCount": 20,
-          "formalRaceCount": 24,
-          "hitRate": 16.7
+          "missRaceCount": 21,
+          "formalRaceCount": 25,
+          "hitRate": 16
         }
       ],
       "races": [
@@ -2527,6 +2527,49 @@
           ],
           "prefixCovered": [
             false,
+            false,
+            false
+          ],
+          "theoryClaims": [
+            {
+              "theoryKey": "flow",
+              "label": "展開",
+              "formal": true
+            },
+            {
+              "theoryKey": "holdPickup",
+              "label": "残し・拾い",
+              "formal": true
+            }
+          ]
+        },
+        {
+          "raceKey": "20260928-16-1",
+          "date": "20260928",
+          "jcd": "16",
+          "place": "児島",
+          "raceNo": 1,
+          "scenarioKey": "threeAttack",
+          "scenarioLabel": "3コース攻め",
+          "actualTicket": "1-4-2",
+          "winningMethod": "逃げ",
+          "payout": 1280,
+          "ticketCount": 10,
+          "stake": 1000,
+          "return": 0,
+          "hit": false,
+          "actualHead": "1",
+          "actualSecond": "4",
+          "actualThird": "2",
+          "boat3Finish": null,
+          "firstDivergence": "SECOND_POSITION",
+          "positionCovered": [
+            true,
+            false,
+            true
+          ],
+          "prefixCovered": [
+            true,
             false,
             false
           ],
@@ -4033,14 +4076,14 @@
       "venue": {
         "jcd": "16",
         "place": "児島",
-        "raceCount": 24,
-        "hitRate": 16.7,
-        "recoveryRate": 35.7,
+        "raceCount": 25,
+        "hitRate": 16,
+        "recoveryRate": 34.2,
         "medianTicketCount": 10,
         "highestHitReturnShare": 54,
-        "recoveryRateWithoutHighestHit": 16.4,
-        "boat3FirstRate": 37.5,
-        "headDivergenceRate": 20.8
+        "recoveryRateWithoutHighestHit": 15.7,
+        "boat3FirstRate": 36,
+        "headDivergenceRate": 20
       },
       "control": {
         "jcd": "20",
@@ -4055,10 +4098,10 @@
         "headDivergenceRate": 22.6
       },
       "deltaVsControl": {
-        "hitRate": -18.8,
-        "recoveryRate": -201.3,
+        "hitRate": -19.5,
+        "recoveryRate": -202.8,
         "medianTicketCount": 0,
-        "boat3FirstRate": 21.4
+        "boat3FirstRate": 19.9
       }
     }
   ],
