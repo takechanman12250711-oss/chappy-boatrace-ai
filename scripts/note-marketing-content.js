@@ -32,7 +32,9 @@ function urlsIn(text) { return [...new Set(String(text).match(/https:\/\/note\.c
 function bodyHtml(text) {
   const escape = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   return String(text).replace(/\r\n?/g, '\n').split('\n').map(line => {
-    let value = escape(line);
+    // HTML collapses leading/repeated ASCII spaces; explicit NBSP preserves
+    // the exact source spacing through the editor paste handler.
+    let value = escape(line).replace(/ /g, '&nbsp;');
     for (const url of urlsIn(line).sort((a,b) => b.length-a.length)) {
       // Navigation URLs are complete standalone lines; don't rewrite prediction text.
       if (line === url) value = `<a href="${escape(url)}">${escape(url)}</a>`;
