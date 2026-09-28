@@ -1,0 +1,55 @@
+name: Check partner rank history
+on:
+  pull_request:
+    paths:
+      - "scripts/open-partner-history-extract.cjs"
+      - "scripts/open-partner-rank-protocol.json"
+      - "scripts/*partner-calibration*.cjs"
+      - ".github/workflows/check-open-partner-history.yml"
+permissions:
+  contents: read
+concurrency:
+  group: partner-rank-history-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+            js
+            config
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/checkout@v4
+        with:
+          ref: c9ed6755b9de811a0bd5aa1ad00f5a7f6b42d4c2
+          path: .rank-history
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /data/predictions/202609[0-1][0-9].json
+            /data/predictions/2026092[0-3].json
+            /data/predictions/source-archives/202609[0-1][0-9].*
+            /data/predictions/source-archives/2026092[0-3].*
+            /data/results/202609[0-1][0-9].json
+            /data/results/2026092[0-3].json
+      - name: Export pre-deadline partner scores and separate labels
+        run: node scripts/open-partner-history-extract.cjs .rank-history /tmp/partner-rank-history
+      - name: Preserve fixed protocol and code
+        if: always()
+        run: |
+          mkdir -p /tmp/partner-rank-history
+          cp scripts/open-partner-rank-protocol.json scripts/open-partner-history-extract.cjs /tmp/partner-rank-history/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: partner-rank-history
+          path: /tmp/partner-rank-history/
+          retention-days: 14
+          if-no-files-found: error
