@@ -1594,14 +1594,20 @@
   function allRaceArticle(article, prediction) {
     const meta = getRaceMeta(prediction);
     const disclosure = "作成時点の取得済み情報による参考予想です。展示・気象・オッズ等の追加情報で評価が変わる場合があります。";
+    const focus = briefReason(article.rangeSummary || "")
+      .split(/(?<=[。！？])/)[0].trim();
+    const practicalCount = article.practicalTickets.length;
     const freeText = [
       `🚤 ${formatDate(meta.date)} ${meta.place}${meta.raceNo}R｜${formatDeadlineLabel(meta.deadline)}`,
+      focus ? `展開の焦点：${focus}` : "",
       "本命・押さえ・万舟を、展開の狙いとフォーメーションで掲載しています。",
+      `実戦厳選は${practicalCount}点です。各区分の候補と重複するため、全部を合算して買う案内ではありません。`,
       disclosure
     ].filter(Boolean).join("\n\n");
     const fullText = [freeText, PAYWALL_MARKER, article.paidText,
       "※舟券の購入は自己責任で、無理のない範囲でお楽しみください。", article.tags.join(" ")].join("\n\n");
-    return { ...article, title: article.title.replace("厳選予想", "レース予想"), publicationPolicy: "all-races-v1", dataDisclosure: disclosure, freeText, fullText };
+    return { ...article, title: article.title.replace("厳選予想", "レース予想"), publicationPolicy: "all-races-v1", dataDisclosure: disclosure,
+      marketingPreviewVersion: "purchase-preview-v1", freeText, fullText };
   }
 
   const api = {

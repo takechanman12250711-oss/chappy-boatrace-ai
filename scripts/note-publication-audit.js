@@ -173,6 +173,15 @@ function auditNotePublication(input = {}) {
       return report;
     }
     report.articleSha256 = sha256(`# ${title}\n\n${fullText}\n`);
+    if (article.marketingPreviewVersion) {
+      const counts = [...freeText.matchAll(/実戦厳選は(\d+)点です。/g)];
+      const baseline = ticketsOf(baselinePracticalTickets);
+      if (article.marketingPreviewVersion !== "purchase-preview-v1" ||
+          counts.length !== 1 || !baseline.length ||
+          Number(counts[0][1]) !== baseline.length) {
+        issue("PURCHASE_PREVIEW_COUNT_MISMATCH", "無料部分の実戦厳選点数が保存済みの独立買い目と一致しません。");
+      }
+    }
     const raceLabel = `${Number(date.slice(4, 6))}月${Number(date.slice(6, 8))}日 ${place}${raceNo}R`;
     if (!normalized(title).includes(raceLabel) || !normalized(freeText).includes(raceLabel)) {
       issue("RACE_LABEL_MISMATCH", "タイトルまたは本文の対象レース表示が一致しません。");
