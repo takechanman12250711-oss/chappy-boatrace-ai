@@ -1,5 +1,5 @@
 'use strict';
-const { VERSION, jstDate, initialState, receiptRow } = require('./note-marketing-content');
+const { VERSION, jstDate, recentDates, initialState, receiptRow } = require('./note-marketing-content');
 const REPO = 'takechanman12250711-oss/chappy-boatrace-ai';
 const BRANCH = 'note-marketing-state';
 function client(env = process.env, request = fetch) {
@@ -35,23 +35,27 @@ function client(env = process.env, request = fetch) {
   async function collect(state, now = Date.now()) {
     const refs = await api('/git/matching-refs/tags/note-published/');
     if (!Array.isArray(refs)) throw new Error('marketing_receipt_refs_invalid');
-    const seen = new Set(state.seenRefs), date = jstDate(now);
-    const rows = state.date === date ? [...state.rows] : [];
+    // One-time migration rechecks receipts to recover yesterday's verified
+    // originals and add count/result links. Later runs remain incremental.
+    const migrated = state.receiptWindowVersion === 2;
+    const seen = new Set(migrated ? state.seenRefs : []), date = jstDate(now), dates = recentDates(now);
+    const rows = migrated ? state.rows.filter(r=>dates.includes(r.raceKey.slice(0,8))) : [];
     for (const ref of refs) {
       if (!/^refs\/tags\/note-published\/[a-f0-9]{64}$/.test(ref.ref || '') || !/^[a-f0-9]{40}$/.test(ref.object?.sha || '')) throw new Error('marketing_receipt_ref_invalid');
       const key = `${ref.ref}:${ref.object.sha}`;
       if (seen.has(key)) continue;
       const receipt = JSON.parse(await file('receipt.json', ref.object.sha));
-      // Validate old receipts too, but only fetch prediction originals for today.
+      // Validate old receipts too; originals are needed for today and yesterday.
       let bytes = '';
-      if (String(receipt.raceKey).slice(0, 8) === date && /^\d{8}-\d{2}-\d{1,2}$/.test(receipt.raceKey) && /^[a-f0-9]{64}$/.test(receipt.sourceSha256 || '')) {
-        bytes = await file(`data/note-drafts/${date}/${receipt.raceKey}-${receipt.sourceSha256}.json`, 'main');
+      const sourceDate = String(receipt.raceKey).slice(0,8);
+      if (dates.includes(sourceDate) && /^\d{8}-\d{2}-\d{1,2}$/.test(receipt.raceKey) && /^[a-f0-9]{64}$/.test(receipt.sourceSha256 || '')) {
+        bytes = await file(`data/note-drafts/${sourceDate}/${receipt.raceKey}-${receipt.sourceSha256}.json`, 'main');
       }
       const row = receiptRow(receipt, bytes, now);
       if (row) rows.push(row);
       seen.add(key);
     }
-    return { ...state, date, seenRefs: [...seen].sort(), rows };
+    return { ...state, date, receiptWindowVersion: 2, seenRefs: [...seen].sort(), rows };
   }
   async function save(state, head) {
     const tree = await api('/git/trees', 'POST', { tree: [{ path: 'state.json', mode: '100644', type: 'blob', content: JSON.stringify(state, null, 2) + '\n' }] });

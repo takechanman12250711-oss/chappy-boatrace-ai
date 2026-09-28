@@ -27,6 +27,11 @@ const { readEditorContent, compareEditorContent } = require('./note-editor-conte
     assert(compareEditorContent(await readEditorContent(input),body).equal);
     await fillLinkedBody(page,input,'通常の本文\n1-3-2');
     assert(compareEditorContent(await readEditorContent(input),'通常の本文\n1-3-2').equal);
+    const resultUrl='https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20260928&jcd=13&rno=4';
+    const resultBody='公開 11:38｜実戦厳選2点\n公式結果を確認\n'+resultUrl;
+    await fillLinkedBody(page,input,resultBody);
+    assert(compareEditorContent(await readEditorContent(input),resultBody).equal);
+    assert.equal(await input.locator('a').getAttribute('href'),resultUrl,'query parameters survive HTML paste');
     await readerContext.close();
     console.log('Linked note body paste: full replacement, spacing, reader context and clickable URL verified');
   } finally { await browser.close(); await new Promise(resolve=>server.close(resolve)); }
