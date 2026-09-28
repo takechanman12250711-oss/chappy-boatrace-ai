@@ -17,7 +17,7 @@ function fixture(change = () => {}) {
   const bundle = { version: 'note-draft-bundle-v1', baselinePracticalTickets: ['1-2-5','1-2-6','1-6-2','1-6-5'], record: {
     publicationPolicy: 'all-races-v1', date, jcd: '24', raceNo: 6, raceKey,
     selectedAt: '2030-09-14T19:46:00+09:00', deadlineAt: '2030-09-14T19:56:00+09:00',
-    reviewEvidence: { predictionMode: 'server_pre_deadline', officialResultUsedForPrediction: false },
+    reviewEvidence: { method: 'fixture-generation', predictionMode: 'server_pre_deadline', officialResultUsedForPrediction: false },
     exhibitionSnapshot: { version: 'note-exhibition-v1', ready: true, capturedAt: '2030-09-14T19:46:00+09:00',
       entries: entries.map(boat => ({ boat, exhibition: { displayTime: 6.8 } })),
       startExhibition: entries.map((boat,i) => ({ boat, course: i+1, st: .12, mappingSource: 'official-start-image' })) },
@@ -85,6 +85,8 @@ test('reports keep pending null, use official results, isolate ticket-count coho
   put({...result,resultSource:'unverified'}); assert.equal(buildReport(root,{}).pending,1);
   put(result); const report=buildReport(root,{});
   assert.equal(report.descriptiveAll.chappyHits,1); assert.equal(report.sameCountWithinFiveMinutes.races,1);
+  assert.equal(report.byChappyMethod[0].method,'fixture-generation');
+  assert.equal(report.byChappyMethod[0].descriptive.misses.chappy.head_missing,0);
   assert.equal(report.rows[0].reporterAimHit,false);
   put({...result,void:true}); assert.equal(buildReport(root,{}).voidOrRefundExcluded,1);
   put({...result,refundBoats:[6]}); assert.equal(buildReport(root,{}).descriptiveAll.races,0);

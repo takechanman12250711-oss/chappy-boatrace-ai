@@ -20,6 +20,7 @@
 - `data/omura-reference/YYYYMMDD/<raceKey>-<SHA256>.json` に不変保存。本命と狙い目は別配列。記事全文・短評は複製せず、数値・買い目・出典URL・レスポンスSHA・取得時刻を保存する。
 - 成績に使うのは各Rの最初の有効保存のみ。後の版から当たりを選ばない。締切後の既存 `data/results` と共通の公式結果契約で照合し、不成立・返還は別扱い、結果待ちは未確定とする。
 - `omura-reporter-reference` artifact の `report.json` に全対象の記述集計と「同点数かつ取得差5分以内」の別集計を出す。対象0件の的中率はnull。1着不足・1/2着の組不足・3着不足を分ける。狙い目を本命の的中率へ足さない。
+- 保存原本の `reviewEvidence.method` を保持し、方式別の `byChappyMethod` を併記する。方式混在の全体集計を現行方式の精度と呼ばない。方式不明はunknownで分離する。
 - これは大村・保存済み通常予想という限定母集団の比較用。投資成績・売上効果・改善実証とは区別する。採用gate未登録。`productionChanged=false`、`automaticProductionChange=false`、`usableForPrediction=false` を維持する。
 
 ## note販売への反映方針

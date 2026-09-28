@@ -105,6 +105,7 @@ function buildCapture({ bundle, file, bytes, responseBytes, startedAt, capturedA
     sourceCommit: process.env.GITHUB_SHA || null,
     source: { url: urlFor(r.date, r.raceNo), sha256: hash(responseBytes), ...page },
     chappy: { sourcePath: file, sourceSha256: hash(bytes), capturedAt: r.selectedAt, deadlineAt: r.deadlineAt,
+      method: r.reviewEvidence.method || null,
       mainBoat: r.prediction?.mainSheet?.honmei?.boatNo ?? null, practicalTickets: practical,
       exhibitionSnapshot: r.exhibitionSnapshot } };
   if (page.status !== 'ready') return { ...common, status: page.status };

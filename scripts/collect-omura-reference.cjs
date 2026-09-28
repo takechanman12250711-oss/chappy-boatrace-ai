@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { VERSION, hash, urlFor, validateBundle, buildCapture, saveCapture } = require('./omura-reference.cjs');
-const { actualTicket, isOfficialResultSource } = require('./analysis-input-contract');
+const { actualTicket, isOfficialResultSource, raceKey } = require('./analysis-input-contract');
 function sourceFiles(root, directory, date = null) {
   const base = path.join(root, directory);
   if (!fs.existsSync(base)) return [];
@@ -45,8 +45,8 @@ function buildReport(root, collection, now = Date.now()) {
     try {
       for (const r of JSON.parse(fs.readFileSync(file)).races || []) {
         if (!isOfficialResultSource(r)) continue;
-        const key = r.raceKey || `${date}-${String(r.jcd).padStart(2,'0')}-${r.raceNo}`;
-        results.set(key, r);
+        const key = raceKey(r,date);
+        if (key && key.startsWith(`${date}-24-`)) results.set(key, r);
       }
     } catch (error) { inputErrors.push({ date, reason: error.message }); }
   }
@@ -58,6 +58,7 @@ function buildReport(root, collection, now = Date.now()) {
     const settled = !excluded && r?.resultAvailable === true && Boolean(actual);
     return { raceKey: p.raceKey, referencePath: p.referencePath, sourceUrl: p.source.url,
       chappySourcePath: p.chappy.sourcePath, capturedAt: p.capturedAt, comparison: p.comparison,
+      chappyMethod: p.chappy.method || 'unknown',
       reporterMainTickets: p.source.mainTickets, reporterAimTickets: p.source.aimTickets,
       chappyTickets: p.chappy.practicalTickets,
       status: excluded ? 'void_or_refund_excluded' : settled ? 'settled' : 'result_pending',
@@ -69,7 +70,9 @@ function buildReport(root, collection, now = Date.now()) {
     chappyHits: list.filter(r => r.chappy === 'hit').length,
     reporterMainHits: list.filter(r => r.reporterMain === 'hit').length,
     chappyHitRate: list.length ? list.filter(r => r.chappy === 'hit').length / list.length : null,
-    reporterMainHitRate: list.length ? list.filter(r => r.reporterMain === 'hit').length / list.length : null });
+    reporterMainHitRate: list.length ? list.filter(r => r.reporterMain === 'hit').length / list.length : null,
+    misses: Object.fromEntries(['chappy','reporterMain'].map(side => [side, Object.fromEntries(
+      ['head_missing','second_missing','third_missing'].map(reason => [reason,list.filter(r => r[side] === reason).length]))])) });
   const settled = rows.filter(r => r.status === 'settled');
   return { version: VERSION, generatedAt: new Date(now).toISOString(), productionChanged: false,
     automaticProductionChange: false, usableForPrediction: false, collection,
@@ -78,9 +81,15 @@ function buildReport(root, collection, now = Date.now()) {
     voidOrRefundExcluded: rows.filter(r => r.status === 'void_or_refund_excluded').length,
     descriptiveAll: score(settled),
     sameCountWithinFiveMinutes: score(settled.filter(r => r.comparison.equalMainTicketCount && r.comparison.withinFiveMinutes)),
+    byChappyMethod: [...new Set(rows.map(r => r.chappyMethod))].sort().map(method => {
+      const subset = settled.filter(r => r.chappyMethod === method);
+      return { method, descriptive: score(subset),
+        sameCountWithinFiveMinutes: score(subset.filter(r => r.comparison.equalMainTicketCount && r.comparison.withinFiveMinutes)) };
+    }),
     limitations: ['One venue only; selected exhibition-ready saved normal predictions, not all site selections.',
       'First valid prospective capture only. Different ticket counts and capture gaps remain visible.',
       'Ticket match diagnostics, not purchase performance or evidence for automatic adoption.',
+      'Aggregate across methods is descriptive only; use byChappyMethod for a generation comparison.',
       'Reporter aim tickets stay separate from the main comparison. No backfill.'], rows };
 }
 async function collect({ root = process.cwd(), now = Date.now, request = fetch } = {}) {
