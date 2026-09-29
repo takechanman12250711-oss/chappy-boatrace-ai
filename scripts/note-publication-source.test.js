@@ -41,9 +41,9 @@ async function main() {
   const payload = publicationPayload(sourcePath, root, clock);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
-  assert.equal(MAX_PUBLICATION_TICKETS, 7);
-  assert.equal(requirePublicationTicketCount({ practicalTickets: Array(7).fill({ ticket: '1-2-3' }) }), 7);
-  assert.throws(() => requirePublicationTicketCount({ practicalTickets: Array(8).fill({ ticket: '1-2-3' }) }), /exceeds_7/);
+  assert.equal(MAX_PUBLICATION_TICKETS, 10);
+  assert.equal(requirePublicationTicketCount({ practicalTickets: Array(10).fill({ ticket: '1-2-3' }) }), 10);
+  assert.throws(() => requirePublicationTicketCount({ practicalTickets: Array(11).fill({ ticket: '1-2-3' }) }), /exceeds_10/);
   assert.deepEqual(verifyPublicationSource(payload, root, clock), payload);
   assert.deepEqual(requirePublicationGate(payload, root, clock), payload);
   const { loadCoverTemplate } = require('./note-cover');
