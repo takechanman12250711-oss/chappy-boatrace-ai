@@ -53,3 +53,17 @@
 - https://developers.line.biz/en/reference/messaging-api/
 
 検証: `node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/check-line-connection.test.cjs scripts/send-note-social.test.cjs`。`Check paired X and LINE distribution` がPR/mainで認証なしのモック検証、note transport回帰と共有スキルの整合性を確認する。
+
+## 2026-09-29 無料運用への変更（最新のユーザー承認）
+
+XはBuffer Free、LINEはURIリッチメニューによるnote一覧への導線とする。以前のX API有料承認・LINE同時broadcast方針は撤回。`Update note marketing` は `send-note-buffer.cjs` だけを呼び、直接X APIの認証情報とLINE tokenを受け取らない。従来の共有claim/evidence validatorは重複防止と原本照合のため再利用する。
+
+- Buffer Freeを本人が選択し、X `@chappy_boat_ai` を接続。Settings → API（https://publish.buffer.com/settings/api）で作ったキーをGitHub Actions Secret `BUFFER_API_KEY` に保存する。キーをチャット・PR・ログへ貼らない。iPhoneのブラウザで完結する。
+- 接続後、`config/note-social.json` の `enabled` と `activatedAt` を設定する。接続前は無効で外部呼出しゼロ。開始時刻より前のレースは送らない。1つのBuffer組織・指定Xアカウントのみ許可。
+- `shareNow` で的中速報を送る。作成受付だけでは公開済みにしない。Bufferの `sent`、本文・channel・post ID・本人のstatus URLを照合して `buffer_confirmed_sent` を記録。Xの公開ページ独立確認とは区別する。
+- `note-social-claim` は旧方式と共通で永久保持。Buffer作成結果不明時も自動再作成しない。受付・照合完了は別tag。未確定照合は直近2日、30分間隔・最大6回、以後は手動確認。古い未確定claimも削除しない。
+- 外部APIの前に `note-buffer-api` tagでリクエスト枠を予約し、ローリング24時間80リクエスト以内に制限する。この自動化だけなら30日3000回未満。キーを他用途と共用するとその分は別途消費される。429等で停止し、有料プランへ自動変更しない。空振り定期実行ではBufferを呼ばない。
+- LINEは `Set up LINE free navigation` で `@009mdbvr` を照合して、2ボタンの既定メニューを設定・画像SHAと設定を再取得照合する。broadcast/push/replyは呼ばない。個別ユーザーメニューが既に設定されている場合はそちらが優先される。iPhone実表示は本人確認と区別する。
+- 「今日の予想」「結果を見る」は、予想リンクと的中・不的中の両方を載せた既存の同じ日次一覧 https://note.com/great_robin3243/n/na76b6c6c18ff を開く。新しい記事や存在しないアンカーは作らない。
+
+公式仕様確認（2026-09-29）: https://buffer.com/pricing 、https://developers.buffer.com/guides/api-limits.html 、https://developers.buffer.com/guides/posts-and-scheduling.html 、https://developers.line.biz/en/docs/messaging-api/using-rich-menus/ 。無料プランも上限はあるため無制限とは案内しない。
