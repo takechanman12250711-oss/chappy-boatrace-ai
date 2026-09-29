@@ -283,3 +283,7 @@ node scripts/check-charter.js
 - 前回の確認済み本文hashと異なる手編集、非公開化、有料化、認証切れでは停止する。投稿ボタン連打や再作成で回避しない。更新済み本文なら同じIDを読み直して復旧する。
 - 検証済み状態は note-marketing-state ブランチへ保存し、日次更新でmainやPagesを更新しない。通常予想の公開用コピーには無料部分に案内・一覧へのリンクだけを追加する。保存原稿、買い目、有料本文、独立監視原稿は維持する。
 - 検証: node --test scripts/note-marketing.test.js と node scripts/note-linked-body.test.js（Playwright Chromium）。本番完了はworkflow成功と匿名公開照合のログで判断する。
+
+## 的中報告のnote・X・LINE展開（2026-09-29ユーザー依頼）
+
+公開receiptとその保存原本の実戦厳選買い目を既存の公式結果に照合し、無料の日次一覧へ種類別の全成績を載せる。Xは的中速報、LINEは日次まとめの原稿を同じ状態ブランチに用意する。X・LINEの配信先と認証は未確認で、原稿の生成を送信完了とは呼ばない。接続の残作業と集計条件は `docs/note-hit-reporting.md` を参照。

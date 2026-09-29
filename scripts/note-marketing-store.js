@@ -1,5 +1,6 @@
 'use strict';
 const { VERSION, jstDate, recentDates, initialState, receiptRow } = require('./note-marketing-content');
+const { settlePublished, distributionDrafts } = require('./note-marketing-reports');
 const REPO = 'takechanman12250711-oss/chappy-boatrace-ai';
 const BRANCH = 'note-marketing-state';
 function client(env = process.env, request = fetch) {
@@ -14,8 +15,9 @@ function client(env = process.env, request = fetch) {
     if (!response.ok) throw new Error(`marketing_github_${method}_${response.status}`);
     return response.json();
   }
-  async function file(filePath, ref) {
-    let data = await api(`/contents/${filePath}?ref=${encodeURIComponent(ref)}`);
+  async function file(filePath, ref, missing = false) {
+    let data = await api(`/contents/${filePath}?ref=${encodeURIComponent(ref)}`, 'GET', null, missing);
+    if (data === null) return null;
     // The Contents API omits base64 for originals larger than 1 MiB.
     // Read the exact returned Git blob, then still verify the original SHA256.
     if (data.encoding === 'none' && data.type === 'file' && /^[a-f0-9]{40}$/.test(data.sha || '')) {
@@ -65,6 +67,39 @@ function client(env = process.env, request = fetch) {
     if (result.object?.sha !== commit.sha) throw new Error('marketing_state_save_unverified');
     return commit.sha;
   }
-  return { load, collect, save };
+  async function settle(state, config, now = Date.now()) {
+    const dates = [...new Set(state.rows.map(r => r.raceKey.slice(0,8)))];
+    const daily = new Map();
+    for (const date of dates) {
+      const bytes = await file(`data/results/${date}.json`, 'main', true);
+      if (bytes === null) continue;
+      const data = JSON.parse(bytes);
+      if (data.source !== 'boatrace-official' || data.date !== date || !Array.isArray(data.races)) throw new Error('marketing_results_file_invalid');
+      for (const r of data.races) {
+        const key = `${r.date}-${r.jcd}-${Number(r.raceNo)}`;
+        if (daily.has(key)) throw new Error('marketing_results_duplicate');
+        daily.set(key, r);
+      }
+    }
+    // Reuse both existing official collectors; do not introduce a new scraper.
+    let ledger = { races: {} };
+    if (state.rows.some(r => !daily.get(r.raceKey)?.resultAvailable && daily.get(r.raceKey)?.status !== 'void')) {
+      const bytes = await file('data/stats/race-review-results.json', 'main', true);
+      if (bytes) {
+        ledger = JSON.parse(bytes);
+        if (ledger.version !== 'race-review-results-v1' || !ledger.races) throw new Error('marketing_result_ledger_invalid');
+      }
+    }
+    const rows = [];
+    for (const row of state.rows) {
+      const bytes = await file(`data/note-drafts/${row.raceKey.slice(0,8)}/${row.raceKey}-${row.sourceSha256}.json`, 'main', true);
+      const result = daily.get(row.raceKey);
+      const official = result?.resultAvailable || result?.status === 'void' ? result : (ledger.races[row.raceKey] || result);
+      const settlement = bytes === null ? { status: 'review', reason: 'published_source_missing' } : settlePublished(row, bytes, official, now);
+      rows.push({ ...row, settlement });
+    }
+    return { ...state, rows, distribution: distributionDrafts(rows, config, state.date) };
+  }
+  return { load, collect, settle, save };
 }
 module.exports = { REPO, BRANCH, client };
