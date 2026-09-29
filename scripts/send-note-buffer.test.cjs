@@ -69,6 +69,12 @@ function announcementFixture(){
  f.state.rows.push({...r,publicationKey:r.raceKey+':escape',articleSeries:'escape',url:r.url+'a'});
  return f;
 }
+test('run connects announcements only after verifying the current public index',async()=>{
+ const f=announcementFixture();f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260929');
+ await assert.rejects(run(f),/public_index_not_verified/);assert.deepEqual(f.events,[]);
+ f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));
+ const result=await run(f);assert.equal(result.announcement.articles,2);assert.equal(result.results[0].kind,'announcement');assert.equal(result.started,0);
+});
 test('announcements batch series, link only verified index and do not repeat covered articles',async()=>{
  const f=announcementFixture();let text;
  f.delivery.create=async t=>{text=t;assert([...f.saved.keys()].some(k=>k.startsWith('note-buffer-announcement/')));return {id:'a',text:t,channelId:'channel',status:'scheduled'};};
