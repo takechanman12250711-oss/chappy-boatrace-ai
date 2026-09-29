@@ -89,7 +89,11 @@ test('social drafts are dated, bounded, stable, series-separated and never marke
   assert.equal(distributionDrafts(rows,config,'20260930').x.items.length,0);
   const many=Array.from({length:144},(_,i)=>({...rows[0],publicationKey:`${i}:normal`}));
   const line=distributionDrafts(many,config,'20260929').line.items[0].text;
-  assert(line.length<5000); assert(line.includes('直近3件')); assert(line.includes('公開144件'));
+  assert(line.length<5000); assert.equal(line,drafts.x.items[0].text);
+  assert.equal(distributionDrafts(many,config,'20260929').line.items.length,144);
+  assert.equal(drafts.mode,'paired-hit');
+  assert.equal(drafts.line.items[0].publicationKey,drafts.x.items[0].publicationKey);
+  assert.equal(distributionDrafts([{...rows[0],settlement:{status:'miss'}}],config,'20260929').line.items.length,0);
 });
 test('store uses existing daily official data, including results absent from research ledger', async () => {
   const f=fixture(), calls=[];
