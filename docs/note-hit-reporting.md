@@ -1,6 +1,6 @@
 # 的中報告から購入までの導線
 
-2026-09-29のユーザー依頼: noteの的中報告をLINE・Xにも配信し、note収益につなげる。
+2026-09-29のユーザー依頼: noteの的中報告をLINE・Xにも配信し、note収益につなげる。同日21:20 JSTに「両方同時配信で進めたい」と明示承認。LINEの日次まとめ案より、この同時配信方針を優先する。
 
 ## 媒体ごとの役割
 
@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | X | 当日の的中速報。種類、場・R、実戦厳選点数、確定組番、公式払戻（100円あたり）、事前公開記事 | 無料の全成績・今日の予想一覧へ |
 | note | 種類別の全公開記事と的中・不的中・結果待ち・不成立・照合確認中。各記事と公式結果へのリンク | 締切を確認して当日の予想へ |
-| LINE公式 | 1日1回の結果まとめを推奨。全体成績と直近3件の的中詳細、一覧へのリンク | 次の予想を確認して継続購読へ |
+| LINE公式 | Xと同じ的中速報を同じ処理から配信。公式アカウントの友だち全体が対象 | 全成績・今日の予想一覧へ |
 
 的中だけで全体成績を良く見せない。通常予想・イン逃げ・万舟を混ぜない。実購入額を持たないため、払戻は公式の100円あたりの金額として表示し、利益や実購入の回収率とは呼ばない。新規集客・一覧への流入・記事購入・再購入を順に測り、表示回数や的中報告数だけで成功と判断しない。売上の自動取得や媒体別購入計測はこの変更には含めていない。
 
@@ -22,15 +22,29 @@
 - 無料記事は既存の日次一覧 `https://note.com/great_robin3243/n/na76b6c6c18ff` を更新する。新規の有料記事を事後投稿する処理ではない。
 - `note-marketing-state` branchの `state.json` に `rows[].settlement` と `distribution` を保存する。配信原稿のIDは根拠と本文から決まり、同じ結果で毎回増殖しない。
 
-## X・LINE接続の残作業
+## 同時配信処理と接続の残作業
 
-この変更は原稿生成まで。`distribution.deliveryEnabled=false`、各媒体は `awaiting_connection`。実送信処理は未実装であり、送信済み・自動配信完了とは扱わない。
+`distributionDrafts` v2は的中記事ごとに同一本文・同一publicationKeyのX/LINE原稿を生成する。原稿の `deliveryEnabled=false` は送信証拠ではないことを表す。実配信は `scripts/send-note-social.cjs` と `config/note-social.json` が管理し、既存 `Update note marketing` の公開一覧更新成功後に実行する。新しい収集cronは追加しない。15分ごとの予定・既存キューによる遅延があり、完全に同じ秒の着信は保証しない。
 
-1. あっくんの配信用XプロフィールURLとLINE公式アカウントの友だち追加URLを確認する。個人LINEへの配信に置き換えない。
-2. iPhoneだけで本人認証を完了でき、認証が実際の送信処理に引き継がれる方法を確認する。PC操作・Cookie抽出・過去に不採用となったfresh X OAuth方式を要求しない。
-3. XのAPIは従量料金、LINEはプランごとの無料送信枠があるため、既存契約と予算を確認する。無断の課金・クレジット購入はしない。
-4. 実送信は配信先を固定し、LINEは1日1回、Xは同じ根拠の再投稿を防止する。API成功と表示確認を区別し、不明な送信結果を無条件に再送しない。LINEの再送は公式のリトライキーを使う。
-5. 本人が指定した配信先で、実際の投稿URL・送信結果を確認してから自動配信開始と報告する。
+実装済みの制御:
+
+- 当日の公開原本・公式結果を既存storeで再照合する。全成績一覧の検証済み本文hashが現在の照合結果と一致しないと送らない。miss/pending/review/voidは速報対象にしない。
+- 両媒体の同一本文・280文字相当の上限・記事識別を検査する。運用開始時刻より前に締切を迎えたレースは遡って配信しない。
+- GitHubの `note-social-claim/YYYYMMDD/<publicationKey hash>` を原子的に予約する。Xの有料認証確認より前に予約するので、認証失敗時も毎回課金される再試行を行わない。結果や本文が変わっても同じ記事を再送しない。
+- 固定LINE基本ID、上限200通以下・残数あり、固定XユーザーIDとユーザー名を確認後、X POSTとLINE broadcastを並列開始する。LINEの実際の消費は友だち人数に依存し、上限不足時は送れない。
+- 月間試行数は予約タグを数えて制限する。failed/unknownも試行数に含める。Xの料金承認と上限が未設定なら有料GETも送信も行わない。実際の金額上限はX側でも設定する。
+- LINEは固定retry keyを予約に保存する。自動再送はしない。XはPOST受付後にID・作者・本文をGETで照合し、確認済み投稿URLを保存する。
+- 結果は `note-social-receipt/YYYYMMDD/<publicationKey hash>` のreceipt.jsonへ保存する。X確認済みとLINE API受付の両方を満たす `both_accepted` はLINE端末配達の証明ではない。
+- 一方だけ成功・通信結果不明・記録失敗は予約を残して停止。自動再投稿・予約削除・成功媒体の再送は行わない。GitHub Actions Summaryとタグを照合して復旧方針を決める。
+
+現在の有効化条件（設定は未有効）:
+
+1. 配信用XプロフィールURLを本人指定と照合し、`xUserId` / `xUsername` を固定する。
+2. X公式APIを使う場合の料金・月間上限を本人が承認する。URL付き投稿、アカウント照合、投稿読戻しが課金対象。承認なしに `xApiCostApproved` を変更しない。
+3. 正規Developer ConsoleでRead and Write権限の本人用OAuth 1.0aキーを発行し、`X_API_KEY`、`X_API_SECRET`、`X_ACCESS_TOKEN`、`X_ACCESS_TOKEN_SECRET`をGitHub Secretsに保存する。鍵をチャット・スクショ・ログへ出さない。この接続は未検証であり、iPhone操作を案内する前に実画面と保存経路を確認する。note用fresh X OAuthやCookie抽出には戻らない。
+4. `monthlyMaxPairs`（1〜200）、未来へ遡らない `activatedAt`、`enabled:true` を承認済みの条件で設定し、実際のX投稿URL・LINE送信結果を確認する。設定変更だけで自動配信成功と報告しない。
+
+初期configは無効、Xアカウント未設定、料金未承認、月間上限0。未接続理由をSummaryへ表示する。LINEの本人宛テスト受信は完了済みだが、X/LINE同時の本番実送信は未確認。
 
 公式仕様の確認元（2026-09-29）:
 - https://docs.x.com/x-api/getting-started/pricing
@@ -38,4 +52,4 @@
 - https://developers.line.biz/en/docs/messaging-api/getting-started/
 - https://developers.line.biz/en/reference/messaging-api/
 
-検証: `node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js`。公開UIの回帰と共有スキルの整合性も既存CIで確認する。
+検証: `node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/check-line-connection.test.cjs scripts/send-note-social.test.cjs`。`Check paired X and LINE distribution` がPR/mainで認証なしのモック検証、note transport回帰と共有スキルの整合性を確認する。
