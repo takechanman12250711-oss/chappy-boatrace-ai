@@ -295,8 +295,21 @@ async function setPaidPrice(page, price) {
   if (value !== String(price)) throw new Error('note_price_verification_failed');
 }
 
-function paidBoundaryIndex(blocks, start) {
+function paidBoundaryIndex(blocks, start, freeText, paidText) {
   const matches = blocks.map((block, index) => !block.widget && block.text === start ? index : -1).filter(index => index >= 0);
+  // note may split a styled heading or add inline markup. Accept a boundary
+  // only when both complete sides equal the original audited article.
+  if (freeText !== undefined && paidText !== undefined) {
+    const normalize = value => String(value).replace(/\s+/g, '');
+    const candidates = blocks.flatMap((block, index) => {
+      if (!block.widget || block.buttons !== 1) return [];
+      const before = blocks.slice(0, index).filter(item => !item.widget).map(item => item.text).join('\n');
+      const after = blocks.slice(index + 1).filter(item => !item.widget).map(item => item.text).join('\n');
+      return normalize(before) === normalize(freeText) && normalize(after) === normalize(paidText) ? [index] : [];
+    });
+    if (candidates.length === 1) return candidates[0];
+    throw new Error('note_paid_boundary_target_not_unique');
+  }
   if (matches.length !== 1) throw new Error('note_paid_boundary_target_not_unique');
   const index = matches[0] - 1;
   if (index < 0 || !blocks[index].widget || blocks[index].buttons !== 1) {
@@ -305,7 +318,7 @@ function paidBoundaryIndex(blocks, start) {
   return index;
 }
 
-async function setPaidBoundary(page, paidText) {
+async function setPaidBoundary(page, paidText, freeText) {
   if (!(await clickVisibleText(page, ['有料エリア設定', '有料エリア']))) {
     throw new Error('note_paid_area_button_missing');
   }
@@ -325,7 +338,7 @@ async function setPaidBoundary(page, paidText) {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     blocks = await readBlocks();
     try {
-      index = paidBoundaryIndex(blocks, start);
+      index = paidBoundaryIndex(blocks, start, freeText, paidText);
       break;
     } catch (error) {
       if (error.message !== 'note_paid_boundary_target_not_unique' || attempt === 3) {
@@ -343,7 +356,7 @@ async function setPaidBoundary(page, paidText) {
     await editor.locator(':scope > *').nth(index).getByRole('button', { name: 'ラインをこの場所に変更', exact: true }).click();
   }
   const verified = await readBlocks();
-  const selected = paidBoundaryIndex(verified, start);
+  const selected = paidBoundaryIndex(verified, start, freeText, paidText);
   if (!verified[selected].pressed || verified.filter(block => block.pressed).length !== 1) {
     throw new Error('note_paid_boundary_verification_failed');
   }
@@ -361,7 +374,7 @@ async function configurePaidPublication(page, payload) {
   requireDraftGate(payload);
   await setPaidPrice(page, EXPECTED_PRICE_YEN);
   requireDraftGate(payload);
-  await setPaidBoundary(page, payload.paidText);
+  await setPaidBoundary(page, payload.paidText, payload.freeText);
   return { ok: true, price: EXPECTED_PRICE_YEN, paidStart: firstPaidParagraph(payload.paidText) };
 }
 
@@ -421,7 +434,7 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
     buttons: child.querySelectorAll('button').length,
     pressed: child.querySelector('button')?.getAttribute('aria-pressed') === 'true'
   })));
-  const index = paidBoundaryIndex(blocks, firstPaidParagraph(payload.paidText));
+  const index = paidBoundaryIndex(blocks, firstPaidParagraph(payload.paidText), payload.freeText, payload.paidText);
   const normalize = value => String(value).replace(/\s+/g, '');
   if (!blocks[index].pressed || blocks.filter(b => b.pressed).length !== 1 ||
       normalize(blocks.filter(b => !b.widget).map(b => b.text).join('\n')) !== normalize(articleBody(payload))) {
