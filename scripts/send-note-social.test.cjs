@@ -31,7 +31,7 @@ test('disabled, absent credentials and unapproved cost make zero calls including
     const r=await run(f);assert.equal(r.status,'awaiting_connection');assert.deepEqual(f.events,[]);
   }
   const f=fixture();f.env={...env,X_API_SECRET:''};assert.equal((await run(f)).status,'awaiting_connection');assert.deepEqual(f.events,[]);
-  assert(blockers(require('../config/note-social.json'),{},now).includes('delivery_not_enabled'));
+  assert.throws(()=>blockers(require('../config/note-social.json'),{},now),/social_config_invalid/); // paid paired route retired
 });
 test('both sends start after shared preflight and durable claim, without awaiting the other send',async()=>{
   const f=fixture();let release;
