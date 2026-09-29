@@ -7,12 +7,12 @@ const { compactArticle } = require('../js/note-generator');
 const { auditNotePublication } = require('./note-publication-audit');
 const { VERSION: MONITOR_VERSION, independentArticle } = require('./note-independent-monitor-source');
 const { seriesOfBundle, publicationKey, seriesTitle } = require('./note-article-series');
-const MAX_PUBLICATION_TICKETS = 7;
+const MAX_PUBLICATION_TICKETS = 10;
 
 function requirePublicationTicketCount(article) {
   const tickets = article?.practicalTickets;
   if (!Array.isArray(tickets) || tickets.length < 1) throw new Error('publication_ticket_count_invalid');
-  if (tickets.length > MAX_PUBLICATION_TICKETS) throw new Error('publication_ticket_count_exceeds_7');
+  if (tickets.length > MAX_PUBLICATION_TICKETS) throw new Error('publication_ticket_count_exceeds_10');
   return tickets.length;
 }
 
