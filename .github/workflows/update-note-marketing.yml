@@ -52,7 +52,7 @@ jobs:
       - name: Record checked-out revision
         run: echo "NOTE_CLAIM_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - name: Verify marketing safeguards
-        run: node --test scripts/note-marketing.test.js
+        run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js
       - run: npm install --no-save playwright@1.55.0
       - name: Update and verify free guide and daily index
         env:
