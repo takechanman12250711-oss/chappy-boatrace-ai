@@ -320,8 +320,25 @@ async function setPaidBoundary(page, paidText) {
     buttons: child.querySelectorAll('button').length,
     pressed: child.querySelector('button')?.getAttribute('aria-pressed') === 'true'
   })));
-  const blocks = await readBlocks();
-  const index = paidBoundaryIndex(blocks, start);
+  let blocks;
+  let index;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    blocks = await readBlocks();
+    try {
+      index = paidBoundaryIndex(blocks, start);
+      break;
+    } catch (error) {
+      if (error.message !== 'note_paid_boundary_target_not_unique' || attempt === 3) {
+        console.error(`NOTE_UI_BOUNDARY_DIAGNOSTIC=${JSON.stringify({
+          reason: error.message, attempt: attempt + 1, blocks: blocks.length,
+          targetIndices: blocks.flatMap((block, i) => !block.widget && block.text === start ? [i] : []),
+          markerIndices: blocks.flatMap((block, i) => block.widget && block.buttons === 1 ? [i] : [])
+        })}`);
+        throw error;
+      }
+      await page.waitForTimeout(500);
+    }
+  }
   if (!blocks[index].pressed) {
     await editor.locator(':scope > *').nth(index).getByRole('button', { name: 'ラインをこの場所に変更', exact: true }).click();
   }
