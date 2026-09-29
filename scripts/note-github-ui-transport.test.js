@@ -78,6 +78,8 @@ assert.throws(() => paidBoundaryIndex([paragraph('🔵 本命予想'), marker], 
 // still identify exactly one marker without guessing from a heading match.
 const splitHeading = [paragraph('無料本文'), marker, paragraph('🔵 本命'), marker, paragraph('予想'), marker, paragraph('有料本文')];
 assert.equal(paidBoundaryIndex(splitHeading, '🔵 本命予想', valid.freeText, valid.paidText), 1);
+const blankBetween = [paragraph('無料本文'), marker, paragraph(''), marker, paragraph('🔵 本命予想'), marker, paragraph('有料本文')];
+assert.equal(paidBoundaryIndex(blankBetween, '🔵 本命予想', valid.freeText, valid.paidText), 3);
 assert.throws(() => paidBoundaryIndex([...splitHeading, marker, paragraph('追加')], '🔵 本命予想', valid.freeText, valid.paidText), /target_not_unique/);
 assert.equal(articleBody(valid), '無料本文\n\n🔵 本命予想\n\n有料本文');
 assert.equal(articleBody(valid).includes('ここから先は有料部分です'), false);
