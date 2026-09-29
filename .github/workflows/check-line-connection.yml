@@ -1,0 +1,37 @@
+name: Check LINE connection
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-line-connection.yml'
+      - 'scripts/check-line-connection.cjs'
+      - 'scripts/check-line-connection.test.cjs'
+  pull_request:
+    paths:
+      - '.github/workflows/check-line-connection.yml'
+      - 'scripts/check-line-connection.cjs'
+      - 'scripts/check-line-connection.test.cjs'
+permissions:
+  contents: read
+concurrency:
+  group: line-connection-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify connection safeguards without credentials
+        run: node --test scripts/check-line-connection.test.cjs
+      - name: Verify configured LINE account without sending
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'takechanman12250711-oss/chappy-boatrace-ai'
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        run: node scripts/check-line-connection.cjs
