@@ -9,3 +9,9 @@ APIの上限には追加有料枠も含まれ、無料プランの証明では�
 次は本人の友だち追加と送信先確認、本人だけへのテスト送信、その受信確認を行う。日次配信は既存 `note-marketing-state` の根拠付き原稿を利用し、1日1回・無料枠・永続的な重複防止を実装してから有効化する。X配信は未接続のまま。
 
 公式仕様: https://developers.line.biz/en/reference/messaging-api/#get-bot-info と同ページのquota/consumption。
+
+## 本人への初回テスト
+
+本人が友だち追加と `LINE_TEST_USER_ID` の保存を完了したと報告したため、`LINE owner onboarding test` をmain反映時に1回実行する。PRはモックテストのみ。本人指定Secretの個人ID、固定bot基本ID、プロフィール取得結果、利用上限200通以下かつ残数ありを確認する。プロフィール内容・ID・鍵は記録しない。
+
+送信前に `line-onboarding-test/v1` タグを原子的に作成し、固定文面1通だけをpushする。LINEのretry keyも付ける。送信失敗・結果不明でもタグを消さず、自動再送しない。タグは試行記録であり成功証拠ではない。成功ログのrequest IDはAPI受付の証拠で、本人端末への受信は本人の返信で別途確認する。自動の日次配信・X配信はまだ有効化しない。
