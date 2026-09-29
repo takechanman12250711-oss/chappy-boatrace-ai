@@ -13,13 +13,15 @@ const performance = "node scripts/test-load-performance.js";
 
 function step(name, nextName) {
   const start = workflow.indexOf(`- name: ${name}`);
-  const end = workflow.indexOf(`- name: ${nextName}`, start + 1);
+  const end = nextName
+    ? workflow.indexOf(`- name: ${nextName}`, start + 1)
+    : workflow.indexOf("\n  calibrate:", start + 1);
   assert.ok(start >= 0 && end > start, `${name}のworkflow範囲を取得する`);
   return workflow.slice(start, end);
 }
 
 for (const [name, nextName] of [
-  ["Validate result prediction artifacts", "Save official results before calibration"],
+  ["Validate result prediction artifacts", null],
   ["Validate calibrated prediction artifacts", "Save calibration and derived data"],
 ]) {
   const source = step(name, nextName);
@@ -31,9 +33,15 @@ for (const [name, nextName] of [
   );
 }
 
+assert.ok(
+  workflow.indexOf("- name: Save official results before calibration") <
+    workflow.indexOf("- name: Validate result prediction artifacts"),
+  "公式結果は重い予想artifact検査より先に保存する",
+);
+
 const save = step(
   "Save official results before calibration",
-  "Build prediction calibration",
+  "Validate result prediction artifacts",
 );
 assert.ok(
   save.includes(prepare),
