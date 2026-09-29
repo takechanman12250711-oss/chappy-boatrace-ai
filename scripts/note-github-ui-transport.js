@@ -114,8 +114,8 @@ function validateDraftGate(payload, now = Date.now()) {
   if (!String(payload.paidText || '').trim()) return { ok: false, reason: 'paid_text_missing' };
   if (Number(payload.price) !== EXPECTED_PRICE_YEN) return { ok: false, reason: 'price_not_300' };
   if (payload.practicalTicketCount != null &&
-      (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 || payload.practicalTicketCount > 10)) {
-    return { ok: false, reason: 'ticket_count_exceeds_10' };
+      (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 || payload.practicalTicketCount > 7)) {
+    return { ok: false, reason: 'ticket_count_exceeds_7' };
   }
   return { ok: true };
 }
@@ -307,7 +307,9 @@ function paidBoundaryIndex(blocks, start, freeText, paidText) {
       const after = blocks.slice(index + 1).filter(item => !item.widget).map(item => item.text).join('\n');
       return normalize(before) === normalize(freeText) && normalize(after) === normalize(paidText) ? [index] : [];
     });
-    if (candidates.length === 1) return candidates[0];
+    // Adjacent empty paragraphs can yield several equivalent markers. The
+    // last one is directly before the first nonempty paid content.
+    if (candidates.length) return candidates[candidates.length - 1];
     throw new Error('note_paid_boundary_target_not_unique');
   }
   if (matches.length !== 1) throw new Error('note_paid_boundary_target_not_unique');

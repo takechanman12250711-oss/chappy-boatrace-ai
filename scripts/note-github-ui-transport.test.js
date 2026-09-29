@@ -48,9 +48,8 @@ assert.deepEqual(gate({ ...valid, title: '' }), { ok: false, reason: 'title_miss
 assert.deepEqual(gate({ ...valid, freeText: '' }), { ok: false, reason: 'free_text_missing' });
 assert.deepEqual(gate({ ...valid, paidText: '' }), { ok: false, reason: 'paid_text_missing' });
 assert.deepEqual(gate({ ...valid, price: 500 }), { ok: false, reason: 'price_not_300' });
-assert.deepEqual(gate({ ...valid, practicalTicketCount: 10 }), { ok: true });
-assert.deepEqual(gate({ ...valid, practicalTicketCount: 11 }), { ok: false, reason: 'ticket_count_exceeds_10' });
-assert.deepEqual(gate({ ...valid, practicalTicketCount: 0 }), { ok: false, reason: 'ticket_count_exceeds_10' });
+assert.deepEqual(gate({ ...valid, practicalTicketCount: 8 }), { ok: false, reason: 'ticket_count_exceeds_7' });
+assert.deepEqual(gate({ ...valid, practicalTicketCount: 0 }), { ok: false, reason: 'ticket_count_exceeds_7' });
 assert.deepEqual(gate({ ...valid, deadlineAt: '' }), { ok: false, reason: 'deadline_unavailable' });
 assert.deepEqual(gate({ ...valid, deadlineAt: '2026-09-13T12:00:00' }), { ok: false, reason: 'deadline_unavailable' });
 assert.deepEqual(gate({ ...valid, raceKey: '20260912-10-7' }), { ok: false, reason: 'race_day_mismatch' });
@@ -78,6 +77,8 @@ assert.throws(() => paidBoundaryIndex([paragraph('🔵 本命予想'), marker], 
 // still identify exactly one marker without guessing from a heading match.
 const splitHeading = [paragraph('無料本文'), marker, paragraph('🔵 本命'), marker, paragraph('予想'), marker, paragraph('有料本文')];
 assert.equal(paidBoundaryIndex(splitHeading, '🔵 本命予想', valid.freeText, valid.paidText), 1);
+const blankBetween = [paragraph('無料本文'), marker, paragraph(''), marker, paragraph('🔵 本命予想'), marker, paragraph('有料本文')];
+assert.equal(paidBoundaryIndex(blankBetween, '🔵 本命予想', valid.freeText, valid.paidText), 3);
 assert.throws(() => paidBoundaryIndex([...splitHeading, marker, paragraph('追加')], '🔵 本命予想', valid.freeText, valid.paidText), /target_not_unique/);
 assert.equal(articleBody(valid), '無料本文\n\n🔵 本命予想\n\n有料本文');
 assert.equal(articleBody(valid).includes('ここから先は有料部分です'), false);
