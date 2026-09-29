@@ -345,7 +345,14 @@ async function setPaidBoundary(page, paidText, freeText) {
         console.error(`NOTE_UI_BOUNDARY_DIAGNOSTIC=${JSON.stringify({
           reason: error.message, attempt: attempt + 1, blocks: blocks.length,
           targetIndices: blocks.flatMap((block, i) => !block.widget && block.text === start ? [i] : []),
-          markerIndices: blocks.flatMap((block, i) => block.widget && block.buttons === 1 ? [i] : [])
+          markerIndices: blocks.flatMap((block, i) => block.widget && block.buttons === 1 ? [i] : []),
+          fullBodyMatches: freeText === undefined ? null :
+            blocks.filter(block => !block.widget).map(block => block.text).join('').replace(/\s+/g, '') ===
+            `${freeText}${paidText}`.replace(/\s+/g, ''),
+          freePrefixIndices: freeText === undefined ? [] : blocks.flatMap((block, i) =>
+            block.widget && block.buttons === 1 &&
+            blocks.slice(0, i).filter(item => !item.widget).map(item => item.text).join('').replace(/\s+/g, '') ===
+            String(freeText).replace(/\s+/g, '') ? [i] : [])
         })}`);
         throw error;
       }
