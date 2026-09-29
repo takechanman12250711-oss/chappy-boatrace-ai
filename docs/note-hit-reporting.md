@@ -39,12 +39,12 @@
 
 現在の有効化条件（設定は未有効）:
 
-1. 配信用XプロフィールURLを本人指定と照合し、`xUserId` / `xUsername` を固定する。
+1. 本人が作成済みの配信用Xは `https://x.com/chappy_boat_ai`。`xUsername` は設定済み。認証接続時に同アカウントの数値IDを照合して `xUserId` を固定する。既に指定されたURLを本人へ聞き直さない。
 2. X公式APIを使う場合の料金・月間上限を本人が承認する。URL付き投稿、アカウント照合、投稿読戻しが課金対象。承認なしに `xApiCostApproved` を変更しない。
 3. 正規Developer ConsoleでRead and Write権限の本人用OAuth 1.0aキーを発行し、`X_API_KEY`、`X_API_SECRET`、`X_ACCESS_TOKEN`、`X_ACCESS_TOKEN_SECRET`をGitHub Secretsに保存する。鍵をチャット・スクショ・ログへ出さない。この接続は未検証であり、iPhone操作を案内する前に実画面と保存経路を確認する。note用fresh X OAuthやCookie抽出には戻らない。
 4. `monthlyMaxPairs`（1〜200）、未来へ遡らない `activatedAt`、`enabled:true` を承認済みの条件で設定し、実際のX投稿URL・LINE送信結果を確認する。設定変更だけで自動配信成功と報告しない。
 
-初期configは無効、Xアカウント未設定、料金未承認、月間上限0。未接続理由をSummaryへ表示する。LINEの本人宛テスト受信は完了済みだが、X/LINE同時の本番実送信は未確認。
+初期configは無効、X数値ID・認証未設定、料金未承認、月間上限0。未接続理由をSummaryへ表示する。LINEの本人宛テスト受信は完了済みだが、X/LINE同時の本番実送信は未確認。
 
 公式仕様の確認元（2026-09-29）:
 - https://docs.x.com/x-api/getting-started/pricing
