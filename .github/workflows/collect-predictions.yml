@@ -288,6 +288,13 @@ jobs:
           node scripts/test-collection-health.js
 
 
+
+      - name: Refresh 100R monitor after watchdog recovery
+        if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run check-active-100r-early-monitor.yml --ref main
+
       - name: Report early note dispatch failure after saving predictions
         if: steps.early-note.outcome == 'failure'
         run: exit 1
