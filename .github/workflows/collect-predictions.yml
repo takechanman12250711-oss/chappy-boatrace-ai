@@ -297,6 +297,7 @@ jobs:
           gh workflow run check-active-100r-early-monitor.yml --ref main
           gh workflow run check-wall-boat-branch-profit.yml --ref main
           gh workflow run check-wall-established-breakdown.yml --ref main
+          gh workflow run collect-playful-link-position-forward.yml --ref main
 
       - name: Report early note dispatch failure after saving predictions
         if: steps.early-note.outcome == 'failure'
