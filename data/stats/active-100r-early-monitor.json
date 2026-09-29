@@ -1,22 +1,81 @@
 {
   "schemaVersion": 1,
   "analysisId": "active-100r-early-monitor-v4",
-  "generatedAt": "2026-09-29T01:46:48.121Z",
+  "generatedAt": "2026-09-29T02:53:47.920Z",
   "productionChanged": false,
   "reviewProgress": {
     "completedReviewCount": 0,
-    "currentWindowCount": 0,
-    "remainingToNext": 100,
+    "currentWindowCount": 1,
+    "remainingToNext": 99,
     "nextReviewAt": 100
   },
   "activeGenerationKey": "[\"[\\\"evaluated-scenarios-v1\\\",\\\"internal-score-v1\\\",\\\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\\\"]\",\"d80e223b1c40da1311fc:587a5eafb6b00892c60d:shadow-selection-v2.0.1-boat-identity:56aff9d6:prediction-v1.0.2-course-fail-closed:ai-core-v4.8.6-escape-skill-role\",\"structured-ticket-support-v1:flow+holdPickup\",\"60\"]",
-  "scopedRaceCount": 0,
-  "matchedRows": 0,
+  "scopedRaceCount": 1,
+  "matchedRows": 1,
   "hits": 0,
-  "misses": 0,
+  "misses": 1,
   "duplicates": 0,
-  "missReasonCounts": {},
-  "patterns": [],
+  "missReasonCounts": {
+    "HEAD_MISS": 1
+  },
+  "patterns": [
+    {
+      "key": "d80e223b1c40da1311fc::HEAD_MISS",
+      "count": 1,
+      "status": "INSUFFICIENT_EVIDENCE"
+    }
+  ],
   "eligibleCandidates": 0,
+  "progressVisibility": {
+    "contract": "formal 100R and all-race review have different eligibility; do not add their counts",
+    "formalInput": {
+      "generatedAt": "2026-09-29T02:38:01.050Z",
+      "records": 3220,
+      "eligible": 1,
+      "excluded": {
+        "notSettled": 151,
+        "legacySchema": 303,
+        "retrospectiveReference": 0,
+        "officialResultLeakage": 0,
+        "calibrationUnavailable": 0,
+        "unsupportedCohort": 0,
+        "incompleteInput": 0,
+        "preDeadlineUnconfirmed": 0,
+        "missingRaceKey": 0,
+        "missingGeneration": 0,
+        "missingSelectorCohort": 0,
+        "missingTheorySetFingerprint": 0,
+        "missingMode": 0,
+        "unsupportedEvaluator": 0,
+        "incompleteShadowV2": 2187,
+        "scenarioNotComparable": 0,
+        "missingSelectionScore": 0,
+        "invalidSelectionDecision": 0,
+        "duplicateRace": 1,
+        "nonActiveGeneration": 577
+      }
+    },
+    "allRaceReview": {
+      "generatedAt": "2026-09-29T01:37:50.721Z",
+      "activeCohort": {
+        "method": "method:4558bb2196905ec9874828d9cb3156e231b6ded98e69c463826e256a9ceed05d",
+        "captured": 5,
+        "settled": 0,
+        "pending": 5,
+        "hits": 0,
+        "hitRate": null,
+        "recoveryRate": null
+      },
+      "latestSettledCohort": {
+        "method": "method:1b712d166d61df97dcadc92707dec6172a3f53bfca9c8aa3a7429c1452f4a893",
+        "captured": 57,
+        "settled": 54,
+        "pending": 0,
+        "hits": 16,
+        "hitRate": 29.62962962962963,
+        "recoveryRate": 84.85042735042735
+      }
+    }
+  },
   "automaticProductionChange": false
 }
