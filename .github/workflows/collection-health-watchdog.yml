@@ -7,13 +7,14 @@ on:
     types:
       - completed
   schedule:
-    - cron: "17 0-13,22-23 * * *"
+    - cron: "17,47 0-13,22-23 * * *"
   workflow_dispatch:
   push:
     branches: [main]
     paths:
       - ".github/workflows/collection-health-watchdog.yml"
       - "scripts/check-prediction-collector-heartbeat.cjs"
+      - "scripts/check-live-note-heartbeat.cjs"
 
 permissions:
   contents: read
@@ -76,4 +77,6 @@ jobs:
       - name: Recover missing collector trigger without duplicate runs
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/check-prediction-collector-heartbeat.cjs
+        run: |
+          node scripts/check-prediction-collector-heartbeat.cjs
+          node scripts/check-live-note-heartbeat.cjs

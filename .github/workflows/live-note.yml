@@ -44,6 +44,10 @@ on:
     # Offset from the busiest minute boundary; cadence and JST window stay the same.
     - cron: '2-57/5 22-23 * * *' # 07:02-08:57 JST
     - cron: '2-57/5 0-13 * * *' # 09:02-22:57 JST
+  workflow_run:
+    workflows: [Collect automatic race predictions]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -57,7 +61,13 @@ concurrency:
 
 jobs:
   live-note:
-    if: github.event_name == 'pull_request' || (github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' && github.ref == 'refs/heads/main')
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' &&
+       ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.head_repository.full_name == github.repository &&
+         github.event.workflow_run.head_branch == 'main') ||
+        (github.event_name != 'workflow_run' && github.ref == 'refs/heads/main')))
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
