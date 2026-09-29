@@ -11,6 +11,7 @@ on:
       - 'config/note-marketing.json'
       - 'config/note-social.json'
       - 'scripts/send-note-social*'
+      - 'scripts/send-note-buffer*'
       - 'scripts/note-marketing-*.js'
       - 'scripts/update-note-marketing.js'
       - 'scripts/note-linked-body.js'
@@ -54,7 +55,7 @@ jobs:
       - name: Record checked-out revision
         run: echo "NOTE_CLAIM_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - name: Verify marketing safeguards
-        run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/send-note-social.test.cjs
+        run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs
       - run: npm install --no-save playwright@1.55.0
       - name: Update and verify free guide and daily index
         env:
@@ -62,12 +63,8 @@ jobs:
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}
         run: node scripts/update-note-marketing.js
-      - name: Dispatch verified hit reports to X and LINE together
+      - name: Dispatch verified hit reports through Buffer Free
         env:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
-          X_API_KEY: ${{ secrets.X_API_KEY }}
-          X_API_SECRET: ${{ secrets.X_API_SECRET }}
-          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
-          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
-        run: node scripts/send-note-social.cjs
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        run: node scripts/send-note-buffer.cjs

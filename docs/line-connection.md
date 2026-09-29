@@ -15,3 +15,7 @@ APIの上限には追加有料枠も含まれ、無料プランの証明では�
 本人が友だち追加と `LINE_TEST_USER_ID` の保存を完了したと報告したため、`LINE owner onboarding test` をmain反映時に1回実行する。PRはモックテストのみ。本人指定Secretの個人ID、固定bot基本ID、プロフィール取得結果、利用上限200通以下かつ残数ありを確認する。プロフィール内容・ID・鍵は記録しない。
 
 送信前に `line-onboarding-test/v1` タグを原子的に作成し、固定文面1通だけをpushする。LINEのretry keyも付ける。送信失敗・結果不明でもタグを消さず、自動再送しない。タグは試行記録であり成功証拠ではない。成功ログのrequest IDはAPI受付の証拠で、本人端末への受信は本人の返信で確認済み。同時配信の本番確認とは区別する。
+
+## 2026-09-29 最新方針: LINEは無料の閲覧メニュー
+
+X速報はBuffer Freeへ移し、LINEの同時broadcastは運用しない。既存の `LINE_CHANNEL_ACCESS_TOKEN` は `setup-line-menu.yml` のメニュー設定だけに使う。「今日の予想」「結果を見る」は既存の日次note一覧を開くURIアクションで、配信メッセージは送らない。詳細・本人接続の残作業は `docs/note-hit-reporting.md` の最新節。設定成功とiPhone実表示確認は区別する。

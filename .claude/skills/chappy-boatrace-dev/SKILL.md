@@ -73,3 +73,10 @@ Workからの切り離しはGitHub側の稼働だけで完了とせず、既存C
 
 - 採用状態は `config/wall-purchase-approval.json` とphase7/8の `productionAdoptionStatus` を確認する。100Rの検証合格とユーザー承認・本番反映を区別し、承認済みの対象を再び承認待ちへ戻さない。
 - 壁成立・主攻め艇2号艇の購入方針は `practicalSelection.purchaseDecision`。予想券は比較用Aとして維持し、購入推奨券は `createPurchaseSelection()` で読む。参考予想と購入対象を混同せず、過去行へ判断を後付けしない。画面・note・自動選定・保存を組で検査する。詳細は `docs/wall-purchase-policy.md`。
+
+## 無料のX速報とLINE閲覧導線
+
+- 最新方針はXをBuffer Free経由、LINEを「今日の予想」「結果を見る」のURIリッチメニューとする。旧X直接API・LINE同時broadcastを再有効化しない。実装と接続条件は `docs/note-hit-reporting.md` の最新節、`config/note-social.json`、`send-note-buffer.cjs`、`setup-line-menu.yml` で確認する。
+- 的中報告は公開receipt・原稿SHA・公式結果・公開済みの全成績一覧を再照合する。共通の永久claimで重複を防ぎ、結果不明は再投稿しない。Buffer受付・BufferのsentとURL照合・X公開ページ確認を区別する。
+- Buffer未接続時は送信無効。本人がFreeでXを接続し、APIキーをActions Secretへ保存してから開始時刻を設定する。キーを会話に要求しない。無料API枠の事前予約と上限を維持する。LINEメニューの登録確認とiPhone実表示確認を区別する。
+
