@@ -8,7 +8,7 @@ function client(env = process.env, request = fetch) {
   if (env.GITHUB_REPOSITORY !== REPO || !env.NOTE_CLAIM_TOKEN || !/^[a-f0-9]{40}$/.test(revision || '')) throw new Error('marketing_repository_context_invalid');
   const base = `https://api.github.com/repos/${REPO}`;
   async function api(route, method = 'GET', body, missing = false) {
-    const response = await request(base + route, { method, headers: { Authorization: `Bearer ${env.NOTE_CLAIM_TOKEN}`,
+    const response = await request(base + route, { method, redirect: 'error', headers: { Authorization: `Bearer ${env.NOTE_CLAIM_TOKEN}`,
       Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
       ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(30000) });
     if (missing && response.status === 404) return null;
@@ -100,6 +100,7 @@ function client(env = process.env, request = fetch) {
     }
     return { ...state, rows, distribution: distributionDrafts(rows, config, state.date) };
   }
-  return { load, collect, settle, save };
+  // Reuse the same scoped client for permanent social claims and receipts.
+  return { load, collect, settle, save, api, revision };
 }
 module.exports = { REPO, BRANCH, client };
