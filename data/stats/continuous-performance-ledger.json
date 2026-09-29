@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "analysisId": "continuous-performance-ledger-v1",
-  "generatedAt": "2026-09-28T23:41:12.819Z",
+  "generatedAt": "2026-09-29T04:33:12.411Z",
   "productionChanged": false,
   "automaticProductionChange": false,
   "policy": {
@@ -11,16 +11,16 @@
     "stakePerTicketYen": 100
   },
   "diagnostics": {
-    "canonicalPredictionCount": 2767,
-    "preDeadlinePredictionCount": 2753,
+    "canonicalPredictionCount": 2772,
+    "preDeadlinePredictionCount": 2758,
     "excludedPredictionCount": 14,
     "excludedReasons": {
       "captured-at-or-after-deadline": 6,
       "source-fetched-at-or-after-deadline": 1,
       "timestamp-missing": 7
     },
-    "officialResultCount": 2717,
-    "settledJoinCount": 2717,
+    "officialResultCount": 2725,
+    "settledJoinCount": 2725,
     "deduplication": "predictions-preferred-over-verificationPredictions",
     "sourceFiles": "data/predictions/YYYYMMDD.json + data/results/YYYYMMDD.json",
     "selectionBasis": "saved practicalTickets/practicalSelection.tickets only",
@@ -29,33 +29,33 @@
     "missingPracticalTicketCount": 2
   },
   "cumulative": {
-    "races": 2715,
+    "races": 2723,
     "hits": 653,
-    "hitRate": 24.05,
-    "stakeYen": 2319800,
+    "hitRate": 23.98,
+    "stakeYen": 2326900,
     "returnYen": 1883510,
-    "profitYen": -436290,
-    "roi": 81.19
+    "profitYen": -443390,
+    "roi": 80.95
   },
   "rolling100": {
     "races": 100,
     "hits": 19,
     "hitRate": 19,
-    "stakeYen": 87900,
+    "stakeYen": 88000,
     "returnYen": 257330,
-    "profitYen": 169430,
-    "roi": 292.75
+    "profitYen": 169330,
+    "roi": 292.42
   },
   "generationBreakdown": [
     {
       "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
-      "races": 1659,
+      "races": 1667,
       "hits": 448,
-      "hitRate": 27,
-      "stakeYen": 1464700,
+      "hitRate": 26.87,
+      "stakeYen": 1471800,
       "returnYen": 1297510,
-      "profitYen": -167190,
-      "roi": 88.59
+      "profitYen": -174290,
+      "roi": 88.16
     },
     {
       "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-v1\"]",
@@ -27267,6 +27267,86 @@
       "actualTicket": "2-1-3",
       "hit": false,
       "stakeYen": 600,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20260929-14-1",
+      "selectedAt": "2026-09-28T17:19:12.686Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
+      "ticketCount": 7,
+      "actualTicket": "1-3-4",
+      "hit": false,
+      "stakeYen": 700,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20260929-21-1",
+      "selectedAt": "2026-09-28T17:19:13.332Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
+      "ticketCount": 8,
+      "actualTicket": "1-5-3",
+      "hit": false,
+      "stakeYen": 800,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20260929-14-2",
+      "selectedAt": "2026-09-28T23:48:08.895Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
+      "ticketCount": 9,
+      "actualTicket": "4-5-1",
+      "hit": false,
+      "stakeYen": 900,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20260929-21-2",
+      "selectedAt": "2026-09-28T23:48:09.380Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
+      "ticketCount": 10,
+      "actualTicket": "2-4-5",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20260929-21-5",
+      "selectedAt": "2026-09-29T01:21:07.259Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
+      "ticketCount": 10,
+      "actualTicket": "4-6-2",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20260929-02-1",
+      "selectedAt": "2026-09-29T01:34:26.051Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
+      "ticketCount": 10,
+      "actualTicket": "4-2-3",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20260929-13-1",
+      "selectedAt": "2026-09-29T01:34:26.789Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
+      "ticketCount": 10,
+      "actualTicket": "5-1-2",
+      "hit": false,
+      "stakeYen": 1000,
+      "returnYen": 0
+    },
+    {
+      "raceKey": "20260929-16-1",
+      "selectedAt": "2026-09-29T01:34:27.277Z",
+      "generationKey": "[\"evaluated-scenarios-v1\",\"internal-score-v1\",\"practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1\"]",
+      "ticketCount": 7,
+      "actualTicket": "4-1-6",
+      "hit": false,
+      "stakeYen": 700,
       "returnYen": 0
     }
   ]
