@@ -307,7 +307,9 @@ function paidBoundaryIndex(blocks, start, freeText, paidText) {
       const after = blocks.slice(index + 1).filter(item => !item.widget).map(item => item.text).join('\n');
       return normalize(before) === normalize(freeText) && normalize(after) === normalize(paidText) ? [index] : [];
     });
-    if (candidates.length === 1) return candidates[0];
+    // Adjacent empty paragraphs can yield several equivalent markers. The
+    // last one is directly before the first nonempty paid content.
+    if (candidates.length) return candidates[candidates.length - 1];
     throw new Error('note_paid_boundary_target_not_unique');
   }
   if (matches.length !== 1) throw new Error('note_paid_boundary_target_not_unique');
