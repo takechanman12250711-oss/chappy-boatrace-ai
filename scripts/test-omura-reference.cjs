@@ -4,8 +4,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const { tickets, parsePage, hash, buildCapture, saveCapture } = require('./omura-reference.cjs');
-const { collect, buildReport, missCategory, loadCaptures } = require('./collect-omura-reference.cjs');
+const { checkedOutCommit, collect, buildReport, missCategory, loadCaptures } = require('./collect-omura-reference.cjs');
 const date = '20300914', raceKey = `${date}-24-6`;
 const capturedAt = '2030-09-14T19:48:00+09:00', clock = Date.parse(capturedAt);
 const html = () => `<meta charset="utf-8">展示航走後の直前生予想<br>
@@ -101,3 +102,49 @@ test('miss categories identify first missing finishing position', () => {
   assert.equal(missCategory(['1-3-4'],'1-2-3'),'second_missing');
   assert.equal(missCategory(['1-2-4'],'1-2-3'),'third_missing');
 });
+test('capture provenance is explicit and never borrows a workflow event SHA', () => {
+  const previous = process.env.GITHUB_SHA, sourceCommit = 'b'.repeat(40);
+  process.env.GITHUB_SHA = 'a'.repeat(40);
+  try {
+    assert.equal(buildCapture({...fixture(),sourceCommit}).sourceCommit,sourceCommit);
+    assert.equal(buildCapture(fixture()).sourceCommit,null,'unknown execution is not the triggering event');
+    for (const invalid of ['', 'not-a-commit', true, 'b'.repeat(41)])
+      assert.throws(()=>buildCapture({...fixture(),sourceCommit:invalid}),/execution_source_commit_invalid/);
+  } finally {
+    if (previous === undefined) delete process.env.GITHUB_SHA;
+    else process.env.GITHUB_SHA = previous;
+  }
+});
+test('collector preserves checkout provenance in empty reports and immutable captures', () => withRoot(async root => {
+  const sourceCommit = 'c'.repeat(40), input = fixture(); let calls = 0;
+  const request = async()=>{calls++;return {ok:true,arrayBuffer:async()=>input.responseBytes};};
+  const empty = await collect({root,now:()=>clock,request,sourceCommit});
+  assert.equal(empty.sourceCommit,sourceCommit); assert.equal(empty.eligible,0); assert.equal(calls,0);
+  assert.equal(buildReport(root,empty).collection.sourceCommit,sourceCommit);
+  writeBundle(root,input);
+  const collected = await collect({root,now:()=>clock,request,sourceCommit});
+  assert.equal(collected.saved.length,1); assert.equal(calls,1);
+  const captured = loadCaptures(root).values[0];
+  assert.equal(captured.sourceCommit,sourceCommit);
+  assert.deepEqual(captured.chappy.practicalTickets,input.bundle.baselinePracticalTickets);
+  assert.equal(captured.productionChanged,false); assert.equal(captured.usableForPrediction,false);
+  await assert.rejects(collect({root,now:()=>clock,request,sourceCommit:'invalid'}),/execution_source_commit_invalid/);
+  assert.equal(calls,1,'invalid execution identity fails before external requests');
+}));
+test('checked-out commit comes from the requested repository rather than event environment', () => withRoot(async root => {
+  const git = args => execFileSync('git',args,{cwd:root,encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
+  git(['init','--quiet','.']);
+  const commit = message => git(['-c','user.name=Omura test','-c','user.email=fixture@example.invalid',
+    'commit','--allow-empty','--quiet','-m',message]);
+  commit('event version'); const eventSha = git(['rev-parse','HEAD']);
+  commit('executed version'); const actualSha = git(['rev-parse','HEAD']);
+  const previous = process.env.GITHUB_SHA; process.env.GITHUB_SHA = eventSha;
+  try {
+    assert.notEqual(eventSha,actualSha);
+    assert.equal(checkedOutCommit(root),actualSha);
+    assert.throws(()=>checkedOutCommit(path.join(root,'missing')),'no event fallback when checkout cannot be verified');
+  } finally {
+    if (previous === undefined) delete process.env.GITHUB_SHA;
+    else process.env.GITHUB_SHA = previous;
+  }
+}));
