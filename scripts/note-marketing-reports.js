@@ -78,12 +78,10 @@ function distributionDrafts(rows, config, date) {
     return { id: `x:${s.evidenceId}`, status: 'awaiting_connection', publicationKey: r.publicationKey,
       text: `${label} ${SERIES[r.articleSeries || 'normal'].label}｜${r.place}${r.raceNo}R 的中\n${r.ticketCount}点で ${s.combination}\n公式払戻（100円あたり）${s.payoutPer100Yen.toLocaleString('ja-JP')}円\n事前公開の記事\n${r.url}\n全成績・今日の予想\n${config.index.url}` };
   });
-  // One digest, rather than a message per win. No sender is enabled here.
-  const lineText = `${label} チャッピーの結果報告\n${dailySummary(current, date)}\n\n` +
-    (hits.length ? `的中の詳細（直近${Math.min(3, hits.length)}件。全件は一覧へ）\n` + hits.slice(-3).map(r => `${SERIES[r.articleSeries || 'normal'].label} ${r.place}${r.raceNo}R｜${r.ticketCount}点\n${outcomeLine(r)}\n${r.url}`).join('\n\n') + '\n\n' : '') +
-    `全成績・今日の予想はこちら\n${config.index.url}\n払戻は公式の100円あたりの金額です。実際の購入額・利益ではありません。`;
-  return { version: 'note-distribution-drafts-v1', date, deliveryEnabled: false,
+  // 2026-09-29: owner requested the same hit report on both channels together.
+  // Drafts never assert delivery; the sender keeps independent durable receipts.
+  return { version: 'note-distribution-drafts-v2', mode: 'paired-hit', date, deliveryEnabled: false,
     x: { status: 'awaiting_connection', items: x },
-    line: { status: 'awaiting_connection', items: current.length ? [{ id: `line:${digest(lineText)}`, text: lineText }] : [] } };
+    line: { status: 'awaiting_connection', items: x.map(item => ({ ...item, id: item.id.replace(/^x:/, 'line:') })) } };
 }
 module.exports = { settlePublished, counts, summaryLine, outcomeLine, dailySummary, distributionDrafts };
