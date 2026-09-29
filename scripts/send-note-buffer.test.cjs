@@ -61,3 +61,45 @@ test('pending reconciliation writes final receipt and never creates again',async
  const f=fixture();await run(f);const receipt=[...f.saved.values()].find(x=>x.postId);f.delivery.post=async()=>({id:receipt.postId,channelId:receipt.channelId,text:f.state.distribution.x.items[0].text,status:'sent',externalLink:'https://x.com/chappy_boat_ai/status/123'});
  const r=await reconcile(f.log,f.delivery,now+1800000);assert.equal(r[0].status,'buffer_confirmed_sent');assert([...f.saved.keys()].some(k=>k.startsWith('note-buffer-final/')));assert.equal((await reconcile(f.log,f.delivery,now+3600000)).length,0);
 });
+
+const {announce,announcementText}=require('./send-note-buffer.cjs');
+function announcementFixture(){
+ const f=fixture();f.config.announcements={enabled:true,activatedAt:'2026-09-29T19:00:00+09:00'};
+ const r=f.state.rows[0];r.publishedAt='2026-09-29T20:30:00+09:00';r.deadlineAt='2026-09-29T22:00:00+09:00';r.settlement={status:'pending'};
+ f.state.rows.push({...r,publicationKey:r.raceKey+':escape',articleSeries:'escape',url:r.url+'a'});
+ return f;
+}
+test('run connects announcements only after verifying the current public index',async()=>{
+ const f=announcementFixture();f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260929');
+ await assert.rejects(run(f),/public_index_not_verified/);assert.deepEqual(f.events,[]);
+ f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));
+ const result=await run(f);assert.equal(result.announcement.articles,2);assert.equal(result.results[0].kind,'announcement');assert.equal(result.started,0);
+});
+test('announcements batch series, link only verified index and do not repeat covered articles',async()=>{
+ const f=announcementFixture();let text;
+ f.delivery.create=async t=>{text=t;assert([...f.saved.keys()].some(k=>k.startsWith('note-buffer-announcement/')));return {id:'a',text:t,channelId:'channel',status:'scheduled'};};
+ let r=await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock);assert.equal(r.articles,2);assert.equal(r.status,'accepted_pending');
+ assert(text.includes('通常1件・イン逃げ1件・万舟0件'));assert(text.includes(marketing.index.url));assert(!text.includes('的中'));
+ assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,()=>now+3600000)).status,'no_new_articles');
+});
+test('announcements exclude old, future, expired, review and wrong-day articles without Buffer calls',async()=>{
+ for(const change of [{publishedAt:'2026-09-29T18:00:00+09:00'},{publishedAt:'2026-09-29T23:00:00+09:00'},{deadlineAt:'2026-09-29T21:01:00+09:00'},{settlement:{status:'review'}},{raceKey:'20260928-13-4'},{url:'https://example.com'}]){
+ const f=announcementFixture();f.state.rows=[{...f.state.rows[0],...change}];assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock)).status,'no_new_articles');assert.deepEqual(f.events,[]);
+ }
+});
+test('announcement timeout, changed batches, hourly spacing and daily cap preserve permanent claims',async()=>{
+ const f=announcementFixture();let calls=0;f.delivery.create=async()=>{calls++;throw Error('timeout');};
+ assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock)).status,'review_required');
+ f.state.rows.push({...f.state.rows[0],publicationKey:'20260929-13-5:normal',raceKey:'20260929-13-5',deadlineAt:'2026-09-29T23:59:00+09:00'});
+ assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock)).status,'interval_or_daily_limit');
+ assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,()=>now+3600000)).articles,1);assert.equal(calls,2);
+ const g=announcementFixture();for(let i=0;i<8;i++)await g.log.put('note-buffer-announcement/20260929/'+i,{at:now-7200000,publicationKeys:[]});
+ assert.equal((await announce(g.state,g.config,g.marketing,g.log,g.delivery,g.clock)).status,'interval_or_daily_limit');assert.deepEqual(g.events,[]);
+});
+test('announcement rechecks deadline after channel lookup and uses existing reconciliation',async()=>{
+ const f=announcementFixture();let clock=now;f.delivery.channel=async()=>{clock=now+3600000;return 'channel';};
+ assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,()=>clock)).status,'deadlines_passed');assert.equal(f.saved.size,0);
+ const g=announcementFixture();await announce(g.state,g.config,g.marketing,g.log,g.delivery,g.clock);
+ const receipt=[...g.saved.values()].find(x=>x.postId);g.delivery.post=async()=>({id:receipt.postId,channelId:receipt.channelId,text:announcementText(g.state.rows,marketing,now),status:'sent',externalLink:'https://x.com/chappy_boat_ai/status/234'});
+ assert.equal((await reconcile(g.log,g.delivery,now+1800000))[0].status,'buffer_confirmed_sent');
+});
