@@ -1,8 +1,12 @@
-name: Check paired X and LINE distribution
+name: Check free X and LINE navigation
 on:
   pull_request:
     paths:
       - 'scripts/send-note-social*'
+      - 'scripts/send-note-buffer*'
+      - 'scripts/setup-line-menu*'
+      - 'scripts/render-line-menu.py'
+      - '.github/workflows/setup-line-menu.yml'
       - 'scripts/note-marketing-*'
       - 'config/note-social.json'
       - '.github/workflows/update-note-marketing.yml'
@@ -11,6 +15,10 @@ on:
     branches: [main]
     paths:
       - 'scripts/send-note-social*'
+      - 'scripts/send-note-buffer*'
+      - 'scripts/setup-line-menu*'
+      - 'scripts/render-line-menu.py'
+      - '.github/workflows/setup-line-menu.yml'
       - 'scripts/note-marketing-*'
       - 'config/note-social.json'
       - '.github/workflows/update-note-marketing.yml'
@@ -28,6 +36,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/check-line-connection.test.cjs scripts/send-note-social.test.cjs
+      - run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/check-line-connection.test.cjs scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/setup-line-menu.test.cjs
       - run: node scripts/note-github-ui-transport.test.js
       - run: node scripts/check-note-skills.js
