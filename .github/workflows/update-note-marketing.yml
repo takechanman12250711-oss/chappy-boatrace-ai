@@ -56,6 +56,28 @@ jobs:
         run: echo "NOTE_CLAIM_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - name: Verify marketing safeguards
         run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs
+      - name: Verify Buffer connection without posting
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          NOTE_CLAIM_TOKEN: ${{ github.token }}
+          BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const {client} = require('./scripts/note-marketing-store');
+          const {ledger,transport,blockers} = require('./scripts/send-note-buffer.cjs');
+          const config = JSON.parse(fs.readFileSync('config/note-social.json','utf8'));
+          (async () => {
+            const reasons = blockers(config,process.env,Date.now());
+            if (reasons.length) throw Error('buffer_connection_conditions_missing');
+            await transport(process.env,config,ledger(client(process.env))).channel();
+            console.log('BUFFER_CONNECTION=verified_chappy_boat_ai_no_post_created');
+          })().catch(error => {
+            const safe = /^buffer_[a-z0-9_]+$/.test(error.message) ? error.message : 'buffer_connection_failed';
+            console.error('BUFFER_CONNECTION=' + safe);
+            process.exitCode = 1;
+          });
+          NODE
       - run: npm install --no-save playwright@1.55.0
       - name: Update and verify free guide and daily index
         env:
