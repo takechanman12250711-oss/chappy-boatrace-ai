@@ -67,3 +67,9 @@ XはBuffer Free、LINEはURIリッチメニューによるnote一覧への導線
 - 「今日の予想」「結果を見る」は、予想リンクと的中・不的中の両方を載せた既存の同じ日次一覧 https://note.com/great_robin3243/n/na76b6c6c18ff を開く。新しい記事や存在しないアンカーは作らない。
 
 公式仕様確認（2026-09-29）: https://buffer.com/pricing 、https://developers.buffer.com/guides/api-limits.html 、https://developers.buffer.com/guides/posts-and-scheduling.html 、https://developers.line.biz/en/docs/messaging-api/using-rich-menus/ 。無料プランも上限はあるため無制限とは案内しない。
+
+
+## 新着note記事のXまとめ告知
+
+- 新着記事は `send-note-buffer.cjs` の announcements で既存の全記事一覧へ案内する。開始時刻以降に公開され、原稿SHAと公開receiptを照合済みで、当日かつ締切まで2分超ある未告知記事だけを対象とする。通常・イン逃げ・万舟の件数をまとめ、記事ごとのX投稿はしない。
+- まとめ告知は1時間以上間隔を空け、1日最大8回。的中速報と同じ80回/直近24時間のAPI予約枠を使う。送信前の永続batch claimで対象記事を記録し、結果不明時も再送しない。新着なしは告知用Buffer APIを呼ばない。受付・sent照合・X公開ページ確認を区別する。
