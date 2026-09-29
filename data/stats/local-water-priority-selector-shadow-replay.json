@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "version": "local-water-priority-selector-shadow-replay-v1",
-  "generatedAt": "2026-09-28T15:36:18.324Z",
+  "generatedAt": "2026-09-29T00:23:10.707Z",
   "productionChanged": false,
   "automaticApplication": false,
   "usableForPrediction": false,
   "methodology": "締切前保存済みの当地・水面正式証拠、現行最終頭、同一候補配列のpriorityScoreだけで反実仮想を作成。候補の最高点が現行頭より厳密に高い場合だけshadow頭へ切り替え、同点は現行頭を維持して公式結果と照合する。",
   "sourceVersion": "local-water-priority-selection-consistency-audit-v1",
-  "sourceGeneratedAt": "2026-09-28T15:28:19.554Z",
+  "sourceGeneratedAt": "2026-09-29T00:03:10.614Z",
   "sourceNextStep": "build-local-water-priority-selector-shadow-replay",
   "applicable": true,
   "shadowRule": {
@@ -32,13 +32,13 @@
     "maximumConditionBandAccuracyDeclinePt": 2
   },
   "metrics": {
-    "settledFormalEvidenceRaceCount": 1479,
-    "currentHeadAvailableCount": 1479,
-    "rankingArrayAvailableCount": 1479,
-    "currentCandidateScoreAvailableCount": 1479,
-    "comparableReplayCount": 1479,
+    "settledFormalEvidenceRaceCount": 1480,
+    "currentHeadAvailableCount": 1480,
+    "rankingArrayAvailableCount": 1480,
+    "currentCandidateScoreAvailableCount": 1480,
+    "comparableReplayCount": 1480,
     "switchCount": 393,
-    "equalTopOtherBoatNoSwitchCount": 1066,
+    "equalTopOtherBoatNoSwitchCount": 1067,
     "currentCorrectCount": 515,
     "shadowCorrectCount": 469,
     "netCorrectChange": -46,
@@ -66,8 +66,8 @@
   "conditionBands": [
     {
       "conditionBand": "calm",
-      "raceCount": 900,
-      "comparableReplayCount": 900,
+      "raceCount": 901,
+      "comparableReplayCount": 901,
       "switchCount": 256,
       "currentCorrectCount": 322,
       "shadowCorrectCount": 285,
@@ -75,8 +75,8 @@
       "correctToWrongCount": 96,
       "rescuedOuterWinnerCount": 6,
       "falseOuterPromotionCount": 41,
-      "currentAccuracy": 35.8,
-      "shadowAccuracy": 31.7,
+      "currentAccuracy": 35.7,
+      "shadowAccuracy": 31.6,
       "accuracyChangePt": -4.1,
       "comparableReplayCoverageRate": 100,
       "switchRate": 28.4
@@ -119,8 +119,8 @@
   "harmfulConditionBands": [
     {
       "conditionBand": "calm",
-      "raceCount": 900,
-      "comparableReplayCount": 900,
+      "raceCount": 901,
+      "comparableReplayCount": 901,
       "switchCount": 256,
       "currentCorrectCount": 322,
       "shadowCorrectCount": 285,
@@ -128,8 +128,8 @@
       "correctToWrongCount": 96,
       "rescuedOuterWinnerCount": 6,
       "falseOuterPromotionCount": 41,
-      "currentAccuracy": 35.8,
-      "shadowAccuracy": 31.7,
+      "currentAccuracy": 35.7,
+      "shadowAccuracy": 31.6,
       "accuracyChangePt": -4.1,
       "comparableReplayCoverageRate": 100,
       "switchRate": 28.4
@@ -153,13 +153,13 @@
     }
   ],
   "currentHeadDistribution": {
-    "1": 450,
+    "1": 451,
     "2": 379,
     "3": 373,
     "4": 277
   },
   "shadowHeadDistribution": {
-    "1": 386,
+    "1": 387,
     "2": 344,
     "3": 322,
     "4": 357,
@@ -168,7 +168,7 @@
   },
   "actualHeadDistribution": {
     "1": 802,
-    "2": 175,
+    "2": 176,
     "3": 216,
     "4": 152,
     "5": 95,
@@ -195,7 +195,7 @@
     "4->3": 4
   },
   "outcomeCounts": {
-    "unchanged-wrong": 710,
+    "unchanged-wrong": 711,
     "unchanged-correct": 376,
     "wrong-to-wrong": 161,
     "correct-to-wrong": 139,
