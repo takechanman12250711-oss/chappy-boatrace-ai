@@ -23,7 +23,7 @@ function decide(runs, now = Date.now()) {
 async function run({ env = process.env, now = Date.now, request = fetch, checkOnly = false } = {}) {
   const repo = env.GITHUB_REPOSITORY;
   if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*\/[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(repo || "") || env.GITHUB_REF !== "refs/heads/main" ||
-      !["schedule", "workflow_dispatch", "push"].includes(env.GITHUB_EVENT_NAME)) throw Error("heartbeat-context-invalid");
+      !["schedule", "workflow_dispatch", "push", "workflow_run"].includes(env.GITHUB_EVENT_NAME)) throw Error("heartbeat-context-invalid");
   if (!inWindow(now())) return { dispatch: false, reason: "outside-collection-hours" };
   if (!env.GH_TOKEN) throw Error("heartbeat-token-missing");
   const base = `https://api.github.com/repos/${repo}/actions/workflows/${WORKFLOW}`;
