@@ -97,12 +97,16 @@ function validateBundle(bundle, file, bytes, now) {
     throw new Error('chappy_baseline_mismatch');
   return { r, practical };
 }
-function buildCapture({ bundle, file, bytes, responseBytes, startedAt, capturedAt }) {
+function buildCapture({ bundle, file, bytes, responseBytes, startedAt, capturedAt, sourceCommit = null }) {
+  // An event SHA can differ from the checkout on workflow reruns. Never infer
+  // the executed code version from GITHUB_SHA; the collector passes its HEAD.
+  if (sourceCommit !== null && (typeof sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(sourceCommit)))
+    throw new Error('execution_source_commit_invalid');
   const now = Date.parse(capturedAt), { r, practical } = validateBundle(bundle, file, bytes, now);
   const page = parsePage(responseBytes, r);
   const common = { version: VERSION, raceKey: r.raceKey, date: r.date, capturedAt, startedAt,
     productionChanged: false, automaticProductionChange: false, usableForPrediction: false,
-    sourceCommit: process.env.GITHUB_SHA || null,
+    sourceCommit,
     source: { url: urlFor(r.date, r.raceNo), sha256: hash(responseBytes), ...page },
     chappy: { sourcePath: file, sourceSha256: hash(bytes), capturedAt: r.selectedAt, deadlineAt: r.deadlineAt,
       method: r.reviewEvidence.method || null,

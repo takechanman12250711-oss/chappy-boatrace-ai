@@ -1,8 +1,16 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const { VERSION, hash, urlFor, validateBundle, buildCapture, saveCapture } = require('./omura-reference.cjs');
 const { actualTicket, isOfficialResultSource, raceKey } = require('./analysis-input-contract');
+function checkedOutCommit(root = process.cwd()) {
+  const commit = execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']
+  }).trim();
+  if (!/^[a-f0-9]{40}$/.test(commit)) throw new Error('execution_source_commit_invalid');
+  return commit;
+}
 function sourceFiles(root, directory, date = null) {
   const base = path.join(root, directory);
   if (!fs.existsSync(base)) return [];
@@ -92,7 +100,9 @@ function buildReport(root, collection, now = Date.now()) {
       'Aggregate across methods is descriptive only; use byChappyMethod for a generation comparison.',
       'Reporter aim tickets stay separate from the main comparison. No backfill.'], rows };
 }
-async function collect({ root = process.cwd(), now = Date.now, request = fetch } = {}) {
+async function collect({ root = process.cwd(), now = Date.now, request = fetch, sourceCommit = null } = {}) {
+  if (sourceCommit !== null && (typeof sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(sourceCommit)))
+    throw new Error('execution_source_commit_invalid');
   const started = now(), date = new Date(started + 9*3600000).toISOString().slice(0,10).replace(/-/g,'');
   const existing = earliestCaptured(loadCaptures(root).values);
   const candidates = new Map(), skipped = {}, errors = [];
@@ -118,16 +128,18 @@ async function collect({ root = process.cwd(), now = Date.now, request = fetch }
       if (!response.ok) throw new Error(`http_${response.status}`);
       const responseBytes = Buffer.from(await response.arrayBuffer());
       if (responseBytes.length > 512000) throw new Error('response_too_large');
-      const value = buildCapture({ ...entry, responseBytes, startedAt, capturedAt: new Date(now()).toISOString() });
+      const value = buildCapture({ ...entry, responseBytes, startedAt, capturedAt: new Date(now()).toISOString(), sourceCommit });
       const file = saveCapture(value,root);
       saved.push({ raceKey: r.raceKey, status: value.status, file: path.relative(root,file) });
     } catch (error) { errors.push({ raceKey: r.raceKey, reason: error.message }); }
   }
-  return { date, startedAt: new Date(started).toISOString(), completedAt: new Date(now()).toISOString(),
+  return { date, sourceCommit, startedAt: new Date(started).toISOString(), completedAt: new Date(now()).toISOString(),
     eligible: candidates.size, saved, skipped, errors };
 }
 async function main() {
-  const collection = await collect();
+  // Resolve once before collection; workflow_run/rerun event SHAs are not the
+  // version checked out by this workflow's explicit ref: main.
+  const collection = await collect({ sourceCommit: checkedOutCommit(process.cwd()) });
   const report = buildReport(process.cwd(),collection);
   const output = path.join(process.env.RUNNER_TEMP || require('node:os').tmpdir(), 'omura-reference');
   fs.mkdirSync(output,{ recursive: true });
@@ -140,4 +152,4 @@ async function main() {
   if (collection.errors.length || !report.inputIntegrity.complete) process.exitCode = 1;
 }
 if (require.main === module) main().catch(error => { console.error(error); process.exitCode = 1; });
-module.exports = { sourceFiles, loadCaptures, earliestCaptured, missCategory, buildReport, collect };
+module.exports = { checkedOutCommit, sourceFiles, loadCaptures, earliestCaptured, missCategory, buildReport, collect };
