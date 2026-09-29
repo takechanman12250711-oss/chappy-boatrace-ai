@@ -127,6 +127,36 @@ async function checkAsyncGuards() {
     else await setPaidBoundary(ui, valid.paidText);
     assert.equal(clicks, scenario === 'already' ? 0 : 1);
   }
+  // note may briefly duplicate the paywall DOM while switching modes. Only a
+  // settled, unique first paid paragraph can be used for the boundary.
+  for (const persistent of [false, true]) {
+    let reads = 0;
+    let waits = 0;
+    const editor = {
+      evaluate: async () => {
+        reads += 1;
+        return persistent || reads < 3
+          ? [...boundaryBlocks, paragraph('🔵 本命予想')].map((block, i) => ({ ...block, pressed: i === 1 }))
+          : boundaryBlocks.map((block, i) => ({ ...block, pressed: i === 1 }));
+      },
+      locator: () => { throw Error('unexpected boundary click'); }
+    };
+    const settings = { isVisible: async () => true, click: async () => {} };
+    const ui = { getByRole: () => ({ count: async () => 1, nth: () => settings }),
+      getByText: () => ({ count: async () => 1, nth: () => settings }),
+      waitForTimeout: async () => { waits += 1; }, locator: () => editor };
+    if (persistent) {
+      const originalError = console.error;
+      console.error = () => {};
+      try { await assert.rejects(setPaidBoundary(ui, valid.paidText), /target_not_unique/); }
+      finally { console.error = originalError; }
+      assert.equal(reads, 4);
+    } else {
+      await setPaidBoundary(ui, valid.paidText);
+      assert.equal(reads, 4); // two transient snapshots, selection, verification
+    }
+    assert.equal(waits, persistent ? 4 : 3);
+  }
   const current = Date.now();
   const today = new Date(current + 9 * 3600000).toISOString().slice(0, 10);
   const eligible = { ...valid, raceDate: today, raceKey: `${today.replaceAll('-', '')}-10-7`, deadlineAt: new Date(current + 3600000).toISOString() };
