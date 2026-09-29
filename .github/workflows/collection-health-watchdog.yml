@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows:
       - Collect automatic race predictions
+      - Update note marketing
     types:
       - completed
   schedule:
@@ -22,7 +23,7 @@ permissions:
 
 jobs:
   watchdog:
-    if: github.event_name == 'workflow_run'
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Collect automatic race predictions'
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -57,7 +58,12 @@ jobs:
         run: node scripts/run-collection-health-watchdog.js
 
   heartbeat:
-    if: github.event_name != 'workflow_run'
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.name == 'Update note marketing' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       github.event.workflow_run.head_branch == 'main')
     concurrency:
       group: chappy-prediction-collector-heartbeat
       cancel-in-progress: false
@@ -78,6 +84,9 @@ jobs:
       - name: Recover missing collector trigger without duplicate runs
         env:
           GH_TOKEN: ${{ github.token }}
+          HEARTBEAT_TRIGGER: ${{ github.event_name }}
         run: |
           node scripts/check-prediction-collector-heartbeat.cjs
-          node scripts/check-live-note-heartbeat.cjs
+          if [ "$HEARTBEAT_TRIGGER" != "workflow_run" ]; then
+            node scripts/check-live-note-heartbeat.cjs
+          fi
