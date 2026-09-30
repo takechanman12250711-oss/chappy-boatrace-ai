@@ -2,6 +2,7 @@
 const fs=require('node:fs'), path=require('node:path');
 const {hiyoriDailySignals,macourWakamatsuSignals,macourWakamatsuRaceSignal,brPublicCapability,captureFromSignal}=require('./external-reference-source-adapters.cjs');
 const {saveCapture}=require('./external-reference-three-source.cjs');
+const scheduleApi=require('../api/schedule');
 
 const jstDate=now=>new Date(now+9*3600000).toISOString().slice(0,10).replace(/-/g,'');
 function deadlines(root,date){
@@ -15,14 +16,49 @@ function deadlines(root,date){
  try{walk(JSON.parse(fs.readFileSync(file)));}catch{}
  return map;
 }
+function callApi(handler,query){
+ return new Promise((resolve,reject)=>{
+  let statusCode=200;
+  const req={query};
+  const res={setHeader(){},status(code){statusCode=code;return this;},json(data){
+   if(statusCode>=400||data?.ok===false){reject(new Error(data?.error||('api_'+statusCode)));return;}
+   resolve(data);
+  }};
+  Promise.resolve(handler(req,res)).catch(reject);
+ });
+}
+async function loadOfficialVenueDeadlines({date,jcd,handler=scheduleApi}){
+ const data=await callApi(handler,{date,jcd});
+ const venue=data?.selectedVenue||{};
+ const races=Array.isArray(venue.races)?venue.races:[];
+ return {source:'boatrace-official',sourceUrl:String(venue.sourceUrl||''),scheduleAvailable:venue.scheduleAvailable===true,
+  races:races.map(race=>({raceNo:Number(race?.raceNo||0),deadlineAt:String(race?.deadlineAt||'')}))
+   .filter(race=>race.raceNo>=1&&race.raceNo<=12&&Number.isFinite(Date.parse(race.deadlineAt)))};
+}
+async function hydrateVenueDeadlines(map,date,jcd,loader=loadOfficialVenueDeadlines){
+ const loaded=await loader({date,jcd});
+ for(const race of loaded?.races||[]){
+  const key=`${date}-${String(jcd).padStart(2,'0')}-${Number(race.raceNo)}`;
+  const deadline=Date.parse(race.deadlineAt);
+  if(Number.isFinite(deadline)&&!map.has(key)) map.set(key,deadline);
+ }
+ return loaded||{source:'boatrace-official',sourceUrl:'',scheduleAvailable:false,races:[]};
+}
+function hasFutureVenueDeadline(map,date,jcd,now){
+ for(let raceNo=1;raceNo<=12;raceNo++){
+  const deadline=map.get(`${date}-${String(jcd).padStart(2,'0')}-${raceNo}`);
+  if(Number.isFinite(deadline)&&deadline-now>120000) return true;
+ }
+ return false;
+}
 async function get(url,fetcher=fetch){
  const r=await fetcher(url,{redirect:'follow',signal:AbortSignal.timeout(7000),headers:{'User-Agent':'ChappyResearch/1.0 (public pre-race reference comparison)','Cache-Control':'no-cache'}});
  if(!r.ok) throw new Error('http_'+r.status);
  const b=Buffer.from(await r.arrayBuffer()); if(b.length>1024*1024) throw new Error('response_too_large');
  return b;
 }
-async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
- const date=jstDate(now), ds=deadlines(root,date), captured=[], skipped=[], errors=[];
+async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch,deadlineLoader=loadOfficialVenueDeadlines}={}){
+ const date=jstDate(now), ds=deadlines(root,date), captured=[], skipped=[], errors=[], deadlineChecks=[];
  const sources=[
   {source:'hiyori',url:`https://kyoteibiyori.com/blog/${date}0001`,parse:b=>hiyoriDailySignals(b.toString('utf8'),date)}
  ];
