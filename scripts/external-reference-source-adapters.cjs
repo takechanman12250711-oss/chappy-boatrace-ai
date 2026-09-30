@@ -47,6 +47,22 @@ function macourWakamatsuSignals(html,date){
  }
  return dedupe(out);
 }
+function macourWakamatsuRaceSignal(html,date,raceNo){
+ const t=strip(html), mentions=[];
+ const map={'①':1,'②':2,'③':3,'④':4,'⑤':5,'⑥':6};
+ for(const m of t.matchAll(/([①②③④⑤⑥])([^。！？]{0,80})/g)){
+  const boat=map[m[1]], phrase=m[2], tags=[];
+  if(/逃げ|速攻|先マイ/.test(phrase)) tags.push('escape_or_fast_attack');
+  if(/差し/.test(phrase)) tags.push('sashi');
+  if(/まくり|捲り|握/.test(phrase)) tags.push('makuri_or_full_turn');
+  if(/カド/.test(phrase)) tags.push('kado');
+  if(/スタート/.test(phrase)) tags.push('start_attention');
+  if(/出足|伸び|舟足|足/.test(phrase)) tags.push('foot');
+  if(tags.length) mentions.push({boat,tags});
+ }
+ if(!mentions.length) return null;
+ return {raceKey:`${date}-20-${Number(raceNo)}`,features:{signal:'public_race_preview',boat:mentions[0].boat,mentions}};
+}
 function brPublicCapability(html){
  const t=strip(html);
  const keys=['B','E','S','A','G','K','L','W'];
@@ -62,4 +78,4 @@ function captureFromSignal(source,signal,{capturedAt,sourceUrl,rawBytes}){
   sourceUrl,sourceSha256:sha256(rawBytes),features:signal.features,
   productionChanged:false,automaticApplication:false,usableForPrediction:false};
 }
-module.exports={VENUES,strip,hiyoriDailySignals,macourWakamatsuSignals,brPublicCapability,captureFromSignal};
+module.exports={VENUES,strip,hiyoriDailySignals,macourWakamatsuSignals,macourWakamatsuRaceSignal,brPublicCapability,captureFromSignal};
