@@ -10,7 +10,7 @@ test('collector saves only locally matched pre-deadline public race signals and 
    {raceKey:'20300930-20-10',deadlineAt:'2030-09-30T20:00:00+09:00'}]}));
   const fetcher=async url=>({ok:true,arrayBuffer:async()=>Buffer.from(
    url.includes('kyoteibiyori')?'<h2>逃げ70%以上/逃し50%以上</h2> 上野真之介 びわこ 5R 1 12:43 <h2>まくり率25%以上のレース</h2>':
-   url.includes('macour')?'<p>準優10Rは4枠の高田がカドから攻め、スタート展示に注目。</p>':
+   url.includes('macour')?'<p>④高田がカドから攻め、スタートに注目。</p>':
    'B 実力 E モーター S スタート A 成績 G コース K コメント L 地元 W 環境')});
   const out=await collect({root:r,now:Date.parse('2030-09-30T10:00:00+09:00'),fetcher});
   assert.equal(out.captured.length,2); assert.deepEqual(out.captured.map(x=>x.source).sort(),['hiyori','macour']);
