@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'), assert=require('node:assert/strict');
-const {hiyoriDailySignals,macourWakamatsuSignals,brPublicCapability,captureFromSignal}=require('./external-reference-source-adapters.cjs');
+const {hiyoriDailySignals,macourWakamatsuSignals,macourWakamatsuRaceSignal,brPublicCapability,captureFromSignal}=require('./external-reference-source-adapters.cjs');
 const {validateCapture}=require('./external-reference-three-source.cjs');
 
 test('Hiyori extracts only race-identifiable public daily signals',()=>{
@@ -16,6 +16,12 @@ test('Macour Wakamatsu extracts explicit race preview signals without copying pr
  assert.equal(rows[0].features.frame,4);
  assert.deepEqual(rows[0].features.tags.sort(),['attack','kado','start_exhibition_attention']);
  assert.equal(JSON.stringify(rows).includes('高田'),false);
+});
+test('Macour public race page maps explicit boat commentary to comparison roles',()=>{
+ const row=macourWakamatsuRaceSignal('①新開が速攻決める。②仲谷がシャープな差しで迫る。③枝尾が外を握って。④瓜生のカギはスタート。','20300930',12);
+ assert.equal(row.raceKey,'20300930-20-12'); assert.equal(row.features.boat,1);
+ assert.ok(row.features.mentions.find(x=>x.boat===2).tags.includes('sashi'));
+ assert.ok(row.features.mentions.find(x=>x.boat===4).tags.includes('start_attention'));
 });
 test('BR public page is methodology-only unless race-level indices are public',()=>{
  const v=brPublicCapability('B:実力 E:モーター S:スタート A:成績 G:コース K:コメント L:地元 W:環境');
