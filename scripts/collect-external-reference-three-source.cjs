@@ -24,7 +24,7 @@ async function get(url,fetcher=fetch){
 async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
  const date=jstDate(now), ds=deadlines(root,date), captured=[], skipped=[], errors=[];
  const sources=[
-  {source:'hiyori',url:`https://www.kyoteibiyori.com/blog/${date}0001`,parse:b=>hiyoriDailySignals(b.toString('utf8'),date)}
+  {source:'hiyori',url:`https://kyoteibiyori.com/blog/${date}0001`,parse:b=>hiyoriDailySignals(b.toString('utf8'),date)}
  ];
  for(const s of sources){
   try{

@@ -68,7 +68,8 @@ function brPublicCapability(html){
  const t=strip(html);
  const keys=['B','E','S','A','G','K','L','W'];
  const hasEight=keys.every(k=>new RegExp(`(?:^|[^A-Z])${k}(?:[^A-Z]|$)`).test(t));
- return {raceLevelPublic:false,methodologyAvailable:hasEight,
+ const methodologyAvailable=hasEight||/8つの指数|8指数|マテマティクス/.test(t);
+ return {raceLevelPublic:false,methodologyAvailable,
    indexKeys:hasEight?keys:[],reason:'public_site_explains_methodology_but_race_level_indices_are_sold_on_note_or_regimag'};
 }
 function dedupe(rows){
