@@ -4,8 +4,8 @@ on:
   pull_request:
     paths:
       - "package.json"
-      - "workflows/external-reference-research.js"
-      - "api/external-reference-workflow.js"
+      - "workflows/external-reference-research.mjs"
+      - "api/external-reference-workflow.mjs"
       - "docs/external-reference-durable-workflow.md"
       - ".github/workflows/check-external-reference-durable.yml"
 
@@ -18,6 +18,6 @@ jobs:
         with:
           node-version: 20
       - run: npm install --ignore-scripts
-      - run: node --check workflows/external-reference-research.js
-      - run: node --check api/external-reference-workflow.js
+      - run: node --check workflows/external-reference-research.mjs
+      - run: node --check api/external-reference-workflow.mjs
       - run: node scripts/check-charter.js
