@@ -1,6 +1,14 @@
 name: Collect external three-source references
 # Public pre-race research only; never mutates production prediction logic.
 on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/external-reference-three-source.cjs"
+      - "scripts/external-reference-source-adapters.cjs"
+      - "scripts/collect-external-reference-three-source.cjs"
+      - "scripts/build-external-reference-result-report.cjs"
+      - ".github/workflows/collect-external-three-source-reference.yml"
   pull_request:
     paths:
       - "scripts/external-reference-three-source.cjs"
