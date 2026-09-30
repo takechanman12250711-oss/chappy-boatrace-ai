@@ -3,8 +3,14 @@ const fs=require('node:fs'),path=require('node:path');
 const {listCaptures}=require('./external-reference-three-source.cjs');
 const {collectOfficialResults,actualTicket,winningMethod}=require('./analysis-input-contract.js');
 function pct(n,d){return d?Math.round(n*1000/d)/10:null;}
+function firstCapturePerSourceRace(rows){
+ const ordered=[...rows].sort((a,b)=>(Date.parse(a.capturedAt)||0)-(Date.parse(b.capturedAt)||0)||String(a.file||'').localeCompare(String(b.file||'')));
+ const first=new Map();
+ for(const row of ordered){const key=String(row.source)+':'+String(row.raceKey);if(!first.has(key))first.set(key,row);}
+ return [...first.values()];
+}
 function build(root=process.cwd()){
- const captures=listCaptures(root).filter(x=>!x.invalid), keys=new Set(captures.map(x=>x.raceKey));
+ const rawCaptures=listCaptures(root).filter(x=>!x.invalid), captures=firstCapturePerSourceRace(rawCaptures), keys=new Set(captures.map(x=>x.raceKey));
  const results=collectOfficialResults(path.join(root,'data','results'),keys), rows=[];
  for(const c of captures){
   const r=results.get(c.raceKey); if(!r){rows.push({source:c.source,raceKey:c.raceKey,status:'pending'});continue;}
@@ -25,7 +31,9 @@ function build(root=process.cwd()){
  }
  return {version:'external-reference-result-report-v1',generatedAt:new Date().toISOString(),
   productionChanged:false,automaticApplication:false,usableForPrediction:false,
-  minimumForwardRacesPerFeature:120,bySource,rows};
+  minimumForwardRacesPerFeature:120,
+  diagnostics:{rawValidCaptures:rawCaptures.length,formalCaptures:captures.length,duplicateCapturesExcluded:rawCaptures.length-captures.length,deduplication:'first-valid-forward-capture-per-source-race'},
+  bySource,rows};
 }
 if(require.main===module){const r=build();const out=path.join(process.cwd(),'data','stats','external-reference-result-report-v1.json');fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(r,null,2)+'\n');console.log(JSON.stringify(r.bySource,null,2));}
-module.exports={build};
+module.exports={build,firstCapturePerSourceRace};
