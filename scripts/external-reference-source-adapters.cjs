@@ -13,17 +13,16 @@ const strip = html => html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,' ')
 
 function hiyoriDailySignals(html,date){
  const t=strip(html), out=[];
+ const venuePattern=[...VENUES.keys()].join('|');
  const sections=[
-  {kind:'escape70_release50', re:/([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}々ヶー]+)\s+(\d{1,2})R\s+([1-6])?/gu},
-  {kind:'makuri25', re:/([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}々ヶー]+)\s+(\d{1,2})R\s+([1-6])\s+(\d{1,2}(?:\.\d)?)%/gu}
+  {kind:'escape70_release50', re:new RegExp(`(${venuePattern})\\s+(\\d{1,2})R(?:\\s+([1-6]))?`,'gu')},
+  {kind:'makuri25', re:new RegExp(`(${venuePattern})\\s+(\\d{1,2})R\\s+([1-6])\\s+(\\d{1,2}(?:\\.\\d)?)%`,'gu')}
  ];
  const escape=t.match(/逃げ70%以上[\s\S]*?(?=まくり率25%以上|$)/)?.[0]||'';
  const makuri=t.match(/まくり率25%以上[\s\S]*$/)?.[0]||'';
  for(const [cfg,body] of [[sections[0],escape],[sections[1],makuri]]){
   for(const m of body.matchAll(cfg.re)){
-   const before=body.slice(Math.max(0,m.index-30),m.index);
-   const venue=[...VENUES.keys()].reverse().find(v=>before.endsWith(v)||before.includes(' '+v+' '));
-   if(!venue) continue;
+   const venue=m[1];
    const features={signal:cfg.kind,boat:m[3]?Number(m[3]):null};
    if(cfg.kind==='makuri25') features.makuriRate=Number(m[4]);
    out.push({raceKey:`${date}-${VENUES.get(venue)}-${Number(m[2])}`,features});
