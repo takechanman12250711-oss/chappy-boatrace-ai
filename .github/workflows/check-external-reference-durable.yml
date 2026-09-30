@@ -20,4 +20,8 @@ jobs:
       - run: npm install --ignore-scripts
       - run: node --check workflows/external-reference-research.mjs
       - run: node --check api/external-reference-workflow.mjs
+      - name: Verify workflow import target exists
+        run: |
+          test -f workflows/external-reference-research.mjs
+          grep -F '../workflows/external-reference-research.mjs' api/external-reference-workflow.mjs
       - run: node scripts/check-charter.js
