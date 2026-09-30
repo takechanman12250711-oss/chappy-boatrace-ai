@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-pipeline-loss-v1",
-  "generatedAt": "2026-09-30T05:31:12.213Z",
+  "generatedAt": "2026-09-30T05:34:29.545Z",
   "productionChanged": false,
   "automaticApplication": false,
-  "signalRaceCount": 39,
+  "signalRaceCount": 40,
   "stageCounts": {
     "archive-missed": 18,
     "not-comparable": 14,
-    "settled": 7
+    "settled": 7,
+    "archived-unsettled": 1
   },
   "notComparableVariantStatus": {
     "cover:no-category-candidate": 13,
@@ -1122,6 +1123,63 @@
               "purchaseEligible": true,
               "evidenceQualified": true,
               "priorityScore": 72.958
+            }
+          },
+          {
+            "variant": "hole",
+            "status": "no-source-ticket",
+            "candidateCount": 0,
+            "sourceTicketPresent": false,
+            "replacement": null
+          }
+        ]
+      ]
+    },
+    {
+      "raceKey": "20260930-09-5",
+      "selectedAt": "2026-09-30T03:16:33.792Z",
+      "signalGate": "active",
+      "stage": "archived-unsettled",
+      "archiveCount": 1,
+      "exclusionStatus": "",
+      "variantDiagnostics": [
+        [
+          {
+            "variant": "cover",
+            "status": "ready",
+            "candidateCount": 4,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "1-2-6",
+              "toTicket": "1-4-5",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 100
+            }
+          },
+          {
+            "variant": "flow",
+            "status": "ready",
+            "candidateCount": 7,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "4-1-2",
+              "toTicket": "1-4-2",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "shadow-physical-1-4-2",
+              "candidateKind": "outer-attack-shadow-physical",
+              "purchaseEligible": true,
+              "evidenceQualified": true,
+              "priorityScore": 71.543
             }
           },
           {
