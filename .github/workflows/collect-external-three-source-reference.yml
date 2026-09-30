@@ -26,8 +26,8 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: external-three-source-reference
-  cancel-in-progress: false
+  group: external-three-source-reference-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   collect:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
