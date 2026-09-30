@@ -32,26 +32,27 @@ function hiyoriDailySignals(html,date){
 }
 function macourWakamatsuSignals(html,date){
  const t=strip(html), out=[];
- const sentenceRe=/[^。！？]*(?:\d{1,2}[ＲR])[^。！？]*[。！？]/g;
- for(const sentence of t.match(sentenceRe)||[]){
-  const race=sentence.match(/(\d{1,2})[ＲR]/), frame=sentence.match(/([1-6])枠/);
-  if(!race) continue;
+ const races=[...t.matchAll(/(\d{1,2})R/g)];
+ for(let i=0;i<races.length;i++){
+  const race=races[i], start=race.index||0, end=i+1<races.length?(races[i+1].index||t.length):t.length;
+  const segment=t.slice(start,end), frame=segment.match(/([1-6])枠/);
   const tags=[];
-  if(/カド/.test(sentence)) tags.push('kado');
-  if(/攻め/.test(sentence)) tags.push('attack');
-  if(/スタート展示/.test(sentence)) tags.push('start_exhibition_attention');
-  if(/伸び/.test(sentence)) tags.push('stretch');
-  if(/足(?:は|が)?いい|舟足.*良|レース足.*いい/.test(sentence)) tags.push('foot_positive');
+  if(/カド/.test(segment)) tags.push('kado');
+  if(/攻め/.test(segment)) tags.push('attack');
+  if(/スタート展示/.test(segment)) tags.push('start_exhibition_attention');
+  if(/伸び/.test(segment)) tags.push('stretch');
+  if(/足(?:は|が)?いい|舟足.*良|レース足.*いい/.test(segment)) tags.push('foot_positive');
   if(!tags.length) continue;
   out.push({raceKey:`${date}-20-${Number(race[1])}`,features:{signal:'public_preview',frame:frame?Number(frame[1]):null,tags}});
  }
  return dedupe(out);
 }
 function macourWakamatsuRaceSignal(html,date,raceNo){
- const t=strip(html), mentions=[];
- const map={'①':1,'②':2,'③':3,'④':4,'⑤':5,'⑥':6};
- for(const m of t.matchAll(/([①②③④⑤⑥])([^。！？]{0,80})/g)){
-  const boat=map[m[1]], phrase=m[2], tags=[];
+ const markers={'①':1,'②':2,'③':3,'④':4,'⑤':5,'⑥':6};
+ const marked=String(html).replace(/[①②③④⑤⑥]/g,m=>` BOAT${markers[m]} `);
+ const t=strip(marked), mentions=[];
+ for(const m of t.matchAll(/BOAT([1-6])\s*([^。！？]{0,80})/g)){
+  const boat=Number(m[1]), phrase=m[2], tags=[];
   if(/逃げ|速攻|先マイ/.test(phrase)) tags.push('escape_or_fast_attack');
   if(/差し/.test(phrase)) tags.push('sashi');
   if(/まくり|捲り|握/.test(phrase)) tags.push('makuri_or_full_turn');
