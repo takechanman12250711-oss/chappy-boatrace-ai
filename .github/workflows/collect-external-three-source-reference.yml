@@ -39,14 +39,18 @@ jobs:
           node --test scripts/test-external-reference-three-source.cjs
           node --test scripts/test-external-reference-source-adapters.cjs
           node --test scripts/test-collect-external-reference-three-source.cjs
+          node --test scripts/test-external-reference-result-report.cjs
           node scripts/check-charter.js
       - name: Collect public pre-race references
         if: github.event_name != 'pull_request'
         run: node scripts/collect-external-reference-three-source.cjs
+      - name: Join captured references to official results
+        if: github.event_name != 'pull_request'
+        run: node scripts/build-external-reference-result-report.cjs
       - name: Save immutable captures and capability report
         if: github.event_name != 'pull_request'
         run: |
-          git add data/external-reference data/stats/external-reference-collector-v1.json 2>/dev/null || true
+          git add data/external-reference data/stats/external-reference-collector-v1.json data/stats/external-reference-result-report-v1.json 2>/dev/null || true
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
