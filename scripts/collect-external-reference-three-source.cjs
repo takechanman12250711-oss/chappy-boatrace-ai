@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'), path=require('node:path');
-const {hiyoriDailySignals,macourWakamatsuSignals,brPublicCapability,captureFromSignal}=require('./external-reference-source-adapters.cjs');
+const {hiyoriDailySignals,macourWakamatsuSignals,macourWakamatsuRaceSignal,brPublicCapability,captureFromSignal}=require('./external-reference-source-adapters.cjs');
 const {saveCapture}=require('./external-reference-three-source.cjs');
 
 const jstDate=now=>new Date(now+9*3600000).toISOString().slice(0,10).replace(/-/g,'');
@@ -24,8 +24,7 @@ async function get(url,fetcher=fetch){
 async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
  const date=jstDate(now), ds=deadlines(root,date), captured=[], skipped=[], errors=[];
  const sources=[
-  {source:'hiyori',url:`https://www.kyoteibiyori.com/blog/${date}0001`,parse:b=>hiyoriDailySignals(b.toString('utf8'),date)},
-  {source:'macour',url:`https://wyosou.macour.jp/seriesindex/index/day/${date}`,parse:b=>macourWakamatsuSignals(b.toString('utf8'),date)}
+  {source:'hiyori',url:`https://www.kyoteibiyori.com/blog/${date}0001`,parse:b=>hiyoriDailySignals(b.toString('utf8'),date)}
  ];
  for(const s of sources){
   try{
@@ -38,6 +37,19 @@ async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
     captured.push({source:s.source,raceKey:signal.raceKey,file:path.relative(root,saveCapture(root,value))});
    }
   }catch(e){errors.push({source:s.source,reason:e.message});}
+ }
+ // Macour exposes public race-by-race Wakamatsu previews. Fetch only locally
+ // known races that are still safely before deadline; never fetch result pages.
+ for(let raceNo=1;raceNo<=12;raceNo++){
+  const raceKey=`${date}-20-${raceNo}`, deadline=ds.get(raceKey);
+  if(!Number.isFinite(deadline)||deadline-now<=120000) continue;
+  const url=`https://wyosou.macour.jp/index/list/day/${date}/no/${raceNo}`;
+  try{
+   const bytes=await get(url,fetcher), signal=macourWakamatsuRaceSignal(bytes.toString('utf8'),date,raceNo);
+   if(!signal){skipped.push({source:'macour',raceKey,reason:'public_preview_not_ready_or_unstructured'});continue;}
+   const value=captureFromSignal('macour',signal,{capturedAt:new Date(now).toISOString(),sourceUrl:url,rawBytes:bytes});
+   captured.push({source:'macour',raceKey,file:path.relative(root,saveCapture(root,value))});
+  }catch(e){errors.push({source:'macour',raceKey,reason:e.message});}
  }
  let br;
  try{
