@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {collect}=require('./collect-external-reference-three-source.cjs');
+const {collect,officialDeadlineFromHtml}=require('./collect-external-reference-three-source.cjs');
 const root=()=>fs.mkdtempSync(path.join(os.tmpdir(),'ext-collector-'));
 test('collector saves only locally matched pre-deadline public race signals and keeps BR methodology separate',async()=>{
  const r=root(), date='20300930'; try{
@@ -61,4 +61,10 @@ test('collector unions note-draft and daily prediction deadlines for different r
   const out=await collect({root:r,now:Date.parse('2030-09-30T10:00:00+09:00'),fetcher});
   assert.deepEqual(out.captured.map(x=>x.source).sort(),['hiyori','macour']);
  }finally{fs.rmSync(r,{recursive:true,force:true});}
+});
+
+
+test('official deadline fallback reads the requested race clock in JST',()=>{
+ const html='<div>締切予定時刻 10:01 10:30 11:00 11:31 12:02 12:33 13:04 13:35 14:06 14:37 15:08 15:40</div>';
+ assert.equal(new Date(officialDeadlineFromHtml(html,'20300930',5)).toISOString(),'2030-09-30T03:02:00.000Z');
 });
