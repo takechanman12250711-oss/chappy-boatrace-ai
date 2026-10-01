@@ -44,3 +44,21 @@ test('collector uses immutable note-draft deadline when the giant daily predicti
   assert.equal(out.skipped.some(x=>x.raceKey==='20300930-11-5'&&x.reason==='no_local_pre_race_deadline'),false);
  }finally{fs.rmSync(r,{recursive:true,force:true});}
 });
+
+
+test('collector unions note-draft and daily prediction deadlines for different races',async()=>{
+ const r=root(), date='20300930'; try{
+  fs.mkdirSync(path.join(r,'data','predictions'),{recursive:true});
+  fs.writeFileSync(path.join(r,'data','predictions',date+'.json'),JSON.stringify({races:[
+   {raceKey:'20300930-20-10',deadlineAt:'2030-09-30T20:00:00+09:00'}]}));
+  const draftDir=path.join(r,'data','note-drafts',date); fs.mkdirSync(draftDir,{recursive:true});
+  fs.writeFileSync(path.join(draftDir,'20300930-11-5-fixture.json'),JSON.stringify({record:{
+   raceKey:'20300930-11-5',deadlineAt:'2030-09-30T12:00:00+09:00'}}));
+  const fetcher=async url=>({ok:true,arrayBuffer:async()=>Buffer.from(
+   url.includes('kyoteibiyori')?'<h2>逃げ70%以上/逃し50%以上</h2> 上野真之介 びわこ 5R 1 12:43 <h2>まくり率25%以上のレース</h2>':
+   url.includes('macour')?'<p>④高田がカドから攻め、スタートに注目。</p>':
+   'B E S A G K L W')});
+  const out=await collect({root:r,now:Date.parse('2030-09-30T10:00:00+09:00'),fetcher});
+  assert.deepEqual(out.captured.map(x=>x.source).sort(),['hiyori','macour']);
+ }finally{fs.rmSync(r,{recursive:true,force:true});}
+});
