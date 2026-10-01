@@ -5,14 +5,29 @@ const {saveCapture}=require('./external-reference-three-source.cjs');
 
 const jstDate=now=>new Date(now+9*3600000).toISOString().slice(0,10).replace(/-/g,'');
 function deadlines(root,date){
- const file=path.join(root,'data','predictions',date+'.json'), map=new Map();
- if(!fs.existsSync(file)) return map;
+ const map=new Map();
  const walk=v=>{
   if(!v||typeof v!=='object') return;
-  if(typeof v.raceKey==='string'&&typeof v.deadlineAt==='string') map.set(v.raceKey,Date.parse(v.deadlineAt));
+  if(typeof v.raceKey==='string'&&typeof v.deadlineAt==='string'){
+   const deadline=Date.parse(v.deadlineAt);
+   if(Number.isFinite(deadline)) map.set(v.raceKey,deadline);
+  }
   for(const x of Object.values(v)) if(x&&typeof x==='object') Array.isArray(x)?x.forEach(walk):walk(x);
  };
- try{walk(JSON.parse(fs.readFileSync(file)));}catch{}
+ // Prefer the small immutable exhibition-ready note sources. The canonical
+ // daily prediction file can exceed 100 MB and some generations do not carry
+ // deadlineAt at all; treating that as the only clock source made valid public
+ // references look unmatched.
+ const drafts=path.join(root,'data','note-drafts',date);
+ if(fs.existsSync(drafts)){
+  for(const name of fs.readdirSync(drafts).filter(n=>n.endsWith('.json')).sort()){
+   try{walk(JSON.parse(fs.readFileSync(path.join(drafts,name),'utf8')));}catch{}
+  }
+ }
+ if(map.size) return map;
+ // Backward-compatible fallback for dates before note-draft collection.
+ const file=path.join(root,'data','predictions',date+'.json');
+ if(fs.existsSync(file)) try{walk(JSON.parse(fs.readFileSync(file,'utf8')));}catch{}
  return map;
 }
 async function get(url,fetcher=fetch){
