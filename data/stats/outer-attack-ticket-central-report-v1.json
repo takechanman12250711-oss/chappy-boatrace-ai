@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "reportId": "outer-attack-ticket-central-report-v1",
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
-  "generatedAt": "2026-10-01T12:03:01.237Z",
+  "generatedAt": "2026-10-01T17:42:25.581Z",
   "productionChanged": false,
   "automaticApplication": false,
   "humanApprovalRequired": true,
@@ -16,22 +16,22 @@
       "missing": 129,
       "invalid": 1,
       "missingBasis": 0,
-      "checkedAt": "2026-10-01T11:55:20.403Z"
+      "checkedAt": "2026-10-01T17:42:15.444Z"
     },
     "lastCapture": {
-      "date": "20261001",
-      "capturedAt": "2026-10-01T11:55:20.403Z",
+      "date": "20261002",
+      "capturedAt": "2026-10-01T17:42:15.444Z",
       "diagnostics": {
-        "sourceRecordCount": 44,
-        "preDeadlineRecordCount": 44,
-        "duplicateRaceKeyCount": 2,
+        "sourceRecordCount": 14,
+        "preDeadlineRecordCount": 14,
+        "duplicateRaceKeyCount": 0,
         "excludedReasons": {},
-        "selectedRaceCount": 42,
+        "selectedRaceCount": 14,
         "beforeProspectiveStartCount": 0,
-        "notPersistenceRecommendedCount": 40,
+        "notPersistenceRecommendedCount": 14,
         "notReadyCount": 0,
         "capturedCount": 0,
-        "preservedCount": 2,
+        "preservedCount": 0,
         "conflictCount": 0
       }
     },
@@ -50,7 +50,7 @@
     "schemaVersion": 1,
     "reportId": "outer-attack-ticket-ab-report-v1",
     "settlementVersion": "outer-attack-ticket-settlement-v1",
-    "generatedAt": "2026-10-01T12:03:01.237Z",
+    "generatedAt": "2026-10-01T17:42:25.581Z",
     "productionChanged": false,
     "automaticApplication": false,
     "primaryCohort": "prediction-before-result",
@@ -1106,7 +1106,7 @@
   "decision": {
     "schemaVersion": 1,
     "gateId": "outer-attack-ticket-decision-gate-v1",
-    "generatedAt": "2026-10-01T12:03:01.237Z",
+    "generatedAt": "2026-10-01T17:42:25.581Z",
     "frozenAt": "2026-08-31T01:40:00.000Z",
     "prospectiveStartAt": "2026-08-31T02:00:00.000Z",
     "sourceMainCommit": "ee644d55b889c0ff38f198b9747c9c4d86c83425",
@@ -3340,18 +3340,16 @@
       }
     },
     "coverage": {
-      "date": "20261001",
+      "date": "20261002",
       "scheduledRaces": 168,
       "scheduleComplete": true,
       "observedRaces": 168,
-      "savedRaces": 17,
-      "missingRaces": 151,
+      "savedRaces": 0,
+      "missingRaces": 168,
       "reasons": {
-        "waiting-exhibition": 44,
-        "closed-or-too-close": 104,
-        "deferred-until-one-hour": 3
+        "deferred-until-one-hour": 168
       },
-      "lastObservedAt": "2026-10-01T11:48:45.293Z",
+      "lastObservedAt": "2026-10-01T17:34:18.574Z",
       "venueFailures": []
     }
   }
