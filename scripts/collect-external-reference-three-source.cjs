@@ -24,8 +24,8 @@ function deadlines(root,date){
    try{walk(JSON.parse(fs.readFileSync(path.join(drafts,name),'utf8')));}catch{}
   }
  }
- if(map.size) return map;
- // Backward-compatible fallback for dates before note-draft collection.
+ // Union all existing trusted pre-race clock sources. Returning as soon as
+ // one note draft was found made unrelated Hiyori/Macour races invisible.
  const file=path.join(root,'data','predictions',date+'.json');
  if(fs.existsSync(file)) try{walk(JSON.parse(fs.readFileSync(file,'utf8')));}catch{}
  return map;
