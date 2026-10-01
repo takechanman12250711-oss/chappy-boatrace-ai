@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-pipeline-loss-v1",
-  "generatedAt": "2026-09-30T17:08:44.537Z",
+  "generatedAt": "2026-10-01T01:16:58.349Z",
   "productionChanged": false,
   "automaticApplication": false,
-  "signalRaceCount": 40,
+  "signalRaceCount": 41,
   "stageCounts": {
     "archive-missed": 18,
     "not-comparable": 14,
-    "settled": 7,
+    "settled": 8,
     "archived-unsettled": 1
   },
   "notComparableVariantStatus": {
@@ -1139,7 +1139,7 @@
       "raceKey": "20260930-09-5",
       "selectedAt": "2026-09-30T03:16:33.792Z",
       "signalGate": "active",
-      "stage": "archived-unsettled",
+      "stage": "settled",
       "archiveCount": 1,
       "exclusionStatus": "",
       "variantDiagnostics": [
@@ -1180,6 +1180,63 @@
               "purchaseEligible": true,
               "evidenceQualified": true,
               "priorityScore": 71.543
+            }
+          },
+          {
+            "variant": "hole",
+            "status": "no-source-ticket",
+            "candidateCount": 0,
+            "sourceTicketPresent": false,
+            "replacement": null
+          }
+        ]
+      ]
+    },
+    {
+      "raceKey": "20261001-23-4",
+      "selectedAt": "2026-10-01T00:55:20.181Z",
+      "signalGate": "active",
+      "stage": "archived-unsettled",
+      "archiveCount": 1,
+      "exclusionStatus": "",
+      "variantDiagnostics": [
+        [
+          {
+            "variant": "cover",
+            "status": "ready",
+            "candidateCount": 2,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "cover",
+              "validEntryIndex": 1,
+              "fromTicket": "1-2-4",
+              "toTicket": "1-4-3",
+              "carriedAmountYen": 100,
+              "targetPosition": 3,
+              "candidateId": "",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 97
+            }
+          },
+          {
+            "variant": "flow",
+            "status": "ready",
+            "candidateCount": 2,
+            "sourceTicketPresent": true,
+            "replacement": {
+              "sourceKey": "flow",
+              "validEntryIndex": 1,
+              "fromTicket": "2-1-6",
+              "toTicket": "2-3-6",
+              "carriedAmountYen": 100,
+              "targetPosition": 2,
+              "candidateId": "",
+              "candidateKind": "canonical-formation",
+              "purchaseEligible": false,
+              "evidenceQualified": true,
+              "priorityScore": 87
             }
           },
           {
