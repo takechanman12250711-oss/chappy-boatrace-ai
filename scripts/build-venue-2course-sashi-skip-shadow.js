@@ -19,12 +19,72 @@ const TARGET_VENUES = Object.freeze([
 ]);
 const MIN_TARGET_SETTLED_PER_VENUE = 30;
 
-function load(dir) {
+function compactTickets(values) {
+  if (!Array.isArray(values)) return [];
+  return values.map(value => value?.ticket || value);
+}
+
+function compactPredictionRecord(record = {}) {
+  const prediction = record.prediction || {};
+  const raceFlow = prediction.raceFlow || {};
+  return {
+    date: record.date,
+    jcd: record.jcd,
+    raceNo: record.raceNo,
+    selectedAt: record.selectedAt,
+    capturedAt: record.capturedAt,
+    deadlineAt: record.deadlineAt,
+    scenarioLabel: record.scenarioLabel,
+    selection: record.selection ? { scenarioLabel: record.selection.scenarioLabel } : undefined,
+    prediction: {
+      scenarioLabel: prediction.scenarioLabel,
+      raceFlow: {
+        scenarioLabel: raceFlow.scenarioLabel,
+        label: raceFlow.label,
+        scenario: raceFlow.scenario ? { title: raceFlow.scenario.title } : undefined
+      },
+      practicalTickets: compactTickets(prediction.practicalTickets),
+      practicalSelection: prediction.practicalSelection
+        ? { tickets: compactTickets(prediction.practicalSelection.tickets) }
+        : undefined
+    }
+  };
+}
+
+function compactPredictionDoc(doc = {}) {
+  return {
+    predictions: (Array.isArray(doc.predictions) ? doc.predictions : []).map(compactPredictionRecord),
+    verificationPredictions: (Array.isArray(doc.verificationPredictions) ? doc.verificationPredictions : []).map(compactPredictionRecord)
+  };
+}
+
+function compactResultDoc(doc = {}) {
+  return {
+    races: (Array.isArray(doc.races) ? doc.races : []).map(race => ({
+      date: race.date,
+      jcd: race.jcd,
+      raceNo: race.raceNo,
+      resultAvailable: race.resultAvailable,
+      status: race.status,
+      trifecta: race.trifecta ? {
+        combination: race.trifecta.combination,
+        payout: race.trifecta.payout
+      } : undefined
+    }))
+  };
+}
+
+function load(dir, compactDoc = doc => doc) {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
+  const docs = [];
+  const names = fs.readdirSync(dir)
     .filter(name => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map(name => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
+    .sort();
+  for (const name of names) {
+    const parsed = JSON.parse(fs.readFileSync(path.join(dir, name), "utf8"));
+    docs.push(compactDoc(parsed));
+  }
+  return docs;
 }
 
 function summarize(rows) {
@@ -131,7 +191,7 @@ function build(predDocs, resultDocs) {
 }
 
 function main() {
-  const report = build(load(predictionDir), load(resultDir));
+  const report = build(load(predictionDir, compactPredictionDoc), load(resultDir, compactResultDoc));
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(`場別2コース差しshadow: ${report.cohort.raceCount}R / 対象確定 ${report.cohort.targetSettledCount}R`);
@@ -147,6 +207,9 @@ module.exports = {
   PROSPECTIVE_CUTOFF,
   TARGET_VENUES,
   MIN_TARGET_SETTLED_PER_VENUE,
+  compactPredictionRecord,
+  compactPredictionDoc,
+  compactResultDoc,
   summarize,
   delta,
   build
