@@ -36,6 +36,19 @@ async function get(url,fetcher=fetch){
  const b=Buffer.from(await r.arrayBuffer()); if(b.length>1024*1024) throw new Error('response_too_large');
  return b;
 }
+function officialDeadlineFromHtml(html,date,raceNo){
+ const text=String(html).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
+ const m=text.match(/締切予定時刻\s+((?:\d{1,2}:\d{2}\s*){1,12})/);
+ if(!m) return null;
+ const times=m[1].match(/\d{1,2}:\d{2}/g)||[], value=times[Number(raceNo)-1];
+ if(!value) return null;
+ const [hh,mm]=value.split(':').map(Number), y=Number(date.slice(0,4)),mo=Number(date.slice(4,6)),d=Number(date.slice(6,8));
+ return Date.UTC(y,mo-1,d,hh-9,mm);
+}
+async function officialDeadline(date,jcd,raceNo,fetcher){
+ const url=`https://www.boatrace.jp/owpc/pc/race/racelist?rno=${raceNo}&jcd=${jcd}&hd=${date}`;
+ const bytes=await get(url,fetcher); return officialDeadlineFromHtml(bytes.toString('utf8'),date,raceNo);
+}
 async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
  const date=jstDate(now), ds=deadlines(root,date), captured=[], skipped=[], errors=[];
  const sources=[
@@ -45,8 +58,12 @@ async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
   try{
    const bytes=await get(s.url,fetcher), signals=s.parse(bytes);
    for(const signal of signals){
-    const deadline=ds.get(signal.raceKey);
-    if(!Number.isFinite(deadline)){skipped.push({source:s.source,raceKey:signal.raceKey,reason:'no_local_pre_race_deadline'});continue;}
+    let deadline=ds.get(signal.raceKey);
+    if(!Number.isFinite(deadline)){
+     const [,jcd,raceNo]=signal.raceKey.split('-');
+     try{deadline=await officialDeadline(date,jcd,raceNo,fetcher);}catch(e){errors.push({source:'official_deadline',raceKey:signal.raceKey,reason:e.message});}
+    }
+    if(!Number.isFinite(deadline)){skipped.push({source:s.source,raceKey:signal.raceKey,reason:'no_verified_pre_race_deadline'});continue;}
     if(deadline-now<=120000){skipped.push({source:s.source,raceKey:signal.raceKey,reason:'outside_pre_result_window'});continue;}
     const value=captureFromSignal(s.source,signal,{capturedAt:new Date(now).toISOString(),sourceUrl:s.url,rawBytes:bytes});
     captured.push({source:s.source,raceKey:signal.raceKey,file:path.relative(root,saveCapture(root,value))});
@@ -56,7 +73,8 @@ async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
  // Macour exposes public race-by-race Wakamatsu previews. Fetch only locally
  // known races that are still safely before deadline; never fetch result pages.
  for(let raceNo=1;raceNo<=12;raceNo++){
-  const raceKey=`${date}-20-${raceNo}`, deadline=ds.get(raceKey);
+  const raceKey=`${date}-20-${raceNo}`; let deadline=ds.get(raceKey);
+  if(!Number.isFinite(deadline)) try{deadline=await officialDeadline(date,'20',raceNo,fetcher);}catch(e){errors.push({source:'official_deadline',raceKey,reason:e.message});}
   if(!Number.isFinite(deadline)||deadline-now<=120000) continue;
   const url=`https://wyosou.macour.jp/index/list/day/${date}/no/${raceNo}`;
   try{
@@ -79,4 +97,4 @@ async function collect({root=process.cwd(),now=Date.now(),fetcher=fetch}={}){
  return report;
 }
 if(require.main===module) collect().then(r=>console.log(JSON.stringify(r,null,2))).catch(e=>{console.error(e);process.exitCode=1;});
-module.exports={jstDate,deadlines,get,collect};
+module.exports={jstDate,deadlines,get,officialDeadlineFromHtml,officialDeadline,collect};
