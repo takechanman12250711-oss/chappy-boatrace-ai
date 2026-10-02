@@ -58,7 +58,15 @@ async function collectAllRaceNotes({ date, loadSchedule, evaluate, createPredict
   schedule.forEach(r => { if (!r.deadlineAt) r.status = "schedule-missing"; else if (Date.parse(r.deadlineAt)-now() <= 120000) r.status = "closed-or-too-close"; else if (Date.parse(r.deadlineAt)-now() > 60*60000) r.status = "deferred-until-one-hour"; });
   const existing = existingRaces(date, rootDir, now());
   existing.forEach(key => mark(key, "note-already-saved"));
-  const pending = targets.filter(r => !existing.has(`${date}-${r.jcd}-${r.raceNo}`) && Date.parse(r.deadlineAt)-now() <= 60*60000);
+  const pending = targets.filter(r => !existing.has(`${date}-${r.jcd}-${r.raceNo}`) && Date.parse(r.deadlineAt)-now() <= 60*60000)
+    // Races nearest the exhibition/publication window must not wait behind
+    // distant one-hour targets. Keep deadline order, but split the work so
+    // <=30 minute races are exhausted first on every five-minute run.
+    .sort((a, b) => {
+      const aUrgent = Date.parse(a.deadlineAt)-now() <= 30*60000 ? 0 : 1;
+      const bUrgent = Date.parse(b.deadlineAt)-now() <= 30*60000 ? 0 : 1;
+      return aUrgent-bUrgent || Date.parse(a.deadlineAt)-Date.parse(b.deadlineAt);
+    });
   const summary = { date, targetCount: targets.length, existing: targets.filter(r => existing.has(`${date}-${r.jcd}-${r.raceNo}`)).length,
     evaluated: 0, waitingExhibition: 0, generated: 0, saved: 0, failures };
   // Keep the existing prediction engine and its bounded API workers. Scores and
