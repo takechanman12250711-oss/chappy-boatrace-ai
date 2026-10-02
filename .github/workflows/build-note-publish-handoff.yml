@@ -9,6 +9,7 @@ on:
       - "scripts/build-note-publish-handoff.js"
       - "scripts/build-note-mcp-markdown.js"
       - "scripts/build-note-iphone-handoff.js"
+      - "data/note-drafts/**"
   workflow_run:
     workflows:
       - Collect automatic race predictions
