@@ -495,6 +495,14 @@ function compactPredictionRecord(
     prediction: {
       predictionMode:
         prediction.predictionMode,
+      head:
+        prediction.head,
+      tickets:
+        prediction.tickets,
+      finalTickets:
+        prediction.finalTickets,
+      practicalTickets:
+        prediction.practicalTickets,
       timing:
         timing(prediction.timing),
       isRetrospective:
@@ -525,10 +533,15 @@ function compactPredictionRecord(
       verificationEvidence:
         evidence,
       practicalSelection:
-        practicalEvidence
+        prediction.practicalSelection
           ? {
+              tickets:
+                prediction
+                  .practicalSelection
+                  .tickets,
               verificationEvidence:
-                practicalEvidence
+                practicalEvidence ||
+                undefined
             }
           : undefined
     },
