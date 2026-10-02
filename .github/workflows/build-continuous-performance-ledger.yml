@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - scripts/build-hit-first-practical-report.cjs
+      - scripts/build-four-stage-miss-diagnosis.cjs
       - tests/hit-first-practical-report.test.cjs
       - .github/workflows/build-continuous-performance-ledger.yml
       - scripts/build-continuous-performance-ledger.cjs
@@ -78,6 +79,18 @@ jobs:
         with:
           name: eight-ticket-exhibition-shadow-report
           path: data/stats/eight-ticket-exhibition-shadow-report.json
+          if-no-files-found: error
+      - name: Build four-stage miss diagnosis without changing predictions
+        id: four_stage
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' && steps.node.outcome == 'success' }}
+        continue-on-error: true
+        run: node scripts/build-four-stage-miss-diagnosis.cjs > data/stats/four-stage-miss-diagnosis.json
+      - name: Preserve four-stage miss diagnosis
+        if: ${{ !cancelled() && steps.four_stage.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: four-stage-miss-diagnosis
+          path: data/stats/four-stage-miss-diagnosis.json
           if-no-files-found: error
       - name: Build hit-first report without changing predictions
         id: hit_first
