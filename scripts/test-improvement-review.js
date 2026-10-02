@@ -1815,3 +1815,27 @@ assert.deepEqual(
 console.log(
   "100R改善レビュー生成テスト: 合格"
 );
+
+;(() => {
+  const compactBuilder = require("./build-improvement-review.js");
+  const phase9 = require("./phase9-live-improvement-cycle.cjs");
+  const compact = compactBuilder.compactPredictionRecord({
+    raceKey: "20261002-01-1",
+    date: "20261002",
+    jcd: "01",
+    raceNo: 1,
+    prediction: {
+      head: 2,
+      practicalTickets: ["2-1-3"],
+      practicalSelection: { tickets: ["2-1-3"] },
+      verificationEvidence: { generation: { logicFingerprint: "test" } }
+    }
+  }, null, { fileName: "20261002.json", collection: "predictions" });
+  require("node:assert/strict").deepEqual(compact.prediction.practicalTickets, ["2-1-3"]);
+  require("node:assert/strict").deepEqual(compact.prediction.practicalSelection.tickets, ["2-1-3"]);
+  require("node:assert/strict").equal(compact.prediction.head, 2);
+  require("node:assert/strict").equal(phase9.classify({
+    ...compact,
+    officialResult: { confirmed: true, combination: "1-2-3" }
+  }).code, "HEAD_MISS");
+})();
