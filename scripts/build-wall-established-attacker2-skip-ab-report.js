@@ -34,12 +34,183 @@ function raceKey(record = {}) {
   return `${String(record.date || "")}-${String(record.jcd || "").padStart(2, "0")}-${Number(record.raceNo || 0)}`;
 }
 
-function load(dir) {
+function compactWall(value) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return {
+    attackerNo: value.attackerNo,
+    wallCandidateNo:
+      value.wallCandidateNo,
+    wallBoat: value.wallBoat,
+    state: value.state,
+    score: value.score,
+    grade: value.grade
+  };
+}
+
+function compactEvidence(value) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return {
+    wallTheory:
+      compactWall(value.wallTheory)
+  };
+}
+
+function compactRaceScenarios(value) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return {
+    attacker: value.attacker,
+    wallTheory:
+      compactWall(value.wallTheory)
+  };
+}
+
+function compactPrediction(value) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return {
+    practicalTickets:
+      value.practicalTickets,
+    practicalSelection:
+      value.practicalSelection &&
+      typeof value.practicalSelection ===
+        "object"
+        ? {
+            tickets:
+              value.practicalSelection
+                .tickets,
+            verificationEvidence:
+              compactEvidence(
+                value.practicalSelection
+                  .verificationEvidence
+              )
+          }
+        : value.practicalSelection,
+    verificationEvidence:
+      compactEvidence(
+        value.verificationEvidence
+      ),
+    wallTheory:
+      compactWall(value.wallTheory),
+    aiCore:
+      value.aiCore &&
+      typeof value.aiCore === "object"
+        ? {
+            wallTheory:
+              compactWall(
+                value.aiCore.wallTheory
+              ),
+            raceScenarios:
+              compactRaceScenarios(
+                value.aiCore
+                  .raceScenarios
+              )
+          }
+        : value.aiCore,
+    raceScenarios:
+      compactRaceScenarios(
+        value.raceScenarios
+      )
+  };
+}
+
+function compactPredictionRecord(record = {}) {
+  return {
+    date: record.date,
+    jcd: record.jcd,
+    raceNo: record.raceNo,
+    selectedAt: record.selectedAt,
+    capturedAt: record.capturedAt,
+    ...compactPrediction(record),
+    prediction:
+      compactPrediction(
+        record.prediction
+      ),
+    result:
+      record.result &&
+      typeof record.result === "object"
+        ? {
+            settled:
+              record.result.settled,
+            resultTicket:
+              record.result
+                .resultTicket,
+            payoutPer100:
+              record.result
+                .payoutPer100,
+            payout:
+              record.result.payout
+          }
+        : record.result
+  };
+}
+
+function compactPredictionDocument(doc = {}) {
+  return {
+    predictions:
+      Array.isArray(doc.predictions)
+        ? doc.predictions.map(
+            compactPredictionRecord
+          )
+        : doc.predictions,
+    verificationPredictions:
+      Array.isArray(
+        doc.verificationPredictions
+      )
+        ? doc.verificationPredictions.map(
+            compactPredictionRecord
+          )
+        : doc.verificationPredictions
+  };
+}
+
+function compactResultDocument(doc = {}) {
+  return {
+    races:
+      Array.isArray(doc.races)
+        ? doc.races.map(race => ({
+            date: race?.date,
+            jcd: race?.jcd,
+            raceNo: race?.raceNo,
+            resultAvailable:
+              race?.resultAvailable,
+            status: race?.status,
+            void: race?.void,
+            trifecta:
+              race?.trifecta
+          }))
+        : doc.races
+  };
+}
+
+function load(
+  dir,
+  compactDocument = value => value
+) {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
     .filter(name => /^\d{8}\.json$/.test(name))
     .sort()
-    .map(name => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
+    .map(name =>
+      compactDocument(
+        JSON.parse(
+          fs.readFileSync(
+            path.join(dir, name),
+            "utf8"
+          )
+        )
+      )
+    );
 }
 
 function resultMap(docs) {
@@ -388,7 +559,16 @@ function build(predDocs, resultDocs) {
 }
 
 function main() {
-  const report = build(load(predictionDir), load(resultDir));
+  const report = build(
+    load(
+      predictionDir,
+      compactPredictionDocument
+    ),
+    load(
+      resultDir,
+      compactResultDocument
+    )
+  );
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify({
@@ -403,6 +583,9 @@ function main() {
 if (require.main === module) main();
 module.exports = {
   build,
+  compactPredictionDocument,
+  compactPredictionRecord,
+  compactResultDocument,
   comparison,
   conditionResult,
   embeddedResult,
