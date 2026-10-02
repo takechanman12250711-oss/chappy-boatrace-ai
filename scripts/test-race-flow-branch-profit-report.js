@@ -6,7 +6,9 @@ function result(r,hit,payout=900){return{date:r.date,jcd:r.jcd,raceNo:r.raceNo,r
 const a=[],b=[],results=[];
 for(let i=1;i<=12;i++){const r=rec(i,"1号艇逃げ");a.push(r);results.push(result(r,i<=6,800));}
 for(let i=13;i<=24;i++){const r=rec(i,"3コース攻め","selection");b.push(r);results.push(result(r,i<=15,1200));}
-const report=engine.build([{predictions:a,verificationPredictions:b}],[{races:results}]);
+const originalPredictions=[{predictions:a,verificationPredictions:b}];
+const originalResults=[{races:results}];
+const report=engine.build(originalPredictions,originalResults);
 assert.equal(report.productionChanged,false);
 assert.equal(report.version,"race-flow-branch-profit-v2-saved-title");
 assert.equal(report.diagnostics.deduplicatedLabeledRaceCount,24);
@@ -17,4 +19,15 @@ assert.equal(report.summaries["1号艇逃げ"].raceCount,12);
 assert.equal(report.summaries["3コース攻め"].raceCount,12);
 assert.equal(report.weakBranchRanking.length,2);
 assert.equal(report.interpretation.retrospectiveInferenceAllowed,false);
+const noisyPredictions={predictions:a.map(r=>({...r,unusedPayload:{rows:Array(100).fill("discard")}})),verificationPredictions:b.map(r=>({...r,unusedPayload:{rows:Array(100).fill("discard")}}))};
+const noisyResults={races:results.map(r=>({...r,unusedPayload:{rows:Array(100).fill("discard")}}))};
+const compactPrediction=engine.compactPredictionDoc(noisyPredictions);
+const compactResult=engine.compactResultDoc(noisyResults);
+const compactReport=engine.build([compactPrediction],[compactResult]);
+assert.equal(JSON.stringify(compactPrediction).includes("unusedPayload"),false);
+assert.equal(JSON.stringify(compactResult).includes("unusedPayload"),false);
+assert.deepEqual(compactReport.diagnostics,report.diagnostics);
+assert.deepEqual(compactReport.summaries,report.summaries);
+assert.deepEqual(compactReport.weakBranchRanking,report.weakBranchRanking);
+const embedded=rec(25,"2コース差し");embedded.result={settled:true,resultTicket:"1-2-3",payout:777,unusedPayload:"discard"};const compactEmbedded=engine.compactPredictionRow(embedded);assert.deepEqual(compactEmbedded.result,{settled:true,resultTicket:"1-2-3",payout:777});
 console.log("race-flow branch profit saved-title test: ok");
