@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "outer-head-forward-shadow-v1",
+  "frozenAt": "2026-08-31T11:45:00Z",
+  "prospectiveStartDate": "2026-09-01",
+  "productionChanged": false,
+  "automaticApplication": false,
+  "usableForPrediction": false,
+  "purpose": "Preregister forward-only shadow eligibility for retaining a 5/6-head alternate scenario without replacing the production head.",
+  "baseline": {
+    "description": "Current production prediction/ticket logic unchanged",
+    "replacementAllowed": false
+  },
+  "candidateRules": [
+    {
+      "id": "structural-r1",
+      "currentHeadBoatNos": [1, 2],
+      "outerHeadBoatNos": [5, 6],
+      "minimumScoreImprovement": 1,
+      "maximumScoreImprovement": 3,
+      "excludedConditionBands": ["strong"],
+      "attackComposite": null,
+      "supportComposite": null
+    },
+    {
+      "id": "balanced-signal-r2",
+      "currentHeadBoatNos": [1, 2],
+      "outerHeadBoatNos": [5, 6],
+      "minimumScoreImprovement": 1,
+      "maximumScoreImprovement": 3,
+      "excludedConditionBands": ["strong"],
+      "attackComposite": { "minimum": -1, "maximum": 3 },
+      "supportComposite": { "minimum": -1.5 }
+    }
+  ],
+  "selectionBoundary": {
+    "usesOnlySavedPreRaceFields": true,
+    "resultUsedForSelection": false,
+    "oddsUsedForSelection": false,
+    "payoutUsedForSelection": false,
+    "retrospectiveRowsExcludedFromPrimaryEvaluation": true
+  },
+  "evaluation": {
+    "primaryUnit": "race",
+    "metrics": [
+      "eligibleRaceCount",
+      "actualOuterHeadWinnerCount",
+      "rescuedOuterHeadWinnerCount",
+      "falseActivationCount",
+      "rescueRate",
+      "falseActivationsPerRescue",
+      "activationRate",
+      "currentHeadBandBreakdown",
+      "outerHeadBandBreakdown",
+      "conditionBandBreakdown"
+    ],
+    "milestones": [50, 100, 250],
+    "minimumDaysAt100": 7,
+    "minimumDaysAt250": 14
+  },
+  "decisionGate": {
+    "earlyHarmAt50": {
+      "maximumFalseActivationsPerRescue": 8
+    },
+    "candidateAt100": {
+      "minimumRescuedOuterHeadWinnerCount": 3,
+      "maximumFalseActivationsPerRescue": 5,
+      "maximumActivationRatePercent": 15
+    },
+    "candidateAt250": {
+      "minimumRescuedOuterHeadWinnerCount": 7,
+      "maximumFalseActivationsPerRescue": 4,
+      "maximumActivationRatePercent": 12,
+      "requiresNonWorseSecondHalfEfficiency": true
+    }
+  },
+  "safety": {
+    "productionPredictionLogicChanged": false,
+    "productionTicketsChanged": false,
+    "noteOutputChanged": false,
+    "purchaseOutputChanged": false,
+    "headReplacementAllowed": false,
+    "automaticAdoption": false,
+    "humanApprovalRequiredForAnyFutureAdoption": true
+  }
+}

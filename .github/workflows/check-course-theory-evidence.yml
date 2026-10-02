@@ -1,0 +1,24 @@
+name: Check course theory evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "js/theory-tag-snapshot.js"
+      - "scripts/test-theory-tag-snapshot.js"
+      - ".github/workflows/check-course-theory-evidence.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify formal course evidence
+        run: |
+          node --check js/theory-tag-snapshot.js
+          node scripts/test-theory-tag-snapshot.js
+          node scripts/test-theory-evaluation-engine.js
+          node scripts/check-charter.js

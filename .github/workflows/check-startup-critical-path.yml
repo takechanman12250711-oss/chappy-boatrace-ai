@@ -1,0 +1,44 @@
+name: Check startup critical path
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "js/app-runtime-loader.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/hiyori-runtime-loader.js"
+      - "js/flow-odds-tabs.js"
+      - "js/formation-odds-display.js"
+      - "js/manshu-display-reliability.js"
+      - "js/home-recommendation-reliability.js"
+      - "scripts/test-startup-critical-path.js"
+      - ".github/workflows/check-startup-critical-path.yml"
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "js/app-runtime-loader.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/hiyori-runtime-loader.js"
+      - "js/flow-odds-tabs.js"
+      - "js/formation-odds-display.js"
+      - "js/manshu-display-reliability.js"
+      - "js/home-recommendation-reliability.js"
+      - "scripts/test-startup-critical-path.js"
+      - ".github/workflows/check-startup-critical-path.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify startup critical path
+        run: |
+          node --check js/app-runtime-loader.js
+          node --check js/prediction-runtime-loader.js
+          node --check js/hiyori-runtime-loader.js
+          node --check scripts/test-startup-critical-path.js
+          node scripts/test-startup-critical-path.js

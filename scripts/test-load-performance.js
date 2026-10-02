@@ -5,10 +5,116 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 const zlib = require("node:zlib");
+const {
+  MAX_SHARD_BYTES,
+  currentShardDescriptors,
+  reconstructIndex,
+  retainedShardDescriptors,
+  sha256
+} = require(
+  "./build-prediction-index-shards"
+);
+const {
+  buildPredictionIndex
+} = require(
+  "./build-prediction-index"
+);
+const {
+  compactIndex
+} = require(
+  "./compact-prediction-index"
+);
+const archiveApi = require(
+  "./daily-prediction-source-archive"
+);
+const restoreApi = require(
+  "./restore-daily-prediction-source"
+);
 
 const root = path.resolve(__dirname, "..");
 const read = file =>
   fs.readFileSync(path.join(root, file), "utf8");
+
+function buildArchiveBackedCurrentIndex() {
+  const predictionDirectory =
+    archiveApi.predictionDirectory(root);
+  const backupDirectory = fs.mkdtempSync(
+    path.join(
+      predictionDirectory,
+      ".load-performance-source-"
+    )
+  );
+  const snapshots =
+    archiveApi
+      .archivedSourceDates(root)
+      .map(date => {
+        const sourcePath =
+          archiveApi.sourcePathFor(root, date);
+        const backupPath = path.join(
+          backupDirectory,
+          date + ".json"
+        );
+        const existed = fs.existsSync(sourcePath);
+
+        if (existed) {
+          try {
+            fs.linkSync(sourcePath, backupPath);
+          } catch {
+            fs.copyFileSync(sourcePath, backupPath);
+          }
+        }
+
+        return {
+          sourcePath,
+          backupPath,
+          existed
+        };
+      });
+
+  try {
+    const restored =
+      restoreApi.restorePredictionSources({
+        rootDirectory: root,
+        all: true
+      });
+
+    assert.ok(
+      restored.length > 0,
+      "分割index照合にはarchive原本が必要"
+    );
+    assert.ok(
+      restored.every(
+        result => result.status === "restored"
+      ),
+      "archive済み日次予想原本をすべて復元する"
+    );
+
+    return compactIndex(
+      buildPredictionIndex(predictionDirectory)
+    );
+  } finally {
+    snapshots.forEach(snapshot => {
+      fs.rmSync(
+        snapshot.sourcePath,
+        { force: true }
+      );
+
+      if (snapshot.existed) {
+        fs.renameSync(
+          snapshot.backupPath,
+          snapshot.sourcePath
+        );
+      }
+    });
+    fs.rmSync(
+      backupDirectory,
+      {
+        recursive: true,
+        force: true
+      }
+    );
+  }
+}
 
 const html = read("index.html");
 const script = read("js/script.js");
@@ -16,6 +122,9 @@ const appRuntime = read("js/app-runtime-loader.js");
 const stats = read("js/stats.js");
 const statsRuntime = read(
   "js/stats-runtime-loader.js"
+);
+const referenceTagReport = read(
+  "js/reference-tag-report.js"
 );
 const autoSelection = read("js/auto-selection.js");
 const api = read("js/api.js");
@@ -45,6 +154,13 @@ const predictionIndexPath =
     "data",
     "predictions",
     "index.json"
+  );
+const predictionIndexManifestPath =
+  path.join(
+    root,
+    "data",
+    "predictions",
+    "index-manifest.json"
   );
 const improvementReviewPath =
   path.join(
@@ -105,6 +221,17 @@ assert.equal(
     `${file} を初期表示で読み込まない`
   );
 });
+
+assert.equal(
+  statsRuntime.includes('"js/reference-tag-report.js"'),
+  true,
+  "公式参考分析は結果画面を開いた時だけ遅延読込する"
+);
+assert.equal(
+  referenceTagReport.includes("hiyori-official-comparison.json"),
+  false,
+  "削除した日和直接比較レポートを画面から取得しない"
+);
 
 const loadVenueChoicesBody = script.slice(
   script.indexOf("async function loadVenueChoices"),
@@ -200,6 +327,7 @@ assert.equal(
 [
   "js/collection-health.js",
   "js/prediction-verification.js",
+  "js/prediction-index-loader.js",
   "js/auto-stats.js",
   "js/verification-readiness.js",
   "js/improvement-suggestions.js",
@@ -263,10 +391,10 @@ assert.equal(
   "結果照合モジュールの遅延読込を15秒で打ち切る"
 );
 [
-  "style.css?v=20260806-results-ui-phase4-1",
+  "style.css?v=20260828-ui-audit-display1",
   "css/home-dashboard-v2.css?v=20260803-entry-odds1",
-  "js/app-runtime-loader.js?v=20260806-results-ui-phase4-1",
-  "js/home-dashboard-v2.js?v=20260803-ui-fix2"
+  "js/app-runtime-loader.js?v=20260816-static-race1",
+  "js/home-dashboard-v2.js?v=20260816-static-race1"
 ].forEach(asset => {
   assert.equal(
     html.includes(asset),
@@ -276,10 +404,32 @@ assert.equal(
 });
 assert.equal(
   appRuntime.includes(
-    'const VERSION = "20260806-results-ui-phase4-1"'
+    'const VERSION = "20260828-ui-audit-display1"'
   ),
   true,
   "変更した通常画面モジュールのキャッシュ世代を更新する"
+);
+assert.equal(
+  html.includes(
+    "js/app-runtime-loader.js?v=20260816-static-race1"
+  ) &&
+    html.includes(
+      "js/prediction-runtime-loader.js?v=20260828-ui-audit-display1"
+    ) &&
+    html.includes(
+      "js/hiyori-runtime-loader.js?v=20260829-effective-score-contract1"
+    ) &&
+    appRuntime.includes(
+      'const VERSION = "20260828-ui-audit-display1"'
+    ) &&
+    predictionRuntime.includes(
+      'const VERSION = "20260828-ui-audit-display1"'
+    ) &&
+    hiyoriLoader.includes(
+      'const VERSION="20260829-effective-score-contract1"'
+    ),
+  true,
+  "現在の親ローダー・予想・日和補助のキャッシュ世代を配信する"
 );
 assert.equal(
   script.includes("function initializeRaceControls()") &&
@@ -309,22 +459,22 @@ assert.equal(
 );
 assert.equal(
   predictionRuntime.includes(
-    'const VERSION = "20260803-flow-missing30"'
+    'const VERSION = "20260828-ui-audit-display1"'
   ),
   true,
   "全文表示を含む予想モジュールのキャッシュ世代を更新する"
 );
 assert.equal(
-  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
-    predictionRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
+  appRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS=15000") &&
+    predictionRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 12000") &&
     statsRuntime.includes("SCRIPT_LOAD_TIMEOUT_MS = 15000") &&
-    hiyoriLoader.includes("SCRIPT_LOAD_TIMEOUT_MS=15000"),
+    hiyoriLoader.includes("SCRIPT_LOAD_TIMEOUT_MS=12000"),
   true,
   "モジュール読込が止まってもタブと予想を無期限待機させない"
 );
 assert.equal(
   statsRuntime.includes(
-    '"20260806-results-ui-phase4-1"'
+    "20260908-result-clarity1"
   ),
   true,
   "結果分析モジュールのキャッシュ世代を更新する"
@@ -380,9 +530,11 @@ assert.equal(
   true
 );
 assert.equal(
-  hiyoriLoader.includes("ensureReady:installCore"),
+  hiyoriLoader.includes("function ensureReady()") &&
+    !hiyoriLoader.match(/function ensureReady\(\)\{[\s\S]*?scheduleInstall\(\);[\s\S]*?return Promise\.resolve\(true\)/) &&
+    hiyoriLoader.includes("return Promise.resolve(true)"),
   true,
-  "予想開始時は必須モジュールだけ待つ"
+  "日和補助は初回予想と並行して予想関数を差し替えない"
 );
 assert.equal(
   appRuntime.includes(
@@ -536,7 +688,7 @@ const predictionIndex =
 assert.ok(
   predictionIndex.length <
     3000000,
-  `集約indexは3MB未満 (${predictionIndex.length} bytes)`
+  `凍結legacy indexは3MB未満 (${predictionIndex.length} bytes)`
 );
 assert.ok(
   zlib.gzipSync(
@@ -545,6 +697,143 @@ assert.ok(
   ).length <
     300000,
   "集約indexのgzip配信量を300KB未満にする"
+);
+const manifestBuffer =
+  fs.readFileSync(
+    predictionIndexManifestPath
+  );
+const manifest = JSON.parse(
+  manifestBuffer.toString("utf8")
+);
+assert.equal(
+  manifest.format,
+  "chappy-prediction-index-manifest"
+);
+assert.ok(
+  manifestBuffer.length < 20_000,
+  `予想index manifestは20KB未満 (${manifestBuffer.length} bytes)`
+);
+const descriptors =
+  currentShardDescriptors(manifest);
+const retainedDescriptors =
+  retainedShardDescriptors(manifest);
+const artifactDescriptors = [
+  ...descriptors,
+  ...retainedDescriptors
+].filter(
+  (descriptor, index, all) =>
+    all.findIndex(item =>
+      item.path === descriptor.path
+    ) === index
+);
+assert.ok(
+  descriptors.length >= 4,
+  "4配列を独立shardとして配信する"
+);
+const artifactBuffers =
+  new Map();
+artifactDescriptors.forEach(
+  descriptor => {
+    const shardPath = path.join(
+      root,
+      "data",
+      "predictions",
+      descriptor.path
+    );
+    const buffer = fs.readFileSync(
+      shardPath
+    );
+    assert.equal(
+      buffer.length,
+      descriptor.bytes,
+      `${descriptor.path} のmanifest容量と実体を一致させる`
+    );
+    assert.ok(
+      buffer.length < MAX_SHARD_BYTES,
+      `${descriptor.path} は1.25MB未満 (${buffer.length} bytes)`
+    );
+    assert.equal(
+      sha256(buffer.toString("utf8")),
+      descriptor.shardId,
+      `${descriptor.path} のcontent hashを一致させる`
+    );
+    artifactBuffers.set(
+      descriptor.path,
+      buffer
+    );
+  }
+);
+const expectedShardNames =
+  artifactDescriptors
+    .map(descriptor =>
+      path.basename(descriptor.path)
+    )
+    .sort();
+const actualShardNames =
+  fs.readdirSync(
+    path.join(
+      root,
+      "data",
+      "predictions",
+      "index-shards"
+    )
+  ).filter(name =>
+    name.endsWith(".json")
+  ).sort();
+assert.deepEqual(
+  actualShardNames,
+  expectedShardNames,
+  "manifestの現世代＋直前世代以外のshardを配信しない"
+);
+const shardBuffers = descriptors.map(
+  descriptor =>
+    artifactBuffers.get(
+      descriptor.path
+    )
+);
+const aggregateGzipBytes = [
+  manifestBuffer,
+  ...shardBuffers
+].reduce(
+  (sum, buffer) =>
+    sum + zlib.gzipSync(
+      buffer,
+      { level: 9 }
+    ).length,
+  0
+);
+assert.ok(
+  aggregateGzipBytes < 300_000,
+  `manifest＋全shardのgzip配信量を300KB未満にする (${aggregateGzipBytes} bytes)`
+);
+const reconstructedIndex =
+  reconstructIndex(
+    predictionIndexManifestPath
+  );
+const expectedCurrentIndex =
+  buildArchiveBackedCurrentIndex();
+assert.deepEqual(
+  {
+    ...reconstructedIndex,
+    generatedAt: ""
+  },
+  {
+    ...expectedCurrentIndex,
+    generatedAt: ""
+  },
+  "分割indexを日次正本の現在値と同一内容で再構成する"
+);
+assert.equal(
+  reconstructedIndex
+    .verificationPredictions.length,
+  300,
+  "検証母数300件を維持する"
+);
+assert.ok(
+  reconstructedIndex
+    .shadowV2Predictions.length >=
+    300,
+  "V2の500R進捗用履歴を維持する"
 );
 assert.ok(
   fs.statSync(

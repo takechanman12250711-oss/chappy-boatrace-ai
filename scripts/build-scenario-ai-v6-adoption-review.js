@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const scenarioAiV6ShadowAb = require("../js/scenario-ai-v6-shadow-ab");
 
 const ROOT = path.resolve(__dirname, "..");
 const AB_PATH = path.join(ROOT, "data", "stats", "scenario-ai-v6-ab-report.json");
@@ -28,11 +29,22 @@ function approvedAdjustments(repro = {}) {
     }));
 }
 
-function buildChecklist(ab = {}, adjustments = []) {
+function buildChecklist(ab = {}, adjustments = [], repro = {}) {
   const overall = ab?.overall || {};
   const firstHalf = ab?.firstHalf || {};
   const secondHalf = ab?.secondHalf || {};
   const regressions = Array.isArray(ab?.majorVenueRegression) ? ab.majorVenueRegression : [];
+  const activeCandidateSetFingerprint = String(ab?.activeCandidateSetFingerprint || "none");
+  const approvedCandidateSetFingerprint = scenarioAiV6ShadowAb.candidateSetFingerprint(repro);
+  const activeCandidateTrainingFingerprint = String(ab?.activeCandidateTrainingFingerprint || "none");
+  const reproTrainingFingerprint = String(repro?.trainingCohort?.fingerprint || "none");
+  const candidateCohortMatch =
+    activeCandidateSetFingerprint !== "none" &&
+    approvedCandidateSetFingerprint !== "none" &&
+    activeCandidateTrainingFingerprint !== "none" &&
+    reproTrainingFingerprint !== "none" &&
+    activeCandidateSetFingerprint === approvedCandidateSetFingerprint &&
+    activeCandidateTrainingFingerprint === reproTrainingFingerprint;
   return [
     { key: "minimum-comparisons", label: "比較可能100R以上", passed: Number(overall.comparableCount || 0) >= 100, actual: Number(overall.comparableCount || 0) },
     { key: "minimum-b-wins", label: "B勝ち30R以上", passed: Number(overall.bWins || 0) >= 30, actual: Number(overall.bWins || 0) },
@@ -40,13 +52,24 @@ function buildChecklist(ab = {}, adjustments = []) {
     { key: "first-half", label: "前半でB優勢", passed: Number(firstHalf.bWins || 0) > Number(firstHalf.aWins || 0), actual: `${Number(firstHalf.aWins || 0)}-${Number(firstHalf.bWins || 0)}` },
     { key: "second-half", label: "後半でB優勢", passed: Number(secondHalf.bWins || 0) > Number(secondHalf.aWins || 0), actual: `${Number(secondHalf.aWins || 0)}-${Number(secondHalf.bWins || 0)}` },
     { key: "venue-regression", label: "重大な場別悪化なし", passed: regressions.length === 0, actual: regressions.length },
-    { key: "approved-adjustments", label: "承認候補の補正内容あり", passed: adjustments.length > 0, actual: adjustments.length }
+    { key: "approved-adjustments", label: "承認候補の補正内容あり", passed: adjustments.length > 0, actual: adjustments.length },
+    {
+      key: "candidate-cohort-match",
+      label: "A/B候補セット・学習世代が再現性ゲートと一致",
+      passed: candidateCohortMatch,
+      actual: {
+        activeCandidateSetFingerprint,
+        approvedCandidateSetFingerprint,
+        activeCandidateTrainingFingerprint,
+        reproTrainingFingerprint
+      }
+    }
   ];
 }
 
 function buildReview(ab = {}, repro = {}) {
   const adjustments = approvedAdjustments(repro);
-  const checklist = buildChecklist(ab, adjustments);
+  const checklist = buildChecklist(ab, adjustments, repro);
   const productionCandidate = ab?.productionGate?.productionCandidate === true;
   const eligibleForHumanReview = productionCandidate && checklist.every(row => row.passed);
   const overall = ab?.overall || {};

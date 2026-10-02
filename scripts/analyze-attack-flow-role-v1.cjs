@@ -1,0 +1,20 @@
+'use strict';
+
+const path=require('node:path');
+const input=require('./analysis-input-contract');
+const ROOT=path.resolve(__dirname,'..');
+const ACTIVATED_AT=Date.parse('2026-09-01T10:19:20Z');
+const GATES=[50,100,250];
+function finite(v){return typeof v==='number'&&Number.isFinite(v)}
+function pct(n,d){return d?Number((100*n/d).toFixed(1)):0}
+function timeOf(r){for(const v of [r?.selectedAt,r?.capturedAt,r?.createdAt,r?.prediction?.selectedAt,r?.prediction?.capturedAt,r?.prediction?.createdAt]){const t=Date.parse(String(v||''));if(Number.isFinite(t))return t}return NaN}
+function cond(r){return r?.prediction?.preRaceConditions||r?.preRaceConditions||null}
+function boatNo(b,i){const n=Number(b?.boatNo??b?.boat??b?.frameNo??i+1);return Number.isInteger(n)&&n>=1&&n<=6?n:i+1}
+function leader(boats,key,lower=false){const a=boats.map((b,i)=>({boatNo:boatNo(b,i),value:b?.[key]})).filter(x=>finite(x.value));if(!a.length)return null;a.sort((x,y)=>lower?x.value-y.value||x.boatNo-y.boatNo:y.value-x.value||x.boatNo-y.boatNo);return a[0]}
+function margin(boats,key){const a=boats.map((b,i)=>({boatNo:boatNo(b,i),value:b?.[key]})).filter(x=>finite(x.value)).sort((x,y)=>y.value-x.value||x.boatNo-y.boatNo);return a.length>=2?Number((a[0].value-a[1].value).toFixed(4)):null}
+function stat(){return{samples:0,wins:0,top2:0,top3:0,winRate:0,top2Rate:0,top3Rate:0}}
+function add(s,boat,order){if(!boat)return;s.samples++;const p=order.indexOf(boat)+1;if(p===1)s.wins++;if(p>0&&p<=2)s.top2++;if(p>0&&p<=3)s.top3++}
+function fin(s){s.winRate=pct(s.wins,s.samples);s.top2Rate=pct(s.top2,s.samples);s.top3Rate=pct(s.top3,s.samples);return s}
+function build(){const cohort=input.buildDefaultCohort({root:ROOT});const out={attack3or4:stat(),attack3or4Margin05:stat(),attack3or4Margin10:stat(),flowLeaderWhenDifferentFromAttack:stat(),flowLeaderInnerWhenDifferent:stat(),flowLeaderOuterWhenDifferent:stat(),attackAndBestSTSame:stat()};let eligible=0;let oneBoatLoss={samples:0,losses:0,lossRate:0};for(const r of cohort.records){const t=timeOf(r);if(!Number.isFinite(t)||t<ACTIVATED_AT)continue;const c=cond(r);if(c?.sourceTiming!=='pre_deadline'||c?.officialResultUsed!==false)continue;const boats=Array.isArray(c.boats)?c.boats:[];if(boats.length!==6)continue;const order=input.finishOrder(r.__officialResult);if(order.length!==3)continue;eligible++;const a=leader(boats,'attackStrength');const f=leader(boats,'raceFlowPower');const st=leader(boats,'exhibitionST',true);const m=margin(boats,'attackStrength');if(a&&[3,4].includes(a.boatNo)){add(out.attack3or4,a.boatNo,order);oneBoatLoss.samples++;if(order[0]!==1)oneBoatLoss.losses++;if(m!==null&&m>=0.5)add(out.attack3or4Margin05,a.boatNo,order);if(m!==null&&m>=1.0)add(out.attack3or4Margin10,a.boatNo,order)}if(a&&f&&a.boatNo!==f.boatNo){add(out.flowLeaderWhenDifferentFromAttack,f.boatNo,order);if(f.boatNo<=3)add(out.flowLeaderInnerWhenDifferent,f.boatNo,order);else add(out.flowLeaderOuterWhenDifferent,f.boatNo,order)}if(a&&st&&a.boatNo===st.boatNo)add(out.attackAndBestSTSame,a.boatNo,order)}for(const s of Object.values(out))fin(s);oneBoatLoss.lossRate=pct(oneBoatLoss.losses,oneBoatLoss.samples);return{schemaVersion:1,analysisId:'attack-flow-role-v1',generatedAt:new Date().toISOString(),activatedAt:new Date(ACTIVATED_AT).toISOString(),productionChanged:false,automaticApplication:false,usableForPrediction:false,eligibleSettledRaceCount:eligible,metrics:out,oneBoatLossWhenAttackLeader3or4:oneBoatLoss,gates:GATES.map(n=>({n,reached:eligible>=n,status:eligible>=n?'ready_for_review':'collecting'})),methodology:{attackRole:'head-candidate audit for attack leader, especially frames 3-4 and larger attack margin',flowRole:'residual/top2-top3 audit when flow leader differs from attack leader',combined:'same boat is attack leader and best exhibition ST',outcomeUse:'evaluation only',warning:'Forward descriptive audit only; no automatic ticket or weight change.'}}}
+if(require.main===module)process.stdout.write(JSON.stringify(build(),null,2)+'\n');
+module.exports={build};

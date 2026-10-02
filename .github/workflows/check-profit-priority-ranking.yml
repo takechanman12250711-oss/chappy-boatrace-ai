@@ -1,0 +1,23 @@
+name: Check profit priority ranking
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/profit-priority-ranking]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate profit priority ranking
+        run: |
+          node --check js/profit-priority-ranking.js
+          node --check scripts/build-profit-priority-ranking.js
+          node --check scripts/test-profit-priority-ranking.js
+          node scripts/test-profit-priority-ranking.js
+          node scripts/check-charter.js

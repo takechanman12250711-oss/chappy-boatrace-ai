@@ -138,20 +138,25 @@ assert.ok(
 const practicalMain = connected.main
   .slice(0, 3)
   .map((ticket) => ticket.split("-").map(Number));
-assert.equal(
+assert.notEqual(
   practicalMain[0][1],
   practicalMain[1][1],
-  "本線1・2点目は2着1位を使う"
+  "本線の先頭枠は2着候補を1艇ずつ分散する"
 );
-assert.notEqual(
-  practicalMain[0][2],
-  practicalMain[1][2],
-  "本線1・2点目は3着候補を分ける"
+assert.deepEqual(
+  new Set(practicalMain.slice(0, 2).map((parts) => parts[1])),
+  new Set(connected.rankings.second.slice(0, 2).map((row) => row.boatNo)),
+  "正式2着候補の上位艇を先に1点ずつ確保する"
 );
-assert.notEqual(
+assert.equal(
   practicalMain[2][1],
   practicalMain[0][1],
-  "本線3点目は2着2位へ分散する"
+  "2着候補を一巡した後に上位艇の別3着を追加する"
+);
+assert.notEqual(
+  practicalMain[2][2],
+  practicalMain[0][2],
+  "同じ2着艇では3着候補を重複させない"
 );
 assert.ok(
   connected.safety.every((ticket) => ticket.startsWith("1-")),

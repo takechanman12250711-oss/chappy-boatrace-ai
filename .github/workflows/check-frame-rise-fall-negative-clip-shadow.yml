@@ -1,0 +1,21 @@
+name: Check frame rise fall negative clip shadow
+
+on:
+  pull_request:
+    paths:
+      - "js/frame-rise-fall-negative-clip-shadow.js"
+      - "scripts/test-frame-rise-fall-negative-clip-shadow.js"
+      - ".github/workflows/check-frame-rise-fall-negative-clip-shadow.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify selective negative clip candidate
+        run: |
+          node --check js/frame-rise-fall-negative-clip-shadow.js
+          node scripts/test-frame-rise-fall-negative-clip-shadow.js

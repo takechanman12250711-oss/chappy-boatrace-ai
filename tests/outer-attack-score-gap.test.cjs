@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('assert');
+const {build}=require('../scripts/analyze-outer-attack-score-gap.cjs');
+const r=build();
+assert.strictEqual(r.scope.holdoutUsed,false);
+assert.strictEqual(r.scope.productionChanged,false);
+assert.ok(r.pairCount>=8);
+assert.ok(r.raceCount>=8);
+assert.ok(r.scoreGap.all.count===r.pairCount);
+assert.ok(Array.isArray(r.largestInnerAdvantages));
+console.log('outer attack score gap tests passed');

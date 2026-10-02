@@ -1,20 +1,24 @@
-// js/reference-tag-report.js
-// 参考タグの検証結果を表示する。予想ロジック・配点・買い目には使用しない。
-(function () {
+// BOAT RACE公式の締切前データから作る日和準拠の参考分析を表示する。
+// 相関確認専用で、予想ロジック・印・配点・買い目には接続しない。
+(function (root) {
   "use strict";
 
-  const REPORTS = [
-    {
-      key: "tag",
-      url: "data/analysis/reference-tag-effectiveness.json",
-      title: "参考タグ実績"
-    },
-    {
-      key: "hiyori",
-      url: "data/analysis/hiyori-official-comparison.json",
-      title: "日和データ・公式結果比較"
-    }
-  ];
+  if (root.ChappyReferenceTagReport) return;
+
+  const REPORT_URL = "data/analysis/reference-tag-effectiveness.json";
+  const REPORT_LOAD_TIMEOUT_MS = 15000;
+  const PANEL_ID = "officialReferenceTagReport";
+  const state = {
+    report: null,
+    loading: false,
+    loaded: false,
+    error: "",
+    opened: false,
+    promise: null
+  };
+  let installed = false;
+  let statsObserver = null;
+  let observedStatsArea = null;
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -25,142 +29,318 @@
       .replace(/'/g, "&#039;");
   }
 
-  function rate(value) {
-    const number = Number(value);
-    return Number.isFinite(number) ? `${number.toFixed(1)}%` : "-";
+  function number(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  function statusClass(status) {
-    if (/高|有効/.test(status || "")) return "is-high";
-    if (/要検証|低/.test(status || "")) return "is-low";
-    if (/不足|蓄積/.test(status || "")) return "is-wait";
-    return "is-mid";
+  function rate(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? `${parsed.toFixed(1)}%` : "-";
+  }
+
+  function isOfficialCompatible(report) {
+    return Boolean(
+      report &&
+      report.dataSource === "boatrace-official" &&
+      report.compatibilityProfile === "hiyori-compatible" &&
+      report.directHiyoriDataUsed === false
+    );
+  }
+
+  function isResultActive() {
+    if (typeof document === "undefined") return false;
+    const section = document.getElementById("resultSection");
+    return Boolean(section && section.hidden === false);
   }
 
   function normalizeRows(report) {
-    const rows = report?.tags || report?.metrics || report?.items || report?.comparisons || [];
-    if (!Array.isArray(rows)) return [];
-    return rows.map(item => ({
-      label: item.label || item.name || item.metric || item.key || "-",
-      samples: Number(item.samples ?? item.count ?? item.races ?? 0),
-      winnerRate: item.winnerRate ?? item.winRate ?? item.firstRate,
-      top3Rate: item.top3Rate ?? item.podiumRate ?? item.placeRate,
-      ticketHitRate: item.ticketHitRate ?? item.hitRate,
-      status: item.status || item.judgement || item.level || "データ蓄積中"
-    }));
+    if (!isOfficialCompatible(report) || !Array.isArray(report.tags)) return [];
+    return report.tags
+      .map(item => ({
+        key: String(item?.key || ""),
+        label: String(item?.label || item?.key || "参考項目"),
+        samples: number(item?.samples),
+        winnerRate: item?.winnerRate,
+        top3Rate: item?.top3Rate,
+        ticketHitRate: item?.ticketHitRate,
+        status: String(item?.status || "蓄積中")
+      }))
+      .filter(item => item.key && item.samples > 0)
+      .slice(0, 8);
   }
 
-  function renderReport(report, definition) {
-    const rows = normalizeRows(report);
-    const matched = Number(report?.matchedRaceCount ?? report?.raceCount ?? report?.samples ?? 0);
-
-    if (!rows.length) {
-      return `
-        <article class="reference-report-card">
-          <h3>${escapeHtml(definition.title)}</h3>
-          <p class="reference-report-empty">検証データを蓄積中です。</p>
-        </article>
-      `;
-    }
-
+  function renderRow(item) {
     return `
-      <article class="reference-report-card">
-        <div class="reference-report-head">
-          <h3>${escapeHtml(definition.title)}</h3>
-          <span>${escapeHtml(matched)}レース</span>
-        </div>
-        <div class="reference-report-table-wrap">
-          <table class="reference-report-table">
-            <thead>
-              <tr>
-                <th>情報</th>
-                <th>件数</th>
-                <th>1着率</th>
-                <th>3着内率</th>
-                <th>厳選的中率</th>
-                <th>判定</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.map(row => `
-                <tr>
-                  <td><strong>${escapeHtml(row.label)}</strong></td>
-                  <td>${escapeHtml(row.samples)}</td>
-                  <td>${escapeHtml(rate(row.winnerRate))}</td>
-                  <td>${escapeHtml(rate(row.top3Rate))}</td>
-                  <td>${escapeHtml(rate(row.ticketHitRate))}</td>
-                  <td><span class="reference-report-status ${statusClass(row.status)}">${escapeHtml(row.status)}</span></td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
+      <article class="official-reference-item">
+        <header>
+          <strong>${escapeHtml(item.label)}</strong>
+          <span>${escapeHtml(item.status)}</span>
+        </header>
+        <dl>
+          <div><dt>対象</dt><dd>${item.samples}R</dd></div>
+          <div><dt>1着率</dt><dd>${escapeHtml(rate(item.winnerRate))}</dd></div>
+          <div><dt>3着内率</dt><dd>${escapeHtml(rate(item.top3Rate))}</dd></div>
+          <div><dt>厳選的中率</dt><dd>${escapeHtml(rate(item.ticketHitRate))}</dd></div>
+        </dl>
       </article>
     `;
   }
 
+  function renderHtml(report, options = {}) {
+    const valid = isOfficialCompatible(report);
+    const rows = normalizeRows(report);
+    const loading = options.loading === true;
+    const error = String(options.error || "");
+    const matched = valid ? number(report.matchedRaceCount) : 0;
+    const settled = valid ? number(report.settledRaceCount) : 0;
+    const legacy = valid
+      ? number(
+          report.sourceBreakdown?.acceptedLegacyUnlabeledRaceCount ??
+          report.sourceBreakdown?.legacyUnlabeledRaceCount
+        )
+      : 0;
+    const meta = loading
+      ? "読込中"
+      : error || !valid
+        ? "確認待ち"
+        : `${matched}R`;
+    const body = loading
+      ? '<p class="official-reference-empty" role="status" aria-live="polite">公式データの分析結果を読み込んでいます…</p>'
+      : error || !valid
+        ? `<div class="official-reference-empty" role="alert" aria-live="assertive">
+            <p>公式データの参考分析を確認できませんでした。通信状態を確認して、もう一度お試しください。</p>
+            <button type="button" class="official-reference-retry" data-reference-tag-retry>再読み込み</button>
+          </div>`
+        : rows.length
+          ? `
+              <div class="official-reference-lead">
+                <strong>BOAT RACE公式 ${settled}Rを照合</strong>
+                <p>締切前に固定した展示・ST・当地実績・風・波を、日和準拠形式で${matched}R分析しています。</p>
+              </div>
+              <div class="official-reference-grid">
+                ${rows.map(renderRow).join("")}
+              </div>
+              <p class="result-panel-note">相関確認の参考値です。ボートレース日和の直接取得は使わず、予想・印・買い目へ自動反映しません。${legacy ? `旧保存分${legacy}Rは公式API収集経路を根拠に含みます。` : ""}</p>
+            `
+          : '<p class="official-reference-empty">公式データを蓄積中です。</p>';
+
+    return `
+      <details
+        id="${PANEL_ID}"
+        class="result-accordion official-reference-report"
+        data-result-panel="official-reference-tags"
+        aria-busy="${loading ? "true" : "false"}"
+        ${options.opened === true ? "open" : ""}
+      >
+        <summary>
+          <span class="result-accordion-icon" aria-hidden="true">📎</span>
+          <span class="result-accordion-title">
+            <span class="result-accordion-name">公式データ参考分析</span>
+            <small>展示・ST・当地・風・波の相関</small>
+          </span>
+          <span class="result-accordion-meta">${escapeHtml(meta)}</span>
+        </summary>
+        <div class="result-accordion-body official-reference-body" aria-live="polite" aria-busy="${loading ? "true" : "false"}">
+          ${body}
+        </div>
+      </details>
+    `;
+  }
+
   function ensureStyles() {
-    if (document.getElementById("reference-tag-report-style")) return;
+    if (typeof document === "undefined" || document.getElementById("officialReferenceTagReportStyle")) return;
     const style = document.createElement("style");
-    style.id = "reference-tag-report-style";
+    style.id = "officialReferenceTagReportStyle";
     style.textContent = `
-      .reference-report-section{margin-top:16px;padding:14px;border:1px solid #dbe6f3;border-radius:14px;background:#f8fbff}
-      .reference-report-title{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:12px}
-      .reference-report-title h3{margin:0;font-size:16px}.reference-report-title small{color:#64748b}
-      .reference-report-grid{display:grid;gap:12px}.reference-report-card{padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
-      .reference-report-card h3{margin:0;font-size:14px}.reference-report-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px}.reference-report-head span{font-size:12px;color:#64748b}
-      .reference-report-table-wrap{overflow-x:auto}.reference-report-table{width:100%;border-collapse:collapse;min-width:620px;font-size:12px}.reference-report-table th,.reference-report-table td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;white-space:nowrap}
-      .reference-report-status{display:inline-block;padding:3px 7px;border-radius:999px;background:#eef2f7}.reference-report-status.is-high{background:#dcfce7;color:#166534}.reference-report-status.is-mid{background:#e0f2fe;color:#075985}.reference-report-status.is-low{background:#fee2e2;color:#991b1b}.reference-report-status.is-wait{background:#f1f5f9;color:#475569}
-      .reference-report-empty{margin:8px 0 0;color:#64748b;font-size:13px}
+      .official-reference-body{display:grid;gap:12px}
+      .official-reference-lead{padding:12px;border:1px solid #dbeafe;border-radius:13px;background:#f7fbff}
+      .official-reference-lead strong{display:block;color:#17324d}.official-reference-lead p{margin:5px 0 0;color:#64748b;line-height:1.55}
+      .official-reference-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+      .official-reference-item{min-width:0;padding:11px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+      .official-reference-item header{display:flex;justify-content:space-between;align-items:center;gap:8px}.official-reference-item header strong{font-size:.88rem;color:#17324d}.official-reference-item header span{flex:0 0 auto;padding:3px 7px;border-radius:999px;background:#ecfdf5;color:#166534;font-size:.68rem;font-weight:800}
+      .official-reference-item dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0 0}.official-reference-item dl div{min-width:0;padding:7px;border-radius:9px;background:#f8fafc}.official-reference-item dt{font-size:.68rem;color:#64748b}.official-reference-item dd{margin:2px 0 0;font-size:.84rem;font-weight:900;color:#1e3a5f}
+      .official-reference-empty{margin:0;padding:13px;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b;background:#f8fafc}
+      .official-reference-empty p{margin:0}.official-reference-retry{margin-top:10px;padding:7px 11px;border:1px solid #93c5fd;border-radius:9px;background:#eff6ff;color:#1d4ed8;font:inherit;font-size:.78rem;font-weight:800;cursor:pointer}.official-reference-retry:focus-visible{outline:3px solid #60a5fa;outline-offset:2px}
+      @media(max-width:640px){.official-reference-grid{grid-template-columns:1fr}.official-reference-item{padding:10px}}
     `;
     document.head.appendChild(style);
   }
 
-  async function fetchReport(definition) {
-    try {
-      const response = await fetch(`${definition.url}?v=${Date.now()}`, { cache: "no-store" });
-      if (!response.ok) return null;
-      return await response.json();
-    } catch (error) {
-      console.warn(`[reference-report] ${definition.url}`, error);
-      return null;
-    }
+  function createPanel() {
+    const holder = document.createElement("div");
+    holder.innerHTML = renderHtml(state.report, {
+      loading: state.loading,
+      error: state.error,
+      opened: state.opened
+    }).trim();
+    return holder.firstElementChild;
   }
 
-  async function render() {
-    const target = document.getElementById("statsArea");
-    if (!target) return;
-    ensureStyles();
+  function bindPanel(panel) {
+    panel.addEventListener("toggle", () => {
+      state.opened = panel.open === true;
+    });
+    panel.querySelector("[data-reference-tag-retry]")?.addEventListener("click", () => {
+      if (!isResultActive()) return;
+      void load();
+    });
+  }
 
-    const reports = await Promise.all(REPORTS.map(fetchReport));
-    let area = document.getElementById("referenceTagReportArea");
-    if (!area) {
-      area = document.createElement("section");
-      area.id = "referenceTagReportArea";
-      area.className = "reference-report-section";
-      target.insertAdjacentElement("afterend", area);
+  function render() {
+    if (typeof document === "undefined" || !isResultActive()) return false;
+    const dashboard = document.querySelector("#statsArea .results-analysis-dashboard");
+    if (!dashboard) return false;
+
+    ensureStyles();
+    const current = document.getElementById(PANEL_ID);
+    const mounted = current && dashboard.contains(current) ? current : null;
+    const restoreFocus = Boolean(mounted && mounted.contains(document.activeElement));
+    if (mounted) state.opened = mounted.open === true;
+
+    const panel = createPanel();
+    bindPanel(panel);
+    if (mounted) {
+      mounted.replaceWith(panel);
+    } else {
+      current?.remove();
+      const recent = dashboard.querySelector('[data-result-panel="recent-results"]');
+      dashboard.insertBefore(panel, recent || null);
     }
 
-    area.innerHTML = `
-      <div class="reference-report-title">
-        <h3>📎 参考情報の検証</h3>
-        <small>公式結果との照合実績。予想ロジックには未反映</small>
-      </div>
-      <div class="reference-report-grid">
-        ${REPORTS.map((definition, index) => renderReport(reports[index] || {}, definition)).join("")}
-      </div>
-    `;
+    if (restoreFocus) {
+      const summary = panel.querySelector("summary");
+      try {
+        summary?.focus({ preventScroll: true });
+      } catch {
+        summary?.focus();
+      }
+    }
+    return true;
+  }
+
+  function ensureMounted() {
+    if (typeof document === "undefined" || !isResultActive()) return false;
+    const dashboard = document.querySelector("#statsArea .results-analysis-dashboard");
+    if (!dashboard) return false;
+    const panel = document.getElementById(PANEL_ID);
+    if (panel && dashboard.contains(panel)) return true;
+    return render();
+  }
+
+  function observeStatsArea() {
+    if (typeof document === "undefined" || typeof root.MutationObserver !== "function") return false;
+    const statsArea = document.getElementById("statsArea");
+    if (!statsArea) return false;
+    if (statsObserver && observedStatsArea === statsArea) return true;
+
+    statsObserver?.disconnect();
+    statsObserver = new root.MutationObserver(() => {
+      if (isResultActive()) ensureMounted();
+    });
+    statsObserver.observe(statsArea, { childList: true, subtree: true });
+    observedStatsArea = statsArea;
+    return true;
+  }
+
+  function load() {
+    if (!isResultActive()) return Promise.resolve(null);
+    if (state.promise) return state.promise;
+    state.loading = true;
+    state.error = "";
+    render();
+    const controller = typeof root.AbortController === "function"
+      ? new root.AbortController()
+      : null;
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+      timeoutId = root.setTimeout(() => {
+        controller?.abort();
+        reject(new Error("公式データ参考分析の読込が15秒を超えました"));
+      }, REPORT_LOAD_TIMEOUT_MS);
+    });
+    const request = fetch(`${REPORT_URL}?v=20260810-official-compatible1`, {
+      cache: "no-store",
+      ...(controller ? { signal: controller.signal } : {})
+    }).then(response => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    });
+    state.promise = Promise.race([request, timeout])
+      .then(report => {
+        if (!isOfficialCompatible(report)) {
+          throw new Error("公式データ参考分析の入力契約が一致しません");
+        }
+        state.report = report;
+        state.loaded = true;
+        return report;
+      })
+      .catch(error => {
+        state.error = String(error?.message || error);
+        state.loaded = false;
+        return null;
+      })
+      .finally(() => {
+        root.clearTimeout(timeoutId);
+        state.loading = false;
+        if (!state.loaded) state.promise = null;
+        if (isResultActive()) render();
+      });
+    return state.promise;
   }
 
   function install() {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", render, { once: true });
-    } else {
-      render();
-    }
-    window.addEventListener("chappy:stats-updated", render);
+    if (installed) return;
+    installed = true;
+    ensureStyles();
+    observeStatsArea();
+    const requestWhenActive = () => {
+      if (!isResultActive()) return;
+      observeStatsArea();
+      if (state.loaded) {
+        render();
+        return;
+      }
+      void load();
+    };
+    root.addEventListener("chappy:stats-runtime-ready", () => {
+      requestWhenActive();
+    });
+    root.addEventListener("chappy:stats-requested", () => {
+      requestWhenActive();
+    });
+    root.addEventListener("chappy:stats-updated", () => {
+      if (!isResultActive()) return;
+      observeStatsArea();
+      if (!state.loaded && !state.loading) {
+        void load();
+        return;
+      }
+      ensureMounted();
+    });
+    root.addEventListener("chappy:view-changed", event => {
+      if (event?.detail?.view !== "result" || !isResultActive()) return;
+      requestWhenActive();
+    });
+    requestWhenActive();
   }
 
-  window.ChappyReferenceTagReport = { install, render };
-  install();
-})();
+  root.ChappyReferenceTagReport = Object.freeze({
+    REPORT_LOAD_TIMEOUT_MS,
+    REPORT_URL,
+    install,
+    isOfficialCompatible,
+    isResultActive,
+    load,
+    normalizeRows,
+    ensureMounted,
+    render,
+    renderHtml
+  });
+
+  if (typeof document !== "undefined") install();
+})(typeof window !== "undefined" ? window : globalThis);
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = globalThis.ChappyReferenceTagReport;
+}

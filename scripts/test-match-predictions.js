@@ -3,8 +3,11 @@
 
 const assert = require("node:assert/strict");
 const {
+  RESULT_VERIFICATION_VERSION,
   normalizeTicket,
   classifyMiss,
+  settlePrediction,
+  verificationInputFingerprint,
   buildSelectionCohorts,
   matchPredictions
 } = require("./match-predictions");
@@ -44,6 +47,122 @@ assert.equal(classifyMiss(["1-2-4"], "2-1-4"), "頭外れ");
 assert.equal(classifyMiss(["2-4-1"], "2-1-4"), "着順違い");
 assert.equal(classifyMiss(["2-1-5"], "2-1-4"), "相手抜け");
 assert.equal(classifyMiss(["2-5-6"], "2-1-4"), "完全抜け");
+assert.equal(
+  RESULT_VERIFICATION_VERSION,
+  "result-verification-v5-scenario-key-v2"
+);
+
+const scenarioRows = [
+  ["escape", "1逃げ", 45],
+  ["sashi", "2差し", 30],
+  ["threeAttack", "3攻め", 15],
+  ["fourAttack", "4カド", 10]
+].map(([key, label, relativeLikelihood]) => ({
+  key,
+  label,
+  relativeLikelihood
+}));
+const scenarioVariant = {
+  scenarios: scenarioRows,
+  leader: scenarioRows[0],
+  runnerUp: scenarioRows[1],
+  ambiguity: "lean"
+};
+const scenarioSettlement = settlePrediction({
+  prediction: {},
+  scenarioLikelihoodV5: scenarioVariant,
+  scenarioLikelihoodV5Ab: {
+    changed: false,
+    a: scenarioVariant,
+    b: scenarioVariant
+  }
+}, {
+  resultAvailable: true,
+  winningMethod: "逃げ",
+  trifecta: {
+    combination: "1-2-3"
+  }
+});
+assert.equal(
+  scenarioSettlement.scenarioLikelihoodV5Verification.leaderHit,
+  true
+);
+assert.equal(
+  scenarioSettlement.scenarioLikelihoodV5AbVerification.a.leaderHit,
+  true
+);
+
+const legacyFingerprintRecord = {
+  raceKey: "20260809-10-1",
+  prediction: {},
+  scenarioLikelihoodV5: scenarioVariant,
+  scenarioLikelihoodV5Ab: {
+    changed: false,
+    a: scenarioVariant,
+    b: scenarioVariant
+  },
+  result: {
+    settled: true,
+    resultTicket: "1-2-3",
+    payout: 1200,
+    popularity: 3,
+    winningMethod: "逃げ",
+    finishers: [],
+    starts: [],
+    verificationInputFingerprint: "legacy-v1",
+    scenarioLikelihoodV5Verification: {
+      comparable: true,
+      leaderHit: false,
+      top2Hit: false
+    },
+    scenarioLikelihoodV5AbVerification: {
+      comparable: true,
+      a: { leaderHit: false, topTwoHit: false },
+      b: { leaderHit: false, topTwoHit: false }
+    }
+  }
+};
+const legacyOfficialResult = {
+  date: "20260809",
+  races: [{
+    jcd: "10",
+    raceNo: 1,
+    resultAvailable: true,
+    winningMethod: "逃げ",
+    trifecta: {
+      combination: "1-2-3",
+      payout: 1200,
+      popularity: 3
+    }
+  }]
+};
+const fingerprintRematched = matchPredictions({
+  date: "20260809",
+  predictions: [legacyFingerprintRecord],
+  verificationPredictions: []
+}, legacyOfficialResult);
+const rematchedRecord = fingerprintRematched.predictions[0];
+assert.equal(
+  rematchedRecord.result.scenarioLikelihoodV5Verification.leaderHit,
+  true
+);
+assert.equal(
+  rematchedRecord.result.scenarioLikelihoodV5AbVerification.a.leaderHit,
+  true
+);
+assert.equal(
+  rematchedRecord.result.verificationInputFingerprint,
+  verificationInputFingerprint(rematchedRecord)
+);
+assert.notEqual(
+  rematchedRecord.result.verificationInputFingerprint,
+  "legacy-v1"
+);
+assert.deepEqual(
+  matchPredictions(fingerprintRematched, legacyOfficialResult),
+  fingerprintRematched,
+  "v5照合バージョン更新後の再照合は2回目以降に保存内容を変えない"
+);
 
 const matched = matchPredictions(
   {

@@ -1,0 +1,21 @@
+name: Check outer attack action tuning
+on:
+  pull_request:
+    paths:
+      - 'scripts/tune-outer-attack-action.cjs'
+      - 'tests/outer-attack-action-tuning.test.cjs'
+      - '.github/workflows/check-outer-attack-action-tuning.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/outer-attack-action-tuning.test.cjs
+      - run: node scripts/tune-outer-attack-action.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code

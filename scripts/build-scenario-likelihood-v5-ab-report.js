@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const verification = require("../js/scenario-likelihood-v5-ab-verification");
+const abDecision = require("../config/scenario-likelihood-v5-decision.json");
 
 const root = path.resolve(__dirname, "..");
 const predictionDir = path.join(root, "data", "predictions");
@@ -23,7 +24,11 @@ function loadJson(filePath, fallback) {
 }
 
 function rowFromRecord(record) {
-  const row = record?.result?.scenarioLikelihoodV5AbVerification;
+  const snapshot = record?.scenarioLikelihoodV5Ab;
+  const officialResult = record?.result;
+  const row = snapshot && officialResult
+    ? verification.verify(snapshot, officialResult)
+    : null;
   if (!row || row.comparable !== true) return null;
   return {
     ...row,
@@ -37,7 +42,7 @@ function rowFromRecord(record) {
 
 function collectRows() {
   if (!fs.existsSync(predictionDir)) return [];
-  const rows = [];
+  const rowsByRaceKey = new Map();
   fs.readdirSync(predictionDir)
     .filter(name => /^\d{8}\.json$/.test(name))
     .sort()
@@ -51,10 +56,12 @@ function collectRows() {
       ];
       records.forEach(record => {
         const row = rowFromRecord(record);
-        if (row) rows.push(row);
+        if (row?.raceKey) {
+          rowsByRaceKey.set(row.raceKey, row);
+        }
       });
     });
-  return rows;
+  return [...rowsByRaceKey.values()];
 }
 
 function main() {
@@ -71,16 +78,20 @@ function main() {
       .filter(item => item.productionCandidate)
       .map(item => ({ scope: "actual-scenario", ...item }))
   ];
+  const rejected = abDecision?.active === false || abDecision?.status === "rejected";
 
   const report = {
     generatedAt: new Date().toISOString(),
     source: "data/predictions/*.json",
-    status: productionCandidates.length
-      ? "production-candidates-ready"
-      : "collecting-data",
+    status: rejected
+      ? "rejected-closed"
+      : productionCandidates.length
+        ? "production-candidates-ready"
+        : "collecting-data",
     ...summary,
     productionCandidateCount: productionCandidates.length,
     productionCandidates,
+    decision: abDecision,
     usableForPrediction: false,
     automaticApplication: false
   };
@@ -90,7 +101,7 @@ function main() {
   console.log(
     `展開AI v5 A/Bレポート：比較${report.overall?.samples || 0}R／` +
     `変化${report.overall?.changedSamples || 0}R／` +
-    `本番候補${productionCandidates.length}件`
+    `判断${report.status}`
   );
 }
 

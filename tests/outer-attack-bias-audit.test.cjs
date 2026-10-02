@@ -1,0 +1,12 @@
+'use strict';
+const assert=require('assert');
+const {build,FIXED}=require('../scripts/analyze-outer-attack-bias-audit.cjs');
+const r=build();
+assert.strictEqual(r.scope.holdoutUsed,false);
+assert.strictEqual(r.scope.productionChanged,false);
+assert.deepStrictEqual(r.scope.fixedCondition,FIXED);
+assert.ok(r.overall.pairs>=8);
+assert.ok(r.coverage.boatCount>=1 && r.coverage.boatCount<=2);
+assert.ok(r.coverage.placeCount>=1);
+assert.strictEqual(Object.keys(r.byChallengerBoat).length,r.coverage.boatCount);
+console.log('outer attack bias audit tests passed');

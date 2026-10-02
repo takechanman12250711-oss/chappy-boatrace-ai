@@ -1,0 +1,38 @@
+name: Check motor v2 core path
+
+on:
+  pull_request:
+    paths:
+      - "js/motor-maintenance-insights.js"
+      - "js/ai-core.js"
+      - "js/prediction-runtime-loader.js"
+      - "tools/test-motor-maintenance-theory-v2.js"
+      - "scripts/test-motor-v2-core-path.js"
+      - ".github/workflows/motor-v2-core-path-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "js/motor-maintenance-insights.js"
+      - "js/ai-core.js"
+      - "js/prediction-runtime-loader.js"
+      - "tools/test-motor-maintenance-theory-v2.js"
+      - "scripts/test-motor-v2-core-path.js"
+      - ".github/workflows/motor-v2-core-path-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  motor-v2-core-path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check syntax
+        run: node --check scripts/test-motor-v2-core-path.js
+      - name: Verify motor v2 reaches AI core
+        run: node scripts/test-motor-v2-core-path.js

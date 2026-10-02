@@ -1,0 +1,62 @@
+name: Compare frozen escape predictions
+on:
+  push:
+    branches: [main, analysis/escape-frozen-comparison]
+    paths:
+      - 'scripts/compare-escape-frozen.cjs'
+      - 'scripts/test-compare-escape-frozen.cjs'
+      - 'scripts/audit-escape-main.cjs'
+      - '.github/workflows/compare-escape-frozen.yml'
+  workflow_run:
+    workflows: ['Build candidate24 performance']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '45 21 * * *'
+permissions:
+  contents: write
+concurrency:
+  group: escape-frozen-comparison-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  compare:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check immutable comparisons and result fallback
+        run: |
+          node scripts/test-compare-escape-frozen.cjs
+          node scripts/test-escape-main-audit.cjs
+          node scripts/check-charter.js
+      - name: Compare saved inputs without changing production predictions
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: node scripts/compare-escape-frozen.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: escape-frozen-comparison
+          path: data/stats/escape-frozen-comparison.json
+      - name: Save derived comparison only
+        env:
+          TARGET_BRANCH: ${{ github.ref_name }}
+        run: |
+          git restore --worktree -- data/predictions
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/stats/escape-frozen-comparison.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Update frozen escape comparison'
+          for attempt in 1 2 3; do
+            git fetch origin "$TARGET_BRANCH"
+            git rebase "origin/$TARGET_BRANCH"
+            if git push origin "HEAD:$TARGET_BRANCH"; then exit 0; fi
+          done
+          exit 1

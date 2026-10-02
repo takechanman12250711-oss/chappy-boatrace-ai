@@ -4,6 +4,8 @@ const assert = require("node:assert/strict");
 const conditions = require("../js/prediction-conditions");
 
 const snapshot = conditions.capture({
+  source: "boatrace-official",
+  fetchedAt: "2026-08-10T00:30:00.000Z",
   entries: Array.from({ length: 6 }, (_, index) => ({
     boat: index + 1,
     // 公式データのboatNoは艇番ではなくボート機材番号。
@@ -42,8 +44,11 @@ const snapshot = conditions.capture({
 });
 
 assert.equal(snapshot.sourceTiming, "pre_deadline");
-assert.equal(snapshot.schemaVersion, 3);
+assert.equal(snapshot.schemaVersion, 4);
 assert.equal(snapshot.officialResultUsed, false);
+assert.equal(snapshot.source, "boatrace-official");
+assert.equal(snapshot.sourceFetchedAt, "2026-08-10T00:30:00.000Z");
+assert.equal(snapshot.analysisProfile, "hiyori-compatible");
 assert.equal(snapshot.boats.length, 6);
 assert.equal(snapshot.dataAvailability.entries, 6);
 assert.equal(snapshot.dataAvailability.averageST, 6);
@@ -82,6 +87,14 @@ const boatsAlias = conditions.capture({
     className: "B1"
   }))
 });
+assert.equal(boatsAlias.source, "");
+assert.equal(boatsAlias.sourceFetchedAt, "");
+assert.equal(boatsAlias.analysisProfile, "");
+const spoofedSource = conditions.capture({
+  source: "fake-boatrace-official-proxy"
+});
+assert.equal(spoofedSource.source, "fake-boatrace-official-proxy");
+assert.equal(spoofedSource.analysisProfile, "");
 assert.equal(
   boatsAlias.boats[0].racerName,
   "別名選手1",

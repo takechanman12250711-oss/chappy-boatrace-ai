@@ -1,0 +1,23 @@
+name: Check frame rise fall shadow futility
+
+on:
+  pull_request:
+    paths:
+      - "js/frame-rise-fall-shadow-futility.js"
+      - "scripts/build-frame-rise-fall-shadow-result-report.js"
+      - "scripts/test-frame-rise-fall-shadow-futility.js"
+      - ".github/workflows/check-frame-rise-fall-shadow-futility.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Verify irreversible futility stop
+        run: |
+          node --check js/frame-rise-fall-shadow-futility.js
+          node --check scripts/build-frame-rise-fall-shadow-result-report.js
+          node scripts/test-frame-rise-fall-shadow-futility.js

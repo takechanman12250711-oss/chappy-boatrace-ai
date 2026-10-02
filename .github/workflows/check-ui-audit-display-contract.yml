@@ -1,0 +1,39 @@
+name: Check UI audit display contract
+
+on:
+  pull_request:
+    paths:
+      - "index.html"
+      - "js/ai-core.js"
+      - "js/render.js"
+      - "js/stats.js"
+      - "js/home-dashboard-v2.js"
+      - "js/race-flow-result-panel.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/stats-runtime-loader.js"
+      - "js/app-runtime-loader.js"
+      - "js/mobile-prediction-startup-terminal.js"
+      - "js/today-results-home.js"
+      - "scripts/test-ui-audit-display-contract.js"
+      - ".github/workflows/check-ui-audit-display-contract.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify audited UI display contracts
+        run: |
+          node --check js/ai-core.js
+          node --check js/render.js
+          node --check js/stats.js
+          node --check js/home-dashboard-v2.js
+          node --check js/race-flow-result-panel.js
+          node scripts/test-ui-audit-display-contract.js
+          node scripts/test-home-dashboard-v2.js
+          node scripts/test-race-flow-result-panel.js
+          node scripts/test-result-ui-phase5.js

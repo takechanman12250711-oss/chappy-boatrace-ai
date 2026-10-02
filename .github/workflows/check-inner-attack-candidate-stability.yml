@@ -1,0 +1,16 @@
+name: Check inner attack candidate stability
+on:
+  pull_request:
+    paths: ['scripts/check-inner-attack-candidate-stability.cjs','tests/inner-attack-candidate-stability.test.cjs','.github/workflows/check-inner-attack-candidate-stability.yml']
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/inner-attack-candidate-stability.test.cjs
+      - run: node scripts/check-inner-attack-candidate-stability.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code

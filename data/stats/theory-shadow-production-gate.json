@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-08-05T16:51:40.338Z",
+  "generatedAt": "2026-09-29T21:07:40.509Z",
   "source": "data/predictions/*.json",
   "version": "1.0.0",
   "status": "collecting-evidence",
   "productionCandidate": false,
   "checks": {
-    "enoughComparable": false,
+    "enoughComparable": true,
     "enoughBWins": false,
     "enoughAdvantage": false,
     "firstHalfBLeading": false,
     "secondHalfBLeading": false,
-    "noMajorVenueRegression": true
+    "noMajorVenueRegression": false
   },
   "safeguards": {
     "minimumComparable": 100,
@@ -19,34 +19,275 @@
     "maximumLosingGroupRate": 35
   },
   "overall": {
-    "comparableCount": 0,
+    "comparableCount": 264,
     "bWins": 0,
-    "aWins": 0,
-    "draws": 0,
+    "aWins": 190,
+    "draws": 74,
     "bWinRate": 0,
-    "aWinRate": 0,
-    "advantagePoints": 0
+    "aWinRate": 72,
+    "advantagePoints": -72
   },
   "firstHalf": {
-    "comparableCount": 0,
+    "comparableCount": 132,
     "bWins": 0,
-    "aWins": 0,
-    "draws": 0,
+    "aWins": 100,
+    "draws": 32,
     "bWinRate": 0,
-    "aWinRate": 0,
-    "advantagePoints": 0
+    "aWinRate": 75.8,
+    "advantagePoints": -75.8
   },
   "secondHalf": {
-    "comparableCount": 0,
+    "comparableCount": 132,
     "bWins": 0,
-    "aWins": 0,
-    "draws": 0,
+    "aWins": 90,
+    "draws": 42,
     "bWinRate": 0,
-    "aWinRate": 0,
-    "advantagePoints": 0
+    "aWinRate": 68.2,
+    "advantagePoints": -68.2
   },
-  "harmfulVenueCount": 0,
-  "venueChecks": [],
+  "harmfulVenueCount": 10,
+  "venueChecks": [
+    {
+      "jcd": "02",
+      "comparableCount": 6,
+      "bWins": 0,
+      "aWins": 6,
+      "draws": 0,
+      "bWinRate": 0,
+      "aWinRate": 100,
+      "advantagePoints": -100
+    },
+    {
+      "jcd": "04",
+      "comparableCount": 7,
+      "bWins": 0,
+      "aWins": 5,
+      "draws": 2,
+      "bWinRate": 0,
+      "aWinRate": 71.4,
+      "advantagePoints": -71.4
+    },
+    {
+      "jcd": "09",
+      "comparableCount": 25,
+      "bWins": 0,
+      "aWins": 21,
+      "draws": 4,
+      "bWinRate": 0,
+      "aWinRate": 84,
+      "advantagePoints": -84
+    },
+    {
+      "jcd": "10",
+      "comparableCount": 17,
+      "bWins": 0,
+      "aWins": 14,
+      "draws": 3,
+      "bWinRate": 0,
+      "aWinRate": 82.4,
+      "advantagePoints": -82.4
+    },
+    {
+      "jcd": "12",
+      "comparableCount": 21,
+      "bWins": 0,
+      "aWins": 14,
+      "draws": 7,
+      "bWinRate": 0,
+      "aWinRate": 66.7,
+      "advantagePoints": -66.7
+    },
+    {
+      "jcd": "14",
+      "comparableCount": 7,
+      "bWins": 0,
+      "aWins": 5,
+      "draws": 2,
+      "bWinRate": 0,
+      "aWinRate": 71.4,
+      "advantagePoints": -71.4
+    },
+    {
+      "jcd": "17",
+      "comparableCount": 10,
+      "bWins": 0,
+      "aWins": 4,
+      "draws": 6,
+      "bWinRate": 0,
+      "aWinRate": 40,
+      "advantagePoints": -40
+    },
+    {
+      "jcd": "19",
+      "comparableCount": 15,
+      "bWins": 0,
+      "aWins": 13,
+      "draws": 2,
+      "bWinRate": 0,
+      "aWinRate": 86.7,
+      "advantagePoints": -86.7
+    },
+    {
+      "jcd": "20",
+      "comparableCount": 8,
+      "bWins": 0,
+      "aWins": 7,
+      "draws": 1,
+      "bWinRate": 0,
+      "aWinRate": 87.5,
+      "advantagePoints": -87.5
+    },
+    {
+      "jcd": "24",
+      "comparableCount": 29,
+      "bWins": 0,
+      "aWins": 21,
+      "draws": 8,
+      "bWinRate": 0,
+      "aWinRate": 72.4,
+      "advantagePoints": -72.4
+    },
+    {
+      "jcd": "03",
+      "comparableCount": 1,
+      "bWins": 0,
+      "aWins": 1,
+      "draws": 0,
+      "bWinRate": 0,
+      "aWinRate": 100,
+      "advantagePoints": -100
+    },
+    {
+      "jcd": "15",
+      "comparableCount": 6,
+      "bWins": 0,
+      "aWins": 6,
+      "draws": 0,
+      "bWinRate": 0,
+      "aWinRate": 100,
+      "advantagePoints": -100
+    },
+    {
+      "jcd": "16",
+      "comparableCount": 17,
+      "bWins": 0,
+      "aWins": 7,
+      "draws": 10,
+      "bWinRate": 0,
+      "aWinRate": 41.2,
+      "advantagePoints": -41.2
+    },
+    {
+      "jcd": "18",
+      "comparableCount": 27,
+      "bWins": 0,
+      "aWins": 23,
+      "draws": 4,
+      "bWinRate": 0,
+      "aWinRate": 85.2,
+      "advantagePoints": -85.2
+    },
+    {
+      "jcd": "23",
+      "comparableCount": 8,
+      "bWins": 0,
+      "aWins": 5,
+      "draws": 3,
+      "bWinRate": 0,
+      "aWinRate": 62.5,
+      "advantagePoints": -62.5
+    },
+    {
+      "jcd": "21",
+      "comparableCount": 5,
+      "bWins": 0,
+      "aWins": 3,
+      "draws": 2,
+      "bWinRate": 0,
+      "aWinRate": 60,
+      "advantagePoints": -60
+    },
+    {
+      "jcd": "05",
+      "comparableCount": 16,
+      "bWins": 0,
+      "aWins": 9,
+      "draws": 7,
+      "bWinRate": 0,
+      "aWinRate": 56.3,
+      "advantagePoints": -56.3
+    },
+    {
+      "jcd": "01",
+      "comparableCount": 9,
+      "bWins": 0,
+      "aWins": 9,
+      "draws": 0,
+      "bWinRate": 0,
+      "aWinRate": 100,
+      "advantagePoints": -100
+    },
+    {
+      "jcd": "07",
+      "comparableCount": 6,
+      "bWins": 0,
+      "aWins": 1,
+      "draws": 5,
+      "bWinRate": 0,
+      "aWinRate": 16.7,
+      "advantagePoints": -16.7
+    },
+    {
+      "jcd": "13",
+      "comparableCount": 4,
+      "bWins": 0,
+      "aWins": 1,
+      "draws": 3,
+      "bWinRate": 0,
+      "aWinRate": 25,
+      "advantagePoints": -25
+    },
+    {
+      "jcd": "22",
+      "comparableCount": 13,
+      "bWins": 0,
+      "aWins": 10,
+      "draws": 3,
+      "bWinRate": 0,
+      "aWinRate": 76.9,
+      "advantagePoints": -76.9
+    },
+    {
+      "jcd": "06",
+      "comparableCount": 1,
+      "bWins": 0,
+      "aWins": 1,
+      "draws": 0,
+      "bWinRate": 0,
+      "aWinRate": 100,
+      "advantagePoints": -100
+    },
+    {
+      "jcd": "08",
+      "comparableCount": 5,
+      "bWins": 0,
+      "aWins": 4,
+      "draws": 1,
+      "bWinRate": 0,
+      "aWinRate": 80,
+      "advantagePoints": -80
+    },
+    {
+      "jcd": "11",
+      "comparableCount": 1,
+      "bWins": 0,
+      "aWins": 0,
+      "draws": 1,
+      "bWinRate": 0,
+      "aWinRate": 0,
+      "advantagePoints": 0
+    }
+  ],
   "usableForPrediction": false,
   "automaticApplication": false
 }

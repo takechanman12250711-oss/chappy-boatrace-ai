@@ -1,0 +1,28 @@
+name: Run new-head prospective shadow
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 15 * * *'
+  push:
+    branches:
+      - analysis/new-head-prospective-shadow
+    paths:
+      - 'scripts/run-new-head-prospective-shadow.cjs'
+      - '.github/workflows/run-new-head-prospective-shadow.yml'
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run prospective shadow
+        run: node scripts/run-new-head-prospective-shadow.cjs > new-head-prospective-shadow-output.json
+      - name: Upload shadow output
+        uses: actions/upload-artifact@v4
+        with:
+          name: new-head-prospective-shadow
+          path: new-head-prospective-shadow-output.json

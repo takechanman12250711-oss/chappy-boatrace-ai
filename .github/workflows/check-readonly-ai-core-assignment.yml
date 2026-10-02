@@ -1,0 +1,87 @@
+name: Check readonly AI core assignment
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/check-readonly-ai-core-assignment.yml"
+      - "scripts/apply-readonly-ai-core-hotfix.js"
+      - "js/ai-core-assignment-compat.js"
+      - "js/prediction-runtime-loader.js"
+      - "js/history-insights-base.js"
+      - "js/motor-maintenance-insights.js"
+      - "js/local-water-v2-tiebreak.js"
+      - "js/third-six-rescue-fixed5.js"
+      - "index.html"
+      - "scripts/test-readonly-ai-core-assignment.js"
+      - "scripts/test-startup-critical-path.js"
+      - "scripts/test-prediction-loading-watchdog.js"
+      - "scripts/test-odds-lightweight-path.js"
+      - "scripts/test-ticket-accordion-render-path.js"
+      - "scripts/test-phase6-integration.js"
+      - "scripts/test-load-performance.js"
+      - "scripts/apply-current-cache-test-alignment.js"
+      - "scripts/test-current-cache-test-alignment.js"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/check-readonly-ai-core-assignment.yml"
+      - "js/ai-core-assignment-compat.js"
+      - "js/prediction-runtime-loader.js"
+      - "index.html"
+      - "scripts/test-readonly-ai-core-assignment.js"
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout target
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Apply one-time hotfix patch
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -f scripts/apply-readonly-ai-core-hotfix.js ]; then
+            node --check scripts/apply-readonly-ai-core-hotfix.js
+            node scripts/apply-readonly-ai-core-hotfix.js
+            git diff --check
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "Fix readonly AI core assignment stall"
+            git push origin HEAD:${GITHUB_HEAD_REF}
+          else
+            echo "One-time hotfix patch already applied"
+          fi
+
+      - name: Verify readonly assignment regression
+        run: |
+          node --check js/ai-core-assignment-compat.js
+          node --check scripts/test-readonly-ai-core-assignment.js
+          node scripts/test-readonly-ai-core-assignment.js
+
+      - name: Verify runtime and display paths
+        run: |
+          node scripts/test-prediction-runtime-loader.js
+          node scripts/test-startup-critical-path.js
+          node scripts/test-prediction-loading-watchdog.js
+          node scripts/test-odds-lightweight-path.js
+          node scripts/test-ticket-accordion-render-path.js
+          node scripts/test-phase6-integration.js
+          node scripts/test-current-cache-test-alignment.js
+          node scripts/test-load-performance.js
+          node scripts/check-charter.js

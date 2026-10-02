@@ -4,6 +4,9 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const charter = require(
+  "../config/chappy-charter.json"
+);
 
 function loadOptionalV2Dependency(
   loader,
@@ -33,21 +36,41 @@ require("../js/motor-maintenance-insights");
 const theoryInput = require(
   "../js/theory-input"
 );
+require("../js/local-water-v2-tiebreak");
 require("../js/prediction");
 require("../js/prediction-simple-evaluation");
 const practicalSelectionApi =
-  require("../js/practical-selection");
+  require("../js/three-course-escape-rescue-fixed5").install(
+    require("../js/practical-selection")
+  );
+const practicalPriorityShadow =
+  loadOptionalV2Dependency(
+    () => require(
+      "../js/practical-priority-shadow"
+    ),
+    {
+      VERSION: "unavailable",
+      LOGIC_FINGERPRINT: "unavailable",
+      build() {
+        throw new Error(
+          "順位候補シャドー評価器を利用できません"
+        );
+      }
+    },
+    "順位候補評価器"
+  );
+const practicalPriorityShadowReport =
+  loadOptionalV2Dependency(
+    () => require(
+      "../js/practical-priority-shadow-report"
+    ),
+    {
+      CONTRACT_FINGERPRINT: "unavailable"
+    },
+    "順位候補固定契約"
+  );
 require("../js/note-generator");
 
-const historyStats = require(
-  "../data/stats/venue-race-patterns.json"
-);
-const officialHistoryStats = require(
-  "../data/stats/race-patterns.json"
-);
-const racerVenueStarts = require(
-  "../data/stats/racer-venue-starts.json"
-);
 const racerSkillStats =
   loadOptionalV2Dependency(
     () => require(
@@ -71,6 +94,9 @@ const courseStructureStats =
 const historyInsights = require(
   "../js/history-insights"
 );
+const {
+  attachVenueRaceHistory
+} = require("./venue-race-history");
 const predictionConditions = require(
   "../js/prediction-conditions"
 );
@@ -121,7 +147,18 @@ const theoryImprovementReport =
     "理論改善承認候補"
   );
 
-const MIN_SCORE = 70;
+const MIN_SCORE = Number(
+  charter?.shadowSelectionV2?.selectionThreshold
+);
+if (
+  !Number.isFinite(MIN_SCORE) ||
+  MIN_SCORE < 0 ||
+  MIN_SCORE > 100
+) {
+  throw new Error(
+    "自動選定基準は0〜100点で設定してください"
+  );
+}
 const MAX_RUNS_PER_DAY = 100;
 const REPOSITORY_ROOT = path.resolve(__dirname, "..");
 
@@ -158,6 +195,7 @@ function safeFingerprintFiles(
 const SHADOW_LOGIC_FINGERPRINT = safeFingerprintFiles([
   "config/chappy-charter.json",
   "api/_parser.js",
+  "api/_original-exhibition.js",
   "js/ai-core.js",
   "js/history-insights-base.js",
   "js/motor-maintenance-insights.js",
@@ -240,86 +278,6 @@ function callApi(handler, query) {
 
 function wait(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
-}
-
-function attachVenueRaceHistory(raceData, jcd, raceNo) {
-  const historyPattern =
-    historyInsights.getPattern(
-      historyStats,
-      jcd,
-      raceNo
-    );
-  const historyTrend =
-    historyInsights.buildTrend(
-      historyPattern,
-      officialHistoryStats.overall || null
-    );
-  const racers = (
-    Array.isArray(raceData?.entries)
-      ? raceData.entries
-      : []
-  ).map((entry) => {
-    const registerNo = String(
-      entry?.registerNo || ""
-    ).trim();
-    const stats =
-      (
-        officialHistoryStats.racers ||
-        {}
-      )[registerNo] || null;
-    const venueStats =
-      (
-        racerVenueStarts.racers ||
-        {}
-      )[registerNo] || null;
-    if (!stats && !venueStats) {
-      return null;
-    }
-    const localStarts = Number(
-      venueStats?.venues?.[
-          String(jcd).padStart(2, "0")
-        ] ?? 0
-    );
-
-    return {
-      registerNo,
-      racerName:
-        stats?.racerName ||
-        entry?.racerName ||
-        "",
-      samples:
-        Number(stats?.starts || 0),
-      localStarts,
-      currentVenueStarts:
-        localStarts,
-      localReliability:
-        localStarts >= 30
-          ? "high"
-          : localStarts >= 12
-            ? "medium"
-            : "low"
-    };
-  }).filter((racer) => racer?.registerNo);
-
-  return {
-    raceData: {
-      ...raceData,
-      historyContext: {
-        ready: Boolean(historyPattern),
-        source: officialHistoryStats.source || "",
-        generatedAt:
-          officialHistoryStats.generatedAt || "",
-        racers,
-        venueRace: historyPattern
-          ? {
-              ...historyPattern,
-              trend: historyTrend
-            }
-          : null
-      }
-    },
-    historyTrend
-  };
 }
 
 function attachShadowReferenceHistory(
@@ -416,6 +374,50 @@ function compactPracticalSelection(
     .compactAudit(selection);
 }
 
+// Research C uses the completed saved payload, never changes purchase tickets.
+function withEightTicketExhibitionShadow(record, options) {
+  try {
+    return require("./eight-ticket-exhibition-shadow.cjs").attach(record, options);
+  } catch {
+    console.warn("Eight-ticket C capture unavailable; production unchanged");
+    return { ...record, eightTicketExhibitionShadow: { status: "unavailable", eligible: false,
+      automaticApplication: false, usableForPrediction: false, affectsTickets: false, affectsPrediction: false } };
+  }
+}
+
+function safelyBuildPracticalPriorityShadow(
+  selection,
+  builder = practicalPriorityShadow.build
+) {
+  try {
+    return builder(selection || {});
+  } catch (error) {
+    console.warn(
+      `順位候補シャドー生成失敗：${error?.message || error}`
+    );
+    return {
+      version: practicalPriorityShadow.VERSION,
+      logicFingerprint:
+        practicalPriorityShadow.LOGIC_FINGERPRINT,
+      status: "shadow-builder-unavailable",
+      reasonCode: "SHADOW_BUILDER_ERROR",
+      sourceSelectionFingerprint: "",
+      eligible: false,
+      applicationMode: "shadow-only",
+      automaticApplication: false,
+      usableForPrediction: false,
+      affectsPrediction: false,
+      affectsTickets: false,
+      baseTickets: [],
+      shadowTickets: [],
+      replacement: null,
+      diagnostics: {
+        error: String(error?.message || error).slice(0, 240)
+      }
+    };
+  }
+}
+
 function compactPrediction(prediction, practicalTickets, raceData) {
   const practicalSelection =
     global.ChappyPracticalSelection &&
@@ -441,16 +443,16 @@ function compactPrediction(prediction, practicalTickets, raceData) {
       ? prediction.ticketRanks
       : [],
     practicalTickets,
+    evaluatedScenarioCandidates: require("./outer-attack-research").compactPool(prediction),
     practicalSelection:
       compactPracticalSelection(
         practicalSelection
       ),
     verificationEvidence:
-      practicalSelection
-        ?.verificationEvidence ||
-      prediction
-        ?.verificationEvidence ||
-      null,
+      compactVerificationEvidence({
+        ...prediction,
+        practicalSelection
+      }),
     internalEvaluation: {
       mode:
         String(
@@ -502,32 +504,70 @@ function compactScenario(value) {
     frameMovementAdjustment: Number(
       value.frameMovementAdjustment || 0
     ),
+    ...(Object.prototype.hasOwnProperty.call(value, "slitAdjustment")
+      ? { slitAdjustment: Number(value.slitAdjustment || 0) }
+      : {}),
+    slitReasons: Array.isArray(value.slitReasons)
+      ? value.slitReasons.map(String).filter(Boolean)
+      : [],
     attacker: Number(value.attacker || 0) || null,
+    attackerCourse: Number(
+      value.attackerCourse ?? value.attacker ?? 0
+    ) || null,
+    attackerBoatNo: Number(
+      value.attackerBoatNo ?? value.headBoatNo ?? 0
+    ) || null,
+    headBoatNo: Number(
+      value.headBoatNo ?? value.attackerBoatNo ?? 0
+    ) || null,
     blockedBoats: Array.isArray(value.blockedBoats)
       ? value.blockedBoats.map(Number).filter(Boolean)
       : []
   };
 }
 
+function mergeCompactScenario(provided, fallback) {
+  if (!provided && !fallback) return null;
+
+  return {
+    ...(fallback || {}),
+    ...(provided || {}),
+    attackerCourse: Number(
+      provided?.attackerCourse ??
+      fallback?.attackerCourse ??
+      fallback?.attacker ??
+      0
+    ) || null,
+    attackerBoatNo: Number(
+      provided?.attackerBoatNo ??
+      provided?.headBoatNo ??
+      fallback?.attackerBoatNo ??
+      fallback?.headBoatNo ??
+      0
+    ) || null,
+    headBoatNo: Number(
+      provided?.headBoatNo ??
+      provided?.attackerBoatNo ??
+      fallback?.headBoatNo ??
+      fallback?.attackerBoatNo ??
+      0
+    ) || null
+  };
+}
+
 function compactVerificationEvidence(prediction) {
-  if (
+  const providedEvidence =
     prediction?.practicalSelection
       ?.verificationEvidence &&
     typeof prediction
       .practicalSelection
       .verificationEvidence ===
       "object"
-  ) {
-    return prediction
-      .practicalSelection
-      .verificationEvidence;
-  }
-  if (
-    prediction?.verificationEvidence &&
-    typeof prediction.verificationEvidence === "object"
-  ) {
-    return prediction.verificationEvidence;
-  }
+      ? prediction.practicalSelection.verificationEvidence
+      : prediction?.verificationEvidence &&
+          typeof prediction.verificationEvidence === "object"
+        ? prediction.verificationEvidence
+        : null;
 
   const aiCore = prediction?.aiCore || {};
   const raceScenarios = aiCore.raceScenarios || {};
@@ -535,9 +575,9 @@ function compactVerificationEvidence(prediction) {
   const formations = aiCore.formations || {};
   const evidence = raceScenarios.evidence || {};
 
-  if (!raceScenarios.mainScenario) return null;
+  if (!raceScenarios.mainScenario) return providedEvidence;
 
-  return {
+  const aiCoreEvidence = {
     sourceCommit: String(process.env.GITHUB_SHA || ""),
     aiCoreVersion: String(
       aiCore.version ||
@@ -552,6 +592,18 @@ function compactVerificationEvidence(prediction) {
       : [],
     roles: {
       attacker: Number(raceScenarios.attacker || 0) || null,
+      attackerCourse: Number(
+        raceScenarios.attackerCourse ??
+        raceScenarios.mainScenario?.attackerCourse ??
+        raceScenarios.mainScenario?.attacker ??
+        0
+      ) || null,
+      attackerBoatNo: Number(
+        raceScenarios.attackerBoatNo ??
+        raceScenarios.headBoatNo ??
+        raceScenarios.attacker ??
+        0
+      ) || null,
       wallBoat: Number(raceScenarios.wallBoat || 0) || null,
       remainers: [...(raceScenarios.remainers || [])],
       followers: [...(raceScenarios.followers || [])],
@@ -574,7 +626,196 @@ function compactVerificationEvidence(prediction) {
     relations: evidence.relations || raceScenarios.relations || null,
     frameMovement: Array.isArray(evidence.frameMovement)
       ? evidence.frameMovement
-      : []
+      : [],
+    stSlit: {
+      source: String(aiCore?.stSlitTheory?.source || ""),
+      roles: (Array.isArray(aiCore?.stSlitTheory?.roles)
+        ? aiCore.stSlitTheory.roles
+        : []).map(role => ({
+          boatNo: Number(role?.boatNo || role?.boat || 0) || null,
+          course: Number(role?.course || 0) || null,
+          score: Number.isFinite(Number(role?.score))
+            ? Number(role.score)
+            : null,
+          status: String(role?.status || ""),
+          samples: Number.isFinite(Number(role?.samples))
+            ? Number(role.samples)
+            : null,
+          isFormal: role?.isFormal === true,
+          appliedToScore: role?.appliedToScore === true,
+          fCount: Number(role?.fCount || 0),
+          reason: String(role?.reason || "")
+        }))
+    },
+    skill: (() => {
+      const support = prediction?.skillLocalSupport || {};
+      const attackBoatNo = Number(support?.attackBoatNo || support?.centerBoatNo || prediction?.flowPriority?.attackBoatNo || 0);
+      const target = (Array.isArray(support?.boats) ? support.boats : []).find(row => Number(row?.boatNo) === attackBoatNo) || null;
+      const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+      const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+      const statements = [...confirms, ...alerts].map(String).filter(text => !/当地/.test(text));
+      const grade = String(target?.grade || "").trim();
+      const nationalWinRate = target?.nationalWinRate == null ? null : Number(target.nationalWinRate);
+      const avgST = target?.avgST == null ? null : Number(target.avgST);
+      const firstRate = target?.firstRate == null ? null : Number(target.firstRate);
+      const explicit = statements.some(text => /A1級|A2級|B1級|B2級|技量|全国勝率|平均ST|1着率/.test(text));
+      const hasData = Boolean(target && (grade || Number.isFinite(nationalWinRate) || Number.isFinite(avgST) || Number.isFinite(firstRate)));
+      return { attackBoatNo: attackBoatNo >= 1 && attackBoatNo <= 6 ? attackBoatNo : null, target: target ? { boatNo: attackBoatNo, grade, nationalWinRate: Number.isFinite(nationalWinRate) ? nationalWinRate : null, avgST: Number.isFinite(avgST) ? avgST : null, firstRate: Number.isFinite(firstRate) ? firstRate : null } : null, statements, formal: attackBoatNo >= 1 && attackBoatNo <= 6 && hasData && explicit };
+    })(),
+    motor: (() => {
+      const support = prediction?.motorEngineSupport || {};
+      const centerBoatNo = Number(support?.attackBoatNo || support?.centerBoatNo || prediction?.flowPriority?.attackBoatNo || 0);
+      const rate = Number(support?.centerMotorRate);
+      const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+      const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+      const statements = [...confirms, ...alerts].map(String).filter(Boolean);
+      const mode = String(support?.mode || "");
+      const normalMode = support?.newEngineMode === false || mode === "normal";
+      const explicit = statements.some(text => /モーター実績(上位|下位)/.test(text));
+      return { centerBoatNo: centerBoatNo >= 1 && centerBoatNo <= 6 ? centerBoatNo : null, centerMotorRate: Number.isFinite(rate) ? rate : null, mode, newEngineMode: support?.newEngineMode === true, statements, formal: centerBoatNo >= 1 && centerBoatNo <= 6 && normalMode && Number.isFinite(rate) && explicit };
+    })(),
+    localWater: (() => {
+      const support = prediction?.venueWaterSupport || {};
+      const venue = String(support?.venue || "").trim();
+      const windValue = Number(support?.wind);
+      const waveValue = Number(support?.wave);
+      const tide = String(support?.tide || "").trim();
+      const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+      const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+      const statements = [...confirms, ...alerts].map(String).filter(Boolean);
+      const wind = Number.isFinite(windValue) ? windValue : null;
+      const wave = Number.isFinite(waveValue) ? waveValue : null;
+      const hasMeasuredCondition = wind !== null || wave !== null || Boolean(tide);
+      const hasSpecificVenueRule = statements.some(text => !/開催場の水面特性を補助評価/.test(text) && /イン|差し|潮|風|波|水面|ナイター|展示|乗り心地/.test(text));
+      return {
+        venue,
+        wind,
+        wave,
+        tide,
+        statements,
+        formal: Boolean(venue) && statements.length > 0 && (hasMeasuredCondition || hasSpecificVenueRule)
+      };
+    })(),
+    exhibitionFoot: (() => {
+      const support = prediction?.flowSupport || prediction?.stExhibitionSupport || {};
+      const confirms = Array.isArray(support?.confirms) ? support.confirms : Array.isArray(support?.confirmations) ? support.confirmations : [];
+      const alerts = Array.isArray(support?.alerts) ? support.alerts : Array.isArray(support?.cautions) ? support.cautions : [];
+      const statements = [...confirms, ...alerts].map(String).filter(Boolean);
+      const attackBoatNo = Number(support?.attackBoatNo || support?.centerBoatNo || prediction?.flowPriority?.attackBoatNo || prediction?.flowPriority?.attackBoat || 0);
+      const exhibitionCoverage = Number(support?.dataCoverage?.exhibition || 0);
+      const exhibitionRank = Number(support?.attackExhibitionRank || 0);
+      const explicit = statements.some(text => /展示|足|気配/.test(text));
+      return {
+        attackBoatNo: attackBoatNo >= 1 && attackBoatNo <= 6 ? attackBoatNo : null,
+        exhibitionCoverage: Number.isFinite(exhibitionCoverage) ? exhibitionCoverage : 0,
+        exhibitionRank: exhibitionRank >= 1 && exhibitionRank <= 6 ? exhibitionRank : null,
+        statements,
+        confirm: statements.some(text => /上位|良|伸び|出足|気配.*良|補強/.test(text)),
+        alert: statements.some(text => /下位|遅|弱|劣|不安|警戒/.test(text)),
+        formal: attackBoatNo >= 1 && attackBoatNo <= 6 && exhibitionCoverage >= 4 && exhibitionRank >= 1 && exhibitionRank <= 6 && explicit
+      };
+    })(),
+    wallTheory: (() => {
+      const wall = aiCore?.wallTheory || {};
+      const attackerNo = Number(wall?.attackerNo || raceScenarios?.attacker || 0);
+      const wallCandidateNo = Number(wall?.wallCandidateNo || 0);
+      const wallBoat = Number(wall?.wallBoat || 0);
+      const state = String(wall?.state || "").trim();
+      const score = Number(wall?.score);
+      const grade = String(wall?.grade || "").trim();
+      return {
+        attackerNo: attackerNo >= 1 && attackerNo <= 6 ? attackerNo : null,
+        wallCandidateNo: wallCandidateNo >= 1 && wallCandidateNo <= 6 ? wallCandidateNo : null,
+        wallBoat: wallBoat >= 1 && wallBoat <= 6 ? wallBoat : null,
+        state,
+        score: Number.isFinite(score) ? score : null,
+        grade,
+        formal: /^(壁成立|互角|壁崩れ)$/.test(state) && attackerNo >= 1 && attackerNo <= 6 && wallCandidateNo >= 1 && wallCandidateNo <= 6 && Number.isFinite(score) && Boolean(grade)
+      };
+    })()
+  };
+
+  if (!providedEvidence) return aiCoreEvidence;
+
+  const providedScenarios = Array.isArray(providedEvidence.scenarios)
+    ? providedEvidence.scenarios.filter(Boolean)
+    : [];
+  const aiCoreScenarios = aiCoreEvidence.scenarios;
+
+  return {
+    ...aiCoreEvidence,
+    ...providedEvidence,
+    sourceCommit:
+      String(providedEvidence.sourceCommit || "") ||
+      aiCoreEvidence.sourceCommit,
+    aiCoreVersion:
+      String(providedEvidence.aiCoreVersion || "") ||
+      aiCoreEvidence.aiCoreVersion,
+    mainScenario: mergeCompactScenario(
+      providedEvidence.mainScenario,
+      aiCoreEvidence.mainScenario
+    ),
+    subScenario: mergeCompactScenario(
+      providedEvidence.subScenario,
+      aiCoreEvidence.subScenario
+    ),
+    scenarios:
+      providedScenarios.length >= 2
+        ? providedScenarios.map((provided, index) =>
+            mergeCompactScenario(
+              provided,
+              aiCoreScenarios.find(row =>
+                String(row?.type || "") ===
+                  String(provided?.type || "")
+              ) || aiCoreScenarios[index] || null
+            )
+          )
+        : aiCoreScenarios,
+    roles: {
+      ...(aiCoreEvidence.roles || {}),
+      ...(providedEvidence.roles || {})
+    },
+    marks: {
+      ...(aiCoreEvidence.marks || {}),
+      ...(providedEvidence.marks || {})
+    },
+    formation: {
+      ...(aiCoreEvidence.formation || {}),
+      ...(providedEvidence.formation || {})
+    },
+    relations:
+      providedEvidence.relations ||
+      aiCoreEvidence.relations,
+    frameMovement:
+      Array.isArray(providedEvidence.frameMovement) &&
+      providedEvidence.frameMovement.length
+        ? providedEvidence.frameMovement
+        : aiCoreEvidence.frameMovement,
+    stSlit: {
+      ...(aiCoreEvidence.stSlit || {}),
+      ...(providedEvidence.stSlit || {}),
+      roles:
+        Array.isArray(providedEvidence?.stSlit?.roles) &&
+        providedEvidence.stSlit.roles.length
+          ? providedEvidence.stSlit.roles
+          : aiCoreEvidence?.stSlit?.roles || []
+    },
+    skill: {
+      ...(aiCoreEvidence.skill || {}),
+      ...(providedEvidence.skill || {})
+    },
+    motor: {
+      ...(aiCoreEvidence.motor || {}),
+      ...(providedEvidence.motor || {})
+    },
+    localWater: {
+      ...(aiCoreEvidence.localWater || {}),
+      ...(providedEvidence.localWater || {})
+    },
+    wallTheory: {
+      ...(aiCoreEvidence.wallTheory || {}),
+      ...(providedEvidence.wallTheory || {})
+    }
   };
 }
 
@@ -601,7 +842,9 @@ function compactVerificationPayload(
       ana: compactMark(prediction?.mainSheet?.ana),
       osae: compactMark(prediction?.mainSheet?.osae)
     },
+    ticketRanks: require("./stored-ticket-categories").storedTicketCategories(prediction),
     practicalTickets: Array.isArray(practicalTickets) ? practicalTickets : [],
+    ...(prediction.evaluatedScenarioCandidates ? { evaluatedScenarioCandidates: prediction.evaluatedScenarioCandidates } : {}),
     practicalSelection:
       compactPracticalSelection(
         prediction
@@ -801,7 +1044,7 @@ async function loadTargets(date) {
     .filter(target => target.jcd && target.raceNo);
 }
 
-async function evaluateTargets(date, targets) {
+async function evaluateTargets(date, targets, { allRaces = false } = {}) {
   const results = [];
   const attempts = [];
   let nextIndex = 0;
@@ -873,7 +1116,7 @@ async function evaluateTargets(date, targets) {
               preparedRaceData
             );
 
-        if (!evaluation?.ready) {
+        if (!evaluation?.ready && !allRaces) {
           const missingReasons = insufficientReasons(evaluation);
           attempts.push({
             ...target,
@@ -1104,6 +1347,21 @@ function selectedRaceKeyFor(
   );
 }
 
+function scoreBandForSelection(selection) {
+  const score = Number(selection?.score);
+
+  if (
+    selection?.ready !== true ||
+    !Number.isFinite(score)
+  ) {
+    return "not_ready";
+  }
+
+  if (score >= 70) return "70_plus";
+  if (score >= 60) return "60_69";
+  return "under_60";
+}
+
 function buildActiveV2Selection(
   shadowV2,
   legacySelection,
@@ -1177,6 +1435,7 @@ function buildStoredPrediction(
   const prediction = createPrediction(
     item.raceData
   );
+  prediction.race = { ...prediction.race, deadlineAt: item.deadlineAt };
   prediction.predictionMode = selected
     ? "server_pre_deadline"
     : "server_pre_deadline_shadow";
@@ -1198,6 +1457,17 @@ function buildStoredPrediction(
     createPracticalSelection(prediction);
   prediction.practicalSelection =
     practicalSelection;
+  const practicalPriorityShadowSnapshot = {
+    ...safelyBuildPracticalPriorityShadow(
+      practicalSelection,
+      dependencies.practicalPriorityShadowBuilder
+    ),
+    cohortContractFingerprint:
+      practicalPriorityShadowReport.CONTRACT_FINGERPRINT,
+    capturedAt,
+    sourceCommit:
+      String(process.env.GITHUB_SHA || "")
+  };
   const raceKey = `${date}-${item.jcd}-${item.raceNo}`;
   const capturedConditions =
     captureStoredConditions(
@@ -1284,7 +1554,7 @@ function buildStoredPrediction(
       ? "server_pre_deadline"
       : "server_pre_deadline_shadow";
 
-  return {
+  return withEightTicketExhibitionShadow({
     raceKey,
     date,
     jcd: item.jcd,
@@ -1297,9 +1567,7 @@ function buildStoredPrediction(
         ? "selected"
         : "shadow",
     scoreBand:
-      selection.qualified
-        ? "70_plus"
-        : "under_70",
+      scoreBandForSelection(selection),
     selection,
     shadowV2,
     scenarioLikelihoodV5:
@@ -1310,12 +1578,14 @@ function buildStoredPrediction(
       theorySnapshot,
     theoryShadowAb:
       theoryShadowComparison,
+    practicalPriorityShadow:
+      practicalPriorityShadowSnapshot,
     prediction: compactVerificationPayload(
-      prediction,
+      { ...prediction, evaluatedScenarioCandidates: require("./outer-attack-research").compactPool(prediction) },
       practicalTickets,
       legacyPreRaceConditions
     )
-  };
+  });
 }
 
 function buildVerificationPredictions(date, comparison, selectedRaceKey = "") {
@@ -1438,10 +1708,11 @@ function buildActiveV2Comparison(
         scoreSource:
           "shadowSelectionV2.evaluation.totalScore",
         selectionReady:
-          selection?.ready === true,
+          selection?.ready === true && record?.prediction?.practicalSelection?.purchaseDecision?.status !== "skip",
+        purchaseDecision: record?.prediction?.practicalSelection?.purchaseDecision || null,
         selectionStatus:
           String(
-            selection?.status ||
+            (record?.prediction?.practicalSelection?.purchaseDecision?.status === "skip" ? "purchase-policy-skip" : selection?.status) ||
             "unavailable"
           ),
         legacyType:
@@ -1908,8 +2179,21 @@ function saveNote(date, selected, article) {
 async function main() {
   const date = getTargetDate();
   const dryRun = hasFlag("dry-run");
+  const noteOnly = hasFlag("note-only");
+  if (noteOnly) {
+    return require("./collect-all-race-notes").collectAllRaceNotes({
+      date, dryRun,
+      loadSchedule: query => callApi(scheduleApi, query),
+      evaluate: targets => evaluateTargets(date, targets, { allRaces: true }),
+      createPrediction: raceData => global.createPrediction(raceData),
+      createPracticalSelection: prediction => global.ChappyNoteGenerator.createPracticalSelection(prediction),
+      generateArticle: (prediction, options) => global.ChappyNoteGenerator.generateArticle(prediction, { ...options, publicationPolicy: "all-races-v1" }),
+      compactPrediction,
+      fetchOdds: query => callApi(require("../api/odds"), query)
+    });
+  }
   const liveTargets = await loadTargets(date);
-  const existing = loadJson(predictionFilePath(date), { runs: [] });
+  const existing = noteOnly ? { runs: [] } : loadJson(predictionFilePath(date), { runs: [] });
   const recoveryPlan = buildRecoveryPlan(date, liveTargets, existing);
   const targets = recoveryPlan.targets;
 
@@ -1933,7 +2217,7 @@ async function main() {
       recoveryPlan.finalizedTargets
     );
     logCollectionHealth(collectionHealth);
-    if (!dryRun) {
+    if (!dryRun && !noteOnly) {
       saveRun(
         date,
         [],
@@ -1993,12 +2277,21 @@ async function main() {
   ) || null;
   let selectedData = null;
   let article = null;
+  let noteBaseline = selectedBase?.prediction?.practicalTickets;
+  let noteOddsSnapshot = null;
 
   if (selectedBase) {
-    const selectedPrediction = global.createPrediction(best.raceData);
+    let selectedPrediction = global.createPrediction(best.raceData);
     selectedPrediction.predictionMode = "server_pre_deadline";
     selectedPrediction.officialResultUsedForPrediction = false;
-    article = global.ChappyNoteGenerator.generateArticle(selectedPrediction);
+    const preparedNote = await require("./prepare-note-input").prepareNoteInput({
+      prediction: selectedPrediction, baseline: noteBaseline, record: selectedBase,
+      fetchOdds: query => callApi(require("../api/odds"), query)
+    });
+    selectedPrediction = preparedNote.prediction;
+    noteBaseline = preparedNote.baseline;
+    noteOddsSnapshot = preparedNote.oddsSnapshot;
+    article = global.ChappyNoteGenerator.generateArticle(selectedPrediction, { practicalTickets: noteBaseline });
     const practicalTickets = article?.practicalTickets ||
       global.ChappyNoteGenerator.createPracticalSelection(selectedPrediction);
     selectedData = {
@@ -2014,11 +2307,66 @@ async function main() {
         rejectionReasons: article?.rejectionReasons || []
       }
     };
+
+    selectedData.exhibitionSnapshot = require("./note-exhibition").exhibitionSnapshot(
+      best.rawRaceData || best.raceData, selectedBase.selectedAt);
+    selectedData.prediction.candidate24Tickets = global.ChappyNoteGenerator.createDisplayCandidates(selectedPrediction, noteBaseline);
+    selectedData = withEightTicketExhibitionShadow(selectedData);
+    // Audit metadata must not change selection, drafts, or collection availability.
+    // Load inside the guard so even an unavailable auditor fails closed locally.
+    try {
+      const { auditNotePublication } = require("./note-publication-audit");
+      selectedData.note.audit = auditNotePublication({
+        article,
+        record: selectedData,
+        baselinePracticalTickets: noteBaseline,
+        now: new Date().toISOString(),
+        minLeadSeconds: charter.shadowSelectionV2.cutoffSeconds,
+        maxPracticalTickets: charter.practicalTickets.maximum
+      });
+    } catch {
+      selectedData.note.audit = {
+        version: "note-publication-audit-v1",
+        status: "audit_error",
+        contentReady: false,
+        canPublish: false,
+        automaticPublicationEnabled: false,
+        issues: [{
+          code: "AUDIT_EXECUTION_FAILED",
+          message: "原稿監査を実行できませんでした。公開は停止しています。"
+        }],
+        auditedAt: new Date().toISOString(),
+        raceKey: selectedData.raceKey
+      };
+      console.warn("note公開前検査失敗：公開不可として収集を継続します");
+    }
   }
 
   if (!dryRun) {
-    if (selectedData) selectedData.note.path = saveNote(date, best, article);
-    saveRun(
+    if (selectedData) {
+      if (!noteOnly) selectedData.note.path = saveNote(date, best, article);
+      // Preserve the exact audit inputs before later runs replace daily records.
+      // Snapshot failures must not interrupt the existing prediction/draft save.
+      try {
+        const { saveNoteDraftBundle } = require("./note-draft-bundle");
+        selectedData.note.draftBundle = saveNoteDraftBundle({
+          article,
+          record: selectedData,
+          baselinePracticalTickets: noteBaseline,
+          minLeadSeconds: charter.shadowSelectionV2.cutoffSeconds,
+          maxPracticalTickets: charter.practicalTickets.maximum,
+          oddsSnapshot: noteOddsSnapshot,
+          sourceCommit: process.env.GITHUB_SHA || null
+        });
+      } catch {
+        selectedData.note.draftBundle = {
+          status: "save_error",
+          message: "原稿の再検査用スナップショットを保存できませんでした。"
+        };
+        console.warn("note再検査用保存失敗：既存の予想・下書き保存を継続します");
+      }
+    }
+    if (!noteOnly) saveRun(
       date,
       comparison,
       selectedData,
@@ -2029,7 +2377,7 @@ async function main() {
   }
 
   console.log(
-    `検証保存：${verificationPredictions.length}R（70点以上${verificationPredictions.filter(item => item.scoreBand === "70_plus").length}R／70点未満${verificationPredictions.filter(item => item.scoreBand === "under_70").length}R）`
+    `${noteOnly ? '検証評価（note専用・日次保存なし）' : '検証保存'}：${verificationPredictions.length}R（${MIN_SCORE}点以上${verificationPredictions.filter(item => item?.selection?.qualified === true).length}R／${MIN_SCORE}点未満${verificationPredictions.filter(item => item?.selection?.ready === true && item?.selection?.qualified !== true).length}R）`
   );
   console.log(
     `V2自動選定対象：${shadowV2Predictions.filter(item => item.calibrationEligible).length}/${shadowV2Predictions.length}R` +
@@ -2082,10 +2430,14 @@ module.exports = {
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
+  scoreBandForSelection,
   buildActiveV2Selection,
   buildActiveV2Comparison,
   applySelectedRaceKey,
   upsertByRaceKey,
+  compactVerificationEvidence,
+  safelyBuildPracticalPriorityShadow,
+  withEightTicketExhibitionShadow,
   compactStoredVerification,
   buildCollectionHealth,
   buildRecoveryPlan,

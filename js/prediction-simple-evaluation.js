@@ -1,6 +1,21 @@
 // チャッピーボートレースAI
 // 予想時に表示する評価を「本線信頼度」または「波乱入口」の1つへ統一する。
 // 既存の印・買い目・予想スコアは変更しない。
+
+// Nodeの履歴収集ではブラウザのhiyori-runtime-loaderを通らないため、
+// createPrediction生成後に本番と同じ補助層を同じ順序で接続する。
+// ブラウザではrequireが存在しないので従来どおりruntime-loader側だけが担当する。
+if (typeof module !== "undefined" && module.exports && typeof require === "function") {
+  [
+    "./prediction-flow-priority",
+    "./prediction-st-exhibition-support",
+    "./prediction-venue-water-support",
+    "./prediction-skill-local-support",
+    "./prediction-motor-engine-support",
+    "./prediction-engine-integration"
+  ].forEach(path => require(path));
+}
+
 (function () {
   "use strict";
 

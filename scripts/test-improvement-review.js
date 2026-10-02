@@ -1,4 +1,5 @@
 "use strict";
+require("../tests/prediction-generation-contract.test.js");
 
 const assert =
   require("node:assert/strict");
@@ -12,6 +13,9 @@ const calibration =
   require("../js/prediction-calibration");
 const improvementReview =
   require("../js/improvement-review");
+const charter = require(
+  "../config/chappy-charter.json"
+);
 const {
   assertProposalOnly,
   buildFromDirectory,
@@ -39,6 +43,8 @@ const GENERATION_B = {
 };
 const GENERATED_AT =
   "2026-07-29T00:00:00.000Z";
+const ACTIVE_SELECTION_THRESHOLD =
+  charter.shadowSelectionV2.selectionThreshold;
 
 function reviewRecord(
   index,
@@ -106,7 +112,8 @@ function reviewRecord(
         ),
       threshold:
         Number(
-          options.threshold ?? 70
+          options.threshold ??
+          ACTIVE_SELECTION_THRESHOLD
         )
     },
     shadowV2: {

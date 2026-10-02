@@ -61,6 +61,24 @@ function analysis(boatNo, overrides = {}) {
   };
 }
 
+function withOfficialCourseMapping(
+  sourceEntries,
+  courseByBoat = {}
+) {
+  return sourceEntries.map((boat) => ({
+    ...boat,
+    startExhibition: {
+      boat: boat.boatNo,
+      course:
+        courseByBoat[boat.boatNo] ??
+        boat.boatNo,
+      st: boat.exhibitionSt,
+      isOfficialCourse: true,
+      mappingSource: "official-start-image"
+    }
+  }));
+}
+
 const entries = [1, 2, 3, 4, 5, 6].map((boatNo) => entry(boatNo));
 entries[1] = entry(2, {
   avgSt: 0.13,
@@ -157,15 +175,10 @@ assert.equal(collapsed.state, "壁崩れ");
 assert.equal(collapsed.wallBoat, null);
 assert.equal(collapsed.scoreAdjustment, 3);
 
-const swappedEntries = entries.map((boat) => {
-  if (boat.boatNo === 2) {
-    return { ...boat, exhibitionCourse: 3 };
-  }
-  if (boat.boatNo === 3) {
-    return { ...boat, exhibitionCourse: 2 };
-  }
-  return boat;
-});
+const swappedEntries = withOfficialCourseMapping(
+  entries,
+  { 2: 3, 3: 2 }
+);
 const swappedScenario = {
   attacker: 2,
   mainScenario: {

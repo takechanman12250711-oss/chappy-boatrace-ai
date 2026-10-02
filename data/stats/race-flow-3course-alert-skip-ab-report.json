@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "version": "race-flow-3course-alert-skip-ab-v1-prospective",
+  "generatedAt": "2026-09-30T20:40:13.142Z",
+  "productionChanged": false,
+  "targetLabel": "3コース攻め警戒",
+  "prospectiveProtocol": {
+    "cutoffSelectedAtInclusive": "2026-08-17T06:55:00Z",
+    "oldRecordsBackfilled": false,
+    "retrospectiveClassificationAllowed": false,
+    "actualPurchase": false
+  },
+  "cohort": {
+    "raceCount": 1603,
+    "settledCount": 1582,
+    "targetRaceCount": 397,
+    "targetSettledCount": 393
+  },
+  "a": {
+    "label": "current-A",
+    "rule": "現行どおり全対象を購入候補として評価",
+    "settledCount": 1582,
+    "betRaceCount": 1582,
+    "skippedRaceCount": 0,
+    "hitCount": 423,
+    "hitRate": 26.7,
+    "stake": 1395700,
+    "return": 1266450,
+    "profit": -129250,
+    "recoveryRate": 90.7
+  },
+  "b": {
+    "label": "skip-3course-alert-B",
+    "rule": "展開ラベルが「3コース攻め警戒」の時だけ購入見送り",
+    "settledCount": 1582,
+    "betRaceCount": 1189,
+    "skippedRaceCount": 393,
+    "hitCount": 320,
+    "hitRate": 26.9,
+    "stake": 1048100,
+    "return": 789880,
+    "profit": -258220,
+    "recoveryRate": 75.4
+  },
+  "delta": {
+    "stake": -347600,
+    "return": -476570,
+    "profit": -128970,
+    "recoveryRate": -15.3,
+    "hitRate": 0.2
+  },
+  "interpretation": {
+    "minimumTargetSettledCount": 30,
+    "automaticApplication": false,
+    "usableForPrediction": false,
+    "affectsCurrentTickets": false,
+    "adoptionDecisionReady": true
+  }
+}

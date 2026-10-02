@@ -1,0 +1,22 @@
+name: Check Phase4 historical cycle proof
+on:
+  pull_request:
+    paths:
+      - "scripts/build-phase4-historical-cycle-proof.js"
+      - ".github/workflows/check-phase4-historical-cycle-proof.yml"
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          node --check scripts/build-phase4-historical-cycle-proof.js
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/build-result-review.js
+          node scripts/build-phase4-historical-cycle-proof.js

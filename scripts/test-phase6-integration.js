@@ -9,6 +9,7 @@ const read = file => fs.readFileSync(path.join(root, file), "utf8");
 
 const html = read("index.html");
 const home = read("js/home-dashboard-v2.js");
+const referenceCss = read("css/final-reference-layout.css");
 const appRuntime = read("js/app-runtime-loader.js");
 const predictionRuntime = read("js/prediction-runtime-loader.js");
 const statsRuntime = read("js/stats-runtime-loader.js");
@@ -25,7 +26,11 @@ assert.equal(home.includes("fetchButton.click()"), true, "レース選択後に�
 assert.equal(home.includes('setView("prediction")'), true, "取得後にAI予想画面へ移動する");
 assert.equal(html.includes('data-view="result"'), true, "下部ナビから成績分析へ移動できる");
 assert.equal(html.includes('data-view="menu"'), false, "未実装メニューを表示しない");
-assert.equal(html.includes('data-view="race"'), false, "ホームと重複するレース検索タブを表示しない");
+if (html.includes('data-view="race"')) {
+  assert.equal(referenceCss.includes('.bottom-nav-item[data-view="race"]'), true, "レースタブを専用選択画面へ接続する");
+  assert.match(referenceCss, /\.bottom-nav-item\[data-view="race"\][^{]*\{[^}]*display:\s*flex/is, "レースタブを実画面へ表示する");
+  assert.match(appRuntime, /view==="race"/, "レースタブ操作でレース本体を読み込む");
+}
 assert.equal(home.includes("sessionStorage"), true, "ホーム再表示をキャッシュで高速化する");
 assert.equal(home.includes("requestAnimationFrame") && home.includes("scheduleRefresh"), true, "初期描画を通信より先に行う");
 
@@ -43,6 +48,6 @@ assert.equal(resultUi.includes("MutationObserver"), true, "結果再描画後も
 assert.equal(html.includes('href="#predictionSection"'), true, "AI予想アンカーを維持する");
 assert.equal(html.includes('href="#resultSection"'), true, "結果分析アンカーを維持する");
 assert.match(html, /id="predictionSection"[\s\S]*id="noteAssistantSection"[\s\S]*<\/section>\s*<section id="resultSection"/, "note投稿アシストをAI予想画面の内側に収める");
-assert.equal(predictionRuntime.includes('const VERSION = "20260804-final-odds2"'), true, "予想ローダーを終了後オッズ修正版キャッシュ世代へ更新する");
+assert.equal(predictionRuntime.includes('const VERSION = "20260828-ui-audit-display1"'), true, "予想ローダーを現在の表示修正版キャッシュ世代へ更新する");
 
 console.log("Phase6 全体統合・ホーム高速化テスト: 合格");

@@ -3,6 +3,8 @@ name: Check scenario AI v6 A/B report
 on:
   pull_request:
     paths:
+      - "js/scenario-ai-v6-shadow.js"
+      - "js/scenario-ai-v6-shadow-ab.js"
       - "scripts/build-scenario-ai-v6-ab-report.js"
       - "scripts/test-scenario-ai-v6-ab-report.js"
       - ".github/workflows/check-scenario-ai-v6-ab-report.yml"

@@ -1,0 +1,35 @@
+name: Run variable formation audit v1
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/analyze-variable-formation-v1.cjs'
+      - '.github/workflows/run-variable-formation-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run variable formation audit
+        run: node scripts/analyze-variable-formation-v1.cjs > variable-formation-v1.json
+      - name: Validate non-production audit
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('variable-formation-v1.json','utf8'));
+          if(r.productionChanged!==false || r.usableForPrediction!==false) process.exit(1);
+          console.log(JSON.stringify(r.results,null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: variable-formation-v1
+          path: variable-formation-v1.json
+          retention-days: 90

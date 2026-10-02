@@ -4,10 +4,10 @@ const assert = require("node:assert/strict");
 const verification = require("../js/scenario-likelihood-v5-ab-verification");
 
 const KEY_BY_LABEL = {
-  "1逃げ": "inEscape",
-  "2差し": "course2Sashi",
-  "3攻め": "course3Attack",
-  "4カド": "course4Kado"
+  "1逃げ": "escape",
+  "2差し": "sashi",
+  "3攻め": "threeAttack",
+  "4カド": "fourAttack"
 };
 
 function variant(leader, runnerUp, actualLikelihood) {
@@ -40,6 +40,44 @@ function variant(leader, runnerUp, actualLikelihood) {
   assert.equal(row.winner, "b");
   assert.equal(row.a.leaderHit, false);
   assert.equal(row.b.leaderHit, true);
+  assert.ok(row.a.actualLikelihood > 0);
+  assert.ok(row.b.actualLikelihood > 0);
+}
+
+{
+  const result = {
+    resultAvailable: true,
+    resultTicket: "1-2-3",
+    winningMethod: "逃げ"
+  };
+  const missingSnapshot = verification.verify({}, result);
+  assert.equal(missingSnapshot.comparable, false);
+  assert.equal(missingSnapshot.reason, "ab-snapshot-incomplete");
+
+  const incomplete = {
+    changed: false,
+    a: variant("1逃げ", "2差し", 20),
+    b: variant("1逃げ", "2差し", 20)
+  };
+  incomplete.b.scenarios = incomplete.b.scenarios.filter(
+    row => row.key !== "fourAttack"
+  );
+  const incompleteResult = verification.verify(incomplete, result);
+  assert.equal(incompleteResult.comparable, false);
+  assert.equal(incompleteResult.b.leaderHit, false);
+
+  const extraScenario = {
+    changed: false,
+    a: variant("1逃げ", "2差し", 20),
+    b: variant("1逃げ", "2差し", 20)
+  };
+  extraScenario.a.scenarios.push({
+    key: "canonical-evaluated-scenario",
+    label: "イン逃げ本線",
+    relativeLikelihood: 5
+  });
+  const extraScenarioResult = verification.verify(extraScenario, result);
+  assert.equal(extraScenarioResult.comparable, false);
 }
 
 {

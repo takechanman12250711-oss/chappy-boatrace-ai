@@ -1,0 +1,16 @@
+name: Check raceFlow attack suppression
+on:
+  pull_request:
+    paths: ['scripts/analyze-raceflow-attack-suppression.cjs','tests/raceflow-attack-suppression.test.cjs','.github/workflows/check-raceflow-attack-suppression.yml']
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/raceflow-attack-suppression.test.cjs
+      - run: node scripts/analyze-raceflow-attack-suppression.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code

@@ -1,0 +1,34 @@
+name: Run scenario expansion audit
+
+on:
+  push:
+    branches:
+      - analysis/scenario-expansion-audit
+      - main
+    paths:
+      - '.github/workflows/run-scenario-expansion-audit.yml'
+      - 'scripts/analyze-scenario-expansion-strict12.cjs'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analyze-ticket-expansion-payout-v2.cjs'
+      - 'data/predictions/**'
+      - 'data/results/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run scenario-aware strict12 audit
+        run: node scripts/analyze-scenario-expansion-strict12.cjs | tee scenario-expansion-audit-output.txt
+      - name: Upload audit output
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenario-expansion-audit
+          path: scenario-expansion-audit-output.txt

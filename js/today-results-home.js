@@ -38,7 +38,7 @@
       script.addEventListener("load",finish,{once:true});
       script.addEventListener("error",()=>fail("結果照合モジュールを読み込めませんでした"),{once:true});
       if(!existing){
-        script.src="js/race-flow-result-panel.js?v=20260803-ui-fix2";
+        script.src="js/race-flow-result-panel.js?v=20260828-ui-audit-display1";
         script.async=true;
         script.dataset.raceFlowResult="true";
         script.dataset.raceFlowState="loading";

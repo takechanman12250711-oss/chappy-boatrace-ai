@@ -359,6 +359,26 @@ function compactPracticalTicket(value) {
       ? { ticket: value }
       : value || {};
 
+  const category =
+    String(row.category || "");
+  const displayCategory =
+    [
+      "順位ゲート補完",
+      "候補補完",
+      "独立展開"
+    ].includes(category)
+      ? category
+      : category === "流し"
+        ? "フォーメーション"
+        : String(
+            row.displayCategory ||
+            category ||
+            ""
+          ).replace(
+            /^流し$/,
+            "フォーメーション"
+          );
+
   return {
     ticket:
       String(
@@ -367,8 +387,8 @@ function compactPracticalTicket(value) {
         row.formation ||
         ""
       ),
-    category:
-      String(row.category || ""),
+    category,
+    displayCategory,
     role:
       String(row.role || ""),
     categories:
@@ -777,6 +797,7 @@ function compactIndexVerification(record) {
         ana: compactMark(prediction?.mainSheet?.ana),
         osae: compactMark(prediction?.mainSheet?.osae)
       },
+      ticketRanks: require("./stored-ticket-categories").storedTicketCategories(prediction),
       practicalTickets: Array.isArray(prediction.practicalTickets)
         ? prediction
             .practicalTickets
@@ -1019,6 +1040,21 @@ function buildPredictionIndex(directory) {
 }
 
 function writePredictionIndex(directory, outputPath) {
+  const frozenLegacyPath = path.resolve(
+    __dirname,
+    "..",
+    "data",
+    "predictions",
+    "index.json"
+  );
+  if (
+    path.resolve(outputPath) ===
+    frozenLegacyPath
+  ) {
+    throw new Error(
+      "legacy indexはfallback用に凍結済みです"
+    );
+  }
   const index = buildPredictionIndex(directory);
   if (fs.existsSync(outputPath)) {
     const existing = readJson(outputPath);
@@ -1035,12 +1071,9 @@ function writePredictionIndex(directory, outputPath) {
 }
 
 function main() {
-  const directory = path.join(process.cwd(), "data", "predictions");
-  const outputPath = path.join(directory, "index.json");
-  const index = writePredictionIndex(directory, outputPath);
-  console.log(
-    `自動予想索引を更新：採用${index.predictions.length}件／検証${index.verificationPredictions.length}件／` +
-    `V2シャドー${index.shadowV2Predictions.length}件／実行${index.runs.length}件`
+  throw new Error(
+    "legacy indexはfallback用に凍結済みです。" +
+    "scripts/build-prediction-index-shards.js を実行してください"
   );
 }
 

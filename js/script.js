@@ -37,6 +37,39 @@
     唐津: "23",
     大村: "24"
   };
+  const MORNING_VENUES = new Set(["三国", "鳴門", "徳山", "芦屋", "唐津"]);
+  const NIGHT_VENUES = new Set(["桐生", "蒲郡", "住之江", "丸亀", "下関", "若松", "大村"]);
+
+  function venueSession(place) {
+    if (MORNING_VENUES.has(place)) return { key: "morning", label: "モーニング" };
+    if (NIGHT_VENUES.has(place)) return { key: "night", label: "ナイター" };
+    return { key: "day", label: "デイ" };
+  }
+
+  function officialRaceRows(data) {
+    const racesByNumber = new Map(
+      (
+        Array.isArray(data?.selectedVenue?.races)
+          ? data.selectedVenue.races
+          : []
+      )
+        .filter(race => {
+          const raceNo = Number(race?.raceNo);
+          return raceNo >= 1 && raceNo <= 12;
+        })
+        .map(race => [Number(race.raceNo), race])
+    );
+    return Array.from(
+      { length: 12 },
+      (_, index) =>
+        racesByNumber.get(index + 1) || {
+          raceNo: index + 1,
+          status: "unavailable",
+          selectable: false,
+          deadline: ""
+        }
+    );
+  }
 
   let lastRaceData = null;
   let lastPrediction = null;
@@ -44,6 +77,7 @@
   let explicitSelectionGeneration = 0;
   let predictionGeneration = 0;
   const ODDS_REQUEST_TIMEOUT_MS = 30000;
+  const OFFICIAL_RESULT_TIMEOUT_MS = 12000;
   const SCHEDULE_REQUEST_TIMEOUT_MS = 30000;
   const SCHEDULE_CACHE_TTL_MS = 30000;
   const scheduleRequestCache = new Map();
@@ -53,6 +87,9 @@
     window.addEventListener("chappy:view-changed", event => {
       if (event?.detail?.view !== "prediction") {
         predictionGeneration += 1;
+      }
+      if (event?.detail?.view === "race") {
+        void applyRaceMode();
       }
     });
   }
@@ -95,6 +132,11 @@
     const modeSelect =
       document.getElementById(
         "raceModeSelect"
+      );
+
+    const modeActions =
+      document.querySelector(
+        ".race-mode-actions"
       );
 
     if (
@@ -157,7 +199,48 @@
       );
     }
 
-    if (!document.getElementById("homeDashboardV2")) {
+    if (
+      modeActions &&
+      modeActions.dataset
+        .chappyRaceControlBound !==
+        "true"
+    ) {
+      modeActions.dataset
+        .chappyRaceControlBound =
+        "true";
+      modeActions.addEventListener(
+        "click",
+        event => {
+          const button =
+            event.target?.closest?.(
+              "[data-race-mode]"
+            );
+
+          if (
+            !button ||
+            !modeActions.contains(button) ||
+            !modeSelect
+          ) {
+            return;
+          }
+
+          const nextMode =
+            button.dataset.raceMode ===
+              "review"
+              ? "review"
+              : "live";
+
+          modeSelect.value = nextMode;
+          void applyRaceMode();
+        }
+      );
+    }
+
+    if (
+      !document.getElementById("homeDashboardV2") ||
+      document.getElementById("raceSection")
+        ?.hidden === false
+    ) {
       void applyRaceMode();
     }
   }
@@ -165,7 +248,10 @@
   window.ChappyRaceControls =
     Object.freeze({
       initialize:
-        initializeRaceControls
+        initializeRaceControls,
+      venueSession,
+      officialRaceRows,
+      applyRaceMode
     });
 
   if (
@@ -219,7 +305,7 @@
       `${yyyy}-${mm}-${dd}`;
   }
 
-    async function applyRaceMode(options = {}) {
+  async function applyRaceMode(options = {}) {
     const selectionGeneration =
       beginRaceSelection();
     const modeSelect =
@@ -253,7 +339,34 @@
         "live"
       ) === "review";
 
+    document
+      .querySelectorAll(
+        ".race-mode-actions [data-race-mode]"
+      )
+      .forEach(button => {
+        const active =
+          button.dataset.raceMode ===
+          (isReview ? "review" : "live");
+
+        button.classList.toggle(
+          "is-selected",
+          active
+        );
+        button.setAttribute(
+          "aria-pressed",
+          String(active)
+        );
+      });
+
     if (dateInput) {
+      const dateField =
+        dateInput.closest("label");
+
+      if (dateField) {
+        dateField.hidden =
+          !isReview;
+      }
+
       dateInput.disabled =
         !isReview;
 
@@ -321,8 +434,8 @@
 
         updateStatus(
           getRaceMode() === "review"
-            ? "レースを変更しました。「振り返り予想を開始」を押してください"
-            : "レースを変更しました。「AI予想を開始」を押してください"
+            ? "レースを変更しました。「④ 振り返り予想を見る」を押してください"
+            : "レースを変更しました。「④ AI予想を見る」を押してください"
         );
       };
     }
@@ -341,8 +454,8 @@
       if (mainText) {
         mainText.textContent =
           isReview
-            ? "振り返り予想を開始"
-            : "AI予想を開始";
+            ? "④ 振り返り予想を見る"
+            : "④ AI予想を見る";
       }
 
       if (subText) {
@@ -576,6 +689,23 @@
     });
   }
 
+  function isLiveVenueAvailable(venue) {
+    const status = String(
+      venue?.status ||
+      ""
+    ).toLowerCase();
+
+    return Boolean(
+      venue &&
+      venue.finalClosed !== true &&
+      ![
+        "closed",
+        "finished",
+        "ended"
+      ].includes(status)
+    );
+  }
+
   function renderOfficialVenuePicker(
     data,
     mode
@@ -661,6 +791,14 @@
       mode === "live"
         ? String(
             data?.nextRace?.jcd ||
+            (
+              venueByJcd.has(
+                currentJcd
+              )
+                ? currentJcd
+                : availableVenues[0]
+                  ?.jcd
+            ) ||
             ""
           )
         : (
@@ -688,8 +826,8 @@
 
         const selectable =
           mode === "live"
-            ? Boolean(
-                venue?.selectable
+            ? isLiveVenueAvailable(
+                venue
               )
             : Boolean(venue);
 
@@ -707,7 +845,10 @@
                 (
                   venue.finalClosed
                     ? "開催終了"
-                    : "開催"
+                    : venue.status ===
+                        "schedule_pending"
+                      ? "開始前"
+                      : "開催"
                 )
               );
 
@@ -738,6 +879,15 @@
           );
         }
 
+        button.setAttribute(
+          "aria-pressed",
+          String(
+            selectable &&
+            String(jcd) ===
+              preferredJcd
+          )
+        );
+
         button.disabled =
           !selectable;
 
@@ -746,6 +896,12 @@
 
         button.dataset.place =
           place;
+
+        const session =
+          venueSession(place);
+
+        button.dataset.session =
+          session.key;
 
         const name =
           document.createElement(
@@ -769,6 +925,20 @@
         venueStatus.textContent =
           statusText;
 
+        const sessionTag =
+          document.createElement(
+            "span"
+          );
+
+        sessionTag.className =
+          "official-venue-session-tag";
+
+        sessionTag.dataset.session =
+          session.key;
+
+        sessionTag.textContent =
+          session.label;
+
         if (grade) {
           venueStatus.classList.add(
             "official-event-grade"
@@ -789,6 +959,7 @@
 
         button.append(
           name,
+          sessionTag,
           venueStatus
         );
 
@@ -806,6 +977,10 @@
                 item.classList.toggle(
                   "is-selected",
                   item === button
+                );
+                item.setAttribute(
+                  "aria-pressed",
+                  String(item === button)
                 );
               });
 
@@ -1537,11 +1712,7 @@
     }
 
     const allRaces =
-      Array.isArray(
-        data?.selectedVenue?.races
-      )
-        ? data.selectedVenue.races
-        : [];
+      officialRaceRows(data);
 
     const selectedRaceNo =
       Number(
@@ -1789,6 +1960,15 @@
       button.disabled =
         !selectable;
 
+      button.setAttribute(
+        "aria-pressed",
+        String(
+          selectable &&
+          Number(race.raceNo) ===
+            selectedRaceNo
+        )
+      );
+
       button.dataset.raceNo =
         String(race.raceNo);
 
@@ -1867,6 +2047,10 @@
               item.classList.toggle(
                 "is-selected",
                 item === button
+              );
+              item.setAttribute(
+                "aria-pressed",
+                String(item === button)
               );
             });
 
@@ -1959,9 +2143,11 @@
       mode === "live"
         ? (
             Array.isArray(
-              data.liveVenues
+              data.venues
             )
-              ? data.liveVenues
+              ? data.venues.filter(
+                  isLiveVenueAvailable
+                )
               : []
           )
         : (
@@ -1973,6 +2159,13 @@
           );
 
     if (!venues.length) {
+      // Keep the official venue grid visible even after every live race has
+      // closed, so the user can see session tags and switch to review mode.
+      renderOfficialVenuePicker(
+        data,
+        mode
+      );
+
       replaceSelectOptions(
         placeSelect,
         [{
@@ -2002,11 +2195,11 @@
 
             updateStatus(
         mode === "live"
-          ? "本日の締切前レースはありません。振り返りモードを選べます"
+          ? "本日の締切前レースはありません。「終了したレース」をタップできます"
           : "この日付の終了レースはありません"
       );
 
-      return;
+      return true;
     }
 
     const currentPlace =
@@ -2177,7 +2370,7 @@
     if (raceSelectGrid) {
       raceSelectGrid.style
         .gridTemplateColumns =
-        "1fr 1fr";
+        "1fr";
     }
 
     return true;
@@ -2294,6 +2487,11 @@
       });
 
     if (!races.length) {
+      renderOfficialRacePicker(
+        data,
+        mode
+      );
+
       replaceSelectOptions(
         raceSelect,
         [{
@@ -2362,7 +2560,7 @@
         `${preferred.raceNo}R`;
     }
 
-　　　        if (
+    if (
       typeof
         raceSelect?.onchange ===
       "function"
@@ -2923,6 +3121,12 @@
         clearReviewResult();
       }
 
+      window.ChappyHomeDashboardV2
+        ?.showPredictionLoading?.(
+          params.place,
+          params.rno
+        );
+
       console.log(
         "🚤 race params",
         params
@@ -2930,33 +3134,37 @@
 
       const raceDataPromise =
         fetchRaceData(params);
-      let oddsSupplementState = null;
-      let oddsSupplementPromise = null;
-      if (!isReview) {
-        oddsSupplementState = {
-          settled: false,
-          value: null,
-          error: null
-        };
-        oddsSupplementPromise =
-          fetchOddsSupplement(params)
-            .then(value => {
-              oddsSupplementState.settled = true;
-              oddsSupplementState.value = value;
-              return value;
-            })
-            .catch(error => {
-              oddsSupplementState.settled = true;
-              oddsSupplementState.error = error;
-              const fallback = {
-                oddsData: null,
-                oddsError: error,
-                missingData: null
-              };
-              oddsSupplementState.value = fallback;
-              return fallback;
-            });
-      }
+      const oddsSupplementState = {
+        settled: false,
+        value: null,
+        error: null
+      };
+      const oddsSupplementPromise =
+        (
+          isReview
+            ? fetchReviewOddsSupplement(
+                params
+              )
+            : fetchOddsSupplement(
+                params
+              )
+        )
+          .then(value => {
+            oddsSupplementState.settled = true;
+            oddsSupplementState.value = value;
+            return value;
+          })
+          .catch(error => {
+            oddsSupplementState.settled = true;
+            oddsSupplementState.error = error;
+            const fallback = {
+              oddsData: null,
+              oddsError: error,
+              missingData: null
+            };
+            oddsSupplementState.value = fallback;
+            return fallback;
+          });
       const predictionRuntime =
         window.ChappyPredictionRuntime
           ?.ensureReady?.();
@@ -2996,9 +3204,13 @@
       console.log(
         "✅ API成功 entries=",
         data?.entries?.length || 0,
-        data
+        {
+          source: data?.source || "",
+          historyReady: Boolean(data?.historyContext)
+        }
       );
 
+      console.log("[prediction-stage] create:start");
       const prediction =
         createPredictionSafe(
           data
@@ -3006,6 +3218,7 @@
         createEmergencyPrediction(
           data
         );
+      console.log("[prediction-stage] create:finished");
 
       function createEmergencyPrediction(
         raceData
@@ -3046,8 +3259,10 @@
         };
       }
 
+      console.log("[prediction-stage] legacy-analysis:start");
       createTheorySafe(data);
       createAISafe(data);
+      console.log("[prediction-stage] legacy-analysis:finished");
 
       if (
         !prediction ||
@@ -3071,6 +3286,12 @@
         .officialResultUsedForPrediction =
         false;
 
+      console.log("[prediction-stage] practical-selection:start");
+      ensurePracticalSelection(
+        prediction
+      );
+      console.log("[prediction-stage] practical-selection:finished");
+
       let oddsAppliedBeforeRender = false;
       const settledOddsSupplement =
         oddsSupplementState?.settled
@@ -3082,6 +3303,7 @@
           settledOddsSupplement.oddsData
         )
       ) {
+        console.log("[prediction-stage] settled-odds:start");
         try {
           lastRaceData = {
             ...lastRaceData,
@@ -3103,6 +3325,7 @@
             oddsError?.message || oddsError
           );
         }
+        console.log("[prediction-stage] settled-odds:finished");
       }
 
       lastPrediction = prediction;
@@ -3118,9 +3341,11 @@
         typeof window.renderAll ===
         "function"
       ) {
+        console.log("[prediction-stage] render:start");
         window.renderAll(
           prediction
         );
+        console.log("[prediction-stage] render:finished");
         const resultArea =
           document.getElementById(
             "resultArea"
@@ -3142,6 +3367,7 @@
             }
           )
         );
+        console.log("[prediction-stage] rendered-event:finished");
       } else {
         throw new Error(
           "renderAll() が見つかりません。render.jsを確認してください。"
@@ -3149,15 +3375,47 @@
       }
 
       if (isReview) {
+        if (oddsAppliedBeforeRender) {
+          updatePredictionOddsStatus(
+            "最終オッズ反映済み",
+            "ready"
+          );
+        } else {
+          void oddsSupplementPromise
+            .then(oddsSupplement =>
+              applyReviewOddsSupplement({
+                oddsSupplement,
+                prediction,
+                params,
+                isCurrentRequest
+              })
+            )
+            .catch(oddsError => {
+              if (
+                !isCurrentRequest() ||
+                lastPrediction !== prediction
+              ) {
+                return;
+              }
+              console.warn(
+                "最終オッズ情報の付加に失敗",
+                oddsError?.message ||
+                  oddsError
+              );
+            });
+        }
+
         updateStatus(
           "予想完了・公式結果を取得中..."
         );
 
         try {
+          console.log("[prediction-stage] official-result:start");
           const officialResult =
             await fetchOfficialResult(
               params
             );
+          console.log("[prediction-stage] official-result:finished");
 
           if (!isCurrentRequest()) {
             return false;
@@ -3168,15 +3426,23 @@
             params
           );
 
-          updateStatus(
+          const reviewStatus =
             officialResult
               .resultAvailable
               ? "振り返り予想と公式結果を表示しました"
-              : "振り返り予想を表示しました。公式結果は未確定です"
+              : isVoidOfficialResult(
+                  officialResult
+                )
+                ? "振り返り予想と不成立結果を表示しました"
+                : "振り返り予想を表示しました。公式結果は未確定です";
+
+          updateStatus(
+            reviewStatus
           );
         } catch (
           resultError
         ) {
+          console.log("[prediction-stage] official-result:terminal-error");
           if (!isCurrentRequest()) {
             return false;
           }
@@ -3356,7 +3622,36 @@
     }
   }
 
-    async function fetchOfficialResult(
+  function fetchOfficialResultPayload(url) {
+    let timer = 0;
+    const timeout = new Promise((_, reject) => {
+      timer = window.setTimeout(() => {
+        const createTimeoutError =
+          window.ChappyResultRequestTimeout?.createTimeoutError;
+        reject(
+          typeof createTimeoutError === "function"
+            ? createTimeoutError(OFFICIAL_RESULT_TIMEOUT_MS)
+            : new Error("公式結果APIの応答が12秒を超えました")
+        );
+      }, OFFICIAL_RESULT_TIMEOUT_MS);
+    });
+
+    const directFetch =
+      typeof window.ChappyDirectFetch === "function"
+        ? window.ChappyDirectFetch
+        : window.fetch.bind(window);
+    const request = (async () => {
+      const response = await directFetch(url);
+      const result = await response.json();
+      return { response, result };
+    })();
+
+    return Promise.race([request, timeout]).finally(() => {
+      if (timer) window.clearTimeout(timer);
+    });
+  }
+
+  async function fetchOfficialResult(
     params
   ) {
     const url =
@@ -3371,11 +3666,10 @@
         params.rno
       )}`;
 
-    const response =
-      await fetch(url);
-
-    const result =
-      await response.json();
+    const payload =
+      await fetchOfficialResultPayload(url);
+    const response = payload.response;
+    let result = payload.result;
 
     if (
       !response.ok ||
@@ -3386,6 +3680,19 @@
         `公式結果APIエラー：` +
         `${response.status}`
       );
+    }
+
+    const compatibility =
+      window.ChappyResultVoidCompat;
+    if (
+      compatibility &&
+      typeof compatibility.normalize ===
+        "function"
+    ) {
+      result =
+        compatibility.normalize(
+          result
+        );
     }
 
     if (result.resultAvailable) {
@@ -3532,6 +3839,25 @@
 
     return result;
   }
+  function isVoidOfficialResult(
+    result
+  ) {
+    const compatibility =
+      window.ChappyResultVoidCompat;
+    if (
+      compatibility &&
+      typeof compatibility.isVoidResult ===
+        "function"
+    ) {
+      return compatibility
+        .isVoidResult(result);
+    }
+    return (
+      result?.resultAvailable ===
+        false &&
+      result?.status === "void"
+    );
+  }
   function ensureReviewResultArea() {
     let area =
       document.getElementById(
@@ -3615,6 +3941,11 @@
       )
         ? result.starts
         : [];
+
+    const isVoid =
+      isVoidOfficialResult(
+        result
+      );
 
     const resultBody =
       result?.resultAvailable
@@ -3711,6 +4042,22 @@
               </article>
 
             </div>
+
+          </div>
+        `
+        : isVoid
+          ? `
+          <div class="race-select-card">
+
+            <p>
+              <strong>
+                不成立（全艇F/L）
+              </strong>
+            </p>
+
+            <p>
+              3連単は成立していません。返還対象として扱います。
+            </p>
 
           </div>
         `
@@ -3961,6 +4308,79 @@
     return null;
   }
 
+  function ensurePracticalSelection(
+    prediction
+  ) {
+    if (
+      !prediction ||
+      typeof prediction !== "object"
+    ) {
+      return null;
+    }
+
+    if (
+      prediction.practicalSelection &&
+      typeof prediction
+        .practicalSelection ===
+        "object"
+    ) {
+      return prediction
+        .practicalSelection;
+    }
+
+    const practicalSelector =
+      typeof window !== "undefined"
+        ? window
+            .ChappyPracticalSelection
+        : null;
+
+    if (
+      typeof practicalSelector
+        ?.select !== "function"
+    ) {
+      return null;
+    }
+
+    try {
+      const practicalSelection =
+        practicalSelector.select(
+          prediction
+        );
+
+      if (
+        !practicalSelection ||
+        typeof practicalSelection !==
+          "object"
+      ) {
+        return null;
+      }
+
+      prediction.practicalSelection =
+        practicalSelection;
+
+      if (
+        !prediction
+          .verificationEvidence &&
+        practicalSelection
+          .verificationEvidence
+      ) {
+        prediction
+          .verificationEvidence =
+          practicalSelection
+            .verificationEvidence;
+      }
+
+      return practicalSelection;
+    } catch (selectionError) {
+      console.warn(
+        "実戦厳選の確定に失敗",
+        selectionError?.message ||
+          selectionError
+      );
+      return null;
+    }
+  }
+
       function savePredictionSnapshot(
     params,
     prediction
@@ -4181,44 +4601,9 @@
           ? summarySource
           : "";
       const practicalSelection =
-        prediction
-          ?.practicalSelection &&
-        typeof prediction
-          .practicalSelection ===
-          "object"
-          ? prediction
-              .practicalSelection
-          : typeof window
-              .ChappyPracticalSelection
-              ?.select ===
-              "function"
-            ? window
-                .ChappyPracticalSelection
-                .select(prediction)
-            : null;
-
-      if (
-        practicalSelection &&
-        prediction &&
-        typeof prediction ===
-          "object"
-      ) {
-        prediction
-          .practicalSelection =
-          practicalSelection;
-
-        if (
-          !prediction
-            .verificationEvidence &&
-          practicalSelection
-            .verificationEvidence
-        ) {
+        ensurePracticalSelection(
           prediction
-            .verificationEvidence =
-            practicalSelection
-              .verificationEvidence;
-        }
-      }
+        );
       const compactMark =
         mark => ({
           boatNo:
@@ -4253,10 +4638,62 @@
             String(
               item?.category || ""
             ),
+          displayCategory:
+            String(
+              item?.displayCategory ||
+              item?.category ||
+              ""
+            ),
           comment:
             String(
               item?.comment || ""
             ),
+          scenarioId:
+            String(
+              item?.scenarioId || ""
+            ),
+          scenarioTitle:
+            String(
+              item?.scenarioTitle || ""
+            ),
+          scenarioSummary:
+            String(
+              item?.scenarioSummary ||
+              ""
+            ),
+          flowAnchor:
+            String(
+              item?.flowAnchor || ""
+            ),
+          flowCommonReason:
+            String(
+              item?.flowCommonReason ||
+              ""
+            ),
+          flowSecondScore:
+            Number.isFinite(
+              Number(
+                item?.flowSecondScore
+              )
+            )
+              ? Number(
+                  item.flowSecondScore
+                )
+              : null,
+          flowThirdScore:
+            Number.isFinite(
+              Number(
+                item?.flowThirdScore
+              )
+            )
+              ? Number(
+                  item.flowThirdScore
+                )
+              : null,
+          flowRoleEvidence: [
+            ...(item
+              ?.flowRoleEvidence || [])
+          ],
           selectionTier:
             String(
               item?.selectionTier || ""
@@ -4550,6 +4987,62 @@
     };
   }
 
+  async function fetchReviewOddsSupplement(
+    params
+  ) {
+    try {
+      const oddsData =
+        await fetchOddsData(
+          params
+        );
+      const normalizedOddsData =
+        normalizeReviewOddsData(
+          oddsData
+        );
+
+      return {
+        oddsData:
+          normalizedOddsData,
+        oddsError: null,
+        missingData: null
+      };
+    } catch (oddsError) {
+      console.warn(
+        "最終オッズの取得に失敗",
+        oddsError?.message ||
+          oddsError
+      );
+
+      return {
+        oddsData: null,
+        oddsError,
+        missingData: null
+      };
+    }
+  }
+
+  function normalizeReviewOddsData(
+    oddsData,
+    retrievedAt =
+      new Date().toISOString()
+  ) {
+    if (
+      !oddsData ||
+      typeof oddsData !== "object"
+    ) {
+      return oddsData;
+    }
+
+    return {
+      ...oddsData,
+      savedAt: String(
+        oddsData.savedAt ||
+        retrievedAt
+      ),
+      isFinalRetrievedOdds: true
+    };
+  }
+
   async function fetchMissingNumbers(
     params
   ) {
@@ -4715,12 +5208,35 @@
       return prediction;
     }
 
+    ensurePracticalSelection(
+      prediction
+    );
+
     const byTicket =
       oddsData.byTicket &&
       typeof oddsData.byTicket ===
         "object"
         ? oddsData.byTicket
         : {};
+    // Keep the complete official trifecta table for display-only consumers.
+    // Selected ticket sheets do not contain most missing-number TOP30 rows.
+    prediction.oddsByTicket = {
+      ...byTicket
+    };
+    const isFinalRetrievedOdds =
+      oddsData
+        .isFinalRetrievedOdds ===
+      true;
+    const oddsSource =
+      String(
+        oddsData.source ||
+        ""
+      );
+    const oddsSavedAt =
+      String(
+        oddsData.savedAt ||
+        ""
+      );
     const oddsHistoryKey =
       `chappy_odds_history_` +
       `${params.date}_` +
@@ -4869,7 +5385,11 @@
                     "オッズ未取得",
                   hasOdds: false,
                   isManshu: false,
-                  oddsValue: "未取得"
+                  oddsValue: "未取得",
+                  oddsSource: "",
+                  oddsSavedAt: "",
+                  isFinalRetrievedOdds:
+                    false
                 };
               }
 
@@ -4915,11 +5435,19 @@
                 ...item,
                 odds: numericOdds,
                 oddsText:
-                  `${numericOdds}倍`,
+                  `${numericOdds}倍` +
+                  (
+                    isFinalRetrievedOdds
+                      ? "（最終取得）"
+                      : ""
+                  ),
                 hasOdds: true,
                 isManshu:
                   numericOdds >= 100,
-                oddsValue
+                oddsValue,
+                oddsSource,
+                oddsSavedAt,
+                isFinalRetrievedOdds
               };
             })
           : [];
@@ -5043,6 +5571,17 @@
     }
 
     if (
+      Array.isArray(
+        prediction.practicalTickets
+      )
+    ) {
+      prediction.practicalTickets =
+        attachOdds(
+          prediction.practicalTickets
+        );
+    }
+
+    if (
       prediction.practicalSelection &&
       typeof prediction
         .practicalSelection ===
@@ -5057,6 +5596,16 @@
               .practicalSelection
               .tickets
           )
+      };
+    }
+
+    if (isFinalRetrievedOdds) {
+      prediction.finalOddsDisplay = {
+        available: true,
+        label: "最終取得オッズ",
+        source: oddsSource,
+        savedAt: oddsSavedAt,
+        isFinalRetrievedOdds: true
       };
     }
 
@@ -5228,6 +5777,100 @@
     );
     updatePredictionOddsStatus(
       "オッズ反映済み",
+      "ready"
+    );
+    return true;
+  }
+
+  function applyReviewOddsSupplement({
+    oddsSupplement,
+    prediction,
+    params,
+    isCurrentRequest
+  }) {
+    if (
+      !isCurrentRequest() ||
+      lastPrediction !== prediction
+    ) {
+      return false;
+    }
+
+    const oddsData =
+      oddsSupplement?.oddsData;
+
+    if (!hasUsableOddsData(oddsData)) {
+      const finalOddsDisplay =
+        window.ChappyFinalOddsDisplay;
+      const fallbackPrediction =
+        finalOddsDisplay &&
+        typeof finalOddsDisplay
+          .prepare === "function"
+          ? finalOddsDisplay
+              .prepare(prediction)
+          : prediction;
+      const hasStoredSnapshot =
+        fallbackPrediction !==
+          prediction &&
+        fallbackPrediction
+          ?.finalOddsDisplay
+          ?.available === true;
+      updatePredictionOddsStatus(
+        hasStoredSnapshot
+          ? "端末保存の最終オッズを表示"
+          : oddsSupplement?.oddsError
+            ? "最終オッズ取得失敗"
+            : "最終オッズ未取得",
+        hasStoredSnapshot
+          ? "ready"
+          : oddsSupplement?.oddsError
+            ? "error"
+            : "pending"
+      );
+      return false;
+    }
+
+    try {
+      lastRaceData = {
+        ...lastRaceData,
+        odds: oddsData
+      };
+      enrichPredictionWithOdds(
+        prediction,
+        oddsData,
+        null,
+        params
+      );
+    } catch (oddsError) {
+      console.warn(
+        "最終オッズ情報の付加に失敗",
+        oddsError?.message ||
+          oddsError
+      );
+      updatePredictionOddsStatus(
+        "最終オッズ反映失敗",
+        "error"
+      );
+      return false;
+    }
+
+    if (
+      !isCurrentRequest() ||
+      lastPrediction !== prediction
+    ) {
+      return false;
+    }
+
+      if (
+        typeof window.renderAll ===
+          "function"
+      ) {
+        window.renderAll(
+          prediction
+        );
+    }
+
+    updatePredictionOddsStatus(
+      "最終オッズ反映済み",
       "ready"
     );
     return true;
@@ -5460,8 +6103,18 @@
 
   let lastNotePrediction = null;
   let lastNoteArticle = null;
+  let lastSavedNoteBundle = null;
+  let noteRequestVersion = 0;
 
   function setupNoteAssistant() {
+    const savedBtn = document.getElementById("noteLoadSavedBtn");
+    if (savedBtn && savedBtn.dataset.chappyNoteControlBound !== "true") {
+      savedBtn.dataset.chappyNoteControlBound = "true";
+      savedBtn.addEventListener("click", loadSavedNoteArticle);
+      const section = document.getElementById("noteAssistantSection");
+      if (section) section.hidden = false;
+      setNoteStatus("この日の保存原稿を確認できます");
+    }
     const generateBtn =
       document.getElementById(
         "noteGenerateBtn"
@@ -5505,7 +6158,7 @@
         "click",
         () => copyNoteText(
           lastNoteArticle?.title || "",
-          "タイトルをコピーしました"
+          noteCopyMessage("タイトルをコピーしました")
         )
       );
     }
@@ -5523,7 +6176,7 @@
         "click",
         () => copyNoteText(
           lastNoteArticle?.fullText || "",
-          "記事全文をコピーしました"
+          noteCopyMessage("記事全文をコピーしました")
         )
       );
     }
@@ -5532,6 +6185,10 @@
   function updateNoteAssistant(
     prediction
   ) {
+    noteRequestVersion += 1;
+    lastSavedNoteBundle = null;
+    const savedBtn = document.getElementById("noteLoadSavedBtn");
+    if (savedBtn) savedBtn.disabled = false;
     const section =
       document.getElementById(
         "noteAssistantSection"
@@ -5567,12 +6224,17 @@
     if (
       !prediction ||
       typeof prediction !== "object" ||
-      prediction.isRetrospective ||
       prediction.ok === false
     ) {
-      section.hidden = true;
+      section.hidden = false;
       lastNotePrediction = null;
       lastNoteArticle = null;
+      if (titlePreview) titlePreview.value = "";
+      if (articlePreview) articlePreview.value = "";
+      if (copyTitleBtn) copyTitleBtn.disabled = true;
+      if (copyFullBtn) copyFullBtn.disabled = true;
+      if (generateBtn) generateBtn.disabled = true;
+      setNoteStatus("この日の保存原稿を確認できます");
       return;
     }
 
@@ -5597,6 +6259,7 @@
     }
 
     const generatorReady =
+      !prediction.isRetrospective &&
       window.ChappyNoteGenerator &&
       typeof window
         .ChappyNoteGenerator
@@ -5609,14 +6272,29 @@
     }
 
     setNoteStatus(
-      generatorReady
+      prediction.isRetrospective
+        ? "この日の保存原稿を確認できます"
+        : generatorReady
         ? "記事生成できます"
         : "生成機能を読み込めません"
     );
   }
 
   function generateNoteArticle() {
-    if (!lastNotePrediction) {
+    noteRequestVersion += 1;
+    lastSavedNoteBundle = null;
+    lastNoteArticle = null;
+    ["noteTitlePreview", "noteArticlePreview"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.value = "";
+    });
+    ["noteCopyTitleBtn", "noteCopyFullBtn"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.disabled = true;
+    });
+    const savedBtn = document.getElementById("noteLoadSavedBtn");
+    if (savedBtn) savedBtn.disabled = false;
+    if (!lastNotePrediction || lastNotePrediction.isRetrospective) {
       setNoteStatus(
         "先にAI予想を表示してください"
       );
@@ -5727,6 +6405,52 @@
         error?.message ||
         "記事生成エラー"
       );
+    }
+  }
+
+  function noteCopyMessage(message) {
+    return lastSavedNoteBundle
+      ? `${message}。${window.ChappySavedNoteDraft.reviewStatus(lastSavedNoteBundle).message}`
+      : message;
+  }
+
+  async function loadSavedNoteArticle() {
+    const requestVersion = ++noteRequestVersion;
+    const date = String(document.getElementById("dateInput")?.value || "").replaceAll("-", "");
+    const savedBtn = document.getElementById("noteLoadSavedBtn");
+    lastNoteArticle = null;
+    lastSavedNoteBundle = null;
+    ["noteTitlePreview", "noteArticlePreview"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.value = "";
+    });
+    ["noteCopyTitleBtn", "noteCopyFullBtn"].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.disabled = true;
+    });
+    if (savedBtn) savedBtn.disabled = true;
+    setNoteStatus("この日の最新の保存原稿を読み込んでいます");
+    const currentRequest = () => requestVersion === noteRequestVersion && date ===
+      String(document.getElementById("dateInput")?.value || "").replaceAll("-", "");
+    try {
+      if (!window.ChappySavedNoteDraft) await window.ChappyAppRuntime.ensure("savedNote");
+      const saved = await window.ChappySavedNoteDraft.loadLatest({ date });
+      if (!currentRequest()) return;
+      lastNoteArticle = saved.article;
+      lastSavedNoteBundle = saved.bundle;
+      const title = document.getElementById("noteTitlePreview");
+      const body = document.getElementById("noteArticlePreview");
+      if (title) title.value = saved.article.title;
+      if (body) body.value = saved.article.fullText;
+      ["noteCopyTitleBtn", "noteCopyFullBtn"].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.disabled = false;
+      });
+      setNoteStatus(`保存原稿：${saved.record.place} ${saved.record.raceNo}R。${saved.review.message}`);
+    } catch (error) {
+      if (currentRequest()) setNoteStatus(error?.message || "保存原稿を読み込めませんでした");
+    } finally {
+      if (requestVersion === noteRequestVersion && savedBtn) savedBtn.disabled = false;
     }
   }
 

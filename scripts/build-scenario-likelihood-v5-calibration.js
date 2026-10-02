@@ -4,6 +4,15 @@ const fs = require("node:fs");
 const path = require("node:path");
 const calibration = require("../js/scenario-likelihood-v5-calibration");
 const approvalGate = require("../js/scenario-likelihood-v5-approval-gate");
+const scenarioVerification = require(
+  "../js/scenario-likelihood-v5-verification"
+);
+const scenarioAbVerification = require(
+  "../js/scenario-likelihood-v5-ab-verification"
+);
+const abDecision = require(
+  "../config/scenario-likelihood-v5-decision.json"
+);
 
 const root = path.resolve(__dirname, "..");
 const predictionDir = path.join(root, "data", "predictions");
@@ -26,7 +35,12 @@ function scenarioName(value) {
 }
 
 function directVerificationRow(record) {
-  const verification = record?.result?.scenarioLikelihoodV5Verification;
+  const verification = record?.scenarioLikelihoodV5 && record?.result
+    ? scenarioVerification.verify(
+        record.scenarioLikelihoodV5,
+        record.result
+      )
+    : null;
   if (!verification || verification.comparable !== true) return null;
   const leader = verification.predictedLeader || null;
   const runnerUp = verification.predictedRunnerUp || null;
@@ -49,7 +63,12 @@ function directVerificationRow(record) {
 }
 
 function abVerificationRow(record) {
-  const verification = record?.result?.scenarioLikelihoodV5AbVerification;
+  const verification = record?.scenarioLikelihoodV5Ab && record?.result
+    ? scenarioAbVerification.verify(
+        record.scenarioLikelihoodV5Ab,
+        record.result
+      )
+    : null;
   const snapshot = record?.scenarioLikelihoodV5Ab?.a;
   if (!verification || verification.comparable !== true || !verification.a) {
     return null;
@@ -82,7 +101,7 @@ function rowsFromRecord(record) {
 
 function collectRows() {
   if (!fs.existsSync(predictionDir)) return [];
-  const rows = [];
+  const rowsByRaceKey = new Map();
   fs.readdirSync(predictionDir)
     .filter(name => /^\d{8}\.json$/.test(name))
     .sort()
@@ -94,10 +113,12 @@ function collectRows() {
       ];
       records.forEach(record => {
         const row = rowsFromRecord(record);
-        if (row) rows.push(row);
+        if (row?.raceKey) {
+          rowsByRaceKey.set(row.raceKey, row);
+        }
       });
     });
-  return rows;
+  return [...rowsByRaceKey.values()];
 }
 
 function main() {
@@ -117,13 +138,15 @@ function main() {
     generatedAt: new Date().toISOString(),
     source: "data/predictions/*.json",
     ...proposalReport,
-    approvalGate: approvalReport
+    approvalGate: approvalReport,
+    abDecision
   };
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(report, null, 2) + "\n", "utf8");
   console.log(
     `展開AI v5校正集計：比較可能${report.comparableCount}R／` +
-    `承認候補${approvalReport.approvedCandidateCount}件`
+    `承認候補${approvalReport.approvedCandidateCount}件／` +
+    `A/B判断${abDecision.status}`
   );
 }
 

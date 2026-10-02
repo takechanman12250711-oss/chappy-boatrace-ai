@@ -70,6 +70,8 @@ assert.match(panelSource, /schedule\?date=.*&jcd=/s, "表示対象場ごとに12
 assert.match(panelSource, /\/result\?date=/, "終了レースは公式結果APIで照合する");
 assert.ok(panelSource.includes("findActualPurchasesByRaceKey"), "正式な実購入保存APIを使う");
 assert.ok(panelSource.includes("flowSignature"), "同じDOMを繰り返し書き換えない");
+assert.ok(panelSource.includes('return isFinished(race) ? `終了 ${time}` : time'), "終了レースは終了状態と時刻を表示する");
+assert.ok(panelSource.includes('${race.raceNo}R ${escapeHtml(deadlineLabel)}'), "終了状態を読み上げ名にも含める");
 assert.ok(panelSource.includes("MAX_DETAIL_REQUESTS = 3"), "場別詳細取得を3並列に制限する");
 assert.ok(panelSource.includes('event.target.closest("[data-open-venue]")'), "押した開催場だけ12R詳細を取得する");
 assert.ok(panelSource.includes("expandVenue"), "開催場の矢印は予想開始と分離して12Rを展開する");
@@ -106,11 +108,11 @@ assert.ok(panelSource.includes("const summaryRace = racesOf(summary).find"), "�
 assert.ok(panelSource.includes("numberOf(summary?.currentRaceNo) === raceNo"), "概要APIの現在Rだけでも裏の開催詳細通信を起こさない");
 assert.ok(!homeSource.includes('racesOf(venue).some(row => row.selectable !== false) &&'), "終了した開催場を一覧から消さない");
 assert.ok(
-  indexSource.includes("js/today-results-home.js?v=20260803-ui-fix2"),
+  indexSource.includes("js/today-results-home.js?v=20260828-ui-audit-display1"),
   "結果照合ローダーのキャッシュ世代を更新する"
 );
 assert.ok(
-  todayLoaderSource.includes("js/race-flow-result-panel.js?v=20260803-ui-fix2"),
+  todayLoaderSource.includes("js/race-flow-result-panel.js?v=20260828-ui-audit-display1"),
   "結果照合本体のキャッシュ世代を更新する"
 );
 

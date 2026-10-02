@@ -1,0 +1,272 @@
+/* Prediction screen photo-match presentation only. No prediction logic changes. */
+.chappy-final-mobile-ui .chappy-reference-prediction,
+.chappy-final-mobile-ui #predictionSection {
+  background:transparent!important;
+  color:#f7fbff!important;
+}
+
+.chappy-final-mobile-ui #predictionSection>.dashboard-section-head {
+  margin:0 0 10px!important;
+  padding:2px 3px 8px!important;
+  border:0!important;
+  background:transparent!important;
+}
+.chappy-final-mobile-ui #predictionSection>.dashboard-section-head h2 {
+  color:#fff!important;
+  font-size:20px!important;
+  letter-spacing:-.02em!important;
+}
+.chappy-final-mobile-ui #predictionOddsStatus {
+  border:1px solid rgba(80,197,255,.16)!important;
+  background:#102330!important;
+  color:#8fcfff!important;
+}
+
+.chappy-final-mobile-ui #resultArea {
+  display:grid!important;
+  gap:11px!important;
+  color:#f7fbff!important;
+}
+
+/* Race information */
+.chappy-final-mobile-ui #resultArea .v3-race-header,
+.chappy-final-mobile-ui #resultArea .v3-race-info,
+.chappy-final-mobile-ui #resultArea .v3-race-summary,
+.chappy-final-mobile-ui #resultArea .v3-weather-card,
+.chappy-final-mobile-ui #resultArea .v3-course-card {
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:16px!important;
+  background:linear-gradient(180deg,#10212d,#0a1822)!important;
+  color:#f7fbff!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.16)!important;
+}
+
+/* Section shells */
+.chappy-final-mobile-ui #resultArea .v3-section,
+.chappy-final-mobile-ui #resultArea .v3-paper-section,
+.chappy-final-mobile-ui #resultArea .v3-boat-evaluation,
+.chappy-final-mobile-ui #resultArea .v3-main-newspaper {
+  margin:0!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:17px!important;
+  background:linear-gradient(180deg,#0f202b,#0a1721)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.17)!important;
+  overflow:hidden!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-section-head,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-head {
+  min-height:48px!important;
+  padding:11px 13px!important;
+  border-bottom:1px solid rgba(255,255,255,.07)!important;
+  background:#10222e!important;
+  color:#fff!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-section-head h2,
+.chappy-final-mobile-ui #resultArea .v3-section-head h3,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-head h2,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-head h3 {
+  margin:0!important;
+  color:#fff!important;
+  font-size:16px!important;
+  letter-spacing:-.01em!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-section-body,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-body {
+  padding:11px!important;
+  background:transparent!important;
+  color:#f7fbff!important;
+}
+
+/* Entry list — one boat per readable row */
+.chappy-final-mobile-ui #resultArea .v3-entry-card-list {
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:7px!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-entry-card {
+  display:grid!important;
+  grid-template-columns:44px minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:10px!important;
+  min-width:0!important;
+  padding:11px 10px!important;
+  border:1px solid rgba(255,255,255,.075)!important;
+  border-radius:13px!important;
+  background:#0a1822!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-entry-card-player,
+.chappy-final-mobile-ui #resultArea .v3-entry-card-player>h3,
+.chappy-final-mobile-ui #resultArea .v3-entry-card-stats {
+  color:#f4f8fb!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-entry-card-player>h3 {
+  font-size:15px!important;
+  line-height:1.2!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-entry-card-meta,
+.chappy-final-mobile-ui #resultArea .v3-entry-card-start {
+  color:#8298a8!important;
+  font-size:10px!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-entry-card-stats {
+  min-width:74px!important;
+  color:#a9bac7!important;
+  font-size:10px!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-entry-card-stats strong {
+  color:#fff!important;
+  font-size:15px!important;
+}
+
+/* Six-boat evaluation tabs */
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-buttons {
+  position:sticky!important;
+  top:64px!important;
+  z-index:4!important;
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  gap:5px!important;
+  padding:7px!important;
+  border:1px solid rgba(255,255,255,.07)!important;
+  border-radius:13px!important;
+  background:rgba(8,22,31,.94)!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-button {
+  min-width:0!important;
+  min-height:39px!important;
+  padding:0!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:10px!important;
+  background:#122531!important;
+  color:#dbe7ef!important;
+  font-size:13px!important;
+  font-weight:950!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-button.is-active,
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-button[aria-selected="true"] {
+  border-color:#4ba6ff!important;
+  background:linear-gradient(180deg,#238af0,#196dc5)!important;
+  color:#fff!important;
+  box-shadow:0 6px 15px rgba(32,131,230,.24)!important;
+}
+
+/* Boat evaluation detail */
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-panel,
+.chappy-final-mobile-ui #resultArea .v3-boat-eval-card,
+.chappy-final-mobile-ui #resultArea .v3-ai-meter,
+.chappy-final-mobile-ui #resultArea .v3-paper-card {
+  border:1px solid rgba(255,255,255,.07)!important;
+  border-radius:13px!important;
+  background:#0a1822!important;
+  color:#f4f8fb!important;
+  box-shadow:none!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-ai-meter,
+.chappy-final-mobile-ui #resultArea .v3-boat-eval-card {
+  padding:11px!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-note,
+.chappy-final-mobile-ui #resultArea .v3-comment,
+.chappy-final-mobile-ui #resultArea .v3-reason,
+.chappy-final-mobile-ui #resultArea p {
+  color:#8fa4b3;
+}
+
+/* Ticket accordions: reference-photo hierarchy */
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion {
+  margin:7px 0!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:13px!important;
+  background:#091720!important;
+  overflow:hidden!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion>summary {
+  position:relative!important;
+  min-height:49px!important;
+  padding:0 13px 0 18px!important;
+  background:#10212d!important;
+  color:#fff!important;
+  font-size:14px!important;
+  font-weight:950!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion>summary::before {
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:4px;
+  background:#2f8cff;
+}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion:nth-of-type(2)>summary::before {background:#4cc18b;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion:nth-of-type(3)>summary::before {background:#9c72ff;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion:nth-of-type(4)>summary::before {background:#ffad43;}
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-panel {padding:0 13px 8px!important;}
+
+.chappy-final-mobile-ui #resultArea .v3-formation-row {
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:5px 9px!important;
+  padding:12px 0!important;
+  border-bottom:1px solid rgba(255,255,255,.065)!important;
+}
+.chappy-final-mobile-ui #resultArea .chappy-photo-ticket,
+.chappy-final-mobile-ui #resultArea .v3-formation-ticket {
+  color:#fff!important;
+  font-size:21px!important;
+  font-weight:950!important;
+  letter-spacing:.03em!important;
+  font-variant-numeric:tabular-nums!important;
+}
+.chappy-final-mobile-ui #resultArea .v3-formation-tags {align-self:center!important;}
+.chappy-final-mobile-ui #resultArea .v3-formation-reason,
+.chappy-final-mobile-ui #resultArea .ticket-reason,
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-aim p {
+  color:#849ba9!important;
+  font-size:11px!important;
+  line-height:1.55!important;
+}
+
+/* Final buy summary */
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-summary {
+  margin:0!important;
+  border:1px solid rgba(87,180,255,.16)!important;
+  border-radius:17px!important;
+  background:linear-gradient(180deg,#10212d,#091720)!important;
+  box-shadow:0 14px 36px rgba(0,0,0,.2)!important;
+}
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-head {
+  min-height:58px!important;
+  padding:11px 13px!important;
+  background:linear-gradient(135deg,#12304a,#10212d)!important;
+}
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-head h3 {font-size:18px!important;}
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-formation {font-size:22px!important;}
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-count {
+  min-width:54px!important;
+  background:#172d3b!important;
+  color:#e4f4ff!important;
+}
+
+/* Remove visual newspaper residue without deleting information */
+.chappy-final-mobile-ui #resultArea .v3-newspaper-grid,
+.chappy-final-mobile-ui #resultArea .v3-newspaper-column,
+.chappy-final-mobile-ui #resultArea .v3-paper-grid {
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:8px!important;
+  background:transparent!important;
+}
+
+@media (max-width:520px) {
+  .chappy-final-mobile-ui #predictionSection {margin-inline:-1px!important;}
+  .chappy-final-mobile-ui #resultArea {gap:9px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-section-body,
+  .chappy-final-mobile-ui #resultArea .v3-paper-section-body {padding:9px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-entry-card {grid-template-columns:42px minmax(0,1fr) 70px!important;padding:10px 9px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-entry-card-stats {min-width:66px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-boat-tab-buttons {top:59px!important;gap:4px!important;padding:6px!important;}
+  .chappy-final-mobile-ui #resultArea .v3-boat-tab-button {min-height:37px!important;font-size:12px!important;}
+  .chappy-final-mobile-ui #resultArea .chappy-photo-ticket,
+  .chappy-final-mobile-ui #resultArea .v3-formation-ticket,
+  .chappy-final-mobile-ui #resultArea .chappy-final-buy-formation {font-size:20px!important;}
+}

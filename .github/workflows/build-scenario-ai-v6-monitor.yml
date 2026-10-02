@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: build-scenario-ai-v6-monitor
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:
@@ -22,20 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Build monitor report
+      - name: Build read-only monitor report
         run: |
           node scripts/test-scenario-ai-v6-monitor.js
+          node scripts/test-scenario-ai-v6-monitor-writer-contract.js
           node scripts/build-scenario-ai-v6-monitor.js
           node scripts/check-charter.js
-      - name: Save monitor report
-        run: |
-          git add data/stats/scenario-ai-v6-monitor.json
-          if git diff --cached --quiet; then
-            echo "監視レポートに変更はありません"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update scenario AI v6 monitor"
-          git pull --rebase origin main
-          git push origin main

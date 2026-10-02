@@ -6,6 +6,7 @@ on:
       - ".github/workflows/charter-check.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-results.yml"
+      - ".github/workflows/build-learning-analysis-pipeline.yml"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
@@ -14,6 +15,8 @@ on:
       - "js/race-history.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
+      - "js/practical-priority-shadow.js"
+      - "js/practical-priority-shadow-report.js"
       - "js/prediction.js"
       - "js/boat-identity.js"
       - "js/render.js"
@@ -34,10 +37,12 @@ on:
       - "js/motor-maintenance-insights.js"
       - "scripts/test-exhibition-performance.js"
       - "scripts/test-double-time.js"
+      - "scripts/test-double-time-formal-evidence.js"
       - "scripts/test-new-sam.js"
       - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/venue-race-history.js"
       - "scripts/collect-results.js"
       - "scripts/test-collect-results.js"
       - "scripts/test-shadow-predictions.js"
@@ -52,12 +57,22 @@ on:
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-race-parser.js"
+      - "scripts/test-original-exhibition.js"
       - "scripts/test-theory-integration.js"
+      - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "scripts/test-prediction-verification.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
+      - "scripts/build-prediction-index-shards.js"
+      - "scripts/test-build-prediction-index-shards.js"
+      - "js/prediction-index-loader.js"
+      - "scripts/test-prediction-index-loader.js"
+      - "data/predictions/index-manifest.json"
+      - "data/predictions/index-shards/**"
+      - "scripts/compact-prediction-index.js"
+      - "scripts/test-compact-prediction-index.js"
       - "js/auto-stats.js"
       - "js/collection-health.js"
       - "scripts/test-collection-health.js"
@@ -74,10 +89,18 @@ on:
       - "scripts/test-stats-runtime-loader.js"
       - "data/predictions/improvement-review.json"
       - "scripts/test-practical-selection.js"
+      - "scripts/test-practical-priority-shadow.js"
+      - "scripts/test-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow-artifact.js"
+      - "scripts/test-practical-priority-shadow-regression.js"
+      - "data/stats/practical-priority-shadow-report.json"
       - "scripts/test-prediction-transparency-ui.js"
       - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
+      - "scripts/test-light-manshu-scenario.js"
+      - "scripts/test-light-manshu-ticket-board.js"
       - "scripts/test-race-scenarios.js"
+      - "scripts/test-course-structure-theory.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
       - "scripts/test-edogawa-fourth-boat-scenario.js"
@@ -93,6 +116,7 @@ on:
       - "js/history-insights-base.js"
       - "js/theory-input.js"
       - "api/_parser.js"
+      - "api/_original-exhibition.js"
       - "api/race.js"
       - "api/_history.js"
       - "scripts/test-api-history.js"
@@ -111,6 +135,7 @@ on:
       - ".github/workflows/charter-check.yml"
       - ".github/workflows/collect-predictions.yml"
       - ".github/workflows/collect-results.yml"
+      - ".github/workflows/build-learning-analysis-pipeline.yml"
       - "config/chappy-charter.json"
       - "docs/CHAPPY_CHARTER.md"
       - "js/ai-core.js"
@@ -119,6 +144,8 @@ on:
       - "js/race-history.js"
       - "js/note-generator.js"
       - "js/practical-selection.js"
+      - "js/practical-priority-shadow.js"
+      - "js/practical-priority-shadow-report.js"
       - "js/prediction.js"
       - "js/boat-identity.js"
       - "js/render.js"
@@ -139,10 +166,12 @@ on:
       - "js/motor-maintenance-insights.js"
       - "scripts/test-exhibition-performance.js"
       - "scripts/test-double-time.js"
+      - "scripts/test-double-time-formal-evidence.js"
       - "scripts/test-new-sam.js"
       - "tools/test-motor-maintenance-theory-v2.js"
       - "scripts/check-charter.js"
       - "scripts/collect-predictions.js"
+      - "scripts/venue-race-history.js"
       - "scripts/collect-results.js"
       - "scripts/test-collect-results.js"
       - "scripts/test-shadow-predictions.js"
@@ -157,12 +186,22 @@ on:
       - "scripts/test-prediction-conditions.js"
       - "scripts/test-shadow-selection-v2.js"
       - "scripts/test-race-parser.js"
+      - "scripts/test-original-exhibition.js"
       - "scripts/test-theory-integration.js"
+      - "scripts/test-collector-theory-support-wiring.js"
       - "scripts/test-boat-identity.js"
       - "scripts/test-auto-selection.js"
       - "scripts/test-prediction-verification.js"
       - "scripts/build-prediction-index.js"
       - "scripts/test-build-prediction-index.js"
+      - "scripts/build-prediction-index-shards.js"
+      - "scripts/test-build-prediction-index-shards.js"
+      - "js/prediction-index-loader.js"
+      - "scripts/test-prediction-index-loader.js"
+      - "data/predictions/index-manifest.json"
+      - "data/predictions/index-shards/**"
+      - "scripts/compact-prediction-index.js"
+      - "scripts/test-compact-prediction-index.js"
       - "js/auto-stats.js"
       - "js/collection-health.js"
       - "scripts/test-collection-health.js"
@@ -179,10 +218,18 @@ on:
       - "scripts/test-stats-runtime-loader.js"
       - "data/predictions/improvement-review.json"
       - "scripts/test-practical-selection.js"
+      - "scripts/test-practical-priority-shadow.js"
+      - "scripts/test-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow-artifact.js"
+      - "scripts/test-practical-priority-shadow-regression.js"
+      - "data/stats/practical-priority-shadow-report.json"
       - "scripts/test-prediction-transparency-ui.js"
       - "scripts/test-stats-methodology.js"
       - "scripts/test-ai-core-formations.js"
+      - "scripts/test-light-manshu-scenario.js"
+      - "scripts/test-light-manshu-ticket-board.js"
       - "scripts/test-race-scenarios.js"
+      - "scripts/test-course-structure-theory.js"
       - "scripts/test-scenario-marks.js"
       - "scripts/test-scenario-formations.js"
       - "scripts/test-edogawa-fourth-boat-scenario.js"
@@ -198,6 +245,7 @@ on:
       - "js/history-insights-base.js"
       - "js/theory-input.js"
       - "api/_parser.js"
+      - "api/_original-exhibition.js"
       - "api/race.js"
       - "api/_history.js"
       - "scripts/test-api-history.js"
@@ -217,7 +265,7 @@ permissions:
 jobs:
   charter:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
@@ -250,12 +298,21 @@ jobs:
           node --check js/motor-maintenance-insights.js
           node --check scripts/test-exhibition-performance.js
           node --check scripts/test-double-time.js
+          node --check scripts/test-double-time-formal-evidence.js
           node --check scripts/test-new-sam.js
           node --check tools/test-motor-maintenance-theory-v2.js
           node --check js/note-generator.js
           node --check js/practical-selection.js
+          node --check js/practical-priority-shadow.js
+          node --check js/practical-priority-shadow-report.js
+          node --check scripts/build-practical-priority-shadow-report.js
+          node --check scripts/test-practical-priority-shadow.js
+          node --check scripts/test-practical-priority-shadow-report.js
+          node --check scripts/test-practical-priority-shadow-artifact.js
+          node --check scripts/test-practical-priority-shadow-regression.js
           node --check scripts/check-charter.js
           node --check scripts/collect-predictions.js
+          node --check scripts/venue-race-history.js
           node --check scripts/collect-results.js
           node --check scripts/test-collect-results.js
           node --check scripts/test-shadow-predictions.js
@@ -270,12 +327,20 @@ jobs:
           node --check scripts/test-prediction-conditions.js
           node --check scripts/test-shadow-selection-v2.js
           node --check scripts/test-race-parser.js
+          node --check scripts/test-original-exhibition.js
           node --check scripts/test-theory-integration.js
+          node --check scripts/test-collector-theory-support-wiring.js
           node --check scripts/test-boat-identity.js
           node --check scripts/test-auto-selection.js
           node --check scripts/test-prediction-verification.js
           node --check scripts/build-prediction-index.js
           node --check scripts/test-build-prediction-index.js
+          node --check scripts/build-prediction-index-shards.js
+          node --check scripts/test-build-prediction-index-shards.js
+          node --check js/prediction-index-loader.js
+          node --check scripts/test-prediction-index-loader.js
+          node --check scripts/compact-prediction-index.js
+          node --check scripts/test-compact-prediction-index.js
           node --check js/auto-stats.js
           node --check js/collection-health.js
           node --check scripts/test-collection-health.js
@@ -292,7 +357,10 @@ jobs:
           node --check scripts/test-prediction-transparency-ui.js
           node --check scripts/test-stats-methodology.js
           node --check scripts/test-ai-core-formations.js
+          node --check scripts/test-light-manshu-scenario.js
+          node --check scripts/test-light-manshu-ticket-board.js
           node --check scripts/test-race-scenarios.js
+          node --check scripts/test-course-structure-theory.js
           node --check scripts/test-scenario-marks.js
           node --check scripts/test-scenario-formations.js
           node --check scripts/test-edogawa-fourth-boat-scenario.js
@@ -308,6 +376,7 @@ jobs:
           node --check js/history-insights-base.js
           node --check js/theory-input.js
           node --check api/_parser.js
+          node --check api/_original-exhibition.js
           node --check api/race.js
           node --check api/_history.js
           node --check scripts/build-prediction-summaries.js
@@ -332,10 +401,15 @@ jobs:
           node scripts/test-prediction-conditions.js
           node scripts/test-shadow-selection-v2.js
           node scripts/test-race-parser.js
+          node scripts/test-original-exhibition.js
           node scripts/test-theory-integration.js
+          node scripts/test-collector-theory-support-wiring.js
           node scripts/test-boat-identity.js
           node scripts/test-auto-selection.js
           node scripts/test-build-prediction-index.js
+          node scripts/test-build-prediction-index-shards.js
+          node scripts/test-prediction-index-loader.js
+          node scripts/test-compact-prediction-index.js
           node scripts/test-auto-stats.js
           node scripts/test-collection-health.js
           node scripts/test-verification-readiness.js
@@ -343,14 +417,22 @@ jobs:
           node scripts/test-improvement-review.js
           node scripts/test-stats-runtime-loader.js
           node scripts/test-practical-selection.js
+          node scripts/test-practical-priority-shadow.js
+          node scripts/test-practical-priority-shadow-report.js
+          node scripts/test-practical-priority-shadow-artifact.js
+          node scripts/test-practical-priority-shadow-regression.js
           node scripts/test-prediction-transparency-ui.js
           node scripts/test-stats-methodology.js
           node scripts/test-ai-core-formations.js
+          node scripts/test-light-manshu-scenario.js
+          node scripts/test-light-manshu-ticket-board.js
           node scripts/test-exhibition-performance.js
           node scripts/test-double-time.js
+          node scripts/test-double-time-formal-evidence.js
           node scripts/test-new-sam.js
           node tools/test-motor-maintenance-theory-v2.js
           node scripts/test-race-scenarios.js
+          node scripts/test-course-structure-theory.js
           node scripts/test-scenario-marks.js
           node scripts/test-scenario-formations.js
           node scripts/test-edogawa-fourth-boat-scenario.js

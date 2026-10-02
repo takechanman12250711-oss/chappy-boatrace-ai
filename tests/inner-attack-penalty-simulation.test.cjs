@@ -1,0 +1,12 @@
+'use strict';
+const assert = require('assert');
+const sim = require('../scripts/simulate-inner-attack-penalty.cjs');
+const report = sim.simulate();
+assert.strictEqual(report.scope.dataset, 'discovery-only');
+assert.strictEqual(report.scope.holdoutUsed, false);
+assert.strictEqual(report.scope.productionChanged, false);
+assert.strictEqual(report.results.length, sim.PENALTIES.length * sim.SIGNALS.length);
+assert(report.results.every(r => Number.isFinite(r.top1) && Number.isFinite(r.netTop1)));
+assert(report.results.every(r => r.added - r.lost === r.netTop1));
+assert(report.best && sim.SIGNALS.includes(report.best.signalKey));
+console.log('inner attack penalty simulation tests passed');

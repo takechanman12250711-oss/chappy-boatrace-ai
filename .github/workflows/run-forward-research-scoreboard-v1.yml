@@ -1,0 +1,40 @@
+name: Run forward research scoreboard v1
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 15 * * *'
+  pull_request:
+    paths:
+      - 'scripts/build-forward-research-scoreboard-v1.cjs'
+      - '.github/workflows/run-forward-research-scoreboard-v1.yml'
+      - 'scripts/audit-prerace-theory-signal-forward-v1.cjs'
+      - 'scripts/analyze-role-ticket-shadow-v1.cjs'
+      - 'scripts/analyze-role-ticket-marginal-cap-v1.cjs'
+      - 'scripts/analyze-role-ticket-special-trigger-v1.cjs'
+      - 'data/predictions/202609*.json'
+permissions:
+  contents: read
+jobs:
+  scoreboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build forward research scoreboard
+        run: node scripts/build-forward-research-scoreboard-v1.cjs > forward-research-scoreboard-v1.json
+      - name: Validate research-only boundary
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('forward-research-scoreboard-v1.json','utf8'));
+          if(r.productionChanged!==false||r.automaticApplication!==false||r.usableForPrediction!==false) process.exit(1);
+          console.log(JSON.stringify({commonSettledRaceCount:r.commonSettledRaceCount,nextGate:r.nextGate,progressPercent:r.progressPercent,audits:Object.fromEntries(Object.entries(r.audits).map(([k,v])=>[k,{settledCount:v.settledCount,gates:v.gates,bestMode:v.bestMode}]))},null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forward-research-scoreboard-v1
+          path: forward-research-scoreboard-v1.json
+          retention-days: 90

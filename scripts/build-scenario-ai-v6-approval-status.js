@@ -15,14 +15,25 @@ function readJson(filePath, fallback = {}) {
 }
 
 function canonicalCandidate(review = {}) {
+  const evidence = review?.summary ?? review?.evidence ?? null;
+  const adoptionTargets = Array.isArray(review?.approvedAdjustments)
+    ? review.approvedAdjustments
+    : Array.isArray(review?.adoptionTargets)
+      ? review.adoptionTargets
+      : [];
+  const conditionChecks = Array.isArray(review?.checklist)
+    ? review.checklist
+    : Array.isArray(review?.conditionChecks)
+      ? review.conditionChecks
+      : [];
   return {
     status: String(review?.status || ""),
-    evidence: review?.evidence || null,
+    evidence,
     firstHalf: review?.firstHalf || null,
     secondHalf: review?.secondHalf || null,
     majorVenueRegression: Array.isArray(review?.majorVenueRegression) ? review.majorVenueRegression : [],
-    adoptionTargets: Array.isArray(review?.adoptionTargets) ? review.adoptionTargets : [],
-    conditionChecks: Array.isArray(review?.conditionChecks) ? review.conditionChecks : []
+    adoptionTargets,
+    conditionChecks
   };
 }
 

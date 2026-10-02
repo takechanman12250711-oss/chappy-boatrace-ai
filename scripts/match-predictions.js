@@ -15,6 +15,9 @@ const scenarioLikelihoodV5AbVerification = require(
   "../js/scenario-likelihood-v5-ab-verification"
 );
 
+const RESULT_VERIFICATION_VERSION =
+  "result-verification-v5-scenario-key-v2";
+
 function boatIdentityInspection(record) {
   return boatIdentity.inspectPrediction(
     record
@@ -200,6 +203,8 @@ function verificationInputFingerprint(
   record
 ) {
   const payload = {
+    verificationVersion:
+      RESULT_VERIFICATION_VERSION,
     selection:
       record?.selection || null,
     shadowV2Reference:
@@ -762,6 +767,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  RESULT_VERIFICATION_VERSION,
   normalizeTicket,
   classifyMiss,
   settlePrediction,

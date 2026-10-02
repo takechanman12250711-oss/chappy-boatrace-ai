@@ -40,8 +40,25 @@
   }
 
   function completenessOf(prediction) {
-    if (Number.isFinite(Number(prediction?.evidenceCompleteness))) {
-      return Number(prediction.evidenceCompleteness);
+    const dataQualityScore =
+      prediction?.dataQuality?.score;
+    if (
+      dataQualityScore !== null &&
+      dataQualityScore !== undefined &&
+      String(dataQualityScore).trim() !== "" &&
+      Number.isFinite(Number(dataQualityScore))
+    ) {
+      return Math.max(0, Math.min(100, Number(dataQualityScore)));
+    }
+    const explicitCompleteness =
+      prediction?.evidenceCompleteness;
+    if (
+      explicitCompleteness !== null &&
+      explicitCompleteness !== undefined &&
+      String(explicitCompleteness).trim() !== "" &&
+      Number.isFinite(Number(explicitCompleteness))
+    ) {
+      return Math.max(0, Math.min(100, Number(explicitCompleteness)));
     }
     const evidence = prediction?.verificationEvidence || {};
     let points = 45;
@@ -53,6 +70,8 @@
   }
 
   function buildDecision(prediction) {
+    const policy=prediction?.practicalSelection?.purchaseDecision||root.ChappyPracticalSelection?.purchaseDecision?.(prediction);
+    if(policy?.status==='skip')return {decision:'skip',riskScore:null,reasons:[policy.reason],purchasePolicy:true};
     const scenarioBuilder = root.ChappyScenarioAiV6Shadow;
     const skipBuilder = root.ChappySkipAiShadow;
     if (!scenarioBuilder?.build || !skipBuilder?.build) return null;
@@ -95,10 +114,10 @@
     panel.innerHTML = `
       <div class="skip-ai-head">
         <div class="skip-ai-title">${view.icon} 見送りAI：${esc(view.label)}</div>
-        <div class="skip-ai-risk">参考リスク ${esc(Math.round(data.riskScore))}点</div>
+        <div class="skip-ai-risk">${data.purchasePolicy ? "承認済み購入方針" : `参考リスク ${esc(Math.round(data.riskScore))}点`}</div>
       </div>
       <ul class="skip-ai-reasons">${reasons.slice(0,3).map(reason => `<li>${esc(reason)}</li>`).join("")}</ul>
-      <div class="skip-ai-note">表示専用。印・買い目・実戦厳選は変更しません。</div>
+      <div class="skip-ai-note">${data.purchasePolicy ? "購入推奨0点・0円。予想券は参考として保持します。" : "表示専用。印・買い目・実戦厳選は変更しません。"}</div>
     `;
     resultArea.prepend(panel);
   }
@@ -118,5 +137,5 @@
 
   wrap("renderAll");
   wrap("renderPrediction");
-  root.ChappySkipAiDisplay = Object.freeze({ render: renderPanel, buildDecision });
+  root.ChappySkipAiDisplay = Object.freeze({ render: renderPanel, buildDecision, completenessOf });
 })(window);

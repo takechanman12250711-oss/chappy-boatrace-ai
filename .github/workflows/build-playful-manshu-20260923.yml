@@ -1,0 +1,32 @@
+name: Build 20260923 playful manshu replay
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/build-playful-manshu-20260923.cjs
+      - tests/playful-manshu-20260923.test.cjs
+permissions:
+  contents: write
+concurrency:
+  group: playful-manshu-20260923
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/playful-manshu-20260923.test.cjs
+      - name: Commit report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/stats/playful-manshu-20260923.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update 9/23 playful manshu replay"
+          git push

@@ -14,6 +14,7 @@ const documentListeners =
 const anchorListeners =
   new Map();
 let failFirstLoad = true;
+let failOptionalOnce = true;
 const resultSection = {
   hidden: true
 };
@@ -82,6 +83,12 @@ global.document = {
       queueMicrotask(() => {
         if (failFirstLoad) {
           failFirstLoad = false;
+          script.emit("error");
+        } else if (
+          failOptionalOnce &&
+          script.src.includes("js/reference-tag-report.js")
+        ) {
+          failOptionalOnce = false;
           script.emit("error");
         } else {
           script.emit("load");
@@ -179,6 +186,7 @@ async function main() {
       "js/boat-identity.js",
       "js/collection-health.js",
       "js/prediction-verification.js",
+      "js/prediction-index-loader.js",
       "js/auto-stats.js",
       "js/verification-readiness.js",
       "js/improvement-suggestions.js",
@@ -186,6 +194,15 @@ async function main() {
       "js/result-ui-phase5.js"
     ],
     "一時失敗後も依存順どおり再読込する"
+  );
+  assert.ok(
+    loaded.indexOf(
+      "js/prediction-index-loader.js"
+    ) <
+      loaded.indexOf(
+        "js/stats.js"
+      ),
+    "分割index loaderをstatsより先に読み込む"
   );
   assert.ok(
     loaded.indexOf(
@@ -208,13 +225,26 @@ async function main() {
         "js/stats.js"
       )
   );
+
+  const expectedOptionalScripts = [
+    "js/reference-tag-report.js",
+    "js/outer-attack-ticket-shadow.js",
+    "js/outer-attack-ticket-settlement.js",
+    "js/outer-attack-ticket-decision-gate.js",
+    "js/outer-attack-ticket-central-report-loader.js",
+    "js/outer-attack-ticket-progress-panel.js"
+  ];
+  assert.deepEqual(
+    window.ChappyStatsRuntime.optionalScripts,
+    expectedOptionalScripts,
+    "公式参考分析と外攻めA/Bの中央判定・進捗表示は結果本体を止めない任意モジュールとして扱う"
+  );
   assert.ok(
-    loaded.indexOf(
-      "js/stats.js"
-    ) <
-      loaded.indexOf(
-        "js/result-ui-phase5.js"
-      )
+    expectedOptionalScripts.indexOf("js/outer-attack-ticket-decision-gate.js") <
+      expectedOptionalScripts.indexOf("js/outer-attack-ticket-central-report-loader.js") &&
+    expectedOptionalScripts.indexOf("js/outer-attack-ticket-central-report-loader.js") <
+      expectedOptionalScripts.indexOf("js/outer-attack-ticket-progress-panel.js"),
+    "端末内gate→中央レポート優先化→進捗表示の順を固定する"
   );
   assert.deepEqual(
     dispatched,
@@ -222,6 +252,28 @@ async function main() {
       "chappy:stats-runtime-ready",
       "chappy:stats-requested"
     ]
+  );
+
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(
+    appended.some(script =>
+      expectedOptionalScripts.includes(
+        script.dataset.chappyStatsModule
+      )
+    ),
+    false,
+    "先頭の任意モジュールが一時失敗した時は後続を半端に読み込まない"
+  );
+
+  await window.ChappyStatsRuntime.ensureReady();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  const optionalLoaded = appended
+    .map(script => script.dataset.chappyStatsModule)
+    .filter(name => expectedOptionalScripts.includes(name));
+  assert.deepEqual(
+    optionalLoaded,
+    expectedOptionalScripts,
+    "任意モジュールだけを次回要求時に固定順で再試行する"
   );
 
   const count =

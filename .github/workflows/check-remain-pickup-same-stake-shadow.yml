@@ -1,0 +1,28 @@
+name: Check remain pickup same-stake shadow
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/build-remain-pickup-same-stake-shadow.js"
+      - "scripts/test-remain-pickup-same-stake-shadow.js"
+      - "data/stats/remain-pickup-same-stake-shadow-report.json"
+      - "config/improvement-cycle-closures.json"
+      - ".github/workflows/check-remain-pickup-same-stake-shadow.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate saved same-stake decision
+        run: |
+          node --check scripts/build-remain-pickup-same-stake-shadow.js
+          node scripts/build-remain-pickup-same-stake-shadow.js
+          node scripts/test-remain-pickup-same-stake-shadow.js

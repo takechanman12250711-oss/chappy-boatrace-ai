@@ -1,0 +1,29 @@
+name: Check Phase5 completion gate
+on:
+  pull_request:
+    paths:
+      - "scripts/build-phase5-completion-gate.js"
+      - "scripts/test-phase5-completion-gate.js"
+      - ".github/workflows/check-phase5-completion-gate.yml"
+      - "js/theory-adoption-phase5.js"
+      - "js/theory-adoption-approval.js"
+      - "js/theory-adoption-rollout.js"
+      - "js/theory-adoption-monitor.js"
+      - "data/config/theory-adoption-approval.json"
+      - "data/config/theory-adoption-rollout.json"
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          node --check scripts/build-phase5-completion-gate.js
+          node scripts/test-phase5-completion-gate.js
+          node scripts/build-phase5-completion-gate.js
+          node scripts/check-charter.js

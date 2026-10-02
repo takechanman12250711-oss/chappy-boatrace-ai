@@ -1,0 +1,47 @@
+name: Run counter hole portable conditions v1
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/analyze-counter-hole-portable-conditions-v1.cjs'
+      - '.github/workflows/run-counter-hole-portable-conditions-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run portable condition audit
+        run: node scripts/analyze-counter-hole-portable-conditions-v1.cjs > counter-hole-portable-conditions-v1.json
+      - name: Validate research-only boundary
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const r = JSON.parse(fs.readFileSync('counter-hole-portable-conditions-v1.json', 'utf8'));
+          if (r.productionChanged !== false || r.automaticApplication !== false || r.usableForPrediction !== false) process.exit(1);
+          if (!Array.isArray(r.filters) || !Array.isArray(r.portableFilters) || !Array.isArray(r.portableCells)) process.exit(1);
+          if (!r.coverage || !r.overall || !r.byFeature) process.exit(1);
+          console.log(JSON.stringify({
+            diagnostics: r.diagnostics,
+            coverage: r.coverage,
+            overall: r.overall,
+            portableFilters: r.portableFilters,
+            strongestFilters: r.filters
+              .filter(x => x.id !== 'all_counter_hole_pair' && x.addedTicketCount >= 100)
+              .sort((a, b) => b.profitYen - a.profitYen || b.roiPercent - a.roiPercent)
+              .slice(0, 15),
+            portableCells: r.portableCells.slice(0, 20)
+          }, null, 2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: counter-hole-portable-conditions-v1
+          path: counter-hole-portable-conditions-v1.json
+          retention-days: 90

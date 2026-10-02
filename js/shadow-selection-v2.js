@@ -3,7 +3,7 @@
 
   - 締切2分前以前に観測した完全データを固定保存する
   - 8項目をそれぞれ0〜100点で記録する
-  - 校正対象として成立した総合点だけを70点の自動選定へ使う
+  - 校正対象として成立した総合点だけを60点の自動選定へ使う
   - 買い目構成・note本文・オッズ・公式結果には接続しない
 ========================================================= */
 
@@ -247,13 +247,19 @@
     function axisBoatNoOf(core, scenario, preparedRaceData) {
       const direct =
         boatNoOf(core?.raceScenarios?.attacker) ||
+        boatNoOf(scenario?.attackerBoatNo) ||
+        boatNoOf(scenario?.headBoatNo) ||
         boatNoOf(core?.marks?.honmei) ||
         boatNoOf(scenario?.outcome?.firstCandidates?.[0]) ||
         boatNoOf(core?.mainSheet?.honmei);
 
       if (direct) return direct;
 
-      const attackerCourse = Number(scenario?.attacker || 0);
+      const attackerCourse = Number(
+        scenario?.attackerCourse ??
+        scenario?.attacker ??
+        0
+      );
       if (attackerCourse < 1 || attackerCourse > 6) {
         return null;
       }
@@ -345,7 +351,11 @@
       const motorTheory =
         preparedRaceData?.motorMaintenanceTheoryV2 || {};
       const preparedEntries =
-        entriesOf(preparedRaceData);
+        typeof coreApi?.getRaceEntries === "function"
+          ? coreApi.getRaceEntries(
+              preparedRaceData
+            )
+          : entriesOf(preparedRaceData);
       const axisEntry =
         preparedEntries.find(
           row => boatNoOf(row) === axisBoatNo
@@ -1200,7 +1210,7 @@
         snapshot: preRaceConditions,
         officialResultUsedForEvaluation: false,
         usagePolicy:
-          "校正対象の総合点は70点の自動選定へ使用。買い目構成・note内容・オッズ・公式結果は変更しない"
+          "校正対象の総合点は60点の自動選定へ使用。買い目構成・note内容・オッズ・公式結果は変更しない"
       };
     }
 

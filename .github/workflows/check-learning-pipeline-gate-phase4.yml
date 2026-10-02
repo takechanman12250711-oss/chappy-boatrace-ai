@@ -1,0 +1,23 @@
+name: Check learning pipeline gate phase4
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/learning-pipeline-gate-phase4]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate learning pipeline gate
+        run: |
+          node --check js/learning-pipeline-gate.js
+          node --check scripts/build-learning-pipeline-gate.js
+          node --check scripts/test-learning-pipeline-gate.js
+          node scripts/test-learning-pipeline-gate.js
+          node scripts/check-charter.js

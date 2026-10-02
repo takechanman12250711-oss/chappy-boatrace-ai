@@ -1,0 +1,41 @@
+name: Check four-kado escape rescue fixed5
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "js/four-kado-escape-rescue-fixed5.js"
+      - "js/three-course-escape-rescue-fixed5.js"
+      - "js/practical-selection.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/test-four-kado-escape-rescue-fixed5.js"
+      - ".github/workflows/check-four-kado-escape-rescue-fixed5.yml"
+  push:
+    branches: [main]
+    paths:
+      - "js/four-kado-escape-rescue-fixed5.js"
+      - "js/three-course-escape-rescue-fixed5.js"
+      - "js/practical-selection.js"
+      - "js/prediction-runtime-loader.js"
+      - "scripts/collect-predictions.js"
+      - "scripts/test-four-kado-escape-rescue-fixed5.js"
+      - ".github/workflows/check-four-kado-escape-rescue-fixed5.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Validate approved rescue
+        run: |
+          node --check js/four-kado-escape-rescue-fixed5.js
+          node --check scripts/collect-predictions.js
+          node scripts/test-three-course-escape-rescue-fixed5.js
+          node scripts/test-four-kado-escape-rescue-fixed5.js
+          node scripts/check-charter.js
+          git diff --check

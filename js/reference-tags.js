@@ -185,18 +185,6 @@
       });
     }
 
-    const source = String(prediction?.externalData?.source || prediction?.hiyori?.source || "");
-    if (/日和|hiyori/i.test(source)) {
-      tags.push({
-        key: "hiyori-source",
-        icon: "📎",
-        label: "日和データあり",
-        detail: "公式情報とは分けて参考表示",
-        strength: 1,
-        kind: "source"
-      });
-    }
-
     return tags
       .filter((item, index, self) => self.findIndex(other => other.key === item.key) === index)
       .slice(0, 8);

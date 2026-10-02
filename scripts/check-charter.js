@@ -7,6 +7,17 @@ const root = path.resolve(__dirname, "..");
 const read = relativePath =>
   fs.readFileSync(path.join(root, relativePath), "utf8");
 const charter = JSON.parse(read("config/chappy-charter.json"));
+const collectPredictionWorkflow = read(
+  ".github/workflows/collect-predictions.yml"
+);
+const collectResultWorkflow = read(
+  ".github/workflows/collect-results.yml"
+);
+const learningAnalysisWorkflow = read(
+  ".github/workflows/build-learning-analysis-pipeline.yml"
+);
+const practicalPriorityShadowReportApi =
+  require("../js/practical-priority-shadow-report");
 
 const expectedPriority = [
   "展開",
@@ -30,6 +41,44 @@ assert(
   JSON.stringify(charter.predictionPriority) ===
     JSON.stringify(expectedPriority),
   "予想の優先順位が憲章と一致しません"
+);
+
+const sharedWriterConcurrency =
+  /concurrency:\s*\n\s+group: chappy-main-data-writers\s*\n\s+queue: max\s*\n\s+cancel-in-progress: false/;
+assert(
+  sharedWriterConcurrency.test(collectPredictionWorkflow) &&
+    sharedWriterConcurrency.test(collectResultWorkflow) &&
+    (
+      sharedWriterConcurrency.test(learningAnalysisWorkflow) ||
+      (
+        learningAnalysisWorkflow.includes("contents: read") &&
+        !learningAnalysisWorkflow.includes("git push origin main") &&
+        collectResultWorkflow.includes(
+          "node scripts/build-learning-analysis-pipeline.js"
+        )
+      )
+    ),
+  "予想・結果・学習分析のmain書込は同じ排他グループで直列実行してください"
+);
+const checksOutCurrentMain =
+  /uses:\s*actions\/checkout@v4[\s\S]{0,160}?\n\s+ref:\s*main/;
+assert(
+  checksOutCurrentMain.test(collectPredictionWorkflow) &&
+    checksOutCurrentMain.test(collectResultWorkflow) &&
+    checksOutCurrentMain.test(learningAnalysisWorkflow),
+  "直列化したmain書込処理は実行開始時点の最新mainを取得してください"
+);
+assert(
+  collectPredictionWorkflow.includes(
+    "node scripts/build-practical-priority-shadow-report.js"
+  ) &&
+    collectPredictionWorkflow.includes(
+      "node scripts/test-practical-priority-shadow-artifact.js"
+    ) &&
+    collectPredictionWorkflow.includes(
+      "git add data/stats/practical-priority-shadow-report.json"
+    ),
+  "予想収集直後に順位候補シャドーレポートを再構築・検証・保存してください"
 );
 
 assert(
@@ -67,6 +116,7 @@ assert(
 
 const practical = charter.practicalTickets || {};
 const allocation = practical.allocationMaximum || {};
+const groundedFlow = practical.groundedFlow || {};
 assert(
   practical.standard === 5 &&
     practical.normalMaximum === 7 &&
@@ -76,10 +126,22 @@ assert(
 assert(
   allocation.main === 3 &&
     allocation.cover === 2 &&
-    allocation.flow === 1 &&
-    allocation.longshot === 1 &&
-    Object.values(allocation).reduce((sum, value) => sum + value, 0) === 7,
-  "実戦厳選の配分上限が3・2・1・1ではありません"
+    allocation.flow === 2 &&
+    allocation.longshot === 1,
+  "実戦厳選の配分上限が本線3・押さえ2・フォーメーション由来2・穴1ではありません"
+);
+assert(
+  groundedFlow.ticketCount === 2 &&
+    groundedFlow.internalSourceCategory === "flow" &&
+    groundedFlow.displayLabel ===
+      "フォーメーション" &&
+    groundedFlow.mustNotDisplayAsFlow === true &&
+    groundedFlow.atomicSelection === true &&
+    groundedFlow.requiresSameScenario === true &&
+    groundedFlow.requiresSameFirstSecondAnchor === true &&
+    groundedFlow.minimumRoleScore === 65 &&
+    groundedFlow.mutuallyExclusiveWithNormalLongshot === true,
+  "フォーメーション表示と同一展開・同一1着2着軸・65点・穴排他契約が固定されていません"
 );
 assert(
   practical.scenarioExpansion?.enabled === true &&
@@ -118,7 +180,9 @@ assert(
 );
 assert(
   exhibitionPerformance.officialModeRequiresExhibitionBoats === 6 &&
-    exhibitionPerformance.fullModeRequiresLapBoats === 6,
+    exhibitionPerformance.fullModeRequiresLapBoats === 6 &&
+    exhibitionPerformance.lapTimeSourcePolicy ===
+      "venue-official-original-exhibition-only",
   "展示モードの6艇成立条件が固定されていません"
 );
 assert(
@@ -159,12 +223,12 @@ assert(
   shadowV2.drivesAutomaticSelection === true &&
     shadowV2.selectionScoreSource ===
       "shadowSelectionV2.evaluation.totalScore" &&
-    shadowV2.selectionThreshold === 70 &&
+    shadowV2.selectionThreshold === 60 &&
     shadowV2.requiresCalibrationEligible === true &&
     shadowV2.legacyEvaluationUsage === "audit_only" &&
     shadowV2.onV2Unavailable ===
       "skip_without_legacy_fallback",
-  "自動選定V2と70点判定の接続条件が固定されていません"
+  "自動選定V2と60点判定の接続条件が固定されていません"
 );
 assert(
   shadowV2.doesNotAffectTicketComposition === true &&
@@ -266,6 +330,8 @@ const index = read("index.html");
 const style = read("style.css");
 const noteGenerator = read("js/note-generator.js");
 const practicalSelection = read("js/practical-selection.js");
+const practicalPriorityShadow =
+  read("js/practical-priority-shadow.js");
 const evaluatedScenarioCandidates =
   read("js/evaluated-scenario-candidates.js");
 const predictionRuntimeLoader =
@@ -279,18 +345,28 @@ const improvementReviewBuilder =
     "scripts/build-improvement-review.js"
   );
 
-const newEngineWeightMatch = aiCore.match(
-  /const NEW_ENGINE_WEIGHTS\s*=\s*\{([\s\S]*?)\};/
+const finalTotalFormulaMatch = aiCore.match(
+  /indexes\.total\s*=\s*clamp\(\s*round\(([\s\S]*?)\)\s*,\s*INDEX_LIMIT\.min\s*,\s*INDEX_LIMIT\.max\s*\);/
 );
-const newEngineMotorMatch = newEngineWeightMatch?.[1]?.match(
-  /motor:\s*([0-9.]+)/
+const actualMotorCoefficient = Number(
+  finalTotalFormulaMatch?.[1]?.match(
+    /indexes\.motor\s*\*\s*([0-9.]+)/
+  )?.[1]
 );
-const actualNewEngineMotorWeight = Number(newEngineMotorMatch?.[1]);
+const newEngineMotorMultiplier = Number(
+  aiCore.match(
+    /score\s*=\s*50\s*\+\s*\(score\s*-\s*50\)\s*\*\s*([0-9.]+)/
+  )?.[1]
+);
 
 assert(
-  Number.isFinite(actualNewEngineMotorWeight) &&
-    actualNewEngineMotorWeight <= charter.newEngine.motorWeightMaximum,
-  "実装の新エンジン期モーター比重が憲章上限を超えています"
+  Number.isFinite(actualMotorCoefficient) &&
+    actualMotorCoefficient <= charter.newEngine.motorWeightMaximum,
+  "返却用総合指数の実効モーター係数が憲章上限を超えています"
+);
+assert(
+  newEngineMotorMultiplier === 0.45,
+  "新エンジン期のモーター偏差圧縮が実装契約と一致しません"
 );
 assert(
   /新エンジン\|新型エンジン\|新モーター\|新燃料/.test(aiCore),
@@ -303,7 +379,29 @@ assert(
 assert(
   practicalSelection.includes("take(lists.main, 3, \"本線\")") &&
     practicalSelection.includes("take(lists.cover, 2, \"押さえ\")") &&
-    practicalSelection.includes("lists.flow,\n        1,\n        \"流し\",\n        true") &&
+    practicalSelection.includes("const FLOW_GROUP_COUNT = 2;") &&
+    practicalSelection.includes(
+      "フォーメーション"
+    ) &&
+    practicalSelection.includes(
+      "displayCategory:"
+    ) &&
+    render.includes(
+      "フォーメーション"
+    ) &&
+    practicalSelection.includes("const MINIMUM_FLOW_ROLE_SCORE = 65;") &&
+    practicalSelection.includes("function selectGroundedFlowPair()") &&
+    practicalSelection.includes("scenarioIds.length === 1") &&
+    practicalSelection.includes("`${boats[0]}-${boats[1]}`") &&
+    /secondScore\s*<\s*MINIMUM_FLOW_ROLE_SCORE\s*\|\|\s*thirdScore\s*<\s*MINIMUM_FLOW_ROLE_SCORE/.test(
+      practicalSelection
+    ) &&
+    /pair\.length\s*!==\s*FLOW_GROUP_COUNT/.test(
+      practicalSelection
+    ) &&
+    /groundedFlowPair\.length\s*!==\s*FLOW_GROUP_COUNT\s*&&\s*evidence\.longshot/.test(
+      practicalSelection
+    ) &&
     practicalSelection.includes("lists.longshot,") &&
     practicalSelection.includes("const NORMAL_MAXIMUM_COUNT = 7;") &&
     practicalSelection.includes("const MAXIMUM_COUNT = 10;") &&
@@ -320,6 +418,72 @@ assert(
 assert(
   practicalSelection.includes("主軸となる展開が定まらないため見送り。"),
   "note原稿に本線不成立時の見送りがありません"
+);
+const priorityShadowCharter =
+  charter.practicalPriorityProspectiveShadow || {};
+assert(
+  priorityShadowCharter.enabled === true &&
+    priorityShadowCharter.startDate === "20260813" &&
+    priorityShadowCharter.targetReplacementCount === 100 &&
+    priorityShadowCharter.fixedEndpoint === true &&
+    priorityShadowCharter.earlyStoppingAllowed === false &&
+    priorityShadowCharter.candidateReasonCode ===
+      "CANDIDATE_ONLY_EVALUATION" &&
+    priorityShadowCharter.firstFormationBranch ===
+      "formation:flow" &&
+    priorityShadowCharter.headBoatNo === 1 &&
+    JSON.stringify(priorityShadowCharter.structuredRoles) ===
+      JSON.stringify(["head", "hold", "pickup"]) &&
+    priorityShadowCharter.priorityScoreExclusiveMinimum === 90 &&
+    priorityShadowCharter.sourceSelectionFingerprint ===
+      "evaluated-scenarios-v1|internal-score-v1|practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1" &&
+    priorityShadowCharter.replacementMode ===
+      "same-index-one-for-one" &&
+    priorityShadowCharter.voidHandling ===
+      "resolved-neutral-kept-in-fixed-cohort" &&
+    priorityShadowCharter.settledPayoutPolicy ===
+      "positive-official-payout-required" &&
+    priorityShadowCharter.minimumDiscordantCount === 6 &&
+    priorityShadowCharter.maximumLossCount === 1 &&
+    priorityShadowCharter.maximumOneSidedPValue === 0.05 &&
+    priorityShadowCharter.conditionsMayChangeDuringCohort === false &&
+    priorityShadowCharter.requiresHumanApproval === true &&
+    priorityShadowCharter.automaticApplication === false &&
+    priorityShadowCharter.usableForPrediction === false,
+  "順位候補の事前登録シャドー条件が憲章と一致しません"
+);
+assert(
+  (() => {
+    const report = practicalPriorityShadowReportApi.build([]);
+    return (
+      report.contract.fixedEndpoint === true &&
+      report.contract.earlyStoppingAllowed === false &&
+      report.contract.conditionsMayChangeDuringCohort === false &&
+      report.contract.voidHandling ===
+        "resolved-neutral-kept-in-fixed-cohort" &&
+      report.contract.settledPayoutPolicy ===
+        "positive-official-payout-required" &&
+      report.requiresHumanApproval === true &&
+      report.automaticApplication === false &&
+      report.usableForPrediction === false
+    );
+  })() &&
+  practicalPriorityShadow.includes(
+    "prospective-shadow-only"
+  ) &&
+    practicalPriorityShadow.includes(
+      "candidate-priority-strictly-greater"
+    ) &&
+    practicalPriorityShadow.includes(
+      "automaticApplication: false"
+    ) &&
+    practicalPriorityShadow.includes(
+      "usableForPrediction: false"
+    ) &&
+    collectPredictions.includes(
+      "practicalPriorityShadowSnapshot"
+    ),
+  "順位候補のシャドー保存・固定終了点・承認ゲートが不足しています"
 );
 assert(
   evaluatedScenarioCandidates.includes("MARK_DEFINITIONS") &&
@@ -340,6 +504,10 @@ assert(
 assert(
   script.includes("practicalSelectionAudit") &&
     script.includes(".compactAudit?.(") &&
+    script.includes("flowAnchor:") &&
+    script.includes("scenarioId:") &&
+    script.includes("flowCommonReason:") &&
+    script.includes("flowRoleEvidence:") &&
     practicalSelection.includes(
       "function compactAudit"
     ) &&
@@ -406,14 +574,16 @@ assert(
   "全表示が最新AIコアの共通買い目を使用していません"
 );
 assert(
-  collectPredictions.includes("const MIN_SCORE = 70;") &&
+  collectPredictions.includes(
+    "charter?.shadowSelectionV2?.selectionThreshold"
+  ) &&
     collectPredictions.includes("shadowV2Predictions") &&
     collectPredictions.includes("buildActiveV2Comparison") &&
     collectPredictions.includes("calibrationEligible === true") &&
     shadowSelectionV2.includes(
-      "校正対象として成立した総合点だけを70点の自動選定へ使う"
+      "校正対象として成立した総合点だけを60点の自動選定へ使う"
     ),
-  "自動選定V2の有効スコアと70点判定の接続が固定されていません"
+  "自動選定V2の有効スコアと60点判定の接続が固定されていません"
 );
 assert(
   improvementReview.includes(
@@ -443,4 +613,5 @@ if (failures.length) {
 console.log("チャッピーAI憲章チェック: 合格");
 console.log(`- 優先順位: ${expectedPriority.join(" → ")}`);
 console.log("- 実戦厳選: 基本5点・通常5〜7点・成立展開時最大10点");
+console.log("- フォーメーション: 同一1着・2着軸の根拠付き3連単2券を一組で採用（通常穴と排他）");
 console.log("- 同意なしの予想ロジック変更: 禁止");

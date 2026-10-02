@@ -134,6 +134,36 @@ assert.equal(theoryResult.isDouble, true);
 assert.equal(theoryResult.topBoat, 4);
 assert.equal(theoryResult.confidence, 88);
 assert.equal(theoryResult.isOuterTarget, true);
+assert.equal(
+  Object.hasOwn(theoryResult, "topCourse"),
+  false,
+  "枠なり時の既存公開shapeを維持する"
+);
+
+const swappedCourseEntries = entries.map(boat => ({
+  ...boat,
+  startExhibition: {
+    boat: boat.boatNo,
+    course:
+      boat.boatNo === 2
+        ? 4
+        : boat.boatNo === 4
+          ? 2
+          : boat.boatNo,
+    isOfficialCourse: true,
+    mappingSource: "official-start-image"
+  }
+}));
+const swappedTheoryResult = theory.calcDoubleTime(
+  swappedCourseEntries
+);
+assert.equal(swappedTheoryResult.topBoat, 4);
+assert.equal(swappedTheoryResult.topCourse, 2);
+assert.equal(
+  swappedTheoryResult.isOuterTarget,
+  false,
+  "ダブルタイム対象の内外を物理艇番ではなく実コースで判定する"
+);
 
 console.log("ダブルタイム理論専用テスト: 合格");
 console.log("- 展示1位＋一周1位が同じ艇のときだけ成立");

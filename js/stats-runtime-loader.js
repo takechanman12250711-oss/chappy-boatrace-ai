@@ -3,19 +3,30 @@
 (function (root) {
   "use strict";
   if (root.ChappyStatsRuntime) return;
-  const VERSION = "20260806-results-ui-phase4-1";
+  const VERSION = "20260828-ui-audit-display1" + "-20260908-result-clarity1-20260915-candidate24-classification1-reviewprogress1-outerprogress1-outerresearch1";
   const SCRIPT_LOAD_TIMEOUT_MS = 15000;
   const scripts = [
     "js/boat-identity.js",
     "js/collection-health.js",
     "js/prediction-verification.js",
+    "js/prediction-index-loader.js",
     "js/auto-stats.js",
     "js/verification-readiness.js",
     "js/improvement-suggestions.js",
     "js/stats.js",
     "js/result-ui-phase5.js"
   ];
+  const optionalScripts = [
+    "js/reference-tag-report.js",
+    "js/outer-attack-ticket-shadow.js",
+    "js/outer-attack-ticket-settlement.js",
+    "js/outer-attack-ticket-decision-gate.js",
+    "js/outer-attack-ticket-central-report-loader.js",
+    "js/outer-attack-ticket-progress-panel.js"
+  ];
   let readyPromise = null;
+  let optionalReady = false;
+  let optionalPromise = null;
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const clean = src.split("?")[0];
@@ -46,7 +57,7 @@
   }
   function preloadScripts() {
     if (typeof document.querySelectorAll !== "function") return;
-    scripts.forEach(src => {
+    [...scripts, ...optionalScripts].forEach(src => {
       const clean = src.split("?")[0];
       if ([...document.scripts].some(script => script.src && script.src.includes(clean))) return;
       if ([...document.querySelectorAll('link[rel="preload"][as="script"]')].some(link => link.href && link.href.includes(clean))) return;
@@ -72,6 +83,22 @@
     root.dispatchEvent(new CustomEvent("chappy:stats-requested"));
     return true;
   }
+  function ensureOptionalScripts() {
+    if (optionalReady) return Promise.resolve(true);
+    if (!optionalPromise) {
+      optionalPromise = (async () => {
+        for (const src of optionalScripts) await loadScript(src);
+        optionalReady = true;
+        return true;
+      })().catch(error => {
+        console.warn("[stats-runtime-loader:optional]", error);
+        return false;
+      }).finally(() => {
+        if (!optionalReady) optionalPromise = null;
+      });
+    }
+    return optionalPromise;
+  }
   function ensureReady() {
     if (!readyPromise) {
       preloadScripts();
@@ -79,10 +106,12 @@
       readyPromise = (async () => {
         for (const src of scripts) await loadScript(src);
         root.dispatchEvent(new CustomEvent("chappy:stats-runtime-ready", { detail: { version: VERSION } }));
+        void ensureOptionalScripts();
         return true;
       })().catch(error => { readyPromise = null; showStatus("結果分析を読み込めませんでした。通信状態を確認して、もう一度開いてください。"); console.error("[stats-runtime-loader]", error); throw error; });
     }
     return readyPromise.then(value => {
+      void ensureOptionalScripts();
       requestIfActive();
       return value;
     });
@@ -94,6 +123,13 @@
     root.addEventListener("hashchange", () => { if (isStatsHash()) requestStats(); });
     if (isStatsHash()) requestStats();
   }
-  root.ChappyStatsRuntime = Object.freeze({ version: VERSION, scripts: scripts.slice(), ensureReady, requestIfActive });
+  root.ChappyStatsRuntime = Object.freeze({
+    version: VERSION,
+    scripts: scripts.slice(),
+    optionalScripts: optionalScripts.slice(),
+    ensureReady,
+    requestIfActive
+  });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installTriggers, { once: true }); else installTriggers();
 })(window);
+

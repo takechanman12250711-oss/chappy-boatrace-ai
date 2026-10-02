@@ -1,0 +1,24 @@
+name: Check theory validation phase6
+on:
+  pull_request:
+    paths:
+      - 'scripts/theory-validation-phase6-prospective-integration.cjs'
+      - 'tests/theory-validation-phase6-prospective-integration.test.cjs'
+      - 'data/stats/theory-validation-phase6-prospective.json'
+      - 'data/stats/wall-established-attacker2-skip-ab-report.json'
+      - 'data/stats/effective-score-weight-ab-report.json'
+      - 'data/stats/theory-evidence-coverage-phase7.json'
+      - '.github/workflows/collect-wall-established-attacker2-skip-ab.yml'
+      - '.github/workflows/check-theory-validation-phase6.yml'
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/theory-validation-phase6-prospective-integration.test.cjs
+      - run: node scripts/theory-validation-phase6-prospective-integration.cjs --output=/tmp/theory-validation-phase6-prospective.json
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code

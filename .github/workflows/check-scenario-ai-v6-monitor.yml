@@ -6,14 +6,23 @@ on:
       - "js/scenario-ai-v6-monitor.js"
       - "scripts/build-scenario-ai-v6-monitor.js"
       - "scripts/test-scenario-ai-v6-monitor.js"
+      - "scripts/test-scenario-ai-v6-monitor-writer-contract.js"
+      - ".github/workflows/build-scenario-ai-v6-monitor.yml"
       - ".github/workflows/check-scenario-ai-v6-monitor.yml"
+      - ".github/workflows/collect-results.yml"
   push:
     branches: [main]
     paths:
       - "js/scenario-ai-v6-monitor.js"
       - "scripts/build-scenario-ai-v6-monitor.js"
       - "scripts/test-scenario-ai-v6-monitor.js"
+      - "scripts/test-scenario-ai-v6-monitor-writer-contract.js"
+      - ".github/workflows/build-scenario-ai-v6-monitor.yml"
       - ".github/workflows/check-scenario-ai-v6-monitor.yml"
+      - ".github/workflows/collect-results.yml"
+
+permissions:
+  contents: read
 
 jobs:
   verify:
@@ -28,4 +37,5 @@ jobs:
           node --check js/scenario-ai-v6-monitor.js
           node --check scripts/build-scenario-ai-v6-monitor.js
           node scripts/test-scenario-ai-v6-monitor.js
+          node scripts/test-scenario-ai-v6-monitor-writer-contract.js
           node scripts/check-charter.js

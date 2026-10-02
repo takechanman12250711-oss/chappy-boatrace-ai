@@ -1,0 +1,19 @@
+name: Check third-six rescue fixed5
+on:
+  pull_request:
+    paths:
+      - 'js/third-six-rescue-fixed5.js'
+      - 'js/prediction-runtime-loader.js'
+      - 'scripts/test-third-six-rescue-fixed5.js'
+      - '.github/workflows/check-third-six-rescue-fixed5.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --check js/third-six-rescue-fixed5.js
+      - run: node --check js/prediction-runtime-loader.js
+      - run: node scripts/test-third-six-rescue-fixed5.js

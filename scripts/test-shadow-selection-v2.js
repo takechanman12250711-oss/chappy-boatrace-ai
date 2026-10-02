@@ -302,7 +302,7 @@ function buildRecord({
     selection: {
       type: "本線",
       score: 45,
-      threshold: 70,
+      threshold: 60,
       qualified: false
     },
     preRaceConditions: builtSnapshot,
@@ -397,7 +397,7 @@ assert.equal(
 assert.equal(normal.evaluation.totalScore, 59.8);
 assert.equal(normal.availability.tideStatus, "not_applicable");
 assert.equal(normal.selectionReference.score, 45);
-assert.equal(normal.selectionReference.threshold, 70);
+assert.equal(normal.selectionReference.threshold, 60);
 assert.equal(normal.selectionReference.qualified, false);
 assert.equal(normal.officialResultUsedForEvaluation, false);
 assert.equal(
@@ -774,5 +774,5 @@ console.log(
   "- 8項目の通常・新エンジン配点を検証"
 );
 console.log(
-  "- 70点の自動選定へ使用し、オッズ・公式結果とは分離"
+  "- 60点の自動選定へ使用し、オッズ・公式結果とは分離"
 );

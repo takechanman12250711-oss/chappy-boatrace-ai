@@ -1,0 +1,43 @@
+name: Build outer attack gate dropoff
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Collect automatic race predictions
+      - Collect outer attack ticket central monitor
+    types: [completed]
+  pull_request:
+    paths:
+      - scripts/build-outer-attack-gate-dropoff.cjs
+      - tests/outer-attack-gate-dropoff.test.cjs
+      - .github/workflows/build-outer-attack-gate-dropoff.yml
+permissions:
+  contents: write
+concurrency:
+  group: outer-attack-gate-dropoff
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/outer-attack-gate-dropoff.test.cjs
+      - if: github.event_name != 'pull_request'
+        run: node scripts/build-outer-attack-gate-dropoff.cjs
+      - name: Persist report
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/stats/outer-attack-gate-dropoff-v1.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update outer attack gate dropoff"
+          git pull --rebase origin main
+          git push origin HEAD:main

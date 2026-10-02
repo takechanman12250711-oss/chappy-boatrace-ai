@@ -9,12 +9,19 @@ const os =
 const path =
   require("node:path");
 const {
+  isVoidRace,
+  normalizeResolvedRace,
   mergeOfficialResults,
   hasMaterialResultChange,
   readExistingResults,
   writeJsonAtomic
 } = require(
   "./collect-results"
+);
+const {
+  parseResult
+} = require(
+  "../api/result"
 );
 
 function race(
@@ -38,6 +45,14 @@ function race(
     resultAvailable:
       options.resultAvailable ??
       false,
+    status:
+      options.status,
+    void:
+      options.void,
+    finishers:
+      options.finishers,
+    starts:
+      options.starts,
     trifecta:
       options.trifecta,
     error:
@@ -143,8 +158,20 @@ assert.equal(
   2
 );
 assert.equal(
+  merged.voidRaces,
+  0
+);
+assert.equal(
+  merged.resolvedRaces,
+  2
+);
+assert.equal(
   merged.pendingRaces,
   1
+);
+assert.deepEqual(
+  merged.pendingRaceKeys,
+  ["24-12"]
 );
 assert.equal(
   merged.failedRaces,
@@ -209,6 +236,10 @@ assert.equal(
   3
 );
 assert.equal(
+  corrected.resolvedRaces,
+  3
+);
+assert.equal(
   corrected.complete,
   true
 );
@@ -250,6 +281,138 @@ assert.equal(
   "公式訂正は実質変更として保存する"
 );
 
+const allFalseStarts =
+  Array.from(
+    { length: 6 },
+    (_, index) => ({
+      course: index + 1,
+      boat: index + 1,
+      marker: "F",
+      falseStart: true,
+      lateStart: false,
+      raw: "F.01"
+    })
+  );
+const voidCandidate =
+  race("24", 1, {
+    place: "大村",
+    resultAvailable: false,
+    status: "not_finished",
+    starts: allFalseStarts,
+    trifecta: null
+  });
+
+assert.equal(
+  isVoidRace(voidCandidate),
+  true,
+  "6艇すべてF/Lで着順・3連単がないレースを不成立と判定する"
+);
+assert.equal(
+  normalizeResolvedRace(voidCandidate).status,
+  "void"
+);
+const voidMerged =
+  mergeOfficialResults(
+    null,
+    {
+      schemaVersion: 1,
+      source: "boatrace-official",
+      date: "20260807",
+      venues: [{
+        jcd: "24",
+        place: "大村"
+      }],
+      races: [voidCandidate]
+    }
+  );
+assert.equal(
+  voidMerged.completedRaces,
+  0,
+  "不成立レースを通常完走へ混ぜない"
+);
+assert.equal(
+  voidMerged.voidRaces,
+  1
+);
+assert.equal(
+  voidMerged.resolvedRaces,
+  1
+);
+assert.equal(
+  voidMerged.pendingRaces,
+  0,
+  "不成立を未確定扱いしない"
+);
+assert.equal(
+  voidMerged.failedRaces,
+  0
+);
+assert.deepEqual(
+  voidMerged.pendingRaceKeys,
+  []
+);
+assert.deepEqual(
+  voidMerged.voidRaceKeys,
+  ["24-1"]
+);
+assert.equal(
+  voidMerged.complete,
+  true,
+  "不成立を含め全レースが解決済みならcompleteにする"
+);
+
+const officialPartialVoidHtml = `
+<table>
+  <tr><th>着</th><th>枠</th><th>ボートレーサー</th><th>レースタイム</th></tr>
+  <tr><td>1</td><td>1</td><td>4365 盛本 真輔</td><td>1'50\"7</td></tr>
+  <tr><td>2</td><td>2</td><td>4730 土屋 実沙希</td><td>1'52\"7</td></tr>
+  <tr><td>F</td><td>3</td><td>3928 林 恵祐</td><td></td></tr>
+</table>
+<table>
+  <tr><th>勝式</th><th>組番</th><th>払戻金</th><th>人気</th></tr>
+  <tr><th>3連単</th><td>不成立</td><td><span class="is-payout1">¥100</span></td><td></td></tr>
+</table>
+`;
+const explicitVoid =
+  parseResult(
+    officialPartialVoidHtml
+  );
+assert.equal(
+  explicitVoid.resultAvailable,
+  false,
+  "3連単不成立を通常の3連単結果へ混ぜない"
+);
+assert.equal(
+  explicitVoid.void,
+  true,
+  "公式3連単不成立を解決済み不成立レースとして認識する"
+);
+assert.equal(
+  explicitVoid.status,
+  "void"
+);
+assert.equal(
+  explicitVoid.trifecta,
+  null
+);
+
+const cancelledRace = parseResult(`
+  <div class="title12">
+    <h3 class="title12_title is-type1">レース中止</h3>
+  </div>
+`);
+assert.equal(
+  cancelledRace.resultAvailable,
+  false,
+  "公式のレース中止を通常結果へ混ぜない"
+);
+assert.equal(
+  cancelledRace.void,
+  true,
+  "公式のレース中止を解決済み不成立として認識する"
+);
+assert.equal(cancelledRace.status, "void");
+
 const tempDirectory =
   fs.mkdtempSync(
     path.join(
@@ -286,5 +449,5 @@ fs.rmSync(
 );
 
 console.log(
-  "公式結果の部分取得保持テスト: 合格"
+  "公式結果の部分取得保持・不成立分類テスト: 合格"
 );

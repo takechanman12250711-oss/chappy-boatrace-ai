@@ -1,0 +1,20 @@
+name: Check theory validation inventory
+on:
+  pull_request:
+    paths:
+      - 'scripts/theory-validation-inventory.cjs'
+      - 'tests/theory-validation-inventory.test.cjs'
+      - '.github/workflows/check-theory-validation-inventory.yml'
+      - 'js/ai-core.js'
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node tests/theory-validation-inventory.test.cjs
+      - run: node scripts/theory-validation-inventory.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code

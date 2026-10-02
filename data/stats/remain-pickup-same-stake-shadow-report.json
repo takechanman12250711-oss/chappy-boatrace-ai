@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "version": "remain-pickup-same-stake-shadow-v1",
+  "generatedAt": "2026-09-08T21:50:46.986Z",
+  "activatedAt": "2026-09-01T10:19:20.000Z",
+  "status": "candidate-fails-retrospective-holdout-100",
+  "productionChanged": false,
+  "productionAUnchanged": true,
+  "automaticApplication": false,
+  "adoptionCandidate": false,
+  "usableForPrediction": false,
+  "actualPurchase": false,
+  "ticketCount": 7,
+  "stakePerTicketYen": 100,
+  "discoveryCount": 100,
+  "holdoutGate": 100,
+  "discovery": {
+    "A": {
+      "settledRaceCount": 100,
+      "affectedRaceCount": 52,
+      "hitCount": 30,
+      "returnYen": 113310,
+      "rescueCount": 0,
+      "lostHitCount": 0,
+      "investmentYen": 70000,
+      "hitRate": 30,
+      "recoveryRate": 161.9,
+      "profitYen": 43310
+    },
+    "B": {
+      "settledRaceCount": 100,
+      "affectedRaceCount": 52,
+      "hitCount": 29,
+      "returnYen": 111950,
+      "rescueCount": 1,
+      "lostHitCount": 2,
+      "investmentYen": 70000,
+      "hitRate": 29,
+      "recoveryRate": 159.9,
+      "profitYen": 41950
+    },
+    "delta": {
+      "hitCount": -1,
+      "returnYen": -1360,
+      "recoveryRatePoints": -2,
+      "rescueCount": 1,
+      "lostHitCount": 2
+    }
+  },
+  "holdout": {
+    "A": {
+      "settledRaceCount": 102,
+      "affectedRaceCount": 56,
+      "hitCount": 24,
+      "returnYen": 29420,
+      "rescueCount": 0,
+      "lostHitCount": 0,
+      "investmentYen": 71400,
+      "hitRate": 23.5,
+      "recoveryRate": 41.2,
+      "profitYen": -41980
+    },
+    "B": {
+      "settledRaceCount": 102,
+      "affectedRaceCount": 56,
+      "hitCount": 24,
+      "returnYen": 28010,
+      "rescueCount": 1,
+      "lostHitCount": 1,
+      "investmentYen": 71400,
+      "hitRate": 23.5,
+      "recoveryRate": 39.2,
+      "profitYen": -43390
+    },
+    "delta": {
+      "hitCount": 0,
+      "returnYen": -1410,
+      "recoveryRatePoints": -2,
+      "rescueCount": 1,
+      "lostHitCount": 1
+    }
+  },
+  "all": {
+    "A": {
+      "settledRaceCount": 202,
+      "affectedRaceCount": 108,
+      "hitCount": 54,
+      "returnYen": 142730,
+      "rescueCount": 0,
+      "lostHitCount": 0,
+      "investmentYen": 141400,
+      "hitRate": 26.7,
+      "recoveryRate": 100.9,
+      "profitYen": 1330
+    },
+    "B": {
+      "settledRaceCount": 202,
+      "affectedRaceCount": 108,
+      "hitCount": 53,
+      "returnYen": 139960,
+      "rescueCount": 2,
+      "lostHitCount": 3,
+      "investmentYen": 141400,
+      "hitRate": 26.2,
+      "recoveryRate": 99,
+      "profitYen": -1440
+    },
+    "delta": {
+      "hitCount": -1,
+      "returnYen": -2770,
+      "recoveryRatePoints": -1.9,
+      "rescueCount": 2,
+      "lostHitCount": 3
+    }
+  },
+  "candidateB": {
+    "description": "7点を維持し、8〜12位の完全な構造化head/hold/pickup候補を、より根拠の弱い既存1点と同額入れ替え",
+    "removalGuard": "追加候補のpriorityが既存候補以上、かつ構造化役割数が多い場合だけ入れ替える",
+    "oddsUsed": false
+  },
+  "decision": "reject-and-advance",
+  "methodology": {
+    "sourceTiming": "pre_deadline only",
+    "officialResultUse": "evaluation only",
+    "sameStake": true,
+    "sameTicketCount": true,
+    "noOutcomeBasedPerRaceSelection": true,
+    "warning": "探索・保留分割を含む回顧監査であり、成功しても直接の本番採用には使わない"
+  }
+}

@@ -1,0 +1,32 @@
+name: Run head promotion feature inventory v1
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/audit-head-promotion-feature-inventory-v1.cjs'
+      - '.github/workflows/run-head-promotion-feature-inventory-v1.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run feature inventory audit
+        run: node scripts/audit-head-promotion-feature-inventory-v1.cjs > head-promotion-feature-inventory-v1.json
+      - name: Validate research boundary and report
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');const r=JSON.parse(fs.readFileSync('head-promotion-feature-inventory-v1.json','utf8'));
+          if(r.productionChanged!==false||r.automaticApplication!==false||r.usableForPrediction!==false) process.exit(1);
+          if(r.eligibleSupportedLane34WinnerCount<=0) process.exit(1);
+          console.log(JSON.stringify({eligible:r.eligibleSupportedLane34WinnerCount,record:r.recordFeaturePaths.slice(0,40),candidate:r.supportedCandidateFeaturePaths.slice(0,40)},null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head-promotion-feature-inventory-v1
+          path: head-promotion-feature-inventory-v1.json
+          retention-days: 90

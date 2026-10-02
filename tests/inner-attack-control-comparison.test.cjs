@@ -1,0 +1,12 @@
+'use strict';
+const assert = require('node:assert');
+const { buildInnerAttackControlComparison } = require('../scripts/compare-inner-attack-controls.cjs');
+const report = buildInnerAttackControlComparison();
+assert.strictEqual(report.scope.holdoutUsed, false);
+assert.strictEqual(report.scope.productionChanged, false);
+assert.strictEqual(report.counts.positives, 39);
+assert.ok(report.counts.controls > report.counts.positives);
+assert.ok(report.signals.length >= 6);
+assert.ok(report.signals.every(row => Number.isFinite(row.positiveRatePct) && Number.isFinite(row.controlRatePct)));
+assert.ok(report.componentMeans.every(row => Number.isFinite(row.positiveMean) && Number.isFinite(row.controlMean)));
+console.log('inner attack control comparison tests passed');

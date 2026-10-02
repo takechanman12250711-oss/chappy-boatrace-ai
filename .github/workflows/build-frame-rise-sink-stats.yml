@@ -1,13 +1,23 @@
 name: Build frame rise and sink statistics
 
 on:
+  pull_request:
+    paths:
+      - "scripts/build-frame-rise-sink-stats.js"
+      - "scripts/test-frame-rise-sink-stats.js"
+      - "scripts/test-frame-rise-sink-writer-contract.js"
+      - ".github/workflows/build-frame-rise-sink-stats.yml"
+      - ".github/workflows/collect-results.yml"
+
   push:
     branches:
       - main
     paths:
       - "scripts/build-frame-rise-sink-stats.js"
       - "scripts/test-frame-rise-sink-stats.js"
+      - "scripts/test-frame-rise-sink-writer-contract.js"
       - ".github/workflows/build-frame-rise-sink-stats.yml"
+      - ".github/workflows/collect-results.yml"
 
   schedule:
     - cron: "45 15 * * *" # 00:45 JST
@@ -15,10 +25,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: build-frame-rise-sink-statistics
+  group: ${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:
@@ -41,22 +51,8 @@ jobs:
         run: |
           node --check scripts/build-frame-rise-sink-stats.js
           node scripts/test-frame-rise-sink-stats.js
+          node scripts/test-frame-rise-sink-writer-contract.js
 
-      - name: Build frame analysis
+      - name: Build read-only frame analysis
         run: |
           node scripts/build-frame-rise-sink-stats.js
-
-      - name: Save frame analysis
-        run: |
-          git add data/stats/frame-rise-sink-patterns.json
-
-          if git diff --cached --quiet; then
-            echo "保存する枠別浮沈率の変更はありません"
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Build frame rise and sink statistics"
-          git pull --rebase origin main
-          git push origin main

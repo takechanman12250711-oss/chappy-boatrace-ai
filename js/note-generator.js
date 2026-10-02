@@ -33,6 +33,48 @@
     return Number.isFinite(number) ? number : fallback;
   }
 
+  function userFacingFormationText(value) {
+    return safeText(value, "")
+      .replace(/流し候補/g, "フォーメーション候補")
+      .replace(/流し展開/g, "フォーメーション")
+      .replace(/流し/g, "フォーメーション");
+  }
+
+  function practicalDisplayCategory(
+    row,
+    fallback = "買い目"
+  ) {
+    if (row?.selectionTier === "順位ゲート置換") {
+      return "順位ゲート補完";
+    }
+    if (row?.selectionTier === "候補補完") {
+      return "候補補完";
+    }
+    if (row?.selectionTier === "展開追加") {
+      return "独立展開";
+    }
+    if (
+      [
+        "順位ゲート補完",
+        "候補補完",
+        "独立展開"
+      ].includes(row?.category)
+    ) {
+      return row.category;
+    }
+    if (row?.category === "流し") {
+      return "フォーメーション";
+    }
+
+    return userFacingFormationText(
+      row?.displayCategory ||
+      row?.category ||
+      arrayify(row?.categories)[0] ||
+      row?.type ||
+      fallback
+    );
+  }
+
   function firstValue(values, fallback = "") {
     for (const value of values) {
       if (value !== null && value !== undefined && value !== "") return value;
@@ -52,7 +94,8 @@
   }
 
   function compactTicketComment(value) {
-    const text = safeText(value, "");
+    const text =
+      userFacingFormationText(value);
     if (!text) return "";
 
     const sentences =
@@ -78,6 +121,218 @@
         return true;
       })
       .join(" ");
+  }
+
+
+  // Presentation only: source tickets, priority and odds remain in metadata.
+  function withoutAsides(value) {
+    let text = String(value || "");
+    let previous;
+    do {
+      previous = text;
+      text = text.replace(/[（(［\[][^（）()［］\[\]]*[）)］\]]/g, "");
+    } while (text !== previous);
+    return text.trim();
+  }
+
+  // Merge only consecutive rows in the same category whose Cartesian product
+  // exactly equals the source set. Never fill gaps to make a formation.
+  function formationLines(lines) {
+    const output = [];
+    for (let index = 0; index < lines.length;) {
+      const match = lines[index].match(/^・([1-6]-[1-6]-[1-6])(?:\s|$)/);
+      if (!match) {
+        output.push(withoutAsides(lines[index++]).replace(/\s*(?:\d+(?:\.\d+)?倍|オッズ未取得)/g, ""));
+        continue;
+      }
+      const category = lines[index].match(/［([^］]+)］/)?.[1] || "";
+      const tickets = [];
+      let end = index;
+      while (end < lines.length) {
+        const next = lines[end].match(/^・([1-6]-[1-6]-[1-6])(?:\s|$)/);
+        if (!next || (lines[end].match(/［([^］]+)］/)?.[1] || "") !== category) break;
+        tickets.push(next[1]); end++;
+      }
+      if (category) output.push(category);
+      for (let start = 0; start < tickets.length;) {
+        let bestEnd = start + 1;
+        let notation = tickets[start];
+        for (let stop = start + 2; stop <= tickets.length; stop++) {
+          const subset = tickets.slice(start, stop);
+          const axes = [0, 1, 2].map(axis => [...new Set(subset.map(t => t.split("-")[axis]))].sort());
+          const expanded = axes[0].flatMap(a => axes[1].flatMap(b => axes[2]
+            .filter(c => new Set([a, b, c]).size === 3).map(c => `${a}-${b}-${c}`)));
+          if (expanded.length === subset.length && expanded.every(t => subset.includes(t))) {
+            notation = axes.map(axis => axis.join("")).join("-"); bestEnd = stop;
+          }
+        }
+        output.push(`・${notation}`);
+        start = bestEnd;
+      }
+      index = end;
+    }
+    return output;
+  }
+
+  function briefReason(value) {
+    return compactTicketComment(withoutAsides(value))
+      .split(/(?<=[。！？])/).map(s => s.trim()).filter(Boolean).slice(0, 2).join("");
+  }
+
+  function compactArticleV2(article) {
+    if (!article?.ok || !article.paidText?.includes("🔥 実戦厳選買い目")) return article;
+    if (article.format === "formation-v2") return article;
+    const originalPaid = article.paidText;
+    const purchaseWarning = originalPaid.match(/^【購入見送り】\n[\s\S]*?(?=\n\n)/)?.[0];
+    const evaluations = originalPaid.match(/【6艇評価】\n([\s\S]*?)\n【AI買い目候補/);
+    const boatEvaluations = evaluations
+      ? [...evaluations[1].matchAll(/^([1-6])号艇/gm)].map(m => Number(m[1]))
+      : article.boatEvaluations;
+    const originalFree = String(article.freeText || "");
+    const conclusion = originalFree.match(/【結論】\n([^\n]+)/)?.[1];
+    const freeText = conclusion ? [
+      originalFree.split("\n")[0],
+      "",
+      briefReason(conclusion),
+      "",
+      "買い目は以下の有料部分にまとめています。"
+    ].join("\n") : withoutAsides(originalFree);
+    let paidText = formationLines(originalPaid
+      .replace(/【6艇評価】\n[\s\S]*?(?=【AI買い目候補)/, "")
+      .split("\n")
+      .filter(line => {
+        const t = line.trim();
+        return !t || /^・|^【|^🔥|^厳選買い目|^参考合計|^展開：|^🔵|^🌸/.test(t);
+      })
+      .map(line => line.trim().startsWith("展開：") ? "展開：" + briefReason(line.trim().slice(3)) : line))
+      .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    if (purchaseWarning) paidText = paidText.replace(/^【購入見送り】/, purchaseWarning);
+    // Keep the original source article intact; this is a separate presentation.
+    return {
+      ...article,
+      format: "formation-v2",
+      boatEvaluations,
+      freeText,
+      paidText,
+      forecastPaidText: article.forecastPaidText
+        ? paidText.slice(paidText.indexOf("【本命とは別会計の参考予想】"))
+        : article.forecastPaidText,
+      fullText: String(article.fullText).replace(originalFree, freeText).replace(originalPaid, paidText)
+    };
+  }
+
+  // Presentation only: retain every source ticket and its stored priority.
+  function compactArticleV3(article) {
+    if (!article?.ok) return article;
+    const compact = article.format === "formation-v3" ? article : compactArticleV2(article);
+    const originalPaid = compact.paidText || "";
+    const practical = originalPaid.match(compact.format === "formation-v3"
+      ? /^買い目\n([\s\S]*?)\n計\s+(\d+)点$/m
+      : /🔥 実戦厳選買い目\n([\s\S]*?)\n厳選買い目\s+(\d+)点[／/]最大10点/);
+    if (!practical) return compact;
+    const tidy = text => text.split("\n").map(line => withoutAsides(line)
+      .replace(/[【】]/g, ""))
+      .filter(line => !/^展開：|^内訳/.test(line))
+      .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    const warning = originalPaid.match(/^【購入見送り】\n[\s\S]*?(?=\n\n)/)?.[0];
+    const remainder = originalPaid.slice(practical.index + practical[0].length).trim();
+    const ticketRows = practical[1].split("\n").filter(line => line.startsWith("・"));
+    // Expand already compacted rows, then merge only exact consecutive sets.
+    const expandedRows = ticketRows.flatMap(line => {
+      const match = line.match(/^・([1-6]+)-([1-6]+)-([1-6]+)$/);
+      if (!match) return [line]; // Keep invalid content visible to the audit.
+      return [...match[1]].flatMap(a => [...match[2]].flatMap(b => [...match[3]]
+        .filter(c => new Set([a, b, c]).size === 3).map(c => `・${a}-${b}-${c}`)));
+    });
+    const formationText = formationLines(expandedRows).join("\n\n");
+    const paidText = [warning, "買い目", formationText, `計 ${practical[2]}点`,
+      tidy(remainder)]
+      .filter(Boolean).join("\n\n");
+    const title = presentationTitle(compact.meta);
+    const originalFree = compact.freeText;
+    const freeWarning = originalFree.match(/^【購入見送り】\n[\s\S]*?(?=\n\n)/)?.[0];
+    const freeText = [freeWarning,
+      originalFree.split("\n").find(line => /^🚤/.test(line)),
+      compact.dataDisclosure && originalFree.includes(compact.dataDisclosure) ? compact.dataDisclosure : ""]
+      .filter(Boolean).join("\n\n") || originalFree;
+    return { ...compact, title, format: "formation-v3", freeText, paidText,
+      forecastPaidText: compact.forecastPaidText ? tidy(compact.forecastPaidText) : compact.forecastPaidText,
+      fullText: compact.fullText.replace(originalFree, freeText).replace(originalPaid, paidText) };
+  }
+
+  function rangeReason(key, rows, reason) {
+    const original = briefReason(reason || rows[0]?.scenarioSummary || rows[0]?.comment || "");
+    if (key !== "main") return original;
+    const heads = [...new Set(rows.map(row => normalizeTicket(row).ticket)
+      .filter(ticket => /^[1-6]-[1-6]-[1-6]$/.test(ticket))
+      .map(ticket => ticket[0]))];
+    const conflicts = value => [...String(value || "").matchAll(/本命は\s*([1-6])号艇/g)]
+      .some(match => !heads.includes(match[1]));
+    if (!heads.length || !conflicts(original)) return original;
+
+    // A global ranking reason can predate the saved scenario tickets.
+    // Use their stored explanation without changing any pool or priority.
+    const candidates = [rows[0]?.presentationByGroup?.main?.summary,
+      rows[0]?.scenarioSummary, rows[0]?.comment];
+    const savedReason = candidates.map(briefReason)
+      .find(value => value && !conflicts(value));
+    return savedReason || `本命の買い目は${heads.join("・")}号艇を1着にした組み合わせです。`;
+  }
+
+  function allRangeGroups(prediction) {
+    const lists = ticketLists(prediction);
+    return [
+      ["main", "🔵 本命", lists.main, prediction?.mainSheet?.reason],
+      ["cover", "🟠 押さえ", lists.cover, ""],
+      ["flow", "🔷 フォーメーション", lists.flow, ""],
+      ["hole", "🌸 万舟", lists.hole, prediction?.manshuSheet?.reason]
+    ].map(([key, heading, rows, reason]) => ({ key, heading,
+      tickets: [...new Set(rows.map(row => normalizeTicket(row).ticket))],
+      reason: rangeReason(key, rows, reason)
+    }));
+  }
+
+  // The complete saved pools are presentation inputs, never reselected predictions.
+  function compactArticle(article, prediction) {
+    if (!article?.ok) return article;
+    const alreadyFull = article.format === "formation-v4";
+    const compact = alreadyFull ? article : compactArticleV3(article);
+    const groups = prediction ? allRangeGroups(prediction) : article.allRangeGroups;
+    if (!groups) return compact;
+    const originalPaid = compact.paidText;
+    const practical = originalPaid.match(alreadyFull
+      ? /^🔥 実戦厳選\n([\s\S]*?)\n計 (\d+)点$/m
+      : /^買い目\n([\s\S]*?)\n計 (\d+)点$/m);
+    if (!practical) return compact;
+    const clean = value => withoutAsides(String(value || "")).replace(/[【】]/g, "");
+    const warning = originalPaid.match(/^【購入見送り】\n[\s\S]*?(?=\n\n)/)?.[0];
+    const summary = briefReason(prediction?.raceFlow?.summary || compact.rangeSummary ||
+      article.freeText?.split("\n").find(line => /^最有力展開/.test(line)) ||
+      prediction?.mainSheet?.reason || "");
+    const sections = groups.map(group => {
+      const lines = formationLines(group.tickets.map(ticket => `・${ticket}`));
+      return [group.heading, clean(group.reason),
+        lines.length ? lines.join("\n") : "保存済みの買い目なし",
+        `${group.heading.slice(3)} ${group.tickets.length}点`].filter(Boolean).join("\n\n");
+    });
+    // Ledger wrappers can append their separate reference section after generation.
+    const reference = originalPaid.slice(practical.index + practical[0].length).trim()
+      .split("\n").map(line => clean(line).trim())
+      .filter(line => !/^内訳/.test(line)).join("\n").replace(/\n{3,}/g, "\n\n");
+    const paidText = [warning, "🚤 展開の狙い", summary || "本命・押さえ・万舟を区分別に掲載しています。",
+      ...sections, "🔥 実戦厳選", practical[1].trim(), `計 ${practical[2]}点`, reference]
+      .filter(Boolean).join("\n\n");
+    const originalFree = compact.freeText;
+    const introduction = "本命・押さえ・万舟を、展開の狙いとフォーメーションで掲載しています。";
+    const freeText = originalFree.includes(introduction) ? originalFree : originalFree + "\n\n" + introduction;
+    return { ...compact, format: "formation-v4", allRangeGroups: groups,
+      rangeSummary: summary, freeText, paidText,
+      forecastPaidText: compact.forecastPaidText ? reference : compact.forecastPaidText,
+      fullText: compact.fullText.replace(originalFree, freeText).replace(originalPaid, paidText) };
+  }
+
+  function presentationTitle(meta = {}) {
+    return `${formatDate(meta.date)} ${meta.place}${meta.raceNo || "-"}R｜${formatDeadlineLabel(meta.deadline)}｜チャッピーボートレースAI`;
   }
 
   function formatDate(value) {
@@ -131,19 +386,23 @@
 
     return {
       ticket,
-      category: safeText(
-        firstValue([row.category, arrayify(row.categories)[0], row.type]),
+      category: practicalDisplayCategory(
+        row,
         fallbackCategory
       ),
       scenarioType: safeText(
-        firstValue([row.scenarioType, arrayify(row.scenarioTypes)[0]]),
+        userFacingFormationText(
+          firstValue([
+            row.scenarioType,
+            arrayify(row.scenarioTypes)[0]
+          ])
+        ),
         ""
       ),
       odds,
       amount,
-      comment: safeText(
-        firstValue([row.scenarioSummary, row.comment, row.reason]),
-        ""
+      comment: userFacingFormationText(
+        firstValue([row.scenarioSummary, row.comment, row.reason])
       ),
       selectionTier: safeText(row.selectionTier, ""),
       expansionReason: safeText(row.expansionReason, ""),
@@ -193,8 +452,26 @@
     return selector.createPracticalSelection(prediction);
   }
 
+  function articlePracticalTickets(prediction, options = {}) {
+    if (!Object.prototype.hasOwnProperty.call(options, "practicalTickets")) {
+      return createPracticalSelection(prediction);
+    }
+    // Use the collector's pre-odds selection; invalid snapshots never reselect.
+    const rows = options.practicalTickets;
+    if (!Array.isArray(rows) || !rows.length || rows.length > 10 ||
+        rows.some(row => !row || typeof row !== "object" ||
+          !/^[1-6]-[1-6]-[1-6]$/.test(row.ticket || "") ||
+          new Set(row.ticket.split("-")).size !== 3 ||
+          typeof row.odds !== "number" || !Number.isFinite(row.odds) || row.odds < 0) ||
+        new Set(rows.map(row => row.ticket)).size !== rows.length) {
+      throw new Error("note_practical_snapshot_invalid");
+    }
+    return rows.map(row => ({ ...row }));
+  }
+
   function createDisplayCandidates(
-    prediction
+    prediction,
+    practical = []
   ) {
     const lists =
       ticketLists(prediction);
@@ -214,20 +491,50 @@
     const isWave =
       waveScore > mainScore;
 
+    const practicalDisplayByTicket =
+      new Map(
+        arrayify(practical)
+          .map(item => {
+            const row =
+              normalizeTicket(
+                item,
+                ""
+              );
+            const displayCategory =
+              practicalDisplayCategory(
+                item,
+                ""
+              );
+
+            return [
+              row.ticket,
+              displayCategory
+            ];
+          })
+          .filter(
+            ([ticket, category]) =>
+              ticket && category
+          )
+      );
+
     const sources =
       isWave
-        ? [lists.hole]
+        ? [{ list: lists.hole }]
         : [
-            lists.main,
-            lists.cover,
-            lists.flow
+            { list: lists.main },
+            { list: lists.cover },
+            {
+              list: lists.flow,
+              displayCategory:
+                "フォーメーション候補"
+            }
           ];
 
     const candidates = [];
     const used = new Set();
 
-    sources.forEach(list => {
-      arrayify(list).forEach(
+    sources.forEach(source => {
+      arrayify(source.list).forEach(
         item => {
           const row =
             normalizeTicket(
@@ -241,6 +548,16 @@
           ) {
             return;
           }
+
+          const practicalCategory =
+            practicalDisplayByTicket
+              .get(row.ticket);
+          row.category =
+            userFacingFormationText(
+              practicalCategory
+            ) ||
+            source.displayCategory ||
+            row.category;
 
           used.add(row.ticket);
           candidates.push(row);
@@ -291,9 +608,14 @@
       item.selectionTier === "展開追加"
         ? "［展開追加］"
         : "";
+    const displayCategory =
+      practicalDisplayCategory(
+        item,
+        ""
+      );
     const category =
-      item.category
-        ? `［${item.category}］`
+      displayCategory
+        ? `［${displayCategory}］`
         : "";
     const roles =
       arrayify(item.roleLabels)
@@ -307,7 +629,7 @@
         item.comment ||
         ticketComment(
           item.ticket,
-          item.category || "買い目"
+          displayCategory || "買い目"
         )
       );
 
@@ -361,16 +683,7 @@
 
   function buildTitle(prediction, options = {}) {
     const meta = getRaceMeta(prediction);
-    const flowTitle = safeText(
-      prediction?.raceFlow?.title,
-      "展開注目"
-    );
-
-    const prefix = options.titlePrefix
-      ? `${safeText(options.titlePrefix, "")} `
-      : "";
-
-    return `${prefix}【${formatDate(meta.date)} ${meta.place}${meta.raceNo || "-"}R】${flowTitle}｜チャッピーボートレースAI厳選予想`;
+    return presentationTitle(meta);
   }
   function buildOfficialHistorySection(
     prediction
@@ -739,7 +1052,8 @@
   }
 
     function buildPaidSection(
-    prediction
+    prediction,
+    practicalTickets = createPracticalSelection(prediction)
   ) {
     const main =
       prediction?.mainSheet || {};
@@ -747,14 +1061,12 @@
     const manshu =
       prediction?.manshuSheet || {};
 
-    const practical =
-      createPracticalSelection(
-        prediction
-      );
+    const practical = practicalTickets;
 
     const candidates =
       createDisplayCandidates(
-        prediction
+        prediction,
+        practical
       );
 
     const mainScore =
@@ -896,6 +1208,7 @@
       };
     }
 
+    const allRaces = options.publicationPolicy === "all-races-v1";
     const rejectionReasons = [];
     const main =
       prediction?.mainSheet || {};
@@ -905,8 +1218,8 @@
       ticketLists(prediction);
 
     const practicalTickets =
-      createPracticalSelection(
-        prediction
+      articlePracticalTickets(
+        prediction, options
       );
 
     const honmeiNo =
@@ -993,7 +1306,7 @@
     }
 
     if (
-      honmeiNo &&
+      !allRaces && honmeiNo &&
       honmeiScore < 72
     ) {
       rejectionReasons.push(
@@ -1015,7 +1328,7 @@
       );
 
     if (
-      honmeiNo &&
+      !allRaces && honmeiNo &&
       /相手・3着|押さえ候補|展開待ち|厚くは買わない|厳しい条件/.test(
         honmeiComment
       )
@@ -1181,7 +1494,7 @@
     }
 
     if (
-      String(
+      !allRaces && String(
         prediction
           ?.dataQuality
           ?.level || ""
@@ -1233,7 +1546,7 @@
 
     const paidText =
       buildPaidSection(
-        prediction
+        prediction, practicalTickets
       );
 
     const tags =
@@ -1257,7 +1570,7 @@
       .filter(Boolean)
       .join("\n\n");
 
-    return {
+    const article = {
       ok: true,
       publishable: true,
       version: VERSION,
@@ -1274,19 +1587,51 @@
           prediction
         )
     };
+    if (allRaces) return allRaceArticle(compactArticle(article, prediction), prediction);
+    return options.format === "detailed" ? article : compactArticle(article, prediction);
+  }
+
+  function allRaceArticle(article, prediction) {
+    const meta = getRaceMeta(prediction);
+    const disclosure = "作成時点の取得済み情報による参考予想です。展示・気象・オッズ等の追加情報で評価が変わる場合があります。";
+    const focus = briefReason(article.rangeSummary || "")
+      .split(/(?<=[。！？])/)[0].trim();
+    const practicalCount = article.practicalTickets.length;
+    const freeText = [
+      `🚤 ${formatDate(meta.date)} ${meta.place}${meta.raceNo}R｜${formatDeadlineLabel(meta.deadline)}`,
+      focus ? `展開の焦点：${focus}` : "",
+      "本命・押さえ・万舟を、展開の狙いとフォーメーションで掲載しています。",
+      `実戦厳選は${practicalCount}点です。各区分の候補と重複するため、全部を合算して買う案内ではありません。`,
+      disclosure
+    ].filter(Boolean).join("\n\n");
+    const fullText = [freeText, PAYWALL_MARKER, article.paidText,
+      "※舟券の購入は自己責任で、無理のない範囲でお楽しみください。", article.tags.join(" ")].join("\n\n");
+    return { ...article, title: article.title.replace("厳選予想", "レース予想"), publicationPolicy: "all-races-v1", dataDisclosure: disclosure,
+      marketingPreviewVersion: "purchase-preview-v1", freeText, fullText };
   }
 
   const api = {
     VERSION,
     PAYWALL_MARKER,
-    generateArticle,
+    generateArticle(prediction, options = {}) {
+      const article = generateArticle(prediction, options);
+      const decision = root.ChappyPracticalSelection?.purchaseDecision?.(prediction);
+      if (!article?.ok || decision?.status !== "skip") return article;
+      const warning = "【購入見送り】\n" + decision.reason + "\n購入推奨0点・0円。以下の買い目は比較・振り返り用の参考予想です。";
+      const freeText = warning + "\n\n" + article.freeText;
+      const paidText = warning + "\n\n" + article.paidText;
+      return { ...article, purchaseDecision: decision, freeText, paidText,
+        fullText: article.fullText.replace(article.freeText, freeText).replace(article.paidText, paidText) };
+    },
+    createDisplayCandidates,
     buildTitle,
     buildFreeSection,
     buildPaidSection,
     buildTags,
     createPracticalSelection,
     formatDeadlineLabel,
-    compactTicketComment
+    compactTicketComment,
+    compactArticle
   };
 
   root.ChappyNoteGenerator =

@@ -1,0 +1,1228 @@
+{
+  "schemaVersion": 1,
+  "analysisId": "effective-score-miss-attribution-v1",
+  "status": "retrospective-proposal-only",
+  "generatedAt": "2026-08-29T06:51:30Z",
+  "source": {
+    "sourceCommit": "89a2e49ef7bc0a31fcf73a55d44e9a03825bd3a1",
+    "weightAbPreregistrationCommit": "0f27c5467e7e838c64213c6f3d5eff274c4de86a",
+    "inputFreezeCommit": "37dfdc3a390d27bd6067ef2c2ad06fe1da028b74",
+    "retrospectiveOnly": true,
+    "candidatePreregisteredBeforeOutcomes": false
+  },
+  "fingerprints": {
+    "replay": "sha256:4e03373df68a08e785af3e290903cd8805fc8e644bc23b6f0de0331c4ef9e986",
+    "settled": "sha256:5ebd791376e068b69aa1314aa8b3beea8096caf183b03404861f6f66846ee444",
+    "missSubset": "sha256:25ec72f68700c1ba8c9a0a765db024389bb528d2ab5e3da343efc8187ba6c422",
+    "analysisConfig": "sha256:601399c0504dd51ac777f30d6d8e4f6fb36f3fa1e96ed38082c1f803dc9e4059"
+  },
+  "cohort": {
+    "scope": "discovery-only",
+    "dates": [
+      "20260815",
+      "20260816",
+      "20260817",
+      "20260818"
+    ],
+    "replayRaceCount": 258,
+    "replayBoatCount": 1548,
+    "settledRaceCount": 258,
+    "baselineTop1HitCount": 124,
+    "baselineTop1MissCount": 134,
+    "chronologicalHalfRaceCounts": [
+      129,
+      129
+    ],
+    "chronologicalHalfMissCounts": [
+      63,
+      71
+    ],
+    "holdoutDatesForbidden": [
+      "20260819",
+      "20260823",
+      "20260827",
+      "20260828"
+    ],
+    "holdoutResultsRead": false,
+    "holdoutEvaluated": false
+  },
+  "definition": {
+    "unit": "race",
+    "definition": "official winner differs from the production effective-score top-ranked boat",
+    "baselineProfileId": "p0-current",
+    "rankingTieBreak": [
+      "total-desc",
+      "roleAttack-desc",
+      "boatNo-asc"
+    ],
+    "ticketMiss": false,
+    "causalClaim": false,
+    "label": "discovery top-1 score miss",
+    "notTicketMiss": true
+  },
+  "baselineIdentity": {
+    "scope": "discovery-only",
+    "exact": true,
+    "expectedBoatCount": 1548,
+    "comparedBoatCount": 1548,
+    "matchedBoatCount": 1548,
+    "mismatchedBoatCount": 0,
+    "scoreIdentity": "1548/1548",
+    "rankComparedBoatCount": 1548,
+    "rankMatchedBoatCount": 1548,
+    "rankMismatchedBoatCount": 0,
+    "orderingIdentity": {
+      "expectedRaceCount": 258,
+      "arrayOrderMatchedRaceCount": 258,
+      "arrayOrderIdentity": "258/258",
+      "totalRankMatchedRaceCount": 258,
+      "totalRankIdentity": "258/258",
+      "aiRankMatchedRaceCount": 258,
+      "aiRankIdentity": "258/258",
+      "exact": true
+    },
+    "mismatchExamples": [],
+    "rankMismatchExamples": []
+  },
+  "attribution": {
+    "comparison": "official-winner minus baseline-top",
+    "componentOrder": [
+      "raceFlow",
+      "courseIndex",
+      "roleAttack",
+      "st",
+      "exhibition",
+      "roleHold",
+      "rolePickup",
+      "local",
+      "turn",
+      "national",
+      "motor"
+    ],
+    "scopeMap": {
+      "componentsWinnerRanksGapsAndStrongestAdvantages": "134 discovery top-1 score misses",
+      "boatDistributionsAndPaths": "all 258 discovery races",
+      "correctHitDominantMargin": "124 discovery top-1 score hits",
+      "courseIndexRange": "all 1548 discovery boats",
+      "roundingAndRankingDiagnostics": "all 258 discovery races; miss clamp count uses the 134 misses"
+    },
+    "components": {
+      "raceFlow": {
+        "baselineTopMean": 96.147015,
+        "officialWinnerMean": 87.183582,
+        "meanDifference": -8.963433,
+        "meanWeightedDifference": -2.240858209,
+        "winnerHigher": 24,
+        "equal": 19,
+        "baselineTopHigher": 91
+      },
+      "courseIndex": {
+        "baselineTopMean": 120.847015,
+        "officialWinnerMean": 67.754975,
+        "meanDifference": -53.09204,
+        "meanWeightedDifference": -12.742089552,
+        "winnerHigher": 13,
+        "equal": 0,
+        "baselineTopHigher": 121
+      },
+      "roleAttack": {
+        "baselineTopMean": 75.174627,
+        "officialWinnerMean": 74.93806,
+        "meanDifference": -0.236567,
+        "meanWeightedDifference": -0.026022388,
+        "winnerHigher": 70,
+        "equal": 1,
+        "baselineTopHigher": 63
+      },
+      "st": {
+        "baselineTopMean": 68.302985,
+        "officialWinnerMean": 67.114925,
+        "meanDifference": -1.18806,
+        "meanWeightedDifference": -0.11880597,
+        "winnerHigher": 69,
+        "equal": 5,
+        "baselineTopHigher": 60
+      },
+      "exhibition": {
+        "baselineTopMean": 61.238806,
+        "officialWinnerMean": 59.682836,
+        "meanDifference": -1.55597,
+        "meanWeightedDifference": -0.140037313,
+        "winnerHigher": 32,
+        "equal": 58,
+        "baselineTopHigher": 44
+      },
+      "roleHold": {
+        "baselineTopMean": 88.808955,
+        "officialWinnerMean": 80.598507,
+        "meanDifference": -8.210448,
+        "meanWeightedDifference": -0.656835821,
+        "winnerHigher": 25,
+        "equal": 0,
+        "baselineTopHigher": 109
+      },
+      "rolePickup": {
+        "baselineTopMean": 75.857463,
+        "officialWinnerMean": 76.257463,
+        "meanDifference": 0.4,
+        "meanWeightedDifference": 0.012,
+        "winnerHigher": 65,
+        "equal": 1,
+        "baselineTopHigher": 68
+      },
+      "local": {
+        "baselineTopMean": 87.308209,
+        "officialWinnerMean": 88.997761,
+        "meanDifference": 1.689552,
+        "meanWeightedDifference": 0.084477612,
+        "winnerHigher": 69,
+        "equal": 3,
+        "baselineTopHigher": 62
+      },
+      "turn": {
+        "baselineTopMean": 58.71791,
+        "officialWinnerMean": 59.766418,
+        "meanDifference": 1.048507,
+        "meanWeightedDifference": 0.026212687,
+        "winnerHigher": 55,
+        "equal": 35,
+        "baselineTopHigher": 44
+      },
+      "national": {
+        "baselineTopMean": 81.532836,
+        "officialWinnerMean": 85.357463,
+        "meanDifference": 3.824627,
+        "meanWeightedDifference": 0.076492537,
+        "winnerHigher": 78,
+        "equal": 1,
+        "baselineTopHigher": 55
+      },
+      "motor": {
+        "baselineTopMean": 51.446269,
+        "officialWinnerMean": 51.562687,
+        "meanDifference": 0.116418,
+        "meanWeightedDifference": 0.00058209,
+        "winnerHigher": 65,
+        "equal": 3,
+        "baselineTopHigher": 66
+      }
+    },
+    "winnerRankCounts": {
+      "2": 42,
+      "3": 38,
+      "4": 24,
+      "5": 23,
+      "6": 7
+    },
+    "scoreGap": {
+      "raw": {
+        "minimum": 0.386,
+        "p25": 6.486,
+        "medianLower": 12.7045,
+        "p75": 21.6135,
+        "maximum": 51.628,
+        "mean": 15.724884,
+        "atMostTwoCount": 7,
+        "aboveTwoCount": 127
+      },
+      "rounded": {
+        "minimum": 0.4,
+        "p25": 6.5,
+        "medianLower": 12.7,
+        "p75": 21.6,
+        "maximum": 51.7,
+        "mean": 15.726866,
+        "atMostTwoCount": 7,
+        "aboveTwoCount": 127
+      }
+    },
+    "strongestBaselineTopAdvantage": {
+      "courseIndex": 119,
+      "raceFlow": 15
+    },
+    "strongestOfficialWinnerAdvantage": {
+      "turn": 2,
+      "roleAttack": 8,
+      "st": 27,
+      "motor": 11,
+      "exhibition": 21,
+      "national": 10,
+      "local": 13,
+      "courseIndex": 13,
+      "raceFlow": 14
+    },
+    "noObservedOfficialWinnerAdvantageCount": 15,
+    "baselineTopBoatDistribution": {
+      "1": 210,
+      "2": 47,
+      "3": 1
+    },
+    "officialWinnerBoatDistribution": {
+      "1": 125,
+      "2": 30,
+      "3": 40,
+      "4": 32,
+      "5": 16,
+      "6": 15
+    },
+    "boatPaths": {
+      "1->5": 13,
+      "1->1": 112,
+      "1->2": 18,
+      "1->4": 26,
+      "1->6": 10,
+      "2->3": 9,
+      "2->5": 3,
+      "1->3": 31,
+      "2->4": 5,
+      "2->2": 12,
+      "2->6": 5,
+      "3->4": 1,
+      "2->1": 13
+    },
+    "correctHitDominantMargin": {
+      "courseIndex": 113,
+      "raceFlow": 10,
+      "local": 1
+    },
+    "courseIndexRange": {
+      "belowMinimumBoatCount": 218,
+      "aboveMaximumBoatCount": 258,
+      "raceCountWithAnyOutOfRange": 258,
+      "outOfRangeBoatCount": 476
+    },
+    "roundingClampTieDiagnostics": {
+      "topRoundedTieRaceCount": 0,
+      "rawVsProductionFullRankingDifferenceRaceCount": 0,
+      "missTopOrWinnerClampRaceCount": 0,
+      "productionTopChangedByRawRankingRaceCount": 0
+    },
+    "structuralVsWeightAssessment": {
+      "result": "descriptive-inner-course-pattern-dominant-local-weight-tuning-unsupported",
+      "structuralDiagnosticComponents": [
+        "courseIndex",
+        "raceFlow",
+        "roleHold"
+      ],
+      "structuralDiagnosticMeanWeightedDeficit": 15.639783582,
+      "shareOfMeanRawGap": 0.994588169,
+      "priorLocalWeightProfilesRecoveringAnyBaselineMiss": 0,
+      "causalClaim": false
+    },
+    "accountingExact": true,
+    "interpretation": "Weighted component margins are overlapping diagnostics, not causal feature importance."
+  },
+  "priorWeightNeighborhoodSanity": {
+    "generation": {
+      "orderedReceiverDonorPairs": true,
+      "deltaMinimum": 0.001,
+      "deltaMaximum": 0.01,
+      "deltaStep": 0.001,
+      "existingWeightConstraintsApplied": true
+    },
+    "validProfileCount": 618,
+    "recoveredBaselineMissUnionCount": 0,
+    "maximumAddedTop1": 0,
+    "maximumNetTop1": 0,
+    "retrospectiveUnpreregistered": true
+  },
+  "courseSensitivity": {
+    "transformation": "raceMean + factor * (courseIndex - raceMean)",
+    "factors": [
+      1,
+      0.95,
+      0.9,
+      0.85,
+      0.8,
+      0.75,
+      0.7,
+      0.6,
+      0.5
+    ],
+    "factorCurve": [
+      {
+        "factor": 1,
+        "all": {
+          "raceCount": 258,
+          "top1": 124,
+          "added": 0,
+          "lost": 0,
+          "netTop1": 0,
+          "top3": 204,
+          "meanWinnerRank": 2.228682171,
+          "pairwiseFinishOrder": {
+            "concordant": 521,
+            "comparable": 774,
+            "rate": 0.673126615
+          },
+          "rankingChangedRaceCount": 0,
+          "topBoatChangedRaceCount": 0,
+          "topBoatDistribution": {
+            "1": 210,
+            "2": 47,
+            "3": 1
+          }
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 66,
+            "added": 0,
+            "lost": 0,
+            "netTop1": 0,
+            "top3": 102,
+            "meanWinnerRank": 2.147286822,
+            "pairwiseFinishOrder": {
+              "concordant": 257,
+              "comparable": 387,
+              "rate": 0.664082687
+            },
+            "rankingChangedRaceCount": 0,
+            "topBoatChangedRaceCount": 0,
+            "topBoatDistribution": {
+              "1": 103,
+              "2": 25,
+              "3": 1
+            }
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 58,
+            "added": 0,
+            "lost": 0,
+            "netTop1": 0,
+            "top3": 102,
+            "meanWinnerRank": 2.310077519,
+            "pairwiseFinishOrder": {
+              "concordant": 264,
+              "comparable": 387,
+              "rate": 0.682170543
+            },
+            "rankingChangedRaceCount": 0,
+            "topBoatChangedRaceCount": 0,
+            "topBoatDistribution": {
+              "1": 107,
+              "2": 22
+            }
+          }
+        ]
+      },
+      {
+        "factor": 0.95,
+        "all": {
+          "raceCount": 258,
+          "top1": 124,
+          "added": 0,
+          "lost": 0,
+          "netTop1": 0,
+          "top3": 205,
+          "meanWinnerRank": 2.224806202,
+          "pairwiseFinishOrder": {
+            "concordant": 523,
+            "comparable": 774,
+            "rate": 0.675710594
+          },
+          "rankingChangedRaceCount": 11,
+          "topBoatChangedRaceCount": 0,
+          "topBoatDistribution": {
+            "1": 210,
+            "2": 47,
+            "3": 1
+          }
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 66,
+            "added": 0,
+            "lost": 0,
+            "netTop1": 0,
+            "top3": 102,
+            "meanWinnerRank": 2.147286822,
+            "pairwiseFinishOrder": {
+              "concordant": 258,
+              "comparable": 387,
+              "rate": 0.666666667
+            },
+            "rankingChangedRaceCount": 7,
+            "topBoatChangedRaceCount": 0,
+            "topBoatDistribution": {
+              "1": 103,
+              "2": 25,
+              "3": 1
+            }
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 58,
+            "added": 0,
+            "lost": 0,
+            "netTop1": 0,
+            "top3": 103,
+            "meanWinnerRank": 2.302325581,
+            "pairwiseFinishOrder": {
+              "concordant": 265,
+              "comparable": 387,
+              "rate": 0.684754522
+            },
+            "rankingChangedRaceCount": 4,
+            "topBoatChangedRaceCount": 0,
+            "topBoatDistribution": {
+              "1": 107,
+              "2": 22
+            }
+          }
+        ]
+      },
+      {
+        "factor": 0.9,
+        "all": {
+          "raceCount": 258,
+          "top1": 125,
+          "added": 2,
+          "lost": 1,
+          "netTop1": 1,
+          "top3": 206,
+          "meanWinnerRank": 2.213178295,
+          "pairwiseFinishOrder": {
+            "concordant": 524,
+            "comparable": 774,
+            "rate": 0.677002584
+          },
+          "rankingChangedRaceCount": 23,
+          "topBoatChangedRaceCount": 5,
+          "topBoatDistribution": {
+            "1": 205,
+            "2": 50,
+            "3": 3
+          },
+          "addedRaceKeys": [
+            "20260817-02-9",
+            "20260817-05-7"
+          ],
+          "lostRaceKeys": [
+            "20260817-13-8"
+          ]
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 66,
+            "added": 0,
+            "lost": 0,
+            "netTop1": 0,
+            "top3": 102,
+            "meanWinnerRank": 2.139534884,
+            "pairwiseFinishOrder": {
+              "concordant": 258,
+              "comparable": 387,
+              "rate": 0.666666667
+            },
+            "rankingChangedRaceCount": 9,
+            "topBoatChangedRaceCount": 1,
+            "topBoatDistribution": {
+              "1": 102,
+              "2": 26,
+              "3": 1
+            },
+            "addedRaceKeys": [],
+            "lostRaceKeys": []
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 59,
+            "added": 2,
+            "lost": 1,
+            "netTop1": 1,
+            "top3": 104,
+            "meanWinnerRank": 2.286821705,
+            "pairwiseFinishOrder": {
+              "concordant": 266,
+              "comparable": 387,
+              "rate": 0.687338501
+            },
+            "rankingChangedRaceCount": 14,
+            "topBoatChangedRaceCount": 4,
+            "topBoatDistribution": {
+              "1": 103,
+              "2": 24,
+              "3": 2
+            },
+            "addedRaceKeys": [
+              "20260817-02-9",
+              "20260817-05-7"
+            ],
+            "lostRaceKeys": [
+              "20260817-13-8"
+            ]
+          }
+        ]
+      },
+      {
+        "factor": 0.85,
+        "all": {
+          "raceCount": 258,
+          "top1": 124,
+          "added": 2,
+          "lost": 2,
+          "netTop1": 0,
+          "top3": 206,
+          "meanWinnerRank": 2.205426357,
+          "pairwiseFinishOrder": {
+            "concordant": 521,
+            "comparable": 774,
+            "rate": 0.673126615
+          },
+          "rankingChangedRaceCount": 41,
+          "topBoatChangedRaceCount": 9,
+          "topBoatDistribution": {
+            "1": 201,
+            "2": 54,
+            "3": 3
+          }
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 65,
+            "added": 0,
+            "lost": 1,
+            "netTop1": -1,
+            "top3": 102,
+            "meanWinnerRank": 2.131782946,
+            "pairwiseFinishOrder": {
+              "concordant": 256,
+              "comparable": 387,
+              "rate": 0.661498708
+            },
+            "rankingChangedRaceCount": 19,
+            "topBoatChangedRaceCount": 3,
+            "topBoatDistribution": {
+              "1": 100,
+              "2": 28,
+              "3": 1
+            }
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 59,
+            "added": 2,
+            "lost": 1,
+            "netTop1": 1,
+            "top3": 104,
+            "meanWinnerRank": 2.279069767,
+            "pairwiseFinishOrder": {
+              "concordant": 265,
+              "comparable": 387,
+              "rate": 0.684754522
+            },
+            "rankingChangedRaceCount": 22,
+            "topBoatChangedRaceCount": 6,
+            "topBoatDistribution": {
+              "1": 101,
+              "2": 26,
+              "3": 2
+            }
+          }
+        ]
+      },
+      {
+        "factor": 0.8,
+        "all": {
+          "raceCount": 258,
+          "top1": 124,
+          "added": 3,
+          "lost": 3,
+          "netTop1": 0,
+          "top3": 205,
+          "meanWinnerRank": 2.209302326,
+          "pairwiseFinishOrder": {
+            "concordant": 521,
+            "comparable": 774,
+            "rate": 0.673126615
+          },
+          "rankingChangedRaceCount": 52,
+          "topBoatChangedRaceCount": 13,
+          "topBoatDistribution": {
+            "1": 197,
+            "2": 56,
+            "3": 5
+          }
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 64,
+            "added": 0,
+            "lost": 2,
+            "netTop1": -2,
+            "top3": 101,
+            "meanWinnerRank": 2.147286822,
+            "pairwiseFinishOrder": {
+              "concordant": 256,
+              "comparable": 387,
+              "rate": 0.661498708
+            },
+            "rankingChangedRaceCount": 26,
+            "topBoatChangedRaceCount": 4,
+            "topBoatDistribution": {
+              "1": 99,
+              "2": 29,
+              "3": 1
+            }
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 60,
+            "added": 3,
+            "lost": 1,
+            "netTop1": 2,
+            "top3": 104,
+            "meanWinnerRank": 2.271317829,
+            "pairwiseFinishOrder": {
+              "concordant": 265,
+              "comparable": 387,
+              "rate": 0.684754522
+            },
+            "rankingChangedRaceCount": 26,
+            "topBoatChangedRaceCount": 9,
+            "topBoatDistribution": {
+              "1": 98,
+              "2": 27,
+              "3": 4
+            }
+          }
+        ]
+      },
+      {
+        "factor": 0.75,
+        "all": {
+          "raceCount": 258,
+          "top1": 125,
+          "added": 4,
+          "lost": 3,
+          "netTop1": 1,
+          "top3": 205,
+          "meanWinnerRank": 2.19379845,
+          "pairwiseFinishOrder": {
+            "concordant": 522,
+            "comparable": 774,
+            "rate": 0.674418605
+          },
+          "rankingChangedRaceCount": 74,
+          "topBoatChangedRaceCount": 16,
+          "topBoatDistribution": {
+            "1": 194,
+            "2": 58,
+            "3": 6
+          }
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 64,
+            "added": 0,
+            "lost": 2,
+            "netTop1": -2,
+            "top3": 101,
+            "meanWinnerRank": 2.147286822,
+            "pairwiseFinishOrder": {
+              "concordant": 255,
+              "comparable": 387,
+              "rate": 0.658914729
+            },
+            "rankingChangedRaceCount": 36,
+            "topBoatChangedRaceCount": 4,
+            "topBoatDistribution": {
+              "1": 99,
+              "2": 29,
+              "3": 1
+            }
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 61,
+            "added": 4,
+            "lost": 1,
+            "netTop1": 3,
+            "top3": 104,
+            "meanWinnerRank": 2.240310078,
+            "pairwiseFinishOrder": {
+              "concordant": 267,
+              "comparable": 387,
+              "rate": 0.689922481
+            },
+            "rankingChangedRaceCount": 38,
+            "topBoatChangedRaceCount": 12,
+            "topBoatDistribution": {
+              "1": 95,
+              "2": 29,
+              "3": 5
+            }
+          }
+        ]
+      },
+      {
+        "factor": 0.7,
+        "all": {
+          "raceCount": 258,
+          "top1": 126,
+          "added": 6,
+          "lost": 4,
+          "netTop1": 2,
+          "top3": 206,
+          "meanWinnerRank": 2.162790698,
+          "pairwiseFinishOrder": {
+            "concordant": 526,
+            "comparable": 774,
+            "rate": 0.679586563
+          },
+          "rankingChangedRaceCount": 88,
+          "topBoatChangedRaceCount": 22,
+          "topBoatDistribution": {
+            "1": 189,
+            "2": 59,
+            "3": 8,
+            "4": 2
+          }
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 64,
+            "added": 1,
+            "lost": 3,
+            "netTop1": -2,
+            "top3": 102,
+            "meanWinnerRank": 2.11627907,
+            "pairwiseFinishOrder": {
+              "concordant": 257,
+              "comparable": 387,
+              "rate": 0.664082687
+            },
+            "rankingChangedRaceCount": 44,
+            "topBoatChangedRaceCount": 7,
+            "topBoatDistribution": {
+              "1": 97,
+              "2": 29,
+              "3": 2,
+              "4": 1
+            }
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 62,
+            "added": 5,
+            "lost": 1,
+            "netTop1": 4,
+            "top3": 104,
+            "meanWinnerRank": 2.209302326,
+            "pairwiseFinishOrder": {
+              "concordant": 269,
+              "comparable": 387,
+              "rate": 0.695090439
+            },
+            "rankingChangedRaceCount": 44,
+            "topBoatChangedRaceCount": 15,
+            "topBoatDistribution": {
+              "1": 92,
+              "2": 30,
+              "3": 6,
+              "4": 1
+            }
+          }
+        ]
+      },
+      {
+        "factor": 0.6,
+        "all": {
+          "raceCount": 258,
+          "top1": 124,
+          "added": 7,
+          "lost": 7,
+          "netTop1": 0,
+          "top3": 204,
+          "meanWinnerRank": 2.170542636,
+          "pairwiseFinishOrder": {
+            "concordant": 528,
+            "comparable": 774,
+            "rate": 0.682170543
+          },
+          "rankingChangedRaceCount": 117,
+          "topBoatChangedRaceCount": 26,
+          "topBoatDistribution": {
+            "1": 185,
+            "2": 60,
+            "3": 10,
+            "4": 3
+          }
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 64,
+            "added": 1,
+            "lost": 3,
+            "netTop1": -2,
+            "top3": 102,
+            "meanWinnerRank": 2.11627907,
+            "pairwiseFinishOrder": {
+              "concordant": 257,
+              "comparable": 387,
+              "rate": 0.664082687
+            },
+            "rankingChangedRaceCount": 55,
+            "topBoatChangedRaceCount": 7,
+            "topBoatDistribution": {
+              "1": 97,
+              "2": 28,
+              "3": 2,
+              "4": 2
+            }
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 60,
+            "added": 6,
+            "lost": 4,
+            "netTop1": 2,
+            "top3": 102,
+            "meanWinnerRank": 2.224806202,
+            "pairwiseFinishOrder": {
+              "concordant": 271,
+              "comparable": 387,
+              "rate": 0.700258398
+            },
+            "rankingChangedRaceCount": 62,
+            "topBoatChangedRaceCount": 19,
+            "topBoatDistribution": {
+              "1": 88,
+              "2": 32,
+              "3": 8,
+              "4": 1
+            }
+          }
+        ]
+      },
+      {
+        "factor": 0.5,
+        "all": {
+          "raceCount": 258,
+          "top1": 126,
+          "added": 12,
+          "lost": 10,
+          "netTop1": 2,
+          "top3": 207,
+          "meanWinnerRank": 2.15503876,
+          "pairwiseFinishOrder": {
+            "concordant": 525,
+            "comparable": 774,
+            "rate": 0.678294574
+          },
+          "rankingChangedRaceCount": 145,
+          "topBoatChangedRaceCount": 34,
+          "topBoatDistribution": {
+            "1": 177,
+            "2": 63,
+            "3": 14,
+            "4": 4
+          }
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 62,
+            "added": 2,
+            "lost": 6,
+            "netTop1": -4,
+            "top3": 104,
+            "meanWinnerRank": 2.139534884,
+            "pairwiseFinishOrder": {
+              "concordant": 253,
+              "comparable": 387,
+              "rate": 0.65374677
+            },
+            "rankingChangedRaceCount": 69,
+            "topBoatChangedRaceCount": 12,
+            "topBoatDistribution": {
+              "1": 92,
+              "2": 31,
+              "3": 4,
+              "4": 2
+            }
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 64,
+            "added": 10,
+            "lost": 4,
+            "netTop1": 6,
+            "top3": 103,
+            "meanWinnerRank": 2.170542636,
+            "pairwiseFinishOrder": {
+              "concordant": 272,
+              "comparable": 387,
+              "rate": 0.702842377
+            },
+            "rankingChangedRaceCount": 76,
+            "topBoatChangedRaceCount": 22,
+            "topBoatDistribution": {
+              "1": 85,
+              "2": 32,
+              "3": 10,
+              "4": 2
+            }
+          }
+        ]
+      }
+    ],
+    "naturalOneToOneHundredClamp": {
+      "status": "retrospective-rejected",
+      "all": {
+        "raceCount": 258,
+        "top1": 109,
+        "added": 14,
+        "lost": 29,
+        "netTop1": -15,
+        "top3": 203,
+        "meanWinnerRank": 2.26744186,
+        "pairwiseFinishOrder": {
+          "concordant": 501,
+          "comparable": 774,
+          "rate": 0.647286822
+        },
+        "rankingChangedRaceCount": 102,
+        "topBoatChangedRaceCount": 70,
+        "topBoatDistribution": {
+          "1": 140,
+          "2": 103,
+          "3": 12,
+          "4": 3
+        }
+      },
+      "chronologicalHalves": [
+        {
+          "half": 1,
+          "raceCount": 129,
+          "top1": 51,
+          "added": 2,
+          "lost": 17,
+          "netTop1": -15,
+          "top3": 101,
+          "meanWinnerRank": 2.286821705,
+          "pairwiseFinishOrder": {
+            "concordant": 240,
+            "comparable": 387,
+            "rate": 0.620155039
+          },
+          "rankingChangedRaceCount": 48,
+          "topBoatChangedRaceCount": 30,
+          "topBoatDistribution": {
+            "1": 73,
+            "2": 53,
+            "3": 2,
+            "4": 1
+          }
+        },
+        {
+          "half": 2,
+          "raceCount": 129,
+          "top1": 58,
+          "added": 12,
+          "lost": 12,
+          "netTop1": 0,
+          "top3": 102,
+          "meanWinnerRank": 2.248062016,
+          "pairwiseFinishOrder": {
+            "concordant": 261,
+            "comparable": 387,
+            "rate": 0.674418605
+          },
+          "rankingChangedRaceCount": 54,
+          "topBoatChangedRaceCount": 40,
+          "topBoatDistribution": {
+            "1": 67,
+            "2": 50,
+            "3": 10,
+            "4": 2
+          }
+        }
+      ]
+    },
+    "exploratoryHypothesis": {
+      "id": "course-index-within-race-spread-factor-090",
+      "factor": 0.9,
+      "formula": "raceMean + factor * (courseIndex - raceMean)",
+      "duplicateOfPriorWeightProfiles": false,
+      "why": "CourseIndex is the largest model-side contribution in 119/134 misses, while the 0.90 spread factor is the smallest explored compression with positive full-discovery net top1 and non-harmful equal-count halves.",
+      "measuredRetrospectiveImpact": {
+        "baseline": {
+          "raceCount": 258,
+          "top1": 124,
+          "added": 0,
+          "lost": 0,
+          "netTop1": 0,
+          "top3": 204,
+          "meanWinnerRank": 2.228682171,
+          "pairwiseFinishOrder": {
+            "concordant": 521,
+            "comparable": 774,
+            "rate": 0.673126615
+          },
+          "rankingChangedRaceCount": 0,
+          "topBoatChangedRaceCount": 0,
+          "topBoatDistribution": {
+            "1": 210,
+            "2": 47,
+            "3": 1
+          }
+        },
+        "candidate": {
+          "raceCount": 258,
+          "top1": 125,
+          "added": 2,
+          "lost": 1,
+          "netTop1": 1,
+          "top3": 206,
+          "meanWinnerRank": 2.213178295,
+          "pairwiseFinishOrder": {
+            "concordant": 524,
+            "comparable": 774,
+            "rate": 0.677002584
+          },
+          "rankingChangedRaceCount": 23,
+          "topBoatChangedRaceCount": 5,
+          "topBoatDistribution": {
+            "1": 205,
+            "2": 50,
+            "3": 3
+          },
+          "addedRaceKeys": [
+            "20260817-02-9",
+            "20260817-05-7"
+          ],
+          "lostRaceKeys": [
+            "20260817-13-8"
+          ]
+        },
+        "chronologicalHalves": [
+          {
+            "half": 1,
+            "raceCount": 129,
+            "top1": 66,
+            "added": 0,
+            "lost": 0,
+            "netTop1": 0,
+            "top3": 102,
+            "meanWinnerRank": 2.139534884,
+            "pairwiseFinishOrder": {
+              "concordant": 258,
+              "comparable": 387,
+              "rate": 0.666666667
+            },
+            "rankingChangedRaceCount": 9,
+            "topBoatChangedRaceCount": 1,
+            "topBoatDistribution": {
+              "1": 102,
+              "2": 26,
+              "3": 1
+            },
+            "addedRaceKeys": [],
+            "lostRaceKeys": []
+          },
+          {
+            "half": 2,
+            "raceCount": 129,
+            "top1": 59,
+            "added": 2,
+            "lost": 1,
+            "netTop1": 1,
+            "top3": 104,
+            "meanWinnerRank": 2.286821705,
+            "pairwiseFinishOrder": {
+              "concordant": 266,
+              "comparable": 387,
+              "rate": 0.687338501
+            },
+            "rankingChangedRaceCount": 14,
+            "topBoatChangedRaceCount": 4,
+            "topBoatDistribution": {
+              "1": 103,
+              "2": 24,
+              "3": 2
+            },
+            "addedRaceKeys": [
+              "20260817-02-9",
+              "20260817-05-7"
+            ],
+            "lostRaceKeys": [
+              "20260817-13-8"
+            ]
+          }
+        ],
+        "oneSidedExactPValue": 0.5
+      },
+      "evidenceStrength": "weak",
+      "approved": false,
+      "usableForPrediction": false,
+      "rollback": "Set factor back to 1.00.",
+      "requiredNextStep": "separate preregistered future shadow cohort after explicit owner approval"
+    },
+    "formalProposalEligibility": {
+      "eligible": false,
+      "decision": "no-supported-change-proposal",
+      "reasons": [
+        "retrospective-multiple-profile-search",
+        "one-sided-exact-p-value-0.5",
+        "no-positive-first-half-selection-candidate"
+      ],
+      "firstHalfPositiveNetFactors": []
+    }
+  },
+  "decision": {
+    "result": "no-supported-change-proposal",
+    "oneWeakFutureShadowHypothesisRecorded": true,
+    "productionChangeAllowed": false,
+    "explicitOwnerApprovalRequiredBeforeFutureShadow": true,
+    "maximumNextAction": "review one new preregistered future-shadow experiment proposal"
+  },
+  "limitations": {
+    "roleComponentsOverlapRawSignals": true,
+    "courseIndexIncludesLegacyCompatibilityOffset": true,
+    "savedReplayCannotReconstructScenariosMarksSelectionsOrTickets": true,
+    "newEnvironmentActiveEvidenceRaceCount": 0,
+    "multiplicityAdjustedInferencePerformed": false,
+    "holdoutIsNotClaimedAsProspectiveOutcomeTimeEvidence": true
+  },
+  "safety": {
+    "productionChanged": false,
+    "runtimeImportAllowed": false,
+    "automaticApplication": false,
+    "proposalApproved": false,
+    "usableForPrediction": false,
+    "holdoutResultsRead": false,
+    "holdoutEvaluated": false,
+    "downstreamScenarioMarksTicketsSupported": false,
+    "newEnvironmentSupported": false,
+    "explicitOwnerApprovalRequiredBeforeFutureShadow": true,
+    "productionApplicationRequiresSeparatePreregisteredEvaluationAndPullRequest": true
+  }
+}

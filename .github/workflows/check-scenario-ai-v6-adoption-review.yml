@@ -3,6 +3,9 @@ name: Check scenario AI v6 adoption review
 on:
   pull_request:
     paths:
+      - "js/scenario-ai-v6-shadow-ab.js"
+      - "scripts/build-scenario-ai-v6-ab-report.js"
+      - "scripts/build-scenario-ai-v6-reproducibility-gate.js"
       - "scripts/build-scenario-ai-v6-adoption-review.js"
       - "scripts/test-scenario-ai-v6-adoption-review.js"
       - ".github/workflows/check-scenario-ai-v6-adoption-review.yml"

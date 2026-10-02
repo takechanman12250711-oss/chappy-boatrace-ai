@@ -1,11 +1,35 @@
 // チャッピーボートレースAI
-// モーター評価と新エンジン期の重み切り替え。
+// モーター評価と新エンジン期の実効採点契約を証拠化する。
 // モーターは最終補正のみ。展開・印・買い目・既存スコアは変更しない。
 (function () {
   "use strict";
 
   if (window.__CHAPPY_MOTOR_ENGINE_SUPPORT_INSTALLED__) return;
   window.__CHAPPY_MOTOR_ENGINE_SUPPORT_INSTALLED__ = true;
+
+  const EFFECTIVE_SCORE_CONTRACT_VERSION = "ai-core-effective-score-contract-v1";
+  const EFFECTIVE_SCORE_SCOPE = "aiCore.analyses[].indexes.total";
+  const NEW_ENVIRONMENT_THEORY_SOURCE = "ai-core-new-environment-theory-v1";
+  const FINAL_TOTAL_COEFFICIENTS = Object.freeze({
+    raceFlow: 0.25,
+    courseIndex: 0.24,
+    roleAttack: 0.11,
+    st: 0.10,
+    exhibition: 0.09,
+    roleHold: 0.08,
+    rolePickup: 0.03,
+    local: 0.05,
+    turn: 0.025,
+    national: 0.02,
+    motor: 0.005
+  });
+  const NEW_ENGINE_ADJUSTMENTS = Object.freeze({
+    motorIndexDeviationFrom50Multiplier: 0.45,
+    raceFlowStThresholdInclusive: 72,
+    raceFlowStBonus: 3,
+    raceFlowTurnThresholdInclusive: 72,
+    raceFlowTurnBonus: 3
+  });
 
   function numberOrNull(value) {
     if (value === null || value === undefined || value === "") return null;
@@ -34,7 +58,38 @@
     return candidates.find(Array.isArray) || [];
   }
 
+  function canonicalNewEnvironmentTheoryOf(prediction) {
+    return prediction?.aiCore?.newEnvironmentTheory || null;
+  }
+
+  function newEnvironmentTheoryOf(prediction) {
+    return canonicalNewEnvironmentTheoryOf(prediction) || prediction?.newEnvironmentTheory || null;
+  }
+
+  function scoredAiCoreStatus(prediction) {
+    const analyses = prediction?.aiCore?.analyses;
+    if (!Array.isArray(analyses)) return { verified: false, boatCount: 0 };
+    const boatNumbers = analyses.map(boatNoOf);
+    const verified =
+      analyses.length === 6 &&
+      new Set(boatNumbers).size === 6 &&
+      boatNumbers.every(boatNo => boatNo >= 1 && boatNo <= 6) &&
+      analyses.every(boat => Number.isFinite(boat?.indexes?.total));
+    return { verified, boatCount: analyses.length };
+  }
+
+  function effectiveNewEngineMode(prediction) {
+    const theory = newEnvironmentTheoryOf(prediction);
+    if (
+      theory?.source !== NEW_ENVIRONMENT_THEORY_SOURCE ||
+      typeof theory?.isActive !== "boolean"
+    ) return null;
+    return theory.isActive;
+  }
+
   function isNewEngineMode(prediction, data) {
+    const effectiveMode = effectiveNewEngineMode(prediction);
+    if (effectiveMode !== null) return effectiveMode;
     if (prediction?.newEngine?.updated || prediction?.newEngine?.isNewEngineMode) return true;
     if (data?.newEngine?.updated || data?.newEngine?.isNewEngineMode) return true;
     const source = JSON.stringify({
@@ -45,6 +100,25 @@
       newEngine: data?.newEngine
     });
     return /(新エンジン|新型エンジン|新モーター|新燃料)/.test(source);
+  }
+
+  function effectiveScoreContract(prediction) {
+    const theory = canonicalNewEnvironmentTheoryOf(prediction);
+    const scoredAiCore = scoredAiCoreStatus(prediction);
+    const modeVerified =
+      scoredAiCore.verified &&
+      theory?.source === NEW_ENVIRONMENT_THEORY_SOURCE &&
+      typeof theory?.isActive === "boolean";
+    return {
+      version: EFFECTIVE_SCORE_CONTRACT_VERSION,
+      scope: EFFECTIVE_SCORE_SCOPE,
+      finalTotalCoefficients: { ...FINAL_TOTAL_COEFFICIENTS },
+      newEngineAdjustments: {
+        applied: modeVerified && theory.isActive === true,
+        modeSource: modeVerified ? theory.source : "",
+        ...NEW_ENGINE_ADJUSTMENTS
+      }
+    };
   }
 
   function motorRate(item) {
@@ -111,9 +185,7 @@
       newEngineMode,
       centerBoatNo: centerNo || null,
       centerMotorRate: centerMotor,
-      weights: newEngineMode
-        ? { st: 0.22, exhibition: 0.23, motor: 0.05, local: 0.14, skill: 0.10, attack: 0.14, raceFlow: 0.08, turn: 0.04 }
-        : { st: 0.18, exhibition: 0.18, motor: 0.12, local: 0.13, skill: 0.10, attack: 0.13, raceFlow: 0.10, turn: 0.06 },
+      effectiveScoreContract: effectiveScoreContract(prediction),
       confirmations: [...new Set(confirmations)],
       cautions: [...new Set(cautions)],
       comment,
@@ -149,7 +221,14 @@
     return true;
   }
 
-  window.ChappyPredictionMotorEngineSupport = { build, enhance, install, isNewEngineMode };
+  window.ChappyPredictionMotorEngineSupport = {
+    build,
+    enhance,
+    install,
+    isNewEngineMode,
+    effectiveNewEngineMode,
+    effectiveScoreContract
+  };
   if (!install()) {
     window.addEventListener("chappy:hiyori-runtime-ready", install, { once: true });
     document.addEventListener("DOMContentLoaded", install, { once: true });

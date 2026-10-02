@@ -15,7 +15,7 @@
     若松:{main:"ナイターの展示・伸びを補助評価",cautions:[]}
   };
 
-  function num(v){const n=Number(String(v??"").replace(/[^\d.-]/g,""));return Number.isFinite(n)?n:null}
+  function num(v){const raw=String(v??"").trim();if(!raw)return null;const normalized=raw.replace(/[^\d.-]/g,"");if(!normalized||normalized==="-"||normalized==="."||normalized==="-.")return null;const n=Number(normalized);return Number.isFinite(n)?n:null}
   function venueName(prediction,data){return data?.place||data?.venue||prediction?.venue?.name||prediction?.race?.place||prediction?.race?.venue||""}
   function build(prediction,data){
     const venue=venueName(prediction,data);

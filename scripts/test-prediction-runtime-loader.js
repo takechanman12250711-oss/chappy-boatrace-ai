@@ -153,6 +153,13 @@ function createRuntime({
         .indexOf("js/prediction.js"),
     "艇番整合性を予想本体より先に読み込む"
   );
+  assert.ok(
+    failedOptional.runtime.scripts
+      .indexOf("js/render.js") <
+      failedOptional.runtime.scripts
+        .indexOf("js/main-cover-display-boundary.js"),
+    "描画本体を公開してから通常最大7点の表示境界を外側へ接続する"
+  );
   const ready =
     await failedOptional
       .runtime
@@ -193,6 +200,30 @@ function createRuntime({
         )
       ),
     "校正より先に必須描画まで読み込む"
+  );
+  assert.ok(
+    failedOptional.appended.includes(
+      "js/ai-core.js?v=20260922-escape-skill-role1"
+    ),
+    "逃げ戦法評価修正済みai-coreを専用キャッシュ世代で読み込む"
+  );
+  assert.ok(
+    failedOptional.appended.includes(
+      "js/render.js?v=20260908-comment-dedup1"
+    ),
+    "別枠舟券更新済みrenderを専用キャッシュ世代で読み込む"
+  );
+  assert.ok(
+    failedOptional.appended.includes(
+      "js/manshu-display-reliability.js?v=20260909-formation-preserve1"
+    ),
+    "万舟フォーメーション保持修正を専用キャッシュ世代で読み込む"
+  );
+  assert.ok(
+    failedOptional.appended.includes(
+      "js/boat-identity.js?v=20260828-ui-audit-display1"
+    ),
+    "未変更モジュールの既存キャッシュ世代を維持する"
   );
 
   const availableOptional =

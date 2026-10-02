@@ -5,6 +5,7 @@ const {
   parseOfficialRaceHtml
 } = require("../api/_parser");
 const raceApi = require("../api/race");
+require("./test-race-parser-missing-st");
 
 const beforeHtml = [
   "枠 写真 ボートレーサー",
@@ -122,7 +123,7 @@ async function testFetchedAt() {
     await raceApi(
       {
         query: {
-          jcd: "06",
+          jcd: "07",
           rno: "9",
           date: "20260726"
         }

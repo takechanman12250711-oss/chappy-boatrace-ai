@@ -1,12 +1,54 @@
 "use strict";
 
+const SCENARIO_KEYS = [
+  "inEscape",
+  "course2Sashi",
+  "course3Attack",
+  "course4Kado"
+];
+
+const SCENARIO_KEY_ALIASES = Object.freeze({
+  inEscape: "inEscape",
+  escape: "inEscape",
+  oneEscape: "inEscape",
+  escape_1: "inEscape",
+  course2Sashi: "course2Sashi",
+  sashi: "course2Sashi",
+  twoSashi: "course2Sashi",
+  sashi_2: "course2Sashi",
+  course3Attack: "course3Attack",
+  threeAttack: "course3Attack",
+  attack_3: "course3Attack",
+  course4Kado: "course4Kado",
+  fourAttack: "course4Kado",
+  attack_4: "course4Kado"
+});
+
 function normalizeTicket(value) {
   const boats = String(value || "").match(/[1-6]/g) || [];
   return boats.length >= 3 ? boats.slice(0, 3).join("-") : "";
 }
 
+function canonicalScenarioKey(value) {
+  const key = String(value || "").trim();
+  return SCENARIO_KEY_ALIASES[key] || key;
+}
+
+function isCompleteScenarioSet(scenarios) {
+  if (!Array.isArray(scenarios) || scenarios.length !== SCENARIO_KEYS.length) {
+    return false;
+  }
+  const keys = scenarios.map(row => canonicalScenarioKey(row?.key));
+  return (
+    new Set(keys).size === SCENARIO_KEYS.length &&
+    keys.every(key => SCENARIO_KEYS.includes(key))
+  );
+}
+
 function actualScenario(result) {
-  const ticket = normalizeTicket(result?.trifecta?.combination);
+  const ticket = normalizeTicket(
+    result?.trifecta?.combination || result?.resultTicket
+  );
   const winner = Number(ticket.split("-")[0] || 0);
   const method = String(result?.winningMethod || "").trim();
   if (winner === 1 && /逃げ/.test(method)) return { key: "inEscape", label: "1逃げ" };
@@ -21,33 +63,60 @@ function verify(shadow, result) {
   const scenarios = Array.isArray(shadow?.scenarios) ? shadow.scenarios : [];
   const leader = shadow?.leader || null;
   const runnerUp = shadow?.runnerUp || null;
-  if (!actual || !scenarios.length || !leader?.key) {
+  const actualKey = canonicalScenarioKey(actual?.key);
+  const leaderKey = canonicalScenarioKey(leader?.key);
+  const runnerUpKey = canonicalScenarioKey(runnerUp?.key);
+  const completeScenarioSet = isCompleteScenarioSet(scenarios);
+  const recognizedLeaders =
+    SCENARIO_KEYS.includes(leaderKey) &&
+    SCENARIO_KEYS.includes(runnerUpKey);
+  if (!actual || !completeScenarioSet || !recognizedLeaders) {
     return {
       comparable: false,
       actualScenario: actual,
       leaderHit: false,
       top2Hit: false,
       ambiguity: String(shadow?.ambiguity || ""),
-      reason: !actual ? "公式結果から4展開を一意に判定できない" : "展開AI v5の保存データが不足"
+      reason: !actual
+        ? "公式結果から4展開を一意に判定できない"
+        : "展開AI v5の4展開保存データが不足または形式不一致"
     };
   }
-  const actualRow = scenarios.find(row => row?.key === actual.key) || null;
+  const actualRow = scenarios.find(
+    row => canonicalScenarioKey(row?.key) === actualKey
+  ) || null;
+  if (!actualRow) {
+    return {
+      comparable: false,
+      actualScenario: {
+        ...actual,
+        key: actualKey
+      },
+      leaderHit: false,
+      top2Hit: false,
+      ambiguity: String(shadow?.ambiguity || ""),
+      reason: "展開AI v5に公式展開と対応する保存データがない"
+    };
+  }
   return {
     comparable: true,
-    actualScenario: actual,
+    actualScenario: {
+      ...actual,
+      key: actualKey
+    },
     predictedLeader: {
-      key: String(leader.key || ""),
+      key: leaderKey,
       label: String(leader.label || ""),
       relativeLikelihood: Number(leader.relativeLikelihood || 0)
     },
     predictedRunnerUp: runnerUp ? {
-      key: String(runnerUp.key || ""),
+      key: runnerUpKey,
       label: String(runnerUp.label || ""),
       relativeLikelihood: Number(runnerUp.relativeLikelihood || 0)
     } : null,
     actualRelativeLikelihood: Number(actualRow?.relativeLikelihood || 0),
-    leaderHit: leader.key === actual.key,
-    top2Hit: leader.key === actual.key || runnerUp?.key === actual.key,
+    leaderHit: leaderKey === actualKey,
+    top2Hit: leaderKey === actualKey || runnerUpKey === actualKey,
     likelihoodGap: Number(shadow?.likelihoodGap || 0),
     ambiguity: String(shadow?.ambiguity || ""),
     status: "shadow-verification"
@@ -81,4 +150,11 @@ function buildSummary(rows) {
   };
 }
 
-module.exports = { actualScenario, verify, buildSummary };
+module.exports = {
+  SCENARIO_KEYS,
+  canonicalScenarioKey,
+  isCompleteScenarioSet,
+  actualScenario,
+  verify,
+  buildSummary
+};

@@ -38,8 +38,52 @@ assert.equal(builder.evaluateRows(rows), 1);
 assert.equal(rows[0].result.missCauseAnalysis.causeCount, result.causeCount);
 assert.equal(builder.evaluateRows(rows), 0);
 
+const matchedScenarioTicketMiss = analyzer.build({
+  result: {
+    settled: true,
+    resultTicket: "1-3-2",
+    practicalHit: false,
+    review: { practicalHit: false, missType: "相手抜け", scenarioMatch: true },
+    verification: { scenarioVerification: { status: "matched" } }
+  },
+  prediction: { practicalTickets: ["1-2-3", "1-3-4"] },
+  theoryEvaluationSnapshot: {
+    evaluations: [
+      { theoryKey: "race-flow", label: "展開理論", status: "evaluated", matched: false, tickets: ["1-2-3", "1-3-4"] }
+    ]
+  }
+});
+assert(matchedScenarioTicketMiss.candidates.some(row => row.code === "ticket-coverage-insufficient"));
+assert(!matchedScenarioTicketMiss.candidates.some(row => row.code === "flow-reading-miss"), "中心展開一致なら3着券不足を展開読み違いにしない");
+
+const verificationOnlyMatched = analyzer.build({
+  result: {
+    settled: true,
+    resultTicket: "1-4-2",
+    practicalHit: false,
+    review: { practicalHit: false, missType: "相手抜け" },
+    verification: { scenarioVerification: { status: "matched" } }
+  },
+  prediction: { practicalTickets: ["1-2-4"] },
+  theoryEvaluationSnapshot: {
+    evaluations: [
+      { theoryKey: "race-flow", label: "展開理論", status: "evaluated", matched: false, tickets: ["1-2-4"] }
+    ]
+  }
+});
+assert(!verificationOnlyMatched.candidates.some(row => row.code === "flow-reading-miss"), "構造化照合matchedでも展開読み違いを抑止する");
+
 const hit = analyzer.build({ result: { settled: true, practicalHit: true }, prediction: { practicalTickets: ["1-2-3"] } });
 assert.equal(hit.status, "hit-no-miss-analysis");
 assert.equal(hit.causeCount, 0);
 
 console.log("外れ原因分析 Phase2: 合格");
+
+// Approved four-stage diagnosis: emit current repository evidence in CI without changing production logic.
+const fourStageDiagnosis = require("./build-four-stage-miss-diagnosis.cjs");
+const fourStageReport = fourStageDiagnosis.build();
+assert.equal(
+  fourStageReport.summary.headMiss + fourStageReport.summary.secondMiss + fourStageReport.summary.thirdMiss,
+  fourStageReport.summary.misses
+);
+console.log("FOUR_STAGE_REPORT_JSON=" + JSON.stringify(fourStageReport));

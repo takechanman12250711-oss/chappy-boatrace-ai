@@ -5,6 +5,9 @@ const verifier = require("../js/scenario-ai-v6-verification");
 const builder = require("./build-scenario-ai-v6-verification");
 
 const snapshot = {
+  version: "6.1.0-shadow",
+  logicFingerprint: "scenario-ai-v6-multi-candidate-v1",
+  inputSourceKind: "live-verification-evidence",
   scenarios: [
     { rank: 1, scenarioType: "escape", likelihood: 60, finishOrder: [1, 2, 4] },
     { rank: 2, scenarioType: "sashi", likelihood: 25, finishOrder: [2, 1, 4] },
@@ -20,6 +23,9 @@ assert.equal(exact.exactWithinCandidates, true);
 assert.equal(exact.matchedRank, 2);
 assert.equal(exact.topCandidateExact, false);
 assert.equal(exact.scenarios[1].winningMethodMatch, true);
+assert.equal(exact.logicFingerprint, snapshot.logicFingerprint);
+assert.equal(exact.snapshotVersion, snapshot.version);
+assert.equal(exact.inputSourceKind, snapshot.inputSourceKind);
 
 const first = verifier.verify(snapshot, {
   resultAvailable: true,

@@ -1,5 +1,7 @@
 "use strict";
 
+const VERSION = "6.1.0-verification";
+
 function normalizeTicket(value) {
   const boats = String(value || "").match(/[1-6]/g) || [];
   return boats.length >= 3 ? boats.slice(0, 3).join("-") : "";
@@ -68,7 +70,10 @@ function verify(snapshot = {}, result = {}) {
   const best = exactRows[0] || firstRows[0] || rows.find(row => row.top2Hit) || null;
   const actual = resultOrder(result);
   return {
-    version: "6.0.0-verification",
+    version: VERSION,
+    logicFingerprint: String(snapshot?.logicFingerprint || ""),
+    snapshotVersion: String(snapshot?.version || ""),
+    inputSourceKind: String(snapshot?.inputSourceKind || ""),
     status: !actual.length ? "result-unavailable" : rows.length ? "verified" : "scenario-unavailable",
     scenarioCount: rows.length,
     exactCount: exactRows.length,
@@ -104,4 +109,11 @@ function buildSummary(rows = []) {
   };
 }
 
-module.exports = { verify, verifyScenario, buildSummary, resultOrder, methodMatches };
+module.exports = {
+  VERSION,
+  verify,
+  verifyScenario,
+  buildSummary,
+  resultOrder,
+  methodMatches
+};

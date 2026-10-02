@@ -1,0 +1,48 @@
+name: Check course miss condition breakdown
+
+on:
+  pull_request:
+    paths:
+      - "scripts/analyze-course-miss-conditions.cjs"
+      - "tests/course-miss-condition-breakdown.test.cjs"
+      - "scripts/build-effective-score-miss-attribution-report.js"
+      - "js/effective-score-weight-ab.js"
+      - "config/effective-score-miss-attribution-v1.json"
+      - "config/effective-score-weight-ab-v1.json"
+      - "data/predictions/202608*.json"
+      - "data/results/202608*.json"
+      - ".github/workflows/check-course-miss-condition-breakdown.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/analyze-course-miss-conditions.cjs"
+      - "tests/course-miss-condition-breakdown.test.cjs"
+      - "scripts/build-effective-score-miss-attribution-report.js"
+      - "js/effective-score-weight-ab.js"
+      - "config/effective-score-miss-attribution-v1.json"
+      - "config/effective-score-weight-ab-v1.json"
+      - "data/predictions/202608*.json"
+      - "data/results/202608*.json"
+      - ".github/workflows/check-course-miss-condition-breakdown.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test frozen Discovery condition breakdown
+        run: node tests/course-miss-condition-breakdown.test.cjs
+      - name: Print condition breakdown
+        run: node scripts/analyze-course-miss-conditions.cjs
+      - name: Check charter
+        run: node scripts/check-charter.js
+      - name: Confirm no tracked files were mutated
+        run: git diff --exit-code

@@ -1,0 +1,27 @@
+name: Check inner attack threshold grid
+on:
+  pull_request:
+    paths:
+      - 'scripts/search-inner-attack-threshold-grid.cjs'
+      - 'tests/inner-attack-threshold-grid.test.cjs'
+      - '.github/workflows/check-inner-attack-threshold-grid.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/search-inner-attack-threshold-grid.cjs'
+      - 'tests/inner-attack-threshold-grid.test.cjs'
+      - '.github/workflows/check-inner-attack-threshold-grid.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/inner-attack-threshold-grid.test.cjs
+      - run: node scripts/search-inner-attack-threshold-grid.cjs
+      - run: node scripts/check-charter.js
+      - run: git diff --exit-code

@@ -19,7 +19,6 @@ const prediction = {
     waveHeight: 7
   },
   engineMode: "新エンジン",
-  externalData: { source: "ボートレース日和" },
   combinedOdds: {
     categories: {
       main: {
@@ -42,7 +41,8 @@ assert.ok(keys.includes("local"));
 assert.ok(keys.includes("wind"));
 assert.ok(keys.includes("wave"));
 assert.ok(keys.includes("new-engine"));
-assert.ok(keys.includes("combined-odds") || keys.includes("hiyori-source"));
+assert.ok(keys.includes("combined-odds"));
+assert.equal(keys.includes("hiyori-source"), false);
 assert.ok(tags.every(item => item.strength >= 1 && item.strength <= 3));
 assert.match(referenceTags.render(tags), /参考情報/);
 assert.match(referenceTags.render(tags), /予想の主判断ではなく補足/);

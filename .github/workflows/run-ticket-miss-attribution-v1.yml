@@ -1,0 +1,37 @@
+name: Run ticket miss attribution v1
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/analyze-ticket-miss-attribution-v1.cjs'
+      - '.github/workflows/run-ticket-miss-attribution-v1.yml'
+      - 'scripts/analyze-ticket-expansion-7-12-18-24.cjs'
+      - 'scripts/analysis-input-contract.js'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run ticket miss attribution
+        run: node scripts/analyze-ticket-miss-attribution-v1.cjs > ticket-miss-attribution-v1.json
+      - name: Validate research-only boundary
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('ticket-miss-attribution-v1.json','utf8'));
+          if(r.productionChanged!==false||r.automaticApplication!==false||r.usableForPrediction!==false) process.exit(1);
+          const sum=Object.values(r.buckets).reduce((s,x)=>s+Number(x.missCount||0),0);
+          if(sum!==r.diagnostics.missCount) process.exit(1);
+          console.log(JSON.stringify({diagnostics:r.diagnostics,buckets:r.buckets,rankBands:r.exactCandidateRankBands,priority:r.improvementPriorityByRecoverableWithin12},null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ticket-miss-attribution-v1
+          path: ticket-miss-attribution-v1.json
+          retention-days: 90

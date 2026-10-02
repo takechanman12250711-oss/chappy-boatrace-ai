@@ -5,7 +5,8 @@
   役割：
   - アプリ・note・自動保存で同じ買い目を返す
   - 本線3＋押さえ2を基本5点とする
-  - 展開根拠がある場合だけ流し1・万舟1を追加する
+  - 同一展開・同一1/2着軸の根拠がそろう場合だけフォーメーション由来の3連単2点を追加する
+  - この2点が成立しない場合だけ万舟1点を追加する
   - 検証済みの独立展開だけ最大10点へ広げる
   - 評価候補の保持と、実際の購入を分離する
 ========================================================= */
@@ -16,6 +17,26 @@
   const STANDARD_COUNT = 5;
   const NORMAL_MAXIMUM_COUNT = 7;
   const MAXIMUM_COUNT = 10;
+  const FLOW_GROUP_COUNT = 2;
+  const FORMATION_DISPLAY_CATEGORY =
+    "フォーメーション";
+  const MINIMUM_FLOW_ROLE_SCORE = 65;
+  const MINIMUM_CANDIDATE_PROMOTION_SCORE =
+    90;
+  const PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK =
+    10;
+  const PRIORITY_GATE_REPLACEMENT_BRANCH =
+    "formation:hole";
+  const STRONG_ESCAPE_MINIMUM_SCORE =
+    80;
+  const STRONG_ESCAPE_MINIMUM_GAP =
+    5;
+  const STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT =
+    1;
+  const VERY_STRONG_ESCAPE_MINIMUM_SCORE =
+    85;
+  const VERY_STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT =
+    0;
   const TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT =
     1;
   const TARGET_EXCLUDED_PREVIEW_COUNT =
@@ -79,6 +100,79 @@
       : [];
   }
 
+  function firstFormationBranch(row) {
+    const branchId =
+      arrayify(row?.branchIds)
+        .map(String)
+        .find(id =>
+          /^formation:[^:]+:/.test(id)
+        );
+
+    if (!branchId) return "";
+
+    return branchId
+      .split(":")
+      .slice(0, 2)
+      .join(":");
+  }
+
+  function userFacingFormationText(
+    value
+  ) {
+    return String(value || "")
+      .replace(
+        /流し候補/g,
+        "フォーメーション候補"
+      )
+      .replace(
+        /流し展開/g,
+        "フォーメーション"
+      )
+      .replace(
+        /流し/g,
+        "フォーメーション"
+      );
+  }
+
+  function finalDisplayCategory(row) {
+    if (
+      row?.selectionTier ===
+        "順位ゲート置換"
+    ) {
+      return "順位ゲート補完";
+    }
+    if (
+      row?.selectionTier ===
+        "候補補完"
+    ) {
+      return "候補補完";
+    }
+    if (
+      row?.selectionTier ===
+        "展開追加"
+    ) {
+      return "独立展開";
+    }
+    if (
+      [
+        "順位ゲート補完",
+        "候補補完",
+        "独立展開"
+      ].includes(row?.category)
+    ) {
+      return row.category;
+    }
+    if (row?.category === "流し") {
+      return FORMATION_DISPLAY_CATEGORY;
+    }
+
+    return String(
+      row?.displayCategory ||
+      row?.category ||
+      "買い目"
+    );
+  }
+
   function boatNo(value) {
     return Number(
       value?.boatNo ??
@@ -139,7 +233,12 @@
     const byPosition =
       new Map();
 
-    arrayify(row?.coverage)
+    [
+      ...arrayify(row?.coverage),
+      ...arrayify(
+        row?.flowRoleEvidence
+      )
+    ]
       .filter(claim => {
         const position =
           Number(
@@ -294,6 +393,7 @@
         String(
           selection.status || ""
         ),
+      ...(selection.purchaseDecision ? { purchaseDecision: selection.purchaseDecision } : {}),
       reason:
         String(
           selection.reason || ""
@@ -846,6 +946,11 @@
         ),
       raceFlow:
         prediction?.raceFlow || {},
+      courseMapping:
+        prediction?.aiCore
+          ?.courseMapping ||
+        prediction?.courseMapping ||
+        null,
       mainHeadBoatNo:
         boatNo(
           prediction?.mainSheet?.honmei ||
@@ -906,6 +1011,27 @@
       targetsById,
       branchesById,
       evaluationsByBoat,
+      courseMappingFormal:
+        evidence.courseMapping
+          ?.formal === true,
+      courseByBoat:
+        new Map(
+          Object.entries(
+            evidence.courseMapping
+              ?.byBoat || {}
+          )
+            .map(([boat, course]) => [
+              Number(boat),
+              Number(course)
+            ])
+            .filter(
+              ([boat, course]) =>
+                boat >= 1 &&
+                boat <= 6 &&
+                course >= 1 &&
+                course <= 6
+            )
+        ),
       raceFlow,
       phases,
       mainHeadBoatNo:
@@ -984,6 +1110,26 @@
   }
 
   function courseOf(context, targetBoatNo) {
+    if (
+      context.courseMappingFormal !== true
+    ) {
+      return targetBoatNo >= 1 &&
+        targetBoatNo <= 6
+        ? targetBoatNo
+        : 0;
+    }
+
+    const mapped =
+      Number(
+        context.courseByBoat?.get(
+          targetBoatNo
+        ) || 0
+      );
+
+    if (mapped >= 1 && mapped <= 6) {
+      return mapped;
+    }
+
     const evaluation =
       context.evaluationsByBoat.get(
         targetBoatNo
@@ -1995,6 +2141,17 @@
         independentBranches.map(
           branch => branch.id
         ),
+      validScenarioIds: [
+        ...new Set(
+          purchaseBranches
+            .map(branch =>
+              String(
+                branch?.scenarioId || ""
+              )
+            )
+            .filter(Boolean)
+        )
+      ],
       requirementIds,
       coverage,
       coveredEvaluationIds,
@@ -2056,6 +2213,7 @@
         validBranchIds: [],
         validPurchaseBranchIds: [],
         validIndependentBranchIds: [],
+        validScenarioIds: [],
         validRequirementIds: []
       };
     }
@@ -2078,6 +2236,9 @@
       validIndependentBranchIds: [
         ...validation
           .validIndependentBranchIds
+      ],
+      validScenarioIds: [
+        ...validation.validScenarioIds
       ],
       validRequirementIds: [
         ...validation.requirementIds
@@ -2115,7 +2276,129 @@
     };
   }
 
-  function select(prediction) {
+  function findRaceScenarios(
+    source,
+    seen = new Set()
+  ) {
+    if (
+      !source ||
+      typeof source !== "object" ||
+      seen.has(source)
+    ) {
+      return null;
+    }
+
+    seen.add(source);
+
+    if (
+      source.mainScenario &&
+      Array.isArray(source.scenarios)
+    ) {
+      return source;
+    }
+
+    for (const value of Object.values(source)) {
+      const found =
+        findRaceScenarios(
+          value,
+          seen
+        );
+      if (found) return found;
+    }
+
+    return null;
+  }
+
+  function strongEscapeTrimPlan(
+    prediction,
+    rows,
+    context
+  ) {
+    const raceScenarios =
+      findRaceScenarios(prediction);
+    const mainScenario =
+      raceScenarios?.mainScenario || null;
+    const scenarios =
+      arrayify(
+        raceScenarios?.scenarios
+      );
+    const mainScore =
+      numeric(mainScenario?.score, 0);
+    const secondScore =
+      scenarios
+        .filter(
+          scenario =>
+            scenario !== mainScenario
+        )
+        .map(scenario =>
+          numeric(scenario?.score, 0)
+        )
+        .sort((a, b) => b - a)[0] ||
+      0;
+    const scoreGap =
+      mainScore - secondScore;
+    const eligible =
+      String(mainScenario?.type || "") ===
+        "escape" &&
+      mainScore >=
+        STRONG_ESCAPE_MINIMUM_SCORE &&
+      scoreGap >=
+        STRONG_ESCAPE_MINIMUM_GAP;
+
+    if (!eligible) {
+      return {
+        eligible: false,
+        applied: false,
+        mainScore,
+        secondScore,
+        scoreGap,
+        keptAlternateTickets: [],
+        removedTickets: []
+      };
+    }
+
+    const alternateRows =
+      arrayify(rows).filter(row => {
+        const headBoatNo =
+          ticketBoats(row?.ticket)[0];
+        const headCourse =
+          courseOf(context, headBoatNo) ||
+          headBoatNo;
+        return headCourse !== 1;
+      });
+    const maximumAlternateHeadCount =
+      mainScore >=
+        VERY_STRONG_ESCAPE_MINIMUM_SCORE
+        ? VERY_STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT
+        : STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT;
+    const keptAlternateTickets =
+      alternateRows
+        .slice(
+          0,
+          maximumAlternateHeadCount
+        )
+        .map(row => row.ticket);
+    const removedTickets =
+      alternateRows
+        .slice(
+          maximumAlternateHeadCount
+        )
+        .map(row => row.ticket);
+
+    return {
+      eligible: true,
+      applied:
+        removedTickets.length > 0,
+      mainScore,
+      secondScore,
+      scoreGap,
+      maximumAlternateHeadCount,
+      keptAlternateTickets,
+      removedTickets
+    };
+  }
+
+  function selectForecast(prediction) {
     const lists =
       ticketLists(prediction);
     const evidence =
@@ -2486,16 +2769,518 @@
       );
     }
 
-    if (evidence.flow) {
-      take(
-        lists.flow,
-        1,
-        "流し",
-        true
-      );
+    /*
+      独立展開の順位計画は基本5点だけを基準にする。
+      通常追加が「フォーメーション由来2券」か「穴1券」かで、別頭候補の
+      採否や順位が変わらないようにする。
+    */
+    const expansionSelectionContext =
+      selected.slice();
+
+    function flowFormationSource() {
+      const sources = [
+        prediction?.mainSheet
+          ?.flowFormations,
+        prediction?.formation
+          ?.flowFormations,
+        prediction?.formations
+          ?.flowFormations,
+        prediction?.aiCore
+          ?.formations
+          ?.flowFormations
+      ];
+
+      for (const source of sources) {
+        const formation =
+          arrayify(source)[0];
+        if (
+          formation &&
+          typeof formation ===
+            "object"
+        ) {
+          return formation;
+        }
+      }
+
+      return null;
     }
 
-    if (evidence.longshot) {
+    function formalFlowRoleEvidence(
+      role,
+      targetBoatNo
+    ) {
+      const formalRows =
+        role === "pickup"
+          ? arrayify(
+              validationContext
+                .raceFlow
+                ?.pickupBoats
+            )
+          : arrayify(
+              validationContext
+                .raceFlow
+                ?.holdBoats
+            );
+      const row =
+        formalRows.find(
+          item =>
+            boatNo(item) ===
+              targetBoatNo
+        );
+
+      if (
+        !row ||
+        typeof row !== "object" ||
+        Array.isArray(row) ||
+        row.qualified === false ||
+        row.isAdopted === false ||
+        row.adopted === false ||
+        row.active === false
+      ) {
+        return null;
+      }
+
+      const status =
+        String(
+          row.evidenceStatus ||
+          row.status ||
+          ""
+        ).toLowerCase();
+      const rejectedStatus = [
+        "rejected",
+        "excluded",
+        "stale",
+        "inactive",
+        "candidate-only",
+        "alternate",
+        "非採用",
+        "除外"
+      ].some(value =>
+        status.includes(value)
+      );
+
+      if (
+        rejectedStatus ||
+        numeric(row.score, 0) <= 0 ||
+        !String(
+          row.reason ||
+          row.comment ||
+          row.summary ||
+          ""
+        ).trim()
+      ) {
+        return null;
+      }
+
+      return row;
+    }
+
+    /*
+      流しは1券ずつ先着順で取らない。
+      正式主展開・同一1/2着軸・同一scenarioIdを共有し、
+      2着残しと3着拾い（または3着残り）がともに65点以上の
+      exact券が2券そろった時だけ、2券を原子的に採用する。
+    */
+    function selectGroundedFlowPair() {
+      if (!evidence.flow) return [];
+
+      const formation =
+        flowFormationSource();
+      const selectedMainHeadBoatNo =
+        Number(
+          ticketBoats(
+            selected[0]?.ticket
+          )[0] ||
+          0
+        );
+      const formationHeadBoatNo =
+        Number(
+          formation?.headBoatNo ||
+          0
+        );
+
+      if (
+        !formation ||
+        formationHeadBoatNo < 1 ||
+        formationHeadBoatNo !==
+          selectedMainHeadBoatNo ||
+        (
+          evidence.mainHeadBoatNo > 0 &&
+          evidence.mainHeadBoatNo !==
+            selectedMainHeadBoatNo
+        )
+      ) {
+        return [];
+      }
+
+      const mainHeadBoatNo =
+        selectedMainHeadBoatNo;
+      const expectedScenarioId =
+        `canonical:` +
+        `${validationContext.primaryAttackerBoatNo}`;
+      const secondPriority =
+        arrayify(
+          formation
+            ?.secondPriorityBoatNos ||
+          formation?.secondBoatNos
+        )
+          .map(Number)
+          .filter(
+            boatNumber =>
+              boatNumber >= 1 &&
+              boatNumber <= 6 &&
+              boatNumber !==
+                mainHeadBoatNo
+          );
+      const groups = new Map();
+
+      arrayify(lists.flow)
+        .forEach((item, index) => {
+          const row =
+            normalizeAndValidate(
+              item,
+              "流し"
+            );
+          const boats =
+            ticketBoats(row.ticket);
+
+          if (
+            boats.length !== 3 ||
+            boats[0] !==
+              mainHeadBoatNo ||
+            used.has(row.ticket) ||
+            !row.purchaseEligible ||
+            !row.validPurchaseBranchIds
+              .length
+          ) {
+            return;
+          }
+
+          const scenarioIds =
+            arrayify(
+              row.validScenarioIds
+            )
+              .map(String)
+              .filter(id =>
+                id.startsWith(
+                  "canonical:"
+                )
+              );
+          const scenarioId =
+            scenarioIds.length === 1
+              ? scenarioIds[0]
+              : "";
+          const flowPurchaseBranches =
+            row
+              .validPurchaseBranchIds
+              .map(id =>
+                validationContext
+                  .branchesById.get(id)
+              )
+              .filter(branch =>
+                branch?.kind ===
+                  "canonical-formation" &&
+                branch?.source ===
+                  "base-formation:flow" &&
+                branch?.scenarioId ===
+                  expectedScenarioId
+              );
+          const secondEvidence =
+            formalFlowRoleEvidence(
+              "hold",
+              boats[1]
+            );
+          const pickupEvidence =
+            formalFlowRoleEvidence(
+              "pickup",
+              boats[2]
+            );
+          const holdEvidence =
+            formalFlowRoleEvidence(
+              "hold",
+              boats[2]
+            );
+          const thirdRoleCandidate = [
+            {
+              role: "pickup",
+              evidence: pickupEvidence
+            },
+            {
+              role: "hold",
+              evidence: holdEvidence
+            }
+          ]
+            .filter(
+              candidate =>
+                candidate.evidence
+            )
+            .sort((a, b) =>
+              numeric(
+                b.evidence?.score,
+                0
+              ) -
+                numeric(
+                  a.evidence?.score,
+                  0
+                ) ||
+              (
+                a.role === "pickup"
+                  ? -1
+                  : 1
+              )
+            )[0] || null;
+          const thirdRole =
+            thirdRoleCandidate?.role ||
+            "";
+          const thirdEvidence =
+            thirdRoleCandidate
+              ?.evidence || null;
+          const secondScore =
+            numeric(
+              secondEvidence?.score,
+              0
+            );
+          const thirdScore =
+            numeric(
+              thirdEvidence?.score,
+              0
+            );
+
+          if (
+            scenarioId !==
+              expectedScenarioId ||
+            !flowPurchaseBranches.length ||
+            !secondPriority.includes(
+              boats[1]
+            ) ||
+            !secondEvidence ||
+            !thirdEvidence ||
+            secondScore <
+              MINIMUM_FLOW_ROLE_SCORE ||
+            thirdScore <
+              MINIMUM_FLOW_ROLE_SCORE
+          ) {
+            return;
+          }
+
+          const anchor =
+            `${boats[0]}-${boats[1]}`;
+          const groupKey =
+            `${scenarioId}|${anchor}`;
+          const thirdRoleLabel =
+            thirdRole === "pickup"
+              ? "3着拾い"
+              : "3着残り";
+          const secondEvidenceReason =
+            String(
+              secondEvidence?.reason ||
+              ""
+            ).trim();
+          const thirdEvidenceReason =
+            String(
+              thirdEvidence?.reason ||
+              ""
+            ).trim();
+          const scenarioTitle =
+            String(
+              formation?.label ||
+              evidence.raceFlow
+                ?.title ||
+              row.scenarioTitle ||
+              "正式主展開"
+            );
+          const commonReason =
+            `${boats[0]}号艇を1着軸` +
+            `（${scenarioTitle}）に、` +
+            `${boats[1]}号艇の2着残し` +
+            `（${secondScore}点` +
+            `${secondEvidenceReason
+              ? `：${secondEvidenceReason}`
+              : ""}）を固定。`;
+          const detailReason =
+            commonReason +
+            `${boats[2]}号艇の${thirdRoleLabel}` +
+            `（${thirdScore}点` +
+            `${thirdEvidenceReason
+              ? `：${thirdEvidenceReason}`
+              : ""}）が同じ展開で成立。`;
+          const enriched = {
+            ...row,
+            category: "流し",
+            displayCategory:
+              FORMATION_DISPLAY_CATEGORY,
+            displayFormationType:
+              "same-first-second-axis",
+            scenarioId,
+            flowAnchor: anchor,
+            flowCommonReason:
+              commonReason,
+            flowSecondScore:
+              secondScore,
+            flowThirdScore:
+              thirdScore,
+            flowRoleEvidence: [
+              {
+                position: 2,
+                boatNo: boats[1],
+                role: "hold",
+                score: secondScore,
+                reason:
+                  secondEvidenceReason,
+                source:
+                  secondEvidence
+                    .qualificationSource ||
+                  "raceFlow.holdBoats"
+              },
+              {
+                position: 3,
+                boatNo: boats[2],
+                role: thirdRole,
+                score: thirdScore,
+                reason:
+                  thirdEvidenceReason,
+                source:
+                  thirdEvidence
+                    .qualificationSource ||
+                  `raceFlow.${thirdRole}Boats`
+              }
+            ],
+            coveredBoatNos: [
+              ...new Set([
+                ...arrayify(
+                  row.coveredBoatNos
+                ),
+                boats[1],
+                boats[2]
+              ])
+            ],
+            evidenceReasons: [
+              ...new Set([
+                ...arrayify(
+                  row.evidenceReasons
+                ),
+                secondEvidenceReason,
+                thirdEvidenceReason
+              ].filter(Boolean))
+            ],
+            scenarioTitle:
+              `${scenarioTitle}のフォーメーション`,
+            scenarioSummary:
+              detailReason,
+            comment: detailReason
+          };
+
+          if (!groups.has(groupKey)) {
+            groups.set(groupKey, {
+              scenarioId,
+              anchor,
+              firstIndex: index,
+              secondPriorityIndex:
+                secondPriority.indexOf(
+                  boats[1]
+                ),
+              rows: []
+            });
+          }
+
+          const group =
+            groups.get(groupKey);
+          const alreadyRegistered =
+            group.rows.some(
+              ({ row: registered }) =>
+                registered.ticket ===
+                  enriched.ticket
+            );
+
+          if (!alreadyRegistered) {
+            group.rows.push({
+              row: enriched,
+              index,
+              thirdScore
+            });
+          }
+        });
+
+      const selectedGroup = [
+        ...groups.values()
+      ]
+        .filter(group =>
+          new Set(
+            group.rows.map(({ row }) =>
+              ticketBoats(
+                row.ticket
+              )[2]
+            )
+          ).size >= FLOW_GROUP_COUNT
+        )
+        .sort((a, b) => {
+          const priorityA =
+            a.secondPriorityIndex < 0
+              ? Number.MAX_SAFE_INTEGER
+              : a.secondPriorityIndex;
+          const priorityB =
+            b.secondPriorityIndex < 0
+              ? Number.MAX_SAFE_INTEGER
+              : b.secondPriorityIndex;
+
+          return (
+            priorityA - priorityB ||
+            a.firstIndex - b.firstIndex ||
+            a.anchor.localeCompare(
+              b.anchor
+            )
+          );
+        })[0];
+
+      if (!selectedGroup) return [];
+
+      const pair =
+        selectedGroup.rows
+          .sort((a, b) =>
+            b.thirdScore -
+              a.thirdScore ||
+            numeric(
+              b.row.priorityScore,
+              0
+            ) -
+              numeric(
+                a.row.priorityScore,
+                0
+              ) ||
+            a.index - b.index ||
+            a.row.ticket.localeCompare(
+              b.row.ticket
+            )
+          )
+          .slice(
+            0,
+            FLOW_GROUP_COUNT
+          )
+          .map(({ row }) => row);
+
+      if (
+        pair.length !==
+          FLOW_GROUP_COUNT
+      ) {
+        return [];
+      }
+
+      pair.forEach(row => {
+        used.add(row.ticket);
+        selected.push(row);
+      });
+
+      return pair;
+    }
+
+    const groundedFlowPair =
+      selectGroundedFlowPair();
+
+    if (
+      groundedFlowPair.length !==
+        FLOW_GROUP_COUNT &&
+      evidence.longshot
+    ) {
       take(
         lists.longshot,
         1,
@@ -3002,7 +3787,7 @@
         }
 
         const representedHead =
-          selected.find(
+          expansionSelectionContext.find(
             item =>
               ticketBoats(
                 item.ticket
@@ -3053,13 +3838,269 @@
     const expansionCandidates = [
       ...holdExpansionCandidates,
       ...alternateHeadByAttacker.values()
-    ].sort(expansionSort);
+    ]
+      .filter(row => {
+        const headBoatNo =
+          ticketBoats(row.ticket)[0];
+        const headCourse =
+          courseOf(
+            validationContext,
+            headBoatNo
+          ) || headBoatNo;
+        const weakOuterHead =
+          (headCourse === 5 || headCourse === 6) &&
+          numeric(row.priorityScore, 0) < 80;
+
+        if (weakOuterHead) {
+          const reason =
+            headCourse === headBoatNo
+              ? "5・6号艇頭の独立展開はpriority 80未満のため購入対象外。"
+              : `${headBoatNo}号艇は実${headCourse}コースの外頭となる独立展開で、priority 80未満のため購入対象外。`;
+          rememberExpansionExclusion(
+            row,
+            "WEAK_OUTER_HEAD_INDEPENDENT",
+            reason
+          );
+        }
+        return !weakOuterHead;
+      })
+      .sort(expansionSort);
 
     expansionCandidates.forEach(
       row => {
         addExpansion(row);
       }
     );
+
+    /*
+      candidate-only は安全ゲートを外さない。
+      既存の通常枠・独立展開を確定した後、最大10点までの空き枠だけを使う。
+      1〜3着すべてに物理根拠があり、priority 90以上の候補だけを補完する。
+    */
+    function hasThreePositionPhysicalEvidence(row) {
+      const positions = new Set(
+        arrayify(row?.physicalCoverage)
+          .map(claim =>
+            Number(claim?.position || 0)
+          )
+          .filter(position =>
+            position >= 1 &&
+            position <= 3
+          )
+      );
+      return positions.size === 3;
+    }
+
+    const candidateOnlyPromotionPool =
+      candidates
+        .filter(({ row, validation }) => {
+          const candidateOnly =
+            (
+              validation.valid === false &&
+              validation.reasonCode ===
+                "CANDIDATE_ONLY_EVALUATION"
+            ) ||
+            (
+              validation.valid === true &&
+              validation.purchaseEligible === true &&
+              validation.expansionEligible === false
+            );
+
+          return (
+            candidateOnly &&
+            !used.has(row.ticket) &&
+            row.priorityScore >=
+              MINIMUM_CANDIDATE_PROMOTION_SCORE &&
+            hasThreePositionPhysicalEvidence(row)
+          );
+        })
+        .sort(
+          (a, b) =>
+            b.row.priorityScore -
+              a.row.priorityScore ||
+            a.row.ticket.localeCompare(
+              b.row.ticket
+            )
+        );
+
+    candidateOnlyPromotionPool.forEach(
+      ({ row }) => {
+        if (
+          selected.length >=
+          MAXIMUM_COUNT
+        ) {
+          return;
+        }
+
+        const promotedHeadBoatNo =
+          ticketBoats(row.ticket)[0];
+        const promotedHeadCourse =
+          courseOf(
+            validationContext,
+            promotedHeadBoatNo
+          ) || promotedHeadBoatNo;
+        if (
+          promotedHeadCourse === 2 ||
+          promotedHeadCourse >= 4
+        ) {
+          const isSecondCourseHead =
+            promotedHeadCourse === 2;
+          const reason =
+            isSecondCourseHead
+              ? (
+                  promotedHeadCourse ===
+                    promotedHeadBoatNo
+                    ? "2号艇頭のcandidate90候補補完は購入対象外。"
+                    : `${promotedHeadBoatNo}号艇は実2コース頭となるためcandidate90候補補完の購入対象外。`
+                )
+              : promotedHeadCourse ===
+                  promotedHeadBoatNo
+                ? "4〜6号艇頭の候補補完は購入対象外。"
+                : `${promotedHeadBoatNo}号艇は実${promotedHeadCourse}コースの外頭となるため候補補完の購入対象外。`;
+          recordDecision(
+            row,
+            false,
+            isSecondCourseHead
+              ? "SECOND_COURSE_HEAD_CANDIDATE_PROMOTION_PRUNED"
+              : "OUTER_HEAD_CANDIDATE_PROMOTION_PRUNED",
+            reason
+          );
+          return;
+        }
+
+        const promoted = {
+          ...row,
+          category: "候補補完",
+          selectionTier: "候補補完",
+          candidatePromotion: true,
+          candidatePromotionThreshold:
+            MINIMUM_CANDIDATE_PROMOTION_SCORE,
+          candidatePromotionReason:
+            "1〜3着すべてに物理根拠があり、priority 90以上のため空き枠へ補完",
+          comment:
+            row.comment ||
+            row.scenarioSummary ||
+            "3着まで物理根拠がそろう高優先度候補を最大10点の空き枠へ補完。"
+        };
+
+        used.add(promoted.ticket);
+        selected.push(promoted);
+        recordDecision(
+          promoted,
+          true,
+          "CANDIDATE_ONLY_PROMOTED",
+          promoted.candidatePromotionReason
+        );
+      }
+    );
+
+    const strongEscapeTrim =
+      strongEscapeTrimPlan(
+        prediction,
+        selected,
+        validationContext
+      );
+    const strongEscapeTrimmedTickets =
+      new Set(
+        strongEscapeTrim
+          .removedTickets
+      );
+
+    if (strongEscapeTrim.applied) {
+      const retained =
+        selected.filter(row =>
+          !strongEscapeTrimmedTickets
+            .has(row.ticket)
+        );
+
+      selected.splice(
+        0,
+        selected.length,
+        ...retained
+      );
+      strongEscapeTrimmedTickets
+        .forEach(ticket =>
+          used.delete(ticket)
+        );
+      candidateDecisions.forEach(
+        decision => {
+          if (
+            strongEscapeTrimmedTickets
+              .has(decision.ticket)
+          ) {
+            decision.selected = false;
+            decision.reasonCode =
+              "STRONG_ESCAPE_ALTERNATE_TRIMMED";
+            decision.reason =
+              "1逃げ成立度80以上かつ次点展開との差5点以上のため、別頭は選抜順の最上位1点だけを維持。";
+          }
+        }
+      );
+    }
+
+    const weakTwoHeadTrimmedTickets =
+      new Set(
+        selected
+          .filter(row => {
+            const headBoatNo =
+              ticketBoats(row.ticket)[0];
+            const headCourse =
+              courseOf(
+                validationContext,
+                headBoatNo
+              ) || headBoatNo;
+            return (
+              row.selectionTier === "展開追加" &&
+              headCourse === 2 &&
+              numeric(row.priorityScore, 0) < 80
+            );
+          })
+          .map(row => row.ticket)
+      );
+    const weakTwoHeadReason = ticket => {
+      const headBoatNo =
+        ticketBoats(ticket)[0];
+      const headCourse =
+        courseOf(
+          validationContext,
+          headBoatNo
+        ) || headBoatNo;
+      return headCourse === headBoatNo
+        ? "2号艇頭の独立展開はpriority 80未満のため購入対象外。"
+        : `${headBoatNo}号艇は実2コース頭の独立展開で、priority 80未満のため購入対象外。`;
+    };
+
+    if (weakTwoHeadTrimmedTickets.size) {
+      const retained =
+        selected.filter(row =>
+          !weakTwoHeadTrimmedTickets.has(row.ticket)
+        );
+      selected.splice(
+        0,
+        selected.length,
+        ...retained
+      );
+      weakTwoHeadTrimmedTickets
+        .forEach(ticket =>
+          used.delete(ticket)
+        );
+      candidateDecisions.forEach(
+        decision => {
+          if (
+            weakTwoHeadTrimmedTickets
+              .has(decision.ticket)
+          ) {
+            decision.selected = false;
+            decision.reasonCode =
+              "WEAK_TWO_HEAD_INDEPENDENT";
+            decision.reason =
+              weakTwoHeadReason(
+                decision.ticket
+              );
+          }
+        }
+      );
+    }
 
     candidates.forEach(
       ({ row, validation }) => {
@@ -3069,6 +4110,34 @@
               item.ticket ===
               row.ticket
           );
+
+        if (
+          weakTwoHeadTrimmedTickets
+            .has(row.ticket)
+        ) {
+          recordDecision(
+            row,
+            false,
+            "WEAK_TWO_HEAD_INDEPENDENT",
+            weakTwoHeadReason(
+              row.ticket
+            )
+          );
+          return;
+        }
+
+        if (
+          strongEscapeTrimmedTickets
+            .has(row.ticket)
+        ) {
+          recordDecision(
+            row,
+            false,
+            "STRONG_ESCAPE_ALTERNATE_TRIMMED",
+            "1逃げ成立度80以上かつ次点展開との差5点以上のため、別頭は選抜順の最上位1点だけを維持。"
+          );
+          return;
+        }
 
         if (wasSelected) {
           mergeIntoSelected(row);
@@ -3204,10 +4273,32 @@
         );
       }
     );
-    const candidateOutcomesByTicket =
-      new Map();
+    if (
+      strongEscapeTrim.applied &&
+      selected.length < MAXIMUM_COUNT
+    ) {
+      candidateDecisions.forEach(
+        decision => {
+          if (
+            decision.selected !== true &&
+            decision.reasonCode ===
+              "MAXIMUM_REACHED"
+          ) {
+            decision.reasonCode =
+              "STRONG_ESCAPE_POST_TRIM_NOT_REFILLED";
+            decision.reason =
+              "強い1逃げの別頭整理後は空き枠を再充填せず、整理前の選抜順位を維持して候補に保持。";
+          }
+        }
+      );
+    }
 
-    candidateDecisions.forEach(
+    const aggregateCandidateOutcomes =
+      decisions => {
+        const candidateOutcomesByTicket =
+          new Map();
+
+        decisions.forEach(
       decision => {
         const structuredEvaluationIds =
           unique(
@@ -3315,26 +4406,344 @@
           }
         );
       }
-    );
-    const candidateOutcomes =
-      [
-        ...candidateOutcomesByTicket
-          .values()
-      ].sort(
-        (a, b) =>
-          Number(b.selected) -
-            Number(a.selected) ||
-          numeric(
-            b.priorityScore,
-            0
-          ) -
+        );
+
+        return [
+          ...candidateOutcomesByTicket
+            .values()
+        ].sort(
+          (a, b) =>
+            Number(b.selected) -
+              Number(a.selected) ||
             numeric(
-              a.priorityScore,
+              b.priorityScore,
+              0
+            ) -
+              numeric(
+                a.priorityScore,
+                0
+              ) ||
+            a.ticket.localeCompare(
+              b.ticket
+            )
+        );
+      };
+    let candidateOutcomes =
+      aggregateCandidateOutcomes(
+        candidateDecisions
+      );
+
+    /*
+      #335の除外的中監査を、結果を使わない固定条件へ絞り込んだ置換。
+      priority上位10位内に残った1号艇頭のformation:hole候補のうち、
+      canonical評価は購入可能だが独立展開ではない候補だけを対象にする。
+      本線3点とフォーメーション由来の2券は固定し、点数と賭金を増やさず、
+      残る最弱1券よりpriorityが高い場合だけ同じ位置へ1対1で置換する。
+    */
+    const priorityGateReplacement =
+      (() => {
+        const rankedByTicket =
+          new Map();
+
+        [
+          ...selected,
+          ...candidateDecisions
+            .filter(
+              decision =>
+                decision.selected !==
+                  true
+            )
+        ].forEach(row => {
+          if (
+            validTicket(row?.ticket) &&
+            !rankedByTicket.has(
+              row.ticket
+            )
+          ) {
+            rankedByTicket.set(
+              row.ticket,
+              row
+            );
+          }
+        });
+
+        const rankByTicket =
+          new Map(
+            [
+              ...rankedByTicket
+                .values()
+            ]
+              .sort(
+                (a, b) =>
+                  numeric(
+                    b.priorityScore,
+                    0
+                  ) -
+                  numeric(
+                    a.priorityScore,
+                    0
+                  )
+              )
+              .map((row, index) => [
+                row.ticket,
+                index + 1
+              ])
+          );
+        const eligible =
+          candidateOutcomes
+            .filter(outcome => {
+              const rank =
+                rankByTicket.get(
+                  outcome.ticket
+                ) || 0;
+              const headBoatNo =
+                ticketBoats(
+                  outcome.ticket
+                )[0] || 0;
+              const headCourse =
+                courseOf(
+                  validationContext,
+                  headBoatNo
+                ) || headBoatNo;
+
+              return (
+                outcome.selected !==
+                  true &&
+                rank >= 1 &&
+                rank <=
+                  PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK &&
+                numeric(
+                  outcome.priorityScore,
+                  0
+                ) > 0 &&
+                outcome.reasonCode ===
+                  "CANDIDATE_ONLY_EVALUATION" &&
+                headCourse === 1 &&
+                firstFormationBranch(
+                  outcome
+                ) ===
+                  PRIORITY_GATE_REPLACEMENT_BRANCH
+              );
+            })
+            .sort(
+              (a, b) =>
+                numeric(
+                  b.priorityScore,
+                  0
+                ) -
+                  numeric(
+                    a.priorityScore,
+                    0
+                  ) ||
+                a.ticket.localeCompare(
+                  b.ticket
+                )
+            );
+        const best =
+          eligible[0] || null;
+        const weakest =
+          [...selected]
+            .filter(row =>
+              row.category !== "本線" &&
+              row.category !== "流し"
+            )
+            .sort(
+              (a, b) =>
+                numeric(
+                  a.priorityScore,
+                  0
+                ) -
+                  numeric(
+                    b.priorityScore,
+                    0
+                  ) ||
+                a.ticket.localeCompare(
+                  b.ticket
+                )
+            )[0] || null;
+        const sourceRow =
+          best
+            ? candidates
+                .map(
+                  candidate =>
+                    candidate.row
+                )
+                .find(row =>
+                  row.ticket ===
+                    best.ticket &&
+                  firstFormationBranch(
+                    row
+                  ) ===
+                    PRIORITY_GATE_REPLACEMENT_BRANCH
+                )
+            : null;
+
+        if (
+          !best ||
+          !weakest ||
+          !sourceRow ||
+          numeric(
+            best.priorityScore,
+            0
+          ) <=
+            numeric(
+              weakest.priorityScore,
               0
             ) ||
-          a.ticket.localeCompare(
-            b.ticket
-          )
+          used.has(best.ticket)
+        ) {
+          return null;
+        }
+
+        const selectedIndex =
+          selected.findIndex(
+            row =>
+              row.ticket ===
+                weakest.ticket
+          );
+
+        if (selectedIndex < 0) {
+          return null;
+        }
+
+        const rank =
+          rankByTicket.get(
+            best.ticket
+          );
+        const reason =
+          `priority上位${PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK}位内の` +
+          (
+            ticketBoats(best.ticket)[0] === 1
+              ? `1号艇頭formation:hole候補`
+              : `${ticketBoats(best.ticket)[0]}号艇（実1コース）頭formation:hole候補`
+          ) +
+          `（${best.ticket}・${best.priorityScore}点）が、` +
+          `本線・フォーメーション由来2券を除く選択済み最弱券${weakest.ticket}` +
+          `（${weakest.priorityScore}点）を上回るため1対1で置換。`;
+        const promoted = {
+          ...sourceRow,
+          category:
+            "順位ゲート補完",
+          selectionTier:
+            "順位ゲート置換",
+          priorityGateReplacement:
+            true,
+          priorityGateRank: rank,
+          priorityGateMaximumRank:
+            PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK,
+          priorityGateSourceReasonCode:
+            "CANDIDATE_ONLY_EVALUATION",
+          priorityGateSourceBranch:
+            PRIORITY_GATE_REPLACEMENT_BRANCH,
+          priorityGateReplacedTicket:
+            weakest.ticket,
+          priorityGateReplacementReason:
+            reason,
+          comment:
+            sourceRow.comment ||
+            sourceRow.scenarioSummary ||
+            reason
+        };
+
+        selected.splice(
+          selectedIndex,
+          1,
+          promoted
+        );
+        used.delete(weakest.ticket);
+        used.add(promoted.ticket);
+
+        let removedDecisionUpdated =
+          false;
+        let promotedDecisionUpdated =
+          false;
+        candidateDecisions.forEach(
+          decision => {
+            if (
+              decision.ticket ===
+                weakest.ticket &&
+              decision.selected === true
+            ) {
+              decision.selected = false;
+              decision.reasonCode =
+                "PRIORITY_GATE_REPLACED";
+              decision.reason = reason;
+              decision.replacedByTicket =
+                promoted.ticket;
+              removedDecisionUpdated =
+                true;
+            }
+
+            if (
+              decision.ticket ===
+                promoted.ticket &&
+              decision.reasonCode ===
+                "CANDIDATE_ONLY_EVALUATION"
+            ) {
+              decision.selected = true;
+              decision.reasonCode =
+                "PRIORITY_GATE_HOLE_PROMOTED";
+              decision.reason = reason;
+              decision.replacedTicket =
+                weakest.ticket;
+              decision.priorityGateRank =
+                rank;
+              promotedDecisionUpdated =
+                true;
+            }
+          }
+        );
+
+        if (!removedDecisionUpdated) {
+          recordDecision(
+            weakest,
+            false,
+            "PRIORITY_GATE_REPLACED",
+            reason
+          );
+        }
+        if (!promotedDecisionUpdated) {
+          recordDecision(
+            promoted,
+            true,
+            "PRIORITY_GATE_HOLE_PROMOTED",
+            reason
+          );
+        }
+
+        return {
+          applied: true,
+          maximumRank:
+            PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK,
+          candidateRank: rank,
+          sourceReasonCode:
+            "CANDIDATE_ONLY_EVALUATION",
+          sourceBranch:
+            PRIORITY_GATE_REPLACEMENT_BRANCH,
+          addedTicket:
+            promoted.ticket,
+          addedPriorityScore:
+            promoted.priorityScore,
+          removedTicket:
+            weakest.ticket,
+          removedPriorityScore:
+            weakest.priorityScore,
+          removedCategory:
+            String(
+              weakest.category || ""
+            ),
+          removedSelectionTier:
+            String(
+              weakest.selectionTier || ""
+            ),
+          selectedIndex,
+          reason
+        };
+      })();
+
+    candidateOutcomes =
+      aggregateCandidateOutcomes(
+        candidateDecisions
       );
 
     const selectedExpansionBoundary =
@@ -3680,6 +5089,41 @@
     const finalizedTickets =
       selected.map(row => ({
         ...row,
+        displayCategory:
+          finalDisplayCategory(row),
+        scenarioType:
+          userFacingFormationText(
+            row.scenarioType
+          ),
+        scenarioTypes:
+          arrayify(row.scenarioTypes)
+            .map(
+              userFacingFormationText
+            ),
+        scenarioTitle:
+          userFacingFormationText(
+            row.scenarioTitle
+          ),
+        scenarioSummary:
+          userFacingFormationText(
+            row.scenarioSummary
+          ),
+        title:
+          userFacingFormationText(
+            row.title
+          ),
+        summary:
+          userFacingFormationText(
+            row.summary
+          ),
+        reason:
+          userFacingFormationText(
+            row.reason
+          ),
+        comment:
+          userFacingFormationText(
+            row.comment
+          ),
         roleLabels:
           roleLabelsFor(row)
       }));
@@ -3706,6 +5150,23 @@
             )
           ]
         }));
+    const candidatePromotionTickets =
+      finalizedTickets
+        .filter(
+          row =>
+            row.selectionTier ===
+            "候補補完"
+        )
+        .map(row => ({
+          ticket: row.ticket,
+          priorityScore:
+            row.priorityScore,
+          roleLabels: [
+            ...arrayify(
+              row.roleLabels
+            )
+          ]
+        }));
     const expansionSummary = {
       normalCount:
         normalTicketCount,
@@ -3713,6 +5174,62 @@
         addedTickets.length,
       finalCount:
         finalizedTickets.length,
+      ...(
+        strongEscapeTrim.eligible
+          ? {
+              strongEscapeTrim: {
+                eligible: true,
+                applied:
+                  strongEscapeTrim.applied,
+                minimumScore:
+                  STRONG_ESCAPE_MINIMUM_SCORE,
+                minimumGap:
+                  STRONG_ESCAPE_MINIMUM_GAP,
+                maximumAlternateHeadCount:
+                  strongEscapeTrim.maximumAlternateHeadCount,
+                veryStrongMinimumScore:
+                  VERY_STRONG_ESCAPE_MINIMUM_SCORE,
+                mainScore:
+                  strongEscapeTrim.mainScore,
+                secondScore:
+                  strongEscapeTrim.secondScore,
+                scoreGap:
+                  strongEscapeTrim.scoreGap,
+                keptAlternateTickets: [
+                  ...strongEscapeTrim
+                    .keptAlternateTickets
+                ],
+                removedTickets: [
+                  ...strongEscapeTrim
+                    .removedTickets
+                ],
+                removedCount:
+                  strongEscapeTrim
+                    .removedTickets.length
+              }
+            }
+          : {}
+      ),
+      ...(
+        candidatePromotionTickets.length
+          ? {
+              candidatePromotionCount:
+                candidatePromotionTickets.length,
+              candidatePromotionThreshold:
+                MINIMUM_CANDIDATE_PROMOTION_SCORE,
+              candidatePromotionTickets
+            }
+          : {}
+      ),
+      ...(
+        priorityGateReplacement
+          ? {
+              priorityGateReplacement: {
+                ...priorityGateReplacement
+              }
+            }
+          : {}
+      ),
       hasIndependentAdditions:
         addedTickets.length > 0,
       exceededNormalMaximum:
@@ -3720,9 +5237,13 @@
           NORMAL_MAXIMUM_COUNT,
       addedTickets,
       reason:
-        addedTickets.length
-          ? "通常枠とは別に、時系列と艇・着順・役割が一致した独立展開だけを追加。"
-          : "購入可能な独立展開がないため、通常枠の点数を維持。"
+        priorityGateReplacement
+          ? priorityGateReplacement.reason
+          : candidatePromotionTickets.length
+          ? "通常枠と検証済み独立展開を維持し、3着まで物理根拠がそろうpriority 90以上の候補だけを空き枠へ補完。"
+          : addedTickets.length
+            ? "通常枠とは別に、時系列と艇・着順・役割が一致した独立展開だけを追加。"
+            : "購入可能な独立展開がないため、通常枠の点数を維持。"
     };
     const verificationTickets =
       finalizedTickets.map(row => {
@@ -3914,7 +5435,7 @@
         confidenceDefinitionVersion:
           "internal-score-v1",
         ticketPolicyVersion:
-          "practical-5-7-10-v1"
+          "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1"
       },
       mainScenario: {
         type:
@@ -3966,10 +5487,18 @@
     return {
       status: "selected",
       reason:
-        selected.length >
-          NORMAL_MAXIMUM_COUNT
-          ? "基本5〜7点に、検証済みの独立展開だけを追加。"
-          : "展開とコースから基本5〜7点を構成。",
+        strongEscapeTrim.applied
+          ? strongEscapeTrim.maximumAlternateHeadCount === 0
+            ? "非常に強い1逃げでは1号艇頭だけを維持し、別頭は購入しない。"
+            : "強い1逃げでは1号艇頭を維持し、別頭は展開選抜順の最上位1点だけに整理。"
+          : priorityGateReplacement
+          ? priorityGateReplacement.reason
+          : candidatePromotionTickets.length
+          ? "基本5〜7点と検証済み独立展開を維持し、priority 90以上かつ3着まで物理根拠がそろう候補だけを空き枠へ補完。"
+          : selected.length >
+              NORMAL_MAXIMUM_COUNT
+            ? "基本5〜7点に、検証済みの独立展開だけを追加。"
+            : "展開とコースから基本5〜7点を構成。",
       standardCount:
         STANDARD_COUNT,
       normalMaximumCount:
@@ -3988,10 +5517,65 @@
     };
   }
 
+  // Owner-approved purchase policy. Forecast tickets remain the frozen A
+  // counterfactual; purchase recommendation B is a separate, empty set.
+  const WALL_PURCHASE_POLICY = Object.freeze({
+    id: "wall-established-attacker2-skip-b-v1",
+    approvedAt: "2026-09-22T23:26:22Z",
+    effectiveFrom: "2026-09-22T23:26:22Z"
+  });
+  function purchaseDecision(prediction) {
+    const p = prediction || {};
+    const stored = p.practicalSelection?.verificationEvidence || p.verificationEvidence || {};
+    const wall = p.aiCore?.wallTheory || p.wallTheory || p.raceScenarios?.wallTheory || stored.wallTheory || {};
+    const attackerNo = Number(wall.attackerNo || p.aiCore?.raceScenarios?.attacker || 0);
+    const wallCandidateNo = Number(wall.wallCandidateNo || 0);
+    const state = String(wall.state || "").trim();
+    const score = Number(wall.score), grade = String(wall.grade || "").trim();
+    const formal = /^(壁成立|互角|壁崩れ)$/.test(state) && attackerNo >= 1 && attackerNo <= 6 &&
+      wallCandidateNo >= 1 && wallCandidateNo <= 6 && Number.isFinite(score) && Boolean(grade);
+    const date = String(p.race?.date || "").replace(/-/g, "");
+    const clock = String(p.race?.raceInfo?.deadline || "");
+    const datedClock = /^\d{8}$/.test(date) && /^\d{2}:\d{2}$/.test(clock)
+      ? `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}T${clock}:00+09:00` : "";
+    const deadline = Date.parse(p.race?.deadlineAt || p.deadlineAt || datedClock);
+    const historical = p.isRetrospective === true || p.officialResultUsedForPrediction === true ||
+      /retrospective|replay|post.?race|post.?deadline/.test(String(p.predictionMode || ""));
+    const skip = !historical && deadline > Date.parse(WALL_PURCHASE_POLICY.effectiveFrom) && formal && state === "壁成立" && attackerNo === 2;
+    return { policyId: WALL_PURCHASE_POLICY.id, approvedAt: WALL_PURCHASE_POLICY.approvedAt,
+      effectiveFrom: WALL_PURCHASE_POLICY.effectiveFrom, status: skip ? "skip" : "unchanged",
+      reasonCode: skip ? "WALL_ESTABLISHED_ATTACKER2_OWNER_APPROVED_SKIP" : "OUTSIDE_APPROVED_WALL_SCOPE",
+      reason: skip ? "正式な壁成立・主攻め艇2号艇のため購入見送り。元の予想は参考として保存。" : "",
+      forecastTicketsPreserved: true, automaticAdoption: false,
+      ...(skip ? { recommendedTickets: [], recommendedStakeYen: 0 } : {}),
+      evidence: { formal, state, attackerNo, wallCandidateNo, score: Number.isFinite(score) ? score : null, grade } };
+  }
+  function select(prediction) {
+    const result = selectForecast(prediction);
+    return { ...result, purchaseDecision: purchaseDecision(prediction) };
+  }
+
   const api = {
+    WALL_PURCHASE_POLICY,
+    purchaseDecision,
+    createPurchaseSelection(prediction) {
+      const result = this.select(prediction);
+      return result.purchaseDecision?.status === "skip" ? [] : result.tickets;
+    },
     STANDARD_COUNT,
     NORMAL_MAXIMUM_COUNT,
     MAXIMUM_COUNT,
+    FLOW_GROUP_COUNT,
+    FORMATION_DISPLAY_CATEGORY,
+    MINIMUM_FLOW_ROLE_SCORE,
+    MINIMUM_CANDIDATE_PROMOTION_SCORE,
+    PRIORITY_GATE_REPLACEMENT_MAXIMUM_RANK,
+    PRIORITY_GATE_REPLACEMENT_BRANCH,
+    STRONG_ESCAPE_MINIMUM_SCORE,
+    STRONG_ESCAPE_MINIMUM_GAP,
+    STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT,
+    VERY_STRONG_ESCAPE_MINIMUM_SCORE,
+    VERY_STRONG_ESCAPE_MAXIMUM_ALTERNATE_HEAD_COUNT,
     THEORY_SCHEMA_VERSION,
     THEORY_SET_FINGERPRINT,
     TARGET_SELECTED_PHYSICAL_PREVIEW_COUNT,

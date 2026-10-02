@@ -1,0 +1,205 @@
+/* iPhone final presentation tuning only. No prediction logic changes. */
+
+.chappy-final-mobile-ui #predictionSection {
+  padding-bottom:calc(92px + env(safe-area-inset-bottom))!important;
+}
+
+.chappy-final-mobile-ui #resultArea {
+  gap:8px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-section,
+.chappy-final-mobile-ui #resultArea .v3-paper-section,
+.chappy-final-mobile-ui #resultArea .v3-boat-evaluation,
+.chappy-final-mobile-ui #resultArea .v3-main-newspaper,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-summary {
+  border-radius:15px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-section-head,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-head {
+  min-height:44px!important;
+  padding:9px 12px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-section-head h2,
+.chappy-final-mobile-ui #resultArea .v3-section-head h3,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-head h2,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-head h3 {
+  font-size:15px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-section-body,
+.chappy-final-mobile-ui #resultArea .v3-paper-section-body {
+  padding:9px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-entry-card-list {
+  gap:5px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-entry-card {
+  grid-template-columns:40px minmax(0,1fr) 66px!important;
+  gap:8px!important;
+  padding:9px 8px!important;
+  border-radius:12px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-entry-card-player>h3 {
+  font-size:14px!important;
+  line-height:1.15!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-entry-card-meta,
+.chappy-final-mobile-ui #resultArea .v3-entry-card-start,
+.chappy-final-mobile-ui #resultArea .v3-entry-card-stats {
+  font-size:10px!important;
+  line-height:1.35!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-entry-card-stats strong {
+  font-size:14px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-buttons {
+  top:56px!important;
+  gap:3px!important;
+  padding:5px!important;
+  border-radius:12px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-boat-tab-button {
+  min-height:35px!important;
+  border-radius:9px!important;
+  font-size:12px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-boat-eval-card,
+.chappy-final-mobile-ui #resultArea .v3-ai-meter,
+.chappy-final-mobile-ui #resultArea .v3-paper-card {
+  border-radius:12px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion {
+  margin:5px 0!important;
+  border-radius:12px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion>summary {
+  min-height:45px!important;
+  padding:0 11px 0 17px!important;
+  font-size:13px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-panel {
+  padding:0 11px 6px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-formation-row {
+  gap:4px 8px!important;
+  padding:10px 0!important;
+}
+
+.chappy-final-mobile-ui #resultArea .chappy-photo-ticket,
+.chappy-final-mobile-ui #resultArea .v3-formation-ticket,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-formation {
+  font-size:19px!important;
+  letter-spacing:.02em!important;
+}
+
+.chappy-final-mobile-ui #resultArea .v3-formation-reason,
+.chappy-final-mobile-ui #resultArea .ticket-reason,
+.chappy-final-mobile-ui #resultArea .v3-ticket-accordion-aim p,
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-reason {
+  font-size:10.5px!important;
+  line-height:1.45!important;
+}
+
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-head {
+  min-height:52px!important;
+  padding:9px 11px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-head h3 {
+  font-size:17px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-count {
+  min-width:50px!important;
+  padding:5px 8px!important;
+  border-radius:9px!important;
+  font-size:11px!important;
+}
+
+.chappy-final-mobile-ui #resultArea .chappy-final-buy-line {
+  padding-block:9px!important;
+}
+
+@media (max-width:430px) {
+  .chappy-final-mobile-ui #predictionSection>.dashboard-section-head {
+    margin-bottom:7px!important;
+    padding-bottom:6px!important;
+  }
+
+  .chappy-final-mobile-ui #predictionSection>.dashboard-section-head h2 {
+    font-size:19px!important;
+  }
+
+  .chappy-final-mobile-ui #predictionOddsStatus {
+    max-width:42vw!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    font-size:10px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea {
+    gap:7px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea .v3-entry-card {
+    grid-template-columns:38px minmax(0,1fr) 62px!important;
+    gap:7px!important;
+    padding:8px 7px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea .v3-boat-tab-buttons {
+    top:54px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea .v3-boat-tab-button {
+    min-height:34px!important;
+    font-size:11px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea .chappy-photo-ticket,
+  .chappy-final-mobile-ui #resultArea .v3-formation-ticket,
+  .chappy-final-mobile-ui #resultArea .chappy-final-buy-formation {
+    font-size:18px!important;
+  }
+}
+
+@media (max-width:390px) {
+  .chappy-final-mobile-ui #resultArea .v3-section-head,
+  .chappy-final-mobile-ui #resultArea .v3-paper-section-head {
+    padding-inline:10px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea .v3-entry-card {
+    grid-template-columns:36px minmax(0,1fr) 58px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea .v3-entry-card-player>h3 {
+    font-size:13px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea .v3-boat-tab-buttons {
+    gap:2px!important;
+    padding:4px!important;
+  }
+
+  .chappy-final-mobile-ui #resultArea .v3-boat-tab-button {
+    min-height:32px!important;
+    font-size:10.5px!important;
+  }
+}

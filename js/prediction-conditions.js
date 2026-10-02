@@ -1,7 +1,7 @@
 /* =========================================================
   予想時点の条件スナップショット
 
-  ST・展示・風・波・潮などを締切前の状態で固定保存する。
+  ST・展示・風・波・潮・予想時点の攻め/展開指数を締切前の状態で固定保存する。
   このモジュールは予想ロジック・重み・買い目を変更しない。
 ========================================================= */
 
@@ -33,6 +33,18 @@
     return String(value ?? "").trim();
   }
 
+  function normalizeDataSource(raceData) {
+    const source = text(
+      raceData?.source ||
+      raceData?.dataSource ||
+      raceData?.provider
+    );
+    if (/^(?:boatrace[-_ ]?official|BOAT\s*RACE公式)$/i.test(source)) {
+      return "boatrace-official";
+    }
+    return source;
+  }
+
   function boatNoOf(value, fallback = 0) {
     const number = Number(
       value?.boat ?? value?.waku ?? value?.no ?? value?.boatNo ?? value ?? fallback
@@ -41,7 +53,12 @@
   }
 
   function average(values) {
-    const numbers = values.map(numberOrNull).filter(value => value !== null);
+    const source = Array.isArray(values)
+      ? values
+      : values === null || values === undefined
+        ? []
+        : [values];
+    const numbers = source.map(numberOrNull).filter(value => value !== null);
     if (!numbers.length) return null;
     return Math.round(numbers.reduce((sum, value) => sum + value, 0) /
       numbers.length * 1000) / 1000;
@@ -84,11 +101,45 @@
     ));
   }
 
-  function captureBoat(raceData, boatNo) {
+  function getPredictionIndex(prediction, boatNo) {
+    const byBoat = prediction?.indexes?.byBoat || {};
+    const direct = byBoat?.[boatNo] || byBoat?.[String(boatNo)] || null;
+    if (direct && typeof direct === "object") return direct;
+
+    const scores = Array.isArray(prediction?.indexes?.scores)
+      ? prediction.indexes.scores
+      : [];
+    return scores.find((item, index) =>
+      boatNoOf(item, index + 1) === boatNo
+    ) || {};
+  }
+
+  function captureTheoryIndex(prediction, boatNo) {
+    const index = getPredictionIndex(prediction, boatNo);
+    const attackStrength = numberOrNull(index?.attack);
+    const raceFlowPower = numberOrNull(index?.tenkai);
+    const totalScore = numberOrNull(index?.total);
+
+    return {
+      attackStrength,
+      attackScore: attackStrength,
+      tenkaiScore: raceFlowPower,
+      raceFlowPower,
+      raceFlowScore: raceFlowPower,
+      totalScore,
+      indexSource:
+        attackStrength !== null || raceFlowPower !== null || totalScore !== null
+          ? "prediction.indexes.pre_deadline"
+          : ""
+    };
+  }
+
+  function captureBoat(raceData, prediction, boatNo) {
     const entry = findBoat(findEntries(raceData), boatNo) || {};
     const before = findBoat(raceData?.beforeInfo, boatNo) || {};
     const start = findBoat(raceData?.startExhibition, boatNo) || {};
     const exhibition = before?.exhibition || entry?.exhibition || {};
+    const theoryIndex = captureTheoryIndex(prediction, boatNo);
     const registerNo = text(
       entry?.registerNo ??
       entry?.registrationNo ??
@@ -109,6 +160,19 @@
       course: numberOrNull(start?.course ?? entry?.course ?? boatNo) || boatNo,
       courseOfficial: start?.isOfficialCourse === true,
       courseMappingSource: text(start?.mappingSource),
+      startExhibition: {
+        boatNo,
+        course:
+          numberOrNull(start?.course ?? entry?.course ?? boatNo) || boatNo,
+        st: numberOrNull(
+          start?.st ?? before?.exhibitionST ?? before?.displayST ??
+          exhibition?.st ?? entry?.exhibitionST
+        ),
+        isOfficialCourse:
+          start?.isOfficialCourse === true,
+        mappingSource:
+          text(start?.mappingSource)
+      },
       registerNo,
       racerName: text(entry?.racerName || entry?.name || entry?.playerName),
       className: text(entry?.className || entry?.class || entry?.grade),
@@ -125,6 +189,14 @@
       lapTime: numberOrNull(
         before?.lapTime ?? before?.oneLapTime ??
         exhibition?.lapTime ?? exhibition?.oneLapTime ?? entry?.lapTime
+      ),
+      lapTimeSource: text(
+        before?.lapTimeSource ?? exhibition?.lapTimeSource ??
+        entry?.lapTimeSource ?? entry?.exhibition?.lapTimeSource
+      ),
+      lapTimeSourceUrl: text(
+        before?.lapTimeSourceUrl ?? exhibition?.lapTimeSourceUrl ??
+        entry?.lapTimeSourceUrl ?? entry?.exhibition?.lapTimeSourceUrl
       ),
       localWinRate: numberOrNull(
         entry?.localWinRate ?? entry?.local?.winRate ?? entry?.local?.rate
@@ -152,7 +224,8 @@
         entry?.localRaceCount ?? entry?.local?.starts ??
         historyRacer?.localStarts ??
         historyRacer?.currentVenueStarts
-      )
+      ),
+      ...theoryIndex
     };
   }
 
@@ -219,20 +292,28 @@
 
   function capture(raceData = {}, prediction = {}) {
     const boats = Array.from({ length: 6 }, (_, index) =>
-      captureBoat(raceData, index + 1)
+      captureBoat(raceData, prediction, index + 1)
     );
     const weather = captureWeather(raceData, prediction);
+    const source = normalizeDataSource(raceData);
     const sourceText = JSON.stringify({
       raceInfo: raceData?.raceInfo || {},
       engine: prediction?.engine || prediction?.motorMode || ""
     });
 
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       sourceTiming: "pre_deadline",
       officialResultUsed: false,
+      source,
+      sourceFetchedAt: text(raceData?.fetchedAt),
+      analysisProfile:
+        source === "boatrace-official"
+          ? "hiyori-compatible"
+          : "",
       boats,
       weather,
+      escapeEvaluationEvidence: captureEscapeEvaluation(raceData, prediction),
       dataAvailability: {
         entries: boats.filter(boat => boat.racerName || boat.className).length,
         officialCourses:
@@ -242,6 +323,9 @@
         exhibitionST: countAvailable(boats, ["exhibitionST"]),
         exhibitionTime: countAvailable(boats, ["exhibitionTime"]),
         lapTime: countAvailable(boats, ["lapTime"]),
+        attackStrength: countAvailable(boats, ["attackStrength"]),
+        raceFlowPower: countAvailable(boats, ["raceFlowPower"]),
+        totalScore: countAvailable(boats, ["totalScore"]),
         skill:
           boats.filter(boat =>
             Boolean(boat.className) &&
@@ -259,11 +343,57 @@
         tide:
           weather.liveTideAvailable === true
       },
+      theorySignalStorage: {
+        mode: "shadow-observation-only",
+        source: "prediction.indexes",
+        sourceTiming: "pre_deadline",
+        affectsPrediction: false,
+        affectsTickets: false,
+        officialResultUsed: false
+      },
       newEngineMode: Boolean(
         prediction?.isNewEngineMode ||
         /新型エンジン|新エンジン|新モーター|新燃料/.test(sourceText)
       ),
       usagePolicy: "検証表示のみ。予想ロジック・重み・買い目は自動変更しない"
+    };
+  }
+
+  // Freeze only evidence used by the current engine, not a new scoring rule.
+  // Legacy snapshots remain legacy: never fill their history with today's data.
+  function captureEscapeEvaluation(raceData, prediction) {
+    const core = prediction?.aiCore || {};
+    const clone = value => value == null ? null : JSON.parse(JSON.stringify(value));
+    // Full scenarios contain repeated candidate trees exceeding 1 MB per race.
+    // Keep the actual decisions; the original history/input is stored separately.
+    const scenario = value => value ? clone(Object.fromEntries([
+      "type", "label", "score", "headBoatNo", "attackerBoatNo", "attacker", "attackerCourse",
+      "blockedBoats", "frameMovementAdjustment", "slitAdjustment", "slitReasons"
+    ].filter(key => value[key] !== undefined).map(key => [key, value[key]]))) : null;
+    const history = raceData?.historyContext;
+    return {
+      version: "escape-evaluation-evidence-v1",
+      sourceFetchedAt: text(raceData?.fetchedAt),
+      datasetVersion: text(raceData?.datasetVersion),
+      resultUsedForGeneration: false,
+      affectsPrediction: false,
+      historyStatus: history && Array.isArray(history.racers)
+        ? "captured" : "unavailable",
+      historyContext: clone(history),
+      // Original entries retain current-series ST lists, F risk and field names.
+      entries: clone(findEntries(raceData)),
+      beforeInfo: clone(raceData?.beforeInfo),
+      startExhibition: clone(raceData?.startExhibition),
+      raceInfo: clone(raceData?.raceInfo),
+      raceScenarios: core.raceScenarios ? {
+        mainScenario: scenario(core.raceScenarios.mainScenario),
+        subScenario: scenario(core.raceScenarios.subScenario),
+        scenarios: (core.raceScenarios.scenarios || []).map(scenario)
+      } : null,
+      racerSkillTheory: clone(core.racerSkillTheory),
+      stSlitTheory: clone(core.stSlitTheory),
+      aiCoreVersion: text(core.version),
+      limitation: "Recorded inputs and evaluations; full-engine replay equivalence must be checked separately."
     };
   }
 

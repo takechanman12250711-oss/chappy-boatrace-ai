@@ -165,6 +165,42 @@ function resultRaceKey(race) {
     : "";
 }
 
+function isVoidRace(race) {
+  if (
+    !race ||
+    race?.resultAvailable === true ||
+    race?.trifecta
+  ) {
+    return false;
+  }
+
+  const starts =
+    Array.isArray(race?.starts)
+      ? race.starts
+      : [];
+
+  return (
+    starts.length === 6 &&
+    starts.every(start =>
+      start?.falseStart === true ||
+      start?.lateStart === true
+    )
+  );
+}
+
+function normalizeResolvedRace(race) {
+  if (!isVoidRace(race)) {
+    return race;
+  }
+
+  return {
+    ...race,
+    status: "void",
+    void: true,
+    resultAvailable: false
+  };
+}
+
 function mergeOfficialResults(
   existing,
   collected
@@ -187,10 +223,12 @@ function mergeOfficialResults(
       ? previous.races
       : []
   ).forEach(race => {
+    const normalizedRace =
+      normalizeResolvedRace(race);
     const key =
-      resultRaceKey(race);
+      resultRaceKey(normalizedRace);
     if (key) {
-      raceMap.set(key, race);
+      raceMap.set(key, normalizedRace);
     }
   });
 
@@ -199,8 +237,10 @@ function mergeOfficialResults(
       ? next.races
       : []
   ).forEach(race => {
+    const normalizedRace =
+      normalizeResolvedRace(race);
     const key =
-      resultRaceKey(race);
+      resultRaceKey(normalizedRace);
     if (!key) return;
 
     const known =
@@ -208,28 +248,28 @@ function mergeOfficialResults(
     if (
       known?.resultAvailable ===
         true &&
-      race?.resultAvailable !==
+      normalizedRace?.resultAvailable !==
         true
     ) {
       raceMap.set(key, {
         ...known,
         place:
-          race?.place ||
+          normalizedRace?.place ||
           known?.place ||
           "",
         eventTitle:
-          race?.eventTitle ||
+          normalizedRace?.eventTitle ||
           known?.eventTitle ||
           "",
         eventGrade:
-          race?.eventGrade ||
+          normalizedRace?.eventGrade ||
           known?.eventGrade ||
           ""
       });
       return;
     }
 
-    raceMap.set(key, race);
+    raceMap.set(key, normalizedRace);
   });
 
   const races =
@@ -311,17 +351,45 @@ function mergeOfficialResults(
         race?.resultAvailable ===
           true
     ).length;
+  const voidRaces =
+    races.filter(
+      race =>
+        race?.void === true ||
+        race?.status === "void"
+    ).length;
   const failedRaces =
     races.filter(
       race =>
         race?.resultAvailable !==
           true &&
+        race?.void !== true &&
+        race?.status !== "void" &&
         Boolean(race?.error)
     ).length;
+  const resolvedRaces =
+    completedRaces + voidRaces;
   const pendingRaces =
     races.length -
-    completedRaces -
+    resolvedRaces -
     failedRaces;
+  const pendingRaceKeys =
+    races
+      .filter(race =>
+        race?.resultAvailable !== true &&
+        race?.void !== true &&
+        race?.status !== "void" &&
+        !race?.error
+      )
+      .map(resultRaceKey)
+      .filter(Boolean);
+  const voidRaceKeys =
+    races
+      .filter(race =>
+        race?.void === true ||
+        race?.status === "void"
+      )
+      .map(resultRaceKey)
+      .filter(Boolean);
 
   return {
     ...previous,
@@ -348,11 +416,15 @@ function mergeOfficialResults(
     raceCount:
       races.length,
     completedRaces,
+    voidRaces,
+    resolvedRaces,
     pendingRaces,
     failedRaces,
+    pendingRaceKeys,
+    voidRaceKeys,
     complete:
       races.length > 0 &&
-      completedRaces ===
+      resolvedRaces ===
         races.length &&
       failedRaces === 0,
     venues:
@@ -577,8 +649,20 @@ async function main() {
   );
 
   console.log(
-    `保存完了：${data.completedRaces}/${data.raceCount}レース`
+    `保存完了：${data.resolvedRaces}/${data.raceCount}レース解決済み` +
+    `（完走${data.completedRaces}・不成立${data.voidRaces}・未確定${data.pendingRaces}・失敗${data.failedRaces}）`
   );
+
+  if (data.pendingRaceKeys.length) {
+    console.log(
+      `未確定：${data.pendingRaceKeys.join(", ")}`
+    );
+  }
+  if (data.voidRaceKeys.length) {
+    console.log(
+      `不成立：${data.voidRaceKeys.join(", ")}`
+    );
+  }
 }
 
 if (require.main === module) {
@@ -598,6 +682,8 @@ module.exports = {
   collectOneRace,
   collectAllRaces,
   resultRaceKey,
+  isVoidRace,
+  normalizeResolvedRace,
   mergeOfficialResults,
   normalizeForComparison,
   hasMaterialResultChange,

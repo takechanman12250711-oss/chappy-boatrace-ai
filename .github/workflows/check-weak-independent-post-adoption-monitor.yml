@@ -1,0 +1,30 @@
+name: Check weak independent post-adoption monitor
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/build-weak-independent-post-adoption-monitor.js'
+      - 'scripts/build-weak-independent-component-monitor.js'
+      - '.github/workflows/check-weak-independent-post-adoption-monitor.yml'
+      - 'js/practical-selection.js'
+      - 'data/predictions/**'
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore canonical prediction sources
+        run: node scripts/restore-daily-prediction-source.js --all
+      - name: Check syntax
+        run: |
+          node --check scripts/build-weak-independent-post-adoption-monitor.js
+          node --check scripts/build-weak-independent-component-monitor.js
+      - name: Build exact post-adoption comparison
+        run: node scripts/build-weak-independent-post-adoption-monitor.js
+      - name: Split effect by adopted rule
+        run: node scripts/build-weak-independent-component-monitor.js

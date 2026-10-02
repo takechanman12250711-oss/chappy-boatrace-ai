@@ -15,7 +15,7 @@
 (function () {
   "use strict";
 
-  const RENDER_VERSION = "render-ui-v3.7.0-display-polish";
+  const RENDER_VERSION = "render-ui-v3.7.2-manshu-integrated";
 
   const BOAT_COLORS = {
     1: { name: "白", bg: "#ffffff", text: "#111111", border: "#c9c9c9" },
@@ -100,6 +100,19 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
+  function displayOddsText(item, numericOdds, hasOdds) {
+    if (
+      item?.isFinalRetrievedOdds === true &&
+      item.oddsText
+    ) {
+      return item.oddsText;
+    }
+
+    return hasOdds
+      ? `${numericOdds}倍`
+      : item?.oddsText || "オッズ未取得";
+  }
+
   function escapeHtml(value) {
     return safeText(value, "")
       .replace(/&/g, "&amp;")
@@ -113,6 +126,47 @@
     if (!value) return [];
     if (Array.isArray(value)) return value;
     return [value];
+  }
+
+  function userFacingFormationText(value) {
+    return safeText(value, "")
+      .replace(/実進入・位置関係(\d+)\/15/g, "実進入・位置関係$1/25")
+      .replace(/canonical[-_ ]formation/gi, "フォーメーション")
+      .replace(/残り全艇へ流す/g, "残り全艇に組む")
+      .replace(/全艇へ流す/g, "全艇に組む")
+      .replace(/流し候補/g, "フォーメーション候補")
+      .replace(/流し展開/g, "フォーメーション")
+      .replace(/流し/g, "フォーメーション");
+  }
+
+  function practicalDisplayCategory(row) {
+    if (row?.selectionTier === "順位ゲート置換") {
+      return "順位ゲート補完";
+    }
+    if (row?.selectionTier === "候補補完") {
+      return "候補補完";
+    }
+    if (row?.selectionTier === "展開追加") {
+      return "独立展開";
+    }
+    if (
+      [
+        "順位ゲート補完",
+        "候補補完",
+        "独立展開"
+      ].includes(row?.category)
+    ) {
+      return row.category;
+    }
+    if (row?.category === "流し") {
+      return "フォーメーション";
+    }
+
+    return userFacingFormationText(
+      row?.displayCategory ||
+      row?.category ||
+      "買い目"
+    );
   }
 
   function resolvePracticalSelection(
@@ -1338,21 +1392,31 @@ if (raceInfoArea) {
         return {
           ticket: notation,
           category: "流し",
+          displayCategory: "フォーメーション",
           categories: ["流し"],
+          displayCategories: ["フォーメーション"],
           scenarioType:
-            row.scenarioType || "",
+            userFacingFormationText(
+              row.scenarioType || ""
+            ),
           scenarioTypes:
             row.scenarioType
-              ? [row.scenarioType]
+              ? [
+                  userFacingFormationText(
+                    row.scenarioType
+                  )
+                ]
               : [],
           oddsText: `${pointCount}点`,
           pointCount,
           scenarioSummary:
-            row.reason ||
-            row.scenarioSummary ||
-            `${headBoatNo}号艇を1着に固定し、` +
-              `${secondBoatNos.join("・")}号艇を2着、` +
-              "3着を残り全艇へ流す。",
+            userFacingFormationText(
+              row.reason ||
+              row.scenarioSummary ||
+              `${headBoatNo}号艇を1着に固定し、` +
+                `${secondBoatNos.join("・")}号艇を2着、` +
+                "3着を残り全艇に組む。"
+            ),
           isFlowFormation: true
         };
       })
@@ -1410,7 +1474,13 @@ if (raceInfoArea) {
   function resolveTicketAim(list, fallback) {
     const row = arrayify(list)[0];
     if (!row || typeof row !== "object") return fallback;
-    return row.scenarioSummary || row.comment || row.reason || fallback;
+    return userFacingFormationText(
+      row.flowCommonReason ||
+      row.scenarioSummary ||
+      row.comment ||
+      row.reason ||
+      fallback
+    );
   }
 
      function renderMainNewspaper(prediction) {
@@ -1620,38 +1690,52 @@ if (raceInfoArea) {
           "",
 
         category:
-          row.category ||
-          fallbackCategory,
+          row.category === "流し"
+            ? "フォーメーション"
+            : userFacingFormationText(
+                row.displayCategory ||
+                row.category ||
+                fallbackCategory
+              ),
 
         scenarioType:
-          row.scenarioType ||
-          fallbackScenario,
+          userFacingFormationText(
+            row.scenarioType ||
+            fallbackScenario
+          ),
 
         oddsText:
-          hasOdds
-            ? `${numericOdds}倍`
-            : row.oddsText ||
-              "オッズ未取得",
+          displayOddsText(
+            row,
+            numericOdds,
+            hasOdds
+          ),
 
         scenarioTitle:
-          row.scenarioTitle ||
-          prediction.raceFlow?.title ||
-          "",
+          userFacingFormationText(
+            row.scenarioTitle ||
+            prediction.raceFlow?.title ||
+            ""
+          ),
 
         scenarioSummary:
-          row.scenarioSummary ||
-          row.comment ||
-          row.reason ||
-          createTicketSpecificComment(
-            prediction,
-            row.ticket ||
-              row.line ||
-              row.formation ||
-              "",
-            [
-              row.category ||
-              fallbackCategory
-            ]
+          userFacingFormationText(
+            row.scenarioSummary ||
+            row.comment ||
+            row.reason ||
+            createTicketSpecificComment(
+              prediction,
+              row.ticket ||
+                row.line ||
+                row.formation ||
+                "",
+              [
+                row.category === "流し"
+                  ? "フォーメーション"
+                  : row.category ||
+                    fallbackCategory
+              ]
+            )
           )
       };
     };
@@ -1708,7 +1792,7 @@ if (raceInfoArea) {
                 ? "main"
                 : type === "safety"
                   ? "cover"
-                  : "flow"
+                  : ""
             )}
           </h3>
 
@@ -1811,6 +1895,8 @@ if (raceInfoArea) {
         `
         : emptyBox("艇評価データがありません");
 
+    const formationLabel =
+      "フォーメーション";
     const ticketBody = [
       renderTicketAccordion(
         "本命",
@@ -1855,14 +1941,14 @@ if (raceInfoArea) {
       ),
 
       renderTicketAccordion(
-        "流し",
+        formationLabel,
         "flow",
         renderTicketRows(
-          "流し",
+          formationLabel,
           flowTickets,
           "flow",
-          "流し",
-          "流し展開"
+          formationLabel,
+          formationLabel
         ),
         resolveTicketPointCount(
           flowTickets,
@@ -1870,7 +1956,7 @@ if (raceInfoArea) {
         ),
         resolveTicketAim(
           flowTickets,
-          "中心艇を固定し、相手を広く拾う買い目です。"
+          "同じ1着・2着軸を共有する根拠付き3連単2券です。"
         ),
         false
       )
@@ -1901,7 +1987,7 @@ if (raceInfoArea) {
     `;
   }
 
-    function renderManshuNewspaper(prediction) {
+  function renderManshuNewspaper(prediction) {
     const sheet =
       prediction.manshuSheet || {};
 
@@ -1954,10 +2040,11 @@ if (raceInfoArea) {
           category,
 
           oddsText:
-            hasOdds
-              ? `${numericOdds}倍`
-              : row.oddsText ||
-                "オッズ未取得",
+            displayOddsText(
+              row,
+              numericOdds,
+              hasOdds
+            ),
 
           scenarioType:
             row.scenarioType ||
@@ -1985,8 +2072,12 @@ if (raceInfoArea) {
         };
       })
       .filter(item => item.ticket);
+    const lightBoard =
+      normalizeLightManshuTicketBoard(
+        prediction
+      );
 
-    if (!rows.length) {
+    if (!rows.length && !lightBoard) {
       return section(
         "万舟",
         emptyBox(
@@ -2091,12 +2182,28 @@ if (raceInfoArea) {
         prediction,
         "manshu"
       );
+    const lightBoardBody = lightBoard
+      ? renderLightManshuTicketBoard(
+          prediction,
+          lightBoard
+        )
+      : "";
+    const lightBoardPointCount = lightBoard
+      ? lightBoard.lines.reduce(
+          (sum, line) => sum + line.pointCount,
+          0
+        )
+      : 0;
 
     const body = [
+      lightBoardBody,
+
       manshuCombinedOdds
         ? `
           <div class="v3-note">
-            万舟候補全体の
+            ${lightBoard
+              ? "通常枠の穴候補の"
+              : "万舟候補全体の"}
             ${manshuCombinedOdds}
           </div>
         `
@@ -2132,13 +2239,441 @@ if (raceInfoArea) {
         "💣",
         "v3-manshu-newspaper"
       ),
-      Math.max(1, rows.length),
-      resolveTicketAim(
-        rows,
-        "内側が崩れた場合や高配当展開を狙う買い目です。"
+      Math.max(
+        1,
+        rows.length + lightBoardPointCount
       ),
+      lightBoard
+        ? "スタート波乱・攻め連動・道中変化まで考えた万舟の参考筋です。"
+        : resolveTicketAim(
+            rows,
+            "内側が崩れた場合や高配当展開を狙う買い目です。"
+          ),
       false
     );
+  }
+
+  function normalizeLightManshuTicketBoard(
+    prediction
+  ) {
+    const board =
+      prediction?.lightManshuTicketBoard;
+    if (
+      !board ||
+      board.displayOnly !== true ||
+      board.advisoryOnly !== true ||
+      board.purchaseEligible !== false ||
+      board.saveEligible !== false ||
+      board.noteEligible !== false ||
+      board.usesOdds !== false ||
+      board.usesOfficialResult !== false ||
+      board.changesNormalTickets !== false ||
+      board.changesPracticalSelection !== false ||
+      !Array.isArray(board.lines) ||
+      board.lines.length < 2 ||
+      board.lines.length > 3
+    ) {
+      return null;
+    }
+
+    const unitYen = Number(board.unitYen);
+
+    if (
+      !Number.isInteger(unitYen) ||
+      unitYen <= 0
+    ) {
+      return null;
+    }
+
+    const exactTicket = value => {
+      const ticket = String(value || "")
+        .replace(/\s+/g, "")
+        .trim();
+      const parts = ticket.split("-");
+
+      if (
+        parts.length !== 3 ||
+        parts.some(part => !/^[1-6]$/.test(part)) ||
+        new Set(parts).size !== 3
+      ) {
+        return "";
+      }
+
+      return ticket;
+    };
+    const reservedTickets = new Set(
+      [
+        prediction?.ticketSheets?.main,
+        prediction?.ticketSheets?.cover,
+        prediction?.ticketSheets?.flow,
+        prediction?.ticketSheets?.hole,
+        prediction?.ticketSheets?.all,
+        prediction?.aiTicketList
+      ]
+        .flatMap(source => arrayify(source))
+        .map(item => exactTicket(item?.ticket || item))
+        .filter(Boolean)
+    );
+    const expandedFromNotation = notation => {
+      const groups = String(notation || "")
+        .split("-")
+        .map(group => [...new Set(group.split(""))]);
+
+      if (
+        groups.length !== 3 ||
+        groups[0].length !== 1 ||
+        groups.some(
+          group =>
+            !group.length ||
+            group.some(value => !/^[1-6]$/.test(value))
+        )
+      ) {
+        return [];
+      }
+
+      const expanded = [];
+
+      groups[0].forEach(first => {
+        groups[1].forEach(second => {
+          groups[2].forEach(third => {
+            if (
+              new Set([first, second, third]).size === 3
+            ) {
+              expanded.push(
+                `${first}-${second}-${third}`
+              );
+            }
+          });
+        });
+      });
+
+      return [...new Set(expanded)];
+    };
+    const normalizedLines = board.lines.map(
+      (source, index) => {
+        const line =
+          source && typeof source === "object"
+            ? source
+            : null;
+        const formation = line?.formation;
+        const allocation = line?.allocation;
+        const notation = String(
+          formation?.notation || ""
+        )
+          .replace(/\s+/g, "")
+          .trim();
+        const expandedTickets = [
+          ...new Set(
+            arrayify(
+              formation?.expandedTickets
+            )
+              .map(exactTicket)
+              .filter(Boolean)
+          )
+        ];
+        const notationTickets =
+          expandedFromNotation(notation);
+        const pointCount = Number(
+          formation?.pointCount
+        );
+        const unitsPerTicket = Number(
+          allocation?.unitsPerTicket
+        );
+        const totalYen = Number(
+          allocation?.totalYen
+        );
+        const title = String(
+          line?.title || ""
+        ).trim();
+        const reason = String(
+          line?.reason || ""
+        ).trim();
+        const allocationLabel = String(
+          allocation?.label || ""
+        ).trim();
+        const detailsByTicket = new Map();
+
+        arrayify(line?.ticketDetails)
+          .forEach(detail => {
+            const ticket = exactTicket(
+              detail?.ticket
+            );
+            const scenarioSummary = String(
+              detail?.scenarioSummary || ""
+            ).trim();
+
+            if (
+              ticket &&
+              scenarioSummary &&
+              !detailsByTicket.has(ticket)
+            ) {
+              detailsByTicket.set(ticket, {
+                ticket,
+                scenarioSummary
+              });
+            }
+          });
+
+        const ticketDetails = expandedTickets
+          .map(ticket =>
+            detailsByTicket.get(ticket)
+          )
+          .filter(Boolean);
+        const expectedTotalYen =
+          pointCount *
+          unitsPerTicket *
+          unitYen;
+        const expectedTotalUnits =
+          pointCount * unitsPerTicket;
+        const notationSet = new Set(
+          notationTickets
+        );
+        const expandedSet = new Set(
+          expandedTickets
+        );
+        const notationMatches =
+          notationTickets.length ===
+            expandedTickets.length &&
+          notationTickets.every(ticket =>
+            expandedSet.has(ticket)
+          ) &&
+          expandedTickets.every(ticket =>
+            notationSet.has(ticket)
+          );
+
+        if (
+          !line ||
+          line.displayOnly !== true ||
+          line.advisoryOnly !== true ||
+          line.purchaseEligible !== false ||
+          line.saveEligible !== false ||
+          line.noteEligible !== false ||
+          line.usesOdds !== false ||
+          line.usesOfficialResult !== false ||
+          Number(line.rank) !== index + 1 ||
+          ![
+            "START_UPSET",
+            "OUTER_FOLLOW",
+            "ROAD_PICKUP"
+          ].includes(String(line.kind || "")) ||
+          !title ||
+          !reason ||
+          !allocationLabel ||
+          !notationMatches ||
+          expandedTickets.some(ticket =>
+            reservedTickets.has(ticket)
+          ) ||
+          !Number.isInteger(pointCount) ||
+          pointCount < 2 ||
+          pointCount > 4 ||
+          pointCount !== expandedTickets.length ||
+          !Number.isInteger(unitsPerTicket) ||
+          unitsPerTicket <= 0 ||
+          unitsPerTicket !== [3, 2, 1][index] ||
+          Number(allocation?.unitYen) !== unitYen ||
+          Number(allocation?.yenPerTicket) !==
+            unitsPerTicket * unitYen ||
+          Number(allocation?.totalUnits) !==
+            expectedTotalUnits ||
+          !allocationLabel.includes(
+            `${unitsPerTicket}枚`
+          ) ||
+          !Number.isInteger(totalYen) ||
+          totalYen !== expectedTotalYen ||
+          ticketDetails.length !== expandedTickets.length
+        ) {
+          return null;
+        }
+
+        return {
+          rank:
+            Number.isInteger(Number(line.rank)) &&
+            Number(line.rank) > 0
+              ? Number(line.rank)
+              : index + 1,
+          kind: String(line.kind || "").trim(),
+          title,
+          reason,
+          notation,
+          pointCount,
+          expandedTickets,
+          unitsPerTicket,
+          totalYen,
+          allocationLabel,
+          ticketDetails
+        };
+      }
+    );
+
+    if (normalizedLines.some(line => !line)) {
+      return null;
+    }
+
+    const totalPoints = normalizedLines.reduce(
+      (sum, line) => sum + line.pointCount,
+      0
+    );
+    const totalYen = normalizedLines.reduce(
+      (sum, line) => sum + line.totalYen,
+      0
+    );
+    const allTickets = normalizedLines.flatMap(
+      line => line.expandedTickets
+    );
+
+    if (
+      totalPoints > 12 ||
+      totalYen > 2400 ||
+      new Set(allTickets).size !== allTickets.length ||
+      Number(board.totalPointCount) !== totalPoints ||
+      Number(board.totalSuggestedYen) !== totalYen ||
+      Number(board.maximumLineCount) !== 3 ||
+      Number(board.maximumPointsPerLine) !== 4 ||
+      Number(board.maximumTotalPointCount) !== 12 ||
+      Number(board.maximumSuggestedYen) !== 2400
+    ) {
+      return null;
+    }
+
+    return {
+      title:
+        String(board.title || "").trim() ||
+        "取れたらいいな舟券",
+      unitYen,
+      lines: normalizedLines
+    };
+  }
+
+  function renderLightManshuTicketBoard(
+    prediction,
+    normalizedBoard = null
+  ) {
+    const board =
+      normalizedBoard ||
+      normalizeLightManshuTicketBoard(prediction);
+
+    if (!board) return "";
+
+    const numberText = value =>
+      Number(value).toLocaleString("ja-JP");
+    const kindLabel = kind => ({
+      START_UPSET: "スタート波乱",
+      OUTER_FOLLOW: "攻め連動",
+      ROAD_PICKUP: "道中浮上"
+    })[kind] || "展開穴";
+    const totalPoints = board.lines.reduce(
+      (sum, line) => sum + line.pointCount,
+      0
+    );
+    const totalYen = board.lines.reduce(
+      (sum, line) => sum + line.totalYen,
+      0
+    );
+    const practicalTickets = new Set(
+      [
+        prediction?.practicalSelection?.tickets,
+        prediction?.practicalTickets
+      ]
+        .flatMap(source => arrayify(source))
+        .map(item => String(item?.ticket || item || "")
+          .replace(/\s+/g, "")
+          .trim()
+        )
+        .filter(Boolean)
+    );
+    const practicalOverlapCount = board.lines
+      .flatMap(line => line.expandedTickets)
+      .filter(ticket => practicalTickets.has(ticket))
+      .length;
+    const lineHtml = board.lines
+      .map(line => `
+        <div class="v3-formation-group v3-light-manshu-ticket-line">
+          <h3>
+            第${escapeHtml(line.rank)}筋
+            ${escapeHtml(line.title)}
+          </h3>
+
+          <div class="v3-formation-list v3-formation-flow">
+            <div class="v3-formation-row v3-formation-row-hole">
+              <div class="v3-formation-ticket">
+                ${ticketArrow(line.notation)}
+              </div>
+
+              <div class="v3-formation-tags">
+                ${tag(
+                  `${line.pointCount}点`,
+                  "hole"
+                )}
+                ${line.kind
+                  ? tag(
+                      kindLabel(line.kind),
+                      "flow"
+                    )
+                  : ""}
+                ${tag(
+                  line.allocationLabel,
+                  "manshu"
+                )}
+              </div>
+
+              <div class="v3-formation-reason">
+                ${escapeHtml(line.reason)}
+              </div>
+
+              <div class="v3-note v3-light-manshu-ticket-allocation">
+                1点あたり${escapeHtml(line.unitsPerTicket)}枚
+                （${escapeHtml(numberText(line.unitsPerTicket * board.unitYen))}円）
+                ・計${escapeHtml(numberText(line.totalYen))}円
+              </div>
+
+              <details class="v3-note v3-light-manshu-ticket-details">
+                <summary>
+                  個別${escapeHtml(line.pointCount)}点を見る
+                </summary>
+                <div class="v3-ticket-list">
+                  ${line.ticketDetails
+                    .map(detail => `
+                      <div class="v3-formation-row v3-light-manshu-exact-ticket">
+                        <div class="v3-formation-ticket">
+                          ${ticketArrow(detail.ticket)}
+                        </div>
+                        <div class="v3-formation-reason">
+                          ${escapeHtml(detail.scenarioSummary)}
+                        </div>
+                      </div>
+                    `)
+                    .join("")}
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      `)
+      .join("");
+    return `
+      <div class="v3-light-manshu-ticket-board">
+        <div class="v3-ticket-accordion-aim v3-light-manshu-ticket-intro">
+          <strong>${escapeHtml(board.title)}・${escapeHtml(board.lines.length)}筋</strong>
+          <p>
+            万舟欄で見る表示用の参考筋です。通常枠7点（成立展開追加時は全体10点）・実戦厳選・購入保存には自動追加しません。
+          </p>
+        </div>
+        <div class="v3-note v3-light-manshu-ticket-total">
+          参考${escapeHtml(totalPoints)}点・1枚${escapeHtml(numberText(board.unitYen))}円・配分合計${escapeHtml(numberText(totalYen))}円
+        </div>
+        ${practicalOverlapCount
+          ? `
+            <div class="v3-note v3-light-manshu-ticket-overlap">
+              このうち${escapeHtml(practicalOverlapCount)}点は実戦厳選にも表示されています。重ねて追加する必要はありません。
+            </div>
+          `
+          : ""}
+        <div class="v3-ticket-accordion-label">
+          展開・フォーメーション・枚数
+        </div>
+        ${lineHtml}
+      </div>
+    `;
   }
 
   function renderMissingNumbers(
@@ -2230,6 +2765,8 @@ if (raceInfoArea) {
       .filter(Boolean)
       .join("〜");
 
+    const formationLabel =
+      "フォーメーション";
     const body = `
       <div class="v3-note">
         選択した開催場の1R〜12Rを合算し、
@@ -2783,7 +3320,7 @@ function getPaperClassName(item) {
         arrayify(flow).length
           ? `
             <div class="v3-formation-group">
-              <h3>流し</h3>
+              <h3>${formationLabel}</h3>
               ${renderFormationBody(flow, "flow")}
             </div>
           `
@@ -2852,15 +3389,19 @@ function getPaperClassName(item) {
               "",
 
             label:
-              item.label ||
-              item.category ||
-              item.type ||
-              item.rank ||
-              "",
+              userFacingFormationText(
+                item.label ||
+                item.category ||
+                item.type ||
+                item.rank ||
+                ""
+              ),
 
             scenarioType:
-              item.scenarioType ||
-              "",
+              userFacingFormationText(
+                item.scenarioType ||
+                ""
+              ),
 
             score:
               item.score !== undefined &&
@@ -2869,16 +3410,20 @@ function getPaperClassName(item) {
                 ? item.score
                 : "",
 
-            oddsText: hasActualOdds
-              ? `${numericOdds}倍`
-              : item.oddsText || "オッズ未取得",
+            oddsText: displayOddsText(
+              item,
+              numericOdds,
+              hasActualOdds
+            ),
 
             reason:
-              item.scenarioSummary ||
-              item.reason ||
-              item.comment ||
-              item.text ||
-              ""
+              userFacingFormationText(
+                item.scenarioSummary ||
+                item.reason ||
+                item.comment ||
+                item.text ||
+                ""
+              )
           };
         })
         .filter(Boolean);
@@ -2904,13 +3449,17 @@ function getPaperClassName(item) {
 
           return {
             label:
-              value.label ||
-              value.category ||
-              label,
+              userFacingFormationText(
+                value.label ||
+                value.category ||
+                label
+              ),
 
             scenarioType:
-              value.scenarioType ||
-              "",
+              userFacingFormationText(
+                value.scenarioType ||
+                ""
+              ),
 
             ticket:
               value.ticket ||
@@ -2927,16 +3476,20 @@ function getPaperClassName(item) {
                 ? value.score
                 : "",
 
-            oddsText: hasActualOdds
-              ? `${numericOdds}倍`
-              : value.oddsText || "オッズ未取得",
+            oddsText: displayOddsText(
+              value,
+              numericOdds,
+              hasActualOdds
+            ),
 
             reason:
-              value.scenarioSummary ||
-              value.reason ||
-              value.comment ||
-              value.text ||
-              ""
+              userFacingFormationText(
+                value.scenarioSummary ||
+                value.reason ||
+                value.comment ||
+                value.text ||
+                ""
+              )
           };
         })
         .filter(Boolean);
@@ -2988,11 +3541,13 @@ function getPaperClassName(item) {
 
   function renderFormationNote(formation) {
     const note =
-      formation.comment ||
-      formation.reason ||
-      formation.text ||
-      formation.mainComment ||
-      "";
+      userFacingFormationText(
+        formation.comment ||
+        formation.reason ||
+        formation.text ||
+        formation.mainComment ||
+        ""
+      );
 
     if (!note) return "";
 
@@ -3030,14 +3585,26 @@ function getPaperClassName(item) {
     const mainSheet =
       prediction?.mainSheet || {};
 
-    const boatNoOf = item =>
-      Number(
-        item?.boatNo ??
-        item?.no ??
-        item?.waku ??
-        item?.number ??
-        0
-      );
+    const boatNoOf = item => {
+      for (const value of [
+        item?.boat,
+        item?.waku,
+        item?.frame,
+        item?.boatNo,
+        item?.no,
+        item?.number
+      ]) {
+        const candidate = Number(value);
+        if (
+          Number.isInteger(candidate) &&
+          candidate >= 1 &&
+          candidate <= 6
+        ) {
+          return candidate;
+        }
+      }
+      return 0;
+    };
 
     const honmeiNo =
       boatNoOf(mainSheet.honmei);
@@ -3071,30 +3638,60 @@ function getPaperClassName(item) {
     const pickupBoats =
       boatSet(raceFlow.pickupBoats);
 
+    const core = window.ChappyAICore;
+    const mappingSource =
+      prediction?.preRaceConditions ||
+      prediction?.race?.raw ||
+      prediction?.race ||
+      prediction;
+    const officialCourseMapping =
+      typeof core?.getRaceEntries === "function" &&
+      typeof core?.buildOfficialCourseMapping === "function"
+        ? core.buildOfficialCourseMapping(
+            core
+              .getRaceEntries(mappingSource)
+              .map((entry, index) => ({
+                ...entry,
+                boat: boatNoOf(entry) || index + 1
+              }))
+          )
+        : null;
+    const courseOfBoat = boatNo => {
+      if (officialCourseMapping?.formal === true) {
+        return Number(
+          officialCourseMapping.courseOfBoat(boatNo) ||
+          boatNo
+        );
+      }
+      return Number(boatNo);
+    };
+
     const roleOf = (
       boatNo,
       position
     ) => {
-      if (boatNo === 1) {
+      const course = courseOfBoat(boatNo);
+
+      if (course === 1) {
         return position === "first"
           ? "イン逃げ"
           : "イン残し";
       }
 
       if (attackBoats.has(boatNo)) {
-        if (boatNo === 2) {
+        if (course === 2) {
           return "2コース差し";
         }
 
-        if (boatNo === 3) {
+        if (course === 3) {
           return "3コース攻め";
         }
 
-        if (boatNo === 4) {
+        if (course === 4) {
           return "4カド攻め";
         }
 
-        if (boatNo === 5) {
+        if (course === 5) {
           return "まくり差し";
         }
 
@@ -3102,11 +3699,11 @@ function getPaperClassName(item) {
       }
 
       if (holdBoats.has(boatNo)) {
-        if (boatNo === 2) {
+        if (course === 2) {
           return "2差し・残り";
         }
 
-        if (boatNo === 4) {
+        if (course === 4) {
           return "4残し";
         }
 
@@ -3133,15 +3730,15 @@ function getPaperClassName(item) {
         return "押さえ評価";
       }
 
-      if (boatNo === 2) {
+      if (course === 2) {
         return "2差し・残り";
       }
 
-      if (boatNo === 4) {
+      if (course === 4) {
         return "4残し";
       }
 
-      if (boatNo >= 5) {
+      if (course >= 5) {
         return "外の展開拾い";
       }
 
@@ -3191,7 +3788,7 @@ function getPaperClassName(item) {
         `${firstBoat}号艇の${firstRole}を軸に、` +
         `${secondBoat}号艇の${secondRole}と` +
         `${thirdBoat}号艇の${thirdRole}まで` +
-        `着順変化を拾う流し。`
+        `着順変化を拾うフォーメーション。`
       );
     }
 
@@ -3221,20 +3818,47 @@ function getPaperClassName(item) {
             result.tickets
           ).map(item => ({
             ...item,
+            displayCategory:
+              practicalDisplayCategory(
+                item
+              ),
+            scenarioTitle:
+              userFacingFormationText(
+                item.scenarioTitle
+              ),
+            scenarioSummary:
+              userFacingFormationText(
+                item.scenarioSummary
+              ),
+            scenarioType:
+              userFacingFormationText(
+                item.scenarioType
+              ),
+            reason:
+              userFacingFormationText(
+                item.reason
+              ),
             roleLabels:
               arrayify(
                 item.roleLabels
               ),
-            oddsText: item.odds > 0
-              ? `${item.odds}倍`
-              : item.oddsText ||
-                "オッズ未取得",
+            oddsText: displayOddsText(
+              item,
+              Number(item.odds),
+              Number(item.odds) > 0
+            ),
             comment:
-              item.comment ||
-              createTicketSpecificComment(
-                prediction,
-                item.ticket,
-                [item.category]
+              userFacingFormationText(
+                item.comment ||
+                createTicketSpecificComment(
+                  prediction,
+                  item.ticket,
+                  [
+                    practicalDisplayCategory(
+                      item
+                    )
+                  ]
+                )
               )
           }))
         : [];
@@ -3491,6 +4115,10 @@ function getPaperClassName(item) {
           .map(item => {
             const type =
               typeOf(item.category);
+            const displayCategory =
+              item.displayCategory ||
+              item.category ||
+              "買い目";
 
             return `
               <div
@@ -3503,8 +4131,7 @@ function getPaperClassName(item) {
 
                 <div class="v3-formation-tags">
                   ${tag(
-                    item.category ||
-                    "買い目",
+                    displayCategory,
                     type
                   )}
 
@@ -3705,29 +4332,47 @@ function getPaperClassName(item) {
           return {
             ticket: ticketText,
             categories,
-            scenarioTypes,
+            displayCategories:
+              categories.map(category =>
+                category === "流し"
+                  ? "フォーメーション候補"
+                  : userFacingFormationText(
+                      category
+                    )
+              ),
+            scenarioTypes:
+              scenarioTypes.map(
+                userFacingFormationText
+              ),
 
             oddsText:
-              hasOdds
-                ? `${numericOdds}倍`
-                : row.oddsText ||
-                  "オッズ未取得",
+              displayOddsText(
+                row,
+                numericOdds,
+                hasOdds
+              ),
 
             oddsValue:
               rankRow.oddsValue ||
               "",
 
-                        scenarioSummary:
-              row.scenarioSummary ||
-              row.comment ||
-              row.reason ||
-              rankRow.scenarioSummary ||
-              rankRow.comment ||
-              rankRow.reason ||
-              createTicketSpecificComment(
-                prediction,
-                ticketText,
-                categories
+            scenarioSummary:
+              userFacingFormationText(
+                row.scenarioSummary ||
+                row.comment ||
+                row.reason ||
+                rankRow.scenarioSummary ||
+                rankRow.comment ||
+                rankRow.reason ||
+                createTicketSpecificComment(
+                  prediction,
+                  ticketText,
+                  categories.map(category =>
+                    category === "流し"
+                      ? "フォーメーション候補"
+                      : category
+                  )
+                )
               )
           };
         })
@@ -3817,7 +4462,11 @@ function getPaperClassName(item) {
                 </span>
 
                 <div class="v3-ticket-values">
-                  ${item.categories
+                  ${arrayify(
+                    item.displayCategories ||
+                    item.displayCategory ||
+                    item.categories
+                  )
                     .map(category =>
                       tag(
                         category,
@@ -3881,7 +4530,9 @@ function getPaperClassName(item) {
       ),
 
       renderGroup(
-        "流し",
+        compactFlowRows.length
+          ? "フォーメーション"
+          : "フォーメーション候補",
         groups.flow,
         "flow"
       ),
@@ -4054,6 +4705,7 @@ function renderOfficialHistory(
   function renderFinalComment(prediction) {
   const finalAi = prediction.finalAi || {};
   const raceFlow = prediction.raceFlow || {};
+  const confidence = prediction.confidence || {};
 
   const finalText = safeText(
     prediction.finalComment ||
@@ -4074,6 +4726,22 @@ function renderOfficialHistory(
     ""
   );
 
+  const normalizeComment = value =>
+    safeText(value, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  const aiSummaryText = safeText(
+    prediction.simpleEvaluation?.mainComment ||
+    finalAi.simpleEvaluation?.mainComment ||
+    confidence.reason ||
+    confidence.comment ||
+    "",
+    ""
+  );
+  const seen = new Set();
+  const summaryKey = normalizeComment(aiSummaryText);
+  if (summaryKey) seen.add(summaryKey);
+
   const blocks = [
     {
       title: "展開",
@@ -4091,15 +4759,16 @@ function renderOfficialHistory(
       title: "AI結論",
       text: finalAi.final || finalAi.summary || finalAi.comment || finalText
     }
-  ].filter((b) => b.text);
+  ].filter(block => {
+    const key = normalizeComment(block.text);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    block.text = safeText(block.text, "");
+    return true;
+  });
 
   if (blocks.length === 0) {
-    return section(
-      "最終コメント",
-      emptyBox("最終コメントデータがありません"),
-      "📝",
-      "v3-final-section"
-    );
+    return "";
   }
 
   const body = `
@@ -4148,6 +4817,21 @@ function renderFinalBlock(block) {
   window.updateMissingNumbersSection =
     updateMissingNumbersSection;
   window.CHAPPY_RENDER_VERSION = RENDER_VERSION;
+  if (
+    window.CHAPPY_RENDER_TEST_HOOKS ===
+      true
+  ) {
+    window.ChappyRenderTestHooks =
+      Object.freeze({
+        normalizeFlowFormationRows,
+        practicalDisplayCategory,
+        renderTicketRanking,
+        createTicketSpecificComment,
+        normalizeLightManshuTicketBoard,
+        renderLightManshuTicketBoard,
+        renderManshuNewspaper
+      });
+  }
   window.addEventListener(
     "chappy:prediction-calibration-loaded",
     refreshCalibrationDisplays
@@ -4201,6 +4885,14 @@ function renderFinalBlock(block) {
       mainSheet: core.mainSheet || prediction.mainSheet,
       manshuSheet: core.manshuSheet || prediction.manshuSheet,
 
+      lightManshuTicketBoard:
+        Object.prototype.hasOwnProperty.call(
+          prediction,
+          "lightManshuTicketBoard"
+        )
+          ? prediction.lightManshuTicketBoard
+          : core.lightManshuTicketBoard,
+
       tickets: core.tickets || prediction.tickets,
       buyTickets: core.tickets || prediction.buyTickets,
 
@@ -4213,9 +4905,14 @@ function renderFinalBlock(block) {
 
   window.renderAll = function renderAllWithAiCore(prediction) {
     const adaptedPrediction = applyAiCoreAdapter(prediction);
+    const displayPrediction =
+      adaptedPrediction &&
+      typeof adaptedPrediction === "object"
+        ? { ...adaptedPrediction }
+        : adaptedPrediction;
 
     if (typeof oldRenderAll === "function") {
-      oldRenderAll(adaptedPrediction);
+      oldRenderAll(displayPrediction);
     }
   };
 

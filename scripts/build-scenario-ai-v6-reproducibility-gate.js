@@ -2,7 +2,9 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const learning = require("./build-scenario-ai-v6-learning-report");
+const scenarioAiV6 = require("../js/scenario-ai-v6-shadow");
 
 const ROOT = path.resolve(__dirname, "..");
 const PREDICTIONS_DIR = path.join(ROOT, "data", "predictions");
@@ -60,8 +62,55 @@ function evaluate(scope, fullRow, firstRow, secondRow, minimumHalfSample) {
   };
 }
 
+function buildTrainingCohort(rows = [], inputSourceKind = "") {
+  const records = [
+    ...new Map(
+      rows
+        .filter(row => row?.raceKey && row?.selectedAt)
+        .map(row => [
+          row.raceKey,
+          {
+            raceKey: String(row.raceKey),
+            selectedAt: String(row.selectedAt)
+          }
+        ])
+    ).values()
+  ].sort((left, right) =>
+    Date.parse(left.selectedAt) - Date.parse(right.selectedAt) ||
+    left.raceKey.localeCompare(right.raceKey)
+  );
+  const trainedThrough = String(records.at(-1)?.selectedAt || "");
+  const fingerprint = records.length
+    ? crypto
+        .createHash("sha256")
+        .update(JSON.stringify({
+          logicFingerprint: scenarioAiV6.LOGIC_FINGERPRINT,
+          inputSourceKind,
+          records
+        }))
+        .digest("hex")
+    : "none";
+  return {
+    mode: "pre-candidate-only",
+    logicFingerprint: scenarioAiV6.LOGIC_FINGERPRINT,
+    inputSourceKind,
+    candidateSetFingerprint: "none",
+    raceCount: records.length,
+    scenarioCount: rows.length,
+    trainedThrough,
+    lastRaceKey: String(records.at(-1)?.raceKey || ""),
+    fingerprint
+  };
+}
+
 function buildReport(documents = []) {
-  const rows = documents.flatMap(learning.scenarioRows);
+  const allRows = documents.flatMap(learning.scenarioRows);
+  const training = learning.activeTrainingRows(allRows);
+  const rows = training.rows;
+  const trainingCohort = buildTrainingCohort(
+    rows,
+    training.activeInputSourceKind
+  );
   const halves = splitRows(rows);
   const aggregateType = source => learning.aggregate(source, row => row.scenarioType);
   const aggregateVenue = source => learning.aggregate(source, row => `${row.jcd}:${row.scenarioType}`, row => `${row.place || row.jcd} × ${row.scenarioType}`);
@@ -80,6 +129,8 @@ function buildReport(documents = []) {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     source: "scenario-ai-v6-learning-report",
+    logicFingerprint: scenarioAiV6.LOGIC_FINGERPRINT,
+    trainingCohort,
     splitPolicy: "time-ordered-half-split",
     thresholds: {
       scenarioTypeMinimumPerHalf: 25,
@@ -108,4 +159,9 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { buildReport, splitRows, evaluate };
+module.exports = {
+  buildReport,
+  splitRows,
+  evaluate,
+  buildTrainingCohort
+};

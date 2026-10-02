@@ -1,0 +1,36 @@
+name: Compare head promotion pre-result features v1
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/analyze-head-promotion-feature-comparison-v1.cjs'
+      - '.github/workflows/run-head-promotion-feature-comparison-v1.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run hit-vs-miss feature comparison
+        run: node scripts/analyze-head-promotion-feature-comparison-v1.cjs > head-promotion-feature-comparison-v1.json
+      - name: Validate research boundary and report
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('head-promotion-feature-comparison-v1.json','utf8'));
+          if(r.productionChanged!==false||r.automaticApplication!==false||r.usableForPrediction!==false) process.exit(1);
+          if(r.selectionUsesOfficialResult!==false||r.officialResultUsedOnlyForLabel!==true) process.exit(1);
+          if(r.overall.opportunityCount<=r.overall.hitCount||r.overall.hitCount<=0) process.exit(1);
+          if(r.invariants.opportunityCountEqualsHitPlusMiss!==true||r.invariants.leakedFeatureKeys.length!==0) process.exit(1);
+          if(r.numericComparisons.length<20||r.topNumericSignals.length===0) process.exit(1);
+          console.log(JSON.stringify({overall:r.overall,chronologicalThirds:r.chronologicalThirds,byLane:r.categoricalComparisons.lane,attacker:r.categoricalComparisons.attackerMatch,support:r.categoricalComparisons.supportScoreBand,topSignals:r.topNumericSignals.slice(0,10)},null,2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: head-promotion-feature-comparison-v1
+          path: head-promotion-feature-comparison-v1.json
+          retention-days: 90

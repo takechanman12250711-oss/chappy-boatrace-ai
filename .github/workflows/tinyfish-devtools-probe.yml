@@ -1,0 +1,22 @@
+name: TinyFish DevTools Probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TINYFISH_API_KEY: ${{ secrets.TINYFISH_API_KEY }}
+      TINYFISH_PROFILE_ID: ${{ secrets.TINYFISH_PROFILE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Probe DevTools metadata safely
+        run: node scripts/run-tinyfish-devtools-probe.js

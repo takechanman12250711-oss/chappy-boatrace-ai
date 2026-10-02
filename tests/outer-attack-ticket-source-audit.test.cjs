@@ -1,0 +1,10 @@
+'use strict';
+const assert=require('assert');
+const {build}=require('../scripts/audit-outer-attack-ticket-sources.cjs');
+const r=build();
+assert.strictEqual(r.scope.holdoutUsed,false);
+assert.strictEqual(r.scope.productionChanged,false);
+assert.strictEqual(r.targetRaceCount,12);
+assert.strictEqual(r.recordFoundCount,12);
+assert.strictEqual(r.rows.length,12);
+console.log('outer attack ticket source audit tests passed');

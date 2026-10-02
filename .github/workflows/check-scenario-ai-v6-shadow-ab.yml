@@ -3,8 +3,14 @@ name: Check scenario AI v6 shadow A/B
 on:
   pull_request:
     paths:
+      - "js/scenario-ai-v6-shadow.js"
       - "js/scenario-ai-v6-shadow-ab.js"
+      - "js/scenario-ai-v6-verification.js"
       - "scripts/build-scenario-ai-v6-snapshots.js"
+      - "scripts/build-scenario-ai-v6-learning-report.js"
+      - "scripts/build-scenario-ai-v6-reproducibility-gate.js"
+      - "scripts/build-scenario-ai-v6-verification.js"
+      - "scripts/build-scenario-ai-v6-ab-report.js"
       - "scripts/test-scenario-ai-v6-shadow-ab.js"
       - ".github/workflows/check-scenario-ai-v6-shadow-ab.yml"
 

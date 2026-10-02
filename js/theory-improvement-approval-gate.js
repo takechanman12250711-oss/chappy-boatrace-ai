@@ -104,7 +104,11 @@ function build(records, customOptions = {}) {
     adjustmentPoints: 2,
     ...customOptions
   };
-  const rows = performance.buildRows(records);
+  const rows = performance.buildRows(records).filter(row =>
+    row?.used === true &&
+    row?.evaluated === true &&
+    Number(row?.ticketCount || 0) > 0
+  );
   const theoryGroups = new Map();
   const venueGroups = new Map();
   rows.forEach(row => {

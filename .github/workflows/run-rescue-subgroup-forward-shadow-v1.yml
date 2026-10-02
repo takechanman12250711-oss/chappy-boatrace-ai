@@ -1,0 +1,38 @@
+name: Run rescue subgroup forward shadow v1
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 15 * * *'
+  pull_request:
+    paths:
+      - 'scripts/analyze-rescue-subgroup-forward-shadow-v1.cjs'
+      - '.github/workflows/run-rescue-subgroup-forward-shadow-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run frozen rescue subgroup forward shadow
+        run: node scripts/analyze-rescue-subgroup-forward-shadow-v1.cjs > rescue-subgroup-forward-shadow-v1.json
+      - name: Validate shadow-only boundary
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const r = JSON.parse(fs.readFileSync('rescue-subgroup-forward-shadow-v1.json','utf8'));
+          if (r.productionChanged !== false || r.automaticApplication !== false || r.usableForPrediction !== false) process.exit(1);
+          if (r.freezeAt !== '2026-09-01T03:10:00Z') process.exit(1);
+          console.log(JSON.stringify({freezeAt:r.freezeAt, diagnostics:r.diagnostics, metrics:r.metrics, union:r.union}, null, 2));
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rescue-subgroup-forward-shadow-v1
+          path: rescue-subgroup-forward-shadow-v1.json
+          retention-days: 90

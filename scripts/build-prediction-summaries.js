@@ -263,6 +263,32 @@ function compactPracticalTicket(value) {
     typeof value === "string"
       ? { ticket: value }
       : value || {};
+  const category =
+    String(row.category || "");
+  const displayCategory =
+    [
+      "順位ゲート補完",
+      "候補補完",
+      "独立展開"
+    ].includes(category)
+      ? category
+      : category === "流し"
+        ? "フォーメーション"
+        : String(
+            row.displayCategory ||
+            category ||
+            ""
+          ).replace(
+            /^流し$/,
+            "フォーメーション"
+          );
+  const scenarioType = String(
+    row.scenarioType || ""
+  )
+    .replace(/流し候補/g, "フォーメーション候補")
+    .replace(/流し展開/g, "フォーメーション")
+    .replace(/流し/g, "フォーメーション");
+
   return {
     ticket: String(
       row.ticket ||
@@ -273,8 +299,9 @@ function compactPracticalTicket(value) {
       row.formation ||
       ""
     ),
-    category: String(row.category || ""),
-    scenarioType: String(row.scenarioType || ""),
+    category,
+    displayCategory,
+    scenarioType,
     amount: Number(row.amount || 0)
   };
 }
@@ -297,6 +324,13 @@ function compactPrediction(prediction) {
           path: String(prediction.note.path || ""),
           title: String(prediction.note.title || ""),
           publishable: prediction.note.publishable === true,
+          ...(prediction.note.draftBundle ? {
+            draftBundle: {
+              status: String(prediction.note.draftBundle.status || ""),
+              path: String(prediction.note.draftBundle.path || ""),
+              sha256: String(prediction.note.draftBundle.sha256 || "")
+            }
+          } : {}),
           rejectionReasons: Array.isArray(prediction.note.rejectionReasons)
             ? prediction.note.rejectionReasons
                 .slice(0, 8)

@@ -21,6 +21,8 @@ const {
   safelyUpsertShadowSnapshots,
   captureStoredConditions,
   selectedRaceKeyFor,
+  scoreBandForSelection,
+  buildActiveV2Selection,
   buildActiveV2Comparison,
   applySelectedRaceKey,
   buildStoredPrediction,
@@ -29,12 +31,139 @@ const {
   saveRun
 } = require("./collect-predictions");
 
-assert.equal(MIN_SCORE, 70);
+const charter = require(
+  "../config/chappy-charter.json"
+);
+const collectorSource = fs.readFileSync(
+  path.join(__dirname, "collect-predictions.js"),
+  "utf8"
+);
+assert.match(
+  collectorSource,
+  /const practicalPriorityShadow\s*=\s*\n?\s*loadOptionalV2Dependency\(/,
+  "順位候補シャドー評価器の読込失敗で本番収集を止めない"
+);
+assert.match(
+  collectorSource,
+  /const practicalPriorityShadowReport\s*=\s*\n?\s*loadOptionalV2Dependency\(/,
+  "順位候補固定契約の読込失敗で本番収集を止めない"
+);
+
+assert.equal(
+  MIN_SCORE,
+  charter.shadowSelectionV2.selectionThreshold,
+  "自動選定基準は憲章設定を正本にする"
+);
+assert.equal(MIN_SCORE, 60);
+
+const belowThresholdSelection =
+  buildActiveV2Selection({
+    status: "ready",
+    calibrationEligible: true,
+    evaluation: { totalScore: 59.9 }
+  }, {});
+const exactThresholdSelection =
+  buildActiveV2Selection({
+    status: "ready",
+    calibrationEligible: true,
+    evaluation: { totalScore: 60 }
+  }, {});
+const upperSixtiesSelection =
+  buildActiveV2Selection({
+    status: "ready",
+    calibrationEligible: true,
+    evaluation: { totalScore: 69.9 }
+  }, {});
+
+assert.equal(
+  belowThresholdSelection.qualified,
+  false,
+  "59.9点は自動選定しない"
+);
+assert.equal(
+  exactThresholdSelection.qualified,
+  true,
+  "60.0点は自動選定する"
+);
+assert.equal(
+  upperSixtiesSelection.qualified,
+  true,
+  "69.9点も自動選定する"
+);
+assert.equal(
+  exactThresholdSelection.threshold,
+  60,
+  "保存する判定基準も60点に統一する"
+);
+assert.equal(
+  scoreBandForSelection(
+    belowThresholdSelection
+  ),
+  "under_60"
+);
+assert.equal(
+  scoreBandForSelection(
+    exactThresholdSelection
+  ),
+  "60_69"
+);
+assert.equal(
+  scoreBandForSelection(
+    upperSixtiesSelection
+  ),
+  "60_69"
+);
+assert.equal(
+  scoreBandForSelection({
+    ready: true,
+    score: 70
+  }),
+  "70_plus"
+);
+assert.equal(
+  scoreBandForSelection({
+    ready: false,
+    score: 99
+  }),
+  "not_ready"
+);
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    {
+      raceKey: "20260726-12-6",
+      selection: belowThresholdSelection
+    }
+  ),
+  ""
+);
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    {
+      raceKey: "20260726-12-7",
+      selection: exactThresholdSelection
+    }
+  ),
+  "20260726-12-7"
+);
+assert.equal(
+  selectedRaceKeyFor(
+    "20260726",
+    {
+      raceKey: "20260726-12-8",
+      selection: upperSixtiesSelection
+    }
+  ),
+  "20260726-12-8"
+);
 
 const provenanceConditions =
   captureStoredConditions(
     {
       rawRaceData: {
+        source: "boatrace-official",
+        fetchedAt: "2026-08-10T00:30:00.000Z",
         entries: [{
           boat: 1,
           racerName: "公式値",
@@ -47,6 +176,8 @@ const provenanceConditions =
         }
       },
       raceData: {
+        source: "boatrace-official",
+        fetchedAt: "2026-08-10T00:30:00.000Z",
         entries: [{
           boat: 1,
           racerName: "補正値",
@@ -83,6 +214,14 @@ assert.equal(
   provenanceConditions.legacy.weather.windSpeed,
   9
 );
+for (const snapshot of [
+  provenanceConditions.shadow,
+  provenanceConditions.legacy
+]) {
+  assert.equal(snapshot.source, "boatrace-official");
+  assert.equal(snapshot.sourceFetchedAt, "2026-08-10T00:30:00.000Z");
+  assert.equal(snapshot.analysisProfile, "hiyori-compatible");
+}
 
 const rawWeatherMissing =
   captureStoredConditions(
@@ -357,6 +496,83 @@ assert.deepEqual(
   practicalTickets,
   "V2追加後も現行の実戦買い目をそのまま保存する"
 );
+assert.equal(
+  highShadowRecord
+    .practicalPriorityShadow
+    .applicationMode,
+  "shadow-only",
+  "順位候補は締切前にシャドー専用で保存する"
+);
+assert.equal(
+  highShadowRecord
+    .practicalPriorityShadow
+    .automaticApplication,
+  false,
+  "順位候補を自動採用しない"
+);
+assert.equal(
+  highShadowRecord
+    .practicalPriorityShadow
+    .usableForPrediction,
+  false,
+  "順位候補を現行予想へ接続しない"
+);
+assert.deepEqual(
+  highShadowRecord
+    .practicalPriorityShadow
+    .baseTickets,
+  highShadowRecord
+    .practicalPriorityShadow
+    .shadowTickets,
+  "候補不成立時も現行買い目を変更しない"
+);
+const failedPriorityShadowRecord =
+  buildStoredPrediction(
+    "20260726",
+    legacyItem,
+    false,
+    legacyItem.capturedAt,
+    {
+      createPrediction: fakePrediction,
+      createPracticalSelection() {
+        return practicalTickets;
+      },
+      practicalPriorityShadowBuilder() {
+        throw new Error("shadow failure");
+      },
+      shadowBuilder() {
+        return {
+          status: "ready",
+          complete: true,
+          calibrationEligible: true,
+          evaluation: { totalScore: 100 }
+        };
+      },
+      coreApi: {}
+    }
+  );
+assert.equal(
+  failedPriorityShadowRecord.raceKey,
+  highShadowRecord.raceKey,
+  "シャドー専用処理が失敗しても締切前予想を保存する"
+);
+assert.equal(
+  failedPriorityShadowRecord
+    .practicalPriorityShadow
+    .status,
+  "shadow-builder-unavailable"
+);
+assert.equal(
+  failedPriorityShadowRecord
+    .practicalPriorityShadow
+    .eligible,
+  false
+);
+assert.deepEqual(
+  failedPriorityShadowRecord.prediction.practicalTickets,
+  practicalTickets,
+  "シャドー失敗時も現行買い目を変更しない"
+);
 const detachedShadowRecord =
   detachShadowV2({
     ...highShadowRecord,
@@ -477,7 +693,7 @@ assert.equal(
 );
 assert.equal(
   lowShadowRecord.scoreBand,
-  "under_70"
+  "under_60"
 );
 assert.equal(
   lowShadowRecord.selection.selected,
@@ -745,6 +961,8 @@ const completeRawRaceData = {
         boat: index + 1,
         racerName:
           completeRacerNames[index],
+        lapTimeSource:
+          "BOATRACE浜名湖公式・独自計測一周",
         exhibition: {
           displayTime:
             6.72 + index * 0.02,
@@ -759,6 +977,25 @@ const completeHistory =
     "12",
     8
   );
+[1, 2, 3, 4].forEach(boatNo => {
+  completeHistory.raceData.historyContext
+    .venueRace.trend.frameMovement[
+      String(boatNo)
+    ] = {
+      boatNo,
+      samples: 200,
+      reliability: "high",
+      riseRate: 60,
+      stayRate: 30,
+      sinkRate: 10,
+      label: "浮上",
+      hasBaseline: true,
+      baselineRiseRate: 30,
+      baselineStayRate: 40,
+      baselineSinkRate: 30,
+      movementDelta: 50
+    };
+});
 const completeLegacyInput =
   theoryInput.prepare(
     JSON.parse(
@@ -825,6 +1062,145 @@ const completeStored =
   );
 const completeV2 =
   completeStored.shadowV2;
+const completeStartDiagnostic =
+  completeStored.theoryTagSnapshot
+    .evidenceDiagnostics.rows.find(
+      row => row.theoryKey === "start"
+    );
+const completeStartTheory =
+  completeStored.theoryTagSnapshot
+    .theories.find(
+      row => row.theoryKey === "stSlit"
+    );
+const completeFrameDiagnostic =
+  completeStored.theoryTagSnapshot
+    .evidenceDiagnostics.rows.find(
+      row => row.theoryKey === "frame-rise-fall"
+    );
+const completeFrameTheory =
+  completeStored.theoryTagSnapshot
+    .theories.find(
+      row => row.theoryKey === "frameRiseSink"
+    );
+const completeDoubleDiagnostic =
+  completeStored.theoryTagSnapshot
+    .evidenceDiagnostics.rows.find(
+      row => row.theoryKey === "double-time"
+    );
+const completeDoubleTheory =
+  completeStored.theoryTagSnapshot
+    .theories.find(
+      row => row.theoryKey === "doubleTime"
+    );
+
+assert.equal(
+  completeStartDiagnostic.formal,
+  true,
+  "公式入力のavgSt・今節ST・展示STからST正式証拠を生成する"
+);
+assert.equal(
+  completeStartDiagnostic.metrics.coverage,
+  6
+);
+assert.ok(
+  completeStartTheory?.ticketCount > 0,
+  "正式ST証拠を実戦買い目へ帰属して日次記録へ保存する"
+);
+assert.equal(
+  completeFrameDiagnostic.formal,
+  true,
+  "AI計算へ適用済みの枠別浮沈率を正式証拠として保存する"
+);
+assert.ok(
+  completeFrameTheory?.ticketCount > 0,
+  "枠別浮沈率を実際に補正した枠を含む実戦買い目へ帰属する"
+);
+assert.equal(
+  completeDoubleDiagnostic.formal,
+  true,
+  "開催場公式の一周6艇と展示・足Ver2の実配点からダブルタイム正式証拠を保存する"
+);
+assert.equal(
+  completeDoubleDiagnostic.metrics.lapCount,
+  6
+);
+assert.ok(
+  completeDoubleTheory?.ticketCount > 0,
+  "実際に5点を統合したダブルタイム艇を含む実戦買い目へ帰属する"
+);
+assert.deepEqual(
+  compactStoredVerification(
+    completeStored
+  ).theoryTagSnapshot,
+  completeStored.theoryTagSnapshot,
+  "検証予想の軽量化後もST正式証拠を保持する"
+);
+const completeStartEvaluation =
+  require("../js/theory-evaluation-engine")
+    .build({
+      ...completeStored,
+      result: {
+        settled: true,
+        resultTicket:
+          completeStartTheory.tickets[0]
+      }
+    })
+    .evaluations.find(
+      row => row.theoryKey === "start"
+    );
+assert.equal(
+  completeStartEvaluation.status,
+  "evaluated",
+  "保存したstSlit証拠をPhase7のstart評価へ接続する"
+);
+assert.equal(
+  completeStartEvaluation.matched,
+  true
+);
+const completeFrameEvaluation =
+  require("../js/theory-evaluation-engine")
+    .build({
+      ...completeStored,
+      result: {
+        settled: true,
+        resultTicket:
+          completeFrameTheory.tickets[0]
+      }
+    })
+    .evaluations.find(
+      row => row.theoryKey === "frame-rise-fall"
+    );
+assert.equal(
+  completeFrameEvaluation.status,
+  "evaluated",
+  "保存した枠別浮沈率証拠をPhase7評価へ接続する"
+);
+assert.equal(
+  completeFrameEvaluation.matched,
+  true
+);
+const completeDoubleEvaluation =
+  require("../js/theory-evaluation-engine")
+    .build({
+      ...completeStored,
+      result: {
+        settled: true,
+        resultTicket:
+          completeDoubleTheory.tickets[0]
+      }
+    })
+    .evaluations.find(
+      row => row.theoryKey === "double-time"
+    );
+assert.equal(
+  completeDoubleEvaluation.status,
+  "evaluated",
+  "保存したダブルタイム証拠をPhase7評価へ接続する"
+);
+assert.equal(
+  completeDoubleEvaluation.matched,
+  true
+);
 
 assert.equal(
   completeEvaluation.ready,
@@ -1205,7 +1581,8 @@ assert.equal(
   "pre_race_structured_branch"
 );
 assert.equal(compacted.prediction.manshuSheet, undefined);
-assert.equal(compacted.prediction.ticketRanks, undefined);
+assert.ok(compacted.prediction.ticketRanks.some(row => row.ticket === "1-2-3"), "Retain stored ticket identities for result details");
+assert.equal(new Set(compacted.prediction.ticketRanks.map(row=>row.ticket)).size, compacted.prediction.ticketRanks.length);
 assert.equal(compacted.prediction.mainSheet.tickets, undefined);
 
 const generatedEvidence = compactStoredVerification({
@@ -1221,6 +1598,9 @@ const generatedEvidence = compactStoredVerification({
           score: 91,
           frameMovementAdjustment: 3,
           attacker: 4,
+          attackerCourse: 4,
+          attackerBoatNo: 4,
+          headBoatNo: 4,
           blockedBoats: []
         },
         subScenario: {
@@ -1233,6 +1613,9 @@ const generatedEvidence = compactStoredVerification({
         },
         scenarios: [],
         attacker: 4,
+        attackerCourse: 4,
+        attackerBoatNo: 4,
+        headBoatNo: 4,
         wallBoat: 3,
         remainers: [1, 2],
         followers: [5],
@@ -1274,6 +1657,79 @@ assert.equal(
   3
 );
 assert.equal(
+  generatedEvidence.prediction.verificationEvidence.mainScenario
+    .attackerCourse,
+  4
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.mainScenario
+    .attackerBoatNo,
+  4
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.roles
+    .attackerCourse,
+  4
+);
+assert.equal(
+  generatedEvidence.prediction.verificationEvidence.roles
+    .attackerBoatNo,
+  4
+);
+
+const generatedMappedEvidence = compactStoredVerification({
+  raceKey: "20260723-24-2",
+  prediction: {
+    practicalSelection: {
+      verificationEvidence: {
+        mainScenario: {
+          type: "threeAttack",
+          headBoatNo: 6,
+          attackerBoatNo: 6
+        }
+      }
+    },
+    aiCore: {
+      raceScenarios: {
+        mainScenario: {
+          type: "threeAttack",
+          attacker: 3,
+          attackerCourse: 3,
+          attackerBoatNo: 6,
+          headBoatNo: 6
+        },
+        subScenario: {
+          type: "escape",
+          attacker: 1,
+          attackerCourse: 1,
+          attackerBoatNo: 1,
+          headBoatNo: 1
+        },
+        attacker: 6,
+        attackerCourse: 3,
+        attackerBoatNo: 6,
+        headBoatNo: 6
+      }
+    }
+  }
+});
+assert.equal(
+  generatedMappedEvidence.prediction.verificationEvidence
+    .mainScenario.attackerCourse,
+  3,
+  "実戦選択の簡略証拠を優先してもAIコアの実コースを保持する"
+);
+assert.equal(
+  generatedMappedEvidence.prediction.verificationEvidence
+    .mainScenario.attackerBoatNo,
+  6
+);
+assert.equal(
+  generatedMappedEvidence.prediction.verificationEvidence
+    .subScenario.attackerCourse,
+  1
+);
+assert.equal(
   generatedEvidence.prediction.verificationEvidence.marks.honmei.boatNo,
   4
 );
@@ -1299,7 +1755,7 @@ try {
       raceKey: "20260726-12-8",
       selection: {
         score: 45,
-        threshold: 70
+        threshold: 60
       },
       prediction: {}
     }],
@@ -1327,6 +1783,11 @@ try {
     )
   );
   assert.equal(saved.schemaVersion, 3);
+  assert.equal(
+    saved.runs[0].threshold,
+    60,
+    "保存runにも現行60点基準を残す"
+  );
   assert.equal(
     saved.verificationPredictions.length,
     1
@@ -1365,3 +1826,8 @@ try {
 }
 
 console.log("シャドー予想保存テスト: 合格");
+
+// Re-compaction must preserve existing research inputs and never backfill legacy rows.
+const frozenPool = { version: 'outer-attack-all-scenarios-v1', candidatePool: [{ticket:'5-1-2', evidenceQualified:true}] };
+assert.deepEqual(compactStoredVerification({ prediction: { evaluatedScenarioCandidates:frozenPool } }).prediction.evaluatedScenarioCandidates, frozenPool);
+assert.equal(compactStoredVerification({ prediction: {} }).prediction.evaluatedScenarioCandidates, undefined);
