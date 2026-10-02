@@ -78,3 +78,12 @@ assert.equal(hit.status, "hit-no-miss-analysis");
 assert.equal(hit.causeCount, 0);
 
 console.log("外れ原因分析 Phase2: 合格");
+
+// Approved four-stage diagnosis: emit current repository evidence in CI without changing production logic.
+const fourStageDiagnosis = require("./build-four-stage-miss-diagnosis.cjs");
+const fourStageReport = fourStageDiagnosis.build();
+assert.equal(
+  fourStageReport.summary.headMiss + fourStageReport.summary.secondMiss + fourStageReport.summary.thirdMiss,
+  fourStageReport.summary.misses
+);
+console.log("FOUR_STAGE_REPORT_JSON=" + JSON.stringify(fourStageReport));
