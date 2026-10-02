@@ -16,6 +16,212 @@ function isBoatIdentityQuarantined(record) {
   );
 }
 
+function compactObject(value, fields) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return Object.fromEntries(
+    fields.map(field => [
+      field,
+      value[field]
+    ])
+  );
+}
+
+function compactGeneration(value) {
+  return compactObject(
+    value,
+    [
+      "logicFingerprint",
+      "confidenceDefinitionVersion",
+      "ticketPolicyVersion"
+    ]
+  );
+}
+
+function compactVerificationEvidence(value) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return {
+    roleSchemaVersion:
+      value.roleSchemaVersion,
+    generation:
+      compactGeneration(
+        value.generation
+      )
+  };
+}
+
+function compactScenarioVerification(value) {
+  return compactObject(value, ["status"]);
+}
+
+function compactResult(value) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return {
+    settled: value.settled,
+    verification:
+      value.verification &&
+      typeof value.verification === "object"
+        ? {
+            scenarioVerification:
+              compactScenarioVerification(
+                value.verification
+                  .scenarioVerification
+              )
+          }
+        : value.verification,
+    automaticVerification:
+      value.automaticVerification &&
+      typeof value.automaticVerification === "object"
+        ? {
+            scenarioVerification:
+              compactScenarioVerification(
+                value.automaticVerification
+                  .scenarioVerification
+              )
+          }
+        : value.automaticVerification,
+    scenarioVerification:
+      compactScenarioVerification(
+        value.scenarioVerification
+      )
+  };
+}
+
+function compactPrediction(value) {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return {
+    predictionMode:
+      value.predictionMode,
+    isRetrospective:
+      value.isRetrospective,
+    officialResultUsedForEvaluation:
+      value.officialResultUsedForEvaluation,
+    officialResultUsedForPrediction:
+      value.officialResultUsedForPrediction,
+    preRaceConditions:
+      compactObject(
+        value.preRaceConditions,
+        ["officialResultUsed"]
+      ),
+    timing:
+      compactObject(
+        value.timing,
+        [
+          "beforeDeadline",
+          "preDeadline"
+        ]
+      ),
+    internalEvaluation:
+      compactObject(
+        value.internalEvaluation,
+        ["score", "mode"]
+      ),
+    verificationEvidence:
+      compactVerificationEvidence(
+        value.verificationEvidence
+      ),
+    practicalSelection:
+      value.practicalSelection &&
+      typeof value.practicalSelection === "object"
+        ? {
+            verificationEvidence:
+              compactVerificationEvidence(
+                value.practicalSelection
+                  .verificationEvidence
+              )
+          }
+        : value.practicalSelection
+  };
+}
+
+function compactCalibrationRecord(record) {
+  return {
+    raceKey: record?.raceKey,
+    date: record?.date,
+    jcd: record?.jcd,
+    raceNo: record?.raceNo,
+    selectedAt: record?.selectedAt,
+    capturedAt: record?.capturedAt,
+    deadlineAt: record?.deadlineAt,
+    verificationMode:
+      record?.verificationMode,
+    predictionMode:
+      record?.predictionMode,
+    isRetrospective:
+      record?.isRetrospective,
+    officialResultUsedForEvaluation:
+      record
+        ?.officialResultUsedForEvaluation,
+    officialResultUsedForPrediction:
+      record
+        ?.officialResultUsedForPrediction,
+    preRaceConditions:
+      compactObject(
+        record?.preRaceConditions,
+        ["officialResultUsed"]
+      ),
+    timing:
+      compactObject(
+        record?.timing,
+        [
+          "beforeDeadline",
+          "preDeadline"
+        ]
+      ),
+    selection:
+      compactObject(
+        record?.selection,
+        [
+          "ready",
+          "selected",
+          "status"
+        ]
+      ),
+    internalEvaluation:
+      compactObject(
+        record?.internalEvaluation,
+        ["score", "mode"]
+      ),
+    verificationEvidence:
+      compactVerificationEvidence(
+        record?.verificationEvidence
+      ),
+    practicalSelection:
+      record?.practicalSelection &&
+      typeof record.practicalSelection ===
+        "object"
+        ? {
+            verificationEvidence:
+              compactVerificationEvidence(
+                record.practicalSelection
+                  .verificationEvidence
+              )
+          }
+        : record?.practicalSelection,
+    prediction:
+      compactPrediction(
+        record?.prediction
+      ),
+    result:
+      compactResult(record?.result),
+    officialResult:
+      compactResult(
+        record?.officialResult
+      )
+  };
+}
+
 const DAILY_FILE_PATTERN = /^\d{8}\.json$/;
 const MAX_CALIBRATION_BYTES = 10 * 1024;
 
@@ -191,7 +397,9 @@ function collectPredictionRecords(inputDirectory) {
           return;
         }
         records.push({
-          ...record,
+          ...compactCalibrationRecord(
+            record
+          ),
           calibrationSource: {
             fileName,
             collection
@@ -293,6 +501,7 @@ module.exports = {
   assertCalibrationSize,
   assertModeSeparatedCalibration,
   preserveGeneratedAtWhenUnchanged,
+  compactCalibrationRecord,
   collectPredictionRecords,
   buildFromDirectory
 };
