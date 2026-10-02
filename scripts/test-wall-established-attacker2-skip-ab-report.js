@@ -76,6 +76,64 @@ assert.equal(report.isTarget(wrongState), false);
 assert.equal(report.isTarget(informal), false);
 
 const built = report.build(predDocs, resultDocs);
+const compactBuilt = report.build(
+  predDocs.map(
+    report.compactPredictionDocument
+  ),
+  resultDocs.map(
+    report.compactResultDocument
+  )
+);
+assert.deepEqual(
+  {
+    diagnostics:
+      compactBuilt.diagnostics,
+    a: compactBuilt.a,
+    b: compactBuilt.b,
+    delta: compactBuilt.delta,
+    robustness:
+      compactBuilt.robustness,
+    checkpoints:
+      compactBuilt.checkpoints
+  },
+  {
+    diagnostics: built.diagnostics,
+    a: built.a,
+    b: built.b,
+    delta: built.delta,
+    robustness: built.robustness,
+    checkpoints: built.checkpoints
+  },
+  "入力を軽量化してもA/B集計契約を変えない"
+);
+const paddedRecord = {
+  ...selectedWinner,
+  prediction: {
+    ...selectedWinner.prediction,
+    unusedPayload:
+      "x".repeat(1024 * 1024)
+  }
+};
+const compactRecord =
+  report.compactPredictionRecord(
+    paddedRecord
+  );
+assert.equal(
+  report.isTarget(compactRecord),
+  true
+);
+assert.deepEqual(
+  report.practicalTickets(
+    compactRecord
+  ),
+  ["1-2-3", "2-1-3"]
+);
+assert.ok(
+  Buffer.byteLength(
+    JSON.stringify(compactRecord)
+  ) < 2048,
+  "集計不要の巨大予想詳細を保持しない"
+);
 assert.equal(built.productionChanged, false);
 assert.equal(built.automaticApplication, false);
 assert.equal(built.usableForPrediction, false);
