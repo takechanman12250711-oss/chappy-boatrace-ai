@@ -88,4 +88,41 @@ assert.equal(report.interpretation.automaticPhase8Handoff, false);
 assert.equal(report.interpretation.affectsCurrentTickets, false);
 assert.equal(report.interpretation.adoptionRequiresUserApproval, true);
 
+const noisyPredictionDoc = {
+  predictions: [{
+    ...kiryuTarget,
+    unusedPayload: "x".repeat(100000),
+    prediction: {
+      ...kiryuTarget.prediction,
+      unusedPayload: "y".repeat(100000),
+      practicalTickets: [
+        { ticket: "1-2-3", unusedPayload: "z".repeat(100000) },
+        { ticket: "1-3-2", unusedPayload: "z".repeat(100000) }
+      ]
+    }
+  }],
+  verificationPredictions: []
+};
+const noisyResultDoc = {
+  races: [{
+    ...result(kiryuTarget, "2-1-3", 1200),
+    unusedPayload: "r".repeat(100000),
+    trifecta: {
+      ...result(kiryuTarget, "2-1-3", 1200).trifecta,
+      unusedPayload: "t".repeat(100000)
+    }
+  }]
+};
+const compactPredictionDoc = engine.compactPredictionDoc(noisyPredictionDoc);
+const compactResultDoc = engine.compactResultDoc(noisyResultDoc);
+assert.equal(JSON.stringify(compactPredictionDoc).includes("unusedPayload"), false);
+assert.equal(JSON.stringify(compactResultDoc).includes("unusedPayload"), false);
+assert.deepEqual(compactPredictionDoc.predictions[0].prediction.practicalTickets, ["1-2-3", "1-3-2"]);
+const noisyReport = engine.build([noisyPredictionDoc], [noisyResultDoc]);
+const compactReport = engine.build([compactPredictionDoc], [compactResultDoc]);
+assert.deepEqual(
+  { ...compactReport, generatedAt: null },
+  { ...noisyReport, generatedAt: null }
+);
+
 console.log("venue 2course sashi prospective shadow test: ok");
