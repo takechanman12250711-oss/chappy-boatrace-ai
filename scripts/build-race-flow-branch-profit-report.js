@@ -10,8 +10,12 @@ const STAKE_PER_TICKET=100;
 
 function ticket(v){const s=String(v?.ticket||v||"").trim();return /^[1-6]-[1-6]-[1-6]$/.test(s)&&new Set(s.split("-")).size===3?s:"";}
 function tickets(v){return [...new Set((Array.isArray(v)?v:[]).map(ticket).filter(Boolean))];}
-function raceKey(r={}){return `${String(r.date||"")}-${String(r.jcd||"").padStart(2,"0")}-${Number(r.raceNo||0)}`;}
-function load(dir){if(!fs.existsSync(dir))return[];return fs.readdirSync(dir).filter(n=>/^\d{8}\.json$/.test(n)).sort().map(n=>JSON.parse(fs.readFileSync(path.join(dir,n),"utf8")));}
+function raceKey(r={}){return [String(r.date||""),String(r.jcd||"").padStart(2,"0"),Number(r.raceNo||0)].join("-");}
+function compactPredictionRow(r={}){const p=r.prediction||{};const raceFlow=p.raceFlow||{};const shadow=r.shadowSelectionV2||{};return{date:r.date,jcd:r.jcd,raceNo:r.raceNo,scenarioLabel:r.scenarioLabel,selection:r.selection?{scenarioLabel:r.selection.scenarioLabel}:undefined,shadowSelectionV2:r.shadowSelectionV2?{scenarioLabel:shadow.scenarioLabel,evaluation:shadow.evaluation?{scenarioLabel:shadow.evaluation.scenarioLabel}:undefined}:undefined,prediction:{practicalTickets:Array.isArray(p.practicalTickets)?p.practicalTickets:undefined,practicalSelection:p.practicalSelection?{tickets:p.practicalSelection.tickets}:undefined,scenarioLabel:p.scenarioLabel,raceFlow:{scenarioLabel:raceFlow.scenarioLabel,scenario:raceFlow.scenario?{title:raceFlow.scenario.title}:undefined,label:raceFlow.label,name:raceFlow.name,type:raceFlow.type}},result:r.result?{settled:r.result.settled,resultTicket:r.result.resultTicket,payout:r.result.payout}:undefined};}
+function compactPredictionDoc(d={}){return{predictions:(Array.isArray(d.predictions)?d.predictions:[]).map(compactPredictionRow),verificationPredictions:(Array.isArray(d.verificationPredictions)?d.verificationPredictions:[]).map(compactPredictionRow)};}
+function compactResultRow(r={}){return{date:r.date,jcd:r.jcd,raceNo:r.raceNo,resultAvailable:r.resultAvailable,status:r.status,trifecta:r.trifecta?{combination:r.trifecta.combination,payout:r.trifecta.payout}:undefined};}
+function compactResultDoc(d={}){return{races:(Array.isArray(d.races)?d.races:[]).map(compactResultRow)};}
+function load(dir,compact=x=>x){if(!fs.existsSync(dir))return[];const docs=[];for(const n of fs.readdirSync(dir).filter(n=>/^\d{8}\.json$/.test(n)).sort()){const parsed=JSON.parse(fs.readFileSync(path.join(dir,n),"utf8"));docs.push(compact(parsed));}return docs;}
 function resultMap(docs){const map=new Map();for(const d of docs)for(const r of(Array.isArray(d.races)?d.races:[]))if(r.resultAvailable&&r.status==="finished")map.set(raceKey(r),r);return map;}
 function practicalTickets(record={}){return tickets(record?.prediction?.practicalTickets||record?.prediction?.practicalSelection?.tickets);}
 function normalizeLabel(v){const s=String(v||"").trim();return s&&s!=="-"&&s!=="不明"?s:"";}
@@ -48,6 +52,6 @@ function build(predDocs,resultDocs){
   const ranking=labels.map(label=>({label,...summaries[label]})).filter(r=>r.settledCount>=10&&r.recoveryRate!==null).sort((a,b)=>a.recoveryRate-b.recoveryRate).map((r,i)=>({rank:i+1,...r}));
   return{schemaVersion:2,version:"race-flow-branch-profit-v2-saved-title",generatedAt:new Date().toISOString(),source:"persisted raceFlow.scenario.title / selection scenarioLabel + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,diagnostics:{selected:diagnose(selected),verification:diagnose(verification),deduplicatedLabeledRaceCount:labeled.length,distinctLabels:labels},summaries,weakBranchRanking:ranking,interpretation:{minimumBranchSettledCount:10,labelsAreStoredValuesOnly:true,retrospectiveInferenceAllowed:false,automaticApplication:false,usableForPrediction:false,actualPurchase:false}};
 }
-function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`race-flow labels ${report.diagnostics.deduplicatedLabeledRaceCount}R / ${report.diagnostics.distinctLabels.length} labels`);}
+function main(){const report=build(load(predictionDir,compactPredictionDoc),load(resultDir,compactResultDoc));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log("race-flow labels "+report.diagnostics.deduplicatedLabeledRaceCount+"R / "+report.diagnostics.distinctLabels.length+" labels");}
 if(require.main===module)main();
-module.exports={ticket,tickets,raceKey,scenarioEvidence,summarize,diagnose,build};
+module.exports={ticket,tickets,raceKey,compactPredictionRow,compactPredictionDoc,compactResultRow,compactResultDoc,scenarioEvidence,summarize,diagnose,build};
