@@ -1,0 +1,80 @@
+name: Diagnose frozen100 outer head sources
+on:
+  pull_request:
+    paths:
+      - .github/workflows/diagnose-frozen100-outer-head-source.yml
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 5e695db894e58d02e99129b8dc857ce1461e31b4
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Extract original frozen population without regeneration
+        shell: bash
+        run: |
+          mkdir -p diagnostic-output
+          node --max-old-space-size=6144 <<'NODE'
+          'use strict';
+          const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),zlib=require('node:zlib'),assert=require('node:assert/strict');
+          const root=process.cwd(),sha=x=>crypto.createHash('sha256').update(x).digest('hex');
+          const input=require('./scripts/analysis-input-contract');
+          const source=require('./scripts/eight-ticket-promotion-report-source.cjs');
+          const helpers=require('./scripts/build-continuous-performance-ledger.cjs');
+          const evaluator=require('./scripts/final-ticket-candidate-evaluator.cjs');
+          const ledgerBytes=fs.readFileSync('data/stats/continuous-performance-ledger.json');
+          assert.equal(sha(ledgerBytes),'9adfa115c55f7d26d6fe97f879903c7779bf9858bcd586d30cc256f61cdfa635','frozen ledger changed');
+          const frozen=JSON.parse(ledgerBytes).rows.slice(-100);
+          assert.equal(frozen.length,100);
+          const keys=frozen.map(x=>x.raceKey),wanted=new Set(keys);
+          assert.equal(wanted.size,100);
+          assert.equal(sha(JSON.stringify(keys)),'14705efd753dd6bea5e2a4f0fb2ccc1f712fea451bf1ea8c4499bb645690154f','population changed');
+          const canonical=new Map(),sources=[];
+          for(const date of [...new Set(keys.map(x=>x.slice(0,8)))].sort()){
+            const d=source.readDay(root,date);
+            for(const r of input.mergePredictionSources(d.data.predictions,d.data.verificationPredictions)){
+              const key=input.raceKey(r);if(wanted.has(key))canonical.set(key,r);
+            }
+            const meta=JSON.parse(fs.readFileSync('data/predictions/source-archives/'+date+'.meta.json','utf8'));
+            sources.push({date,source:d.source,updatedAt:d.data.updatedAt,metadata:meta});
+          }
+          const official=input.collectOfficialResults(path.join(root,'data/results'),wanted);
+          const details=[],records=[];
+          for(const row of frozen){
+            const p=canonical.get(row.raceKey),o=official.get(row.raceKey);
+            assert.ok(p&&o,'missing source '+row.raceKey);
+            assert.equal(input.preDeadlineReason(p),'','not predeadline '+row.raceKey);
+            assert.equal(p.selectedAt||p.capturedAt,row.selectedAt,'capture mismatch');
+            const generationKey=helpers.generationOf(p);assert.equal(generationKey,row.generationKey);
+            const base=helpers.practicalTickets(p.prediction||p);
+            const actual=input.actualTicket(o),payout=evaluator.payout(o);
+            assert.equal(base.length,row.ticketCount);assert.equal(actual,row.actualTicket);
+            details.push({raceKey:row.raceKey,selectedAt:row.selectedAt,generationKey,base,actual,payout});
+            records.push({raceKey:row.raceKey,predictionRecord:p,officialResult:o});
+          }
+          assert.equal(sha(JSON.stringify(details)),'2595a46ad5bf2336c3d7eedb3119a1e5d1ba7da515b3701492211036141a8eba','not the previous report population and tickets');
+          const payload={analysisId:'frozen100-outer-head-source-v1',sourceCommit:'5e695db894e58d02e99129b8dc857ce1461e31b4',generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,noPredictionRegeneration:true,sources,details,records};
+          const raw=Buffer.from(JSON.stringify(payload)),gz=zlib.gzipSync(raw);
+          fs.writeFileSync('diagnostic-output/frozen100-source.json.gz',gz);
+          const summary={sourceCommit:payload.sourceCommit,races:records.length,detailsSha256:sha(JSON.stringify(details)),sourceSha256:sha(raw),gzipSha256:sha(gz),sourceBytes:raw.length,gzipBytes:gz.length,productionChanged:false,automaticApplication:false};
+          fs.writeFileSync('diagnostic-output/source-manifest.json',JSON.stringify(summary,null,2)+'\n');
+          console.log(JSON.stringify(summary));
+          NODE
+      - name: Preserve exact source code for local read-only diagnosis
+        run: |
+          tar -czf diagnostic-output/source-code.tgz js config scripts/analysis-input-contract.js scripts/eight-ticket-promotion-report-source.cjs scripts/daily-prediction-source-archive.js scripts/build-continuous-performance-ledger.cjs scripts/build-hit-first-practical-report.cjs scripts/analyze-ticket-expansion-7-12-18-24.cjs scripts/final-ticket-candidate-evaluator.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frozen100-outer-head-sources
+          path: diagnostic-output/
+          if-no-files-found: error
+          retention-days: 90
