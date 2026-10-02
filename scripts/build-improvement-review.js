@@ -239,6 +239,309 @@ function selectShadowV2Snapshot(
   return null;
 }
 
+
+function compactVerificationDetail(
+  detail
+) {
+  if (
+    !detail ||
+    typeof detail !== "object"
+  ) {
+    return null;
+  }
+
+  return {
+    settled:
+      detail.settled === true,
+    resultTicket:
+      detail.resultTicket,
+    scenarioTitle:
+      detail.scenarioTitle,
+    scenarioMatched:
+      detail.scenarioMatched,
+    practicalRows:
+      detail.practicalRows,
+    practicalPointCount:
+      detail.practicalPointCount,
+    practicalHit:
+      detail.practicalHit === true,
+    hitCategory:
+      detail.hitCategory,
+    missType:
+      detail.missType,
+    payoutPer100:
+      detail.payoutPer100,
+    simulatedStake:
+      detail.simulatedStake,
+    simulatedReturn:
+      detail.simulatedReturn,
+    scenarioVerification:
+      detail.scenarioVerification,
+    roleResults:
+      detail.roleResults,
+    ticketCategoryResults:
+      detail.ticketCategoryResults,
+    supportIdentity:
+      detail.supportIdentity,
+    marks:
+      detail.marks,
+    priorityReview:
+      detail.priorityReview
+  };
+}
+
+function compactResult(
+  result
+) {
+  if (
+    !result ||
+    typeof result !== "object"
+  ) {
+    return null;
+  }
+
+  return {
+    settled:
+      result.settled === true,
+    settledAt:
+      result.settledAt,
+    verification:
+      compactVerificationDetail(
+        result.verification ||
+        result.automaticVerification ||
+        result
+      )
+  };
+}
+
+function compactEvidence(
+  evidence
+) {
+  if (
+    !evidence ||
+    typeof evidence !== "object"
+  ) {
+    return null;
+  }
+
+  return {
+    roleSchemaVersion:
+      evidence.roleSchemaVersion,
+    theorySchemaVersion:
+      evidence.theorySchemaVersion,
+    theorySetFingerprint:
+      evidence.theorySetFingerprint,
+    generation:
+      evidence.generation
+  };
+}
+
+function compactShadowV2Snapshot(
+  snapshot
+) {
+  if (
+    !snapshot ||
+    typeof snapshot !== "object"
+  ) {
+    return null;
+  }
+
+  return {
+    recordKey:
+      snapshot.recordKey,
+    raceKey:
+      snapshot.raceKey,
+    cohortKey:
+      snapshot.cohortKey,
+    capturedAt:
+      snapshot.capturedAt,
+    selectedAt:
+      snapshot.selectedAt,
+    evaluatorVersion:
+      snapshot.evaluatorVersion,
+    complete:
+      snapshot.complete === true,
+    calibrationEligible:
+      snapshot.calibrationEligible ===
+      true,
+    status:
+      snapshot.status,
+    officialResultUsedForEvaluation:
+      snapshot
+        .officialResultUsedForEvaluation ===
+      true,
+    evaluation:
+      snapshot.evaluation
+        ? {
+            totalScore:
+              snapshot
+                .evaluation
+                .totalScore
+          }
+        : undefined
+  };
+}
+
+function compactPredictionRecord(
+  record,
+  shadowV2,
+  source
+) {
+  const prediction =
+    record?.prediction || {};
+  const evidence =
+    compactEvidence(
+      prediction
+        .verificationEvidence
+    );
+  const practicalEvidence =
+    compactEvidence(
+      prediction
+        .practicalSelection
+        ?.verificationEvidence
+    );
+  const conditionFlags =
+    value =>
+      value &&
+      typeof value === "object"
+        ? {
+            officialResultUsed:
+              value
+                .officialResultUsed ===
+              true
+          }
+        : undefined;
+  const timing =
+    value =>
+      value &&
+      typeof value === "object"
+        ? {
+            beforeDeadline:
+              value.beforeDeadline ===
+              true,
+            preDeadline:
+              value.preDeadline ===
+              true
+          }
+        : undefined;
+
+  return {
+    raceKey:
+      record?.raceKey,
+    date:
+      record?.date,
+    jcd:
+      record?.jcd,
+    raceNo:
+      record?.raceNo,
+    place:
+      record?.place,
+    selectedAt:
+      record?.selectedAt,
+    capturedAt:
+      record?.capturedAt,
+    deadlineAt:
+      record?.deadlineAt,
+    timing:
+      timing(record?.timing),
+    verificationMode:
+      record?.verificationMode,
+    predictionMode:
+      record?.predictionMode,
+    isRetrospective:
+      record?.isRetrospective ===
+      true,
+    officialResultUsedForEvaluation:
+      record
+        ?.officialResultUsedForEvaluation ===
+      true,
+    officialResultUsedForPrediction:
+      record
+        ?.officialResultUsedForPrediction ===
+      true,
+    preRaceConditions:
+      conditionFlags(
+        record?.preRaceConditions
+      ),
+    selection:
+      record?.selection
+        ? {
+            evaluator:
+              record.selection
+                .evaluator,
+            ready:
+              record.selection.ready ===
+              true,
+            qualified:
+              record.selection
+                .qualified === true,
+            selected:
+              record.selection
+                .selected === true,
+            status:
+              record.selection.status,
+            score:
+              record.selection.score,
+            threshold:
+              record.selection
+                .threshold
+          }
+        : undefined,
+    shadowV2:
+      compactShadowV2Snapshot(
+        shadowV2 ||
+        record?.shadowV2
+      ),
+    prediction: {
+      predictionMode:
+        prediction.predictionMode,
+      timing:
+        timing(prediction.timing),
+      isRetrospective:
+        prediction.isRetrospective ===
+        true,
+      officialResultUsedForEvaluation:
+        prediction
+          .officialResultUsedForEvaluation ===
+        true,
+      officialResultUsedForPrediction:
+        prediction
+          .officialResultUsedForPrediction ===
+        true,
+      preRaceConditions:
+        conditionFlags(
+          prediction
+            .preRaceConditions
+        ),
+      internalEvaluation:
+        prediction.internalEvaluation
+          ? {
+              mode:
+                prediction
+                  .internalEvaluation
+                  .mode
+            }
+          : undefined,
+      verificationEvidence:
+        evidence,
+      practicalSelection:
+        practicalEvidence
+          ? {
+              verificationEvidence:
+                practicalEvidence
+            }
+          : undefined
+    },
+    result:
+      compactResult(
+        record?.result ||
+        record?.officialResult
+      ),
+    improvementReviewSource:
+      source
+  };
+}
+
 function collectPredictionRecords(
   inputDirectory
 ) {
@@ -294,12 +597,17 @@ function collectPredictionRecords(
       ) {
         return;
       }
+      const compactSnapshot =
+        compactShadowV2Snapshot(
+          snapshot
+        );
       shadowSnapshots.push(
-        snapshot
+        compactSnapshot
       );
       const raceKey =
         String(
-          snapshot?.raceKey || ""
+          compactSnapshot
+            ?.raceKey || ""
         );
       if (!raceKey) return;
       if (
@@ -314,7 +622,7 @@ function collectPredictionRecords(
       }
       shadowByRace
         .get(raceKey)
-        .push(snapshot);
+        .push(compactSnapshot);
     });
 
     [
@@ -353,21 +661,24 @@ function collectPredictionRecords(
               record
                 ?.raceKey || ""
             );
-          records.push({
-            ...record,
-            shadowV2:
-              record?.shadowV2 ||
-              selectShadowV2Snapshot(
-                shadowByRace.get(
-                  raceKey
-                ),
-                record
+          const shadowV2 =
+            record?.shadowV2 ||
+            selectShadowV2Snapshot(
+              shadowByRace.get(
+                raceKey
               ),
-            improvementReviewSource: {
-              fileName,
-              collection
-            }
-          });
+              record
+            );
+          records.push(
+            compactPredictionRecord(
+              record,
+              shadowV2,
+              {
+                fileName,
+                collection
+              }
+            )
+          );
         });
       }
     );
@@ -1171,6 +1482,11 @@ if (
 module.exports = {
   DAILY_FILE_PATTERN,
   DEFAULT_OUTPUT_NAME,
+  compactVerificationDetail,
+  compactResult,
+  compactEvidence,
+  compactShadowV2Snapshot,
+  compactPredictionRecord,
   collectPredictionRecords,
   selectShadowV2Snapshot,
   preserveGeneratedAtWhenUnchanged,
