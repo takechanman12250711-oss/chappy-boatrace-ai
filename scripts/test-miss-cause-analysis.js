@@ -87,3 +87,8 @@ assert.equal(
   fourStageReport.summary.misses
 );
 console.log("FOUR_STAGE_REPORT_JSON=" + JSON.stringify(fourStageReport));
+
+const secondPlaceRankReport = require("./analyze-second-place-rank-efficiency-v1.cjs").build();
+console.log("SECOND_PLACE_RANK_REPORT_JSON=" + JSON.stringify(secondPlaceRankReport));
+const thirdPlaceRankReport = require("./analyze-third-place-prefix-rank-efficiency-v1.cjs").build();
+console.log("THIRD_PLACE_RANK_REPORT_JSON=" + JSON.stringify(thirdPlaceRankReport));
