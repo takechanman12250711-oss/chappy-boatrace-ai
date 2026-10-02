@@ -19,6 +19,8 @@ const charter = require(
 const {
   assertProposalOnly,
   buildFromDirectory,
+  compactPredictionRecord,
+  compactShadowV2Snapshot,
   collectPredictionRecords,
   selectShadowV2Snapshot
 } = require(
@@ -1733,6 +1735,82 @@ assert.equal(
     ),
   "予想世代と自動選定世代を結合した母集団だけで100Rを区切る"
 );
+
+
+const noisyReviewRecord = {
+  ...reviewRecord(999),
+  unusedPayload:
+    "x".repeat(100000),
+  prediction: {
+    ...reviewRecord(999)
+      .prediction,
+    unusedPayload:
+      "y".repeat(100000)
+  },
+  result: {
+    ...reviewRecord(999)
+      .result,
+    unusedPayload:
+      "z".repeat(100000),
+    verification: {
+      ...reviewRecord(999)
+        .result
+        .verification,
+      unusedPayload:
+        "v".repeat(100000)
+    }
+  },
+  shadowV2: {
+    ...reviewRecord(999)
+      .shadowV2,
+    unusedPayload:
+      "s".repeat(100000),
+    evaluation: {
+      totalScore: 75,
+      unusedPayload:
+        "e".repeat(100000)
+    }
+  }
+};
+const compactReviewRecord =
+  compactPredictionRecord(
+    noisyReviewRecord,
+    noisyReviewRecord.shadowV2,
+    {
+      fileName:
+        "20260729.json",
+      collection:
+        "verificationPredictions"
+    }
+  );
+assert.equal(
+  JSON.stringify(
+    compactReviewRecord
+  ).includes(
+    "unusedPayload"
+  ),
+  false,
+  "改善レビューに未使用の巨大payloadを保持しない"
+);
+assert.deepEqual(
+  build([
+    compactReviewRecord
+  ]),
+  build([
+    noisyReviewRecord
+  ]),
+  "軽量化前後で正式100R判定を変えない"
+);
+assert.deepEqual(
+  compactShadowV2Snapshot(
+    noisyReviewRecord.shadowV2
+  ).evaluation,
+  {
+    totalScore: 75
+  },
+  "V2結合に必要な評価点だけを保持する"
+);
+
 
 console.log(
   "100R改善レビュー生成テスト: 合格"
