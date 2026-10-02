@@ -47,6 +47,7 @@ jobs:
           node --check scripts/build-note-publish-handoff.js
           node --check scripts/build-note-mcp-markdown.js
           node --check scripts/build-note-iphone-handoff.js
+          node --test scripts/build-note-iphone-handoff.test.js
           node scripts/build-note-publish-handoff.js
           node scripts/build-note-mcp-markdown.js
           node scripts/build-note-iphone-handoff.js

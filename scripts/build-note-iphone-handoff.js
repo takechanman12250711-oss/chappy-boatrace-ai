@@ -22,10 +22,15 @@ function todayJst() {
   }).format(new Date());
 }
 
-function buildIphoneHandoff() {
+function buildIphoneHandoff({ now = Date.now(), today = todayJst() } = {}) {
   if (!fs.existsSync(INPUT)) return { status: "no_handoff" };
   const source = JSON.parse(fs.readFileSync(INPUT, "utf8"));
-  const candidate = Array.isArray(source.candidates) ? source.candidates.find(row => !row.articleSeries || row.articleSeries === "normal") : null;
+  const normalCandidates = Array.isArray(source.candidates) ? source.candidates.filter(row => !row.articleSeries || row.articleSeries === "normal") : [];
+  const candidate = normalCandidates.find(row => {
+    const raceDate = raceDateFromKey(row?.raceKey);
+    const deadlineMs = Date.parse(row?.deadlineAt || "");
+    return raceDate === today && Number.isFinite(deadlineMs) && deadlineMs > now;
+  }) || normalCandidates[0] || null;
   if (!candidate?.title || !candidate?.fullText) return { status: "no_candidate" };
 
   const freeText = String(candidate.freeText || "").trim();
@@ -35,8 +40,8 @@ function buildIphoneHandoff() {
   const deadlineMs = Date.parse(candidate.deadlineAt || "");
   const hasDeadline = Number.isFinite(deadlineMs);
   const raceDate = raceDateFromKey(candidate.raceKey);
-  const sameRaceDay = Boolean(raceDate && raceDate === todayJst());
-  const beforeDeadline = hasDeadline && deadlineMs > Date.now();
+  const sameRaceDay = Boolean(raceDate && raceDate === today);
+  const beforeDeadline = hasDeadline && deadlineMs > now;
   // Fail closed: publish only when both the race date and a future deadline are verified.
   const canPublish = sameRaceDay && beforeDeadline;
   const blockReason = canPublish
