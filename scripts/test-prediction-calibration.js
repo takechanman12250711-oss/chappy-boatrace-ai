@@ -9,6 +9,7 @@ const {
   MAX_CALIBRATION_BYTES,
   calibrationByteSize,
   assertCalibrationSize,
+  compactCalibrationRecord,
   collectPredictionRecords,
   buildFromDirectory,
   assertModeSeparatedCalibration,
@@ -417,6 +418,42 @@ const built = calibration.buildCalibration(records, {
   generatedAt: "2026-07-29T00:00:00.000Z",
   fileCount: 2
 });
+const compactBuilt =
+  calibration.buildCalibration(
+    records.map(
+      compactCalibrationRecord
+    ),
+    {
+      activeGeneration:
+        GENERATION_A,
+      generatedAt:
+        "2026-07-29T00:00:00.000Z",
+      fileCount: 2
+    }
+  );
+assert.deepEqual(
+  compactBuilt,
+  built,
+  "校正入力を軽量化しても正式集計を変えない"
+);
+const paddedCalibrationRecord = {
+  ...records[0],
+  prediction: {
+    ...records[0].prediction,
+    unusedPayload:
+      "x".repeat(1024 * 1024)
+  }
+};
+assert.ok(
+  Buffer.byteLength(
+    JSON.stringify(
+      compactCalibrationRecord(
+        paddedCalibrationRecord
+      )
+    )
+  ) < 4096,
+  "校正に不要な巨大予想詳細を保持しない"
+);
 const builtB = calibration.buildCalibration(records, {
   activeGeneration: GENERATION_B,
   generatedAt: "2026-07-29T00:00:00.000Z",
