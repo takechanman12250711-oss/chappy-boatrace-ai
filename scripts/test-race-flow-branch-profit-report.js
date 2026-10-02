@@ -17,4 +17,14 @@ assert.equal(report.summaries["1号艇逃げ"].raceCount,12);
 assert.equal(report.summaries["3コース攻め"].raceCount,12);
 assert.equal(report.weakBranchRanking.length,2);
 assert.equal(report.interpretation.retrospectiveInferenceAllowed,false);
+
+const noisyPrediction={predictions:a.map(r=>({...r,unusedPayload:{rows:Array(100).fill("discard")}})),verificationPredictions:b.map(r=>({...r,unusedPayload:{rows:Array(100).fill("discard")}}))};
+const noisyResults={races:results.map(r=>({...r,unusedPayload:{rows:Array(100).fill("discard")}}))};
+const compactPrediction=engine.compactPredictionDoc(noisyPrediction);const compactResults=engine.compactResultDoc(noisyResults);
+assert.equal(compactPrediction.predictions[0].unusedPayload,undefined);
+assert.equal(compactResults.races[0].unusedPayload,undefined);
+const compactReport=engine.build([compactPrediction],[compactResults]);
+assert.deepEqual(compactReport.diagnostics,report.diagnostics);
+assert.deepEqual(compactReport.summaries,report.summaries);
+assert.deepEqual(compactReport.weakBranchRanking,report.weakBranchRanking);
 console.log("race-flow branch profit saved-title test: ok");
