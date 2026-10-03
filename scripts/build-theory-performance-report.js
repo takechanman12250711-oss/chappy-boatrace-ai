@@ -66,11 +66,119 @@ function normalizeCohortRecord(record = {}) {
   return normalized;
 }
 
+function compactBoat(row = {}) {
+  return {
+    boatNo: row?.boatNo,
+    no: row?.no,
+    boat: row?.boat,
+    exhibitionST: row?.exhibitionST,
+    currentST: row?.currentST,
+    avgST: row?.avgST,
+    exhibitionTime: row?.exhibitionTime,
+    className: row?.className,
+    nationalWinRate: row?.nationalWinRate,
+    motor2Rate: row?.motor2Rate
+  };
+}
+
+function compactPredictionRecord(record = {}) {
+  const prediction = record?.prediction || {};
+  const conditions =
+    prediction?.preRaceConditions ||
+    record?.preRaceConditions ||
+    {};
+  const raceFlow = prediction?.raceFlow || {};
+  const practicalSelection =
+    prediction?.practicalSelection || {};
+  const aiCore = prediction?.aiCore || {};
+
+  return {
+    raceKey: record?.raceKey,
+    date: record?.date,
+    raceDate: record?.raceDate,
+    targetDate: record?.targetDate,
+    jcd: record?.jcd,
+    placeCode: record?.placeCode,
+    raceNo: record?.raceNo,
+    rno: record?.rno,
+    place: record?.place,
+    race: record?.race,
+    marker: record?.marker,
+    selectedAt: record?.selectedAt,
+    capturedAt: record?.capturedAt,
+    createdAt: record?.createdAt,
+    deadlineAt: record?.deadlineAt,
+    deadline: record?.deadline,
+    officialResultUsedForPrediction:
+      record?.officialResultUsedForPrediction,
+    officialResultUsedForEvaluation:
+      record?.officialResultUsedForEvaluation,
+    isRetrospective: record?.isRetrospective,
+    verificationMode: record?.verificationMode,
+    preRaceConditions: record?.preRaceConditions,
+    theoryTagSnapshot: record?.theoryTagSnapshot,
+    prediction: {
+      practicalTickets: prediction?.practicalTickets,
+      mainSheet: prediction?.mainSheet,
+      predictedScenarioTitle:
+        prediction?.predictedScenarioTitle,
+      raceFlow: {
+        title: raceFlow?.title,
+        scenario: raceFlow?.scenario
+          ? { title: raceFlow.scenario.title }
+          : undefined
+      },
+      verificationEvidence:
+        prediction?.verificationEvidence,
+      practicalSelection: {
+        verificationEvidence:
+          practicalSelection?.verificationEvidence
+      },
+      internalEvaluation:
+        prediction?.internalEvaluation,
+      aiCore: {
+        stSlitTheory:
+          aiCore?.stSlitTheory
+      },
+      preRaceConditions: {
+        schemaVersion: conditions?.schemaVersion,
+        source: conditions?.source,
+        dataSource: conditions?.dataSource,
+        sourceTiming: conditions?.sourceTiming,
+        officialResultUsed:
+          conditions?.officialResultUsed,
+        sourceFetchedAt:
+          conditions?.sourceFetchedAt,
+        dataAvailability:
+          conditions?.dataAvailability,
+        weather: conditions?.weather,
+        newEngineMode:
+          conditions?.newEngineMode,
+        boats: (
+          Array.isArray(conditions?.boats)
+            ? conditions.boats
+            : Array.isArray(conditions?.entries)
+              ? conditions.entries
+              : []
+        ).map(compactBoat)
+      },
+      predictionMode: prediction?.predictionMode,
+      officialResultUsedForPrediction:
+        prediction?.officialResultUsedForPrediction,
+      officialResultUsedForEvaluation:
+        prediction?.officialResultUsedForEvaluation,
+      isRetrospective:
+        prediction?.isRetrospective
+    }
+  };
+}
+
 function collect(options = {}) {
   const cohort = inputContract.buildDefaultCohort({
     root: options.root || root,
     predictionsDir: options.predictionsDir,
-    resultsDir: options.resultsDir
+    resultsDir: options.resultsDir,
+    compactPredictionRecord
   });
   return {
     records: cohort.records
@@ -125,6 +233,8 @@ module.exports = {
   ANALYSIS_INPUT_CONTRACT,
   officialPayout,
   normalizeCohortRecord,
+  compactBoat,
+  compactPredictionRecord,
   collect,
   venueProfileOut,
   venueScenarioCandidateOut,
