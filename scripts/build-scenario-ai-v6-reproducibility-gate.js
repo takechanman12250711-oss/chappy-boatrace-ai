@@ -103,8 +103,7 @@ function buildTrainingCohort(rows = [], inputSourceKind = "") {
   };
 }
 
-function buildReport(documents = []) {
-  const allRows = documents.flatMap(learning.scenarioRows);
+function buildReportFromRows(allRows = []) {
   const training = learning.activeTrainingRows(allRows);
   const rows = training.rows;
   const trainingCohort = buildTrainingCohort(
@@ -151,8 +150,14 @@ function buildReport(documents = []) {
   };
 }
 
+function buildReport(documents = []) {
+  return buildReportFromRows(documents.flatMap(learning.scenarioRows));
+}
+
 function main() {
-  const report = buildReport(predictionFiles().map(file => readJson(file)));
+  const report = buildReportFromRows(
+    predictionFiles().flatMap(file => learning.scenarioRows(readJson(file)))
+  );
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(report, null, 2) + "\n", "utf8");
   console.log(`展開AI v6再現性：承認候補${report.approvalGate.approvedCandidateCount}件`);
@@ -161,6 +166,7 @@ function main() {
 if (require.main === module) main();
 module.exports = {
   buildReport,
+  buildReportFromRows,
   splitRows,
   evaluate,
   buildTrainingCohort
