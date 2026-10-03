@@ -1,0 +1,12 @@
+"use strict";
+const fs=require("fs"),path=require("path");
+const shadow=require("../js/escape-role-partner-shadow");
+const input=require("./analysis-input-contract");
+const root=path.resolve(__dirname,".."),predDir=path.join(root,"data","predictions"),resDir=path.join(root,"data","results");
+function norm(v){const t=String(v?.ticket??v??"");return /^[1-6]-[1-6]-[1-6]$/.test(t)&&new Set(t.split("-")).size===3?t:""}
+function resultMap(date){const p=path.join(resDir,date+".json");if(!fs.existsSync(p))return new Map();const d=JSON.parse(fs.readFileSync(p));return new Map((d.races||[]).map(r=>[input.raceKey(r),r]));}
+let rows=[];
+for(const name of fs.readdirSync(predDir).filter(n=>/^2026\d{4}\.json$/.test(n)).sort()){const date=name.slice(0,8),d=JSON.parse(fs.readFileSync(path.join(predDir,name))),rm=resultMap(date);for(const r of input.mergePredictionSources(d.predictions,d.verificationPredictions)){const p=r.prediction||r,sel=p.practicalSelection;if(!sel?.tickets||!sel?.candidateOutcomes)continue;const base=sel.tickets.map(norm).filter(Boolean);if(!base.some(t=>t.startsWith("1-")))continue;const sh=shadow.build(sel);if(!sh.eligible)continue;const off=rm.get(input.raceKey(r)),actual=input.actualTicket(off||{}),pay=Number(off?.trifecta?.payout||0);if(!actual||!pay)continue;rows.push({raceKey:input.raceKey(r),jcd:String(r.jcd||"").padStart(2,"0"),base,shadow:sh.shadowTickets,actual,payout:pay,baseHit:base.includes(actual),shadowHit:sh.shadowTickets.includes(actual),replacement:sh.replacement});}}
+function sum(xs){const bh=xs.filter(x=>x.baseHit),sh=xs.filter(x=>x.shadowHit),stake=xs.reduce((n,x)=>n+x.base.length*100,0);return{races:xs.length,baseHits:bh.length,shadowHits:sh.length,gains:xs.filter(x=>!x.baseHit&&x.shadowHit).length,losses:xs.filter(x=>x.baseHit&&!x.shadowHit).length,baseReturn:bh.reduce((n,x)=>n+x.payout,0),shadowReturn:sh.reduce((n,x)=>n+x.payout,0),stake,baseRecovery:stake?+(100*bh.reduce((n,x)=>n+x.payout,0)/stake).toFixed(1):null,shadowRecovery:stake?+(100*sh.reduce((n,x)=>n+x.payout,0)/stake).toFixed(1):null}}
+const out={generatedAt:new Date().toISOString(),productionChanged:false,automaticApplication:false,usableForPrediction:false,total:sum(rows),omura:sum(rows.filter(x=>x.jcd==="24")),rows};
+fs.mkdirSync(path.join(root,"tmp-shadow"),{recursive:true});fs.writeFileSync(path.join(root,"tmp-shadow","escape-role-partner-shadow-report.json"),JSON.stringify(out,null,2));console.log(JSON.stringify({total:out.total,omura:out.omura}));
