@@ -65,7 +65,8 @@ for (const file of fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)
       actual,
       payout: payoutOf(race),
       tickets,
-      trim: selection?.expansionSummary?.strongEscapeTrim || null
+      trim: selection?.expansionSummary?.strongEscapeTrim || null,
+      replacement: selection?.expansionSummary?.escapeRolePartnerReplacement || null
     });
   }
 }
@@ -100,6 +101,15 @@ function summarize(list) {
   }
   return result;
 }
+
+const changed = all.filter(row => row.replacement?.applied === true).map(row => ({
+  date: row.date,
+  actual: row.actual,
+  hit: row.tickets.includes(row.actual),
+  replacement: row.replacement
+}));
+console.log("escape-role-partner regression changes");
+console.log(JSON.stringify(changed, null, 2));
 
 const actual = Object.fromEntries(
   Object.entries(groups).map(([name, list]) => [name, summarize(list)])
