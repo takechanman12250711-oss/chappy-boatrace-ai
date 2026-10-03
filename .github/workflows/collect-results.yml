@@ -310,6 +310,8 @@ jobs:
           node --check scripts/build-miss-cause-analysis.js
           node --check js/improvement-proposal-engine.js
           node --check scripts/build-improvement-proposal-report.js
+          node --check scripts/test-improvement-proposal-compaction.js
+          node scripts/test-improvement-proposal-compaction.js
           node --check scripts/build-learning-pipeline-gate.js
           node --check scripts/build-phase6-data-audit.js
           node --check scripts/test-improvement-proposal-input-contract.js
