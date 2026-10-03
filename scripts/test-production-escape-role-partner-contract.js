@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("assert");
+const fs=require("fs");
+const source=fs.readFileSync(require("path").join(__dirname,"../js/practical-selection.js"),"utf8");
+assert(source.includes('Object.freeze(["1-2-3", "1-2-4"])'));
+assert(source.includes('escapeRolePartnerReplacement'));
+assert(source.includes('selectionTier:\n            "1逃げ相手補正"'));
+assert(source.includes('row.category !== "本線"'));
+assert(source.includes('row.category !== "流し"'));
+assert(source.includes('numeric(best.priorityScore, 0) <='));
+console.log("production escape role partner contract: ok");
