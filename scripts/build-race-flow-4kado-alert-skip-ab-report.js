@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const sourceReport = require("./build-frame-rise-fall-shadow-result-report");
 
 const root = path.resolve(__dirname, "..");
 const predictionDir = path.join(root, "data", "predictions");
@@ -24,12 +25,58 @@ function raceKey(record = {}) {
   return `${String(record.date || "")}-${String(record.jcd || "").padStart(2, "0")}-${Number(record.raceNo || 0)}`;
 }
 
-function load(dir) {
+function load(dir, compact = value => value) {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter(name => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map(name => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
+  const documents = [];
+  for (const name of fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)).sort()) {
+    documents.push(compact(JSON.parse(fs.readFileSync(path.join(dir, name), "utf8"))));
+  }
+  return documents;
+}
+
+function compactPredictionRecord(record = {}) {
+  const prediction = record?.prediction || {};
+  const raceFlow = prediction?.raceFlow || {};
+  const scenario = raceFlow?.scenario || {};
+  const practicalSelection = prediction?.practicalSelection || {};
+  const result = record?.result || null;
+  return {
+    date: record?.date,
+    jcd: record?.jcd,
+    raceNo: record?.raceNo,
+    selectedAt: record?.selectedAt,
+    capturedAt: record?.capturedAt,
+    scenarioLabel: record?.scenarioLabel,
+    selection: record?.selection ? {
+      scenarioLabel: record.selection.scenarioLabel
+    } : undefined,
+    prediction: {
+      scenarioLabel: prediction?.scenarioLabel,
+      raceFlow: {
+        scenario: raceFlow?.scenario ? { title: scenario.title } : undefined,
+        scenarioLabel: raceFlow?.scenarioLabel,
+        label: raceFlow?.label
+      },
+      practicalTickets: prediction?.practicalTickets,
+      practicalSelection: prediction?.practicalSelection ? {
+        tickets: practicalSelection.tickets
+      } : undefined
+    },
+    result: result ? {
+      settled: result.settled,
+      resultTicket: result.resultTicket,
+      payout: result.payout
+    } : undefined
+  };
+}
+
+function compactPredictionDoc(doc = {}) {
+  return {
+    predictions: (Array.isArray(doc?.predictions) ? doc.predictions : [])
+      .map(compactPredictionRecord),
+    verificationPredictions: (Array.isArray(doc?.verificationPredictions) ? doc.verificationPredictions : [])
+      .map(compactPredictionRecord)
+  };
 }
 
 function resultMap(docs) {
@@ -190,11 +237,25 @@ function build(predDocs, resultDocs) {
 }
 
 function main() {
-  const report = build(load(predictionDir), load(resultDir));
+  const report = build(
+    load(predictionDir, compactPredictionDoc),
+    load(resultDir, sourceReport.compactResultDoc)
+  );
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(`4カド攻め警戒 prospective A/B: cohort ${report.cohort.raceCount}R / target settled ${report.cohort.targetSettledCount}R`);
 }
 
 if (require.main === module) main();
-module.exports = { build, settle, scenarioLabel, selectedEpoch, isProspective, TARGET_LABEL, PROSPECTIVE_CUTOFF };
+module.exports = {
+  load,
+  compactPredictionRecord,
+  compactPredictionDoc,
+  build,
+  settle,
+  scenarioLabel,
+  selectedEpoch,
+  isProspective,
+  TARGET_LABEL,
+  PROSPECTIVE_CUTOFF
+};
