@@ -19,13 +19,17 @@ const builder = "node scripts/build-frame-rise-sink-stats.js";
 const collectStart = central.indexOf("- name: Collect official results");
 const restoreIndex = central.indexOf(restore, collectStart);
 const repairIndex = central.indexOf(repair, collectStart);
-const builderIndex = central.indexOf(builder, collectStart);
-const saveStart = central.indexOf(
+const officialSaveStart = central.indexOf(
   "- name: Save official results before calibration",
+);
+const diagnosticsStart = central.indexOf("- name: Build result diagnostics");
+const builderIndex = central.indexOf(builder, diagnosticsStart);
+const derivedSaveStart = central.indexOf(
+  "- name: Save derived result reports before calibration",
 );
 const calibrationStart = central.indexOf(
   "- name: Build prediction calibration",
-  saveStart,
+  derivedSaveStart,
 );
 
 assert.match(central, /permissions:\s*\n\s*contents: write/);
@@ -34,13 +38,15 @@ assert.ok(
   collectStart >= 0 &&
     restoreIndex > collectStart &&
     repairIndex > restoreIndex &&
-    builderIndex > repairIndex &&
-    builderIndex < saveStart &&
-    calibrationStart > saveStart,
-  "枠別浮沈統計は中央結果収集で正本復元・結果修復後、保存前に生成する",
+    officialSaveStart > repairIndex &&
+    diagnosticsStart > officialSaveStart &&
+    builderIndex > diagnosticsStart &&
+    derivedSaveStart > builderIndex &&
+    calibrationStart > derivedSaveStart,
+  "枠別浮沈統計は公式結果の早期保存後に生成し、派生レポート保存へ渡す",
 );
 assert.match(
-  central.slice(saveStart, calibrationStart),
+  central.slice(derivedSaveStart, calibrationStart),
   /git add data\/results data\/stats/,
   "中央結果収集が枠別浮沈統計をdata/statsとして保存する",
 );
