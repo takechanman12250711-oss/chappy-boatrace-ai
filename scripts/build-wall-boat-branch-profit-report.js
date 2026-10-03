@@ -47,7 +47,7 @@ function compactPredictionRecord(record={}){
     selectedAt:record.selectedAt,
     capturedAt:record.capturedAt,
     prediction:compactedPrediction,
-    ...(embedded.settled?{result:{settled:true,resultTicket:embedded.resultTicket,payout:embedded.payout}}:{})
+    ...(embedded.settled?{result:{settled:true,resultTicket:embedded.resultTicket,payoutPer100:embedded.payoutPer100,payout:embedded.payout}}:{})
   };
 }
 function compactPredictionDoc(doc={}){
