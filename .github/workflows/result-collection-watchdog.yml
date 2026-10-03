@@ -47,6 +47,7 @@ jobs:
         with:
           node-version: "20"
       - run: node scripts/test-result-collection-watchdog.js
+      - run: node scripts/test-result-source-archive-order.js
 
   watchdog:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
