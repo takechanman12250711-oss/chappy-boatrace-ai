@@ -83,4 +83,18 @@ assert.ok(
   "重い学習分析は公式結果checkpoint後に実行する",
 );
 
+const restoreCanonical =
+  "node scripts/restore-daily-prediction-source.js --all";
+const practicalShadow =
+  "node scripts/build-practical-priority-shadow-report.js";
+assert.ok(
+  diagnostics.includes(restoreCanonical),
+  "固定100Rシャドーは保存済みarchive正本を復元して再計算する",
+);
+assert.ok(
+  diagnostics.indexOf(restoreCanonical) <
+    diagnostics.indexOf(practicalShadow),
+  "固定100Rシャドー生成より先にarchive正本を復元する",
+);
+
 console.log("result source archive validation order: ok");
