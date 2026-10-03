@@ -10,9 +10,79 @@ const OUTPUT = path.join(ROOT, "data", "stats", "race-flow-3course-internal-repo
 const TARGET_LABEL = "3コース攻め";
 const STAKE_PER_TICKET = 100;
 
-function load(dir) {
+function compactScenario(row = {}) {
+  return {
+    slitAdjustment: row.slitAdjustment,
+    attackerBoatNo: row.attackerBoatNo,
+    headBoatNo: row.headBoatNo,
+    attackerCourse: row.attackerCourse,
+    attacker: row.attacker
+  };
+}
+function compactEvidence(value) {
+  if (!value || typeof value !== "object") return null;
+  return {
+    mainScenario: value.mainScenario && typeof value.mainScenario === "object" ? compactScenario(value.mainScenario) : undefined,
+    scenarios: Array.isArray(value.scenarios) ? value.scenarios.slice(0, 1).map(compactScenario) : undefined,
+    wallTheory: value.wallTheory && typeof value.wallTheory === "object" ? { formal: value.wallTheory.formal, state: value.wallTheory.state } : undefined,
+    roles: value.roles && typeof value.roles === "object" ? { attackerBoatNo: value.roles.attackerBoatNo, attackerCourse: value.roles.attackerCourse } : undefined,
+    stSlit: value.stSlit && typeof value.stSlit === "object" ? {
+      roles: Array.isArray(value.stSlit.roles) ? value.stSlit.roles.map(role => ({
+        boatNo: role?.boatNo,
+        isFormal: role?.isFormal,
+        appliedToScore: role?.appliedToScore
+      })) : undefined
+    } : undefined
+  };
+}
+function compactPredictionRow(record = {}) {
+  const out = { date: record.date, jcd: record.jcd, raceNo: record.raceNo };
+  if (record.selection && typeof record.selection === "object") out.selection = { scenarioLabel: record.selection.scenarioLabel };
+  const source = record.prediction && typeof record.prediction === "object" ? record.prediction : {};
+  const prediction = {};
+  if (Object.prototype.hasOwnProperty.call(source, "practicalTickets")) prediction.practicalTickets = source.practicalTickets;
+  if (source.practicalSelection && typeof source.practicalSelection === "object") {
+    const practical = source.practicalSelection;
+    prediction.practicalSelection = {
+      tickets: practical.tickets,
+      scenarioLabel: practical.scenarioLabel,
+      verificationEvidence: compactEvidence(practical.verificationEvidence)
+    };
+  }
+  if (source.raceFlow?.scenario) prediction.raceFlow = { scenario: { title: source.raceFlow.scenario.title } };
+  if (source.verificationEvidence && typeof source.verificationEvidence === "object") prediction.verificationEvidence = compactEvidence(source.verificationEvidence);
+  out.prediction = prediction;
+  if (record.verificationEvidence && typeof record.verificationEvidence === "object") out.verificationEvidence = compactEvidence(record.verificationEvidence);
+  return out;
+}
+function compactPredictionDoc(doc = {}) {
+  return {
+    predictions: Array.isArray(doc.predictions) ? doc.predictions.map(compactPredictionRow) : [],
+    verificationPredictions: Array.isArray(doc.verificationPredictions) ? doc.verificationPredictions.map(compactPredictionRow) : []
+  };
+}
+function compactResultDoc(doc = {}) {
+  return {
+    races: Array.isArray(doc.races) ? doc.races.map(row => ({
+      date: row.date,
+      jcd: row.jcd,
+      raceNo: row.raceNo,
+      resultAvailable: row.resultAvailable,
+      status: row.status,
+      trifecta: row.trifecta && typeof row.trifecta === "object" ? {
+        combination: row.trifecta.combination,
+        payout: row.trifecta.payout
+      } : undefined
+    })) : []
+  };
+}
+function load(dir, compact = value => value) {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)).sort().map(name => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
+  const docs = [];
+  for (const name of fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)).sort()) {
+    docs.push(compact(JSON.parse(fs.readFileSync(path.join(dir, name), "utf8"))));
+  }
+  return docs;
 }
 function raceKey(row = {}) { return `${String(row.date || "")}-${String(row.jcd || "").padStart(2, "0")}-${Number(row.raceNo || 0)}`; }
 function ticket(value) { const text = String(value?.ticket || value || "").trim(); return /^[1-6]-[1-6]-[1-6]$/.test(text) && new Set(text.split("-")).size === 3 ? text : ""; }
@@ -51,6 +121,6 @@ function build(predictionDocs, resultDocs) {
   const weakBranchRanking = Object.entries(summaries).filter(([name, value]) => name !== "all" && name !== "detailedEvidence" && value.settledCount >= 10 && value.recoveryRate != null).sort((a,b)=>a[1].recoveryRate-b[1].recoveryRate).map(([branch,value],index)=>({rank:index+1,branch,...value}));
   return { schemaVersion:1, version:"race-flow-3course-internal-v1", generatedAt:new Date().toISOString(), targetLabel:TARGET_LABEL, source:"saved 3course attack records + verificationEvidence + official results", productionChanged:false, diagnostics:{selectedSourceCount:selectedCount,verificationSourceCount:verificationCount,deduplicatedRaceCount:rows.length,detailedEvidenceRaceCount:detailed.length,detailedEvidenceRate:rows.length?Math.round(detailed.length/rows.length*1000)/10:null}, summaries, weakBranchRanking, interpretation:{minimumBranchSettledCount:10,retrospectiveInferenceAllowed:false,automaticApplication:false,usableForPrediction:false,actualPurchase:false,note:"通常の3コース攻め全体は変更せず、保存済み内部証拠だけを分解する"} };
 }
-function main(){ const report=build(load(PREDICTION_DIR),load(RESULT_DIR)); fs.mkdirSync(path.dirname(OUTPUT),{recursive:true}); fs.writeFileSync(OUTPUT,JSON.stringify(report,null,2)+"\n"); console.log(`3course internal: ${report.diagnostics.detailedEvidenceRaceCount}/${report.diagnostics.deduplicatedRaceCount}R detailed`); }
+function main(){ const report=build(load(PREDICTION_DIR,compactPredictionDoc),load(RESULT_DIR,compactResultDoc)); fs.mkdirSync(path.dirname(OUTPUT),{recursive:true}); fs.writeFileSync(OUTPUT,JSON.stringify(report,null,2)+"\n"); console.log(\`3course internal: \${report.diagnostics.detailedEvidenceRaceCount}/\${report.diagnostics.deduplicatedRaceCount}R detailed\`); }
 if(require.main===module) main();
-module.exports={raceKey,ticket,tickets,scenarioLabel,dimensions,summarize,build};
+module.exports={raceKey,ticket,tickets,scenarioLabel,dimensions,summarize,build,compactPredictionDoc,compactResultDoc};
