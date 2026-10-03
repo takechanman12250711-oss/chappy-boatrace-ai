@@ -1,6 +1,6 @@
 (function(root,factory){"use strict";const api=factory();root.ChappyEscapeRolePartnerShadow=api;if(typeof module!=="undefined"&&module.exports)module.exports=api;})(typeof window!=="undefined"?window:globalThis,function(){"use strict";
-const VERSION="1.1.0";
-const PROTECTED_ESCAPE_TICKETS=new Set(["1-2-3"]);
+const VERSION="1.2.0";
+const PROTECTED_ESCAPE_TICKETS=new Set(["1-2-3","1-2-4"]);
 function arr(v){return Array.isArray(v)?v:[]}
 function ticket(v){const t=String(v?.ticket??v??"");return /^[1-6]-[1-6]-[1-6]$/.test(t)&&new Set(t.split("-")).size===3?t:""}
 function score(v){const n=Number(v?.priorityScore);return Number.isFinite(n)?n:0}
