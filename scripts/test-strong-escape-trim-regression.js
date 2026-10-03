@@ -102,15 +102,6 @@ function summarize(list) {
   return result;
 }
 
-const changed = all.filter(row => row.replacement?.applied === true).map(row => ({
-  date: row.date,
-  actual: row.actual,
-  hit: row.tickets.includes(row.actual),
-  replacement: row.replacement
-}));
-console.log("escape-role-partner regression changes");
-console.log(JSON.stringify(changed, null, 2));
-
 const actual = Object.fromEntries(
   Object.entries(groups).map(([name, list]) => [name, summarize(list)])
 );
