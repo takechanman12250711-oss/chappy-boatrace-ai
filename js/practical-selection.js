@@ -2398,7 +2398,82 @@
     };
   }
 
-  function selectForecast(prediction) {
+  const ESCAPE_ROLE_PARTNER_POLICY = Object.freeze({
+    id: "escape-role-partner-v1.3",
+    effectiveFrom: "2026-10-03T10:11:00Z",
+    protectedTickets: Object.freeze(["1-2-3", "1-2-4"])
+  });
+
+  // Pure, result-blind plan. Source candidates must already have passed the
+  // production branch validator. Role-specific branches must share a scenario and source.
+  function planEscapeRolePartnerReplacement(selected, candidates, trim, context = {}) {
+    if (trim?.eligible !== true || !(context.branchesById instanceof Map) ||
+        courseOf(context, 1) !== 1) return null;
+    if (!Array.isArray(selected) || !selected.length || selected.length > MAXIMUM_COUNT ||
+        selected.some(row => !validTicket(row?.ticket)) ||
+        new Set(selected.map(row => row.ticket)).size !== selected.length) return null;
+    const used = new Set(selected.map(row => row.ticket));
+    const protectedTickets = new Set(ESCAPE_ROLE_PARTNER_POLICY.protectedTickets);
+    const strongest = new Map();
+    for (const candidate of arrayify(candidates)) {
+      const row = candidate?.row, validation = candidate?.validation;
+      if (!row || !validTicket(row.ticket) || ticketBoats(row.ticket)[0] !== 1 || used.has(row.ticket) ||
+          validation?.valid !== true || validation.purchaseEligible !== true ||
+          !Number.isFinite(row.priorityScore) || row.priorityScore <= 0) continue;
+      const boats = ticketBoats(row.ticket);
+      const branchIds = arrayify(row.validPurchaseBranchIds);
+      const scenarioGroups = new Map();
+      for (const branchId of branchIds) {
+        const branch = context.branchesById.get(branchId);
+        if (!branch || branch.qualified !== true || branch.ticket !== row.ticket ||
+            branch.kind !== "canonical-formation" ||
+            Number(branch.headBoatNo ?? branch.attackerBoatNo) !== 1 ||
+            Number(branch.attackerBoatNo) !== context.primaryAttackerBoatNo ||
+            !branch.scenarioId || !branch.source) continue;
+        const key = branch.scenarioId + "|" + branch.source;
+        if (!scenarioGroups.has(key)) scenarioGroups.set(key, []);
+        scenarioGroups.get(key).push(...arrayify(row.coverage).filter(claim => claim.branchId === branchId));
+      }
+      const grounded = [...scenarioGroups.values()].some(claims =>
+        [[1, ["head", "attack"]], [2, ["hold", "pickup", "attack"]], [3, ["hold", "pickup"]]]
+          .every(([position, roles]) => claims.some(claim => Number(claim.position) === position &&
+            Number(claim.boatNo) === boats[position - 1] && roles.includes(claim.role))));
+      if (!grounded) continue;
+      const previous = strongest.get(row.ticket);
+      if (!previous || row.priorityScore > previous.priorityScore) strongest.set(row.ticket, row);
+    }
+    const best = [...strongest.values()].sort((a, b) =>
+      b.priorityScore - a.priorityScore || a.ticket.localeCompare(b.ticket))[0];
+    const weak = selected.map((row, index) => ({row, index})).filter(({row}) =>
+      ticketBoats(row.ticket)[0] === 1 && !protectedTickets.has(row.ticket) &&
+      typeof row.category === "string" && row.category.length > 0 &&
+      row.category !== "本線" && row.category !== "流し" &&
+      Number.isFinite(row.priorityScore))
+      .sort((a, b) => a.row.priorityScore - b.row.priorityScore || a.row.ticket.localeCompare(b.row.ticket))[0];
+    if (!best || !weak || best.priorityScore <= weak.row.priorityScore) return null;
+    return { selectedIndex: weak.index, sourceRow: best, removedRow: weak.row,
+      policyId: ESCAPE_ROLE_PARTNER_POLICY.id };
+  }
+
+  // New forecasts only. Historical replay requires an explicit analysis option;
+  // loading a settled race must not rewrite the original policy's track record.
+  function escapeRolePartnerActive(prediction = {}, options = {}) {
+    if (options.escapeRolePartner === false) return false;
+    if (options.escapeRolePartner === "replay") return true;
+    if (prediction.isRetrospective === true || prediction.officialResultUsedForPrediction === true ||
+        /retrospective|replay|post.?race|post.?deadline/.test(String(prediction.predictionMode || ""))) return false;
+    const race = prediction.race || {};
+    const date = String(race.date || "").replace(/-/g, "");
+    const clock = String(race.raceInfo?.deadline || "");
+    const datedClock = /^\d{8}$/.test(date) && /^\d{2}:\d{2}$/.test(clock)
+      ? `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}T${clock}:00+09:00` : "";
+    const deadline = Date.parse(prediction.deadlineAt || race.deadlineAt || datedClock);
+    return Number.isFinite(deadline) && deadline > Date.parse(ESCAPE_ROLE_PARTNER_POLICY.effectiveFrom) &&
+      deadline > Date.now();
+  }
+
+  function selectForecast(prediction, options = {}) {
+    const partnerPolicyActive = escapeRolePartnerActive(prediction, options);
     const lists =
       ticketLists(prediction);
     const evidence =
@@ -4746,6 +4821,50 @@
         candidateDecisions
       );
 
+    // Category, candidate disposition, explanation and verification tickets
+    // must describe the same final selection on the app and note paths.
+    const escapeRolePartnerReplacement = (() => {
+      if (!partnerPolicyActive) return null;
+      const plan = planEscapeRolePartnerReplacement(selected, candidates, strongEscapeTrim, validationContext);
+      if (!plan) return null;
+      const {sourceRow, removedRow, selectedIndex, policyId} = plan;
+      const reason = `${sourceRow.ticket}の1着軸・2着残し/攻め・3着残り/拾いが` +
+        `同じ成立展開で確認できるため、${removedRow.ticket}と1対1で置換。` +
+        `内側基本線・本線・フォーメーションの組・別頭・点数は維持。`;
+      const promoted = {...sourceRow,
+        category: removedRow.category,
+        displayCategory: removedRow.displayCategory || removedRow.category,
+        selectionTier: "1逃げ相手補正",
+        escapeRolePartnerReplacement: true,
+        escapeRolePartnerReplacedTicket: removedRow.ticket,
+        comment: sourceRow.scenarioSummary || sourceRow.comment || reason};
+      selected.splice(selectedIndex, 1, promoted);
+      used.delete(removedRow.ticket);
+      used.add(promoted.ticket);
+      for (const decision of candidateDecisions) {
+        if (decision.ticket === removedRow.ticket) {
+          decision.selected = false;
+          decision.reasonCode = "ESCAPE_ROLE_PARTNER_REPLACED";
+          decision.reason = reason;
+          decision.replacedByTicket = promoted.ticket;
+        } else if (decision.ticket === promoted.ticket) {
+          decision.selected = true;
+          decision.reasonCode = "ESCAPE_ROLE_PARTNER_PROMOTED";
+          decision.reason = reason;
+          decision.replacedTicket = removedRow.ticket;
+          decision.category = promoted.category;
+          decision.selectionTier = promoted.selectionTier;
+        }
+      }
+      recordDecision(removedRow, false, "ESCAPE_ROLE_PARTNER_REPLACED", reason);
+      recordDecision(promoted, true, "ESCAPE_ROLE_PARTNER_PROMOTED", reason);
+      return {applied: true, policyId, selectedIndex,
+        addedTicket: promoted.ticket, addedPriorityScore: promoted.priorityScore,
+        removedTicket: removedRow.ticket, removedPriorityScore: removedRow.priorityScore,
+        reason, pointCountBefore: selected.length, pointCountAfter: selected.length};
+    })();
+    candidateOutcomes = aggregateCandidateOutcomes(candidateDecisions);
+
     const selectedExpansionBoundary =
       [...selected]
         .filter(
@@ -5168,6 +5287,7 @@
           ]
         }));
     const expansionSummary = {
+      ...(escapeRolePartnerReplacement ? {escapeRolePartnerReplacement} : {}),
       normalCount:
         normalTicketCount,
       addedCount:
@@ -5435,7 +5555,8 @@
         confidenceDefinitionVersion:
           "internal-score-v1",
         ticketPolicyVersion:
-          "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1"
+          "practical-5-7-10-grounded-flow2-candidate90-strongescape-prioritygate-v5-coursefailclosed1" +
+          (partnerPolicyActive ? "|" + ESCAPE_ROLE_PARTNER_POLICY.id : "")
       },
       mainScenario: {
         type:
@@ -5487,6 +5608,7 @@
     return {
       status: "selected",
       reason:
+        escapeRolePartnerReplacement ? escapeRolePartnerReplacement.reason :
         strongEscapeTrim.applied
           ? strongEscapeTrim.maximumAlternateHeadCount === 0
             ? "非常に強い1逃げでは1号艇頭だけを維持し、別頭は購入しない。"
@@ -5550,12 +5672,15 @@
       ...(skip ? { recommendedTickets: [], recommendedStakeYen: 0 } : {}),
       evidence: { formal, state, attackerNo, wallCandidateNo, score: Number.isFinite(score) ? score : null, grade } };
   }
-  function select(prediction) {
-    const result = selectForecast(prediction);
+  function select(prediction, options = {}) {
+    const result = selectForecast(prediction, options);
     return { ...result, purchaseDecision: purchaseDecision(prediction) };
   }
 
   const api = {
+    ESCAPE_ROLE_PARTNER_POLICY,
+    escapeRolePartnerActive,
+    planEscapeRolePartnerReplacement,
     WALL_PURCHASE_POLICY,
     purchaseDecision,
     createPurchaseSelection(prediction) {

@@ -47,7 +47,7 @@
   ];
   const SCRIPT_VERSIONS = Object.freeze({
     "js/note-generator.js": "20260923-wall-purchase1",
-    "js/practical-selection.js": "20260923-wall-purchase1",
+    "js/practical-selection.js": "20261003-escape-partner-v13",
     "js/skip-ai-display.js": "20260923-wall-purchase1",
     "js/ai-core.js": "20260922-escape-skill-role1",
     "js/render.js": "20260908-comment-dedup1",
