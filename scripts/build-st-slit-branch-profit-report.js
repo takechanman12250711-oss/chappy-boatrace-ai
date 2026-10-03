@@ -16,9 +16,13 @@ function ticket(v) {
 }
 function tickets(v) { return [...new Set((Array.isArray(v) ? v : []).map(ticket).filter(Boolean))]; }
 function raceKey(r={}) { return `${String(r.date||"")}-${String(r.jcd||"").padStart(2,"0")}-${Number(r.raceNo||0)}`; }
-function load(dir) {
+function load(dir, compact=value=>value) {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter(n=>/^\d{8}\.json$/.test(n)).sort().map(n=>JSON.parse(fs.readFileSync(path.join(dir,n),"utf8")));
+  const docs=[];
+  for(const n of fs.readdirSync(dir).filter(n=>/^\d{8}\.json$/.test(n)).sort()){
+    docs.push(compact(JSON.parse(fs.readFileSync(path.join(dir,n),"utf8"))));
+  }
+  return docs;
 }
 function resultMap(docs) {
   const map=new Map();
@@ -29,6 +33,7 @@ function practicalTickets(record={}) {
   return tickets(record?.prediction?.practicalTickets || record?.prediction?.practicalSelection?.tickets);
 }
 function stEvidence(record={}) {
+  if(record._stEvidence)return record._stEvidence;
   const prediction=record.prediction||{};
   const core=prediction.aiCore||{};
   const coreScenarios=core.raceScenarios||{};
@@ -63,6 +68,47 @@ function stEvidence(record={}) {
     roleCount:roleRows.length,
     adjustments
   };
+}
+function compactPredictionRecord(record={}) {
+  const prediction=record.prediction||{};
+  const compacted={
+    date:record.date,
+    jcd:record.jcd,
+    raceNo:record.raceNo,
+    selectedAt:record.selectedAt,
+    prediction:{
+      practicalTickets:prediction.practicalTickets,
+      practicalSelection:prediction.practicalSelection?{tickets:prediction.practicalSelection.tickets}:undefined
+    },
+    _stEvidence:stEvidence(record)
+  };
+  if(record.result){
+    compacted.result={
+      settled:record.result.settled,
+      resultTicket:record.result.resultTicket,
+      payout:record.result.payout
+    };
+  }
+  return compacted;
+}
+function compactPredictionDoc(doc={}) {
+  return {
+    predictions:(Array.isArray(doc.predictions)?doc.predictions:[]).map(compactPredictionRecord),
+    verificationPredictions:(Array.isArray(doc.verificationPredictions)?doc.verificationPredictions:[]).map(compactPredictionRecord)
+  };
+}
+function compactResultRecord(record={}) {
+  return {
+    date:record.date,
+    jcd:record.jcd,
+    raceNo:record.raceNo,
+    resultAvailable:record.resultAvailable,
+    status:record.status,
+    trifecta:record.trifecta
+  };
+}
+function compactResultDoc(doc={}) {
+  return {races:(Array.isArray(doc.races)?doc.races:[]).map(compactResultRecord)};
 }
 function normalizeVerificationResult(record={}, results=new Map()) {
   const embedded=record.result||{};
@@ -158,6 +204,6 @@ function build(predDocs,resultDocs){
     }
   };
 }
-function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit selected evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll}R / prospective verification ${report.verificationProspective.evidenceRaceCount}R`);}
+function main(){const report=build(load(predictionDir,compactPredictionDoc),load(resultDir,compactResultDoc));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`ST/slit selected evidence ${report.evidenceDiagnostics.adjustmentEvidenceRaceCountAll}R / prospective verification ${report.verificationProspective.evidenceRaceCount}R`);}
 if(require.main===module)main();
-module.exports={ticket,tickets,raceKey,stEvidence,normalizeVerificationResult,summarize,diagnose,branchSummaries,build};
+module.exports={ticket,tickets,raceKey,load,stEvidence,compactPredictionRecord,compactPredictionDoc,compactResultRecord,compactResultDoc,normalizeVerificationResult,summarize,diagnose,branchSummaries,build};
