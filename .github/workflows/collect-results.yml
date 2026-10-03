@@ -452,6 +452,8 @@ jobs:
           node-version: "20"
 
       - name: Build prediction calibration
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/test-match-predictions.js
