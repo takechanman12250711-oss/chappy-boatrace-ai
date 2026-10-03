@@ -35,17 +35,37 @@ for (const [name, nextName] of [
 
 assert.ok(
   workflow.indexOf("- name: Save official results before calibration") <
+    workflow.indexOf("- name: Build result diagnostics"),
+  "公式結果は重い診断生成より先に保存する",
+);
+
+assert.ok(
+  workflow.indexOf("- name: Save derived result reports before calibration") <
     workflow.indexOf("- name: Validate result prediction artifacts"),
-  "公式結果は重い予想artifact検査より先に保存する",
+  "派生レポートは重い予想artifact検査より先に保存する",
 );
 
 const save = step(
   "Save official results before calibration",
-  "Validate result prediction artifacts",
+  "Build result diagnostics",
 );
 assert.ok(
   save.includes(prepare),
   "検証済みarchiveを公式結果と同じ中央commitへ保存する",
+);
+assert.match(
+  save,
+  /git add data\/results(?:\s|$)/,
+  "先行checkpointは公式結果を保存対象に含める",
+);
+
+const diagnostics = step(
+  "Build result diagnostics",
+  "Build Local Water V2 post-adoption monitor",
+);
+assert.ok(
+  diagnostics.includes("node scripts/build-learning-analysis-pipeline.js"),
+  "重い学習分析は公式結果checkpoint後に実行する",
 );
 
 console.log("result source archive validation order: ok");
