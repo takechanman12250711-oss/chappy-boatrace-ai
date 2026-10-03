@@ -67,4 +67,60 @@ for (const path of dedicated) {
   );
 }
 
+const rank3plus = require("./build-exhibition-rank3plus-breakdown");
+const predictionRows = [];
+const resultRows = [];
+for (let i = 1; i <= 12; i += 1) {
+  const prediction = {
+    date: "20261002",
+    jcd: "05",
+    raceNo: i,
+    unusedPayload: { rows: Array(100).fill("discard") },
+    prediction: {
+      practicalTickets: ["1-2-3"],
+      unusedPayload: { rows: Array(100).fill("discard") },
+      verificationEvidence: {
+        exhibitionFoot: {
+          formal: true,
+          attackBoatNo: i % 2 ? 3 : 4,
+          exhibitionRank: i % 2 ? 3 : 4,
+          exhibitionCoverage: 6,
+          statements: [i % 2 ? "3号艇は展示下位で足に不安" : "4号艇は展示上位で気配良好"],
+          confirm: i % 2 === 0,
+          alert: i % 2 === 1,
+        },
+      },
+    },
+  };
+  predictionRows.push(prediction);
+  resultRows.push({
+    date: prediction.date,
+    jcd: prediction.jcd,
+    raceNo: prediction.raceNo,
+    resultAvailable: true,
+    status: "finished",
+    trifecta: {
+      combination: i % 2 ? "2-1-3" : "1-2-3",
+      payout: 900,
+    },
+    unusedPayload: { rows: Array(100).fill("discard") },
+  });
+}
+const fullPredictionDoc = { predictions: predictionRows, verificationPredictions: [] };
+const fullResultDoc = { races: resultRows };
+const compactPredictionDoc = rank3plus.compactPredictionDoc(fullPredictionDoc);
+const compactResultDoc = rank3plus.compactResultDoc(fullResultDoc);
+assert.equal(compactPredictionDoc.predictions[0].unusedPayload, undefined);
+assert.equal(compactPredictionDoc.predictions[0].prediction.unusedPayload, undefined);
+assert.equal(compactResultDoc.races[0].unusedPayload, undefined);
+const fullReport = rank3plus.build([fullPredictionDoc], [fullResultDoc]);
+const compactReport = rank3plus.build([compactPredictionDoc], [compactResultDoc]);
+assert.deepEqual(compactReport.summary, fullReport.summary);
+assert.deepEqual(compactReport.dimensions, fullReport.dimensions);
+assert.deepEqual(compactReport.rankings, fullReport.rankings);
+assert.deepEqual(
+  compactReport.weakestEligibleBranches,
+  fullReport.weakestEligibleBranches,
+);
+
 console.log("breakdown writer contract: ok");
