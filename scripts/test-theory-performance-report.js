@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const api = require("../js/theory-performance-report");
+const scenarioAi = require("../js/scenario-ai-v6-shadow");
 const builder = require("./build-theory-performance-report");
 const inputContract = require("./analysis-input-contract");
 
@@ -122,6 +123,55 @@ assert.equal(api.skipDecisionOf({ prediction: { selectionScore: 58, evidenceComp
 assert.equal(api.skipDecisionOf({ prediction: { selectionScore: 78, evidenceCompleteness: 90, verificationEvidence: { scenarios: [{ type: "escape", score: 62 }, { type: "sashi", score: 22 }, { type: "makuri", score: 16 }] } } }), "bet-candidate");
 assert.equal(api.skipDecisionOf({ selectionScore: 78, evidenceCompleteness: 90, verificationEvidence: { scenarios: [{ type: "escape", score: 62 }, { type: "sashi", score: 22 }, { type: "makuri", score: 16 }] } }), "bet-candidate");
 assert.equal(api.predictionOf({ confidence: 71 }).confidence, 71);
+const scenarioFallbackInput = predictionRecord({
+  raceKey: "20260813-01-5",
+  raceNo: 5
+});
+scenarioFallbackInput.prediction.selectionScore = 78;
+scenarioFallbackInput.prediction.evidenceCompleteness = 90;
+scenarioFallbackInput.prediction.preRaceConditions.boats =
+  scenarioFallbackInput.prediction.preRaceConditions.boats.map(
+    (boat, index) => ({
+      ...boat,
+      course: index === 0 ? 2 : index === 1 ? 1 : index + 1,
+      courseOfficial: true,
+      courseMappingSource: "official-start-image"
+    })
+  );
+scenarioFallbackInput.prediction.aiCore = {
+  marks: {
+    honmei: { boatNo: 2 },
+    taikou: { boatNo: 1 },
+    third: { boatNo: 4 }
+  },
+  raceScenarios: {
+    mainScenario: {
+      type: "escape",
+      label: "1コース逃げ",
+      attackerCourse: 1,
+      score: 60
+    },
+    subScenario: {
+      type: "sashi",
+      label: "2コース差し",
+      attackerCourse: 2,
+      score: 40
+    }
+  }
+};
+const compactScenarioFallback = builder.compactPredictionRecord(
+  scenarioFallbackInput
+);
+assert.deepEqual(
+  scenarioAi.build(compactScenarioFallback.prediction),
+  scenarioAi.build(scenarioFallbackInput.prediction),
+  "compaction must preserve legacy scenario reconstruction"
+);
+assert.equal(
+  api.skipDecisionOf(compactScenarioFallback),
+  api.skipDecisionOf(scenarioFallbackInput),
+  "compaction must preserve reconstructed skip decisions"
+);
 const temporaryRoot = fs.mkdtempSync(
   path.join(os.tmpdir(), "theory-performance-cohort-")
 );
