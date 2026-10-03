@@ -69,6 +69,40 @@ function officialResult({
   };
 }
 
+const compactSource = predictionRecord({
+  raceNo: 12,
+  marker: "compact-check",
+  ticket: "1-2-3"
+});
+compactSource.prediction.unusedLargePayload = {
+  rows: Array.from({ length: 100 }, (_, index) => ({ index }))
+};
+compactSource.prediction.preRaceConditions.boats[0].unusedHistory =
+  Array.from({ length: 100 }, (_, index) => index);
+const compacted = theoryPerformance.compactPredictionRecord(
+  compactSource
+);
+assert.equal(compacted.marker, "compact-check");
+assert.equal(
+  compacted.prediction.practicalTickets[0].ticket,
+  "1-2-3"
+);
+assert.equal(
+  compacted.prediction.preRaceConditions.sourceTiming,
+  "pre_deadline"
+);
+assert.equal(
+  compacted.prediction.unusedLargePayload,
+  undefined,
+  "analysis compaction must discard unrelated large payloads"
+);
+assert.equal(
+  compacted.prediction.preRaceConditions.boats[0]
+    .unusedHistory,
+  undefined,
+  "analysis compaction must discard unrelated boat histories"
+);
+
 const temporaryRoot = fs.mkdtempSync(
   path.join(os.tmpdir(), "improvement-input-contract-")
 );
