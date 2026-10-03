@@ -82,4 +82,19 @@ assert.ok(
 assert.ok(
   report.weakBranchRanking.some(row => row.branch === "slit_negative")
 );
+
+const noisyPrediction = {
+  predictions: [],
+  verificationPredictions: rows.map(row => ({...row, unusedPayload:{rows:Array(100).fill("discard")}, prediction:{...row.prediction, unusedPayload:{rows:Array(100).fill("discard")}}}))
+};
+const noisyResults = {races:results.map(row => ({...row, unusedPayload:{rows:Array(100).fill("discard")}}))};
+const compactPrediction = engine.compactPredictionDoc(noisyPrediction);
+const compactResults = engine.compactResultDoc(noisyResults);
+assert.equal(compactPrediction.verificationPredictions[0].unusedPayload, undefined);
+assert.equal(compactPrediction.verificationPredictions[0].prediction.unusedPayload, undefined);
+assert.equal(compactResults.races[0].unusedPayload, undefined);
+const compactReport = engine.build([compactPrediction], [compactResults]);
+assert.deepEqual(compactReport.diagnostics, report.diagnostics);
+assert.deepEqual(compactReport.summaries, report.summaries);
+assert.deepEqual(compactReport.weakBranchRanking, report.weakBranchRanking);
 console.log("race-flow 3course internal report test: ok");
