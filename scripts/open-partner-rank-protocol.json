@@ -1,0 +1,20 @@
+{
+  "version": "conditional-partner-rank-calibration-v1",
+  "status": "research-only-not-approved",
+  "sourceRef": "c9ed6755b9de811a0bd5aa1ad00f5a7f6b42d4c2",
+  "trainingDates": ["20260901", "20260917"],
+  "validationDates": ["20260918", "20260923"],
+  "diagnosticDates": ["20260924", "20260927"],
+  "priorResearchExposure": "All September dates may have been inspected in earlier work. Validation is time-separated from fitting this model, not an untouched prospective cohort.",
+  "scope": "All 20 main-head partner pairs. Same base main head, per-head ticket counts, total count and alternative-head tickets. No course whitelist, fixed role score threshold or modeled-blocked hard veto.",
+  "featurePolicy": "Centered secondScore and thirdScore divided by 100; scenario-specific one-hot second course and third course. No results, payout, odds, date, race ID, original ticket membership or actual finish in prediction features.",
+  "model": "Conditional softmax over 20 ordered pairs, 2 score coefficients plus 4 scenarios x 2 positions x 6 courses = 50 coefficients. Nonnegative constraints on the two score coefficients.",
+  "objective": "Mean negative conditional log likelihood + 0.05/2 times squared coefficient norm, projected gradient descent from zero, learning rate 0.2, 1500 iterations. No hyperparameter or cutoff search.",
+  "trainingEligibility": "Stored pre-deadline six-boat scores and recorded six-course mapping, valid official saved result, no refunds/void, actual winner equals the stored main head. This condition is for fitting the conditional outcome only, never for evaluation race selection.",
+  "minimumTrainingRaces": 100,
+  "missingPolicy": "Missing or invalid record uses baseline when comparison is possible and is reported; never fabricate missing values. Export failures are separately counted.",
+  "evaluation": "All eligible validation and diagnostic races irrespective of winning head. Refund-related races excluded from primary hit and monetary cohorts with full exclusion counts. Each result joined after predictions saved.",
+  "primary": "Exact trifecta hits, additional hits minus lost hits at unchanged per-race count.",
+  "secondary": "Equal 100-yen-per-ticket return reported separately; do not use to choose model or offset hit loss.",
+  "interpretation": "Model softmax numbers are training-model weights, not validated probabilities or confidence promises. No automatic adoption. No production writes. Hypothesis and all settings frozen before fitting/evaluation."
+}

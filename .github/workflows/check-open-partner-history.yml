@@ -1,0 +1,78 @@
+name: Check partner rank history
+on:
+  pull_request:
+    paths:
+      - "scripts/open-partner-history-extract.cjs"
+      - "scripts/open-partner-rank-protocol.json"
+      - "scripts/*partner-calibration*.cjs"
+      - ".github/workflows/check-open-partner-history.yml"
+permissions:
+  contents: read
+concurrency:
+  group: partner-rank-history-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+            js
+            config
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test fitting isolation, complete candidates and fixed budgets
+        run: node --test scripts/test-partner-calibration.cjs
+      - uses: actions/checkout@v4
+        with:
+          ref: c9ed6755b9de811a0bd5aa1ad00f5a7f6b42d4c2
+          path: .rank-history
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /data/predictions/202609[0-1][0-9].json
+            /data/predictions/2026092[0-3].json
+            /data/predictions/source-archives/202609[0-1][0-9].*
+            /data/predictions/source-archives/2026092[0-3].*
+            /data/results/202609[0-1][0-9].json
+            /data/results/2026092[0-3].json
+      - name: Export pre-deadline partner scores and separate labels
+        run: node scripts/open-partner-history-extract.cjs .rank-history /tmp/partner-rank-history
+      - uses: actions/checkout@v4
+        with:
+          ref: 6fb160175071b3e354ac45073662362bf5b5e153
+          path: .rank-diagnostic
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /data/predictions/2026092[4-7].json
+            /data/predictions/source-archives/2026092[4-7].meta.json
+            /data/predictions/source-archives/2026092[4-7].json.gz
+            /data/results/2026092[4-7].json
+      - name: Verify original 144R production replay before new rank comparison
+        run: |
+          node scripts/replay-open-partner-ab.cjs .rank-diagnostic /tmp/partner-rank-evidence
+          node scripts/replay-scenario-partner-pairs.cjs /tmp/partner-rank-evidence/pre-race-inputs.json /tmp/partner-rank-evidence/scenario-pairs
+      - name: Fit on September 1-17 and compare fixed later cohorts
+        run: node scripts/replay-partner-calibration.cjs /tmp/partner-rank-history /tmp/partner-rank-evidence /tmp/partner-rank-history/calibration
+      - name: Preserve fixed protocol, code and diagnostic evidence
+        if: always()
+        run: |
+          mkdir -p /tmp/partner-rank-history
+          cp scripts/open-partner-rank-protocol.json scripts/open-partner-history-extract.cjs /tmp/partner-rank-history/
+          tar -czf /tmp/partner-rank-history/evaluation-source.tar.gz scripts js config
+          if test -f /tmp/partner-rank-evidence/replay-baseline.json; then
+            cp /tmp/partner-rank-evidence/replay-baseline.json /tmp/partner-rank-evidence/replay-policy.json /tmp/partner-rank-evidence/official-results.json /tmp/partner-rank-history/
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: partner-rank-calibration
+          path: /tmp/partner-rank-history/
+          retention-days: 14
+          if-no-files-found: error

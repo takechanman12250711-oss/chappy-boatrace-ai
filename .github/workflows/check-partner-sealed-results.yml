@@ -1,0 +1,71 @@
+name: Settle sealed partner candidates
+on:
+  pull_request:
+    paths:
+      - scripts/settle-sealed-partner.cjs
+      - scripts/test-settle-sealed-partner.cjs
+      - .github/workflows/check-partner-sealed-results.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: partner-sealed-results-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  settle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts
+            js
+            config
+            api
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Read the original seal metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p tmp
+          gh api repos/takechanman12250711-oss/chappy-boatrace-ai/actions/artifacts/10951677542 > tmp/artifact-metadata.json
+      - name: Download original sealed candidates without recapture
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: '10951677542'
+          run-id: '36378589197'
+          github-token: ${{ github.token }}
+          path: tmp/candidates
+          merge-multiple: true
+      - name: Read already-collected official results at fixed main commit
+        uses: actions/checkout@v4
+        with:
+          ref: 6a6a4cd12e36a90f0c84fb6f6d549cf1b790f8ca
+          path: .official-source
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /data/results/20260928.json
+      - name: Verify seal and result-only settlement
+        env:
+          SEALED_OFFICIAL: .official-source/data/results/20260928.json
+        run: node --test scripts/test-settle-sealed-partner.cjs
+      - name: Settle exact original tickets with no model refitting
+        run: node scripts/settle-sealed-partner.cjs tmp/candidates .official-source/data/results/20260928.json tmp/artifact-metadata.json tmp/report/comparison.json
+      - name: Preserve sealed sources and result-only comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-sealed-settlement-20260928
+          path: |
+            tmp/report/
+            tmp/candidates/
+            tmp/artifact-metadata.json
+            .official-source/data/results/20260928.json
+          retention-days: 90
+          include-hidden-files: true
+          if-no-files-found: error
