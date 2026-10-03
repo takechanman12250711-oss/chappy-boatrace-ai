@@ -6,9 +6,10 @@
 
 `collect-results.yml` の既存 `chappy-main-data-writers` キューを workflow 全体で保持する。
 
-1. `collect`（45分上限）で既存の公式結果取得・照合・分析・原本の圧縮保存・整合性検査を実行する。
-2. main への保存成功後の SHA を `saved_sha` として引き渡す。
-3. `calibrate`（30分上限）は `needs: collect` で待ち、同じ SHA を取得して既存の校正・整合性検査・中央保存を実行する。
+1. `collect`（45分上限）は、既存の公式結果取得・修復後に `data/results` と復元済み予想原本を先行checkpointする。
+2. 先行checkpoint後に重い診断・学習分析を実行し、成功した派生レポートをもう一度mainへ保存する。診断がOOMや時間切れで失敗しても、取得済み公式結果は失わない。
+3. 派生レポート保存成功後の SHA を `saved_sha` として引き渡す。
+4. `calibrate`（30分上限）は `needs: collect` で待ち、同じ SHA を取得して既存の校正・整合性検査・中央保存を実行する。
 
 校正が失敗しても先行保存済みの公式結果は残る。再開には GitHub の失敗ジョブ再実行を使える。別の定期 writer を作ったり、未保存の作業ディレクトリを引き継いだりしない。
 
