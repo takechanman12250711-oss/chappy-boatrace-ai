@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const reportBuilder = require("./build-frame-rise-fall-negative-clip-result-report");
+const sourceReport = require("./build-frame-rise-fall-shadow-result-report");
 const trial = require("../config/frame-rise-fall-negative-clip-trial.json");
 
 function record(index, candidateId = trial.candidateId) {
@@ -13,6 +14,7 @@ function record(index, candidateId = trial.candidateId) {
     jcd,
     raceNo,
     selectedAt: new Date(Date.UTC(2026, 7, 16, 11, index)).toISOString(),
+    unusedPayload: "not-needed-by-report",
     frameRiseFallNegativeClipShadowAb: {
       candidateId,
       implementationFingerprint: "frame-rise-fall-negative-adjustment-clip-v1",
@@ -23,8 +25,16 @@ function record(index, candidateId = trial.candidateId) {
       },
       downstreamReplay: {
         status: "replay-ready",
-        a: { skipDecision: false, practicalTickets: ["1-2-3"] },
-        b: { skipDecision: false, practicalTickets: ["2-1-3"] }
+        a: {
+          skipDecision: false,
+          practicalTickets: ["1-2-3"],
+          unusedPayload: "drop-me"
+        },
+        b: {
+          skipDecision: false,
+          practicalTickets: ["2-1-3"],
+          unusedPayload: "drop-me"
+        }
       }
     }
   };
@@ -37,23 +47,83 @@ function resultFor(row, combination) {
     raceNo: row.raceNo,
     resultAvailable: true,
     status: "finished",
+    unusedPayload: "not-needed-by-report",
     trifecta: { combination, payout: 1000 }
   };
 }
 
 const current = record(0);
 const other = record(1, "old-or-other-candidate");
-const remapped = reportBuilder.remapPredictionDocuments([
-  { verificationPredictions: [current, other] }
-]);
+const rawPredictions = [
+  {
+    unusedPayload: "drop-document-field",
+    verificationPredictions: [current, other]
+  }
+];
+const rawResults = [
+  {
+    unusedPayload: "drop-document-field",
+    races: [
+      resultFor(current, "2-1-3"),
+      resultFor(other, "1-2-3")
+    ]
+  }
+];
+
+const compactPredictions =
+  rawPredictions.map(reportBuilder.compactNegativePredictionDoc);
+const compactResults =
+  rawResults.map(sourceReport.compactResultDoc);
+
+assert.equal(
+  compactPredictions[0].verificationPredictions.length,
+  1
+);
+assert.equal(
+  Object.hasOwn(
+    compactPredictions[0].verificationPredictions[0],
+    "unusedPayload"
+  ),
+  false
+);
+assert.equal(
+  Object.hasOwn(
+    compactPredictions[0].verificationPredictions[0]
+      .frameRiseFallNegativeClipShadowAb.downstreamReplay.a,
+    "unusedPayload"
+  ),
+  false
+);
+assert.equal(
+  Object.hasOwn(compactResults[0].races[0], "unusedPayload"),
+  false
+);
+
+const remapped = reportBuilder.remapPredictionDocuments(
+  compactPredictions
+);
 assert.equal(remapped[0].verificationPredictions.length, 1);
-assert.equal(remapped[0].verificationPredictions[0].raceKey, current.raceKey);
-assert.equal(remapped[0].verificationPredictions[0].frameRiseFallShadowAb.candidateId, trial.candidateId);
+assert.equal(
+  remapped[0].verificationPredictions[0].raceKey,
+  current.raceKey
+);
+assert.equal(
+  remapped[0].verificationPredictions[0]
+    .frameRiseFallShadowAb.candidateId,
+  trial.candidateId
+);
 
 const report = reportBuilder.buildReport(
-  [{ verificationPredictions: [current, other] }],
-  [{ races: [resultFor(current, "2-1-3"), resultFor(other, "1-2-3")] }]
+  rawPredictions,
+  rawResults
 );
+const compactReport = reportBuilder.buildReport(
+  compactPredictions,
+  compactResults
+);
+assert.deepEqual(compactReport.observation, report.observation);
+assert.deepEqual(compactReport.overall, report.overall);
+assert.deepEqual(compactReport.protocol, report.protocol);
 assert.equal(report.candidateId, trial.candidateId);
 assert.equal(report.observation.rawComparableCount, 1);
 assert.equal(report.observation.eligibleComparableCount, 1);
