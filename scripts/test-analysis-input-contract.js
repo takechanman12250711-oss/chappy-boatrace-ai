@@ -418,7 +418,9 @@ try {
   fs.rmSync(temporaryRoot, { recursive: true, force: true });
 }
 
-const cohort = inputContract.buildDefaultCohort();
+const cohort = inputContract.buildDefaultCohort({
+  compactPredictionRecord: referenceAnalyzer.compactPredictionRecord
+});
 assert.ok(cohort.diagnostics.canonicalPredictionCount > 0);
 assert.ok(cohort.diagnostics.preDeadlinePredictionCount > 0);
 assert.ok(cohort.diagnostics.officialResultCount > 0);
