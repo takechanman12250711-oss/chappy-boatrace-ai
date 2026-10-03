@@ -121,6 +121,9 @@ const expected = {
   d0809_10: { races: 173, hits: 59, stake: 144100, ret: 104470, trimmed: 68, removed: 105 }
 };
 
+console.log("strong escape regression actual");
+console.log(JSON.stringify(actual, null, 2));
+
 for (const [name, want] of Object.entries(expected)) {
   const got = actual[name];
   for (const [key, value] of Object.entries(want)) {
