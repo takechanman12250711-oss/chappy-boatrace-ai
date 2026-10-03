@@ -161,8 +161,7 @@ function proposalFor(row, minimumSample) {
   return { action: "maintain", adjustment: 0, reason: "指標が混在しているため現状維持" };
 }
 
-function buildReport(documents = []) {
-  const allRows = documents.flatMap(scenarioRows);
+function buildReportFromRows(allRows = []) {
   const training = activeTrainingRows(allRows);
   const rows = training.rows;
   const raceKeys = new Set(rows.map(row => row.raceKey).filter(Boolean));
@@ -206,14 +205,18 @@ function buildReport(documents = []) {
   };
 }
 
+function buildReport(documents = []) {
+  return buildReportFromRows(documents.flatMap(scenarioRows));
+}
+
 function writeReport(report, outputPath = OUTPUT_PATH) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(report, null, 2) + "\n", "utf8");
 }
 
 function main() {
-  const documents = predictionFiles().map(file => readJson(file, {}));
-  const report = buildReport(documents);
+  const rows = predictionFiles().flatMap(file => scenarioRows(readJson(file, {})));
+  const report = buildReportFromRows(rows);
   writeReport(report);
   console.log(`展開AI v6学習：${report.verifiedRaceCount}R／${report.evaluatedScenarioCount}シナリオ`);
 }
@@ -222,6 +225,7 @@ if (require.main === module) main();
 
 module.exports = {
   buildReport,
+  buildReportFromRows,
   scenarioRows,
   aggregate,
   proposalFor,
