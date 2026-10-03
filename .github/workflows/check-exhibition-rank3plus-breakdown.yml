@@ -6,6 +6,7 @@ on:
     paths:
       - "scripts/build-exhibition-rank3plus-breakdown.js"
       - "scripts/build-exhibition-foot-branch-report.js"
+      - "scripts/test-exhibition-rank3plus-breakdown.js"
       - "scripts/test-breakdown-writer-contract.js"
       - "scripts/restore-daily-prediction-source.js"
       - ".github/workflows/collect-results.yml"
@@ -53,6 +54,8 @@ jobs:
       - name: Verify exhibition rank3plus breakdown
         run: |
           node --check scripts/build-exhibition-rank3plus-breakdown.js
+          node --check scripts/test-exhibition-rank3plus-breakdown.js
+          node scripts/test-exhibition-rank3plus-breakdown.js
           node scripts/test-breakdown-writer-contract.js
       - name: Build read-only real diagnostics
         if: github.event_name != 'pull_request'

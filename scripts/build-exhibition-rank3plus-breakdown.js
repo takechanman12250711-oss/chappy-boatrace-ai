@@ -20,9 +20,14 @@ function tickets(r = {}) {
 function key(r = {}) {
   return `${r.date}-${String(r.jcd).padStart(2, "0")}-${Number(r.raceNo)}`;
 }
-function load(dir) {
+function load(dir, compact = value => value) {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter(n => /^\d{8}\.json$/.test(n)).sort().map(n => JSON.parse(fs.readFileSync(path.join(dir, n), "utf8")));
+  const docs = [];
+  for (const name of fs.readdirSync(dir).filter(n => /^\d{8}\.json$/.test(n)).sort()) {
+    const parsed = JSON.parse(fs.readFileSync(path.join(dir, name), "utf8"));
+    docs.push(compact(parsed));
+  }
+  return docs;
 }
 function resultMap(docs) {
   const m = new Map();
@@ -123,10 +128,20 @@ function build(pd, rd) {
   };
 }
 function main() {
-  const report = build(load(predDir), load(resultDir));
+  const report = build(
+    load(predDir, base.compactPredictionDoc),
+    load(resultDir, base.compactResultDoc)
+  );
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify({ summary: report.summary, weakestEligibleBranches: report.weakestEligibleBranches.slice(0, 12) }, null, 2));
 }
 if (require.main === module) main();
-module.exports = { build, summarize, rank, MIN_SETTLED };
+module.exports = {
+  build,
+  summarize,
+  rank,
+  compactPredictionDoc: base.compactPredictionDoc,
+  compactResultDoc: base.compactResultDoc,
+  MIN_SETTLED
+};
