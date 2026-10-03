@@ -70,7 +70,8 @@ function collect(options = {}) {
   const cohort = inputContract.buildDefaultCohort({
     root: options.root || root,
     predictionsDir: options.predictionsDir,
-    resultsDir: options.resultsDir
+    resultsDir: options.resultsDir,
+    compactPredictionRecord: options.compactPredictionRecord
   });
   return {
     records: cohort.records
