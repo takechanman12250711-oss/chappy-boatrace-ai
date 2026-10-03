@@ -3,8 +3,9 @@ on:
   pull_request:
     paths:
       - js/practical-selection.js
-      - js/escape-role-partner-shadow.js
+      - js/prediction-runtime-loader.js
       - scripts/test-production-escape-role-partner-contract.js
+      - scripts/verify-escape-partner-paired.cjs
       - scripts/test-strong-escape-trim-regression.js
       - scripts/test-very-strong-escape-trim-regression.js
       - .github/workflows/check-production-escape-role-partner.yml
@@ -16,35 +17,18 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Preserve reproducible integration inputs
+      - name: Verify production and historical contracts
         run: |
-          mkdir -p tmp-integration/inputs/data/predictions
+          mkdir -p tmp-integration
           git rev-parse HEAD > tmp-integration/source-commit.txt
-          tar -czf tmp-integration/source-code.tgz js scripts config .github
-          node <<'NODE'
-          const fs=require('fs'),path=require('path'),crypto=require('crypto');
-          const manifest=[];
-          for(const f of fs.readdirSync('data/predictions').filter(f=>/^\d{8}\.json$/.test(f)&&f.slice(0,8)<='20260812').sort()){
-            const raw=fs.readFileSync(path.join('data/predictions',f));const d=JSON.parse(raw);
-            const compact=r=>({date:r.date,jcd:r.jcd,place:r.place,raceNo:r.raceNo,raceKey:r.raceKey,result:r.result,preRaceConditions:r.preRaceConditions,prediction:{preRaceConditions:r.prediction?.preRaceConditions}});
-            const out={date:d.date,predictions:(d.predictions||[]).map(compact),verificationPredictions:(d.verificationPredictions||[]).map(compact)};
-            fs.writeFileSync(path.join('tmp-integration/inputs/data/predictions',f),JSON.stringify(out));
-            manifest.push({path:'data/predictions/'+f,originalSha256:crypto.createHash('sha256').update(raw).digest('hex'),projection:'identity, result, exact preRaceConditions; no regenerated fields'});
-          }
-          fs.writeFileSync('tmp-integration/input-manifest.json',JSON.stringify(manifest,null,2));
-          NODE
-          tar -czf tmp-integration/regression-inputs.tgz -C tmp-integration/inputs data
-          rm -r tmp-integration/inputs
-      - name: Run every integration check
-        run: |
           status=0
-          for file in scripts/test-production-escape-role-partner-contract.js scripts/test-practical-selection.js scripts/test-strong-escape-trim-regression.js scripts/test-very-strong-escape-trim-regression.js; do
+          for file in scripts/test-production-escape-role-partner-contract.js scripts/test-practical-selection.js scripts/test-strong-escape-trim-regression.js scripts/test-very-strong-escape-trim-regression.js scripts/test-practical-priority-shadow-regression.js scripts/verify-escape-partner-paired.cjs; do
             log="tmp-integration/$(basename "$file").log"
             echo "::group::$file"
             if node "$file" > "$log" 2>&1; then

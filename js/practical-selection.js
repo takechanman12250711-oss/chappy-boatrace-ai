@@ -27,8 +27,6 @@
     10;
   const PRIORITY_GATE_REPLACEMENT_BRANCH =
     "formation:hole";
-  const ESCAPE_ROLE_PARTNER_PROTECTED_TICKETS =
-    Object.freeze(["1-2-3", "1-2-4"]);
   const STRONG_ESCAPE_MINIMUM_SCORE =
     80;
   const STRONG_ESCAPE_MINIMUM_GAP =
@@ -4637,7 +4635,6 @@
             "CANDIDATE_ONLY_EVALUATION",
           priorityGateSourceBranch:
             PRIORITY_GATE_REPLACEMENT_BRANCH,
-    ESCAPE_ROLE_PARTNER_PROTECTED_TICKETS,
           priorityGateReplacedTicket:
             weakest.ticket,
           priorityGateReplacementReason:
@@ -4740,176 +4737,6 @@
               weakest.selectionTier || ""
             ),
           selectedIndex,
-          reason
-        };
-      })();
-
-    candidateOutcomes =
-      aggregateCandidateOutcomes(
-        candidateDecisions
-      );
-
-    /*
-      全24場shadow A/Bで既存的中損失0を確認した1逃げ相手補正。
-      1-2-3 / 1-2-4の内側基本線、本線、フォーメーション券は保護。
-      それ以外の1号艇頭の最弱券だけを、1着軸・2着残し/攻め・
-      3着残り/拾いの構造化根拠が全てある高priority候補へ1対1置換する。
-      点数は増やさない。
-    */
-    const escapeRolePartnerReplacement =
-      (() => {
-        if (strongEscapeTrim.applied !== true) {
-          return null;
-        }
-        const protectedTickets =
-          new Set(
-            ESCAPE_ROLE_PARTNER_PROTECTED_TICKETS
-          );
-        const roleGrounded =
-          outcome => {
-            const boats =
-              ticketBoats(outcome?.ticket);
-            const roles =
-              arrayify(outcome?.roleLabels)
-                .filter(
-                  role =>
-                    role?.structured === true
-                );
-            return (
-              boats.length === 3 &&
-              roles.some(
-                role =>
-                  Number(role.position) === 1 &&
-                  Number(role.boatNo) === boats[0] &&
-                  ["head", "attack"].includes(
-                    String(role.role)
-                  )
-              ) &&
-              roles.some(
-                role =>
-                  Number(role.position) === 2 &&
-                  Number(role.boatNo) === boats[1] &&
-                  ["hold", "pickup", "attack"].includes(
-                    String(role.role)
-                  )
-              ) &&
-              roles.some(
-                role =>
-                  Number(role.position) === 3 &&
-                  Number(role.boatNo) === boats[2] &&
-                  ["hold", "pickup"].includes(
-                    String(role.role)
-                  )
-              )
-            );
-          };
-        const eligible =
-          candidateOutcomes
-            .filter(outcome => {
-              const boats =
-                ticketBoats(outcome?.ticket);
-              return (
-                outcome.selected !== true &&
-                boats[0] === 1 &&
-                !used.has(outcome.ticket) &&
-                roleGrounded(outcome)
-              );
-            })
-            .sort(
-              (a, b) =>
-                numeric(b.priorityScore, 0) -
-                  numeric(a.priorityScore, 0) ||
-                a.ticket.localeCompare(b.ticket)
-            );
-        const weakest =
-          [...selected]
-            .map((row, index) => ({
-              row,
-              index
-            }))
-            .filter(({ row }) =>
-              ticketBoats(row?.ticket)[0] === 1 &&
-              !protectedTickets.has(row.ticket) &&
-              row.category !== "本線" &&
-              row.category !== "流し"
-            )
-            .sort(
-              (a, b) =>
-                numeric(
-                  a.row.priorityScore,
-                  0
-                ) -
-                  numeric(
-                    b.row.priorityScore,
-                    0
-                  ) ||
-                a.row.ticket.localeCompare(
-                  b.row.ticket
-                )
-            )[0] || null;
-        const best = eligible[0] || null;
-        if (
-          !best ||
-          !weakest ||
-          numeric(best.priorityScore, 0) <=
-            numeric(
-              weakest.row.priorityScore,
-              0
-            )
-        ) {
-          return null;
-        }
-        const sourceRow =
-          candidates
-            .map(candidate => candidate.row)
-            .find(
-              row =>
-                row.ticket === best.ticket
-            ) || best;
-        const reason =
-          `1逃げ内側基本線1-2-3/1-2-4を保護し、` +
-          `${weakest.row.ticket}（${numeric(weakest.row.priorityScore, 0)}点）を` +
-          `構造化された残し・拾い根拠を持つ${best.ticket}` +
-          `（${numeric(best.priorityScore, 0)}点）へ同点数で置換。`;
-        const promoted = {
-          ...sourceRow,
-          category: "相手補正",
-          selectionTier:
-            "1逃げ相手補正",
-          escapeRolePartnerReplacement:
-            true,
-          escapeRolePartnerReplacedTicket:
-            weakest.row.ticket,
-          comment:
-            sourceRow.comment ||
-            sourceRow.scenarioSummary ||
-            reason
-        };
-        selected.splice(
-          weakest.index,
-          1,
-          promoted
-        );
-        used.delete(
-          weakest.row.ticket
-        );
-        used.add(promoted.ticket);
-        return {
-          applied: true,
-          addedTicket:
-            promoted.ticket,
-          addedPriorityScore:
-            numeric(
-              best.priorityScore,
-              0
-            ),
-          removedTicket:
-            weakest.row.ticket,
-          removedPriorityScore:
-            numeric(
-              weakest.row.priorityScore,
-              0
-            ),
           reason
         };
       })();
@@ -5383,11 +5210,6 @@
             }
           : {}
       ),
-      ...(escapeRolePartnerReplacement
-        ? {
-            escapeRolePartnerReplacement
-          }
-        : {}),
       ...(
         candidatePromotionTickets.length
           ? {

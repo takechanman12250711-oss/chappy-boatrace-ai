@@ -65,8 +65,7 @@ for (const file of fs.readdirSync(dir).filter(name => /^\d{8}\.json$/.test(name)
       actual,
       payout: payoutOf(race),
       tickets,
-      trim: selection?.expansionSummary?.strongEscapeTrim || null,
-      replacement: selection?.expansionSummary?.escapeRolePartnerReplacement || null
+      trim: selection?.expansionSummary?.strongEscapeTrim || null
     });
   }
 }
@@ -106,14 +105,11 @@ const actual = Object.fromEntries(
   Object.entries(groups).map(([name, list]) => [name, summarize(list)])
 );
 const expected = {
-  preEarly: { races: 269, hits: 78, stake: 222200, ret: 154600, trimmed: 61, removed: 79 },
-  preLate: { races: 188, hits: 66, stake: 158000, ret: 92370, trimmed: 66, removed: 86 },
-  d0807_08: { races: 140, hits: 48, stake: 120100, ret: 95350, trimmed: 46, removed: 72 },
-  d0809_10: { races: 173, hits: 62, stake: 144100, ret: 105050, trimmed: 68, removed: 105 }
+  preEarly: { races: 269, hits: 74, stake: 222200, ret: 146070, trimmed: 61, removed: 79 },
+  preLate: { races: 188, hits: 60, stake: 158000, ret: 79640, trimmed: 66, removed: 86 },
+  d0807_08: { races: 140, hits: 48, stake: 120100, ret: 93880, trimmed: 46, removed: 72 },
+  d0809_10: { races: 173, hits: 59, stake: 144100, ret: 104470, trimmed: 68, removed: 105 }
 };
-
-console.log("strong escape regression actual");
-console.log(JSON.stringify(actual, null, 2));
 
 for (const [name, want] of Object.entries(expected)) {
   const got = actual[name];

@@ -1,0 +1,57 @@
+  const ESCAPE_ROLE_PARTNER_POLICY = Object.freeze({
+    id: "escape-role-partner-v1.3",
+    effectiveFrom: "2026-10-03T10:11:00Z",
+    protectedTickets: Object.freeze(["1-2-3", "1-2-4"])
+  });
+
+  // Pure, result-blind plan. Source candidates must already have passed the
+  // production branch validator. Role-specific branches must share a scenario and source.
+  function planEscapeRolePartnerReplacement(selected, candidates, trim, context = {}) {
+    if (trim?.eligible !== true || !(context.branchesById instanceof Map) ||
+        courseOf(context, 1) !== 1) return null;
+    if (!Array.isArray(selected) || !selected.length || selected.length > MAXIMUM_COUNT ||
+        selected.some(row => !validTicket(row?.ticket)) ||
+        new Set(selected.map(row => row.ticket)).size !== selected.length) return null;
+    const used = new Set(selected.map(row => row.ticket));
+    const protectedTickets = new Set(ESCAPE_ROLE_PARTNER_POLICY.protectedTickets);
+    const strongest = new Map();
+    for (const candidate of arrayify(candidates)) {
+      const row = candidate?.row, validation = candidate?.validation;
+      if (!row || !validTicket(row.ticket) || ticketBoats(row.ticket)[0] !== 1 || used.has(row.ticket) ||
+          validation?.valid !== true || validation.purchaseEligible !== true ||
+          !Number.isFinite(row.priorityScore) || row.priorityScore <= 0) continue;
+      const boats = ticketBoats(row.ticket);
+      const branchIds = arrayify(row.validPurchaseBranchIds);
+      const scenarioGroups = new Map();
+      for (const branchId of branchIds) {
+        const branch = context.branchesById.get(branchId);
+        if (!branch || branch.qualified !== true || branch.ticket !== row.ticket ||
+            branch.kind !== "canonical-formation" ||
+            Number(branch.headBoatNo ?? branch.attackerBoatNo) !== 1 ||
+            Number(branch.attackerBoatNo) !== context.primaryAttackerBoatNo ||
+            !branch.scenarioId || !branch.source) continue;
+        const key = branch.scenarioId + "|" + branch.source;
+        if (!scenarioGroups.has(key)) scenarioGroups.set(key, []);
+        scenarioGroups.get(key).push(...arrayify(row.coverage).filter(claim => claim.branchId === branchId));
+      }
+      const grounded = [...scenarioGroups.values()].some(claims =>
+        [[1, ["head", "attack"]], [2, ["hold", "pickup", "attack"]], [3, ["hold", "pickup"]]]
+          .every(([position, roles]) => claims.some(claim => Number(claim.position) === position &&
+            Number(claim.boatNo) === boats[position - 1] && roles.includes(claim.role))));
+      if (!grounded) continue;
+      const previous = strongest.get(row.ticket);
+      if (!previous || row.priorityScore > previous.priorityScore) strongest.set(row.ticket, row);
+    }
+    const best = [...strongest.values()].sort((a, b) =>
+      b.priorityScore - a.priorityScore || a.ticket.localeCompare(b.ticket))[0];
+    const weak = selected.map((row, index) => ({row, index})).filter(({row}) =>
+      ticketBoats(row.ticket)[0] === 1 && !protectedTickets.has(row.ticket) &&
+      typeof row.category === "string" && row.category.length > 0 &&
+      row.category !== "本線" && row.category !== "流し" &&
+      Number.isFinite(row.priorityScore))
+      .sort((a, b) => a.row.priorityScore - b.row.priorityScore || a.row.ticket.localeCompare(b.row.ticket))[0];
+    if (!best || !weak || best.priorityScore <= weak.row.priorityScore) return null;
+    return { selectedIndex: weak.index, sourceRow: best, removedRow: weak.row,
+      policyId: ESCAPE_ROLE_PARTNER_POLICY.id };
+  }
+

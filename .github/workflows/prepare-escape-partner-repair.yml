@@ -1,0 +1,61 @@
+name: Prepare verified escape partner repair
+on:
+  push:
+    branches: [feature/escape-role-partner-shadow-20261003]
+    paths:
+      - _pr1163_repair/**
+      - .github/workflows/prepare-escape-partner-repair.yml
+permissions:
+  contents: write
+concurrency:
+  group: prepare-escape-partner-repair-1163
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.repository == 'takechanman12250711-oss/chappy-boatrace-ai' && github.ref == 'refs/heads/feature/escape-role-partner-shadow-20261003'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Apply exact locally verified repair
+        run: |
+          python3 _pr1163_repair/prepare.py
+          rm -r _pr1163_repair
+          rm .github/workflows/prepare-escape-partner-repair.yml
+          git diff --check
+          node --check js/practical-selection.js
+          node --check js/prediction-runtime-loader.js
+      - name: Test final content before publishing staging commit
+        run: |
+          mkdir -p tmp-integration
+          status=0
+          for file in scripts/test-production-escape-role-partner-contract.js scripts/test-practical-selection.js scripts/test-strong-escape-trim-regression.js scripts/test-very-strong-escape-trim-regression.js scripts/test-practical-priority-shadow-regression.js scripts/verify-escape-partner-paired.cjs; do
+            log="tmp-integration/$(basename "$file").log"
+            echo "::group::$file"
+            if node "$file" > "$log" 2>&1; then echo "$file PASS"; else status=1; echo "::error::$file failed"; fi
+            tail -n 80 "$log"
+            echo '::endgroup::'
+          done
+          exit "$status"
+      - name: Publish verified staging commit only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/practical-selection.js js/prediction-runtime-loader.js index.html _pr1163_repair .github/workflows/prepare-escape-partner-repair.yml
+          git commit -m 'Fix escape partner production evidence and preserve historical policy'
+          git rev-parse HEAD > tmp-integration/verified-commit.txt
+          git rev-parse HEAD^{tree} > tmp-integration/verified-tree.txt
+          git show --stat --oneline HEAD
+          git push origin HEAD:refs/heads/ci/escape-partner-verified-20261003-v13
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: escape-partner-verified-repair-${{ github.run_id }}
+          path: tmp-integration/
+          if-no-files-found: error
+          retention-days: 30
