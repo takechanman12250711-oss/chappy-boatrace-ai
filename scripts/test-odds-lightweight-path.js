@@ -14,7 +14,30 @@ const formationOdds = read("js/formation-odds-display.js");
 
 const directOddsIndex = html.indexOf('src="js/odds-fetch-cache.js?v=20260815-odds-immediate1"');
 const directApiIndex = html.indexOf('src="js/api.js?v=20260825-mobile-startup-terminal4&app=20260828-ui-audit-display1"');
-const directPredictionLoaderIndex = html.indexOf('src="js/prediction-runtime-loader.js?v=20260828-ui-audit-display1&feature=four-kado-124-v1&app=20260828-ui-audit-display1&lightManshu=20260909-formation-preserve1&root=20260908-clarity-fix2&concise=20260914-note1&escapeSkill=20260922-1&wallPurchase=20260923-1"');
+// Check order independently of the cache query, then require every feature
+// version explicitly so a cache bump cannot silently remove an older fix.
+const predictionLoaderTags = [...html.matchAll(/src="(js\/prediction-runtime-loader\.js\?[^\"]+)"/g)];
+assert.equal(predictionLoaderTags.length, 1, "予想ランタイムの直接読込は1回だけ");
+const directPredictionLoaderIndex = predictionLoaderTags[0].index;
+const predictionLoaderParams = new URL(predictionLoaderTags[0][1], "https://example.invalid").searchParams;
+const requiredPredictionLoaderParams = {
+  v: "20260828-ui-audit-display1",
+  feature: "four-kado-124-v1",
+  app: "20260828-ui-audit-display1",
+  lightManshu: "20260909-formation-preserve1",
+  root: "20260908-clarity-fix2",
+  concise: "20260914-note1",
+  escapeSkill: "20260922-1",
+  wallPurchase: "20260923-1",
+  escapePartner: "20261003-v13"
+};
+for (const [key, value] of Object.entries(requiredPredictionLoaderParams)) {
+  assert.deepEqual(predictionLoaderParams.getAll(key), [value], `予想ランタイムの版指定: ${key}`);
+}
+assert.ok(
+  predictionRuntime.includes('"js/practical-selection.js": "20261003-escape-partner-v13"'),
+  "相手補正v1.3の選択処理を新しいキャッシュ版で配信する"
+);
 const hiyoriIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260829-effective-score-contract1"');
 const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');

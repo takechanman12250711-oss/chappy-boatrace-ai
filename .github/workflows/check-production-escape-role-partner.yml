@@ -1,0 +1,50 @@
+name: Check production escape role partner
+on:
+  pull_request:
+    paths:
+      - js/practical-selection.js
+      - js/prediction-runtime-loader.js
+      - scripts/test-production-escape-role-partner-contract.js
+      - scripts/verify-escape-partner-paired.cjs
+      - scripts/test-strong-escape-trim-regression.js
+      - scripts/test-very-strong-escape-trim-regression.js
+      - .github/workflows/check-production-escape-role-partner.yml
+permissions:
+  contents: read
+concurrency:
+  group: escape-partner-integration-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify production and historical contracts
+        run: |
+          mkdir -p tmp-integration
+          git rev-parse HEAD > tmp-integration/source-commit.txt
+          status=0
+          for file in scripts/test-production-escape-role-partner-contract.js scripts/test-practical-selection.js scripts/test-strong-escape-trim-regression.js scripts/test-very-strong-escape-trim-regression.js scripts/test-practical-priority-shadow-regression.js scripts/verify-escape-partner-paired.cjs; do
+            log="tmp-integration/$(basename "$file").log"
+            echo "::group::$file"
+            if node "$file" > "$log" 2>&1; then
+              echo "$file PASS"
+            else
+              status=1
+              echo "::error::$file failed"
+            fi
+            tail -n 80 "$log"
+            echo '::endgroup::'
+          done
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: escape-partner-integration-${{ github.run_id }}
+          path: tmp-integration/
+          if-no-files-found: error
+          retention-days: 30
