@@ -59,6 +59,21 @@ assert.match(
   "先行checkpointは公式結果を保存対象に含める",
 );
 
+const centralRebases =
+  workflow.match(
+    /git pull --rebase --autostash origin main/g,
+  ) || [];
+assert.equal(
+  centralRebases.length,
+  3,
+  "中央保存3か所は未保存差分を退避してrebaseする",
+);
+assert.doesNotMatch(
+  workflow,
+  /git pull --rebase origin main/,
+  "未保存差分を失う通常rebaseを残さない",
+);
+
 const diagnostics = step(
   "Build result diagnostics",
   "Build Local Water V2 post-adoption monitor",
