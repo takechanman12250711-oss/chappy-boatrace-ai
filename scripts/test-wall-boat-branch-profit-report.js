@@ -48,4 +48,6 @@ assert.deepEqual(compactParity,rawParity);
 assert.equal("unusedPayload" in compactPredictionDocs[0].predictions[0].prediction,false);
 assert.equal("unrelated" in compactPredictionDocs[0],false);
 assert.equal("unusedPayload" in compactResultDocs[0].races[0],false);
+const payoutPer100Record={date:"20260818",jcd:"01",raceNo:4,selectedAt:"2026-08-18T04:04:00Z",result:{settled:true,resultTicket:"4-1-3",payoutPer100:2340},prediction:{practicalTickets:["4-1-3"],wallTheory:wall}};
+assert.equal(engine.compactPredictionRecord(payoutPer100Record).result.payoutPer100,2340);
 console.log("wall-boat prospective branch profit report test: ok");
