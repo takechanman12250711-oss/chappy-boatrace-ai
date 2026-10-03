@@ -86,7 +86,7 @@ const monitorStart = central.indexOf(
   collectStart,
 );
 const saveStart = central.indexOf(
-  "- name: Save official results before calibration",
+  "- name: Save derived result reports before calibration",
   monitorStart,
 );
 const validateStart = central.indexOf(
