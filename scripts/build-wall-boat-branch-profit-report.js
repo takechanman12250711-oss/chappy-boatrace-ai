@@ -15,7 +15,58 @@ const STORAGE_SOURCE_COMMIT="def6199bbadaf4b006bc0b4409cf49c528ed61f0";
 function ticket(v){const s=String(v?.ticket||v||"").trim();return /^[1-6]-[1-6]-[1-6]$/.test(s)&&new Set(s.split("-")).size===3?s:"";}
 function tickets(v){return [...new Set((Array.isArray(v)?v:[]).map(ticket).filter(Boolean))];}
 function raceKey(r={}){return `${String(r.date||"")}-${String(r.jcd||"").padStart(2,"0")}-${Number(r.raceNo||0)}`;}
-function load(dir){if(!fs.existsSync(dir))return[];return fs.readdirSync(dir).filter(n=>/^\d{8}\.json$/.test(n)).sort().map(n=>JSON.parse(fs.readFileSync(path.join(dir,n),"utf8")));}
+function load(dir,compact=value=>value){
+  if(!fs.existsSync(dir))return[];
+  const docs=[];
+  for(const name of fs.readdirSync(dir).filter(n=>/^\d{8}\.json$/.test(n)).sort()){
+    const parsed=JSON.parse(fs.readFileSync(path.join(dir,name),"utf8"));
+    docs.push(compact(parsed));
+  }
+  return docs;
+}
+function compactPredictionRecord(record={}){
+  const prediction=record.prediction||{};
+  const evidence=snapshot.wallEvidence(prediction);
+  const compactedPrediction={
+    wallTheory:{
+      attackerNo:evidence.attackerNo,
+      wallCandidateNo:evidence.wallCandidateNo,
+      wallBoat:evidence.wallBoat,
+      state:evidence.state,
+      score:evidence.score,
+      grade:evidence.grade
+    }
+  };
+  if(Array.isArray(prediction.practicalTickets))compactedPrediction.practicalTickets=prediction.practicalTickets;
+  if(Array.isArray(prediction?.practicalSelection?.tickets))compactedPrediction.practicalSelection={tickets:prediction.practicalSelection.tickets};
+  const embedded=record.result||{};
+  return{
+    date:record.date,
+    jcd:record.jcd,
+    raceNo:record.raceNo,
+    selectedAt:record.selectedAt,
+    capturedAt:record.capturedAt,
+    prediction:compactedPrediction,
+    ...(embedded.settled?{result:{settled:true,resultTicket:embedded.resultTicket,payout:embedded.payout}}:{})
+  };
+}
+function compactPredictionDoc(doc={}){
+  return{
+    predictions:(Array.isArray(doc.predictions)?doc.predictions:[]).map(compactPredictionRecord),
+    verificationPredictions:(Array.isArray(doc.verificationPredictions)?doc.verificationPredictions:[]).map(compactPredictionRecord)
+  };
+}
+function compactResultRecord(record={}){
+  return{
+    date:record.date,
+    jcd:record.jcd,
+    raceNo:record.raceNo,
+    resultAvailable:record.resultAvailable,
+    status:record.status,
+    trifecta:record.trifecta?{combination:record.trifecta.combination,payout:record.trifecta.payout}:undefined
+  };
+}
+function compactResultDoc(doc={}){return{races:(Array.isArray(doc.races)?doc.races:[]).map(compactResultRecord)};}
 function resultMap(docs){const map=new Map();for(const d of docs)for(const r of(Array.isArray(d.races)?d.races:[]))if(r.resultAvailable&&r.status==="finished")map.set(raceKey(r),r);return map;}
 function practicalTickets(record={}){return tickets(record?.prediction?.practicalTickets||record?.prediction?.practicalSelection?.tickets);}
 function wallEvidence(record={}){return snapshot.wallEvidence(record?.prediction||record||{});}
@@ -43,6 +94,6 @@ function build(predDocs,resultDocs){
   const firstEvidence=formalRows.length?{raceKey:raceKey(formalRows[0].record),selectedAt:String(formalRows[0].record.selectedAt||formalRows[0].record.capturedAt||""),state:formalRows[0].evidence.state,score:formalRows[0].evidence.score,grade:formalRows[0].evidence.grade,settled:Boolean(formalRows[0].result)}:null;
   return{schemaVersion:2,version:"wall-boat-branch-profit-v2-prospective",generatedAt:new Date().toISOString(),source:"post-storage-cutoff saved predictions + official results",stakePerTicket:STAKE_PER_TICKET,productionChanged:false,prospectiveProtocol:{cutoffSelectedAtInclusive:PROSPECTIVE_CUTOFF,storageSourceCommit:STORAGE_SOURCE_COMMIT,oldRecordsBackfilled:false,actualPurchase:false},diagnostics:{selected:diagnose(selected),verification:diagnose(verification),prospectiveDeduplicatedFormalRaceCount:formalRows.length,firstEvidence},summaries,weakStateRanking:stateRanking,interpretation:{minimumBranchSettledCount:10,retrospectiveClassificationAllowed:false,automaticApplication:false,usableForPrediction:false}};
 }
-function main(){const report=build(load(predictionDir),load(resultDir));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`wall prospective selected ${report.diagnostics.selected.prospectiveFormalWallEvidenceRaceCount}R / verification ${report.diagnostics.verification.prospectiveFormalWallEvidenceRaceCount}R / dedup ${report.diagnostics.prospectiveDeduplicatedFormalRaceCount}R`);}
+function main(){const report=build(load(predictionDir,compactPredictionDoc),load(resultDir,compactResultDoc));fs.writeFileSync(output,JSON.stringify(report,null,2)+"\n");console.log(`wall prospective selected ${report.diagnostics.selected.prospectiveFormalWallEvidenceRaceCount}R / verification ${report.diagnostics.verification.prospectiveFormalWallEvidenceRaceCount}R / dedup ${report.diagnostics.prospectiveDeduplicatedFormalRaceCount}R`);}
 if(require.main===module)main();
-module.exports={ticket,tickets,raceKey,scoreBand,selectedEpoch,isProspective,wallEvidence,summarize,diagnose,build,PROSPECTIVE_CUTOFF,STORAGE_SOURCE_COMMIT};
+module.exports={ticket,tickets,raceKey,load,compactPredictionRecord,compactPredictionDoc,compactResultRecord,compactResultDoc,scoreBand,selectedEpoch,isProspective,wallEvidence,summarize,diagnose,build,PROSPECTIVE_CUTOFF,STORAGE_SOURCE_COMMIT};

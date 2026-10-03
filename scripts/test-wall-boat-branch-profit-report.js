@@ -25,4 +25,27 @@ assert.equal(report.weakStateRanking[0].branch,"wallEstablished");
 assert.equal(report.interpretation.retrospectiveClassificationAllowed,false);
 assert.equal(report.interpretation.automaticApplication,false);
 assert.equal(report.interpretation.usableForPrediction,false);
+
+const wall={attackerNo:4,wallCandidateNo:3,wallBoat:3,state:"壁成立",score:78,grade:"A"};
+const rawPredictionDocs=[{
+  predictions:[
+    {date:"20260818",jcd:"01",raceNo:1,selectedAt:"2026-08-18T04:01:00Z",prediction:{practicalTickets:["4-1-3"],aiCore:{wallTheory:wall},unusedPayload:"x".repeat(10000)}},
+    {date:"20260818",jcd:"01",raceNo:2,capturedAt:"2026-08-18T04:02:00Z",result:{settled:true,resultTicket:"4-2-3",payout:1230},prediction:{practicalSelection:{tickets:["4-2-3"],verificationEvidence:{wallTheory:{...wall,state:"互角"}}},unusedPayload:"y".repeat(10000)}}
+  ],
+  verificationPredictions:[
+    {date:"20260818",jcd:"01",raceNo:3,selectedAt:"2026-08-18T04:03:00Z",prediction:{practicalTickets:["4-3-1"],raceScenarios:{wallTheory:{...wall,state:"壁崩れ"}},unusedPayload:"z".repeat(10000)}}
+  ],
+  unrelated:"discard"
+}];
+const rawResultDocs=[{races:[{date:"20260818",jcd:"01",raceNo:1,resultAvailable:true,status:"finished",trifecta:{combination:"4-1-3",payout:980},unusedPayload:"q".repeat(10000)}],unrelated:"discard"}];
+const compactPredictionDocs=rawPredictionDocs.map(engine.compactPredictionDoc);
+const compactResultDocs=rawResultDocs.map(engine.compactResultDoc);
+const rawParity=engine.build(rawPredictionDocs,rawResultDocs);
+const compactParity=engine.build(compactPredictionDocs,compactResultDocs);
+delete rawParity.generatedAt;
+delete compactParity.generatedAt;
+assert.deepEqual(compactParity,rawParity);
+assert.equal("unusedPayload" in compactPredictionDocs[0].predictions[0].prediction,false);
+assert.equal("unrelated" in compactPredictionDocs[0],false);
+assert.equal("unusedPayload" in compactResultDocs[0].races[0],false);
 console.log("wall-boat prospective branch profit report test: ok");
