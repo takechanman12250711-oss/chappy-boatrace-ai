@@ -20,9 +20,14 @@ function tickets(r = {}) {
 function key(r = {}) {
   return `${r.date}-${String(r.jcd).padStart(2, "0")}-${Number(r.raceNo)}`;
 }
-function load(dir) {
+function load(dir, compact = value => value) {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter(n => /^\d{8}\.json$/.test(n)).sort().map(n => JSON.parse(fs.readFileSync(path.join(dir, n), "utf8")));
+  const docs = [];
+  for (const name of fs.readdirSync(dir).filter(n => /^\d{8}\.json$/.test(n)).sort()) {
+    const parsed = JSON.parse(fs.readFileSync(path.join(dir, name), "utf8"));
+    docs.push(compact(parsed));
+  }
+  return docs;
 }
 function resultMap(docs) {
   const m = new Map();
