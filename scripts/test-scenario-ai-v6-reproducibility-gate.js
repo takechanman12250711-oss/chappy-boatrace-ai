@@ -1,6 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 const gate = require("./build-scenario-ai-v6-reproducibility-gate");
+const learning = require("./build-scenario-ai-v6-learning-report");
 const scenarioAiV6 = require("../js/scenario-ai-v6-shadow");
 
 function doc(rows) {
@@ -45,7 +46,13 @@ function doc(rows) {
 
 const stable = [];
 for (let i = 0; i < 60; i += 1) stable.push({ date: `202607${String(1 + Math.floor(i / 2)).padStart(2, "0")}`, exact: i % 4 !== 0, firstHit: i % 5 !== 0, top2Hit: true, method: i % 5 !== 0 });
-const report = gate.buildReport([doc(stable)]);
+const stableDocument = doc(stable);
+const report = gate.buildReport([stableDocument]);
+const streamedReport = gate.buildReportFromRows(learning.scenarioRows(stableDocument));
+assert.equal(streamedReport.evaluatedScenarioCount, report.evaluatedScenarioCount);
+assert.deepEqual(streamedReport.trainingCohort, report.trainingCohort);
+assert.deepEqual(streamedReport.evaluations, report.evaluations);
+assert.deepEqual(streamedReport.approvalGate, report.approvalGate);
 assert.equal(report.usableForPrediction, false);
 assert.equal(report.automaticApplication, false);
 assert.ok(report.approvalGate.approvedCandidateCount >= 1);
