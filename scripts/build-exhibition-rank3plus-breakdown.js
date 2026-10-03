@@ -123,10 +123,20 @@ function build(pd, rd) {
   };
 }
 function main() {
-  const report = build(load(predDir), load(resultDir));
+  const report = build(
+    load(predDir, base.compactPredictionDoc),
+    load(resultDir, base.compactResultDoc)
+  );
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify({ summary: report.summary, weakestEligibleBranches: report.weakestEligibleBranches.slice(0, 12) }, null, 2));
 }
 if (require.main === module) main();
-module.exports = { build, summarize, rank, MIN_SETTLED };
+module.exports = {
+  build,
+  summarize,
+  rank,
+  compactPredictionDoc: base.compactPredictionDoc,
+  compactResultDoc: base.compactResultDoc,
+  MIN_SETTLED
+};
