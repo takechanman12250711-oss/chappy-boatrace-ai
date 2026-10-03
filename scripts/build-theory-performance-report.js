@@ -48,6 +48,11 @@ function compactPredictionRecord(record = {}) {
     boatNo: row?.boatNo,
     no: row?.no,
     boat: row?.boat,
+    course: row?.course,
+    courseOfficial: row?.courseOfficial,
+    isOfficialCourse: row?.isOfficialCourse,
+    courseMappingSource: row?.courseMappingSource,
+    mappingSource: row?.mappingSource,
     exhibitionST: row?.exhibitionST,
     currentST: row?.currentST,
     avgST: row?.avgST,
@@ -81,6 +86,7 @@ function compactPredictionRecord(record = {}) {
     return {
       attacker: value.attacker,
       mainScenario: value.mainScenario,
+      subScenario: value.subScenario,
       scenarios: value.scenarios,
       frameMovement: value.frameMovement,
       evidence: value.evidence?.frameMovement
@@ -89,6 +95,7 @@ function compactPredictionRecord(record = {}) {
     };
   };
   const compactAiCore = {
+    marks: aiCore.marks,
     formations: aiCore.formations?.evidence?.branches
       ? {
           evidence: {
@@ -182,6 +189,7 @@ function compactPredictionRecord(record = {}) {
       mainLineConfidence: prediction.mainLineConfidence,
       confidence: prediction.confidence,
       evidenceCompleteness: prediction.evidenceCompleteness,
+      dataCompleteness: prediction.dataCompleteness,
       exhibition: prediction.exhibition,
       exhibitionData: prediction.exhibitionData,
       weather: prediction.weather,
@@ -189,6 +197,9 @@ function compactPredictionRecord(record = {}) {
         ? { weather: prediction.raceInfo.weather }
         : undefined,
       internalEvaluation: prediction.internalEvaluation,
+      evidence: prediction.evidence,
+      marks: prediction.marks,
+      inputSourceKind: prediction.inputSourceKind,
       flowSupport: prediction.flowSupport,
       stExhibitionSupport: prediction.stExhibitionSupport,
       skillLocalSupport: prediction.skillLocalSupport,
