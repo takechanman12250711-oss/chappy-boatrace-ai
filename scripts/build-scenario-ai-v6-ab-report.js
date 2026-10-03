@@ -9,6 +9,19 @@ const ROOT = path.resolve(__dirname, "..");
 const PREDICTIONS_DIR = path.join(ROOT, "data", "predictions");
 const OUTPUT_PATH = path.join(ROOT, "data", "stats", "scenario-ai-v6-ab-report.json");
 
+function readJson(filePath, fallback = {}) {
+  try { return JSON.parse(fs.readFileSync(filePath, "utf8")); }
+  catch (error) { if (error?.code === "ENOENT") return fallback; throw error; }
+}
+
+function predictionFiles(directory = PREDICTIONS_DIR) {
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory)
+    .filter(name => /^\d{8}\.json$/.test(name))
+    .sort()
+    .map(name => path.join(directory, name));
+}
+
 function normalizeTicket(value) {
   const boats = String(value || "").match(/[1-6]/g) || [];
   return boats.length >= 3 ? boats.slice(0, 3).join("-") : "";
@@ -255,14 +268,15 @@ function deduplicateRows(rows = []) {
   return { rows: [...byRaceKey.values()], duplicateCount };
 }
 
-function buildReport(documents = []) {
-  const rawObservedRows = documents.flatMap(doc =>
-    (Array.isArray(doc?.verificationPredictions)
-      ? doc.verificationPredictions
-      : [])
-      .map(compareRecord)
-      .filter(Boolean)
-  );
+function observedRowsFromDocument(doc = {}) {
+  return (Array.isArray(doc?.verificationPredictions)
+    ? doc.verificationPredictions
+    : [])
+    .map(compareRecord)
+    .filter(Boolean);
+}
+
+function buildReportFromRows(rawObservedRows = []) {
   const deduplicated = deduplicateRows(rawObservedRows);
   const observedRows = deduplicated.rows;
   const currentGenerationRows = observedRows.filter(row => row.currentGeneration);
@@ -412,16 +426,14 @@ function buildReport(documents = []) {
   };
 }
 
-function readDocuments(directory = PREDICTIONS_DIR) {
-  if (!fs.existsSync(directory)) return [];
-  return fs.readdirSync(directory)
-    .filter(name => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map(name => JSON.parse(fs.readFileSync(path.join(directory, name), "utf8")));
+function buildReport(documents = []) {
+  return buildReportFromRows(documents.flatMap(observedRowsFromDocument));
 }
 
 function main() {
-  const report = buildReport(readDocuments());
+  const report = buildReportFromRows(
+    predictionFiles().flatMap(file => observedRowsFromDocument(readJson(file)))
+  );
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(report, null, 2) + "\n", "utf8");
   console.log(
@@ -434,6 +446,8 @@ function main() {
 if (require.main === module) main();
 module.exports = {
   buildReport,
+  buildReportFromRows,
+  observedRowsFromDocument,
   compareRecord,
   summarize,
   splitRows,
