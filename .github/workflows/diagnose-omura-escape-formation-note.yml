@@ -1,7 +1,10 @@
 name: Diagnose Omura escape formation and note alignment
 on:
   push:
-    branches: [diagnosis/omura-escape-formation-note-20261003]
+    branches: [main]
+    paths:
+      - .github/workflows/diagnose-omura-escape-formation-note.yml
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
