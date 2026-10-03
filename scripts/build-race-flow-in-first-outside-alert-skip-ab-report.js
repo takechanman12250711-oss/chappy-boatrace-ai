@@ -2,6 +2,8 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const compactInput = require("./build-race-flow-4kado-alert-skip-ab-report");
+const sourceReport = require("./build-frame-rise-fall-shadow-result-report");
 
 const root = path.resolve(__dirname, "..");
 const predictionDir = path.join(root, "data", "predictions");
@@ -182,7 +184,10 @@ function build(predDocs, resultDocs) {
 }
 
 function main() {
-  const report = build(load(predictionDir), load(resultDir));
+  const report = build(
+    compactInput.load(predictionDir, compactInput.compactPredictionDoc),
+    compactInput.load(resultDir, sourceReport.compactResultDoc)
+  );
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(`イン先マイ・外攻め警戒 prospective A/B: cohort ${report.cohort.raceCount}R / target settled ${report.cohort.targetSettledCount}R`);
