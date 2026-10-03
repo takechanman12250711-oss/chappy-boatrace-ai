@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const engine = require("../js/frame-rise-fall-shadow-result-report");
+const builder = require("./build-frame-rise-fall-shadow-result-report");
 
 function prediction(index, options = {}) {
   const raceNo = (index % 12) + 1;
@@ -153,5 +154,29 @@ assert.equal(engine.oneSidedExactPValue(12, 2) <= 0.05, true);
 const bootstrap = engine.pairedProfitBootstrap(report.rows, 1000);
 assert.equal(bootstrap.confidenceLevel, 0.95);
 assert.ok(Number.isFinite(bootstrap.lowerBound));
+
+const noisyPredictionDoc = {
+  verificationPredictions: predictions.map(row => ({ ...row, unrelated: { payload: "discard" } })),
+  predictions: [{ unrelated: { payload: "discard" } }],
+  unrelated: { payload: "discard" }
+};
+const noisyResultDoc = {
+  races: results.map(row => ({ ...row, unrelated: { payload: "discard" } })),
+  unrelated: { payload: "discard" }
+};
+const compactPredictionDoc = builder.compactPredictionDoc(noisyPredictionDoc);
+const compactResultDoc = builder.compactResultDoc(noisyResultDoc);
+const rawParity = builder.buildReport([noisyPredictionDoc], [noisyResultDoc]);
+const compactParity = builder.buildReport([compactPredictionDoc], [compactResultDoc]);
+delete rawParity.generatedAt;
+delete compactParity.generatedAt;
+assert.deepEqual(compactParity, rawParity, "枠別浮沈Shadow結果は圧縮前後で一致する");
+assert.equal("unrelated" in compactPredictionDoc, false);
+assert.equal("predictions" in compactPredictionDoc, false);
+assert.equal("unrelated" in compactResultDoc.races[0], false);
+assert.equal(
+  "mainScenario" in compactPredictionDoc.verificationPredictions[0].frameRiseFallShadowAb.downstreamReplay.a,
+  false
+);
 
 console.log("frame rise fall fixed-100 result report tests passed");
