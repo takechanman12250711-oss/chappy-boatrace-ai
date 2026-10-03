@@ -1,0 +1,20 @@
+name: Check production escape role partner
+on:
+  pull_request:
+    paths:
+      - js/practical-selection.js
+      - scripts/test-production-escape-role-partner-contract.js
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/test-production-escape-role-partner-contract.js
+      - run: node scripts/test-practical-selection.js
+      - run: node scripts/test-strong-escape-trim-regression.js
+      - run: node scripts/test-very-strong-escape-trim-regression.js
