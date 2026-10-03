@@ -131,6 +131,59 @@ function extractTags(record, options = {}) {
   });
 }
 
+function compactTicketRows(value) {
+  if (!Array.isArray(value)) return undefined;
+  return value.map(item => {
+    if (typeof item === "string") return item;
+    return {
+      ticket: item?.ticket,
+      combination: item?.combination,
+      bet: item?.bet
+    };
+  });
+}
+
+function compactPredictionRecord(record) {
+  const prediction = record?.prediction || record || {};
+  const practicalSelection = Array.isArray(prediction.practicalSelection)
+    ? compactTicketRows(prediction.practicalSelection)
+    : Array.isArray(prediction.practicalSelection?.tickets)
+      ? { tickets: compactTicketRows(prediction.practicalSelection.tickets) }
+      : undefined;
+
+  return {
+    raceKey: record?.raceKey,
+    race: record?.race,
+    date: record?.date,
+    raceDate: record?.raceDate,
+    targetDate: record?.targetDate,
+    jcd: record?.jcd,
+    placeCode: record?.placeCode,
+    raceNo: record?.raceNo,
+    rno: record?.rno,
+    selectedAt: record?.selectedAt,
+    capturedAt: record?.capturedAt,
+    createdAt: record?.createdAt,
+    deadlineAt: record?.deadlineAt,
+    deadline: record?.deadline,
+    officialResultUsedForPrediction: record?.officialResultUsedForPrediction,
+    officialResultUsedForEvaluation: record?.officialResultUsedForEvaluation,
+    isRetrospective: record?.isRetrospective,
+    verificationMode: record?.verificationMode,
+    prediction: {
+      preRaceConditions: prediction.preRaceConditions,
+      predictionMode: prediction.predictionMode,
+      practicalTickets: compactTicketRows(prediction.practicalTickets),
+      practicalSelection,
+      tickets: compactTicketRows(prediction.tickets),
+      ticketRanking: compactTicketRows(prediction.ticketRanking),
+      bets: compactTicketRows(prediction.bets),
+      mainTickets: compactTicketRows(prediction.mainTickets),
+      recommendedTickets: compactTicketRows(prediction.recommendedTickets)
+    }
+  };
+}
+
 function predictedTickets(record) {
   const prediction = record.prediction || record;
   const lists = [
@@ -370,7 +423,9 @@ function main() {
       allowLegacyUnlabeled: false
     });
   } else {
-    const cohort = inputContract.buildDefaultCohort();
+    const cohort = inputContract.buildDefaultCohort({
+      compactPredictionRecord
+    });
     report = analyze(cohort.records, {
       inputDiagnostics: settledCohortDiagnostics(cohort.diagnostics),
       strictFrozenInputs: true,
@@ -388,6 +443,7 @@ function main() {
 if (require.main === module) main();
 module.exports = {
   analyze,
+  compactPredictionRecord,
   actualTicket,
   extractTags,
   flattenRecords,
