@@ -106,6 +106,7 @@ on:
       - "scripts/test-exhibition-foot-branch-report.js"
       - "scripts/test-exhibition-foot-writer-contract.js"
       - "scripts/build-exhibition-rank3plus-breakdown.js"
+      - "scripts/test-exhibition-rank3plus-breakdown.js"
       - "scripts/build-wall-boat-branch-profit-report.js"
       - "scripts/test-wall-boat-branch-profit-report.js"
       - "scripts/build-wall-established-breakdown.js"
@@ -270,6 +271,7 @@ jobs:
           node scripts/test-exhibition-foot-branch-report.js
           node scripts/test-exhibition-foot-writer-contract.js
           node --check scripts/build-exhibition-rank3plus-breakdown.js
+          node scripts/test-exhibition-rank3plus-breakdown.js
           node --check scripts/build-wall-boat-branch-profit-report.js
           node scripts/test-wall-boat-branch-profit-report.js
           node --check scripts/build-wall-established-breakdown.js
