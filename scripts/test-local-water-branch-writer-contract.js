@@ -16,18 +16,26 @@ const builder = "node scripts/build-local-water-branch-report.js";
 const restore = "node scripts/restore-daily-prediction-source.js --all";
 const collectStart = central.indexOf("- name: Collect official results");
 const restoreIndex = central.indexOf(restore, collectStart);
-const builderIndex = central.indexOf(builder, collectStart);
-const saveStart = central.indexOf("- name: Save official results before calibration");
+const officialSaveStart = central.indexOf(
+  "- name: Save official results before calibration",
+);
+const diagnosticsStart = central.indexOf("- name: Build result diagnostics");
+const builderIndex = central.indexOf(builder, diagnosticsStart);
+const derivedSaveStart = central.indexOf(
+  "- name: Save derived result reports before calibration",
+);
 
 assert.ok(
   collectStart >= 0 &&
     restoreIndex > collectStart &&
-    builderIndex > restoreIndex &&
-    builderIndex < saveStart,
-  "当地・水面レポートは中央結果収集で正本復元後・保存前に生成する"
+    officialSaveStart > restoreIndex &&
+    diagnosticsStart > officialSaveStart &&
+    builderIndex > diagnosticsStart &&
+    derivedSaveStart > builderIndex,
+  "当地・水面レポートは公式結果の早期保存後に生成し、派生レポート保存へ渡す"
 );
 assert.match(
-  central.slice(saveStart),
+  central.slice(derivedSaveStart),
   /git add data\/results data\/stats/,
   "中央結果収集が当地・水面レポートをdata\/statsとして保存する"
 );
