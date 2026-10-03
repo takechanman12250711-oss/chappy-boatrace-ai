@@ -49,7 +49,7 @@ const repairIndex = central.indexOf(repair, collectStart);
 const threeCourseIndex = central.indexOf(threeCourseBuilder, collectStart);
 const fourKadoIndex = central.indexOf(fourKadoBuilder, collectStart);
 const saveStart = central.indexOf(
-  "- name: Save official results before calibration",
+  "- name: Save derived result reports before calibration",
   collectStart,
 );
 const calibrationStart = central.indexOf(
@@ -97,7 +97,7 @@ assert.ok(
     threeCourseIndex > repairIndex &&
     fourKadoIndex > threeCourseIndex &&
     fourKadoIndex < saveStart,
-  "救済monitorは中央結果収集で正本復元・結果修復後、保存前に固定順生成する",
+  "救済monitorは正本復元・結果修復・公式結果先行保存後、派生保存前に固定順生成する",
 );
 assert.ok(
   calibrationStart > saveStart,
