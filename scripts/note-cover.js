@@ -43,7 +43,7 @@ function loadCoverTemplate(payload, rootDir = process.cwd(), now = Date.now()) {
       raceNo: Number(record.raceNo), deadline: new Date(Date.parse(record.deadlineAt)+9*3600000).toISOString().slice(11,16) };
     const font = fs.readFileSync(path.join(__dirname, '..', 'assets', 'note', 'ZenMaruGothic-Cover.ttf'));
     if (font.length < 1000 || font.readUInt32BE(0) !== 0x00010000) throw new Error('note_cover_font_invalid');
-    const background = loadCover(path.join(__dirname, '..', 'assets', 'note', 'chappy-realistic-cover.jpg')).buffer;
+    const background = loadCover(path.join(__dirname, '..', 'assets', 'note', 'chappy-cover.jpg')).buffer;
     return { layout: 'series-v1', info, html: require('./note-cover-template').raceCoverHtml(info, background, font) };
   } else {
     // Legacy manual drafts have no immutable source path. Only use a summary
