@@ -4758,6 +4758,9 @@
     */
     const escapeRolePartnerReplacement =
       (() => {
+        if (strongEscapeTrim.applied !== true) {
+          return null;
+        }
         const protectedTickets =
           new Set(
             ESCAPE_ROLE_PARTNER_PROTECTED_TICKETS
