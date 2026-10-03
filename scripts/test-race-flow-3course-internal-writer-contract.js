@@ -14,14 +14,14 @@ const restore = "node scripts/restore-daily-prediction-source.js --all";
 const collectStart = central.indexOf("- name: Collect official results");
 const restoreIndex = central.indexOf(restore, collectStart);
 const builderIndex = central.indexOf(builder, collectStart);
-const saveStart = central.indexOf("- name: Save official results before calibration");
+const saveStart = central.indexOf("- name: Save derived result reports before calibration");
 
 assert.ok(
   collectStart >= 0 &&
     restoreIndex > collectStart &&
     builderIndex > restoreIndex &&
     builderIndex < saveStart,
-  "3コース攻め内部レポートは中央結果収集で正本復元後・保存前に生成する"
+  "3コース攻め内部レポートは正本復元・公式結果先行保存後、派生保存前に生成する"
 );
 assert.match(
   central.slice(saveStart),
