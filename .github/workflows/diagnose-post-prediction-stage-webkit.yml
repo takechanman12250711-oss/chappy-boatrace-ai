@@ -1,199 +1,124 @@
 name: Diagnose post-prediction stage in WebKit
 
+# One-shot verification branch only. Do not merge: production code is unchanged.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/diagnose-post-prediction-stage-webkit.yml"
-      - "scripts/diagnose-post-prediction-stage-webkit.mjs"
-      - "index.html"
-      - "style.css"
-      - "js/**"
-  workflow_dispatch:
-
+  push:
+    branches: [verify/escape-partner-live-20261003]
+    paths: [.github/workflows/diagnose-post-prediction-stage-webkit.yml]
 permissions:
   contents: read
-
+concurrency:
+  group: escape-live-proof-once
+  cancel-in-progress: false
 jobs:
   post-prediction:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
     steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
         with:
-          node-version: "20"
-
-      - name: Install Playwright WebKit
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /index.html
+            /js/practical-selection.js
+            /js/prediction-runtime-loader.js
+            /scripts/diagnose-post-prediction-stage-webkit.mjs
+            /data/note-drafts/20261003/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Read published bytes and persisted source records
+        id: proof
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts-post/live-proof
+          git rev-parse HEAD > artifacts-post/live-proof/source-commit.txt
+          node - <<'NODE'
+          'use strict';
+          const fs=require('node:fs'),crypto=require('node:crypto'),path=require('node:path');
+          const out='artifacts-post/live-proof';
+          const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+          async function main(){
+            const base='https://takechanman12250711-oss.github.io/chappy-boatrace-ai/';
+            const proof={checkedAt:new Date().toISOString(),base,sourceCommit:process.env.GITHUB_SHA,files:[],readOnly:true};
+            for(const file of ['index.html','js/prediction-runtime-loader.js','js/practical-selection.js']){
+              try{
+                const url=new URL(file==='index.html'?'':file,base);url.searchParams.set('verifyRelease','escape-v13-'+Date.now());
+                const r=await fetch(url,{signal:AbortSignal.timeout(30000),cache:'no-store'});
+                const bytes=Buffer.from(await r.arrayBuffer()),local=fs.readFileSync(file);
+                proof.files.push({file,status:r.status,bytes:bytes.length,sha256:hash(bytes),expectedSha256:hash(local),matches:r.ok&&hash(bytes)===hash(local)});
+              }catch(e){proof.files.push({file,error:e.message,matches:false});}
+            }
+            fs.writeFileSync(path.join(out,'published-files.json'),JSON.stringify(proof,null,2));
+            console.log('PUBLISHED_FILES',JSON.stringify(proof));
+            const dir='data/note-drafts/20261003';
+            const audit={checkedAt:new Date().toISOString(),sourceCommit:process.env.GITHUB_SHA,directory:dir,rows:[]};
+            const walk=(o,p='',found=[])=>{if(!o||typeof o!=='object')return found;for(const [k,v] of Object.entries(o)){const q=p?p+'.'+k:k;if(k==='ticketPolicyVersion'&&typeof v==='string')found.push({path:q,value:v});if(v&&typeof v==='object')walk(v,q,found);}return found;};
+            for(const name of fs.existsSync(dir)?fs.readdirSync(dir).filter(f=>f.endsWith('.json')).sort():[]){
+              const b=JSON.parse(fs.readFileSync(path.join(dir,name),'utf8'));
+              const p=b.record?.prediction||b.prediction||{},sel=p.practicalSelection||{};
+              const e=b.record?.practicalSelectionEvidence||b.practicalSelectionEvidence||p.practicalSelectionEvidence;
+              audit.rows.push({file:name,topKeys:Object.keys(b),recordKeys:Object.keys(b.record||{}),raceKey:b.record?.raceKey||b.raceKey||'',savedAt:b.savedAt||b.createdAt||b.record?.savedAt||b.generatedAt||null,series:b.articleSeries||b.monitor?.kind||b.record?.articleSeries||null,policies:walk(b),tickets:(sel.tickets||[]).map(t=>t.ticket||t),finalEvidenceTickets:e?.finalPracticalTickets||[],replacement:sel.expansionSummary?.escapeRolePartnerReplacement||null});
+            }
+            audit.count=audit.rows.length;audit.newPolicyRows=audit.rows.filter(r=>r.policies.some(x=>x.value.includes('escape-role-partner-v1.3'))).length;
+            fs.writeFileSync(path.join(out,'saved-note-sources.json'),JSON.stringify(audit,null,2));
+            console.log('SAVED_SOURCE_COUNTS',JSON.stringify({count:audit.count,newPolicyRows:audit.newPolicyRows}));
+            if(proof.files.some(x=>!x.matches))process.exitCode=1;
+          }
+          main().catch(e=>{console.error(e);process.exitCode=1;});
+          NODE
+      - name: Install existing WebKit version
         run: |
           npm install --no-save --no-package-lock playwright@1.55.0
           npx playwright install --with-deps webkit
-
-      - name: Start local server
-        run: |
-          python3 -m http.server 4173 > /tmp/chappy-post-http.log 2>&1 &
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat /tmp/chappy-post-http.log
-          exit 1
-
-      - name: Isolate practical selection
-        id: local_select
+      - name: Inspect live runtime and render historical diagnostic without publishing
+        id: browser
         continue-on-error: true
-        shell: bash
+        env:
+          APP_URL: https://takechanman12250711-oss.github.io/chappy-boatrace-ai/
+          EXPECTED_RUNTIME: 20260828-ui-audit-display1
+          RACE_URL: https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825
+          DIAG_OUTPUT: artifacts-post/production-render
         run: |
-          set +e
-          mkdir -p artifacts-post/local-select
-          timeout --signal=TERM --kill-after=5s 90s \
-            env \
-              APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
-              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
-              DIAG_OUTPUT=artifacts-post/local-select \
-            node scripts/diagnose-post-prediction-stage-webkit.mjs select \
-            > artifacts-post/local-select/process.log 2>&1
-          status=$?
-          echo "$status" > artifacts-post/local-select/exit-status.txt
-          echo "exit_status=$status" | tee -a artifacts-post/local-select/process.log
-          cat artifacts-post/local-select/process.log
-          pkill -9 MiniBrowser || true
-          pkill -9 WebKitNetworkProcess || true
-          exit "$status"
-
-      - name: Isolate renderAll locally
-        id: local_render
-        continue-on-error: true
-        shell: bash
-        run: |
-          set +e
-          mkdir -p artifacts-post/local-render
-          timeout --signal=TERM --kill-after=5s 90s \
-            env \
-              APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
-              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
-              DIAG_OUTPUT=artifacts-post/local-render \
-            node scripts/diagnose-post-prediction-stage-webkit.mjs render \
-            > artifacts-post/local-render/process.log 2>&1
-          status=$?
-          echo "$status" > artifacts-post/local-render/exit-status.txt
-          echo "exit_status=$status" | tee -a artifacts-post/local-render/process.log
-          cat artifacts-post/local-render/process.log
-          pkill -9 MiniBrowser || true
-          pkill -9 WebKitNetworkProcess || true
-          exit "$status"
-
-      - name: Isolate renderAll in production
-        id: production_render
-        if: github.event_name == 'workflow_dispatch'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set +e
           mkdir -p artifacts-post/production-render
-          timeout --signal=TERM --kill-after=5s 90s \
-            env \
-              APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
-              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
-              DIAG_OUTPUT=artifacts-post/production-render \
-            node scripts/diagnose-post-prediction-stage-webkit.mjs render \
-            > artifacts-post/production-render/process.log 2>&1
+          node - <<'NODE'
+          const fs=require('node:fs');
+          const p='scripts/diagnose-post-prediction-stage-webkit.mjs';
+          let s=fs.readFileSync(p,'utf8');
+          const marker='  mark("runtime-ensure-finished");';
+          if(!s.includes(marker))throw new Error('diagnostic insertion point not found');
+          s=s.replace(marker, marker+`
+            const deployed = await page.evaluate(() => ({
+              policy: window.ChappyPracticalSelection?.ESCAPE_ROLE_PARTNER_POLICY?.id || null,
+              selectorVersion: window.ChappyPredictionRuntime?.scriptVersions?.['js/practical-selection.js'] || null,
+              scripts: Array.from(document.scripts).map(s=>s.src).filter(s=>/practical-selection|note-generator|prediction-runtime-loader/.test(s))
+            }));
+            mark('deployed-policy', deployed);
+            if(deployed.policy !== 'escape-role-partner-v1.3' || deployed.selectorVersion !== '20261003-escape-partner-v13')throw new Error('Published selector policy mismatch');
+            await page.screenshot({path:path.join(outputDir,'production-home.png'),fullPage:true});
+          `);
+          fs.writeFileSync(p,s);
+          NODE
+          set +e
+          timeout --signal=TERM --kill-after=5s 180s node scripts/diagnose-post-prediction-stage-webkit.mjs render > artifacts-post/production-render/process.log 2>&1
           status=$?
           echo "$status" > artifacts-post/production-render/exit-status.txt
-          echo "exit_status=$status" | tee -a artifacts-post/production-render/process.log
-          cat artifacts-post/production-render/process.log
-          pkill -9 MiniBrowser || true
-          pkill -9 WebKitNetworkProcess || true
+          tail -n 70 artifacts-post/production-render/process.log
           exit "$status"
-
-      - name: Enforce post-prediction diagnostics
-        if: always()
-        shell: bash
-        env:
-          CHECK_PRODUCTION: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          node - <<'NODE'
-          const fs = require("fs");
-          const required = [
-            {
-              dir: "artifacts-post/local-select",
-              report: "select-progress.json",
-              marks: ["practical-select-finished"]
-            },
-            {
-              dir: "artifacts-post/local-render",
-              report: "render-progress.json",
-              marks: [
-                "render-all-finished",
-                "post-render-responsive-finished",
-                "render-screenshot-finished"
-              ],
-              screenshot: "render-result.png"
-            }
-          ];
-          if (process.env.CHECK_PRODUCTION === "true") {
-            required.push({
-              dir: "artifacts-post/production-render",
-              report: "render-progress.json",
-              marks: [
-                "render-all-finished",
-                "post-render-responsive-finished",
-                "render-screenshot-finished"
-              ],
-              screenshot: "render-result.png"
-            });
-          }
-          const failures = [];
-          for (const check of required) {
-            const file = `${check.dir}/${check.report}`;
-            if (!fs.existsSync(file)) {
-              failures.push(`${file}: missing report`);
-              continue;
-            }
-            const report = JSON.parse(fs.readFileSync(file, "utf8"));
-            const marks = new Set((report.marks || []).map(row => row.name));
-            for (const mark of check.marks) {
-              if (!marks.has(mark)) {
-                failures.push(`${file}: missing ${mark}; error=${report.error?.message || "none"}`);
-              }
-            }
-            if (report.error) {
-              failures.push(`${file}: ${report.error.message || "diagnostic error"}`);
-            }
-            const exitFile = `${check.dir}/exit-status.txt`;
-            const exitStatus = fs.existsSync(exitFile)
-              ? fs.readFileSync(exitFile, "utf8").trim()
-              : "missing";
-            if (exitStatus !== "0") {
-              failures.push(`${exitFile}: expected 0, got ${exitStatus}`);
-            }
-            if (
-              check.screenshot &&
-              !fs.existsSync(`${check.dir}/${check.screenshot}`)
-            ) {
-              failures.push(`${check.dir}/${check.screenshot}: missing screenshot`);
-            }
-          }
-          if (failures.length) {
-            console.error(failures.join("\n"));
-            process.exit(1);
-          }
-          console.log("All post-prediction WebKit stages completed.");
-          NODE
-
-      - name: Upload post-prediction diagnostics
+      - name: Preserve verification artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: post-prediction-webkit-diagnostics
-          path: artifacts-post
+          name: escape-partner-live-proof
+          path: artifacts-post/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
+      - name: Enforce observed result
+        if: always()
+        env:
+          PROOF: ${{ steps.proof.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+        run: |
+          test "$PROOF" = success
+          test "$BROWSER" = success
