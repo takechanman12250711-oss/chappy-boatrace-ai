@@ -149,7 +149,7 @@ assert.ok(
 );
 for (const command of [
   'git commit -m "Collect official race results"',
-  "git pull --rebase origin main",
+  "git pull --rebase --autostash origin main",
   "git push origin main",
 ]) {
   assert.ok(saveStep.includes(command), `中央writerが実行する: ${command}`);
@@ -158,8 +158,8 @@ assert.ok(
   saveStep.indexOf("git add data/results data/stats") <
     saveStep.indexOf('git commit -m "Collect official race results"') &&
     saveStep.indexOf('git commit -m "Collect official race results"') <
-      saveStep.indexOf("git pull --rebase origin main") &&
-    saveStep.indexOf("git pull --rebase origin main") <
+      saveStep.indexOf("git pull --rebase --autostash origin main") &&
+    saveStep.indexOf("git pull --rebase --autostash origin main") <
       saveStep.indexOf("git push origin main"),
   "中央writerはstage・commit・rebase・pushの固定順で保存する",
 );
