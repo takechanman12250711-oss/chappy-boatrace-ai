@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const proposals = require("../js/theory-improvement-proposals");
 const approvalGate = require("../js/theory-improvement-approval-gate");
+const theoryPerformance = require("./build-theory-performance-report");
 
 const root = path.resolve(__dirname, "..");
 const input = path.join(root, "data", "stats", "theory-performance-report.json");
@@ -18,17 +19,39 @@ function load(filePath, fallback = {}) {
   }
 }
 
-function collectRecords() {
-  if (!fs.existsSync(predictionDir)) return [];
+/*
+  The approval gate only reads the stored theory evaluations, settled result,
+  and the prediction fields used by theory-performance replay. Daily documents
+  also contain large runtime/browser snapshots. Project each parsed row before
+  retaining it so the gate keeps the same saved evidence without holding those
+  unused payloads for the full history.
+*/
+function compactApprovalRecord(record = {}) {
+  return {
+    ...theoryPerformance.compactPredictionRecord(record),
+    theoryEvaluationSnapshot:
+      record.theoryEvaluationSnapshot,
+    result: record.result
+  };
+}
+
+function collectRecords(options = {}) {
+  const directory =
+    options.predictionDir || predictionDir;
+  if (!fs.existsSync(directory)) return [];
   const rows = [];
-  fs.readdirSync(predictionDir)
+  fs.readdirSync(directory)
     .filter(name => /^\d{8}\.json$/.test(name))
     .sort()
     .forEach(name => {
-      const data = load(path.join(predictionDir, name), {});
+      const data = load(path.join(directory, name), {});
       rows.push(
-        ...(Array.isArray(data.predictions) ? data.predictions : []),
-        ...(Array.isArray(data.verificationPredictions) ? data.verificationPredictions : [])
+        ...(Array.isArray(data.predictions)
+          ? data.predictions.map(compactApprovalRecord)
+          : []),
+        ...(Array.isArray(data.verificationPredictions)
+          ? data.verificationPredictions.map(compactApprovalRecord)
+          : [])
       );
     });
   return rows;
@@ -52,4 +75,8 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { load, collectRecords };
+module.exports = {
+  load,
+  compactApprovalRecord,
+  collectRecords
+};

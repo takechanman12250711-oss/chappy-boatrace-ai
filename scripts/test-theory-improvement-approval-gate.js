@@ -2,6 +2,7 @@
 
 const assert = require("assert");
 const gate = require("../js/theory-improvement-approval-gate");
+const builder = require("./build-theory-improvement-proposals");
 
 function records({ theoryKey, jcd, firstHit, secondHit, firstScenario, secondScenario, payout }) {
   const rows = [];
@@ -37,7 +38,7 @@ function records({ theoryKey, jcd, firstHit, secondHit, firstScenario, secondSce
   return rows;
 }
 
-const stableRaise = gate.build(records({
+const stableRaiseRows = records({
   theoryKey: "wall",
   jcd: "20",
   firstHit: 12,
@@ -45,11 +46,40 @@ const stableRaise = gate.build(records({
   firstScenario: 20,
   secondScenario: 19,
   payout: 300
-}));
+});
+const stableRaise = gate.build(stableRaiseRows);
 assert.ok(stableRaise.approvedCandidates.some(row => row.scope === "theory" && row.action === "raise"));
 assert.ok(stableRaise.approvedCandidates.some(row => row.scope === "venue-theory" && row.action === "raise"));
 assert.strictEqual(stableRaise.usableForPrediction, false);
 assert.strictEqual(stableRaise.automaticApplication, false);
+
+const compactInput = stableRaiseRows.map(record => ({
+  ...record,
+  largeUnusedPayload: new Array(1000).fill("unused-record"),
+  prediction: {
+    largeUnusedPayload: new Array(1000).fill("unused-prediction")
+  }
+}));
+const compacted = compactInput.map(
+  builder.compactApprovalRecord
+);
+assert.deepStrictEqual(
+  gate.build(compacted),
+  gate.build(compactInput),
+  "approval gate semantics must be identical after input compaction"
+);
+assert.ok(compacted.every(record =>
+  record.largeUnusedPayload === undefined &&
+  record.prediction.largeUnusedPayload === undefined
+));
+assert.strictEqual(
+  compacted[0].theoryEvaluationSnapshot,
+  compactInput[0].theoryEvaluationSnapshot
+);
+assert.strictEqual(
+  compacted[0].result,
+  compactInput[0].result
+);
 
 const unstable = gate.build(records({
   theoryKey: "engine",
