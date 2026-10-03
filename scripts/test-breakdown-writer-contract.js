@@ -2,6 +2,8 @@
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const breakdown = require("./build-wall-established-breakdown");
+const wall = require("./build-wall-boat-branch-profit-report");
 
 const central = fs.readFileSync(".github/workflows/collect-results.yml", "utf8");
 const restore = "node scripts/restore-daily-prediction-source.js --all";
@@ -66,5 +68,21 @@ for (const path of dedicated) {
     `${path}は保存準備で予想原本を変更しない`,
   );
 }
+
+const wallTheory={attackerNo:2,wallCandidateNo:1,wallBoat:1,state:"壁成立",score:76,grade:"A"};
+const records=Array.from({length:10},(_,index)=>({
+  date:"20260819",jcd:"02",raceNo:index+1,selectedAt:`2026-08-19T04:${String(index).padStart(2,"0")}:00Z`,
+  ...(index===0?{result:{settled:true,resultTicket:"2-1-3",payoutPer100:2340}}:{}),
+  prediction:{practicalTickets:["2-1-3"],aiCore:{wallTheory},unusedPayload:"x".repeat(10000)}
+}));
+const resultRows=records.slice(1).map(record=>({date:record.date,jcd:record.jcd,raceNo:record.raceNo,resultAvailable:true,status:"finished",trifecta:{combination:"1-2-3",payout:500},unusedPayload:"y".repeat(10000)}));
+const rawPredDocs=[{predictions:records,unrelated:"discard"}];
+const rawResultDocs=[{races:resultRows,unrelated:"discard"}];
+const raw=breakdown.build(rawPredDocs,rawResultDocs);
+const compact=breakdown.build(rawPredDocs.map(wall.compactPredictionDoc),rawResultDocs.map(wall.compactResultDoc));
+delete raw.generatedAt;
+delete compact.generatedAt;
+assert.deepEqual(compact,raw,"壁成立内訳は圧縮前後で一致する");
+assert.equal(compact.summary.return,2340,"埋込payoutPer100を保持する");
 
 console.log("breakdown writer contract: ok");

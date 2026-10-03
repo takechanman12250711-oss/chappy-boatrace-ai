@@ -11,14 +11,6 @@ const output = path.join(root, "data", "stats", "wall-established-breakdown.json
 const STAKE_PER_TICKET = 100;
 const MIN_SETTLED = 10;
 
-function load(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter(name => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map(name => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
-}
-
 function resultMap(docs) {
   const map = new Map();
   for (const doc of docs) {
@@ -157,7 +149,10 @@ function build(predDocs, resultDocs) {
 }
 
 function main() {
-  const report = build(load(predictionDir), load(resultDir));
+  const report = build(
+    wall.load(predictionDir, wall.compactPredictionDoc),
+    wall.load(resultDir, wall.compactResultDoc)
+  );
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify({ summary: report.summary, weakestEligibleBranches: report.weakestEligibleBranches.slice(0, 12) }, null, 2));
