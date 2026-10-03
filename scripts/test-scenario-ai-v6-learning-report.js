@@ -4,6 +4,8 @@ const assert = require("node:assert/strict");
 const scenarioAiV6 = require("../js/scenario-ai-v6-shadow");
 const {
   buildReport,
+  buildReportFromRows,
+  scenarioRows,
   proposalFor
 } = require("./build-scenario-ai-v6-learning-report");
 
@@ -72,6 +74,14 @@ assert.equal(report.usableForPrediction, false);
 assert.equal(report.automaticApplication, false);
 assert.equal(report.proposalOnly, true);
 assert.ok(report.breakReasonSummary[0].count > 0);
+
+const streamedReport = buildReportFromRows(scenarioRows({
+  date: "20260801",
+  verificationPredictions: scenarios
+}));
+assert.equal(streamedReport.verifiedRaceCount, report.verifiedRaceCount);
+assert.equal(streamedReport.evaluatedScenarioCount, report.evaluatedScenarioCount);
+assert.deepEqual(streamedReport.byScenarioType, report.byScenarioType);
 
 const activeVariant = record(
   "20260802-01-1",
