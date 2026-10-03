@@ -206,7 +206,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
-      saved_sha: ${{ steps.save_results.outputs.sha }}
+      saved_sha: ${{ steps.save_reports.outputs.sha }}
 
     steps:
       - name: Checkout repository
@@ -342,6 +342,27 @@ jobs:
           node scripts/restore-daily-prediction-source.js --all
           node scripts/repair-recent-results.js
           node scripts/repair-queued-results.js
+
+      - name: Save official results before calibration
+        id: save_results
+        run: |
+          node scripts/prepare-daily-prediction-git-save.js --all
+          git add data/results
+
+          if git diff --cached --quiet; then
+            echo "先行保存する公式結果はありません"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Collect official race results"
+            git pull --rebase origin main
+            git push origin main
+          fi
+
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build result diagnostics
+        run: |
           node scripts/monitor-three-course-escape-rescue.js
           node scripts/monitor-four-kado-escape-rescue.js
           node scripts/build-frame-rise-sink-stats.js
@@ -380,8 +401,8 @@ jobs:
         continue-on-error: true
         run: timeout 300s node scripts/monitor-local-water-v2-post-adoption.js
 
-      - name: Save official results before calibration
-        id: save_results
+      - name: Save derived result reports before calibration
+        id: save_reports
         run: |
           node scripts/prepare-daily-prediction-git-save.js --all
           git add data/results data/stats data/analysis/reference-tag-effectiveness.json
