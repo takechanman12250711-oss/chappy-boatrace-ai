@@ -30,6 +30,194 @@ function officialPayout(result = {}) {
   return Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
+/*
+  Daily prediction documents contain browser/runtime snapshots that are not
+  referenced by this report. Keeping every full row until the official-result
+  join can exceed the Actions runner heap. Project each parsed daily row to the
+  evidence used by the report before it is retained in the corpus.
+
+  This is an input-memory optimization only. It must not regenerate a
+  prediction or change tickets, theory evidence, marks, or scenario choices.
+*/
+function compactPredictionRecord(record = {}) {
+  const prediction = record?.prediction || {};
+  const practicalSelection = prediction?.practicalSelection || {};
+  const aiCore = prediction?.aiCore || {};
+  const raceFlow = prediction?.raceFlow || {};
+  const compactBoat = row => ({
+    boatNo: row?.boatNo,
+    no: row?.no,
+    boat: row?.boat,
+    exhibitionST: row?.exhibitionST,
+    currentST: row?.currentST,
+    avgST: row?.avgST,
+    exhibitionTime: row?.exhibitionTime,
+    className: row?.className,
+    nationalWinRate: row?.nationalWinRate,
+    motor2Rate: row?.motor2Rate
+  });
+  const compactConditions = conditions => {
+    if (!conditions || typeof conditions !== "object") return conditions;
+    return {
+      schemaVersion: conditions.schemaVersion,
+      source: conditions.source,
+      dataSource: conditions.dataSource,
+      sourceTiming: conditions.sourceTiming,
+      sourceFetchedAt: conditions.sourceFetchedAt,
+      officialResultUsed: conditions.officialResultUsed,
+      newEngineMode: conditions.newEngineMode,
+      dataAvailability: conditions.dataAvailability,
+      weather: conditions.weather,
+      boats: Array.isArray(conditions.boats)
+        ? conditions.boats.map(compactBoat)
+        : conditions.boats,
+      entries: Array.isArray(conditions.entries)
+        ? conditions.entries.map(compactBoat)
+        : conditions.entries
+    };
+  };
+  const compactRaceScenarios = value => {
+    if (!value || typeof value !== "object") return value;
+    return {
+      attacker: value.attacker,
+      mainScenario: value.mainScenario,
+      scenarios: value.scenarios,
+      frameMovement: value.frameMovement,
+      evidence: value.evidence?.frameMovement
+        ? { frameMovement: value.evidence.frameMovement }
+        : undefined
+    };
+  };
+  const compactAiCore = {
+    formations: aiCore.formations?.evidence?.branches
+      ? {
+          evidence: {
+            branches: aiCore.formations.evidence.branches
+          }
+        }
+      : undefined,
+    stSlitTheory: aiCore.stSlitTheory,
+    wallTheory: aiCore.wallTheory,
+    raceScenarios: compactRaceScenarios(aiCore.raceScenarios),
+    analysisRaceScenarios:
+      compactRaceScenarios(aiCore.analysisRaceScenarios),
+    exhibitionPerformanceTheory: aiCore.exhibitionPerformanceTheory,
+    doubleTime: aiCore.doubleTime,
+    newEnvironmentTheory: aiCore.newEnvironmentTheory,
+    analyses: Array.isArray(aiCore.analyses)
+      ? aiCore.analyses.map(row => ({
+          boatNo: row?.boatNo,
+          number: row?.number,
+          lane: row?.lane,
+          waku: row?.waku,
+          indexes: row?.indexes
+            ? { total: row.indexes.total }
+            : undefined
+        }))
+      : undefined
+  };
+
+  return {
+    raceKey: record.raceKey,
+    date: record.date,
+    raceDate: record.raceDate,
+    targetDate: record.targetDate,
+    jcd: record.jcd,
+    placeCode: record.placeCode,
+    raceNo: record.raceNo,
+    rno: record.rno,
+    race: record.race
+      ? {
+          date: record.race.date,
+          jcd: record.race.jcd,
+          placeCode: record.race.placeCode,
+          raceNo: record.race.raceNo,
+          rno: record.race.rno
+        }
+      : undefined,
+    place: record.place,
+    marker: record.marker,
+    selectedAt: record.selectedAt,
+    capturedAt: record.capturedAt,
+    createdAt: record.createdAt,
+    deadlineAt: record.deadlineAt,
+    deadline: record.deadline,
+    verificationMode: record.verificationMode,
+    predictionMode: record.predictionMode,
+    isRetrospective: record.isRetrospective,
+    officialResultUsedForPrediction:
+      record.officialResultUsedForPrediction,
+    officialResultUsedForEvaluation:
+      record.officialResultUsedForEvaluation,
+    preRaceConditions:
+      compactConditions(record.preRaceConditions),
+    theoryTagSnapshot: record.theoryTagSnapshot,
+    prediction: {
+      practicalTickets: prediction.practicalTickets,
+      practicalSelection: {
+        tickets: practicalSelection.tickets,
+        selectionScore: practicalSelection.selectionScore,
+        score: practicalSelection.score,
+        verificationEvidence:
+          practicalSelection.verificationEvidence
+      },
+      verificationEvidence: prediction.verificationEvidence,
+      mainSheet: prediction.mainSheet,
+      preRaceConditions:
+        compactConditions(prediction.preRaceConditions),
+      predictedScenarioTitle:
+        prediction.predictedScenarioTitle,
+      raceFlow: {
+        title: raceFlow.title,
+        scenario: raceFlow?.scenario
+          ? { title: raceFlow.scenario.title }
+          : undefined
+      },
+      scenarioAiV6Shadow: prediction.scenarioAiV6Shadow,
+      scenarios: prediction.scenarios,
+      skipAiDisplay: prediction.skipAiDisplay,
+      skipAiShadow: prediction.skipAiShadow,
+      skipDecision: prediction.skipDecision,
+      selectionScore: prediction.selectionScore,
+      mainLineConfidence: prediction.mainLineConfidence,
+      confidence: prediction.confidence,
+      evidenceCompleteness: prediction.evidenceCompleteness,
+      exhibition: prediction.exhibition,
+      exhibitionData: prediction.exhibitionData,
+      weather: prediction.weather,
+      raceInfo: prediction.raceInfo?.weather
+        ? { weather: prediction.raceInfo.weather }
+        : undefined,
+      internalEvaluation: prediction.internalEvaluation,
+      flowSupport: prediction.flowSupport,
+      stExhibitionSupport: prediction.stExhibitionSupport,
+      skillLocalSupport: prediction.skillLocalSupport,
+      frameRiseSinkSupport: prediction.frameRiseSinkSupport,
+      doubleTimeSupport: prediction.doubleTimeSupport,
+      theorySupport: prediction.theorySupport?.doubleTime
+        ? { doubleTime: prediction.theorySupport.doubleTime }
+        : undefined,
+      motorEngineSupport: prediction.motorEngineSupport,
+      venueWaterSupport: prediction.venueWaterSupport,
+      wallTheory: prediction.wallTheory,
+      raceScenarios:
+        compactRaceScenarios(prediction.raceScenarios),
+      exhibitionPerformanceTheory:
+        prediction.exhibitionPerformanceTheory,
+      doubleTime: prediction.doubleTime,
+      flowPriority: prediction.flowPriority,
+      formations: prediction.formations,
+      aiCore: compactAiCore,
+      predictionMode: prediction.predictionMode,
+      isRetrospective: prediction.isRetrospective,
+      officialResultUsedForPrediction:
+        prediction.officialResultUsedForPrediction,
+      officialResultUsedForEvaluation:
+        prediction.officialResultUsedForEvaluation
+    }
+  };
+}
+
 function normalizeCohortRecord(record = {}) {
   const officialResult = record?.__officialResult || {};
   const prediction = record?.prediction || {};
@@ -67,11 +255,17 @@ function normalizeCohortRecord(record = {}) {
 }
 
 function collect(options = {}) {
+  const compact = Object.prototype.hasOwnProperty.call(
+    options,
+    "compactPredictionRecord"
+  )
+    ? options.compactPredictionRecord
+    : compactPredictionRecord;
   const cohort = inputContract.buildDefaultCohort({
     root: options.root || root,
     predictionsDir: options.predictionsDir,
     resultsDir: options.resultsDir,
-    compactPredictionRecord: options.compactPredictionRecord
+    compactPredictionRecord: compact
   });
   return {
     records: cohort.records
@@ -125,6 +319,7 @@ if (require.main === module) main();
 module.exports = {
   ANALYSIS_INPUT_CONTRACT,
   officialPayout,
+  compactPredictionRecord,
   normalizeCohortRecord,
   collect,
   venueProfileOut,
