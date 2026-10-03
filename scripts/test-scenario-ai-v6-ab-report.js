@@ -210,7 +210,19 @@ for (let index = 0; index < 120; index += 1) {
     { selectedAt: selectedAt(index) }
   ));
 }
-const built = report.buildReport([{ verificationPredictions: rows }]);
+const rowsDocument = { verificationPredictions: rows };
+const built = report.buildReport([rowsDocument]);
+const streamedBuilt = report.buildReportFromRows(
+  report.observedRowsFromDocument(rowsDocument)
+);
+assert.deepEqual(streamedBuilt.observation, built.observation);
+assert.deepEqual(streamedBuilt.overall, built.overall);
+assert.deepEqual(streamedBuilt.firstHalf, built.firstHalf);
+assert.deepEqual(streamedBuilt.secondHalf, built.secondHalf);
+assert.deepEqual(streamedBuilt.byVenue, built.byVenue);
+assert.deepEqual(streamedBuilt.majorVenueRegression, built.majorVenueRegression);
+assert.deepEqual(streamedBuilt.productionGate, built.productionGate);
+assert.deepEqual(streamedBuilt.rows, built.rows);
 assert.equal(built.overall.comparableCount, 120);
 assert.equal(built.observation.activeCohortObservedCount, 120);
 assert.equal(built.observation.productionComparisonEligibleCount, 120);
