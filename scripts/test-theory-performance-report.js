@@ -39,7 +39,9 @@ function predictionRecord({
     selectedAt,
     deadlineAt,
     marker,
+    largeUnusedPayload: new Array(1000).fill("unused-top-level"),
     prediction: {
+      largeUnusedPayload: new Array(1000).fill("unused-prediction"),
       practicalTickets: practicalTickets.map(ticket => ({ ticket })),
       preRaceConditions: {
         schemaVersion: 4,
@@ -241,9 +243,30 @@ fs.writeFileSync(
 );
 
 try {
+  const full = builder.collect({
+    root: temporaryRoot,
+    compactPredictionRecord: null
+  });
   const collected = builder.collect({
     root: temporaryRoot
   });
+  assert.deepEqual(
+    collected.diagnostics,
+    full.diagnostics,
+    "compaction must preserve cohort diagnostics"
+  );
+  assert.deepEqual(
+    api.build(collected.records),
+    api.build(full.records),
+    "compaction must preserve theory report semantics"
+  );
+  assert.ok(
+    collected.records.every(row =>
+      row.largeUnusedPayload === undefined &&
+      row.prediction.largeUnusedPayload === undefined
+    ),
+    "unused prediction payloads must be released before corpus retention"
+  );
   assert.deepEqual(collected.diagnostics, {
     canonicalPredictionCount: 4,
     preDeadlinePredictionCount: 3,
