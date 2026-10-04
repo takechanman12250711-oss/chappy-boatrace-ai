@@ -16,13 +16,13 @@ const sameSet = (a, b) => JSON.stringify([...new Set(a)].sort()) === JSON.string
 
 function formations(tickets) {
   // Group only equal first/second axes; the third axis cannot invent a ticket.
-  const groups = new Map();
+  const groups = [];
   for (const ticket of tickets) {
     const [a,b,c] = ticket.split('-'), key = `${a}-${b}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(c);
+    if (groups.at(-1)?.key !== key) groups.push({ key, thirds: [] });
+    groups.at(-1).thirds.push(c);
   }
-  return [...groups].map(([key, thirds]) => `・${key}-${thirds.join('')}`).join('\n');
+  return groups.map(({ key, thirds }) => `・${key}-${thirds.join('')}`).join('\n');
 }
 
 function readableArticle(article, bundle) {

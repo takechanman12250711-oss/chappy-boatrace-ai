@@ -35,3 +35,10 @@ test('a concrete ticket in an explanation cannot leak into the free preview', ()
   assert.deepEqual(ticketsIn(a.freeText), []);
   assert.deepEqual(ticketsIn(a.paidText), ['1-2-3', '1-2-4']);
 });
+test('formation compression does not move a later longshot before earlier central tickets', () => {
+  const b = fixture();
+  const tickets = ['1-5-2','1-5-4','1-2-5','1-4-5','1-2-4','1-4-2','1-5-6'];
+  b.baselinePracticalTickets = tickets;
+  b.article.paidText = '買い目\n\n' + tickets.map(t => '・'+t).join('\n') + '\n\n計 7点';
+  assert.deepEqual(ticketsIn(readableArticle(b.article, b).paidText), tickets);
+});
