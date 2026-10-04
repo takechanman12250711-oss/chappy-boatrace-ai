@@ -10,7 +10,7 @@ const weight=text=>[...text.replace(/https:\/\/\S+/g,'x'.repeat(23))].reduce((n,
 const short=(text,length)=>[...text].length>length?[...text].slice(0,length-1).join('')+'…':text;
 function safePreview(text) {
   return String(text||'').normalize('NFKC').split(/(?<=[。！？])|\n/)
-    .map(s=>s.trim()).filter(s=>s && !ticketsIn(s).length &&
+    .map(s=>s.trim()).filter(s=>s && !/^【[^】]+】$/.test(s) && !ticketsIn(s).length &&
       !/https?:|[@#]|買い目|計\s*\d+点|監視の根拠|確実|絶対|必ず|保証/.test(s))[0]||'';
 }
 function sourceContext(row,bytes) {
@@ -23,8 +23,10 @@ function sourceContext(row,bytes) {
     !(published<Date.parse(row.deadlineAt))||!tickets.length||tickets.length>7||
     tickets.some(t=>!/^([1-6])-([1-6])-([1-6])$/.test(t)||new Set(t.split('-')).size!==3)||
     JSON.stringify([...tickets].sort())!==JSON.stringify([...saved].sort()))return null;
+  const explanation=String(b.article?.paidText||'').split(/^買い目\s*$/m)[0];
+  const flow=explanation.match(/【想定展開】\s*([^【]*)/);
   const raw=b.version==='independent-monitor-note-v1'
-    ? String(b.article?.paidText||'').split(/^買い目\s*$/m)[0]
+    ? flow?.[1]||explanation
     : r.prediction?.raceFlow?.summary||b.article?.rangeSummary||'';
   return {version:'source-context-v1',sourceSha256:row.sourceSha256,
     preview:short(safePreview(raw),60),firstBoats:[...new Set(tickets.map(t=>t[0]))]};

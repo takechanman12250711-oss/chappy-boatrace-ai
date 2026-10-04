@@ -83,11 +83,12 @@ test('announcements batch series, link only verified index and do not repeat cov
  assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,()=>now+3600000)).status,'no_new_articles');
 });
 
-const {sourceContext,announcementCopy,recapCopy,weight}=require('./note-marketing-social');
+const {sourceContext,safePreview,announcementCopy,recapCopy,weight}=require('./note-marketing-social');
 const {recap,collectMetrics}=require('./send-note-buffer.cjs');
 test('preview uses immutable before-deadline evidence and excludes paid ticket sentences',()=>{
  const b=require('./note-independent-monitor-fixture').fixture();
- b.article.paidText='監視の根拠\n狙う券は１－２－３。1号艇の先行が焦点です。\n\n買い目\n1-2-34\n計 2点';
+ b.article.paidText='【狙いの根拠】\n1号艇の平均ST.15。\n【想定展開】\n狙う券は１－２－３。1号艇の先行が焦点です。\n\n買い目\n1-2-34\n計 2点';
+ assert.equal(safePreview('【狙いの根拠】\n1号艇の先行が焦点です。'),'1号艇の先行が焦点です。');
  const bytes=JSON.stringify(b),row={raceKey:b.record.raceKey,deadlineAt:b.record.deadlineAt,publishedAt:'2026-09-28T17:00:00+09:00',sourceSha256:createHash('sha256').update(bytes).digest('hex')};
  const context=sourceContext(row,bytes);assert.equal(context.preview,'1号艇の先行が焦点です。');assert.deepEqual(context.firstBoats,['1']);
  assert.equal(sourceContext(row,bytes+' '),null);
