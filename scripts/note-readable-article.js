@@ -22,7 +22,7 @@ function formations(tickets) {
     if (groups.at(-1)?.key !== key) groups.push({ key, thirds: [] });
     groups.at(-1).thirds.push(c);
   }
-  return groups.map(({ key, thirds }) => `・${key}-${thirds.join('')}`).join('\n');
+  return groups.map(({ key, thirds }) => `・${key}-${thirds.join('・')}`).join('\n');
 }
 
 function readableArticle(article, bundle) {
