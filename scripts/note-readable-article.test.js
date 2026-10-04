@@ -11,6 +11,8 @@ test('independent original remains immutable, reasons move before the paywall', 
     assert.ok(a.freeText.includes('元の理由を短縮・差し替えしない。'));
     assert.deepEqual(ticketsIn(a.freeText), []);
     assert.deepEqual(ticketsIn(a.paidText), ['1-2-3', '1-2-4']);
+    assert.ok(a.paidText.includes('・1-2-3・4'));
+    assert.ok(!a.paidText.includes('・1-2-34'));
     assert.ok(a.freeText.includes('中心の買い目 2点'));
     assert.equal(a.fullText.split(a.paywallMarker).length, 2);
   }
