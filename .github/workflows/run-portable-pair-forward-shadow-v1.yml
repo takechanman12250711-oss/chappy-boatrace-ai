@@ -21,6 +21,8 @@ jobs:
         with:
           node-version: '20'
       - name: Run frozen portable pair shadow
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: node scripts/analyze-portable-pair-forward-shadow-v1.cjs > portable-pair-forward-shadow-v1.json
       - name: Validate shadow-only boundary
         run: |
