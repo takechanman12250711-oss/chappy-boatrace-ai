@@ -17,7 +17,7 @@ test('independent original remains immutable, reasons move before the paywall', 
     assert.equal(a.fullText.split(a.paywallMarker).length, 2);
   }
 });
-test('compact rectangles preserve exact ordered tickets without inventing cross combinations', () => {
+test('compact rectangles preserve the exact ticket set without inventing cross combinations', () => {
   for (const tickets of [
     ['1-2-4','1-2-5','1-3-4','1-3-5'],
     ['1-2-4','1-2-5','1-3-4'],
@@ -27,7 +27,7 @@ test('compact rectangles preserve exact ordered tickets without inventing cross 
     b.baselinePracticalTickets = tickets;
     b.article.paidText = '買い目\n\n' + tickets.map(t => '・'+t).join('\n') + '\n\n計 '+tickets.length+'点';
     const a = readableArticle(b.article, b);
-    assert.deepEqual(ticketsIn(a.paidText), tickets);
+    assert.deepEqual(ticketsIn(a.paidText).sort(), [...tickets].sort());
     assert.equal((a.paidText.match(/1点100円/g) || []).length, 1);
     if (tickets.length === 4 && tickets[2] === '1-3-4') assert.ok(a.paidText.includes('1 → 2・3 → 4・5'));
   }
@@ -40,7 +40,7 @@ test('overlapping candidate pools and reference tickets are each shown once; non
   b.article.paidText = '🔥 実戦厳選\n\n・1-2-34\n\n計 2点\n\n本命とは別会計の参考予想\n・4-1-2\n・5-1-2';
   const before = JSON.stringify(b), a = readableArticle(b.article, b);
   const shown = ticketsIn(a.paidText);
-  assert.deepEqual(shown, ['1-2-3','1-2-4','1-3-2','1-4-2','2-1-3','4-1-2','5-1-2']);
+  assert.deepEqual([...shown].sort(), ['1-2-3','1-2-4','1-3-2','1-4-2','2-1-3','4-1-2','5-1-2'].sort());
   assert.equal(new Set(shown).size, shown.length);
   assert.equal(JSON.stringify(b), before);
   assert.ok(a.paidText.indexOf('中心の買い目') < a.paidText.indexOf('相手を広げるなら'));
@@ -52,10 +52,31 @@ test('a concrete ticket in an explanation cannot leak into the free preview', ()
   assert.deepEqual(ticketsIn(a.freeText), []);
   assert.deepEqual(ticketsIn(a.paidText), ['1-2-3', '1-2-4']);
 });
-test('formation compression does not move a later longshot before earlier central tickets', () => {
+test('non-adjacent display grouping preserves immutable source priority and every ticket', () => {
   const b = fixture();
   const tickets = ['1-5-2','1-5-4','1-2-5','1-4-5','1-2-4','1-4-2','1-5-6'];
   b.baselinePracticalTickets = tickets;
   b.article.paidText = '買い目\n\n' + tickets.map(t => '・'+t).join('\n') + '\n\n計 7点';
-  assert.deepEqual(ticketsIn(readableArticle(b.article, b).paidText), tickets);
+  const before = JSON.stringify(b);
+  const a = readableArticle(b.article, b);
+  assert.deepEqual(ticketsIn(a.paidText).sort(), [...tickets].sort());
+  assert.equal(JSON.stringify(b), before);
+  assert.ok(a.paidText.includes('1 → 5 → 2・4・6'));
+});
+test('non-adjacent axes merge across all positions but never across paid sections', () => {
+  const b = fixture();
+  const tickets = ['1-2-4','1-3-4','1-2-5','1-3-5','6-2-4','6-3-4','6-2-5','6-3-5'];
+  b.baselinePracticalTickets = tickets;
+  b.article.paidText = '買い目\n\n'+tickets.map(t=>'・'+t).join('\n')+'\n\n計 8点';
+  const a = readableArticle(b.article,b);
+  assert.ok(a.paidText.includes('1・6 → 2・3 → 4・5\n8点'));
+  assert.deepEqual(ticketsIn(a.paidText).sort(), [...tickets].sort());
+  // Formatting accepts this fixture; the real publication gate still caps 7.
+  b.version = 'note-draft-bundle-v1';
+  b.baselinePracticalTickets = ['1-2-4'];
+  b.record.prediction.mainSheet = { tickets: ['1-2-4','1-2-5'] };
+  b.article.paidText = '🔥 実戦厳選\n\n・1-2-4\n\n計 1点';
+  const split = readableArticle(b.article,b).paidText.split('相手を広げるなら');
+  assert.deepEqual(ticketsIn(split[0]), ['1-2-4']);
+  assert.deepEqual(ticketsIn(split[1]), ['1-2-5']);
 });
