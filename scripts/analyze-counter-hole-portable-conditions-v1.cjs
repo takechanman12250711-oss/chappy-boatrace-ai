@@ -437,9 +437,9 @@ function buildFilters() {
   ];
 }
 
-function build() {
-  const cohort = input.buildDefaultCohort({ root: ROOT });
-  const payouts = payoutAudit.payoutMap();
+function build(options = {}) {
+  const cohort = options.cohort || input.buildDefaultCohort({ root: ROOT });
+  const payouts = options.payouts || payoutAudit.payoutMap();
   const venueFeatures = loadVenueFeatures();
   const folds = chronologicalFoldMap(cohort.records);
   const rows = [];
