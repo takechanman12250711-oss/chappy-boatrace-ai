@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
-const { loadCover, attachCover } = require('./note-cover');
+const { loadCover, loadSeriesCover, attachCover } = require('./note-cover');
 
 async function main() {
   const file = loadCover();
@@ -8,6 +8,10 @@ async function main() {
   assert.ok(file.buffer.length > 1000);
   assert.throws(() => loadCover(__filename), /note_cover_invalid/);
   assert.throws(() => loadCover(__filename + '.missing'), /ENOENT/);
+  const seriesCovers = ['normal', 'escape', 'manshu'].map(kind => loadSeriesCover(kind).buffer);
+  assert.ok(seriesCovers[0].equals(file.buffer));
+  assert.equal(new Set(seriesCovers.map(b => require('node:crypto').createHash('sha256').update(b).digest('hex'))).size, 3);
+  assert.throws(() => loadSeriesCover('../escape'), /note_article_series_invalid/);
   const events = [];
   let loaded = true;
   const cover = {

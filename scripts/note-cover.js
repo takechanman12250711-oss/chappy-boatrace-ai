@@ -2,7 +2,13 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const COVER_PATH = path.join(__dirname, '..', 'assets', 'note', 'chappy-cover.jpg');
+const COVER_PATH = path.join(__dirname, '..', 'assets', 'note', 'chappy-normal-cover.jpg');
+
+// Artwork selection follows the saved article series, never its predicted winner.
+function loadSeriesCover(series) {
+  const { requireSeries } = require('./note-article-series');
+  return loadCover(path.join(__dirname, '..', 'assets', 'note', `chappy-${requireSeries(series)}-cover.jpg`));
+}
 
 function loadCover(file = COVER_PATH) {
   const buffer = fs.readFileSync(file);
@@ -43,7 +49,7 @@ function loadCoverTemplate(payload, rootDir = process.cwd(), now = Date.now()) {
       raceNo: Number(record.raceNo), deadline: new Date(Date.parse(record.deadlineAt)+9*3600000).toISOString().slice(11,16) };
     const font = fs.readFileSync(path.join(__dirname, '..', 'assets', 'note', 'ZenMaruGothic-Cover.ttf'));
     if (font.length < 1000 || font.readUInt32BE(0) !== 0x00010000) throw new Error('note_cover_font_invalid');
-    const background = loadCover(path.join(__dirname, '..', 'assets', 'note', 'chappy-cover.jpg')).buffer;
+    const background = loadSeriesCover(source.articleSeries).buffer;
     return { layout: 'series-v1', info, html: require('./note-cover-template').raceCoverHtml(info, background, font) };
   } else {
     // Legacy manual drafts have no immutable source path. Only use a summary
@@ -59,4 +65,4 @@ function loadCoverTemplate(payload, rootDir = process.cwd(), now = Date.now()) {
   return { lines, html: coverHtml(lines, loadCover().buffer, font) };
 }
 
-module.exports = { COVER_PATH, loadCover, loadCoverTemplate, attachCover };
+module.exports = { COVER_PATH, loadCover, loadSeriesCover, loadCoverTemplate, attachCover };

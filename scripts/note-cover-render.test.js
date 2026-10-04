@@ -9,7 +9,8 @@ const { coverLines, coverHtml, raceCoverHtml, renderCover } = require('./note-co
   const browser = await chromium.launch({ headless: true });
   try {
     const font = fs.readFileSync(path.join(__dirname,'../assets/note/Yomogi-Cover.ttf'));
-    const background = fs.readFileSync(path.join(__dirname,'../assets/note/chappy-cover.jpg'));
+    const { loadCover, loadSeriesCover } = require('./note-cover');
+    const background = loadCover().buffer;
     const examples = [
       {rangeSummary:'最有力展開は2コース差し。2着残しは1・4・3号艇'},
       {rangeSummary:'最有力展開は4コースまくり差し。2着残しは1・2・3・5・6号艇'},
@@ -29,12 +30,11 @@ const { coverLines, coverHtml, raceCoverHtml, renderCover } = require('./note-co
       console.log(JSON.stringify({lines,bytes:file.buffer.length}));
     }
     assert.ok(!outputs[0].equals(outputs[1]),'race-specific images differ');
-    const realistic = fs.readFileSync(path.join(__dirname, '../assets/note/chappy-realistic-cover.jpg'));
     const round = fs.readFileSync(path.join(__dirname, '../assets/note/ZenMaruGothic-Cover.ttf'));
     const seriesImages = [];
     for (const articleSeries of ['normal', 'escape', 'manshu']) {
       const info = { articleSeries, date: '20260929', place: '平和島', raceNo: 12, deadline: '16:45', sample: true };
-      const html = raceCoverHtml(info, realistic, round);
+      const html = raceCoverHtml(info, loadSeriesCover(articleSeries).buffer, round);
       const file = await renderCover(browser, { html, layout: 'series-v1' });
       assert.equal(browser.contexts().length, 0);
       assert.ok(file.buffer.length > 10000);
