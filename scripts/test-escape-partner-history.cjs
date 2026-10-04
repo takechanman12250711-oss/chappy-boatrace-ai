@@ -68,7 +68,7 @@ test('priority and history effects stay separate, with lost hits and exclusive m
     {raceKey:'loss',actual:'1-2-3',payout:500,baseline:['1-2-3'],control:['1-3-2'],candidate:['1-2-3']},
     {raceKey:'head',actual:'2-1-3',payout:900,baseline:['1-2-3'],control:['1-3-2'],candidate:['1-2-3']}
   ];
-  for (const row of rows) Object.assign(row,r.preservePairCoverage(row.baseline,row.control));
+  for (const row of rows) Object.assign(row,r.preservePairCoverage(row.baseline,row.control),{coverageFirst:row.control});
   const before=JSON.stringify(rows), report=r.summarize(rows), a=report.selectionComparisons.priorityVsSaved;
   assert.deepEqual([a.gainedHits,a.lostHits,a.netHits],[1,1,0]);
   assert.deepEqual(a.stagesBefore,{'third-missing':1,hit:1,'head-missing':1});
@@ -97,11 +97,45 @@ test('pair guard uses saved coverage only and does not hardcode boat one or look
 test('guard reports both rescued and sacrificed hits instead of treating protected pairs as success',()=>{
   const saved=['2-3-4','2-4-5'], proposed=['2-4-1','2-4-5'];
   const rows=['2-3-4','2-4-1'].map((actual,i)=>({raceKey:String(i),actual,payout:1000,
-    baseline:saved,control:proposed,candidate:proposed,...r.preservePairCoverage(saved,proposed)}));
+    baseline:saved,control:proposed,candidate:proposed,coverageFirst:proposed,...r.preservePairCoverage(saved,proposed)}));
   const report=r.summarize(rows);
   assert.equal(report.pairGuardAppliedRaces,2);
   assert.equal(report.selectionComparisons.guardedVsPriority.gainedHits,1);
   assert.equal(report.selectionComparisons.guardedVsPriority.lostHits,1);
   assert.equal(report.selectionComparisons.guardedVsPriority.netHits,0);
   assert.equal(report.baseline.stake,report.guarded.stake);
+});
+test('complete role evidence ranks before score, preserves locked slots and does not use outcomes',()=>{
+  const input=row(), d=input.evidence.stageHistory.candidateDecisions;
+  d[1].priorityScore=70;
+  d[1].physicalCoverage.push({boatNo:4,position:3,role:'pickup'});
+  const original=JSON.stringify(input), selected=r.select(input,profile);
+  assert.deepEqual(selected.control,input.baseline);
+  assert.deepEqual(selected.coverageFirst,['1-3-4','1-2-5','4-1-3']);
+  assert.equal(selected.coverageFirst.length,input.baseline.length);
+  assert.equal(JSON.stringify(input),original);
+  assert.deepEqual(r.select({...input,actual:'6-5-4',payout:999999},profile).coverageFirst,selected.coverageFirst);
+  const wrong=row();wrong.evidence.stageHistory.candidateDecisions[1].physicalCoverage.push({boatNo:6,position:3,role:'pickup'});
+  assert.deepEqual(r.select(wrong,profile).coverageFirst,wrong.baseline,'wrong boat cannot complete evidence');
+});
+test('coverage never unions incomplete observations, never uses wrong roles or duplicate positions',()=>{
+  const input=row(), d=input.evidence.stageHistory.candidateDecisions[1];
+  input.evidence.stageHistory.candidateDecisions.push({...d,physicalCoverage:[d.physicalCoverage[0],{boatNo:4,position:3,role:'pickup'}]});
+  assert.equal(r.rankedCandidates(input).candidates.get(d.ticket).completeRoles,false);
+  d.physicalCoverage.push({boatNo:4,position:3,role:'pickup'});
+  assert.equal(r.rankedCandidates(input).candidates.get(d.ticket).completeRoles,false,'conflicting completeness stays conservative');
+  input.evidence.stageHistory.candidateDecisions.reverse();
+  assert.equal(r.rankedCandidates(input).candidates.get(d.ticket).completeRoles,false,'stage order cannot change completeness');
+  assert.deepEqual(r.groundedPositions({ticket:'2-4-6',physicalCoverage:[{boatNo:2,position:1,role:'head'},
+    {boatNo:4,position:2,role:'hold'},{boatNo:4,position:2,role:'hold'},{boatNo:6,position:3,role:'head'}]}),[1,2]);
+});
+test('coverage comparison keeps both gained and lost hits with equal point counts',()=>{
+  const input=row(), d=input.evidence.stageHistory.candidateDecisions[1];
+  d.physicalCoverage.push({boatNo:4,position:3,role:'pickup'});d.priorityScore=70;
+  const selected=r.select(input,profile);
+  const rows=['1-3-4','1-2-4'].map((actual,i)=>({raceKey:String(i),actual,payout:1000,...selected}));
+  const report=r.summarize(rows), c=report.selectionComparisons.coverageVsPriority;
+  assert.deepEqual([c.gainedHits,c.lostHits,c.netHits],[1,1,0]);
+  assert.equal(report.coverageFirst.stake,report.baseline.stake);
+  assert.equal(r.summarize([]).coverageFirst.hitRate,null);
 });

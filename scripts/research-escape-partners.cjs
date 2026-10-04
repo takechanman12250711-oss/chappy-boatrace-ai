@@ -46,6 +46,13 @@ function historyBefore(rows, date, jcd) {
   for (const r of rows) if (r.date < date && r.jcd === jcd && !seen.has(r.raceKey)) { seen.add(r.raceKey); addHistory(p,r); }
   return p;
 }
+function groundedPositions(d) {
+  if (!validTicket(d.ticket)) return [];
+  const roles = {1:['head','attack'],2:['hold','pickup','attack'],3:['hold','pickup']};
+  return [...new Set((d.physicalCoverage || []).filter(c=>
+    Number(c.boatNo) === Number(d.ticket[(Number(c.position)-1)*2]) &&
+    roles[Number(c.position)]?.includes(c.role)).map(c=>Number(c.position)))].sort();
+}
 function rankedCandidates(row) {
   const e = row.evidence;
   if (e?.status !== 'validated') return { reason:'selection-evidence-unavailable' };
@@ -56,13 +63,13 @@ function rankedCandidates(row) {
     if (d.reasonCode === 'INDEPENDENT_SCENARIO' && row.baseline.includes(t)) independent.add(t);
     if (!pool.includes(t) || !validTicket(t) || !Number.isFinite(d.priorityScore) || !d.branchIds?.length ||
         !['ALREADY_SELECTED','INDEPENDENT_SCENARIO','CANDIDATE_ONLY_EVALUATION','LOWER_PRIORITY_SAME_ATTACKER','STRONG_ESCAPE_ALTERNATE_TRIMMED'].includes(d.reasonCode)) continue;
-    const roles = {1:['head','attack'],2:['hold','pickup','attack'],3:['hold','pickup']};
-    const grounded = (d.physicalCoverage || []).filter(c=>Number(c.boatNo) === Number(t[(Number(c.position)-1)*2]) &&
-      roles[Number(c.position)]?.includes(c.role));
-    if (!grounded.some(c=>Number(c.position)===1) || !grounded.some(c=>Number(c.position)>1)) continue;
+    const positions = groundedPositions(d);
+    if (!positions.includes(1) || !positions.some(p=>p>1)) continue;
     const old = candidates.get(t);
     if (old && old.priorityScore !== d.priorityScore) return { reason:'conflicting-saved-priority' };
-    candidates.set(t,{ticket:t,priorityScore:d.priorityScore});
+    // Never combine two incomplete stage observations into complete evidence.
+    const completeRoles = positions.length === 3 && (!old || old.completeRoles);
+    candidates.set(t,{ticket:t,priorityScore:d.priorityScore,completeRoles});
   }
   return { candidates, independent };
 }
@@ -89,13 +96,16 @@ function select(row, profile) {
   const priority = (a,b) => b.priorityScore-a.priorityScore;
   const stable = (a,b) => baselineOrder(a.ticket)-baselineOrder(b.ticket) || a.ticket.localeCompare(b.ticket);
   const control = [...available].sort((a,b)=>priority(a,b)||stable(a,b)).slice(0,mutable.length).map(c=>c.ticket);
+  const coverageFirst = [...available].sort((a,b)=>Number(b.completeRoles)-Number(a.completeRoles)||priority(a,b)||stable(a,b))
+    .slice(0,mutable.length).map(c=>c.ticket);
   const frequency = t => profile.pairs[`${row.courses[Number(t[2])]}-${row.courses[Number(t[4])]}`] || 0;
   const candidate = [...available].sort((a,b)=>priority(a,b)||
     (profile.samples >= MIN_HISTORY ? frequency(b.ticket)-frequency(a.ticket) : 0)||stable(a,b))
     .slice(0,mutable.length).map(c=>c.ticket);
   if (control.length !== mutable.length || candidate.length !== mutable.length) return { reason:'insufficient-grounded-pool' };
   const restore = replacement => { let i=0; return row.baseline.map(t=>mutable.includes(t) ? replacement[i++] : t); };
-  return { baseline:[...row.baseline], control:restore(control), candidate:restore(candidate), mutableSlots:mutable.length,
+  return { baseline:[...row.baseline], control:restore(control), candidate:restore(candidate),
+    coverageFirst:restore(coverageFirst), rankingEvidence:[...candidates.values()], mutableSlots:mutable.length,
     ...preservePairCoverage(row.baseline,restore(control)),
     locked, historyApplied:profile.samples>=MIN_HISTORY, historyChangedControl:!same(control,candidate),
     candidateChangedBaseline:!same(row.baseline,restore(candidate)) };
@@ -121,7 +131,7 @@ function compareSelections(rows, before, after) {
 }
 function summarize(rows) {
   const n = rows.length, stats = {};
-  for (const key of ['baseline','control','candidate','guarded']) {
+  for (const key of ['baseline','control','candidate','guarded','coverageFirst']) {
     const hits = rows.filter(r=>r[key].includes(r.actual)), stake = rows.reduce((s,r)=>s+r[key].length*100,0);
     const returned = hits.reduce((s,r)=>s+r.payout,0);
     stats[key] = { races:n,hits:hits.length,stake,returned,hitRate:n?hits.length/n*100:null,recoveryRate:stake?returned/stake*100:null };
@@ -138,7 +148,9 @@ function summarize(rows) {
       priorityVsSaved:compareSelections(rows,'baseline','control'),
       historyVsPriority:compareSelections(rows,'control','candidate'),
       guardedVsSaved:compareSelections(rows,'baseline','guarded'),
-      guardedVsPriority:compareSelections(rows,'control','guarded')
+      guardedVsPriority:compareSelections(rows,'control','guarded'),
+      coverageVsSaved:compareSelections(rows,'baseline','coverageFirst'),
+      coverageVsPriority:compareSelections(rows,'control','coverageFirst')
     } };
 }
 function build(selected, historical, results, diagnostics = {}, generatedAt = new Date().toISOString()) {
@@ -157,6 +169,10 @@ function build(selected, historical, results, diagnostics = {}, generatedAt = ne
   const groups = key => Object.fromEntries([...new Set(rows.map(r=>r[key]))].sort().map(k=>[k,summarize(rows.filter(r=>r[key]===k))]));
   return {version:VERSION,generatedAt,sourceCommit:process.env.GITHUB_SHA||'',productionChanged:false,automaticProductionChange:false,usableForPrediction:false,
     experiment:'retrospective-discovery',decisionGate:{status:'INSUFFICIENT_EVIDENCE',reason:'No preregistered adoption gate or untouched forward cohort'},
+    roleCoverageExperiment:{id:'complete-role-coverage-first-v1',
+      rule:'Within the unchanged mutable slots, rank candidates with grounded positions 1, 2 and 3 first, then existing priority and saved order. Keep incomplete candidates available as fallback.',
+      resultUsedForSelection:false,productionChanged:false,untouchedHoldout:false,
+      limitation:'Designed after inspecting saved stage evidence and prior losses. Evidence completeness is not proof of race-flow correctness. No forward capture or adoption gate is implemented.'},
     pairGuardExperiment:{id:'saved-first-second-coverage-guard-v1',
       rule:'Keep the complete saved selection if priority-only reselection removes any saved first-second pair; otherwise use that reselection.',
       resultUsedForSelection:false,productionChanged:false,untouchedHoldout:false,
@@ -213,4 +229,4 @@ function main(root=process.cwd()) {
   return report;
 }
 if(require.main===module)main();
-module.exports={VERSION,courseMap,historicalRace,historyBefore,rankedCandidates,preservePairCoverage,select,missStage,compareSelections,summarize,build,main};
+module.exports={VERSION,courseMap,historicalRace,historyBefore,groundedPositions,rankedCandidates,preservePairCoverage,select,missStage,compareSelections,summarize,build,main};
