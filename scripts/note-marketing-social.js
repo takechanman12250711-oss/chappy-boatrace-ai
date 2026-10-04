@@ -3,6 +3,7 @@ const {createHash}=require('node:crypto');
 const {ticketsIn}=require('./note-readable-article');
 const {counts}=require('./note-marketing-reports');
 const labels={normal:'AI展開',escape:'本命',manshu:'万舟'};
+const articleContents='展開・注目艇・狙う理由まで無料で解説！\n有料の買い目はフォーメーション・点数付き。';
 const dateOf=now=>new Date(now+9*3600000).toISOString().slice(0,10).replaceAll('-','');
 const timeOf=now=>new Date(now+9*3600000).toISOString().slice(11,16);
 const dayLabel=date=>`${Number(date.slice(4,6))}/${Number(date.slice(6,8))}`;
@@ -45,11 +46,11 @@ function announcementCopy(rows,indexUrl,now) {
       `${labels[r.articleSeries]}｜${r.place}${r.raceNo}R ${timeOf(Date.parse(r.deadlineAt))}締切${[200,300].includes(r.price)?`｜${r.price}円`:''}`),
       preview?`${first.place}${first.raceNo}Rの注目：${preview}`:'',
       ordered.length>n?`ほか${ordered.length-n}記事は一覧へ`:'',
-      '展開の説明は無料、買い目は有料です。',url].filter(Boolean);
+      articleContents,url].filter(Boolean);
     if(weight(lines.join('\n'))<=280)return lines.join('\n');
   }
   const result=[`${dayLabel(dateOf(now))} ${labels[first.articleSeries]}｜${first.place}${first.raceNo}R`,
-    `${timeOf(Date.parse(first.deadlineAt))}締切｜価格は記事で確認`, '展開の説明は無料、買い目は有料です。',url].join('\n');
+    `${timeOf(Date.parse(first.deadlineAt))}締切｜価格は記事で確認`, articleContents,url].join('\n');
   if(weight(result)>280)throw Error('social_announcement_too_long');
   return result;
 }
