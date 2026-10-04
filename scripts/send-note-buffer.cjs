@@ -4,6 +4,7 @@ const {createHash,randomUUID}=require('node:crypto');
 const {client,REPO}=require('./note-marketing-store');
 const {loadConfig,jstDate,hash,indexBody,validUrl}=require('./note-marketing-content');
 const {journal,pairedItems}=require('./send-note-social.cjs');
+const {announcementCopy,recapCopy,weight,timeOf}=require('./note-marketing-social');
 const digest=s=>createHash('sha256').update(s).digest('hex');
 const literal=JSON.stringify;
 const fields='id text channelId status externalLink';
@@ -61,7 +62,8 @@ function transport(env,c,log,request=fetch,clock=Date.now) {
   },async create(text,channelId) {
     const d=await query('mutation{createPost(input:{text:'+literal(text)+',channelId:'+literal(channelId)+',schedulingType:automatic,mode:shareNow,assets:[],needsApproval:false,saveToDraft:false}){... on PostActionSuccess{post{'+fields+'}} ... on MutationError{message}}}');
     if(!d.createPost?.post?.id)throw Error('buffer_post_not_accepted');return d.createPost.post;
-  },async post(id) {return (await query('{post(input:{id:'+literal(id)+'}){'+fields+'}}')).post;}};
+  },async post(id) {return (await query('{post(input:{id:'+literal(id)+'}){'+fields+'}}')).post;},
+  async metrics(id) {return (await query('{post(input:{id:'+literal(id)+'}){'+fields+' metrics{type name value unit} metricsUpdatedAt}}')).post;}};
 }
 function observed(post,receipt) {
   if(!post||post.id!==receipt.postId||post.channelId!==receipt.channelId||digest(post.text||'')!==receipt.textSha256) return {status:'review_required',reason:'post_identity_or_text_mismatch'};
@@ -103,10 +105,7 @@ function announcementRows(state,config,now,seen) {
 }
 function announcementText(rows,marketing,now) {
   if(!validUrl(marketing.index.url))throw Error('buffer_announcement_index_invalid');
-  const date=jstDate(now),time=new Date(now+9*3600000).toISOString().slice(11,16);
-  const labels={normal:'通常',escape:'イン逃げ',manshu:'万舟'};
-  const counts=Object.entries(labels).map(([key,label])=>`${label}${rows.filter(r=>r.articleSeries===key).length}件`).join('・');
-  return `${Number(date.slice(4,6))}/${Number(date.slice(6,8))} ${time}更新（日本時間）\nnote予想記事を公開しました\n今回のご案内：${rows.length}記事\n${counts}\n価格・日付・締切は各記事をご確認ください。\n全記事・成績はこちら\n${marketing.index.url}`;
+  return announcementCopy(rows,marketing.index.url,now);
 }
 async function announce(state,config,marketing,log,delivery,clock) {
   if(config.announcements?.enabled!==true)return {status:'disabled'};
@@ -126,6 +125,7 @@ async function announce(state,config,marketing,log,delivery,clock) {
   rows=announcementRows(state,config,now,seen);
   if(!rows.length)return {status:'deadlines_passed'};
   const text=announcementText(rows,marketing,now);
+  if(weight(text)>280)throw Error('buffer_announcement_too_long');
   const publicationKeys=rows.map(r=>r.publicationKey).sort();
   if(new Set(publicationKeys).size!==rows.length)throw Error('buffer_announcement_duplicate');
   const publicationKey='announcement:'+date+':'+digest(JSON.stringify(publicationKeys));
@@ -144,6 +144,64 @@ async function announce(state,config,marketing,log,delivery,clock) {
   const result=observed(post,accepted);
   if(result.status!=='accepted_pending')await log.put('note-buffer-final/'+suffix,{...accepted,...result});
   return {...result,postId:post.id,articles:rows.length};
+}
+
+async function recap(state,config,marketing,log,delivery,clock) {
+  if(config.recap?.enabled!==true)return {status:'disabled'};
+  const now=clock(),date=jstDate(now),activation=Date.parse(config.recap.activatedAt);
+  if(!Number.isFinite(activation)||now<activation)throw Error('buffer_recap_activation_invalid');
+  if(timeOf(now)<'22:30')return {status:'before_recap_window'};
+  const rows=state.rows.filter(r=>r.raceKey.startsWith(date+'-'));
+  if(!rows.length)return {status:'no_articles'};
+  if(rows.some(r=>!Number.isFinite(Date.parse(r.deadlineAt))||Date.parse(r.deadlineAt)>now-1800000))return {status:'races_not_finished'};
+  if(!validUrl(marketing.index.url))throw Error('buffer_recap_index_invalid');
+  const name='note-buffer-recap/'+date;
+  if(await log.get(name))return {status:'already_attempted'};
+  const text=recapCopy(rows,marketing.index.url,now),channelId=await delivery.channel();
+  if(jstDate(clock())!==date)throw Error('buffer_date_changed');
+  const publicationKey='recap:'+date,suffix=date+'/'+digest(publicationKey);
+  const receipt={date,publicationKey,at:now,channelId,textSha256:digest(text),provider:'buffer-free-recap',
+    sources:rows.map(r=>({publicationKey:r.publicationKey,sourceSha256:r.sourceSha256,status:r.settlement?.status||'pending',evidenceId:r.settlement?.evidenceId||null}))};
+  await log.put(name,receipt);
+  let post;try{post=await delivery.create(text,channelId);}catch{
+    await log.put('note-buffer-recap-review/'+date,{...receipt,status:'review_required',reason:'create_failed_or_unknown_do_not_resend'});
+    return {status:'review_required'};
+  }
+  const accepted={...receipt,postId:post.id};await log.put('note-buffer-accepted/'+suffix,accepted);
+  const result=observed(post,accepted);
+  if(result.status!=='accepted_pending')await log.put('note-buffer-final/'+suffix,{...accepted,...result});
+  return {...result,postId:post.id};
+}
+
+async function collectMetrics(config,log,delivery,now) {
+  if(config.metrics?.enabled!==true)return {status:'disabled'};
+  if(timeOf(now)<'22:30')return {status:'before_metrics_window'};
+  const date=jstDate(now),claim='note-buffer-metrics-claim/'+date;
+  if(await log.get(claim))return {status:'already_attempted'};
+  const receipts=[];
+  for(const d of [jstDate(now-86400000),date])for(const ref of await log.refs('note-buffer-final/'+d+'/')) {
+    const r=await log.get(ref.ref.replace('refs/tags/',''));
+    if(r?.status==='buffer_confirmed_sent'&&r.postId&&r.channelId)receipts.push(r);
+  }
+  if(!receipts.length)return {status:'no_verified_posts'};
+  // Read at most six posts once per JST day, within the existing shared budget.
+  // Experimental metrics never gate publishing or trigger strategy changes.
+  await log.put(claim,{date,at:now});const items=[];
+  for(const receipt of receipts.slice(0,6)) {
+    let item={postId:receipt.postId,url:receipt.url,publicationKey:receipt.publicationKey,status:'unavailable',metrics:null};
+    try {
+      const p=await delivery.metrics(receipt.postId);
+      if(observed(p,receipt).status!=='buffer_confirmed_sent')throw Error('metrics_identity_mismatch');
+      const metrics=Array.isArray(p.metrics)?p.metrics.filter(m=>typeof m.type==='string'&&typeof m.name==='string'&&
+        typeof m.value==='number'&&Number.isFinite(m.value)&&m.value>=0&&typeof m.unit==='string'):[];
+      const updated=Date.parse(p.metricsUpdatedAt);
+      if(metrics.length&&Number.isFinite(updated)&&updated<=now)item={...item,status:'observed',metrics,metricsUpdatedAt:p.metricsUpdatedAt};
+    }catch{/* Unavailable is never represented as zero or retried in a loop. */}
+    items.push(item);
+  }
+  const report={date,observedAt:new Date(now).toISOString(),experimental:true,purchaseAttribution:'not_connected',items};
+  await log.put('note-buffer-metrics/'+date,report);
+  return {status:'recorded',posts:items.length,available:items.filter(x=>x.status==='observed').length,purchaseAttribution:'not_connected'};
 }
 
 async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.parse(fs.readFileSync('config/note-social.json','utf8')),marketing=loadConfig(),store,log,delivery,claims}={}) {
@@ -178,7 +236,10 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   }
   const announcement=await announce(state,config,marketing,log,delivery,clock);
   if(announcement.status==='review_required'||announcement.postId)results.push({kind:'announcement',...announcement});
-  return {announcement,status:results.some(x=>x.status==='review_required')?'review_required':results.length?'processed':'no_new_hits',started,results};
+  const review=await recap(state,config,marketing,log,delivery,clock);
+  if(review.status==='review_required'||review.postId)results.push({kind:'recap',...review});
+  let metrics;try{metrics=await collectMetrics(config,log,delivery,clock());}catch{metrics={status:'unavailable'};}
+  return {announcement,recap:review,metrics,status:results.some(x=>x.status==='review_required')?'review_required':results.length?'processed':'no_new_hits',started,results};
 }
 if(require.main===module)run().then(result=>{const text=JSON.stringify(result);console.log('NOTE_BUFFER='+text);if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'\nBuffer Free X reports\n```json\n'+text+'\n```\n');if(result.status==='review_required')process.exitCode=1;}).catch(()=>{console.error('NOTE_BUFFER_STOPPED=check_free_budget_and_permanent_receipts_no_auto_repost');process.exitCode=1;});
-module.exports={blockers,ledger,transport,observed,reconcile,announcementRows,announcementText,announce,run};
+module.exports={blockers,ledger,transport,observed,reconcile,announcementRows,announcementText,announce,recap,collectMetrics,run};

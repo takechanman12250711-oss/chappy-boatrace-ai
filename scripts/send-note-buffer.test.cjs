@@ -79,8 +79,64 @@ test('announcements batch series, link only verified index and do not repeat cov
  const f=announcementFixture();let text;
  f.delivery.create=async t=>{text=t;assert([...f.saved.keys()].some(k=>k.startsWith('note-buffer-announcement/')));return {id:'a',text:t,channelId:'channel',status:'scheduled'};};
  let r=await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock);assert.equal(r.articles,2);assert.equal(r.status,'accepted_pending');
- assert(text.includes('通常1件・イン逃げ1件・万舟0件'));assert(text.includes(marketing.index.url));assert(!text.includes('的中'));
+ assert(text.includes('AI展開｜尼崎4R 22:00締切'));assert(text.includes('本命｜尼崎4R 22:00締切'));assert(text.includes(marketing.index.url));assert(!text.includes('的中'));
  assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,()=>now+3600000)).status,'no_new_articles');
+});
+
+const {sourceContext,announcementCopy,recapCopy,weight}=require('./note-marketing-social');
+const {recap,collectMetrics}=require('./send-note-buffer.cjs');
+test('preview uses immutable before-deadline evidence and excludes paid ticket sentences',()=>{
+ const b=require('./note-independent-monitor-fixture').fixture();
+ b.article.paidText='監視の根拠\n狙う券は１－２－３。1号艇の先行が焦点です。\n\n買い目\n1-2-34\n計 2点';
+ const bytes=JSON.stringify(b),row={raceKey:b.record.raceKey,deadlineAt:b.record.deadlineAt,publishedAt:'2026-09-28T17:00:00+09:00',sourceSha256:createHash('sha256').update(bytes).digest('hex')};
+ const context=sourceContext(row,bytes);assert.equal(context.preview,'1号艇の先行が焦点です。');assert.deepEqual(context.firstBoats,['1']);
+ assert.equal(sourceContext(row,bytes+' '),null);
+ assert.equal(sourceContext({...row,publishedAt:'2026-09-28T15:00:00+09:00'},bytes),null);
+});
+test('announcements include actual race, deadline, price and safe free insight within X length',()=>{
+ const f=announcementFixture(),r=f.state.rows[0];r.price=200;
+ r.socialContext={version:'source-context-v1',sourceSha256:r.sourceSha256,preview:'1号艇の先行が焦点です。'};
+ const text=announcementCopy([r],marketing.index.url,now);
+ assert(text.includes('尼崎4R 22:00締切｜200円'));assert(text.includes(r.url));assert(text.includes('1号艇の先行'));assert(weight(text)<=280);
+ const long=Array.from({length:30},(_,i)=>({...r,raceNo:i%12+1,publicationKey:r.publicationKey+i}));
+ assert(weight(announcementCopy(long,marketing.index.url,now))<=280);
+ r.socialContext.preview='買い目は1-2-3です。';assert(!announcementCopy([r],marketing.index.url,now).includes('1-2-3'));
+});
+test('recap includes misses and unresolved separately, only source-backed comparison',()=>{
+ const f=fixture(),r=f.state.rows[0];
+ const miss={...r,articleSeries:'escape',publicationKey:r.raceKey+':escape',settlement:{...r.settlement,status:'miss'},socialContext:{version:'source-context-v1',sourceSha256:r.sourceSha256,firstBoats:['1']}};
+ const text=recapCopy([r,miss,{...r,articleSeries:'manshu',publicationKey:r.raceKey+':manshu',settlement:{status:'review'}}],marketing.index.url,now);
+ assert(text.includes('AI展開：1的中／0不的中'));assert(text.includes('本命：0的中／1不的中'));assert(text.includes('確認中1'));assert(text.includes('1着は想定内、組み合わせが不的中'));assert(weight(text)<=280);
+});
+test('night recap waits for the window and deadlines, and unknown creation is never resent',async()=>{
+ const f=fixture();f.config.recap={enabled:true,activatedAt:'2026-09-29T00:00:00+09:00'};
+ assert.equal((await recap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'before_recap_window');
+ f.clock=()=>Date.parse('2026-09-29T22:45:00+09:00');
+ const original=f.state.rows[0].deadlineAt;f.state.rows[0].deadlineAt='2026-09-29T22:20:00+09:00';
+ assert.equal((await recap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'races_not_finished');f.state.rows[0].deadlineAt=original;
+ let calls=0;f.delivery.create=async()=>{calls++;throw Error('lost response');};
+ assert.equal((await recap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'review_required');
+ assert.equal((await recap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'already_attempted');assert.equal(calls,1);
+});
+test('night recap shares verified-index gate and accepted-post reconciliation',async()=>{
+ const f=fixture();f.config.recap={enabled:true,activatedAt:'2026-09-29T00:00:00+09:00'};
+ f.now=Date.parse('2026-09-29T22:45:00+09:00');f.clock=()=>f.now;
+ f.state.articles.index.hash='stale';await assert.rejects(run(f),/public_index_not_verified/);assert.deepEqual(f.events,[]);
+ f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,f.now));
+ const result=await run(f);assert.equal(result.recap.status,'accepted_pending');
+ assert([...f.saved.values()].some(x=>x.provider==='buffer-free-recap'&&x.postId));
+});
+test('experimental metrics distinguish missing from zero, pin identity, and run at most once daily',async()=>{
+ const f=fixture(),late=Date.parse('2026-09-29T22:45:00+09:00');f.config.metrics={enabled:true};
+ const text='original',base={status:'buffer_confirmed_sent',postId:'p',channelId:'c',textSha256:createHash('sha256').update(text).digest('hex'),url:'https://x.com/chappy_boat_ai/status/1'};
+ await f.log.put('note-buffer-final/20260929/a',base);
+ f.delivery.metrics=async()=>({id:'p',channelId:'c',text,status:'sent',externalLink:base.url,metrics:[{type:'impressions',name:'Impressions',value:0,unit:'count'}],metricsUpdatedAt:new Date(late-1000).toISOString()});
+ assert.equal((await collectMetrics(f.config,f.log,f.delivery,late)).available,1);
+ const saved=await f.log.get('note-buffer-metrics/20260929');assert.equal(saved.items[0].metrics[0].value,0);assert.equal(saved.purchaseAttribution,'not_connected');
+ assert.equal((await collectMetrics(f.config,f.log,f.delivery,late)).status,'already_attempted');
+ const g=fixture();g.config.metrics={enabled:true};await g.log.put('note-buffer-final/20260929/a',base);
+ g.delivery.metrics=async()=>({id:'wrong',channelId:'c',text,status:'sent',externalLink:base.url,metrics:[]});
+ assert.equal((await collectMetrics(g.config,g.log,g.delivery,late)).available,0);assert.equal((await g.log.get('note-buffer-metrics/20260929')).items[0].metrics,null);
 });
 test('announcements exclude old, future, expired, review and wrong-day articles without Buffer calls',async()=>{
  for(const change of [{publishedAt:'2026-09-29T18:00:00+09:00'},{publishedAt:'2026-09-29T23:00:00+09:00'},{deadlineAt:'2026-09-29T21:01:00+09:00'},{settlement:{status:'review'}},{raceKey:'20260928-13-4'},{url:'https://example.com'}]){
