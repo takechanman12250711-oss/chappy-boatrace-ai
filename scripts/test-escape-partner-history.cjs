@@ -62,3 +62,22 @@ test('comparison retains lost hits, equal stakes, pending and method separation'
   assert.equal(report.decisionGate.status,'INSUFFICIENT_EVIDENCE');
   assert.equal(r.summarize([]).candidate.hitRate,null);
 });
+test('priority and history effects stay separate, with lost hits and exclusive miss stages',()=>{
+  const rows=[
+    {raceKey:'gain',actual:'1-4-2',payout:1000,baseline:['1-4-3'],control:['1-4-2'],candidate:['1-4-3']},
+    {raceKey:'loss',actual:'1-2-3',payout:500,baseline:['1-2-3'],control:['1-3-2'],candidate:['1-2-3']},
+    {raceKey:'head',actual:'2-1-3',payout:900,baseline:['1-2-3'],control:['1-3-2'],candidate:['1-2-3']}
+  ];
+  const before=JSON.stringify(rows), report=r.summarize(rows), a=report.selectionComparisons.priorityVsSaved;
+  assert.deepEqual([a.gainedHits,a.lostHits,a.netHits],[1,1,0]);
+  assert.deepEqual(a.stagesBefore,{'third-missing':1,hit:1,'head-missing':1});
+  assert.deepEqual(a.stagesAfter,{hit:1,'second-missing':1,'head-missing':1});
+  assert.deepEqual(a.gained[0],{raceKey:'gain',actual:'1-4-2',beforeStage:'third-missing',afterStage:'hit',removed:['1-4-3'],added:['1-4-2']});
+  assert.equal(a.lost[0].raceKey,'loss');
+  const b=report.selectionComparisons.historyVsPriority;
+  assert.equal(b.gained[0].raceKey,'loss'); assert.equal(b.lost[0].raceKey,'gain');
+  assert.equal(report.baseline.stake,report.control.stake);
+  assert.equal(report.control.stake,report.candidate.stake);
+  assert.equal(JSON.stringify(rows),before);
+  assert.equal(r.summarize([]).selectionComparisons.priorityVsSaved.races,0);
+});
