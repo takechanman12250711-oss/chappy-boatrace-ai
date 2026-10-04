@@ -1,199 +1,106 @@
 name: Diagnose post-prediction stage in WebKit
-
+# One-shot read-only investigation. Never merge this branch into main.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/diagnose-post-prediction-stage-webkit.yml"
-      - "scripts/diagnose-post-prediction-stage-webkit.mjs"
-      - "index.html"
-      - "style.css"
-      - "js/**"
-  workflow_dispatch:
-
+  push:
+    branches: [verify/escape-v13-saved-20261004]
+    paths: [.github/workflows/diagnose-post-prediction-stage-webkit.yml]
 permissions:
   contents: read
-
+  actions: read
+  pull-requests: read
 jobs:
-  post-prediction:
+  saved-v13-evidence:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
+    timeout-minutes: 5
     steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
         with:
-          node-version: "20"
-
-      - name: Install Playwright WebKit
-        run: |
-          npm install --no-save --no-package-lock playwright@1.55.0
-          npx playwright install --with-deps webkit
-
-      - name: Start local server
-        run: |
-          python3 -m http.server 4173 > /tmp/chappy-post-http.log 2>&1 &
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat /tmp/chappy-post-http.log
-          exit 1
-
-      - name: Isolate practical selection
-        id: local_select
-        continue-on-error: true
-        shell: bash
-        run: |
-          set +e
-          mkdir -p artifacts-post/local-select
-          timeout --signal=TERM --kill-after=5s 90s \
-            env \
-              APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
-              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
-              DIAG_OUTPUT=artifacts-post/local-select \
-            node scripts/diagnose-post-prediction-stage-webkit.mjs select \
-            > artifacts-post/local-select/process.log 2>&1
-          status=$?
-          echo "$status" > artifacts-post/local-select/exit-status.txt
-          echo "exit_status=$status" | tee -a artifacts-post/local-select/process.log
-          cat artifacts-post/local-select/process.log
-          pkill -9 MiniBrowser || true
-          pkill -9 WebKitNetworkProcess || true
-          exit "$status"
-
-      - name: Isolate renderAll locally
-        id: local_render
-        continue-on-error: true
-        shell: bash
-        run: |
-          set +e
-          mkdir -p artifacts-post/local-render
-          timeout --signal=TERM --kill-after=5s 90s \
-            env \
-              APP_URL=http://127.0.0.1:4173/ \
-              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
-              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
-              DIAG_OUTPUT=artifacts-post/local-render \
-            node scripts/diagnose-post-prediction-stage-webkit.mjs render \
-            > artifacts-post/local-render/process.log 2>&1
-          status=$?
-          echo "$status" > artifacts-post/local-render/exit-status.txt
-          echo "exit_status=$status" | tee -a artifacts-post/local-render/process.log
-          cat artifacts-post/local-render/process.log
-          pkill -9 MiniBrowser || true
-          pkill -9 WebKitNetworkProcess || true
-          exit "$status"
-
-      - name: Isolate renderAll in production
-        id: production_render
-        if: github.event_name == 'workflow_dispatch'
-        continue-on-error: true
-        shell: bash
-        run: |
-          set +e
-          mkdir -p artifacts-post/production-render
-          timeout --signal=TERM --kill-after=5s 90s \
-            env \
-              APP_URL=https://takechanman12250711-oss.github.io/chappy-boatrace-ai/ \
-              EXPECTED_RUNTIME=20260828-ui-audit-display1 \
-              RACE_URL='https://chappy-boatrace-api.vercel.app/api/race?jcd=01&rno=10&date=20260825' \
-              DIAG_OUTPUT=artifacts-post/production-render \
-            node scripts/diagnose-post-prediction-stage-webkit.mjs render \
-            > artifacts-post/production-render/process.log 2>&1
-          status=$?
-          echo "$status" > artifacts-post/production-render/exit-status.txt
-          echo "exit_status=$status" | tee -a artifacts-post/production-render/process.log
-          cat artifacts-post/production-render/process.log
-          pkill -9 MiniBrowser || true
-          pkill -9 WebKitNetworkProcess || true
-          exit "$status"
-
-      - name: Enforce post-prediction diagnostics
-        if: always()
-        shell: bash
+          ref: 441b036873f36bfe5bb9ca6fd36d8644f9e83552
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/workflows/
+            /scripts/
+            /js/
+            /config/
+            /docs/escape-partner-v13.md
+            /docs/note-article-series.md
+            /docs/note-hit-reporting.md
+            /data/note-drafts/20261004/
+            /data/note-publish/
+            /data/results/20261004.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Read actual saved evidence and current pipeline runs
         env:
-          CHECK_PRODUCTION: ${{ github.event_name == 'workflow_dispatch' }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          mkdir -p evidence
+          git rev-parse HEAD > evidence/source-commit.txt
           node - <<'NODE'
-          const fs = require("fs");
-          const required = [
-            {
-              dir: "artifacts-post/local-select",
-              report: "select-progress.json",
-              marks: ["practical-select-finished"]
-            },
-            {
-              dir: "artifacts-post/local-render",
-              report: "render-progress.json",
-              marks: [
-                "render-all-finished",
-                "post-render-responsive-finished",
-                "render-screenshot-finished"
-              ],
-              screenshot: "render-result.png"
+          const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+          const out='evidence',root='https://api.github.com/repos/'+process.env.GITHUB_REPOSITORY;
+          const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json'};
+          const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+          async function get(p){const r=await fetch(root+p,{headers,signal:AbortSignal.timeout(25000)});if(!r.ok)throw Error(p+': HTTP '+r.status);return r.json();}
+          const token=v=>typeof v==='string'?v:v?.ticket;
+          const list=v=>Array.isArray(v)?v.map(token):null;
+          function scan(o,p='',a=[]){if(!o||typeof o!=='object')return a;for(const [k,v]of Object.entries(o)){const q=p?p+'.'+k:k;if(k==='ticketPolicyVersion'||k==='escapeRolePartnerReplacement')a.push({path:q,value:v});if(v&&typeof v==='object')scan(v,q,a);}return a;}
+          async function main(){
+            const report={checkedAt:new Date().toISOString(),readOnly:true,sourceCommit:fs.readFileSync(out+'/source-commit.txt','utf8').trim(),rows:[],pipelines:[],errors:[]};
+            const dir='data/note-drafts/20261004';
+            for(const name of fs.existsSync(dir)?fs.readdirSync(dir).filter(n=>n.endsWith('.json')).sort():[]){
+              const raw=fs.readFileSync(dir+'/'+name),b=JSON.parse(raw),r=b.record||{},p=r.prediction||{},a=b.article||{},e=r.practicalSelectionEvidence||{};
+              const surfaces={article:list(a.practicalTickets),prediction:list(p.practicalTickets),verification:list(p.verificationEvidence?.tickets),baseline:list(b.baselinePracticalTickets),selectionEvidence:list(e.practicalTickets)};
+              const valid=Object.values(surfaces).filter(x=>x!==null);
+              report.rows.push({file:name,sha256:sha(raw),raceKey:r.raceKey,series:b.monitor?.kind||a.articleSeries||'normal',capturedAt:b.capturedAt,selectedAt:r.selectedAt,deadlineAt:r.deadlineAt,sourceCommit:b.sourceCommit,preDeadline:Date.parse(r.selectedAt)<Date.parse(r.deadlineAt),afterDeployment:Date.parse(r.selectedAt)>Date.parse('2026-10-03T11:37:32Z'),policies:scan(b),surfaces,matching:valid.length>=4&&valid.every(x=>JSON.stringify(x)===JSON.stringify(valid[0]))});
             }
-          ];
-          if (process.env.CHECK_PRODUCTION === "true") {
-            required.push({
-              dir: "artifacts-post/production-render",
-              report: "render-progress.json",
-              marks: [
-                "render-all-finished",
-                "post-render-responsive-finished",
-                "render-screenshot-finished"
-              ],
-              screenshot: "render-result.png"
-            });
+            report.uniqueRaces=new Set(report.rows.map(x=>x.raceKey)).size;
+            const latest='data/note-publish/latest.json';if(fs.existsSync(latest)){const h=JSON.parse(fs.readFileSync(latest));report.handoff={date:h.date,generatedAt:h.generatedAt,candidateCount:h.candidateCount,candidates:(h.candidates||[]).map(x=>({raceKey:x.raceKey,series:x.articleSeries,selectedAt:x.selectedAt,sourcePath:x.sourcePath}))};}
+            const files=fs.readdirSync('.github/workflows').filter(f=>/\.ya?ml$/.test(f));
+            for(const file of files){
+              const text=fs.readFileSync('.github/workflows/'+file,'utf8'),name=(text.match(/^name:\s*(.+)$/m)||[])[1]||'';
+              if(!/live note independently|automatic race predictions|note publish handoff|note github ui transport|collection health/i.test(name))continue;
+              try{
+                const data=await get('/actions/workflows/'+file+'/runs?branch=main&per_page=20');
+                const runs=(data.workflow_runs||[]).filter(x=>x.event!=='pull_request').slice(0,5);
+                const pipe={file,name,runs:runs.map(x=>({id:x.id,sha:x.head_sha,status:x.status,conclusion:x.conclusion,event:x.event,createdAt:x.created_at,updatedAt:x.updated_at,attempt:x.run_attempt}))};
+                for(const x of runs.slice(0,2)){
+                  const jobs=await get('/actions/runs/'+x.id+'/jobs');
+                  const row=pipe.runs.find(r=>r.id===x.id);row.jobs=(jobs.jobs||[]).map(j=>({id:j.id,name:j.name,status:j.status,conclusion:j.conclusion,steps:j.steps}));
+                  if(x===runs[0]&&x.status==='completed')for(const j of (jobs.jobs||[]).filter(j=>j.conclusion!=='skipped').slice(0,2)){
+                    const res=await fetch(root+'/actions/jobs/'+j.id+'/logs',{headers,signal:AbortSignal.timeout(25000)});
+                    if(res.ok)fs.writeFileSync(out+'/job-'+j.id+'.log',await res.text());
+                  }
+                }
+                report.pipelines.push(pipe);
+              }catch(e){report.errors.push({file,error:e.message});}
+            }
+            try{const prs=await get('/pulls?state=open&per_page=30');report.openPRs=prs.map(p=>({number:p.number,title:p.title,head:p.head.sha,branch:p.head.ref,body:p.body}));}catch(e){report.errors.push({openPRs:e.message});}
+            fs.writeFileSync(out+'/audit.json',JSON.stringify(report,null,2));
+            console.log('SAVED_V13',JSON.stringify({sourceCommit:report.sourceCommit,rows:report.rows,uniqueRaces:report.uniqueRaces,handoff:report.handoff?{date:report.handoff.date,generatedAt:report.handoff.generatedAt}:null,errors:report.errors}));
+            console.log('PIPELINES',JSON.stringify(report.pipelines.map(p=>({file:p.file,runs:p.runs.map(({jobs,...r})=>r)}))));
+            console.log('OPEN_PRS',JSON.stringify(report.openPRs?.map(({body,...p})=>p)));
           }
-          const failures = [];
-          for (const check of required) {
-            const file = `${check.dir}/${check.report}`;
-            if (!fs.existsSync(file)) {
-              failures.push(`${file}: missing report`);
-              continue;
-            }
-            const report = JSON.parse(fs.readFileSync(file, "utf8"));
-            const marks = new Set((report.marks || []).map(row => row.name));
-            for (const mark of check.marks) {
-              if (!marks.has(mark)) {
-                failures.push(`${file}: missing ${mark}; error=${report.error?.message || "none"}`);
-              }
-            }
-            if (report.error) {
-              failures.push(`${file}: ${report.error.message || "diagnostic error"}`);
-            }
-            const exitFile = `${check.dir}/exit-status.txt`;
-            const exitStatus = fs.existsSync(exitFile)
-              ? fs.readFileSync(exitFile, "utf8").trim()
-              : "missing";
-            if (exitStatus !== "0") {
-              failures.push(`${exitFile}: expected 0, got ${exitStatus}`);
-            }
-            if (
-              check.screenshot &&
-              !fs.existsSync(`${check.dir}/${check.screenshot}`)
-            ) {
-              failures.push(`${check.dir}/${check.screenshot}: missing screenshot`);
-            }
-          }
-          if (failures.length) {
-            console.error(failures.join("\n"));
-            process.exit(1);
-          }
-          console.log("All post-prediction WebKit stages completed.");
+          main().catch(e=>{console.error(e);process.exitCode=1;});
           NODE
-
-      - name: Upload post-prediction diagnostics
+      - name: Preserve originals and matching source code
         if: always()
-        uses: actions/upload-artifact@v4
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          paths=['scripts','js','config','.github/workflows','data/note-drafts/20261004','data/note-publish','data/results/20261004.json','docs/escape-partner-v13.md','docs/note-article-series.md','docs/note-hit-reporting.md']
+          with zipfile.ZipFile('evidence/originals.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for p in map(Path,paths):
+                  for f in p.rglob('*') if p.is_dir() else [p]:
+                      if f.is_file(): z.write(f,str(f))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: post-prediction-webkit-diagnostics
-          path: artifacts-post
+          name: escape-v13-saved-20261004
+          path: evidence/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
