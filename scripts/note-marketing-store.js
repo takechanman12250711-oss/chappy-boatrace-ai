@@ -1,6 +1,7 @@
 'use strict';
 const { VERSION, jstDate, recentDates, initialState, receiptRow } = require('./note-marketing-content');
 const { settlePublished, distributionDrafts } = require('./note-marketing-reports');
+const { sourceContext } = require('./note-marketing-social');
 const REPO = 'takechanman12250711-oss/chappy-boatrace-ai';
 const BRANCH = 'note-marketing-state';
 function client(env = process.env, request = fetch) {
@@ -96,7 +97,7 @@ function client(env = process.env, request = fetch) {
       const result = daily.get(row.raceKey);
       const official = result?.resultAvailable || result?.status === 'void' ? result : (ledger.races[row.raceKey] || result);
       const settlement = bytes === null ? { status: 'review', reason: 'published_source_missing' } : settlePublished(row, bytes, official, now);
-      rows.push({ ...row, settlement });
+      rows.push({ ...row, settlement, socialContext: sourceContext(row,bytes) });
     }
     return { ...state, rows, distribution: distributionDrafts(rows, config, state.date) };
   }
