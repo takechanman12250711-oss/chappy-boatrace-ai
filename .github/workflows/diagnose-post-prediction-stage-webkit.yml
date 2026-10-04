@@ -1,5 +1,5 @@
 name: Diagnose post-prediction stage in WebKit
-# One-shot read-only investigation. Never merge this branch into main.
+# Temporary read-only evidence retrieval, never merge.
 on:
   push:
     branches: [verify/escape-v13-saved-20261004]
@@ -7,100 +7,41 @@ on:
 permissions:
   contents: read
   actions: read
-  pull-requests: read
 jobs:
-  saved-v13-evidence:
+  observed-public-evidence:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: 441b036873f36bfe5bb9ca6fd36d8644f9e83552
-          persist-credentials: false
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            /.github/workflows/
-            /scripts/
-            /js/
-            /config/
-            /docs/escape-partner-v13.md
-            /docs/note-article-series.md
-            /docs/note-hit-reporting.md
-            /data/note-drafts/20261004/
-            /data/note-publish/
-            /data/results/20261004.json
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Read actual saved evidence and current pipeline runs
+      - name: Read the existing publication and official result only
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p evidence
-          git rev-parse HEAD > evidence/source-commit.txt
+          mkdir evidence
           node - <<'NODE'
-          const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
-          const out='evidence',root='https://api.github.com/repos/'+process.env.GITHUB_REPOSITORY;
+          const fs=require('node:fs'),crypto=require('node:crypto');
+          const root='https://api.github.com/repos/'+process.env.GITHUB_REPOSITORY;
+          const report={checkedAt:new Date().toISOString(),readOnly:true,pages:[],workflows:[],errors:[]};
           const headers={Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json'};
-          const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
-          async function get(p){const r=await fetch(root+p,{headers,signal:AbortSignal.timeout(25000)});if(!r.ok)throw Error(p+': HTTP '+r.status);return r.json();}
-          const token=v=>typeof v==='string'?v:v?.ticket;
-          const list=v=>Array.isArray(v)?v.map(token):null;
-          function scan(o,p='',a=[]){if(!o||typeof o!=='object')return a;for(const [k,v]of Object.entries(o)){const q=p?p+'.'+k:k;if(k==='ticketPolicyVersion'||k==='escapeRolePartnerReplacement')a.push({path:q,value:v});if(v&&typeof v==='object')scan(v,q,a);}return a;}
+          async function api(path){const r=await fetch(root+path,{headers,signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error(path+': '+r.status);return r.json();}
           async function main(){
-            const report={checkedAt:new Date().toISOString(),readOnly:true,sourceCommit:fs.readFileSync(out+'/source-commit.txt','utf8').trim(),rows:[],pipelines:[],errors:[]};
-            const dir='data/note-drafts/20261004';
-            for(const name of fs.existsSync(dir)?fs.readdirSync(dir).filter(n=>n.endsWith('.json')).sort():[]){
-              const raw=fs.readFileSync(dir+'/'+name),b=JSON.parse(raw),r=b.record||{},p=r.prediction||{},a=b.article||{},e=r.practicalSelectionEvidence||{};
-              const surfaces={article:list(a.practicalTickets),prediction:list(p.practicalTickets),verification:list(p.verificationEvidence?.tickets),baseline:list(b.baselinePracticalTickets),selectionEvidence:list(e.practicalTickets)};
-              const valid=Object.values(surfaces).filter(x=>x!==null);
-              report.rows.push({file:name,sha256:sha(raw),raceKey:r.raceKey,series:b.monitor?.kind||a.articleSeries||'normal',capturedAt:b.capturedAt,selectedAt:r.selectedAt,deadlineAt:r.deadlineAt,sourceCommit:b.sourceCommit,preDeadline:Date.parse(r.selectedAt)<Date.parse(r.deadlineAt),afterDeployment:Date.parse(r.selectedAt)>Date.parse('2026-10-03T11:37:32Z'),policies:scan(b),surfaces,matching:valid.length>=4&&valid.every(x=>JSON.stringify(x)===JSON.stringify(valid[0]))});
+            for(const [name,url]of [['official-result','https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261004&jcd=23&rno=3'],['published-note','https://note.com/great_robin3243/n/n500c84aedec6']]){
+              try{const r=await fetch(url,{signal:AbortSignal.timeout(30000)}),b=Buffer.from(await r.arrayBuffer());fs.writeFileSync('evidence/'+name+'.html',b);report.pages.push({name,url,finalUrl:r.url,status:r.status,contentType:r.headers.get('content-type'),bytes:b.length,sha256:crypto.createHash('sha256').update(b).digest('hex')});}catch(e){report.errors.push({name,error:e.message});}
             }
-            report.uniqueRaces=new Set(report.rows.map(x=>x.raceKey)).size;
-            const latest='data/note-publish/latest.json';if(fs.existsSync(latest)){const h=JSON.parse(fs.readFileSync(latest));report.handoff={date:h.date,generatedAt:h.generatedAt,candidateCount:h.candidateCount,candidates:(h.candidates||[]).map(x=>({raceKey:x.raceKey,series:x.articleSeries,selectedAt:x.selectedAt,sourcePath:x.sourcePath}))};}
-            const files=fs.readdirSync('.github/workflows').filter(f=>/\.ya?ml$/.test(f));
-            for(const file of files){
-              const text=fs.readFileSync('.github/workflows/'+file,'utf8'),name=(text.match(/^name:\s*(.+)$/m)||[])[1]||'';
-              if(!/live note independently|automatic race predictions|note publish handoff|note github ui transport|collection health/i.test(name))continue;
-              try{
-                const data=await get('/actions/workflows/'+file+'/runs?branch=main&per_page=20');
-                const runs=(data.workflow_runs||[]).filter(x=>x.event!=='pull_request').slice(0,5);
-                const pipe={file,name,runs:runs.map(x=>({id:x.id,sha:x.head_sha,status:x.status,conclusion:x.conclusion,event:x.event,createdAt:x.created_at,updatedAt:x.updated_at,attempt:x.run_attempt}))};
-                for(const x of runs.slice(0,2)){
-                  const jobs=await get('/actions/runs/'+x.id+'/jobs');
-                  const row=pipe.runs.find(r=>r.id===x.id);row.jobs=(jobs.jobs||[]).map(j=>({id:j.id,name:j.name,status:j.status,conclusion:j.conclusion,steps:j.steps}));
-                  if(x===runs[0]&&x.status==='completed')for(const j of (jobs.jobs||[]).filter(j=>j.conclusion!=='skipped').slice(0,2)){
-                    const res=await fetch(root+'/actions/jobs/'+j.id+'/logs',{headers,signal:AbortSignal.timeout(25000)});
-                    if(res.ok)fs.writeFileSync(out+'/job-'+j.id+'.log',await res.text());
-                  }
-                }
-                report.pipelines.push(pipe);
-              }catch(e){report.errors.push({file,error:e.message});}
+            for(const file of ['live-note.yml','collect-predictions.yml','note-github-ui-transport.yml']){
+              try{const d=await api('/actions/workflows/'+file+'/runs?branch=main&per_page=20');report.workflows.push({file,runs:d.workflow_runs.filter(r=>r.event!=='pull_request').slice(0,5).map(r=>({id:r.id,name:r.name,status:r.status,conclusion:r.conclusion,sha:r.head_sha,event:r.event,createdAt:r.created_at,updatedAt:r.updated_at}))});}catch(e){report.errors.push({file,error:e.message});}
             }
-            try{const prs=await get('/pulls?state=open&per_page=30');report.openPRs=prs.map(p=>({number:p.number,title:p.title,head:p.head.sha,branch:p.head.ref,body:p.body}));}catch(e){report.errors.push({openPRs:e.message});}
-            fs.writeFileSync(out+'/audit.json',JSON.stringify(report,null,2));
-            console.log('SAVED_V13',JSON.stringify({sourceCommit:report.sourceCommit,rows:report.rows,uniqueRaces:report.uniqueRaces,handoff:report.handoff?{date:report.handoff.date,generatedAt:report.handoff.generatedAt}:null,errors:report.errors}));
-            console.log('PIPELINES',JSON.stringify(report.pipelines.map(p=>({file:p.file,runs:p.runs.map(({jobs,...r})=>r)}))));
-            console.log('OPEN_PRS',JSON.stringify(report.openPRs?.map(({body,...p})=>p)));
+            try{report.main=(await api('/commits/main')).sha; const d=await api('/contents/data/note-drafts/20261004?ref='+report.main); report.sourceFiles=d.map(x=>({path:x.path,sha:x.sha,size:x.size}));}catch(e){report.errors.push({sourceFiles:e.message});}
+            fs.writeFileSync('evidence/public-evidence.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
           }
           main().catch(e=>{console.error(e);process.exitCode=1;});
           NODE
-      - name: Preserve originals and matching source code
-        if: always()
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import zipfile
-          paths=['scripts','js','config','.github/workflows','data/note-drafts/20261004','data/note-publish','data/results/20261004.json','docs/escape-partner-v13.md','docs/note-article-series.md','docs/note-hit-reporting.md']
-          with zipfile.ZipFile('evidence/originals.zip','w',zipfile.ZIP_DEFLATED) as z:
-              for p in map(Path,paths):
-                  for f in p.rglob('*') if p.is_dir() else [p]:
-                      if f.is_file(): z.write(f,str(f))
-          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: escape-v13-saved-20261004
+          name: escape-v13-public-evidence-20261004
           path: evidence/
           if-no-files-found: error
           retention-days: 14
