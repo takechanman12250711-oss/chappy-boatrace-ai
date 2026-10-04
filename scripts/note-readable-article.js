@@ -15,24 +15,35 @@ const ticketsIn = text => mentions(text).flatMap(expand);
 const sameSet = (a, b) => JSON.stringify([...new Set(a)].sort()) === JSON.stringify([...new Set(b)].sort());
 
 function formations(tickets) {
-  // Group only equal first/second axes; the third axis cannot invent a ticket.
-  const groups = [];
+  // Display may regroup non-adjacent tickets within this section only.
+  // Original priority, odds and the central/reference ledgers stay untouched.
+  const groups = new Map();
   for (const ticket of tickets) {
     const [a,b,c] = ticket.split('-'), key = `${a}-${b}`;
-    if (groups.at(-1)?.key !== key) groups.push({ key, thirds: [] });
-    groups.at(-1).thirds.push(c);
+    if (!groups.has(key)) groups.set(key, { axes: [[a], [b], []], tickets: [] });
+    groups.get(key).axes[2].push(c);
+    groups.get(key).tickets.push(ticket);
   }
-  // Merge adjacent second-axis rows only when their ordered third axes match.
-  // This preserves both the exact ticket set and its original priority order.
-  const blocks = [];
-  for (const { key, thirds } of groups) {
-    const [first, second] = key.split('-');
-    const previous = blocks.at(-1);
-    if (previous?.first === first && previous.thirds.join() === thirds.join()) {
-      previous.seconds.push(second);
-    } else blocks.push({ first, seconds: [second], thirds });
+  const blocks = [...groups.values()];
+  const format = axes => axes.map(axis => [...new Set(axis)].sort().join('・')).join(' → ');
+  // A merge is allowed only when expanding its axes yields exactly its source
+  // tickets. Incomplete rectangles therefore cannot invent cross combinations.
+  let merged = true;
+  while (merged) {
+    merged = false;
+    outer: for (let i = 0; i < blocks.length; i++) {
+      for (let j = i + 1; j < blocks.length; j++) {
+        const axes = blocks[i].axes.map((axis,k) => [...new Set([...axis, ...blocks[j].axes[k]])]);
+        const source = [...blocks[i].tickets, ...blocks[j].tickets];
+        if (!sameSet(ticketsIn(format(axes)), source)) continue;
+        blocks[i] = { axes, tickets: source };
+        blocks.splice(j, 1);
+        merged = true;
+        break outer;
+      }
+    }
   }
-  return blocks.map(({ first, seconds, thirds }) => `${first} → ${seconds.join('・')} → ${thirds.join('・')}`).join('\n');
+  return blocks.map(({ axes }) => format(axes)).join('\n');
 }
 
 function readableArticle(article, bundle) {
