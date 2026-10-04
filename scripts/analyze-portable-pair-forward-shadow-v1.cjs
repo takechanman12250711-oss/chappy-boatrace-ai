@@ -176,7 +176,7 @@ function gates(metric) {
 function build() {
   const cohort = input.buildDefaultCohort({ root: ROOT });
   const payouts = payoutAudit.payoutMap();
-  const portableAudit = portable.build();
+  const portableAudit = portable.build({ cohort, payouts });
   const eligibleRecords = cohort.records.filter(record => captureMs(record) >= FREEZE_MS);
   const eligibleKeys = new Set(eligibleRecords.map(record => record.__analysisRaceKey || input.raceKey(record)));
   const pairRows = portableAudit.rows.filter(row => eligibleKeys.has(row.raceKey));
