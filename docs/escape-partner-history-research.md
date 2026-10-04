@@ -26,4 +26,6 @@
 
 採用gate未登録なので `INSUFFICIENT_EVIDENCE` を維持する。Bに比べてCが変わらない場合や失った的中が上回る場合もそのまま報告し、良い結果を得るための重み調整を同じ評価期間で繰り返さない。`productionChanged=false` / `automaticProductionChange=false` / `usableForPrediction=false`。
 
+`selectionComparisons.priorityVsSaved` はA→B、`historyVsPriority` はB→Cの追加・喪失・純増を分けて示す。各段階の的中／頭なし／1・2着の組なし／3着不足は排他的に数え、的中が変わったレースには公式着順と追加・削除券を残す。全体・方式別・場別を同じ規則で比較する。これは保存券と公式着順の位置照合であり、実際の展開や選定理由の推測ではない。未確定・返還等の除外、買い目生成、採用条件は従来どおり。
+
 確認: `node --test scripts/test-escape-partner-history.cjs`。実データ比較: `node scripts/research-escape-partners.cjs`（GitHub Actionsで実行）。

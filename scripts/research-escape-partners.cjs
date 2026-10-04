@@ -93,6 +93,25 @@ function select(row, profile) {
     locked, historyApplied:profile.samples>=MIN_HISTORY, historyChangedControl:!same(control,candidate),
     candidateChangedBaseline:!same(row.baseline,restore(candidate)) };
 }
+function missStage(tickets, actual) {
+  if (tickets.includes(actual)) return 'hit';
+  if (!tickets.some(t=>t[0]===actual[0])) return 'head-missing';
+  if (!tickets.some(t=>t.slice(0,3)===actual.slice(0,3))) return 'second-missing';
+  return 'third-missing';
+}
+function compareSelections(rows, before, after) {
+  const stagesBefore={}, stagesAfter={}, gained=[], lost=[];
+  for (const row of rows) {
+    const from=missStage(row[before],row.actual), to=missStage(row[after],row.actual);
+    inc(stagesBefore,from); inc(stagesAfter,to);
+    if ((from==='hit') === (to==='hit')) continue;
+    const detail={raceKey:row.raceKey,actual:row.actual,beforeStage:from,afterStage:to,
+      removed:row[before].filter(t=>!row[after].includes(t)),added:row[after].filter(t=>!row[before].includes(t))};
+    (to==='hit'?gained:lost).push(detail);
+  }
+  return {races:rows.length,gainedHits:gained.length,lostHits:lost.length,netHits:gained.length-lost.length,
+    stagesBefore,stagesAfter,gained,lost};
+}
 function summarize(rows) {
   const n = rows.length, stats = {};
   for (const key of ['baseline','control','candidate']) {
@@ -106,7 +125,11 @@ function summarize(rows) {
     return { gainedHits:gained.length,lostHits:lost.length,netHits:gained.length-lost.length,gained,lost };
   };
   return { ...stats,changedRaces:rows.filter(r=>r.candidateChangedBaseline).length,
-    historyChangedControl:rows.filter(r=>r.historyChangedControl).length, versusBaseline:change('baseline'), versusPriorityControl:change('control') };
+    historyChangedControl:rows.filter(r=>r.historyChangedControl).length, versusBaseline:change('baseline'), versusPriorityControl:change('control'),
+    selectionComparisons:{
+      priorityVsSaved:compareSelections(rows,'baseline','control'),
+      historyVsPriority:compareSelections(rows,'control','candidate')
+    } };
 }
 function build(selected, historical, results, diagnostics = {}, generatedAt = new Date().toISOString()) {
   const {resultOf} = require('./audit-escape-main.cjs');
@@ -176,4 +199,4 @@ function main(root=process.cwd()) {
   return report;
 }
 if(require.main===module)main();
-module.exports={VERSION,courseMap,historicalRace,historyBefore,rankedCandidates,select,summarize,build,main};
+module.exports={VERSION,courseMap,historicalRace,historyBefore,rankedCandidates,select,missStage,compareSelections,summarize,build,main};
