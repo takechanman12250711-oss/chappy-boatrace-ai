@@ -107,6 +107,12 @@ function announcementText(rows,marketing,now) {
   if(!validUrl(marketing.index.url))throw Error('buffer_announcement_index_invalid');
   return announcementCopy(rows,marketing.index.url,now);
 }
+function announcementDue(rows,last,now) {
+  if(now-last<5*60000)return false;
+  if(now-last>=3600000)return true;
+  // Do not wait an hour when that would leave at most two minutes to read.
+  return rows.some(r=>Date.parse(r.deadlineAt)<=last+3600000+120000);
+}
 async function announce(state,config,marketing,log,delivery,clock) {
   if(config.announcements?.enabled!==true)return {status:'disabled'};
   let now=clock();const date=jstDate(now),seen=new Set();
@@ -117,13 +123,15 @@ async function announce(state,config,marketing,log,delivery,clock) {
     record.publicationKeys.forEach(k=>seen.add(k));last=Math.max(last,record.at);
   }
   // Failed/unknown attempts also consume a slot and permanently cover their rows.
-  if(refs.length>=8||now-last<3600000)return {status:'interval_or_daily_limit'};
+  if(refs.length>=8)return {status:'interval_or_daily_limit'};
   let rows=announcementRows(state,config,now,seen);
   if(!rows.length)return {status:'no_new_articles'};
+  if(!announcementDue(rows,last,now))return {status:'interval_or_daily_limit'};
   const channelId=await delivery.channel();now=clock();
   if(jstDate(now)!==date)throw Error('buffer_date_changed');
   rows=announcementRows(state,config,now,seen);
   if(!rows.length)return {status:'deadlines_passed'};
+  if(!announcementDue(rows,last,now))return {status:'interval_or_daily_limit'};
   const text=announcementText(rows,marketing,now);
   if(weight(text)>280)throw Error('buffer_announcement_too_long');
   const publicationKeys=rows.map(r=>r.publicationKey).sort();
@@ -211,6 +219,9 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   const results=await reconcile(log,delivery,now);
   const loaded=await store.load(marketing),state=await store.settle(loaded.state,marketing,now);
   if(loaded.state.verifiedDate!==jstDate(now)||loaded.state.articles.index.hash!==hash(indexBody(state.rows,marketing,now)))throw Error('buffer_public_index_not_verified');
+  // Time-sensitive announcements use the existing shared API budget first.
+  const announcement=await announce(state,config,marketing,log,delivery,clock);
+  if(announcement.status==='review_required'||announcement.postId)results.push({kind:'announcement',...announcement});
   // Existing paired draft validator is retained only as an evidence validator;
   // this sender has no LINE or direct paid X transport.
   const candidates=pairedItems(state,config,now);let channelId,started=0;
@@ -234,8 +245,6 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
     if(result.status!=='accepted_pending')await log.put('note-buffer-final/'+suffix,{...receipt,...result});
     results.push({postId:post.id,...result});
   }
-  const announcement=await announce(state,config,marketing,log,delivery,clock);
-  if(announcement.status==='review_required'||announcement.postId)results.push({kind:'announcement',...announcement});
   const review=await recap(state,config,marketing,log,delivery,clock);
   if(review.status==='review_required'||review.postId)results.push({kind:'recap',...review});
   let metrics;try{metrics=await collectMetrics(config,log,delivery,clock());}catch{metrics={status:'unavailable'};}

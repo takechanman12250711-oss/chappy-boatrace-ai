@@ -31,7 +31,11 @@ function settlePublished(row, bytes, result, now = Date.now()) {
   const checked = Date.parse(result.checkedAt);
   const resultUrl = `https://www.boatrace.jp/owpc/pc/race/raceresult?hd=${date}&jcd=${jcd}&rno=${Number(rno)}`;
   if (result.ok !== true || result.source !== 'boatrace-official' || result.date !== date || result.jcd !== jcd ||
-      Number(result.raceNo) !== Number(rno) || result.resultUrl !== resultUrl || !Number.isFinite(checked) || checked <= deadline || checked > now) return review('official_result_identity_mismatch');
+      Number(result.raceNo) !== Number(rno) || result.resultUrl !== resultUrl || !Number.isFinite(checked) || checked > now) return review('official_result_identity_mismatch');
+  // A correctly identified pre-race snapshot is merely stale, not a foreign
+  // result. Never accept a resolved result captured before the deadline.
+  if (checked <= deadline) return !result.resultAvailable && result.status === 'not_finished' && !result.void && !result.trifecta
+    ? pending('official_result_stale') : review('official_result_identity_mismatch');
   if (result.void === true || result.status === 'void') return { status: 'void', resultUrl };
   if (!result.resultAvailable || result.status !== 'finished') return pending('official_result_pending');
   const t = result.trifecta;

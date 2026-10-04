@@ -74,6 +74,39 @@ test('note retains misses and every unresolved category in the published denomin
   const unresolved=indexBody([{...f.row,settlement:{status:'pending'}}],config,now);
   assert(!unresolved.includes('1-2-3')); assert(!unresolved.includes('1-3-2'));
 });
+test('stale pre-race snapshots wait without weakening resolved-result identity checks', () => {
+  const f=fixture(), stale={...f.result,checkedAt:f.bundle.capturedAt,resultAvailable:false,status:'not_finished',void:false,trifecta:null,finishers:[]};
+  assert.deepEqual(settlePublished(f.row,f.bytes,stale,now),{status:'pending',reason:'official_result_stale'});
+  for(const change of [{date:'20260928'},{resultUrl:'https://example.com'},{void:true},{status:'finished'},{trifecta:f.result.trifecta}]) {
+    assert.equal(settlePublished(f.row,f.bytes,{...stale,...change},now).status,'review');
+  }
+});
+test('published pending results refresh once, cache official evidence and respect retry cooldown', async () => {
+  const f=fixture('escape'), stale={...f.result,checkedAt:f.bundle.capturedAt,resultAvailable:false,status:'not_finished',trifecta:null,finishers:[]};
+  const store=client({GITHUB_REPOSITORY:REPO,NOTE_CLAIM_TOKEN:'test-only',NOTE_CLAIM_SHA:'f'.repeat(40)},async url=>{
+    let content;
+    if(url.includes('/contents/data/results/')) content=JSON.stringify({source:'boatrace-official',date:'20260929',races:[stale]});
+    else if(url.includes('/contents/data/stats/')) content=JSON.stringify({version:'race-review-results-v1',races:{}});
+    else if(url.includes('/contents/data/note-drafts/')) content=f.bytes;
+    else throw Error(url);
+    return {ok:true,status:200,json:async()=>({encoding:'base64',content:Buffer.from(content).toString('base64')})};
+  });
+  const input={...initialState(config),date:'20260929',rows:[f.row]};let calls=0;
+  const options={refresh:true,clock:()=>now+1000,fetchResult:async key=>{calls++;assert.equal(key,f.row.raceKey);return {...f.result,checkedAt:new Date(now+500).toISOString()};}};
+  const output=await store.settle(input,config,now,options);
+  assert.equal(output.rows[0].settlement.status,'hit');assert.equal(calls,1);assert(output.officialResults[f.row.raceKey]);
+  assert.equal((await store.settle(output,config,now+2000,options)).rows[0].settlement.status,'hit');assert.equal(calls,1);
+  const retryOptions={...options,fetchResult:async()=>{calls++;throw Error('unavailable');}};
+  const failed=await store.settle(input,config,now,retryOptions);
+  assert.equal(failed.rows[0].settlement.status,'pending');
+  await store.settle(failed,config,now+60000,retryOptions);assert.equal(calls,2);
+  await store.settle(failed,config,now+20*60000,retryOptions);assert.equal(calls,3);
+  const wrong=await store.settle(input,config,now,{...options,fetchResult:async()=>({...f.result,jcd:'24'})});
+  assert.equal(wrong.rows[0].settlement.status,'review');assert.deepEqual(wrong.officialResults,{});
+  const corrupt=await store.settle({...input,rows:[{...f.row,sourceSha256:'a'.repeat(64)}]},config,now,retryOptions);
+  assert.equal(corrupt.rows[0].settlement.status,'review');assert.equal(calls,3);
+  assert.equal(input.officialResults,undefined);
+});
 test('social drafts are dated, bounded, stable, series-separated and never marked delivered', () => {
   const f=fixture(), rows=[{...f.row,settlement:settlePublished(f.row,f.bytes,f.result,now)}];
   const drafts=distributionDrafts(rows,config,'20260929');

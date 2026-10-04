@@ -49,13 +49,14 @@ jobs:
             scripts
             config
             js
+            api
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Record checked-out revision
         run: echo "NOTE_CLAIM_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - name: Verify marketing safeguards
-        run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs
+        run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs
       - name: Verify Buffer connection without posting
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:

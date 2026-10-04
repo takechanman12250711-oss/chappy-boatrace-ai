@@ -68,7 +68,7 @@ function client(env = process.env, request = fetch) {
     if (result.object?.sha !== commit.sha) throw new Error('marketing_state_save_unverified');
     return commit.sha;
   }
-  async function settle(state, config, now = Date.now()) {
+  async function settle(state, config, now = Date.now(), { refresh = false, fetchResult, clock = Date.now } = {}) {
     const dates = [...new Set(state.rows.map(r => r.raceKey.slice(0,8)))];
     const daily = new Map();
     for (const date of dates) {
@@ -91,15 +91,38 @@ function client(env = process.env, request = fetch) {
         if (ledger.version !== 'race-review-results-v1' || !ledger.races) throw new Error('marketing_result_ledger_invalid');
       }
     }
+    const keys = new Set(state.rows.map(r => r.raceKey));
+    const officialResults = Object.fromEntries(Object.entries(state.officialResults || {}).filter(([key]) => keys.has(key)));
+    const resultAttempts = Object.fromEntries(Object.entries(state.resultAttempts || {}).filter(([key]) => keys.has(key)));
+    const attempted = new Set();
     const rows = [];
     for (const row of state.rows) {
       const bytes = await file(`data/note-drafts/${row.raceKey.slice(0,8)}/${row.raceKey}-${row.sourceSha256}.json`, 'main', true);
       const result = daily.get(row.raceKey);
-      const official = result?.resultAvailable || result?.status === 'void' ? result : (ledger.races[row.raceKey] || result);
-      const settlement = bytes === null ? { status: 'review', reason: 'published_source_missing' } : settlePublished(row, bytes, official, now);
+      let official = result?.resultAvailable || result?.status === 'void' ? result : (ledger.races[row.raceKey] || officialResults[row.raceKey] || result);
+      let settlement = bytes === null ? { status: 'review', reason: 'published_source_missing' } : settlePublished(row, bytes, official, refresh ? clock() : now);
+      // Only verified published originals that are still waiting need a fetch.
+      // Reuse api/result's official parser; no new scraper or research writer.
+      if (refresh && settlement.status === 'pending' && now >= Date.parse(row.deadlineAt) + 15 * 60000 &&
+          attempted.size < 12 && !attempted.has(row.raceKey) &&
+          now - (Date.parse(resultAttempts[row.raceKey]?.checkedAt) || 0) >= 20 * 60000) {
+        attempted.add(row.raceKey);
+        resultAttempts[row.raceKey] = { checkedAt: new Date(now).toISOString(), status: 'retry' };
+        try {
+          const candidate = await (fetchResult || require('./note-marketing-results').fetchOfficialResult)(row.raceKey);
+          const checked = settlePublished(row, bytes, candidate, clock());
+          if (checked.reason !== 'official_result_identity_mismatch') {
+            officialResults[row.raceKey] = candidate;
+            official = candidate;
+          }
+          settlement = checked;
+          resultAttempts[row.raceKey].status = checked.status;
+        } catch { /* Keep the verified pending snapshot; retry on a later run. */ }
+      }
       rows.push({ ...row, settlement, socialContext: sourceContext(row,bytes) });
     }
-    return { ...state, rows, distribution: distributionDrafts(rows, config, state.date) };
+    return { ...state, rows, ...(refresh || state.officialResults ? { officialResults, resultAttempts } : {}),
+      distribution: distributionDrafts(rows, config, state.date) };
   }
   // Reuse the same scoped client for permanent social claims and receipts.
   return { load, collect, settle, save, api, revision };
