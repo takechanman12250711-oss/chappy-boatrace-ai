@@ -70,7 +70,7 @@ test('terminal free-guide NBSP does not block the index; meaningful edits and pa
   assert.equal(c.hash(actual),c.hash(desired));
   assert.equal(c.sameMarketingContent(actual+'\n',desired),true);
   c.requireEditable(actual,c.hash(desired),desired);
-  for(const changed of [desired+' ',desired+'追加',desired.replace('300円','500円'),desired.replace('今日の予想一覧',' 今日の予想一覧')]) {
+  for(const changed of [desired+' ',desired+'追加',desired.replace('200円','500円'),desired.replace('今日の予想一覧',' 今日の予想一覧')]) {
     assert.throws(()=>c.requireEditable(changed,c.hash(desired),desired),/manual_change/);
   }
   assert.equal(require('./note-editor-content').compareEditorContent(actual,desired).equal,false,'paid article comparison is unchanged');

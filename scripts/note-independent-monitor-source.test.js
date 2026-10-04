@@ -31,7 +31,7 @@ try {
     const b = fixture(), p = publicationPayload(save(b), root, NOW);
     assert.equal(p.title, b.article.title); assert.equal(p.freeText, b.article.freeText);
     assert.equal(p.paidText, b.article.paidText); assert.equal(p.body, b.article.fullText);
-    assert.equal(p.price, 300); assert.equal(p.practicalTicketCount, 2);
+    assert.equal(p.price, 200); assert.equal(p.practicalTicketCount, 2);
     assert.deepEqual(verifyPublicationSource(p, root, NOW), p);
   });
   const rejects = [
@@ -74,4 +74,3 @@ try {
   });
   console.log(`independent monitor source: ${passed} tests passed`);
 } finally { fs.rmSync(root, { recursive: true, force: true }); }
-

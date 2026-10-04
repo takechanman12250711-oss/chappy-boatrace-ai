@@ -7,7 +7,7 @@ const { raceDateFromKey } = require('./build-note-iphone-handoff');
 const { requireSeries, publicationKey, seriesOfBundle } = require('./note-article-series');
 
 const DEFAULT_HANDOFF = path.join(process.cwd(), 'data', 'note-publish', 'iphone.json');
-const EXPECTED_PRICE_YEN = 300;
+const { NOTE_PRICE_YEN: EXPECTED_PRICE_YEN, isRecordedPrice } = require('./note-pricing');
 const NOTE_EDITOR_URL = 'https://editor.note.com/new';
 const BROWSER_USE_API_URL = 'https://api.browser-use.com/api/v4/browsers';
 const BROWSER_USE_PROXY_COUNTRY = 'jp';
@@ -112,7 +112,7 @@ function validateDraftGate(payload, now = Date.now()) {
   if (!String(payload.title || '').trim()) return { ok: false, reason: 'title_missing' };
   if (!String(payload.freeText || '').trim()) return { ok: false, reason: 'free_text_missing' };
   if (!String(payload.paidText || '').trim()) return { ok: false, reason: 'paid_text_missing' };
-  if (Number(payload.price) !== EXPECTED_PRICE_YEN) return { ok: false, reason: 'price_not_300' };
+  if (Number(payload.price) !== EXPECTED_PRICE_YEN) return { ok: false, reason: 'price_not_200' };
   if (payload.practicalTicketCount != null &&
       (!Number.isInteger(payload.practicalTicketCount) || payload.practicalTicketCount < 1 || payload.practicalTicketCount > 7)) {
     return { ok: false, reason: 'ticket_count_exceeds_7' };
@@ -167,7 +167,7 @@ async function legacyClaimBlocks(payload, env, request, rootDir) {
     const data = await response.json();
     if (data.encoding !== 'base64') return true;
     const receipt = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
-    if (receipt.version !== 'note-publication-receipt-v1' || receipt.price !== 300 ||
+    if (receipt.version !== 'note-publication-receipt-v1' || !isRecordedPrice(receipt.price) ||
         publicationKey(receipt.raceKey) !== publicationKey(payload.raceKey) ||
         !/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+$/.test(receipt.url || '') ||
         !Number.isFinite(Date.parse(receipt.publishedAt)) || !Number.isFinite(Date.parse(receipt.verifiedAt)) ||
@@ -477,7 +477,7 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
     if (!response?.ok() || !publicArticleUrl(publicPage.url(), noteId)) throw new Error('publication_public_page_unavailable');
     await publicPage.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
     await publicPage.getByRole('heading', { name: 'ここから先は', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-    await publicPage.getByRole('button', { name: '¥300', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+    await publicPage.getByRole('button', { name: `¥${EXPECTED_PRICE_YEN}`, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
     const dates = await publicPage.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
     const publishedAt = dates.find(value => Number.isFinite(Date.parse(value)) &&
       Math.abs(Date.now() - Date.parse(value)) < 10 * 60 * 1000);

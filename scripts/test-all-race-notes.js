@@ -116,7 +116,7 @@ async function main() {
   assert.equal(savedBundle.record.practicalSelectionEvidence.candidateDecisions[0].reasonCode,'TEST_RECORDED_EXCLUSION');
   assert.deepEqual(savedBundle.record.outerAttackShadow.a.entries.map(t => t.ticket).sort(),
     savedBundle.baselinePracticalTickets.map(t => t.ticket).sort(), 'A/B baseline must exclude raw formations');
-  assert.equal(publicationPayload(`data/note-drafts/${date}/${file}`, rootDir, clock).price, 300);
+  assert.equal(publicationPayload(`data/note-drafts/${date}/${file}`, rootDir, clock).price, 200);
   const env = { GITHUB_REPOSITORY: 'takechanman12250711-oss/chappy-boatrace-ai', NOTE_UI_MODE: 'publish', NOTE_CLAIM_TOKEN: 'test' };
   const sent = [], dispatch = [];
   const queue = await publishQueue({ env, now: () => clock,
