@@ -7,6 +7,7 @@ const { compactArticle } = require('../js/note-generator');
 const { auditNotePublication } = require('./note-publication-audit');
 const { VERSION: MONITOR_VERSION, independentArticle } = require('./note-independent-monitor-source');
 const { seriesOfBundle, publicationKey, seriesTitle } = require('./note-article-series');
+const { NOTE_PRICE_YEN } = require('./note-pricing');
 const MAX_PUBLICATION_TICKETS = 7;
 
 function requirePublicationTicketCount(article) {
@@ -55,7 +56,7 @@ function publicationPayload(sourcePath, rootDir = process.cwd(), now = Date.now(
     articleSeries, publicationKey: publicationKey(bundle.record.raceKey, articleSeries),
     raceDate: `${bundle.record.date.slice(0, 4)}-${bundle.record.date.slice(4, 6)}-${bundle.record.date.slice(6, 8)}`,
     title: article.title, freeText: article.freeText.trim(), paidText: article.paidText.trim(),
-    body: article.fullText, price: 300, deadlineAt: bundle.record.deadlineAt,
+    body: article.fullText, price: NOTE_PRICE_YEN, deadlineAt: bundle.record.deadlineAt,
     practicalTicketCount,
     canPublish: true, blockReason: null
   };

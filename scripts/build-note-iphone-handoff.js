@@ -6,7 +6,7 @@ const path = require("node:path");
 const ROOT = process.cwd();
 const INPUT = path.join(ROOT, "data", "note-publish", "latest.json");
 const OUTPUT = path.join(ROOT, "data", "note-publish", "iphone.json");
-const NOTE_PRICE_YEN = 300;
+const { NOTE_PRICE_YEN } = require('./note-pricing');
 
 function raceDateFromKey(raceKey) {
   const match = String(raceKey || "").match(/^(\d{4})(\d{2})(\d{2})-/);
@@ -87,4 +87,3 @@ function buildIphoneHandoff({ now = Date.now(), today = todayJst() } = {}) {
 
 if (require.main === module) console.log(JSON.stringify(buildIphoneHandoff()));
 module.exports = { NOTE_PRICE_YEN, buildIphoneHandoff, raceDateFromKey };
-

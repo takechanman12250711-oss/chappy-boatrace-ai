@@ -31,7 +31,7 @@ const valid = {
   title: 't',
   freeText: '無料本文',
   paidText: '🔵 本命予想\n\n有料本文',
-  price: 300,
+  price: 200,
   practicalTicketCount: 7
 };
 const now = Date.parse('2026-09-13T11:00:00+09:00');
@@ -40,14 +40,14 @@ const gate = (payload) => validateDraftGate(payload, now);
 const storageState = { cookies: [{ name: 'session', value: 'redacted', domain: '.note.com', path: '/' }], origins: [] };
 const encodedState = Buffer.from(JSON.stringify(storageState), 'utf8').toString('base64');
 
-assert.equal(EXPECTED_PRICE_YEN, 300);
+assert.equal(EXPECTED_PRICE_YEN, 200);
 assert.deepEqual(gate(valid), { ok: true });
 assert.deepEqual(gate({ ...valid, canPublish: false, blockReason: 'deadline_passed' }), { ok: false, reason: 'deadline_passed' });
 assert.deepEqual(gate({ ...valid, blockReason: 'audit_error' }), { ok: false, reason: 'audit_error' });
 assert.deepEqual(gate({ ...valid, title: '' }), { ok: false, reason: 'title_missing' });
 assert.deepEqual(gate({ ...valid, freeText: '' }), { ok: false, reason: 'free_text_missing' });
 assert.deepEqual(gate({ ...valid, paidText: '' }), { ok: false, reason: 'paid_text_missing' });
-assert.deepEqual(gate({ ...valid, price: 500 }), { ok: false, reason: 'price_not_300' });
+assert.deepEqual(gate({ ...valid, price: 500 }), { ok: false, reason: 'price_not_200' });
 assert.deepEqual(gate({ ...valid, practicalTicketCount: 8 }), { ok: false, reason: 'ticket_count_exceeds_7' });
 assert.deepEqual(gate({ ...valid, practicalTicketCount: 0 }), { ok: false, reason: 'ticket_count_exceeds_7' });
 assert.deepEqual(gate({ ...valid, deadlineAt: '' }), { ok: false, reason: 'deadline_unavailable' });

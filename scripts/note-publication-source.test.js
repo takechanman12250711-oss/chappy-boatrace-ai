@@ -91,31 +91,32 @@ async function main() {
     locator: () => ({ evaluate: async () => blocks }) };
   await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 500 }, () => {}), /price_unverified/);
   assert.equal(clicks, 0);
-  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 300 }, () => { throw new Error('stale'); }), /stale/);
+  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 200 }, () => { throw new Error('stale'); }), /stale/);
   assert.equal(clicks, 0);
   blocks[1].pressed = false;
-  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {}), /boundary_mismatch/);
+  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 200 }, () => {}), /boundary_mismatch/);
   assert.equal(clicks, 0);
   blocks[1].pressed = true;
-  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {}), /response_lost/);
+  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 200 }, () => {}), /response_lost/);
   assert.equal(clicks, 1, 'never retry an ambiguous publication click');
   let closed = 0;
   const publicUrl = 'https://note.com/test/n/n123abc';
   const publicPage = { goto: async () => ({ ok: () => true }), url: () => publicUrl,
-    getByRole: () => ({ waitFor: async () => {} }),
+    getByRole: (role, options) => ({ waitFor: async () => { if (role === 'button') assert.equal(options.name, '¥200'); } }),
     locator: () => ({ evaluateAll: async () => [new Date(clock).toISOString()] }) };
   page.context = () => ({ browser: () => ({ newContext: async () => ({ newPage: async () => publicPage, close: async () => { closed++; } }) }) });
   page.locator = selector => selector === 'a[href]' ? { evaluateAll: async () => [
     'https://note.com/test/n/n999', 'https://evil.example/test/n/n123abc', publicUrl
   ] } : { evaluate: async () => blocks };
   submit.click = async () => { clicks++; };
-  const receipt = await publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {});
+  const receipt = await publishConfiguredArticle(page, uiPayload, { price: 200 }, () => {});
   assert.equal(receipt.url, publicUrl);
+  assert.equal(receipt.price, 200);
   assert.equal(receipt.publishedAt, new Date(clock).toISOString());
   assert.equal(closed, 1);
   assert.equal(clicks, 2);
   publicPage.locator = () => ({ evaluateAll: async () => ['2020-01-01T00:00:00Z'] });
-  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {}), /timestamp_unverified/);
+  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 200 }, () => {}), /timestamp_unverified/);
   assert.equal(closed, 2);
   assert.equal(clicks, 3);
   // A real 2026-09-23 publication was visible in /notes although the completion
@@ -131,13 +132,13 @@ async function main() {
   page.waitForTimeout = async () => {};
   page.locator = selector => selector === 'a[href]' ? { evaluateAll: async () => [] } : { evaluate: async () => blocks };
   publicPage.locator = () => ({ evaluateAll: async () => [new Date(clock).toISOString()] });
-  const recovered = await publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {});
+  const recovered = await publishConfiguredArticle(page, uiPayload, { price: 200 }, () => {});
   assert.equal(recovered.url, publicUrl);
   assert.equal(clicks, 4, 'list recovery never clicks publish a second time');
   assert.equal(listingClosed, 1);
   assert.equal(closed, 3);
   publicPage.getByRole = () => ({ waitFor: async () => { throw new Error('public_paywall_missing'); } });
-  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 300 }, () => {}), /public_paywall_missing/);
+  await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 200 }, () => {}), /public_paywall_missing/);
   assert.equal(clicks, 5);
   assert.equal(closed, 4, 'anonymous verification failure closes its context');
   assert.equal(fs.readFileSync(path.join(root, sourcePath), 'utf8'), bytes, 'source remains immutable');
@@ -145,4 +146,3 @@ async function main() {
 }
 main().finally(() => { Date.now = oldClock; fs.rmSync(root, { recursive: true, force: true }); })
   .catch(error => { console.error(error); process.exitCode = 1; });
-

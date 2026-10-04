@@ -106,7 +106,7 @@ function announcementText(rows,marketing,now) {
   const date=jstDate(now),time=new Date(now+9*3600000).toISOString().slice(11,16);
   const labels={normal:'通常',escape:'イン逃げ',manshu:'万舟'};
   const counts=Object.entries(labels).map(([key,label])=>`${label}${rows.filter(r=>r.articleSeries===key).length}件`).join('・');
-  return `${Number(date.slice(4,6))}/${Number(date.slice(6,8))} ${time}更新（日本時間）\nnote予想記事を公開しました\n今回のご案内：${rows.length}記事\n${counts}\n各記事300円。日付・締切をご確認ください。\n全記事・成績はこちら\n${marketing.index.url}`;
+  return `${Number(date.slice(4,6))}/${Number(date.slice(6,8))} ${time}更新（日本時間）\nnote予想記事を公開しました\n今回のご案内：${rows.length}記事\n${counts}\n価格・日付・締切は各記事をご確認ください。\n全記事・成績はこちら\n${marketing.index.url}`;
 }
 async function announce(state,config,marketing,log,delivery,clock) {
   if(config.announcements?.enabled!==true)return {status:'disabled'};

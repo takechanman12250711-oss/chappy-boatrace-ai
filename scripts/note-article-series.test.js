@@ -140,7 +140,7 @@ test('index verifies source kind, lists three sections, and rejects duplicate ar
   const body = indexBody(rows, config, now);
   for (const [i, label] of ['通常予想', 'イン逃げ', '万舟'].entries()) {
     const section = body.split(label + '\n')[1].split('\n\n')[0];
-    assert.ok(section.includes('17:29｜丸亀6R\n公開 16:00｜実戦厳選' + rows[i].ticketCount + '点\n公式結果との照合待ち\n' + rows[i].url));
+    assert.ok(section.includes('17:29｜丸亀6R\n公開 16:00｜実戦厳選' + rows[i].ticketCount + '点\n公開時価格 300円\n公式結果との照合待ち\n' + rows[i].url));
     assert.ok(section.includes(rows[i].resultUrl));
     assert.equal(rows.filter(row => section.includes(row.url)).length, 1, 'each article stays in its own series');
   }
