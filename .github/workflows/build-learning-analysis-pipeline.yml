@@ -54,6 +54,8 @@ jobs:
           node scripts/test-learning-pipeline-gate.js
           node scripts/test-phase6-data-audit.js
       - name: Build in fixed order
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
         run: |
           node scripts/restore-daily-prediction-source.js --all
           node scripts/build-learning-analysis-pipeline.js
