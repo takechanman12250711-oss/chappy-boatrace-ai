@@ -51,7 +51,7 @@ async function run({ env = process.env, now = Date.now(), store = client(env), u
   const config = loadConfig();
   if (!config) throw new Error('marketing_config_missing');
   const loaded = await store.load(config);
-  const state = await store.settle(await store.collect(loaded.state, now), config, now);
+  const state = await store.settle(await store.collect(loaded.state, now), config, now, { refresh: true });
   const desired = { guide: config.guide.initialBody, index: indexBody(state.rows, config, now) };
   const changed = ['guide','index'].filter(k=>state.articles[k]?.hash !== hash(desired[k]));
   // Daily public verification also catches unpublishing or changed links even

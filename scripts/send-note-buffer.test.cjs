@@ -176,3 +176,34 @@ test('announcement rechecks deadline after channel lookup and uses existing reco
  const receipt=[...g.saved.values()].find(x=>x.postId);g.delivery.post=async()=>({id:receipt.postId,channelId:receipt.channelId,text:announcementText(g.state.rows,marketing,now),status:'sent',externalLink:'https://x.com/chappy_boat_ai/status/234'});
  assert.equal((await reconcile(g.log,g.delivery,now+1800000))[0].status,'buffer_confirmed_sent');
 });
+test('urgent announcements advance the hourly window, but keep five-minute spacing and permanent claims',async()=>{
+ const f=announcementFixture();
+ await f.log.put('note-buffer-announcement/20260929/earlier',{at:now-4*60000,publicationKeys:[]});
+ f.state.rows=[{...f.state.rows[0],deadlineAt:'2026-09-29T21:07:00+09:00'}];
+ assert.equal((await announce(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'interval_or_daily_limit');
+ assert.deepEqual(f.events,[]);
+ const r=await announce(f.state,f.config,marketing,f.log,f.delivery,()=>now+60000);
+ assert.equal(r.status,'accepted_pending');assert.equal(r.articles,1);
+ assert.equal((await announce(f.state,f.config,marketing,f.log,f.delivery,()=>now+2*60000)).status,'no_new_articles');
+ assert.equal(f.events.filter(e=>e==='create').length,1);
+ const g=announcementFixture();
+ await g.log.put('note-buffer-announcement/20260929/earlier',{at:now-10*60000,publicationKeys:[]});
+ assert.equal((await announce(g.state,g.config,marketing,g.log,g.delivery,g.clock)).status,'interval_or_daily_limit');
+ assert.deepEqual(g.events,[]);
+});
+test('urgent eligibility is checked again after channel lookup, without claiming expired rows',async()=>{
+ const f=announcementFixture();let clock=now;
+ await f.log.put('note-buffer-announcement/20260929/earlier',{at:now-10*60000,publicationKeys:[]});
+ f.state.rows[0].deadlineAt='2026-09-29T21:03:00+09:00';
+ f.delivery.channel=async()=>{clock=now+2*60000;return 'channel';};
+ assert.equal((await announce(f.state,f.config,marketing,f.log,f.delivery,()=>clock)).status,'interval_or_daily_limit');
+ assert.equal(f.saved.size,1);assert(!f.events.includes('create'));
+});
+test('verified live announcements are sent before hit reports',async()=>{
+ const f=announcementFixture(),hit=sourceFixture().state.rows[0];
+ f.state.rows.push({...hit,publicationKey:hit.raceKey+':manshu',articleSeries:'manshu',url:hit.url+'b'});
+ f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));
+ f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260929');
+ const sent=[];f.delivery.create=async text=>{sent.push(text);return {id:'p'+sent.length,text,channelId:'channel',status:'scheduled'};};
+ await run(f);assert.equal(sent.length,2);assert(!sent[0].includes('的中'));assert(sent[1].includes('的中'));
+});
