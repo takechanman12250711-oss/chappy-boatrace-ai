@@ -68,6 +68,7 @@ test('priority and history effects stay separate, with lost hits and exclusive m
     {raceKey:'loss',actual:'1-2-3',payout:500,baseline:['1-2-3'],control:['1-3-2'],candidate:['1-2-3']},
     {raceKey:'head',actual:'2-1-3',payout:900,baseline:['1-2-3'],control:['1-3-2'],candidate:['1-2-3']}
   ];
+  for (const row of rows) Object.assign(row,r.preservePairCoverage(row.baseline,row.control));
   const before=JSON.stringify(rows), report=r.summarize(rows), a=report.selectionComparisons.priorityVsSaved;
   assert.deepEqual([a.gainedHits,a.lostHits,a.netHits],[1,1,0]);
   assert.deepEqual(a.stagesBefore,{'third-missing':1,hit:1,'head-missing':1});
@@ -80,4 +81,27 @@ test('priority and history effects stay separate, with lost hits and exclusive m
   assert.equal(report.control.stake,report.candidate.stake);
   assert.equal(JSON.stringify(rows),before);
   assert.equal(r.summarize([]).selectionComparisons.priorityVsSaved.races,0);
+});
+test('pair guard uses saved coverage only and does not hardcode boat one or look at outcomes',()=>{
+  const saved=['2-4-1','2-3-5','6-1-2'];
+  const removed=['2-4-1','2-5-3','6-1-2'];
+  const before=JSON.stringify([saved,removed]);
+  assert.deepEqual(r.preservePairCoverage(saved,removed),{guarded:saved,pairGuardApplied:true,removedPairs:['2-3']});
+  const thirdChange=['2-4-5','2-3-1','6-1-2'];
+  assert.deepEqual(r.preservePairCoverage(saved,thirdChange),{guarded:thirdChange,pairGuardApplied:false,removedPairs:[]});
+  assert.equal(JSON.stringify([saved,removed]),before);
+  const selected=r.select(row(),profile);
+  assert.equal(selected.guarded.length,selected.baseline.length);
+  assert.deepEqual(selected.guarded,selected.control);
+});
+test('guard reports both rescued and sacrificed hits instead of treating protected pairs as success',()=>{
+  const saved=['2-3-4','2-4-5'], proposed=['2-4-1','2-4-5'];
+  const rows=['2-3-4','2-4-1'].map((actual,i)=>({raceKey:String(i),actual,payout:1000,
+    baseline:saved,control:proposed,candidate:proposed,...r.preservePairCoverage(saved,proposed)}));
+  const report=r.summarize(rows);
+  assert.equal(report.pairGuardAppliedRaces,2);
+  assert.equal(report.selectionComparisons.guardedVsPriority.gainedHits,1);
+  assert.equal(report.selectionComparisons.guardedVsPriority.lostHits,1);
+  assert.equal(report.selectionComparisons.guardedVsPriority.netHits,0);
+  assert.equal(report.baseline.stake,report.guarded.stake);
 });
