@@ -91,6 +91,7 @@ jobs:
       - name: Run scheduled analysis workflow regressions
         run: |
           node scripts/restore-daily-prediction-source.js --all
+          node scripts/analyze-reference-tag-effectiveness.js
           node scripts/test-scheduled-analysis-workflows.js
           node scripts/test-reference-tag-effectiveness.js
           node scripts/test-reference-tag-report.js
