@@ -79,7 +79,7 @@ test('announcements batch series, link only verified index and do not repeat cov
  const f=announcementFixture();let text;
  f.delivery.create=async t=>{text=t;assert([...f.saved.keys()].some(k=>k.startsWith('note-buffer-announcement/')));return {id:'a',text:t,channelId:'channel',status:'scheduled'};};
  let r=await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock);assert.equal(r.articles,2);assert.equal(r.status,'accepted_pending');
- assert(text.includes('AI展開｜尼崎4R 22:00締切'));assert(text.includes('本命｜尼崎4R 22:00締切'));assert(text.includes(marketing.index.url));assert(!text.includes('的中'));
+ assert(text.includes('AI展開｜尼崎4R｜22:00締切'));assert(text.includes('本命｜尼崎4R｜22:00締切'));assert(text.includes(marketing.index.url));assert(!text.includes('的中'));
  assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,()=>now+3600000)).status,'no_new_articles');
 });
 
@@ -98,10 +98,26 @@ test('announcements include actual race, deadline, price and safe free insight w
  const f=announcementFixture(),r=f.state.rows[0];r.price=200;
  r.socialContext={version:'source-context-v1',sourceSha256:r.sourceSha256,preview:'1号艇の先行が焦点です。'};
  const text=announcementCopy([r],marketing.index.url,now);
- assert(text.includes('尼崎4R 22:00締切｜200円'));assert(text.includes(r.url));assert(text.includes('1号艇の先行'));assert(weight(text)<=280);
+ assert(text.includes('尼崎4R｜22:00締切'));assert(text.includes('選べます。200円。'));assert(text.includes(r.url));assert(text.includes('1号艇の先行'));assert(weight(text)<=280);
  const long=Array.from({length:30},(_,i)=>({...r,raceNo:i%12+1,publicationKey:r.publicationKey+i}));
  assert(weight(announcementCopy(long,marketing.index.url,now))<=280);
  r.socialContext.preview='買い目は1-2-3です。';assert(!announcementCopy([r],marketing.index.url,now).includes('1-2-3'));
+});
+test('announcement grouping preserves series and prices across mixed and omitted articles',()=>{
+ const f=announcementFixture(),r={...f.state.rows[0],price:200};
+ const other={...f.state.rows[1],price:200};
+ const mixed=announcementCopy([r,other],marketing.index.url,now);
+ assert(mixed.startsWith('9/29 予想記事\n'));
+ assert(mixed.includes('AI展開｜尼崎4R｜22:00締切'));assert(mixed.includes('本命｜尼崎4R｜22:00締切'));
+ assert(mixed.includes('各200円。'));assert(weight(mixed)<=280);
+ const batch=Array.from({length:8},(_,i)=>({...r,raceNo:i+1,publicationKey:r.publicationKey+i}));
+ for(const price of [300,undefined]){
+   batch[7].price=price;
+   const text=announcementCopy(batch,marketing.index.url,now);
+   assert(text.startsWith('9/29 AI展開予想\n'));assert(!text.includes('各200円'));
+   assert(text.includes('尼崎1R｜22:00締切｜200円'));assert(text.includes('価格は各記事で確認。'));
+   assert(text.includes('記事は一覧へ'));assert(text.includes(marketing.index.url));assert(weight(text)<=280);
+ }
 });
 test('recap includes misses and unresolved separately, only source-backed comparison',()=>{
  const f=fixture(),r=f.state.rows[0];
