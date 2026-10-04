@@ -483,14 +483,17 @@ const collectResultsWorkflow = readWorkflow("collect-results.yml");
     `${workflowPath}の変更後に結果収集から学習パイプラインを起動する`
   );
 });
+const safetyVerifyIndex = learningPipelineWorkflow.indexOf(
+  "- name: Verify generated safety flags"
+);
+assert.ok(
+  learningBuildIndex < safetyVerifyIndex,
+  "保存済み成果物の更新時点に依存せず、固定順生成後に安全検査を実行する"
+);
 const safetyGuard = stepRunLines(
   learningPipelineWorkflow,
   "Verify generated safety flags"
 ).join("\n");
-assert.doesNotThrow(
-  () => run("bash", ["-e", "-c", safetyGuard], root),
-  "現在のPhase9提案成果物と承認済みPhase10成果物で生成安全検査を通す"
-);
 const guardedVersions = [
   ...safetyGuard.matchAll(/perf\.version\s*!==\s*(['"])([^'"]+)\1/g)
 ].map(match => match[2]);
