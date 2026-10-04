@@ -66,6 +66,12 @@ function rankedCandidates(row) {
   }
   return { candidates, independent };
 }
+function preservePairCoverage(baseline, proposed) {
+  const pairs=tickets=>new Set(tickets.map(t=>t.slice(0,3)));
+  const proposedPairs=pairs(proposed);
+  const removedPairs=[...pairs(baseline)].filter(pair=>!proposedPairs.has(pair));
+  return {guarded:[...(removedPairs.length?baseline:proposed)],pairGuardApplied:removedPairs.length>0,removedPairs};
+}
 function select(row, profile) {
   if (!row.courses || row.baseline.length < 1 || row.baseline.length > 10 || !row.baseline.every(validTicket) ||
       new Set(row.baseline).size !== row.baseline.length) return { reason:'invalid-saved-input' };
@@ -90,6 +96,7 @@ function select(row, profile) {
   if (control.length !== mutable.length || candidate.length !== mutable.length) return { reason:'insufficient-grounded-pool' };
   const restore = replacement => { let i=0; return row.baseline.map(t=>mutable.includes(t) ? replacement[i++] : t); };
   return { baseline:[...row.baseline], control:restore(control), candidate:restore(candidate), mutableSlots:mutable.length,
+    ...preservePairCoverage(row.baseline,restore(control)),
     locked, historyApplied:profile.samples>=MIN_HISTORY, historyChangedControl:!same(control,candidate),
     candidateChangedBaseline:!same(row.baseline,restore(candidate)) };
 }
@@ -114,7 +121,7 @@ function compareSelections(rows, before, after) {
 }
 function summarize(rows) {
   const n = rows.length, stats = {};
-  for (const key of ['baseline','control','candidate']) {
+  for (const key of ['baseline','control','candidate','guarded']) {
     const hits = rows.filter(r=>r[key].includes(r.actual)), stake = rows.reduce((s,r)=>s+r[key].length*100,0);
     const returned = hits.reduce((s,r)=>s+r.payout,0);
     stats[key] = { races:n,hits:hits.length,stake,returned,hitRate:n?hits.length/n*100:null,recoveryRate:stake?returned/stake*100:null };
@@ -125,10 +132,13 @@ function summarize(rows) {
     return { gainedHits:gained.length,lostHits:lost.length,netHits:gained.length-lost.length,gained,lost };
   };
   return { ...stats,changedRaces:rows.filter(r=>r.candidateChangedBaseline).length,
+    pairGuardAppliedRaces:rows.filter(r=>r.pairGuardApplied).length,
     historyChangedControl:rows.filter(r=>r.historyChangedControl).length, versusBaseline:change('baseline'), versusPriorityControl:change('control'),
     selectionComparisons:{
       priorityVsSaved:compareSelections(rows,'baseline','control'),
-      historyVsPriority:compareSelections(rows,'control','candidate')
+      historyVsPriority:compareSelections(rows,'control','candidate'),
+      guardedVsSaved:compareSelections(rows,'baseline','guarded'),
+      guardedVsPriority:compareSelections(rows,'control','guarded')
     } };
 }
 function build(selected, historical, results, diagnostics = {}, generatedAt = new Date().toISOString()) {
@@ -147,6 +157,10 @@ function build(selected, historical, results, diagnostics = {}, generatedAt = ne
   const groups = key => Object.fromEntries([...new Set(rows.map(r=>r[key]))].sort().map(k=>[k,summarize(rows.filter(r=>r[key]===k))]));
   return {version:VERSION,generatedAt,sourceCommit:process.env.GITHUB_SHA||'',productionChanged:false,automaticProductionChange:false,usableForPrediction:false,
     experiment:'retrospective-discovery',decisionGate:{status:'INSUFFICIENT_EVIDENCE',reason:'No preregistered adoption gate or untouched forward cohort'},
+    pairGuardExperiment:{id:'saved-first-second-coverage-guard-v1',
+      rule:'Keep the complete saved selection if priority-only reselection removes any saved first-second pair; otherwise use that reselection.',
+      resultUsedForSelection:false,productionChanged:false,untouchedHoldout:false,
+      limitation:'Designed after inspecting prior losses. This is a new exploratory variant, not independent validation or an approved production rule.'},
     contract:{historyCutoff:'strictly earlier race dates; no same-day or future outcomes',asOfAvailabilityProven:false,
       historyBasis:'official escape wins by actual course one, six complete finishers and starts, no refunds',minimumVenueSamples:MIN_HISTORY,
       selection:'saved grounded candidate pool; preserve head allocation, independent tickets and total point count; saved priority first, venue escape pair frequency only breaks equal priority',
@@ -199,4 +213,4 @@ function main(root=process.cwd()) {
   return report;
 }
 if(require.main===module)main();
-module.exports={VERSION,courseMap,historicalRace,historyBefore,rankedCandidates,select,missStage,compareSelections,summarize,build,main};
+module.exports={VERSION,courseMap,historicalRace,historyBefore,rankedCandidates,preservePairCoverage,select,missStage,compareSelections,summarize,build,main};
