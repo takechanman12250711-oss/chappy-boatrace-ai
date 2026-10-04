@@ -22,7 +22,17 @@ function formations(tickets) {
     if (groups.at(-1)?.key !== key) groups.push({ key, thirds: [] });
     groups.at(-1).thirds.push(c);
   }
-  return groups.map(({ key, thirds }) => `・${key}-${thirds.join('・')}`).join('\n');
+  // Merge adjacent second-axis rows only when their ordered third axes match.
+  // This preserves both the exact ticket set and its original priority order.
+  const blocks = [];
+  for (const { key, thirds } of groups) {
+    const [first, second] = key.split('-');
+    const previous = blocks.at(-1);
+    if (previous?.first === first && previous.thirds.join() === thirds.join()) {
+      previous.seconds.push(second);
+    } else blocks.push({ first, seconds: [second], thirds });
+  }
+  return blocks.map(({ first, seconds, thirds }) => `${first} → ${seconds.join('・')} → ${thirds.join('・')}`).join('\n');
 }
 
 function readableArticle(article, bundle) {
@@ -31,7 +41,7 @@ function readableArticle(article, bundle) {
   const central = unique(bundle.baselinePracticalTickets);
   const seen = new Set(central);
   const groups = [{ heading: '中心の買い目', tickets: central,
-    description: 'まず確認する買い目です。追加候補を買わず、この範囲だけで選べます。' }];
+    description: 'この買い目を中心に検討します。' }];
   const reasons = [];
   let reference = '';
   let freeBase = article.freeText;
@@ -56,7 +66,11 @@ function readableArticle(article, bundle) {
       if (!tickets.length) continue;
       const existing = groups.find(g => g.heading === heading);
       if (existing) existing.tickets.push(...tickets);
-      else groups.push({ heading, tickets, description: 'ここからは追加候補です。中心の買い目との重複はありません。無料部分の展開説明を確認して、必要な場合だけ追加してください。' });
+      else groups.push({ heading, tickets, description: {
+        '相手を広げるなら': '相手を広げたい場合の追加候補です。',
+        '別の展開を考えるなら': '別の展開に備える追加候補です。',
+        '高配当を狙うなら': '高配当を狙う場合の追加候補です。'
+      }[heading] });
     }
     const practical = article.paidText.match(/^🔥 実戦厳選\n([\s\S]*?)\n計\s+(\d+)点$/m);
     if (!practical) throw new Error('readable_practical_section_missing');
@@ -70,7 +84,7 @@ function readableArticle(article, bundle) {
   const referenceTickets = [...new Set(ticketsIn(reference))];
   const remainingReference = referenceTickets.filter(t => !seen.has(t));
   if (remainingReference.length) groups.push({ heading: '別会計の参考予想', tickets: remainingReference,
-    description: '保存された参考予想のうち、上の買い目と重複しない分です。中心の買い目の成績とは別集計です。' });
+    description: '中心の買い目の成績とは別集計の参考予想です。' });
   const referenceProse = reference.split('\n').filter(line => !mentions(line).length && !/^(計 |内訳|参考.*点|本命とは別会計)/.test(line)).join('\n').trim();
   if (referenceProse) reasons.push(referenceProse);
   // A saved rationale can include the full ticket. Its ticket remains in the
@@ -85,10 +99,9 @@ function readableArticle(article, bundle) {
   let cumulative = 0;
   const paidText = groups.map(group => {
     cumulative += group.tickets.length;
-    return [group.heading, group.description, formations(group.tickets),
-      `${group === groups[0] ? '中心' : '追加'} ${group.tickets.length}点｜ここまで重複なし${cumulative}点`,
-      `1点100円の場合：この欄${group.tickets.length * 100}円`].join('\n\n');
-  }).join('\n\n');
+    const count = `${group.tickets.length}点${group === groups[0] ? '' : `｜ここまで合計${cumulative}点`}`;
+    return [group.heading, formations(group.tickets) + '\n' + count, group.description].join('\n\n');
+  }).join('\n\n') + `\n\n金額の目安（1点100円）\n中心のみ${central.length * 100}円${total > central.length ? `／追加・参考をすべて含めると${total * 100}円` : ''}`;
   const rendered = ticketsIn(paidText);
   const expected = [...central, ...(!independent ? unique([
     ...(prediction.mainSheet?.tickets || []), ...(prediction.mainSheet?.coverTickets || []),

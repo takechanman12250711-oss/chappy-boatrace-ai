@@ -11,10 +11,25 @@ test('independent original remains immutable, reasons move before the paywall', 
     assert.ok(a.freeText.includes('元の理由を短縮・差し替えしない。'));
     assert.deepEqual(ticketsIn(a.freeText), []);
     assert.deepEqual(ticketsIn(a.paidText), ['1-2-3', '1-2-4']);
-    assert.ok(a.paidText.includes('・1-2-3・4'));
+    assert.ok(a.paidText.includes('1 → 2 → 3・4\n2点'));
     assert.ok(!a.paidText.includes('・1-2-34'));
     assert.ok(a.freeText.includes('中心の買い目 2点'));
     assert.equal(a.fullText.split(a.paywallMarker).length, 2);
+  }
+});
+test('compact rectangles preserve exact ordered tickets without inventing cross combinations', () => {
+  for (const tickets of [
+    ['1-2-4','1-2-5','1-3-4','1-3-5'],
+    ['1-2-4','1-2-5','1-3-4'],
+    ['1-2-4','1-2-5','1-3-5','1-3-4']
+  ]) {
+    const b = fixture();
+    b.baselinePracticalTickets = tickets;
+    b.article.paidText = '買い目\n\n' + tickets.map(t => '・'+t).join('\n') + '\n\n計 '+tickets.length+'点';
+    const a = readableArticle(b.article, b);
+    assert.deepEqual(ticketsIn(a.paidText), tickets);
+    assert.equal((a.paidText.match(/1点100円/g) || []).length, 1);
+    if (tickets.length === 4 && tickets[2] === '1-3-4') assert.ok(a.paidText.includes('1 → 2・3 → 4・5'));
   }
 });
 test('overlapping candidate pools and reference tickets are each shown once; none are invented or lost', () => {
