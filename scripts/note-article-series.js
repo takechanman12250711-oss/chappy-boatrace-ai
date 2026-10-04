@@ -2,7 +2,7 @@
 
 // Source identity, never inferred from a normal AI ticket or headline.
 const SERIES = Object.freeze({
-  normal: { label: '通常予想', brand: 'チャッピーボートレースAI', color: '#136b86' },
+  normal: { label: 'AI展開予想', brand: 'チャッピーボートレースAI', color: '#136b86' },
   escape: { label: 'イン逃げ', brand: 'チャッピー 狙い目監視', color: '#167665' },
   manshu: { label: '万舟', brand: 'チャッピー 狙い目監視', color: '#aa5732' }
 });
@@ -26,7 +26,7 @@ function publicationKey(raceKey, series = 'normal') {
 function seriesTitle(article, series) {
   requireSeries(series);
   // Monitoring originals already identify their kind. Preserve their wording.
-  if (series !== 'normal' || article.title.startsWith('【通常予想】')) return article;
-  return { ...article, title: `【通常予想】${article.title}` };
+  if (series !== 'normal') return article;
+  return { ...article, title: `【AI展開予想】${article.title.replace(/^【(?:通常予想|AI展開予想)】/, '')}` };
 }
 module.exports = { SERIES, requireSeries, seriesOfBundle, publicationKey, seriesTitle };

@@ -29,8 +29,11 @@ try {
   });
   test('actual publication adapter preserves title, reasons, formation and paywall', () => {
     const b = fixture(), p = publicationPayload(save(b), root, NOW);
-    assert.equal(p.title, b.article.title); assert.equal(p.freeText, b.article.freeText);
-    assert.equal(p.paidText, b.article.paidText); assert.equal(p.body, b.article.fullText);
+    assert.equal(p.title, b.article.title);
+    assert.ok(p.freeText.includes('元の理由を短縮・差し替えしない。'));
+    assert.ok(p.paidText.startsWith('中心の買い目'));
+    assert.ok(p.paidText.includes('・1-2-34'));
+    assert.deepEqual(b.article, b.monitor.article);
     assert.equal(p.price, 200); assert.equal(p.practicalTicketCount, 2);
     assert.deepEqual(verifyPublicationSource(p, root, NOW), p);
   });

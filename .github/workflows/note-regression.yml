@@ -23,6 +23,7 @@ on:
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
       - "scripts/note-pricing*"
+      - "scripts/note-readable-article*"
       - "scripts/note-cover*"
       - "assets/note/**"
       - "scripts/note-browserbase-draft-save.js"
@@ -78,6 +79,7 @@ on:
       - "scripts/check-note-skills.js"
       - "scripts/note-github-ui-transport.js"
       - "scripts/note-pricing*"
+      - "scripts/note-readable-article*"
       - "scripts/note-cover*"
       - "assets/note/**"
       - "scripts/note-browserbase-draft-save.js"
@@ -147,7 +149,7 @@ jobs:
           node scripts/test-prediction-summaries.js
           node scripts/check-note-skills.js
           node scripts/note-github-ui-transport.test.js
-          node --test scripts/note-pricing.test.js
+          node --test scripts/note-pricing.test.js scripts/note-readable-article.test.js
           node scripts/note-cover.test.js
           node scripts/note-cover-template.test.js
           node scripts/note-browserbase-draft-save.test.js

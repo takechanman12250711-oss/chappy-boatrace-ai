@@ -46,8 +46,10 @@ test('intake preserves complete independent original and has one immutable path'
     assert.equal(saved.changed, true);
     assert.equal(saveIndependentMonitorNote(b, { rootDir, now }).changed, false);
     const p = publicationPayload(saved.sourcePath, rootDir, now);
-    assert.equal(p.title, b.article.title); assert.equal(p.body, b.article.fullText);
-    assert.equal(p.freeText, b.article.freeText); assert.equal(p.paidText, b.article.paidText);
+    assert.equal(p.title, b.article.title);
+    assert.ok(p.freeText.includes('元の理由を短縮・差し替えしない。'));
+    assert.ok(p.paidText.startsWith('中心の買い目'));
+    assert.deepEqual(require('./note-readable-article').ticketsIn(p.paidText), ['1-2-3', '1-2-4']);
     assert.equal(JSON.stringify(b), before);
   }
 }));
@@ -138,7 +140,7 @@ test('index verifies source kind, lists three sections, and rejects duplicate ar
     return receiptRow(receipt, bytes, now);
   });
   const body = indexBody(rows, config, now);
-  for (const [i, label] of ['通常予想', 'イン逃げ', '万舟'].entries()) {
+  for (const [i, label] of ['AI展開予想', 'イン逃げ', '万舟'].entries()) {
     const section = body.split(label + '\n')[1].split('\n\n')[0];
     assert.ok(section.includes('17:29｜丸亀6R\n公開 16:00｜実戦厳選' + rows[i].ticketCount + '点\n公開時価格 300円\n公式結果との照合待ち\n' + rows[i].url));
     assert.ok(section.includes(rows[i].resultUrl));

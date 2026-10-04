@@ -95,7 +95,7 @@ function indexBody(rows, config, now = Date.now()) {
   // Always show absolute deadlines. A static note cannot claim to know whether
   // a race is still open at the reader's current time between updater runs.
   return [`${date.slice(0,4)}年${Number(date.slice(4,6))}月${Number(date.slice(6,8))}日の予想一覧`,
-    `通常予想・イン逃げ・万舟を分け、各区分の締切順にまとめています。イン逃げと万舟は独立した狙い目監視の原稿です。時刻は日本時間です。新規公開の記事は各${NOTE_PRICE_YEN}円で試行中です。過去の記事を含め、購入価格は各記事ページをご確認ください。`,
+    `AI展開予想・イン逃げ・万舟を分け、各区分の締切順にまとめています。イン逃げと万舟は独立した狙い目監視の原稿です。時刻は日本時間です。新規公開の記事は各${NOTE_PRICE_YEN}円で試行中です。過去の記事を含め、購入価格は各記事ページをご確認ください。`,
     '日付と締切をご確認ください。締切を過ぎた記事は振り返り用の記録です。',
     `本日の公開記事の成績\n${dailySummary(current, date)}\n集計は事前公開した記事の実戦厳選買い目だけが対象です。種類ごとに集計し、結果待ち・不成立・確認中は判定済み件数に含めません。払戻は公式の100円あたりの金額で、実際の購入額・利益ではありません。`,
     ...Object.entries(SERIES).map(([key, series]) => {

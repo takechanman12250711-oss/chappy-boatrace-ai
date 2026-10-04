@@ -79,7 +79,7 @@ test('social drafts are dated, bounded, stable, series-separated and never marke
   const drafts=distributionDrafts(rows,config,'20260929');
   assert.equal(drafts.deliveryEnabled,false); assert.equal(drafts.x.status,'awaiting_connection');
   assert.equal(drafts.line.status,'awaiting_connection');
-  assert.equal(drafts.x.items.length,1); assert(drafts.x.items[0].text.includes('9/29 通常予想'));
+  assert.equal(drafts.x.items.length,1); assert(drafts.x.items[0].text.includes('9/29 AI展開予想'));
   assert(drafts.x.items[0].text.includes('公式払戻（100円あたり）1,230円'));
   assert(drafts.x.items[0].text.includes(f.row.url)); assert(drafts.x.items[0].text.includes(config.index.url));
   // Conservative upper bound: all non-ASCII codepoints count as two; each URL as 23.

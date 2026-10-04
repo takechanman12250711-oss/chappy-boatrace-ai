@@ -44,7 +44,9 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
     error.issueCodes = [...new Set(audit.issues.map(issue => issue.code))];
     throw error;
   }
-  return { bundle, article, articleSeries, sha256: match[4] };
+  // Audit the immutable original first, then verify the approved public copy.
+  const readable = require('./note-readable-article').readableArticle(article, bundle);
+  return { bundle, article: readable, articleSeries, sha256: match[4] };
 }
 
 function publicationPayload(sourcePath, rootDir = process.cwd(), now = Date.now()) {
