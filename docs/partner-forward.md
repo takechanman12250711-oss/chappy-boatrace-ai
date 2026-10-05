@@ -12,9 +12,9 @@
 
 ## 保存と時刻証拠
 
-既存 `live-note.yml` の5分収集後に、まだ締切前の当日原稿からA/B/Dを `/tmp/partner-forward-seal` へ生成する。GitHub Actions artifactへ保存した後、公式APIでartifact ID・digest・名前・run ID・headを照合する。API応答のDateの1秒上限を確認時刻に使い、候補生成→artifact作成→確認の順序と確認時刻が締切前であることを要求する。ローカルのselectedAtだけをリモート保存証拠にしない。
+既存 `live-note.yml` の5分収集とnote原本の保存・公開handoff開始後に、まだ締切前の当日原稿からA/B/Dを `/tmp/partner-forward-seal` へ生成する。GitHub Actions artifactへ保存した後、公式APIでartifact ID・digest・名前・run ID・headを照合する。API応答のDateの1秒上限を確認時刻に使い、候補生成→artifact作成→確認の順序と確認時刻が締切前であることを要求する。ローカルのselectedAtだけをリモート保存証拠にしない。
 
-遅延分はlateとして前向き件数へ入れない。確認できた候補とreceiptだけを `data/partner-forward/YYYYMMDD` に内容hash付きで不変保存し、既存source-only writerを使う。途中失敗でもnote保存・投稿の既存処理を優先し、研究失敗は最後にworkflow失敗として明示する。新しいcron・有料API・Workの常時監視は追加しない。
+遅延分はlateとして前向き件数へ入れない。確認できた候補とreceiptだけを `data/partner-forward/YYYYMMDD` に内容hash付きで不変保存し、既存source-only writerを使う。note保存・公開handoffを研究処理より先に実行する。artifactアップロードは1分、確認APIは10秒で打ち切り、研究失敗は最後にworkflow失敗として明示する。新しいcron・有料API・Workの常時監視は追加しない。
 
 artifactは90日保存。receiptはリポジトリへ残るが、元artifactの取得期限とは区別する。生の候補だけ・アップロード途中・確認失敗を保存済みとしない。
 

@@ -79,7 +79,7 @@ function capture(root,out,env=process.env,now=Date.now()){
 async function seal(root,out,env=process.env,fetcher=fetch){
   if(env.GITHUB_REPOSITORY!==repo||env.GITHUB_REF!=='refs/heads/main'||!/^\d+$/.test(env.PARTNER_ARTIFACT_ID||''))throw Error('seal_context_invalid');
   const p=protocol(root),response=await fetcher(`https://api.github.com/repos/${repo}/actions/artifacts/${env.PARTNER_ARTIFACT_ID}`,{
-    headers:{Authorization:`Bearer ${env.GH_TOKEN}`,Accept:'application/vnd.github+json'}});
+    signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${env.GH_TOKEN}`,Accept:'application/vnd.github+json'}});
   if(!response.ok)throw Error('artifact_metadata_unavailable');
   const a=await response.json(),digest='sha256:'+String(env.PARTNER_ARTIFACT_DIGEST||'').replace(/^sha256:/,'');
   const server=Date.parse(response.headers.get('date'))+1000; // HTTP Date has second precision: use its upper bound.

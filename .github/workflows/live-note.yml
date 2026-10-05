@@ -118,6 +118,16 @@ jobs:
         env:
           NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
         run: node scripts/collect-predictions.js --note-only
+      - name: Save immutable evidence independently of publication audit
+        if: always() && github.event_name != 'pull_request'
+        run: node scripts/save-live-verification-sources.js
+      - name: Save only audited note source and start existing publisher
+        if: github.event_name != 'pull_request'
+        env:
+          NOTE_CLAIM_TOKEN: ${{ github.token }}
+          NOTE_SOURCE_ISOLATED: 'true'
+        run: node scripts/dispatch-ready-note.js
+
       - name: Capture fixed partner candidates without results
         id: partner-capture
         if: github.event_name != 'pull_request'
@@ -127,6 +137,7 @@ jobs:
         id: partner-artifact
         if: github.event_name != 'pull_request' && steps.partner-capture.outputs.count != '0' && steps.partner-capture.outcome == 'success'
         continue-on-error: true
+        timeout-minutes: 1
         uses: actions/upload-artifact@v4
         with:
           name: partner-forward-${{ github.run_id }}-${{ github.run_attempt }}
@@ -142,16 +153,9 @@ jobs:
           PARTNER_ARTIFACT_ID: ${{ steps.partner-artifact.outputs.artifact-id }}
           PARTNER_ARTIFACT_DIGEST: ${{ steps.partner-artifact.outputs.artifact-digest }}
         run: node scripts/partner-forward.cjs seal /tmp/partner-forward-seal
-      - name: Save immutable evidence independently of publication audit
+      - name: Persist sealed partner evidence after publication handoff
         if: always() && github.event_name != 'pull_request'
         run: node scripts/save-live-verification-sources.js
-      - name: Save only audited note source and start existing publisher
-        if: github.event_name != 'pull_request'
-        env:
-          NOTE_CLAIM_TOKEN: ${{ github.token }}
-          NOTE_SOURCE_ISOLATED: 'true'
-        run: node scripts/dispatch-ready-note.js
-
       - name: Report partner capture failures after preserving notes
         if: always() && (steps.partner-capture.outcome == 'failure' || steps.partner-artifact.outcome == 'failure' || steps.partner-confirm.outcome == 'failure')
         run: exit 1

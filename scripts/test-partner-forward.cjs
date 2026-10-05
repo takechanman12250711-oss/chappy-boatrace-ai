@@ -73,3 +73,9 @@ test('fixed checkpoint selects exactly the first 100 distinct remote confirmatio
  const c=f.cohort(root,p);assert.equal(c.rows.length,100);assert.equal(c.rows[0].snapshot.raceKey,'20301005-01-1');assert.equal(c.rows.at(-1).snapshot.raceKey,'20301005-09-4');
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+test('research upload cannot delay the existing note publication handoff',()=>{
+ const text=fs.readFileSync(path.resolve(__dirname,'../.github/workflows/live-note.yml'),'utf8');
+ assert.ok(text.indexOf('run: node scripts/dispatch-ready-note.js')<text.indexOf('name: Capture fixed partner candidates'));
+ assert.ok(text.includes('timeout-minutes: 1\n        uses: actions/upload-artifact@v4'));
+ assert.ok(text.indexOf('name: Persist sealed partner evidence')>text.indexOf('name: Confirm remote seal time'));
+});
