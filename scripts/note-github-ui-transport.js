@@ -422,6 +422,57 @@ async function preparePublication({ rootDir = process.cwd(), env = process.env, 
   return { ok: false, reason: 'no_eligible_unclaimed_article', skipped };
 }
 
+function recoveryReference(payload) {
+  return draftClaimRef(payload).replace('note-draft-claim/', 'note-published/');
+}
+
+function recoverySourceTime(sourcePath, rootDir = process.cwd()) {
+  const source = JSON.parse(fs.readFileSync(path.join(rootDir, sourcePath), 'utf8'));
+  const value = source?.record?.selectedAt || source?.monitor?.confirmedAt || source?.capturedAt;
+  const time = Date.parse(value);
+  if (!Number.isFinite(time) || time >= Date.parse(source?.record?.deadlineAt)) {
+    throw new Error('publication_recovery_source_time_invalid');
+  }
+  return time;
+}
+
+async function recoveryClaimStatus(payload, env = process.env, request = fetch) {
+  const { repository, token } = loadClaimConfig(env);
+  const claim = draftClaimRef(payload);
+  const receipt = recoveryReference(payload);
+  const options = { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(30000) };
+  const [claimResponse, receiptResponse] = await Promise.all([
+    request(`https://api.github.com/repos/${repository}/git/ref/${claim.slice(5)}`, options),
+    request(`https://api.github.com/repos/${repository}/git/ref/${receipt.slice(5)}`, options)
+  ]);
+  if (receiptResponse.status === 200) return { ok: false, reason: 'publication_receipt_exists' };
+  if (receiptResponse.status !== 404) throw new Error(`publication_receipt_lookup_failed_${receiptResponse.status}`);
+  if (claimResponse.status === 404) return { ok: false, reason: 'publication_claim_missing' };
+  if (claimResponse.status !== 200) throw new Error(`note_claim_lookup_failed_${claimResponse.status}`);
+  if ((await claimResponse.json()).ref !== claim) throw new Error('note_claim_lookup_invalid');
+  return { ok: true };
+}
+
+async function preparePublicationRecovery({ rootDir = process.cwd(), env = process.env, request = fetch, handoff } = {}) {
+  const latest = handoff || JSON.parse(fs.readFileSync(path.join(rootDir, 'data/note-publish/latest.json'), 'utf8'));
+  if (!Array.isArray(latest.candidates)) throw new Error('publication_candidates_invalid');
+  const skipped = [];
+  for (const candidate of latest.candidates) {
+    let payload;
+    try {
+      const sourceTime = recoverySourceTime(candidate.sourcePath, rootDir);
+      payload = require('./note-publication-source').publicationPayload(candidate.sourcePath, rootDir, sourceTime);
+      requirePublicationGate(payload, rootDir, sourceTime);
+      const gate = await recoveryClaimStatus(payload, env, request);
+      if (gate.ok) return { ok: true, payload, recoveryOnly: true, skipped };
+      skipped.push({ raceKey: payload.raceKey, articleSeries: payload.articleSeries, reason: gate.reason });
+    } catch (error) {
+      skipped.push({ raceKey: candidate.raceKey, articleSeries: candidate.articleSeries || 'normal', reason: error.message, issueCodes: error.issueCodes });
+    }
+  }
+  return { ok: false, reason: 'no_claimed_publication_to_recover', skipped };
+}
+
 function publicArticleUrl(value, noteId) {
   try {
     const u = new URL(value);
@@ -512,6 +563,42 @@ async function findPublishedArticleInList(page, noteId) {
   }
 }
 
+async function recoverClaimedPublication(page, payload, rootDir = process.cwd()) {
+  const sourceTime = recoverySourceTime(payload.sourcePath, rootDir);
+  requirePublicationGate(payload, rootDir, sourceTime);
+  const response = await page.goto('https://note.com/great_robin3243', { waitUntil: 'domcontentloaded', timeout: 60000 });
+  if (!response?.ok()) throw new Error('publication_recovery_listing_unavailable');
+  const links = page.locator('a[href*="/great_robin3243/n/"]').filter({ hasText: payload.title });
+  if (await links.count() !== 1) throw new Error('publication_recovery_title_not_unique');
+  const href = await links.first().getAttribute('href');
+  const noteId = String(href || '').match(/\/n\/(n[a-f0-9]+)\/?$/)?.[1];
+  const url = publicArticleUrl(new URL(href, 'https://note.com').href, noteId);
+  if (!url) throw new Error('publication_recovery_url_invalid');
+  const articleResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  if (!articleResponse?.ok() || !publicArticleUrl(page.url(), noteId)) throw new Error('publication_public_page_unavailable');
+  await page.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  const articleText = await page.locator('article').innerText();
+  const normalize = value => String(value).replace(/\s+/g, '');
+  if (!normalize(articleText).includes(normalize(payload.freeText)) ||
+      !normalize(articleText).includes(normalize(payload.paidText))) {
+    throw new Error('publication_recovery_body_mismatch');
+  }
+  if (!normalize(articleText).includes(normalize(`¥${EXPECTED_PRICE_YEN}`))) {
+    throw new Error('publication_price_unverified');
+  }
+  const dates = await page.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
+  const deadline = Date.parse(payload.deadlineAt);
+  const publishedAt = dates.find(value => Number.isFinite(Date.parse(value)) &&
+    Date.parse(value) >= sourceTime && Date.parse(value) < deadline);
+  if (!publishedAt) throw new Error('publication_timestamp_unverified_review_required');
+  const receipt = { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
+    articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
+    publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
+    sourceSha256: payload.sourceSha256 };
+  console.log(`NOTE_UI_PUBLICATION_URL_RECOVERED=${url}`);
+  return receipt;
+}
+
 async function savePublicationReceipt(payload, receipt, env = process.env, request = fetch) {
   const { repository, sha, token } = loadClaimConfig(env);
   const base = `https://api.github.com/repos/${repository}/git`;
@@ -536,15 +623,20 @@ async function savePublicationReceipt(payload, receipt, env = process.env, reque
 async function run({ env = process.env } = {}) {
   const mode = String(env.NOTE_UI_MODE || 'auth').trim().toLowerCase();
   if (!['auth', 'draft', 'publish'].includes(mode)) throw new Error('unsupported_note_ui_mode');
+  const recoveryOnly = mode === 'publish' && String(env.NOTE_UI_RECOVERY_ONLY || '').trim() === 'true';
 
   // Invalid/missing credentials and stale handoffs must stop before browser setup.
   const browserUse = loadBrowserUseConfig(env);
   const draft = mode !== 'auth' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
-  if (draft) requireDraftGate(draft.payload);
-  if (mode === 'publish') requirePublicationGate(draft.payload);
+  if (draft && !recoveryOnly) requireDraftGate(draft.payload);
+  if (mode === 'publish' && !recoveryOnly) requirePublicationGate(draft.payload);
+  if (recoveryOnly) {
+    const sourceTime = recoverySourceTime(draft.payload.sourcePath);
+    requirePublicationGate(draft.payload, process.cwd(), sourceTime);
+  }
   const { loadCoverTemplate, attachCover } = require('./note-cover');
   const { renderCover } = require('./note-cover-template');
-  const coverTemplate = draft ? loadCoverTemplate(draft.payload) : null;
+  const coverTemplate = draft && !recoveryOnly ? loadCoverTemplate(draft.payload) : null;
   const { chromium } = require('playwright');
   // Cover rendering does not need note authentication. Keep the large embedded
   // image/font document off the remote CDP session, then hand only the verified
@@ -559,11 +651,21 @@ async function run({ env = process.env } = {}) {
     }
   }
   // Do not reserve a race when local cover generation itself fails.
-  if (draft) await claimDraft(draft.payload, env);
+  if (draft && !recoveryOnly) await claimDraft(draft.payload, env);
   const session = await createBrowserUseSession(browserUse);
   let browser;
   try {
     browser = await chromium.connectOverCDP(session.cdpUrl);
+    if (recoveryOnly) {
+      const context = browser.contexts()[0];
+      if (!context) throw new Error('browser_use_context_missing');
+      const page = context.pages()[0] || await context.newPage();
+      const receipt = await recoverClaimedPublication(page, draft.payload);
+      await savePublicationReceipt(draft.payload, receipt, env);
+      console.log(`NOTE_UI_PUBLICATION=${JSON.stringify(receipt)}`);
+      console.log('NOTE_UI_PUBLISH_CLICKED=false');
+      return receipt;
+    }
     const { page } = await createAuthenticatedPage(browser);
     console.log('NOTE_UI_PROFILE_LOADED=true');
     console.log('NOTE_UI_EDITOR_READY=true');
@@ -642,7 +744,12 @@ module.exports = {
   createAuthenticatedPage,
   requirePublicationGate,
   preparePublication,
+  recoveryReference,
+  recoverySourceTime,
+  recoveryClaimStatus,
+  preparePublicationRecovery,
   findPublishedArticleInList,
+  recoverClaimedPublication,
   publishConfiguredArticle,
   savePublicationReceipt,
   run
