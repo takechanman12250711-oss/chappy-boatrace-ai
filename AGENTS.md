@@ -74,3 +74,8 @@
 ## 2026-10-06 コロがしの運用接続
 
 既存 `Update note marketing` の明示開始入力と専用 `note-korogashi-state` を使う。初回1点1,000円、以後100円単位の全額配分、初回込み最大2〜3R、10万円単位の複数目標。GitHub artifactの締切前登録と、無料一覧の匿名掲載確認を両方保存してから結果・継続を扱う。配分だけのローカル下書き、artifactだけの登録、実購入は区別する。買い目は既存有料記事へ案内し、別課金のコース記事は作らない。詳細と未実証項目は `docs/note-korogashi-draft.md`。独立予想の無人生成とは別工程。
+
+
+## 2026-10-06 独立候補の無人研究
+
+`docs/independent-autonomous-candidate.md` を参照。既存live-noteが通常AI評価前の公式解析データから、限定した展示優位仮説を無人生成し、締切前artifact確認後だけ不変保存する。既存日次auditが公式結果を照合する。Chat判断の移植や合意済み8段階の完全再現ではない。人の役割評価による旧比較とは別方式・別コホート。通常記事の公開を先行し、新cron・Work定期タスク・有料APIを作らない。採用gate未登録、usableForPrediction=false、automaticApplication=falseを維持し、研究候補を有料記事・コロがしへ流さない。実レース未取得や0件を自動予想の運用完成と扱わない。

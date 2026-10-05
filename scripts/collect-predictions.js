@@ -1044,7 +1044,7 @@ async function loadTargets(date) {
     .filter(target => target.jcd && target.raceNo);
 }
 
-async function evaluateTargets(date, targets, { allRaces = false } = {}) {
+async function evaluateTargets(date, targets, { allRaces = false, onOfficialRace = null } = {}) {
   const results = [];
   const attempts = [];
   let nextIndex = 0;
@@ -1059,6 +1059,9 @@ async function evaluateTargets(date, targets, { allRaces = false } = {}) {
           jcd: target.jcd,
           rno: String(target.raceNo)
         });
+        // Research receives only the official response, before any model/history
+        // enrichment. Its recorder handles failures without blocking publication.
+        if (onOfficialRace) onOfficialRace(raceData, target);
         const identity =
           boatIdentity.inspectEntries(
             raceData?.entries,
@@ -2181,10 +2184,23 @@ async function main() {
   const dryRun = hasFlag("dry-run");
   const noteOnly = hasFlag("note-only");
   if (noteOnly) {
+    let onOfficialRace = null;
+    const researchDir = process.env.INDEPENDENT_CANDIDATE_DIR;
+    if (!dryRun && researchDir) {
+      const recordError = error => {
+        const message = String(error?.message || error).slice(0, 200);
+        console.warn(`Independent candidate capture failed: ${message}`);
+        fs.appendFileSync(researchDir + '.errors', message + '\n');
+      };
+      try {
+        const recorder = require('./independent-autonomous-forward.cjs').createRecorder(process.cwd(), researchDir);
+        onOfficialRace = (data, target) => { try { recorder(data, target); } catch (error) { recordError(error); } };
+      } catch (error) { recordError(error); }
+    }
     return require("./collect-all-race-notes").collectAllRaceNotes({
       date, dryRun,
       loadSchedule: query => callApi(scheduleApi, query),
-      evaluate: targets => evaluateTargets(date, targets, { allRaces: true }),
+      evaluate: targets => evaluateTargets(date, targets, { allRaces: true, onOfficialRace }),
       createPrediction: raceData => global.createPrediction(raceData),
       createPracticalSelection: prediction => global.ChappyNoteGenerator.createPracticalSelection(prediction),
       generateArticle: (prediction, options) => global.ChappyNoteGenerator.generateArticle(prediction, { ...options, publicationPolicy: "all-races-v1" }),
@@ -2416,6 +2432,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  evaluateTargets,
   MIN_SCORE,
   SHADOW_LOGIC_FINGERPRINT,
   SHADOW_REFERENCE_GENERATION_ID,
