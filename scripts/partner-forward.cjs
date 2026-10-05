@@ -27,7 +27,7 @@ function validSeal(r,p){
   return r?.version==='partner-forward-seal-v1'&&validSnapshot(s,p)&&r.snapshotHash===hash(json(s))&&
     Number.isSafeInteger(a?.id)&&a.id>0&&/^sha256:[a-f0-9]{64}$/.test(a.digest)&&
     a.runId===s.runId&&a.workflowHead===s.workflowHead&&a.name===`partner-forward-${s.runId}-${s.runAttempt}`&&
-    Date.parse(s.capturedAt)<=Date.parse(a.createdAt)&&Date.parse(a.createdAt)<=Date.parse(a.confirmedAt)&&Date.parse(a.confirmedAt)<Date.parse(s.deadlineAt);
+    Date.parse(s.capturedAt)<Date.parse(a.createdAt)+1000&&Date.parse(a.createdAt)<=Date.parse(a.confirmedAt)&&Date.parse(a.confirmedAt)<Date.parse(s.deadlineAt);
 }
 function writeOnce(file,bytes){
   fs.mkdirSync(path.dirname(file),{recursive:true});

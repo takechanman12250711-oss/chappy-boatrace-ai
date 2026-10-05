@@ -11,6 +11,7 @@ function fixture(){const root=fs.mkdtempSync(path.join(os.tmpdir(),'partner-forw
 function persist(root,r){const b=f.json(r),file=path.join(root,'data/partner-forward',r.snapshot.date,`${r.snapshot.raceKey}-${f.hash(b)}.json`);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,b);return file;}
 test('seal rejects wrong identity, head budget, stale clocks and changed protocol',()=>{
  assert.equal(f.validSeal(receipt(),p),true);
+ const sameSecond=receipt();sameSecond.snapshot.capturedAt='2030-10-05T01:02:00.500Z';sameSecond.snapshotHash=f.hash(f.json(sameSecond.snapshot));assert.equal(f.validSeal(sameSecond,p),true,'artifact created_at has only second precision');
  for(const change of [r=>r.snapshot.control.push('2-1-3'),r=>r.snapshot.control[0]='2-1-3',r=>r.snapshot.guarded[1]='1-2-3',r=>r.snapshot.method='other',r=>r.snapshot.sourceSha256='x',r=>r.snapshot.capturedAt=r.snapshot.deadlineAt,r=>r.artifact.confirmedAt=r.snapshot.deadlineAt,r=>r.artifact.runId='999',r=>r.artifact.workflowHead='d'.repeat(40),r=>r.artifact.createdAt='2030-10-05T00:00:00Z',r=>r.snapshot.protocolHash='e'.repeat(64)]){
  const r=receipt();change(r);r.snapshotHash=f.hash(f.json(r.snapshot));assert.equal(f.validSeal(r,p),false);
  }
