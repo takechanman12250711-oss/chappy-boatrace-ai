@@ -568,8 +568,11 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd())
   requirePublicationGate(payload, rootDir, sourceTime);
   const response = await page.goto('https://note.com/great_robin3243', { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!response?.ok()) throw new Error('publication_recovery_listing_unavailable');
-  const article = page.getByRole('link', { name: payload.title, exact: true });
-  if (await article.count() !== 1 || !await article.isVisible()) throw new Error('publication_recovery_title_not_unique');
+  const articles = page.getByRole('link', { name: payload.title, exact: true });
+  const article = articles.filter({ visible: true });
+  const visibleCount = await article.count();
+  console.log(`NOTE_UI_RECOVERY_LINKS=${await articles.count()}/${visibleCount}`);
+  if (visibleCount !== 1) throw new Error('publication_recovery_title_not_unique');
   const href = await article.getAttribute('href');
   if (!href) throw new Error('publication_recovery_url_invalid');
   const target = new URL(href, page.url()).href;
