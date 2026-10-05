@@ -2,6 +2,7 @@
 const fs=require('node:fs'), path=require('node:path');
 const {VERSION,hash,officialInput,select}=require('./independent-autonomous-candidate.cjs');
 const {writeOnce,stats}=require('./independent-rule-forward.cjs');
+const judgmentContext=require('./independent-judgment-context.cjs');
 const REPO='takechanman12250711-oss/chappy-boatrace-ai';
 const json=x=>JSON.stringify(x)+'\n';
 const read=file=>JSON.parse(fs.readFileSync(file,'utf8'));
@@ -18,7 +19,7 @@ function context(env){
 }
 function validate(s,p){
   const i=s?.input;
-  if(s?.version!=='independent-autonomous-snapshot-v1' || s.protocolHash!==p.hash ||
+  if(!['independent-autonomous-snapshot-v1','independent-autonomous-snapshot-v2'].includes(s?.version) || s.protocolHash!==p.hash ||
       !/^\d{8}-(0[1-9]|1\d|2[0-4])-([1-9]|1[0-2])$/.test(i?.raceKey||'') ||
       i.raceKey!==`${i.date}-${i.jcd}-${i.raceNo}` || i.provenance!=='parsed-official-response' ||
       !/^\d+$/.test(s.runId||'') || !/^\d+$/.test(s.runAttempt||'') || !/^[a-f0-9]{40}$/.test(s.workflowHead||'') ||
@@ -28,6 +29,8 @@ function validate(s,p){
     entryUrl:i.urls?.[0],beforeInfoUrl:i.urls?.[1],entries:i.rows.map(r=>({boat:r.boat,exhibition:{displayTime:r.displayTime}})),
     startExhibition:i.rows.map(r=>({...r,mappingSource:'official-start-image'}))},i,Date.parse(s.selectedAt));
   if(json(again)!==json(i) || json(select(i))!==json(s.candidate))fail('replay_mismatch');
+  if(s.version==='independent-autonomous-snapshot-v2')judgmentContext.validate(s.judgmentContext,i);
+  else if(s.judgmentContext!==undefined)fail('legacy_context_unexpected');
   return true;
 }
 function files(root,date){
@@ -60,9 +63,9 @@ function createRecorder(root,out,env=process.env,now=Date.now){
     const i=officialInput(data,target,clock);
     if(!i)return {status:'waiting-exhibition'};
     if(seen.has(i.raceKey))return {status:'already-captured'};
-    const s={version:'independent-autonomous-snapshot-v1',protocolHash:p.hash,input:i,inputHash:hash(json(i)),
+    const s={version:'independent-autonomous-snapshot-v2',protocolHash:p.hash,input:i,inputHash:hash(json(i)),
       selectedAt:new Date(clock).toISOString(),runId:env.GITHUB_RUN_ID,runAttempt:env.GITHUB_RUN_ATTEMPT,
-      workflowHead:env.GITHUB_SHA,candidate:select(i)};
+      workflowHead:env.GITHUB_SHA,candidate:select(i),judgmentContext:judgmentContext.capture(data,i)};
     validate(s,p);const bytes=json(s);writeOnce(path.join(out,hash(bytes)+'.json'),bytes);seen.add(i.raceKey);
     return {status:s.candidate.status,raceKey:i.raceKey,reason:s.candidate.reason};
   };
@@ -128,7 +131,10 @@ function report(root){
     protocol:p.value,protocolHash:p.hash,autonomousInput:true,chatEquivalent:false,productionChanged:false,
     usableForPrediction:false,automaticApplication:false,decisionGate:{status:'INSUFFICIENT_EVIDENCE',reason:'No registered adoption gate'},
     coverage:'first remote-sealed complete official input among existing live-note fetches; not all races',
-    sealed:c.rows.length,rejected:c.rejected,skipped,groups};
+    sealed:c.rows.length,rejected:c.rejected,skipped,groups,
+    judgmentContext:{captured:c.rows.filter(r=>r.snapshot.version==='independent-autonomous-snapshot-v2').length,
+      legacyWithoutContext:c.rows.filter(r=>r.snapshot.version==='independent-autonomous-snapshot-v1').length,
+      judgmentImplemented:false,usedForCandidateSelection:false}};
   const file=path.join(root,'data/stats/independent-autonomous-report.json');fs.mkdirSync(path.dirname(file),{recursive:true});
   fs.writeFileSync(file+'.tmp',json(r));fs.renameSync(file+'.tmp',file);
   console.log(JSON.stringify({sealed:r.sealed,skipped,groups,usableForPrediction:false}));return r;

@@ -1,6 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const candidate=require('./independent-autonomous-candidate.cjs'),f=require('./independent-autonomous-forward.cjs');
+const context=require('./independent-judgment-context.cjs');
 const clock=Date.parse('2030-09-14T06:00:00Z');
 const target={jcd:'23',raceNo:1,deadlineAt:'2030-09-14T15:20:00+09:00'};
 const env={GITHUB_REPOSITORY:'takechanman12250711-oss/chappy-boatrace-ai',GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:'123',GITHUB_RUN_ATTEMPT:'1',GITHUB_SHA:'a'.repeat(40),AUTONOMOUS_ARTIFACT_ID:'456',AUTONOMOUS_ARTIFACT_DIGEST:'b'.repeat(64),GH_TOKEN:'synthetic-test'};
@@ -26,6 +27,30 @@ test('strict official projection ignores model tickets, odds, results and arbitr
   assert.deepEqual(candidate.officialInput(raw,target,clock),input);assert.deepEqual(candidate.select(input).tickets,['1-2-3','1-3-2']);
   assert.deepEqual(before,official());assert.equal(candidate.select(input).usableForPrediction,false);
   assert.equal(candidate.select(input).chatEquivalent,false);
+});
+test('official judgment facts keep unknowns and isolate model outputs from pre-race context',()=>{
+  const raw=official();raw.entries[0]={...raw.entries[0],registerNo:'5280',className:'A1',avgSt:.16,
+    currentRace:{stList:[.14,.12]},nationalWinRate:6.8,localWinRate:5.2,motorNo:44,motor2Rate:35.7,
+    exhibition:{...raw.entries[0].exhibition,tilt:-.5,propeller:'',partsExchange:'ピストン'}};
+  raw.weather={windSpeed:0,waveHeight:1,windDirection:'横風',liveTideAvailable:false};
+  const input=candidate.officialInput(raw,target,clock),before=structuredClone(raw),c=context.capture(raw,input);
+  assert.equal(c.coverage.registeredRacers,1);assert.equal(c.coverage.averageST,1);assert.equal(c.weather.windSpeed,0);
+  assert.equal(c.weather.tideLevel,null);assert.equal(c.officialEntries[1].avgSt,null);assert.equal(c.judgmentImplemented,false);
+  assert.equal(c.usedForCandidateSelection,false);assert.equal(context.validate(c,input),true);assert.deepEqual(raw,before);
+  Object.assign(raw,{prediction:{head:6},odds:{x:100},results:{actual:'6-5-4'},historyContext:{generatedAt:'future',head:6}});
+  raw.entries[0].score=999;assert.deepEqual(context.capture(raw,input),c);assert.deepEqual(candidate.select(input).tickets,['1-2-3','1-3-2']);
+  const tampered=structuredClone(c);tampered.weather.windSpeed=9;assert.throws(()=>context.validate(tampered,input),/judgment_context/);
+  raw.entries[0].avgSt='0.16';assert.equal(context.capture(raw,input).officialEntries[0].avgSt,null);
+});
+test('course-rank context preserves source identity and the unconfirmed general-race limitation',()=>{
+  const raw=official();raw.entries[0].registerNo='5280';raw.entries[0].officialStartRank={version:'official-course-start-rank-v1',status:'available',
+    source:'boatrace-official-course',registerNo:'5280',sourceUrl:'https://www.boatrace.jp/owpc/pc/data/racersearch/course?toban=5280',
+    sourceSha256:'a'.repeat(64),fetchedAt:new Date(clock-2000).toISOString(),referenceOnly:true,population:'general-only-unconfirmed',
+    byCourse:{1:2.1,2:3,3:2.5,4:3.3,5:null,6:4}};
+  const input=candidate.officialInput(raw,target,clock),c=context.capture(raw,input);
+  assert.equal(c.coverage.courseStartRank,1);assert.equal(c.officialEntries[0].officialStartRank.byCourse[5],null);assert.equal(context.validate(c,input),true);
+  raw.entries[0].officialStartRank.registerNo='9999';assert.equal(context.capture(raw,input).coverage.courseStartRank,0);
+  raw.entries[0].officialStartRank.registerNo='5280';raw.entries[0].officialStartRank.fetchedAt=new Date(clock+1).toISOString();assert.equal(context.capture(raw,input).coverage.courseStartRank,0);
 });
 test('actual course decides group; ties, cross-position tradeoffs and markers never gain invented tie-breaks',()=>{
   let raw=official();[raw.startExhibition[0].course,raw.startExhibition[3].course]=[4,1];
@@ -54,6 +79,19 @@ test('only remote-confirmed snapshots enter cohort, with immutable bytes and exa
   for(const a of [{...metadata,digest:'sha256:'+'c'.repeat(64)},{...metadata,expired:true},{...metadata,workflow_run:{id:124,head_sha:env.GITHUB_SHA}}])await assert.rejects(f.seal(x.root,x.out,env,response(undefined,a)),/artifact_identity/);
   await assert.rejects(f.seal(x.root,x.out,env,response('invalid')),/artifact_identity/);
   assert.throws(()=>f.createRecorder(x.root,path.join(x.root,'pr'),{...env,GITHUB_REF:'refs/pull/1/merge'},()=>clock),/context/);
+});
+test('new captures bind judgment facts into the seal while legacy snapshots remain valid',async t=>{
+  const x=setup(t),raw=official();raw.entries[0].avgSt=.15;
+  f.createRecorder(x.root,x.out,env,()=>clock)(raw,target);
+  const file=path.join(x.out,fs.readdirSync(x.out)[0]),s=JSON.parse(fs.readFileSync(file));
+  assert.equal(s.version,'independent-autonomous-snapshot-v2');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
+  assert.equal(s.judgmentContext.inputHash,s.inputHash);assert.deepEqual(s.candidate,candidate.select(s.input));
+  const p=f.protocol(x.root);assert.equal(f.validate(s,p),true);
+  const missing=structuredClone(s);delete missing.judgmentContext;assert.throws(()=>f.validate(missing,p),/judgment_context/);
+  missing.version='independent-autonomous-snapshot-v1';assert.equal(f.validate(missing,p),true);
+  await f.seal(x.root,x.out,env,response());const report=f.report(x.root);
+  assert.equal(report.judgmentContext.captured,1);assert.equal(report.judgmentContext.legacyWithoutContext,0);
+  assert.equal(report.judgmentContext.judgmentImplemented,false);assert.equal(report.usableForPrediction,false);
 });
 test('first seal including a skip stays fixed; modified source or method is rejected',async t=>{
   const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
