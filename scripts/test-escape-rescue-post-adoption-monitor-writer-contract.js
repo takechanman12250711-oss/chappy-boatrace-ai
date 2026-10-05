@@ -105,14 +105,14 @@ assert.ok(
 );
 assert.match(
   central.slice(saveStart, calibrationStart),
-  /git add data\/results data\/stats/,
+  /result-report-checkpoint.cjs publish diagnostics/,
   "中央writerが2つの救済monitorを公式結果と同じcommitへ保存する",
 );
 const saveStep = central.slice(saveStart, calibrationStart);
 assert.ok(
-  saveStep.includes('git commit -m "Collect official race results"') &&
-    saveStep.includes("git push origin main"),
-  "中央writerが公式結果commitをmainへ保存する",
+  saveStep.includes("result-report-checkpoint.cjs publish diagnostics") &&
+    central.includes("artifact-ids: ${{ needs.diagnostics.outputs.artifact_id }}"),
+  "中央writerが検査済みartifactを元blob照合後にmainへ保存する",
 );
 
 for (const {

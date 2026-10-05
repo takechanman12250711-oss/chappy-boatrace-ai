@@ -51,7 +51,7 @@ note自動公開は、最新mainで実装・接続・権限・投稿条件が確
 自動予想収集と公式結果収集の監視は、まず最新mainの既存GitHub Actionsを確認する。結果収集workflowの異常は同一の監視Issueへ追記され、正常復帰時に自動で閉じる経路があるため、Workで同じ常時監視を作り直さない。Issueがないことだけで正常と決めず、必要なときは対象workflowの最新実行結果も確認する。
 
 
-監視の詳細は最新mainの `docs/result-collection-monitoring.md` を参照する。中央の `collect` → 保存済みSHA → `calibrate` の順序とworkflow全体のwriterキューを維持し、結果保存・校正・派生データ保存の各成功を確認する。
+監視の詳細は最新mainの `docs/result-collection-monitoring.md` を参照する。公式原本の `collect` と診断/校正の保存jobだけが共有writerキューを保持し、重い計算jobは保存済みSHAを読む。artifact ID・入力SHA・元blobの照合を維持し、原本の保存、診断の保存、校正の保存をそれぞれ確認する。競合停止を成功扱いせず、新しい原本を古いsnapshotで上書きしない。
 
 Workからの切り離しはGitHub側の稼働だけで完了とせず、既存ChatGPT定期タスクの有効状態も確認する。移行対象と重複する定期監視の停止を実際に確認してから切り離し済みと報告し、別用途の定期タスクや通知が残る場合は区別して伝える。
 

@@ -15,7 +15,7 @@ function step(name, nextName) {
   const start = workflow.indexOf(`- name: ${name}`);
   const end = nextName
     ? workflow.indexOf(`- name: ${nextName}`, start + 1)
-    : workflow.indexOf("\n  calibrate:", start + 1);
+    : workflow.indexOf("- name: Package verified diagnostics reports", start + 1);
   assert.ok(start >= 0 && end > start, `${name}のworkflow範囲を取得する`);
   return workflow.slice(start, end);
 }
@@ -40,9 +40,9 @@ assert.ok(
 );
 
 assert.ok(
-  workflow.indexOf("- name: Save derived result reports before calibration") <
-    workflow.indexOf("- name: Validate result prediction artifacts"),
-  "派生レポートは重い予想artifact検査より先に保存する",
+  workflow.indexOf("- name: Validate result prediction artifacts") <
+    workflow.indexOf("- name: Save derived result reports before calibration"),
+  "派生レポートは共有writerキュー外の検査に合格してから保存する",
 );
 
 const save = step(
@@ -65,8 +65,8 @@ const centralRebases =
   ) || [];
 assert.equal(
   centralRebases.length,
-  3,
-  "中央保存3か所は未保存差分を退避してrebaseする",
+  1,
+  "公式原本の先行保存だけがautostash rebaseを使用する",
 );
 assert.doesNotMatch(
   workflow,
@@ -74,6 +74,8 @@ assert.doesNotMatch(
   "未保存差分を失う通常rebaseを残さない",
 );
 
+assert.equal((workflow.match(/result-report-checkpoint.cjs publish /g) || []).length, 2,
+  "診断と校正は元blobの比較を通して保存する");
 const diagnostics = step(
   "Build result diagnostics",
   "Build Local Water V2 post-adoption monitor",

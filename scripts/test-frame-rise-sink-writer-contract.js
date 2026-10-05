@@ -47,7 +47,7 @@ assert.ok(
 );
 assert.match(
   central.slice(derivedSaveStart, calibrationStart),
-  /git add data\/results data\/stats/,
+  /result-report-checkpoint.cjs publish diagnostics/,
   "中央結果収集が枠別浮沈統計をdata/statsとして保存する",
 );
 assert.match(dedicated, /permissions:\s*\n\s*contents: read/);

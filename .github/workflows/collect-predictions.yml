@@ -117,13 +117,14 @@ permissions:
   contents: write
   actions: write
 
-concurrency:
-  group: chappy-main-data-writers
-  queue: max
-  cancel-in-progress: false
-
 jobs:
   predict:
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.saved-checkpoint.outputs.sha }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -257,6 +258,48 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
+      - name: Identify saved prediction checkpoint
+        id: saved-checkpoint
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Refresh dependent monitors after watchdog recovery
+        if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]' && steps.early-note.outcome != 'failure' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run check-active-100r-early-monitor.yml --ref main
+          gh workflow run check-wall-boat-branch-profit.yml --ref main
+          gh workflow run check-wall-established-breakdown.yml --ref main
+          gh workflow run collect-playful-link-position-forward.yml --ref main
+
+      - name: Refresh dependent monitors after saved predictions and note dispatch failure
+        if: steps.early-note.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run check-active-100r-early-monitor.yml --ref main
+          gh workflow run check-wall-boat-branch-profit.yml --ref main
+          gh workflow run check-wall-established-breakdown.yml --ref main
+          gh workflow run collect-playful-link-position-forward.yml --ref main
+
+      - name: Report early note dispatch failure after saving predictions
+        if: steps.early-note.outcome == 'failure'
+        run: exit 1
+
+  regression:
+    needs: predict
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.predict.outputs.saved_sha }}
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
       - name: Run noncritical regression checks
         continue-on-error: true
         env:
@@ -286,29 +329,3 @@ jobs:
           node scripts/test-prediction-index-loader.js
           node scripts/test-compact-prediction-index.js
           node scripts/test-collection-health.js
-
-
-
-      - name: Refresh dependent monitors after watchdog recovery
-        if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]' && steps.early-note.outcome != 'failure' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh workflow run check-active-100r-early-monitor.yml --ref main
-          gh workflow run check-wall-boat-branch-profit.yml --ref main
-          gh workflow run check-wall-established-breakdown.yml --ref main
-          gh workflow run collect-playful-link-position-forward.yml --ref main
-
-      - name: Refresh dependent monitors after saved predictions and note dispatch failure
-        if: steps.early-note.outcome == 'failure'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh workflow run check-active-100r-early-monitor.yml --ref main
-          gh workflow run check-wall-boat-branch-profit.yml --ref main
-          gh workflow run check-wall-established-breakdown.yml --ref main
-          gh workflow run collect-playful-link-position-forward.yml --ref main
-
-      - name: Report early note dispatch failure after saving predictions
-        if: steps.early-note.outcome == 'failure'
-        run: exit 1

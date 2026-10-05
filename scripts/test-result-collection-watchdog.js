@@ -134,19 +134,19 @@ async function main() {
   // Central workflow checkpoint: no parallel writers or dependence on a dirty workspace.
   const workflow = fs.readFileSync(".github/workflows/collect-results.yml", "utf8");
   assert.match(workflow, /group: chappy-main-data-writers\n\s+queue: max\n\s+cancel-in-progress: false/);
-  assert.match(workflow, /calibrate:\n\s+needs: collect/);
+  assert.match(workflow, /calibrate:\n\s+needs: publish_reports/);
   assert.match(workflow, /saved_sha: \$\{\{ steps\.save_reports\.outputs\.sha \}\}/);
   assert.match(workflow, /ref: \$\{\{ needs\.collect\.outputs\.saved_sha \}\}/);
   const reportSave = workflow.indexOf("- name: Save derived result reports before calibration");
-  const reportSha = workflow.indexOf('echo "sha=$(git rev-parse HEAD)"', reportSave);
-  const reportPush = workflow.indexOf("git push origin main", reportSave);
-  assert.ok(reportSave >= 0 && reportSha > reportPush);
+  assert.ok(reportSave >= 0);
+  assert.match(workflow.slice(reportSave), /result-report-checkpoint.cjs publish diagnostics/);
+  assert.match(workflow, /ref: \$\{\{ needs\.publish_reports\.outputs\.saved_sha \}\}/);
   assert.ok(
     workflow.indexOf("- name: Save official results before calibration") <
       workflow.indexOf("- name: Build result diagnostics"),
     "official results must be checkpointed before heavy diagnostics",
   );
-  assert.match(workflow, /run: git checkout -B main/);
+  assert.match(workflow, /artifact-ids: \$\{\{ needs\.calibrate\.outputs\.artifact_id \}\}/);
   assert.equal((workflow.match(/node scripts\/test-load-performance\.js/g) || []).length, 2,
     "only the two changed artifact generations need the expensive consistency check");
   const watchdog = fs.readFileSync(".github/workflows/result-collection-watchdog.yml", "utf8");
