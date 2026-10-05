@@ -1,6 +1,6 @@
 'use strict';
-// Validate and persist a completed monitoring original. No prediction engine,
-// generation, rewriting, publication, or network access occurs here.
+// Persist the completed original, with optional separate research evidence.
+// The research selector never replaces the article or its purchase tickets.
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
@@ -25,7 +25,8 @@ function saveIndependentMonitorNote(bundle, { rootDir = process.cwd(), now = Dat
     error.issueCodes = [...new Set(audit.issues.map(issue => issue.code))];
     throw error;
   }
-  const bytes = JSON.stringify(bundle) + '\n';
+  const stored = require('./independent-rule-shadow.cjs').withShadow(bundle);
+  const bytes = JSON.stringify(stored) + '\n';
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   const sourcePath = `data/note-drafts/${date}/${raceKey}-${sha256}.json`;
   const file = path.join(rootDir, sourcePath);

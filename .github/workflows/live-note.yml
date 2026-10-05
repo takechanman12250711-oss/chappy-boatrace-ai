@@ -14,6 +14,11 @@ on:
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
       - 'config/partner-forward.json'
+      - 'config/independent-rule-forward.json'
+      - 'scripts/independent-role-selector.cjs'
+      - 'scripts/independent-rule-shadow.cjs'
+      - 'scripts/independent-rule-forward.cjs'
+      - 'scripts/independent-rule-forward.test.cjs'
       - 'scripts/test-outer-attack-research.js'
       - 'scripts/note-exhibition.js'
       - 'js/note-generator.js'
@@ -35,6 +40,11 @@ on:
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
       - 'config/partner-forward.json'
+      - 'config/independent-rule-forward.json'
+      - 'scripts/independent-role-selector.cjs'
+      - 'scripts/independent-rule-shadow.cjs'
+      - 'scripts/independent-rule-forward.cjs'
+      - 'scripts/independent-rule-forward.test.cjs'
       - 'scripts/test-outer-attack-research.js'
       - 'scripts/note-exhibition.js'
       - 'js/note-generator.js'
@@ -92,6 +102,7 @@ jobs:
             data/stats
             data/note-drafts
             data/partner-forward
+            data/independent-rule-forward
             data/outer-attack-sources
             data/verification-coverage
             data/note-publish
@@ -101,7 +112,7 @@ jobs:
       - name: Verify isolated collector and source preservation
         run: |
           node scripts/test-note-source-concurrency.js
-          node --test scripts/test-partner-forward.cjs
+          node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs
           node --test scripts/test-omura-reference.cjs
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
@@ -159,4 +170,36 @@ jobs:
         run: node scripts/save-live-verification-sources.js
       - name: Report partner capture failures after preserving notes
         if: always() && (steps.partner-capture.outcome == 'failure' || steps.partner-artifact.outcome == 'failure' || steps.partner-confirm.outcome == 'failure')
+        run: exit 1
+
+      - name: Capture independent role selections and explicit skips
+        id: independent-capture
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: node scripts/independent-rule-forward.cjs capture /tmp/independent-rule-seal
+      - name: Seal independent comparison on GitHub before deadline
+        id: independent-artifact
+        if: github.event_name != 'pull_request' && steps.independent-capture.outcome == 'success' && steps.independent-capture.outputs.count != '0'
+        continue-on-error: true
+        timeout-minutes: 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-rule-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/independent-rule-seal/*.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Confirm independent remote timestamp and preserve receipt
+        id: independent-confirm
+        if: github.event_name != 'pull_request' && steps.independent-artifact.outputs.artifact-id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INDEPENDENT_ARTIFACT_ID: ${{ steps.independent-artifact.outputs.artifact-id }}
+          INDEPENDENT_ARTIFACT_DIGEST: ${{ steps.independent-artifact.outputs.artifact-digest }}
+        run: node scripts/independent-rule-forward.cjs seal /tmp/independent-rule-seal
+      - name: Save immutable independent comparison receipts only
+        if: always() && github.event_name != 'pull_request'
+        run: node scripts/save-live-verification-sources.js
+      - name: Surface independent research failures after preserving notes
+        if: always() && (steps.independent-capture.outcome == 'failure' || steps.independent-artifact.outcome == 'failure' || steps.independent-confirm.outcome == 'failure')
         run: exit 1

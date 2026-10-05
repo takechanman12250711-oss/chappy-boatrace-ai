@@ -183,3 +183,7 @@ description: チャッピーボートレースAIのnote公開経路を扱う。�
 ## 独立判断の記録
 
 新しくChatで独立本命・万舟を作成するときは `docs/independent-monitor-decision.md` に従って `monitor.decisionEvidence` を締切前に記録し、既存保存スクリプトで検査する。8段階の判断、公式出典、候補の採否と1〜3着の役割を残す。過去原本に後付けしない。この記録だけで自動判定・前向き成績・採用条件達成とは扱わない。
+
+
+## 独立役割の研究候補（自動予想ではない）
+新しい締切前原稿では `docs/independent-role-selector.md` に沿って、Chatが確認した役割と8段階の優先群を任意の `monitor.ruleInput` に記録できる。元の買い目から順位を逆算せず、未知はunknown/nullにする。既存保存器が本文・中心買い目と別の `independentRuleShadow` を生成する。通常AIへの代用、過去原本への後付け、研究券への公開買い目差し替えは禁止。既存live-noteのリモートreceiptと日次 `independent-rule-report.json` を確認し、ローカル保存・CI合格を前向き比較開始と扱わない。優先群の評価は人の判断を必要とし、無人生成・性能改善・本番採用は未実証。
