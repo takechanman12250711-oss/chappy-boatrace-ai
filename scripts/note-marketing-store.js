@@ -125,6 +125,6 @@ function client(env = process.env, request = fetch) {
       distribution: distributionDrafts(rows, config, state.date) };
   }
   // Reuse the same scoped client for permanent social claims and receipts.
-  return { load, collect, settle, save, api, revision };
+  return { load, collect, settle, save, api, file, revision };
 }
 module.exports = { REPO, BRANCH, client };

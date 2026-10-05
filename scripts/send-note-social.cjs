@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const { createHash, createHmac, randomBytes, randomUUID } = require('node:crypto');
 const { client, REPO } = require('./note-marketing-store');
-const { loadConfig, jstDate, hash, indexBody } = require('./note-marketing-content');
+const { loadConfig, jstDate, hash, publishedIndexBody } = require('./note-marketing-content');
 const { check, EXPECTED_BASIC_ID } = require('./check-line-connection.cjs');
 const digest = text => createHash('sha256').update(text).digest('hex');
 const enc = s => encodeURIComponent(s).replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
@@ -129,7 +129,7 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   // Recheck immutable originals and existing official results; never trust a
   // persisted draft's hit flag. Require its all-results note page to be current.
   const state=await store.settle(loaded.state,marketing,now);
-  if(loaded.state.verifiedDate!==jstDate(now) || loaded.state.articles.index.hash!==hash(indexBody(state.rows,marketing,now))) throw Error('social_public_index_not_verified');
+  if(loaded.state.verifiedDate!==jstDate(now) || loaded.state.articles.index.hash!==hash(publishedIndexBody(state,marketing,now))) throw Error('social_public_index_not_verified');
   const items=pairedItems(state,config,now), results=[];
   for(const {row,item} of items) {
     const pair={version:'note-social-pair-v1',date:state.date,publicationKey:row.publicationKey,evidenceId:row.settlement.evidenceId,

@@ -2,6 +2,20 @@ name: Update note marketing
 
 on:
   workflow_dispatch:
+    inputs:
+      korogashi_first_publication_key:
+        description: 'コロがし開始元（例 20261006-15-6:escape）。空欄なら通常更新のみ'
+        type: string
+        required: false
+      korogashi_targets:
+        description: '目標保有額・円（カンマ区切り。10万円単位）'
+        type: string
+        default: '100000,200000,300000'
+      korogashi_max_legs:
+        description: '初回を含む最大レース数'
+        type: choice
+        options: ['2', '3']
+        default: '3'
   schedule:
     - cron: '7,22,37,52 * * * *'
   push:
@@ -15,6 +29,8 @@ on:
       - 'scripts/note-marketing-*.js'
       - 'scripts/update-note-marketing.js'
       - 'scripts/note-linked-body.js'
+      - 'scripts/note-korogashi*.cjs'
+      - 'config/note-korogashi.json'
   workflow_run:
     workflows: ['Note GitHub UI Transport']
     types: [completed]
@@ -40,6 +56,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,13 +67,43 @@ jobs:
             config
             js
             api
+            .github/workflows
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Record checked-out revision
         run: echo "NOTE_CLAIM_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - name: Verify marketing safeguards
-        run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs
+        run: node --test scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/note-korogashi*.test.cjs
+      - name: Prepare requested korogashi courses and settle saved legs
+        id: korogashi-prepare
+        continue-on-error: true
+        env:
+          NOTE_CLAIM_TOKEN: ${{ github.token }}
+          KOROGASHI_FIRST_PUBLICATION_KEY: ${{ inputs.korogashi_first_publication_key }}
+          KOROGASHI_TARGETS: ${{ inputs.korogashi_targets }}
+          KOROGASHI_MAX_LEGS: ${{ inputs.korogashi_max_legs }}
+        run: node scripts/note-korogashi-run.cjs prepare /tmp/note-korogashi-stage.json
+      - name: Register course snapshots on GitHub before deadline
+        id: korogashi-artifact
+        if: steps.korogashi-prepare.outcome == 'success' && steps.korogashi-prepare.outputs.count != '0'
+        continue-on-error: true
+        timeout-minutes: 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: note-korogashi-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/note-korogashi-stage.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Confirm external registration before advancing courses
+        id: korogashi-confirm
+        if: steps.korogashi-artifact.outputs.artifact-id != ''
+        continue-on-error: true
+        env:
+          NOTE_CLAIM_TOKEN: ${{ github.token }}
+          KOROGASHI_ARTIFACT_ID: ${{ steps.korogashi-artifact.outputs.artifact-id }}
+          KOROGASHI_ARTIFACT_DIGEST: ${{ steps.korogashi-artifact.outputs.artifact-digest }}
+        run: node scripts/note-korogashi-run.cjs confirm /tmp/note-korogashi-stage.json
       - name: Verify Buffer connection without posting
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
@@ -91,3 +138,6 @@ jobs:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           BUFFER_API_KEY: ${{ secrets.BUFFER_API_KEY }}
         run: node scripts/send-note-buffer.cjs
+      - name: Surface course registration failures after normal updates
+        if: always() && (steps.korogashi-prepare.outcome == 'failure' || steps.korogashi-artifact.outcome == 'failure' || steps.korogashi-confirm.outcome == 'failure')
+        run: exit 1

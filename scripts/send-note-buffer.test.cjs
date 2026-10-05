@@ -39,6 +39,14 @@ test('Buffer acceptance is pending and permanent claim prevents duplicates even 
 test('fresh evidence, public index and activation remain required',async()=>{
  for(const mode of ['index','miss','activation','branch']){const f=fixture();if(mode==='index')f.state.articles.index.hash='old';if(mode==='miss')f.state.rows[0].settlement.status='miss';if(mode==='activation')f.config.activatedAt='2026-09-29T20:00:00+09:00';if(mode==='branch')f.env={...env,GITHUB_REF:'refs/heads/other'};if(mode==='activation')assert.equal((await run(f)).status,'no_new_hits');else await assert.rejects(run(f));assert(!f.events.includes('create'));}
 });
+test('course suffix uses the exact verified index snapshot without disabling normal Buffer reporting',async()=>{
+ const {publishedIndexBody}=require('./note-marketing-content');
+ const f=fixture();f.state.korogashiIndex={version:'note-korogashi-index-v1',text:'登録したコースの経過\nモデル配分です。'};
+ f.state.articles.index.hash=hash(publishedIndexBody(f.state,marketing,now));
+ assert.equal((await run(f)).results[0].status,'accepted_pending');
+ const bad=fixture();bad.state.korogashiIndex={...f.state.korogashiIndex};
+ await assert.rejects(run(bad),/public_index_not_verified/);assert(!bad.events.includes('create'));
+});
 test('sent requires exact text, channel, ID and real owner status URL; queue is not sent',()=>{
  const r={postId:'p',channelId:'c',textSha256:createHash('sha256').update('hit').digest('hex')};const p={id:'p',channelId:'c',text:'hit',status:'sent',externalLink:'https://x.com/chappy_boat_ai/status/123'};
  assert.equal(observed(p,r).status,'buffer_confirmed_sent');assert.equal(observed({...p,status:'scheduled'},r).status,'accepted_pending');

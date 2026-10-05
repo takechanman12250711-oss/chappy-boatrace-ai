@@ -108,7 +108,16 @@ function indexBody(rows, config, now = Date.now()) {
 function initialState(config) {
   return { version: VERSION, date: '', seenRefs: [], rows: [], articles: Object.fromEntries(['guide','index'].map(k=>[k,{ hash: hash(config[k].initialBody) }])) };
 }
+// Keep the exact course text from the last verified publication. A later
+// course receipt can change the live journal before the next index update.
+// Distribution must compare against the displayed snapshot, not that future
+// rendering, while still rechecking the current race/result portion.
+function publishedIndexBody(state, config, now = Date.now()) {
+  const extra = state.korogashiIndex;
+  if (extra && (extra.version !== 'note-korogashi-index-v1' || typeof extra.text !== 'string')) throw Error('marketing_course_snapshot_invalid');
+  return indexBody(state.rows, config, now) + (extra?.text ? '\n\n' + extra.text : '');
+}
 function requireEditable(actual, previousHash, desired) {
   if (hash(actual) !== previousHash && hash(actual) !== hash(desired)) throw new Error('marketing_manual_change_review_required');
 }
-module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, recentDates, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, initialState, requireEditable };
+module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, recentDates, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, publishedIndexBody, initialState, requireEditable };

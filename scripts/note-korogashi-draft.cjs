@@ -29,9 +29,13 @@ function allocate(balanceYen, tickets) {
 }
 
 function loadLeg(input, rootDir, now) {
+  requireValue(/^data\/note-drafts\/\d{8}\/\d{8}-\d{2}-\d{1,2}-[a-f0-9]{64}\.json$/.test(input.sourcePath || ''), 'source_path_invalid');
+  return readLeg(input, fs.readFileSync(path.join(rootDir, input.sourcePath), 'utf8'), now);
+}
+
+function readLeg(input, bytes, now) {
   const match = /^data\/note-drafts\/(\d{8})\/\1-(\d{2})-(\d{1,2})-([a-f0-9]{64})\.json$/.exec(input.sourcePath || '');
   requireValue(match, 'source_path_invalid');
-  const bytes = fs.readFileSync(path.join(rootDir, input.sourcePath), 'utf8');
   requireValue(hash(bytes) === match[4] && input.receipt?.sourceSha256 === match[4], 'source_hash_mismatch');
   const planned = time(input.plannedAt);
   requireValue(planned <= now, 'future_plan');
@@ -132,4 +136,4 @@ if (require.main === module) {
     process.stdout.write(JSON.stringify({ ...draft, draftText: renderDraft(draft) }, null, 2) + '\n');
   } catch (error) { process.stderr.write(error.message + '\n'); process.exitCode = 1; }
 }
-module.exports = { VERSION, TARGETS, DISCLAIMER, allocate, buildDraft, renderDraft };
+module.exports = { VERSION, TARGETS, DISCLAIMER, allocate, readLeg, buildDraft, renderDraft };

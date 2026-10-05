@@ -121,7 +121,9 @@ permissions:
 jobs:
   note-regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # A cold checkout of the retained prediction sources can take five
+    # minutes by itself. Leave time for the unchanged regression commands.
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4

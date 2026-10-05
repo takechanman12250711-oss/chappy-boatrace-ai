@@ -2,7 +2,7 @@
 const fs=require('node:fs');
 const {createHash,randomUUID}=require('node:crypto');
 const {client,REPO}=require('./note-marketing-store');
-const {loadConfig,jstDate,hash,indexBody,validUrl}=require('./note-marketing-content');
+const {loadConfig,jstDate,hash,publishedIndexBody,validUrl}=require('./note-marketing-content');
 const {journal,pairedItems}=require('./send-note-social.cjs');
 const {announcementCopy,recapCopy,weight,timeOf}=require('./note-marketing-social');
 const digest=s=>createHash('sha256').update(s).digest('hex');
@@ -218,7 +218,7 @@ async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.pa
   store ||= client(env);log ||= ledger(store);delivery ||= transport(env,config,log);claims ||= journal(store);
   const results=await reconcile(log,delivery,now);
   const loaded=await store.load(marketing),state=await store.settle(loaded.state,marketing,now);
-  if(loaded.state.verifiedDate!==jstDate(now)||loaded.state.articles.index.hash!==hash(indexBody(state.rows,marketing,now)))throw Error('buffer_public_index_not_verified');
+  if(loaded.state.verifiedDate!==jstDate(now)||loaded.state.articles.index.hash!==hash(publishedIndexBody(state,marketing,now)))throw Error('buffer_public_index_not_verified');
   // Time-sensitive announcements use the existing shared API budget first.
   const announcement=await announce(state,config,marketing,log,delivery,clock);
   if(announcement.status==='review_required'||announcement.postId)results.push({kind:'announcement',...announcement});

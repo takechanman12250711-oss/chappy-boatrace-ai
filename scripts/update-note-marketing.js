@@ -1,10 +1,11 @@
 'use strict';
 const fs = require('node:fs');
-const { loadConfig, initialState, indexBody, hash, urlsIn, requireEditable, sameMarketingContent } = require('./note-marketing-content');
+const { loadConfig, publishedIndexBody, hash, urlsIn, requireEditable, sameMarketingContent } = require('./note-marketing-content');
 const { client } = require('./note-marketing-store');
 const { readEditorContent } = require('./note-editor-content');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
 const { loadBrowserUseConfig, createBrowserUseSession, stopBrowserUseSession } = require('./note-github-ui-transport');
+const korogashi = require('./note-korogashi-lifecycle.cjs');
 const BODY = '.note-common-styles__textnote-body';
 async function readPublic(page, article) {
   const response = await page.goto(article.url, { waitUntil: 'domcontentloaded', timeout: 45000 });
@@ -47,16 +48,20 @@ async function updateArticle(page, publicPage, article, desired, previousHash) {
     catch (error) { if (attempt===4) throw error; await page.waitForTimeout(1500); }
   }
 }
-async function run({ env = process.env, now = Date.now(), store = client(env), update = updateArticle } = {}) {
+async function run({ env = process.env, now = Date.now(), clock = Date.now, store = client(env), update = updateArticle } = {}) {
   const config = loadConfig();
   if (!config) throw new Error('marketing_config_missing');
   const loaded = await store.load(config);
   const state = await store.settle(await store.collect(loaded.state, now), config, now, { refresh: true });
-  const desired = { guide: config.guide.initialBody, index: indexBody(state.rows, config, now) };
+  const courseRepo = require('./note-korogashi-store.cjs').repository(store);
+  const courses = await courseRepo.load();
+  const courseText = korogashi.publicText(courses.state, now);
+  state.korogashiIndex = {version:'note-korogashi-index-v1',text:courseText};
+  const desired = { guide: config.guide.initialBody, index: publishedIndexBody(state, config, now) };
   const changed = ['guide','index'].filter(k=>state.articles[k]?.hash !== hash(desired[k]));
   // Daily public verification also catches unpublishing or changed links even
   // when there is no new race. Same content within the same day uses no browser.
-  const verify = loaded.state.verifiedDate !== state.date;
+  const verify = loaded.state.verifiedDate !== state.date || korogashi.needsPublication(courses.state);
   if (!changed.length && !verify) {
     if (JSON.stringify(state) !== JSON.stringify(loaded.state)) await store.save(state, loaded.head);
     console.log('NOTE_MARKETING=unchanged'); return { changed: [], verified: false };
@@ -75,7 +80,25 @@ async function run({ env = process.env, now = Date.now(), store = client(env), u
     for (const key of ['guide','index']) {
       if (await update(page, publicPage, config[key], desired[key], state.articles[key].hash)) updates.push(key);
       await verifyPublic(publicPage, config[key], desired[key]);
-      state.articles[key] = { hash: hash(desired[key]), url: config[key].url, verifiedAt: new Date().toISOString() };
+      state.articles[key] = { hash: hash(desired[key]), url: config[key].url, verifiedAt: new Date(clock()).toISOString() };
+      if (key === 'index' && korogashi.needsPublication(courses.state)) {
+        // The complete body and all source links were just read anonymously.
+        // Persist that real time before any official settlement can advance.
+        const next = korogashi.announce(courses.state, {url:config.index.url,contentHash:hash(desired.index)}, clock());
+        await courseRepo.save(courses, next);
+        // If publishing itself overran the deadline, correct the visible
+        // status immediately. The saved history already excludes that leg.
+        const expired = Object.entries(next.plans).some(([id,p])=>korogashi.project(p).status==='stopped_publication_late' &&
+          korogashi.project(courses.state.plans[id]).status==='waiting_publication');
+        if (expired) {
+          const text = korogashi.publicText(next, clock());
+          state.korogashiIndex = {version:'note-korogashi-index-v1',text};
+          desired.index = publishedIndexBody(state, config, now);
+          if (await update(page, publicPage, config.index, desired.index, state.articles.index.hash)) updates.push('index');
+          await verifyPublic(publicPage, config.index, desired.index);
+          state.articles.index = {hash:hash(desired.index),url:config.index.url,verifiedAt:new Date(clock()).toISOString()};
+        }
+      }
     }
     state.verifiedDate = state.date;
     await store.save(state, loaded.head);
