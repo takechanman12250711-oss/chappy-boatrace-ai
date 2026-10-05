@@ -67,6 +67,10 @@ try {
   git(code.work, ['reset', '--hard', code.baseSha]);
   assert.throws(() => apply({ ...code, root: code.work, bundle: forged }), /Incorrect source blob/);
 
+  write(code.work, 'data/predictions/index-shards/test.json', { snapshotDerived: true });
+  const indexPack = path.join(root, 'index-only.json');
+  pack({ root: code.work, stage: 'diagnostics', output: indexPack });
+  assert.deepEqual(JSON.parse(fs.readFileSync(indexPack)).files, [], 'snapshot index is not published over live index');
   write(code.work, 'data/predictions/20261005.json', { changed: true });
   assert.throws(() => pack({ root: code.work, stage: 'diagnostics', output: path.join(root, 'invalid.json') }), /Unsaved source changes/);
 

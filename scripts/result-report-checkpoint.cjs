@@ -43,7 +43,7 @@ function pack({ root = process.cwd(), stage, output }) {
   // Prediction/result originals must have been saved in the source checkpoint.
   // A report artifact must never smuggle old originals into a newer main.
   const originalChanges = paths.filter(file => /^data\/(results|predictions)\//.test(file) &&
-    !/^data\/predictions\/(index(?:-manifest)?\.json|shards\/)/.test(file));
+    !/^data\/predictions\/(index(?:-manifest)?\.json|index-shards\/)/.test(file));
   if (originalChanges.length) throw new Error(`Unsaved source changes: ${originalChanges.join(', ')}`);
   const files = paths.filter(allowed).map(file => {
     const absolute = path.join(root, file);
