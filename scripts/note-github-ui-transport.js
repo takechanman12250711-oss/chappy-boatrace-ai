@@ -473,6 +473,15 @@ async function preparePublicationRecovery({ rootDir = process.cwd(), env = proce
   return { ok: false, reason: 'no_claimed_publication_to_recover', skipped };
 }
 
+async function prepareTransport(mode, options = {}, handlers = {}) {
+  if (!['auth', 'draft', 'publish', 'recover'].includes(mode)) throw new Error('unsupported_note_ui_mode');
+  if (mode === 'auth') return { ok: true };
+  if (mode === 'publish') return (handlers.publish || preparePublication)(options);
+  if (mode === 'recover') return (handlers.recover || preparePublicationRecovery)(options);
+  return (handlers.draft || preflightDraft)(
+    loadHandoff(options.env?.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF).payload);
+}
+
 function publicArticleUrl(value, noteId) {
   try {
     const u = new URL(value);
@@ -628,8 +637,11 @@ async function savePublicationReceipt(payload, receipt, env = process.env, reque
 
 async function run({ env = process.env } = {}) {
   const mode = String(env.NOTE_UI_MODE || 'auth').trim().toLowerCase();
-  if (!['auth', 'draft', 'publish'].includes(mode)) throw new Error('unsupported_note_ui_mode');
-  const recoveryOnly = mode === 'publish' && String(env.NOTE_UI_RECOVERY_ONLY || '').trim() === 'true';
+  if (!['auth', 'draft', 'publish', 'recover'].includes(mode)) throw new Error('unsupported_note_ui_mode');
+  const recoveryOnly = mode === 'recover';
+  if (mode !== 'recover' && String(env.NOTE_UI_RECOVERY_ONLY || '').trim() === 'true') {
+    throw new Error('explicit_recovery_mode_required');
+  }
 
   // Invalid/missing credentials and stale handoffs must stop before browser setup.
   const browserUse = loadBrowserUseConfig(env);
@@ -754,6 +766,7 @@ module.exports = {
   recoverySourceTime,
   recoveryClaimStatus,
   preparePublicationRecovery,
+  prepareTransport,
   findPublishedArticleInList,
   recoverClaimedPublication,
   publishConfiguredArticle,
