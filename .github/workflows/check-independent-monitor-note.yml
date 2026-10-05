@@ -5,6 +5,9 @@ on:
       - "scripts/note-article-series*"
       - "scripts/save-independent-monitor-note.js"
       - "scripts/independent-monitor-decision*"
+      - "scripts/independent-role-*"
+      - "scripts/independent-rule-*"
+      - "config/independent-rule-forward.json"
       - "scripts/audit-independent-monitor-decisions.cjs"
       - "scripts/note-independent-monitor-fixture.js"
       - 'scripts/note-independent-monitor-source*'
@@ -21,6 +24,7 @@ jobs:
         with:
           persist-credentials: false
           sparse-checkout: |
+            .github/workflows
             scripts
             js
             config
@@ -32,7 +36,7 @@ jobs:
           node-version: '20'
       - name: Test unchanged originals and existing publication protections
         run: |
-          node --test scripts/independent-monitor-decision.test.cjs
+          node --test scripts/independent-monitor-decision.test.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs
           node scripts/note-independent-monitor-source.test.js
           node scripts/note-publication-source.test.js
           node --test scripts/note-article-series.test.js
