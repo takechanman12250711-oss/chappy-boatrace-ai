@@ -96,6 +96,20 @@ assert.throws(() => loadStorageState({ NOTE_STATE_JSON_BASE64: Buffer.from(JSON.
 
 // Missing state stops the CLI before even loading a browser dependency.
 async function checkAsyncGuards() {
+  // An expired unpublished draft must not trigger a remote recovery scan.
+  const { prepareTransport } = require('./note-github-ui-transport');
+  const callsByMode = [];
+  const handlers = {
+    publish: async () => { callsByMode.push('publish'); return { ok: false, reason: 'no_eligible_unclaimed_article' }; },
+    recover: async () => { callsByMode.push('recover'); return { ok: true, recoveryOnly: true }; }
+  };
+  assert.deepEqual(await prepareTransport('publish', {}, handlers), { ok: false, reason: 'no_eligible_unclaimed_article' });
+  assert.deepEqual(callsByMode, ['publish']);
+  assert.deepEqual(await prepareTransport('recover', {}, handlers), { ok: true, recoveryOnly: true });
+  assert.deepEqual(callsByMode, ['publish', 'recover']);
+  assert.deepEqual(await prepareTransport('auth', {}, handlers), { ok: true });
+  await assert.rejects(prepareTransport('invalid', {}, handlers), /unsupported_note_ui_mode/);
+  await assert.rejects(run({ env: { NOTE_UI_MODE: 'publish', NOTE_UI_RECOVERY_ONLY: 'true' } }), /explicit_recovery_mode_required/);
   const publicUrl = 'https://note.com/great_robin3243/n/nc97383960b4b';
   for (const scenario of ['published', 'other-id', 'external', 'preview', 'login', 'error']) {
     let closed = 0;
