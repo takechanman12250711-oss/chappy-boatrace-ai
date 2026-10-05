@@ -12,6 +12,7 @@ on:
       - "scripts/build-practical-priority-shadow-report.js"
       - "scripts/test-practical-priority-shadow.js"
       - "scripts/test-practical-priority-shadow-report.js"
+      - "scripts/test-practical-priority-shadow-memory.js"
       - "scripts/test-practical-priority-shadow-artifact.js"
       - "scripts/test-practical-priority-shadow-regression.js"
       - "scripts/test-shadow-predictions.js"
@@ -43,6 +44,7 @@ jobs:
           node --check scripts/collect-predictions.js
           node scripts/test-practical-priority-shadow.js
           node scripts/test-practical-priority-shadow-report.js
+          node scripts/test-practical-priority-shadow-memory.js
           node scripts/test-practical-priority-shadow-artifact.js
           node scripts/test-practical-priority-shadow-regression.js
           node scripts/test-priority-gate-hole-replacement-regression.js

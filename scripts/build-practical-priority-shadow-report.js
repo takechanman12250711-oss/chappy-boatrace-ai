@@ -24,9 +24,55 @@ const OUTPUT = path.join(
   "practical-priority-shadow-report.json"
 );
 
-function predictionRows() {
+// Keep only fields read by practical-priority-shadow-report. Daily prediction
+// trees contain large diagnostics; retaining them across dates exhausts the
+// collector heap. Do not filter eligibility here: deduplication precedes it.
+function compactPredictionRow(row) {
+  const shadow = row?.practicalPriorityShadow;
+  const result = row?.result;
+  const tickets = value => Array.isArray(value)
+    ? value.map(reportApi.ticketOf)
+    : undefined;
+  return {
+    raceKey: row?.raceKey,
+    date: row?.date,
+    deadlineAt: row?.deadlineAt,
+    selectedAt: row?.selectedAt,
+    practicalPriorityShadow: shadow ? {
+      eligible: shadow.eligible,
+      logicFingerprint: shadow.logicFingerprint,
+      cohortContractFingerprint: shadow.cohortContractFingerprint,
+      sourceSelectionFingerprint: shadow.sourceSelectionFingerprint,
+      capturedAt: shadow.capturedAt,
+      sourceCommit: shadow.sourceCommit,
+      baseTickets: tickets(shadow.baseTickets),
+      shadowTickets: tickets(shadow.shadowTickets),
+      replacement: shadow.replacement ? {
+        addedTicket: reportApi.ticketOf(shadow.replacement.addedTicket),
+        removedTicket: reportApi.ticketOf(shadow.replacement.removedTicket),
+        addedPriorityScore: shadow.replacement.addedPriorityScore,
+        removedPriorityScore: shadow.replacement.removedPriorityScore
+      } : undefined
+    } : undefined,
+    result: result ? {
+      settled: result.settled,
+      status: result.status,
+      void: result.void,
+      resolvedVoid: result.resolvedVoid,
+      resultTicket: reportApi.ticketOf(
+        result.resultTicket || result.review?.resultTicket
+      ),
+      payoutPer100: result.payoutPer100 || result.review?.payoutPer100
+    } : undefined
+  };
+}
+
+function predictionRows({
+  predictionDirectory = PREDICTION_DIRECTORY,
+  resultDirectory = RESULT_DIRECTORY
+} = {}) {
   const rows = [];
-  fs.readdirSync(PREDICTION_DIRECTORY)
+  fs.readdirSync(predictionDirectory)
     .filter(name => /^\d{8}\.json$/.test(name))
     .filter(name =>
       name.slice(0, 8) >=
@@ -36,12 +82,12 @@ function predictionRows() {
     .forEach(name => {
       const data = JSON.parse(
         fs.readFileSync(
-          path.join(PREDICTION_DIRECTORY, name),
+          path.join(predictionDirectory, name),
           "utf8"
         )
       );
       const resultPath = path.join(
-        RESULT_DIRECTORY,
+        resultDirectory,
         name
       );
       const resultData = fs.existsSync(resultPath)
@@ -51,6 +97,7 @@ function predictionRows() {
         : {};
       rows.push(
         ...rowsFromPredictionData(data, resultData)
+          .map(compactPredictionRow)
       );
     });
   return rows;
@@ -260,6 +307,7 @@ module.exports = {
   attachOfficialResults,
   attachOfficialVoid,
   rowsFromPredictionData,
+  compactPredictionRow,
   predictionRows,
   buildReport,
   withoutGeneratedAt,
