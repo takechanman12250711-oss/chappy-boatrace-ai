@@ -12,6 +12,7 @@ const { publicationKey, seriesOfBundle } = require('./note-article-series');
 function saveIndependentMonitorNote(bundle, { rootDir = process.cwd(), now = Date.now() } = {}) {
   independentArticle(bundle);
   requireExhibition(bundle.record);
+  require('./independent-monitor-decision.cjs').validateDecisionEvidence(bundle);
   const record = bundle.record;
   const date = new Date(now + 9 * 3600000).toISOString().slice(0, 10).replace(/-/g, '');
   const raceKey = `${record.date}-${String(record.jcd).padStart(2, '0')}-${Number(record.raceNo)}`;

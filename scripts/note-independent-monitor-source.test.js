@@ -32,7 +32,7 @@ try {
     assert.equal(p.title, b.article.title);
     assert.ok(p.freeText.includes('元の理由を短縮・差し替えしない。'));
     assert.ok(p.paidText.startsWith('中心の買い目'));
-    assert.ok(p.paidText.includes('・1-2-34'));
+    assert.deepEqual(require('./note-readable-article').ticketsIn(p.paidText).sort(), ['1-2-3', '1-2-4']);
     assert.deepEqual(b.article, b.monitor.article);
     assert.equal(p.price, 200); assert.equal(p.practicalTicketCount, 2);
     assert.deepEqual(verifyPublicationSource(p, root, NOW), p);
