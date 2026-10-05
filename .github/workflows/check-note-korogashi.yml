@@ -1,0 +1,32 @@
+name: Check note korogashi draft
+on:
+  pull_request:
+    paths:
+      - 'scripts/note-korogashi*'
+      - 'scripts/note-marketing-content.js'
+      - 'scripts/note-marketing-reports.js'
+      - 'scripts/note-exhibition.js'
+      - '.github/workflows/check-note-korogashi.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/note-korogashi*'
+      - '.github/workflows/check-note-korogashi.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts
+            js
+            config
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --test scripts/note-korogashi-draft.test.cjs
