@@ -25,7 +25,7 @@ assert.match(appRuntime, /prediction-runtime-loader\.js/);
 assert.match(appRuntime, /hiyori-runtime-loader\.js/);
 
 assert.match(html, /prediction-runtime-loader\.js\?v=20260828-ui-audit-display1/);
-assert.match(html, /hiyori-runtime-loader\.js\?v=20261006-adjacent-exhibition1/);
+assert.match(html, /hiyori-runtime-loader\.js\?v=20261006-adjacent-start-rank1/);
 assert.match(html, /app-runtime-loader\.js\?v=20260816-static-race1/);
 assert.match(html, /home-dashboard-v2\.js\?v=20260816-static-race1/);
 assert.doesNotMatch(html, /home-venue-tap-hotfix\.js|outer-attack-ticket-shadow-guard\.js/);

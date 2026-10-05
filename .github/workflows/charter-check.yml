@@ -36,6 +36,8 @@ on:
       - "js/hiyori-runtime-loader.js"
       - "js/motor-maintenance-insights.js"
       - "scripts/test-exhibition-performance.js"
+      - "scripts/test-official-start-rank.js"
+      - "api/_official-start-rank.js"
       - "scripts/test-double-time.js"
       - "scripts/test-double-time-formal-evidence.js"
       - "scripts/test-new-sam.js"
@@ -165,6 +167,8 @@ on:
       - "js/hiyori-runtime-loader.js"
       - "js/motor-maintenance-insights.js"
       - "scripts/test-exhibition-performance.js"
+      - "scripts/test-official-start-rank.js"
+      - "api/_official-start-rank.js"
       - "scripts/test-double-time.js"
       - "scripts/test-double-time-formal-evidence.js"
       - "scripts/test-new-sam.js"
@@ -427,6 +431,7 @@ jobs:
           node scripts/test-light-manshu-scenario.js
           node scripts/test-light-manshu-ticket-board.js
           node scripts/test-exhibition-performance.js
+          node scripts/test-official-start-rank.js
           node scripts/test-double-time.js
           node scripts/test-double-time-formal-evidence.js
           node scripts/test-new-sam.js

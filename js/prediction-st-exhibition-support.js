@@ -167,10 +167,17 @@
     const adjacentRows = Array.isArray(adjacentExhibition?.rows) ? adjacentExhibition.rows : [];
     const attackAdjacent = adjacentRows.find(row => row.boatNo === attackBoat);
     if (attackAdjacent?.alert === true) {
-      confirms.push(`${attackAdjacent.reason}。中心展開を展示・足の面から補強`);
+      const rank = attackAdjacent.startRankReference;
+      confirms.push(`${attackAdjacent.reason}。` +
+        (rank?.status === "available" ? rank.reason : "中心展開を展示・足の面から補強"));
+      if (rank?.status === "available" && rank.rankAdvantage === false) {
+        alerts.push("中心艇は展示優位だが、公式コース別平均ST順位の0.5位優位はなく攻め切る裏付けを過信しない");
+      }
     }
     adjacentRows.filter(row => row.alert === true && row.insideBoatNo === attackBoat).forEach(row => {
-      alerts.push(`${row.reason}。中心艇の外隣に展示優位があり、既存の攻め評価と照合`);
+      const rank = row.startRankReference;
+      alerts.push(`${row.reason}。` + (rank?.status === "available" ? rank.reason + "。" : "") +
+        "中心艇の外隣に展示優位があり、既存の攻め評価と照合");
     });
 
     if (attackBoat && attackSTRank !== null) {

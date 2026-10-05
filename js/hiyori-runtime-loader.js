@@ -6,7 +6,7 @@
   window.__CHAPPY_HIYORI_RUNTIME_LOADED__=true;
 
   let corePromise=null,backgroundPromise=null,installPromise=null,compatibilityScheduled=false;
-  const VERSION="20261006-adjacent-exhibition1";
+  const VERSION="20261006-adjacent-start-rank1";
   const SCRIPT_LOAD_TIMEOUT_MS=12000,PRELOAD_LOOKAHEAD=2;
   const coreScripts=[
     "js/prediction-flow-priority.js",

@@ -3,6 +3,7 @@
 
 const { parseOfficialRaceHtml } = require("./_parser");
 const { buildHistoryContext } = require("./_history");
+const { attachOfficialStartRanks } = require("./_official-start-rank");
 const {
   fetchOriginalExhibition,
   attachOriginalLapTimes
@@ -104,10 +105,11 @@ module.exports = async function handler(req, res) {
               ""
             )
           };
-    const parsed = attachOriginalLapTimes(
+    const withLapTimes = attachOriginalLapTimes(
       centralParsed,
       originalExhibition
     );
+    const parsed = await attachOfficialStartRanks(withLapTimes, { date });
     const fetchedAt = new Date().toISOString();
 
     const historyContext = buildHistoryContext({
