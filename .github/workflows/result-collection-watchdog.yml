@@ -22,6 +22,7 @@ on:
       - "scripts/test-result-collection-watchdog.js"
       - "scripts/result-report-checkpoint.cjs"
       - "scripts/test-result-report-checkpoint.cjs"
+      - "scripts/test-source-checkpoint-push-retry.cjs"
 
 permissions:
   contents: read
@@ -51,6 +52,7 @@ jobs:
       - run: node scripts/test-result-collection-watchdog.js
       - run: node scripts/test-result-source-archive-order.js
       - run: node scripts/test-result-report-checkpoint.cjs
+      - run: node scripts/test-source-checkpoint-push-retry.cjs
 
   watchdog:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
