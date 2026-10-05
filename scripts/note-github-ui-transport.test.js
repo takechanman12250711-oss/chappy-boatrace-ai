@@ -12,6 +12,8 @@ const {
   draftClaimRef,
   claimDraft,
   preflightDraft,
+  recoveryReference,
+  recoveryClaimStatus,
   run,
   ensureEditorReady,
   isEditorUrl,
@@ -175,6 +177,19 @@ async function checkAsyncGuards() {
   };
   assert.deepEqual(await preflightDraft(eligible, claimEnv, absent), { ok: true });
   assert.deepEqual(await preflightDraft(eligible, claimEnv, async () => ({ status: 200, json: async () => ({ ref: draftClaimRef(eligible) }) })), { ok: false, reason: 'prior_attempt_review_required' });
+  assert.equal(recoveryReference(eligible), draftClaimRef(eligible).replace('note-draft-claim/', 'note-published/'));
+  const recoveryRequests = [];
+  const recoverable = await recoveryClaimStatus(eligible, claimEnv, async (url, options) => {
+    recoveryRequests.push({ url, options });
+    if (url.includes('/note-draft-claim/')) return { status: 200, json: async () => ({ ref: draftClaimRef(eligible) }) };
+    if (url.includes('/note-published/')) return { status: 404 };
+    throw new Error('unexpected recovery lookup');
+  });
+  assert.deepEqual(recoverable, { ok: true });
+  assert.equal(recoveryRequests.length, 2);
+  assert.deepEqual(await recoveryClaimStatus(eligible, claimEnv, async url =>
+    url.includes('/note-published/') ? { status: 200 } : { status: 200, json: async () => ({ ref: draftClaimRef(eligible) }) }),
+  { ok: false, reason: 'publication_receipt_exists' });
   const noRequest = async () => { throw new Error('unexpected external call'); };
   assert.deepEqual(await preflightDraft({ ...eligible, canPublish: false }, {}, noRequest), { ok: false, reason: 'can_publish_false' });
   assert.deepEqual(await preflightDraft({ ...eligible, deadlineAt: new Date(current - 1).toISOString() }, {}, noRequest), { ok: false, reason: 'deadline_passed' });
