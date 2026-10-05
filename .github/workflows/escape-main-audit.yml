@@ -8,6 +8,10 @@ on:
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
       - 'config/partner-forward.json'
+      - 'config/independent-autonomous-forward.json'
+      - 'scripts/independent-autonomous-candidate.cjs'
+      - 'scripts/independent-autonomous-forward.cjs'
+      - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-rule-forward.cjs'
       - 'scripts/independent-rule-forward.test.cjs'
@@ -26,6 +30,10 @@ on:
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
       - 'config/partner-forward.json'
+      - 'config/independent-autonomous-forward.json'
+      - 'scripts/independent-autonomous-candidate.cjs'
+      - 'scripts/independent-autonomous-forward.cjs'
+      - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-rule-forward.cjs'
       - 'scripts/independent-rule-forward.test.cjs'
@@ -58,7 +66,7 @@ jobs:
           node scripts/test-prediction-conditions-missing-series.js
           node scripts/test-escape-main-audit.cjs
           node --test scripts/test-escape-partner-history.cjs
-          node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs
+          node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
           node scripts/test-note-draft-bundle.js
           node scripts/test-escape-skill-role.cjs
           node scripts/test-racer-skill-theory.js
@@ -72,6 +80,7 @@ jobs:
           node scripts/research-escape-partners.cjs
           node scripts/partner-forward.cjs report
           node scripts/independent-rule-forward.cjs report
+          node scripts/independent-autonomous-forward.cjs report
       - uses: actions/upload-artifact@v4
         with:
           name: escape-main-audit
@@ -80,6 +89,7 @@ jobs:
             data/stats/escape-partner-history-research.json
             data/stats/partner-forward-report.json
             data/stats/independent-rule-report.json
+            data/stats/independent-autonomous-report.json
       - name: Save derived report only
         if: github.event_name != 'pull_request'
         env:
@@ -88,7 +98,7 @@ jobs:
           git restore --worktree -- data/predictions
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/stats/escape-main-audit.json data/stats/escape-partner-history-research.json data/stats/partner-forward-report.json data/stats/independent-rule-report.json
+          git add data/stats/independent-autonomous-report.json data/stats/escape-main-audit.json data/stats/escape-partner-history-research.json data/stats/partner-forward-report.json data/stats/independent-rule-report.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Update all-venue escape main audit'
           for attempt in 1 2 3; do

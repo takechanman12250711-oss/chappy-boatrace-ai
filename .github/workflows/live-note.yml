@@ -14,6 +14,10 @@ on:
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
       - 'config/partner-forward.json'
+      - 'config/independent-autonomous-forward.json'
+      - 'scripts/independent-autonomous-candidate.cjs'
+      - 'scripts/independent-autonomous-forward.cjs'
+      - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-role-selector.cjs'
       - 'scripts/independent-rule-shadow.cjs'
@@ -40,6 +44,10 @@ on:
       - 'scripts/partner-forward.cjs'
       - 'scripts/test-partner-forward.cjs'
       - 'config/partner-forward.json'
+      - 'config/independent-autonomous-forward.json'
+      - 'scripts/independent-autonomous-candidate.cjs'
+      - 'scripts/independent-autonomous-forward.cjs'
+      - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-role-selector.cjs'
       - 'scripts/independent-rule-shadow.cjs'
@@ -102,6 +110,7 @@ jobs:
             data/stats
             data/note-drafts
             data/partner-forward
+            data/independent-autonomous-forward
             data/independent-rule-forward
             data/outer-attack-sources
             data/verification-coverage
@@ -112,7 +121,7 @@ jobs:
       - name: Verify isolated collector and source preservation
         run: |
           node scripts/test-note-source-concurrency.js
-          node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs
+          node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
           node --test scripts/test-omura-reference.cjs
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
@@ -129,6 +138,7 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
+          INDEPENDENT_CANDIDATE_DIR: /tmp/independent-autonomous
         run: node scripts/collect-predictions.js --note-only
       - name: Save immutable evidence independently of publication audit
         if: always() && github.event_name != 'pull_request'
@@ -139,6 +149,35 @@ jobs:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           NOTE_SOURCE_ISOLATED: 'true'
         run: node scripts/dispatch-ready-note.js
+
+      - name: Prepare autonomous research snapshots after publication handoff
+        id: autonomous-prepare
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
+        run: node scripts/independent-autonomous-forward.cjs prepare /tmp/independent-autonomous
+      - name: Seal autonomous candidates and skips before deadline
+        id: autonomous-artifact
+        if: always() && github.event_name != 'pull_request' && steps.autonomous-prepare.outcome == 'success' && steps.autonomous-prepare.outputs.count != '0'
+        continue-on-error: true
+        timeout-minutes: 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-autonomous-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/independent-autonomous/*.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Confirm autonomous remote timestamp
+        id: autonomous-confirm
+        if: always() && github.event_name != 'pull_request' && steps.autonomous-artifact.outputs.artifact-id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTONOMOUS_ARTIFACT_ID: ${{ steps.autonomous-artifact.outputs.artifact-id }}
+          AUTONOMOUS_ARTIFACT_DIGEST: ${{ steps.autonomous-artifact.outputs.artifact-digest }}
+        run: node scripts/independent-autonomous-forward.cjs seal /tmp/independent-autonomous
+      - name: Save autonomous research receipts
+        if: always() && github.event_name != 'pull_request'
+        run: node scripts/save-live-verification-sources.js
 
       - name: Capture fixed partner candidates without results
         id: partner-capture
@@ -203,3 +242,14 @@ jobs:
       - name: Surface independent research failures after preserving notes
         if: always() && (steps.independent-capture.outcome == 'failure' || steps.independent-artifact.outcome == 'failure' || steps.independent-confirm.outcome == 'failure')
         run: exit 1
+      - name: Surface autonomous capture failures after other evidence is preserved
+        if: always() && github.event_name != 'pull_request'
+        env:
+          PREPARE_OUTCOME: ${{ steps.autonomous-prepare.outcome }}
+          ARTIFACT_OUTCOME: ${{ steps.autonomous-artifact.outcome }}
+          CONFIRM_OUTCOME: ${{ steps.autonomous-confirm.outcome }}
+        run: |
+          test ! -s /tmp/independent-autonomous.errors
+          test "$PREPARE_OUTCOME" != failure
+          test "$ARTIFACT_OUTCOME" != failure
+          test "$CONFIRM_OUTCOME" != failure
