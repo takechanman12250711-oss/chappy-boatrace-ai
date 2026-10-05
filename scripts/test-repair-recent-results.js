@@ -341,6 +341,27 @@ assert.equal(
   "公式訂正と保存済み照合結果の差を再照合対象にする"
 );
 
+// Exercise the real entrypoint with a local collector fixture. sources-only
+// must still collect all dates, while standalone repair keeps its derived work.
+const { execFileSync } = require("node:child_process");
+for (const sourcesOnly of [true, false]) {
+  const root = path.join(tempDirectory, sourcesOnly ? "sources-only" : "standalone");
+  fs.mkdirSync(path.join(root, "scripts"), { recursive: true });
+  fs.writeFileSync(path.join(root, "scripts", "collect-results.js"), `
+    const fs = require('node:fs');
+    const date = process.argv.find(x => x.startsWith('--date=')).slice(7);
+    fs.mkdirSync('data/results', { recursive: true });
+    fs.writeFileSync('data/results/' + date + '.json', JSON.stringify({ date, source: 'fixture' }));
+  `);
+  const derived = ["build-prediction-index-shards.js", "build-prediction-calibration.js", "build-improvement-review.js", "build-race-stats.js"];
+  for (const script of derived) fs.writeFileSync(path.join(root, "scripts", script),
+    `require('node:fs').appendFileSync('derived.txt', ${JSON.stringify(script + "\n")});`);
+  execFileSync(process.execPath, [path.join(__dirname, "repair-recent-results.js"), "--date=20261005", ...(sourcesOnly ? ["--sources-only"] : [])],
+    { cwd: root, stdio: "pipe" });
+  assert.deepEqual(fs.readdirSync(path.join(root, "data", "results")).sort(), ["20261003.json", "20261004.json", "20261005.json"]);
+  if (sourcesOnly) assert.equal(fs.existsSync(path.join(root, "derived.txt")), false);
+  else assert.deepEqual(fs.readFileSync(path.join(root, "derived.txt"), "utf8").trim().split("\n"), derived);
+}
 fs.rmSync(tempDirectory, { recursive: true, force: true });
 
 console.log("直近3日間の結果自動復旧・予想照合テストに合格しました");

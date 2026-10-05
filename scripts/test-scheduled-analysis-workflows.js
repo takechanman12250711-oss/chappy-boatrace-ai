@@ -308,11 +308,11 @@ assert.ok(
 assert.ok(
   stepRunLines(
     collectResultsPredictionGapWorkflow,
-    "Save calibration and derived data"
+    "Package verified calibration reports"
   ).includes(
     "git add data/results data/stats data/analysis/reference-tag-effectiveness.json"
   ),
-  "中央結果writerがprediction gapを同じ校正commitへstageする"
+  "校正artifactはprediction gapを同じbatchへstageし、照合済みの中央writerへ渡す"
 );
 
 const learningPipelineWorkflow = readWorkflow(

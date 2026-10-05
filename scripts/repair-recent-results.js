@@ -472,12 +472,14 @@ function main() {
     return;
   }
 
-  runNodeScript(
-    "build-prediction-index-shards.js"
-  );
-  runNodeScript("build-prediction-calibration.js");
-  runNodeScript("build-improvement-review.js");
-  runNodeScript("build-race-stats.js");
+  // The central collector saves source data first. Its downstream read-only
+  // jobs build these reports without occupying the live prediction writer.
+  if (!process.argv.includes("--sources-only")) {
+    runNodeScript("build-prediction-index-shards.js");
+    runNodeScript("build-prediction-calibration.js");
+    runNodeScript("build-improvement-review.js");
+    runNodeScript("build-race-stats.js");
+  }
 
   if (repairedDates.length) {
     console.log(`公式結果の自動復旧完了：${repairedDates.join(", ")}`);

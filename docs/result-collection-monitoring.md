@@ -4,16 +4,21 @@
 
 ## 中央の保存順
 
-`collect-results.yml` の既存 `chappy-main-data-writers` キューを workflow 全体で保持する。
+`collect-results.yml` 自体は `chappy-result-pipeline` で世代を直列化する。共有 `chappy-main-data-writers` は公式原本の収集保存と2つの成果物保存jobだけが保持する。重い診断・校正・事前検査は contents: read で実行し、予想収集の待機列を占有しない。既存scheduleを維持し、新しい定期writerやWork監視は追加しない。
 
-1. `collect`（45分上限）は、既存の公式結果取得・修復後に `data/results` と復元済み予想原本を先行checkpointする。
-2. 先行checkpoint後に重い診断・学習分析を実行し、成功した派生レポートをもう一度mainへ保存する。診断がOOMや時間切れで失敗しても、取得済み公式結果は失わない。
-3. 派生レポート保存成功後の SHA を `saved_sha` として引き渡す。
-4. `calibrate`（30分上限）は `needs: collect` で待ち、同じ SHA を取得して既存の校正・整合性検査・中央保存を実行する。
+1. `verify` は既存の回帰検査を行う。
+2. `collect` は最新mainを取得し、`repair-recent-results.js --sources-only` で公式結果を収集・照合する。原本に付くreview・理論評価・外れ原因を更新し、indexを再生成して、公式結果と圧縮予想原本を先行checkpointする。この短いjobは共有writerキューを保持する。
+3. `diagnostics` は `collect.saved_sha` を復元し、既存の重い分析・参考統計・整合性検査を行う。検査済みのstatsと参照タグ成果物だけを元blob・SHA256・入力SHA付きartifactへ渡す。予想/結果原本に未保存変更があれば停止する。
+4. `publish_reports` はそのartifact IDだけを取得し、共有writerキュー内で最新mainと照合する。許可したレポートの元blobが同じ場合だけ反映する。計算中に増えた予想・結果・note原稿は触らない。生成コードが変わった場合、または同じ診断成果物が変わった場合はbatch全体を失敗させ、古いJSONを自動mergeしない。独立したpractical-priority-shadow-reportだけは予想収集側の新しい版を保持して記録する。
+5. `calibrate` は `publish_reports.saved_sha` を復元し、既存の校正と整合性検査を行う。`publish_calibration` が同じ照合方法で短時間保存する。
 
-校正が失敗しても先行保存済みの公式結果は残る。再開には GitHub の失敗ジョブ再実行を使える。別の定期 writer を作ったり、未保存の作業ディレクトリを引き継いだりしない。
+共有キュー外の計算は保存済みSHA時点の分析であり、計算中に追加された最新予想まで含むとは扱わない。`data/stats/result-diagnostics-checkpoint.json` と `result-calibration-checkpoint.json` に入力SHA、反映直前SHA、反映ファイルhash、新しい版を保持した対象を記録する。許可範囲外の原本や記事をartifact経由で保存しない。
 
-校正前と校正後の2世代の成果物は、それぞれ既存の原本・index整合性検査を通す。同じ校正後成果物を再検査する3回目の非必須検査は行わない。予想基準・買い目・自動採用条件は変更しない。
+pushが他の変更に先を越された場合は最新mainとの照合だけを最大3回繰り返す。強制pushや共有キュー内での重い再計算は行わない。競合・生成失敗・artifact不足を成功に置き換えない。先行保存済みの公式結果は残り、GitHubの失敗job再実行、または次の既存定期実行で再開する。コードや同じレポートが変わった競合は現在のmainからの再生成が必要。
+
+予想収集も `predict` の保存までだけ共有writerキューを保持し、その後の非必須回帰検査は保存済みSHAを読む `regression` jobへ分離する。予想基準・買い目・自動採用条件・noteの締切条件は変更しない。
+
+検証: `node scripts/test-result-report-checkpoint.cjs`（競合、更新された原本の保持、改ざんartifact、push中の更新、job境界）。GitHub concurrencyのjob単位制御とartifact IDは公式機能を使用する。
 
 ## 監視
 

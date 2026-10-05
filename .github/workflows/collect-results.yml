@@ -51,6 +51,8 @@ on:
       - "scripts/prepare-daily-prediction-git-save.js"
       - "scripts/test-daily-prediction-source-archive.js"
       - "scripts/test-result-source-archive-order.js"
+      - "scripts/result-report-checkpoint.cjs"
+      - "scripts/test-result-report-checkpoint.cjs"
       - "scripts/build-result-review.js"
       - "scripts/test-result-review.js"
       - "scripts/build-prediction-calibration.js"
@@ -200,26 +202,23 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: chappy-main-data-writers
+  group: chappy-result-pipeline
   queue: max
   cancel-in-progress: false
 
 jobs:
-  collect:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    outputs:
-      saved_sha: ${{ steps.save_reports.outputs.sha }}
-
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -341,13 +340,41 @@ jobs:
           node scripts/test-improvement-proposal-engine.js
           node scripts/test-theory-adoption-phase5.js
 
+  collect:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.save_results.outputs.sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Collect official results
         env:
           COLLECT_DATE: ${{ inputs.date }}
         run: |
           node scripts/restore-daily-prediction-source.js --all
-          node scripts/repair-recent-results.js
+          node scripts/repair-recent-results.js --sources-only
           node scripts/repair-queued-results.js
+          node scripts/build-result-review.js
+          node scripts/build-theory-evaluations.js
+          node scripts/build-miss-cause-analysis.js
+          node scripts/build-prediction-index-shards.js
 
       - name: Save official results before calibration
         id: save_results
@@ -367,8 +394,30 @@ jobs:
 
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+  diagnostics:
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      artifact_id: ${{ steps.reports.outputs.artifact-id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.collect.outputs.saved_sha }}
+          fetch-depth: 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Restore saved result sources
+        run: node scripts/restore-daily-prediction-source.js --all
+
       - name: Build result diagnostics
         run: |
+          node scripts/build-race-stats.js
           node scripts/monitor-three-course-escape-rescue.js
           node scripts/monitor-four-kado-escape-rescue.js
           node scripts/build-frame-rise-sink-stats.js
@@ -408,58 +457,83 @@ jobs:
         continue-on-error: true
         run: timeout 300s node scripts/monitor-local-water-v2-post-adoption.js
 
-      - name: Save derived result reports before calibration
-        id: save_reports
-        run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
-          git add data/results data/stats data/analysis/reference-tag-effectiveness.json
-
-          if git diff --cached --quiet; then
-            echo "先行保存する公式結果はありません"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "Collect official race results"
-            for attempt in 1 2 3; do
-              if ! git pull --rebase --autostash origin main; then
-                conflicts="$(git diff --name-only --diff-filter=U)"
-                if [ "$conflicts" != "data/stats/theory-validation-phase8-cycle.json" ]; then
-                  exit 1
-                fi
-                git checkout origin/main -- data/stats/theory-validation-phase8-cycle.json
-                git add data/stats/theory-validation-phase8-cycle.json
-                GIT_EDITOR=true git rebase --continue
-              fi
-              if git push origin main; then
-                break
-              fi
-              if [ "$attempt" -eq 3 ]; then
-                exit 1
-              fi
-            done
-          fi
-
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
       - name: Validate result prediction artifacts
         run: |
           node scripts/prepare-daily-prediction-git-save.js --all
           node scripts/test-load-performance.js
           git diff --exit-code -- data/predictions/index.json
 
-  calibrate:
-    needs: collect
+      - name: Package verified diagnostics reports
+        run: |
+          git add data/results data/stats data/analysis/reference-tag-effectiveness.json
+          node scripts/result-report-checkpoint.cjs pack diagnostics "$RUNNER_TEMP/result-reports/checkpoint.json"
+
+      - name: Upload verified reports
+        id: reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/result-reports/checkpoint.json
+          retention-days: 3
+          if-no-files-found: error
+
+  publish_reports:
+    needs: [diagnostics, collect]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.save_reports.outputs.sha }}
     steps:
-      - name: Checkout saved result checkpoint
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.collect.outputs.saved_sha }}
-          fetch-depth: 0
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts
+            js
+            api
+            config
+            data/stats
+            data/analysis
+            .github/workflows
 
-      - name: Keep the central writer on main
-        run: git checkout -B main
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Download verified reports
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.diagnostics.outputs.artifact_id }}
+          path: ${{ runner.temp }}/result-reports
+          merge-multiple: true
+
+      - name: Save derived result reports before calibration
+        id: save_reports
+        env:
+          BASE_SHA: ${{ needs.collect.outputs.saved_sha }}
+        run: node scripts/result-report-checkpoint.cjs publish diagnostics "$RUNNER_TEMP/result-reports/checkpoint.json" "$BASE_SHA"
+
+  calibrate:
+    needs: publish_reports
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      artifact_id: ${{ steps.reports.outputs.artifact-id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.publish_reports.outputs.saved_sha }}
+          fetch-depth: 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -561,21 +635,64 @@ jobs:
           node scripts/test-load-performance.js
           git diff --exit-code -- data/predictions/index.json
 
-      - name: Save calibration and derived data
+      - name: Package verified calibration reports
         run: |
-          node scripts/prepare-daily-prediction-git-save.js --all
           git add data/results data/stats data/analysis/reference-tag-effectiveness.json
+          node scripts/result-report-checkpoint.cjs pack calibration "$RUNNER_TEMP/result-reports/checkpoint.json"
 
-          if git diff --cached --quiet; then
-            echo "追加保存する校正・集計データはありません"
-            exit 0
-          fi
+      - name: Upload verified reports
+        id: reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-calibration-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/result-reports/checkpoint.json
+          retention-days: 3
+          if-no-files-found: error
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update result calibration and reports"
-          git pull --rebase --autostash origin main
-          git push origin main
+  publish_calibration:
+    needs: [calibrate, publish_reports]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: chappy-main-data-writers
+      queue: max
+      cancel-in-progress: false
+    outputs:
+      saved_sha: ${{ steps.save_reports.outputs.sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts
+            js
+            api
+            config
+            data/stats
+            data/analysis
+            .github/workflows
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Download verified reports
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ needs.calibrate.outputs.artifact_id }}
+          path: ${{ runner.temp }}/result-reports
+          merge-multiple: true
+
+      - name: Save calibration and derived data
+        id: save_reports
+        env:
+          BASE_SHA: ${{ needs.publish_reports.outputs.saved_sha }}
+        run: node scripts/result-report-checkpoint.cjs publish calibration "$RUNNER_TEMP/result-reports/checkpoint.json" "$BASE_SHA"
 
       - name: Report saved calibration
         run: echo "公式結果・校正・派生データの保存が完了しました" >> "$GITHUB_STEP_SUMMARY"

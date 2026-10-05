@@ -60,7 +60,7 @@ assert.ok(
 );
 assert.match(
   central.slice(saveStart, performanceStart),
-  /git add data\/results data\/stats/,
+  /result-report-checkpoint.cjs publish calibration/,
   "中央writerがmonitorを校正・派生データと同じcommitへ保存する",
 );
 

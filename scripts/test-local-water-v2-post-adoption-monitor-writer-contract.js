@@ -91,7 +91,7 @@ const saveStart = central.indexOf(
 );
 const validateStart = central.indexOf(
   "- name: Validate result prediction artifacts",
-  saveStart,
+  monitorStart,
 );
 const calibrationStart = central.indexOf(
   "- name: Build prediction calibration",
@@ -101,8 +101,8 @@ assert.ok(
   verifyStart >= 0 &&
     collectStart > verifyStart &&
     monitorStart > collectStart &&
-    saveStart > monitorStart &&
-    validateStart > saveStart &&
+    validateStart > monitorStart &&
+    saveStart > validateStart &&
     calibrationStart > validateStart,
   "中央結果収集の検証・生成・保存・artifact検査step順を特定できる",
 );
@@ -138,32 +138,13 @@ assert.ok(
   "Local/Water V2診断は5分上限かつ公式結果保存を妨げない独立stepで実行する",
 );
 
-const saveStep = central.slice(saveStart, validateStart);
-const validateStep = central.slice(validateStart, calibrationStart);
+const saveStep = central.slice(saveStart, calibrationStart);
+const validateStep = central.slice(validateStart, saveStart);
 assert.ok(validateStep.includes("node scripts/prepare-daily-prediction-git-save.js --all"));
-assert.match(saveStep, /git add data\/results data\/stats/);
-assert.ok(
-  saveStep.indexOf("node scripts/prepare-daily-prediction-git-save.js --all") <
-    saveStep.indexOf("git add data/results data/stats"),
-  "中央writerはGit-safe復元後に成果物をstageする",
-);
-for (const command of [
-  'git commit -m "Collect official race results"',
-  "git pull --rebase --autostash origin main",
-  "git push origin main",
-]) {
-  assert.ok(saveStep.includes(command), `中央writerが実行する: ${command}`);
-}
-assert.ok(
-  saveStep.indexOf("git add data/results data/stats") <
-    saveStep.indexOf('git commit -m "Collect official race results"') &&
-    saveStep.indexOf('git commit -m "Collect official race results"') <
-      saveStep.indexOf("git pull --rebase --autostash origin main") &&
-    saveStep.indexOf("git pull --rebase --autostash origin main") <
-      saveStep.indexOf("git push origin main"),
-  "中央writerはstage・commit・rebase・pushの固定順で保存する",
-);
-
+assert.ok(validateStep.includes("node scripts/test-load-performance.js"));
+assert.ok(validateStep.includes("result-report-checkpoint.cjs pack diagnostics"));
+assert.match(saveStep, /result-report-checkpoint.cjs publish diagnostics/);
+assert.match(central, /artifact-ids: \$\{\{ needs\.diagnostics\.outputs\.artifact_id \}\}/);
 assert.match(dedicated, /permissions:\s*\n\s*contents: read/);
 assert.match(dedicated, /timeout-minutes: 15/);
 assert.match(dedicated, /node-version: 20/);

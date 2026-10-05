@@ -20,6 +20,8 @@ on:
       - ".github/workflows/collect-results.yml"
       - "scripts/result-collection-watchdog.js"
       - "scripts/test-result-collection-watchdog.js"
+      - "scripts/result-report-checkpoint.cjs"
+      - "scripts/test-result-report-checkpoint.cjs"
 
 permissions:
   contents: read
@@ -48,6 +50,7 @@ jobs:
           node-version: "20"
       - run: node scripts/test-result-collection-watchdog.js
       - run: node scripts/test-result-source-archive-order.js
+      - run: node scripts/test-result-report-checkpoint.cjs
 
   watchdog:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
