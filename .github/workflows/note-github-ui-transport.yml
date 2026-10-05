@@ -76,16 +76,19 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('node:fs');
-          const { loadHandoff, preflightDraft, preparePublication } = require('./scripts/note-github-ui-transport');
+          const { loadHandoff, preflightDraft, preparePublication, preparePublicationRecovery } = require('./scripts/note-github-ui-transport');
           (async () => {
             const mode = process.env.NOTE_UI_MODE;
             if (!['auth', 'draft', 'publish'].includes(mode)) throw new Error('unsupported_note_ui_mode');
-            const gate = mode === 'auth' ? { ok: true } : mode === 'publish'
-              ? await preparePublication({ handoff: require('./scripts/build-note-publish-handoff').buildLatestHandoff({ write: false }).payload }) : await preflightDraft(loadHandoff(process.env.NOTE_IPHONE_HANDOFF).payload);
+            const handoff = mode === 'publish' ? require('./scripts/build-note-publish-handoff').buildLatestHandoff({ write: false }).payload : null;
+            let gate = mode === 'auth' ? { ok: true } : mode === 'publish'
+              ? await preparePublication({ handoff }) : await preflightDraft(loadHandoff(process.env.NOTE_IPHONE_HANDOFF).payload);
+            if (mode === 'publish' && !gate.ok) gate = await preparePublicationRecovery({ handoff });
             if (mode === 'publish' && gate.ok) {
               const file = require('node:path').join(process.env.RUNNER_TEMP, 'note-publication.json');
               fs.writeFileSync(file, JSON.stringify(gate.payload));
               fs.appendFileSync(process.env.GITHUB_ENV, `NOTE_IPHONE_HANDOFF=${file}\n`);
+              fs.appendFileSync(process.env.GITHUB_ENV, `NOTE_UI_RECOVERY_ONLY=${gate.recoveryOnly === true}\n`);
             }
             if (gate.skipped?.length) console.log(`NOTE_UI_SKIPPED=${JSON.stringify(gate.skipped)}`);
             fs.appendFileSync(process.env.GITHUB_OUTPUT, `ready=${gate.ok}\n`);
@@ -121,7 +124,7 @@ jobs:
           BROWSER_USE_PROFILE_ID: ${{ secrets.BROWSER_USE_PROFILE_ID }}
           NOTE_CLAIM_TOKEN: ${{ github.token }}
         run: |
-          if [ "$NOTE_UI_MODE" = "publish" ]; then
+          if [ "$NOTE_UI_MODE" = "publish" ] && [ "$NOTE_UI_RECOVERY_ONLY" != "true" ]; then
             node scripts/publish-note-queue.js
           else
             node scripts/note-github-ui-transport.js
