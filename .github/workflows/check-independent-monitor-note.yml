@@ -4,6 +4,8 @@ on:
     paths:
       - "scripts/note-article-series*"
       - "scripts/save-independent-monitor-note.js"
+      - "scripts/independent-monitor-decision*"
+      - "scripts/audit-independent-monitor-decisions.cjs"
       - "scripts/note-independent-monitor-fixture.js"
       - 'scripts/note-independent-monitor-source*'
       - 'scripts/note-publication-source.js'
@@ -30,6 +32,7 @@ jobs:
           node-version: '20'
       - name: Test unchanged originals and existing publication protections
         run: |
+          node --test scripts/independent-monitor-decision.test.cjs
           node scripts/note-independent-monitor-source.test.js
           node scripts/note-publication-source.test.js
           node --test scripts/note-article-series.test.js
