@@ -44,6 +44,7 @@ function loadLeg(input, rootDir, now) {
   const checked = settlePublished(row, bytes, null, planned);
   requireValue(checked.status === 'pending', checked.reason || 'source_unverified');
   const bundle = JSON.parse(bytes);
+  requireValue(time(bundle.record.selectedAt) <= time(row.publishedAt), 'selection_after_publication');
   require('./note-exhibition').requireExhibition(bundle.record);
   const tickets = bundle.baselinePracticalTickets.map(t => typeof t === 'string' ? t : t.ticket);
   const settlement = settlePublished(row, bytes, input.result || null, now);
@@ -110,6 +111,7 @@ function renderDraft(draft) {
   const result = { hit: '的中', miss: '不的中', pending: '結果待ち', void: '不成立', review: '確認中' };
   return [`コロがし下書き｜目標 ${money(draft.targetYen)}`,
     '確認用の試算です。このコースの事前公開・実購入・運用実績を証明するものではありません。',
+    draft.disclaimer,
     `目標は最終保有額（最後の払戻＋未投入の端数）で、利益額ではありません。初回を含め最大${draft.maxLegs}レース。`,
     `開始資金 ${money(draft.initialYen)}｜初回1点1,000円`,
     ...draft.legs.map(leg => [`${leg.number}レース目｜${leg.place}${leg.raceNo}R｜締切 ${leg.deadlineAt}`,
@@ -118,9 +120,8 @@ function renderDraft(draft) {
       `投入 ${money(leg.stakeYen)}｜未投入の端数 ${money(leg.remainderYen)}`,
       `判定 ${result[leg.settlement.status]}｜払戻 ${leg.payoutYen === null ? '未確定' : money(leg.payoutYen)}`].join('\n')),
     `状態：${states[draft.status]}`,
-    `最終保有額 ${draft.balanceYen === null ? '未確定' : money(draft.balanceYen)}｜開始資金差引 ${draft.netBeforeFeesYen === null ? '未確定' : money(draft.netBeforeFeesYen)}`,
-    '記事代などは含まない試算です。目標に合わせた買い目の追加・削除、追加入金は行いません。',
-    draft.disclaimer].join('\n\n');
+    `現時点の保有額 ${draft.balanceYen === null ? '未確定' : money(draft.balanceYen)}｜開始資金差引 ${draft.netBeforeFeesYen === null ? '未確定' : money(draft.netBeforeFeesYen)}`,
+    '記事代などは含まない試算です。目標に合わせた買い目の追加・削除、追加入金は行いません。'].join('\n\n');
 }
 
 if (require.main === module) {

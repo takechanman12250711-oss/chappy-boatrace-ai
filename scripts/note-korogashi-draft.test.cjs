@@ -126,6 +126,7 @@ test('review label, full-risk notice and fees accompany amounts; it cannot claim
   const leg=fixture();delete leg.result;
   const out=build(plan([leg])), text=renderDraft(out);
   assert.equal(out.canPublish,false);assert.equal(out.preRaceCommitVerified,false);assert.equal(out.purchaseExecuted,false);
+  assert(text.indexOf('全額再投入') < text.indexOf('1 → 2 → 3'));
   for(const phrase of ['目標 100,000円','開始資金 2,000円','1 → 2 → 3：1,000円','未確定',
     '利益額ではありません','記事代','全額再投入','追加入金はしません','実購入・運用実績を証明するものではありません']) assert(text.includes(phrase),phrase);
   assert.throws(()=>require('./note-github-ui-transport').requirePublicationGate(out,rootDir,now));
