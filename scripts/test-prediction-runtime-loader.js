@@ -203,7 +203,7 @@ function createRuntime({
   );
   assert.ok(
     failedOptional.appended.includes(
-      "js/ai-core.js?v=20261006-adjacent-exhibition1"
+      "js/ai-core.js?v=20261006-adjacent-start-rank1"
     ),
     "内隣展示比較を含むai-coreを専用キャッシュ世代で読み込む"
   );

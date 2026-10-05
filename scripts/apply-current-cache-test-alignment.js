@@ -48,7 +48,7 @@ function replaceOneOf(
 }
 
 const CURRENT_HIYORI_VERSION =
-  "20261006-adjacent-exhibition1";
+  "20261006-adjacent-start-rank1";
 const PREVIOUS_HIYORI_VERSION =
   "20260825-mobile-startup-terminal4";
 

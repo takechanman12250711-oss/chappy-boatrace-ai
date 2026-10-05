@@ -16,7 +16,7 @@
   "use strict";
 
   const CORE_VERSION =
-    "ai-core-v4.8.7-adjacent-exhibition";
+    "ai-core-v4.8.8-adjacent-start-rank";
 
   /* ===============================
     基本ユーティリティ
@@ -1708,6 +1708,38 @@ function getBoatNo(boat) {
     );
   }
 
+  function buildAdjacentStartRankReference(entry, inside, course, exhibitionAlert) {
+    function profileOf(row, actualCourse) {
+      const p = row?.officialStartRank;
+      const value = p?.byCourse?.[actualCourse];
+      if (p?.version !== "official-course-start-rank-v1" || p.status !== "available" ||
+          p.source !== "boatrace-official-course" || p.population !== "general-only-unconfirmed" ||
+          p.referenceOnly !== true || !/^\d{4}$/.test(String(row?.registerNo || "")) ||
+          p.registerNo !== String(row.registerNo) ||
+          p.sourceUrl !== `https://www.boatrace.jp/owpc/pc/data/racersearch/course?toban=${p.registerNo}` ||
+          !/^[a-f0-9]{64}$/.test(p.sourceSha256 || "") || !Number.isFinite(Date.parse(p.fetchedAt)) ||
+          typeof value !== "number" || !Number.isFinite(value) || value < 1 || value > 6) return null;
+      return { registerNo: p.registerNo, course: actualCourse, averageRank: value,
+        sourceUrl: p.sourceUrl, sourceSha256: p.sourceSha256, fetchedAt: p.fetchedAt,
+        population: p.population, period: null, sampleCount: null };
+    }
+    const own = profileOf(entry, course);
+    const inner = profileOf(inside, course - 1);
+    const comparable = Boolean(inside && own && inner);
+    const gapRanks = comparable ? round(inner.averageRank - own.averageRank, 6) : null;
+    const rankAdvantage = comparable ? gapRanks + 1e-9 >= 0.5 : null;
+    const combinedAlert = exhibitionAlert === false ? false
+      : exhibitionAlert === true && comparable ? rankAdvantage : null;
+    const reason = !comparable ? "公式コース別平均ST順位が揃わず近似判定は保留"
+      : `公式コース別平均ST順位は${own.averageRank.toFixed(2)}位、内隣は${inner.averageRank.toFixed(2)}位。` +
+        (combinedAlert === true ? "展示0.10秒・順位0.5位の近似条件が成立"
+          : exhibitionAlert === true ? "展示優位はあるが順位0.5位の裏付けは不足"
+            : "展示0.10秒の条件は不成立") + "（一般戦限定・集計期間・順位の母数は未確認）";
+    return { version: "adjacent-start-rank-reference-v1", status: comparable ? "available" : "unavailable",
+      own, inside: inner, gapRanks, thresholdRanks: 0.5, rankAdvantage, combinedAlert,
+      referenceOnly: true, scoreApplied: false, reason };
+  }
+
   // 舟券太郎の展示タイム比較。既存の左右隣艇との展示ST比較とは別物。
   // 公式進入が欠ける場合、枠番を実進入として代用しない。
   function buildAdjacentExhibitionEvidence(entries) {
@@ -1727,6 +1759,7 @@ function getBoatNo(boat) {
       const gap = insideTime !== null ? round(insideTime - exhibitionTime, 6) : null;
       const comparable = gap !== null;
       const alert = comparable ? gap + 1e-9 >= 0.10 : null;
+      const startRankReference = buildAdjacentStartRankReference(entry, inside, course, alert);
       const reason = !mapping.formal ? "公式の実進入6艇が揃わず内隣を確定できない"
         : !complete ? "展示タイム6艇が揃わず判定できない"
           : course === 1 ? "1コースには内隣がないため対象外"
@@ -1736,17 +1769,18 @@ function getBoatNo(boat) {
       return {
         boatNo, course, insideBoatNo: inside ? getBoatNo(inside) : null,
         exhibitionTime, insideExhibitionTime: insideTime, gapSeconds: gap,
-        comparable, alert, reason,
+        comparable, alert, reason, startRankReference,
         // 一般戦の平均スタート順位の取得経路は未接続。平均ST秒・当日順位では代用しない。
         generalStartRankGap: null,
         superAlert: alert === false ? false : null,
         superStatus: alert === false ? "ordinary-condition-not-met" : "unavailable",
-        superReason: "一般戦の平均スタート順位が未取得のためスーパー判定はできない"
+        superReason: "一般戦限定の平均スタート順位は未取得。公式コース別順位の近似判定はstartRankReferenceへ分離"
       };
     });
     return {
       version: "adjacent-exhibition-v1", source: "inside-course-exhibition-time",
       thresholdSeconds: 0.10, superRankThreshold: 0.5,
+      rankComparisonVersion: "adjacent-start-rank-reference-v1",
       formalCourseMapping: mapping.formal, complete, rows,
       reference: "https://www.youtube.com/watch?v=2CTJeDkz-ak",
       scorePolicy: "existing-exhibition-component-only",
@@ -10072,7 +10106,10 @@ function buildRaceTrendEvaluation(data) {
 
     analyses.forEach((boat) => {
       const adjacent = boat.exhibitionPerformanceTheory?.adjacentExhibition;
-      if (adjacent?.alert === true) comments.push(`${adjacent.reason}。展開と選手の攻め・残し・拾い評価に照らして扱う。`);
+      if (adjacent?.alert === true) {
+        comments.push(`${adjacent.reason}。展開と選手の攻め・残し・拾い評価に照らして扱う。`);
+        if (adjacent.startRankReference?.status === "available") comments.push(`${boat.boatNo}号艇：${adjacent.startRankReference.reason}。`);
+      }
     });
 
     if (isNewEngineMode(data)) {

@@ -198,6 +198,8 @@
         before?.lapTimeSourceUrl ?? exhibition?.lapTimeSourceUrl ??
         entry?.lapTimeSourceUrl ?? entry?.exhibition?.lapTimeSourceUrl
       ),
+      officialStartRank: entry?.officialStartRank
+        ? JSON.parse(JSON.stringify(entry.officialStartRank)) : null,
       localWinRate: numberOrNull(
         entry?.localWinRate ?? entry?.local?.winRate ?? entry?.local?.rate
       ),
