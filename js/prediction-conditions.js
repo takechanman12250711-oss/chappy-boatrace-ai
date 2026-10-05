@@ -314,6 +314,11 @@
       boats,
       weather,
       escapeEvaluationEvidence: captureEscapeEvaluation(raceData, prediction),
+      // 計算時の判定をそのまま保存。過去レコードへの現行理論の後付けはしない。
+      adjacentExhibitionEvidence: JSON.parse(JSON.stringify(
+        prediction?.aiCore?.exhibitionPerformanceTheory?.adjacentExhibition ||
+        prediction?.exhibitionPerformanceTheory?.adjacentExhibition || null
+      )),
       dataAvailability: {
         entries: boats.filter(boat => boat.racerName || boat.className).length,
         officialCourses:

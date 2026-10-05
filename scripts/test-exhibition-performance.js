@@ -336,3 +336,90 @@ console.log(
 console.log(
   "- 展示ST・ダブルタイム・新サムの二重加点なし"
 );
+
+// 内隣展示差: 実進入と艇番の混同、ST秒との混同、境界値、保存時の欠測を検査。
+const adjacentEntries = [6.80, 6.70, 6.69, 6.79, 6.78, 6.68].map((time, index) => ({
+  ...entry(index + 1, time),
+  startExhibition: { boat: index + 1, course: index + 1, isOfficialCourse: true }
+}));
+const beforeAdjacent = JSON.stringify(adjacentEntries);
+const adjacent = aiCore.buildAdjacentExhibitionEvidence(adjacentEntries);
+const rowAt = (evidence, no) => evidence.rows.find(row => row.boatNo === no);
+assert.equal(rowAt(adjacent, 2).alert, true, "0.10秒ちょうどを成立とする");
+assert.equal(rowAt(adjacent, 3).alert, false, "外隣より速くても内隣との差で判定");
+assert.equal(rowAt(adjacent, 4).alert, false, "遅い側へ警報を付けない");
+assert.equal(rowAt(adjacent, 1).alert, null, "1コースを対象外にする");
+assert.equal(rowAt(adjacent, 2).superAlert, null, "平均ST秒があっても一般戦平均順位には代用しない");
+const belowThreshold = structuredClone(adjacentEntries);
+belowThreshold[1].exhibitionTime = 6.7004;
+assert.equal(rowAt(aiCore.buildAdjacentExhibitionEvidence(belowThreshold), 2).alert, false,
+  "表示用丸めで0.10秒未満を成立させない");
+
+const swapped = structuredClone(adjacentEntries);
+swapped[1].startExhibition.course = 3;
+swapped[5].startExhibition.course = 2;
+swapped[2].startExhibition.course = 6;
+const reordered = aiCore.buildAdjacentExhibitionEvidence(swapped.slice().reverse());
+assert.equal(rowAt(reordered, 2).insideBoatNo, 6);
+assert.equal(rowAt(reordered, 2).alert, false);
+assert.equal(rowAt(reordered, 6).insideBoatNo, 1);
+assert.equal(rowAt(reordered, 6).alert, true, "6号艇でも実2コースなら1コース艇と比較");
+for (const mutate of [
+  rows => { rows[5].startExhibition.course = 5; },
+  rows => { delete rows[5].startExhibition; },
+  rows => { rows[5].exhibitionTime = null; },
+  rows => { rows[5].boatNo = 5; },
+  rows => { rows[5].exhibitionTime = 9.99; }
+]) {
+  const invalid = structuredClone(adjacentEntries); mutate(invalid);
+  assert(aiCore.buildAdjacentExhibitionEvidence(invalid).rows.every(row => row.alert === null));
+}
+
+const adjacentPerformance = aiCore.buildExhibitionPerformanceEvaluation(adjacentEntries);
+assert.equal(adjacentPerformance.roles[1].components.exhibitionNeighborGap, 20);
+assert.equal(adjacentPerformance.roles[2].components.exhibitionNeighborGap, 10,
+  "0.01秒以内は同等評価");
+const fullAdjacent = aiCore.buildExhibitionPerformanceEvaluation(
+  adjacentEntries.map(row => ({ ...row, lapTime: 37.5 }))
+);
+assert.equal(fullAdjacent.roles[1].components.exhibitionInsideGap, 12);
+assert.equal(fullAdjacent.roles[1].components.exhibitionAverageDiff, undefined,
+  "フルモードも従来の差成分と置き換え、追加加点しない");
+assert.deepEqual(aiCore.buildAdjacentExhibitionEvidence(adjacentEntries.map(row => ({
+  ...row, avgSt: 0.01, exhibitionSt: 0.40, avgSTRank: 1, startRank: 1
+}))), adjacent, "展示ST・平均ST・推測した順位を内隣展示差やスーパーに混ぜない");
+
+const adjacentData = { source: "boatrace-official", entries: adjacentEntries, stadiumCode: "12" };
+const coreAdjacent = aiCore.buildPredictionData(adjacentData);
+const changedInside = structuredClone(adjacentData);
+[changedInside.entries[0].exhibitionTime, changedInside.entries[2].exhibitionTime] =
+  [changedInside.entries[2].exhibitionTime, changedInside.entries[0].exhibitionTime];
+const coreChangedInside = aiCore.buildPredictionData(changedInside);
+const evaluated2 = core => core.analyses.find(row => row.boatNo === 2);
+assert.equal(evaluated2(coreAdjacent).exhibitionPerformanceTheory.exhibitionRank,
+  evaluated2(coreChangedInside).exhibitionPerformanceTheory.exhibitionRank);
+assert(evaluated2(coreAdjacent).indexes.exhibition > evaluated2(coreChangedInside).indexes.exhibition,
+  "対象艇のタイム・順位・全体平均が同じでも内隣のタイムで展示評価が変わる");
+assert(evaluated2(coreAdjacent).indexes.total > evaluated2(coreChangedInside).indexes.total,
+  "内隣差の変更が表示だけでなく総合9%枠へ到達する");
+assert.equal(evaluated2(coreAdjacent).indexes.st, evaluated2(coreChangedInside).indexes.st);
+assert.deepEqual(coreAdjacent.exhibitionPerformanceTheory.adjacentExhibition, adjacent);
+assert.deepEqual(coreAdjacent.raceScenarios.evidence.adjacentExhibition, adjacent);
+assert(coreAdjacent.comments.some(text => /内隣展示アラート/.test(text)));
+const conditions = require("../js/prediction-conditions");
+const captured = conditions.capture(adjacentData, { aiCore: coreAdjacent });
+assert.deepEqual(captured.adjacentExhibitionEvidence, adjacent);
+captured.adjacentExhibitionEvidence.rows[1].alert = false;
+assert.equal(coreAdjacent.exhibitionPerformanceTheory.adjacentExhibition.rows[1].alert, true);
+assert.equal(conditions.capture({}, {}).adjacentExhibitionEvidence, null, "旧保存予想へ再計算しない");
+require("../js/prediction-st-exhibition-support");
+const support = global.ChappyPredictionSTExhibitionSupport.build({
+  aiCore: coreAdjacent, flowPriority: { attackBoatNo: 2 }
+}, adjacentData);
+assert.match(support.comment, /内隣の1号艇.*0.10秒速い/);
+const innerSupport = global.ChappyPredictionSTExhibitionSupport.build({
+  aiCore: coreAdjacent, flowPriority: { attackBoatNo: 1 }
+}, adjacentData);
+assert.match(innerSupport.alerts.join(" "), /中心艇の外隣に展示優位/);
+assert.equal(JSON.stringify(adjacentEntries), beforeAdjacent, "公式取得原本を変更しない");
+console.log("- 内隣展示差: 境界・実進入・欠測・9%枠内の置換・説明・不変保存が合格");

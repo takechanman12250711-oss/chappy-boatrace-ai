@@ -16,7 +16,7 @@
   "use strict";
 
   const CORE_VERSION =
-    "ai-core-v4.8.6-escape-skill-role";
+    "ai-core-v4.8.7-adjacent-exhibition";
 
   /* ===============================
     基本ユーティリティ
@@ -1708,6 +1708,60 @@ function getBoatNo(boat) {
     );
   }
 
+  // 舟券太郎の展示タイム比較。既存の左右隣艇との展示ST比較とは別物。
+  // 公式進入が欠ける場合、枠番を実進入として代用しない。
+  function buildAdjacentExhibitionEvidence(entries) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const mapping = buildOfficialCourseMapping(sourceEntries);
+    const complete = mapping.formal && new Set(sourceEntries.map(getBoatNo)).size === 6 &&
+      sourceEntries.every((entry) => getBoatNo(entry) >= 1 && getBoatNo(entry) <= 6 &&
+      normalizedTimingValue(getExhibitionTime(entry), EXHIBITION_TIME_RANGE) !== null
+    );
+    const rows = sourceEntries.map((entry) => {
+      const boatNo = getBoatNo(entry);
+      const course = mapping.formal ? mapping.courseOfBoat(boatNo) : null;
+      const inside = complete && course > 1 ? mapping.entryAtCourse(course - 1) : null;
+      const exhibitionTime = normalizedTimingValue(getExhibitionTime(entry), EXHIBITION_TIME_RANGE);
+      const insideTime = inside
+        ? normalizedTimingValue(getExhibitionTime(inside), EXHIBITION_TIME_RANGE) : null;
+      const gap = insideTime !== null ? round(insideTime - exhibitionTime, 6) : null;
+      const comparable = gap !== null;
+      const alert = comparable ? gap + 1e-9 >= 0.10 : null;
+      const reason = !mapping.formal ? "公式の実進入6艇が揃わず内隣を確定できない"
+        : !complete ? "展示タイム6艇が揃わず判定できない"
+          : course === 1 ? "1コースには内隣がないため対象外"
+            : `${boatNo}号艇（${course}コース）は内隣の${getBoatNo(inside)}号艇より展示タイムが` +
+              (gap > 0 ? `${gap.toFixed(2)}秒速い` : gap < 0 ? `${Math.abs(gap).toFixed(2)}秒遅い` : "同じ") +
+              (alert ? "。内隣展示アラートに該当" : "。0.10秒以上の優位には非該当");
+      return {
+        boatNo, course, insideBoatNo: inside ? getBoatNo(inside) : null,
+        exhibitionTime, insideExhibitionTime: insideTime, gapSeconds: gap,
+        comparable, alert, reason,
+        // 一般戦の平均スタート順位の取得経路は未接続。平均ST秒・当日順位では代用しない。
+        generalStartRankGap: null,
+        superAlert: alert === false ? false : null,
+        superStatus: alert === false ? "ordinary-condition-not-met" : "unavailable",
+        superReason: "一般戦の平均スタート順位が未取得のためスーパー判定はできない"
+      };
+    });
+    return {
+      version: "adjacent-exhibition-v1", source: "inside-course-exhibition-time",
+      thresholdSeconds: 0.10, superRankThreshold: 0.5,
+      formalCourseMapping: mapping.formal, complete, rows,
+      reference: "https://www.youtube.com/watch?v=2CTJeDkz-ak",
+      scorePolicy: "existing-exhibition-component-only",
+      probabilityCalibration: false
+    };
+  }
+
+  function adjacentGapComponent(evidence, maximum, fallback) {
+    if (!evidence?.comparable) return fallback;
+    const gap = Math.abs(evidence.gapSeconds) <= EXHIBITION_TIE_TOLERANCE + 1e-9
+      ? 0 : evidence.gapSeconds;
+    // 既存の隣接差の尺度を使用。配点総量・9%枠・他理論の点数は増やさない。
+    return averageDiffComponent(gap, maximum, 0.10);
+  }
+
   function resolveExhibitionSource(entries, data, fullMode) {
     const explicitExhibitionSource = entries
       .map(
@@ -1759,6 +1813,7 @@ function getBoatNo(boat) {
     const sourceEntries = Array.isArray(entries)
       ? entries
       : [];
+    const adjacentExhibition = buildAdjacentExhibitionEvidence(sourceEntries);
     const rows = sourceEntries.map((boat, index) => ({
       boatNo: getBoatNo(boat) || index + 1,
       name: getPlayerName(boat),
@@ -1849,6 +1904,7 @@ function getBoatNo(boat) {
         : null;
 
     const roles = rows.map((row) => {
+      const adjacent = adjacentExhibition.rows.find((item) => item.boatNo === row.boatNo);
       let score = 50;
       let components = {
         neutral: 50
@@ -1864,12 +1920,13 @@ function getBoatNo(boat) {
           35,
           0.20
         );
-        const neighborGap = nearestGapComponent(
+        const legacyNeighborGap = nearestGapComponent(
           row,
           exhibitionRanking,
           "exhibitionTime",
           20
         );
+        const neighborGap = adjacentGapComponent(adjacent, 20, legacyNeighborGap);
         const reliability = 10;
 
         components = {
@@ -1890,11 +1947,12 @@ function getBoatNo(boat) {
           row.exhibitionTimeRank,
           18
         );
-        const exhibitionDiff = averageDiffComponent(
+        const legacyExhibitionDiff = averageDiffComponent(
           exhibitionAverage - row.exhibitionTime,
           12,
           0.20
         );
+        const exhibitionDiff = adjacentGapComponent(adjacent, 12, legacyExhibitionDiff);
         const lapRank = rankComponent(
           row.lapTimeRank,
           21
@@ -1918,7 +1976,7 @@ function getBoatNo(boat) {
 
         components = {
           exhibitionRank,
-          exhibitionAverageDiff: exhibitionDiff,
+          [adjacent?.comparable ? "exhibitionInsideGap" : "exhibitionAverageDiff"]: exhibitionDiff,
           lapRank,
           lapAverageDiff: lapDiff,
           newSam,
@@ -1939,6 +1997,7 @@ function getBoatNo(boat) {
 
       return {
         ...row,
+        adjacentExhibition: adjacent,
         exhibitionRank:
           row.exhibitionTimeRank || null,
         lapRank: row.lapTimeRank || null,
@@ -1976,19 +2035,19 @@ function getBoatNo(boat) {
         appliedToScore: officialMode,
         source: source.label,
         components,
-        reason:
+        reason: (adjacent?.comparable ? `${adjacent.reason}。` : "") + (
           mode === "official"
             ? [
                 `展示順位${components.exhibitionRank}/35`,
                 `6艇平均との差${components.exhibitionAverageDiff}/35`,
-                `1位・隣接差${components.exhibitionNeighborGap}/20`,
+                `${adjacent?.comparable ? "内隣展示差" : "1位・隣接差"}${components.exhibitionNeighborGap}/20`,
                 `取得信頼度${components.reliability}/10`
               ].join(" / ")
             : mode === "full"
               ? [
-                  `展示順位・差${
+                  `展示順位・${adjacent?.comparable ? "内隣差" : "平均との差"}${
                     components.exhibitionRank +
-                    components.exhibitionAverageDiff
+                    (components.exhibitionInsideGap ?? components.exhibitionAverageDiff)
                   }/30`,
                   `一周順位・差${
                     components.lapRank +
@@ -1998,12 +2057,14 @@ function getBoatNo(boat) {
                   `ダブルタイム${components.doubleTime}/5`,
                   `取得信頼度${components.reliability}/10`
                 ].join(" / ")
-              : `展示${exhibitionCount}/6艇・一周${lapCount}/6艇のため中立50点`
+              : `展示${exhibitionCount}/6艇・一周${lapCount}/6艇のため中立50点`)
       };
     });
 
     return {
       version: "exhibition-performance-v2",
+      comparisonVersion: "adjacent-exhibition-v1",
+      adjacentExhibition,
       mode,
       modeLabel,
       status:
@@ -9047,6 +9108,7 @@ if (hasComparison(threeNo, oneNo)) {
       threeVsTwo: round(threeVsTwo),
       fourVsThree: round(fourVsThree)
     },
+    adjacentExhibition: buildAdjacentExhibitionEvidence(entries),
     slit: {
       threshold: slit.threshold,
       source: slit.source,
@@ -10007,6 +10069,11 @@ function buildRaceTrendEvaluation(data) {
       );
 
     }
+
+    analyses.forEach((boat) => {
+      const adjacent = boat.exhibitionPerformanceTheory?.adjacentExhibition;
+      if (adjacent?.alert === true) comments.push(`${adjacent.reason}。展開と選手の攻め・残し・拾い評価に照らして扱う。`);
+    });
 
     if (isNewEngineMode(data)) {
 
@@ -16275,6 +16342,8 @@ return {
     buildCourseStructureEvaluation,
 
     buildExhibitionPerformanceEvaluation,
+
+    buildAdjacentExhibitionEvidence,
     
     buildRaceScenarios,
 

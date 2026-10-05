@@ -203,9 +203,9 @@ function createRuntime({
   );
   assert.ok(
     failedOptional.appended.includes(
-      "js/ai-core.js?v=20260922-escape-skill-role1"
+      "js/ai-core.js?v=20261006-adjacent-exhibition1"
     ),
-    "逃げ戦法評価修正済みai-coreを専用キャッシュ世代で読み込む"
+    "内隣展示比較を含むai-coreを専用キャッシュ世代で読み込む"
   );
   assert.ok(
     failedOptional.appended.includes(

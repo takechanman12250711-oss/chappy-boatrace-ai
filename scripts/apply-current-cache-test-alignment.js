@@ -48,7 +48,7 @@ function replaceOneOf(
 }
 
 const CURRENT_HIYORI_VERSION =
-  "20260829-effective-score-contract1";
+  "20261006-adjacent-exhibition1";
 const PREVIOUS_HIYORI_VERSION =
   "20260825-mobile-startup-terminal4";
 
@@ -113,6 +113,7 @@ function patchLoad(text) {
     "20260828-ui-audit-display1"
   );
   const supportedGenerations = [
+    generationBlock("20260828-ui-audit-display1", "20260829-effective-score-contract1"),
     previousGenerationBlock(
       "20260828-ui-audit-display1"
     ),

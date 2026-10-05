@@ -20,7 +20,7 @@ const stats = fs.readFileSync(
 const patchedLoad = patchLoad(load);
 const patchedStats = patchStats(stats);
 const previousLoad = load.replaceAll(
-  "20260829-effective-score-contract1",
+  "20261006-adjacent-exhibition1",
   "20260825-mobile-startup-terminal4"
 );
 
@@ -50,7 +50,7 @@ assert.equal(
 );
 assert.equal(
   patchedLoad.includes(
-    "'const VERSION=\"20260829-effective-score-contract1\"'"
+    "'const VERSION=\"20261006-adjacent-exhibition1\"'"
   ),
   true
 );
