@@ -38,7 +38,7 @@ assert.ok(
   predictionRuntime.includes('"js/practical-selection.js": "20261003-escape-partner-v13"'),
   "相手補正v1.3の選択処理を新しいキャッシュ版で配信する"
 );
-const hiyoriIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20260829-effective-score-contract1"');
+const hiyoriIndex = html.indexOf('src="js/hiyori-runtime-loader.js?v=20261006-adjacent-exhibition1"');
 const appRuntimeIndex = html.indexOf('src="js/app-runtime-loader.js');
 const homeIndex = html.indexOf('src="js/home-dashboard-v2.js');
 const todayResultsIndex = html.indexOf('src="js/today-results-home.js');

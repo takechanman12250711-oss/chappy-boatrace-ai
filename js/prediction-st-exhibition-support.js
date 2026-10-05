@@ -162,6 +162,16 @@
 
     const alerts = [];
     const confirms = [];
+    const adjacentExhibition = prediction?.aiCore?.exhibitionPerformanceTheory?.adjacentExhibition ||
+      prediction?.exhibitionPerformanceTheory?.adjacentExhibition || null;
+    const adjacentRows = Array.isArray(adjacentExhibition?.rows) ? adjacentExhibition.rows : [];
+    const attackAdjacent = adjacentRows.find(row => row.boatNo === attackBoat);
+    if (attackAdjacent?.alert === true) {
+      confirms.push(`${attackAdjacent.reason}。中心展開を展示・足の面から補強`);
+    }
+    adjacentRows.filter(row => row.alert === true && row.insideBoatNo === attackBoat).forEach(row => {
+      alerts.push(`${row.reason}。中心艇の外隣に展示優位があり、既存の攻め評価と照合`);
+    });
 
     if (attackBoat && attackSTRank !== null) {
       if (attackSTRank <= 2) confirms.push(`${attackBoat}号艇はスリット上位で中心展開を後押し`);
@@ -200,6 +210,7 @@
 
     return {
       status,
+      adjacentExhibition,
       attackBoatNo: attackBoat || null,
       attackCourse:
         attackCourse >= 1 && attackCourse <= 6
