@@ -569,11 +569,14 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd())
   const response = await page.goto('https://note.com/great_robin3243', { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!response?.ok()) throw new Error('publication_recovery_listing_unavailable');
   const links = page.locator('a[href*="/great_robin3243/n/"]').filter({ hasText: payload.title });
-  if (await links.count() !== 1) throw new Error('publication_recovery_title_not_unique');
-  const href = await links.first().getAttribute('href');
-  const noteId = String(href || '').match(/\/n\/(n[a-f0-9]+)\/?$/)?.[1];
-  const url = publicArticleUrl(new URL(href, 'https://note.com').href, noteId);
-  if (!url) throw new Error('publication_recovery_url_invalid');
+  const hrefs = await links.evaluateAll(elements => elements.map(element => element.href));
+  const urls = [...new Set(hrefs.map(value => {
+    const noteId = String(value || '').match(/\/n\/(n[a-f0-9]+)\/?$/)?.[1];
+    return publicArticleUrl(value, noteId);
+  }).filter(Boolean))];
+  if (urls.length !== 1) throw new Error('publication_recovery_title_not_unique');
+  const [url] = urls;
+  const noteId = url.match(/\/n\/(n[a-f0-9]+)$/)?.[1];
   const articleResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!articleResponse?.ok() || !publicArticleUrl(page.url(), noteId)) throw new Error('publication_public_page_unavailable');
   await page.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
