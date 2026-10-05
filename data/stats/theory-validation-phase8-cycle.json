@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "analysisId": "theory-validation-phase8-cycle-v1",
-  "generatedAt": "2026-10-05T05:15:00.211Z",
+  "generatedAt": "2026-10-05T22:05:22.928Z",
   "sourceCoverageGeneratedAt": "2026-10-05T04:38:38.429Z",
-  "coreVersion": "ai-core-v4.8.6-escape-skill-role",
+  "coreVersion": "ai-core-v4.8.8-adjacent-start-rank",
   "productionChanged": false,
   "phaseComplete": true,
   "policy": {
@@ -95,7 +95,7 @@
             "PR #692"
           ],
           "fixedDefinition": "Existing standalone raceFlow signal reviewed in phase 4; definition is frozen to its historical report and is not re-optimized.",
-          "cohortFingerprint": "ai-core-v4.8.6-escape-skill-role",
+          "cohortFingerprint": "ai-core-v4.8.8-adjacent-start-rank",
           "discoveryPeriod": {
             "sourceCohort": "data/stats/flow-suppression-report.json",
             "calendarRangeKnown": false
@@ -113,7 +113,7 @@
           },
           "standaloneCounterfactual": true,
           "runnerAdapter": null,
-          "candidateFingerprint": "33582e14719a02d673c817f1cfb42768f5ccd11394e61ac63184cdd661b73226"
+          "candidateFingerprint": "cc4256924abd00678f27c248aeddd5fc82a3750ff7d2974ea0ac22f6362ff84a"
         },
         "sourcePolicy": "EXISTING_IMPLEMENTATION_OR_FORMAL_VALIDATION_OR_EXISTING_DISCOVERY_OR_USER_APPROVED_ONLY",
         "newThresholdInvented": false
@@ -157,7 +157,7 @@
             "PR #863"
           ],
           "fixedDefinition": "Existing seven-ticket same-stake one-ticket replacement hold/pickup shadow candidate; no threshold or ticket rule changes are permitted.",
-          "cohortFingerprint": "ai-core-v4.8.6-escape-skill-role",
+          "cohortFingerprint": "ai-core-v4.8.8-adjacent-start-rank",
           "discoveryPeriod": {
             "sourceCohort": "102R frozen holdout",
             "calendarRangeKnown": false
@@ -175,7 +175,7 @@
           },
           "standaloneCounterfactual": true,
           "runnerAdapter": null,
-          "candidateFingerprint": "939fa22defe94dba1c3c5cb877ea2d2ecea6c1ccf1df1140fc725fc4e26aae79"
+          "candidateFingerprint": "3655b1f808c085ffc000ff20b2c696db832d18eea061380cb0864ee38566289f"
         },
         "sourcePolicy": "EXISTING_IMPLEMENTATION_OR_FORMAL_VALIDATION_OR_EXISTING_DISCOVERY_OR_USER_APPROVED_ONLY",
         "newThresholdInvented": false
@@ -220,7 +220,7 @@
             "PR #351"
           ],
           "fixedDefinition": "Existing frame-rise-fall fixed100 shadow candidate exactly as evaluated in phase 5.",
-          "cohortFingerprint": "ai-core-v4.8.6-escape-skill-role",
+          "cohortFingerprint": "ai-core-v4.8.8-adjacent-start-rank",
           "discoveryPeriod": {
             "sourceCohort": "frame-rise-fall fixed100",
             "calendarRangeKnown": false
@@ -238,7 +238,7 @@
           },
           "standaloneCounterfactual": true,
           "runnerAdapter": null,
-          "candidateFingerprint": "85ec77468ceca5abb0b4d282a199e6800f99fe30aa68b6814978fc85698a0475"
+          "candidateFingerprint": "23f2d9c5dc0b41ddcacbe749636712523d8203d68b6c28afccfeee3a2ff9e6a4"
         },
         "sourcePolicy": "EXISTING_IMPLEMENTATION_OR_FORMAL_VALIDATION_OR_EXISTING_DISCOVERY_OR_USER_APPROVED_ONLY",
         "newThresholdInvented": false
@@ -536,7 +536,7 @@
           },
           "dataCount": {
             "formalEvidence": 1674,
-            "validation": 164,
+            "validation": 166,
             "eligible": null
           },
           "antiPosthoc": {
@@ -565,7 +565,7 @@
         "existingAdapter": "scripts/theory-validation-phase6-prospective-integration.cjs",
         "mode": "PROSPECTIVE_PREREGISTERED",
         "gate": {
-          "current": 164,
+          "current": 166,
           "required": 100,
           "automaticAtGate": true
         },
