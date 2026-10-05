@@ -255,8 +255,16 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Collect automatic race prediction"
-          git pull --rebase origin main
-          git push origin main
+          for attempt in 1 2 3; do
+            git pull --rebase --autostash origin main
+            if git push origin main; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::mainへの保存が3回失敗しました"
+              exit 1
+            fi
+          done
 
       - name: Identify saved prediction checkpoint
         id: saved-checkpoint
