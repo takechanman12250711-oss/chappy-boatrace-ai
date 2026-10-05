@@ -569,6 +569,7 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd())
   const response = await page.goto('https://note.com/great_robin3243', { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!response?.ok()) throw new Error('publication_recovery_listing_unavailable');
   const articles = page.getByRole('link', { name: payload.title, exact: true });
+  await articles.first().waitFor({ state: 'visible', timeout: 30000 });
   const article = articles.filter({ visible: true });
   const visibleCount = await article.count();
   console.log(`NOTE_UI_RECOVERY_LINKS=${await articles.count()}/${visibleCount}`);
