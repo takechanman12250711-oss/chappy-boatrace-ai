@@ -1,6 +1,6 @@
 {
   "version": "outer-attack-all-scenarios-v1",
-  "generatedAt": "2026-10-05T22:40:54.965Z",
+  "generatedAt": "2026-10-05T23:45:31.318Z",
   "productionChanged": false,
   "automaticApplication": false,
   "adoptionStatus": "NOT_REGISTERED_FOR_PRODUCTION_ADOPTION",
@@ -12503,10 +12503,12 @@
       "scheduledRaces": 156,
       "scheduleComplete": true,
       "observedRaces": 156,
-      "savedRaces": 0,
-      "missingRaces": 156,
+      "savedRaces": 1,
+      "missingRaces": 155,
       "reasons": {
-        "deferred-until-one-hour": 156
+        "deferred-until-one-hour": 151,
+        "closed-or-too-close": 1,
+        "waiting-exhibition": 3
       },
       "missing": [
         {
@@ -12847,15 +12849,15 @@
         },
         {
           "raceKey": "20261006-14-1",
-          "reason": "deferred-until-one-hour"
+          "reason": "closed-or-too-close"
         },
         {
           "raceKey": "20261006-14-2",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261006-14-3",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261006-14-4",
@@ -12894,12 +12896,8 @@
           "reason": "deferred-until-one-hour"
         },
         {
-          "raceKey": "20261006-18-1",
-          "reason": "deferred-until-one-hour"
-        },
-        {
           "raceKey": "20261006-18-2",
-          "reason": "deferred-until-one-hour"
+          "reason": "waiting-exhibition"
         },
         {
           "raceKey": "20261006-18-3",
@@ -13134,17 +13132,17 @@
           "reason": "deferred-until-one-hour"
         }
       ],
-      "lastObservedAt": "2026-10-05T22:23:01.347Z",
+      "lastObservedAt": "2026-10-05T23:37:45.540Z",
       "venueFailures": []
     }
   },
   "diagnosticCounts": {
-    "inactive": 201,
+    "inactive": 202,
     "active": 11
   },
-  "capturedRaces": 200,
+  "capturedRaces": 201,
   "settledRaces": 186,
-  "pending": 0,
+  "pending": 1,
   "voidRaces": 11,
   "unknownPayout": 0,
   "rejected": {},
