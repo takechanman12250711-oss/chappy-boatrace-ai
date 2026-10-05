@@ -119,6 +119,7 @@ try {
   assert.match(jobs.calibrate, /ref: \$\{\{ needs.publish_reports.outputs.saved_sha \}\}/);
   assert.match(jobs.diagnostics, /node scripts\/build-race-stats.js/);
   const predictions = fs.readFileSync('.github/workflows/collect-predictions.yml', 'utf8');
+  assert.doesNotMatch(predictions.slice(0, predictions.indexOf('jobs:')), /^concurrency:/m, 'read-only regression must not hold up the next prediction run');
   const regression = predictions.slice(predictions.indexOf('\n  regression:'));
   assert.match(regression, /needs: predict/);
   assert.match(regression, /contents: read/);

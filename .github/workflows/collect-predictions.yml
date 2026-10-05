@@ -117,11 +117,6 @@ permissions:
   contents: write
   actions: write
 
-concurrency:
-  group: chappy-prediction-pipeline
-  queue: max
-  cancel-in-progress: false
-
 jobs:
   predict:
     concurrency:
