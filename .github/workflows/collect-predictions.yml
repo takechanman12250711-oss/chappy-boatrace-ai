@@ -125,7 +125,7 @@ concurrency:
 jobs:
   predict:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -290,7 +290,17 @@ jobs:
 
 
       - name: Refresh dependent monitors after watchdog recovery
-        if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'github-actions[bot]' && steps.early-note.outcome != 'failure' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run check-active-100r-early-monitor.yml --ref main
+          gh workflow run check-wall-boat-branch-profit.yml --ref main
+          gh workflow run check-wall-established-breakdown.yml --ref main
+          gh workflow run collect-playful-link-position-forward.yml --ref main
+
+      - name: Refresh dependent monitors after saved predictions and note dispatch failure
+        if: steps.early-note.outcome == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
