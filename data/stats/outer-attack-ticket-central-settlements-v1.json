@@ -4,7 +4,7 @@
   "monitorVersion": "outer-attack-ticket-central-monitor-v1",
   "sourceSettlementVersion": "outer-attack-ticket-settlement-v1",
   "createdAt": "2026-08-31T07:24:47.726Z",
-  "updatedAt": "2026-10-05T03:49:40.462Z",
+  "updatedAt": "2026-10-05T05:17:51.499Z",
   "productionChanged": false,
   "automaticApplication": false,
   "settlements": {
@@ -2854,6 +2854,234 @@
       "shadowImmutableFingerprint": "sha256:a533fee4ae01d6c392744b8eed0c7b4b81da84f8d2e91d12ccf57d2240d7f34e",
       "centralComparisonEligible": true,
       "centralSettlementFingerprint": "sha256:af2ccd56bbaeb7676b15b3ceb474cfd00a72743f8324f5f89c9f21d725bfe03e"
+    },
+    "20261005-02-5": {
+      "schemaVersion": 1,
+      "settlementId": "20261005-02-5",
+      "settlementVersion": "outer-attack-ticket-settlement-v1",
+      "experimentId": "outer-attack-ticket-shadow-v1",
+      "status": "settled-shadow-only",
+      "productionChanged": false,
+      "automaticApplication": false,
+      "sourceRaceKey": "20261005-02-5",
+      "shadowCaptureKey": "20261005-02-5|2026-10-05T03:42:15.091Z",
+      "shadowCaptureAt": "2026-10-05T03:42:15.091Z",
+      "resultUsedForGeneration": false,
+      "captureOrder": "prediction-before-result",
+      "comparisonEligible": true,
+      "targetBoatNo": 4,
+      "eligibleVariantKeys": [
+        "cover",
+        "flow"
+      ],
+      "variantMetadata": {
+        "cover": {
+          "status": "ready",
+          "targetBoatNo": 4,
+          "targetPosition": 2,
+          "fromTicket": "3-1-6",
+          "toTicket": "1-4-2"
+        },
+        "flow": {
+          "status": "ready",
+          "targetBoatNo": 4,
+          "targetPosition": 2,
+          "fromTicket": "4-3-6",
+          "toTicket": "1-4-2"
+        },
+        "hole": {
+          "status": "no-source-ticket",
+          "targetBoatNo": 4,
+          "targetPosition": null,
+          "fromTicket": "",
+          "toTicket": ""
+        }
+      },
+      "official": {
+        "valid": true,
+        "raceKey": "20261005-02-5",
+        "ticket": "4-1-2",
+        "finishers": [
+          4,
+          1,
+          2
+        ],
+        "payoutPer100Yen": 3000,
+        "source": "boatrace-official",
+        "recordType": "official_result",
+        "checkedAt": "2026-10-05T04:19:09.221Z",
+        "fingerprint": "fnv1a32:a707e3bc"
+      },
+      "comparison": {
+        "sourceRaceKey": "20261005-02-5",
+        "officialTicket": "4-1-2",
+        "payoutPer100Yen": 3000,
+        "a": {
+          "ticket": "4-1-2",
+          "hit": false,
+          "investmentYen": 1000,
+          "returnYen": 0,
+          "profitYen": -1000,
+          "roiPercent": 0
+        },
+        "variants": {
+          "cover": {
+            "status": "ready",
+            "outcome": {
+              "ticket": "4-1-2",
+              "hit": false,
+              "investmentYen": 1000,
+              "returnYen": 0,
+              "profitYen": -1000,
+              "roiPercent": 0
+            }
+          },
+          "flow": {
+            "status": "ready",
+            "outcome": {
+              "ticket": "4-1-2",
+              "hit": false,
+              "investmentYen": 1000,
+              "returnYen": 0,
+              "profitYen": -1000,
+              "roiPercent": 0
+            }
+          },
+          "hole": {
+            "status": "no-source-ticket",
+            "outcome": {
+              "ticket": "4-1-2",
+              "hit": false,
+              "investmentYen": 1000,
+              "returnYen": 0,
+              "profitYen": -1000,
+              "roiPercent": 0
+            }
+          }
+        }
+      },
+      "settledAt": "2026-10-05T05:17:51.499Z",
+      "revision": 1,
+      "centralMonitorVersion": "outer-attack-ticket-central-monitor-v1",
+      "centralCaptureOrder": "central-before-result",
+      "centralCapturedAt": "2026-10-05T03:42:15.091Z",
+      "shadowImmutableFingerprint": "sha256:38c0c8828d5f8951c8f80f8b8eaaca8f8d37fa62181924852939c25f617b6023",
+      "centralComparisonEligible": true,
+      "centralSettlementFingerprint": "sha256:78d4b375db78a794f96cbc5c6d5d80d60744c724c9c923ee66b8ca5ac7a3b240"
+    },
+    "20261005-18-8": {
+      "schemaVersion": 1,
+      "settlementId": "20261005-18-8",
+      "settlementVersion": "outer-attack-ticket-settlement-v1",
+      "experimentId": "outer-attack-ticket-shadow-v1",
+      "status": "settled-shadow-only",
+      "productionChanged": false,
+      "automaticApplication": false,
+      "sourceRaceKey": "20261005-18-8",
+      "shadowCaptureKey": "20261005-18-8|2026-10-05T02:58:05.077Z",
+      "shadowCaptureAt": "2026-10-05T02:58:05.077Z",
+      "resultUsedForGeneration": false,
+      "captureOrder": "prediction-before-result",
+      "comparisonEligible": true,
+      "targetBoatNo": 4,
+      "eligibleVariantKeys": [
+        "cover",
+        "flow"
+      ],
+      "variantMetadata": {
+        "cover": {
+          "status": "ready",
+          "targetBoatNo": 4,
+          "targetPosition": 2,
+          "fromTicket": "1-2-4",
+          "toTicket": "1-4-5"
+        },
+        "flow": {
+          "status": "ready",
+          "targetBoatNo": 4,
+          "targetPosition": 3,
+          "fromTicket": "3-2-6",
+          "toTicket": "3-2-4"
+        },
+        "hole": {
+          "status": "no-source-ticket",
+          "targetBoatNo": 4,
+          "targetPosition": null,
+          "fromTicket": "",
+          "toTicket": ""
+        }
+      },
+      "official": {
+        "valid": true,
+        "raceKey": "20261005-18-8",
+        "ticket": "2-3-4",
+        "finishers": [
+          2,
+          3,
+          4
+        ],
+        "payoutPer100Yen": 10400,
+        "source": "boatrace-official",
+        "recordType": "official_result",
+        "checkedAt": "2026-10-05T04:19:22.547Z",
+        "fingerprint": "fnv1a32:6011d130"
+      },
+      "comparison": {
+        "sourceRaceKey": "20261005-18-8",
+        "officialTicket": "2-3-4",
+        "payoutPer100Yen": 10400,
+        "a": {
+          "ticket": "2-3-4",
+          "hit": false,
+          "investmentYen": 900,
+          "returnYen": 0,
+          "profitYen": -900,
+          "roiPercent": 0
+        },
+        "variants": {
+          "cover": {
+            "status": "ready",
+            "outcome": {
+              "ticket": "2-3-4",
+              "hit": false,
+              "investmentYen": 900,
+              "returnYen": 0,
+              "profitYen": -900,
+              "roiPercent": 0
+            }
+          },
+          "flow": {
+            "status": "ready",
+            "outcome": {
+              "ticket": "2-3-4",
+              "hit": false,
+              "investmentYen": 900,
+              "returnYen": 0,
+              "profitYen": -900,
+              "roiPercent": 0
+            }
+          },
+          "hole": {
+            "status": "no-source-ticket",
+            "outcome": {
+              "ticket": "2-3-4",
+              "hit": false,
+              "investmentYen": 900,
+              "returnYen": 0,
+              "profitYen": -900,
+              "roiPercent": 0
+            }
+          }
+        }
+      },
+      "settledAt": "2026-10-05T05:17:51.499Z",
+      "revision": 1,
+      "centralMonitorVersion": "outer-attack-ticket-central-monitor-v1",
+      "centralCaptureOrder": "central-before-result",
+      "centralCapturedAt": "2026-10-05T03:26:47.243Z",
+      "shadowImmutableFingerprint": "sha256:725e7786ce56496165af004fa4692ce9e2836a5b7eef00e064174918d91b9996",
+      "centralComparisonEligible": true,
+      "centralSettlementFingerprint": "sha256:05dd7c046ea4da25e68e59bb3dedf664fb1271bcaf469915e73947cb663b1df6"
     }
   },
   "exclusions": {
@@ -2942,16 +3170,16 @@
       "automaticApplication": false
     }
   },
-  "settlementCount": 25,
+  "settlementCount": 27,
   "exclusionCount": 14,
   "lastSettlement": {
-    "settledAt": "2026-10-05T03:49:40.462Z",
+    "settledAt": "2026-10-05T05:17:51.499Z",
     "diagnostics": {
       "archivedSnapshotCount": 45,
       "archivedRaceCount": 41,
-      "officialResultCount": 39,
-      "pendingResultCount": 2,
-      "settledCount": 0,
+      "officialResultCount": 41,
+      "pendingResultCount": 0,
+      "settledCount": 2,
       "preservedCount": 25,
       "revisedCount": 0,
       "supersededSnapshotCount": 4,
