@@ -67,6 +67,11 @@ try {
   fs.writeFileSync(path.join(worker, reference), 'immutable reporter comparison');
   assert.equal(save(saveArgs).saved, 1, 'reporter reference shares immutable-only persistence');
   assert.equal(git(root, ['--git-dir', bare, 'show', `main:${reference}`]), 'immutable reporter comparison');
+  const forward = 'data/partner-forward/20300914/20300914-24-6-' + 'd'.repeat(64) + '.json';
+  fs.mkdirSync(path.dirname(path.join(worker, forward)), { recursive: true });
+  fs.writeFileSync(path.join(worker, forward), 'sealed partner candidate');
+  assert.equal(save(saveArgs).saved, 1, 'partner evidence shares immutable-only persistence');
+  assert.equal(git(root, ['--git-dir', bare, 'show', `main:${forward}`]), 'sealed partner candidate');
   fs.writeFileSync(path.join(worker, 'data/stats/result.json'), 'must not be included');
   assert.throws(() => save(saveArgs), /unrelated_changes/);
   console.log('concurrent official result and immutable note source writes preserve both histories');

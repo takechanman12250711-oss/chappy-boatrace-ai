@@ -11,6 +11,9 @@ on:
       - 'scripts/verification-coverage.js'
       - 'scripts/outer-attack-live-source.js'
       - 'scripts/save-live-verification-sources.js'
+      - 'scripts/partner-forward.cjs'
+      - 'scripts/test-partner-forward.cjs'
+      - 'config/partner-forward.json'
       - 'scripts/test-outer-attack-research.js'
       - 'scripts/note-exhibition.js'
       - 'js/note-generator.js'
@@ -29,6 +32,9 @@ on:
       - 'scripts/verification-coverage.js'
       - 'scripts/outer-attack-live-source.js'
       - 'scripts/save-live-verification-sources.js'
+      - 'scripts/partner-forward.cjs'
+      - 'scripts/test-partner-forward.cjs'
+      - 'config/partner-forward.json'
       - 'scripts/test-outer-attack-research.js'
       - 'scripts/note-exhibition.js'
       - 'js/note-generator.js'
@@ -84,6 +90,7 @@ jobs:
             scripts
             data/stats
             data/note-drafts
+            data/partner-forward
             data/outer-attack-sources
             data/verification-coverage
             data/note-publish
@@ -93,6 +100,7 @@ jobs:
       - name: Verify isolated collector and source preservation
         run: |
           node scripts/test-note-source-concurrency.js
+          node --test scripts/test-partner-forward.cjs
           node --test scripts/test-omura-reference.cjs
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
@@ -110,6 +118,30 @@ jobs:
         env:
           NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
         run: node scripts/collect-predictions.js --note-only
+      - name: Capture fixed partner candidates without results
+        id: partner-capture
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: node scripts/partner-forward.cjs capture /tmp/partner-forward-seal
+      - name: Seal partner candidates on GitHub before deadline
+        id: partner-artifact
+        if: github.event_name != 'pull_request' && steps.partner-capture.outputs.count != '0' && steps.partner-capture.outcome == 'success'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-forward-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/partner-forward-seal/*.json
+          retention-days: 90
+          if-no-files-found: error
+      - name: Confirm remote seal time before admitting forward races
+        id: partner-confirm
+        if: github.event_name != 'pull_request' && steps.partner-artifact.outputs.artifact-id != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PARTNER_ARTIFACT_ID: ${{ steps.partner-artifact.outputs.artifact-id }}
+          PARTNER_ARTIFACT_DIGEST: ${{ steps.partner-artifact.outputs.artifact-digest }}
+        run: node scripts/partner-forward.cjs seal /tmp/partner-forward-seal
       - name: Save immutable evidence independently of publication audit
         if: always() && github.event_name != 'pull_request'
         run: node scripts/save-live-verification-sources.js
@@ -119,3 +151,7 @@ jobs:
           NOTE_CLAIM_TOKEN: ${{ github.token }}
           NOTE_SOURCE_ISOLATED: 'true'
         run: node scripts/dispatch-ready-note.js
+
+      - name: Report partner capture failures after preserving notes
+        if: always() && (steps.partner-capture.outcome == 'failure' || steps.partner-artifact.outcome == 'failure' || steps.partner-confirm.outcome == 'failure')
+        run: exit 1
