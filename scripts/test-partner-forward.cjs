@@ -9,6 +9,8 @@ function snapshot(){return {version:'partner-forward-snapshot-v1',protocolHash:p
 function receipt(){const s=snapshot();return {version:'partner-forward-seal-v1',snapshotHash:f.hash(f.json(s)),snapshot:s,artifact:{id:456,digest:'sha256:'+'d'.repeat(64),runId:s.runId,workflowHead:s.workflowHead,name:'partner-forward-123-1',createdAt:'2030-10-05T01:02:00Z',confirmedAt:'2030-10-05T01:03:00Z'}};}
 function fixture(){const root=fs.mkdtempSync(path.join(os.tmpdir(),'partner-forward-'));fs.mkdirSync(path.join(root,'config'));fs.mkdirSync(path.join(root,'scripts'));for(const file of ['config/partner-forward.json','scripts/research-escape-partners.cjs'])fs.copyFileSync(path.resolve(__dirname,'..',file),path.join(root,file));return root;}
 function persist(root,r){const b=f.json(r),file=path.join(root,'data/partner-forward',r.snapshot.date,`${r.snapshot.raceKey}-${f.hash(b)}.json`);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,b);return file;}
+function enableMethodCohorts(root){fs.copyFileSync(path.resolve(__dirname,'../config/partner-forward-cohorts.json'),path.join(root,'config/partner-forward-cohorts.json'));}
+function methodReceipt(root,method){const r=receipt(),next=f.protocol(root,method);r.snapshot.method=method;r.snapshot.protocolHash=next.digest;r.snapshotHash=f.hash(f.json(r.snapshot));return r;}
 test('seal rejects wrong identity, head budget, stale clocks and changed protocol',()=>{
  assert.equal(f.validSeal(receipt(),p),true);
  const sameSecond=receipt();sameSecond.snapshot.capturedAt='2030-10-05T01:02:00.500Z';sameSecond.snapshotHash=f.hash(f.json(sameSecond.snapshot));assert.equal(f.validSeal(sameSecond,p),true,'artifact created_at has only second precision');
@@ -64,8 +66,50 @@ test('capture validates a real bundle contract before deadline and never uses re
  const env={GITHUB_REPOSITORY:'takechanman12250711-oss/chappy-boatrace-ai',GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:s.runId,GITHUB_RUN_ATTEMPT:s.runAttempt,GITHUB_SHA:s.workflowHead};
  const out=path.join(root,'before');assert.equal(f.capture(root,out,env,Date.parse(s.capturedAt)).captured,1);
  const captured=JSON.parse(fs.readFileSync(path.join(out,fs.readdirSync(out)[0]),'utf8'));assert.deepEqual(captured.baseline,s.baseline);assert.equal(captured.control.includes('1-4-5'),true);assert.equal(fs.readFileSync(source,'utf8'),raw);
+ // A real code-generation change must start its own prospective cohort. An old
+ // receipt for the same race must neither block nor count toward the new one.
+ enableMethodCohorts(root);persist(root,receipt());
+ const newMethod='method:'+'f'.repeat(64);record.reviewEvidence={...review,method:newMethod.slice(7)};
+ record.practicalSelectionEvidence.reviewEvidence={...record.reviewEvidence};
+ const nextRaw=f.json(bundle),nextSource=path.join(path.dirname(source),`${s.raceKey}-${f.hash(nextRaw)}.json`);fs.writeFileSync(nextSource,nextRaw);
+ const nextOut=path.join(root,'new-method');const nextCapture=f.capture(root,nextOut,env,Date.parse(s.capturedAt));
+ assert.equal(nextCapture.captured,1);assert.deepEqual(nextCapture.skips,{});
+ const next=JSON.parse(fs.readFileSync(path.join(nextOut,fs.readdirSync(nextOut)[0]),'utf8'));
+ assert.equal(next.method,newMethod);assert.equal(next.protocolHash,f.protocol(root,newMethod).digest);
+ assert.deepEqual(next.baseline,s.baseline);assert.equal(fs.readFileSync(source,'utf8'),raw);assert.equal(fs.readFileSync(nextSource,'utf8'),nextRaw);
  assert.equal(f.capture(root,path.join(root,'after'),env,Date.parse(s.deadlineAt)).captured,0);
  assert.throws(()=>f.capture(root,path.join(root,'pr'),{...env,GITHUB_REF:'refs/pull/1/merge'}),/context/);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+test('method cohorts keep independent first-100 limits and retain every old receipt',()=>{
+ const root=fixture();try{
+ enableMethodCohorts(root);const newMethod='method:'+'f'.repeat(64),bytes=[];
+ for(let i=0;i<101;i++){const r=receipt(),s=r.snapshot;s.raceKey=`20301005-${String(Math.floor(i/12)+1).padStart(2,'0')}-${i%12+1}`;s.sourcePath=`data/note-drafts/${s.date}/${s.raceKey}-${s.sourceSha256}.json`;r.snapshotHash=f.hash(f.json(s));r.artifact.confirmedAt=new Date(Date.parse('2030-10-05T01:03:00Z')+i*1000).toISOString();const file=persist(root,r);bytes.push([file,fs.readFileSync(file,'utf8')]);}
+ const r=methodReceipt(root,newMethod);r.snapshot.raceKey='20301005-01-1';r.snapshot.sourcePath=`data/note-drafts/${r.snapshot.date}/${r.snapshot.raceKey}-${r.snapshot.sourceSha256}.json`;r.snapshotHash=f.hash(f.json(r.snapshot));persist(root,r);
+ assert.equal(f.cohort(root,p).rows.length,100);assert.equal(f.cohort(root,f.protocol(root,newMethod)).rows.length,1);
+ const d=f.report(root,{currentMethod:newMethod});assert.equal(d.version,'partner-forward-report-v2');assert.equal(d.sealed,1);assert.equal(d.archivedSealed,100);assert.equal(d.checkpointReached,false);assert.equal(d.cohorts.length,2);assert.deepEqual(d.rejected,{});
+ assert.equal(d.stats.baseline.races,0);assert.equal(d.pending.length,1);assert.equal(d.automaticProductionChange,false);
+ for(const [file,raw] of bytes)assert.equal(fs.readFileSync(file,'utf8'),raw);
+ const swapped=structuredClone(r);swapped.snapshot.method=p.value.method;swapped.snapshotHash=f.hash(f.json(swapped.snapshot));assert.equal(f.validSeal(swapped,p),false);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+test('current-method zero is explicit while previous-generation results stay readable',()=>{
+ const root=fixture();try{enableMethodCohorts(root);persist(root,receipt());const newMethod='method:'+'e'.repeat(64);
+ const d=f.report(root,{currentMethod:newMethod});assert.equal(d.sealed,0);assert.equal(d.archivedSealed,1);assert.equal(d.collectionStatus,'awaiting-current-method-capture');
+ assert.equal(d.cohorts.find(x=>x.method===p.value.method).sealed,1);assert.equal(d.cohorts.find(x=>x.method===newMethod).sealed,0);
+ assert.equal(d.stats.baseline.hitRate,null);assert.equal(d.usableForPrediction,false);
+ const file=path.join(root,'config/partner-forward-cohorts.json'),policy=JSON.parse(fs.readFileSync(file));policy.legacyProtocolHash='0'.repeat(64);fs.writeFileSync(file,JSON.stringify(policy));
+ assert.throws(()=>f.protocol(root,newMethod),/cohort_policy_invalid/);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+test('remote seal supports a new method without weakening time and artifact checks',async()=>{
+ const root=fixture(),out=path.join(root,'staging');try{enableMethodCohorts(root);fs.mkdirSync(out);const method='method:'+'e'.repeat(64),s=methodReceipt(root,method).snapshot,raw=f.json(s);fs.writeFileSync(path.join(out,f.hash(raw)+'.json'),raw);
+ const env={GITHUB_REPOSITORY:'takechanman12250711-oss/chappy-boatrace-ai',GITHUB_REF:'refs/heads/main',GITHUB_RUN_ID:'123',GITHUB_RUN_ATTEMPT:'1',GITHUB_SHA:s.workflowHead,PARTNER_ARTIFACT_ID:'456',PARTNER_ARTIFACT_DIGEST:'d'.repeat(64),GH_TOKEN:'test-only'};
+ const metadata={id:456,digest:'sha256:'+'d'.repeat(64),name:'partner-forward-123-1',created_at:'2030-10-05T01:02:00Z',expired:false,workflow_run:{id:123,head_sha:s.workflowHead}};
+ const response=date=>async()=>({ok:true,headers:{get:()=>date},json:async()=>metadata});
+ assert.deepEqual(await f.seal(root,out,env,response('Sat, 05 Oct 2030 01:03:00 GMT')),{saved:1,late:0});
+ assert.equal(f.cohort(root,f.protocol(root,method)).rows.length,1);assert.equal(f.cohort(root,p).rows.length,0);
+ assert.deepEqual(await f.seal(root,out,env,response('Sat, 05 Oct 2030 01:09:59 GMT')),{saved:0,late:1});
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
 test('fixed checkpoint selects exactly the first 100 distinct remote confirmations',()=>{
