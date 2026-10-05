@@ -115,6 +115,9 @@ try {
   assert.match(jobs.collect, /repair-recent-results.js --sources-only/);
   for (const script of ['build-result-review.js', 'build-theory-evaluations.js', 'build-miss-cause-analysis.js', 'build-prediction-index-shards.js'])
     assert.ok(jobs.collect.indexOf(`node scripts/${script}`) < jobs.collect.indexOf('- name: Save official results'), script);
+  assert.match(jobs.collect, /node scripts\/build-scenario-ai-v6-verification.js --recent/);
+  assert.ok(jobs.collect.indexOf('build-scenario-ai-v6-verification.js --recent') < jobs.collect.indexOf('build-prediction-index-shards.js'));
+  assert.doesNotMatch(jobs.diagnostics, /node scripts\/build-scenario-ai-v6-verification.js/, 'verification metadata must be saved before archive restoration');
   assert.match(jobs.diagnostics, /ref: \$\{\{ needs.collect.outputs.saved_sha \}\}/);
   assert.match(jobs.calibrate, /ref: \$\{\{ needs.publish_reports.outputs.saved_sha \}\}/);
   assert.match(jobs.diagnostics, /node scripts\/build-race-stats.js/);

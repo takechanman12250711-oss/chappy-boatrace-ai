@@ -3,6 +3,11 @@
 const assert = require("node:assert/strict");
 const verifier = require("../js/scenario-ai-v6-verification");
 const builder = require("./build-scenario-ai-v6-verification");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { execFileSync } = require("node:child_process");
+const archive = require("./daily-prediction-source-archive");
 
 const snapshot = {
   version: "6.1.0-shadow",
@@ -58,5 +63,33 @@ assert.equal(built.data.scenarioAiV6VerificationSummary.exactWithinCandidatesCou
 assert.equal(built.data.verificationPredictions[0].selection.score, 70);
 assert.equal(built.data.verificationPredictions[0].scenarioAiV6Verification.usableForPrediction, false);
 assert.equal(built.data.verificationPredictions[0].scenarioAiV6Verification.automaticApplication, false);
+
+// Exercise the real entrypoint across midnight, then the same archive/restore
+// boundary used between source collection and read-only diagnostics.
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "scenario-verification-save-"));
+try {
+  for (const directory of ["predictions", "results"]) fs.mkdirSync(path.join(root, "data", directory), { recursive: true });
+  const date = predictionData.date;
+  const predictionPath = path.join(root, "data", "predictions", `${date}.json`);
+  const original = JSON.stringify(predictionData);
+  fs.writeFileSync(predictionPath, original);
+  fs.writeFileSync(path.join(root, "data", "results", `${date}.json`), JSON.stringify(resultData));
+  archive.archivePredictionSource({ rootDirectory: root, date, rawSaveLimitBytes: 1 });
+  archive.restorePredictionSource({ rootDirectory: root, date });
+  execFileSync(process.execPath, [path.join(__dirname, "build-scenario-ai-v6-verification.js"), "--recent"], {
+    cwd: root, env: { ...process.env, COLLECT_DATE: "2026-08-03" }, stdio: "pipe"
+  });
+  const verified = JSON.parse(fs.readFileSync(predictionPath));
+  assert.deepEqual(verified, built.data, "previous-day official results are verified when the run crosses midnight");
+  archive.archivePredictionSource({ rootDirectory: root, date, rawSaveLimitBytes: 1 });
+  fs.unlinkSync(predictionPath);
+  archive.restorePredictionSource({ rootDirectory: root, date });
+  assert.deepEqual(JSON.parse(fs.readFileSync(predictionPath)), built.data, "diagnostics restores the saved verification, not the old source");
+  assert.equal(JSON.stringify(predictionData), original, "source prediction input remains unchanged");
+  assert.deepEqual(verified.verificationPredictions.map(row => row.scenarioAiV6Shadow), predictionData.verificationPredictions.map(row => row.scenarioAiV6Shadow));
+  assert.equal(builder.build(verified, resultData).changed, false, "repeated verification is stable");
+} finally {
+  fs.rmSync(root, { recursive: true, force: true });
+}
 
 console.log("scenario AI v6 verification tests passed");

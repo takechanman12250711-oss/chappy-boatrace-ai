@@ -50,9 +50,7 @@ function build(predictionData, resultData) {
   };
 }
 
-function main() {
-  const date = targetDate();
-  if (!/^\d{8}$/.test(date)) throw new Error(`日付はYYYYMMDD形式で指定してください：${date}`);
+function verifyDate(date) {
   const predictionPath = path.join(process.cwd(), "data", "predictions", `${date}.json`);
   const resultPath = path.join(process.cwd(), "data", "results", `${date}.json`);
   const predictionData = loadJson(predictionPath);
@@ -64,6 +62,15 @@ function main() {
   const output = build(predictionData, resultData);
   if (output.changed) writeJson(predictionPath, output.data);
   console.log(`展開AI v6照合：${output.data.scenarioAiV6VerificationSummary.verifiedCount}R`);
+}
+
+function main() {
+  const date = targetDate();
+  if (!/^\d{8}$/.test(date)) throw new Error(`日付はYYYYMMDD形式で指定してください：${date}`);
+  const dates = process.argv.includes("--recent")
+    ? require("./repair-recent-results").getRecentDateKeys(date)
+    : [date];
+  for (const target of dates) verifyDate(target);
 }
 
 if (require.main === module) main();
