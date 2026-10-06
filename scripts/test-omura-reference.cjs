@@ -37,6 +37,55 @@ test('formation expansion keeps main/aim separate and rejects unknown notation',
   for (const v of ['1-2-3BOX','1-2-3 失敗','1=2=3','1-1-1']) assert.throws(()=>tickets(v));
   assert.deepEqual(tickets('なし',true),[]);
 });
+test('reporter long-vowel dash expands exact tickets while retaining source notation', () => {
+  // Regression observed after the deadline, not a prospective capture:
+  // https://omurakyotei.jp/yosou/m/chokuzen.php?day=20261006&race=12
+  // Response SHA256: 39205b33a0f8f301f1abcdc763fad4e576be4760fecf366435c39d8ffb068ad0
+  const notation = '1ー3=256';
+  const expected = ['1-2-3','1-3-2','1-3-5','1-3-6','1-5-3','1-6-3'];
+  assert.deepEqual(tickets(notation), expected);
+  assert.deepEqual(tickets('１ｰ３＝２５６'), expected, 'NFKC-compatible width variants');
+  for (const v of ['1ー3=256BOX','1ー3=256 失敗','1ー3→256','1=3=256','1ー1ー1'])
+    assert.throws(()=>tickets(v), 'no partial salvage or changed formation grammar');
+  const input = fixture();
+  input.responseBytes = Buffer.from(html().replace('1-26-256',notation).replace('2-1-6','なし'));
+  const capture = buildCapture(input);
+  assert.equal(capture.status,'captured');
+  assert.deepEqual(capture.source.mainTickets,expected);
+  assert.deepEqual(capture.source.aimTickets,[]);
+  assert.deepEqual(capture.source.ticketNotation,{main:notation,aim:'なし'});
+  assert.equal(capture.source.sha256,hash(input.responseBytes));
+  assert.deepEqual(capture.chappy.practicalTickets,input.bundle.baselinePracticalTickets);
+});
+test('unsupported notation remains a bounded diagnostic, never a comparison capture', () => withRoot(async root => {
+  const input = fixture(); writeBundle(root,input);
+  for (const [field,value] of [['main','1ー3=256BOX'],['aim','2ー1ー6?'],['main','x'.repeat(300)]]) {
+    const responseBytes = Buffer.from(html().replace(field === 'main' ? '1-26-256' : '2-1-6',value));
+    const sourceCommit = 'd'.repeat(40);
+    const collection = await collect({root,now:()=>clock,sourceCommit,
+      request:async()=>({ok:true,arrayBuffer:async()=>responseBytes})});
+    assert.equal(collection.errors.length,1);
+    assert.equal(collection.errors[0].reason,'ticket_notation_unsupported');
+    const diagnostic = collection.errors[0].sourceDiagnostic;
+    assert.equal(diagnostic.ticketNotation[field],value.slice(0,256));
+    assert.equal(diagnostic.ticketNotationTruncated,value.length > 256);
+    assert.equal(diagnostic.sha256,hash(responseBytes));
+    assert.equal(diagnostic.chappySourcePath,input.file);
+    assert.equal(diagnostic.chappySourceSha256,hash(input.bytes));
+    assert.equal(diagnostic.capturedAt,new Date(clock).toISOString());
+    assert.equal(diagnostic.usableForComparison,false);
+    assert.equal(diagnostic.status,'parse_rejected');
+    assert.equal(diagnostic.encoding,'utf-8');
+    assert.equal(collection.sourceCommit,sourceCommit);
+    assert.equal(collection.saved.length,0);
+    assert.equal(loadCaptures(root).values.length,0);
+    const report = buildReport(root,collection);
+    assert.equal(report.pairedRaces,0);
+    assert.equal(report.descriptiveAll.reporterMainHitRate,null);
+    assert.deepEqual(report.collection.errors[0].sourceDiagnostic,diagnostic);
+    assert(!JSON.stringify(diagnostic).includes('合成テスト'),'article prose is not saved');
+  }
+}));
 test('only identified exhibition-after section is parsed; no prior-day fallback', () => {
   const p = parsePage(Buffer.from(html()),{date,raceNo:6});
   assert.equal(p.raceKey,raceKey); assert.equal(p.exhibition[4].boat,6); assert.equal(p.exhibition[4].course,5);

@@ -121,17 +121,25 @@ async function collect({ root = process.cwd(), now = Date.now, request = fetch, 
   for (const entry of [...candidates.values()].sort((a,b) => Date.parse(a.bundle.record.deadlineAt)-Date.parse(b.bundle.record.deadlineAt))) {
     if (now() - started > 90000) { skip('collection_budget_exhausted'); continue; }
     const r = entry.bundle.record, startedAt = new Date(now()).toISOString();
+    let responseBytes, capturedAt;
     try {
       validateBundle(entry.bundle,entry.file,entry.bytes,now());
       const response = await request(urlFor(r.date,r.raceNo), { signal: AbortSignal.timeout(7000), redirect: 'error',
         headers: { 'User-Agent': 'ChappyResearch/1.0 (bounded public forecast comparison)', 'Cache-Control': 'no-cache' } });
       if (!response.ok) throw new Error(`http_${response.status}`);
-      const responseBytes = Buffer.from(await response.arrayBuffer());
+      responseBytes = Buffer.from(await response.arrayBuffer());
       if (responseBytes.length > 512000) throw new Error('response_too_large');
-      const value = buildCapture({ ...entry, responseBytes, startedAt, capturedAt: new Date(now()).toISOString(), sourceCommit });
+      capturedAt = new Date(now()).toISOString();
+      const value = buildCapture({ ...entry, responseBytes, startedAt, capturedAt, sourceCommit });
       const file = saveCapture(value,root);
       saved.push({ raceKey: r.raceKey, status: value.status, file: path.relative(root,file) });
-    } catch (error) { errors.push({ raceKey: r.raceKey, reason: error.message }); }
+    } catch (error) {
+      errors.push({ raceKey: r.raceKey, reason: error.message,
+        ...(error.sourceDiagnostic ? { sourceDiagnostic: { ...error.sourceDiagnostic,
+          status: 'parse_rejected', usableForComparison: false, url: urlFor(r.date,r.raceNo),
+          sha256: hash(responseBytes), startedAt, capturedAt, chappySourcePath: entry.file,
+          chappySourceSha256: hash(entry.bytes) } } : {}) });
+    }
   }
   return { date, sourceCommit, startedAt: new Date(started).toISOString(), completedAt: new Date(now()).toISOString(),
     eligible: candidates.size, saved, skipped, errors };
