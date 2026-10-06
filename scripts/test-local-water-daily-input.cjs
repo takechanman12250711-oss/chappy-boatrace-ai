@@ -7,6 +7,7 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const builders = [
+  "build-local-water-result-breakdown",
   "build-local-water-outer-head-bottleneck-audit",
   "build-local-water-outside-head-miss-structure",
   "build-local-water-outer-head-priority-score-audit"

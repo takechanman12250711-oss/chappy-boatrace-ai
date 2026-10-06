@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - "scripts/build-local-water-result-breakdown.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-local-water-daily-input.cjs"
       - "scripts/test-local-water-result-breakdown.js"
       - ".github/workflows/check-local-water-result-breakdown.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-local-water-result-breakdown.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-local-water-daily-input.cjs"
       - "scripts/test-local-water-result-breakdown.js"
       - ".github/workflows/check-local-water-result-breakdown.yml"
   workflow_run:
@@ -43,6 +47,7 @@ jobs:
         run: |
           node --check scripts/build-local-water-result-breakdown.js
           node scripts/test-local-water-result-breakdown.js
+          node scripts/test-local-water-daily-input.cjs
       - name: Build real result breakdown
         if: github.event_name != 'pull_request'
         run: |
