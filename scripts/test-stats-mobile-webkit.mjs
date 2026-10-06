@@ -191,11 +191,12 @@ async function runScenario(name, run) {
   await page.route("https://chappy-boatrace-api.vercel.app/api/schedule?*", async route => {
     info.scheduleReadsStubbed += 1;
     const date = new URL(route.request().url()).searchParams.get("date");
-    await route.fulfill({ json: { date, venues: [] }, headers: { "access-control-allow-origin": "*" } });
+    await route.fulfill({ json: { ok: true, date, venues: [] }, headers: { "access-control-allow-origin": "*" } });
   });
   try {
     await run(page);
     assert.deepEqual(info.pageErrors, [], `${name}: uncaught page errors`);
+    assert.deepEqual(info.consoleErrors, [], `${name}: unexpected browser console errors`);
     mark("scenario-passed", { name });
   } catch (error) {
     info.failure = String(error.stack || error);

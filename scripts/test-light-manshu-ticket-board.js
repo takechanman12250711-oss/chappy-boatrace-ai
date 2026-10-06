@@ -572,6 +572,69 @@ assert.equal(
   "cloneされた固定展開も候補集合まで含む安定identityで照合する"
 );
 
+global.CHAPPY_RENDER_TEST_HOOKS = true;
+global.window.addEventListener = () => {};
+const renderRoot = {};
+global.document = {
+  body: {},
+  getElementById(id) {
+    return id === "resultArea" ? renderRoot : null;
+  },
+  querySelectorAll() {
+    return [];
+  }
+};
+require("../js/render");
+
+const renderHooks = global.ChappyRenderTestHooks;
+assert.equal(
+  typeof renderHooks?.renderLightManshuTicketBoard,
+  "function",
+  "万舟欄内の参考筋描画hookを公開する"
+);
+assert.equal(
+  typeof renderHooks?.renderManshuNewspaper,
+  "function",
+  "万舟欄の統合描画hookを公開する"
+);
+let savedIntegratedBoardCount = 0;
+function assertSavedDisplayIntegration(fixture) {
+  const rendered = renderHooks.renderLightManshuTicketBoard({
+    lightManshuTicketBoard: fixture.board,
+    practicalSelection: fixture.selection
+  });
+  assert.ok(
+    rendered,
+    `${fixture.raceLabel}: 実戦厳選の状態や重複で万舟の参考筋を丸ごと消さない`
+  );
+  savedIntegratedBoardCount += 1;
+
+  const productionHtml = renderHooks.renderManshuNewspaper(
+    fixture.displayPrediction
+  );
+  const productionSummary = productionHtml.match(
+    /<span class="v3-ticket-accordion-count">\s*(\d+)点\s*<\/span>/
+  );
+  const normalHoleCount = ticketValues(
+    fixture.displayPrediction?.manshuSheet?.tickets
+  ).length;
+  assert.equal(
+    Number(productionSummary?.[1]),
+    normalHoleCount + fixture.board.totalPointCount,
+    `${fixture.raceLabel}: 本番表示境界後も万舟summaryを統合実点数にする`
+  );
+  assert.equal(
+    (productionHtml.match(/class="v3-section v3-manshu-newspaper"/g) || []).length,
+    1,
+    `${fixture.raceLabel}: 本番表示境界後も万舟sectionは1つ`
+  );
+  assert.doesNotMatch(
+    productionHtml,
+    /<section[^>]*v3-light-manshu-ticket-board/,
+    `${fixture.raceLabel}: 本番表示境界後も独立参考sectionを作らない`
+  );
+}
+
 const savedInputs = require(path.join(
   __dirname,
   "../data/stats/local-water-v2-post-adoption-input-cache.json"
@@ -579,7 +642,6 @@ const savedInputs = require(path.join(
 let savedBoardCount = 0;
 let savedLineCount = 0;
 let savedAbSnapshotCount = 0;
-const savedDisplayFixtures = [];
 
 for (const savedRace of savedInputs) {
   const cleanInput = cloneJson(savedRace.api);
@@ -711,7 +773,9 @@ for (const savedRace of savedInputs) {
     },
     practicalSelection
   );
-  savedDisplayFixtures.push({
+  // Check this complete fixture before continuing to the next race. Keeping
+  // every cloned selection/display graph here retains several MB per race.
+  assertSavedDisplayIntegration({
     raceLabel,
     board: cloneJson(cleanBoard),
     selection: cloneJson(selectionWithBoard),
@@ -759,71 +823,9 @@ assert.equal(
   "保存入力5Rで外攻めA/B snapshot・fingerprint不変を直接確認する"
 );
 
-global.CHAPPY_RENDER_TEST_HOOKS = true;
-global.window.addEventListener = () => {};
-const renderRoot = {};
-global.document = {
-  body: {},
-  getElementById(id) {
-    return id === "resultArea" ? renderRoot : null;
-  },
-  querySelectorAll() {
-    return [];
-  }
-};
-require("../js/render");
-
-const renderHooks = global.ChappyRenderTestHooks;
-assert.equal(
-  typeof renderHooks?.renderLightManshuTicketBoard,
-  "function",
-  "万舟欄内の参考筋描画hookを公開する"
-);
-assert.equal(
-  typeof renderHooks?.renderManshuNewspaper,
-  "function",
-  "万舟欄の統合描画hookを公開する"
-);
-let savedIntegratedBoardCount = 0;
-for (const fixture of savedDisplayFixtures) {
-  const rendered = renderHooks.renderLightManshuTicketBoard({
-    lightManshuTicketBoard: fixture.board,
-    practicalSelection: fixture.selection
-  });
-  assert.ok(
-    rendered,
-    `${fixture.raceLabel}: 実戦厳選の状態や重複で万舟の参考筋を丸ごと消さない`
-  );
-  savedIntegratedBoardCount += 1;
-
-  const productionHtml = renderHooks.renderManshuNewspaper(
-    fixture.displayPrediction
-  );
-  const productionSummary = productionHtml.match(
-    /<span class="v3-ticket-accordion-count">\s*(\d+)点\s*<\/span>/
-  );
-  const normalHoleCount = ticketValues(
-    fixture.displayPrediction?.manshuSheet?.tickets
-  ).length;
-  assert.equal(
-    Number(productionSummary?.[1]),
-    normalHoleCount + fixture.board.totalPointCount,
-    `${fixture.raceLabel}: 本番表示境界後も万舟summaryを統合実点数にする`
-  );
-  assert.equal(
-    (productionHtml.match(/class="v3-section v3-manshu-newspaper"/g) || []).length,
-    1,
-    `${fixture.raceLabel}: 本番表示境界後も万舟sectionは1つ`
-  );
-  assert.doesNotMatch(
-    productionHtml,
-    /<section[^>]*v3-light-manshu-ticket-board/,
-    `${fixture.raceLabel}: 本番表示境界後も独立参考sectionを作らない`
-  );
-}
 assert.equal(
   savedIntegratedBoardCount,
-  savedDisplayFixtures.length,
+  savedBoardCount,
   "成立した参考筋はすべて既存の万舟欄へ統合できる"
 );
 const boardHtml = renderHooks.renderLightManshuTicketBoard({
