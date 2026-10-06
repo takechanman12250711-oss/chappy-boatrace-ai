@@ -55,3 +55,7 @@ configにコードSHAと方式を固定する。`adoptionGate:null`、`usableFor
 [independent-route-water-study-v1.md](independent-route-water-study-v1.md) の `routeWaterStudy` を追加する。実進入に基づく想定進路・競合・必要条件と公式気象を保存し、上位判断が完全同値の場合だけ当地2連率・3連率を比較する。母数・対象期間は不明の参考値として扱う。実際の旋回や気象別の艇適性を観測したものではない。
 
 旧v1〜v4と各方式の最初のsealを保ち、新研究は最初のv5を別集計する。同じv5入力のpartnerStudy（selector-v1）と同点数で比較する。従来の頭・役割・技量条件は維持し、新規取得・cron・自動採用は追加しない。
+
+## 気象別履歴の接続（snapshot-v6）
+
+`docs/independent-weather-history-v1.md` を参照。既存日次監査が前日まで90日間の締切前保存入力と公式結果を登録番号で結び、場・実コース・風向/風速/波高別の母数と各着回数を作る。既存live-noteは入力取得より前に生成された履歴だけを `weatherHistoryStudy` に封印する。潮不明と0件を区別し、旧v1〜v5・先行コホートを保持する。この接続は研究材料の追加であり、艇の適性順位や買い目を変更しない。
