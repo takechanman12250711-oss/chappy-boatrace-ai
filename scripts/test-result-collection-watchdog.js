@@ -1,7 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
-const { ISSUE_TITLE, dueDates, inspectResults, evaluate, render, syncIssue, runWatchdog } = require("./result-collection-watchdog");
+const { ISSUE_TITLE, dueDates, inspectResults, evaluate, render, syncIssue, latestCollectorRun, runWatchdog } = require("./result-collection-watchdog");
 const now = new Date("2026-09-14T00:00:00Z");
 function official(date) {
   return { source: "boatrace-official", date, raceCount: 1, completedRaces: 1,
@@ -9,7 +9,7 @@ function official(date) {
     races: [{ jcd: "01", raceNo: 1, resultAvailable: true, trifecta: { combination: "1-2-3", payout: 1000 } }] };
 }
 const results = Object.fromEntries(dueDates(now).map(date => [date, official(date)]));
-const successRun = { id: 100, head_branch: "main", status: "completed", conclusion: "success",
+const successRun = { id: 100, path: ".github/workflows/collect-results.yml", head_branch: "main", status: "completed", conclusion: "success",
   created_at: "2026-09-13T17:30:00Z", html_url: "https://github.com/example/repo/actions/runs/100" };
 const jobs = [{ steps: ["Save official results before calibration", "Build prediction calibration", "Save calibration and derived data"]
   .map(name => ({ name, conclusion: "success" })) }];
@@ -114,19 +114,84 @@ async function main() {
       return { data: { encoding: "base64", content: Buffer.from(JSON.stringify(results[date])).toString("base64") } };
     }
   };
-  github.rest.actions = {
-    listWorkflowRuns: async () => ({ data: { workflow_runs: [
-      { ...successRun, id: 200, head_branch: "other-branch" }, successRun,
-      { ...successRun, id: 99, created_at: "2026-09-12T17:00:00Z", conclusion: "cancelled" }
-    ] } }),
-    listJobsForWorkflowRun: () => {}
-  };
+  const oldRun = { ...successRun, id: 99, created_at: "2026-09-12T17:00:00Z", conclusion: "cancelled" };
+  function runApi(runs, current = runs) {
+    const reads = [];
+    return {
+      reads,
+      // A stale workflow-specific first page must not be used by either caller.
+      listWorkflowRuns: async () => { throw new Error("historical workflow first page must not be used"); },
+      listWorkflowRunsForRepo: async args => {
+        reads.push(args);
+        assert.equal(args.branch, "main");
+        const [from, to] = args.created.split("..").map(Date.parse);
+        const window = runs.filter(run => Date.parse(run.created_at) >= from && Date.parse(run.created_at) <= to);
+        return { data: { total_count: window.length, workflow_runs: window.slice((args.page - 1) * 100, args.page * 100) } };
+      },
+      getWorkflowRun: async args => ({ data: current.find(run => run.id === args.run_id) }),
+      listJobsForWorkflowRun: () => {}
+    };
+  }
+  github.rest.actions = runApi([
+    { ...successRun, id: 200, head_branch: "other-branch" }, successRun, oldRun
+  ]);
   github.paginate = async (method, args) => {
     if (method === github.rest.actions.listJobsForWorkflowRun) { assert.equal(args.run_id, 100); return jobs; }
     return [];
   };
   const context = { repo: { owner: "example", repo: "repo" }, payload: { workflow_run: { id: 99 } } };
   assert.equal((await runWatchdog({ github, context, core, now })).healthy, true);
+  const lookup = (actions, extra = {}) => latestCollectorRun({ github: { rest: { actions } },
+    owner: "example", repo: "repo", now, ...extra });
+  const recent = { ...successRun, id: 300, created_at: "2026-09-13T23:30:00Z", status: "pending", conclusion: null };
+  const older = { ...successRun, id: 250, created_at: "2026-09-13T22:00:00Z" };
+  const noise = Array.from({ length: 99 }, (_, i) => ({ ...older, id: 1000 + i, path: ".github/workflows/other.yml" }));
+  // The newest collector is on page 2, after an older completed collector and
+  // unrelated jobs. Delayed completion events cannot hide the pending run.
+  let actions = runApi([older, ...noise, recent, oldRun]);
+  assert.equal((await lookup(actions, { eventRunId: oldRun.id })).id, recent.id);
+  assert.equal(actions.reads.length, 2);
+  assert.equal(actions.reads[1].page, 2);
+  assert.equal(evaluate({ now, run: await lookup(actions), jobs: [], results }).status, "watching");
+  const sameTime = { ...recent, id: 301 };
+  actions = runApi([recent, sameTime, { ...sameTime, id: 999, head_branch: "feature" },
+    { ...sameTime, id: 998, path: ".github/workflows/not-collector.yml" }]);
+  assert.equal((await lookup(actions)).id, 301, "explicit timestamp/id sort and exact workflow/branch match");
+  actions = runApi([successRun]);
+  assert.equal((await lookup(actions)).id, 100, "empty newer windows must reach the due nightly run");
+  assert.ok(actions.reads.length > 1);
+  actions = runApi([oldRun]);
+  assert.equal(await lookup(actions, { eventRunId: oldRun.id }), null);
+  assert.equal(evaluate({ now, run: await lookup(actions), jobs, results }).status, "error",
+    "old success and complete results cannot hide a missing expected nightly run");
+  assert.equal(await lookup(actions, { since: now.getTime() - 3 * 3600000 }), null,
+    "recovery only considers its existing three-hour guard");
+  const running = { ...recent, status: "in_progress", run_started_at: "2026-09-13T23:50:00Z" };
+  assert.equal((await lookup(runApi([recent], [running]))).status, "in_progress", "refresh selected run status");
+  await assert.rejects(lookup(runApi([older], [older, recent]), { eventRunId: recent.id }), /older than its completion event/);
+  await assert.rejects(lookup(runApi([], [{ ...recent, head_branch: "feature" }]), { eventRunId: recent.id }), /does not match/);
+  await assert.rejects(lookup(runApi([recent], [{ ...recent, path: "other.yml" }])), /changed identity/);
+  await assert.rejects(lookup(runApi([]), { since: now.getTime() - 37 * 3600000 }), /Invalid collector lookup/);
+  for (const data of [
+    { total_count: 1001, workflow_runs: [recent] },
+    { total_count: 2, workflow_runs: [recent] },
+    { total_count: 1, workflow_runs: [oldRun] },
+    { total_count: 1, workflow_runs: [{ ...recent, created_at: "invalid" }] },
+    { workflow_runs: [] }
+  ]) {
+    actions = { ...runApi([recent]), listWorkflowRunsForRepo: async () => ({ data }) };
+    await assert.rejects(lookup(actions), /listing/);
+  }
+  actions = { ...runApi([older, ...noise, recent]), listWorkflowRunsForRepo: async args => ({ data: {
+    total_count: args.page === 1 ? 101 : 102, workflow_runs: args.page === 1 ? [older, ...noise] : [recent]
+  } }) };
+  await assert.rejects(lookup(actions), /changed during pagination/);
+  // Selection/API errors must leave issue state unchanged, not signal recovery.
+  const goodActions = github.rest.actions;
+  github.rest.actions = { ...goodActions, listWorkflowRunsForRepo: async () => ({ data: { total_count: 1001, workflow_runs: [] } }) };
+  await assert.rejects(runWatchdog({ github, context, core, now }), /listing/);
+  assert.deepEqual(github.calls, []);
+  github.rest.actions = goodActions;
   github.rest.repos.getContent = async () => { throw Object.assign(new Error("API unavailable"), { status: 503 }); };
   await assert.rejects(runWatchdog({ github, context, core, now }), /API unavailable/);
   assert.deepEqual(github.calls, [], "an API error cannot close or create an issue");
@@ -151,6 +216,9 @@ async function main() {
     "only the two changed artifact generations need the expensive consistency check");
   const watchdog = fs.readFileSync(".github/workflows/result-collection-watchdog.yml", "utf8");
   assert.match(watchdog, /schedule:/);
+  assert.match(watchdog, /const recent = await latestCollectorRun/);
+  assert.match(watchdog, /since: now.getTime\(\) - 3 \* HOUR/);
+  assert.ok(!watchdog.includes("listWorkflowRuns("), "recovery must share the paginated current-run lookup");
   assert.match(watchdog, /actions: read/);
   assert.match(watchdog, /issues: write/);
   assert.match(watchdog, /branches: \[main\]/);
