@@ -31,6 +31,10 @@ on:
       - 'scripts/independent-weather-context-v1.cjs'
       - 'scripts/independent-weather.test.cjs'
       - 'config/independent-weather-study-v1.json'
+      - 'config/independent-weather-study-v2.json'
+      - 'scripts/independent-weather-history-v2.cjs'
+      - 'scripts/independent-weather-context-v2.cjs'
+      - 'scripts/independent-weather-v2.test.cjs'
       - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-rule-forward.cjs'
@@ -73,6 +77,10 @@ on:
       - 'scripts/independent-weather-context-v1.cjs'
       - 'scripts/independent-weather.test.cjs'
       - 'config/independent-weather-study-v1.json'
+      - 'config/independent-weather-study-v2.json'
+      - 'scripts/independent-weather-history-v2.cjs'
+      - 'scripts/independent-weather-context-v2.cjs'
+      - 'scripts/independent-weather-v2.test.cjs'
       - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-rule-forward.cjs'
@@ -107,7 +115,7 @@ jobs:
           node scripts/test-escape-main-audit.cjs
           node --test scripts/test-escape-partner-history.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
-          node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-weather.test.cjs
+          node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-weather.test.cjs scripts/independent-weather-v2.test.cjs
           node scripts/test-note-draft-bundle.js
           node scripts/test-escape-skill-role.cjs
           node scripts/test-racer-skill-theory.js
@@ -122,6 +130,7 @@ jobs:
           node scripts/partner-forward.cjs report
           node scripts/independent-rule-forward.cjs report
           node scripts/independent-weather-history-v1.cjs
+          node scripts/independent-weather-history-v2.cjs
           node scripts/independent-autonomous-forward.cjs report
       - uses: actions/upload-artifact@v4
         with:
@@ -133,6 +142,7 @@ jobs:
             data/stats/independent-rule-report.json
             data/stats/independent-autonomous-report.json
             data/stats/independent-weather-history.json
+            data/stats/independent-weather-history-v2.json
       - name: Save derived report only
         if: github.event_name != 'pull_request'
         env:
@@ -141,7 +151,7 @@ jobs:
           git restore --worktree -- data/predictions
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/stats/independent-weather-history.json data/stats/independent-autonomous-report.json data/stats/escape-main-audit.json data/stats/escape-partner-history-research.json data/stats/partner-forward-report.json data/stats/independent-rule-report.json
+          git add data/stats/independent-weather-history.json data/stats/independent-weather-history-v2.json data/stats/independent-autonomous-report.json data/stats/escape-main-audit.json data/stats/escape-partner-history-research.json data/stats/partner-forward-report.json data/stats/independent-rule-report.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Update all-venue escape main audit'
           for attempt in 1 2 3; do
@@ -150,4 +160,3 @@ jobs:
             if git push origin "HEAD:$TARGET_BRANCH"; then exit 0; fi
           done
           exit 1
-
