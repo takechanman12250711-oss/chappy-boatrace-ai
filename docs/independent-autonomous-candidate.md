@@ -59,3 +59,6 @@ configにコードSHAと方式を固定する。`adoptionGate:null`、`usableFor
 ## 気象別履歴の接続（snapshot-v6）
 
 `docs/independent-weather-history-v1.md` を参照。既存日次監査が前日まで90日間の締切前保存入力と公式結果を登録番号で結び、場・実コース・風向/風速/波高別の母数と各着回数を作る。既存live-noteは入力取得より前に生成された履歴だけを `weatherHistoryStudy` に封印する。潮不明と0件を区別し、旧v1〜v5・先行コホートを保持する。この接続は研究材料の追加であり、艇の適性順位や買い目を変更しない。
+# 気象材料の追加版
+
+保存noteの公式入力を補足する履歴v2とsnapshot-v7は [independent-weather-history-v2.md](independent-weather-history-v2.md) を参照。weather-v1/snapshot-v6は保持し、reportのweatherHistoryStudyV2を別枠とする。材料を増やす変更であり、適性順位や買い目の変更ではない。

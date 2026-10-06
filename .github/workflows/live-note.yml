@@ -40,6 +40,10 @@ on:
       - 'scripts/independent-weather-context-v1.cjs'
       - 'scripts/independent-weather.test.cjs'
       - 'config/independent-weather-study-v1.json'
+      - 'config/independent-weather-study-v2.json'
+      - 'scripts/independent-weather-history-v2.cjs'
+      - 'scripts/independent-weather-context-v2.cjs'
+      - 'scripts/independent-weather-v2.test.cjs'
       - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-role-selector.cjs'
@@ -93,6 +97,10 @@ on:
       - 'scripts/independent-weather-context-v1.cjs'
       - 'scripts/independent-weather.test.cjs'
       - 'config/independent-weather-study-v1.json'
+      - 'config/independent-weather-study-v2.json'
+      - 'scripts/independent-weather-history-v2.cjs'
+      - 'scripts/independent-weather-context-v2.cjs'
+      - 'scripts/independent-weather-v2.test.cjs'
       - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-role-selector.cjs'
@@ -171,7 +179,7 @@ jobs:
           node scripts/test-note-source-concurrency.js
           node --test scripts/official-start-rank-cache.test.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
-          node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-weather.test.cjs
+          node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs scripts/independent-weather.test.cjs scripts/independent-weather-v2.test.cjs
           node --test scripts/test-omura-reference.cjs
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js

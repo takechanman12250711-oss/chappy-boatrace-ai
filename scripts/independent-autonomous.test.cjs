@@ -17,7 +17,8 @@ function setup(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'independent-a
     'config/independent-flow-study-v1.json','scripts/independent-flow-roles-v1.cjs',
     'config/independent-partner-study-v1.json','scripts/independent-partner-context-v1.cjs','scripts/independent-partner-selector-v1.cjs',
     'config/independent-route-water-study-v1.json','scripts/independent-route-water-v1.cjs','scripts/independent-partner-selector-v2.cjs',
-    'config/independent-weather-study-v1.json','scripts/independent-weather-history-v1.cjs','scripts/independent-weather-context-v1.cjs']){
+    'config/independent-weather-study-v1.json','scripts/independent-weather-history-v1.cjs','scripts/independent-weather-context-v1.cjs',
+    'config/independent-weather-study-v2.json','scripts/independent-weather-history-v2.cjs','scripts/independent-weather-context-v2.cjs']){
     fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});fs.copyFileSync(path.resolve(__dirname,'..',file),path.join(root,file));}
   return {root,out:path.join(root,'capture')};}
 async function sealed(t,change=()=>{}){const x=setup(t),data=official();change(data);f.createRecorder(x.root,x.out,env,()=>clock)(data,target);await f.seal(x.root,x.out,env,response());return x;}
@@ -88,7 +89,7 @@ test('new captures bind judgment facts into the seal while legacy snapshots rema
   const x=setup(t),raw=official();raw.entries[0].avgSt=.15;
   f.createRecorder(x.root,x.out,env,()=>clock)(raw,target);
   const file=path.join(x.out,fs.readdirSync(x.out)[0]),s=JSON.parse(fs.readFileSync(file));
-  assert.equal(s.version,'independent-autonomous-snapshot-v6');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
+  assert.equal(s.version,'independent-autonomous-snapshot-v7');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
   assert.equal(s.judgmentContext.inputHash,s.inputHash);assert.deepEqual(s.candidate,candidate.select(s.input));
   const p=f.protocol(x.root);assert.equal(f.validate(s,p),true);
   const missing=structuredClone(s);delete missing.judgmentContext;assert.throws(()=>f.validate(missing,p),/judgment_context/);
@@ -158,7 +159,7 @@ test('v5 preserves an earlier v3 flow judgment while starting a separate partner
   f.createRecorder(x.root,out,env,()=>clock+10000)(official(),target);
   await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
   assert.equal(f.cohort(x.root,p,null,{studyOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v3');
-  assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v6');
+  assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v7');
   const report=f.report(x.root);assert.equal(report.flowStudy.unresolved['exhibition-start-marker'],1);
   assert.equal(report.partnerStudy.sealed,1);assert.equal(report.partnerStudy.skipped['course-history-insufficient'],1);
   fs.appendFileSync(path.join(x.root,'scripts/independent-partner-selector-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/partner_protocol/);
@@ -210,7 +211,7 @@ test('v5 starts a new cohort without replacing an earlier v4 partner skip',async
   await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
   assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v4');
   const current=f.cohort(x.root,p,null,{waterOnly:true}).rows[0].snapshot;
-  assert.equal(current.version,'independent-autonomous-snapshot-v6');
+  assert.equal(current.version,'independent-autonomous-snapshot-v7');
   const tampered=structuredClone(current);tampered.routeWaterStudy.context.routes[0].actualTurnObserved=true;
   assert.throws(()=>f.validate(tampered,p),/route_water_replay/);
   assert.equal(f.createRecorder(x.root,path.join(x.root,'again-v5'),env,()=>clock+20000)(official(),target).status,'already-captured');
@@ -218,27 +219,29 @@ test('v5 starts a new cohort without replacing an earlier v4 partner skip',async
   fs.appendFileSync(path.join(x.root,'scripts/independent-route-water-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/water_protocol/);
 });
 
-test('v6 seals available weather histories while keeping earlier v5 cohort and tickets unchanged',async t=>{
-  const x=await sealed(t),p=f.protocol(x.root),h=require('./independent-weather-history-v1.cjs');
+test('v7 seals supplemental weather histories while keeping earlier v6 cohort and tickets unchanged',async t=>{
+  const x=await sealed(t),p=f.protocol(x.root),h=require('./independent-weather-history-v2.cjs');
   const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
-  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v5';delete legacy.snapshot.weatherHistoryStudy;
+  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v6';legacy.snapshot.weatherHistoryStudy={protocolHash:p.weather.hash,
+    context:require('./independent-weather-context-v1.cjs').capture(legacy.snapshot.input,legacy.snapshot.judgmentContext,null)};
   legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));const bytes=f.json(legacy);
   fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
   const d=h.create({asOfDate:'20300914',generatedAt:'2030-09-14T01:00:00Z',sourceCommit:'c'.repeat(40)});
-  d.builderHash=h.hash(fs.readFileSync(require.resolve('./independent-weather-history-v1.cjs')));
+  d.version=h.VERSION;d.builderHash=h.hash(fs.readFileSync(require.resolve('./independent-weather-history-v2.cjs')));
   const stat={starts:2,first:0,second:1,third:1,other:0,firstDate:'20300912',lastDate:'20300913'};
   d.racers['5101']={registerNo:'5101',groups:{'23|1':{jcd:'23',course:1,allWeather:stat,byWeather:{'head|3|2':{condition:{direction:'head',windSpeed:3,waveHeight:2},stats:stat,byTide:{}}}}}};
   fs.mkdirSync(path.join(x.root,'data/stats'),{recursive:true});fs.writeFileSync(path.join(x.root,h.SOURCE),h.json(d));
   const raw=official();raw.entries[0].registerNo='5101';raw.weather={windDirection:'向かい風',windSpeed:3,waveHeight:2};
   const out=path.join(x.root,'v6');f.createRecorder(x.root,out,env,()=>clock+10000)(raw,target);
   await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
-  assert.equal(f.cohort(x.root,p,null,{waterOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v5');
-  const current=f.cohort(x.root,p,null,{weatherOnly:true}).rows[0].snapshot;
+  assert.equal(f.cohort(x.root,p,null,{weatherOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v6');
+  const current=f.cohort(x.root,p,null,{weatherV2Only:true}).rows[0].snapshot;
   assert.equal(current.weatherHistoryStudy.context.rows[0].matchedWeather.second,1);
   assert.equal(current.weatherHistoryStudy.context.history.sha256,h.hash(h.json(d)));
   assert.deepEqual(current.candidate.tickets,legacy.snapshot.candidate.tickets);
-  const report=f.report(x.root);assert.equal(report.weatherHistoryStudy.sealed,1);assert.equal(report.weatherHistoryStudy.historyAvailableRaces,1);
-  assert.equal(report.weatherHistoryStudy.matchedSampleBoats,1);assert.equal(report.routeWaterStudy.sealed,1);
+  const report=f.report(x.root);assert.equal(report.weatherHistoryStudyV2.sealed,1);assert.equal(report.weatherHistoryStudyV2.historyAvailableRaces,1);
+  assert.equal(report.weatherHistoryStudy.sealed,1);assert.equal(report.weatherHistoryStudy.historyAvailableRaces,0);
+  assert.equal(report.weatherHistoryStudyV2.matchedSampleBoats,1);assert.equal(report.routeWaterStudy.sealed,1);
   const bad=structuredClone(current);bad.weatherHistoryStudy.context.rows[0].matchedWeather.starts=3;
   assert.throws(()=>f.validate(bad,p),/weather_context/);
   fs.appendFileSync(path.join(x.root,'scripts/independent-weather-context-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/weather_protocol/);
