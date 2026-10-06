@@ -61,7 +61,11 @@ jobs:
     if: >-
       github.event_name != 'workflow_run' ||
       (github.event.workflow_run.name == 'Update note marketing' &&
+       github.event.workflow_run.path == '.github/workflows/update-note-marketing.yml' &&
+       github.event.workflow_run.status == 'completed' &&
        github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event != 'pull_request' &&
+       github.event.workflow_run.event != 'pull_request_target' &&
        github.event.workflow_run.head_repository.full_name == github.repository &&
        github.event.workflow_run.head_branch == 'main')
     concurrency:
@@ -84,9 +88,6 @@ jobs:
       - name: Recover missing collector trigger without duplicate runs
         env:
           GH_TOKEN: ${{ github.token }}
-          HEARTBEAT_TRIGGER: ${{ github.event_name }}
         run: |
           node scripts/check-prediction-collector-heartbeat.cjs
-          if [ "$HEARTBEAT_TRIGGER" != "workflow_run" ]; then
-            node scripts/check-live-note-heartbeat.cjs
-          fi
+          node scripts/check-live-note-heartbeat.cjs

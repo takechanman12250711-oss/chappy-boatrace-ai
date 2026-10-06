@@ -11,6 +11,8 @@ on:
       - 'tests/continuous-ledger-persistence.test.cjs'
       - 'scripts/check-prediction-collector-heartbeat.cjs'
       - 'tests/prediction-collector-heartbeat.test.cjs'
+      - 'scripts/check-live-note-heartbeat.cjs'
+      - 'tests/live-note-heartbeat.test.cjs'
       - '.github/workflows/collection-health-watchdog.yml'
       - 'scripts/eight-ticket-promotion-report-source.cjs'
       - 'tests/eight-ticket-promotion-report-source.test.cjs'
@@ -46,6 +48,7 @@ jobs:
           node --check scripts/persist-continuous-performance-ledger.cjs
           node --test tests/continuous-ledger-persistence.test.cjs | tee test-output/ledger-persistence.log
           node --test tests/prediction-collector-heartbeat.test.cjs | tee test-output/heartbeat.log
+          node --test tests/live-note-heartbeat.test.cjs | tee test-output/live-note-heartbeat.log
           node --test tests/eight-ticket-promotion-report-source.test.cjs | tee test-output/eight-source.log
           node --check scripts/eight-ticket-exhibition-shadow.cjs
           node --check scripts/build-eight-ticket-exhibition-shadow-report.cjs
