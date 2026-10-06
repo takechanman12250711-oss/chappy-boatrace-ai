@@ -2,32 +2,12 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const root = path.resolve(__dirname, "..");
 const OUT = path.join(root, "data", "stats", "outer-head-drop-stage-audit.json");
 
 function arr(value) {
   return Array.isArray(value) ? value : [];
-}
-
-function load(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter((name) => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
-}
-
-function rows(docs) {
-  const map = new Map();
-  for (const doc of docs) {
-    for (const name of ["predictions", "verificationPredictions"]) {
-      for (const row of arr(doc[name])) {
-        const key = `${row.date}-${String(row.jcd || "").padStart(2, "0")}-${Number(row.raceNo || 0)}`;
-        if (name === "predictions" || !map.has(key)) map.set(key, row);
-      }
-    }
-  }
-  return [...map.values()];
 }
 
 function semanticStage(key) {
@@ -129,7 +109,9 @@ function inspect(record) {
 }
 
 function build(docs) {
-  const predictionRows = rows(docs);
+  const predictionRows = mapPredictionRows(docs, record => ({
+    head: mainHead(record), inspection: inspect(record)
+  }));
   let final56 = 0;
   let candidate56 = 0;
   let scenario56 = 0;
@@ -137,10 +119,9 @@ function build(docs) {
   const pathCounts = new Map();
 
   for (const record of predictionRows) {
-    const head = mainHead(record);
+    const { head, inspection } = record;
     if (head === 5 || head === 6) final56++;
 
-    const inspection = inspect(record);
     if (inspection.candidate56) candidate56++;
     if (inspection.scenario56) scenario56++;
     if (!inspection.candidate56 && !inspection.scenario56) none56++;
@@ -179,7 +160,7 @@ function build(docs) {
 }
 
 function main() {
-  const report = build(load(path.join(root, "data", "predictions")));
+  const report = build(loadDailyDocuments(path.join(root, "data", "predictions")));
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, `${JSON.stringify(report, null, 2)}\n`);
   console.log(JSON.stringify(report, null, 2));
