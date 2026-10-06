@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { execFileSync } = require('node:child_process');
-const { pack, apply, publish, validate } = require('./result-report-checkpoint.cjs');
+const { pack, apply, publish, validate, allowed } = require('./result-report-checkpoint.cjs');
 const git = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'result-checkpoint-test-'));
 const report = 'data/stats/example-report.json';
@@ -92,6 +92,62 @@ try {
   } }), /Report changed/);
   assert.equal(JSON.parse(git(raceConflict.remote, ['show', 'main:' + report])).newest, true);
   assert.equal(git(raceConflict.work, ['worktree', 'list', '--porcelain']).match(/^worktree /gm).length, 1, 'temporary worktrees cleaned');
+
+  const calibrationPaths = ['data/predictions/calibration.json', 'data/predictions/improvement-review.json'];
+  for (const file of calibrationPaths) {
+    assert.equal(allowed(file, 'calibration'), true);
+    assert.equal(allowed(file, 'diagnostics'), false);
+    assert.equal(allowed(file), false, 'an unspecified stage cannot publish calibration reports');
+  }
+  const calibrated = fixture('calibration-derived');
+  for (const file of calibrationPaths) write(calibrated.work, file, { generation: 'before' });
+  const calibrationBase = commit(calibrated.work, 'existing derived calibration reports');
+  git(calibrated.work, ['push', 'origin', 'main']);
+  for (const file of calibrationPaths) write(calibrated.work, file, { generation: 'after', automaticApplication: false });
+  const calibrationOutput = path.join(root, 'calibration.json');
+  assert.throws(() => pack({ root: calibrated.work, stage: 'diagnostics', output: calibrationOutput }), /Unsaved source changes/);
+  pack({ root: calibrated.work, stage: 'calibration', output: calibrationOutput });
+  const calibrationBundle = JSON.parse(fs.readFileSync(calibrationOutput));
+  assert.deepEqual(calibrationBundle.files.map(file => file.path), calibrationPaths);
+  const calibrationArgs = { stage: 'calibration', baseSha: calibrationBase };
+  validate(calibrationBundle, calibrationArgs);
+  const wrongStage = { ...calibrationBundle, stage: 'diagnostics' };
+  assert.throws(() => validate(wrongStage, { ...calibrationArgs, stage: 'diagnostics' }), /Invalid checkpoint file/);
+  for (const forbidden of [
+    'data/predictions/20261005.json', 'data/results/20261005.json',
+    'data/predictions/other.json', 'data/predictions/improvement-reviews/example.json',
+    'data/predictions/source-archives/20261005.meta.json'
+  ]) {
+    assert.equal(allowed(forbidden, 'calibration'), false, forbidden);
+    const forgedPath = structuredClone(calibrationBundle);
+    forgedPath.files[0].path = forbidden;
+    assert.throws(() => validate(forgedPath, calibrationArgs), /Invalid checkpoint file/);
+    write(calibrated.work, forbidden, { mustNotPublish: true });
+    assert.throws(() => pack({ root: calibrated.work, stage: 'calibration', output: calibrationOutput }), /Unsaved source changes/);
+    fs.rmSync(path.join(calibrated.work, forbidden));
+    if (forbidden === 'data/predictions/20261005.json') git(calibrated.work, ['restore', '--', forbidden]);
+  }
+  const tamperedCalibration = structuredClone(calibrationBundle);
+  tamperedCalibration.files[0].content = '{}';
+  assert.throws(() => validate(tamperedCalibration, calibrationArgs), /Invalid checkpoint file/);
+  git(calibrated.work, ['reset', '--hard', calibrationBase]);
+  write(calibrated.work, calibrationPaths[0], { newer: true });
+  commit(calibrated.work, 'newer calibration report');
+  assert.throws(() => apply({ root: calibrated.work, bundle: calibrationBundle, ...calibrationArgs }), /Report changed/);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(calibrated.work, calibrationPaths[0]))).newer, true);
+  git(calibrated.work, ['reset', '--hard', calibrationBase]);
+  write(calibrated.work, 'data/predictions/20261005.json', { original: true, fresher: true });
+  const newerOriginal = commit(calibrated.work, 'newer prediction remains untouched');
+  git(calibrated.work, ['push', 'origin', 'main']);
+  git(calibrated.work, ['sparse-checkout', 'set', 'scripts', 'data/stats', 'data/analysis']);
+  assert.equal(fs.existsSync(path.join(calibrated.work, calibrationPaths[0])), false);
+  const calibrationSaved = publish({ root: calibrated.work, bundle: calibrationBundle, ...calibrationArgs });
+  assert.equal(calibrationSaved.receipt.publishedFromSha, newerOriginal);
+  assert.deepEqual(calibrationSaved.receipt.files.map(file => file.path), calibrationPaths);
+  for (const file of calibrationPaths)
+    assert.deepEqual(JSON.parse(git(calibrated.remote, ['show', 'main:' + file])), { generation: 'after', automaticApplication: false });
+  assert.equal(JSON.parse(git(calibrated.remote, ['show', 'main:data/predictions/20261005.json'])).fresher, true);
+  assert.equal(git(calibrated.work, ['rev-parse', 'HEAD']), newerOriginal, 'sparse publisher preserves the caller');
 
   // Workflow contract: all main writes use the existing lock, heavy computation
   // uses read-only jobs, and saved commits/artifact IDs connect the stages.

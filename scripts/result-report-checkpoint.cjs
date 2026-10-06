@@ -9,6 +9,13 @@ const { createHash } = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const VERSION = 'result-report-checkpoint-v1';
 const STAGES = new Set(['diagnostics', 'calibration']);
+// These existing builder outputs are derived reports, despite their directory.
+// Only the calibration stage may publish them; daily/source prediction data is
+// never permitted through this report checkpoint.
+const CALIBRATION_REPORTS = new Set([
+  'data/predictions/calibration.json',
+  'data/predictions/improvement-review.json',
+]);
 // This standalone report also belongs to the live prediction writer. Preserve
 // its newer generation; interdependent diagnostic reports must fail as a batch.
 const KEEP_NEWER = new Set([
@@ -18,10 +25,11 @@ const CODE_PATHS = ['scripts', 'js', 'api', 'config', '.github/workflows/collect
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const git = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] }).trimEnd();
 const receiptPath = stage => `data/stats/result-${stage}-checkpoint.json`;
-function allowed(file) {
+function allowed(file, stage) {
   return (/^data\/stats\/[a-z0-9][a-z0-9.-]*\.json$/.test(file) &&
     !/^data\/stats\/result-(diagnostics|calibration)-checkpoint\.json$/.test(file)) ||
-    file === 'data/analysis/reference-tag-effectiveness.json';
+    file === 'data/analysis/reference-tag-effectiveness.json' ||
+    (stage === 'calibration' && CALIBRATION_REPORTS.has(file));
 }
 function blob(cwd, ref, file) {
   const row = git(cwd, ['ls-tree', ref, '--', file]);
@@ -43,9 +51,10 @@ function pack({ root = process.cwd(), stage, output }) {
   // Prediction/result originals must have been saved in the source checkpoint.
   // A report artifact must never smuggle old originals into a newer main.
   const originalChanges = paths.filter(file => /^data\/(results|predictions)\//.test(file) &&
-    !/^data\/predictions\/(index(?:-manifest)?\.json|index-shards\/)/.test(file));
+    !/^data\/predictions\/(index(?:-manifest)?\.json|index-shards\/)/.test(file) &&
+    !(stage === 'calibration' && CALIBRATION_REPORTS.has(file)));
   if (originalChanges.length) throw new Error(`Unsaved source changes: ${originalChanges.join(', ')}`);
-  const files = paths.filter(allowed).map(file => {
+  const files = paths.filter(file => allowed(file, stage)).map(file => {
     const absolute = path.join(root, file);
     if (!fs.existsSync(absolute) || !fs.lstatSync(absolute).isFile()) throw new Error(`Deleted/nonregular report: ${file}`);
     const content = fs.readFileSync(absolute, 'utf8');
@@ -64,7 +73,7 @@ function validate(bundle, { stage, baseSha }) {
     throw new Error('Invalid checkpoint identity');
   const seen = new Set();
   for (const file of bundle.files) {
-    if (!allowed(file.path) || seen.has(file.path) || typeof file.content !== 'string' ||
+    if (!allowed(file.path, stage) || seen.has(file.path) || typeof file.content !== 'string' ||
         !(file.baseBlob === null || /^[a-f0-9]{40}$/.test(file.baseBlob)) || sha256(file.content) !== file.sha256)
       throw new Error('Invalid checkpoint file');
     seen.add(file.path);
@@ -99,7 +108,9 @@ function apply({ root, bundle, stage, baseSha }) {
   fs.mkdirSync(path.dirname(path.join(root, receiptFile)), { recursive: true });
   fs.writeFileSync(path.join(root, receiptFile), JSON.stringify(receipt, null, 2) + '\n');
   const savePaths = [...publish.map(file => file.path), receiptFile];
-  git(root, ['add', '--', ...savePaths]);
+  // The publisher intentionally omits prediction originals from its sparse
+  // checkout. Stage only validated explicit paths, including the two reports.
+  git(root, ['add', '--sparse', '--', ...savePaths]);
   const staged = git(root, ['diff', '--cached', '--name-only', '-z']).split('\0').filter(Boolean);
   if (staged.some(file => !savePaths.includes(file))) throw new Error('Unexpected staged file');
   return receipt;
