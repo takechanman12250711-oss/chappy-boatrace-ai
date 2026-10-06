@@ -143,7 +143,27 @@ function editDiagnostics(actual, previousHash, desired, previousText = null) {
     previousComparison: previousVerified ? comparison(previousText) : null,
     whitespaceCandidates: { previous: matches(previousHash), desired: matches(hash(desired)) } };
 }
+function validateUpdateAttempt(attempt, article, previousHash) {
+  if (!attempt) return null;
+  if (attempt.version !== 'note-marketing-update-attempt-v1' || attempt.articleId !== article.id ||
+      attempt.fromHash !== previousHash || !/^[a-f0-9]{64}$/.test(attempt.fromHash || '') ||
+      !/^[a-f0-9]{64}$/.test(attempt.targetHash || '') || !Number.isFinite(Date.parse(attempt.startedAt))) {
+    throw new Error('marketing_update_attempt_invalid');
+  }
+  return attempt;
+}
+function updateAttempt(state, key, article) {
+  return validateUpdateAttempt(state.pendingUpdates?.[key], article, state.articles[key]?.hash);
+}
+function prepareUpdateAttempt(state, key, article, desired, now) {
+  updateAttempt(state, key, article);
+  const fromHash = state.articles[key]?.hash;
+  if (!/^[a-f0-9]{64}$/.test(fromHash || '') || !Number.isFinite(now)) throw new Error('marketing_update_attempt_invalid');
+  return { ...state, articles: { ...state.articles }, pendingUpdates: { ...state.pendingUpdates,
+    [key]: { version: 'note-marketing-update-attempt-v1', articleId: article.id,
+      fromHash, targetHash: hash(desired), startedAt: new Date(now).toISOString() } } };
+}
 function requireEditable(actual, previousHash, desired) {
   if (hash(actual) !== previousHash && hash(actual) !== hash(desired)) throw new Error('marketing_manual_change_review_required');
 }
-module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, recentDates, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, publishedIndexBody, initialState, requireEditable, editDiagnostics };
+module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, recentDates, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, publishedIndexBody, initialState, requireEditable, editDiagnostics, validateUpdateAttempt, updateAttempt, prepareUpdateAttempt };
