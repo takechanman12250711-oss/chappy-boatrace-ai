@@ -7,6 +7,10 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const builders = [
+  "build-local-water-strong-condition-cohort",
+  "build-local-water-main-head-selection-audit",
+  "build-local-water-outer-head-candidate-ranking-audit",
+  "build-local-water-outer-head-stage-audit",
   "build-local-water-result-breakdown",
   "build-local-water-outer-head-bottleneck-audit",
   "build-local-water-outside-head-miss-structure",
@@ -19,7 +23,7 @@ if (process.argv[2] === "heap-child") {
   // Negative control reproduces the previous eager loader, before aggregation.
   const input = mode === "eager" ? [...docs] : docs;
   const report = require(`./${name}`).build(input, loadDailyDocuments(path.join(dir, "results")));
-  assert.equal(report.actualHead56RaceCount ?? report.settledFormalEvidenceRaceCount ?? report.metrics.unselectedScenarioHeadCount, 32);
+  assert.equal(report.actualHead56RaceCount ?? report.settledFormalEvidenceRaceCount ?? report.metrics?.settledFormalEvidenceRaceCount ?? report.metrics?.unselectedScenarioHeadCount, 32);
   assert.equal(report.productionChanged, false);
   assert.equal(report.automaticApplication, false);
   assert.equal(report.usableForPrediction, false);
@@ -41,6 +45,22 @@ if (process.argv[2] === "heap-child") {
   assert.deepEqual(projected, ["primary", "new-primary", "later-primary", null, "first"]);
   assert.ok(!calls.some(value => /ignored|must-not-fill/.test(value)));
   assert.equal(JSON.stringify(documents), before, "saved inputs must remain unchanged");
+
+  // PR validation has no remote writes and must not reserve the production
+  // writer queue. Every production event keeps the original shared writer lock.
+  for (const name of builders) {
+    const topic = name.replace("build-local-water-", "");
+    const workflow = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", `check-local-water-${topic}.yml`), "utf8");
+    assert.ok(workflow.includes("group: ${{ github.event_name == 'pull_request' && format('chappy-local-water-audit-{0}', github.ref) || 'chappy-main-data-writers' }}"));
+    assert.match(workflow, /queue: max\n\s+cancel-in-progress: false/);
+    assert.ok(workflow.includes("ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}"));
+    const steps = workflow.split(/\n(?=      - )/).slice(1);
+    const buildAndSave = steps.filter(step => step.includes(`node scripts/${name}.js`) || step.includes("git push origin main"));
+    assert.equal(buildAndSave.length, 2);
+    for (const step of buildAndSave) assert.match(step, /if: github.event_name != 'pull_request'/,
+      `${topic}: pull requests may not build or save production reports`);
+    assert.ok(workflow.includes("node scripts/test-local-water-daily-input.cjs"));
+  }
 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "chappy-local-water-input-"));
   try {
@@ -74,6 +94,14 @@ if (process.argv[2] === "heap-child") {
       const build = require(`./${name}`).build;
       assert.deepEqual(clean(build(loadDailyDocuments(path.join(dir, "predictions")), results)),
         clean(build(predictions, results)), `${name}: full recursive saved evidence produces identical summaries`);
+      if (/main-head-selection-audit|outer-head-candidate-ranking-audit/.test(name)) {
+        const mixedResults = structuredClone(results.slice(0, 2));
+        mixedResults[0].races[0].trifecta.combination = "1-2-3";
+        const mixed = build(predictions.slice(0, 2), mixedResults);
+        assert.equal(mixed.metrics.settledFormalEvidenceRaceCount, 2,
+          "non-5/6 settled winners must remain in the formal denominator");
+        assert.equal(mixed.metrics.actualHead56Count, 1);
+      }
       const primary = { ...predictions[0].predictions[0], prediction: {} };
       const verification = predictions[0].predictions[0];
       for (const docs of [

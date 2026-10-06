@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - "scripts/build-local-water-outside-head-miss-structure.js"
+      - "scripts/build-local-water-strong-condition-cohort.js"
       - "scripts/build-local-water-result-breakdown.js"
       - "scripts/local-water-daily-input.cjs"
       - "scripts/test-local-water-daily-input.cjs"
@@ -12,6 +13,7 @@ on:
     branches: [main]
     paths:
       - "scripts/build-local-water-outside-head-miss-structure.js"
+      - "scripts/build-local-water-strong-condition-cohort.js"
       - "scripts/build-local-water-result-breakdown.js"
       - "scripts/local-water-daily-input.cjs"
       - "scripts/test-local-water-daily-input.cjs"
@@ -23,7 +25,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.event_name == 'pull_request' && format('chappy-local-water-audit-{0}', github.ref) || 'chappy-main-data-writers' }}
   queue: max
   cancel-in-progress: false
 jobs:

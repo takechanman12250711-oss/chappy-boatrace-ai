@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const localWater = require("./build-local-water-result-breakdown");
 const outerHead = require("./build-outer-head-drop-stage-audit");
 const root = path.resolve(__dirname, "..");
@@ -13,14 +14,6 @@ function arr(value) {
 
 function key(record = {}) {
   return `${record.date}-${String(record.jcd || "").padStart(2, "0")}-${Number(record.raceNo || 0)}`;
-}
-
-function load(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter((name) => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
 }
 
 function predictionRows(docs) {
@@ -69,13 +62,12 @@ function decide(metrics) {
 
 function build(predDocs, resultDocs) {
   const results = resultMap(resultDocs);
-  const settled = predictionRows(predDocs)
-    .map((record) => ({
-      record,
-      evidence: localWater.evidence(record),
-      result: results.get(key(record)) || null
-    }))
-    .filter((row) => row.evidence.formal && row.result && localWater.actualHead(row.result));
+  const settled = mapPredictionRows(predDocs, record => {
+    const evidence = localWater.evidence(record), result = results.get(key(record)) || null;
+    if (!evidence.formal || !result) return null;
+    const actual = localWater.actualHead(result);
+    return actual ? { inspection: outerHead.inspect(record), predicted: outerHead.mainHead(record), actual } : null;
+  }).filter(Boolean);
 
   let candidate56Count = 0;
   let scenario56Count = 0;
@@ -90,9 +82,7 @@ function build(predDocs, resultDocs) {
   const actualHead56PathCounts = new Map();
 
   for (const row of settled) {
-    const inspection = outerHead.inspect(row.record);
-    const predicted = outerHead.mainHead(row.record);
-    const actual = localWater.actualHead(row.result);
+    const { inspection, predicted, actual } = row;
 
     if (inspection.candidate56) candidate56Count++;
     if (inspection.scenario56) scenario56Count++;
@@ -156,8 +146,8 @@ function build(predDocs, resultDocs) {
 
 function main() {
   const report = build(
-    load(path.join(root, "data", "predictions")),
-    load(path.join(root, "data", "results"))
+    loadDailyDocuments(path.join(root, "data", "predictions")),
+    loadDailyDocuments(path.join(root, "data", "results"))
   );
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, `${JSON.stringify(report, null, 2)}\n`);

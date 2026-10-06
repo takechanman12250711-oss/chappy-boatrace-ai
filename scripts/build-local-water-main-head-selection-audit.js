@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const localWater = require("./build-local-water-result-breakdown");
 
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const root = path.resolve(__dirname, "..");
 const OUT = path.join(root, "data", "stats", "local-water-main-head-selection-audit.json");
 
@@ -13,27 +14,6 @@ function arr(value) {
 
 function key(row = {}) {
   return `${row.date}-${String(row.jcd || "").padStart(2, "0")}-${Number(row.raceNo || 0)}`;
-}
-
-function load(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter((name) => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
-}
-
-function predictionRows(docs) {
-  const map = new Map();
-  for (const doc of docs) {
-    for (const name of ["predictions", "verificationPredictions"]) {
-      for (const row of arr(doc?.[name])) {
-        const rowKey = key(row);
-        if (name === "predictions" || !map.has(rowKey)) map.set(rowKey, row);
-      }
-    }
-  }
-  return [...map.values()];
 }
 
 function resultMap(docs) {
@@ -332,12 +312,15 @@ function chooseNextStep(metrics) {
 
 function build(predDocs, resultDocs) {
   const results = resultMap(resultDocs);
-  const settledFormal = predictionRows(predDocs)
-    .map((record) => ({ record, evidence: localWater.evidence(record), result: results.get(key(record)) || null }))
-    .filter((row) => row.evidence.formal && row.result && localWater.actualHead(row.result));
-  const targetRows = settledFormal
-    .filter((row) => [5, 6].includes(localWater.actualHead(row.result)))
-    .map((row) => classifyTarget(row.record, row.result));
+  const settledFormal = mapPredictionRows(predDocs, record => {
+    const evidence = localWater.evidence(record), result = results.get(key(record)) || null;
+    if (!evidence.formal || !result) return null;
+    const actual = localWater.actualHead(result);
+    if (!actual) return null;
+    // Keep all settled formal races in the denominator, including non-5/6 wins.
+    return { target: [5, 6].includes(actual) ? classifyTarget(record, result) : null };
+  }).filter(Boolean);
+  const targetRows = settledFormal.map(row => row.target).filter(Boolean);
 
   const count = (predicate) => targetRows.filter(predicate).length;
   const classifications = {};
@@ -393,8 +376,8 @@ function build(predDocs, resultDocs) {
 
 function main() {
   const report = build(
-    load(path.join(root, "data", "predictions")),
-    load(path.join(root, "data", "results"))
+    loadDailyDocuments(path.join(root, "data", "predictions")),
+    loadDailyDocuments(path.join(root, "data", "results"))
   );
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(report, null, 2) + "\n");

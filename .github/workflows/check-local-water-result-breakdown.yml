@@ -26,7 +26,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.event_name == 'pull_request' && format('chappy-local-water-audit-{0}', github.ref) || 'chappy-main-data-writers' }}
   queue: max
   cancel-in-progress: false
 
