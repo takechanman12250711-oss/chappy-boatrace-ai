@@ -2197,6 +2197,22 @@ async function main() {
         onOfficialRace = (data, target) => { try { recorder(data, target); } catch (error) { recordError(error); } };
       } catch (error) { recordError(error); }
     }
+    const rankCacheFile = process.env.OFFICIAL_START_RANK_STAGE;
+    if (!dryRun && rankCacheFile) {
+      const previousRecorder = onOfficialRace;
+      const recordError = error => {
+        const message = String(error?.message || error).slice(0, 200);
+        console.warn(`Official rank cache capture failed: ${message}`);
+        fs.appendFileSync(rankCacheFile + '.errors', message + '\n');
+      };
+      try {
+        const recorder = require('./official-start-rank-cache.cjs').createRecorder(rankCacheFile);
+        onOfficialRace = (data, target) => {
+          if (previousRecorder) previousRecorder(data, target);
+          try { recorder(data); } catch (error) { recordError(error); }
+        };
+      } catch (error) { recordError(error); }
+    }
     return require("./collect-all-race-notes").collectAllRaceNotes({
       date, dryRun,
       loadSchedule: query => callApi(scheduleApi, query),
