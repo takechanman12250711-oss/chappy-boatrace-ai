@@ -49,13 +49,30 @@ function buildReport(options = {}) {
   };
 }
 
+function withoutGeneratedAt(report = {}) {
+  const { generatedAt, ...semantic } = report;
+  return semantic;
+}
+
+function writeIfChanged(report, file = output) {
+  const current = load(file, null);
+  // The shadow collector and result diagnostics share this frozen report.
+  // A timestamp-only rewrite must not invalidate a verified result checkpoint.
+  // Keep every other field in the comparison, including all approval guards.
+  if (
+    current &&
+    JSON.stringify(withoutGeneratedAt(current)) === JSON.stringify(withoutGeneratedAt(report))
+  ) return { changed: false, report: current };
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(report, null, 2) + "\n");
+  return { changed: true, report };
+}
+
 function main() {
-  const report = buildReport();
-  fs.mkdirSync(stats, { recursive: true });
-  fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
-  console.log(`Phase10 A/B基盤：${report.status}`);
-  return report;
+  const result = writeIfChanged(buildReport());
+  console.log(`Phase10 A/B基盤：${result.report.status}（${result.changed ? "更新" : "変更なし"}）`);
+  return result.report;
 }
 
 if (require.main === module) main();
-module.exports = { load, buildReport, main, source, candidateSource, approvalSource, approvedSource, output };
+module.exports = { load, buildReport, withoutGeneratedAt, writeIfChanged, main, source, candidateSource, approvalSource, approvedSource, output };
