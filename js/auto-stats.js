@@ -356,6 +356,9 @@
       runs,
       shadowV2Predictions,
       activeGenerationKey,
+      generatedAt: String(data?.generatedAt || ""),
+      retentionLimits: { ...(data?.retentionLimits || {}) },
+      sourceRecordCounts: { ...(data?.sourceRecordCounts || {}) },
       selectedCount: selectedRaceKeys.size,
       shadowCount: predictions.filter(
         item => item.predictionSource === "automatic_shadow"
@@ -364,6 +367,42 @@
   }
 
   const SHADOW_V2_MILESTONES = Object.freeze([100, 250, 500]);
+
+  // Display-only evidence. Reuse the index's complete selection identity rather
+  // than a hardcoded ticket-policy version or a mixture of different methods.
+  function buildDetailedMethodProgress(rows, activeGenerationKey) {
+    const source = (Array.isArray(rows) ? rows : []).filter(row => !row?.isShadow);
+    const excluded = { unknownMethod: 0, otherMethod: 0, pending: 0, incomplete: 0 };
+    const verifications = [];
+    let currentCount = 0;
+    for (const row of source) {
+      const key = String(row?.prediction?.selectionGenerationKey || "");
+      if (!activeGenerationKey || !key) { excluded.unknownMethod += 1; continue; }
+      if (key !== activeGenerationKey) { excluded.otherMethod += 1; continue; }
+      currentCount += 1;
+      const verification = row?.verification;
+      if (verification?.settled !== true) { excluded.pending += 1; continue; }
+      if (!verification.internalEvaluation || verification.scenarioVerification?.structured !== true) {
+        excluded.incomplete += 1;
+        continue;
+      }
+      verifications.push(verification);
+    }
+    return { verifications, currentCount, sourceCount: source.length, excluded,
+      methodKnown: Boolean(activeGenerationKey) };
+  }
+
+  function formatEvidenceTime(value) {
+    const timestamp = Date.parse(String(value || ""));
+    if (!Number.isFinite(timestamp)) return "未確認";
+    return new Date(timestamp + 9 * 60 * 60 * 1000).toISOString()
+      .slice(0, 16).replace("T", " ") + " JST";
+  }
+
+  function formatEvidenceCount(value, unit = "R") {
+    return typeof value === "number" && Number.isFinite(value) && value >= 0
+      ? `${Math.trunc(value)}${unit}` : "未確認";
+  }
 
   function percentage(count, total) {
     const safeCount = Number(count);
@@ -508,6 +547,9 @@
     selectionGenerationKey,
     classifySelectionCohort,
     normalizeIndex,
+    buildDetailedMethodProgress,
+    formatEvidenceTime,
+    formatEvidenceCount,
     buildResultHeadline,
     buildShadowV2Progress
   };

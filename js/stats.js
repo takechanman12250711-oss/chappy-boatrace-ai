@@ -21,14 +21,7 @@
   const RESULTS_UI_PHASE3 = "results-ui-phase3-20260806";
   const RESULTS_UI_VERSION = "results-ui-phase1-20260806";
   const NEW_METHOD_MINIMUM_COUNT = 30;
-  const CURRENT_CALIBRATION_GENERATION = {
-    logicFingerprint:
-      "evaluated-scenarios-v1",
-    confidenceDefinitionVersion:
-      "internal-score-v1",
-    ticketPolicyVersion:
-      "practical-5-7-10-v1"
-  };
+  const evidenceTime = value => A?.formatEvidenceTime?.(value) || "未確認";
 
   function buildObservedRateDisplay(
     attempts,
@@ -1549,34 +1542,17 @@
     軽量校正へ接続できる保存値だけを別集計する。
     旧履歴を混ぜて0%や見かけの率を作らない。
   */
-  const newMethodVerifications =
-    realSettledRows
-      .map(item => item.verification)
-      .filter(
-        item => {
-          const generation =
-            item?.calibrationKey || {};
-          const sameGeneration =
-            Object.entries(
-              CURRENT_CALIBRATION_GENERATION
-            ).every(
-              ([key, value]) =>
-                generation?.[key] ===
-                value
-            );
-
-          return (
-            item?.settled === true &&
-            sameGeneration &&
-            Boolean(
-              item.internalEvaluation
-            ) &&
-            item
-              .scenarioVerification
-              ?.structured === true
-          );
-        }
-      );
+  const detailedMethod = A?.buildDetailedMethodProgress?.(
+    predictionRows, automaticStats.activeGenerationKey
+  ) || { verifications: [], currentCount: 0, sourceCount: 0, excluded: {}, methodKnown: false };
+  const newMethodVerifications = detailedMethod.verifications;
+  const detailedMethodState = !detailedMethod.methodKnown ? "方式を確認できません"
+    : !detailedMethod.currentCount ? "現行方式の採用記録なし"
+    : "データ蓄積中";
+  const detailedExclusionLabels = { unknownMethod: "方式未確認", otherMethod: "別方式", pending: "結果待ち", incomplete: "詳細入力不足" };
+  const detailedExclusionText = Object.entries(detailedMethod.excluded)
+    .filter(([, count]) => count > 0)
+    .map(([key, count]) => `${detailedExclusionLabels[key]} ${count}R`).join(" ／ ");
   const newMethodSummary =
     V?.buildSummary
       ? V.buildSummary(
@@ -1876,23 +1852,30 @@
     </div>
   `;
   const operationalReview = raceReviewProgress;
+  const reviewCohorts = operationalReview?.cohorts || [];
+  const activeReview = reviewCohorts.find(group => group.active === true);
+  const archivedReviews = reviewCohorts.filter(group => group.active !== true);
   const reviewBadge = operationalReview
-    ? `照合済み${operationalReview.settled}R・結果待ち${operationalReview.pending}R`
+    ? activeReview ? `現行 ${activeReview.completedWindows ? `${activeReview.completedWindows}区間完了・次 ` : ""}${activeReview.currentWindowCount}/100R` : "現行方式の記録なし"
     : raceReviewError ? "取得失敗" : "読込中";
   const reviewPercent = value => Number.isFinite(value) ? `${value.toFixed(1)}%` : "—";
-  const operationalReviewHtml = operationalReview ? `
-    <p class="result-panel-note">展示後・締切前に保存した予想。各買い目100円の検証成績です。方式別に100Rずつ積み上げ、途中成績も表示します。</p>
-    ${(operationalReview.cohorts || []).map(group => `
+  const renderReviewCohort = group => `
       <article class="result-data-card">
-        <h4>${group.legacy ? "旧記録" : "予想方式"} ${E(group.method.split(":")[1].slice(0,8))}${group.active ? "（現行）" : ""}</h4>
+        <h4>${group.legacy ? "旧記録" : "予想方式"} ${E(String(group.method).split(":")[1]?.slice(0,8) || "未確認")}${group.active ? "（現行）" : ""}</h4>
         <p>保存${group.captured}R ／ 照合済み${group.settled}R ／ 結果待ち${group.pending}R</p>
         <p>${group.completedWindows}区間完了・次の100R区間 ${group.currentWindowCount}/100R</p>
         <p>実戦厳選：的中率 ${reviewPercent(group.practical.hitRate)} ／ 回収率 ${reviewPercent(group.practical.recoveryRate)}</p>
         <p>最大24点候補：的中率 ${reviewPercent(group.candidate24.hitRate)} ／ 回収率 ${reviewPercent(group.candidate24.recoveryRate)}</p>
         ${group.excludedRefundOrVoid || group.unknownPayout ? `<p>返還・不成立 ${group.excludedRefundOrVoid}R ／ 払戻未確認 ${group.unknownPayout}R</p>` : ""}
-      </article>`).join("") || renderEmpty("展示後・締切前の保存予想を待っています")}
+        <p class="result-panel-note">対象期間：${E(group.from || "未確認")}〜${E(group.to || "未確認")}</p>
+      </article>`;
+  const operationalReviewHtml = operationalReview ? `
+    <p class="result-panel-note">展示後・締切前の保存予想を方式別に検証。各買い目100円の検証値です。</p>
+    <p class="result-panel-note">集計：${E(evidenceTime(operationalReview.generatedAt))} ／ 全方式の照合済み${operationalReview.settled}R・結果待ち${operationalReview.pending}R</p>
+    ${activeReview ? renderReviewCohort(activeReview) : renderEmpty("現行方式の保存予想はまだありません")}
+    ${archivedReviews.length ? `<details class="result-inner-details"><summary>過去の方式・記録（${archivedReviews.length}方式）</summary><div class="result-inner-details-body">${archivedReviews.map(renderReviewCohort).join("")}<p class="result-panel-note">保存時の方式ごとに保持しています。現行方式へは合算しません。</p></div></details>` : ""}
     ${operationalReview.resultFetchRetries ? `<p class="result-panel-note">公式結果の取得再試行待ち：${operationalReview.resultFetchRetries}R</p>` : ""}
-    <p class="result-panel-note">旧記録は保存時のコード別に分けています。予想方式の変更で過去の成績は消えません。改善案の自動採用は行いません。</p>
+    <p class="result-panel-note">改善案の自動採用は行いません。</p>
   ` : renderEmpty(raceReviewError ? "検証データの取得に失敗しました。更新で再確認できます。" : "検証データを読み込んでいます");
   const latestAccuracyReview =
     Array.isArray(
@@ -2155,6 +2138,7 @@
             <p class="result-panel-note">
               直近収集のV2判定可能：
               ${Number(latestV2Health.readyCount || 0)}/${Number(latestV2Health.evaluatedCount || 0)}R
+              （収集確認 ${E(evidenceTime(latestV2Health.checkedAt))}）
               ${
                 latestV2ReasonText
                   ? `（未完成の主因：${E(latestV2ReasonText)}）`
@@ -2584,10 +2568,10 @@
         `
       : `
           ${renderEmpty(
-            `新方式データ蓄積中：` +
+            `${detailedMethodState}：` +
             `${newMethodCount}/` +
             `${NEW_METHOD_MINIMUM_COUNT}件。` +
-            "旧履歴は新方式の率へ混ぜません。"
+            "別方式・未確認の記録は混ぜません。"
           )}
           ${
             calibrationAvailable
@@ -2643,10 +2627,10 @@
           const strengthLabel = row.practicalCount < 5
             ? "蓄積中"
             : practicalRate >= 30
-              ? "得意"
+              ? "的中率30%以上"
               : practicalRate >= 15
-                ? "標準"
-                : "改善対象";
+                ? "的中率15〜30%未満"
+                : "的中率15%未満";
           return `
             <article class="result-data-card result-scenario-card ${state}">
               <header>
@@ -2671,13 +2655,13 @@
   const weakestScenario = comparableScenarioRows[comparableScenarioRows.length - 1] || null;
   const scenarioInsightHtml = comparableScenarioRows.length
     ? `<div class="result-ai-insight">
-        <strong>AI改善メモ</strong>
-        <p>好調：${E(strongestScenario.label)}（厳選${strongestScenario.practicalRate}%）</p>
+        <strong>保存予想の傾向</strong>
+        <p>的中率が高い展開：${E(strongestScenario.label)}（厳選${strongestScenario.practicalRate}%）</p>
         ${weakestScenario && weakestScenario !== strongestScenario
-          ? `<p>改善対象：${E(weakestScenario.label)}（厳選${weakestScenario.practicalRate}%）</p>`
+          ? `<p>的中率が低い展開：${E(weakestScenario.label)}（厳選${weakestScenario.practicalRate}%）</p>`
           : ""}
       </div>`
-    : `<div class="result-ai-insight"><strong>AI改善メモ</strong><p>各展開5R以上になるまで蓄積中です。</p></div>`;
+    : `<div class="result-ai-insight"><strong>保存予想の傾向</strong><p>各展開5R以上になるまで蓄積中です。</p></div>`;
   const RESULTS_UI_PHASE4 = "results-ui-phase4-20260806";
   const ROLE_TICKETS_NOT_STORED = "分類別データ未保存";
 
@@ -2854,9 +2838,8 @@
           "公式結果と照合できる予想がありません"
         );
   const sampleMessage =
-    realSettledRows.length < 30
-      ? `サンプル蓄積中：現在${realSettledRows.length}R。30R未満の数値は参考値です。`
-      : `${realSettledRows.length}Rの公式結果で検証しています。`;
+    `表示用の採用履歴・端末保存の照合済み${realSettledRows.length}R。` +
+    (realSettledRows.length < 30 ? "30R未満は参考値です。" : "全期間集計とは対象が異なります。");
 
   const previousDashboard =
     document.querySelector(
@@ -2941,7 +2924,7 @@
       : "未取得";
   const dataLoadMessage =
     automaticStatsLoaded
-      ? `自動履歴：採用${automaticSelectedRuns}回・シャドー${automaticShadowRuns}R・見送り${automaticSkippedRuns}回`
+      ? `自動採用 ${automaticSelectedRuns}R${automaticStats.retentionLimits?.predictions ? `（表示用の直近最大${Number(automaticStats.retentionLimits.predictions)}件）` : ""} ／ 集計 ${evidenceTime(automaticStats.generatedAt)}`
       : automaticStatsError
         ? `自動履歴を取得できません：${automaticStatsError}`
         : "自動履歴を読み込んでいます";
@@ -2983,14 +2966,14 @@
           ${renderMetricCard({
             icon: "🎯",
             label: "厳選的中率",
-            value: `${analysisHitRate}%`,
+            value: resultHeadline.practicalCount ? `${analysisHitRate}%` : "—",
             detail: `${resultHeadline.practicalHits}/${resultHeadline.practicalCount}R`,
             tone: "blue"
           })}
           ${renderMetricCard({
             icon: "📈",
             label: "回収率",
-            value: `${recoveryRate}%`,
+            value: resultHeadline.totalStake ? `${recoveryRate}%` : "—",
             detail: "1点100円の検証値",
             tone:
               recoveryRate >= 100
@@ -3002,12 +2985,13 @@
           ${renderMetricCard({
             icon: "💹",
             label: "検証収支",
-            value: formatMoney(
+            value: resultHeadline.practicalCount ? formatMoney(
               resultHeadline.totalReturn -
                 resultHeadline.totalStake
-            ),
+            ) : "—",
             detail: "払戻－購入額",
             tone:
+              resultHeadline.practicalCount === 0 ? "blue" :
               resultHeadline.totalReturn >=
               resultHeadline.totalStake
                 ? "green"
@@ -3016,14 +3000,14 @@
           ${renderMetricCard({
             icon: "🧾",
             label: "購入額",
-            value: formatMoney(resultHeadline.totalStake),
+            value: resultHeadline.practicalCount ? formatMoney(resultHeadline.totalStake) : "—",
             detail: `対象${resultHeadline.practicalCount}R`,
             tone: "amber"
           })}
           ${renderMetricCard({
             icon: "💴",
             label: "払戻額",
-            value: formatMoney(resultHeadline.totalReturn),
+            value: resultHeadline.practicalCount ? formatMoney(resultHeadline.totalReturn) : "—",
             detail: `的中${resultHeadline.practicalHits}R`,
             tone:
               resultHeadline.totalReturn > 0
@@ -3035,6 +3019,11 @@
         <p class="result-mode-note">
           1点100円の検証値です。
         </p>
+        <details class="result-inner-details"><summary>集計対象・保存履歴の内訳</summary><div class="result-inner-details-body">
+          <p>この欄は採用・端末保存の履歴です。全期間の最大24点候補、方式別100R検証とは対象が異なります。</p>
+          <p>表示用の自動履歴：採用${automaticSelectedRuns}R・非採用の検証予想${automaticShadowRuns}R・見送り${automaticSkippedRuns}回。非採用予想はこの要点へ含めません。</p>
+          <p>端末保存分の件数は利用端末で異なります。表示件数の上限で過去の原本は削除されません。</p>
+        </div></details>
       </section>
 
       <details
@@ -3053,7 +3042,7 @@
           </span>
           <span class="result-accordion-title">
             <span class="result-accordion-name">
-              新方式の詳細実績
+              現行方式の詳細実績
             </span>
             <small>
               役割別・買い目区分別・構造化展開
@@ -3063,15 +3052,17 @@
             ${
               newMethodReady
                 ? `${newMethodCount}件`
-                : "データ蓄積中"
+                : E(detailedMethodState)
             }
           </span>
         </summary>
         <div class="result-accordion-body result-compact-analysis-body">
           <div class="result-compact-progress">
             <strong>${newMethodCount}/${NEW_METHOD_MINIMUM_COUNT}件</strong>
-            <span>${newMethodReady ? "参考確認段階" : "データ蓄積中"}</span>
+            <span>${newMethodReady ? "参考確認段階" : E(detailedMethodState)}</span>
           </div>
+          <p class="result-panel-note">現行方式の採用記録 ${detailedMethod.currentCount}R ／ 詳細照合 ${newMethodCount}R ／ 集計 ${E(evidenceTime(automaticStats.generatedAt))}</p>
+          ${detailedExclusionText ? `<p class="result-panel-note">表示用履歴の対象外：${E(detailedExclusionText)}</p>` : ""}
           <details class="result-inner-details">
             <summary>詳しい説明を見る</summary>
             <div class="result-inner-details-body">
@@ -3110,12 +3101,13 @@
         <div class="result-accordion-body result-compact-analysis-body">
           <div class="result-compact-progress">
             <strong>${reviewBadge}</strong>
-            <span>方式別に累積</span>
+            <span>同じ方式だけで100Rずつ検証</span>
           </div>
           ${operationalReviewHtml}
           <details class="result-inner-details">
-            <summary>従来のV2厳選検証を見る</summary>
+            <summary>従来のV2厳選検証・除外根拠</summary>
             <div class="result-inner-details-body">
+              <p class="result-panel-note">別の検証条件による旧集計。集計：${E(evidenceTime(improvementReview?.generatedAt))}。上の現行100Rへ合算しません。</p>
               ${improvementReviewHtml}
             </div>
           </details>
@@ -3136,6 +3128,7 @@
           <span class="result-accordion-meta">${venueGroups.length}場</span>
         </summary>
         <div class="result-accordion-body result-group-list">
+          <p class="result-panel-note">表示用履歴の採用・非採用の検証予想・端末保存を含む照合済み${settledRows.length}R。集計：${E(evidenceTime(automaticStats.generatedAt))}</p>
           ${venuePerformanceHtml}
         </div>
       </details>
@@ -3154,6 +3147,7 @@
           <span class="result-accordion-meta">${predictedScenarioGroups.length}展開</span>
         </summary>
         <div class="result-accordion-body">
+          <p class="result-panel-note">表示用履歴の採用・非採用の検証予想・端末保存を含む照合済み${settledRows.length}R。集計：${E(evidenceTime(automaticStats.generatedAt))}。改善効果を検証した数値ではありません。</p>
           ${scenarioInsightHtml}
           <div class="result-data-grid result-scenario-grid">
             ${scenarioPerformanceHtml}

@@ -12,6 +12,7 @@
   const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;
   const HOME_CACHE_KEY="chappy-home-v2-cache",HOME_CACHE_TTL=300000,SCRIPT_LOAD_TIMEOUT_MS=15000,PRELOAD_LOOKAHEAD=2,HOME_RACE_SELECTOR="[data-place][data-race]";
   const loaded=new Map(),groupReady=new Map();
+  let statsNavigationGeneration=0;
   const groups={race:["js/utils.js","js/storage.js","js/prediction-conditions.js","js/prediction-runtime-loader.js","js/script.js","js/hiyori-runtime-loader.js"],stats:["js/utils.js","js/storage.js","js/stats-runtime-loader.js"],autoSelection:["js/utils.js","js/storage.js","js/auto-selection.js"]};
   groups.race.splice(2,0,"js/outer-attack-ticket-shadow.js");
   groups.race.splice(3,0,"js/outer-attack-ticket-settlement.js");
@@ -153,6 +154,10 @@
   function preloadGroupForTarget(target){if(target?.matches(HOME_RACE_SELECTOR))return"";return requiredGroup(target);}
   function replay(target){target.dataset.chappyRuntimeReady="true";target.click();delete target.dataset.chappyRuntimeReady;}
 
+  root.addEventListener("chappy:view-changed",event=>{
+    if(event?.detail?.view==="race"||event?.detail?.view==="prediction")statsNavigationGeneration+=1;
+  });
+
   document.addEventListener("pointerdown",event=>{
     const target=event.target.closest("button,a");
     const group=preloadGroupForTarget(target);
@@ -165,15 +170,20 @@
   document.addEventListener("click",event=>{
     const target=event.target.closest("button,a");
     if(!target||target.dataset.chappyRuntimeReady==="true")return;
+    const view=target.dataset.view||"";
+    const href=target.getAttribute("href");
+    if(["race","prediction","result"].includes(view)||["#raceSection","#predictionSection","#resultSection"].includes(href))statsNavigationGeneration+=1;
     const group=requiredGroup(target);
     if(!group)return;
+    const requestedGeneration=statsNavigationGeneration;
+    const isCurrent=()=>group!=="stats"||requestedGeneration===statsNavigationGeneration;
     event.preventDefault();
     event.stopImmediatePropagation();
     ensure(group)
-      .then(()=>replay(target))
+      .then(()=>{if(isCurrent())replay(target);})
       .catch(error=>{
         console.error("[app-runtime-loader]",error);
-        renderRuntimeError(error);
+        if(isCurrent())renderRuntimeError(error);
       });
   },true);
 
@@ -187,4 +197,3 @@
     persistHomeCache
   });
 })(window);
-

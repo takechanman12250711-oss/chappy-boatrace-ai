@@ -15,3 +15,5 @@ assert(!ui.includes("saveResult("), "結果保存ロジックを変更しない"
 assert(!ui.includes("buildStats("), "集計ロジックを変更しない");
 assert(!ui.includes("buildMarks("), "予想ロジックを変更しない");
 console.log("Phase5 結果分析UIテスト: 合格");
+
+require("./test-candidate24-evidence");

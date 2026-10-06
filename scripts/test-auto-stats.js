@@ -585,3 +585,5 @@ assert.equal(
 );
 
 console.log("自動予想成績変換テスト: 合格");
+
+require("./test-stats-evidence");

@@ -102,7 +102,7 @@
       key: definition.key,
       label: definition.label,
       status,
-      statusLabel: statusLabel(status),
+      statusLabel: sampleCount ? statusLabel(status) : "比較結果なし",
       tone: statusTone(status),
       sampleCount,
       nextMilestone,
@@ -208,6 +208,9 @@
       <div class="outer-attack-progress-body">
       <p class="outer-attack-progress-note">${escapeHtml(view.prospectiveStartLabel)}以降の、結果前に保存した予想だけを集計。同点数・同資金で比較し、自動採用はしません。</p>
       <p class="outer-attack-progress-note">${escapeHtml(view.collectionLabel || "")}</p>
+      ${view.evidenceLabel ? `<p class="outer-attack-progress-note">${escapeHtml(view.evidenceLabel)}</p>` : ""}
+      ${view.coverageLabel ? `<p class="outer-attack-progress-note">${escapeHtml(view.coverageLabel)}</p>` : ""}
+      ${view.collectionDetail ? `<details class="result-inner-details"><summary>保存・対象外の内訳</summary><p class="outer-attack-progress-note">${escapeHtml(view.collectionDetail)}</p></details>` : ""}
       <div class="outer-attack-progress-summary">
         <span>前向き確定 <strong>${view.prospectiveForwardCount.toLocaleString("ja-JP")}R</strong></span>
         <span>全確定 <strong>${view.sourceSettlementCount.toLocaleString("ja-JP")}R</strong></span>
@@ -299,24 +302,34 @@
     return null;
   }
 
+  function applyCentralEvidence(view, central) {
+    if (central) {
+      const generatedAt = Date.parse(central.generatedAt);
+      const stale = Date.now() - generatedAt > 24 * 60 * 60 * 1000;
+      const pipeline = central.pipeline || {}, notes = pipeline.noteCollection;
+      if (!Number.isFinite(generatedAt)) view.overallStatusLabel = '集計時刻未確認';
+      else if (stale) view.overallStatusLabel = '集計から24時間以上経過';
+      else if (!pipeline.immutableSnapshotCount) view.overallStatusLabel = notes?.missingBasis ? '比較用の評価データ不足' : '比較対象なし';
+      view.evidenceLabel = `集計：${Number.isFinite(generatedAt) ? jstLabel(central.generatedAt) : '未確認'} ／ 最終収集確認：${pipeline.lastCapture?.capturedAt ? jstLabel(pipeline.lastCapture.capturedAt) : '未確認'}`;
+      view.collectionLabel = `比較用保存 ${integer(pipeline.immutableSnapshotCount)}件・結果待ち ${integer(pipeline.pendingOfficialResultCount)}件`;
+      view.collectionDetail = `比較対象外 ${integer(pipeline.exclusionCount)}件`;
+      if (notes) view.collectionDetail += ` ／ 予想確認 ${integer(notes.checked - notes.missing)}件 ／ 旧予想の比較データ未保存 ${integer(notes.missing)}件`;
+      const broad = central.research, coverage = broad?.coverage;
+      if (broad) view.collectionDetail += ` ／ 別集計の外攻め全体：保存${integer(broad.capturedRaces)}R・照合${integer(broad.settledRaces)}R`;
+      if (coverage) {
+        const waiting = Math.min(integer(coverage.missingRaces), integer(coverage.reasons?.['deferred-until-one-hour']));
+        view.coverageLabel = `${coverage.date} 開催確認${integer(coverage.scheduledRaces)}R ／ 展示後保存${integer(coverage.savedRaces)}R ／ 締切1時間前まで待機${waiting}R ／ その他未保存${Math.max(0, integer(coverage.missingRaces) - waiting)}R`;
+      }
+    }
+    return view;
+  }
+
   function render(rootObject) {
     ensureStyle(rootObject);
     const area = ensureArea(rootObject);
     if (!area) return null;
-    const view = buildViewModel(readReport(rootObject));
-    const central = rootObject?.ChappyOuterAttackTicketCentralReport?.readReport?.(rootObject);
-    if (central) {
-      const stale = Date.now() - Date.parse(central.generatedAt) > 24 * 60 * 60 * 1000;
-      const pipeline = central.pipeline || {}, notes = pipeline.noteCollection;
-      if (stale) view.overallStatusLabel = '集計更新が停止しています';
-      else if (!pipeline.immutableSnapshotCount) view.overallStatusLabel = notes?.missingBasis ? '比較用の評価データ不足' : '比較対象なし';
-      view.collectionLabel = `保存 ${integer(pipeline.immutableSnapshotCount)}件・結果待ち ${integer(pipeline.pendingOfficialResultCount)}件`;
-      if (notes) view.collectionLabel += `・予想確認 ${integer(notes.checked - notes.missing)}件・旧予想の比較データ未保存 ${integer(notes.missing)}件`;
-      const broad = central.research, coverage = broad?.coverage;
-      if (broad) view.collectionLabel += `・外攻め全体：保存${integer(broad.capturedRaces)}R／照合${integer(broad.settledRaces)}R`;
-      if (coverage) view.collectionLabel += `・${escapeHtml(coverage.date)} 開催確認${integer(coverage.scheduledRaces)}R／展示後証拠${integer(coverage.savedRaces)}R／未保存${integer(coverage.missingRaces)}R`;
-
-    }
+    const view = applyCentralEvidence(buildViewModel(readReport(rootObject)),
+      rootObject?.ChappyOuterAttackTicketCentralReport?.readReport?.(rootObject));
     if (!view.available) {
       area.hidden = true;
       area.innerHTML = "";
@@ -367,6 +380,7 @@
     statusLabel,
     statusTone,
     buildViewModel,
+    applyCentralEvidence,
     renderMarkup,
     render,
     install

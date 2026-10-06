@@ -87,3 +87,4 @@ const empty = home.selectRecommendations({threshold:70,compared:[candidate("12",
 assert.equal(empty.length, 0, "勝負対象がなければ空配列を返す");
 assert.equal(home.summaryCheckedAt({updatedAt:"2026-08-03T01:10:00.000Z"},{checkedAt:"2026-08-03T00:55:00.000Z"}).toISOString(), "2026-08-03T00:55:00.000Z", "最終更新には要約runのcheckedAtを優先する");
 console.log("承認済みホーム画面・高速化 回帰テスト: 合格");
+require("./test-stats-navigation-loading.js");
