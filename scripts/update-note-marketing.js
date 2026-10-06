@@ -27,7 +27,7 @@ function requireArticleEditable(actual, previousHash, desired, article, stage, p
   // This never accepts arbitrary page text or general whitespace differences.
   validateUpdateAttempt(attempt, article, previousHash);
   const acceptedHash = attempt && attempt.articleId === article.id && attempt.fromHash === previousHash &&
-    attempt.targetHash === hash(actual) ? attempt.targetHash : previousHash;
+    [attempt.targetHash, ...attempt.previousAttempts.map(value => value.targetHash)].includes(hash(actual)) ? hash(actual) : previousHash;
   try { requireEditable(actual, acceptedHash, desired); }
   catch (error) {
     if (error.message === 'marketing_manual_change_review_required') {

@@ -275,3 +275,58 @@ test('verified article checkpoints chain CAS and retain the last verified index 
   assert.deepEqual(loaded,original,'source state is not mutated');
   assert.throws(()=>createUpdateJournal(store,{state:{...original,pendingUpdates:{foreign:{}}},head},config,()=>now),/attempt_invalid/);
 });
+test('a second interruption after replacing an intent preserves the earlier published target',async()=>{
+  const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
+  const old='verified A',published='published B',interrupted='intended C',latest='latest D';
+  let state=c.initialState(config);state.articles.index.hash=c.hash(old);
+  state=c.prepareUpdateAttempt(state,'index',config.index,published,now);
+  let head='a'.repeat(40),writes=0;
+  const store={save:async(next,expected)=>{assert.equal(expected,head);state=structuredClone(next);head=String(++writes).padStart(40,'0');return head;}};
+  const second=createUpdateJournal(store,{state,head},config,()=>now+1000);
+  await second.options('index',interrupted).beforeWrite(); // process stops here, before any editor change
+  assert.equal(state.articles.index.hash,c.hash(old));
+  assert.deepEqual(state.pendingUpdates.index.previousAttempts.map(value=>value.targetHash),[c.hash(published)]);
+  const third=createUpdateJournal(store,{state,head},config,()=>now+2000);
+  const pages=fakeMarketingPages(config.index,published);
+  assert.equal(await updateArticle(pages.page,pages.publicPage,config.index,latest,c.hash(old),old,third.options('index',latest)),true);
+  assert.equal(pages.published,latest);
+  assert.equal(pages.events.filter(x=>x==='submit').length,1);
+  assert.deepEqual(state.pendingUpdates.index.previousAttempts.map(value=>value.targetHash),[c.hash(published),c.hash(interrupted)]);
+  const invalid=structuredClone(state);invalid.pendingUpdates.index.previousAttempts=[{sequence:1,targetHash:'unknown',startedAt:new Date(now).toISOString()}];
+  assert.throws(()=>createUpdateJournal(store,{state:invalid,head},config,()=>now),/attempt_invalid/);
+});
+test('an autosaved intermediate draft is retained without treating it as a verified publication',async()=>{
+  const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
+  const old='verified public A',draft='autosaved B',desired='intended C',latest='later D';
+  let state=c.initialState(config);state.articles.index.hash=c.hash(old);
+  state=c.prepareUpdateAttempt(state,'index',config.index,draft,now);
+  let head='a'.repeat(40),writes=0;
+  const store={save:async(next,expected)=>{assert.equal(expected,head);state=structuredClone(next);head=String(++writes).padStart(40,'0');return head;}};
+  const interrupted=createUpdateJournal(store,{state,head},config,()=>now+1000);
+  const options=interrupted.options('index',desired),save=options.beforeWrite;
+  options.beforeWrite=async()=>{await save();throw Error('process stopped after intent');};
+  const first=fakeMarketingPages(config.index,old,{editorText:draft});
+  await assert.rejects(updateArticle(first.page,first.publicPage,config.index,desired,c.hash(old),old,options),/process stopped/);
+  assert.equal(state.articles.index.hash,c.hash(old));
+  assert.equal(first.published,old);
+  assert.equal(first.editor,draft);
+  const resumed=createUpdateJournal(store,{state,head},config,()=>now+2000);
+  const next=fakeMarketingPages(config.index,old,{editorText:draft});
+  assert.equal(await updateArticle(next.page,next.publicPage,config.index,latest,c.hash(old),old,resumed.options('index',latest)),true);
+  assert.equal(next.published,latest);
+});
+test('attempt ancestry is ordered, contiguous and tied to the same verified article epoch',()=>{
+  const {createUpdateJournal}=require('./update-note-marketing');
+  let state=c.initialState(config);
+  state=c.prepareUpdateAttempt(state,'index',config.index,'B',now);
+  state=c.prepareUpdateAttempt(state,'index',config.index,'C',now+1000);
+  state=c.prepareUpdateAttempt(state,'index',config.index,'D',now+2000);
+  const load=value=>createUpdateJournal({}, {state:value,head:'a'.repeat(40)},config,()=>now+3000);
+  load(state);
+  for(const mutate of [a=>a.previousAttempts.reverse(),a=>a.previousAttempts.pop(),a=>a.previousAttempts.push(a.previousAttempts[0]),
+    a=>a.previousAttempts[0].sequence=9,a=>a.previousAttempts[0].startedAt=new Date(now+9000).toISOString(),
+    a=>a.previousAttempts[0].targetHash='unknown',a=>a.fromHash=c.hash('other verified epoch'),a=>a.articleId=config.guide.id]) {
+    const bad=structuredClone(state);mutate(bad.pendingUpdates.index);assert.throws(()=>load(bad),/attempt_invalid/);
+  }
+  assert.throws(()=>c.prepareUpdateAttempt(state,'index',config.index,'E',now-1),/attempt_invalid/);
+});

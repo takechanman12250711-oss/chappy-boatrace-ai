@@ -145,10 +145,20 @@ function editDiagnostics(actual, previousHash, desired, previousText = null) {
 }
 function validateUpdateAttempt(attempt, article, previousHash) {
   if (!attempt) return null;
+  const digest = value => /^[a-f0-9]{64}$/.test(value || '');
   if (attempt.version !== 'note-marketing-update-attempt-v1' || attempt.articleId !== article.id ||
-      attempt.fromHash !== previousHash || !/^[a-f0-9]{64}$/.test(attempt.fromHash || '') ||
-      !/^[a-f0-9]{64}$/.test(attempt.targetHash || '') || !Number.isFinite(Date.parse(attempt.startedAt))) {
+      attempt.fromHash !== previousHash || !digest(attempt.fromHash) || !digest(attempt.targetHash) ||
+      !Number.isFinite(Date.parse(attempt.startedAt)) || !Number.isSafeInteger(attempt.sequence) || attempt.sequence < 1 ||
+      !Array.isArray(attempt.previousAttempts) || attempt.previousAttempts.length !== attempt.sequence - 1) {
     throw new Error('marketing_update_attempt_invalid');
+  }
+  let lastTime = -Infinity;
+  for (const [index, earlier] of [...attempt.previousAttempts, attempt].entries()) {
+    const time = Date.parse(earlier?.startedAt);
+    if (earlier?.sequence !== index + 1 || !digest(earlier?.targetHash) || !Number.isFinite(time) || time < lastTime) {
+      throw new Error('marketing_update_attempt_invalid');
+    }
+    lastTime = time;
   }
   return attempt;
 }
@@ -156,12 +166,18 @@ function updateAttempt(state, key, article) {
   return validateUpdateAttempt(state.pendingUpdates?.[key], article, state.articles[key]?.hash);
 }
 function prepareUpdateAttempt(state, key, article, desired, now) {
-  updateAttempt(state, key, article);
+  const previous = updateAttempt(state, key, article);
   const fromHash = state.articles[key]?.hash;
-  if (!/^[a-f0-9]{64}$/.test(fromHash || '') || !Number.isFinite(now)) throw new Error('marketing_update_attempt_invalid');
+  if (!/^[a-f0-9]{64}$/.test(fromHash || '') || !Number.isFinite(now) ||
+      (previous && now < Date.parse(previous.startedAt))) throw new Error('marketing_update_attempt_invalid');
   return { ...state, articles: { ...state.articles }, pendingUpdates: { ...state.pendingUpdates,
     [key]: { version: 'note-marketing-update-attempt-v1', articleId: article.id,
-      fromHash, targetHash: hash(desired), startedAt: new Date(now).toISOString() } } };
+      fromHash, targetHash: hash(desired), startedAt: new Date(now).toISOString(),
+      // A retry may persist C then stop before replacing published/draft B.
+      // Keep every earlier generated target in this same verified-hash epoch.
+      sequence: previous ? previous.sequence + 1 : 1,
+      previousAttempts: previous ? [...previous.previousAttempts, {sequence:previous.sequence,
+        targetHash:previous.targetHash, startedAt:previous.startedAt}] : [] } } };
 }
 function requireEditable(actual, previousHash, desired) {
   if (hash(actual) !== previousHash && hash(actual) !== hash(desired)) throw new Error('marketing_manual_change_review_required');
