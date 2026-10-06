@@ -49,3 +49,9 @@ configにコードSHAと方式を固定する。`adoptionGate:null`、`usableFor
 [independent-partner-study-v1.md](independent-partner-study-v1.md) の別枠 `partnerStudy` を追加する。前日までの公式実コース履歴を元ファイルSHA・対象期間とともに投影し、取得済み公式一周があれば同時保存する。主展開の条件付き役割から2・3着の部分順位と全候補を作り、競合する根拠や7券超過は無理に解消しない。旧展示優位candidateとflowStudyは同じコード・契約を保持する。
 
 新枠は `selectionImplemented=true` だが全8段階完成ではなく、販売・コロがしへの利用はfalse。旧v1〜v3へ追記せず、partnerStudyの最初の有効v4 sealだけを別集計する。日次レポートの同名枠で、全候補成績と同一入力・同一点数の比較を分ける。
+
+## 条件付き進路・当地の比較（snapshot-v5）
+
+[independent-route-water-study-v1.md](independent-route-water-study-v1.md) の `routeWaterStudy` を追加する。実進入に基づく想定進路・競合・必要条件と公式気象を保存し、上位判断が完全同値の場合だけ当地2連率・3連率を比較する。母数・対象期間は不明の参考値として扱う。実際の旋回や気象別の艇適性を観測したものではない。
+
+旧v1〜v4と各方式の最初のsealを保ち、新研究は最初のv5を別集計する。同じv5入力のpartnerStudy（selector-v1）と同点数で比較する。従来の頭・役割・技量条件は維持し、新規取得・cron・自動採用は追加しない。

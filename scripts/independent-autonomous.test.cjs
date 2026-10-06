@@ -15,7 +15,8 @@ const response=(date='Sat, 14 Sep 2030 06:00:02 GMT',a=metadata)=>async()=>({ok:
 function setup(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'independent-auto-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   for(const file of ['config/independent-autonomous-forward.json','scripts/independent-autonomous-candidate.cjs',
     'config/independent-flow-study-v1.json','scripts/independent-flow-roles-v1.cjs',
-    'config/independent-partner-study-v1.json','scripts/independent-partner-context-v1.cjs','scripts/independent-partner-selector-v1.cjs']){
+    'config/independent-partner-study-v1.json','scripts/independent-partner-context-v1.cjs','scripts/independent-partner-selector-v1.cjs',
+    'config/independent-route-water-study-v1.json','scripts/independent-route-water-v1.cjs','scripts/independent-partner-selector-v2.cjs']){
     fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});fs.copyFileSync(path.resolve(__dirname,'..',file),path.join(root,file));}
   return {root,out:path.join(root,'capture')};}
 async function sealed(t,change=()=>{}){const x=setup(t),data=official();change(data);f.createRecorder(x.root,x.out,env,()=>clock)(data,target);await f.seal(x.root,x.out,env,response());return x;}
@@ -86,22 +87,23 @@ test('new captures bind judgment facts into the seal while legacy snapshots rema
   const x=setup(t),raw=official();raw.entries[0].avgSt=.15;
   f.createRecorder(x.root,x.out,env,()=>clock)(raw,target);
   const file=path.join(x.out,fs.readdirSync(x.out)[0]),s=JSON.parse(fs.readFileSync(file));
-  assert.equal(s.version,'independent-autonomous-snapshot-v4');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
+  assert.equal(s.version,'independent-autonomous-snapshot-v5');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
   assert.equal(s.judgmentContext.inputHash,s.inputHash);assert.deepEqual(s.candidate,candidate.select(s.input));
   const p=f.protocol(x.root);assert.equal(f.validate(s,p),true);
   const missing=structuredClone(s);delete missing.judgmentContext;assert.throws(()=>f.validate(missing,p),/judgment_context/);
-  missing.version='independent-autonomous-snapshot-v1';delete missing.flowStudy;delete missing.partnerStudy;assert.equal(f.validate(missing,p),true);
-  const legacy=structuredClone(s);legacy.version='independent-autonomous-snapshot-v2';delete legacy.flowStudy;delete legacy.partnerStudy;assert.equal(f.validate(legacy,p),true);
+  missing.version='independent-autonomous-snapshot-v1';delete missing.flowStudy;delete missing.partnerStudy;delete missing.routeWaterStudy;assert.equal(f.validate(missing,p),true);
+  const legacy=structuredClone(s);legacy.version='independent-autonomous-snapshot-v2';delete legacy.flowStudy;delete legacy.partnerStudy;delete legacy.routeWaterStudy;assert.equal(f.validate(legacy,p),true);
   const altered=structuredClone(s);altered.flowStudy.judgment.decision.actor=6;assert.throws(()=>f.validate(altered,p),/flow_judgment/);
   await f.seal(x.root,x.out,env,response());const report=f.report(x.root);
   assert.equal(report.judgmentContext.captured,1);assert.equal(report.judgmentContext.legacyWithoutContext,0);
   assert.equal(report.judgmentContext.judgmentImplemented,false);assert.equal(report.usableForPrediction,false);
   assert.equal(report.flowStudy.sealed,1);assert.equal(report.flowStudy.ticketPerformanceAvailable,false);
 });
-test('v4 captures source histories and selected tickets through sealing and official accounting',async t=>{
+test('v5 captures source histories and selected tickets through sealing and official accounting',async t=>{
   const x=setup(t),raw=official(),history={schemaVersion:1,source:'boatrace-official',generatedAt:'2030-09-13T01:00:00Z',
     firstDate:'20270914',lastDate:'20300913',analysisWindow:{latestDate:'20300913'},thresholds:{minimumSamples:12},racers:{}};
-  for(const e of raw.entries){e.registerNo=String(5100+e.boat);e.officialStartRank={version:'official-course-start-rank-v1',status:'available',
+  raw.weather={windSpeed:2,waveHeight:2,windDirection:'横風'};
+  for(const e of raw.entries){e.local2Rate=30;e.local3Rate=50;e.registerNo=String(5100+e.boat);e.officialStartRank={version:'official-course-start-rank-v1',status:'available',
     source:'boatrace-official-course',registerNo:e.registerNo,sourceUrl:`https://www.boatrace.jp/owpc/pc/data/racersearch/course?toban=${e.registerNo}`,
     sourceSha256:'a'.repeat(64),fetchedAt:new Date(clock-2000).toISOString(),referenceOnly:true,population:'general-only-unconfirmed',byCourse:{1:3,2:3,3:3,4:3,5:3,6:3}};
     const byCourse=Object.fromEntries([1,2,3,4,5,6].map(course=>[course,{course,starts:30,wins:5,top3:18,winningMethods:[{key:'差し',count:5}]}]));
@@ -113,6 +115,8 @@ test('v4 captures source histories and selected tickets through sealing and offi
   assert.equal(s.partnerStudy.context.history.sha256,candidate.hash(bytes));assert.deepEqual(s.partnerStudy.judgment.tickets,['1-2-3','1-3-2']);
   result(x);const r=f.report(x.root);assert.equal(r.partnerStudy.allCandidate.hits,1);assert.equal(r.partnerStudy.paired.count,1);
   assert.equal(r.partnerStudy.allCandidate.stake,200);assert.equal(r.partnerStudy.allCandidate.returned,1200);assert.equal(r.partnerStudy.actualPurchase,false);
+  assert.equal(r.routeWaterStudy.sealed,1);assert.equal(r.routeWaterStudy.allCandidate.hits,1);assert.equal(r.routeWaterStudy.paired.count,1);
+  assert.equal(r.routeWaterStudy.baselineMethod,'independent-partner-selector-v1');assert.equal(r.routeWaterStudy.coverage.weatherAvailableRaces,1);
 });
 test('first seal including a skip stays fixed; modified source or method is rejected',async t=>{
   const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
@@ -129,7 +133,7 @@ test('new studies start their first-seal cohort without replacing the earlier v2
   const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
   const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
   const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v2';
-  delete legacy.snapshot.flowStudy;delete legacy.snapshot.partnerStudy;legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));
+  delete legacy.snapshot.flowStudy;delete legacy.snapshot.partnerStudy;delete legacy.snapshot.routeWaterStudy;legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));
   const bytes=f.json(legacy);fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
   const out=path.join(x.root,'v3'),p=f.protocol(x.root);
   assert.equal(f.cohort(x.root,p,null,{studyOnly:true}).rows.length,0);
@@ -142,10 +146,10 @@ test('new studies start their first-seal cohort without replacing the earlier v2
   const report=f.report(x.root);assert.equal(report.skipped.start_marker_present,1);assert.equal(report.flowStudy.sealed,1);
   fs.appendFileSync(path.join(x.root,'scripts/independent-flow-roles-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/flow_protocol/);
 });
-test('v4 preserves an earlier v3 flow judgment while starting a separate partner cohort',async t=>{
+test('v5 preserves an earlier v3 flow judgment while starting a separate partner cohort',async t=>{
   const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
   const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
-  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v3';delete legacy.snapshot.partnerStudy;
+  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v3';delete legacy.snapshot.partnerStudy;delete legacy.snapshot.routeWaterStudy;
   legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));const bytes=f.json(legacy);
   fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
   const out=path.join(x.root,'v4'),p=f.protocol(x.root);
@@ -153,7 +157,7 @@ test('v4 preserves an earlier v3 flow judgment while starting a separate partner
   f.createRecorder(x.root,out,env,()=>clock+10000)(official(),target);
   await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
   assert.equal(f.cohort(x.root,p,null,{studyOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v3');
-  assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v4');
+  assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v5');
   const report=f.report(x.root);assert.equal(report.flowStudy.unresolved['exhibition-start-marker'],1);
   assert.equal(report.partnerStudy.sealed,1);assert.equal(report.partnerStudy.skipped['course-history-insufficient'],1);
   fs.appendFileSync(path.join(x.root,'scripts/independent-partner-selector-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/partner_protocol/);
@@ -191,4 +195,24 @@ test('collector captures official evidence before normal evaluation, even if tha
   const record=f.createRecorder(x.root,x.out,env,()=>clock);
   const r=await collector.evaluateTargets('20300914',[target],{allRaces:true,onOfficialRace:record});
   assert.equal(r.comparison.length,0);assert.equal(f.prepare(x.root,x.out,env),1);
+});
+
+test('v5 starts a new cohort without replacing an earlier v4 partner skip',async t=>{
+  const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
+  const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
+  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v4';delete legacy.snapshot.routeWaterStudy;
+  legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));const bytes=f.json(legacy);
+  fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
+  const out=path.join(x.root,'v5'),p=f.protocol(x.root);
+  assert.equal(f.cohort(x.root,p,null,{waterOnly:true}).rows.length,0);
+  f.createRecorder(x.root,out,env,()=>clock+10000)(official(),target);
+  await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
+  assert.equal(f.cohort(x.root,p,null,{partnerOnly:true}).rows[0].snapshot.version,'independent-autonomous-snapshot-v4');
+  const current=f.cohort(x.root,p,null,{waterOnly:true}).rows[0].snapshot;
+  assert.equal(current.version,'independent-autonomous-snapshot-v5');
+  const tampered=structuredClone(current);tampered.routeWaterStudy.context.routes[0].actualTurnObserved=true;
+  assert.throws(()=>f.validate(tampered,p),/route_water_replay/);
+  assert.equal(f.createRecorder(x.root,path.join(x.root,'again-v5'),env,()=>clock+20000)(official(),target).status,'already-captured');
+  const report=f.report(x.root);assert.equal(report.partnerStudy.skipped['main-scenario-unresolved'],1);assert.equal(report.routeWaterStudy.sealed,1);
+  fs.appendFileSync(path.join(x.root,'scripts/independent-route-water-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/water_protocol/);
 });
