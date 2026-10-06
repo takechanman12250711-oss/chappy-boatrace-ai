@@ -410,7 +410,9 @@ jobs:
   diagnostics:
     needs: collect
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Restored history, the bounded monitor, source validation and artifact upload
+    # must all finish; the 45-minute limit interrupted validation after the build.
+    timeout-minutes: 60
     outputs:
       artifact_id: ${{ steps.reports.outputs.artifact-id }}
     steps:
