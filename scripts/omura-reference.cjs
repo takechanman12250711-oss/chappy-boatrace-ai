@@ -14,7 +14,10 @@ function text(html) {
     .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').normalize('NFKC');
 }
 function tickets(value, allowNone = false) {
-  const s = value.normalize('NFKC').trim().replace(/[−‐–]/g, '-');
+  // The reporter also uses the Japanese prolonged sound mark as a dash.
+  // Normalize only separators; the strict formation grammar below still
+  // rejects unknown or partially readable ticket notation in full.
+  const s = value.normalize('NFKC').trim().replace(/[−‐–ー]/g, '-');
   if (allowNone && /^(?:なし|無し)$/.test(s)) return [];
   const parts = s.split(/[\s、,\/]+/).filter(Boolean), out = new Set();
   if (!parts.length) throw new Error('tickets_missing');
@@ -68,9 +71,22 @@ function parsePage(bytes, { date, raceNo }) {
   }
   if (exhibition.length !== 6 || new Set(exhibition.map(e=>e.boat)).size !== 6)
     throw new Error('source_exhibition_incomplete');
-  return { status: 'ready', encoding, raceKey: `${date}-24-${raceNo}`,
-    deadlineAt: iso(deadline[1]), updatedAt: iso(updated[1]),
-    mainTickets: tickets(main[1]), aimTickets: tickets(aim[1], true), exhibition };
+  const source = { encoding, raceKey: `${date}-24-${raceNo}`,
+    deadlineAt: iso(deadline[1]), updatedAt: iso(updated[1]) };
+  // Keep the extracted page notation before separator expansion. The page
+  // text has already been decoded/NFKC-normalized; this is not raw HTML.
+  const ticketNotation = { main: main[1].trim(), aim: aim[1].trim() };
+  try {
+    return { status: 'ready', ...source, ticketNotation,
+      mainTickets: tickets(ticketNotation.main), aimTickets: tickets(ticketNotation.aim, true), exhibition };
+  } catch (error) {
+    // A rejected form must remain diagnosable without copying the article
+    // or being admitted into the immutable prospective comparison corpus.
+    error.sourceDiagnostic = { ...source,
+      ticketNotation: Object.fromEntries(Object.entries(ticketNotation).map(([k,v]) => [k,v.slice(0,256)])),
+      ticketNotationTruncated: Object.values(ticketNotation).some(v => v.length > 256) };
+    throw error;
+  }
 }
 function normalizeTickets(values) {
   if (!Array.isArray(values) || !values.length || values.length > 10) throw new Error('chappy_tickets_invalid');
