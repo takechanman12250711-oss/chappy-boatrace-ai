@@ -672,14 +672,15 @@
       root.requestAnimationFrame?.(() => section?.scrollIntoView?.({ behavior: "auto", block: "start" }));
 
       if (view === "result") {
-        const status = document.getElementById("resultSyncStatus");
-        if (status) {
-          status.hidden = false;
-          status.textContent = "結果分析を読み込んでいます…";
-        }
+        // 読込・照合の状態は各処理が管理する。再タップで完了表示を読込中へ戻さない。
         root.ChappyAppRuntime?.ensure?.("stats").catch(error => {
           console.error("結果分析の読み込みエラー", error);
-          if (status) status.textContent = "結果分析を読み込めませんでした。もう一度お試しください。";
+          const status = document.getElementById("resultSyncStatus");
+          if (status) {
+            status.hidden = false;
+            status.dataset.state = "warning";
+            status.textContent = "結果分析を読み込めませんでした。もう一度お試しください。";
+          }
         });
       }
     });

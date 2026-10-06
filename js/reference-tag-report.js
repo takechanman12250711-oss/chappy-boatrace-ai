@@ -75,7 +75,7 @@
       <article class="official-reference-item">
         <header>
           <strong>${escapeHtml(item.label)}</strong>
-          <span>${escapeHtml(item.status)}</span>
+          <span>${escapeHtml(item.status === "参考度高" ? "3着内率55%以上" : item.status)}</span>
         </header>
         <dl>
           <div><dt>対象</dt><dd>${item.samples}R</dd></div>
@@ -117,11 +117,13 @@
               <div class="official-reference-lead">
                 <strong>BOAT RACE公式 ${settled}Rを照合</strong>
                 <p>締切前に固定した展示・ST・当地実績・風・波を、日和準拠形式で${matched}R分析しています。</p>
+                <p>集計：${escapeHtml(root.ChappyAutoStats?.formatEvidenceTime?.(report.generatedAt) || report.generatedAt || "未確認")} ／ 指標なし ${typeof report.untaggedRaceCount === "number" && Number.isFinite(report.untaggedRaceCount) && report.untaggedRaceCount >= 0 ? report.untaggedRaceCount : "未確認"}R</p>
               </div>
               <div class="official-reference-grid">
                 ${rows.map(renderRow).join("")}
               </div>
-              <p class="result-panel-note">相関確認の参考値です。ボートレース日和の直接取得は使わず、予想・印・買い目へ自動反映しません。${legacy ? `旧保存分${legacy}Rは公式API収集経路を根拠に含みます。` : ""}</p>
+              <p class="result-panel-note">保存データの相関です。対象20件以上・3着内率55%以上の表示は、予想の改善効果や確かさの証明ではありません。</p>
+              <details class="result-inner-details"><summary>集計対象・出典の説明</summary><p class="result-panel-note">ボートレース日和の直接取得は使わず、予想・印・買い目へ自動反映しません。${legacy ? `旧保存分${legacy}Rは公式API収集経路を根拠に含みます。` : ""}</p></details>
             `
           : '<p class="official-reference-empty">公式データを蓄積中です。</p>';
 

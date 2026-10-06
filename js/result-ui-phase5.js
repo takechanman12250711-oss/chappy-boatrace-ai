@@ -155,19 +155,29 @@
     candidateReportRequest ||= readReport(liveReport).catch(() => readReport(localReport))
       .catch(() => { candidateReportRequest = null; return null; });
     candidateReportRequest.then(report => {
-      if (!report || !area.isConnected || document.getElementById("candidate24Performance")) return;
+      if (!area.isConnected || document.getElementById("candidate24Performance")) return;
       const card = document.createElement("section");
       card.id = "candidate24Performance";
       card.style.cssText = "padding:16px;margin-bottom:14px;border:1px solid #29404d;border-radius:16px;color:inherit";
       const heading = document.createElement("h3"); heading.textContent = "最大24点候補の成績"; card.appendChild(heading);
+      if (!report || report.version !== "candidate24-report-v1") {
+        const warning = document.createElement("p");
+        warning.textContent = "全期間の集計を取得できませんでした。更新して再確認してください。";
+        card.appendChild(warning); area.before(card); return;
+      }
       const period = document.createElement("p");
       period.textContent = report.from && report.to ? `保存予想の全期間：${report.from}〜${report.to}` : "保存予想の照合待ち";
       card.appendChild(period);
+      const evidence = document.createElement("p");
+      const asOf = root.ChappyAutoStats?.formatEvidenceTime?.(report.generatedAt) || report.generatedAt || "未確認";
+      const count = value => root.ChappyAutoStats?.formatEvidenceCount?.(value) ?? "未確認";
+      evidence.textContent = `集計：${asOf} ／ 結果待ち ${count(report.pending)} ／ 返還・不成立除外 ${count(report.excludedRefundOrVoid)} ／ 払戻未確認 ${count(report.unknownPayout)}`;
+      card.appendChild(evidence);
       const percent = v => Number.isFinite(v) ? v.toFixed(1) + "%" : "集計待ち";
       for (const [key, label] of [["candidate24", "最大24点候補"], ["practical", "同じレースの実戦厳選"]]) {
         const m = report[key]; if (!m) continue;
         const line = document.createElement("p");
-        line.textContent = `${label}：的中率 ${percent(m.hitRate)} ／ 回収率 ${percent(m.recoveryRate)}（${Number(m.races) || 0}R）`;
+        line.textContent = `${label}：的中率 ${m.races > 0 ? percent(m.hitRate) : "—"} ／ 回収率 ${m.races > 0 ? percent(m.recoveryRate) : "—"}（${count(m.races)}）`;
         card.appendChild(line);
       }
       const note = document.createElement("small");
