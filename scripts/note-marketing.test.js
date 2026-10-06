@@ -135,3 +135,49 @@ test('anonymous verification requires full text and clickable navigation',async(
   links=[];
   await assert.rejects(verifyPublic(publicPage,article,desired),/public_content_mismatch/);
 });
+test('edit-review diagnostics locate public/editor drift without logging text or relaxing the guard',()=>{
+  const {requireArticleEditable}=require('./update-note-marketing');
+  const old='known line\nhttps://note.com/great_robin3243', desired='new approved line';
+  const actual=old+' ', diagnostic=c.editDiagnostics(actual,c.hash(old),desired,old);
+  assert.deepEqual(diagnostic.whitespaceCandidates.previous,['terminalAsciiSpace','terminalWhitespace','lineEndWhitespace']);
+  assert.equal(diagnostic.previousComparison.firstDifferentLine,2);
+  assert.equal(diagnostic.desiredComparison.firstDifferentLine,1);
+  assert.equal(c.editDiagnostics(actual,c.hash(old),desired,'wrong reconstruction').previousComparison,null);
+  assert.throws(()=>c.requireEditable(actual,c.hash(old),desired),/manual_change/,'diagnosis is not permission to trim');
+  const messages=[], original=console.error;
+  try {
+    console.error=message=>messages.push(message);
+    for (const stage of ['public','editor']) {
+      assert.throws(()=>requireArticleEditable('private draft addition',c.hash(old),desired,config.guide,stage,old),/manual_change/);
+    }
+  } finally { console.error=original; }
+  assert.equal(messages.length,2);
+  assert.equal(messages.some(message=>message.includes('private draft addition') || message.includes('known line') || message.includes(desired)),false);
+  const report=JSON.parse(messages[1].split('NOTE_MARKETING_EDIT_REVIEW=')[1]);
+  assert.equal(report.stage,'editor');
+  assert.equal(report.articleId,config.guide.id);
+  assert.deepEqual(report.whitespaceCandidates,{previous:[],desired:[]});
+});
+test('previous body diagnostics use only a hash-verified reconstruction at the original publication time',()=>{
+  const {previousArticleText}=require('./update-note-marketing');
+  const state=c.initialState(config);
+  assert.equal(previousArticleText(state,config,'guide'),config.guide.initialBody);
+  assert.equal(previousArticleText(state,config,'index'),null);
+  const publishedAt='2026-09-28T14:00:00Z';
+  state.articles.index={verifiedAt:publishedAt,hash:c.hash(c.publishedIndexBody(state,config,Date.parse(publishedAt)))};
+  assert.equal(previousArticleText(state,config,'index'),c.publishedIndexBody(state,config,Date.parse(publishedAt)));
+  state.articles.index.hash=c.hash('an older generator output');
+  assert.equal(previousArticleText(state,config,'index'),null);
+});
+test('public manual-change diagnostics stop before opening the editor or submitting',async()=>{
+  const {updateArticle}=require('./update-note-marketing');
+  let editorOpened=false;
+  const publicPage={goto:async()=>({ok:()=>true}),url:()=>config.guide.url,
+    getByRole:()=>({waitFor:async()=>{},count:async()=>0}),
+    locator:()=>({count:async()=>1,innerText:async()=>'unknown added text',locator:()=>({evaluateAll:async()=>[]})})};
+  const original=console.error; console.error=()=>{};
+  try {
+    await assert.rejects(updateArticle({goto:async()=>{editorOpened=true;}},publicPage,config.guide,config.guide.initialBody,c.hash(config.guide.initialBody)),/manual_change/);
+    assert.equal(editorOpened,false);
+  } finally {console.error=original;}
+});

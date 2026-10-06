@@ -117,7 +117,33 @@ function publishedIndexBody(state, config, now = Date.now()) {
   if (extra && (extra.version !== 'note-korogashi-index-v1' || typeof extra.text !== 'string')) throw Error('marketing_course_snapshot_invalid');
   return indexBody(state.rows, config, now) + (extra?.text ? '\n\n' + extra.text : '');
 }
+// Diagnostics never authorize an edit. In particular, whitespace candidates
+// are only reported for review; requireEditable below remains exact and closed.
+// Do not log article text: an unexpected draft can contain private additions.
+function editDiagnostics(actual, previousHash, desired, previousText = null) {
+  const current = String(actual || '');
+  const previousVerified = typeof previousText === 'string' && hash(previousText) === previousHash;
+  const variants = {
+    terminalAsciiSpace: current.replace(/ +(?=[\r\n]*$)/u, ''),
+    terminalWhitespace: current.replace(/[\t \u00a0]+(?=[\r\n]*$)/u, ''),
+    lineEndWhitespace: current.replace(/[\t \u00a0]+(?=\r?$)/gmu, ''),
+    zeroWidthCharacters: current.replace(/[\u200b\u200c\u200d\ufeff]/gu, '')
+  };
+  const matches = expectedHash => Object.entries(variants)
+    .filter(([, value]) => value !== current && hash(value) === expectedHash).map(([name]) => name);
+  const comparison = expected => {
+    const a = contentLines(marketingText(current)), b = contentLines(marketingText(expected));
+    let first = 0;
+    while (first < a.length && first < b.length && a[first] === b[first]) first++;
+    return { actualLines: a.length, expectedLines: b.length,
+      firstDifferentLine: first === a.length && first === b.length ? null : first + 1 };
+  };
+  return { actualHash: hash(current), previousHash, desiredHash: hash(desired),
+    desiredComparison: comparison(desired),
+    previousComparison: previousVerified ? comparison(previousText) : null,
+    whitespaceCandidates: { previous: matches(previousHash), desired: matches(hash(desired)) } };
+}
 function requireEditable(actual, previousHash, desired) {
   if (hash(actual) !== previousHash && hash(actual) !== hash(desired)) throw new Error('marketing_manual_change_review_required');
 }
-module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, recentDates, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, publishedIndexBody, initialState, requireEditable };
+module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, recentDates, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, publishedIndexBody, initialState, requireEditable, editDiagnostics };

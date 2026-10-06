@@ -1,6 +1,6 @@
 'use strict';
 const fs = require('node:fs');
-const { loadConfig, publishedIndexBody, hash, urlsIn, requireEditable, sameMarketingContent } = require('./note-marketing-content');
+const { loadConfig, publishedIndexBody, hash, urlsIn, requireEditable, sameMarketingContent, editDiagnostics } = require('./note-marketing-content');
 const { client } = require('./note-marketing-store');
 const { readEditorContent } = require('./note-editor-content');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
@@ -21,9 +21,29 @@ async function verifyPublic(page, article, desired) {
   if (!sameMarketingContent(value.text, desired) || urlsIn(desired).some(url=>!value.links.includes(url))) throw new Error('marketing_public_content_mismatch');
   return value;
 }
-async function updateArticle(page, publicPage, article, desired, previousHash) {
+function requireArticleEditable(actual, previousHash, desired, article, stage, previousText) {
+  try { requireEditable(actual, previousHash, desired); }
+  catch (error) {
+    if (error.message === 'marketing_manual_change_review_required') {
+      console.error(`NOTE_MARKETING_EDIT_REVIEW=${JSON.stringify({articleId:article.id, stage,
+        ...editDiagnostics(actual, previousHash, desired, previousText)})}`);
+    }
+    throw error;
+  }
+}
+function previousArticleText(state, config, key) {
+  const article = state.articles[key];
+  let text = key === 'guide' ? config.guide.initialBody : null;
+  if (key === 'index' && Number.isFinite(Date.parse(article?.verifiedAt))) {
+    text = publishedIndexBody(state, config, Date.parse(article.verifiedAt));
+  }
+  // An older generator may not be reproducible from today's code. Never label
+  // a guessed rendering as the previous verified body.
+  return typeof text === 'string' && hash(text) === article?.hash ? text : null;
+}
+async function updateArticle(page, publicPage, article, desired, previousHash, previousText = null) {
   const current = await readPublic(publicPage, article);
-  requireEditable(current.text, previousHash, desired);
+  requireArticleEditable(current.text, previousHash, desired, article, 'public', previousText);
   if (sameMarketingContent(current.text, desired) && urlsIn(desired).every(url=>current.links.includes(url))) return false;
   const editUrl = `https://editor.note.com/notes/${article.id}/edit/`;
   await page.goto(editUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
@@ -31,7 +51,7 @@ async function updateArticle(page, publicPage, article, desired, previousHash) {
   const input = await waitForVisibleAcrossFrames(page, ['.ProseMirror[contenteditable="true"]']);
   if (page.url() !== editUrl || !title || !input || (await title.inputValue()).trim() !== article.title) throw new Error('marketing_editor_identity_mismatch');
   // Refuse to overwrite a human edit or a different pending draft.
-  requireEditable(await readEditorContent(input), previousHash, desired);
+  requireArticleEditable(await readEditorContent(input), previousHash, desired, article, 'editor', previousText);
   await fillDraft(page, { title: article.title, body: desired });
   const settings = page.getByRole('button', { name: /^(公開に進む|公開設定)$/ });
   if (await settings.count() !== 1) throw new Error('marketing_settings_button_missing');
@@ -78,7 +98,7 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
     publicContext = await browser.newContext();
     const publicPage = await publicContext.newPage();
     for (const key of ['guide','index']) {
-      if (await update(page, publicPage, config[key], desired[key], state.articles[key].hash)) updates.push(key);
+      if (await update(page, publicPage, config[key], desired[key], state.articles[key].hash, previousArticleText(loaded.state, config, key))) updates.push(key);
       await verifyPublic(publicPage, config[key], desired[key]);
       state.articles[key] = { hash: hash(desired[key]), url: config[key].url, verifiedAt: new Date(clock()).toISOString() };
       if (key === 'index' && korogashi.needsPublication(courses.state)) {
@@ -114,4 +134,4 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   }
 }
 if (require.main === module) run().catch(error=>{console.error(`NOTE_MARKETING_FAILED=${error.message}`);process.exitCode=1;});
-module.exports = { BODY, readPublic, verifyPublic, updateArticle, run };
+module.exports = { BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, run };

@@ -343,3 +343,7 @@ node scripts/check-charter.js
 ## 2026-10-06 独立候補の無人研究
 
 `docs/independent-autonomous-candidate.md` を参照。既存live-noteが通常AI評価前の公式解析データから、限定した展示優位仮説を無人生成し、締切前artifact確認後だけ不変保存する。既存日次auditが公式結果を照合する。Chat判断の移植や合意済み8段階の完全再現ではない。人の役割評価による旧比較とは別方式・別コホート。通常記事の公開を先行し、新cron・Work定期タスク・有料APIを作らない。採用gate未登録、usableForPrediction=false、automaticApplication=falseを維持し、研究候補を有料記事・コロがしへ流さない。実レース未取得や0件を自動予想の運用完成と扱わない。
+
+### 手編集ガードの安全な原因確認
+
+`marketing_manual_change_review_required` は上書きせず停止する。`NOTE_MARKETING_EDIT_REVIEW` は対象記事ID、公開面／編集面、本文hash、最初の相違行番号、末尾等の空白を除いた場合の既知hash一致候補だけを記録する。本文、未知の下書き、認証情報はログへ出さない。前回本文は保存済みhashと一致して再構成できた場合だけ比較する。候補の表示は編集許可ではなく、手編集の意図と実内容を確認するまでhashの更新や比較の緩和を行わない。
