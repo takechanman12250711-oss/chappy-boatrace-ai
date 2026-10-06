@@ -3,6 +3,7 @@ const fs=require('node:fs'), path=require('node:path');
 const {VERSION,hash,officialInput,select}=require('./independent-autonomous-candidate.cjs');
 const {writeOnce,stats}=require('./independent-rule-forward.cjs');
 const judgmentContext=require('./independent-judgment-context.cjs');
+const flowJudgment=require('./independent-flow-roles-v1.cjs');
 const REPO='takechanman12250711-oss/chappy-boatrace-ai';
 const json=x=>JSON.stringify(x)+'\n';
 const read=file=>JSON.parse(fs.readFileSync(file,'utf8'));
@@ -11,7 +12,11 @@ function protocol(root){
   const raw=fs.readFileSync(path.join(root,'config/independent-autonomous-forward.json')),p=JSON.parse(raw);
   if(p.method!==VERSION || p.usableForPrediction!==false || p.automaticApplication!==false || p.adoptionGate!==null ||
       p.codeHash!==hash(fs.readFileSync(path.join(root,'scripts/independent-autonomous-candidate.cjs'))))fail('protocol_invalid');
-  return {value:p,hash:hash(raw)};
+  const studyRaw=fs.readFileSync(path.join(root,'config/independent-flow-study-v1.json')),study=JSON.parse(studyRaw);
+  if(study.version!=='independent-flow-study-v1'||study.method!==flowJudgment.VERSION||study.usableForPrediction!==false||
+    study.automaticApplication!==false||study.selectionImplemented!==false||study.adoptionGate!==null||
+    study.codeHash!==hash(fs.readFileSync(path.join(root,'scripts/independent-flow-roles-v1.cjs'))))fail('flow_protocol_invalid');
+  return {value:p,hash:hash(raw),study:{value:study,hash:hash(studyRaw)}};
 }
 function context(env){
   if(env.GITHUB_REPOSITORY!==REPO || env.GITHUB_REF!=='refs/heads/main' || !/^\d+$/.test(env.GITHUB_RUN_ID||'') ||
@@ -19,7 +24,7 @@ function context(env){
 }
 function validate(s,p){
   const i=s?.input;
-  if(!['independent-autonomous-snapshot-v1','independent-autonomous-snapshot-v2'].includes(s?.version) || s.protocolHash!==p.hash ||
+  if(!['independent-autonomous-snapshot-v1','independent-autonomous-snapshot-v2','independent-autonomous-snapshot-v3'].includes(s?.version) || s.protocolHash!==p.hash ||
       !/^\d{8}-(0[1-9]|1\d|2[0-4])-([1-9]|1[0-2])$/.test(i?.raceKey||'') ||
       i.raceKey!==`${i.date}-${i.jcd}-${i.raceNo}` || i.provenance!=='parsed-official-response' ||
       !/^\d+$/.test(s.runId||'') || !/^\d+$/.test(s.runAttempt||'') || !/^[a-f0-9]{40}$/.test(s.workflowHead||'') ||
@@ -29,8 +34,12 @@ function validate(s,p){
     entryUrl:i.urls?.[0],beforeInfoUrl:i.urls?.[1],entries:i.rows.map(r=>({boat:r.boat,exhibition:{displayTime:r.displayTime}})),
     startExhibition:i.rows.map(r=>({...r,mappingSource:'official-start-image'}))},i,Date.parse(s.selectedAt));
   if(json(again)!==json(i) || json(select(i))!==json(s.candidate))fail('replay_mismatch');
-  if(s.version==='independent-autonomous-snapshot-v2')judgmentContext.validate(s.judgmentContext,i);
+  if(s.version!=='independent-autonomous-snapshot-v1')judgmentContext.validate(s.judgmentContext,i);
   else if(s.judgmentContext!==undefined)fail('legacy_context_unexpected');
+  if(s.version==='independent-autonomous-snapshot-v3'){
+    if(s.flowStudy?.protocolHash!==p.study.hash)fail('flow_protocol_mismatch');
+    flowJudgment.validate(s.flowStudy.judgment,i,s.judgmentContext);
+  }else if(s.flowStudy!==undefined)fail('legacy_flow_unexpected');
   return true;
 }
 function files(root,date){
@@ -38,7 +47,7 @@ function files(root,date){
   return fs.existsSync(base)?fs.readdirSync(base).filter(d=>/^\d{8}$/.test(d)&&(!date||date===d)).sort()
     .flatMap(d=>fs.readdirSync(path.join(base,d)).filter(f=>f.endsWith('.json')).sort().map(f=>path.join(base,d,f))):[];
 }
-function cohort(root,p,date){
+function cohort(root,p,date,{studyOnly=false}={}){
   const byRace=new Map(),rejected={};
   for(const file of files(root,date))try{
     const raw=fs.readFileSync(file),r=JSON.parse(raw),s=r.snapshot,a=r.artifact;
@@ -48,6 +57,7 @@ function cohort(root,p,date){
         a.name!==`independent-autonomous-${s.runId}-${s.runAttempt}` || a.runId!==s.runId || a.workflowHead!==s.workflowHead ||
         !(Date.parse(s.selectedAt)<Date.parse(a.createdAt)+1000 && Date.parse(a.createdAt)<=Date.parse(a.confirmedAt) &&
           Date.parse(a.confirmedAt)<Date.parse(s.input.deadlineAt)))fail('seal_invalid');
+    if(studyOnly&&s.version!=='independent-autonomous-snapshot-v3')continue;
     const old=byRace.get(s.input.raceKey),order=x=>`${x.artifact.confirmedAt}|${x.snapshotHash}`;
     if(!old || order(r)<order(old))byRace.set(s.input.raceKey,r);
   }catch(e){rejected[e.message]=(rejected[e.message]||0)+1;}
@@ -55,7 +65,7 @@ function cohort(root,p,date){
 }
 function createRecorder(root,out,env=process.env,now=Date.now){
   context(env);const p=protocol(root),date=new Date(now()+9*3600000).toISOString().slice(0,10).replaceAll('-','');
-  const seen=new Set(cohort(root,p,date).rows.map(r=>r.snapshot.input.raceKey));
+  const seen=new Set(cohort(root,p,date,{studyOnly:true}).rows.map(r=>r.snapshot.input.raceKey));
   fs.mkdirSync(out,{recursive:true});if(fs.readdirSync(out).length)fail('capture_directory_not_empty');
   return (data,target)=>{
     const clock=now();
@@ -63,9 +73,11 @@ function createRecorder(root,out,env=process.env,now=Date.now){
     const i=officialInput(data,target,clock);
     if(!i)return {status:'waiting-exhibition'};
     if(seen.has(i.raceKey))return {status:'already-captured'};
-    const s={version:'independent-autonomous-snapshot-v2',protocolHash:p.hash,input:i,inputHash:hash(json(i)),
+    const contextValue=judgmentContext.capture(data,i);
+    const s={version:'independent-autonomous-snapshot-v3',protocolHash:p.hash,input:i,inputHash:hash(json(i)),
       selectedAt:new Date(clock).toISOString(),runId:env.GITHUB_RUN_ID,runAttempt:env.GITHUB_RUN_ATTEMPT,
-      workflowHead:env.GITHUB_SHA,candidate:select(i),judgmentContext:judgmentContext.capture(data,i)};
+      workflowHead:env.GITHUB_SHA,candidate:select(i),judgmentContext:contextValue,
+      flowStudy:{protocolHash:p.study.hash,judgment:flowJudgment.judge(i,contextValue)}};
     validate(s,p);const bytes=json(s);writeOnce(path.join(out,hash(bytes)+'.json'),bytes);seen.add(i.raceKey);
     return {status:s.candidate.status,raceKey:i.raceKey,reason:s.candidate.reason};
   };
@@ -106,12 +118,13 @@ async function seal(root,out,env=process.env,fetcher=fetch){
 }
 function report(root){
   const p=protocol(root),c=cohort(root,p),{resultOf,chooseOfficialResult}=require('./audit-escape-main.cjs'),contract=require('./analysis-input-contract');
-  const wanted=new Set(c.rows.map(r=>r.snapshot.input.raceKey)),results=new Map(),conflicts=new Set();
+  const flowCohort=cohort(root,p,null,{studyOnly:true});
+  const wanted=new Set([...c.rows,...flowCohort.rows].map(r=>r.snapshot.input.raceKey)),results=new Map(),conflicts=new Set();
   const add=r=>{const key=contract.raceKey(r);if(!wanted.has(key))return;
     const a=resultOf(results.get(key)),b=resultOf(r);
     if(a&&b&&json([a.actual,a.payout,a.excluded])!==json([b.actual,b.payout,b.excluded]))conflicts.add(key);
     results.set(key,chooseOfficialResult(results.get(key),r));};
-  for(const date of new Set(c.rows.map(r=>r.snapshot.input.date))){const file=path.join(root,'data/results',date+'.json');if(fs.existsSync(file))(read(file).races||[]).forEach(add);}
+  for(const date of new Set([...c.rows,...flowCohort.rows].map(r=>r.snapshot.input.date))){const file=path.join(root,'data/results',date+'.json');if(fs.existsSync(file))(read(file).races||[]).forEach(add);}
   const ledger=path.join(root,'data/stats/race-review-results.json');if(fs.existsSync(ledger))Object.values(read(ledger).races||{}).forEach(add);
   const skipped={},groups={};
   for(const r of c.rows)if(r.snapshot.candidate.status==='skipped'){
@@ -132,9 +145,10 @@ function report(root){
     usableForPrediction:false,automaticApplication:false,decisionGate:{status:'INSUFFICIENT_EVIDENCE',reason:'No registered adoption gate'},
     coverage:'first remote-sealed complete official input among existing live-note fetches; not all races',
     sealed:c.rows.length,rejected:c.rejected,skipped,groups,
-    judgmentContext:{captured:c.rows.filter(r=>r.snapshot.version==='independent-autonomous-snapshot-v2').length,
+    judgmentContext:{captured:c.rows.filter(r=>r.snapshot.version!=='independent-autonomous-snapshot-v1').length,
       legacyWithoutContext:c.rows.filter(r=>r.snapshot.version==='independent-autonomous-snapshot-v1').length,
-      judgmentImplemented:false,usedForCandidateSelection:false}};
+      judgmentImplemented:false,usedForCandidateSelection:false},
+    flowStudy:require('./independent-flow-study-report.cjs').build(flowCohort,p.study,results,conflicts,resultOf)};
   const file=path.join(root,'data/stats/independent-autonomous-report.json');fs.mkdirSync(path.dirname(file),{recursive:true});
   fs.writeFileSync(file+'.tmp',json(r));fs.renameSync(file+'.tmp',file);
   console.log(JSON.stringify({sealed:r.sealed,skipped,groups,usableForPrediction:false}));return r;

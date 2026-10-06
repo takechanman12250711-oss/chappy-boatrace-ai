@@ -35,3 +35,11 @@ configにコードSHAと方式を固定する。`adoptionGate:null`、`usableFor
 通常AIの頭・評価・買い目、オッズ、結果、派生historyContextは取り込まない。データはparserが返した公式項目で、HTML原文そのものではない。展示・進入/STは従来input、追加材料は `judgmentContext` に保存し、両者のレース・取得時刻・入力hashを一致させ、snapshot全体を既存artifactへ封印する。旧snapshot-v1へ後付けしない。レポートではcontext保存件数と旧形式の件数を分ける。
 
 候補選定器・固定方式・既存の候補と見送りは変更しない。追加材料はまだ候補判断に使わず、`judgmentImplemented=false` / `usedForCandidateSelection=false` を明示する。この変更は8段階判断の完成でも販売用自動化でもない。次は保存材料と既存の人の役割評価を使い、展開・残し/拾いの成立条件と欠測時の見送りを固定し、独立した新しい検証として比較する。数字だけによる頭決定や未検証の加点を本番へ接続しない。
+
+## 展開・残し／拾いの別枠判断（snapshot-v3）
+
+次工程は [independent-flow-roles-v1.md](independent-flow-roles-v1.md) に固定した研究版。旧展示優位の `candidate` とそのprotocolは維持し、新しい `flowStudy` を同じ公式input・judgmentContextから作る。新しい方式hashと判断結果をsnapshot-v3に含め、既存artifactへ同時に締切前保存する。旧v1/v2を再解釈・補完しない。
+
+「展開・コース・ST・展示・残し／拾い」の限定した仮説は自動判定する。差し場の実際の開き、当地・水面の展開補正、技量の戦法適性、モーター評価、2着と3着の優先順は未実装。判断資料であるcontext自体の `judgmentImplemented=false` は保持し、実装状態は `flowStudy.judgment.stages` と `fullJudgmentImplemented=false` で確認する。買い目は生成せず、販売・コロがしへ渡さない。
+
+旧展示優位の母数は全旧形式を含めた各レース最初の有効sealを維持する。新しいflowStudyはsnapshot-v3の各レース・方式で最初の有効sealだけを別集計する。同じレースに旧v2と新v3があっても合算せず、旧入力に新判断を後付けしない。日次レポート内の `flowStudy` が正式な新方式の件数・未確定理由・頭の参考一致・条件付き役割の観測を示す。的中率・ROI・実際の決まり手の検証と混同しない。
