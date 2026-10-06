@@ -22,6 +22,39 @@ function matched(r){return Boolean(r?.resultMatched===true||r?.officialResultMat
 function predictedHead(r){return String(r?.predictedHead||r?.prediction?.head||r?.marks?.head||r?.prediction?.verificationEvidence?.mainScenario?.headBoatNo||'');}
 function logicFingerprint(r){return r?.logicFingerprint||r?.cohortFingerprint||r?.shadowV2Reference?.logicFingerprint||r?.prediction?.verificationEvidence?.generation?.logicFingerprint||null;}
 function theoryIds(r){const direct=arr(r?.theoryIds||r?.theories).map(String);if(direct.length)return direct;return arr(r?.prediction?.verificationEvidence?.theoryClaims).map(x=>String(x?.theoryKey||'')).filter(Boolean);}
+// Daily files contain large runtime snapshots. Retain only the existing input
+// contract and classification inputs before accumulating the full corpus.
+// Do not filter here: even an empty-ticket primary row must override a
+// verification row for the same race in the shared canonical merge.
+function compactPredictionRecord(record={}){
+ const prediction=record?.prediction||record||{};
+ const pick=(value,keys)=>Object.fromEntries(keys.map(key=>[key,value?.[key]]));
+ const compactConditions=value=>value&&typeof value==='object'?pick(value,[
+  'schemaVersion','source','dataSource','sourceTiming','sourceFetchedAt','officialResultUsed'
+ ]):value;
+ return{
+  ...pick(record,[
+   'recordKey','raceKey','id','date','raceDate','targetDate','jcd','placeCode','raceNo','rno',
+   'selectedAt','capturedAt','createdAt','deadlineAt','deadline','verificationMode',
+   'isRetrospective','officialResultUsedForPrediction','officialResultUsedForEvaluation',
+   'missingRequiredData','ticketCapDropped','ratedBoatNotPropagated','theoryTriggered','ticketsChanged'
+  ]),
+  race:pick(record?.race,['date','jcd','placeCode','raceNo','rno']),
+  preRaceConditions:compactConditions(record?.preRaceConditions),
+  prediction:{
+   ...pick(prediction,['isRetrospective','predictionMode','officialResultUsedForPrediction','officialResultUsedForEvaluation']),
+   preRaceConditions:compactConditions(prediction?.preRaceConditions)
+  },
+  finalTickets:arr(ticketValues(record)).map(value=>typeof value==='string'?value:pick(value,['combination','ticket'])),
+  predictedHead:predictedHead(record),
+  logicFingerprint:logicFingerprint(record),
+  theoryIds:theoryIds(record),
+  resultMatched:matched(record),
+  result:{trifecta:resultCombo(record)},
+  propagation:pick(record?.propagation,['ticketCapDropped','ratedBoatNotPropagated','ticketsChanged']),
+  missCause:pick(record?.missCause,['code','reason'])
+ };
+}
 function classify(r){
  const combo=resultCombo(r), ts=tickets(r), hit=combo&&ts.some(t=>String(t).replace(/[^1-6]/g,'')===combo);
  if(hit)return{code:'HIT',reason:'official trifecta is present in final tickets'};
@@ -54,7 +87,7 @@ function load(options={}){
  const root=options.root||ROOT;
  const predictionsDir=options.predictionsDir||path.join(root,'data','predictions');
  const resultsDir=options.resultsDir||path.join(root,'data','results');
- const cohort=inputContract.buildDefaultCohort({root,predictionsDir,resultsDir});
+ const cohort=inputContract.buildDefaultCohort({root,predictionsDir,resultsDir,compactPredictionRecord});
  return cohort.records.filter(r=>tickets(r).length>0);
 }
 function build(records=[],options={}){
@@ -73,4 +106,4 @@ function build(records=[],options={}){
  return{schemaVersion:1,analysisId:'phase9-live-improvement-cycle-v1',generatedAt:new Date().toISOString(),productionChanged:false,summary:{matchedRows:rows.length,hits:rows.filter(x=>x.hit).length,misses:rows.filter(x=>!x.hit).length,duplicates:duplicates.length,patterns:patterns.length,eligibleCandidates:0},taxonomy:[...TAXONOMY],rows,patterns,handoff:{target:'scripts/theory-validation-phase8-cycle.cjs',eligibleCandidates:[],automaticProductionChange:false,approvalStop:'CANDIDATE_FOR_USER_APPROVAL'},audit:{phase8Complete:p8.phaseComplete===true,matchedOnly:true,duplicateRaceRecords:duplicates.length,ambiguousMissReasons:rows.filter(x=>!x.hit&&(!TAXONOMY.has(x.missReason)||!x.reason)).length,rejectedCandidateRetest:0,candidateFingerprintUnique:true,brokenHandoff:0,productionPredictionChanged:false},phaseComplete:p8.phaseComplete===true&&duplicates.length===0&&rows.every(x=>x.hit||TAXONOMY.has(x.missReason))};
 }
 if(require.main===module){const out=build(load());const a=process.argv.find(x=>x.startsWith('--output='));if(a){const d=path.resolve(ROOT,a.slice(9));fs.mkdirSync(path.dirname(d),{recursive:true});fs.writeFileSync(d,JSON.stringify(out,null,2)+'\n');}process.stdout.write(JSON.stringify(out,null,2)+'\n');if(!out.phaseComplete)process.exitCode=1;}
-module.exports={TAXONOMY,attachOfficialResults,build,classify,load,logicFingerprint,predictedHead,recordsFromIndex,resultCombo,theoryIds,tickets};
+module.exports={TAXONOMY,attachOfficialResults,build,classify,compactPredictionRecord,load,logicFingerprint,predictedHead,recordsFromIndex,resultCombo,theoryIds,tickets};

@@ -4,6 +4,8 @@ on:
     paths:
       - 'scripts/phase9-live-improvement-cycle.cjs'
       - 'tests/phase9-live-improvement-cycle.test.cjs'
+      - 'tests/phase9-input-compaction.test.cjs'
+      - 'scripts/analysis-input-contract.js'
       - 'scripts/run-live-improvement-cycle.cjs'
       - 'tests/run-live-improvement-cycle.test.cjs'
       - 'scripts/build-learning-analysis-pipeline.js'
@@ -22,9 +24,15 @@ jobs:
         with: {node-version: 20}
       - run: node --check scripts/phase9-live-improvement-cycle.cjs
       - run: node tests/phase9-live-improvement-cycle.test.cjs
+      - run: node tests/phase9-input-compaction.test.cjs
       - run: node --check scripts/run-live-improvement-cycle.cjs
       - run: node tests/run-live-improvement-cycle.test.cjs
-      - run: node scripts/run-live-improvement-cycle.cjs
+      - name: Verify restored diagnostic input and downstream reports
+        run: |
+          node scripts/restore-daily-prediction-source.js --all
+          node scripts/run-live-improvement-cycle.cjs
+          node scripts/build-learning-pipeline-gate.js
+          node scripts/build-phase6-data-audit.js
       - name: Guard production prediction files
         shell: bash
         run: |
