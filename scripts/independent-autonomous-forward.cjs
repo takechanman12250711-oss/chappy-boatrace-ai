@@ -6,6 +6,7 @@ const judgmentContext=require('./independent-judgment-context.cjs');
 const flowJudgment=require('./independent-flow-roles-v1.cjs');
 const partnerContext=require('./independent-partner-context-v1.cjs'),partnerJudgment=require('./independent-partner-selector-v1.cjs');
 const routeWater=require('./independent-route-water-v1.cjs'),waterSelector=require('./independent-partner-selector-v2.cjs');
+const weatherHistory=require('./independent-weather-context-v1.cjs');
 const REPO='takechanman12250711-oss/chappy-boatrace-ai';
 const json=x=>JSON.stringify(x)+'\n';
 const read=file=>JSON.parse(fs.readFileSync(file,'utf8'));
@@ -31,7 +32,13 @@ function protocol(root){
     water.usableForPrediction!==false||water.automaticApplication!==false||water.adoptionGate!==null||
     Object.keys(water.codeHashes||{}).length!==waterDependencies.length||
     waterDependencies.some(file=>water.codeHashes[file]!==hash(fs.readFileSync(path.join(root,file)))))fail('water_protocol_invalid');
-  return {value:p,hash:hash(raw),water:{value:water,hash:hash(waterRaw)},study:{value:study,hash:hash(studyRaw)},partner:{value:partner,hash:hash(partnerRaw)}};
+  const weatherRaw=fs.readFileSync(path.join(root,'config/independent-weather-study-v1.json')),weather=JSON.parse(weatherRaw);
+  const weatherDependencies=['scripts/independent-weather-history-v1.cjs','scripts/independent-weather-context-v1.cjs'];
+  if(weather.version!=='independent-weather-study-v1'||weather.method!==weatherHistory.VERSION||weather.selectionImplemented!==false||
+    weather.usableForPrediction!==false||weather.automaticApplication!==false||weather.adoptionGate!==null||
+    Object.keys(weather.codeHashes||{}).length!==weatherDependencies.length||
+    weatherDependencies.some(file=>weather.codeHashes[file]!==hash(fs.readFileSync(path.join(root,file)))))fail('weather_protocol_invalid');
+  return {value:p,hash:hash(raw),weather:{value:weather,hash:hash(weatherRaw)},water:{value:water,hash:hash(waterRaw)},study:{value:study,hash:hash(studyRaw)},partner:{value:partner,hash:hash(partnerRaw)}};
 }
 function context(env){
   if(env.GITHUB_REPOSITORY!==REPO || env.GITHUB_REF!=='refs/heads/main' || !/^\d+$/.test(env.GITHUB_RUN_ID||'') ||
@@ -39,7 +46,7 @@ function context(env){
 }
 function validate(s,p){
   const i=s?.input;
-  if(!['independent-autonomous-snapshot-v1','independent-autonomous-snapshot-v2','independent-autonomous-snapshot-v3','independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5'].includes(s?.version) || s.protocolHash!==p.hash ||
+  if(!['independent-autonomous-snapshot-v1','independent-autonomous-snapshot-v2','independent-autonomous-snapshot-v3','independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5','independent-autonomous-snapshot-v6'].includes(s?.version) || s.protocolHash!==p.hash ||
       !/^\d{8}-(0[1-9]|1\d|2[0-4])-([1-9]|1[0-2])$/.test(i?.raceKey||'') ||
       i.raceKey!==`${i.date}-${i.jcd}-${i.raceNo}` || i.provenance!=='parsed-official-response' ||
       !/^\d+$/.test(s.runId||'') || !/^\d+$/.test(s.runAttempt||'') || !/^[a-f0-9]{40}$/.test(s.workflowHead||'') ||
@@ -51,18 +58,22 @@ function validate(s,p){
   if(json(again)!==json(i) || json(select(i))!==json(s.candidate))fail('replay_mismatch');
   if(s.version!=='independent-autonomous-snapshot-v1')judgmentContext.validate(s.judgmentContext,i);
   else if(s.judgmentContext!==undefined)fail('legacy_context_unexpected');
-  if(['independent-autonomous-snapshot-v3','independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5'].includes(s.version)){
+  if(['independent-autonomous-snapshot-v3','independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5','independent-autonomous-snapshot-v6'].includes(s.version)){
     if(s.flowStudy?.protocolHash!==p.study.hash)fail('flow_protocol_mismatch');
     flowJudgment.validate(s.flowStudy.judgment,i,s.judgmentContext);
   }else if(s.flowStudy!==undefined)fail('legacy_flow_unexpected');
-  if(['independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5'].includes(s.version)){
+  if(['independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5','independent-autonomous-snapshot-v6'].includes(s.version)){
     if(s.partnerStudy?.protocolHash!==p.partner.hash)fail('partner_protocol_mismatch');
     partnerJudgment.validate(s.partnerStudy.judgment,i,s.judgmentContext,s.flowStudy.judgment,s.partnerStudy.context);
   }else if(s.partnerStudy!==undefined)fail('legacy_partner_unexpected');
-  if(s.version==='independent-autonomous-snapshot-v5'){
+  if(['independent-autonomous-snapshot-v5','independent-autonomous-snapshot-v6'].includes(s.version)){
     if(s.routeWaterStudy?.protocolHash!==p.water.hash)fail('water_protocol_mismatch');
     waterSelector.validate(s.routeWaterStudy.judgment,i,s.judgmentContext,s.flowStudy.judgment,s.partnerStudy.context,s.routeWaterStudy.context);
   }else if(s.routeWaterStudy!==undefined)fail('legacy_water_unexpected');
+  if(s.version==='independent-autonomous-snapshot-v6'){
+    if(s.weatherHistoryStudy?.protocolHash!==p.weather.hash)fail('weather_protocol_mismatch');
+    weatherHistory.validate(s.weatherHistoryStudy.context,i,s.judgmentContext);
+  }else if(s.weatherHistoryStudy!==undefined)fail('legacy_weather_unexpected');
   return true;
 }
 function files(root,date){
@@ -70,7 +81,7 @@ function files(root,date){
   return fs.existsSync(base)?fs.readdirSync(base).filter(d=>/^\d{8}$/.test(d)&&(!date||date===d)).sort()
     .flatMap(d=>fs.readdirSync(path.join(base,d)).filter(f=>f.endsWith('.json')).sort().map(f=>path.join(base,d,f))):[];
 }
-function cohort(root,p,date,{studyOnly=false,partnerOnly=false,waterOnly=false}={}){
+function cohort(root,p,date,{studyOnly=false,partnerOnly=false,waterOnly=false,weatherOnly=false}={}){
   const byRace=new Map(),rejected={};
   for(const file of files(root,date))try{
     const raw=fs.readFileSync(file),r=JSON.parse(raw),s=r.snapshot,a=r.artifact;
@@ -80,9 +91,10 @@ function cohort(root,p,date,{studyOnly=false,partnerOnly=false,waterOnly=false}=
         a.name!==`independent-autonomous-${s.runId}-${s.runAttempt}` || a.runId!==s.runId || a.workflowHead!==s.workflowHead ||
         !(Date.parse(s.selectedAt)<Date.parse(a.createdAt)+1000 && Date.parse(a.createdAt)<=Date.parse(a.confirmedAt) &&
           Date.parse(a.confirmedAt)<Date.parse(s.input.deadlineAt)))fail('seal_invalid');
-    if(studyOnly&&!['independent-autonomous-snapshot-v3','independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5'].includes(s.version))continue;
-    if(partnerOnly&&!['independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5'].includes(s.version))continue;
-    if(waterOnly&&s.version!=='independent-autonomous-snapshot-v5')continue;
+    if(studyOnly&&!['independent-autonomous-snapshot-v3','independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5','independent-autonomous-snapshot-v6'].includes(s.version))continue;
+    if(partnerOnly&&!['independent-autonomous-snapshot-v4','independent-autonomous-snapshot-v5','independent-autonomous-snapshot-v6'].includes(s.version))continue;
+    if(waterOnly&&!['independent-autonomous-snapshot-v5','independent-autonomous-snapshot-v6'].includes(s.version))continue;
+    if(weatherOnly&&s.version!=='independent-autonomous-snapshot-v6')continue;
     const old=byRace.get(s.input.raceKey),order=x=>`${x.artifact.confirmedAt}|${x.snapshotHash}`;
     if(!old || order(r)<order(old))byRace.set(s.input.raceKey,r);
   }catch(e){rejected[e.message]=(rejected[e.message]||0)+1;}
@@ -90,8 +102,8 @@ function cohort(root,p,date,{studyOnly=false,partnerOnly=false,waterOnly=false}=
 }
 function createRecorder(root,out,env=process.env,now=Date.now){
   context(env);const p=protocol(root),date=new Date(now()+9*3600000).toISOString().slice(0,10).replaceAll('-','');
-  const seen=new Set(cohort(root,p,date,{waterOnly:true}).rows.map(r=>r.snapshot.input.raceKey));
-  const skillSource=partnerContext.load(root);
+  const seen=new Set(cohort(root,p,date,{weatherOnly:true}).rows.map(r=>r.snapshot.input.raceKey));
+  const skillSource=partnerContext.load(root),weatherSource=weatherHistory.load(root);
   fs.mkdirSync(out,{recursive:true});if(fs.readdirSync(out).length)fail('capture_directory_not_empty');
   return (data,target)=>{
     const clock=now();
@@ -102,12 +114,13 @@ function createRecorder(root,out,env=process.env,now=Date.now){
     const contextValue=judgmentContext.capture(data,i);
     const flow=flowJudgment.judge(i,contextValue),support=partnerContext.capture(data,i,contextValue,skillSource);
     const waterContext=routeWater.judge(i,contextValue,flow);
-    const s={version:'independent-autonomous-snapshot-v5',protocolHash:p.hash,input:i,inputHash:hash(json(i)),
+    const s={version:'independent-autonomous-snapshot-v6',protocolHash:p.hash,input:i,inputHash:hash(json(i)),
       selectedAt:new Date(clock).toISOString(),runId:env.GITHUB_RUN_ID,runAttempt:env.GITHUB_RUN_ATTEMPT,
       workflowHead:env.GITHUB_SHA,candidate:select(i),judgmentContext:contextValue,
       flowStudy:{protocolHash:p.study.hash,judgment:flow},
       partnerStudy:{protocolHash:p.partner.hash,context:support,judgment:partnerJudgment.judge(i,contextValue,flow,support)},
-      routeWaterStudy:{protocolHash:p.water.hash,context:waterContext,judgment:waterSelector.judge(i,contextValue,flow,support,waterContext)}};
+      routeWaterStudy:{protocolHash:p.water.hash,context:waterContext,judgment:waterSelector.judge(i,contextValue,flow,support,waterContext)},
+      weatherHistoryStudy:{protocolHash:p.weather.hash,context:weatherHistory.capture(i,contextValue,weatherSource)}};
     validate(s,p);const bytes=json(s);writeOnce(path.join(out,hash(bytes)+'.json'),bytes);seen.add(i.raceKey);
     return {status:s.candidate.status,raceKey:i.raceKey,reason:s.candidate.reason};
   };
@@ -150,7 +163,8 @@ function report(root){
   const p=protocol(root),c=cohort(root,p),{resultOf,chooseOfficialResult}=require('./audit-escape-main.cjs'),contract=require('./analysis-input-contract');
   const flowCohort=cohort(root,p,null,{studyOnly:true});
   const partnerCohort=cohort(root,p,null,{partnerOnly:true}),waterCohort=cohort(root,p,null,{waterOnly:true});
-  const allRows=[...c.rows,...flowCohort.rows,...partnerCohort.rows,...waterCohort.rows];
+  const weatherCohort=cohort(root,p,null,{weatherOnly:true});
+  const allRows=[...c.rows,...flowCohort.rows,...partnerCohort.rows,...waterCohort.rows,...weatherCohort.rows];
   const wanted=new Set(allRows.map(r=>r.snapshot.input.raceKey)),results=new Map(),conflicts=new Set();
   const add=r=>{const key=contract.raceKey(r);if(!wanted.has(key))return;
     const a=resultOf(results.get(key)),b=resultOf(r);
@@ -182,7 +196,8 @@ function report(root){
       judgmentImplemented:false,usedForCandidateSelection:false},
     flowStudy:require('./independent-flow-study-report.cjs').build(flowCohort,p.study,results,conflicts,resultOf),
     partnerStudy:require('./independent-partner-study-report.cjs').build(partnerCohort,p.partner,results,conflicts,resultOf),
-    routeWaterStudy:require('./independent-route-water-report.cjs').build(waterCohort,p.water,results,conflicts,resultOf)};
+    routeWaterStudy:require('./independent-route-water-report.cjs').build(waterCohort,p.water,results,conflicts,resultOf),
+    weatherHistoryStudy:weatherHistory.report(weatherCohort)};
   const file=path.join(root,'data/stats/independent-autonomous-report.json');fs.mkdirSync(path.dirname(file),{recursive:true});
   fs.writeFileSync(file+'.tmp',json(r));fs.renameSync(file+'.tmp',file);
   console.log(JSON.stringify({sealed:r.sealed,skipped,groups,usableForPrediction:false}));return r;
