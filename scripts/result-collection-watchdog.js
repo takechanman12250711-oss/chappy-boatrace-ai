@@ -2,6 +2,67 @@
 const { createHash } = require("node:crypto");
 const ISSUE_TITLE = "[自動監視] 結果収集workflow異常";
 const HOUR = 3600000;
+const COLLECTOR_PATH = ".github/workflows/collect-results.yml";
+const newestFirst = (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id;
+function isCollector(run) {
+  return run?.path === COLLECTOR_PATH && run.head_branch === "main" &&
+    Number.isSafeInteger(run.id) && run.id > 0 && Number.isFinite(Date.parse(run.created_at));
+}
+// The workflow-specific first page has returned historical runs while newer
+// collectors were present in the repository listing. Read every page of each
+// recent window instead, without relying on API order or a delayed event alone.
+// Three-hour windows stay below GitHub's 1,000-result filtered-search limit in
+// normal operation. A truncated/inconsistent read must not close an incident or
+// dispatch a duplicate recovery run.
+async function latestCollectorRun({ github, owner, repo, now = new Date(),
+  since = scheduledAfter(dueDates(now)[0]), eventRunId }) {
+  const until = now.getTime();
+  if (!Number.isFinite(since) || !Number.isFinite(until) || since > until || until - since > 36 * HOUR)
+    throw new Error("Invalid collector lookup window");
+  let anchor;
+  if (eventRunId != null) {
+    const { data } = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: eventRunId });
+    if (!isCollector(data) || data.id !== eventRunId || Date.parse(data.created_at) > until)
+      throw new Error("Collector completion event does not match main workflow");
+    anchor = data;
+  }
+  let selected;
+  for (let end = until; end >= since;) {
+    const start = Math.max(since, end - 3 * HOUR);
+    const seen = new Map();
+    let total;
+    for (let page = 1; page <= 10; page++) {
+      const { data } = await github.rest.actions.listWorkflowRunsForRepo({ owner, repo,
+        branch: "main", created: `${new Date(start).toISOString()}..${new Date(end).toISOString()}`,
+        per_page: 100, page });
+      if (!Number.isInteger(data.total_count) || data.total_count < 0 || data.total_count > 1000 ||
+          !Array.isArray(data.workflow_runs) || (total != null && total !== data.total_count))
+        throw new Error("Collector run listing is incomplete or changed during pagination");
+      total = data.total_count;
+      for (const run of data.workflow_runs) {
+        const created = Date.parse(run.created_at);
+        if (!Number.isSafeInteger(run.id) || !Number.isFinite(created) || created < start || created > end)
+          throw new Error("Collector run listing returned an invalid or out-of-window run");
+        seen.set(run.id, run);
+      }
+      if (seen.size === total) break;
+      if (data.workflow_runs.length < 100 || page === 10 || seen.size > total)
+        throw new Error("Collector run listing pagination is incomplete");
+    }
+    selected = [...seen.values()].filter(isCollector).sort(newestFirst)[0];
+    if (selected || start === since) break;
+    end = start; // Inclusive boundary duplicates across windows are harmless.
+  }
+  // A known newer event missing from the listing means that read is unreliable.
+  // Old events may never replace a newer pending/current collector.
+  if (anchor && Date.parse(anchor.created_at) >= since && (!selected || newestFirst(anchor, selected) < 0))
+    throw new Error("Collector run listing is older than its completion event");
+  if (!selected) return null;
+  const { data: current } = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: selected.id });
+  if (!isCollector(current) || current.id !== selected.id || current.created_at !== selected.created_at)
+    throw new Error("Selected collector run changed identity");
+  return current;
+}
 function dateKey(date) { return date.toISOString().slice(0, 10).replaceAll("-", ""); }
 // By 06:00 JST yesterday's nightly collection is due, including scheduler grace.
 // Before that deadline, today's unrun races and yesterday's retry are not late.
@@ -130,10 +191,8 @@ async function syncIssue({ github, owner, repo, report }) {
 async function runWatchdog({ github, context, core, now = new Date() }) {
   const { owner, repo } = context.repo;
   // Read current main/run state: delayed workflow_run events cannot reopen old incidents.
-  const { data: runs } = await github.rest.actions.listWorkflowRuns({
-    owner, repo, workflow_id: "collect-results.yml", branch: "main", per_page: 20 });
-  const run = runs.workflow_runs.filter(x => x.head_branch === "main")
-    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id)[0];
+  const run = await latestCollectorRun({ github, owner, repo, now,
+    eventRunId: context.payload?.workflow_run?.id });
   const jobs = run ? await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
     owner, repo, run_id: run.id, filter: "all", per_page: 100 }) : [];
   const { data: branch } = await github.rest.repos.getBranch({ owner, repo, branch: "main" });
@@ -152,10 +211,10 @@ async function runWatchdog({ github, context, core, now = new Date() }) {
   }
   const report = evaluate({ now, run, jobs, results });
   const action = await syncIssue({ github, owner, repo, report });
-  core.info(JSON.stringify({ status: report.status, action, stages: report.stages, data: report.data }));
+  core.info(JSON.stringify({ runId: run?.id || null, status: report.status, action, stages: report.stages, data: report.data }));
   await core.summary.addHeading("結果収集監視").addRaw(report.status === "watching"
     ? "結果収集は実行中です。既存の異常Issueは完了確認まで保持します。" : render(report)).write();
   if (report.status === "error") core.setFailed(report.problems.join(" / "));
   return report;
 }
-module.exports = { ISSUE_TITLE, dueDates, inspectResults, evaluate, render, syncIssue, runWatchdog };
+module.exports = { ISSUE_TITLE, dueDates, inspectResults, evaluate, render, syncIssue, latestCollectorRun, runWatchdog };

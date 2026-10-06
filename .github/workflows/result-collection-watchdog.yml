@@ -105,12 +105,9 @@ jobs:
               core.info(`${date}: official results are already complete.`);
               return;
             }
-            const { data: runs } = await github.rest.actions.listWorkflowRuns({
-              owner, repo, workflow_id: 'collect-results.yml', branch: 'main', per_page: 20
-            });
-            const recent = runs.workflow_runs.find(run =>
-              Date.parse(run.created_at) >= now.getTime() - 3 * HOUR
-            );
+            const { latestCollectorRun } = require('./scripts/result-collection-watchdog.js');
+            const recent = await latestCollectorRun({ github, owner, repo, now,
+              since: now.getTime() - 3 * HOUR, eventRunId: context.payload?.workflow_run?.id });
             if (recent) {
               core.info(`${date}: collector run ${recent.id} is recent; skip duplicate recovery dispatch.`);
               return;
