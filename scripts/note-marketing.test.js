@@ -135,3 +135,198 @@ test('anonymous verification requires full text and clickable navigation',async(
   links=[];
   await assert.rejects(verifyPublic(publicPage,article,desired),/public_content_mismatch/);
 });
+test('edit-review diagnostics locate public/editor drift without logging text or relaxing the guard',()=>{
+  const {requireArticleEditable}=require('./update-note-marketing');
+  const old='known line\nhttps://note.com/great_robin3243', desired='new approved line';
+  const actual=old+' ', diagnostic=c.editDiagnostics(actual,c.hash(old),desired,old);
+  assert.deepEqual(diagnostic.whitespaceCandidates.previous,['terminalAsciiSpace','terminalWhitespace','lineEndWhitespace']);
+  assert.equal(diagnostic.previousComparison.firstDifferentLine,2);
+  assert.equal(diagnostic.desiredComparison.firstDifferentLine,1);
+  assert.equal(c.editDiagnostics(actual,c.hash(old),desired,'wrong reconstruction').previousComparison,null);
+  assert.throws(()=>c.requireEditable(actual,c.hash(old),desired),/manual_change/,'diagnosis is not permission to trim');
+  const messages=[], original=console.error;
+  try {
+    console.error=message=>messages.push(message);
+    for (const stage of ['public','editor']) {
+      assert.throws(()=>requireArticleEditable('private draft addition',c.hash(old),desired,config.guide,stage,old),/manual_change/);
+    }
+  } finally { console.error=original; }
+  assert.equal(messages.length,2);
+  assert.equal(messages.some(message=>message.includes('private draft addition') || message.includes('known line') || message.includes(desired)),false);
+  const report=JSON.parse(messages[1].split('NOTE_MARKETING_EDIT_REVIEW=')[1]);
+  assert.equal(report.stage,'editor');
+  assert.equal(report.articleId,config.guide.id);
+  assert.deepEqual(report.whitespaceCandidates,{previous:[],desired:[]});
+});
+test('previous body diagnostics use only a hash-verified reconstruction at the original publication time',()=>{
+  const {previousArticleText}=require('./update-note-marketing');
+  const state=c.initialState(config);
+  assert.equal(previousArticleText(state,config,'guide'),config.guide.initialBody);
+  assert.equal(previousArticleText(state,config,'index'),null);
+  const publishedAt='2026-09-28T14:00:00Z';
+  state.articles.index={verifiedAt:publishedAt,hash:c.hash(c.publishedIndexBody(state,config,Date.parse(publishedAt)))};
+  assert.equal(previousArticleText(state,config,'index'),c.publishedIndexBody(state,config,Date.parse(publishedAt)));
+  state.articles.index.hash=c.hash('an older generator output');
+  assert.equal(previousArticleText(state,config,'index'),null);
+});
+test('public manual-change diagnostics stop before opening the editor or submitting',async()=>{
+  const {updateArticle}=require('./update-note-marketing');
+  let editorOpened=false;
+  const publicPage={goto:async()=>({ok:()=>true}),url:()=>config.guide.url,
+    getByRole:()=>({waitFor:async()=>{},count:async()=>0}),
+    locator:()=>({count:async()=>1,innerText:async()=>'unknown added text',locator:()=>({evaluateAll:async()=>[]})})};
+  const original=console.error; console.error=()=>{};
+  try {
+    await assert.rejects(updateArticle({goto:async()=>{editorOpened=true;}},publicPage,config.guide,config.guide.initialBody,c.hash(config.guide.initialBody)),/manual_change/);
+    assert.equal(editorOpened,false);
+  } finally {console.error=original;}
+});
+function fakeMarketingPages(article, initial, {failAfterSubmit = false, editorText = initial} = {}) {
+  const events=[];
+  let published=initial, edited=editorText, title=article.title, pageUrl='', hasSubmitted=false;
+  const titleInput={count:async()=>1,nth(){return this;},isVisible:async()=>true,inputValue:async()=>title,
+    fill:async value=>{events.push('fill title');title=value;}};
+  const bodyInput={count:async()=>1,nth(){return this;},isVisible:async()=>true,
+    evaluate:async fn=>fn({tagName:'DIV',getAttribute:()=> 'true',innerText:edited}),
+    fill:async value=>{events.push('fill body');edited=value;}};
+  const page={goto:async url=>{events.push('open editor');pageUrl=url;},url:()=>pageUrl,
+    locator:selector=>selector.includes('タイトル')?titleInput:bodyInput,
+    frames:()=>[],mainFrame:()=>null,waitForTimeout:async()=>{},waitForURL:async()=>{},
+    getByRole:(role,{name})=>role==='radio'?{isChecked:async()=>true}:{count:async()=>1,isEnabled:async()=>true,click:async()=>{
+      if (String(name).includes('公開に進む')) {events.push('settings');pageUrl=`https://editor.note.com/notes/${article.id}/publish/`;}
+      else {events.push('submit');published=edited;hasSubmitted=true;}
+    }}};
+  const publicPage={goto:async()=>({ok:()=>!(hasSubmitted&&failAfterSubmit)}),url:()=>article.url,
+    getByRole:()=>({waitFor:async()=>{},count:async()=>0}),
+    locator:()=>({count:async()=>1,innerText:async()=>published,locator:()=>({evaluateAll:async()=>c.urlsIn(published)})})};
+  return {page,publicPage,events,get published(){return published;},get editor(){return edited;}};
+}
+test('publication success followed by verification failure recovers exact pending content after desired changes',async()=>{
+  const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
+  const article=config.index, old='old verified content', first='first generated content', next='new result arrived';
+  let persisted={...c.initialState(config),rows:[],articles:{guide:{hash:c.hash(config.guide.initialBody)},index:{hash:c.hash(old)}}};
+  let head='a'.repeat(40), saves=0;
+  const events=[];
+  const store={save:async(state,expected)=>{assert.equal(expected,head);events.push('save intent');persisted=structuredClone(state);head=(++saves).toString(16).padStart(40,'0');return head;}};
+  const journal=createUpdateJournal(store,{state:persisted,head},config,()=>now);
+  const firstPages=fakeMarketingPages(article,old,{failAfterSubmit:true});
+  const options=journal.options('index',first), persist=options.beforeWrite;
+  options.beforeWrite=async()=>{await persist();firstPages.events.push('intent saved');};
+  await assert.rejects(updateArticle(firstPages.page,firstPages.publicPage,article,first,c.hash(old),old,options),/public_page_unavailable/);
+  assert(firstPages.events.indexOf('intent saved')<firstPages.events.indexOf('fill body'));
+  assert.equal(firstPages.events.filter(x=>x==='submit').length,1);
+  assert.equal(persisted.articles.index.hash,c.hash(old),'unverified target is not recorded as verified');
+  assert.equal(persisted.pendingUpdates.index.targetHash,c.hash(first));
+  assert.equal(firstPages.published,first);
+  const resumed=createUpdateJournal(store,{state:persisted,head},config,()=>now+1000);
+  const secondPages=fakeMarketingPages(article,first);
+  assert.equal(await updateArticle(secondPages.page,secondPages.publicPage,article,next,c.hash(old),old,resumed.options('index',next)),true);
+  assert.equal(secondPages.published,next);
+  assert.equal(secondPages.events.filter(x=>x==='submit').length,1,'first publication is not resent');
+  assert.equal(persisted.pendingUpdates.index.targetHash,c.hash(next));
+  assert.equal(resumed.head,head);
+});
+test('already desired published content is verified without another editor write or submission',async()=>{
+  const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
+  const old='old',desired='published target',state=c.initialState(config);state.articles.index.hash=c.hash(old);
+  const pending=c.prepareUpdateAttempt(state,'index',config.index,desired,now);
+  const journal=createUpdateJournal({save:async()=>{throw Error('no new write expected');}},{state:pending,head:'a'.repeat(40)},config,()=>now);
+  const pages=fakeMarketingPages(config.index,desired);
+  assert.equal(await updateArticle(pages.page,pages.publicPage,config.index,desired,c.hash(old),old,journal.options('index',desired)),false);
+  assert.deepEqual(pages.events,[]);
+});
+test('failed intent persistence, foreign attempts and manual editor changes never permit a write',async()=>{
+  const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
+  const old='old',target='automated target',desired='new desired',state=c.initialState(config);state.articles.index.hash=c.hash(old);
+  const pages=fakeMarketingPages(config.index,old);
+  const blocked=createUpdateJournal({save:async()=>{throw Error('CAS conflict');}},{state,head:'a'.repeat(40)},config,()=>now);
+  await assert.rejects(updateArticle(pages.page,pages.publicPage,config.index,desired,c.hash(old),old,blocked.options('index',desired)),/CAS conflict/);
+  assert.equal(pages.events.some(x=>x.startsWith('fill')||x==='submit'),false);
+  const pending=c.prepareUpdateAttempt(state,'index',config.index,target,now);
+  for (const bad of [{articleId:config.guide.id},{fromHash:c.hash('foreign state')},{targetHash:'bad'},{version:'unknown'},{startedAt:'invalid'}]) {
+    const tampered=structuredClone(pending);Object.assign(tampered.pendingUpdates.index,bad);
+    assert.throws(()=>createUpdateJournal({}, {state:tampered,head:'a'.repeat(40)},config,()=>now),/attempt_invalid/);
+  }
+  let writes=0;
+  const resumed=createUpdateJournal({save:async()=>{writes++;return 'b'.repeat(40);}},{state:pending,head:'a'.repeat(40)},config,()=>now);
+  const manual=fakeMarketingPages(config.index,target,{editorText:target+' human addition'});
+  const original=console.error;console.error=()=>{};
+  try {await assert.rejects(updateArticle(manual.page,manual.publicPage,config.index,desired,c.hash(old),old,resumed.options('index',desired)),/manual_change/);}
+  finally {console.error=original;}
+  assert.equal(writes,0);
+  assert.equal(manual.events.some(x=>x.startsWith('fill')||x==='submit'),false);
+});
+test('verified article checkpoints chain CAS and retain the last verified index rows until complete',async()=>{
+  const {createUpdateJournal}=require('./update-note-marketing');
+  const original=c.initialState(config);original.rows=[{proof:'last verified rows'}];
+  const loaded=structuredClone(original), states=[];let head='a'.repeat(40);
+  const store={save:async(state,expected)=>{assert.equal(expected,head);states.push(structuredClone(state));head=String(states.length).padStart(40,'0');return head;}};
+  const j=createUpdateJournal(store,{state:loaded,head},config,()=>now);
+  await j.options('guide','new guide').beforeWrite();
+  j.verified('guide',{hash:c.hash('new guide'),url:config.guide.url,verifiedAt:new Date(now).toISOString()});
+  await j.options('index','first index').beforeWrite();
+  assert.equal(states[1].articles.guide.hash,c.hash('new guide'));
+  assert.equal(states[1].pendingUpdates.guide,undefined);
+  assert.deepEqual(states[1].rows,original.rows);
+  j.verified('index',{hash:c.hash('first index'),url:config.index.url,verifiedAt:new Date(now).toISOString()});
+  await j.options('index','corrected course index').beforeWrite();
+  assert.equal(states[2].pendingUpdates.index.fromHash,c.hash('first index'));
+  assert.equal(states[2].pendingUpdates.index.targetHash,c.hash('corrected course index'));
+  assert.deepEqual(loaded,original,'source state is not mutated');
+  assert.throws(()=>createUpdateJournal(store,{state:{...original,pendingUpdates:{foreign:{}}},head},config,()=>now),/attempt_invalid/);
+});
+test('a second interruption after replacing an intent preserves the earlier published target',async()=>{
+  const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
+  const old='verified A',published='published B',interrupted='intended C',latest='latest D';
+  let state=c.initialState(config);state.articles.index.hash=c.hash(old);
+  state=c.prepareUpdateAttempt(state,'index',config.index,published,now);
+  let head='a'.repeat(40),writes=0;
+  const store={save:async(next,expected)=>{assert.equal(expected,head);state=structuredClone(next);head=String(++writes).padStart(40,'0');return head;}};
+  const second=createUpdateJournal(store,{state,head},config,()=>now+1000);
+  await second.options('index',interrupted).beforeWrite(); // process stops here, before any editor change
+  assert.equal(state.articles.index.hash,c.hash(old));
+  assert.deepEqual(state.pendingUpdates.index.previousAttempts.map(value=>value.targetHash),[c.hash(published)]);
+  const third=createUpdateJournal(store,{state,head},config,()=>now+2000);
+  const pages=fakeMarketingPages(config.index,published);
+  assert.equal(await updateArticle(pages.page,pages.publicPage,config.index,latest,c.hash(old),old,third.options('index',latest)),true);
+  assert.equal(pages.published,latest);
+  assert.equal(pages.events.filter(x=>x==='submit').length,1);
+  assert.deepEqual(state.pendingUpdates.index.previousAttempts.map(value=>value.targetHash),[c.hash(published),c.hash(interrupted)]);
+  const invalid=structuredClone(state);invalid.pendingUpdates.index.previousAttempts=[{sequence:1,targetHash:'unknown',startedAt:new Date(now).toISOString()}];
+  assert.throws(()=>createUpdateJournal(store,{state:invalid,head},config,()=>now),/attempt_invalid/);
+});
+test('an autosaved intermediate draft is retained without treating it as a verified publication',async()=>{
+  const {createUpdateJournal,updateArticle}=require('./update-note-marketing');
+  const old='verified public A',draft='autosaved B',desired='intended C',latest='later D';
+  let state=c.initialState(config);state.articles.index.hash=c.hash(old);
+  state=c.prepareUpdateAttempt(state,'index',config.index,draft,now);
+  let head='a'.repeat(40),writes=0;
+  const store={save:async(next,expected)=>{assert.equal(expected,head);state=structuredClone(next);head=String(++writes).padStart(40,'0');return head;}};
+  const interrupted=createUpdateJournal(store,{state,head},config,()=>now+1000);
+  const options=interrupted.options('index',desired),save=options.beforeWrite;
+  options.beforeWrite=async()=>{await save();throw Error('process stopped after intent');};
+  const first=fakeMarketingPages(config.index,old,{editorText:draft});
+  await assert.rejects(updateArticle(first.page,first.publicPage,config.index,desired,c.hash(old),old,options),/process stopped/);
+  assert.equal(state.articles.index.hash,c.hash(old));
+  assert.equal(first.published,old);
+  assert.equal(first.editor,draft);
+  const resumed=createUpdateJournal(store,{state,head},config,()=>now+2000);
+  const next=fakeMarketingPages(config.index,old,{editorText:draft});
+  assert.equal(await updateArticle(next.page,next.publicPage,config.index,latest,c.hash(old),old,resumed.options('index',latest)),true);
+  assert.equal(next.published,latest);
+});
+test('attempt ancestry is ordered, contiguous and tied to the same verified article epoch',()=>{
+  const {createUpdateJournal}=require('./update-note-marketing');
+  let state=c.initialState(config);
+  state=c.prepareUpdateAttempt(state,'index',config.index,'B',now);
+  state=c.prepareUpdateAttempt(state,'index',config.index,'C',now+1000);
+  state=c.prepareUpdateAttempt(state,'index',config.index,'D',now+2000);
+  const load=value=>createUpdateJournal({}, {state:value,head:'a'.repeat(40)},config,()=>now+3000);
+  load(state);
+  for(const mutate of [a=>a.previousAttempts.reverse(),a=>a.previousAttempts.pop(),a=>a.previousAttempts.push(a.previousAttempts[0]),
+    a=>a.previousAttempts[0].sequence=9,a=>a.previousAttempts[0].startedAt=new Date(now+9000).toISOString(),
+    a=>a.previousAttempts[0].targetHash='unknown',a=>a.fromHash=c.hash('other verified epoch'),a=>a.articleId=config.guide.id]) {
+    const bad=structuredClone(state);mutate(bad.pendingUpdates.index);assert.throws(()=>load(bad),/attempt_invalid/);
+  }
+  assert.throws(()=>c.prepareUpdateAttempt(state,'index',config.index,'E',now-1),/attempt_invalid/);
+});

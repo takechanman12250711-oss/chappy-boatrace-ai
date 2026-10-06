@@ -1,6 +1,6 @@
 'use strict';
 const fs = require('node:fs');
-const { loadConfig, publishedIndexBody, hash, urlsIn, requireEditable, sameMarketingContent } = require('./note-marketing-content');
+const { loadConfig, publishedIndexBody, hash, urlsIn, requireEditable, sameMarketingContent, editDiagnostics, validateUpdateAttempt, updateAttempt, prepareUpdateAttempt } = require('./note-marketing-content');
 const { client } = require('./note-marketing-store');
 const { readEditorContent } = require('./note-editor-content');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
@@ -21,9 +21,35 @@ async function verifyPublic(page, article, desired) {
   if (!sameMarketingContent(value.text, desired) || urlsIn(desired).some(url=>!value.links.includes(url))) throw new Error('marketing_public_content_mismatch');
   return value;
 }
-async function updateArticle(page, publicPage, article, desired, previousHash) {
+function requireArticleEditable(actual, previousHash, desired, article, stage, previousText, attempt = null) {
+  // An intent is written before any editor change. Only its exact target may
+  // recover a prior successful publish whose verification response was lost.
+  // This never accepts arbitrary page text or general whitespace differences.
+  validateUpdateAttempt(attempt, article, previousHash);
+  const acceptedHash = attempt && attempt.articleId === article.id && attempt.fromHash === previousHash &&
+    [attempt.targetHash, ...attempt.previousAttempts.map(value => value.targetHash)].includes(hash(actual)) ? hash(actual) : previousHash;
+  try { requireEditable(actual, acceptedHash, desired); }
+  catch (error) {
+    if (error.message === 'marketing_manual_change_review_required') {
+      console.error(`NOTE_MARKETING_EDIT_REVIEW=${JSON.stringify({articleId:article.id, stage,
+        ...editDiagnostics(actual, previousHash, desired, previousText)})}`);
+    }
+    throw error;
+  }
+}
+function previousArticleText(state, config, key) {
+  const article = state.articles[key];
+  let text = key === 'guide' ? config.guide.initialBody : null;
+  if (key === 'index' && Number.isFinite(Date.parse(article?.verifiedAt))) {
+    text = publishedIndexBody(state, config, Date.parse(article.verifiedAt));
+  }
+  // An older generator may not be reproducible from today's code. Never label
+  // a guessed rendering as the previous verified body.
+  return typeof text === 'string' && hash(text) === article?.hash ? text : null;
+}
+async function updateArticle(page, publicPage, article, desired, previousHash, previousText = null, options = {}) {
   const current = await readPublic(publicPage, article);
-  requireEditable(current.text, previousHash, desired);
+  requireArticleEditable(current.text, previousHash, desired, article, 'public', previousText, options.attempt);
   if (sameMarketingContent(current.text, desired) && urlsIn(desired).every(url=>current.links.includes(url))) return false;
   const editUrl = `https://editor.note.com/notes/${article.id}/edit/`;
   await page.goto(editUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
@@ -31,7 +57,9 @@ async function updateArticle(page, publicPage, article, desired, previousHash) {
   const input = await waitForVisibleAcrossFrames(page, ['.ProseMirror[contenteditable="true"]']);
   if (page.url() !== editUrl || !title || !input || (await title.inputValue()).trim() !== article.title) throw new Error('marketing_editor_identity_mismatch');
   // Refuse to overwrite a human edit or a different pending draft.
-  requireEditable(await readEditorContent(input), previousHash, desired);
+  requireArticleEditable(await readEditorContent(input), previousHash, desired, article, 'editor', previousText, options.attempt);
+  if (typeof options.beforeWrite !== 'function') throw new Error('marketing_update_attempt_persistence_required');
+  await options.beforeWrite(); // CAS must succeed before fill, autosave or publish.
   await fillDraft(page, { title: article.title, body: desired });
   const settings = page.getByRole('button', { name: /^(公開に進む|公開設定)$/ });
   if (await settings.count() !== 1) throw new Error('marketing_settings_button_missing');
@@ -48,10 +76,35 @@ async function updateArticle(page, publicPage, article, desired, previousHash) {
     catch (error) { if (attempt===4) throw error; await page.waitForTimeout(1500); }
   }
 }
+function createUpdateJournal(store, loaded, config, clock = Date.now) {
+  let state = structuredClone(loaded.state), head = loaded.head;
+  if (state.pendingUpdates && (typeof state.pendingUpdates !== 'object' || Array.isArray(state.pendingUpdates) ||
+      Object.keys(state.pendingUpdates).some(key => !['guide', 'index'].includes(key)))) {
+    throw new Error('marketing_update_attempt_invalid');
+  }
+  for (const key of ['guide', 'index']) updateAttempt(state, key, config[key]);
+  return {
+    options(key, desired) {
+      return { attempt: updateAttempt(state, key, config[key]), beforeWrite: async () => {
+        const next = prepareUpdateAttempt(state, key, config[key], desired, clock());
+        const savedHead = await store.save(next, head);
+        if (!/^[a-f0-9]{40}$/.test(savedHead || '')) throw new Error('marketing_update_attempt_save_unverified');
+        state = next; head = savedHead;
+      } };
+    },
+    verified(key, receipt) {
+      state.articles[key] = { ...receipt };
+      if (state.pendingUpdates) delete state.pendingUpdates[key];
+    },
+    get state() { return state; },
+    get head() { return head; }
+  };
+}
 async function run({ env = process.env, now = Date.now(), clock = Date.now, store = client(env), update = updateArticle } = {}) {
   const config = loadConfig();
   if (!config) throw new Error('marketing_config_missing');
   const loaded = await store.load(config);
+  const journal = createUpdateJournal(store, loaded, config, clock);
   const state = await store.settle(await store.collect(loaded.state, now), config, now, { refresh: true });
   const courseRepo = require('./note-korogashi-store.cjs').repository(store);
   const courses = await courseRepo.load();
@@ -61,7 +114,8 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   const changed = ['guide','index'].filter(k=>state.articles[k]?.hash !== hash(desired[k]));
   // Daily public verification also catches unpublishing or changed links even
   // when there is no new race. Same content within the same day uses no browser.
-  const verify = loaded.state.verifiedDate !== state.date || korogashi.needsPublication(courses.state);
+  const verify = loaded.state.verifiedDate !== state.date || korogashi.needsPublication(courses.state) ||
+    Object.keys(loaded.state.pendingUpdates || {}).length > 0;
   if (!changed.length && !verify) {
     if (JSON.stringify(state) !== JSON.stringify(loaded.state)) await store.save(state, loaded.head);
     console.log('NOTE_MARKETING=unchanged'); return { changed: [], verified: false };
@@ -78,9 +132,10 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
     publicContext = await browser.newContext();
     const publicPage = await publicContext.newPage();
     for (const key of ['guide','index']) {
-      if (await update(page, publicPage, config[key], desired[key], state.articles[key].hash)) updates.push(key);
+      if (await update(page, publicPage, config[key], desired[key], state.articles[key].hash, previousArticleText(journal.state, config, key), journal.options(key, desired[key]))) updates.push(key);
       await verifyPublic(publicPage, config[key], desired[key]);
       state.articles[key] = { hash: hash(desired[key]), url: config[key].url, verifiedAt: new Date(clock()).toISOString() };
+      journal.verified(key, state.articles[key]);
       if (key === 'index' && korogashi.needsPublication(courses.state)) {
         // The complete body and all source links were just read anonymously.
         // Persist that real time before any official settlement can advance.
@@ -94,14 +149,16 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
           const text = korogashi.publicText(next, clock());
           state.korogashiIndex = {version:'note-korogashi-index-v1',text};
           desired.index = publishedIndexBody(state, config, now);
-          if (await update(page, publicPage, config.index, desired.index, state.articles.index.hash)) updates.push('index');
+          if (await update(page, publicPage, config.index, desired.index, state.articles.index.hash, null, journal.options('index', desired.index))) updates.push('index');
           await verifyPublic(publicPage, config.index, desired.index);
           state.articles.index = {hash:hash(desired.index),url:config.index.url,verifiedAt:new Date(clock()).toISOString()};
+          journal.verified('index', state.articles.index);
         }
       }
     }
     state.verifiedDate = state.date;
-    await store.save(state, loaded.head);
+    delete state.pendingUpdates;
+    await store.save(state, journal.head);
     const result = { changed: updates, verified: true, articles: state.articles, date: state.date, races: state.rows.length };
     console.log(`NOTE_MARKETING=${JSON.stringify(result)}`);
     if (env.GITHUB_STEP_SUMMARY) fs.appendFileSync(env.GITHUB_STEP_SUMMARY, `\nVerified free guide: ${config.guide.url}\nVerified daily index: ${config.index.url}\nDate: ${state.date}; verified publications: ${state.rows.length}; updated: ${updates.join(', ') || 'none'}.\n`);
@@ -114,4 +171,4 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   }
 }
 if (require.main === module) run().catch(error=>{console.error(`NOTE_MARKETING_FAILED=${error.message}`);process.exitCode=1;});
-module.exports = { BODY, readPublic, verifyPublic, updateArticle, run };
+module.exports = { BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, run };

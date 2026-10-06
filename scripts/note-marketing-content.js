@@ -117,7 +117,69 @@ function publishedIndexBody(state, config, now = Date.now()) {
   if (extra && (extra.version !== 'note-korogashi-index-v1' || typeof extra.text !== 'string')) throw Error('marketing_course_snapshot_invalid');
   return indexBody(state.rows, config, now) + (extra?.text ? '\n\n' + extra.text : '');
 }
+// Diagnostics never authorize an edit. In particular, whitespace candidates
+// are only reported for review; requireEditable below remains exact and closed.
+// Do not log article text: an unexpected draft can contain private additions.
+function editDiagnostics(actual, previousHash, desired, previousText = null) {
+  const current = String(actual || '');
+  const previousVerified = typeof previousText === 'string' && hash(previousText) === previousHash;
+  const variants = {
+    terminalAsciiSpace: current.replace(/ +(?=[\r\n]*$)/u, ''),
+    terminalWhitespace: current.replace(/[\t \u00a0]+(?=[\r\n]*$)/u, ''),
+    lineEndWhitespace: current.replace(/[\t \u00a0]+(?=\r?$)/gmu, ''),
+    zeroWidthCharacters: current.replace(/[\u200b\u200c\u200d\ufeff]/gu, '')
+  };
+  const matches = expectedHash => Object.entries(variants)
+    .filter(([, value]) => value !== current && hash(value) === expectedHash).map(([name]) => name);
+  const comparison = expected => {
+    const a = contentLines(marketingText(current)), b = contentLines(marketingText(expected));
+    let first = 0;
+    while (first < a.length && first < b.length && a[first] === b[first]) first++;
+    return { actualLines: a.length, expectedLines: b.length,
+      firstDifferentLine: first === a.length && first === b.length ? null : first + 1 };
+  };
+  return { actualHash: hash(current), previousHash, desiredHash: hash(desired),
+    desiredComparison: comparison(desired),
+    previousComparison: previousVerified ? comparison(previousText) : null,
+    whitespaceCandidates: { previous: matches(previousHash), desired: matches(hash(desired)) } };
+}
+function validateUpdateAttempt(attempt, article, previousHash) {
+  if (!attempt) return null;
+  const digest = value => /^[a-f0-9]{64}$/.test(value || '');
+  if (attempt.version !== 'note-marketing-update-attempt-v1' || attempt.articleId !== article.id ||
+      attempt.fromHash !== previousHash || !digest(attempt.fromHash) || !digest(attempt.targetHash) ||
+      !Number.isFinite(Date.parse(attempt.startedAt)) || !Number.isSafeInteger(attempt.sequence) || attempt.sequence < 1 ||
+      !Array.isArray(attempt.previousAttempts) || attempt.previousAttempts.length !== attempt.sequence - 1) {
+    throw new Error('marketing_update_attempt_invalid');
+  }
+  let lastTime = -Infinity;
+  for (const [index, earlier] of [...attempt.previousAttempts, attempt].entries()) {
+    const time = Date.parse(earlier?.startedAt);
+    if (earlier?.sequence !== index + 1 || !digest(earlier?.targetHash) || !Number.isFinite(time) || time < lastTime) {
+      throw new Error('marketing_update_attempt_invalid');
+    }
+    lastTime = time;
+  }
+  return attempt;
+}
+function updateAttempt(state, key, article) {
+  return validateUpdateAttempt(state.pendingUpdates?.[key], article, state.articles[key]?.hash);
+}
+function prepareUpdateAttempt(state, key, article, desired, now) {
+  const previous = updateAttempt(state, key, article);
+  const fromHash = state.articles[key]?.hash;
+  if (!/^[a-f0-9]{64}$/.test(fromHash || '') || !Number.isFinite(now) ||
+      (previous && now < Date.parse(previous.startedAt))) throw new Error('marketing_update_attempt_invalid');
+  return { ...state, articles: { ...state.articles }, pendingUpdates: { ...state.pendingUpdates,
+    [key]: { version: 'note-marketing-update-attempt-v1', articleId: article.id,
+      fromHash, targetHash: hash(desired), startedAt: new Date(now).toISOString(),
+      // A retry may persist C then stop before replacing published/draft B.
+      // Keep every earlier generated target in this same verified-hash epoch.
+      sequence: previous ? previous.sequence + 1 : 1,
+      previousAttempts: previous ? [...previous.previousAttempts, {sequence:previous.sequence,
+        targetHash:previous.targetHash, startedAt:previous.startedAt}] : [] } } };
+}
 function requireEditable(actual, previousHash, desired) {
   if (hash(actual) !== previousHash && hash(actual) !== hash(desired)) throw new Error('marketing_manual_change_review_required');
 }
-module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, recentDates, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, publishedIndexBody, initialState, requireEditable };
+module.exports = { ACCOUNT, PROFILE, VERSION, marketingText, sameMarketingContent, hash, jstDate, recentDates, validUrl, loadConfig, navigation, urlsIn, bodyHtml, receiptRow, indexBody, publishedIndexBody, initialState, requireEditable, editDiagnostics, validateUpdateAttempt, updateAttempt, prepareUpdateAttempt };
