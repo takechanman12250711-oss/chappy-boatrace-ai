@@ -3,12 +3,16 @@ on:
   pull_request:
     paths:
       - "scripts/build-local-water-outer-head-bottleneck-audit.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-local-water-daily-input.cjs"
       - "scripts/test-local-water-outer-head-bottleneck-audit.js"
       - ".github/workflows/check-local-water-outer-head-bottleneck-audit.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-local-water-outer-head-bottleneck-audit.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-local-water-daily-input.cjs"
       - ".github/workflows/check-local-water-outer-head-bottleneck-audit.yml"
   workflow_run:
     workflows: ["Collect official race results"]
@@ -36,6 +40,7 @@ jobs:
         run: |
           node --check scripts/build-local-water-outer-head-bottleneck-audit.js
           node scripts/test-local-water-outer-head-bottleneck-audit.js
+          node scripts/test-local-water-daily-input.cjs
       - name: Build real diagnostic
         if: github.event_name != 'pull_request'
         run: |
