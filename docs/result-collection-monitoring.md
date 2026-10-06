@@ -10,7 +10,7 @@
 2. `collect` は最新mainを取得し、`repair-recent-results.js --sources-only` で公式結果を収集・照合する。原本に付くreview・理論評価・外れ原因・展開AI v6照合を更新し、indexを再生成して、公式結果と圧縮予想原本を先行checkpointする。v6照合は同じ対象日から直近3日を扱い、夜間に日付が変わっても前日分を保存する。照合は結果後の検証情報だけを追加し、保存予想・買い目・自動採用は変更しない。診断側で照合後に古いarchiveを復元して情報を失う順序に戻さない。この短いjobは共有writerキューを保持する。
 3. `diagnostics` は `collect.saved_sha` を復元し、既存の重い分析・参考統計・整合性検査を行う。検査済みのstatsと参照タグ成果物だけを元blob・SHA256・入力SHA付きartifactへ渡す。予想/結果原本に未保存変更があれば停止する。
 4. `publish_reports` はそのartifact IDだけを取得し、共有writerキュー内で最新mainと照合する。許可したレポートの元blobが同じ場合だけ反映する。計算中に増えた予想・結果・note原稿は触らない。生成コードが変わった場合、または同じ診断成果物が変わった場合はbatch全体を失敗させ、古いJSONを自動mergeしない。独立したpractical-priority-shadow-reportだけは予想収集側の新しい版を保持して記録する。
-5. `calibrate` は `publish_reports.saved_sha` を復元し、既存の校正と整合性検査を行う。`publish_calibration` が同じ照合方法で短時間保存する。
+5. `calibrate` は `publish_reports.saved_sha` を復元し、既存の校正と整合性検査を行う。`publish_calibration` が同じ照合方法で短時間保存する。既存builderが作る `data/predictions/calibration.json` と `data/predictions/improvement-review.json` は派生レポートとして校正stageだけに明示登録する。diagnostics stageや他の予想ディレクトリ内ファイルには許可を広げない。元blob・入力SHA・内容hash・コード競合の検査は同じで、sparse checkout外でも検査済みの正確な2パスだけをstageできるようにする。日次予想・公式結果・source archiveは引き続き保存対象外であり、未保存変更があれば停止する。
 
 共有キュー外の計算は保存済みSHA時点の分析であり、計算中に追加された最新予想まで含むとは扱わない。`data/stats/result-diagnostics-checkpoint.json` と `result-calibration-checkpoint.json` に入力SHA、反映直前SHA、反映ファイルhash、新しい版を保持した対象を記録する。許可範囲外の原本や記事をartifact経由で保存しない。
 
