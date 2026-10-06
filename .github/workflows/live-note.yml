@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/live-note.yml'
       - 'scripts/collect-predictions.js'
+      - 'api/_official-start-rank.js'
+      - 'scripts/official-start-rank-cache.cjs'
+      - 'scripts/official-start-rank-cache.test.cjs'
       - 'scripts/collect-all-race-notes.js'
       - 'scripts/outer-attack-research.js'
       - 'scripts/verification-coverage.js'
@@ -38,6 +41,9 @@ on:
     paths:
       - '.github/workflows/live-note.yml'
       - 'scripts/collect-predictions.js'
+      - 'api/_official-start-rank.js'
+      - 'scripts/official-start-rank-cache.cjs'
+      - 'scripts/official-start-rank-cache.test.cjs'
       - 'scripts/collect-all-race-notes.js'
       - 'scripts/outer-attack-research.js'
       - 'scripts/verification-coverage.js'
@@ -81,7 +87,8 @@ on:
 permissions:
   contents: read
 
-# This process writes only immutable note sources. Central prediction/result/
+# This process writes immutable note sources and the derived official-rank cache.
+# Central prediction/result/
 # calibration data continues to use its existing shared writer queue.
 concurrency:
   group: chappy-live-note-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
@@ -113,6 +120,7 @@ jobs:
             scripts
             data/stats
             data/note-drafts
+            data/official-start-rank-cache
             data/partner-forward
             data/independent-autonomous-forward
             data/independent-rule-forward
@@ -125,6 +133,7 @@ jobs:
       - name: Verify isolated collector and source preservation
         run: |
           node scripts/test-note-source-concurrency.js
+          node --test scripts/official-start-rank-cache.test.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
           node --test scripts/test-omura-reference.cjs
           node scripts/test-note-pipeline.js
@@ -143,6 +152,7 @@ jobs:
         env:
           NODE_OPTIONS: --require ./js/frame-rise-fall-replay-preload.js
           INDEPENDENT_CANDIDATE_DIR: /tmp/independent-autonomous
+          OFFICIAL_START_RANK_STAGE: /tmp/official-start-rank-cache.json
         run: node scripts/collect-predictions.js --note-only
       - name: Save immutable evidence independently of publication audit
         if: always() && github.event_name != 'pull_request'
@@ -257,3 +267,8 @@ jobs:
           test "$PREPARE_OUTCOME" != failure
           test "$ARTIFACT_OUTCOME" != failure
           test "$CONFIRM_OUTCOME" != failure
+      - name: Share fetched official ranks after publication and evidence preservation
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          node scripts/official-start-rank-cache.cjs /tmp/official-start-rank-cache.json
+          test ! -s /tmp/official-start-rank-cache.json.errors

@@ -86,7 +86,33 @@ async function fetchProfile(registerNo, { fetcher, now, timeoutMs }) {
   try { return await task; } finally { pending.delete(key); }
 }
 
-async function attachOfficialStartRanks(parsed, { date, fetcher = global.fetch, now = Date.now(), timeoutMs = TIMEOUT_MS } = {}) {
+// Shared profiles are derived factual data, never prediction/settlement inputs.
+// Rebuild the canonical object so untrusted cache metadata cannot change its meaning.
+function validateSharedProfile(profile, { registerNo, date, now = Date.now() } = {}) {
+  if (!/^\d{4}$/.test(registerNo || "") || String(date) !== jstDate(now)
+    || profile?.registerNo !== registerNo || profile.version !== VERSION || profile.source !== SOURCE
+    || profile.status !== "available" || profile.referenceOnly !== true
+    || profile.population !== "general-only-unconfirmed" || profile.period !== null || profile.sampleCount !== null
+    || profile.sourceUrl !== `https://www.boatrace.jp/owpc/pc/data/racersearch/course?toban=${registerNo}`
+    || !/^[a-f0-9]{64}$/.test(profile.sourceSha256 || "")) return null;
+  const fetched = Date.parse(profile.fetchedAt);
+  if (!Number.isFinite(fetched) || fetched > now || now - fetched > CACHE_MS
+    || jstDate(fetched) !== String(date) || new Date(fetched).toISOString() !== profile.fetchedAt) return null;
+  const values = profile.byCourse;
+  if (!values || Object.keys(values).length !== 6) return null;
+  const byCourse = {};
+  for (let course = 1; course <= 6; course++) {
+    const value = values[course];
+    if (!Object.hasOwn(values, course) || (value !== null
+      && (typeof value !== "number" || !Number.isFinite(value) || value < 1 || value > 6))) return null;
+    byCourse[course] = value;
+  }
+  return { version: VERSION, source: SOURCE, registerNo, status: "available", byCourse,
+    sourceUrl: profile.sourceUrl, sourceSha256: profile.sourceSha256, fetchedAt: profile.fetchedAt,
+    population: "general-only-unconfirmed", period: null, sampleCount: null, referenceOnly: true };
+}
+
+async function attachOfficialStartRanks(parsed, { date, fetcher = global.fetch, now = Date.now(), timeoutMs = TIMEOUT_MS, sharedProfiles = {} } = {}) {
   const entries = Array.isArray(parsed?.entries) ? parsed.entries : [];
   const starts = Array.isArray(parsed?.startExhibition) ? parsed.startExhibition : [];
   // A current, undated profile must never be used to fill historical race inputs.
@@ -102,7 +128,12 @@ async function attachOfficialStartRanks(parsed, { date, fetcher = global.fetch, 
   if (ids.length !== 6 || ids.some(id => !/^\d{4}$/.test(id))) {
     return { ...parsed, officialStartRankCollection: { version: VERSION, status: "invalid-racer-identities", available: 0 } };
   }
-  const profiles = await Promise.all(ids.map(registerNo => fetchProfile(registerNo, { fetcher, now, timeoutMs })));
+  let sharedAvailable = 0;
+  const profiles = await Promise.all(ids.map(registerNo => {
+    const shared = validateSharedProfile(sharedProfiles?.[registerNo], { registerNo, date, now });
+    if (shared) { sharedAvailable++; return shared; }
+    return fetchProfile(registerNo, { fetcher, now, timeoutMs });
+  }));
   const byId = new Map(profiles.map(profile => [profile.registerNo, profile]));
   return {
     ...parsed,
@@ -110,9 +141,10 @@ async function attachOfficialStartRanks(parsed, { date, fetcher = global.fetch, 
     officialStartRankCollection: {
       version: VERSION, status: profiles.every(profile => profile.status === "available") ? "available" : "partial-or-unavailable",
       available: profiles.filter(profile => profile.status === "available").length,
+      sharedAvailable,
       referenceOnly: true
     }
   };
 }
 
-module.exports = { SOURCE, VERSION, parseOfficialStartRank, attachOfficialStartRanks };
+module.exports = { SOURCE, VERSION, parseOfficialStartRank, attachOfficialStartRanks, validateSharedProfile, jstDate };
