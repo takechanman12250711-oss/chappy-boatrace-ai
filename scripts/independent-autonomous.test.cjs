@@ -13,7 +13,8 @@ function official(){return {ok:true,source:'boatrace-official',date:'20300914',s
 const metadata={id:456,digest:'sha256:'+env.AUTONOMOUS_ARTIFACT_DIGEST,name:'independent-autonomous-123-1',created_at:'2030-09-14T06:00:01Z',expired:false,workflow_run:{id:123,head_sha:env.GITHUB_SHA}};
 const response=(date='Sat, 14 Sep 2030 06:00:02 GMT',a=metadata)=>async()=>({ok:true,headers:{get:()=>date},json:async()=>a});
 function setup(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'independent-auto-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
-  for(const file of ['config/independent-autonomous-forward.json','scripts/independent-autonomous-candidate.cjs']){
+  for(const file of ['config/independent-autonomous-forward.json','scripts/independent-autonomous-candidate.cjs',
+    'config/independent-flow-study-v1.json','scripts/independent-flow-roles-v1.cjs']){
     fs.mkdirSync(path.dirname(path.join(root,file)),{recursive:true});fs.copyFileSync(path.resolve(__dirname,'..',file),path.join(root,file));}
   return {root,out:path.join(root,'capture')};}
 async function sealed(t,change=()=>{}){const x=setup(t),data=official();change(data);f.createRecorder(x.root,x.out,env,()=>clock)(data,target);await f.seal(x.root,x.out,env,response());return x;}
@@ -84,14 +85,17 @@ test('new captures bind judgment facts into the seal while legacy snapshots rema
   const x=setup(t),raw=official();raw.entries[0].avgSt=.15;
   f.createRecorder(x.root,x.out,env,()=>clock)(raw,target);
   const file=path.join(x.out,fs.readdirSync(x.out)[0]),s=JSON.parse(fs.readFileSync(file));
-  assert.equal(s.version,'independent-autonomous-snapshot-v2');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
+  assert.equal(s.version,'independent-autonomous-snapshot-v3');assert.equal(s.judgmentContext.officialEntries[0].avgSt,.15);
   assert.equal(s.judgmentContext.inputHash,s.inputHash);assert.deepEqual(s.candidate,candidate.select(s.input));
   const p=f.protocol(x.root);assert.equal(f.validate(s,p),true);
   const missing=structuredClone(s);delete missing.judgmentContext;assert.throws(()=>f.validate(missing,p),/judgment_context/);
-  missing.version='independent-autonomous-snapshot-v1';assert.equal(f.validate(missing,p),true);
+  missing.version='independent-autonomous-snapshot-v1';delete missing.flowStudy;assert.equal(f.validate(missing,p),true);
+  const legacy=structuredClone(s);legacy.version='independent-autonomous-snapshot-v2';delete legacy.flowStudy;assert.equal(f.validate(legacy,p),true);
+  const altered=structuredClone(s);altered.flowStudy.judgment.decision.actor=6;assert.throws(()=>f.validate(altered,p),/flow_judgment/);
   await f.seal(x.root,x.out,env,response());const report=f.report(x.root);
   assert.equal(report.judgmentContext.captured,1);assert.equal(report.judgmentContext.legacyWithoutContext,0);
   assert.equal(report.judgmentContext.judgmentImplemented,false);assert.equal(report.usableForPrediction,false);
+  assert.equal(report.flowStudy.sealed,1);assert.equal(report.flowStudy.ticketPerformanceAvailable,false);
 });
 test('first seal including a skip stays fixed; modified source or method is rejected',async t=>{
   const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
@@ -103,6 +107,23 @@ test('first seal including a skip stays fixed; modified source or method is reje
   const raw=f.json(r);fs.unlinkSync(file);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(raw)}.json`),raw);
   assert.equal(f.cohort(x.root,f.protocol(x.root)).rows.length,0);
   fs.appendFileSync(path.join(x.root,'scripts/independent-autonomous-candidate.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/protocol/);
+});
+test('v3 starts its own first-seal cohort without replacing the earlier v2 baseline',async t=>{
+  const x=await sealed(t,r=>{r.startExhibition[0].marker='F';});
+  const dir=path.join(x.root,'data/independent-autonomous-forward/20300914'),first=path.join(dir,fs.readdirSync(dir)[0]);
+  const legacy=JSON.parse(fs.readFileSync(first));legacy.snapshot.version='independent-autonomous-snapshot-v2';
+  delete legacy.snapshot.flowStudy;legacy.snapshotHash=candidate.hash(f.json(legacy.snapshot));
+  const bytes=f.json(legacy);fs.unlinkSync(first);fs.writeFileSync(path.join(dir,`20300914-23-1-${candidate.hash(bytes)}.json`),bytes);
+  const out=path.join(x.root,'v3'),p=f.protocol(x.root);
+  assert.equal(f.cohort(x.root,p,null,{studyOnly:true}).rows.length,0);
+  assert.equal(f.createRecorder(x.root,out,env,()=>clock+10000)(official(),target).status,'selected');
+  await f.seal(x.root,out,env,response('Sat, 14 Sep 2030 06:00:12 GMT',{...metadata,created_at:'2030-09-14T06:00:11Z'}));
+  assert.equal(f.cohort(x.root,p).rows[0].snapshot.version,'independent-autonomous-snapshot-v2');
+  assert.equal(f.cohort(x.root,p).rows[0].snapshot.candidate.status,'skipped');
+  assert.equal(f.cohort(x.root,p,null,{studyOnly:true}).rows[0].snapshot.candidate.status,'selected');
+  assert.equal(f.createRecorder(x.root,path.join(x.root,'again-v3'),env,()=>clock+20000)(official(),target).status,'already-captured');
+  const report=f.report(x.root);assert.equal(report.skipped.start_marker_present,1);assert.equal(report.flowStudy.sealed,1);
+  fs.appendFileSync(path.join(x.root,'scripts/independent-flow-roles-v1.cjs'),'\n');assert.throws(()=>f.protocol(x.root),/flow_protocol/);
 });
 test('official settlement separates pending, losses, unknown payout, refund and conflicting evidence',async t=>{
   const x=await sealed(t);let r=f.report(x.root);assert.equal(r.groups.escape.pending.length,1);assert.equal(r.groups.escape.performance.hitRate,null);
