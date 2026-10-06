@@ -71,6 +71,8 @@ on:
       - "scripts/phase9-live-improvement-cycle.cjs"
       - "scripts/run-live-improvement-cycle.cjs"
       - "tests/phase9-input-compaction.test.cjs"
+      - "scripts/build-theory-ab-phase10.js"
+      - "scripts/test-theory-ab-phase10-approval.js"
       - "js/theory-candidate-branch-analysis-phase9.js"
       - "scripts/build-theory-candidate-branch-analysis-phase9.js"
       - "scripts/test-theory-candidate-branch-analysis-phase9.js"
@@ -265,6 +267,7 @@ jobs:
           node scripts/test-phase3-refresh-contract.js
           node --check scripts/build-learning-analysis-pipeline.js
           node tests/phase9-input-compaction.test.cjs
+          node scripts/test-theory-ab-phase10-approval.js
           node --check scripts/build-phase4-daily-cycle-gate.js
           node --check scripts/build-phase4-historical-cycle-proof.js
           node scripts/test-phase4-daily-cycle-gate.js

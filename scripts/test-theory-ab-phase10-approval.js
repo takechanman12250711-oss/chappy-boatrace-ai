@@ -2,6 +2,7 @@
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const builder = require("./build-theory-ab-phase10");
 
@@ -124,5 +125,40 @@ const metadataRejected = builder.buildReport({ phase9, candidateAnalysis: candid
 assert.equal(metadataRejected.approvedSourceMetadataMatches, false);
 assert.equal(metadataRejected.readinessChecks.approvalApplied, false);
 assert.equal(metadataRejected.candidateB, null);
+
+const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "phase10-stable-report-"));
+try {
+  const file = path.join(temporary, "nested", "theory-ab-phase10.json");
+  const first = builder.writeIfChanged(report, file);
+  assert.equal(first.changed, true, "a missing report must be created");
+  const original = fs.readFileSync(file, "utf8");
+  const originalTime = new Date("2026-01-01T00:00:00Z");
+  fs.utimesSync(file, originalTime, originalTime);
+
+  const later = { ...report, generatedAt: "2026-10-06T15:56:42.716Z" };
+  const unchanged = builder.writeIfChanged(later, file);
+  assert.equal(unchanged.changed, false, "timestamp-only collector refresh must be a no-op");
+  assert.equal(fs.readFileSync(file, "utf8"), original, "preserve exact bytes and blob identity");
+  assert.equal(fs.statSync(file).mtimeMs, originalTime.getTime(), "do not rewrite the file");
+  assert.deepEqual(unchanged.report, report, "return the persisted generation");
+
+  const changedReports = [
+    metadataRejected,
+    { ...report, humanApprovalRequired: false },
+    { ...report, automaticApplication: true },
+    { ...report, candidateB: { ...report.candidateB, rationale: "changed evidence" } }
+  ];
+  for (const changed of changedReports) {
+    builder.writeIfChanged(report, file);
+    const saved = builder.writeIfChanged(changed, file);
+    assert.equal(saved.changed, true, "non-timestamp content must still update");
+    assert.deepEqual(JSON.parse(fs.readFileSync(file, "utf8")), changed);
+  }
+  fs.writeFileSync(file, "{invalid");
+  assert.throws(() => builder.writeIfChanged(report, file), SyntaxError,
+    "invalid previous content must not be silently ignored");
+} finally {
+  fs.rmSync(temporary, { recursive: true, force: true });
+}
 
 console.log("Phase10 frozen approval tests passed");
