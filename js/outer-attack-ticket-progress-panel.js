@@ -32,6 +32,8 @@
   const number = (value, fallback = 0) => finite(value) ? Number(value) : fallback;
   const round = (value, digits = 1) => Math.round(number(value) * 10 ** digits) / 10 ** digits;
   const integer = value => Math.max(0, Math.trunc(number(value)));
+  const hasCount = value => typeof value === "number" && Number.isFinite(value) && value >= 0;
+  const evidenceCount = (value, unit) => hasCount(value) ? `${integer(value)}${unit}` : "未確認";
 
   function signed(value, digits, suffix) {
     if (!finite(value)) return "—";
@@ -309,16 +311,18 @@
       const pipeline = central.pipeline || {}, notes = pipeline.noteCollection;
       if (!Number.isFinite(generatedAt)) view.overallStatusLabel = '集計時刻未確認';
       else if (stale) view.overallStatusLabel = '集計から24時間以上経過';
+      else if (!hasCount(pipeline.immutableSnapshotCount)) view.overallStatusLabel = '収集件数未確認';
       else if (!pipeline.immutableSnapshotCount) view.overallStatusLabel = notes?.missingBasis ? '比較用の評価データ不足' : '比較対象なし';
       view.evidenceLabel = `集計：${Number.isFinite(generatedAt) ? jstLabel(central.generatedAt) : '未確認'} ／ 最終収集確認：${pipeline.lastCapture?.capturedAt ? jstLabel(pipeline.lastCapture.capturedAt) : '未確認'}`;
-      view.collectionLabel = `比較用保存 ${integer(pipeline.immutableSnapshotCount)}件・結果待ち ${integer(pipeline.pendingOfficialResultCount)}件`;
-      view.collectionDetail = `比較対象外 ${integer(pipeline.exclusionCount)}件`;
-      if (notes) view.collectionDetail += ` ／ 予想確認 ${integer(notes.checked - notes.missing)}件 ／ 旧予想の比較データ未保存 ${integer(notes.missing)}件`;
+      view.collectionLabel = `比較用保存 ${evidenceCount(pipeline.immutableSnapshotCount, "件")}・結果待ち ${evidenceCount(pipeline.pendingOfficialResultCount, "件")}`;
+      view.collectionDetail = `比較対象外 ${evidenceCount(pipeline.exclusionCount, "件")}`;
+      if (notes) view.collectionDetail += ` ／ 予想確認 ${evidenceCount(hasCount(notes.checked) && hasCount(notes.missing) ? notes.checked - notes.missing : null, "件")} ／ 旧予想の比較データ未保存 ${evidenceCount(notes.missing, "件")}`;
       const broad = central.research, coverage = broad?.coverage;
-      if (broad) view.collectionDetail += ` ／ 別集計の外攻め全体：保存${integer(broad.capturedRaces)}R・照合${integer(broad.settledRaces)}R`;
+      if (broad) view.collectionDetail += ` ／ 別集計の外攻め全体：保存${evidenceCount(broad.capturedRaces, "R")}・照合${evidenceCount(broad.settledRaces, "R")}`;
       if (coverage) {
-        const waiting = Math.min(integer(coverage.missingRaces), integer(coverage.reasons?.['deferred-until-one-hour']));
-        view.coverageLabel = `${coverage.date} 開催確認${integer(coverage.scheduledRaces)}R ／ 展示後保存${integer(coverage.savedRaces)}R ／ 締切1時間前まで待機${waiting}R ／ その他未保存${Math.max(0, integer(coverage.missingRaces) - waiting)}R`;
+        const waitingKnown = hasCount(coverage.missingRaces) && coverage.reasons && typeof coverage.reasons === "object";
+        const waiting = waitingKnown ? Math.min(integer(coverage.missingRaces), integer(coverage.reasons['deferred-until-one-hour'])) : null;
+        view.coverageLabel = `${coverage.date} 開催確認${evidenceCount(coverage.scheduledRaces, "R")} ／ 展示後保存${evidenceCount(coverage.savedRaces, "R")} ／ 締切1時間前まで待機${evidenceCount(waiting, "R")} ／ その他未保存${evidenceCount(waitingKnown ? Math.max(0, coverage.missingRaces - waiting) : null, "R")}`;
       }
     }
     return view;

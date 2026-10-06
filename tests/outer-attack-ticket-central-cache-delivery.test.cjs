@@ -17,13 +17,13 @@ assert.equal(
   "予想・通常画面の全体ビルド契約は変更しない"
 );
 assert.equal(
-  html.includes('root.CHAPPY_STATS_BUILD="20260908-result-clarity1"'),
+  html.includes('root.CHAPPY_STATS_BUILD="20261007-stats-evidence1"'),
   true,
   "成績分析だけに中央レポート用の配信世代を設定する"
 );
 assert.equal(
   html.includes(
-    "js/app-runtime-loader.js?v=20260816-static-race1&app=20260828-ui-audit-display1&stats=20260908-result-clarity1"
+    "js/app-runtime-loader.js?v=20260816-static-race1&app=20260828-ui-audit-display1&stats=20261007-stats-evidence1"
   ),
   true,
   "既存端末でも個別配信世代を理解する親ローダーを再取得する"
@@ -46,7 +46,7 @@ assert.equal(
   "予想開始の必須race groupを変更しない"
 );
 assert.equal(
-  statsRuntime.includes('const VERSION = "20260828-ui-audit-display1" + "-20260908-result-clarity1-20260915-candidate24-classification1-reviewprogress1-outerprogress1-outerresearch1";') &&
+  statsRuntime.includes('const VERSION = "20260828-ui-audit-display1" + "-20260908-result-clarity1-20260915-candidate24-classification1-reviewprogress1-outerprogress1-outerresearch1-stats-evidence-20261007";') &&
     statsRuntime.includes('"js/outer-attack-ticket-central-report-loader.js"'),
   true,
   "取得した成績分析ローダーが中央レポート用モジュールを新世代で読む"

@@ -117,7 +117,7 @@
               <div class="official-reference-lead">
                 <strong>BOAT RACE公式 ${settled}Rを照合</strong>
                 <p>締切前に固定した展示・ST・当地実績・風・波を、日和準拠形式で${matched}R分析しています。</p>
-                <p>集計：${escapeHtml(root.ChappyAutoStats?.formatEvidenceTime?.(report.generatedAt) || report.generatedAt || "未確認")} ／ 指標なし ${report.untaggedRaceCount == null ? "未確認" : number(report.untaggedRaceCount)}R</p>
+                <p>集計：${escapeHtml(root.ChappyAutoStats?.formatEvidenceTime?.(report.generatedAt) || report.generatedAt || "未確認")} ／ 指標なし ${typeof report.untaggedRaceCount === "number" && Number.isFinite(report.untaggedRaceCount) && report.untaggedRaceCount >= 0 ? report.untaggedRaceCount : "未確認"}R</p>
               </div>
               <div class="official-reference-grid">
                 ${rows.map(renderRow).join("")}
