@@ -214,3 +214,49 @@ test('deterministic precedence returns one intact record with its own odds and m
  assert.equal(resolved.evidence[0].source, 'raw'); assert.equal(resolved.evidence[0].sourceArray, 'predictions');
  assert.equal(resolved.record.prediction.practicalTickets[0].odds, 6.3);
 });
+function rescueEvidence() {
+ return { applied: true, version: 'fixture-rescue', targetLabel: '3コース攻め', ticket: '3-1-2', replacedTicket: '1-4-2', index: 8 };
+}
+for (const [label, count, odds] of [['13-1', 9, 14.9], ['02-2', 10, 17.5], ['11-3', 10, 29.7]])
+ test(`observed ${label} nested rescue display odds are equivalent without mutating the record`, t => {
+  const f = frozenFixture(t), tickets = f.records[0].prediction.practicalTickets;
+  tickets.push('3-1-2'); if (count === 10) tickets.push('3-1-4');
+  const rescue = { ...rescueEvidence(), index: count - 1, odds, oddsText: `${odds}倍`, hasOdds: true };
+  tickets[count - 1] = { ticket: tickets[count - 1], threeCourseEscapeRescueFixed5: rescue };
+  f.ledger.rows[0].ticketCount = count; f.ledger.rows[0].stakeYen = count * 100;
+  f.ledger.rolling100 = ledgerHelpers.summary(f.ledger.rows);
+  writeFixture(f.root, 'data/stats/continuous-performance-ledger.json', f.ledger);
+  const original = structuredClone(f.records[0]), newer = structuredClone(f.daily);
+  const duplicateRescue = newer.verificationPredictions[0].prediction.practicalTickets[count - 1].threeCourseEscapeRescueFixed5;
+  delete duplicateRescue.odds; delete duplicateRescue.oddsText; delete duplicateRescue.hasOdds;
+  f.save(); archiveFixture(f.root, newer);
+  assertComplete(m.build(f.root), f.ledger);
+  const capture = frozenSource.readFrozenDay(f.root, DATE, f.ledger.rows).captures.get(original.raceKey);
+  assert.deepEqual(capture.record, original); assert.notEqual(capture.evidence[0].recordSha256, capture.evidence[1].recordSha256);
+  assert.equal(capture.evidence[0].verifierEvidenceSha256, capture.evidence[1].verifierEvidenceSha256);
+ });
+for (const [name, change] of [
+ ['rescue non-display field', r => { r.prediction.practicalTickets[0].threeCourseEscapeRescueFixed5.replacedTicket = '1-5-2'; }],
+ ['unrecognized rescue metadata', r => { r.prediction.practicalTickets[0].threeCourseEscapeRescueFixed5.roleEvidence = 'changed'; }],
+ ['missing rescue object', r => { delete r.prediction.practicalTickets[0].threeCourseEscapeRescueFixed5; }],
+ ['null rescue object', r => { r.prediction.practicalTickets[0].threeCourseEscapeRescueFixed5 = null; }],
+ ['array rescue object', r => { r.prediction.practicalTickets[0].threeCourseEscapeRescueFixed5 = []; }],
+ ['unrelated nested odds', r => { r.prediction.practicalTickets[0].otherEvidence = { odds: 42 }; }],
+ ['candidate nested rescue odds', r => { r.prediction.practicalSelection.candidateOutcomes[0].threeCourseEscapeRescueFixed5.odds = 14.9; }]
+]) test(`narrow rescue exemption still rejects ${name}`, t => {
+ const f = frozenFixture(t);
+ f.records[0].prediction.practicalTickets[0] = { ticket: '2-4-3', threeCourseEscapeRescueFixed5: rescueEvidence() };
+ f.records[0].prediction.practicalSelection.candidateOutcomes[0].threeCourseEscapeRescueFixed5 = rescueEvidence();
+ f.save(); const newer = structuredClone(f.daily); change(newer.verificationPredictions[0]); archiveFixture(f.root, newer);
+ const out = m.build(f.root); assert.equal(out.source.complete, false);
+ assert.equal(out.source.failures[0].reason, 'conflicting-frozen-capture');
+});
+test('empty rescue object stays distinct from a missing or null rescue', t => {
+ const f = frozenFixture(t);
+ f.records[0].prediction.practicalTickets[0] = { ticket: '2-4-3', threeCourseEscapeRescueFixed5: {} }; f.save();
+ for (const value of [undefined, null, []]) {
+  const newer = structuredClone(f.daily), ticket = newer.verificationPredictions[0].prediction.practicalTickets[0];
+  if (value === undefined) delete ticket.threeCourseEscapeRescueFixed5; else ticket.threeCourseEscapeRescueFixed5 = value;
+  archiveFixture(f.root, newer); assert.equal(m.build(f.root).source.failures[0].reason, 'conflicting-frozen-capture');
+ }
+});

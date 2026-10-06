@@ -71,8 +71,17 @@ function frozenEvidence(record) {
   // Preserve ticket/role evidence and order. Only these known odds-display fields
   // differ between primary and verification copies; hit-first never uses odds.
   const withoutOdds = item => {
-    if (!item || typeof item !== "object") return item;
+    if (!item || typeof item !== "object" || Array.isArray(item)) return item;
     const { odds, oddsText, hasOdds, ...evidence } = item;
+    return evidence;
+  };
+  const practicalTicketEvidence = item => {
+    const evidence = typeof item === "string" ? { ticket: item } : withoutOdds(item);
+    const rescue = evidence?.threeCourseEscapeRescueFixed5;
+    // This one saved practical-ticket annotation also carries display odds.
+    // Keep null/missing/array distinctions and every other rescue field intact.
+    if (rescue && typeof rescue === "object" && !Array.isArray(rescue))
+      evidence.threeCourseEscapeRescueFixed5 = withoutOdds(rescue);
     return evidence;
   };
   // See docs/frozen-ledger-capture-resolution.md for the explicit boundary.
@@ -85,8 +94,7 @@ function frozenEvidence(record) {
     predictionFlags: [prediction.officialResultUsedForPrediction, prediction.officialResultUsedForEvaluation, prediction.isRetrospective],
     preRaceConditions: prediction.preRaceConditions || record.preRaceConditions || {},
     verificationEvidence: prediction.verificationEvidence || prediction.practicalSelection?.verificationEvidence || {},
-    practicalTickets: Array.isArray(savedTickets)
-      ? savedTickets.map(item => typeof item === "string" ? { ticket: item } : withoutOdds(item)) : null,
+    practicalTickets: Array.isArray(savedTickets) ? savedTickets.map(practicalTicketEvidence) : null,
     candidatePool: Array.isArray(pool) ? pool.map(withoutOdds) : null
   };
 }

@@ -45,6 +45,16 @@ accounting reads these fields. Their original values remain in the selected
 record and are covered by its full record hash. Role, priority, selection and
 other ticket metadata are not ignored.
 
+One additional, exact path is allowed only in the practical-ticket list:
+`practicalTickets[n].threeCourseEscapeRescueFixed5.{odds, oddsText, hasOdds}`.
+The 2026-10-06 primary copies for 13-1, 02-2 and 11-3 retain these display fields
+(14.9, 17.5 and 29.7); the verification copies omit them. All other rescue fields
+(`applied`, `version`, `targetLabel`, `ticket`, `replacedTicket`, `index`, or any
+other field) must agree. Missing, null, array and object rescue values stay
+distinct. No arbitrary nested odds fields are stripped, and this nested exception
+does not apply to candidate outcomes. The original selected record and its full
+hash retain its original nested odds.
+
 All remaining fields outside this projection are outside the hit-first verifier's
 input contract. This includes compacted presentation fields such as
 `prediction.raceFlow` and `prediction.mainSheet`, other research shadows, note
