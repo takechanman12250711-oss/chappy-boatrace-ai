@@ -3,26 +3,31 @@ on:
   pull_request:
     paths:
       - "scripts/build-outer-head-drop-stage-audit.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-outer-head-drop-stage-memory.cjs"
       - "scripts/test-outer-head-drop-stage-audit.js"
       - ".github/workflows/check-outer-head-drop-stage-audit.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-outer-head-drop-stage-audit.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-outer-head-drop-stage-memory.cjs"
       - ".github/workflows/check-outer-head-drop-stage-audit.yml"
   workflow_run:
     workflows: ["Collect official race results"]
+    branches: [main]
     types: [completed]
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.event_name == 'pull_request' && format('chappy-outer-head-drop-stage-{0}', github.ref) || 'chappy-main-data-writers' }}
   queue: max
   cancel-in-progress: false
 jobs:
   verify:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.event != 'pull_request_target')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +40,8 @@ jobs:
       - run: |
           node --check scripts/build-outer-head-drop-stage-audit.js
           node scripts/test-outer-head-drop-stage-audit.js
+          node scripts/test-outer-head-drop-stage-memory.cjs
+          node scripts/test-local-water-outer-head-stage-audit.js
       - name: Build real diagnostic
         if: github.event_name != 'pull_request'
         run: |

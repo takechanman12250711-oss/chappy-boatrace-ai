@@ -3,27 +3,32 @@ on:
   pull_request:
     paths:
       - "scripts/build-local-water-priority-selection-consistency-audit.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-local-water-priority-selection-consistency-memory.cjs"
       - "scripts/test-local-water-priority-selection-consistency-audit.js"
       - ".github/workflows/check-local-water-priority-selection-consistency-audit.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-local-water-priority-selection-consistency-audit.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-local-water-priority-selection-consistency-memory.cjs"
       - ".github/workflows/check-local-water-priority-selection-consistency-audit.yml"
       - "data/stats/local-water-outer-head-priority-score-audit.json"
   workflow_run:
     workflows: ["Check local water outer head priority score audit"]
+    branches: [main]
     types: [completed]
   workflow_dispatch:
 permissions:
   contents: write
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.event_name == 'pull_request' && format('chappy-local-water-consistency-{0}', github.ref) || 'chappy-main-data-writers' }}
   queue: max
   cancel-in-progress: false
 jobs:
   verify:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.event != 'pull_request_target')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +42,7 @@ jobs:
         run: |
           node --check scripts/build-local-water-priority-selection-consistency-audit.js
           node scripts/test-local-water-priority-selection-consistency-audit.js
+          node scripts/test-local-water-priority-selection-consistency-memory.cjs
       - name: Build real diagnostic
         if: github.event_name != 'pull_request'
         run: |
