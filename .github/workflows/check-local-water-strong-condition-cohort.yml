@@ -3,12 +3,18 @@ on:
   pull_request:
     paths:
       - "scripts/build-local-water-strong-condition-cohort.js"
+      - "scripts/build-local-water-result-breakdown.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-local-water-daily-input.cjs"
       - "scripts/test-local-water-strong-condition-cohort.js"
       - ".github/workflows/check-local-water-strong-condition-cohort.yml"
   push:
     branches: [main]
     paths:
       - "scripts/build-local-water-strong-condition-cohort.js"
+      - "scripts/build-local-water-result-breakdown.js"
+      - "scripts/local-water-daily-input.cjs"
+      - "scripts/test-local-water-daily-input.cjs"
       - ".github/workflows/check-local-water-strong-condition-cohort.yml"
   workflow_run:
     workflows: ["Collect official race results"]
@@ -17,7 +23,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: chappy-main-data-writers
+  group: ${{ github.event_name == 'pull_request' && format('chappy-local-water-audit-{0}', github.ref) || 'chappy-main-data-writers' }}
   queue: max
   cancel-in-progress: false
 jobs:
@@ -35,6 +41,7 @@ jobs:
       - run: |
           node --check scripts/build-local-water-strong-condition-cohort.js
           node scripts/test-local-water-strong-condition-cohort.js
+          node scripts/test-local-water-daily-input.cjs
       - name: Build real cohort
         if: github.event_name != 'pull_request'
         run: |

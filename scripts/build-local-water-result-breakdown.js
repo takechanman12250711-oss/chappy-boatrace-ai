@@ -2,26 +2,12 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const root = path.resolve(__dirname, "..");
 const OUT = path.join(root, "data", "stats", "local-water-result-breakdown.json");
 
 function arr(v) { return Array.isArray(v) ? v : []; }
 function key(r = {}) { return `${r.date}-${String(r.jcd || "").padStart(2, "0")}-${Number(r.raceNo || 0)}`; }
-function load(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter(n => /^\d{8}\.json$/.test(n)).sort()
-    .map(n => JSON.parse(fs.readFileSync(path.join(dir, n), "utf8")));
-}
-function predictionRows(docs) {
-  const map = new Map();
-  for (const doc of docs) for (const name of ["predictions", "verificationPredictions"]) {
-    for (const row of arr(doc[name])) {
-      const k = key(row);
-      if (name === "predictions" || !map.has(k)) map.set(k, row);
-    }
-  }
-  return [...map.values()];
-}
 function resultMap(docs) {
   const map = new Map();
   for (const doc of docs) for (const race of arr(doc.races)) {
@@ -61,11 +47,15 @@ function predictedHead(record = {}) {
 }
 function build(predDocs, resultDocs) {
   const results = resultMap(resultDocs);
-  const rows = predictionRows(predDocs).map(record => ({ record, evidence: evidence(record), result: results.get(key(record)) || null }))
-    .filter(row => row.evidence.formal && row.result && actualHead(row.result));
+  const rows = mapPredictionRows(predDocs, record => {
+    const savedEvidence = evidence(record), result = results.get(key(record)) || null;
+    if (!savedEvidence.formal || !result) return null;
+    const actual = actualHead(result);
+    return actual ? { evidence: savedEvidence, actual, predicted: predictedHead(record) } : null;
+  }).filter(Boolean);
   const buckets = new Map();
   for (const row of rows) {
-    const actual = actualHead(row.result), predicted = predictedHead(row.record);
+    const { actual, predicted } = row;
     for (const branch of branches(row.evidence)) {
       const b = buckets.get(branch) || { branch, settledCount: 0, predictedHeadAvailableCount: 0, predictedHeadHitCount: 0, actualHead1Count: 0, actualOutsideHeadCount: 0 };
       b.settledCount++;
@@ -93,7 +83,7 @@ function build(predDocs, resultDocs) {
   };
 }
 function main() {
-  const report = build(load(path.join(root, "data", "predictions")), load(path.join(root, "data", "results")));
+  const report = build(loadDailyDocuments(path.join(root, "data", "predictions")), loadDailyDocuments(path.join(root, "data", "results")));
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(report, null, 2) + "\n");
   console.log(`local water result breakdown: ${report.settledFormalEvidenceRaceCount} settled formal-evidence races`);

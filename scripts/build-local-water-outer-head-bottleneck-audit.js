@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const localWater = require("./build-local-water-result-breakdown");
 
 const ROOT = path.resolve(__dirname, "..");
@@ -11,33 +12,12 @@ const UPSTREAM = path.join(ROOT, "data", "stats", "local-water-main-head-selecti
 const arr = (value) => Array.isArray(value) ? value : [];
 const raceKey = (row = {}) => `${row.date}-${String(row.jcd || "").padStart(2, "0")}-${Number(row.raceNo || 0)}`;
 
-function loadDaily(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter((name) => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
-}
-
 function readJson(file, fallback = null) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch (_error) {
     return fallback;
   }
-}
-
-function predictionRows(docs) {
-  const map = new Map();
-  for (const doc of docs) {
-    for (const source of ["predictions", "verificationPredictions"]) {
-      for (const row of arr(doc?.[source])) {
-        const key = raceKey(row);
-        if (source === "predictions" || !map.has(key)) map.set(key, row);
-      }
-    }
-  }
-  return [...map.values()];
 }
 
 function resultMap(docs) {
@@ -345,14 +325,18 @@ function build(predictionDocs, resultDocs, upstreamReport = null) {
   const supportPaths = new Map();
   const examples = [];
 
-  const targetRows = predictionRows(predictionDocs)
-    .map((record) => ({ record, evidence: localWater.evidence(record), result: results.get(raceKey(record)) || null }))
-    .filter((row) => row.evidence.formal && row.result)
-    .map((row) => ({ ...row, actualHead: localWater.actualHead(row.result) }))
-    .filter((row) => row.actualHead === 5 || row.actualHead === 6);
+  const targetRows = mapPredictionRows(predictionDocs, (record) => {
+    const evidence = localWater.evidence(record);
+    const result = results.get(raceKey(record)) || null;
+    if (!evidence.formal || !result) return null;
+    const actualHead = localWater.actualHead(result);
+    if (actualHead !== 5 && actualHead !== 6) return null;
+    return { record: { date: record.date, jcd: record.jcd, raceNo: record.raceNo },
+      evidence, actualHead, audit: collectWinnerEvidence(record.prediction || {}, actualHead) };
+  }).filter(Boolean);
 
   for (const row of targetRows) {
-    const audit = collectWinnerEvidence(row.record.prediction || {}, row.actualHead);
+    const audit = row.audit;
     increment(classifications, audit.classification);
     increment(byBoat, row.actualHead);
     increment(byVenue, row.evidence.venue || row.record.jcd || "unknown");
@@ -421,8 +405,8 @@ function build(predictionDocs, resultDocs, upstreamReport = null) {
 
 function main() {
   const report = build(
-    loadDaily(path.join(ROOT, "data", "predictions")),
-    loadDaily(path.join(ROOT, "data", "results")),
+    loadDailyDocuments(path.join(ROOT, "data", "predictions")),
+    loadDailyDocuments(path.join(ROOT, "data", "results")),
     readJson(UPSTREAM, null)
   );
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
