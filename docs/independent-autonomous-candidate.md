@@ -42,4 +42,10 @@ configにコードSHAと方式を固定する。`adoptionGate:null`、`usableFor
 
 「展開・コース・ST・展示・残し／拾い」の限定した仮説は自動判定する。差し場の実際の開き、当地・水面の展開補正、技量の戦法適性、モーター評価、2着と3着の優先順は未実装。判断資料であるcontext自体の `judgmentImplemented=false` は保持し、実装状態は `flowStudy.judgment.stages` と `fullJudgmentImplemented=false` で確認する。買い目は生成せず、販売・コロがしへ渡さない。
 
-旧展示優位の母数は全旧形式を含めた各レース最初の有効sealを維持する。新しいflowStudyはsnapshot-v3の各レース・方式で最初の有効sealだけを別集計する。同じレースに旧v2と新v3があっても合算せず、旧入力に新判断を後付けしない。日次レポート内の `flowStudy` が正式な新方式の件数・未確定理由・頭の参考一致・条件付き役割の観測を示す。的中率・ROI・実際の決まり手の検証と混同しない。
+旧展示優位の母数は全旧形式を含めた各レース最初の有効sealを維持する。新しいflowStudyはsnapshot-v3以降の各レース・方式で最初の有効sealだけを別集計する。同じレースに旧v2と新v3があっても合算せず、旧入力に新判断を後付けしない。日次レポート内の `flowStudy` が正式な新方式の件数・未確定理由・頭の参考一致・条件付き役割の観測を示す。的中率・ROI・実際の決まり手の検証と混同しない。
+
+## 条件付きの相手順位・候補券（snapshot-v4）
+
+[independent-partner-study-v1.md](independent-partner-study-v1.md) の別枠 `partnerStudy` を追加する。前日までの公式実コース履歴を元ファイルSHA・対象期間とともに投影し、取得済み公式一周があれば同時保存する。主展開の条件付き役割から2・3着の部分順位と全候補を作り、競合する根拠や7券超過は無理に解消しない。旧展示優位candidateとflowStudyは同じコード・契約を保持する。
+
+新枠は `selectionImplemented=true` だが全8段階完成ではなく、販売・コロがしへの利用はfalse。旧v1〜v3へ追記せず、partnerStudyの最初の有効v4 sealだけを別集計する。日次レポートの同名枠で、全候補成績と同一入力・同一点数の比較を分ける。
