@@ -33,7 +33,8 @@ function parseOfficialStartRank(html, { registerNo, fetchedAt }) {
     const course = th && strip(th[1]);
     const value = strip(td[1]);
     if (!/^[1-6]$/.test(course || "") || Object.hasOwn(byCourse, course)) return unavailable(registerNo, "invalid-table");
-    if (value === "-") byCourse[course] = null;
+    // The official no-data cell repeats its dash in the graph and value spans.
+    if (/^-(?:\s+-)?$/.test(value)) byCourse[course] = null;
     else if (/^[1-6]\.\d{2}$/.test(value) && Number(value) <= 6) byCourse[course] = Number(value);
     else return unavailable(registerNo, "invalid-table");
   }

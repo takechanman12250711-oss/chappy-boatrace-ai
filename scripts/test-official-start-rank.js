@@ -27,6 +27,10 @@ const inputs = () => ({ entries: Array.from({ length: 6 }, (_, i) => ({ boat: i+
 async function main() {
   assert.deepEqual(profile("4101").byCourse, { 1:3.5, 2:3, 3:2.5, 4:4, 5:3.5, 6:3 });
   assert.equal(profile("4101", ["-", 3, 3, 3, 3, 3]).byCourse[1], null);
+  const missingGraph = html("4101", ["-", "-", "-", 4.2, 3.4, 4.5])
+    .replaceAll('<span style="width:60%"></span><span>-</span>', '<span style="width:0%">-</span><span>-</span>');
+  assert.deepEqual(parseOfficialStartRank(missingGraph, {registerNo:"4101",fetchedAt:new Date(now).toISOString()}).byCourse,
+    {1:null,2:null,3:null,4:4.2,5:3.4,6:4.5}, "欠測コースの重複ダッシュで取得済みの他コースを捨てない");
   assert.equal(parseOfficialStartRank(html("4102"), { registerNo:"4101", fetchedAt:new Date(now).toISOString() }).status,"identity-mismatch");
   for (const bad of [html("4101").replace("3.50", "0.15"), html("4101").replace("3.50", "空欄"),
     html("4101", [3,3,3,3,3]), html("4101").replace('class="is-boatColor6">6','class="is-boatColor6">5')]) {
