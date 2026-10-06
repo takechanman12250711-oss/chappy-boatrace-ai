@@ -31,6 +31,11 @@ on:
       - 'scripts/independent-partner-selector-v1.cjs'
       - 'scripts/independent-partner-study-report.cjs'
       - 'scripts/independent-partner-selector.test.cjs'
+      - 'config/independent-route-water-study-v1.json'
+      - 'scripts/independent-route-water-v1.cjs'
+      - 'scripts/independent-partner-selector-v2.cjs'
+      - 'scripts/independent-route-water-report.cjs'
+      - 'scripts/independent-route-water.test.cjs'
       - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-role-selector.cjs'
@@ -75,6 +80,11 @@ on:
       - 'scripts/independent-partner-selector-v1.cjs'
       - 'scripts/independent-partner-study-report.cjs'
       - 'scripts/independent-partner-selector.test.cjs'
+      - 'config/independent-route-water-study-v1.json'
+      - 'scripts/independent-route-water-v1.cjs'
+      - 'scripts/independent-partner-selector-v2.cjs'
+      - 'scripts/independent-route-water-report.cjs'
+      - 'scripts/independent-route-water.test.cjs'
       - 'scripts/independent-autonomous.test.cjs'
       - 'config/independent-rule-forward.json'
       - 'scripts/independent-role-selector.cjs'
@@ -153,7 +163,7 @@ jobs:
           node scripts/test-note-source-concurrency.js
           node --test scripts/official-start-rank-cache.test.cjs
           node --test scripts/test-partner-forward.cjs scripts/independent-role-selector.test.cjs scripts/independent-rule-forward.test.cjs scripts/independent-autonomous.test.cjs
-          node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs
+          node --test scripts/independent-flow-roles.test.cjs scripts/independent-partner-selector.test.cjs scripts/independent-route-water.test.cjs
           node --test scripts/test-omura-reference.cjs
           node scripts/test-note-pipeline.js
           node scripts/test-all-race-notes.js
