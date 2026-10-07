@@ -93,7 +93,7 @@ function indexBody(rows, config, now = Date.now()) {
     const result=publishedOutcomeLine(r).split('\n');
     return [`${result.shift()}｜${r.place}${r.raceNo}R`,...result,
       `🕒 締切 ${time(r.deadlineAt)}｜公開 ${time(r.publishedAt)}`,
-      `${Number.isInteger(r.ticketCount)?`中心${r.ticketCount}点`:'点数は記事で確認'}${isRecordedPrice(r.price)?`｜公開時価格 ${r.price}円`:''}`,
+      `${Number.isInteger(r.ticketCount)?`中心${r.ticketCount}点`:'点数は記事で確認'}${isRecordedPrice(r.price)?`｜公開時価格 ${r.price}円`:'｜価格は記事ページで確認'}`,
       purchaseLinkText(r, now),'🏁 公式結果を確認',r.resultUrl].join('\n');
   };
   const yesterday = recentDates(now)[1], previous = rows.filter(r=>r.raceKey.slice(0,8)===yesterday)
@@ -113,7 +113,7 @@ function indexBody(rows, config, now = Date.now()) {
     `📅 前日の結果（${Number(yesterday.slice(4,6))}月${Number(yesterday.slice(6,8))}日）\n${summarizePublicRows(previous)}\n\n${groups(previous)}`,
     `📊 集計の詳細\n${details(current,date,'本日')}\n\n${details(previous,yesterday,'前日')}`,
     'ℹ️ 結果の見方\n掲載全券は、締切前に公開した本命・押さえ・展開・万舟の買い目が対象です。別会計の参考予想は含めません。\n同じレースは全体で1回だけ数え、種類別と中心のみの成績は記事単位です。結果待ち・不成立・照合確認中は判定済み件数に含めません。\n払戻は公式の100円あたりの金額です。実際の購入額・利益ではありません。',
-    `🕒 購入前に\n時刻は日本時間です。日付・締切・各記事の価格をご確認ください。新規公開は各${NOTE_PRICE_YEN}円で試行中です。\n${EXPIRY_NOTICE}`,
+    `🕒 購入前に\n時刻は日本時間です。日付・締切・各記事の価格をご確認ください。新規公開の記事は各${NOTE_PRICE_YEN}円で試行中です。\n${EXPIRY_NOTICE}`,
     `📖 はじめての方へ\n${config.guide.url}`, `チャッピーのプロフィール\n${PROFILE}`].join('\n\n');
 }
 function initialState(config) {
