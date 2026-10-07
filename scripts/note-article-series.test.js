@@ -49,7 +49,10 @@ test('intake preserves complete independent original and has one immutable path'
     assert.equal(p.title, b.article.title);
     assert.ok(p.freeText.includes('元の理由を短縮・差し替えしない。'));
     assert.ok(p.paidText.startsWith(kind === 'escape' ? '🎯 独立本命' : '💥 独立万舟'));
-    assert.deepEqual(require('./note-readable-article').ticketsIn(p.paidText), ['1-2-3', '1-2-4']);
+    const shown=require('./note-korogashi-presentation.cjs').parsePaidText(p.paidText);
+    assert.deepEqual(shown.sections.flatMap(section=>section.tickets), ['1-2-3', '1-2-4']);
+    assert.deepEqual(shown.modelTickets, ['1-2-3', '1-2-4']);
+    assert.equal(shown.sections.length,1, 'the model appendix is not another prediction category');
     assert.equal(JSON.stringify(b), before);
   }
 }));

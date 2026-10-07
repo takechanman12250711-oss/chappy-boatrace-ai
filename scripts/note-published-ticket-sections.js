@@ -5,6 +5,7 @@
 const { createHash } = require('node:crypto');
 const { seriesOfBundle, publicationKey } = require('./note-article-series');
 const categoryV2 = require('./note-category-article');
+const modelV3 = require('./note-korogashi-presentation.cjs');
 const V2_LABELS = categoryV2.LABELS, V2_PRIMARY_LABELS = categoryV2.PRIMARY_LABELS;
 const VERSION = 'published-ticket-sections-v1';
 const EVIDENCE_VERSION = 'note-publication-evidence-v1';
@@ -18,6 +19,7 @@ const same = (a, b) => equal(sorted(a), sorted(b));
 const requireValue = (value, reason) => { if (!value) throw Error(reason); };
 const LABELS = Object.freeze(['中心の買い目', '相手を広げるなら', '別の展開を考えるなら', '高配当を狙うなら', '別会計の参考予想']);
 const REFERENCE = LABELS[4];
+const categoryPresentation = version => [categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION].includes(version);
 const DESCRIPTIONS = Object.freeze([
   'この買い目を中心に検討します。', '相手を広げたい場合の追加候補です。',
   '別の展開に備える追加候補です。', '高配当を狙う場合の追加候補です。',
@@ -55,7 +57,7 @@ function canonicalSections(sections) {
   return sections.map(section => ({ label: section.label, tickets: sorted(section.tickets) }));
 }
 function describe(sections, presentationVersion) {
-  const reference = presentationVersion === categoryV2.PRESENTATION_VERSION ? categoryV2.REFERENCE : REFERENCE;
+  const reference = categoryPresentation(presentationVersion) ? categoryV2.REFERENCE : REFERENCE;
   const all = canonicalSections(sections);
   const primary = all.filter(section => section.label !== reference);
   const unionTickets = sorted(primary.flatMap(section => section.tickets));
@@ -63,10 +65,11 @@ function describe(sections, presentationVersion) {
     publishedTicketCount: unionTickets.length, sections: primary, unionTickets,
     sectionsSha256: hash(JSON.stringify(all)), publishedTicketsSha256: hash(JSON.stringify(unionTickets)),
     referenceTicketCount: all.filter(section => section.label === reference).reduce((count, section) => count + section.tickets.length, 0),
-    ...(presentationVersion === categoryV2.PRESENTATION_VERSION ? { displayedPrimaryTicketCount: primary.reduce((count, section) => count + section.tickets.length, 0) } : {}) };
+    ...(categoryPresentation(presentationVersion) ? { displayedPrimaryTicketCount: primary.reduce((count, section) => count + section.tickets.length, 0) } : {}) };
 }
 
 function parsePaidSections(paidText, presentationVersion) {
+  if (presentationVersion === modelV3.PRESENTATION_VERSION) return modelV3.parsePaidText(paidText).sections;
   if (presentationVersion === categoryV2.PRESENTATION_VERSION) return categoryV2.parsePaidSections(paidText);
   requireValue(presentationVersion === 'readable-v1', 'published_presentation_version_unsupported');
   requireValue(typeof paidText === 'string' && paidText.trim(), 'published_paid_text_missing');
@@ -127,15 +130,16 @@ function extractPublishedTicketSections(paidText, { presentationVersion = 'reada
 
 // Hash-only evidence is safe to put in the receipt. Reference labels/counts are
 // retained, explicitly excluded from the approved public-result union.
-function sectionProof(paidText, presentationVersion = 'readable-v1') {
-  const reference = presentationVersion === categoryV2.PRESENTATION_VERSION ? categoryV2.REFERENCE : REFERENCE;
+function sectionProof(paidText, presentationVersion = 'readable-v1', { sourceSha256 } = {}) {
+  const reference = categoryPresentation(presentationVersion) ? categoryV2.REFERENCE : REFERENCE;
   const sections = canonicalSections(parsePaidSections(paidText, presentationVersion));
   const result = describe(sections, presentationVersion);
   return { version: VERSION, presentationVersion, paidTextSha256: hash(paidText),
     sectionsSha256: result.sectionsSha256, publishedTicketsSha256: result.publishedTicketsSha256,
     publishedTicketCount: result.publishedTicketCount,
     sections: sections.map(section => ({ label: section.label, ticketCount: section.tickets.length,
-      ticketsSha256: hash(JSON.stringify(section.tickets)), includedInPublishedResult: section.label !== reference })) };
+      ticketsSha256: hash(JSON.stringify(section.tickets)), includedInPublishedResult: section.label !== reference })),
+    ...(presentationVersion === modelV3.PRESENTATION_VERSION ? { modelSubset: modelV3.modelProof(paidText, sourceSha256) } : {}) };
 }
 
 function removeAsides(text) {
@@ -210,52 +214,120 @@ function paidTextFromSections(sections) {
   }).join('\n\n') + `\n\n金額の目安（1点100円）\n中心のみ${central * 100}円${total > central ? `／追加・参考をすべて含めると${total * 100}円` : ''}`;
 }
 
+// Identity and immutable practical selection are checked before any display
+// reconstruction. This internal helper never exposes paid arrays itself.
+function verifiedSource(row, bytes, now) {
+  requireValue(Number.isFinite(now), 'published_clock_invalid');
+  requireValue((typeof bytes === 'string' || Buffer.isBuffer(bytes)) && hash(bytes) === row?.sourceSha256, 'source_hash_mismatch');
+  let bundle;
+  try { bundle = JSON.parse(bytes); } catch { throw Error('source_json_invalid'); }
+  const record = bundle.record, series = seriesOfBundle(bundle), deadline = Date.parse(row.deadlineAt);
+  const published = Date.parse(row.publishedAt), captured = Date.parse(bundle.capturedAt);
+  requireValue(record?.raceKey === row.raceKey && record.deadlineAt === row.deadlineAt && record.place === row.place &&
+    Number(record.raceNo) === row.raceNo && series === (row.articleSeries || 'normal') &&
+    row.publicationKey === publicationKey(row.raceKey, series) &&
+    [deadline, published, captured].every(Number.isFinite) && captured <= published && published < deadline && published <= now, 'source_identity_mismatch');
+  const central = ticketRows(bundle.baselinePracticalTickets, 'published_tickets_unverified');
+  requireValue(central.length > 0 && central.length <= 7 && central.length === row.ticketCount && unique(central).length === central.length &&
+    same(central, ticketRows(record.prediction?.practicalTickets, 'published_tickets_unverified')), 'published_tickets_unverified');
+  if (series !== 'normal') {
+    requireValue(same(central, ticketRows(bundle.monitor?.tickets, 'monitor_tickets_mismatch')) &&
+      same(central, ticketRows(bundle.article?.practicalTickets, 'monitor_tickets_mismatch')) &&
+      equal(bundle.article, bundle.monitor?.article), 'monitor_tickets_mismatch');
+  }
+  return { bundle, series, central, deadline, published, captured };
+}
+function requireRendererEvidence(evidence, sourceSha256) {
+  requireValue(evidence?.version === EVIDENCE_VERSION && evidence.sourceSha256 === sourceSha256 &&
+    /^[a-f0-9]{40}$/.test(evidence.receiptCommitSha || '') && /^[a-f0-9]{40}$/.test(evidence.publisherCommitSha || ''), 'published_renderer_evidence_missing');
+}
+function requireLegacyRenderer(evidence) {
+  requireValue(Object.entries(LEGACY_READABLE).filter(([key]) => key !== 'presentationVersion')
+    .every(([key, value]) => evidence[key] === value) &&
+    (!evidence.presentationVersion || evidence.presentationVersion === LEGACY_READABLE.presentationVersion), 'published_renderer_unreviewed');
+}
+function reconstructDisplay(source, presentationVersion, sourceSha256) {
+  requireValue(['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION].includes(presentationVersion), 'published_display_proof_unsupported');
+  const { bundle, series, central } = source;
+  const sections = categoryPresentation(presentationVersion)
+    ? categoryV2.sourceSections(bundle, series) : sourceSections(bundle, series, central);
+  const paidText = presentationVersion === modelV3.PRESENTATION_VERSION ? modelV3.paidTextFromSource(bundle, series)
+    : presentationVersion === categoryV2.PRESENTATION_VERSION ? categoryV2.paidTextFromSections(sections) : paidTextFromSections(sections);
+  return { sections, paidText, proof: sectionProof(paidText, presentationVersion, { sourceSha256 }) };
+}
+
 // Evidence is collected from the verified receipt tag/commit, not an original's
 // generation sourceCommit. The collector must read renderer/source/generator
 // bytes at the receipt commit's sole parent and hash them. Existing rows without
 // this evidence remain review; never infer a publication renderer from a date.
 function publishedTicketSections(row, bytes, now = Date.now()) {
   try {
-    requireValue(Number.isFinite(now), 'published_clock_invalid');
-    requireValue((typeof bytes === 'string' || Buffer.isBuffer(bytes)) && hash(bytes) === row?.sourceSha256, 'source_hash_mismatch');
-    let bundle;
-    try { bundle = JSON.parse(bytes); } catch { throw Error('source_json_invalid'); }
-    const record = bundle.record, series = seriesOfBundle(bundle), deadline = Date.parse(row.deadlineAt);
-    const published = Date.parse(row.publishedAt), captured = Date.parse(bundle.capturedAt);
-    requireValue(record?.raceKey === row.raceKey && record.deadlineAt === row.deadlineAt && record.place === row.place &&
-      Number(record.raceNo) === row.raceNo && series === (row.articleSeries || 'normal') &&
-      row.publicationKey === publicationKey(row.raceKey, series) &&
-      [deadline, published, captured].every(Number.isFinite) && captured <= published && published < deadline && published <= now, 'source_identity_mismatch');
-    const central = ticketRows(bundle.baselinePracticalTickets, 'published_tickets_unverified');
-    requireValue(central.length > 0 && central.length <= 7 && central.length === row.ticketCount && unique(central).length === central.length &&
-      same(central, ticketRows(record.prediction?.practicalTickets, 'published_tickets_unverified')), 'published_tickets_unverified');
-    if (series !== 'normal') {
-      requireValue(same(central, ticketRows(bundle.monitor?.tickets, 'monitor_tickets_mismatch')) &&
-        same(central, ticketRows(bundle.article?.practicalTickets, 'monitor_tickets_mismatch')) &&
-        equal(bundle.article, bundle.monitor?.article), 'monitor_tickets_mismatch');
-    }
+    const source = verifiedSource(row, bytes, now);
     // No paid ticket lists or section membership leave the result API at/before
     // deadline, even with a forged early official result or complete receipt.
-    if (now <= deadline) return { status: 'pending', reason: 'official_result_pending' };
+    if (now <= source.deadline) return { status: 'pending', reason: 'official_result_pending' };
     const evidence = row.publicationEvidence;
-    requireValue(evidence?.version === EVIDENCE_VERSION && evidence.sourceSha256 === row.sourceSha256 &&
-      /^[a-f0-9]{40}$/.test(evidence.receiptCommitSha || '') && /^[a-f0-9]{40}$/.test(evidence.publisherCommitSha || ''), 'published_renderer_evidence_missing');
+    requireRendererEvidence(evidence, row.sourceSha256);
     const proof = evidence.publishedDisplayProof;
-    if (!proof) requireValue(Object.entries(LEGACY_READABLE).filter(([key]) => key !== 'presentationVersion')
-      .every(([key, value]) => evidence[key] === value) &&
-      (!evidence.presentationVersion || evidence.presentationVersion === LEGACY_READABLE.presentationVersion), 'published_renderer_unreviewed');
-    else requireValue(proof.version === VERSION && ['readable-v1', categoryV2.PRESENTATION_VERSION].includes(proof.presentationVersion), 'published_display_proof_unsupported');
+    if (!proof) requireLegacyRenderer(evidence);
+    else requireValue(proof.version === VERSION && ['readable-v1', categoryV2.PRESENTATION_VERSION, modelV3.PRESENTATION_VERSION]
+      .includes(proof.presentationVersion), 'published_display_proof_unsupported');
     const presentationVersion = proof?.presentationVersion || 'readable-v1';
     requireValue(!evidence.presentationVersion || evidence.presentationVersion === presentationVersion, 'published_display_proof_mismatch');
-    const sections = presentationVersion === categoryV2.PRESENTATION_VERSION
-      ? categoryV2.sourceSections(bundle, series) : sourceSections(bundle, series, central);
-    const paidText = presentationVersion === categoryV2.PRESENTATION_VERSION
-      ? categoryV2.paidTextFromSections(sections) : paidTextFromSections(sections);
-    const expectedProof = sectionProof(paidText, presentationVersion);
-    if (proof) requireValue(equal(proof, expectedProof), 'published_display_proof_mismatch');
-    return { ...describe(sections, presentationVersion), evidenceBasis: proof ? 'receipt-display-proof' : 'receipt-publisher-code',
+    const reconstructed = reconstructDisplay(source, presentationVersion, row.sourceSha256);
+    if (proof) requireValue(equal(proof, reconstructed.proof), 'published_display_proof_mismatch');
+    return { ...describe(reconstructed.sections, presentationVersion), evidenceBasis: proof ? 'receipt-display-proof' : 'receipt-publisher-code',
       receiptCommitSha: evidence.receiptCommitSha, publisherCommitSha: evidence.publisherCommitSha };
   } catch (error) { return review(error.message); }
+}
+
+// Internal course validation works before the deadline but returns hash-only
+// selection evidence. It does not weaken the public result boundary above.
+// Later settlement may revalidate the same original; its original publication
+// and verification must still have happened before the race deadline.
+function verifiedModelSubset(row, bytes, receipt, now = Date.now()) {
+  const source = verifiedSource(row, bytes, now);
+  const verified = Date.parse(receipt?.verifiedAt), selected = Date.parse(source.bundle.record.selectedAt);
+  requireValue(receipt?.version === 'note-publication-receipt-v1' &&
+    receipt.sourceSha256 === row.sourceSha256 && receipt.raceKey === row.raceKey &&
+    receipt.publishedAt === row.publishedAt && receipt.url === row.url && receipt.price === row.price &&
+    require('./note-pricing').isRecordedPrice(receipt.price) &&
+    /^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+$/.test(receipt.url || '') &&
+    (receipt.articleSeries === undefined || receipt.articleSeries === source.series) &&
+    (receipt.publicationKey === undefined || receipt.publicationKey === row.publicationKey), 'model_selection_receipt_mismatch');
+  requireValue(Number.isFinite(verified) && Number.isFinite(selected) && selected <= source.captured &&
+    verified >= source.published && verified < source.deadline && verified <= now, 'model_selection_clock_invalid');
+  if (source.series !== 'normal') {
+    const monitor = source.bundle.monitor;
+    requireValue(monitor.raceKey === source.bundle.record.raceKey && monitor.status === 'confirmed-after-exhibition' &&
+      Date.parse(monitor.confirmedAt) === selected, 'model_selection_monitor_identity_invalid');
+  }
+  const proof = receipt.publishedDisplayProof;
+  const presentationVersion = proof?.presentationVersion || 'readable-v1';
+  // readable-v2 shows categories, not the practical selection. A count match,
+  // even an accidental exact ticket match, is never proof of a center section.
+  requireValue(['readable-v1', modelV3.PRESENTATION_VERSION].includes(presentationVersion), 'model_selection_presentation_unsupported');
+  if (proof) requireValue(proof.version === VERSION, 'published_display_proof_unsupported');
+  const evidence = row.publicationEvidence;
+  if (evidence) {
+    requireRendererEvidence(evidence, row.sourceSha256);
+    requireValue(!evidence.presentationVersion || evidence.presentationVersion === presentationVersion, 'published_display_proof_mismatch');
+    requireValue(equal(evidence.publishedDisplayProof, proof), 'published_display_proof_mismatch');
+  }
+  if (!proof) {
+    requireRendererEvidence(evidence, row.sourceSha256);
+    requireLegacyRenderer(evidence);
+  }
+  const reconstructed = reconstructDisplay(source, presentationVersion, row.sourceSha256);
+  if (proof) requireValue(equal(proof, reconstructed.proof), 'published_display_proof_mismatch');
+  const model = presentationVersion === modelV3.PRESENTATION_VERSION ? reconstructed.proof.modelSubset
+    : { ...reconstructed.proof.sections[0], sourceSha256: row.sourceSha256 };
+  requireValue(model.label === (presentationVersion === 'readable-v1' ? LABELS[0] : modelV3.MODEL_LABEL) &&
+    model.ticketCount === source.central.length && model.ticketsSha256 === hash(JSON.stringify(sorted(source.central))) &&
+    model.sourceSha256 === row.sourceSha256, 'model_selection_source_mismatch');
+  return Object.freeze({ version: 'note-korogashi-selection-evidence-v1', presentationVersion,
+    sourceSha256: row.sourceSha256, paidTextSha256: reconstructed.proof.paidTextSha256,
+    ticketsSha256: model.ticketsSha256, ticketCount: model.ticketCount, label: model.label });
 }
 
 // The caller still validates official source, chronology, payout, refunds and
@@ -269,4 +341,4 @@ function classifyPublishedTickets(row, bytes, officialCombination, now = Date.no
 }
 
 module.exports = { VERSION, EVIDENCE_VERSION, LEGACY_READABLE, V2_LABELS, V2_PRIMARY_LABELS, sectionProof, extractPublishedTicketSections,
-  publishedTicketSections, classifyPublishedTickets };
+  publishedTicketSections, classifyPublishedTickets, verifiedModelSubset };

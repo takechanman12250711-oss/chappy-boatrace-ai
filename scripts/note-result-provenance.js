@@ -70,7 +70,7 @@ function winningProvenance(row, bytes, settlement, section, now = Date.now()) {
     const { publishedTicketSections } = require('./note-published-ticket-sections');
     const verified = publishedTicketSections(row, bytes, now);
     requireValue(verified.status === 'verified' && equal(sectionProjection(section), sectionProjection(verified)));
-    requireValue(['readable-v1', 'readable-v2'].includes(verified.presentationVersion));
+    requireValue(['readable-v1', 'readable-v2', 'readable-v3'].includes(verified.presentationVersion));
     const combination = settlement.combination;
     requireValue(validTicket(combination) && verified.unionTickets.includes(combination));
     const matchedSections = verified.sections.filter(value => value.tickets.includes(combination)).map(value => value.label);

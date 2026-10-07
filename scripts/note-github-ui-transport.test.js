@@ -193,14 +193,13 @@ async function checkAsyncGuards() {
   assert.deepEqual(await preflightDraft(eligible, claimEnv, async () => ({ status: 200, json: async () => ({ ref: draftClaimRef(eligible) }) })), { ok: false, reason: 'prior_attempt_review_required' });
   assert.equal(recoveryReference(eligible), draftClaimRef(eligible).replace('note-draft-claim/', 'note-published/'));
   const recoveryRequests = [];
-  const recoverable = await recoveryClaimStatus(eligible, claimEnv, async (url, options) => {
+  await assert.rejects(recoveryClaimStatus(eligible, claimEnv, async (url, options) => {
     recoveryRequests.push({ url, options });
     if (url.includes('/note-draft-claim/')) return { status: 200, json: async () => ({ ref: draftClaimRef(eligible) }) };
     if (url.includes('/note-published/')) return { status: 404 };
     throw new Error('unexpected recovery lookup');
-  });
-  assert.deepEqual(recoverable, { ok: true });
-  assert.equal(recoveryRequests.length, 2);
+  }), /note_claim_lookup_invalid/);
+  assert.equal(recoveryRequests.length, 2, 'a bare claim ref without immutable commit identity cannot authorize recovery');
   assert.deepEqual(await recoveryClaimStatus(eligible, claimEnv, async url =>
     url.includes('/note-published/') ? { status: 200 } : { status: 200, json: async () => ({ ref: draftClaimRef(eligible) }) }),
   { ok: false, reason: 'publication_receipt_exists' });

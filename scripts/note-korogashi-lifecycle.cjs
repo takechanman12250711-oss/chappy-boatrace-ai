@@ -2,6 +2,7 @@
 const { createHash } = require('node:crypto');
 const { readLeg, allocate, DISCLAIMER } = require('./note-korogashi-draft.cjs');
 const { jstDate, recentDates, validUrl } = require('./note-marketing-content');
+const { verifiedModelSubset } = require('./note-published-ticket-sections');
 const VERSION = 'note-korogashi-state-v1';
 const POLICY = 'published-same-series-deadline-order-v1';
 const json = x => JSON.stringify(x);
@@ -53,6 +54,13 @@ function project(plan) {
         ms(leg.plannedAt) <= ms(seal.confirmedAt) && ms(seal.createdAt) <= ms(seal.confirmedAt) &&
         ms(seal.confirmedAt) <= ms(body.at) && ms(leg.deadlineAt) - ms(seal.confirmedAt) > 120000, 'seal_invalid');
       check(seal.snapshotHash === hash({ request: r, previous, leg }), 'snapshot_mismatch');
+      const selection = leg.modelSelectionEvidence;
+      check(selection?.version === 'note-korogashi-selection-evidence-v1' &&
+        ['readable-v1','readable-v3'].includes(selection.presentationVersion) &&
+        selection.sourceSha256 === leg.sourceSha256 && /^[a-f0-9]{64}$/.test(selection.paidTextSha256 || '') &&
+        selection.ticketCount === leg.allocations.length &&
+        selection.ticketsSha256 === hash(leg.allocations.map(a=>a.ticket).sort()) &&
+        selection.label === (selection.presentationVersion === 'readable-v3' ? '🔄 コロがし検証対象' : '中心の買い目'), 'registered_selection_unverified');
       const opening = state.balanceYen ?? leg.allocations.length * 1000;
       check(json(allocate(opening,leg.allocations.map(a=>a.ticket))) === json({ allocations:leg.allocations,stakeYen:leg.stakeYen,remainderYen:leg.remainderYen }), 'funding_mismatch');
       check(leg.openingYen === opening && (!state.lastAt || ms(leg.plannedAt) >= ms(state.lastAt)), 'registration_timing_invalid');
@@ -118,12 +126,14 @@ function makeLeg(row, receipt, bytes, view, now) {
   const input={sourcePath,receipt,plannedAt:iso(now)};
   const verified=readLeg(input,bytes,now);
   check(json(verified.row)===json(Object.fromEntries(Object.keys(verified.row).map(k=>[k,row[k]]))), 'publication_row_mismatch');
+  const modelSelectionEvidence=verifiedModelSubset(row,bytes,receipt,now);
   const openingYen=view.balanceYen ?? verified.tickets.length*1000;
   return { number:view.legs.length+1, ...input, raceKey:row.raceKey, articleSeries:row.articleSeries,
     sourceSha256:row.sourceSha256, sourceArticleUrl:row.url, place:row.place, raceNo:row.raceNo, deadlineAt:row.deadlineAt,
     // The public readable article may reorder formations. A numeric ticket
     // order lets a buyer reproduce the allocation from those paid picks.
-    openingYen, ...allocate(openingYen,[...verified.tickets].sort()) };
+    ...(row.publicationEvidence ? {publicationEvidence:copy(row.publicationEvidence)} : {}),
+    modelSelectionEvidence, openingYen, ...allocate(openingYen,[...verified.tickets].sort()) };
 }
 async function prepare(state, config, { rows, source, result, now, context }) {
   validateState(state);const next=copy(state), day=jstDate(now);
@@ -150,8 +160,10 @@ async function prepare(state, config, { rows, source, result, now, context }) {
     if(view.status==='waiting_result') {
       const last=view.legs.at(-1), official=await result(last.raceKey);
       if(official) {
-        const {bytes}=await source(last);
+        const {bytes,receipt}=await source(last);
         const verified=readLeg({...last,result:official},bytes,now);
+        const publicationRow={...verified.row,...(last.publicationEvidence ? {publicationEvidence:last.publicationEvidence} : {})};
+        check(json(verifiedModelSubset(publicationRow,bytes,receipt,now)) === json(last.modelSelectionEvidence), 'saved_selection_source_mismatch');
         check(json(last.allocations)===json(allocate(last.openingYen,[...verified.tickets].sort()).allocations), 'saved_funding_source_mismatch');
         const settlement=verified.settlement;
         if(settlement.status!=='pending') {
@@ -227,7 +239,8 @@ function publicText(state, now) {
       ...v.legs.map(l=>[`${l.number}段目 ${l.place}${l.raceNo}R｜締切 ${stamp(l.deadlineAt)}`,
         `締切前登録 ${stamp(l.seal.confirmedAt)}｜${l.allocations.length}点｜モデル配分 ${amount(l.stakeYen)}｜未投入端数 ${amount(l.remainderYen)}`,
         l.publication ? `一覧での掲載確認 ${stamp(l.publication.verifiedAt)}` : '締切前の掲載確認記録なし。この段は的中・払戻の実績に算入していません。',
-        `元記事の中心買い目を艇番の数字が小さい順に並べ、上から ${l.allocations.map(a=>amount(a.stakeYen)).join('・')} と配分します。追加候補は含みません。`,
+        `元記事の「${l.modelSelectionEvidence.label}」欄だけをモデル検証に使用します。掲載済み買い目の一部であり、別の買い目や追加購入ではありません。`,
+        `対象券を艇番の数字が小さい順に並べ、上から ${l.allocations.map(a=>amount(a.stakeYen)).join('・')} とモデル配分します。その他の掲載券・参考予想は対象外です。`,
         `結果：${({hit:'的中',miss:'不的中',void:'不成立',review:'確認中'})[l.settlement?.status]||'結果待ち'}｜モデル払戻 ${amount(l.payoutYen)}`,
         l.sourceArticleUrl].join('\n')),
       `モデル保有額 ${amount(v.balanceYen)}｜開始資金差引 ${amount(v.netBeforeFeesYen)}（記事代別）`].join('\n\n');})].join('\n\n');

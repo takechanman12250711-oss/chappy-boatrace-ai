@@ -32,7 +32,10 @@ try {
     assert.equal(p.title, b.article.title);
     assert.ok(p.freeText.includes('元の理由を短縮・差し替えしない。'));
     assert.ok(p.paidText.startsWith('🎯 独立本命'));
-    assert.deepEqual(require('./note-readable-article').ticketsIn(p.paidText).sort(), ['1-2-3', '1-2-4']);
+    const shown=require('./note-korogashi-presentation.cjs').parsePaidText(p.paidText);
+    assert.deepEqual(shown.sections.flatMap(section=>section.tickets).sort(), ['1-2-3', '1-2-4']);
+    assert.deepEqual(shown.modelTickets.sort(), ['1-2-3', '1-2-4']);
+    assert.equal(shown.sections.length,1, 'model subset replay is not another prediction category');
     assert.deepEqual(b.article, b.monitor.article);
     assert.equal(p.price, 200); assert.equal(p.practicalTicketCount, 2);
     assert.deepEqual(verifyPublicationSource(p, root, NOW), p);

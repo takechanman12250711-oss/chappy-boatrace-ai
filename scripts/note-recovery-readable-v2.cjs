@@ -128,7 +128,7 @@ function readableArticleV1(article, bundle) {
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].filter(Boolean).join('\n\n');
   return { ...article, presentationVersion: 'readable-v1', freeText, paidText, fullText };
 }
-function readableArticleV2(article, bundle, { presentationVersion = 'readable-v2' } = {}) {
+function readableArticle(article, bundle, { presentationVersion = 'readable-v2' } = {}) {
   // Explicit legacy use exists only for historical regression/reconstruction.
   if (presentationVersion === 'readable-v1') return readableArticleV1(article, bundle);
   if (presentationVersion !== 'readable-v2') throw new Error('published_presentation_version_unsupported');
@@ -177,24 +177,5 @@ function readableArticleV2(article, bundle, { presentationVersion = 'readable-v2
     section.label !== sections[index].label || !sameSet(section.tickets, sections[index].tickets))) throw new Error('readable_rendered_tickets_mismatch');
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].join('\n\n');
   return { ...article, presentationVersion, freeText, paidText, fullText };
-}
-function readableArticle(article, bundle, { presentationVersion = 'readable-v3' } = {}) {
-  // Historical v1/v2 reconstruction keeps its exact existing bytes and grammar.
-  if (presentationVersion === 'readable-v1' || presentationVersion === 'readable-v2') {
-    return readableArticleV2(article, bundle, { presentationVersion });
-  }
-  if (presentationVersion !== 'readable-v3') throw new Error('published_presentation_version_unsupported');
-  const model = require('./note-korogashi-presentation.cjs');
-  const series = require('./note-article-series').seriesOfBundle(bundle);
-  const paidText = model.paidTextFromSource(bundle, series, article);
-  const base = readableArticleV2(article, bundle);
-  const parsed = model.parsePaidText(paidText);
-  if (parsed.basePaidText !== base.paidText) throw new Error('readable_rendered_tickets_mismatch');
-  const freeText = base.freeText + '\n\n🔄 コロがし検証対象は、有料部分の末尾に掲載します。\n保存済みの実戦厳選を示す欄で、上の公開予想と重複します。追加購入を勧めるものではありません。';
-  if (mentions(freeText).length) throw new Error('readable_free_ticket_leak');
-  // Existing free disclosures (including article price) remain unchanged.
-  // The fixed model preview adds no new amount or funding recommendation.
-  const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].join('\n\n');
-  return { ...base, presentationVersion, freeText, paidText, fullText };
 }
 module.exports = { readableArticle, ticketsIn };

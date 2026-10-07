@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { readableArticle: currentReadableArticle, ticketsIn } = require('./note-readable-article');
 const readableArticle = (article, bundle) => currentReadableArticle(article, bundle, { presentationVersion: 'readable-v1' });
+const readableArticleV2 = (article, bundle) => currentReadableArticle(article, bundle, { presentationVersion: 'readable-v2' });
 const { sectionProof } = require('./note-published-ticket-sections');
 const { fixture } = require('./note-independent-monitor-fixture');
 test('independent original remains immutable, reasons move before the paywall', () => {
@@ -107,7 +108,7 @@ function categoryFixture() {
   return b;
 }
 test('readable-v2 preserves explicit source categories and overlaps, odds and practical priority', () => {
-  const b = categoryFixture(), before = JSON.stringify(b), a = currentReadableArticle(b.article, b);
+  const b = categoryFixture(), before = JSON.stringify(b), a = readableArticleV2(b.article, b);
   const parsed = require('./note-category-article').parsePaidSections(a.paidText);
   assert.equal(a.presentationVersion, 'readable-v2');
   assert.deepEqual(parsed.map(section => section.label), ['🎯 本命','🛡️ 押さえ','🌊 流し','💥 万舟狙い','🧾 別会計の参考予想']);
@@ -132,7 +133,7 @@ test('readable-v2 has short saved rationale and emoji date/deadline, with no pai
   const b = categoryFixture();
   b.record.prediction.raceFlow.summary = '1-2-3を想定します。1号艇の逃げを中心に考えます。2号艇の差しも見ます。';
   b.article.freeText += '\n\n作成時点の取得済み情報による参考予想です。\n\n今日の予想一覧\nhttps://note.com/great_robin3243/n/na76b6c6c18ff';
-  const a = currentReadableArticle(b.article, b);
+  const a = readableArticleV2(b.article, b);
   assert.ok(a.freeText.startsWith('🚤 9月28日 丸亀6R\n🕒 締切 17:29'));
   assert.ok(a.freeText.includes('🧭 展開の考え方\n1号艇の逃げを中心に考えます。\n2号艇の差しも見ます。\n内側の差しにも注意します。'));
   assert.deepEqual(ticketsIn(a.freeText), []);
@@ -145,24 +146,24 @@ test('readable-v2 fails closed rather than guessing missing category membership'
     b => { b.record.prediction.mainSheet.flowTickets = null; },
     b => { delete b.record.prediction.manshuSheet; }]) {
     const b = categoryFixture(); mutate(b);
-    assert.throws(() => currentReadableArticle(b.article, b), /category_source_missing/);
+    assert.throws(() => readableArticleV2(b.article, b), /category_source_missing/);
   }
   const b = categoryFixture(); b.record.prediction.mainSheet.tickets = ['1-2-3'];
-  assert.throws(() => currentReadableArticle(b.article, b), /category_membership_missing/);
+  assert.throws(() => readableArticleV2(b.article, b), /category_membership_missing/);
   b.record.prediction.mainSheet.tickets = ['7-2-1'];
-  assert.throws(() => currentReadableArticle(b.article, b), /category_ticket_invalid/);
+  assert.throws(() => readableArticleV2(b.article, b), /category_ticket_invalid/);
 });
 test('readable-v2 explicit empty categories are zero, never inferred from practical selection or candidate24', () => {
   const b = categoryFixture();
   b.record.prediction.mainSheet.coverTickets = []; b.record.prediction.mainSheet.flowTickets = [];
   b.record.prediction.manshuSheet.tickets = [];
-  const a = currentReadableArticle(b.article, b);
+  const a = readableArticleV2(b.article, b);
   for (const heading of ['🛡️ 押さえ','🌊 流し','💥 万舟狙い']) assert.ok(a.paidText.includes(heading + '\n\n保存済みの買い目なし\n0点'));
 });
 test('readable-v2 independent article kinds remain separate from every ordinary AI pool', () => {
   for (const kind of ['escape', 'manshu']) {
     const b = fixture(); b.monitor.kind = kind;
-    const a = currentReadableArticle(b.article, b);
+    const a = readableArticleV2(b.article, b);
     assert.ok(a.paidText.startsWith(kind === 'escape' ? '🎯 独立本命' : '💥 独立万舟'));
     assert.ok(a.freeText.includes('🔎 通常AIとは別の独立した監視予想です。'));
     assert.ok(a.freeText.includes('💡 すべての買い目を購入する前提ではありません。'));
@@ -171,7 +172,7 @@ test('readable-v2 independent article kinds remain separate from every ordinary 
     assert.deepEqual(ticketsIn(a.paidText), ['1-2-3','1-2-4']);
     for (const key of ['mainSheet', 'manshuSheet', 'ticketSheets']) {
       const changed = structuredClone(b); changed.record.prediction[key] = {};
-      assert.throws(() => currentReadableArticle(changed.article, changed), /independent_pool_mixture/);
+      assert.throws(() => readableArticleV2(changed.article, changed), /independent_pool_mixture/);
     }
   }
 });

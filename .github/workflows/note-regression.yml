@@ -24,6 +24,11 @@ on:
       - "scripts/note-github-ui-transport.js"
       - "scripts/note-pricing*"
       - "scripts/note-readable-article*"
+      - "scripts/note-korogashi-presentation*"
+      - "scripts/note-recovery*"
+      - "scripts/fixtures/note-recovery-code.json"
+      - "scripts/note-published-ticket-sections*"
+      - "scripts/note-result-provenance*"
       - "scripts/note-cover*"
       - "assets/note/**"
       - "scripts/note-browserbase-draft-save.js"
@@ -80,6 +85,11 @@ on:
       - "scripts/note-github-ui-transport.js"
       - "scripts/note-pricing*"
       - "scripts/note-readable-article*"
+      - "scripts/note-korogashi-presentation*"
+      - "scripts/note-recovery*"
+      - "scripts/fixtures/note-recovery-code.json"
+      - "scripts/note-published-ticket-sections*"
+      - "scripts/note-result-provenance*"
       - "scripts/note-cover*"
       - "assets/note/**"
       - "scripts/note-browserbase-draft-save.js"
@@ -151,12 +161,15 @@ jobs:
           node scripts/test-prediction-summaries.js
           node scripts/check-note-skills.js
           node scripts/note-github-ui-transport.test.js
-          node --test scripts/note-pricing.test.js scripts/note-readable-article.test.js
+          node --test scripts/note-pricing.test.js scripts/note-readable-article.test.js scripts/note-korogashi-presentation.test.cjs
+          node --test scripts/note-published-ticket-sections.test.js scripts/note-result-provenance.test.js scripts/note-korogashi-lifecycle.test.cjs
           node scripts/note-cover.test.js
           node scripts/note-cover-template.test.js
           node scripts/note-browserbase-draft-save.test.js
           node scripts/note-editor-content.test.js
           node scripts/note-publication-source.test.js
+          node scripts/note-independent-monitor-source.test.js
+          node --test scripts/note-recovery-presentation.test.cjs
           node --test scripts/note-article-series.test.js
           node --test scripts/note-marketing.test.js
           node --test scripts/note-marketing-reports.test.js scripts/note-marketing-measurement.test.js

@@ -427,30 +427,42 @@ function recoveryReference(payload) {
 }
 
 function recoverySourceTime(sourcePath, rootDir = process.cwd()) {
-  const source = JSON.parse(fs.readFileSync(path.join(rootDir, sourcePath), 'utf8'));
-  const value = source?.record?.selectedAt || source?.monitor?.confirmedAt || source?.capturedAt;
-  const time = Date.parse(value);
-  if (!Number.isFinite(time) || time >= Date.parse(source?.record?.deadlineAt)) {
-    throw new Error('publication_recovery_source_time_invalid');
-  }
-  return time;
+  return require('./note-recovery-presentation.cjs').recoveryIdentity(sourcePath, rootDir).sourceTime;
 }
 
-async function recoveryClaimStatus(payload, env = process.env, request = fetch) {
+async function recoveryClaimStatus(payload, env = process.env, request = fetch, rootDir = process.cwd()) {
   const { repository, token } = loadClaimConfig(env);
   const claim = draftClaimRef(payload);
   const receipt = recoveryReference(payload);
   const options = { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(30000) };
+  const base = `https://api.github.com/repos/${repository}`;
   const [claimResponse, receiptResponse] = await Promise.all([
-    request(`https://api.github.com/repos/${repository}/git/ref/${claim.slice(5)}`, options),
-    request(`https://api.github.com/repos/${repository}/git/ref/${receipt.slice(5)}`, options)
+    request(`${base}/git/ref/${claim.slice(5)}`, options),
+    request(`${base}/git/ref/${receipt.slice(5)}`, options)
   ]);
   if (receiptResponse.status === 200) return { ok: false, reason: 'publication_receipt_exists' };
   if (receiptResponse.status !== 404) throw new Error(`publication_receipt_lookup_failed_${receiptResponse.status}`);
   if (claimResponse.status === 404) return { ok: false, reason: 'publication_claim_missing' };
   if (claimResponse.status !== 200) throw new Error(`note_claim_lookup_failed_${claimResponse.status}`);
-  if ((await claimResponse.json()).ref !== claim) throw new Error('note_claim_lookup_invalid');
-  return { ok: true };
+  const data = await claimResponse.json();
+  if (data.ref !== claim || data.object?.type !== 'commit' || !/^[a-f0-9]{40}$/.test(data.object.sha || '')) {
+    throw new Error('note_claim_lookup_invalid');
+  }
+  const { recoveryIdentity, verifyRecoveryPresentation } = require('./note-recovery-presentation.cjs');
+  const identity = recoveryIdentity(payload.sourcePath, rootDir);
+  for (const key of ['raceKey', 'sourceSha256', 'articleSeries', 'publicationKey']) {
+    if (payload[key] !== identity[key]) throw new Error('publication_recovery_claim_identity_mismatch');
+  }
+  const recoveryEvidence = await verifyRecoveryPresentation(identity, data.object.sha, { base, options, request, rootDir });
+  return { ok: true, recoveryEvidence };
+}
+
+function requireRecoveryPublicationGate(payload, recoveryEvidence, rootDir = process.cwd()) {
+  const { recoveryIdentity, requireRecoveryEvidence } = require('./note-recovery-presentation.cjs');
+  const identity = recoveryIdentity(payload.sourcePath, rootDir);
+  const presentationVersion = requireRecoveryEvidence(recoveryEvidence, identity);
+  requireDraftGate(payload, identity.sourceTime);
+  return require('./note-publication-source').verifyPublicationSource(payload, rootDir, identity.sourceTime, { presentationVersion });
 }
 
 async function preparePublicationRecovery({ rootDir = process.cwd(), env = process.env, request = fetch, handoff } = {}) {
@@ -460,12 +472,15 @@ async function preparePublicationRecovery({ rootDir = process.cwd(), env = proce
   for (const candidate of latest.candidates) {
     let payload;
     try {
-      const sourceTime = recoverySourceTime(candidate.sourcePath, rootDir);
-      payload = require('./note-publication-source').publicationPayload(candidate.sourcePath, rootDir, sourceTime);
-      requirePublicationGate(payload, rootDir, sourceTime);
-      const gate = await recoveryClaimStatus(payload, env, request);
-      if (gate.ok) return { ok: true, payload, recoveryOnly: true, skipped };
-      skipped.push({ raceKey: payload.raceKey, articleSeries: payload.articleSeries, reason: gate.reason });
+      const identity = require('./note-recovery-presentation.cjs').recoveryIdentity(candidate.sourcePath, rootDir);
+      const gate = await recoveryClaimStatus(identity, env, request, rootDir);
+      if (gate.ok) {
+        payload = require('./note-publication-source').publicationPayload(identity.sourcePath, rootDir, identity.sourceTime,
+          { presentationVersion: gate.recoveryEvidence.presentationVersion });
+        requireRecoveryPublicationGate(payload, gate.recoveryEvidence, rootDir);
+        return { ok: true, payload, recoveryOnly: true, skipped };
+      }
+      skipped.push({ raceKey: identity.raceKey, articleSeries: identity.articleSeries, reason: gate.reason });
     } catch (error) {
       skipped.push({ raceKey: candidate.raceKey, articleSeries: candidate.articleSeries || 'normal', reason: error.message, issueCodes: error.issueCodes });
     }
@@ -573,9 +588,16 @@ async function findPublishedArticleInList(page, noteId) {
   }
 }
 
-async function recoverClaimedPublication(page, payload, rootDir = process.cwd()) {
+function recoveryBodyMatches(articleText, payload) {
+  // Inspect only the uniquely identified note body, never a page-wide prefix.
+  // Preserve every non-empty line, including non-ticket prose and spaces;
+  // note's empty paragraphs, CRLF and NBSP are the only normalizations.
+  return require('./note-editor-content').compareEditorContent(articleText, articleBody(payload)).equal;
+}
+
+async function recoverClaimedPublication(page, payload, rootDir = process.cwd(), recoveryEvidence) {
   const sourceTime = recoverySourceTime(payload.sourcePath, rootDir);
-  requirePublicationGate(payload, rootDir, sourceTime);
+  requireRecoveryPublicationGate(payload, recoveryEvidence, rootDir);
   const publishedDisplayProof = require('./note-publication-source').parsePublishedDisplayProof(payload);
   const response = await page.goto('https://note.com/great_robin3243', { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!response?.ok()) throw new Error('publication_recovery_listing_unavailable');
@@ -594,13 +616,14 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd())
   const articleResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!articleResponse?.ok() || !publicArticleUrl(page.url(), noteId)) throw new Error('publication_public_page_unavailable');
   await page.getByRole('heading', { name: payload.title, exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  const articleText = await page.locator('article').innerText();
-  const normalize = value => String(value).replace(/\s+/g, '');
-  if (!normalize(articleText).includes(normalize(payload.freeText)) ||
-      !normalize(articleText).includes(normalize(payload.paidText))) {
+  const body = page.locator('.note-common-styles__textnote-body');
+  if (await body.count() !== 1) throw Error('publication_recovery_body_layout_unverified');
+  const actualBody = await body.innerText();
+  if (!recoveryBodyMatches(actualBody, payload)) {
     throw new Error('publication_recovery_body_mismatch');
   }
-  if (!normalize(articleText).includes(normalize(`¥${EXPECTED_PRICE_YEN}`))) {
+  const articleText = await page.locator('article').innerText();
+  if (!String(articleText).replace(/\s+/g, '').includes(`¥${EXPECTED_PRICE_YEN}`)) {
     throw new Error('publication_price_unverified');
   }
   const dates = await page.locator('time[datetime]').evaluateAll(elements => elements.map(el => el.getAttribute('datetime')));
@@ -650,9 +673,14 @@ async function run({ env = process.env } = {}) {
   const draft = mode !== 'auth' ? loadHandoff(env.NOTE_IPHONE_HANDOFF || DEFAULT_HANDOFF) : null;
   if (draft && !recoveryOnly) requireDraftGate(draft.payload);
   if (mode === 'publish' && !recoveryOnly) requirePublicationGate(draft.payload);
+  let recoveryEvidence;
   if (recoveryOnly) {
-    const sourceTime = recoverySourceTime(draft.payload.sourcePath);
-    requirePublicationGate(draft.payload, process.cwd(), sourceTime);
+    // A serialized handoff cannot carry trust across processes. Re-read the
+    // original claim and immutable code/source before opening any browser.
+    const gate = await recoveryClaimStatus(draft.payload, env);
+    if (!gate.ok) throw Error(gate.reason);
+    recoveryEvidence = gate.recoveryEvidence;
+    requireRecoveryPublicationGate(draft.payload, recoveryEvidence);
   }
   const { loadCoverTemplate, attachCover } = require('./note-cover');
   const { renderCover } = require('./note-cover-template');
@@ -680,7 +708,7 @@ async function run({ env = process.env } = {}) {
       const context = browser.contexts()[0];
       if (!context) throw new Error('browser_use_context_missing');
       const page = context.pages()[0] || await context.newPage();
-      const receipt = await recoverClaimedPublication(page, draft.payload);
+      const receipt = await recoverClaimedPublication(page, draft.payload, process.cwd(), recoveryEvidence);
       await savePublicationReceipt(draft.payload, receipt, env);
       console.log(`NOTE_UI_PUBLICATION=${JSON.stringify(receipt)}`);
       console.log('NOTE_UI_PUBLISH_CLICKED=false');
@@ -767,10 +795,12 @@ module.exports = {
   recoveryReference,
   recoverySourceTime,
   recoveryClaimStatus,
+  requireRecoveryPublicationGate,
   preparePublicationRecovery,
   prepareTransport,
   findPublishedArticleInList,
   recoverClaimedPublication,
+  recoveryBodyMatches,
   publishConfiguredArticle,
   savePublicationReceipt,
   run
