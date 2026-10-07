@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "analysisId": "phase9-live-improvement-cycle-v1",
-  "generatedAt": "2026-10-06T18:08:18.199Z",
+  "generatedAt": "2026-10-07T01:02:02.947Z",
   "productionChanged": false,
   "summary": {
-    "matchedRows": 3339,
-    "hits": 816,
+    "matchedRows": 3341,
+    "hits": 818,
     "misses": 2523,
     "duplicates": 0,
     "patterns": 103,
@@ -74610,6 +74610,46 @@
         "1-3-4"
       ],
       "result": "135"
+    },
+    {
+      "raceKey": "20261007-14-1",
+      "hit": true,
+      "missReason": "HIT",
+      "reason": "official trifecta is present in final tickets",
+      "logicFingerprint": "1fa71b68e849ba9ae36d",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-6",
+        "1-3-6"
+      ],
+      "result": "143"
+    },
+    {
+      "raceKey": "20261007-18-1",
+      "hit": true,
+      "missReason": "HIT",
+      "reason": "official trifecta is present in final tickets",
+      "logicFingerprint": "1fa71b68e849ba9ae36d",
+      "theoryIds": [
+        "flow",
+        "holdPickup"
+      ],
+      "finalTickets": [
+        "1-2-3",
+        "1-4-3",
+        "1-3-4",
+        "1-2-4",
+        "1-2-5",
+        "1-3-2"
+      ],
+      "result": "125"
     }
   ],
   "patterns": [
@@ -78946,9 +78986,9 @@
       "reason": "No pre-existing formal minimum-count gate is attached to this observed pattern; phase9 must not invent one."
     },
     {
-      "patternId": "f7692caeb24647e3726eb4adece3c1ac61981ac7296f88178e4a06fdb18a9fe5",
+      "patternId": "27718ba566b4d17d58bd5d82189fedf2ab0d6c96c354f9dfd087e6effbdb19b1",
       "key": "1fa71b68e849ba9ae36d::HIT",
-      "count": 11,
+      "count": 13,
       "races": [
         "20261006-02-6",
         "20261006-05-3",
@@ -78960,7 +79000,9 @@
         "20261006-20-2",
         "20261006-22-2",
         "20261006-22-6",
-        "20261006-24-11"
+        "20261006-24-11",
+        "20261007-14-1",
+        "20261007-18-1"
       ],
       "status": "INSUFFICIENT_EVIDENCE",
       "candidate": null,

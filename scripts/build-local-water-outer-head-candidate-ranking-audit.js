@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const root = path.resolve(__dirname, "..");
 const OUT = path.join(
   root,
@@ -53,27 +54,6 @@ function arr(value) {
 
 function key(row = {}) {
   return `${row.date}-${String(row.jcd || "").padStart(2, "0")}-${Number(row.raceNo || 0)}`;
-}
-
-function load(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter((name) => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
-}
-
-function predictionRows(docs) {
-  const map = new Map();
-  for (const doc of docs) {
-    for (const name of ["predictions", "verificationPredictions"]) {
-      for (const row of arr(doc?.[name])) {
-        const rowKey = key(row);
-        if (name === "predictions" || !map.has(rowKey)) map.set(rowKey, row);
-      }
-    }
-  }
-  return [...map.values()];
 }
 
 function resultMap(docs) {
@@ -622,17 +602,15 @@ function chooseNextStep(metrics) {
 
 function build(predDocs, resultDocs) {
   const results = resultMap(resultDocs);
-  const settledFormal = predictionRows(predDocs)
-    .map((record) => ({
-      record,
-      evidence: localWaterEvidence(record),
-      result: results.get(key(record)) || null
-    }))
-    .filter((row) => row.evidence.formal && row.result && actualHead(row.result));
-
-  const targetRows = settledFormal
-    .filter((row) => [5, 6].includes(actualHead(row.result)))
-    .map((row) => inspectRace(row.record, row.result));
+  const settledFormal = mapPredictionRows(predDocs, record => {
+    const evidence = localWaterEvidence(record), result = results.get(key(record)) || null;
+    if (!evidence.formal || !result) return null;
+    const actual = actualHead(result);
+    if (!actual) return null;
+    // Keep all settled formal races in the denominator, including non-5/6 wins.
+    return { target: [5, 6].includes(actual) ? inspectRace(record, result) : null };
+  }).filter(Boolean);
+  const targetRows = settledFormal.map(row => row.target).filter(Boolean);
 
   const count = (predicate) => targetRows.filter(predicate).length;
   const unselectedScenarioRows = targetRows.filter((row) => row.scenario && !row.selected);
@@ -736,8 +714,8 @@ function build(predDocs, resultDocs) {
 
 function main() {
   const report = build(
-    load(path.join(root, "data", "predictions")),
-    load(path.join(root, "data", "results"))
+    loadDailyDocuments(path.join(root, "data", "predictions")),
+    loadDailyDocuments(path.join(root, "data", "results"))
   );
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(report, null, 2) + "\n");

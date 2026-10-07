@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const base = require("./build-local-water-result-breakdown");
 const cohort = require("./build-local-water-strong-condition-cohort");
 const root = path.resolve(__dirname, "..");
@@ -9,21 +10,6 @@ const OUT = path.join(root, "data", "stats", "local-water-outside-head-miss-stru
 
 function arr(v){ return Array.isArray(v) ? v : []; }
 function key(r={}){ return `${r.date}-${String(r.jcd||"").padStart(2,"0")}-${Number(r.raceNo||0)}`; }
-function load(dir){
-  if(!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter(n=>/^\d{8}\.json$/.test(n)).sort()
-    .map(n=>JSON.parse(fs.readFileSync(path.join(dir,n),"utf8")));
-}
-function predictionRows(docs){
-  const map = new Map();
-  for(const doc of docs) for(const name of ["predictions","verificationPredictions"]){
-    for(const row of arr(doc[name])){
-      const k = key(row);
-      if(name === "predictions" || !map.has(k)) map.set(k,row);
-    }
-  }
-  return [...map.values()];
-}
 function resultMap(docs){
   const map = new Map();
   for(const doc of docs) for(const race of arr(doc.races)){
@@ -94,9 +80,17 @@ function decision(summaries){
 }
 function build(predDocs,resultDocs){
   const results = resultMap(resultDocs);
-  const rows = predictionRows(predDocs)
-    .map(record=>({record,evidence:base.evidence(record),result:results.get(key(record))||null}))
-    .filter(row=>row.evidence.formal && row.result && base.actualHead(row.result) && base.predictedHead(row.record));
+  const rows = mapPredictionRows(predDocs, record => {
+    const evidence = base.evidence(record), result = results.get(key(record)) || null;
+    if (!evidence.formal || !result || !base.actualHead(result)) return null;
+    const predicted = base.predictedHead(record);
+    if (!predicted) return null;
+    // summarize only needs the existing predicted-head accessor, not the saved
+    // prediction tree. Calculate it before releasing the full daily document.
+    return { evidence, result, record: {
+      prediction: { verificationEvidence: { mainScenario: { headBoatNo: predicted } } }
+    } };
+  }).filter(Boolean);
   const groups = {calm:[],medium:[],strong:[]};
   for(const row of rows) groups[cohort.classify(row.evidence)].push(row);
   const summaries = Object.fromEntries(Object.entries(groups).map(([k,v])=>[k,summarize(v)]));
@@ -114,7 +108,7 @@ function build(predDocs,resultDocs){
   };
 }
 function main(){
-  const report = build(load(path.join(root,"data","predictions")), load(path.join(root,"data","results")));
+  const report = build(loadDailyDocuments(path.join(root,"data","predictions")), loadDailyDocuments(path.join(root,"data","results")));
   fs.mkdirSync(path.dirname(OUT),{recursive:true});
   fs.writeFileSync(OUT, JSON.stringify(report,null,2)+"\n");
   console.log(JSON.stringify(report,null,2));

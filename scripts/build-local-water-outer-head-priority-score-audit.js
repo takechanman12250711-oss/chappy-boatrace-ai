@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const rankingAudit = require("./build-local-water-outer-head-candidate-ranking-audit");
 
 const root = path.resolve(__dirname, "..");
@@ -18,27 +19,6 @@ function arr(value) {
 
 function key(row = {}) {
   return `${row.date}-${String(row.jcd || "").padStart(2, "0")}-${Number(row.raceNo || 0)}`;
-}
-
-function load(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter((name) => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
-}
-
-function predictionRows(docs) {
-  const map = new Map();
-  for (const doc of docs) {
-    for (const name of ["predictions", "verificationPredictions"]) {
-      for (const row of arr(doc?.[name])) {
-        const rowKey = key(row);
-        if (name === "predictions" || !map.has(rowKey)) map.set(rowKey, row);
-      }
-    }
-  }
-  return [...map.values()];
 }
 
 function resultMap(docs) {
@@ -353,19 +333,13 @@ function chooseNextStep(metrics, component) {
 
 function build(predDocs, resultDocs) {
   const results = resultMap(resultDocs);
-  const targetRows = predictionRows(predDocs)
-    .map((record) => ({
-      record,
-      evidence: rankingAudit.localWaterEvidence(record),
-      result: results.get(key(record)) || null
-    }))
-    .filter((row) =>
-      row.evidence.formal &&
-      row.result &&
-      [5, 6].includes(rankingAudit.actualHead(row.result))
-    )
-    .map((row) => inspectPriority(row.record, row.result))
-    .filter((row) => row.scenario && !row.selected);
+  const targetRows = mapPredictionRows(predDocs, record => {
+    const evidence = rankingAudit.localWaterEvidence(record);
+    const result = results.get(key(record)) || null;
+    if (!evidence.formal || !result || ![5, 6].includes(rankingAudit.actualHead(result))) return null;
+    const inspected = inspectPriority(record, result);
+    return inspected.scenario && !inspected.selected ? inspected : null;
+  }).filter(Boolean);
 
   const comparableRows = targetRows.filter((row) => row.comparable);
   const positiveGaps = comparableRows
@@ -439,8 +413,8 @@ function build(predDocs, resultDocs) {
 
 function main() {
   const report = build(
-    load(path.join(root, "data", "predictions")),
-    load(path.join(root, "data", "results"))
+    loadDailyDocuments(path.join(root, "data", "predictions")),
+    loadDailyDocuments(path.join(root, "data", "results"))
   );
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(report, null, 2) + "\n");

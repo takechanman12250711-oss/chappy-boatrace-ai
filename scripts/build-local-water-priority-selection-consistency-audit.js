@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 const ROOT = path.resolve(__dirname, "..");
 const INPUT = path.join(
   ROOT,
@@ -56,27 +57,6 @@ function loadJson(file, fallback = null) {
   } catch (_error) {
     return fallback;
   }
-}
-
-function loadDaily(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter((name) => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
-}
-
-function predictionRows(docs) {
-  const map = new Map();
-  for (const doc of arr(docs)) {
-    for (const source of ["predictions", "verificationPredictions"]) {
-      for (const row of arr(doc?.[source])) {
-        const rowKey = key(row);
-        if (source === "predictions" || !map.has(rowKey)) map.set(rowKey, row);
-      }
-    }
-  }
-  return map;
 }
 
 function boatNumber(value) {
@@ -506,7 +486,6 @@ function build(sourceReport = {}, predictionDocs = []) {
   const applicable =
     source.version === EXPECTED_SOURCE_VERSION &&
     source.nextStep === EXPECTED_SOURCE_NEXT_STEP;
-  const predictions = predictionRows(predictionDocs);
   const targets = arr(source.targetRaces).filter((row) => {
     const comparison = object(row.primaryComparison);
     return row.comparable === true &&
@@ -514,7 +493,20 @@ function build(sourceReport = {}, predictionDocs = []) {
       (comparison.winnerAhead === true || comparison.tied === true || Number(comparison.gap) <= 0);
   });
 
-  const cases = targets.map((row) => inspectTarget(row, predictions.get(key(row)) || null));
+  // A race may appear more than once with different comparison paths. Retain
+  // every target's original index, rather than collapsing source report rows.
+  const targetsByRace = new Map();
+  targets.forEach((target, index) => {
+    const raceKey = key(target);
+    if (!targetsByRace.has(raceKey)) targetsByRace.set(raceKey, []);
+    targetsByRace.get(raceKey).push({ target, index });
+  });
+  const docs = typeof predictionDocs?.[Symbol.iterator] === "function" ? predictionDocs : [];
+  const inspected = mapPredictionRows(docs, record =>
+    (targetsByRace.get(key(record)) || []).map(({ target, index }) =>
+      ({ index, report: inspectTarget(target, record) })));
+  const casesByIndex = new Map(inspected.flat().map(row => [row.index, row.report]));
+  const cases = targets.map((row, index) => casesByIndex.get(index) || inspectTarget(row, null));
   const resolvedCases = cases.filter((row) => row.resolved);
   const classifications = new Map();
   const signals = new Map();
@@ -576,7 +568,7 @@ function build(sourceReport = {}, predictionDocs = []) {
 function main() {
   const report = build(
     loadJson(INPUT, {}),
-    loadDaily(path.join(ROOT, "data", "predictions"))
+    loadDailyDocuments(path.join(ROOT, "data", "predictions"))
   );
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
   fs.writeFileSync(OUTPUT, `${JSON.stringify(report, null, 2)}\n`);
