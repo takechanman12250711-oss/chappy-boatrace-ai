@@ -8,6 +8,7 @@ const { auditNotePublication } = require('./note-publication-audit');
 const { VERSION: MONITOR_VERSION, independentArticle } = require('./note-independent-monitor-source');
 const { seriesOfBundle, publicationKey, seriesTitle } = require('./note-article-series');
 const { NOTE_PRICE_YEN } = require('./note-pricing');
+const { sectionProof } = require('./note-published-ticket-sections');
 const MAX_PUBLICATION_TICKETS = 7;
 
 function requirePublicationTicketCount(article) {
@@ -52,16 +53,44 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
 function publicationPayload(sourcePath, rootDir = process.cwd(), now = Date.now()) {
   const { bundle, article, articleSeries, sha256 } = sourceArticle(sourcePath, rootDir, now);
   const practicalTicketCount = requirePublicationTicketCount(article);
+  const paidText = article.paidText.trim();
+  const presentationVersion = article.presentationVersion;
+  if (typeof presentationVersion !== 'string' || !presentationVersion) {
+    throw new Error('publication_presentation_version_missing');
+  }
+  // Bind the actual audited public copy, not an internal candidate pool. Keep
+  // this handoff field primitive so source revalidation checks exact bytes.
+  const publishedDisplayProofJson = JSON.stringify(sectionProof(paidText, presentationVersion));
   return {
     version: 'note-publication-handoff-v1', sourcePath, sourceSha256: sha256,
     raceKey: bundle.record.raceKey,
     articleSeries, publicationKey: publicationKey(bundle.record.raceKey, articleSeries),
     raceDate: `${bundle.record.date.slice(0, 4)}-${bundle.record.date.slice(4, 6)}-${bundle.record.date.slice(6, 8)}`,
-    title: article.title, freeText: article.freeText.trim(), paidText: article.paidText.trim(),
+    title: article.title, freeText: article.freeText.trim(), paidText,
+    presentationVersion, publishedDisplayProofJson,
     body: article.fullText, price: NOTE_PRICE_YEN, deadlineAt: bundle.record.deadlineAt,
     practicalTicketCount,
     canPublish: true, blockReason: null
   };
+}
+
+function parsePublishedDisplayProof(payload) {
+  // New receipts must carry their own verified display proof. An absent proof
+  // is never filled in from today's renderer for an older publication.
+  if (typeof payload?.publishedDisplayProofJson !== 'string' || !payload.publishedDisplayProofJson ||
+      typeof payload.presentationVersion !== 'string' || !payload.presentationVersion) {
+    throw new Error('publication_display_proof_missing');
+  }
+  let proof;
+  try { proof = JSON.parse(payload.publishedDisplayProofJson); }
+  catch { throw new Error('publication_display_proof_invalid'); }
+  const expected = sectionProof(payload.paidText, payload.presentationVersion);
+  // Comparing the canonical serialization also rejects extra data, including
+  // accidentally attached paid bodies or ticket arrays in public receipts.
+  if (payload.publishedDisplayProofJson !== JSON.stringify(expected)) {
+    throw new Error('publication_display_proof_mismatch');
+  }
+  return proof;
 }
 
 function verifyPublicationSource(payload, rootDir = process.cwd(), now = Date.now()) {
@@ -72,4 +101,4 @@ function verifyPublicationSource(payload, rootDir = process.cwd(), now = Date.no
   return expected;
 }
 
-module.exports = { MAX_PUBLICATION_TICKETS, requirePublicationTicketCount, sourceArticle, publicationPayload, verifyPublicationSource };
+module.exports = { MAX_PUBLICATION_TICKETS, requirePublicationTicketCount, sourceArticle, publicationPayload, parsePublishedDisplayProof, verifyPublicationSource };

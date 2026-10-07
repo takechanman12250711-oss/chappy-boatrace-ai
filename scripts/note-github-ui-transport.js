@@ -493,6 +493,7 @@ function publicArticleUrl(value, noteId) {
 async function publishConfiguredArticle(page, payload, paid, guard = requirePublicationGate) {
   guard(payload);
   if (paid?.price !== EXPECTED_PRICE_YEN) throw new Error('publication_price_unverified');
+  const publishedDisplayProof = require('./note-publication-source').parsePublishedDisplayProof(payload);
   const noteId = new URL(page.url()).pathname.match(/^\/notes\/(n[a-f0-9]+)\/publish\/?$/)?.[1];
   if (!noteId || !isEditorUrl(page.url())) throw new Error('publication_editor_identity_missing');
   const title = page.getByRole('heading', { name: payload.title, exact: true });
@@ -545,7 +546,7 @@ async function publishConfiguredArticle(page, payload, paid, guard = requirePubl
     return { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
       articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
       publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
-      sourceSha256: payload.sourceSha256 };
+      sourceSha256: payload.sourceSha256, publishedDisplayProof };
   } finally { await verification.close(); }
 }
 
@@ -575,6 +576,7 @@ async function findPublishedArticleInList(page, noteId) {
 async function recoverClaimedPublication(page, payload, rootDir = process.cwd()) {
   const sourceTime = recoverySourceTime(payload.sourcePath, rootDir);
   requirePublicationGate(payload, rootDir, sourceTime);
+  const publishedDisplayProof = require('./note-publication-source').parsePublishedDisplayProof(payload);
   const response = await page.goto('https://note.com/great_robin3243', { waitUntil: 'domcontentloaded', timeout: 60000 });
   if (!response?.ok()) throw new Error('publication_recovery_listing_unavailable');
   const articles = page.getByRole('link', { name: payload.title, exact: true });
@@ -609,7 +611,7 @@ async function recoverClaimedPublication(page, payload, rootDir = process.cwd())
   const receipt = { version: 'note-publication-receipt-v1', raceKey: payload.raceKey, url,
     articleSeries: payload.articleSeries, publicationKey: payload.publicationKey,
     publishedAt, verifiedAt: new Date().toISOString(), price: EXPECTED_PRICE_YEN,
-    sourceSha256: payload.sourceSha256 };
+    sourceSha256: payload.sourceSha256, publishedDisplayProof };
   console.log(`NOTE_UI_PUBLICATION_URL_RECOVERED=${url}`);
   return receipt;
 }

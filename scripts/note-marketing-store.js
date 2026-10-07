@@ -1,7 +1,10 @@
 'use strict';
 const { VERSION, jstDate, recentDates, initialState, receiptRow } = require('./note-marketing-content');
-const { settlePublished, distributionDrafts } = require('./note-marketing-reports');
+const { settlePublished, distributionDrafts, observeResult } = require('./note-marketing-reports');
 const { sourceContext } = require('./note-marketing-social');
+const {createHash}=require('node:crypto');
+const {settlePublic,raceReports}=require('./note-public-results');
+const digest=value=>createHash('sha256').update(value).digest('hex');
 const REPO = 'takechanman12250711-oss/chappy-boatrace-ai';
 const BRANCH = 'note-marketing-state';
 function client(env = process.env, request = fetch) {
@@ -40,7 +43,9 @@ function client(env = process.env, request = fetch) {
     if (!Array.isArray(refs)) throw new Error('marketing_receipt_refs_invalid');
     // One-time migration rechecks receipts to recover yesterday's verified
     // originals and add count/result links. Later runs remain incremental.
-    const migrated = state.receiptWindowVersion === 2;
+    const migrated = state.receiptWindowVersion === 3;
+    const publisherEvidence=new Map();
+    const priorRows=new Map(state.rows.map(row=>[row.publicationKey,row]));
     const seen = new Set(migrated ? state.seenRefs : []), date = jstDate(now), dates = recentDates(now);
     const rows = migrated ? state.rows.filter(r=>dates.includes(r.raceKey.slice(0,8))) : [];
     for (const ref of refs) {
@@ -55,10 +60,35 @@ function client(env = process.env, request = fetch) {
         bytes = await file(`data/note-drafts/${sourceDate}/${receipt.raceKey}-${receipt.sourceSha256}.json`, 'main');
       }
       const row = receiptRow(receipt, bytes, now);
-      if (row) rows.push(row);
+      if (row) {
+        // A receipt's sole parent is the actual publisher checkout recorded by
+        // savePublicationReceipt. Read reviewed source bytes; never execute
+        // code from a historical commit to reconstruct a winning prediction.
+        const commit=await api('/git/commits/'+ref.object.sha);
+        if(commit.sha!==ref.object.sha||commit.parents?.length!==1||!/^[a-f0-9]{40}$/.test(commit.parents[0].sha))throw Error('marketing_publication_parent_invalid');
+        const publisherCommitSha=commit.parents[0].sha;
+        if(!publisherEvidence.has(publisherCommitSha)) {
+          const files={rendererSha256:'scripts/note-readable-article.js',publicationSourceSha256:'scripts/note-publication-source.js',generatorSha256:'js/note-generator.js'};
+          const evidence={};
+          for(const [key,path] of Object.entries(files)) {
+            const text=await file(path,publisherCommitSha,true);
+            evidence[key]=text===null?null:digest(text);
+          }
+          publisherEvidence.set(publisherCommitSha,evidence);
+        }
+        row.publicationEvidence={version:'note-publication-evidence-v1',receiptCommitSha:ref.object.sha,publisherCommitSha,
+          sourceSha256:row.sourceSha256,presentationVersion:receipt.publishedDisplayProof?.presentationVersion||null,
+          ...publisherEvidence.get(publisherCommitSha),...(receipt.publishedDisplayProof?{publishedDisplayProof:receipt.publishedDisplayProof}:{})};
+        const prior=priorRows.get(row.publicationKey);
+        if(prior?.sourceSha256===row.sourceSha256) {
+          if(prior.resultObservation)row.resultObservation=prior.resultObservation;
+          if(prior.publicResultObservation)row.publicResultObservation=prior.publicResultObservation;
+        }
+        rows.push(row);
+      }
       seen.add(key);
     }
-    return { ...state, date, receiptWindowVersion: 2, seenRefs: [...seen].sort(), rows };
+    return { ...state, date, receiptWindowVersion: 3, seenRefs: [...seen].sort(), rows };
   }
   async function save(state, head) {
     const tree = await api('/git/trees', 'POST', { tree: [{ path: 'state.json', mode: '100644', type: 'blob', content: JSON.stringify(state, null, 2) + '\n' }] });
@@ -95,15 +125,21 @@ function client(env = process.env, request = fetch) {
     const officialResults = Object.fromEntries(Object.entries(state.officialResults || {}).filter(([key]) => keys.has(key)));
     const resultAttempts = Object.fromEntries(Object.entries(state.resultAttempts || {}).filter(([key]) => keys.has(key)));
     const attempted = new Set();
-    const rows = [];
+    const rows = [],ticketSets=new Map();
     for (const row of state.rows) {
       const bytes = await file(`data/note-drafts/${row.raceKey.slice(0,8)}/${row.raceKey}-${row.sourceSha256}.json`, 'main', true);
       const result = daily.get(row.raceKey);
-      let official = result?.resultAvailable || result?.status === 'void' ? result : (ledger.races[row.raceKey] || officialResults[row.raceKey] || result);
+      const saved=officialResults[row.raceKey], researched=ledger.races[row.raceKey];
+      const resolved=value=>value?.resultAvailable||value?.status==='void';
+      // A stale pre-race research snapshot must not hide a result that this
+      // same approved updater already fetched and validated. New resolved
+      // daily/research evidence still takes precedence and is revalidated.
+      let official = resolved(result) ? result : resolved(researched) ? researched :
+        resolved(saved) ? saved : (researched || saved || result);
       let settlement = bytes === null ? { status: 'review', reason: 'published_source_missing' } : settlePublished(row, bytes, official, refresh ? clock() : now);
       // Only verified published originals that are still waiting need a fetch.
       // Reuse api/result's official parser; no new scraper or research writer.
-      if (refresh && settlement.status === 'pending' && now >= Date.parse(row.deadlineAt) + 15 * 60000 &&
+      if (refresh && settlement.status === 'pending' && now >= Date.parse(row.deadlineAt) + 5 * 60000 &&
           attempted.size < 12 && !attempted.has(row.raceKey) &&
           now - (Date.parse(resultAttempts[row.raceKey]?.checkedAt) || 0) >= 20 * 60000) {
         attempted.add(row.raceKey);
@@ -119,9 +155,14 @@ function client(env = process.env, request = fetch) {
           resultAttempts[row.raceKey].status = checked.status;
         } catch { /* Keep the verified pending snapshot; retry on a later run. */ }
       }
-      rows.push({ ...row, settlement, socialContext: sourceContext(row,bytes) });
+      const publicResult=bytes===null?{settlement:{status:'review',reason:'published_source_missing'}}:settlePublic(row,bytes,settlement,refresh?clock():now);
+      if(publicResult.tickets)ticketSets.set(row.publicationKey,publicResult.tickets);
+      rows.push({ ...row, settlement, publishedSettlement:publicResult.settlement,
+        publicResultObservation:observeResult({...row,resultObservation:row.publicResultObservation},publicResult.settlement,official,refresh?clock():now),
+        resultObservation: observeResult(row, settlement, official, refresh ? clock() : now),
+        socialContext: sourceContext(row,bytes) });
     }
-    return { ...state, rows, ...(refresh || state.officialResults ? { officialResults, resultAttempts } : {}),
+    return { ...state, rows, publishedRaceResults:raceReports(rows,ticketSets), ...(refresh || state.officialResults ? { officialResults, resultAttempts } : {}),
       distribution: distributionDrafts(rows, config, state.date) };
   }
   // Reuse the same scoped client for permanent social claims and receipts.

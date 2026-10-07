@@ -70,7 +70,8 @@ test('note retains misses and every unresolved category in the published denomin
   const body=indexBody(rows,config,now);
   assert(body.includes('公開5件｜判定済み2件中1件的中・1件不的中'));
   assert(body.includes('結果待ち1件・不成立1件・確認中1件'));
-  for(const row of rows) assert(body.includes(row.url));
+  for(const row of rows) { assert(!body.includes(row.url)); assert(body.includes(row.resultUrl)); }
+  assert(body.includes('締切済み｜購入リンクの掲載終了'));
   const unresolved=indexBody([{...f.row,settlement:{status:'pending'}}],config,now);
   assert(!unresolved.includes('1-2-3')); assert(!unresolved.includes('1-3-2'));
 });
@@ -86,7 +87,7 @@ test('published pending results refresh once, cache official evidence and respec
   const store=client({GITHUB_REPOSITORY:REPO,NOTE_CLAIM_TOKEN:'test-only',NOTE_CLAIM_SHA:'f'.repeat(40)},async url=>{
     let content;
     if(url.includes('/contents/data/results/')) content=JSON.stringify({source:'boatrace-official',date:'20260929',races:[stale]});
-    else if(url.includes('/contents/data/stats/')) content=JSON.stringify({version:'race-review-results-v1',races:{}});
+    else if(url.includes('/contents/data/stats/')) content=JSON.stringify({version:'race-review-results-v1',races:{[f.row.raceKey]:stale}});
     else if(url.includes('/contents/data/note-drafts/')) content=f.bytes;
     else throw Error(url);
     return {ok:true,status:200,json:async()=>({encoding:'base64',content:Buffer.from(content).toString('base64')})};
@@ -114,7 +115,7 @@ test('social drafts are dated, bounded, stable, series-separated and never marke
   assert.equal(drafts.line.status,'awaiting_connection');
   assert.equal(drafts.x.items.length,1); assert(drafts.x.items[0].text.includes('9/29 AI展開予想'));
   assert(drafts.x.items[0].text.includes('公式払戻（100円あたり）1,230円'));
-  assert(drafts.x.items[0].text.includes(f.row.url)); assert(drafts.x.items[0].text.includes(config.index.url));
+  assert(!drafts.x.items[0].text.includes(f.row.url)); assert(drafts.x.items[0].text.includes(f.row.resultUrl)); assert(drafts.x.items[0].text.includes(config.index.url));
   // Conservative upper bound: all non-ASCII codepoints count as two; each URL as 23.
   const weighted = [...drafts.x.items[0].text.replace(/https:\/\/\S+/g,'x'.repeat(23))].reduce((n,c)=>n+(c.codePointAt(0)>127?2:1),0);
   assert(weighted<=280,`X length ${weighted}`);
@@ -144,4 +145,33 @@ test('store uses existing daily official data, including results absent from res
   assert.equal(settled.distribution.x.items.length,1);
   assert(calls.every(c=>c.method==='GET')); assert(!JSON.stringify(settled).includes('1-3-2'));
   assert.equal(state.rows[0].settlement,undefined);
+});
+
+test('five-minute eligibility changes only result-fetch start, keeping official/source validation and cooldown',async()=>{
+ const f=fixture(),deadline=Date.parse(f.row.deadlineAt);
+ const store=client({GITHUB_REPOSITORY:REPO,NOTE_CLAIM_TOKEN:'test-only',NOTE_CLAIM_SHA:'f'.repeat(40)},async url=>{
+  let content;
+  if(url.includes('/contents/data/results/'))content=JSON.stringify({source:'boatrace-official',date:'20260929',races:[]});
+  else if(url.includes('/contents/data/stats/'))content=JSON.stringify({version:'race-review-results-v1',races:{}});
+  else if(url.includes('/contents/data/note-drafts/'))content=f.bytes;
+  else throw Error(url);
+  return {ok:true,status:200,json:async()=>({encoding:'base64',content:Buffer.from(content).toString('base64')})};
+ });
+ const input={...initialState(config),date:'20260929',rows:[f.row]};let calls=0;
+ const options=time=>({refresh:true,clock:()=>time,fetchResult:async()=>{calls++;return {...f.result,checkedAt:new Date(time).toISOString()};}});
+ await store.settle(input,config,deadline+5*60000-1,options(deadline+5*60000-1));assert.equal(calls,0);
+ const result=await store.settle(input,config,deadline+5*60000,options(deadline+5*60000));assert.equal(calls,1);assert.equal(result.rows[0].settlement.status,'hit');
+});
+test('first result-seen and note-verified timestamps are observations, preserved only for identical evidence',()=>{
+ const {observeResult,markResultsVerified}=require('./note-marketing-reports'),f=fixture();
+ const settlement=settlePublished(f.row,f.bytes,f.result,now),observation=observeResult(f.row,settlement,f.result,now);
+ assert.equal(observation.firstResultSeenAt,new Date(now).toISOString());assert.equal(observation.officialSourceCheckedAt,f.result.checkedAt);assert.equal(observation.noteVerifiedAt,null);
+ const row={...f.row,settlement,resultObservation:observation};
+ const verified=markResultsVerified([row],now+1000)[0];assert.equal(verified.resultObservation.noteVerifiedAt,new Date(now+1000).toISOString());
+ assert.deepEqual(observeResult(verified,settlement,f.result,now+2000),verified.resultObservation);
+ assert.deepEqual(observeResult(verified,{status:'review'},f.result,now+2000),verified.resultObservation);
+ const waiting={...verified,settlement:{status:'pending'},resultObservation:{...verified.resultObservation,noteVerifiedAt:null}};
+ assert.equal(markResultsVerified([waiting],now+2000)[0].resultObservation.noteVerifiedAt,null);
+ const changed=observeResult(verified,{...settlement,evidenceId:'f'.repeat(64)},f.result,now+2000);
+ assert.equal(changed.noteVerifiedAt,null);assert.equal(changed.firstResultSeenAt,new Date(now+2000).toISOString());
 });

@@ -215,3 +215,137 @@ test('verified live announcements are sent before hit reports',async()=>{
  const sent=[];f.delivery.create=async text=>{sent.push(text);return {id:'p'+sent.length,text,channelId:'channel',status:'scheduled'};};
  await run(f);assert.equal(sent.length,2);assert(!sent[0].includes('的中'));assert(sent[1].includes('的中'));
 });
+
+const {hitItems,recoverRecap,validateAssets}=require('./send-note-buffer.cjs');
+function nextDayFixture() {
+ const f=fixture();f.now=Date.parse('2026-09-30T00:05:00+09:00');f.clock=()=>f.now;
+ f.config.resultReports={previousDay:true,images:false};
+ f.state.date=f.state.verifiedDate='20260930';f.state.articles.index.verifiedAt=new Date(f.now).toISOString();
+ f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,f.now));
+ f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260930');return f;
+}
+test('previous-day unclaimed hit is clearly dated and retains race-day permanent claim',async()=>{
+ const f=nextDayFixture();let text,claim;
+ const reserve=f.claims.reserve;f.claims.reserve=async p=>{claim=p;await reserve(p);};
+ f.delivery.create=async t=>{text=t;f.events.push('create');return {id:'late',text:t,channelId:'channel',status:'scheduled'};};
+ const result=await run(f);assert.equal(result.started,1);assert(text.startsWith('前日分 9/29'));
+ assert.equal(claim.date,'20260929');assert.equal(claim.deliveryDate,'20260930');
+ assert([...f.saved.keys()].some(k=>k.startsWith('note-buffer-accepted/20260930/')));
+ await run(f);assert.equal(f.events.filter(e=>e==='create').length,1);
+ const g=nextDayFixture();await g.claims.reserve({publicationKey:g.state.rows[0].publicationKey,date:'20260929'});
+ assert.equal((await run(g)).started,0);assert(!g.events.includes('create'));
+});
+test('previous-day timeout stays permanently claimed and two-day-old hits never qualify',async()=>{
+ const f=nextDayFixture();let calls=0;f.delivery.create=async()=>{calls++;throw Error('unknown');};
+ assert.equal((await run(f)).status,'review_required');await run(f);assert.equal(calls,1);
+ const g=nextDayFixture();g.now+=86400000;g.state.date=g.state.verifiedDate='20261001';
+ g.state.distribution=distributionDrafts(g.state.rows,marketing,'20261001');g.state.articles.index.hash=hash(indexBody(g.state.rows,marketing,g.now));
+ assert.equal(hitItems(g.state,g.config,marketing,g.now).length,0);
+});
+test('late recovery recap reports every status, counts articles vs unique races, and sends once',async()=>{
+ const f=nextDayFixture();f.config.recap={enabled:true,activatedAt:config.activatedAt};
+ const r=f.state.rows[0];f.state.rows.push({...r,articleSeries:'escape',publicationKey:r.raceKey+':escape',settlement:{status:'miss'}},
+   {...r,articleSeries:'manshu',publicationKey:r.raceKey+':manshu',settlement:{status:'void'}});
+ let text;f.delivery.create=async t=>{text=t;return {id:'recap',channelId:'channel',text:t,status:'scheduled'};};
+ assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'accepted_pending');
+ assert(text.startsWith('前日分 9/29'));assert(text.includes('3記事・1レース'));
+ assert(text.includes('1不的中'));assert(text.includes('不成立1'));assert(weight(text)<=280);
+ assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'earlier_send_unconfirmed_no_resend');
+});
+test('late supplement requires confirmed earlier send and newly resolved evidence; never retries an unknown recap',async()=>{
+ const f=nextDayFixture();f.config.recap={enabled:true,activatedAt:config.activatedAt};
+ const row=f.state.rows[0],source={publicationKey:row.publicationKey,sourceSha256:row.sourceSha256,status:'pending'};
+ await f.log.put('note-buffer-recap/20260929',{date:'20260929',sources:[source]});
+ assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'earlier_send_unconfirmed_no_resend');
+ assert.deepEqual(f.events,[]);
+ await f.log.put('note-buffer-final/20260929/'+createHash('sha256').update('recap:20260929').digest('hex'),{status:'buffer_confirmed_sent'});
+ let text;f.delivery.create=async t=>{text=t;return {id:'supplement',channelId:'channel',text:t,status:'scheduled'};};
+ assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'accepted_pending');
+ assert(text.includes('前日分 9/29'));assert(text.includes('結果追記'));
+ assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'already_attempted');
+});
+test('zero results, pending and review remain honest in both current and recovered summaries',async()=>{
+ const f=nextDayFixture();f.config.recap={enabled:true,activatedAt:config.activatedAt};f.state.rows=[];
+ assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'no_articles');assert.deepEqual(f.events,[]);
+ const g=nextDayFixture(),r=g.state.rows[0];
+ const text=recapCopy([{...r,settlement:{status:'pending'}},{...r,articleSeries:'escape',publicationKey:r.raceKey+':escape',settlement:{status:'review'}}],marketing.index.url,g.now,{date:'20260929',late:true});
+ assert(text.includes('0的中／0不的中'));assert(text.includes('確認中1・結果待ち1'));assert(!text.includes('1的中'));
+});
+test('JST date boundaries and non-Japanese daylight-saving changes do not mislabel reports',()=>{
+ for(const instant of ['2026-11-01T14:59:59Z','2026-11-01T15:00:00Z','2026-03-08T14:59:59Z','2026-03-08T15:00:00Z']) {
+   const ms=Date.parse(instant),day=require('./note-marketing-content').jstDate(ms);
+   assert.equal(day,instant.includes('15:00')?(instant.startsWith('2026-11')?'20261102':'20260309'):(instant.startsWith('2026-11')?'20261101':'20260308'));
+ }
+ const f=nextDayFixture();let time=f.now;f.clock=()=>time;f.delivery.channel=async()=>{time+=86400000;return 'channel';};
+ return assert.rejects(run(f),/buffer_date_changed/);
+});
+test('images are prepared and anonymously verified before claim; failed media never creates a post',async()=>{
+ const f=fixture();f.config.resultReports={images:true};
+ const url='https://raw.githubusercontent.com/takechanman12250711-oss/chappy-boatrace-ai/'+ 'a'.repeat(40)+'/result-card.png';
+ f.renderCard=async()=>{f.events.push('render');return {png:Buffer.from('test')};};
+ f.publishCard=async()=>{f.events.push('verify-image');return {url,imageSha256:'a'.repeat(64),assetCommit:'a'.repeat(40),assets:[{image:{url}}]};};
+ f.delivery.create=async(text,channel,assets)=>{assert.equal(assets[0].image.url,url);assert(f.events.indexOf('verify-image')<f.events.indexOf('claim'));return {id:'media',text,channelId:channel,status:'scheduled'};};
+ await run(f);const accepted=[...f.saved.values()].find(v=>v.postId);assert.equal(accepted.imageUrl,url);assert.equal(accepted.bufferAcceptedAt,new Date(now).toISOString());
+ const g=fixture();g.config.resultReports={images:true};g.renderCard=f.renderCard;g.publishCard=async()=>{throw Error('public image unavailable');};
+ await assert.rejects(run(g),/public image/);assert(!g.events.includes('claim'));assert(!g.events.includes('create'));
+ for(const url of ['https://private.example/secret','https://raw.githubusercontent.com/other/repo/'+ 'a'.repeat(40)+'/result-card.png'])assert.throws(()=>validateAssets([{image:{url}}]),/asset_invalid/);
+});
+test('source, note verification, Buffer acceptance, and sent observation timestamps remain distinct',async()=>{
+ const f=fixture();const r=f.state.rows[0];r.resultObservation={firstResultSeenAt:'2026-09-29T12:00:00+09:00',officialSourceCheckedAt:'2026-09-29T11:59:00+09:00',noteVerifiedAt:'2026-09-29T12:01:00+09:00'};
+ f.delivery.create=async text=>({id:'sent',text,channelId:'channel',status:'sent',externalLink:'https://x.com/chappy_boat_ai/status/1234'});
+ await run(f);const final=[...f.saved.values()].find(v=>v.status==='buffer_confirmed_sent');
+ assert.equal(final.firstResultSeenAt,r.resultObservation.firstResultSeenAt);assert.equal(final.noteVerifiedAt,r.resultObservation.noteVerifiedAt);
+ assert.equal(final.bufferAcceptedAt,new Date(now).toISOString());assert.equal(final.sentObservedAt,new Date(now).toISOString());assert(!Object.hasOwn(final,'officialConfirmedAt'));
+});
+test('midnight with all hits already claimed still blocks recap until the new-day index is verified',async()=>{
+ const f=fixture();f.config.resultReports={previousDay:true};f.config.recap={enabled:true,activatedAt:config.activatedAt};
+ await f.claims.reserve({publicationKey:f.state.rows[0].publicationKey,date:'20260929'});
+ f.clock=()=>Date.parse('2026-09-30T00:01:00+09:00');
+ await assert.rejects(run(f),/buffer_date_changed/);assert(!f.events.includes('create'));
+});
+test('image send verification pins real image source, size and MIME independently of text sent status',()=>{
+ const text='verified report',url='https://raw.githubusercontent.com/takechanman12250711-oss/chappy-boatrace-ai/'+ 'a'.repeat(40)+'/result-card.png';
+ const receipt={postId:'p',channelId:'c',textSha256:createHash('sha256').update(text).digest('hex'),imageUrl:url};
+ const asset={source:url,mimeType:'image/png',type:'image',image:{width:1200,height:675}};
+ const post={id:'p',channelId:'c',text,status:'sent',externalLink:'https://x.com/chappy_boat_ai/status/123',assets:[asset]};
+ assert.equal(observed(post,receipt,now).imageSourceVerified,true);
+ for(const change of [{assets:[]},{assets:[{...asset,source:'https://wrong.example/a.png'}]},{assets:[{...asset,image:{width:1,height:1}}]}]){
+  const actual=observed({...post,...change},receipt,now);assert.equal(actual.status,'review_required');assert.equal(actual.textSentVerified,true);
+ }
+});
+function publicFixture() {
+ const f=fixture(),row=f.state.rows[0];
+ f.config.resultReports={scope:'published-main-sections-v1',previousDay:true,images:false};
+ row.settlement={...row.settlement,status:'miss'};
+ row.publishedSettlement={status:'hit',method:'published-main-sections-v1',combination:'1-2-3',payoutPer100Yen:1230,
+  resultUrl:row.resultUrl,matchedSections:['相手を広げるなら'],publishedTicketCount:8,sectionsSha256:'c'.repeat(64),evidenceId:'d'.repeat(64)};
+ f.state.publishedRaceResults=require('./note-public-results').raceReports([row],new Map([[row.publicationKey,['1-2-3','2-1-3']]]));
+ f.state.distribution=distributionDrafts(f.state.rows,marketing,'20260929');
+ f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));return f;
+}
+test('new public-union scope sends an additional-section hit once without overwriting center miss',async()=>{
+ const f=publicFixture();let text;
+ f.delivery.create=async t=>{text=t;f.events.push('create');return {id:'union',text:t,channelId:'channel',status:'scheduled'};};
+ assert.equal((await run(f)).started,1);assert(text.includes('相手を広げるなら'));assert(text.includes('掲載全券2点'));
+ assert.equal(f.state.rows[0].settlement.status,'miss');await run(f);assert.equal(f.events.filter(e=>e==='create').length,1);
+ const receipt=[...f.saved.values()].find(v=>v.postId);assert.equal(receipt.publicationKey,'20260929-13-4:published-main');assert.equal(receipt.method,'published-main-sections-v1');
+});
+test('new race-level reports honor old article-level permanent claims including unknown outcomes',async()=>{
+ const f=publicFixture();await f.claims.reserve({date:'20260929',publicationKey:f.state.rows[0].publicationKey});
+ assert.equal((await run(f)).started,0);assert(!f.events.includes('create'));
+});
+test('multiple public article kinds yield one race report with every actual matching section',async()=>{
+ const f=publicFixture(),first=f.state.rows[0],second={...first,articleSeries:'escape',publicationKey:first.raceKey+':escape',url:first.url+'a'};
+ second.publishedSettlement={...first.publishedSettlement,matchedSections:['中心の買い目']};f.state.rows.push(second);
+ f.state.publishedRaceResults=require('./note-public-results').raceReports(f.state.rows,new Map(f.state.rows.map(r=>[r.publicationKey,['1-2-3','2-1-3']])));
+ f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));let text;
+ f.delivery.create=async t=>{text=t;f.events.push('create');return {id:'combined',text:t,channelId:'channel',status:'scheduled'};};
+ assert.equal((await run(f)).started,1);assert(text.includes('本命・中心の買い目'));assert(text.includes('AI展開・相手を広げるなら'));
+ assert.equal(f.events.filter(e=>e==='create').length,1);
+});
+test('public recap shares race deduplication and explicitly keeps old center metric separate',async()=>{
+ const f=publicFixture();f.config.recap={enabled:true,activatedAt:config.activatedAt};f.now=Date.parse('2026-09-29T22:45:00+09:00');f.clock=()=>f.now;
+ let texts=[];f.delivery.create=async text=>{texts.push(text);return {id:'p'+texts.length,text,channelId:'channel',status:'scheduled'};};
+ const r=await run(f);assert.equal(r.recap.status,'accepted_pending');const text=texts.find(t=>t.includes('結果まとめ'));
+ assert(text.includes('1記事・1レース'));assert(text.includes('1的中／0不的中'));assert(text.includes('中心のみ（従来・記事別）：0的中／1不的中'));assert(text.includes('参考は別集計'));
+});
