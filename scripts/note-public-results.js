@@ -1,6 +1,7 @@
 'use strict';
 const {createHash}=require('node:crypto');
 const digest=value=>createHash('sha256').update(value).digest('hex');
+const {statusCounts}=require('./note-result-presentation');
 const VERSION='published-main-race-result-v1';
 const METHOD='published-main-sections-v1';
 const LABELS={normal:'AI展開',escape:'本命',manshu:'万舟'};
@@ -77,7 +78,7 @@ function raceReports(rows,ticketSets) {
 function summarizeRaceReports(reports) {
   const c={races:reports.length,hit:0,miss:0,pending:0,void:0,review:0};
   for(const report of reports){if(!Object.hasOwn(c,report.status)||report.status==='races')throw Error('public_results_status_invalid');c[report.status]++;}
-  return `公開${c.races}レース｜判定済み${c.hit+c.miss}R中${c.hit}的中・${c.miss}不的中｜結果待ち${c.pending}・不成立${c.void}・確認中${c.review}`;
+  return c.races ? `公開${c.races}レース｜判定済み${c.hit+c.miss}R\n${statusCounts(c,'R')}` : '公開を確認できたレースはありません。';
 }
 function matchedLabel(report) {
   return report.matchedSections.map(s=>`${LABELS[s.articleSeries]}・${s.label}`).join('／');
@@ -85,10 +86,10 @@ function matchedLabel(report) {
 function hitText(report,indexUrl,previousDay=false) {
   if(report.status!=='hit'||report.evidenceId!==raceEvidenceId(report))throw Error('public_results_hit_unverified');
   const d=report.raceKey.slice(0,8),date=`${Number(d.slice(4,6))}/${Number(d.slice(6,8))}`;
-  const head=`${previousDay?'前日分 ':''}${date} ${report.place}${report.raceNo}R 的中`;
-  const base=[head,`掲載全券${report.publishedTicketCount}点（参考別集計）`,`確定 ${report.combination}`,
-    `公式払戻（100円あたり）${report.payoutPer100Yen.toLocaleString('ja-JP')}円`];
-  const tail=['公式結果',report.resultUrl,'全結果一覧（無料）',indexUrl];
+  const head=`🎯 的中｜${previousDay?'前日分 ':''}${date} ${report.place}${report.raceNo}R`;
+  const base=[head,`\n確定 ${report.combination}`,`💴 公式払戻（100円あたり）${report.payoutPer100Yen.toLocaleString('ja-JP')}円`,
+    `\n掲載全券${report.publishedTicketCount}点（重複なし・参考別集計）`];
+  const tail=['\n公式結果',report.resultUrl,'📋 全結果一覧（無料）',indexUrl];
   const {weight}=require('./note-marketing-social');
   let text=[...base,`的中欄：${matchedLabel(report)}`,...tail].join('\n');
   if(weight(text)>280)text=[...base,'的中欄は画像・全結果一覧に掲載',...tail].join('\n');
@@ -100,17 +101,19 @@ function publicRecapCopy(rows,reports,indexUrl,now,{date,late=false,supplement=f
   date ||=dateOf(now);
   const selected=reports.filter(r=>r.raceKey.startsWith(date+'-'));
   if(!selected.length)return null;
-  const c=status=>selected.filter(r=>r.status===status).length;
   const centerRows=rows.filter(r=>r.raceKey.startsWith(date+'-'));
-  const centerHit=centerRows.filter(r=>r.settlement?.status==='hit').length;
-  const centerMiss=centerRows.filter(r=>r.settlement?.status==='miss').length;
   const label=d=>`${Number(d.slice(4,6))}/${Number(d.slice(6,8))}`;
-  const text=[`${late?'前日分 ':''}${label(date)} 全掲載券の${supplement?'結果追記':'結果まとめ'}`,
+  const tally=Object.fromEntries(['hit','miss','review','pending','void'].map(status=>[status,selected.filter(r=>r.status===status).length]));
+  let text=[`📊 ${late?'前日分 ':''}${label(date)} ${supplement?'結果追記':'結果まとめ'}`,
     `${centerRows.length}記事・${selected.length}レース（重複なし）`,
-    `${c('hit')}的中／${c('miss')}不的中`,`確認中${c('review')}・結果待ち${c('pending')}・不成立${c('void')}`,
+    '',statusCounts(tally,'R'),'',
     '本命・押さえ・展開・万舟の掲載券で判定。参考は別集計。',
-    `中心のみ（従来・記事別）：${centerHit}的中／${centerMiss}不的中`,
-    `${label(dateOf(now))} ${timeOf(now)}時点｜種類・的中欄は無料一覧へ`,indexUrl].join('\n');
+    '種類別・中心のみの従来成績も無料一覧に掲載。',
+    `🕒 ${label(dateOf(now))} ${timeOf(now)}時点`,indexUrl].join('\n');
+  if(weight(text)>280)text=[`📊 ${late?'前日分 ':''}${label(date)} ${supplement?'結果追記':'結果まとめ'}`,
+    `${centerRows.length}記事・${selected.length}レース（重複なし）`,statusCounts(tally,'R'),
+    '掲載全券で判定（参考別集計）。種類別・中心のみは無料一覧へ。',
+    `🕒 ${label(dateOf(now))} ${timeOf(now)}時点`,indexUrl].join('\n');
   if(weight(text)>280)throw Error('public_results_recap_too_long');return text;
 }
 module.exports={validatedRaceStatus,combinedStatus,summarizePublicRows,VERSION,METHOD,HEADINGS,LABELS,raceEvidenceId,settlePublic,raceReports,summarizeRaceReports,matchedLabel,hitText,publicRecapCopy};

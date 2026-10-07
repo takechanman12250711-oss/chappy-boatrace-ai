@@ -1,6 +1,7 @@
 'use strict';
 const { createHash } = require('node:crypto');
 const { SERIES, seriesOfBundle, publicationKey } = require('./note-article-series');
+const {statusLabel,statusCounts}=require('./note-result-presentation');
 const digest = text => createHash('sha256').update(text).digest('hex');
 const pending = reason => ({ status: 'pending', reason });
 const review = reason => ({ status: 'review', reason });
@@ -62,16 +63,19 @@ function counts(rows) {
 }
 function summaryLine(rows) {
   const c = counts(rows);
-  return `公開${c.published}件｜判定済み${c.settled}件中${c.hit}件的中・${c.miss}件不的中｜結果待ち${c.pending}件・不成立${c.void}件・確認中${c.review}件`;
+  return c.published ? `公開${c.published}件｜判定済み${c.settled}件\n${statusCounts(c)}` : '公開なし';
 }
 function outcomeLine(row) {
   const s = row.settlement;
-  if (s?.status === 'hit' || s?.status === 'miss') return `${s.status === 'hit' ? '的中' : '不的中'}｜確定 ${s.combination}｜公式払戻（100円あたり）${s.payoutPer100Yen.toLocaleString('ja-JP')}円`;
-  return ({ void: '不成立', review: '照合確認中', pending: '公式結果との照合待ち' })[s?.status || 'pending'];
+  if (s?.status === 'hit' || s?.status === 'miss') return `${statusLabel(s.status)}｜確定 ${s.combination}｜公式払戻（100円あたり）${s.payoutPer100Yen.toLocaleString('ja-JP')}円`;
+  return statusLabel(s?.status || 'pending');
 }
 function dailySummary(rows, date) {
   const selected = rows.filter(r => r.raceKey.startsWith(date + '-'));
-  return Object.entries(SERIES).map(([key, s]) => `${s.label}：${summaryLine(selected.filter(r => (r.articleSeries || 'normal') === key))}`).join('\n');
+  return Object.entries(SERIES).flatMap(([key, s]) => {
+    const subset=selected.filter(r => (r.articleSeries || 'normal') === key);
+    return subset.length ? [`${s.label}：${summaryLine(subset)}`] : [];
+  }).join('\n') || '公開なし';
 }
 function distributionDrafts(rows, config, date, { previousDay = false } = {}) {
   const current = rows.filter(r => r.raceKey.startsWith(date + '-')).sort((a, b) => Date.parse(a.deadlineAt) - Date.parse(b.deadlineAt) || a.publicationKey.localeCompare(b.publicationKey));
@@ -116,17 +120,24 @@ function markResultsVerified(rows, now) {
 }
 function publishedOutcomeLine(row) {
   const s=row.publishedSettlement;
-  if(['hit','miss'].includes(s?.status))return `掲載全券：${s.status==='hit'?'的中':'不的中'}${s.matchedSections?.length?'｜的中欄 '+s.matchedSections.join('・'):''}｜${s.publishedTicketCount}点（参考別集計）`;
-  return '掲載全券：'+({void:'不成立',pending:'結果待ち',review:'照合確認中'})[s?.status||'review'];
+  const lines=[statusLabel(s?.status||'review')];
+  if(['hit','miss'].includes(s?.status)) {
+    lines.push(`確定 ${s.combination}｜公式払戻（100円あたり）${s.payoutPer100Yen.toLocaleString('ja-JP')}円`);
+    if(s.matchedSections?.length)lines.push(`的中欄：${s.matchedSections.join('・')}`);
+  }
+  if(Number.isInteger(s?.publishedTicketCount))lines.push(`掲載全券${s.publishedTicketCount}点（重複なし・参考別集計）`);
+  return lines.join('\n');
 }
-function dailyPublishedSummary(rows,date) {
+function dailyPublishedSummary(rows,date,{includeRaces=true}={}) {
   const selected=rows.filter(r=>r.raceKey.startsWith(date+'-'));
   const {summarizePublicRows}=require('./note-public-results');
-  return summarizePublicRows(selected)+'\n'+Object.entries(SERIES).map(([key,s])=>{
+  const lines=Object.entries(SERIES).flatMap(([key,s])=>{
     const subset=selected.filter(r=>(r.articleSeries||'normal')===key);
+    if(!subset.length)return [];
     const c=counts(subset.map(r=>({...r,settlement:r.publishedSettlement||{status:'review'}})));
-    return `${s.label}：${c.published}記事｜${c.hit}的中・${c.miss}不的中｜待ち${c.pending}・不成立${c.void}・確認中${c.review}`;
-  }).join('\n');
+    return [`${s.label}：${c.published}記事\n${statusCounts(c)}`];
+  });
+  return [includeRaces?summarizePublicRows(selected):'',...lines].filter(Boolean).join('\n') || '公開なし';
 }
 
 module.exports = { publishedOutcomeLine,dailyPublishedSummary,observeResult, markResultsVerified, settlePublished, counts, summaryLine, outcomeLine, dailySummary, distributionDrafts };

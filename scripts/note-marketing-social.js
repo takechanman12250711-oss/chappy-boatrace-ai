@@ -2,8 +2,9 @@
 const {createHash}=require('node:crypto');
 const {ticketsIn}=require('./note-readable-article');
 const {counts}=require('./note-marketing-reports');
+const {statusCounts}=require('./note-result-presentation');
 const labels={normal:'AI展開',escape:'本命',manshu:'万舟'};
-const articleContents='無料：展開の流れ・注目艇・狙う理由を解説。\n有料：中心の買い目を、重複をまとめたフォーメーションと点数で掲載。';
+const articleContents='🧭 無料：展開・注目艇・狙う理由\n🎟️ 有料：買い目・フォーメーション・点数';
 const dateOf=now=>new Date(now+9*3600000).toISOString().slice(0,10).replaceAll('-','');
 const timeOf=now=>new Date(now+9*3600000).toISOString().slice(11,16);
 const dayLabel=date=>`${Number(date.slice(4,6))}/${Number(date.slice(6,8))}`;
@@ -45,12 +46,12 @@ function announcementCopy(rows,indexUrl,now) {
   // A shared price describes the whole batch, including rows linked via the index.
   const samePrice=[200,300].includes(first.price)&&ordered.every(r=>r.price===first.price);
   const price=samePrice?`${ordered.length>1?'各':''}${first.price}円。`:'価格は各記事で確認。';
-  const title=`${dayLabel(dateOf(now))} ${sameSeries?labels[first.articleSeries]+'予想':'予想記事'}`;
+  const title=`🚤 ${dayLabel(dateOf(now))} ${sameSeries?labels[first.articleSeries]+'予想':'予想記事'}`;
   // Keep the source-backed insight when it fits; never invent a shorter forecast.
   for(const insight of preview?[preview,'']:['']) {
     for(let n=Math.min(3,ordered.length);n>=1;n--) {
       const races=ordered.slice(0,n).map(r=>
-        `${sameSeries?'':labels[r.articleSeries]+'｜'}${r.place}${r.raceNo}R｜${timeOf(Date.parse(r.deadlineAt))}締切${!samePrice&&[200,300].includes(r.price)?`｜${r.price}円`:''}`);
+        `${sameSeries?'':labels[r.articleSeries]+'｜'}${r.place}${r.raceNo}R｜🕒 ${timeOf(Date.parse(r.deadlineAt))}締切${!samePrice&&[200,300].includes(r.price)?`｜${r.price}円`:''}`);
       if(ordered.length>n)races.push(`ほか${ordered.length-n}記事は一覧へ`);
       const text=[[title,...races].join('\n'),
         insight?`${sameSeries?'':labels[first.articleSeries]+'・'}${first.place}${first.raceNo}R：${insight}`:'',
@@ -64,12 +65,11 @@ function announcementCopy(rows,indexUrl,now) {
 function recapCopy(rows,indexUrl,now,{date=dateOf(now),late=false,supplement=false}={}) {
   const current=rows.filter(r=>r.raceKey.startsWith(date+'-'));
   if(!current.length)return null;
-  const totals=counts(current);
-  const lines=[`${late ? '前日分 ' : ''}${dayLabel(date)} 公開予想の${supplement ? '結果追記' : '振り返り'}`,
+  const lines=[`📊 ${late ? '前日分 ' : ''}${dayLabel(date)} 公開予想の${supplement ? '結果追記' : '振り返り'}`,
     `${current.length}記事・${new Set(current.map(r=>r.raceKey)).size}レース（種類別）`,...Object.entries(labels).flatMap(([key,label])=>{
     const c=counts(current.filter(r=>r.articleSeries===key));
-    return c.published?[`${label}：${c.hit}的中／${c.miss}不的中`]:[];
-  }),`確認中${totals.review}・結果待ち${totals.pending}・不成立${totals.void}`];
+    return c.published?[`${label}：${statusCounts(c)}`]:[];
+  })];
   // Explain a miss without inventing the actual race development from a result.
   const missed=current.filter(r=>r.settlement?.status==='miss'&&contextOf(r)?.firstBoats?.length)
     .sort((a,b)=>a.deadlineAt.localeCompare(b.deadlineAt)||a.publicationKey.localeCompare(b.publicationKey))[0];
@@ -77,6 +77,8 @@ function recapCopy(rows,indexUrl,now,{date=dateOf(now),late=false,supplement=fal
   const tail=[`公開時の中心買い目で判定。${late ? dayLabel(dateOf(now))+' ' : ''}${timeOf(now)}時点`, '全記事・公式結果',indexUrl];
   let text=[...lines,example,...tail].filter(Boolean).join('\n');
   if(weight(text)>280)text=[...lines,...tail].join('\n');
+  if(weight(text)>280)text=[lines[0],lines[1],statusCounts(counts(current)),
+    '種類別の内訳は無料一覧へ',...tail].join('\n');
   if(weight(text)>280)throw Error('social_recap_too_long');
   return text;
 }

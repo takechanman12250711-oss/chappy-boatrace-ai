@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { readableArticle, ticketsIn } = require('./note-readable-article');
+const { sectionProof } = require('./note-published-ticket-sections');
 const { fixture } = require('./note-independent-monitor-fixture');
 test('independent original remains immutable, reasons move before the paywall', () => {
   for (const kind of ['escape', 'manshu']) {
@@ -15,6 +16,12 @@ test('independent original remains immutable, reasons move before the paywall', 
     assert.ok(!a.paidText.includes('・1-2-34'));
     assert.ok(a.freeText.includes('中心の買い目 2点'));
     assert.equal(a.fullText.split(a.paywallMarker).length, 2);
+    assert.ok(a.freeText.includes('🧭 展開の考え方\n\n監視の根拠'));
+    assert.ok(a.freeText.includes('🎟️ 有料部分の内容\n中心の買い目 2点\n重複を除いた全体は2点です。'));
+    assert.ok(a.freeText.includes('📊 的中報告について\n・中心・追加の買い目全体で判定'));
+    // Preview-only layout must not alter the exact existing paid-body proof.
+    assert.equal(sectionProof(a.paidText).paidTextSha256,
+      'cb6fb0fb2fd0bd1e2ce4f7a9a914e7c888c10ef12926768c9741082d95a3010c');
   }
 });
 test('compact rectangles preserve the exact ticket set without inventing cross combinations', () => {
@@ -45,6 +52,7 @@ test('overlapping candidate pools and reference tickets are each shown once; non
   assert.equal(JSON.stringify(b), before);
   assert.ok(a.paidText.indexOf('中心の買い目') < a.paidText.indexOf('相手を広げるなら'));
   assert.ok(a.freeText.includes('全体は7点'));
+  assert.ok(a.freeText.includes('中心の買い目 2点\n追加・参考 5点\n'));
 });
 test('a concrete ticket in an explanation cannot leak into the free preview', () => {
   const b = fixture(); b.article.paidText = '理由 1-2-3\n\n' + b.article.paidText;

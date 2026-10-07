@@ -103,9 +103,12 @@ function readableArticle(article, bundle) {
   const explanation = [...new Set(reasons.filter(Boolean).map(reason => reason
     .split(/(?<=[。！？])|\n/).filter(sentence => !mentions(sentence).length).join('\n').trim()).filter(Boolean))].join('\n\n');
   const total = groups.reduce((n,g) => n + g.tickets.length, 0);
-  const freeText = [freeBase, '展開の考え方', explanation,
-    `有料部分の内容\n中心の買い目 ${central.length}点${total > central.length ? `／追加・参考 ${total - central.length}点` : ''}。重複を除いた全体は${total}点です。`,
-    '中心の買い目から順に掲載します。追加候補はすべて買う前提ではありません。的中報告は掲載した中心・追加の買い目全体で判定し、的中した欄を明記します。別会計の参考予想は含めず、中心のみの従来成績も分けて表示します。'
+  // Keep paid section labels and bytes stable: publication proofs use their
+  // frozen readable-v1 grammar. Preview headings are presentation-only.
+  const freeText = [freeBase, '🧭 展開の考え方', explanation,
+    `🎟️ 有料部分の内容\n中心の買い目 ${central.length}点${total > central.length ? `\n追加・参考 ${total - central.length}点` : ''}\n重複を除いた全体は${total}点です。`,
+    '中心の買い目から順に掲載します。\n追加候補はすべて買う前提ではありません。',
+    '📊 的中報告について\n・中心・追加の買い目全体で判定し、的中した欄を明記します。\n・別会計の参考予想は含めません。\n・中心のみの従来成績も分けて表示します。'
   ].filter(Boolean).join('\n\n');
   let cumulative = 0;
   const paidText = groups.map(group => {

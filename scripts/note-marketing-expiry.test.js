@@ -61,7 +61,7 @@ const row = { ...expired, raceKey:'20261006-18-8', articleSeries:'normal', place
 test('index drops expired purchase URL while retaining race, count and official results',()=>{
   const before=JSON.stringify(row), body=c.indexBody([row],config,now);
   assert(!body.includes(row.url));assert(body.includes('締切済み'));assert(body.includes(row.resultUrl));
-  assert(body.includes('徳山8R'));assert(body.includes('実戦厳選6点'));assert(body.includes(e.NOTICE));
+  assert(body.includes('徳山8R'));assert(body.includes('中心6点'));assert(body.includes(e.NOTICE));
   assert.equal(JSON.stringify(row),before);
 });
 test('index link remains until exact saved deadline and changes without new source data',()=>{

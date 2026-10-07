@@ -183,60 +183,55 @@ def text(x, y, value, size, fill='#ffffff', max_width=None, anchor='lt'):
     if max_width and draw.textlength(value, font=font(size)) > max_width*S:
         raise ValueError('text_does_not_fit')
     draw.text((x*S, y*S), value, font=font(size), fill=fill, anchor=anchor)
-series = c['articleSeries'][0] if aggregate else c['articleSeries']
-accent = {'normal':'#40cdb9','escape':'#40cdb9','manshu':'#ec8879'}[series]
-gold = '#f3ca78'
-box((0,0,1200,10), accent)
-box((970,10,1200,17), gold)
-text(54,35,'チャッピーボートレースAI',26, max_width=680)
-text(1146,42,'公式結果照合済み',18,accent,anchor='rt')
-if c.get('resultSeenAt'):
-    seen = datetime.fromisoformat(c['resultSeenAt'].replace('Z','+00:00')) + timedelta(hours=9)
-    label = '結果確認 '+str(seen.month)+'/'+str(seen.day)+' '+seen.strftime('%H:%M')+' JST'
-    text(1146,91,label,18,'#bfcee0',max_width=550,anchor='rt')
+# A result-first layout, visually distinct from the illustrated prediction
+# covers. Draw the target locally: CJK fonts do not reliably include emoji.
+accent = '#6be1cd'
+gold = '#ffdb79'
+box((0,0,1200,8), accent)
+text(48,30,'チャッピーボートレースAI',25,'#d5e4f5',max_width=680)
+text(1152,32,'公式結果レポート',24,accent,anchor='rt')
+def target(x,y,r):
+    for scale,color in [(1,'#ff646e'),(.76,'#ffffff'),(.52,'#ff646e'),(.28,'#ffffff'),(.12,'#ff646e')]:
+        q=r*scale
+        draw.ellipse(((x-q)*S,(y-q)*S,(x+q)*S,(y+q)*S),fill=color)
+    draw.line(((x+4)*S,(y-4)*S,(x+44)*S,(y-44)*S),fill=gold,width=7*S)
+    draw.polygon([((x+29)*S,(y-43)*S),((x+46)*S,(y-46)*S),((x+43)*S,(y-29)*S)],fill=gold)
+target(94,141,37)
+text(153,92,'的中',106,gold)
 date = c['date'][:4] + '.' + c['date'][4:6] + '.' + c['date'][6:8]
-text(55,91,date,24,'#bfcee0')
-if c['previousDay']:
-    box((250,86,349,124),'#233750',radius=12)
-    text(300,105,'前日分',19,'#f3ca78',anchor='mm')
-text(55,143,c['place']+' '+str(c['raceNo'])+'R',52,max_width=615)
-if aggregate:
-    box((55,222,846,268),'#173b47',radius=10)
-    text(450,245,c['seriesLabel'],25,accent,anchor='mm',max_width=760)
-else:
-    box((55,222,322,268),'#173b47',radius=10)
-    text(188,245,c['seriesLabel'],25,accent,anchor='mm',max_width=240)
-text(1145,141,'的中',104,gold,anchor='rt')
-box((55,296,1145,509),'#142641',radius=20)
-count_text = '掲載全券 '+str(c['publishedTicketCount'])+'点（重複なし）' if aggregate else '事前公開した中心の買い目 '+str(c['ticketCount'])+'点'
-text(82,320,count_text,24,'#d1dbe9',max_width=550)
-text(82,367,'確定出目（3連単）',20,'#a7b8cf')
-boat_colors = {'1':('#f9fafb','#15243c'),'2':('#263044','#ffffff'),'3':('#d45252','#ffffff'),
+text(1149,84,date+('  前日分' if c['previousDay'] else ''),26,'#c7d7eb',anchor='rt')
+text(1152,124,c['place']+' '+str(c['raceNo'])+'R',66,anchor='rt',max_width=650)
+# Single high-contrast result block: combination and official per-100 payout.
+box((48,229,1152,432),'#f4f8fc',radius=20)
+text(74,247,'確定出目（3連単）',24,'#344863')
+text(1124,247,'公式払戻（100円あたり）',25,'#344863',anchor='rt')
+boat_colors = {'1':('#ffffff','#15243c'),'2':('#263044','#ffffff'),'3':('#d45252','#ffffff'),
                '4':('#3883be','#ffffff'),'5':('#e2b744','#12213b'),'6':('#319681','#ffffff')}
 for index, boat in enumerate(c['combination'].split('-')):
-    x = 82 + index*148
+    x = 74 + index*139
     bg, fg = boat_colors[boat]
-    box((x,400,x+100,485),bg,radius=12,outline='#54627a',width=1)
-    text(x+50,442,boat,59,fg,anchor='mm')
-    if index < 2: text(x+124,442,'-',39,'#9cadc4',anchor='mm')
-box((650,328,652,477),'#31455f')
-text(692,330,'公式払戻（100円あたり）',23,'#bfcee0',max_width=420)
-text(1109,392,format(c['payoutPer100Yen'],',')+'円',61,gold,max_width=416,anchor='rt')
+    box((x,294,x+101,406),bg,radius=12,outline='#95a5b9',width=1)
+    text(x+50,350,boat,78,fg,anchor='mm')
+    if index < 2: text(x+119,350,'-',36,'#344863',anchor='mm')
+text(1124,305,format(c['payoutPer100Yen'],',')+'円',79,'#163352',max_width=583,anchor='rt')
+count_text = '掲載全券 '+str(c['publishedTicketCount'])+'点（重複なし）' if aggregate else '事前公開した中心の買い目 '+str(c['ticketCount'])+'点'
+text(48,452,count_text,30,accent,max_width=750)
 if aggregate:
     labels = {'normal':'AI展開予想','escape':'本命予想','manshu':'万舟予想'}
     line = 0
     for series in c['articleSeries']:
         matches = [section['label'] for section in c['matchedSections'] if section['articleSeries'] == series]
         if matches:
-            text(55,522+line*26,'的中欄 '+labels[series]+'：'+' / '.join(matches),18,'#d1dbe9',max_width=1090)
+            text(48,504+line*30,'的中欄 '+labels[series]+'：'+' / '.join(matches),24,'#f4f8fc',max_width=1104)
             line += 1
-    text(55,611,'全結果（無料）',18,accent)
-    text(237,611,c['indexUrl'],22,'#f6f8fc',max_width=908)
-    text(55,650,'公式結果との照合記録 ｜ 別会計の参考は対象外。購入実績・利益を示すものではありません',14,'#a6b7ce',max_width=1090)
 else:
-    text(55,539,'全記事の結果（無料）',21,accent)
-    text(55,575,c['indexUrl'],24,'#f6f8fc',max_width=1090)
-    text(55,630,'公式結果との照合記録 ｜ 購入実績・利益を示すものではありません',18,'#a6b7ce',max_width=1090)
+    text(48,504,c['seriesLabel']+'｜中心の買い目で的中',28,'#f4f8fc',max_width=1104)
+text(48,608,'全結果は投稿内の無料一覧へ',23,accent,max_width=650)
+if c.get('resultSeenAt'):
+    seen = datetime.fromisoformat(c['resultSeenAt'].replace('Z','+00:00')) + timedelta(hours=9)
+    label = '結果確認 '+str(seen.month)+'/'+str(seen.day)+' '+seen.strftime('%H:%M')+' JST'
+    text(1152,609,label,20,'#bfcee0',max_width=440,anchor='rt')
+text(48,650,'公式結果との照合記録 ｜ 別会計の参考は対象外。購入実績・利益を示すものではありません',17,'#a6b7ce',max_width=1104)
 image = image.resize((1200,675), Image.Resampling.LANCZOS)
 output = io.BytesIO()
 image.save(output, format='PNG', compress_level=9, optimize=False)
