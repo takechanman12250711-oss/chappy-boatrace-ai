@@ -165,26 +165,10 @@
     new root.MutationObserver(filterVenues).observe(grid, {childList:true});
     filterVenues();
   }
-  function ensureSelectionPrompt() {
-    const area = root.document.getElementById('resultArea');
-    const section = root.document.getElementById('predictionSection');
-    if (!area || section?.hidden || area.querySelector('.v3-root,.prediction-empty-state') || area.dataset.raceLoading === 'true') return;
-    const children = [...area.children];
-    const onlyResultStatus = children.length > 0 && children.every(node => node.id === 'raceResultStatus');
-    if (area.textContent.trim() && !onlyResultStatus) return;
-    if (root.document.getElementById('errorArea')?.textContent.trim()) return;
-    const prompt = root.document.createElement('div');
-    prompt.className = 'prediction-empty-state';
-    prompt.textContent = 'レースを選び、「AI予想を見る」を押してください。';
-    area.prepend(prompt);
-  }
   function install() {
     if (!root.document) return;
     root.document.body?.classList.add('chappy-bright-ui');
     installFilters();
-    root.addEventListener('chappy:view-changed', event => {
-      if (event.detail?.view === 'prediction') ensureSelectionPrompt();
-    });
     root.document.addEventListener('click', event => {
       if (!event.target.closest?.('.chappy-back-races')) return;
       event.preventDefault();
@@ -198,7 +182,6 @@
       schedule();
     });
     const observer = new root.MutationObserver(records => {
-      ensureSelectionPrompt();
       if (records.some(record => record.target === root.document.getElementById('resultArea') || record.target.closest?.('.v3-manshu-newspaper') || [...record.addedNodes].some(node => node.nodeType === 1 && (node.matches?.('.chappy-final-buy-summary,.chappy-practical-visible-panel') || node.querySelector?.('.chappy-final-buy-summary'))))) schedule();
     });
     observer.observe(root.document.getElementById('resultArea'), {childList:true,subtree:true});

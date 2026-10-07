@@ -101,8 +101,28 @@ export async function capturePredictionViews(page,outputDir,step) {
   await page.locator('.bottom-nav-item[data-view="prediction"]').click();
   assert.equal(await page.locator('#predictionSection').isVisible(),true);
   // Returning to the race picker intentionally resets the selection in the existing controller.
-  // Revisit must show a clear empty state rather than stale tickets or a blank screen.
-  await page.locator('.prediction-empty-state').waitFor({state:'visible'});
-  assert.equal(await page.locator('.chappy-bright-race-intro').count(),0);
+  // Preserve the existing baseline: prediction is reset; its official status stays visible.
+  // Do not impose a new prompt or erase results/errors as part of a layout change.
+  await settle(page);
+  const revisit=await page.evaluate(()=>{
+    const area=document.getElementById('resultArea');
+    const status=area.querySelector('#raceResultStatus');
+    const rect=status?.getBoundingClientRect();
+    return {
+      visibleViews:['race','prediction','result'].filter(view=>!document.getElementById(`${view}Section`).hidden),
+      priorPredictionCount:area.querySelectorAll('.chappy-bright-race-intro,.chappy-final-buy-summary').length,
+      loading:area.dataset.raceLoading==='true',
+      statusVisible:Boolean(rect&&rect.width>0&&rect.height>0),
+      statusText:status?.textContent.trim()||'',
+      errorText:document.getElementById('errorArea')?.textContent.trim()||''
+    };
+  });
+  assert.deepEqual(revisit.visibleViews,['prediction']);
+  assert.equal(revisit.priorPredictionCount,0,'prior prediction and ticket groups are cleared');
+  assert.equal(revisit.loading,false,'no stuck loading state after return');
+  assert.equal(revisit.statusVisible,true,'official status remains available');
+  assert(revisit.statusText.length>0,'official status text is not erased');
+  await page.screenshot({path:path.join(outputDir,'bright-back-revisit-390.png'),fullPage:true});
+  step('bright-back-revisit-state',{sourceCommit,...revisit});
   step('bright-disclosures-and-back-passed',{sourceCommit,badges});
 }
