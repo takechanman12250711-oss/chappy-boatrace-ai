@@ -66,6 +66,8 @@ async function main() {
   assert.ok(payload.freeText.startsWith('🚤 9月14日 唐津10R\n🕒 締切 16:00'));
   assert.deepEqual(require('./note-readable-article').ticketsIn(payload.freeText), []);
   assert.ok(payload.paidText.includes('📌 合計（重複なし）\n公開予想：5点'));
+  assert.ok(!/金額|予算|[0-9０-９]+円|[¥￥]/.test(payload.paidText));
+  assert.ok(payload.freeText.includes('💡 すべての買い目を購入する前提ではありません。'));
   for (const [heading, changed] of [['🎯 本命', '本命'], ['🛡️ 押さえ', '🎯 独立本命'], ['💥 万舟狙い', '💥 当選確実']]) {
     assert.throws(() => parsePublishedDisplayProof({ ...payload, paidText: payload.paidText.replace(heading, changed) }));
   }

@@ -9,7 +9,6 @@ const REFERENCE = '🧾 別会計の参考予想';
 const PRIMARY_LABELS = Object.freeze([...NORMAL_LABELS, ...Object.values(INDEPENDENT_LABELS)]);
 const LABELS = Object.freeze([...PRIMARY_LABELS, REFERENCE]);
 const TOTAL_HEADING = '📌 合計（重複なし）';
-const BUDGET_HEADING = '💰 金額の目安（1点100円）';
 const requireValue = (value, reason) => { if (!value) throw Error(reason); };
 const unique = values => [...new Set(values)];
 const same = (left, right) => JSON.stringify(unique(left).sort()) === JSON.stringify(unique(right).sort());
@@ -118,9 +117,7 @@ function footer(sections) {
   const counts = totals(sections);
   return [TOTAL_HEADING, `公開予想：${counts.primary}点`,
     `区分別は延べ${counts.displayed}点。同じ買い目は合計で1点と数えます。`,
-    ...(counts.reference ? [`参考予想：${counts.reference}点（別集計）`, `参考を含む全体：${counts.all}点（重複なし）`] : []),
-    '', BUDGET_HEADING,
-    `公開予想のみ${counts.primary * 100}円${counts.reference ? `／参考を含む全体${counts.all * 100}円` : ''}`].join('\n');
+    ...(counts.reference ? [`参考予想：${counts.reference}点（別集計）`, `参考を含む全体：${counts.all}点（重複なし）`] : [])].join('\n');
 }
 function paidTextFromSections(sections) {
   validateSections(sections);
@@ -157,7 +154,7 @@ function parsePaidSections(paidText) {
   requireValue(current && current.declared !== null, 'published_section_count_mismatch');
   const result = sections.map(({ label, tickets }) => ({ label, tickets }));
   validateSections(result);
-  requireValue(TOTAL_HEADING + '\n' + parts[1] === footer(result), 'published_budget_text_invalid');
+  requireValue(TOTAL_HEADING + '\n' + parts[1] === footer(result), 'published_total_text_invalid');
   return result;
 }
 module.exports = { PRESENTATION_VERSION, NORMAL_LABELS, INDEPENDENT_LABELS, REFERENCE, PRIMARY_LABELS, LABELS,

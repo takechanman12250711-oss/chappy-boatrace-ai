@@ -202,11 +202,11 @@ test('v2 exact source proof retains all category matches while excluding overlap
   assert.equal(row.publicationEvidence.publishedDisplayProof.sections.at(-1).includedInPublishedResult, false);
   assert.ok(!JSON.stringify(row.publicationEvidence.publishedDisplayProof).includes('1-2-3'));
 });
-test('v2 rejects unknown headings, mixed article families, duplicate category tickets, count or budget inflation', () => {
+test('v2 rejects unknown headings, mixed families, duplicate tickets, count inflation and budget guidance', () => {
   const { article } = categoryInput(), text = article.paidText;
   for (const changed of [text.replace('🎯 本命', '🎯 絶対当たる本命'),
     text.replace('🌊 流し', '💥 独立万舟'), text.replace('3点', '4点'),
-    text.replace('公開予想：6点', '公開予想：9点'), text.replace('公開予想のみ600円', '公開予想のみ900円'),
+    text.replace('公開予想：6点', '公開予想：9点'), text + '\n\n💰 金額の目安（1点100円）\n公開予想のみ600円',
     text.replace('延べ9点', '延べ6点'), text.replace('参考予想：2点', '参考予想：1点'),
     text.replace('1 → 2 → 3・4', '1 → 2 → 3・4\n1 → 2 → 3'),
     text + '\n安全な買い目\n6 → 5 → 4', text.replace('🧾 別会計の参考予想', '参考')]) {

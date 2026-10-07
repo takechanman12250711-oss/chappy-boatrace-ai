@@ -165,6 +165,7 @@ function readableArticle(article, bundle, { presentationVersion = 'readable-v2' 
     `🧭 展開の考え方\n${explanation}`,
     `🎟️ 有料部分の内容\n${sections.filter(section => section.label !== category.REFERENCE).map(section => `${section.label}：${section.tickets.length}点`).join('\n')}\n📌 公開予想は重複なし${counts.primary}点です。`,
     ...(counts.reference ? ['🧾 参考予想は別枠に掲載し、公開予想の成績から除きます。'] : []),
+    '💡 すべての買い目を購入する前提ではありません。',
     '📊 的中した区分を明記します。\n保存済みの実戦厳選の成績は、従来どおり別に集計します。',
     ...retained.filter(paragraph => /今日の予想一覧|はじめての方へ|https:\/\//.test(paragraph))
   ].join('\n\n');

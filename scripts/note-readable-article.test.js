@@ -121,7 +121,9 @@ test('readable-v2 preserves explicit source categories and overlaps, odds and pr
   assert.equal(new Set(ticketsIn(a.paidText)).size, 7);
   assert.ok(a.paidText.includes('公開予想：6点\n区分別は延べ9点。同じ買い目は合計で1点と数えます。'));
   assert.ok(a.paidText.includes('参考予想：2点（別集計）\n参考を含む全体：7点（重複なし）'));
-  assert.ok(a.paidText.endsWith('公開予想のみ600円／参考を含む全体700円'));
+  assert.ok(a.paidText.endsWith('参考を含む全体：7点（重複なし）'));
+  assert.ok(!/金額|予算|[0-9０-９]+円|[¥￥]/.test(a.paidText));
+  assert.ok(a.freeText.includes('💡 すべての買い目を購入する前提ではありません。'));
   assert.ok(!a.paidText.includes('6 → 5 → 4'));
   assert.ok(!a.paidText.includes('中心の買い目'));
   assert.equal(a.fullText.split(a.paywallMarker).length, 2);
@@ -163,6 +165,8 @@ test('readable-v2 independent article kinds remain separate from every ordinary 
     const a = currentReadableArticle(b.article, b);
     assert.ok(a.paidText.startsWith(kind === 'escape' ? '🎯 独立本命' : '💥 独立万舟'));
     assert.ok(a.freeText.includes('🔎 通常AIとは別の独立した監視予想です。'));
+    assert.ok(a.freeText.includes('💡 すべての買い目を購入する前提ではありません。'));
+    assert.ok(!/金額|予算|[0-9０-９]+円|[¥￥]/.test(a.paidText));
     assert.ok(a.freeText.includes('元の理由を短縮・差し替えしない。'));
     assert.deepEqual(ticketsIn(a.paidText), ['1-2-3','1-2-4']);
     for (const key of ['mainSheet', 'manshuSheet', 'ticketSheets']) {
