@@ -30,7 +30,7 @@
     const data = summaryData(pred);
     const a = data.availability;
     const exhibition = a ? `展示 ${Number(a.exhibitionTime)||0}/6艇・公式進入 ${Number(a.officialCourses)||0}/6艇` : '展示・進入の取得状況は詳細で確認';
-    return `<header class="chappy-bright-race-intro"><a href="#raceSection" data-view="race" class="chappy-back-races">‹ レースへ</a><h2>${esc(data.title || '選択したレース')}</h2><div class="chappy-bright-race-meta"><strong>締切 ${esc(data.deadline)}</strong><span>${esc(data.date)}</span></div><p class="chappy-data-freshness">データ取得 ${esc(data.fetched)}<br>${esc(exhibition)}</p></header><section class="chappy-flow-preview"><h3>展開の要点</h3><p>${esc(data.flow || '展開説明は未取得です。詳しい根拠で取得状況を確認できます。')}</p>${data.warning ? `<p class="chappy-flow-warning">注意：${esc(data.warning)}</p>` : ''}<a href="#chappy-readable-evidence" class="chappy-open-evidence">詳しい根拠を見る ›</a></section>`;
+    return `<header class="chappy-bright-race-intro"><a href="#raceSection" data-view="race" class="chappy-back-races">‹ レースへ</a><h2>${esc(data.title || '選択したレース')}</h2><div class="chappy-bright-race-meta"><strong>締切 ${esc(data.deadline)}</strong><span>${esc(data.date)}</span></div><p class="chappy-data-freshness">参照データ取得 ${esc(data.fetched)}<br>${esc(exhibition)}</p></header><section class="chappy-flow-preview"><h3>展開の要点</h3><p>${esc(data.flow || '展開説明は未取得です。詳しい根拠で取得状況を確認できます。')}</p>${data.warning ? `<p class="chappy-flow-warning">注意：${esc(data.warning)}</p>` : ''}<a href="#chappy-readable-evidence" class="chappy-open-evidence">詳しい根拠を見る ›</a></section>`;
   }
   let latest = null, pending = false, currentAreaRoot = null, presentationRoot = null, introPrediction = null;
   function organize(pred) {
@@ -169,6 +169,12 @@
     if (!root.document) return;
     root.document.body?.classList.add('chappy-bright-ui');
     installFilters();
+    root.addEventListener('chappy:view-changed', event => {
+      const area = root.document.getElementById('resultArea');
+      if (event.detail?.view === 'prediction' && area && !area.textContent.trim() && !area.dataset.raceLoading) {
+        area.innerHTML = '<div class="prediction-empty-state">レースを選び、「AI予想を見る」を押してください。</div>';
+      }
+    });
     root.document.addEventListener('click', event => {
       if (!event.target.closest?.('.chappy-back-races')) return;
       event.preventDefault();

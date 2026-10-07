@@ -135,6 +135,8 @@ filters.querySelector('[data-session-filter="all"]').click();assert.equal([...gr
 let view='prediction';window.ChappyHomeDashboardV2={setView:value=>view=value};
 area.querySelector('.chappy-back-races').click();assert.equal(view,'race','back link must use the existing view controller');
 window.renderAll(fixture(4));area.innerHTML='<p>読み込み中</p>';flush();assert.equal(area.textContent,'読み込み中','old callbacks cannot repaint a newer loading state');
+area.innerHTML='';window.dispatchEvent(new window.CustomEvent('chappy:view-changed',{detail:{view:'prediction'}}));
+assert.match(area.textContent,/レースを選び/,'returning after selection reset explains how to reopen a prediction');
 console.log('Bright mobile DOM: ordered layout, exact category ticket sets, immutable inputs, six boat colours, latest-render guard, safe text, 24-card filters passed');
 
 process.exit(0);

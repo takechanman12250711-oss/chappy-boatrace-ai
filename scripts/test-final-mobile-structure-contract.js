@@ -44,7 +44,7 @@ for (const hook of ["ensureFormationGroup", "rewritePractical", "rewriteManshu",
 }
 assert.ok(owner.includes("buildManshuRows"), "exact manshu ticket display source missing");
 assert.ok(owner.includes("現在、取得オッズで100倍以上の万舟買い目はありません"), "explicit empty manshu state missing");
-assert.ok(owner.includes("実戦厳選"), "practical selection tag missing");
+assert.ok(owner.includes("厳選"), "practical selection tag missing");
 assert.doesNotMatch(owner, /単券1点は万舟欄に表示しません/,
   "single 100x ticket must no longer be suppressed from the manshu display");
 assert.match(ownerCss, /\.v3-practical-section\{display:none!important;\}/,

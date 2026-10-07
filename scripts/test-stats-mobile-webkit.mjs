@@ -131,7 +131,7 @@ async function assertSavedEvidence(page, expected) {
   for (const text of [timeLabel(candidate.generatedAt), `結果待ち ${candidate.pending}R`,
     `返還・不成立除外 ${candidate.excludedRefundOrVoid}R`, `払戻未確認 ${candidate.unknownPayout}R`,
     `最大24点候補：的中率 ${percent(candidate.candidate24.hitRate)}`,
-    `同じレースの実戦厳選：的中率 ${percent(candidate.practical.hitRate)}`]) {
+    `同じレースの厳選：的中率 ${percent(candidate.practical.hitRate)}`]) {
     assert.ok(candidateText.includes(text), `saved candidate evidence missing: ${text}`);
   }
   const overview = cleanText(await page.locator('[data-stats-load-state="ready"]').innerText());

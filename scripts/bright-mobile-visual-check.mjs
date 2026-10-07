@@ -43,6 +43,9 @@ export async function captureVenueViews(page,outputDir,step) {
     const result=await assertCanvas(page,'#raceSection',width);
     const columns=await page.locator('#officialVenueGrid').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);
     assert.equal(columns,width<700?3:6);
+    const action = await page.evaluate(()=>({position:getComputedStyle(document.querySelector('.race-main-action')).position,top:document.querySelector('.race-main-action').getBoundingClientRect().top,gridBottom:document.getElementById('officialVenueGrid').getBoundingClientRect().bottom}));
+    assert.equal(action.position,'static','legacy action overlay removed');
+    assert(action.top >= action.gridBottom-1,'prediction action must not cover venue cards');
     await page.screenshot({path:path.join(outputDir,`bright-venues-${width}.png`),fullPage:true});
     step('bright-venues-captured',{sourceCommit,width,columns,...result});
   }
@@ -97,6 +100,9 @@ export async function capturePredictionViews(page,outputDir,step) {
   assert.equal(await page.locator('#predictionSection').isVisible(),false);
   await page.locator('.bottom-nav-item[data-view="prediction"]').click();
   assert.equal(await page.locator('#predictionSection').isVisible(),true);
-  assert.equal(await page.locator('.chappy-bright-race-intro').count(),1);
+  // Returning to the race picker intentionally resets the selection in the existing controller.
+  // Revisit must show a clear empty state rather than stale tickets or a blank screen.
+  await page.locator('.prediction-empty-state').waitFor({state:'visible'});
+  assert.equal(await page.locator('.chappy-bright-race-intro').count(),0);
   step('bright-disclosures-and-back-passed',{sourceCommit,badges});
 }
