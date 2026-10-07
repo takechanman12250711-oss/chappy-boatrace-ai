@@ -48,7 +48,7 @@ test('intake preserves complete independent original and has one immutable path'
     const p = publicationPayload(saved.sourcePath, rootDir, now);
     assert.equal(p.title, b.article.title);
     assert.ok(p.freeText.includes('元の理由を短縮・差し替えしない。'));
-    assert.ok(p.paidText.startsWith('中心の買い目'));
+    assert.ok(p.paidText.startsWith(kind === 'escape' ? '🎯 独立本命' : '💥 独立万舟'));
     assert.deepEqual(require('./note-readable-article').ticketsIn(p.paidText), ['1-2-3', '1-2-4']);
     assert.equal(JSON.stringify(b), before);
   }

@@ -31,7 +31,7 @@ try {
     const b = fixture(), p = publicationPayload(save(b), root, NOW);
     assert.equal(p.title, b.article.title);
     assert.ok(p.freeText.includes('元の理由を短縮・差し替えしない。'));
-    assert.ok(p.paidText.startsWith('中心の買い目'));
+    assert.ok(p.paidText.startsWith('🎯 独立本命'));
     assert.deepEqual(require('./note-readable-article').ticketsIn(p.paidText).sort(), ['1-2-3', '1-2-4']);
     assert.deepEqual(b.article, b.monitor.article);
     assert.equal(p.price, 200); assert.equal(p.practicalTicketCount, 2);

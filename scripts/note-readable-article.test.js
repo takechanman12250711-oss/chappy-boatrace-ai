@@ -1,7 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { readableArticle, ticketsIn } = require('./note-readable-article');
+const { readableArticle: currentReadableArticle, ticketsIn } = require('./note-readable-article');
+const readableArticle = (article, bundle) => currentReadableArticle(article, bundle, { presentationVersion: 'readable-v1' });
 const { sectionProof } = require('./note-published-ticket-sections');
 const { fixture } = require('./note-independent-monitor-fixture');
 test('independent original remains immutable, reasons move before the paywall', () => {
@@ -87,4 +88,86 @@ test('non-adjacent axes merge across all positions but never across paid section
   const split = readableArticle(b.article,b).paidText.split('相手を広げるなら');
   assert.deepEqual(ticketsIn(split[0]), ['1-2-4']);
   assert.deepEqual(ticketsIn(split[1]), ['1-2-5']);
+});
+
+function categoryFixture() {
+  const b = fixture(); b.version = 'note-draft-bundle-v1';
+  delete b.monitor; delete b.record.source;
+  b.record.prediction.mainSheet = {
+    tickets: [{ ticket: '1-2-3', odds: 12.3 }, { ticket: '1-2-4', odds: 16.4 }, { ticket: '1-3-2', odds: 20 }],
+    coverTickets: [{ ticket: '1-3-2', odds: 20 }, { ticket: '2-1-3', odds: 30 }],
+    flowTickets: [{ ticket: '1-2-3', odds: 12.3 }, { ticket: '3-1-2', odds: 40 }],
+    reason: '内側の差しにも注意します。'
+  };
+  b.record.prediction.manshuSheet = { tickets: [{ ticket: '3-1-2', odds: 40 }, { ticket: '4-1-2', odds: 120 }] };
+  b.record.prediction.raceFlow = { summary: '1号艇の逃げを中心に考えます。2号艇の差しも見ます。' };
+  b.record.prediction.candidate24Tickets = [{ ticket: '6-5-4', odds: 900 }];
+  b.article.format = 'formation-v4';
+  b.article.paidText = '🔥 実戦厳選\n\n・1-2-34\n\n計 2点\n\n本命とは別会計の参考予想\n・4-1-2\n・5-1-2';
+  return b;
+}
+test('readable-v2 preserves explicit source categories and overlaps, odds and practical priority', () => {
+  const b = categoryFixture(), before = JSON.stringify(b), a = currentReadableArticle(b.article, b);
+  const parsed = require('./note-category-article').parsePaidSections(a.paidText);
+  assert.equal(a.presentationVersion, 'readable-v2');
+  assert.deepEqual(parsed.map(section => section.label), ['🎯 本命','🛡️ 押さえ','🌊 流し','💥 万舟狙い','🧾 別会計の参考予想']);
+  for (const [index, source] of [b.record.prediction.mainSheet.tickets, b.record.prediction.mainSheet.coverTickets,
+    b.record.prediction.mainSheet.flowTickets, b.record.prediction.manshuSheet.tickets].entries()) {
+    assert.deepEqual([...parsed[index].tickets].sort(), source.map(row => row.ticket).sort());
+  }
+  assert.deepEqual(parsed.at(-1).tickets, ['4-1-2', '5-1-2']);
+  assert.equal(JSON.stringify(b), before);
+  assert.equal(ticketsIn(a.paidText).length, 11, 'all memberships, including reference overlaps, stay visible');
+  assert.equal(new Set(ticketsIn(a.paidText)).size, 7);
+  assert.ok(a.paidText.includes('公開予想：6点\n区分別は延べ9点。同じ買い目は合計で1点と数えます。'));
+  assert.ok(a.paidText.includes('参考予想：2点（別集計）\n参考を含む全体：7点（重複なし）'));
+  assert.ok(a.paidText.endsWith('公開予想のみ600円／参考を含む全体700円'));
+  assert.ok(!a.paidText.includes('6 → 5 → 4'));
+  assert.ok(!a.paidText.includes('中心の買い目'));
+  assert.equal(a.fullText.split(a.paywallMarker).length, 2);
+});
+test('readable-v2 has short saved rationale and emoji date/deadline, with no paid ticket leak', () => {
+  const b = categoryFixture();
+  b.record.prediction.raceFlow.summary = '1-2-3を想定します。1号艇の逃げを中心に考えます。2号艇の差しも見ます。';
+  b.article.freeText += '\n\n作成時点の取得済み情報による参考予想です。\n\n今日の予想一覧\nhttps://note.com/great_robin3243/n/na76b6c6c18ff';
+  const a = currentReadableArticle(b.article, b);
+  assert.ok(a.freeText.startsWith('🚤 9月28日 丸亀6R\n🕒 締切 17:29'));
+  assert.ok(a.freeText.includes('🧭 展開の考え方\n1号艇の逃げを中心に考えます。\n2号艇の差しも見ます。\n内側の差しにも注意します。'));
+  assert.deepEqual(ticketsIn(a.freeText), []);
+  assert.ok(a.freeText.includes('作成時点の取得済み情報による参考予想です。'));
+  assert.ok(a.freeText.includes('今日の予想一覧\nhttps://note.com/great_robin3243/n/na76b6c6c18ff'));
+  assert.ok(a.paidText.includes('1 → 2 → 3・4'));
+});
+test('readable-v2 fails closed rather than guessing missing category membership', () => {
+  for (const mutate of [b => { delete b.record.prediction.mainSheet.coverTickets; },
+    b => { b.record.prediction.mainSheet.flowTickets = null; },
+    b => { delete b.record.prediction.manshuSheet; }]) {
+    const b = categoryFixture(); mutate(b);
+    assert.throws(() => currentReadableArticle(b.article, b), /category_source_missing/);
+  }
+  const b = categoryFixture(); b.record.prediction.mainSheet.tickets = ['1-2-3'];
+  assert.throws(() => currentReadableArticle(b.article, b), /category_membership_missing/);
+  b.record.prediction.mainSheet.tickets = ['7-2-1'];
+  assert.throws(() => currentReadableArticle(b.article, b), /category_ticket_invalid/);
+});
+test('readable-v2 explicit empty categories are zero, never inferred from practical selection or candidate24', () => {
+  const b = categoryFixture();
+  b.record.prediction.mainSheet.coverTickets = []; b.record.prediction.mainSheet.flowTickets = [];
+  b.record.prediction.manshuSheet.tickets = [];
+  const a = currentReadableArticle(b.article, b);
+  for (const heading of ['🛡️ 押さえ','🌊 流し','💥 万舟狙い']) assert.ok(a.paidText.includes(heading + '\n\n保存済みの買い目なし\n0点'));
+});
+test('readable-v2 independent article kinds remain separate from every ordinary AI pool', () => {
+  for (const kind of ['escape', 'manshu']) {
+    const b = fixture(); b.monitor.kind = kind;
+    const a = currentReadableArticle(b.article, b);
+    assert.ok(a.paidText.startsWith(kind === 'escape' ? '🎯 独立本命' : '💥 独立万舟'));
+    assert.ok(a.freeText.includes('🔎 通常AIとは別の独立した監視予想です。'));
+    assert.ok(a.freeText.includes('元の理由を短縮・差し替えしない。'));
+    assert.deepEqual(ticketsIn(a.paidText), ['1-2-3','1-2-4']);
+    for (const key of ['mainSheet', 'manshuSheet', 'ticketSheets']) {
+      const changed = structuredClone(b); changed.record.prediction[key] = {};
+      assert.throws(() => currentReadableArticle(changed.article, changed), /independent_pool_mixture/);
+    }
+  }
 });

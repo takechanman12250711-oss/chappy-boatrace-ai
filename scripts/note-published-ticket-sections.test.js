@@ -3,7 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const { fixture } = require('./note-independent-monitor-fixture');
-const { readableArticle } = require('./note-readable-article');
+const { readableArticle: currentReadableArticle } = require('./note-readable-article');
+const readableArticle = (article, bundle) => currentReadableArticle(article, bundle, { presentationVersion: 'readable-v1' });
 const { VERSION, EVIDENCE_VERSION, LEGACY_READABLE, sectionProof, extractPublishedTicketSections,
   publishedTicketSections, classifyPublishedTickets } = require('./note-published-ticket-sections');
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -168,4 +169,98 @@ test('formation regrouping exactly matches current publication renderer over non
   bundle.record.prediction.manshuSheet = { tickets: [] };
   const { row, bytes, now } = input(bundle, true);
   assert.equal(publishedTicketSections(row, bytes, now).status, 'verified');
+});
+
+function categoryInput(bundle) {
+  if (!bundle) {
+    bundle = normalFixture();
+    bundle.record.prediction.mainSheet.tickets.splice(1, 0, '1-2-4');
+  }
+  const args = input(bundle), article = currentReadableArticle(bundle.article, bundle);
+  args.row.publicationEvidence.presentationVersion = article.presentationVersion;
+  args.row.publicationEvidence.publishedDisplayProof = sectionProof(article.paidText, article.presentationVersion);
+  return { ...args, bundle, article };
+}
+test('v2 exact source proof retains all category matches while excluding overlapping references from totals', () => {
+  const { row, bytes, now, article } = categoryInput();
+  const result = publishedTicketSections(row, bytes, now);
+  assert.equal(result.status, 'verified'); assert.equal(result.presentationVersion, 'readable-v2');
+  assert.equal(result.publishedTicketCount, 6); assert.equal(result.displayedPrimaryTicketCount, 9);
+  assert.equal(result.referenceTicketCount, 2);
+  assert.deepEqual(result.sections, [
+    { label: '🎯 本命', tickets: ['1-2-3','1-2-4','1-3-2'] },
+    { label: '🛡️ 押さえ', tickets: ['1-3-2','2-1-3'] },
+    { label: '🌊 流し', tickets: ['1-2-3','3-1-2'] },
+    { label: '💥 万舟狙い', tickets: ['3-1-2','4-1-2'] }
+  ]);
+  assert.deepEqual(classifyPublishedTickets(row, bytes, '1-3-2', now).matchedSections, ['🎯 本命','🛡️ 押さえ']);
+  assert.deepEqual(classifyPublishedTickets(row, bytes, '3-1-2', now).matchedSections, ['🌊 流し','💥 万舟狙い']);
+  assert.deepEqual(classifyPublishedTickets(row, bytes, '4-1-2', now).matchedSections, ['💥 万舟狙い']);
+  assert.equal(classifyPublishedTickets(row, bytes, '5-1-2', now).status, 'miss');
+  assert.equal(classifyPublishedTickets(row, bytes, '6-5-4', now).status, 'miss');
+  assert.equal(row.publicationEvidence.publishedDisplayProof.paidTextSha256, hash(article.paidText));
+  assert.equal(row.publicationEvidence.publishedDisplayProof.sections.at(-1).includedInPublishedResult, false);
+  assert.ok(!JSON.stringify(row.publicationEvidence.publishedDisplayProof).includes('1-2-3'));
+});
+test('v2 rejects unknown headings, mixed article families, duplicate category tickets, count or budget inflation', () => {
+  const { article } = categoryInput(), text = article.paidText;
+  for (const changed of [text.replace('🎯 本命', '🎯 絶対当たる本命'),
+    text.replace('🌊 流し', '💥 独立万舟'), text.replace('3点', '4点'),
+    text.replace('公開予想：6点', '公開予想：9点'), text.replace('公開予想のみ600円', '公開予想のみ900円'),
+    text.replace('延べ9点', '延べ6点'), text.replace('参考予想：2点', '参考予想：1点'),
+    text.replace('1 → 2 → 3・4', '1 → 2 → 3・4\n1 → 2 → 3'),
+    text + '\n安全な買い目\n6 → 5 → 4', text.replace('🧾 別会計の参考予想', '参考')]) {
+    assert.equal(extractPublishedTicketSections(changed, { presentationVersion: 'readable-v2' }).status, 'review');
+    assert.throws(() => sectionProof(changed, 'readable-v2'));
+  }
+});
+test('v2 binds exact source SHA, category membership, version and paid body', () => {
+  const { row, bytes, now } = categoryInput();
+  assert.equal(publishedTicketSections(row, bytes + '\n', now).reason, 'source_hash_mismatch');
+  for (const edit of [proof => { proof.paidTextSha256 = 'c'.repeat(64); },
+    proof => { proof.sections[1].ticketsSha256 = proof.sections[0].ticketsSha256; },
+    proof => { proof.sections.at(-1).includedInPublishedResult = true; },
+    proof => { proof.publishedTicketCount = 9; }, proof => { proof.sections.push(proof.sections[0]); }]) {
+    const changed = clone(row); edit(changed.publicationEvidence.publishedDisplayProof);
+    assert.equal(publishedTicketSections(changed, bytes, now).reason, 'published_display_proof_mismatch');
+  }
+  const wrongVersion = clone(row); wrongVersion.publicationEvidence.presentationVersion = 'readable-v1';
+  assert.equal(publishedTicketSections(wrongVersion, bytes, now).reason, 'published_display_proof_mismatch');
+  const bundle = JSON.parse(bytes); bundle.record.prediction.mainSheet.coverTickets = ['2-1-3'];
+  const changedBytes = JSON.stringify(bundle), changedRow = clone(row);
+  changedRow.sourceSha256 = hash(changedBytes); changedRow.publicationEvidence.sourceSha256 = hash(changedBytes);
+  assert.equal(publishedTicketSections(changedRow, changedBytes, now).reason, 'published_display_proof_mismatch');
+});
+test('v2 cannot disclose paid membership before the deadline or infer missing source classifications', () => {
+  const { row, bytes, now } = categoryInput();
+  assert.deepEqual(publishedTicketSections(row, bytes, Date.parse(row.deadlineAt)), { status: 'pending', reason: 'official_result_pending' });
+  for (const mutation of [b => { delete b.record.prediction.mainSheet.coverTickets; },
+    b => { b.record.prediction.mainSheet.tickets = ['1-2-3','1-3-2']; }]) {
+    const b = JSON.parse(bytes); mutation(b); const changedBytes = JSON.stringify(b), changedRow = clone(row);
+    changedRow.sourceSha256 = hash(changedBytes); changedRow.publicationEvidence.sourceSha256 = hash(changedBytes);
+    assert.equal(publishedTicketSections(changedRow, changedBytes, now).status, 'review');
+  }
+});
+test('v2 independent kinds have exact receipt proofs and preserve reference overlaps without AI pools', () => {
+  for (const kind of ['escape', 'manshu']) {
+    const bundle = fixture(); bundle.monitor.kind = kind;
+    bundle.article.paidText += '\n\n参考\n・1-2-3\n・6-1-2'; bundle.monitor.article = clone(bundle.article);
+    const { row, bytes, now } = categoryInput(bundle), result = publishedTicketSections(row, bytes, now);
+    assert.equal(result.status, 'verified'); assert.equal(result.publishedTicketCount, 2); assert.equal(result.referenceTicketCount, 2);
+    assert.deepEqual(classifyPublishedTickets(row, bytes, '1-2-3', now).matchedSections, [kind === 'escape' ? '🎯 独立本命' : '💥 独立万舟']);
+    assert.equal(classifyPublishedTickets(row, bytes, '6-1-2', now).status, 'miss');
+  }
+});
+test('v1 byte fingerprint and grammar remain frozen when v2 is the generation default', () => {
+  assert.deepEqual(LEGACY_READABLE, {
+    presentationVersion: 'readable-v1',
+    rendererSha256: 'f8bdeed262196f6e0a57d98e93a09c0a9b85f4c8bbbaa96bac383ddb5bcff389',
+    publicationSourceSha256: 'd00657d58c8c9e35b679142bd5e7c981bdfa42905c0bb1ea85377fb234d47e4f',
+    generatorSha256: '2f4b9769f34e29287e8b23bae208a694c39eca66700850397a64879619d48be3'
+  });
+  const legacy = readableArticle(fixture().article, fixture());
+  assert.equal(sectionProof(legacy.paidText, 'readable-v1').paidTextSha256,
+    'cb6fb0fb2fd0bd1e2ce4f7a9a914e7c888c10ef12926768c9741082d95a3010c');
+  assert.equal(extractPublishedTicketSections(legacy.paidText, { presentationVersion: 'readable-v2' }).status, 'review');
+  assert.equal(extractPublishedTicketSections(categoryInput().article.paidText, { presentationVersion: 'readable-v1' }).status, 'review');
 });
