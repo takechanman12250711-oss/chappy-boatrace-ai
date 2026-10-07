@@ -41,6 +41,7 @@
 - `live-note.yml` がJST 07:00〜22:55の5分間隔で既存collectorの `--note-only` を実行する。GitHubの起動遅延はあり得るが、結果収集・校正の共有キューには入らない。
 - 同じ予想エンジン・V2選定・公式オッズ補完・原稿監査を使う。日次予想、結果、校正、可変のMarkdownは保存せず、immutableな `data/note-drafts` だけを保存する。通常collectorと結果・校正の共有writerは維持する。
 - 独立writerは変更パスを検査し、原稿だけのコミットを最新mainへrebaseしてfast-forward pushする。競合は停止し、push競争は最大3回。締切を再検査して既存publisherへ渡す。force pushしない。
+- 通常collectorの解析前先行保存は、監査済み原稿1件だけを最新mainから作る一時的なsparse worktreeへ同一SHA256でコピーし、同じsource-only検査・最大3回の再保存を使う。収集中の予想・統計・index・HEADを変更せず、保存後も締切を再検査してからpublisherを1回だけdispatchする。応答不明時は再送しない。`NOTE_EARLY_SOURCE_SAVED` は原稿保存の証拠であり、公開成功は別途receiptと公開ページで確認する。
 - 投稿は監査合格・当日・締切余裕120秒超・未予約の対象がある時だけ。原子的な予約により通常collectorとの二重投稿を防ぐ。5分間隔は収集予定であり、投稿時刻の保証ではない。対象なしのskipと実際の公開成功を区別する。
 
 ## 2026-09-14 自動投稿の有効化

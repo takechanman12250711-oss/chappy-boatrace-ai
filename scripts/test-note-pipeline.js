@@ -96,14 +96,12 @@ async function main() {
   const payload = { sourcePath: 'data/note-drafts/20300914/verified.json', raceKey: record.raceKey };
   const options = { env, build: ({write}) => { assert.equal(write, false); return { payload: { candidates: [] } }; },
     prepare: async () => ({ ok: true, payload }), guard: () => {},
+    persist: ({ payload: source, guard, git }) => { assert.equal(source, payload); guard(); git(['push']); },
     git: args => { calls.push(['git', args]); return args[0] === 'diff' ? payload.sourcePath : ''; },
     request: async (url, args) => { calls.push(['dispatch', url]); assert.deepEqual(JSON.parse(args.body), { ref: 'main', inputs: { mode: 'publish' } }); return { status: 204 }; } };
   assert.equal((await dispatchReadyNote(options)).dispatched, true);
   assert.equal(calls.at(-2)[1][0], 'push');
   assert.equal(calls.at(-1)[0], 'dispatch');
-  const commit = calls.find(c => c[0] === 'git' && c[1].includes('commit'))[1];
-  assert.ok(commit.includes('--only'));
-  assert.equal(commit.at(-1), payload.sourcePath);
   calls.length = 0;
   assert.equal((await dispatchReadyNote({ ...options, prepare: async () => ({ ok: false, reason: 'no_eligible_unclaimed_article' }) })).dispatched, false);
   assert.equal(calls.length, 0);
