@@ -17,7 +17,7 @@ Race / deadline / source freshness → existing flow explanation and caution →
 
 - Existing DOM sections are moved, not regenerated or deleted, preserving controls and evidence.
 - The flow preview comes only from fields already present on the prediction. Missing explanation or source freshness is explicit. Generation time is not substituted for source fetch time.
-- `厳選` is a display name. Internal practical keys, selection rules and performance cohorts remain unchanged.
+- `厳選` is a display name, including UI-owned prediction and stats labels. Original proof/comment text, note drafts, internal practical keys, selection rules and performance cohorts remain unchanged.
 - The existing display membership is preserved: sub-100 or unpriced reference tickets still appear under 押さえ, now identified as 参考候補. No saved ticket changes category.
 - The four-category total includes all four groups, excluding the overlapping practical selection. Practical-only tickets remain visible in the dedicated selection panel.
 - Six boat badge colours stay white / black / red / blue / yellow / green.
@@ -37,3 +37,5 @@ NODE_PATH=/tmp/chappy-dom-tests/node_modules node scripts/test-bright-mobile-lay
 It checks layout order, exact category ticket sets, source immutability, reference labels, practical-only tickets, totals, empty/high-odds-only states, race switching, delayed callbacks, all boat badge colours, safe text and the 24-card filters. The existing mobile/display and home workflows remain required.
 
 DOM tests do not establish pixel-level contrast or responsive rendering. Verify 320px / 390px / desktop, all navigation states and real screenshots through an available authorized browser before claiming visual QA complete.
+
+The existing visible-review WebKit job also captures 320px, 390px and 1024px venue/prediction screens, open categories and boat details. Captures carry an explicit CI/historical-data label and checkout SHA. It checks focus retention, repeated disclosure toggles, back navigation, all 24 venues and viewport containment; the stats WebKit workflow continues to verify same-method isolation and cold/repeated navigation.

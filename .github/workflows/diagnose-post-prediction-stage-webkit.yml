@@ -7,6 +7,7 @@ on:
       - "scripts/diagnose-post-prediction-stage-webkit.mjs"
       - "index.html"
       - "style.css"
+      - "css/bright-mobile-layout.css"
       - "js/**"
   workflow_dispatch:
 
@@ -21,6 +22,8 @@ jobs:
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

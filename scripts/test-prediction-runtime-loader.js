@@ -209,7 +209,7 @@ function createRuntime({
   );
   assert.ok(
     failedOptional.appended.includes(
-      "js/render.js?v=20260908-comment-dedup1"
+      "js/render.js?v=20260908-comment-dedup1&bright=20261007-1"
     ),
     "別枠舟券更新済みrenderを専用キャッシュ世代で読み込む"
   );

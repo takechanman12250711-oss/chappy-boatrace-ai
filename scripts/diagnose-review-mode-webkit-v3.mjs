@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { webkit } from "playwright";
+import {sourceCommit,captureVenueViews,capturePredictionViews} from "./bright-mobile-visual-check.mjs";
 
 const APP_URL = process.env.APP_URL || "http://127.0.0.1:4173/";
 const EXPECTED_RUNTIME = process.env.EXPECTED_RUNTIME || "20260828-ui-audit-display1";
@@ -13,6 +14,8 @@ const REVIEW_RACE_NO = Number(process.env.REVIEW_RACE_NO || 12);
 fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 const report = {
+  sourceCommit,
+  fixtureDescription: "Historical race API with result-pending fixture; development verification only",
   appUrl: APP_URL,
   expectedRuntime: EXPECTED_RUNTIME,
   review: {
@@ -188,6 +191,8 @@ try {
     venueSummary
   });
 
+  await captureVenueViews(page,OUTPUT_DIR,step);
+
   await page.click(venueSelector);
   step("venue-clicked", { place: REVIEW_PLACE });
 
@@ -284,6 +289,8 @@ try {
     })
   ]);
   step("post-render-responsive-finished", responsiveness);
+
+  await capturePredictionViews(page,OUTPUT_DIR,step);
 
   report.final = await page.evaluate(() => {
     const text = id => document.getElementById(id)?.textContent || "";

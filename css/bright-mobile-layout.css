@@ -62,7 +62,7 @@ body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea :is(
 body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea :is(p,small,em,.v3-note,.v3-comment,.v3-reason,.v3-paper-comment,.v3-role,.v3-info-cell span,.v3-info-cell em,.v3-entry-card-meta,.v3-entry-card-stats) {color:#496982!important;font-size:12px!important;line-height:1.6!important;}
 body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-section,.v3-paper-section,.chappy-final-buy-summary,.v3-paper-card,.v3-entry-card,.v3-ai-summary-box,.v3-ai-calibration,.v3-note,.v3-empty,.v3-info-cell,.v3-boat-tab-panel,.chappy-final-buy-line,.chappy-practical-visible-panel,.chappy-practical-visible-row,.chappy-true-manshu-empty,.chappy-true-manshu-line,.v3-comment-card,.v3-final-comment-card,.v3-formation-row,.ticket-row,.chappy-formation-odds-card,.chappy-formation-odds-item,.chappy-final-purchase-row) {background:#fff!important;color:#173650!important;border-color:#d1e1ee!important;box-shadow:none!important;}
 body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-section-head,.v3-paper-section-head,.chappy-final-buy-head,.chappy-practical-visible-head,.chappy-ui10-details>summary,.v3-boat-tab-buttons) {background:#edf6ff!important;color:#173650!important;border-color:#d1e1ee!important;box-shadow:none!important;}
-body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea :is(.chappy-final-buy-odds,.chappy-final-buy-count,.chappy-final-buy-meta,.chappy-missing-odds,.chappy-missing-all-odds>span,.chappy-practical-visible-head span,.v3-tag) {background:#eaf4ff!important;color:#245b87!important;border-color:#d3e4f4!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea :is(.chappy-final-buy-odds,.chappy-final-buy-count,.chappy-final-buy-total,.chappy-final-buy-meta,.chappy-missing-odds,.chappy-missing-all-odds>span,.chappy-practical-visible-head span,.v3-tag) {background:#eaf4ff!important;color:#245b87!important;border-color:#d3e4f4!important;}
 body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea .chappy-practical-tag {background:#e9f6ee!important;color:#21633f!important;border-color:#bedfca!important;}
 body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea .v3-root {display:flex!important;flex-direction:column!important;gap:14px!important;}
 body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea .chappy-bright-intro {order:-10!important;}
@@ -113,3 +113,28 @@ body.chappy-bright-ui.chappy-final-mobile-ui .chappy-session-filters button {min
 body.chappy-bright-ui.chappy-final-mobile-ui .chappy-session-filters button[aria-pressed="true"] {background:#e1f0ff;border-color:#0769cf;color:#075eae;}
 body.chappy-bright-ui.chappy-final-mobile-ui .chappy-session-help {color:#496982;font-size:11px;line-height:1.6;margin:10px 0;}
 body.chappy-bright-ui.chappy-final-mobile-ui #officialVenueGrid .official-venue-button[hidden] {display:none!important;}
+/* Existing auxiliary UI shares the light theme, including async result status. */
+body.chappy-bright-ui.chappy-final-mobile-ui .home-header-actions button {color:#0769cf!important;background:#eaf4ff!important;border-color:#ccdeed!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui :is(.home-v2-recommend,.home-v2-recommend-card,.home-v2-empty,.home-v2-no-race,.home-v2-hint) {background:#fff!important;color:#173650!important;border-color:#cfdfed!important;box-shadow:none!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui :is(.home-v2-title-row h2,.home-v2-recommend-card>strong) {color:#173650!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui :is(.home-v2-title-row>span,.home-v2-deadline,.home-v2-reason,.home-v2-score-row small,.home-v2-arrow) {color:#496982!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui .home-v2-deadline b {color:#a53b27!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui .home-v2-score-row {background:#eaf4ff!important;color:#245b87!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui .home-v2-score-row b {color:#075eae!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea #raceResultStatus {background:#fff!important;color:#173650!important;border:1px solid #cfdfed!important;box-shadow:none!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea #raceResultStatus :is(h3,strong,small,span) {color:#173650!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea :is(.v3-ticket-accordion,.v3-ticket-accordion-panel,.v3-paper-head,.v3-paper-score,.chappy-practical-compact-row,.chappy-manshu-compact-row,.v3-odds-alert-box) {background:#fff!important;color:#173650!important;border-color:#cfdfed!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea .v3-ticket-accordion>summary {background:#edf6ff!important;color:#173650!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection>.dashboard-section-head h2 {color:#173650!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionOddsStatus {background:#eaf4ff!important;color:#245b87!important;border-color:#d1e1ee!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea .v3-ai-meter {background:#fff!important;color:#173650!important;border-color:#cfdfed!important;}
+
+body.chappy-bright-ui.chappy-final-mobile-ui .race-main-action {background:#f3f8ff!important;box-shadow:none!important;border:0!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #noteAssistantSection :is(.note-assistant-disclosure,.note-assistant-disclosure>summary,.note-assistant-body,.note-preview-details) {background:#fff!important;color:#173650!important;border-color:#d1e1ee!important;box-shadow:none!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #noteAssistantSection :is(span,small,p,label) {color:#496982!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #predictionSection #resultArea #raceResultStatus {order:-7!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui .select-date-field[hidden] {display:none!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #reviewResultArea {color:#173650!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #reviewResultArea :is(p,strong,span,h3,h4) {color:#173650!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #reviewResultArea :is(.race-select-card,.result-data-card) {background:#fff!important;border:1px solid #cfdfed!important;padding:12px!important;border-radius:12px!important;}
+body.chappy-bright-ui.chappy-final-mobile-ui #noteAssistantSection :is(input,textarea,button) {background:#f5f9ff!important;color:#173650!important;border-color:#cfdfed!important;}

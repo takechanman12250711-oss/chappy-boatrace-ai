@@ -42,8 +42,8 @@ assert.match(race, /button\.dataset\.raceMode/);
 assert.match(race, /modeSelect\.value = nextMode/);
 assert.match(race, /aria-pressed/);
 assert.match(race, /dateField\.hidden\s*=\s*!isReview/);
-assert.match(race, /④ AI予想を見る/);
-assert.match(race, /④ 振り返り予想を見る/);
+assert.match(race, /AI予想を見る/);
+assert.match(race, /振り返り予想を見る/);
 assert.match(
   race,
   /ChappyHomeDashboardV2[\s\S]*showPredictionLoading[\s\S]*params\.place[\s\S]*params\.rno/,

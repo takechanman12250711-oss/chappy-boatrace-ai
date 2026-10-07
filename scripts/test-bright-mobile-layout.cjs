@@ -11,6 +11,14 @@ for (const [foreground,background] of [['173650','ffffff'],['496982','ffffff'],[
   const [a,b] = [luminance(foreground),luminance(background)];
   assert((Math.max(a,b)+.05)/(Math.min(a,b)+.05) >= 4.5, `text contrast ${foreground}/${background}`);
 }
+const palette = fs.readFileSync('css/bright-mobile-layout.css','utf8');
+assert.match(palette, /#raceResultStatus \{background:#fff!important/,'asynchronous result panel must have a light surface with dark text');
+assert.match(palette, /\.home-header-actions button \{color:#0769cf!important/,'header refresh stays visible on white');
+for (const file of ['js/stats.js','js/result-ui-phase5.js','js/final-display-owner-v2.js']) {
+  assert(!fs.readFileSync(file,'utf8').includes('実戦厳選'), `${file}: UI-owned labels use 厳選`);
+}
+// Source records and internal practical keys are deliberately not rewritten.
+assert(fs.readFileSync('js/render.js','utf8').includes('prediction.practicalSelection'));
 const {parseHTML} = require('linkedom');
 const {window} = parseHTML('<html><head></head><body class="chappy-final-mobile-ui"><div id="officialVenueGrid"></div><div id="resultArea"></div></body></html>');
 const document = window.document;
@@ -72,9 +80,29 @@ for(let i=0;i<4;i++)window.ChappyBrightMobileLayout.organize(prediction);
 assert.equal(layout.querySelectorAll('.chappy-bright-intro').length,1);
 assert.equal(layout.querySelectorAll('.chappy-readable-evidence').length,1);
 assert.equal(layout.querySelectorAll('.chappy-bright-manshu').length,1);
+for (const key of ['skip-ai-panel','scenario-v6-panel']) {const extra=document.createElement('section');extra.className=key;area.prepend(extra);}
+window.ChappyBrightMobileLayout.organize(prediction);
+assert.equal(area.firstElementChild,layout,'optional diagnostic panels must not precede the race intro');
+assert.equal(layout.querySelectorAll('.chappy-readable-evidence .skip-ai-panel,.chappy-readable-evidence .scenario-v6-panel').length,2);
 // All boat badge backgrounds remain the original six colours, not theme decisions.
 const badges=[...layout.querySelectorAll('.v3-entry-card-boat .v3-boat-badge')];
 assert.deepEqual(badges.map(x=>x.style.background),['#ffffff','#111111','#e53935','#1e88e5','#fdd835','#43a047']);
+const resultStatus=document.createElement('section');resultStatus.id='raceResultStatus';resultStatus.textContent='公式結果は確認中';area.appendChild(resultStatus);
+window.ChappyBrightMobileLayout.organize(prediction);
+for(let i=0;i<4;i++){await Promise.resolve();flush();}
+assert.equal(frames.length,0,'practical plus result status must settle without perpetual reorder frames');
+assert.equal(layout.querySelector('.chappy-practical-visible-panel').nextElementSibling,resultStatus);
+assert.equal(resultStatus.nextElementSibling,layout.querySelector('.chappy-readable-evidence'));
+// Repeated presentation callbacks preserve an already-open disclosure and its DOM identity.
+const savedPanel=area.querySelector('.chappy-practical-visible-panel');
+savedPanel.open=true;
+window.ChappyPracticalVisiblePanel.render(prediction);
+assert.equal(area.querySelector('.chappy-practical-visible-panel'),savedPanel);
+assert.equal(savedPanel.open,true);
+window.ChappyTicketOddsVisibility.enhance(prediction);
+const savedManshu=area.querySelector('.v3-manshu-newspaper .chappy-scenario-manshu-board');
+window.ChappyTicketOddsVisibility.enhance(prediction);
+assert.equal(area.querySelector('.v3-manshu-newspaper .chappy-scenario-manshu-board'),savedManshu);
 // High-odds-only and empty sources still have four category disclosures.
 for (const manshu of [[{ticket:'5-1-2',odds:150}],[]]) {
   const only = {race:{place:'検証用の場',raceNo:9},manshuSheet:{tickets:manshu},practicalSelection:{tickets:[]}};

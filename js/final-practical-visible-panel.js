@@ -3,7 +3,7 @@
   if(!root||!root.document)return;
   const HOOK="__chappyPracticalVisiblePanelWrapped";
   let latestPrediction=null;
-  let renderGeneration=0,latestRoot=null;
+  let renderGeneration=0,latestRoot=null,lastPanelHtml="",lastPanel=null;
   const text=v=>String(v??"").trim();
   const esc=v=>text(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c]);
   function exactTicket(v){const raw=text(v).replace(/\s+/g,"").replace(/→/g,"-");const p=raw.split("-");return p.length===3&&p.every(x=>/^[1-6]$/.test(x))&&new Set(p).size===3?raw:"";}
@@ -38,19 +38,27 @@
     ensureStyle();
     const area=root.document.getElementById("resultArea");
     if(!area)return;
-    area.querySelectorAll?.(".chappy-practical-visible-panel").forEach(node=>node.remove());
+    const previous=area.querySelector?.(".chappy-practical-visible-panel");
     const decision=pred.practicalSelection?.purchaseDecision||root.ChappyPracticalSelection?.purchaseDecision?.(pred);
     if(decision?.status==="skip"){
+      previous?.remove();
       area.insertAdjacentHTML("afterbegin",`<section class="chappy-practical-visible-panel" aria-label="購入見送り"><div class="chappy-practical-visible-head"><strong>購入見送り</strong><span>購入推奨0点・0円</span></div><p>${esc(decision.reason)}</p><p>買い目候補は参考予想です。購入対象ではありません。</p></section>`);
       area.querySelectorAll?.(".chappy-final-buy-group.is-practical-fallback").forEach(node=>node.remove());
       return;
     }
     const selected=selectedRows(pred);
-    if(!selected.length)return;
+    if(!selected.length){previous?.remove();return;}
     const map=oddsMap(pred);
     const html=`<details class="chappy-practical-visible-panel"><summary class="chappy-practical-visible-head"><strong>厳選</strong><span>${selected.length}点</span></summary><div class="chappy-practical-visible-list">${root.ChappyFinalMobileUi?.compactTickets ? root.ChappyFinalMobileUi.compactTickets(selected.map(row=>row.ticket)).map(row=>root.ChappyFinalMobileUi.compactLine(row,map)).join("") : selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></details>`;
+    if(previous===lastPanel&&html===lastPanelHtml)return;
+    const wasOpen=Boolean(previous?.open);
+    const hadFocus=Boolean(previous?.contains?.(root.document.activeElement));
+    previous?.remove();
     const anchor=area.querySelector?.(".chappy-final-buy-summary")||area.querySelector?.(".v3-boat-evaluation")||area.querySelector?.(".v3-main-newspaper");
     if(anchor)anchor.insertAdjacentHTML("afterend",html);else area.insertAdjacentHTML?.("afterbegin",html);
+    lastPanel=area.querySelector?.(".chappy-practical-visible-panel");lastPanelHtml=html;
+    if(wasOpen&&lastPanel)lastPanel.open=true;
+    if(hadFocus)lastPanel?.querySelector?.("summary")?.focus?.();
     if(area.querySelector?.(".chappy-practical-visible-panel"))area.querySelectorAll?.(".chappy-final-buy-group.is-practical-fallback").forEach(node=>node.remove());
   }
   function wrap(){

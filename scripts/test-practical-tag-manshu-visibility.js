@@ -36,7 +36,7 @@ assert.strictEqual(rows[0].odds,150);
 const manshuHtml=api.manshuHtml(prediction);
 assert.match(manshuHtml,/4-1-2/);
 assert.match(manshuHtml,/150\.0倍/);
-assert.match(manshuHtml,/実戦厳選/,
+assert.match(manshuHtml,/厳選/,
   "selected manshu ticket must carry the practical tag in its original section");
 assert.doesNotMatch(manshuHtml,/5-1-4/,
   "sub-100x ticket must not be promoted into the manshu display");
@@ -64,7 +64,7 @@ currentArea={
 };
 api.decoratePracticalTags({practicalSelection:{status:"selected",tickets:[{ticket:"1-2-3"}]}});
 assert.strictEqual(badges.length,1);
-assert.strictEqual(badges[0].textContent,"実戦厳選",
+assert.strictEqual(badges[0].textContent,"厳選",
   "original exact ticket row must receive the practical-selection tag");
 
 assert.deepStrictEqual(

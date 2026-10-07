@@ -105,9 +105,15 @@
       if (total.textContent !== `${allTickets.size}点`) total.textContent = `${allTickets.size}点`;
     }
     const practical = area.querySelector('.chappy-practical-visible-panel');
-    if (practical && practical.nextElementSibling !== evidence) layout.insertBefore(practical, evidence);
-    const retained = new Set([layout.querySelector('.chappy-bright-intro'), summary, practical, evidence]);
+    const resultStatus = area.querySelector('#raceResultStatus');
+    const practicalAnchor = resultStatus?.parentNode === layout ? resultStatus : evidence;
+    if (practical && practical.nextElementSibling !== practicalAnchor) layout.insertBefore(practical, practicalAnchor);
+    if (resultStatus && resultStatus.nextElementSibling !== evidence) layout.insertBefore(resultStatus, evidence);
+    const retained = new Set([layout.querySelector('.chappy-bright-intro'), summary, practical, resultStatus, evidence]);
     for (const child of [...layout.children]) if (!retained.has(child)) detailBody.appendChild(child);
+    // Existing display-only diagnostics are siblings added by optional renderers.
+    // Keep them as available evidence rather than ahead of the selected race.
+    for (const child of [...area.children]) if (child !== layout && !child.contains(layout)) detailBody.appendChild(child);
     // Display name only. The internal practical category and stored tickets stay intact.
     area.querySelectorAll('.chappy-practical-visible-head strong,.chappy-practical-tag,.is-practical-fallback .chappy-final-buy-label').forEach(node => {
       if (node.textContent.includes('実戦厳選')) node.textContent = node.textContent.replaceAll('実戦厳選', '厳選');
@@ -166,7 +172,9 @@
     root.document.addEventListener('click', event => {
       if (!event.target.closest?.('.chappy-back-races')) return;
       event.preventDefault();
-      root.ChappyHomeDashboardV2?.setView?.('race');
+      const nav = root.document.querySelector('.bottom-nav-item[data-view="race"]');
+      if (nav) nav.click();
+      else root.ChappyHomeDashboardV2?.setView?.('race');
     });
     root.addEventListener('chappy:presentation-rendered', event => {
       latest = event.detail;

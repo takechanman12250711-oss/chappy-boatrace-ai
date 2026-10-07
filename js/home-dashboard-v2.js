@@ -591,7 +591,7 @@
     const header = document.querySelector(".app-header");
     if (!header || header.dataset.homeReady === "true") return;
     header.dataset.homeReady = "true";
-    header.innerHTML = `<div class="header-brand"><div class="header-logo">🚤</div><div class="header-copy"><h1>チャッピーボートレースAI</h1><p class="header-description">展開を読む、勝つためのAI予想</p></div></div><div class="home-header-actions"><button type="button" id="homeRefreshBtn"><b>↻</b><small>更新</small></button></div>`;
+    header.innerHTML = `<div class="header-brand"><div class="header-logo">🚤</div><div class="header-copy"><h1>チャッピーボートレースAI</h1><p class="header-description">展開を読む、AI予想</p></div></div><div class="home-header-actions"><button type="button" id="homeRefreshBtn"><b>↻</b><small>更新</small></button></div>`;
     document.getElementById("homeRefreshBtn")?.addEventListener("click", () => refresh(true));
   }
 

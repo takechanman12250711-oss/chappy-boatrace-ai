@@ -2655,7 +2655,7 @@ if (raceInfoArea) {
         <div class="v3-ticket-accordion-aim v3-light-manshu-ticket-intro">
           <strong>${escapeHtml(board.title)}・${escapeHtml(board.lines.length)}筋</strong>
           <p>
-            万舟欄で見る表示用の参考筋です。通常枠7点（成立展開追加時は全体10点）・実戦厳選・購入保存には自動追加しません。
+            万舟欄で見る表示用の参考筋です。通常枠7点（成立展開追加時は全体10点）・厳選・購入保存には自動追加しません。
           </p>
         </div>
         <div class="v3-note v3-light-manshu-ticket-total">
@@ -2664,7 +2664,7 @@ if (raceInfoArea) {
         ${practicalOverlapCount
           ? `
             <div class="v3-note v3-light-manshu-ticket-overlap">
-              このうち${escapeHtml(practicalOverlapCount)}点は実戦厳選にも表示されています。重ねて追加する必要はありません。
+              このうち${escapeHtml(practicalOverlapCount)}点は厳選にも表示されています。重ねて追加する必要はありません。
             </div>
           `
           : ""}
@@ -4205,7 +4205,7 @@ function getPaperClassName(item) {
     `;
 
     return section(
-      "実戦厳選",
+      "厳選",
       body,
       "🔥",
       "v3-practical-section"
