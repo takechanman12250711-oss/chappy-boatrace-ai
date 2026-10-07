@@ -137,6 +137,13 @@ area.querySelector('.chappy-back-races').click();assert.equal(view,'race','back 
 window.renderAll(fixture(4));area.innerHTML='<p>読み込み中</p>';flush();assert.equal(area.textContent,'読み込み中','old callbacks cannot repaint a newer loading state');
 area.innerHTML='';window.dispatchEvent(new window.CustomEvent('chappy:view-changed',{detail:{view:'prediction'}}));
 assert.match(area.textContent,/レースを選び/,'returning after selection reset explains how to reopen a prediction');
+area.innerHTML='<section id="raceResultStatus">公式結果の反映待ち</section>';
+window.dispatchEvent(new window.CustomEvent('chappy:view-changed',{detail:{view:'prediction'}}));
+assert.match(area.textContent,/レースを選び/,'result-status-only revisit must explain how to open a prediction');
+assert.match(area.querySelector('#raceResultStatus').textContent,/公式結果の反映待ち/,'official result status remains intact');
+area.innerHTML='<div class="prediction-error">APIエラーの詳細</div>';
+window.dispatchEvent(new window.CustomEvent('chappy:view-changed',{detail:{view:'prediction'}}));
+assert.equal(area.querySelector('.prediction-empty-state'),null,'specific errors must not be replaced by the generic prompt');
 console.log('Bright mobile DOM: ordered layout, exact category ticket sets, immutable inputs, six boat colours, latest-render guard, safe text, 24-card filters passed');
 
 process.exit(0);
