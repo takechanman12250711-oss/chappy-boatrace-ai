@@ -1,23 +1,22 @@
 {
   "schemaVersion": 1,
   "analysisId": "outer-attack-pipeline-loss-v1",
-  "generatedAt": "2026-10-07T22:43:47.630Z",
+  "generatedAt": "2026-10-07T22:47:58.221Z",
   "productionChanged": false,
   "automaticApplication": false,
   "signalRaceCount": 60,
   "stageCounts": {
     "archive-missed": 18,
-    "not-comparable": 14,
-    "settled": 26,
-    "archived-unsettled": 2
+    "not-comparable": 15,
+    "settled": 27
   },
   "notComparableVariantStatus": {
     "cover:no-category-candidate": 13,
     "flow:no-category-candidate": 13,
     "hole:no-source-ticket": 13,
-    "cover:signal-not-active": 1,
-    "flow:signal-not-active": 1,
-    "hole:signal-not-active": 1
+    "cover:signal-not-active": 2,
+    "flow:signal-not-active": 2,
+    "hole:signal-not-active": 2
   },
   "rows": [
     {
@@ -2386,7 +2385,7 @@
       "raceKey": "20261007-11-12",
       "selectedAt": "2026-10-07T06:52:08.803Z",
       "signalGate": "active",
-      "stage": "archived-unsettled",
+      "stage": "settled",
       "archiveCount": 1,
       "exclusionStatus": "",
       "variantDiagnostics": [
@@ -2443,9 +2442,9 @@
       "raceKey": "20261007-16-3",
       "selectedAt": "2026-10-07T02:37:20.700Z",
       "signalGate": "ambiguous",
-      "stage": "archived-unsettled",
+      "stage": "not-comparable",
       "archiveCount": 1,
-      "exclusionStatus": "",
+      "exclusionStatus": "not-comparable",
       "variantDiagnostics": [
         [
           {
