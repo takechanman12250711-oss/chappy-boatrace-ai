@@ -108,20 +108,23 @@ function build(root = path.resolve(__dirname, '..')) {
   // Keep precisely the saved ledger population. No cherry-picked race filter.
   const frozen = ledger.rows.slice(-100), keys = new Set(frozen.map(r => r.raceKey));
   if (keys.size !== frozen.length) throw Error('duplicate-ledger-race');
-  const canonical = new Map(), sources = [], sourceErrors = [];
+  const captures = new Map(), sources = [], sourceErrors = [];
   for (const date of [...new Set(frozen.map(r => r.raceKey.slice(0, 8)))].sort()) {
     try {
-      const d = source.readDay(root, date);
-      for (const r of input.mergePredictionSources(d.data.predictions, d.data.verificationPredictions)) canonical.set(input.raceKey(r), r);
-      sources.push({ date, source: d.source, updatedAt: d.data.updatedAt });
+      const d = source.readFrozenDay(root, date, frozen.filter(r => r.raceKey.slice(0, 8) === date));
+      for (const [key, capture] of d.captures) captures.set(key, capture);
+      sources.push(...d.sources);
     } catch (e) { sourceErrors.push({ date, reason: e.message }); }
   }
   const official = input.collectOfficialResults(path.join(root, 'data/results'), keys);
   const details = [], failures = [];
   for (const r of frozen) {
     try {
-      const p = canonical.get(r.raceKey), o = official.get(r.raceKey);
-      if (!p || !o) throw Error('missing-source-or-official-result');
+      const capture = captures.get(r.raceKey), o = official.get(r.raceKey);
+      if (!capture) throw Error('missing-frozen-capture');
+      if (capture.conflict) throw Error('conflicting-frozen-capture');
+      const p = capture.record;
+      if (!o) throw Error('missing-source-or-official-result');
       const timingError = input.preDeadlineReason(p);
       if (timingError) throw Error(timingError);
       if ((p.selectedAt || p.capturedAt) !== r.selectedAt) throw Error('capture-mismatch');
@@ -147,7 +150,9 @@ function build(root = path.resolve(__dirname, '..')) {
       noOddsInSelection: true, sameRacePopulationRequired: true, sameTicketCountPerRaceRequired: true,
       maximumPracticalTickets: 10, stakePerTicketYen: 100, noNewPredictionRules: true },
     source: { ledgerGeneratedAt: ledger.generatedAt, ledgerSha256: crypto.createHash('sha256').update(bytes).digest('hex'),
-      frozenRaceKeys: [...keys], sources, sourceErrors, failures, expectedRaces: frozen.length,
+      frozenRaceKeys: [...keys], sources, sourceErrors, failures,
+      captureEvidence: frozen.filter(r => captures.has(r.raceKey)).map(r => ({ raceKey: r.raceKey,
+        selectedAt: r.selectedAt, matches: captures.get(r.raceKey).evidence })), expectedRaces: frozen.length,
       verifiedRaces: details.length, complete: allVerified },
     baseline: { savedRolling100: ledger.rolling100, verified: observed,
       primary: { races: observed.races, hits: observed.hits, hitRate: observed.hitRate },
