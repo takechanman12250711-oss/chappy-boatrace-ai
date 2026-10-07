@@ -47,6 +47,14 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
   }
   // Audit the immutable original first, then verify the approved public copy.
   const readable = require('./note-readable-article').readableArticle(article, bundle);
+  if (readable.presentationVersion === 'readable-v2') {
+    // A new receipt must be reproducible from the immutable original itself,
+    // rather than only from today's compactArticle preprocessing. Unknown old
+    // source formats cannot receive a v2 proof that result readers cannot verify.
+    const categories = require('./note-category-article');
+    const sourcePaidText = categories.paidTextFromSections(categories.sourceSections(bundle, articleSeries));
+    if (readable.paidText !== sourcePaidText) throw new Error('publication_category_source_mismatch');
+  }
   return { bundle, article: readable, articleSeries, sha256: match[4] };
 }
 

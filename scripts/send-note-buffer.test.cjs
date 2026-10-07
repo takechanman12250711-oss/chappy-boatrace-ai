@@ -87,7 +87,7 @@ test('announcements batch series, link only verified index and do not repeat cov
  const f=announcementFixture();let text;
  f.delivery.create=async t=>{text=t;assert([...f.saved.keys()].some(k=>k.startsWith('note-buffer-announcement/')));return {id:'a',text:t,channelId:'channel',status:'scheduled'};};
  let r=await announce(f.state,f.config,f.marketing,f.log,f.delivery,f.clock);assert.equal(r.articles,2);assert.equal(r.status,'accepted_pending');
- assert(text.includes('AI展開｜尼崎4R｜22:00締切'));assert(text.includes('本命｜尼崎4R｜22:00締切'));assert(text.includes(marketing.index.url));assert(!text.includes('的中'));
+ assert(text.includes('AI展開｜尼崎4R｜🕒 22:00締切'));assert(text.includes('本命｜尼崎4R｜🕒 22:00締切'));assert(text.includes(marketing.index.url));assert(!text.includes('的中'));
  assert.equal((await announce(f.state,f.config,f.marketing,f.log,f.delivery,()=>now+3600000)).status,'no_new_articles');
 });
 
@@ -106,7 +106,7 @@ test('announcements include actual race, deadline, price and safe free insight w
  const f=announcementFixture(),r=f.state.rows[0];r.price=200;
  r.socialContext={version:'source-context-v1',sourceSha256:r.sourceSha256,preview:'1号艇の先行が焦点です。'};
  const text=announcementCopy([r],marketing.index.url,now);
- assert(text.includes('尼崎4R｜22:00締切'));assert(text.includes('選べます。200円。'));assert(text.includes(r.url));assert(text.includes('1号艇の先行'));assert(weight(text)<=280);
+ assert(text.includes('尼崎4R｜🕒 22:00締切'));assert(text.includes('選べます。200円。'));assert(text.includes(r.url));assert(text.includes('1号艇の先行'));assert(weight(text)<=280);
  const long=Array.from({length:30},(_,i)=>({...r,raceNo:i%12+1,publicationKey:r.publicationKey+i}));
  assert(weight(announcementCopy(long,marketing.index.url,now))<=280);
  r.socialContext.preview='買い目は1-2-3です。';assert(!announcementCopy([r],marketing.index.url,now).includes('1-2-3'));
@@ -115,15 +115,15 @@ test('announcement grouping preserves series and prices across mixed and omitted
  const f=announcementFixture(),r={...f.state.rows[0],price:200};
  const other={...f.state.rows[1],price:200};
  const mixed=announcementCopy([r,other],marketing.index.url,now);
- assert(mixed.startsWith('9/29 予想記事\n'));
- assert(mixed.includes('AI展開｜尼崎4R｜22:00締切'));assert(mixed.includes('本命｜尼崎4R｜22:00締切'));
+ assert(mixed.startsWith('🚤 9/29 予想記事\n'));
+ assert(mixed.includes('AI展開｜尼崎4R｜🕒 22:00締切'));assert(mixed.includes('本命｜尼崎4R｜🕒 22:00締切'));
  assert(mixed.includes('各200円。'));assert(weight(mixed)<=280);
  const batch=Array.from({length:8},(_,i)=>({...r,raceNo:i+1,publicationKey:r.publicationKey+i}));
  for(const price of [300,undefined]){
    batch[7].price=price;
    const text=announcementCopy(batch,marketing.index.url,now);
-   assert(text.startsWith('9/29 AI展開予想\n'));assert(!text.includes('各200円'));
-   assert(text.includes('尼崎1R｜22:00締切｜200円'));assert(text.includes('価格は各記事で確認。'));
+   assert(text.startsWith('🚤 9/29 AI展開予想\n'));assert(!text.includes('各200円'));
+   assert(text.includes('尼崎1R｜🕒 22:00締切｜200円'));assert(text.includes('価格は各記事で確認。'));
    assert(text.includes('記事は一覧へ'));assert(text.includes(marketing.index.url));assert(weight(text)<=280);
  }
 });
@@ -131,7 +131,7 @@ test('recap includes misses and unresolved separately, only source-backed compar
  const f=fixture(),r=f.state.rows[0];
  const miss={...r,articleSeries:'escape',publicationKey:r.raceKey+':escape',settlement:{...r.settlement,status:'miss'},socialContext:{version:'source-context-v1',sourceSha256:r.sourceSha256,firstBoats:['1']}};
  const text=recapCopy([r,miss,{...r,articleSeries:'manshu',publicationKey:r.raceKey+':manshu',settlement:{status:'review'}}],marketing.index.url,now);
- assert(text.includes('AI展開：1的中／0不的中'));assert(text.includes('本命：0的中／1不的中'));assert(text.includes('確認中1'));assert(text.includes('1着は想定内、組み合わせが不的中'));assert(weight(text)<=280);
+ assert(text.includes('AI展開：🎯 的中 1件'));assert(text.includes('本命：❌ 不的中 1件'));assert(text.includes('万舟：🔎 照合確認中 1件'));assert(!text.includes('0的中'));assert(!text.includes('0不的中'));assert(text.includes('1着は想定内、組み合わせが不的中'));assert(weight(text)<=280);
 });
 test('night recap waits for the window and deadlines, and unknown creation is never resent',async()=>{
  const f=fixture();f.config.recap={enabled:true,activatedAt:'2026-09-29T00:00:00+09:00'};
@@ -248,8 +248,8 @@ test('late recovery recap reports every status, counts articles vs unique races,
    {...r,articleSeries:'manshu',publicationKey:r.raceKey+':manshu',settlement:{status:'void'}});
  let text;f.delivery.create=async t=>{text=t;return {id:'recap',channelId:'channel',text:t,status:'scheduled'};};
  assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'accepted_pending');
- assert(text.startsWith('前日分 9/29'));assert(text.includes('3記事・1レース'));
- assert(text.includes('1不的中'));assert(text.includes('不成立1'));assert(weight(text)<=280);
+ assert(text.startsWith('📊 前日分 9/29'));assert(text.includes('3記事・1レース'));
+ assert(text.includes('❌ 不的中 1件'));assert(text.includes('➖ 不成立 1件'));assert(weight(text)<=280);
  assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'earlier_send_unconfirmed_no_resend');
 });
 test('late supplement requires confirmed earlier send and newly resolved evidence; never retries an unknown recap',async()=>{
@@ -269,7 +269,37 @@ test('zero results, pending and review remain honest in both current and recover
  assert.equal((await recoverRecap(f.state,f.config,marketing,f.log,f.delivery,f.clock)).status,'no_articles');assert.deepEqual(f.events,[]);
  const g=nextDayFixture(),r=g.state.rows[0];
  const text=recapCopy([{...r,settlement:{status:'pending'}},{...r,articleSeries:'escape',publicationKey:r.raceKey+':escape',settlement:{status:'review'}}],marketing.index.url,g.now,{date:'20260929',late:true});
- assert(text.includes('0的中／0不的中'));assert(text.includes('確認中1・結果待ち1'));assert(!text.includes('1的中'));
+ assert(text.includes('AI展開：⏳ 結果待ち 1件'));assert(text.includes('本命：🔎 照合確認中 1件'));assert(!text.includes('的中'));assert(!text.includes('不成立'));assert(text.includes('2記事・1レース'));
+});
+test('all-miss and all-pending recaps retain denominators without empty status padding',()=>{
+ const f=fixture(),r=f.state.rows[0];
+ for(const [status,label] of [['miss','❌ 不的中'],['pending','⏳ 結果待ち']]) {
+  const rows=['normal','escape','manshu'].map(articleSeries=>({...r,articleSeries,publicationKey:r.raceKey+':'+articleSeries,settlement:{status}}));
+  const before=JSON.stringify(rows);
+  for(const options of [{},{date:'20260929',late:true},{date:'20260929',late:true,supplement:true}]) {
+   const text=recapCopy(rows,marketing.index.url,now,options);
+   assert(text.startsWith('📊 '));assert(text.includes('9/29'));assert(text.includes('3記事・1レース'));
+   for(const series of ['AI展開','本命','万舟'])assert(text.includes(`${series}：${label} 1件`));
+   assert(!text.includes('🎯 的中'));assert(!text.includes('0的中'));assert(!text.includes('0不的中'));
+   assert(!text.includes('🔎 照合確認中'));assert(!text.includes('➖ 不成立'));
+   assert(text.includes('21:00時点'));assert(text.endsWith(marketing.index.url));assert(weight(text)<=280);
+  }
+  assert.equal(JSON.stringify(rows),before);
+ }
+});
+test('legacy recap overflow retains all five status totals and sends series detail to the free index',()=>{
+ const f=fixture(),r=f.state.rows[0],labels={hit:'🎯 的中',miss:'❌ 不的中',pending:'⏳ 結果待ち',void:'➖ 不成立',review:'🔎 照合確認中'};
+ const rows=['normal','escape','manshu'].flatMap(articleSeries=>Object.keys(labels).map((status,i)=>({...r,
+  articleSeries,raceKey:`20260929-13-${i+1}`,raceNo:i+1,publicationKey:`20260929-13-${i+1}:${articleSeries}`,settlement:{status}})));
+ const before=JSON.stringify(rows);
+ for(const options of [{},{date:'20260929',late:true},{date:'20260929',late:true,supplement:true}]) {
+  const text=recapCopy(rows,marketing.index.url,now,options);
+  assert(text.startsWith('📊 '));assert(text.includes('9/29'));assert(text.includes('15記事・5レース'));
+  for(const label of Object.values(labels))assert(text.includes(`${label} 3件`));
+  assert(text.includes('種類別の内訳は無料一覧へ'));assert(text.includes('公開時の中心買い目で判定。'));
+  assert(text.includes('21:00時点'));assert(text.endsWith(marketing.index.url));assert(weight(text)<=280);
+ }
+ assert.equal(JSON.stringify(rows),before);
 });
 test('JST date boundaries and non-Japanese daylight-saving changes do not mislabel reports',()=>{
  for(const instant of ['2026-11-01T14:59:59Z','2026-11-01T15:00:00Z','2026-03-08T14:59:59Z','2026-03-08T15:00:00Z']) {
@@ -340,12 +370,29 @@ test('multiple public article kinds yield one race report with every actual matc
  f.state.publishedRaceResults=require('./note-public-results').raceReports(f.state.rows,new Map(f.state.rows.map(r=>[r.publicationKey,['1-2-3','2-1-3']])));
  f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));let text;
  f.delivery.create=async t=>{text=t;f.events.push('create');return {id:'combined',text:t,channelId:'channel',status:'scheduled'};};
- assert.equal((await run(f)).started,1);assert(text.includes('本命・中心の買い目'));assert(text.includes('AI展開・相手を広げるなら'));
+ assert.equal((await run(f)).started,1);
+ if(text.includes('的中した掲載欄は画像・無料一覧へ')) {
+  assert(text.includes('AI展開／独立本命'));assert(text.includes(marketing.index.url));
+ } else {
+  assert(text.includes('独立本命予想「中心の買い目」'));assert(text.includes('AI展開予想「相手を広げるなら」'));
+ }
+ assert(weight(text)<=280);
  assert.equal(f.events.filter(e=>e==='create').length,1);
 });
-test('public recap shares race deduplication and explicitly keeps old center metric separate',async()=>{
+test('public recap shares race deduplication and links to center metrics in the note appendix',async()=>{
  const f=publicFixture();f.config.recap={enabled:true,activatedAt:config.activatedAt};f.now=Date.parse('2026-09-29T22:45:00+09:00');f.clock=()=>f.now;
  let texts=[];f.delivery.create=async text=>{texts.push(text);return {id:'p'+texts.length,text,channelId:'channel',status:'scheduled'};};
  const r=await run(f);assert.equal(r.recap.status,'accepted_pending');const text=texts.find(t=>t.includes('結果まとめ'));
- assert(text.includes('1記事・1レース'));assert(text.includes('1的中／0不的中'));assert(text.includes('中心のみ（従来・記事別）：0的中／1不的中'));assert(text.includes('参考は別集計'));
+ assert(text.includes('1記事・1レース'));assert(text.includes('🎯 的中 1R'));assert(!text.includes('❌ 不的中'));assert(!text.includes('0的中'));assert(text.includes('種類別・中心のみの従来成績も無料一覧に掲載。'));assert(text.includes(marketing.index.url));assert(text.includes('参考は別集計'));
+});
+
+test('new display text and image rendering cannot revive prior race or article claims',async()=>{
+ for(const type of ['race','article']) {
+  const f=publicFixture();f.config.resultReports.images=true;
+  const publicationKey=type==='race'?f.state.publishedRaceResults[0].publicationKey:f.state.rows[0].publicationKey;
+  await f.claims.reserve({date:'20260929',publicationKey,evidenceId:'old-evidence',textSha256:'old-text-hash'});
+  f.renderCard=async()=>{throw Error('old_claim_must_skip_new_renderer');};
+  f.publishCard=async()=>{throw Error('old_claim_must_skip_image_upload');};
+  assert.equal((await run(f)).started,0);assert(!f.events.includes('create'));assert(!f.events.includes('channel'));
+ }
 });

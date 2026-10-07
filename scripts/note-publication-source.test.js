@@ -45,7 +45,7 @@ async function main() {
   const payload = publicationPayload(sourcePath, root, clock);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
-  assert.equal(payload.presentationVersion, 'readable-v1');
+  assert.equal(payload.presentationVersion, 'readable-v2');
   assert.equal(typeof payload.publishedDisplayProofJson, 'string');
   const displayProof = parsePublishedDisplayProof(payload);
   const sha = value => createHash('sha256').update(value).digest('hex');
@@ -55,14 +55,27 @@ async function main() {
   assert.equal(displayProof.publishedTicketsSha256, sha(JSON.stringify(['1-2-3', '1-2-4', '1-3-2', '2-1-3', '3-4-5'])));
   assert.equal(displayProof.publishedTicketCount, 5);
   assert.deepEqual(displayProof.sections.map(section => section.label), [
-    '中心の買い目', '相手を広げるなら', '別の展開を考えるなら', '高配当を狙うなら'
+    '🎯 本命', '🛡️ 押さえ', '🌊 流し', '💥 万舟狙い'
   ]);
-  assert.equal(displayProof.sections[0].ticketCount, 1);
+  assert.equal(displayProof.sections[0].ticketCount, 2);
   assert.ok(displayProof.sections.every(section => section.includedInPublishedResult === true));
-  assert.equal(displayProof.sections[0].ticketsSha256, sha(JSON.stringify(['1-2-3'])));
+  assert.equal(displayProof.sections[0].ticketsSha256, sha(JSON.stringify(['1-2-3', '1-2-4'])));
   assert.equal(JSON.stringify(displayProof).includes('1-2-3'), false);
   assert.equal(JSON.stringify(displayProof).includes('6-5-4'), false);
   assert.equal(JSON.stringify(displayProof).includes(payload.paidText), false);
+  assert.ok(payload.freeText.startsWith('🚤 9月14日 唐津10R\n🕒 締切 16:00'));
+  assert.deepEqual(require('./note-readable-article').ticketsIn(payload.freeText), []);
+  assert.ok(payload.paidText.includes('📌 合計（重複なし）\n公開予想：5点'));
+  assert.ok(!/金額|予算|[0-9０-９]+円|[¥￥]/.test(payload.paidText));
+  assert.ok(payload.freeText.includes('💡 すべての買い目を購入する前提ではありません。'));
+  for (const [heading, changed] of [['🎯 本命', '本命'], ['🛡️ 押さえ', '🎯 独立本命'], ['💥 万舟狙い', '💥 当選確実']]) {
+    assert.throws(() => parsePublishedDisplayProof({ ...payload, paidText: payload.paidText.replace(heading, changed) }));
+  }
+  // A valid legacy proof still round-trips by its explicit presentation version.
+  const legacyArticle = require('./note-readable-article').readableArticle(article, bundle, { presentationVersion: 'readable-v1' });
+  const legacyProof = require('./note-published-ticket-sections').sectionProof(legacyArticle.paidText, 'readable-v1');
+  assert.deepEqual(parsePublishedDisplayProof({ paidText: legacyArticle.paidText, presentationVersion: 'readable-v1',
+    publishedDisplayProofJson: JSON.stringify(legacyProof) }), legacyProof);
   assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: undefined }), /proof_missing/);
   assert.throws(() => parsePublishedDisplayProof({ ...payload, presentationVersion: undefined }), /proof_missing/);
   assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: '{' }), /proof_invalid/);
@@ -76,6 +89,16 @@ async function main() {
   assert.throws(() => requirePublicationTicketCount({ practicalTickets: Array(8).fill({ ticket: '1-2-3' }) }), /exceeds_7/);
   assert.deepEqual(verifyPublicationSource(payload, root, clock), payload);
   assert.deepEqual(requirePublicationGate(payload, root, clock), payload);
+  // An old source that today's compactor can display still cannot acquire a v2
+  // receipt unless the immutable original supports frozen result reconstruction.
+  const oldSource = structuredClone(bundle);
+  oldSource.article.format = 'formation-v3';
+  oldSource.article.paidText = '買い目\n\n・1-2-3\n\n計 1点';
+  oldSource.article.fullText = [oldSource.article.freeText, oldSource.article.paywallMarker,
+    oldSource.article.paidText, '※舟券の購入は自己責任で、無理のない範囲でお楽しみください。', oldSource.article.tags.join(' ')].join('\n\n');
+  const oldBytes = JSON.stringify(oldSource), oldPath = `data/note-drafts/20300914/20300914-23-10-${sha(oldBytes)}.json`;
+  fs.writeFileSync(path.join(root, oldPath), oldBytes);
+  assert.throws(() => publicationPayload(oldPath, root, clock), /published_original_format_unsupported/);
   const { loadCoverTemplate } = require('./note-cover');
   assert.ok(loadCoverTemplate(payload, root, clock).html.includes('ChappyRound'));
   assert.throws(() => loadCoverTemplate({ ...payload, paidText: '別原稿' }, root, clock), /mismatch/);

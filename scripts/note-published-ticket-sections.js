@@ -4,6 +4,8 @@
 // This module never runs a prediction engine or reads candidate24/research pools.
 const { createHash } = require('node:crypto');
 const { seriesOfBundle, publicationKey } = require('./note-article-series');
+const categoryV2 = require('./note-category-article');
+const V2_LABELS = categoryV2.LABELS, V2_PRIMARY_LABELS = categoryV2.PRIMARY_LABELS;
 const VERSION = 'published-ticket-sections-v1';
 const EVIDENCE_VERSION = 'note-publication-evidence-v1';
 const hash = value => createHash('sha256').update(value).digest('hex');
@@ -53,16 +55,19 @@ function canonicalSections(sections) {
   return sections.map(section => ({ label: section.label, tickets: sorted(section.tickets) }));
 }
 function describe(sections, presentationVersion) {
+  const reference = presentationVersion === categoryV2.PRESENTATION_VERSION ? categoryV2.REFERENCE : REFERENCE;
   const all = canonicalSections(sections);
-  const primary = all.filter(section => section.label !== REFERENCE);
+  const primary = all.filter(section => section.label !== reference);
   const unionTickets = sorted(primary.flatMap(section => section.tickets));
   return { status: 'verified', version: VERSION, presentationVersion,
     publishedTicketCount: unionTickets.length, sections: primary, unionTickets,
     sectionsSha256: hash(JSON.stringify(all)), publishedTicketsSha256: hash(JSON.stringify(unionTickets)),
-    referenceTicketCount: all.filter(section => section.label === REFERENCE).reduce((count, section) => count + section.tickets.length, 0) };
+    referenceTicketCount: all.filter(section => section.label === reference).reduce((count, section) => count + section.tickets.length, 0),
+    ...(presentationVersion === categoryV2.PRESENTATION_VERSION ? { displayedPrimaryTicketCount: primary.reduce((count, section) => count + section.tickets.length, 0) } : {}) };
 }
 
 function parsePaidSections(paidText, presentationVersion) {
+  if (presentationVersion === categoryV2.PRESENTATION_VERSION) return categoryV2.parsePaidSections(paidText);
   requireValue(presentationVersion === 'readable-v1', 'published_presentation_version_unsupported');
   requireValue(typeof paidText === 'string' && paidText.trim(), 'published_paid_text_missing');
   const lines = paidText.split(/\r?\n/), sections = [];
@@ -123,13 +128,14 @@ function extractPublishedTicketSections(paidText, { presentationVersion = 'reada
 // Hash-only evidence is safe to put in the receipt. Reference labels/counts are
 // retained, explicitly excluded from the approved public-result union.
 function sectionProof(paidText, presentationVersion = 'readable-v1') {
+  const reference = presentationVersion === categoryV2.PRESENTATION_VERSION ? categoryV2.REFERENCE : REFERENCE;
   const sections = canonicalSections(parsePaidSections(paidText, presentationVersion));
   const result = describe(sections, presentationVersion);
   return { version: VERSION, presentationVersion, paidTextSha256: hash(paidText),
     sectionsSha256: result.sectionsSha256, publishedTicketsSha256: result.publishedTicketsSha256,
     publishedTicketCount: result.publishedTicketCount,
     sections: sections.map(section => ({ label: section.label, ticketCount: section.tickets.length,
-      ticketsSha256: hash(JSON.stringify(section.tickets)), includedInPublishedResult: section.label !== REFERENCE })) };
+      ticketsSha256: hash(JSON.stringify(section.tickets)), includedInPublishedResult: section.label !== reference })) };
 }
 
 function removeAsides(text) {
@@ -238,11 +244,16 @@ function publishedTicketSections(row, bytes, now = Date.now()) {
     if (!proof) requireValue(Object.entries(LEGACY_READABLE).filter(([key]) => key !== 'presentationVersion')
       .every(([key, value]) => evidence[key] === value) &&
       (!evidence.presentationVersion || evidence.presentationVersion === LEGACY_READABLE.presentationVersion), 'published_renderer_unreviewed');
-    else requireValue(proof.version === VERSION && proof.presentationVersion === 'readable-v1', 'published_display_proof_unsupported');
-    const sections = sourceSections(bundle, series, central), paidText = paidTextFromSections(sections);
-    const expectedProof = sectionProof(paidText, 'readable-v1');
+    else requireValue(proof.version === VERSION && ['readable-v1', categoryV2.PRESENTATION_VERSION].includes(proof.presentationVersion), 'published_display_proof_unsupported');
+    const presentationVersion = proof?.presentationVersion || 'readable-v1';
+    requireValue(!evidence.presentationVersion || evidence.presentationVersion === presentationVersion, 'published_display_proof_mismatch');
+    const sections = presentationVersion === categoryV2.PRESENTATION_VERSION
+      ? categoryV2.sourceSections(bundle, series) : sourceSections(bundle, series, central);
+    const paidText = presentationVersion === categoryV2.PRESENTATION_VERSION
+      ? categoryV2.paidTextFromSections(sections) : paidTextFromSections(sections);
+    const expectedProof = sectionProof(paidText, presentationVersion);
     if (proof) requireValue(equal(proof, expectedProof), 'published_display_proof_mismatch');
-    return { ...describe(sections, 'readable-v1'), evidenceBasis: proof ? 'receipt-display-proof' : 'receipt-publisher-code',
+    return { ...describe(sections, presentationVersion), evidenceBasis: proof ? 'receipt-display-proof' : 'receipt-publisher-code',
       receiptCommitSha: evidence.receiptCommitSha, publisherCommitSha: evidence.publisherCommitSha };
   } catch (error) { return review(error.message); }
 }
@@ -257,5 +268,5 @@ function classifyPublishedTickets(row, bytes, officialCombination, now = Date.no
     matchedSections: extracted.sections.filter(section => section.tickets.includes(officialCombination)).map(section => section.label) };
 }
 
-module.exports = { VERSION, EVIDENCE_VERSION, LEGACY_READABLE, sectionProof, extractPublishedTicketSections,
+module.exports = { VERSION, EVIDENCE_VERSION, LEGACY_READABLE, V2_LABELS, V2_PRIMARY_LABELS, sectionProof, extractPublishedTicketSections,
   publishedTicketSections, classifyPublishedTickets };

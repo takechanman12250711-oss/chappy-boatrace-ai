@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const { receiptRow, indexBody, initialState } = require('./note-marketing-content');
-const { settlePublished, counts, distributionDrafts } = require('./note-marketing-reports');
+const { settlePublished, counts, distributionDrafts, summaryLine, dailySummary, dailyPublishedSummary } = require('./note-marketing-reports');
 const { client, REPO } = require('./note-marketing-store');
 const config = require('../config/note-marketing.json');
 const now = Date.parse('2026-09-29T14:00:00+09:00');
@@ -65,15 +65,57 @@ test('note retains misses and every unresolved category in the published denomin
   const f=fixture();
   const rows=['hit','miss','pending','void','review'].map((status,i)=>({...f.row,url:f.row.url+i,
     raceKey:`20260929-13-${i+1}`,publicationKey:`20260929-13-${i+1}:normal`,raceNo:i+1,
-    settlement:{...settlePublished(f.row,f.bytes,f.result,now),status}}));
+    settlement:{...settlePublished(f.row,f.bytes,f.result,now),status},
+    publishedSettlement:{...settlePublished(f.row,f.bytes,f.result,now),status,publishedTicketCount:2,
+      matchedSections:status==='hit'?['中心の買い目']:[]}}));
   assert.deepEqual(counts(rows),{published:5,hit:1,miss:1,pending:1,void:1,review:1,settled:2});
+  const before=JSON.stringify(rows);
   const body=indexBody(rows,config,now);
-  assert(body.includes('公開5件｜判定済み2件中1件的中・1件不的中'));
-  assert(body.includes('結果待ち1件・不成立1件・確認中1件'));
+  assert(body.startsWith('📅 2026年9月29日の予想・結果一覧'));
+  assert(body.includes('公開5レース｜判定済み2R'));
+  assert(body.includes('公開5件｜判定済み2件'));
+  for(const [i,label] of ['🎯 的中','❌ 不的中','⏳ 結果待ち','➖ 不成立','🔎 照合確認中'].entries()) {
+    assert(body.includes(`${label} 1R`));assert(body.includes(`${label} 1件`));
+    assert(body.includes(`${label}｜尼崎${i+1}R`));
+  }
   for(const row of rows) { assert(!body.includes(row.url)); assert(body.includes(row.resultUrl)); }
   assert(body.includes('締切済み｜購入リンクの掲載終了'));
+  assert.equal(JSON.stringify(rows),before);
   const unresolved=indexBody([{...f.row,settlement:{status:'pending'}}],config,now);
   assert(!unresolved.includes('1-2-3')); assert(!unresolved.includes('1-3-2'));
+});
+test('zero result categories are omitted without hiding all misses or unresolved article counts',()=>{
+  const f=fixture();
+  for(const [status,label] of [['hit','🎯 的中'],['miss','❌ 不的中'],['pending','⏳ 結果待ち'],['void','➖ 不成立'],['review','🔎 照合確認中']]) {
+    const rows=[1,2].map(raceNo=>({...f.row,raceKey:`20260929-13-${raceNo}`,raceNo,
+      publicationKey:`20260929-13-${raceNo}:normal`,url:f.row.url+raceNo,
+      settlement:{status},publishedSettlement:{status,publishedTicketCount:2}}));
+    assert.equal(summaryLine(rows),`公開2件｜判定済み${['hit','miss'].includes(status)?2:0}件\n${label} 2件`);
+    assert.equal(dailySummary(rows,'20260929'),`AI展開予想：${summaryLine(rows)}`);
+    assert.equal(dailyPublishedSummary(rows,'20260929',{includeRaces:false}),`AI展開予想：2記事\n${label} 2件`);
+    assert(!dailySummary(rows,'20260929').includes('イン逃げ'));
+    assert(!dailySummary(rows,'20260929').includes('万舟'));
+  }
+  assert.equal(summaryLine([]),'公開なし');
+  assert.equal(dailySummary([],'20260929'),'公開なし');
+  assert.equal(dailyPublishedSummary([],'20260929',{includeRaces:false}),'公開なし');
+});
+test('each article shows one outcome and payout while center-only results remain in the appendix',()=>{
+  const f=fixture(),center=settlePublished(f.row,f.bytes,f.result,now);
+  const rows=[{...f.row,settlement:{...center,status:'miss'},publishedSettlement:{...center,status:'hit',
+    publishedTicketCount:6,matchedSections:['相手を広げるなら']}}];
+  const before=JSON.stringify(rows),body=indexBody(rows,config,now),[main,appendix]=body.split('📊 集計の詳細');
+  assert(main.includes('🎯 的中｜尼崎4R\n📌 的中した予想：AI展開予想\n「相手を広げるなら」\n✅ 的中買い目 1-2-3\n💴 公式払戻（100円あたり）1,230円'));
+  assert(main.includes('📌 掲載全券6点（重複なし・参考別集計）\n🕒 締切 11:52｜公開 11:38\n中心2点｜公開時価格 300円'));
+  assert(main.includes('🏁 公式結果を確認\n'+rows[0].resultUrl));
+  assert(!main.includes('押さえで的中'));
+  assert.equal((body.match(/公式払戻（100円あたり）1,230円/g)||[]).length,1);
+  assert(!main.includes('❌ 不的中'));assert(!main.includes('中心のみ'));
+  assert(appendix.includes('中心のみの従来成績（記事別）\nAI展開予想：公開1件｜判定済み1件\n❌ 不的中 1件'));
+  assert(appendix.includes('掲載全券・種類別\nAI展開予想：1記事\n🎯 的中 1件'));
+  assert(!body.includes('0的中'));assert(!body.includes('0不的中'));
+  assert(!body.includes(rows[0].url));assert(body.includes(rows[0].resultUrl));
+  assert.equal(JSON.stringify(rows),before);
 });
 test('stale pre-race snapshots wait without weakening resolved-result identity checks', () => {
   const f=fixture(), stale={...f.result,checkedAt:f.bundle.capturedAt,resultAvailable:false,status:'not_finished',void:false,trifecta:null,finishers:[]};

@@ -4,7 +4,7 @@ const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { contentLines, compareEditorContent } = require('./note-editor-content');
 const { SERIES, seriesOfBundle, publicationKey } = require('./note-article-series');
-const { outcomeLine, dailySummary,publishedOutcomeLine,dailyPublishedSummary } = require('./note-marketing-reports');
+const { dailySummary,publishedOutcomeLine,dailyPublishedSummary } = require('./note-marketing-reports');
 const { NOTE_PRICE_YEN, isRecordedPrice } = require('./note-pricing');
 const { NOTICE: EXPIRY_NOTICE, purchaseLinkText, indexPurchaseLinks } = require('./note-marketing-expiry');
 const ACCOUNT = 'great_robin3243';
@@ -89,23 +89,32 @@ function indexBody(rows, config, now = Date.now()) {
   const retained = rows.filter(r=>recentDates(now).includes(r.raceKey.slice(0,8)));
   if (new Set(retained.map(r=>publicationKey(r.raceKey,r.articleSeries))).size !== retained.length || new Set(retained.map(r=>r.url)).size !== retained.length) throw new Error('marketing_duplicate_publication');
   const time = value => new Date(Date.parse(value)+9*3600000).toISOString().slice(11,16);
-  const show = r => `${time(r.deadlineAt)}｜${r.place}${r.raceNo}R\n公開 ${time(r.publishedAt)}｜${Number.isInteger(r.ticketCount) ? `実戦厳選${r.ticketCount}点` : '点数は記事で確認'}\n${isRecordedPrice(r.price) ? `公開時価格 ${r.price}円` : '価格は記事ページで確認'}\n${publishedOutcomeLine(r)}\n中心のみ（従来）：${outcomeLine(r)}\n${purchaseLinkText(r, now)}\n公式結果を確認\n${r.resultUrl}`;
+  const show = r => {
+    const result=publishedOutcomeLine(r).split('\n');
+    return [`${result.shift()}｜${r.place}${r.raceNo}R`,...result,
+      `🕒 締切 ${time(r.deadlineAt)}｜公開 ${time(r.publishedAt)}`,
+      `${Number.isInteger(r.ticketCount)?`中心${r.ticketCount}点`:'点数は記事で確認'}${isRecordedPrice(r.price)?`｜公開時価格 ${r.price}円`:'｜価格は記事ページで確認'}`,
+      purchaseLinkText(r, now),'🏁 公式結果を確認',r.resultUrl].join('\n');
+  };
   const yesterday = recentDates(now)[1], previous = rows.filter(r=>r.raceKey.slice(0,8)===yesterday)
     .sort((a,b)=>Date.parse(a.deadlineAt)-Date.parse(b.deadlineAt));
-  const descriptions = {normal:'展開と相手の組み合わせを確認したい方へ。',escape:'イン逃げを狙う独立監視の予想を確認したい方へ。',manshu:'高配当を狙う独立監視の予想を確認したい方へ。'};
-  // Always show absolute deadlines. A static note cannot claim to know whether
-  // a race is still open at the reader's current time between updater runs.
-  return [`${date.slice(0,4)}年${Number(date.slice(4,6))}月${Number(date.slice(6,8))}日の予想一覧`,
-    `AI展開予想・イン逃げ・万舟を分け、各区分の締切順にまとめています。イン逃げと万舟は独立した狙い目監視の原稿です。時刻は日本時間です。新規公開の記事は各${NOTE_PRICE_YEN}円で試行中です。過去の記事を含め、購入価格は各記事ページをご確認ください。`,
-    '日付と締切をご確認ください。締切を過ぎた記事は振り返り用の記録です。',
-    EXPIRY_NOTICE,
-    `本日の公開記事の成績（${current.length}記事・${new Set(current.map(r=>r.raceKey)).size}レース）\n${dailyPublishedSummary(current,date)}\n掲載全券は、締切前に公開した本命・押さえ・展開・万舟の掲載買い目が対象です。別会計の参考予想は含めません。同じレースは全体で1回だけ数え、的中欄を表示します。結果待ち・不成立・確認中は判定済み件数に含めません。\n中心のみの従来成績（記事別）\n${dailySummary(current,date)}\n払戻は公式の100円あたりの金額で、実際の購入額・利益ではありません。`,
-    ...Object.entries(SERIES).map(([key, series]) => {
-      const selected = current.filter(r => (r.articleSeries || 'normal') === key);
-      return `${series.label}\n${descriptions[key]}\n${selected.length ? selected.map(show).join('\n\n') : '本日、掲載を確認できた記事はまだありません。'}`;
-    }),
-    `前日の公開記事と公式結果（${Number(yesterday.slice(4,6))}月${Number(yesterday.slice(6,8))}日）\n前日分は${previous.length}記事・${new Set(previous.map(r=>r.raceKey)).size}レース。振り返り用です。的中・不的中を選ばず、公開を確認した記事を種類別に掲載しています。\n${dailyPublishedSummary(previous,yesterday)}\n中心のみの従来成績（記事別）\n${dailySummary(previous,yesterday)}\n\n${previous.length ? Object.entries(SERIES).map(([key,series])=>{const selected=previous.filter(r=>(r.articleSeries||'normal')===key);return selected.length ? `${series.label}\n${selected.map(show).join('\n\n')}` : '';}).filter(Boolean).join('\n\n') : '前日の公開を確認できた記事はありません。'}`,
-    `はじめての方へ\n${config.guide.url}`, `チャッピーのプロフィール\n${PROFILE}`].join('\n\n');
+  const icons={normal:'🚤',escape:'🏁',manshu:'🌊'};
+  const groups = selected => Object.entries(SERIES).flatMap(([key,series])=>{
+    const subset=selected.filter(r=>(r.articleSeries||'normal')===key);
+    return subset.length ? [`${icons[key]} ${series.label}\n\n${subset.map(show).join('\n\n')}`] : [];
+  }).join('\n\n') || '掲載を確認できた記事はまだありません。';
+  const {summarizePublicRows}=require('./note-public-results');
+  const details=(selected,day,label)=>`${label}（${selected.length}記事）\n掲載全券・種類別\n${dailyPublishedSummary(selected,day,{includeRaces:false})}\n\n中心のみの従来成績（記事別）\n${dailySummary(selected,day)}`;
+  // Keep every published result visible. Legacy center-only numbers live once
+  // in the detail block rather than competing with each race's public result.
+  return [`📅 ${date.slice(0,4)}年${Number(date.slice(4,6))}月${Number(date.slice(6,8))}日の予想・結果一覧`,
+    `🚤 本日の公開記事\n${summarizePublicRows(current)}`,
+    groups(current),
+    `📅 前日の結果（${Number(yesterday.slice(4,6))}月${Number(yesterday.slice(6,8))}日）\n${summarizePublicRows(previous)}\n\n${groups(previous)}`,
+    `📊 集計の詳細\n${details(current,date,'本日')}\n\n${details(previous,yesterday,'前日')}`,
+    'ℹ️ 結果の見方\n掲載全券は、締切前に公開した本命・押さえ・展開・万舟の買い目が対象です。別会計の参考予想は含めません。\n同じレースは全体で1回だけ数え、種類別と中心のみの成績は記事単位です。結果待ち・不成立・照合確認中は判定済み件数に含めません。\n払戻は公式の100円あたりの金額です。実際の購入額・利益ではありません。',
+    `🕒 購入前に\n時刻は日本時間です。日付・締切・各記事の価格をご確認ください。新規公開の記事は各${NOTE_PRICE_YEN}円で試行中です。\n${EXPIRY_NOTICE}`,
+    `📖 はじめての方へ\n${config.guide.url}`, `チャッピーのプロフィール\n${PROFILE}`].join('\n\n');
 }
 function initialState(config) {
   return { version: VERSION, date: '', seenRefs: [], rows: [], articles: Object.fromEntries(['guide','index'].map(k=>[k,{ hash: hash(config[k].initialBody) }])) };

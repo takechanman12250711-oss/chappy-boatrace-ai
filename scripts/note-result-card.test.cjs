@@ -266,3 +266,30 @@ test('series and previous-day badge affect pixels; longest permitted payout fits
   await assert.rejects(renderCard(fixture(), { now: NOW, indexUrl: fixture().url }), /free_index_invalid/);
   await assert.rejects(renderCard(fixture(), { now: NOW, fontPath: '/tmp/missing-result-font.ttf' }), /font_missing/);
 });
+
+test('longest venue, twelve headings, previous-day label and widest payouts fit together', async () => {
+  for (const payout of [9999999, 10000000, 99999999]) {
+    const report = aggregateFixture();
+    Object.assign(report, { raceKey:'20261005-12-12',publicationKey:'20261005-12-12:published-main',place:'住之江',raceNo:12,
+      publishedAt:'2026-10-05T15:00:00+09:00',deadlineAt:'2026-10-05T15:30:00+09:00',firstResultSeenAt:'2026-10-05T07:15:00Z',
+      publishedTicketCount:120,payoutPer100Yen:payout,
+      resultUrl:'https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20261005&jcd=12&rno=12' });
+    report.matchedSections=report.articleSeries.flatMap(articleSeries=>PUBLISHED_SECTION_LABELS.map(label=>({articleSeries,label})));
+    report.evidenceId=aggregateDigest(report);
+    const card=await renderCard(report,{now:NOW});
+    assert.equal(card.width,1200);assert.equal(card.height,675);assert.equal(card.content.previousDay,true);
+    assert.equal(card.content.publishedTicketCount,120);assert.equal(card.content.matchedSections.length,12);
+    assert(card.altText.includes(payout.toLocaleString('ja-JP')+'円'));assert(card.altText.includes('住之江12R'));
+  }
+});
+
+test('v2 category names cannot be rebound to a different article family even with a recomputed hash',()=>{
+  for(const [articleSeries,label] of [['normal','🎯 独立本命'],['normal','💥 独立万舟'],['escape','🌊 流し'],['manshu','🛡️ 押さえ']]) {
+    const report=aggregateFixture();report.matchedSections=[{articleSeries,label}];report.evidenceId=aggregateDigest(report);
+    assert.throws(()=>publicContent(report,{now:NOW}),/matched_sections_invalid/);
+  }
+  for(const [articleSeries,label] of [['normal','🎯 本命'],['normal','🛡️ 押さえ'],['normal','🌊 流し'],['normal','💥 万舟狙い'],['escape','🎯 独立本命'],['manshu','💥 独立万舟']]) {
+    const report=aggregateFixture();report.matchedSections=[{articleSeries,label}];report.evidenceId=aggregateDigest(report);
+    assert.equal(publicContent(report,{now:NOW}).matchedSections[0].label,label);
+  }
+});

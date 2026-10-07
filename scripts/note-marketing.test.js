@@ -29,12 +29,13 @@ test('navigation leaves paid text, picks and source object unchanged',()=>{
 });
 test('index uses absolute deadlines, rolls over at midnight JST and refuses duplicates',()=>{
   const row=c.receiptRow(receipt,source,now);
-  assert(c.indexBody([row],config,now).includes('11:52｜尼崎4R'));
+  assert(c.indexBody([row],config,now).includes('🔎 照合確認中｜尼崎4R'));
+  assert(c.indexBody([row],config,now).includes('🕒 締切 11:52｜公開 11:38'));
   const tomorrow=c.indexBody([row],config,Date.parse('2026-09-28T15:00:00Z'));
-  assert(tomorrow.startsWith('2026年9月29日'));
+  assert(tomorrow.startsWith('📅 2026年9月29日の予想・結果一覧'));
   assert(!tomorrow.includes(receipt.url));
   assert(tomorrow.includes('締切済み｜購入リンクの掲載終了'));
-  assert(tomorrow.includes('前日の公開記事と公式結果'));
+  assert(tomorrow.includes('📅 前日の結果（9月28日）'));
   assert(!c.indexBody([row],config,now+2*86400000).includes(receipt.url));
   assert.throws(()=>c.indexBody([row,row],config,now),/duplicate_publication/);
   assert.throws(()=>c.indexBody([row,row],config,now+86400000),/duplicate_publication/);
@@ -48,7 +49,7 @@ test('count comes from both immutable ticket sets; result links reveal no paid t
   };
   const row=make(), body=c.indexBody([row],config,now);
   assert.equal(row.ticketCount,2);
-  assert(body.includes('公開 11:38｜実戦厳選2点'));
+  assert(body.includes('中心2点｜公開時価格 300円'));
   assert(!body.includes('1-2-3'));
   assert(!JSON.stringify(row).includes('1-3-2'));
   const url='https://www.boatrace.jp/owpc/pc/race/raceresult?hd=20260928&jcd=13&rno=4';

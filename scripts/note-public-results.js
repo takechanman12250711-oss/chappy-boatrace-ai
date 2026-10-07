@@ -1,10 +1,12 @@
 'use strict';
 const {createHash}=require('node:crypto');
 const digest=value=>createHash('sha256').update(value).digest('hex');
+const {statusCounts,winningGroups,winningLabel,isPublishedSectionLabel}=require('./note-result-presentation');
 const VERSION='published-main-race-result-v1';
 const METHOD='published-main-sections-v1';
 const LABELS={normal:'AI展開',escape:'本命',manshu:'万舟'};
 const HEADINGS=['中心の買い目','相手を広げるなら','別の展開を考えるなら','高配当を狙うなら'];
+const {winningProvenance,validatedReportOrigins}=require('./note-result-provenance');
 function raceEvidenceId(report) {
   return digest([report.version,report.raceKey,report.sourceSha256,report.combination,
     report.payoutPer100Yen,report.publishedTicketCount,JSON.stringify(report.matchedSections)].join('|'));
@@ -21,7 +23,8 @@ function settlePublic(row,bytes,center,now) {
   if(!['hit','miss'].includes(center.status))return {settlement:{...center,...common},tickets:section.unionTickets};
   const matchedSections=section.sections.filter(s=>s.tickets.includes(center.combination)).map(s=>s.label);
   const evidenceId=digest([METHOD,row.publicationKey,row.sourceSha256,section.sectionsSha256,center.combination,center.payoutPer100Yen].join('|'));
-  return {settlement:{...center,...common,status:matchedSections.length?'hit':'miss',matchedSections,evidenceId},tickets:section.unionTickets};
+  const settlement={...center,...common,status:matchedSections.length?'hit':'miss',matchedSections,evidenceId};
+  return {settlement,tickets:section.unionTickets,provenance:winningProvenance(row,bytes,settlement,section,now)};
 }
 function combinedStatus(settlements) {
   const values=new Set(settlements.map(s=>s?.status||'review'));
@@ -57,7 +60,7 @@ function raceReports(rows,ticketSets) {
     const union=allKnown?[...new Set(members.flatMap(r=>ticketSets.get(r.publicationKey)))].sort():[];
     if(['hit','miss'].includes(status)&&(!allKnown||!union.length||union.length>120))status='review';
     const matchedSections=members.flatMap(r=>(r.publishedSettlement?.matchedSections||[]).map(label=>({articleSeries:r.articleSeries,label})));
-    if(matchedSections.some(s=>!Object.hasOwn(LABELS,s.articleSeries)||!HEADINGS.includes(s.label)))status='review';
+    if(matchedSections.some(s=>!Object.hasOwn(LABELS,s.articleSeries)||!isPublishedSectionLabel(s.articleSeries,s.label)))status='review';
     const sources=members.map(r=>({publicationKey:r.publicationKey,sourceSha256:r.sourceSha256,publishedAt:r.publishedAt,
       sectionsSha256:r.publishedSettlement?.sectionsSha256||null,status:r.publishedSettlement?.status||'review',
       evidenceId:r.publishedSettlement?.evidenceId||null}));
@@ -71,27 +74,39 @@ function raceReports(rows,ticketSets) {
       combination:resolved[0]?.combination||null,payoutPer100Yen:resolved[0]?.payoutPer100Yen||null,resultUrl:first.resultUrl,
       firstResultSeenAt:firstSeen.at(-1)||null,noteVerifiedAt:noteTimes.length===members.length?noteTimes.at(-1):null};
     if(['hit','miss'].includes(status))report.evidenceId=raceEvidenceId(report);
+    if(status==='hit')report.winningProvenance=members.map(r=>r.winningProvenance).filter(Boolean);
     return report;
   });
 }
 function summarizeRaceReports(reports) {
   const c={races:reports.length,hit:0,miss:0,pending:0,void:0,review:0};
   for(const report of reports){if(!Object.hasOwn(c,report.status)||report.status==='races')throw Error('public_results_status_invalid');c[report.status]++;}
-  return `公開${c.races}レース｜判定済み${c.hit+c.miss}R中${c.hit}的中・${c.miss}不的中｜結果待ち${c.pending}・不成立${c.void}・確認中${c.review}`;
+  return c.races ? `公開${c.races}レース｜判定済み${c.hit+c.miss}R\n${statusCounts(c,'R')}` : '公開を確認できたレースはありません。';
 }
 function matchedLabel(report) {
-  return report.matchedSections.map(s=>`${LABELS[s.articleSeries]}・${s.label}`).join('／');
+  return winningLabel(report.matchedSections);
 }
 function hitText(report,indexUrl,previousDay=false) {
   if(report.status!=='hit'||report.evidenceId!==raceEvidenceId(report))throw Error('public_results_hit_unverified');
   const d=report.raceKey.slice(0,8),date=`${Number(d.slice(4,6))}/${Number(d.slice(6,8))}`;
-  const head=`${previousDay?'前日分 ':''}${date} ${report.place}${report.raceNo}R 的中`;
-  const base=[head,`掲載全券${report.publishedTicketCount}点（参考別集計）`,`確定 ${report.combination}`,
-    `公式払戻（100円あたり）${report.payoutPer100Yen.toLocaleString('ja-JP')}円`];
-  const tail=['公式結果',report.resultUrl,'全結果一覧（無料）',indexUrl];
+  const groups=winningGroups(report.matchedSections);
+  const single=report.matchedSections.length===1;
+  const origins=validatedReportOrigins(report),categories=[...new Set(origins.map(o=>o.label))];
+  const head=categories.length?`🎯 ${categories.join('・')}で的中！`:single?`🎯「${report.matchedSections[0].label}」で的中！`:'🎯 複数の掲載欄で的中！';
+  const race=`🚤 ${previousDay?'前日分 ':''}${date} ${report.place}${report.raceNo}R`;
+  const details=[`\n✅ 的中買い目 ${report.combination}`,`💴 公式払戻（100円あたり）${report.payoutPer100Yen.toLocaleString('ja-JP')}円`,
+    `掲載全券${report.publishedTicketCount}点（重複なし・参考別集計）`];
+  const tail=['\n公式結果',report.resultUrl,'📋 全結果一覧（無料）',indexUrl];
   const {weight}=require('./note-marketing-social');
-  let text=[...base,`的中欄：${matchedLabel(report)}`,...tail].join('\n');
-  if(weight(text)>280)text=[...base,'的中欄は画像・全結果一覧に掲載',...tail].join('\n');
+  let text=[head,single?`${race}｜${groups[0].family}`:race,
+    ...(!single?groups.map(g=>`📌 ${g.family}「${g.labels.join('／')}」`):categories.length?[`📌 掲載欄「${report.matchedSections[0].label}」`]:[]),...details,...tail].join('\n');
+  // Every winning article family remains named; all exact section names are
+  // always in the attached image and free index when X cannot hold them all.
+  if(weight(text)>280)text=['🎯 的中',race,groups.map(g=>g.family.replace('予想','')).join('／'),
+    '📌 的中した掲載欄は画像・無料一覧へ',`✅ 的中買い目 ${report.combination}`,
+    `💴 公式払戻（100円）${report.payoutPer100Yen.toLocaleString('ja-JP')}円`,
+    `掲載全券${report.publishedTicketCount}点（重複なし・参考別集計）`,
+    '公式結果',report.resultUrl,'📋 全結果（無料）',indexUrl].join('\n');
   if(weight(text)>280)throw Error('public_results_text_too_long');
   return text;
 }
@@ -100,17 +115,19 @@ function publicRecapCopy(rows,reports,indexUrl,now,{date,late=false,supplement=f
   date ||=dateOf(now);
   const selected=reports.filter(r=>r.raceKey.startsWith(date+'-'));
   if(!selected.length)return null;
-  const c=status=>selected.filter(r=>r.status===status).length;
   const centerRows=rows.filter(r=>r.raceKey.startsWith(date+'-'));
-  const centerHit=centerRows.filter(r=>r.settlement?.status==='hit').length;
-  const centerMiss=centerRows.filter(r=>r.settlement?.status==='miss').length;
   const label=d=>`${Number(d.slice(4,6))}/${Number(d.slice(6,8))}`;
-  const text=[`${late?'前日分 ':''}${label(date)} 全掲載券の${supplement?'結果追記':'結果まとめ'}`,
+  const tally=Object.fromEntries(['hit','miss','review','pending','void'].map(status=>[status,selected.filter(r=>r.status===status).length]));
+  let text=[`📊 ${late?'前日分 ':''}${label(date)} ${supplement?'結果追記':'結果まとめ'}`,
     `${centerRows.length}記事・${selected.length}レース（重複なし）`,
-    `${c('hit')}的中／${c('miss')}不的中`,`確認中${c('review')}・結果待ち${c('pending')}・不成立${c('void')}`,
+    '',statusCounts(tally,'R'),'',
     '本命・押さえ・展開・万舟の掲載券で判定。参考は別集計。',
-    `中心のみ（従来・記事別）：${centerHit}的中／${centerMiss}不的中`,
-    `${label(dateOf(now))} ${timeOf(now)}時点｜種類・的中欄は無料一覧へ`,indexUrl].join('\n');
+    '種類別・中心のみの従来成績も無料一覧に掲載。',
+    `🕒 ${label(dateOf(now))} ${timeOf(now)}時点`,indexUrl].join('\n');
+  if(weight(text)>280)text=[`📊 ${late?'前日分 ':''}${label(date)} ${supplement?'結果追記':'結果まとめ'}`,
+    `${centerRows.length}記事・${selected.length}レース（重複なし）`,statusCounts(tally,'R'),
+    '掲載全券で判定（参考別集計）。種類別・中心のみは無料一覧へ。',
+    `🕒 ${label(dateOf(now))} ${timeOf(now)}時点`,indexUrl].join('\n');
   if(weight(text)>280)throw Error('public_results_recap_too_long');return text;
 }
 module.exports={validatedRaceStatus,combinedStatus,summarizePublicRows,VERSION,METHOD,HEADINGS,LABELS,raceEvidenceId,settlePublic,raceReports,summarizeRaceReports,matchedLabel,hitText,publicRecapCopy};
