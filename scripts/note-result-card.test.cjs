@@ -282,3 +282,14 @@ test('longest venue, twelve headings, previous-day label and widest payouts fit 
     assert(card.altText.includes(payout.toLocaleString('ja-JP')+'円'));assert(card.altText.includes('住之江12R'));
   }
 });
+
+test('v2 category names cannot be rebound to a different article family even with a recomputed hash',()=>{
+  for(const [articleSeries,label] of [['normal','🎯 独立本命'],['normal','💥 独立万舟'],['escape','🌊 流し'],['manshu','🛡️ 押さえ']]) {
+    const report=aggregateFixture();report.matchedSections=[{articleSeries,label}];report.evidenceId=aggregateDigest(report);
+    assert.throws(()=>publicContent(report,{now:NOW}),/matched_sections_invalid/);
+  }
+  for(const [articleSeries,label] of [['normal','🎯 本命'],['normal','🛡️ 押さえ'],['normal','🌊 流し'],['normal','💥 万舟狙い'],['escape','🎯 独立本命'],['manshu','💥 独立万舟']]) {
+    const report=aggregateFixture();report.matchedSections=[{articleSeries,label}];report.evidenceId=aggregateDigest(report);
+    assert.equal(publicContent(report,{now:NOW}).matchedSections[0].label,label);
+  }
+});

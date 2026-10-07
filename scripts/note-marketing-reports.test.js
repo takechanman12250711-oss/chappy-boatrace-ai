@@ -105,8 +105,10 @@ test('each article shows one outcome and payout while center-only results remain
   const rows=[{...f.row,settlement:{...center,status:'miss'},publishedSettlement:{...center,status:'hit',
     publishedTicketCount:6,matchedSections:['相手を広げるなら']}}];
   const before=JSON.stringify(rows),body=indexBody(rows,config,now),[main,appendix]=body.split('📊 集計の詳細');
-  assert(main.includes('🎯 的中｜尼崎4R\n確定 1-2-3｜公式払戻（100円あたり）1,230円\n的中欄：相手を広げるなら'));
-  assert(main.includes('掲載全券6点（重複なし・参考別集計）\n🕒 締切 11:52｜公開 11:38\n中心2点｜公開時価格 300円'));
+  assert(main.includes('🎯 的中｜尼崎4R\n📌 的中した予想：AI展開予想\n「相手を広げるなら」\n✅ 的中買い目 1-2-3\n💴 公式払戻（100円あたり）1,230円'));
+  assert(main.includes('📌 掲載全券6点（重複なし・参考別集計）\n🕒 締切 11:52｜公開 11:38\n中心2点｜公開時価格 300円'));
+  assert(main.includes('🏁 公式結果を確認\n'+rows[0].resultUrl));
+  assert(!main.includes('押さえで的中'));
   assert.equal((body.match(/公式払戻（100円あたり）1,230円/g)||[]).length,1);
   assert(!main.includes('❌ 不的中'));assert(!main.includes('中心のみ'));
   assert(appendix.includes('中心のみの従来成績（記事別）\nAI展開予想：公開1件｜判定済み1件\n❌ 不的中 1件'));

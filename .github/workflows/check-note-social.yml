@@ -10,6 +10,8 @@ on:
       - 'scripts/note-marketing-*'
       - 'scripts/note-result-card*'
       - 'scripts/note-result-presentation*'
+      - 'scripts/note-result-provenance*'
+      - 'scripts/note-category-article*'
       - 'scripts/note-public-results*'
       - 'scripts/note-published-ticket-sections*'
       - 'scripts/note-publication-source*'
@@ -28,6 +30,8 @@ on:
       - 'scripts/note-marketing-*'
       - 'scripts/note-result-card*'
       - 'scripts/note-result-presentation*'
+      - 'scripts/note-result-provenance*'
+      - 'scripts/note-category-article*'
       - 'scripts/note-public-results*'
       - 'scripts/note-published-ticket-sections*'
       - 'scripts/note-publication-source*'
@@ -56,7 +60,7 @@ jobs:
           python -m pip install --disable-pip-version-check Pillow==12.3.0
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends fonts-noto-cjk
-      - run: node --test scripts/note-public-results.test.js scripts/note-published-ticket-sections.test.js scripts/note-marketing-expiry.test.js scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/check-line-connection.test.cjs scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/setup-line-menu.test.cjs scripts/note-result-card.test.cjs scripts/note-marketing-image.test.js
+      - run: node --test scripts/note-public-results.test.js scripts/note-published-ticket-sections.test.js scripts/note-marketing-expiry.test.js scripts/note-marketing.test.js scripts/note-marketing-reports.test.js scripts/check-line-connection.test.cjs scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs scripts/setup-line-menu.test.cjs scripts/note-result-card.test.cjs scripts/note-result-provenance.test.js scripts/note-marketing-image.test.js
       - run: node scripts/note-publication-source.test.js
       - run: node --test scripts/note-readable-article.test.js
       - run: node scripts/note-github-ui-transport.test.js

@@ -9,6 +9,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { spawn } = require('node:child_process');
+const { RESULT_SERIES_LABELS,isPublishedSectionLabel } = require('./note-result-presentation');
+const {validatedReportOrigins}=require('./note-result-provenance');
 
 const VERSION = 'note-result-card-v1';
 const INDEX_URL = 'https://note.com/great_robin3243/n/na76b6c6c18ff';
@@ -111,7 +113,7 @@ function publicRaceContent(report, { now, previousDay, indexUrl }) {
   const matches = report.matchedSections;
   if (!Array.isArray(matches) || !matches.length || matches.length > 12 || matches.some(section => !section || typeof section !== 'object' ||
       Array.isArray(section) || Object.keys(section).some(key => !['articleSeries', 'label'].includes(key)) ||
-      !types.includes(section.articleSeries) || !PUBLISHED_SECTION_LABELS.includes(section.label)) ||
+      !types.includes(section.articleSeries) || !isPublishedSectionLabel(section.articleSeries,section.label)) ||
       new Set(matches.map(section => `${section.articleSeries}:${section.label}`)).size !== matches.length) throw Error('result_card_matched_sections_invalid');
   const combination = report.combination, payout = report.payoutPer100Yen;
   if (typeof combination !== 'string' || !/^[1-6]-[1-6]-[1-6]$/.test(combination) || new Set(combination.split('-')).size !== 3) throw Error('result_card_combination_invalid');
@@ -127,10 +129,13 @@ function publicRaceContent(report, { now, previousDay, indexUrl }) {
     if (!Number.isFinite(observed) || observed < deadline || observed > now) throw Error('result_card_observation_invalid');
     resultSeenAt = new Date(observed).toISOString();
   }
+  const origins=validatedReportOrigins(report);
+  const winningCategories=origins.map(o=>Object.freeze({articleSeries:o.articleSeries,categoryId:o.categoryId,label:o.label}));
   return Object.freeze({ version: VERSION, scope: 'published-main', date, place: report.place, raceNo: report.raceNo,
     articleSeries: Object.freeze([...types]), seriesLabel: types.map(type => LABELS[type]).join(' / '), status: 'hit',
     publishedTicketCount: report.publishedTicketCount,
     matchedSections: Object.freeze(matches.map(section => Object.freeze({ articleSeries: section.articleSeries, label: section.label }))),
+    ...(winningCategories.length?{winningCategories:Object.freeze(winningCategories)}:{}),
     combination, payoutPer100Yen: payout, indexUrl, previousDay: isPreviousDay, ...(resultSeenAt ? { resultSeenAt } : {}) });
 }
 
@@ -144,10 +149,12 @@ function altText(content) {
   const date = `${content.date.slice(0, 4)}年${Number(content.date.slice(4, 6))}月${Number(content.date.slice(6, 8))}日`;
   const tickets = content.scope === 'published-main'
     ? `事前公開した掲載全券${content.publishedTicketCount}点（重複なし）で的中。的中欄：` +
-      content.matchedSections.map(section => `${LABELS[section.articleSeries]}・${section.label}`).join('／') + '。'
+      content.matchedSections.map(section => `${RESULT_SERIES_LABELS[section.articleSeries]}・${section.label}`).join('／') + '。'
     : `事前公開した中心の買い目${content.ticketCount}点で的中。`;
   return `${date}${content.previousDay ? '（前日分）' : ''} ${content.place}${content.raceNo}R ${content.seriesLabel}。` +
-    `公式結果照合済み。${tickets}確定出目（3連単） ${content.combination}。` +
+    `公式結果照合済み。${tickets}` +
+    (content.winningCategories?.length ? `元の予想区分：${content.winningCategories.map(o=>`${RESULT_SERIES_LABELS[o.articleSeries]}・${o.label}`).join('／')}。` : '') +
+    `確定出目（3連単） ${content.combination}。` +
     `公式払戻（100円あたり）${content.payoutPer100Yen.toLocaleString('ja-JP')}円。` +
     (content.resultSeenAt ? `${observationLabel(content)}。` : '') +
     `全記事の結果（無料） ${content.indexUrl}。購入実績・利益を示すものではありません。`;
@@ -197,35 +204,46 @@ def target(x,y,r):
     draw.line(((x+4)*S,(y-4)*S,(x+44)*S,(y-44)*S),fill=gold,width=7*S)
     draw.polygon([((x+29)*S,(y-43)*S),((x+46)*S,(y-46)*S),((x+43)*S,(y-29)*S)],fill=gold)
 target(94,141,37)
-text(153,92,'的中',106,gold)
+categories = list(dict.fromkeys(o['label'] for o in c.get('winningCategories',[])))
+headline = ('・'.join(categories)+'で的中') if len(categories) <= 2 else '複数区分で的中'
+text(153,92,headline if categories else '的中',83 if categories else 106,gold,max_width=565)
 date = c['date'][:4] + '.' + c['date'][4:6] + '.' + c['date'][6:8]
 text(1149,84,date+('  前日分' if c['previousDay'] else ''),26,'#c7d7eb',anchor='rt')
-text(1152,124,c['place']+' '+str(c['raceNo'])+'R',66,anchor='rt',max_width=650)
+text(1152,124,c['place']+' '+str(c['raceNo'])+'R',60,anchor='rt',max_width=460)
+# Promote the actual winning article and literal published section names.
+# Never infer 本命/押さえ/流し from a merged published heading.
+labels = {'normal':'AI展開予想','escape':'独立本命予想','manshu':'独立万舟予想'}
+section_names = {'🎯 本命':'本命','🛡️ 押さえ':'押さえ','🌊 流し':'流し','💥 万舟狙い':'万舟狙い','🎯 独立本命':'独立本命','💥 独立万舟':'独立万舟'}
+groups = []
+if aggregate:
+    for series in ['normal','escape','manshu']:
+        matches = [section_names.get(section['label'],section['label']) for section in c['matchedSections'] if section['articleSeries'] == series]
+        if matches: groups.append((labels[series],matches,[o['label'] for o in c.get('winningCategories',[]) if o['articleSeries']==series]))
+else:
+    groups = [(labels[c['articleSeries']],['中心の買い目'],[])]
+box((48,207,1152,327),'#123348',radius=14)
+if len(groups) == 1:
+    family, matches, origins = groups[0]
+    text(72,223,family+('｜'+'・'.join(origins) if origins else 'で的中'),30,accent,max_width=1060)
+    text(72,269,'「'+'／'.join(matches)+'」',38,max_width=1060)
+else:
+    for line,(family,matches,origins) in enumerate(groups):
+        text(72,224+line*33,family+('（'+'・'.join(origins)+'）' if origins else '')+'：'+'／'.join(matches),27,max_width=1060)
 # Single high-contrast result block: combination and official per-100 payout.
-box((48,229,1152,432),'#f4f8fc',radius=20)
-text(74,247,'確定出目（3連単）',24,'#344863')
-text(1124,247,'公式払戻（100円あたり）',25,'#344863',anchor='rt')
+box((48,346,1152,535),'#f4f8fc',radius=20)
+text(74,362,'確定出目（3連単）',24,'#344863')
+text(1124,362,'公式払戻（100円あたり）',25,'#344863',anchor='rt')
 boat_colors = {'1':('#ffffff','#15243c'),'2':('#263044','#ffffff'),'3':('#d45252','#ffffff'),
                '4':('#3883be','#ffffff'),'5':('#e2b744','#12213b'),'6':('#319681','#ffffff')}
 for index, boat in enumerate(c['combination'].split('-')):
     x = 74 + index*139
     bg, fg = boat_colors[boat]
-    box((x,294,x+101,406),bg,radius=12,outline='#95a5b9',width=1)
-    text(x+50,350,boat,78,fg,anchor='mm')
-    if index < 2: text(x+119,350,'-',36,'#344863',anchor='mm')
-text(1124,305,format(c['payoutPer100Yen'],',')+'円',79,'#163352',max_width=583,anchor='rt')
+    box((x,407,x+101,512),bg,radius=12,outline='#95a5b9',width=1)
+    text(x+50,459,boat,76,fg,anchor='mm')
+    if index < 2: text(x+119,459,'-',36,'#344863',anchor='mm')
+text(1124,412,format(c['payoutPer100Yen'],',')+'円',79,'#163352',max_width=583,anchor='rt')
 count_text = '掲載全券 '+str(c['publishedTicketCount'])+'点（重複なし）' if aggregate else '事前公開した中心の買い目 '+str(c['ticketCount'])+'点'
-text(48,452,count_text,30,accent,max_width=750)
-if aggregate:
-    labels = {'normal':'AI展開予想','escape':'本命予想','manshu':'万舟予想'}
-    line = 0
-    for series in c['articleSeries']:
-        matches = [section['label'] for section in c['matchedSections'] if section['articleSeries'] == series]
-        if matches:
-            text(48,504+line*30,'的中欄 '+labels[series]+'：'+' / '.join(matches),24,'#f4f8fc',max_width=1104)
-            line += 1
-else:
-    text(48,504,c['seriesLabel']+'｜中心の買い目で的中',28,'#f4f8fc',max_width=1104)
+text(48,550,count_text,29,accent,max_width=1104)
 text(48,608,'全結果は投稿内の無料一覧へ',23,accent,max_width=650)
 if c.get('resultSeenAt'):
     seen = datetime.fromisoformat(c['resultSeenAt'].replace('Z','+00:00')) + timedelta(hours=9)

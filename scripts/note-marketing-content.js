@@ -94,7 +94,7 @@ function indexBody(rows, config, now = Date.now()) {
     return [`${result.shift()}｜${r.place}${r.raceNo}R`,...result,
       `🕒 締切 ${time(r.deadlineAt)}｜公開 ${time(r.publishedAt)}`,
       `${Number.isInteger(r.ticketCount)?`中心${r.ticketCount}点`:'点数は記事で確認'}${isRecordedPrice(r.price)?`｜公開時価格 ${r.price}円`:''}`,
-      purchaseLinkText(r, now),'公式結果を確認',r.resultUrl].join('\n');
+      purchaseLinkText(r, now),'🏁 公式結果を確認',r.resultUrl].join('\n');
   };
   const yesterday = recentDates(now)[1], previous = rows.filter(r=>r.raceKey.slice(0,8)===yesterday)
     .sort((a,b)=>Date.parse(a.deadlineAt)-Date.parse(b.deadlineAt));

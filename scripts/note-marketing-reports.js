@@ -1,7 +1,8 @@
 'use strict';
 const { createHash } = require('node:crypto');
 const { SERIES, seriesOfBundle, publicationKey } = require('./note-article-series');
-const {statusLabel,statusCounts}=require('./note-result-presentation');
+const {statusLabel,statusCounts,RESULT_SERIES_LABELS}=require('./note-result-presentation');
+const {validatedRowOrigins}=require('./note-result-provenance');
 const digest = text => createHash('sha256').update(text).digest('hex');
 const pending = reason => ({ status: 'pending', reason });
 const review = reason => ({ status: 'review', reason });
@@ -120,12 +121,13 @@ function markResultsVerified(rows, now) {
 }
 function publishedOutcomeLine(row) {
   const s=row.publishedSettlement;
-  const lines=[statusLabel(s?.status||'review')];
+  const categories=[...new Set(validatedRowOrigins(row).map(o=>o.label))];
+  const lines=[categories.length?`🎯 ${categories.join('・')}で的中！`:statusLabel(s?.status||'review')];
+  if(s?.status==='hit'&&s.matchedSections?.length)lines.push(`📌 的中した予想：${RESULT_SERIES_LABELS[row.articleSeries||'normal']}\n「${s.matchedSections.join('／')}」`);
   if(['hit','miss'].includes(s?.status)) {
-    lines.push(`確定 ${s.combination}｜公式払戻（100円あたり）${s.payoutPer100Yen.toLocaleString('ja-JP')}円`);
-    if(s.matchedSections?.length)lines.push(`的中欄：${s.matchedSections.join('・')}`);
+    lines.push(`${s.status==='hit'?'✅ 的中買い目':'🏁 確定出目'} ${s.combination}`,`💴 公式払戻（100円あたり）${s.payoutPer100Yen.toLocaleString('ja-JP')}円`);
   }
-  if(Number.isInteger(s?.publishedTicketCount))lines.push(`掲載全券${s.publishedTicketCount}点（重複なし・参考別集計）`);
+  if(Number.isInteger(s?.publishedTicketCount))lines.push(`📌 掲載全券${s.publishedTicketCount}点（重複なし・参考別集計）`);
   return lines.join('\n');
 }
 function dailyPublishedSummary(rows,date,{includeRaces=true}={}) {

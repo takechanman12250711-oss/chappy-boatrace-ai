@@ -157,7 +157,7 @@ function client(env = process.env, request = fetch) {
       }
       const publicResult=bytes===null?{settlement:{status:'review',reason:'published_source_missing'}}:settlePublic(row,bytes,settlement,refresh?clock():now);
       if(publicResult.tickets)ticketSets.set(row.publicationKey,publicResult.tickets);
-      rows.push({ ...row, settlement, publishedSettlement:publicResult.settlement,
+      rows.push({ ...row, settlement, publishedSettlement:publicResult.settlement,winningProvenance:publicResult.provenance||null,
         publicResultObservation:observeResult({...row,resultObservation:row.publicResultObservation},publicResult.settlement,official,refresh?clock():now),
         resultObservation: observeResult(row, settlement, official, refresh ? clock() : now),
         socialContext: sourceContext(row,bytes) });

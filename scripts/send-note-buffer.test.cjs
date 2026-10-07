@@ -370,7 +370,13 @@ test('multiple public article kinds yield one race report with every actual matc
  f.state.publishedRaceResults=require('./note-public-results').raceReports(f.state.rows,new Map(f.state.rows.map(r=>[r.publicationKey,['1-2-3','2-1-3']])));
  f.state.articles.index.hash=hash(indexBody(f.state.rows,marketing,now));let text;
  f.delivery.create=async t=>{text=t;f.events.push('create');return {id:'combined',text:t,channelId:'channel',status:'scheduled'};};
- assert.equal((await run(f)).started,1);assert(text.includes('本命・中心の買い目'));assert(text.includes('AI展開・相手を広げるなら'));
+ assert.equal((await run(f)).started,1);
+ if(text.includes('的中した掲載欄は画像・無料一覧へ')) {
+  assert(text.includes('AI展開／独立本命'));assert(text.includes(marketing.index.url));
+ } else {
+  assert(text.includes('独立本命予想「中心の買い目」'));assert(text.includes('AI展開予想「相手を広げるなら」'));
+ }
+ assert(weight(text)<=280);
  assert.equal(f.events.filter(e=>e==='create').length,1);
 });
 test('public recap shares race deduplication and links to center metrics in the note appendix',async()=>{
