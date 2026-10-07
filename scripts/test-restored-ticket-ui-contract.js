@@ -6,7 +6,7 @@ const source=fs.readFileSync("js/final-display-user-contract.js","utf8");
 const loader=fs.readFileSync("js/result-void-compat.js","utf8");
 const index=fs.readFileSync("index.html","utf8");
 
-assert.match(source,/textContent="流し"/,"approved label must be 流し");
+assert.match(source,/textContent="流し（フォーメーション）"/,"approved label must be 流し（フォーメーション）");
 assert.match(source,/textContent="万舟"/,"approved label must be 万舟");
 assert.match(source,/\.v3-main-newspaper/,"duplicate legacy ticket section must be targeted");
 assert.match(source,/compactTickets/,"legacy ticket visibility must depend on a rendered compact ticket row");
@@ -43,7 +43,7 @@ const document={
 };
 const window={document,addEventListener(){},MutationObserver:class{constructor(cb){observerCallback=cb;}observe(){}}};
 vm.runInNewContext(source,{window});
-assert.equal(flowLabel.textContent,"流し");
+assert.equal(flowLabel.textContent,"流し（フォーメーション）");
 assert.equal(manshuTitle.textContent,"万舟");
 assert.equal(main.hidden,false,"legacy tickets must remain visible when compact tickets are missing");
 assert.equal(main.attrs["aria-hidden"],undefined);
@@ -60,5 +60,5 @@ assert.equal(main.attrs["aria-hidden"],undefined);
 assert.equal(main.dataset.userContractHidden,undefined);
 flowLabel.textContent="フォーメーション";
 observerCallback([]);
-assert.equal(flowLabel.textContent,"流し","later owner repaint must be corrected again");
+assert.equal(flowLabel.textContent,"流し（フォーメーション）","later owner repaint must be corrected again");
 console.log("restored ticket UI contract: ok");

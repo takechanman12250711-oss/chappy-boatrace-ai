@@ -40,10 +40,39 @@
   const MORNING_VENUES = new Set(["三国", "鳴門", "徳山", "芦屋", "唐津"]);
   const NIGHT_VENUES = new Set(["桐生", "蒲郡", "住之江", "丸亀", "下関", "若松", "大村"]);
 
-  function venueSession(place) {
-    if (MORNING_VENUES.has(place)) return { key: "morning", label: "モーニング" };
-    if (NIGHT_VENUES.has(place)) return { key: "night", label: "ナイター" };
-    return { key: "day", label: "デイ" };
+  function venueSession(place, venue) {
+    const labels = {
+      morning: "モーニング",
+      day: "デイ",
+      summer: "サマータイム",
+      night: "ナイター",
+      midnight: "ミッドナイト"
+    };
+    const timeband = String(venue?.eventSession || "");
+    if (Object.prototype.hasOwnProperty.call(labels, timeband)) {
+      return {
+        key: timeband === "midnight" ? "night" : timeband === "summer" ? "day" : timeband,
+        label: labels[timeband],
+        timeband,
+        source: "official"
+      };
+    }
+    const key = MORNING_VENUES.has(place) ? "morning" : NIGHT_VENUES.has(place) ? "night" : "day";
+    return { key, label: `通常${labels[key]}`, timeband: key, source: "usual" };
+  }
+
+  function venueGrade(venue) {
+    if (!venue) return "—";
+    const grade = String(venue.eventGrade || "").trim().toUpperCase();
+    return ["SG", "PG1", "G1", "G2", "G3", "一般"].includes(grade) ? grade : "確認中";
+  }
+
+  function venueStatusLabel(venue) {
+    if (!venue) return "開催なし";
+    const status = String(venue.status || "").toLowerCase();
+    if (venue.finalClosed || ["closed", "finished", "ended"].includes(status)) return "開催終了";
+    if (["schedule_pending", "unknown"].includes(status)) return "時刻確認中";
+    return "開催中";
   }
 
   function officialRaceRows(data) {
@@ -87,6 +116,9 @@
     window.addEventListener("chappy:view-changed", event => {
       if (event?.detail?.view !== "prediction") {
         predictionGeneration += 1;
+      }
+      if (event?.detail?.view !== "race") {
+        beginRaceSelection();
       }
       if (event?.detail?.view === "race") {
         void applyRaceMode();
@@ -787,31 +819,14 @@
         ""
       );
 
-    const preferredJcd =
-      mode === "live"
-        ? String(
-            data?.nextRace?.jcd ||
-            (
-              venueByJcd.has(
-                currentJcd
-              )
-                ? currentJcd
-                : availableVenues[0]
-                  ?.jcd
-            ) ||
-            ""
-          )
-        : (
-            venueByJcd.has(
-              currentJcd
-            )
-              ? currentJcd
-              : String(
-                  availableVenues[0]
-                    ?.jcd ||
-                  ""
-                )
-          );
+    const selectableVenues = mode === "live"
+      ? availableVenues.filter(isLiveVenueAvailable)
+      : availableVenues;
+    const preferredJcd = String(
+      selectableVenues.find(venue => String(venue.jcd) === currentJcd)?.jcd ||
+      selectableVenues.find(venue => String(venue.jcd) === String(data?.nextRace?.jcd || ""))?.jcd ||
+      selectableVenues[0]?.jcd || ""
+    );
 
     grid.innerHTML = "";
 
@@ -831,26 +846,8 @@
               )
             : Boolean(venue);
 
-        const grade =
-          String(
-            venue?.eventGrade ||
-            ""
-          );
-
-        const statusText =
-          !venue
-            ? "本日なし"
-            : (
-                grade ||
-                (
-                  venue.finalClosed
-                    ? "開催終了"
-                    : venue.status ===
-                        "schedule_pending"
-                      ? "開始前"
-                      : "開催"
-                )
-              );
+        const grade = venueGrade(venue);
+        const statusText = venueStatusLabel(venue);
 
         const button =
           document.createElement(
@@ -898,10 +895,13 @@
           place;
 
         const session =
-          venueSession(place);
+          venueSession(place, venue);
 
         button.dataset.session =
           session.key;
+        button.dataset.timeband = session.timeband;
+        button.dataset.sessionSource = session.source;
+        button.setAttribute("aria-label", `${place}、${session.label}、グレード ${grade}、${statusText}`);
 
         const name =
           document.createElement(
@@ -935,31 +935,28 @@
 
         sessionTag.dataset.session =
           session.key;
+        sessionTag.dataset.timeband = session.timeband;
+        sessionTag.dataset.sessionSource = session.source;
+        sessionTag.title = session.source === "official"
+          ? "選択日の公式開催時間帯"
+          : "通常の開催時間帯。選択日の公式情報は未確認です";
 
         sessionTag.textContent =
           session.label;
 
-        if (grade) {
-          venueStatus.classList.add(
-            "official-event-grade"
-          );
-
-          const gradeClass =
-            grade === "一般"
-              ? "grade-general"
-              : (
-                  "grade-" +
-                  grade.toLowerCase()
-                );
-
-          venueStatus.classList.add(
-            gradeClass
-          );
-        }
+        const gradeTag = document.createElement("span");
+        gradeTag.className = "official-venue-grade official-event-grade";
+        gradeTag.textContent = grade;
+        gradeTag.classList.add(grade === "一般" ? "grade-general"
+          : grade === "確認中" ? "grade-unknown"
+          : grade === "—" ? "grade-none" : `grade-${grade.toLowerCase()}`);
+        const metadata = document.createElement("span");
+        metadata.className = "official-venue-meta";
+        metadata.append(sessionTag, gradeTag);
 
         button.append(
           name,
-          sessionTag,
+          metadata,
           venueStatus
         );
 
@@ -1002,8 +999,7 @@
             ) {
               eventGradeText
                 .textContent =
-                grade ||
-                "開催";
+                grade;
             }
 
             if (raceGrid) {
@@ -1057,13 +1053,7 @@
         preferredJcd
       );
 
-    if (
-      panel &&
-      selectedVenue
-    ) {
-      panel.hidden =
-        false;
-    }
+    if (panel) panel.hidden = !selectedVenue;
 
     if (
       selectedVenueText &&
@@ -1073,14 +1063,7 @@
         selectedVenue.place;
     }
 
-    if (
-      eventGradeText &&
-      selectedVenue
-    ) {
-      eventGradeText.textContent =
-        selectedVenue.eventGrade ||
-        "開催";
-    }
+    if (eventGradeText) eventGradeText.textContent = venueGrade(selectedVenue);
   }
   /* ===============================
     レース一覧用AI期待度
@@ -2124,10 +2107,13 @@
       );
     }
 
-    const data =
-      await requestSchedule(
-        date
-      );
+    let data;
+    try {
+      data = await requestSchedule(date);
+    } catch (error) {
+      if (!isCurrentRaceSelection(selectionGeneration, mode, date)) return false;
+      throw error;
+    }
 
     if (
       !isCurrentRaceSelection(
@@ -2213,9 +2199,6 @@
             venues
           )
         : null;
-    latestStoredLiveSelection =
-      liveAutoSelection;
-
     if (
       !isCurrentRaceSelection(
         selectionGeneration,
@@ -2225,6 +2208,7 @@
     ) {
       return false;
     }
+    latestStoredLiveSelection = liveAutoSelection;
 
     const preferredJcd =
       mode === "live"
@@ -2427,11 +2411,14 @@
       "レース締切を確認中..."
     );
 
-    const data =
-      await requestSchedule(
-        date,
-        jcd
-      );
+    let data;
+    try {
+      data = await requestSchedule(date, jcd);
+    } catch (error) {
+      if (!isCurrentRaceSelection(selectionGeneration, mode, date) ||
+          placeSelect?.value !== selectedPlace) return false;
+      throw error;
+    }
 
     const currentOption =
       placeSelect?.options?.[
@@ -2691,6 +2678,14 @@
         "開催場の選択準備が完了しませんでした"
       );
     }
+    const assertCurrentSelection = () => {
+      if (isCurrentRaceSelection(modeGeneration, mode, date)) return;
+      const error = new Error("新しいレース選択へ切り替えました");
+      error.name = "AbortError";
+      error.staleSelection = true;
+      throw error;
+    };
+    assertCurrentSelection();
 
     const homeVenues =
       window.ChappyHomeDashboardV2
@@ -2748,6 +2743,7 @@
       await Promise.resolve(
         input.schedulePromise || null
       ).catch(() => null);
+    assertCurrentSelection();
     primeScheduleCache(
       date,
       jcd,
@@ -2760,6 +2756,7 @@
         raceNo,
         modeGeneration
       );
+    assertCurrentSelection();
 
     const raceValue =
       `${raceNo}R`;
@@ -2925,6 +2922,7 @@
       }
       return selected;
     } catch (error) {
+      if (error?.staleSelection === true) throw error;
       if (
         selectionGeneration !==
         explicitSelectionGeneration

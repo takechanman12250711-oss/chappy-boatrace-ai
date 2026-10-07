@@ -7,7 +7,7 @@
 
   function renameFlow(summaryRoot){
     summaryRoot.querySelectorAll?.(".chappy-final-buy-group.is-flow .chappy-final-buy-label").forEach(node=>{
-      if(text(node)!=="流し")node.textContent="流し";
+      if(text(node)!=="流し（フォーメーション）")node.textContent="流し（フォーメーション）";
     });
   }
 

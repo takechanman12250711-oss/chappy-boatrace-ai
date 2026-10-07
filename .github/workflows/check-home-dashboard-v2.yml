@@ -9,6 +9,8 @@ on:
       - "js/prediction-loading-watchdog.js"
       - "js/prediction-runtime-loader.js"
       - "js/script.js"
+      - "api/schedule.js"
+      - "api/_schedule-parser.js"
       - "js/home-recommendation-reliability.js"
       - "css/home-dashboard-v2.css"
       - "css/final-mobile-ui.css"
@@ -17,6 +19,8 @@ on:
       - "scripts/test-home-dashboard-v2.js"
       - "scripts/test-home-race-root-contract.js"
       - "scripts/test-tap-race-flow.js"
+      - "scripts/test-venue-picker-metadata.js"
+      - "scripts/test-schedule-parser.js"
       - "scripts/test-prediction-loading-watchdog.js"
       - "scripts/test-prediction-loading-terminal-state.js"
       - "scripts/test-home-recommendation-reliability.js"
@@ -41,6 +45,8 @@ jobs:
           node scripts/test-home-dashboard-v2.js
           node scripts/test-home-race-root-contract.js
           node scripts/test-tap-race-flow.js
+          node scripts/test-venue-picker-metadata.js
+          node scripts/test-schedule-parser.js
           node scripts/test-prediction-loading-watchdog.js
           node scripts/test-prediction-loading-terminal-state.js
           node scripts/test-home-recommendation-reliability.js

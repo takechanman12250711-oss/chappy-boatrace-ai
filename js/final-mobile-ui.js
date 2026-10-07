@@ -2,6 +2,7 @@
   "use strict";
 
   const BUILD = "20260904-final-mobile-ui9";
+  let renderGeneration = 0;
   const HOOK_FLAG = "__chappyFinalMobileUiWrapped";
 
   function text(value) {
@@ -268,9 +269,17 @@
     const entries = [...grouped.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
 
     const oddsMap = buildOddsMap(prediction);
+    const references = new Set([
+      ...arrayify(prediction?.manshuSheet?.tickets || prediction?.ticketSheets?.hole),
+      ...arrayify(prediction?.lightManshuTicketBoard?.lines)
+    ].flatMap(row => expandFormationNotation(formationFromRow(row))));
+    const sourceLabel = row => {
+      const count = row.expandedTickets.filter(ticket => references.has(ticket)).length;
+      return row.category === "押さえ" && count ? `<small class="chappy-reference-source">参考候補${count}点を含む</small>` : "";
+    };
     return `<section class="chappy-final-buy-summary" data-compact-tickets="1" data-final-ui-build="${BUILD}">
       <div class="chappy-final-buy-head"><h3>買い目</h3><span class="chappy-final-buy-total">${rows.reduce((sum,row)=>sum+row.points,0)}点</span></div>
-      ${entries.map(([category,list])=>`<details class="chappy-final-buy-group ${groupClass(category)}" ${category === "本命" ? "open" : ""}><summary><span class="chappy-final-buy-label">${category}</span><span class="chappy-final-buy-meta">${list.reduce((sum,row)=>sum+row.points,0)}点</span></summary><div class="chappy-final-buy-lines">${list.map(row=>compactLine(row,oddsMap)).join("")}</div></details>`).join("")}
+      ${entries.map(([category,list])=>`<details class="chappy-final-buy-group ${groupClass(category)}" ><summary><span class="chappy-final-buy-label">${category}</span><span class="chappy-final-buy-meta">${list.reduce((sum,row)=>sum+row.points,0)}点</span></summary><div class="chappy-final-buy-lines">${category === "押さえ" && list.some(row => row.expandedTickets.some(ticket => references.has(ticket))) ? '<p class="chappy-category-note">従来の表示区分を維持。100倍未満・オッズ未取得の参考候補を含みます。</p>' : ""}${list.map(row=>sourceLabel(row)+compactLine(row,oddsMap)).join("")}</div></details>`).join("")}
     </section>`;
   }
 
@@ -437,6 +446,7 @@
     decorateMissingOdds(prediction, resultArea);
     fixManshuSection(prediction, resultArea);
     markVisibleSections(resultArea);
+    if (root.CustomEvent) root.dispatchEvent(new root.CustomEvent("chappy:presentation-rendered", {detail: prediction}));
   }
 
   function wrapRender() {
@@ -444,7 +454,9 @@
     if (typeof fn !== "function" || fn[HOOK_FLAG]) return false;
     function wrapped(prediction) {
       const value = fn.apply(this, arguments);
-      root.setTimeout(() => enhance(prediction), 0);
+      const generation = ++renderGeneration;
+      const renderedRoot = root.document?.getElementById("resultArea")?.querySelector?.(".v3-root");
+      root.setTimeout(() => { if (generation === renderGeneration && renderedRoot && renderedRoot === root.document?.getElementById("resultArea")?.querySelector?.(".v3-root")) enhance(prediction); }, 0);
       return value;
     }
     wrapped[HOOK_FLAG] = true;

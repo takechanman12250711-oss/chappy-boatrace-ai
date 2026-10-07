@@ -3,6 +3,7 @@
   if(!root||!root.document)return;
   const HOOK="__chappyPracticalVisiblePanelWrapped";
   let latestPrediction=null;
+  let renderGeneration=0,latestRoot=null;
   const text=v=>String(v??"").trim();
   const esc=v=>text(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[c]);
   function exactTicket(v){const raw=text(v).replace(/\s+/g,"").replace(/→/g,"-");const p=raw.split("-");return p.length===3&&p.every(x=>/^[1-6]$/.test(x))&&new Set(p).size===3?raw:"";}
@@ -47,7 +48,7 @@
     const selected=selectedRows(pred);
     if(!selected.length)return;
     const map=oddsMap(pred);
-    const html=`<details class="chappy-practical-visible-panel"><summary class="chappy-practical-visible-head"><strong>実戦厳選</strong><span>${selected.length}点</span></summary><div class="chappy-practical-visible-list">${root.ChappyFinalMobileUi?.compactTickets ? root.ChappyFinalMobileUi.compactTickets(selected.map(row=>row.ticket)).map(row=>root.ChappyFinalMobileUi.compactLine(row,map)).join("") : selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></details>`;
+    const html=`<details class="chappy-practical-visible-panel"><summary class="chappy-practical-visible-head"><strong>厳選</strong><span>${selected.length}点</span></summary><div class="chappy-practical-visible-list">${root.ChappyFinalMobileUi?.compactTickets ? root.ChappyFinalMobileUi.compactTickets(selected.map(row=>row.ticket)).map(row=>root.ChappyFinalMobileUi.compactLine(row,map)).join("") : selected.map(row=>{const odds=Number(map.get(row.ticket));return`<div class="chappy-practical-visible-row"><strong>${esc(row.ticket)}</strong><span>${Number.isFinite(odds)&&odds>0?`${odds.toFixed(1)}倍`:"オッズ未取得"}</span></div>`;}).join("")}</div></details>`;
     const anchor=area.querySelector?.(".chappy-final-buy-summary")||area.querySelector?.(".v3-boat-evaluation")||area.querySelector?.(".v3-main-newspaper");
     if(anchor)anchor.insertAdjacentHTML("afterend",html);else area.insertAdjacentHTML?.("afterbegin",html);
     if(area.querySelector?.(".chappy-practical-visible-panel"))area.querySelectorAll?.(".chappy-final-buy-group.is-practical-fallback").forEach(node=>node.remove());
@@ -55,12 +56,12 @@
   function wrap(){
     const fn=root.renderAll;
     if(typeof fn!=="function"||fn[HOOK])return false;
-    function wrapped(pred){const value=fn.apply(this,arguments);latestPrediction=pred;root.setTimeout(()=>render(pred),80);root.setTimeout(()=>render(pred),500);return value;}
+    function wrapped(pred){const value=fn.apply(this,arguments);latestPrediction=pred;const generation=++renderGeneration;const renderedRoot=root.document.getElementById("resultArea")?.querySelector?.(".v3-root");latestRoot=renderedRoot;const current=()=>generation===renderGeneration&&renderedRoot&&renderedRoot===root.document.getElementById("resultArea")?.querySelector?.(".v3-root");root.setTimeout(()=>{if(current())render(pred);},80);root.setTimeout(()=>{if(current())render(pred);},500);return value;}
     wrapped[HOOK]=true;wrapped.__original=fn;root.renderAll=wrapped;return true;
   }
   root.addEventListener?.("chappy:prediction-runtime-ready",wrap);
   ensureStyle();wrap();
   let tries=0;const timer=root.setInterval(()=>{wrap();tries++;if(tries>=160)root.clearInterval(timer);},100);
-  root.document.addEventListener?.("visibilitychange",()=>{if(root.document.visibilityState==="visible"&&latestPrediction)render(latestPrediction);});
+  root.document.addEventListener?.("visibilitychange",()=>{if(root.document.visibilityState==="visible"&&latestPrediction&&latestRoot&&latestRoot===root.document.getElementById("resultArea")?.querySelector?.(".v3-root"))render(latestPrediction);});
   root.ChappyPracticalVisiblePanel=Object.freeze({render,selectedRows});
 })(typeof window!=="undefined"?window:null);

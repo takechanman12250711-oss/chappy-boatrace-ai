@@ -3,7 +3,7 @@
 
   if(!root||!root.document)return;
   const HOOK="__chappyTicketOddsVisibilityWrapped";
-  let lastPrediction=null;
+  let lastPrediction=null,renderGeneration=0,latestRoot=null;
 
   function text(value){return String(value??"").trim();}
   function arrayify(value){return !value?[]:Array.isArray(value)?value:[value];}
@@ -165,8 +165,12 @@
     function wrapped(prediction){
       const value=fn.apply(this,arguments);
       lastPrediction=prediction;
-      root.setTimeout(()=>enhance(prediction),40);
-      root.setTimeout(()=>enhance(prediction),450);
+      const generation=++renderGeneration;
+      const renderedRoot=root.document.getElementById("resultArea")?.querySelector?.(".v3-root");
+      latestRoot=renderedRoot;
+      const current=()=>generation===renderGeneration&&renderedRoot&&renderedRoot===root.document.getElementById("resultArea")?.querySelector?.(".v3-root");
+      root.setTimeout(()=>{if(current())enhance(prediction);},40);
+      root.setTimeout(()=>{if(current())enhance(prediction);},450);
       return value;
     }
     wrapped[HOOK]=true;
@@ -189,7 +193,7 @@
       wrapCurrent();
     });
     root.document.addEventListener("visibilitychange",()=>{
-      if(root.document.visibilityState==="visible"){wrapCurrent();if(lastPrediction)enhance(lastPrediction);}
+      if(root.document.visibilityState==="visible"){wrapCurrent();if(lastPrediction&&latestRoot&&latestRoot===root.document.getElementById("resultArea")?.querySelector?.(".v3-root"))enhance(lastPrediction);}
     });
   }
   root.ChappyTicketOddsVisibility=Object.freeze({enhance,buildOddsMap,manshuSources,expandNotation,ticketFromNode});

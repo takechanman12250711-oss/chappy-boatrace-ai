@@ -20,7 +20,7 @@
 
   function assetVersion(clean){
     if (clean === "js/script.js") {
-      return `${MISSING_ODDS_VERSION}&note=${NOTE_HANDOFF_VERSION}`;
+      return `${MISSING_ODDS_VERSION}&note=${NOTE_HANDOFF_VERSION}&bright=20261007-1`;
     }
     if (["js/saved-note-draft.js", "js/note-generator.js"].includes(clean)) {
       return NOTE_HANDOFF_VERSION;

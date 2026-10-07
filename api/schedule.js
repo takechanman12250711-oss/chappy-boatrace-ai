@@ -45,6 +45,34 @@ function createDeadlineAt(date, time) {
   return `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}T${time}:00+09:00`;
 }
 
+function parseEventSession(block) {
+  // The official index has a dedicated timeband cell immediately before the
+  // event-title cell. Read that daily value, rather than the venue's usual hours.
+  const cells = [...String(block || "").matchAll(/<td\b([^>]*)>([\s\S]*?)<\/td>/gi)];
+  const eventIndex = cells.findIndex(cell => /href=["'][^"']*\/race\/raceindex\?/i.test(cell[2]));
+  if (eventIndex < 1) return "";
+  const cell = cells[eventIndex - 1];
+  // Official columns: venue 1, progress/vote 2–4, grade 5, timeband 6,
+  // event title 7. Closed rows merge columns 2–4 with colspan="3".
+  const columnSpans = cells.map(value => Number(value[1].match(/\bcolspan\s*=\s*["'](\d+)["']/i)?.[1] || 1));
+  const precedingColumns = columnSpans.slice(0, eventIndex - 1).reduce((sum, span) => sum + span, 0);
+  if (precedingColumns !== 5 || columnSpans[eventIndex - 1] !== 1 ||
+      !/\browspan\s*=\s*["']2["']/i.test(cell[1]) || cell[2].trim() !== "") return "";
+  const classMatch = cell[1].match(/\bclass\s*=\s*["']([^"']*)["']/i);
+  const classes = String(classMatch?.[1] || "").trim().split(/\s+/).filter(Boolean);
+  const sessions = {
+    "is-morning": "morning",
+    "is-summer": "summer",
+    "is-nighter": "night",
+    "is-midnight": "midnight"
+  };
+  const matches = classes.filter(name => Object.hasOwn(sessions, name));
+  if (classes.length === 1 && matches.length === 1) return sessions[matches[0]];
+  // An empty official timeband cell denotes daytime. Missing/changed markup
+  // and unknown classes remain unknown; do not infer daytime from venue name.
+  return classes.length === 0 && cell[2].trim() === "" ? "day" : "";
+}
+
 function parseVenues(indexHtml, date, nowMs) {
   const venues = [];
   const seen = new Set();
@@ -80,6 +108,7 @@ function parseVenues(indexHtml, date, nowMs) {
       place: PLACE_NAMES[jcd] || jcd,
       eventTitle,
       eventGrade,
+      eventSession: parseEventSession(block),
       currentRaceNo: raceLink.raceNo,
       nextDeadline,
       deadlineAt,
@@ -280,6 +309,7 @@ async function handler(req, res) {
 
 module.exports = handler;
 module.exports.parseVenues = parseVenues;
+module.exports.parseEventSession = parseEventSession;
 module.exports.parseDeadlineTimes = parseDeadlineTimes;
 module.exports.createDeadlineAt = createDeadlineAt;
 module.exports.resolveMissingDeadlines = resolveMissingDeadlines;
