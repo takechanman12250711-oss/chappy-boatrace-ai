@@ -5,6 +5,7 @@ const path = require("node:path");
 const localWater = require("./build-local-water-result-breakdown");
 const bottleneck = require("./build-local-water-outer-head-bottleneck-audit");
 const selection = require("./build-local-water-priority-selection-consistency-audit");
+const { loadDailyDocuments, mapPredictionRows } = require("./local-water-daily-input.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
 const INPUT = path.join(
@@ -65,30 +66,9 @@ function readJson(file, fallback = null) {
   }
 }
 
-function loadDaily(dir) {
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir)
-    .filter((name) => /^\d{8}\.json$/.test(name))
-    .sort()
-    .map((name) => JSON.parse(fs.readFileSync(path.join(dir, name), "utf8")));
-}
-
-function predictionRows(docs) {
-  const map = new Map();
-  for (const doc of arr(docs)) {
-    for (const source of ["predictions", "verificationPredictions"]) {
-      for (const row of arr(doc?.[source])) {
-        const key = raceKey(row);
-        if (source === "predictions" || !map.has(key)) map.set(key, row);
-      }
-    }
-  }
-  return [...map.values()];
-}
-
 function resultMap(docs) {
   const map = new Map();
-  for (const doc of arr(docs)) {
+  for (const doc of docs || []) {
     for (const race of arr(doc?.races)) {
       if (race?.resultAvailable === true && race?.status === "finished") {
         map.set(raceKey(race), race);
@@ -379,15 +359,15 @@ function build(predictionDocs = [], resultDocs = [], sourceReport = {}) {
     source.version === EXPECTED_SOURCE_VERSION &&
     source.nextStep === EXPECTED_SOURCE_NEXT_STEP;
   const results = resultMap(resultDocs);
-  const settled = predictionRows(predictionDocs)
-    .map((record) => ({
-      record,
-      evidence: localWater.evidence(record),
-      result: results.get(raceKey(record)) || null
-    }))
-    .filter((row) => row.evidence.formal && row.result && localWater.actualHead(row.result));
-
-  const replays = settled.map((row) => replayRace(row.record, row.result));
+  // Replay from the complete saved record while its daily document is loaded.
+  // Keep only the replay result; null still occupies its global dedup key so an
+  // ineligible primary cannot be replaced by a verification row of that race.
+  const replays = mapPredictionRows(predictionDocs || [], (record) => {
+    const evidence = localWater.evidence(record);
+    const result = results.get(raceKey(record)) || null;
+    if (!evidence.formal || !result || !localWater.actualHead(result)) return null;
+    return replayRace(record, result);
+  }).filter(Boolean);
   const currentRows = replays.filter((row) => row.currentHead);
   const comparableRows = currentRows.filter((row) => row.comparable);
   const switchedRows = currentRows.filter((row) => row.switched);
@@ -430,7 +410,7 @@ function build(predictionDocs = [], resultDocs = [], sourceReport = {}) {
   const shadowAccuracy = rate(shadowCorrectCount, currentRows.length);
 
   const metrics = {
-    settledFormalEvidenceRaceCount: settled.length,
+    settledFormalEvidenceRaceCount: replays.length,
     currentHeadAvailableCount: currentRows.length,
     rankingArrayAvailableCount: currentRows.filter((row) => row.rankingArrayAvailable).length,
     currentCandidateScoreAvailableCount: currentRows.filter((row) => row.currentScore !== null).length,
@@ -450,9 +430,9 @@ function build(predictionDocs = [], resultDocs = [], sourceReport = {}) {
     lostOuterWinnerCount: currentRows.filter((row) => row.lostOuterWinner).length,
     outerPromotionSwitchCount: currentRows.filter((row) => row.shadowOuterPromotion).length,
     falseOuterPromotionCount,
-    currentHeadCoverageRate: rate(currentRows.length, settled.length),
-    rankingArrayCoverageRate: rate(currentRows.filter((row) => row.rankingArrayAvailable).length, settled.length),
-    comparableReplayCoverageRate: rate(comparableRows.length, settled.length),
+    currentHeadCoverageRate: rate(currentRows.length, replays.length),
+    rankingArrayCoverageRate: rate(currentRows.filter((row) => row.rankingArrayAvailable).length, replays.length),
+    comparableReplayCoverageRate: rate(comparableRows.length, replays.length),
     switchRate: rate(switchedRows.length, currentRows.length),
     currentAccuracy,
     shadowAccuracy,
@@ -516,8 +496,8 @@ function build(predictionDocs = [], resultDocs = [], sourceReport = {}) {
 
 function main() {
   const report = build(
-    loadDaily(path.join(ROOT, "data", "predictions")),
-    loadDaily(path.join(ROOT, "data", "results")),
+    loadDailyDocuments(path.join(ROOT, "data", "predictions")),
+    loadDailyDocuments(path.join(ROOT, "data", "results")),
     readJson(INPUT, {})
   );
   fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
