@@ -379,3 +379,14 @@ test('public recap shares race deduplication and links to center metrics in the 
  const r=await run(f);assert.equal(r.recap.status,'accepted_pending');const text=texts.find(t=>t.includes('結果まとめ'));
  assert(text.includes('1記事・1レース'));assert(text.includes('🎯 的中 1R'));assert(!text.includes('❌ 不的中'));assert(!text.includes('0的中'));assert(text.includes('種類別・中心のみの従来成績も無料一覧に掲載。'));assert(text.includes(marketing.index.url));assert(text.includes('参考は別集計'));
 });
+
+test('new display text and image rendering cannot revive prior race or article claims',async()=>{
+ for(const type of ['race','article']) {
+  const f=publicFixture();f.config.resultReports.images=true;
+  const publicationKey=type==='race'?f.state.publishedRaceResults[0].publicationKey:f.state.rows[0].publicationKey;
+  await f.claims.reserve({date:'20260929',publicationKey,evidenceId:'old-evidence',textSha256:'old-text-hash'});
+  f.renderCard=async()=>{throw Error('old_claim_must_skip_new_renderer');};
+  f.publishCard=async()=>{throw Error('old_claim_must_skip_image_upload');};
+  assert.equal((await run(f)).started,0);assert(!f.events.includes('create'));assert(!f.events.includes('channel'));
+ }
+});
