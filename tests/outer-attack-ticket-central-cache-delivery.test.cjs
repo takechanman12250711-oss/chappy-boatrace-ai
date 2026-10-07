@@ -31,7 +31,7 @@ assert.equal(
 assert.equal(
   appRuntime.includes("const STATS_VERSION = root.CHAPPY_STATS_BUILD || ACTIVE_VERSION;") &&
     appRuntime.includes('const ROOT_FIX_VERSION = "20260908-clarity-fix2";') &&
-    appRuntime.includes('return clean === "js/stats-runtime-loader.js" ? `${STATS_VERSION}&candidate24=20260915&classification=20260915-1&reviewprogress=20260915-2&outerresearch=20260923-1` : ACTIVE_VERSION;') &&
+    appRuntime.includes('return clean === "js/stats-runtime-loader.js" ? `${STATS_VERSION}&candidate24=20260915&classification=20260915-1&reviewprogress=20260915-2&outerresearch=20260923-1&bright=20261007-1` : ACTIVE_VERSION;') &&
     appRuntime.includes('"js/outer-attack-ticket-shadow.js"') &&
     appRuntime.includes('"js/outer-attack-ticket-settlement.js"') &&
     appRuntime.includes('"js/script.js"') &&

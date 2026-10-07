@@ -117,7 +117,7 @@
         <div class="skip-ai-risk">${data.purchasePolicy ? "承認済み購入方針" : `参考リスク ${esc(Math.round(data.riskScore))}点`}</div>
       </div>
       <ul class="skip-ai-reasons">${reasons.slice(0,3).map(reason => `<li>${esc(reason)}</li>`).join("")}</ul>
-      <div class="skip-ai-note">${data.purchasePolicy ? "購入推奨0点・0円。予想券は参考として保持します。" : "表示専用。印・買い目・実戦厳選は変更しません。"}</div>
+      <div class="skip-ai-note">${data.purchasePolicy ? "購入推奨0点・0円。予想券は参考として保持します。" : "表示専用。印・買い目・厳選は変更しません。"}</div>
     `;
     resultArea.prepend(panel);
   }

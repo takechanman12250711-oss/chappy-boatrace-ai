@@ -5,6 +5,9 @@ on:
     paths:
       - "index.html"
       - "js/final-mobile-ui.js"
+      - "js/bright-mobile-layout.js"
+      - "css/bright-mobile-layout.css"
+      - "scripts/test-bright-mobile-layout.cjs"
       - "css/final-mobile-ui.css"
       - "css/final-readability-fix.css"
       - "scripts/test-player-readability.cjs"
@@ -26,6 +29,9 @@ on:
     paths:
       - "index.html"
       - "js/final-mobile-ui.js"
+      - "js/bright-mobile-layout.js"
+      - "css/bright-mobile-layout.css"
+      - "scripts/test-bright-mobile-layout.cjs"
       - "css/final-mobile-ui.css"
       - "css/final-readability-fix.css"
       - "scripts/test-player-readability.cjs"
@@ -67,6 +73,10 @@ jobs:
           node --check scripts/test-final-mobile-structure-contract.js
           node --check scripts/test-ticket-specific-reasons.js
           node --check scripts/test-final-missing-odds-refresh.js
+      - name: Check bright layout DOM with synthetic fixtures
+        run: |
+          npm install --prefix "$RUNNER_TEMP/chappy-dom-tests" --no-audit --no-fund --ignore-scripts linkedom@0.18.12
+          NODE_PATH="$RUNNER_TEMP/chappy-dom-tests/node_modules" node scripts/test-bright-mobile-layout.cjs
       - name: Check exact ticket compression and deduplication
         run: node scripts/test-ticket-compact-disclosure.js
       - name: Check player names and brighter card contrast

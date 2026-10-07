@@ -59,9 +59,9 @@ const document = {
 vm.runInNewContext(race, { window, document, console }, { filename: "js/script.js" });
 
 const controls = window.ChappyRaceControls;
-assert.deepEqual({ ...controls.venueSession("三国") }, { key: "morning", label: "モーニング" });
-assert.deepEqual({ ...controls.venueSession("大村") }, { key: "night", label: "ナイター" });
-assert.deepEqual({ ...controls.venueSession("戸田") }, { key: "day", label: "デイ" });
+assert.deepEqual({ ...controls.venueSession("三国") }, { key: "morning", label: "通常モーニング", timeband: "morning", source: "usual" });
+assert.deepEqual({ ...controls.venueSession("大村") }, { key: "night", label: "通常ナイター", timeband: "night", source: "usual" });
+assert.deepEqual({ ...controls.venueSession("戸田") }, { key: "day", label: "通常デイ", timeband: "day", source: "usual" });
 
 const rows = controls.officialRaceRows({
   selectedVenue: { races: [{ raceNo: 3, status: "closed", deadline: "10:10" }] }

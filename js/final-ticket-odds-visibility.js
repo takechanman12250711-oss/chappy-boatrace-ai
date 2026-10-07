@@ -3,7 +3,7 @@
 
   if(!root||!root.document)return;
   const HOOK="__chappyTicketOddsVisibilityWrapped";
-  let lastPrediction=null;
+  let lastPrediction=null,renderGeneration=0,latestRoot=null;
 
   function text(value){return String(value??"").trim();}
   function arrayify(value){return !value?[]:Array.isArray(value)?value:[value];}
@@ -99,7 +99,8 @@
     if (compact?.compactTickets) {
       const already = new Set(compact.buildPhotoStyleLines(prediction).flatMap(row=>row.expandedTickets));
       const tickets = [...new Set(sources.flatMap(source=>expandNotation(source.notation)))].filter(ticket=>!already.has(ticket) && Number(oddsMap.get(ticket)) >= 100);
-      body.innerHTML = `<div class="chappy-scenario-manshu-board v3-light-manshu-ticket-board">${compact.compactTickets(tickets).map(row=>compact.compactLine(row,oddsMap)).join("") || '<div class="chappy-true-manshu-empty">取得オッズで100倍以上の候補はありません</div>'}</div>`;
+      const html = `<div class="chappy-scenario-manshu-board v3-light-manshu-ticket-board">${compact.compactTickets(tickets).map(row=>compact.compactLine(row,oddsMap)).join("") || '<div class="chappy-true-manshu-empty">取得オッズで100倍以上の候補はありません</div>'}</div>`;
+      if(body.__chappyManshuHtml!==html){body.innerHTML=html;body.__chappyManshuHtml=html;}
     }
   }
 
@@ -165,8 +166,12 @@
     function wrapped(prediction){
       const value=fn.apply(this,arguments);
       lastPrediction=prediction;
-      root.setTimeout(()=>enhance(prediction),40);
-      root.setTimeout(()=>enhance(prediction),450);
+      const generation=++renderGeneration;
+      const renderedRoot=root.document.getElementById("resultArea")?.querySelector?.(".v3-root");
+      latestRoot=renderedRoot;
+      const current=()=>generation===renderGeneration&&renderedRoot&&renderedRoot===root.document.getElementById("resultArea")?.querySelector?.(".v3-root");
+      root.setTimeout(()=>{if(current())enhance(prediction);},40);
+      root.setTimeout(()=>{if(current())enhance(prediction);},450);
       return value;
     }
     wrapped[HOOK]=true;
@@ -189,7 +194,7 @@
       wrapCurrent();
     });
     root.document.addEventListener("visibilitychange",()=>{
-      if(root.document.visibilityState==="visible"){wrapCurrent();if(lastPrediction)enhance(lastPrediction);}
+      if(root.document.visibilityState==="visible"){wrapCurrent();if(lastPrediction&&latestRoot&&latestRoot===root.document.getElementById("resultArea")?.querySelector?.(".v3-root"))enhance(lastPrediction);}
     });
   }
   root.ChappyTicketOddsVisibility=Object.freeze({enhance,buildOddsMap,manshuSources,expandNotation,ticketFromNode});

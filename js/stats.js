@@ -1802,7 +1802,7 @@
           <div class="v3-empty">
             ${improvementAnalysis.sampleReady
               ? "現在の成績に、変更を検討するほど偏った弱点はありません。"
-              : `サンプル蓄積中です。結果確定${improvementAnalysis.settledCount}R／実戦厳選${improvementAnalysis.practicalCount}R。最低${improvementAnalysis.minimumSample}Rまでは改善案を確定しません。`}
+              : `サンプル蓄積中です。結果確定${improvementAnalysis.settledCount}R／厳選${improvementAnalysis.practicalCount}R。最低${improvementAnalysis.minimumSample}Rまでは改善案を確定しません。`}
           </div>
         `;
   const improvementStatus =
@@ -1864,7 +1864,7 @@
         <h4>${group.legacy ? "旧記録" : "予想方式"} ${E(String(group.method).split(":")[1]?.slice(0,8) || "未確認")}${group.active ? "（現行）" : ""}</h4>
         <p>保存${group.captured}R ／ 照合済み${group.settled}R ／ 結果待ち${group.pending}R</p>
         <p>${group.completedWindows}区間完了・次の100R区間 ${group.currentWindowCount}/100R</p>
-        <p>実戦厳選：的中率 ${reviewPercent(group.practical.hitRate)} ／ 回収率 ${reviewPercent(group.practical.recoveryRate)}</p>
+        <p>厳選：的中率 ${reviewPercent(group.practical.hitRate)} ／ 回収率 ${reviewPercent(group.practical.recoveryRate)}</p>
         <p>最大24点候補：的中率 ${reviewPercent(group.candidate24.hitRate)} ／ 回収率 ${reviewPercent(group.candidate24.recoveryRate)}</p>
         ${group.excludedRefundOrVoid || group.unknownPayout ? `<p>返還・不成立 ${group.excludedRefundOrVoid}R ／ 払戻未確認 ${group.unknownPayout}R</p>` : ""}
         <p class="result-panel-note">対象期間：${E(group.from || "未確認")}〜${E(group.to || "未確認")}</p>
@@ -2604,7 +2604,7 @@
             <div class="result-group-body">
               <dl class="result-data-facts">
                 ${renderFact("本命1着", formatCountRate(row.honmeiHits, row.count))}
-                ${renderFact("実戦厳選", formatCountRate(row.practicalHits, row.practicalCount))}
+                ${renderFact("厳選", formatCountRate(row.practicalHits, row.practicalCount))}
                 ${renderFact("展開一致", formatCountRate(row.scenarioHits, row.scenarioComparable))}
               </dl>
             </div>
@@ -2639,7 +2639,7 @@
               </header>
               <dl class="result-data-facts">
                 ${renderFact("展開一致", formatCountRate(row.scenarioHits, row.scenarioComparable))}
-                ${renderFact("実戦厳選", formatCountRate(row.practicalHits, row.practicalCount))}
+                ${renderFact("厳選", formatCountRate(row.practicalHits, row.practicalCount))}
                 ${renderFact("本命1着", formatCountRate(row.honmeiHits, row.count))}
               </dl>
             </article>
@@ -2816,7 +2816,7 @@
                       ["押さえ", renderRoleTickets(item, "押さえ")],
                       ["流し", renderRoleTickets(item, "流し")],
                       ["万舟", renderRoleTickets(item, "穴・万舟候補")],
-                      ["実戦厳選", item.practicalTickets.length ? item.practicalTickets.join("、") : "見送り"]
+                      ["厳選", item.practicalTickets.length ? item.practicalTickets.join("、") : "見送り"]
                     ].map(([label, value]) => `
                       <details class="result-ticket-detail">
                         <summary><span>${label}</span><small>開く</small></summary>
@@ -3123,7 +3123,7 @@
           <span class="result-accordion-icon" aria-hidden="true">🏟️</span>
           <span class="result-accordion-title">
             <span class="result-accordion-name">場別成績</span>
-            <small>場ごとの本命・実戦厳選・展開一致</small>
+            <small>場ごとの本命・厳選・展開一致</small>
           </span>
           <span class="result-accordion-meta">${venueGroups.length}場</span>
         </summary>

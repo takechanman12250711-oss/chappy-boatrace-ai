@@ -52,7 +52,7 @@
       script.dataset.chappyStatsModule = clean;
       script.addEventListener("load", finish(() => { script.dataset.chappyLoaded = "true"; resolve(); }), { once: true });
       script.addEventListener("error", finish(() => { script.dataset.chappyLoadFailed = "true"; script.remove(); reject(new Error(`結果分析モジュールを読み込めません: ${clean}`)); }), { once: true });
-      if (!existing) { script.src = `${clean}?v=${VERSION}`; document.head.appendChild(script); }
+      if (!existing) { script.src = `${clean}?v=${VERSION}&bright=20261007-1`; document.head.appendChild(script); }
     });
   }
   function preloadScripts() {
@@ -64,7 +64,7 @@
       const link = document.createElement("link");
       link.rel = "preload";
       link.as = "script";
-      link.href = `${clean}?v=${VERSION}`;
+      link.href = `${clean}?v=${VERSION}&bright=20261007-1`;
       document.head.appendChild(link);
     });
   }

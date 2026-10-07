@@ -20,7 +20,7 @@
 
   function assetVersion(clean){
     if (clean === "js/script.js") {
-      return `${MISSING_ODDS_VERSION}&note=${NOTE_HANDOFF_VERSION}`;
+      return `${MISSING_ODDS_VERSION}&note=${NOTE_HANDOFF_VERSION}&bright=20261007-1`;
     }
     if (["js/saved-note-draft.js", "js/note-generator.js"].includes(clean)) {
       return NOTE_HANDOFF_VERSION;
@@ -28,7 +28,7 @@
     if (["js/outer-attack-ticket-shadow.js", "js/outer-attack-ticket-settlement.js"].includes(clean)) {
       return ROOT_FIX_VERSION;
     }
-    return clean === "js/stats-runtime-loader.js" ? `${STATS_VERSION}&candidate24=20260915&classification=20260915-1&reviewprogress=20260915-2&outerresearch=20260923-1` : ACTIVE_VERSION;
+    return clean === "js/stats-runtime-loader.js" ? `${STATS_VERSION}&candidate24=20260915&classification=20260915-1&reviewprogress=20260915-2&outerresearch=20260923-1&bright=20261007-1` : ACTIVE_VERSION;
   }
 
   function runtimeError(code,message){

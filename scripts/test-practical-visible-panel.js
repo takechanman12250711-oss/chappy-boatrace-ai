@@ -35,7 +35,7 @@ const api=window.ChappyPracticalVisiblePanel;
 assert(api,"practical visible panel API missing");
 inserted="";
 api.render({});
-assert.match(inserted,/実戦厳選/);
+assert.match(inserted,/厳選/);
 assert.match(inserted,/2点/);
 assert.match(inserted,/1-2-3/);
 assert.match(inserted,/4-1-2/);
@@ -49,7 +49,7 @@ const originalQuery=area.querySelector;
 area.querySelector=function(){return null;};
 inserted="";
 api.render({});
-assert.match(inserted,/実戦厳選/,"panel must fall back to resultArea when buy summary is absent");
+assert.match(inserted,/厳選/,"panel must fall back to resultArea when buy summary is absent");
 area.querySelector=originalQuery;
 
 window.ChappyFinalDisplayOwner.practicalRows=()=>[];

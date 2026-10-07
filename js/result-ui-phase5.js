@@ -174,7 +174,7 @@
       evidence.textContent = `集計：${asOf} ／ 結果待ち ${count(report.pending)} ／ 返還・不成立除外 ${count(report.excludedRefundOrVoid)} ／ 払戻未確認 ${count(report.unknownPayout)}`;
       card.appendChild(evidence);
       const percent = v => Number.isFinite(v) ? v.toFixed(1) + "%" : "集計待ち";
-      for (const [key, label] of [["candidate24", "最大24点候補"], ["practical", "同じレースの実戦厳選"]]) {
+      for (const [key, label] of [["candidate24", "最大24点候補"], ["practical", "同じレースの厳選"]]) {
         const m = report[key]; if (!m) continue;
         const line = document.createElement("p");
         line.textContent = `${label}：的中率 ${m.races > 0 ? percent(m.hitRate) : "—"} ／ 回収率 ${m.races > 0 ? percent(m.recoveryRate) : "—"}（${count(m.races)}）`;

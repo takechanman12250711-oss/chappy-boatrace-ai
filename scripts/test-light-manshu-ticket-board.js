@@ -837,7 +837,7 @@ assert.match(boardHtml, /取れたらいいな舟券/);
 assert.match(boardHtml, /3筋/);
 assert.match(
   boardHtml,
-  /通常枠7点（成立展開追加時は全体10点）・実戦厳選・購入保存には自動追加しません/
+  /通常枠7点（成立展開追加時は全体10点）・厳選・購入保存には自動追加しません/
 );
 assert.doesNotMatch(boardHtml, /別枠の参考表示|通常予想とは別枠/);
 assert.match(boardHtml, /1点あたり3枚/);
@@ -942,7 +942,7 @@ for (const status of ["skipped", "unavailable", "error"]) {
   );
   assert.match(
     statusHtml,
-    /このうち1点は実戦厳選にも表示されています。重ねて追加する必要はありません/,
+    /このうち1点は厳選にも表示されています。重ねて追加する必要はありません/,
     "実戦厳選と重なる参考券を二重購入しないよう明示する"
   );
 }

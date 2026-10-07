@@ -48,9 +48,9 @@
   const SCRIPT_VERSIONS = Object.freeze({
     "js/note-generator.js": "20260923-wall-purchase1",
     "js/practical-selection.js": "20261003-escape-partner-v13",
-    "js/skip-ai-display.js": "20260923-wall-purchase1",
+    "js/skip-ai-display.js": "20260923-wall-purchase1&bright=20261007-1",
     "js/ai-core.js": "20261006-adjacent-start-rank1",
-    "js/render.js": "20260908-comment-dedup1",
+    "js/render.js": "20260908-comment-dedup1&bright=20261007-1",
     "js/manshu-display-reliability.js": "20260909-formation-preserve1"
   });
   const optionalScripts = ["js/prediction-calibration.js"];
