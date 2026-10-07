@@ -186,12 +186,20 @@ test('model proof is hash-only, source-bound and excluded from published result 
   }
 });
 
-test('v3 free preview never includes tickets or monetary amounts from saved explanations', () => {
+test('v3 preserves existing free price disclosures while its model preview adds no amount or tickets', () => {
   const b = normalFixture(); b.article.rangeSummary = '1-2-3を想定します。内側の艇を見ます。';
   assert.deepEqual(ticketsIn(readableArticle(b.article, b).freeText), []);
-  for (const amount of ['100円', '１，０００円', '一万円', '$100', '100 USD']) {
-    const changed = normalFixture(); changed.article.rangeSummary = `目安は${amount}です。`;
-    assert.throws(() => readableArticle(changed.article, changed), /free_money_leak/);
+  for (const value of [normalFixture(), independentFixture()]) {
+    value.article.freeText += '\n\n作成時点の取得済み情報です。本記事は200円です。';
+    value.article.rangeSummary = '掲載価格200円を確認してください。';
+    if (value.monitor) value.monitor.article = clone(value.article);
+    const old = readableArticle(value.article, value, { presentationVersion: 'readable-v2' });
+    const current = readableArticle(value.article, value);
+    assert(current.freeText.startsWith(old.freeText + '\n\n'));
+    assert(current.freeText.includes('本記事は200円です。'));
+    const added = current.freeText.slice(old.freeText.length);
+    assert(!/円|[¥￥$＄€]|JPY|USD|EUR/.test(added));
+    assert.deepEqual(ticketsIn(added), []);
   }
 });
 

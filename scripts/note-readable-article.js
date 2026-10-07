@@ -192,9 +192,8 @@ function readableArticle(article, bundle, { presentationVersion = 'readable-v3' 
   if (parsed.basePaidText !== base.paidText) throw new Error('readable_rendered_tickets_mismatch');
   const freeText = base.freeText + '\n\n🔄 コロがし検証対象は、有料部分の末尾に掲載します。\n保存済みの実戦厳選を示す欄で、上の公開予想と重複します。追加購入を勧めるものではありません。';
   if (mentions(freeText).length) throw new Error('readable_free_ticket_leak');
-  if (/(?:[0-9０-９][0-9０-９,，.．]*(?:万|億|兆)?\s*(?:円|ドル|ユーロ|JPY|USD|EUR)|[¥￥$＄€]\s*[0-9０-９]|[一二三四五六七八九十百千万億兆]+\s*円)/i.test(freeText)) {
-    throw new Error('readable_free_money_leak');
-  }
+  // Existing free disclosures (including article price) remain unchanged.
+  // The fixed model preview adds no new amount or funding recommendation.
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].join('\n\n');
   return { ...base, presentationVersion, freeText, paidText, fullText };
 }
