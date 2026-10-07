@@ -2,12 +2,15 @@
 const fs=require('node:fs');
 const {createHash,randomUUID}=require('node:crypto');
 const {client,REPO}=require('./note-marketing-store');
-const {loadConfig,jstDate,hash,publishedIndexBody,validUrl}=require('./note-marketing-content');
+const {loadConfig,jstDate,hash,publishedIndexBody,validUrl,recentDates}=require('./note-marketing-content');
 const {journal,pairedItems}=require('./send-note-social.cjs');
+const {distributionDrafts}=require('./note-marketing-reports');
+const {hitText,publicRecapCopy,VERSION:PUBLIC_VERSION}=require('./note-public-results');
+const allPublished=config=>config.resultReports?.scope==='published-main-sections-v1';
 const {announcementCopy,recapCopy,weight,timeOf}=require('./note-marketing-social');
 const digest=s=>createHash('sha256').update(s).digest('hex');
 const literal=JSON.stringify;
-const fields='id text channelId status externalLink';
+const fields='id text channelId status externalLink assets { id mimeType source type ... on ImageAsset { image { width height altText } } }';
 function blockers(c,env,now) {
   if(c.mode!=='buffer-free-line-menu'||c.xUsername!=='chappy_boat_ai'||c.xApiCostApproved!==false) throw Error('free_config_invalid');
   const reasons=[];
@@ -43,6 +46,14 @@ function ledger(store) {
     await put('note-buffer-api/'+jstDate(now)+'/'+now+'-'+randomUUID(),{at:new Date(now).toISOString()});
   }};
 }
+function validateAssets(assets) {
+  if(!Array.isArray(assets)||assets.length>1||assets.some(a=>!a?.image||
+    !/^https:\/\/raw\.githubusercontent\.com\/takechanman12250711-oss\/chappy-boatrace-ai\/[a-f0-9]{40}\/result-card\.png$/.test(a.image.url||'')||(a.image.metadata!==undefined&&(typeof a.image.metadata.altText!=='string'||a.image.metadata.altText.length>1000))))throw Error('buffer_asset_invalid');
+}
+function assetInput(assets) {
+  validateAssets(assets);
+  return '['+assets.map(a=>'{image:{url:'+literal(a.image.url)+(a.image.metadata?',metadata:{altText:'+literal(a.image.metadata.altText)+'}':'')+'}}').join(',')+']';
+}
 function transport(env,c,log,request=fetch,clock=Date.now) {
   async function query(query) {
     await log.budget(clock());
@@ -59,17 +70,26 @@ function transport(env,c,log,request=fetch,clock=Date.now) {
     const x=matches[0];
     if(x.isDisconnected||x.isLocked||x.isQueuePaused||!/^https:\/\/(?:www\.)?(?:x|twitter)\.com\/chappy_boat_ai\/?$/i.test(x.externalLink||''))throw Error('buffer_channel_unavailable');
     return x.id;
-  },async create(text,channelId) {
-    const d=await query('mutation{createPost(input:{text:'+literal(text)+',channelId:'+literal(channelId)+',schedulingType:automatic,mode:shareNow,assets:[],needsApproval:false,saveToDraft:false}){... on PostActionSuccess{post{'+fields+'}} ... on MutationError{message}}}');
+  },async create(text,channelId,assets=[]) {
+    validateAssets(assets);
+    const d=await query('mutation{createPost(input:{text:'+literal(text)+',channelId:'+literal(channelId)+',schedulingType:automatic,mode:shareNow,assets:'+assetInput(assets)+',needsApproval:false,saveToDraft:false}){... on PostActionSuccess{post{'+fields+'}} ... on MutationError{message}}}');
     if(!d.createPost?.post?.id)throw Error('buffer_post_not_accepted');return d.createPost.post;
   },async post(id) {return (await query('{post(input:{id:'+literal(id)+'}){'+fields+'}}')).post;},
   async metrics(id) {return (await query('{post(input:{id:'+literal(id)+'}){'+fields+' metrics{type name value unit} metricsUpdatedAt}}')).post;}};
 }
-function observed(post,receipt) {
+function observed(post,receipt,now=Date.now()) {
   if(!post||post.id!==receipt.postId||post.channelId!==receipt.channelId||digest(post.text||'')!==receipt.textSha256) return {status:'review_required',reason:'post_identity_or_text_mismatch'};
   if(post.status==='sent') {
     if(!/^https:\/\/(?:www\.)?(?:x|twitter)\.com\/chappy_boat_ai\/status\/\d+(?:\?.*)?$/i.test(post.externalLink||''))return {status:'review_required',reason:'published_url_missing_or_mismatched'};
-    return {status:'buffer_confirmed_sent',url:post.externalLink,publicPageIndependentlyVerified:false};
+    if(receipt.imageUrl) {
+      const assets=post.assets;
+      if(!Array.isArray(assets)||assets.length!==1||assets[0].source!==receipt.imageUrl||
+         assets[0].mimeType!=='image/png'||assets[0].type!=='image'||assets[0].image?.width!==1200||assets[0].image?.height!==675) {
+        return {status:'review_required',reason:'published_image_missing_or_mismatched',textSentVerified:true,
+          url:post.externalLink,sentObservedAt:new Date(now).toISOString(),publicPageIndependentlyVerified:false};
+      }
+    }
+    return {status:'buffer_confirmed_sent',...(receipt.imageUrl?{imageSourceVerified:true}:{}),url:post.externalLink,sentObservedAt:new Date(now).toISOString(),publicPageIndependentlyVerified:false};
   }
   if(['error','failed'].includes(post.status))return {status:'review_required',reason:'buffer_publish_failed'};
   return {status:'accepted_pending',bufferStatus:post.status};
@@ -87,7 +107,7 @@ async function reconcile(log,delivery,now) {
     if(now-last<1800000)continue;
     await log.put('note-buffer-poll/'+suffix+'/'+now,{at:now});
     let result;
-    try{result=observed(await delivery.post(receipt.postId),receipt);}catch{result={status:'accepted_pending',reason:'verification_unavailable'};}
+    try{result=observed(await delivery.post(receipt.postId),receipt,now);}catch{result={status:'accepted_pending',reason:'verification_unavailable'};}
     if(result.status!=='accepted_pending')await log.put('note-buffer-final/'+suffix,{...receipt,...result});
     results.push({postId:receipt.postId,...result});
   }
@@ -147,38 +167,88 @@ async function announce(state,config,marketing,log,delivery,clock) {
     await log.put('note-buffer-announcement-review/'+suffix,{...receipt,status:'review_required',reason:'create_failed_or_unknown_do_not_resend'});
     return {status:'review_required',articles:rows.length};
   }
-  const accepted={...receipt,postId:post.id};
+  const accepted={...receipt,postId:post.id,bufferAcceptedAt:new Date(clock()).toISOString()};
   await log.put('note-buffer-accepted/'+suffix,accepted);
-  const result=observed(post,accepted);
+  const result=observed(post,accepted,clock());
   if(result.status!=='accepted_pending')await log.put('note-buffer-final/'+suffix,{...accepted,...result});
   return {...result,postId:post.id,articles:rows.length};
 }
 
-async function recap(state,config,marketing,log,delivery,clock) {
-  if(config.recap?.enabled!==true)return {status:'disabled'};
-  const now=clock(),date=jstDate(now),activation=Date.parse(config.recap.activatedAt);
-  if(!Number.isFinite(activation)||now<activation)throw Error('buffer_recap_activation_invalid');
-  if(timeOf(now)<'22:30')return {status:'before_recap_window'};
+async function recapDay(state,config,marketing,log,delivery,clock,date,{late=false,supplement=false}={}) {
+  const now=clock();
+  if(state.date!==jstDate(now)||state.verifiedDate!==jstDate(now))throw Error('buffer_date_changed');
+  const activation=Date.parse(config.recap.activatedAt);
+  // Do not revive dates before the already-authorized recap activation.
+  if (date<jstDate(activation)) return {status:'before_activation'};
   const rows=state.rows.filter(r=>r.raceKey.startsWith(date+'-'));
   if(!rows.length)return {status:'no_articles'};
   if(rows.some(r=>!Number.isFinite(Date.parse(r.deadlineAt))||Date.parse(r.deadlineAt)>now-1800000))return {status:'races_not_finished'};
   if(!validUrl(marketing.index.url))throw Error('buffer_recap_index_invalid');
-  const name='note-buffer-recap/'+date;
+  const name=(supplement?'note-buffer-recap-late/':'note-buffer-recap/')+date;
   if(await log.get(name))return {status:'already_attempted'};
-  const text=recapCopy(rows,marketing.index.url,now),channelId=await delivery.channel();
-  if(jstDate(clock())!==date)throw Error('buffer_date_changed');
-  const publicationKey='recap:'+date,suffix=date+'/'+digest(publicationKey);
-  const receipt={date,publicationKey,at:now,channelId,textSha256:digest(text),provider:'buffer-free-recap',
-    sources:rows.map(r=>({publicationKey:r.publicationKey,sourceSha256:r.sourceSha256,status:r.settlement?.status||'pending',evidenceId:r.settlement?.evidenceId||null}))};
+  const text=(allPublished(config)?publicRecapCopy(rows,state.publishedRaceResults||[],marketing.index.url,now,{date,late,supplement}):recapCopy(rows,marketing.index.url,now,{date,late,supplement})),channelId=await delivery.channel();
+  if(!text)throw Error('buffer_public_result_recap_missing');
+  if(jstDate(clock())!==jstDate(now))throw Error('buffer_date_changed');
+  const publicationKey=(supplement?'recap-late:':'recap:')+date;
+  // Tag by delivery day so a late accepted post remains in reconciliation's
+  // two-day window. The public report and permanent claim retain the race day.
+  const suffix=jstDate(now)+'/'+digest(publicationKey);
+  const receipt={date,deliveryDate:jstDate(now),publicationKey,at:now,channelId,textSha256:digest(text),provider:'buffer-free-recap',
+    sources:rows.map(r=>({publicationKey:r.publicationKey,sourceSha256:r.sourceSha256,status:(allPublished(config)?r.publishedSettlement:r.settlement)?.status||'pending',evidenceId:(allPublished(config)?r.publishedSettlement:r.settlement)?.evidenceId||null})),
+    noteVerifiedAt:state.articles.index.verifiedAt||null};
   await log.put(name,receipt);
   let post;try{post=await delivery.create(text,channelId);}catch{
-    await log.put('note-buffer-recap-review/'+date,{...receipt,status:'review_required',reason:'create_failed_or_unknown_do_not_resend'});
+    await log.put(name.replace('recap/','recap-review/').replace('recap-late/','recap-late-review/'),{...receipt,status:'review_required',reason:'create_failed_or_unknown_do_not_resend'});
     return {status:'review_required'};
   }
-  const accepted={...receipt,postId:post.id};await log.put('note-buffer-accepted/'+suffix,accepted);
-  const result=observed(post,accepted);
+  const accepted={...receipt,postId:post.id,bufferAcceptedAt:new Date(clock()).toISOString()};await log.put('note-buffer-accepted/'+suffix,accepted);
+  const result=observed(post,accepted,clock());
   if(result.status!=='accepted_pending')await log.put('note-buffer-final/'+suffix,{...accepted,...result});
-  return {...result,postId:post.id};
+  return {...result,postId:post.id,date,supplement};
+}
+async function recap(state,config,marketing,log,delivery,clock) {
+  if(config.recap?.enabled!==true)return {status:'disabled'};
+  const now=clock(),activation=Date.parse(config.recap.activatedAt);
+  if(!Number.isFinite(activation)||now<activation)throw Error('buffer_recap_activation_invalid');
+  if(timeOf(now)<'22:30')return {status:'before_recap_window'};
+  return recapDay(state,config,marketing,log,delivery,clock,jstDate(now));
+}
+async function recoverRecap(state,config,marketing,log,delivery,clock) {
+  if(config.recap?.enabled!==true||config.resultReports?.previousDay!==true)return {status:'disabled'};
+  const now=clock(),date=jstDate(now-86400000),activation=Date.parse(config.recap.activatedAt);
+  if(!Number.isFinite(activation)||now<activation)throw Error('buffer_recap_activation_invalid');
+  const earlier=await log.get('note-buffer-recap/'+date);
+  if(!earlier)return recapDay(state,config,marketing,log,delivery,clock,date,{late:true});
+  // A supplementary report is a new, explicitly-labelled result update, not
+  // a retry. Unknown or failed previous sends never trigger another recap.
+  const delivered=await log.get('note-buffer-final/'+(earlier.deliveryDate||date)+'/'+digest('recap:'+date));
+  if(delivered?.status!=='buffer_confirmed_sent')return {status:'earlier_send_unconfirmed_no_resend'};
+  const rows=state.rows.filter(r=>r.raceKey.startsWith(date+'-'));
+  if(rows.some(r=>(allPublished(config)?r.publishedSettlement:r.settlement)?.status==='pending'))return {status:'results_still_pending'};
+  const changed=rows.some(r=>earlier.sources?.some(source=>source.publicationKey===r.publicationKey&&
+    source.sourceSha256===r.sourceSha256&&['pending','review'].includes(source.status)&&['hit','miss','void'].includes((allPublished(config)?r.publishedSettlement:r.settlement)?.status)));
+  if(!changed)return {status:'no_late_results'};
+  return recapDay(state,config,marketing,log,delivery,clock,date,{late:true,supplement:true});
+}
+
+function requireVerifiedIndex(state,marketing,now) {
+  if(state.date!==jstDate(now)||state.verifiedDate!==jstDate(now))throw Error('buffer_date_changed');
+  if(state.articles.index.hash!==hash(publishedIndexBody(state,marketing,now)))throw Error('buffer_public_index_not_verified');
+}
+function hitItems(state,config,marketing,now) {
+  if(allPublished(config)) {
+    const dates=config.resultReports?.previousDay===true?recentDates(now):[jstDate(now)];
+    return (state.publishedRaceResults||[]).filter(r=>r.version===PUBLIC_VERSION&&dates.includes(r.raceKey.slice(0,8))&&
+      r.status==='hit'&&Date.parse(r.deadlineAt)>=Date.parse(config.activatedAt)).map(row=>({row,
+        item:{publicationKey:row.publicationKey,text:hitText(row,marketing.index.url,row.raceKey.slice(0,8)!==jstDate(now))}}));
+  }
+  const current=pairedItems(state,config,now);
+  if(config.resultReports?.previousDay!==true)return current;
+  const previousNow=now-86400000, date=jstDate(previousNow);
+  // Only the old draft validator uses the corresponding date. Original and
+  // official-result evidence were re-settled at the actual current time.
+  const previous={...state,date,distribution:distributionDrafts(state.rows,marketing,date,{previousDay:true})};
+  return [...current,...pairedItems(previous,config,previousNow)];
 }
 
 async function collectMetrics(config,log,delivery,now) {
@@ -212,43 +282,78 @@ async function collectMetrics(config,log,delivery,now) {
   return {status:'recorded',posts:items.length,available:items.filter(x=>x.status==='observed').length,purchaseAttribution:'not_connected'};
 }
 
-async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.parse(fs.readFileSync('config/note-social.json','utf8')),marketing=loadConfig(),store,log,delivery,claims}={}) {
+async function run({env=process.env,now=Date.now(),clock=Date.now,config=JSON.parse(fs.readFileSync('config/note-social.json','utf8')),marketing=loadConfig(),store,log,delivery,claims,renderCard,publishCard}={}) {
   const reasons=blockers(config,env,now);if(reasons.length)return {status:'awaiting_buffer_connection',reasons};
   if(env.GITHUB_REPOSITORY!==REPO||env.GITHUB_REF!=='refs/heads/main')throw Error('buffer_main_only');
   store ||= client(env);log ||= ledger(store);delivery ||= transport(env,config,log);claims ||= journal(store);
   const results=await reconcile(log,delivery,now);
   const loaded=await store.load(marketing),state=await store.settle(loaded.state,marketing,now);
   if(loaded.state.verifiedDate!==jstDate(now)||loaded.state.articles.index.hash!==hash(publishedIndexBody(state,marketing,now)))throw Error('buffer_public_index_not_verified');
+  // The static index can become stale at a deadline even on the same JST day.
+  // Recheck at the actual create boundary after every channel/media lookup.
+  const create=delivery.create.bind(delivery);
+  delivery={...delivery,create:(...args)=>{requireVerifiedIndex(state,marketing,clock());return create(...args);}};
   // Time-sensitive announcements use the existing shared API budget first.
+  requireVerifiedIndex(state,marketing,clock());
   const announcement=await announce(state,config,marketing,log,delivery,clock);
   if(announcement.status==='review_required'||announcement.postId)results.push({kind:'announcement',...announcement});
   // Existing paired draft validator is retained only as an evidence validator;
   // this sender has no LINE or direct paid X transport.
-  const candidates=pairedItems(state,config,now);let channelId,started=0;
+  const candidates=hitItems(state,config,marketing,now);let channelId,started=0;
   for(const {row,item} of candidates) {
-    const pair={date:state.date,publicationKey:row.publicationKey,evidenceId:row.settlement.evidenceId,textSha256:digest(item.text),sourceSha256:row.sourceSha256,provider:'buffer-free',attemptedAt:new Date(now).toISOString()};
+    const resultSettlement=row.settlement||row;
+    const pair={date:row.raceKey.slice(0,8),deliveryDate:jstDate(now),publicationKey:row.publicationKey,evidenceId:resultSettlement.evidenceId,textSha256:digest(item.text),sourceSha256:row.sourceSha256,provider:'buffer-free',attemptedAt:new Date(clock()).toISOString(),
+      firstResultSeenAt:row.firstResultSeenAt||row.resultObservation?.firstResultSeenAt||null,officialSourceCheckedAt:row.resultObservation?.officialSourceCheckedAt||null,
+      noteVerifiedAt:row.noteVerifiedAt||row.resultObservation?.noteVerifiedAt||state.articles.index.verifiedAt||null};
     if(await claims.exists(pair))continue;
+    if(allPublished(config)) {
+      // A race-level upgrade cannot bypass old article-level permanent claims.
+      // A prior center report, including an unknown attempt, suppresses this
+      // race's new alert rather than quietly recreating the same result.
+      let previouslyAttempted=false;
+      for(const source of row.sources)if(await claims.exists({date:pair.date,publicationKey:source.publicationKey})){previouslyAttempted=true;break;}
+      if(previouslyAttempted)continue;
+      pair.method='published-main-sections-v1';pair.sources=row.sources;pair.matchedSections=row.matchedSections;
+    }
     if(started>=5)break;
     channelId ||= await delivery.channel();
-    if(jstDate(clock())!==pair.date)throw Error('buffer_date_changed');
+    if(jstDate(clock())!==state.date)throw Error('buffer_date_changed');
+    let media;
+    if(config.resultReports?.images===true) {
+      const render=renderCard||require('./note-result-card.cjs').renderCard;
+      const publish=publishCard||require('./note-marketing-image').publishCard;
+      const card=await render(row,{now:clock()});
+      media=await publish(store,row,card,undefined,clock());
+      validateAssets(media.assets);
+      Object.assign(pair,{imageSha256:media.imageSha256,imageUrl:media.url,assetCommit:media.assetCommit});
+    }
+    // Rendering and anonymous media verification may cross midnight. Re-run
+    // later with a newly verified index rather than publish a mislabeled card.
+    if(jstDate(clock())!==state.date)throw Error('buffer_date_changed');
+    requireVerifiedIndex(state,marketing,clock());
     await claims.reserve(pair);started++;
     let post;
-    try{post=await delivery.create(item.text,channelId);}catch {
+    try{post=await delivery.create(item.text,channelId,media?.assets||[]);}catch {
       await claims.record(pair,{status:'review_required',reason:'buffer_create_failed_or_unknown_do_not_resend'});
       return {status:'review_required',results,started};
     }
-    const receipt={...pair,postId:post.id,channelId};
-    const suffix=pair.date+'/'+digest(pair.publicationKey);
+    const receipt={...pair,postId:post.id,channelId,bufferAcceptedAt:new Date(clock()).toISOString()};
+    const suffix=pair.deliveryDate+'/'+digest(pair.publicationKey);
     await log.put('note-buffer-accepted/'+suffix,receipt);
     await claims.record(pair,{status:'accepted_pending',postId:post.id,channelId});
-    const result=observed(post,receipt);
+    const result=observed(post,receipt,clock());
     if(result.status!=='accepted_pending')await log.put('note-buffer-final/'+suffix,{...receipt,...result});
     results.push({postId:post.id,...result});
   }
+  if(state.date!==jstDate(clock())||state.verifiedDate!==jstDate(clock()))throw Error('buffer_date_changed');
+  requireVerifiedIndex(state,marketing,clock());
   const review=await recap(state,config,marketing,log,delivery,clock);
   if(review.status==='review_required'||review.postId)results.push({kind:'recap',...review});
+  requireVerifiedIndex(state,marketing,clock());
+  const recovery=await recoverRecap(state,config,marketing,log,delivery,clock);
+  if(recovery.status==='review_required'||recovery.postId)results.push({kind:'previous_day_recap',...recovery});
   let metrics;try{metrics=await collectMetrics(config,log,delivery,clock());}catch{metrics={status:'unavailable'};}
-  return {announcement,recap:review,metrics,status:results.some(x=>x.status==='review_required')?'review_required':results.length?'processed':'no_new_hits',started,results};
+  return {announcement,recap:review,recovery,metrics,status:results.some(x=>x.status==='review_required')?'review_required':results.length?'processed':'no_new_hits',started,results};
 }
 if(require.main===module)run().then(result=>{const text=JSON.stringify(result);console.log('NOTE_BUFFER='+text);if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'\nBuffer Free X reports\n```json\n'+text+'\n```\n');if(result.status==='review_required')process.exitCode=1;}).catch(()=>{console.error('NOTE_BUFFER_STOPPED=check_free_budget_and_permanent_receipts_no_auto_repost');process.exitCode=1;});
-module.exports={blockers,ledger,transport,observed,reconcile,announcementRows,announcementText,announce,recap,collectMetrics,run};
+module.exports={hitItems,recoverRecap,validateAssets,assetInput,blockers,ledger,transport,observed,reconcile,announcementRows,announcementText,announce,recap,collectMetrics,run};

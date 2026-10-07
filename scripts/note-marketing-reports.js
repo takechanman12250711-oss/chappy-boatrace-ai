@@ -73,14 +73,14 @@ function dailySummary(rows, date) {
   const selected = rows.filter(r => r.raceKey.startsWith(date + '-'));
   return Object.entries(SERIES).map(([key, s]) => `${s.label}：${summaryLine(selected.filter(r => (r.articleSeries || 'normal') === key))}`).join('\n');
 }
-function distributionDrafts(rows, config, date) {
+function distributionDrafts(rows, config, date, { previousDay = false } = {}) {
   const current = rows.filter(r => r.raceKey.startsWith(date + '-')).sort((a, b) => Date.parse(a.deadlineAt) - Date.parse(b.deadlineAt) || a.publicationKey.localeCompare(b.publicationKey));
   const hits = current.filter(r => r.settlement?.status === 'hit');
   const label = `${Number(date.slice(4,6))}/${Number(date.slice(6,8))}`;
   const x = hits.map(r => {
     const s = r.settlement;
     return { id: `x:${s.evidenceId}`, status: 'awaiting_connection', publicationKey: r.publicationKey,
-      text: `${label} ${SERIES[r.articleSeries || 'normal'].label}｜${r.place}${r.raceNo}R 的中\n${r.ticketCount}点で ${s.combination}\n公式払戻（100円あたり）${s.payoutPer100Yen.toLocaleString('ja-JP')}円\n事前公開の記事\n${r.url}\n全成績・今日の予想\n${config.index.url}` };
+      text: `${previousDay ? '前日分 ' : ''}${label} ${SERIES[r.articleSeries || 'normal'].label}｜${r.place}${r.raceNo}R 的中\n${r.ticketCount}点で ${s.combination}\n公式払戻（100円あたり）${s.payoutPer100Yen.toLocaleString('ja-JP')}円\n公式結果\n${s.resultUrl || r.resultUrl}\n全結果一覧（無料）\n${config.index.url}` };
   });
   // 2026-09-29: owner requested the same hit report on both channels together.
   // Drafts never assert delivery; the sender keeps independent durable receipts.
@@ -88,4 +88,45 @@ function distributionDrafts(rows, config, date) {
     x: { status: 'awaiting_connection', items: x },
     line: { status: 'awaiting_connection', items: x.map(item => ({ ...item, id: item.id.replace(/^x:/, 'line:') })) } };
 }
-module.exports = { settlePublished, counts, summaryLine, outcomeLine, dailySummary, distributionDrafts };
+
+// These are observation times, never the time the official provider finalized
+// a result. Preserve the first local sighting only for the same verified fact.
+function observeResult(row, settlement, official, now) {
+  if (!['hit','miss','void'].includes(settlement.status)) return row.resultObservation;
+  const evidenceId = settlement.evidenceId || digest([row.publicationKey, row.sourceSha256, settlement.status].join('|'));
+  const old = row.resultObservation;
+  const seen = old?.evidenceId === evidenceId && Number.isFinite(Date.parse(old.firstResultSeenAt)) &&
+    Date.parse(old.firstResultSeenAt) <= now ? old.firstResultSeenAt : new Date(now).toISOString();
+  const noteVerifiedAt = old?.evidenceId === evidenceId && Number.isFinite(Date.parse(old.noteVerifiedAt)) &&
+    Date.parse(old.noteVerifiedAt) >= Date.parse(seen) && Date.parse(old.noteVerifiedAt) <= now ? old.noteVerifiedAt : null;
+  return { version: 'note-result-observation-v1', evidenceId, firstResultSeenAt: seen,
+    officialSourceCheckedAt: official.checkedAt, noteVerifiedAt };
+}
+function markResultsVerified(rows, now) {
+  return rows.map(row=>{
+    let next={...row};
+    for(const [settled,observed] of [['settlement','resultObservation'],['publishedSettlement','publicResultObservation']]) {
+      const s=row[settled],o=row[observed];
+      if(o&&['hit','miss','void'].includes(s?.status)&&o.evidenceId===(s.evidenceId||digest([row.publicationKey,row.sourceSha256,s.status].join('|')))) {
+        next[observed]={...o,noteVerifiedAt:o.noteVerifiedAt||new Date(now).toISOString()};
+      }
+    }
+    return next;
+  });
+}
+function publishedOutcomeLine(row) {
+  const s=row.publishedSettlement;
+  if(['hit','miss'].includes(s?.status))return `掲載全券：${s.status==='hit'?'的中':'不的中'}${s.matchedSections?.length?'｜的中欄 '+s.matchedSections.join('・'):''}｜${s.publishedTicketCount}点（参考別集計）`;
+  return '掲載全券：'+({void:'不成立',pending:'結果待ち',review:'照合確認中'})[s?.status||'review'];
+}
+function dailyPublishedSummary(rows,date) {
+  const selected=rows.filter(r=>r.raceKey.startsWith(date+'-'));
+  const {summarizePublicRows}=require('./note-public-results');
+  return summarizePublicRows(selected)+'\n'+Object.entries(SERIES).map(([key,s])=>{
+    const subset=selected.filter(r=>(r.articleSeries||'normal')===key);
+    const c=counts(subset.map(r=>({...r,settlement:r.publishedSettlement||{status:'review'}})));
+    return `${s.label}：${c.published}記事｜${c.hit}的中・${c.miss}不的中｜待ち${c.pending}・不成立${c.void}・確認中${c.review}`;
+  }).join('\n');
+}
+
+module.exports = { publishedOutcomeLine,dailyPublishedSummary,observeResult, markResultsVerified, settlePublished, counts, summaryLine, outcomeLine, dailySummary, distributionDrafts };

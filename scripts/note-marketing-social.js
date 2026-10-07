@@ -61,11 +61,12 @@ function announcementCopy(rows,indexUrl,now) {
   }
   throw Error('social_announcement_too_long');
 }
-function recapCopy(rows,indexUrl,now) {
-  const date=dateOf(now),current=rows.filter(r=>r.raceKey.startsWith(date+'-'));
+function recapCopy(rows,indexUrl,now,{date=dateOf(now),late=false,supplement=false}={}) {
+  const current=rows.filter(r=>r.raceKey.startsWith(date+'-'));
   if(!current.length)return null;
   const totals=counts(current);
-  const lines=[`${dayLabel(date)} 公開予想の振り返り`,...Object.entries(labels).flatMap(([key,label])=>{
+  const lines=[`${late ? '前日分 ' : ''}${dayLabel(date)} 公開予想の${supplement ? '結果追記' : '振り返り'}`,
+    `${current.length}記事・${new Set(current.map(r=>r.raceKey)).size}レース（種類別）`,...Object.entries(labels).flatMap(([key,label])=>{
     const c=counts(current.filter(r=>r.articleSeries===key));
     return c.published?[`${label}：${c.hit}的中／${c.miss}不的中`]:[];
   }),`確認中${totals.review}・結果待ち${totals.pending}・不成立${totals.void}`];
@@ -73,7 +74,7 @@ function recapCopy(rows,indexUrl,now) {
   const missed=current.filter(r=>r.settlement?.status==='miss'&&contextOf(r)?.firstBoats?.length)
     .sort((a,b)=>a.deadlineAt.localeCompare(b.deadlineAt)||a.publicationKey.localeCompare(b.publicationKey))[0];
   const example=missed?`${missed.place}${missed.raceNo}R：${contextOf(missed).firstBoats.includes(missed.settlement.combination[0])?'1着は想定内、組み合わせが不的中。':'1着の想定が外れたレース。'}`:'';
-  const tail=[`公開時の中心買い目で判定。${timeOf(now)}時点`, '全記事・公式結果',indexUrl];
+  const tail=[`公開時の中心買い目で判定。${late ? dayLabel(dateOf(now))+' ' : ''}${timeOf(now)}時点`, '全記事・公式結果',indexUrl];
   let text=[...lines,example,...tail].filter(Boolean).join('\n');
   if(weight(text)>280)text=[...lines,...tail].join('\n');
   if(weight(text)>280)throw Error('social_recap_too_long');

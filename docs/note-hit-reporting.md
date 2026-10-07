@@ -93,3 +93,39 @@ XはBuffer Free、LINEはURIリッチメニューによるnote一覧への導線
 - noteの公式X案内は `https://x.com/chappy_boat_ai`。古いログイン連携先のプロフィール表示と自動メンションはオフにし、ログイン連携自体は保持する。プロフィール本文にクリックできる公式Xリンクを掲載済み。
 - 正しいレースIDのレース前未確定結果は `pending/official_result_stale` とする。確定・不成立を締切前の確認時刻で受け入れない。公開receiptと保存原本が一致し、締切15分後もpendingのレースだけ、既存 `api/result.js` で最大12レース/回、同レース20分以上空けて補完する。結果・試行時刻は `note-marketing-state` に保存し、当日・前日分だけ保持する。研究台帳や元予想は更新しない。不一致、返還、同着はreviewのまま。
 - 効果測定は `docs/note-price-trial.md` の手順を使う。X送信、note閲覧、購入、別日再購入を分ける。非公開の売上・購入者データを公開リポジトリやActionsログへ入れない。販売CSVの取得にnoteのパスワード再確認が必要な場合、未取得を0件に置き換えない。
+
+## 2026-10-07 確認済み結果カード・前日回復・締切後案内（承認済み）
+
+この節が、上記の「当日のみ」「事前公開の有料記事への結果速報リンク」「締切15分後」の旧指定に優先する。
+
+- 既存15分予定 `7,22,37,52` と無料運用を維持。公開receipt・SHA・中心1〜7点が一致するpendingだけ、締切5分後から既存公式result parserで照会する。同一レース20分間隔、1回12R、当日・前日の保持は不変。公式が未確定ならpendingのまま。GitHubの遅延もあるため、即時・秒単位の配信保証ではない。
+- 無料note一覧は当日・前日の全公開記事をhit/miss/pending/void/reviewで掲載し、記事数と重複しないレース数を分ける。同一レースのnormal/escape/manshuを複数レース的中に数えない。判定は公開時の中心買い目だけ。返還・同着はreview、候補24点・参考券を含めない。
+- X的中速報は従来の `note-social-claim/<レース日>/<publicationKey hash>` を保持。未claimの前日分も「前日分」と明記して一度だけ送る。受付・sent照合のタグは配信日の下へ保存し、遅れた投稿も照合窓に入れる。claimを削除せず、本文変更や日付変更で再送しない。
+- 22:30 JST以降の全結果振り返りを維持。前日に未実行だった場合は前日分として回復する。前日振り返りがsent確認済みで、pending/reviewから確定したものがあり、pendingが残らない場合に限り、別の永久claimで「結果追記」を一度だけ送る。旧送信が不明・失敗の場合、振り返りを再作成しない。掲載0件は投稿しない。
+- `rows[].resultObservation` は `firstResultSeenAt`（この処理で結果を最初に確認）、`officialSourceCheckedAt`（公式取得データの確認時刻）、`noteVerifiedAt`（その結果を含む無料一覧を匿名照合した時刻）を保持。公式が確定した時刻ではない。一時的にpending/reviewになっても同一根拠の初回確認をリセットしない。ブラウザ処理の前に観測を保存し、失敗で遅延計測を短縮しない。過去の未計測時刻を作らない。
+- Buffer receiptは `bufferAcceptedAt` と `sentObservedAt` を別保存。`sentObservedAt` はsent応答を確認した時刻で、Xが公開した実時刻の保証ではない。本文・channel・post ID・本人status URLを照合する。画像ありではimage source/MIME/実寸も照合し、不一致はreviewへ。X公開画面の独立確認とは区別する。
+- `note-result-card.cjs` は保存中心的中だけから、日本語の1200×675 PNGを生成する。日付・前日分・種類・場R・中心点数・確定出目・公式100円当たり払戻・無料全結果一覧を表示。実購入金額、獲得利益、将来の有料買い目や元原稿は画像に入れない。公開画像だけを既存public repoの不変commit/tagへ保存し、無認証GETのPNG bytes/SHAを照合後にBufferの `assets.image.url` へ渡す。第三者画像ホストや有料画像APIを追加しない。
+- Pillow 12.3.0とNoto Sans CJKを用いる。生成は同じrenderer/font環境で決定的。画像URLは投稿後も保持し、タグを自動削除しない。画像生成／公開読取り失敗時はテキストだけを黙って送らず、claim前に停止する。
+- 80回/直近24時間は投稿数ではなくBufferリクエスト総数。告知・速報・まとめ・読戻し・計測で共用する。GitHub/画像の検証はBuffer枠を消費しない。新cron・有料アップグレード・直接X API・LINE broadcastを追加しない。
+- 締切を過ぎた有料記事URLは無料一覧から外し「締切済み｜購入リンクの掲載終了」と表示。保存コロがし欄の期限切れ・期限不明の有料URLも表示上だけ除去する。公式結果リンク、結果本文、保存原本・receipt・元記事と購入者アクセスは保持。無料一覧の本文だけでなく余分な有料anchorが残っていないことも匿名検証する。
+- これは記事本体の販売停止ではない。直接URLや更新前の画面から購入できる可能性を一覧に明示する。削除・無料化・価格変更はしない。結果カード／X結果速報は有料記事への直リンクを外し、無料全結果一覧と公式結果へ案内する。送信直前にも現在時刻の一覧hashを再検査し、日付またぎ・締切またぎで未更新なら停止する。
+
+検証: `node --test scripts/note-marketing*.test.js scripts/note-result-card.test.cjs scripts/send-note-social.test.cjs scripts/send-note-buffer.test.cjs`、`node scripts/note-github-ui-transport.test.js`、`node scripts/check-note-skills.js`。
+
+公式仕様: [Buffer画像投稿](https://developers.buffer.com/examples/create-image-post.html)、[公開メディアURL](https://developers.buffer.com/guides/hosting-media.html)、[Buffer schema](https://developers.buffer.com/reference.html)、[Pillow 12.3.0](https://pypi.org/project/pillow/12.3.0/)。画像付きの実投稿成功と公開画面の確認は、本番の実対象で別途検証する。テスト原稿や架空的中を本番送信しない。
+
+## 同日追加承認：公開済みの本命・押さえ・展開・万舟を結果対象へ
+
+この節が「中心のみを的中速報の対象」とした旧指定に優先する。予想方式や過去の券を変更するものではない。
+
+- 新しい報告基準は `published-main-sections-v1`。締切前の公開receiptと不変原稿に対応する、本当に掲載された主な4区分の和集合だけを照合する。現在のreadable-v1では「中心の買い目」「相手を広げるなら」「別の展開を考えるなら」「高配当を狙うなら」。実際に的中した掲載欄を表示する。本命と押さえが同じ追加欄に整理されていた場合、事後にどちらかの名前を捏造しない。
+- 「別会計の参考予想」は引き続き対象外。内部のcandidate24、非掲載プール、後から生成した券も含めない。原本の中心1〜7点が掲載和集合に含まれることと、参考の除外を検査する。
+- `rows[].settlement` と従来の中心のみ・記事別成績は維持。新しい `rows[].publishedSettlement`、別観測 `publicResultObservation`、レース単位の `publishedRaceResults` を追加する。記事種類別の結果も保持し、同じ実レースは全体の的中・不的中・待ち・不成立・確認中で1回だけ数える。別記事の公式結果・締切・会場などが矛盾した場合は全体をreviewにする。
+- 旧receiptは、そのcommitの唯一のparentが示す当時の公開checkoutを取得し、レビュー済みの表示adapter・publication source・generatorの3つの完全一致SHA256を確認する。原稿のformatや日付だけでは掲載版を推定しない。履歴のコードを実行しない。未対応の掲載版はreviewのまま。
+- 新しい公開handoffに `presentationVersion` と `publishedDisplayProofJson` を追加。receiptの `publishedDisplayProof` は、最終有料本文SHA・実際の区分の名称／点数／券集合SHA・参考除外済み和集合SHAを保持する。券の文字列や有料本文そのものは新receiptへ格納しない。最終クリック前の原本・editor本文照合を保持し、旧receiptは書き換えない。
+- `note-marketing-state` のreceipt窓をv3へ移行し、当日・前日分に公開版証拠を付ける。同じpublicationKey・原本SHAの既存観測時刻を保持する。過去の未計測時刻は埋めない。公開原稿の証明可能な表示集合を復元するのであり、結果を見て予想を再生成する処理ではない。
+- X速報とカードはレース単位。画像は「掲載全券N点（重複なし）」と記事種類ごとの実際の的中欄、確定出目、100円当たりの公式払戻を示す。初回のレース永久claimは `${raceKey}:published-main` で予約する。旧article単位の的中claimが1つでもあれば、そのレースを新定義で再速報しない。不明な過去送信も同じ扱いとし、claim削除や改名再送を行わない。
+- 日次全体は実レース単位の新基準。併記する「中心のみ（従来・記事別）」は旧成績のまま。母数を混ぜない。購入額・利益・ROIは表示しない。今後仮定の回収率を追加する場合も、掲載和集合の重複を除いた全点数を分母にし、中心の点数を流用しない。
+- 新規記事の無料説明もこの結果基準を説明する。公開済み記事本文は変更しない。カードからは無料一覧へ、X速報は無料一覧・公式結果へ案内し、締切済み有料記事の購入を誘導しない。
+
+追加検証：`node --test scripts/note-public-results.test.js scripts/note-published-ticket-sections.test.js scripts/note-result-card.test.cjs`、`node scripts/note-publication-source.test.js`。公開済み原本からの追加欄的中・中心不的中の両立、参考/candidate24除外、複数記事の1R集約、旧claim、旧観測保持、掲載本文proofの欠落/改変、締切前の券非出力を確認する。

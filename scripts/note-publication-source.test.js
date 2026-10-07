@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
-const { MAX_PUBLICATION_TICKETS, requirePublicationTicketCount, publicationPayload, verifyPublicationSource } = require('./note-publication-source');
-const { requirePublicationGate, preparePublication, publishConfiguredArticle, savePublicationReceipt } = require('./note-github-ui-transport');
+const { MAX_PUBLICATION_TICKETS, requirePublicationTicketCount, publicationPayload, parsePublishedDisplayProof, verifyPublicationSource } = require('./note-publication-source');
+const { requirePublicationGate, preparePublication, publishConfiguredArticle, recoverClaimedPublication, savePublicationReceipt } = require('./note-github-ui-transport');
 global.ChappyPracticalSelection = { createPracticalSelection: prediction => prediction.practicalTickets };
 const generator = require('../js/note-generator');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'note-publish-source-'));
@@ -15,7 +15,11 @@ const prediction = {
   date: '20300914', race: { date: '20300914', stadiumName: '唐津', raceNo: 10, raceInfo: { deadline: '16:00' } },
   confidence: 84, mainSheet: { honmei: { boatNo: 1, name: "テスト選手", score: 84 },
     evaluations: [1, 2, 3, 4, 5, 6].map(boatNo => ({ boatNo, name: "テスト選手", score: 84 })),
-    tickets: [{ ticket: '1-2-3', odds: 20 }] },
+    tickets: [{ ticket: '1-2-3', odds: 20 }, { ticket: '1-2-4', odds: 25 }],
+    coverTickets: [{ ticket: '1-3-2', odds: 30 }], flowTickets: [{ ticket: '2-1-3', odds: 50 }] },
+  manshuSheet: { tickets: [{ ticket: '3-4-5', odds: 120 }] },
+  // This internal-only candidate must never enter publication proof.
+  candidate24Tickets: [{ ticket: '6-5-4', odds: 180 }],
   practicalTickets: [{ ticket: '1-2-3', odds: 20, category: '本命' }],
   raceFlow: { title: 'イン逃げ本線', summary: '1号艇の逃げを中心に考える。' }
 };
@@ -41,6 +45,32 @@ async function main() {
   const payload = publicationPayload(sourcePath, root, clock);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
+  assert.equal(payload.presentationVersion, 'readable-v1');
+  assert.equal(typeof payload.publishedDisplayProofJson, 'string');
+  const displayProof = parsePublishedDisplayProof(payload);
+  const sha = value => createHash('sha256').update(value).digest('hex');
+  assert.equal(displayProof.version, 'published-ticket-sections-v1');
+  assert.equal(displayProof.presentationVersion, payload.presentationVersion);
+  assert.equal(displayProof.paidTextSha256, sha(payload.paidText));
+  assert.equal(displayProof.publishedTicketsSha256, sha(JSON.stringify(['1-2-3', '1-2-4', '1-3-2', '2-1-3', '3-4-5'])));
+  assert.equal(displayProof.publishedTicketCount, 5);
+  assert.deepEqual(displayProof.sections.map(section => section.label), [
+    '中心の買い目', '相手を広げるなら', '別の展開を考えるなら', '高配当を狙うなら'
+  ]);
+  assert.equal(displayProof.sections[0].ticketCount, 1);
+  assert.ok(displayProof.sections.every(section => section.includedInPublishedResult === true));
+  assert.equal(displayProof.sections[0].ticketsSha256, sha(JSON.stringify(['1-2-3'])));
+  assert.equal(JSON.stringify(displayProof).includes('1-2-3'), false);
+  assert.equal(JSON.stringify(displayProof).includes('6-5-4'), false);
+  assert.equal(JSON.stringify(displayProof).includes(payload.paidText), false);
+  assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: undefined }), /proof_missing/);
+  assert.throws(() => parsePublishedDisplayProof({ ...payload, presentationVersion: undefined }), /proof_missing/);
+  assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: '{' }), /proof_invalid/);
+  for (const tampered of [null, [], { ...displayProof, paidTextSha256: 'a'.repeat(64) },
+    { ...displayProof, publishedTicketsSha256: 'b'.repeat(64) }, { ...displayProof, tickets: ['1-2-3'] },
+    { ...displayProof, paidText: payload.paidText }]) {
+    assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: JSON.stringify(tampered) }), /proof_mismatch/);
+  }
   assert.equal(MAX_PUBLICATION_TICKETS, 7);
   assert.equal(requirePublicationTicketCount({ practicalTickets: Array(7).fill({ ticket: '1-2-3' }) }), 7);
   assert.throws(() => requirePublicationTicketCount({ practicalTickets: Array(8).fill({ ticket: '1-2-3' }) }), /exceeds_7/);
@@ -49,7 +79,7 @@ async function main() {
   const { loadCoverTemplate } = require('./note-cover');
   assert.ok(loadCoverTemplate(payload, root, clock).html.includes('ChappyRound'));
   assert.throws(() => loadCoverTemplate({ ...payload, paidText: '別原稿' }, root, clock), /mismatch/);
-  for (const field of ['paidText', 'freeText', 'title', 'body', 'sourceSha256', 'price', 'deadlineAt', 'practicalTicketCount', 'articleSeries', 'publicationKey']) {
+  for (const field of ['paidText', 'freeText', 'title', 'body', 'sourceSha256', 'price', 'deadlineAt', 'practicalTicketCount', 'articleSeries', 'publicationKey', 'presentationVersion', 'publishedDisplayProofJson']) {
     assert.throws(() => verifyPublicationSource({ ...payload, [field]: 'tampered' }, root, clock), /mismatch/);
   }
   assert.throws(() => requirePublicationGate(payload, root, Date.parse(bundle.record.deadlineAt) - 60000), /audit_blocked/);
@@ -81,9 +111,8 @@ async function main() {
   let clicks = 0;
   const blocks = [{ text: payload.freeText, widget: false }, { widget: true, buttons: 1, pressed: true },
     { text: payload.paidText, widget: false }];
-  // Use a one-paragraph paid body for the captured boundary interaction fixture.
-  const uiPayload = { ...payload, paidText: '有料本文' };
-  blocks[2].text = uiPayload.paidText;
+  // Preserve the exact rendered body and its proof in the final-click fixture.
+  const uiPayload = { ...payload };
   const submit = { count: async () => 1, isVisible: async () => true, isEnabled: async () => true,
     click: async () => { clicks++; throw new Error('response_lost'); } };
   const page = { url: () => 'https://editor.note.com/notes/n123abc/publish/',
@@ -93,6 +122,10 @@ async function main() {
   assert.equal(clicks, 0);
   await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 200 }, () => { throw new Error('stale'); }), /stale/);
   assert.equal(clicks, 0);
+  await assert.rejects(publishConfiguredArticle(page, { ...uiPayload, publishedDisplayProofJson: undefined }, { price: 200 }, () => {}), /proof_missing/);
+  await assert.rejects(publishConfiguredArticle(page, { ...uiPayload,
+    publishedDisplayProofJson: JSON.stringify({ ...displayProof, publishedTicketCount: 24 }) }, { price: 200 }, () => {}), /proof_mismatch/);
+  assert.equal(clicks, 0, 'missing or altered display proof fails before the one publish click');
   blocks[1].pressed = false;
   await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 200 }, () => {}), /boundary_mismatch/);
   assert.equal(clicks, 0);
@@ -113,6 +146,10 @@ async function main() {
   assert.equal(receipt.url, publicUrl);
   assert.equal(receipt.price, 200);
   assert.equal(receipt.publishedAt, new Date(clock).toISOString());
+  assert.equal(receipt.sourceSha256, hash);
+  assert.deepEqual(receipt.publishedDisplayProof, displayProof);
+  assert.equal(JSON.stringify(receipt).includes('1-2-3'), false);
+  assert.equal(Object.hasOwn(receipt, 'paidText'), false);
   assert.equal(closed, 1);
   assert.equal(clicks, 2);
   publicPage.locator = () => ({ evaluateAll: async () => ['2020-01-01T00:00:00Z'] });
@@ -141,6 +178,23 @@ async function main() {
   await assert.rejects(publishConfiguredArticle(page, uiPayload, { price: 200 }, () => {}), /public_paywall_missing/);
   assert.equal(clicks, 5);
   assert.equal(closed, 4, 'anonymous verification failure closes its context');
+  let recoveryUrl;
+  let recoveryBody = `${payload.freeText}\n\n${payload.paidText}\n¥200`;
+  const recoveredLink = { first: () => ({ waitFor: async () => {} }), filter: () => recoveredLink,
+    count: async () => 1, getAttribute: async () => publicUrl };
+  const recoveryPage = {
+    goto: async url => { recoveryUrl = url; return { ok: () => true }; }, url: () => recoveryUrl,
+    getByRole: role => role === 'link' ? recoveredLink : { waitFor: async () => {} },
+    locator: selector => selector === 'article' ? { innerText: async () => recoveryBody } :
+      { evaluateAll: async () => [new Date(clock).toISOString()] }
+  };
+  const claimedReceipt = await recoverClaimedPublication(recoveryPage, payload, root);
+  assert.equal(claimedReceipt.url, publicUrl);
+  assert.equal(claimedReceipt.sourceSha256, hash);
+  assert.deepEqual(claimedReceipt.publishedDisplayProof, displayProof);
+  assert.equal(JSON.stringify(claimedReceipt).includes('1-2-3'), false);
+  recoveryBody = recoveryBody.replace('3 → 4 → 5', '3 → 4 → 6');
+  await assert.rejects(recoverClaimedPublication(recoveryPage, payload, root), /recovery_body_mismatch/);
   assert.equal(fs.readFileSync(path.join(root, sourcePath), 'utf8'), bytes, 'source remains immutable');
   console.log('note publication source, claim and final-click tests passed');
 }

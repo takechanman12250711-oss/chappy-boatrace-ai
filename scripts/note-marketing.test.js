@@ -32,8 +32,9 @@ test('index uses absolute deadlines, rolls over at midnight JST and refuses dupl
   assert(c.indexBody([row],config,now).includes('11:52｜尼崎4R'));
   const tomorrow=c.indexBody([row],config,Date.parse('2026-09-28T15:00:00Z'));
   assert(tomorrow.startsWith('2026年9月29日'));
-  assert(tomorrow.includes(receipt.url));
-  assert(tomorrow.indexOf(receipt.url)>tomorrow.indexOf('前日の公開記事と公式結果'));
+  assert(!tomorrow.includes(receipt.url));
+  assert(tomorrow.includes('締切済み｜購入リンクの掲載終了'));
+  assert(tomorrow.includes('前日の公開記事と公式結果'));
   assert(!c.indexBody([row],config,now+2*86400000).includes(receipt.url));
   assert.throws(()=>c.indexBody([row,row],config,now),/duplicate_publication/);
   assert.throws(()=>c.indexBody([row,row],config,now+86400000),/duplicate_publication/);
@@ -93,6 +94,8 @@ test('receipt store is incremental and state writes only its dedicated branch',a
     else if(route.startsWith('/contents/receipt.json'))data={encoding:'base64',content:Buffer.from(JSON.stringify(receipt)).toString('base64')};
     else if(route.startsWith('/contents/data/note-drafts/')){assert(route.endsWith('ref=main'));data={encoding:'none',type:'file',sha:'e'.repeat(40)};}
     else if(route==='/git/blobs/'+'e'.repeat(40))data={encoding:'base64',content:Buffer.from(source).toString('base64')};
+    else if(route==='/git/commits/'+receiptCommit)data={sha:receiptCommit,parents:[{sha:'f'.repeat(40)}]};
+    else if(route.startsWith('/contents/scripts/')||route.startsWith('/contents/js/'))data={encoding:'base64',content:Buffer.from('reviewed-source-fixture').toString('base64')};
     else if(route==='/git/trees')data={sha:'d'.repeat(40)};
     else if(route==='/git/commits')data={sha:commit};
     else if(route==='/git/refs' || route==='/git/refs/heads/'+BRANCH)data={object:{sha:commit}};
@@ -103,6 +106,9 @@ test('receipt store is incremental and state writes only its dedicated branch',a
   const loaded=await store.load(config);
   const state=await store.collect(loaded.state,now);
   assert.equal(state.rows.length,1);
+  assert.equal(state.receiptWindowVersion,3);
+  assert.equal(state.rows[0].publicationEvidence.receiptCommitSha,receiptCommit);
+  assert.equal(state.rows[0].publicationEvidence.publisherCommitSha,'f'.repeat(40));
   const count=calls.length;
   assert.deepEqual(await store.collect(state,now),state);
   assert.equal(calls.length-count,1);
@@ -116,7 +122,11 @@ test('receipt store is incremental and state writes only its dedicated branch',a
   const oldState={...state,rows:[]}; delete oldState.receiptWindowVersion;
   const migrated=await store.collect(oldState,now+86400000);
   assert.equal(migrated.rows.length,1,'migration recovers yesterday even when its receipt was already seen');
-  assert.equal(migrated.receiptWindowVersion,2);
+  assert.equal(migrated.receiptWindowVersion,3);
+  const observation={evidenceId:'f'.repeat(64),firstResultSeenAt:new Date(now-60000).toISOString(),noteVerifiedAt:new Date(now-30000).toISOString()};
+  const observedLegacy={...state,receiptWindowVersion:2,rows:[{...state.rows[0],resultObservation:observation}]};
+  const observedMigrated=await store.collect(observedLegacy,now);
+  assert.deepEqual(observedMigrated.rows[0].resultObservation,observation);
   assert(migrated.rows[0].resultUrl.includes('jcd=13&rno=4'));
   assert.deepEqual((await store.collect(tomorrow,now+2*86400000)).rows,[]);
 });
@@ -329,4 +339,10 @@ test('attempt ancestry is ordered, contiguous and tied to the same verified arti
     const bad=structuredClone(state);mutate(bad.pendingUpdates.index);assert.throws(()=>load(bad),/attempt_invalid/);
   }
   assert.throws(()=>c.prepareUpdateAttempt(state,'index',config.index,'E',now-1),/attempt_invalid/);
+});
+test('anonymous verification rejects a hidden expired paid link even when visible text matches',()=>{
+  const {publicMatches}=require('./update-note-marketing');
+  const desired='締切済み｜購入リンクの掲載終了\n'+config.index.url;
+  assert.equal(publicMatches({text:desired,links:[config.index.url]},desired),true);
+  assert.equal(publicMatches({text:desired,links:[config.index.url,'https://note.com/great_robin3243/n/nabcdef']},desired),false);
 });

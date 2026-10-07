@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const { loadConfig, publishedIndexBody, hash, urlsIn, requireEditable, sameMarketingContent, editDiagnostics, validateUpdateAttempt, updateAttempt, prepareUpdateAttempt } = require('./note-marketing-content');
 const { client } = require('./note-marketing-store');
+const { markResultsVerified } = require('./note-marketing-reports');
 const { readEditorContent } = require('./note-editor-content');
 const { fillDraft, waitForVisibleAcrossFrames } = require('./note-browserbase-draft-save');
 const { loadBrowserUseConfig, createBrowserUseSession, stopBrowserUseSession } = require('./note-github-ui-transport');
@@ -16,9 +17,14 @@ async function readPublic(page, article) {
   if (await body.count() !== 1) throw new Error('marketing_public_body_missing');
   return { text: await body.innerText(), links: await body.locator('a[href]').evaluateAll(elements=>elements.map(a=>a.href)) };
 }
+function publicMatches(value, desired) {
+  const expected=urlsIn(desired);
+  return sameMarketingContent(value.text, desired) && expected.every(url=>value.links.includes(url)) &&
+    !value.links.some(url=>/^https:\/\/note\.com\/great_robin3243\/n\/n[a-f0-9]+(?:[?#].*)?$/.test(url) && !expected.includes(url));
+}
 async function verifyPublic(page, article, desired) {
   const value = await readPublic(page, article);
-  if (!sameMarketingContent(value.text, desired) || urlsIn(desired).some(url=>!value.links.includes(url))) throw new Error('marketing_public_content_mismatch');
+  if (!publicMatches(value, desired)) throw new Error('marketing_public_content_mismatch');
   return value;
 }
 function requireArticleEditable(actual, previousHash, desired, article, stage, previousText, attempt = null) {
@@ -50,7 +56,7 @@ function previousArticleText(state, config, key) {
 async function updateArticle(page, publicPage, article, desired, previousHash, previousText = null, options = {}) {
   const current = await readPublic(publicPage, article);
   requireArticleEditable(current.text, previousHash, desired, article, 'public', previousText, options.attempt);
-  if (sameMarketingContent(current.text, desired) && urlsIn(desired).every(url=>current.links.includes(url))) return false;
+  if (publicMatches(current, desired)) return false;
   const editUrl = `https://editor.note.com/notes/${article.id}/edit/`;
   await page.goto(editUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
   const title = await waitForVisibleAcrossFrames(page, ['textarea[placeholder*="タイトル"]']);
@@ -104,8 +110,7 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   const config = loadConfig();
   if (!config) throw new Error('marketing_config_missing');
   const loaded = await store.load(config);
-  const journal = createUpdateJournal(store, loaded, config, clock);
-  const state = await store.settle(await store.collect(loaded.state, now), config, now, { refresh: true });
+  const state = await store.settle(await store.collect(loaded.state, now), config, now, { refresh: true, clock });
   const courseRepo = require('./note-korogashi-store.cjs').repository(store);
   const courses = await courseRepo.load();
   const courseText = korogashi.publicText(courses.state, now);
@@ -120,6 +125,11 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
     if (JSON.stringify(state) !== JSON.stringify(loaded.state)) await store.save(state, loaded.head);
     console.log('NOTE_MARKETING=unchanged'); return { changed: [], verified: false };
   }
+  // Save the first observation before browser work. A note outage must not
+  // restart the measured result-to-publication delay on the next run.
+  const observed = JSON.stringify(state) === JSON.stringify(loaded.state) ? loaded :
+    {state,head:await store.save(state,loaded.head)};
+  const journal = createUpdateJournal(store, observed, config, clock);
   const connection = loadBrowserUseConfig(env);
   const session = await createBrowserUseSession(connection);
   let browser, publicContext;
@@ -156,6 +166,9 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
         }
       }
     }
+    state.rows = markResultsVerified(state.rows, clock());
+    state.publishedRaceResults=(state.publishedRaceResults||[]).map(report=>['hit','miss','void'].includes(report.status)?
+      {...report,noteVerifiedAt:report.noteVerifiedAt||new Date(clock()).toISOString()}:report);
     state.verifiedDate = state.date;
     delete state.pendingUpdates;
     await store.save(state, journal.head);
@@ -171,4 +184,4 @@ async function run({ env = process.env, now = Date.now(), clock = Date.now, stor
   }
 }
 if (require.main === module) run().catch(error=>{console.error(`NOTE_MARKETING_FAILED=${error.message}`);process.exitCode=1;});
-module.exports = { BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, run };
+module.exports = { publicMatches, BODY, readPublic, verifyPublic, updateArticle, requireArticleEditable, previousArticleText, createUpdateJournal, run };
