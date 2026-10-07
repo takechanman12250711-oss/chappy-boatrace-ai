@@ -101,3 +101,8 @@ Workからの切り離しはGitHub側の稼働だけで完了とせず、既存C
 ## 相手選定の方式別100R
 
 `docs/partner-forward.md` と `config/partner-forward-cohorts.json` を確認する。予想コード指紋が変わった場合は各方式の最初の100件を別々に締切前保存・公式照合する。旧 `config/partner-forward.json` とreceiptは不変のまま保持する。`partner-forward-report-v2` のトップレベルは現行方式、`cohorts` は方式別集計、`archivedSealed` は現行以外の保存件数。旧方式の件数を現行へ足さず、現行0件を保存消失と扱わない。100件未満の旧方式は未完了として残し、採用gate未登録・自動採用なしを維持する。
+
+
+## 2026-10-07 コロがし対象の明示
+
+新規記事はreadable-v3で4区分を維持し、有料末尾の「🔄 コロがし検証対象」に保存済み実戦厳選の完全一致部分集合を再掲する。原本・券・オッズ・区分別成績は変更しない。対象欄のsource hash・ticket hash・点数と有料本文hashを公開receiptへ固定し、初回・次段・結果照合で検査する。無料へ券を出さず、対象欄を新たな成績区分や参考へ数えない。既公開v1/v2を保持し、v2の本命を中心券と読み替えない。詳細と実証状況は `docs/note-korogashi-draft.md` を確認する。

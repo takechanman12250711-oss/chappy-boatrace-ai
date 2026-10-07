@@ -9,6 +9,8 @@ const { requirePublicationGate, preparePublication, publishConfiguredArticle, re
 global.ChappyPracticalSelection = { createPracticalSelection: prediction => prediction.practicalTickets };
 const generator = require('../js/note-generator');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'note-publish-source-'));
+fs.mkdirSync(path.join(root, 'config'), { recursive: true });
+fs.copyFileSync(path.join(__dirname, '../config/note-marketing.json'), path.join(root, 'config/note-marketing.json'));
 const clock = Date.parse('2030-09-14T06:00:00Z');
 const oldClock = Date.now;
 const prediction = {
@@ -45,7 +47,7 @@ async function main() {
   const payload = publicationPayload(sourcePath, root, clock);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
-  assert.equal(payload.presentationVersion, 'readable-v2');
+  assert.equal(payload.presentationVersion, 'readable-v3');
   assert.equal(typeof payload.publishedDisplayProofJson, 'string');
   const displayProof = parsePublishedDisplayProof(payload);
   const sha = value => createHash('sha256').update(value).digest('hex');
@@ -58,6 +60,13 @@ async function main() {
     '🎯 本命', '🛡️ 押さえ', '🌊 流し', '💥 万舟狙い'
   ]);
   assert.equal(displayProof.sections[0].ticketCount, 2);
+  assert.deepEqual(displayProof.modelSubset, { version: 'note-korogashi-display-v1', label: '🔄 コロがし検証対象',
+    sourceSha256: hash, ticketCount: 1, ticketsSha256: sha(JSON.stringify(['1-2-3'])), includedInPublishedResult: false });
+  assert.ok(payload.paidText.includes('🔄 コロがし検証対象'));
+  assert.throws(() => parsePublishedDisplayProof({ ...payload, sourceSha256: 'd'.repeat(64) }), /proof_mismatch/);
+  assert.throws(() => parsePublishedDisplayProof({ ...payload, sourceSha256: undefined }), /source_hash_invalid/);
+  assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: JSON.stringify({
+    ...displayProof, modelSubset: { ...displayProof.modelSubset, tickets: ['1-2-3'] } }) }), /proof_mismatch/);
   assert.ok(displayProof.sections.every(section => section.includedInPublishedResult === true));
   assert.equal(displayProof.sections[0].ticketsSha256, sha(JSON.stringify(['1-2-3', '1-2-4'])));
   assert.equal(JSON.stringify(displayProof).includes('1-2-3'), false);
@@ -76,6 +85,11 @@ async function main() {
   const legacyProof = require('./note-published-ticket-sections').sectionProof(legacyArticle.paidText, 'readable-v1');
   assert.deepEqual(parsePublishedDisplayProof({ paidText: legacyArticle.paidText, presentationVersion: 'readable-v1',
     publishedDisplayProofJson: JSON.stringify(legacyProof) }), legacyProof);
+  const v2Article = require('./note-readable-article').readableArticle(article, bundle, { presentationVersion: 'readable-v2' });
+  const v2Proof = require('./note-published-ticket-sections').sectionProof(v2Article.paidText, 'readable-v2');
+  assert.deepEqual(parsePublishedDisplayProof({ paidText: v2Article.paidText, presentationVersion: 'readable-v2',
+    publishedDisplayProofJson: JSON.stringify(v2Proof) }), v2Proof);
+  assert.equal(Object.hasOwn(v2Proof, 'modelSubset'), false);
   assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: undefined }), /proof_missing/);
   assert.throws(() => parsePublishedDisplayProof({ ...payload, presentationVersion: undefined }), /proof_missing/);
   assert.throws(() => parsePublishedDisplayProof({ ...payload, publishedDisplayProofJson: '{' }), /proof_invalid/);
@@ -87,9 +101,21 @@ async function main() {
   assert.equal(MAX_PUBLICATION_TICKETS, 7);
   assert.equal(requirePublicationTicketCount({ practicalTickets: Array(7).fill({ ticket: '1-2-3' }) }), 7);
   assert.throws(() => requirePublicationTicketCount({ practicalTickets: Array(8).fill({ ticket: '1-2-3' }) }), /exceeds_7/);
+  // The new appendix must not replace the established oversized-source reason.
+  const oversized = structuredClone(bundle);
+  const oversizedTickets = ['1-2-3', '1-2-4', '1-2-5', '1-2-6', '1-3-2', '1-3-4', '1-3-5', '1-3-6']
+    .map(ticket => ({ ticket, odds: 20, category: '本命' }));
+  oversized.baselinePracticalTickets = structuredClone(oversizedTickets);
+  oversized.record.prediction.practicalTickets = structuredClone(oversizedTickets);
+  oversized.record.prediction.mainSheet.tickets = structuredClone(oversizedTickets);
+  oversized.article = generator.generateArticle(oversized.record.prediction);
+  const oversizedBytes = JSON.stringify(oversized);
+  const oversizedPath = `data/note-drafts/20300914/20300914-23-10-${sha(oversizedBytes)}.json`;
+  fs.writeFileSync(path.join(root, oversizedPath), oversizedBytes);
+  assert.throws(() => publicationPayload(oversizedPath, root, clock), /publication_ticket_count_exceeds_7/);
   assert.deepEqual(verifyPublicationSource(payload, root, clock), payload);
   assert.deepEqual(requirePublicationGate(payload, root, clock), payload);
-  // An old source that today's compactor can display still cannot acquire a v2
+  // An old source that today's compactor can display still cannot acquire a v3
   // receipt unless the immutable original supports frozen result reconstruction.
   const oldSource = structuredClone(bundle);
   oldSource.article.format = 'formation-v3';
@@ -209,15 +235,18 @@ async function main() {
     goto: async url => { recoveryUrl = url; return { ok: () => true }; }, url: () => recoveryUrl,
     getByRole: role => role === 'link' ? recoveredLink : { waitFor: async () => {} },
     locator: selector => selector === 'article' ? { innerText: async () => recoveryBody } :
+      selector === '.note-common-styles__textnote-body' ? { count: async () => 1, innerText: async () => recoveryBody.replace(/\n¥200$/, '') } :
       { evaluateAll: async () => [new Date(clock).toISOString()] }
   };
-  const claimedReceipt = await recoverClaimedPublication(recoveryPage, payload, root);
+  const recoveryMock = require('./note-recovery-test-fixture.cjs').requestFixture(payload, { rootDir: root });
+  const recoveryGate = await require('./note-github-ui-transport').recoveryClaimStatus(payload, env, recoveryMock.request, root);
+  const claimedReceipt = await recoverClaimedPublication(recoveryPage, payload, root, recoveryGate.recoveryEvidence);
   assert.equal(claimedReceipt.url, publicUrl);
   assert.equal(claimedReceipt.sourceSha256, hash);
   assert.deepEqual(claimedReceipt.publishedDisplayProof, displayProof);
   assert.equal(JSON.stringify(claimedReceipt).includes('1-2-3'), false);
   recoveryBody = recoveryBody.replace('3 → 4 → 5', '3 → 4 → 6');
-  await assert.rejects(recoverClaimedPublication(recoveryPage, payload, root), /recovery_body_mismatch/);
+  await assert.rejects(recoverClaimedPublication(recoveryPage, payload, root, recoveryGate.recoveryEvidence), /recovery_body_mismatch/);
   assert.equal(fs.readFileSync(path.join(root, sourcePath), 'utf8'), bytes, 'source remains immutable');
   console.log('note publication source, claim and final-click tests passed');
 }

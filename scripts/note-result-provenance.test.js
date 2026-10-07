@@ -37,11 +37,11 @@ function input({ bundle = normalBundle(), combination = '1-4-3', presentationVer
     version: 'note-publication-evidence-v1', receiptCommitSha: 'a'.repeat(40), publisherCommitSha: 'b'.repeat(40),
     sourceSha256: row.sourceSha256, ...LEGACY_READABLE
   };
-  if (presentationVersion === 'readable-v2') {
+  if (['readable-v2', 'readable-v3'].includes(presentationVersion)) {
     const { readableArticle } = require('./note-readable-article');
-    const article = readableArticle(bundle.article, bundle);
+    const article = readableArticle(bundle.article, bundle, { presentationVersion });
     row.publicationEvidence.presentationVersion = presentationVersion;
-    row.publicationEvidence.publishedDisplayProof = sectionProof(article.paidText, presentationVersion);
+    row.publicationEvidence.publishedDisplayProof = sectionProof(article.paidText, presentationVersion, { sourceSha256: row.sourceSha256 });
   }
   const now = deadline + 3600000, section = publishedTicketSections(row, bytes, now);
   assert.equal(section.status, 'verified', JSON.stringify(section));
@@ -291,6 +291,28 @@ test('readable-v2 category headings and independent labels preserve exact-source
     const bundle = fixture(); bundle.monitor.kind = kind;
     const f = input({ bundle, combination: '1-2-3', presentationVersion: 'readable-v2' });
     assert.deepEqual(derive(f).matchedSections, [kind === 'escape' ? '🎯 独立本命' : '💥 独立万舟']);
+    assert.deepEqual(ids(validateWinningProvenance(derive(f), binding(f))), [`independent-${kind}`]);
+  }
+});
+
+test('readable-v3 model appendix preserves v2 settlement evidence and never adds a winning category', () => {
+  const bundle = normalBundle(); bundle.record.prediction.mainSheet.tickets.push('1-2-4');
+  for (const combination of ['1-2-3', '1-4-3', '3-1-2', '5-1-2', '6-5-4']) {
+    const v2 = input({ bundle, combination, presentationVersion: 'readable-v2' });
+    const v3 = input({ bundle, combination, presentationVersion: 'readable-v3' });
+    assert.deepEqual(v3.settlement, v2.settlement, 'union, result, matched labels and existing evidence identity stay unchanged');
+    const before = JSON.stringify(v3.settlement), proof = derive(v3);
+    if (v3.settlement.status === 'hit') {
+      assert(proof);
+      assert.deepEqual(proof, derive(v2));
+      assert.ok(!proof.matchedSections.includes('🔄 コロがし検証対象'));
+      assert.deepEqual(ids(validateWinningProvenance(proof, binding(v3))), ids(validateWinningProvenance(derive(v2), binding(v2))));
+    } else assert.equal(proof, null);
+    assert.equal(JSON.stringify(v3.settlement), before);
+  }
+  for (const kind of ['escape', 'manshu']) {
+    const independent = fixture(); independent.monitor.kind = kind;
+    const f = input({ bundle: independent, combination: '1-2-3', presentationVersion: 'readable-v3' });
     assert.deepEqual(ids(validateWinningProvenance(derive(f), binding(f))), [`independent-${kind}`]);
   }
 });

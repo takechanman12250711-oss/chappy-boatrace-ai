@@ -6,7 +6,7 @@ const { fixture } = require('./note-independent-monitor-fixture');
 const { readableArticle: currentReadableArticle } = require('./note-readable-article');
 const readableArticle = (article, bundle) => currentReadableArticle(article, bundle, { presentationVersion: 'readable-v1' });
 const { VERSION, EVIDENCE_VERSION, LEGACY_READABLE, sectionProof, extractPublishedTicketSections,
-  publishedTicketSections, classifyPublishedTickets } = require('./note-published-ticket-sections');
+  publishedTicketSections, classifyPublishedTickets, verifiedModelSubset } = require('./note-published-ticket-sections');
 const hash = value => createHash('sha256').update(value).digest('hex');
 const clone = value => JSON.parse(JSON.stringify(value));
 
@@ -171,14 +171,14 @@ test('formation regrouping exactly matches current publication renderer over non
   assert.equal(publishedTicketSections(row, bytes, now).status, 'verified');
 });
 
-function categoryInput(bundle) {
+function categoryInput(bundle, presentationVersion = 'readable-v2') {
   if (!bundle) {
     bundle = normalFixture();
     bundle.record.prediction.mainSheet.tickets.splice(1, 0, '1-2-4');
   }
-  const args = input(bundle), article = currentReadableArticle(bundle.article, bundle);
+  const args = input(bundle), article = currentReadableArticle(bundle.article, bundle, { presentationVersion });
   args.row.publicationEvidence.presentationVersion = article.presentationVersion;
-  args.row.publicationEvidence.publishedDisplayProof = sectionProof(article.paidText, article.presentationVersion);
+  args.row.publicationEvidence.publishedDisplayProof = sectionProof(article.paidText, article.presentationVersion, { sourceSha256: args.row.sourceSha256 });
   return { ...args, bundle, article };
 }
 test('v2 exact source proof retains all category matches while excluding overlapping references from totals', () => {
@@ -263,4 +263,184 @@ test('v1 byte fingerprint and grammar remain frozen when v2 is the generation de
     'cb6fb0fb2fd0bd1e2ce4f7a9a914e7c888c10ef12926768c9741082d95a3010c');
   assert.equal(extractPublishedTicketSections(legacy.paidText, { presentationVersion: 'readable-v2' }).status, 'review');
   assert.equal(extractPublishedTicketSections(categoryInput().article.paidText, { presentationVersion: 'readable-v1' }).status, 'review');
+});
+
+function modelInput(presentationVersion = 'readable-v3', bundle) {
+  const args = categoryInput(bundle, presentationVersion);
+  args.row.url = 'https://note.com/great_robin3243/n/n123abc';
+  args.row.price = 200;
+  args.receipt = { version: 'note-publication-receipt-v1', raceKey: args.row.raceKey,
+    articleSeries: args.row.articleSeries, publicationKey: args.row.publicationKey,
+    url: args.row.url, price: args.row.price, sourceSha256: args.row.sourceSha256,
+    publishedAt: args.row.publishedAt, verifiedAt: new Date(Date.parse(args.row.publishedAt) + 1000).toISOString(),
+    publishedDisplayProof: clone(args.row.publicationEvidence.publishedDisplayProof) };
+  args.beforeDeadline = Date.parse(args.row.deadlineAt) - 130000;
+  return args;
+}
+
+test('v3 appends a source-bound model proof without changing v2 categories, union or matched labels', () => {
+  const args = modelInput(), v2 = categoryInput(JSON.parse(args.bytes));
+  const result = publishedTicketSections(args.row, args.bytes, args.now);
+  const original = publishedTicketSections(v2.row, v2.bytes, v2.now);
+  assert.equal(result.status, 'verified'); assert.equal(result.presentationVersion, 'readable-v3');
+  for (const field of ['sections', 'sectionsSha256', 'publishedTicketsSha256', 'publishedTicketCount',
+    'displayedPrimaryTicketCount', 'referenceTicketCount', 'unionTickets']) assert.deepEqual(result[field], original[field]);
+  assert.equal(result.publishedTicketCount, 6);
+  assert.equal(result.displayedPrimaryTicketCount, 9);
+  assert.equal(result.referenceTicketCount, 2);
+  assert.deepEqual(classifyPublishedTickets(args.row, args.bytes, '1-3-2', args.now).matchedSections, ['🎯 本命', '🛡️ 押さえ']);
+  assert.deepEqual(classifyPublishedTickets(args.row, args.bytes, '3-1-2', args.now).matchedSections, ['🌊 流し', '💥 万舟狙い']);
+  assert.equal(classifyPublishedTickets(args.row, args.bytes, '5-1-2', args.now).status, 'miss');
+  assert.equal(classifyPublishedTickets(args.row, args.bytes, '6-5-4', args.now).status, 'miss');
+  const proof = args.receipt.publishedDisplayProof;
+  assert.deepEqual(proof.modelSubset, { version: 'note-korogashi-display-v1', label: '🔄 コロがし検証対象',
+    sourceSha256: args.row.sourceSha256, ticketCount: 2, ticketsSha256: hash(JSON.stringify(['1-2-3', '1-2-4'])),
+    includedInPublishedResult: false });
+  assert.deepEqual(proof.sections, v2.row.publicationEvidence.publishedDisplayProof.sections);
+  assert.equal(Object.hasOwn(result, 'modelSubset'), false);
+  assert.ok(!/[1-6]-[1-6]-[1-6]/.test(JSON.stringify(proof)));
+  assert.throws(() => sectionProof(args.article.paidText, 'readable-v3'), /source_hash_invalid/);
+});
+
+test('v3 pre-deadline model validator returns only hashes while public result APIs remain closed', () => {
+  const { row, bytes, receipt, beforeDeadline, now } = modelInput(), before = JSON.stringify({ row, bytes, receipt });
+  const evidence = verifiedModelSubset(row, bytes, receipt, beforeDeadline);
+  assert.deepEqual(evidence, { version: 'note-korogashi-selection-evidence-v1', presentationVersion: 'readable-v3',
+    sourceSha256: row.sourceSha256, paidTextSha256: receipt.publishedDisplayProof.paidTextSha256,
+    ticketsSha256: hash(JSON.stringify(['1-2-3', '1-2-4'])), ticketCount: 2, label: '🔄 コロがし検証対象' });
+  assert(Object.isFrozen(evidence));
+  assert.ok(!/[1-6]-[1-6]-[1-6]/.test(JSON.stringify(evidence)));
+  assert.deepEqual(verifiedModelSubset(row, Buffer.from(bytes), receipt, now), evidence, 'settlement revalidates original publication chronology');
+  for (const clock of [beforeDeadline, Date.parse(row.deadlineAt)]) {
+    assert.deepEqual(publishedTicketSections(row, bytes, clock), { status: 'pending', reason: 'official_result_pending' });
+    assert.deepEqual(classifyPublishedTickets(row, bytes, '1-2-3', clock), { status: 'pending', reason: 'official_result_pending' });
+  }
+  assert.equal(JSON.stringify({ row, bytes, receipt }), before);
+  // A fetched modern receipt can prove its displayed subset even if a cached
+  // marketing row has not yet acquired legacy publisher-code fingerprints.
+  const uncached = { ...row }; delete uncached.publicationEvidence;
+  assert.deepEqual(verifiedModelSubset(uncached, bytes, receipt, beforeDeadline), evidence);
+});
+
+test('v3 proof rejects source rebinding even if only unrelated immutable bytes change', () => {
+  const args = modelInput(), changed = JSON.parse(args.bytes);
+  changed.unrelatedImmutableAnnotation = 'These bytes were not the publication original.';
+  const bytes = JSON.stringify(changed), sourceSha256 = hash(bytes);
+  const row = { ...args.row, sourceSha256, publicationEvidence: { ...args.row.publicationEvidence, sourceSha256 } };
+  const receipt = { ...args.receipt, sourceSha256 };
+  assert.equal(publishedTicketSections(row, bytes, args.now).reason, 'published_display_proof_mismatch');
+  assert.throws(() => verifiedModelSubset(row, bytes, receipt, args.beforeDeadline), /published_display_proof_mismatch/);
+  assert.throws(() => verifiedModelSubset(args.row, args.bytes + ' ', args.receipt, args.beforeDeadline), /source_hash_mismatch/);
+});
+
+test('v3 model proof rejects tampering, extra fields and altered paid subsection membership', () => {
+  const args = modelInput();
+  for (const edit of [
+    proof => { proof.modelSubset.sourceSha256 = 'e'.repeat(64); },
+    proof => { proof.modelSubset.ticketsSha256 = proof.sections[0].ticketsSha256; },
+    proof => { proof.modelSubset.ticketCount = 3; },
+    proof => { proof.modelSubset.includedInPublishedResult = true; },
+    proof => { proof.modelSubset.label = '🎯 本命'; },
+    proof => { proof.modelSubset.version = 'future-v2'; },
+    proof => { proof.modelSubset.tickets = ['1-2-3']; },
+    proof => { proof.paidText = args.article.paidText; },
+    proof => { proof.sections.push({ ...proof.modelSubset }); },
+    proof => { delete proof.modelSubset; },
+    proof => { proof.paidTextSha256 = 'a'.repeat(64); }
+  ]) {
+    const row = clone(args.row), receipt = clone(args.receipt);
+    edit(receipt.publishedDisplayProof); row.publicationEvidence.publishedDisplayProof = clone(receipt.publishedDisplayProof);
+    assert.equal(publishedTicketSections(row, args.bytes, args.now).reason, 'published_display_proof_mismatch');
+    assert.throws(() => verifiedModelSubset(row, args.bytes, receipt, args.beforeDeadline), /published_display_proof_mismatch/);
+  }
+  const model = require('./note-korogashi-presentation.cjs');
+  const parsed = model.parsePaidText(args.article.paidText);
+  const appendix = args.article.paidText.slice(parsed.basePaidText.length);
+  const changedText = parsed.basePaidText + appendix.replace('1 → 2 → 3・4', '1 → 3 → 2・4');
+  assert.throws(() => sectionProof(changedText, 'readable-v3', { sourceSha256: args.row.sourceSha256 }), /primary_membership_missing/);
+});
+
+test('model validator verifies actual receipt identity and clocks rather than a count or source label', () => {
+  for (const edit of [
+    args => { args.receipt.url = 'https://note.com/great_robin3243/n/n456abc'; },
+    args => { args.receipt.sourceSha256 = 'a'.repeat(64); },
+    args => { args.receipt.raceKey += '1'; },
+    args => { args.receipt.articleSeries = 'escape'; },
+    args => { args.receipt.publicationKey += ':escape'; },
+    args => { args.receipt.price = 300; },
+    args => { args.receipt.version = 'future-v2'; },
+    args => { args.receipt.publishedAt = args.row.deadlineAt; },
+    args => { args.receipt.verifiedAt = new Date(Date.parse(args.row.publishedAt) - 1).toISOString(); },
+    args => { args.receipt.verifiedAt = args.row.deadlineAt; },
+    args => { args.receipt.verifiedAt = new Date(args.beforeDeadline + 1).toISOString(); },
+    args => { args.beforeDeadline = NaN; },
+    args => { args.row.publicationEvidence.sourceSha256 = 'a'.repeat(64); },
+    args => { args.row.publicationEvidence.publishedDisplayProof = undefined; },
+    args => { args.receipt.publishedDisplayProof = undefined; }
+  ]) {
+    const args = modelInput(); edit(args);
+    assert.throws(() => verifiedModelSubset(args.row, args.bytes, args.receipt, args.beforeDeadline));
+  }
+});
+
+test('v3 rejects unknown source families and formats without substituting research pools', () => {
+  for (const mutate of [
+    bundle => { bundle.version = 'future-note-source-v9'; },
+    bundle => { bundle.record.source = 'autonomous-research'; },
+    bundle => { bundle.article.format = 'formation-future'; },
+    bundle => { delete bundle.baselinePracticalTickets; },
+    bundle => { delete bundle.article.practicalTickets; },
+    bundle => { bundle.article.practicalTickets = [{ ticket: '6-5-4' }]; },
+    bundle => { delete bundle.record.prediction.mainSheet.coverTickets; }
+  ]) {
+    const args = modelInput(), bundle = JSON.parse(args.bytes); mutate(bundle);
+    const bytes = JSON.stringify(bundle), sourceSha256 = hash(bytes);
+    const row = clone(args.row); row.sourceSha256 = sourceSha256; row.publicationEvidence.sourceSha256 = sourceSha256;
+    const receipt = { ...args.receipt, sourceSha256 };
+    assert.equal(publishedTicketSections(row, bytes, args.now).status, 'review');
+    assert.throws(() => verifiedModelSubset(row, bytes, receipt, args.beforeDeadline));
+  }
+});
+
+test('readable-v2 remains a valid ordinary result but cannot supply a fabricated model center', () => {
+  const args = modelInput('readable-v2');
+  assert.equal(publishedTicketSections(args.row, args.bytes, args.now).status, 'verified');
+  assert.throws(() => verifiedModelSubset(args.row, args.bytes, args.receipt, args.beforeDeadline), /model_selection_presentation_unsupported/);
+  const bundle = normalFixture();
+  // Both sections happen to contain two tickets, but the actual published main
+  // contains different tickets than the immutable practical selection.
+  bundle.record.prediction.mainSheet = { tickets: ['1-2-3', '1-3-2'], coverTickets: ['1-2-4'], flowTickets: [] };
+  const sameCount = modelInput('readable-v2', bundle);
+  assert.equal(sameCount.receipt.publishedDisplayProof.sections[0].ticketCount, sameCount.row.ticketCount);
+  assert.notEqual(sameCount.receipt.publishedDisplayProof.sections[0].ticketsSha256, hash(JSON.stringify(['1-2-3', '1-2-4'])));
+  assert.throws(() => verifiedModelSubset(sameCount.row, sameCount.bytes, sameCount.receipt, sameCount.beforeDeadline), /model_selection_presentation_unsupported/);
+});
+
+test('legacy readable-v1 qualifies only with its actual center proof or validated publisher-code evidence', () => {
+  const args = modelInput('readable-v1');
+  const evidence = verifiedModelSubset(args.row, args.bytes, args.receipt, args.beforeDeadline);
+  assert.equal(evidence.presentationVersion, 'readable-v1'); assert.equal(evidence.label, '中心の買い目');
+  assert.equal(evidence.ticketCount, 2); assert.equal(evidence.ticketsSha256, hash(JSON.stringify(['1-2-3', '1-2-4'])));
+  const legacyRow = clone(args.row), receipt = clone(args.receipt);
+  delete legacyRow.publicationEvidence.publishedDisplayProof; delete receipt.publishedDisplayProof;
+  assert.deepEqual(verifiedModelSubset(legacyRow, args.bytes, receipt, args.beforeDeadline), evidence);
+  const missing = { ...legacyRow }; delete missing.publicationEvidence;
+  assert.throws(() => verifiedModelSubset(missing, args.bytes, receipt, args.beforeDeadline), /published_renderer_evidence_missing/);
+  legacyRow.publicationEvidence.rendererSha256 = 'f'.repeat(64);
+  assert.throws(() => verifiedModelSubset(legacyRow, args.bytes, receipt, args.beforeDeadline), /published_renderer_unreviewed/);
+});
+
+test('v3 independent article kinds keep their own source and reference accounting', () => {
+  for (const kind of ['escape', 'manshu']) {
+    const bundle = fixture(); bundle.monitor.kind = kind;
+    bundle.article.paidText += '\n\n参考\n・1-2-3\n・6-1-2'; bundle.monitor.article = clone(bundle.article);
+    const args = modelInput('readable-v3', bundle);
+    const selected = verifiedModelSubset(args.row, args.bytes, args.receipt, args.beforeDeadline);
+    assert.equal(selected.ticketCount, 2);
+    const result = publishedTicketSections(args.row, args.bytes, args.now);
+    assert.equal(result.publishedTicketCount, 2); assert.equal(result.referenceTicketCount, 2);
+    assert.deepEqual(classifyPublishedTickets(args.row, args.bytes, '1-2-3', args.now).matchedSections,
+      [kind === 'escape' ? '🎯 独立本命' : '💥 独立万舟']);
+    assert.equal(classifyPublishedTickets(args.row, args.bytes, '6-1-2', args.now).status, 'miss');
+  }
 });

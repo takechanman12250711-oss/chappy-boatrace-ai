@@ -10,12 +10,15 @@ const ctx={runId:'123',runAttempt:'1',headSha:'a'.repeat(40)};
 function fixture(rno=6,hour=16,payout=1001) {
   const b=original(), now=time(hour), key=`20260928-15-${rno}`;
   b.record.raceKey=key;b.record.raceNo=rno;b.monitor.raceKey=key;
-  b.record.selectedAt=b.capturedAt=new Date(now-180000).toISOString();
+  b.record.selectedAt=b.capturedAt=b.monitor.confirmedAt=new Date(now-180000).toISOString();
   b.record.exhibitionSnapshot.capturedAt=new Date(now-240000).toISOString();
   b.record.deadlineAt=new Date(now+600000).toISOString();
   const bytes=JSON.stringify(b), receipt={version:'note-publication-receipt-v1',price:200,raceKey:key,articleSeries:'escape',
     sourceSha256:k.hash(bytes),url:`https://note.com/great_robin3243/n/nabc${rno}`,
     publishedAt:new Date(now-120000).toISOString(),verifiedAt:new Date(now-60000).toISOString()};
+  const presentation=require('./note-korogashi-presentation.cjs');
+  receipt.publishedDisplayProof=require('./note-published-ticket-sections').sectionProof(
+    presentation.paidTextFromSource(b,'escape'),presentation.PRESENTATION_VERSION,{sourceSha256:receipt.sourceSha256});
   const row=receiptRow(receipt,bytes,now);
   const result={ok:true,source:'boatrace-official',date:'20260928',jcd:'15',raceNo:rno,resultUrl:row.resultUrl,
     checkedAt:new Date(now+1200000).toISOString(),resultAvailable:true,status:'finished',void:false,
@@ -231,4 +234,54 @@ test('conflicting official caches are rejected instead of choosing the profitabl
   const repo=repository({file:async()=>k.json({date:'20260928',source:'boatrace-official',races:[f.result]})});
   const changed=clone(f.result);changed.trifecta.payout+=100;
   await assert.rejects(repo.officialLoader({officialResults:{[f.row.raceKey]:changed}})(f.row.raceKey),/official_result_conflict/);
+});
+
+test('courses require an actual published subset proof, never a same-count category or absent proof',async()=>{
+  const category=require('./note-category-article'),{sectionProof}=require('./note-published-ticket-sections');
+  for(const mutation of [
+    f=>{delete f.receipt.publishedDisplayProof;},
+    f=>{f.receipt.publishedDisplayProof=sectionProof(category.paidTextFromSections(category.sourceSections(f.b,'escape')),'readable-v2');},
+    f=>{f.receipt.publishedDisplayProof.modelSubset.ticketsSha256='e'.repeat(64);},
+    f=>{f.receipt.publishedDisplayProof.modelSubset.sourceSha256='d'.repeat(64);},
+    f=>{f.receipt.publishedDisplayProof.modelSubset.ticketCount+=1;}
+  ]) {
+    const f=fixture();mutation(f);
+    const out=await k.prepare(k.initialState(),config(),options([f]));
+    assert.equal(out.staged.length,0);assert.equal(out.state.plans['test-100k'].events.length,0);
+    assert.match(out.skipped[0].reason,/model_selection|published_display_proof|published_renderer_evidence/);
+  }
+});
+
+test('saved model evidence binds the exact allocations, and public instructions name only the paid subset',async()=>{
+  const f=fixture(),state=await registered(f),plan=state.plans['test-100k'],view=k.project(plan);
+  const selection=view.legs[0].modelSelectionEvidence;
+  assert.equal(selection.sourceSha256,f.receipt.sourceSha256);
+  assert.equal(selection.ticketsSha256,k.hash(view.legs[0].allocations.map(a=>a.ticket).sort()));
+  assert.equal(selection.ticketCount,2);assert.equal(selection.presentationVersion,'readable-v3');
+  const text=k.publicText(state,f.now+2000);
+  assert(text.includes('「🔄 コロがし検証対象」欄だけ'));
+  assert(text.includes('その他の掲載券・参考予想は対象外'));
+  assert(!text.includes('1-2-3'));assert(!text.includes('1 → 2 → 3'));
+  const changed=clone(state),event=changed.plans['test-100k'].events[0];
+  event.data.leg.modelSelectionEvidence.ticketsSha256='e'.repeat(64);
+  event.data.seal.snapshotHash=k.hash({request:changed.plans['test-100k'].request,previous:event.previous,leg:event.data.leg});
+  const {hash,...body}=event;event.hash=k.hash(body);
+  assert.throws(()=>k.validateState(changed),/registered_selection_unverified/);
+});
+
+test('the next leg rechecks display evidence and never silently follows an unmarked v2 article',async()=>{
+  const first=fixture(),next=fixture(7,17),state=await registered(first);
+  const category=require('./note-category-article'),{sectionProof}=require('./note-published-ticket-sections');
+  next.receipt.publishedDisplayProof=sectionProof(category.paidTextFromSections(category.sourceSections(next.b,'escape')),'readable-v2');
+  const out=await k.prepare(state,config(),options([first,next],next.now));
+  assert.equal(out.staged.length,0);assert.equal(k.project(out.state.plans['test-100k']).status,'waiting_next');
+  assert.match(out.skipped[0].reason,/model_selection_presentation_unsupported/);
+  assert.equal(k.project(out.state.plans['test-100k']).legs.length,1);
+});
+
+test('settlement rejects a receipt whose subset proof changed after the saved registration',async()=>{
+  const first=fixture(),state=await registered(first);
+  first.receipt.publishedDisplayProof.modelSubset.ticketsSha256='e'.repeat(64);
+  await assert.rejects(k.prepare(state,config(),options([first],time(17))),/published_display_proof_mismatch/);
+  assert.equal(k.project(state.plans['test-100k']).status,'waiting_result');
 });

@@ -18,7 +18,8 @@ function requirePublicationTicketCount(article) {
   return tickets.length;
 }
 
-function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
+function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now(), { presentationVersion = 'readable-v3' } = {}) {
+  if (!['readable-v1', 'readable-v2', 'readable-v3'].includes(presentationVersion)) throw Error('published_presentation_version_unsupported');
   const match = /^data\/note-drafts\/(\d{8})\/\1-(\d{2})-(\d{1,2})-([a-f0-9]{64})\.json$/.exec(String(sourcePath));
   if (!match) throw new Error('publication_source_path_invalid');
   const bytes = fs.readFileSync(path.join(rootDir, sourcePath), 'utf8');
@@ -45,8 +46,16 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
     error.issueCodes = [...new Set(audit.issues.map(issue => issue.code))];
     throw error;
   }
+  // Preserve the established 1–7 publication gate and its diagnostic before
+  // v3's separate model-subset renderer can reject an oversized source.
+  requirePublicationTicketCount(article);
   // Audit the immutable original first, then verify the approved public copy.
-  const readable = require('./note-readable-article').readableArticle(article, bundle);
+  // Explicit versions are used only by the proof-gated historical recovery
+  // path. New publication gates always reconstruct the v3 default. Historical
+  // v1 needs its original free introduction as well as the frozen paid body.
+  const renderer = presentationVersion === 'readable-v1' ? require('./note-recovery-readable-v1.cjs')
+    : presentationVersion === 'readable-v2' ? require('./note-recovery-readable-v2.cjs') : require('./note-readable-article');
+  const readable = renderer.readableArticle(article, bundle);
   if (readable.presentationVersion === 'readable-v2') {
     // A new receipt must be reproducible from the immutable original itself,
     // rather than only from today's compactArticle preprocessing. Unknown old
@@ -55,11 +64,17 @@ function sourceArticle(sourcePath, rootDir = process.cwd(), now = Date.now()) {
     const sourcePaidText = categories.paidTextFromSections(categories.sourceSections(bundle, articleSeries));
     if (readable.paidText !== sourcePaidText) throw new Error('publication_category_source_mismatch');
   }
+  if (readable.presentationVersion === 'readable-v3') {
+    // Bind the compact-derived publication to the exact immutable original,
+    // including the unchanged practical subset and its separate appendix.
+    const sourcePaidText = require('./note-korogashi-presentation.cjs').paidTextFromSource(bundle, articleSeries);
+    if (readable.paidText !== sourcePaidText) throw new Error('publication_model_source_mismatch');
+  }
   return { bundle, article: readable, articleSeries, sha256: match[4] };
 }
 
-function publicationPayload(sourcePath, rootDir = process.cwd(), now = Date.now()) {
-  const { bundle, article, articleSeries, sha256 } = sourceArticle(sourcePath, rootDir, now);
+function publicationPayload(sourcePath, rootDir = process.cwd(), now = Date.now(), options) {
+  const { bundle, article, articleSeries, sha256 } = sourceArticle(sourcePath, rootDir, now, options);
   const practicalTicketCount = requirePublicationTicketCount(article);
   const paidText = article.paidText.trim();
   const presentationVersion = article.presentationVersion;
@@ -68,7 +83,7 @@ function publicationPayload(sourcePath, rootDir = process.cwd(), now = Date.now(
   }
   // Bind the actual audited public copy, not an internal candidate pool. Keep
   // this handoff field primitive so source revalidation checks exact bytes.
-  const publishedDisplayProofJson = JSON.stringify(sectionProof(paidText, presentationVersion));
+  const publishedDisplayProofJson = JSON.stringify(sectionProof(paidText, presentationVersion, { sourceSha256: sha256 }));
   return {
     version: 'note-publication-handoff-v1', sourcePath, sourceSha256: sha256,
     raceKey: bundle.record.raceKey,
@@ -92,7 +107,7 @@ function parsePublishedDisplayProof(payload) {
   let proof;
   try { proof = JSON.parse(payload.publishedDisplayProofJson); }
   catch { throw new Error('publication_display_proof_invalid'); }
-  const expected = sectionProof(payload.paidText, payload.presentationVersion);
+  const expected = sectionProof(payload.paidText, payload.presentationVersion, { sourceSha256: payload.sourceSha256 });
   // Comparing the canonical serialization also rejects extra data, including
   // accidentally attached paid bodies or ticket arrays in public receipts.
   if (payload.publishedDisplayProofJson !== JSON.stringify(expected)) {
@@ -101,8 +116,8 @@ function parsePublishedDisplayProof(payload) {
   return proof;
 }
 
-function verifyPublicationSource(payload, rootDir = process.cwd(), now = Date.now()) {
-  const expected = publicationPayload(payload?.sourcePath, rootDir, now);
+function verifyPublicationSource(payload, rootDir = process.cwd(), now = Date.now(), options) {
+  const expected = publicationPayload(payload?.sourcePath, rootDir, now, options);
   for (const key of Object.keys(expected)) {
     if (payload[key] !== expected[key]) throw new Error(`publication_handoff_mismatch_${key}`);
   }
