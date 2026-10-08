@@ -47,7 +47,7 @@ async function main() {
   const payload = publicationPayload(sourcePath, root, clock);
   assert.equal(payload.canPublish, true);
   assert.equal(payload.practicalTicketCount, 1);
-  assert.equal(payload.presentationVersion, 'readable-v3');
+  assert.equal(payload.presentationVersion, 'readable-v4');
   assert.equal(typeof payload.publishedDisplayProofJson, 'string');
   const displayProof = parsePublishedDisplayProof(payload);
   const sha = value => createHash('sha256').update(value).digest('hex');

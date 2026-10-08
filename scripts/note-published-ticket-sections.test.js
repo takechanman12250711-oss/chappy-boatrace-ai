@@ -444,3 +444,19 @@ test('v3 independent article kinds keep their own source and reference accountin
     assert.equal(classifyPublishedTickets(args.row, args.bytes, '6-1-2', args.now).status, 'miss');
   }
 });
+
+test('v4 keeps v3 paid accounting and source-bound model proof with the corrected free explanation', () => {
+  const v3=modelInput('readable-v3'), v4=modelInput('readable-v4');
+  assert.equal(v4.article.paidText,v3.article.paidText);
+  assert.deepEqual(v4.receipt.publishedDisplayProof.modelSubset,v3.receipt.publishedDisplayProof.modelSubset);
+  const evidence=verifiedModelSubset(v4.row,v4.bytes,v4.receipt,v4.beforeDeadline);
+  assert.equal(evidence.presentationVersion,'readable-v4');
+  assert.equal(evidence.label,'🔄 コロがし検証対象');
+  assert.deepEqual(publishedTicketSections(v4.row,v4.bytes,v4.beforeDeadline),{status:'pending',reason:'official_result_pending'});
+  const result=publishedTicketSections(v4.row,v4.bytes,v4.now);
+  assert.equal(result.status,'verified');
+  assert.deepEqual(result.unionTickets,publishedTicketSections(v3.row,v3.bytes,v3.now).unionTickets);
+  const changed=clone(v4);changed.receipt.publishedDisplayProof.modelSubset.ticketCount++;
+  changed.row.publicationEvidence.publishedDisplayProof=clone(changed.receipt.publishedDisplayProof);
+  assert.throws(()=>verifiedModelSubset(changed.row,changed.bytes,changed.receipt,changed.beforeDeadline),/proof_mismatch/);
+});

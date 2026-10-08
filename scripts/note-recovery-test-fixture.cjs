@@ -7,7 +7,7 @@ const historical = require('./fixtures/note-recovery-code.json');
 const root = path.join(__dirname, '..');
 const blobSha = bytes => createHash('sha1').update(`blob ${Buffer.byteLength(bytes)}\0`).update(bytes).digest('hex');
 function response(data, status = 200) { return { status, json: async () => data }; }
-function requestFixture(identity, { version = 'readable-v3', rootDir = root, largeSource = false, mutate } = {}) {
+function requestFixture(identity, { version = 'readable-v4', rootDir = root, largeSource = false, mutate } = {}) {
   const claimSha = 'b'.repeat(40), calls = [], blobs = new Map();
   const request = async (url, options) => {
     if (options?.method && options.method !== 'GET') throw Error('test_unexpected_write');

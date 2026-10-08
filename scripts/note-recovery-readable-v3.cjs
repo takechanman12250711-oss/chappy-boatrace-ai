@@ -178,7 +178,7 @@ function readableArticleV2(article, bundle, { presentationVersion = 'readable-v2
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].join('\n\n');
   return { ...article, presentationVersion, freeText, paidText, fullText };
 }
-function readableArticleV3(article, bundle, { presentationVersion = 'readable-v3' } = {}) {
+function readableArticle(article, bundle, { presentationVersion = 'readable-v3' } = {}) {
   // Historical v1/v2 reconstruction keeps its exact existing bytes and grammar.
   if (presentationVersion === 'readable-v1' || presentationVersion === 'readable-v2') {
     return readableArticleV2(article, bundle, { presentationVersion });
@@ -196,9 +196,5 @@ function readableArticleV3(article, bundle, { presentationVersion = 'readable-v3
   // The fixed model preview adds no new amount or funding recommendation.
   const fullText = [freeText, article.paywallMarker, paidText, NOTICE, article.tags.join(' ')].join('\n\n');
   return { ...base, presentationVersion, freeText, paidText, fullText };
-}
-function readableArticle(article, bundle, { presentationVersion = 'readable-v4' } = {}) {
-  if (presentationVersion !== 'readable-v4') return readableArticleV3(article, bundle, { presentationVersion });
-  return require('./note-free-explanation.cjs').withVerifiedExplanation(readableArticleV3(article, bundle), article, bundle);
 }
 module.exports = { readableArticle, ticketsIn };

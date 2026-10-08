@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
 const categoryV2 = require('./note-category-article');
 const model = require('./note-korogashi-presentation.cjs');
-const { readableArticle, ticketsIn } = require('./note-readable-article');
+const { readableArticle: currentReadableArticle, ticketsIn } = require('./note-readable-article');
+const readableArticle = (article, bundle, options = {}) => currentReadableArticle(article, bundle, { presentationVersion: 'readable-v3', ...options });
 const { fixture: independentFixture } = require('./note-independent-monitor-fixture');
 const hash = text => createHash('sha256').update(text).digest('hex');
 const strings = rows => rows.map(row => typeof row === 'string' ? row : row.ticket);
@@ -211,3 +212,6 @@ test('explicit readable-v2 keeps its frozen free, paid and full bytes', () => {
   assert.ok(!a.fullText.includes(model.MODEL_LABEL));
   assert.throws(() => readableArticle(b.article, b, { presentationVersion: 'readable-v99' }), /version_unsupported/);
 });
+
+// Keep v4 safety regressions in this established CI entry point; no new workflow.
+require('./note-free-explanation.test.cjs');

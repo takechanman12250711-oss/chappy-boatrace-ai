@@ -59,15 +59,15 @@ async function pinned(f, version, options = {}) {
   return { ...mock, ...gate, payload };
 }
 
-test('historical v1/v2 recovery pins exact old body and proof; new publication stays v3', async () => {
+test('historical v1/v2 recovery pins exact old body and proof; new publication uses v4', async () => {
   const f = original();
   try {
-    for (const version of ['readable-v1', 'readable-v2', 'readable-v3']) {
+    for (const version of ['readable-v1', 'readable-v2', 'readable-v3', 'readable-v4']) {
       const p = await pinned(f, version), before = fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8');
       assert.equal(p.payload.presentationVersion, version);
       assert.equal(p.recoveryEvidence.claimCommitSha, p.claimSha);
       assert.equal(p.recoveryEvidence.sourceSha256, hash(f.bytes));
-      assert.equal(p.payload.paidText.includes('🔄 コロがし検証対象'), version === 'readable-v3');
+      assert.equal(p.payload.paidText.includes('🔄 コロがし検証対象'), ['readable-v3', 'readable-v4'].includes(version));
       assert.deepEqual(requireRecoveryPublicationGate(p.payload, p.recoveryEvidence, f.rootDir), p.payload);
       if (version === 'readable-v1') {
         assert.ok(p.payload.freeText.includes('展開の考え方\n'));
@@ -83,9 +83,9 @@ test('historical v1/v2 recovery pins exact old body and proof; new publication s
       assert.ok(!/[1-6]-[1-6]-[1-6]/.test(JSON.stringify(receipt.publishedDisplayProof)));
       assert.deepEqual(ui.visited, ['https://note.com/great_robin3243', receipt.url]);
       assert.equal(fs.readFileSync(path.join(f.rootDir, f.sourcePath), 'utf8'), before);
-      if (version !== 'readable-v3') assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
+      if (version !== 'readable-v4') assert.throws(() => requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), /handoff_mismatch/);
       else assert.deepEqual(requirePublicationGate(p.payload, f.rootDir, f.identity.sourceTime), p.payload);
-      assert.equal(publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime).presentationVersion, 'readable-v3');
+      assert.equal(publicationPayload(f.sourcePath, f.rootDir, f.identity.sourceTime).presentationVersion, 'readable-v4');
     }
   } finally { f.cleanup(); }
 });
